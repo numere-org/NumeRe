@@ -1,0 +1,1376 @@
+03 December 2015
+   v 1.0.8 "Release Candidate 3" rev. 58
+
+     Change log:
+        -Added: Neues Colorscheme: "coast" = "BCyw"
+        -Cleaned: NumeRe beruecksichtigt nun bei Datenplots die tatsachlich angezeigten Intervalle zur Berechnung automatischer Intervalle.
+        -Fixed: Ein seltener Bug in "hist" wurde behoben, der die Binskalierung bei sehr grossen oder sehr kleinen Groessenordnungen nicht korrekt anzeigte.
+        -Added: "diff" kann nun auch Funktionen ueber ein ganzes Intervall differenzieren.
+        -Added: "integrate" kann nun 1. Datensaetze integrieren, 2. die numerische Stammfunktion als Datensatz zurueckgeben (points) und 3. die entsprechenden x-Werte dazu bestimmen (xvals).
+        -Added: Neue Parameter fuer "plot": "hbars" erzeugt horizontale Balken, "steps" stellt Datenpunkte als Stufenfunktion dar.
+        -Added: Neuer Parameter fuer "hist": "silent" unterdrueckt saemtliche Ausgaben. Kann genutzt werden, wenn viele Histogramme erzeugt oder nur die Histogrammdaten benötigt werden.
+        -Added: Dem Parameter "tocache" kann nun, falls gewuenscht, auch der Name des Zielcaches vorgegeben werden.
+        -Added: Neuer Parameter fuer "hist": "grid" laesst "hist" den Datensatz als Datengitter interpretieren und ein einzelnes Histogramm entsprechend der z-Werte berechnen.
+        -Added: Mit der Option "legendstyle" kann die Styleinformation der Legendensymbole beeinflusst werden: mit "onlycolors" werden nur die Farben und mit "onlystyles" nur die Styles der Linien gezeigt.
+        -Added: ";" kann nun verwendet werden, um mehrere (Kommando-)Ausdruecke in einer Zeile anzugeben.
+        -New: Die Funktion "pct(x,y,z,...,p)" kann das p-te Perzentil von x,y,z,... bestimmen.
+        -New: Die MATOP-Funktionen "solve()" und "cross()" wurden hinzugefuegt. "solve()" loest LGS und "cross()" berechnet n-Dim-Kreuzprodukte.
+        -Fixed: Prozeduren koennen die Variablennamen "var" und "str" nicht mehr uebergeben werden ("var" und "str" sind Prozedurspezifische Kommandos)
+        -Fixed: Bug in "getindices()" behoben, der bei Caches und T > -1 auftrat.
+        -Added: NumeRe beruecksichtigt nun auch die Fehlerprozentwerte, die beim Fitten berechnet werden, fuer die Fitanalyse.
+        -Added: Mittels "-lnumctrl" ist ein einfacher Sicherheitsabbruch von Schleifen implementiert, der nach 1000 (bzw. WERT bei "-lnumctrl=WERT") Iterationen abbricht.
+        -Fixed: Extrema-Erkennung von Datensaetzen mittels "extrema" verbessert. Ausserdem ist es moeglich mittels "points=WERT" die Breite fuer den gleitenden Median einzustellen. Default ist 5.
+        -Cleaned: NumeRe legt als automatische Sicherung nur noch so viele Dateninformationen an, wie wirklich noetig sind. Bei einem Neustart wird der Speicher von der automatischen Sicherung nicht mehr komplett belegt.
+        -Added: Die beiden "matop"-Funktionen "eigenvals()" und "eigenvects()" berechnen Eigenwerte und Eigenvectoren symmetrischer Matrizen. Die Rückgabe erfolgt in Form eines Vektors für die Eigenwerte bzw. einer Matrix mit den Eigenvectoren in den Spalten.
+        -Updated: Die Funktionen "eigenvals()" und "eigenvects()" koennen nun auch mit nicht-symmetrischen Matrizen umgehen (thanks to Eigen-Library), allerdings werden die Eigenwerte/Eigenvektoren ggf. durch komplexe Matrizen zurueckgegeben (2n-dimensional).
+        -Added: Die Funktion "diag(x,y,z,...)" erzeugt eine Diagonalmatrix mit x,y,z,... auf der Hauptdiagonalen.
+        -Added: "diagonalize(MATRIX())" diagonalisiert die Matrix MATRIX().
+        -Added: Die Funktionen "matfcf()" und "matflf()" erzeugen aehnlich zu "matfc()" bzw. "matfl()" Matrizen aus Spalten/Zeilen, jedoch werden fehlende Elemente logisch anhand der vorhandenen ergaenzt.
+        -Cleaned: "extrema" und "zeroes" geben nun "nan" zurueck, wenn keine Extrema bzw. keine Nullstelle gefunden wurde.
+        -New: Das Kommando "odesolve" erlaubt das numerische Loesen von Differentialgleichungen erster Ordnung (n-te Ordnungen koennen in Systeme n DGLs erster Ordnung ueberfuehrt werden).
+        -Added: Die Funktion "trace(MAT)" ist fuer Matrizen ueberladen und berechnet hier die Spur der quadratischen Matrix MAT.
+        -Added: "odesolve" kann mittels "lyapunov" auch den Kurzzeit-Lyapunov-Exponenten bestimmen
+        -Fixed: "open <>" oeffnet nun korrekt das NumeRe-Stammverzeichnis im Explorer.
+        -Fixed: NumeRe laesst nun nur noch maximal 1e10 Schritte je Integral zu ==> Die Praezision muss dementsprechend angepasst werden.
+        -Cleaned: Langwierige Auswertungen/Prozeduren/Plugins koennen nun mittels der Taste "ESC" abgebrochen werden.
+        -Cleaned: Die Darstellung von Matrizen als Antwort von "matop" wurde verbessert.
+        -Cleaned: !!!Die Syntax zu EINHEITENUMRECHNUNGEN wurde GEAENDERT!!! Einheiten werden nun durch ein Hochkomma gefolgt von dem Einheitensymbol (WERT'EINHEIT) angegeben. Damit soll die Syntax (speziell die Vektorsyntax) weiter vereinfacht werden. Ausserdem wurden {km/h} zu 'kmh, {G} zu 'Gs und {P} zu 'Ps geaendert.
+        -Cleaned: !!!Die SPALTEN-/VEKTORSYNTAX wurde GEANDERT!!! Spalten-/Vektoren werden statt durch doppelte nun durch einfache geschweifte Klammern angegeben. Dies sollte sowohl Eingabe als auch Uebersicht deutlich verbessern.
+        -Removed: "test" ist kein NumeRe-Kommando mehr. Die Testtabellenfunktionalitaet wurde entfernt.
+        -Added: "plot" hat nun die neue Option "boxplot", die Boxplots fuer Datensaetze aktiviert.
+        -Fixed: Mit der Vektorsyntax koennen bei "plot" und Konsorten nun auch einzelne Spalten dargestellt werden.
+        -Cleaned: "nodes" von Dokumentationseintraeagen koennen nun auch innerhalb des "nodes-Bereich" umgebrochen werden.
+        -Fixed: Vektorunterstuetzung fuer Zeichnungsfunktionen (draw und draw3d) hinzugefuegt. (trace(x,y,x,y,STL) == trace({x,y},{x,y},STL))
+        -Added: Einige Zeichnungsfunktionen verstehen nun Differenzenvektoren. Diese Funktionen hoeren mit "v" auf.
+        -Cleaned: Wenn "trace()" und "tracev()" nur mit einem Punkt angegeben werden, wird der fehlende Punkt als {0,0,0} angenommen.
+        -Updated: Hilfeeintrag zu "arc()" und "arv()" in "draw3d" aktualisiert. Nun ist es auch moeglich den Normalenvektor des Kreisbogens anzugeben. Standard ist {0,0,1}.
+
+28 October 2015
+   v 1.0.8 "Release Candidate 2" rev. 58
+
+     Change log:
+        -Fixed: NumeRe kann nun auch Dateiendungen in Grossbuchstaben korrekt identifizieren.
+        -Cleaned: Darstellungsfehler der Matrizen bei "matop" behoben.
+        -Fixed: "fit" und "fitw" koennen nun auch wieder mit kleinen Datensaetzen umgehen, ohne die falsche Fehlermeldung zu bringen, dass die Parameterzahl groesser der Datenpunktzahl ist.
+        -Fixed: nan-Bug in Schleifen behoben.
+        -Fixed: Substr-Bug in For-Schleifen behoben.
+        -Fixed: "show" kann nun auch bei "data()" mit der Bereichssyntax eingeschraenkt werden.
+        -Added: "diff" kann nun auch Datensaetze ableiten. Dabei werden nur die y-Werte zurueckgegeben. Um die x-Werte zu bekommen, muss "xvals" als Option angegeben werden.
+        -Added: "extrema" kann nun auch die Extrema von Datensaetzen bestimmen.
+        -Fixed: Segfault beim Plotten, Fitten und der FFT im Falle negativer Indices behoben.
+        -Fixed: Logikfehler bei "zeroes" entfernt, der Nullstellen mehrfach zaehlte.
+        -ixed: Datenobjekte koennen nun wieder direkt als Indices anderer Datenfiles verwendet werden.
+        -Added: Spalten und Zeilen koennen als Indexmenge fuer Datenobjekte interpretiert werden.
+        -Added: "lcm()" und "gcd()" (fuer "kgv()" bzw. "ggt()") implementiert.
+        -Fixed: Daten aus "data()" koennen nun auch wieder korrekt exportiert werden.
+        -Removed: Unnoetige und nicht mehr genutzte booleans aus "parser_getDataElement()" und "parser_ReplaceEntities()" entfernt.
+        -Cleaned: Das Ergebnis gefitteter Funktionen sollte "+-" oder "--" nicht mehr enthalten.
+        -Fixed: Segmentation-Fault bei sehr schmalen Spalten behoben.
+        -Cleaned: "copy", "move" und "delete" beeinflussen nun auch die Tabellenkoepfe
+        -Added: Mit "bars=BREITE" kann die prozentuale Breite der Balken bestimmt werden.
+        -Cleaned: "matrix()" hat nun den Stellenwert von "ans" fuer "matop" (aber nur, wenn kein Zielcache vorgegeben wird).
+        -Added: "invert()" und "transpose()" als Funktionen zu "matop" hinzugefuegt.
+        -Fixed: Aufgrund der geometrischen Mittelung der Fehler bei "fitw" wurden fehlende oder absichtlich als 0 angegebene Fehlerintervalle zu 0 gemittelt. Wurde behoben.
+        -Added: Tabellen in NumeRe koennen nun Kopfzeilen mit mehreren Zeilen enthalten. Die Zeilen werden durch den String-Modifier "\n" repraesentiert. Das Einlesen solcher Kopfzeilen wird nur bei *.csv- und *.ndat-Dateien sowie dem direkten Einkopieren mittels "data -paste" weitestgehend unterstuetzt.
+        -Fixed: In "fit" kann nun innerhalb der Gleichung auch die Exponentenschreibweise "ZAHLe+-EXP" verwendet werden.
+        -Cleaned: Die Pfadplatzhalter ergaenzen nun ggf. selbst ein "/", falls selbiger fehlt.
+        -Cleaned: "plot" und Konsorten pruefen nun auf die Variable "t", falls "animate" verwendet wurde.
+        -Fixed: "export" wird nun bei TeX-Ausgabe alle Umlaute durch die entsprechenden TeX-Makros ersetzen.
+        -Fixed: SegmentationFault beim Starten von NumeRe behoben (wurde in der letzten Version lediglich durch ein Work-Around behoben).
+        -Fixed: Pointer-Fehler bei Schleifen behoben.
+        -Fixed: 1x1-Matrizen werden von "matop" nun als Skalare betrachtet.
+        -Added: NumeRe kann die Determinante quadratischer Matrizen mittels "matop det(MATRIX())" berechnen.
+        -Added: Die Funktionen "zero()", "one()" und "identity()" erzeugen spezielle Matrizen, wenn sie unter "matop" eingesetzt werden (0-Matrix, 1-Matrix & Identitaet).
+        -Added: Die Funktionen "matfc()" und "matfl()" koennen Matrizen aus einzelnen Spalten/Zeilen generieren. Fehlende Elemente werden duch 0 ergaenzt.
+        -Added: "data -paste" greift nun direkt auf das Clipboard zu und zeigt nur dann, wenn dieses tatsaechlich leer ist oder nicht gelesen werden kann, die Eingabe-Maske an.
+        -Fixed: Fehler bei "#DATENOBJEKT()" behoben.
+        -Fixed: "student_t()" gibt nun nur noch "nan" zurück, wenn das erste Argument kleiner oder gleich 1 ist.
+        -Fixed: Mehrfache ";" am Ende einer Zeile werden nun korrekt verarbeitet.
+        -Cleaned: Aliase fuer "asin()", "acos()", ... durch "arcsin()", "arccos()", ... implementiert
+        -Added: "fit" und "fitw" definieren automatisch die verwendeten Fitfunktionen durch "Fit()" bzw. "Fitw()"
+        -Cleaned: "plot" und Konsorten koennen nun auch Zieldateinamen mittels "export" und "save" angegeben werden.
+        -Cleaned: Tabellenkoepfe koennen nun auch TeX-Code fassen (wird allerdings auch so angezeigt).
+        -Cleaned: "fit" und "fitw" verwenden, wenn keine Parameter explizit angegeben werden, nun automatisch alle Variablen der angegeben Funktion (außer "x" und "y").
+        -Added: NumeRe kann nun auch OpenDocument-Spreadsheets (*.ods) oeffnen und lesen. Die Darstellung unterscheidet sich jedoch marginal von OpenOffice Calc.
+        -Cleaned: An allen Stellen, an denen Intervalle angegeben werden muessen, koennen diese nun auch mit der Intervallsyntax "[x0:x1,y0:y1]" angegeben werden.
+        -Cleaned: Die seltsamen Achsenbeschriftungen in der Groessenordnung 1e-3 wurden behoben.
+        -Fixed: NumeRe wird beim Integrieren nun die Groessenordnung der Ergebnisse fuer die abschliessende Rundung beachten.
+        -Fixed: "tocache" funktioniert bei "hist" wieder ordnungsgemaess.
+        -Added: Mit der Option "noround" kann das Runden des Ergebnisses von "integrate" unterdrueckt werden.
+        -Fixed: In Schleifen kann die Kurzschreibweise "--" fuer "-set" nun korrekt verwendet werden.
+        -Fixed: Ein Logikfehler, der leere Fehlerspalten bei "fitw" nicht korrekt interpretierte, wurde behoben.
+
+28 September 2015
+   v 1.0.8 "Release Candidate 1" rev. 35
+
+     Change log:
+        -Added: Neue Funktionen: roof(), floor() und rect()
+        -Added: Die Funktion "getindices()" laesst sich nun mit einem optionalen, zweiten Parameter auf spalten- und zeilenweises Lesen einschraenken.
+        -Fixed: "resample" bringt keine Fehlermeldung mehr wenn die Zahl der samples mit der Zahl der Zeilen uebereinstimmt.
+        -Fixed: Ein Segfault in "resample", der erst bei großen Samplewerten auftrat, wurde behoben.
+        -Cleaned: Source "parser_functions.cpp" in drei einzelne Dateien zerlegt: "parser_functions.cpp", "stringparsing.cpp" und "plotting.cpp". Damit erfordern Aenderungen weniger Compiletime und die Source ist uebersichtlicher.
+        -Added: "graph" als Synonym zu "plot" eingebunden.
+        -Cleaned: "elseif ()" zur Kommandosyntax hinzugefuegt. Es koennen beliebig viele "elseif ()" zwischen "if ()" und "endif" verwendet werden.
+        -Added: Das Kommando "read" besitzt nun die Option "declext=EXTENSION", dass die Registrierung weiterer Dateierweiterungen erlaubt.
+        -Added: "^=" hinzugefuegt
+        -Removed: Die Option "declext=EXTENSION" wurde wieder entfernt. "read" fuehrt das Verhalten automatisch anhand der Dateierweiterung bei file=DATEI aus.
+        -Cleaned: Die Kurzschreibweise "CACHE()" fuer "CACHE(:,:)" kann nun auch bei "fft" und "fit" verwendet werden.
+        -Updated: "firststart" wurde aktualisiert.
+        -Added: Mit "edit" oder "view" oder "open" kann nun auch der entsprechende Ordner geoeffnet werden.
+        -Fixed: Lokale Variablen in Prozeduren sollten nun auch in abstrakten String-Funktions-Verschachtelungen funktionieren.
+        -Fixed: String-Bug behoben, der beim Beispielscript 1 auftrat und mit dem "\n"-Stringmodifier verknuepft war.
+        -Cleaned: "plot" zeigt nun auch im Falle der Kurzschreibweise "DATA()" die korrekte Legende an.
+        -Fixed: Pointer-Fehler beim Einbringen von Prozeduren in Schleifen behoben.
+        -Added: "inline"-Flag hinzugefuegt. Inline-Prozeduren werden mit dem Loop-Parsing-Mode ausgefuehrt; normale Prozeduren nicht. Allerdings koennen inline-Prozeduren weniger.
+        -Added: Mit "set -plotfont=FONT" kann nun die Standardschriftart fuer Plots geaendert werden.
+        -Fixed: Caches koennen nun auch entfernt werden, wenn der Cache noch nicht beschrieben wurde (SegFault behoben).
+        -Fixed: Fehlerbalken, deren Punkte ausserhalb des Plotbereich liegen, werden nun nicht mehr faelschlicherweise angezeigt.
+        -Fixed: Die Spaltenueberschriften von *.labx-Dateien werden wieder korrekt eingelesen.
+        -Fixed: "hist" bringt nun eine Fehlermeldung, wenn das Einschränkungsintervall außerhalb des Datenbereichs liegt (anstatt abzustuerzen)
+        -Fixed: "stats" berechnet nun den korrekten Standardfehler (Unsicherheit).
+        -Added: Mit "save -settings" kann die Konfiguration nun auch manuell gespeichert werden. Es ist daher nicht mehr noetig, NumeRe hierzu zu beenden.
+        -Cleaned: "export" kann nun auch mit der Kurzschreibweise umgehen.
+        -Fixed: "export" kann nun wieder ohne Parameter verwendet werden. Ausserdem wird der Name des Caches automatisch als Praefix verwendet.
+        -Fixed: Lokale Variablen mittels "var" koennen nun auf bereits bekannte lokale Variablen referenzieren.
+        -Fixed: Lokale Strings mittels "str" koennen nun ebenfalls auf bereits bekannte lokale Strings referenzieren.
+        -Fixed: Ausdrücke können nun auch mit leeren Datenelementen umgehen (abgesehen von "data()").
+        -Fixed: Datenobjekte koennen nun auch in While-Bedingungen verwendet werden.
+        -Fixed: Die Ticks bei Histogrammen ohne Exponenten werden nun korrekt angezeigt.
+        -Cleaned: "save" kann nun auch mit der Bereichssyntax a la "export" umgehen.
+        -Cleaned: Es koennen nun auch Leerzeichen in der Kurzschreibweise "DATA(   )" verwendet werden.
+        -new: Das neue Kommando "matop" erlaubt Matrizenoperationen.
+
+31 August 2015
+   v 1.0.7 "Bose" rev. 35
+
+     Change log:
+        -Fixed: Prozeduren zaehlen die Klammern in ihren Argumenten nun korrekt (wenn Klammern in Anfuehrungszeichen enthalten sind)
+        -Fixed: Numerische Ergebnisse von Zeichenkettenfunktionen koennen nun auch an Caches zugewiesen werden.
+        -Added: Neue Funktionen: "is_data(STRING)" gibt true zurueck, wenn STRING ein Datenobjekt ist, sonst false; "getmatchingparens(STRING)" gibt die Position der passenden schließenden Klammer in STRING zurueck, wobei STRING mit einer oeffnenden Klammer beginnen muss.
+        -Fixed: "strfnd()" korrigiert.
+
+26 August 2015
+   v 1.0.7 "Bose" rev. 35
+
+     Change log:
+        -Added: 2D-Histogramm wurde ueber "hist2d" hinzugefuegt.
+        -Fixed: Ein Auswertefehler in Schleifen wurde behoben.
+        -Fixed: "clear -cache" ist wieder verfuegbar.
+        -Added: NumeRe kann nun auch xz- statt xy-slices aus 3D-Igor IBWs extrahieren. Dazu die Option "slices=xz" angeben.
+        -Fixed: Falls strings in einem Ausdruck gefunden werden, wird NumeRe nicht mehr versuchen, zuerst den Inhalt eventuell enthaltener Datenobjekte zu lesen.
+        -Fixed: Cacheobjekte, die in einem Zeichenkettenausdruck verwendet wurden, verursachten ggf. eine Substr-Exception. Wurde behoben.
+        -Added: Die Einführung kann mittels des Kommandos "firststart" auch spaeter aufgerufen werden.
+        -Fixed: Spaltensyntaxausdruecke geben in Kommandos wieder das erwartete Ergebnis zurueck.
+        -Cleaned: Das Fitlog wird nun ebenfalls regelmaessig gekuerzt. Da dieses Verhalten zeitaufwaendig ist, wird es nur umgesetzt, wenn weder der Parameter "mask" uebergeben wurde noch ein Plugin ausgefuehrt wird.
+        -Fixed: Das Ergebnis von CACHE -avg -lines (etc) kann nun auch direkt an eine Spalte von CACHE zugewiesen werden. (Rekursion war bisher nicht moeglich)
+        -Fixed: "delete" kann wieder auf einzelne Zeilen/Spalten eines CACHES angewendet werden
+        -Cleaned: "list -func" kann mit zusaetzlichen Parametern ("numerical", "string", "polynomial", "trigonometric", "hyperbolic", "logical", "time", "statistical", "physical", "logarithmic", "coords", "random", "angular") auf Funktionentypen eingeschraenkt werden.
+        -Cleaned: Multi-Argumentfunktionen auf Datenobjekte koennen nun auch bei "lines" bzw. "cols" mit "grid" eingeschraenkt werden.
+        -Fixed: Index-Parsing von Datenobjekten verbessert und Absicherung gegen SegFaults erweitert.
+        -Added: Mit "progress" koennen nun Fortschrittsanzeigen ausgegeben werden.
+        -Fixed: Werden Dateien mit "getfilelist()" gelesen, die Kommata im Dateinamen enthalten, werden diese nicht mehr an den Kommata aufgetrennt.
+        -Fixed: Rekursive Ausdruecke mit Datenfileobjekten geben nun wieder korrekte Ergebnisse.
+        -Fixed: Problem mit der Zuweisung von Zeichenketten an Spaltenueberschriften behoben.
+        -Fixed: Ein Substr-Error bei der Kombination von Funktions- und Daten-Plots behoben.
+        -Cleaned: Da das Regenbogenfarbschema tendenziell eher schlecht ist, wurde das "hot"-Farbschema zum Standardschema geaendert.
+        -Cleaned: Tabellenspalten werden bei "show" und "export" nun an den Inhalt der einzelnen Spalten angepasst.
+        -Fixed: Nun koennen auch Umlaute bei "copy", "move" und "remove" verwendet werden.
+        -Fixed: "copy FILES -target=TARGET -all" versteht nun auch ein TARGET, das mit "/" aufhoert.
+        -Cleaned: "show" versteht nun auch die Syntax "show DATENOBJEKT()"
+        -Cleaned: "load" kann nun ohne den Parameter "-data=FILE" in der Form "load FILE" verwendet werden.
+        -Fixed: "eval" ordnet die x-Grenzen nun nicht mehr automatisch.
+        -Fixed: Der Zeichenkettenoperator "#" kann nun wieder auf Funktionen angewandt werden, ohne einen Klammerfehler auszuloesen.
+        -Fixed: Der Zeichenkettenoperator "#" kann nun wieder direkt auf Statistikfunktionen von Datenobjekten angewandt werden.
+        -Added: "smooth" glaettet nun per default zweidimensional: "lines" und "cols" schraenken den Algorithmus entsprechend ein.
+        -Added: Die Achsenskalierung (von "m" nach "\mu m") kann nun manuell durch "*scale" geaendert werden, wobei "*" fuer x,y,z oder c steht.
+        -Cleaned: Die Standardpalette fuer "plot" wurde von "rgb..." nach "rbG..." getauscht, da "g" teilweise schwer zu erkennen ist.
+        -Fixed: Bei Zuweisungen der Form "COMMAND*** = COMMAND -PARAMSET", wobei "COMMAND***" eine Variable und "***" eine beliebige lange Zeichenkette mit mindestens einem Zeichen ist, wird das Kommando COMMAND wieder eindeutig identifiziert.
+        -Cleaned: Analogon zu "load FILE" in der Form "append FILE" eingebunden.
+        -Fixed: Indexfehler bei "smooth" behoben: bereits glatte (lineare) Funktionen werden nicht mehr geglaettet.
+        -New: Neues Kommando "retoque": dieses Kommando entfernt ungueltige Messpunkte durch lineare Interpolation. Wird bei zweidimensionalem Glaetten automatisch aufgerufen.
+        -Added: Die Farbskala kann nun mittels "clog" logarithmisch dargestellt werden.
+        -Added: Die Funktionen "Ai(x)", "Bi(x)", "bessel(n,x)" und "neumann(n,x)" wurden hinzugefuegt.
+        -Added: Die Position der Plotlegende bei "plot", "hist" und Spezialfällen von "plot3d" kann nun mittels "legend=POS" mit POS = "topleft", "topright", "bottomleft" oder "bottomright" beeinflusst werden.
+        -Fixed: Der aus einer Zeichenkette mittels "to_value()" umgewandelte Wert kann nun auch direkt an den Cache zugewiesen werden.
+        -New: NumeRe zeigt nun Tipps bei jedem Start an. Dieses Verhalten kann mit "set -hints" (de-)aktiviert werden.
+        -Fixed: "CTRL-C" beendet NumeRe nicht mehr.
+        -Fixed: "export" funktioniert wieder erwartungsgemaess.
+        -Added: "delete" kann nun Elemente aus mehrere Caches zugleich loeschen.
+        -New: Mit "linesize" kann die Liniendicke in Plot beeinflusst werden. Fuer jede Kurve koennen Werte zwischen 0 und 9 verwendet werden.
+        -Added: Mit dem Parameter "styles" koennen alle Linien-/Punktformatierungen in einer gemeinsamen Zeichenkette angegeben werden.
+        -Cleaned: Invertierte Plotintervalle (z.B. [10:-10]) werden nun in den Plot uebernommen.
+        -Added: Die Funktion "getindices(STRING)" gibt die Indices eines als Zeichenkette uebergebenen Datenobjekts in der Form I1,I2,J1,J2 zurueck.
+        -Cleaned: Die "Spaltensyntax" kann nun auch als Zielwert eines Ausdrucks ({{...}} = AUSDRUCK) verwendet werden.
+        -Cleaned: Die Spaltentitel eines Caches koennen auch dann gesetzt werden, wenn sie noch keine Elemente enthalten.
+        -Added: "zeroes" kann nun auch die Nullstellen eines Datensatzes bestimmen. Ausserdem koennen Nullstellen auf steigende bzw. fallende Flanken eingeschraenkt werden.
+        -Added: Prozeduren koennen nun flags uebergeben werden (procedure $NAME(VARS) :: FLAGS), die entweder alle Plugins in der Prozedur deaktivieren (explicit) oder die Prozedur als privat deklarieren (private).
+        -Fixed: Substr-Error bei Verwendung von Zeichenkettenvariablen behoben.
+        -Fixed: Klammererkennung bei Zeichenkettenfunktionen verbessert (Klammern in Anfuehrungszeichen werden nun ignoriert)
+        -Fixed: Die Pfadplatzhaltererkennung wurde zur Beispielbeschreibung der NumeRe-Hilfe hinzugefuegt.
+        -Cleaned: Das Intervall fuer das Farbschema kann nun auch durch ein viertes Intervall angegeben werden: [x1:x2,y1:y2,z1:z2,c1:c2]
+
+05 July 2015
+   v 1.0.7 "Release Candidate 3" rev. 20
+
+     Change log:
+        -Fixed: Zwischen oeffnende Klammern und Vorzeichen werden nun keine Leerzeichen mehr eingefuegt.
+        -Fixed: In seltenen Faellen wurden die Parameter einer Anpassungsfunktion nicht korrekt identifiziert. Wurde behoben.
+        -Added: NumeRe kann nun auch zweidimensional fitten.
+        -Fixed: "fit" ohne "x=x0:x1" fuehrte zu kryptischen Fehlermeldungen. Wurde behoben.
+        -Fixed: Zeichenkettenerkennung bei "plot" und Konsorten verbessert.
+        -Fixed: Zaehlvariablen fuer "for" sind nun auf den Scope einer Prozedur beschraenkt (In untergeordneten Prozeduren kann derselbe Name fuer eine Zaehlvariable verwendet werden und er ist trotzdem eindeutig)
+        -Fixed: "getfilelist()" und "split()" geben nun einen Zeichenketten"vektor" zurueck, der direkt auf andere Zeichenketten addiert werden kann.
+        -Cleaned: "script -start=SCRIPT install" mit dem vereinfachten Alias "install SCRIPT" versehen.
+        -Fixed: Prozeduren sind nun "install-safe".
+        -Cleaned: Die NumeRe-Datenfile-Uebersicht bei "list -files" wird nun uebersichtlicher dargestellt.
+        -Added: Es koennen nun weitere Caches erzeugt werden: "new -cache=CACHENAMES" oder "new CACHE()" erzeugt neue caches, "remove CACHE()" entfernt sie wieder
+        -Fixed: Kommandos und Funktionen mit demselben Namen werden nun zuverlaessiger unterschieden. (Die MatLab-Syntax "plot(x,y)" ist daher nicht mehr moeglich)
+        -Fixed: "DATENOBJEKT(#,INDEX)  = TEXT" war fuer einzelne Spalten nicht moeglich. Wurde behoben.
+        -Work-Around: "\tau" und "\nu" werden beim plotten nicht richtig erkannt. Temporaerer Work-Around: bei der Achsenbeschriftung Backslashes weglassen.
+        -Fixed: Logarithmische Skalierung im "compose"-Modus sorgte teilweise für seltsame offsets bei den als zweites geplotteten Graphen. Wurde behoben.
+        -Fixed: "global" wurde nicht korrekt erkannt. Wurde behoben.
+        -Added: Funktion "repeat()" hinzugefuegt: fuegt n Kopien einer Zeichenkette ein.
+        -Fixed: "\tau", "\theta" und "\nu" werden beim Plotten nun korrekt erkannt. Darstellung des "Minuszeichens" verbessert.
+        -Fixed: In der "@SCRIPT: globals"-Syntax muss in Prozeduren nun kein Leerzeichen mehr zwischen ":" und "globals" sein.
+        -Added: Mit dem optionalen Parameter "-all" koennen bei "data -load" und "data -app" alle Dateien geladen/angehaengt werden, die dem gegebenen Dateischema folgen.
+        -Cleaned: NumeRe kann nun Spalten mit vielen Eintraegen deutlich schneller verarbeiten (Spalten mit 10000 oder weniger Eintraegen benoetigen nur noch wenige msec)
+        -Cleaned: Die Loeschroutine mittels "delete CACHE()" ist nun ebenfalls deutlich schneller.
+        -Added: Die Plotoption "light" kann nun mittels "light=smooth" auf deutlich weicheres Licht umgeschalten werden.
+        -Added: Datenobjekte koennen nun Statistikfunktionen auf alle Zeilen oder Spalten zugleich anwenden (z.B. "data -sum cols") und das Ergebnis als "Vektor" zurueckgeben.
+        -Cleaned: Um den Inhalt eines Caches vollstaendig zu loeschen, kann dies nun auch durch die Kurzvariante "delete CACHE() -ignore" (statt "delete CACHE(:,:) -ignore") durchgefuehrt werden.
+        -Cleaned: Datenobjekte koennen Statistikfunktionen auf ihren gesamten Inhalt anwenden, wenn "lines" und "cols" weggelassen wird.
+        -Cleaned: Die Zahl der Zeilen des NumeRe-Logfiles ist nun auf 100 000 begrenzt. Bei Überschreiten dieser Marke wird das Logfile auf 20 000 Zeilen gekürzt.
+        -Fixed: Die Schriftart "Pagella" wird nun wieder korrekt geladen.
+        -Added: Weitere Schriftarten sind nun verfuegbar. Sie koennen mittels der Plotoption "font=SCHRIFTART" geladen werden.
+        -Cleaned: Sollte die Achsenskalierung auf logarithmisch gestellt werden, so werden nun die Stuetzstellen der Funktionen ggf. ebenfalls logarithmisch verteilt.
+        -Added: "list -cmd" zeigt nun eine schematische Syntax der Kommandos an.
+        -Added: "eval" kann mit dem Parameter "logscale" nun auch logarithmisch verteilte Punkte erzeugen.
+        -Added: "zeroes" und "extrema" kann mittels der Option "samples=STUETZSTELLEN" eine andere Aufloesung vorgegeben werden. Das Minimum ist 21, das Maximum ist 10001. Die Zahl wird automatisch an das Intervall angeglichen.
+        -Added: Funktionen "to_lowercase()" und "to_uppercase()" hinzugefuegt, die Gross- und Kleinschreibung beeinflussen.
+        -Added: "list -func" zeigt nun den Typ des Rückgabewertes der Funktionen an.
+        -Fixed: Installationen koennen nun wieder Hilfeartikel hinzufuegen.
+
+21 May 2015
+   v 1.0.7 "Release Candidate 2" rev. 20
+
+     Change log:
+        -Fixed: Wenn "#" als Colorscheme uebergeben wurde, das Colorscheme aber bereits "#" enthielt, wurde auf "std" zurueckgesetzt. Wurde behoben.
+        -Fixed: ":" wurde bei der Variablenersetzung in Prozeduren und vielen Funktionen nicht als Variablendelimiter erkannt. Wurde behoben.
+        -Fixed: Ein Problem mit dem Zeichenkettenparser, der Funktion to_string() und dem Kommando data -load wurde behoben.
+        -Fixed: Mit "var" in Prozeduren lokal deklarierte Variablen können nun während der Deklaration auch mit Funktionswerten initialisiert werden, die Zeichenketten oder Datenelemente enthalten.
+        -New: Zeichenkettenvariablen wurden als neue Datentypen hinzugefuegt. Mit ihnen kann wie mit gewoehnlichen Variablen umgegangen werden, abgesehen von der Tatsache, dass sie nur Zeichenketten enthalten koennen.
+        -Added: Bei von NumeRe erzeugten Script- und Prozedurdateien wird nun Programmname und Website in die Signatur eingebunden.
+        -Fixed: "move" und "copy" ueberschreiben bei "-target=.../*" nicht mehr andere Dateien.
+        -Added: "smooth" kann mit dem zusaetzlichen Parameter "lines" nun auch Zeilen glaetten.
+        -Added: "fit"/"fitw" geben nun chi^2 als neue Variable in Form von "chi" zurueck.
+        -Fixed: Bug bei "fit" behoben, der die Syntax "data(:,:)" verbot.
+        -Added: "datagrid" wurde um den Parameter "transpose" ergaenzt, der das Transponieren der Daten waehrend der Gittererzeugung erlaubt.
+        -Added: Die Funktion "getfilelist(STRING)" gibt alle Dateinamen als Zeichenketten zurueck, auf die das Schema STRING zutrifft.
+        -Fixed: For-Schleifen koennen nun auch mit String-Funktionen umgehen - sofern diese Werte zurueckgeben.
+        -Fixed: Multi-Argumentfunktionen auf leere Spalten gaben unverständliche Fehlermeldungen zurueck. Wurde nachgebessert.
+        -Added: Prozeduren und Plugins koennen nun auch Zeichenketten als Rueckgabewerte besitzen.
+        -Fixed: Die fehlerhafte Erkennung des "void"-Rueckgabewertes bei Prozeduren wurde verbessert.
+        -Fixed: Laden einspaltiger CSV-Dateien verbessert.
+        -Added: Einstellmoeglichkeit, um leere Spalten in Dateien zu laden, ueber "set -loademptycols" realisiert. Dieses Verhalten kann mittels des Parameters "keepdim" oder "complete" bei "load" und "reload" ueberschrieben werden.
+        -Fixed: Zeichenkettenfunktionen (wie "num(STRING)" oder "findfile(STRING)") koennen nun zusammen mit dem Zeichenkettenparser ("#") verwendet werden.
+        -Cleaned: Die Funktion "to_string()" wandelt string-Variablen und -Ausdruecke nicht mehr 1:1 in puren Text um. Dieses Verhalten wurde in die Funktion "string_cast()" ueberfuehrt.
+        -Added: Neue Funktionen "replace()" und "replaceall()": diese Funktionen ersetzen Teile in Zeichenketten; erstere einen definierten Abschnitt einer Zeichenkette, zweitere jedes Auftreten einer Zeichenkette in einer anderen mit einer dritten Zeichenkette.
+        -Added: "hline" hat nun den Parameter "-single", der auf eine Einfachlinie umschaelt.
+        -New: Der neue Parameter "paste" zu "data" erlaubt das direkte Einfuegen eines tabellarischen Datensatzes in die NumeRe-Konsole, so dass dieser in den "data()"-Speicher geschrieben wird.
+        -Added: NumeRe kann nun auch IGOR Binary Wave Files (*.ibw) lesen.
+        -Cleaned: Speichermanagement des Caches verbessert.
+        -Added: Neue Plotoption "region": fuellt den Raum zwischen zwei Kurven mittels der interpolierten Farben der beiden Kurven. Verfuegbar bei "plot" und "plot3d"
+        -Fixed: In Verbindung mit Datensaetzen konnte die x-Achse nicht angepasst werden. Wurde behoben.
+        -Fixed: Die Funktionen "sum()", "avg()", "min()" und "max()" ignorieren nun auch "nan".
+        -Added: Die Funktion "gauss()" erzeugt normalverteilte Zufallszahlen.
+        -Added: Grundlagen fuer FLTK-Graph-Widget implementiert (MathGL muss noch neu kompiliert werden)
+        -Cleaned: "Start-UI" um eine Zeile verkuerzt.
+        -New: NumeRe wird nun mit einem Installer ausgeliefert. Der Installer liefert die Option der Dateiverknuepfung.
+
+30 April 2015
+   v 1.0.7 "Release Candidate 1" rev. 20
+
+     Change log:
+        -Fixed: "hist" erstellte keine korrekten Histogramme aus Spalten > 1, falls diese groesser als die erste Spalte waren. Wurde behoben.
+        -Fixed: Sturges-Regel bei "hist" wurde nicht korrekt implementiert.
+        -Added: NumeRe ist nun wieder vollstaendig portabel. (Es werden nicht mehr die absoluten Dateipfade in der Konfiguration gespeichert)
+        -Added: NumeRe kann nun mit *.labx-, *.dat-, *.csv- und *.txt-Dateien verknuepft werden (so das Doppelklicken auf die Datei automatisch NumeRe oeffnet und die Datei geladen wird)
+        -Fixed: Die Legende im "compose"-Modus funktioniert nun korrekt
+        -Fixed: Bei der NumeRe-Spaltensyntax wurden die Legenden bei "plot" und "plot3d" mit eigentuemlichen Anfuehrungszeichen versehen. Wurde behoben.
+        -Cleaned: Der Transparenzeffekt der Colorbar wird nun nur noch bei Plots sichtbar, die auch Transparenz verwenden koennen (surf, surf3d, dens3d und cont3d mit fcont)
+        -Cleaned: Die Funktion "num()" liefert nur noch die Zahl der gueltigen Elemente zurueck.
+        -Added: Die Funktion "cnt()" gibt die Zahl aller Argumente zurueck (auch der ungueltigen)
+        -Removed: Speicherabfragen bei "hist" und "stats" wurden entfernt.
+        -Fixed: Die ShellExecute-Funktion erwartete Anfuehungszeichen beim Dateinamen. Wurde behoben.
+        -Fixed: Datensaetze mit einer oder mehreren Zeilen, die nur aus Tabulatoren besteht, wurden nicht korrekt eingelesen.
+        -Cleaned: "hist" und "cache" verstehen nun die Syntax von "delete", "copy" und "move": "hist data(:,1:2) -set width=0.5 export"
+        -Added: "hist" und "fit"/"fitw" koennen nun im "x-Bereich"/"Rubriken-Bereich" auch durch die Option "x=xmin:xmax" eingeschraenkt werden.
+        -Added: Die Position des Koordinatenursprungs kann mittels "origin=URSPRUNG" beeinflusst werden. URSPRUNG kann dabei auf "std" (Standard), "sliding" (Achsen gehen durch mindestens eine 0, falls vorhanden) und "X,Y,Z" (wobei für X,Y,Z konkrete Werte noetig sind) gesetzt werden.
+        -Added: Die Funktion "split(STRING,CHAR)" teilt die Zeichenkette an den Zeichen CHAR in einzelne Zeichenketten auf.
+        -Added: Der Parameter "all" erlaubt bei "remove", "move" und "copy" das Batch-Processing von allen Dateien, auf die die Wildcards zutreffen.
+        -Cleaned: Erfolgsmeldungen bei "data -load" und "data -clear" wurden wieder aktiviert.
+        -Added: Mit "data -reload" bzw. "reload -data" koennen die Daten im Speicher aktualisiert werden, nachdem das Datenfile bearbeitet wurde.
+        -Fixed: Wenn mehr Parameter als Datenpunkte zum Fitten angegeben werden, wird dies nun abgefangen.
+        -Added: NumeRe kann nun "JCAMP-DX-Spektra" (*.jdx, *.dx und *.jcm) einlesen. Ausserdem wurden die Dateiverknuepfungen in "regupd.exe" aktualisiert und Icons fuer "*.labx" und "*.jdx" hinzugefuegt.
+        -Fixed: Support fuer aeltere LABX-Versionen verbessert.
+        -Fixed: Substring-Problem bei "new" und anderen Kommandos behoben.
+        -Fixed: "xerrorbars" kann bei "plot" nun alleine verwendet werden.
+        -Cleaned: "pointstyles" interpretiert nun jedes Zeichen als Stilzeichen und nur wenn "#" gefunden wird, wird das folgende Zeichen zum aktuellen Stilzeichen hinzugefuegt.
+        -Fixed: Substr-Error abgefangen, wenn beim Plotten ein Vorzeichen vor den cache() oder data() gesetzt wurde.
+        -Cleaned: Die Binachse bei "hist" wird nun ggf. mit weniger Bins angezeigt und die gemeinsame Zehnerpotenz wird am Ende der Achse angezeigt.
+        -Cleaned: "hist" erzeugt nun auf jeden Fall eine graphische Darstellung des Histogramms, ganz gleich, ob "export" verwendet wird, oder nicht. "export" beeinflusst nur noch den Speicherort/Name.
+        -Fixed: Die Zieldateipfadangabe bei "move" und "copy" versteht nun auch Pfade, die nur mit "/" aufhoeren, als Synonyme zu "/*".
+        -Fixed: Punkte in Dateipfaden, die nicht fuer die Dateierweiterungen verwendet werden, sind nun wieder moeglich.
+        -Added: Der Pfadplatzhalter "<this>" kann in Scripten und Prozeduren verwendet werden. Er beinhaelt das Verzeichnis, in welchem sich das ausgefuehrte Script/die ausgefuehrte Prozedur befindet.
+        -Fixed: Wenn bei "hist" die Binbreite festgelegt wurde, wurden die Ticks falsch berechnet. Wurde behoben.
+        -Work-Around: "mesh3d" und "surf3d" haben ein Problem mit der Option "cut". Dieses wurde als temporaere Loesung umgangen.
+        -Added: "dens3d" besitzt nun die Option "cloudplot", mit der ein raumfuellender Dichteplot in Gestalt einer Wolke erzeugt wird. Wird zusaetzlich "alpha" verwendet, geht die Transparenz mit der Amplitude des Feldes einher.
+        -Cleaned: Die Achsendarstellung bei "hist" wurde entscheidend verbessert. Ausserdem wurde eine Sicherheitsabfrage eingebaut, fuer den Fall, dass eine Binbreite groesser als das Intervall angegeben wurde.
+        -Cleaned: NumeRe kann den Hilfeindex nun aus der "update.hlpidx" rekonstruieren.
+        -Added: Es koennen nun auch 2D-Datensaetze mittels "mesh", "surf" und Konsorten dargestellt werden. Die Datensaetze muessen dabei als Datengitter vorliegen. Dieses kann mittels "datagrid" erzeugt werden.
+        -Added: Neue Plotoption "perspective=WERT": Damit kann die perspektivische Ansicht aktiviert werden.
+        -Fixed: Vektorplots wurden beim Animieren nicht korrekt normiert. Wurde behoben.
+        -Cleaned: Die NumeRe-Hilfe kann nun auch ohne "Parameter-Minus" verwendet werden.
+        -Cleaned: Die Stichwortsuche kann nun auch ohne "Parameter-Minus" verwendet werden. Außerdem werden Ausdruecke in Anfuehrungszeichen unterstuetzt.
+        -Added: Die Statistikfunktion "med()" (fuer "Median") wurde hinzugefuegt.
+        -Fixed: Seltener Substring Bug behoben, der bei fehlerhaften Eingaben ("helf -fit") auftreten konnte.
+        -Added: "plot" und Konsorten koennen nun auch leere Intervalle uebergeben werden, wenn nur ein darauffolgendes modifiziert werden soll ("[:,:,0:1e-5]")
+        -Added: Die berechneten Statistikwerte bei "stats" wurde deutlich erhoeht: RMS, Median, min/max, num/cnt, Schiefe und Exzess
+        -Cleaned: "fitw" mittelt die x-y-Fehler nun geometrisch.
+
+25 March 2015
+   v 1.0.6 "de Broglie" rev. 14
+
+     Change log:
+        -Fixed: "fitw data(:,1:3)" konnte nicht verwendet werden. Wurde behoben.
+        -Removed: Fits analysieren das Ergebnis nun anhand der gewoehnlichen Varianz der Residuen. Die normierte Varianz wurde entfernt.
+        -Fixed: "plot" kann nun auch wieder 2D-Datensaetze trotz "*errorbars" anzeigen.
+        -Fixed: NumeRe kann nun wieder mehr als ein Plugin laden und verwenden.
+        -Fixed: NumeRe kann nun auch mit Umlauten in Verzeichnisnamen umgehen.
+        -Added: "linestyles=STYLE" und "pointstyles=STYLE" zu den Plotoptionen hinzugefügt, um Linien- und Punktstile bearbeitbar zu machen.
+        -Removed: "hist" gibt mit dem Parameter "-tocache" keine Tabelle mehr aus.
+        -Updated: "list -cmd" wurde aktualisiert.
+        -Added: "write" kann nun mit dem Parameter "noquotes" ergaenzt werden, der die Anfuehrungszeichen in der Ausgabedatei unterdrueckt.
+        -Fixed: Die erste Spalte bei Textexporten war um ein Leerzeichen zu wenig eingerueckt. Wurde behoben.
+        -Cleaned: "export" ist nun an die Kommandos "remove", "copy", "delete" etc. angeglichen. Es koennen nun mittels "export DATEN(:,:) -file=DATEI" Teilbereiche einer Datentabelle exportiert werden.
+        -Cleaned: Wenn "#" oder "|" als colorscheme angegeben wird, werden diese nun an das bisherige Schemata angehängt.
+        -Fixed: Die Plotlegende erkennt nun wieder Konstanten als Symbole.
+        -Cleaned: Das Colorscheme "cold" wurde von deutlichen Farbgradienten befreit.
+        -Added: "list -files" zeigt bei NumeRe-Datenfiles erweiterte Details an.
+        -Fixed: Die Binbreite kann bei "hist" nun wieder mittels "w=" bzw. "width=" angegeben werden.
+        -Cleaned: Ein seltsames "|<- |" bei "stats" wurde entfernt.
+        -Added: Die erweiterten Dateiinformationen werden nur mit "set -extendedfileinfo=true" angezeigt.
+        -Cleaned: Einzelne fehlerhafte Elemente in Data und Cache werden nun als "nan" zurueckgegeben und nicht mehr als ein Fehler.
+        -Updated: Die Stichwortsuche wurde verbessert.
+        -Added: CSV-Export der Daten hinzugefuegt.
+        -Cleaned: CSV-Import verbessert
+        -Added: Leere Spalten werden beim Laden entfernt.
+        -Added: NumeRe protokolliert nun die eingegebenen Befehle und Fehler. Dieses Verhalten kann mittels "set -logfile" gesteuert werden.
+        -Cleaned: Tabellen bei "show *" sind im kompakten Darstellungsmodus nun schmaler.
+        -Fixed: Beim ersten Start sind nun bereits alle Pfadinformationen verfuegbar und koennen verwendet werden.
+        -Fixed: FOR, WHILE & IF pruefen waehrend der Eingabe ihrer Deklaration nun auf Klammerfehler.
+        -Added: "hist" kann mittels "binlabel=LABEL" und "countlabel=LABEL" eine selbst gewaehlte Achsenbeschriftung anzeigen.
+        -Cleaned: Die Rubrikenachse bei "hist" zeigt die Ticks nun in der Mitte der Rubriken an.
+
+10 March 2015
+   v 1.0.6 "Release Candidate 3" rev. 11
+
+     Change log:
+        -New: Neue Plotoptionen " *ticks="TEMPLATE" ": damit kann das Erscheinungsbild der Ticks der *-Achse beeinflusst werden.
+        -Fixed: Die Hilfe interpretiert "%" nun nicht mehr als ",CRLF"
+        -Fixed: Zeitfehler in den ersten Frames bei "animate" als Plotoption behoben.
+        -Added: Die Textgroesse der Plots kann nun mittels der Plotoption "textsize=GROESSE" festgelegt werden. Die Skala (linear) umfasst 1-9 und verwendet 5 als Standardwert.
+        -Updated: MathGL auf v2.3.2 aktualisiert.
+        -Added: Fits geben nun auch chi^2 zurueck.
+        -Added: Mit "bgcolorscheme=real" (nun standardmaessig) wird der Hintergrund in Originalfarben angezeigt.
+        -Added: Neue Plotfunktion "grad3d": Pendant zu "grad" für 3D-Funktionen
+        -Fixed: Der Suffix "G" entsprach nicht "Giga" sondern "Terra"
+        -Added: Die Option "tocache" schreibt die Ausgabe von "hist" zusätzlich in den Cache.
+        -Added: Wenn weder die Zahl der Bins noch die Breite der Bins bei "hist" angegeben wird, werden die Bins anhand der Sturges-Regel automatisch bestimmt.
+        -Fixed: "compose" hat keine sukzessive angegebenen Datenobjekte unterstuetzt. Wurde behoben.
+        -Cleaned: "bars" mit Datensaetzen vergroessert nun die dargestellten Ranges, damit auch alle Bars angezeigt werden koennen.
+        -Cleaned: Plugins geben nun keine Systemmeldungen mehr aus (abgesehen von Fehlermeldungen). Andere Meldungen muessen selbst programmiert werden.
+        -Fixed: Problem mit Zeichenketten als Uebergabeparameter an "new" wurde behoben.
+        -Added: "integrate" kann nun auch mehrere Funktionen zugleich integrieren.
+        -Added: "diff" kann nun auch mehrere Funktionen zugleich punktweise differenzieren.
+        -Cleaned: "integrate" akzeptiert nun auch "eps=AUFL" als Parameter (statt "precision=AUFL")
+        -Added: NumeRe kann nun die Fehler einer Anpassung bestimmen und ggf. in neue Variablen schreiben.
+        -Fixed: Substr-Error bei edit behoben.
+        -Added: "fit" und "fitw" protokollieren ihre Ergebnisse nun in "<savepath>/numerefit.log". Ausserdem wird das Ergebnis der Anpassung in Bezug auf die Vertrauenswuerdigkeit analysiert.
+        -Added: Option zum eigenstaendigen Beschriften der Achsen hinzugefuegt:"*ticklabels=LBL1\nLBL2\n..." gibt die ueber die *-Achse aequidistant verteilten Beschriftungen der Skalierung an.
+        -Fixed: Indexfehler in "plot", "plot3d" und "fit" behoben: der maximale Zeilenindex wird nun korrekt interpretiert.
+        -Fixed: Klammererkennungsfehler bei String-Argumenten bei "plot" etc. behoben.
+        -Fixed: Fehler beim Argumentextraktor behoben.
+        -Fixed: Indexfehler beim Deinstallieren von Plugins behoben, falls selbige einen Hilfeeintrag hinzugefuegt hatten.
+        -Fixed: "vline=()" und "hline=()" werden nun korrekt vom Stringparser ausgewertet.
+        -Added: Der Plotparameterstring kann nun auch User-Defined Funktionen enthalten.
+        -Fixed: Ergebnisse der User-Defined-Functions koennen nun auch mit #FUNC(ARGS) in Zeichenketten umgewandelt werden.
+        -Cleaned: Die Kategorien bei "hist" werden nun zentriert und nicht mehr linksbuendig angegeben. (Da "bars" bei "plot" ebenfalls von zentrierten Werten ausgeht)
+
+30 January 2015
+   v 1.0.6 "Release Candidate 2" rev. 3
+
+     Change log:
+        -Added: Update-Algorithmus fuer den Hilfeindex implementiert.
+        -Added: Moeglichkeit, fuer Plugins Eintraege zur Hilfe hinzuzufuegen, implementiert. Infos zum Vorgehen und zur Syntax unter "help -documentation"
+        -New: Neuer Plotstil: "draw". Dieser Stil erlaubt das Zeichnen von primitiven geometrischen Objekten.
+        -New: Neuer Plotstil: "draw3d": 3D-Pendant von "draw" mit weiteren Funktionen, die primitive Objekte darstellen können.
+        -Fixed: Bei "compose" wurden die Anzahl der übergebenen Plotintervalle nicht gespeichert. Wurde behoben.
+        -Fixed: "resample" verwendet nun die korrekte Zeilenzahl.
+        -Cleaned: Die Legenden in "plot" erkennen nun Hochzahlen zuverlaessiger.
+        -Fixed: "resample"-Algorithmus ist nun stabiler gegenueber der Auswahl von Zeilenbereichen.
+        -Added: Beim Deinstallieren eines Plugins wird auch der Hilfeeintrag entfernt, wenn ein solcher vorhanden ist.
+
+15 January 2015
+   v 1.0.6 "Release Candidate 1" rev. 214
+
+     Change log:
+        -Fixed: Wenn das "string()"-Objekt leer war, konnte nicht an einen beliebigen Index geschrieben werden, sondern nur an den ersten. Wurde behoben.
+        -Fixed: #VAR kann nun wieder zwischen Ganzzahlen und Gleitkommazahlen unterscheiden.
+        -Added: Das Kommando "hline" zeichnet eine horizontale Linie, die zum Abtrennen verschiedener Auswertungen bzw. zum Formatieren einer Ausgabe verwendet werden kann.
+        -Applied: Schleifen speichern waehrend der Auswertung nun, ob ein Kommando ein Plugin oder eine Prozedur ausgefuehrt und sprechen die entsprechende Schnittstelle nur daher noch einmal an.
+        -Fixed: Nun koennen auch Prozeduren wieder aus Schleifen heraus ausgefuehrt werden.
+        -Cleaned: "std()" und "stats" verwenden nun die mathematisch korrektere Variante der Standardabweichung := sqrt(sum((mu-x)^2)/(N-1))
+        -Fixed: "hist" kann nun auch mit Zeichenketten als Argument fuer "export=" umgehen.
+        -Cleaned: Position der Legende bei "hist" verbessert.
+        -Added: Fouriertransformation mittels "fft DATENOBJEKT()" implementiert. Inverse Trafo durch "fft DATENOBJEKT() -inverse". Mit "-complex" werden komplexe Werte zurueckgegeben oder fuer die inverse Trafo akzeptiert.
+        -Added: "eval EXPRESSION -set VAR=POS1:POS2 samples=SAMPLES" kann Stuetzstellen der Zahl SAMPLES erzeugen. Das Ergebnis des Kommandos kann direkt an den Cache zugewiesen werden.
+        -Fixed: "extrema" und "zeroes" koennen ihre Ergebnisse nun wieder an den Cache zuweisen.
+        -Fixed: "plot" prueft bei "logscale" nicht mehr den Bereich der z-Achse. ("logscale" aktiviert effektiv nur noch "xlog" und "ylog" im Standardplotmodus)
+        -Fixed: "zeroes", "extrema", "integrate" und "diff" koennen nun auch mit negativem Vorzeichen ausgefuehrt werden.
+        -Fixed: "std(DATENOBJEKT)" liefert nun ebenfalls die korrekte Standardabweichung.
+        -Added: "stats" zeigt nun verkuerzte Statistiken an, wenn der Parameter "export" uebergeben wurde.
+        -Fixed: Darstellung von Vektoren in "vect" und "vect3d" verbessert, so dass die Vektoren nun deutlicher dargestellt werden. Samples fuer "flow" und "pipe" bei "vect3d" auf gerade Zahlen reduziert.
+        -Fixed: Der Plot-Algorithmus kann nun auch wieder mit NaN's umgehen.
+        -Fixed: Bug bei den rekursiven Operatoren behoben, wenn Kommata in den Ausdruecken verwendet wurden.
+        -Cleaned: "move", "copy" und "delete" verwenden nun die verbesserte Index-Funktion.
+        -Fixed: "move" und "copy" zeigen nun das erwartete und gewuenschte Verhalten.
+        -Applied: Die NumeRe-Hilfe wurde in externe Dateien ausgelagert: es existiert nun eine Index-Datei (numere.hlpidx) und mehrere Hilfedateien (*.nhlp) mit den eigentlichen Hilfeartikeln.
+        -Fixed: Der SegFault beim Cache wurde behoben.
+        -Cleaned: Tabellenkopfzeilen entfernen nun nur noch '\' und nicht mehr zwei Zeichen, ehe sie gesetzt werden.
+        -Applied: "\mu" wird nun vorzugsweise als ein Einheitenvorsatz bei Plots betrachtet und es werden keine Abstaende mehr ergaenzt,
+        -Cleaned: Unstetigkeitsstellen am linken Plotrand (wie 1/x bei x=0) werden nun nicht mehr auf 0 gesetzt.
+        -Applied: Wenn mittels "*label" eine Achsenbeschriftung bei "plot -set schematic" gewuenscht wird, werden alle Achsenbeschriftungen wieder eingeblendet.
+        -Cleaned: Bei "schematic" werden nun keine Skalenteiler mehr angezeigt.
+        -Added: Horizontale und vertikale Linien fuer Anmerkungen in einfachen Plots hinzugefuegt. Horizontal: maxline=DESC,minline=DESC,hline=(POS,DESC); vertikal: lborder=(POS,DESC),rborder=(POS,DESC),vline=(POS,DESC). DESC wird dabei an die Linie geschrieben.
+        -Added: Die Funktion "range(VAR,LEFT,RIGHT)" kann genutzt werden, um die Variable VAR auf das Intervall [LEFT,RIGHT] einzuschraenken.
+        -New: Mittels "compose ... endcompose" koennen nun mehrere verschiedene Plotstile in einem Plot verwendet werden.
+        -Cleaned: Die Farbschemata von "vect" und "vect3d" koennen nun auch den eigenen Wuenschen angepasst werden.
+        -Added: Die Stichwortsuche prueft nun auch auf Uebereinstimmung mit den Schluesselwoertern der Hilfeartikeln.
+        -Fixed: Wenn eine Funktion oder ein Datensatz nur "nan" oder "inf" als Werte enthaehlt, wird nun der Plotvorgang abgebrochen.
+
+17 November 2014
+   v 1.0.5 "Brillouin r2" rev. 214
+
+     Change log:
+        -Removed: Aus mittels "@SCRIPT" eingebundenen Scripten koennen nun keine Installationen mehr ausgefuehrt werden.
+        -Fixed: Plugins koennen nun auch aus Schleifen und Bedingungen heraus ausgefuehrt werden und produzieren keinen substr-Fehler mehr.
+        -Fixed: Ausdruecke wie "STRING == STRING" werden nun nicht mehr als Logikausdruecke interpretiert (im Gegensatz zu "STRING" == "STRING")
+        -Fixed: getopt(STRING,POS) kann nun auch mit leeren Optionswerten umgehen.
+        -Fixed: "return" innerhalb von Schleifen und Bedingungen gibt nun wieder den tatsaechlich gewuenschten Wert zurueck.
+        -Fixed: Der Namespace, der mittels "namespace NSP" angegeben wurde, wird nicht mehr ueberschrieben, wenn eine lokale Variable zufaellig denselben Namen hat.
+        -Fixed: Die Pluginbeschreibungen koennen nun auch escapte Anfuehrungszeichen enthalten.
+        -Cleaned: Die Uebergabe von Argumenten an Prozeduren wurde verbessert und prueft nun auf fehlende Defaultwerte. Prozeduren verstehen nun auch Argumentlisten wie $PROC(,ARG)
+        -Fixed: Plugins uebergeben nun fuer den Kommando-Tag <PARAMSTRING> zumindest ein ""
+        -Added: Plugin-Installationen pruefen nun auch den Pluginnamen auf eventuelle Doppeldeutigkeiten.
+        -Fixed: "read" liest nun keine Leerzeilen mehr ein und "write" schreibt keine Leerzeilen mehr.
+        -Added: "strfnd()" hat nun ein drittes optionales Argument, das die Position, ab der gesucht werden soll, beschreibt. "strrfnd()" hinzugefuegt: diese Funktion sucht vom Ende des Strings ab nach dem letzten Auftreten.
+        -Fixed: "taylor" kann nun auch eindeutige Funktionsnamen aus Funktionen mit Kommata im Argument erzeugen.
+
+11 November 2014
+   v 1.0.5 "Brillouin" rev. 198
+
+     Change log:
+        -Fixed: In Plotlegenden können nun auch Funktionen mittels "#FUNKTION(VARS)" verwendet werden.
+        -Cleaned: Leere Plotlegenden ("") werden nun vollstaendig unterdrueckt (Es wird nicht mehr der Linienstil ohne eine Legende angezeigt).
+        -Added: Wenn bei "export=DATEI" ein Dateinamen mit "*.tex" angegeben wird, wird eine TeX-Tabelle anstatt der normalen Ausgabe erzeugt.
+        -Fixed: "<>" kann nun wieder als Stammordner in Dateipfaden verwendet werden.
+        -Fixed: "<scriptpath>" wurde nicht ueberall korrekt verwendet.
+        -New: Das Kommando "new" kann neue Ordner, Scripte und Prozeduren erzeugen. Dazu ist ein Parameter und der Pfad notwendig.
+        -Added: Wenn Prozeduren über die NumeRe-Kommandozeile eingegeben werden, werden sie nun automatisch korrekt eingerueckt. Sollte die Prozedur enden, bevor alle Schleifen geschlossen wurden, wird eine entsprechende Fehlermeldung angezeigt.
+        -Fixed: In Prozeduren, die "throw" innerhalb einer Schleife oder einer Bedingung enthalten, wird "throw" nun nicht mehr vor der Auswertung (und per default) ausgefuehrt.
+        -Fixed: Der Parameter "export" kann nun auch mit der Syntax "#FUNKTION()" umgehen.
+        -Fixed: NumeRe kann nun wieder mehrere Ordnerebenen (bei z.B. set -PATH=PATH) zugleich erzeugen.
+        -New: Mit dem Kommando "edit" koennen Dateien extern geoeffnet werden. "view" ist ein Synonym zu diesem Kommando.
+        -Added: Ein Texteditor kann nun mit NumeRe verknuepft werden. Per default ist das "notepad.exe".
+        -Fixed: Der Cache kann nun auch mit den Inkrement (++) und Dekrement(--)Operatoren umgehen.
+        -Added: Verkuerzte rekursive Operatoren (+=, -=, *= und /=) eingefuehrt.
+        -Fixed: Wenn der Cache beschrieben wird, wird nun nicht mehr das kryptische "[dem Cache]" in der Fensterkopfzeile angezeigt.
+        -Cleaned: Die Kommandos "integrate", "hist" & "random" verwenden nun auch die globale Fehlerbehandlung anstatt eine erneute Eingabe des Benutzers abzufragen.
+        -Fixed: Die Stichwortsuche "find -BEGRIFF" kann nun auch mit Umlauten umgehen.
+        -Cleaned: Der Standardpfadtrenner ist nun "/". Einstellungen mit "\" werden entsprechend ueberschrieben.
+        -Fixed: Falsch geschriebene Pfadplatzhalter "<PFAD>" werden nun auch als falsch erkannt.
+        -Cleaned: "list -cmd" zeigt nun alle Kommandos und nicht mehr nur rein numerische an.
+        -Fixed: Auch NumeResyntaxfehler und C++-Standardfehler brechen nun ein Script ab, wenn der Fehler waehrend der Auswertung auftrat.
+        -Fixed: Programmstabilitaet beim Laden von Daten verbessert.
+        -Applied: "rand(x0,x1)" hat nun einen groesseren Buffer und ist ein wenig schneller.
+        -Removed: Wenn eine neue Variable deklariert wird, wird dies nicht mehr als Meldung ausgegeben.
+        -Added: Jumptable in Schleifen und Bedingungen implementiert, um "break" und "continue"-Behandlung zu beschleunigen.
+        -Cleaned: Wenn beim Plotten die TeX-Ausgabe (ueber "otex=FILE") gewaehlt wird, wird nun der festgelegte Texteditor geladen.
+        -Added: Wenn der Zielpfad beim Kopieren oder Verschieben von Dateien mit "*" oder "/" endet, so wird nun automatisch der bisherige Dateiname verwendet.
+        -Added: In Schleifen wird nun der Parserbytecode für jede Rechenoperation gespeichert und verkürzt die Rechenzeit auf bis zu ein Zehntel (bisher 29sec / nun 3sec)
+        -Fixed: Der Dateiexplorer liefert nun keine Fehlermeldung mehr, wenn er eine Datei ohne Dateiendung findet.
+        -Fixed: Behandlung von rekursiven Ausdruecken (VAR = AUSDRUCK(VAR)) verbessert.
+        -Added: Plotoption "bars" hinzugefuegt: Erfordert aequidistant verteilte x-Werte. Zeichnet vertikale Balken statt Punkte bei Datenpunktplots.
+        -Cleaned: Inkrement- und Dekrementoperatoren koennen nun - ebenso wie rekursive Operatoren ("+=", etc) mehrmals je Zeile verwendet werden, sofern sie sich in durch Kommata getrennten Ausdruecken befinden.
+        -Fixed: Zeichenkettenerkennung verbessert; "to_string(#1)" bspw. wird nun korrekt ausgewertet.
+        -Fixed: Maskierter Bug in der Verzeichnisverwaltung behoben.
+        -Fixed: "plot3d" kann nun wieder mit "box" verwendet werden.
+        -New: Neue Plotoptionen "colormask" und "alphamask" für "surf"-Plots: "colormask" färbt und "alphamask" berechnet die Transparenz entsprechend einer zweiten Funktion.
+        -Added: Simpsonintegration ueber Option "method=simpson" hinzugefuegt.
+        -Fixed: NumeRe kann nun auch Prozeduren in verschachtelten Namensraeumen erzeugen.
+        -Added: Wird "plot3d" auf  0,0 gedreht (rotate=0,0), so wird die Legende im statt ausserhalb des Plots angezeigt. (Wie bei "plot")
+        -Fixed: Achsendarstellung bei "plot3d", "mesh", "surf", etc. verbessert, so dass wenn (0,0,0) nicht Teil des Plots ist, das Koordinatensystem nun am kleinsten Ende der Achsen angezeigt wird.
+        -Added: Plotoption "schematic" hinzugefuegt: dadurch werden alle Basisinformationen (Achsenbeschriftung, Legende & Farbskala) eines Plots deaktivert.
+        -Fixed: Optionenargumente werden nun nicht mehr faelschlicherweise als Optionen identifiziert.
+        -New: Neue Funktion "date(TIME,TYPE)": diese Funktion gibt die Zeit TIME gemaess des Typs in verschiedenen Formaten zurueck.
+        -New: Programmierbarkeit mithilfe von Plugins: Plugins koennen NumeRe-Kommandos ueberschreiben und fuehren Prozeduren aus. Siehe "help -script", "help -procedure", "help -install" und "help -plugin"
+        -Added: Plotoption "reset": setzt alle Einstellungen auf die Ursprungswerte zurück. Wird vor allen anderen Optionen ausgewertet; kann also auch in Kombination verwendet werden.
+        -Fixed: @SCRIPT: globals kann nun auch ohne Leerzeichen verwendet werden.
+        -Fixed: Die "string()"-Variable kann nun auch bei set-Funktionen verwendet werden.
+        -Added: Funktionen hinzugefuegt: "findfile("DATEI")" gibt true zurück, wenn DATEI existiert, false sonst. "findparam("PARAM","CMDSTRING","CHAR")" gibt zurueck, ob der Parameter "PARAM" in "CMDSTRING" gefunden werden kann und wo er sich befindet (+offset von "CHAR" und Leerzeichen). "getopt("CMDSTRING",POSITION)" gibt den Wert einer Option an der Stelle Position zurueck.
+        -Cleaned: Rekursiver Operator "+=" ist nun auch fuer "string()" ueberladen.
+        -Added: Funktionen hinzugefuegt: "char(STRING,POS)" gibt das Zeichen aus STRING an der Stelle POS zurueck. "ascii(STRING)" gibt die ASCII-Werte aller Zeichen in STRING zurueck. "to_char(x,y,z,...)" interpretiert x,y,z,... als ASCII-Werte und gibt sie als verknuepfte Zeichenkette zurueck.
+        -Added: "throw" kann nun mit eigenen Fehlermeldungen versehen werden: throw "FEHLERMELDUNG".
+        -New: NumeRe kann nun aus Dateien lesen und in sie schreiben: "string() = read -file=FILE" liest FILE zeilenweise ein und speichert jede Zeile als neue Zeichenkette in string(). "write EXPR -set file=FILE mode=MODE" schreibt EXPR in FILE, wobei der Modus MODE (append oder trunc) verwendet wird. Besteht EXPR aus mehreren Strings, so werden diese als einzelne Zeilen geschrieben.
+        -Fixed: Der Inhalt eines String-Elements kann nun mittels string(ELEMENT) = "" gelöscht werden.
+        -Fixed: Der String-Parser ignoriert nun nicht mehr Zeichenketten, die auf mehrere leere Zeichenketten folgen.
+        -Fixed: "zeroes" und "extrema" verwenden nun maximal 10001 samples, um das Intervall im ersten Durchlauf zu teilen. Für eine höhere Aufloesung muss das Intervall kleiner gewaehlt werden.
+        -Removed: Die Unterdrueckung von NumeRe-Kommandos als Funktionsnamen wurde weitestgehend (bis auf wenige Ausnahmen) entfernt. Nun koennen auch Kommandos wie "integrate" als Funktionsnamen verwendet werden.
+        -Fixed: Die logarithmische Skalierung wurde verbessert, so dass nun keine kryptischen Fehlermeldungen erscheinen.
+        -Fixed: NumeRe kann nun auch Daten laden, deren Tabellenkoepfe nicht auskommentiert ist.
+
+25 September 2014
+   v 1.0.4 "Bohr" rev. 179
+
+     Change log:
+        -Fixed: VAR = integrate2d EXPR(x,y) -set [...] - Bug behoben.
+        -Fixed: Speicher-Ueberallozierung beim Cache teilweise abgefangen.
+        -Updated: Hilfeeintrag zur "NumeRe-Spaltensyntax" (help -{{ oder help -multiresult) hinzugefuegt.
+        -Cleaned: Einheitenumrechnungsliste aus Logik- und Symmetriegruenden nach "list -units" verschoben.
+        -Added: Hilfe-Index ("help -index" oder "help -idx") hinzugefuegt.
+        -Applied: Der Bytecode des Parsers wird nun innerhalb von Schleifen fuer alle Zeilen gespeichert.
+        -Removed: Der Bytecode wird nicht mehr gespeichert, da die Speicherung deutlich mehr Zeit in Anspruch nimmt, als der Parser zum Parsen benoetigt.
+        -New: Das Farbschema bei 2D- und 3D-Plots kann nun mittels plot -set colorscheme=SCHEMA gewaehlt werden. Vordefiniert sind "std", "grey", "hot", "cold" und "map". Es koennen aber auch eigene Schemata durch Angabe der Farben definiert werden. Hilfeeintrag unter "help -colorscheme" hinzugefuegt.
+        -New: Mit der Plot-Option "aspect=WERT" kann das Verhaeltnis von Breite zu Hoehe des ausgegeben Plots bestimmt werden: Werte kleiner 1 ergeben hochformatige, Werte groesser 1 querformatige Plots.
+        -Fixed: Fehler in der Speicherverwaltung behoben, der zu einer Speicherverletzung fuehren konnte.
+        -Fixed: Fehler in der Datenobjektlegende behoben, der in seltenen Faellen auftreten konnte und zur Darstellung falscher Spaltennamen fuehren konnte.
+        -Applied: Statistikfunktionen, wie "sum()", "prd()", "avg()", etc. werden nun intern schneller ausgewertet, was speziell bei grossen Datensaetzen von Vorteil ist.
+        -New: Funktion zum Glaetten von Datensaetzen hinzugefuegt: smooth cache(i1:i2,j1:j2) -order=ORDNUNG glaettet die Daten gemaess einer Linearisierung der Ordnung ORDNUNG.
+        -New: Funktion zum Resamplen von Datensaetzen hinzugefuegt: resample cache(i1:i2,j1:j2) -samples=SAMPLES resamplet die Datenreihe auf SAMPLES Samples (sowohl auf- als auch abwaerts).
+        -Cleaned: Die Variablen "x","y","z" und "t" zaehlen nun zu den Standardvariablen (wie "ans") und brauchen zu Programmstart nicht initialisiert zu werden.
+        -Fixed: Range-Bug bei "plot3d" behoben, der auftrat, wenn kein Plotintervall angegeben wurde.
+        -Fixed: Es koennen nun auch Variablen mit data* und cache* als Vorsatz initialisiert werden.
+        -Cleaned: Linienfarben werden bei "colorscheme=grey" automatisch auf Grauwerte umgestellt.
+        -New: Linienfarben bei "plot" und "plot3d" koennen mit der Option "plotcolors="FARBEN"" beeinflusst werden. Die Aenderungen werden nicht von Plot zu Plot gespeichert. Infos finden sich unter "help -plotcolors"
+        -Fixed: Wenn zuerst mehrere 2D-Funktionen oder 3D-Trajektorien und im Anschluss weniger 3D-Trajektorien geplottet wurden, kam es zu einer fehlerhaften Darstellung der Legende. Wurde behoben.
+        -Fixed: Plotproblem mit pseudo-konstanten Funktionen (Funktionen, die eigentlich konstant sein sollten, es aber wegen Rundungsfehlern nicht sindz.B. erf(x) + erfc(x)) behoben.
+        -Cleaned: Auswertung von "+", "-" und "*" beim TeX-Parser verbessert, so dass nun zusaetzliche Leerzeichen ignoriert werden. "," zum TeX-Parser hinzugefuegt.
+        -Added: Mittels "if(data())" bzw. "if (cache())" kann ausgewertet werden, ob ein Datenfile geladen oder Daten im Cache vorhanden sind.
+        -Fixed: Moeglicher Fehler beim Plotten leerer Datenobjekte behoben.
+        -Fixed: Selbst definierte Funktionen koennen nun auch mit Ausdruecken als Funktionsargumente umgehen.
+        -New: Funktion "cmp(x,y,z,...,CMP,T)" vergleicht die Elemente x,y,z,... mit CMP gemaess dem Vergleichstyp T = {-2,-1,0,1,2} und gibt Indices zurueck. Für T=0 muss das Element gleich CMP sein, für T=-1 kleiner gleich, aber das groesste, für T=1 groesser gleich, aber das kleinste, für T=-2 oder T=2 werden Werte statt Indices zurueckgegeben. Wird kein passender Wert gefunden, wird "nan" zurueckgegeben.
+        -Added: Konstanten fuer "nan" und "inf" ergaenzt. "_true" zu "true" und "_false" zu "false" umbenannt.
+        -New: "while"-Schleife hinzugefuegt.
+        -Fixed: In Schleifen kann nun die "Prompt-Syntax" (??) verwendet werden.
+        -Cleaned: Die Deklaration von FOR-Schleifen erfolgt nun aus Konsistenzgruenden auch mit umschliessenden Klammern (aus Legacy-Gruenden wird die alte Syntax ebenfalls korrekt umgesetzt).
+        -Fixed: Variablen koennen nun auch mit "del*" beginnen.
+        -Added: Mit dem Kommando "abort" kann eine Schleifen-/IF-Definition ohne Auswertung abgebrochen werden.
+        -Fixed: Fehlende Klammern in selbst definierten, zu plottenden Funktionen werden nun besser erkannt.
+        -Added: Mit der Syntax "@SCRIPT" koennen die Definitionen und die globalen Variablen (mit dem neuen Kommando "global" versehen) aus dem Script SCRIPT in das auszufuehrende Script geladen werden.
+        -Added: "@SCRIPT" mit zwei Parametern erweitert: "@SCRIPT: defines" (laedt nur Funktionsdefinitionen) und "@SCRIPT: globals" (laedt nur globale Ausdruecke)
+        -Fixed: Vor der Auswertung werden nun alle Tabulatoren in einer Kommandozeile entfernt und durch Leerzeichen ersetzt. (Betrifft natuerlich nicht den String-Modifikator "\t")
+        -Added: Modulo-Operator als "a % b" implementiert.
+        -Added: XOR-Operator als "a ||| b" implementiert.
+        -New: Prozeduren implementiert: Prozeduren werden durch $PROZEDUR(ARGLIST) aufgerufen und durch "procedure $PROZEDUR(ARGLIST) ... endprocedure" deklariert. Kann in einem NumeRe-Prozedur-File (*.nprc) oder in einem Script geschehen. Im ersten Fall muss der Dateiname mit dem Prozedurnamen uebereinstimmen, im zweiten Fall wird automatisch eine Prozedur-Datei erzeugt. Prozeduren koennen auch rekursiv aufgerufen werden.
+        -Added: Standard-Prozedurordner hinzugefuegt: "procedures" mit "<procpath>" als Token.
+        -Added: Parameter "mask" unterdrueckt (angewandt auf Schleifen) alle Basisausgaben der Schleifen.
+        -Fixed: "#" innerhalb eines Strings erzeugen nun keine Fehler mehr.
+        -Added: Mit der Syntax "DATENOBJEKT(#,#)" kann der Dateiname des geladenen Datenfiles gelesen werden.
+        -Added: Der Parameter "-print" hat auf einen String angewendet dieselbe Wirkung wie "-peek noquotes".
+        -Added: Die Funktion "is_string(EXPR)" gibt "true" zurueck, wenn EXPR ein oder mehrere Zeichenketten enthaelt, "false" sonst. Die Funktion "to_value(STRING)" wertet den String STRING aus und wandelt selbigen in einen Wert um.
+        -Added: Die Funktion "time()" gibt die Zeit in Sekunden seit 1970 zurueck.
+        -Fixed: fixed
+        -Added: Namespaces hinzugefuegt: "namespace NAMESPACE" deklariert einen Namespace, der ab dieser Stelle gilt, $NAMESPACE~PROZEDUR(ARGS) ruft Funktionen aus einem spezifischen Namespace auf. Namespaces sind als Unterordner repraesentiert. Der Standard-Namespace ist als "namespace main" bzw. "namespace" bzw. $main~PROZEDUR() dargestellt.
+        -Added: Der Stringparser kann nun auch die Logikverknuepfungen "STRING1" == "STRING2" und "STRING1" != "STRING2" umsetzen. Ausserdem auch "STRING1" <(=) "STRING2" und "STRING1" >(=) "STRING2".
+        -Added: Die Funktion "to_string(EXPR)" wandelt EXPR 1:1 in einen String um.
+        -New: Neues Kommando "remove FILE". Dieses Kommando entfernt die Datei FILE dauerhaft und unwiderbringlich vom System. Es kann keine Dateien loeschen, deren Endungen nicht standardmaessig von NumeRe verwendet werden. Die Sicherheitsabfrage kann mit "-ignore" unterdrueckt werden.
+        -New: Neue Kommandos "copy FILE -target=ZIEL", "move cache(i,j) -target=cache(I,J)", "move FILE -target=ZIEL". Kopieren/verschieben Dateien/Tabellen aus dem Cache ins ZIEL/nach Cache(I,J).
+        -Added: Die "get"-Funktionen koennen mit den zusaetzlichen Parametern "-asstr" (as string) oder "-asval" (as value, nur wert-basierte Einstellungen) nun auch auswertbare Ausdruecke zurueckgeben.
+        -New: String-Speicherobjekt "string()" hinzugefuegt.
+        -Added: "num()", "min()", "max()" und "sum()" sind nun fuer Strings ueberladen.
+        -Cleaned: NumeRe-internes Errorhandling mittels "try" und "catch" und Errorcodes verbessert.
+        -Added: "@SCRIPT" kann nun auch innerhalb oder VOR Prozedurdefinitionen verwendet werden.
+        -Fixed: Bei Konstrukten wie "VAR = AUSDRUCK(VAR)" oder "VAR++" oder "VAR--" konnte es in Schleifen in seltenen Faellen zu schwerwiegenden Fehlern kommen (speziell wenn die Schleifenanordnung ein zweites Mal ausgefuehrt wurde). Wurde behoben.
+        -Added: "clear -string" bzw. "string -clear" loeschen den Inhalt des string()-Objekts
+        -Updated: MathGL auf v2.3 und boost auf v1.56 aktualisiert
+        -Added: Plotoption "grid" erweitert mit "grid=fine" und "grid=coarse". Erstere zeichnet ein feineres Gitter.
+        -Fixed: Variablen, die vor einer Zaehlschleifendefinition bereits bekannt sind und in einer Zaehlschleife als Index verwendet wurden, sind nun nach dem Schleifendurchlauf mit ihrem neuen Wert verfügbar.
+        -Added: Qualitaetseinstellungen bei "flow" und "pipe"-Optionen im "vect" und "vect3d"-Stil.
+        -Fixed: Darstellungsproblem bei cont3d behoben.
+        -Removed: Die Option "otex=FILE" erzeugt nun nur noch zwei Dateien: die TeX-Hauptdatei und eine Datei, die die eigentliche Graphik enthält.
+        -Added: Orthogonalprojektionen auf xy-, xz- und yz-Ebene via Plotoption "orthoproject" für surf*, mesh*, vect3d und plot3d hinzugefuegt.
+        -Added: "if()" und "while()" werten nun, wenn ihre Bedingungen nur Zeichenketten enthalten, vorhandene Zeichenketten als "true" und leere Zeichenketten als "false" aus.
+        -Added: Stringfunktionen "strlen()" (Stringlaenge), "strfnd()" (Suche) und "substr()" (Extraktion) hinzugefuegt.
+        -New: Neuer Ladescreen mit ASCII-Logo.
+        -Fixed: Moeglicher Fehler beim Ueberschreiben von Dateien (Dateien konnten unvollstaendig ueberschrieben werden) behoben.
+        -Fixed: Wenn "data -export" bei einem Datensatz aus einem NumeRe-Datenfile (*.ndat) angewendet wurde, wurde die Tabelle in eine Textdatei mit der Endung *.ndat geschrieben. Wurde behoben.
+        -Added: Plotoption hinzugefuegt: "area" fuellt den Bereich zwischen Kurve und x-Achse bzw. x-y-Ebene bei "plot" und "plot3d" farblich aus. Falls Datenpunkte geplottet werden sollen, werden statt gefuellten Bereichen senkrechte Linien gezogen.
+        -Fixed: Fehler bei Datenlegenden bei "plot3d" behoben.
+        -Added: Funktion "is_nan()" hinzugefügt, die TRUE zurueckgibt, wenn das Argument den Wert NaN hat.
+        -Fixed: Darstellungs-Bug beim Histogramm entfernt, der bei den Plotoptionen "ylog box" auftreten konnte (Es wurden trotz der Box Pfeile ans Ende der Achsen gezeichnet).
+        -Cleaned: "hist", "random" und "stats" sind nun keine "Plugins" mehr.
+        -Removed: NumeRe wartet nun nicht mehr darauf, dass das Viewer-Fenster geschlossen wird.
+        -Fixed: "cut" blendet nun auch die aeussersten Ecken des Ausschnitts aus.
+        -Added: Der "Entwurfsmodus" von "plot" (etc.) kann nun als Einstellung mittels "set -draftmode" ein-/ausgeschalten werden.
+        -Fixed: "zeroes" und "extrema" lieferten kein auswertbares Ergebnis, wenn das Ergebnis nicht an eine Variable zugewiesen wurde. Behoben.
+        -Fixed: Eine Syntax wie "cache(num(cache(:,I),I) = WERT" konnte nicht ausgefuehrt werden. Wurde behoben.
+        -New: Krummlinige Koordinaten hinzugefügt: "coords=polar" (Polar- /Zylinderkoordinaten) und "coords=spherical" (Sphaerische Koordinaten) als zuaetzliche Plotoptionen. Mit "coords=cartesian" kann auf kartesische Koordinaten zurueckgeschalten werden.
+        -Removed: Der unnuetze Menue-Modus wurde entfernt: "mode" & "menue" sind keine Kommandos mehr, "set -mode" und "get -mode" werden nicht mehr als Parameter erkannt.
+        -Fixed: Seg-Fault beim Einlesen sehr kurzer Datenfiles behoben.
+        -Fixed: Bugs beim Kopieren und Verschieben grosser/binaerer Dateien behoben.
+        -Cleaned: Beim Darstellen der Tabellen werden Unterstriche nun als Leerzeichen dargestellt.
+        -Fixed: Strings mit Gleichheitszeichen wurden nicht korrekt interpretiert. Wurde behoben.
+        -Fixed: LabX-Dateien mit unterschiedlich langen Spalten wurden nicht korrekt eingelesen. Wurde behoben.
+        -Cleaned: "nan" und "inf" werden in Datentabellen nun auch als ungueltige Werte interpretiert. (num(DATA()) zaehlt diese Elemente nicht mit)
+        -New: Einfache Fitprozedur implementiert: "fit DATEN() -with=FUNCTION(x,PARAMS) params=PARAMS" bzw. "fitw DATEN() -with=FUNCTION(x,PARAMS) params=PARAMS", wobei "fitw" die Fehlerwerte beruecksichtigt.
+
+01 July 2014
+   v 1.0.3 "Bragg" rev. 168 --- HOTFIX ---
+
+     Change log:
+        -Updated: Hilfeeintrag zu "string" bezueglich "-peek" aktualisiert.
+        -Fixed: Daten, die aus dem Cache in das neue NumeRe-Format gespeichert wurden, konnte unter Umständen nicht mehr korrekt geladen werden. Dies wurde behoben.
+        -Fixed: Multi-Argumentfunktionen werden mit Datenobjekten nun wieder als solche erkannt.
+
+30 June 2014
+   v 1.0.3 "Bragg" rev. 168
+
+     Change log:
+        -Fixed: Ueberfluessige Dateinamensabfrage beim Ueberschreiben von Datensaetzen entfernt.
+        -Fixed: Bug in der Auswertung der Schleifendeklarationen behoben. Es spielt nun keine Rolle mehr, ob die Schleife durch "i=1:10" oder "i = 1:10" deklariert wird.
+        -Fixed: Funktionsdefinitionen koennen nun wieder gespeichert werden, auch wenn zuvor keine Definitionsdatei vorhanden war.
+        -Added: NumeRe versteht nun weitestgehend an allen Stellen die ueblichen Umlaute, scharfes "s" und das Grad-Symbol.
+        -Added: "list -var" zeigt nun auch die Groesse des data()-Objekts an.
+        -Cleaned: "list -var" und "list -exprvar" an das Layout von "list -files" angeglichen.
+        -Fixed: Wenn NumeRe durch Doppelklicken auf ein Script gestartet wurde, wurde u.U. die Funktionsdefinitionsdatei nicht gefunden. Wurde behoben.
+        -Fixed: In Schleifen und Verzweigungen konnte "ans" nicht verwendet werden. Wurde behoben.
+        -Updated: Speed-Up (2x-50x) in FOR-Schleifen und IF-Verzweigungen bei rekursiven Ausdruecken (VAR = AUSDRUCK(VAR))
+        -Fixed: "script -load=SCRIPT" laedt nun keine ungueltigen Dateien mehr.
+        -Fixed: Funktionsdefinitionen koennen nun auch wieder entfernt werden, auch wenn keine Definitionsdatei vorhanden ist.
+        -Cleaned: Die Ausgabe von mehreren Werten wird nun sauber und tabellarisch geordnet.
+        -Fixed: Plotoptionen werden nun, wenn sie durch Variablen uebergeben werden, nicht mehr automatisch in Kleinbuchstaben umgewandelt.
+        -Updated: Kleinere Speed-Ups an anderen Stellen der Auswertung.
+        -New: Binaeres Datenformat als Ausgabe implentiert: DATEN.ndat. data -save bzw. cache -save generiert standardmaessig eine soche Datei, data -export bzw. cache -export generiert eine Text-Datei (*.dat)
+        -Fixed: Semikolon am Ende eines Strings unterdrueckt nun ebenfalls die Ausgabe.
+        -Cleaned: "hist" und "stats" verwenden nun auch "export" (aus Legacy-Gruenden wird "save" ebenfalls akzeptiert)
+        -Added: Wenn die Statistiken exportiert werden, werden nun die Zeilen mit den Statistikergebnissen automatisch auskommentiert. Ausserdem wird die trennende Linie nun automatisch erzeugt, so dass eine schmalere Darstellung erreicht werden kann.
+        -Added: NumeRe-Datenfiles (*.ndat) koennen nun ebenso wie NumeRe-Scripte mit NumeRe verknuepft werden und werden bei einem Doppelklick automatisch geladen. (regupd.exe wurde entsprechend aktualisiert)
+
+13 June 2014
+   v 1.0.2 "Becquerel" rev. 162
+
+     Change log:
+        -Fixed: Optionen, wie "set -faststart", die ohne einen Wert uebergeben wurden, wurden als "-PARAMETER=0" interpretiert. Wurde behoben.
+        -Fixed: Spaltenueberschriften in Plots beachteten viele Spezialfaelle nicht. Diese wurden hinzugefuegt.
+        -New: Die neue Option "defineautoload" aktiviert das Laden der selbst definierten Funktionen zum Programmstart und das Speichern selbiger zum Programmende.
+        -Cleaned: "defineautoload" zu "defcontrol" umbenannt, da kuerzer und treffendere Beschreibung des Verhaltens.
+        -New: Das Color theme des NumeRe-Fensters kann nun mittels des Kommandos "set -colortheme=WERT" eingestellt werden. Die aktuelle Liste der voreingestellten Themes findet sich unter "set -colortheme"
+        -Fixed: Problematik beim Einlesen von CSV-Dateien, die Text in diversen Zellen beinhalten, verringert.
+        -Cleaned: Bei den wenigen Schalter-Einstellungen mit den moeglichen Werten 1 und 0 (z.B. "set -faststart", "set -compact", etc.) fuehrt das Weglassen eines Wertes nun zu einem automatischen umschalten vom vorherigen Wert.
+        -Added: Wenn "set -defcontrol=1" gesetzt wird, werden fuer diese Sitzung die Funktionen gleichzeitig geladen (so lange nicht schon welche definiert sind).
+        -New: Taylorentwicklung ueber das Kommando "taylor FUNKTION(VAR) -set VAR=POS n=ORDNUNG" hinzugefuegt. Dieses Kommando legt ein entsprechendes Taylorpolynom im Funktionenspeicher an.
+        -Added: Zahl der Linestyles in Plots und Histogrammen verdoppelt.
+        -Cleaned: Syntax-Logik verbessert: "delete cache(i,j)" benoetigt nun das "Parameter-Minus" nicht mehr, da "cache(i,j)" als Ausdruck zaehlt.
+        -Fixed: Zwischen den Plots werden die Plotintervalle nun zurueckgesetzt.
+        -New: Kopierfunktion fuer Datenobjekte implementiert: "copy data(i1:i2,j1:j2)" kopiert die Elemente von i1 bis i2 und j1 bis j2 an eine freie Stelle in den Cache. (Dasselbe existiert auch fuer den Cache selbst: "copy cache(,)"). Mit dem Parameter "-target=cache(i1:i2,j1:j2)" koennen die zu ueberschreibenden Cache-Elemente festgelegt werden.
+        -New: Mit "define FUNKTION(ARGS) := AUSDRUCK(ARGS) -set comment="KOMMENTAR"" kann ein Kommentar zu einer selbst definierten Funktion hinzugefügt werden, der dann unter "list -define" angezeigt wird.
+        -Updated: Hilfeeintrag zu "help -define" entsprechend aktualisiert.
+        -Added: Konstante "_coul_norm" fuer die Coulomb-Normierung 1/(4*PI*EPS_0) hinzugefuegt.
+        -Applied: Selbst definierte Funktionen werden beim Laden nun alphabetisch sortiert.
+        -Fixed: Bug im Dateiexplorer bei zu langen Dateinamen behoben.
+        -Fixed: Bei (2D-)Plots mit Fehlerbalken wurde das Achsenkreuz nicht in den Ursprung gelegt. Wurde behoben.
+        -Added: Bei allen farbskalierten Plots (wie mesh, surf, cont3d, etc.) wird nun eine Colorbar angezeigt.
+        -Fixed: Beim Wechsel von "nohires" auf "hires=medium" auf "hires" konnte es bei 3D-Plots passieren, dass die Darstellung sich gewaltig veraenderte, falls eine Unstetigkeitsstelle im Plotbereich lag (da ein Sample auf dieser Stelle landen konnte). Dieser Effekt wurde abgeschwaecht. (Er kann nicht voellig verhindert werden)
+        -Added: Die Funktionen "erf(x)", "erfc(x)" und "gamma(x)" wurden hinzugefuegt.
+        -Added: Die Colorbar kann mit der Option "colorbar/nocolorbar" ein-/ausgeschalten werden
+
+27 May 2014
+   v 1.0.1 "Boltzmann" rev. 161
+
+     Change log:
+        -Fixed: Wurde der 3D-Plot rotiert, wurden die projizierten Konturen nicht auf die aktuellen Hintergruende projiziert. Wurde behoben.
+        -Cleaned: Die automatische Speicherung verwendet nun automatisch 20 Dezimalstellen.
+        -New: Sortieralgorithmus fuer den Cache implementiert: cache -sort=RICHTUNG cols=SPALTEN[SPALTENGRUPPEN] sortiert die gewaehlten Spalten in der angegeben RICHTUNG. Sortiert werden nur die Spalten. Die Spaltengruppen werden entsprechend der vorangestellten Spalte sortiert.
+        -Added: Umkehrung zum Kommando "cache -sort" implementiert: "sort -cache=RICHTUNG cols=SPALTEN[SPALTENGRUPPEN]
+        -Updated: Hilfeeintrag zu "cache" aktualisiert.
+        -Added: Die Funktion "rand(x0,x1)" erzeugt gleichverteilte, reelle Zufallszahlen im Intervall [x0,x1)
+        -New: Das Random-Plugin beherrscht nun 5 weitere Verteilungen: Binomial-, Poisson-, Gleich-, Gamma- und Student-t-Verteilung.
+        -Fixed: Wenn die Tabellenkoepfe geaendert werden, wird dies nun auch als eine Aenderung am Cache betrachtet, die die automatische Sicherung aktiviert.
+        -Fixed: Das Histogramm-Plugin hat nun auch sieben Colorstyles fuer die Histogramme.
+        -Updated: Hilfeeintrag zu "random" entsprechend aktualisiert.
+        -Cleaned: "random" verwendet nun (abgesehen von lines= und cols=) Standardwerte fuer fehlende Parameter. Diese Standardwerte werden unter "help -random" angezeigt.
+        -Applied: "random" verwendet nun (neben der Zeit) einen multiplikativen Faktor aus seinen eigenen Zufallszahlen, um sich selbst zu seeden.
+        -Fixed: Bug im Histogramm-Plugin behoben, der bei der Analyse einer einzelnen Spalte auftreten konnte.
+        -Cleaned: Die (relative) Breite der Histogramm-Balken wurde von 0.7 auf 0.9 erhoeht.
+        -Cleaned: Autosave-Layout verbessert.
+        -Cleaned: Der Dateiexplorer listet nun zuerst Verzeichnisse und im Anschluss alle anderen Dateien (nicht wie zuvor rein alphabetisch).
+        -Added: Sortieralgorithmus fuer geladene Datenfiles zugelassen.
+        -New: Beim ersten Start von NumeRe (wird an der Existenz von "numere.ini" festgemacht) wird eine "First-start-Einfuehrung" angezeigt.
+        -Cleaned: Eingabefehlertoleranz erhoeht: Leerzeichen zwischen Parameter, "=" und Wert werden nun ignoriert: z.B. -samples=150 und -samples = 150 werden nun als gleichermassen erkannt.
+        -Fixed: Bei Datenfiles, die bereits von NumeRe erzeugt wurden, findet NumeRe die Kopfzeilen nun selbststaendig. In anderen Faellen wird ebenfalls versucht die Kopfzeilen zu finden, was aber nicht garantiert werden kann (Unterstuetzt werden Kopfzeilen direkt ueber den Werten und durch eine Zeile (z.B. Unterstreichung) getrennte Kopfzeilen. Leerzeilen werden dabei ignoriert) FIX VERBESSERT.
+        -New: NumeRe kann nun auch mit CASSY(R)-LABX-Dateien umgehen. (Cassy v2.x) Dabei werden nur die tatsaechlichen Werte und Spaltenueberschriften uebernommen, die restliche Werte werden verworfen. Ausserdem kann aus ebendiesem Grund nicht nach *.labx gespeichert werden.
+        -New: Beim Laden von Dateien koennen nun auch Wildcards verwendet werden.
+        -Cleaned: "data -app" an die Standard-Syntax angeglichen: "data -app=DATEI head=KOPFZEILE"
+        -Fixed: Datensaetze, die nicht komplett gewaehlt wurden, wurden beim Plotten nicht korrekt auf die x-Achse gemappt. Wurde behoben.
+        -New: NumeRe kann nun auch CSV-Dateien einlesen. Sollte aber aufgrund des uneindeutigen CSV-Standards mit Vorsicht verwendet werden.
+        -Fixed: Einlesen von CSV verbessert: Falls kein Spaltentrenner identifziert werden kann, werden Beispielzeilen der CSV-Datei gelistet und eine Eingabe erwartet.
+        -Cleaned: x = x+1-Workaround verbessert: der Doppelpunkt ist nicht mehr noetig.
+        -Fixed: Funktionsnamen koennen nun nicht mehr mit Ziffern beginnen oder Operatoren beinhalten.
+        -Added: Bei Datenplots werden nun automatisch die Spaltenueberschriften der Datensaetze als Legenden verwendet, wenn nichts anderes angegeben ist.
+        -Added: NumeRe aendert beim Start die Farbeinstellungen der Konsole nun selbststaendig.
+
+06 May 2014
+   v 1.0.0 "Biot" rev. 157
+
+     Change log:
+        -Added: Der NumeRe-Plotalgorithmus kann nun auch Bahnkurven darstellen: dazu wird der Parameter t verwendet, der standardmaessig im Intervall [0,1] liegt. Der Algorithmus benoetigt dazu mindestens 3 Funktionen, die durch Kommata getrennt angegeben werden muessen: X-WERTE,Y-WERTE, Z-WERTE. Fehlende Werte werden durch 0 ergaenzt. Es koennen mehrere Bahnkurven durch wiederholte Angabe der x-,y- und z-Werte erzeugt werden.
+        -Fixed: Wenn Funktionen mit mehreren Rueckgabewerten verwendet werden (und selbige durch Kommata miteinander verknuepft werden, z.B. beim Plotten), so werden deren Rueckgabewerte nun nicht mehr umgeordnet.
+        -Fixed: Der Plotparameter wurde zwischen den einzelnen Trajektorien nicht auf seine linke Grenze zurueckgesetzt. Wurde behoben.
+        -Added: Neue Option beim Plotten: rotate=THETA,PHI bestimmt die Ausrichtung des 3D-Plots. PHI dreht um die z-Achse, THETA kippt den Plot.
+        -Updated: Hilfeeintraege zu plot3d und mesh/surf/cont ueberarbeitet.
+        -Cleaned: rotate=THETA,PHI benoetigt nun nicht mehr beide Winkel. Nun koennen die zu aendernden Winkel durch "rotate=THETA," bzw. "rotate=,PHI" angegeben werden (Komma ist essentiell).
+        -Added: Neue Option beim Plotten: "open/noopen". Diese Option steuert, ob das erzeugte Bild extern geoeffnet werden soll oder nicht. Ist von Vorteil, wenn mehrere Plots in einer FOR-Schleife erzeugt werden sollen.
+        -Cleaned: Zeilenumbruch beim Befehl "get -plotparams" eingefuehrt.
+        -Fixed: Lapsus beseitigt, der den Aufruf der Hilfe zu "integrate", "extrema", "zeroes" und "diff" verhinderte.
+        -Cleaned: Der Zeilenumbruch in der Bildschirmausgabe wird nun zu Teilen automatisch bestimmt und an die Dimensionen des Fensters angepasst.
+        -Added: Wenn die Groesse des NumeRe-Fensters geaendert wird, so werden diese Aenderungen nun sofort ausgefuehrt.
+        -Updated: Eintraege in der Hilfe an vielen Stellen ueberarbeitet/erweitert.
+        -Fixed: "set -mode" konnte kein zusaetzliches String-Argument uebergeben werden. Wurde behoben.
+        -Added: Moeglichkeit eingefuehrt, waehrend der Laufzeit in den Debug-Mode zu wechseln (Passwortgeschuetzt).
+        -Fixed: Selbst definierte Funktionen koennen nun auch mit der NumeRe-Vektorsyntax umgehen.
+        -Added: Neue Plotoption "interpolate": Falls ein Datensatz mindestens so viele Punkte besitzt, wie die aktuelle Zahl der Samples, so werden die Datenpunkte als Funktionswerte interpretiert (z.B. zum numerischen Berechnen der Ableitung).
+        -Added: Zwei weitere Linien-/Farbstile beim Plotten hinzugefuegt.
+        -New: Plots werden nun standardmaessig kleiner und schlechterer Qualitaet dargestellt um Rechenzeit zu sparen und zeitintensives "Replotting" zum Optimieren zu vermeiden. Mit der Plotoption "hires" wird schliesslich eine hochaufloesende Darstellung des Plots erzeugt.
+        -Added: Die hohe Aufloesung kann nun auch fuer eine ganze Sitzung aktiviert werden, indem als Option "hires=all" gesetzt wird.
+        -Fixed: Wenn NumeRe durch Doppelklicken auf ein Skript gestartet wurde, wurde bei Plots nicht die richtige Schriftart verwendet. Wurde behoben.
+        -Added: Sollten bei "interpolate" weniger Datenpunkte, als der Wert von samples betraegt, verwendet werden, aber trotzdem noch mindesten 90%, so wird fuer diese Kurve automatisch auf "connect" umgeschalten.
+        -Cleaned: Wenn eigene Funktionen gespeichert werden, so wird zunaechst geprueft, ob bereits Funktionen diesen Namens gespeichert wurden und diese ueberschrieben. Alle anderen werden an die bestehenden Definitionen angehaengt. (Gespeicherte Definitionen werden damit nicht mehr aus Versehen ueberschrieben)
+        -Added: Zwei zusaetzliche Schalter zu "hires" hinzugefuegt: "hires=medium" aktiviert eine mittlere Aufloesung und "hires=allmedium" aktiviert selbige fuer eine ganze Sitzung.
+        -Fixed: Wenn '[' waehrend eines Plots in einem string verwendet wurde, konnte das zu einem unvorhergesehenen Verhalten fuehren. Wurde behoben.
+        -Fixed: Bei Plots werden die String-Optionen nun auch mit dem String-Parser ausgewertet.
+        -Fixed: Eine ungerade Zahl an Anfuehrungszeichen >= 3 wurde vom String-Parser nicht korrekt als Fehler erkannt und fuehrte zu einer Endlosschleife. Wurde behoben.
+        -Fixed: Automatischer Zeilenumbruch korrigiert: selbst gesetzte '$' wurden beim Zeichen Zaehlen nicht als gewollter Zeilenumbruch erkannt.
+        -Added: Plotoption: "silent/nosilent". Dies deaktiviert saemtliche Bildschirmausgaben (inkl. der Graphik selbst).
+        -New: Einfacher Animations-Algorithmus implementiert: die Plotoption "animate" aktiviert das Generieren einer GIF-Datei, wobei der Parameter "t" als Zeit verwendet wird. Mit "animate=WERT" kann die Zahl der zu rendernden Frames eingestellt werden.
+        -Added: Bei "plot3d" kann "animate" verwendet werden, um die Erzeugung der Trajektorie zu verfolgen.
+        -Fixed: Klammersalat bei selbst definierten Funktion reduziert und Fehler beseitigt, der durch das Maskieren einer Vektor-Funktion (Funktion mit mehr als einem Rueckgabewert) entstand. Fix verbessert: Built-In-Funktionen von Vektoren hatten Schwierigkeiten , die nun beseitigt sind.
+        -Updated: Hilfeeintraege zu "plot" und "plotoptions" aktualisiert.
+        -Added: Das Histogramm-Plugin kann nun unter Angabe von "cols=S1:S2" auch gezielte Spaltenbereiche auswerten.
+        -Cleaned: Das Histogramm-Plugin verwendet nun die Spalten-Titel als Legenden beim Erzeugen des Graphen.
+        -Updated: Erlaeuternde Beispiele zu manchen Hilfeeintraegen hinzugefuegt.
+        -Fixed: Bei Animationen sind die Zahl der zu rendernden Samples im 2D/3D-Fall auf 100 festgesetzt um RAM zu sparen.
+        -Cleaned: "integrate" erkennt nun anhand der uebergebenen Optionen, ob eine 2D-Integration erforderlich ist ("integrate FUNCTION -set x=0:1 y=0:1 precision=1e-4"). Ausserdem kann "precision=" durch "p=" abgekuerzt werden. Fehlt diese Option, wird der Standardwert 1e-3 verwendet.
+        -Updated: Hilfeeintrag zu "integrate" aktualisiert.
+        -Cleaned: Zahl der Argumente bei selbst definierten Funktionen auf 10 erhoeht. Dies sollte fuer die meisten Faelle vollkommen ausreichen. (Vorherige Definitionsdateien koennen natuerlich weiterverwendet werden)
+        -Cleaned: Der TeX-Parser ersetzt nun auch lange Indices "_INDEX" automatisch durch "_{INDEX}". Dabei ist auch eine Rekursive Darstellung moeglich: "_INDEX1_INDEX2" wird zu "_{INDEX1_{INDEX2}}"
+        -Added: Realteil der Kugelflaechenfunktionen bis zu Ordnung l = 3 durch die Funktion "Y(l,m,theta,phi)" hinzugefuegt.
+        -Added: Ordnungen 4 und 5 der Kugelflaechenfunktionen hinzugefuegt.
+        -New: Die Kommandos "break" und "continue" zu FOR-Schleifen und IF-Bedingungen hinzugefuegt. Hilfeeintraege entsprechend aktualisiert.
+        -Fixed: IF konnte Bedingungen der Art "(i/2 == rint(i/2))" nicht auswerten, da die schliessenden Klammern abgeschnitten wurden. Wurde behoben.
+        -Added: Sphaerische Besselfunktionen erster und zweiter Art bis zur Ordnung n <= 5 hinzugefuegt. (sbessel(n,x), bzw. sneumann(n,x)).
+        -Added: Sinus cardinalis hinzugefuegt.
+        -Added: Legendre-, Laguerre- und Hermite-Polynome hinzugefuegt: legendre(n,x), laguerre(n,x) und hermite(n,x). Ausserdem die Assoziierten Varianten: legendre_a(l,m,x) und laguerre_a(n,k,x)
+        -Updated: Alle Polynome und Y(l,m,theta,phi) sind nun durch Rekursionen dargestellt und nicht mehr auf eine Ordnung begrenzt.
+        -Updated: Sphaerische Besselfunktionen erster und zweiter Art bis zur Ordnung n <= 10 hinzugefuegt. Ausserdem gibt es fuer hoehere Ordnungen nun auch Naehrungen im Intervall [-30,30].
+        -Added: Bethe-Weizsaecker-Massenformel als "betheweizsaecker(N,Z)" implementiert.
+        -Updated: Funktionenliste mit weiteren Informationen zu den Funktionen versehen.
+        -Added: Mit dem Kommando "undefine FUNCTION()" kann die Funktion FUNCTION() wieder aus dem Speicher entfernt werden, wobei die leeren Argumentklammern angegeben werden muessen. Sie wird dabei auch aus der Definitionsdatei ("functions.def") entfernt!
+        -Cleaned: Zusaetzliche Infos zu den mathematischen Funktionen in die NumeRe-Hilfe unter "help -func" ausgelagert.
+        -Fixed: Rundungsfehler und Ungenauigkeiten in den definierten Polynomen beseitigt. Durch die Verwendung der Funktion "pow()" sind die "legendre_a(l,m,x)" nun auf ganz IR definiert (abgesehen von den Termen \propto \sqrt(1-x^2))
+        -Added: Curie und Gauss zur Einheitenumrechnung hinzugefuegt.
+        -Updated: Hilfeeintrag zur Einheitenumrechnung ueberarbeitet: alphabetische Sortierung, tabellarisches Layout, Dimensionenkuerzel hinzugefuegt.
+        -Updated: Neues Icon fuer NumeRe v1.0.0 "Biot"
+        -Added: Die NumeRe-Suche kann nun auch nach NumeRe selbst suchen: "find -NumeRe" gibt Versionsnummer und Dateipfad zurueck.
+        -New: Icon fuer NumeRe-Scripte hinzugefuegt. Das beiliegende Programm "regupd.exe" fuegt die entsprechenden Eintraege und Dateiverknuepfungen in der Windows-Registry hinzu.
+        -Updated: "extrema" und "zeroes" linearisieren nun den Funktionsverlauf zwischen den zwei endgueltig bestimmten Stuetzstellen und teilen ihr Intervall nicht nur durch zwei.
+        -New: Dateiexplorer implementiert: "list -files" zeigt alle Dateien/Ordner, die sich in den Standardordnern befinden. Mit "files=loadpath" (bzw. "savepath", "scriptpath" oder "plotpath") laesst sich die Darstellung auf einen der Ordner eingrenzen. Der Parameter "dir" listet nur die Unterverzeichnisse in den Ordnern. Mit dem Parameter "pattern=" (bzw. "p=") koennen Wildcards (*) und Pfade aehnlich einer Kombination von "cd" und "dir" in der WinConsole.
+        -Added: Der Dateiexplorer kann nun mittels "list -files=PFAD" die Dateien an einem beliebigen Ort anzeigen. Ein PFAD mit Leerzeichen muss wiederum mit umschliessenden Anfuehrungszeichen angegeben werden. Des Weiteren wurden die Standardordner-Syntax auf "<STANDARD>" geandert. (z.B. <savepath>) Das NumeRe-Stammverzeichnis ist dabei "<>". Diese "Tokens" koennen ebenfalls als ROOT in dem zu durchsuchenden Pfad verwendet werden.
+        -Updated: Entsprechenden Hilfeeintrag ergaenzt: "help -explorer"
+        -Added: Der Stringparser kann nun ggf. "0" vor einem Variablenwert ergaenzen: #~~VAR wird so viele Nullen ergaenzen, bis die Laenge des Strings der Zahl der "~"+1 entspricht (in diesem Fall also maximal 2)
+        -Updated: Zahl der angezeigten Konturlinien auf 35 erhoeht.
+        -Added: Die Tokens des Explorers (z.B. <loadpath>) koennen nun auch global verwendet werden.
+        -Cleaned: Kommando-Syntaxen angeglichen: wenn ein Parameter mit einem Wert versehen werden kann, ist dies nun in der Form "PARAMETER=WERT" moeglich. String-Werte brauchen keine Anfuehrungszeichen, so lange sie keine Leerstellen enthalten. Als Legacy-Option ist die alte Snytax noch immer moeglich.
+        -Fixed: Parameter-/Werterkennung verbessert: die Funktion, welche die Parameter erkennt, gibt nun auch die char-Position des ersten Zeichens des Parameters+1 zurueck (Funktion von bool nach int umdeklariert). Aufgrund des Indexshifts kann diese Funktion noch immer als bool verwendet werden.
+        -Fixed: Die Eingabeaufforderung wurde nicht korrekt ausgewertet/konnte nicht als Platzhalter in Schluesselwoertern verwendet werden. Wurde behoben.
+        -Added: Der automatische Zeilenumbruch wird nun auch fuer die verwendeten Strings verwendet, sofern sie auf der Console ausgegeben werden sollen.
+        -New: 3D-Plotting-Styles implementiert: surf3d, mesh3d und cont3d. Diese berechnen einen 3D-Plot anhand der drei Variablen x,y,z
+        -Added: Plotoption hinzugefuegt: "cut/nocut" schneidet den vorderen Quadranten aus der Darstellung aus, so dass ins Innere des Plots gesehen werden kann.
+        -New: Neue Plotting-Styles: "dens" und "dens3d". Diese Styles erzeugen Plots, deren Farbwerte dem Funktionswert entsprechen.
+        -Added: Heaviside-(Theta-)Funktion implementiert
+        -Updated: Theta-Funktion & dens zum Suchindex und der Liste nicht-definierbarer Funktionen hinzugefuegt.
+        -Added: Winkel-Umrechnungen implementiert: phi(x,y) berechnet den Azimuthal- theta(x,y,z) den Polarwinkel.
+        -Added: Vektor-Norm implementiert: norm(x,y,z,...) berechnet ||(x,y,z,...)|| := sqrt(x^2+y^2+z^2+...)
+        -New: Vector-Plotting-Styles implementiert: "vect" erzeugt einen 2D-Vectorfeld-Plot anhand zweier Funktionen "x(x,y),y(x,y)"; "vect3d" einen 3D-Vektorfeld aus "x(x,y,z),y(x,y,z),z(x,y,z)". Zusaetzliche Optionen sind "flength" (Vektoren fixierter Laenge), "flow" ("Stroemungsplot") & "pipe" (Amplitude als Linienstaerke).
+        -Added: Hilfeeintraege zu "vect" und "vect3d" ergaenzt.
+        -Fixed: Die Vektorsyntax ergaenzt nun Klammern, wenn im Inneren einer Vektorkomponente eine Rechenoperation durchgefuerht wird.
+        -Fixed: Ein Bug in der Auswertung des "ELSE"-Zweiges wurde behoben.
+        -Cleaned: Rework, um die Compilerwarnings zu entfernen.
+        -Updated: Vektorpfeile bei "vect3d" werden nun aus mehreren Datenpunkten berechnet und erscheinen groesser.
+
+07 March 2014
+   v 0.9.9 "Angstroem" rev. 155
+
+     Change log:
+        -New: Die Groesse des NumeRe-Fensters und des Consolen-Buffers koennen nun selbst eingestellt werden: "set -buffersize WERT" fuer die Buffergroesse, "set -windowsize x=X y=Y" fuer die Fenstergroesse (im letzteren Fall ist die Reihenfolge nicht von Belang und es muss auch nicht x UND y gesetzt werden)
+        -Added: "hist" und "stats" koennen nun auch mit "save" ohne einen Dateinamen aufgerufen werden. Es wird dann automatisch ein Dateiname gewaehlt.
+        -Cleaned: Die automatische Speicherung ist nun (bei mehreren zu speichernden Spalten) ein wenig schneller.
+        -New: NumeRe kann nun auch mit Blockkommentaren (#* Kommentar *#) umgehen. Diese duerfen auch ueber mehrere Zeilen verteilt sein.
+        -Updated: Entsprechenden Hilfeeintrag aktualisiert.
+        -New: Mit "delete -cache(i_1:i_2,j_1:j_2)" koennen ein oder mehrere Eintraege aus dem Cache entfernt werden. Wird zusaetzlich "i" oder "ignore" angehaengt, wird die Sicherheitsabfrage unterdrueckt.
+        -New: NumeRe kann nun auch Datenfiles einlesen, die Kommata als Dezimaltrennzeichen (oder gemischt) verwenden. Ausserdem wird nun auch "NaN" / "nan" / "NAN" (= "Not a Number") als Bezeichner fuer einen ungueltigen Wert unterstuetzt (bisher nur "---").
+        -Fixed: NumeRe kann nun auch Datenfiles einlesen, deren Spalten mit Tabulatoren (oder gemischt) getrennt sind.
+        -Fixed: Falls Datenfiles nicht von einer Leerzeile abgeschlossen wurden, wurde die letzte Zeile nicht eingelesen. Dies wurde behoben.
+        -Updated: Hilfeeintrag zu Datenfiles ueberarbeitet.
+        -New: Numerische Differentation in einer Dimension implementiert. Die Variable, bezueglich welcher abgeleitet werden soll, ist dabei beliebig, muss aber angegeben werden: "diff FUNCTION -set var=VAR pos=POS [eps=EPS]", wobei die Argumente wieder durch ihre Anfangsbuchstaben abgekuerzt werden koennen. "eps=" ist optional. Wird hier kein Wert angegeben, wird automatisch 1e-7 gewaehlt.
+        -Fixed: Kommandoerkennung im Falle fuehrender Leerstellen verbessert.
+        -Fixed: Bug behoben, der verhinderte "cache(a,b) = integrate[...]" korrekt auszuwerten.
+        -Added: Hilfeeintrag zur numerischen Differentiation "help -diff" hinzugefuegt.
+        -Added: Mit der neuen Option "connect" kann beim Plotten erzwungen werden, dass Datenpunkte verbunden werden. Dies funktioniert jedoch nicht, wenn Fehlerbalken aktiv sind. Hilfeeintraege entsprechend erweitert.
+        -Fixed: integrate und integrate2d geben nun nicht mehr "nan" zurueck, wenn bis an eine undefinierte Stelle integriert wird (z.B. integrate sqrt(1-x^2) -set x=0:1). Sollte allerdings ueber eine undefinierte Stelle hinweg integriert werden, wird nach wie vor "nan" fuer sqrt(-1) bzw. "inf" fuer 1/0 zurueckgegeben.
+        -Fixed: "plot" und Konsorten stellen nun auch Funktionen mit undefinierten Stellen korrekt dar (allerdings kann es aufgrund der endlichen Aufloesung zu "Pseudo-Asymptoten" kommen...).
+        -Cleaned: Das Kommando "diff" wurde ueberarbeitet: die korrekte Syntax lautet nun "diff FUNCTION -set VAR=POS [eps=EPS]", z.B: "diff x^2 -set x=1". Der Hilfeeintrag wurde entsprechend angepasst.
+        -Fixed: NumeRe ignoriert nun auch Leerzeilen inmitten eines Datenfiles (ebenso wie Zeilen, die nur aus Leerzeichen und tabs bestehen).
+        -Cleaned: Der Dateipfad zum aktuell geladenen Datenfile wird nun in der Titelzeile der Konsole verkürzt dargestellt. (Zwischenordner durch "/../")
+        -Added: Mit der neuen Option "points" koennen die berechneten Punkte der Funktionen auf der Kurve angezeigt werden (das Pendant zu "connect" fuer Datenplots)
+        -Fixed: Der Plotalgorithmus kommt nun auch mit NaN's zurecht, die aus dem Cache oder einem Datenfile stammen. Letzterer Fall ist vermutlich ziemlich unwahrscheinlich.
+        -New: Neues Kommando "extrema": Dieses Kommando berechnet die Positionen aller Extrema in einem gegebenen Intervall eines (ggf. nicht zu stark oszillierenden) Ausdrucks. Syntax: "extrema EXPR -set VAR=POS1:POS2 [min/max]" (min bzw. max filtert nach Minima bzw. Maxima und ist optional)
+        -Added: Hilfeeintrag zu "extrema" hinzugefuegt. "extrema" zur Stichwortsuche und der Liste nicht-definierbarer Funktionen hinzugefuegt.
+        -New: Neues Kommando "zeroes": Dieses Kommando bestimmt alle Nullstellen eines Ausdrucks in einem gegebenen Intervall. Syntax: "zeroes EXPR -set VAR=POS1:POS2". 
+        -Added: Hilfeeintrag zu "zeroes" hinzugefuegt. "zeroes" zur Stichwortsuche und der Liste nicht-definierbarer Funktionen hinzugefuegt.
+        -Updated: Default-Aufloesung von 11 auf 21 Samples fuer Intervallbreiten kleiner als 2 gesetzt.
+        -Cleaned: Zeilenumbrueche beim Ergebnis von Mehrfachausdruecke angepasst (Lange Floats mit Exponenten wurden nicht sauber dargestellt).
+        -New: Neues Kommando "replaceline" ("repl"): dieses Kommando kann innerhalb von FOR-Schleifen/IF-Verzweigungen eingesetzt werden, um EINFACHE Korrekturen in der Eingabe durchzufuehren (Tippfehler o.Ä.). Es kann keine FOR- oder IF-Deklarationen durch andere Ausdruecke ersetzen oder umgekehrt. Syntax: "replaceline -[line=ZEILE] "NEUE ZEILE"". Wenn keine Zeile angegeben wird, wird automatisch die letzte Eingabe ueberschrieben. Die Eingabe kann absolut (positiv) oder relativ (negativ) von der aktuellen Zeile erfolgen.
+        -Added: Hilfeeintrag zu "replaceline" hinzugefuegt: "help -replaceline"
+        -New: Neuer Parameter "-noquotes" bzw. "-nq" fuer den Stringparser: wird "-noquotes" bzw. "-nq" mit einem String uebergeben, so werden keine umschliessenden Anfuehrungszeichen dargestellt.
+        -Fixed: diff, zeroes und extrema waren nicht in der Lage -set x=cache(1,1) auszuwerten. Wurde behoben.
+        -Fixed: Selbst definierte Funktionen koennen nun auch mit anderen Funktionen (welche mehrere Argumente besitzen) aufgerufen werden. (Insbesondere mit cache(i,j) und data(i,j))
+        -Fixed: Wenn mehrere Datensaetze geplottet werden sollen und diese unterschiedliche Laengen aufweisen, werden nun nicht mehr "sinnlose" (0,0)-Punkte in ergaenzender Anzahl geplottet.
+        -Fixed: cache(:,i) bzw. data(:,i) stellt nun keine angehaengten Nullzeilen mehr dar (allerdings nach wie vor Nullzeilen zwischen gefuellten Zeilen).
+        -Fixed: Zusaetzliche Rundungsfehler behoben, wenn Daten aus data() oder cache() verwendet wurden. Diese werden nun standardmaessig mit sehr hoher Genauigkeit gelesen.
+        -Cleaned: FOR-Schleifen stellen die Auswertung nur noch in einer Zeile (statt wie zuvor in zwei Zeilen) dar.
+
+12 February 2014
+   v 0.9.8 "Ampere" rev. 151
+
+     Change log:
+        -New: Versionen tragen nun die Namen bekannter Physiker.
+        -Added: "integrate" bzw."integrate2d" koennen nun auch am Ende (und nur da) eines Ausdrucks verwendet werden. Sie werden vor dem restlichen Ausdruck ausgewertet, schreiben ihr Ergebnis in "ans", welche anstelle von "integrate" bzw. "integrate2d" in den Ausdruck kopiert wird (Damit kann nun das Ergebnis eines Integrals direkt an eine Variable uebergeben werden).
+        -New: Scripte koennen nun direkt per Kommandozeile durch "numere.exe SCRIPTNAME.nscr" gestartet werden. (.nscr ist wichtig, da ggf. hier noch weitere Dateitypen hinzukommen werden)
+        -New: Scripte koennen nun fest mit NumeRe verknuepft werden. Sie werden dann mit "Oeffnen mit" -> "NumeRe: Framework fuer Numerische Rechnungen" automatisch ausgefuehrt.
+        -Fixed: Automatische Speicherungen mit ungueltigen Feldern lesen selbige nun auch als ungueltig ein.
+        -Fixed: std::exceptions werden nun besser abgefangen und erfordern nicht mehr zwangslaeufig einen terminate() (Abgesehen von std::bad_alloc)
+        -Added: list -var zeigt nun auch den für die Variablen verwendeten Speicherplatz an.
+        -Cleaned: "random" an die Syntax von "plot" angeglichen: random kann nun mittels der Parameter "lines=" (l=), "cols=" (c=), "mean=" (m=) und "width=" (w=) innerhalb einer Zeile aufgerufen werden. Natuerlich ist der Parameter "o" (override) ebenso vorhanden.
+        -Cleaned: Die Automatische Speicherung speichert den Cache nur noch, so lange er kleiner als 128 MB ist.
+        -Fixed: Die umgekehrten Varianten der Kommandos "cache -clear", "data -clear", "data -load" (also "clear -cache", ...) hatten den "ignore"-Parameter nicht verstanden. Wurde behoben.
+        -New: Das Kommando "stats" (bzw. die Umkehrung als z.B. "data -stats") kann nun mit dem Parameter "save=FILENAME" versehen werden. Soll FILENAME Leerzeichen enthalten, ist es in Anfuehrungszeichen zu setzen.
+        -New: Das Kommando "hist" kann nun mit den Parametern "save=FILENAME", "bins=WERT", "cols=WERT" bzw. "width=WERT" versehen werden.
+        -Updated: Hilfeeintraege zu "hist", "stats" und "random" aktualisiert.
+        -Fixed: Wenn ein Script aus einem anderen Ordner als dem NumeRe-Stammverzeichnis gestartet wurde, erzeugte NumeRe die Standard-Ordner in diesem Verzeichnis. Dies wurde behoben.
+        -New: NumeRe legt nun bei jedem Start eine Backup-Datei der aktuellen Konfiguration an ("numere.ini.back"), die im Fehlerfall geladen wird.
+        -Fixed: Falls beim Plotten ein Legendenstring in der Form "f(a,b)" am Ende aller Ausdruecke erschien, wurde er nicht korrekt erkannt. Wurde behoben.
+        -Fixed: "+", "*" und "-" wurden vom TeX-Parser nicht korrekt erkannt. Wurde behoben.
+        -Added: Weitere Konstanten hinzugefuegt.
+        -New: "list -const" listet nun Konstanten inkl. ihrer phys. Einheiten (sofern vorhanden).
+
+02 February 2014
+   v 0.9.7 rev. 148
+
+     Change log:
+        -Updated: MathGL auf Version 2.2.1 aktualisiert.
+        -Added: Fahrenheit °F und Celsius °C zur Einheitenumrechnung (nach Kelvin) hinzugefügt.
+        -Added: Neuer Parameter fuer data -load, data -clear und cache -clear: mit "ignore" (z.B. data -load "data" ignore) wird keine Bestaetigung mehr abgefragt (Vorteilhaft bei einer automatisierten Auswertung mehrerer Datenfiles)
+        -Added: Neuer Parameter fuer "list": "-options" listet alle in NumeRe getaetigten Einstellungen.
+        -New: String-Argumente auf Kommandos (so wie data -load "datafilename") werden nun auch vom String-Parser ausgewertet und koennen daher auch mit #var beeinflusst werden.
+        -New: Legenden von Plots werden nun ebenfalls  mit dem String-Parser ausgewertet und koennen mit #var beeinflusst werden.
+        -Fixed: Der String-Parser kann nun auch mit Gleichheitszeichen in Strings umgehen (Fuer eine Syntax a la "var = " + #var).
+        -Cleaned: Display-Breite des NumeRe-UI von 54 auf 80 Zeichen erhoeht (Standardmaessige Breite der meisten Konsolen, sollte die Window-Resize-Funktion failen).
+        -Fixed: Den Cache-Algorithmus, welcher seine Groesse berechnete, verbessert (statt seine Groesse nur anzupassen, verdoppelt er seine Groesse so lange, bis die Groesse wieder passt -> Deutlich weniger "Resize"-Aufrufe) und dadurch die Schreibgeschwindigkeit vervielfacht.
+        -Cleaned: Parameter "-options" zu "-settings" geaendert, da intuitiver.
+        -Added: Eine Begruessung als Easteregg eingebaut.
+        -Added: Die Begruessung kann nun als Setting ein-/ausgeschalten werden.
+        -Cleaned: Code weitestgehend mit Kommentaren erlaeutert.
+        -Cleaned: Settings-Methoden weitestgehend als inline-Methoden deklariert.
+
+24 January 2014
+   v 0.9.6 rev. 141
+
+     Change log:
+        -Fixed: Einen Seg-Fault bei der Eingabe von FOR-Schleifen und (IF-Bedingungen) behoben.
+        -New: IF-Bedingungen implementiert: Syntax lautet wie folgt "if (BED) ... else ... endif". "BED" steht fuer die zu erfuellende Bedingung, die Kommandos muessen in einzelnen Zeilen stehen, wobei "else" nicht zwingend erforderlich ist (im Gegensatz zu "endif"). "elseif" existiert nicht, dies muss durch ein "else" und ein "if (BED)" in der naechsten Zeile simuliert werden. 
+        -Updated: Einen entsprechenden Hilfeeintrag ergaenzt ("help -if" oder "help -condition" oder "help -bedingung" oder "help -else") und zum Suchindex hinzugefuegt.
+        -Fixed: Der String-Parser kann nun auch #(a+b), etc. korrekt auswerten.
+        -Fixed: Ein Problem bei Funktionsdefinitionen, wenn im Ausdruck der zu definierenden Funktion eine Argumentliste auftauchte (z.B. " ... avg(a,c,trans,7) ... "), welche als Vektorausdruck interpretiert wurde, wurde behoben.
+        -Fixed: Falls bei Plots das Intervall mit Grossbuchstabigen Variablen bestimmt wurde, wurden diese als Kleinbuchstaben gelesen und folglich falsch interpretiert. Wurde behoben.
+        -Cleaned: "integrate" und "integrate2d" verwenden nun den eingegebenen Ausdruck als Antwort und nicht mehr den Ausdruck, in dem alle Funktionen durch ihre Definitionen ersetzt wurden (Von Vorteil bei langen Ausdruecken).
+        -Fixed: Falls sich ein Funktionsname einer definierten Funktion in einem string befindet, so wird dieser nun nicht mehr durch den Ausdruck ersetzt.
+        -New: Die Legenden bei Plots koennen nun direkt bestimmt werden, indem sie der Funktion in Anfuehrungszeichen uebergeben werden. Fehlt die Legende, wird automatisch eine Legende aus dem Ausdruck generiert.
+        -Added: Griechische Gross- und Kleinbuchstaben zum TeX-Parser hinzugefuegt, Token-Erkennung des TeX-Parsers verbessert.
+        -Fixed: Nun koennen auch Kommata in den Labels der Plots verwendet werden.
+        -New: Ein langer Ausdruck kann nun auch mittels zweier '\\' auf zwei oder mehr Zeilen ('\\' am Ende jeder Zeile ausser der letzten) verteilt werden. Dies kann die Uebersichtlichkeit deutlich erhoehen.
+        -Cleaned: NumeRe weist bei einem fehlerhaften Ausdruck in der Fehlermeldung auf die Stelle, wo der Fehler gefunden wurde. (Erleichtert die Fehlersuche)
+        -Cleaned: Die Fehlermeldungen, die der muParser wirft, sind nun auf Deutsch uebersetzt worden.
+        -Added: Universelle Gaskonstante "R" zu den definierten Konstanten hinzugefuegt.
+        -Updated: Highlighting fuer notepad++ ueberarbeitet.
+
+17 January 2014
+   v 0.9.5 rev. 136
+
+     Change log:
+        -Fixed: TeX-Parser fuer Legende, Labels und Titel ueberarbeitet.
+        -Added: mile, yard, foot, inch, cal zur Einheitenumrechnung hinzugefuegt.
+        -New: Faehigkeit, aus Skripten zu lesen ("script.nscr"), hinzugefuegt.
+        -Updated: Entsprechenden Hilfeeinstrag ("help -script") hinzugefuegt.
+        -Cleaned: Unterstuetzung fuer Scripte verbessert.
+        -Cleaned: Der "string-Parser" zeigt nicht mehr "string: " vor dem String an.
+        -Added: Logarithmische Skalierung bei Plots hinzugefuegt: "logscale" aktiviert allgemeine logarithmische Skalierung "xlog", "ylog" und "zlog" die logarithmische Skalierung der entsprechenden Achse (Falls eine solche auch angezeigt wird). Ausserdem wird (falls sinnvoll moeglich) das Darstellungsintervall auf >= 0 gesetzt.
+        -Updated: Hilfeeintrag zu "plot" entsprechend erweitert.
+        -Cleaned: Syntax von "integrate" und "integrate -2" (jetzt "integrate2" oder "integrate2d") an die Syntax von "plot" (etc.) angeglichen. Intervalle werden nun nur noch durch "a:b" angegeben.
+        -Updated: Hilfeeintrag zu "integrate" entsprechend ueberarbeitet.
+        -Fixed: Potentieller Fehler bei der neuen Syntax fuer "integrate" behoben: Wird eine Praezision eingegeben, die groesser als das Integrationsintervall ist, wird NumeRe eine neue Angabe abfragen.
+        -Cleaned: Falls der erzeugte Plot extern geoeffnet wird, zeigt NumeRe nun an, dass der Viewer wieder geschlossen werden muss, ehe NumeRe fortfahren kann.
+        -Added: Im Falle einer Integration mit vielen Datenpunkten, die dementsprechend viel Zeit in Anspruch nimmt, wechselt NumeRe's Statusanzeige nun auf 1%-Schritte.
+        -Cleaned: Syntax zu "for" an die Syntax zu "plot" angeglichen. Beschraenkung der Indexvariablen auf i,j,k und l aufgehoben. Beschraenkung der Zahl der Ausdruecke und der Verschachtelungen aufgehoben. Es ist nun auch moeglich, innerhalb einer Schleife andere Schleifen zu oeffnen und zu schliessen; Ausdruecke werden nun auch wirklich nur noch in der Schleife ausgefuehrt, in der sie aufgerufen werden.
+        -Fixed: Script-Kommentarstil zu "##" geandert, um den String-Parser fuer Ausdruecke der Form #x weiterverwenden zu koennen, ausserdem sind Kommentare nicht mehr auf ganze Zeilen beschraenkt.
+        -Cleaned: Tabbing-Stil zu den list-Befehlen "list -var", "list -const" und "list -exprvar" hinzugefuegt.
+        -Cleaned: Die Meldung, dass eine neue Variable initialisiert wurde, wird nun auch durch das angehaengte Semikolon ";" unterdrueckt.
+        -Fixed: Scripte koennen zur persoenlichen Uebersicht nun auch mit Tabulatoren eingerueckt werden.
+        -Fixed: toLowerCase-Funktion von den ANSI-Werten einer definierten System Code Page entkoppelt, indem die ANSI-Werte des aktuellen OS aus expliziten char-to-int-Konvertierungen berechnet werden.
+        -Added: Nun koennen (weitestgehend) alle Kommandos in einer FOR-Schleife automatisiert ausgefuehrt werden. Wenige werden ignoriert ("menue"  und "mode"), andere aus logischen Gruenden waehrend der Eingabe bereits ausgefuehrt: "help", "find", "list", etc...
+        -Added: Newline-Character "\n" implementiert: Wenn in  einem string "\n" eingegeben wird, bricht der String-Parser den String an dieser Stelle um.
+        -Added: Tab-Character "\t" implementiert: Wenn in einem string "\t" eingegeben wird, so fuegt der String-Parser einen horizontalen Tab an dieser Stelle ein.
+        -Added: Der Character "\" kann nun als Escape-Zeichen fuer die Anfuehrungszeichen verwendet werden: "Text mit \"Anfuehrungszeichen\" in der Mitte" wird "Text mit "Anfuehrungszeichen" in der Mitte" produzieren.
+        -Fixed: Die Plot-Option "otex" erzeugt nun drei Dateien im gewuenschten Zielverzeichnis, wobei "name.tex" die TikZ-Graphik, "namecolors.tex" die Deklarationen der Farben in der TikZ-Graphik und "namemain.tex" die eigentliche LaTeX-Hauptdatei enthaelt.
+        -Cleaned: Aufgrund des sehr umfassenden Hilfeeintrags zu "plot", wurde die Erlaeuterung der Plotoptionen in die Hilfe unter "help -plotoptions" ausgelagert und selbiger Abschnitt im urspruenglichen Eintrag verkuerzt.
+        -Added: psi, kn, l (liter), km/h und mph zur Einheitenumrechnung hinzugefuegt.
+        -Cleaned: Programmlizenz zur GNU GPL v3.0 konvertiert. (MathGL erfordert dies)
+        -Added: "script" und zugehoerige Befehle zum Satz nicht-definierbarer-Funktionen hinzugefuegt.
+        -New: Neues Kommando "ifndefined <function>": Dies ist eine Definitionsanweisung, die zuvor prueft, ob eine Funktion nicht bereits schon definiert ist. Ausgeschrieben etwa "wenn <function> nicht bereits definiert ist, definiere <function>"
+        -Added: "script" und "ifndefined" zur Stichwortsuche hinzugefuegt.
+
+09 January 2014
+   v 0.9.4 rev. 133
+
+     Change log:
+        -Added: Die Achsenbeschriftungen koennen nun mit "xlabel=Label", "ylabel=Label" bzw. "zlabel=Label" bearbeitet werden. Lange Beschrftungen mit Leerzeichen muessen dabei mit umschliessenden Anfuehrungszeichen angegeben werden.
+        -Updated: Hilfeeintrag zu "plot" entsprechend bearbeitet.
+        -Added: Plot-Dateinamen koennen nun auch (indem sie mit Anfuehrungszeichen umschlossen werden) mit Leerzeichen angegeben werden.
+        -Cleaned: Code teilweise kommentiert.
+        -New: Neue Schriftart fuer plots: "Pagella" (Palatino-Derivat). Die Font-Files sind im Ordner ".\fonts" zu finden.
+        -Applied: Schriftgroesse auf etwa die Haelfte reduziert.
+        -New: Neue Option fuer "plot": "title=Titel". Mit dieser Option kann ein optionaler Titel angegeben werden, der ueber dem Plot angezeigt wird. Lange Titel mit Leerstellen muessen dabei mit umschliessenden Anfuehrungszeichen angegeben werden.
+        -New: Mittels "set -viewer" kann der (absolute) Pfad zu einem Bildbetrachter angegeben werden, mit dem die erzeugten Plots automatisch betrachtet werden koennen. Hierzu bietet sich z.B. irfanView an.
+        -Fixed: Bei den Histogramm-Plots wurde die y-Achse nicht angezeigt, wenn die 0 nicht im betrachteten Bereich lag und die option "box" nicht zuvor gesetzt war. Wurde behoben.
+        -Fixed: Das Histogramm- und das Statistik-Plugin konnten ohne vorhandene Daten gestartet werden. Wurde behoben.
+        -Fixed: Ein kryptischer BADALLOC-Fehler wurde behoben, der entstand, wenn das Histogramm-Plugin unter Verwendung der Daten aus dem Cache vorzeitig abgebrochen wurde.
+
+08 January 2014
+   v 0.9.3 rev. 126
+
+     Change log:
+        -New: Wird ein Ausdruck mit ";" abgeschlossen, so unterdrueckt NumeRe die Ausgabe des Ergebnisses (von Vorteil beim gleichzeitigen Operieren auf langen Datenreihen).
+        -Fixed: Die Kontrolle der NumeRe-Schluesselwoerter beim Definieren eigener Funktionen wurde nicht vollstaendig durchgefuehrt und verhinderte simple Funktionsnamen wie "f(x)". Wurde behoben.
+        -New: Funktionen "degree()" und "radian()" hinzugefuegt, die Bogenmass in Grad und umgekehrt umrechnen.
+        -New: Exportmoeglichkeiten nach EPS und SVG hinzugefuegt: Aktivieren mittels der Angabe eines Dateinamen durch oeps=Name (fuer EPS), bzw. osvg=Name (fuer SVG).
+        -New: Konfigurationsdatei auf neues, variableres und sichereres Format aktualisiert. Die neue Datei ist nicht mehr abwaerts kompatibel, allerdings werden Konfigurationen im alten Format (Versionen kleiner 0.9.3) regulaer geladen und beim naechsten Speichern im neuen Format geschrieben.
+		-New: Exportmoeglichkeit nach TeX hinzugefuegt: Aktivieren mittels der Angabe eines Dateinamens durch otex=Name.
+
+05 January 2014
+   v 0.9.2 rev. 119
+
+     Change log:
+        -Added: 1 Torr \approx 133.322 Pa zur Einheitenumrechnung hinzugefuegt.
+        -Cleaned: 1 AU, 1 ly und 1 pc von den Konstanten zur Einheitenumrechnung verschoben.
+        -Added: Hilfeeintrag zur Einheitenumrechung (help -unit oder help -{) hinzugefuegt.
+        -New: Neue Parameter fuer "plot": "errorbars" & "yerrorbars". "errorbars" aktiviert Fehlerbalken in x- und y-Richtung, "yerrorbars" nur in y-Richtung. Erster benoetigt vier Datenspalten, zweiterer nur drei. Dabei lautet die Spaltenfolge: x,y,(delta_x), delta_y
+        -Fixed: Segmentation-Fault bei Angabe von zu vielen oder falschen Spalten bei "plot" oder "plot3d" abgefangen.
+        -Fixed: Segmentation-Fault bei Angabe von gar keinen Spalten bei "plot3d" behoben.
+        -Added: Der Parameter "errorbars" aktiviert bei "plot3d" Fehlerbalken in x-, y- und z-Richtung.
+        -Updated: Hilfeeintraege zu "plot" und "plot3d" mit "errorbars" (etc.) aktualisiert.
+        -Fixed: Die Reihenfolge der Spalten kann beim Plotten nun auch umgekehrt werden, falls sie in der Tabelle in der falschen Reihenfolge tabelliert sind.
+        -Fixed: NumeRe speichert nun nicht mehr den gewaehlten Dateinamen fuer Plots von Plot zu Plot.
+        -New: Neuer Plotstil "grad": "grad" erzeugt eine 2D-Projektion einer Funktion z = f(x,y), wobei (einige, nicht alle) Gradient-Linien (staerkste Aenderung) eingezeichnet werden. Rot steht dabei fuer positive Steigung, blau fuer eine negative. Extrema werden hell hervorgehoben.
+        -Cleaned: Default-Dateinamen fuer Plots (teilweise) verlaengert: "mesh": meshgrid.png, "surf": surface.png, "grad": gradient.png & "cont": contour.png
+        -Updated: Hilfeeintrag zu "grad" hinzugefuegt.
+        -Updated: "grad" und "cont" zum Suchindex hinzugefuegt.
+        -Fixed: NumeRe-Kommandos zu der Liste an nicht-neu-definierbaren Funktionen hinzugefuegt.
+        -New: Eingabe-Prompt: "??" in einem Ausdruck zwingt NumeRe eine Eingabe abzufragen. Mit "??[WERT]" kann ein Default "WERT" angegeben werden, der verwendet wird, wenn keine Eingabe getaetigt wird. Dies ist im Zusammenhang mit FOR-Schleifen interessant.
+        -Updated: Hilfeeintrag zum Eingabe-Prompt hinzugefuegt: "help -??" oder "help -prompt"
+
+02 January 2014
+   v 0.9.1 rev. 116
+
+     Change log:
+        -New: Dritte Lichtquelle bei "surf"-plots hinzugefuegt fuer noch plastischere Ausgabe.
+        -Cleaned: Kommandos intuitiver und fehlertoleranter gestaltet: fuer Parameter, die es bei mehreren Kommandos gibt (z.B. "-save" oder "-load"), existiert nun auch die Umkehrung: "data -load == load -data" oder "cache -save == save -cache"
+        -New: Neuer Plotting-Style "cont": 3D-Konturplot mit zum z-Wert passenden Farbe. Zu verwenden wie "mesh" oder "surf".
+        -Added: Zwei neue Plot-Parameter zu "cont": "pcont" projiziert die Konturlinien auf die untere Ebene, "lcont" versieht die Konturlinien mit ihren z-Werten. (Die Umkehrungen lauten "nolcont" und "nopcont")
+        -Added: "pcont" und "lcont" koennen nun auch verwendet werden, um "surf" oder "mesh" zu modifizieren.
+		-Fixed: TeX-Converter hatte die Legenden bei "mesh" und "surf" nicht korrekt umgewandelt. Wurde behoben.
+		-Updated: Hilfeeintrag zu "mesh" und "surf" mit "cont" und Parametern erweitert.
+		-Cleaned: Linienstile fuer "mesh" und "surf" verbessert (nun Differenzierbarer). "lcont" verwendet bei "mesh" und "surf" auch die Konturlinienstile von "mesh" und "surf".
+		-Added: Boost-Library-Credits hinzugefuegt.
+
+29 December 2013
+   v 0.9.0 rev. 114
+
+     Change log:
+        -New: Plotting-Funktionalitaet implementiert! Syntax fuer 1D-Plotting: plot Funktion(x) -set Parameter; fuer 2D-Plotting mesh Funktion(x,y) -set Parameter fuer ein Meshgrid und surf Funktion(x,y) -set Parameter fuer eine glatte Oberflaeche.
+        -New: Standardspeicher-Ordner fuer alle Plots wird ueber die Einstellungen verwaltet, gespeichert und dort auch geaendert. (set -plotpath "Pfad")
+        -Added: 1D-Multiplotting hinzugefuegt (z.B.: "plot f(x), g(x), h(x), ...")
+        -Added: Ausgabe-Dateiname kann nun mit dem Parameter opng=Name angegeben werden (z.B.: plot cos(x) -set opng=cos erzeugt eine PNG-Datei "cos.png" mit dem Graphen des cos(x)). Derzeit wird nur PNG unterstuetzt. Falls kein Name angegeben wird, waehlt NumeRe den Standardnamen. Vorhandene Dateien mit demselben Namen werden stets ueberschrieben!
+        -Updated: Hilfeeintraege zu "set" und "get" aktualisiert.
+        -Added: Auto-Legende im 1D-Fall hinzugefuegt.
+        -Added: 2D-Multiplotting hinzugefuegt (z.B.: "mesh g(x,y), k(x,y), ...")
+        -Added: Auto-Legende und Auto-Konturlinien im 2D-Fall bei 2D-Multiplotting hinzugefuegt.
+        -Fixed: Range-Einstellungen koennen nun auch mit komplexen Ausdruecken, wie z.B. [0:_2pi] umgehen.
+        -Fixed: Die Plotparameter sind nun nicht mehr Case-Sensitive
+        -New: Das Histogramm-Plugin erzeugt nun automatisch eine graphische Darstellung eines Histogramms, wenn gleichzeitig auch der Datensatz gespeichert wird. Die Plotparameter wie "grid" und "box" sollten zuvor gesetzt werden.
+        -Cleaned: Falls das Histogramm einer gesamten Tabelle erzeugt werden soll, wird der erzeugte Datensatz nun in eine Datei geschrieben (die Bins werden nach absolutem Min- und Max bestimmt) und die graphische Ausgabe wird ebenfalls in eine Datei geschrieben.
+        -Fixed: Histogramm-Intervallerkennung und -Intervallbereich verbessert und erweitert, damit wirklich alle(!) Werte erfasst werden.
+        -Fixed: Legenden aus dem Graphen geschoben.
+        -New: TeX-Legenden-Parser implementiert.
+        -Fixed: Achsenbeschriftungen werden nun nur noch angezeigt, wenn auch Achsen angezeigt werden.
+        -Added: Sofern bei Plots der Parameter "box" nicht gesetzt wurde (oder ueber "nobox" deaktiviert wurde) und das Achsenkreuz aktiviert ist, werden die Achsen so verschoben, dass sie durch den Ursprung verlaufen und Pfeile an ihren Enden angezeigt.
+        -Updated: Credits mit den Daten zu "MathGL" aktualisiert.
+        -Added: Moeglichkeit Datenpunkte aus "data()" und "cache()" zu plotten, hinzugefuegt. Die Syntax orientiert sich an der ueblichen Syntax fuer diese Speicherobjekte. Geplottet werden stets nur die Spalten der Speicherobjekte.
+        -Fixed: Automatische Range-Anpassung auf Datenpunkte aus "cache()" und "data()" erweitert. Falls keine Intervallgrenzen explizit angegeben werden, waehlt NumeRe automatisch den Datenbereich der Datenpunkte. Dieser wird ggf. ergaenzt, wenn eine zusaetzliche Funktion geplottet wird, deren y-Range groesser als die der Datenpunkte ist.
+        -Added: Moeglichkeit, 3D-Datenarrays zu plotten mittels des Kommandos "plot3d" hinzugefuegt.
+        -Cleaned: Legenden fuer Datenplots zeigen nun die entsprechende Eingabe (z.B. "cache(:,1:3)") an, statt der vorherigen "Daten #i".
+        -Fixed: Bug behoben, der bei zwei oder mehr zu plottenden Funktionen und Datenplots fuer eine Endlosschleife sorgte.
+        -Updated: Hilfeeintrag zu "hist" auf Basis des neuen Verhaltens aktualisiert.
+        -Added: Plot-Befehle ("plot", "plot3d", "mesh" und "surf") zum Suchindex hinzugefuegt.
+        -Added: Hilfeeintraege zu "plot", "plot3d" und "mesh/surf" hinzugefuegt.
+        -New: Weitere Lichtquelle bei "surf"-plots hinzugefuegt, um die Ausgabe noch plastischer wirken zu lassen.
+
+19 December 2013
+   v 0.8.9 rev. 104
+
+     Change log:
+        -Fixed: Kommandoparametersuche verbessert, so dass nun auch Parameter, die sich in einzelnen Wortfolgen ueberschneiden besser voneinander getrennt werden.
+        -Fixed: Die Stichwortsuche, die Hilfe und alle Parameter der Kommandos sind nun nicht mehr Case-Sensitive. Die Kommandos sind immer noch Case-Sensitive, um ggf. eine Großgeschriebene Alternative als Variable verwenden zu koennen (z.B. "Integrate" als Ergebnis von "integrate")
+        -Fixed: Den Fix der Multi-Argument-Funktionen innerhalb der Vektorsyntax ("{{a,b,c}}") nochmals ueberarbeitet.
+        -Cleaned: Funktionen zur Definition eigener Funktionen in das Objekt "Define" ausgelagert.
+        -New: Definierte Funktionen koennen nun mittels des Parameters "-save" auf dem Kommando "define" gespeichert und mit dem Parameter "-load" geladen werden. Die Funktionen werden IMMER (!) in die Datei "functions.def" im Stammverzeichnis gespeichert.
+        -Updated: Hilfeeintrag zu "define" entsprechend ueberarbeitet.
+
+18 December 2013
+   v 0.8.8 rev. 96
+
+     Change log:
+        -Fixed: "cache()" und "data()" zu den nicht-neu-definierbaren Funktionen hinzugefuegt.
+        -Fixed: Als Abbruchbedingung bei rekursiv definierten Funktionen die Zahl der definierten Funktionen eingefuegt, um Endlosschleifen abzufangen.
+        -Fixed: "define" und "redefine" pruefen nun bereits (soweit moeglich), ob die neu definierte Funktion eine Endlosschleife erzeugt.
+        -Fixed: Bug behoben, bei denen zwei Funktionen, von denen eine der beiden identisch dem letzten Teil der anderen Funktion benannt ist (z.B.: "unc(x)" und "func(x)"), beim Aufruf zu einem seltsamen Verhalten führten.
+
+17 December 2013
+   v 0.8.7 rev. 91
+
+     Change log:
+        -Updated: "define" und "redefine" zum Suchindex hinzugefuegt.
+        -Updated: Heuristik der Hilfefunktion verbessert.
+        -Typo: Diverse Rechtschreib- und Tippfehler korrigiert.
+        -Updated: "random"-Hilfeintrag ueberarbeitet.
+        -Cleaned: Diverse Funktionen in eine externe include ausgelagert.
+        -Fixed: "define" (bzw. "redefine") erlaubt nun nicht mehr die Angabe von mehr als drei Funktionsargumente.
+        -Fixed: Mehrfachausdruecke in Funktionsdefinitionen werden nun (weitestgehend) korrekt umgesetzt.
+        -Fixed: Durch die Vektorsyntax "{{a,b,c}}" automatisch generierte Mehrfachausdruecke werten nun auch Multi-Argument-Funktionen korrekt aus.
+
+16 December 2013
+   v 0.8.6 rev. 85
+
+     Change log:
+        -New: NumeRe passt nun beim Start die Fenstergroesse der Console auf ein vernuenftiges Mass an. Sollte das nicht gelingen, wird eine Fehlermeldung ausgegeben und die Standardwerte verwendet.
+        -New: NumeRe's Icon hat einen frischeren Look bekommen.
+        -Fixed: NumeRe zaehlt fuer die Autosave-Einstellung nun die Sekunden seit der ersten Aenderung des Caches nach der letzten Speicherung und nicht immer seit der letzten Speicherung.
+        -Fixed: Ein Bug verhinderte den Aufruf des Parameters "-exprvar" auf dem Kommando "list". Dies wurde behoben.
+        -New: Mittels des Kommandos "define" und der Syntax "define funktionsname(x) := funktion(x)" bzw. "define funktionsname(x,y) := funktion(x,y)" (wobei auch andere Variablen als x und y moeglich sind), koennen nun auch einfache Funktionen fuer den Wiederholten Aufruf gespeichert werden.
+        -Updated: Entsprechenden Hilfeeintrag hinzugefuegt.
+        -New: Erweiterung der Funktionsdefinitionen auf 3 Variablen.
+        -New: Der Parameter "-define" fuer das Kommando "list" listet die selbst definierten Funktionen.
+        -Added: Der Integrator und die For-Schleife verstehen nun auch eigene, definierte Funktionen.
+        -Fixed: Es sind nun auch rekursive Funktions-Definitionen moeglich, z.B: f(x) := cos(x) und daraus g(x,y) := f(x)*exp(-y)
+        -Added: Die Konstante "_2pi" wurde als Abkuerzung zu "2*_pi" eingefuehrt.
+        -Added: Das Kommando "redefine", das eine Umdefinition einer selbst definierten Funktion ermoeglicht, wurde implementiert.
+        -Fixed: In NumeRe vordefinierte Funktionen koennen nun nicht mehr ueberschrieben werden.
+        -Added: NumeRe zeigt nun an, wie viele Funktionen noch definiert werden koennen.
+
+09 December 2013
+   v 0.8.5 rev. 82
+
+     Change log:
+        -Fixed: Der neue Umgang mit den Parametern verhinderte die Verwendung des Parameters "-showf". Dies wurde behoben.
+        -New: Eine rudimentaere Auto-Save-Funktion wurde implementiert.
+        -New: Das Intervall der Auto-Save-Funktion wird ueber das Ini-File gesteuert und ist per Default auf 30 sec gesetzt. (Dies wird aber nur bei fortlaufenen Eingaben umgesetzt und auch dann nur waehrend idle-Zeiten)
+        -New: Das Kommando "quit" besitzt nun den Parameter "-as", der ggf. eine automatische Speicherung des Caches (unter SAVEPATH/cache.tmp) anlegt.
+        -New: Die automatische Speicherung des Caches wird nun beim naechsten Programmstart wieder automatisch in den Speicher geladen.
+        -Added: Die automatische Speicherung kann mittels des Kommandos "cache -clear" (oder von Hand) geloescht werden.
+        -Updated: Hilfe-Eintraege ueberarbeitet.
+
+09 December 2013
+   v 0.8.4 rev. 80
+
+     Change log:
+        -New: Das Random-Plugin ueberschreibt nun nicht mehr per default die bereits vorhandenen Eintraege im Cache, sondern haengt sie rechts daneben an.
+        -Added: Es wurde der Parameter "-o" fuer das random-plugin eingefuehrt, der ein Ueberschreiben der vorhandenen Daten erlaubt.
+        -Fixed: Der Kommando-Parser von NumeRe ist nun nicht mehr auf eine spezielle Zahl an Leerzeichen zwischen Kommando und Parameter sensitiv.
+        -Fixed: Der Kommando-Parser ist nun auch nicht mehr auf eine spezielle Zahl an Leerzeichen zwischen einem zusaetzlichen (string/int)-Argument sensitiv.
+        -Fixed: Die Hilfefunktion ignoriert nun auch fuehrende oder abschliessende Leerzeichen.
+
+08 December 2013
+   v 0.8.3 rev. 74
+
+     Change log:
+        -Cleaned: Der Fenstertitel wird - sobald NumeRe gestartet wird - nun in "NumeRe: Framework fuer Numerische Rechnungen (v [Version])" geaendert.
+        -New: NumeRe verfolgt nun, ob der Inhalt des Caches gespeichert wurde, oder nicht. Dies wird auch im Fenstertitel mittels eines Sternchens "*" angedeutet.
+        -New: Falls beim Beenden von NumeRe noch ungesicherte Daten im Cache sind, fragt NumeRe nun, ob diese gesichert werden sollen (Es wird dann ein Standard-Name gewaehlt).
+        -New: Um die Speicherabfrage beim Beenden zu Umgehen, kann der Parameter "-i" ("-ignore") an den Befehl "quit" uebergeben werden.
+
+06 December 2013
+   v 0.8.2 rev. 71
+
+     Change log:
+        -Cleaned: Kosmetische Korrektur: Der Prozentsatz der Messwerte im Vertrauensintervall (Statistik-Plugin) wird nun auf 2 Nachkommastellen gerundet.
+        -New: NumeRe kann nun auch rudimentaer mit strings umgehen: Strings werden durch Anfuehrungszeichen "string" verdeutlicht. Vielfachausdruecke konnen durch Kommata dargestellt werden ("string1", "string2",...) und Verknuepfungen mit dem Pluszeichen: "string1" + "string2".
+        -Added: Die Kopfzeilen des Datenfile- und des Cache-Objekts koennen nun auch direkt ausgelesen und bearbeitet werden. Mittels der Syntax "data(#,i)" bzw. "cache(#,i)" kann auf das i-te Kopfzeilenelement zugegriffen und selbiges veraendert werden.
+        -Added: NumeRe kann nun auch Variablenwerte in Strings umwandeln, indem vor dem Namen der Variablen das '#' gesetzt wird: #i wird "0" produzieren, falls i = 0.
+        -Updated: Hilfe-Eintrag zu Zeichenketten "#" oder "strings" hinzugefuegt.
+
+05 December 2013
+   v 0.8.1 rev. 66
+
+     Change log:
+        -Cleaned: Kosmetische Korrektur: Der Cache zeigt nun nicht mehr an, dass er erfolgreich vorbereitet wurde.
+        -Cleaned: Kosmetische Korrektur: Die Spalten im Statistik-Plugin sind nun per Default ein Zeichen schmaler.
+        -Cleaned: Kosmetische Korrektur: Es besteht nun die Moeglichkeit, dass nicht mehr die gesamte Tabelle angezeigt wird, wenn sie mehr als 11 Zeilen besitzt.
+        -Added: Die Darstellung der Tabellen wird nun in der Konfiguration gespeichert und kann mittels des Kommandos "set -compact" gesteuert werden.
+        -Added: Fuer die Objekte "data" und "cache" wurden die Parameter "-showf" hinzugfuegt, welche die Kompakt-Einstellung umgehen.
+
+05 December 2013
+   v 0.8.0 rev. 55
+
+     Change log:
+        -New: Icon eingebunden.
+        -Cleaned: Knappe Legal-Informationen beim Programmstart eingebunden.
+
+05 December 2013
+   v 0.7.9 rev. 47
+
+     Change log:
+        -Fixed: Ein Intervall-Fehler bei der Statusabfrage brachte irrtuemliche Statusmeldungen (teils auch negative) zum Vorschein. Wurde behoben.
+        -New: Die Multi-Argument-Funktion "prd(x,y,z,...)", die das Produkt ihrer Argument berechnet, wurde implementiert.
+        -Fixed: Wenn die Koepfe beim Laden einer Datei nicht korrekt identifiziert werden konnten, wurden diese Fehlerhaften Koepfe trotzdem gespeichert. Nun werden stattdessen automatische Koepfe verwendet.
+        -Added: Die Funktion "rint(x)", die x auf die naheliegendste Ganzzahl rundet, wurde implementiert.
+        -Added: Die Funktion "round(x,n)", die x auf n Nachkommastellen rundet, wurde implementiert.
+
+03 December 2013
+   v 0.7.8 rev. 45
+
+     Change log:
+        -Fixed: Das Statistik-Plugin hat bei der Groesse "iVeInt" zwar korrekt gerechnet, aber das Ergebnis nicht als Prozentsatz angegeben, wie durch das "%" angedeutet wurde. Dies wurde behoben.
+        -Cleaned: Der Cache hatte neue Spalten stets in der Form "Spalte n" und nicht wie die Konsistenz eigentlich erfordert haette "Spalte_n". Dies wurde ebenfalls korrigiert.
+        -Updated: Interne Plugin-Versionsnummern auf den neuesten Stand gebracht.
+        -Cleaned: Die Indizes fuer data() und cache() beginnen nun bei 1 (intuitiver) statt bei 0.
+        -Fixed: Falls bei data() oder cache() ganze Zeilen- oder Spaltenbereiche ausgewaehlt waren und der dabei zweite Index kleiner als der erste war, fuehrte das zu einer Endlosschleife. Dies wurde behoben.
+        -New: For-Schleifen und (1D und 2D)-Integration zeigt nun den Rechenstatus in Prozent an. Dies ist inbesondere bei der 2D-Integration und mehrdimensionalen For-Schleifen interessant. Im Falle der For-Schleifen wird dies nur dann angezeigt, wenn die Zwischenwert-Ausgabe unterdrueckt ist (Parameter "-sv").
+        -Fixed: Die Kommando-Heurisitik verbat die sinnvolle Nutzung von "int" bis "integrat" als Variablennamen. Dies wurde behoben.
+
+29 November 2013
+   v 0.7.7 rev. 37
+
+     Change log:
+        -New: Die Stichwortsuche (find -begriff) ordnet nun nach Relevanz, wobei die Uebereinstimmungen mit Funktionsnamen hoeher bewertet werden, als Treffer in der Beschreibung einer Funktion.
+        -New: Mittels der Kommandos "stats -data" bzw. "stats -cache" oder "hist -data" bzw. "hist -cache" wird sofort das Plugin auf entsprechendem Datentraeger ausgefuehrt. Eine Abfrage des Speichersatzes entfaellt.
+        -New: Die Kommandos "data -stats" bzw. "data -hist" und "cache -stats" bzw. "cache -hist" wurden als Synonyme zu den oben definierten Kommandos eingefuehrt.
+        -Fixed: Aufgrund einer Aenderung in der Definition einer Methode auf dem Cache kam es zu Fehlern im Statistik- bzw. Histogramm-Plugin. Dies wurde behoben.
+        -Fixed: Bei Funktionen, die mehrere Argumente verwerten konnten, kam es bei Datentraegern mit unterschiedlich langen Spalten zu Fehlern, da zusaetzliche "0-en" angehaengt wurden. Wurde ebenfalls behoben.
+
+28 November 2013
+   v 0.7.6 rev. 29
+
+     Change log:
+        -Fixed: Schoenheitskorrektur beim Histogramm-Plugin: nachdem Histogramme aller Spalten erzeugt wurden, trat das Artefakt "|<- |" in der Eingabezeile auf. Behoben.
+        -Cleaned: Bei Ausdruecken, die mehrere Rueckgabewerte haben (z.B: data(:,0)) war es in der bisherigen Darstellung moeglich, dass die Ausgabe am Zeilenende umgebrochen und unschoen am Anfgang der naechsten Zeile fortgesetzt wurde. Dies wurde abgefanen/verbessert.
+        -Fixed: Ein weiterer Bug der eine Zuweisung der Form "cache(num(cache(:,0)),0)" verhinderte, wurde behoben.
+        -New: Die Funktion "std(a,b,c,...)", die die Standardabweichung "sqrt(sum(x-mu)^2/N)" berechnet, wurde implementiert.
+        -New: Eine Suche-Funktion wurde implementiert und kann mittels "search -begriff" oder "find -begriff" aufgerufen werden.
+        -Added: Die Suche-Funktion kann nun auch mit beliebig vielen Begriffen (durch Leerzeichen zu trennen) umgehen und ordnet die Ergebnisse nach Relevanz (Trefferzahl).
+
+26 November 2013
+   v 0.7.5 rev. 28
+
+     Change log:
+        -Fixed: Ein Bug, der verhinderte, dass das ein oder beide Argumente von data() oder cache() von anderen Funktionen abhaengen koennen, wurde behoben.
+        -Fixed: Eine fehlende Rekursion verhinderte eine Syntax der Form "data(num(data(:,0)),0)" (also ein Argument von data, das von data selbst abhaengt). Diese Rekursion wurde hinzugefuegt.
+
+25 November 2013
+   v 0.7.4 rev. 26
+
+     Change log:
+        -New: Die Funktion "num(a,b,c,...)", die die Zahl ihrer Argumente zurueckgibt, wurde implementiert. Mittels num(data(:,0)) kann damit zum Beispiel die Anzahl der Zeilen von data erhalten werden.
+
+25 November 2013
+   v 0.7.3 rev. 21
+
+     Change log:
+        -New: Die Moeglichkeit, einzelne Eintraege eines Datenfiles im Rechner-Modus zu verwenden, wurde hinzugefuegt. Dazu ist die Syntax "data(Zeile, Spalte) noetig.
+        -New: Dasselbe wurde auch fuer den Cache mittels "cache(Zeile, Spalte)" implementiert. Im Gegensatz zum Datenfile (das READ-ONLY ist) kann in den Cache an der Stelle i,j auch geschrieben werden. Der Cache ist dabei zu verwenden wie eine gewoehnliche Variable.
+        -Updated: Hilfeeintrag zu "data" und "cache" entsprechend ueberarbeitet.
+        -Fixed: Fehler bei Logik-Ausdruecken zwischen "data()" und "cache()", der ebendiese Ausdruecke verhinderte, behoben.
+        -Cleaned: Unnoetige Speicher-Abfragen bei "data -show" bzw. "cache -show" entfernt. Speichern geht im Rechner-Modus explizit nur noch durch den Parameter "-save"
+        -New: Moeglichkeit, ganze Zeilen- bzw. Spaltenbereiche von "data" bzw. "cache" zu verarbeiten, wurde implementiert. Die Syntax lautet in diesem Fall z.B. "i_0:i_1", wobei i_0 der erste und i_1 der zweite Zeilen-bzw. Spalten-Index ist. Es werden auch halbseitige (z.B. "i_0:") oder grenzenfreie Angaben (also ":") akzeptiert. Hier werden die fehlenden Grenzen automatisch logisch ergaenzt.
+        -Cleaned: Der Parser erkennt nun auch Unterschiede in dem Umgang mit Ausdruecken wie "sin(data(:,1))" und "sum(data(:,1))". Im ersteren Fall gibt der Parser einen "Vektor" mit n Sinuswerten zurueck, im zweiten Fall einen Skalar mit der Summe aus allen n Elementen.
+        -Updated: Hilfeeintraege zu "data" und "cache" nochmals angepasst.
+
+20 November 2013
+   v 0.7.2 rev. 14
+
+     Change log:
+        -Fixed: Die Funktion "list -exprvar" war nicht freigeschalten. Wurde behoben.
+        -Cleaned: Die Kopfzeilen in den "list"-Auflistungen wurde dem restlichen Layout angeglichen.
+
+19 November 2013
+   v 0.7.1 rev. 6
+
+     Change log:
+        -New: NumeRe versteht nun auch (englische) Text-Kommandos (aehnlich wie der NumeRe-Rechner). Textkommandos koennen dabei durch Parameter (verdeutlicht durch ein vorangestelltes "-") und diese wiederum durch Argumente versehen werden (Abhaengig vom Kommando).
+        -New: Globale Hilfe-Funktion hinzugefuegt: aufzurufen mittels "help -<topic>". In der Hilfe koennen auch die Kommandos nachgeschlagen werden.
+        -New: Bei Kommandos, die ein Parameter als Argument ZWINGEND benoetigen, selbiges aber nicht eingegeben wurde, wird automatisch der entsprechende Hilfe-Artikel aufgerufen.
+        -Cleaned: Die Text-Kommandos sind (fast) vollstaendig im NumeRe-Rechner und in NumeRe selbst verfuegbar. Ggf. wird dann zwar nur die Hilfe aufgerufen, aber zumindest keine Uneinsichtige Fehlermeldung angezeigt.
+        -Cleaned: Der NumeRe-Rechner wird nun per Default gestartet. Dies wird in der Konfigurations-Datei gespeichert. Außerdem wurde der NumeRe-Rechner zum "Rechner-Modus" und NumeRe selbst zum "Menue-Modus" umgetauft.
+        -New: Eine (nur) kommando-basierte Einstellung, die es moeglich macht, dass der Parser nicht bei jedem Start geprueft wird, wurde hinzugefuegt. Damit startet NumeRe mindestens doppelt so schnell.
+        -Updated: Als Folge wurde die Struktur der Datei "numere.ini" veraendert. Dies ist aber mit vorherigen Versionen kompatibel, da im Falle des Fehlens einer Einstellung automatisch der Default geladen wird.
+
+14 November 2013
+   v 0.6.1 rev. 5
+
+     Change log:
+        -New: Die Funktionen binom(n,k) (Binomialkoeffzient von n und k) und faculty(n) (Fakultaet von n) wurden im NumeRe-Rechner implementiert.
+        -New: Die Funktion "help" kann nun einen weiteren Parameter entgegen nehmen, der das Hilfethema definiert. Z.B. "help -integrate".
+        -Cleaned: Die Funktion "list" kann nun auch ohne Parameter aufgerufen werden und liefert als Antwort eine Liste der definierten Parameter dieser Funktion.
+
+14 November 2013
+   v 0.6.0 rev. 0
+
+     Change log:
+        -Fixed: Die Integrations-Funktion wurde verfeinert (Loest einfache, konstante Integrale auf Basis der analytischen Loesung) und verlaeuft nun noch stabiler. Ausserdem werden die meisten fehlerhaften Eingaben abgefangen.
+        -New: Auf Basis der bereits vorhandenen Integrations-Funktion wurde eine Integrations-Funktion in 2 Dimensionen implementiert. Bietet die meisten Moeglichkeiten, die man von einer Integration in 2D erwarten wuerde (inkl. Grenzen, die von einer Variable abhaengen)
+        -Added: Die For-Schleife erkennt nun auch die simple Grenzeneingabe (i = 0..10) und kann weitestgehend sinnvoll damit umgehen.
+        -New: Inkrement- (i++) und Dekrement-(i--)-Operatoren wurden im NumeRe-Rechner (und speziell der For-Schleife) implementiert.
+        -Fixed: Es wurde ein Work-Around fuer den x=x+a-Bug implementiert. Diese Gleichung muss nun in der Form x := x+a eingegeben werden, um das korrekte Ergebnis zu erhalten.
+
+10 November 2013
+   v 0.5.7 rev. 32
+
+     Change log:
+        -New: Die Integrations-Funktion des NumeRe-Rechners rundet nun auf eine sinnvolle Anzahl an Nachkommastellen (basierend auf der Praezision, die man bei der Integration angegeben hatte).
+        -Fixed: Die Integrations-Funktion wurde stabiler und intelligenter gestaltet: Konstante Funktionen werden erkannt, vertauschte Grenzen koennen verarbeitet werden, fehlerhafte Eingaben werden weitestgehen abgefangen.
+
+07 November 2013
+   v 0.5.7 rev. 32
+
+     Change log:
+        -New: Die Integration des NumeRe-Rechners verwendet nun Trapeze, um den tatsaechlichen Kurvenverlauf zu naehern. Dies erhoeht die Genauigkeit um einen Faktor 2.
+        -Updated: Die Funktion, welche die erweiterten Befehle listet, wurde erweitert und aktualisiert.
+
+07 November 2013
+   v 0.5.6 rev. 25
+
+     Change log:
+        -New: Eine Funktion, die alle erweiterten Befehle listet, wurde zum NumeRe-Rechner hinzugefuegt.
+
+07 November 2013
+   v 0.5.5 rev. 23
+
+     Change log:
+        -New: Der NumeRe-Rechner beherrscht nun auch die Erzeugung einer FOR-Schleife. Es ist eine Verschachtelung von bis zu 4 Schleifen moeglich.
+        -New: Der NumeRe-Rechner ist nun zu einer einfachen numerischen Integration in der Lage.
+        -Fixed: Ein Bug, der die linke Grenze bei der Integration automatisch auf 0 setzte, wurde behoben.
+
+07 November 2013
+   v 0.5.4 rev. 17
+
+     Change log:
+        -New: Die Variable "ans" ist nun fest in den NumeRe-Rechner integriert und beinhaltet stets das letzte Ergebnis. Beim Aufruf mehrerer Ausdruecke zugleich verwendet "ans" das erste Ergebnis.
+        -Updated: Liste der Konstanten ueberarbeitet und ergaenzt.
+        -New: Eine einfache Einheitenumrechnung (von nicht-SI nach SI) durch Anhaengen der Einheit implementiert.
+
+05 November 2013
+   v 0.5.4 rev. 17
+
+     Change log:
+        -New: Im NumeRe-Rechner eine Funktion zur Auflistung logischer Ausdruecke implementiert.
+        -Added: Der NumeRe-Rechner zeigt nun auch die Werte der Variablen, wenn sie gelistet werden.
+        -Added: Die Praezision des NumeRe-Rechners ist nun global mit der Praezision von NumeRe verknüpft.
+
+05 November 2013
+   v 0.5.3 rev. 11
+
+     Change log:
+        -New: Im NumeRe-Rechner eine Funktion, die alle definierten Funktionen listet, definiert.
+        -Added: Numerische, physikalische Konstanten eingefuegt.
+
+04 November 2013
+   v 0.5.2 rev. 10
+
+     Change log:
+        -Fixed: Kleinere kosmetische Korrekturen
+
+04 November 2013
+   v 0.5.1 rev. 9
+
+     Change log:
+        -Fixed: Buggy-MinGW-WorkAround fuer die C++11-Standardfunktionen to_string() und stoi() implementiert.
+        -New: muParser (Commando line mathematic parser) integriert. Enthaelt bis jetzt nur Basis-Funktionen.
+        -Cleaned: Versionsinformationen-Handling der IDE mittels des Headers "version.h" ueberlassen.
+
+31 October 2013
+   v 0.4.2 rev. 0
+
+     Change log:
+        -New: Neues Logo als "Splash"  eingebunden.
+        -Updated: Maximale Zeilenlaenge auf 54 Zeichen erhoeht.
+        -Cleaned: Logo in die Funktion void BI_splash() ausgelagert.
+        -Cleaned: Horizontale Trennlinien in die Funktion void BI_hline() und die globale Konstante const int nLINE_LENGTH ausgelagert.
+
+31 October 2013
+   v 0.4.1 rev. 0
+
+     Change log:
+        -Fixed: Beim Hinzufuegen von weiteren Datenreihen wurde der standardmaessige Ordnerpfad nicht angezeigt und uebergeben. Dies wurde behoben.
+        -Fixed: (Statistik) die Prozentzahl fuer die Daten im Vertrauensintervall konnte bei Tabellen mit Nullzeilen falsch sein. Wurde ebenfalls behoben.
+
+31 October 2013
+   v 0.4.0 rev. 0
+
+     Change log:
+        -Added: Die Einstellungen, die im Programm vorgenommen werden, werden nun in der Datei "numere.ini" gespeichert und beim naechsten Start wieder automatisch geladen.
+        -Added: Der Standard-Import-Ordner kann nun auch selbst bestimmt werden.
+
+31 October 2013
+   v 0.3.5 rev. 10
+
+     Change log:
+        -Fixed: NumeRe unterstuetzt nun auch Leerstellen in Dateinamen und -pfaden.
+        -Fixed: Es koennen auch Leerstellen fuer die Tabellenheader eingeben werden, die automatisch durch Unterstriche "_" ersetzt werden.
+        -Fixed: In Datenfiles, die nur eine Datenreihe tragen, eine Leerstelle im Dateinamen/-pfad haben und keine Kommentarzeile beinhalten, werden die Leerstellen im Tabellenkopf auch automatisch durch "_" ersetzt.
+        -Fixed: Automatisch generierte Kopfzeilen enthalten nun auch keine Leerstellen mehr.
+
+31 October 2013
+   v 0.3.4 rev. 0
+
+     Change log:
+        -New: Release unter neuem Namen "NumeRe: Framework fuer Numerische Rechnungen".
+        -Cleaned: Legals, Versions- und Buildinfo unter "Credits" ausgelagert.
+
