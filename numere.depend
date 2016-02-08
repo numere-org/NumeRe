@@ -398,7 +398,7 @@
 	"settings.hpp"
 	"datafile.hpp"
 
-1454180068 source:c:\cpp\numere\tools.cpp
+1454859933 source:c:\cpp\numere\tools.cpp
 	"tools.hpp"
 
 1454400515 c:\cpp\numere\define.hpp
@@ -435,7 +435,7 @@
 	"filesystem.hpp"
 	"tools.hpp"
 
-1450433764 source:c:\cpp\numere\script.cpp
+1454659344 source:c:\cpp\numere\script.cpp
 	"script.hpp"
 
 1454233757 source:c:\cpp\numere\loop.cpp
@@ -456,7 +456,7 @@
 	"built-in.hpp"
 	"tools.hpp"
 
-1454530071 c:\cpp\numere\procedure.hpp
+1454657801 c:\cpp\numere\procedure.hpp
 	<iostream>
 	<string>
 	<cmath>
@@ -477,7 +477,7 @@
 	"output.hpp"
 	"script.hpp"
 
-1454540487 source:c:\cpp\numere\procedure.cpp
+1454670049 source:c:\cpp\numere\procedure.cpp
 	"procedure.hpp"
 
 1452812596 c:\cpp\numere\documentation.hpp
@@ -570,10 +570,10 @@
 1433063232 source:c:\cpp\numere\graph_helper.cpp
 	"graph_helper.hpp"
 
-1454320239 source:c:\cpp\numere\plotting.cpp
+1454860212 source:c:\cpp\numere\plotting.cpp
 	"parser_functions.hpp"
 
-1452185204 source:c:\cpp\numere\stringparsing.cpp
+1454698360 source:c:\cpp\numere\stringparsing.cpp
 	"parser_functions.hpp"
 
 1450164414 source:c:\cpp\numere\matrixoperations.cpp

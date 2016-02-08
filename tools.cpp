@@ -322,6 +322,8 @@ bool getIntArgument(const string& sCmd, int& nArgument)
 // Entfernt fuehrende und angehaengte Leerstellen/Tabulatoren
 void StripSpaces(string& sToStrip)
 {
+    if (!sToStrip.length())
+        return;
     // --> Am Anfgang und am Ende weder ' ' noch '\t' gefunden? Zurueckkehren <--
     if (sToStrip[0] != ' ' && sToStrip[sToStrip.length()-1] != ' ' && sToStrip[0] != '\t' && sToStrip[sToStrip.length()-1] != '\t')
         return;

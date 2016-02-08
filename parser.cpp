@@ -3003,7 +3003,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                             oLogFile << toString(time(0) - tTimeZero, true) << "> FEHLER: Zusammengesetzte oder eingefügte Daten können nicht neu geladen werden" << endl;
                         break;
                     case PLOT_ERROR:
-                        cerr << LineBreak("|-> Ein gewünschter Plotstil kann nicht umgesetzt werden.", _option) << endl;
+                        cerr << LineBreak("|-> Ein Plot kann nicht erzeugt werden. Entweder ist ein Plotstil nicht bekannt, oder die darzustellenden Funktionen/Datensätze konnten nicht identifiziert werden.", _option) << endl;
                         if (oLogFile.is_open())
                             oLogFile << toString(time(0) - tTimeZero, true) << "> FEHLER: Plotfehler" << endl;
                         break;

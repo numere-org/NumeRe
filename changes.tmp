@@ -4,14 +4,14 @@ Added	Temporaer erzeugte Matrizen in "matop" koennen nun auch mit der Bereichssy
 Fixed	Matrixmultiplikationen verwenden nun nicht mehr die falschen Matrizen, wenn ein uebergebenes Datenobjekt nicht existiert.
 Cleaned	Scripte koennen nun vereinfacht mittels "start SCRIPT" statt "start -script=SCRIPT" gestartet werden.
 Fixed	Die Spaltenueberschriften leerer Spalten koennen nun wieder geaendert und gelesen werden.
-Fixed	"pct()" und "cmp()" koennen nun mit Datenobjekte als Vergleichswerte umgehen.
+Fixed	"pct()" und "cmp()" koennen nun mit Datenobjektwerten als Vergleichswerte umgehen.
 Fixed	Bei "hist" funktioniert "tocache=CACHE()" nun erwartungsgemaess.
 Added	Die Zeichenkettenfunktion "valtostr(VAL)" verallgemeinert "#VAL".
 Fixed	Absolute Pfadangaben in der "@-Include-Syntax" der Scripte koennen nun erwartungsgemaess verwendet werden.
 Cleaned	Die dargestellten slices in "cont3d" und "dens3d" sind nun erwartungsgemaess die jeweils zentralen slices.
 Cleaned	Krummlinige Koordinatensaetze koennen nun mit groesseren Winkelbereichen umgehen.
 Fixed	Krummlinige Koordinatensaetze verwenden nun als Winkelbereiche korrekt Vielfache von PI.
-Cleaned	Krummlinige Koordinatensaetze konnen nun mittels *ticklabels="" und *scale=SCALE beeinflusst werden.
+Cleaned	Achsen von krummlinigen Koordinatensaetze konnen nun mittels *ticklabels="" und *scale=SCALE beeinflusst werden.
 Added	Der Stil des Koordinatengitters kann mittels 'gridstyle="STYLE" ' geaendert werden.
 Cleaned	"this~" ist nun auch der Standardnamensraum der aktuellen Prozedur.
 Cleaned	1'mol ist nun als Stoffmenge definiert und gibt die Zahl der Teilchen zurueck.
@@ -24,7 +24,7 @@ Fixed	Ein Fehler, der Datenpunkte fremder (neuerer) Caches beim Entfernen eines 
 Cleaned	Die Stichwortsuche- und die Begruessungs-Datenbank wurden in externe Dateien ausgegliedert.
 Fixed	"fit data()" wird nun korrekt als "fit data(:,1:2)" interpretiert.
 Cleaned	"fit data() -with=Fit(x)" wird nicht mehr jedes mal "Fit(x)" mit weiteren umschliessenden Klammern umdefinieren.
-Cleaned	Zentrale Aenderung im Fitting-Algorithmus: Sollte der Jacobian oder der Varianzenvektor NaNs enthalten, so werden diese nicht mehr auf 0 sondern auf moeglichst grosse Werte gesetzt. Damit bleibt der Algorithmus bei Funktionen, die viele NaNs enthalten nicht mehr in einem solchen Regime stecken.
+Cleaned	Zentrale Aenderung im Fitting-Algorithmus: Sollte der Jacobian oder der Varianzenvektor NaNs enthalten, so werden diese nicht mehr auf 0 sondern auf moeglichst grosse Werte gesetzt. Damit bleibt der Algorithmus bei Funktionen, die viele NaNs enthalten, nicht mehr in einem solchen Regime stecken.
 Fixed	"{VARS} = VALUES" funktioniert nun erwartungsgemaess.
 Added	Die Parameter des Fit-Algorithmus koennen nun mittels "restrict=[PARAM_RESTRICTS]" eingeschraenkt werden.
 Removed	"headedit" wurde entfernt. Die direkte Syntax mittels "DATA(#,J1:J2) = HEADJ1,...,HEADJ2" ist variabler und maechtiger.
@@ -37,4 +37,5 @@ Fixed	Vorzeichen in Achsenbeschriftungen werden nun nach der gleichen Logik wie 
 Fixed	"edit data(#,#)" funktioniert nun erwartungsgemaess.
 Cleaned	NumeRe verwendet nun "viridis" als Standard-Farbschema.
 Added	Selbst definierte Funktionen koennen nun auch beliebige Zahlen an Argumenten haben, wenn hierfuer "..." als Argument angegeben wurde.
-Added	Mehrere Prozeduren koennen nun in einer Prozedurdatei angelegt werden. Nur die namensgebende Prozedur kann von aussen angesprochen werden, die anderen sind implizit "private".
+Added	Mehrere Prozeduren koennen nun in einer Prozedurdatei angelegt werden. Nur die namensgebende Prozedur kann von aussen angesprochen werden, die anderen sind implizit "private" und muessen mittels des namespace "thisfile~" aufgerufen werden.
+Fixed	Wenn bei einem Plot weder Funktion noch Datensatz angegeben wird, wird nun eine sinnvolle Fehlermeldung zurueckgegeben.
