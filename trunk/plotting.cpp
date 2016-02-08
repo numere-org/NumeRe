@@ -415,8 +415,10 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
             }
         }
 
-        if (!sFunc.length())
+        if (!sFunc.length() && vPlotCompose.size() > 1)
             continue;
+        else if (!sFunc.length())
+            throw PLOT_ERROR;
 
         if (!nPlotCompose)
         {
