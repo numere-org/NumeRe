@@ -24,6 +24,7 @@ Procedure::Procedure() : Loop(), Plugin()
 {
     sProcNames = "";
     sCurrentProcedureName = "";
+    sLastWrittenProcedureFile = "";
     sProcKeep = "";
     sProcPlotCompose = "";
     sNameSpace = "";
@@ -69,15 +70,15 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
     //static double* dVarAdress = 0;
 
     if (!_parser.ActiveLoopMode() || (!_parser.IsLockedPause() && !(nFlags & 2)))
-        _parser.ClearVectorVars();
+        _parser.ClearVectorVars(true);
     bool bMultLinCol[2] = {false, false};
     int i_pos[2];
     int j_pos[2];
     //bool bFault = false;
     bool bWriteToCache = false;
     Returnvalue thisReturnVal;
-    thisReturnVal.dNumVal = NAN;
-    thisReturnVal.sStringVal = "";
+    //thisReturnVal.dNumVal = NAN;
+    //thisReturnVal.sStringVal = "";
     int nNum = 0;
     value_type* v = 0;
 
@@ -109,8 +110,10 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
 
     // --> Keine Laenge? Ignorieren! <--
     if (!sLine.length() || sLine[0] == '@')
+    {
+        thisReturnVal.vNumVal.push_back(NAN);
         return thisReturnVal;
-
+    }
     // --> Kommando "global" entfernen <--
     if (findCommand(sLine).sString == "global")
     {
@@ -124,6 +127,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
         {
             // --> Ergaenze die Eingabe zu sProcKeep und beginne einen neuen Schleifendurchlauf <--
             sProcKeep += sLine.substr(0,sLine.length()-2);
+            thisReturnVal.vNumVal.push_back(NAN);
             return thisReturnVal;
         }
     }
@@ -146,12 +150,14 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
         if (!sProcPlotCompose.length() && findCommand(sLine).sString == "compose")
         {
             sProcPlotCompose = "plotcompose ";
+            thisReturnVal.vNumVal.push_back(NAN);
             return thisReturnVal;
         }
         else if (findCommand(sLine).sString == "abort")
         {
             sProcPlotCompose = "";
             //cerr << "|-> Deklaration abgebrochen." << endl;
+            thisReturnVal.vNumVal.push_back(NAN);
             return thisReturnVal;
         }
         else if (findCommand(sLine).sString != "endcompose")
@@ -165,7 +171,10 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
                 || sCommand.substr(0,4) == "surf"
                 || sCommand.substr(0,4) == "mesh")
                 sProcPlotCompose += sLine + " <<COMPOSE>> ";
-            return thisReturnVal;
+            {
+                thisReturnVal.vNumVal.push_back(NAN);
+                return thisReturnVal;
+            }
         }
         else
         {
@@ -236,14 +245,22 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
         || sLine.substr(0,4) == "mode"
         || sLine.substr(0,5) == "menue")
     {
+        bool bSupressAnswer_back = bSupressAnswer;
+        bSupressAnswer = bProcSupressAnswer;
         switch (BI_CheckKeyword(sLine, _data, _out, _option, _parser, _functions, _pData, _script, true))
         {
             case  0: break; // Kein Keywort: Mit dem Parser auswerten
             case  1:        // Keywort: Naechster Schleifendurchlauf!
                 SetConsTitle(_data, _option);
+                thisReturnVal.vNumVal.push_back(NAN);
+                bSupressAnswer = bSupressAnswer_back;
                 return thisReturnVal;
-            default: return thisReturnVal;  // Keywort "mode"
+            default:
+                thisReturnVal.vNumVal.push_back(NAN);
+                bSupressAnswer = bSupressAnswer_back;
+                return thisReturnVal;  // Keywort "mode"
         }
+        bSupressAnswer = bSupressAnswer_back;
     }
 
 
@@ -390,7 +407,9 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
         /* --> So lange wir im Loop sind und nicht endfor aufgerufen wurde, braucht die Zeile nicht an den Parser
          *     weitergegeben werden. Wir ignorieren daher den Rest dieser for(;;)-Schleife <--
          */
+        thisReturnVal.vNumVal.push_back(NAN);
         return thisReturnVal;
+
     }
 
     // --> Gibt es "??" ggf. nochmal? Dann rufe die Prompt-Funktion auf <--
@@ -425,7 +444,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
         int nReturn = parser_StringParser(sLine, sCache, _data, _parser, _option, bProcSupressAnswer);
         if (nReturn == 1)
         {
-            thisReturnVal.sStringVal = sLine;
+            thisReturnVal.vStringVal.push_back(sLine);
             return thisReturnVal;
         }
         else if (!nReturn)
@@ -459,6 +478,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
             StripSpaces(sj_pos[0]);
             if (!si_pos[0].length() || !sj_pos[0].length())
             {
+                thisReturnVal.vNumVal.push_back(NAN);
                 return thisReturnVal;
             }
             _parser.SetExpr(si_pos[0] + "," + sj_pos[0]);
@@ -492,6 +512,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
             if (bMultLinCol[0] && bMultLinCol[1])
             {
                 cerr << LineBreak("|-> FEHLER: Kann Ergebnisse nicht zugleich an Zeilen und Spalten zuweisen!", _option) << endl;
+                thisReturnVal.vNumVal.push_back(NAN);
                 return thisReturnVal;
             }
             if (parser_ExprNotEmpty(si_pos[0]))
@@ -553,7 +574,8 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
     // --> Jetzt weiss der Parser, wie viele Ergebnisse er berechnen muss <--
     if (nNum > 1)
     {
-        thisReturnVal.dNumVal = v[0];
+        for (int i = 0; i < nNum; ++i)
+            thisReturnVal.vNumVal.push_back(v[i]);
         if (!bProcSupressAnswer)
         {
             //cerr << std::setprecision(_option.getPrecision());
@@ -606,7 +628,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
     }
     else
     {
-        thisReturnVal.dNumVal = v[0];
+        thisReturnVal.vNumVal.push_back(v[0]);
         /*if (isinf(vAns))
         {
             cerr << "INF catch!" << endl;
@@ -615,25 +637,33 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
         {
             if (_option.getbDebug())
                 mu::console() << _T("|-> DEBUG: i_pos = ") << i_pos[0] <<  _T(", j_pos = ") << j_pos[0] << endl;
-            _data.writeToCache(i_pos[0], j_pos[0],sCache.substr(0,sCache.find('(')), thisReturnVal.dNumVal);
+            _data.writeToCache(i_pos[0], j_pos[0],sCache.substr(0,sCache.find('(')), thisReturnVal.vNumVal[0]);
         }
         if (!bProcSupressAnswer)
-            cerr << std::setprecision(_option.getPrecision()) << "|-> ans = " << thisReturnVal.dNumVal << endl;
+            cerr << std::setprecision(_option.getPrecision()) << "|-> ans = " << thisReturnVal.vNumVal[0] << endl;
     }
     if (!_parser.ActiveLoopMode() || (!_parser.IsLockedPause() && !(nFlags & 2)))
-        _parser.ClearVectorVars();
+        _parser.ClearVectorVars(true);
     return thisReturnVal;
 }
 
-bool Procedure::setProcName(const string& sProc)
+bool Procedure::setProcName(const string& sProc, bool bInstallFileName)
 {
     if (sProc.length())
     {
         string _sProc = sProc;
+        //cerr << sProc << endl;
+        //cerr << sProcNames << endl;
 
-        if (sProcNames.length() && _sProc.substr(0,9) == "thisfile~")
+        if (sProcNames.length() && !bInstallFileName && _sProc.substr(0,9) == "thisfile~")
         {
             sCurrentProcedureName = sProcNames.substr(sProcNames.rfind(';')+1);
+            sProcNames += ";" + sCurrentProcedureName;
+            return true;
+        }
+        else if (sLastWrittenProcedureFile.length() && bInstallFileName && _sProc.substr(0,9) == "thisfile~")
+        {
+            sCurrentProcedureName = sLastWrittenProcedureFile.substr(0,sLastWrittenProcedureFile.find('|'));
             return true;
         }
         else if (_sProc.substr(0,9) == "thisfile~")
@@ -692,8 +722,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
     bool bReadingFromInclude = false;
     int nIncludeType = 0;
     Returnvalue _ReturnVal;
-    _ReturnVal.dNumVal = 1.0;
-    _ReturnVal.sStringVal = "";
+    //_ReturnVal.dNumVal = 1.0;
+    //_ReturnVal.sStringVal = "";
     nCurrentLine = 0;
     nFlags = 0;
     nReturnType = 1;
@@ -855,7 +885,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 if (sProcCommandLine[sProcCommandLine.length()-1] == ';')
                 {
                     bProcSupressAnswer = true;
-                    bSupressAnswer = true;
+                    //bSupressAnswer = true;
                     sProcCommandLine = sProcCommandLine.substr(0,sProcCommandLine.length()-1);
                 }
 
@@ -868,7 +898,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     {
                         sProcCommandLine = "";
                         bProcSupressAnswer = false;
-                        bSupressAnswer = false;
+                        //bSupressAnswer = false;
                         continue;
                     }
                 }
@@ -877,8 +907,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 sProcCommandLine = "";
                 if (bProcSupressAnswer)
                     bProcSupressAnswer = false;
-                if (bSupressAnswer)
-                    bSupressAnswer = false;
+                /*if (bSupressAnswer)
+                    bSupressAnswer = false;*/
             }
 
             if (fInclude.eof())
@@ -1203,7 +1233,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
     while (!fProc_in.eof())
     {
         bProcSupressAnswer = false;
-        bSupressAnswer = false;
+        //bSupressAnswer = false;
         if (!sCmdCache.length())
         {
             if (!bReadingFromInclude)
@@ -1351,7 +1381,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     if (sProcCommandLine[sProcCommandLine.length()-1] == ';')
                     {
                         bProcSupressAnswer = true;
-                        bSupressAnswer = true;
+                        //bSupressAnswer = true;
                         sProcCommandLine = sProcCommandLine.substr(0,sProcCommandLine.length()-1);
                     }
 
@@ -1401,7 +1431,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             {
                                 sProcCommandLine = "";
                                 bProcSupressAnswer = false;
-                                bSupressAnswer = false;
+                                //bSupressAnswer = false;
                                 continue;
                             }
                         }
@@ -1483,8 +1513,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     sProcCommandLine = "";
                     if (bProcSupressAnswer)
                         bProcSupressAnswer = false;
-                    if (bSupressAnswer)
-                        bSupressAnswer = false;
+                    /*if (bSupressAnswer)
+                        bSupressAnswer = false;*/
                 }
 
                 if (fInclude.eof())
@@ -1628,7 +1658,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     {
                         if (sCmdCache[i] == ';' && !isInQuotes(sCmdCache, i))
                         {
-                            bSupressAnswer = true;
+                            //bSupressAnswer = true;
                             bProcSupressAnswer = true;
                             sProcCommandLine = sCmdCache.substr(0,i);
                             sCmdCache.erase(0,i+1);
@@ -1650,7 +1680,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             }
             else if (sProcCommandLine.find(';') == sProcCommandLine.length()-1)
             {
-                bSupressAnswer = true;
+                //bSupressAnswer = true;
                 bProcSupressAnswer = true;
                 sProcCommandLine.pop_back();
             }
@@ -1663,7 +1693,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                         if (i != sProcCommandLine.length()-1)
                             sCmdCache = sProcCommandLine.substr(i+1);
                         sProcCommandLine.erase(i);
-                        bSupressAnswer = true;
+                        //bSupressAnswer = true;
                         bProcSupressAnswer = true;
                     }
                     if (i == sProcCommandLine.length()-1)
@@ -2392,6 +2422,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             Procedure _procedure(*this);
 
             unsigned int nPos = 0;
+            int nProc = 0;
             while (sProcCommandLine.find('$', nPos) != string::npos && sProcCommandLine.find('(', sProcCommandLine.find('$', nPos)) != string::npos)
             {
                 unsigned int nParPos = 0;
@@ -2463,11 +2494,28 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     {
                         Returnvalue _return = _procedure.execute(__sName, __sVarList, _parser, _functions, _data, _option, _out, _pData, _script, nth_procedure+1);
                         if (!_procedure.nReturnType)
-                            sProcCommandLine = sProcCommandLine.substr(0,nPos-1) + sProcCommandLine.substr(nParPos+1);
-                        else if (_return.sStringVal.length())
-                            sProcCommandLine = sProcCommandLine.substr(0, nPos-1) + _return.sStringVal + sProcCommandLine.substr(nParPos+1);
+                            sProcCommandLine = sProcCommandLine.substr(0, nPos-1) + sProcCommandLine.substr(nParPos+1);
                         else
-                            sProcCommandLine = sProcCommandLine.substr(0,nPos-1) + toCmdString(_return.dNumVal) +  sProcCommandLine.substr(nParPos+1);
+                        {
+                            replaceReturnVal(sProcCommandLine, _parser, _return, nPos-1, nParPos+1, "PROC~["+__sName+"~"+toString(nProc)+"_"+toString((int)nth_procedure)+"_"+toString((int)nCurrentLine)+"]");
+                            nProc++;
+                        }
+                        /* if (_return.vStringVal.size())
+                        {
+                            string sReturn = "{";
+                            for (unsigned int v = 0; v < _return.vStringVal.size(); v++)
+                                sReturn += _return.vStringVal[v]+",";
+                            sReturn.back() = '}';
+                            sProcCommandLine = sProcCommandLine.substr(0, nPos-1) + sReturn + sProcCommandLine.substr(nParPos+1);
+                            //sProcCommandLine = sProcCommandLine.substr(0, nPos-1) + _return.sStringVal + sProcCommandLine.substr(nParPos+1);
+                        }
+                        else
+                        {
+                            _parser.SetVectorVar("~PROC["+__sName+"_"+toString(nProc)+"]", _return.vNumVal);
+                            sProcCommandLine = sProcCommandLine.substr(0,nPos-1) + "~PROC["+__sName+"_"+toString(nProc)+"]" +  sProcCommandLine.substr(nParPos+1);
+                            nProc++;
+                            //sProcCommandLine = sProcCommandLine.substr(0,nPos-1) + toCmdString(_return.dNumVal) +  sProcCommandLine.substr(nParPos+1);
+                        }*/
                     }
                     catch (...)
                     {
@@ -2589,13 +2637,20 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 {
                     if (sProcCommandLine.find("<<RETURNVAL>>") != string::npos)
                     {
-                        if (_return.sStringVal.length())
+                        if (_return.vStringVal.size())
                         {
-                            sProcCommandLine.replace(sProcCommandLine.find("<<RETURNVAL>>"), 13, _return.sStringVal);
+                            string sReturn = "{";
+                            for (unsigned int v = 0; v < _return.vStringVal.size(); v++)
+                                sReturn += _return.vStringVal[v] + ",";
+                            sReturn.back() = '}';
+                            sProcCommandLine.replace(sProcCommandLine.find("<<RETURNVAL>>"), 13, sReturn);
+                            //sProcCommandLine.replace(sProcCommandLine.find("<<RETURNVAL>>"), 13, _return.sStringVal);
                         }
                         else
                         {
-                            sProcCommandLine.replace(sProcCommandLine.find("<<RETURNVAL>>"),13,toCmdString(_return.dNumVal));
+                            _parser.SetVectorVar("~PLUGIN["+_procedure.getPluginProcName()+"~"+toString((int)nth_procedure)+"_"+toString((int)nCurrentLine)+"]", _return.vNumVal);
+                            sProcCommandLine.replace(sProcCommandLine.find("<<RETURNVAL>>"),13,"~PLUGIN["+_procedure.getPluginProcName()+"~"+toString((int)nth_procedure)+_procedure.getPluginProcName()+"_"+toString((int)nCurrentLine)+"]");
+                            //sProcCommandLine.replace(sProcCommandLine.find("<<RETURNVAL>>"),13,toCmdString(_return.dNumVal));
                         }
                     }
                 }
@@ -2873,7 +2928,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
     return _ReturnVal;
 }
 
-int Procedure::procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure)
+int Procedure::procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure, int nth_command)
 {
     //cerr << sLine << endl;
     Procedure _procedure(*this);
@@ -2882,6 +2937,7 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, Define& _funct
     {
         sLine += " ";
         unsigned int nPos = 0;
+        int nProc = 0;
         while (sLine.find('$', nPos) != string::npos && sLine.find('(', sLine.find('$', nPos)) != string::npos)
         {
             unsigned int nParPos = 0;
@@ -2926,10 +2982,14 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, Define& _funct
                 //cerr << "returned" << endl;
                 if (!_procedure.nReturnType)
                     sLine = sLine.substr(0,nPos-1) + sLine.substr(nParPos+1);
-                else if (tempreturnval.sStringVal.length())
+                else
+                {
+                    replaceReturnVal(sLine, _parser, tempreturnval, nPos-1, nParPos+1, "PROC~["+__sName+"~"+toString(nProc)+"_"+toString((int)nth_procedure)+"_"+toString((int)(nth_command+nth_procedure))+"]");
+                }
+                 /*if (tempreturnval.vStringVal.size())
                     sLine = sLine.substr(0,nPos-1) + tempreturnval.sStringVal + sLine.substr(nParPos+1);
                 else
-                    sLine = sLine.substr(0,nPos-1) + toCmdString(tempreturnval.dNumVal) + sLine.substr(nParPos+1);
+                    sLine = sLine.substr(0,nPos-1) + toCmdString(tempreturnval.dNumVal) + sLine.substr(nParPos+1);*/
                 //cerr << sLine << endl;
 //                sCurrentProcedureName = sProcNames.substr(sProcNames.rfind(';',sProcNames.rfind(';')-1)+1, sProcNames.rfind(';')-sProcNames.rfind(';',sProcNames.rfind(';')-1)-1);
 //                sProcNames = sProcNames.substr(0,sProcNames.rfind(';'));
@@ -2969,13 +3029,19 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, Define& _funct
             {
                 if (sLine.find("<<RETURNVAL>>") != string::npos)
                 {
-                    if (_return.sStringVal.length())
+                    if (_return.vStringVal.size())
                     {
-                        sLine.replace(sLine.find("<<RETURNVAL>>"), 13, _return.sStringVal);
+                        string sReturn = "{";
+                        for (unsigned int v = 0; v < _return.vStringVal.size(); v++)
+                            sReturn += _return.vStringVal[v]+",";
+                        sReturn.back() = '}';
+                        sLine.replace(sLine.find("<<RETURNVAL>>"), 13, sReturn);
+                        //sLine.replace(sLine.find("<<RETURNVAL>>"), 13, _return.sStringVal);
                     }
                     else
                     {
-                        sLine.replace(sLine.find("<<RETURNVAL>>"),13,toCmdString(_return.dNumVal));
+                        _parser.SetVectorVar("~PLUGIN["+_procedure.getPluginProcName()+"~"+toString((int)nth_procedure)+"]", _return.vNumVal);
+                        sLine.replace(sLine.find("<<RETURNVAL>>"),13,"~PLUGIN["+_procedure.getPluginProcName()+"~"+toString((int)(nth_command+nth_procedure))+"]");
                     }
                 }
             }
@@ -3030,12 +3096,18 @@ bool Procedure::writeProcedure(string sProcedureLine)
         && sProcedureLine.find('$') != string::npos
         && sProcedureLine.find('(', sProcedureLine.find('$')) != string::npos)
     {
+        bool bAppend = false;
+        bool bNamespaceline = false;
         nthBlock = 0;
         string sFileName = sProcedureLine.substr(sProcedureLine.find('$')+1, sProcedureLine.find('(', sProcedureLine.find('$'))-sProcedureLine.find('$')-1);
         StripSpaces(sFileName);
         if (!setProcName(sFileName))
             return false;
         //cerr << sFileName << endl;
+        if (sFileName.substr(0,9) == "thisfile~")
+            bAppend = true;
+        if (sLastWrittenProcedureFile.find("|namespace") != string::npos)
+            bNamespaceline = true;
         if (sCurrentProcedureName.find('~') != string::npos)
         {
             FileSystem _fSys;
@@ -3046,7 +3118,10 @@ bool Procedure::writeProcedure(string sProcedureLine)
             FileSystem _fSys;
             _fSys.setPath(sCurrentProcedureName.substr(0,sCurrentProcedureName.rfind('/')), true, sTokens[5][1]);
         }
-        fProcedure.open(sCurrentProcedureName.c_str(), ios_base::out | ios_base::trunc);
+        if (bAppend)
+            fProcedure.open(sCurrentProcedureName.c_str(), ios_base::out | ios_base::app);
+        else
+            fProcedure.open(sCurrentProcedureName.c_str(), ios_base::out | ios_base::trunc);
         if (fProcedure.fail())
         {
             fProcedure.close();
@@ -3054,11 +3129,28 @@ bool Procedure::writeProcedure(string sProcedureLine)
         }
         else
         {
+            string sProcName = "";
+            if (sFileName.find('~') != string::npos)
+                sProcName = sFileName.substr(sFileName.rfind('~')+1);
+            else
+                sProcName = sFileName;
+            sLastWrittenProcedureFile = sCurrentProcedureName;
             bWritingTofile = true;
-            fProcedure << "#*" << endl;
-            fProcedure << " * Diese Prozedur wurde automatisch von NumeRe erzeugt" << endl;
-            fProcedure << " * ===================================================" << endl;
-            fProcedure << " *#" << endl;
+            if (bAppend && !bNamespaceline)
+            {
+                fProcedure << endl << endl
+                           << "#************************************************" << endl
+                           << " * NAMENSRAUM: THISFILE                         *" << endl
+                           << " * Folgende Prozeduren sind implizit 'private'. *" << endl
+                           << " ************************************************#" << endl << endl << endl;
+                sLastWrittenProcedureFile += "|namespace";
+            }
+            else if (bAppend)
+                fProcedure << endl << endl;
+            fProcedure << "#********************" << std::setfill('*') << std::setw(max(21u,sProcName.length()+2)) << "*" << endl;
+            fProcedure << " * NUMERE-PROZEDUR: $" << sProcName << "()" << endl;
+            fProcedure << " * ==================" << std::setfill('=') << std::setw(max(21u,sProcName.length()+2)) << "=" << endl;
+            fProcedure << " * Hinzugefügt: " << getTimeStamp(false) << " *#" << endl;
             fProcedure << endl;
             fProcedure << "procedure $";
             if (sFileName.find('~') != string::npos)
@@ -3100,7 +3192,7 @@ bool Procedure::writeProcedure(string sProcedureLine)
         fProcedure << "#* Ende der Prozedur" << endl;
         fProcedure << " * NumeRe: Framework für Numerische Rechnungen | Freie numerische Software unter der GNU GPL v3" << endl;
         fProcedure << " * https://sites.google.com/site/numereframework/" << endl;
-        fProcedure << " *#" << endl;
+        fProcedure << " *********************************************************************************************#" << endl;
 
         fProcedure.close();
         if (nthBlock)
@@ -3242,6 +3334,27 @@ bool Procedure::isInline(const string& sProc)
     return (nFlags & 2);
  }
 
+void Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnvalue& _return, unsigned int nPos, unsigned int nPos2, const string& sReplaceName)
+{
+    if (_return.vStringVal.size())
+    {
+        string sReturn = "{";
+        for (unsigned int v = 0; v < _return.vStringVal.size(); v++)
+            sReturn += _return.vStringVal[v]+",";
+        sReturn.back() = '}';
+        sLine = sLine.substr(0, nPos) + sReturn + sLine.substr(nPos2);
+    }
+    else if (_return.vNumVal.size())
+    {
+        //std::cerr << sReplaceName << endl;
+        //std::cerr << _return.vNumVal.size() << endl;
+        _parser.SetVectorVar(sReplaceName, _return.vNumVal);
+        sLine = sLine.substr(0,nPos) + sReplaceName +  sLine.substr(nPos2);
+    }
+    else
+        sLine = sLine.substr(0,nPos2) + "nan" + sLine.substr(nPos2);
+    return;
+}
 
 void Procedure::deleteVars(Parser& _parser, Datafile& _data, string** sLocalVars, unsigned int nLocalVarMapSize, double* dLocalVars, string** sLocalStrings, unsigned int nLocalStrMapSize, string** sVarMap, unsigned int nVarMapSize)
 {

@@ -34,8 +34,8 @@ Loop::Loop()
     nJumpTableLength = 0;
     nLoopSavety = -1;
     //dReturnValue = 0.0;
-    ReturnVal.dNumVal = NAN;
-    ReturnVal.sStringVal = "";
+    //ReturnVal.dNumVal = NAN;
+    //ReturnVal.sStringVal = "";
     nReturnType = 1;
     nCmd = 0;
     nLoop = 0;
@@ -233,7 +233,7 @@ int Loop::for_loop(Parser& _parser, Define& _functions, Datafile& _data, Setting
             _parser.PauseLoopMode();
             _parser.LockPause();
         }
-        int nReturn = procedureInterface(sForHead, _parser, _functions, _data, _out, _pData, _script, _option, nLoop+nWhile+nIf);
+        int nReturn = procedureInterface(sForHead, _parser, _functions, _data, _out, _pData, _script, _option, nLoop+nWhile+nIf, nth_Cmd);
         if (nReturn == -1)
             return -1;
         else if (nReturn == -2)
@@ -525,7 +525,7 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
             _parser.PauseLoopMode();
             _parser.LockPause();
         }
-        int nReturn = procedureInterface(sWhile_Condition, _parser, _functions, _data, _out, _pData, _script, _option, nLoop+nWhile+nIf);
+        int nReturn = procedureInterface(sWhile_Condition, _parser, _functions, _data, _out, _pData, _script, _option, nLoop+nWhile+nIf, nth_Cmd);
         if (nReturn == -1)
             return -1;
         else if (nReturn == -2)
@@ -782,7 +782,7 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
                     _parser.PauseLoopMode();
                     _parser.LockPause();
                 }
-                int nReturn = procedureInterface(sWhile_Condition, _parser, _functions, _data, _out, _pData, _script, _option, nLoop+nWhile+nIf);
+                int nReturn = procedureInterface(sWhile_Condition, _parser, _functions, _data, _out, _pData, _script, _option, nLoop+nWhile+nIf, nth_Cmd);
                 if (nReturn == -1)
                     return -1;
                 else if (nReturn == -2)
@@ -898,7 +898,7 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
             _parser.PauseLoopMode();
             _parser.LockPause();
         }
-        int nReturn = procedureInterface(sIf_Condition, _parser, _functions, _data, _out, _pData, _script, _option, nLoop+nWhile+nIf);
+        int nReturn = procedureInterface(sIf_Condition, _parser, _functions, _data, _out, _pData, _script, _option, nLoop+nWhile+nIf, nth_Cmd);
         if (nReturn == -1)
             return -1;
         else if (nReturn == -2)
@@ -1158,7 +1158,7 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                     _parser.PauseLoopMode();
                     _parser.LockPause();
                 }
-                int nReturn = procedureInterface(sIf_Condition, _parser, _functions, _data, _out, _pData, _script, _option, nLoop+nWhile+nIf);
+                int nReturn = procedureInterface(sIf_Condition, _parser, _functions, _data, _out, _pData, _script, _option, nLoop+nWhile+nIf, nth_Cmd);
                 if (nReturn == -1)
                     return -1;
                 else if (nReturn == -2)
@@ -2109,8 +2109,8 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
     nReturnType = 1;
     bBreakSignal = false;
     bContinueSignal = false;
-    ReturnVal.dNumVal = NAN;
-    ReturnVal.sStringVal = "";
+    //ReturnVal.dNumVal = NAN;
+    //ReturnVal.sStringVal = "";
     string sVars = ";";
     string sVar = "";
     sVarName = "";
@@ -2582,7 +2582,7 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
             cerr << "|-> DEBUG: returning sLine = " << sLine << endl;
         if (!sLine.length())
         {
-            ReturnVal.dNumVal = 1.0;
+            ReturnVal.vNumVal.push_back(1.0);
             bReturnSignal = true;
             return -2;
         }
@@ -2593,7 +2593,7 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
         if (bPrintedStatus)
             cerr << " ABBRUCH!";
         throw PROCESS_ABORTED_BY_USER;
-        ReturnVal.dNumVal = NAN;
+        ReturnVal.vNumVal.push_back(NAN);
         bReturnSignal = true;
         return -2;
     }
@@ -2792,7 +2792,7 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
             _parser.PauseLoopMode();
             _parser.LockPause();
         }
-        int nReturn = procedureInterface(sLine, _parser, _functions, _data, _out, _pData, _script, _option, nLoop+nWhile+nIf);
+        int nReturn = procedureInterface(sLine, _parser, _functions, _data, _out, _pData, _script, _option, nLoop+nWhile+nIf, nthCmd);
         if (!bLockedPauseMode && bUseLoopParsingMode)
         {
             _parser.PauseLoopMode(false);
@@ -3003,7 +3003,7 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
                     _parser.PauseLoopMode(false);
                 if (bReturnSignal)
                 {
-                    ReturnVal.sStringVal = sLine;
+                    ReturnVal.vStringVal.push_back(sLine);
                     return -2;
                 }
                 return 1;
@@ -3281,13 +3281,15 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
     }
     if (bReturnSignal)
     {
-        ReturnVal.dNumVal = vAns;
+        for (int i = 0; i < nNum; i++)
+            ReturnVal.vNumVal.push_back(v[i]);
+        //ReturnVal.dNumVal = vAns;
         return -2;
     }
     return 1;
 }
 
-int Loop::procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop)
+int Loop::procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command)
 {
     cerr << "LOOP_procedureInterface" << endl;
     return 1;

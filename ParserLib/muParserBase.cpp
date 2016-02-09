@@ -554,7 +554,7 @@ namespace mu
         }
         PauseLoopMode(false);
     }
-    //cerr << sBuf << endl;
+    //std::cerr << sBuf << endl;
 
     if (sBuf.find("{") != string::npos || sBuf.find("}") != string::npos)
         Error(ecMISSING_PARENS);
@@ -2161,8 +2161,14 @@ string_type ParserBase::getNextVarObject(std::string& sArgList, bool bCut)
             buffer.push_back(0.0);
             for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
             {
+                //std::cerr << iter->first << endl;
                 if ((iter->second).size() > nVectorlength && iter->first != "~TRGTVCT[~]" && vars.find(iter->first) != vars.end())
+                {
                     nVectorlength = (iter->second).size();
+                    /*for (unsigned int nsize = 0; nsize < (iter->second).size(); nsize++)
+                        std::cerr << (iter->second)[nsize] << endl;*/
+                    //std::cerr << "found" << endl;
+                }
             }
             //std::cerr << "Evaluating " << nVectorlength << " Expressions ..." << endl;
             for (int j = 1; j < m_nFinalResultIdx+1; j++)
@@ -2438,29 +2444,52 @@ string_type ParserBase::getNextVarObject(std::string& sArgList, bool bCut)
             *(GetVar().find(sVarName)->second) = vVar[0];
             //std::cerr << "Defining " << sVarName << " with " << vVar[0] << endl;
         }
+        //std::cerr << "'" << sVarName << "'" << endl;
+        //std::cerr << vVar.size() << endl;
+
+        /*for (unsigned int i = 0; i < vVar.size(); i++)
+            std::cerr << vVar[i] << endl;*/
         mVectorVars[sVarName] = vVar;
+        //std::cerr << mVectorVars[sVarName].size() << endl;
         return;
     }
 
-    void ParserBase::ClearVectorVars()
+    void ParserBase::ClearVectorVars(bool bIgnoreProcedureVects)
     {
         if (!mVectorVars.size())
             return;
-        for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
+        //cerr << "clearing vect vars" << endl;
+        auto iter = mVectorVars.begin();
+        while (iter != mVectorVars.end())
         {
+            //cerr << iter->first << endl;
             if ((iter->first).find('[') != string::npos && (iter->first).find(']') != string::npos)
+            {
+                if (bIgnoreProcedureVects && (iter->first).substr(0,6) == "PROC~[")
+                {
+                    iter++;
+                    continue;
+                }
                 RemoveVar(iter->first);
+                iter = mVectorVars.erase(iter);
+            }
+            else
+                iter++;
         }
-        mVectorVars.clear();
-        mTargets.clear();
-        sTargets.clear();
-        nVectorIndex = 0;
-        if (dVectorVars && nVectorVarsSize > 200)
+        if (!bIgnoreProcedureVects)
         {
-            delete[] dVectorVars;
-            dVectorVars = 0;
+            mVectorVars.clear();
+            mTargets.clear();
+            sTargets.clear();
+            nVectorIndex = 0;
+            if (dVectorVars && nVectorVarsSize > 200)
+            {
+                delete[] dVectorVars;
+                dVectorVars = 0;
+            }
+            nVectorVarsSize = 200;
         }
-        nVectorVarsSize = 200;
+        //cerr << "finished" << endl;
         return;
     }
 

@@ -1688,13 +1688,17 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
         StripSpaces(sFinal[n]);
         if (!sFinal[n].length())
             continue;
-        for (unsigned int j = 0; j < sFinal[n].length(); j++)
+        // Strings verknüpfen
+        if (sFinal[n].front() == '"' && sFinal[n].back() == '"')
         {
-            if (sFinal[n][j] == '+' && !isInQuotes(sFinal[n], j))
+            for (unsigned int j = 0; j < sFinal[n].length(); j++)
             {
-                unsigned int k = j;
-                j = sFinal[n].rfind('"', j);
-                sFinal[n] = sFinal[n].substr(0,sFinal[n].rfind('"', k)) + sFinal[n].substr(sFinal[n].find('"', k)+1);
+                if (sFinal[n][j] == '+' && !isInQuotes(sFinal[n], j))
+                {
+                    unsigned int k = j;
+                    j = sFinal[n].rfind('"', j);
+                    sFinal[n] = sFinal[n].substr(0,sFinal[n].rfind('"', k)) + sFinal[n].substr(sFinal[n].find('"', k)+1);
+                }
             }
         }
         if (sFinal[n].find("&&") != string::npos
@@ -1729,13 +1733,31 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
 
         }
         if (sFinal[n].front() != '"' && sFinal[n].back() != '"')
+        {
+            _parser.SetExpr(sFinal[n]);
+            sFinal[n] = toString(_parser.Eval(), _option);
             vIsNoStringValue.push_back(true);
+        }
         else
             vIsNoStringValue.push_back(false);
-        if (sFinal[n].front() == '"')
-            sFinal[n] = sFinal[n].substr(1);
-        if (sFinal[n].back() == '"')
-            sFinal[n].pop_back();
+        if ((sFinal[n].front() == '"' && sFinal[n].back() != '"')
+            || (sFinal[n].front() != '"' && sFinal[n].back() == '"'))
+        {
+            if (sFinal[n].front() == '"')
+                sFinal[n].insert(0,1,'\\');
+            for (unsigned int q = 1; q < sFinal[n].length(); q++)
+            {
+                if (sFinal[n][q] == '"' && sFinal[n][q-1] != '\\')
+                    sFinal[n].insert(q,1,'\\');
+            }
+        }
+        else
+        {
+            if (sFinal[n].front() == '"')
+                sFinal[n] = sFinal[n].substr(1);
+            if (sFinal[n].back() == '"')
+                sFinal[n].pop_back();
+        }
     }
 
     if (sObject.length())
