@@ -1601,6 +1601,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
             {
                 //cerr << sLine << endl;
                 unsigned int nPos = 0;
+                int nProc = 0;
                 while (sLine.find('$', nPos) != string::npos && sLine.find('(', sLine.find('$', nPos)) != string::npos)
                 {
                     unsigned int nParPos = 0;
@@ -1624,10 +1625,15 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                         Returnvalue _rTemp = _procedure.execute(__sName, __sVarList, _parser, _functions, _data, _option, _out, _pData, _script);
                         if (!_procedure.getReturnType())
                             sLine = sLine.substr(0, nPos-1) + sLine.substr(nParPos+1);
-                        else if (_rTemp.sStringVal.length())
+                        else
+                        {
+                            _procedure.replaceReturnVal(sLine, _parser, _rTemp, nPos-1, nParPos+1, "PROC~["+__sName+"~ROOT_"+toString(nProc)+"]");
+                            nProc++;
+                        }
+                        /* if (_rTemp.sStringVal.length())
                             sLine = sLine.substr(0, nPos-1) + _rTemp.sStringVal + sLine.substr(nParPos+1);
                         else
-                            sLine = sLine.substr(0,nPos-1) + toCmdString(_rTemp.dNumVal) + sLine.substr(nParPos+1);
+                            sLine = sLine.substr(0,nPos-1) + toCmdString(_rTemp.dNumVal) + sLine.substr(nParPos+1);*/
                     }
                     nPos += __sName.length() + __sVarList.length()+1;
 
@@ -1656,12 +1662,19 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                 {
                     _option.setSystemPrintStatus(false);
                     Returnvalue _rTemp = _procedure.execute(_procedure.getPluginProcName(), _procedure.getPluginVarList(), _parser, _functions, _data, _option, _out, _pData, _script);
-                    if (_rTemp.sStringVal.length() && sLine.find("<<RETURNVAL>>") != string::npos)
-                        sLine.replace(sLine.find("<<RETURNVAL>>"), 13, _rTemp.sStringVal);
-                    else if (!_rTemp.sStringVal.length() && sLine.find("<<RETURNVAL>>") != string::npos)
+                    if (_rTemp.vStringVal.size() && sLine.find("<<RETURNVAL>>") != string::npos)
                     {
-                        sLine.replace(sLine.find("<<RETURNVAL>>"), 13, "ans");
-                        vAns = _rTemp.dNumVal;
+                        string sReturn = "{";
+                        for (unsigned int v = 0; v < _rTemp.vStringVal.size(); v++)
+                            sReturn += _rTemp.vStringVal[v]+",";
+                        sReturn.back() = '}';
+                        sLine.replace(sLine.find("<<RETURNVAL>>"), 13, sReturn);
+                    }
+                    else if (!_rTemp.vStringVal.size() && sLine.find("<<RETURNVAL>>") != string::npos)
+                    {
+                        sLine.replace(sLine.find("<<RETURNVAL>>"), 13, "~PLUGIN["+_procedure.getPluginProcName()+"~ROOT]");
+                        vAns = _rTemp.vNumVal[0];
+                        _parser.SetVectorVar("~PLUGIN["+_procedure.getPluginProcName()+"~ROOT]", _rTemp.vNumVal);
                     }
                     _option.setSystemPrintStatus(true);
                     if (!sLine.length())
@@ -1710,6 +1723,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
             if (sLine.find('$') != string::npos && sLine.find('(', sLine.find('$')) != string::npos && !_procedure.getLoop())
             {
                 unsigned int nPos = 0;
+                int nProc = 0;
                 while (sLine.find('$', nPos) != string::npos && sLine.find('(', sLine.find('$', nPos)) != string::npos)
                 {
                     unsigned int nParPos = 0;
@@ -1725,10 +1739,15 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                         Returnvalue _rTemp = _procedure.execute(__sName, __sVarList, _parser, _functions, _data, _option, _out, _pData, _script);
                         if (!_procedure.getReturnType())
                             sLine = sLine.substr(0, nPos-1) + sLine.substr(nParPos+1);
-                        else if (_rTemp.sStringVal.length())
+                        else
+                        {
+                            _procedure.replaceReturnVal(sLine, _parser, _rTemp, nPos-1, nParPos+1, "PROC~["+__sName+"~ROOT_"+toString(nProc)+"]");
+                            nProc++;
+                        }
+                        /*if (_rTemp.sStringVal.length())
                             sLine = sLine.substr(0,nPos-1) + _rTemp.sStringVal + sLine.substr(nParPos+1);
                         else
-                            sLine = sLine.substr(0,nPos-1) + toCmdString(_rTemp.dNumVal) + sLine.substr(nParPos+1);
+                            sLine = sLine.substr(0,nPos-1) + toCmdString(_rTemp.dNumVal) + sLine.substr(nParPos+1);*/
                     }
                     nPos += __sName.length() + __sVarList.length()+1;
 

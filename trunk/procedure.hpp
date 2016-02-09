@@ -60,6 +60,7 @@ class Procedure : /*public FileSystem,*/ public Loop, public Plugin
         string sNameSpace;
         string sCallingNameSpace;
         string sThisNameSpace;
+        string sLastWrittenProcedureFile;
         bool bProcSupressAnswer;
         bool bWritingTofile;
         int nFlags;
@@ -68,8 +69,8 @@ class Procedure : /*public FileSystem,*/ public Loop, public Plugin
         //Loop _block;
 
         Returnvalue ProcCalc(string sLine, Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script);
-        bool setProcName(const string& sProc);
-        int procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure = 0);
+        bool setProcName(const string& sProc, bool bInstallFileName = false);
+        int procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure = 0, int nth_command = 0);
         int procedureCmdInterface(string& sLine);
         void deleteVars(Parser& _parser, Datafile& _data, string** sLocalVars, unsigned int nLocalVarMapSize, double* dLocalVars, string** sLocalStrings, unsigned int nLocalStrMapSize, string** sVarMap, unsigned int nVarMapSize);
     public:
@@ -88,6 +89,7 @@ class Procedure : /*public FileSystem,*/ public Loop, public Plugin
             {return nReturnType;}
         inline bool is_writing() const
             {return bWritingTofile;}
+        void replaceReturnVal(string& sLine, Parser& _parser, const Returnvalue& _return, unsigned int nPos, unsigned int nPos2, const string& sReplaceName);
 };
 
 #endif // PROCEDURE_HPP

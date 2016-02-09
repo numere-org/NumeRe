@@ -270,7 +270,7 @@ private:
                 const string_type &a_strTok = string_type() ) const;
 
     void SetVectorVar(const std::string& sVarName, const std::vector<double>& vVar, bool bAddVectorType = false);
-    void ClearVectorVars();
+    void ClearVectorVars(bool bIgnoreProcedureVects = false);
 
  protected:
 

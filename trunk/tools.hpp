@@ -55,8 +55,8 @@ struct Line
 
 struct Returnvalue
 {
-    double dNumVal;
-    string sStringVal;
+    vector<double> vNumVal;
+    vector<string> vStringVal;
 };
 
 // --> Macht aus einem Int ein String (mit Praezision) <--
