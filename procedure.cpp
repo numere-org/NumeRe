@@ -1624,13 +1624,17 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     {
                         nPos = sProcCommandLine.find(sVarMap[i][0], nPos);
                         //cerr << nPos << endl;
+                        if ((sProcCommandLine[nPos-1] == '~' && sProcCommandLine[sProcCommandLine.find_last_not_of('~',nPos-1)] != '#') || sProcCommandLine[nPos+sVarMap[i][0].length()] == '(')
+                        {
+                            nPos += sVarMap[i][0].length();
+                            continue;
+                        }
                         if (checkDelimiter(sProcCommandLine.substr(nPos-1, sVarMap[i][0].length()+2))
-                            && (!isInQuotes(sProcCommandLine, nPos, true) || isToCmd(sProcCommandLine, nPos))
-                            && sProcCommandLine[nPos+sVarMap[i][0].length()] != '('
-                            && sProcCommandLine[nPos-1] != '~')
+                            && (!isInQuotes(sProcCommandLine, nPos, true)
+                                || isToCmd(sProcCommandLine, nPos)))
                         {
                             //cerr << sVarMap[i][0] << " ==> " << sVarMap[i][1] << endl;
-                            sProcCommandLine = sProcCommandLine.substr(0, nPos) + sVarMap[i][1] + sProcCommandLine.substr(nPos+sVarMap[i][0].length());
+                            sProcCommandLine.replace(nPos, sVarMap[i][0].length(), sVarMap[i][1]);
                             nPos += sVarMap[i][1].length();
                         }
                         else
@@ -2925,6 +2929,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
     sCallingNameSpace = "main";
     sThisNameSpace = "";
     mVarMap.clear();*/
+    if (nReturnType && !_ReturnVal.vNumVal.size() && !_ReturnVal.vStringVal.size())
+        _ReturnVal.vNumVal.push_back(1.0);
     return _ReturnVal;
 }
 
@@ -3352,7 +3358,7 @@ void Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnval
         sLine = sLine.substr(0,nPos) + sReplaceName +  sLine.substr(nPos2);
     }
     else
-        sLine = sLine.substr(0,nPos2) + "nan" + sLine.substr(nPos2);
+        sLine = sLine.substr(0,nPos) + "nan" + sLine.substr(nPos2);
     return;
 }
 

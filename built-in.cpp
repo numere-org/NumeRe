@@ -2560,6 +2560,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         //cerr << sCmd << endl;
                         _data.setCacheStatus(false);
                         sArgument = "stats -cache c=1: " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('(')))+1+sCmd.find('('));
+                        sArgument = BI_evalParamString(sArgument, _parser, _data, _option, _functions);
                         plugin_statistics(sArgument, _cache, _out, _option, true, false);
                         return 1;
                     }
@@ -5020,7 +5021,7 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
     vector<double> vInterval;
     /*if (sCmd.find('=') == string::npos)
         return sCmd;*/
-    if (sReturn[sReturn.length()-1] != ' ')
+    if (sReturn.back() != ' ')
         sReturn += " ";
 
     //cerr << sReturn << endl;

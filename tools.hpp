@@ -156,6 +156,8 @@ string removeControlSymbols(const string&);
 string addControlSymbols(const string&);
 string getArgAtPos(const string& sCmd, unsigned int nPos);
 bool isInQuotes(const string& sExpr, unsigned int nPos, bool bIgnoreVarParser = false);
+bool isToStringArg(const string& sExpr, unsigned int nPos);
+bool isDelimiter(char cChar);
 bool addLegends(string&);
 bool checkDelimiter(const string&);
 string LineBreak(string sOutput, const Settings& _option, bool bAllowDashBreaks = true, int nFirstIndent = 0, int nIndent = 4);
@@ -181,13 +183,13 @@ inline bool validateParenthesisNumber(const string& sCmd)
     int nVectCount = 0;
     for (unsigned int i = 0; i < sCmd.length(); i++)
     {
-        if (sCmd[i] == '(' && !isInQuotes(sCmd, i))
+        if (sCmd[i] == '(' && !isInQuotes(sCmd, i, true))
             nParCount++;
-        if (sCmd[i] == ')' && !isInQuotes(sCmd, i))
+        if (sCmd[i] == ')' && !isInQuotes(sCmd, i, true))
             nParCount--;
-        if (sCmd[i] == '{' && !isInQuotes(sCmd, i))
+        if (sCmd[i] == '{' && !isInQuotes(sCmd, i, true))
             nVectCount++;
-        if (sCmd[i] == '}' && !isInQuotes(sCmd, i))
+        if (sCmd[i] == '}' && !isInQuotes(sCmd, i, true))
             nVectCount--;
     }
     return !((bool)nParCount || (bool)nVectCount);

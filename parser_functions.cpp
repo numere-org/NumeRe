@@ -3260,9 +3260,15 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
     }
     sScalars[32] = "";
 
+    //cerr << sTemp << endl;
     do
     {
         nPos_2 = sTemp.find("{", nPos);
+        if (isInQuotes(sTemp, nPos_2, false) || isToStringArg(sTemp, nPos_2))
+        {
+            nPos++;
+            continue;
+        }
         //nPos_2 = sTemp.find("{{", nPos);
         if (isMultiValue(sTemp.substr(nPos, nPos_2-nPos), true))
         {
@@ -3348,8 +3354,9 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
             nPos++;
     }
     while (sTemp.find("{", nPos) != string::npos);
+    //cerr << nPos << endl;
 
-    if (isMultiValue(sTemp.substr(nPos), true))
+    if (isMultiValue(sTemp.substr(nPos), true) && !isToStringArg(sTemp, nPos))
     {
         sInterVector = sTemp.substr(nPos);
         /*if (_option.getbDebug())
@@ -3428,6 +3435,7 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
     nPos = 0;
     nPos_2 = 0;
 
+    //cerr << sTemp << endl;
 
     do
     {
@@ -3435,14 +3443,20 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
         {
             throw TOO_MANY_VECTORS;
         }
+        nPos = sTemp.find('{', nPos);
+        if (isInQuotes(sTemp, nPos, false) || isToStringArg(sTemp, nPos))
+        {
+            nPos++;
+            continue;
+        }
         nDim_vec = 1;
-        if ((sTemp.find("{") != string::npos && sTemp.find("}") == string::npos)
-            || (sTemp.find("{") == string::npos && sTemp.find("}") != string::npos))
+        if ((sTemp.find("{", nPos) != string::npos && sTemp.find("}", nPos) == string::npos)
+            || (sTemp.find("{", nPos) == string::npos && sTemp.find("}", nPos) != string::npos))
             throw INCOMPLETE_VECTOR_SYNTAX;
-        sVectors[nCount] = sTemp.substr(sTemp.find("{")+1, sTemp.find("}") - sTemp.find("{")-1);
-        if (sTemp.find("{") != 0)
-            sScalars[nScalars] += sTemp.substr(0, sTemp.find("{"));
-        if (sVectors[nCount][0] == '{' && parser_CheckMultArgFunc(sScalars[nScalars], sTemp.substr(sTemp.find("}}")+2)))
+        sVectors[nCount] = sTemp.substr(sTemp.find("{", nPos)+1, getMatchingParenthesis(sTemp.substr(sTemp.find('{', nPos)))-1);
+        if (sTemp.find("{", nPos) != 0)
+            sScalars[nScalars] += sTemp.substr(0, sTemp.find("{", nPos));
+        if (sVectors[nCount][0] == '{' && parser_CheckMultArgFunc(sScalars[nScalars], sTemp.substr(sTemp.find("}",nPos)+1)))
         {
             sVectors[nCount].erase(0,1);
             if (sVectors[nCount].back() == '}')
@@ -3451,10 +3465,10 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
             sTemp = sTemp.substr(sTemp.find("}}")+2);
             continue;
         }
-        else if (parser_CheckMultArgFunc(sScalars[nScalars], sTemp.substr(sTemp.find("}")+1)))
+        else if (parser_CheckMultArgFunc(sScalars[nScalars], sTemp.substr(sTemp.find("}",nPos)+1)))
         {
             sScalars[nScalars] += sVectors[nCount];
-            sTemp = sTemp.substr(sTemp.find("}")+1);
+            sTemp = sTemp.substr(sTemp.find("}", nPos)+1);
             continue;
         }
         /*if (_option.getbDebug())
@@ -3464,10 +3478,10 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
             sVectors[nCount].erase(0,1);
             if (sVectors[nCount].back() == '}')
                 sVectors[nCount].pop_back();
-            sTemp.erase(0,sTemp.find("}}")+2);
+            sTemp.erase(0,sTemp.find("}", nPos)+2);
         }
         else
-            sTemp.erase(0,sTemp.find('}')+1);
+            sTemp.erase(0,sTemp.find('}', nPos)+1);
         for (unsigned int i = 0; i < sVectors[nCount].length(); i++)
         {
             if (sVectors[nCount][i] == '(')
@@ -3484,7 +3498,7 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
         if (!sTemp.length())
             break;
     }
-    while (sTemp.find("{") != string::npos);
+    while (sTemp.find("{", nPos) != string::npos);
     if (sTemp.length())
     {
         sScalars[nScalars] += sTemp;
@@ -4852,10 +4866,10 @@ void parser_CheckIndices(long long int& nIndex_1, long long int& nIndex_2)
 // --> Gibt die Position des naechsten Delimiters zurueck <--
 unsigned int parser_getDelimiterPos(const string& sLine)
 {
-    string sDelimiter = "+-*/ ={}^&|!<>,\n";
+    string sDelimiter = "+-*/ =^&|!<>,\n";
     for (unsigned int i = 0; i < sLine.length(); i++)
     {
-        if (sLine[i] == '(')
+        if (sLine[i] == '(' || sLine[i] == '{')
             i += getMatchingParenthesis(sLine.substr(i));
         for (unsigned int j = 0; j < sDelimiter.length(); j++)
         {

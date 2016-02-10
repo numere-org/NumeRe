@@ -2109,8 +2109,8 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
     nReturnType = 1;
     bBreakSignal = false;
     bContinueSignal = false;
-    //ReturnVal.dNumVal = NAN;
-    //ReturnVal.sStringVal = "";
+    ReturnVal.vNumVal.clear();
+    ReturnVal.vStringVal.clear();
     string sVars = ";";
     string sVar = "";
     sVarName = "";

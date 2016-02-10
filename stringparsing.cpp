@@ -1302,11 +1302,31 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             }
             if (!containsStrings(sExpr))
             {
+                int nResults = 0;
+                value_type* v = 0;
                 _parser.SetExpr(sExpr);
-                if (fabs(rint(_parser.Eval())-_parser.Eval()) < 1e-14 && fabs(_parser.Eval()) >= 1.0)
-                    sToString = toString((long long int)rint(_parser.Eval()));
+                v = _parser.Eval(nResults);
+                if (nResults > 1)
+                    sToString = "{";
                 else
-                    sToString = toString((double)_parser.Eval(), _option);
+                    sToString.clear();
+                string sElement = "";
+                for (int n = 0; n < nResults; n++)
+                {
+                    if (fabs(rint(v[n])-v[n]) < 1e-14 && fabs(v[n]) >= 1.0)
+                        sElement = toString((long long int)rint(v[n]));
+                    else
+                        sElement = toString(v[n], _option);
+                    while (sElement.length() < nCount && sChar.length())
+                        sElement.insert(0,sChar);
+                    sToString += sElement;
+                    if (nResults > 1)
+                        sToString += ",";
+                }
+                if (nResults > 1)
+                {
+                    sToString.back() = '}';
+                }
             }
             else
             {
@@ -1315,8 +1335,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     return 0;
                 sToString = sExpr;
             }
-            while (sToString.length() < nCount && sChar.length())
-                sToString.insert(0,sChar);
+
             sLine = sLine.substr(0,n_pos) + "\"" + sToString + "\"" + sLine.substr(nPos+1);
         }
         n_pos++;
@@ -1553,8 +1572,8 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 n_pos = 1;
             else
                 n_pos = 0;
-            if (sTemp[0] == '(')
-                _parser.SetExpr(sTemp.substr(0, getMatchingParenthesis(sTemp)+1));
+            if (sTemp[0] == '(' || sTemp[0] == '{')
+                _parser.SetExpr(sTemp.substr(1, getMatchingParenthesis(sTemp)-1));
             else if (sTemp[0] == '"')
             {
                 sTemp_2 += sTemp.substr(1, sTemp.find('"', 1)-1) + "\"";
@@ -1604,6 +1623,31 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 _parser.SetExpr(sTemp.substr(0, parser_getDelimiterPos(sTemp.substr(n_pos))));
             if (_option.getbDebug())
                 mu::console() << _T("|-> DEBUG: parser_getDelimiterPos(sTemp) = ") << parser_getDelimiterPos(sTemp.substr(n_pos)) << endl;
+
+            {
+                int nResults = 0;
+                value_type* v = 0;
+                v = _parser.Eval(nResults);
+                if (nResults > 1)
+                    sTemp_2 += "{";
+                string sElement = "";
+                for (int n = 0; n < nResults; n++)
+                {
+                    if (fabs(rint(v[n])-v[n]) < 1e-14 && fabs(v[n]) >= 1.0)
+                        sElement = toString((long long int)rint(v[n]));
+                    else
+                        sElement = toString(v[n], _option);
+                    while (sElement.length() < sPrefix.length()+1)
+                        sElement.insert(0,1,'0');
+                    sTemp_2 += sElement;
+                    if (nResults > 1)
+                        sTemp_2 += ",";
+                }
+                if (nResults > 1)
+                    sTemp_2.back() = '}';
+            }
+
+            /*
             if (sPrefix.length())
             {
                 if (fabs(rint(_parser.Eval())-_parser.Eval()) < 1e-14 && _parser.Eval() >= 1.0 && toString((long long int)rint(_parser.Eval())).length() < sPrefix.length()+1)
@@ -1614,7 +1658,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             if (fabs(rint(_parser.Eval())-_parser.Eval()) < 1e-14 && fabs(_parser.Eval()) >= 1.0)
                 sTemp_2 += toString((long long int)rint(_parser.Eval()));
             else
-                sTemp_2 += toString((double)_parser.Eval(), _option);
+                sTemp_2 += toString((double)_parser.Eval(), _option);*/
             sTemp_2 += "\"";
             if (parser_getDelimiterPos(sTemp.substr(n_pos)) < sTemp.length())
                 sTemp = sTemp.substr(parser_getDelimiterPos(sTemp.substr(n_pos)));

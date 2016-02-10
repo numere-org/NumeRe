@@ -221,7 +221,7 @@ bool getStringArgument(const string& sCmd, string& sArgument)
                     }
                     if (sCmd[j] == '(')
                     {
-                        j = getMatchingParenthesis(sCmd.substr(j))+j;
+                        j += getMatchingParenthesis(sCmd.substr(j));
                     }
                     if (j == sCmd.length()-1)
                     {
@@ -241,9 +241,9 @@ bool getStringArgument(const string& sCmd, string& sArgument)
                 else
                 {
                     i = sCmd.find_first_not_of(' ', i);
-                    if (i != string::npos)
+                    if (i < sCmd.length()-1 && sCmd[i] == '+' && sCmd[i+1] == ' ')
                         i++;
-                    while (i < sCmd.length() && sCmd[i] == ' ')
+                    while (i < sCmd.length()-1 && sCmd[i] == ' ' && sCmd[i+1] == ' ')
                         i++;
                 }
             }
@@ -1464,6 +1464,43 @@ bool isInQuotes(const string& sExpr, unsigned int nPos, bool bIgnoreVarParser)
         return false;
 }
 
+bool isToStringArg(const string& sExpr, unsigned int nPos)
+{
+    //cerr << sExpr << endl;
+    //cerr << nPos << endl;
+    if (sExpr.find("valtostr(") == string::npos && sExpr.find("to_string(") == string::npos && sExpr.find("string_cast(") == string::npos)
+        return false;
+    for (int i = nPos; i >= 8; i--)
+    {
+        if (sExpr[i] == '(' && getMatchingParenthesis(sExpr.substr(i))+i > nPos)
+        {
+            //cerr << "i=" << i << endl;
+            if (i > 10 && sExpr.substr(i-11,12) == "string_cast(")
+                return true;
+            else if (i > 8 && sExpr.substr(i-9,10) == "to_string(")
+                return true;
+            else if (sExpr.substr(i-8,9) == "valtostr(")
+            {
+                //cerr << "valtostr(" << endl;
+                return true;
+            }
+            else if (isDelimiter(sExpr[i-1]))
+                continue;
+            else
+                return false;
+        }
+    }
+    return false;
+}
+
+
+bool isDelimiter(char cChar)
+{
+    string sDelimiter = "+-*/ ^&|!%<>,=";
+    if (sDelimiter.find(cChar) != string::npos)
+        return true;
+    return false;
+}
 // --> Ergaenzt fehlende Legenden mit den gegebenen Ausdruecken <--
 bool addLegends(string& sExpr)
 {
@@ -1972,19 +2009,19 @@ string getNextArgument(string& sArgList, bool bCut)
     for (unsigned int i = 0; i < sArgList.length(); i++)
     {
         //cerr << nParenthesis << " ";
-        if (sArgList[i] == '(' && !isInQuotes(sArgList, i))
+        if (sArgList[i] == '(' && !isInQuotes(sArgList, i, true))
             nParenthesis++;
-        if (sArgList[i] == ')' && !isInQuotes(sArgList, i))
+        if (sArgList[i] == ')' && !isInQuotes(sArgList, i, true))
             nParenthesis--;
-        if (sArgList[i] == '{' && !isInQuotes(sArgList, i))
+        if (sArgList[i] == '{' && !isInQuotes(sArgList, i, true))
         {
             nVektorbrace++;
         }
-        if (sArgList[i] == '}' && !isInQuotes(sArgList, i))
+        if (sArgList[i] == '}' && !isInQuotes(sArgList, i, true))
         {
             nVektorbrace--;
         }
-        if (sArgList[i] == ',' && !nParenthesis && !nVektorbrace && !isInQuotes(sArgList, i))
+        if (sArgList[i] == ',' && !nParenthesis && !nVektorbrace && !isInQuotes(sArgList, i, true))
         {
             nPos = i;
             break;
