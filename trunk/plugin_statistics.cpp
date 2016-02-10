@@ -29,6 +29,8 @@ const string PI_MED = "0.2.2";
 
 void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _option, bool bUseCache, bool bUseData)
 {
+    if (_option.getbDebug())
+        cerr << "|-> DEBUG: sCmd = " << sCmd << endl;
 	double dAverage;		// Variable fuer Mittelwert
 	double dError;			// Variable fuer Abweichung
 	double dPercentage;		// Variable fuer den Prozentsatz

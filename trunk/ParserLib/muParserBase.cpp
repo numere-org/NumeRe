@@ -478,7 +478,7 @@ namespace mu
                     if (sBuf.substr(j,2) == "}}")
                     {
                         //std::cerr << sBuf.substr(i+2,j-i-2) << endl;
-                        SetExpr(sBuf.substr(i+2,j-i-2));
+                        //SetExpr(sBuf.substr(i+2,j-i-2));
                         v = Eval(nResults);
                         for (int n = 0; n < nResults; n++)
                         {
