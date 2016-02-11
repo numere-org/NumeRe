@@ -315,7 +315,7 @@ void BI_append_data(const string& __sCmd, Datafile& _data, Settings& _option, Pa
                 _cache.openFile(sPath+vFilelist[i], _option, false, true);
                 _data.melt(_cache);
             }
-            if (_data.isValid())
+            if (_data.isValid() && _option.getSystemPrintStatus())
                 cerr << LineBreak("|-> Alle Daten der " +toString((int)vFilelist.size())+ " Dateien \"" + sArgument + "\" wurden erfolgreich mit den Daten im Speicher zusammengeführt: der Datensatz besteht nun aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
             return;
         }
@@ -2468,7 +2468,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         sCmd.insert(sCmd.find_last_not_of(' ')+1, 1, '"');
                     }
                 }
-                sCmd.insert(sCmd.find('"'), "-app=");
+                sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos+7), "-app=");
                 BI_append_data(sCmd, _data, _option, _parser);
                 return 1;
             }
@@ -3286,6 +3286,17 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     else
                         sArgument = sCmd.substr(findCommand(sCmd).nPos+6);
                     StripSpaces(sArgument);
+                    if (!sArgument.length())
+                    {
+                        if (_script.getScriptFileName().length())
+                            _script.openScript();
+                        else
+                        {
+                            sErrorToken = "[Bereits geladenes Script]";
+                            throw SCRIPT_NOT_EXIST;
+                        }
+                        return 1;
+                    }
                     _script.openScript(sArgument);
                 }
             }
@@ -3695,7 +3706,11 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
         }
         else if (sCommand == "help" || sCommand == "man")
         {
-            if (sCmd.length() > 5 && sCmd.find("-") != string::npos)
+            if (findCommand(sCmd).nPos + findCommand(sCmd).sString.length() < sCmd.length())
+                doc_Help(sCmd.substr(findCommand(sCmd).nPos+findCommand(sCmd).sString.length()), _option);
+            else
+                doc_Help("brief", _option);
+            /*if (sCmd.length() > 5 && sCmd.find("-") != string::npos)
             {
                 doc_Help(sCmd.substr(sCmd.find('-')+1), _option);
             }
@@ -3704,7 +3719,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 doc_Help(getArgAtPos(sCmd, findCommand(sCmd).nPos+sCommand.length()), _option);
             }
             else
-                doc_Help("brief", _option);
+                doc_Help("brief", _option);*/
             return 1;
         }
         /*else if (sCommand == "headedit")
@@ -4426,7 +4441,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 if (matchParams(sCmd, "app"))
                 {
-                    sCmd.insert(sCmd.find('"'), "-app=");
+                    sCmd.insert(sCmd.find_first_not_of(' ',findCommand(sCmd).nPos+5), "-app=");
                     BI_append_data(sCmd, _data, _option, _parser);
                     return 1;
                 }

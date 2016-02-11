@@ -23,6 +23,8 @@
 void doc_Help(const string& __sTopic, Settings& _option)
 {
     string sTopic = toLowerCase(__sTopic);
+    if (matchParams(sTopic, "html"))
+        eraseToken(sTopic, "html", false);
     vector<string> vDocArticle;
     // --> Zunaechst einmal muessen wir anfuehrende oder abschliessende Leerzeichen entfernen <--
     StripSpaces(sTopic);
@@ -34,14 +36,265 @@ void doc_Help(const string& __sTopic, Settings& _option)
 
     vDocArticle = _option.getHelpArticle(sTopic);
 
-    if (vDocArticle[0] == "NO_ENTRY_FOUND")
+    if (vDocArticle[0] == "NO_ENTRY_FOUND") // Nix gefunden
     {
         make_hline();
         cerr << LineBreak("|-> Zu dem Thema \"" + sTopic + "\" wurde kein Eintrag gefunden. Möglicherweise wurde das Thema falsch geschrieben, oder das Thema existiert (noch) nicht. Ein Synonym oder eine Stichwortsuche mittels \"find " + sTopic + "\" kann unter Umständen auch zum Erfolg führen.", _option) << endl;
         make_hline();
         return;
     }
-    else
+    else if (matchParams(__sTopic, "html")) // HTML-Export generieren
+    {
+        ofstream fHTML;
+        FileSystem _fSys;
+        _fSys.setTokens(_option.getTokenPaths());
+        _fSys.setPath("docs/htmlexport", true, _option.getExePath());
+        string sFilename = "<>/docs/htmlexport/"+_option.getHelpArtclID(sTopic) + ".html";
+        _option.declareFileType(".html");
+        sFilename = _option.ValidFileName(sFilename,".html");
+
+        fHTML.open(sFilename.c_str());
+        if (fHTML.fail())
+        {
+            sErrorToken = sFilename;
+            throw CANNOT_GENERATE_FILE;
+        }
+        // Header schreiben
+        fHTML << "<!DOCTYPE html>" << endl
+              << "<html>" << endl
+              << "<head>" << endl;
+        for (unsigned int i = 0; i < vDocArticle.size(); i++)
+        {
+            if (!i)
+            {
+                // Header fertigstellen
+                fHTML << "<title>NUMERE-HILFE: " + toUpperCase(vDocArticle[i])
+                      << "</title>" << endl
+                      << "</head>" << endl << endl
+                      << "<body>" << endl;
+                fHTML << "<h4>Beschreibung:</h4>" << endl;
+                continue;
+            }
+
+            if (vDocArticle[i].find("<example ") != string::npos) // Beispiel-Tags
+            {
+                fHTML << "<h4>Beispiel</h4>" << endl;
+                bool bVerb = false;
+                if (vDocArticle[i].find("type=") && getArgAtPos(vDocArticle[i], vDocArticle[i].find("type=")+5) == "verbatim")
+                    bVerb = true;
+
+                doc_ReplaceTokensForHTML(vDocArticle[i], _option);
+                fHTML << "<p>" << (getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5)) << "</p>" << endl;
+                fHTML << "<div style=\"margin-left:40px;\"><code>" << endl;
+                for (unsigned int j = i+1; j < vDocArticle.size(); j++)
+                {
+                    if (vDocArticle[j].find("</example>") != string::npos)
+                    {
+                        i = j;
+                        fHTML << "</code></div>" << endl;
+                        break;
+                    }
+                    if (vDocArticle[j] == "[...]")
+                    {
+                        fHTML << "[...]<br>" << endl;
+                        continue;
+                    }
+
+                    doc_ReplaceTokensForHTML(vDocArticle[j], _option);
+
+                    if (!bVerb)
+                    {
+                        if (((i+1) % 2 && j % 2) || (!((i+1) % 2) && !(j % 2)))
+                        {
+                            fHTML << "|&lt;- ";
+                            fHTML << (vDocArticle[j]) << "<br>" << endl;
+                        }
+                        else
+                        {
+                            fHTML << "|-&gt; ";
+                            fHTML << (vDocArticle[j]) << "<br>" << endl;
+                            if (vDocArticle[j+1].find("</example>") == string::npos)
+                                fHTML << "|<br>" << endl;
+                        }
+                    }
+                    else
+                    {
+                        fHTML << (vDocArticle[j]) << "<br>" << endl;
+                    }
+                }
+            }
+            else if (vDocArticle[i].find("<exprblock>") != string::npos) // EXPRBLOCK-Tags
+            {
+                if (vDocArticle[i].find("</exprblock>", vDocArticle[i].find("<exprblock>")) != string::npos)
+                {
+                    doc_ReplaceTokensForHTML(vDocArticle[i], _option);
+                    for (unsigned int k = 0; k < vDocArticle[i].length(); k++)
+                    {
+                        if (vDocArticle[i].substr(k,12) == "</exprblock>")
+                            break;
+                        if (vDocArticle[i][k] == '^')
+                        {
+                            vDocArticle[i].insert(k+2,"</sup>");
+                            vDocArticle[i].replace(k,1,"<sup>");
+                        }
+                        if (vDocArticle[i][k] == '_')
+                        {
+                            vDocArticle[i].insert(k+2,"</sub>");
+                            vDocArticle[i].replace(k,1,"<sub>");
+                            k += 7;
+                        }
+                        if (k < vDocArticle[i].length()-1 && isdigit(vDocArticle[i][k+1]) && isalpha(vDocArticle[i][k]))
+                        {
+                            if (k < vDocArticle[i].length()-2)
+                                vDocArticle[i].insert(k+2, "</sub>");
+                            else
+                                vDocArticle[i].append("</sub>");
+                            vDocArticle[i].insert(k+1,"<sub>");
+                            k += 7;
+                        }
+                    }
+                    while (vDocArticle[i].find("</exprblock>", vDocArticle[i].find("<exprblock>")) != string::npos)
+                    {
+                        string sExprBlock = vDocArticle[i].substr(vDocArticle[i].find("<exprblock>")+11, vDocArticle[i].find("</exprblock>")-vDocArticle[i].find("<exprblock>")-11);
+                        for (unsigned int k = 0; k < sExprBlock.length(); k++)
+                        {
+                            if (sExprBlock.substr(k,2) == "\\n")
+                                sExprBlock.replace(k,2,"<br>");
+                            if (sExprBlock.substr(k,2) == "\\t")
+                                sExprBlock.replace(k,2,"&nbsp;&nbsp;&nbsp;&nbsp;");
+                        }
+                        vDocArticle[i].replace(vDocArticle[i].find("<exprblock>"), vDocArticle[i].find("</exprblock>")+12-vDocArticle[i].find("<exprblock>"), "</p><div style=\"font-style: italic;margin-left: 40px\">" + sExprBlock + "</div><p>");
+                    }
+
+                    fHTML << "<p>" << (vDocArticle[i]) << "</p>" << endl;
+                }
+                else
+                {
+                    if (vDocArticle[i] != "<exprblock>")
+                        fHTML << "<p>" << (vDocArticle[i].substr(0,vDocArticle[i].find("<exprblock>"))) << "</p>" << endl;
+                    fHTML << "<div style=\"font-style: italic;margin-left: 40px\">" << endl;
+                    for (unsigned int j = i+1; j < vDocArticle.size(); j++)
+                    {
+                        if (vDocArticle[j].find("</exprblock>") != string::npos)
+                        {
+                            i = j;
+                            fHTML << "</div>" << endl;
+                            break;
+                        }
+
+                        doc_ReplaceTokensForHTML(vDocArticle[j], _option);
+                        for (unsigned int k = 0; k < vDocArticle[j].length(); k++)
+                        {
+                            if (vDocArticle[j][k] == '^')
+                            {
+                                vDocArticle[j].insert(k+2,"</sup>");
+                                vDocArticle[j].replace(k,1,"<sup>");
+                            }
+                            if (vDocArticle[j][k] == '_')
+                            {
+                                vDocArticle[j].insert(k+2,"</sub>");
+                                vDocArticle[j].replace(k,1,"<sub>");
+                                k += 7;
+                            }
+                            if (k < vDocArticle[j].length()-1 && isdigit(vDocArticle[j][k+1]) && isalpha(vDocArticle[j][k]))
+                            {
+                                if (k < vDocArticle[j].length()-2)
+                                    vDocArticle[j].insert(k+2, "</sub>");
+                                else
+                                    vDocArticle[j].append("</sub>");
+                                vDocArticle[j].insert(k+1,"<sub>");
+                                k += 7;
+                            }
+                        }
+
+                        while (vDocArticle[j].find("\\t") != string::npos)
+                            vDocArticle[j].replace(vDocArticle[j].find("\\t"), 2, "&nbsp;&nbsp;&nbsp;&nbsp;");
+
+                        fHTML << (vDocArticle[j]) << "<br>" << endl;
+                    }
+                }
+            }
+            else if (vDocArticle[i].find("<codeblock>") != string::npos) // CODEBLOCK-Tags
+            {
+                if (vDocArticle[i].find("</codeblock>", vDocArticle[i].find("<codeblock>")) != string::npos)
+                {
+                    doc_ReplaceTokensForHTML(vDocArticle[i], _option);
+                    while (vDocArticle[i].find("</codeblock>", vDocArticle[i].find("<codeblock>")) != string::npos)
+                    {
+                        string sExprBlock = vDocArticle[i].substr(vDocArticle[i].find("<codeblock>")+11, vDocArticle[i].find("</codeblock>")-vDocArticle[i].find("<codeblock>")-11);
+                        for (unsigned int k = 0; k < sExprBlock.length(); k++)
+                        {
+                            if (sExprBlock.substr(k,2) == "\\n")
+                                sExprBlock.replace(k,2,"<br>");
+                            if (sExprBlock.substr(k,2) == "\\t")
+                                sExprBlock.replace(k,2,"&nbsp;&nbsp;&nbsp;&nbsp;");
+                        }
+                        vDocArticle[i].replace(vDocArticle[i].find("<codeblock>"), vDocArticle[i].find("</codeblock>")+12-vDocArticle[i].find("<codeblock>"), "</p><div class=\"sites-codeblock sites-codesnippet-block\"><code>" + sExprBlock + "</code></div><p>");
+                    }
+                    fHTML << "<p>" << (vDocArticle[i]) << "</p>" << endl;
+                }
+                else
+                {
+                    if (vDocArticle[i] != "<codeblock>")
+                        fHTML << "<p>" << (vDocArticle[i].substr(0,vDocArticle[i].find("<codeblock>"))) << "</p>" << endl;
+                    fHTML << "<div class=\"sites-codeblock sites-codesnippet-block\"><code>" << endl;
+                    for (unsigned int j = i+1; j < vDocArticle.size(); j++)
+                    {
+                        if (vDocArticle[j].find("</codeblock>") != string::npos)
+                        {
+                            i = j;
+                            fHTML << "</code></div>" << endl;
+                            break;
+                        }
+
+                        doc_ReplaceTokensForHTML(vDocArticle[j], _option);
+                        while (vDocArticle[j].find("\\t") != string::npos)
+                            vDocArticle[j].replace(vDocArticle[j].find("\\t"), 2, "&nbsp;&nbsp;&nbsp;&nbsp;");
+
+                        fHTML << (vDocArticle[j]) << "<br>" << endl;
+                    }
+                }
+            }
+            else if (vDocArticle[i].find("<list") != string::npos) // Alle LIST-Tags (umgewandelt zu TABLE)
+            {
+                fHTML << "<h4>Optionen:</h4>" << endl;
+                fHTML << "<table style=\"border-collapse:collapse; border-color:rgb(136,136,136);border-width:1px\" border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">" << endl << "  <tbody>" << endl;
+                for (unsigned int j = i+1; j < vDocArticle.size(); j++)
+                {
+                    if (vDocArticle[j].find("</list>") != string::npos)
+                    {
+                        fHTML << "  </tbody>" << endl
+                             << "</table>" << endl;
+                        i = j;
+                        break;
+                    }
+                    else
+                    {
+                        doc_ReplaceTokensForHTML(vDocArticle[j], _option);
+                        fHTML << "    <tr>" << endl;
+                        fHTML << "      <td style=\"width:200px;height:19px\"><code>"
+                             << (getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5))
+                             << "</code></td>" << endl
+                             << "      <td style=\"width:400px;height:19px\">"
+                             << (vDocArticle[j].substr(vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)+1, vDocArticle[j].find("</item>")-1-vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)))
+                             << "</td>" << endl;
+                        fHTML << "    </tr>" << endl;
+                    }
+                }
+            }
+            else // Normaler Paragraph
+            {
+                doc_ReplaceTokensForHTML(vDocArticle[i], _option);
+                fHTML << "<p>" << (vDocArticle[i]) << "</p>" << endl;
+            }
+        }
+        fHTML << "</body>" << endl
+              << "</html>" << endl;
+        fHTML.close();
+        cerr << LineBreak("|-> Eine Kopie des Artikels \"" + _option.getHelpArticleTitle(_option.getHelpIdxKey(sTopic)) + "\" wurde in \"" + sFilename + "\" angelegt.", _option) << endl;
+        return;
+    }
+    else // Hilfeartikel anzeigen
     {
         make_hline();
         for (unsigned int i = 0; i < vDocArticle.size(); i++)
@@ -53,34 +306,13 @@ void doc_Help(const string& __sTopic, Settings& _option)
                 continue;
             }
 
-            if (vDocArticle[i].find("<example ") != string::npos)
+            if (vDocArticle[i].find("<example ") != string::npos) // Beispiel-Tags
             {
                 bool bVerb = false;
                 if (vDocArticle[i].find("type=") && getArgAtPos(vDocArticle[i], vDocArticle[i].find("type=")+5) == "verbatim")
                     bVerb = true;
 
                 doc_ReplaceTokens(vDocArticle[i], _option);
-                /*for (unsigned int k = 0; k < vDocArticle[i].size(); k++)
-                {
-                    if (vDocArticle[i].substr(k,4) == "&gt;")
-                        vDocArticle[i].replace(k,4,">");
-                    if (vDocArticle[i].substr(k,4) == "&lt;")
-                        vDocArticle[i].replace(k,4,"<");
-                    if (vDocArticle[i].substr(k,6) == "&quot;")
-                        vDocArticle[i].replace(k,6,"\"");
-                    if (vDocArticle[i].substr(k,10) == "&PLOTPATH&")
-                        vDocArticle[i].replace(k,10,replacePathSeparator(_option.getPlotOutputPath()));
-                    if (vDocArticle[i].substr(k,10) == "&LOADPATH&")
-                        vDocArticle[i].replace(k,10,replacePathSeparator(_option.getLoadPath()));
-                    if (vDocArticle[i].substr(k,10) == "&SAVEPATH&")
-                        vDocArticle[i].replace(k,10,replacePathSeparator(_option.getSavePath()));
-                    if (vDocArticle[i].substr(k,10) == "&PROCPATH&")
-                        vDocArticle[i].replace(k,10,replacePathSeparator(_option.getProcsPath()));
-                    if (vDocArticle[i].substr(k,12) == "&SCRIPTPATH&")
-                        vDocArticle[i].replace(k,12,replacePathSeparator(_option.getScriptPath()));
-                    if (vDocArticle[i].substr(k,9) == "&EXEPATH&")
-                        vDocArticle[i].replace(k,9,replacePathSeparator(_option.getExePath()));
-                }*/
                 if (getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5).find('~') == string::npos)
                     cerr << LineBreak("|-> BEISPIEL: " + getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5), _option) << endl;
                 else
@@ -102,27 +334,6 @@ void doc_Help(const string& __sTopic, Settings& _option)
                     }
 
                     doc_ReplaceTokens(vDocArticle[j], _option);
-                    /*for (unsigned int k = 0; k < vDocArticle[j].size(); k++)
-                    {
-                        if (vDocArticle[j].substr(k,4) == "&gt;")
-                            vDocArticle[j].replace(k,4,">");
-                        if (vDocArticle[j].substr(k,4) == "&lt;")
-                            vDocArticle[j].replace(k,4,"<");
-                        if (vDocArticle[j].substr(k,6) == "&quot;")
-                            vDocArticle[j].replace(k,6,"\"");
-                        if (vDocArticle[j].substr(k,10) == "&PLOTPATH&")
-                            vDocArticle[j].replace(k,10,replacePathSeparator(_option.getPlotOutputPath()));
-                        if (vDocArticle[j].substr(k,10) == "&LOADPATH&")
-                            vDocArticle[j].replace(k,10,replacePathSeparator(_option.getLoadPath()));
-                        if (vDocArticle[j].substr(k,10) == "&SAVEPATH&")
-                            vDocArticle[j].replace(k,10,replacePathSeparator(_option.getSavePath()));
-                        if (vDocArticle[j].substr(k,10) == "&PROCPATH&")
-                            vDocArticle[j].replace(k,10,replacePathSeparator(_option.getProcsPath()));
-                        if (vDocArticle[j].substr(k,12) == "&SCRIPTPATH&")
-                            vDocArticle[j].replace(k,12,replacePathSeparator(_option.getScriptPath()));
-                        if (vDocArticle[j].substr(k,9) == "&EXEPATH&")
-                            vDocArticle[j].replace(k,9,replacePathSeparator(_option.getExePath()));
-                    }*/
 
                     if (!bVerb)
                     {
@@ -145,7 +356,7 @@ void doc_Help(const string& __sTopic, Settings& _option)
                     }
                 }
             }
-            else if (vDocArticle[i].find("<exprblock>") != string::npos)
+            else if (vDocArticle[i].find("<exprblock>") != string::npos) // EXPRBLOCK-Tags
             {
                 if (vDocArticle[i].find("</exprblock>", vDocArticle[i].find("<exprblock>")) != string::npos)
                 {
@@ -193,7 +404,7 @@ void doc_Help(const string& __sTopic, Settings& _option)
                     }
                 }
             }
-            else if (vDocArticle[i].find("<codeblock>") != string::npos)
+            else if (vDocArticle[i].find("<codeblock>") != string::npos) // CODEBLOCK-Tags
             {
                 if (vDocArticle[i].find("</codeblock>", vDocArticle[i].find("<codeblock>")) != string::npos)
                 {
@@ -241,7 +452,7 @@ void doc_Help(const string& __sTopic, Settings& _option)
                     }
                 }
             }
-            else if (vDocArticle[i].find("<list>") != string::npos)
+            else if (vDocArticle[i].find("<list>") != string::npos) // Standard-LIST-Tags
             {
                 unsigned int nLengthMax = 0;
                 for (unsigned int j = i+1; j < vDocArticle.size(); j++)
@@ -322,28 +533,6 @@ void doc_Help(const string& __sTopic, Settings& _option)
                     else
                     {
                         doc_ReplaceTokens(vDocArticle[j], _option);
-                        /*
-                        for (unsigned int k = 0; k < vDocArticle[j].size(); k++)
-                        {
-                            if (vDocArticle[j].substr(k,4) == "&gt;")
-                                vDocArticle[j].replace(k,4,">");
-                            if (vDocArticle[j].substr(k,4) == "&lt;")
-                                vDocArticle[j].replace(k,4,"<");
-                            if (vDocArticle[j].substr(k,6) == "&quot;")
-                                vDocArticle[j].replace(k,6,"\"");
-                            if (vDocArticle[j].substr(k,10) == "&PLOTPATH&")
-                                vDocArticle[j].replace(k,10,replacePathSeparator(_option.getPlotOutputPath()));
-                            if (vDocArticle[j].substr(k,10) == "&LOADPATH&")
-                                vDocArticle[j].replace(k,10,replacePathSeparator(_option.getLoadPath()));
-                            if (vDocArticle[j].substr(k,10) == "&SAVEPATH&")
-                                vDocArticle[j].replace(k,10,replacePathSeparator(_option.getSavePath()));
-                            if (vDocArticle[j].substr(k,10) == "&PROCPATH&")
-                                vDocArticle[j].replace(k,10,replacePathSeparator(_option.getProcsPath()));
-                            if (vDocArticle[j].substr(k,12) == "&SCRIPTPATH&")
-                                vDocArticle[j].replace(k,12,replacePathSeparator(_option.getScriptPath()));
-                            if (vDocArticle[j].substr(k,9) == "&EXEPATH&")
-                                vDocArticle[j].replace(k,9,replacePathSeparator(_option.getExePath()));
-                        }*/
 
                         string sNode = getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5);
                         for (unsigned int k = 0; k < sNode.length(); k++)
@@ -361,7 +550,7 @@ void doc_Help(const string& __sTopic, Settings& _option)
                     }
                 }
             }
-            else if (vDocArticle[i].find("<list") != string::npos && vDocArticle[i].find("type=") != string::npos)
+            else if (vDocArticle[i].find("<list") != string::npos && vDocArticle[i].find("type=") != string::npos) // Modified-LIST-Tags
             {
                 map<string,string> mListitems;
                 string sType = getArgAtPos(vDocArticle[i], vDocArticle[i].find("type=")+5);
@@ -449,59 +638,15 @@ void doc_Help(const string& __sTopic, Settings& _option)
                     else
                     {
                         doc_ReplaceTokens(vDocArticle[j], _option);
-                        /*
-                        for (unsigned int k = 0; k < vDocArticle[j].size(); k++)
-                        {
-                            if (vDocArticle[j].substr(k,4) == "&gt;")
-                                vDocArticle[j].replace(k,4,">");
-                            if (vDocArticle[j].substr(k,4) == "&lt;")
-                                vDocArticle[j].replace(k,4,"<");
-                            if (vDocArticle[j].substr(k,6) == "&quot;")
-                                vDocArticle[j].replace(k,6,"\"");
-                            if (vDocArticle[j].substr(k,10) == "&PLOTPATH&")
-                                vDocArticle[j].replace(k,10,replacePathSeparator(_option.getPlotOutputPath()));
-                            if (vDocArticle[j].substr(k,10) == "&LOADPATH&")
-                                vDocArticle[j].replace(k,10,replacePathSeparator(_option.getLoadPath()));
-                            if (vDocArticle[j].substr(k,10) == "&SAVEPATH&")
-                                vDocArticle[j].replace(k,10,replacePathSeparator(_option.getSavePath()));
-                            if (vDocArticle[j].substr(k,10) == "&PROCPATH&")
-                                vDocArticle[j].replace(k,10,replacePathSeparator(_option.getProcsPath()));
-                            if (vDocArticle[j].substr(k,12) == "&SCRIPTPATH&")
-                                vDocArticle[j].replace(k,12,replacePathSeparator(_option.getScriptPath()));
-                            if (vDocArticle[j].substr(k,9) == "&EXEPATH&")
-                                vDocArticle[j].replace(k,9,replacePathSeparator(_option.getExePath()));
-                        }*/
 
                         if (nLengthMax < getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()-countEscapeSymbols(getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5)))
                             nLengthMax = getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()-countEscapeSymbols(getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5));
                     }
                 }
             }
-            else
+            else // Normaler Paragraph
             {
                 doc_ReplaceTokens(vDocArticle[i], _option);
-                /*
-                for (unsigned int k = 0; k < vDocArticle[i].size(); k++)
-                {
-                    if (vDocArticle[i].substr(k,4) == "&gt;")
-                        vDocArticle[i].replace(k,4,">");
-                    if (vDocArticle[i].substr(k,4) == "&lt;")
-                        vDocArticle[i].replace(k,4,"<");
-                    if (vDocArticle[i].substr(k,6) == "&quot;")
-                        vDocArticle[i].replace(k,6,"\"");
-                    if (vDocArticle[i].substr(k,10) == "&PLOTPATH&")
-                        vDocArticle[i].replace(k,10,replacePathSeparator(_option.getPlotOutputPath()));
-                    if (vDocArticle[i].substr(k,10) == "&LOADPATH&")
-                        vDocArticle[i].replace(k,10,replacePathSeparator(_option.getLoadPath()));
-                    if (vDocArticle[i].substr(k,10) == "&SAVEPATH&")
-                        vDocArticle[i].replace(k,10,replacePathSeparator(_option.getSavePath()));
-                    if (vDocArticle[i].substr(k,10) == "&PROCPATH&")
-                        vDocArticle[i].replace(k,10,replacePathSeparator(_option.getProcsPath()));
-                    if (vDocArticle[i].substr(k,12) == "&SCRIPTPATH&")
-                        vDocArticle[i].replace(k,12,replacePathSeparator(_option.getScriptPath()));
-                    if (vDocArticle[i].substr(k,9) == "&EXEPATH&")
-                        vDocArticle[i].replace(k,9,replacePathSeparator(_option.getExePath()));
-                }*/
 
                 if (vDocArticle[i].find('~') == string::npos && vDocArticle[i].find('%') == string::npos)
                     cerr << LineBreak("|-> " + vDocArticle[i], _option) << endl;
@@ -516,9 +661,10 @@ void doc_Help(const string& __sTopic, Settings& _option)
     return;
 }
 
+// Definierte Tokens durch Steuerzeichen ersetzen
 void doc_ReplaceTokens(string& sDocParagraph, const Settings& _option)
 {
-    for (unsigned int k = 0; k < sDocParagraph.size(); k++)
+    for (unsigned int k = 0; k < sDocParagraph.length(); k++)
     {
         if (sDocParagraph.substr(k,6) == "<expr>" && sDocParagraph.find("</expr>", k+6) != string::npos)
         {
@@ -584,6 +730,83 @@ void doc_ReplaceTokens(string& sDocParagraph, const Settings& _option)
             sDocParagraph.replace(k,12,replacePathSeparator(_option.getScriptPath()));
         if (sDocParagraph.substr(k,9) == "&EXEPATH&")
             sDocParagraph.replace(k,9,replacePathSeparator(_option.getExePath()));
+    }
+    return;
+}
+
+// Definierte Tokens durch ggf. passende HTML-Tokens ersetzen
+void doc_ReplaceTokensForHTML(string& sDocParagraph, const Settings& _option)
+{
+    for (unsigned int k = 0; k < sDocParagraph.length(); k++)
+    {
+        if (sDocParagraph.substr(k,2) == "\\$")
+            sDocParagraph.erase(k,1);
+        if (sDocParagraph.substr(k,2) == "  ")
+            sDocParagraph.replace(k,1,"&nbsp;");
+        if (sDocParagraph.substr(k,4) == "<em>" && sDocParagraph.find("</em>", k+4) != string::npos)
+        {
+            sDocParagraph.insert(k+4,"<strong>");
+            sDocParagraph.insert(sDocParagraph.find("</em>",k+12),"</strong>");
+        }
+        if (sDocParagraph.substr(k,6) == "<expr>" && sDocParagraph.find("</expr>", k+6) != string::npos)
+        {
+            string sExpr = sDocParagraph.substr(k+6, sDocParagraph.find("</expr>", k+6)-k-6);
+            for (unsigned int i = 0; i < sExpr.length(); i++)
+            {
+                /*if (!i && sExpr[i] == '$')
+                    sExpr.insert(0,"\\");
+                if (sExpr[i] == '$' && sExpr[i-1] != '\\')
+                    sExpr.insert(i,"\\");*/
+                if (sExpr[i] == '^')
+                {
+                    sExpr.insert(i+2,"</sup>");
+                    sExpr.replace(i,1,"<sup>");
+                }
+                if (sExpr[i] == '_')
+                {
+                    sExpr.insert(i+2,"</sub>");
+                    sExpr.replace(i,1,"<sub>");
+                    i += 7;
+                }
+                if (i < sExpr.length()-1 && isdigit(sExpr[i+1]) && isalpha(sExpr[i]))
+                {
+                    if (i < sExpr.length()-2)
+                        sExpr.insert(i+2, "</sub>");
+                    else
+                        sExpr.append("</sub>");
+                    sExpr.insert(i+1,"<sub>");
+                    i += 7;
+                }
+                if (sExpr.substr(i,2) == "\\n")
+                    sExpr.replace(i,2,"<br>");
+            }
+            sDocParagraph.replace(k, sDocParagraph.find("</expr>",k+6)+7-k, "<em>"+sExpr+"</em>");
+        }
+        if (sDocParagraph.substr(k,6) == "<code>" && sDocParagraph.find("</code>", k+6) != string::npos)
+        {
+            string sCode = sDocParagraph.substr(k+6, sDocParagraph.find("</code>", k+6)-k-6);
+            for (unsigned int i = 0; i < sCode.length(); i++)
+            {
+                /*if (sCode.substr(i,6) == "&quot;")
+                    sCode.replace(i,6,"\"");*/
+                if (sCode.substr(i,2) == "\\n")
+                    sCode.replace(i,2,"<br>");
+            }
+            //sDocParagraph.replace(k, sDocParagraph.find("</code>",k+6)+7-k, "'"+sCode+"'");
+            k += sCode.length();
+        }
+        if (sDocParagraph.substr(k,10) == "&PLOTPATH&")
+            sDocParagraph.replace(k,10,"&lt;plotpath&gt;");
+        if (sDocParagraph.substr(k,10) == "&LOADPATH&")
+            sDocParagraph.replace(k,10,"&lt;loadpath&gt;");
+        if (sDocParagraph.substr(k,10) == "&SAVEPATH&")
+            sDocParagraph.replace(k,10,"&lt;savepath&gt;");
+        if (sDocParagraph.substr(k,10) == "&PROCPATH&")
+            sDocParagraph.replace(k,10,"&lt;procpath&gt;");
+        if (sDocParagraph.substr(k,12) == "&SCRIPTPATH&")
+            sDocParagraph.replace(k,12,"&lt;scriptpath&gt;");
+        if (sDocParagraph.substr(k,9) == "&EXEPATH&")
+            sDocParagraph.replace(k,9,"&lt;&gt;");
     }
     return;
 }
