@@ -386,6 +386,8 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             }
             if (sString.length())
             {
+                if (!parser_StringParser(sString, sDummy, _data, _parser, _option, true))
+                    return 0;
                 if (sString.find(':') != string::npos)
                 {
                     int i1 = 0, i2 = 0;
@@ -428,7 +430,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                                 if (i < i2-1)
                                     sString += ", ";
                             }
-                            sLine = sLine.substr(0, n_pos) + sString + sLine.substr(nPos+1);
+                            sLine = sLine.substr(0, n_pos) + "{"+sString+"}" + sLine.substr(nPos+1);
                         }
                         else
                             sLine = sLine.substr(0, n_pos) + "\"\"" + sLine.substr(nPos+1);
@@ -2095,6 +2097,16 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             continue;*/
         if (sFinal[j] != "\\n" && sFinal[j+1] != "\\n" && sFinal[j] != "\\t" && sFinal[j] != "\\t")
         {
+            if (sLine.find_last_not_of("\" ") != string::npos && sLine[sLine.find_last_not_of("\" ")] == '\n')
+            {
+                sLine += ", ";
+                if (sConsoleOut.back() == '"')
+                {
+                    sConsoleOut[sConsoleOut.rfind('$')] = '"';
+                    sConsoleOut.back() = '$';
+                }
+                continue;
+            }
             sConsoleOut += ", ";
             sLine += ", ";
         }

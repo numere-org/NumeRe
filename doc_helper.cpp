@@ -30,18 +30,6 @@ Documentation::~Documentation()
         fDocument.close();
 }
 
-/*
-<helpindex>
-<article id="">
-<file path="" />
-<title string="" idxkey="" />
-<keywords>
-<keyword>KEY</keyword>
-</keywords>
-</article>
-</helpindex>
-*/
-
 void Documentation::updateIndexFile()
 {
     if (!vDocIndexTable.size())
@@ -536,6 +524,41 @@ string Documentation::getHelpIdxKey(const string& _sTheme)
     if (sReturn.find(',') != string::npos)
         sReturn.erase(sReturn.find(','));
     return sReturn;
+}
+
+string Documentation::getHelpArtclID(const string& _sTheme)
+{
+    map<string,int>::iterator iter = mDocumentationIndex.begin();
+    map<string,int>::iterator firstIndex = mDocumentationIndex.end();
+    map<string,int>::iterator secondIndex = mDocumentationIndex.end();
+
+    for (unsigned int i = _sTheme.length(); i > 0; i--)
+    {
+        if (firstIndex != mDocumentationIndex.end())
+            iter = firstIndex;
+        else
+            iter = mDocumentationIndex.begin();
+        //int n = 0;
+        for (; iter != secondIndex; ++iter)
+        {
+            if (iter->first[0] < _sTheme[0])
+                continue;
+            if (iter->first[0] == _sTheme[0] && firstIndex == mDocumentationIndex.end())
+                firstIndex = iter;
+            if (iter->first[0] > _sTheme[0])
+            {
+                secondIndex = iter;
+                break;
+            }
+            //cerr << iter->first << endl;
+            if (iter->first == _sTheme.substr(0,i))
+            {
+                return vDocIndexTable[iter->second][0];
+            }
+            //n++;
+        }
+    }
+    return "NO_ENTRY_FOUND";
 }
 
 string Documentation::getHelpArticleTitle(const string& _sIdxKey)

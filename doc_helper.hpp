@@ -56,6 +56,7 @@ class Documentation : public FileSystem
         void removeFromDocIndex(const string& _sID);
         vector<string> getHelpArticle(const string& _sTheme);
         string getHelpIdxKey(const string& _sTheme);
+        string getHelpArtclID(const string& _sTheme);
         string getHelpArticleTitle(const string& _sIdxKey);
 };
 

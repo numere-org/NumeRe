@@ -23,6 +23,7 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <fstream>
 
 #include "error.hpp"
 #include "tools.hpp"
@@ -33,6 +34,7 @@ extern const string sVersion;
 
 void doc_Help(const string&, Settings&);
 void doc_ReplaceTokens(string& sDocParagraph, const Settings& _option);
+void doc_ReplaceTokensForHTML(string& sDocParagraph, const Settings& _option);
 void doc_SearchFct(const string& sToLookFor, Settings& _option);
 void doc_FirstStart(const Settings& _option);
 void doc_TipOfTheDay(Settings& _option);

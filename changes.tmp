@@ -40,3 +40,8 @@ Added	Selbst definierte Funktionen koennen nun auch beliebige Zahlen an Argument
 Added	Mehrere Prozeduren koennen nun in einer Prozedurdatei angelegt werden. Nur die namensgebende Prozedur kann von aussen angesprochen werden, die anderen sind implizit "private" und muessen mittels des namespace "thisfile~" aufgerufen werden.
 Fixed	Wenn bei einem Plot weder Funktion noch Datensatz angegeben wird, wird nun eine sinnvolle Fehlermeldung zurueckgegeben.
 Added	Prozeduren koennen nun mehrere Werte zugleich zurueckgeben.
+Fixed	"string()" kann nun auch rekursiv auf sich und andere Stringfunktionen zugreifen.
+Fixed	"append" kann nun mit "string()" verwendet werden
+Cleaned	Darstellung von "string()"+"\n" entscheidend verbessert.
+Fixed	{"a","b","c,"} wurde als "a", "b", "b" interpretiert. Wurde behoben.
+Added	NumeRe kann nun mittels "help THEMA -html" eine HTML-Datei des betreffenden Hilfeartikels erzeugen.

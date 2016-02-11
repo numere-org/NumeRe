@@ -3259,8 +3259,8 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
         sScalars[i] = "";
     }
     sScalars[32] = "";
-
-    //cerr << sTemp << endl;
+    if (_option.getbDebug())
+        cerr << "|-> DEBUG: sLine = " << sTemp << endl;
     do
     {
         nPos_2 = sTemp.find("{", nPos);
@@ -3484,9 +3484,9 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
             sTemp.erase(0,sTemp.find('}', nPos)+1);
         for (unsigned int i = 0; i < sVectors[nCount].length(); i++)
         {
-            if (sVectors[nCount][i] == '(')
+            if (sVectors[nCount][i] == '(' && !isInQuotes(sVectors[nCount], i))
             {
-                i = getMatchingParenthesis(sVectors[nCount].substr(i)) + i;
+                i += getMatchingParenthesis(sVectors[nCount].substr(i));
             }
             else if (sVectors[nCount][i] == ',' && !isInQuotes(sVectors[nCount], i))
                 nDim_vec++;
@@ -3505,8 +3505,8 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
         nScalars++;
     }
 
-    sTemp = "";
-    sLine = "";
+    sTemp.clear();
+    sLine.clear();
     if (!nDim)
     {
         for (int i = 0; i < nScalars; i++)
@@ -3519,30 +3519,36 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
             for (int j = 0; j < nCount; j++)
             {
                 sLine += sScalars[j];
+                sTemp.clear();
                 if (sVectors[j].find(',') != string::npos)
                 {
                     for (unsigned int n = 0; n < sVectors[j].length(); n++)
                     {
-                        if (sVectors[j][n] == '(')
+                        if (sVectors[j][n] == '(' && !isInQuotes(sVectors[j],n))
                         {
                             if (getMatchingParenthesis(sVectors[j].substr(n)) == string::npos)
                             {
                                 throw UNMATCHED_PARENTHESIS;
                             }
-                            n = getMatchingParenthesis(sVectors[j].substr(n)) + n;
+                            n += getMatchingParenthesis(sVectors[j].substr(n));
                         }
                         else if (sVectors[j][n] == ',' && !isInQuotes(sVectors[j],n))
                         {
                             sTemp = sVectors[j].substr(0,n);
-                            sVectors[j] = sVectors[j].substr(n+1);
+                            sVectors[j].erase(0,n+1);
                             break;
                         }
+                    }
+                    if (!sTemp.length())
+                    {
+                        sTemp = sVectors[j];
+                        sVectors[j].clear();
                     }
                 }
                 else if (sVectors[j].length())
                 {
                     sTemp = sVectors[j];
-                    sVectors[j] = "";
+                    sVectors[j].clear();
                 }
                 else
                 {
@@ -3551,7 +3557,7 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
 
                 for (unsigned int n = 0; n < sDelim.length(); n++)
                 {
-                    if (sTemp.find(sDelim[n]) != string::npos)
+                    if (sTemp.find(sDelim[n]) != string::npos && !bIsStringExpression)
                     {
                         sTemp = "(" + sTemp + ")";
                         break;

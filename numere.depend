@@ -321,7 +321,7 @@
 1454963201 source:c:\cpp\numere\parser.cpp
 	"parser.hpp"
 
-1455054136 source:c:\cpp\numere\built-in.cpp
+1455144886 source:c:\cpp\numere\built-in.cpp
 	"built-in.hpp"
 
 1453189922 c:\cpp\numere\built-in.hpp
@@ -380,7 +380,7 @@
 1406662210 source:c:\cpp\numere\menues.cpp
 	"menues.hpp"
 
-1455027106 source:c:\cpp\numere\parser_functions.cpp
+1455109161 source:c:\cpp\numere\parser_functions.cpp
 	"parser_functions.hpp"
 
 1455024988 c:\cpp\numere\tools.hpp
@@ -480,15 +480,16 @@
 1455030169 source:c:\cpp\numere\procedure.cpp
 	"procedure.hpp"
 
-1452812596 c:\cpp\numere\documentation.hpp
+1455183482 c:\cpp\numere\documentation.hpp
 	<iostream>
 	<iomanip>
 	<string>
+	<fstream>
 	"error.hpp"
 	"tools.hpp"
 	"settings.hpp"
 
-1452843994 source:c:\cpp\numere\documentation.cpp
+1455193791 source:c:\cpp\numere\documentation.cpp
 	"documentation.hpp"
 
 1454399327 c:\cpp\numere\error.hpp
@@ -505,7 +506,7 @@
 1441544249 source:c:\cpp\numere\plugin.cpp
 	"plugin.hpp"
 
-1422391486 c:\cpp\numere\doc_helper.hpp
+1455183010 c:\cpp\numere\doc_helper.hpp
 	<fstream>
 	<string>
 	<vector>
@@ -513,7 +514,7 @@
 	"filesystem.hpp"
 	"error.hpp"
 
-1453449803 source:c:\cpp\numere\doc_helper.cpp
+1455184387 source:c:\cpp\numere\doc_helper.cpp
 	"doc_helper.hpp"
 
 1431583000 c:\cpp\numere\igorlib\readwave.h
@@ -573,7 +574,7 @@
 1454860212 source:c:\cpp\numere\plotting.cpp
 	"parser_functions.hpp"
 
-1455019125 source:c:\cpp\numere\stringparsing.cpp
+1455109603 source:c:\cpp\numere\stringparsing.cpp
 	"parser_functions.hpp"
 
 1450164414 source:c:\cpp\numere\matrixoperations.cpp
