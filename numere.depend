@@ -398,7 +398,7 @@
 	"settings.hpp"
 	"datafile.hpp"
 
-1455054233 source:c:\cpp\numere\tools.cpp
+1455452306 source:c:\cpp\numere\tools.cpp
 	"tools.hpp"
 
 1454400515 c:\cpp\numere\define.hpp
@@ -480,7 +480,7 @@
 1455030169 source:c:\cpp\numere\procedure.cpp
 	"procedure.hpp"
 
-1455183482 c:\cpp\numere\documentation.hpp
+1455300048 c:\cpp\numere\documentation.hpp
 	<iostream>
 	<iomanip>
 	<string>

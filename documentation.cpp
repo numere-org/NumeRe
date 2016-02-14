@@ -30,9 +30,11 @@ void doc_Help(const string& __sTopic, Settings& _option)
     StripSpaces(sTopic);
     if (!sTopic.length())
     {
-        cerr << LineBreak("|-> FEHLER: Es wurde kein Thema angegeben!", _option) << endl;
-        return;
+        sTopic = "brief";
     }
+    if (sTopic.front() == '-')
+        sTopic.erase(0,1);
+    StripSpaces(sTopic);
 
     vDocArticle = _option.getHelpArticle(sTopic);
 
@@ -71,7 +73,8 @@ void doc_Help(const string& __sTopic, Settings& _option)
                 fHTML << "<title>NUMERE-HILFE: " + toUpperCase(vDocArticle[i])
                       << "</title>" << endl
                       << "</head>" << endl << endl
-                      << "<body>" << endl;
+                      << "<body>" << endl
+                      << "<!-- START COPYING HERE -->" << endl;
                 fHTML << "<h4>Beschreibung:</h4>" << endl;
                 continue;
             }
@@ -128,31 +131,7 @@ void doc_Help(const string& __sTopic, Settings& _option)
                 if (vDocArticle[i].find("</exprblock>", vDocArticle[i].find("<exprblock>")) != string::npos)
                 {
                     doc_ReplaceTokensForHTML(vDocArticle[i], _option);
-                    for (unsigned int k = 0; k < vDocArticle[i].length(); k++)
-                    {
-                        if (vDocArticle[i].substr(k,12) == "</exprblock>")
-                            break;
-                        if (vDocArticle[i][k] == '^')
-                        {
-                            vDocArticle[i].insert(k+2,"</sup>");
-                            vDocArticle[i].replace(k,1,"<sup>");
-                        }
-                        if (vDocArticle[i][k] == '_')
-                        {
-                            vDocArticle[i].insert(k+2,"</sub>");
-                            vDocArticle[i].replace(k,1,"<sub>");
-                            k += 7;
-                        }
-                        if (k < vDocArticle[i].length()-1 && isdigit(vDocArticle[i][k+1]) && isalpha(vDocArticle[i][k]))
-                        {
-                            if (k < vDocArticle[i].length()-2)
-                                vDocArticle[i].insert(k+2, "</sub>");
-                            else
-                                vDocArticle[i].append("</sub>");
-                            vDocArticle[i].insert(k+1,"<sub>");
-                            k += 7;
-                        }
-                    }
+                    doc_ReplaceExprContentForHTML(vDocArticle[i], _option);
                     while (vDocArticle[i].find("</exprblock>", vDocArticle[i].find("<exprblock>")) != string::npos)
                     {
                         string sExprBlock = vDocArticle[i].substr(vDocArticle[i].find("<exprblock>")+11, vDocArticle[i].find("</exprblock>")-vDocArticle[i].find("<exprblock>")-11);
@@ -183,29 +162,7 @@ void doc_Help(const string& __sTopic, Settings& _option)
                         }
 
                         doc_ReplaceTokensForHTML(vDocArticle[j], _option);
-                        for (unsigned int k = 0; k < vDocArticle[j].length(); k++)
-                        {
-                            if (vDocArticle[j][k] == '^')
-                            {
-                                vDocArticle[j].insert(k+2,"</sup>");
-                                vDocArticle[j].replace(k,1,"<sup>");
-                            }
-                            if (vDocArticle[j][k] == '_')
-                            {
-                                vDocArticle[j].insert(k+2,"</sub>");
-                                vDocArticle[j].replace(k,1,"<sub>");
-                                k += 7;
-                            }
-                            if (k < vDocArticle[j].length()-1 && isdigit(vDocArticle[j][k+1]) && isalpha(vDocArticle[j][k]))
-                            {
-                                if (k < vDocArticle[j].length()-2)
-                                    vDocArticle[j].insert(k+2, "</sub>");
-                                else
-                                    vDocArticle[j].append("</sub>");
-                                vDocArticle[j].insert(k+1,"<sub>");
-                                k += 7;
-                            }
-                        }
+                        doc_ReplaceExprContentForHTML(vDocArticle[j], _option);
 
                         while (vDocArticle[j].find("\\t") != string::npos)
                             vDocArticle[j].replace(vDocArticle[j].find("\\t"), 2, "&nbsp;&nbsp;&nbsp;&nbsp;");
@@ -288,7 +245,8 @@ void doc_Help(const string& __sTopic, Settings& _option)
                 fHTML << "<p>" << (vDocArticle[i]) << "</p>" << endl;
             }
         }
-        fHTML << "</body>" << endl
+        fHTML << "<!-- END COPYING HERE -->" << endl
+              << "</body>" << endl
               << "</html>" << endl;
         fHTML.close();
         cerr << LineBreak("|-> Eine Kopie des Artikels \"" + _option.getHelpArticleTitle(_option.getHelpIdxKey(sTopic)) + "\" wurde in \"" + sFilename + "\" angelegt.", _option) << endl;
@@ -714,7 +672,7 @@ void doc_ReplaceTokens(string& sDocParagraph, const Settings& _option)
             sDocParagraph.replace(k,4,">");
         if (sDocParagraph.substr(k,4) == "&lt;")
             sDocParagraph.replace(k,4,"<");
-        if (sDocParagraph.substr(k,4) == "&amp;")
+        if (sDocParagraph.substr(k,5) == "&amp;")
             sDocParagraph.replace(k,5,"&");
         if (sDocParagraph.substr(k,6) == "&quot;")
             sDocParagraph.replace(k,6,"\"");
@@ -741,6 +699,8 @@ void doc_ReplaceTokensForHTML(string& sDocParagraph, const Settings& _option)
     {
         if (sDocParagraph.substr(k,2) == "\\$")
             sDocParagraph.erase(k,1);
+        if (sDocParagraph.substr(k,3) == "\\\\n")
+            sDocParagraph.erase(k,1);
         if (sDocParagraph.substr(k,2) == "  ")
             sDocParagraph.replace(k,1,"&nbsp;");
         if (sDocParagraph.substr(k,4) == "<em>" && sDocParagraph.find("</em>", k+4) != string::npos)
@@ -751,35 +711,7 @@ void doc_ReplaceTokensForHTML(string& sDocParagraph, const Settings& _option)
         if (sDocParagraph.substr(k,6) == "<expr>" && sDocParagraph.find("</expr>", k+6) != string::npos)
         {
             string sExpr = sDocParagraph.substr(k+6, sDocParagraph.find("</expr>", k+6)-k-6);
-            for (unsigned int i = 0; i < sExpr.length(); i++)
-            {
-                /*if (!i && sExpr[i] == '$')
-                    sExpr.insert(0,"\\");
-                if (sExpr[i] == '$' && sExpr[i-1] != '\\')
-                    sExpr.insert(i,"\\");*/
-                if (sExpr[i] == '^')
-                {
-                    sExpr.insert(i+2,"</sup>");
-                    sExpr.replace(i,1,"<sup>");
-                }
-                if (sExpr[i] == '_')
-                {
-                    sExpr.insert(i+2,"</sub>");
-                    sExpr.replace(i,1,"<sub>");
-                    i += 7;
-                }
-                if (i < sExpr.length()-1 && isdigit(sExpr[i+1]) && isalpha(sExpr[i]))
-                {
-                    if (i < sExpr.length()-2)
-                        sExpr.insert(i+2, "</sub>");
-                    else
-                        sExpr.append("</sub>");
-                    sExpr.insert(i+1,"<sub>");
-                    i += 7;
-                }
-                if (sExpr.substr(i,2) == "\\n")
-                    sExpr.replace(i,2,"<br>");
-            }
+            doc_ReplaceExprContentForHTML(sExpr,_option);
             sDocParagraph.replace(k, sDocParagraph.find("</expr>",k+6)+7-k, "<em>"+sExpr+"</em>");
         }
         if (sDocParagraph.substr(k,6) == "<code>" && sDocParagraph.find("</code>", k+6) != string::npos)
@@ -809,6 +741,125 @@ void doc_ReplaceTokensForHTML(string& sDocParagraph, const Settings& _option)
             sDocParagraph.replace(k,9,"&lt;&gt;");
     }
     return;
+}
+
+void doc_ReplaceExprContentForHTML(string& sExpr, const Settings& _option)
+{
+    static const unsigned int nEntities = 10;
+    static const string sHTMLEntities[nEntities][2] =
+        {
+            { "_2pi",   "2&pi;"},
+            {  "_pi",    "&pi;"},
+            {   "PI",    "&pi;"},
+            {   "pi",    "&pi;"},
+            {  "chi",   "&chi;"},
+            {  "phi",   "&phi;"},
+            {  "Phi",   "&Phi;"},
+            {  "rho",   "&rho;"},
+            {"theta", "&theta;"},
+            {"delta", "&delta;"},
+        };
+    unsigned int nPos = 0;
+    if (sExpr.find("<exprblock>") != string::npos)
+        nPos = sExpr.find("<exprblock>")+11;
+    for (unsigned int i = nPos; i < sExpr.length(); i++)
+    {
+        if (sExpr.substr(i,12) == "</exprblock>")
+        {
+            if (sExpr.find("<exprblock>", i+12) != string::npos)
+            {
+                i = sExpr.find("<exprblock>",i+12)+10;
+                continue;
+            }
+            break;
+        }
+        if (sExpr.substr(i,2) == "<=")
+        {
+            sExpr.replace(i,2,"&le;");
+            i += 3;
+        }
+        if (sExpr.substr(i,5) == "&lt;=")
+        {
+            sExpr.replace(i,5,"&le;");
+            i += 3;
+        }
+        if (sExpr.substr(i,2) == ">=")
+        {
+            sExpr.replace(i,2,"&ge;");
+            i += 3;
+        }
+        if (sExpr.substr(i,5) == "&gt;=")
+        {
+            sExpr.replace(i,5,"&ge;");
+            i += 3;
+        }
+        for (unsigned int n = 0; n < nEntities; n++)
+        {
+            if (sExpr.substr(i,sHTMLEntities[n][0].length()) == sHTMLEntities[n][0]
+                && (!i
+                    || !isalpha(sExpr[i-1]))
+                && (i+sHTMLEntities[n][0].length() == sExpr.length()
+                    || !isalpha(sExpr[i+sHTMLEntities[n][0].length()]))
+                )
+            {
+                sExpr.replace(i,sHTMLEntities[n][0].length(),sHTMLEntities[n][1]);
+                i += sHTMLEntities[n][1].length()-1;
+            }
+        }
+
+        /*if (sExpr.substr(i,3) == "chi" && (!i || !isalpha(sExpr[i-1])) && (i + 3 == sExpr.length() || !isalpha(sExpr[i+3])))
+        {
+            sExpr.replace(i,3,"&chi;");
+            i += 4;
+        }
+        if (sExpr.substr(i,3) == "Phi" && (!i || !isalpha(sExpr[i-1])) && (i + 3 == sExpr.length() || !isalpha(sExpr[i+3])))
+        {
+            sExpr.replace(i,3,"&Phi;");
+            i += 4;
+        }
+        if (sExpr.substr(i,3) == "phi" && (!i || !isalpha(sExpr[i-1])) && (i + 3 == sExpr.length() || !isalpha(sExpr[i+3])))
+        {
+            sExpr.replace(i,3,"&phi;");
+            i += 4;
+        }
+        if (sExpr.substr(i,3) == "rho" && (!i || !isalpha(sExpr[i-1])) && (i + 3 == sExpr.length() || !isalpha(sExpr[i+3])))
+        {
+            sExpr.replace(i,3,"&rho;");
+            i += 4;
+        }
+        if (sExpr.substr(i,5) == "theta" && (!i || !isalpha(sExpr[i-1])) && (i + 5 == sExpr.length() || !isalpha(sExpr[i+5])))
+        {
+            sExpr.replace(i,5,"&theta;");
+            i += 7;
+        }
+        if (sExpr.substr(i,5) == "delta" && (!i || !isalpha(sExpr[i-1])) && (i + 5 == sExpr.length() || !isalpha(sExpr[i+5])))
+        {
+            sExpr.replace(i,5,"&delta;");
+            i += 7;
+        }*/
+        if (sExpr[i] == '^')
+        {
+            sExpr.insert(i+2,"</sup>");
+            sExpr.replace(i,1,"<sup>");
+        }
+        if (sExpr[i] == '_')
+        {
+            sExpr.insert(i+2,"</sub>");
+            sExpr.replace(i,1,"<sub>");
+            i += 7;
+        }
+        if (i < sExpr.length()-1 && isdigit(sExpr[i+1]) && isalpha(sExpr[i]))
+        {
+            if (i < sExpr.length()-2)
+                sExpr.insert(i+2, "</sub>");
+            else
+                sExpr.append("</sub>");
+            sExpr.insert(i+1,"<sub>");
+            i += 7;
+        }
+        if (sExpr.substr(i,2) == "\\n")
+            sExpr.replace(i,2,"<br>");
+    }
 }
 
 void doc_SearchFct(const string& sToLookFor, Settings& _option)
