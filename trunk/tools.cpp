@@ -544,12 +544,12 @@ string replaceToTeX(const string& sString)
 {
     string sReturn = " " + sString + " ";   // Rueckgabe-String
     string sTemp = "";                      // Temporaerer String, erleichert das Einfuegen von strings
-    const unsigned int nSymbols = 89;                // Anzahl an bekannten Symbolen
+    static const unsigned int nSymbols = 89;                // Anzahl an bekannten Symbolen
     unsigned int nPos = 0;                           // Positions-Index-Variable
     unsigned int nPos_2 = 0;                         // Positions-Index-Variable
 
     // --> 2D-String-Array: links das zu ersetzende Token, rechts die Ersetzung <--
-    string sCodepage[nSymbols][2] = {
+    static const string sCodepage[nSymbols][2] = {
         {"*", "\\cdot  "},
         {"+", " + "},
         {"-", " -- "},
