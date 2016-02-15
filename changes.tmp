@@ -6,7 +6,7 @@ Cleaned	Scripte koennen nun vereinfacht mittels "start SCRIPT" statt "start -scr
 Fixed	Die Spaltenueberschriften leerer Spalten koennen nun wieder geaendert und gelesen werden.
 Fixed	"pct()" und "cmp()" koennen nun mit Datenobjektwerten als Vergleichswerte umgehen.
 Fixed	Bei "hist" funktioniert "tocache=CACHE()" nun erwartungsgemaess.
-Added	Die Zeichenkettenfunktion "valtostr(VAL)" verallgemeinert "#VAL".
+Added	Die Zeichenkettenfunktion "valtostr(VAL)" verallgemeinert "#VAL". Beides kann auch auf Zeichenketten angewendet werden.
 Fixed	Absolute Pfadangaben in der "@-Include-Syntax" der Scripte koennen nun erwartungsgemaess verwendet werden.
 Cleaned	Die dargestellten slices in "cont3d" und "dens3d" sind nun erwartungsgemaess die jeweils zentralen slices.
 Cleaned	Krummlinige Koordinatensaetze koennen nun mit groesseren Winkelbereichen umgehen.
@@ -33,7 +33,7 @@ Cleaned	Eine Hilfedatei kann nun mehrere Dokumentationsartikel enthalten, da geg
 Fixed	"smooth" versteht nun auch "smooth DATA()" als Abkuerzung fuer "smooth DATA(:,:)"
 Cleaned	"x","y","z" und "t" werden in Legenden nun kursiv angezeigt. Die Achsenbeschriftungen "x", "y", "z" und ggf. "r" ebenfalls.
 Cleaned	UI-Verbesserungen: wird die Fensterbreite mittels "set -windowsize x=BREITE" geaendert, so wird dies nun ueberall auch ausgenutzt.
-Fixed	Vorzeichen in Achsenbeschriftungen werden nun nach der gleichen Logik wie die Vorzeichen in der Legende verarbeitet.
+Fixed	Vorzeichen in Achsenbeschriftungen mittels "*label=LABEL" werden nun nach der gleichen Logik wie die Vorzeichen in der Legende verarbeitet.
 Fixed	"edit data(#,#)" funktioniert nun erwartungsgemaess.
 Cleaned	NumeRe verwendet nun "viridis" als Standard-Farbschema.
 Added	Selbst definierte Funktionen koennen nun auch beliebige Zahlen an Argumenten haben, wenn hierfuer "..." als Argument angegeben wurde.
@@ -45,3 +45,6 @@ Fixed	"append" kann nun mit "string()" verwendet werden
 Cleaned	Darstellung von "string()"+"\n" entscheidend verbessert.
 Fixed	{"a","b","c,"} wurde als "a", "b", "b" interpretiert. Wurde behoben.
 Added	NumeRe kann nun mittels "help THEMA -html" eine HTML-Datei des betreffenden Hilfeartikels erzeugen.
+Fixed	Kleinere Korrekturen am "#"-VarToStr-Parser
+Fixed	Rekursive Operatoren koennen nun auch auf die "Spaltensyntax" angewendet werden.
+Cleaned	Die Position der "phi"-Achsenbeschriftung wird nun entsprechend den dargestellten Winkeln angepasst.

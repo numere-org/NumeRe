@@ -1493,7 +1493,7 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
         {
             if (isInQuotes(__sCmd, i, false))
                 continue;
-            if (__sCmd[i] == '(')
+            if (__sCmd[i] == '(' || __sCmd[i] == '{')
                 i += getMatchingParenthesis(__sCmd.substr(i));
             if (__sCmd[i] == ',')
                 nArgSepPos = i;
@@ -2863,7 +2863,7 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
         {
             if (isInQuotes(sLine, i, false))
                 continue;
-            if (sLine[i] == '(')
+            if (sLine[i] == '(' || sLine[i] == '{')
                 i += getMatchingParenthesis(sLine.substr(i));
             if (sLine[i] == ',')
                 nArgSepPos = i;

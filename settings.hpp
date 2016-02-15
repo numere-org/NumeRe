@@ -53,6 +53,7 @@ class Settings : public Documentation
 		bool bUseLogfile;
 		bool bLoadEmptyCols;
 		bool bShowHints;
+		bool bUseESCinScripts;
 		int nPrecision;			    // Setzt die Genauigkeit der Ausgabe
 		int nAutoSaveInterval;      // Das Intervall fuer die automatische Speicherung
 		string sPath;               // Programm-Hauptpfad
@@ -237,6 +238,11 @@ class Settings : public Documentation
                 bShowHints = _bShowHints;
                 return;
             }
+        inline void setbUseESCinScripts(bool _bUseESC)
+            {
+                bUseESCinScripts = _bUseESC;
+                return;
+            }
         inline void setDefaultPlotFont(string& _sPlotFont)
             {
                 if (_sPlotFont == "palatino")
@@ -297,6 +303,8 @@ class Settings : public Documentation
             {return bGreeting;}
         inline bool getbShowHints() const
             {return bShowHints;}
+        inline bool getbUseESCinScripts() const
+            {return bUseESCinScripts;}
         inline bool getbDefineAutoLoad() const
             {return bDefineAutoLoad;}
         inline bool getbShowExtendedFileInfo() const

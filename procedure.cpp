@@ -284,7 +284,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
         {
             if (isInQuotes(sLine, i, false))
                 continue;
-            if (sLine[i] == '(')
+            if (sLine[i] == '(' || sLine[i] == '{')
                 i += getMatchingParenthesis(sLine.substr(i));
             if (sLine[i] == ',')
                 nArgSepPos = i;

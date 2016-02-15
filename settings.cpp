@@ -39,6 +39,7 @@ Settings::Settings() : Documentation()
 	bUseLogfile = true;
 	bLoadEmptyCols = false;
 	bShowHints = true;
+	bUseESCinScripts = true;
 	nPrecision = 7;			// Standardmaessig setzen wir die Praezision auf 7
 	nAutoSaveInterval = 30; // 30 sec
 	sPath = "./";
@@ -181,6 +182,7 @@ void Settings::save(string _sWhere, bool bMkBackUp)
 	Settings_ini << "-FASTSTART=" << bFastStart << endl;
 	Settings_ini << "-GREETING=" << bGreeting << endl;
 	Settings_ini << "-HINTS=" << bShowHints << endl;
+	Settings_ini << "-ESCINSCRIPTS=" << bUseESCinScripts << endl;
 	Settings_ini << "-PLOTFONT=" << sDefaultfont << endl;
 	Settings_ini << "-USECOMPACTTABLES=" << bCompact << endl;
 	Settings_ini << "-DEFCONTROL=" << bDefineAutoLoad << endl;
@@ -318,6 +320,11 @@ bool Settings::set(const string& _sOption)
     else if (matchParams(_sOption, "hints", '='))
     {
         bShowHints = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
+        return true;
+    }
+    else if (matchParams(_sOption, "escinscripts", '='))
+    {
+        bUseESCinScripts = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
     else if (matchParams(_sOption, "usedraftmode", '='))

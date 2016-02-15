@@ -4194,13 +4194,13 @@ void Cache::getStringValues(string& sLine, unsigned int nPos)
                 continue;
             if (__nPos == 1)
             {
-                if (checkDelimiter(" " + sLine.substr(0, (iter->first).length()+1)) && !isInQuotes(sLine, 0))
+                if (checkDelimiter(" " + sLine.substr(0, (iter->first).length()+1)) && !isInQuotes(sLine, 0, true))
                 {
                     sLine.replace(0,(iter->first).length(), "\"" + iter->second + "\"");
                 }
                 continue;
             }
-            if (checkDelimiter(sLine.substr(__nPos-2, (iter->first).length()+2)) && !isInQuotes(sLine, __nPos-1))
+            if (checkDelimiter(sLine.substr(__nPos-2, (iter->first).length()+2)) && !isInQuotes(sLine, __nPos-1, true))
             {
                 sLine.replace(__nPos-1,(iter->first).length(), "\"" + iter->second + "\"");
             }
