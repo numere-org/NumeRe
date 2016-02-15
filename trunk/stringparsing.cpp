@@ -1302,7 +1302,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     nCount = (unsigned int)fabs(_parser.Eval());
                 }
             }
-            if (!containsStrings(sExpr))
+            if (!containsStrings(sExpr) && !_data.containsStringVars(sExpr))
             {
                 int nResults = 0;
                 value_type* v = 0;
@@ -1333,8 +1333,10 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             else
             {
                 sExpr += " -nq";
-                if (parser_StringParser(sExpr, sDummy, _data, _parser, _option, true))
+                if (!parser_StringParser(sExpr, sDummy, _data, _parser, _option, true))
                     return 0;
+                while (sExpr.length() < nCount && sChar.length())
+                    sExpr.insert(0,sChar);
                 sToString = sExpr;
             }
 
@@ -1575,10 +1577,50 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             else
                 n_pos = 0;
             if (sTemp[0] == '(' || sTemp[0] == '{')
-                _parser.SetExpr(sTemp.substr(1, getMatchingParenthesis(sTemp)-1));
+            {
+                string sExpr = sTemp.substr(1,getMatchingParenthesis(sTemp)-1);
+                if (containsStrings(sExpr))
+                {
+                    sExpr += " -nq";
+                    if (!parser_StringParser(sExpr, sDummy, _data, _parser, _option, true))
+                        return 0;
+                    string sElement = "";
+                    string sBlock = "";
+                    while (getNextArgument(sExpr, false).length())
+                    {
+                        sElement = getNextArgument(sExpr, true);
+                        while (sElement.length() < sPrefix.length()+1)
+                            sElement.insert(0,1,'0');
+                        sBlock += sElement;
+                        if (getNextArgument(sExpr, false).length())
+                        {
+                            sBlock += ",";
+                            if (sBlock.front() != '{')
+                                sBlock.insert(0,1,'{');
+                        }
+                    }
+                    if (sBlock.front() == '{')
+                        sBlock += "}";
+                    sTemp_2 += sBlock + "\"";
+                    if (parser_getDelimiterPos(sTemp.substr(n_pos)) < sTemp.length())
+                        sTemp = sTemp.substr(parser_getDelimiterPos(sTemp.substr(n_pos)));
+                    else
+                        sTemp = "";
+                    if (_option.getbDebug())
+                        mu::console() << _T("|-> DEBUG: sTemp_2 = ") << sTemp_2 << endl;
+
+                    nPos = 0;
+                    continue;
+                }
+                _parser.SetExpr(sExpr);
+                //_parser.SetExpr(sTemp.substr(1, getMatchingParenthesis(sTemp)-1));
+            }
             else if (sTemp[0] == '"')
             {
-                sTemp_2 += sTemp.substr(1, sTemp.find('"', 1)-1) + "\"";
+                string sExpr = sTemp.substr(1, sTemp.find('"', 1)-1);
+                while (sExpr.length() < sPrefix.length()+2)
+                    sExpr.insert(0,1,'0');
+                sTemp_2 += sExpr + "\"";
                 if (sTemp.find('"', 1) < sTemp.length()-1)
                     sTemp = sTemp.substr(sTemp.find('"', 1)+1);
                 else
@@ -1625,7 +1667,6 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 _parser.SetExpr(sTemp.substr(0, parser_getDelimiterPos(sTemp.substr(n_pos))));
             if (_option.getbDebug())
                 mu::console() << _T("|-> DEBUG: parser_getDelimiterPos(sTemp) = ") << parser_getDelimiterPos(sTemp.substr(n_pos)) << endl;
-
             {
                 int nResults = 0;
                 value_type* v = 0;
@@ -1649,18 +1690,6 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     sTemp_2.back() = '}';
             }
 
-            /*
-            if (sPrefix.length())
-            {
-                if (fabs(rint(_parser.Eval())-_parser.Eval()) < 1e-14 && _parser.Eval() >= 1.0 && toString((long long int)rint(_parser.Eval())).length() < sPrefix.length()+1)
-                    sTemp_2.append(sPrefix.length()+1-toString((long long int)rint(_parser.Eval())).length(), '0');
-                else if (toString((double)_parser.Eval(), _option).length() < sPrefix.length()+1)
-                    sTemp_2.append(sPrefix.length()+1-toString((double)_parser.Eval(), _option).length(), '0');
-            }
-            if (fabs(rint(_parser.Eval())-_parser.Eval()) < 1e-14 && fabs(_parser.Eval()) >= 1.0)
-                sTemp_2 += toString((long long int)rint(_parser.Eval()));
-            else
-                sTemp_2 += toString((double)_parser.Eval(), _option);*/
             sTemp_2 += "\"";
             if (parser_getDelimiterPos(sTemp.substr(n_pos)) < sTemp.length())
                 sTemp = sTemp.substr(parser_getDelimiterPos(sTemp.substr(n_pos)));

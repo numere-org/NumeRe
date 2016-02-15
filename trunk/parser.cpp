@@ -1491,7 +1491,8 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                 oLogFile << toString(time(0) - tTimeZero, true) << "> " << sLine << endl;
             if (GetAsyncKeyState(VK_ESCAPE) && _script.isValid() && _script.isOpen())
             {
-                throw PROCESS_ABORTED_BY_USER;
+                if (_option.getbUseESCinScripts())
+                    throw PROCESS_ABORTED_BY_USER;
             }
             GetAsyncKeyState(VK_ESCAPE);
             if ((findCommand(sLine).sString == "compose"
@@ -1778,7 +1779,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                 {
                     if (isInQuotes(sLine, i, false))
                         continue;
-                    if (sLine[i] == '(')
+                    if (sLine[i] == '(' || sLine[i] == '{')
                         i += getMatchingParenthesis(sLine.substr(i));
                     if (sLine[i] == ',')
                         nArgSepPos = i;

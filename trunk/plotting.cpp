@@ -5689,7 +5689,7 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                         || matchParams(_pInfo.sPlotParams, "zlabel", '='))
                     {
                         _graph.Label('x', fromSystemCodePage(_pData.getzLabel()).c_str(), -0.5);
-                        _graph.Label('y', fromSystemCodePage(_pData.getxLabel()).c_str(), -0.6); //-0.65
+                        _graph.Label('y', fromSystemCodePage(_pData.getxLabel()).c_str(), (_pData.getRotateAngle(1)-225.0)/180.0); //-0.65
                         _graph.Label('z', fromSystemCodePage(_pData.getyLabel()).c_str(), 0.0);
                     }
                     if (_pData.getBars() || _pData.getArea())
@@ -5742,7 +5742,7 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                         || matchParams(_pInfo.sPlotParams, "zlabel", '='))
                     {
                         _graph.Label('x', fromSystemCodePage(_pData.getzLabel()).c_str(), -0.4);
-                        _graph.Label('y', fromSystemCodePage(_pData.getxLabel()).c_str(), -0.6); //-0.7
+                        _graph.Label('y', fromSystemCodePage(_pData.getxLabel()).c_str(), (_pData.getRotateAngle(1)-225.0)/180.0); //-0.7
                         _graph.Label('z', fromSystemCodePage(_pData.getyLabel()).c_str(), -0.9); // -0.4
                     }
                     if (_pData.getBars() || _pData.getArea())
@@ -5839,7 +5839,7 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                         || matchParams(_pInfo.sPlotParams, "ylabel", '=')
                         || matchParams(_pInfo.sPlotParams, "zlabel", '='))
                     {
-                        _graph.Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), -0.6);//-0.65
+                        _graph.Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), (_pData.getRotateAngle(1)-225.0)/180.0);//-0.65
                         _graph.Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), 0.0);
                         _graph.Label('z', fromSystemCodePage(_pData.getzLabel()).c_str(), -0.5);
                     }
@@ -5884,7 +5884,7 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                         || matchParams(_pInfo.sPlotParams, "ylabel", '=')
                         || matchParams(_pInfo.sPlotParams, "zlabel", '='))
                     {
-                        _graph.Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), -0.6);//-0.6
+                        _graph.Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), (_pData.getRotateAngle(1)-225.0)/180.0);//-0.6
                         _graph.Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), -0.9);//-0.4
                         _graph.Label('z', fromSystemCodePage(_pData.getzLabel()).c_str(), -0.4);//-0.5
                     }

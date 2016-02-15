@@ -1139,20 +1139,41 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             if (matchParams(sCmd, "asval"))
             {
                 if (!nPos)
-                    sCmd = toString(_option.getbGreeting());
+                    sCmd = toString(_option.getbShowHints());
                 else
-                    sCmd.replace(nPos, sCommand.length(), toString(_option.getbGreeting()));
+                    sCmd.replace(nPos, sCommand.length(), toString(_option.getbShowHints()));
                 return 0;
             }
             if (matchParams(sCmd, "asstr"))
             {
                 if (!nPos)
-                    sCmd = "\"" + toString(_option.getbGreeting()) + "\"";
+                    sCmd = "\"" + toString(_option.getbShowHints()) + "\"";
                 else
                     sCmd.replace(nPos, sCommand.length(), "\"" + toString(_option.getbGreeting()) + "\"");
                 return 0;
             }
             cerr << "|-> HINTS: " << toString(_option.getbGreeting()) << endl;
+            return 1;
+        }
+        else if (matchParams(sCmd, "useescinscripts"))
+        {
+            if (matchParams(sCmd, "asval"))
+            {
+                if (!nPos)
+                    sCmd = toString(_option.getbUseESCinScripts());
+                else
+                    sCmd.replace(nPos, sCommand.length(), toString(_option.getbUseESCinScripts()));
+                return 0;
+            }
+            if (matchParams(sCmd, "asstr"))
+            {
+                if (!nPos)
+                    sCmd = "\"" + toString(_option.getbUseESCinScripts()) + "\"";
+                else
+                    sCmd.replace(nPos, sCommand.length(), "\"" + toString(_option.getbUseESCinScripts()) + "\"");
+                return 0;
+            }
+            cerr << "|-> HINTS: " << toString(_option.getbUseESCinScripts()) << endl;
             return 1;
         }
         else if (matchParams(sCmd, "draftmode"))
@@ -3122,6 +3143,22 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 return 1;
             }
+            else if (matchParams(sCmd, "useescinscripts") || matchParams(sCmd, "useescinscripts", '='))
+            {
+                if (!parser_parseCmdArg(sCmd, "useescinscripts", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
+                {
+                    nArgument = !_option.getbUseESCinScripts();
+                }
+                _option.setbUseESCinScripts((bool)nArgument);
+                if (_option.getSystemPrintStatus())
+                {
+                    cerr << toSystemCodePage("|-> NumeRe wird die ESC-Taste ");
+                    if (!nArgument)
+                        cerr << "nicht ";
+                    cerr << toSystemCodePage("in Scripts verwenden.") << endl;
+                }
+                return 1;
+            }
             else if (matchParams(sCmd, "defcontrol") || matchParams(sCmd, "defcontrol", '='))
             {
                 if (!parser_parseCmdArg(sCmd, "defcontrol", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
@@ -4875,6 +4912,11 @@ void BI_ListOptions(Settings& _option)
         cerr << "DEAKTIVIERT" << endl;
     cerr << toSystemCodePage("|   Erweiterte Dateiinfo:      ");
     if (_option.getbShowExtendedFileInfo())
+        cerr << "AKTIVIERT" << endl;
+    else
+        cerr << "DEAKTIVIERT" << endl;
+    cerr << toSystemCodePage("|   ESC in Scripts:            ");
+    if (_option.getbUseESCinScripts())
         cerr << "AKTIVIERT" << endl;
     else
         cerr << "DEAKTIVIERT" << endl;
