@@ -306,6 +306,22 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                         dRotateAngles[i] = 115;
                 }
             }
+            if (dRotateAngles[0] < 0)
+            {
+                dRotateAngles[0] += ceil(-dRotateAngles[0]/180.0)*180.0;
+            }
+            if (dRotateAngles[0] > 180)
+            {
+                dRotateAngles[0] -= floor(dRotateAngles[0]/180.0)*180.0;
+            }
+            if (dRotateAngles[1] < 0)
+            {
+                dRotateAngles[1] += ceil(-dRotateAngles[1]/360.0)*360.0;
+            }
+            if (dRotateAngles[1] > 360)
+            {
+                dRotateAngles[1] -= floor(dRotateAngles[1]/360.0)*360.0;
+            }
         }
     }
     if (matchParams(sCmd, "origin", '=') && (!nType || nType == 1))
@@ -406,6 +422,10 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             nAnimateSamples = 50;
             bAnimate = false;
         }
+        if (nAnimateSamples > 128)
+            nAnimateSamples = 128;
+        if (nAnimateSamples < 1)
+            nAnimateSamples = 50;
     }
     if (matchParams(sCmd, "marks", '=') && (!nType || nType == 2))
     {
