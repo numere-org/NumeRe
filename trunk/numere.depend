@@ -286,7 +286,7 @@
 	<windows.h>
 	"version.h"
 
-1448640518 c:\cpp\numere\version.h
+1455709760 c:\cpp\numere\version.h
 
 1446632519 c:\cpp\numere\parser.hpp
 	<cstdlib>
@@ -353,7 +353,7 @@
 	"settings.hpp"
 	"plotdata.hpp"
 
-1453929166 c:\cpp\numere\parser_functions.hpp
+1455617128 c:\cpp\numere\parser_functions.hpp
 	<cmath>
 	<string>
 	<sstream>
@@ -416,7 +416,7 @@
 1454602789 source:c:\cpp\numere\define.cpp
 	"define.hpp"
 
-1454234512 source:c:\cpp\numere\plotdata.cpp
+1455645325 source:c:\cpp\numere\plotdata.cpp
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
@@ -571,7 +571,7 @@
 1433063232 source:c:\cpp\numere\graph_helper.cpp
 	"graph_helper.hpp"
 
-1454860212 source:c:\cpp\numere\plotting.cpp
+1455565998 source:c:\cpp\numere\plotting.cpp
 	"parser_functions.hpp"
 
 1455559594 source:c:\cpp\numere\stringparsing.cpp

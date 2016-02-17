@@ -1,3 +1,58 @@
+17 February 2016
+   v 1.0.8 "Bloch" rev. 58
+
+     Change log:
+        -Fixed: Zeichenketten und numerische Variablen muessten nun in einem einzigen Ausdruck verarbeitbar sein.
+        -Added: Die Variablen/Zeichenketten sind nun mittels des "get"-Kommandos als Liste abrufbar, so dass sie auch in eine Datei exportiert werden koennen.
+        -Added: Temporaer erzeugte Matrizen in "matop" koennen nun auch mit der Bereichssyntax der Caches umgehen.
+        -Fixed: Matrixmultiplikationen verwenden nun nicht mehr die falschen Matrizen, wenn ein uebergebenes Datenobjekt nicht existiert.
+        -Cleaned: Scripte koennen nun vereinfacht mittels "start SCRIPT" statt "start -script=SCRIPT" gestartet werden.
+        -Fixed: Die Spaltenueberschriften leerer Spalten koennen nun wieder geaendert und gelesen werden.
+        -Fixed: "pct()" und "cmp()" koennen nun mit Datenobjektwerten als Vergleichswerte umgehen.
+        -Fixed: Bei "hist" funktioniert "tocache=CACHE()" nun erwartungsgemaess.
+        -Added: Die Zeichenkettenfunktion "valtostr(VAL)" verallgemeinert "#VAL". Beides kann auch auf Zeichenketten angewendet werden.
+        -Fixed: Absolute Pfadangaben in der "@-Include-Syntax" der Scripte koennen nun erwartungsgemaess verwendet werden.
+        -Cleaned: Die dargestellten slices in "cont3d" und "dens3d" sind nun erwartungsgemaess die jeweils zentralen slices.
+        -Cleaned: Krummlinige Koordinatensaetze koennen nun mit groesseren Winkelbereichen umgehen.
+        -Fixed: Krummlinige Koordinatensaetze verwenden nun als Winkelbereiche korrekt Vielfache von PI.
+        -Cleaned: Achsen von krummlinigen Koordinatensaetze konnen nun mittels *ticklabels="" und *scale=SCALE beeinflusst werden.
+        -Added: Der Stil des Koordinatengitters kann mittels 'gridstyle="STYLE" ' geaendert werden.
+        -Cleaned: "this~" ist nun auch der Standardnamensraum der aktuellen Prozedur.
+        -Cleaned: 1'mol ist nun als Stoffmenge definiert und gibt die Zahl der Teilchen zurueck.
+        -Updated: Der Fitalgorithmus wurde grundlegend ueberarbeitet und erlaubt nun (nahezu) jeden numerischen Ausdruck als Funktion (ausser Zufallsfunktionen). Zusaetzlich werden die benoetigten Iterationen zurueckgegeben.
+        -Fixed: Logikfehler bei 2D-Fits wurde behoben, der besonders bei Datensaetzen abseits der ersten Spalte auftritt.
+        -Added: Die numerische Toleranz (Standard: 1e-4) und die maximale Zahl der Iterationen (Standard: 500) koennen Fits nun vorgegeben werden.
+        -Added: "<code>", "<expr>", "<codeblock>", "<exprblock>" und "<em>" als Tags zur Dokumentation hinzugefuegt.
+        -Cleaned: Die Darstellung von Tabellen mittels "show", der Statistiken und der Histogramme wurde verbessert.
+        -Fixed: Ein Fehler, der Datenpunkte fremder (neuerer) Caches beim Entfernen eines (aelteren) Caches vernichten konnte, falls die Zahl der Zeilen/Spalten nicht uebereinstimmte, wurde behoben.
+        -Cleaned: Die Stichwortsuche- und die Begruessungs-Datenbank wurden in externe Dateien ausgegliedert.
+        -Fixed: "fit data()" wird nun korrekt als "fit data(:,1:2)" interpretiert.
+        -Cleaned: "fit data() -with=Fit(x)" wird nicht mehr jedes mal "Fit(x)" mit weiteren umschliessenden Klammern umdefinieren.
+        -Cleaned: Zentrale Aenderung im Fitting-Algorithmus: Sollte der Jacobian oder der Varianzenvektor NaNs enthalten, so werden diese nicht mehr auf 0 sondern auf moeglichst grosse Werte gesetzt. Damit bleibt der Algorithmus bei Funktionen, die viele NaNs enthalten, nicht mehr in einem solchen Regime stecken.
+        -Fixed: "{VARS} = VALUES" funktioniert nun erwartungsgemaess.
+        -Added: Die Parameter des Fit-Algorithmus koennen nun mittels "restrict=[PARAM_RESTRICTS]" eingeschraenkt werden.
+        -Removed: "headedit" wurde entfernt. Die direkte Syntax mittels "DATA(#,J1:J2) = HEADJ1,...,HEADJ2" ist variabler und maechtiger.
+        -Added: Mittels "chimap=DATAGRID()" kann "fit" eine "chi^2-Konvergenz-Map" erstellen. DATAGRID() muss dabei passend vorgegeben werden.
+        -Cleaned: Eine Hilfedatei kann nun mehrere Dokumentationsartikel enthalten, da gegen die spezifische ID geprueft wird: dies erlaubt eine uebersichtliche Bearbeitung von "untergeordneten" Artikeln.
+        -Fixed: "smooth" versteht nun auch "smooth DATA()" als Abkuerzung fuer "smooth DATA(:,:)"
+        -Cleaned: "x","y","z" und "t" werden in Legenden nun kursiv angezeigt. Die Achsenbeschriftungen "x", "y", "z" und ggf. "r" ebenfalls.
+        -Cleaned: UI-Verbesserungen: wird die Fensterbreite mittels "set -windowsize x=BREITE" geaendert, so wird dies nun ueberall auch ausgenutzt.
+        -Fixed: Vorzeichen in Achsenbeschriftungen mittels "*label=LABEL" werden nun nach der gleichen Logik wie die Vorzeichen in der Legende verarbeitet.
+        -Fixed: "edit data(#,#)" funktioniert nun erwartungsgemaess.
+        -Cleaned: NumeRe verwendet nun "viridis" als Standard-Farbschema.
+        -Added: Selbst definierte Funktionen koennen nun auch beliebige Zahlen an Argumenten haben, wenn hierfuer "..." als Argument angegeben wurde.
+        -Added: Mehrere Prozeduren koennen nun in einer Prozedurdatei angelegt werden. Nur die namensgebende Prozedur kann von aussen angesprochen werden, die anderen sind implizit "private" und muessen mittels des namespace "thisfile~" aufgerufen werden.
+        -Fixed: Wenn bei einem Plot weder Funktion noch Datensatz angegeben wird, wird nun eine sinnvolle Fehlermeldung zurueckgegeben.
+        -Added: Prozeduren koennen nun mehrere Werte zugleich zurueckgeben.
+        -Fixed: "string()" kann nun auch rekursiv auf sich und andere Stringfunktionen zugreifen.
+        -Fixed: "append" kann nun mit "string()" verwendet werden
+        -Cleaned: Darstellung von "string()"+"\n" entscheidend verbessert.
+        -Fixed: {"a","b","c,"} wurde als "a", "b", "b" interpretiert. Wurde behoben.
+        -Added: NumeRe kann nun mittels "help THEMA -html" eine HTML-Datei des betreffenden Hilfeartikels erzeugen.
+        -Fixed: Kleinere Korrekturen am "#"-VarToStr-Parser
+        -Fixed: Rekursive Operatoren koennen nun auch auf die "Spaltensyntax" angewendet werden.
+        -Cleaned: Die Position der "phi"-Achsenbeschriftung wird nun entsprechend den dargestellten Winkeln angepasst.
+
 03 December 2015
    v 1.0.8 "Release Candidate 3" rev. 58
 
