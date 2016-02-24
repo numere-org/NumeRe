@@ -31,6 +31,7 @@
 #include "tools.hpp"
 #include "filesystem.hpp"
 #include "version.h"
+#include "resampler.h"
 
 
 #ifndef CACHE_HPP
@@ -65,6 +66,8 @@ inline void prepareRegion(RetoqueRegion& _region, unsigned int nSize, double _dM
 
 class Cache : public FileSystem
 {
+    public:
+        enum AppDir {LINES,COLS,GRID,ALL};
 	private:
 		long long int nLines;							// Zeilen des Caches
 		long long int nCols;							// Spalten des Caches
@@ -89,7 +92,7 @@ class Cache : public FileSystem
 		map<string,string> sStringVars;
 
 		bool isValidDisc(long long int _nLine, long long int _nCol, long long int _nLayer, unsigned int nSize);
-		bool retoqueRegion(long long int _nLayer, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, unsigned int nOrder = 1, unsigned int nDir = 0);
+		bool retoqueRegion(long long int _nLayer, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, unsigned int nOrder = 1, AppDir Direction = ALL);
 		bool retoqueRegion(RetoqueRegion& _region);
 
 
@@ -121,6 +124,8 @@ class Cache : public FileSystem
 		Cache(long long int _nLines, long long int _nCols, long long int _nLayers);	    				// Allgemeiner Konstruktor (generiert zugleich die Matrix dCache und die Arrays
 														// 		auf Basis der uebergeben Werte)
 		~Cache();										// Destruktor (wendet delete[] auf die Matrix und alle Arrays an, sofern es noetig ist)
+
+
 		map<string,long long int> mCachesMap;
 
 		inline void setPredefinedFuncs(const string& sFuncs)
@@ -321,12 +326,12 @@ class Cache : public FileSystem
         double pct(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, double dPct = 0.5);
 
 
-        bool smooth(long long int _nLayer, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, unsigned int nOrder = 1, unsigned int nDir = 0);
-        bool smooth(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, unsigned int nOrder = 1, unsigned int nDir = 0);
-        bool retoque(long long int _nLayer, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, unsigned int nDir = 0);
-        bool retoque(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, unsigned int nDir = 0);
-        bool resample(long long int _nLayer, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, unsigned int nSamples = 0);
-        bool resample(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, unsigned int nSamples = 0);
+        bool smooth(long long int _nLayer, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, unsigned int nOrder = 1, AppDir Direction = ALL);
+        bool smooth(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, unsigned int nOrder = 1, AppDir Direction = ALL);
+        bool retoque(long long int _nLayer, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, AppDir Direction = ALL);
+        bool retoque(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, AppDir Direction = ALL);
+        bool resample(long long int _nLayer, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, unsigned int nSamples = 0, AppDir Direction = ALL);
+        bool resample(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, unsigned int nSamples = 0, AppDir Direction = ALL);
 };
 
 #endif

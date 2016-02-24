@@ -2651,7 +2651,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                             oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: Konnte cache() nicht retuschieren" << endl;
                         break;
                     case CANNOT_RESAMPLE_CACHE:
-                        cerr << LineBreak("|-> Resampling der Spalte(n) konnte nicht erfolgreich abgeschlossen werden.", _option) << endl;
+                        cerr << LineBreak("|-> Resampling konnte nicht erfolgreich abgeschlossen werden.", _option) << endl;
                         cerr << LineBreak("|-> SIEHE AUCH: \"help resample\"", _option) << endl;
                         if (oLogFile.is_open())
                             oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: Konnte nicht erfolgreich resamplen" << endl;

@@ -1,8 +1,8 @@
 # depslib dependency file v1.0
-1455559046 source:c:\cpp\numere\cache.cpp
+1456298228 source:c:\cpp\numere\cache.cpp
 	"cache.hpp"
 
-1452633143 c:\cpp\numere\cache.hpp
+1456221554 c:\cpp\numere\cache.hpp
 	<iostream>
 	<fstream>
 	<string>
@@ -16,6 +16,7 @@
 	"tools.hpp"
 	"filesystem.hpp"
 	"version.h"
+	"resampler.h"
 
 1455521692 c:\cpp\numere\settings.hpp
 	<string>
@@ -120,7 +121,7 @@
 1433480995 source:c:\cpp\numere\plugin_random.cpp
 	"plugins.hpp"
 
-1455052121 source:c:\cpp\numere\plugin_statistics.cpp
+1456176281 source:c:\cpp\numere\plugin_statistics.cpp
 	"plugins.hpp"
 
 1383553778 source:c:\cpp\numere\tostring.cpp
@@ -318,10 +319,10 @@
 	"ParserLib/muParserTest.h"
 	"ParserLib/muParser.h"
 
-1455560119 source:c:\cpp\numere\parser.cpp
+1456127496 source:c:\cpp\numere\parser.cpp
 	"parser.hpp"
 
-1455522179 source:c:\cpp\numere\built-in.cpp
+1456221073 source:c:\cpp\numere\built-in.cpp
 	"built-in.hpp"
 
 1453189922 c:\cpp\numere\built-in.hpp
@@ -416,11 +417,11 @@
 1454602789 source:c:\cpp\numere\define.cpp
 	"define.hpp"
 
-1455645325 source:c:\cpp\numere\plotdata.cpp
+1455868980 source:c:\cpp\numere\plotdata.cpp
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1453639626 c:\cpp\numere\plotdata.hpp
+1455866573 c:\cpp\numere\plotdata.hpp
 	<string>
 	<cmath>
 	"error.hpp"
@@ -571,7 +572,7 @@
 1433063232 source:c:\cpp\numere\graph_helper.cpp
 	"graph_helper.hpp"
 
-1455565998 source:c:\cpp\numere\plotting.cpp
+1455994528 source:c:\cpp\numere\plotting.cpp
 	"parser_functions.hpp"
 
 1455559594 source:c:\cpp\numere\stringparsing.cpp
@@ -640,4 +641,15 @@
 	"ParserLib/muParser.h"
 	"tools.hpp"
 	"error.hpp"
+
+1456171862 c:\cpp\numere\resampler.h
+
+1456181830 source:c:\cpp\numere\resampler.cpp
+	<stdlib.h>
+	<math.h>
+	<float.h>
+	<assert.h>
+	<string.h>
+	<iostream>
+	"resampler.h"
 

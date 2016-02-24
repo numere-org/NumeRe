@@ -2195,8 +2195,8 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
             }
             else if (sFunc != "<<empty>>" && _pInfo.b3D)
             {
-                mglPoint _mLowerEdge = parser_CalcCutBox(_pData.getRotateAngle(1), _pInfo.dRanges, 0, _pData.getCoords(), true);
-                mglPoint _mHigherEdge = parser_CalcCutBox(_pData.getRotateAngle(1), _pInfo.dRanges, 1, _pData.getCoords(), true);
+                //mglPoint _mLowerEdge = parser_CalcCutBox(_pData.getRotateAngle(1), _pInfo.dRanges, 0, _pData.getCoords(), true);
+                //mglPoint _mHigherEdge = parser_CalcCutBox(_pData.getRotateAngle(1), _pInfo.dRanges, 1, _pData.getCoords(), true);
                 // --> Wie oben, aber 3D-Fall <--
                 for (int x = 0; x < _pInfo.nSamples; x++)
                 {
@@ -2237,13 +2237,13 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
 
                             if (isnan(dResult)
                                 || isinf(dResult)
-                                || (_pData.getCutBox()
+                                /*|| (_pData.getCutBox()
                                     && _pInfo.sCommand.substr(0,4) != "cont"
                                     && _pInfo.sCommand.substr(0,4) != "grad"
                                     && (_pInfo.sCommand.substr(0,4) != "dens" || (_pInfo.sCommand.substr(0,4) == "dens" && _pData.getCloudPlot()))
                                     && ((parser_iVars.vValue[0][0] >= _mLowerEdge.val(0) && parser_iVars.vValue[0][0] <= _mHigherEdge.val(0))
                                         && (parser_iVars.vValue[1][0] >= _mLowerEdge.val(1) && parser_iVars.vValue[1][0] <= _mHigherEdge.val(1))
-                                        && (parser_iVars.vValue[2][0] >= _mLowerEdge.val(2) && parser_iVars.vValue[2][0] <= _mHigherEdge.val(2)))))
+                                        && (parser_iVars.vValue[2][0] >= _mLowerEdge.val(2) && parser_iVars.vValue[2][0] <= _mHigherEdge.val(2))))*/)
                             {
                                 _pData.setData(x, y, NAN, z);
                             }
@@ -3850,18 +3850,30 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                         }
                         else if (_pData.getContFilled())
                         {
-                            _graph.ContF3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("x").c_str(), _pInfo.nSamples/2);
-                            _graph.ContF3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str(), _pInfo.nSamples/2);
-                            _graph.ContF3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("z").c_str(), _pInfo.nSamples/2);
-                            _graph.Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, "kx", _pInfo.nSamples/2);
-                            _graph.Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, "k", _pInfo.nSamples/2);
-                            _graph.Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, "kz", _pInfo.nSamples/2);
+                            for (unsigned short n = 0; n < _pData.getSlices(); n++)
+                            {
+                                _graph.ContF3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("x").c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices()+1));
+                                _graph.Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, "kx", (n+1)*_pInfo.nSamples/(_pData.getSlices()+1));
+                            }
+                            for (unsigned short n = 0; n < _pData.getSlices(1); n++)
+                            {
+                                _graph.ContF3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices(1)+1));
+                                _graph.Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, "k", (n+1)*_pInfo.nSamples/(_pData.getSlices(1)+1));
+                            }
+                            for (unsigned short n = 0; n < _pData.getSlices(2); n++)
+                            {
+                                _graph.ContF3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("z").c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices(2)+1));
+                                _graph.Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, "kz", (n+1)*_pInfo.nSamples/(_pData.getSlices(2)+1));
+                            }
                         }
                         else
                         {
-                            _graph.Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("x").c_str(), _pInfo.nSamples/2);
-                            _graph.Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str(), _pInfo.nSamples/2);
-                            _graph.Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("z").c_str(), _pInfo.nSamples/2);
+                            for (unsigned short n = 0; n < _pData.getSlices(); n++)
+                                _graph.Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("x").c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices()+1));
+                            for (unsigned short n = 0; n < _pData.getSlices(1); n++)
+                                _graph.Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices(1)+1));
+                            for (unsigned short n = 0; n < _pData.getSlices(2); n++)
+                                _graph.Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("z").c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices(2)+1));
                         }
                     }
                     else if (_pInfo.sCommand.substr(0,4) == "grad")
@@ -3898,9 +3910,12 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                     {
                         if (!(_pData.getContFilled() && _pData.getContProj()) && !_pData.getCloudPlot())
                         {
-                            _graph.Dens3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("x").c_str(), _pInfo.nSamples/2);
-                            _graph.Dens3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str(), _pInfo.nSamples/2);
-                            _graph.Dens3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("z").c_str(), _pInfo.nSamples/2);
+                            for (unsigned short n = 0; n < _pData.getSlices(); n++)
+                                _graph.Dens3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("x").c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices()+1));
+                            for (unsigned short n = 0; n < _pData.getSlices(1); n++)
+                                _graph.Dens3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices(1)+1));
+                            for (unsigned short n = 0; n < _pData.getSlices(2); n++)
+                                _graph.Dens3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("z").c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices(2)+1));
                         }
                         else if (_pData.getCloudPlot() && !(_pData.getContFilled() && _pData.getContProj()))
                             _graph.Cloud(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str());
@@ -4987,77 +5002,6 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                 }
             }
 
-            /*if (!nPlotCompose)
-            {
-                // --> Achsen beschriften <--
-                if (_pData.getAxis()
-                    && _pData.getBox()
-                    && !_pData.getCoords()
-                    && (!_pData.getSchematic()
-                        || matchParams(_pInfo.sPlotParams, "xlabel", '=')
-                        || matchParams(_pInfo.sPlotParams, "ylabel", '=')
-                        || matchParams(_pInfo.sPlotParams, "zlabel", '=')))
-                {
-                    _graph.Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), 0.0);
-                    _graph.Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), 0.0);
-                    _graph.Label('z', fromSystemCodePage(_pData.getzLabel()).c_str(), 0.0);
-                    //_graph.Label('t', fromSystemCodePage(_pData.getzLabel()).c_str(), 0.0);
-                }
-                else if (_pData.getAxis()
-                    && _pData.getCoords()
-                    && (!_pData.getSchematic()
-                        || matchParams(_pInfo.sPlotParams, "xlabel", '=')
-                        || matchParams(_pInfo.sPlotParams, "ylabel", '=')
-                        || matchParams(_pInfo.sPlotParams, "zlabel", '=')))
-                {
-                    // --> Im Falle von krummliniger Koordinaten sind die Achsen anders beschriftet <--
-                    if (_pData.getCoords() && !(_pInfo.b2D || _pInfo.sCommand.find("3d") != string::npos || _pInfo.b2DVect))
-                        _graph.Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), 0.25);
-                    else if (_pData.getCoords() && _pInfo.b2DVect)
-                        _graph.Label('x', fromSystemCodePage(_pData.getzLabel()).c_str(), 0.0);
-                    else if (_pInfo.sCommand.find("3d") != string::npos && _pData.getCoords() == 1)
-                        _graph.Label('x', fromSystemCodePage(_pData.getzLabel()).c_str(), -0.5);
-                    else if (_pInfo.sCommand.find("3d") != string::npos && _pData.getCoords() == 2)
-                        _graph.Label('x', fromSystemCodePage(_pData.getzLabel()).c_str(), -0.4);
-                    else if (_pData.getCoords() == 1)
-                        _graph.Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), -0.6);//-0.65
-                    else
-                        _graph.Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), -0.6);//-0.7
-
-                    if (_pData.getCoords() && !(_pInfo.b2D || _pInfo.sCommand.find("3d") != string::npos || _pInfo.b2DVect))
-                        _graph.Label('y', fromSystemCodePage(_pData.getzLabel()).c_str(), 0.0);
-                    else if (_pData.getCoords() && _pInfo.b2DVect)
-                        _graph.Label('y', fromSystemCodePage(_pData.getxLabel()).c_str(), 0.25);
-                    else if (_pData.getCoords() == 1 && _pInfo.sCommand.find("3d") != string::npos)
-                        _graph.Label('y', fromSystemCodePage(_pData.getxLabel()).c_str(), -0.6); //-0.65
-                    else if (_pData.getCoords() == 2 && _pInfo.sCommand.find("3d") != string::npos)
-                        _graph.Label('y', fromSystemCodePage(_pData.getxLabel()).c_str(), -0.6); //-0.7
-                    else if (_pData.getCoords() == 1)
-                        _graph.Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), 0.0);
-                    else
-                        _graph.Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), -0.4);
-
-                    if (_pInfo.b2D && _pData.getCoords() == 2)
-                        _graph.Label('z', fromSystemCodePage(_pData.getzLabel()).c_str(), -0.9); // -0.5
-                    else if (_pInfo.sCommand.find("3d") != string::npos && _pData.getCoords() == 2)
-                        _graph.Label('z', fromSystemCodePage(_pData.getyLabel()).c_str(), -0.9); // -0.4
-                    else if (_pInfo.sCommand.find("3d") != string::npos && _pData.getCoords() == 1)
-                        _graph.Label('z', fromSystemCodePage(_pData.getyLabel()).c_str(), 0.0);
-                    else if (_pData.getCoords() == 1)
-                        _graph.Label('z', fromSystemCodePage(_pData.getzLabel()).c_str(), -0.5);
-                }
-                else if (_pData.getAxis()
-                    && !_pData.getBox()
-                    && (!_pData.getSchematic()
-                        || matchParams(_pInfo.sPlotParams, "xlabel", '=')
-                        || matchParams(_pInfo.sPlotParams, "ylabel", '=')
-                        || matchParams(_pInfo.sPlotParams, "zlabel", '=')))
-                {
-                    _graph.Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), 1.1);
-                    _graph.Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), 1.1);
-                    _graph.Label('z', fromSystemCodePage(_pData.getzLabel()).c_str(), 1.1);
-                }
-            }*/
             // --> GIF-Frame beenden <--
             if (_pData.getAnimateSamples() && bAnimateVar)
                 _graph.EndFrame();

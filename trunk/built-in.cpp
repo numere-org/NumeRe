@@ -398,88 +398,6 @@ void BI_remove_data (Datafile& _data, Settings& _option, bool bIgnore)
 	return;
 }
 
-/* 6. Zwar ist das Programm so clever und kann u.U. Tabellenkoepfe automatisch aus einem
- * Datenfile extrahieren. Aber man moechte die vielleicht trotzdem bearbeiten. Machen wir hiermit.
- */
-/*void BI_edit_header (Datafile& _data, Settings& _option)
-{
-	if (_data.isValid() || _data.isValidCache())
-	{
-		string c = "";
-		if (!_data.isValid() && _data.isValidCache())
-		{
-			cerr << LineBreak("|-> Es sind nur Daten im Cache vorhanden. Es werden die Tabellenköpfe aus dem Cache bearbeitet.", _option) << endl;
-
-			_data.setCacheStatus(true);
-		}
-		else if (_data.isValid() && _data.isValidCache())
-		{
-			cerr << LineBreak("|-> Es sind sowohl Daten im Cache als auch die Daten eines Datenfiles vorhanden. Welche Köpfe sollen verwendet werden? (c/d)$(0 zum Abbrechen)", _option) << endl;
-			cerr << "|" << endl;
-            cerr << "|<- ";
-			getline(cin, c);
-
-			if (c == "0")
-			{
-				cerr << "|-> ABBRUCH!" << endl;
-				return;
-			}
-			if (c == "c")
-				_data.setCacheStatus(true);
-			cerr << LineBreak("|-> Es werden die Tabellenköpfe aus " + _data.getDataFileName("data") + " bearbeitet.", _option) << endl;
-		}
-		else
-		{
-			cerr << LineBreak("|-> Tabellenköpfe der geladenen Daten bearbeiten.", _option) << endl;
-		}
-		int nHead = 0;
-		string sNew = "";
-		cerr << toSystemCodePage("|-> Köpfe werden gelistet ...") << endl;
-
-		for (int i = 0; i < _data.getCols("data"); i++)
-		{
-			cerr << "|-> Kopf #" << i+1 << ": " << _data.getHeadLineElement(i, "data") << endl;		// Alle Koepfe mit einer Nummer anzeigen
-		}
-
-		cerr << "|-> Beenden: 0" << endl;
-
-		do 			// mindestens einmal durchlaufen!
-		{
-			cerr << LineBreak("|-> Nummer des zu bearbeitenden Kopfes oder 0 zum Beenden eingeben:", _option) << endl;
-			cerr << "|" << endl;
-            cerr << "|<- ";
-			cin >> nHead;
-			if(!nHead)
-				break;
-			else if (nHead <= _data.getCols("data") && nHead > 0)		// Gibt's diese Nummer ueberhaupt?
-			{
-				cerr << "|-> Kopf #" << nHead << " wird bearbeitet." << endl;
-				cerr << "|   Neu eingeben: (Leerzeichen werden automatisch" << endl;
-				cerr << "|   durch '_' ersetzt)" << endl;
-				cerr << "|<- ";
-				cin.ignore(1); 								// Restbestaende im cin-Buffer ignorieren!
-				getline(cin, sNew);							// Gesamte Zeile einlesen!
-				cerr << "|" << endl;
-				_data.setHeadLineElement(nHead-1, "data", sNew);	// Neu zuweisen
-				cerr << LineBreak("|-> Kopf #" + toString(nHead) + " lautet nun: " + _data.getHeadLineElement(nHead-1, "data"), _option) << endl; // Kontrollausgabe
-
-			}
-			else		// Oha! Vertippt!
-			{
-				cerr << "|-> FEHLER: Dieser Kopf existiert nicht!" << endl;
-			}
-		}
-		while (nHead);
-		_data.setCacheStatus(false);
-		cin.ignore(1);
-	}
-	else
-	{
-		cerr << "|-> FEHLER: Keine Daten geladen!" << endl;
-	}
-	return;
-}*/
-
 // 8. Den Cache leeren
 void BI_clear_cache(Datafile& _data, Settings& _option, bool bIgnore)
 {
@@ -3574,9 +3492,22 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 _idx.nI[1] = _data.getLines(sArgument.substr(0,sArgument.find('(')), false);
             if (_idx.nJ[1] == -2)
                 _idx.nJ[1] = _data.getCols(sArgument.substr(0,sArgument.find('(')));
-            if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
+            if (matchParams(sCmd, "grid"))
             {
-                if (_data.smooth(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument))
+                if (_data.smooth(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::GRID))
+                {
+                    if (_option.getSystemPrintStatus())
+                        cerr << LineBreak("|-> \"" +sArgument.substr(0,sArgument.find('('))+ "\" wurde erfolgreich geglättet.", _option) << endl;
+                }
+                else
+                {
+                    throw CANNOT_SMOOTH_CACHE;
+                    //cerr << LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht geglättet werden! Siehe \"help -smooth\" für weitere Details.", _option) << endl;
+                }
+            }
+            else if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
+            {
+                if (_data.smooth(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::ALL))
                 {
                     if (_option.getSystemPrintStatus())
                         cerr << LineBreak("|-> \"" +sArgument.substr(0,sArgument.find('('))+ "\" wurde erfolgreich geglättet.", _option) << endl;
@@ -3589,7 +3520,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             }
             else if (matchParams(sCmd, "lines"))
             {
-                if (_data.smooth(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, 1))
+                if (_data.smooth(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::LINES))
                 {
                     if (_option.getSystemPrintStatus())
                         cerr << LineBreak("|-> Zeile(n) wurden erfolgreich geglättet.", _option) << endl;
@@ -3602,7 +3533,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             }
             else if (matchParams(sCmd, "cols"))
             {
-                if (_data.smooth(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, 2))
+                if (_data.smooth(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::COLS))
                 {
                     if (_option.getSystemPrintStatus())
                         cerr << LineBreak("|-> Spalte(n) wurden erfolgreich geglättet.", _option) << endl;
@@ -3865,15 +3796,16 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             if (matchParams(sCmd, "samples", '='))
             {
                 nArgument = matchParams(sCmd, "samples", '=') + 7;
-                if (_data.containsCacheElements(sCmd.substr(nArgument)) || sCmd.substr(nArgument).find("data(") != string::npos)
+                if (_data.containsCacheElements(getArgAtPos(sCmd, nArgument)) || getArgAtPos(sCmd, nArgument).find("data(") != string::npos)
                 {
-                    sArgument = sCmd.substr(nArgument);
+                    sArgument = getArgAtPos(sCmd, nArgument);
                     parser_GetDataElement(sArgument, _parser, _data, _option);
                     if (sArgument.find("{") != string::npos)
                         parser_VectorToExpr(sArgument, _option);
-                    sCmd = sCmd.substr(0,nArgument) + sArgument;
+                    sCmd.replace(nArgument, getArgAtPos(sCmd, nArgument).length(), sArgument);
+                    //sCmd = sCmd.substr(0,nArgument) + sArgument;
                 }
-                _parser.SetExpr(sCmd.substr(nArgument));
+                _parser.SetExpr(getArgAtPos(sCmd, nArgument));
                 nArgument = (int)_parser.Eval();
             }
             else
@@ -3897,15 +3829,53 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 _idx.nI[1] = _data.getLines(sArgument.substr(0,sArgument.find('(')), false);
             if (_idx.nJ[1] == -2)
                 _idx.nJ[1] = _data.getCols(sArgument.substr(0,sArgument.find('(')));
-            if (_data.resample(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument))
+            if (matchParams(sCmd, "grid"))
             {
-                if (_option.getSystemPrintStatus())
-                    cerr << LineBreak("|-> Resampling der Spalte(n) wurde erfolgreich abgeschlossen.", _option) << endl;
+                if (_data.resample(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::GRID))
+                {
+                    if (_option.getSystemPrintStatus())
+                        cerr << LineBreak("|-> Resampling von \""+sArgument.substr(0,sArgument.find('('))+"\" wurde erfolgreich abgeschlossen.", _option) << endl;
+                }
+                else
+                {
+                    throw CANNOT_RESAMPLE_CACHE;
+                }
             }
-            else
+            else if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
             {
-                throw CANNOT_RESAMPLE_CACHE;
-                //cerr << LineBreak("|-> FEHLER: Resampling der Spalte(n) konnte nicht erfolgreich durchgeführt werden! Siehe \"help -resample\" für weitere Details.", _option) << endl;
+                if (_data.resample(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::ALL))
+                {
+                    if (_option.getSystemPrintStatus())
+                        cerr << LineBreak("|-> Resampling von \""+sArgument.substr(0,sArgument.find('('))+"\" wurde erfolgreich abgeschlossen.", _option) << endl;
+                }
+                else
+                {
+                    throw CANNOT_RESAMPLE_CACHE;
+                }
+            }
+            else if (matchParams(sCmd, "cols"))
+            {
+                if (_data.resample(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::COLS))
+                {
+                    if (_option.getSystemPrintStatus())
+                        cerr << LineBreak("|-> Resampling der Spalte(n) wurde erfolgreich abgeschlossen.", _option) << endl;
+                }
+                else
+                {
+                    throw CANNOT_RESAMPLE_CACHE;
+                }
+            }
+            else if (matchParams(sCmd, "lines"))
+            {
+                if (_data.resample(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::LINES))
+                {
+                    if (_option.getSystemPrintStatus())
+                        cerr << LineBreak("|-> Resampling der Zeile(n) wurde erfolgreich abgeschlossen.", _option) << endl;
+                }
+                else
+                {
+                    throw CANNOT_RESAMPLE_CACHE;
+                }
             }
             return 1;
         }
@@ -4044,9 +4014,22 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 _idx.nI[1] = _data.getLines(sArgument.substr(0,sArgument.find('(')), false);
             if (_idx.nJ[1] == -2)
                 _idx.nJ[1] = _data.getCols(sArgument.substr(0,sArgument.find('(')));
+            if (matchParams(sCmd, "grid"))
+            {
+                if (_data.retoque(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], Cache::GRID))
+                {
+                    if (_option.getSystemPrintStatus())
+                        cerr << LineBreak("|-> \"" +sArgument.substr(0,sArgument.find('('))+ "\" wurde erfolgreich retuschiert.", _option) << endl;
+                }
+                else
+                {
+                    throw CANNOT_RETOQUE_CACHE;
+                    //cerr << LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht geglättet werden! Siehe \"help -smooth\" für weitere Details.", _option) << endl;
+                }
+            }
             if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
             {
-                if (_data.retoque(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], 0))
+                if (_data.retoque(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], Cache::ALL))
                 {
                     if (_option.getSystemPrintStatus())
                         cerr << LineBreak("|-> \"" +sArgument.substr(0,sArgument.find('('))+ "\" wurde erfolgreich retuschiert.", _option) << endl;
@@ -4059,7 +4042,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             }
             else if (matchParams(sCmd, "lines"))
             {
-                if (_data.retoque(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], 1))
+                if (_data.retoque(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], Cache::LINES))
                 {
                     if (_option.getSystemPrintStatus())
                         cerr << LineBreak("|-> Zeile(n) wurden erfolgreich retuschiert.", _option) << endl;
@@ -4072,7 +4055,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             }
             else if (matchParams(sCmd, "cols"))
             {
-                if (_data.retoque(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], 2))
+                if (_data.retoque(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], Cache::COLS))
                 {
                     if (_option.getSystemPrintStatus())
                         cerr << LineBreak("|-> Spalte(n) wurden erfolgreich retuschiert.", _option) << endl;
