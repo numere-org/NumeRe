@@ -335,9 +335,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             double* dTemp = _parser.Eval(nResults);
             if (nResults)
             {
-                for (int i = 0; i < nResults; i++)
+                for (int i = 0; i < 3; i++)
                 {
-                    if (!isnan(dTemp[i]) && !isinf(dTemp[i]))
+                    if (i < nResults && !isnan(dTemp[i]) && !isinf(dTemp[i]))
                         dOrigin[i] = dTemp[i];
                     else
                         dOrigin[i] = 0.0;
@@ -353,6 +353,32 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         {
             for (int i = 0; i < 3; i++)
                 dOrigin[i] = 0.0;
+        }
+    }
+    if (matchParams(sCmd, "slices", '=') && (!nType || nType == 2))
+    {
+        int nPos = matchParams(sCmd, "slices", '=')+6;
+        string sTemp = getArgAtPos(__sCmd, nPos);
+        if (sTemp.find(',') != string::npos && sTemp.length() > 1)
+        {
+            _parser.SetExpr(sTemp);
+            int nResults = 0;
+            double* dTemp = _parser.Eval(nResults);
+            if (nResults)
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    if (i < nResults && !isnan(dTemp[i]) && !isinf(dTemp[i]) && dTemp[i] <= 5 && dTemp >= 0)
+                        nSlices[i] = (unsigned short)dTemp[i];
+                    else
+                        nSlices[i] = 1;
+                }
+            }
+        }
+        else
+        {
+            for (int i = 0; i < 3; i++)
+                nSlices[i] = 1;
         }
     }
     if (matchParams(sCmd, "connect") && (!nType || nType == 2))
@@ -1453,6 +1479,7 @@ void PlotData::reset()
         _lVLines[i].sDesc = "";
         _lVLines[i].sStyle = "k;2";
         _lVLines[i].dPos = 0.0;
+        nSlices[i] = 1;
     }
 
     for (int i = 0; i < 4; i++)
@@ -1808,6 +1835,7 @@ string PlotData::getParams(const Settings& _option, bool asstr) const
         sReturn += "std" + sSepString;
     else
         sReturn += "[" + toString(dOrigin[0], _option) + ", " + toString(dOrigin[1], _option) + ", " + toString(dOrigin[2], _option) + "]" + sSepString;
+    sReturn += "slices=[" +toString((int)nSlices[0]) + ", " + toString((int)nSlices[1]) + ", " + toString((int)nSlices[2]) + "]" + sSepString;
     if (bStepPlot)
         sReturn += "steps" + sSepString;
     if (bOrthoProject)

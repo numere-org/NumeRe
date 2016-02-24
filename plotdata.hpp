@@ -47,6 +47,7 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         double*** dPlotData;        // Datenspeicher fuer die berechneten Plotpunkte (dreidimensionaler Speicher!)
         double dRanges[3][2];       // Speicher fuer die Plot-Intervalle
         double dOrigin[3];
+        unsigned short nSlices[3];
         int nRows;                  // Dimensions-Speicher-Int: Spalten
         int nLines;                 // Dimensions-Speicher-Int: Zeilen
         int nLayers;                // Dimensions-Speicher-Int: Ebenen (Jede Ebene fuer einen neue Funktion)
@@ -339,6 +340,13 @@ class PlotData : public FileSystem  // CHILD von Filesystem
                     return dOrigin[nDir];
                 else
                     return 0.0;
+            }
+        inline unsigned short getSlices(unsigned int nDir = 0) const
+            {
+                if (nDir < 3)
+                    return nSlices[nDir];
+                else
+                    return 1;
             }
 
         inline string getColorScheme(string _sAddOpt = "") const

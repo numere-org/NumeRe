@@ -2695,13 +2695,14 @@ double Cache::pct(long long int _nLayer, const vector<long long int>& _vLine, co
 }
 
 
-bool Cache::retoque(const string& _sCache, long long int i1, long long int i2, long long int j1, long long int j2, unsigned int nDir)
+bool Cache::retoque(const string& _sCache, long long int i1, long long int i2, long long int j1, long long int j2, AppDir Direction)
 {
-    return retoque(mCachesMap.at(_sCache), i1, i2, j1, j2, nDir);
+    return retoque(mCachesMap.at(_sCache), i1, i2, j1, j2, Direction);
 }
 
-bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, long long int j1, long long int j2, unsigned int nDir)
+bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, long long int j1, long long int j2, AppDir Direction)
 {
+    bool bUseAppendedZeroes = false;
     if (!bValidData)
         return false;
     if (i1 == -1 && i2 == -1 && j1 == -1 && j2 == -1)
@@ -2709,8 +2710,10 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
     if (i2 == -1)
         i2 = i1;
     else if (i2 == -2)
-        i2 = getCacheLines(_nLayer, false)-1;
-
+    {
+        i2 = getCacheLines(_nLayer, true)-1;
+        bUseAppendedZeroes = true;
+    }
     if (j2 == -1)
         j2 = j1;
     else if (j2 == -2)
@@ -2735,13 +2738,40 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
     if (j2 >= getCacheCols(_nLayer, false))
         j2 = getCacheCols(_nLayer, false)-1;
 
-    if (!nDir && i2 - i1 < 3)
-        nDir = 1;
-    if (!nDir && j2 - j1 < 3)
-        nDir = 2;
+    if ((Direction == ALL || Direction == GRID) && i2 - i1 < 3)
+        Direction = LINES;
+    if ((Direction == ALL || Direction == GRID) && j2 - j1 < 3)
+        Direction = COLS;
+
+    if (bUseAppendedZeroes)
+    {
+        long long int nMax = 0;
+        for (long long int j = j1; j <= j2; j++)
+        {
+            if (nMax < nLines - nAppendedZeroes[_nLayer][j]-1)
+                nMax = nLines - nAppendedZeroes[_nLayer][j]-1;
+        }
+        if (i2 > nMax)
+            i2 = nMax;
+    }
 
 
-    if (!nDir)
+    if (Direction == GRID)
+    {
+        if (bUseAppendedZeroes)
+        {
+            if (!retoque(_nLayer, i1, -2, j1, -1, COLS) || !retoque(_nLayer, i1, -2, j1+1, -1, COLS))
+                return false;
+        }
+        else
+        {
+            if (!retoque(_nLayer, i1, i2, j1, j1+1, COLS))
+                return false;
+        }
+        j1 += 2;
+    }
+
+    if (Direction == ALL || Direction == GRID)
     {
         for (long long int i = i1; i <= i2; i++)
         {
@@ -2751,7 +2781,7 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                 {
                     if (i > i1 && i < i2 && j > j1 && j < j2 && isValidDisc(i-1, j-1, _nLayer, 2))
                     {
-                        retoqueRegion(_nLayer, i-1, i+1, j-1, j+1, 1, 0);
+                        retoqueRegion(_nLayer, i-1, i+1, j-1, j+1, 1, ALL);
                         if (bIsSaved)
                         {
                             bIsSaved = false;
@@ -2770,7 +2800,7 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                 {
                     if (i > i1 && i < i2 && j > j1 && j < j2 && isValidDisc(i-1, j-1, _nLayer, 2))
                     {
-                        retoqueRegion(_nLayer, i-1, i+1, j-1, j+1, 1, 0);
+                        retoqueRegion(_nLayer, i-1, i+1, j-1, j+1, 1, ALL);
                     }
                     else if (i == i1 || i == i2 || j == j1 || j == j2)
                     {
@@ -3359,7 +3389,7 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
             }
         }
     }
-    else if (nDir == 1)
+    else if (Direction == LINES)
     {
         for (long long int i = i1; i <= i2; i++)
         {
@@ -3419,7 +3449,7 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
             }
         }
     }
-    else if (nDir == 2)
+    else if (Direction == COLS)
     {
         for (long long int j = j1; j <= j2; j++)
         {
@@ -3481,8 +3511,9 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
     return true;
 }
 
-bool Cache::retoqueRegion(long long int _nLayer, long long int i1, long long int i2, long long int j1, long long int j2, unsigned int nOrder, unsigned int nDir)
+bool Cache::retoqueRegion(long long int _nLayer, long long int i1, long long int i2, long long int j1, long long int j2, unsigned int nOrder, AppDir Direction)
 {
+    bool bUseAppendedZeroes = false;
     if (!bValidData)
         return false;
     if (nOrder < 1)
@@ -3492,8 +3523,10 @@ bool Cache::retoqueRegion(long long int _nLayer, long long int i1, long long int
     if (i2 == -1)
         i2 = i1;
     else if (i2 == -2)
-        i2 = getCacheLines(_nLayer, false)-1;
-
+    {
+        i2 = getCacheLines(_nLayer, true)-1;
+        bUseAppendedZeroes = true;
+    }
     if (j2 == -1)
         j2 = j1;
     else if (j2 == -2)
@@ -3518,17 +3551,38 @@ bool Cache::retoqueRegion(long long int _nLayer, long long int i1, long long int
     if (j2 >= getCacheCols(_nLayer, false))
         j2 = getCacheCols(_nLayer, false)-1;
 
-
-    if (!nDir && nOrder > 1)
+    if (bUseAppendedZeroes)
     {
-        Cache::smooth(_nLayer, i1, i2, j1, j1, nOrder, 2);
-        Cache::smooth(_nLayer, i1, i2, j2, j2, nOrder, 2);
-        Cache::smooth(_nLayer, i1, i1, j1, j2, nOrder, 1);
-        Cache::smooth(_nLayer, i2, i2, j1, j2, nOrder, 1);
+        long long int nMax = 0;
+        for (long long int j = j1; j <= j2; j++)
+        {
+            if (nMax < nLines - nAppendedZeroes[_nLayer][j]-1)
+                nMax = nLines - nAppendedZeroes[_nLayer][j]-1;
+        }
+        if (i2 > nMax)
+            i2 = nMax;
+    }
+
+    if ((Direction == ALL || Direction == GRID) && nOrder > 1)
+    {
+        if (bUseAppendedZeroes)
+        {
+            Cache::smooth(_nLayer, i1, -2, j1, j1, nOrder, COLS);
+            Cache::smooth(_nLayer, i1, -2, j2, j2, nOrder, COLS);
+            Cache::smooth(_nLayer, i1, i1, j1, j2, nOrder, LINES);
+            Cache::smooth(_nLayer, i2, i2, j1, j2, nOrder, LINES);
+        }
+        else
+        {
+            Cache::smooth(_nLayer, i1, i2, j1, j1, nOrder, COLS);
+            Cache::smooth(_nLayer, i1, i2, j2, j2, nOrder, COLS);
+            Cache::smooth(_nLayer, i1, i1, j1, j2, nOrder, LINES);
+            Cache::smooth(_nLayer, i2, i2, j1, j2, nOrder, LINES);
+        }
     }
 
     //cerr << i1 << " " << i2 << " " << j1 << " " << j2 << " " << nOrder << endl;
-    if (nDir == 1)
+    if (Direction == LINES)
     {
         for (long long int i = i1; i <= i2; i++)
         {
@@ -3542,7 +3596,7 @@ bool Cache::retoqueRegion(long long int _nLayer, long long int i1, long long int
             }
         }
     }
-    else if (nDir == 2)
+    else if (Direction == COLS)
     {
         for (long long int j = j1; j <= j2; j++)
         {
@@ -3556,7 +3610,7 @@ bool Cache::retoqueRegion(long long int _nLayer, long long int i1, long long int
             }
         }
     }
-    else if (!nDir && i2-i1 > 1 && j2-j1 > 1)
+    else if ((Direction == ALL || Direction == GRID) && i2-i1 > 1 && j2-j1 > 1)
     {
         for (long long int j = j1; j <= j2-nOrder-1; j++)
         {
@@ -3690,22 +3744,10 @@ bool Cache::retoqueRegion(RetoqueRegion& _region)
                     _region.vDataArray[i][j] = dAverage;
                 else
                 {
-//                    if (nOrder % 2)
-//                    {
-//                        _region.vDataArray[i][j] =
-//                            0.5*(1.0-0.5*hypot(i-(nOrder+1)/2.0,j-(nOrder+1)/2.0)/(M_SQRT2*((nOrder+1)/2.0)))
-//                                *_region.dMedian
-//                            + 0.5*(1.0+0.5*hypot(i-(nOrder+1)/2.0,j-(nOrder+1)/2.0)/(M_SQRT2*((nOrder+1)/2.0)))*dAverage;
-//                    }
-//                    else
-//                    {
-                        _region.vDataArray[i][j] =
-                            0.5*(1.0-0.5*hypot(i-(nOrder)/2.0,j-(nOrder)/2.0)/(M_SQRT2*(nOrder/2.0)))
-                                *_region.dMedian
-                            + 0.5*(1.0+0.5*hypot(i-(nOrder)/2.0,j-(nOrder)/2.0)/(M_SQRT2*(nOrder/2.0)))*dAverage;
-  //                  }
-
-//                    _region.vDataArray[i][j] = 0.5*_region.dMedian + 0.5*dAverage;
+                    _region.vDataArray[i][j] =
+                        0.5*(1.0-0.5*hypot(i-(nOrder)/2.0,j-(nOrder)/2.0)/(M_SQRT2*(nOrder/2.0)))
+                            *_region.dMedian
+                        + 0.5*(1.0+0.5*hypot(i-(nOrder)/2.0,j-(nOrder)/2.0)/(M_SQRT2*(nOrder/2.0)))*dAverage;
                 }
                 if (!isnan(dAverage) && !isinf(dAverage) && !isnan(_region.vDataArray[i][j]) && !isinf(_region.vDataArray[i][j]))
                     _region.vValidationArray[i][j] = true;
@@ -3717,24 +3759,27 @@ bool Cache::retoqueRegion(RetoqueRegion& _region)
     return true;
 }
 
-bool Cache::smooth(const string& _sCache, long long int i1, long long int i2, long long int j1, long long int j2, unsigned int nOrder, unsigned int nDir)
+bool Cache::smooth(const string& _sCache, long long int i1, long long int i2, long long int j1, long long int j2, unsigned int nOrder, AppDir Direction)
 {
-    return smooth(mCachesMap.at(_sCache), i1, i2, j1, j2, nOrder, nDir);
+    return smooth(mCachesMap.at(_sCache), i1, i2, j1, j2, nOrder, Direction);
 }
 
-bool Cache::smooth(long long int _nLayer, long long int i1, long long int i2, long long int j1, long long int j2, unsigned int nOrder, unsigned int nDir)
+bool Cache::smooth(long long int _nLayer, long long int i1, long long int i2, long long int j1, long long int j2, unsigned int nOrder, AppDir Direction)
 {
+    bool bUseAppendedZeroes = false;
     if (!bValidData)
-        return false;
-    if (nOrder < 1 || (nOrder >= nLines && nDir == 2) || (nOrder >= nCols && nDir == 1) || ((nOrder >= nLines || nOrder >= nCols) && !nDir))
+        return false; //Cols == 2
+    if (nOrder < 1 || (nOrder >= nLines && Direction == COLS) || (nOrder >= nCols && Direction == LINES) || ((nOrder >= nLines || nOrder >= nCols) && !(Direction == ALL || Direction == GRID)))
         return false;
     if (i1 == -1 && i2 == -1 && j1 == -1 && j2 == -1)
         return false;
     if (i2 == -1)
         i2 = i1;
     else if (i2 == -2)
-        i2 = getCacheLines(_nLayer, false)-1;
-
+    {
+        i2 = getCacheLines(_nLayer, true)-1;
+        bUseAppendedZeroes = true;
+    }
     if (j2 == -1)
         j2 = j1;
     else if (j2 == -2)
@@ -3760,23 +3805,50 @@ bool Cache::smooth(long long int _nLayer, long long int i1, long long int i2, lo
         j2 = getCacheCols(_nLayer, false)-1;
 
 
-    if (!nDir && i2 - i1 < 3)
-        nDir = 1;
-    if (!nDir && j2 - j1 < 3)
-        nDir = 2;
+    if ((Direction == ALL || Direction == GRID) && i2 - i1 < 3)
+        Direction = LINES;
+    if ((Direction == ALL || Direction == GRID) && j2 - j1 < 3)
+        Direction = COLS;
 
-
-    if (!nDir)
+    if (bUseAppendedZeroes)
     {
-        Cache::retoque(_nLayer, i1, i2+1, j1, j2+1, nDir);
-        Cache::smooth(_nLayer, i1, i2, j1, j1, nOrder, 2);
-        Cache::smooth(_nLayer, i1, i2, j2, j2, nOrder, 2);
-        Cache::smooth(_nLayer, i1, i1, j1, j2, nOrder, 1);
-        Cache::smooth(_nLayer, i2, i2, j1, j2, nOrder, 1);
+        long long int nMax = 0;
+        for (long long int j = j1; j <= j2; j++)
+        {
+            if (nMax < nLines - nAppendedZeroes[_nLayer][j]-1)
+                nMax = nLines - nAppendedZeroes[_nLayer][j]-1;
+        }
+        if (i2 > nMax)
+            i2 = nMax;
+    }
+
+
+    if (Direction == GRID)
+    {
+        if (bUseAppendedZeroes)
+        {
+            if (!smooth(_nLayer, i1, -2, j1, -1, nOrder, COLS) || !smooth(_nLayer, i1, -2, j1+1, -1, nOrder, COLS))
+                return false;
+        }
+        else
+        {
+            if (!smooth(_nLayer, i1, i2, j1, j1+1, nOrder, COLS))
+                return false;
+        }
+        j1 += 2;
+    }
+
+    if (Direction == ALL || Direction == GRID)
+    {
+        Cache::retoque(_nLayer, i1, i2+1, j1, j2+1, ALL);
+        Cache::smooth(_nLayer, i1, i2, j1, j1, nOrder, COLS);
+        Cache::smooth(_nLayer, i1, i2, j2, j2, nOrder, COLS);
+        Cache::smooth(_nLayer, i1, i1, j1, j2, nOrder, LINES);
+        Cache::smooth(_nLayer, i2, i2, j1, j2, nOrder, LINES);
     }
 
     //cerr << i1 << " " << i2 << " " << j1 << " " << j2 << " " << nOrder << endl;
-    if (nDir == 1)
+    if (Direction == LINES)
     {
         for (long long int i = i1; i <= i2; i++)
         {
@@ -3790,7 +3862,7 @@ bool Cache::smooth(long long int _nLayer, long long int i1, long long int i2, lo
             }
         }
     }
-    else if (nDir == 2)
+    else if (Direction == COLS)
     {
         for (long long int j = j1; j <= j2; j++)
         {
@@ -3804,7 +3876,7 @@ bool Cache::smooth(long long int _nLayer, long long int i1, long long int i2, lo
             }
         }
     }
-    else if (!nDir && i2-i1 > 1 && j2-j1 > 1)
+    else if ((Direction == ALL || Direction == GRID) && i2-i1 > 1 && j2-j1 > 1)
     {
         for (long long int j = j1; j <= j2-nOrder-1; j++)
         {
@@ -3906,12 +3978,12 @@ bool Cache::smooth(long long int _nLayer, long long int i1, long long int i2, lo
     return true;
 }
 
-bool Cache::resample(const string& _sCache, long long int i1, long long int i2, long long int j1, long long int j2, unsigned int nSamples)
+bool Cache::resample(const string& _sCache, long long int i1, long long int i2, long long int j1, long long int j2, unsigned int nSamples, AppDir Direction)
 {
-    return resample(mCachesMap.at(_sCache), i1, i2, j1, j2, nSamples);
+    return resample(mCachesMap.at(_sCache), i1, i2, j1, j2, nSamples, Direction);
 }
 
-bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, long long int j1, long long int j2, unsigned int nSamples)
+bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, long long int j1, long long int j2, unsigned int nSamples, AppDir Direction)
 {
     //cerr << i1 << " " << i2 << " " << j1 << " " << j2 << " " << endl;
     bool bUseAppendedZeroes = false;
@@ -3919,17 +3991,17 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
 
     if (!bValidData)
         return false;
-    if (nSamples == getCacheLines(_nLayer, false))
-        return true;
+    /*if (nSamples == getCacheLines(_nLayer, false))
+        return true;*/
     if (!nSamples)
         return false;
     if (i1 == -1 && i2 == -1 && j1 == -1 && j2 == -1)
         return false;
     if (i2 == -1)
-        return false;
+        i2 = i1;
     else if (i2 == -2)
     {
-        i2 = getCacheLines(_nLayer, true)-1;
+        i2 = getCacheLines(_nLayer, false)-1;
         bUseAppendedZeroes = true;
     }
     if (j2 == -1)
@@ -3955,9 +4027,216 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
         i2 = getCacheLines(_nLayer, false)-1;
     if (j2 >= getCacheCols(_nLayer, false))
         j2 = getCacheCols(_nLayer, false)-1;
+
+    if (bUseAppendedZeroes)
+    {
+        long long int nMax = 0;
+        for (long long int j = j1; j <= j2; j++)
+        {
+            if (nMax < nLines - nAppendedZeroes[_nLayer][j]-1)
+                nMax = nLines - nAppendedZeroes[_nLayer][j]-1;
+        }
+        if (i2 > nMax)
+            i2 = nMax;
+    }
+    if (Direction == GRID)
+    {
+        if (j2-j1-2 != i2-i1 && !bUseAppendedZeroes)
+            return false;
+        else if (j2-j1-2 != (nLines-nAppendedZeroes[_nLayer][j1+1]-1)-i1 && bUseAppendedZeroes)
+            return false;
+    }
     //cerr << i2 << endl;
     //cerr << i2-i1 << endl;
-    double dValues[nSamples];
+    const long long int __nLines = nLines;
+    const long long int __nCols = nCols;
+    double dTemp[__nLines][__nCols];
+    Resampler* _resampler = 0;
+    if (Direction == ALL || Direction == GRID) // 2D
+    {
+        if (Direction == GRID)
+        {
+            if (bUseAppendedZeroes)
+            {
+                if (!resample(_nLayer, i1, -2, j1, -1, nSamples, COLS) || !resample(_nLayer, i1, -2, j1+1, -1, nSamples, COLS))
+                    return false;
+            }
+            else
+            {
+                if (!resample(_nLayer, i1, i2, j1, j1+1, nSamples, COLS)) // Achsenwerte getrennt resamplen
+                    return false;
+            }
+            j1 += 2;
+        }
+        if (bUseAppendedZeroes)
+        {
+            long long int nMax = 0;
+            for (long long int j = j1; j <= j2; j++)
+            {
+                if (nMax < nLines - nAppendedZeroes[_nLayer][j]-1)
+                    nMax = nLines - nAppendedZeroes[_nLayer][j]-1;
+            }
+            if (i2 > nMax)
+                i2 = nMax;
+        }
+        _resampler = new Resampler(j2-j1+1, i2-i1+1, nSamples, nSamples, Resampler::BOUNDARY_CLAMP, 1.0, 0.0, "lanczos6");
+        if (nSamples > i2-i1+1 || nSamples > j2-j1+1)
+            resizeCache(nLines+nSamples-(i2-i1+1), nCols+nSamples-(j2-j1+1), -1);
+    }
+    else if (Direction == COLS) // cols
+    {
+        _resampler = new Resampler(j2-j1+1, i2-i1+1, j2-j1+1, nSamples, Resampler::BOUNDARY_CLAMP, 1.0, 0.0, "lanczos6");
+        if (nSamples > i2-i1+1)
+            resizeCache(nLines+nSamples-(i2-i1+1), nCols-1, -1);
+    }
+    else if (Direction == LINES)// lines
+    {
+        _resampler = new Resampler(j2-j1+1, i2-i1+1, nSamples, i2-i1+1, Resampler::BOUNDARY_CLAMP, 1.0, 0.0, "lanczos6");
+        if (nSamples > j2-j1+1)
+            resizeCache(nLines-1, nCols+nSamples-(j2-j1+1), -1);
+    }
+
+    if (!_resampler)
+        return false;
+
+    const double* dOutputSamples = 0;
+    double* dInputSamples = new double[j2-j1+1];
+
+    for (long long int i = i1; i <= i2; i++)
+    {
+        for (long long int j = j1; j <= j2; j++)
+        {
+            dInputSamples[j-j1] = dCache[i][j][_nLayer];
+        }
+        if (!_resampler->put_line(dInputSamples))
+        {
+            //cerr << "STATUS: " << _resampler->status() << endl;
+            delete _resampler;
+            return false;
+        }
+    }
+    delete[] dInputSamples;
+
+
+    for (long long int i = 0; i < __nLines; i++)
+    {
+        for (long long int j = 0; j < __nCols; j++)
+        {
+            dTemp[i][j] = dCache[i][j][_nLayer];
+        }
+    }
+
+    long long int _ret_line = 0;
+    long long int _final_cols = 0;
+    if (Direction == ALL || Direction == GRID || Direction == LINES)
+        _final_cols = nSamples;
+    else
+        _final_cols = j2-j1+1;
+
+    while (true)
+    {
+        dOutputSamples = _resampler->get_line();
+        if (!dOutputSamples)
+            break;
+        for (long long int _fin = 0; _fin < _final_cols; _fin++)
+        {
+            //cerr << dOutputSamples[_fin] << " ";
+            if (isnan(dOutputSamples[_fin]))
+            {
+                dCache[i1+_ret_line][j1+_fin][_nLayer] = NAN;
+                bValidElement[i1+_ret_line][j1+_fin][_nLayer] = false;
+                continue;
+            }
+            dCache[i1+_ret_line][j1+_fin][_nLayer] = dOutputSamples[_fin];
+            bValidElement[i1+_ret_line][j1+_fin][_nLayer] = true;
+        }
+        //cerr << endl;
+        _ret_line++;
+
+    }
+    _ret_line++;
+    delete _resampler;
+
+    // Block unter dem resampleten kopieren
+    if (i2-i1+1 < nSamples && (Direction == ALL || Direction == GRID || Direction == COLS))
+    {
+        for (long long int i = i2+1; i < __nLines; i++)
+        {
+            for (long long int j = j1; j <= j2; j++)
+            {
+                if (isnan(dTemp[i][j]))
+                {
+                    dCache[_ret_line+i-(i2+1)+i1][j][_nLayer] = NAN;
+                    bValidElement[_ret_line+i-(i2+1)+i1][j][_nLayer] = false;
+                }
+                else
+                {
+                    dCache[_ret_line+i-(i2+1)+i1][j][_nLayer] = dTemp[i][j];
+                    bValidElement[_ret_line+i-(i2+1)+i1][j][_nLayer] = true;
+                }
+            }
+        }
+    }
+    else if (i2-i1+1 > nSamples && (Direction == ALL || Direction == GRID || Direction == COLS))
+    {
+        for (long long int i = i1+nSamples; i <= i2; i++)
+        {
+            for (long long int j = j1; j <= j2; j++)
+            {
+                dCache[_ret_line+i-nSamples][j][_nLayer] = NAN;
+                bValidElement[_ret_line+i-nSamples][j][_nLayer] = false;
+            }
+        }
+    }
+
+    // Block rechts kopieren
+    if (j2-j1+1 < nSamples && (Direction == ALL || Direction == GRID || Direction == LINES))
+    {
+        for (long long int i = 0; i < __nLines; i++)
+        {
+            for (long long int j = j2+1; j < __nCols; j++)
+            {
+                if (isnan(dTemp[i][j]))
+                {
+                    dCache[i][_final_cols+j-(j2+1)+j1][_nLayer] = NAN;
+                    bValidElement[i][_final_cols+j-(j2+1)+j1][_nLayer] = false;
+                }
+                else
+                {
+                    dCache[i][_final_cols+j-(j2+1)+j1][_nLayer] = dTemp[i][j];
+                    bValidElement[i][_final_cols+j-(j2+1)+j1][_nLayer] = true;
+                }
+            }
+        }
+    }
+    else if (j2-j1+1 > nSamples && (Direction == ALL || Direction == GRID || Direction == LINES))
+    {
+        for (long long int i = i1; i < i2; i++)
+        {
+            for (long long int j = j1+nSamples; j <= j2; j++)
+            {
+                dCache[i][_final_cols+j-nSamples][_nLayer] = NAN;
+                bValidElement[i][_final_cols+j-nSamples][_nLayer] = false;
+            }
+        }
+    }
+
+    // appended zeroes zaehlen
+    for (long long int j = 0; j < nCols; j++)
+    {
+        for (long long int i = nLines; i >= 0; i--)
+        {
+            if (i == nLines)
+                nAppendedZeroes[_nLayer][j] = 0;
+            else if (!bValidElement[i][j][_nLayer])
+                nAppendedZeroes[_nLayer][j]++;
+            else
+                break;
+
+        }
+    }
+
+    /*double dValues[nSamples];
     double dDelta = 1.0;
     if (!bUseAppendedZeroes)
         dDelta = (double)(i2-i1) / (double)(nSamples-1);
@@ -4052,7 +4331,7 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
                 nAppendedZeroes[_nLayer][j]++;
             }
         }
-    }
+    }*/
     if (bIsSaved)
     {
         bIsSaved = false;
