@@ -886,10 +886,15 @@ Match findCommand(const string& sCmd, string sCommand)
     {
         for (unsigned int i = 0; i < sCmd.length(); i++)
         {
-            if ((sCmd[i] == ' ' || sCmd[i] == '\t' || sCmd[i] == '-') && _mMatch.nPos == string::npos)
+            if ((sCmd[i] == ' ' || sCmd[i] == '\t' || sCmd[i] == '-' || sCmd[i] == '=') && _mMatch.nPos == string::npos)
                 continue;
             else if ((sCmd[i] == ' ' || sCmd[i] == '-') && _mMatch.nPos != string::npos)
             {
+                if (sCmd[i] != '-' && sCmd.find_first_not_of(' ',i) != string::npos && sCmd[sCmd.find_first_not_of(' ',i)] == '=')
+                {
+                    _mMatch.nPos = string::npos;
+                    continue;
+                }
                 _mMatch.sString = sCmd.substr(_mMatch.nPos,i-_mMatch.nPos);
                 if (isInQuotes(sCmd, (i-_mMatch.nPos)/2))
                 {
