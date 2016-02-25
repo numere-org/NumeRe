@@ -1913,6 +1913,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                 && !_data.containsStringVars(sLine)
                 && (sLine.find("data(") != string::npos || _data.containsCacheElements(sLine)))
             {
+                cerr << "get data element (parser)" << endl;
                 sCache = parser_GetDataElement(sLine, _parser, _data, _option);
                 if (sCache.length() && sCache.find('#') == string::npos)
                     bWriteToCache = true;
@@ -2012,8 +2013,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                     }
                     if (bMultLinCol[0] && bMultLinCol[1])
                     {
-                        cerr << LineBreak("|-> FEHLER: Kann Ergebnisse nicht zugleich an Zeilen und Spalten zuweisen!", _option) << endl;
-                        continue;
+                        throw NO_MATRIX;
                     }
                     if (parser_ExprNotEmpty(si_pos[0]))
                     {
@@ -2409,8 +2409,9 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                             oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: Keine Daten im Cache" << endl;
                         break;
                     case NO_MATRIX:
-                        cerr << LineBreak("|-> Es können entweder nur Zeilen oder nur Spalten aus einem Datenobjekt extrahiert werden.$(Möglicherweise wurde versucht, eine Untertabelle aus einem Datenobjekt zu lesen)", _option) << endl;
-                        cerr << LineBreak("|-> SIEHE AUCH: \"help data\" und \"help cache\"", _option) << endl;
+                        cerr << LineBreak("|-> Es können entweder nur Zeilen oder nur Spalten aus einem Datenobjekt extrahiert oder hinein geschrieben werden.$(Möglicherweise wurde versucht, eine Untertabelle aus einem Datenobjekt zu lesen oder hinein zu schreiben)", _option) << endl;
+                        cerr << LineBreak("|-> Verwende das \"matop\"-Kommando, um dieses Problem zu lösen.", _option) << endl;
+                        cerr << LineBreak("|-> SIEHE AUCH: \"help data\", \"help cache\" und \"help matop\"", _option) << endl;
                         if (oLogFile.is_open())
                             oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: Untertabellen können nicht extrahiert werden" << endl;
                         break;

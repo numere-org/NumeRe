@@ -3987,7 +3987,9 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
 {
     //cerr << i1 << " " << i2 << " " << j1 << " " << j2 << " " << endl;
     bool bUseAppendedZeroes = false;
-    vector<double> vTemp;
+    //vector<double> vTemp;
+    const long long int __nLines = nLines;
+    const long long int __nCols = nCols;
 
     if (!bValidData)
         return false;
@@ -4048,10 +4050,14 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
     }
     //cerr << i2 << endl;
     //cerr << i2-i1 << endl;
-    const long long int __nLines = nLines;
-    const long long int __nCols = nCols;
-    double dTemp[__nLines][__nCols];
+    //cerr << __nLines << " " << __nCols << endl;
+    //double dTemp[__nLines][__nCols];
+    double** dTemp = new double*[__nLines];
+    for (long long int i = 0; i < __nLines; i++)
+        dTemp[i] = new double[__nCols];
+    //cerr << "dTemp" << endl;
     Resampler* _resampler = 0;
+    //cerr << "_resampler-pointer" << endl;
     if (Direction == ALL || Direction == GRID) // 2D
     {
         if (Direction == GRID)
@@ -4059,12 +4065,22 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
             if (bUseAppendedZeroes)
             {
                 if (!resample(_nLayer, i1, -2, j1, -1, nSamples, COLS) || !resample(_nLayer, i1, -2, j1+1, -1, nSamples, COLS))
+                {
+                    for (long long int i = 0; i < __nLines; i++)
+                        delete[] dTemp[i];
+                    delete[] dTemp;
                     return false;
+                }
             }
             else
             {
                 if (!resample(_nLayer, i1, i2, j1, j1+1, nSamples, COLS)) // Achsenwerte getrennt resamplen
+                {
+                    for (long long int i = 0; i < __nLines; i++)
+                        delete[] dTemp[i];
+                    delete[] dTemp;
                     return false;
+                }
             }
             j1 += 2;
         }
@@ -4079,12 +4095,14 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
             if (i2 > nMax)
                 i2 = nMax;
         }
+        //cerr << "initializing grid resampler: " << j2-j1+1 << " " << i2-i1+1 << " " << nSamples << endl;
         _resampler = new Resampler(j2-j1+1, i2-i1+1, nSamples, nSamples, Resampler::BOUNDARY_CLAMP, 1.0, 0.0, "lanczos6");
         if (nSamples > i2-i1+1 || nSamples > j2-j1+1)
             resizeCache(nLines+nSamples-(i2-i1+1), nCols+nSamples-(j2-j1+1), -1);
     }
     else if (Direction == COLS) // cols
     {
+        //cerr << "initializing cols resampler: " << j2-j1+1 << " " << i2-i1+1 << " " << nSamples << endl;
         _resampler = new Resampler(j2-j1+1, i2-i1+1, j2-j1+1, nSamples, Resampler::BOUNDARY_CLAMP, 1.0, 0.0, "lanczos6");
         if (nSamples > i2-i1+1)
             resizeCache(nLines+nSamples-(i2-i1+1), nCols-1, -1);
@@ -4097,7 +4115,13 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
     }
 
     if (!_resampler)
+    {
+        for (long long int i = 0; i < __nLines; i++)
+            delete[] dTemp[i];
+        delete[] dTemp;
         return false;
+    }
+    //cerr << "_resampler initialized" << endl;
 
     const double* dOutputSamples = 0;
     double* dInputSamples = new double[j2-j1+1];
@@ -4112,6 +4136,9 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
         {
             //cerr << "STATUS: " << _resampler->status() << endl;
             delete _resampler;
+            for (long long int i = 0; i < __nLines; i++)
+                delete[] dTemp[i];
+            delete[] dTemp;
             return false;
         }
     }
@@ -4156,7 +4183,7 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
     }
     _ret_line++;
     delete _resampler;
-
+    //cerr << "_resampler deleted" << endl;
     // Block unter dem resampleten kopieren
     if (i2-i1+1 < nSamples && (Direction == ALL || Direction == GRID || Direction == COLS))
     {
@@ -4164,6 +4191,13 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
         {
             for (long long int j = j1; j <= j2; j++)
             {
+                if (_ret_line+i-(i2+1)+i1 >= nLines)
+                {
+                    for (long long int i = 0; i < __nLines; i++)
+                        delete[] dTemp[i];
+                    delete[] dTemp;
+                    return false;
+                }
                 if (isnan(dTemp[i][j]))
                 {
                     dCache[_ret_line+i-(i2+1)+i1][j][_nLayer] = NAN;
@@ -4179,16 +4213,23 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
     }
     else if (i2-i1+1 > nSamples && (Direction == ALL || Direction == GRID || Direction == COLS))
     {
-        for (long long int i = i1+nSamples; i <= i2; i++)
+        for (long long int i = i1+nSamples-1; i <= i2; i++)
         {
             for (long long int j = j1; j <= j2; j++)
             {
-                dCache[_ret_line+i-nSamples][j][_nLayer] = NAN;
-                bValidElement[_ret_line+i-nSamples][j][_nLayer] = false;
+                if (i >= nLines)
+                {
+                    for (long long int i = 0; i < __nLines; i++)
+                        delete[] dTemp[i];
+                    delete[] dTemp;
+                    return false;
+                }
+                dCache[i][j][_nLayer] = NAN;
+                bValidElement[i][j][_nLayer] = false;
             }
         }
     }
-
+    //cerr << "Lower block" << endl;
     // Block rechts kopieren
     if (j2-j1+1 < nSamples && (Direction == ALL || Direction == GRID || Direction == LINES))
     {
@@ -4196,6 +4237,13 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
         {
             for (long long int j = j2+1; j < __nCols; j++)
             {
+                if (_final_cols+j-(j2+1)+j1 >= nCols)
+                {
+                    for (long long int i = 0; i < __nLines; i++)
+                        delete[] dTemp[i];
+                    delete[] dTemp;
+                    return false;
+                }
                 if (isnan(dTemp[i][j]))
                 {
                     dCache[i][_final_cols+j-(j2+1)+j1][_nLayer] = NAN;
@@ -4213,10 +4261,17 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
     {
         for (long long int i = i1; i < i2; i++)
         {
-            for (long long int j = j1+nSamples; j <= j2; j++)
+            for (long long int j = j1+nSamples-1; j <= j2; j++)
             {
-                dCache[i][_final_cols+j-nSamples][_nLayer] = NAN;
-                bValidElement[i][_final_cols+j-nSamples][_nLayer] = false;
+                if (j >= nCols)
+                {
+                    for (long long int i = 0; i < __nLines; i++)
+                        delete[] dTemp[i];
+                    delete[] dTemp;
+                    return false;
+                }
+                dCache[i][j][_nLayer] = NAN;
+                bValidElement[i][j][_nLayer] = false;
             }
         }
     }
@@ -4235,7 +4290,9 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
 
         }
     }
-
+    for (long long int i = 0; i < __nLines; i++)
+        delete[] dTemp[i];
+    delete[] dTemp;
     /*double dValues[nSamples];
     double dDelta = 1.0;
     if (!bUseAppendedZeroes)

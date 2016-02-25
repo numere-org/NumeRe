@@ -509,6 +509,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
     Indices _idx;
     map<string,long long int> mCaches = _data.getCacheList();
     mCaches["data"] = -1;
+    static string sPreferredCmds = "clear;copy;smooth;retoque;resample;stats;save;showf;swap;hist;help;man;move;matop;mtrxop;random;remove;rename;append;reload;delete;datagrid;list;load;export;edit";
     string sCacheCmd = "";
     for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
     {
@@ -518,6 +519,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             break;
         }
     }
+    if (sCacheCmd.length() && sPreferredCmds.find(sCommand) != string::npos) // Ist das fuehrende Kommando praeferiert?
+        sCacheCmd.clear();
 
     //cerr << sCmd << endl;
     //cerr << sCacheCmd << endl;
@@ -754,7 +757,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             doc_Help("fft", _option);
         return 1;
     }
-    else if (findCommand(sCmd, "get").sString == "get")
+    else if (findCommand(sCmd, "get").sString == "get" && sCommand != "help")
     {
         nPos = findCommand(sCmd, "get").nPos;
         sCommand = extractCommandString(sCmd, findCommand(sCmd, "get"));
@@ -1280,7 +1283,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             doc_Help("define", _option);
         return 1;
     }
-    else if (findCommand(sCmd, "readline").sString == "readline")
+    else if (findCommand(sCmd, "readline").sString == "readline" && sCommand != "help")
     {
         nPos = findCommand(sCmd, "readline").nPos;
         sCommand = extractCommandString(sCmd, findCommand(sCmd, "readline"));
@@ -1309,7 +1312,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
         GetAsyncKeyState(VK_ESCAPE);
         return 0;
     }
-    else if (findCommand(sCmd, "read").sString == "read")
+    else if (findCommand(sCmd, "read").sString == "read" && sCommand != "help")
     {
         nPos = findCommand(sCmd, "read").nPos;
         sArgument = extractCommandString(sCmd, findCommand(sCmd, "read"));
@@ -1910,7 +1913,13 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             doc_Help("odesolver", _option);
         return 1;
     }
-    else if (sCacheCmd.length() && findCommand(sCmd, sCacheCmd).sString == sCacheCmd && sCommand != "clear" && sCommand != "copy")
+    else if (sCacheCmd.length() // BUGGY
+        && findCommand(sCmd, sCacheCmd).sString == sCacheCmd
+        && sCommand != "clear"
+        && sCommand != "copy"
+        && sCommand != "smooth"
+        && sCommand != "retoque"
+        && sCommand != "resample")
     {
         //cerr << "found" << endl;
         if (matchParams(sCmd, "showf"))
@@ -3793,12 +3802,14 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
         }
         else if (sCommand == "resample")
         {
+            //cerr << sCommand << endl;
             if (matchParams(sCmd, "samples", '='))
             {
                 nArgument = matchParams(sCmd, "samples", '=') + 7;
                 if (_data.containsCacheElements(getArgAtPos(sCmd, nArgument)) || getArgAtPos(sCmd, nArgument).find("data(") != string::npos)
                 {
                     sArgument = getArgAtPos(sCmd, nArgument);
+                    //cerr << "get data element (BI)" << endl;
                     parser_GetDataElement(sArgument, _parser, _data, _option);
                     if (sArgument.find("{") != string::npos)
                         parser_VectorToExpr(sArgument, _option);
