@@ -114,6 +114,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
 bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
 bool parser_evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions);
 bool parser_datagrid(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
+bool parser_writeAudio(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
 
 void parser_splash(Parser&);
 

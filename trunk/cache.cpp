@@ -149,13 +149,16 @@ bool Cache::AllocateCache(long long int _nNLines, long long int _nNCols, long lo
 	}
 	else if (nLines && nCols && nLayers && dCache && nAppendedZeroes && bValidElement)
 	{
+        long long int nCaches = mCachesMap.size();
+        if (nLayers < nCaches)
+            nCaches = nLayers;
         string** sNewHeadLine = new string*[_nNLayers];
         for (long long int i = 0; i < _nNLayers; i++)
         {
             sNewHeadLine[i] = new string[_nNCols];
             for (long long int j = 0; j < _nNCols; j++)
             {
-                if (j < nCols && i < nLayers)
+                if (j < nCols && i < nCaches)
                     sNewHeadLine[i][j] = sHeadLine[i][j];
                 else
                     sNewHeadLine[i][j] = "Spalte_"+toString(j+1);
@@ -167,7 +170,7 @@ bool Cache::AllocateCache(long long int _nNLines, long long int _nNCols, long lo
             nNewAppendedZeroes[i] = new long long int[_nNCols];
             for (long long int j = 0; j < _nNCols; j++)
             {
-                if (j < nCols && i < nLayers)
+                if (j < nCols && i < nCaches)
                     nNewAppendedZeroes[i][j] = nAppendedZeroes[i][j]+(_nNLines-nLines);
                 else
                     nNewAppendedZeroes[i][j] = _nNLines;
@@ -182,7 +185,7 @@ bool Cache::AllocateCache(long long int _nNLines, long long int _nNCols, long lo
                 dNewCache[i][j] = new double[_nNLayers];
                 for (long long int k = 0; k < _nNLayers; k++)
                 {
-                    if (i < nLines && j < nCols && k < nLayers)
+                    if (i < nLines && j < nCols && k < nCaches)
                         dNewCache[i][j][k] = dCache[i][j][k];
                     else
                         dNewCache[i][j][k] = NAN;
@@ -198,7 +201,7 @@ bool Cache::AllocateCache(long long int _nNLines, long long int _nNCols, long lo
                 bNewValidElement[i][j] = new bool[_nNLayers];
                 for (long long int k = 0; k < _nNLayers; k++)
                 {
-                    if (i < nLines && j < nCols && k < nLayers)
+                    if (i < nLines && j < nCols && k < nCaches)
                         bNewValidElement[i][j][k] = bValidElement[i][j][k];
                     else
                         bNewValidElement[i][j][k] = false;

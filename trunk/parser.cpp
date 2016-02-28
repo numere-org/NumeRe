@@ -1913,7 +1913,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                 && !_data.containsStringVars(sLine)
                 && (sLine.find("data(") != string::npos || _data.containsCacheElements(sLine)))
             {
-                cerr << "get data element (parser)" << endl;
+                //cerr << "get data element (parser)" << endl;
                 sCache = parser_GetDataElement(sLine, _parser, _data, _option);
                 if (sCache.length() && sCache.find('#') == string::npos)
                     bWriteToCache = true;
