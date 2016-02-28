@@ -2810,6 +2810,7 @@ void parser_ListCmd(const Settings& _option)
     cerr << LineBreak("|   abort                       - Abbrechen einer Schleifendeklaration oder einer Plotkomposition", _option, false, 0, 34) << endl;
     cerr << LineBreak("|   about                       - rechtliche Informationen zu NumeRe", _option, false, 0, 34) << endl;
     cerr << LineBreak("|   append       NM [-PAR]      - Dateien an Daten im Speicher anhängen", _option, false, 0, 34) << endl;
+    cerr << LineBreak("|   audio        OB [-PAR]      - Erzeugt eine WAVE-Datei aus einem Datensatz", _option, false, 0, 34) << endl;
     cerr << LineBreak("|   break                       - Schleifendurchlauf abbrechen", _option, false, 0, 34) << endl;
     cerr << LineBreak("|   cache        -PAR           - Optionen auf dem Cache", _option, false, 0, 34) << endl;
     cerr << LineBreak("|   compose                     - Startet die Komposition mehrerer Plotstile", _option, false, 0, 34) << endl;
@@ -10454,3 +10455,227 @@ vector<double> parser_IntervalReader(string& sExpr, Parser& _parser, Datafile& _
     return vInterval;
 }
 
+// audio data() -samples=SAMPLES file=FILENAME
+bool parser_writeAudio(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+{
+    using namespace little_endian_io;
+
+    ofstream fAudio;
+    string sAudioFileName = "<savepath>/audiofile.wav";
+    string sDataset = "";
+    int nSamples = 44100;
+    int nChannels = 1;
+    int nBPS = 16;
+    unsigned int nDataChunkPos = 0;
+    unsigned int nFileSize = 0;
+    const double dValMax = 32760.0;
+    double dMax = 0.0;
+    Indices _idx;
+    Matrix _mDataSet;
+    //_option.declareFileType(".wav");
+    sCmd.erase(0,findCommand(sCmd).nPos + findCommand(sCmd).sString.length()); // Kommando entfernen
+
+    // Strings parsen
+    if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
+    {
+        string sDummy = "";
+        if (!parser_StringParser(sCmd, sDummy, _data, _parser, _option, true))
+            throw STRING_ERROR;
+    }
+    // Funktionen aufrufen
+    if (!_functions.call(sCmd, _option))
+        throw FUNCTION_ERROR;
+
+    // Samples lesen
+    if (matchParams(sCmd, "samples", '='))
+    {
+        string sSamples = getArgAtPos(sCmd, matchParams(sCmd, "samples",'=')+7);
+        if (sSamples.find("data(") != string::npos || _data.containsCacheElements(sSamples))
+        {
+            parser_GetDataElement(sSamples, _parser, _data, _option);
+        }
+        _parser.SetExpr(sSamples);
+        if (!isnan(_parser.Eval()) && !isinf(_parser.Eval()) && _parser.Eval() >= 1);
+        nSamples = (int)_parser.Eval();
+    }
+
+    // Dateiname lesen
+    if (matchParams(sCmd, "file", '='))
+        sAudioFileName = getArgAtPos(sCmd, matchParams(sCmd, "file", '=')+4);
+    if (sAudioFileName.find('/') == string::npos && sAudioFileName.find('\\') == string::npos)
+        sAudioFileName.insert(0,"<savepath>/");
+    // Dateiname pruefen
+    sAudioFileName = _data.ValidFileName(sAudioFileName, ".wav");
+    //cerr << sAudioFileName << endl;
+
+
+    // Indices lesen
+    _idx = parser_getIndices(sCmd, _parser, _data, _option);
+    sDataset = sCmd.substr(0,sCmd.find('('));
+    StripSpaces(sDataset);
+    if (_idx.vI.size() || _idx.vJ.size())
+    {
+        if (_idx.vJ.size() > 2)
+            return false;
+        if (fabs(_data.max(sDataset, _idx.vI, _idx.vJ)) > fabs(_data.min(sDataset, _idx.vI, _idx.vJ)))
+            dMax = fabs(_data.max(sDataset, _idx.vI, _idx.vJ));
+        else
+            dMax = fabs(_data.min(sDataset, _idx.vI, _idx.vJ));
+        _mDataSet.push_back(_data.getElement(_idx.vI, vector<long long int>(_idx.vJ[0]), sDataset));
+        if (_idx.vJ.size() == 2)
+            _mDataSet.push_back(_data.getElement(_idx.vI, vector<long long int>(_idx.vJ[1]), sDataset));
+        _mDataSet = parser_transposeMatrix(_mDataSet);
+    }
+    else
+    {
+        if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
+            return false;
+        if (_idx.nI[1] == -1)
+            _idx.nI[1] = _idx.nI[0];
+        else if (_idx.nI[1] == -2)
+            _idx.nI[1] = _data.getLines(sDataset,false)-1;
+        if (_idx.nJ[1] == -1)
+            _idx.nJ[1] = _idx.nJ[0];
+        else if (_idx.nJ[1] == -2)
+        {
+            _idx.nJ[1] = _idx.nJ[0]+1;
+        }
+        if (_data.getCols(sDataset, false) <= _idx.nJ[1])
+            _idx.nJ[1] = _idx.nJ[0];
+        _mDataSet = parser_ZeroesMatrix(_idx.nI[1]-_idx.nI[0]+1,(_idx.nJ[1] != _idx.nJ[0] ? 2 : 1));
+        double dMaxCol[2] = {0.0,0.0};
+        if (_idx.nJ[1] != _idx.nJ[0])
+        {
+            if (fabs(_data.max(sDataset, _idx.nI[0], _idx.nI[1], _idx.nJ[1], -1)) > fabs(_data.min(sDataset, _idx.nI[0], _idx.nI[1], _idx.nJ[1], -1)))
+                dMaxCol[1] = fabs(_data.max(sDataset, _idx.nI[0], _idx.nI[1], _idx.nJ[1], -1));
+            else
+                dMaxCol[1] = fabs(_data.min(sDataset, _idx.nI[0], _idx.nI[1], _idx.nJ[1], -1));
+            for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
+                _mDataSet[i-_idx.nI[0]][1] = _data.getElement(i, _idx.nJ[1], sDataset);
+        }
+        if (fabs(_data.max(sDataset, _idx.nI[0], _idx.nI[1], _idx.nJ[0], -1)) > fabs(_data.min(sDataset, _idx.nI[0], _idx.nI[1], _idx.nJ[0], -1)))
+            dMaxCol[1] = fabs(_data.max(sDataset, _idx.nI[0], _idx.nI[1], _idx.nJ[0], -1));
+        else
+            dMaxCol[1] = fabs(_data.min(sDataset, _idx.nI[0], _idx.nI[1], _idx.nJ[0], -1));
+        for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
+            _mDataSet[i-_idx.nI[0]][0] = _data.getElement(i, _idx.nJ[0], sDataset);
+
+        if (dMaxCol[0] > dMaxCol[1])
+            dMax = dMaxCol[0];
+        else
+            dMax = dMaxCol[1];
+
+    }
+
+    for (unsigned int i = 0; i < _mDataSet.size(); i++)
+    {
+        for (unsigned int j = 0; j < _mDataSet[0].size(); j++)
+        {
+            _mDataSet[i][j] = _mDataSet[i][j] / dMax * dValMax;
+        }
+    }
+
+    nChannels = _mDataSet[0].size();
+
+    // Datenstream oeffnen
+    fAudio.open(sAudioFileName.c_str(), ios::binary);
+
+    if (fAudio.fail())
+        return false;
+
+    // Wave Header
+    fAudio << "RIFF----WAVEfmt ";
+    write_word(fAudio, 16, 4);
+    write_word(fAudio, 1, 2);
+    write_word(fAudio, nChannels, 2);
+    write_word(fAudio, nSamples, 4);
+    write_word(fAudio, (nSamples*nBPS*nChannels)/8, 4);
+    write_word(fAudio, 2*nChannels, 2);
+    write_word(fAudio, nBPS, 2);
+
+    nDataChunkPos = fAudio.tellp();
+    fAudio << "data----";
+    // Audio-Daten schreiben
+    for (unsigned int i = 0; i < _mDataSet.size(); i++)
+    {
+        for (unsigned int j = 0; j < _mDataSet[0].size(); j++)
+        {
+            write_word(fAudio, (int)_mDataSet[i][j], 2);
+        }
+    }
+    // Chunk sizes nachtraeglich einfuegen
+    nFileSize = fAudio.tellp();
+    fAudio.seekp(nDataChunkPos+4);
+    write_word(fAudio, nFileSize-nDataChunkPos+8,4);
+    fAudio.seekp(4);
+    write_word(fAudio, nFileSize-8,4);
+    fAudio.close();
+    return true;
+}
+
+/* C++ FORUM:
+#include <cmath>
+#include <fstream>
+#include <iostream>
+using namespace std;
+
+namespace little_endian_io
+{
+  template <typename Word>
+  std::ostream& write_word( std::ostream& outs, Word value, unsigned size = sizeof( Word ) )
+  {
+    for (; size; --size, value >>= 8)
+      outs.put( static_cast <char> (value & 0xFF) );
+    return outs;
+  }
+}
+using namespace little_endian_io;
+
+int main()
+{
+  ofstream f( "example.wav", ios::binary );
+
+  // Write the file headers
+  f << "RIFF----WAVEfmt ";     // (chunk size to be filled in later)
+  write_word( f,     16, 4 );  // no extension data
+  write_word( f,      1, 2 );  // PCM - integer samples
+  write_word( f,      2, 2 );  // two channels (stereo file)
+  write_word( f,  44100, 4 );  // samples per second (Hz)
+  write_word( f, 176400, 4 );  // (Sample Rate * BitsPerSample * Channels) / 8
+  write_word( f,      4, 2 );  // data block size (size of two integer samples, one for each channel, in bytes)
+  write_word( f,     16, 2 );  // number of bits per sample (use a multiple of 8)
+
+  // Write the data chunk header
+  size_t data_chunk_pos = f.tellp();
+  f << "data----";  // (chunk size to be filled in later)
+
+  // Write the audio samples
+  // (We'll generate a single C4 note with a sine wave, fading from left to right)
+  constexpr double two_pi = 6.283185307179586476925286766559;
+  constexpr double max_amplitude = 32760;  // "volume"
+
+  double hz        = 44100;    // samples per second
+  double frequency = 261.626;  // middle C
+  double seconds   = 2.5;      // time
+
+  int N = hz * seconds;  // total number of samples
+  for (int n = 0; n < N; n++)
+  {
+    double amplitude = (double)n / N * max_amplitude;
+    double value     = sin( (two_pi * n * frequency) / hz );
+    write_word( f, (int)(                 amplitude  * value), 2 );
+    write_word( f, (int)((max_amplitude - amplitude) * value), 2 );
+  }
+
+  // (We'll need the final file size to fix the chunk sizes above)
+  size_t file_length = f.tellp();
+
+  // Fix the data chunk header to contain the data size
+  f.seekp( data_chunk_pos + 4 );
+  write_word( f, file_length - data_chunk_pos + 8 );
+
+  // Fix the file header to contain the proper RIFF chunk size, which is (file size - 8) bytes
+  f.seekp( 0 + 4 );
+  write_word( f, file_length - 8, 4 );
+}
+*/

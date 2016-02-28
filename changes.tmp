@@ -2,3 +2,4 @@ Added	Mit der Option "slices=X,Y,Z" koennen nun die Zahl der Schnitte bei "cont3
 Fixed	Die Kombination von "surf3d" bzw. "mesh3d" mit "cut" und "light" zeigte seltsame unbeleuchtete Flaechen. Dies wurde behoben.
 Added	"resample" resamplet nun per default zweidimensional (wie "smooth" und "retoque"). Dieses Verhalten kann mit den Parametern "lines" und "cols" geändert werden.
 Cleaned	Parameter "grid" zu "resample", "smooth" und "retoque" hinzugefuegt, der den Datensatz als Datengitter interpretiert.
+Added	NumeRe kann mittels "audio DATA()" einen Datensatz in eine WAVE-Datei umwandeln.

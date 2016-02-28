@@ -2421,6 +2421,14 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 return 1;
             }
         }
+        else if (sCommand == "audio")
+        {
+            if (!parser_writeAudio(sCmd, _parser, _data, _functions, _option))
+                throw CANNOT_SAVE_FILE;
+            else if (_option.getSystemPrintStatus())
+                cerr << LineBreak("|-> Die Audiodatei wurde erfolgreich erzeugt.", _option) << endl;
+            return 1;
+        }
 
         return 0;
     }
@@ -6032,6 +6040,8 @@ bool BI_ListDirectory(const string& sDir, const string& sParams, const Settings&
                     sConnect += "Plugininformationen";
                 else if (sExt == ".ods")
                     sConnect += "OpenDoc-Spreadsheet";
+                else if (sExt == ".wave" || sExt == ".wav")
+                    sConnect += "WAVE-Audiodatei";
                 else
                     sConnect += toUpperCase(sConnect.substr(sConnect.rfind('.')+1, sConnect.find(' ', sConnect.rfind('.'))-sConnect.rfind('.')-1)) + "-Datei";
 
