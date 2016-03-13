@@ -3,3 +3,9 @@ Fixed	Die Kombination von "surf3d" bzw. "mesh3d" mit "cut" und "light" zeigte se
 Added	"resample" resamplet nun per default zweidimensional (wie "smooth" und "retoque"). Dieses Verhalten kann mit den Parametern "lines" und "cols" geändert werden.
 Cleaned	Parameter "grid" zu "resample", "smooth" und "retoque" hinzugefuegt, der den Datensatz als Datengitter interpretiert.
 Added	NumeRe kann mittels "audio DATA()" einen Datensatz in eine WAVE-Datei umwandeln.
+Added	NumeRe kann mittels "regularize CACHE()" aus Datensaetzen mit unregelmaessigen x-y-Wertepaaren Datensaetze mit aequidistanten x-Werten generieren.
+Fixed	"readline" kann nun auch Meldungen mit Umlauten ausgeben.
+Fixed	Wenn die IDs eigener Hilfeartikel bei einer Plugin-Installation geaendert werden, wird dies nun konsistent in Index und Hilfedatei durchgefuehrt.
+Fixed	Die Vektorzuweisung "{x,y,z} = WERTE" ist nun nicht mehr auf Leerzeichen zwischen "}" und "=" sensitiv.
+Fixed	"break" und "continue" werden in Schleifen, die in Prozeduren ausgefuehrt werden, wieder korrekt erkannt.
+Fixed	"get -viewer -asstr" gibt nun eine leere Zeichenkette zuruck (und keine Fehlermeldung), wenn kein Imageviewer deklariert wurde.

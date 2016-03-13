@@ -3130,6 +3130,12 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                         if (oLogFile.is_open())
                             oLogFile << toString(time(0) - tTimeZero, true) << "> FEHLER: " << sErrorToken << " kann keine Zeichenketten verarbeiten" << endl;
                         break;
+                    case CANNOT_REGULARIZE_CACHE:
+                        cerr << LineBreak("|-> Der gewünschte Cache konnte nicht regularisiert werden.", _option, false) << endl;
+                        cerr << LineBreak("|-> Siehe auch \"help regularize\"", _option) << endl;
+                        if (oLogFile.is_open())
+                            oLogFile << toString(time(0) - tTimeZero, true) << "> FEHLER: Cache konnte nicht regularisiert werden" << endl;
+                        break;
                     /*case PROCESS_ABORTED_BY_USER:
                         cerr << LineBreak("|-> Ein Prozess wurde vom Benutzer abgebrochen.$(Während des Prozesses wurde \"ESC\" gedrückt. Dies bricht die Auswertung ab.)", _option, false) << endl;
                         //cerr << LineBreak("|-> Siehe auch \"help procedure\"", _option) << endl;
