@@ -162,6 +162,22 @@ string Script::getNextScriptCommand()
                 StripSpaces(sScriptCommand);
                 if (!sScriptCommand.length())
                     continue;
+                if (bBlockComment && sScriptCommand.find("*#") != string::npos)
+                {
+                    bBlockComment = false;
+                    if (sScriptCommand.find("*#") == sScriptCommand.length()-2)
+                    {
+                        sScriptCommand = "";
+                        continue;
+                    }
+                    else
+                        sScriptCommand = sScriptCommand.substr(sScriptCommand.find("*#")+2);
+                }
+                else if (bBlockComment && sScriptCommand.find("*#") == string::npos)
+                {
+                    sScriptCommand = "";
+                    continue;
+                }
                 if (sScriptCommand.find("##") != string::npos)
                     sScriptCommand.erase(sScriptCommand.find("##"));
                 if (sScriptCommand.substr(0,9) == "<install>" && !bInstallProcedures)
@@ -340,6 +356,14 @@ string Script::getNextScriptCommand()
                         fHelpfile.open(sHelpfileName.c_str());
                         if (!fHelpfile.fail())
                         {
+                            if (sScriptCommand.length() > 10 && sScriptCommand.find("<article") != string::npos)
+                            {
+                                if (getArgAtPos(sScriptCommand, sScriptCommand.find("id=")+3).substr(0,5) != "plgn_"
+                                    && "plgn_"+getArgAtPos(sScriptCommand, sScriptCommand.find("id=")+3) == sHelpID)
+                                {
+                                    sScriptCommand.insert(sScriptCommand.find(getArgAtPos(sScriptCommand, sScriptCommand.find("id=")+3)), "plgn_");
+                                }
+                            }
                             if (sScriptCommand.length() > 10)
                             fHelpfile << sScriptCommand.substr(10) << endl;
 
@@ -355,6 +379,14 @@ string Script::getNextScriptCommand()
                                     fHelpfile << sTemp << endl;
                                 else
                                 {
+                                    if (sTemp.length() > 10 && sTemp.find("<article") != string::npos)
+                                    {
+                                        if (getArgAtPos(sTemp, sTemp.find("id=")+3).substr(0,5) != "plgn_"
+                                            && "plgn_"+getArgAtPos(sTemp, sTemp.find("id=")+3) == sHelpID)
+                                        {
+                                            sTemp.insert(sTemp.find(getArgAtPos(sTemp, sTemp.find("id=")+3)), "plgn_");
+                                        }
+                                    }
                                     fHelpfile << sTemp.substr(0,sTemp.find("</helpfile>")) << endl;
                                     break;
                                 }

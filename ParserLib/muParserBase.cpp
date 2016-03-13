@@ -538,7 +538,7 @@ namespace mu
                         {
                             sTargets = sBuf.substr(i+1,j-i-1);
                             SetVectorVar("~TRGTVCT[~]", vResults);
-                            sBuf.replace(i,j+2-i,"~TRGTVCT[~]");
+                            sBuf.replace(i,j+1-i,"~TRGTVCT[~]");
                             mTargets = GetUsedVar();
                         }
                         else

@@ -816,7 +816,16 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             }
             else
             {
-                cerr << "|-> Kein Imageviewer deklariert!" << endl;
+                if (matchParams(sCmd, "asstr"))
+                {
+                    if (!nPos)
+                        sCmd = "\"\"";
+                    else
+                        sCmd.replace(nPos, sCommand.length(), "\"\"");
+                    return 0;
+                }
+                else
+                    cerr << "|-> Kein Imageviewer deklariert!" << endl;
             }
             return 1;
         }
@@ -1301,7 +1310,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             if (matchParams(sCmd, "msg", '='))
             {
                 unsigned int n_pos = matchParams(sCmd, "msg", '=') + 3;
-                cerr << sCmd.substr(sCmd.find('"', n_pos)+1, sCmd.rfind('"')-sCmd.find('"', n_pos)-1);
+                cerr << toSystemCodePage(sCmd.substr(sCmd.find('"', n_pos)+1, sCmd.rfind('"')-sCmd.find('"', n_pos)-1));
             }
             getline(cin, sArgument);
         }
@@ -4087,6 +4096,15 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             }
             return 1;
         }
+        else if (sCommand == "regularize")
+        {
+            if (!parser_regularize(sCmd, _parser, _data, _functions, _option))
+                throw CANNOT_REGULARIZE_CACHE;
+            else if (_option.getSystemPrintStatus())
+                cerr << LineBreak("|-> Der gewünschte Cache wurde erfolgreich regularisiert.", _option) << endl;
+            return 1;
+        }
+
 
         return 0;
     }

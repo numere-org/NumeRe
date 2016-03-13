@@ -2873,6 +2873,7 @@ void parser_ListCmd(const Settings& _option)
     cerr << LineBreak("|   read         -PAR           - Lesen aus einer Datei", _option, false, 0, 34) << endl;
     cerr << LineBreak("|   readline     [-PAR]         - Formatierte Wertabfrage", _option, false, 0, 34) << endl;
     cerr << LineBreak("|   redefine     EX [-set PAR]  - Ermöglicht eine Neudefinition einer selbst definierten Funktion.", _option, false, 0, 34) << endl;
+    cerr << LineBreak("|   regularize   OB [-PAR]      - Regularisiert Datenreihen mit unregelmäßig verteilten x-Werten.", _option, false, 0, 34) << endl;
     cerr << LineBreak("|   remove       OB [-PAR]      - Entfernt Caches oder die angegebene Datei unwiderbringlich von diesem Computer.", _option, false, 0, 34) << endl;
     cerr << LineBreak("|   rename       -OB            - Benennt einen vorhandenen Cache um.", _option, false, 0, 34) << endl;
     cerr << LineBreak("|   replaceline  STR [-PAR]     - Ermöglicht einfache Korrekturen einer Schleifen- oder Bedingungsdeklaration", _option, false, 0, 34) << endl;
@@ -10679,3 +10680,113 @@ int main()
   write_word( f, file_length - 8, 4 );
 }
 */
+
+bool parser_regularize(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+{
+    int nSamples = 100;
+    string sDataset = "";
+    string sColHeaders[2] = {"",""};
+    Indices _idx;
+    mglData _x, _v;
+    double dXmin, dXmax;
+    //_option.declareFileType(".wav");
+    sCmd.erase(0,findCommand(sCmd).nPos + findCommand(sCmd).sString.length()); // Kommando entfernen
+
+    // Strings parsen
+    if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
+    {
+        string sDummy = "";
+        if (!parser_StringParser(sCmd, sDummy, _data, _parser, _option, true))
+            throw STRING_ERROR;
+    }
+    // Funktionen aufrufen
+    if (!_functions.call(sCmd, _option))
+        throw FUNCTION_ERROR;
+
+    // Samples lesen
+    if (matchParams(sCmd, "samples", '='))
+    {
+        string sSamples = getArgAtPos(sCmd, matchParams(sCmd, "samples",'=')+7);
+        if (sSamples.find("data(") != string::npos || _data.containsCacheElements(sSamples))
+        {
+            parser_GetDataElement(sSamples, _parser, _data, _option);
+        }
+        _parser.SetExpr(sSamples);
+        if (!isnan(_parser.Eval()) && !isinf(_parser.Eval()) && _parser.Eval() >= 1);
+        nSamples = (int)_parser.Eval();
+    }
+
+    // Indices lesen
+    _idx = parser_getIndices(sCmd, _parser, _data, _option);
+    sDataset = sCmd.substr(0,sCmd.find('('));
+    StripSpaces(sDataset);
+    if (_idx.vI.size() || _idx.vJ.size())
+    {
+        if (_idx.vJ.size() != 2)
+            return false;
+        _x.Create(_data.cnt(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0])));
+        _v.Create(_data.cnt(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0])));
+        dXmin = _data.min(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0]));
+        dXmax = _data.max(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0]));
+        sColHeaders[0] = _data.getHeadLineElement(_idx.vJ[0], sDataset) + "\n(regularisiert)";
+        sColHeaders[1] = _data.getHeadLineElement(_idx.vJ[1], sDataset) + "\n(regularisiert)";
+        for (long long int i = 0; i < _idx.vI.size(); i++)
+        {
+            _x.a[i] = _data.getElement(_idx.vI[i], _idx.vJ[0], sDataset);
+            _v.a[i] = _data.getElement(_idx.vI[i], _idx.vJ[1], sDataset);
+        }
+    }
+    else
+    {
+        if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
+            return false;
+        if (_idx.nI[1] == -1)
+            _idx.nI[1] = _idx.nI[0];
+        else if (_idx.nI[1] == -2)
+            _idx.nI[1] = _data.getLines(sDataset,false)-1;
+        if (_idx.nJ[1] == -1)
+            _idx.nJ[1] = _idx.nJ[0];
+        else if (_idx.nJ[1] == -2)
+        {
+            _idx.nJ[1] = _idx.nJ[0]+1;
+        }
+        if (_data.getCols(sDataset, false) <= _idx.nJ[1])
+            return false;
+        _v.Create(_data.cnt(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]));
+        _x.Create(_data.cnt(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]));
+        for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
+        {
+            _v.a[i-_idx.nI[0]] = _data.getElement(i, _idx.nJ[1], sDataset);
+        }
+        dXmin = _data.min(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]);
+        dXmax = _data.max(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]);
+        sColHeaders[0] = _data.getHeadLineElement(_idx.nJ[0], sDataset) + "\\n(regularisiert)";
+        sColHeaders[1] = _data.getHeadLineElement(_idx.nJ[1], sDataset) + "\\n(regularisiert)";
+        for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
+        {
+            _x.a[i-_idx.nI[0]] = _data.getElement(i, _idx.nJ[0], sDataset);
+        }
+    }
+
+    /*cerr << _v.GetNx() << " " << _v.Minimal() << " " << _v.Maximal() << endl;
+    cerr << _x.GetNx() << " " << _x.Minimal() << " " << _x.Maximal() << endl;
+    cerr << dXmin << " " << dXmax << endl;*/
+
+    if (_x.GetNx() != _v.GetNx())
+        return false;
+    if (!matchParams(sCmd, "samples", '='))
+        nSamples = _x.GetNx();
+    mglData _regularized(nSamples);
+    _regularized.Refill(_x, _v, dXmin, dXmax); //wohin damit?
+
+    long long int nLastCol = _data.getCols(sDataset, false);
+    for (long long int i = 0; i < nSamples; i++)
+    {
+        _data.writeToCache(i, nLastCol, sDataset, dXmin + i*(dXmax-dXmin)/(nSamples-1));
+        _data.writeToCache(i, nLastCol+1, sDataset, _regularized.a[i]);
+    }
+    _data.setHeadLineElement(nLastCol, sDataset, sColHeaders[0]);
+    _data.setHeadLineElement(nLastCol+1, sDataset, sColHeaders[1]);
+    return true;
+}
+

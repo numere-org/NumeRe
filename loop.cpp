@@ -2351,6 +2351,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
                         //cerr << sCmd[i][1] << endl;
                     }
                 }
+                StripSpaces(sCmd[i][1]);
                 /*if (sCmd[i][1][sCmd[i][1].length()-1] == ' ')
                     sCmd[i][1].pop_back();*/
             }
