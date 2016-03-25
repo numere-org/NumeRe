@@ -2150,7 +2150,10 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
             // --> Vernuenftig formatierte Fehlermeldungen <--
             unsigned int nErrorPos = (int)e.GetPos();
             make_hline();
-            cerr << "|-> FEHLER IM AUSDRUCK" << endl;
+            if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
+                cerr << "|-> NUMERE: DEBUGGER   [FEHLER IM AUSDRUCK]" << endl;
+            else
+                cerr << "|-> FEHLER IM AUSDRUCK" << endl;
             make_hline();
 
             // --> Eigentliche Fehlermeldung <--
@@ -2204,6 +2207,27 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                 // --> Script beenden! Mit einem Fehler ist es unsinnig weiterzurechnen <--
                 _script.close();
             }
+            if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
+            {
+                /*make_hline();
+                cerr << "|-> NUMERE: DEBUGGER" << endl;
+                make_hline();*/
+                cerr << "|" << endl << "|   " << toUpperCase("Modulinformationen: ") << std::setfill((char)196) << std::setw(_option.getWindow()-24) << (char)196 << endl;
+                cerr << LineBreak("|   "+_option._debug.printModuleInformations(), _option, false) << endl;
+                cerr << "|" << endl << "|   " << toUpperCase("Stacktrace: ") << std::setfill((char)196) << std::setw(_option.getWindow()-16) << (char)196 << endl;
+                /*make_hline(-2);
+                cerr << "|-> Stacktrace:" << endl;*/
+                cerr << LineBreak("|   "+_option._debug.printStackTrace(), _option, false) << endl;
+                //make_hline(-2);
+                //cerr << "|-> Lokale numerische Variablen:" << endl;
+                cerr << "|" << endl << "|   " << toUpperCase("Lokale numerische Variablen: ") << std::setfill((char)196) << std::setw(_option.getWindow()-33) << (char)196 << endl;
+                cerr << LineBreak("|   "+_option._debug.printLocalVars(), _option, false) << endl;
+                //make_hline(-2);
+                //cerr << "|-> Lokale Zeichenketten:" << endl;
+                cerr << "|" << endl << "|   " << toUpperCase("Lokale Zeichenketten: ") << std::setfill((char)196) << std::setw(_option.getWindow()-26) << (char)196 << endl;
+                cerr << LineBreak("|   "+_option._debug.printLocalStrings(), _option, false) << endl;
+                _option._debug.reset();
+            }
             make_hline();
 
             // --> Alle Variablen zuerst zuruecksetzen! <--
@@ -2244,7 +2268,10 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
             _option.setSystemPrintStatus(true);
             // --> Alle anderen Standard-Exceptions <--
             make_hline();
-            cerr << "|-> EIN FEHLER IST AUFGETRETEN" << endl;
+            if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
+                    cerr << "|-> NUMERE: DEBUGGER   [INTERNER FEHLER]" << endl;
+            else
+                cerr << "|-> EIN INTERNER FEHLER IST AUFGETRETEN" << endl;
             make_hline();
             cerr << LineBreak("|-> " + string(e.what()), _option) << endl;
             cerr << LineBreak("|-> Dies ist ein nicht-kritischer Fehler. Sollte sich dieser Fehler (auch nach einem Neustart) wiederholen (lassen), freut der Entwickler sich über eine entsprechende Bugmeldung unter <numere.developer@gmail.com>.", _option) << endl;
@@ -2255,6 +2282,27 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                 cerr << LineBreak("|-> Der Fehler wurde im ausgeführten Script nahe der " + toString((int)_script.getCurrentLine()) + ". Zeile gefunden.$Die Ausführung des Scripts wurde sicherheitshalber abgebrochen.", _option) << endl;
                 // --> Script beenden! Mit einem Fehler ist es unsinnig weiterzurechnen <--
                 _script.close();
+            }
+            if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
+            {
+                /*make_hline();
+                cerr << "|-> NUMERE: DEBUGGER" << endl;
+                make_hline();*/
+                cerr << "|" << endl << "|   " << toUpperCase("Modulinformationen: ") << std::setfill((char)196) << std::setw(_option.getWindow()-24) << (char)196 << endl;
+                cerr << LineBreak("|   "+_option._debug.printModuleInformations(), _option, false) << endl;
+                cerr << "|" << endl << "|   " << toUpperCase("Stacktrace: ") << std::setfill((char)196) << std::setw(_option.getWindow()-16) << (char)196 << endl;
+                /*make_hline(-2);
+                cerr << "|-> Stacktrace:" << endl;*/
+                cerr << LineBreak("|   "+_option._debug.printStackTrace(), _option, false) << endl;
+                //make_hline(-2);
+                //cerr << "|-> Lokale numerische Variablen:" << endl;
+                cerr << "|" << endl << "|   " << toUpperCase("Lokale numerische Variablen: ") << std::setfill((char)196) << std::setw(_option.getWindow()-33) << (char)196 << endl;
+                cerr << LineBreak("|   "+_option._debug.printLocalVars(), _option, false) << endl;
+                //make_hline(-2);
+                //cerr << "|-> Lokale Zeichenketten:" << endl;
+                cerr << "|" << endl << "|   " << toUpperCase("Lokale Zeichenketten: ") << std::setfill((char)196) << std::setw(_option.getWindow()-26) << (char)196 << endl;
+                cerr << LineBreak("|   "+_option._debug.printLocalStrings(), _option, false) << endl;
+                _option._debug.reset();
             }
             _pData.setFileName("");
             make_hline();
@@ -2285,7 +2333,10 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
             }
             else
             {
-                cerr << "|-> EIN FEHLER IST AUFGETRETEN" << endl;
+                if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
+                    cerr << "|-> NUMERE: DEBUGGER   [SYNTAXFEHLER]" << endl;
+                else
+                    cerr << "|-> EIN FEHLER IST AUFGETRETEN" << endl;
                 make_hline();
                 switch (e)
                 {
@@ -3153,6 +3204,27 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                     cerr << LineBreak("|-> Der Fehler wurde im ausgeführten Script nahe der " + toString((int)_script.getCurrentLine()) + ". Zeile gefunden.$Die Ausführung des Scripts wurde sicherheitshalber abgebrochen.", _option) << endl;
                     // --> Script beenden! Mit einem Fehler ist es unsinnig weiterzurechnen <--
                     _script.close();
+                }
+                if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
+                {
+                    /*make_hline();
+                    cerr << "|-> NUMERE: DEBUGGER" << endl;
+                    make_hline();*/
+                    cerr << "|" << endl << "|   " << toUpperCase("Modulinformationen: ") << std::setfill((char)196) << std::setw(_option.getWindow()-24) << (char)196 << endl;
+                    cerr << LineBreak("|   "+_option._debug.printModuleInformations(), _option, false) << endl;
+                    cerr << "|" << endl << "|   " << toUpperCase("Stacktrace: ") << std::setfill((char)196) << std::setw(_option.getWindow()-16) << (char)196 << endl;
+                    /*make_hline(-2);
+                    cerr << "|-> Stacktrace:" << endl;*/
+                    cerr << LineBreak("|   "+_option._debug.printStackTrace(), _option, false) << endl;
+                    //make_hline(-2);
+                    //cerr << "|-> Lokale numerische Variablen:" << endl;
+                    cerr << "|" << endl << "|   " << toUpperCase("Lokale numerische Variablen: ") << std::setfill((char)196) << std::setw(_option.getWindow()-33) << (char)196 << endl;
+                    cerr << LineBreak("|   "+_option._debug.printLocalVars(), _option, false) << endl;
+                    //make_hline(-2);
+                    //cerr << "|-> Lokale Zeichenketten:" << endl;
+                    cerr << "|" << endl << "|   " << toUpperCase("Lokale Zeichenketten: ") << std::setfill((char)196) << std::setw(_option.getWindow()-26) << (char)196 << endl;
+                    cerr << LineBreak("|   "+_option._debug.printLocalStrings(), _option, false) << endl;
+                    _option._debug.reset();
                 }
             }
             _pData.setFileName("");

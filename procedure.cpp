@@ -36,6 +36,13 @@ Procedure::Procedure() : Loop(), Plugin()
     nthBlock = 0;
     nFlags = 0;
     //nReturnType = 1;
+
+    sVars = 0;
+    dVars = 0;
+    sStrings = 0;
+
+    nVarSize = 0;
+    nStrSize = 0;
 }
 
 Procedure::Procedure(const Procedure& _procedure) : Loop(), Plugin(_procedure)
@@ -280,6 +287,12 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
         || sLine.find("--") != string::npos)
     {
         unsigned int nArgSepPos = 0;
+        bool bBreakPoint = (sLine.substr(sLine.find_first_not_of(" \t"),2) == "|>");
+        if (bBreakPoint)
+        {
+            sLine.erase(sLine.find_first_not_of(" \t"),2);
+            StripSpaces(sLine);
+        }
         for (unsigned int i = 0; i < sLine.length(); i++)
         {
             if (isInQuotes(sLine, i, false))
@@ -393,6 +406,8 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
                         + sLine.substr(i+2);
             }
         }
+        if (bBreakPoint)
+            sLine.insert(0,"|> ");
         if (_option.getbDebug())
             cerr << "|-> DEBUG: sLine = " << sLine << endl;
     }
@@ -701,6 +716,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
         if (sProc[i] == ' ')
             sProc[i] = '_';
     }*/
+    if (_option.getUseDebugger())
+        _option._debug.pushStackItem(sProc + "(" + sVarList + ")");
     if (!setProcName(sProc))
         throw INVALID_PROCEDURE_NAME;
     //cerr << "Procedure started: " << sProc << endl;
@@ -736,6 +753,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
     if (fProc_in.fail())
     {
         fProc_in.close();
+        if (_option.getUseDebugger())
+            _option._debug.popStackItem();
         throw FILE_NOT_EXIST;
     }
     if (sProc.length() > 5 && sProc.substr(sProc.length()-5) == ".nprc")
@@ -893,7 +912,13 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 {
                     int nReturn = procedureInterface(sProcCommandLine, _parser, _functions, _data, _out, _pData, _script, _option, nth_procedure);
                     if (nReturn == -1)
+                    {
+                        if (_option.getUseDebugger())
+                        {
+                            _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
+                        }
                         throw PROCEDURE_ERROR;
+                    }
                     else if (nReturn == -2)
                     {
                         sProcCommandLine = "";
@@ -997,6 +1022,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 sErrorToken = sIncludeFileName;
                 bReadingFromInclude = false;
                 fInclude.close();
+                if (_option.getUseDebugger())
+                    _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                 throw SCRIPT_NOT_EXIST;
             }
             continue;
@@ -1025,6 +1052,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             sErrorToken = "\"" + sThisNameSpace + "\" aus dem globalen Namensraum";
                         else
                             sErrorToken = "\"" + sThisNameSpace + "\" aus dem Namensraum \"" + sCallingNameSpace + "\"";
+                        if (_option.getUseDebugger())
+                            _option._debug.popStackItem();
                         throw PRIVATE_PROCEDURE_CALLED;
                     }
                 }
@@ -1037,11 +1066,15 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             //cerr << "sVarDeclarationList: " << sVarDeclarationList << endl;
             if (findCommand(sVarList, "var").sString == "var" || findCommand(sVarDeclarationList, "var").sString == "var")
             {
+                if (_option.getUseDebugger())
+                    _option._debug.gatherInformations(0, 0, 0, 0, 0, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                 sErrorToken = "var";
                 throw WRONG_ARG_NAME;
             }
             if (findCommand(sVarList, "str").sString == "str" || findCommand(sVarDeclarationList, "str").sString == "str")
             {
+                if (_option.getUseDebugger())
+                    _option._debug.gatherInformations(0, 0, 0, 0, 0, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                 sErrorToken = "str";
                 throw WRONG_ARG_NAME;
             }
@@ -1049,6 +1082,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             StripSpaces(sVarList);
             if (!sVarDeclarationList.length() && sVarList.length())
             {
+                if (_option.getUseDebugger())
+                    _option._debug.popStackItem();
                 throw TOO_MANY_ARGS;
             }
             if (sVarDeclarationList.length())
@@ -1056,7 +1091,11 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 unsigned int nVars = 1;
                 int nParenthesis = 0;
                 if (!validateParenthesisNumber(sVarDeclarationList))
+                {
+                    if (_option.getUseDebugger())
+                        _option._debug.gatherInformations(0, 0, 0, 0, 0, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                     throw UNMATCHED_PARENTHESIS;
+                }
                 for (unsigned int i = 0; i < sVarDeclarationList.length(); i++)
                 {
                     if (sVarDeclarationList[i] == '(' && !isInQuotes(sVarDeclarationList, i))
@@ -1067,7 +1106,11 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                         nVars++;
                 }
                 if (nParenthesis)
+                {
+                    if (_option.getUseDebugger())
+                        _option._debug.gatherInformations(0, 0, 0, 0, 0, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                     throw UNMATCHED_PARENTHESIS;
+                }
                 nVarMapSize = nVars;
                 //cerr << "nVars: " << nVars << endl;
                 sVarMap = new string*[nVarMapSize];
@@ -1081,6 +1124,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                         for (unsigned int j = 0; j <= i; j++)
                             delete[] sVarMap[j];
                         delete[] sVarMap;
+                        if (_option.getUseDebugger())
+                            _option._debug.gatherInformations(0, 0, 0, 0, 0, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                         sErrorToken = "var";
                         throw WRONG_ARG_NAME;
                     }
@@ -1089,6 +1134,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                         for (unsigned int j = 0; j <= i; j++)
                             delete[] sVarMap[j];
                         delete[] sVarMap;
+                        if (_option.getUseDebugger())
+                            _option._debug.gatherInformations(0, 0, 0, 0, 0, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                         sErrorToken = "str";
                         throw WRONG_ARG_NAME;
                     }
@@ -1102,6 +1149,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             for (unsigned int j = 0; j <= i; j++)
                                 delete[] sVarMap[j];
                             delete[] sVarMap;
+                            if (_option.getUseDebugger())
+                                _option._debug.gatherInformations(0, 0, 0, 0, 0, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                             sErrorToken = "var";
                             throw WRONG_ARG_NAME;
                         }
@@ -1110,6 +1159,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             for (unsigned int j = 0; j <= i; j++)
                                 delete[] sVarMap[j];
                             delete[] sVarMap;
+                            if (_option.getUseDebugger())
+                                _option._debug.gatherInformations(0, 0, 0, 0, 0, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                             sErrorToken = "str";
                             throw WRONG_ARG_NAME;
                         }
@@ -1130,6 +1181,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             for (unsigned int j = 0; j <= i; j++)
                                 delete[] sVarMap[j];
                             delete[] sVarMap;
+                            if (_option.getUseDebugger())
+                                _option._debug.popStackItem();
                             throw MISSING_DEFAULT_VALUE;
                         }
                     }
@@ -1143,6 +1196,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             for (unsigned int j = 0; j <= i; j++)
                                 delete[] sVarMap[j];
                             delete[] sVarMap;
+                            if (_option.getUseDebugger())
+                                _option._debug.gatherInformations(0, 0, 0, 0, 0, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                             sErrorToken = "var";
                             throw WRONG_ARG_NAME;
                         }
@@ -1151,6 +1206,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             for (unsigned int j = 0; j <= i; j++)
                                 delete[] sVarMap[j];
                             delete[] sVarMap;
+                            if (_option.getUseDebugger())
+                                _option._debug.gatherInformations(0, 0, 0, 0, 0, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                             sErrorToken = "str";
                             throw WRONG_ARG_NAME;
                         }
@@ -1174,6 +1231,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             for (unsigned int j = 0; j <= i; j++)
                                 delete[] sVarMap[j];
                             delete[] sVarMap;
+                            if (_option.getUseDebugger())
+                                _option._debug.popStackItem();
                             throw MISSING_DEFAULT_VALUE;
                         }
                     }
@@ -1184,6 +1243,10 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     {
                         if (nFlags & 2)
                         {
+                            if (_option.getUseDebugger())
+                            {
+                                _option._debug.gatherInformations(0, 0, 0, 0, 0, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
+                            }
                             for (unsigned int j = 0; j < nVarMapSize; j++)
                                 delete[] sVarMap[j];
                             delete[] sVarMap;
@@ -1194,6 +1257,9 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             int nReturn = procedureInterface(sVarMap[i][1], _parser, _functions, _data, _out, _pData, _script, _option, nth_procedure);
                             if (nReturn == -1)
                             {
+                                if (_option.getUseDebugger())
+                                    _option._debug.gatherInformations(0, 0, 0, 0, 0, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
+
                                 throw PROCEDURE_ERROR;
                             }
                             else if (nReturn == -2)
@@ -1227,6 +1293,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
         }
         sCallingNameSpace = "main";
         mVarMap.clear();
+        if (_option.getUseDebugger())
+            _option._debug.popStackItem();
         throw PROCEDURE_NOT_FOUND;
     }
     sProcCommandLine = "";
@@ -1389,36 +1457,9 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     {
                         if (nFlags & 2)
                         {
+                            if (_option.getUseDebugger())
+                                _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                             deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
-                            /*if (sLocalVars && dLocalVars)
-                            {
-                                for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                                {
-                                    _parser.RemoveVar(sLocalVars[i][1]);
-                                }
-                            }
-                            if (sVarMap)
-                            {
-                                for (unsigned int i = 0; i < nVarMapSize; i++)
-                                    delete[] sVarMap[i];
-                                delete[] sVarMap;
-                                sVarMap = 0;
-
-                            }
-                            if (sLocalVars)
-                            {
-                                for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                                    delete[] sLocalVars[i];
-                                delete[] sLocalVars;
-                                sLocalVars = 0;
-                            }
-                            if (dLocalVars)
-                            {
-                                delete[] dLocalVars;
-                                dLocalVars = 0;
-                            }
-                            sCallingNameSpace = "main";
-                            mVarMap.clear();*/
                             throw INLINE_PROCEDURE_IS_NOT_INLINE;
                         }
 
@@ -1426,7 +1467,11 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                         {
                             int nReturn = procedureInterface(sProcCommandLine, _parser, _functions, _data, _out, _pData, _script, _option, nth_procedure);
                             if (nReturn == -1)
+                            {
+                                if (_option.getUseDebugger())
+                                    _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                                 throw PROCEDURE_ERROR;
+                            }
                             else if (nReturn == -2)
                             {
                                 sProcCommandLine = "";
@@ -1438,35 +1483,6 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                         catch (...)
                         {
                             deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
-                            /*if (sLocalVars && dLocalVars)
-                            {
-                                for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                                {
-                                    _parser.RemoveVar(sLocalVars[i][1]);
-                                }
-                            }
-                            if (sVarMap)
-                            {
-                                for (unsigned int i = 0; i < nVarMapSize; i++)
-                                    delete[] sVarMap[i];
-                                delete[] sVarMap;
-                                sVarMap = 0;
-
-                            }
-                            if (sLocalVars)
-                            {
-                                for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                                    delete[] sLocalVars[i];
-                                delete[] sLocalVars;
-                                sLocalVars = 0;
-                            }
-                            if (dLocalVars)
-                            {
-                                delete[] dLocalVars;
-                                dLocalVars = 0;
-                            }
-                            sCallingNameSpace = "main";
-                            mVarMap.clear();*/
                             throw;
                         }
                     }
@@ -1477,36 +1493,9 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     }
                     catch (...)
                     {
+                        if (_option.getUseDebugger())
+                            _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                         deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
-                        /*if (sLocalVars && dLocalVars)
-                        {
-                            for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                            {
-                                _parser.RemoveVar(sLocalVars[i][1]);
-                            }
-                        }
-                        if (sVarMap)
-                        {
-                            for (unsigned int i = 0; i < nVarMapSize; i++)
-                                delete[] sVarMap[i];
-                            delete[] sVarMap;
-                            sVarMap = 0;
-
-                        }
-                        if (sLocalVars)
-                        {
-                            for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                                delete[] sLocalVars[i];
-                            delete[] sLocalVars;
-                            sLocalVars = 0;
-                        }
-                        if (dLocalVars)
-                        {
-                            delete[] dLocalVars;
-                            dLocalVars = 0;
-                        }
-                        sCallingNameSpace = "main";
-                        mVarMap.clear();*/
                         throw;
                     }
 
@@ -1554,11 +1543,21 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             if (sProcCommandLine.find('(') != string::npos || sProcCommandLine.find('{') != string::npos)
             {
                 if (!validateParenthesisNumber(sProcCommandLine))
+                {
+                    if (_option.getUseDebugger())
+                        _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                     throw UNMATCHED_PARENTHESIS;
+                }
             }
 
             while (sProcCommandLine.find("<this>") != string::npos)
                 sProcCommandLine.replace(sProcCommandLine.find("<this>"),6,sCurrentProcedureName.substr(0,sCurrentProcedureName.rfind('/')));
+
+            for (unsigned int n = 0; n < sProcCommandLine.length(); n++)
+            {
+                if (sProcCommandLine[n] == '\t')
+                    sProcCommandLine[n] = ' ';
+            }
 
             if (sLocalVars && dLocalVars && findCommand(sProcCommandLine).sString != "namespace" && sProcCommandLine[1] != '@')
             {
@@ -1644,7 +1643,6 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 }
             }
         }
-        //cerr << sProcCommandLine << endl;
 
         if (sCmdCache.length() || sProcCommandLine.find(';') != string::npos)
         {
@@ -1708,6 +1706,20 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             }
         }
 
+        if (sProcCommandLine.substr(sProcCommandLine.find_first_not_of(' '),2) == "|>" && !getLoop())
+        {
+            sProcCommandLine.erase(sProcCommandLine.find_first_not_of(' '),2);
+            StripSpaces(sProcCommandLine);
+            if (_option.getUseDebugger())
+            {
+                _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
+                evalDebuggerBreakPoint(_option);
+            }
+            if (!sProcCommandLine.length())
+                continue;
+            sProcCommandLine.insert(0,1,' ');
+        }
+
 
         if (findCommand(sProcCommandLine).sString == "var" && !nLocalVarMapSize && sProcCommandLine.length() > 6)
         {
@@ -1737,6 +1749,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     {
                         if (nFlags & 2)
                         {
+                            if (_option.getUseDebugger())
+                                    _option._debug.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                             deleteVars(_parser, _data, 0, 0, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                             /*if (sVarMap)
                             {
@@ -1777,6 +1791,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                         }
                         catch (...)
                         {
+                            if (_option.getUseDebugger())
+                                _option._debug.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                             deleteVars(_parser, _data, 0, 0, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                             /*if (sVarMap)
                             {
@@ -1813,6 +1829,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             string sTemp;
                             if (!parser_StringParser(sVarValue, sTemp, _data, _parser, _option, true))
                             {
+                                if (_option.getUseDebugger())
+                                    _option._debug.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                                 deleteVars(_parser, _data, 0, 0, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                                 /*if (sVarMap)
                                 {
@@ -1869,6 +1887,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     }
                     catch (...)
                     {
+                        if (_option.getUseDebugger())
+                            _option._debug.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                         deleteVars(_parser, _data, 0, 0, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                         /*if (sVarMap)
                         {
@@ -1907,6 +1927,9 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 _parser.DefineVar(sLocalVars[i][1], &dLocalVars[i]);
             }
             sProcCommandLine = "";
+            sVars = sLocalVars;
+            dVars = dLocalVars;
+            nVarSize = nLocalVarMapSize;
             continue;
         }
         else if (findCommand(sProcCommandLine).sString == "var")
@@ -1943,6 +1966,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     {
                         if (nFlags & 2)
                         {
+                            if (_option.getUseDebugger())
+                                _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                             deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, 0, 0, sVarMap, nVarMapSize);
                             /*if (sLocalVars && dLocalVars)
                             {
@@ -1993,6 +2018,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                         }
                         catch (...)
                         {
+                            if (_option.getUseDebugger())
+                                _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                             deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, 0, 0, sVarMap, nVarMapSize);
                             /*if (sLocalVars && dLocalVars)
                             {
@@ -2059,6 +2086,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             string sTemp;
                             if (!parser_StringParser(sVarValue, sTemp, _data, _parser, _option, true))
                             {
+                                if (_option.getUseDebugger())
+                                    _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                                 deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, 0, 0, sVarMap, nVarMapSize);
                                 /*if (sLocalVars && dLocalVars)
                                 {
@@ -2159,6 +2188,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 }
                 catch (...)
                 {
+                    if (_option.getUseDebugger())
+                        _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                     deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, 0, 0, sVarMap, nVarMapSize);
                     /*if (sLocalVars && dLocalVars)
                     {
@@ -2199,6 +2230,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 }
             }
             sProcCommandLine = "";
+            sStrings = sLocalStrings;
+            nStrSize = nLocalStrMapSize;
             continue;
         }
         else if (findCommand(sProcCommandLine).sString == "str")
@@ -2281,6 +2314,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 sErrorToken = sIncludeFileName;
                 bReadingFromInclude = false;
                 fInclude.close();
+                if (_option.getUseDebugger())
+                    _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                 deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                 /*if (sLocalVars && dLocalVars)
                 {
@@ -2336,6 +2371,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 || findCommand(sProcCommandLine).sString == "if"
                 || findCommand(sProcCommandLine).sString == "while")
             {
+                if (_option.getUseDebugger())
+                    _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                 deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                /* if (sLocalVars && dLocalVars)
                 {
@@ -2382,6 +2419,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
         {
             if (nFlags & 2)
             {
+                if (_option.getUseDebugger())
+                    _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                 deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                 /*if (sLocalVars && dLocalVars)
                 {
@@ -2449,6 +2488,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 __sVarList = sProcCommandLine.substr(nParPos);
                 if (getMatchingParenthesis(sProcCommandLine.substr(nParPos)) == string::npos)
                 {
+                    if (_option.getUseDebugger())
+                        _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                     deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                     /*if (sVarMap)
                     {
@@ -2523,6 +2564,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     }
                     catch (...)
                     {
+                        if (_option.getUseDebugger())
+                            _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                         deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                         /*if (sLocalVars && dLocalVars)
                         {
@@ -2584,6 +2627,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
         {
             if (nFlags & 2)
             {
+                if (_option.getUseDebugger())
+                    _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                 deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                 /*if (sLocalVars && dLocalVars)
                 {
@@ -2673,6 +2718,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
         }
         if (findCommand(sProcCommandLine).sString == "install" || findCommand(sProcCommandLine).sString == "script")
         {
+            if (_option.getUseDebugger())
+                _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
             deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
             /*if (sLocalVars && dLocalVars)
             {
@@ -2724,45 +2771,10 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 string sDummy = "";
                 parser_StringParser(sErrorToken, sDummy, _data, _parser, _option, true);
             }
+            if (_option.getUseDebugger())
+                _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
             deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
-            /*if (sLocalVars && dLocalVars)
-            {
-                for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                {
-                    _parser.RemoveVar(sLocalVars[i][1]);
-                }
-            }
-            if (sLocalStrings)
-            {
-                for (unsigned int i = 0; i < nLocalStrMapSize; i++)
-                {
-                    _data.removeStringVar(sLocalStrings[i][1]);
-                    delete[] sLocalStrings[i];
-                }
-                delete[] sLocalStrings;
-            }
-            if (sVarMap)
-            {
-                for (unsigned int i = 0; i < nVarMapSize; i++)
-                    delete[] sVarMap[i];
-                delete[] sVarMap;
-                sVarMap = 0;
-            }
-            if (sLocalVars)
-            {
-                for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                    delete[] sLocalVars[i];
-                delete[] sLocalVars;
-                sLocalVars = 0;
-            }
-            if (dLocalVars)
-            {
-                delete[] dLocalVars;
-                dLocalVars = 0;
-            }
-            sCallingNameSpace = "main";
-            mVarMap.clear();*/
-            //cerr << getLoop() << endl;
+
             throw PROCEDURE_THROW;
         }
         if (findCommand(sProcCommandLine).sString == "return" && !getLoop())
@@ -2789,44 +2801,9 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             }
             catch (...)
             {
+                if (_option.getUseDebugger())
+                    _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                 deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
-                /*if (sLocalVars && dLocalVars)
-                {
-                    for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                    {
-                        _parser.RemoveVar(sLocalVars[i][1]);
-                    }
-                }
-                if (sLocalStrings)
-                {
-                    for (unsigned int i = 0; i < nLocalStrMapSize; i++)
-                    {
-                        _data.removeStringVar(sLocalStrings[i][1]);
-                        delete[] sLocalStrings[i];
-                    }
-                    delete[] sLocalStrings;
-                }
-                if (sVarMap)
-                {
-                    for (unsigned int i = 0; i < nVarMapSize; i++)
-                        delete[] sVarMap[i];
-                    delete[] sVarMap;
-                    sVarMap = 0;
-                }
-                if (sLocalVars)
-                {
-                    for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                        delete[] sLocalVars[i];
-                    delete[] sLocalVars;
-                    sLocalVars = 0;
-                }
-                if (dLocalVars)
-                {
-                    delete[] dLocalVars;
-                    dLocalVars = 0;
-                }
-                sCallingNameSpace = "main";
-                mVarMap.clear();*/
                 throw;
             }
         }
@@ -2843,44 +2820,9 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             }
             catch (...)
             {
+                if (_option.getUseDebugger())
+                    _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                 deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
-                /*if (sLocalVars && dLocalVars)
-                {
-                    for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                    {
-                        _parser.RemoveVar(sLocalVars[i][1]);
-                    }
-                }
-                if (sLocalStrings)
-                {
-                    for (unsigned int i = 0; i < nLocalStrMapSize; i++)
-                    {
-                        _data.removeStringVar(sLocalStrings[i][1]);
-                        delete[] sLocalStrings[i];
-                    }
-                    delete[] sLocalStrings;
-                }
-                if (sVarMap)
-                {
-                    for (unsigned int i = 0; i < nVarMapSize; i++)
-                        delete[] sVarMap[i];
-                    delete[] sVarMap;
-                    sVarMap = 0;
-                }
-                if (sLocalVars)
-                {
-                    for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                        delete[] sLocalVars[i];
-                    delete[] sLocalVars;
-                    sLocalVars = 0;
-                }
-                if (dLocalVars)
-                {
-                    delete[] dLocalVars;
-                    dLocalVars = 0;
-                }
-                sCallingNameSpace = "main";
-                mVarMap.clear();*/
                 throw;
             }
         }
@@ -2889,46 +2831,10 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
     }
     fProc_in.close();
 
+    if (_option.getUseDebugger())
+        _option._debug.popStackItem();
     deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
-    /*if (sLocalVars && dLocalVars)
-    {
-        for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-        {
-            _parser.RemoveVar(sLocalVars[i][1]);
-        }
-    }
-    if (sLocalStrings)
-    {
-        for (unsigned int i = 0; i < nLocalStrMapSize; i++)
-        {
-            _data.removeStringVar(sLocalStrings[i][1]);
-            delete[] sLocalStrings[i];
-        }
-        delete[] sLocalStrings;
-    }
-    if (sVarMap)
-    {
-        for (unsigned int i = 0; i < nVarMapSize; i++)
-            delete[] sVarMap[i];
-        delete[] sVarMap;
-        sVarMap = 0;
-    }
-    if (sLocalVars)
-    {
-        for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-            delete[] sLocalVars[i];
-        delete[] sLocalVars;
-        sLocalVars = 0;
-    }
-    if (dLocalVars)
-    {
-        delete[] dLocalVars;
-        dLocalVars = 0;
-    }
-    _parser.mVarMapPntr = 0;
-    sCallingNameSpace = "main";
-    sThisNameSpace = "";
-    mVarMap.clear();*/
+
     if (nReturnType && !_ReturnVal.vNumVal.size() && !_ReturnVal.vStringVal.size())
         _ReturnVal.vNumVal.push_back(1.0);
     return _ReturnVal;
@@ -2966,7 +2872,9 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, Define& _funct
                 nParPos = sLine.find('(', nPos);
             __sVarList = sLine.substr(nParPos);
             if (getMatchingParenthesis(sLine.substr(nParPos)) == string::npos)
+            {
                 throw UNMATCHED_PARENTHESIS;
+            }
             nParPos += getMatchingParenthesis(sLine.substr(nParPos));
             __sVarList = __sVarList.substr(1,getMatchingParenthesis(__sVarList)-1);
 
@@ -3238,34 +3146,52 @@ bool Procedure::isInline(const string& sProc)
             {
                 __sName = sProc.substr(nPos+1, sProc.find('\'', nPos+1)-nPos-1);
             }
-            //cerr << __sName << endl;!isInQuotes(sProc, nPos, true)
+            //cerr << __sName << endl; // !isInQuotes(sProc, nPos, true)
             if (!isInQuotes(sProc, nPos, true))
             {
-                __sName = FileSystem::ValidFileName(__sName, ".nprc");
-                if (__sName.find('~') != string::npos)
+                string __sFileName = __sName;
+                if (__sFileName.find('~') != string::npos)
                 {
-                    unsigned int __nPos = __sName.rfind('/');
-                    if (__nPos < __sName.rfind('\\') && __sName.rfind('\\') != string::npos)
-                        __nPos = __sName.rfind('\\');
-                    for (unsigned int i = __nPos; i < __sName.length(); i++)
+                    if (__sFileName.substr(0,9) == "thisfile~")
                     {
-                        if (__sName[i] == '~')
+                        if (sProcNames.length())
+                            __sFileName = sProcNames.substr(sProcNames.rfind(';')+1);
+                        else
                         {
-                            if (__sName.length() > 5 && i >= 4 && __sName.substr(i-4,5) == "main~")
-                                __sName = __sName.substr(0,i-4) + __sName.substr(i+1);
-                            else
-                                __sName[i] = '/';
+                            sErrorToken = "thisfile";
+                            throw PRIVATE_PROCEDURE_CALLED;
+                        }
+                        __sFileName = FileSystem::ValidFileName(__sFileName, ".nprc");
+                    }
+                    else
+                    {
+                        __sFileName = FileSystem::ValidFileName(__sFileName, ".nprc");
+                        for (unsigned int i = 0; i < __sFileName.length(); i++)
+                        {
+                            if (__sFileName[i] == '~')
+                            {
+                                if (__sFileName.length() > 5 && i >= 4 && __sFileName.substr(i-4,5) == "main~")
+                                    __sFileName = __sFileName.substr(0,i-4) + __sFileName.substr(i+1);
+                                else
+                                    __sFileName[i] = '/';
+                            }
                         }
                     }
                 }
-
+                //cerr << __sFileName << endl;
                 fProc_in.clear();
-                fProc_in.open(__sName.c_str());
-
+                fProc_in.open(__sFileName.c_str());
+                if (fProc_in.fail())
+                {
+                    fProc_in.close();
+                    throw FILE_NOT_EXIST;
+                }
                 if (__sName.find('/') != string::npos)
                 {
                     __sName.erase(0,__sName.rfind('/')+1);
                 }
+                if (__sName.find('~') != string::npos)
+                    __sName.erase(0,__sName.rfind('~')+1);
                 if (__sName.find('.') != string::npos)
                     __sName.erase(__sName.find('.'));
 
@@ -3340,6 +3266,28 @@ bool Procedure::isInline(const string& sProc)
     return (nFlags & 2);
  }
 
+void Procedure::evalDebuggerBreakPoint(Settings& _option)
+{
+    string sTemp;
+    _option._debug.gatherInformations(sVars, nVarSize, dVars, sStrings, nStrSize, "",sCurrentProcedureName,nCurrentLine);
+    make_hline();
+    cerr << "|-> NUMERE: DEBUGGER   [BREAKPOINT]" << endl;
+    make_hline();
+    cerr << "|   " << toUpperCase("Modulinformationen: ") << std::setfill((char)196) << std::setw(_option.getWindow()-24) << (char)196 << endl;
+    cerr << LineBreak("|   "+_option._debug.printNonErrorModuleInformations(), _option, false) << endl;
+    cerr << "|" << endl << "|   " << toUpperCase("Stacktrace: ") << std::setfill((char)196) << std::setw(_option.getWindow()-16) << (char)196 << endl;
+    cerr << LineBreak("|   "+_option._debug.printStackTrace(), _option, false) << endl;
+    cerr << "|" << endl << "|   " << toUpperCase("Lokale numerische Variablen: ") << std::setfill((char)196) << std::setw(_option.getWindow()-33) << (char)196 << endl;
+    cerr << LineBreak("|   "+_option._debug.printLocalVars(), _option, false) << endl;
+    cerr << "|" << endl << "|   " << toUpperCase("Lokale Zeichenketten: ") << std::setfill((char)196) << std::setw(_option.getWindow()-26) << (char)196 << endl;
+    cerr << LineBreak("|   "+_option._debug.printLocalStrings(), _option, false) << endl;
+    _option._debug.resetBP();
+    cerr << "|" << endl << toSystemCodePage("|-> Zum Fortfahren ENTER drücken ... ");
+    getline(cin, sTemp);
+    make_hline();
+    return;
+}
+
 void Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnvalue& _return, unsigned int nPos, unsigned int nPos2, const string& sReplaceName)
 {
     if (_return.vStringVal.size())
@@ -3407,5 +3355,12 @@ void Procedure::deleteVars(Parser& _parser, Datafile& _data, string** sLocalVars
     {
         sProcNames.erase(sProcNames.rfind(';'));
     }
+
+    sVars = 0;
+    sStrings = 0;
+    dVars = 0;
+
+    nVarSize = 0;
+    nStrSize = 0;
     return;
 }

@@ -2968,14 +2968,28 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option);
                 if (sArgument.length() && sArgument == "debug")
                 {
+                    if (_option.getUseDebugger())
+                    {
+                        cerr << LineBreak("|-> Debugger wurde deaktiviert.", _option) << endl;
+                        _option.setDebbuger(false);
+                    }
+                    else
+                    {
+                        _option.setDebbuger(true);
+                        cerr << LineBreak("|-> Debugger wurde aktiviert.", _option) << endl;
+                    }
+                    return 1;
+                }
+                else if (sArgument.length() && sArgument == "developer")
+                {
                     if (_option.getbDebug())
                     {
-                        cerr << LineBreak("|-> DEBUG-MODE wird deaktiviert.", _option) << endl;
+                        cerr << LineBreak("|-> DEVELOPER-MODE wird deaktiviert.", _option) << endl;
                         _option.setbDebug(false);
                     }
                     else
                     {
-                        cerr << LineBreak("|-> DEBUG-MODE wird aktiviert. Dieser Modus stellt Zwischenergebnisse zur vereinfachten Fehlersuche dar. Er ist nicht zum produktiven Arbeiten ausgelegt. Zum Aktivieren wird ein Passwort benötigt:$(0 zum Abbrechen)", _option) << endl;
+                        cerr << LineBreak("|-> DEVELOPER-MODE wird aktiviert. Dieser Modus stellt Zwischenergebnisse zur vereinfachten Fehlersuche dar. Er ist nicht zum produktiven Arbeiten ausgelegt. Zum Aktivieren wird ein Passwort benötigt:$(0 zum Abbrechen)", _option) << endl;
                         sArgument = "";
                         do
                         {
@@ -2987,7 +3001,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         if (sArgument == AutoVersion::STATUS)
                         {
                             _option.setbDebug(true);
-                            cerr << LineBreak("|-> DEBUG-MODE erfolgreich aktiviert!", _option) << endl;
+                            cerr << LineBreak("|-> DEVELOPER-MODE erfolgreich aktiviert!", _option) << endl;
                         }
                         else
                         {
