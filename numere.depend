@@ -18,7 +18,7 @@
 	"version.h"
 	"resampler.h"
 
-1455521692 c:\cpp\numere\settings.hpp
+1458464858 c:\cpp\numere\settings.hpp
 	<string>
 	<sstream>
 	<fstream>
@@ -26,6 +26,7 @@
 	<windows.h>
 	"error.hpp"
 	"doc_helper.hpp"
+	"debugger.hpp"
 
 1383553772 c:\cpp\numere\tostring.hpp
 	<string>
@@ -127,7 +128,7 @@
 1383553778 source:c:\cpp\numere\tostring.cpp
 	"tostring.hpp"
 
-1455521799 source:c:\cpp\numere\settings.cpp
+1458464894 source:c:\cpp\numere\settings.cpp
 	"settings.hpp"
 
 1436767510 c:\cpp\numere\parserlib\muparser.h
@@ -319,10 +320,10 @@
 	"ParserLib/muParserTest.h"
 	"ParserLib/muParser.h"
 
-1457257370 source:c:\cpp\numere\parser.cpp
+1458912326 source:c:\cpp\numere\parser.cpp
 	"parser.hpp"
 
-1457544434 source:c:\cpp\numere\built-in.cpp
+1458481285 source:c:\cpp\numere\built-in.cpp
 	"built-in.hpp"
 
 1453189922 c:\cpp\numere\built-in.hpp
@@ -402,7 +403,7 @@
 	"settings.hpp"
 	"datafile.hpp"
 
-1456385843 source:c:\cpp\numere\tools.cpp
+1458913987 source:c:\cpp\numere\tools.cpp
 	"tools.hpp"
 
 1454400515 c:\cpp\numere\define.hpp
@@ -439,13 +440,13 @@
 	"filesystem.hpp"
 	"tools.hpp"
 
-1457545338 source:c:\cpp\numere\script.cpp
+1457876973 source:c:\cpp\numere\script.cpp
 	"script.hpp"
 
-1457547561 source:c:\cpp\numere\loop.cpp
+1458913498 source:c:\cpp\numere\loop.cpp
 	"loop.hpp"
 
-1454925001 c:\cpp\numere\loop.hpp
+1458758940 c:\cpp\numere\loop.hpp
 	<string>
 	<iostream>
 	"error.hpp"
@@ -460,7 +461,7 @@
 	"built-in.hpp"
 	"tools.hpp"
 
-1454924980 c:\cpp\numere\procedure.hpp
+1458756078 c:\cpp\numere\procedure.hpp
 	<iostream>
 	<string>
 	<cmath>
@@ -481,7 +482,7 @@
 	"output.hpp"
 	"script.hpp"
 
-1455560253 source:c:\cpp\numere\procedure.cpp
+1458914120 source:c:\cpp\numere\procedure.cpp
 	"procedure.hpp"
 
 1455300048 c:\cpp\numere\documentation.hpp
@@ -655,4 +656,12 @@
 	<string.h>
 	<iostream>
 	"resampler.h"
+
+1458915212 c:\cpp\numere\debugger.hpp
+	<vector>
+	<string>
+	<map>
+
+1458765824 source:c:\cpp\numere\debugger.cpp
+	"debugger.hpp"
 

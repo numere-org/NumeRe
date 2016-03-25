@@ -81,6 +81,8 @@
 		<Unit filename="cache.hpp" />
 		<Unit filename="datafile.cpp" />
 		<Unit filename="datafile.hpp" />
+		<Unit filename="debugger.cpp" />
+		<Unit filename="debugger.hpp" />
 		<Unit filename="define.cpp" />
 		<Unit filename="define.hpp" />
 		<Unit filename="doc_helper.cpp" />
