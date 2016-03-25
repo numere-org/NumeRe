@@ -27,6 +27,7 @@
 
 #include "error.hpp"
 #include "doc_helper.hpp"
+#include "debugger.hpp"
 
 using namespace std;
 /*
@@ -54,6 +55,7 @@ class Settings : public Documentation
 		bool bLoadEmptyCols;
 		bool bShowHints;
 		bool bUseESCinScripts;
+		bool bUseDebugger;
 		int nPrecision;			    // Setzt die Genauigkeit der Ausgabe
 		int nAutoSaveInterval;      // Das Intervall fuer die automatische Speicherung
 		string sPath;               // Programm-Hauptpfad
@@ -88,6 +90,8 @@ class Settings : public Documentation
 	public:
 		Settings();				    // Standard-Konstruktor
 		~Settings();                // Destruktor (schliesst ggf. die INI-Datei)
+
+        Debugger _debug;
 
         // --> Speicher- und Lade-Methoden <--
 		void save(string _sWhere, bool bMkBackUp = false);
@@ -274,6 +278,11 @@ class Settings : public Documentation
                 }
                 return;
             }
+        inline void setDebbuger(bool _debugger)
+            {
+                bUseDebugger = _debugger;
+                return;
+            }
         // --> Keine inline-Methode, da hoehere Komplexitaet <--
 		void setViewerPath(const string& _sViewerPath);
 		void setEditorPath(const string& _sEditorPath);
@@ -361,6 +370,8 @@ class Settings : public Documentation
             }
         inline bool getSystemPrintStatus() const
             {return bUseSystemPrints;}
+        inline bool getUseDebugger() const
+            {return bUseDebugger;}
 
 };
 #endif

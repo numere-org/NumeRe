@@ -27,6 +27,7 @@
 Settings::Settings() : Documentation()
 {
 	bDebug = false;
+	bUseDebugger = false;
 	bTestTabelle = false;
 	bOnce = false;
 	bFastStart = false;

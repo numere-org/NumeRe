@@ -327,18 +327,9 @@ void StripSpaces(string& sToStrip)
     // --> Am Anfgang und am Ende weder ' ' noch '\t' gefunden? Zurueckkehren <--
     if (sToStrip[0] != ' ' && sToStrip[sToStrip.length()-1] != ' ' && sToStrip[0] != '\t' && sToStrip[sToStrip.length()-1] != '\t')
         return;
-
-    // --> Leerzeichen und Tabulatoren am Anfang des Strings wegschneiden <--
-    while (sToStrip[0] == ' ' || sToStrip[0] == '\t')
-    {
-        sToStrip = sToStrip.substr(1);
-    }
-
-    // --> Leerzeichen und Tabulatoren am Ende des Strings wegschneiden <--
-    while (sToStrip[sToStrip.length()-1] == ' ' || sToStrip[sToStrip.length()-1] == '\t')
-    {
-        sToStrip = sToStrip.substr(0,sToStrip.length()-1);
-    }
+    sToStrip.erase(0,sToStrip.find_first_not_of(" \t"));
+    if (sToStrip.length() && (sToStrip.back() == ' ' || sToStrip.back() == '\t'))
+        sToStrip.erase(sToStrip.find_last_not_of(" \t")+1);
 
     // --> Zurueckkehren <--
     return;
@@ -385,7 +376,10 @@ void SetConsTitle(const Datafile& _data, const Settings& _option, string sScript
     {
         sConsoleTitle += "- ";  // Bindestrich zur optischen Trennung
     }
-    if ((sConsoleTitle.length() + sVersion.length() > _option.getWindow()-40 && !_option.getbDebug()) || (sConsoleTitle.length() + sVersion.length() > _option.getWindow()-55 && _option.getbDebug()))
+    if ((sConsoleTitle.length() + sVersion.length() > _option.getWindow()-40
+            && (!_option.getbDebug() && !_option.getUseDebugger()))
+        || (sConsoleTitle.length() + sVersion.length() > _option.getWindow()-55
+            && (_option.getbDebug() || _option.getUseDebugger())))
     {
         if (sVersion.length() > _option.getWindow()-65 && sConsoleTitle.length() > _option.getWindow()-60)
             sConsoleTitle += "NumeRe (v " + (sVersion.substr(0,5) + AutoVersion::STATUS_SHORT) + ")";
@@ -394,8 +388,10 @@ void SetConsTitle(const Datafile& _data, const Settings& _option, string sScript
     }
     else
         sConsoleTitle += "NumeRe: Framework für Numerische Rechnungen (v " + sVersion + ")";
+    if (_option.getUseDebugger())
+        sConsoleTitle += " [Debugger aktiv]";
     if (_option.getbDebug())
-        sConsoleTitle += " [DEBUG-MODE]";
+        sConsoleTitle += " [DEV-MODE]";
     sConsoleTitle = toSystemCodePage(sConsoleTitle);
     SetConsoleTitle(sConsoleTitle.c_str()); // WINDOWS-Funktion aus <windows.h>
     return;

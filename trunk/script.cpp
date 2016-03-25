@@ -365,7 +365,7 @@ string Script::getNextScriptCommand()
                                 }
                             }
                             if (sScriptCommand.length() > 10)
-                            fHelpfile << sScriptCommand.substr(10) << endl;
+                                fHelpfile << sScriptCommand.substr(10) << endl;
 
                             string sTemp;
                             while (!fScript.eof())
@@ -376,8 +376,6 @@ string Script::getNextScriptCommand()
                                 if (sTemp.find("##") != string::npos)
                                     sTemp.erase(sTemp.find("##"));
                                 if (sTemp.find("</helpfile>") == string::npos)
-                                    fHelpfile << sTemp << endl;
-                                else
                                 {
                                     if (sTemp.length() > 10 && sTemp.find("<article") != string::npos)
                                     {
@@ -387,6 +385,10 @@ string Script::getNextScriptCommand()
                                             sTemp.insert(sTemp.find(getArgAtPos(sTemp, sTemp.find("id=")+3)), "plgn_");
                                         }
                                     }
+                                    fHelpfile << sTemp << endl;
+                                }
+                                else
+                                {
                                     fHelpfile << sTemp.substr(0,sTemp.find("</helpfile>")) << endl;
                                     break;
                                 }

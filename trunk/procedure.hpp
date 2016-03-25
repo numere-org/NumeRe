@@ -65,6 +65,13 @@ class Procedure : /*public FileSystem,*/ public Loop, public Plugin
         bool bWritingTofile;
         int nFlags;
         int nthBlock;
+
+        string** sVars;
+        double* dVars;
+        string** sStrings;
+
+        unsigned int nVarSize;
+        unsigned int nStrSize;
         //int nReturnType;
         //Loop _block;
 
@@ -81,6 +88,7 @@ class Procedure : /*public FileSystem,*/ public Loop, public Plugin
         Returnvalue execute(string sProc, string sVarList, Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, unsigned int nth_procedure = 0);
         bool writeProcedure(string sProcedureLine);
         bool isInline(const string& sProc);
+        void evalDebuggerBreakPoint(Settings& _option);
         inline string getCurrentProcedureName() const
             {return sCurrentProcedureName;}
         inline unsigned int GetCurrentLine() const

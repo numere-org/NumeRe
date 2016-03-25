@@ -9,3 +9,6 @@ Fixed	Wenn die IDs eigener Hilfeartikel bei einer Plugin-Installation geaendert 
 Fixed	Die Vektorzuweisung "{x,y,z} = WERTE" ist nun nicht mehr auf Leerzeichen zwischen "}" und "=" sensitiv.
 Fixed	"break" und "continue" werden in Schleifen, die in Prozeduren ausgefuehrt werden, wieder korrekt erkannt.
 Fixed	"get -viewer -asstr" gibt nun eine leere Zeichenkette zuruck (und keine Fehlermeldung), wenn kein Imageviewer deklariert wurde.
+New	NumeRe beinhaelt nun auch einen Debugger fuer Prozeduren und Plugins, der mittels "set-mode=debug" gestartet werden kann.
+Cleaned	Die Funktion "StripSpaces(string&)" wurde ueberarbeitet und verwendet nun vorzugsweise String-Methoden.
+Added	Die Zeichenfolge "|>" am Anfang einer Zeile in einer Prozedur wird vom Debugger als Breakpoint interpretiert, so dass an dieser Stelle alle Werte kontrolliert werden koennen.
