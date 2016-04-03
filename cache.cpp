@@ -38,9 +38,9 @@ Cache::Cache() : FileSystem()
 	bIsSaved = true;
 	nLastSaved = time(0);
 	sCache_file = "<>/numere.cache";
-	sPredefinedFuncs = ",abs(),acos(),acosh(),Ai(),asin(),asinh(),ascii(),atan(),atanh(),avg(),bessel(),betheweizsaecker(),Bi(),binom(),cache(),char(),cmp(),cnt(),cos(),cosh(),data(),date(),dblfacul(),degree(),erf(),erfc(),exp(),faculty(),findfile(),findparam(),gamma(),getfilelist(),getopt(),heaviside(),hermite(),is_nan(),is_string(),laguerre(),laguerre_a(),legendre(),legendre_a(),ln(),log(),log10(),log2(),max(),med(),min(),neumann(),norm(),num(),phi(),prd(),radian(),rand(),range(),rint(),round(),sbessel(),sign(),sin(),sinc(),sinh(),sneumann(),split(),sqrt(),std(),strfnd(),strrfnd(),strlen(),substr(),sum(),tan(),tanh(),theta(),time(),to_char(),to_cmd(),to_string(),to_value(),Y()";
+	sPredefinedFuncs = ",abs(),acos(),acosh(),Ai(),arccos(),arcosh(),arcsin(),arsinh(),arctan(),artanh(),asin(),asinh(),ascii(),atan(),atanh(),avg(),bessel(),betheweizsaecker(),Bi(),binom(),cache(),char(),cmp(),cnt(),cos(),cosh(),cross(),data(),date(),dblfacul(),degree(),det(),diag(),diagonalize(),eigenvals(),eigenvects(),erf(),erfc(),exp(),faculty(),findfile(),findparam(),floor(),gamma(),gcd(),getfilelist(),getmatchingparens(),getopt(),heaviside(),hermite(),identity(),invert(),is_data(),is_nan(),is_string(),laguerre(),laguerre_a(),lcm(),legendre(),legendre_a(),ln(),log(),log10(),log2(),matfc(),matfcf(),matfl(),matflf(),max(),med(),min(),neumann(),norm(),num(),one(),pct(),phi(),prd(),radian(),rand(),range(),rect(),rint(),roof(),round(),sbessel(),sign(),sin(),sinc(),sinh(),sneumann(),solve(),split(),sqrt(),std(),strfnd(),strrfnd(),strlen(),student_t(),substr(),sum(),tan(),tanh(),theta(),time(),to_char(),to_cmd(),to_string(),to_value(),trace(),transpose(),valtostr(),Y(),zero()";
 	sUserdefinedFuncs = "";
-	sPredefinedCommands =  ";abort;about;break;compose;cont;cont3d;continue;copy;credits;data;datagrid;define;delete;dens;dens3d;diff;draw;draw3d;edit;else;endcompose;endfor;endif;endprocedure;endwhile;eval;explicit;export;extrema;fft;find;fit;for;get;global;grad;grad3d;help;hist;hline;if;ifndef;ifndefined;info;integrate;list;load;mesh;mesh3d;move;namespace;new;plot;plot3d;procedure;quit;random;read;readline;remove;rename;replaceline;resample;return;save;script;set;smooth;sort;stats;str;surf;surf3d;swap;taylor;throw;undef;undefine;var;vect;vect3d;while;write;zeroes;";
+	sPredefinedCommands =  ";abort;about;audio;break;compose;cont;cont3d;continue;copy;credits;data;datagrid;define;delete;dens;dens3d;diff;draw;draw3d;edit;else;endcompose;endfor;endif;endprocedure;endwhile;eval;explicit;export;extrema;fft;find;fit;for;get;global;grad;grad3d;graph;graph3d;help;hist;hline;if;ifndef;ifndefined;info;integrate;list;load;matop;mesh;mesh3d;move;mtrxop;namespace;new;odesolve;plot;plot3d;procedure;quit;random;read;readline;regularize;remove;rename;replaceline;resample;return;save;script;set;smooth;sort;stats;str;surf;surf3d;swap;taylor;throw;undef;undefine;var;vect;vect3d;while;write;zeroes;";
 	sPluginCommands = "";
 	sStrings.reserve(32);
 	mCachesMap["cache"] = 0;
@@ -1410,10 +1410,20 @@ bool Cache::deleteCache(const string& sCache)
             //cerr << 3 << endl;
             mCachesMap.erase(iter);
             //cerr << 4 << endl;
-            if (bIsSaved)
+            if (bIsSaved && Cache::isValid())
             {
                 bIsSaved = false;
                 nLastSaved = time(0);
+            }
+            else if (!bIsSaved || !Cache::isValid())
+            {
+                bIsSaved = true;
+                nLastSaved = time(0);
+                if (fileExists(getProgramPath()+"/numere.cache"))
+                {
+                    string sCachefile = getProgramPath() + "/numere.cache";
+                    remove(sCachefile.c_str());
+                }
             }
             return true;
         }

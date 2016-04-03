@@ -1110,7 +1110,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         || matchParams(sCmd, "oeps", '=')
         || matchParams(sCmd, "osvg", '=')
         || matchParams(sCmd, "otex", '=')
-        || matchParams(sCmd, "ogif", '=')) && (!nType || nType == 2))
+        || matchParams(sCmd, "ogif", '=')) && (!nType || nType == 1))
     {
         unsigned int nPos = 0;
         if (matchParams(sCmd, "opng", '='))

@@ -126,6 +126,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
         void condenseDataSet();
         string expandODSLine(const string& sLine);
         vector<double> parseJDXLine(const string& sLine);
+        vector<string> getPastedDataFromCmdLine(const Settings& _option, bool& bKeepEmptyTokens);
 
         inline void parseJDXDataLabel(string& sLine)
             {

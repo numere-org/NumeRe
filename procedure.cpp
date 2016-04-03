@@ -157,6 +157,10 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
         if (!sProcPlotCompose.length() && findCommand(sLine).sString == "compose")
         {
             sProcPlotCompose = "plotcompose ";
+            if (matchParams(sLine, "multiplot", '='))
+            {
+                sProcPlotCompose += "-multiplot=" + getArgAtPos(sLine, matchParams(sLine, "multiplot", '=')+9) + " <<COMPOSE>> ";
+            }
             thisReturnVal.vNumVal.push_back(NAN);
             return thisReturnVal;
         }
@@ -171,6 +175,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
         {
             string sCommand = findCommand(sLine).sString;
             if (sCommand.substr(0,4) == "plot"
+                || sCommand.substr(0,7) == "subplot"
                 || sCommand.substr(0,4) == "grad"
                 || sCommand.substr(0,4) == "dens"
                 || sCommand.substr(0,4) == "vect"

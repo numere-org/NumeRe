@@ -607,6 +607,7 @@ string Fitcontroller::getFitFunction()
 {
     if (!sExpr.length())
         return "";
+    sExpr += " ";
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
     {
         for (unsigned int i = 0; i < sExpr.length(); i++)
