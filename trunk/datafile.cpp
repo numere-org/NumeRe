@@ -2350,6 +2350,67 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 	return;
 }
 
+vector<string> Datafile::getPastedDataFromCmdLine(const Settings& _option, bool& bKeepEmptyTokens)
+{
+    vector<string> vPaste;
+    string sLine;
+    make_hline();
+    cerr << LineBreak("|-> NUMERE: DATEN EINFÜGEN", _option) << endl;
+    make_hline();
+    cerr << LineBreak("|-> Daten hier einfügen (Entweder direkt mittels der \"Einfügen\"-Option des Kontextmenüs, oder aber durch zeilenweises Eintippen der Daten. Mit \"endpaste\" wird das Einfügen abgeschlossen):", _option) << endl << "|" << endl;
+    while (true)
+    {
+        cerr << "|PASTE> ";
+        getline(cin, sLine);
+        if (sLine == "endpaste")
+            break;
+        if (!isNumeric(sLine) && sLine.find(' ') != string::npos && sLine.find('\t') != string::npos)
+        {
+            for (unsigned int i = 0; i < sLine.length(); i++)
+            {
+                if (sLine[i] == ' ')
+                    sLine[i] = '_';
+            }
+            if (!bKeepEmptyTokens)
+                bKeepEmptyTokens = true;
+        }
+        replaceTabSign(sLine);
+        if (sLine.find_first_not_of(' ') == string::npos)
+            continue;
+        if (isNumeric(sLine) && sLine.find(',') != string::npos && sLine.find('.') == string::npos)
+            replaceDecimalSign(sLine);
+        else if (sLine.find(',') != string::npos && sLine.find(';') != string::npos)
+        {
+            for (unsigned int i = 0; i < sLine.length(); i++)
+            {
+                if (sLine[i] == ',')
+                    sLine[i] = '.';
+                if (sLine[i] == ';')
+                {
+                    if (!bKeepEmptyTokens)
+                        bKeepEmptyTokens = true;
+                    sLine[i] = ' ';
+                }
+            }
+        }
+        else
+        {
+            for (unsigned int i = 0; i < sLine.length(); i++)
+            {
+                if (sLine[i] == ',')
+                {
+                    if (!bKeepEmptyTokens)
+                        bKeepEmptyTokens = true;
+                    sLine[i] = ' ';
+                }
+            }
+        }
+        vPaste.push_back(sLine);
+    }
+    make_hline();
+    return vPaste;
+}
+
 // --> Lese den Inhalt eines Tabellenpastes <--
 void Datafile::pasteLoad(const Settings& _option)
 {
@@ -2368,20 +2429,11 @@ void Datafile::pasteLoad(const Settings& _option)
 
         if (!sClipboard.length())
         {
-            make_hline();
-            cerr << LineBreak("|-> NUMERE: DATEN EINFÜGEN", _option) << endl;
-            make_hline();
-            cerr << LineBreak("|-> Daten hier einfügen (Entweder direkt mittels der \"Einfügen\"-Option des Kontextmenüs, oder aber durch zeilenweises Eintippen der Daten. Mit \"endpaste\" wird das Einfügen abgeschlossen):", _option) << endl << "|" << endl;
+            vPaste = getPastedDataFromCmdLine(_option, bKeepEmptyTokens);
         }
-
-        while (true)
+        else
         {
-            if (!bReadClipboard)
-            {
-                cerr << "|PASTE> ";
-                getline(cin, sLine);
-            }
-            else
+            while (true)
             {
                 if (!sClipboard.length() || sClipboard == "\n")
                     break;
@@ -2393,58 +2445,61 @@ void Datafile::pasteLoad(const Settings& _option)
                     sClipboard.erase(0, sClipboard.find('\n')+1);
                 else
                     sClipboard.clear();
-            }
-            //StripSpaces(sLine);
-            if (sLine == "endpaste")
-                break;
-            if (!isNumeric(sLine) && sLine.find(' ') != string::npos && sLine.find('\t') != string::npos)
-            {
-                for (unsigned int i = 0; i < sLine.length(); i++)
+                //StripSpaces(sLine);
+                if (!isNumeric(sLine) && sLine.find(' ') != string::npos && sLine.find('\t') != string::npos)
                 {
-                    if (sLine[i] == ' ')
-                        sLine[i] = '_';
-                }
-                if (!bKeepEmptyTokens)
-                    bKeepEmptyTokens = true;
-            }
-            replaceTabSign(sLine);
-            if (sLine.find_first_not_of(' ') == string::npos)
-                continue;
-            if (isNumeric(sLine) && sLine.find(',') != string::npos && sLine.find('.') == string::npos)
-                replaceDecimalSign(sLine);
-            else if (sLine.find(',') != string::npos && sLine.find(';') != string::npos)
-            {
-                for (unsigned int i = 0; i < sLine.length(); i++)
-                {
-                    if (sLine[i] == ',')
-                        sLine[i] = '.';
-                    if (sLine[i] == ';')
+                    for (unsigned int i = 0; i < sLine.length(); i++)
                     {
-                        if (!bKeepEmptyTokens)
-                            bKeepEmptyTokens = true;
-                        sLine[i] = ' ';
+                        if (sLine[i] == ' ')
+                            sLine[i] = '_';
+                    }
+                    if (!bKeepEmptyTokens)
+                        bKeepEmptyTokens = true;
+                }
+                replaceTabSign(sLine);
+                if (sLine.find_first_not_of(' ') == string::npos)
+                    continue;
+                if (isNumeric(sLine) && sLine.find(',') != string::npos && sLine.find('.') == string::npos)
+                    replaceDecimalSign(sLine);
+                else if (sLine.find(',') != string::npos && sLine.find(';') != string::npos)
+                {
+                    for (unsigned int i = 0; i < sLine.length(); i++)
+                    {
+                        if (sLine[i] == ',')
+                            sLine[i] = '.';
+                        if (sLine[i] == ';')
+                        {
+                            if (!bKeepEmptyTokens)
+                                bKeepEmptyTokens = true;
+                            sLine[i] = ' ';
+                        }
                     }
                 }
-            }
-            else
-            {
-                for (unsigned int i = 0; i < sLine.length(); i++)
+                else
                 {
-                    if (sLine[i] == ',')
+                    for (unsigned int i = 0; i < sLine.length(); i++)
                     {
-                        if (!bKeepEmptyTokens)
-                            bKeepEmptyTokens = true;
-                        sLine[i] = ' ';
+                        if (sLine[i] == ',')
+                        {
+                            if (!bKeepEmptyTokens)
+                                bKeepEmptyTokens = true;
+                            sLine[i] = ' ';
+                        }
                     }
                 }
+                vPaste.push_back(sLine);
             }
-            vPaste.push_back(sLine);
+            if (!vPaste.size())
+            {
+                bReadClipboard = false;
+                bKeepEmptyTokens = false;
+                vPaste = getPastedDataFromCmdLine(_option, bKeepEmptyTokens);
+            }
         }
         //cerr << vPaste.size() << endl;
         if (!vPaste.size())
             return;
-        if (!bReadClipboard)
-            make_hline();
+
         nLines = vPaste.size();
         //cerr << nLines << endl;
         for (unsigned int i = 0; i < vPaste.size(); i++)
@@ -2466,8 +2521,43 @@ void Datafile::pasteLoad(const Settings& _option)
                 break;
         }
         //cerr << nLines << endl;
-        if (!nLines)
+        if (!nLines && !bReadClipboard)
+        {
+            cerr << LineBreak("|-> Der eingefügte Inhalt konnte nicht als Tabelle mit numerischen Werten identifiziert werden.", _option) << endl;
             return;
+        }
+        else if (bReadClipboard && !nLines)
+        {
+            bKeepEmptyTokens = false;
+            vPaste = getPastedDataFromCmdLine(_option, bKeepEmptyTokens);
+            if (!vPaste.size())
+                return;
+            nLines = vPaste.size();
+            //cerr << nLines << endl;
+            for (unsigned int i = 0; i < vPaste.size(); i++)
+            {
+                if (!isNumeric(vPaste[i]))
+                {
+                    nLines--;
+                    nSkip++;
+                    if (nLines > i+1 && vPaste[i+1].find(' ') == string::npos && vPaste[i].find(' ') != string::npos)
+                    {
+                        for (unsigned int j = 0; j < vPaste[i].size(); j++)
+                        {
+                            if (vPaste[i][j] == ' ')
+                                vPaste[i][j] = '_';
+                        }
+                    }
+                }
+                else
+                    break;
+            }
+            if (!nLines)
+            {
+                cerr << LineBreak("|-> Der eingefügte Inhalt konnte nicht als Tabelle mit numerischen Werten identifiziert werden.", _option) << endl;
+                return;
+            }
+        }
 
         if (bKeepEmptyTokens)
         {

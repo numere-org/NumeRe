@@ -1498,12 +1498,17 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
             if ((findCommand(sLine).sString == "compose"
                     || findCommand(sLine).sString == "endcompose"
                     || sPlotCompose.length())
+                && !_procedure.is_writing()
                 && findCommand(sLine).sString != "quit"
                 && findCommand(sLine).sString != "help")
             {
                 if (!sPlotCompose.length() && findCommand(sLine).sString == "compose")
                 {
                     sPlotCompose = "plotcompose ";
+                    if (matchParams(sLine, "multiplot", '='))
+                    {
+                        sPlotCompose += "-multiplot=" + getArgAtPos(sLine, matchParams(sLine, "multiplot",'=')+9) + " <<COMPOSE>> ";
+                    }
                     continue;
                 }
                 else if (findCommand(sLine).sString == "abort")
@@ -1516,6 +1521,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                 {
                     string sCommand = findCommand(sLine).sString;
                     if (sCommand.substr(0,4) == "plot"
+                        || sCommand.substr(0,7) == "subplot"
                         || sCommand.substr(0,4) == "grad"
                         || sCommand.substr(0,4) == "dens"
                         || sCommand.substr(0,4) == "draw"
@@ -3075,7 +3081,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                             oLogFile << toString(time(0) - tTimeZero, true) << "> FEHLER: Zusammengesetzte oder eingefügte Daten können nicht neu geladen werden" << endl;
                         break;
                     case PLOT_ERROR:
-                        cerr << LineBreak("|-> Ein Plot kann nicht erzeugt werden. Entweder ist ein Plotstil nicht bekannt, oder die darzustellenden Funktionen/Datensätze konnten nicht identifiziert werden.", _option) << endl;
+                        cerr << LineBreak("|-> Ein Plot kann nicht erzeugt werden. Entweder ist ein Plotstil nicht bekannt, ein Plotstil kann nicht mit Datensätzen umgehen, oder die darzustellenden Funktionen/Datensätze konnten nicht identifiziert werden.", _option) << endl;
                         if (oLogFile.is_open())
                             oLogFile << toString(time(0) - tTimeZero, true) << "> FEHLER: Plotfehler" << endl;
                         break;
@@ -3187,12 +3193,12 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                         if (oLogFile.is_open())
                             oLogFile << toString(time(0) - tTimeZero, true) << "> FEHLER: Cache konnte nicht regularisiert werden" << endl;
                         break;
-                    /*case PROCESS_ABORTED_BY_USER:
-                        cerr << LineBreak("|-> Ein Prozess wurde vom Benutzer abgebrochen.$(Während des Prozesses wurde \"ESC\" gedrückt. Dies bricht die Auswertung ab.)", _option, false) << endl;
-                        //cerr << LineBreak("|-> Siehe auch \"help procedure\"", _option) << endl;
+                    case INVALID_SUBPLOT_INDEX:
+                        cerr << LineBreak("|-> Es wurden mehr Subplots angegeben, als angelegt wurden, oder ein Subplot wird mehrfach referenziert.$(Die Zahl und die Anordnung der Subplots muss vor dem eigentlichen Plotvorgang bekannt sein und eingehalten werden.)", _option) << endl;
+                        cerr << LineBreak("|-> Siehe auch \"help plot\" und \"help subplot\"", _option) << endl;
                         if (oLogFile.is_open())
-                            oLogFile << toString(time(0) - tTimeZero, true) << "> FEHLER: Prozess vom Benutzer abgebrochen" << endl;
-                        break;*/
+                            oLogFile << toString(time(0) - tTimeZero, true) << "> FEHLER: Es wurden mehr Subplots angefordert als angelegt sind." << endl;
+                        break;
                     default:
                         cerr << LineBreak("|-> Der Fehler Nr. " + toString(e) + " trat auf und zwang NumeRe, alle laufenden Auswertungen abzubrechen.", _option) << endl;
                         if (oLogFile.is_open())
