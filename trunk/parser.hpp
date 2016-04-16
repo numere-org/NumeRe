@@ -149,6 +149,8 @@ value_type parser_time();
 value_type parser_date(value_type, value_type);
 value_type parser_isnan(value_type);
 value_type parser_interval(value_type, value_type, value_type);
+value_type parser_numereversion();
+value_type parser_cot(value_type);
 
 
 value_type parser_SelfTest(Parser&);

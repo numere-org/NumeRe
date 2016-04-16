@@ -69,6 +69,7 @@ class Debugger
                                 double* dLocalVars,
                                 string** sLocalStrings,
                                 unsigned int nLocalStrMapSize,
+                                const map<string,string>& sStringMap,
                                 /*string** sVarMap,
                                 unsigned int nVarMapSize,*/
                                 const string& _sErraticCommand,

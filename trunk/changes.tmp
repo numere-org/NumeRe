@@ -20,3 +20,18 @@ Fixed	Plotstile, an die Datensaetze uebergeben werden, die jedoch nicht damit um
 Fixed	"data -paste" entnimmt nun den Inhalt des Clipboards automatisch oder zeigt die Einfuegemaske, falls der Inhalt des Clipboards nicht in eine nur-text Tabelle umgewandelt werden kann oder keine numerischen Werte enthaelt.
 Fixed	"compose"-Bloecke wurden bei Prozedurinstallationen nicht korrekt kopiert. Wurde behoben.
 New	Subplot-Funktionalitaet hinzugefuegt: "compose" kann mit dem Parameter "-multiplot=LINES,COLS" versehen werden, so dass ein Gitter fuer mehrere Plots in einer Datei erzeugt wird. "subplot" leitet dabei einen neuen Unterplot ein. Unterplots koennen sich auch ueber mehrere Spalten und Zeilen der Ausgabe erstrecken.
+Fixed	"for (i<=N)" wird nun korrekt als fehlerhafte Eingabe abgefangen.
+Fixed	Moeglicherweise (!) wurde ein Schleifenfehler entfernt, der verhinderte, dass Schleifen unter bestimmten Umstaenden nicht mehr korrekt ausgefuehrt werden koennen.
+Cleaned	Die Zahl der maximalen Datenpunkte fuer 2- und 3-D-Plots wurde auf 1M begrenzt. (1000x1000 bzw. 100x100x100)
+Cleaned	"clear" kann nun auch mit "data()", "CACHE()" und "string()" verwendet werden.
+Cleaned	"print STRING" als Alias zu "STRING -print" eingefuehrt.
+Cleaned	"for"-Schleifen erfordern nun zwingend Klammern um ihr Argument.
+Cleaned	Schleifen und Verzweigungen muessen nun nicht mehr zwingend auf mehrere Zeilen verteilt werden: "if (COND) EXPR2 else EXPR2 endif" ist daher in einer Zeile moeglich
+Added	Die Funktion "cot(x)" berechnet den Kotangens von x.
+Added	Die Funktion "version()" gibt die NumeRe-Versionsnummer als natürliche Zahl zurueck.
+Fixed	Der seltsame Definitionsfehler bei speziellen Funktionsnamen "Argumente konnten nicht gefunden werden" wurde behoben.
+Cleaned	Der seltsame Darstellungsfehler bei "list -var" nachdem "list -define" ausgefuehrt wurde, wurde behoben.
+Cleaned	Tritt das Kommando "start" nun in einem Script auf, wird nun eine Fehlermeldung angezeigt.
+Fixed	"export data() -file=FILE" sollte nun tatsaechlich endlich funktionieren.
+Fixed	"extrema" gibt nun keine doppelten Indices mehr zurueck.
+Fixed	"plot" kann wieder mit einem Index-Datensatz verwendet werden.

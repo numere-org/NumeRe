@@ -331,7 +331,7 @@ namespace big_endian_io
 }
 
 
-
+void evalRecursiveExpressions(string& sExpr);
 
 
 #endif
