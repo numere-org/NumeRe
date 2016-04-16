@@ -975,6 +975,12 @@ value_type parser_time()
     return time(0);
 }
 
+// --> NumeRe-Version als natuerliche Zahl <--
+value_type parser_numereversion()
+{
+    return 100.0*AutoVersion::MAJOR+10.0*AutoVersion::MINOR + AutoVersion::BUILD;
+}
+
 // --> Wandelt Zeitangaben in Sekunden in ein Datum um <--
 value_type parser_date(value_type vTime, value_type vType)
 {
@@ -1021,6 +1027,16 @@ value_type parser_interval(value_type v, value_type vLeft, value_type vRight)
         return v;
     else
         return NAN;
+}
+
+// --> Co-Tan(x) <--
+value_type parser_cot(value_type x)
+{
+    if (isnan(x) || isinf(x))
+        return NAN;
+    if (!sin(x))
+        return INFINITY;
+    return cos(x) / sin(x);
 }
 
 // --> Diese Funktion wird zu Beginn von NumeRe aufgerufen und testet den muParser <--
@@ -1164,11 +1180,13 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
     _parser.DefineFun(_T("is_string"), parser_is_string, false);                    // is_string(EXPR)
     _parser.DefineFun(_T("to_value"), parser_Ignore, false);                        // to_value(STRING)
     _parser.DefineFun(_T("time"), parser_time, false);                              // time()
+    _parser.DefineFun(_T("version"), parser_numereversion, true);                   // version()
     _parser.DefineFun(_T("date"), parser_date, false);                              // date(TIME,TYPE)
     _parser.DefineFun(_T("is_nan"), parser_isnan, true);                            // is_nan(x)
     _parser.DefineFun(_T("range"), parser_interval, true);                          // range(x,left,right)
     _parser.DefineFun(_T("Ai"), parser_AiryA, true);                                // Ai(x)
     _parser.DefineFun(_T("Bi"), parser_AiryB, true);                                // Bi(x)
+    _parser.DefineFun(_T("cot"), parser_cot, true);                                 // cot(x)
     _parser.DefineFun(_T("floor"), parser_floor, true);                             // floor(x)
     _parser.DefineFun(_T("roof"), parser_roof, true);                               // roof(x)
     _parser.DefineFun(_T("rect"), parser_rect, true);                               // rect(x,x0,x1)
@@ -1772,132 +1790,13 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
             // --> Nochmals ueberzaehlige Leerzeichen entfernen <--
             StripSpaces(sLine);
 
-            if (sLine.find("+=") != string::npos
-                || sLine.find("-=") != string::npos
-                || sLine.find("*=") != string::npos
-                || sLine.find("/=") != string::npos
-                || sLine.find("^=") != string::npos
-                || sLine.find("++") != string::npos
-                || sLine.find("--") != string::npos)
+            if (!_procedure.getLoop())
             {
-                unsigned int nArgSepPos = 0;
-                for (unsigned int i = 0; i < sLine.length(); i++)
-                {
-                    if (isInQuotes(sLine, i, false))
-                        continue;
-                    if (sLine[i] == '(' || sLine[i] == '{')
-                        i += getMatchingParenthesis(sLine.substr(i));
-                    if (sLine[i] == ',')
-                        nArgSepPos = i;
-                    if (sLine.substr(i,2) == "+="
-                        || sLine.substr(i,2) == "-="
-                        || sLine.substr(i,2) == "*="
-                        || sLine.substr(i,2) == "/="
-                        || sLine.substr(i,2) == "^=")
-                    {
-                        if (sLine.find(',', i) != string::npos)
-                        {
-                            for (unsigned int j = i; j < sLine.length(); j++)
-                            {
-                                if (sLine[j] == '(')
-                                    j += getMatchingParenthesis(sLine.substr(j));
-                                if (sLine[j] == ',' || j+1 == sLine.length())
-                                {
-                                    if (!nArgSepPos && j+1 != sLine.length())
-                                        sLine = sLine.substr(0, i)
-                                            + " = "
-                                            + sLine.substr(0, i)
-                                            + sLine[i]
-                                            + "("
-                                            + sLine.substr(i+2, j-i-2)
-                                            + ") "
-                                            + sLine.substr(j);
-                                    else if (nArgSepPos && j+1 != sLine.length())
-                                        sLine = sLine.substr(0, i)
-                                            + " = "
-                                            + sLine.substr(nArgSepPos+1, i-nArgSepPos-1)
-                                            + sLine[i]
-                                            + "("
-                                            + sLine.substr(i+2, j-i-2)
-                                            + ") "
-                                            + sLine.substr(j);
-                                    else if (!nArgSepPos && j+1 == sLine.length())
-                                        sLine = sLine.substr(0, i)
-                                            + " = "
-                                            + sLine.substr(0, i)
-                                            + sLine[i]
-                                            + "("
-                                            + sLine.substr(i+2)
-                                            + ") ";
-                                    else
-                                        sLine = sLine.substr(0, i)
-                                            + " = "
-                                            + sLine.substr(nArgSepPos+1, i-nArgSepPos-1)
-                                            + sLine[i]
-                                            + "("
-                                            + sLine.substr(i+2)
-                                            + ") ";
-
-                                    for (unsigned int k = i; k < sLine.length(); k++)
-                                    {
-                                        if (sLine[k] == '(')
-                                            k += getMatchingParenthesis(sLine.substr(k));
-                                        if (sLine[k] == ',')
-                                        {
-                                            nArgSepPos = k;
-                                            i = k;
-                                            break;
-                                        }
-                                    }
-                                    //cerr << sLine << " | nArgSepPos=" << nArgSepPos << endl;
-                                    break;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            if (!nArgSepPos)
-                                sLine = sLine.substr(0, i)
-                                    + " = "
-                                    + sLine.substr(0, i)
-                                    + sLine[i]
-                                    + "("
-                                    + sLine.substr(i+2)
-                                    + ")";
-                            else
-                                sLine = sLine.substr(0, i)
-                                    + " = "
-                                    + sLine.substr(nArgSepPos+1, i-nArgSepPos-1)
-                                    + sLine[i]
-                                    + "("
-                                    + sLine.substr(i+2)
-                                    + ")";
-                            break;
-                        }
-                    }
-                    if (sLine.substr(i,2) == "++" || sLine.substr(i,2) == "--")
-                    {
-                        if (!nArgSepPos)
-                        {
-                            sLine = sLine.substr(0, i)
-                                + " = "
-                                + sLine.substr(0, i)
-                                + sLine[i]
-                                + "1"
-                                + sLine.substr(i+2);
-                        }
-                        else
-                            sLine = sLine.substr(0, i)
-                                + " = "
-                                + sLine.substr(nArgSepPos+1, i-nArgSepPos-1)
-                                + sLine[i]
-                                + "1"
-                                + sLine.substr(i+2);
-                    }
-                }
-                if (_option.getbDebug())
-                    cerr << "|-> DEBUG: sLine = " << sLine << endl;
+                evalRecursiveExpressions(sLine);
             }
+
+            if (_option.getbDebug())
+                cerr << "|-> DEBUG: sLine = " << sLine << endl;
 
             // --> Befinden wir uns in einem Loop? Dann ist nLoop > -1! <--
             if (_procedure.getLoop() || sLine.substr(0,3) == "for" || sLine.substr(0,2) == "if" || sLine.substr(0,5) == "while")
@@ -2243,6 +2142,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                 oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: " << e.GetMsg() << endl;
             if (sCmdCache.length())
                 sCmdCache.clear();
+            _parser.DeactivateLoopMode();
 
         }
         catch (const std::bad_alloc &e)
@@ -2316,6 +2216,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                 oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: " << e.what() << endl;
             if (sCmdCache.length())
                 sCmdCache.clear();
+            _parser.DeactivateLoopMode();
         }
         catch (errorcode& e)
         {
@@ -2684,6 +2585,12 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                         if (oLogFile.is_open())
                             oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: Script existiert nicht" << endl;
                         break;
+                    case CANNOT_CALL_SCRIPT_RECURSIVELY:
+                        cerr << LineBreak("|-> Scripte können nicht rekursiv aufgerufen werden.$Verwende NumeRe-Prozeduren für rekursive Aufrufe von Befehlsketten.", _option) << endl;
+                        cerr << LineBreak("|-> SIEHE AUCH: \"help script\" und \"help procedure\"", _option) << endl;
+                        if (oLogFile.is_open())
+                            oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: Script können nicht rekursiv aufgerufen werden" << endl;
+                        break;
                     case CANNOT_SORT_DATA:
                         cerr << LineBreak("|-> Die Daten aus \"data()\" konnten nicht sortiert werden.", _option) << endl;
                         cerr << LineBreak("|-> SIEHE AUCH: \"help data\"", _option) << endl;
@@ -2691,22 +2598,22 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                             oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: Konnte data() nicht sortieren" << endl;
                         break;
                     case CANNOT_SORT_CACHE:
-                        cerr << LineBreak("|-> Die Daten aus \"cache()\" konnten nicht sortiert werden.", _option) << endl;
+                        cerr << LineBreak("|-> Die Daten aus dem Cache konnten nicht sortiert werden.", _option) << endl;
                         cerr << LineBreak("|-> SIEHE AUCH: \"help cache\"", _option) << endl;
                         if (oLogFile.is_open())
-                            oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: Konnte cache() nicht sortieren" << endl;
+                            oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: Konnte den Cache nicht sortieren" << endl;
                         break;
                     case CANNOT_SMOOTH_CACHE:
                         cerr << LineBreak("|-> Die Daten konnten nicht geglättet werden.", _option) << endl;
                         cerr << LineBreak("|-> SIEHE AUCH: \"help smooth\"", _option) << endl;
                         if (oLogFile.is_open())
-                            oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: Konnte cache() nicht glätten" << endl;
+                            oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: Konnte den Cache nicht glätten" << endl;
                         break;
                     case CANNOT_RETOQUE_CACHE:
                         cerr << LineBreak("|-> Die Daten konnten nicht retuschiert werden.", _option) << endl;
                         cerr << LineBreak("|-> SIEHE AUCH: \"help retoque\"", _option) << endl;
                         if (oLogFile.is_open())
-                            oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: Konnte cache() nicht retuschieren" << endl;
+                            oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: Konnte den Cache nicht retuschieren" << endl;
                         break;
                     case CANNOT_RESAMPLE_CACHE:
                         cerr << LineBreak("|-> Resampling konnte nicht erfolgreich abgeschlossen werden.", _option) << endl;
@@ -3240,6 +3147,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
             nErrorIndices[1] = -1;
             if (sCmdCache.length())
                 sCmdCache.clear();
+            _parser.DeactivateLoopMode();
         }
         catch (...)
         {
@@ -3257,6 +3165,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             if (sCmdCache.length())
                 sCmdCache.clear();
+            _parser.DeactivateLoopMode();
         }
     } // while running
     return 0;

@@ -1023,6 +1023,13 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                         {
                             bPrintedStatus = false;
                             __i = for_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i);
+                            if (!bReturnSignal && !bMask && __i != -1)
+                            {
+                                if (bSilent)
+                                    cerr << "\r|FOR> Werte aus ... 100 %: Erfolg!" << endl;
+                                else
+                                    cerr << "|FOR> Erfolg!" << endl;
+                            }
                         }
                         else
                             __i = for_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i, nth_loop+1);
@@ -1035,6 +1042,13 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                         {
                             bPrintedStatus = false;
                             __i = while_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i);
+                            if (!bReturnSignal && !bMask && __i != -1)
+                            {
+                                if (bSilent)
+                                    cerr << "\r|WHL> Werte aus ...: Erfolg!" << endl;
+                                else
+                                    cerr << "|WHL> Erfolg!" << endl;
+                            }
                         }
                         else
                             __i = while_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i, nth_loop+1);
@@ -1254,6 +1268,13 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                                 {
                                     bPrintedStatus = false;
                                     __i = for_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i);
+                                    if (!bReturnSignal && !bMask && __i != -1)
+                                    {
+                                        if (bSilent)
+                                            cerr << "\r|FOR> Werte aus ... 100 %: Erfolg!" << endl;
+                                        else
+                                            cerr << "|FOR> Erfolg!" << endl;
+                                    }
                                 }
                                 else
                                     __i = for_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i, nth_loop+1);
@@ -1266,6 +1287,13 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                                 {
                                     bPrintedStatus = false;
                                     __i = while_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i);
+                                    if (!bReturnSignal && !bMask && __i != -1)
+                                    {
+                                        if (bSilent)
+                                            cerr << "\r|WHL> Werte aus ...: Erfolg!" << endl;
+                                        else
+                                            cerr << "|WHL> Erfolg!" << endl;
+                                    }
                                 }
                                 else
                                     __i = while_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i, nth_loop+1);
@@ -1403,6 +1431,13 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                             //mu::console() << endl;
                             bPrintedStatus = false;
                             __i = for_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i);
+                            if (!bReturnSignal && !bMask && __i != -1)
+                            {
+                                if (bSilent)
+                                    cerr << "\r|FOR> Werte aus ... 100 %: Erfolg!" << endl;
+                                else
+                                    cerr << "|FOR> Erfolg!" << endl;
+                            }
                         }
                         else
                             __i = for_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i, nth_loop+1);
@@ -1415,6 +1450,13 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                         {
                             bPrintedStatus = false;
                             __i = while_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i);
+                            if (!bReturnSignal && !bMask && __i != -1)
+                            {
+                                if (bSilent)
+                                    cerr << "\r|WHL> Werte aus ...: Erfolg!" << endl;
+                                else
+                                    cerr << "|WHL> Erfolg!" << endl;
+                            }
                         }
                         else
                             __i = while_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i, nth_loop+1);
@@ -1502,6 +1544,7 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
 void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& _functions, Settings& _option, Output& _out, PlotData& _pData, Script& _script)
 {
     bool bDebuggingBreakPoint = (__sCmd.substr(__sCmd.find_first_not_of(' '),2) == "|>");
+    string sAppendedExpression = "";
     if (bDebuggingBreakPoint)
     {
         __sCmd.erase(__sCmd.find_first_not_of(' '),2);
@@ -1529,132 +1572,6 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
         throw FUNCTION_ERROR;
     }
 
-    if (__sCmd.find("+=") != string::npos
-        || __sCmd.find("-=") != string::npos
-        || __sCmd.find("*=") != string::npos
-        || __sCmd.find("/=") != string::npos
-        || __sCmd.find("^=") != string::npos
-        /*|| __sCmd.find("++") != string::npos
-        || __sCmd.find("--") != string::npos*/)
-    {
-        unsigned int nArgSepPos = 0;
-        for (unsigned int i = 0; i < __sCmd.length(); i++)
-        {
-            if (isInQuotes(__sCmd, i, false))
-                continue;
-            if (__sCmd[i] == '(' || __sCmd[i] == '{')
-                i += getMatchingParenthesis(__sCmd.substr(i));
-            if (__sCmd[i] == ',')
-                nArgSepPos = i;
-            if (__sCmd.substr(i,2) == "+="
-                || __sCmd.substr(i,2) == "-="
-                || __sCmd.substr(i,2) == "*="
-                || __sCmd.substr(i,2) == "/="
-                || __sCmd.substr(i,2) == "^=")
-            {
-                if (__sCmd.find(',', i) != string::npos)
-                {
-                    for (unsigned int j = i; j < __sCmd.length(); j++)
-                    {
-                        if (__sCmd[j] == '(')
-                            j += getMatchingParenthesis(__sCmd.substr(j));
-                        if (__sCmd[j] == ',' || j+1 == __sCmd.length())
-                        {
-                            if (!nArgSepPos && j+1 != __sCmd.length())
-                                __sCmd = __sCmd.substr(0, i)
-                                    + " = "
-                                    + __sCmd.substr(0, i)
-                                    + __sCmd[i]
-                                    + "("
-                                    + __sCmd.substr(i+2, j-i-2)
-                                    + ") "
-                                    + __sCmd.substr(j);
-                            else if (nArgSepPos && j+1 != __sCmd.length())
-                                __sCmd = __sCmd.substr(0, i)
-                                    + " = "
-                                    + __sCmd.substr(nArgSepPos+1, i-nArgSepPos-1)
-                                    + __sCmd[i]
-                                    + "("
-                                    + __sCmd.substr(i+2, j-i-2)
-                                    + ") "
-                                    + __sCmd.substr(j);
-                            else if (!nArgSepPos && j+1 == __sCmd.length())
-                                __sCmd = __sCmd.substr(0, i)
-                                    + " = "
-                                    + __sCmd.substr(0, i)
-                                    + __sCmd[i]
-                                    + "("
-                                    + __sCmd.substr(i+2)
-                                    + ") ";
-                            else
-                                __sCmd = __sCmd.substr(0, i)
-                                    + " = "
-                                    + __sCmd.substr(nArgSepPos+1, i-nArgSepPos-1)
-                                    + __sCmd[i]
-                                    + "("
-                                    + __sCmd.substr(i+2)
-                                    + ") ";
-
-                            for (unsigned int k = i; k < __sCmd.length(); k++)
-                            {
-                                if (__sCmd[k] == '(')
-                                    k += getMatchingParenthesis(__sCmd.substr(k));
-                                if (__sCmd[k] == ',')
-                                {
-                                    nArgSepPos = k;
-                                    i = k;
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    if (!nArgSepPos)
-                        __sCmd = __sCmd.substr(0, i)
-                            + " = "
-                            + __sCmd.substr(0, i)
-                            + __sCmd[i]
-                            + "("
-                            + __sCmd.substr(i+2)
-                            + ")";
-                    else
-                        __sCmd = __sCmd.substr(0, i)
-                            + " = "
-                            + __sCmd.substr(nArgSepPos+1, i-nArgSepPos-1)
-                            + __sCmd[i]
-                            + "("
-                            + __sCmd.substr(i+2)
-                            + ")";
-                    break;
-                }
-            }
-            /*if (__sCmd.substr(i,2) == "++" || __sCmd.substr(i,2) == "--")
-            {
-                if (!nArgSepPos)
-                {
-                    __sCmd = __sCmd.substr(0, i)
-                        + " = "
-                        + __sCmd.substr(0, i)
-                        + __sCmd[i]
-                        + "1"
-                        + __sCmd.substr(i+2);
-                }
-                else
-                    __sCmd = __sCmd.substr(0, i)
-                        + " = "
-                        + __sCmd.substr(nArgSepPos+1, i-nArgSepPos-1)
-                        + __sCmd[i]
-                        + "1"
-                        + __sCmd.substr(i+2);
-            }*/
-        }
-        if (_option.getbDebug())
-            cerr << "|-> DEBUG: __sCmd = " << __sCmd << endl;
-    }
-
 
     StripSpaces(__sCmd);
 
@@ -1667,13 +1584,16 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
         || __sCmd.substr(0,8) == "endwhile")
     {
         if (!validateParenthesisNumber(__sCmd))
+        {
+            reset(_parser);
             throw UNMATCHED_PARENTHESIS;
+        }
         if (__sCmd.substr(0,3) == "for")
         {
             sLoopNames += ";FOR";
             nLoop++;
             // --> Pruefen wir, ob auch Grenzen eingegeben wurden <--
-            if (__sCmd.find('=') == string::npos)
+            if (__sCmd.find('=') == string::npos || __sCmd.find(':') == string::npos || __sCmd.find('(') == string::npos)
             {
                 cerr << LineBreak("|-> Bitte Grenzen und Zählvariable angeben:", _option) << endl;
                 string sTemp = "";
@@ -1683,30 +1603,36 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
                     getline(cin, sTemp);
                     StripSpaces(sTemp);
 
-                    if (sTemp.find('=') == string::npos)
+                    if (sTemp.find('=') == string::npos || sTemp.find('|') == string::npos || sTemp.find('(') == string::npos)
                         sTemp = "";
                 }
                 while (!sTemp.length());
                 __sCmd = "for " + sTemp;
             }
             // --> Schneller: ':' durch ',' ersetzen, da der Parser dann seine eigenen Mulit-Expr. einsetzen kann <--
-            for (unsigned int i = 3; i < __sCmd.length(); i++)
+            /*for (unsigned int i = 3; i < __sCmd.length(); i++)
             {
                 if (__sCmd[i] != ' ')
                 {
-                    if (__sCmd[i] == '(' && __sCmd[__sCmd.length()-1] == ')')
+                    if (__sCmd[i] == '(' && __sCmd.back() == ')')
                     {
                         __sCmd[i] = ' ';
-                        __sCmd = __sCmd.substr(0,__sCmd.length()-1);
+                        __sCmd.pop_back();
                     }
                     break;
                 }
-            }
+            }*/
             unsigned int nPos = __sCmd.find(':');
-            if (__sCmd.find('(') != string::npos && __sCmd.find('(') < nPos)
+            if (__sCmd.find('(', __sCmd.find('(')+1) != string::npos && __sCmd.find('(', __sCmd.find('(')+1) < nPos)
             {
-                nPos = getMatchingParenthesis(__sCmd.substr(__sCmd.find('(')));
+                nPos = getMatchingParenthesis(__sCmd.substr(__sCmd.find('(', __sCmd.find('(')+1)));
                 nPos = __sCmd.find(':', nPos);
+            }
+
+            if (nPos == string::npos)
+            {
+                reset(_parser);
+                throw CANNOT_EVAL_FOR;
             }
             __sCmd.replace(nPos, 1, ",");
         }
@@ -1888,6 +1814,24 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
         else
             return;
 
+        if (__sCmd.find('(') != string::npos
+            && (__sCmd.substr(0,3) == "for"
+                || __sCmd.find(">>if") != string::npos
+                || __sCmd.find(">>elseif") != string::npos
+                || __sCmd.substr(0,5) == "while"))
+        {
+            sAppendedExpression = __sCmd.substr(getMatchingParenthesis(__sCmd)+1);
+            __sCmd.erase(getMatchingParenthesis(__sCmd)+1);
+        }
+        else if (__sCmd.find(' ',4) != string::npos
+            && __sCmd.find_first_not_of(' ', __sCmd.find(' ', 4)) != string::npos
+            && __sCmd[__sCmd.find_first_not_of(' ', __sCmd.find(' ',4))] != '-')
+        {
+            sAppendedExpression = __sCmd.substr(__sCmd.find(' ',4));
+            __sCmd.erase(__sCmd.find(' ',4));
+        }
+        StripSpaces(sAppendedExpression);
+        StripSpaces(__sCmd);
         if (sCmd[nCmd][0].length())
             nCmd++;
         sCmd[nCmd][0] += __sCmd;
@@ -2127,6 +2071,43 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
     }
     else
     {
+        if (__sCmd.find(" for ") != string::npos
+            || __sCmd.find(" for(") != string::npos
+            || __sCmd.find(" endfor") != string::npos
+            || __sCmd.find(" if ") != string::npos
+            || __sCmd.find(" if(") != string::npos
+            || __sCmd.find(" else") != string::npos
+            || __sCmd.find(" elseif ") != string::npos
+            || __sCmd.find(" elseif(") != string::npos
+            || __sCmd.find(" endif") != string::npos
+            || __sCmd.find(" while ") != string::npos
+            || __sCmd.find(" while(") != string::npos
+            || __sCmd.find(" endwhile") != string::npos)
+        {
+            for (unsigned int n = 0; n < __sCmd.length(); n++)
+            {
+                if (__sCmd[n] == ' ' && !isInQuotes(__sCmd, n))
+                {
+                    if (__sCmd.substr(n,5) == " for "
+                        || __sCmd.substr(n,5) == " for("
+                        || __sCmd.substr(n,7) == " endfor"
+                        || __sCmd.substr(n,4) == " if "
+                        || __sCmd.substr(n,4) == " if("
+                        || __sCmd.substr(n,5) == " else"
+                        || __sCmd.substr(n,8) == " elseif "
+                        || __sCmd.substr(n,8) == " elseif("
+                        || __sCmd.substr(n,6) == " endif"
+                        || __sCmd.substr(n,7) == " while "
+                        || __sCmd.substr(n,7) == " while("
+                        || __sCmd.substr(n,9) == " endwhile")
+                    {
+                        sAppendedExpression = __sCmd.substr(n+1);
+                        __sCmd.erase(n);
+                        break;
+                    }
+                }
+            }
+        }
         if (bDebuggingBreakPoint)
             __sCmd.insert(0,"|> ");
         sCmd[nCmd][1] = __sCmd;
@@ -2149,6 +2130,8 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
         cerr << "|-> DEBUG: nWhile = " << nWhile << endl;
         cerr << "|-> DEBUG: sLoopNames = " << sLoopNames << endl;
     }
+    if (sAppendedExpression.length())
+        setCommand(sAppendedExpression, _parser, _data, _functions, _option, _out, _pData, _script);
     return;
 }
 
@@ -2177,7 +2160,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
             continue;
         if (sCmd[i][0].substr(0,3) == "for")
         {
-            sVar = sCmd[i][0].substr(sCmd[i][0].find(' ')+1);
+            sVar = sCmd[i][0].substr(sCmd[i][0].find('(')+1);
             sVar = sVar.substr(0, sVar.find('='));
             StripSpaces(sVar);
             if (sVars.find(";" + sVar + ";") == string::npos)
@@ -2190,6 +2173,8 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
                     cerr << "|-> DEBUG: nVarArray = " << nVarArray << endl;
                 }
             }
+            sCmd[i][0][sCmd[i][0].find('(')] = ' ';
+            sCmd[i][0].pop_back();
         }
         if ((sCmd[i][0].substr(0,6) == "endfor" || sCmd[i][0].substr(0,8) == "endwhile" || sCmd[i][0].find(">>endif") != string::npos) && matchParams(sCmd[i][0], "sv"))
             bSilent = false;
@@ -2411,6 +2396,122 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
                         //cerr << sCmd[i][1] << endl;
                     }
                 }
+                // Könnte Schwierigkeiten machen
+                if (sCmd[i][1].find("+=") != string::npos
+                    || sCmd[i][1].find("-=") != string::npos
+                    || sCmd[i][1].find("*=") != string::npos
+                    || sCmd[i][1].find("/=") != string::npos
+                    || sCmd[i][1].find("^=") != string::npos)
+                {
+                    bool bBreakPoint = (sCmd[i][1].substr(sCmd[i][1].find_first_not_of(" \t"),2) == "|>");
+                    if (bBreakPoint)
+                    {
+                        sCmd[i][1].erase(sCmd[i][1].find_first_not_of(" \t"),2);
+                        StripSpaces(sCmd[i][1]);
+                    }
+                    unsigned int nArgSepPos = 0;
+                    for (unsigned int i = 0; i < sCmd[i][1].length(); i++)
+                    {
+                        if (isInQuotes(sCmd[i][1], i, false))
+                            continue;
+                        if (sCmd[i][1][i] == '(' || sCmd[i][1][i] == '{')
+                            i += getMatchingParenthesis(sCmd[i][1].substr(i));
+                        if (sCmd[i][1][i] == ',')
+                            nArgSepPos = i;
+                        if (sCmd[i][1].substr(i,2) == "+="
+                            || sCmd[i][1].substr(i,2) == "-="
+                            || sCmd[i][1].substr(i,2) == "*="
+                            || sCmd[i][1].substr(i,2) == "/="
+                            || sCmd[i][1].substr(i,2) == "^=")
+                        {
+                            if (sCmd[i][1].find(',', i) != string::npos)
+                            {
+                                for (unsigned int j = i; j < sCmd[i][1].length(); j++)
+                                {
+                                    if (sCmd[i][1][j] == '(')
+                                        j += getMatchingParenthesis(sCmd[i][1].substr(j));
+                                    if (sCmd[i][1][j] == ',' || j+1 == sCmd[i][1].length())
+                                    {
+                                        if (!nArgSepPos && j+1 != sCmd[i][1].length())
+                                            sCmd[i][1] = sCmd[i][1].substr(0, i)
+                                                + " = "
+                                                + sCmd[i][1].substr(0, i)
+                                                + sCmd[i][1][i]
+                                                + "("
+                                                + sCmd[i][1].substr(i+2, j-i-2)
+                                                + ") "
+                                                + sCmd[i][1].substr(j);
+                                        else if (nArgSepPos && j+1 != sCmd[i][1].length())
+                                            sCmd[i][1] = sCmd[i][1].substr(0, i)
+                                                + " = "
+                                                + sCmd[i][1].substr(nArgSepPos+1, i-nArgSepPos-1)
+                                                + sCmd[i][1][i]
+                                                + "("
+                                                + sCmd[i][1].substr(i+2, j-i-2)
+                                                + ") "
+                                                + sCmd[i][1].substr(j);
+                                        else if (!nArgSepPos && j+1 == sCmd[i][1].length())
+                                            sCmd[i][1] = sCmd[i][1].substr(0, i)
+                                                + " = "
+                                                + sCmd[i][1].substr(0, i)
+                                                + sCmd[i][1][i]
+                                                + "("
+                                                + sCmd[i][1].substr(i+2)
+                                                + ") ";
+                                        else
+                                            sCmd[i][1] = sCmd[i][1].substr(0, i)
+                                                + " = "
+                                                + sCmd[i][1].substr(nArgSepPos+1, i-nArgSepPos-1)
+                                                + sCmd[i][1][i]
+                                                + "("
+                                                + sCmd[i][1].substr(i+2)
+                                                + ") ";
+
+                                        for (unsigned int k = i; k < sCmd[i][1].length(); k++)
+                                        {
+                                            if (sCmd[i][1][k] == '(')
+                                                k += getMatchingParenthesis(sCmd[i][1].substr(k));
+                                            if (sCmd[i][1][k] == ',')
+                                            {
+                                                nArgSepPos = k;
+                                                i = k;
+                                                break;
+                                            }
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if (!nArgSepPos)
+                                    sCmd[i][1] = sCmd[i][1].substr(0, i)
+                                        + " = "
+                                        + sCmd[i][1].substr(0, i)
+                                        + sCmd[i][1][i]
+                                        + "("
+                                        + sCmd[i][1].substr(i+2)
+                                        + ")";
+                                else
+                                    sCmd[i][1] = sCmd[i][1].substr(0, i)
+                                        + " = "
+                                        + sCmd[i][1].substr(nArgSepPos+1, i-nArgSepPos-1)
+                                        + sCmd[i][1][i]
+                                        + "("
+                                        + sCmd[i][1].substr(i+2)
+                                        + ")";
+                                break;
+                            }
+                        }
+                    }
+                    if (bBreakPoint)
+                        sCmd[i][1].insert(0,"|> ");
+
+                    if (_option.getbDebug())
+                        cerr << "|-> DEBUG: sCmd[i][1] = " << sCmd[i][1] << endl;
+                }
+
+
                 StripSpaces(sCmd[i][1]);
                 /*if (sCmd[i][1][sCmd[i][1].length()-1] == ' ')
                     sCmd[i][1].pop_back();*/
@@ -2463,13 +2564,6 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
                     cerr << endl;
                 throw CANNOT_EVAL_IF;
             }
-            /*else
-            {
-                if (bSilent)
-                    cerr << "\r|IF-> Erfolgreich ausgewertet." << endl;
-                else
-                    cerr << "|IF-> Erfolg!\n";
-            }*/
         }
     }
     catch (...)
@@ -2583,8 +2677,7 @@ void Loop::reset(Parser& _parser)
         _parser.DeactivateLoopMode();
         bUseLoopParsingMode = false;
     }
-    if (_parser.IsLockedPause())
-        bLockedPauseMode = false;
+    bLockedPauseMode = false;
     _parser.ClearVectorVars();
     return;
 }
@@ -2616,7 +2709,7 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
         if (_option.getUseDebugger())
         {
             _option._debug.gatherLoopBasedInformations(sLine, nCmd-nthCmd, mVarMap, vVarArray, sVarArray, nVarArray);
-            evalDebuggerBreakPoint(_option);
+            evalDebuggerBreakPoint(_option, _data.getStringVars());
         }
     }
 
@@ -2923,131 +3016,8 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
     }
 
 
-    if (sLine.find("+=") != string::npos
-        || sLine.find("-=") != string::npos
-        || sLine.find("*=") != string::npos
-        || sLine.find("/=") != string::npos
-        || sLine.find("^=") != string::npos
-        || sLine.find("++") != string::npos
-        || sLine.find("--") != string::npos)
-    {
-        unsigned int nArgSepPos = 0;
-        for (unsigned int i = 0; i < sLine.length(); i++)
-        {
-            if (isInQuotes(sLine, i, false))
-                continue;
-            if (sLine[i] == '(' || sLine[i] == '{')
-                i += getMatchingParenthesis(sLine.substr(i));
-            if (sLine[i] == ',')
-                nArgSepPos = i;
-            if (sLine.substr(i,2) == "+="
-                || sLine.substr(i,2) == "-="
-                || sLine.substr(i,2) == "*="
-                || sLine.substr(i,2) == "/="
-                || sLine.substr(i,2) == "^=")
-            {
-                if (sLine.find(',', i) != string::npos)
-                {
-                    for (unsigned int j = i; j < sLine.length(); j++)
-                    {
-                        if (sLine[j] == '(')
-                            j += getMatchingParenthesis(sLine.substr(j));
-                        if (sLine[j] == ',' || j+1 == sLine.length())
-                        {
-                            if (!nArgSepPos && j+1 != sLine.length())
-                                sLine = sLine.substr(0, i)
-                                    + " = "
-                                    + sLine.substr(0, i)
-                                    + sLine[i]
-                                    + "("
-                                    + sLine.substr(i+2, j-i-2)
-                                    + ") "
-                                    + sLine.substr(j);
-                            else if (nArgSepPos && j+1 != sLine.length())
-                                sLine = sLine.substr(0, i)
-                                    + " = "
-                                    + sLine.substr(nArgSepPos+1, i-nArgSepPos-1)
-                                    + sLine[i]
-                                    + "("
-                                    + sLine.substr(i+2, j-i-2)
-                                    + ") "
-                                    + sLine.substr(j);
-                            else if (!nArgSepPos && j+1 == sLine.length())
-                                sLine = sLine.substr(0, i)
-                                    + " = "
-                                    + sLine.substr(0, i)
-                                    + sLine[i]
-                                    + "("
-                                    + sLine.substr(i+2)
-                                    + ") ";
-                            else
-                                sLine = sLine.substr(0, i)
-                                    + " = "
-                                    + sLine.substr(nArgSepPos+1, i-nArgSepPos-1)
-                                    + sLine[i]
-                                    + "("
-                                    + sLine.substr(i+2)
-                                    + ") ";
+    evalRecursiveExpressions(sLine);
 
-                            for (unsigned int k = i; k < sLine.length(); k++)
-                            {
-                                if (sLine[k] == '(')
-                                    k += getMatchingParenthesis(sLine.substr(k));
-                                if (sLine[k] == ',')
-                                {
-                                    nArgSepPos = k;
-                                    i = k;
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    if (!nArgSepPos)
-                        sLine = sLine.substr(0, i)
-                            + " = "
-                            + sLine.substr(0, i)
-                            + sLine[i]
-                            + "("
-                            + sLine.substr(i+2)
-                            + ")";
-                    else
-                        sLine = sLine.substr(0, i)
-                            + " = "
-                            + sLine.substr(nArgSepPos+1, i-nArgSepPos-1)
-                            + sLine[i]
-                            + "("
-                            + sLine.substr(i+2)
-                            + ")";
-                    break;
-                }
-            }
-            if (sLine.substr(i,2) == "++" || sLine.substr(i,2) == "--")
-            {
-                if (!nArgSepPos)
-                {
-                    sLine = sLine.substr(0, i)
-                        + " = "
-                        + sLine.substr(0, i)
-                        + sLine[i]
-                        + "1"
-                        + sLine.substr(i+2);
-                }
-                else
-                    sLine = sLine.substr(0, i)
-                        + " = "
-                        + sLine.substr(nArgSepPos+1, i-nArgSepPos-1)
-                        + sLine[i]
-                        + "1"
-                        + sLine.substr(i+2);
-            }
-        }
-        if (_option.getbDebug())
-            cerr << "|-> DEBUG: sLine = " << sLine << endl;
-    }
     // --> Datafile/Cache! <--
     if (!containsStrings(sLine)
         && !_data.containsStringVars(sLine)
@@ -3401,7 +3371,7 @@ void Loop::replaceLocalVars(string& sLine)
     return;
 }
 
-void Loop::evalDebuggerBreakPoint(Settings& _option)
+void Loop::evalDebuggerBreakPoint(Settings& _option, const map<string,string>& sStringMap)
 {
     return;
 }

@@ -73,6 +73,7 @@ void Debugger::gatherInformations(string** sLocalVars,
                         double* dLocalVars,
                         string** sLocalStrings,
                         unsigned int nLocalStrMapSize,
+                        const map<string,string>& sStringMap,
                         /*string** sVarMap,
                         unsigned int nVarMapSize,*/
                         const string& _sErraticCommand,
@@ -103,7 +104,7 @@ void Debugger::gatherInformations(string** sLocalVars,
     {
         while (sErraticCommand.find(sLocalStrings[i][1]) != string::npos)
             sErraticCommand.replace(sErraticCommand.find(sLocalStrings[i][1]), sLocalStrings[i][1].length(), sLocalStrings[i][0]);
-        mLocalStrings[sLocalStrings[i][0]] = sLocalStrings[i][2];
+        mLocalStrings[sLocalStrings[i][0]] = sStringMap.at(sLocalStrings[i][1]);
     }
 
     return;
@@ -202,7 +203,7 @@ string Debugger::printLocalStrings()
     {
         sLocalStrings += iter->first;
         sLocalStrings.append(nLength - (iter->first).length()+2,' ');
-        sLocalStrings += " =   " + iter->second + "\\n";
+        sLocalStrings += " =   \"" + iter->second + "\"\\n";
     }
     if (sLocalStrings.length())
         sLocalStrings.erase(sLocalStrings.length()-2);

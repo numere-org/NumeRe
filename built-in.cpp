@@ -462,9 +462,9 @@ void BI_show_credits(Parser& _parser, Settings& _option)
     cerr << LineBreak("|-> Die Veröffentlichung dieses Programms erfolgt in der Hoffnung, dass es Ihnen von Nutzen sein wird, aber OHNE IRGENDEINE GARANTIE, sogar ohne die implizite Garantie der MARKTREIFE oder der VERWENDBARKEIT FÜR EINEN BESTIMMTEN ZWECK. Details stehen in der GNU General Public Licence." , _option) << endl;
     cerr << LineBreak("|-> Sie sollten ein Exemplar der GNU GPL zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.org/licenses/>.", _option) << endl;
     make_hline(-80);
-    cerr << LineBreak("|-> Konzept/UI: Erik HÄNEL; Mathe-Parser: Ingo BERG; Plotting: Alexey BALAKIN; numerische Algorithmen: GNU Scientific Library; Tokenizer: Boost-Library; Matrix-Algorithmen: Eigen Library; Testing: D. BAMMERT, J. HÄNEL, R. HUTT, K. KILGUS, E. KLOSTER, K. KURZ, M. LÖCHNER, V. SEHRA, G. STADELMANN, R. WANNER, F. WUNDER, J. ZINßER", _option) << endl;
+    cerr << LineBreak("|-> Konzept/UI: Erik HÄNEL; Mathe-Parser: Ingo BERG; Plotting: Alexey BALAKIN; numerische Algorithmen: GNU Scientific Library; Tokenizer: Boost-Library; Matrix-Algorithmen: Eigen Library; Testing: D. BAMMERT, J. HÄNEL, R. HUTT, K. KILGUS, E. KLOSTER, K. KURZ, M. LÖCHNER, L. SAHINOVIC, D. SCHMID, V. SEHRA, G. STADELMANN, R. WANNER, F. WUNDER, J. ZINßER", _option) << endl;
 	cerr << "|-> muParser  v  " << _parser.GetVersion(pviBRIEF) << ",   " << (char)184 << " 2011, Ingo Berg             [MIT-Licence]" << endl;
-	cerr << "|-> MathGL    v  2.3.2,   " << (char)184 << " 2012, Alexey A. Balakin     [GNU GPL v2]" << endl;
+	cerr << "|-> MathGL    v  2.3.4,   " << (char)184 << " 2012, Alexey A. Balakin     [GNU GPL v2]" << endl;
 	cerr << "|-> GSL       v    1.8,   " << (char)184 << " 2006, M. Galassi et al.     [GNU GPL v2]" << endl;
 	cerr << "|-> Boost     v 1.56.0,   " << (char)184 << " 2006, Joe Coder             [Boost-Software-Licence]" << endl;
 	cerr << "|-> Eigen     v  3.2.7,   " << (char)184 << " 2008, Gael Guennebaud       [MPL v2]" << endl;
@@ -1832,6 +1832,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             || matchParams(sCmd, "script", '=')
             || matchParams(sCmd, "proc", '=')
             || matchParams(sCmd, "file", '=')
+            || matchParams(sCmd, "plugin", '=')
             || matchParams(sCmd, "cache", '=')
             || sCmd.find("()", findCommand(sCmd).nPos+3) != string::npos
             || sCmd.find('$', findCommand(sCmd).nPos+3) != string::npos)
@@ -2066,7 +2067,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
 
             sArgument = getArgAtPos(sCmd, matchParams(sCmd, "swap", '=')+4);
             _data.swapCaches(sCommand, sArgument);
-            cerr << LineBreak("|-> Der Inhalt von \""+sCommand+"\" wurde erfolgreich mit dem Inhalt von \""+sArgument+"\" getauscht.", _option) << endl;
+            if (_option.getSystemPrintStatus())
+                cerr << LineBreak("|-> Der Inhalt von \""+sCommand+"\" wurde erfolgreich mit dem Inhalt von \""+sArgument+"\" getauscht.", _option) << endl;
             return 1;
         }
         else if ((matchParams(sCmd, "avg")
@@ -2281,21 +2283,21 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
     {
         if (sCommand == "clear")
         {
-            if (matchParams(sCmd, "data"))
+            if (matchParams(sCmd, "data") || sCmd.find(" data()", findCommand(sCmd).nPos) != string::npos)
             {
                 if (matchParams(sCmd, "i") || matchParams(sCmd, "ignore"))
                     BI_remove_data(_data, _option, true);
                 else
                     BI_remove_data(_data, _option);
             }
-            else if (_data.matchCache(sCmd).length())
+            else if (_data.matchCache(sCmd).length() || _data.containsCacheElements(sCmd.substr(findCommand(sCmd).nPos)))
             {
                 if (matchParams(sCmd, "i") || matchParams(sCmd, "ignore"))
                     BI_clear_cache(_data, _option, true);
                 else
                     BI_clear_cache(_data, _option);
             }
-            else if (matchParams(sCmd, "string"))
+            else if (matchParams(sCmd, "string") || sCmd.find(" string()", findCommand(sCmd).nPos) != string::npos)
             {
                 if (_data.clearStringElements())
                 {
@@ -2623,7 +2625,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
 
                         //cerr << sCmd << endl;
                         _data.setCacheStatus(false);
-                        if (containsStrings(sCmd) && BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+                        if (containsStrings(sCmd) && BI_parseStringArgs(sCmd.substr(matchParams(sCmd, "file", '=')), sArgument, _parser, _data, _option))
                         {
                             //cerr << sArgument << endl;
                             _cache.setPrefix(sArgument);
@@ -3257,6 +3259,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
         }
         else if (sCommand == "start")
         {
+            if (_script.isOpen())
+                throw CANNOT_CALL_SCRIPT_RECURSIVELY;
             if (matchParams(sCmd, "script") || matchParams(sCmd, "script", '='))
             {
                 if (_data.containsStringVars(sCmd))
@@ -3331,9 +3335,13 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         throw SCRIPT_NOT_EXIST;
                     }
                 }
+                else
+                    throw CANNOT_CALL_SCRIPT_RECURSIVELY;
             }
             else if (matchParams(sCmd, "start") || matchParams(sCmd, "start", '='))
             {
+                if (_script.isOpen())
+                    throw CANNOT_CALL_SCRIPT_RECURSIVELY;
                 if (_data.containsStringVars(sCmd))
                     _data.getStringValues(sCmd);
                 if (matchParams(sCmd, "install"))
@@ -3609,7 +3617,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             {
                 sArgument = getArgAtPos(sCmd, matchParams(sCmd, _data.matchCache(sCmd, '='), '=')+_data.matchCache(sCmd, '=').length());
                 _data.swapCaches(_data.matchCache(sCmd, '='), sArgument);
-                cerr << LineBreak("|-> Der Inhalt von \""+_data.matchCache(sCmd, '=')+"\" wurde erfolgreich mit dem Inhalt von \""+sArgument+"\" getauscht.", _option) << endl;
+                if (_option.getSystemPrintStatus())
+                    cerr << LineBreak("|-> Der Inhalt von \""+_data.matchCache(sCmd, '=')+"\" wurde erfolgreich mit dem Inhalt von \""+sArgument+"\" getauscht.", _option) << endl;
             }
             return 1;
         }
@@ -4742,7 +4751,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
 
                         //cerr << sCmd << endl;
                         _data.setCacheStatus(false);
-                        if (containsStrings(sCmd) && BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+                        if (containsStrings(sCmd) && BI_parseStringArgs(sCmd.substr(matchParams(sCmd, "file", '=')), sArgument, _parser, _data, _option))
                         {
                             //cerr << sArgument << endl;
                             _out.setFileName(sArgument);
@@ -4841,6 +4850,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             vVals = _parser.Eval(nArgument);
             make_progressBar((int)vVals[0], (int)vVals[1], (int)vVals[2], sArgument);
             return 1;
+        }
+        else if (sCommand == "print" && sCmd.length() > 6)
+        {
+            sArgument = sCmd.substr(findCommand(sCmd).nPos+6) + " -print";
+            sCmd.replace(findCommand(sCmd).nPos, string::npos, sArgument);
+            return 0;
         }
         return 0;
     }
@@ -7117,6 +7132,11 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
         nType = 4;
         addArgumentQuotes(sCmd, "file");
     }
+    else if (matchParams(sCmd, "plugin", '='))
+    {
+        nType = 5;
+        addArgumentQuotes(sCmd, "plugin");
+    }
     else if (matchParams(sCmd, "cache", '='))
     {
         string sReturnVal = "";
@@ -7407,6 +7427,95 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
         fFile.close();
         if (_option.getSystemPrintStatus())
             cerr << LineBreak("|-> Die Datei \"" + sObject + "\" wurde erfolgreich erzeugt.", _option) << endl;
+    }
+    else if (nType == 5)
+    {
+        if (sObject.find('/') != string::npos || sObject.find('\\') != string::npos)
+        {
+            string sPath = sObject;
+            for (unsigned int i = sPath.length()-1; i >= 0; i--)
+            {
+                if (sPath[i] == '\\' || sPath[i] == '/')
+                {
+                    sPath = sPath.substr(0,i);
+                    break;
+                }
+            }
+            _fSys.setPath(sPath, true, _option.getScriptPath());
+        }
+        else
+            _fSys.setPath(_option.getScriptPath(), false, _option.getExePath());
+        if (sObject.find('\\') == string::npos && sObject.find('/') == string::npos)
+            sObject = "<scriptpath>/"+sObject;
+        sObject = _fSys.ValidFileName(sObject, ".nscr");
+        if (sObject.substr(sObject.rfind('/')+1, 5) != "plgn_")
+            sObject.insert(sObject.rfind('/')+1, "plgn_");
+        while (sObject.find(' ', sObject.rfind('/')) != string::npos)
+            sObject.erase(sObject.find(' ', sObject.rfind('/')),1);
+        ofstream fScript;
+        string sPluginName = sObject.substr(sObject.rfind("plgn_")+5, sObject.rfind('.')-sObject.rfind("plgn_")-5);
+        fScript.open(sObject, ios_base::trunc);
+        if (fScript.fail())
+        {
+            sErrorToken = sObject;
+            throw CANNOT_GENERATE_SCRIPT;
+        }
+        fScript << "#*" << endl;
+        fScript << " * Dieses Plugin-Template wurde automatisch von NumeRe erzeugt" << endl;
+        fScript << " * ==========================================================" << endl;
+        fScript << " *" << endl;
+        fScript << " * Dieses Script enthält die Installationsroutine für das " << sPluginName << "-Plugin als Template," << endl;
+        fScript << " * das mittels des Kommandos \"install plgn_" << sPluginName << "\" installiert werden kann." << endl;
+        fScript << " *#" << endl << endl;
+        fScript << "<install>" << endl;
+        fScript << "\t<info>" << endl;
+        fScript << "\t\t-type=TYPE_PLUGIN" << endl;
+        fScript << "\t\t-author=\"DEIN NAME\"" << endl;
+        fScript << "\t\t-flags=ENABLE_DEFAULTS" << endl;
+        fScript << "\t\t-name=\"" << sPluginName << "\"" << endl;
+        fScript << "\t\t-plugincommand=\"" << sPluginName << "\"" << endl;
+        fScript << "\t\t-pluginmain=$plugins~" << sPluginName << "~main(<CMDSTRING>)" << endl;
+        fScript << "\t\t-plugindesc=\"BESCHREIBUNG DES PLUGINS\"" << endl;
+        fScript << "\t\t-version=<AUTO>" << endl;
+        fScript << "\t<endinfo>" << endl << endl;
+        fScript << "\tprocedure $plugins~" << sPluginName << "~main(cmdstring) :: explicit" << endl;
+        fScript << "\t\t#* Dies ist die Hauptprozedur für dein neues Plugin. " << endl;
+        fScript << "\t\t * Ergänze hier die Kommandos und Auswertungen, die dein Plugin ausführen soll." << endl;
+        fScript << "\t\t * Falls dein Plugin Prozeduren aufrufen soll, kopiere diese mit Namensraum in diese Installationsroutine. *#" << endl;
+        fScript << "\t\tnamespace plugins~" << sPluginName << " ## Standard-Namensraum. Du könntest auch \"this\" verwenden." << endl;
+        fScript << "\t\t" << endl;
+        fScript << "\t\t## Wenn du einen Wert zurückgeben willst, solltest du den Typ zu \"TYPE_PLUGIN_WITH_RETURN_VALUE\" ändern." << endl;
+        fScript << "\t\treturn void" << endl;
+        fScript << "\tendprocedure" << endl << endl;
+        fScript << "\t## Hier können auch noch weitere Prozeduren eingebunden werden." << endl << endl;
+        fScript << "\t## Die folgenden Zeilen bieten die Möglichkeit, einen eigenen Eintrag zur NumeRe-Hilfe hinzu zu fügen."
+        fScript << "\t<helpindex>" << endl;
+        fScript << "\t\t<article id=\"plgn_" << sPluginName << "\">" << endl;
+        fScript << "\t\t\t<title string=\"" << sPluginName << "\" idxkey=\"" << sPluginName << "\" />" << endl;
+        fScript << "\t\t\t<keywords>" << endl;
+        fScript << "\t\t\t\t<keyword>" << sPluginName << "</keyword>" << endl;
+        fScript << "\t\t\t</keywords>" << endl;
+        fScript << "\t\t</article>" << endl;
+        fScript << "\t</helpindex>" << endl;
+        fScript << endl;
+        fScript << "\t<helpfile>" << endl;
+        fScript << "\t\t<article id=\"plgn_" << sPluginName << "\">" << endl;
+        fScript << "\t\t\t<title string=\"" << sPluginName << "\" />" << endl;
+        fScript << "\t\t\tBESCHREIBE DIE FUNKTIONEN DEINES PLUGINS" << endl;
+        fScript << "\t\t\t<example desc=\"Ausführung von " << sPluginName << "\">" << endl;
+        fScript << "\t\t\t\t" << sPluginName << endl;
+        fScript << "\t\t\t</example>" << endl;
+        fScript << "\t\t</article>" << endl;
+        fScript << "\t</helpfile>" << endl;
+        fScript << "<endinstall>" << endl;
+        fScript << endl;
+        fScript << "#* Ende des Plugin-Templates" << endl;
+        fScript << " * NumeRe: Framework für Numerische Rechnungen | Freie numerische Software unter der GNU GPL v3" << endl;
+        fScript << " * https://sites.google.com/site/numereframework/" << endl;
+        fScript << " *#" << endl;
+        fScript.close();
+        if (_option.getSystemPrintStatus())
+            cerr << LineBreak("|-> Ein Template für das Plugin \"" + sPluginName + "\" wurde in \"" + sObject + "\" erzeugt.", _option) << endl;
     }
     return true;
 }

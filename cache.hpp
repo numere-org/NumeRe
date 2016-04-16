@@ -271,7 +271,7 @@ class Cache : public FileSystem
         void getStringValues(string& sLine, unsigned int nPos = 0);
         void setStringValue(const string& sVar, const string& sValue);
         void removeStringVar(const string& sVar);
-        inline map<string,string> getStringVars() const
+        inline const map<string,string>& getStringVars() const
             {
                 return sStringVars;
             }

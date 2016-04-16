@@ -2300,6 +2300,8 @@ void parser_ListFunc(const Settings& _option, const string& sType)
         cerr << LineBreak("|   cos(x)                 VAL    - Kosinus von x. Definiert auf ganz R", _option, false, 0, 36) << endl;
     if (sType == "all" || sType == "num" || sType == "hyperbolic")
         cerr << LineBreak("|   cosh(x)                VAL    - Kosinus Hyperbolicus von x. Definiert auf ganz R", _option, false, 0, 36) << endl;
+    if (sType == "all" || sType == "num" || sType == "trigonometric")
+        cerr << LineBreak("|   cot(x)                 VAL    - Kotangens von x. Definiert auf R \\ {n*PI}. n ist eine ganze Zahl.", _option, false, 0, 36) << endl;
     if (sType == "all" || sType == "time")
         cerr << LineBreak("|   date(TIME,TYP)         VAL    - Formatiert TIME gemäß TYP: TYP = 0 gibt YYYYMMDDhhmmss, TYP = 1...6 geben YYYY ... ss, TYP = -1 gibt YYYYMMDD und TYP = -2 gibt hhmmss zurück", _option, false, 0, 36) << endl;
     if (sType == "all" || sType == "num")
@@ -2452,6 +2454,8 @@ void parser_ListFunc(const Settings& _option, const string& sType)
         cerr << LineBreak("|   to_value(STRING)       VAL    - Wertet die Zeichenkette STRING aus und wandelt das Ergebnis in einen Wert um", _option, false, 0, 36) << endl;
     if (sType == "all" || sType == "string")
         cerr << LineBreak("|   valtostr(x,C,n)        VAL    - Wertet x aus und wandelt den Wert in eine Zeichenkette um. C ist ein optionales Zeichen, das verwendet wird, um x auf n Zeichen, die vorne angestellt werden, zu füllen", _option, false, 0, 36) << endl;
+    if (sType == "all")
+        cerr << LineBreak("|   version()              VAL    - Gibt die Versionsnummer von NumeRe als natürliche Zahl zurück: v1.0.8 wird als 108 zurückgegeben", _option, false, 0, 36) << endl;
     if (sType == "all" || sType == "num" || sType == "polynomial")
         cerr << LineBreak("|   Y(l,m,theta,phi)       VAL    - Realteil der Kugelflächenfunktionen der Ordnung l >= 0 mit m = [-l,l] unter den Winkeln theta im Intervall [0,PI] und phi im Intervall [0,2*PI)", _option, false, 0, 36) << endl;
     cerr << "|" << endl;
@@ -2495,7 +2499,7 @@ void parser_ListDefine(const Define& _functions, const Settings& _option)
             /*if (i < _functions.getDefinedFunctions()-1)
                 cerr << "|" << endl;*/
         }
-        cerr << "|   -- " << _functions.getDefinedFunctions() << " Funktionen --" << endl;
+        cerr << "|   -- " << std::right << _functions.getDefinedFunctions() << " Funktionen --" << endl;
     }
     make_hline();
     return;
@@ -2525,6 +2529,7 @@ void parser_ListLogical(const Settings& _option)
     cerr << toSystemCodePage("|   x != y     - WAHR, wenn x ungleich y, sonst FALSCH") << endl;
     cerr << toSystemCodePage("|") << endl;
     cerr << LineBreak("|-> WAHR entspricht dem Wert 1, FALSCH dem Wert 0. Logik kann auch auf Zeichenketten angewendet werden, siehe \"help -string\". Binäre Operatoren vergleichen die Bitwerte direkt und geben daher auch Werte ungleich {1,0} zurück.", _option) << endl;
+    cerr << LineBreak("|-> Eine Aneinanderkettung mehrere Logikausdrücke sollte nur mit UND- bzw. ODER-Operatoren durchgeführt werden, da anderenfalls direkt gegen das Ergebnis des vorherigen Logikausdrucks (1 oder 0) geprüft wird. Um z.B. zu prüfen, ob eine Variable x in einem Intervall liegt, muss der Ausdruck \"x >= a && x <= b\" WAHR sein. Einfacher geht dies allerdings mittels \"!is_nan(range(x,a,b))\"", _option) << endl;
     make_hline();
     return;
 }
@@ -2565,8 +2570,8 @@ void parser_ListVar(mu::ParserBase& _parser, const Settings& _option, const Data
     {
         string sCacheSize = toString(_data.getCacheLines(iter->first, false)) + " x " + toString(_data.getCacheCols(iter->first, false));
 
-        cerr << "|   " << iter->first << "()" << std::setfill(' ') << std::setw((_option.getWindow()-32)/2-(iter->first).length() + _option.getWindow()%2) << "Dim:" //24
-             <<  std::setfill(' ') << std::setw((_option.getWindow()-50)/2) << sCacheSize << std::setw(19) << "[double x double]"; //15
+        cerr << "|   " << iter->first << "()" << std::setfill(' ') << std::setw((_option.getWindow(0)-32)/2-(iter->first).length() + _option.getWindow(0)%2) << "Dim:" //24
+             <<  std::setfill(' ') << std::setw((_option.getWindow(0)-50)/2) << sCacheSize << std::setw(19) << "[double x double]"; //15
         if (_data.getSize(iter->second) >= 1024*1024)
             cerr << std::setprecision(4) << std::setw(9) << _data.getSize(iter->second)/(1024.0*1024.0) << " MBytes";
         else if (_data.getSize(iter->second) >= 1024)
@@ -2576,11 +2581,11 @@ void parser_ListVar(mu::ParserBase& _parser, const Settings& _option, const Data
         cerr << endl;
         nBytesSum += _data.getSize(iter->second);
     }
-    cerr << "|   " << std::setfill((char)196) << std::setw(_option.getWindow()-4) << (char)196 << endl;
+    cerr << "|   " << std::setfill((char)196) << std::setw(_option.getWindow(0)-4) << (char)196 << endl;
 
     if (_data.isValid())
     {
-        cerr << "|   data()" << std::setfill(' ') << std::setw((_option.getWindow()-32)/2-4 + _option.getWindow()%2) << "Dim:" << std::setfill(' ') << std::setw((_option.getWindow()-50)/2) << sDataSize << std::setw(19) << "[double x double]";
+        cerr << "|   data()" << std::setfill(' ') << std::setw((_option.getWindow(0)-32)/2-4 + _option.getWindow(0)%2) << "Dim:" << std::setfill(' ') << std::setw((_option.getWindow(0)-50)/2) << sDataSize << std::setw(19) << "[double x double]";
         if (_data.getDataSize() >= 1024*1024)
             cerr << std::setprecision(4) << std::setw(9) << _data.getDataSize()/(1024.0*1024.0) << " MBytes";
         else if (_data.getDataSize() >= 1024)
@@ -2589,11 +2594,11 @@ void parser_ListVar(mu::ParserBase& _parser, const Settings& _option, const Data
             cerr << std::setw(9) << _data.getDataSize() << "  Bytes";
         cerr << endl;
         nBytesSum += _data.getDataSize();
-        cerr << "|   " << std::setfill((char)196) << std::setw(_option.getWindow()-4) << (char)196 << endl;
+        cerr << "|   " << std::setfill((char)196) << std::setw(_option.getWindow(0)-4) << (char)196 << endl;
     }
     if (_data.getStringElements())
     {
-        cerr << "|   string()" << std::setfill(' ') << std::setw((_option.getWindow()-32)/2-6 + _option.getWindow()%2) << "Dim:" << std::setfill(' ') << std::setw((_option.getWindow()-50)/2) << sStringSize << std::setw(19) << "[string]";
+        cerr << "|   string()" << std::setfill(' ') << std::setw((_option.getWindow(0)-32)/2-6 + _option.getWindow(0)%2) << "Dim:" << std::setfill(' ') << std::setw((_option.getWindow(0)-50)/2) << sStringSize << std::setw(19) << "[string]";
         if (_data.getStringSize() >= 1024*1024)
             cerr << std::setprecision(4) << std::setw(9) << _data.getStringSize()/(1024.0*1024.0) << " MBytes";
         else if (_data.getStringSize() >= 1024)
@@ -2602,7 +2607,7 @@ void parser_ListVar(mu::ParserBase& _parser, const Settings& _option, const Data
             cerr << std::setw(9) << _data.getStringSize() << "  Bytes";
         cerr << endl;
         nBytesSum += _data.getStringSize();
-        cerr << "|   " << std::setfill((char)196) << std::setw(_option.getWindow()-4) << (char)196 << endl;
+        cerr << "|   " << std::setfill((char)196) << std::setw(_option.getWindow(0)-4) << (char)196 << endl;
     }
 
     for (auto item = VarMap.begin(); item != VarMap.end(); ++item)
@@ -2610,11 +2615,11 @@ void parser_ListVar(mu::ParserBase& _parser, const Settings& _option, const Data
         if (item->second)
         {
             cerr << "|   " << item->first;
-            cerr << std::setfill(' ') << std::setw((_option.getWindow()-20)/2+1-_option.getPrecision()-(item->first).length() + _option.getWindow()%2) << " = ";
-            if (StringMap[item->first].length() > (unsigned int)_option.getPrecision()+(_option.getWindow()-60)/2-4)
-                cerr << std::setw((_option.getWindow()-60)/2+_option.getPrecision()) << "\""+StringMap[item->first].substr(0,_option.getPrecision()+(_option.getWindow()-60)/2-7)+"...\"";
+            cerr << std::setfill(' ') << std::setw((_option.getWindow(0)-20)/2+1-_option.getPrecision()-(item->first).length() + _option.getWindow(0)%2) << " = ";
+            if (StringMap[item->first].length() > (unsigned int)_option.getPrecision()+(_option.getWindow(0)-60)/2-4)
+                cerr << std::setw((_option.getWindow(0)-60)/2+_option.getPrecision()) << "\""+StringMap[item->first].substr(0,_option.getPrecision()+(_option.getWindow(0)-60)/2-7)+"...\"";
             else
-                cerr << std::setw((_option.getWindow()-60)/2+_option.getPrecision()) << "\""+StringMap[item->first]+"\"";
+                cerr << std::setw((_option.getWindow(0)-60)/2+_option.getPrecision()) << "\""+StringMap[item->first]+"\"";
             cerr << std::setw(19) << "[string]";
             cerr << std::setw(9) << StringMap[item->first].size() << "  Bytes" << endl;
             nBytesSum += StringMap[item->first].size();
@@ -2624,8 +2629,8 @@ void parser_ListVar(mu::ParserBase& _parser, const Settings& _option, const Data
             //_parser.SetExpr(item->first);
             cerr << std::setprecision(_option.getPrecision());
             cerr << "|   " << item->first;
-            cerr << std::setfill(' ') << std::setw((_option.getWindow()-20)/2+1-_option.getPrecision()-(item->first).length() + _option.getWindow()%2) << " = ";
-            cerr << std::setw((_option.getWindow()-60)/2+ _option.getPrecision()) << *variables[item->first];
+            cerr << std::setfill(' ') << std::setw((_option.getWindow(0)-20)/2+1-_option.getPrecision()-(item->first).length() + _option.getWindow(0)%2) << " = ";
+            cerr << std::setw((_option.getWindow(0)-60)/2+ _option.getPrecision()) << *variables[item->first];
             cerr << std::setw(19) << "[double]";
             cerr << std::setw(9) << sizeof(double) << "  Bytes" << endl;
             nBytesSum += sizeof(double);
@@ -2663,11 +2668,11 @@ void parser_ListVar(mu::ParserBase& _parser, const Settings& _option, const Data
         cerr << 0;
     cerr << " Datentabelle(n) --";
     if (VarMap.size() > 9 && nDataSetNum > 9)
-        cerr << std::setfill(' ') << std::setw(_option.getWindow()-62) << "Total: ";
+        cerr << std::setfill(' ') << std::setw(_option.getWindow(0)-62) << "Total: ";
     else if (VarMap.size() > 9 || nDataSetNum > 9)
-        cerr << std::setfill(' ') << std::setw(_option.getWindow()-61) << "Total: ";
+        cerr << std::setfill(' ') << std::setw(_option.getWindow(0)-61) << "Total: ";
     else
-        cerr << std::setfill(' ') << std::setw(_option.getWindow()-60) << "Total: ";
+        cerr << std::setfill(' ') << std::setw(_option.getWindow(0)-60) << "Total: ";
     if (nBytesSum >= 1024*1024)
         cerr << std::setprecision(4) << std::setw(8) << nBytesSum/(1024.0*1024.0) << " MBytes";
     else if (nBytesSum >= 1024)
@@ -5129,26 +5134,26 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
             _cache.sortElements(sCmd);
 
             double dMedian = 0.0, dExtremum = 0.0;
-            double data[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
+            double* data = new double[nOrder];
             int nDir = 0;
 
             for (int i = 0; i < _cache.getLines("cache", true); i++)
             {
-                if (i == 5)
+                if (i == nOrder)
                     break;
                 data[i] = _cache.getElement(i,1,"cache");
             }
-            gsl_sort(data, 1, 5);
-            dExtremum = gsl_stats_median_from_sorted_data(data, 1, 5);
+            gsl_sort(data, 1, nOrder);
+            dExtremum = gsl_stats_median_from_sorted_data(data, 1, nOrder);
             //cerr << dExtremum << endl;
             //for (int i = 1; i < nResults-1; i++)
-            for (int i = 5; i < _cache.getLines("cache", false)-5; i++)
+            for (int i = nOrder; i < _cache.getLines("cache", false)-nOrder; i++)
             {
                 dMedian = 0.0;
-                for (int j = i; j < i+5; j++)
+                for (int j = i; j < i+nOrder; j++)
                     data[j-i] = _cache.getElement(j, 1, "cache");
-                gsl_sort(data, 1, 5);
-                dMedian = gsl_stats_median_from_sorted_data(data, 1, 5);
+                gsl_sort(data, 1, nOrder);
+                dMedian = gsl_stats_median_from_sorted_data(data, 1, nOrder);
                 //cerr << dMedian << endl;
                 if (!nDir)
                 {
@@ -5174,7 +5179,7 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
                                 double dExtremum = _cache.getElement(i, 1, "cache");
                                 for (long long int k = i; k >= 0; k--)
                                 {
-                                    if (k == i-5)
+                                    if (k == i-nOrder)
                                         break;
                                     if (_cache.getElement(k, 1, "cache") > dExtremum)
                                     {
@@ -5183,6 +5188,7 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
                                     }
                                 }
                                 vResults.push_back(_cache.getElement(nExtremum, 0, "cache"));
+                                i = nExtremum+nOrder;
                             }
                             nDir = 0;
                         }
@@ -5198,7 +5204,7 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
                                 double dExtremum = _cache.getElement(i, 1, "cache");
                                 for (long long int k = i; k >= 0; k--)
                                 {
-                                    if (k == i-5)
+                                    if (k == i-nOrder)
                                         break;
                                     if (_cache.getElement(k, 1, "cache") < dExtremum)
                                     {
@@ -5207,6 +5213,7 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
                                     }
                                 }
                                 vResults.push_back(_cache.getElement(nExtremum, 0, "cache"));
+                                i = nExtremum+nOrder;
                             }
                             nDir = 0;
                         }
@@ -5215,74 +5222,10 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
                 }
 
 
-            /*sCmd = "diff cache(:,1:2)";
-            vector<double> vTemp2 = parser_Diff(sCmd, _parser, _cache, _option, _functions);
-
-            sCmd = "diff cache(:,1:2) -set xvals";
-            vector<double> vTemp1 = parser_Diff(sCmd, _parser, _cache, _option, _functions);
-            //_cache.clearCache();
-            for (unsigned int i = 0; i < vTemp1.size(); i++)
-            {
-                _cache.writeToCache(i, 2, "cache", vTemp1[i]);
-                _cache.writeToCache(i, 3, "cache", vTemp2[i]);
-            }
-            //_cache.smooth("cache", 0,_cache.getLines("cache", false), 1,1,3,2);
-            for (long long int i = 1; i < _cache.getLines("cache", false)-1; i++)
-            {
-                if (!nMode && _cache.getElement(i,3,"cache")*_cache.getElement(i-1,3,"cache") <= 0.0)
-                {
-                    // Umgebung untersuchen
-                    if (i > 1 && i < _cache.getLines("cache", false)-1
-                        && (_cache.getElement(i+1,3,"cache")*_cache.getElement(i-2,3,"cache") > 0.0
-                            || _cache.getElement(i,3,"cache")*_cache.getElement(i+1,3,"cache") < 0.0
-                            || _cache.getElement(i-1,3,"cache")*_cache.getElement(i-2,3,"cache") < 0.0))
-                        continue;
-                    if (_cache.getElement(i,3,"cache") == 0.0)
-                        vResults.push_back(_cache.getElement(i,2,"cache"));
-                    if (_cache.getElement(i-1,3,"cache") == 0.0)
-                        vResults.push_back(_cache.getElement(i-1,2,"cache"));
-                    if (_cache.getElement(i,3,"cache")*_cache.getElement(i-1,3,"cache") < 0.0)
-                        vResults.push_back(Linearize(_cache.getElement(i-1,2,"cache"), _cache.getElement(i-1,3,"cache"), _cache.getElement(i,2,"cache"), _cache.getElement(i,3,"cache")));
-                }
-                else if (nMode && _cache.getElement(i,3,"cache")*_cache.getElement(i-1,3,"cache") <= 0.0)
-                {
-                    // Umgebung untersuchen
-                    if (i > 1 && i < _cache.getLines("cache", false)-1
-                        && (_cache.getElement(i+1,3,"cache")*_cache.getElement(i-2,3,"cache") > 0.0
-                            || _cache.getElement(i,3,"cache")*_cache.getElement(i+1,3,"cache") < 0.0
-                            || _cache.getElement(i-1,3,"cache")*_cache.getElement(i-2,3,"cache") < 0.0))
-                        continue;
-                    if (_cache.getElement(i,3,"cache") == 0.0 && _cache.getElement(i-1,3,"cache") == 0.0)
-                    {
-                        for (long long int j = i+1; j < _cache.getLines("cache", false); j++)
-                        {
-                            if (nMode * _cache.getElement(j,3,"cache") < 0.0)
-                            {
-                                for (long long int k = i-1; k <= j; k++)
-                                    vResults.push_back(_cache.getElement(k,2,"cache"));
-                                break;
-                            }
-                            else if (nMode * _cache.getElement(j,3,"cache") > 0.0)
-                                break;
-                            if (j+1 == _cache.getLines("cache", false) && i > 1 && nMode*_data.getElement(i-2,3,"cache") > 0.0)
-                            {
-                                for (long long int k = i-1; k <= j; k++)
-                                    vResults.push_back(_cache.getElement(k,2,"cache"));
-                                break;
-                            }
-                        }
-                        continue;
-                    }
-                    if (_cache.getElement(i,3,"cache") == 0.0 && nMode * _cache.getElement(i-1,3,"cache") > 0.0)
-                        vResults.push_back(_cache.getElement(i,2,"cache"));
-                    if (_cache.getElement(i-1,3,"cache") == 0.0 && nMode * _cache.getElement(i,3,"cache") < 0.0)
-                        vResults.push_back(_cache.getElement(i-1,2,"cache"));
-                    if (_cache.getElement(i,3,"cache")*_cache.getElement(i-1,3,"cache") < 0.0 && nMode*_cache.getElement(i-1,3,"cache") > 0.0)
-                        vResults.push_back(Linearize(_cache.getElement(i-1,2,"cache"), _cache.getElement(i-1,3,"cache"), _cache.getElement(i,2,"cache"), _cache.getElement(i,3,"cache")));
-                }*/
             }
             if (!vResults.size())
                 vResults.push_back(NAN);
+            delete[] data;
             sCmd = "extrema[~_~]";
             _parser.SetVectorVar("extrema[~_~]", vResults);
             return true;
@@ -5388,7 +5331,7 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
                             {
                                 int nExtremum = i;
                                 double dExtremum = v[i];
-                                for (long long int k = i+nOrder; k >= 0; k--)
+                                for (long long int k = i; k >= 0; k--)
                                 {
                                     if (k == i-nOrder)
                                         break;
@@ -5399,6 +5342,8 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
                                     }
                                 }
                                 vResults.push_back(nExtremum+1);
+                                //cerr << i-nExtremum << endl;
+                                i = nExtremum + nOrder;
                             }
                             nDir = 0;
                         }
@@ -5412,7 +5357,7 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
                             {
                                 int nExtremum = i;
                                 double dExtremum = v[i];
-                                for (long long int k = i+nOrder; k >= 0; k--)
+                                for (long long int k = i; k >= 0; k--)
                                 {
                                     if (k == i-nOrder)
                                         break;
@@ -5423,6 +5368,8 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
                                     }
                                 }
                                 vResults.push_back(nExtremum+1);
+                                //cerr << i-nExtremum << endl;
+                                i = nExtremum + nOrder;
                             }
                             nDir = 0;
                         }
@@ -5677,7 +5624,10 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
                 if (!nMode && _cache.getElement(i,1,"cache")*_cache.getElement(i-1,1,"cache") <= 0.0)
                 {
                     if (_cache.getElement(i,1,"cache") == 0.0)
+                    {
                         vResults.push_back(_cache.getElement(i,0,"cache"));
+                        i++;
+                    }
                     else if (_cache.getElement(i-1,1,"cache") == 0.0)
                         vResults.push_back(_cache.getElement(i-1,0,"cache"));
                     else if (_cache.getElement(i,1,"cache")*_cache.getElement(i-1,1,"cache") < 0.0)
@@ -5783,7 +5733,10 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
                 if (!nMode && v[i]*v[i-1] <= 0.0)
                 {
                     if (v[i] == 0.0)
+                    {
                         vResults.push_back((double)i+1);
+                        i++;
+                    }
                     else if (v[i-1] == 0.0)
                         vResults.push_back((double)i);
                     else if (fabs(v[i]) <= fabs(v[i-1]))

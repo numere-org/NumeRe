@@ -531,7 +531,16 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                 && _pInfo.sCommand.substr(0,4) != "grad"
                 && _pInfo.sCommand.substr(0,4) != "cont"))
             _pInfo.nSamples = _pData.getSamples();
+        else if (_pData.getSamples() > 1000
+            && (_pInfo.sCommand.substr(0,4) == "mesh"
+                || _pInfo.sCommand.substr(0,4) == "surf"
+                || _pInfo.sCommand.substr(0,4) == "grad"
+                || _pInfo.sCommand.substr(0,4) == "cont"))
+            _pInfo.nSamples = 1000;
         else
+            _pInfo.nSamples = 100;
+
+        if (_pInfo.nSamples > 100 && _pInfo.b3D)
             _pInfo.nSamples = 100;
 
 
@@ -1514,13 +1523,17 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                             if (vCol[q] == -1)
                             {
                                 for (unsigned int n = 0; n < vLine.size(); n++)
-                                    _mDataPlots[i][1].a[n] = vLine[n]+1;
+                                    _mDataPlots[i][q].a[n] = vLine[n]+1;
                             }
                             else
                             {
-                                _vTempCol[0] = vCol[q];
+                                for (unsigned int n = 0; n < vLine.size(); n++)
+                                {
+                                    _mDataPlots[i][q].a[n] = _data.getElement(vLine[n], vCol[q], sDataTable);
+                                }
+                                /*_vTempCol[0] = vCol[q];
                                 //cerr << vCol[q] << endl;
-                                _mDataPlots[i][q].Set(_data.getElement(vLine, _vTempCol, sDataTable));
+                                _mDataPlots[i][q].Set(_data.getElement(vLine, _vTempCol, sDataTable));*/
                             }
                         }
                         // --> Berechnen der DataRanges <--
