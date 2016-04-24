@@ -114,8 +114,10 @@ private:
         {
             if (!bMakeLoopByteCode)
             {
-                nLoopLength = _nLoopLength;
                 nthLoopElement = 0;
+                bMakeLoopByteCode = true;
+                DeactivateLoopMode();
+                nLoopLength = _nLoopLength;
                 bMakeLoopByteCode = true;
                 vLoopByteCode.resize(nLoopLength);
                 vLoopString.resize(nLoopLength, "");

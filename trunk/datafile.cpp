@@ -18,6 +18,8 @@
 
 
 #include "datafile.hpp"
+
+bool fileExists(const string&);
 using namespace std;
 using namespace boost;
 
@@ -1626,11 +1628,13 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 	if (!bValidData)			// Es sind hoffentlich noch keine Daten gespeichert ...
 	{
 		if(_option.getbDebug())
-			cerr << "|-> DEBUG: bValidData = false" << endl;
+			cerr << "|-> DEBUG: bValidData = false, _sFile = " << _sFile << endl;
 
 		boost::char_separator<char> sep(" ");				// Setze " " als Zeichentrenner fuer den Tokenizer -> Wird spaeter verwendet
 
         sDataFile = FileSystem::ValidFileName(_sFile);
+        if (!fileExists(sDataFile) && (_sFile.find('.') == string::npos || _sFile.find('.') < _sFile.rfind('/')))
+            sDataFile = FileSystem::ValidFileName(_sFile+".*");
 
 		if(_option.getbDebug())
 			cerr << "|-> DEBUG: sDataFile = " << sDataFile << endl;

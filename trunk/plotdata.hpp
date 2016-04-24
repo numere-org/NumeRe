@@ -127,6 +127,7 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         int nLegendstyle;
         Line _lHlines[3];
         Line _lVLines[3];
+        Axis _AddAxes[2];
         int nRequestedLayers;
         int nLegendPosition;
 
@@ -399,6 +400,17 @@ class PlotData : public FileSystem  // CHILD von Filesystem
                     return _lVLines[i];
                 else
                     return _lLine;
+            }
+        inline Axis getAddAxes(unsigned int i = 0) const
+            {
+                Axis _Axis;
+                _Axis.sLabel = "";
+                _Axis.dMax = NAN;
+                _Axis.dMin = NAN;
+                if (i < 2)
+                    return _AddAxes[i];
+                else
+                    return _Axis;
             }
 
         // --> Lesen der einzelnen Achsenbeschriftungen <--

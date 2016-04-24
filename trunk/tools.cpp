@@ -882,6 +882,8 @@ Match findCommand(const string& sCmd, string sCommand)
     {
         for (unsigned int i = 0; i < sCmd.length(); i++)
         {
+            if ((sCmd.substr(i,2) == "--" || sCmd.substr(i,5) == "-set ") && !isInQuotes(sCmd, i))
+                break;
             if ((sCmd[i] == ' ' || sCmd[i] == '\t' || sCmd[i] == '-' || sCmd[i] == '=') && _mMatch.nPos == string::npos)
                 continue;
             else if ((sCmd[i] == ' ' || sCmd[i] == '-') && _mMatch.nPos != string::npos)
@@ -938,6 +940,8 @@ Match findCommand(const string& sCmd, string sCommand)
     {
         for (unsigned int i = 0; i < sCmd.length(); i++)
         {
+            if ((sCmd.substr(i,2) == "--" || sCmd.substr(i,5) == "-set ") && !isInQuotes(sCmd, i))
+                break;
             if (sCmd[i] == ' ' || sCmd[i] == '\t' || sCmd[i] == '(')
                 continue;
             if (sCmd.substr(i,sCommand.length()) != sCommand)

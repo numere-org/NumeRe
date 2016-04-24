@@ -40,10 +40,12 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension)
     while (_sFileName.find('\\') != string::npos)
         _sFileName[_sFileName.find('\\')] = '/';
 
-    while (_sFileName[0] == ' ')
+    while (_sFileName.front() == ' ')
     {
-        _sFileName = _sFileName.substr(1);
+        _sFileName.erase(0,1);
     }
+    while (_sFileName.back() ==  ' ')
+        _sFileName.pop_back();
 	if (_sFileName[0] == '<')
 	{
         for (int i = 0; i < 6; i++)

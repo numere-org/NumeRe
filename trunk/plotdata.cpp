@@ -677,6 +677,62 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         }
         replaceControlChars(_lVLines[1].sDesc);
     }
+    if (matchParams(sCmd, "addxaxis", '=') && (!nType || nType == 1))
+    {
+        string sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "addxaxis", '=')+8);
+        if (sTemp.find(',') != string::npos)
+        {
+            if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
+                sTemp = sTemp.substr(1,sTemp.length()-2);
+            _parser.SetExpr(getNextArgument(sTemp, true));
+            _AddAxes[0].dMin = _parser.Eval();
+            _parser.SetExpr(getNextArgument(sTemp, true));
+            _AddAxes[0].dMax = _parser.Eval();
+            if (getNextArgument(sTemp, false).length())
+            {
+                _AddAxes[0].sLabel = "@{"+getArgAtPos(getNextArgument(sTemp, true),0)+"}";
+                if (getNextArgument(sTemp, false).length())
+                {
+                    _AddAxes[0].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
+                    if (!checkColorChars(_AddAxes[0].sStyle))
+                        _AddAxes[0].sStyle = "k";
+                }
+            }
+            else
+            {
+                _AddAxes[0].sLabel = "@{\\i x}";
+            }
+        }
+        //replaceControlChars(_[1].sDesc);
+    }
+    if (matchParams(sCmd, "addyaxis", '=') && (!nType || nType == 1))
+    {
+        string sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "addyaxis", '=')+8);
+        if (sTemp.find(',') != string::npos)
+        {
+            if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
+                sTemp = sTemp.substr(1,sTemp.length()-2);
+            _parser.SetExpr(getNextArgument(sTemp, true));
+            _AddAxes[1].dMin = _parser.Eval();
+            _parser.SetExpr(getNextArgument(sTemp, true));
+            _AddAxes[1].dMax = _parser.Eval();
+            if (getNextArgument(sTemp, false).length())
+            {
+                _AddAxes[1].sLabel = "@{"+getArgAtPos(getNextArgument(sTemp, true),0) + "}";
+                if (getNextArgument(sTemp, false).length())
+                {
+                    _AddAxes[1].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
+                    if (!checkColorChars(_AddAxes[0].sStyle))
+                        _AddAxes[1].sStyle = "k";
+                }
+            }
+            else
+            {
+                _AddAxes[1].sLabel = "@{\\i y}";
+            }
+        }
+        //replaceControlChars(_[1].sDesc);
+    }
     if (matchParams(sCmd, "colorscheme", '=') && (!nType || nType == 2))
     {
         unsigned int nPos = matchParams(sCmd, "colorscheme", '=') + 11;
@@ -1489,6 +1545,13 @@ void PlotData::reset()
         sCustomTicks[i] = "";
         dAxisScale[i] = 1.0;
     }
+    for (int i = 0; i < 2; i++)
+    {
+        _AddAxes[i].dMin = NAN;
+        _AddAxes[i].dMax = NAN;
+        _AddAxes[i].sLabel = "";
+        _AddAxes[i].sStyle = "k";
+    }
     dAspect = 4.0/3.0;
     dtParam[0] = 0.0;
     dtParam[1] = 1.0;
@@ -1628,6 +1691,13 @@ void PlotData::deleteData()
         _lVLines[i].sStyle = "k;2";
         _lHlines[i].dPos = 0.0;
         _lVLines[i].dPos = 0.0;
+    }
+    for (int i = 0; i < 2; i++)
+    {
+        _AddAxes[i].dMin = NAN;
+        _AddAxes[i].dMax = NAN;
+        _AddAxes[i].sLabel = "";
+        _AddAxes[i].sStyle = "k";
     }
     return;
 }

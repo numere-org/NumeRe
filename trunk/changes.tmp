@@ -28,10 +28,18 @@ Cleaned	"print STRING" als Alias zu "STRING -print" eingefuehrt.
 Cleaned	"for"-Schleifen erfordern nun zwingend Klammern um ihr Argument.
 Cleaned	Schleifen und Verzweigungen muessen nun nicht mehr zwingend auf mehrere Zeilen verteilt werden: "if (COND) EXPR2 else EXPR2 endif" ist daher in einer Zeile moeglich
 Added	Die Funktion "cot(x)" berechnet den Kotangens von x.
-Added	Die Funktion "version()" gibt die NumeRe-Versionsnummer als natürliche Zahl zurueck.
+Added	Die Funktion "version()" gibt die NumeRe-Versionsnummer als natuerliche Zahl zurueck.
 Fixed	Der seltsame Definitionsfehler bei speziellen Funktionsnamen "Argumente konnten nicht gefunden werden" wurde behoben.
 Cleaned	Der seltsame Darstellungsfehler bei "list -var" nachdem "list -define" ausgefuehrt wurde, wurde behoben.
 Cleaned	Tritt das Kommando "start" nun in einem Script auf, wird nun eine Fehlermeldung angezeigt.
 Fixed	"export data() -file=FILE" sollte nun tatsaechlich endlich funktionieren.
 Fixed	"extrema" gibt nun keine doppelten Indices mehr zurueck.
 Fixed	"plot" kann wieder mit einem Index-Datensatz verwendet werden.
+Added	Mittels "-requireversion=VERSION" kann nun geprueft werden, ob die NumeRe-Version ausreichend fuer die zu installierenden Plugins ist. ACHTUNG: NumeRe-Versionen VOR v1.0.9 werden dieses Feld NICHT lesen koennen.
+Added	"new" kann nun mittels "new -plugin=PLUGINCMD" ein Template fuer eine Plugininstallation erzeugen.
+Added	Mittels "-requirepackages=PACKAGELIST" kann ein Satz an Packages (Scripte) vorgegeben werden, der mit einer Installation automatisch mitinstalliert wird. Wird erst ab Version v1.0.9 interpretiert.
+Fixed	Maskierter Segfault in Schleifen behoben.
+Cleaned	NumeRe wird den Dateityp beim Laden nun erraten, wenn keine Endung angegeben wird.
+Cleaned	Die Kommandoerkennung wurde verbessert.
+Added	Mittels "addxaxis=(MIN,MAX)" bzw. "addyaxis=(MIN,MAX)" können jeweils eine zusaetzliche Achse mit einem anderen Bereich angezeigt werden. Diese Option erfordert "box" und kann nur bei "plot" angewendet werden.
+Fixed	Temporaerer Memoryleak in Prozeduren wurde behoben.

@@ -7477,6 +7477,7 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
         fScript << "\t\t-pluginmain=$plugins~" << sPluginName << "~main(<CMDSTRING>)" << endl;
         fScript << "\t\t-plugindesc=\"BESCHREIBUNG DES PLUGINS\"" << endl;
         fScript << "\t\t-version=<AUTO>" << endl;
+        fScript << "\t\t-requireversion=\"" << AutoVersion::MAJOR << "." << AutoVersion::MINOR << "." << AutoVersion::BUILD << "\"" << endl;
         fScript << "\t<endinfo>" << endl << endl;
         fScript << "\tprocedure $plugins~" << sPluginName << "~main(cmdstring) :: explicit" << endl;
         fScript << "\t\t#* Dies ist die Hauptprozedur für dein neues Plugin. " << endl;
@@ -7488,7 +7489,7 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
         fScript << "\t\treturn void" << endl;
         fScript << "\tendprocedure" << endl << endl;
         fScript << "\t## Hier können auch noch weitere Prozeduren eingebunden werden." << endl << endl;
-        fScript << "\t## Die folgenden Zeilen bieten die Möglichkeit, einen eigenen Eintrag zur NumeRe-Hilfe hinzu zu fügen."
+        fScript << "\t## Die folgenden Zeilen bieten die Möglichkeit, einen eigenen Eintrag zur NumeRe-Hilfe hinzu zu fügen." << endl;
         fScript << "\t<helpindex>" << endl;
         fScript << "\t\t<article id=\"plgn_" << sPluginName << "\">" << endl;
         fScript << "\t\t\t<title string=\"" << sPluginName << "\" idxkey=\"" << sPluginName << "\" />" << endl;

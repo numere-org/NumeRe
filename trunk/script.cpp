@@ -39,6 +39,7 @@ Script::Script() : FileSystem()
     bENABLE_FULL_LOGGING = false;
     bDISABLE_SCREEN_OUTPUT = false;
     bIsInstallingProcedure = false;
+    nCurrentPackage = 0;
     nLine = 0;
     nIncludeLine = 0;
     nIncludeType = 0;
@@ -68,8 +69,8 @@ void Script::openScript()
         bScriptOpen = true;
         if (fScript.fail())
         {
-            close();
             sErrorToken = sScriptFileName;
+            close();
             sScriptFileName = "";
             throw SCRIPT_NOT_EXIST;
         }
@@ -108,14 +109,24 @@ void Script::close()
             fLogFile << "--- INSTALLATION FAILED ---" << endl << endl << endl;
             fLogFile.close();
         }
-
+        bBlockComment = false;
+        bAppendNextLine = false;
+        bReadFromInclude = false;
+        bAutoStart = false;
+        if (vInstallPackages.size() > nCurrentPackage+1)
+        {
+            bLastScriptCommand = false;
+            nCurrentPackage++;
+            openScript(vInstallPackages[nCurrentPackage]);
+            return;
+        }
+        if (vInstallPackages.size())
+            sScriptFileName = vInstallPackages[0];
+        vInstallPackages.clear();
+        nCurrentPackage = 0;
         bScriptOpen = false;
         sIncludeFileName = "";
-        bReadFromInclude = false;
-        bAppendNextLine = false;
         bValidScript = false;
-        bAutoStart = false;
-        bBlockComment = false;
         bInstallProcedures = false;
         bENABLE_FULL_LOGGING = false;
         bDISABLE_SCREEN_OUTPUT = false;
@@ -213,12 +224,50 @@ string Script::getNextScriptCommand()
                     }
                     else
                     {
+                        unsigned int nNumereVersion = AutoVersion::MAJOR*100+AutoVersion::MINOR*10+AutoVersion::BUILD;
+                        unsigned int nRequiredVersion = nNumereVersion;
                         if (sScriptCommand.find("<endinfo>") != string::npos)
                         {
                             sInstallInfoString = sScriptCommand.substr(sScriptCommand.find("<info>")+6, sScriptCommand.find("<endinfo>")-sScriptCommand.find("<info>")-6);
                             sScriptCommand = sScriptCommand.substr(sScriptCommand.find("<endinfo>")+9);
                             bFirstPassedInstallCommand = true;
                             sInstallID = getArgAtPos(sInstallInfoString, sInstallInfoString.find("name=")+5);
+                            if (sInstallInfoString.find("requirepackages=") != string::npos)
+                            {
+                                string sInstallPackages = getArgAtPos(sInstallInfoString, sInstallInfoString.find("requirepackages=")+16);
+                                while (sInstallPackages.length())
+                                {
+                                    string sPackage = ValidFileName(sInstallPackages.substr(0,sInstallPackages.find(',')),".nscr");
+                                    if (sInstallPackages.find(',') != string::npos)
+                                        sInstallPackages.erase(0,sInstallPackages.find(',')+1);
+                                    else
+                                        sInstallPackages.clear();
+                                    if (!sPackage.length())
+                                        continue;
+                                    if (!vInstallPackages.size())
+                                    {
+                                        vInstallPackages.push_back(sScriptFileName);
+                                        vInstallPackages.push_back(sPackage);
+                                    }
+                                    for (unsigned int i = 0; i < vInstallPackages.size(); i++)
+                                    {
+                                        if (vInstallPackages[i] == sPackage)
+                                            break;
+                                        else if (i+1 == vInstallPackages.size())
+                                        {
+                                            vInstallPackages.push_back(sPackage);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (sInstallInfoString.find("requireversion=") != string::npos)
+                            {
+                                string sTemp = getArgAtPos(sInstallInfoString, sInstallInfoString.find("requireversion=")+15);
+                                while (sTemp.find('.') != string::npos)
+                                    sTemp.erase(sTemp.find('.'),1);
+                                nRequiredVersion = (unsigned int)StrToInt(sTemp);
+                            }
                             if (!sScriptCommand.length())
                                 continue;
                         }
@@ -245,22 +294,98 @@ string Script::getNextScriptCommand()
                             sScriptCommand = sTemp.substr(sTemp.find("<endinfo>")+9);
                             bFirstPassedInstallCommand = true;
                             sInstallID = getArgAtPos(sInstallInfoString, sInstallInfoString.find("name=")+5);
+                            if (sInstallInfoString.find("requirepackages=") != string::npos)
+                            {
+                                string sInstallPackages = getArgAtPos(sInstallInfoString, sInstallInfoString.find("requirepackages=")+16);
+                                while (sInstallPackages.length())
+                                {
+                                    string sPackage = ValidFileName(sInstallPackages.substr(0,sInstallPackages.find(',')),".nscr");
+                                    if (sInstallPackages.find(',') != string::npos)
+                                        sInstallPackages.erase(0,sInstallPackages.find(',')+1);
+                                    else
+                                        sInstallPackages.clear();
+                                    if (!sPackage.length())
+                                        continue;
+                                    if (!vInstallPackages.size())
+                                    {
+                                        vInstallPackages.push_back(sScriptFileName);
+                                        vInstallPackages.push_back(sPackage);
+                                    }
+                                    for (unsigned int i = 0; i < vInstallPackages.size(); i++)
+                                    {
+                                        if (vInstallPackages[i] == sPackage)
+                                            break;
+                                        else if (i+1 == vInstallPackages.size())
+                                        {
+                                            vInstallPackages.push_back(sPackage);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (sInstallInfoString.find("requireversion=") != string::npos)
+                            {
+                                string sTemp = getArgAtPos(sInstallInfoString, sInstallInfoString.find("requireversion=")+15);
+                                while (sTemp.find('.') != string::npos)
+                                    sTemp.erase(sTemp.find('.'),1);
+                                nRequiredVersion = (unsigned int)StrToInt(sTemp);
+                            }
                             if (!sScriptCommand.length())
                                 continue;
                         }
+                        if (nRequiredVersion > nNumereVersion)
+                            throw INSUFFICIENT_NUMERE_VERSION;
+                        if (!sScriptCommand.length())
+                            continue;
                     }
                 }
 
                 if (sScriptCommand.substr(0,6) == "<info>" && bInstallProcedures)
                 {
+                    unsigned int nNumereVersion = AutoVersion::MAJOR*100+AutoVersion::MINOR*10+AutoVersion::BUILD;
+                    unsigned int nRequiredVersion = nNumereVersion;
                     if (sScriptCommand.find("<endinfo>") != string::npos)
                     {
                         sInstallInfoString = sScriptCommand.substr(sScriptCommand.find("<info>")+6, sScriptCommand.find("<endinfo>")-sScriptCommand.find("<info>")-6);
                         sScriptCommand = sScriptCommand.substr(sScriptCommand.find("<endinfo>")+9);
                         bFirstPassedInstallCommand = true;
                         sInstallID = getArgAtPos(sInstallInfoString, sInstallInfoString.find("name=")+5);
-                        if (!sScriptCommand.length())
-                            continue;
+                        if (sInstallInfoString.find("requirepackages=") != string::npos)
+                        {
+                            string sInstallPackages = getArgAtPos(sInstallInfoString, sInstallInfoString.find("requirepackages=")+16);
+                            while (sInstallPackages.length())
+                            {
+                                string sPackage = ValidFileName(sInstallPackages.substr(0,sInstallPackages.find(',')),".nscr");
+                                if (sInstallPackages.find(',') != string::npos)
+                                    sInstallPackages.erase(0,sInstallPackages.find(',')+1);
+                                else
+                                    sInstallPackages.clear();
+                                if (!sPackage.length())
+                                    continue;
+                                if (!vInstallPackages.size())
+                                {
+                                    vInstallPackages.push_back(sScriptFileName);
+                                    vInstallPackages.push_back(sPackage);
+                                }
+                                for (unsigned int i = 0; i < vInstallPackages.size(); i++)
+                                {
+                                    if (vInstallPackages[i] == sPackage)
+                                        break;
+                                    else if (i+1 == vInstallPackages.size())
+                                    {
+                                        vInstallPackages.push_back(sPackage);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (sInstallInfoString.find("requireversion=") != string::npos)
+                        {
+                            string sTemp = getArgAtPos(sInstallInfoString, sInstallInfoString.find("requireversion=")+15);
+                            while (sTemp.find('.') != string::npos)
+                                sTemp.erase(sTemp.find('.'),1);
+                            nRequiredVersion = (unsigned int)StrToInt(sTemp);
+                        }
                     }
                     else
                     {
@@ -285,9 +410,47 @@ string Script::getNextScriptCommand()
                         sScriptCommand = sTemp.substr(sTemp.find("<endinfo>")+9);
                         bFirstPassedInstallCommand = true;
                         sInstallID = getArgAtPos(sInstallInfoString, sInstallInfoString.find("name=")+5);
-                        if (!sScriptCommand.length())
-                            continue;
+                        if (sInstallInfoString.find("requirepackages=") != string::npos)
+                        {
+                            string sInstallPackages = getArgAtPos(sInstallInfoString, sInstallInfoString.find("requirepackages=")+16);
+                            while (sInstallPackages.length())
+                            {
+                                string sPackage = ValidFileName(sInstallPackages.substr(0,sInstallPackages.find(',')),".nscr");
+                                if (sInstallPackages.find(',') != string::npos)
+                                    sInstallPackages.erase(0,sInstallPackages.find(',')+1);
+                                else
+                                    sInstallPackages.clear();
+                                if (!sPackage.length())
+                                    continue;
+                                if (!vInstallPackages.size())
+                                {
+                                    vInstallPackages.push_back(sScriptFileName);
+                                    vInstallPackages.push_back(sPackage);
+                                }
+                                for (unsigned int i = 0; i < vInstallPackages.size(); i++)
+                                {
+                                    if (vInstallPackages[i] == sPackage)
+                                        break;
+                                    else if (i+1 == vInstallPackages.size())
+                                    {
+                                        vInstallPackages.push_back(sPackage);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (sInstallInfoString.find("requireversion=") != string::npos)
+                        {
+                            string sTemp = getArgAtPos(sInstallInfoString, sInstallInfoString.find("requireversion=")+15);
+                            while (sTemp.find('.') != string::npos)
+                                sTemp.erase(sTemp.find('.'),1);
+                            nRequiredVersion = (unsigned int)StrToInt(sTemp);
+                        }
                     }
+                    if (nRequiredVersion > nNumereVersion)
+                        throw INSUFFICIENT_NUMERE_VERSION;
+                    if (!sScriptCommand.length())
+                        continue;
                 }
 
                 if (sScriptCommand.substr(0,11) == "<helpindex>" && bInstallProcedures)
