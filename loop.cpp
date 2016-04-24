@@ -2200,7 +2200,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
         nJumpTable[i] = new int[3];
         nJumpTable[i][0] = -1;
         nJumpTable[i][1] = -1;
-        nJumpTable[i][3] = -1;
+        nJumpTable[i][2] = -1;
     }
 
     for (int i = 0; i <= nCmd; i++)

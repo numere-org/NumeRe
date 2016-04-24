@@ -5770,7 +5770,29 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                 else
                 {
                     if (!_pData.getSchematic())
+                    {
+                        if (_pData.getAddAxes(0).sLabel.length() || _pData.getAddAxes(1).sLabel.length())
+                        {
+                            Axis _axis;
+                            _graph.SetOrigin(_pInfo.dRanges[0][1], _pInfo.dRanges[1][1]);
+                            for (int i = 0; i < 2; i++)
+                            {
+                                _axis = _pData.getAddAxes(i);
+                                if (_axis.sLabel.length())
+                                {
+                                    _graph.SetRange('x'+i, _axis.dMin, _axis.dMax);
+                                    if (!i)
+                                        _graph.Axis("x", _axis.sStyle.c_str());
+                                    else
+                                        _graph.Axis("y", _axis.sStyle.c_str());
+                                    _graph.Label('x'+i, fromSystemCodePage("#"+_axis.sStyle+"{"+_axis.sLabel+"}").c_str(), 0);
+                                }
+                            }
+                            _graph.SetRanges(_pInfo.dRanges[0][0], _pInfo.dRanges[0][1], _pInfo.dRanges[1][0], _pInfo.dRanges[1][1], _pInfo.dRanges[2][0], _pInfo.dRanges[2][1]);
+                            _graph.SetOrigin(_pInfo.dRanges[0][0], _pInfo.dRanges[1][0]);
+                        }
                         _graph.Axis("xy");
+                    }
                 }
             }
             else if (_pInfo.sCommand.find("3d") != string::npos)

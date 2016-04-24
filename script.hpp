@@ -28,6 +28,7 @@
 #include "error.hpp"
 #include "filesystem.hpp"
 #include "tools.hpp"
+#include "version.h"
 
 using namespace std;
 
@@ -56,6 +57,8 @@ class Script : public FileSystem
         string sInstallInfoString;
         string sHelpID;
         string sInstallID;
+        vector<string> vInstallPackages;
+        unsigned int nCurrentPackage;
 
     public:
         Script();

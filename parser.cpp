@@ -3106,6 +3106,12 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                         if (oLogFile.is_open())
                             oLogFile << toString(time(0) - tTimeZero, true) << "> FEHLER: Es wurden mehr Subplots angefordert als angelegt sind." << endl;
                         break;
+                    case INSUFFICIENT_NUMERE_VERSION:
+                        cerr << LineBreak("|-> Die zu installierenden Prozeduren (bzw. das Plugin) erfordern eine höhere Version von NumeRe als du zur Zeit verwendest. Installiere bitte die aktuellste Version um auf die aktuellen Features zugreifen zu können.", _option) << endl;
+                        //cerr << LineBreak("|-> Siehe auch \"help plot\" und \"help subplot\"", _option) << endl;
+                        if (oLogFile.is_open())
+                            oLogFile << toString(time(0) - tTimeZero, true) << "> FEHLER: NumeRe-Version ungenügend" << endl;
+                        break;
                     default:
                         cerr << LineBreak("|-> Der Fehler Nr. " + toString(e) + " trat auf und zwang NumeRe, alle laufenden Auswertungen abzubrechen.", _option) << endl;
                         if (oLogFile.is_open())

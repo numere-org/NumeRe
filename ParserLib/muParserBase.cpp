@@ -2458,7 +2458,7 @@ string_type ParserBase::getNextVarObject(std::string& sArgList, bool bCut)
     {
         if (!mVectorVars.size())
             return;
-        //cerr << "clearing vect vars" << endl;
+        //cerr << "clearing vect vars; size = " << mVectorVars.size() << endl;
         auto iter = mVectorVars.begin();
         while (iter != mVectorVars.end())
         {
@@ -2474,9 +2474,9 @@ string_type ParserBase::getNextVarObject(std::string& sArgList, bool bCut)
                 iter = mVectorVars.erase(iter);
             }
             else
-                iter++;
+                iter = mVectorVars.erase(iter); //iter++;
         }
-        if (!bIgnoreProcedureVects)
+        if (!bIgnoreProcedureVects || !mVectorVars.size())
         {
             mVectorVars.clear();
             mTargets.clear();

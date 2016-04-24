@@ -53,6 +53,14 @@ struct Line
     double dPos;
 };
 
+struct Axis
+{
+    string sLabel;
+    string sStyle;
+    double dMin;
+    double dMax;
+};
+
 struct Returnvalue
 {
     vector<double> vNumVal;

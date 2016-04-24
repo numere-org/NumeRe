@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1460478810 source:c:\cpp\numere\built-in.cpp
+1461001606 source:c:\cpp\numere\built-in.cpp
 	"built-in.hpp"
 
 1453193522 c:\cpp\numere\built-in.hpp
@@ -26,7 +26,7 @@
 	"documentation.hpp"
 	"odesolver.hpp"
 
-1460405164 c:\cpp\numere\error.hpp
+1461001065 c:\cpp\numere\error.hpp
 	<string>
 
 1459631811 c:\cpp\numere\datafile.hpp
@@ -88,7 +88,7 @@
 	"version.h"
 	"resampler.h"
 
-1460057487 c:\cpp\numere\tools.hpp
+1461180408 c:\cpp\numere\tools.hpp
 	<iostream>
 	<iomanip>
 	<sstream>
@@ -157,7 +157,7 @@
 	"tools.hpp"
 	"plotdata.hpp"
 
-1455870173 c:\cpp\numere\plotdata.hpp
+1461182581 c:\cpp\numere\plotdata.hpp
 	<string>
 	<cmath>
 	"error.hpp"
@@ -169,7 +169,7 @@
 	"muParserBase.h"
 	"muParserTemplateMagic.h"
 
-1454934083 c:\cpp\numere\parserlib\muparserbase.h
+1461081951 c:\cpp\numere\parserlib\muparserbase.h
 	<cmath>
 	<string>
 	<iostream>
@@ -313,13 +313,14 @@
 	"tools.hpp"
 	"error.hpp"
 
-1422491609 c:\cpp\numere\script.hpp
+1461006893 c:\cpp\numere\script.hpp
 	<iostream>
 	<string>
 	<fstream>
 	"error.hpp"
 	"filesystem.hpp"
 	"tools.hpp"
+	"version.h"
 
 1455303648 c:\cpp\numere\documentation.hpp
 	<iostream>
@@ -345,7 +346,7 @@
 	"settings.hpp"
 	"error.hpp"
 
-1459633278 source:c:\cpp\numere\datafile.cpp
+1461086190 source:c:\cpp\numere\datafile.cpp
 	"datafile.hpp"
 
 1459789981 source:c:\cpp\numere\debugger.cpp
@@ -360,7 +361,7 @@
 1455474044 source:c:\cpp\numere\documentation.cpp
 	"documentation.hpp"
 
-1456506432 source:c:\cpp\numere\filesystem.cpp
+1461007711 source:c:\cpp\numere\filesystem.cpp
 	"filesystem.hpp"
 
 1459624315 source:c:\cpp\numere\fitcontroller.cpp
@@ -390,7 +391,7 @@
 	"IgorLib/CrossPlatformFileIO.h"
 	"IgorLib/IgorBin.h"
 
-1460391874 source:c:\cpp\numere\loop.cpp
+1461083283 source:c:\cpp\numere\loop.cpp
 	"loop.hpp"
 
 1459788128 c:\cpp\numere\loop.hpp
@@ -519,7 +520,7 @@
 	<algorithm>
 	<numeric>
 
-1457549757 source:c:\cpp\numere\parserlib\muparserbase.cpp
+1461419713 source:c:\cpp\numere\parserlib\muparserbase.cpp
 	"muParserBase.h"
 	"muParserTemplateMagic.h"
 	<cassert>
@@ -573,7 +574,7 @@
 	"muParserTokenReader.h"
 	"muParserBase.h"
 
-1459675110 source:c:\cpp\numere\plotdata.cpp
+1461302356 source:c:\cpp\numere\plotdata.cpp
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
@@ -598,7 +599,7 @@
 	<iostream>
 	"resampler.h"
 
-1457880573 source:c:\cpp\numere\script.cpp
+1461011281 source:c:\cpp\numere\script.cpp
 	"script.hpp"
 
 1458468494 source:c:\cpp\numere\settings.cpp
@@ -607,7 +608,7 @@
 1455563194 source:c:\cpp\numere\stringparsing.cpp
 	"parser_functions.hpp"
 
-1460057244 source:c:\cpp\numere\tools.cpp
+1461417299 source:c:\cpp\numere\tools.cpp
 	"tools.hpp"
 
 1432015841 source:c:\cpp\numere\ttr-ws13_private.rc
@@ -634,12 +635,12 @@
 1459683814 source:c:\cpp\numere\cache.cpp
 	"cache.hpp"
 
-1460405685 source:c:\cpp\numere\parser.cpp
+1461002900 source:c:\cpp\numere\parser.cpp
 	"parser.hpp"
 
 1460392037 source:c:\cpp\numere\procedure.cpp
 	"procedure.hpp"
 
-1460651724 source:c:\cpp\numere\plotting.cpp
+1461302032 source:c:\cpp\numere\plotting.cpp
 	"parser_functions.hpp"
 
