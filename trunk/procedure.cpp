@@ -2894,7 +2894,8 @@ bool Procedure::writeProcedure(string sProcedureLine)
     {
         if (sProcedureLine.find('(') != string::npos
             && (sProcedureLine.substr(0,3) == "for"
-                || sProcedureLine.substr(0,2) == "if"
+                || sProcedureLine.substr(0,3) == "if "
+                || sProcedureLine.substr(0,3) == "if("
                 || sProcedureLine.substr(0,6) == "elseif"
                 || sProcedureLine.substr(0,5) == "while"))
         {

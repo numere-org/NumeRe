@@ -187,7 +187,7 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
         throw NO_NUMBER_AT_POS_1;
     }
 
-    string sDelim = "+-*/^!=&| ><)?[]{}$%§~#:.,;";
+    string sDelim = "+-*/^!=&| ><()?[]{}$%§~#:.,;";
     for (unsigned int i = 0; i < sFunctionName.find('('); i++)
     {
         if (sDelim.find(sFunctionName[i]) != string::npos)
@@ -273,7 +273,13 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
     sFunctions[nDefine][2] = fromSystemCodePage(sExpr);                                             // Urspruengliche Definition
 
     // --> Hierein kommt die Argumentliste aus der Definition. Wir werden sie weiter unten weiterverarbeiten <--
-    sFunctions[nDefine][3] = sExpr.substr(sExpr.find('('),sExpr.find(')')-sExpr.find('(')+1);
+    //sFunctions[nDefine][3] = sExpr.substr(sExpr.find('('),sExpr.find(')')-sExpr.find('(')+1);
+    sFunctions[nDefine][3] = getArgAtPos(sExpr, sExpr.find('('));
+    if (getMatchingParenthesis(sFunctions[nDefine][3]) != string::npos && sFunctions[nDefine][3].front() == '(' && sFunctions[nDefine][3].back() == ')')
+    {
+        sFunctions[nDefine][3].erase(0,1);
+        sFunctions[nDefine][3].pop_back();
+    }
 
     // --> Entfernen wir Leerzeichen um den Funktionsnamen <--
     StripSpaces(sFunctions[nDefine][0]);
@@ -303,6 +309,11 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
         cerr << "|-> DEBUG: sFunctions[][2] = " << sFunctions[nDefine][2] << endl;
         cerr << "|-> DEBUG: sFunctions[][3] = " << sFunctions[nDefine][3] << endl;
     }
+    if (sFunctions[nDefine][3].find('(') != string::npos || sFunctions[nDefine][3].find(')') != string::npos)
+    {
+        sErrorToken = "()";
+        throw FUNCTION_ARGS_MUST_NOT_CONTAIN_SIGN;
+    }
 
     /* --> Pruefen wir, ob in der Argumentliste nicht das ein oder andere Komma enthalten ist
      *     und teilen den String an dieser Stelle <--
@@ -311,9 +322,23 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
      */
     if (sFunctions[nDefine][3].find(',') != string::npos)
     {
+        //sFunctions[nDefine][3] = "(" + sFunctions[nDefine][3] + ")";
         for (int i = 3; i < 12; i++)
         {
-            parser_SplitArgs(sFunctions[nDefine][i], sFunctions[nDefine][i+1], ',', _option, false);
+            try
+            {
+                parser_SplitArgs(sFunctions[nDefine][i], sFunctions[nDefine][i+1], ',', _option, true);
+            }
+            catch (errorcode &e)
+            {
+                if (e == SEPARATOR_NOT_FOUND)
+                {
+                    sErrorToken = ",";
+                    throw FUNCTION_ARGS_MUST_NOT_CONTAIN_SIGN;
+                }
+                else
+                    throw;
+            }
             StripSpaces(sFunctions[nDefine][i]);
             StripSpaces(sFunctions[nDefine][i+1]);
             if (sFunctions[nDefine][i] == "...")
@@ -326,6 +351,17 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
                         sFunctions[nDefine][u] = "";
                 }
                 throw ELLIPSIS_MUST_BE_LAST_ARG;
+            }
+            if (sFunctions[nDefine][i] != "...")
+            {
+                for (unsigned int n = 0; n < sDelim.length(); n++)
+                {
+                    if (sFunctions[nDefine][i].find(sDelim[n]) != string::npos)
+                    {
+                        sErrorToken = sDelim[n];
+                        throw FUNCTION_ARGS_MUST_NOT_CONTAIN_SIGN;
+                    }
+                }
             }
             if (sFunctions[nDefine][i+1].find(',') != string::npos && i < 11)
             {
@@ -340,7 +376,7 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
                     }
                     throw ELLIPSIS_MUST_BE_LAST_ARG;
                 }
-                sFunctions[nDefine][i+1] = "(" + sFunctions[nDefine][i+1] + ")";
+                //sFunctions[nDefine][i+1] = "(" + sFunctions[nDefine][i+1] + ")";
             }
             else if (sFunctions[nDefine][i+1].find(',') != string::npos)
             {
@@ -383,7 +419,7 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
     else
     {
         // --> Kein Komma? Dann nur ein Argument. Entfernen wir rasch die Klammern und entfernen ueberzaehlige Leerzeichen <--
-        sFunctions[nDefine][3] = sFunctions[nDefine][3].substr(1,sFunctions[nDefine][3].length()-2);
+        //sFunctions[nDefine][3] = sFunctions[nDefine][3].substr(1,sFunctions[nDefine][3].length()-2);
         StripSpaces(sFunctions[nDefine][3]);
     }
 
@@ -700,9 +736,12 @@ bool Define::call(string& sExpr, const Settings& _option, int nRecursion)
                 {
                     cerr << "|-> DEBUG: vArg[0] = " << vArg[0] << endl;
                 }
-
+                if (!vArg[0].length() && vArg.size() == 1)
+                {
+                    vArg.clear();
+                }
                 // --> Pruefe, ob mehr als ein Funktionsargument gegeben ist und trenne die liste entsprechend <--
-                while (isMultiValue(vArg.back()))
+                while (vArg.size() && isMultiValue(vArg.back()))
                 {
                     vArg.back() = "(" + vArg.back() + ")";
                     vArg.push_back("");
@@ -743,7 +782,7 @@ bool Define::call(string& sExpr, const Settings& _option, int nRecursion)
                 for (unsigned int n = 3; n < 13; n++)
                 {
                     // --> Gibt's das n-te Argument nicht? Abbrechen! <--
-                    if (!sFunctions[i][n].length() && vArg.size() > n-3)
+                    if (!sFunctions[i][n].length() && vArg.size() > n-3 && vArg[n-3].length())
                         throw TOO_MANY_ARGS_FOR_DEFINE;
                     else if (!sFunctions[i][n].length())
                         break;

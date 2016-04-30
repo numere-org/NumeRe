@@ -119,6 +119,9 @@ int main(int argc, char* argv[])
     nextLoadMessage(50);
     cerr << " -> Lese Systeminformationen ... ";
     char __cPath[1024];
+    OSVERSIONINFO _osversioninfo;
+    _osversioninfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+    GetVersionEx(&_osversioninfo);
     GetModuleFileName(NULL, __cPath, 1024);
     string sPath = __cPath;
     sPath = sPath.substr(0,sPath.rfind("\\numere.exe"));
@@ -141,7 +144,9 @@ int main(int argc, char* argv[])
     if (oLogFile.is_open())
     {
         oLogFile << "--- NUMERE-SITZUNGS-PROTOKOLL: " << sTime << " ---" << endl;
-        oLogFile << "--- NumeRe v " << sVersion << " | Build " << AutoVersion::YEAR << "-" << AutoVersion::MONTH << "-" << AutoVersion::DATE << " ---" << endl;
+        oLogFile << "--- NumeRe v " << sVersion
+                 << " | Build " << AutoVersion::YEAR << "-" << AutoVersion::MONTH << "-" << AutoVersion::DATE
+                 << " | OS: Windows v " << _osversioninfo.dwMajorVersion << "." << _osversioninfo.dwMinorVersion << "." << _osversioninfo.dwBuildNumber << " " << _osversioninfo.szCSDVersion << " ---" << endl;
     }
 
  	nextLoadMessage(50);
