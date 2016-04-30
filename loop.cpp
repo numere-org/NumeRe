@@ -1577,7 +1577,8 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
 
     if (__sCmd.substr(0,3) == "for"
         || __sCmd.substr(0,6) == "endfor"
-        || __sCmd.substr(0,2) == "if"
+        || __sCmd.substr(0,3) == "if "
+        || __sCmd.substr(0,3) == "if("
         || __sCmd.substr(0,5) == "endif"
         || __sCmd.substr(0,4) == "else"
         || __sCmd.substr(0,5) == "while"
@@ -1680,7 +1681,7 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
                 __sCmd += " " + sTemp;
             }
         }
-        else if (__sCmd.substr(0,2) == "if")
+        else if (__sCmd.substr(0,3) == "if " || __sCmd.substr(0,3) == "if(")
         {
             sLoopNames += ";IF";
             nIf++;

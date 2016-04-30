@@ -43,3 +43,9 @@ Cleaned	NumeRe wird den Dateityp beim Laden nun erraten, wenn keine Endung angeg
 Cleaned	Die Kommandoerkennung wurde verbessert.
 Added	Mittels "addxaxis=(MIN,MAX)" bzw. "addyaxis=(MIN,MAX)" können jeweils eine zusaetzliche Achse mit einem anderen Bereich angezeigt werden. Diese Option erfordert "box" und kann nur bei "plot" angewendet werden.
 Fixed	Temporaerer Memoryleak in Prozeduren wurde behoben.
+Added	"inf" wird bei Plots nun korrekt als "\infty" interpretiert.
+Removed	"noround" und die internen Rundungen bei "integrate" wurden entfernt.
+Added	Mit "steps=SCHRITTE" kann die Zahl der Intervallunterteilungen bei "integrate" vorgegeben werden.
+Cleaned	Argumentbezeichner in "define" muessen nun auch den Benennungsregeln aller Variablen folgen.
+Fixed	Es koennen nun Funktionen mit leeren Argumenten definiert werden.
+Added	Das Logfile protokolliert nun die Windows-Version.

@@ -2537,6 +2537,12 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                         if (oLogFile.is_open())
                             oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: Funktionsnamen dürfen \"" << sErrorToken << "\" nicht enthalten" << endl;
                         break;
+                    case FUNCTION_ARGS_MUST_NOT_CONTAIN_SIGN:
+                        cerr << LineBreak("|-> Funktionsargumente dürfen das Zeichen \"" + sErrorToken + "\" nicht enthalten.", _option) << endl;
+                        cerr << LineBreak("|-> SIEHE AUCH: \"help define\"", _option) << endl;
+                        if (oLogFile.is_open())
+                            oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: Funktionsnamen dürfen \"" << sErrorToken << "\" nicht enthalten" << endl;
+                        break;
                     case TOO_MANY_ARGS_FOR_DEFINE:
                         cerr << LineBreak("|-> Selbst definierte Funktionen können nicht mehr als 10 Argumente verarbeiten.", _option) << endl;
                         cerr << LineBreak("|-> SIEHE AUCH: \"help define\"", _option) << endl;

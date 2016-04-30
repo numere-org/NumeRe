@@ -72,7 +72,7 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
     vector<double> fx_n[3]; // Werte an der Stelle n und n+1
     bool bNoIntVar = false;     // Boolean: TRUE, wenn die Funktion eine Konstante der Integration ist
     bool bLargeInterval = false;    // Boolean: TRUE, wenn ueber ein grosses Intervall integriert werden soll
-    bool bDoRoundResults = true;
+    //bool bDoRoundResults = true;
     bool bReturnFunctionPoints = false;
     bool bCalcXvals = false;
     int nSign = 1;              // Vorzeichen, falls die Integrationsgrenzen getauscht werden muessen
@@ -366,8 +366,20 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
             if (getArgAtPos(sParams, nPos) == "simpson")
                 nMethod = 2;
         }
-        if (matchParams(sParams, "noround") || matchParams(sParams, "nr"))
-            bDoRoundResults = false;
+        if (matchParams(sParams, "steps", '='))
+        {
+            sInt_Line[2] = getArgAtPos(sParams, matchParams(sParams, "steps", '=')+5);
+            _parser.SetExpr(sInt_Line[2]);
+            parser_iVars.vValue[0][3] = (parser_iVars.vValue[0][2]-parser_iVars.vValue[0][1])/_parser.Eval();
+        }
+        if (matchParams(sParams, "s", '='))
+        {
+            sInt_Line[2] = getArgAtPos(sParams, matchParams(sParams, "s", '=')+1);
+            _parser.SetExpr(sInt_Line[2]);
+            parser_iVars.vValue[0][3] = (parser_iVars.vValue[0][2]-parser_iVars.vValue[0][1])/_parser.Eval();
+        }
+        /*if (matchParams(sParams, "noround") || matchParams(sParams, "nr"))
+            bDoRoundResults = false;*/
         if (matchParams(sParams, "points"))
             bReturnFunctionPoints = true;
         if (matchParams(sParams, "xvals"))
@@ -548,7 +560,7 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
         if (bCalcXvals)
         {
             parser_iVars.vValue[0][0] = parser_iVars.vValue[0][1];//+parser_iVars.vValue[0][2]/2.0;
-            vResult.push_back(parser_iVars.vValue[0][0]);
+            vResult[0] = parser_iVars.vValue[0][0];
             while (parser_iVars.vValue[0][0] + parser_iVars.vValue[0][3] < parser_iVars.vValue[0][2])
             {
                 parser_iVars.vValue[0][0] += parser_iVars.vValue[0][3];
@@ -613,7 +625,10 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
                 if (!bReturnFunctionPoints)
                 {
                     for (int i = 0; i < nResults; i++)
+                    {
                         vResult[i] += parser_iVars.vValue[0][3] * (fx_n[0][i] + fx_n[1][i]) * 0.5; // Durch ein Trapez annaehern!
+                        //cerr << vResult[i] << endl;
+                    }
                 }
                 else
                 {
@@ -673,7 +688,7 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
         }
 
         // --> Ergebnis sinnvoll runden! <--
-        if (bDoRoundResults)
+        /*if (bDoRoundResults)
         {
             for (unsigned int i = 0; i < vResult.size(); i++)
             {
@@ -684,7 +699,7 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
                 vResult[i] = std::round(vResult[i]);
                 vResult[i] = nSign * vResult[i] * (parser_iVars.vValue[0][3]) / pow(10.0,dExponent);
             }
-        }
+        }*/
     }
     else
     {
@@ -759,7 +774,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
     bool bIntVar[2] = {true, true}; // bool-Array, das speichert, ob und welche Integrationsvariablen in sInt_Fct enthalten sind
     bool bRenewBorder = false;      // bool, der speichert, ob die Integralgrenzen von x oder y abhaengen
     bool bLargeArray = false;       // bool, der TRUE fuer viele Datenpunkte ist
-    bool bDoRoundResults = true;
+    //bool bDoRoundResults = true;
     int nSign = 1;                  // Vorzeichen-Integer
     unsigned int nMethod = 1;       // trapezoidal = 1, simpson = 2
 
@@ -987,8 +1002,22 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
             if (getArgAtPos(sParams, nPos) == "simpson")
                 nMethod = 2;
         }
-        if (matchParams(sParams, "noround") || matchParams(sParams, "nr"))
-            bDoRoundResults = false;
+        if (matchParams(sParams, "steps", '='))
+        {
+            sInt_Line[0][2] = getArgAtPos(sParams, matchParams(sParams, "steps", '=')+5);
+            _parser.SetExpr(sInt_Line[0][2]);
+            parser_iVars.vValue[0][3] = (parser_iVars.vValue[0][2]-parser_iVars.vValue[0][1])/_parser.Eval();
+            parser_iVars.vValue[1][3] = parser_iVars.vValue[0][3];
+        }
+        if (matchParams(sParams, "s", '='))
+        {
+            sInt_Line[0][2] = getArgAtPos(sParams, matchParams(sParams, "s", '=')+1);
+            _parser.SetExpr(sInt_Line[0][2]);
+            parser_iVars.vValue[0][3] = (parser_iVars.vValue[0][2]-parser_iVars.vValue[0][1])/_parser.Eval();
+            parser_iVars.vValue[1][3] = parser_iVars.vValue[0][3];
+        }
+        /*if (matchParams(sParams, "noround") || matchParams(sParams, "nr"))
+            bDoRoundResults = false;*/
     }
 
 
@@ -1672,7 +1701,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
         }
 
         // --> Ergebnis sinnvoll runden! <--
-        if (bDoRoundResults)
+        /*if (bDoRoundResults)
         {
             for (unsigned int i = 0; i < vResult[0].size(); i++)
             {
@@ -1683,7 +1712,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
                 vResult[0][i] = std::round(vResult[0][i]);
                 vResult[0][i] = vResult[0][i] * (parser_iVars.vValue[0][3] * parser_iVars.vValue[0][3]) / pow(10.0, dExponent);
             }
-        }
+        }*/
         if (_option.getSystemPrintStatus())
             cerr << "\r|INTEGRATE> Werte aus ... 100 %";
     }
@@ -1858,7 +1887,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
         }
 
         // --> Ergebnis sinnvoll runden! <--
-        if (bDoRoundResults)
+        /*if (bDoRoundResults)
         {
             for (unsigned int i = 0; i < vResult[0].size(); i++)
             {
@@ -1869,7 +1898,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
                 vResult[0][i] = std::round(vResult[0][i]);
                 vResult[0][i] = vResult[0][i] * (parser_iVars.vValue[0][3] * parser_iVars.vValue[0][3]) / pow(10.0, dExponent);
             }
-        }
+        }*/
     }
 
     // --> Falls die Grenzen irgendwo getauscht worden sind, wird dem hier Rechnung getragen <--
@@ -2386,7 +2415,7 @@ void parser_ListFunc(const Settings& _option, const string& sType)
         cerr << LineBreak("|   rand(x0,x1)            VAL    - Generiert eine (reelle und gleichverteilte) Zufallszahl im Intervall [x0,x1)", _option, false, 0, 36) << endl;
     if (sType == "all" || sType == "num")
         cerr << LineBreak("|   range(VAR,LFT,RGHT)    VAL    - Schränkt VAR auf das Intervall [LFT,RGHT] ein", _option, false, 0, 36) << endl;
-    if (sType == "all" || sType == "num")
+    if (sType == "all" || sType == "num" || sType == "distrib")
         cerr << LineBreak("|   rect(x,x0,x1)          VAL    - Rechteckfunktion: 1 für x in [x0,x1]; 0 sonst", _option, false, 0, 36) << endl;
     if (sType == "all" || sType == "string")
         cerr << LineBreak("|   repeat(STRING,n)       STR    - Fügt n Kopien von STRING ein", _option, false, 0, 36) << endl;
