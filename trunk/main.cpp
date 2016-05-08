@@ -74,6 +74,30 @@ extern volatile sig_atomic_t exitsignal;
 // Globale Variable fuer die Zeilenlaenge
 int nLINE_LENGTH = 80;
 time_t tTimeZero = time(0);
+
+typedef BOOL (WINAPI *LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
+bool IsWow64()
+{
+    BOOL bIsWow64 = false;
+
+    //IsWow64Process is not available on all supported versions of Windows.
+    //Use GetModuleHandle to get a handle to the DLL that contains the function
+    //and GetProcAddress to get a pointer to the function if available.
+
+    LPFN_ISWOW64PROCESS fnIsWow64Process = (LPFN_ISWOW64PROCESS) GetProcAddress(
+        GetModuleHandle(TEXT("kernel32")),"IsWow64Process");
+
+    if(NULL != fnIsWow64Process)
+    {
+        if (!fnIsWow64Process(GetCurrentProcess(),&bIsWow64))
+        {
+            return false;
+        }
+    }
+    return (bool)bIsWow64;
+}
+
+
 /*
  * -> HIER UND IM FOLGENDEN: Objekte werden stets als Referenz& uebergeben, damit zum einen unnoetiges und aufwaendiges
  *    Kopieren vermieden wird, zum anderen aber auch auf den Objekten und nicht auf ihrer Kopie agiert werden kann
@@ -146,7 +170,7 @@ int main(int argc, char* argv[])
         oLogFile << "--- NUMERE-SITZUNGS-PROTOKOLL: " << sTime << " ---" << endl;
         oLogFile << "--- NumeRe v " << sVersion
                  << " | Build " << AutoVersion::YEAR << "-" << AutoVersion::MONTH << "-" << AutoVersion::DATE
-                 << " | OS: Windows v " << _osversioninfo.dwMajorVersion << "." << _osversioninfo.dwMinorVersion << "." << _osversioninfo.dwBuildNumber << " " << _osversioninfo.szCSDVersion << " ---" << endl;
+                 << " | OS: Windows v " << _osversioninfo.dwMajorVersion << "." << _osversioninfo.dwMinorVersion << "." << _osversioninfo.dwBuildNumber << " " << _osversioninfo.szCSDVersion << (IsWow64() ? " (64 Bit) ---" : " ---") << endl;
     }
 
  	nextLoadMessage(50);
@@ -203,9 +227,13 @@ int main(int argc, char* argv[])
         nextLoadMessage(50);
         cerr << " -> Verarbeite Kommandozeilenparameter ... ";
         string sTemp = "";
+        if (oLogFile.is_open())
+            oLogFile << toString(time(0) - tTimeZero, true) << "> SYSTEM: Kommandozeile: \"numere";
         for (int i = 1; i < argc; i++)
         {
             sTemp = argv[i];
+            if (oLogFile.is_open())
+                oLogFile << " " << sTemp;
             sTemp = replacePathSeparator(sTemp);
             //cerr << sTemp << endl;
             if (sTemp == "-d")
@@ -250,7 +278,9 @@ int main(int argc, char* argv[])
         }
         cerr << "Abgeschlossen.";
         if (oLogFile.is_open())
-            oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Kommandozeilenparameter wurden verarbeitet." << endl;
+        {
+            oLogFile << "\"" << endl << toString(time(0)-tTimeZero, true) << "> SYSTEM: Kommandozeilenparameter wurden verarbeitet." << endl;
+        }
     }
 
     if (_option.getbDebug())
