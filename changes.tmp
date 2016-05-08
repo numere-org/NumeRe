@@ -49,3 +49,5 @@ Added	Mit "steps=SCHRITTE" kann die Zahl der Intervallunterteilungen bei "integr
 Cleaned	Argumentbezeichner in "define" muessen nun auch den Benennungsregeln aller Variablen folgen.
 Fixed	Es koennen nun Funktionen mit leeren Argumenten definiert werden.
 Added	Das Logfile protokolliert nun die Windows-Version.
+Fixed	"show" kann nun wieder Ausschnitte aus "data()" anzeigen.
+Added	"readline" kann mittels "dflt=DEFAULT" nun ebenfalls ein Standardwert uebergeben werden.

@@ -132,7 +132,7 @@ void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string
             _data.setCacheStatus(false);
         else
         {
-            throw NO_DATA_AVAILABLE;;
+            throw NO_DATA_AVAILABLE;
         }
         int nHeadlineCount = 1;
         if (!_out.isCompact())
@@ -509,17 +509,17 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
     Indices _idx;
     map<string,long long int> mCaches = _data.getCacheList();
     mCaches["data"] = -1;
-    static string sPreferredCmds = "clear;copy;smooth;retoque;resample;stats;save;showf;swap;hist;help;man;move;matop;mtrxop;random;remove;rename;append;reload;delete;datagrid;list;load;export;edit";
+    static string sPreferredCmds = ";clear;copy;smooth;retoque;resample;stats;save;showf;swap;hist;help;man;move;matop;mtrxop;random;remove;rename;append;reload;delete;datagrid;list;load;export;edit";
     string sCacheCmd = "";
     for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
     {
-        if (findCommand(sCmd, iter->first).sString == iter->first && iter->first != "data")
+        if (findCommand(sCmd, iter->first).sString == iter->first)
         {
             sCacheCmd = iter->first;
             break;
         }
     }
-    if (sCacheCmd.length() && sPreferredCmds.find(sCommand) != string::npos) // Ist das fuehrende Kommando praeferiert?
+    if (sCacheCmd.length() && sPreferredCmds.find(";"+sCommand+";") != string::npos) // Ist das fuehrende Kommando praeferiert?
         sCacheCmd.clear();
 
     //cerr << sCmd << endl;
@@ -1296,23 +1296,36 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
     {
         nPos = findCommand(sCmd, "readline").nPos;
         sCommand = extractCommandString(sCmd, findCommand(sCmd, "readline"));
+        string sDefault = "";
         if (matchParams(sCmd, "msg", '='))
         {
             if (_data.containsStringVars(sCmd))
                 _data.getStringValues(sCmd, nPos);
-            addArgumentQuotes(sCmd, "msg");
+            //addArgumentQuotes(sCmd, "msg");
             sCmd = sCmd.replace(nPos, sCommand.length(), BI_evalParamString(sCommand, _parser, _data, _option, _functions));
             sCommand = BI_evalParamString(sCommand, _parser, _data, _option, _functions);
+        }
+        if (matchParams(sCmd, "dflt", '='))
+        {
+            if (_data.containsStringVars(sCmd))
+                _data.getStringValues(sCmd, nPos);
+            //addArgumentQuotes(sCmd, "dflt");
+            sCmd = sCmd.replace(nPos, sCommand.length(), BI_evalParamString(sCommand, _parser, _data, _option, _functions));
+            sCommand = BI_evalParamString(sCommand, _parser, _data, _option, _functions);
+            sDefault = getArgAtPos(sCmd, matchParams(sCmd, "dflt", '=')+4);
         }
         while (!sArgument.length())
         {
             cerr << "|-> ";
             if (matchParams(sCmd, "msg", '='))
             {
-                unsigned int n_pos = matchParams(sCmd, "msg", '=') + 3;
-                cerr << toSystemCodePage(sCmd.substr(sCmd.find('"', n_pos)+1, sCmd.rfind('"')-sCmd.find('"', n_pos)-1));
+                //unsigned int n_pos = matchParams(sCmd, "msg", '=') + 3;
+                //cerr << toSystemCodePage(sCmd.substr(sCmd.find('"', n_pos)+1, sCmd.rfind('"')-sCmd.find('"', n_pos)-1));
+                cerr << LineBreak(getArgAtPos(sCmd, matchParams(sCmd, "msg", '=')+3), _option, false, 4);
             }
             getline(cin, sArgument);
+            if (!sArgument.length() && sDefault.length())
+                sArgument = sDefault;
         }
         if (matchParams(sCmd, "asstr") && sArgument[0] != '"' && sArgument[sArgument.length()-1] != '"')
             sCmd = sCmd.replace(nPos, sCommand.length(), "\"" + sArgument + "\"");
@@ -1336,7 +1349,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             doc_Help("read", _option);
         return 1;
     }
-    else if (findCommand(sCmd, "data").sString == "data" && sCommand != "clear" && sCommand != "copy")
+    else if (findCommand(sCmd, "data").sString == "data" && sCacheCmd == "data" && sCommand != "clear" && sCommand != "copy")
     {
         if (matchParams(sCmd, "clear"))
         {
@@ -3414,36 +3427,34 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                             parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
 
                             _cache.setCacheSize(_idx.nI[1]-_idx.nI[0]+1, _idx.nJ[1]-_idx.nJ[0]+1, 1);
-                            if (iter->first != "cache")
-                                _cache.renameCache("cache", iter->first, true);
+                            _cache.renameCache("cache", toUpperCase(iter->first), true);
                             for (unsigned int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
                             {
                                 for (unsigned int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
                                 {
                                     if (i == _idx.nI[0])
                                     {
-                                        _cache.setHeadLineElement(j-_idx.nJ[0], iter->first, _data.getHeadLineElement(j, iter->first));
+                                        _cache.setHeadLineElement(j-_idx.nJ[0], toUpperCase(iter->first), _data.getHeadLineElement(j, iter->first));
                                     }
                                     if (_data.isValidEntry(i,j,iter->first))
-                                        _cache.writeToCache(i-_idx.nI[0], j-_idx.nJ[0], iter->first, _data.getElement(i,j, iter->first));
+                                        _cache.writeToCache(i-_idx.nI[0], j-_idx.nJ[0], toUpperCase(iter->first), _data.getElement(i,j, iter->first));
                                 }
                             }
                         }
                         else
                         {
                             _cache.setCacheSize(_idx.vI.size(), _idx.vJ.size(), 1);
-                            if (iter->first != "cache")
-                                _cache.renameCache("cache", iter->first, true);
+                            _cache.renameCache("cache", toUpperCase(iter->first), true);
                             for (unsigned int i = 0; i < _idx.vI.size(); i++)
                             {
                                 for (unsigned int j = 0; j < _idx.vJ.size(); j++)
                                 {
                                     if (!i)
                                     {
-                                        _cache.setHeadLineElement(j, iter->first, _data.getHeadLineElement(_idx.vJ[j], iter->first));
+                                        _cache.setHeadLineElement(j, toUpperCase(iter->first), _data.getHeadLineElement(_idx.vJ[j], iter->first));
                                     }
                                     if (_data.isValidEntry(_idx.vI[i], _idx.vJ[j], iter->first))
-                                        _cache.writeToCache(i, j, iter->first, _data.getElement(_idx.vI[i], _idx.vJ[j], iter->first));
+                                        _cache.writeToCache(i, j, toUpperCase(iter->first), _data.getElement(_idx.vI[i], _idx.vJ[j], iter->first));
                                 }
                             }
                         }
@@ -3454,7 +3465,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
 
                         //cerr << sCmd << endl;
                         _data.setCacheStatus(false);
-                        BI_show_data(_cache, _out, _option, iter->first, false, true);
+                        BI_show_data(_cache, _out, _option, toUpperCase(iter->first), false, true);
                         return 1;
                     }
                 }
@@ -4527,6 +4538,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
                 {
+                    //cerr << sArgument << endl;
                     if (matchParams(sCmd, "slice", '=') && getArgAtPos(sCmd, matchParams(sCmd, "slice", '=')+5) == "xz")
                         nArgument = -1;
                     else if (matchParams(sCmd, "slice", '=') && getArgAtPos(sCmd, matchParams(sCmd, "slice", '=')+5) == "yz")
