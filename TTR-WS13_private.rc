@@ -33,23 +33,23 @@ FILEVERSION RC_FILEVERSION
 PRODUCTVERSION RC_FILEVERSION
 FILETYPE VFT_APP
 {
-  BLOCK "StringFileInfo"
-  {
-    BLOCK "040704E4"
+    BLOCK "StringFileInfo"
     {
-      VALUE "CompanyName", "Erik Hänel et al."
-      VALUE "FileVersion", RC_FILEVERSION_STRING
-      VALUE "FileDescription", "NumeRe: Framework für Numerische Rechnungen"
-      VALUE "InternalName", "NumeRe"
-      VALUE "LegalCopyright", "(c) 2015, Erik Hänel et al. | GNU GPL v3.0"
-      VALUE "LegalTrademarks", "muParser Library, (c) 2011 Ingo Berg; Boost Library, (c) 2006 Joe Coder; MathGL Library, (c) 2012 Alexey A. Balakin"
-      VALUE "OriginalFilename", "numere.exe"
-      VALUE "ProductName", "NumeRe | Freie numerische Software unter der GNU GPL v3.0"
-      VALUE "ProductVersion", RC_FILEVERSION_STRING
+        BLOCK "040704E4"
+        {
+            VALUE "CompanyName", "Erik Hänel et al."
+            VALUE "FileVersion", RC_FILEVERSION_STRING
+            VALUE "FileDescription", "NumeRe: Framework für Numerische Rechnungen"
+            VALUE "InternalName", "NumeRe"
+            VALUE "LegalCopyright", "(c) 2016, Erik Hänel et al. | GNU GPL v3.0"
+            VALUE "LegalTrademarks", "muParser Library, (c) 2011 Ingo Berg; Boost Library, (c) 2006 Joe Coder; MathGL Library, (c) 2012 Alexey A. Balakin"
+            VALUE "OriginalFilename", "numere.exe"
+            VALUE "ProductName", "NumeRe | Freie numerische Software unter der GNU GPL v3.0"
+            VALUE "ProductVersion", RC_FILEVERSION_STRING
+        }
     }
-  }
-  BLOCK "VarFileInfo"
-  {
-    VALUE "Translation", 0x0407, 1252
-  }
+    BLOCK "VarFileInfo"
+    {
+        VALUE "Translation", 0x0407, 1252
+    }
 }

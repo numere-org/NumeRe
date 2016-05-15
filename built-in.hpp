@@ -93,5 +93,6 @@ bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _op
 bool BI_writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
 bool BI_readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
 string BI_getVarList(const string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
+bool BI_generateTemplate(const string& sFile, const string& sTempl, const vector<string>& vTokens, Settings& _option);
 
 #endif
