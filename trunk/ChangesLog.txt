@@ -1,3 +1,61 @@
+12 May 2016
+   v 1.0.9 "Release Candidate 1" rev. 73
+
+     Change log:
+        -Added: Mit der Option "slices=X,Y,Z" koennen nun die Zahl der Schnitte bei "cont3d" und "dens3d" angegeben werden.
+        -Fixed: Die Kombination von "surf3d" bzw. "mesh3d" mit "cut" und "light" zeigte seltsame unbeleuchtete Flaechen. Dies wurde behoben.
+        -Added: "resample" resamplet nun per default zweidimensional (wie "smooth" und "retoque"). Dieses Verhalten kann mit den Parametern "lines" und "cols" geändert werden.
+        -Cleaned: Parameter "grid" zu "resample", "smooth" und "retoque" hinzugefuegt, der den Datensatz als Datengitter interpretiert.
+        -New: NumeRe kann mittels "audio DATA()" einen Datensatz in eine WAVE-Datei umwandeln.
+        -New: NumeRe kann mittels "regularize CACHE()" aus Datensaetzen mit unregelmaessigen x-y-Wertepaaren Datensaetze mit aequidistanten x-Werten generieren.
+        -Fixed: "readline" kann nun auch Meldungen mit Umlauten ausgeben.
+        -Fixed: Wenn die IDs eigener Hilfeartikel bei einer Plugin-Installation geaendert werden, wird dies nun konsistent in Index und Hilfedatei durchgefuehrt.
+        -Fixed: Die Vektorzuweisung "{x,y,z} = WERTE" ist nun nicht mehr auf Leerzeichen zwischen "}" und "=" sensitiv.
+        -Fixed: "break" und "continue" werden in Schleifen, die in Prozeduren ausgefuehrt werden, wieder korrekt erkannt.
+        -Fixed: "get -viewer -asstr" gibt nun eine leere Zeichenkette zuruck (und keine Fehlermeldung), wenn kein Imageviewer deklariert wurde.
+        -New: NumeRe beinhaelt nun auch einen Debugger fuer Prozeduren und Plugins, der mittels "set-mode=debug" gestartet werden kann.
+        -Cleaned: Die Funktion "StripSpaces(string&)" wurde ueberarbeitet und verwendet nun vorzugsweise String-Methoden.
+        -Added: Die Zeichenfolge "|>" am Anfang einer Zeile in einer Prozedur wird vom Debugger als Breakpoint interpretiert, so dass an dieser Stelle alle Werte kontrolliert werden koennen.
+        -Fixed: Parsertester lieferte Fehlermeldungen, die mit einer Syntaxaenderung zusammenhingen. Wurde behoben.
+        -Fixed: In der Ergebnisfunktion bei "fit" werden nun auch Parameter am Ende korrekt durch ihre Werte ersetzt.
+        -Fixed: Sind alle Caches leer, so wird das Entfernen eines Caches nicht mehr als Modifikation eines Caches interpretiert.
+        -Fixed: Die Plotoption "interpolate" wird nun auch für die Kurzschreibweise "CACHE()" korrekt umgesetzt.
+        -Fixed: Plotstile, an die Datensaetze uebergeben werden, die jedoch nicht damit umgehen koennen, bringen NumeRe nicht mehr zum Absturz.
+        -Fixed: "data -paste" entnimmt nun den Inhalt des Clipboards automatisch oder zeigt die Einfuegemaske, falls der Inhalt des Clipboards nicht in eine nur-text Tabelle umgewandelt werden kann oder keine numerischen Werte enthaelt.
+        -Fixed: "compose"-Bloecke wurden bei Prozedurinstallationen nicht korrekt kopiert. Wurde behoben.
+        -New: Subplot-Funktionalitaet hinzugefuegt: "compose" kann mit dem Parameter "-multiplot=LINES,COLS" versehen werden, so dass ein Gitter fuer mehrere Plots in einer Datei erzeugt wird. "subplot" leitet dabei einen neuen Unterplot ein. Unterplots koennen sich auch ueber mehrere Spalten und Zeilen der Ausgabe erstrecken.
+        -Fixed: "for (i<=N)" wird nun korrekt als fehlerhafte Eingabe abgefangen.
+        -Fixed: Moeglicherweise (!) wurde ein Schleifenfehler entfernt, der verhinderte, dass Schleifen unter bestimmten Umstaenden nicht mehr korrekt ausgefuehrt werden koennen.
+        -Cleaned: Die Zahl der maximalen Datenpunkte fuer 2- und 3-D-Plots wurde auf 1M begrenzt. (1000x1000 bzw. 100x100x100)
+        -Cleaned: "clear" kann nun auch mit "data()", "CACHE()" und "string()" verwendet werden.
+        -Cleaned: "print STRING" als Alias zu "STRING -print" eingefuehrt.
+        -Cleaned: "for"-Schleifen erfordern nun zwingend Klammern um ihr Argument.
+        -Cleaned: Schleifen und Verzweigungen muessen nun nicht mehr zwingend auf mehrere Zeilen verteilt werden: "if (COND) EXPR2 else EXPR2 endif" ist daher in einer Zeile moeglich
+        -Added: Die Funktion "cot(x)" berechnet den Kotangens von x.
+        -Added: Die Funktion "version()" gibt die NumeRe-Versionsnummer als natuerliche Zahl zurueck.
+        -Fixed: Der seltsame Definitionsfehler bei speziellen Funktionsnamen "Argumente konnten nicht gefunden werden" wurde behoben.
+        -Cleaned: Der seltsame Darstellungsfehler bei "list -var" nachdem "list -define" ausgefuehrt wurde, wurde behoben.
+        -Cleaned: Tritt das Kommando "start" nun in einem Script auf, wird nun eine Fehlermeldung angezeigt.
+        -Fixed: "export data() -file=FILE" sollte nun tatsaechlich endlich funktionieren.
+        -Fixed: "extrema" gibt nun keine doppelten Indices mehr zurueck.
+        -Fixed: "plot" kann wieder mit einem Index-Datensatz verwendet werden.
+        -Added: Mittels "-requireversion=VERSION" kann nun geprueft werden, ob die NumeRe-Version ausreichend fuer die zu installierenden Plugins ist. ACHTUNG: NumeRe-Versionen VOR v1.0.9 werden dieses Feld NICHT lesen koennen.
+        -Added: "new" kann nun mittels "new -plugin=PLUGINCMD" ein Template fuer eine Plugininstallation erzeugen.
+        -Added: Mittels "-requirepackages=PACKAGELIST" kann ein Satz an Packages (Scripte) vorgegeben werden, der mit einer Installation automatisch mitinstalliert wird. Wird erst ab Version v1.0.9 interpretiert.
+        -Fixed: Maskierter Segfault in Schleifen behoben.
+        -Cleaned: NumeRe wird den Dateityp beim Laden nun erraten, wenn keine Endung angegeben wird.
+        -Cleaned: Die Kommandoerkennung wurde verbessert.
+        -Added: Mittels "addxaxis=(MIN,MAX)" bzw. "addyaxis=(MIN,MAX)" können jeweils eine zusaetzliche Achse mit einem anderen Bereich angezeigt werden. Diese Option erfordert "box" und kann nur bei "plot" angewendet werden.
+        -Fixed: Temporaerer Memoryleak in Prozeduren wurde behoben.
+        -Added: "inf" wird bei Plots nun korrekt als "\infty" interpretiert.
+        -Removed: "noround" und die internen Rundungen bei "integrate" wurden entfernt.
+        -Added: Mit "steps=SCHRITTE" kann die Zahl der Intervallunterteilungen bei "integrate" vorgegeben werden.
+        -Cleaned: Argumentbezeichner in "define" muessen nun auch den Benennungsregeln aller Variablen folgen.
+        -Fixed: Es koennen nun Funktionen mit leeren Argumenten definiert werden.
+        -Added: Das Logfile protokolliert nun die Windows-Version.
+        -Fixed: "show" kann nun wieder Ausschnitte aus "data()" anzeigen.
+        -Added: "readline" kann mittels "dflt=DEFAULT" nun ebenfalls ein Standardwert uebergeben werden.
+
 17 February 2016
    v 1.0.8 "Bloch" rev. 58
 

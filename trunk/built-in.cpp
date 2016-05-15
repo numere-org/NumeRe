@@ -455,8 +455,8 @@ void BI_show_credits(Parser& _parser, Settings& _option)
 	cerr << "|-> Build-Datum: " << AutoVersion::YEAR << "-" << AutoVersion::MONTH << "-" << AutoVersion::DATE << endl;
 	cerr << "|-> Copyright " << (char)184 << " " << AutoVersion::YEAR << toSystemCodePage(", Erik HÄNEL et al.") << endl;
 	cerr << "|   <numere.developer" << (char)64 << "gmail.com>" << endl;
-	//cerr << LineBreak("|-> RELEASE CANDIDATE: ein Release Candidate trägt keinen Eigennamen. Außerdem wird NICHT garantiert, dass die gesamte derzeitig Funktionalität erhalten bleibt, wie sie in diesem Release Candidate vorliegt. Auf den Fortgang der Entwicklung kann durch eine Mail an obige Mailadresse Einfluss genommen werden. Sollten Bugs gefunden werden, oder eine Funktionalität noch nicht den erwünschten Umfang haben, sollte dies per Mail übermittelt werden.", _option) << endl;
-    cerr << LineBreak("|-> Felix BLOCH (1905-1983) war ein schweizerisch-US-amerikanischer Physiker, der 1952 den Nobelpreis für Physik für die Entdeckung der Kernspinresonanz erhielt. Er ist Namensgeber vieler quantenmechanischer Modelle der Festkörperphysik.", _option) << endl;
+	cerr << LineBreak("|-> RELEASE CANDIDATE: ein Release Candidate trägt keinen Eigennamen. Außerdem wird NICHT garantiert, dass die gesamte derzeitig Funktionalität erhalten bleibt, wie sie in diesem Release Candidate vorliegt. Auf den Fortgang der Entwicklung kann durch eine Mail an obige Mailadresse Einfluss genommen werden. Sollten Bugs gefunden werden, oder eine Funktionalität noch nicht den erwünschten Umfang haben, sollte dies per Mail übermittelt werden.", _option) << endl;
+    //cerr << LineBreak("|-> Felix BLOCH (1905-1983) war ein schweizerisch-US-amerikanischer Physiker, der 1952 den Nobelpreis für Physik für die Entdeckung der Kernspinresonanz erhielt. Er ist Namensgeber vieler quantenmechanischer Modelle der Festkörperphysik.", _option) << endl;
     make_hline(-80);
     cerr << LineBreak("|-> Dieses Programm ist freie Software. Sie können es unter den Bedingungen der GNU General Public Licence, wie von der Free Software Foundation veröffentlicht, weitergeben und/oder modifizieren, entweder gemäß Version 3 der Lizenz, oder (nach Ihrer Option) jeder späteren Version.", _option) << endl;
     cerr << LineBreak("|-> Die Veröffentlichung dieses Programms erfolgt in der Hoffnung, dass es Ihnen von Nutzen sein wird, aber OHNE IRGENDEINE GARANTIE, sogar ohne die implizite Garantie der MARKTREIFE oder der VERWENDBARKEIT FÜR EINEN BESTIMMTEN ZWECK. Details stehen in der GNU General Public Licence." , _option) << endl;
@@ -7120,6 +7120,7 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
 {
     int nType = 0;
     string sObject = "";
+    vector<string> vTokens;
     FileSystem _fSys;
     _fSys.setTokens(_option.getTokenPaths());
     if (_data.containsStringVars(sCmd))
@@ -7299,7 +7300,14 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
         if (sObject.find('\\') == string::npos && sObject.find('/') == string::npos)
             sObject = "<scriptpath>/"+sObject;
         sObject = _fSys.ValidFileName(sObject, ".nscr");
-        ofstream fScript;
+        vTokens.push_back(sObject.substr(sObject.rfind('/')+1, sObject.rfind('.')-sObject.rfind('/')-1));
+        vTokens.push_back(getTimeStamp(false));
+        if (!BI_generateTemplate(sObject, "<>/lang/tmpl_script.nlng", vTokens, _option))
+        {
+            sErrorToken = sObject;
+            throw CANNOT_GENERATE_SCRIPT;
+        }
+        /*ofstream fScript;
         fScript.open(sObject, ios_base::trunc);
         if (fScript.fail())
         {
@@ -7322,7 +7330,7 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
         fScript << " * NumeRe: Framework für Numerische Rechnungen | Freie numerische Software unter der GNU GPL v3" << endl;
         fScript << " * https://sites.google.com/site/numereframework/" << endl;
         fScript << " *#" << endl;
-        fScript.close();
+        fScript.close();*/
         if (_option.getSystemPrintStatus())
             cerr << LineBreak("|-> Das Script \"" + sObject + "\" wurde erfolgreich erzeugt.", _option) << endl;
     }
@@ -7376,7 +7384,14 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
         while (sObject.find('$') != string::npos)
             sObject.erase(sObject.find('$'),1);
         sObject = _fSys.ValidFileName(sObject, ".nprc");
-        ofstream fProc;
+        vTokens.push_back(sProcedure);
+        vTokens.push_back(getTimeStamp(false));
+        if (!BI_generateTemplate(sObject, "<>/lang/tmpl_proc.nlng", vTokens, _option))
+        {
+            sErrorToken = sObject;
+            throw CANNOT_GENERATE_PROCEDURE;
+        }
+        /*ofstream fProc;
         fProc.open(sObject, ios_base::trunc);
         if (fProc.fail())
         {
@@ -7397,7 +7412,7 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
         fProc << " * NumeRe: Framework für Numerische Rechnungen | Freie numerische Software unter der GNU GPL v3" << endl;
         fProc << " * https://sites.google.com/site/numereframework/" << endl;
         fProc << " *#" << endl;
-        fProc.close();
+        fProc.close();*/
         if (_option.getSystemPrintStatus())
             cerr << LineBreak("|-> Die Prozedur \"" + sObject + "\" wurde erfolgreich erzeugt.", _option) << endl;
     }
@@ -7426,8 +7441,14 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
             || sObject.substr(sObject.rfind('.')) == ".nscr"
             || sObject.substr(sObject.rfind('.')) == ".ndat")
             sObject.replace(sObject.rfind('.'),5,".txt");
-
-        ofstream fFile;
+        vTokens.push_back(sObject.substr(sObject.rfind('/')+1, sObject.rfind('.')-sObject.rfind('/')-1));
+        vTokens.push_back(getTimeStamp(false));
+        if (!BI_generateTemplate(sObject, "<>/lang/tmpl_file.nlng", vTokens, _option))
+        {
+            sErrorToken = sObject;
+            throw CANNOT_GENERATE_FILE;
+        }
+        /*ofstream fFile;
         fFile.open(sObject, ios_base::trunc);
         if (fFile.fail())
         {
@@ -7436,7 +7457,7 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
         }
         fFile << "# Diese Datei wurde automatisch von NumeRe erzeugt." << endl;
         fFile << "# =================================================" << endl;
-        fFile.close();
+        fFile.close();*/
         if (_option.getSystemPrintStatus())
             cerr << LineBreak("|-> Die Datei \"" + sObject + "\" wurde erfolgreich erzeugt.", _option) << endl;
     }
@@ -7464,8 +7485,17 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
             sObject.insert(sObject.rfind('/')+1, "plgn_");
         while (sObject.find(' ', sObject.rfind('/')) != string::npos)
             sObject.erase(sObject.find(' ', sObject.rfind('/')),1);
-        ofstream fScript;
+
         string sPluginName = sObject.substr(sObject.rfind("plgn_")+5, sObject.rfind('.')-sObject.rfind("plgn_")-5);
+        vTokens.push_back(sPluginName);
+        vTokens.push_back(getTimeStamp(false));
+        if (!BI_generateTemplate(sObject, "<>/lang/tmpl_plugin.nlng", vTokens, _option))
+        {
+            sErrorToken = sObject;
+            throw CANNOT_GENERATE_SCRIPT;
+        }
+
+        /*ofstream fScript;
         fScript.open(sObject, ios_base::trunc);
         if (fScript.fail())
         {
@@ -7526,7 +7556,7 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
         fScript << " * NumeRe: Framework für Numerische Rechnungen | Freie numerische Software unter der GNU GPL v3" << endl;
         fScript << " * https://sites.google.com/site/numereframework/" << endl;
         fScript << " *#" << endl;
-        fScript.close();
+        fScript.close();*/
         if (_option.getSystemPrintStatus())
             cerr << LineBreak("|-> Ein Template für das Plugin \"" + sPluginName + "\" wurde in \"" + sObject + "\" erzeugt.", _option) << endl;
     }
@@ -7963,6 +7993,41 @@ string BI_getVarList(const string& sCmd, Parser& _parser, Datafile& _data, Setti
     else
         sReturn.erase(sReturn.length()-2);
     return sReturn;
+}
+
+bool BI_generateTemplate(const string& sFile, const string& sTempl, const vector<string>& vTokens, Settings& _option)
+{
+    ifstream iTempl_in;
+    ofstream oFile_out;
+    string sLine;
+    string sToken;
+
+    iTempl_in.open(_option.ValidFileName(sTempl, ".nlng").c_str());
+    oFile_out.open(_option.ValidFileName(sFile, sFile.substr(sFile.rfind('.'))).c_str());
+
+    if (iTempl_in.fail() || oFile_out.fail())
+    {
+        iTempl_in.close();
+        oFile_out.close();
+        return false;
+    }
+
+    while (!iTempl_in.eof())
+    {
+        getline(iTempl_in, sLine);
+        for (unsigned int i = 0; i < vTokens.size(); i++)
+        {
+            sToken = "%%"+toString(i+1)+"%%";
+            while (sLine.find(sToken) != string::npos)
+            {
+                sLine.replace(sLine.find(sToken), sToken.length(), vTokens[i]);
+            }
+        }
+        oFile_out << sLine << endl;
+    }
+    iTempl_in.close();
+    oFile_out.close();
+    return true;
 }
 
 /*
