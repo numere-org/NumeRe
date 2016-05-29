@@ -342,10 +342,10 @@ int Loop::for_loop(Parser& _parser, Define& _functions, Datafile& _data, Setting
                         else
                         {
                             if (bPrintedStatus && !nth_loop)
-                                cerr << "\r|FOR> Werte aus ... 100 %: Erfolg!" << endl;
+                                cerr << "\r|FOR> " << toSystemCodePage(_lang.get("COMMON_EVALUATING")) << " ... 100 %: " << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
                             else if (!nth_loop)
                             {
-                                cerr << "|FOR> Werte aus ... 100 %: Erfolg!" << endl;
+                                cerr << "|FOR> " << toSystemCodePage(_lang.get("COMMON_EVALUATING")) << " ... 100 %: " << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
                                 bPrintedStatus = true;
                             }
                             return __j;
@@ -609,7 +609,7 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
     }
     if (bSilent && !bMask && !nth_loop)
     {
-        cerr << "|WHL> Werte aus ... ";
+        cerr << "|WHL> " << toSystemCodePage(_lang.get("COMMON_EVALUATING")) << " ... ";
         bPrintedStatus = true;
     }
     while (true)
@@ -740,7 +740,7 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
         {
             if (bSilent && !bMask)
             {
-                cerr << "\r|WHL> Werte aus ... ";
+                cerr << "\r|WHL> " << toSystemCodePage(_lang.get("COMMON_EVALUATING")) << " ... ";
                 bPrintedStatus = true;
             }
         }
@@ -1026,9 +1026,9 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                             if (!bReturnSignal && !bMask && __i != -1)
                             {
                                 if (bSilent)
-                                    cerr << "\r|FOR> Werte aus ... 100 %: Erfolg!" << endl;
+                                    cerr << "\r|FOR> " << toSystemCodePage(_lang.get("COMMON_EVALUATING")) << " ... 100 %: " << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
                                 else
-                                    cerr << "|FOR> Erfolg!" << endl;
+                                    cerr << "|FOR> " << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
                             }
                         }
                         else
@@ -1045,9 +1045,9 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                             if (!bReturnSignal && !bMask && __i != -1)
                             {
                                 if (bSilent)
-                                    cerr << "\r|WHL> Werte aus ...: Erfolg!" << endl;
+                                    cerr << "\r|WHL> " << toSystemCodePage(_lang.get("COMMON_EVALUATING")) << " ...: " << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
                                 else
-                                    cerr << "|WHL> Erfolg!" << endl;
+                                    cerr << "|WHL> " << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
                             }
                         }
                         else
@@ -1271,9 +1271,9 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                                     if (!bReturnSignal && !bMask && __i != -1)
                                     {
                                         if (bSilent)
-                                            cerr << "\r|FOR> Werte aus ... 100 %: Erfolg!" << endl;
+                                            cerr << "\r|FOR> " << toSystemCodePage(_lang.get("COMMON_EVALUATING")) << " ... 100 %: " << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
                                         else
-                                            cerr << "|FOR> Erfolg!" << endl;
+                                            cerr << "|FOR> " << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
                                     }
                                 }
                                 else
@@ -1290,9 +1290,9 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                                     if (!bReturnSignal && !bMask && __i != -1)
                                     {
                                         if (bSilent)
-                                            cerr << "\r|WHL> Werte aus ...: Erfolg!" << endl;
+                                            cerr << "\r|WHL> " << toSystemCodePage(_lang.get("COMMON_EVALUATING")) << " ...: " << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
                                         else
-                                            cerr << "|WHL> Erfolg!" << endl;
+                                            cerr << "|WHL> " << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
                                     }
                                 }
                                 else
@@ -1434,9 +1434,9 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                             if (!bReturnSignal && !bMask && __i != -1)
                             {
                                 if (bSilent)
-                                    cerr << "\r|FOR> Werte aus ... 100 %: Erfolg!" << endl;
+                                    cerr << "\r|FOR> " << toSystemCodePage(_lang.get("COMMON_EVALUATING")) << " ... 100 %: " << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
                                 else
-                                    cerr << "|FOR> Erfolg!" << endl;
+                                    cerr << "|FOR> " << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
                             }
                         }
                         else
@@ -1453,9 +1453,9 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                             if (!bReturnSignal && !bMask && __i != -1)
                             {
                                 if (bSilent)
-                                    cerr << "\r|WHL> Werte aus ...: Erfolg!" << endl;
+                                    cerr << "\r|WHL> " << toSystemCodePage(_lang.get("COMMON_EVALUATING")) << " ...: " << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
                                 else
-                                    cerr << "|WHL> Erfolg!" << endl;
+                                    cerr << "|WHL> " << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
                             }
                         }
                         else
@@ -1559,7 +1559,7 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
     if (__sCmd == "abort")
     {
         reset(_parser);
-        cerr << "|-> Deklaration abgebrochen." << endl;
+        cerr << "|-> " << toSystemCodePage(_lang.get("LOOP_SETCOMMAND_ABORT")) << endl;
         return;
     }
 
@@ -1596,7 +1596,7 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
             // --> Pruefen wir, ob auch Grenzen eingegeben wurden <--
             if (__sCmd.find('=') == string::npos || __sCmd.find(':') == string::npos || __sCmd.find('(') == string::npos)
             {
-                cerr << LineBreak("|-> Bitte Grenzen und Zählvariable angeben:", _option) << endl;
+                cerr << LineBreak("|-> " + toSystemCodePage(_lang.get("LOOP_SUPPLY_BORDERS_AND_VAR")) + ":", _option) << endl;
                 string sTemp = "";
                 do
                 {
@@ -1657,7 +1657,7 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
             }
             if (__sCmd.find('(') == string::npos)
             {
-                cerr << LineBreak("|-> FEHLER: Es wurde keine erfüllbare Bedingung eingegeben! Bitte ergänzen:", _option) << endl;
+                cerr << LineBreak("|-> " + toSystemCodePage(_lang.get("LOOP_SUPPLY_FULFILLABLE_CONDITION")) + ":", _option) << endl;
 
                 string sTemp = "";
                 while (sTemp.find('(') == string::npos)
@@ -1701,7 +1701,7 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
             }
             if (__sCmd.find('(') == string::npos)
             {
-                cerr << LineBreak("|-> FEHLER: Es wurde keine erfüllbare Bedingung eingegeben! Bitte ergänzen:", _option) << endl;
+                cerr << LineBreak("|-> " + toSystemCodePage(_lang.get("LOOP_SUPPLY_FULFILLABLE_CONDITION")) + ":", _option) << endl;
 
                 string sTemp = "";
                 while (sTemp.find('(') == string::npos)
@@ -1748,7 +1748,7 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
                     }
                     if (__sCmd.find('(') == string::npos)
                     {
-                        cerr << LineBreak("|-> FEHLER: Es wurde keine erfüllbare Bedingung eingegeben! Bitte ergänzen:", _option) << endl;
+                        cerr << LineBreak("|-> " + toSystemCodePage(_lang.get("LOOP_SUPPLY_FULFILLABLE_CONDITION")) + ":", _option) << endl;
 
                         string sTemp = "";
                         while (sTemp.find('(') == string::npos)
@@ -1850,7 +1850,7 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
         string sNewCommand = "";
         if (__sCmd.find('"') == string::npos)
         {
-            cerr << "|-> FEHLER: Kein neues Kommando angegeben!" << endl;
+            cerr << "|-> " << toSystemCodePage(_lang.get("LOOP_MISSING_COMMAND")) << endl;
             return;
         }
         sNewCommand = __sCmd.substr(__sCmd.find('"')+1);
@@ -1858,7 +1858,7 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
         StripSpaces(sNewCommand);
         if (!sNewCommand.length())
         {
-            cerr << "|-> FEHLER: Kein neues Kommando angegeben!" << endl;
+            cerr << "|-> " << toSystemCodePage(_lang.get("LOOP_MISSING_COMMAND")) << endl;
             return;
         }
         for (int i = 0; i < nCmd; i++)
@@ -1883,13 +1883,13 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
             nLine += nInput+1;
             if (nLine < 0)
             {
-                cerr << "|-> FEHLER: Diese Zeile existiert nicht!" << endl;
+                cerr << "|-> " << toSystemCodePage(_lang.get("LOOP_LINE_NOT_EXISTENT")) << endl;
                 return;
             }
         }
         else if (nInput-1 > nLine)
         {
-            cerr << "|-> FEHLER: Diese Zeile existiert nicht!" << endl;
+            cerr << "|-> " << toSystemCodePage(_lang.get("LOOP_LINE_NOT_EXISTENT")) << endl;
             return;
         }
         else
@@ -1939,7 +1939,7 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
                     // --> Pruefen wir, ob auch Grenzen eingegeben wurden <--
                     if (sNewCommand.find('=') == string::npos)
                     {
-                        cerr << LineBreak("|-> Bitte Grenzen und Zaehlvariable angeben:", _option) << endl;
+                        cerr << LineBreak("|-> " + toSystemCodePage(_lang.get("LOOP_SUPPLY_BORDERS_AND_VAR")) + ":", _option) << endl;
                         string sTemp = "";
                         do
                         {
@@ -1994,7 +1994,7 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
                     }
                     if (sNewCommand.find('(') == string::npos)
                     {
-                        cerr << LineBreak("|-> FEHLER: Es wurde keine erfüllbare Bedingung eingegeben! Bitte ergänzen:", _option) << endl;
+                        cerr << LineBreak("|-> " + toSystemCodePage(_lang.get("LOOP_SUPPLY_FULFILLABLE_CONDITION")) + ":", _option) << endl;
 
                         string sTemp = "";
                         while (sTemp.find('(') == string::npos)
@@ -2037,7 +2037,7 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
                     }
                     if (sNewCommand.find('(') == string::npos)
                     {
-                        cerr << LineBreak("|-> FEHLER: Es wurde keine erfüllbare Bedingung eingegeben! Bitte ergänzen:", _option) << endl;
+                        cerr << LineBreak("|-> " + toSystemCodePage(_lang.get("LOOP_SUPPLY_FULFILLABLE_CONDITION")) + ":", _option) << endl;
 
                         string sTemp = "";
                         while (sTemp.find('(') == string::npos)
@@ -2536,9 +2536,9 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
             else if (!bReturnSignal && !bMask)
             {
                 if (bSilent)
-                    cerr << "\r|FOR> Werte aus ... 100 %: Erfolg!" << endl;
+                    cerr << "\r|FOR> " << toSystemCodePage(_lang.get("COMMON_EVALUATING")) << " ... 100 %: " << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
                 else
-                    cerr << "|FOR> Erfolg!" << endl;
+                    cerr << "|FOR> " << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
             }
         }
         else if (sCmd[0][0].substr(0,5) == "while")
@@ -2552,9 +2552,9 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
             else if (!bReturnSignal && !bMask)
             {
                 if (bSilent)
-                    cerr << "\r|WHL> Werte aus ...: Erfolg!" << endl;
+                    cerr << "\r|WHL> " << toSystemCodePage(_lang.get("COMMON_EVALUATING")) << " ...: " << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
                 else
-                    cerr << "|WHL> Erfolg!" << endl;
+                    cerr << "|WHL> " << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
             }
         }
         else
@@ -3112,8 +3112,7 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
             }
             if (bMultLinCol[0] && bMultLinCol[1])
             {
-                cerr << LineBreak("|-> FEHLER: Kann Ergebnisse nicht zugleich an Zeilen und Spalten zuweisen!", _option) << endl;
-                return -1;
+                throw NO_MATRIX;
             }
             if (parser_ExprNotEmpty(si_pos[0]))
             {

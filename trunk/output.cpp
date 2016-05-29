@@ -300,11 +300,11 @@ void Output::print(string sOutput)
 		if (file_out.fail())	// Fehlermeldung, falls nicht in die Datei geschrieben werden kann
 		{
 			cerr << "*************************************************" << endl;
-			cerr << "|-> ACHTUNG: NICHT BEHEBBARER FEHLER!" << endl;
-			cerr << "|-> In die Datei" << endl;
+			cerr << "|-> " << toSystemCodePage(_lang.get("OUTPUT_PRINT_INACCESSIBLE1")) << endl;
+			cerr << "|-> " << toSystemCodePage(_lang.get("OUTPUT_PRINT_INACCESSIBLE2")) << endl;
 			cerr << "|   \"" << sFileName << "\"" << endl;
-			cerr << "|   kann nicht geschrieben werden!" << endl;
-			cerr << "|-> Ausgabe erfolgt daher nun ueber die Konsole!" << endl;
+			cerr << "|   " << toSystemCodePage(_lang.get("OUTPUT_PRINT_INACCESSIBLE3")) << endl;
+			cerr << "|-> " << toSystemCodePage(_lang.get("OUTPUT_PRINT_INACCESSIBLE4")) << endl;
 			cerr << "*************************************************" << endl;
 			end();				// Schliesse ggf. die Datei
 			bFile = false;		// Setze den Boolean auf FALSE
@@ -390,7 +390,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
         sLabel.erase(sLabel.rfind(".tex"));
     while (sLabel.find(' ') != string::npos)
         sLabel[sLabel.find(' ')] = '_';
-	char cRerun = 0;				// String fuer den erneuten Aufruf
+	string cRerun = "";				// String fuer den erneuten Aufruf
 									// Wegen dem Rueckgabewert von string::length() sind alle Schleifenindices unsigned
 
 	if(_option.getbDebug())
@@ -768,65 +768,68 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
     {
         //print("|   " + sPrint);
         //print(sPrint);
-        sConsoleOut += "|   -- " + toString(_nCol) + " Spalte(n) und " + toString(_nLine-1) + " Zeile(n) [" + toString(_nCol*(_nLine-1)) + " Elemente] --";
+        sConsoleOut += "|   -- " + toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY", toString(_nCol), toString(_nLine-1), toString(_nCol*(_nLine-1)))) + " --";
+        //sConsoleOut += "|   -- " + toString(_nCol) + " Spalte(n) und " + toString(_nLine-1) + " Zeile(n) [" + toString(_nCol*(_nLine-1)) + " Elemente] --";
     }
     else
-        sConsoleOut += "|-> Eine Tabelle mit " + toString(_nCol*(_nLine-1)) + " Elementen ";
+        sConsoleOut += "|-> "+toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY_FILE", toString(_nCol*(_nLine-1)), sFileName));
+        //sConsoleOut += "|-> Eine Tabelle mit " + toString(_nCol*(_nLine-1)) + " Elementen ";
 
+    if (_option.getSystemPrintStatus())
+        cerr << LineBreak(sConsoleOut, _option) << endl;
     if (bFile)
     {
-        sConsoleOut += "wurde erfolgreich in die Datei \"" + sFileName + "\" geschrieben.";
+        /*sConsoleOut += "wurde erfolgreich in die Datei \"" + sFileName + "\" geschrieben.";
         if (_option.getSystemPrintStatus())
-            cerr << LineBreak(sConsoleOut, _option) << endl;
+            cerr << LineBreak(sConsoleOut, _option) << endl;*/
 
         end();
         return;
     }
     else
     {
-        if (_option.getSystemPrintStatus())
-            cerr << LineBreak(sConsoleOut, _option) << endl;
+        /*if (_option.getSystemPrintStatus())
+            cerr << LineBreak(sConsoleOut, _option) << endl;*/
         if (!bDontAsk)
         {
-            cerr << "|-> Soll eine Kopie in eine Datei gespeichert werden? (j/n)" << endl;
+            cerr << "|-> " << toSystemCodePage(_lang.get("OUTPUT_FORMAT_ASK_FILEOUT")) << endl;
             cerr << "|" << endl;
             cerr << "|<- ";
-            cin >> cRerun;
+            getline(cin, cRerun);
         }
 
 
-        if (cRerun == 'j')
+        if (cRerun == _lang.YES())
         {
             setCompact(false);
             generateFileName();			// Im Voraus schon einmal den Dateinamen generieren
-            cerr << "|-> Es wird eine Kopie angelegt." << endl;
-            cerr << "|   Einen Dateinahmen waehlen, 0 fuer Default." << endl;
+            cerr << LineBreak("|-> " + _lang.get("OUTPUT_FORMAT_ASK_FILENAME"), _option) << endl;
             cerr << "|   (-> " << sFileName << ")" << endl;
-            cerr << "|-> Dateiname:" << endl;
+            cerr << "|-> " << toSystemCodePage(_lang.get("COMMON_FILENAME")) << ":" << endl;
             cerr << "|" << endl;
             cerr << "|<- " << sPath << "/";
-            cin >> sPrint;
+            getline(cin, sPrint);
 
             bFile = true;
 
-            if (sPrint.compare("0"))	// WICHTIG: Diese Bedingung liefert FALSE, wenn sPrint == "0";
+            if (sPrint != "0")	// WICHTIG: Diese Bedingung liefert FALSE, wenn sPrint == "0";
             {
                 setFileName(sPrint);	// WICHTIG: Durch das Aufrufen dieser Funktion wird auch geprueft, ob der Dateiname moeglich ist
             }
             else
             {
-                cerr << "|-> Default gewaehlt." << endl;
+                cerr << "|-> " << toSystemCodePage(_lang.get("OUTPUT_FORMAT_CONFIRMDEFAULT")) << endl;
             }
             format(_sMatrix, _nCol, _nLine, _option);	// Nochmal dieselbe Funktion mit neuen Parametern aufrufen
         }
         else if (!bDontAsk)
         {
-            cerr << "|-> Es wurde KEINE Kopie angelegt." << endl;
+            cerr << LineBreak("|-> "+_lang.get("OUTPUT_FORMAT_NOFILECREATED"), _option) << endl;
         }
     }
 
-	if (!bDontAsk)
-        cin.ignore(1);
+	/*if (!bDontAsk)
+        cin.ignore(1);*/
 	return;
 }
 

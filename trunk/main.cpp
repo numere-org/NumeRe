@@ -49,6 +49,7 @@
 #include "loop.hpp"
 #include "procedure.hpp"
 #include "plugin.hpp"
+#include "language.hpp"
 // --> PARSER-HEADER <--
 #include "ParserLib/muParser.h"
 
@@ -67,6 +68,7 @@ const string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)
 
 const string PI_TT = "0.1.4";
 mglGraph _fontData;
+Language _lang;
 extern Plugin _plugin;
 extern volatile sig_atomic_t exitsignal;
 
@@ -117,7 +119,7 @@ int main(int argc, char* argv[])
 	printLogo();
     cerr << endl;
 	//cerr << toSystemCodePage("Starte NumeRe: Framework für Numerische Rechnungen (v ") << sVersion << ")" << endl;
-	cerr << toSystemCodePage(" Starte NumeRe: Framework für Numerische Rechnungen. Einen Augenblick ...") << endl;
+	cerr << toSystemCodePage(" Starting NumeRe: Framework für Numerische Rechnungen. Please be patient ...") << endl;
 	//cerr << endl;
 
     int nReturnValue = -1;      // Zum Pruefen der Rueckgabewerte der Frameworks
@@ -127,7 +129,7 @@ int main(int argc, char* argv[])
 	string sLogFile = "numere.log";
 	ofstream oLogFile;
 
-    cerr << " -> Starte NumeRe-Core ... ";
+    cerr << " -> Starting NumeRe-Core ... ";
 	Settings _option;			// Starte eine Instanz der Settings-Klasse
 	Output _out;				// Starte eine Instanz der Output-Klasse
 	Datafile _data;				// Starte eine Instanz eines Datenfile-Objekts
@@ -138,10 +140,10 @@ int main(int argc, char* argv[])
     Procedure _procedure;       // Starte eine Instanz der Procedure-Klasse
     _data.setPredefinedFuncs(_functions.getPredefinedFuncs());
     Sleep(50);
-    cerr << "Abgeschlossen.";
+    cerr << "Done.";
 
     nextLoadMessage(50);
-    cerr << " -> Lese Systeminformationen ... ";
+    cerr << " -> Reading system's information ... ";
     char __cPath[1024];
     OSVERSIONINFO _osversioninfo;
     _osversioninfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
@@ -152,7 +154,7 @@ int main(int argc, char* argv[])
     while (sPath.find('\\') != string::npos)
         sPath[sPath.find('\\')] = '/';
     Sleep(50);
-    cerr << "Abgeschlossen.";
+    cerr << "Done.";
 
     nextLoadMessage(50);
     _option.setExePath(sPath);
@@ -167,14 +169,14 @@ int main(int argc, char* argv[])
     }
     if (oLogFile.is_open())
     {
-        oLogFile << "--- NUMERE-SITZUNGS-PROTOKOLL: " << sTime << " ---" << endl;
+        oLogFile << "--- NUMERE-SESSION-PROTOCOL: " << sTime << " ---" << endl;
         oLogFile << "--- NumeRe v " << sVersion
                  << " | Build " << AutoVersion::YEAR << "-" << AutoVersion::MONTH << "-" << AutoVersion::DATE
                  << " | OS: Windows v " << _osversioninfo.dwMajorVersion << "." << _osversioninfo.dwMinorVersion << "." << _osversioninfo.dwBuildNumber << " " << _osversioninfo.szCSDVersion << (IsWow64() ? " (64 Bit) ---" : " ---") << endl;
     }
 
  	nextLoadMessage(50);
- 	cerr << " -> Setze globale Parameter ... ";
+ 	cerr << " -> Setting global parameters ... ";
  	_data.setTokens(_option.getTokenPaths());
  	_out.setTokens(_option.getTokenPaths());
  	_pData.setTokens(_option.getTokenPaths());
@@ -182,13 +184,14 @@ int main(int argc, char* argv[])
  	_functions.setTokens(_option.getTokenPaths());
  	_procedure.setTokens(_option.getTokenPaths());
  	_option.setTokens(_option.getTokenPaths());
+ 	_lang.setTokens(_option.getTokenPaths());
 	ResizeConsole(_option);
     nLINE_LENGTH = _option.getWindow();
     Sleep(50);
-    cerr << "Abgeschlossen.";
+    cerr << "Done.";
 
  	nextLoadMessage(50);
- 	cerr << toSystemCodePage(" -> Prüfe NumeRe-Dateisystem ... ");
+ 	cerr << toSystemCodePage(" -> Verifying NumeRe file system ... ");
 	_out.setPath(_option.getSavePath(), true, sPath);
 	_data.setPath(_option.getLoadPath(), true, sPath);
 	_data.setSavePath(_option.getSavePath());
@@ -198,37 +201,50 @@ int main(int argc, char* argv[])
 	_procedure.setPath(_option.getProcsPath(), true, sPath);
 	_option.setPath(_option.getExePath() + "/docs/plugins", true, sPath);
 	_option.setPath(_option.getExePath() + "/docs", true, sPath);
+	_option.setPath(_option.getExePath() + "/user/lang", true, sPath);
+	_option.setPath(_option.getExePath() + "/user/docs", true, sPath);
+	_functions.setPath(_option.getExePath(), false, sPath);
 	Sleep(50);
-    cerr << "Abgeschlossen.";
+    cerr << "Done.";
     if (oLogFile.is_open())
-        oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Dateisystem wurde geprüft." << endl;
+        oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: File system was verified." << endl;
 
     nextLoadMessage(50);
-    cerr << toSystemCodePage(" -> Lade Dokumentationsverzeichnis ... ");
+    cerr << toSystemCodePage(" -> Loading documentation index ... ");
     _option.loadDocIndex();
     Sleep(50);
-    cerr << "Abgeschlossen.";
+    cerr << "Done.";
     if (oLogFile.is_open())
-            oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Dokumentationsverzeichnis wurde geladen." << endl;
+            oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Documentation index was loaded." << endl;
 
     if (BI_FileExists(_option.getExePath() + "/update.hlpidx"))
     {
         nextLoadMessage(50);
-        cerr << toSystemCodePage(" -> Aktualisiere Dokumentationsverzeichnis ... ");
+        cerr << toSystemCodePage(" -> Updating documentation index ... ");
         _option.updateDocIndex();
         Sleep(50);
-        cerr << "Abgeschlossen.";
+        cerr << "Done.";
         if (oLogFile.is_open())
-            oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Dokumentationsverzeichnis wurde aktualisiert." << endl;
+            oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Documentation index was updated." << endl;
     }
+    nextLoadMessage(50);
+    cerr << toSystemCodePage(" -> Loading language files ... ");
+    _lang.loadStrings();
+    Sleep(50);
+    cerr << "Done.";
+    if (oLogFile.is_open())
+            oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Language files were loaded." << endl;
+
+
+
 	// --> Kommandozeilen-Optionen einlesen und in die Instanz der Settings-Klasse uebertragen <--
     if (argc > 1)
     {
         nextLoadMessage(50);
-        cerr << " -> Verarbeite Kommandozeilenparameter ... ";
+        cerr << " -> " + _lang.get("MAIN_LOADING_CMDLINE") + " ... ";
         string sTemp = "";
         if (oLogFile.is_open())
-            oLogFile << toString(time(0) - tTimeZero, true) << "> SYSTEM: Kommandozeile: \"numere";
+            oLogFile << toString(time(0) - tTimeZero, true) << "> SYSTEM: Command line: \"numere";
         for (int i = 1; i < argc; i++)
         {
             sTemp = argv[i];
@@ -276,10 +292,10 @@ int main(int argc, char* argv[])
                 _option.cacheCmd(sTemp);
             }
         }
-        cerr << "Abgeschlossen.";
+        cerr << toSystemCodePage(_lang.get("COMMON_DONE")) << ".";
         if (oLogFile.is_open())
         {
-            oLogFile << "\"" << endl << toString(time(0)-tTimeZero, true) << "> SYSTEM: Kommandozeilenparameter wurden verarbeitet." << endl;
+            oLogFile << "\"" << endl << toString(time(0)-tTimeZero, true) << "> SYSTEM: Command line parameters were processed." << endl;
         }
     }
 
@@ -296,27 +312,27 @@ int main(int argc, char* argv[])
 	if (!_option.getbFastStart())
 	{
         nextLoadMessage(50);
-        cerr << " -> Initialisiere Parser-Selbsttest ... ";
+        cerr << toSystemCodePage(" -> " + _lang.get("MAIN_LOADING_PARSER_SELFTEST") + " ... ");
         Sleep(600);
         parser_SelfTest(_parser);   // Fuehre den Parser-Selbst-Test aus
         Sleep(650);				    // Warte 500 msec
         if (oLogFile.is_open())
-            oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Parser-Selbsttest wurde abgeschlossen." << endl;
+            oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Parser self test was done." << endl;
     }
     nextLoadMessage(50);
-    cerr << LineBreak(" -> Starte I/O-Stream ... ", _option);
+    cerr << toSystemCodePage(" -> " + _lang.get("MAIN_LOADING_IOSTREAM") + " ... ");
     Sleep(50);
-    cerr << "Abgeschlossen.";
+    cerr << toSystemCodePage(_lang.get("COMMON_DONE")) << ".";
     if (BI_FileExists(_procedure.getPluginInfoPath()))
     {
         nextLoadMessage(50);
-        cerr << LineBreak(" -> Lade Plugin-Informationen ... ", _option);
+        cerr << LineBreak(" -> "+_lang.get("MAIN_LOADING_PLUGINS")+" ... ", _option);
         _procedure.loadPlugins();
         _plugin = _procedure;
         _data.setPluginCommands(_procedure.getPluginNames());
-        cerr << "Abgeschlossen.";
+        cerr << toSystemCodePage(_lang.get("COMMON_DONE")) << ".";
         if (oLogFile.is_open())
-            oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Plugin-Informationen wurden geladen." << endl;
+            oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Plugin information were loaded." << endl;
     }
     if (_option.getbDefineAutoLoad() && BI_FileExists(_option.getExePath() + "\\functions.def"))
     {
@@ -326,74 +342,75 @@ int main(int argc, char* argv[])
         if (!_option.getbFastStart())
             Sleep(350);
         if (oLogFile.is_open())
-            oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Funktionsdefinitionen wurden geladen." << endl;
+            oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Function definitions were loaded." << endl;
     }
 
     nextLoadMessage(50);
-    cerr << toSystemCodePage(" -> Lade Schriftsatz \""+toUpperCase(_option.getDefaultPlotFont().substr(0,1))+_option.getDefaultPlotFont().substr(1)+"\" für Graph ... ");
+    cerr << toSystemCodePage(" -> " + _lang.get("MAIN_LOADING_FONT", toUpperCase(_option.getDefaultPlotFont().substr(0,1))+_option.getDefaultPlotFont().substr(1)) + " ... ");
+    //cerr << toSystemCodePage(" -> Lade Schriftsatz \""+toUpperCase(_option.getDefaultPlotFont().substr(0,1))+_option.getDefaultPlotFont().substr(1)+"\" für Graph ... ");
     _fontData.LoadFont(_option.getDefaultPlotFont().c_str(), (_option.getExePath()+ "\\fonts").c_str());
-    cerr << "Abgeschlossen.";
+    cerr << toSystemCodePage(_lang.get("COMMON_DONE")) << ".";
 
     nextLoadMessage(50);
-    cerr << " -> Suche nach automatischen Sicherungen ... ";
+    cerr << LineBreak(" -> "+_lang.get("MAIN_LOADING_AUTOSAVE_SEARCH")+" ... ", _option);
     Sleep(50);
     if (BI_FileExists(sAutosave) || BI_FileExists(sCacheFile))
     {
-        cerr << "Sicherung gefunden.";
+        cerr << toSystemCodePage(_lang.get("MAIN_LOADING_AUTOSAVE_FOUND"));
         if (BI_FileExists(sAutosave))
         {
             // --> Lade den letzten Cache, falls dieser existiert <--
             nextLoadMessage(50);
-            cerr << " -> Lade automatische Sicherung ... ";
+            cerr << LineBreak(" -> "+_lang.get("MAIN_LOADING_AUTOSAVE")+" ... ", _option);
             _data.openAutosave(sAutosave, _option);
             _data.setSaveStatus(true);
             remove(sAutosave.c_str());
-            cerr << toSystemCodePage("Übertrage in neues Format ... ");
+            cerr << toSystemCodePage(_lang.get("MAIN_LOADING_AUTOSAVE_TRANSLATING")+" ... ");
             if (_data.saveCache())
-                cerr << "Abgeschlossen.";
+                cerr << toSystemCodePage(_lang.get("COMMON_DONE")) << ".";
             else
             {
-                cerr << endl << " -> FEHLER: Konnte die Sicherung nicht speichern!" << endl;
+                cerr << endl << " -> " << toSystemCodePage(_lang.get("MAIN_LOADING_AUTOSAVE_ERROR_SAVING")) << endl;
                 Sleep(50);
             }
         }
         else
         {
             nextLoadMessage(50);
-            cerr << " -> Lade automatische Sicherung ... ";
+            cerr << LineBreak(" -> "+_lang.get("MAIN_LOADING_AUTOSAVE")+" ... ", _option);
             if (_data.loadCache())
-                cerr << "Abgeschlossen.";
+                cerr << toSystemCodePage(_lang.get("COMMON_DONE")) << ".";
             else
             {
-                cerr << endl << " -> FEHLER: Konnte die Sicherung nicht laden!" << endl;
+                cerr << endl << " -> " << toSystemCodePage(_lang.get("MAIN_LOADING_AUTOSAVE_ERROR_LOADING")) << endl;
                 Sleep(50);
             }
         }
         if (oLogFile.is_open())
-            oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Automatische Sicherung wurde geladen." << endl;
+            oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Automatic backup was loaded." << endl;
     }
     else
-        cerr << "Keine Sicherung gefunden.";
+        cerr << toSystemCodePage(_lang.get("MAIN_LOADING_AUTOSAVE_NOT_FOUND"));
 
     nextLoadMessage(50);
-    cerr << LineBreak(" -> Starte NumeRe-Benutzeroberfläche ... ", _option);
+    cerr << LineBreak(" -> "+_lang.get("MAIN_LOADING_USER_INTERFACE")+" ... ", _option);
     Sleep(50);
-    cerr << "Abgeschlossen.";
+    cerr << toSystemCodePage(_lang.get("COMMON_DONE")) << ".";
     nextLoadMessage(50);
-    cerr << LineBreak(" -> Aktiviere Color-Theme ... ", _option);
+    cerr << LineBreak(" -> "+_lang.get("MAIN_LOADING_COLORTHEME")+" ... ", _option);
     Sleep(200);
 
     // --> Farben der Console aendern <--
     if (!ColorTheme(_option))
     {
-        cerr << endl << LineBreak(" -> FEHLER: Konnte Color-Theme nicht laden!", _option) << endl;
+        cerr << endl << LineBreak(" -> "+_lang.get("MAIN_LOADING_COLORTHEME_ERROR"), _option) << endl;
     }
 	// --> Mach' einen netten Header <--
 	//BI_hline(80);
 	BI_splash();
 	//BI_hline(80);
 	//cerr << "|-> Copyright " << (char)184 << " " << AutoVersion::YEAR << toSystemCodePage(", E. Hänel et al.  +  +  +  siehe \"about\" für rechtl. Info |") << endl;
-	cerr << "|-> Copyright " << (char)184 << " " << AutoVersion::YEAR << toSystemCodePage(", E. Hänel et al.") << std::setfill(' ') << std::setw(_option.getWindow()-37) << toSystemCodePage("Über: siehe \"about\" |") << endl;
+	cerr << "|-> Copyright " << (char)184 << " " << AutoVersion::YEAR << toSystemCodePage(", E. Hänel et al.") << std::setfill(' ') << std::setw(_option.getWindow()-37) << toSystemCodePage(_lang.get("MAIN_ABOUT_NBR") + " |") << endl; //toSystemCodePage("Über: siehe \"about\" |") << endl; //MAIN_ABOUT
 	cerr << "|   Version: " << sVersion << std::setfill(' ') << std::setw(_option.getWindow()-25-sVersion.length()) << "Build: " << AutoVersion::YEAR << "-" << AutoVersion::MONTH << "-" << AutoVersion::DATE << " |" << endl;
 	make_hline();
 	/*cerr << "|" << endl;
@@ -447,19 +464,21 @@ int main(int argc, char* argv[])
     while (nReturnValue);
 
     // --> Sind ungesicherte Daten im Cache? Dann moechte der Nutzer diese vielleicht speichern <--
-    if (!_data.getSaveStatus())
+    if (!_data.getSaveStatus()) // MAIN_UNSAVED_CACHE
     {
         if (!exitsignal)
         {
             char c = 0;
-            cerr << LineBreak("|-> Es sind ungesicherte Daten im Cache vorhanden! Sollen sie gespeichert werden? (j/n)", _option) << endl;
+            cerr << LineBreak("|-> "+_lang.get("MAIN_UNSAVED_CACHE"), _option) << endl;
+            //cerr << LineBreak("|-> Es sind ungesicherte Daten im Cache vorhanden! Sollen sie gespeichert werden? (j/n)", _option) << endl;
             cerr << "|" << endl;
             cerr << "|<- ";
             cin >> c;
             if (c == 'j')
             {
-                _data.saveCache();
-                cerr << LineBreak("|-> Cache wurde erfolgreich gespeichert.", _option) << endl;
+                _data.saveCache(); // MAIN_CACHE_SAVED
+                cerr << LineBreak("|-> "+_lang.get("MAIN_CACHE_SAVED"), _option) << endl;
+                //cerr << LineBreak("|-> Cache wurde erfolgreich gespeichert.", _option) << endl;
                 // --> Sleep, damit genug Zeit zum Lesen ist <--
                 //Sleep(1500);
                 Sleep(500);
@@ -467,15 +486,17 @@ int main(int argc, char* argv[])
         }
         else
         {
-            _data.saveCache();
-            cerr << LineBreak("|-> Cache wurde erfolgreich gespeichert.", _option) << endl;
+            _data.saveCache(); // MAIN_CACHE_SAVED
+            cerr << LineBreak("|-> "+_lang.get("MAIN_CACHE_SAVED"), _option) << endl;
+            //cerr << LineBreak("|-> Cache wurde erfolgreich gespeichert.", _option) << endl;
             Sleep(500);
         }
     }
     // Speicher aufraeumen
     _data.clearCache();
-    _data.removeData(false);
-	cerr << toSystemCodePage("|-> Bis zum nächsten Mal!") << endl;
+    _data.removeData(false); // MAIN_BYE
+	cerr << toSystemCodePage("|-> "+_lang.get("MAIN_BYE_NBR")) << endl;
+	//cerr << toSystemCodePage("|-> Bis zum nächsten Mal!") << endl;
 
     // --> Konfiguration aus den Objekten zusammenfassen und anschliessend speichern <--
 	_option.setSavePath(_out.getPath());
@@ -487,12 +508,13 @@ int main(int argc, char* argv[])
         _functions.save(_option);
         Sleep(100);
 	}
-	_option.save(sPath);
-	cerr << LineBreak("|-> NumeRe v " + sVersion + " wurde erfolgreich beendet.", _option) << endl;
+	_option.save(sPath); // MAIN_QUIT
+	cerr << LineBreak("|-> "+_lang.get("MAIN_QUIT", sVersion), _option) << endl;
+	//cerr << LineBreak("|-> NumeRe v " + sVersion + " wurde erfolgreich beendet.", _option) << endl;
 	cerr << "|" << endl;
 	if (oLogFile.is_open())
 	{
-        oLogFile << "--- NUMERE WURDE ERFOLGREICH BEENDET ---" << endl << endl << endl;
+        oLogFile << "--- NUMERE WAS SUCCESSFULLY TERMINATED ---" << endl << endl << endl;
         oLogFile.close();
 	}
 	// --> Sleep, damit genug Zeit zum Lesen ist <--

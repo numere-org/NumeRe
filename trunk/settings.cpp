@@ -155,13 +155,13 @@ void Settings::save(string _sWhere, bool bMkBackUp)
 	 */
 	if (Settings_ini.fail() && !bMkBackUp)
 	{
-		cerr << "|-> FEHLER: Konfiguration konnte nicht gespeichert werden!" << endl;
+		cerr << "|-> ERROR: Could not save your configuration." << endl;
 		Settings_ini.close();
 		return;
 	}
 	else if (Settings_ini.fail() && bMkBackUp)
 	{
-        cerr << "FEHLER: Es konnte keine Sicherheitskopie der Konfiguration gespeichert werden!" << endl;
+        cerr << "ERROR: Could not save a backup of your configuration." << endl;
         Settings_ini.close();
         return;
 	}
@@ -199,7 +199,7 @@ void Settings::save(string _sWhere, bool bMkBackUp)
 	// --> Datei auf jeden Fall wieder schliessen, Erfolgsmeldung ausgeben und zurueck zur aufrufenden Stelle <--
 	Settings_ini.close();
 	if (!bMkBackUp)
-        cerr << "|-> Konfiguration wurde erfolgreich gespeichert." << endl;
+        cerr << toSystemCodePage("|-> "+_lang.get("SETTINGS_SAVE_SUCCESS")) << endl;
 	return;
 }
 
@@ -462,8 +462,8 @@ void Settings::load(string _sWhere)
         Settings_ini.open((sWhere+".back").c_str(),ios_base::in);
         if (Settings_ini.fail())
         {
-            cerr << " -> HINWEIS: Die Konfigurationsdatei \"" << sSettings_ini << "\" wurde nicht gefunden." << endl;
-            cerr << "    Es werden die Standardeinstellungen geladen." << endl;
+            cerr << " -> NOTE: Could not find the configuration file \"" << sSettings_ini << "\"." << endl;
+            cerr << "    Loading default settings." << endl;
             Sleep(500);
             Settings_ini.close();
             if (sPath == "./" || sPath == "<>")
@@ -583,7 +583,7 @@ void Settings::load(string _sWhere)
             if (!Settings::set(s))
             {
                 // --> FALSE wird nur dann zurueckgegeben, wenn ein Fehler auftaucht, oder ein Parameter unbekannt ist <--
-                cerr << endl << " -> FEHLER: Die Einstellung \"" << s << "\" ist unbekannt und wird ignoriert!" << endl;
+                cerr << endl << " -> NOTE: The setting \"" << s << "\" is not known and will be ignored." << endl;
                 Sleep(500);
                 continue;
             }
@@ -611,7 +611,7 @@ void Settings::load(string _sWhere)
     // --> Datei schliessen, Erfolgsmeldung und zurueck zur aufrufenden Stelle <--
     Settings_ini.close();
     Settings::save(_sWhere, true);
-    cerr << " -> Konfiguration erfolgreich geladen!";
+    cerr << " -> Configuration loaded successful.";
 	return;
 }
 

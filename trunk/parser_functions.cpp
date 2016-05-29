@@ -444,7 +444,7 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
                         parser_iVars.vValue[0][1] = _parser.Eval();
                     else
                     {
-                        cerr << LineBreak("|INTEGRATE> FEHLER: Die Grenzen duerfen nicht von " + parser_iVars.sName[0] + " abhaengen!", _option, true, 0, 12) << endl;
+                        cerr << LineBreak("|INTEGRATE> " + _lang.get("PARSERFUNCS_INTEGRATE_BOUNDARYDEPENDENCE", parser_iVars.sName[0]), _option, true, 0, 12) << endl;
                         sInt_Line[0] = "";
                         sInt_Line[1] = "";
                     }
@@ -453,14 +453,14 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
                         parser_iVars.vValue[0][2] = _parser.Eval();
                     else
                     {
-                        cerr << LineBreak("|INTEGRATE> FEHLER: Die Grenzen duerfen nicht von " + parser_iVars.sName[0] + " abhaengen!", _option, true, 0, 12) << endl;
+                        cerr << LineBreak("|INTEGRATE> " + _lang.get("PARSERFUNCS_INTEGRATE_BOUNDARYDEPENDENCE", parser_iVars.sName[0]), _option, true, 0, 12) << endl;
                         sInt_Line[0] = "";
                         sInt_Line[1] = "";
                     }
                 }
                 else if(!sInt_Line[0].find(':') || (sInt_Line[0].find(':') == sInt_Line[0].length() - 1 && sInt_Line[0].length() > 1))
                 {
-                    cerr << LineBreak("|INTEGRATE> FEHLER: Kann Grenzen nicht eindeutig zuweisen!", _option, true, 0, 12) << endl;
+                    cerr << LineBreak("|INTEGRATE> " + _lang.get("PARSERFUNCS_INTEGRATE_BOUNDARYINVALID"), _option, true, 0, 12) << endl;
                     sInt_Line[0] = "";
                 }
                 else
@@ -470,7 +470,7 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
                     // --> Pruefen, ob "x" in den/der Grenze(n) vorkommt. Das koennen wir naemlich nicht zulassen <--
                     if (parser_CheckVarOccurence(_parser,parser_iVars.sName[0]))
                     {
-                        cerr << LineBreak("|INTEGRATE> FEHLER: Die Grenzen duerfen nicht von " + parser_iVars.sName[0] + " abhaengen!", _option, true, 0, 12);
+                        cerr << LineBreak("|INTEGRATE> " + _lang.get("PARSERFUNCS_INTEGRATE_BOUNDARYDEPENDENCE", parser_iVars.sName[0]), _option, true, 0, 12);
                         sInt_Line[0] = "";
                     }
                     else
@@ -495,7 +495,7 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
                 // --> Erneut pruefen, ob "x" in dem String vorkommt <--
                 if (parser_CheckVarOccurence(_parser,parser_iVars.sName[0]))
                 {
-                    cerr << LineBreak("|INTEGRATE> FEHLER: Die Grenzen duerfen nicht von " + parser_iVars.sName[0] + " abhaengen!", _option, true, 0, 12) << endl;
+                    cerr << LineBreak("|INTEGRATE> " + _lang.get("PARSERFUNCS_INTEGRATE_BOUNDARYDEPENDENCE", parser_iVars.sName[0]), _option, true, 0, 12) << endl;
                     sInt_Line[1] = "";
                     mu::console() << _T("|INTEGRATE> bis ") << parser_iVars.sName[0] << _T(" = ");
                 }
@@ -533,7 +533,7 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
                     getline(mu::console_in(), sInt_Line[2]);
                     if (sInt_Line[2] == "0")
                     {
-                        cerr << LineBreak("|INTEGRATE> FEHLER: Die Praezision darf nicht 0 sein!", _option, true, 0, 12) << endl;
+                        cerr << LineBreak("|INTEGRATE> " + _lang.get("PARSERFUNCS_INTEGRATE_PRECISIONGREATERZERO"), _option, true, 0, 12) << endl;
                     }
                 }
                 while (!sInt_Line[2].length() || sInt_Line[2] == "0"); // Wiederhole so lange String empty oder identisch 0
@@ -543,10 +543,10 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
                 parser_iVars.vValue[0][3] = _parser.Eval();
                 // --> Sicherheitshalber noch mal pruefen, falls der Ausdruck in der Auswertung 0 ist <--
                 if (!parser_iVars.vValue[0][3])
-                    cerr << LineBreak("|INTEGRATE> FEHLER: Die Praezision darf nicht 0 sein!", _option, true, 0, 12) << endl;
+                    cerr << LineBreak("|INTEGRATE> " + _lang.get("PARSERFUNCS_INTEGRATE_PRECISIONGREATERZERO"), _option, true, 0, 12) << endl;
                 if (parser_iVars.vValue[0][3] > (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]))
                 {
-                    cerr << LineBreak("|INTEGRATE> FEHLER: Die Praezision kann nicht groesser als das Integrationsintervall sein!", _option, true, 0, 12) << endl;
+                    cerr << LineBreak("|INTEGRATE> " + _lang.get("PARSERFUNCS_INTEGRATE_PRECISIONGREATERINTERVAL"), _option, true, 0, 12) << endl;
                 }
             }
             while (!parser_iVars.vValue[0][3] || parser_iVars.vValue[0][3] > (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1])); // Wiederhole so lange, wie die Praezision identisch 0 ist
@@ -669,19 +669,19 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
                 {
                     if ((int)((parser_iVars.vValue[0][0]-parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2]-parser_iVars.vValue[0][1]) * 20) > (int)((parser_iVars.vValue[0][0]-parser_iVars.vValue[0][3]-parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2]-parser_iVars.vValue[0][1]) * 20))
                     {
-                        cerr << "\r|INTEGRATE> Werte aus ... " << (int)((parser_iVars.vValue[0][0]-parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 20) * 5 << " %";
+                        cerr << "\r|INTEGRATE> " << _lang.get("COMMON_EVALUATING") << " ... " << (int)((parser_iVars.vValue[0][0]-parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 20) * 5 << " %";
                     }
                 }
                 else
                 {
                     if ((int)((parser_iVars.vValue[0][0]-parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2]-parser_iVars.vValue[0][1]) * 100) > (int)((parser_iVars.vValue[0][0]-parser_iVars.vValue[0][3]-parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2]-parser_iVars.vValue[0][1]) * 100))
                     {
-                        cerr << "\r|INTEGRATE> Werte aus ... " << (int)((parser_iVars.vValue[0][0]-parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 100) << " %";
+                        cerr << "\r|INTEGRATE> " << _lang.get("COMMON_EVALUATING") << " ... " << (int)((parser_iVars.vValue[0][0]-parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 100) << " %";
                     }
                 }
                 if (GetAsyncKeyState(VK_ESCAPE))
                 {
-                    cerr << "\r|INTEGRATE> Werte aus ... ABBRUCH!" << endl;
+                    cerr << "\r|INTEGRATE> " << _lang.get("COMMON_EVALUATING") << " ... " << _lang.get("COMMON_CANCEL") << "." << endl;
                     throw PROCESS_ABORTED_BY_USER;
                 }
             }
@@ -732,7 +732,7 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
     if (_option.getSystemPrintStatus() && bLargeInterval)
     {
         cerr << std::setprecision(_option.getPrecision());
-        cerr << "\r|INTEGRATE> Werte aus ... 100 %: Erfolg!" << endl;
+        cerr << "\r|INTEGRATE> " << _lang.get("COMMON_EVALUATING") << " ... 100 %: " << _lang.get("COMMON_SUCCESS") << "!" << endl;
         /*cerr << "|INTEGRATE>";
         if (bNoIntVar)
             cerr << LineBreak(" F(" + parser_iVars.sName[0] + ") = " + sInt_Line[3] + " von " + parser_iVars.sName[0] + "=" + sInt_Line[0] + " bis " + sInt_Line[1] + ": Erfolg!", _option, true, 12, 12) << endl;
@@ -1089,7 +1089,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
                         parser_iVars.vValue[0][1] = _parser.Eval();
                     else
                     {
-                        cerr << LineBreak("|INTEGRATE> FEHLER: " + parser_iVars.sName[0] + "-Grenzen koennen nicht von" + parser_iVars.sName[0] + " oder " + parser_iVars.sName[1] + " abhaengen!", _option, true, 0, 12) << endl;
+                        cerr << LineBreak("|INTEGRATE> "+_lang.get("PARSERFUNCS_INTEGRATE2_BOUNDARYDEPENDENCE", parser_iVars.sName[0], parser_iVars.sName[1]), _option, true, 0, 12) << endl;
                         sInt_Line[0][0] = "";
                         sInt_Line[0][1] = "";
                     }
@@ -1098,14 +1098,14 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
                         parser_iVars.vValue[0][2] = _parser.Eval();
                     else
                     {
-                        cerr << LineBreak("|INTEGRATE> FEHLER: " + parser_iVars.sName[0] + "-Grenzen koennen nicht von" + parser_iVars.sName[0] + " oder " + parser_iVars.sName[1] + " abhaengen!", _option, true, 0, 12) << endl;
+                        cerr << LineBreak("|INTEGRATE> "+_lang.get("PARSERFUNCS_INTEGRATE2_BOUNDARYDEPENDENCE", parser_iVars.sName[0], parser_iVars.sName[1]), _option, true, 0, 12) << endl;
                         sInt_Line[0][0] = "";
                         sInt_Line[0][1] = "";
                     }
                 }
                 else if (!sInt_Line[0][0].find(':') || (sInt_Line[0][0].find(':') == sInt_Line[0][0].length() - 1 && sInt_Line[0][0].length() > 1))
                 {
-                    cerr << LineBreak("|INTEGRATE> FEHLER: Kann Grenzen nicht eindeutig zuweisen!", _option, true, 0, 12) << endl;
+                    cerr << LineBreak("|INTEGRATE> "+_lang.get("PARSERFUNCS_INTERGRATE_BOUNDARYINVALID"), _option, true, 0, 12) << endl;
                     sInt_Line[0][0] = "";
                 }
                 else
@@ -1113,7 +1113,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
                     _parser.SetExpr(sInt_Line[0][0]);
                     if (parser_CheckVarOccurence(_parser, parser_iVars.sName[0]) || parser_CheckVarOccurence(_parser, parser_iVars.sName[1]))
                     {
-                        cerr << LineBreak("|INTEGRATE> FEHLER: " + parser_iVars.sName[0] + "-Grenzen koennen nicht von" + parser_iVars.sName[0] + " oder " + parser_iVars.sName[1] + " abhaengen!", _option, true, 0, 12) << endl;
+                        cerr << LineBreak("|INTEGRATE> "+_lang.get("PARSERFUNCS_INTEGRATE2_BOUNDARYDEPENDENCE", parser_iVars.sName[0], parser_iVars.sName[1]), _option, true, 0, 12) << endl;
                         sInt_Line[0][0] = "";
                     }
                 }
@@ -1137,7 +1137,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
                 _parser.SetExpr(sInt_Line[0][1]);
                 if (parser_CheckVarOccurence(_parser, parser_iVars.sName[0]) || parser_CheckVarOccurence(_parser, parser_iVars.sName[1]))
                 {
-                    cerr << LineBreak("|INTEGRATE> FEHLER: " + parser_iVars.sName[0] + "-Grenzen koennen nicht von" + parser_iVars.sName[0] + " oder " + parser_iVars.sName[1] + " abhaengen!", _option, true, 0, 12) << endl;
+                    cerr << LineBreak("|INTEGRATE> "+_lang.get("PARSERFUNCS_INTEGRATE2_BOUNDARYDEPENDENCE", parser_iVars.sName[0], parser_iVars.sName[1]), _option, true, 0, 12) << endl;
                     sInt_Line[0][1] = "";
                 }
             }
@@ -1168,7 +1168,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
                         parser_iVars.vValue[1][1] = _parser.Eval();
                     else
                     {
-                        cerr << LineBreak("|INTEGRATE> FEHLER: " + parser_iVars.sName[1] + "-Grenzen koennen nicht von" + parser_iVars.sName[1] + " selbst abhaengen!", _option, true, 0, 12) << endl;
+                        cerr << LineBreak("|INTEGRATE> "+_lang.get("PARSERFUNCS_INTEGRATE2_BOUNDARYSELFDEPENDENCE", parser_iVars.sName[1]), _option, true, 0, 12) << endl;
                         sInt_Line[1][0] = "";
                         sInt_Line[1][1] = "";
                     }
@@ -1177,14 +1177,14 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
                         parser_iVars.vValue[1][2] = _parser.Eval();
                     else
                     {
-                        cerr << LineBreak("|INTEGRATE> FEHLER: " + parser_iVars.sName[1] + "-Grenzen koennen nicht von" + parser_iVars.sName[1] + " selbst abhaengen!", _option, true, 0, 12) << endl;
+                        cerr << LineBreak("|INTEGRATE> "+_lang.get("PARSERFUNCS_INTEGRATE2_BOUNDARYSELFDEPENDENCE", parser_iVars.sName[1]), _option, true, 0, 12) << endl;
                         sInt_Line[1][0] = "";
                         sInt_Line[1][1] = "";
                     }
                 }
                 else if (!sInt_Line[1][0].find(':') || (sInt_Line[1][0].find(':') == sInt_Line[1][0].length() - 1 && sInt_Line[1][0].length() > 1))
                 {
-                    cerr << LineBreak("|INTEGRATE> FEHLER: Kann Grenzen nicht eindeutig zuweisen!", _option, true, 0, 12) << endl;
+                    cerr << LineBreak("|INTEGRATE> "+_lang.get("PARSERFUNCS_INTEGRATE_BOUNDARYINVALID"), _option, true, 0, 12) << endl;
                     sInt_Line[1][0] = "";
                 }
                 else
@@ -1192,7 +1192,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
                     _parser.SetExpr(sInt_Line[1][0]);
                     if (parser_CheckVarOccurence(_parser, parser_iVars.sName[1]))
                     {
-                        cerr << LineBreak("|INTEGRATE> FEHLER: " + parser_iVars.sName[1] + "-Grenzen koennen nicht von" + parser_iVars.sName[1] + " selbst abhaengen!", _option, true, 0, 12) << endl;
+                        cerr << LineBreak("|INTEGRATE> "+_lang.get("PARSERFUNCS_INTEGRATE2_BOUNDARYSELFDEPENDENCE", parser_iVars.sName[1]), _option, true, 0, 12) << endl;
                         sInt_Line[1][0] = "";
                     }
                 }
@@ -1214,7 +1214,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
                 _parser.SetExpr(sInt_Line[1][1]);
                 if (parser_CheckVarOccurence(_parser, parser_iVars.sName[1]))
                 {
-                    cerr << LineBreak("|INTEGRATE> FEHLER: " + parser_iVars.sName[1] + "-Grenzen koennen nicht von" + parser_iVars.sName[1] + " selbst abhaengen!", _option, true, 0, 12) << endl;
+                    cerr << LineBreak("|INTEGRATE> "+_lang.get("PARSERFUNCS_INTEGRATE2_BOUNDARYSELFDEPENDENCE", parser_iVars.sName[1]), _option, true, 0, 12) << endl;
                     sInt_Line[1][1] = "";
                 }
             }
@@ -1274,17 +1274,17 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
                     mu::console() << _T("|INTEGRATE> Praezision d") << parser_iVars.sName[0] << _T(", d") << parser_iVars.sName[1] << _T(" = ");
                     getline(mu::console_in(), sInt_Line[0][2]);
                     if (sInt_Line[0][2] == "0")
-                        cerr << LineBreak("|INTEGRATE> FEHLER: Die Praezision kann nicht 0 sein!", _option, true, 0, 12) << endl;
+                        cerr << LineBreak("|INTEGRATE> "+_lang.get("PARSERFUNCS_INTEGRATE_PRECISIONGREATERZERO"), _option, true, 0, 12) << endl;
                 }
                 while(!sInt_Line[0][2].length() || sInt_Line[0][2] == "0");
                 _parser.SetExpr(sInt_Line[0][2]);
                 parser_iVars.vValue[0][3] = _parser.Eval();
                 if (!parser_iVars.vValue[0][3])
-                    cerr << LineBreak("|INTEGRATE> FEHLER: Die Praezision kann nicht 0 sein!", _option, true, 0, 12) << endl;
+                    cerr << LineBreak("|INTEGRATE> "+_lang.get("PARSERFUNCS_INTEGRATE_PRECISIONGREATER_ZERO"), _option, true, 0, 12) << endl;
                 if (parser_iVars.vValue[0][3] > (parser_iVars.vValue[0][2]-parser_iVars.vValue[0][1])
                     || parser_iVars.vValue[0][3] > (parser_iVars.vValue[1][2]-parser_iVars.vValue[1][1]))
                 {
-                    cerr << LineBreak("|INTEGRATE> FEHLER: Die Praezision kann nicht groesser als das kleinste Integrationsintervall sein!", _option, true, 0, 12) << endl;
+                    cerr << LineBreak("|INTEGRATE> "+_lang.get("PARSERFUNCS_INTEGRATE_PRECISIONGREATERINTERVAL"), _option, true, 0, 12) << endl;
                 }
             }
             while(!parser_iVars.vValue[0][3] || parser_iVars.vValue[0][3] > (parser_iVars.vValue[0][2]-parser_iVars.vValue[0][1])
@@ -1309,7 +1309,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
              * --> Dazu muessen wir in der Funktion "y" durch "x" ersetzen, die Werte der Grenzen und
              *     die ihre string_types tauschen. <--
              */
-            cerr << LineBreak("|INTEGRATE> Tausche " + parser_iVars.sName[0] + "- und " + parser_iVars.sName[1] + "-Integration aus Gruenden der Performance ...", _option, false, 0, 12) << endl;
+            cerr << LineBreak("|INTEGRATE> "+_lang.get("PARSERFUNCS_INTEGRATE2_SWAPVARS", parser_iVars.sName[0], parser_iVars.sName[1]) + " ...", _option, false, 0, 12) << endl;
             // --> Leerzeichen als "virtuelle Delimiter" hinzufuegen <--
             string_type sTempFct = " " + sInt_Fct + " ";
             sInt_Fct = "";
@@ -1364,7 +1364,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
             parser_iVars.vValue[1][2] = vTemp;
             bIntVar[0] = true;
             bIntVar[1] = false;
-            mu::console() << _T("|INTEGRATE> Erfolg!\n");
+            cerr << "|INTEGRATE> " << _lang.get("COMMON_SUCCESS") << "!" << endl;
         }
         // --> Uebergeben wir nun die Integrations-Funktion an den Parser <--
         _parser.SetExpr(sInt_Fct);
@@ -1378,7 +1378,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
         // --> Kleine Info an den Benutzer, dass der Code arbeitet <--
 
         if (_option.getSystemPrintStatus())
-            cerr << "|INTEGRATE> Werte aus ... 0 %";
+            cerr << "|INTEGRATE> " << _lang.get("COMMON_EVALUATING") << " ... 0 %";
 
         // --> Setzen wir "x" und "y" auf ihre Startwerte <--
         parser_iVars.vValue[0][0] = parser_iVars.vValue[0][1]; // x = x_0
@@ -1682,19 +1682,19 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
                 {
                     if ((int)((parser_iVars.vValue[0][0]-parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2]-parser_iVars.vValue[0][1]) * 20) > (int)((parser_iVars.vValue[0][0]-parser_iVars.vValue[0][3]-parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2]-parser_iVars.vValue[0][1]) * 20))
                     {
-                        cerr << "\r|INTEGRATE> Werte aus ... " << (int)((parser_iVars.vValue[0][0]-parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 20) * 5 << " %";
+                        cerr << "\r|INTEGRATE> " << _lang.get("COMMON_EVALUATING") << " ... " << (int)((parser_iVars.vValue[0][0]-parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 20) * 5 << " %";
                     }
                 }
                 else
                 {
                     if ((int)((parser_iVars.vValue[0][0]-parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2]-parser_iVars.vValue[0][1]) * 100) > (int)((parser_iVars.vValue[0][0]-parser_iVars.vValue[0][3]-parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2]-parser_iVars.vValue[0][1]) * 100))
                     {
-                        cerr << "\r|INTEGRATE> Werte aus ... " << (int)((parser_iVars.vValue[0][0]-parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 100) << " %";
+                        cerr << "\r|INTEGRATE> " << _lang.get("COMMON_EVALUATING") << " ... " << (int)((parser_iVars.vValue[0][0]-parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 100) << " %";
                     }
                 }
                 if (GetAsyncKeyState(VK_ESCAPE))
                 {
-                    cerr << "\r|INTEGRATE> Werte aus ... ABBRUCH!" << endl;
+                    cerr << "\r|INTEGRATE> " << _lang.get("COMMON_EVALUATING") << " ... " << _lang.get("COMMON_CANCEL") << "!" << endl;
                     throw PROCESS_ABORTED_BY_USER;
                 }
             }
@@ -1714,7 +1714,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
             }
         }*/
         if (_option.getSystemPrintStatus())
-            cerr << "\r|INTEGRATE> Werte aus ... 100 %";
+            cerr << "\r|INTEGRATE> " << _lang.get("COMMON_EVALUATING") << " ... 100 %";
     }
     else if (!bRenewBorder)
     {
@@ -1729,8 +1729,8 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
         //string_type sInt_Fct_2 = sInt_Fct + "*" + parser_iVars.sName[0] + "*" + parser_iVars.sName[1];
         if (_option.getSystemPrintStatus())
         {
-            cerr << "|INTEGRATE>" << LineBreak(" Analytische Lösung: F(" + parser_iVars.sName[0] + "," + parser_iVars.sName[1] + ") = " + sInt_Fct_2,_option, true, 12, 12) << endl;
-            cerr << "|INTEGRATE> Werte aus ... ";
+            cerr << "|INTEGRATE>" << LineBreak(" " + _lang.get("PARSERFUNCS_INTEGRATE_ANALYTICAL") + ": F(" + parser_iVars.sName[0] + "," + parser_iVars.sName[1] + ") = " + sInt_Fct_2,_option, true, 12, 12) << endl;
+            cerr << "|INTEGRATE> " << _lang.get("COMMON_EVALUATING") << " ... ";
         }
         // --> Schnelle Loesung: Konstante x Flaeche, die vom Integral umschlossen wird <--
         parser_iVars.vValue[0][0] = parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1];
@@ -1747,7 +1747,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
          *     werden. <--
          */
         if (_option.getSystemPrintStatus())
-            cerr << "|INTEGRATE> Konstante Funktion. Berechne Integral ... ";
+            cerr << "|INTEGRATE> " << _lang.get("PARSERFUNCS_INTEGRATE_CONSTANT") << " ... ";
         // --> Waehle willkuerliche Praezision von 1e-4 <--
         parser_iVars.vValue[0][3] = 1e-4;
         parser_iVars.vValue[1][3] = 1e-4;
@@ -1909,7 +1909,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
     if (_option.getSystemPrintStatus())
     {
         //cerr << std::setprecision(_option.getPrecision());
-        cerr << ": Erfolg!" << endl;;
+        cerr << ": " << _lang.get("COMMON_SUCCESS") << "!" << endl;;
 
         // --> Noch eine abschliessende Ausgabe des Ergebnisses <--
         /*if (bIntVar[0] || bIntVar[1])
@@ -2255,11 +2255,16 @@ vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data,
 }
 
 // --> Listet alle vorhandenen mathematischen Funktionen <--
-void parser_ListFunc(const Settings& _option, const string& sType)
+void parser_ListFunc(const Settings& _option, const string& sType) //PRSRFUNC_LISTFUNC_[TYPES]_*
 {
     make_hline();
-    cerr << "|-> NUMERE: VORDEFINIERTE FUNKTIONEN";
-    if (sType == "num")
+    cerr << "|-> NUMERE: " << toUpperCase(_lang.get("PARSERFUNCS_LISTFUNC_HEADLINE"));
+    if (sType != "all")
+    {
+        cerr << "  [" << toUpperCase(_lang.get("PARSERFUNCS_LISTFUNC_"+toUpperCase(sType))) << "]";
+    }
+    cerr << endl;
+    /*if (sType == "num")
         cerr << " [NUMERISCH]";
     if (sType == "string")
         cerr << " [ZEICHENKETTEN]";
@@ -2286,11 +2291,22 @@ void parser_ListFunc(const Settings& _option, const string& sType)
     if (sType == "coords")
         cerr << " [KOORDINATEN]";
     if (sType == "polynomial")
-        cerr << " [POLYNOMIELL]";
-    cerr << endl;
+        cerr << " [POLYNOMIELL]";  PARSERFUNCS_LISTFUNCS_FUNC_*_[TYPE]
+    cerr << endl;*/
     make_hline();
-    cerr << LineBreak("|   Funktion:              Typ:   Ausgabe:", _option, false, 0, 28) << endl;
+    cerr << LineBreak("|   "+_lang.get("PARSERFUNCS_LISTFUNC_TABLEHEAD"), _option, false, 0, 28) << endl;
     cerr << "|" << endl;
+    vector<string> vFuncs;
+    if (sType == "all")
+        vFuncs = _lang.getList("PARSERFUNCS_LISTFUNC_FUNC_*");
+    else
+        vFuncs = _lang.getList("PARSERFUNCS_LISTFUNC_FUNC_*_["+toUpperCase(sType)+"]");
+
+    for (unsigned int i = 0; i < vFuncs.size(); i++)
+    {
+        cerr << LineBreak("|   " + vFuncs[i], _option, false, 0, 36) << endl;
+    }
+    /*
     if (sType == "all" || sType == "num")
         cerr << LineBreak("|   abs(x)                 VAL    - Betrag von x", _option, false, 0, 36) << endl;
     if (sType == "all" || sType == "num" || sType == "trigonometric")
@@ -2487,9 +2503,10 @@ void parser_ListFunc(const Settings& _option, const string& sType)
         cerr << LineBreak("|   version()              VAL    - Gibt die Versionsnummer von NumeRe als natürliche Zahl zurück: v1.0.8 wird als 108 zurückgegeben", _option, false, 0, 36) << endl;
     if (sType == "all" || sType == "num" || sType == "polynomial")
         cerr << LineBreak("|   Y(l,m,theta,phi)       VAL    - Realteil der Kugelflächenfunktionen der Ordnung l >= 0 mit m = [-l,l] unter den Winkeln theta im Intervall [0,PI] und phi im Intervall [0,2*PI)", _option, false, 0, 36) << endl;
+    */
     cerr << "|" << endl;
-    cerr << LineBreak("|-> Der Typ des Rückgabewertes wird schematisch durch VAL = numerischer Wert, STR = Zeichenkette, LOG = Logikwert (true oder false) und ARG = Typ der Argumente angegeben.", _option) << endl;
-    cerr << LineBreak("|-> Weiterführende Informationen zu den vordefinierten mathematischen Funktionen können in der NumeRe-Hilfe mittels \"help -func\" erhalten werden.", _option) << endl;
+    cerr << LineBreak("|-> " + _lang.get("PARSERFUNCS_LISTFUNC_FOOTNOTE1"), _option) << endl;
+    cerr << LineBreak("|-> " + _lang.get("PARSERFUNCS_LISTFUNC_FOOTNOTE2"), _option) << endl;
     make_hline();
     return;
 }
@@ -2498,37 +2515,26 @@ void parser_ListFunc(const Settings& _option, const string& sType)
 void parser_ListDefine(const Define& _functions, const Settings& _option)
 {
     make_hline();
-    cerr << "|-> NUMERE: EIGENE DEFINIERTE FUNKTIONEN" << endl;
+    cerr << "|-> NUMERE: " << toUpperCase(_lang.get("PARSERFUNCS_LISTDEFINE_HEADLINE")) << endl;
     make_hline();
     if (!_functions.getDefinedFunctions())
     {
-        cerr << "|-> Keine Funktionen definiert!" << endl;
+        cerr << "|-> " << toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_EMPTY")) << endl;
     }
     else
     {
         for (unsigned int i = 0; i < _functions.getDefinedFunctions(); i++)
         {
-            /*cerr << "|   "  << std::setfill(' ') << std::setw(22) << std::left << _functions.getFunction(i);
-            if (_functions.getFunction(i).length() > 22)
-                cerr << endl << "|                         - ";
-            else
-                cerr << "- ";
-            if (_functions.getComment(i).length())
-            {
-                cerr << LineBreak(_functions.getComment(i), _option, true, 28, 28) << endl;//10(char)196
-                cerr << "|                           ";
-            }
-            cerr << LineBreak("[" + _functions.getImplemention(i) + "]", _option, false, 28, 32) << endl;*/
             cerr << "|   "  << std::setfill((char)196) << std::setw(_option.getWindow()-4) << std::left << toUpperCase(_functions.getFunction(i).substr(0,_functions.getFunction(i).rfind('(')))+": " << endl;
             if (_functions.getComment(i).length())
             {
-                cerr << LineBreak("|       Beschreibung:    " + _functions.getComment(i), _option, true, 0, 25) << endl;//10
+                cerr << LineBreak("|       "+_lang.get("PARSERFUNCS_LISTDEFINE_DESCRIPTION",_functions.getComment(i)), _option, true, 0, 25) << endl;//10
             }
-            cerr << LineBreak("|       Definition:      " + _functions.getFunction(i) + " := " + _functions.getImplemention(i), _option, false, 0, 29) << endl;//14
+            cerr << LineBreak("|       "+_lang.get("PARSERFUNCS_LISTDEFINE_DEFINITION", _functions.getFunction(i), _functions.getImplemention(i)), _option, false, 0, 29) << endl;//14
             /*if (i < _functions.getDefinedFunctions()-1)
                 cerr << "|" << endl;*/
         }
-        cerr << "|   -- " << std::right << _functions.getDefinedFunctions() << " Funktionen --" << endl;
+        cerr << "|   -- " << std::right << _functions.getDefinedFunctions() << " " << toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_FUNCTIONS"))  << " --" << endl;
     }
     make_hline();
     return;
@@ -2538,11 +2544,14 @@ void parser_ListDefine(const Define& _functions, const Settings& _option)
 void parser_ListLogical(const Settings& _option)
 {
     make_hline();
-    cerr << toSystemCodePage("|-> NUMERE: LOGIK-AUSDRÜCKE") << endl;
+    cerr << toSystemCodePage("|-> NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_LISTLOGICAL_HEADLINE"))) << endl;
     make_hline();
-    cerr << toSystemCodePage("|   Ausdruck:  Ausgabe:") << endl;
+    cerr << toSystemCodePage("|   "+_lang.get("PARSERFUNCS_LISTLOGICAL_TABLEHEAD")) << endl;
     cerr << toSystemCodePage("|") << endl;
-    cerr << toSystemCodePage("|   A          - WAHR, wenn A WAHR, sonst FALSCH") << endl;
+    vector<string> vLogicals = _lang.getList("PARSERFUNCS_LISTLOGICAL_ITEM*");
+    for (unsigned int i = 0; i < vLogicals.size(); i++)
+        cerr << toSystemCodePage("|   " + vLogicals[i]) << endl;
+    /*cerr << toSystemCodePage("|   A          - WAHR, wenn A WAHR, sonst FALSCH") << endl;
     cerr << toSystemCodePage("|   !A         - WAHR, wenn A FALSCH, sonst FALSCH") << endl;
     cerr << toSystemCodePage("|   A && B     - WAHR, wenn A und B WAHR, sonst FALSCH") << endl;
     cerr << toSystemCodePage("|   A || B     - WAHR, wenn A oder B WAHR, sonst FALSCH") << endl;
@@ -2555,10 +2564,10 @@ void parser_ListLogical(const Settings& _option)
     cerr << toSystemCodePage("|   x <= y     - WAHR, wenn x kleiner oder gleich y, sonst FALSCH") << endl;
     cerr << toSystemCodePage("|   x >= y     - WAHR, wenn x größer oder gleich y, sonst FALSCH") << endl;
     cerr << toSystemCodePage("|   x == y     - WAHR, wenn x gleich y, sonst FALSCH") << endl;
-    cerr << toSystemCodePage("|   x != y     - WAHR, wenn x ungleich y, sonst FALSCH") << endl;
+    cerr << toSystemCodePage("|   x != y     - WAHR, wenn x ungleich y, sonst FALSCH") << endl;*/
     cerr << toSystemCodePage("|") << endl;
-    cerr << LineBreak("|-> WAHR entspricht dem Wert 1, FALSCH dem Wert 0. Logik kann auch auf Zeichenketten angewendet werden, siehe \"help -string\". Binäre Operatoren vergleichen die Bitwerte direkt und geben daher auch Werte ungleich {1,0} zurück.", _option) << endl;
-    cerr << LineBreak("|-> Eine Aneinanderkettung mehrere Logikausdrücke sollte nur mit UND- bzw. ODER-Operatoren durchgeführt werden, da anderenfalls direkt gegen das Ergebnis des vorherigen Logikausdrucks (1 oder 0) geprüft wird. Um z.B. zu prüfen, ob eine Variable x in einem Intervall liegt, muss der Ausdruck \"x >= a && x <= b\" WAHR sein. Einfacher geht dies allerdings mittels \"!is_nan(range(x,a,b))\"", _option) << endl;
+    cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_LISTLOGICAL_FOOTNOTE1"), _option) << endl;
+    cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_LISTLOGICAL_FOOTNOTE2"), _option) << endl;
     make_hline();
     return;
 }
@@ -2588,11 +2597,11 @@ void parser_ListVar(mu::ParserBase& _parser, const Settings& _option, const Data
     string sStringSize = toString((int)_data.getStringElements()) + " x 1";
     if (!VarMap.size())
     {
-        cerr << "|-> Keine Variablen definiert!" << endl;
+        cerr << "|-> " << toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_EMPTY")) << endl;
         return;
     }
     make_hline();
-    cerr << "|-> NUMERE: DEFINIERTE VARIABLEN" << endl;
+    cerr << "|-> NUMERE: " << toUpperCase(toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_HEADLINE"))) << endl;
     make_hline();
 
     for (auto iter = CacheMap.begin(); iter != CacheMap.end(); ++iter)
@@ -2666,7 +2675,7 @@ void parser_ListVar(mu::ParserBase& _parser, const Settings& _option, const Data
         }
     }
 
-    cerr << "|   -- " << (int)VarMap.size() << " Variable(n) und ";
+    cerr << "|   -- " << (int)VarMap.size() << " " << toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_VARS_AND")) << " ";
     if (_data.isValid() || _data.isValidCache() || _data.getStringElements())
     {
         if (_data.isValid() && _data.isValidCache() && _data.getStringElements())
@@ -2695,13 +2704,13 @@ void parser_ListVar(mu::ParserBase& _parser, const Settings& _option, const Data
     }
     else
         cerr << 0;
-    cerr << " Datentabelle(n) --";
+    cerr << " " << toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_DATATABLES")) << " --";
     if (VarMap.size() > 9 && nDataSetNum > 9)
-        cerr << std::setfill(' ') << std::setw(_option.getWindow(0)-62) << "Total: ";
+        cerr << std::setfill(' ') << std::setw(_option.getWindow(0)-32-_lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length()-_lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length()) << "Total: ";
     else if (VarMap.size() > 9 || nDataSetNum > 9)
-        cerr << std::setfill(' ') << std::setw(_option.getWindow(0)-61) << "Total: ";
+        cerr << std::setfill(' ') << std::setw(_option.getWindow(0)-31-_lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length()-_lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length()) << "Total: ";
     else
-        cerr << std::setfill(' ') << std::setw(_option.getWindow(0)-60) << "Total: ";
+        cerr << std::setfill(' ') << std::setw(_option.getWindow(0)-30-_lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length()-_lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length()) << "Total: ";
     if (nBytesSum >= 1024*1024)
         cerr << std::setprecision(4) << std::setw(8) << nBytesSum/(1024.0*1024.0) << " MBytes";
     else if (nBytesSum >= 1024)
@@ -2737,13 +2746,13 @@ void parser_ListConst(const mu::ParserBase& _parser, const Settings& _option)
         "_r[m]",
         "_[---]"};
     make_hline();
-    cerr << "|-> NUMERE: DEFINIERTE KONSTANTEN" << endl;
+    cerr << "|-> NUMERE: " << toSystemCodePage(toUpperCase(_lang.get("PARSERFUNCS_LISTCONST_HEADLINE"))) << endl;
     make_hline();
 
     mu::valmap_type cmap = _parser.GetConst();
     if (!cmap.size())
     {
-        mu::console() << _T("|-> Keine Konstanten definiert!\n");
+        cerr << toSystemCodePage("|-> " + _lang.get("PARSERFUNCS_LISTCONST_EMPTY")) << endl;
     }
     else
     {
@@ -2768,9 +2777,8 @@ void parser_ListConst(const mu::ParserBase& _parser, const Settings& _option)
             cerr << endl;
         }
         cerr << "|" << endl;
-        cerr << "|-> Die Konstanten sind - falls zutreffend - in SI-Einheiten angegeben:" << endl;
-        cerr << "|   [kg, J, K, m, s, A, mol, T]" << endl;
-        cerr << LineBreak("|-> Spezielle Konstanten/Werte sind \"nan\" (Kein Wert), \"inf\" (Unendlich), \"true\" (WAHR), \"false\" (FALSCH) und \"void\" (Leerer/kein Wert).", _option) << endl;
+        cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_LISTCONST_FOOTNOTE1"), _option) << endl;
+        cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_LISTCONST_FOOTNOTE2"), _option) << endl;
     }
     make_hline();
     return;
@@ -2783,21 +2791,21 @@ void parser_ListExprVar(mu::ParserBase& _parser, const Settings& _option, const 
     //string sCacheSize = "Dimension: " + toString(_data.getCacheLines(false)) + " x " + toString(_data.getCacheCols(false));
     if (sExpr.length()==0)
     {
-        cerr << "|-> Kein Ausdruck eingegeben!" << endl;
+        cerr << toSystemCodePage("|-> " + _lang.get("PARSERFUNCS_LISTEXPRVAR_EMPTY")) << endl;
         return;
     }
 
     // Query the used variables (must be done after calc)
     make_hline();
-    cerr << "|-> NUMERE: VARIABLEN IM AUSDRUCK" << endl;
+    cerr << "|-> NUMERE: " << toSystemCodePage(toUpperCase(_lang.get("PARSERFUNCS_LISTEXPRVAR_HEADLINE"))) << endl;
     make_hline();
-    cerr << "|   Ausdruck: " << LineBreak(_parser.GetExpr(), _option, true, 14, 14) << endl;
+    cerr << LineBreak("|   " + _lang.get("PARSERFUNCS_LISTEXPRVAR_EXPR", _parser.GetExpr()), _option, true, 0, 14) << endl;
 
     varmap_type variables = _parser.GetUsedVar();
     if (!variables.size())
     {
         cerr << "|" << endl
-             << toSystemCodePage("|-> Ausdruck enthält keine Variablen!") << endl;
+             << toSystemCodePage("|-> "+_lang.get("PARSERFUNCS_LISTEXPRVAR_NOVARS")) << endl;
     }
     else
     {
@@ -2825,7 +2833,7 @@ void parser_ListExprVar(mu::ParserBase& _parser, const Settings& _option, const 
             cerr << std::setw(19) << "[double]";
             cerr << std::setw(9) << sizeof(double) << "  Bytes" << endl;
         }
-        cerr << "|   -- " << variables.size() << " Variable(n) --" << endl;
+        cerr << "|   -- " << _lang.get("PARSERFUNCS_LISTEXPRVAR_FOOTNOTE", toString((int)variables.size())) << " --" << endl;
 
     }
     _parser.SetExpr(sExpr);
@@ -2837,10 +2845,17 @@ void parser_ListExprVar(mu::ParserBase& _parser, const Settings& _option, const 
 void parser_ListCmd(const Settings& _option)
 {
     make_hline();
-    cerr << "|-> NUMERE: KOMMANDOSATZ" << endl;
+    cerr << "|-> NUMERE: " << toSystemCodePage(toUpperCase(_lang.get("PARSERFUNCS_LISTCMD_HEADLINE"))) << endl; //PRSRFUNC_LISTCMD_*
     make_hline();
-    cerr << LineBreak("|   Befehl:      Syntax:        Funktion:", _option) << endl;
+    cerr << LineBreak("|   " +_lang.get("PARSERFUNCS_LISTCMD_TABLEHEAD"), _option) << endl;
     cerr << "|" << endl;
+    vector<string> vCMDList = _lang.getList("PARSERFUNCS_LISTCMD_CMD_*");
+
+    for (unsigned int i = 0; i < vCMDList.size(); i++)
+    {
+        cerr << LineBreak("|   "+vCMDList[i], _option, false, 0, 34) << endl;
+    }
+    /*
     cerr << LineBreak("|   abort                       - Abbrechen einer Schleifendeklaration oder einer Plotkomposition", _option, false, 0, 34) << endl;
     cerr << LineBreak("|   about                       - rechtliche Informationen zu NumeRe", _option, false, 0, 34) << endl;
     cerr << LineBreak("|   append       NM [-PAR]      - Dateien an Daten im Speicher anhängen", _option, false, 0, 34) << endl;
@@ -2934,47 +2949,49 @@ void parser_ListCmd(const Settings& _option)
     cerr << LineBreak("|   while        EX             - Startet die Definition einer While-Schleife", _option, false, 0, 34) << endl;
     cerr << LineBreak("|   write        STR -set PAR   - Schreiben in eine Datei", _option, false, 0, 34) << endl;
     cerr << LineBreak("|   zeroes       EX -set PAR    - Ruft die Funktion zur numerischen Bestimmung der Nullstellen eines Ausdrucks auf.", _option, false, 0, 34) << endl;
+    */
     cerr << "|" << endl;
-    cerr << LineBreak("|-> Die Syntax ist schematisch angegeben: EX = Ausdruck, PAR = Parameter, OB = (Daten-)Objekt, STR = Zeichenkette, CMD = Kommando und NM = Name. Syntaxelemente in eckigen Klammern sind optional.", _option) << endl;
-    cerr << LineBreak("|-> SIEHE AUCH: Zu jedem der gelisteten Befehle existiert ein Hilfeeintrag, der durch \"help -BEFEHL\" aufgerufen werden kann.", _option) << endl;
+    cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_LISTCMD_FOOTNOTE1"), _option) << endl;
+    cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_LISTCMD_FOOTNOTE2"), _option) << endl;
     make_hline();
 }
 
 // --> Listet alle Einheitenumrechnungen <--
-void parser_ListUnits(const Settings& _option)
+void parser_ListUnits(const Settings& _option) //PRSRFUNC_LISTUNITS_*
 {
     make_hline();
-    cerr << "|-> NUMERE: EINHEITENUMRECHNUNGEN" << endl; //(_option.getWindow()-x)/3
+    cerr << "|-> NUMERE: " << toSystemCodePage(toUpperCase(_lang.get("PARSERFUNCS_LISTUNITS_HEADLINE"))) << endl; //(_option.getWindow()-x)/3
     make_hline(); // 11       21  x=17             15   x=35      1               x=2      26
     //cerr << "|     Symbol     Bezeichnung          Dimension              Umrechnung  Einheit" << endl;
-    cerr << "|     Symbol     " << std::setfill(' ') << std::setw((_option.getWindow()-17)/3 + (_option.getWindow()+1)%3) << std::left << "Bezeichnung"
-                                << std::setfill(' ') << std::setw((_option.getWindow()-35)/3+1) << std::left << "Dimension"
-                                << std::setfill(' ') << std::setw((_option.getWindow()-2)/3) << std::right << "Umrechnung  Einheit" << endl;
+    //cerr << "|     Symbol     " << std::setfill(' ') << std::setw((_option.getWindow()-17)/3 + (_option.getWindow()+1)%3) << std::left << "Bezeichnung"
+    //                            << std::setfill(' ') << std::setw((_option.getWindow()-35)/3+1) << std::left << "Dimension"
+    //                            << std::setfill(' ') << std::setw((_option.getWindow()-2)/3) << std::right << "Umrechnung  Einheit" << endl;
+    printUnits(_lang.get("PARSERFUNCS_LISTUNITS_SYMBOL"), _lang.get("PARSERFUNCS_LISTUNITS_DESCRIPTION"), _lang.get("PARSERFUNCS_LISTUNITS_DIMENSION"), _lang.get("PARSERFUNCS_LISTUNITS_UNIT"), _option.getWindow());
     cerr << "|" << endl;
-    printUnits("1'A",   "(Angstroem)",        "L",           "1e-10      [m]", _option.getWindow());
-    printUnits("1'AU",  "(Astro. Einheit)",   "L",           "1.4959787e11      [m]", _option.getWindow());
-    printUnits("1'b",   "(barn)",             "L^2",         "1e-28    [m^2]", _option.getWindow());
-    printUnits("1'cal", "(Kalorie)",          "M L^2 / T^2", "4.1868      [J]", _option.getWindow());
-    printUnits("1'Ci",  "(Curie)",            "1 / T",       "3.7e10     [Bq]", _option.getWindow());
-    printUnits("1'eV",  "(Elektronenvolt)",   "M L^2 / T^2", "1.60217657e-19      [J]", _option.getWindow());
-    printUnits("1'fm",  "(Fermi)",            "L",           "1e-15      [m]", _option.getWindow());
-    printUnits("1'ft",  "(Foot)",             "L",           "0.3048      [m]", _option.getWindow());
-    printUnits("1'Gs",  "(Gauss)",            "M / (T^2 I)", "1e-4      [T]", _option.getWindow());
-    printUnits("1'in",  "(inch)",             "L",           "0.0254      [m]", _option.getWindow());
-    printUnits("1'kmh", "(Geschwindigkeit)",  "L / T",       "0.2777777...    [m/s]", _option.getWindow());
-    printUnits("1'kn",  "(Knoten)",           "L / T",       "0.5144444...    [m/s]", _option.getWindow());
-    printUnits("1'l",   "(Liter)",            "L^3",         "1e-3    [m^3]", _option.getWindow());
-    printUnits("1'ly",  "(Lichtjahr)",        "L",           "9.4607305e15      [m]", _option.getWindow());
-    printUnits("1'mile","(Meile)",            "L",           "1609.344      [m]", _option.getWindow());
-    printUnits("1'mol", "(Stoffmenge)",       "N",           "6.022140857e23      ---", _option.getWindow());
-    printUnits("1'mph", "(Geschwindigkeit)",  "L / T",       "0.44703722    [m/s]", _option.getWindow());
-    printUnits("1'Ps",  "(Poise)",            "M / (L T)",   "0.1   [Pa s]", _option.getWindow());
-    printUnits("1'pc",  "(Parsec)",           "L",           "3.0856776e16      [m]", _option.getWindow());
-    printUnits("1'psi", "(Pounds/inch^2)",    "M / (L T^2)", "6894.7573     [Pa]", _option.getWindow());
-    printUnits("1'TC",  "(Celsius)",          "Theta",       "274.15      [K]", _option.getWindow());
-    printUnits("1'TF",  "(Fahrenheit)",       "Theta",       "255.92778      [K]", _option.getWindow());
-    printUnits("1'Torr","(mmHg)",             "M / (L T^2)", "133.322     [Pa]", _option.getWindow());
-    printUnits("1'yd",  "(Yard)",             "L",           "0.9144      [m]", _option.getWindow());
+    printUnits("1'A",   _lang.get("PARSERFUNCS_LISTUNITS_UNIT_ANGSTROEM"),        "L",           "1e-10      [m]", _option.getWindow());
+    printUnits("1'AU",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_ASTRO_UNIT"),       "L",           "1.4959787e11      [m]", _option.getWindow());
+    printUnits("1'b",   _lang.get("PARSERFUNCS_LISTUNITS_UNIT_BARN"),             "L^2",         "1e-28    [m^2]", _option.getWindow());
+    printUnits("1'cal", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_CALORY"),           "M L^2 / T^2", "4.1868      [J]", _option.getWindow());
+    printUnits("1'Ci",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_CURIE"),            "1 / T",       "3.7e10     [Bq]", _option.getWindow());
+    printUnits("1'eV",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_ELECTRONVOLT"),     "M L^2 / T^2", "1.60217657e-19      [J]", _option.getWindow());
+    printUnits("1'fm",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_FERMI"),            "L",           "1e-15      [m]", _option.getWindow());
+    printUnits("1'ft",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_FOOT"),             "L",           "0.3048      [m]", _option.getWindow());
+    printUnits("1'Gs",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_GAUSS"),            "M / (T^2 I)", "1e-4      [T]", _option.getWindow());
+    printUnits("1'in",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_INCH"),             "L",           "0.0254      [m]", _option.getWindow());
+    printUnits("1'kmh", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_VELOCITY"),         "L / T",       "0.2777777...    [m/s]", _option.getWindow());
+    printUnits("1'kn",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_KNOTS"),            "L / T",       "0.5144444...    [m/s]", _option.getWindow());
+    printUnits("1'l",   _lang.get("PARSERFUNCS_LISTUNITS_UNIT_LITERS"),           "L^3",         "1e-3    [m^3]", _option.getWindow());
+    printUnits("1'ly",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_LIGHTYEAR"),        "L",           "9.4607305e15      [m]", _option.getWindow());
+    printUnits("1'mile",_lang.get("PARSERFUNCS_LISTUNITS_UNIT_MILE"),             "L",           "1609.344      [m]", _option.getWindow());
+    printUnits("1'mol", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_MOL"),              "N",           "6.022140857e23      ---", _option.getWindow());
+    printUnits("1'mph", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_VELOCITY"),         "L / T",       "0.44703722    [m/s]", _option.getWindow());
+    printUnits("1'Ps",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_POISE"),            "M / (L T)",   "0.1   [Pa s]", _option.getWindow());
+    printUnits("1'pc",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_PARSEC"),           "L",           "3.0856776e16      [m]", _option.getWindow());
+    printUnits("1'psi", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_PSI"),              "M / (L T^2)", "6894.7573     [Pa]", _option.getWindow());
+    printUnits("1'TC",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_CELSIUS"),          "Theta",       "274.15      [K]", _option.getWindow());
+    printUnits("1'TF",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_FAHRENHEIT"),       "Theta",       "255.92778      [K]", _option.getWindow());
+    printUnits("1'Torr",_lang.get("PARSERFUNCS_LISTUNITS_UNIT_TORR"),             "M / (L T^2)", "133.322     [Pa]", _option.getWindow());
+    printUnits("1'yd",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_YARD"),             "L",           "0.9144      [m]", _option.getWindow());
     cerr << "|" << endl;
     printUnits("1'G",   "(giga)",             "---",           "1e9      ---", _option.getWindow());
     printUnits("1'M",   "(mega)",             "---",           "1e6      ---", _option.getWindow());
@@ -2982,39 +2999,9 @@ void parser_ListUnits(const Settings& _option)
     printUnits("1'm",   "(milli)",            "---",           "1e-3      ---", _option.getWindow());
     printUnits("1'mu",  "(micro)",            "---",           "1e-6      ---", _option.getWindow());
     printUnits("1'n",   "(nano)",             "---",           "1e-9      ---", _option.getWindow());
-    //cerr << "|     1'A        (Angstroem)          L              =            1e-10      [m]" << endl;
-    //cerr << "|     1'AU       (Astro. Einheit)     L              =     1.4959787e11      [m]" << endl;
-    //cerr << "|     1'b        (barn)               L^2            =            1e-28    [m^2]" << endl;
-    //cerr << "|     1'cal      (Kalorie)            M L^2 / T^2    =           4.1868      [J]" << endl;
-    //cerr << "|     1'Ci       (Curie)              1 / T          =           3.7e10     [Bq]" << endl;
-    //cerr << "|     1'eV       (Elektronvolt)       M L^2 / T^2    =   1.60217657e-19      [J]" << endl;
-    //cerr << "|     1'fm       (Fermi)              L              =            1e-15      [m]" << endl;
-    //cerr << "|     1'ft       (Foot)               L              =           0.3048      [m]" << endl;
-    //cerr << "|     1'Gs       (Gauss)              M / (T^2 I)    =             1e-4      [T]" << endl;
-    //cerr << "|     1'in       (Inch)               L              =           0.0254      [m]" << endl;
-    //cerr << "|     1'kmh      (Geschwindigkeit)    L / T          =     0.2777777...    [m/s]" << endl;
-    //cerr << "|     1'kn       (Knoten)             L / T          =     0.5144444...    [m/s]" << endl;
-    //cerr << "|     1'l        (Liter)              L^3            =             1e-3    [m^3]" << endl;
-    //cerr << "|     1'ly       (Lichtjahr)          L              =     9.4607305e15      [m]" << endl;
-    //cerr << "|     1'mile     (Meile)              L              =         1609.344      [m]" << endl;
-    //cerr << "|     1'mol      (Stoffmenge)         N              =   6.022140857e23      ---" << endl;
-    //cerr << "|     1'mph      (Geschwindigkeit)    L / T          =       0.44703722    [m/s]" << endl;
-    //cerr << "|     1'Ps       (Poise)              M / (L T)      =              0.1   [Pa s]" << endl;
-    //cerr << "|     1'pc       (Parsec)             L              =     3.0856776e16      [m]" << endl;
-    //cerr << "|     1'psi      (Pounds/inch^2)      M / (L T^2)    =        6894.7573     [Pa]" << endl;
-    //cerr << "|     1'TC       (Celsius)            Theta          =           274.15      [K]" << endl;
-    //cerr << "|     1'TF       (Fahrenheit)         Theta          =        255.92778      [K]" << endl;
-    //cerr << "|     1'Torr     (mmHg)               M / (L T^2)    =          133.322     [Pa]" << endl;
-    //cerr << "|     1'yd       (Yard)               L              =           0.9144      [m]" << endl;
-    //cerr << "|" << endl;
-    //cerr << "|     1'G        (giga)               ---            =              1e9      ---" << endl;
-    //cerr << "|     1'M        (mega)               ---            =              1e6      ---" << endl;
-    //cerr << "|     1'k        (kilo)               ---            =              1e3      ---" << endl;
-    //cerr << "|     1'm        (milli)              ---            =             1e-3      ---" << endl;
-    //cerr << "|     1'mu       (micro)              ---            =             1e-6      ---" << endl;
-    //cerr << "|     1'n        (nano)               ---            =             1e-9      ---" << endl;
+
     cerr << "|" << endl;
-    cerr << LineBreak("|-> Die Dimensionen der Einheiten sind durch die Abkürzungen L, M, T, ... gegeben. Dabei steht L für \"Länge\", M für \"Masse\", T für \"Zeit\", N für \"Menge\" und Theta für \"Temperatur\".", _option) << endl;
+    cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_LISTUNITS_FOOTNOTE"), _option) << endl;
     make_hline();
 
     return;
@@ -3025,13 +3012,13 @@ void parser_ListPlugins(Parser& _parser, Datafile& _data, const Settings& _optio
 {
     string sDummy = "";
     make_hline();
-    cerr << toSystemCodePage("|-> NUMERE: INSTALLIERTE PLUGINS") << endl;
+    cerr << toSystemCodePage("|-> NUMERE: "+toUpperCase(_lang.get("PARSERFUNCS_LISTPLUGINS_HEADLINE"))) << endl;
     make_hline();
     if (!_plugin.getPluginCount())
-        cerr << toSystemCodePage("|-> Keine Plugins installiert.") << endl;
+        cerr << toSystemCodePage("|-> " + _lang.get("PARSERFUNCS_LISTPLUGINS_EMPTY")) << endl;
     else
     {
-        cerr << LineBreak("|   Befehl:            Beschreibung:", _option) << endl;
+        cerr << LineBreak("|   "+_lang.get("PARSERFUNCS_LISTPLUGINS_TABLEHEAD"), _option) << endl;
         cerr << "|" << endl;
         for (unsigned int i = 0; i < _plugin.getPluginCount(); i++)
         {
@@ -6082,7 +6069,7 @@ void parser_Taylor(string& sCmd, Parser& _parser, const Settings& _option, Defin
     }
     else
     {
-        cerr << LineBreak("|-> FEHLER: Es wurden nicht die nötigen Parameter übergeben!$Siehe \"help -taylor\" für weitere Details.", _option) << endl;
+        cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_TAYLOR_MISSINGPARAMS"), _option) << endl;
         return;
     }
 
@@ -6137,7 +6124,7 @@ void parser_Taylor(string& sCmd, Parser& _parser, const Settings& _option, Defin
     _parser.SetExpr(sExpr);
     if (!parser_CheckVarOccurence(_parser, sVarName))
     {
-        cerr << LineBreak("|-> FEHLER: Bezüglich der Variablen \"" + sVarName + "\" ist der Ausdruck konstant und kann nicht in ein Taylorpolynom entwickelt werden!", _option) << endl;
+        cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_TAYLOR_CONSTEXPR", sVarName), _option) << endl;
         return;
     }
     if (sVarName.length())
@@ -6285,7 +6272,8 @@ void parser_Taylor(string& sCmd, Parser& _parser, const Settings& _option, Defin
     }
     if (_option.getSystemPrintStatus())
         cerr << LineBreak("|-> " + sTaylor, _option, true, 0, 8) << endl;
-    sTaylor += " -set comment=\"Taylorentwicklung des Ausdrucks '" + sExpr_cpy + "' an der Stelle " + sVarName + "=" + toString(dVarValue, 4) + " bis zur Ordnung " + toString((int)nth_taylor) + "\"";
+    sTaylor += _lang.get("PARSERFUNCS_TAYLOR_DEFINESTRING", sExpr_cpy, sVarName, toString(dVarValue, 4), toString((int)nth_taylor));
+    //sTaylor += " -set comment=\"Taylorentwicklung des Ausdrucks '" + sExpr_cpy + "' an der Stelle " + sVarName + "=" + toString(dVarValue, 4) + " bis zur Ordnung " + toString((int)nth_taylor) + "\"";
 
     if (_functions.isDefined(sTaylor.substr(0,sTaylor.find(":="))))
         _functions.defineFunc(sTaylor, _parser, _option, true);
@@ -8187,7 +8175,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
     }
 
     if (_option.getSystemPrintStatus())
-        cerr << LineBreak("|-> Fitte \"" + sFuncDisplay + "\" ... ", _option);
+        cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_FIT_FITTING", sFuncDisplay)+" ", _option);
 
     for (auto iter = paramsMap.begin(); iter != paramsMap.end(); ++iter)
     {
@@ -8231,20 +8219,20 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
                             if (!_fControl.fit(vx, vy, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
                             {
                                 if (_option.getSystemPrintStatus())
-                                    cerr << "Misserfolg!" << endl;
+                                    cerr << _lang.get("COMMON_FAILURE") << "!" << endl;
                                 return false;
                             }
-                            sFunctionDefString = "Fit(x) := " + sFuncDisplay + " -set comment=\"Angepasste Funktion\"";
+                            sFunctionDefString = "Fit(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
                         }
                         else
                         {
                             if (!_fControl.fit(vx, vy, vy_w, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
                             {
                                 if (_option.getSystemPrintStatus())
-                                    cerr << "Misserfolg!" << endl;
+                                    cerr << _lang.get("COMMON_FAILURE") << "!" << endl;
                                 return false;
                             }
-                            sFunctionDefString = "Fitw(x) := " + sFuncDisplay + " -set comment=\"Angepasste Funktion\"";
+                            sFunctionDefString = "Fitw(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
                         }
                     }
                     else if (nDim == 3)
@@ -8252,20 +8240,20 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
                         if (!_fControl.fit(vx, vy, vz, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
                         {
                             if (_option.getSystemPrintStatus())
-                                cerr << "Misserfolg!" << endl;
+                                cerr << _lang.get("COMMON_FAILURE") << "!" << endl;
                             return false;
                         }
-                        sFunctionDefString = "Fit(x,y) := " + sFuncDisplay + " -set comment=\"Angepasste Funktion\"";
+                        sFunctionDefString = "Fit(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
                     }
                     else if (nDim == 5)
                     {
                         if (!_fControl.fit(vx, vy, vz, vz_w, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
                         {
                             if (_option.getSystemPrintStatus())
-                                cerr << "Misserfolg!" << endl;
+                                cerr << _lang.get("COMMON_FAILURE") << "!" << endl;
                             return false;
                         }
-                        sFunctionDefString = "Fitw(x,y) := " + sFuncDisplay + " -set comment=\"Angepasste Funktion\"";
+                        sFunctionDefString = "Fitw(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
                     }
                     //if (_idx.nJ[0]+1+(!b1DChiMap)*(j+1) >= _idx.nJ[1])
                     // break;
@@ -8316,20 +8304,20 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
                             if (!_fControl.fit(vx, vy, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
                             {
                                 if (_option.getSystemPrintStatus())
-                                    cerr << "Misserfolg!" << endl;
+                                    cerr << _lang.get("COMMON_FAILURE") << "!" << endl;
                                 return false;
                             }
-                            sFunctionDefString = "Fit(x) := " + sFuncDisplay + " -set comment=\"Angepasste Funktion\"";
+                            sFunctionDefString = "Fit(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
                         }
                         else
                         {
                             if (!_fControl.fit(vx, vy, vy_w, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
                             {
                                 if (_option.getSystemPrintStatus())
-                                    cerr << "Misserfolg!" << endl;
+                                    cerr << _lang.get("COMMON_FAILURE") << "!" << endl;
                                 return false;
                             }
-                            sFunctionDefString = "Fitw(x) := " + sFuncDisplay + " -set comment=\"Angepasste Funktion\"";
+                            sFunctionDefString = "Fitw(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
                         }
                     }
                     else if (nDim == 3)
@@ -8337,20 +8325,20 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
                         if (!_fControl.fit(vx, vy, vz, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
                         {
                             if (_option.getSystemPrintStatus())
-                                cerr << "Misserfolg!" << endl;
+                                cerr << _lang.get("COMMON_FAILURE") << "!" << endl;
                             return false;
                         }
-                        sFunctionDefString = "Fit(x,y) := " + sFuncDisplay + " -set comment=\"Angepasste Funktion\"";
+                        sFunctionDefString = "Fit(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
                     }
                     else if (nDim == 5)
                     {
                         if (!_fControl.fit(vx, vy, vz, vz_w, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
                         {
                             if (_option.getSystemPrintStatus())
-                                cerr << "Misserfolg!" << endl;
+                                cerr << _lang.get("COMMON_FAILURE") << "!" << endl;
                             return false;
                         }
-                        sFunctionDefString = "Fitw(x,y) := " + sFuncDisplay + " -set comment=\"Angepasste Funktion\"";
+                        sFunctionDefString = "Fitw(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
                     }
                     //if (_idx.nJ[0]+1+(!b1DChiMap)*(j+1) >= _idx.nJ[1])
                     // break;
@@ -8371,8 +8359,9 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
         }
         if (_option.getSystemPrintStatus())
         {
-            cerr << "Erfolg!" << endl;
-            cerr << LineBreak("|-> Die chi^2-Map wurde erfolgreich in " + sChiMap + "() angelegt.", _option) << endl;
+            cerr << _lang.get("COMMON_SUCCESS") << "!" << endl;
+            cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_FIT_CHIMAPLOCATION", sChiMap), _option) << endl;
+            //cerr << LineBreak("|-> Die chi^2-Map wurde erfolgreich in " + sChiMap + "() angelegt.", _option) << endl;
         }
         if (!_functions.isDefined(sFunctionDefString))
             _functions.defineFunc(sFunctionDefString, _parser, _option);
@@ -8391,11 +8380,11 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
             if (!_fControl.fit(vx, vy, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
             {
                 if (_option.getSystemPrintStatus())
-                    cerr << "Misserfolg!" << endl;
+                    cerr << _lang.get("COMMON_FAILURE") << "!" << endl;
                 return false;
             }
             //_graph.Fit(_fitDataX, _fitDataY, sFitFunction.c_str(), sParams.c_str(), _fitParams);
-            sFunctionDefString = "Fit(x) := " + sFuncDisplay + " -set comment=\"Angepasste Funktion\"";
+            sFunctionDefString = "Fit(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
             /*if (!_functions.isDefined("Fit"))
                 _functions.defineFunc("Fit(x) := "+sFuncDisplay + " -set comment=\"Angepasste Funktion\"", _parser, _option);
             else
@@ -8406,11 +8395,11 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
             if (!_fControl.fit(vx, vy, vy_w, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
             {
                 if (_option.getSystemPrintStatus())
-                    cerr << "Misserfolg!" << endl;
+                    cerr << _lang.get("COMMON_FAILURE") << "!" << endl;
                 return false;
             }
             //_graph.FitS(_fitDataX, _fitDataY, _fitErrors, sFitFunction.c_str(), sParams.c_str(), _fitParams);
-            sFunctionDefString = "Fitw(x) := " + sFuncDisplay + " -set comment=\"Angepasste Funktion\"";
+            sFunctionDefString = "Fitw(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
             /*if (!_functions.isDefined("Fitw"))
                 _functions.defineFunc("Fitw(x) := "+sFuncDisplay + " -set comment=\"Angepasste Funktion\"", _parser, _option);
             else
@@ -8423,11 +8412,11 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
         if (!_fControl.fit(vx, vy, vz, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
         {
             if (_option.getSystemPrintStatus())
-                cerr << "Misserfolg!" << endl;
+                cerr << _lang.get("COMMON_FAILURE") << "!" << endl;
             return false;
         }
         //_graph.Fit(_fitDataX, _fitDataY, _fitDataZ, sFitFunction.c_str(), sParams.c_str(), _fitParams);
-        sFunctionDefString = "Fit(x,y) := " + sFuncDisplay + " -set comment=\"Angepasste Funktion\"";
+        sFunctionDefString = "Fit(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
         /*if (!_functions.isDefined("Fit"))
             _functions.defineFunc("Fit(x,y) := "+sFuncDisplay + " -set comment=\"Angepasste Funktion\"", _parser, _option);
         else
@@ -8438,11 +8427,11 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
         if (!_fControl.fit(vx, vy, vz, vz_w, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
         {
             if (_option.getSystemPrintStatus())
-                cerr << "Misserfolg!" << endl;
+                cerr << _lang.get("COMMON_FAILURE") << "!" << endl;
             return false;
         }
         //_graph.Fit(_fitDataX, _fitDataY, _fitDataZ, _fitErrors, sFitFunction.c_str(), sParams.c_str(), _fitParams);
-        sFunctionDefString = "Fitw(x,y) := " + sFuncDisplay + " -set comment=\"Angepasste Funktion\"";
+        sFunctionDefString = "Fitw(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
         /*if (!_functions.isDefined("Fitw"))
             _functions.defineFunc("Fitw(x,y) := "+sFuncDisplay + " -set comment=\"Angepasste Funktion\"", _parser, _option);
         else
@@ -8490,11 +8479,11 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
     else
     {
         oFitLog << std::setw(76) << std::setfill('=') << '=' << endl;
-        oFitLog << "FITERGEBNIS: " << getTimeStamp(false) << endl;
+        oFitLog << toUpperCase(_lang.get("PARSERFUNCS_FIT_HEADLINE")) <<": " << getTimeStamp(false) << endl;
         oFitLog << std::setw(76) << std::setfill('=') << '=' << endl;
-        oFitLog << "Funktion: " << sFuncDisplay << endl;
-        oFitLog << "Angepasst: " << sFittedFunction << endl;
-        oFitLog << "Datensatz: Spalte(n) ";
+        oFitLog << (_lang.get("PARSERFUNCS_FIT_FUNCTION", sFuncDisplay)) << endl;
+        oFitLog << (_lang.get("PARSERFUNCS_FIT_FITTED_FUNC", sFittedFunction)) << endl;
+        oFitLog << (_lang.get("PARSERFUNCS_FIT_DATASET")) << " ";
         if (nDim == 2)
         {
             oFitLog << j_pos[0]+1;
@@ -8569,78 +8558,104 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
                     oFitLog << ", ";
             }
         }
-        oFitLog << " aus " << _data.getDataFileName(sDataTable) << endl;
-        oFitLog << "Datenpunkte:                            " << nSize << (bUseErrors ? " mit " : " ohne ") << "Gewichtungsfaktoren" << endl;
+        oFitLog << " " << _lang.get("PARSERFUNCS_FIT_FROM") << " " << _data.getDataFileName(sDataTable) << endl;
+        if (bUseErrors)
+            oFitLog << (_lang.get("PARSERFUNCS_FIT_POINTS_W_ERR", toString((int)nSize))) << endl;
+        else
+            oFitLog << (_lang.get("PARSERFUNCS_FIT_POINTS_WO_ERR", toString((int)nSize))) << endl;
         if (bRestrictXVals)
-            oFitLog << "x-Werte eingeschränkt auf:              [" << dMin << ", " << dMax << "]" << endl;
+            oFitLog << (_lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "x", toString(dMin, 5), toString(dMax, 5))) << endl;
         if (bRestrictYVals)
-            oFitLog << "y-Werte eingeschränkt auf:              [" << dMinY << ", " << dMaxY << "]" << endl;
+            oFitLog << (_lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "y", toString(dMinY, 5), toString(dMaxY, 5))) << endl;
         if (sRestrictions.length())
-            oFitLog << "Parametereinschränkungen:               [" << sRestrictions << "]" << endl;
-        oFitLog << "Freiheitsgrade:                         " <<  nSize - paramsMap.size() /*_fitParams.GetNx()*/ << endl;
-        oFitLog << "Algorithmusparameter:                   TOL=" << dPrecision << ", MAXITER=" << nMaxIterations << endl;
-        oFitLog << "Iterationen:                            " << _fControl.getIterations() << endl;
+            oFitLog << _lang.get("PARSERFUNCS_FIT_PARAM_RESTRICTS", sRestrictions) << endl;
+        oFitLog << _lang.get("PARSERFUNCS_FIT_FREEDOMS", toString((int)nSize - paramsMap.size())) << endl;
+        oFitLog << _lang.get("PARSERFUNCS_FIT_ALGORITHM_SETTINGS", toString(dPrecision, 5), toString(nMaxIterations)) << endl;
+        oFitLog << _lang.get("PARSERFUNCS_FIT_ITERATIONS", toString(_fControl.getIterations())) << endl;
         if (nSize != paramsMap.size() /*_fitParams.GetNx()*/ && !(nFitVars & 2))
         {
-            oFitLog << "Gewichtete Summe der Residuen (chi^2):  " << dChisq << endl;
-            oFitLog << "Varianz der Residuen (red. chi^2):      " << dChisq / (double) (nSize - paramsMap.size() /*_fitParams.GetNx()*/)<< endl;
-            oFitLog << "Standardabweichung der Residuen:        " << sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size() /*_fitParams.GetNx()*/)) << endl;
+            oFitLog << _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7)) << endl;
+            oFitLog << _lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7)) << endl;
+            oFitLog << _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) << endl;
         }
         else if (nFitVars & 2 && nSize != paramsMap.size() /*_fitParams.GetNx()*/)
         {
-            oFitLog << "Gewichtete Summe der Residuen (chi^2):  " << dChisq << endl;
-            oFitLog << "Varianz der Residuen (red. chi^2):      " << dChisq / (double) (nSize - paramsMap.size() /*_fitParams.GetNx()*/)<< endl;
-            oFitLog << "Standardabweichung der Residuen:        " << sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size() /*_fitParams.GetNx()*/)) << endl;
+            oFitLog << _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7)) << endl;
+            oFitLog << _lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7)) << endl;
+            oFitLog << _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) << endl;
         }
         //oFitLog << "Normierte Varianz der Residuen:         " << dNormChisq / (double)(nSize - _fitParams.GetNx()) << endl;
         oFitLog << endl;
         if (bUseErrors)
-            oFitLog << "Parameter        Initialwert      Anpassung    berechnete Standardabweichung" << endl;
+            oFitLog << _lang.get("PARSERFUNCS_FIT_LOG_TABLEHEAD1") << endl;
         else
-            oFitLog << "Parameter        Initialwert      Anpassung    Asymptotischer Standardfehler" << endl;
+            oFitLog << _lang.get("PARSERFUNCS_FIT_LOG_TABLEHEAD2") << endl;
         oFitLog << std::setw(76) << std::setfill('-') << '-' << endl;
     }
     _data.setCacheStatus(false);
 
 
     if (_option.getSystemPrintStatus())
-        cerr << "Erfolg!" << endl;
+        cerr << _lang.get("COMMON_SUCCESS") << "." << endl;
 
     if (_option.getSystemPrintStatus() && !bMaskDialog)
     {
         make_hline();
-        cerr << "|-> NUMERE: FITERGEBNIS" << endl;
+        cerr << toSystemCodePage("|-> NUMERE: "+toUpperCase(_lang.get("PARSERFUNCS_FIT_HEADLINE"))) << endl;
         make_hline();
-        cerr << LineBreak("|-> Funktion: " + sFittedFunction, _option, true) << endl;
-        cerr << "|-> Datenpunkte:                            " << nSize << (bUseErrors ? " mit " : " ohne ") << "Gewichtungsfaktoren" << endl;
+        cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_FIT_FUNCTION", sFittedFunction), _option, true) << endl;
+        if (bUseErrors)
+            cerr << toSystemCodePage("|-> " + _lang.get("PARSERFUNCS_FIT_POINTS_W_ERR", toString((int)nSize))) << endl;
+        else
+            cerr << toSystemCodePage("|-> " + _lang.get("PARSERFUNCS_FIT_POINTS_WO_ERR", toString((int)nSize))) << endl;
+        //cerr << "|-> Datenpunkte:                            " << nSize << (bUseErrors ? " mit " : " ohne ") << "Gewichtungsfaktoren" << endl;
         if (bRestrictXVals)
-            cerr << toSystemCodePage("|-> x-Werte eingeschränkt auf:              [") << dMin << ", " << dMax << "]" << endl;
+            cerr << toSystemCodePage("|-> "+_lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "x", toString(dMin, 5), toString(dMax, 5))) << endl;
         if (bRestrictYVals)
-            cerr << toSystemCodePage("|-> y-Werte eingeschränkt auf:              [") << dMinY << ", " << dMaxY << "]" << endl;
+            cerr << toSystemCodePage("|-> "+_lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "y", toString(dMinY, 5), toString(dMaxY, 5))) << endl;
         if (sRestrictions.length())
-            cerr << toSystemCodePage("|-> Parametereinschränkungen:               [") << sRestrictions << "]" << endl;
-        cerr << "|-> Freiheitsgrade:                         " << nSize - paramsMap.size() /*_fitParams.GetNx()*/ << endl;
-        cerr << "|-> Algorithmusparameter:                   TOL=" << dPrecision << ", MAXITER=" << nMaxIterations << endl;
-        cerr << "|-> Iterationen:                            " << _fControl.getIterations() << endl;
-        if (nSize != paramsMap.size() /*_fitParams.GetNx()*/ && !(nFitVars & 2))
+            cerr << toSystemCodePage("|-> "+_lang.get("PARSERFUNCS_FIT_PARAM_RESTRICTS", sRestrictions)) << endl;
+        cerr << toSystemCodePage("|-> "+_lang.get("PARSERFUNCS_FIT_FREEDOMS", toString((int)nSize - paramsMap.size()))) << endl;
+        cerr << toSystemCodePage("|-> "+_lang.get("PARSERFUNCS_FIT_ALGORITHM_SETTINGS", toString(dPrecision, 5), toString(nMaxIterations))) << endl;
+        cerr << toSystemCodePage("|-> "+_lang.get("PARSERFUNCS_FIT_ITERATIONS", toString(_fControl.getIterations()))) << endl;
+        if (nSize != paramsMap.size() && !(nFitVars & 2))
         {
-            cerr << "|-> Gewichtete Summe der Residuen (chi^2):  " << dChisq << endl;
-            cerr << "|-> Varianz der Residuen (red. chi^2):      " << dChisq / (double) (nSize - paramsMap.size() /*_fitParams.GetNx()*/) << endl;
-            cerr << "|-> Standardabweichung der Residuen:        " << sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size() /*_fitParams.GetNx()*/)) << endl;
+            cerr << toSystemCodePage("|-> "+_lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7))) << endl;
+            cerr << toSystemCodePage("|-> "+_lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7))) << endl;
+            cerr << toSystemCodePage("|-> "+_lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7))) << endl;
         }
-        else if (nSize != paramsMap.size() /*_fitParams.GetNx()*/ && (nFitVars & 2))
+        else if (nSize != paramsMap.size() && (nFitVars & 2))
         {
-            cerr << "|-> Gewichtete Summe der Residuen (chi^2):  " << dChisq << endl;
-            cerr << "|-> Varianz der Residuen (red. chi^2):      " << dChisq / (double) (nSize - paramsMap.size() /*_fitParams.GetNx()*/)<< endl;
-            cerr << "|-> Standardabweichung der Residuen:        " << sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size() /*_fitParams.GetNx()*/)) << endl;
+            cerr << toSystemCodePage("|-> "+_lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7))) << endl;
+            cerr << toSystemCodePage("|-> "+_lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7))) << endl;
+            cerr << toSystemCodePage("|-> "+_lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7))) << endl;
         }
-        //cerr << "|-> Normierte Varianz der Residuen:         " << dNormChisq / (double) (nSize - _fitParams.GetNx())<< endl;
         cerr << "|" << endl;
 
         if (bUseErrors)
-            cerr << "|-> Parameter" << std::setw((_option.getWindow()-32)/2+_option.getWindow()%2-5) << std::setfill(' ') << "Initialwert" << std::setw((_option.getWindow()-50)/2) << std::setfill(' ') << "Anpassung" << "    berechnete Standardabweichung" << endl;
+        {
+            cerr << "|-> "
+                 << _lang.get("PARSERFUNCS_FIT_PARAM")
+                 << std::setw((_option.getWindow()-32)/2+_option.getWindow()%2-5+9-_lang.get("PARSERFUNCS_FIT_PARAM").length()) << std::setfill(' ')
+                 << _lang.get("PARSERFUNCS_FIT_INITIAL")
+                 << std::setw((_option.getWindow()-50)/2) << std::setfill(' ')
+                 << _lang.get("PARSERFUNCS_FIT_FITTED")
+                 << std::setw(33) << std::setfill(' ')
+                 << _lang.get("PARSERFUNCS_FIT_PARAM_DEV") << endl;
+            //cerr << "|-> Parameter" << std::setw((_option.getWindow()-32)/2+_option.getWindow()%2-5) << std::setfill(' ') << "Initialwert" << std::setw((_option.getWindow()-50)/2) << std::setfill(' ') << "Anpassung" << "    berechnete Standardabweichung" << endl;
+        }
         else
-            cerr << "|-> Parameter" << std::setw((_option.getWindow()-32)/2+_option.getWindow()%2-5) << std::setfill(' ') << "Initialwert" << std::setw((_option.getWindow()-50)/2) << std::setfill(' ') << "Anpassung" << "    Asymptotischer Standardfehler" << endl;
+        {
+            cerr << "|-> "
+                 << _lang.get("PARSERFUNCS_FIT_PARAM")
+                 << std::setw((_option.getWindow()-32)/2+_option.getWindow()%2-5+9-_lang.get("PARSERFUNCS_FIT_PARAM").length()) << std::setfill(' ')
+                 << _lang.get("PARSERFUNCS_FIT_INITIAL")
+                 << std::setw((_option.getWindow()-50)/2) << std::setfill(' ')
+                 << _lang.get("PARSERFUNCS_FIT_FITTED")
+                 << std::setw(33) << std::setfill(' ')
+                 << _lang.get("PARSERFUNCS_FIT_ASYMPTOTIC_ERROR") << endl;
+            //cerr << "|-> Parameter" << std::setw((_option.getWindow()-32)/2+_option.getWindow()%2-5) << std::setfill(' ') << "Initialwert" << std::setw((_option.getWindow()-50)/2) << std::setfill(' ') << "Anpassung" << "    Asymptotischer Standardfehler" << endl;
+        }
         cerr << "|   " << std::setw(_option.getWindow()-4) << std::setfill((char)196) << (char)196 << endl;
     }
     pItem = paramsMap.begin();
@@ -8697,7 +8712,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
     if (paramsMap.size() > 1 && paramsMap.size() != nSize) //(_fitParams.GetNx() > 1 && _fitParams.GetNx() != nSize)
     {
         oFitLog << endl;
-        oFitLog << "Korrelationsmatrix der angepassten Parameter:" << endl;
+        oFitLog << _lang.get("PARSERFUNCS_FIT_CORRELMAT_HEAD") << ":" << endl;
         oFitLog << endl;
         for (unsigned int n = 0; n < paramsMap.size() /*_fitParams.GetNx()*/; n++)
         {
@@ -8723,7 +8738,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
         if (_option.getSystemPrintStatus() && !bMaskDialog)
         {
             cerr << "|" << endl;
-            cerr << "|-> Korrelationsmatrix der angepassten Parameter:" << endl;
+            cerr << "|-> " << toSystemCodePage(_lang.get("PARSERFUNCS_FIT_CORRELMAT_HEAD")) << ":" << endl;
             cerr << "|" << endl;
             for (unsigned int n = 0; n < paramsMap.size() /*_fitParams.GetNx()*/; n++)
             {
@@ -8754,11 +8769,10 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
     if (nFitVars & 2)
         dNormChisq = sqrt(dNormChisq);
     oFitLog << endl;
-    oFitLog << "Fitanalyse:" << endl;
+    oFitLog << _lang.get("PARSERFUNCS_FIT_ANALYSIS") <<":" << endl;
     if (_fControl.getIterations() == nMaxIterations)
     {
-        oFitLog << "Die maximale Zahl der Iterationen wurde erreicht. Es ist sehr wahrscheinlich," << endl
-                << "dass der Algorithmus kein korrektes Ergebnis geliefert hat." << endl;
+        oFitLog << LineBreak(_lang.get("PARSERFUNCS_FIT_MAXITER_REACHED"), _option) << endl;
     }
     else
     {
@@ -8767,50 +8781,29 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
             if (bUseErrors)
             {
                 if (log10(dNormChisq) > -1.0 && log10(dNormChisq) < 0.5 && dErrorPercentageSum < 50.0)
-                    oFitLog << "Die angepasste Funktion scheint den Verlauf der Datenpunkte gut zu" << endl
-                            << "beschreiben. Die übergebenen Gewichtungsfaktoren wurden passend geschätzt." << endl;
+                    oFitLog << LineBreak(_lang.get("PARSERFUNCS_FIT_GOOD_W_ERROR"), _option) << endl;
                 else if (log10(dNormChisq) <= -1.0 && dErrorPercentageSum < 20.0)
-                    oFitLog << "Die angepasste Funktion beschreibt den Verlauf der Datenpunkte genauer" << endl
-                            << "als erwartet. Entweder sind die Schätzungen der Gewichtungsfaktoren zu" << endl
-                            << "groß oder die Fitfunktion wurde zu generell gewählt (zu viele Parameter/" << endl
-                            << "Over-Fitting)." << endl;
+                    oFitLog << LineBreak(_lang.get("PARSERFUNCS_FIT_BETTER_W_ERROR"), _option) << endl;
                 else if (log10(dNormChisq) >= 0.5 && log10(dNormChisq) < 1.5 && dErrorPercentageSum < 100.0)
-                    oFitLog << "Die angepasste Funktion könnte den Verlauf der Datenpunkte beschreiben," << endl
-                            << "scheint diesen aber noch nicht ganz zu fassen. Möglicherweise wurden die" << endl
-                            << "übergebenen Gewichtungsfaktoren deutlich zu klein geschätzt oder Ausreißer" << endl
-                            << "verzerren das Ergebnis." << endl;
+                    oFitLog << LineBreak(_lang.get("PARSERFUNCS_FIT_NOT_GOOD_W_ERROR"), _option) << endl;
                 else
-                    oFitLog << "Offenbar konnte die Funktion die Datenpunkte gar nicht oder nur sehr schlecht" << endl
-                            << "beschreiben. Das verwendete Modell ist ggf. nicht für diese Datenpunkte" << endl
-                            << "angebracht, es wurden zu viele Parameter verwendet, oder die Gewichtungsfak-" << endl
-                            << "toren sind um Größenordnungen zu klein geschätzt worden." << endl;
+                    oFitLog << LineBreak(_lang.get("PARSERFUNCS_FIT_BAD_W_ERROR"), _option) << endl;
             }
             else
             {
                 if (log10(dNormChisq) < -3.0 && dErrorPercentageSum < 20.0)
-                    oFitLog << "Die angepasste Funktion scheint den Verlauf der Datenpunkte gut zu" << endl
-                            << "beschreiben." << endl;
+                    oFitLog << LineBreak(_lang.get("PARSERFUNCS_FIT_GOOD_WO_ERROR"), _option) << endl;
                 else if (log10(dNormChisq) < 0.0 && dErrorPercentageSum < 50.0)
-                    oFitLog << "Die angepasste Funktion kann den Verlauf der Datenpunkte beschreiben, jedoch" << endl
-                            << "ist noch Raum für Optimierungen." << endl;
+                    oFitLog << LineBreak(_lang.get("PARSERFUNCS_FIT_IMPROVABLE_WO_ERROR"), _option) << endl;
                 else if (log10(dNormChisq) >= 0.0 && log10(dNormChisq) < 0.5 && dErrorPercentageSum < 100.0)
-                    oFitLog << "Die angepasste Funktion könnte den Verlauf der Datenpunkte beschreiben," << endl
-                            << "scheint diesen aber noch nicht ganz zu fassen. Möglicherweise werden die" << endl
-                            << "Ergebnisse besser, wenn zusätzliche Gewichtungsfaktoren abgeschätzt und" << endl
-                            << "übergeben werden." << endl;
+                    oFitLog << LineBreak(_lang.get("PARSERFUNCS_FIT_NOT_GOOD_WO_ERROR"), _option) << endl;
                 else
-                    oFitLog << "Offenbar konnte die Funktion die Datenpunkte gar nicht oder nur sehr schlecht" << endl
-                            << "beschreiben. Das verwendete Modell ist ggf. nicht für diese Datenpunkte" << endl
-                            << "angebracht, Ausreißer verzerren das Ergebnis, oder die Datenpunkte können nur" << endl
-                            << "mit ausreichend groß gewählten Gewichtungsfaktoren durch das Modell" << endl
-                            << "beschrieben werden." << endl;
+                    oFitLog << LineBreak(_lang.get("PARSERFUNCS_FIT_BAD_WO_ERROR"), _option) << endl;
             }
         }
         else
         {
-            oFitLog << "Es wurden exakt so viele Parameter wie Datenpunkte vorgegeben. Die angepasste" << endl
-                    << "Funktion beschreibt die Datenpunkte wahrscheinlich exakt. Ob diese Funktion" << endl
-                    << "als sinnvolles Modell gelten kann, ist allerdings fragwürdig." << endl;
+            oFitLog << LineBreak(_lang.get("PARSERFUNCS_FIT_OVERFITTING"), _option) << endl;
         }
     }
     oFitLog << std::setw(76) << std::setfill('=') << '=' << endl;
@@ -8818,10 +8811,10 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
     if (_option.getSystemPrintStatus() && !bMaskDialog)
     {
         cerr << "|" << endl;
-        cerr << "|-> Fitanalyse:" << endl;
+        cerr << "|-> " << _lang.get("PARSERFUNCS_FIT_ANALYSIS") << ":" << endl;
         if (_fControl.getIterations() == nMaxIterations)
         {
-            cerr << LineBreak("|-> Die maximale Zahl der Iterationen wurde erreicht. Es ist sehr wahrscheinlich, dass der Algorithmus kein korrektes Ergebnis geliefert hat.", _option) << endl;
+            cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_FIT_MAXITER_REACHED"), _option) << endl;
         }
         else
         {
@@ -8830,29 +8823,29 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
                 if (bUseErrors)
                 {
                     if (log10(dNormChisq) > -1.0 && log10(dNormChisq) < 0.5 && dErrorPercentageSum < 50.0)
-                        cerr << LineBreak("|-> Die angepasste Funktion scheint den Verlauf der Datenpunkte gut zu beschreiben. Die übergebenen Gewichtungsfaktoren wurden passend geschätzt.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_FIT_GOOD_W_ERROR"), _option) << endl;
                     else if (log10(dNormChisq) <= -1.0 && dErrorPercentageSum < 20.0)
-                        cerr << LineBreak("|-> Die angepasste Funktion beschreibt den Verlauf der Datenpunkte genauer als erwartet. Entweder sind die Schätzungen der Gewichtungsfaktoren zu groß oder die Fitfunktion wurde zu generell gewählt (zu viele Parameter/Over-Fitting).", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_FIT_BETTER_W_ERROR"), _option) << endl;
                     else if (log10(dNormChisq) >= 0.5 && log10(dNormChisq) < 1.5 && dErrorPercentageSum < 100.0)
-                        cerr << LineBreak("|-> Die angepasste Funktion könnte den Verlauf der Datenpunkte beschreiben, scheint diesen aber noch nicht ganz zu fassen. Möglicherweise wurden die übergebenen Gewichtungsfaktoren deutlich zu klein geschätzt oder Ausreißer verzerren das Ergebnis.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_FIT_NOT_GOOD_W_ERROR"), _option) << endl;
                     else
-                        cerr << LineBreak("|-> Offenbar konnte die Funktion die Datenpunkte gar nicht oder nur sehr schlecht beschreiben. Das verwendete Modell ist ggf. nicht für diese Datenpunkte angebracht, es wurden zu viele Parameter verwendet, oder die Gewichtungsfaktoren sind um Größenordnungen zu klein geschätzt worden.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_FIT_BAD_W_ERROR"), _option) << endl;
                 }
                 else
                 {
                     if (log10(dNormChisq) < -3.0 && dErrorPercentageSum < 20.0)
-                        cerr << LineBreak("|-> Die angepasste Funktion scheint den Verlauf der Datenpunkte gut zu beschreiben.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_FIT_GOOD_WO_ERROR"), _option) << endl;
                     else if (log10(dNormChisq) < 0.0 && dErrorPercentageSum < 50.0)
-                        cerr << LineBreak("|-> Die angepasste Funktion kann den Verlauf der Datenpunkte beschreiben, jedoch ist noch Raum für Optimierungen.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_FIT_IMPROVABLE_WO_ERROR"), _option) << endl;
                     else if (log10(dNormChisq) >= 0.0 && log10(dNormChisq) < 0.5 && dErrorPercentageSum < 100.0)
-                        cerr << LineBreak("|-> Die angepasste Funktion könnte den Verlauf der Datenpunkte beschreiben, scheint diesen aber noch nicht ganz zu fassen. Möglicherweise werden die Ergebnisse besser, wenn zusätzliche Gewichtungsfaktoren abgeschätzt und übergeben werden.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_FIT_NOT_GOOD_WO_ERROR"), _option) << endl;
                     else
-                        cerr << LineBreak("|-> Offenbar konnte die Funktion die Datenpunkte gar nicht oder nur sehr schlecht beschreiben. Das verwendete Modell ist ggf. nicht für diese Datenpunkte angebracht, Ausreißer verzerren das Ergebnis, oder die Datenpunkte können nur mit ausreichend groß gewählten Gewichtungsfaktoren durch das Modell beschrieben werden.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_FIT_BAD_WO_ERROR"), _option) << endl;
                 }
             }
             else
             {
-                cerr << LineBreak("|-> Es wurden exakt so viele Parameter wie Datenpunkte vorgegeben. Die angepasste Funktion beschreibt die Datenpunkte wahrscheinlich exakt. Ob diese Funktion als sinnvolles Modell gelten kann, ist allerdings fragwürdig.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_FIT_OVERFITTING"), _option) << endl;
             }
         }
         make_hline();
@@ -9177,13 +9170,17 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
     if (_option.getSystemPrintStatus())
     {
         if (!bInverseTrafo && nDim == 2)
-            cerr << LineBreak("|-> Fourier-transformiere Spalten " + toString(j_pos[0]+1) + " und " + toString(j_pos[1]+1) + ":$Nyquist-Grenzfrequenz ist " + toString(dNyquistFrequency,6) + " Hz ... ", _option);
+            cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_FFT_FOURIERTRANSFORMING", toString(j_pos[0]+1), toString(j_pos[1]+1), toString(dNyquistFrequency,6)) + " ", _option);
+            //cerr << LineBreak("|-> Fourier-transformiere Spalten " + toString(j_pos[0]+1) + " und " + toString(j_pos[1]+1) + ":$Nyquist-Grenzfrequenz ist " + toString(dNyquistFrequency,6) + " Hz ... ", _option);
         else if (!bInverseTrafo)
-            cerr << LineBreak("|-> Fourier-transformiere Spalten " + toString(j_pos[0]+1) + ", " + toString(j_pos[1]+1) + " und " + toString(j_pos[2]+1) + ":$Nyquist-Grenzfrequenz ist " + toString(dNyquistFrequency,6) + " Hz ... ", _option);
+            cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_FFT_FOURIERTRANSFORMING", toString(j_pos[0]+1)+", "+toString(j_pos[1]+1), toString(j_pos[2]+1), toString(dNyquistFrequency,6)) + " ", _option);
+            //cerr << LineBreak("|-> Fourier-transformiere Spalten " + toString(j_pos[0]+1) + ", " + toString(j_pos[1]+1) + " und " + toString(j_pos[2]+1) + ":$Nyquist-Grenzfrequenz ist " + toString(dNyquistFrequency,6) + " Hz ... ", _option);
         else if (bInverseTrafo && nDim == 2)
-            cerr << LineBreak("|-> Invers-Fourier-transformiere Spalten " + toString(j_pos[0]+1) + " und " + toString(j_pos[1]+1) + ":$Ergebnis-Zeitintervall ist " + toString(dTimeInterval,6) + " s ... ", _option);
+            cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_FFT_INVERSE_FOURIERTRANSFORMING", toString(j_pos[0]+1), toString(j_pos[1]+1), toString(dNyquistFrequency,6)) + " ", _option);
+            //cerr << LineBreak("|-> Invers-Fourier-transformiere Spalten " + toString(j_pos[0]+1) + " und " + toString(j_pos[1]+1) + ":$Ergebnis-Zeitintervall ist " + toString(dTimeInterval,6) + " s ... ", _option);
         else
-            cerr << LineBreak("|-> Invers-Fourier-transformiere Spalten " + toString(j_pos[0]+1) + ", " + toString(j_pos[1]+1) + " und " + toString(j_pos[2]+1) + ":$Ergebnis-Zeitintervall ist " + toString(dTimeInterval,6) + " s ... ", _option);
+            cerr << LineBreak("|-> "+_lang.get("PARSERFUNCS_FFT_INVERSE_FOURIERTRANSFORMING", toString(j_pos[0]+1)+", "+toString(j_pos[1]+1), toString(j_pos[2]+1), toString(dNyquistFrequency,6)) + " ", _option);
+            //cerr << LineBreak("|-> Invers-Fourier-transformiere Spalten " + toString(j_pos[0]+1) + ", " + toString(j_pos[1]+1) + " und " + toString(j_pos[2]+1) + ":$Ergebnis-Zeitintervall ist " + toString(dTimeInterval,6) + " s ... ", _option);
     }
 
     if (!vLine.size())
@@ -9304,16 +9301,16 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
         }
 
         _data.setCacheStatus(true);
-        _data.setHeadLineElement(nCols-1, sTargetTable, "Frequenz_[Hz]");
+        _data.setHeadLineElement(nCols-1, sTargetTable, _lang.get("COMMON_FREQUENCY")+"_[Hz]");
         if (!bComplex)
         {
-            _data.setHeadLineElement(nCols, sTargetTable, "Amplitude");
-            _data.setHeadLineElement(nCols+1, sTargetTable, "Phase_[rad]");
+            _data.setHeadLineElement(nCols, sTargetTable, _lang.get("COMMON_AMPLITUDE"));
+            _data.setHeadLineElement(nCols+1, sTargetTable, _lang.get("COMMON_PHASE")+"_[rad]");
         }
         else
         {
-            _data.setHeadLineElement(nCols, sTargetTable, "Re(Amplitude)");
-            _data.setHeadLineElement(nCols+1, sTargetTable, "Im(Amplitude)");
+            _data.setHeadLineElement(nCols, sTargetTable, "Re("+_lang.get("COMMON_AMPLITUDE")+")");
+            _data.setHeadLineElement(nCols+1, sTargetTable, "Im("+_lang.get("COMMON_AMPLITUDE")+")");
         }
     }
     else
@@ -9326,12 +9323,12 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
         }
 
         _data.setCacheStatus(true);
-        _data.setHeadLineElement(nCols-1, sTargetTable, "Zeit_[s]");
-        _data.setHeadLineElement(nCols, sTargetTable, "Re(Signal)");
-        _data.setHeadLineElement(nCols+1, sTargetTable, "Im(Signal)");
+        _data.setHeadLineElement(nCols-1, sTargetTable, _lang.get("COMMON_TIME")+"_[s]");
+        _data.setHeadLineElement(nCols, sTargetTable, "Re("+_lang.get("COMMON_SIGNAL")+")");
+        _data.setHeadLineElement(nCols+1, sTargetTable, "Im("+_lang.get("COMMON_SIGNAL")+")");
     }
     if (_option.getSystemPrintStatus())
-        cerr << "Abgeschlossen." << endl;
+        cerr << toSystemCodePage(_lang.get("COMMON_DONE")) << "." << endl;
 
     _data.setCacheStatus(false);
     return true;
@@ -9562,12 +9559,14 @@ bool parser_evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Set
 // datagrid -x=data(:,1) y=data(:,2) z=data(:,3)
 // datagrid -x=data(2:,1) y=data(1,2:) z=data(2:,2:)
 // datagrid EXPR -set [x0:x1, y0:y1] PARAMS
-bool parser_datagrid(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
 {
     unsigned int nSamples = 100;
     string sXVals = "";
     string sYVals = "";
     string sZVals = "";
+
+    Indices _idx;
 
     bool bTranspose = false;
 
@@ -9637,6 +9636,26 @@ bool parser_datagrid(string& sCmd, Parser& _parser, Datafile& _data, Define& _fu
             throw TOO_FEW_DATAPOINTS;
         sCmd.erase(sCmd.find(getArgAtPos(sCmd, matchParams(sCmd, "samples", '=')+7), matchParams(sCmd, "samples", '=')-1),getArgAtPos(sCmd, matchParams(sCmd, "samples", '=')+7).length());
         sCmd.erase(matchParams(sCmd, "samples", '=')-1, 8);
+    }
+    if (matchParams(sCmd, "target", '='))
+    {
+        sTargetCache = getArgAtPos(sCmd, matchParams(sCmd, "target", '=')+6);
+        _idx = parser_getIndices(sTargetCache, _parser, _data, _option);
+        sTargetCache.erase(sTargetCache.find('('));
+
+        if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
+            throw INVALID_INDEX;
+        sCmd.erase(sCmd.find(getArgAtPos(sCmd, matchParams(sCmd, "target", '=')+6), matchParams(sCmd, "target", '=')-1),getArgAtPos(sCmd, matchParams(sCmd, "target", '=')+6).length());
+        sCmd.erase(matchParams(sCmd, "target", '=')-1, 7);
+    }
+    else
+    {
+        _idx.nI[0] = 0;
+        _idx.nI[1] = -2;
+        _idx.nJ[0] = 0;
+        if (_data.isCacheElement("grid()"))
+            _idx.nJ[0] += _data.getCols("grid", false);
+        _idx.nJ[1] = -2;
     }
     if (matchParams(sCmd, "transpose"))
     {
@@ -10223,26 +10242,35 @@ bool parser_datagrid(string& sCmd, Parser& _parser, Datafile& _data, Define& _fu
         }
     }
 
-    if (!_data.isCacheElement("grid"))
-        _data.addCache("grid", _option);
+    if (_idx.nI[1] == -2 || _idx.nI[1] == -1)
+        _idx.nI[1] = _idx.nI[0] + vXVals.size();
+    if (_idx.nJ[1] == -2 || _idx.nJ[1] == -1)
+        _idx.nJ[1] = _idx.nJ[0] + vYVals.size()+2;
+
+    if (!_data.isCacheElement(sTargetCache))
+        _data.addCache(sTargetCache, _option);
     _data.setCacheStatus(true);
-    long long int nFirstCol = _data.getCacheCols("grid", false);
+    //long long int nFirstCol = _data.getCacheCols(sTargetCache, false);
     for (unsigned int i = 0; i < vXVals.size(); i++)
-        _data.writeToCache(i, nFirstCol, "grid", vXVals[i]);
-    _data.setHeadLineElement(nFirstCol, "grid", "x");
-    nFirstCol++;
+        _data.writeToCache(i, _idx.nJ[0], sTargetCache, vXVals[i]);
+    _data.setHeadLineElement(_idx.nJ[0], sTargetCache, "x");
+    //nFirstCol++;
     for (unsigned int i = 0; i < vYVals.size(); i++)
-        _data.writeToCache(i, nFirstCol, "grid", vYVals[i]);
-    _data.setHeadLineElement(nFirstCol, "grid", "y");
-    nFirstCol++;
+        _data.writeToCache(i, _idx.nJ[0]+1, sTargetCache, vYVals[i]);
+    _data.setHeadLineElement(_idx.nJ[0]+1, sTargetCache, "y");
+    //nFirstCol++;
 
     for (unsigned int i = 0; i < vZVals.size(); i++)
     {
+        if (i+_idx.nI[0] >= _idx.nI[1])
+            break;
         for (unsigned int j = 0; j < vZVals[i].size(); j++)
         {
-            _data.writeToCache(i,nFirstCol+j,"grid",vZVals[i][j]);
+            if (j+2+_idx.nJ[0] >= _idx.nJ[1])
+                break;
+            _data.writeToCache(_idx.nI[0]+i, _idx.nJ[0]+2+j, sTargetCache, vZVals[i][j]);
             if (!i)
-                _data.setHeadLineElement(nFirstCol+j, "grid", "z["+toString((int)j+1)+"]");
+                _data.setHeadLineElement(_idx.nJ[0]+2+j, sTargetCache, "z["+toString((int)j+1)+"]");
         }
     }
     _data.setCacheStatus(false);

@@ -771,7 +771,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
             continue;
 
         if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
-            cerr << toSystemCodePage("|-> Berechne Daten für ");
+            cerr << toSystemCodePage("|-> " + _lang.get("PLOT_CALCULATING_DATA_FOR") + " ");
 
         if (_pInfo.sCommand == "surface3d"
             || _pInfo.sCommand.substr(0,6) == "surf3d"
@@ -797,15 +797,15 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                     _pInfo.nSamples = 51;
             }
             if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand.substr(0,4) == "surf")
-                cerr << toSystemCodePage("3D-Oberflächen-");
+                cerr << "3D-" << toSystemCodePage(_lang.get("PLOT_SURFACE")) << "-";
             else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand.substr(0,4) == "mesh")
-                cerr << "3D-Meshgrid-";
+                cerr << "3D-" << toSystemCodePage(_lang.get("PLOT_MESHGRID")) << "-";
             else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand.substr(0,4) == "cont")
-                cerr << "3D-Kontur-";
+                cerr << "3D-" << toSystemCodePage(_lang.get("PLOT_CONTOUR")) << "-";
             else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand.substr(0,4) == "dens")
-                cerr << "3D-Dichte-";
+                cerr << "3D-" << toSystemCodePage(_lang.get("PLOT_DENSITY")) << "-";
             else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand.substr(0,4) == "grad")
-                cerr << "3D-Gradienten-";
+                cerr << "3D-" << toSystemCodePage(_lang.get("PLOT_GRADIENT")) << "-";
         }
         else if (_pInfo.sCommand.substr(0,6) == "vect3d" ||_pInfo.sCommand == "vector3d")
         {
@@ -815,7 +815,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
             if (_pInfo.nSamples > 11)
                 _pInfo.nSamples = 11;
             if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
-                cerr << "3D-Vektorfeld-";
+                cerr << "3D-" << toSystemCodePage(_lang.get("PLOT_VECTOR")) << "-";
             if (_pData.getPipe() || _pData.getFlow())
             {
                 if (_pInfo.nSamples % 2)
@@ -833,7 +833,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
             if (_pInfo.nSamples > 21)
                 _pInfo.nSamples = 21;
             if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
-                cerr << "Vektorfeld-";
+                cerr << toSystemCodePage(_lang.get("PLOT_VECTOR")) << "-";
             if (_pData.getPipe() || _pData.getFlow())
             {
                 if (_pData.getHighRes() <= 1 && _option.getbUseDraftMode())
@@ -851,15 +851,15 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
             //_parser.DefineVar(parser_iVars.sName[1], &parser_iVars.vValue[1][0]);   // Plotvariable: y
             _pInfo.b2D = true;
             if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand.substr(0,4) == "surf")
-                cerr << toSystemCodePage("2D-Oberflächen-");
+                cerr << "2D-" << toSystemCodePage(_lang.get("PLOT_SURFACE")) << "-";
             else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand.substr(0,4) == "mesh")
-                cerr << "2D-Meshgrid-";
+                cerr << "2D-" << toSystemCodePage(_lang.get("PLOT_MESHGRID")) << "-";
             else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand.substr(0,4) == "cont")
-                cerr << "2D-Kontur-";
+                cerr << "2D-" << toSystemCodePage(_lang.get("PLOT_CONTOUR")) << "-";
             else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand.substr(0,4) == "dens")
-                cerr << "2D-Dichte-";
+                cerr << "2D-" << toSystemCodePage(_lang.get("PLOT_DENSITY")) << "-";
             else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand.substr(0,4) == "grad")
-                cerr << "2D-Gradienten-";
+                cerr << "2D-" << toSystemCodePage(_lang.get("PLOT_GRADIENT")) << "-";
         }
         else if (_pInfo.sCommand == "plot3d")
         {
@@ -873,19 +873,19 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
         {
             _pInfo.bDraw = true;
             if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
-                cerr << "Zeichnung ... " << endl;
+                cerr << toSystemCodePage(_lang.get("PLOT_DRAWING")) << " ... " << endl;
         }
         else if (_pInfo.sCommand == "draw3d")
         {
             _pInfo.bDraw3D = true;
             if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
-                cerr << "3D-Zeichnung ... " << endl;
+                cerr << toSystemCodePage("3D-"+_lang.get("PLOT_DRAWING")) <<" ... " << endl;
         }
         if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && !_pData.getAnimateSamples() && !(_pInfo.bDraw3D || _pInfo.bDraw))
             cerr << "Plot ... " << endl;
         else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && !(_pInfo.bDraw3D || _pInfo.bDraw))
         {
-            cerr << "Animation: Bitte etwas Geduld ... " << endl;
+            cerr << toSystemCodePage(_lang.get("PLOT_ANIMATION")) <<" ... " << endl;
             //_parser.DefineVar(parser_iVars.sName[3], &parser_iVars.vValue[3][0]);   // Animations-Variable: t
         }
         // --> Logarithmische Skalierung; ein bisschen Fummelei <--
@@ -2326,9 +2326,9 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
 
         if (_pData.getBackground().length() && _pData.getBGColorScheme() != "<<REALISTIC>>")
         {
-            cerr << "|-> Lade Hintergrund ... ";
+            cerr << "|-> " << toSystemCodePage(_lang.get("PLOT_LOADING_BACKGROUND")) << " ... ";
             _mBackground.Import(_pData.getBackground().c_str(), "kw");
-            cerr << "Abgeschlossen." << endl;
+            cerr << toSystemCodePage(_lang.get("COMMON_DONE")) << "." << endl;
         }
 
         /*********************************
@@ -2340,7 +2340,8 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
             if (_pData.getAnimateSamples() && !_pData.getSilentMode() && _option.getSystemPrintStatus() && bAnimateVar)
             {
                 // --> Falls es eine Animation ist, muessen die Plotvariablen zu Beginn zurueckgesetzt werden <--
-                cerr << "\r|-> Rendere Frame " << t_animate+1 << " von " << _pData.getAnimateSamples()+1 << " ... ";
+                cerr << "\r|-> " << toSystemCodePage(_lang.get("PLOT_RENDERING_FRAME", toString(t_animate+1), toString(_pData.getAnimateSamples()+1))) << " ... ";
+                //cerr << "\r|-> Rendere Frame " << t_animate+1 << " von " << _pData.getAnimateSamples()+1 << " ... ";
                 nStyle = 0;
 
                 // --> Neuen GIF-Frame oeffnen <--
@@ -3255,7 +3256,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                     || _pInfo.sCommand.substr(0,4) == "cont"
                     || _pInfo.sCommand.substr(0,4) == "dens"
                     || _pInfo.sCommand.substr(0,4) == "grad"
-                    || (_pInfo.sCommand.substr(0,6) == "plot3d" && _pData.getMarks())
+                    || (_pInfo.sCommand.substr(0,6) == "plot3d" && (_pData.getMarks() || _pData.getCrust()))
                     )
                 )
             {
@@ -3268,7 +3269,15 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                     _graph.SetRange('c', _pInfo.dColorRanges[0], _pInfo.dColorRanges[1]);
             }
 
-            if (_pInfo.sCommand.substr(0,4) == "mesh" || _pInfo.sCommand.substr(0,4) == "surf" || _pInfo.sCommand.substr(0,4) == "cont" || _pInfo.b3D || _pInfo.b3DVect || _pData.getPipe() || _pInfo.bDraw3D || _pInfo.bDraw)
+            if (_pInfo.sCommand.substr(0,4) == "mesh"
+                || _pInfo.sCommand.substr(0,4) == "surf"
+                || _pInfo.sCommand.substr(0,4) == "cont"
+                || _pInfo.b3D
+                || _pInfo.b3DVect
+                || _pData.getPipe()
+                || _pInfo.bDraw3D
+                || _pInfo.bDraw
+                || (_pInfo.sCommand == "plot3d" && _pData.getCrust()))
             {
                 /*if (!_pInfo.b2DVect)
                     _graph.Rotate(_pData.getRotateAngle(),_pData.getRotateAngle(1));    // Ausrichtung des Plots einstellen*/
@@ -3329,7 +3338,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
             // --> Rendern des Hintergrundes <--
             if (_pData.getBackground().length())
             {
-                cerr << "|-> Rendere Hintergrund ... ";
+                cerr << "|-> " << toSystemCodePage(_lang.get("PLOT_RENDERING_BACKGROUND")) << " ... ";
                 if (_pData.getBGColorScheme() != "<<REALISTIC>>")
                 {
                     _graph.SetRanges(_pInfo.dRanges[0][0], _pInfo.dRanges[0][1], _pInfo.dRanges[1][0], _pInfo.dRanges[1][1], _mBackground.Minimal(), _mBackground.Maximal());
@@ -3341,7 +3350,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                 //_graph.Dens(_mBackground, "kRQYEGLCNBUMPw");
                 _graph.Rasterize();
                 _graph.SetRanges(_pInfo.dRanges[0][0], _pInfo.dRanges[0][1], _pInfo.dRanges[1][0], _pInfo.dRanges[1][1], _pInfo.dRanges[2][0], _pInfo.dRanges[2][1]);
-                cerr << "Abgeschlossen." << endl;
+                cerr << toSystemCodePage(_lang.get("COMMON_DONE")) << "." << endl;
             }
 
             // --> Nun kopieren wir die aufbereiteten Datenpunkte in ein mglData-Objekt und plotten die Daten aus diesem Objekt <--
@@ -5131,13 +5140,15 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                             }
                             else
                             {
-                                if (!_pData.getArea() && !_pData.getMarks() && !_pData.getBars() && !_pData.getStepplot())
+                                if (!_pData.getArea() && !_pData.getMarks() && !_pData.getBars() && !_pData.getStepplot() && !_pData.getCrust())
                                     _graph.Plot(_mDataPlots[j][0], _mDataPlots[j][1], _mDataPlots[j][2], sPointStyles[nStyle].c_str());
-                                else if (_pData.getMarks() && !_pData.getBars() && !_pData.getArea() && !_pData.getStepplot())
+                                else if (_pData.getMarks() && !_pData.getCrust() && !_pData.getBars() && !_pData.getArea() && !_pData.getStepplot())
                                     _graph.Dots(_mDataPlots[j][0], _mDataPlots[j][1], _mDataPlots[j][2], _pData.getColorScheme(toString(_pData.getMarks())).c_str());
-                                else if (_pData.getBars() && !_pData.getArea() && !_pData.getMarks() && !_pData.getStepplot())
+                                else if (_pData.getCrust() && !_pData.getMarks() && !_pData.getBars() && !_pData.getArea() && !_pData.getStepplot())
+                                    _graph.Crust(_mDataPlots[j][0], _mDataPlots[j][1], _mDataPlots[j][2], _pData.getColorScheme().c_str());
+                                else if (_pData.getBars() && !_pData.getArea() && !_pData.getMarks() && !_pData.getStepplot() && !_pData.getCrust())
                                     _graph.Bars(_mDataPlots[j][0], _mDataPlots[j][1], _mDataPlots[j][2], (sLineStyles[nStyle]+"^").c_str());
-                                else if (!_pData.getBars() && !_pData.getArea() && !_pData.getMarks() && _pData.getStepplot())
+                                else if (!_pData.getBars() && !_pData.getArea() && !_pData.getMarks() && _pData.getStepplot() && !_pData.getCrust())
                                     _graph.Step(_mDataPlots[j][0], _mDataPlots[j][1], _mDataPlots[j][2], (sLineStyles[nStyle]).c_str());
                                 else
                                     _graph.Stem(_mDataPlots[j][0], _mDataPlots[j][1], _mDataPlots[j][2], sConPointStyles[nStyle].c_str());
@@ -5163,7 +5174,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                                     _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(),parser_getLegendStyle(sLineStyles[nStyle], _pData).c_str());
                                 else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mDataPlots[j][0].GetNx() >= 0.9*_pInfo.nSamples))
                                     _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sConPointStyles[nStyle], _pData).c_str());
-                                else if (!_pData.getMarks())
+                                else if (!_pData.getMarks() && !_pData.getCrust())
                                     _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sPointStyles[nStyle], _pData).c_str());
                             }
                             else
@@ -5177,7 +5188,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                 }
                 if (_pData.getCutBox())
                     _graph.SetCutBox(mglPoint(0), mglPoint(0));
-                if (!(_pData.getMarks() && _pInfo.sCommand.substr(0,6) == "plot3d") && nLegends && !_pData.getSchematic() && nPlotCompose+1 == vPlotCompose.size())
+                if (!((_pData.getMarks() || _pData.getCrust()) && _pInfo.sCommand.substr(0,6) == "plot3d") && nLegends && !_pData.getSchematic() && nPlotCompose+1 == vPlotCompose.size())
                 {
                     if (_pData.getRotateAngle() || _pData.getRotateAngle(1))
                         _graph.Legend(1.35,1.2);
@@ -5202,7 +5213,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
     if (!_pData.getAnimateSamples() || !bAnimateVar)
     {
         if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
-            cerr << "|-> Speichern ... ";
+            cerr << "|-> " << toSystemCodePage(_lang.get("PLOT_SAVING")) << " ... ";
         // --> Speichern des erzeugten Plots <--
         /*if (_pData.getHighRes() <= 1 && sOutputName.substr(sOutputName.length()-4,4) == ".png")
             _graph.WritePNG(sOutputName.c_str(), "", false);
@@ -5219,8 +5230,8 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
     }
     if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
     {
-        cerr << "Erfolg!" << endl;
-        cerr << LineBreak("|   Gespeichert unter: \"" + sOutputName + "\"", _option) << endl;
+        cerr << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
+        cerr << LineBreak("|   " +_lang.get("PLOT_SAVE_LOCATION", sOutputName), _option) << endl;
     }
     // --> Ist ein ImageViewer angegeben und der "openImage" TRUE? Dann oeffnen wir das erzeugte Bild mit diesem <--
     if (_option.getViewerPath().length() && _option.getEditorPath().length() && _pData.getOpenImage() && !_pData.getSilentMode() && _option.getSystemPrintStatus())

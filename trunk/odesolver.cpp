@@ -378,7 +378,7 @@ bool Odesolver::solve(const string& sCmd)
         odeSystem_ly.params = 0;
     }
 
-    cerr << toSystemCodePage("|-> Löse ODE-System ...");
+    cerr << toSystemCodePage("|-> " + _lang.get("ODESOLVER_SOLVE_SYSTEM") + " ...");
     if (bAllowCacheClearance || !_idx.nI[0])
         _odeData->setHeadLineElement(_idx.nJ[0], sTarget, "x");
     _odeData->writeToCache(_idx.nI[0], _idx.nJ[0], sTarget, t);
@@ -400,11 +400,11 @@ bool Odesolver::solve(const string& sCmd)
     {
         if (time(0) - tTimeControl > 1)
         {
-            cerr << toSystemCodePage("\r|-> Löse ODE-System ... " + toString((int)(i*100.0/(double)nSamples)) + " %");
+            cerr << toSystemCodePage("\r|-> " + _lang.get("ODESOLVER_SOLVE_SYSTEM") + " ... " + toString((int)(i*100.0/(double)nSamples)) + " %");
         }
         if (GetAsyncKeyState(VK_ESCAPE))
         {
-            cerr << " ABBRUCH!" << endl;
+            cerr << " " << toSystemCodePage(_lang.get("COMMON_CANCEL")) << "." << endl;
             gsl_odeiv_evolve_free(odeEvolve);
             gsl_odeiv_control_free(odeControl);
             gsl_odeiv_step_free(odeStep);
@@ -491,7 +491,7 @@ bool Odesolver::solve(const string& sCmd)
         delete[] y;
     if (y2)
         delete[] y2;
-    cerr << " Erfolg!" << endl;
+    cerr << " " << _lang.get("COMMON_SUCCESS") << "." << endl;
     return true;
 }
 

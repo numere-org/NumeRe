@@ -184,6 +184,7 @@ string utf8parser(const string& sString);
 void eraseToken(string& sExpr, const string& sToken, bool bTokenHasValue = false);
 vector<string> getDBFileContent(const string& sFilename, Settings& _option);
 vector<vector<string> > getDataBase(const string& sDatabaseFileName, Settings& _option);
+string generateCacheName(const string& sFilename, Settings& _option);
 
 inline bool validateParenthesisNumber(const string& sCmd)
 {

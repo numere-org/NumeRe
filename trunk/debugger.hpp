@@ -25,6 +25,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include "error.hpp"
 using namespace std;
 
 string toString(int);

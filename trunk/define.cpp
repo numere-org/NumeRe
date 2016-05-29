@@ -114,11 +114,11 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
                     sFunctions[i][2] = sFunctions[i][2] + "-set comment=" + fromSystemCodePage(sComment);
                 }
                 if (_option.getSystemPrintStatus())
-                    cerr << LineBreak("|-> Die Funktion \"" + sFunction + "\" wurde erfolgreich kommentiert!", _option) << endl;
+                    cerr << LineBreak("|-> "+_lang.get("DEFINE_FUNCTION_COMMENTED", sFunction), _option) << endl;
                 return true;
             }
         }
-        cerr << LineBreak("|-> Die Funktion \"" + sFunction + "\" existiert nicht!", _option) << endl;
+        cerr << LineBreak("|-> "+_lang.get("DEFINE_FUNCTION_NOT_EXISTING", sFunction), _option) << endl;
         return false;
     }
 
@@ -228,7 +228,7 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
              *     umzudefinierenden Funktion uebereinstimmt. Definieren wir einfach eine neue. <--
              */
             if (_option.getSystemPrintStatus())
-                cerr << LineBreak("|-> Diese Funktion existiert nicht! Es wird eine neue Funktion definiert ...", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("DEFINE_NEW_FUNCTION")+" ...", _option) << endl;
             nDefine = nDefinedFunctions;
             bRedefine = false;
         }
@@ -249,7 +249,7 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
             nDefine = nDefinedFunctions; // nDefinedFunctions ist immer der Absolutwert an definierten Funktionen (1,2,3,...)
         else
         {
-            cerr << LineBreak("|-> Keinen Funktionsspeicher mehr!", _option) << endl;
+            cerr << LineBreak("|-> "+_lang.get("DEFINE_NO_SPACE"), _option) << endl;
             return false;
         }
     }
@@ -545,7 +545,7 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
                 {
                     sFunctions[nDefine][i] = "";
                 }
-                cerr << LineBreak("|   Die Neudefinition wird rückgängig gemacht ...", _option) << endl;
+                cerr << LineBreak("|   "+_lang.get("DEFINE_UNDOING_REDEFINE")+" ...", _option) << endl;
                 defineFunc(sFallback, _parser, _option, true);
             }
             return false;
@@ -553,7 +553,7 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
     }
     catch (...)
     {
-       if (!bRedefine)
+        if (!bRedefine)
         {
             for (int i = 0; i < 13; i++)
             {
@@ -577,13 +577,13 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
     {
         if (bRedefine)
         {
-            cerr << LineBreak("|-> Funktion \"" + sFunctions[nDefine][0] + "\" wurde erfolgreich aktualisiert!", _option) << endl;
+            cerr << LineBreak("|-> "+_lang.get("DEFINE_REDEFINE_SUCCESS", sFunctions[nDefine][0]), _option) << endl;
         }
         else
         {
-            cerr << LineBreak("|-> Funktion \"" + sFunctions[nDefine][0] + "\" wurde erfolgreich definiert.", _option) << endl;
+            cerr << LineBreak("|-> "+_lang.get("DEFINE_NEW_FUNCTION_SUCCESS", sFunctions[nDefine][0]), _option) << endl;
             if (nDefinedFunctions > 90)
-                cerr << "|   (freier Speicher: " << 100 - nDefinedFunctions << " Funktionen)" << endl;
+                cerr << toSystemCodePage("|   ("+_lang.get("DEFINE_FREE_SPACE", toString(100-nDefinedFunctions))+")") << endl;
         }
     }
     // --> Gebe TRUE zurueck <--
@@ -940,7 +940,7 @@ bool Define::save(const Settings& _option)
     if (nDefinedFunctions)
     {
         if (_option.getSystemPrintStatus())
-            cerr << "|-> Speichere Funktionsdefinitionen ... ";
+            cerr << "|-> " << toSystemCodePage(_lang.get("DEFINE_SAVING_FUNCTIONS")) << " ... ";
         if (ifstream(sFileName.c_str()).good())
         {
             Defines_def.open(sFileName.c_str(), ios_base::in);
@@ -1036,12 +1036,12 @@ bool Define::save(const Settings& _option)
             sDefines_def = 0;
         }
         if (_option.getSystemPrintStatus())
-            cerr << "Erfolg!" << endl;
+            cerr << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
         return true;
     }
     else
     {
-        cerr << "|-> Es wurden keine Funktionen definiert!" << endl;
+        cerr << "|-> " << toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_EMPTY")) << endl;
         return false;
     }
 }
@@ -1056,13 +1056,13 @@ bool Define::load(const Settings& _option, bool bAutoLoad)
     if (nDefinedFunctions)
     {
         string sTemp = "";
-        cerr << LineBreak("|-> Alle definierten Funktionen im Speicher werden überschrieben!$Sicher? (j/n)", _option) << endl;
+        cerr << LineBreak("|-> "+_lang.get("DEFINE_ASK_OVERRIDE"), _option) << endl;
         cerr << "|" << endl << "|<- ";
         getline(cin, sTemp);
         StripSpaces(sTemp);
-        if (sTemp != "j")
+        if (sTemp != _lang.YES())
         {
-            cerr << "|-> ABBRUCH!" << endl;
+            cerr << "|-> " << _lang.get("COMMON_CANCEL") << "." << endl;
             return false;
         }
     }
@@ -1070,7 +1070,7 @@ bool Define::load(const Settings& _option, bool bAutoLoad)
     {
         if (!bAutoLoad)
             cerr << "|-> ";
-        cerr << "Lade Funktionsdefinitionen ... ";
+        cerr << toSystemCodePage(_lang.get("DEFINE_LOADING_FUNCTIONS")) << " ... ";
     }
     string sIn = "";
     // --> Oeffne Datei "functions.def" <--
@@ -1079,7 +1079,7 @@ bool Define::load(const Settings& _option, bool bAutoLoad)
     // --> Dateifehler abfangen! <--
     if (Defines_def.fail())
     {
-        cerr << "Misserfolg!" << endl;
+        cerr << toSystemCodePage(_lang.get("COMMON_FAILURE")) << "." << endl;
         //cerr << LineBreak("|-> FEHLER: Aus der Datei \"" + sFileName + "\" kann nicht gelesen werden oder die Datei existiert nicht!", _option) << endl;
         Defines_def.close();
         throw FILE_NOT_EXIST;
@@ -1089,7 +1089,7 @@ bool Define::load(const Settings& _option, bool bAutoLoad)
     // --> Manchmal kann es sein, dass erst nach dem ersten Leseversuch ein fail-Flag auftritt. Fangen wir hier ab! <--
     if (Defines_def.fail())
     {
-        cerr << "Misserfolg!" << endl;
+        cerr << toSystemCodePage(_lang.get("COMMON_FAILURE")) << "." << endl;
         //cerr << LineBreak("|-> FEHLER: Aus der Datei \"" + sFileName + "\" kann nicht gelesen werden oder die Datei existiert nicht!", _option) << endl;
         Defines_def.close();
         throw FILE_NOT_EXIST;
@@ -1173,11 +1173,11 @@ bool Define::load(const Settings& _option, bool bAutoLoad)
     sFunc_Temp = 0;
 
     if (bAutoLoad)
-        cerr << "Abgeschlossen [" << nDefinedFunctions << " Funktionen].";
+        cerr << toSystemCodePage(_lang.get("DEFINE_DONE_AUTOLOADING", toString((int)nDefinedFunctions)));
     else if (_option.getSystemPrintStatus())
     {
-        cerr << "Erfolg!" << endl;
-        cerr << LineBreak("|-> Die Definitionen für " + toString((int)nDefinedFunctions) + " Funktion(en) wurden erfolgreich geladen!", _option) << endl;
+        cerr << toSystemCodePage(_lang.get("COMMON_SUCCESS")) << "." << endl;
+        cerr << LineBreak("|-> "+_lang.get("DEFINE_DONE_LOADING", toString((int)nDefinedFunctions)), _option) << endl;
     }
     return true;
 }

@@ -31,7 +31,8 @@ void BI_load_data(Datafile& _data, Settings& _option, Parser& _parser, string sF
 {
     if (!sFileName.length())
     {
-        cerr << LineBreak("|-> Bitte den Dateinamen des Datenfiles eingeben! Wenn kein Pfad angegeben wird, wird standardmäßig im Ordner \"" + _data.getPath() + "\" gesucht.$(0 zum Abbrechen)", _option) << endl;
+        cerr << LineBreak("|-> "+_lang.get("BUILTIN_LOADDATA_ENTER_NAME", _data.getPath()), _option) << endl;
+        //cerr << LineBreak("|-> Bitte den Dateinamen des Datenfiles eingeben! Wenn kein Pfad angegeben wird, wird standardmäßig im Ordner \"" + _data.getPath() + "\" gesucht.$(0 zum Abbrechen)", _option) << endl;
         do
         {
             cerr << "|" << endl;
@@ -43,7 +44,8 @@ void BI_load_data(Datafile& _data, Settings& _option, Parser& _parser, string sF
 
         if (sFileName == "0")
         {
-            cerr << "|-> ABBRUCH!" << endl;
+            cerr << "|-> " << _lang.get("COMMON_CANCEL") << endl;
+            //cerr << "|-> ABBRUCH!" << endl;
             return;
         }
 
@@ -57,38 +59,43 @@ void BI_load_data(Datafile& _data, Settings& _option, Parser& _parser, string sF
 	else	// Sind sie doch? Dann muessen wir uns was ueberlegen...
 	{
 		string c = "";
-		cerr << LineBreak("|-> FEHLER: Speichergruppe bereits mit den Daten des Files \"" + _data.getDataFileName("data") + "\" besetzt. Sollen die neuen Daten stattdessen an die vorhandene Tabelle angehängt werden? (j/n)$(0 zum Abbrechen)", _option) << endl;
+		cerr << LineBreak("|-> " + _lang.get("BUILTIN_LOADDATA_ASK_APPEND", _data.getDataFileName("data")), _option) << endl;
+		//cerr << LineBreak("|-> FEHLER: Speichergruppe bereits mit den Daten des Files \"" + _data.getDataFileName("data") + "\" besetzt. Sollen die neuen Daten stattdessen an die vorhandene Tabelle angehängt werden? (j/n)$(0 zum Abbrechen)", _option) << endl;
 		cerr << "|" << endl;
         cerr << "|<- ";
 		getline(cin, c);
 
 		if (c == "0")
 		{
-			cerr << "|-> ABBRUCH!" << endl;
+			cerr << "|-> " << _lang.get("COMMON_CANCEL") << endl;
+			//cerr << "|-> ABBRUCH!" << endl;
 			return;
 		}
-		else if (c == "j")		// Anhaengen?
+		else if (c == _lang.YES())		// Anhaengen?
 		{
 			BI_append_data("data -app=\"" + sFileName + "\" i", _data, _option, _parser);
 		}
 		else				// Nein? Dann vielleicht ueberschreiben?
 		{
 			c = "";
-			cerr << LineBreak("|-> Daten werden nicht angehängt. Sollen die Daten überschrieben werden? (j/n)", _option) << endl;
+			cerr << LineBreak("|-> "+_lang.get("BUILTIN_LOADDATA_ASK_OVERRIDE"), _option) << endl;
+			//cerr << LineBreak("|-> Daten werden nicht angehängt. Sollen die Daten überschrieben werden? (j/n)", _option) << endl;
 			cerr << "|" << endl;
             cerr << "|<- ";
 			getline(cin, c);
 
-			if (c == "j")					// Also ueberschreiben
+			if (c == _lang.YES())					// Also ueberschreiben
 			{
 				_data.removeData();			// Speicher freigeben...
 				_data.openFile(sFileName, _option, false, false);
 				if (_data.isValid())
-                    cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
+                    cerr << LineBreak("|-> " + _lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) << endl;
+                    //cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
 			}
 			else							// Kannst du dich vielleicht mal entscheiden?
 			{
-				cerr << "|-> ABBRUCH!" << endl;
+				cerr << "|-> " << _lang.get("COMMON_CANCEL") << endl;
+				//cerr << "|-> ABBRUCH!" << endl;
 			}
 		}
 	}
@@ -301,9 +308,9 @@ void BI_append_data(const string& __sCmd, Datafile& _data, Settings& _option, Pa
             string sPath = "<loadpath>/";
             if (sArgument.find('/') != string::npos)
                 sPath = sArgument.substr(0,sArgument.rfind('/')+1);
-            Datafile _cache;
+            /*Datafile _cache;
             _cache.setTokens(_option.getTokenPaths());
-            _cache.setPath(_data.getPath(), false, _data.getProgramPath());
+            _cache.setPath(_data.getPath(), false, _data.getProgramPath());*/
             for (unsigned int i = 0; i < vFilelist.size(); i++)
             {
                 if (!_data.isValid())
@@ -316,7 +323,8 @@ void BI_append_data(const string& __sCmd, Datafile& _data, Settings& _option, Pa
                 _data.melt(_cache);
             }
             if (_data.isValid() && _option.getSystemPrintStatus())
-                cerr << LineBreak("|-> Alle Daten der " +toString((int)vFilelist.size())+ " Dateien \"" + sArgument + "\" wurden erfolgreich mit den Daten im Speicher zusammengeführt: der Datensatz besteht nun aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("BUILTIN_APPENDDATA_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) << endl;
+                //cerr << LineBreak("|-> Alle Daten der " +toString((int)vFilelist.size())+ " Dateien \"" + sArgument + "\" wurden erfolgreich mit den Daten im Speicher zusammengeführt: der Datensatz besteht nun aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
             return;
         }
 
@@ -336,7 +344,8 @@ void BI_append_data(const string& __sCmd, Datafile& _data, Settings& _option, Pa
 
             _data.melt(_cache);
             if (_cache.isValid() && _option.getSystemPrintStatus())
-                cerr << LineBreak("|-> Daten aus \"" + _cache.getDataFileName("data") + "\" wurden erfolgreich mit den Daten im Speicher zusammengeführt: der Datensatz besteht nun aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("BUILTIN_APPENDDATA_SUCCESS", _cache.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) << endl;
+                //cerr << LineBreak("|-> Daten aus \"" + _cache.getDataFileName("data") + "\" wurden erfolgreich mit den Daten im Speicher zusammengeführt: der Datensatz besteht nun aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
         }
         else
         {
@@ -352,7 +361,8 @@ void BI_append_data(const string& __sCmd, Datafile& _data, Settings& _option, Pa
             else
                 _data.openFile(sArgument, _option, false, true);
             if (_data.isValid() && _option.getSystemPrintStatus())
-                cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
+                cerr << LineBreak("|-> " + _lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) << endl;
+                //cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
         }
     }
 	return;
@@ -366,25 +376,28 @@ void BI_remove_data (Datafile& _data, Settings& _option, bool bIgnore)
         if (!bIgnore)
         {
             string c = "";
-            cerr << LineBreak("|-> Die gespeicherten Daten werden aus dem Speicher entfernt!$Sicher? (j/n)", _option) << endl;
+            cerr << LineBreak("|-> "+_lang.get("BUILTIN_REMOVEDATA_CONFIRM"), _option) << endl;
+            //cerr << LineBreak("|-> Die gespeicherten Daten werden aus dem Speicher entfernt!$Sicher? (j/n)", _option) << endl;
             cerr << "|" << endl;
             cerr << "|<- ";			// Bist du sicher?
             getline(cin, c);
 
-            if (c == "j")
+            if (c == _lang.YES())
             {
                 _data.removeData();		// Wenn ja: Aufruf der Methode Datafile::removeData(), die den Rest erledigt
-                cerr << LineBreak("|-> Der Speicher wurde erfolgreich freigegeben.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("BUILTIN_REMOVEDATA_SUCCESS"), _option) << endl;
+                //cerr << LineBreak("|-> Der Speicher wurde erfolgreich freigegeben.", _option) << endl;
             }
             else					// Wieder mal anders ueberlegt, hm?
             {
-                cerr << "|-> ABBRUCH!" << endl;
+                cerr << "|-> " << _lang.get("COMMON_CANCEL") << endl;
             }
         }
         else if (_option.getSystemPrintStatus())
         {
             _data.removeData();
-            cerr << LineBreak("|-> Der Speicher wurde erfolgreich freigegeben.", _option) << endl;
+            cerr << LineBreak("|-> "+_lang.get("BUILTIN_REMOVEDATA_SUCCESS"), _option) << endl;
+            //cerr << LineBreak("|-> Der Speicher wurde erfolgreich freigegeben.", _option) << endl;
         }
         else
         {
@@ -393,7 +406,8 @@ void BI_remove_data (Datafile& _data, Settings& _option, bool bIgnore)
 	}
 	else if (_option.getSystemPrintStatus())
 	{
-		cerr << LineBreak("|-> Es existieren keine Daten, die gelöscht werden können.", _option) << endl;
+		cerr << LineBreak("|-> "+_lang.get("BUILTIN_REMOVEDATA_NO_DATA"), _option) << endl;
+		//cerr << LineBreak("|-> Es existieren keine Daten, die gelöscht werden können.", _option) << endl;
 	}
 	return;
 }
@@ -405,17 +419,19 @@ void BI_clear_cache(Datafile& _data, Settings& _option, bool bIgnore)
 	{
         if (!bIgnore)
         {
-            char c = 0;
+            string c = "";
             if (!_data.getSaveStatus())
-                cerr << LineBreak("|-> Alle Caches und die automatische Speicherung werden gelöscht, obwohl sie NICHT gespeichert wurden!$Sicher? (j/n)", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("BUILTIN_CLEARCACHE_CONFIRM_NOTSAFED"), _option) << endl;
+                //cerr << LineBreak("|-> Alle Caches und die automatische Speicherung werden gelöscht, obwohl sie NICHT gespeichert wurden!$Sicher? (j/n)", _option) << endl;
             else
-                cerr << LineBreak("|-> Alle Caches und die automatische Speicherung werden gelöscht!$Sicher? (j/n)", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("BUILTIN_CLEARCACHE_CONFIRM"), _option) << endl;
+                //cerr << LineBreak("|-> Alle Caches und die automatische Speicherung werden gelöscht!$Sicher? (j/n)", _option) << endl;
 
             cerr << "|" << endl;
             cerr << "|<- ";			// Bist du sicher?
-            cin >> c;
+            getline(cin, c);
 
-            if(c == 'j')
+            if(c == _lang.YES())
             {
                 string sAutoSave = _option.getSavePath() + "/cache.tmp";
                 string sCache_file = _option.getExePath() + "/numere.cache";
@@ -425,9 +441,9 @@ void BI_clear_cache(Datafile& _data, Settings& _option, bool bIgnore)
             }
             else					// Wieder mal anders ueberlegt, hm?
             {
-                cerr << "|-> ABBRUCH!" << endl;
+                cerr << "|-> " << _lang.get("COMMON_CANCEL") << endl;
             }
-            cin.ignore(1);
+            //cin.ignore(1);
 		}
 		else
 		{
@@ -438,11 +454,13 @@ void BI_clear_cache(Datafile& _data, Settings& _option, bool bIgnore)
             remove(sCache_file.c_str());
 		}
 		if (_option.getSystemPrintStatus())
-            cerr << "|-> Alle Caches wurden entfernt und der Speicher wurde erfolgreich freigegeben." << endl;
+            cerr << LineBreak("|-> "+ _lang.get("BUILTIN_CLEARCACHE_SUCCESS"), _option) << endl;
+            //cerr << "|-> Alle Caches wurden entfernt und der Speicher wurde erfolgreich freigegeben." << endl;
 	}
 	else if (_option.getSystemPrintStatus())
 	{
-		cerr << "|-> Der Cache ist bereits leer." << endl;
+		cerr << LineBreak("|-> " + _lang.get("BUILTIN_CLEARCACHE_EMPTY"), _option) << endl;
+		//cerr << "|-> Der Cache ist bereits leer." << endl;
 	}
 	return;
 }
@@ -452,24 +470,30 @@ void BI_show_credits(Parser& _parser, Settings& _option)
 {
     BI_splash();
 	cerr << "|-> Version: " << sVersion << setfill(' ') << endl;
-	cerr << "|-> Build-Datum: " << AutoVersion::YEAR << "-" << AutoVersion::MONTH << "-" << AutoVersion::DATE << endl;
+	cerr << "|-> "<< _lang.get("BUILTIN_CREDITS_BUILD") << ": " << AutoVersion::YEAR << "-" << AutoVersion::MONTH << "-" << AutoVersion::DATE << endl;
+	//cerr << "|-> Build-Datum: " << AutoVersion::YEAR << "-" << AutoVersion::MONTH << "-" << AutoVersion::DATE << endl;
 	cerr << "|-> Copyright " << (char)184 << " " << AutoVersion::YEAR << toSystemCodePage(", Erik HÄNEL et al.") << endl;
 	cerr << "|   <numere.developer" << (char)64 << "gmail.com>" << endl;
-	cerr << LineBreak("|-> RELEASE CANDIDATE: ein Release Candidate trägt keinen Eigennamen. Außerdem wird NICHT garantiert, dass die gesamte derzeitig Funktionalität erhalten bleibt, wie sie in diesem Release Candidate vorliegt. Auf den Fortgang der Entwicklung kann durch eine Mail an obige Mailadresse Einfluss genommen werden. Sollten Bugs gefunden werden, oder eine Funktionalität noch nicht den erwünschten Umfang haben, sollte dies per Mail übermittelt werden.", _option) << endl;
-    //cerr << LineBreak("|-> Felix BLOCH (1905-1983) war ein schweizerisch-US-amerikanischer Physiker, der 1952 den Nobelpreis für Physik für die Entdeckung der Kernspinresonanz erhielt. Er ist Namensgeber vieler quantenmechanischer Modelle der Festkörperphysik.", _option) << endl;
+	cerr << LineBreak("|-> "+_lang.get("BUILTIN_CREDITS_VERSIONINFO"), _option) << endl;
+	//cerr << LineBreak("|-> RELEASE CANDIDATE: ein Release Candidate trägt keinen Eigennamen. Außerdem wird NICHT garantiert, dass die gesamte derzeitig Funktionalität erhalten bleibt, wie sie in diesem Release Candidate vorliegt. Auf den Fortgang der Entwicklung kann durch eine Mail an obige Mailadresse Einfluss genommen werden. Sollten Bugs gefunden werden, oder eine Funktionalität noch nicht den erwünschten Umfang haben, sollte dies per Mail übermittelt werden.", _option) << endl;
     make_hline(-80);
-    cerr << LineBreak("|-> Dieses Programm ist freie Software. Sie können es unter den Bedingungen der GNU General Public Licence, wie von der Free Software Foundation veröffentlicht, weitergeben und/oder modifizieren, entweder gemäß Version 3 der Lizenz, oder (nach Ihrer Option) jeder späteren Version.", _option) << endl;
-    cerr << LineBreak("|-> Die Veröffentlichung dieses Programms erfolgt in der Hoffnung, dass es Ihnen von Nutzen sein wird, aber OHNE IRGENDEINE GARANTIE, sogar ohne die implizite Garantie der MARKTREIFE oder der VERWENDBARKEIT FÜR EINEN BESTIMMTEN ZWECK. Details stehen in der GNU General Public Licence." , _option) << endl;
-    cerr << LineBreak("|-> Sie sollten ein Exemplar der GNU GPL zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.org/licenses/>.", _option) << endl;
+    cerr << LineBreak("|-> "+_lang.get("BUILTIN_CREDITS_LICENCE_1"), _option) << endl;
+    cerr << LineBreak("|-> "+_lang.get("BUILTIN_CREDITS_LICENCE_2"), _option) << endl;
+    cerr << LineBreak("|-> "+_lang.get("BUILTIN_CREDITS_LICENCE_3"), _option) << endl;
+    //cerr << LineBreak("|-> Dieses Programm ist freie Software. Sie können es unter den Bedingungen der GNU General Public Licence, wie von der Free Software Foundation veröffentlicht, weitergeben und/oder modifizieren, entweder gemäß Version 3 der Lizenz, oder (nach Ihrer Option) jeder späteren Version.", _option) << endl;
+    //cerr << LineBreak("|-> Die Veröffentlichung dieses Programms erfolgt in der Hoffnung, dass es Ihnen von Nutzen sein wird, aber OHNE IRGENDEINE GARANTIE, sogar ohne die implizite Garantie der MARKTREIFE oder der VERWENDBARKEIT FÜR EINEN BESTIMMTEN ZWECK. Details stehen in der GNU General Public Licence." , _option) << endl;
+    //cerr << LineBreak("|-> Sie sollten ein Exemplar der GNU GPL zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.org/licenses/>.", _option) << endl;
     make_hline(-80);
-    cerr << LineBreak("|-> Konzept/UI: Erik HÄNEL; Mathe-Parser: Ingo BERG; Plotting: Alexey BALAKIN; numerische Algorithmen: GNU Scientific Library; Tokenizer: Boost-Library; Matrix-Algorithmen: Eigen Library; Testing: D. BAMMERT, J. HÄNEL, R. HUTT, K. KILGUS, E. KLOSTER, K. KURZ, M. LÖCHNER, L. SAHINOVIC, D. SCHMID, V. SEHRA, G. STADELMANN, R. WANNER, F. WUNDER, J. ZINßER", _option) << endl;
+    cerr << LineBreak("|-> "+_lang.get("BUILTIN_CREDITS_MEMBERS"), _option) << endl;
+    //cerr << LineBreak("|-> Konzept/UI: Erik HÄNEL; Mathe-Parser: Ingo BERG; Plotting: Alexey BALAKIN; numerische Algorithmen: GNU Scientific Library; Tokenizer: Boost-Library; Matrix-Algorithmen: Eigen Library; Testing: D. BAMMERT, J. HÄNEL, R. HUTT, K. KILGUS, E. KLOSTER, K. KURZ, M. LÖCHNER, L. SAHINOVIC, D. SCHMID, V. SEHRA, G. STADELMANN, R. WANNER, F. WUNDER, J. ZINßER", _option) << endl;
 	cerr << "|-> muParser  v  " << _parser.GetVersion(pviBRIEF) << ",   " << (char)184 << " 2011, Ingo Berg             [MIT-Licence]" << endl;
 	cerr << "|-> MathGL    v  2.3.4,   " << (char)184 << " 2012, Alexey A. Balakin     [GNU GPL v2]" << endl;
 	cerr << "|-> GSL       v    1.8,   " << (char)184 << " 2006, M. Galassi et al.     [GNU GPL v2]" << endl;
 	cerr << "|-> Boost     v 1.56.0,   " << (char)184 << " 2006, Joe Coder             [Boost-Software-Licence]" << endl;
 	cerr << "|-> Eigen     v  3.2.7,   " << (char)184 << " 2008, Gael Guennebaud       [MPL v2]" << endl;
 	cerr << "|                         " << (char)184 << " 2007-2011, Benoit Jacob" << endl;
-	cerr << "|-> Bugs und Feature-Requests gerne an:" << endl;
+	cerr << LineBreak("|-> "+_lang.get("BUILTIN_CREDITS_BUGS_REQUESTS")+":", _option) << endl;
+	//cerr << "|-> Bugs und Feature-Requests gerne an:" << endl;
 	cerr << "|   <numere.developer" << (char)64 << "gmail.com>" << endl;
 	make_hline();
     return;
@@ -522,10 +546,13 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
     if (sCacheCmd.length() && sPreferredCmds.find(";"+sCommand+";") != string::npos) // Ist das fuehrende Kommando praeferiert?
         sCacheCmd.clear();
 
-    //cerr << sCmd << endl;
-    //cerr << sCacheCmd << endl;
-    //cerr << sCommand << endl;
-    //cerr << findCommand(sCmd, "data").sString << endl;
+    if (_option.getbDebug())
+    {
+        cerr << "|-> DEBUG: sCmd = " << sCmd << endl;
+        cerr << "|-> DEBUG: sCacheCmd = " << sCacheCmd << endl;
+        cerr << "|-> DEBUG: sCommand = " << sCommand << endl;
+        cerr << "|-> DEBUG: findCommand(sCmd, \"data\").sString = " << findCommand(sCmd, "data").sString << endl;
+    }
     if (sCommand == "find")
     {
         if (sCmd.length() > 6 && sCmd.find("-") != string::npos)
@@ -536,7 +563,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
         }
         else
         {
-            cerr << "|-> Kann den Begriff nicht identifizieren!" << endl;
+            cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_FIND_CANNOT_READ"), _option) << endl;
+            //cerr << "|-> Kann den Begriff nicht identifizieren!" << endl;
             doc_Help("find", _option);
         }
         return 1;
@@ -729,7 +757,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     else
                         _pData.setParams(sCmd.substr(sCmd.find("-set")), _parser, _option);
                     if (_option.getSystemPrintStatus())
-                        cerr << "|-> Plotparameter aktualisiert." << endl;
+                        cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_PLOTPARAMS")) << endl;
+                        //cerr << "|-> Plotparameter aktualisiert." << endl;
                 }
                 else
                     parser_Plot(sCmd, _data, _parser, _option, _functions, _pData);
@@ -1284,9 +1313,11 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
         if (sCmd.length() > 7)
         {
             if (!_functions.undefineFunc(sCmd.substr(sCmd.find(' ', nPos)+1)))
-                cerr << LineBreak("|-> Diese Funktion existiert nicht, oder sie wurde nicht korrekt bezeichnet. Siehe \"help -define\" für weitere Informationen.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_UNDEF_FAIL"), _option) << endl;
+                //cerr << LineBreak("|-> Diese Funktion existiert nicht, oder sie wurde nicht korrekt bezeichnet. Siehe \"help -define\" für weitere Informationen.", _option) << endl;
             else if (_option.getSystemPrintStatus())
-                cerr << LineBreak("|-> Die Funktion wurde erfolgreich aus dem Funktionsspeicher entfernt.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_UNDEF_SUCCESS"), _option) << endl;
+                //cerr << LineBreak("|-> Die Funktion wurde erfolgreich aus dem Funktionsspeicher entfernt.", _option) << endl;
         }
         else
             doc_Help("define", _option);
@@ -1405,7 +1436,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                             _data.melt(_cache);
                         }
                         if (_data.isValid())
-                            cerr << LineBreak("|-> Alle Daten der " + toString((int)vFilelist.size())+ " Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
+                            cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) << endl;
+                            //cerr << LineBreak("|-> Alle Daten der " + toString((int)vFilelist.size())+ " Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
                         return 1;
                     }
                     if (matchParams(sCmd, "head", '=') || matchParams(sCmd, "h", '='))
@@ -1422,7 +1454,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         _data.openFile(sArgument, _option, false, true, nArgument);
                     }
                     if (_data.isValid() && _option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
+                        cerr << LineBreak("|-> " +_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) << endl;
+                        //cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
                 }
                 else if (!_data.isValid())
                 {
@@ -1448,7 +1481,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                             _data.melt(_cache);
                         }
                         if (_data.isValid())
-                            cerr << LineBreak("|-> Alle Daten der " +toString((int)vFilelist.size())+ " Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
+                            cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) << endl;
+                            //cerr << LineBreak("|-> Alle Daten der " +toString((int)vFilelist.size())+ " Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
                         return 1;
                     }
                     if (matchParams(sCmd, "head", '=') || matchParams(sCmd, "h", '='))
@@ -1463,7 +1497,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     else
                         _data.openFile(sArgument, _option, false, false, nArgument);
                     if (_data.isValid() && _option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
+                        cerr << LineBreak("|-> " +_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) << endl;
+                        //cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
                 }
                 else
                     BI_load_data(_data, _option, _parser, sArgument);
@@ -1476,7 +1511,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
         {
             _data.pasteLoad(_option);
             if (_data.isValid())
-                cerr << LineBreak("|-> Die Daten wurden erfolgreich eingefügt: Der Datensatz besteht nun aus "+toString(_data.getLines("data"))+" Zeile(n) und "+toString(_data.getCols("data"))+" Spalte(n).", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_PASTE_SUCCESS", toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) << endl;
+                //cerr << LineBreak("|-> Die Daten wurden erfolgreich eingefügt: Der Datensatz besteht nun aus "+toString(_data.getLines("data"))+" Zeile(n) und "+toString(_data.getCols("data"))+" Spalte(n).", _option) << endl;
             return 1;
         }
         else if (matchParams(sCmd, "reload") || matchParams(sCmd, "reload", '='))
@@ -1506,7 +1542,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     else
                         _data.openFile(sArgument, _option);
                     if (_data.isValid() && _option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich aktualisiert.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_RELOAD_FILE_SUCCESS", _data.getDataFileName("data")), _option) << endl;
+                        //cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich aktualisiert.", _option) << endl;
                 }
                 else
                     BI_load_data(_data, _option, _parser, sArgument);
@@ -1519,7 +1556,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 _data.removeData(false);
                 _data.openFile(sArgument, _option, false, true);
                 if (_data.isValid() && _option.getSystemPrintStatus())
-                    cerr << LineBreak("|-> Daten wurden erfolgreich aktualisiert.", _option) << endl;
+                    cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_RELOAD_SUCCESS"), _option) << endl;
+                    //cerr << LineBreak("|-> Daten wurden erfolgreich aktualisiert.", _option) << endl;
             }
             else
                 BI_load_data(_data, _option, _parser);
@@ -1580,7 +1618,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_data.saveFile("data", sArgument))
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Daten wurden erfolgreich nach \"" + _data.getOutputFileName() + "\" gespeichert.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _data.getOutputFileName()), _option) << endl;
+                        //cerr << LineBreak("|-> Daten wurden erfolgreich nach \"" + _data.getOutputFileName() + "\" gespeichert.", _option) << endl;
                 }
                 else
                     throw CANNOT_SAVE_FILE;
@@ -1598,7 +1637,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_data.saveFile("data", "copy_of_" + sArgument))
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Daten wurden erfolgreich nach \"" + _data.getOutputFileName() + "\" gespeichert.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _data.getOutputFileName()), _option) << endl;
+                        //cerr << LineBreak("|-> Daten wurden erfolgreich nach \"" + _data.getOutputFileName() + "\" gespeichert.", _option) << endl;
                 }
                 else
                     throw CANNOT_SAVE_FILE;
@@ -1612,7 +1652,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 throw CANNOT_SORT_DATA;
                 //cerr << LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht sortiert werden! Siehe \"help -data\" für weitere Details.", _option) << endl;
             else if (_option.getSystemPrintStatus())
-                cerr << LineBreak("|-> Spalte(n) wurde(n) erfolgreich sortiert.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SORT_SUCCESS"), _option) << endl;
+                //cerr << LineBreak("|-> Spalte(n) wurde(n) erfolgreich sortiert.", _option) << endl;
             return 1;
         }
         else if (matchParams(sCmd, "export") || matchParams(sCmd, "export", '='))
@@ -1644,6 +1685,19 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
         {
             if (!_data.isValid())
                 throw NO_DATA_AVAILABLE;
+            string sEvery = "";
+            if (matchParams(sCmd, "every", '='))
+            {
+                value_type* v = 0;
+                _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "every", '=')+5));
+                v = _parser.Eval(nArgument);
+                if (nArgument > 1)
+                {
+                    sEvery = "every=" + toString((int)v[0]) + "," + toString((int)v[1]) + " ";
+                }
+                else
+                    sEvery = "every=" + toString((int)v[0]) + " ";
+            }
             nPos = findCommand(sCmd, "data").nPos;
             sArgument = extractCommandString(sCmd, findCommand(sCmd, "data"));
             sCommand = sArgument;
@@ -1656,12 +1710,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "lines"))
                 {
                     sCmd.replace(nPos, sCommand.length(), "data[avg_lines]");
-                    _parser.SetVectorVar("data[avg_lines]", _data.avg("data", sArgument+"lines"));
+                    _parser.SetVectorVar("data[avg_lines]", _data.avg("data", sArgument+"lines"+sEvery));
                 }
                 else
                 {
                     sCmd.replace(nPos, sCommand.length(), "data[avg_cols]");
-                    _parser.SetVectorVar("data[avg_cols]", _data.avg("data", sArgument+"cols"));
+                    _parser.SetVectorVar("data[avg_cols]", _data.avg("data", sArgument+"cols"+sEvery));
                 }
             }
             else if (matchParams(sCmd, "sum"))
@@ -1669,12 +1723,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "lines"))
                 {
                     sCmd.replace(nPos, sCommand.length(), "data[sum_lines]");
-                    _parser.SetVectorVar("data[sum_lines]", _data.sum("data", sArgument+"lines"));
+                    _parser.SetVectorVar("data[sum_lines]", _data.sum("data", sArgument+"lines"+sEvery));
                 }
                 else
                 {
                     sCmd.replace(nPos, sCommand.length(), "data[sum_cols]");
-                    _parser.SetVectorVar("data[sum_cols]", _data.sum("data", sArgument+"cols"));
+                    _parser.SetVectorVar("data[sum_cols]", _data.sum("data", sArgument+"cols"+sEvery));
                 }
             }
             else if (matchParams(sCmd, "min"))
@@ -1682,12 +1736,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "lines"))
                 {
                     sCmd.replace(nPos, sCommand.length(), "data[min_lines]");
-                    _parser.SetVectorVar("data[min_lines]", _data.min("data", sArgument+"lines"));
+                    _parser.SetVectorVar("data[min_lines]", _data.min("data", sArgument+"lines"+sEvery));
                 }
                 else
                 {
                     sCmd.replace(nPos, sCommand.length(), "data[min_cols]");
-                    _parser.SetVectorVar("data[min_cols]", _data.min("data", sArgument+"cols"));
+                    _parser.SetVectorVar("data[min_cols]", _data.min("data", sArgument+"cols"+sEvery));
                 }
             }
             else if (matchParams(sCmd, "max"))
@@ -1695,12 +1749,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "lines"))
                 {
                     sCmd.replace(nPos, sCommand.length(), "data[max_lines]");
-                    _parser.SetVectorVar("data[max_lines]", _data.max("data", sArgument+"lines"));
+                    _parser.SetVectorVar("data[max_lines]", _data.max("data", sArgument+"lines"+sEvery));
                 }
                 else
                 {
                     sCmd.replace(nPos, sCommand.length(), "data[max_cols]");
-                    _parser.SetVectorVar("data[max_cols]", _data.max("data", sArgument+"cols"));
+                    _parser.SetVectorVar("data[max_cols]", _data.max("data", sArgument+"cols"+sEvery));
                 }
             }
             else if (matchParams(sCmd, "norm"))
@@ -1708,12 +1762,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "lines"))
                 {
                     sCmd.replace(nPos, sCommand.length(), "data[norm_lines]");
-                    _parser.SetVectorVar("data[norm_lines]", _data.norm("data", sArgument+"lines"));
+                    _parser.SetVectorVar("data[norm_lines]", _data.norm("data", sArgument+"lines"+sEvery));
                 }
                 else
                 {
                     sCmd.replace(nPos, sCommand.length(), "data[norm_cols]");
-                    _parser.SetVectorVar("data[norm_cols]", _data.norm("data", sArgument+"cols"));
+                    _parser.SetVectorVar("data[norm_cols]", _data.norm("data", sArgument+"cols"+sEvery));
                 }
             }
             else if (matchParams(sCmd, "std"))
@@ -1721,12 +1775,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "lines"))
                 {
                     sCmd.replace(nPos, sCommand.length(), "data[std_lines]");
-                    _parser.SetVectorVar("data[std_lines]", _data.std("data", sArgument+"lines"));
+                    _parser.SetVectorVar("data[std_lines]", _data.std("data", sArgument+"lines"+sEvery));
                 }
                 else
                 {
                     sCmd.replace(nPos, sCommand.length(), "data[std_cols]");
-                    _parser.SetVectorVar("data[std_cols]", _data.std("data", sArgument+"cols"));
+                    _parser.SetVectorVar("data[std_cols]", _data.std("data", sArgument+"cols"+sEvery));
                 }
             }
             else if (matchParams(sCmd, "prd"))
@@ -1734,12 +1788,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "lines"))
                 {
                     sCmd.replace(nPos, sCommand.length(), "data[prd_lines]");
-                    _parser.SetVectorVar("data[prd_lines]", _data.prd("data", sArgument+"lines"));
+                    _parser.SetVectorVar("data[prd_lines]", _data.prd("data", sArgument+"lines"+sEvery));
                 }
                 else
                 {
                     sCmd.replace(nPos, sCommand.length(), "data[prd_cols]");
-                    _parser.SetVectorVar("data[prd_cols]", _data.prd("data", sArgument+"cols"));
+                    _parser.SetVectorVar("data[prd_cols]", _data.prd("data", sArgument+"cols"+sEvery));
                 }
             }
             else if (matchParams(sCmd, "num"))
@@ -1747,12 +1801,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "lines"))
                 {
                     sCmd.replace(nPos, sCommand.length(), "data[num_lines]");
-                    _parser.SetVectorVar("data[num_lines]", _data.num("data", sArgument+"lines"));
+                    _parser.SetVectorVar("data[num_lines]", _data.num("data", sArgument+"lines"+sEvery));
                 }
                 else
                 {
                     sCmd.replace(nPos, sCommand.length(), "data[num_cols]");
-                    _parser.SetVectorVar("data[num_cols]", _data.num("data", sArgument+"cols"));
+                    _parser.SetVectorVar("data[num_cols]", _data.num("data", sArgument+"cols"+sEvery));
                 }
             }
             else if (matchParams(sCmd, "cnt"))
@@ -1760,12 +1814,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "lines"))
                 {
                     sCmd.replace(nPos, sCommand.length(), "data[cnt_lines]");
-                    _parser.SetVectorVar("data[cnt_lines]", _data.cnt("data", sArgument+"lines"));
+                    _parser.SetVectorVar("data[cnt_lines]", _data.cnt("data", sArgument+"lines"+sEvery));
                 }
                 else
                 {
                     sCmd.replace(nPos, sCommand.length(), "data[cnt_cols]");
-                    _parser.SetVectorVar("data[cnt_cols]", _data.cnt("data", sArgument+"cols"));
+                    _parser.SetVectorVar("data[cnt_cols]", _data.cnt("data", sArgument+"cols"+sEvery));
                 }
             }
             else if (matchParams(sCmd, "med"))
@@ -1773,12 +1827,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "lines"))
                 {
                     sCmd.replace(nPos, sCommand.length(), "data[med_lines]");
-                    _parser.SetVectorVar("data[med_lines]", _data.med("data", sArgument+"lines"));
+                    _parser.SetVectorVar("data[med_lines]", _data.med("data", sArgument+"lines"+sEvery));
                 }
                 else
                 {
                     sCmd.replace(nPos, sCommand.length(), "data[med_cols]");
-                    _parser.SetVectorVar("data[med_cols]", _data.med("data", sArgument+"cols"));
+                    _parser.SetVectorVar("data[med_cols]", _data.med("data", sArgument+"cols"+sEvery));
                 }
             }
 
@@ -2011,7 +2065,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_data.saveFile(sCommand, sArgument))
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Daten wurden erfolgreich nach \"" + _data.getOutputFileName() + "\" gespeichert.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _data.getOutputFileName()), _option) << endl;
+                        //cerr << LineBreak("|-> Daten wurden erfolgreich nach \"" + _data.getOutputFileName() + "\" gespeichert.", _option) << endl;
                 }
                 else
                 {
@@ -2027,7 +2082,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_data.saveFile(sCommand, ""))
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Daten wurden erfolgreich nach \"" + _data.getOutputFileName() + "\" gespeichert.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _data.getOutputFileName()), _option) << endl;
+                        //cerr << LineBreak("|-> Daten wurden erfolgreich nach \"" + _data.getOutputFileName() + "\" gespeichert.", _option) << endl;
                 }
                 else
                 {
@@ -2045,7 +2101,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 throw CANNOT_SORT_CACHE;
                 //cerr << LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht sortiert werden! Siehe \"help -cache\" für weitere Details.", _option) << endl;
             else if (_option.getSystemPrintStatus())
-                cerr << LineBreak("|-> Spalte(n) wurde(n) erfolgreich sortiert.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SORT_SUCCESS"), _option) << endl;
+                //cerr << LineBreak("|-> Spalte(n) wurde(n) erfolgreich sortiert.", _option) << endl;
             return 1;
         }
         else if (matchParams(sCmd, "export") || matchParams(sCmd, "export", '='))
@@ -2070,7 +2127,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
 
             sArgument = getArgAtPos(sCmd, matchParams(sCmd,"rename", '=')+6);
             _data.renameCache(sCommand, sArgument);
-            cerr << LineBreak("|-> Der Cache wurde erfolgreich zu \""+sArgument+"\" umbenannt.", _option) << endl;
+            cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_RENAME_CACHE", sArgument), _option) << endl;
+            //cerr << LineBreak("|-> Der Cache wurde erfolgreich zu \""+sArgument+"\" umbenannt.", _option) << endl;
             return 1;
         }
         else if (matchParams(sCmd, "swap", '=')) //CACHE -swap=NEWCACHE
@@ -2081,7 +2139,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             sArgument = getArgAtPos(sCmd, matchParams(sCmd, "swap", '=')+4);
             _data.swapCaches(sCommand, sArgument);
             if (_option.getSystemPrintStatus())
-                cerr << LineBreak("|-> Der Inhalt von \""+sCommand+"\" wurde erfolgreich mit dem Inhalt von \""+sArgument+"\" getauscht.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SWAP_CACHE", sCommand, sArgument), _option) << endl;
+                //cerr << LineBreak("|-> Der Inhalt von \""+sCommand+"\" wurde erfolgreich mit dem Inhalt von \""+sArgument+"\" getauscht.", _option) << endl;
             return 1;
         }
         else if ((matchParams(sCmd, "avg")
@@ -2098,6 +2157,19 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
         {
             if (!_data.isValidCache() || !_data.getCacheCols(sCacheCmd, false))
                 throw NO_CACHED_DATA;
+            string sEvery = "";
+            if (matchParams(sCmd, "every", '='))
+            {
+                value_type* v = 0;
+                _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "every", '=')+5));
+                v = _parser.Eval(nArgument);
+                if (nArgument > 1)
+                {
+                    sEvery = "every=" + toString((int)v[0]) + "," + toString((int)v[1]) + " ";
+                }
+                else
+                    sEvery = "every=" + toString((int)v[0]) + " ";
+            }
             nPos = findCommand(sCmd, sCacheCmd).nPos;
             sArgument = extractCommandString(sCmd, findCommand(sCmd, sCacheCmd));
             sCommand = sArgument;
@@ -2110,12 +2182,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "lines"))
                 {
                     sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[avg_lines]");
-                    _parser.SetVectorVar(sCacheCmd+"[avg_lines]", _data.avg(sCacheCmd, sArgument+"lines"));
+                    _parser.SetVectorVar(sCacheCmd+"[avg_lines]", _data.avg(sCacheCmd, sArgument+"lines"+sEvery));
                 }
                 else
                 {
                     sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[avg_cols]");
-                    _parser.SetVectorVar(sCacheCmd+"[avg_cols]", _data.avg(sCacheCmd, sArgument+"cols"));
+                    _parser.SetVectorVar(sCacheCmd+"[avg_cols]", _data.avg(sCacheCmd, sArgument+"cols"+sEvery));
                 }
             }
             else if (matchParams(sCmd, "sum"))
@@ -2123,12 +2195,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "lines"))
                 {
                     sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[sum_lines]");
-                    _parser.SetVectorVar(sCacheCmd+"[sum_lines]", _data.sum(sCacheCmd, sArgument+"lines"));
+                    _parser.SetVectorVar(sCacheCmd+"[sum_lines]", _data.sum(sCacheCmd, sArgument+"lines"+sEvery));
                 }
                 else
                 {
                     sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[sum_cols]");
-                    _parser.SetVectorVar(sCacheCmd+"[sum_cols]", _data.sum(sCacheCmd, sArgument+"cols"));
+                    _parser.SetVectorVar(sCacheCmd+"[sum_cols]", _data.sum(sCacheCmd, sArgument+"cols"+sEvery));
                 }
             }
             else if (matchParams(sCmd, "min"))
@@ -2136,12 +2208,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "lines"))
                 {
                     sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[min_lines]");
-                    _parser.SetVectorVar(sCacheCmd+"[min_lines]", _data.min(sCacheCmd, sArgument+"lines"));
+                    _parser.SetVectorVar(sCacheCmd+"[min_lines]", _data.min(sCacheCmd, sArgument+"lines"+sEvery));
                 }
                 else
                 {
                     sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[min_cols]");
-                    _parser.SetVectorVar(sCacheCmd+"[min_cols]", _data.min(sCacheCmd, sArgument+"cols"));
+                    _parser.SetVectorVar(sCacheCmd+"[min_cols]", _data.min(sCacheCmd, sArgument+"cols"+sEvery));
                 }
             }
             else if (matchParams(sCmd, "max"))
@@ -2149,12 +2221,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "lines"))
                 {
                     sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[max_lines]");
-                    _parser.SetVectorVar(sCacheCmd+"[max_lines]", _data.max(sCacheCmd, sArgument+"lines"));
+                    _parser.SetVectorVar(sCacheCmd+"[max_lines]", _data.max(sCacheCmd, sArgument+"lines"+sEvery));
                 }
                 else
                 {
                     sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[max_cols]");
-                    _parser.SetVectorVar(sCacheCmd+"[max_cols]", _data.max(sCacheCmd, sArgument+"cols"));
+                    _parser.SetVectorVar(sCacheCmd+"[max_cols]", _data.max(sCacheCmd, sArgument+"cols"+sEvery));
                 }
             }
             else if (matchParams(sCmd, "norm"))
@@ -2162,12 +2234,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "lines"))
                 {
                     sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[norm_lines]");
-                    _parser.SetVectorVar(sCacheCmd+"[norm_lines]", _data.norm(sCacheCmd, sArgument+"lines"));
+                    _parser.SetVectorVar(sCacheCmd+"[norm_lines]", _data.norm(sCacheCmd, sArgument+"lines"+sEvery));
                 }
                 else
                 {
                     sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[norm_cols]");
-                    _parser.SetVectorVar(sCacheCmd+"[norm_cols]", _data.norm(sCacheCmd, sArgument+"cols"));
+                    _parser.SetVectorVar(sCacheCmd+"[norm_cols]", _data.norm(sCacheCmd, sArgument+"cols"+sEvery));
                 }
             }
             else if (matchParams(sCmd, "std"))
@@ -2175,12 +2247,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "lines"))
                 {
                     sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[std_lines]");
-                    _parser.SetVectorVar(sCacheCmd+"[std_lines]", _data.std(sCacheCmd, sArgument+"lines"));
+                    _parser.SetVectorVar(sCacheCmd+"[std_lines]", _data.std(sCacheCmd, sArgument+"lines"+sEvery));
                 }
                 else
                 {
                     sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[std_cols]");
-                    _parser.SetVectorVar(sCacheCmd+"[std_cols]", _data.std(sCacheCmd, sArgument+"cols"));
+                    _parser.SetVectorVar(sCacheCmd+"[std_cols]", _data.std(sCacheCmd, sArgument+"cols"+sEvery));
                 }
             }
             else if (matchParams(sCmd, "prd"))
@@ -2188,12 +2260,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "lines"))
                 {
                     sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[prd_lines]");
-                    _parser.SetVectorVar(sCacheCmd+"[prd_lines]", _data.prd(sCacheCmd, sArgument+"lines"));
+                    _parser.SetVectorVar(sCacheCmd+"[prd_lines]", _data.prd(sCacheCmd, sArgument+"lines"+sEvery));
                 }
                 else
                 {
                     sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[prd_cols]");
-                    _parser.SetVectorVar(sCacheCmd+"[prd_cols]", _data.prd(sCacheCmd, sArgument+"cols"));
+                    _parser.SetVectorVar(sCacheCmd+"[prd_cols]", _data.prd(sCacheCmd, sArgument+"cols"+sEvery));
                 }
             }
             else if (matchParams(sCmd, "num"))
@@ -2201,12 +2273,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "lines"))
                 {
                     sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[num_lines]");
-                    _parser.SetVectorVar(sCacheCmd+"[num_lines]", _data.num(sCacheCmd, sArgument+"lines"));
+                    _parser.SetVectorVar(sCacheCmd+"[num_lines]", _data.num(sCacheCmd, sArgument+"lines"+sEvery));
                 }
                 else
                 {
                     sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[num_cols]");
-                    _parser.SetVectorVar(sCacheCmd+"[num_cols]", _data.num(sCacheCmd, sArgument+"cols"));
+                    _parser.SetVectorVar(sCacheCmd+"[num_cols]", _data.num(sCacheCmd, sArgument+"cols"+sEvery));
                 }
             }
             else if (matchParams(sCmd, "cnt"))
@@ -2214,12 +2286,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "lines"))
                 {
                     sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[cnt_lines]");
-                    _parser.SetVectorVar(sCacheCmd+"[cnt_lines]", _data.cnt(sCacheCmd, sArgument+"lines"));
+                    _parser.SetVectorVar(sCacheCmd+"[cnt_lines]", _data.cnt(sCacheCmd, sArgument+"lines"+sEvery));
                 }
                 else
                 {
                     sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[cnt_cols]");
-                    _parser.SetVectorVar(sCacheCmd+"[cnt_cols]", _data.cnt(sCacheCmd, sArgument+"cols"));
+                    _parser.SetVectorVar(sCacheCmd+"[cnt_cols]", _data.cnt(sCacheCmd, sArgument+"cols"+sEvery));
                 }
             }
             else if (matchParams(sCmd, "med"))
@@ -2227,12 +2299,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "lines"))
                 {
                     sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[med_lines]");
-                    _parser.SetVectorVar(sCacheCmd+"[med_lines]", _data.med(sCacheCmd, sArgument+"lines"));
+                    _parser.SetVectorVar(sCacheCmd+"[med_lines]", _data.med(sCacheCmd, sArgument+"lines"+sEvery));
                 }
                 else
                 {
                     sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[med_cols]");
-                    _parser.SetVectorVar(sCacheCmd+"[med_cols]", _data.med(sCacheCmd, sArgument+"cols"));
+                    _parser.SetVectorVar(sCacheCmd+"[med_cols]", _data.med(sCacheCmd, sArgument+"cols"+sEvery));
                 }
             }
 
@@ -2315,10 +2387,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_data.clearStringElements())
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Zeichenketten wurden erfolgreich entfernt.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_SUCCESS"), _option) << endl;
+                        //cerr << LineBreak("|-> Zeichenketten wurden erfolgreich entfernt.", _option) << endl;
                 }
                 else
-                    cerr << LineBreak("|-> Es wurden keine Zeichenketten gefunden.", _option) << endl;
+                    cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_EMPTY"), _option) << endl;
+                    //cerr << LineBreak("|-> Es wurden keine Zeichenketten gefunden.", _option) << endl;
                 return 1;
             }
             else
@@ -2373,7 +2447,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (BI_CopyData(sCmd, _parser, _data, _option))
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Der Datensatz wurde erfolgreich kopiert.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_COPYDATA_SUCCESS"), _option) << endl;
+                        //cerr << LineBreak("|-> Der Datensatz wurde erfolgreich kopiert.", _option) << endl;
                 }
                 else
                     throw CANNOT_COPY_DATA;
@@ -2390,9 +2465,11 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     if (_option.getSystemPrintStatus())
                     {
                         if (nArgument)
-                            cerr << LineBreak("|-> Die Dateien \"" + sCmd + "\" wurden erfolgreich kopiert.", _option) << endl;
+                            cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_COPYFILE_ALL_SUCCESS", sCmd), _option) << endl;
+                            //cerr << LineBreak("|-> Die Dateien \"" + sCmd + "\" wurden erfolgreich kopiert.", _option) << endl;
                         else
-                            cerr << LineBreak("|-> Die Datei \"" + sCmd + "\" wurde erfolgreich kopiert.", _option) << endl;
+                            cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_COPYFILE_SUCCESS", sCmd), _option) << endl;
+                            //cerr << LineBreak("|-> Die Datei \"" + sCmd + "\" wurde erfolgreich kopiert.", _option) << endl;
                     }
                 }
                 else
@@ -2450,7 +2527,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             if (!parser_writeAudio(sCmd, _parser, _data, _functions, _option))
                 throw CANNOT_SAVE_FILE;
             else if (_option.getSystemPrintStatus())
-                cerr << LineBreak("|-> Die Audiodatei wurde erfolgreich erzeugt.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_AUDIO_SUCCESS"), _option) << endl;
+                //cerr << LineBreak("|-> Die Audiodatei wurde erfolgreich erzeugt.", _option) << endl;
             return 1;
         }
 
@@ -2645,7 +2723,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                             if (_cache.saveFile(iter->second == -1 ? "copy_of_"+(iter->first) : (iter->first), sArgument))
                             {
                                 if (_option.getSystemPrintStatus())
-                                    cerr << LineBreak("|-> Daten wurden erfolgreich nach \"" + _cache.getOutputFileName() + "\" gespeichert.", _option) << endl;
+                                    cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()), _option) << endl;
+                                    //cerr << LineBreak("|-> Daten wurden erfolgreich nach \"" + _cache.getOutputFileName() + "\" gespeichert.", _option) << endl;
                                 return 1;
                             }
                             else
@@ -2656,7 +2735,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         if (_cache.saveFile(iter->second == -1 ? "copy_of_"+(iter->first) : (iter->first), ""))
                         {
                             if (_option.getSystemPrintStatus())
-                                cerr << LineBreak("|-> Daten wurden erfolgreich nach \"" + _cache.getOutputFileName() + "\" gespeichert.", _option) << endl;
+                                cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()), _option) << endl;
+                                //cerr << LineBreak("|-> Daten wurden erfolgreich nach \"" + _cache.getOutputFileName() + "\" gespeichert.", _option) << endl;
                         }
                         else
                             throw CANNOT_SAVE_FILE;
@@ -2683,7 +2763,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     sCmd[sCmd.find('\\')] = '/';
                 if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
                 {
-                    cerr << "|-> Einen Pfad eingeben:" << endl;
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH")+":") << endl;
+                    //cerr << "|-> Einen Pfad eingeben:" << endl;
                     do
                     {
                         cerr << "|" << endl;
@@ -2696,7 +2777,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 _option.setSavePath(_out.getPath());
                 _data.setSavePath(_option.getSavePath());
                 if (_option.getSystemPrintStatus())
-                    cerr << "|-> Dateipfad erfolgreich aktualisiert." << endl;
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) << endl;
+                    //cerr << "|-> Dateipfad erfolgreich aktualisiert." << endl;
                 return 1;
             }
             else if (matchParams(sCmd, "loadpath") || matchParams(sCmd, "loadpath", '='))
@@ -2710,7 +2792,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
 
                 if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
                 {
-                    cerr << "|-> Einen Pfad eingeben:" << endl;
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH")+":") << endl;
+                    //cerr << "|-> Einen Pfad eingeben:" << endl;
                     do
                     {
                         cerr << "|" << endl;
@@ -2722,7 +2805,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 _data.setPath(sArgument, true, _data.getProgramPath());
                 _option.setLoadPath(_data.getPath());
                 if (_option.getSystemPrintStatus())
-                    cerr << "|-> Dateipfad erfolgreich aktualisiert." << endl;
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) << endl;
+                    //cerr << "|-> Dateipfad erfolgreich aktualisiert." << endl;
                 return 1;
             }
             else if (matchParams(sCmd, "viewer") || matchParams(sCmd, "viewer", '='))
@@ -2733,7 +2817,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     sCmd[sCmd.find('\\')] = '/';
                 if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
                 {
-                    cerr << "|-> Einen Pfad eingeben:" << endl;
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH")+":") << endl;
+                    //cerr << "|-> Einen Pfad eingeben:" << endl;
                     do
                     {
                         cerr << "|" << endl;
@@ -2744,7 +2829,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 _option.setViewerPath(sArgument);
                 if (_option.getSystemPrintStatus())
-                    cerr << "|-> Imageviewer erfolgreich deklariert." << endl;
+                    cerr << toSystemCodePage("|-> " + _lang.get("BUILTIN_CHECKKEYWORD_SET_PROGRAM", "Imageviewer")) << endl;
+                    //cerr << "|-> Imageviewer erfolgreich deklariert." << endl;
                 return 1;
             }
             else if (matchParams(sCmd, "editor") || matchParams(sCmd, "editor", '='))
@@ -2755,7 +2841,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     sCmd[sCmd.find('\\')] = '/';
                 if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
                 {
-                    cerr << "|-> Einen Pfad eingeben:" << endl;
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH")+":") << endl;
+                    //cerr << "|-> Einen Pfad eingeben:" << endl;
                     do
                     {
                         cerr << "|" << endl;
@@ -2766,7 +2853,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 _option.setEditorPath(sArgument);
                 if (_option.getSystemPrintStatus())
-                    cerr << "|-> Texteditor erfolgreich deklariert." << endl;
+                    cerr << toSystemCodePage("|-> " + _lang.get("BUILTIN_CHECKKEYWORD_SET_PROGRAM", "Texteditor")) << endl;
+                    //cerr << "|-> Texteditor erfolgreich deklariert." << endl;
                 return 1;
             }
             else if (matchParams(sCmd, "scriptpath") || matchParams(sCmd, "scriptpath", '='))
@@ -2779,7 +2867,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     sCmd[sCmd.find('\\')] = '/';
                 if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
                 {
-                    cerr << "|-> Einen Pfad eingeben:" << endl;
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH")+":") << endl;
+                    //cerr << "|-> Einen Pfad eingeben:" << endl;
                     do
                     {
                         cerr << "|" << endl;
@@ -2791,7 +2880,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 _script.setPath(sArgument, true, _script.getProgramPath());
                 _option.setScriptPath(_script.getPath());
                 if (_option.getSystemPrintStatus())
-                    cerr << "|-> Dateipfad erfolgreich aktualisiert." << endl;
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) << endl;
+                    //cerr << "|-> Dateipfad erfolgreich aktualisiert." << endl;
                 return 1;
             }
             else if (matchParams(sCmd, "plotpath") || matchParams(sCmd, "plotpath", '='))
@@ -2802,7 +2892,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     sCmd[sCmd.find('\\')] = '/';
                 if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
                 {
-                    cerr << "|-> Einen Pfad eingeben:" << endl;
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH")+":") << endl;
+                    //cerr << "|-> Einen Pfad eingeben:" << endl;
                     do
                     {
                         cerr << "|" << endl;
@@ -2814,7 +2905,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 _pData.setPath(sArgument, true, _pData.getProgramPath());
                 _option.setPlotOutputPath(_pData.getPath());
                 if (_option.getSystemPrintStatus())
-                    cerr << "|-> Dateipfad erfolgreich aktualisiert." << endl;
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) << endl;
+                    //cerr << "|-> Dateipfad erfolgreich aktualisiert." << endl;
                 return 1;
             }
             else if (matchParams(sCmd, "procpath") || matchParams(sCmd, "procpath", '='))
@@ -2825,7 +2917,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     sCmd[sCmd.find('\\')] = '/';
                 if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
                 {
-                    cerr << "|-> Einen Pfad eingeben:" << endl;
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH")+":") << endl;
+                    //cerr << "|-> Einen Pfad eingeben:" << endl;
                     do
                     {
                         cerr << "|" << endl;
@@ -2836,7 +2929,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 _option.setProcPath(sArgument);
                 if (_option.getSystemPrintStatus())
-                    cerr << "|-> Dateipfad erfolgreich aktualisiert." << endl;
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) << endl;
+                    //cerr << "|-> Dateipfad erfolgreich aktualisiert." << endl;
                 return 1;
             }
             else if (matchParams(sCmd, "plotfont") || matchParams(sCmd, "plotfont", '='))
@@ -2845,7 +2939,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     addArgumentQuotes(sCmd, "plotfont");
                 if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
                 {
-                    cerr << "|-> Standardschriftart angeben:" << endl;
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_ENTER_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_DEFAULTFONT"))) << endl;
+                    //cerr << "|-> Standardschriftart angeben:" << endl;
                     do
                     {
                         cerr << "|" << endl;
@@ -2862,14 +2957,16 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 _fontData.LoadFont(_option.getDefaultPlotFont().c_str(), _option.getExePath().c_str());
                 _pData.setFont(_option.getDefaultPlotFont());
                 if (_option.getSystemPrintStatus())
-                    cerr << "|-> Standardschriftart wurde erfolgreich eingestellt." << endl;
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_DEFAULTFONT"))) << endl;
+                    //cerr << "|-> Standardschriftart wurde erfolgreich eingestellt." << endl;
                 return 1;
             }
             else if (matchParams(sCmd, "precision") || matchParams(sCmd, "precision", '='))
             {
                 if (!parser_parseCmdArg(sCmd, "precision", _parser, nArgument) || (!nArgument || nArgument > 14))
                 {
-                    cerr << toSystemCodePage("|-> Präzision eingeben: (1-14)") << endl;
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_ENTER_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_PRECISION"))+ " (1-14)") << endl;
+                    //cerr << toSystemCodePage("|-> Präzision eingeben: (1-14)") << endl;
                     do
                     {
                         cerr << "|" << endl;
@@ -2882,7 +2979,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 _option.setprecision(nArgument);
                 if (_option.getSystemPrintStatus())
-                    cerr << toSystemCodePage("|-> Präzision erfolgreich geändert.") << endl;
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_PRECISION"))) << endl;
+                    //cerr << "|-> Präzision wurde erfolgreich eingestellt." << endl;
                 return 1;
             }
             else if (matchParams(sCmd, "faststart") || matchParams(sCmd, "faststart", '='))
@@ -2904,9 +3002,13 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_option.getSystemPrintStatus())
                 {
                     if (nArgument)
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_PARSERTEST", _lang.get("COMMON_WITHOUT")), _option) << endl;
+                    else
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_PARSERTEST", _lang.get("COMMON_WITH")), _option) << endl;
+                    /*if (nArgument)
                         cerr << LineBreak("|-> Numere wird in Zukunft ohne den Parser-Selbsttest starten.", _option) << endl;
                     else
-                        cerr << LineBreak("|-> Numere wird in Zukunft mit Parser-Selbsttest starten.", _option) << endl;
+                        cerr << LineBreak("|-> Numere wird in Zukunft mit Parser-Selbsttest starten.", _option) << endl;*/
                 }
                 return 1;
             }
@@ -2920,9 +3022,13 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_option.getSystemPrintStatus())
                 {
                     if (nArgument)
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DRAFTMODE"), _lang.get("COMMON_ACTIVE")), _option) << endl;
+                    else
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DRAFTMODE"), _lang.get("COMMON_INACTIVE")), _option) << endl;
+                    /*if (nArgument)
                         cerr << LineBreak("|-> Entwurfsmodus aktiviert.", _option) << endl;
                     else
-                        cerr << LineBreak("|-> Entwurfsmodus deaktiviert.", _option) << endl;
+                        cerr << LineBreak("|-> Entwurfsmodus deaktiviert.", _option) << endl;*/
                 }
                 return 1;
             }
@@ -2936,9 +3042,13 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_option.getSystemPrintStatus())
                 {
                     if (nArgument)
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_EXTENDEDINFO"), _lang.get("COMMON_ACTIVE")), _option) << endl;
+                    else
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_EXTENDEDINFO"), _lang.get("COMMON_INACTIVE")), _option) << endl;
+                    /*if (nArgument)
                         cerr << LineBreak("|-> Erweiterte Dateiinformationen aktiviert.", _option) << endl;
                     else
-                        cerr << LineBreak("|-> Erweiterte Dateiinformationen deaktiviert.", _option) << endl;
+                        cerr << LineBreak("|-> Erweiterte Dateiinformationen deaktiviert.", _option) << endl;*/
                 }
                 return 1;
             }
@@ -2953,9 +3063,13 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_option.getSystemPrintStatus())
                 {
                     if (nArgument)
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_LOADEMPTYCOLS"), _lang.get("COMMON_ACTIVE")), _option) << endl;
+                    else
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_LOADEMPTYCOLS"), _lang.get("COMMON_INACTIVE")), _option) << endl;
+                    /*if (nArgument)
                         cerr << LineBreak("|-> Laden leerer Spalten aktiviert.", _option) << endl;
                     else
-                        cerr << LineBreak("|-> Laden leerer Spalten deaktiviert.", _option) << endl;
+                        cerr << LineBreak("|-> Laden leerer Spalten deaktiviert.", _option) << endl;*/
                 }
                 return 1;
             }
@@ -2969,10 +3083,15 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_option.getSystemPrintStatus())
                 {
                     if (nArgument)
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_LOGFILE"), _lang.get("COMMON_ACTIVE")), _option) << endl;
+                    else
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_LOGFILE"), _lang.get("COMMON_INACTIVE")), _option) << endl;
+                    /*if (nArgument)
                         cerr << LineBreak("|-> Protokollierung aktiviert.", _option) << endl;
                     else
-                        cerr << LineBreak("|-> Protokollierung deaktiviert.", _option) << endl;
-                    cerr << LineBreak("|   (Einstellung wird zum nächsten Start aktiv)", _option) << endl;
+                        cerr << LineBreak("|-> Protokollierung deaktiviert.", _option) << endl;*/
+                    cerr << LineBreak("|   ("+_lang.get("BUILTIN_CHECKKEYWORD_SET_RESTART_REQUIRED")+")", _option) << endl;
+                    //cerr << LineBreak("|   (Einstellung wird zum nächsten Start aktiv)", _option) << endl;
                 }
                 return 1;
             }
@@ -2985,13 +3104,15 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 {
                     if (_option.getUseDebugger())
                     {
-                        cerr << LineBreak("|-> Debugger wurde deaktiviert.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DEBUGGER"), _lang.get("COMMON_INACTIVE")), _option) << endl;
+                        //cerr << LineBreak("|-> Debugger wurde deaktiviert.", _option) << endl;
                         _option.setDebbuger(false);
                     }
                     else
                     {
                         _option.setDebbuger(true);
-                        cerr << LineBreak("|-> Debugger wurde aktiviert.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DEBUGGER"), _lang.get("COMMON_ACTIVE")), _option) << endl;
+                        //cerr << LineBreak("|-> Debugger wurde aktiviert.", _option) << endl;
                     }
                     return 1;
                 }
@@ -2999,12 +3120,14 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 {
                     if (_option.getbDebug())
                     {
-                        cerr << LineBreak("|-> DEVELOPER-MODE wird deaktiviert.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_DEVMODE_INACTIVE"), _option) << endl;
+                        //cerr << LineBreak("|-> DEVELOPER-MODE wird deaktiviert.", _option) << endl;
                         _option.setbDebug(false);
                     }
                     else
                     {
-                        cerr << LineBreak("|-> DEVELOPER-MODE wird aktiviert. Dieser Modus stellt Zwischenergebnisse zur vereinfachten Fehlersuche dar. Er ist nicht zum produktiven Arbeiten ausgelegt. Zum Aktivieren wird ein Passwort benötigt:$(0 zum Abbrechen)", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_DEVMODE_ACTIVE"), _option) << endl;
+                        //cerr << LineBreak("|-> DEVELOPER-MODE wird aktiviert. Dieser Modus stellt Zwischenergebnisse zur vereinfachten Fehlersuche dar. Er ist nicht zum produktiven Arbeiten ausgelegt. Zum Aktivieren wird ein Passwort benötigt:$(0 zum Abbrechen)", _option) << endl;
                         sArgument = "";
                         do
                         {
@@ -3016,11 +3139,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         if (sArgument == AutoVersion::STATUS)
                         {
                             _option.setbDebug(true);
-                            cerr << LineBreak("|-> DEVELOPER-MODE erfolgreich aktiviert!", _option) << endl;
+                            cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_DEVMODE_SUCCESS"), _option) << endl;
+                            //cerr << LineBreak("|-> DEVELOPER-MODE erfolgreich aktiviert!", _option) << endl;
                         }
                         else
                         {
-                            cerr << "|-> ABBRUCH!" << endl;
+                            cerr << toSystemCodePage("|-> "+_lang.get("COMMON_CANCEL")) << endl;
                         }
                     }
                     return 1;
@@ -3059,10 +3183,14 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 _option.setbCompact((bool)nArgument);
                 if (_option.getSystemPrintStatus())
                 {
-                    if (!nArgument)
+                    if (nArgument)
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_COMPACT"), _lang.get("COMMON_ACTIVE")), _option) << endl;
+                    else
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_COMPACT"), _lang.get("COMMON_INACTIVE")), _option) << endl;
+                    /*if (!nArgument)
                         cerr << LineBreak("|-> Tabellen werden in Zukunft vollständig dargestellt.", _option) << endl;
                     else
-                        cerr << LineBreak("|-> Tabellen werden in Zukunft kompakt dargestellt.", _option) << endl;
+                        cerr << LineBreak("|-> Tabellen werden in Zukunft kompakt dargestellt.", _option) << endl;*/
                 }
                 return 1;
             }
@@ -3084,10 +3212,14 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 _option.setbGreeting((bool)nArgument);
                 if (_option.getSystemPrintStatus())
                 {
-                    cerr << toSystemCodePage("|-> NumeRe wird bei zukünftigen Starts ");
+                    if (nArgument)
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_GREETING"), _lang.get("COMMON_ACTIVE")), _option) << endl;
+                    else
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_GREETING"), _lang.get("COMMON_INACTIVE")), _option) << endl;
+                    /*cerr << toSystemCodePage("|-> NumeRe wird bei zukünftigen Starts ");
                     if (!nArgument)
                         cerr << "nicht mehr ";
-                    cerr << toSystemCodePage("grüßen.") << endl;
+                    cerr << toSystemCodePage("grüßen.") << endl;*/
                 }
                 return 1;
             }
@@ -3109,10 +3241,14 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 _option.setbShowHints((bool)nArgument);
                 if (_option.getSystemPrintStatus())
                 {
-                    cerr << toSystemCodePage("|-> NumeRe wird in Zukunft ");
+                    if (nArgument)
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_HINTS"), _lang.get("COMMON_ACTIVE")), _option) << endl;
+                    else
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_HINTS"), _lang.get("COMMON_INACTIVE")), _option) << endl;
+                    /*cerr << toSystemCodePage("|-> NumeRe wird in Zukunft ");
                     if (!nArgument)
                         cerr << "keine ";
-                    cerr << toSystemCodePage("Tipps zeigen.") << endl;
+                    cerr << toSystemCodePage("Tipps zeigen.") << endl;*/
                 }
                 return 1;
             }
@@ -3125,10 +3261,14 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 _option.setbUseESCinScripts((bool)nArgument);
                 if (_option.getSystemPrintStatus())
                 {
-                    cerr << toSystemCodePage("|-> NumeRe wird die ESC-Taste ");
+                    if (nArgument)
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_ESC_IN_SCRIPTS"), _lang.get("COMMON_ACTIVE")), _option) << endl;
+                    else
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_ESC_IN_SCRIPTS"), _lang.get("COMMON_INACTIVE")), _option) << endl;
+                    /*cerr << toSystemCodePage("|-> NumeRe wird die ESC-Taste ");
                     if (!nArgument)
                         cerr << "nicht ";
-                    cerr << toSystemCodePage("in Scripts verwenden.") << endl;
+                    cerr << toSystemCodePage("in Scripts verwenden.") << endl;*/
                 }
                 return 1;
             }
@@ -3150,10 +3290,14 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 _option.setbDefineAutoLoad((bool)nArgument);
                 if (_option.getSystemPrintStatus())
                 {
-                    if (_option.getbDefineAutoLoad())
+                    if (nArgument)
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DEFCONTROL"), _lang.get("COMMON_ACTIVE")), _option) << endl;
+                    else
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DEFCONTROL"), _lang.get("COMMON_INACTIVE")), _option) << endl;
+                    /*if (_option.getbDefineAutoLoad())
                         cerr << LineBreak("|-> Laden und Speichern der selbst definierten Funktionen wird in Zukunft automatisch durchgeführt.", _option) << endl;
                     else
-                        cerr << LineBreak("|-> Laden und Speichern der selbst definierten Funktionen muss in Zukunft manuell durchgeführt werden.", _option) << endl;
+                        cerr << LineBreak("|-> Laden und Speichern der selbst definierten Funktionen muss in Zukunft manuell durchgeführt werden.", _option) << endl;*/
                 }
                 if (_option.getbDefineAutoLoad() && !_functions.getDefinedFunctions() && BI_FileExists(_option.getExePath() + "\\functions.def"))
                     _functions.load(_option);
@@ -3163,7 +3307,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             {
                 if (!parser_parseCmdArg(sCmd, "autosave", _parser, nArgument) && !nArgument)
                 {
-                    cerr << toSystemCodePage("|-> Intervall für automatische Speicherung? [sec]") << endl;
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_AUTOSAVE")+"? [sec]") << endl;
+                    //cerr << toSystemCodePage("|-> Intervall für automatische Speicherung? [sec]") << endl;
                     do
                     {
                         cerr << "|" << endl;
@@ -3175,14 +3320,16 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 _option.setAutoSaveInterval(nArgument);
                 if (_option.getSystemPrintStatus())
-                    cerr << "|-> Automatische Speicherung alle " << _option.getAutoSaveInterval() << " sec." << endl;
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_AUTOSAVE"))) << endl;
+                    //cerr << "|-> Automatische Speicherung alle " << _option.getAutoSaveInterval() << " sec." << endl;
                 return 1;
             }
             else if (matchParams(sCmd, "buffersize") || matchParams(sCmd, "buffersize", '='))
             {
                 if (!parser_parseCmdArg(sCmd, "buffersize", _parser, nArgument) || nArgument < 300)
                 {
-                    cerr << toSystemCodePage("|-> Buffergröße? (Größer oder gleich 300)") << endl;
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_BUFFERSIZE")+"? (>= 300)") << endl;
+                    //cerr << toSystemCodePage("|-> Buffergröße? (Größer oder gleich 300)") << endl;
                     do
                     {
                         cerr << "|" << endl;
@@ -3196,10 +3343,11 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (ResizeConsole(_option))
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << "|-> Buffer erfolgreich aktualisiert." << endl;
+                        cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_BUFFERSIZE"))) << endl;
+                    //cerr << "|-> Buffer erfolgreich aktualisiert." << endl;
                 }
                 else
-                    cerr << LineBreak("|-> Ein Fehler ist aufgetreten!", _option) << endl;
+                    throw;
                 return 1;
             }
             else if (matchParams(sCmd, "windowsize"))
@@ -3226,10 +3374,11 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (ResizeConsole(_option))
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Fenstergröße erfolgreich aktualisiert.", _option) << endl;
+                        cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_WINDOWSIZE"))) << endl;
+                    //cerr << LineBreak("|-> Fenstergröße erfolgreich aktualisiert.", _option) << endl;
                 }
                 else
-                    cerr << LineBreak("|-> Ein Fehler ist aufgetreten!", _option) << endl;
+                    throw; //cerr << LineBreak("|-> Ein Fehler ist aufgetreten!", _option) << endl;
                 return 1;
             }
             else if (matchParams(sCmd, "colortheme") || matchParams(sCmd, "colortheme", '='))
@@ -3304,7 +3453,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                             _script.openScript();
                         else
                         {
-                            sErrorToken = "[Bereits geladenes Script]";
+                            sErrorToken = "["+_lang.get("BUILTIN_CHECKKEYWORD_START_ERRORTOKEN")+"]";
                             throw SCRIPT_NOT_EXIST;
                         }
                         return 1;
@@ -3328,7 +3477,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     {
                         do
                         {
-                            cerr << "|-> Dateiname des Scripts angeben:" << endl;
+                            cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_ENTER_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_SCRIPTNAME"))) << endl;
+                            //cerr << "|-> Dateiname des Scripts angeben:" << endl;
                             cerr << "|<- ";
                             getline(cin, sArgument);
                         }
@@ -3338,7 +3488,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     if (BI_FileExists(_script.getScriptFileName()))
                     {
                         if (_option.getSystemPrintStatus())
-                            cerr << LineBreak("|-> Script \"" + _script.getScriptFileName() + "\" wurde erfolgreich geladen!", _option) << endl;
+                            cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SCRIPTLOAD_SUCCESS", _script.getScriptFileName()), _option) << endl;
+                            //cerr << LineBreak("|-> Script \"" + _script.getScriptFileName() + "\" wurde erfolgreich geladen!", _option) << endl;
                     }
                     else
                     {
@@ -3486,7 +3637,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 doc_SearchFct(sCmd.substr(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos+sCommand.length())), _option);
             else
             {
-                cerr << "|-> Kann den Begriff nicht identifizieren!" << endl;
+                cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_FIND_CANNOT_READ"), _option) << endl;
+                //cerr << "|-> Kann den Begriff nicht identifizieren!" << endl;
                 doc_Help("find", _option);
             }
             return 1;
@@ -3499,7 +3651,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     throw CANNOT_SORT_CACHE;
                     //cerr << LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht sortiert werden! Siehe \"help -cache\" für weitere Details.", _option) << endl;
                 else if (_option.getSystemPrintStatus())
-                    cerr << LineBreak("|-> Spalte(n) wurde(n) erfolgreich sortiert.", _option) << endl;
+                    cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SORT_SUCCESS"), _option) << endl;
+                    //cerr << LineBreak("|-> Spalte(n) wurde(n) erfolgreich sortiert.", _option) << endl;
             }
             else if (matchParams(sCmd, "data", '=') || matchParams(sCmd, "data"))
             {
@@ -3507,7 +3660,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     throw CANNOT_SORT_DATA;
                     //cerr << LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht sortiert werden! Siehe \"help -data\" für weitere Details.", _option) << endl;
                 else if (_option.getSystemPrintStatus())
-                    cerr << LineBreak("|-> Spalte(n) wurde(n) erfolgreich sortiert.", _option) << endl;
+                    cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SORT_SUCCESS"), _option) << endl;
+                    //cerr << LineBreak("|-> Spalte(n) wurde(n) erfolgreich sortiert.", _option) << endl;
             }
             return 1;
         }
@@ -3556,7 +3710,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_data.smooth(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::GRID))
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> \"" +sArgument.substr(0,sArgument.find('('))+ "\" wurde erfolgreich geglättet.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", "\"" +sArgument.substr(0,sArgument.find('('))+ "\""), _option) << endl;
+                        //cerr << LineBreak("|-> \"" +sArgument.substr(0,sArgument.find('('))+ "\" wurde erfolgreich geglättet.", _option) << endl;
                 }
                 else
                 {
@@ -3569,7 +3724,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_data.smooth(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::ALL))
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> \"" +sArgument.substr(0,sArgument.find('('))+ "\" wurde erfolgreich geglättet.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", "\"" +sArgument.substr(0,sArgument.find('('))+ "\""), _option) << endl;
+                        //cerr << LineBreak("|-> \"" +sArgument.substr(0,sArgument.find('('))+ "\" wurde erfolgreich geglättet.", _option) << endl;
                 }
                 else
                 {
@@ -3582,7 +3738,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_data.smooth(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::LINES))
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Zeile(n) wurden erfolgreich geglättet.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", _lang.get("COMMON_LINES")), _option) << endl;
+                        //cerr << LineBreak("|-> Zeile(n) wurden erfolgreich geglättet.", _option) << endl;
                 }
                 else
                 {
@@ -3595,7 +3752,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_data.smooth(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::COLS))
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Spalte(n) wurden erfolgreich geglättet.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", _lang.get("COMMON_COLS")), _option) << endl;
+                        //cerr << LineBreak("|-> Spalte(n) wurden erfolgreich geglättet.", _option) << endl;
                 }
                 else
                 {
@@ -3612,10 +3770,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_data.clearStringElements())
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Zeichenketten wurden erfolgreich entfernt.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_SUCCESS"), _option) << endl;
+                        //cerr << LineBreak("|-> Zeichenketten wurden erfolgreich entfernt.", _option) << endl;
                 }
                 else
-                    cerr << LineBreak("|-> Es wurden keine Zeichenketten gefunden.", _option) << endl;
+                    cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_EMPTY"), _option) << endl;
+                    //cerr << LineBreak("|-> Es wurden keine Zeichenketten gefunden.", _option) << endl;
                 return 1;
             }
         }
@@ -3629,7 +3789,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 sArgument = getArgAtPos(sCmd, matchParams(sCmd, _data.matchCache(sCmd, '='), '=')+_data.matchCache(sCmd, '=').length());
                 _data.swapCaches(_data.matchCache(sCmd, '='), sArgument);
                 if (_option.getSystemPrintStatus())
-                    cerr << LineBreak("|-> Der Inhalt von \""+_data.matchCache(sCmd, '=')+"\" wurde erfolgreich mit dem Inhalt von \""+sArgument+"\" getauscht.", _option) << endl;
+                    cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SWAP_CACHE", _data.matchCache(sCmd, '='), sArgument), _option) << endl;
+                //cerr << LineBreak("|-> Der Inhalt von \""+_data.matchCache(sCmd, '=')+"\" wurde erfolgreich mit dem Inhalt von \""+sArgument+"\" getauscht.", _option) << endl;
             }
             return 1;
         }
@@ -3845,7 +4006,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (matchParams(sCmd, "comment", '='))
                     addArgumentQuotes(sCmd, "comment");
                 if (!_functions.defineFunc(sCmd.substr(sCmd.find(' ')+1), _parser, _option, true))
-                    cerr << LineBreak("|-> Siehe \"help -redefine\" für weitere Informationen.", _option) << endl;
+                    cerr << LineBreak("|-> " + _lang.get("BUILTIN_CHECKKEYWORD_HELP_DEF"), _option) << endl;
+                    //cerr << LineBreak("|-> Siehe \"help -redefine\" für weitere Informationen.", _option) << endl;
             }
             else
                 doc_Help("define", _option);
@@ -3896,7 +4058,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_data.resample(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::GRID))
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Resampling von \""+sArgument.substr(0,sArgument.find('('))+"\" wurde erfolgreich abgeschlossen.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", "\""+sArgument.substr(0,sArgument.find('('))+"\""), _option) << endl;
+                        //cerr << LineBreak("|-> Resampling von \""+sArgument.substr(0,sArgument.find('('))+"\" wurde erfolgreich abgeschlossen.", _option) << endl;
                 }
                 else
                 {
@@ -3908,7 +4071,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_data.resample(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::ALL))
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Resampling von \""+sArgument.substr(0,sArgument.find('('))+"\" wurde erfolgreich abgeschlossen.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", "\""+sArgument.substr(0,sArgument.find('('))+"\""), _option) << endl;
+                        //cerr << LineBreak("|-> Resampling von \""+sArgument.substr(0,sArgument.find('('))+"\" wurde erfolgreich abgeschlossen.", _option) << endl;
                 }
                 else
                 {
@@ -3920,7 +4084,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_data.resample(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::COLS))
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Resampling der Spalte(n) wurde erfolgreich abgeschlossen.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", _lang.get("COMMON_COLS")), _option) << endl;
+                        //cerr << LineBreak("|-> Resampling der Spalte(n) wurde erfolgreich abgeschlossen.", _option) << endl;
                 }
                 else
                 {
@@ -3932,7 +4097,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_data.resample(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::LINES))
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Resampling der Zeile(n) wurde erfolgreich abgeschlossen.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", _lang.get("COMMON_LINES")), _option) << endl;
+                        //cerr << LineBreak("|-> Resampling der Zeile(n) wurde erfolgreich abgeschlossen.", _option) << endl;
                 }
                 else
                 {
@@ -3963,7 +4129,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     }
                 }
                 if (sArgument.length() && _option.getSystemPrintStatus())
-                    cerr << LineBreak("|-> Cache(s) " + sArgument + " wurde(n) erfolgreich entfernt.", _option) << endl;
+                    cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_REMOVECACHE", sArgument), _option) << endl;
+                    //cerr << LineBreak("|-> Cache(s) " + sArgument + " wurde(n) erfolgreich entfernt.", _option) << endl;
             }
             else if (sCmd.length() > 7)
             {
@@ -3980,9 +4147,13 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 else if (_option.getSystemPrintStatus())
                 {
                     if (nArgument)
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_REMOVE_ALL_FILE"), _option) << endl;
+                    else
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_REMOVE_FILE"), _option) << endl;
+                    /*if (nArgument)
                         cerr << LineBreak("|-> Die Dateien wurden erfolgreich entfernt.", _option) << endl;
                     else
-                        cerr << LineBreak("|-> Die Datei wurde erfolgreich entfernt.", _option) << endl;
+                        cerr << LineBreak("|-> Die Datei wurde erfolgreich entfernt.", _option) << endl;*/
                 }
             }
             else
@@ -4000,7 +4171,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             {
                 sArgument = getArgAtPos(sCmd, matchParams(sCmd, _data.matchCache(sCmd, '='), '=')+_data.matchCache(sCmd,'=').length());
                 _data.renameCache(_data.matchCache(sCmd,'='),sArgument);
-                cerr << LineBreak("|-> Der Cache wurde erfolgreich zu \""+sArgument+"\" umbenannt.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_RENAME_CACHE", sArgument), _option) << endl;
+                //cerr << LineBreak("|-> Der Cache wurde erfolgreich zu \""+sArgument+"\" umbenannt.", _option) << endl;
             }
             return 1;
         }
@@ -4031,7 +4203,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         else
                             _data.openFile(sArgument, _option);
                         if (_data.isValid() && _option.getSystemPrintStatus())
-                            cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich aktualisiert.", _option) << endl;
+                            cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_RELOAD_FILE_SUCCESS", _data.getDataFileName("data")), _option) << endl;
+                            //cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich aktualisiert.", _option) << endl;
                     }
                     else
                         BI_load_data(_data, _option, _parser, sArgument);
@@ -4046,7 +4219,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     _data.removeData(false);
                     _data.openFile(sArgument, _option, false, true);
                     if (_data.isValid() && _option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Daten wurden erfolgreich aktualisiert.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_RELOAD_SUCCESS"), _option) << endl;
+                        //cerr << LineBreak("|-> Daten wurden erfolgreich aktualisiert.", _option) << endl;
                 }
                 else
                     BI_load_data(_data, _option, _parser);
@@ -4081,7 +4255,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_data.retoque(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], Cache::GRID))
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> \"" +sArgument.substr(0,sArgument.find('('))+ "\" wurde erfolgreich retuschiert.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", "\"" +sArgument.substr(0,sArgument.find('('))+ "\""), _option) << endl;
+                        //cerr << LineBreak("|-> \"" +sArgument.substr(0,sArgument.find('('))+ "\" wurde erfolgreich retuschiert.", _option) << endl;
                 }
                 else
                 {
@@ -4094,7 +4269,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_data.retoque(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], Cache::ALL))
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> \"" +sArgument.substr(0,sArgument.find('('))+ "\" wurde erfolgreich retuschiert.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", "\"" +sArgument.substr(0,sArgument.find('('))+ "\""), _option) << endl;
+                        //cerr << LineBreak("|-> \"" +sArgument.substr(0,sArgument.find('('))+ "\" wurde erfolgreich retuschiert.", _option) << endl;
                 }
                 else
                 {
@@ -4107,7 +4283,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_data.retoque(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], Cache::LINES))
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Zeile(n) wurden erfolgreich retuschiert.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_LINES")), _option) << endl;
+                        //cerr << LineBreak("|-> Zeile(n) wurden erfolgreich retuschiert.", _option) << endl;
                 }
                 else
                 {
@@ -4120,7 +4297,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_data.retoque(sArgument.substr(0,sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], Cache::COLS))
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Spalte(n) wurden erfolgreich retuschiert.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_COLS")), _option) << endl;
+                        //cerr << LineBreak("|-> Spalte(n) wurden erfolgreich retuschiert.", _option) << endl;
                 }
                 else
                 {
@@ -4135,7 +4313,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             if (!parser_regularize(sCmd, _parser, _data, _functions, _option))
                 throw CANNOT_REGULARIZE_CACHE;
             else if (_option.getSystemPrintStatus())
-                cerr << LineBreak("|-> Der gewünschte Cache wurde erfolgreich regularisiert.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_REGULARIZE"), _option) << endl;
+                //cerr << LineBreak("|-> Der gewünschte Cache wurde erfolgreich regularisiert.", _option) << endl;
             return 1;
         }
 
@@ -4164,12 +4343,14 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     if (BI_FileExists(_option.getExePath() + "\\functions.def"))
                         _functions.load(_option);
                     else
-                        cerr << "|-> Es wurden keine Funktionen gespeichert." << endl;
+                        cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_DEF_EMPTY")) << endl;
+                        //cerr << "|-> Es wurden keine Funktionen gespeichert." << endl;
                     return 1;
                 }
                 else if (!_functions.defineFunc(sCmd.substr(7), _parser, _option))
                 {
-                    cerr << LineBreak("|-> Siehe \"help -define\" für weitere Informationen.", _option) << endl;
+                    cerr << LineBreak("|-> " + _lang.get("BUILTIN_CHECKKEYWORD_HELP_DEF"), _option) << endl;
+                    //cerr << LineBreak("|-> Siehe \"help -define\" für weitere Informationen.", _option) << endl;
                 }
             }
             else
@@ -4184,14 +4365,16 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     if (BI_deleteCacheEntry(sCmd, _parser, _data, _option))
                     {
                         if (_option.getSystemPrintStatus())
-                            cerr << LineBreak("|-> Element(e) wurde(n) erfolgreich gelöscht.", _option) << endl;
+                            cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_DELETE_SUCCESS"), _option) << endl;
+                            //cerr << LineBreak("|-> Element(e) wurde(n) erfolgreich gelöscht.", _option) << endl;
                     }
                     else
                         throw CANNOT_DELETE_ELEMENTS;
                         //cerr << LineBreak("|-> FEHLER: Element(e) konnte(n) nicht gelöscht werden!", _option) << endl;
                 else
                 {
-                    cerr << LineBreak("|-> Ein oder mehrere Elemente werden dadurch unwiderruflich gelöscht!$Sicher? (j/n)", _option) << endl;
+                    cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_DELETE_CONFIRM"), _option) << endl;
+                    //cerr << LineBreak("|-> Ein oder mehrere Elemente werden dadurch unwiderruflich gelöscht!$Sicher? (j/n)", _option) << endl;
                     do
                     {
                         cerr << "|" << endl;
@@ -4200,11 +4383,11 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         StripSpaces(sArgument);
                     }
                     while (!sArgument.length());
-                    if (sArgument.substr(0,1) == "j")
+                    if (sArgument.substr(0,1) == _lang.YES())
                         BI_deleteCacheEntry(sCmd, _parser, _data, _option);
                     else
                     {
-                        cerr << "|-> ABBRUCH!" << endl;
+                        cerr << "|-> " << _lang.get("COMMON_CANCEL") << endl;
                         return 1;
                     }
                 }
@@ -4222,10 +4405,12 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_data.clearStringElements())
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> Zeichenketten wurden erfolgreich entfernt.", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_SUCCESS"), _option) << endl;
+                        //cerr << LineBreak("|-> Zeichenketten wurden erfolgreich entfernt.", _option) << endl;
                 }
                 else
-                    cerr << LineBreak("|-> Es wurden keine Zeichenketten gefunden.", _option) << endl;
+                    cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_EMPTY"), _option) << endl;
+                    //cerr << LineBreak("|-> Es wurden keine Zeichenketten gefunden.", _option) << endl;
                 return 1;
             }
             else
@@ -4234,11 +4419,13 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
         }
         else if (sCommand == "datagrid")
         {
-            if (!parser_datagrid(sCmd, _parser, _data, _functions, _option))
+            sArgument = "grid";
+            if (!parser_datagrid(sCmd, sArgument, _parser, _data, _functions, _option))
                 doc_Help("datagrid", _option);
             else if (_option.getSystemPrintStatus())
             {
-                cerr << LineBreak("|-> Das Datengitter wurde erfolgreich in \"grid()\" erzeugt.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_DATAGRID_SUCCESS", sArgument), _option) << endl;
+                //cerr << LineBreak("|-> Das Datengitter wurde erfolgreich in \"grid()\" erzeugt.", _option) << endl;
             }
             return 1;
         }
@@ -4353,7 +4540,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (BI_FileExists("functions.def"))
                     _functions.load(_option);
                 else
-                    cerr << "|-> Es wurden keine Funktionen gespeichert." << endl;
+                    cerr << "|-> "+_lang.get("BUILTIN_CHECKKEYWORD_DEF_EMPTY") << endl;
+                    //cerr << "|-> Es wurden keine Funktionen gespeichert." << endl;
             }
             else if (matchParams(sCmd, "data") || matchParams(sCmd, "data", '='))
             {
@@ -4371,6 +4559,32 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         nArgument = 0;
                     if (matchParams(sCmd, "keepdim") || matchParams(sCmd, "complete"))
                         _data.setbLoadEmptyColsInNextFile(true);
+                    if (matchParams(sCmd, "tocache"))
+                    {
+                        Datafile _cache;
+                        _cache.setTokens(_option.getTokenPaths());
+                        _cache.setPath(_option.getLoadPath(), false, _option.getExePath());
+                        _cache.openFile(sArgument, _option, false, true, nArgument);
+                        sArgument = generateCacheName(sArgument, _option);
+                        if (!_data.isCacheElement(sArgument+"()"))
+                            _data.addCache(sArgument+"()", _option);
+                        nArgument = _data.getCols(sArgument, false);
+                        for (long long int i = 0; i < _cache.getLines("data", false); i++)
+                        {
+                            for (long long int j = 0; j < _cache.getCols("data", false); j++)
+                            {
+                                if (!i)
+                                    _data.setHeadLineElement(j+nArgument, sArgument, _cache.getHeadLineElement(j, "data"));
+                                if (_cache.isValidEntry(i,j,"data"))
+                                {
+                                    _data.writeToCache(i, j+nArgument, sArgument, _cache.getElement(i, j, "data"));
+                                }
+                            }
+                        }
+                        if (_data.isValidCache() && _data.getCols(sArgument, false))
+                            cerr << LineBreak("|-> " +_lang.get("BUILTIN_LOADDATA_SUCCESS", _cache.getDataFileName("data"), toString(_data.getLines(sArgument, false)), toString(_data.getCols(sArgument, false))), _option) << endl;
+                        return 1;
+                    }
                     if (matchParams(sCmd, "i") || matchParams(sCmd, "ignore"))
                     {
                         if (_data.isValid())
@@ -4401,7 +4615,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                                 _data.melt(_cache);
                             }
                             if (_data.isValid())
-                                cerr << LineBreak("|-> Alle Daten der Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
+                                cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) << endl;
+                                //cerr << LineBreak("|-> Alle Daten der Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
                             return 1;
                         }
 
@@ -4417,7 +4632,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         else
                             _data.openFile(sArgument, _option, false, true, nArgument);
                         if (_data.isValid() && _option.getSystemPrintStatus())
-                            cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
+                            cerr << LineBreak("|-> " +_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) << endl;
+                            //cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
 
                     }
                     else if (!_data.isValid())
@@ -4443,7 +4659,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                                 _data.melt(_cache);
                             }
                             if (_data.isValid())
-                                cerr << LineBreak("|-> Alle Daten der Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
+                                cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) << endl;
+                                //cerr << LineBreak("|-> Alle Daten der Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
                             return 1;
                         }
                         if (matchParams(sCmd, "head", '=') || matchParams(sCmd, "h", '='))
@@ -4458,7 +4675,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         else
                             _data.openFile(sArgument, _option, false, false, nArgument);
                         if (_data.isValid() && _option.getSystemPrintStatus())
-                            cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
+                            cerr << LineBreak("|-> " +_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) << endl;
+                            //cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
 
                     }
                     else
@@ -4479,7 +4697,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     {
                         do
                         {
-                            cerr << "|-> Dateiname des Scripts angeben:" << endl;
+                            cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_ENTER_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_SCRIPTNAME"))) << endl;
+                            //cerr << "|-> Dateiname des Scripts angeben:" << endl;
                             cerr << "|<- ";
                             getline(cin, sArgument);
                         }
@@ -4489,7 +4708,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     if (BI_FileExists(_script.getScriptFileName()))
                     {
                         if (_option.getSystemPrintStatus())
-                            cerr << LineBreak("|-> Script \"" + _script.getScriptFileName() + "\" wurde erfolgreich geladen!", _option) << endl;
+                            cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SCRIPTLOAD_SUCCESS", _script.getScriptFileName()), _option) << endl;
+                            //cerr << LineBreak("|-> Script \"" + _script.getScriptFileName() + "\" wurde erfolgreich geladen!", _option) << endl;
                     }
                     else
                     {
@@ -4512,6 +4732,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         || matchParams(sCmd, "keepdim")
                         || matchParams(sCmd, "complete")
                         || matchParams(sCmd, "ignore")
+                        || matchParams(sCmd, "tocache")
                         || matchParams(sCmd, "i")
                         || matchParams(sCmd, "head")
                         || matchParams(sCmd, "h")
@@ -4547,6 +4768,32 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         nArgument = 0;
                     if (matchParams(sCmd, "keepdim") || matchParams(sCmd, "complete"))
                         _data.setbLoadEmptyColsInNextFile(true);
+                    if (matchParams(sCmd, "tocache"))
+                    {
+                        Datafile _cache;
+                        _cache.setTokens(_option.getTokenPaths());
+                        _cache.setPath(_option.getLoadPath(), false, _option.getExePath());
+                        _cache.openFile(sArgument, _option, false, true, nArgument);
+                        sArgument = generateCacheName(sArgument, _option);
+                        if (!_data.isCacheElement(sArgument+"()"))
+                            _data.addCache(sArgument+"()", _option);
+                        nArgument = _data.getCols(sArgument, false);
+                        for (long long int i = 0; i < _cache.getLines("data", false); i++)
+                        {
+                            for (long long int j = 0; j < _cache.getCols("data", false); j++)
+                            {
+                                if (!i)
+                                    _data.setHeadLineElement(j+nArgument, sArgument, _cache.getHeadLineElement(j, "data"));
+                                if (_cache.isValidEntry(i,j,"data"))
+                                {
+                                    _data.writeToCache(i, j+nArgument, sArgument, _cache.getElement(i, j, "data"));
+                                }
+                            }
+                        }
+                        if (_data.isValidCache() && _data.getCols(sArgument, false))
+                            cerr << LineBreak("|-> " +_lang.get("BUILTIN_LOADDATA_SUCCESS", _cache.getDataFileName("data"), toString(_data.getLines(sArgument, false)), toString(_data.getCols(sArgument, false))), _option) << endl;
+                        return 1;
+                    }
                     if (matchParams(sCmd, "i") || matchParams(sCmd, "ignore"))
                     {
                         if (_data.isValid())
@@ -4577,7 +4824,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                                 _data.melt(_cache);
                             }
                             if (_data.isValid())
-                                cerr << LineBreak("|-> Alle Daten der Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
+                                cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) << endl;
+                                //cerr << LineBreak("|-> Alle Daten der Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
                             return 1;
                         }
 
@@ -4593,7 +4841,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         else
                             _data.openFile(sArgument, _option, false, true, nArgument);
                         if (_data.isValid() && _option.getSystemPrintStatus())
-                            cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
+                            cerr << LineBreak("|-> " +_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", false)), toString(_data.getCols("data", false))), _option) << endl;
+                            //cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
 
                     }
                     else if (!_data.isValid())
@@ -4619,7 +4868,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                                 _data.melt(_cache);
                             }
                             if (_data.isValid())
-                                cerr << LineBreak("|-> Alle Daten der Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
+                                cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))), _option) << endl;
+                                //cerr << LineBreak("|-> Alle Daten der Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
                             return 1;
                         }
                         if (matchParams(sCmd, "head", '=') || matchParams(sCmd, "h", '='))
@@ -4634,7 +4884,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         else
                             _data.openFile(sArgument, _option, false, false, nArgument);
                         if (_data.isValid() && _option.getSystemPrintStatus())
-                            cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
+                            cerr << LineBreak("|-> " +_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", false)), toString(_data.getCols("data", false))), _option) << endl;
+                            //cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
                     }
                     else
                         BI_load_data(_data, _option, _parser, sArgument);
@@ -4807,7 +5058,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             {
                 _data.pasteLoad(_option);
                 if (_data.isValid())
-                    cerr << LineBreak("|-> Die Daten wurden erfolgreich eingefügt: Der Datensatz besteht nun aus "+toString(_data.getLines("data"))+" Zeile(n) und "+toString(_data.getCols("data"))+" Spalte(n).", _option) << endl;
+                    cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_PASTE_SUCCESS", toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) << endl;
+                    //cerr << LineBreak("|-> Die Daten wurden erfolgreich eingefügt: Der Datensatz besteht nun aus "+toString(_data.getLines("data"))+" Zeile(n) und "+toString(_data.getCols("data"))+" Spalte(n).", _option) << endl;
                 return 1;
 
             }
@@ -4877,7 +5129,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
 // 12. Eine Funktion, die die Hilfe zum Menue-Modus zeigt.
 void BI_Basis()
 {
-    make_hline();
+    /*make_hline();
     cerr << toSystemCodePage("|-> NUMERE: ÜBERSICHT (MENÜ-MODUS)") << endl;
     make_hline();
 	cerr << toSystemCodePage("|-> NumeRe im Menü-Modus ist per Kommando oder Zahlenkombinationen zu bedienen.\n|   Zentrale Kommandos sind die folgenden:") << endl;
@@ -4886,7 +5138,7 @@ void BI_Basis()
 	cerr << "|   mode     - Wechselt zum Rechner-Modus" << endl;
 	cerr << "|   quit     - Beendet NumeRe" << endl;
 	cerr << toSystemCodePage("|-> Im Menü-Modus sind die Rechenoperationen deaktiviert!") << endl;
-	make_hline();
+	make_hline();*/
     return;
 }
 
@@ -4896,11 +5148,12 @@ void BI_Autosave(Datafile& _data, Output& _out, Settings& _option)
     if (_data.isValidCache() && !_data.getSaveStatus())
     {
         if (_option.getSystemPrintStatus())
-        cerr << "|-> Automatische Speicherung ... ";
+        cerr << toSystemCodePage("|-> " + _lang.get("BUILTIN_AUTOSAVE") + " ... ");
+        //cerr << "|-> Automatische Speicherung ... ";
         if (_data.saveCache())
         {
             if (_option.getSystemPrintStatus())
-                cerr << "Erfolg!" << endl;
+                cerr << toSystemCodePage(_lang.get("COMMON_SUCCESS")+".") << endl;
         }
         else
         {
@@ -4922,25 +5175,118 @@ bool BI_FileExists(const string& sFilename)
 void BI_ListOptions(Settings& _option)
 {
     make_hline();
-    cerr << "|-> NUMERE: EINSTELLUNGEN" << endl;
+    cerr << "|-> NUMERE: " << toUpperCase(_lang.get("BUILTIN_LISTOPT_SETTINGS")) << endl;
     make_hline();
-    cerr << "|-> NumeRe wurde mit den folgenden Parametern konfiguriert:" << endl << "|" << endl;
-    cerr << "|   " << toUpperCase("Dateipfade: ") << std::setfill((char)196) << std::setw(_option.getWindow()-16) << (char)196 << endl;
-    cerr << LineBreak("|   Speicherpfad:        \"" + _option.getSavePath() + "\"", _option, true, 0, 25) << endl;
+    cerr << "|-> " << toSystemCodePage(_lang.get("BUILTIN_LISTOPT_1")) << endl << "|" << endl;
+    //cerr << "|-> NumeRe wurde mit den folgenden Parametern konfiguriert:" << endl << "|" << endl;
+    cerr << "|   " << toUpperCase(_lang.get("BUILTIN_LISTOPT_2") + " ") << std::setfill((char)196) << std::setw(_option.getWindow()-5-_lang.get("BUILTIN_LISTOPT_2").length()) << (char)196 << endl;
+    //cerr << "|   " << toUpperCase("Dateipfade: ") << std::setfill((char)196) << std::setw(_option.getWindow()-16) << (char)196 << endl;
+    cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_3", _option.getSavePath()), _option, true, 0, 25) << endl;
+    cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_4", _option.getLoadPath()), _option, true, 0, 25) << endl;
+    cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_5", _option.getScriptPath()), _option, true, 0, 25) << endl;
+    cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_6", _option.getProcsPath()), _option, true, 0, 25) << endl;
+    cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_7", _option.getPlotOutputPath()), _option, true, 0, 25) << endl;
+    /*cerr << LineBreak("|   Speicherpfad:        \"" + _option.getSavePath() + "\"", _option, true, 0, 25) << endl;
     cerr << LineBreak("|   Importpfad:          \"" + _option.getLoadPath() + "\"", _option, true, 0, 25) << endl;
     cerr << LineBreak("|   Scriptpfad:          \"" + _option.getScriptPath() + "\"", _option, true, 0, 25) << endl;
     cerr << LineBreak("|   Prozedurpfad:        \"" + _option.getProcsPath() + "\"", _option, true, 0, 25) << endl;
-    cerr << LineBreak("|   Plotspeicherpfad:    \"" + _option.getPlotOutputPath() + "\"", _option, true, 0, 25) << endl;
-    cerr << "|   Imageviewer:         ";
+    cerr << LineBreak("|   Plotspeicherpfad:    \"" + _option.getPlotOutputPath() + "\"", _option, true, 0, 25) << endl;*/
+    if (_option.getViewerPath().length())
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_8", _option.getViewerPath()), _option, true, 0, 25) << endl;
+    else
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_8", _lang.get("BUILTIN_LISTOPT_NOVIEWER")), _option, true, 0, 25) << endl;
+    /*cerr << "|   Imageviewer:         ";
     if (_option.getViewerPath().length())
         cerr << LineBreak(_option.getViewerPath(), _option, true, 25, 25);
     else
         cerr << "Kein Viewer festgelegt";
-    cerr << endl;
-    cerr << LineBreak("|   Texteditor:          " + _option.getEditorPath(), _option, true, 0, 25) << endl;
+    cerr << endl;*/
+    cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_9", _option.getEditorPath()), _option, true, 0, 25) << endl;
+    //cerr << LineBreak("|   Texteditor:          " + _option.getEditorPath(), _option, true, 0, 25) << endl;
     cerr << "|" << endl;
-    cerr << "|   " << toUpperCase("Programmkonfiguration: ") << std::setfill((char)196) << std::setw(_option.getWindow()-27) << (char)196 << endl;
-    cerr << toSystemCodePage("|   Autosave-Intervall:        ") << _option.getAutoSaveInterval() << " [sec]" << endl;
+    cerr << "|   " << toUpperCase(_lang.get("BUILTIN_LISTOPT_10") + " ") << std::setfill((char)196) << std::setw(_option.getWindow()-5-_lang.get("BUILTIN_LISTOPT_10").length()) << (char)196 << endl;//cerr << "|   " << toUpperCase("Programmkonfiguration: ") << std::setfill((char)196) << std::setw(_option.getWindow()-27) << (char)196 << endl;
+    ///Autosaveintervall
+    cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_11", toString(_option.getAutoSaveInterval())), _option) << endl;
+    ///Begruessung
+    if (_option.getbGreeting())
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_12", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) << endl;
+    else
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_12", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) << endl;
+    ///Puffer
+    cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_13", toString(_option.getBuffer(1))), _option) << endl;
+    ///Colortheme
+    switch (_option.getColorTheme())
+    {
+        case 1:
+            cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_14", "\"Bios\""), _option) << endl;
+            break;
+        case 2:
+            cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_14", "\"Freaky\""), _option) << endl;
+            break;
+        case 3:
+            cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_14", "\"Classic Black\""), _option) << endl;
+            break;
+        case 4:
+            cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_14", "\"Classic Green\""), _option) << endl;
+            break;
+        default:
+            cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_14", "\"NumeRe\""), _option) << endl;
+            break;
+    }
+    ///Draftmode
+    if (_option.getbUseDraftMode())
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_15", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) << endl;
+    else
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_15", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) << endl;
+    ///Extendedfileinfo
+    if (_option.getbShowExtendedFileInfo())
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_16", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) << endl;
+    else
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_16", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) << endl;
+    ///ESC in Scripts
+    if (_option.getbUseESCinScripts())
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_17", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) << endl;
+    else
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_17", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) << endl;
+    ///Fenstergroesse
+    cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_18", toString(_option.getWindow()+1), toString(_option.getWindow(1)+1)), _option) << endl;
+    ///Defcontrol
+    if (_option.getbDefineAutoLoad())
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_19", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) << endl;
+    else
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_19", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) << endl;
+    ///Kompakte Tabellen
+    if (_option.getbCompact())
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_20", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) << endl;
+    else
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_20", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) << endl;
+    ///Leere Spalten laden
+    if (_option.getbLoadEmptyCols())
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_21", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) << endl;
+    else
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_21", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) << endl;
+    /// Praezision
+    cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_22", toString(_option.getPrecision())), _option) << endl;
+    /// Logfile
+    if (_option.getbUseLogFile())
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_23", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) << endl;
+    else
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_23", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) << endl;
+    ///Schneller Start
+    if (_option.getbFastStart())
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_24", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) << endl;
+    else
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_24", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) << endl;
+    /// Plotfont
+    cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_25", _option.getDefaultPlotFont()), _option) << endl;
+    /// Hints
+    if (_option.getbShowHints())
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_26", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) << endl;
+    else
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_26", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) << endl;
+
+//////////////////////////////////////////////
+    /*cerr << toSystemCodePage("|   Autosave-Intervall:        ") << _option.getAutoSaveInterval() << " [sec]" << endl;
     cerr << toSystemCodePage("|   Begrüßung:                 ");
     if (_option.getbGreeting())
         cerr << "AKTIVIERT" << endl;
@@ -5013,9 +5359,10 @@ void BI_ListOptions(Settings& _option)
     if (_option.getbShowHints())
         cerr << "AKTIVIERT" << endl;
     else
-        cerr << "DEAKTIVIERT" << endl;
+        cerr << "DEAKTIVIERT" << endl;*/
     cerr << "|" << endl;
-    cerr << LineBreak("|-> Alle Einstellungen können mit \"set -OPTION\" geändert werden. Weitere Informationen hierzu findest du unter \"help set\"", _option) << endl;
+    cerr << LineBreak("|-> "+_lang.get("BUILTIN_LISTOPT_FOOTNOTE"), _option) << endl;
+    //cerr << LineBreak("|-> Alle Einstellungen können mit \"set -OPTION\" geändert werden. Weitere Informationen hierzu findest du unter \"help set\"", _option) << endl;
     make_hline();
     return;
 }
@@ -5111,7 +5458,11 @@ bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, 
 string BI_Greeting(Settings& _option)
 {
     unsigned int nth_Greeting = 0;
-    vector<string> vGreetings = getDBFileContent("<>/docs/greetings.ndb", _option);
+    vector<string> vGreetings;
+    if (fileExists(_option.ValidFileName("<>/user/docs/greetings.ndb", ".ndb")))
+        vGreetings = getDBFileContent("<>/user/docs/greetings.ndb", _option);
+    else
+        vGreetings = getDBFileContent("<>/docs/greetings.ndb", _option);
     string sLine;
     if (!vGreetings.size())
         return "|-> ERROR: GREETINGS FILE IS EMPTY.\n";
@@ -5722,11 +6073,13 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
         sPattern = getArgAtPos(__sCmd, nPos);
         StripSpaces(sPattern);
         if (sPattern.length())
-            sPattern = "[gefiltert nach: " + sPattern + "]";
+            sPattern = _lang.get("BUILTIN_LISTFILES_FILTEREDFOR", sPattern);
+            //sPattern = "[gefiltert nach: " + sPattern + "]";
     }
 
     make_hline();
-    cerr << LineBreak("|-> NUMERE: DATEIEXPLORER               " + sPattern, _option, true, 0, 41) << endl;
+    cerr << LineBreak("|-> NUMERE: " + toUpperCase(_lang.get("BUILTIN_LISTFILES_EXPLORER")) + "               " + sPattern, _option, true, 0, 28+_lang.get("BUILTIN_LISTFILES_EXPLORER").length()) << endl;
+    //cerr << LineBreak("|-> NUMERE: DATEIEXPLORER               " + sPattern, _option, true, 0, 41) << endl;
     make_hline();
 
     if (matchParams(__sCmd, "files", '='))
@@ -5764,7 +6117,7 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
             }
             else
                 sConnect.append(nFirstColLength-sConnect.length(), (char)249);
-            sConnect += "  <IMPORTORDNER>  ";
+            sConnect += "  <" + toUpperCase(_lang.get("BUILTIN_LISTFILES_LOADPATH")) + ">  ";
             if (sConnect.find('$') != string::npos)
             {
                 sConnect.append(_option.getWindow()-4-sConnect.length()+sConnect.rfind('$'), (char)249);
@@ -5773,7 +6126,7 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
                 sConnect.append(_option.getWindow()-4-sConnect.length(), (char)249);
             cerr << LineBreak("|-> "+sConnect, _option) << endl;
             if (!BI_ListDirectory("LOADPATH", __sCmd, _option))
-                cerr << LineBreak("|   -- NumeRe konnte keine Dateien/Verzeichnisse finden --", _option) << endl;
+                cerr << LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) << endl;
         }
         if (!sSpecified.length() || sSpecified == "savepath")
         {
@@ -5785,7 +6138,7 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
             }
             else
                 sConnect.append(nFirstColLength-sConnect.length(), (char)249);
-            sConnect += "  <SPEICHERORDNER>  ";
+            sConnect += "  <" + toUpperCase(_lang.get("BUILTIN_LISTFILES_SAVEPATH")) + ">  ";
             if (sConnect.find('$') != string::npos)
             {
                 sConnect.append(_option.getWindow()-4-sConnect.length()+sConnect.rfind('$'), (char)249);
@@ -5796,7 +6149,7 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
                 cerr << "|" << endl;
             cerr << LineBreak("|-> "+sConnect, _option) << endl;
             if (!BI_ListDirectory("SAVEPATH", __sCmd, _option))
-                cerr << LineBreak("|   -- NumeRe konnte keine Dateien/Verzeichnisse finden --", _option) << endl;
+                cerr << LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) << endl;
         }
         if (!sSpecified.length() || sSpecified == "scriptpath")
         {
@@ -5808,7 +6161,7 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
             }
             else
                 sConnect.append(nFirstColLength-sConnect.length(), (char)249);
-            sConnect += "  <SCRIPTORDNER>  ";
+            sConnect += "  <" + toUpperCase(_lang.get("BUILTIN_LISTFILES_SCRIPTPATH")) + ">  ";
             if (sConnect.find('$') != string::npos)
             {
                 sConnect.append(_option.getWindow()-4-sConnect.length()+sConnect.rfind('$'), (char)249);
@@ -5819,7 +6172,7 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
                 cerr << "|" << endl;
             cerr << LineBreak("|-> "+sConnect, _option) << endl;
             if (!BI_ListDirectory("SCRIPTPATH", __sCmd, _option))
-                cerr << LineBreak("|   -- NumeRe konnte keine Dateien/Verzeichnisse finden --", _option) << endl;
+                cerr << LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) << endl;
         }
         if (!sSpecified.length() || sSpecified == "procpath")
         {
@@ -5831,7 +6184,7 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
             }
             else
                 sConnect.append(nFirstColLength-sConnect.length(), (char)249);
-            sConnect += "  <PROZEDURENORDNER>  ";
+            sConnect += "  <" + toUpperCase(_lang.get("BUILTIN_LISTFILES_PROCPATH")) + ">  ";
             if (sConnect.find('$') != string::npos)
             {
                 sConnect.append(_option.getWindow()-4-sConnect.length()+sConnect.rfind('$'), (char)249);
@@ -5842,7 +6195,7 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
                 cerr << "|" << endl;
             cerr << LineBreak("|-> "+sConnect, _option) << endl;
             if (!BI_ListDirectory("PROCPATH", __sCmd, _option))
-                cerr << LineBreak("|   -- NumeRe konnte keine Dateien/Verzeichnisse finden --", _option) << endl;
+                cerr << LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) << endl;
         }
         if (!sSpecified.length() || sSpecified == "plotpath")
         {
@@ -5854,7 +6207,7 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
             }
             else
                 sConnect.append(nFirstColLength-sConnect.length(), (char)249);
-            sConnect += "  <PLOTSPEICHERORDNER>  ";
+            sConnect += "  <" + toUpperCase(_lang.get("BUILTIN_LISTFILES_PLOTPATH")) + ">  ";
             if (sConnect.find('$') != string::npos)
             {
                 sConnect.append(_option.getWindow()-4-sConnect.length()+sConnect.rfind('$'), (char)249);
@@ -5865,7 +6218,7 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
                 cerr << "|" << endl;
             cerr << LineBreak("|-> "+sConnect, _option) << endl;
             if (!BI_ListDirectory("PLOTPATH", __sCmd, _option))
-                cerr << LineBreak("|   -- NumeRe konnte keine Dateien/Verzeichnisse finden --", _option) << endl;
+                cerr << LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) << endl;
         }
     }
     else
@@ -5883,9 +6236,9 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
         else
             sConnect.append(nFirstColLength-sConnect.length(), (char)249);
         if (sSpecified == "<>" || sSpecified == "<this>")
-            sConnect += "  <STAMMORDNER>  ";
+            sConnect += "  <" + toUpperCase(_lang.get("BUILTIN_LISTFILES_ROOTPATH")) + ">  ";
         else
-            sConnect += "  <VERZEICHNIS>  ";
+            sConnect += "  <" + toUpperCase(_lang.get("BUILTIN_LISTFILES_CUSTOMPATH")) + ">  ";
         if (sConnect.find('$') != string::npos)
         {
             sConnect.append(_option.getWindow()-4-sConnect.length()+sConnect.rfind('$'), (char)249);
@@ -5894,7 +6247,7 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
             sConnect.append(_option.getWindow()-4-sConnect.length(), (char)249);
         cerr << LineBreak("|-> "+sConnect, _option) << endl;
         if (!BI_ListDirectory(sSpecified, __sCmd, _option))
-            cerr << LineBreak("|   -- NumeRe konnte keine Dateien/Verzeichnisse finden --", _option) << endl;
+            cerr << LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) << endl;
     }
     make_hline();
     return true;
@@ -6030,7 +6383,7 @@ bool BI_ListDirectory(const string& sDir, const string& sParams, const Settings&
                 nCount[1]++;
                 sConnect += "  (...)";
                 sConnect.append(nFirstColLength-1-nLength, ' ');
-                sConnect += "<Verzeichnis>";
+                sConnect += "<" + _lang.get("BUILTIN_LISTFILES_CUSTOMPATH") + ">";
             }
             else if (!bOnlyDir && n)
             {
@@ -6042,67 +6395,69 @@ bool BI_ListDirectory(const string& sDir, const string& sParams, const Settings&
                     sExt = toLowerCase(sConnect.substr(sConnect.rfind('.'), sConnect.find(' ', sConnect.rfind('.'))-sConnect.rfind('.')));
                 sConnect.append(nFirstColLength+7-nLength, ' ');
                 if (!sExt.length())
-                    sConnect += "Datei";
+                    sConnect += _lang.get("COMMON_FILETYPE_NOEXT");
                 else if (sExt == ".dat")
-                    sConnect += "Datenfile";
+                    sConnect += _lang.get("COMMON_FILETYPE_DAT");
                 else if (sExt == ".nscr")
-                    sConnect += "NumeRe-Script";
+                    sConnect += _lang.get("COMMON_FILETYPE_NSCR");
                 else if (sExt == ".nhlp")
-                    sConnect += "NumeRe-Hilfedatei";
+                    sConnect += _lang.get("COMMON_FILETYPE_NHLP");
+                else if (sExt == ".nlng")
+                    sConnect += _lang.get("COMMON_FILETYPE_NLNG");
                 else if (sExt == ".hlpidx")
-                    sConnect += "Dokumentationsindex";
+                    sConnect += _lang.get("COMMON_FILETYPE_HLPIDX");
                 else if (sExt == ".labx")
-                    sConnect += "CASSYLab-Datei";
+                    sConnect += _lang.get("COMMON_FILETYPE_LABX");
                 else if (sExt == ".jdx" || sExt == ".dx" || sExt == ".jcm")
-                    sConnect += "JCAMP-DX-Spektrum";
+                    sConnect += _lang.get("COMMON_FILETYPE_JDX");
                 else if (sExt == ".ibw")
-                    sConnect += "IGOR-Binärwelle";
+                    sConnect += _lang.get("COMMON_FILETYPE_IBW");
                 else if (sExt == ".png")
-                    sConnect += "PNG-Bitmap";
+                    sConnect += _lang.get("COMMON_FILETYPE_PNG");
                 else if (sExt == ".tex")
-                    sConnect += "TeX-Source";
+                    sConnect += _lang.get("COMMON_FILETYPE_TEX");
                 else if (sExt == ".eps")
-                    sConnect += "EPS-Vektorgraphik";
+                    sConnect += _lang.get("COMMON_FILETYPE_EPS");
                 else if (sExt == ".gif")
-                    sConnect += "GIF-Bitmap";
+                    sConnect += _lang.get("COMMON_FILETYPE_GIF");
                 else if (sExt == ".svg")
-                    sConnect += "SVG-Vektorgraphik";
+                    sConnect += _lang.get("COMMON_FILETYPE_SVG");
                 else if (sExt == ".zip")
-                    sConnect += "ZIP-Archiv";
+                    sConnect += _lang.get("COMMON_FILETYPE_ZIP");
                 else if (sExt == ".dll")
-                    sConnect += "Programmbibliothek";
+                    sConnect += _lang.get("COMMON_FILETYPE_DLL");
                 else if (sExt == ".exe")
-                    sConnect += "Programm";
+                    sConnect += _lang.get("COMMON_FILETYPE_EXE");
                 else if (sExt == ".ini")
-                    sConnect += "Konfigurationsdatei";
+                    sConnect += _lang.get("COMMON_FILETYPE_INI");
                 else if (sExt == ".txt")
-                    sConnect += "Textdatei";
+                    sConnect += _lang.get("COMMON_FILETYPE_TXT");
                 else if (sExt == ".def")
-                    sConnect += "Definitionsdatei";
+                    sConnect += _lang.get("COMMON_FILETYPE_DEF");
                 else if (sExt == ".csv")
-                    sConnect += "Comma Separated Values";
+                    sConnect += _lang.get("COMMON_FILETYPE_CSV");
                 else if (sExt == ".back")
-                    sConnect += "Konfig-Backup";
+                    sConnect += _lang.get("COMMON_FILETYPE_BACK");
                 else if (sExt == ".cache")
-                    sConnect += "NumeRe-Cache";
+                    sConnect += _lang.get("COMMON_FILETYPE_CACHE");
                 else if (sExt == ".ndat")
-                    sConnect += "NumeRe-Datenfile";
+                    sConnect += _lang.get("COMMON_FILETYPE_NDAT");
                 else if (sExt == ".nprc")
-                    sConnect += "NumeRe-Prozedur";
+                    sConnect += _lang.get("COMMON_FILETYPE_NPRC");
                 else if (sExt == ".ndb")
-                    sConnect += "NumeRe-Datenbank";
+                    sConnect += _lang.get("COMMON_FILETYPE_NDB");
                 else if (sExt == ".log")
-                    sConnect += "Protokolldatei";
+                    sConnect += _lang.get("COMMON_FILETYPE_LOG");
                 else if (sExt == ".vfm")
-                    sConnect += "Schriftartdatei";
+                    sConnect += _lang.get("COMMON_FILETYPE_VFM");
                 else if (sExt == ".plugins")
-                    sConnect += "Plugininformationen";
+                    sConnect += _lang.get("COMMON_FILETYPE_PLUGINS");
                 else if (sExt == ".ods")
-                    sConnect += "OpenDoc-Spreadsheet";
+                    sConnect += _lang.get("COMMON_FILETYPE_ODS");
                 else if (sExt == ".wave" || sExt == ".wav")
-                    sConnect += "WAVE-Audiodatei";
+                    sConnect += _lang.get("COMMON_FILETYPE_WAV");
                 else
-                    sConnect += toUpperCase(sConnect.substr(sConnect.rfind('.')+1, sConnect.find(' ', sConnect.rfind('.'))-sConnect.rfind('.')-1)) + "-Datei";
+                    sConnect += toUpperCase(sConnect.substr(sConnect.rfind('.')+1, sConnect.find(' ', sConnect.rfind('.'))-sConnect.rfind('.')-1)) + "-" + _lang.get("COMMON_FILETYPE_NOEXT");
 
                 dFilesize = (double)Filesize.QuadPart;
                 dFilesizeTotal += dFilesize;
@@ -6135,31 +6490,8 @@ bool BI_ListDirectory(const string& sDir, const string& sParams, const Settings&
                     fFileInfo.open(sFileName.c_str());
                     if (fFileInfo.good())
                     {
-                        /*sConnect += "$    ";
-                        sConnect += (char)192;
-                        sConnect += (char)249;
-                        sConnect += " NR v";
-                        fFileInfo.read((char*)&nNumber, sizeof(long int));
-                        sConnect += toString((long long int)nNumber) + ".";
-                        fFileInfo.read((char*)&nNumber, sizeof(long int));
-                        sConnect += toString((long long int)nNumber) + ".";
-                        fFileInfo.read((char*)&nNumber, sizeof(long int));
-                        sConnect += toString((long long int)nNumber) + " ";
-                        sConnect.append(2, (char)249);
-                        fFileInfo.read((char*)&tTime, sizeof(time_t));
-                        sConnect += " " + toString(tTime) + " ";
-                        sConnect.append(2, (char)249);
-                        fFileInfo.read((char*)&nDim, sizeof(long long int));
-                        sConnect += " " + toString(nDim) + " x ";
-                        fFileInfo.read((char*)&nDim, sizeof(long long int));
-                        sConnect += toString(nDim) + " ";
-                        sConnect.append(2*_option.getWindow()-sConnect.length()-4,(char)249);
-                        fFileInfo.close();*/
                         string sNumeReVersion = " (v";
                         sConnect += "$    ";
-                        //sConnect += (char)195;
-                        //sConnect += (char)249;
-                        //sConnect += " NR v";
                         fFileInfo.read((char*)&nNumber, sizeof(long int));
                         sNumeReVersion += toString((long long int)nNumber) + ".";
                         fFileInfo.read((char*)&nNumber, sizeof(long int));
@@ -6212,15 +6544,15 @@ bool BI_ListDirectory(const string& sDir, const string& sParams, const Settings&
     }
     else
         sFilesize = "";
-    string sSummary = "-- " + toString(nCount[0]) + " Datei(en) und " + toString(nCount[1]) + " Verzeichnis(se) --";
+    string sSummary = "-- " + _lang.get("BUILTIN_LISTFILES_SUMMARY", toString(nCount[0]), toString(nCount[1])) + " --";
     sSummary.append(_option.getWindow() - sSummary.length() - 4 - sFilesize.length(), ' ');
     sSummary += sFilesize;
     if (bOnlyDir)
     {
         if (nCount[1])
-            cerr << LineBreak("|   -- " + toString(nCount[1]) + " Verzeichnis(se) --", _option) << endl;
+            cerr << LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_DIR_SUMMARY", toString(nCount[1])) + " --", _option) << endl;
         else
-            cerr << LineBreak("|   -- NumeRe konnte keine Verzeichnisse finden --", _option) << endl;
+            cerr << LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NODIRS") + " --", _option) << endl;
     }
     else
         cerr << LineBreak("|   " + sSummary, _option) << endl;
@@ -6292,12 +6624,12 @@ bool BI_removeFile(string& sCmd, Parser& _parser, Datafile& _data, const Setting
         }
         if (!bIgnore)
         {
-            char c = 0;
-            cerr << LineBreak("|-> WARNUNG: Die Datei \"" + _sCmd + "\" wird unwiderbringlich gelöscht! Dies kann nicht rückgängig gemacht werden!$Sicher (j/n)", _option) << endl;
+            string c = "";
+            cerr << LineBreak("|-> "+_lang.get("BUILTIN_REMOVEFILE_CONFIRM", _sCmd), _option) << endl;
             cerr << "|" << endl << "|<- ";
-            cin >> c;
-            cin.ignore(1);
-            if (c != 'j')
+            getline(cin, c);
+
+            if (c != _lang.YES())
             {
                 return false;
             }
@@ -7278,7 +7610,7 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
     {
         int nReturn = _fSys.setPath(sObject, true, _option.getExePath());
         if (nReturn == 1 && _option.getSystemPrintStatus())
-            cerr << LineBreak("|-> Der Ordner \"" + sObject + "\" wurde erfolgreich erzeugt.", _option) << endl;
+            cerr << LineBreak("|-> "+_lang.get("BUILTIN_NEW_FOLDERCREATED", sObject), _option) << endl;
     }
     else if (nType == 2)
     {
@@ -7302,37 +7634,24 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
         sObject = _fSys.ValidFileName(sObject, ".nscr");
         vTokens.push_back(sObject.substr(sObject.rfind('/')+1, sObject.rfind('.')-sObject.rfind('/')-1));
         vTokens.push_back(getTimeStamp(false));
-        if (!BI_generateTemplate(sObject, "<>/lang/tmpl_script.nlng", vTokens, _option))
+        if (fileExists(_option.ValidFileName("<>/user/lang/tmpl_script.nlng", ".nlng")))
         {
-            sErrorToken = sObject;
-            throw CANNOT_GENERATE_SCRIPT;
+            if (!BI_generateTemplate(sObject, "<>/user/lang/tmpl_script.nlng", vTokens, _option))
+            {
+                sErrorToken = sObject;
+                throw CANNOT_GENERATE_SCRIPT;
+            }
         }
-        /*ofstream fScript;
-        fScript.open(sObject, ios_base::trunc);
-        if (fScript.fail())
+        else
         {
-            sErrorToken = sObject;
-            throw CANNOT_GENERATE_SCRIPT;
+            if (!BI_generateTemplate(sObject, "<>/lang/tmpl_script.nlng", vTokens, _option))
+            {
+                sErrorToken = sObject;
+                throw CANNOT_GENERATE_SCRIPT;
+            }
         }
-        fScript << "#*" << endl;
-        fScript << " * Dieses Script wurde automatisch von NumeRe erzeugt" << endl;
-        fScript << " * ==================================================" << endl;
-        fScript << " *" << endl;
-        fScript << " * Die Befehle direkt im Anschluss angeben oder mittels der Syntax" << endl;
-        fScript << " * @SCRIPT Definitionen und globale Ausdrücke aus dem Script SCRIPT" << endl;
-        fScript << " * in dieses Script laden." << endl;
-        fScript << " *" << endl;
-        fScript << " * (Falls dieses Script veröffentlich werden soll, bietet sich an dieser" << endl;
-        fScript << " * Stelle auch die Nennung der Lizenz an)" << endl;
-        fScript << " *#" << endl;
-        fScript << endl << endl;
-        fScript << "#* Ende des Scripts" << endl;
-        fScript << " * NumeRe: Framework für Numerische Rechnungen | Freie numerische Software unter der GNU GPL v3" << endl;
-        fScript << " * https://sites.google.com/site/numereframework/" << endl;
-        fScript << " *#" << endl;
-        fScript.close();*/
         if (_option.getSystemPrintStatus())
-            cerr << LineBreak("|-> Das Script \"" + sObject + "\" wurde erfolgreich erzeugt.", _option) << endl;
+            cerr << LineBreak("|-> "+_lang.get("BUILTIN_NEW_SCRIPTCREATED", sObject), _option) << endl;
     }
     else if (nType == 3)
     {
@@ -7384,37 +7703,43 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
         while (sObject.find('$') != string::npos)
             sObject.erase(sObject.find('$'),1);
         sObject = _fSys.ValidFileName(sObject, ".nprc");
-        vTokens.push_back(sProcedure);
+
+        ofstream fProcedure;
+        fProcedure.open(sObject.c_str());
+        if (fProcedure.fail())
+        {
+            sErrorToken = sObject;
+            throw CANNOT_GENERATE_PROCEDURE;
+        }
+        unsigned int nLength = _lang.get("COMMON_PROCEDURE").length();
+        fProcedure << "#*********" << std::setfill('*') << std::setw(nLength+2) << "***" << std::setfill('*') << std::setw(max(21u,sProcedure.length()+2)) << "*" << endl;
+        fProcedure << " * NUMERE-" << toUpperCase(_lang.get("COMMON_PROCEDURE")) << ": " << sProcedure << "()" << endl;
+        fProcedure << " * =======" << std::setfill('=') << std::setw(nLength+2) << "===" << std::setfill('=') << std::setw(max(21u,sProcedure.length()+2)) << "=" << endl;
+        fProcedure << " * " << _lang.get("PROC_ADDED_DATE") << ": " << getTimeStamp(false) << " *#" << endl;
+        fProcedure << endl;
+        fProcedure << "procedure " << sProcedure << "()" << endl;
+        fProcedure << "\t## " << _lang.get("BUILTIN_NEW_ENTERYOURCODE") << endl;
+        fProcedure << "\treturn true" << endl;
+        fProcedure << "endprocedure" << endl;
+        fProcedure << endl;
+        fProcedure << "#* " << _lang.get("PROC_END_OF_PROCEDURE") << endl;
+        fProcedure << " * " << _lang.get("PROC_FOOTER") << endl;
+        fProcedure << " * https://sites.google.com/site/numereframework/" << endl;
+        fProcedure << " **" << std::setfill('*') << std::setw(_lang.get("PROC_FOOTER").length()+1) << "#" << endl;
+
+
+        fProcedure.close();
+
+        /*vTokens.push_back(sProcedure);
         vTokens.push_back(getTimeStamp(false));
         if (!BI_generateTemplate(sObject, "<>/lang/tmpl_proc.nlng", vTokens, _option))
         {
             sErrorToken = sObject;
             throw CANNOT_GENERATE_PROCEDURE;
-        }
-        /*ofstream fProc;
-        fProc.open(sObject, ios_base::trunc);
-        if (fProc.fail())
-        {
-            sErrorToken = sObject;
-            throw CANNOT_GENERATE_PROCEDURE;
-        }
-        fProc << "#*" << endl;
-        fProc << " * Diese Prozedur wurde automatisch von NumeRe erzeugt" << endl;
-        fProc << " * ===================================================" << endl;
-        fProc << " *#" << endl;
-        fProc << endl;
-        fProc << "procedure " << sProcedure << "()" << endl;
-        fProc << '\t' << endl;
-        fProc << "\treturn true" << endl;
-        fProc << "endprocedure" << endl;
-        fProc << endl;
-        fProc << "#* Ende der Prozedur" << endl;
-        fProc << " * NumeRe: Framework für Numerische Rechnungen | Freie numerische Software unter der GNU GPL v3" << endl;
-        fProc << " * https://sites.google.com/site/numereframework/" << endl;
-        fProc << " *#" << endl;
-        fProc.close();*/
+        }*/
+
         if (_option.getSystemPrintStatus())
-            cerr << LineBreak("|-> Die Prozedur \"" + sObject + "\" wurde erfolgreich erzeugt.", _option) << endl;
+            cerr << LineBreak("|-> "+_lang.get("BUILTIN_NEW_PROCCREATED", sObject), _option) << endl;
     }
     else if (nType == 4)
     {
@@ -7443,23 +7768,24 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
             sObject.replace(sObject.rfind('.'),5,".txt");
         vTokens.push_back(sObject.substr(sObject.rfind('/')+1, sObject.rfind('.')-sObject.rfind('/')-1));
         vTokens.push_back(getTimeStamp(false));
-        if (!BI_generateTemplate(sObject, "<>/lang/tmpl_file.nlng", vTokens, _option))
+        if (fileExists(_option.ValidFileName("<>/user/lang/tmpl_file.nlng", ".nlng")))
         {
-            sErrorToken = sObject;
-            throw CANNOT_GENERATE_FILE;
+            if (!BI_generateTemplate(sObject, "<>/user/lang/tmpl_file.nlng", vTokens, _option))
+            {
+                sErrorToken = sObject;
+                throw CANNOT_GENERATE_FILE;
+            }
         }
-        /*ofstream fFile;
-        fFile.open(sObject, ios_base::trunc);
-        if (fFile.fail())
+        else
         {
-            sErrorToken = sObject;
-            throw CANNOT_GENERATE_FILE;
+            if (!BI_generateTemplate(sObject, "<>/lang/tmpl_file.nlng", vTokens, _option))
+            {
+                sErrorToken = sObject;
+                throw CANNOT_GENERATE_FILE;
+            }
         }
-        fFile << "# Diese Datei wurde automatisch von NumeRe erzeugt." << endl;
-        fFile << "# =================================================" << endl;
-        fFile.close();*/
         if (_option.getSystemPrintStatus())
-            cerr << LineBreak("|-> Die Datei \"" + sObject + "\" wurde erfolgreich erzeugt.", _option) << endl;
+            cerr << LineBreak("|-> "+_lang.get("BUILTIN_NEW_FILECREATED", sObject), _option) << endl;
     }
     else if (nType == 5)
     {
@@ -7489,76 +7815,24 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
         string sPluginName = sObject.substr(sObject.rfind("plgn_")+5, sObject.rfind('.')-sObject.rfind("plgn_")-5);
         vTokens.push_back(sPluginName);
         vTokens.push_back(getTimeStamp(false));
-        if (!BI_generateTemplate(sObject, "<>/lang/tmpl_plugin.nlng", vTokens, _option))
+        if (fileExists(_option.ValidFileName("<>/user/lang/tmpl_plugin.nlng", ".nlng")))
         {
-            sErrorToken = sObject;
-            throw CANNOT_GENERATE_SCRIPT;
+            if (!BI_generateTemplate(sObject, "<>/user/lang/tmpl_plugin.nlng", vTokens, _option))
+            {
+                sErrorToken = sObject;
+                throw CANNOT_GENERATE_SCRIPT;
+            }
         }
-
-        /*ofstream fScript;
-        fScript.open(sObject, ios_base::trunc);
-        if (fScript.fail())
+        else
         {
-            sErrorToken = sObject;
-            throw CANNOT_GENERATE_SCRIPT;
+            if (!BI_generateTemplate(sObject, "<>/lang/tmpl_plugin.nlng", vTokens, _option))
+            {
+                sErrorToken = sObject;
+                throw CANNOT_GENERATE_SCRIPT;
+            }
         }
-        fScript << "#*" << endl;
-        fScript << " * Dieses Plugin-Template wurde automatisch von NumeRe erzeugt" << endl;
-        fScript << " * ==========================================================" << endl;
-        fScript << " *" << endl;
-        fScript << " * Dieses Script enthält die Installationsroutine für das " << sPluginName << "-Plugin als Template," << endl;
-        fScript << " * das mittels des Kommandos \"install plgn_" << sPluginName << "\" installiert werden kann." << endl;
-        fScript << " *#" << endl << endl;
-        fScript << "<install>" << endl;
-        fScript << "\t<info>" << endl;
-        fScript << "\t\t-type=TYPE_PLUGIN" << endl;
-        fScript << "\t\t-author=\"DEIN NAME\"" << endl;
-        fScript << "\t\t-flags=ENABLE_DEFAULTS" << endl;
-        fScript << "\t\t-name=\"" << sPluginName << "\"" << endl;
-        fScript << "\t\t-plugincommand=\"" << sPluginName << "\"" << endl;
-        fScript << "\t\t-pluginmain=$plugins~" << sPluginName << "~main(<CMDSTRING>)" << endl;
-        fScript << "\t\t-plugindesc=\"BESCHREIBUNG DES PLUGINS\"" << endl;
-        fScript << "\t\t-version=<AUTO>" << endl;
-        fScript << "\t\t-requireversion=\"" << AutoVersion::MAJOR << "." << AutoVersion::MINOR << "." << AutoVersion::BUILD << "\"" << endl;
-        fScript << "\t<endinfo>" << endl << endl;
-        fScript << "\tprocedure $plugins~" << sPluginName << "~main(cmdstring) :: explicit" << endl;
-        fScript << "\t\t#* Dies ist die Hauptprozedur für dein neues Plugin. " << endl;
-        fScript << "\t\t * Ergänze hier die Kommandos und Auswertungen, die dein Plugin ausführen soll." << endl;
-        fScript << "\t\t * Falls dein Plugin Prozeduren aufrufen soll, kopiere diese mit Namensraum in diese Installationsroutine. *#" << endl;
-        fScript << "\t\tnamespace plugins~" << sPluginName << " ## Standard-Namensraum. Du könntest auch \"this\" verwenden." << endl;
-        fScript << "\t\t" << endl;
-        fScript << "\t\t## Wenn du einen Wert zurückgeben willst, solltest du den Typ zu \"TYPE_PLUGIN_WITH_RETURN_VALUE\" ändern." << endl;
-        fScript << "\t\treturn void" << endl;
-        fScript << "\tendprocedure" << endl << endl;
-        fScript << "\t## Hier können auch noch weitere Prozeduren eingebunden werden." << endl << endl;
-        fScript << "\t## Die folgenden Zeilen bieten die Möglichkeit, einen eigenen Eintrag zur NumeRe-Hilfe hinzu zu fügen." << endl;
-        fScript << "\t<helpindex>" << endl;
-        fScript << "\t\t<article id=\"plgn_" << sPluginName << "\">" << endl;
-        fScript << "\t\t\t<title string=\"" << sPluginName << "\" idxkey=\"" << sPluginName << "\" />" << endl;
-        fScript << "\t\t\t<keywords>" << endl;
-        fScript << "\t\t\t\t<keyword>" << sPluginName << "</keyword>" << endl;
-        fScript << "\t\t\t</keywords>" << endl;
-        fScript << "\t\t</article>" << endl;
-        fScript << "\t</helpindex>" << endl;
-        fScript << endl;
-        fScript << "\t<helpfile>" << endl;
-        fScript << "\t\t<article id=\"plgn_" << sPluginName << "\">" << endl;
-        fScript << "\t\t\t<title string=\"" << sPluginName << "\" />" << endl;
-        fScript << "\t\t\tBESCHREIBE DIE FUNKTIONEN DEINES PLUGINS" << endl;
-        fScript << "\t\t\t<example desc=\"Ausführung von " << sPluginName << "\">" << endl;
-        fScript << "\t\t\t\t" << sPluginName << endl;
-        fScript << "\t\t\t</example>" << endl;
-        fScript << "\t\t</article>" << endl;
-        fScript << "\t</helpfile>" << endl;
-        fScript << "<endinstall>" << endl;
-        fScript << endl;
-        fScript << "#* Ende des Plugin-Templates" << endl;
-        fScript << " * NumeRe: Framework für Numerische Rechnungen | Freie numerische Software unter der GNU GPL v3" << endl;
-        fScript << " * https://sites.google.com/site/numereframework/" << endl;
-        fScript << " *#" << endl;
-        fScript.close();*/
         if (_option.getSystemPrintStatus())
-            cerr << LineBreak("|-> Ein Template für das Plugin \"" + sPluginName + "\" wurde in \"" + sObject + "\" erzeugt.", _option) << endl;
+            cerr << LineBreak("|-> "+_lang.get("BUILTIN_NEW_PLUGINCREATED", sPluginName, sObject), _option) << endl;
     }
     return true;
 }

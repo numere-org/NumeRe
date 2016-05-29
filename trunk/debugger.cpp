@@ -132,18 +132,20 @@ void Debugger::gatherLoopBasedInformations(const string& _sErraticCommand, unsig
 
 string Debugger::printModuleInformations()
 {
-    string sModuleInformations = "Fehlerhafter Ausdruck:   " + sErraticCommand
+    /*string sModuleInformations = "Fehlerhafter Ausdruck:   " + sErraticCommand
                             + "\\nFehlerhaftes Modul:      " + sErraticModule
-                            + "\\nZeilennummer:            " + toString(nLineNumber);
-    return sModuleInformations;
+                            + "\\nZeilennummer:            " + toString(nLineNumber);*/
+    return _lang.get("DBG_MODULE_TEMPLATE", sErraticCommand, sErraticModule, toString(nLineNumber));
+    //return sModuleInformations;
 }
 
 string Debugger::printNonErrorModuleInformations()
 {
-    string sModuleInformations = "Aktueller Ausdruck:      " + sErraticCommand
+    /*string sModuleInformations = "Aktueller Ausdruck:      " + sErraticCommand
                             + "\\nAktuelles Modul:         " + sErraticModule
-                            + "\\nZeilennummer:            " + toString(nLineNumber);
-    return sModuleInformations;
+                            + "\\nZeilennummer:            " + toString(nLineNumber);*/
+    return _lang.get("DBG_MODULE_TEMPLATE_BP", sErraticCommand, sErraticModule, toString(nLineNumber));
+    //return sModuleInformations;
 }
 
 string Debugger::printStackTrace()
@@ -164,7 +166,7 @@ string Debugger::printStackTrace()
         sStackTrace.erase(sStackTrace.length()-2);
     }
     else
-        sStackTrace = "Keine Prozeduren auf dem Stack.";
+        sStackTrace = _lang.get("DBG_STACK_EMPTY");
     return sStackTrace;
 }
 
@@ -186,7 +188,7 @@ string Debugger::printLocalVars()
     if (sLocalVars.length())
         sLocalVars.erase(sLocalVars.length()-2);
     else
-        sLocalVars = "Keine lokalen Variablen in dieser Prozedur.";
+        sLocalVars = _lang.get("DBG_LOCALVARS_EMPTY");
     return sLocalVars;
 }
 
@@ -208,7 +210,7 @@ string Debugger::printLocalStrings()
     if (sLocalStrings.length())
         sLocalStrings.erase(sLocalStrings.length()-2);
     else
-        sLocalStrings = "Keine lokalen Zeichenketten in dieser Prozedur.";
+        sLocalStrings = _lang.get("DBG_LOCALSTRINGS_EMPTY");
     return sLocalStrings;
 }
 

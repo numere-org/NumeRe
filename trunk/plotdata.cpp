@@ -597,6 +597,10 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         bRegion = true;
     if (matchParams(sCmd, "noregion") && (!nType || nType == 2))
         bRegion = false;
+    if ((matchParams(sCmd, "crust") || matchParams(sCmd, "reconstruct")) && (!nType || nType == 2))
+        bCrust = true;
+    if ((matchParams(sCmd, "nocrust") || matchParams(sCmd, "noreconstruct")) && (!nType || nType == 2))
+        bCrust = false;
     if (matchParams(sCmd, "maxline", '=') && (!nType || nType == 2))
     {
         string sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "maxline", '=')+7);
@@ -1601,6 +1605,7 @@ void PlotData::reset()
     bSchematic = false;
     bCloudPlot = false;
     bRegion = false;
+    bCrust = false;
     dPerspective = 0.0;
     sColorScheme = "UNC{e4}y";
     sColorSchemeMedium = "{U4}{N4}{C4}{e3}{y4}";
@@ -1822,6 +1827,8 @@ string PlotData::getParams(const Settings& _option, bool asstr) const
     }
     if (bConnectPoints)
         sReturn += "connect" + sSepString;
+    if (bCrust)
+        sReturn += "crust" + sSepString;
     if (nCoords == 1)
         sReturn += "polar coords" + sSepString;
     if (nCoords == 2)

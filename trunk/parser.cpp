@@ -1209,7 +1209,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
         // --> Ist das der erste Start? Dann zeigen wir die "Firststart"-Infos an <--
         parser_FirstStart(_option);
         cerr << "|" << endl;
-        cerr << LineBreak("|-> Das war erst einmal das Wichtigste. Nun ist es an dir, dich hier einfach mal in aller Ruhe umzusehen. Versuch einfach mal, einen Ausdruck oder ein Kommando einzugeben!$Und falls mal was schief geht: Hilfe findest du unter \"help THEMA\" oder \"find BEGRIFFE\". Und wenn ich gar nicht verstehe, was du willst, werde ich auch selbst versuchen, den passenden Artikel in der Hilfe zu finden ...$(Mit \"quit\" beendest du mich)", _option) << endl;
+        cerr << LineBreak("|-> "+_lang.get("PARSER_FIRSTSTART_INTRO"), _option) << endl;
     }
     else
     {
@@ -1218,7 +1218,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
         if (_option.getbShowHints())
             doc_TipOfTheDay(_option);
         cerr << "|" << endl;
-        cerr << LineBreak("|-> Einen Ausdruck oder ein Kommando eingeben ...$(Siehe \"help\" oder \"help expression\" für weitere Informationen)", _option) << endl;
+        cerr << LineBreak("|-> "+_lang.get("PARSER_INTRO"), _option) << endl;
 
     }
 
@@ -1297,22 +1297,23 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                     if (_data.isValid())
                     {
                         cerr << "|" << endl;
-                        cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) << endl;
+                        //cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
                         if (oLogFile.is_open())
-                            oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Daten aus " <<_data.getDataFileName("data") << " wurden in den Speicher geladen." << endl;
+                            oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Data out of " <<_data.getDataFileName("data") << " was succcessfully loaded." << endl;
                     }
                 }
                 if (_script.getAutoStart())
                 {
                     cerr << "|" << endl;
-                    cerr << LineBreak("|-> Starte Script \"" + _script.getScriptFileName() + "\" ...", _option) << endl;
+                    cerr << LineBreak("|-> "+_lang.get("PARSER_STARTINGSCRIPT", _script.getScriptFileName()), _option) << endl;
                     if (oLogFile.is_open())
-                        oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Starte Script " << _script.getScriptFileName() << endl;
+                        oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Starting Script " << _script.getScriptFileName() << endl;
                     _script.openScript();
                 }
                 if (_script.wasLastCommand())
                 {
-                    cerr << LineBreak("|-> Die Ausführung des Scripts \"" + _script.getScriptFileName() + "\" wurde erfolgreich abgeschlossen.", _option) << endl;
+                    cerr << LineBreak("|-> "+_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option) << endl;
                     _data.setPluginCommands(_procedure.getPluginNames());
                 }
                 // --> Werden die Eingaben gerade in "_procedure" geschrieben ? <--
@@ -1383,7 +1384,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                 else if (_option.readCmdCache().length())
                 {
                     if (oLogFile.is_open())
-                        oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Führe übergebene Kommandozeilenparameter aus:" << endl;
+                        oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Processing command line parameters:" << endl;
                     sLine = _option.readCmdCache(true);
                 }
                 else
@@ -1532,7 +1533,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                 else if (findCommand(sLine).sString == "abort")
                 {
                     sPlotCompose = "";
-                    cerr << "|-> Deklaration abgebrochen." << endl;
+                    cerr << LineBreak("|-> "+_lang.get("PARSER_ABORTED"), _option) << endl;
                     continue;
                 }
                 else if (findCommand(sLine).sString != "endcompose")
@@ -1584,17 +1585,17 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                             _option.removeFromDocIndex(getNextArgument(sPlugin, true));
                         }
                     }
-                    cerr << "|-> Plugin erfolgreich entfernt." << endl;
+                    cerr << LineBreak("|-> "+_lang.get("PARSER_PLUGINDELETED"), _option) << endl;
                 }
                 else
-                    cerr << "|-> Das Plugin konnte nicht gefunden werden." << endl;
+                    cerr << LineBreak("|-> "+_lang.get("PARSER_PLUGINNOTFOUND"), _option) << endl;
                 continue;
             }
 
             if (_procedure.is_writing() || findCommand(sLine).sString == "procedure")
             {
                 if (!_procedure.writeProcedure(sLine))
-                    cerr << LineBreak("|-> FEHLER: Konnte die Prozedur nicht in eine Datei schreiben!", _option) << endl;
+                    cerr << LineBreak("|-> "+_lang.get("PARSER_CANNOTCREATEPROC"), _option) << endl;
                 continue;
             }
 
@@ -2022,7 +2023,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                     }
                     else
                     {
-                        mu::console() << _T("|-> Ergebnisse wurden in Spalte ") << j_pos[0]+1 << _T(" ab Element ") << i_pos[0]+1 << _T(" geschrieben!\n");
+                        cerr << LineBreak("|-> "+_lang.get("PARSER_RESULTSLOCATEDAT", toString(j_pos[0]+1), toString(i_pos[0]+1)), _option) << endl;
                         for (int i = i_pos[0]; i < i_pos[0] + nNum; i++)
                         {
                             if (!_data.writeToCache(i, j_pos[0], sCache.substr(0,sCache.find('(')), (double)v[i-i_pos[0]]))
@@ -2056,21 +2057,23 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
             unsigned int nErrorPos = (int)e.GetPos();
             make_hline();
             if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
-                cerr << "|-> NUMERE: DEBUGGER   [FEHLER IM AUSDRUCK]" << endl;
+                cerr << "|-> " << toUpperCase(_lang.get("ERR_MUP_HEAD_DBG")) << endl;
             else
-                cerr << "|-> FEHLER IM AUSDRUCK" << endl;
+                cerr << "|-> " << toUpperCase(_lang.get("ERR_MUP_HEAD")) << endl;
             make_hline();
 
             // --> Eigentliche Fehlermeldung <--
             cerr << LineBreak("|-> " + e.GetMsg(), _option) << endl;
-            cerr << "|   Ausdruck:  " << LineBreak("\"" + e.GetExpr() + "\"", _option, true, 15, 15) << endl;
+            cerr << LineBreak("|   "+_lang.get("ERR_EXPRESSION", e.GetExpr()), _option, true, 0, 15) << endl;
+            //cerr << "|   Ausdruck:  " << LineBreak("\"" + e.GetExpr() + "\"", _option, true, 15, 15) << endl;
 
             /* --> Ausdruecke, die laenger als 63 Zeichen sind, passen nicht in die Zeile. Wir stellen nur die ersten
              *     60 Zeichen gefolgt von "..." dar <--
              */
             // --> Fehlerhaftes/Unerwartetes Objekt <--
             if (e.GetToken().length())
-                cerr << "|   Objekt:    \"" << e.GetToken()    << "\"" << endl;
+                cerr << toSystemCodePage("|   "+_lang.get("ERR_OBJECT", e.GetToken())) << endl;
+                //cerr << "|   Objekt:    \"" << e.GetToken()    << "\"" << endl;
 
             /* --> Position des Fehlers im Ausdruck: Wir stellen um den Fehler nur einen Ausschnitt
              *     des Ausdrucks in der Laenge von etwa 63 Zeichen dar und markieren die Fehlerposition
@@ -2108,28 +2111,20 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
             // --> Wenn ein Script ausgefuehrt wird, lesen wir den Index der letzten eingelesenen Zeile und geben diesen hier aus <--
             if (_script.isValid() && _script.isOpen())
             {
-                cerr << LineBreak("|-> Der Fehler wurde im ausgeführten Script nahe der " + toString((int)_script.getCurrentLine()) + ". Zeile gefunden.$Die Ausführung des Scripts wurde sicherheitshalber abgebrochen.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("ERR_SCRIPTCATCH", toString((int)_script.getCurrentLine())), _option) << endl;
                 // --> Script beenden! Mit einem Fehler ist es unsinnig weiterzurechnen <--
                 _script.close();
             }
             if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
             {
-                /*make_hline();
-                cerr << "|-> NUMERE: DEBUGGER" << endl;
-                make_hline();*/
-                cerr << "|" << endl << "|   " << toUpperCase("Modulinformationen: ") << std::setfill((char)196) << std::setw(_option.getWindow()-24) << (char)196 << endl;
+                cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_MODULE")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_MODULE").length()) << (char)196 << endl;
                 cerr << LineBreak("|   "+_option._debug.printModuleInformations(), _option, false) << endl;
-                cerr << "|" << endl << "|   " << toUpperCase("Stacktrace: ") << std::setfill((char)196) << std::setw(_option.getWindow()-16) << (char)196 << endl;
-                /*make_hline(-2);
-                cerr << "|-> Stacktrace:" << endl;*/
+                cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_STACKTRACE")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_STACKTRACE").length()) << (char)196 << endl;
                 cerr << LineBreak("|   "+_option._debug.printStackTrace(), _option, false) << endl;
-                //make_hline(-2);
-                //cerr << "|-> Lokale numerische Variablen:" << endl;
-                cerr << "|" << endl << "|   " << toUpperCase("Lokale numerische Variablen: ") << std::setfill((char)196) << std::setw(_option.getWindow()-33) << (char)196 << endl;
+
+                cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_LOCALVARS")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_LOCALVARS").length()) << (char)196 << endl;
                 cerr << LineBreak("|   "+_option._debug.printLocalVars(), _option, false) << endl;
-                //make_hline(-2);
-                //cerr << "|-> Lokale Zeichenketten:" << endl;
-                cerr << "|" << endl << "|   " << toUpperCase("Lokale Zeichenketten: ") << std::setfill((char)196) << std::setw(_option.getWindow()-26) << (char)196 << endl;
+                cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_LOCALSTRINGS")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_LOCALSTRINGS").length()) << (char)196 << endl;
                 cerr << LineBreak("|   "+_option._debug.printLocalStrings(), _option, false) << endl;
                 _option._debug.reset();
             }
@@ -2139,7 +2134,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
             _procedure.reset(_parser);
             _pData.setFileName("");
             if (oLogFile.is_open())
-                oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: " << e.GetMsg() << endl;
+                oLogFile << toString(time(0)-tTimeZero, true) << "> " << toUpperCase(_lang.get("ERR_ERROR")) << ": " << e.GetMsg() << endl;
             if (sCmdCache.length())
                 sCmdCache.clear();
             _parser.DeactivateLoopMode();
@@ -2154,12 +2149,12 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
              */
             cerr << endl;
             make_hline();
-            cerr << "|-> EIN KRITISCHER FEHLER IST AUFGETRETEN" << endl;
+            cerr << "|-> " << toUpperCase(_lang.get("ERR_STD_BA_HEAD")) << endl;
             make_hline();
-            cerr << LineBreak("|-> NumeRe " + sVersion + " verursachte eine kritische Speicherzugriffsverletzung und muss beendet werden.", _option) << endl;
+            cerr << LineBreak("|-> "+_lang.get("ERR_STD_BADALLOC", sVersion), _option) << endl;
             make_hline();
             if (oLogFile.is_open())
-                oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: KRITISCHE SPEICHERVERLETZUNG" << endl;
+                oLogFile << toString(time(0)-tTimeZero, true) << "> ERROR: CRITICAL ACCESS VIOLATION" << endl;
             for (int i = 4; i > 0; i--)
             {
                 cerr << "\r|-> TERMINATING IN " << i << " sec ...";
@@ -2175,45 +2170,37 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
             // --> Alle anderen Standard-Exceptions <--
             make_hline();
             if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
-                    cerr << "|-> NUMERE: DEBUGGER   [INTERNER FEHLER]" << endl;
+                    cerr << "|-> " << toUpperCase(_lang.get("ERR_STD_INTERNAL_HEAD_DBG")) << endl;
             else
-                cerr << "|-> EIN INTERNER FEHLER IST AUFGETRETEN" << endl;
+                cerr << "|-> " << toUpperCase(_lang.get("ERR_STD_INTERNAL_HEAD")) << endl;
             make_hline();
             cerr << LineBreak("|-> " + string(e.what()), _option) << endl;
-            cerr << LineBreak("|-> Dies ist ein nicht-kritischer Fehler. Sollte sich dieser Fehler (auch nach einem Neustart) wiederholen (lassen), freut der Entwickler sich über eine entsprechende Bugmeldung unter <numere.developer@gmail.com>.", _option) << endl;
+            cerr << LineBreak("|-> " + _lang.get("ERR_STD_INTERNAL"), _option) << endl;
 
             // --> Wenn ein Script ausgefuehrt wird, lesen wir den Index der letzten eingelesenen Zeile und geben diesen hier aus <--
             if (_script.isValid() && _script.isOpen())
             {
-                cerr << LineBreak("|-> Der Fehler wurde im ausgeführten Script nahe der " + toString((int)_script.getCurrentLine()) + ". Zeile gefunden.$Die Ausführung des Scripts wurde sicherheitshalber abgebrochen.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("ERR_SCRIPTCATCH", toString((int)_script.getCurrentLine())), _option) << endl;
                 // --> Script beenden! Mit einem Fehler ist es unsinnig weiterzurechnen <--
                 _script.close();
             }
             if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
             {
-                /*make_hline();
-                cerr << "|-> NUMERE: DEBUGGER" << endl;
-                make_hline();*/
-                cerr << "|" << endl << "|   " << toUpperCase("Modulinformationen: ") << std::setfill((char)196) << std::setw(_option.getWindow()-24) << (char)196 << endl;
+                cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_MODULE")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_MODULE").length()) << (char)196 << endl;
                 cerr << LineBreak("|   "+_option._debug.printModuleInformations(), _option, false) << endl;
-                cerr << "|" << endl << "|   " << toUpperCase("Stacktrace: ") << std::setfill((char)196) << std::setw(_option.getWindow()-16) << (char)196 << endl;
-                /*make_hline(-2);
-                cerr << "|-> Stacktrace:" << endl;*/
+                cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_STACKTRACE")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_STACKTRACE").length()) << (char)196 << endl;
                 cerr << LineBreak("|   "+_option._debug.printStackTrace(), _option, false) << endl;
-                //make_hline(-2);
-                //cerr << "|-> Lokale numerische Variablen:" << endl;
-                cerr << "|" << endl << "|   " << toUpperCase("Lokale numerische Variablen: ") << std::setfill((char)196) << std::setw(_option.getWindow()-33) << (char)196 << endl;
+
+                cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_LOCALVARS")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_LOCALVARS").length()) << (char)196 << endl;
                 cerr << LineBreak("|   "+_option._debug.printLocalVars(), _option, false) << endl;
-                //make_hline(-2);
-                //cerr << "|-> Lokale Zeichenketten:" << endl;
-                cerr << "|" << endl << "|   " << toUpperCase("Lokale Zeichenketten: ") << std::setfill((char)196) << std::setw(_option.getWindow()-26) << (char)196 << endl;
+                cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_LOCALSTRINGS")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_LOCALSTRINGS").length()) << (char)196 << endl;
                 cerr << LineBreak("|   "+_option._debug.printLocalStrings(), _option, false) << endl;
                 _option._debug.reset();
             }
             _pData.setFileName("");
             make_hline();
             if (oLogFile.is_open())
-                oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: " << e.what() << endl;
+                oLogFile << toString(time(0)-tTimeZero, true) << "> " << toUpperCase(_lang.get("ERR_ERROR")) << ": " << e.what() << endl;
             if (sCmdCache.length())
                 sCmdCache.clear();
             _parser.DeactivateLoopMode();
@@ -2224,16 +2211,16 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
             make_hline();
             if (e == PROCESS_ABORTED_BY_USER)
             {
-                cerr << "|-> PROZESS ABGEBROCHEN" << endl;
+                cerr << "|-> " << toUpperCase(_lang.get("ERR_PROCESS_CANCELLED_HEAD")) << endl;
                 make_hline();
-                cerr << LineBreak("|-> Ein Prozess wurde vom Benutzer abgebrochen.$(Während eines Prozesses wurde \"ESC\" gedrückt. Dies bricht die Auswertung ab.)", _option, false) << endl;
+                cerr << LineBreak("|-> "+_lang.get("ERR_NR_3200_0_PROCESS_ABORTED_BY_USER"), _option, false) << endl;
                 //cerr << LineBreak("|-> Siehe auch \"help procedure\"", _option) << endl;
                 if (oLogFile.is_open())
-                    oLogFile << toString(time(0) - tTimeZero, true) << "> HINWEIS: Prozess vom Benutzer abgebrochen" << endl;
+                    oLogFile << toString(time(0) - tTimeZero, true) << "> NOTE: Process was cancelled by user" << endl;
                 // --> Wenn ein Script ausgefuehrt wird, lesen wir den Index der letzten eingelesenen Zeile und geben diesen hier aus <--
                 if (_script.isValid() && _script.isOpen())
                 {
-                    cerr << LineBreak("|-> Das ausgeführte Script wurde nahe der " + toString((int)_script.getCurrentLine()) + ". Zeile abgebrochen.", _option) << endl;
+                    cerr << LineBreak("|-> "+_lang.get("ERR_SCRIPTABORT", toString((int)_script.getCurrentLine())), _option) << endl;
                     // --> Script beenden! Mit einem Fehler ist es unsinnig weiterzurechnen <--
                     _script.close();
                 }
@@ -2241,15 +2228,41 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
             else
             {
                 if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
-                    cerr << "|-> NUMERE: DEBUGGER   [SYNTAXFEHLER]" << endl;
+                    cerr << "|-> " << toUpperCase(_lang.get("ERR_NR_HEAD_DBG")) << endl;
                 else
-                    cerr << "|-> EIN FEHLER IST AUFGETRETEN" << endl;
+                    cerr << "|-> " << toUpperCase(_lang.get("ERR_NR_HEAD")) << endl;
                 make_hline();
+
+                if (sErrorToken.length() && (e == PROCEDURE_THROW || e == LOOP_THROW))
+                {
+                    cerr << LineBreak("|-> " + sErrorToken, _option) << endl;
+                    if (oLogFile.is_open())
+                        oLogFile << toString(time(0)-tTimeZero, true) << "> " << toUpperCase(_lang.get("ERR_ERROR")) << ": " << sErrorToken << endl;
+                }
+                else
+                {
+                    string sErrLine_0 = _lang.get("ERR_NR_"+toString((int)e)+"_0_*", sErrorToken, toString(nErrorIndices[0]), toString(nErrorIndices[1]));
+                    string sErrLine_1 = _lang.get("ERR_NR_"+toString((int)e)+"_1_*", sErrorToken, toString(nErrorIndices[0]), toString(nErrorIndices[1]));
+                    string sErrIDString = _lang.getKey("ERR_NR_"+toString((int)e)+"_0_*");
+
+                    if (sErrLine_0.substr(0,7) == "ERR_NR_")
+                    {
+                        sErrLine_0 = _lang.get("ERR_GENERIC_0");
+                        sErrLine_1 = _lang.get("ERR_GENERIC_1");
+                        sErrIDString = "ERR_GENERIC";
+                    }
+                    cerr << LineBreak("|-> " + sErrLine_0, _option) << endl;
+                    cerr << LineBreak("|-> " + sErrLine_1, _option) << endl;
+                    if (oLogFile.is_open())
+                        oLogFile << toString(time(0)-tTimeZero, true) << "> " << toUpperCase(_lang.get("ERR_ERROR")) << ": " << sErrIDString << endl;
+                }
+
+                /*
                 switch (e)
                 {
                     case STRING_ERROR:
-                        cerr << LineBreak("|-> Die Zeichenketten konnten nicht korrekt verarbeitet werden.$Womöglich sind eine oder mehrere Zeichenketten nicht zu beiden Seiten mit Anführungszeichen umgeben oder es wurde versucht, einer Zeichenkettenvariable einen numerischen Wert oder einer numerischen Variable eine Zeichenkette zu zu weisen.", _option) << endl;
-                        cerr << LineBreak("|-> SIEHE AUCH: \"help string\"", _option) << endl;
+                        cerr << LineBreak("|-> " + _lang.get("ERR_NR_STRING_ERROR"), _option) << endl;
+                        cerr << LineBreak("|-> " + _lang.get("ERR_NR_STRING_ERROR_2"), _option) << endl;
                         if (oLogFile.is_open())
                             oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: Zeichenkettenfehler" << endl;
                         break;
@@ -3123,31 +3136,24 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                         if (oLogFile.is_open())
                             oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: Nr. " << e << endl;
                 }
+                */
                 // --> Wenn ein Script ausgefuehrt wird, lesen wir den Index der letzten eingelesenen Zeile und geben diesen hier aus <--
                 if (_script.isValid() && _script.isOpen())
                 {
-                    cerr << LineBreak("|-> Der Fehler wurde im ausgeführten Script nahe der " + toString((int)_script.getCurrentLine()) + ". Zeile gefunden.$Die Ausführung des Scripts wurde sicherheitshalber abgebrochen.", _option) << endl;
+                    cerr << LineBreak("|-> "+_lang.get("ERR_SCRIPTCATCH", toString((int)_script.getCurrentLine())), _option) << endl;
                     // --> Script beenden! Mit einem Fehler ist es unsinnig weiterzurechnen <--
                     _script.close();
                 }
                 if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
                 {
-                    /*make_hline();
-                    cerr << "|-> NUMERE: DEBUGGER" << endl;
-                    make_hline();*/
-                    cerr << "|" << endl << "|   " << toUpperCase("Modulinformationen: ") << std::setfill((char)196) << std::setw(_option.getWindow()-24) << (char)196 << endl;
+                    cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_MODULE")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_MODULE").length()) << (char)196 << endl;
                     cerr << LineBreak("|   "+_option._debug.printModuleInformations(), _option, false) << endl;
-                    cerr << "|" << endl << "|   " << toUpperCase("Stacktrace: ") << std::setfill((char)196) << std::setw(_option.getWindow()-16) << (char)196 << endl;
-                    /*make_hline(-2);
-                    cerr << "|-> Stacktrace:" << endl;*/
+                    cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_STACKTRACE")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_STACKTRACE").length()) << (char)196 << endl;
                     cerr << LineBreak("|   "+_option._debug.printStackTrace(), _option, false) << endl;
-                    //make_hline(-2);
-                    //cerr << "|-> Lokale numerische Variablen:" << endl;
-                    cerr << "|" << endl << "|   " << toUpperCase("Lokale numerische Variablen: ") << std::setfill((char)196) << std::setw(_option.getWindow()-33) << (char)196 << endl;
+
+                    cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_LOCALVARS")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_LOCALVARS").length()) << (char)196 << endl;
                     cerr << LineBreak("|   "+_option._debug.printLocalVars(), _option, false) << endl;
-                    //make_hline(-2);
-                    //cerr << "|-> Lokale Zeichenketten:" << endl;
-                    cerr << "|" << endl << "|   " << toUpperCase("Lokale Zeichenketten: ") << std::setfill((char)196) << std::setw(_option.getWindow()-26) << (char)196 << endl;
+                    cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_LOCALSTRINGS")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_LOCALSTRINGS").length()) << (char)196 << endl;
                     cerr << LineBreak("|   "+_option._debug.printLocalStrings(), _option, false) << endl;
                     _option._debug.reset();
                 }
@@ -3167,12 +3173,12 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
              *     abgedeckt wird <--
              */
             make_hline();
-            cerr << "|-> EIN UNBEKANNTER FEHLER IST AUFGETRETEN" << endl;
+            cerr << "|-> " << toUpperCase(_lang.get("ERR_CATCHALL_HEAD")) << endl;
             make_hline();
-            cerr << LineBreak("|-> ENTER drücken, um mit NumeRe fortzufahren ...", _option) << endl;
+            cerr << LineBreak("|-> "+_lang.get("ERR_CATCHALL"), _option) << endl;
             make_hline();
             if (oLogFile.is_open())
-                oLogFile << toString(time(0)-tTimeZero, true) << "> FEHLER: UNKNOWN EXCEPTION" << endl;
+                oLogFile << toString(time(0)-tTimeZero, true) << "> ERROR: UNKNOWN EXCEPTION" << endl;
             _pData.setFileName("");
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             if (sCmdCache.length())
@@ -3190,14 +3196,14 @@ value_type* parser_AddVariable(const char_type* a_szName, void* a_pUserData)
     static value_type afValBuf[200];
     static int iVal = 0;
     if (iVal >= 199)
-        throw mu::ParserError( _T("Keinen Speicherplatz mehr!") );
+        throw mu::ParserError( _T(toSystemCodePage(_lang.get("PARSER_ADD_VAR_ERROR"))) );
 
     if (!bSupressAnswer)
     {
         if (199-iVal < 10)
         {
-            cerr << "|-> neue Variable \"" << a_szName << "\" [double]" << endl;
-            cerr << "|   (freier Speicher: " << 199-iVal << " Variablen)" << endl;
+            cerr << "|-> " << toSystemCodePage(_lang.get("PARSER_ADD_VAR_1", a_szName)) << endl;
+            cerr << "|   " << toSystemCodePage(_lang.get("PARSER_ADD_VAR_2", toString(199-iVal))) << endl;
         }
     }
     afValBuf[iVal] = 0;
@@ -3209,15 +3215,14 @@ value_type* parser_AddVariable(const char_type* a_szName, void* a_pUserData)
 void parser_Help(const Settings& _option)
 {
     make_hline();
-    cerr << LineBreak("|-> NUMERE: WILLKOMMEN", _option) << endl;
+    cerr << LineBreak("|-> NUMERE: " + toUpperCase(_lang.get("PARSER_HELP_HEAD")), _option) << endl;
     make_hline();
-    cerr << LineBreak("|-> NumeRe ist mittels Kommandos zu bedienen. Die zentralen und wichtigsten Kommandos sind die folgenden:", _option) << endl;
-    cerr << LineBreak("|   find BEGRIFFE   - Nach BEGRIFFE suchen", _option, false, 0, 22) << endl;
-    cerr << LineBreak("|   help            - Zeigt die Hilfe-Übersicht an", _option, false, 0, 22) << endl;
-    cerr << LineBreak("|   help THEMA      - Zeigt eine Hilfe zum THEMA an. Die Hilfe achtet nicht auf Groß- und Kleinschreibung", _option, false, 0, 22) << endl;
-    cerr << LineBreak("|   list -OBJEKT    - Listet OBJEKT. OBJEKT kann groß oder klein geschrieben werden", _option, false, 0, 22) << endl;
-    //cerr << LineBreak("|   mode            - Wechselt zum Menue-Modus", _option, false, 0, 22) << endl;
-    cerr << LineBreak("|   quit            - Beendet NumeRe", _option, false, 0, 22) << endl;
+    cerr << LineBreak("|-> "+_lang.get("PARSER_HELP_INTRO"), _option) << endl;
+    cerr << LineBreak("|   "+_lang.get("PARSER_HELP_ITEM_1"), _option, false, 0, 22) << endl;
+    cerr << LineBreak("|   "+_lang.get("PARSER_HELP_ITEM_2"), _option, false, 0, 22) << endl;
+    cerr << LineBreak("|   "+_lang.get("PARSER_HELP_ITEM_3"), _option, false, 0, 22) << endl;
+    cerr << LineBreak("|   "+_lang.get("PARSER_HELP_ITEM_4"), _option, false, 0, 22) << endl;
+    cerr << LineBreak("|   "+_lang.get("PARSER_HELP_ITEM_5"), _option, false, 0, 22) << endl;
     make_hline();
     return;
 }

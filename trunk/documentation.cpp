@@ -41,7 +41,7 @@ void doc_Help(const string& __sTopic, Settings& _option)
     if (vDocArticle[0] == "NO_ENTRY_FOUND") // Nix gefunden
     {
         make_hline();
-        cerr << LineBreak("|-> Zu dem Thema \"" + sTopic + "\" wurde kein Eintrag gefunden. Möglicherweise wurde das Thema falsch geschrieben, oder das Thema existiert (noch) nicht. Ein Synonym oder eine Stichwortsuche mittels \"find " + sTopic + "\" kann unter Umständen auch zum Erfolg führen.", _option) << endl;
+        cerr << LineBreak("|-> "+_lang.get("DOC_HELP_NO_ENTRY_FOUND", sTopic), _option) << endl;
         make_hline();
         return;
     }
@@ -249,7 +249,7 @@ void doc_Help(const string& __sTopic, Settings& _option)
               << "</body>" << endl
               << "</html>" << endl;
         fHTML.close();
-        cerr << LineBreak("|-> Eine Kopie des Artikels \"" + _option.getHelpArticleTitle(_option.getHelpIdxKey(sTopic)) + "\" wurde in \"" + sFilename + "\" angelegt.", _option) << endl;
+        cerr << LineBreak("|-> "+_lang.get("DOC_HELP_HTMLEXPORT", _option.getHelpArticleTitle(_option.getHelpIdxKey(sTopic)), sFilename), _option) << endl;
         return;
     }
     else // Hilfeartikel anzeigen
@@ -259,7 +259,7 @@ void doc_Help(const string& __sTopic, Settings& _option)
         {
             if (!i)
             {
-                cerr << toSystemCodePage("|-> NUMERE-HILFE: " + toUpperCase(vDocArticle[i])) << endl;
+                cerr << toSystemCodePage("|-> " + toUpperCase(_lang.get("DOC_HELP_HEADLINE", vDocArticle[i]))) << endl;
                 make_hline();
                 continue;
             }
@@ -272,9 +272,9 @@ void doc_Help(const string& __sTopic, Settings& _option)
 
                 doc_ReplaceTokens(vDocArticle[i], _option);
                 if (getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5).find('~') == string::npos)
-                    cerr << LineBreak("|-> BEISPIEL: " + getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5), _option) << endl;
+                    cerr << LineBreak("|-> " + _lang.get("DOC_HELP_EXAMPLE", getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5)), _option) << endl;
                 else
-                    cerr << LineBreak("|-> BEISPIEL: " + getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5), _option, false) << endl;
+                    cerr << LineBreak("|-> " + _lang.get("DOC_HELP_EXAMPLE", getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5)), _option, false) << endl;
                 cerr << "|" << endl;
                 for (unsigned int j = i+1; j < vDocArticle.size(); j++)
                 {
@@ -868,11 +868,30 @@ void doc_SearchFct(const string& sToLookFor, Settings& _option)
     string* sMultiTopics;
     string sToLookFor_cp = toLowerCase(sToLookFor);
     string sUsedIdxKeys = ";";
-    static vector<vector<string> > vTopics = getDataBase("<>/docs/find.ndb", _option);
+    static vector<vector<string> > vTopics;
+    if (!vTopics.size() && fileExists(_option.ValidFileName("<>/user/docs/find.ndb", ".ndb")))
+    {
+        vector<vector<string> > vStdTopics = getDataBase("<>/docs/find.ndb", _option);
+        vector<vector<string> > vLangTopics = getDataBase("<>/user/docs/find.ndb", _option);
+        map<string,int> mTopics;
+        for (unsigned int i = 0; i < vStdTopics.size(); i++)
+            mTopics[toLowerCase(vStdTopics[i][0])] = i+1;
+        for (unsigned int i = 0; i < vLangTopics.size(); i++)
+            mTopics[toLowerCase(vLangTopics[i][0])] = -i-1;
+        for (auto iter = mTopics.begin(); iter != mTopics.end(); ++iter)
+        {
+            if (iter->second > 0)
+                vTopics.push_back(vStdTopics[(iter->second-1)]);
+            else
+                vTopics.push_back(vLangTopics[abs(iter->second+1)]);
+        }
+    }
+    else if (!vTopics.size())
+        vTopics = getDataBase("<>/docs/find.ndb", _option);
     if (!vTopics.size())
     {
         make_hline();
-        cerr << LineBreak("|-> Die Datenbank der Stichwortsuche ist beschädigt. Installiere NumeRe erneut, um dieses Problem zu beheben. Falls dieses Problem damit nicht behoben werden konnte, wende dich an die Entwicklung.", _option) << endl;
+        cerr << LineBreak("|-> "+_lang.get("DOC_SEARCHFCT_DB_ERROR"), _option) << endl;
         make_hline();
         return;
     }
@@ -887,7 +906,7 @@ void doc_SearchFct(const string& sToLookFor, Settings& _option)
     if (sToLookFor_cp == "help")
     {
         make_hline();
-        cerr << "|-> RELEVANZ:   SUCHERGEBNIS:" << endl;
+        cerr << "|-> " << toSystemCodePage(toUpperCase(_lang.get("DOC_SEARCHFCT_TABLEHEAD"))) << endl;
         make_hline();
         for (unsigned int i = 0; i < vTopics.size(); i++)
         {
@@ -898,7 +917,7 @@ void doc_SearchFct(const string& sToLookFor, Settings& _option)
             }
         }
         cerr << "|" << endl;
-        cerr << "|-> Die NumeRe-Suche ergab 1 Treffer." << endl;
+        cerr << "|-> " << toSystemCodePage(_lang.get("DOC_SEARCHFCT_RESULT", "1")) << endl;
         make_hline();
         return;
     }
@@ -962,7 +981,7 @@ void doc_SearchFct(const string& sToLookFor, Settings& _option)
                 if (sMultiTopics)
                     delete[] sMultiTopics;
                 make_hline();
-                cerr << LineBreak("|-> Die Datenbank der Stichwortsuche ist beschädigt. Installiere NumeRe erneut, um dieses Problem zu beheben. Falls dieses Problem damit nicht behoben werden konnte, wende dich an die Entwicklung.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("DOC_SEARCHFCT_DB_ERROR"), _option) << endl;
                 make_hline();
                 return;
             }
@@ -987,7 +1006,7 @@ void doc_SearchFct(const string& sToLookFor, Settings& _option)
     if (bResult)
     {
         make_hline();
-        cerr << "|-> RELEVANZ:   SUCHERGEBNIS:" << endl;
+        cerr << "|-> " << toSystemCodePage(toUpperCase(_lang.get("DOC_SEARCHFCT_TABLEHEAD"))) << endl;
         make_hline();
 
         if (nMax[0] % nMultiTopics && nMultiTopics > 1)
@@ -1032,7 +1051,7 @@ void doc_SearchFct(const string& sToLookFor, Settings& _option)
             }
         }
         cerr << "|" << endl;
-        cerr << "|-> Die NumeRe-Suche ergab " << nCount << " Treffer." << endl;
+        cerr << "|-> " << toSystemCodePage(_lang.get("DOC_SEARCHFCT_RESULT", toString(nCount))) << endl;
         make_hline();
     }
     else
@@ -1046,7 +1065,7 @@ void doc_SearchFct(const string& sToLookFor, Settings& _option)
                     continue;
                 if (!nCount)
                 {
-                    cerr << "|-> RELEVANZ:   SUCHERGEBNIS:" << endl;
+                    cerr << "|-> " << toSystemCodePage(toUpperCase(_lang.get("DOC_SEARCHFCT_TABLEHEAD"))) << endl;
                     make_hline();
                 }
                 cerr << LineBreak("|->    [HELP]   " + _option.getHelpIdxKey(sMultiTopics[i]) + " -- " + _option.getHelpArticleTitle(_option.getHelpIdxKey(sMultiTopics[i])), _option) << endl;
@@ -1055,11 +1074,11 @@ void doc_SearchFct(const string& sToLookFor, Settings& _option)
             }
         }
         if (!nCount)
-            cerr << LineBreak("|-> Leider kein Ergebnis für \"" + sToLookFor_cp + "\" gefunden! Womöglich führt eine andere Schreibweise oder ein Synonym des Begriffs zum Erfolg. Möglicherweise hat sich aber auch ein Tippfehler eingeschlichen.", _option) << endl;
+            cerr << LineBreak("|-> "+_lang.get("DOC_SEARCHFCT_NO_RESULTS", sToLookFor_cp), _option) << endl;
         else
         {
             cerr << "|" << endl;
-            cerr << "|-> Die NumeRe-Suche ergab " << nCount << " Treffer." << endl;
+            cerr << "|-> " << toSystemCodePage(_lang.get("DOC_SEARCHFCT_RESULT", toString(nCount))) << endl;
         }
         make_hline();
     }
@@ -1071,8 +1090,37 @@ void doc_SearchFct(const string& sToLookFor, Settings& _option)
 void doc_FirstStart(const Settings& _option)
 {
     string sInput = "";
+    vector<string> vPageContents;
     make_hline();
-    cerr << "|-> NUMERE: ERSTER START [EINSTIEG -- SEITE 1/7]" << endl;
+
+    for (int i = 1; i <= 7; i++)
+    {
+        cerr << toSystemCodePage("|-> "+toUpperCase(_lang.get("DOC_FIRSTSTART_HEADLINE_PREFIX", _lang.get("DOC_FIRSTSTART_PAGE_"+toString(i)+"_HEAD"), toString(i), "7"))) << endl;
+        make_hline();
+        vPageContents = _lang.getList("DOC_FIRSTSTART_PAGE_"+toString(i)+"_LINE_*");
+        for (unsigned int j = 0; j < vPageContents.size(); j++)
+        {
+            while (vPageContents[j].find("%%1%%") != string::npos)
+            {
+                vPageContents[j].replace(vPageContents[j].find("%%1%%"),5,sVersion);
+            }
+            cerr << LineBreak("|-> "+vPageContents[j], _option) << endl;
+        }
+        vPageContents.clear();
+        cerr << "|   (" << toSystemCodePage(toUpperCase(_lang.get("DOC_FIRSTSTART_NEXTPAGE"))) << ") ";
+        getline(cin, sInput);
+        StripSpaces(sInput);
+        if (sInput == "0")
+        {
+            make_hline();
+            return;
+        }
+        else
+            sInput = "";
+        make_hline();
+    }
+
+    /*cerr << "|-> NUMERE: ERSTER START [EINSTIEG -- SEITE 1/7]" << endl;
     make_hline();
     cerr << LineBreak("|-> HALLO UND WILLKOMMEN!$Ich bin NumeRe v " + sVersion + ", Framework für Numerische Rechnungen, und freue mich, dich zum ersten Mal zu begrüßen!", _option) << endl;
     cerr << LineBreak("|-> Ich bin ausgelegt als eine Tabellenkalkulation, die rein auf der Konsole basiert, allerdings bin ich für die (Natur-)Wissenschaftliche Arbeit optimiert. So verfüge ich über die Möglichkeit, durch Scripte vordefinierte Abläufe zu automatisieren, graphische Plots in vielerlei Varianten zu erzeugen, oder einige andere Dinge.", _option) << endl;
@@ -1189,8 +1237,8 @@ void doc_FirstStart(const Settings& _option)
     cerr << LineBreak("|-> Zusätzlich kannst du auch noch eigene Funktionen definieren, mit denen du dann genauso wie mit meinen vordefinierten umgehen kannst. Dazu musst du mir aber erklären, was deine Funktion können soll. Die dazu nötige Definition machst du dabei durch das Schema \"define FUNKTIONSNAME(ARGUMENTE) := FUNKTIONSAUSDRUCK\", z.B. durch \"define f(x,y) := cos(x)+sin(y)\"", _option) << endl;
     cerr << LineBreak("|-> TIPP: Weiterführende Infos erhältst du unter \"help func\" und \"help define\"", _option) << endl;
     cerr << "|   (ENTER ZUM FORTFAHREN) ";
-    getline(cin, sInput);
-    make_hline();
+    getline(cin, sInput);*/
+    //make_hline();
     return;
 }
 
@@ -1210,7 +1258,8 @@ void doc_TipOfTheDay(Settings& _option)
 
     /*cerr << "|" << endl;
     make_hline();*/
-    cerr << "|-> NUMERE: SCHON GEWUSST?  [Nr. "<< nth_tip+1 << "/" << vTipList.size() << "]" << endl;
+    //cerr << "|-> NUMERE: SCHON GEWUSST?  [Nr. "<< nth_tip+1 << "/" << vTipList.size() << "]" << endl;
+    cerr << toSystemCodePage("|-> "+_lang.get("DOC_TIPOFTHEDAY_HEADLINE", toString(nth_tip+1), toString((int)vTipList.size()))) << endl;
     make_hline();
     cerr << LineBreak("|-> " + vTipList[nth_tip], _option) << endl;
     //cerr << "|" << endl << LineBreak("|-> Diese Hinweise können mit \"set -hints=false\" deaktiviert werden.", _option) << endl;

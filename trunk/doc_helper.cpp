@@ -18,6 +18,8 @@
 
 #include "doc_helper.hpp"
 
+bool fileExists(const string&);
+
 Documentation::Documentation() : FileSystem()
 {
     vDocIndexTable.reserve(128);
@@ -67,23 +69,13 @@ void Documentation::updateIndexFile()
     return;
 }
 
-void Documentation::loadDocIndex()
+bool Documentation::loadIndexFile(const string& sIndexFile)
 {
-    if (sDocIndexFile.find("<>") != string::npos)
-        sDocIndexFile = FileSystem::ValidFileName(sDocIndexFile, ".hlpidx");
-
-    fDocument.open(sDocIndexFile.c_str(), ios_base::in);
+    fDocument.open(FileSystem::ValidFileName(sIndexFile, ".hlpidx").c_str(), ios_base::in);
     if (fDocument.fail())
     {
         fDocument.close();
-        string sUpdateFile = FileSystem::ValidFileName("<>/update.hlpidx", ".hlpidx");
-        fDocument.open(sUpdateFile.c_str(), ios_base::in);
-        if (fDocument.fail())
-        {
-            fDocument.close();
-            cerr << endl << " FEHLER: Dokumentationsverzeichnis konnte nicht gefunden werden." << endl;
-            return;
-        }
+        return false;
     }
 
     string sLine = "";
@@ -102,8 +94,7 @@ void Documentation::loadDocIndex()
     fDocument.close();
     if (!sDocIndex.length())
     {
-        cerr << endl << " FEHLER: Dokumentationsverzeichnis konnte nicht gelesen werden." << endl;
-        return;
+        return false;
     }
     while (sDocIndex.length() > 26)
     {
@@ -117,21 +108,82 @@ void Documentation::loadDocIndex()
         vEntry.push_back(getArgAtPos(sLine, sLine.find("path=")+5));
         vEntry.push_back(getArgAtPos(sLine, sLine.find("string=")+7));
         vEntry.push_back(getArgAtPos(sLine, sLine.find("idxkey=")+7));
-        vDocIndexTable.push_back(vEntry);
+
+        // is this item already known? (user lang file)
+        if (mDocumentationIndex.find(vEntry.back()) == mDocumentationIndex.end())
+        {
+            mDocumentationIndex[vEntry.back()] = nIndex;
+            while (sLine.find("<keyword>") != string::npos)
+            {
+                sKeyWord = sLine.substr(sLine.find("<keyword>")+9, sLine.find("</keyword>")-9-sLine.find("<keyword>"));
+                sLine.erase(0,sLine.find("</keyword>")+10);
+
+                mDocumentationIndex[sKeyWord] = nIndex;
+            }
+
+            nIndex++;
+
+            vDocIndexTable.push_back(vEntry);
+        }
+        else
+        {
+            // overwrite nIndex in this scope
+            int nIndex = mDocumentationIndex[vEntry.back()];
+            for (unsigned int i = 0; i < vEntry.size(); i++)
+            {
+                vDocIndexTable[nIndex][i] = vEntry[i];
+            }
+            while (sLine.find("<keyword>") != string::npos)
+            {
+                sKeyWord = sLine.substr(sLine.find("<keyword>")+9, sLine.find("</keyword>")-9-sLine.find("<keyword>"));
+                sLine.erase(0,sLine.find("</keyword>")+10);
+
+                mDocumentationIndex[sKeyWord] = nIndex;
+            }
+        }
         vEntry.clear();
 
-        while (sLine.find("<keyword>") != string::npos)
-        {
-            sKeyWord = sLine.substr(sLine.find("<keyword>")+9, sLine.find("</keyword>")-9-sLine.find("<keyword>"));
-            sLine.erase(0,sLine.find("</keyword>")+10);
-
-            mDocumentationIndex[sKeyWord] = nIndex;
-        }
-
-        nIndex++;
         if (sDocIndex == "</helpindex>")
             break;
     }
+    return true;
+
+}
+
+void Documentation::loadDocIndex()
+{
+    if (sDocIndexFile.find("<>") != string::npos)
+        sDocIndexFile = FileSystem::ValidFileName(sDocIndexFile, ".hlpidx");
+
+    if (!fileExists(sDocIndexFile))
+    {
+        cerr << endl << " ERROR: Documentation index was not found." << endl;
+        return;
+    }
+    if (!loadIndexFile(sDocIndexFile))
+    {
+        if (fileExists(FileSystem::ValidFileName("<>/update.hlpidx", ".hlpidx")))
+        {
+            if (!loadIndexFile("<>/updata.hlpidx"))
+            {
+                cerr << endl << " ERROR: Documentation index could not be read." << endl;
+                return;
+            }
+        }
+        else
+        {
+            cerr << endl << " ERROR: Documentation index could not be read." << endl;
+            return;
+        }
+    }
+    if (fileExists(FileSystem::ValidFileName("<>/user/numere.hlpidx")))
+    {
+        if (!loadIndexFile("<>/user/numere.hlpidx"))
+        {
+            cerr << endl << " ERROR: User documentation index could not be read." << endl;
+        }
+    }
+
     return;
 }
 
@@ -140,7 +192,7 @@ void Documentation::updateDocIndex(string _sFilename)
     _sFilename = FileSystem::ValidFileName(_sFilename, ".hlpidx");
     if (!vDocIndexTable.size())
     {
-        cerr << endl << "FEHLER: Es wurde kein Dokumentationsverzeichnis geladen." << endl;
+        cerr << endl << "ERROR: A documentation index was not loaded." << endl;
         return;
     }
     string sLine = "";
@@ -155,7 +207,7 @@ void Documentation::updateDocIndex(string _sFilename)
     if (fDocument.fail())
     {
         fDocument.close();
-        cerr << endl << " FEHLER: Dokumentationsverzeichnis konnte nicht aktualisiert werden." << endl;
+        cerr << endl << " ERROR: Could not update documentation index." << endl;
         return;
     }
 
@@ -169,7 +221,7 @@ void Documentation::updateDocIndex(string _sFilename)
     fDocument.close();
     if (!sDocIndex.length())
     {
-        cerr << endl << " FEHLER: Dokumentationsverzeichnis-Update konnte nicht gelesen werden." << endl;
+        cerr << endl << " ERROR: Documentation index update file could not be read." << endl;
         return;
     }
     while (sDocIndex.length() > 26)
@@ -229,7 +281,7 @@ void Documentation::updateDocIndex(string _sFilename)
     }
     catch (...)
     {
-        cerr << endl << " FEHLER: Dokumentationsverzeichnis konnte nicht geschrieben werden." << endl;
+        cerr << endl << " ERROR: Documentation could not be written." << endl;
     }
 
     return;
@@ -459,14 +511,15 @@ vector<string> Documentation::getHelpArticle(const string& _sTheme)
             //mIdx[vDocIndexTable[i][2]] = vDocIndexTable[i][3];
         }
         map<string,string>::iterator iter = mIdx.begin();
-        vReturn.push_back("Schlüsselwörter und verknüpfte Artikel dieser Dokumentation:");
+        vReturn.push_back(_lang.get("DOCHELPER_KEYWORDS_AND_ARTICLES")+ ":");
         vReturn.push_back("<list>");
         for (; iter != mIdx.end(); ++iter)
         {
             vReturn.push_back("<item node=\"" + iter->first + "\">" + iter->second + "</item>");
         }
         vReturn.push_back("</list>");
-        vReturn.push_back("\r|   -- " + toString((int)vReturn.size()-4) + " Schlüsselwörter und " + toString(vDocIndexTable.size()) + " Artikel --");
+        vReturn.push_back("\r|   -- " + _lang.get("DOCHELPER_KEYWORDS_AND_ARTICLES_NUMBERS", toString((int)vReturn.size()-4), toString((int)vDocIndexTable.size())) + " --");
+        //vReturn.push_back("\r|   -- " + toString((int)vReturn.size()-4) + " Schlüsselwörter und " + toString(vDocIndexTable.size()) + " Artikel --");
         //map<string,int>::iterator iter = mDocumentationIndex.begin();
         /*string sEntry = "";
         for (; iter != mDocumentationIndex.end(); ++iter)

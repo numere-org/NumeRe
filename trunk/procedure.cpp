@@ -90,7 +90,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
     value_type* v = 0;
 
     if (_script.wasLastCommand() && _option.getSystemPrintStatus())
-        cerr << LineBreak("|-> Die Ausführung des Scripts \"" + _script.getScriptFileName() + "\" wurde erfolgreich abgeschlossen.", _option) << endl;
+        cerr << LineBreak("|-> "+_lang.get("PARSER_SCRIPT_FINIHED", _script.getScriptFileName()), _option) << endl;
 
     if (GetAsyncKeyState(VK_ESCAPE))
     {
@@ -413,9 +413,9 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
             }
             if (bMultLinCol[0] && bMultLinCol[1])
             {
-                cerr << LineBreak("|-> FEHLER: Kann Ergebnisse nicht zugleich an Zeilen und Spalten zuweisen!", _option) << endl;
                 thisReturnVal.vNumVal.push_back(NAN);
-                return thisReturnVal;
+                throw NO_MATRIX;
+                //return thisReturnVal;
             }
             if (parser_ExprNotEmpty(si_pos[0]))
             {
@@ -2865,19 +2865,21 @@ bool Procedure::writeProcedure(string sProcedureLine)
             bWritingTofile = true;
             if (bAppend && !bNamespaceline)
             {
+                unsigned int nLength = _lang.get("PROC_NAMESPACE_THISFILE_MESSAGE").length();
                 fProcedure << endl << endl
-                           << "#************************************************" << endl
-                           << " * NAMENSRAUM: THISFILE                         *" << endl
-                           << " * Folgende Prozeduren sind implizit 'private'. *" << endl
-                           << " ************************************************#" << endl << endl << endl;
+                           << "#**" << std::setfill('*') << std::setw(nLength+2) << "**" << endl
+                           << " * NAMESPACE: THISFILE" << std::setfill(' ') << std::setw(nLength-17) << " *" << endl
+                           << " * " << _lang.get("PROC_NAMESPACE_THISFILE_MESSAGE") << " *" << endl
+                           << " **" << std::setfill('*') << std::setw(nLength+3) << "**#" << endl << endl << endl;
                 sLastWrittenProcedureFile += "|namespace";
             }
             else if (bAppend)
                 fProcedure << endl << endl;
-            fProcedure << "#********************" << std::setfill('*') << std::setw(max(21u,sProcName.length()+2)) << "*" << endl;
-            fProcedure << " * NUMERE-PROZEDUR: $" << sProcName << "()" << endl;
-            fProcedure << " * ==================" << std::setfill('=') << std::setw(max(21u,sProcName.length()+2)) << "=" << endl;
-            fProcedure << " * Hinzugefügt: " << getTimeStamp(false) << " *#" << endl;
+            unsigned int nLength = _lang.get("COMMON_PROCEDURE").length();
+            fProcedure << "#*********" << std::setfill('*') << std::setw(nLength+2) << "***" << std::setfill('*') << std::setw(max(21u,sProcName.length()+2)) << "*" << endl;
+            fProcedure << " * NUMERE-" << toUpperCase(_lang.get("COMMON_PROCEDURE")) << ": $" << sProcName << "()" << endl;
+            fProcedure << " * =======" << std::setfill('=') << std::setw(nLength+2) << "===" << std::setfill('=') << std::setw(max(21u,sProcName.length()+2)) << "=" << endl;
+            fProcedure << " * " << _lang.get("PROC_ADDED_DATE") << ": " << getTimeStamp(false) << " *#" << endl;
             fProcedure << endl;
             fProcedure << "procedure $";
             if (sFileName.find('~') != string::npos)
@@ -2974,10 +2976,10 @@ bool Procedure::writeProcedure(string sProcedureLine)
     if (!bWritingTofile && fProcedure.is_open())
     {
         fProcedure << endl;
-        fProcedure << "#* Ende der Prozedur" << endl;
-        fProcedure << " * NumeRe: Framework für Numerische Rechnungen | Freie numerische Software unter der GNU GPL v3" << endl;
+        fProcedure << "#* " << _lang.get("PROC_END_OF_PROCEDURE") << endl;
+        fProcedure << " * " << _lang.get("PROC_FOOTER") << endl;
         fProcedure << " * https://sites.google.com/site/numereframework/" << endl;
-        fProcedure << " *********************************************************************************************#" << endl;
+        fProcedure << " **" << std::setfill('*') << std::setw(_lang.get("PROC_FOOTER").length()+1) << "#" << endl;
 
         fProcedure.close();
         if (nthBlock)
@@ -3145,18 +3147,18 @@ void Procedure::evalDebuggerBreakPoint(Settings& _option, const map<string,strin
     string sTemp;
     _option._debug.gatherInformations(sVars, nVarSize, dVars, sStrings, nStrSize, sStringMap, "",sCurrentProcedureName,nCurrentLine);
     make_hline();
-    cerr << "|-> NUMERE: DEBUGGER   [BREAKPOINT]" << endl;
+    cerr << "|-> " << toSystemCodePage(_lang.get("DBG_HEADLINE")) << endl;
     make_hline();
-    cerr << "|   " << toUpperCase("Modulinformationen: ") << std::setfill((char)196) << std::setw(_option.getWindow()-24) << (char)196 << endl;
+    cerr << "|   " << toUpperCase(_lang.get("DBG_MODULE")+": ") << std::setfill((char)196) << std::setw(_option.getWindow()-24) << (char)196 << endl;
     cerr << LineBreak("|   "+_option._debug.printNonErrorModuleInformations(), _option, false) << endl;
-    cerr << "|" << endl << "|   " << toUpperCase("Stacktrace: ") << std::setfill((char)196) << std::setw(_option.getWindow()-16) << (char)196 << endl;
+    cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_STACKTRACE")+": ") << std::setfill((char)196) << std::setw(_option.getWindow()-16) << (char)196 << endl;
     cerr << LineBreak("|   "+_option._debug.printStackTrace(), _option, false) << endl;
-    cerr << "|" << endl << "|   " << toUpperCase("Lokale numerische Variablen: ") << std::setfill((char)196) << std::setw(_option.getWindow()-33) << (char)196 << endl;
+    cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_LOCALVARS")+": ") << std::setfill((char)196) << std::setw(_option.getWindow()-33) << (char)196 << endl;
     cerr << LineBreak("|   "+_option._debug.printLocalVars(), _option, false) << endl;
-    cerr << "|" << endl << "|   " << toUpperCase("Lokale Zeichenketten: ") << std::setfill((char)196) << std::setw(_option.getWindow()-26) << (char)196 << endl;
+    cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_LOCALSTRINGS")+": ") << std::setfill((char)196) << std::setw(_option.getWindow()-26) << (char)196 << endl;
     cerr << LineBreak("|   "+_option._debug.printLocalStrings(), _option, false) << endl;
     _option._debug.resetBP();
-    cerr << "|" << endl << toSystemCodePage("|-> Zum Fortfahren ENTER drücken ... ");
+    cerr << "|" << endl << toSystemCodePage("|-> " + _lang.get("DBG_PRESS_ENTER") + " ... ");
     getline(cin, sTemp);
     make_hline();
     return;
