@@ -389,7 +389,7 @@ void SetConsTitle(const Datafile& _data, const Settings& _option, string sScript
     else
         sConsoleTitle += "NumeRe: Framework für Numerische Rechnungen (v " + sVersion + ")";
     if (_option.getUseDebugger())
-        sConsoleTitle += " [Debugger aktiv]";
+        sConsoleTitle += " [Debugger "+_lang.get("COMMON_ACTIVE")+"]";
     if (_option.getbDebug())
         sConsoleTitle += " [DEV-MODE]";
     sConsoleTitle = toSystemCodePage(sConsoleTitle);
@@ -1716,8 +1716,16 @@ string LineBreak(string sOutput, const Settings& _option, bool bAllowDashBreaks,
             {
                 if (sOutput[j] == ' ')
                 {
-                    sOutput[j] = '$';   // Leerzeichen durch "$" ersetzen
-                    nLastLineBreak = j;
+                    if (sOutput[j-1] == '\\')
+                    {
+                        sOutput.insert(j+1, "$");
+                        nLastLineBreak = j+1;
+                    }
+                    else
+                    {
+                        sOutput[j] = '$';   // Leerzeichen durch "$" ersetzen
+                        nLastLineBreak = j;
+                    }
                     break;
                 }
                 else if (sOutput[j] == '-' && bAllowDashBreaks && j != i)
@@ -2103,7 +2111,7 @@ void make_progressBar(int nStep, int nFirstStep, int nFinalStep, const string& s
     cerr << "\r                                                                                ";
     if (sType == "std")
     {
-        cerr << "\r|-> Werte aus ... " << nStatusVal << " %";
+        cerr << "\r|-> " << _lang.get("COMMON_EVALUATING") << " ... " << nStatusVal << " %";
     }
     else if (sType == "bar")
     {
@@ -2378,7 +2386,11 @@ string getTimeStamp(bool bGetStamp)
 	if(bGetStamp)
 		Temp_str << "_";		// Unterstrich im Dateinamen
 	else
-		Temp_str << ", um ";	// Komma im regulaeren Datum
+	{
+		Temp_str << ", ";	// Komma im regulaeren Datum
+		Temp_str << _lang.get("TOOLS_TIMESTAMP_AT");
+		Temp_str << " ";
+	}
 	if(ltm->tm_hour < 10)
 		Temp_str << "0";
 	Temp_str << ltm->tm_hour; 	// hh
@@ -2526,11 +2538,8 @@ void reduceLogFilesize(const string& sFileName)
     return;
 }
 
-string replaceToVectorname(const string& sExpression)
+void OprtRplc_setup(map<string,string>& mOprtRplc)
 {
-    string sVectorName = sExpression;
-    static map<string,string> mOprtRplc;
-    // + \p\, - \m\, * \ml\, / \d\, ^ \e\, && \a\, || \o\, ||| \xo\, % \md\, ! \n\, == \eq\, != \ne\, >= \ge\, <= \le\, ? \q\//
     mOprtRplc["("] = "[";
     mOprtRplc[")"] = "]";
     mOprtRplc[":"] = "~";
@@ -2551,6 +2560,36 @@ string replaceToVectorname(const string& sExpression)
     mOprtRplc[">="] = "\\ge\\";
     mOprtRplc["<="] = "\\le\\";
     mOprtRplc["?"] = "\\q\\";
+    return;
+}
+
+string replaceToVectorname(const string& sExpression)
+{
+    string sVectorName = sExpression;
+    static map<string,string> mOprtRplc;
+    // + \p\, - \m\, * \ml\, / \d\, ^ \e\, && \a\, || \o\, ||| \xo\, % \md\, ! \n\, == \eq\, != \ne\, >= \ge\, <= \le\, ? \q\//
+    /*mOprtRplc["("] = "[";
+    mOprtRplc[")"] = "]";
+    mOprtRplc[":"] = "~";
+    mOprtRplc[","] = "_";
+    mOprtRplc["+"] = "\\p\\";
+    mOprtRplc["-"] = "\\m\\";
+    mOprtRplc["*"] = "\\ml\\";
+    mOprtRplc["/"] = "\\d\\";
+    mOprtRplc["^"] = "\\e\\";
+    mOprtRplc["{"] = "\\ob\\";
+    mOprtRplc["}"] = "\\cb\\";
+    mOprtRplc["&&"] = "\\a\\";
+    mOprtRplc["||"] = "\\o\\";
+    mOprtRplc["%"] = "\\md\\";
+    mOprtRplc["!"] = "\\n\\";
+    mOprtRplc["=="] = "\\eq\\";
+    mOprtRplc["!="] = "\\ne\\";
+    mOprtRplc[">="] = "\\ge\\";
+    mOprtRplc["<="] = "\\le\\";
+    mOprtRplc["?"] = "\\q\\";*/
+    if (!mOprtRplc.size())
+        OprtRplc_setup(mOprtRplc);
 
     while (sVectorName.find("|||") != string::npos)
         sVectorName.replace(sVectorName.find("|||"),3,"\\xo\\");
@@ -2738,5 +2777,30 @@ void evalRecursiveExpressions(string& sExpr)
     }
 
     return;
+}
+
+string generateCacheName(const string& sFilename, Settings& _option)
+{
+    string sCacheName;
+    if (sFilename.find('/') != string::npos)
+        sCacheName = _option.ValidFileName(sFilename);
+    else
+        sCacheName = _option.ValidFileName("<loadpath>/"+sFilename);
+    string sValidChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_";
+
+    if (sCacheName.find('/') != string::npos)
+        sCacheName.erase(0,sCacheName.rfind('/')+1);
+    if (sCacheName.find('.') != string::npos)
+        sCacheName.erase(sCacheName.rfind('.'));
+    if (isdigit(sCacheName.front()))
+        sCacheName.insert(0,1,'_');
+
+    for (unsigned int i = 0; i < sCacheName.length(); i++)
+    {
+        if (sValidChars.find(sCacheName[i]) == string::npos)
+            sCacheName[i] = '_';
+    }
+
+    return sCacheName;
 }
 

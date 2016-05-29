@@ -1,1 +1,9 @@
 Added	"new" verwendet nun Templatedateien in "<>/lang/tmpl_TYPE.nlng"
+New	NumeRe kann nun uebersetzt werden, indem die Sprachdateien (<>/lang/*.nlng), die Datenbanken und Hilfedateien (<>/doc/*.ndb und <>/doc/*.nhlp) uebersetzt werden.
+Cleaned	Kleinerer Speed-Up bei Rechnungen mit Datensaetzen.
+New	"plot3d" kann mit der Option "crust" nun eine 2D-Oberfläche aus beliebig verteilten x-y-z-Punkten rekonstruieren.
+Added	Eine "every"-Option wurde zu den MAF-Tabellenfunktionen hinzugefuegt.
+Fixed	Ein sehr seltener Fehler im automatischen Zeilenumbruch, der ein Dollarzeichen einfuegte statt die Zeile umzubrechen, wurde behoben.
+Added	NumeRe kann nun Nutzer-Sprachdateien laden. NumeRe erzeugt hierzu die Ordnerstruktur "<>/user/lang" und "<>/user/docs". Die Inhalte der hierin gefunden Sprachdateien ueberschreiben die Inhalte der Standarddateien.
+Added	Die Option "target=CACHE()" wurde zu "datagrid" hinzugefuegt.
+Added	Die Option "tocache" wurde zu "load" hinzugefuegt.

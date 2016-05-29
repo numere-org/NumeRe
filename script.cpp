@@ -607,7 +607,7 @@ string Script::getNextScriptCommand()
                             bDISABLE_SCREEN_OUTPUT = true;
                     }
                     if (!bDISABLE_SCREEN_OUTPUT)
-                        cerr << "|-> Starte Installation ..." << endl;
+                        cerr << "|-> " << toSystemCodePage(_lang.get("SCRIPT_START_INSTALL")) << " ..." << endl;
                 }
 
                 if (sInstallInfoString.length())
@@ -622,7 +622,7 @@ string Script::getNextScriptCommand()
                         fLogFile << endl << endl;
                         fLogFile.close();
                         if (!bDISABLE_SCREEN_OUTPUT)
-                            cerr << "|-> Installation erfolgreich abgeschlossen." << endl;
+                            cerr << "|-> " << toSystemCodePage(_lang.get("SCRIPT_INSTALL_SUCCESS")) << endl;
                     }
                     bIsInstallingProcedure = false;
                     sScriptCommand = sScriptCommand.substr(12);
@@ -864,7 +864,8 @@ string Script::getNextScriptCommand()
             fLogFile << ">> Installing: \"" << sScriptCommand.substr(sScriptCommand.find('$'), sScriptCommand.find('(', sScriptCommand.find('$'))-sScriptCommand.find('$')) << "\" ..." << endl;
             if (!bDISABLE_SCREEN_OUTPUT)
             {
-                cerr << "|-> Installiere \"" << sScriptCommand.substr(sScriptCommand.find('$'), sScriptCommand.find('(', sScriptCommand.find('$'))-sScriptCommand.find('$')) << "\" ..." << endl;
+                cerr << toSystemCodePage("|-> "+_lang.get("SCRIPT_INSTALLING_PROC", sScriptCommand.substr(sScriptCommand.find('$'), sScriptCommand.find('(', sScriptCommand.find('$'))-sScriptCommand.find('$')))) << endl;
+                //cerr << "|-> Installiere \"" << sScriptCommand.substr(sScriptCommand.find('$'), sScriptCommand.find('(', sScriptCommand.find('$'))-sScriptCommand.find('$')) << "\" ..." << endl;
             }
         }
         if (bENABLE_FULL_LOGGING)

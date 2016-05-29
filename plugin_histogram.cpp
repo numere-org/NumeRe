@@ -41,30 +41,30 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
         {
             if (!_data.isValid() && _data.isValidCache())
             {
-                cerr << LineBreak("|-> Es sind nur Daten im Cache vorhanden. Es werden automatisch diese Punkte verwendet.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("HIST_ONLY_CACHE"), _option) << endl;
                 _data.setCacheStatus(true);
             }
             else if (_data.isValid() && _data.isValidCache())
             {
                 char c = 0;
-                cerr << LineBreak("|-> Es sind sowohl Daten im Cache als auch die Daten eines Datenfiles vorhanden. Welche sollen verwendet werden? (c/d)$(0 zum Abbrechen)", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("HIST_ASK_DATASET"), _option) << endl;
                 cerr << "|" << endl;
                 cerr << "|<- ";
                 cin >> c;
 
                 if (c == '0')
                 {
-                    cerr << "|-> ABBRUCH!" << endl;
+                    cerr << "|-> " << _lang.get("COMMON_CANCEL") << "." << endl;
                     cin.ignore(1);
                     return;
                 }
                 else if (c == 'c')
                     _data.setCacheStatus(true);
-                cerr << LineBreak("|-> Es werden die geladenen Daten aus \"" + _data.getDataFileName("data") + "\" verwendet.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("HIST_CONFIRM_DATASET", _data.getDataFileName("data")), _option) << endl;
             }
             else
             {
-                cerr << LineBreak("|-> Es werden die geladenen Daten des Files \"" + _data.getDataFileName("data") + "\" verwendet.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("HIST_CONFIRM_DATASET", _data.getDataFileName("data")), _option) << endl;
             }
         }
         else if (bUseCache || sCmd.find("-cache") != string::npos || _data.matchCache(sCmd).length())
@@ -382,7 +382,8 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
             if (nDataRow >= _data.getCols(sDatatable)+1)
             {
                 if (_option.getSystemPrintStatus())
-                    cerr << LineBreak("|-> Es werden " + toString(_data.getCols(sDatatable)) + " Histogramm-Datensätze erzeugt.", _option) << endl;
+                    cerr << LineBreak("|-> "+_lang.get("HIST_GENERATING_DATASETS", toString(_data.getCols(sDatatable))), _option) << endl;
+                    //cerr << LineBreak("|-> Es werden " + toString(_data.getCols(sDatatable)) + " Histogramm-Datensätze erzeugt.", _option) << endl;
                 nDataRowFinal = _data.getCols(sDatatable);
                 nDataRow = 0;
             }
@@ -593,7 +594,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
             {
                 if (dIntervallLength == 0.0)
                 {
-                    cerr << "|-> Wie breit sollen die Bins sein?" << endl;
+                    cerr << "|-> " << toSystemCodePage(_lang.get("HIST_ASK_BINWIDTH")) << endl;
                     cerr << "|" << endl;
                     cerr << "|<- ";
                     cin >> dIntervallLength;
@@ -935,11 +936,13 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
             // --> Setze die ueblichen Ausgabe-Info-Parameter <--
             if (!bWriteToCache || matchParams(sCmd, "export", '=') || matchParams(sCmd, "save", '='))
             {
-                _out.setPluginName("Histogramm (v " + PI_HIST + ") unter Verwendung der Datenreihe(n) " + toString(nDataRow+1) + "-" + toString(nDataRowFinal) + " aus " + _data.getDataFileName(sDatatable));
+                _out.setPluginName(_lang.get("HIS_OUT_PLGNINFO", PI_HIST, toString(nDataRow+1), toString(nDataRowFinal), _data.getDataFileName(sDatatable)));
+                //_out.setPluginName("Histogramm (v " + PI_HIST + ") unter Verwendung der Datenreihe(n) " + toString(nDataRow+1) + "-" + toString(nDataRowFinal) + " aus " + _data.getDataFileName(sDatatable));
                 if (bGrid)
-                    _out.setCommentLine("Die Bins bezeichnen immer die Mitte einer Kategorie. Der minimale Wert ist " + toString(dMinZ, _option) + ", der maximale " + toString(dMaxZ, _option) + ". Die Breite einer Kategorie ist " + toString(dIntervallLength, _option) + ".");
+                    _out.setCommentLine(_lang.get("HIST_OUT_COMMENTLINE", toString(dMinZ, 5), toString(dMaxZ,5), toString(dIntervallLength, 5)));
+                    //_out.setCommentLine("Die Bins bezeichnen immer die Mitte einer Kategorie. Der minimale Wert ist " + toString(dMinZ, _option) + ", der maximale " + toString(dMaxZ, _option) + ". Die Breite einer Kategorie ist " + toString(dIntervallLength, _option) + ".");
                 else
-                    _out.setCommentLine("Die Bins bezeichnen immer die Mitte einer Kategorie. Der minimale Wert ist " + toString(dMin, _option) + ", der maximale " + toString(dMax, _option) + ". Die Breite einer Kategorie ist " + toString(dIntervallLength, _option) + ".");
+                    _out.setCommentLine(_lang.get("HIST_OUT_COMMENTLINE", toString(dMin, 5), toString(dMax,5), toString(dIntervallLength, 5)));
 
                 _out.setPrefix("hist");
             }
@@ -1007,7 +1010,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                     if (!_out.isFile())
                     {
                         make_hline();
-                        cerr << "|-> NUMERE: HISTOGRAMM" << endl;
+                        cerr << "|-> NUMERE: " << toSystemCodePage(toUpperCase(_lang.get("HIST_HEADLINE"))) << endl;
                         make_hline();
                     }
                     _out.format(sOut, nDataRowFinal-nDataRow+1, nBin+1, _option, true);
@@ -1113,7 +1116,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 delete[] dTicksVal;
 
             if (_option.getSystemPrintStatus() && !bSilent)
-                cerr << "|-> Graphische Darstellung wird erzeugt ... ";
+                cerr << toSystemCodePage("|-> " + _lang.get("HIST_GENERATING_PLOT") + " ... ");
             if (_out.isFile())
                 sHistSavePath = sHistSavePath.substr(0, sHistSavePath.length()-4) + ".png";
             else
@@ -1133,8 +1136,8 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
             _histGraph.WriteFrame(sHistSavePath.c_str());
             if (_option.getSystemPrintStatus() && !bSilent)
             {
-                cerr << "Erfolg!" << endl;
-                cerr << "|   Gespeichert unter \"" << sHistSavePath << "\"" << endl;
+                cerr << _lang.get("COMMON_SUCCESS") << "." << endl;
+                cerr << LineBreak("|   " + _lang.get("HIST_SAVED_AT", sHistSavePath), _option) << endl;
             }
             if (_option.getViewerPath().length() && _pData.getOpenImage() && !(_pData.getSilentMode() || bSilent))
             {
@@ -1290,7 +1293,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
             {
                 if (dIntervallLength == 0.0)
                 {
-                    cerr << "|-> Wie breit sollen die Bins sein?" << endl;
+                    cerr << "|-> " << toSystemCodePage(_lang.get("HIST_ASK_BINWIDTH")) << endl;
                     cerr << "|" << endl;
                     cerr << "|<- ";
                     cin >> dIntervallLength;
@@ -1347,8 +1350,9 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 
             if (!bWriteToCache || matchParams(sCmd, "export", '=') || matchParams(sCmd, "save", '='))
             {
-                _out.setPluginName("2D-Histogramm (v " + PI_HIST + ") unter Verwendung der Datenreihe(n) " + toString(nDataRow+1) + "-" + toString(nDataRowFinal) + " aus " + _data.getDataFileName(sDatatable));
-                _out.setCommentLine("Die Bins bezeichnen immer die Mitte einer Kategorie. Der minimale x-Wert ist " + toString(dMin, _option) + ", der maximale " + toString(dMax, _option) + ". Die Breite einer x-Kategorie ist " + toString(dIntervallLength, _option) + ". Der minimale y-Wert ist " + toString(dMinY, _option) + ", der maximale " + toString(dMaxY, _option) + ". Die Breite einer y-Kategorie ist " + toString(dIntervallLengthY, _option) + ".");
+                _out.setPluginName("2D-"+_lang.get("HIS_OUT_PLGNINFO", PI_HIST, toString(nDataRow+1), toString(nDataRowFinal), _data.getDataFileName(sDatatable)));
+                _out.setCommentLine(_lang.get("HIST_OUT_COMMENTLINE2D", toString(dMin, 5), toString(dMax, 5), toString(dIntervallLength, 5), toString(dMinY, 5), toString(dMaxY, 5), toString(dIntervallLengthY, 5)));
+                //_out.setCommentLine("Die Bins bezeichnen immer die Mitte einer Kategorie. Der minimale x-Wert ist " + toString(dMin, _option) + ", der maximale " + toString(dMax, _option) + ". Die Breite einer x-Kategorie ist " + toString(dIntervallLength, _option) + ". Der minimale y-Wert ist " + toString(dMinY, _option) + ", der maximale " + toString(dMaxY, _option) + ". Die Breite einer y-Kategorie ist " + toString(dIntervallLengthY, _option) + ".");
 
                 _out.setPrefix("hist2d");
             }
@@ -2005,7 +2009,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                     if (!_out.isFile())
                     {
                         make_hline();
-                        cerr << "|-> NUMERE: 2D-HISTOGRAMM" << endl;
+                        cerr << "|-> NUMERE: 2D-" << toSystemCodePage(toUpperCase(_lang.get("HIST_HEADLINE"))) << endl;
                         make_hline();
                     }
                     _out.format(sOut, 4, nBin+1, _option, true);
@@ -2024,7 +2028,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 
 
             if (_option.getSystemPrintStatus() && !bSilent)
-                cerr << "|-> Graphische Darstellung wird erzeugt ... ";
+                cerr << toSystemCodePage("|-> " + _lang.get("HIST_GENERATING_PLOT") + " ... ");
             if (_out.isFile())
                 sHistSavePath = sHistSavePath.substr(0, sHistSavePath.length()-4) + ".png";
             else
@@ -2034,9 +2038,9 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
             //_histGraph.Bars(_histData, sColor.c_str());
             _histGraph.WriteFrame(sHistSavePath.c_str());
             if (_option.getSystemPrintStatus() && !bSilent)
-                cerr << "Erfolg!" << endl;
+                cerr << _lang.get("COMMON_SUCCESS") << "." << endl;
             if (!_out.isFile() && _option.getSystemPrintStatus() && !bSilent)
-                cerr << "|   Gespeichert unter \"" << sHistSavePath << "\"" << endl;
+                cerr << LineBreak("|   "+_lang.get("HIST_SAVED_AT", sHistSavePath), _option) << endl;
             if (_option.getViewerPath().length() && _pData.getOpenImage() && !_pData.getSilentMode())
             {
                 string sFileName = sHistSavePath;

@@ -45,6 +45,7 @@ class Documentation : public FileSystem
         string sDocIndexFile;
 
         void updateIndexFile();
+        bool loadIndexFile(const string& sIndexFile);
 
     public:
         Documentation();

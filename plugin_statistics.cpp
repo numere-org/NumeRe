@@ -54,30 +54,30 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
         {
             if (!_data.isValid() && _data.isValidCache())
             {
-                cerr << LineBreak("|-> Es sind nur Daten im Cache vorhanden. Es werden automatisch diese Punkte verwendet.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("HIST_ONLY_CACHE"), _option) << endl;
                 _data.setCacheStatus(true);
             }
             else if (_data.isValid() && _data.isValidCache())
             {
                 char c = 0;
-                cerr << LineBreak("|-> Es sind sowohl Daten im Cache als auch die Daten eines Datenfiles vorhanden. Welche sollen verwendet werden? (c/d)$(0 zum Abbrechen)", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("HIST_ASK_DATASET"), _option) << endl;
                 cerr << "|" << endl;
                 cerr << "|<- ";
                 cin >> c;
 
                 if (c == '0')
                 {
-                    cerr << "|-> ABBRUCH!" << endl;
+                    cerr << "|-> " << _lang.get("COMMON_CANCEL") << "." << endl;
                     cin.ignore(1);
                     return;
                 }
                 else if (c == 'c')
                     _data.setCacheStatus(true);
-                cerr << LineBreak("|-> Es werden die geladenen Daten aus \"" + _data.getDataFileName("data") + "\" verwendet.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("HIST_CONFIRM_DATASET", _data.getDataFileName("data")), _option) << endl;
             }
             else
             {
-                cerr << LineBreak("|-> Es werden die geladenen Daten des Files \"" + _data.getDataFileName("data") + "\" verwendet.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("HIST_CONFIRM_DATASET", _data.getDataFileName("data")), _option) << endl;
             }
         }
         else if (bUseCache)
@@ -186,16 +186,16 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 			dKurt /= _data.num(sDatatable,0,nLine,j);
 
 			sOut[nLine+1][j] = "<<SUMBAR>>"; // Schreiben der berechneten Werte in die letzten drei Zeilen der Ausgabe
-			sOut[nLine+2][j] = "MW: " + toString(dAverage, nPrecision);
-			sOut[nLine+3][j] = "+/-" + toString(dError, nPrecision);
-			sOut[nLine+4][j] = "iVInt: " + toString(dPercentage, nPrecision) + " %";
-			sOut[nLine+5][j] = "Uns: " + toString(dUnsure, nPrecision);
-			sOut[nLine+6][j] = "Med: " + toString(_data.med(sDatatable,0,nLine,j), nPrecision);
+			sOut[nLine+2][j] = _lang.get("STATS_TYPE_AVG") + ": " + toString(dAverage, nPrecision);
+			sOut[nLine+3][j] = _lang.get("STATS_TYPE_STD") + ": " + toString(dError, nPrecision);
+			sOut[nLine+4][j] = _lang.get("STATS_TYPE_CONFINT") + ": " + toString(dPercentage, nPrecision) + " %";
+			sOut[nLine+5][j] = _lang.get("STATS_TYPE_STDERR") + ": " + toString(dUnsure, nPrecision);
+			sOut[nLine+6][j] = _lang.get("STATS_TYPE_MED") + ": " + toString(_data.med(sDatatable,0,nLine,j), nPrecision);
 			sOut[nLine+7][j] = "Q1: " + toString(_data.pct(sDatatable,0,nLine,j,-1,0.25), nPrecision);
 			sOut[nLine+8][j] = "Q3: " + toString(_data.pct(sDatatable,0,nLine,j,-1,0.75), nPrecision);
-			sOut[nLine+9][j] = "RMS: " + toString(_data.norm(sDatatable,0,nLine,j)/sqrt(_data.num(sDatatable,0,nLine,j)), nPrecision);
-			sOut[nLine+10][j] = "Skew: " + toString(dSkew, nPrecision);
-			sOut[nLine+11][j] = "Exz: " + toString(dKurt, nPrecision);
+			sOut[nLine+9][j] = _lang.get("STATS_TYPE_RMS") + ": " + toString(_data.norm(sDatatable,0,nLine,j)/sqrt(_data.num(sDatatable,0,nLine,j)), nPrecision);
+			sOut[nLine+10][j] = _lang.get("STATS_TYPE_SKEW") + ": " + toString(dSkew, nPrecision);
+			sOut[nLine+11][j] = _lang.get("STATS_TYPE_EXCESS") + ": " + toString(dKurt, nPrecision);
 			sOut[nLine+12][j] = "min: " + toString(_data.min(sDatatable,0,nLine,j), nPrecision);
 			sOut[nLine+13][j] = "max: " + toString(_data.max(sDatatable,0,nLine,j), nPrecision);
 			sOut[nLine+14][j] = "num: " + toString(_data.num(sDatatable,0,nLine,j), nPrecision);
@@ -206,7 +206,7 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 		//cerr << "|-> Die Statistiken von " << nCol << " Spalte(n) wurden erfolgreich berechnet." << endl;
 
 		// --> Allgemeine Ausgabe-Info-Parameter setzen <--
-		_out.setPluginName("Statistik (v " + PI_MED + ") unter Verwendung der Daten aus " + _data.getDataFileName(sDatatable));
+		_out.setPluginName(_lang.get("RANDOM_OUT_PLGNINFO", PI_MED, _data.getDataFileName(sDatatable)));
 		//_out.setCommentLine("Legende: MW = Mittelwert, +/- = Standardabweichung, iVInt = im Vertrauensintervall, Uns = Unsicherheit");
 		_out.setPrefix("stats");
 		// --> Wenn sCmd einen Eintrag enthaelt, dann soll die Ausgabe automatische in eine Datei geschrieben werden <--
@@ -233,15 +233,15 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 		// --> Formatieren und Schreiben der Ausgabe <--
         //cerr << "|" << endl;
         _out.setCompact(false);
-		_out.setCommentLine("Legende: MW = Mittelwert, +/- = Standardabweichung, iVInt = im Vertrauensintervall, Uns = Unsicherheit, Med = Median, Q1 = unteres Quartil, Q3 = oberes Quartil, RMS = root mean square, Skew = Schiefe, Exz = Exzess, min = Minimum, max = Maximum, num = Zahl der Elemente, cnt = Zahl der Zeilen, s_t = Student-Faktor");
+		_out.setCommentLine(_lang.get("STATS_OUT_COMMENTLINE"));
 		if (_out.isFile())
             _out.format(sOut, nCol, nLine+nStatsFields, _option, true);
         _out.reset();
         _out.setCompact(false);
-		_out.setCommentLine("Legende: MW = Mittelwert, +/- = Standardabweichung, iVInt = im Vertrauensintervall, Uns = Unsicherheit, Med = Median, Q1 = unteres Quartil, Q3 = oberes Quartil, RMS = root mean square, Skew = Schiefe, Exz = Exzess, min = Minimum, max = Maximum, num = Zahl der Elemente, cnt = Zahl der Zeilen, s_t = Student-Faktor");
+		_out.setCommentLine(_lang.get("STATS_OUT_COMMENTLINE"));
 
         make_hline();
-        cerr << "|-> NUMERE: STATISTIKEN" << endl;
+        cerr << "|-> NUMERE: " << toSystemCodePage(toUpperCase(_lang.get("STATS_HEADLINE"))) << endl;
         make_hline();
         _out.format(sOverview, nCol+1, nStatsFields-1, _option, true);
         _out.reset();
@@ -260,7 +260,7 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 	}
 	else				// Oh! Das sind offensichtlich keine Daten vorhanden... Sollte man dem Benutzer wohl mitteilen
 	{
-		cerr << "|-> FEHLER: Es sind keine Daten verfuegbar!" << endl;
+        throw NO_DATA_AVAILABLE;
 	}
 	//cerr << "|-> Das Plugin wurde erfolgreich beendet." << endl;
 

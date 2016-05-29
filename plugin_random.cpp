@@ -142,37 +142,37 @@ void plugin_random(string& sCmd, Datafile& _data, Output& _out, Settings& _optio
         sDistrib = getArgAtPos(sCmd, nPos);
         if (sDistrib == "gauss" || sDistrib == "normal")
         {
-            sDistrib = "normalverteilte";
+            sDistrib = _lang.get("RANDOM_DISTRIB_TYPE_GAUSS");
             nDistribution = 0;
         }
         else if (sDistrib == "poisson")
         {
-            sDistrib = "poissonverteilte";
+            sDistrib = _lang.get("RANDOM_DISTRIB_TYPE_POISSON");
             nDistribution = 1;
         }
         else if (sDistrib == "gamma")
         {
-            sDistrib = "gammaverteilte";
+            sDistrib = _lang.get("RANDOM_DISTRIB_TYPE_GAMMA");
             nDistribution = 2;
         }
         else if (sDistrib == "uniform")
         {
-            sDistrib = "gleichverteilte";
+            sDistrib = _lang.get("RANDOM_DISTRIB_TYPE_UNIFORM");
             nDistribution = 3;
         }
         else if (sDistrib == "binomial")
         {
-            sDistrib = "binomialverteilte";
+            sDistrib = _lang.get("RANDOM_DISTRIB_TYPE_BINOMIAL");
             nDistribution = 4;
         }
         else if (sDistrib == "student")
         {
-            sDistrib = "studentverteilte";
+            sDistrib = _lang.get("RANDOM_DISTRIB_TYPE_STUDENT");
             nDistribution = 5;
         }
         else
         {
-            sDistrib = "normalverteilte";
+            sDistrib = _lang.get("RANDOM_DISTRIB_TYPE_GAUSS");
             nDistribution = 0;
         }
     }
@@ -228,11 +228,11 @@ void plugin_random(string& sCmd, Datafile& _data, Output& _out, Settings& _optio
 	binomial_distribution<int> binomialDistribution(nUpperBound, dProbability);             // 4
 	student_t_distribution<double> studentTDistribution(nFreedoms);                         // 5
     if (nDataPoints * nDataRows > 1e6)
-        cerr << "|-> Reserviere Speicher ... ";
+        cerr << toSystemCodePage("|-> "+_lang.get("RANDOM_RESERVING_MEM")+" ... ");
     if (!_data.setCacheSize(nDataPoints,nDataRows+nFilledCols,-1))
         return;
     if (nDataPoints * nDataRows > 1e6)
-        cerr << "Erfolg!" << endl;
+        cerr << _lang.get("COMMON_SUCCESS") << "." << endl;
 
     if (_option.getbDebug())
         cerr << "|-> DEBUG: Cache angepasst!" << endl;
@@ -265,7 +265,8 @@ void plugin_random(string& sCmd, Datafile& _data, Output& _out, Settings& _optio
 		}
 	}
 
-	cerr << LineBreak("|-> Es wurde(n) " + toString(nDataRows*nDataPoints) + " " + sDistrib + " Zufallszahlen erfolgreich in den Cache geschrieben.", _option) << endl;
+	cerr << LineBreak("|-> "+_lang.get("RANDOM_SUCCESS", toString(nDataRows*nDataPoints), sDistrib), _option) << endl;
+	//cerr << LineBreak("|-> Es wurde(n) " + toString(nDataRows*nDataPoints) + " " + sDistrib + " Zufallszahlen erfolgreich in den Cache geschrieben.", _option) << endl;
 	//cerr << "|-> Das Plugin wurde erfolgreich beendet." << endl;
 	return;
 }

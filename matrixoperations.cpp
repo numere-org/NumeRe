@@ -1758,7 +1758,7 @@ Matrix parser_solveLGS(const Matrix& _mMatrix, Parser& _parser, Define& _functio
     if ((_mToSolve[_mToSolve.size()-1][_mToSolve[0].size()-2] == 0.0 && _mToSolve[_mToSolve.size()-1][_mToSolve[0].size()-1] == 0.0)
         || _mToSolve.size()+1 < _mToSolve[0].size())
     {
-        cerr << toSystemCodePage("|-> LGS hat keine eindeutige Lösung.") << endl;
+        cerr << toSystemCodePage("|-> "+_lang.get("ERR_NR_2101_0_LGS_HAS_NO_UNIQUE_SOLUTION")) << endl;
         parser_solveLGSSymbolic(_mToSolve, _parser, _functions, _option);
         return _mToSolve;
     }
@@ -1805,7 +1805,7 @@ Matrix parser_solveLGS(const Matrix& _mMatrix, Parser& _parser, Define& _functio
 
         if (_mToSolve[_mToSolve[0].size()-2][_mToSolve[0].size()-2] == 0.0 && _mToSolve[_mToSolve[2].size()-2][_mToSolve[0].size()-1] == 0.0)
         {
-            cerr << toSystemCodePage("|-> LGS hat keine eindeutige Lösung.") << endl;
+            cerr << toSystemCodePage("|-> "+_lang.get("ERR_NR_2101_0_LGS_HAS_NO_UNIQUE_SOLUTION")) << endl;
             parser_solveLGSSymbolic(_mToSolve, _parser, _functions, _option);
             return _mToSolve;
         }
@@ -1823,7 +1823,7 @@ Matrix parser_solveLGS(const Matrix& _mMatrix, Parser& _parser, Define& _functio
         }
         if (_mToSolve[i][i] == 0.0 && _mToSolve[i][_mToSolve[0].size()-1] == 0.0)
         {
-            cerr << toSystemCodePage("|-> LGS hat keine eindeutige Lösung.") << endl;
+            cerr << toSystemCodePage("|-> "+_lang.get("ERR_NR_2101_0_LGS_HAS_NO_UNIQUE_SOLUTION")) << endl;
             parser_solveLGSSymbolic(_mToSolve, _parser, _functions, _option);
             return _mToSolve;
         }
@@ -2320,7 +2320,7 @@ void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, Define& _f
     sSolution += "}";
 
     cerr << "|-> " << sSolution << endl;
-    sSolution += " -set comment=\"Ergebnis des linearen Gleichungssystems\"";
+    sSolution += " "+_lang.get("MATOP_SOLVELGSSYMBOLIC_DEFINECOMMENT");
 
     if (!_functions.isDefined(sSolution))
         _functions.defineFunc(sSolution, _parser, _option);

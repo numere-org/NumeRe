@@ -95,6 +95,7 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         bool bRegion;
         bool bStepPlot;
         bool bBoxPlot;
+        bool bCrust;
         double dHBars;
         double dPerspective;        // optische Perspective?
         string sColorScheme;        // Colorscheme
@@ -329,6 +330,8 @@ class PlotData : public FileSystem  // CHILD von Filesystem
             {return bCloudPlot;}
         inline bool getRegion() const
             {return bRegion;}
+        inline bool getCrust() const
+            {return bCrust;}
         inline double getPerspective() const
             {return dPerspective;}
         inline int getTextSize() const
