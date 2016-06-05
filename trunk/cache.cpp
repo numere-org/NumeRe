@@ -33,7 +33,7 @@ Cache::Cache() : FileSystem()
 	dCache = 0;
 	sHeadLine = 0;
 	nAppendedZeroes = 0;
-	bValidElement = 0;
+	//bValidElement = 0;
 	bValidData = false;
 	bIsSaved = true;
 	nLastSaved = time(0);
@@ -70,7 +70,7 @@ Cache::~Cache()
 		}
 		delete[] dCache;
 	}
-	if (bValidElement)
+	/*if (bValidElement)
 	{
 		for (long long int i = 0; i < nLines; i++)
 		{
@@ -79,7 +79,7 @@ Cache::~Cache()
 			delete[] bValidElement[i];
 		}
 		delete[] bValidElement;
-	}
+	}*/
 	if (sHeadLine)
 	{
         for (long long int i = 0; i < nLayers; i++)
@@ -99,11 +99,12 @@ Cache::~Cache()
 // --> Generiere eine neue Matrix auf Basis der gesetzten Werte. Pruefe zuvor, ob nicht schon eine vorhanden ist <--
 bool Cache::AllocateCache(long long int _nNLines, long long int _nNCols, long long int _nNLayers)
 {
+    //cerr << _nNLines << " " << _nNCols << " " << _nNLayers << endl;
 	if (_nNCols * _nNLines * _nNLayers > 1e8)
 	{
         throw TOO_LARGE_CACHE;
 	}
-	else if (!dCache && !nAppendedZeroes && !sHeadLine && !bValidElement)
+	else if (!dCache && !nAppendedZeroes && !sHeadLine)// && !bValidElement)
 	{
 		sHeadLine = new string*[_nNLayers];
 		for (long long int i = 0; i < _nNLayers; i++)
@@ -119,7 +120,7 @@ bool Cache::AllocateCache(long long int _nNLines, long long int _nNCols, long lo
             for (long long int j = 0; j < _nNCols; j++)
                 nAppendedZeroes[i][j] = _nNLines;
 		}
-		bValidElement = new bool**[_nNLines];
+		/*bValidElement = new bool**[_nNLines];
 		for (long long int i = 0; i < _nNLines; i++)
 		{
 			bValidElement[i] = new bool*[_nNCols];
@@ -129,7 +130,7 @@ bool Cache::AllocateCache(long long int _nNLines, long long int _nNCols, long lo
                 for (long long int k = 0; k < _nNLayers; k++)
                     bValidElement[i][j][k] = false;
 			}
-		}
+		}*/
 		dCache = new double**[_nNLines];
 		for (long long int i = 0; i < _nNLines; i++)
 		{
@@ -141,13 +142,17 @@ bool Cache::AllocateCache(long long int _nNLines, long long int _nNCols, long lo
                     dCache[i][j][k] = NAN;
 			}
 		}
+		//cerr << nLines << " " << nCols << " " << nLayers << endl;
+
 		nLines = _nNLines;
 		nCols = _nNCols;
 		nLayers = _nNLayers;
 
+
+		//cerr << nLines << " " << nCols << " " << nLayers << endl;
 		//cerr << "|-> Cache wurde erfolgreich vorbereitet!" << endl;
 	}
-	else if (nLines && nCols && nLayers && dCache && nAppendedZeroes && bValidElement)
+	else if (nLines && nCols && nLayers && dCache && nAppendedZeroes)// && bValidElement)
 	{
         long long int nCaches = mCachesMap.size();
         if (nLayers < nCaches)
@@ -192,7 +197,7 @@ bool Cache::AllocateCache(long long int _nNLines, long long int _nNCols, long lo
                 }
             }
         }
-        bool*** bNewValidElement = new bool**[_nNLines];
+        /*bool*** bNewValidElement = new bool**[_nNLines];
         for (long long int i = 0; i < _nNLines; i++)
         {
             bNewValidElement[i] = new bool*[_nNCols];
@@ -207,20 +212,20 @@ bool Cache::AllocateCache(long long int _nNLines, long long int _nNCols, long lo
                         bNewValidElement[i][j][k] = false;
                 }
             }
-        }
+        }*/
 
         for (long long int i = 0; i < nLines; i++)
         {
             for (long long int j = 0; j < nCols; j++)
             {
                 delete[] dCache[i][j];
-                delete[] bValidElement[i][j];
+                //delete[] bValidElement[i][j];
             }
             delete[] dCache[i];
-            delete[] bValidElement[i];
+            //delete[] bValidElement[i];
         }
         delete[] dCache;
-        delete[] bValidElement;
+        //delete[] bValidElement;
         for (long long int i = 0; i < nLayers; i++)
         {
             delete[] nAppendedZeroes[i];
@@ -234,7 +239,7 @@ bool Cache::AllocateCache(long long int _nNLines, long long int _nNCols, long lo
         nLayers = _nNLayers;
 
         dCache = dNewCache;
-        bValidElement = bNewValidElement;
+        //bValidElement = bNewValidElement;
         nAppendedZeroes = nNewAppendedZeroes;
         sHeadLine = sNewHeadLine;
 	}
@@ -254,11 +259,11 @@ bool Cache::resizeCache(long long int _nLines, long long int _nCols, long long i
 	long long int _nNLines = nLines;
 	long long int _nNLayers = nLayers;
 
-	while (_nLines >= _nNLines)
+	while (_nLines > _nNLines)
 		_nNLines *= 2;
-	while (_nCols >= _nNCols)
+	while (_nCols > _nNCols)
 		_nNCols *= 2;
-    if (_nLayers > 0 && (_nLayers > _nNLayers || !dCache))
+    if (_nLayers > 0 && (_nLayers > _nNLayers || !dCache) && _nLayers > 4)
         _nNLayers = _nLayers;
 	if (!AllocateCache(_nNLines, _nNCols, _nNLayers))
         return false;
@@ -385,8 +390,8 @@ bool Cache::isValidElement(long long int _nLine, long long int _nCol, const stri
 // --> gibt zurueck, ob das Element der _nLine-ten Zeile und _nCol-ten Spalte ueberhaupt gueltig ist <--
 bool Cache::isValidElement(long long int _nLine, long long int _nCol, long long int _nLayer) const
 {
-	if (_nLine < nLines && _nLine >= 0 && _nCol < nCols && _nCol >= 0 && _nLayer < nLayers && bValidElement)
-		return bValidElement[_nLine][_nCol][_nLayer];
+	if (_nLine < nLines && _nLine >= 0 && _nCol < nCols && _nCol >= 0 && _nLayer < nLayers && dCache)// && bValidElement)
+		return !isnan(dCache[_nLine][_nCol][_nLayer]);//bValidElement[_nLine][_nCol][_nLayer];
 	else
 		return false;
 }
@@ -402,13 +407,13 @@ void Cache::removeCachedData()
             for (long long int j = 0; j < nCols; j++)
             {
                 delete[] dCache[i][j];
-                delete[] bValidElement[i][j];
+                //delete[] bValidElement[i][j];
             }
 			delete[] dCache[i];
-			delete[] bValidElement[i];
+			//delete[] bValidElement[i];
 		}
 		delete[] dCache;
-		delete[] bValidElement;
+		//delete[] bValidElement;
 		if (nAppendedZeroes)
 		{
             for (long long int i = 0; i < nLayers; i++)
@@ -429,7 +434,7 @@ void Cache::removeCachedData()
 		nCols = 8;
 		nLayers = 4;
 		dCache = 0;
-		bValidElement = 0;
+		//bValidElement = 0;
 		bValidData = false;
 		bIsSaved = true;
 		nLastSaved = time(0);
@@ -557,14 +562,14 @@ bool Cache::writeToCache(long long int _nLine, long long int _nCol, long long in
 	{
         if (isinf(_dData) || isnan(_dData))
         {
-            bValidElement[_nLine][_nCol][_nLayer] = false;
+            //bValidElement[_nLine][_nCol][_nLayer] = false;
             dCache[_nLine][_nCol][_nLayer] = NAN;
         }
         else
         {
             //cerr << _dData << endl;
             dCache[_nLine][_nCol][_nLayer] = _dData;
-            bValidElement[_nLine][_nCol][_nLayer] = true;
+            //bValidElement[_nLine][_nCol][_nLayer] = true;
             if (nLines - nAppendedZeroes[_nLayer][_nCol] <= _nLine)
             {
                 nAppendedZeroes[_nLayer][_nCol] = nLines - _nLine - 1;
@@ -583,6 +588,7 @@ bool Cache::writeToCache(long long int _nLine, long long int _nCol, long long in
          *     bis die fehlende Dimension groesser als das zu schreibende Matrixelement
          *     ist. <--
          */
+        //cerr << "Write " << nLines << " " << nCols << " " << nLayers << endl;
 		long long int _nNLines = nLines;
 		long long int _nNCols = nCols;
 		while (_nLine+1 >= _nNLines)
@@ -598,13 +604,13 @@ bool Cache::writeToCache(long long int _nLine, long long int _nCol, long long in
 
         if (isinf(_dData) || isnan(_dData))
         {
-            bValidElement[_nLine][_nCol][_nLayer] = false;
+            //bValidElement[_nLine][_nCol][_nLayer] = false;
             dCache[_nLine][_nCol][_nLayer] = NAN;
         }
         else
         {
             dCache[_nLine][_nCol][_nLayer] = _dData;
-            bValidElement[_nLine][_nCol][_nLayer] = true;
+            //bValidElement[_nLine][_nCol][_nLayer] = true;
             if (nLines - nAppendedZeroes[_nLayer][_nCol] <= _nLine)
                 nAppendedZeroes[_nLayer][_nCol] = nLines - _nLine - 1;
 		}
@@ -643,12 +649,12 @@ void Cache::deleteEntry(long long int _nLine, long long int _nCol, const string&
 
 void Cache::deleteEntry(long long int _nLine, long long int _nCol, long long int _nLayer)
 {
-    if (dCache && bValidElement)
+    if (dCache)// && bValidElement)
     {
-        if (bValidElement[_nLine][_nCol][_nLayer])
+        if (!isnan(dCache[_nLine][_nCol][_nLayer]))//bValidElement[_nLine][_nCol][_nLayer])
         {
             dCache[_nLine][_nCol][_nLayer] = NAN;
-            bValidElement[_nLine][_nCol][_nLayer] = false;
+            //bValidElement[_nLine][_nCol][_nLayer] = false;
             if (bIsSaved)
             {
                 nLastSaved = time(0);
@@ -656,12 +662,12 @@ void Cache::deleteEntry(long long int _nLine, long long int _nCol, long long int
             }
             for (long long int i = nLines-1; i >= 0; i--)
             {
-                if (bValidElement[i][_nCol][_nLayer])
+                if (!isnan(dCache[i][_nCol][_nLayer]))
                 {
                     nAppendedZeroes[_nLayer][_nCol] = nLines - i - 1;
                     break;
                 }
-                if (!i && !bValidElement[i][_nCol][_nLayer])
+                if (!i && isnan(dCache[i][_nCol][_nLayer]))
                 {
                     nAppendedZeroes[_nLayer][_nCol] = nLines;
                     sHeadLine[_nLayer][_nCol] = "Spalte_"+toString((int)_nCol+1);
@@ -682,16 +688,16 @@ bool Cache::qSort(int* nIndex, int nElements, int nKey, int nLayer, int nLeft, i
     }
     if (nRight == nLeft)
         return true;
-    if (nRight - nLeft <= 1 && (nSign*dCache[nIndex[nLeft]][nKey][nLayer] <= nSign*dCache[nIndex[nRight]][nKey][nLayer] || !bValidElement[nIndex[nRight]][nKey][nLayer]))
+    if (nRight - nLeft <= 1 && (nSign*dCache[nIndex[nLeft]][nKey][nLayer] <= nSign*dCache[nIndex[nRight]][nKey][nLayer] || isnan(dCache[nIndex[nRight]][nKey][nLayer])))
         return true;
-    else if (nRight - nLeft <= 1 && (nSign*dCache[nIndex[nRight]][nKey][nLayer] <= nSign*dCache[nIndex[nLeft]][nKey][nLayer] || !bValidElement[nIndex[nLeft]][nKey][nLayer]))
+    else if (nRight - nLeft <= 1 && (nSign*dCache[nIndex[nRight]][nKey][nLayer] <= nSign*dCache[nIndex[nLeft]][nKey][nLayer] || isnan(dCache[nIndex[nLeft]][nKey][nLayer])))
     {
         int nTemp = nIndex[nLeft];
         nIndex[nLeft] = nIndex[nRight];
         nIndex[nRight] = nTemp;
         return true;
     }
-    while (!bValidElement[nIndex[nRight]][nKey][nLayer] && nRight >= nLeft)
+    while (isnan(dCache[nIndex[nRight]][nKey][nLayer]) && nRight >= nLeft)
     {
         nRight--;
     }
@@ -700,9 +706,9 @@ bool Cache::qSort(int* nIndex, int nElements, int nKey, int nLayer, int nLeft, i
     int j = nRight-1;
     do
     {
-        while ((nSign*dCache[nIndex[i]][nKey][nLayer] <= nPivot && bValidElement[nIndex[i]][nKey][nLayer]) && i < nRight)
+        while ((nSign*dCache[nIndex[i]][nKey][nLayer] <= nPivot && !isnan(dCache[nIndex[i]][nKey][nLayer])) && i < nRight)
             i++;
-        while ((nSign*dCache[nIndex[j]][nKey][nLayer] >= nPivot || !bValidElement[nIndex[j]][nKey][nLayer]) && j > nLeft)
+        while ((nSign*dCache[nIndex[j]][nKey][nLayer] >= nPivot || isnan(dCache[nIndex[j]][nKey][nLayer])) && j > nLeft)
             j--;
         if (i < j)
         {
@@ -713,13 +719,13 @@ bool Cache::qSort(int* nIndex, int nElements, int nKey, int nLayer, int nLeft, i
     }
     while (i < j);
 
-    if (nSign*dCache[nIndex[i]][nKey][nLayer] > nPivot || !bValidElement[nIndex[i]][nKey][nLayer])
+    if (nSign*dCache[nIndex[i]][nKey][nLayer] > nPivot || isnan(dCache[nIndex[i]][nKey][nLayer]))
     {
         int nTemp = nIndex[i];
         nIndex[i] = nIndex[nRight];
         nIndex[nRight] = nTemp;
     }
-    if (!bValidElement[nIndex[nRight-1]][nKey][nLayer])
+    if (isnan(dCache[nIndex[nRight-1]][nKey][nLayer]))
     {
         int nTemp = nIndex[nRight-1];
         nIndex[nRight-1] = nIndex[nRight];
@@ -746,7 +752,7 @@ bool Cache::sortElements(const string& sLine) // cache -sort[[=desc]] cols=1[2:3
     int nIndex[nLines];
     int nLayer = 0;
     bool bError = false;
-    bool bSortVector[nLines];
+    //bool bSortVector[nLines];
     double dSortVector[nLines];
     for (int i = 0; i < nLines; i++)
         nIndex[i] = i;
@@ -796,13 +802,13 @@ bool Cache::sortElements(const string& sLine) // cache -sort[[=desc]] cols=1[2:3
             {
                 //cerr << nIndex[j] << "; ";
                 dSortVector[j] = dCache[nIndex[j]][i][nLayer];
-                bSortVector[j] = bValidElement[nIndex[j]][i][nLayer];
+                //bSortVector[j] = !isnan(dCache[nIndex[j]][i][nLayer]);
             }
 
             for (int j = 0; j < nLines-nAppendedZeroes[nLayer][i]; j++)
             {
                 dCache[j][i][nLayer] = dSortVector[j];
-                bValidElement[j][i][nLayer] = bSortVector[j];
+                //bValidElement[j][i][nLayer] = bSortVector[j];
                 //cerr << bSortVector[j] << "/" << bValidElement[j][i] << "; ";
             }
             for (int j = 0; j < nLines; j++)
@@ -837,12 +843,12 @@ bool Cache::sortElements(const string& sLine) // cache -sort[[=desc]] cols=1[2:3
                     for (int j = 0; j < nLines-nAppendedZeroes[nLayer][nKey]; j++)
                     {
                         dSortVector[j] = dCache[nIndex[j]][nKey][nLayer];
-                        bSortVector[j] = bValidElement[nIndex[j]][nKey][nLayer];
+                        //bSortVector[j] = bValidElement[nIndex[j]][nKey][nLayer];
                     }
                     for (int j = 0; j < nLines-nAppendedZeroes[nLayer][nKey]; j++)
                     {
                         dCache[j][nKey][nLayer] = dSortVector[j];
-                        bValidElement[j][nKey][nLayer] = bSortVector[j];
+                        //bValidElement[j][nKey][nLayer] = bSortVector[j];
                     }
                 }
             }
@@ -883,12 +889,12 @@ bool Cache::sortElements(const string& sLine) // cache -sort[[=desc]] cols=1[2:3
                         for (int j = 0; j < nLines-nAppendedZeroes[nLayer][i]; j++)
                         {
                             dSortVector[j] = dCache[nIndex[j]][i][nLayer];
-                            bSortVector[j] = bValidElement[nIndex[j]][i][nLayer];
+                            //bSortVector[j] = bValidElement[nIndex[j]][i][nLayer];
                         }
                         for (int j = 0; j < nLines-nAppendedZeroes[nLayer][i]; j++)
                         {
                             dCache[j][i][nLayer] = dSortVector[j];
-                            bValidElement[j][i][nLayer] = bSortVector[j];
+                            //bValidElement[j][i][nLayer] = bSortVector[j];
                         }
                         for (int j = 0; j < nLines; j++)
                             nIndex[j] = j;
@@ -947,13 +953,13 @@ bool Cache::sortElements(const string& sLine) // cache -sort[[=desc]] cols=1[2:3
                     for (int j = 0; j < nLines-nAppendedZeroes[nLayer][nKey]; j++)
                     {
                         dSortVector[j] = dCache[nIndex[j]][nKey][nLayer];
-                        bSortVector[j] = bValidElement[nIndex[j]][nKey][nLayer];
+                        //bSortVector[j] = bValidElement[nIndex[j]][nKey][nLayer];
 
                     }
                     for (int j = 0; j < nLines-nAppendedZeroes[nLayer][nKey]; j++)
                     {
                         dCache[j][nKey][nLayer] = dSortVector[j];
-                        bValidElement[j][nKey][nLayer] = bSortVector[j];
+                        //bValidElement[j][nKey][nLayer] = bSortVector[j];
                     }
                     //cerr << nKey_1 << "; " << nKey_2 << endl;
                     for (int c = nKey_1; c < nKey_2; c++)
@@ -963,12 +969,12 @@ bool Cache::sortElements(const string& sLine) // cache -sort[[=desc]] cols=1[2:3
                         for (int j = 0; j < nLines-nAppendedZeroes[nLayer][nKey]; j++)
                         {
                             dSortVector[j] = dCache[nIndex[j]][c][nLayer];
-                            bSortVector[j] = bValidElement[nIndex[j]][c][nLayer];
+                            //bSortVector[j] = bValidElement[nIndex[j]][c][nLayer];
                         }
                         for (int j = 0; j < nLines-nAppendedZeroes[nLayer][nKey]; j++)
                         {
                             dCache[j][c][nLayer] = dSortVector[j];
-                            bValidElement[j][c][nLayer] = bSortVector[j];
+                            //bValidElement[j][c][nLayer] = bSortVector[j];
                         }
                     }
                     for (int j = 0; j < nLines; j++)
@@ -994,7 +1000,7 @@ bool Cache::sortElements(const string& sLine) // cache -sort[[=desc]] cols=1[2:3
     {
         for (int j = nLines-1; j >= 0; j--)
         {
-            if (bValidElement[j][i][nLayer])
+            if (!isnan(dCache[j][i][nLayer]))
             {
                 nAppendedZeroes[nLayer][i] = nLines-j-1;
                 break;
@@ -1027,6 +1033,7 @@ bool Cache::saveCache()
     long long int nSavingLines = 128;
     long long int nColMax = 0;
     long long int nLineMax = 0;
+    bool* bValidElement = 0;
 
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
@@ -1045,6 +1052,11 @@ bool Cache::saveCache()
     sCache_file = FileSystem::ValidFileName(sCache_file, ".cache");
 
     char*** cHeadLine = new char**[nSavingLayers];
+    bValidElement = new bool[nSavingLayers];
+    //cerr << 1 << endl;
+    //cerr << nSavingCols << " " << nSavingLines << " " << nSavingLayers << endl;
+    //cerr << nCols << " " << nLines << " " << nLayers << endl;
+    //cerr << mCachesMap.size() << endl;
     char** cCachesList = new char*[mCachesMap.size()];
     long long int** nAppZeroesTemp = new long long int*[nSavingLayers];
     for (long long int i = 0; i < nSavingLayers; i++)
@@ -1062,6 +1074,7 @@ bool Cache::saveCache()
             cHeadLine[i][j][sHeadLine[i][j].length()] = '\0';
         }
     }
+    //cerr << 1.1 << endl;
     int n = 0;
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
@@ -1071,13 +1084,14 @@ bool Cache::saveCache()
         cCachesList[n][(iter->first).length()] = '\0';
         n++;
     }
+    //cerr << 1.2 << endl;
     long int nMajor = AutoVersion::MAJOR;
     long int nMinor = AutoVersion::MINOR;
     long int nBuild = AutoVersion::BUILD;
     if (cache_file.is_open())
         cache_file.close();
     cache_file.open(sCache_file.c_str(), ios_base::out | ios_base::binary | ios_base::trunc);
-
+    //cerr << 1.3 << endl;
     if (bValidData && cache_file.good())
     {
         long long int nDimTemp = -nSavingLines;
@@ -1094,6 +1108,7 @@ bool Cache::saveCache()
         size_t cachemapsize = mCachesMap.size();
         cache_file.write((char*)&cachemapsize, sizeof(size_t));
         n = 0;
+        //cerr << 2 << endl;
         for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
         {
             nDimTemp = iter->second;
@@ -1103,6 +1118,7 @@ bool Cache::saveCache()
             cache_file.write((char*)&nDimTemp, sizeof(long long int));
             n++;
         }
+        //cerr << 3 << endl;
         for (long long int i = 0; i < nSavingLayers; i++)
         {
             for (long long int j = 0; j < nSavingCols; j++)
@@ -1113,7 +1129,7 @@ bool Cache::saveCache()
                 cache_file.write(cHeadLine[i][j], sizeof(char)*(sHeadLine[i][j].length()+1));
             }
         }
-
+        //cerr << 4 << endl;
         for (long long int i = 0; i < nSavingLayers; i++)
             cache_file.write((char*)nAppZeroesTemp[i], sizeof(long long int)*nSavingCols);
         for (long long int i = 0; i < nSavingLines; i++)
@@ -1121,11 +1137,17 @@ bool Cache::saveCache()
             for (long long int j = 0; j < nSavingCols; j++)
                 cache_file.write((char*)dCache[i][j], sizeof(double)*nSavingLayers);
         }
+        //cerr << 5 << endl;
         for (long long int i = 0; i < nSavingLines; i++)
         {
             for (long long int j = 0; j < nSavingCols; j++)
-                cache_file.write((char*)bValidElement[i][j], sizeof(bool)*nSavingLayers);
+            {
+                for (long long int k = 0; k < nSavingLayers; k++)
+                    bValidElement[k] = !isnan(dCache[i][j][k]);
+                cache_file.write((char*)bValidElement, sizeof(bool)*nSavingLayers);
+            }
         }
+        //cerr << 6 << endl;
         cache_file.close();
         setSaveStatus(true);
     }
@@ -1140,6 +1162,8 @@ bool Cache::saveCache()
             delete[] cHeadLine[i];
             delete[] nAppZeroesTemp[i];
         }
+        if (bValidElement)
+            delete[] bValidElement;
         delete[] cHeadLine;
         delete[] nAppZeroesTemp;
         for (unsigned int i = 0; i < mCachesMap.size(); i++)
@@ -1154,6 +1178,8 @@ bool Cache::saveCache()
         delete[] cHeadLine[i];
         delete[] nAppZeroesTemp[i];
     }
+    if (bValidElement)
+        delete[] bValidElement;
     delete[] cHeadLine;
     delete[] nAppZeroesTemp;
     for (unsigned int i = 0; i < mCachesMap.size(); i++)
@@ -1167,6 +1193,7 @@ bool Cache::loadCache()
     sCache_file = FileSystem::ValidFileName(sCache_file, ".cache");
     char*** cHeadLine = 0;
     char* cCachesMap = 0;
+    bool* bValidElement = 0;
     long int nMajor = 0;
     long int nMinor = 0;
     long int nBuild = 0;
@@ -1219,6 +1246,7 @@ bool Cache::loadCache()
 
         AllocateCache(nLines, nCols, nLayers);
         cHeadLine = new char**[nLayers];
+        bValidElement = new bool[nLayers];
         for (long long int i = 0; i < nLayers; i++)
         {
             cHeadLine[i] = new char*[nCols];
@@ -1250,7 +1278,14 @@ bool Cache::loadCache()
         for (long long int i = 0; i < nLines; i++)
         {
             for (long long int j = 0; j < nCols; j++)
-                cache_file.read((char*)bValidElement[i][j], sizeof(bool)*nLayers);
+            {
+                cache_file.read((char*)bValidElement, sizeof(bool)*nLayers);
+                for (long long int k = 0; k < nLayers; k++)
+                {
+                    if (!bValidElement[k])
+                        dCache[i][j][k] = NAN;
+                }
+            }
         }
         //cerr << endl << nMajor << " " << nMinor << " " << nBuild << " " << nLines << " " << nCols << endl;
         cache_file.close();
@@ -1281,6 +1316,8 @@ bool Cache::loadCache()
         }
         delete[] cHeadLine;
     }
+    if (bValidElement)
+        delete[] bValidElement;
     return true;
 }
 
@@ -1298,7 +1335,9 @@ bool Cache::containsCacheElements(const string& sExpression)
 {
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
-        if (sExpression.find(iter->first+"(") != string::npos)
+        if (sExpression.find(iter->first+"(") != string::npos
+            && (!sExpression.find(iter->first+"(")
+                || checkDelimiter(sExpression.substr(sExpression.find(iter->first+"(")-1, (iter->first).length()+2))))
         {
             return true;
         }
@@ -1341,9 +1380,11 @@ bool Cache::addCache(const string& sCache, const Settings& _option)
     }
 
     if (sPredefinedCommands.find(";"+sCacheName+";") != string::npos)
-        cerr << LineBreak("|-> WARNUNG: \""+sCacheName+"\" stimmt mit einem NumeRe-Kommando überein. \""+sCacheName+"\" kann in numerischen Ausdrücken verwendet werden, jedoch nicht als Kommandoausdruck.$(Viele Kommandos auf Datensätzen existieren auch in der inversen Schreibweise)", _option) << endl;
+        cerr << LineBreak("|-> " + _lang.get("CACHE_WARNING_CMD_OVERLAP", sCacheName), _option) << endl;
     if (sPluginCommands.length() && sPluginCommands.find(";"+sCacheName+";") != string::npos)
-        cerr << LineBreak("|-> WARNUNG: \""+sCacheName+"\" stimmt mit einem Plugin-Kommando überein. \""+sCacheName+"\" kann in numerischen Ausdrücken verwendet werden, jedoch nicht als Kommandoausdruck.$(Viele Kommandos auf Datensätzen existieren auch in der inversen Schreibweise)", _option) << endl;
+        cerr << LineBreak("|-> " + _lang.get("CACHE_WARNING_PLUGIN_OVERLAP"), _option) << endl;
+
+    //cerr << "add" << mCachesMap.size() << " " << nLayers << endl;
 
     if (mCachesMap.size() >= nLayers)
     {
@@ -1352,6 +1393,7 @@ bool Cache::addCache(const string& sCache, const Settings& _option)
     }
     long long int nIndex = mCachesMap.size();
     mCachesMap[sCacheName] = nIndex;
+    //cerr << "add" << mCachesMap.size() << " " << nLayers << endl;
     /*for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
         cerr << iter->first << " = " << iter->second << endl;
@@ -1382,7 +1424,7 @@ bool Cache::deleteCache(const string& sCache)
                                 nAppendedZeroes[k][j] = nAppendedZeroes[k+1][j];
                             }
                             dCache[i][j][k] = dCache[i][j][k+1];
-                            bValidElement[i][j][k] = bValidElement[i][j][k+1];
+                            //bValidElement[i][j][k] = bValidElement[i][j][k+1];
                         }
                     }
                 }
@@ -1397,7 +1439,7 @@ bool Cache::deleteCache(const string& sCache)
                             nAppendedZeroes[nLayers-1][j] = nLines;
                         }
                         dCache[i][j][nLayers-1] = NAN;
-                        bValidElement[i][j][nLayers-1] = false;
+                        //bValidElement[i][j][nLayers-1] = false;
                     }
                 }
             }
@@ -1415,16 +1457,18 @@ bool Cache::deleteCache(const string& sCache)
                 bIsSaved = false;
                 nLastSaved = time(0);
             }
-            else if (!bIsSaved || !Cache::isValid())
+            else if (!Cache::isValid())
             {
                 bIsSaved = true;
                 nLastSaved = time(0);
                 if (fileExists(getProgramPath()+"/numere.cache"))
                 {
                     string sCachefile = getProgramPath() + "/numere.cache";
+                    cerr << sCachefile << endl;
                     remove(sCachefile.c_str());
                 }
             }
+            //cerr << 5 << endl;
             return true;
         }
     }
@@ -1492,7 +1536,7 @@ bool Cache::saveLayer(string _sFileName, const string& sLayer)
         for (long long int i = 0; i < lines; i++)
         {
             for (long long int j = 0; j < cols; j++)
-                bValidValues[j] = bValidElement[i][j][nLayer];
+                bValidValues[j] = !isnan(dCache[i][j][nLayer]);
             file_out.write((char*)bValidValues, sizeof(bool)*cols);
         }
         file_out.close();
@@ -1536,7 +1580,7 @@ void Cache::deleteBulk(long long int _nLayer, long long int i1, long long int i2
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            bValidElement[i][j][_nLayer] = false;
+            //bValidElement[i][j][_nLayer] = false;
             dCache[i][j][_nLayer] = NAN;
         }
     }
@@ -1549,12 +1593,12 @@ void Cache::deleteBulk(long long int _nLayer, long long int i1, long long int i2
     {
         for (long long int i = nLines-1; i >= 0; i--)
         {
-            if (bValidElement[i][j][_nLayer])
+            if (!isnan(dCache[i][j][_nLayer]))
             {
                 nAppendedZeroes[_nLayer][j] = nLines - i - 1;
                 break;
             }
-            if (!i && !bValidElement[i][j][_nLayer])
+            if (!i && isnan(dCache[i][j][_nLayer]))
             {
                 nAppendedZeroes[_nLayer][j] = nLines;
                 sHeadLine[_nLayer][j] = "Spalte_"+toString((int)j+1);
@@ -1578,7 +1622,7 @@ void Cache::deleteBulk(long long int _nLayer, const vector<long long int>& _vLin
         {
             if (_vCol[j] >= nCols || _vCol[j] < 0 || _vLine[i] >= nLines || _vLine[i] < 0)
                 continue;
-            bValidElement[_vLine[i]][_vCol[j]][_nLayer] = false;
+            //bValidElement[_vLine[i]][_vCol[j]][_nLayer] = false;
             dCache[_vLine[i]][_vCol[j]][_nLayer] = NAN;
         }
     }
@@ -1591,12 +1635,12 @@ void Cache::deleteBulk(long long int _nLayer, const vector<long long int>& _vLin
     {
         for (long long int i = nLines-1; i >= 0; i--)
         {
-            if (bValidElement[i][j][_nLayer])
+            if (!isnan(dCache[i][j][_nLayer]))
             {
                 nAppendedZeroes[_nLayer][j] = nLines - i - 1;
                 break;
             }
-            if (!i && !bValidElement[i][j][_nLayer])
+            if (!i && isnan(dCache[i][j][_nLayer]))
             {
                 nAppendedZeroes[_nLayer][j] = nLines;
                 sHeadLine[_nLayer][j] = "Spalte_"+toString((int)j+1);
@@ -1649,7 +1693,7 @@ double Cache::std(long long int _nLayer, long long int i1, long long int i2, lon
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            if (!bValidElement[i][j][_nLayer])
+            if (isnan(dCache[i][j][_nLayer]))
             {
                 nInvalid++;
                 continue;
@@ -1663,7 +1707,7 @@ double Cache::std(long long int _nLayer, long long int i1, long long int i2, lon
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            if (!bValidElement[i][j][_nLayer])
+            if (isnan(dCache[i][j][_nLayer]))
                 continue;
             dStd += (dMean - dCache[i][j][_nLayer]) * (dMean - dCache[i][j][_nLayer]);
         }
@@ -1692,7 +1736,7 @@ double Cache::std(long long int _nLayer, const vector<long long int>& _vLine, co
         {
             if (_vLine[i] < 0 || _vLine[i] >= getCacheLines(_nLayer, false) || _vCol[j] < 0 || _vCol[j] >= getCacheCols(_nLayer, false))
                 nInvalid++;
-            else if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]) || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
+            else if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]))// || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
                 nInvalid++;
             else
                 dStd += (dAvg - dCache[_vLine[i]][_vCol[j]][_nLayer])*(dAvg - dCache[_vLine[i]][_vCol[j]][_nLayer]);
@@ -1746,7 +1790,7 @@ double Cache::avg(long long int _nLayer, long long int i1, long long int i2, lon
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            if (!bValidElement[i][j][_nLayer])
+            if (isnan(dCache[i][j][_nLayer]))
             {
                 nInvalid++;
                 continue;
@@ -1778,7 +1822,7 @@ double Cache::avg(long long int _nLayer, const vector<long long int>& _vLine, co
             //cerr << "j " << _vCol[j] << endl;
             if (_vLine[i] < 0 || _vLine[i] >= getCacheLines(_nLayer, false) || _vCol[j] < 0 || _vCol[j] >= getCacheCols(_nLayer, false))
                 nInvalid++;
-            else if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]) || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
+            else if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]))// || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
                 nInvalid++;
             else
                 dAvg += dCache[_vLine[i]][_vCol[j]][_nLayer];
@@ -1831,7 +1875,7 @@ double Cache::max(long long int _nLayer, long long int i1, long long int i2, lon
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            if (!bValidElement[i][j][_nLayer])
+            if (isnan(dCache[i][j][_nLayer]))
                 continue;
             if (i == i1 && j == j1)
                 dMax = dCache[i][j][_nLayer];
@@ -1861,7 +1905,7 @@ double Cache::max(long long int _nLayer, const vector<long long int>& _vLine, co
         {
             if (_vLine[i] < 0 || _vLine[i] >= getCacheLines(_nLayer, false) || _vCol[j] < 0 || _vCol[j] >= getCacheCols(_nLayer, false))
                 continue;
-            if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]) || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
+            if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]))// || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
                 continue;
             if (isnan(dMax))
                 dMax = dCache[_vLine[i]][_vCol[j]][_nLayer];
@@ -1914,7 +1958,7 @@ double Cache::min(long long int _nLayer, long long int i1, long long int i2, lon
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            if (!bValidElement[i][j][_nLayer])
+            if (isnan(dCache[i][j][_nLayer]))
                 continue;
             if (i == i1 && j == j1)
                 dMin = dCache[i][j][_nLayer];
@@ -1944,7 +1988,7 @@ double Cache::min(long long int _nLayer, const vector<long long int>& _vLine, co
         {
             if (_vLine[i] < 0 || _vLine[i] >= getCacheLines(_nLayer, false) || _vCol[j] < 0 || _vCol[j] >= getCacheCols(_nLayer, false))
                 continue;
-            if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]) || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
+            if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]))// || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
                 continue;
             if (isnan(dMin))
                 dMin = dCache[_vLine[i]][_vCol[j]][_nLayer];
@@ -1978,7 +2022,7 @@ double Cache::prd(long long int _nLayer, long long int i1, long long int i2, lon
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            if (!bValidElement[i][j][_nLayer])
+            if (isnan(dCache[i][j][_nLayer]))
                 continue;
             dPrd *= dCache[i][j][_nLayer];
         }
@@ -2004,7 +2048,7 @@ double Cache::prd(long long int _nLayer, const vector<long long int>& _vLine, co
         {
             if (_vLine[i] < 0 || _vLine[i] >= getCacheLines(_nLayer, false) || _vCol[j] < 0 || _vCol[j] >= getCacheCols(_nLayer, false))
                 continue;
-            if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]) || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
+            if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]))// || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
                 continue;
             dPrd *= dCache[_vLine[i]][_vCol[j]][_nLayer];
         }
@@ -2054,7 +2098,7 @@ double Cache::sum(long long int _nLayer, long long int i1, long long int i2, lon
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            if (!bValidElement[i][j][_nLayer])
+            if (isnan(dCache[i][j][_nLayer]))
                 continue;
             dSum += dCache[i][j][_nLayer];
         }
@@ -2079,7 +2123,7 @@ double Cache::sum(long long int _nLayer, const vector<long long int>& _vLine, co
         {
             if (_vLine[i] < 0 || _vLine[i] >= getCacheLines(_nLayer, false) || _vCol[j] < 0 || _vCol[j] >= getCacheCols(_nLayer, false))
                 continue;
-            if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]) || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
+            if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]))// || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
                 continue;
             dSum += dCache[_vLine[i]][_vCol[j]][_nLayer];
         }
@@ -2130,7 +2174,7 @@ double Cache::num(long long int _nLayer, long long int i1, long long int i2, lon
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            if (!bValidElement[i][j][_nLayer])
+            if (isnan(dCache[i][j][_nLayer]))
                 nInvalid++;
         }
     }
@@ -2157,7 +2201,7 @@ double Cache::num(long long int _nLayer, const vector<long long int>& _vLine, co
         {
             if (_vLine[i] < 0 || _vLine[i] >= getCacheLines(_nLayer, false) || _vCol[j] < 0 || _vCol[j] >= getCacheCols(_nLayer, false))
                 nInvalid++;
-            else if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]) || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
+            else if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]))// || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
                 nInvalid++;
         }
     }
@@ -2273,7 +2317,7 @@ double Cache::norm(long long int _nLayer, long long int i1, long long int i2, lo
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            if (!bValidElement[i][j][_nLayer])
+            if (isnan(dCache[i][j][_nLayer]))
                 continue;
             dNorm += dCache[i][j][_nLayer]*dCache[i][j][_nLayer];
         }
@@ -2298,7 +2342,7 @@ double Cache::norm(long long int _nLayer, const vector<long long int>& _vLine, c
         {
             if (_vLine[i] < 0 || _vLine[i] >= getCacheLines(_nLayer, false) || _vCol[j] < 0 || _vCol[j] >= getCacheCols(_nLayer, false))
                 continue;
-            if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]) || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
+            if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]))// || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
                 continue;
             dNorm += dCache[_vLine[i]][_vCol[j]][_nLayer]*dCache[_vLine[i]][_vCol[j]][_nLayer];
         }
@@ -2351,7 +2395,7 @@ double Cache::cmp(long long int _nLayer, long long int i1, long long int i2, lon
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            if (!bValidElement[i][j][_nLayer])
+            if (isnan(dCache[i][j][_nLayer]))
                 continue;
             if (dCache[i][j][_nLayer] == dRef)
             {
@@ -2419,7 +2463,7 @@ double Cache::cmp(long long int _nLayer, const vector<long long int>& _vLine, co
         {
             if (_vLine[i] < 0 || _vLine[i] >= getCacheLines(_nLayer, false) || _vCol[j] < 0 || _vCol[j] >= getCacheCols(_nLayer, false))
                 continue;
-            if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]) || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
+            if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]))// || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
                 continue;
             if (dCache[_vLine[i]][_vCol[j]][_nLayer] == dRef)
             {
@@ -2514,17 +2558,17 @@ double Cache::med(long long int _nLayer, long long int i1, long long int i2, lon
         {
             if (i1 != i2 && j1 != j2)
             {
-                if (bValidElement[i][j][_nLayer])
+                if (!isnan(dCache[i][j][_nLayer]))
                     _cache.writeToCache((j-j1)+(i-i1)*(j2-j1+1),0, "cache", dCache[i][j][_nLayer]);
             }
             else if (i1 != i2)
             {
-                if (bValidElement[i][j][_nLayer])
+                if (!isnan(dCache[i][j][_nLayer]))
                     _cache.writeToCache(i-i1,j-j1,"cache",dCache[i][j][_nLayer]);
             }
             else
             {
-                if (bValidElement[i][j][_nLayer])
+                if (!isnan(dCache[i][j][_nLayer]))
                     _cache.writeToCache(j-j1,i-i1,"cache",dCache[i][j][_nLayer]);
             }
         }
@@ -2561,7 +2605,7 @@ double Cache::med(long long int _nLayer, const vector<long long int>& _vLine, co
         {
             if (_vLine[i] < 0 || _vLine[i] >= getCacheLines(_nLayer, false) || _vCol[j] < 0 || _vCol[j] >= getCacheCols(_nLayer, false))
                 nInvalid++;
-            if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]) || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
+            if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]))// || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
                 nInvalid++;
         }
     }
@@ -2636,17 +2680,17 @@ double Cache::pct(long long int _nLayer, long long int i1, long long int i2, lon
         {
             if (i1 != i2 && j1 != j2)
             {
-                if (bValidElement[i][j][_nLayer])
+                if (!isnan(dCache[i][j][_nLayer]))
                     _cache.writeToCache((j-j1)+(i-i1)*(j2-j1+1),0, "cache", dCache[i][j][_nLayer]);
             }
             else if (i1 != i2)
             {
-                if (bValidElement[i][j][_nLayer])
+                if (!isnan(dCache[i][j][_nLayer]))
                     _cache.writeToCache(i-i1,j-j1,"cache",dCache[i][j][_nLayer]);
             }
             else
             {
-                if (bValidElement[i][j][_nLayer])
+                if (!isnan(dCache[i][j][_nLayer]))
                     _cache.writeToCache(j-j1,i-i1,"cache",dCache[i][j][_nLayer]);
             }
         }
@@ -2679,7 +2723,7 @@ double Cache::pct(long long int _nLayer, const vector<long long int>& _vLine, co
         {
             if (_vLine[i] < 0 || _vLine[i] >= getCacheLines(_nLayer, false) || _vCol[j] < 0 || _vCol[j] >= getCacheCols(_nLayer, false))
                 nInvalid++;
-            if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]) || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
+            if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]))// || !bValidElement[_vLine[i]][_vCol[j]][_nLayer])
                 nInvalid++;
         }
     }
@@ -2790,7 +2834,7 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
         {
             for (long long int j = j1; j <= j2; j++)
             {
-                if (!bValidElement[i][j][_nLayer])
+                if (isnan(dCache[i][j][_nLayer]))
                 {
                     if (i > i1 && i < i2 && j > j1 && j < j2 && isValidDisc(i-1, j-1, _nLayer, 2))
                     {
@@ -2809,7 +2853,7 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
         {
             for (long long int j = j1; j <= j2; j++)
             {
-                if (!bValidElement[i][j][_nLayer])
+                if (isnan(dCache[i][j][_nLayer]))
                 {
                     if (i > i1 && i < i2 && j > j1 && j < j2 && isValidDisc(i-1, j-1, _nLayer, 2))
                     {
@@ -2847,7 +2891,7 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                                                 _region.vDataArray[(_i == __i+nOrder ? 0 : _i-__i+1)][(_j == __j+nOrder ? 0 : _j-__j+1)] = dCache[_i][_j][_nLayer];
                                                 _region.vValidationArray[(_i == __i+nOrder ? 0 : _i-__i+1)][(_j == __j+nOrder ? 0 : _j-__j+1)] = true;
                                             }
-                                            if (bValidElement[_i][_j][_nLayer])
+                                            if (!isnan(dCache[_i][_j][_nLayer]))
                                             {
                                                 _region.vDataArray[_i-__i+1][_j-__j+1] = dCache[_i][_j][_nLayer];
                                                 _region.vValidationArray[_i-__i+1][_j-__j+1] = true;
@@ -2867,10 +2911,10 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                                     {
                                         for (long long int _j = __j; _j <= __j+nOrder; _j++)
                                         {
-                                            if (!bValidElement[_i][_j][_nLayer] && _region.vValidationArray[_i-__i+1][_j-__j+1])
+                                            if (isnan(dCache[_i][_j][_nLayer]) && _region.vValidationArray[_i-__i+1][_j-__j+1])
                                             {
                                                 dCache[_i][_j][_nLayer] = _region.vDataArray[_i-__i+1][_j-__j+1];
-                                                bValidElement[_i][_j][_nLayer] = true;
+                                                //bValidElement[_i][_j][_nLayer] = true;
                                             }
                                         }
                                     }
@@ -2903,7 +2947,7 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                                         //_region.vValidationArray[_i-__i].resize(nOrder+2);
                                         for (long long int _j = __j; _j <= __j+nOrder+1; _j++)
                                         {
-                                            if (bValidElement[_i][_j][_nLayer])
+                                            if (!isnan(dCache[_i][_j][_nLayer]))
                                             {
                                                 _region.vDataArray[_i-__i+1][_j-__j] = dCache[_i][_j][_nLayer];
                                                 _region.vValidationArray[_i-__i+1][_j-__j] = true;
@@ -2927,10 +2971,10 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                                     {
                                         for (long long int _j = __j; _j <= __j+nOrder+1; _j++)
                                         {
-                                            if (!bValidElement[_i][_j][_nLayer] && _region.vValidationArray[_i-__i+1][_j-__j])
+                                            if (isnan(dCache[_i][_j][_nLayer]) && _region.vValidationArray[_i-__i+1][_j-__j])
                                             {
                                                 dCache[_i][_j][_nLayer] = _region.vDataArray[_i-__i+1][_j-__j];
-                                                bValidElement[_i][_j][_nLayer] = true;
+                                                //bValidElement[_i][_j][_nLayer] = true;
                                             }
                                         }
                                     }
@@ -2965,7 +3009,7 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                                         //_region.vValidationArray[_i-__i].resize(nOrder+2);
                                         for (long long int _j = __j; _j <= __j+nOrder+1; _j++)
                                         {
-                                            if (bValidElement[_i][_j][_nLayer])
+                                            if (!isnan(dCache[_i][_j][_nLayer]))
                                             {
                                                 _region.vDataArray[_i-__i+1][_j-__j] = dCache[_i][_j][_nLayer];
                                                 _region.vValidationArray[_i-__i+1][_j-__j] = true;
@@ -2991,10 +3035,10 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                                     {
                                         for (long long int _j = __j; _j <= __j+nOrder+1; _j++)
                                         {
-                                            if (!bValidElement[_i][_j][_nLayer] && _region.vValidationArray[_i-__i+1][_j-__j])
+                                            if (isnan(dCache[_i][_j][_nLayer]) && _region.vValidationArray[_i-__i+1][_j-__j])
                                             {
                                                 dCache[_i][_j][_nLayer] = _region.vDataArray[_i-__i+1][_j-__j];
-                                                bValidElement[_i][_j][_nLayer] = true;
+                                                //bValidElement[_i][_j][_nLayer] = true;
                                             }
                                         }
                                     }
@@ -3033,7 +3077,7 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                                         //_region.vValidationArray[_i-__i].resize(nOrder+2);
                                         for (long long int _j = __j; _j <= __j+nOrder+1; _j++)
                                         {
-                                            if (bValidElement[_i][_j][_nLayer])
+                                            if (!isnan(dCache[_i][_j][_nLayer]))
                                             {
                                                 _region.vDataArray[_i-__i][_j-__j] = dCache[_i][_j][_nLayer];
                                                 _region.vValidationArray[_i-__i][_j-__j] = true;
@@ -3057,10 +3101,10 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                                     {
                                         for (long long int _j = __j; _j <= __j+nOrder+1; _j++)
                                         {
-                                            if (!bValidElement[_i][_j][_nLayer] && _region.vValidationArray[_i-__i][_j-__j])
+                                            if (isnan(dCache[_i][_j][_nLayer]) && _region.vValidationArray[_i-__i][_j-__j])
                                             {
                                                 dCache[_i][_j][_nLayer] = _region.vDataArray[_i-__i][_j-__j];
-                                                bValidElement[_i][_j][_nLayer] = true;
+                                                //bValidElement[_i][_j][_nLayer] = true;
                                             }
                                         }
                                     }
@@ -3092,7 +3136,7 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                                         //_region.vValidationArray[_i-__i].resize(nOrder+2);
                                         for (long long int _j = __j; _j <= __j+nOrder; _j++)
                                         {
-                                            if (bValidElement[_i][_j][_nLayer])
+                                            if (!isnan(dCache[_i][_j][_nLayer]))
                                             {
                                                 _region.vDataArray[_i-__i][_j-__j+1] = dCache[_i][_j][_nLayer];
                                                 _region.vValidationArray[_i-__i][_j-__j+1] = true;
@@ -3116,10 +3160,10 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                                     {
                                         for (long long int _j = __j; _j <= __j+nOrder; _j++)
                                         {
-                                            if (!bValidElement[_i][_j][_nLayer] && _region.vValidationArray[_i-__i][_j-__j+1])
+                                            if (isnan(dCache[_i][_j][_nLayer]) && _region.vValidationArray[_i-__i][_j-__j+1])
                                             {
                                                 dCache[_i][_j][_nLayer] = _region.vDataArray[_i-__i][_j-__j+1];
-                                                bValidElement[_i][_j][_nLayer] = true;
+                                                //bValidElement[_i][_j][_nLayer] = true;
                                             }
                                         }
                                     }
@@ -3153,7 +3197,7 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                                         //_region.vValidationArray[_i-__i].resize(nOrder+2);
                                         for (long long int _j = __j; _j <= __j+nOrder+1; _j++)
                                         {
-                                            if (bValidElement[_i][_j][_nLayer])
+                                            if (!isnan(dCache[_i][_j][_nLayer]))
                                             {
                                                 _region.vDataArray[_i-__i][_j-__j] = dCache[_i][_j][_nLayer];
                                                 _region.vValidationArray[_i-__i][_j-__j] = true;
@@ -3177,10 +3221,10 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                                     {
                                         for (long long int _j = __j; _j <= __j+nOrder+1; _j++)
                                         {
-                                            if (!bValidElement[_i][_j][_nLayer] && _region.vValidationArray[_i-__i][_j-__j])
+                                            if (isnan(dCache[_i][_j][_nLayer]) && _region.vValidationArray[_i-__i][_j-__j])
                                             {
                                                 dCache[_i][_j][_nLayer] = _region.vDataArray[_i-__i][_j-__j];
-                                                bValidElement[_i][_j][_nLayer] = true;
+                                                //bValidElement[_i][_j][_nLayer] = true;
                                             }
                                         }
                                     }
@@ -3216,7 +3260,7 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                                     //_region.vValidationArray[_i-__i].resize(nOrder+2);
                                     for (long long int _j = __j; _j <= __j+nOrder; _j++)
                                     {
-                                        if (bValidElement[_i][_j][_nLayer])
+                                        if (!isnan(dCache[_i][_j][_nLayer]))
                                         {
                                             _region.vDataArray[_i-__i][_j-__j+1] = dCache[_i][_j][_nLayer];
                                             _region.vValidationArray[_i-__i][_j-__j+1] = true;
@@ -3240,10 +3284,10 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                                 {
                                     for (long long int _j = __j; _j <= __j+nOrder; _j++)
                                     {
-                                        if (!bValidElement[_i][_j][_nLayer] && _region.vValidationArray[_i-__i][_j-__j+1])
+                                        if (isnan(dCache[_i][_j][_nLayer]) && _region.vValidationArray[_i-__i][_j-__j+1])
                                         {
                                             dCache[_i][_j][_nLayer] = _region.vDataArray[_i-__i][_j-__j+1];
-                                            bValidElement[_i][_j][_nLayer] = true;
+                                            //bValidElement[_i][_j][_nLayer] = true;
                                         }
                                     }
                                 }
@@ -3278,7 +3322,7 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                                     //_region.vValidationArray[_i-__i].resize(nOrder+2);
                                     for (long long int _j = __j; _j <= __j+nOrder+1; _j++)
                                     {
-                                        if (bValidElement[_i][_j][_nLayer])
+                                        if (!isnan(dCache[_i][_j][_nLayer]))
                                         {
                                             _region.vDataArray[_i-__i][_j-__j] = dCache[_i][_j][_nLayer];
                                             _region.vValidationArray[_i-__i][_j-__j] = true;
@@ -3302,10 +3346,10 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                                 {
                                     for (long long int _j = __j; _j <= __j+nOrder+1; _j++)
                                     {
-                                        if (!bValidElement[_i][_j][_nLayer] && _region.vValidationArray[_i-__i][_j-__j])
+                                        if (isnan(dCache[_i][_j][_nLayer]) && _region.vValidationArray[_i-__i][_j-__j])
                                         {
                                             dCache[_i][_j][_nLayer] = _region.vDataArray[_i-__i][_j-__j];
-                                            bValidElement[_i][_j][_nLayer] = true;
+                                            //bValidElement[_i][_j][_nLayer] = true;
                                         }
                                     }
                                 }
@@ -3323,12 +3367,12 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                         {
                             for (long long int _i = __i; _i <= __i+nOrder+1; _i++)
                             {
-                                if (!bValidElement[_i][__j][_nLayer])
+                                if (isnan(dCache[_i][__j][_nLayer]))
                                 {
                                     __j--;
                                     break;
                                 }
-                                if (!bValidElement[_i][__j+nOrder+1][_nLayer])
+                                if (isnan(dCache[_i][__j+nOrder+1][_nLayer]))
                                 {
                                     nOrder++;
                                     break;
@@ -3338,12 +3382,12 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                                 break;
                             for (long long int _j = __j; _j <= __j+nOrder+1; _j++)
                             {
-                                if (!bValidElement[__i][_j][_nLayer])
+                                if (isnan(dCache[__i][_j][_nLayer]))
                                 {
                                     __i--;
                                     break;
                                 }
-                                if (!bValidElement[__i+nOrder+1][_j][_nLayer])
+                                if (isnan(dCache[__i+nOrder+1][_j][_nLayer]))
                                 {
                                     nOrder++;
                                     break;
@@ -3366,7 +3410,7 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                             //_region.vValidationArray[k-__i].resize(nOrder+2);
                             for (long long int l = __j; l <= __j+nOrder+1; l++)
                             {
-                                if (bValidElement[k][l][_nLayer])
+                                if (!isnan(dCache[k][l][_nLayer]))
                                 {
                                     _region.vDataArray[k-__i][l-__j] = dCache[k][l][_nLayer];
                                     _region.vValidationArray[k-__i][l-__j] = true;
@@ -3384,10 +3428,10 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                         {
                             for (long long int l = __j; l <= __j+nOrder+1; l++)
                             {
-                                if (!bValidElement[k][l][_nLayer] && _region.vValidationArray[k-__i][l-__j])
+                                if (isnan(dCache[k][l][_nLayer]) && _region.vValidationArray[k-__i][l-__j])
                                 {
                                     dCache[k][l][_nLayer] = _region.vDataArray[k-__i][l-__j];
-                                    bValidElement[k][l][_nLayer] = true;
+                                    //bValidElement[k][l][_nLayer] = true;
                                 }
                             }
                         }
@@ -3408,17 +3452,17 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
         {
             for (long long int j = j1; j <= j2; j++)
             {
-                if (!bValidElement[i][j][_nLayer])
+                if (isnan(dCache[i][j][_nLayer]))
                 {
                     for (long long int _j = j; _j <= j2; _j++)
                     {
-                        if (bValidElement[i][_j][_nLayer])
+                        if (!isnan(dCache[i][_j][_nLayer]))
                         {
                             if (j != j1)
                             {
                                 for (long long int __j = j; __j < _j; __j++)
                                 {
-                                    bValidElement[i][__j][_nLayer] = true;
+                                    //bValidElement[i][__j][_nLayer] = true;
                                     dCache[i][__j][_nLayer] = (dCache[i][_j][_nLayer]-dCache[i][j-1][_nLayer])/(double)(_j-j)*(double)(__j-j+1) + dCache[i][j-1][_nLayer];
                                 }
                                 if (bIsSaved)
@@ -3432,7 +3476,7 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                             {
                                 for (long long int __j = j; __j < _j; __j++)
                                 {
-                                    bValidElement[i][__j][_nLayer] = true;
+                                    //bValidElement[i][__j][_nLayer] = true;
                                     dCache[i][__j][_nLayer] = dCache[i][_j][_nLayer];
                                 }
                                 if (bIsSaved)
@@ -3443,11 +3487,11 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                                 break;
                             }
                         }
-                        if (j != j1 && _j == j2 && !bValidElement[i][_j][_nLayer])
+                        if (j != j1 && _j == j2 && isnan(dCache[i][_j][_nLayer]))
                         {
                             for (long long int __j = j; __j <= j2; __j++)
                             {
-                                bValidElement[i][__j][_nLayer] = true;
+                                //bValidElement[i][__j][_nLayer] = true;
                                 dCache[i][__j][_nLayer] = dCache[i][j-1][_nLayer];
                             }
                             if (bIsSaved)
@@ -3468,17 +3512,17 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
         {
             for (long long int i = i1; i <= i2; i++)
             {
-                if (!bValidElement[i][j][_nLayer])
+                if (isnan(dCache[i][j][_nLayer]))
                 {
                     for (long long int _i = i; _i <= i2; _i++)
                     {
-                        if (bValidElement[_i][j][_nLayer])
+                        if (!isnan(dCache[_i][j][_nLayer]))
                         {
                             if (i != i1)
                             {
                                 for (long long int __i = i; __i < _i; __i++)
                                 {
-                                    bValidElement[__i][j][_nLayer] = true;
+                                    //bValidElement[__i][j][_nLayer] = true;
                                     dCache[__i][j][_nLayer] = (dCache[_i][j][_nLayer]-dCache[i-1][j][_nLayer])/(double)(_i-i)*(double)(__i-i+1) + dCache[i-1][j][_nLayer];
                                 }
                                 if (bIsSaved)
@@ -3492,7 +3536,7 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                             {
                                 for (long long int __i = i; __i < _i; __i++)
                                 {
-                                    bValidElement[__i][j][_nLayer] = true;
+                                    //bValidElement[__i][j][_nLayer] = true;
                                     dCache[__i][j][_nLayer] = dCache[_i][j][_nLayer];
                                 }
                                 if (bIsSaved)
@@ -3503,11 +3547,11 @@ bool Cache::retoque(long long int _nLayer, long long int i1, long long int i2, l
                                 break;
                             }
                         }
-                        if (i != i1 && _i == i2 && !bValidElement[_i][j][_nLayer])
+                        if (i != i1 && _i == i2 && isnan(dCache[_i][j][_nLayer]))
                         {
                             for (long long int __i = i; __i <= i2; __i++)
                             {
-                                bValidElement[__i][j][_nLayer] = true;
+                                //bValidElement[__i][j][_nLayer] = true;
                                 dCache[__i][j][_nLayer] = dCache[i-1][j][_nLayer];
                             }
                             if (bIsSaved)
@@ -3603,7 +3647,7 @@ bool Cache::retoqueRegion(long long int _nLayer, long long int i1, long long int
             {
                 for (unsigned int n = 0; n < nOrder; n++)
                 {
-                    if (bValidElement[i][j-1][_nLayer] && bValidElement[i][j+nOrder][_nLayer] && bValidElement[i][j+n][_nLayer])
+                    if (!isnan(dCache[i][j-1][_nLayer]) && !isnan(dCache[i][j+nOrder][_nLayer]) && !isnan(dCache[i][j+n][_nLayer]))
                         dCache[i][j+n][_nLayer] = 0.5 * dCache[i][j+n][_nLayer] + 0.5 * (dCache[i][j-1][_nLayer] + (dCache[i][j+nOrder][_nLayer] - dCache[i][j-1][_nLayer])/(double)(nOrder+1)*(double)(n+1));
                 }
             }
@@ -3617,7 +3661,7 @@ bool Cache::retoqueRegion(long long int _nLayer, long long int i1, long long int
             {
                 for (unsigned int n = 0; n < nOrder; n++)
                 {
-                    if (bValidElement[i-1][j][_nLayer] && bValidElement[i+nOrder][j][_nLayer] && bValidElement[i+n][j][_nLayer])
+                    if (!isnan(dCache[i-1][j][_nLayer]) && !isnan(dCache[i+nOrder][j][_nLayer]) && !isnan(dCache[i+n][j][_nLayer]))
                         dCache[i+n][j][_nLayer] = 0.5 * dCache[i+n][j][_nLayer] + 0.5 * (dCache[i-1][j][_nLayer] + (dCache[i+nOrder][j][_nLayer] - dCache[i-1][j][_nLayer])/(double)(nOrder+1)*(double)(n+1));
                 }
             }
@@ -3635,10 +3679,10 @@ bool Cache::retoqueRegion(long long int _nLayer, long long int i1, long long int
                     {
                         if (nOrder == 1)
                         {
-                            if (bValidElement[i+ni][j+nOrder+1][_nLayer]
-                                && bValidElement[i+ni][j][_nLayer]
-                                && bValidElement[i+nOrder+1][j+nj][_nLayer]
-                                && bValidElement[i][j+nj][_nLayer])
+                            if (!isnan(dCache[i+ni][j+nOrder+1][_nLayer])
+                                && !isnan(dCache[i+ni][j][_nLayer])
+                                && !isnan(dCache[i+nOrder+1][j+nj][_nLayer])
+                                && !isnan(dCache[i][j+nj][_nLayer]))
                             {
                                 //cerr << dCache[i+ni][j+nj][_nLayer];
                                 dCache[i+ni][j+nj][_nLayer] = 0.5*med(_nLayer, i1, i2+1, j1, j2+1) + 0.25*(
@@ -3647,8 +3691,8 @@ bool Cache::retoqueRegion(long long int _nLayer, long long int i1, long long int
 //                                dCache[i+ni][j+nj][_nLayer] = 0.5*(
 //                                    dCache[i][j+nj][_nLayer]+(dCache[i+nOrder+1][j+nj][_nLayer]-dCache[i][j+nj][_nLayer])/(double)(nOrder+1)*(double)ni
 //                                    +dCache[i+ni][j][_nLayer]+(dCache[i+ni][j+nOrder+1][_nLayer]-dCache[i+ni][j][_nLayer])/(double)(nOrder+1)*(double)nj);
-                                if (!isnan(dCache[i+ni][j+nj][_nLayer]) && !isinf(dCache[i+ni][j+nj][_nLayer]))
-                                    bValidElement[i+ni][j+nj][_nLayer] = true;
+                                /*if (!isnan(dCache[i+ni][j+nj][_nLayer]) && !isinf(dCache[i+ni][j+nj][_nLayer]))
+                                    bValidElement[i+ni][j+nj][_nLayer] = true;*/
                                 //cerr << " / " << dCache[i+ni][j+nj][_nLayer] << endl;
                             }
                         }
@@ -3682,7 +3726,7 @@ bool Cache::retoqueRegion(long long int _nLayer, long long int i1, long long int
                                         +(dCache[i+(ni+nj-nOrder-1)][j+nOrder+1][_nLayer]-dCache[i+nOrder+1][j+(ni+nj-nOrder-1)][_nLayer])/(double)(2*nOrder+2-(ni+nj))*(double)(nj-(ni+nj-nOrder-1));
                                 }
                                 dAverage /= 6.0;
-                                if (bValidElement[i+ni][j+nj][_nLayer])
+                                if (!isnan(dCache[i+ni][j+nj][_nLayer]))
                                 {
                                     //dCache[i+ni][j+nj][_nLayer] = 0.5*dCache[i+ni][j+nj][_nLayer] + 0.5*dAverage;
                                     if (nOrder % 2)
@@ -3703,7 +3747,7 @@ bool Cache::retoqueRegion(long long int _nLayer, long long int i1, long long int
                                 else
                                 {
                                     dCache[i+ni][j+nj][_nLayer] = dAverage;
-                                    bValidElement[i+ni][j+nj][_nLayer] = true;
+                                    //bValidElement[i+ni][j+nj][_nLayer] = true;
                                 }
                             }
                         }
@@ -3869,7 +3913,7 @@ bool Cache::smooth(long long int _nLayer, long long int i1, long long int i2, lo
             {
                 for (unsigned int n = 0; n < nOrder; n++)
                 {
-                    if (bValidElement[i][j-1][_nLayer] && bValidElement[i][j+nOrder][_nLayer] && bValidElement[i][j+n][_nLayer])
+                    if (!isnan(dCache[i][j-1][_nLayer]) && !isnan(dCache[i][j+nOrder][_nLayer]) && !isnan(dCache[i][j+n][_nLayer]))
                         dCache[i][j+n][_nLayer] = 0.5 * dCache[i][j+n][_nLayer] + 0.5 * (dCache[i][j-1][_nLayer] + (dCache[i][j+nOrder][_nLayer] - dCache[i][j-1][_nLayer])/(double)(nOrder+1)*(double)(n+1));
                 }
             }
@@ -3883,7 +3927,7 @@ bool Cache::smooth(long long int _nLayer, long long int i1, long long int i2, lo
             {
                 for (unsigned int n = 0; n < nOrder; n++)
                 {
-                    if (bValidElement[i-1][j][_nLayer] && bValidElement[i+nOrder][j][_nLayer] && bValidElement[i+n][j][_nLayer])
+                    if (!isnan(dCache[i-1][j][_nLayer]) && !isnan(dCache[i+nOrder][j][_nLayer]) && !isnan(dCache[i+n][j][_nLayer]))
                         dCache[i+n][j][_nLayer] = 0.5 * dCache[i+n][j][_nLayer] + 0.5 * (dCache[i-1][j][_nLayer] + (dCache[i+nOrder][j][_nLayer] - dCache[i-1][j][_nLayer])/(double)(nOrder+1)*(double)(n+1));
                 }
             }
@@ -3901,13 +3945,13 @@ bool Cache::smooth(long long int _nLayer, long long int i1, long long int i2, lo
                     {
                         if (nOrder == 1)
                         {
-                            if (bValidElement[i+ni][j+nOrder+1][_nLayer]
-                                && bValidElement[i+ni][j][_nLayer]
-                                && bValidElement[i+nOrder+1][j+nj][_nLayer]
-                                && bValidElement[i][j+nj][_nLayer])
+                            if (!isnan(dCache[i+ni][j+nOrder+1][_nLayer])
+                                && !isnan(dCache[i+ni][j][_nLayer])
+                                && !isnan(dCache[i+nOrder+1][j+nj][_nLayer])
+                                && !isnan(dCache[i][j+nj][_nLayer]))
                             {
                                 //cerr << dCache[i+ni][j+nj][_nLayer];
-                                if (bValidElement[i+ni][j+nj][_nLayer])
+                                if (!isnan(dCache[i+ni][j+nj][_nLayer]))
                                     dCache[i+ni][j+nj][_nLayer] = 0.5*dCache[i+ni][j+nj][_nLayer] + 0.25*(
                                         dCache[i][j+nj][_nLayer]+(dCache[i+nOrder+1][j+nj][_nLayer]-dCache[i][j+nj][_nLayer])/(double)(nOrder+1)*(double)ni
                                         +dCache[i+ni][j][_nLayer]+(dCache[i+ni][j+nOrder+1][_nLayer]-dCache[i+ni][j][_nLayer])/(double)(nOrder+1)*(double)nj);
@@ -3916,7 +3960,7 @@ bool Cache::smooth(long long int _nLayer, long long int i1, long long int i2, lo
                                     dCache[i+ni][j+nj][_nLayer] = 0.5*(
                                         dCache[i][j+nj][_nLayer]+(dCache[i+nOrder+1][j+nj][_nLayer]-dCache[i][j+nj][_nLayer])/(double)(nOrder+1)*(double)ni
                                         +dCache[i+ni][j][_nLayer]+(dCache[i+ni][j+nOrder+1][_nLayer]-dCache[i+ni][j][_nLayer])/(double)(nOrder+1)*(double)nj);
-                                    bValidElement[i+ni][j+nj][_nLayer] = true;
+                                    //bValidElement[i+ni][j+nj][_nLayer] = true;
                                 }
                                 //cerr << " / " << dCache[i+ni][j+nj][_nLayer] << endl;
                             }
@@ -3951,7 +3995,7 @@ bool Cache::smooth(long long int _nLayer, long long int i1, long long int i2, lo
                                         +(dCache[i+(ni+nj-nOrder-1)][j+nOrder+1][_nLayer]-dCache[i+nOrder+1][j+(ni+nj-nOrder-1)][_nLayer])/(double)(2*nOrder+2-(ni+nj))*(double)(nj-(ni+nj-nOrder-1));
                                 }
                                 dAverage /= 6.0;
-                                if (bValidElement[i+ni][j+nj][_nLayer])
+                                if (!isnan(dCache[i+ni][j+nj][_nLayer]))
                                 {
                                     //dCache[i+ni][j+nj][_nLayer] = 0.5*dCache[i+ni][j+nj][_nLayer] + 0.5*dAverage;
 //                                    if (nOrder % 2)
@@ -3972,7 +4016,7 @@ bool Cache::smooth(long long int _nLayer, long long int i1, long long int i2, lo
                                 else
                                 {
                                     dCache[i+ni][j+nj][_nLayer] = dAverage;
-                                    bValidElement[i+ni][j+nj][_nLayer] = true;
+                                    //bValidElement[i+ni][j+nj][_nLayer] = true;
                                 }
                             }
                         }
@@ -4184,11 +4228,11 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
             if (isnan(dOutputSamples[_fin]))
             {
                 dCache[i1+_ret_line][j1+_fin][_nLayer] = NAN;
-                bValidElement[i1+_ret_line][j1+_fin][_nLayer] = false;
+                //bValidElement[i1+_ret_line][j1+_fin][_nLayer] = false;
                 continue;
             }
             dCache[i1+_ret_line][j1+_fin][_nLayer] = dOutputSamples[_fin];
-            bValidElement[i1+_ret_line][j1+_fin][_nLayer] = true;
+            //bValidElement[i1+_ret_line][j1+_fin][_nLayer] = true;
         }
         //cerr << endl;
         _ret_line++;
@@ -4214,12 +4258,12 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
                 if (isnan(dTemp[i][j]))
                 {
                     dCache[_ret_line+i-(i2+1)+i1][j][_nLayer] = NAN;
-                    bValidElement[_ret_line+i-(i2+1)+i1][j][_nLayer] = false;
+                    //bValidElement[_ret_line+i-(i2+1)+i1][j][_nLayer] = false;
                 }
                 else
                 {
                     dCache[_ret_line+i-(i2+1)+i1][j][_nLayer] = dTemp[i][j];
-                    bValidElement[_ret_line+i-(i2+1)+i1][j][_nLayer] = true;
+                    //bValidElement[_ret_line+i-(i2+1)+i1][j][_nLayer] = true;
                 }
             }
         }
@@ -4238,7 +4282,7 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
                     return false;
                 }
                 dCache[i][j][_nLayer] = NAN;
-                bValidElement[i][j][_nLayer] = false;
+                //bValidElement[i][j][_nLayer] = false;
             }
         }
     }
@@ -4260,12 +4304,12 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
                 if (isnan(dTemp[i][j]))
                 {
                     dCache[i][_final_cols+j-(j2+1)+j1][_nLayer] = NAN;
-                    bValidElement[i][_final_cols+j-(j2+1)+j1][_nLayer] = false;
+                    //bValidElement[i][_final_cols+j-(j2+1)+j1][_nLayer] = false;
                 }
                 else
                 {
                     dCache[i][_final_cols+j-(j2+1)+j1][_nLayer] = dTemp[i][j];
-                    bValidElement[i][_final_cols+j-(j2+1)+j1][_nLayer] = true;
+                    //bValidElement[i][_final_cols+j-(j2+1)+j1][_nLayer] = true;
                 }
             }
         }
@@ -4284,7 +4328,7 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
                     return false;
                 }
                 dCache[i][j][_nLayer] = NAN;
-                bValidElement[i][j][_nLayer] = false;
+                //bValidElement[i][j][_nLayer] = false;
             }
         }
     }
@@ -4296,7 +4340,7 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
         {
             if (i == nLines)
                 nAppendedZeroes[_nLayer][j] = 0;
-            else if (!bValidElement[i][j][_nLayer])
+            else if (isnan(dCache[i][j][_nLayer]))
                 nAppendedZeroes[_nLayer][j]++;
             else
                 break;
@@ -4621,12 +4665,12 @@ bool Cache::isValidDisc(long long int _nLine, long long int _nCol, long long int
         return false;
     for (long long int i = _nLine; i <= _nLine+nSize; i++)
     {
-        if (!bValidElement[i][_nCol][_nLayer] || !bValidElement[i][_nCol+nSize][_nLayer])
+        if (isnan(dCache[i][_nCol][_nLayer]) || isnan(dCache[i][_nCol+nSize][_nLayer]))
             return false;
     }
     for (long long int j = _nCol; j <= _nCol+nSize; j++)
     {
-        if (!bValidElement[_nLine][j][_nLayer] ||!bValidElement[_nLine+nSize][j][_nLayer])
+        if (isnan(dCache[_nLine][j][_nLayer]) || isnan(dCache[_nLine+nSize][j][_nLayer]))
             return false;
     }
 

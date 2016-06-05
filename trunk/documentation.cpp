@@ -1244,7 +1244,11 @@ void doc_FirstStart(const Settings& _option)
 
 void doc_TipOfTheDay(Settings& _option)
 {
-    vector<string> vTipList = getDBFileContent("<>/docs/hints.ndb", _option);
+    vector<string> vTipList;
+    if (fileExists(_option.ValidFileName("<>/user/docs/hints.ndb", ".ndb")))
+        vTipList = getDBFileContent("<>/user/docs/hints.ndb", _option);
+    else
+        vTipList = getDBFileContent("<>/docs/hints.ndb", _option);
     unsigned int nth_tip = 0;
     // --> Einen Seed (aus der Zeit generiert) an die rand()-Funktion zuweisen <--
     srand(time(NULL));

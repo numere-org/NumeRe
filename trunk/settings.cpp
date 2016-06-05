@@ -134,8 +134,24 @@ void Settings::save(string _sWhere, bool bMkBackUp)
     // --> INI-Datei oeffnen, wobei "ios_base::out" bedeutet, dass wir in die Datei schreiben moechten <--
 	Settings_ini.open(sWhere.c_str(), ios_base::out | ios_base::trunc);
 
+	/* --> Sollte aus irgendeinem Grund nicht in die INI-Datei geschrieben werden koennen, brechen wir ab und
+	 *     geben eine entsprechende Fehlermeldung aus <--
+	 */
+	if (Settings_ini.fail() && !bMkBackUp)
+	{
+		cerr << "|-> ERROR: Could not save your configuration." << endl;
+		Settings_ini.close();
+		return;
+	}
+	else if (Settings_ini.fail() && bMkBackUp)
+	{
+        cerr << "ERROR: Could not save a backup of your configuration." << endl;
+        Settings_ini.close();
+        return;
+	}
+
 	// --> Ggf vorherige Error-Flags, die beim Lesen aufgetreten sind, entfernen <--
-	Settings_ini.clear();
+	//Settings_ini.clear();
 
 	// --> Zum Anfang springen <--
 	Settings_ini.seekg(0);

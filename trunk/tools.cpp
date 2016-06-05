@@ -1663,7 +1663,7 @@ bool checkDelimiter(const string& sString)
 {
     bool isDelimitedLeft = false;
     bool isDelimitedRight = false;
-    string sDelimiter = "+-*/ ()={}^&|!<>,\\%#~[]:";
+    string sDelimiter = "+-*/ ()={}^&|!<>,\\%#~[]?:\";";
 
     // --> Versuche jeden Delimiter, der dir bekannt ist und setze bei einem Treffer den entsprechenden BOOL auf TRUE <--
     for (unsigned int i = 0; i < sDelimiter.length(); i++)
@@ -2801,6 +2801,8 @@ string generateCacheName(const string& sFilename, Settings& _option)
             sCacheName[i] = '_';
     }
 
+    if (sCacheName == "data")
+        sCacheName = "loaded_data";
     return sCacheName;
 }
 

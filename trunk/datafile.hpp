@@ -59,7 +59,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
 		ifstream file_in;								// ifstream, der zum Einlesen eines Datenfiles verwendet wird
 		ofstream file_out;                              // ofstream, der zum Schreiben des Datenfiles verwendet wird
 		bool bValidData;								// TRUE, wenn die Instanz der Klasse auch Daten enthaelt
-		bool** bValidEntry;							// Pointer auf Pointer auf Valid-Element-Bool-Matrix
+		//bool** bValidEntry;							// Pointer auf Pointer auf Valid-Element-Bool-Matrix
 		bool bUseCache;									// TRUE, wenn die Elemente des Caches verwendet werden sollen
 		bool bLoadEmptyCols;
 		bool bLoadEmptyColsInNextFile;
