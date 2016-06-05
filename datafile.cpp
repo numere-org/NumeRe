@@ -33,7 +33,7 @@ Datafile::Datafile() : Cache()
 	nLines = 0;
 	nCols = 0;
 	dDatafile = 0;
-	bValidEntry = 0;
+	//bValidEntry = 0;
 	sHeadLine = 0;
 	nAppendedZeroes = 0;
 	bValidData = false;
@@ -64,18 +64,18 @@ Datafile::Datafile(long long int _nLines, long long int _nCols) : Cache()
 	nAppendedZeroes = 0;
 	// --> Bereite gleich den Speicher auf Basis der beiden ints vor <--
 	dDatafile = new double*[nLines];
-	bValidEntry = new bool*[nLines];
+	//bValidEntry = new bool*[nLines];
 	sHeadLine = new string[nCols];
 
 	for (long long int i = 0; i < nLines; i++)
 	{
 		dDatafile[i] = new double[nCols];
-		bValidEntry[i] = new bool[nCols];
+		//bValidEntry[i] = new bool[nCols];
 		for (long long int j = 0; j < nCols; j++)
 		{
 			sHeadLine[j] = "";
 			dDatafile[i][j] = 0.0;
-			bValidEntry[i][j] = false;
+			//bValidEntry[i][j] = false;
 		}
 	}
 }
@@ -92,14 +92,14 @@ Datafile::~Datafile()
 		}
 		delete[] dDatafile;
 	}
-	if(bValidEntry)
+	/*if(bValidEntry)
 	{
 		for (long long int i = 0; i < nLines; i++)
 		{
 			delete[] bValidEntry[i];
 		}
 		delete[] bValidEntry;
-	}
+	}*/
 	if(sHeadLine)
 		delete[] sHeadLine;
 	if(nAppendedZeroes)
@@ -111,7 +111,7 @@ Datafile::~Datafile()
 // --> Generiere eine neue Matrix auf Basis der gesetzten Werte. Pruefe zuvor, ob nicht schon eine vorhanden ist <--
 void Datafile::Allocate()
 {
-	if (nLines && nCols && !dDatafile && !nAppendedZeroes && !bValidEntry)
+	if (nLines && nCols && !dDatafile && !nAppendedZeroes)// && !bValidEntry)
 	{
         if (!sHeadLine)
         {
@@ -126,16 +126,16 @@ void Datafile::Allocate()
 		{
 			nAppendedZeroes[i] = nLines;
 		}
-		bValidEntry = new bool*[nLines];
+		//bValidEntry = new bool*[nLines];
 		dDatafile = new double*[nLines];
 		for (long long int i = 0; i < nLines; i++)
 		{
 			dDatafile[i] = new double[nCols];
-			bValidEntry[i] = new bool[nCols];
+			//bValidEntry[i] = new bool[nCols];
 			for (long long int j = 0; j < nCols; j++)
 			{
 				dDatafile[i][j] = NAN;
-				bValidEntry[i][j] = false;
+				//bValidEntry[i][j] = false;
 			}
 		}
 	}
@@ -151,7 +151,7 @@ void Datafile::countAppendedZeroes(long long int nCol)
             nAppendedZeroes[i] = 0;
             for (long long int j = nLines-1; j >= 0; j--)
             {
-                if (!bValidEntry[j][i])
+                if (isnan(dDatafile[j][i]))
                     nAppendedZeroes[i]++;
                 else
                     break;
@@ -163,7 +163,7 @@ void Datafile::countAppendedZeroes(long long int nCol)
         nAppendedZeroes[nCol] = 0;
         for (long long int j = nLines-1; j >= 0; j--)
         {
-            if (!bValidEntry[j][nCol])
+            if (isnan(dDatafile[j][nCol]))
                 nAppendedZeroes[nCol]++;
             else
                 break;
@@ -311,13 +311,13 @@ void Datafile::openLabx(Settings& _option)
         {
             if (sDataMatrix[i][j] == "<value />")
             {
-                dDatafile[i][j] = 0.0;
-                bValidEntry[i][j] = false;
+                dDatafile[i][j] = NAN;
+                //bValidEntry[i][j] = false;
             }
             else
             {
                 dDatafile[i][j] = StrToDb(sDataMatrix[i][j].substr(7, sDataMatrix[i][j].find('<', 7)-7));
-                bValidEntry[i][j] = true;
+                //bValidEntry[i][j] = true;
                 if (!bValidData)
                     bValidData = true;
             }
@@ -720,7 +720,7 @@ void Datafile::openCSV(Settings& _option)
 						// --> Aha! Da ist der gesuchte String. Dann ist das Wohl eine Leerzeile. Wir werden '0.0' in
 						//	   den Datensatz schreiben und den Datenpunkt als zu ignorierende Nullzeile interpretieren <--
 						dDatafile[i][j] = NAN;
-						bValidEntry[i][j] = false;
+						//bValidEntry[i][j] = false;
 					}
 					else
 					{
@@ -730,7 +730,7 @@ void Datafile::openCSV(Settings& _option)
                             {
                                 sHeadLine[j] += "\\n" + sDataMatrix[i][j];
                                 dDatafile[i][j] = NAN;
-                                bValidEntry[i][j] = false;
+                                //bValidEntry[i][j] = false;
                                 break;
                             }
                             if (n+1 == sDataMatrix[i][j].length())
@@ -740,7 +740,7 @@ void Datafile::openCSV(Settings& _option)
                                 sstr.precision(20);
                                 sstr << sDataMatrix[i][j];
                                 sstr >> dDatafile[i][j];
-                                bValidEntry[i][j] = true;
+                                //bValidEntry[i][j] = true;
                             }
                         }
 					}
@@ -1039,8 +1039,8 @@ void Datafile::openJDX(Settings& _option)
                             dDatafile[j-vComment[i]+1][vCols[i-1]+k] = vLine[k] * (k % 2 ? dYFactor : dXFactor);
                         else
                             dDatafile[j-vComment[i]+1][vCols[i-1]+k] = vLine[k] * (k % 2 ? dYFactor : dXFactor);
-                        if (!isnan(dDatafile[j-vComment[i]+1][vCols[i-1]+k]) && !isinf(dDatafile[j-vComment[i]+1][vCols[i-1]+k]))
-                            bValidEntry[j-vComment[i]+1][vCols[i-1]+k] = true;
+                        /*if (!isnan(dDatafile[j-vComment[i]+1][vCols[i-1]+k]) && !isinf(dDatafile[j-vComment[i]+1][vCols[i-1]+k]))
+                            bValidEntry[j-vComment[i]+1][vCols[i-1]+k] = true;*/
                     }
                     else
                     {
@@ -1048,8 +1048,8 @@ void Datafile::openJDX(Settings& _option)
                             dDatafile[j-vComment[i]+1][k] = vLine[k] * (k % 2 ? dYFactor : dXFactor);
                         else
                             dDatafile[j-vComment[i]+1][k] = vLine[k] * (k % 2 ? dYFactor : dXFactor);
-                        if (!isnan(dDatafile[j-vComment[i]+1][k]) && !isinf(dDatafile[j-vComment[i]+1][k]))
-                            bValidEntry[j-vComment[i]+1][k] = true;
+                        /*if (!isnan(dDatafile[j-vComment[i]+1][k]) && !isinf(dDatafile[j-vComment[i]+1][k]))
+                            bValidEntry[j-vComment[i]+1][k] = true;*/
                     }
                 }
                 /*for (unsigned int k = 0; k < vDataMatrix[i][j].length(); k++)
@@ -1118,7 +1118,7 @@ void Datafile::openNDAT(Settings& _option)
 {
     if (sDataFile.substr(sDataFile.rfind('.')) != ".ndat")
         return;
-
+    bool* bValidEntry = 0;
     char** cHeadLine = 0;
     long int nMajor = 0;
     long int nMinor = 0;
@@ -1139,6 +1139,7 @@ void Datafile::openNDAT(Settings& _option)
         file_in.read((char*)&nCols, sizeof(long long int));
         //cerr << nLines << " " << nCols << endl;
         Allocate();
+        bValidEntry = new bool[nCols];
         cHeadLine = new char*[nCols];
         for (long long int i = 0; i < nCols; i++)
         {
@@ -1164,7 +1165,12 @@ void Datafile::openNDAT(Settings& _option)
         //cerr << endl << nMajor << " " << nMinor << " " << nBuild << " " << nLines << " " << nCols << endl;
         for (long long int i = 0; i < nLines; i++)
         {
-            file_in.read((char*)bValidEntry[i], sizeof(bool)*nCols);
+            file_in.read((char*)bValidEntry, sizeof(bool)*nCols);
+            for (long long int j = 0; j < nCols; j++)
+            {
+                if (!bValidEntry[j])
+                    dDatafile[i][j] = NAN;
+            }
         }
         //cerr << endl << nMajor << " " << nMinor << " " << nBuild << " " << nLines << " " << nCols << endl;
         file_in.close();
@@ -1183,6 +1189,8 @@ void Datafile::openNDAT(Settings& _option)
         }
         delete[] cHeadLine;
     }
+    if (bValidEntry)
+        delete[] bValidEntry;
     if (nMajor == 1 && nMinor == 0 && nBuild == 3)
         countAppendedZeroes();
     return;
@@ -1295,7 +1303,7 @@ void Datafile::openIBW(Settings& _option, bool bXZSlice, bool bYZSlice)
         for (long long int i = 0; i < nDim[j]; i++)
         {
             dDatafile[i][j] = dScalingFactorA[j]*(double)i+dScalingFactorB[j];
-            bValidEntry[i][j] = true;
+            //bValidEntry[i][j] = true;
         }
     }
 
@@ -1332,55 +1340,55 @@ void Datafile::openIBW(Settings& _option, bool bXZSlice, bool bYZSlice)
             if (dData && !isnan(dData[i+j*(nDim[0]+bReadComplexData*nDim[0])]) && !isinf(dData[i+j*(nDim[0]+bReadComplexData*nDim[0])]))
             {
                 dDatafile[i][nSliceCounter+nFirstCol] = dData[i+j*(nDim[0]+bReadComplexData*nDim[0])];
-                bValidEntry[i][nSliceCounter+nFirstCol] = true;
+                //bValidEntry[i][nSliceCounter+nFirstCol] = true;
                 if (bReadComplexData)
                 {
                     dDatafile[i][nSliceCounter+1+nFirstCol] = dData[i+1+j*(nDim[0]+bReadComplexData*nDim[0])];
-                    bValidEntry[i][nSliceCounter+1+nFirstCol] = true;
+                    //bValidEntry[i][nSliceCounter+1+nFirstCol] = true;
                     i++;
                 }
             }
             else if (fData && !isnan(fData[i+j*(nDim[0]+bReadComplexData*nDim[0])] && !isinf(fData[i+j*(nDim[0]+bReadComplexData*nDim[0])])))
             {
                 dDatafile[i][nSliceCounter+nFirstCol] = fData[i+j*(nDim[0]+bReadComplexData*nDim[0])];
-                bValidEntry[i][nSliceCounter+nFirstCol] = true;
+                //bValidEntry[i][nSliceCounter+nFirstCol] = true;
                 if (bReadComplexData)
                 {
                     dDatafile[i][nSliceCounter+1+nFirstCol] = fData[i+1+j*(nDim[0]+bReadComplexData*nDim[0])];
-                    bValidEntry[i][nSliceCounter+1+nFirstCol] = true;
+                    //bValidEntry[i][nSliceCounter+1+nFirstCol] = true;
                     i++;
                 }
             }
             else if (n8_tData)
             {
                 dDatafile[i][nSliceCounter+nFirstCol] = (double)n8_tData[i+j*(nDim[0]+bReadComplexData*nDim[0])];
-                bValidEntry[i][nSliceCounter+nFirstCol] = true;
+                //bValidEntry[i][nSliceCounter+nFirstCol] = true;
                 if (bReadComplexData)
                 {
                     dDatafile[i][nSliceCounter+1+nFirstCol] = (double)n8_tData[i+1+j*(nDim[0]+bReadComplexData*nDim[0])];
-                    bValidEntry[i][nSliceCounter+1+nFirstCol] = true;
+                    //bValidEntry[i][nSliceCounter+1+nFirstCol] = true;
                     i++;
                 }
             }
             else if (n16_tData)
             {
                 dDatafile[i][nSliceCounter+nFirstCol] = (double)n16_tData[i+j*(nDim[0]+bReadComplexData*nDim[0])];
-                bValidEntry[i][nSliceCounter+nFirstCol] = true;
+                //bValidEntry[i][nSliceCounter+nFirstCol] = true;
                 if (bReadComplexData)
                 {
                     dDatafile[i][nSliceCounter+1+nFirstCol] = (double)n16_tData[i+1+j*(nDim[0]+bReadComplexData*nDim[0])];
-                    bValidEntry[i][nSliceCounter+1+nFirstCol] = true;
+                    //bValidEntry[i][nSliceCounter+1+nFirstCol] = true;
                     i++;
                 }
             }
             else if (n32_tData)
             {
                 dDatafile[i][nSliceCounter+nFirstCol] = (double)n32_tData[i+j*(nDim[0]+bReadComplexData*nDim[0])];
-                bValidEntry[i][nSliceCounter+nFirstCol] = true;
+                //bValidEntry[i][nSliceCounter+nFirstCol] = true;
                 if (bReadComplexData)
                 {
                     dDatafile[i][nSliceCounter+1+nFirstCol] = (double)n32_tData[i+1+j*(nDim[0]+bReadComplexData*nDim[0])];
-                    bValidEntry[i][nSliceCounter+1+nFirstCol] = true;
+                    //bValidEntry[i][nSliceCounter+1+nFirstCol] = true;
                     i++;
                 }
             }
@@ -1603,7 +1611,7 @@ void Datafile::openODS(Settings& _option)
                 if (sEntry.find_first_not_of('-') == string::npos)
                     continue;
                 dDatafile[i][j] = StrToDb(sEntry);
-                bValidEntry[i][j] = true;
+                //bValidEntry[i][j] = true;
             }
             else if (sHeadLine[j] == "Spalte_"+toString(j+1))
             {
@@ -2295,7 +2303,7 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 						// --> Aha! Da ist der gesuchte String. Dann ist das Wohl eine Leerzeile. Wir werden '0.0' in
 						//	   den Datensatz schreiben und den Datenpunkt als zu ignorierende Nullzeile interpretieren <--
 						dDatafile[i][j] = NAN;
-						bValidEntry[i][j] = false;
+						//bValidEntry[i][j] = false;
 					}
 					else
 					{
@@ -2304,7 +2312,7 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 						sstr.precision(20);     	// Praezision setzen
 						sstr << sDataMatrix[i][j];	// machen wir aus den tokens mal Zahlen
 						sstr >> dDatafile[i][j];	// schreiben wir den Stringstream in die Daten-Matrix
-						bValidEntry[i][j] = true;	// Dieser Eintrag existiert nun offensichtlich!
+						//bValidEntry[i][j] = true;	// Dieser Eintrag existiert nun offensichtlich!
 					}
 					if(_option.getbDebug())
 						cerr << dDatafile[i][j] << " ";
@@ -2359,9 +2367,9 @@ vector<string> Datafile::getPastedDataFromCmdLine(const Settings& _option, bool&
     vector<string> vPaste;
     string sLine;
     make_hline();
-    cerr << LineBreak("|-> NUMERE: DATEN EINFÜGEN", _option) << endl;
+    cerr << LineBreak("|-> NUMERE: "+toUpperCase(_lang.get("DATA_PASTE_HEADLINE")), _option) << endl;
     make_hline();
-    cerr << LineBreak("|-> Daten hier einfügen (Entweder direkt mittels der \"Einfügen\"-Option des Kontextmenüs, oder aber durch zeilenweises Eintippen der Daten. Mit \"endpaste\" wird das Einfügen abgeschlossen):", _option) << endl << "|" << endl;
+    cerr << LineBreak("|-> "+_lang.get("DATA_PASTE_DESCRIPTION"), _option) << endl << "|" << endl;
     while (true)
     {
         cerr << "|PASTE> ";
@@ -2527,7 +2535,7 @@ void Datafile::pasteLoad(const Settings& _option)
         //cerr << nLines << endl;
         if (!nLines && !bReadClipboard)
         {
-            cerr << LineBreak("|-> Der eingefügte Inhalt konnte nicht als Tabelle mit numerischen Werten identifiziert werden.", _option) << endl;
+            cerr << LineBreak("|-> "+_lang.get("DATA_COULD_NOT_IDENTIFY_PASTED_CONTENT"), _option) << endl;
             return;
         }
         else if (bReadClipboard && !nLines)
@@ -2558,7 +2566,7 @@ void Datafile::pasteLoad(const Settings& _option)
             }
             if (!nLines)
             {
-                cerr << LineBreak("|-> Der eingefügte Inhalt konnte nicht als Tabelle mit numerischen Werten identifiziert werden.", _option) << endl;
+                cerr << LineBreak("|-> "+_lang.get("DATA_COULD_NOT_IDENTIFY_PASTED_CONTENT"), _option) << endl;
                 return;
             }
         }
@@ -2606,7 +2614,7 @@ void Datafile::pasteLoad(const Settings& _option)
                     else
                     {
                         dDatafile[i-nSkip][j] = StrToDb(sLine);
-                        bValidEntry[i-nSkip][j] = true;
+                        //bValidEntry[i-nSkip][j] = true;
                     }
                 }
                 else if (i < nSkip && nSkip)
@@ -2622,7 +2630,7 @@ void Datafile::pasteLoad(const Settings& _option)
                 else
                 {
                     dDatafile[i-nSkip][j] = NAN;
-                    bValidEntry[i-nSkip][j] = false;
+                    //bValidEntry[i-nSkip][j] = false;
                 }
                 j++;
                 if (j == nCols)
@@ -2662,7 +2670,7 @@ void Datafile::condenseDataSet()
     }
 
     double dDataTemp[nLines][nCols];
-    bool bValidTemp[nLines][nCols];
+    //bool bValidTemp[nLines][nCols];
     string sHeadTemp[nCols];
     string sDataTemp = sDataFile;
     long long int nAppendedTemp[nCols];
@@ -2676,7 +2684,7 @@ void Datafile::condenseDataSet()
         for (long long int j = 0; j < nCols; j++)
         {
             dDataTemp[i][j] = dDatafile[i][j];
-            bValidTemp[i][j] = bValidEntry[i][j];
+            //bValidTemp[i][j] = bValidEntry[i][j];
             if (!i)
             {
                 nAppendedTemp[j] = nAppendedZeroes[j];
@@ -2712,7 +2720,7 @@ void Datafile::condenseDataSet()
                 continue;
             }
             dDatafile[i][j-nSkip] = dDataTemp[i][j];
-            bValidEntry[i][j-nSkip] = bValidTemp[i][j];
+            //bValidEntry[i][j-nSkip] = bValidTemp[i][j];
             if (!i)
             {
                 sHeadLine[j-nSkip] = sHeadTemp[j];
@@ -3024,10 +3032,10 @@ void Datafile::removeData(bool bAutoSave)
 		for (long long int i = 0; i < nLines; i++)
 		{
 			delete[] dDatafile[i];
-			delete[] bValidEntry[i];
+			//delete[] bValidEntry[i];
 		}
 		delete[] dDatafile;
-		delete[] bValidEntry;
+		//delete[] bValidEntry;
 		if (nAppendedZeroes)
 		{
 			delete[] nAppendedZeroes;
@@ -3044,7 +3052,7 @@ void Datafile::removeData(bool bAutoSave)
 		nCols = 0;
 		dDatafile = 0;
 		bValidData = false;
-		bValidEntry = 0;
+		//bValidEntry = 0;
 		sDataFile = "";
 
 	}
@@ -3194,8 +3202,8 @@ bool Datafile::isValidEntry(long long int _nLine, long long int _nCol, const str
 	{
 		return isValidElement(_nLine,_nCol,sCache);
 	}
-	else if (_nLine < nLines && _nLine >= 0 && _nCol < nCols && _nCol >= 0 && bValidEntry)
-		return bValidEntry[_nLine][_nCol];
+	else if (_nLine < nLines && _nLine >= 0 && _nCol < nCols && _nCol >= 0 && dDatafile)
+		return !isnan(dDatafile[_nLine][_nCol]);
 	else
 		return false;
 }
@@ -3218,10 +3226,10 @@ void Datafile::melt(Datafile& _cache)
 
 		// --> Speicher fuer Kopie anlegen <--
 		double** dDataFileOld = new double*[nOldLines];
-		bool** bValidEntryOld = new bool*[nOldLines];
+		//bool** bValidEntryOld = new bool*[nOldLines];
 		for (long long int i = 0; i < nOldLines; i++)
 		{
-			bValidEntryOld[i] = new bool[nOldCols];
+			//bValidEntryOld[i] = new bool[nOldCols];
 			dDataFileOld[i] = new double[nOldCols];
 		}
 		long long int* nAppendedZeroesOld = new long long int[nOldCols];
@@ -3241,7 +3249,7 @@ void Datafile::melt(Datafile& _cache)
 						nAppendedZeroesOld[j] = 0;
 				}
 				dDataFileOld[i][j] = dDatafile[i][j];
-				bValidEntryOld[i][j] = bValidEntry[i][j];
+				//bValidEntryOld[i][j] = bValidEntry[i][j];
 			}
 		}
 
@@ -3256,19 +3264,19 @@ void Datafile::melt(Datafile& _cache)
 		for (long long int i = 0; i < nOldLines; i++)
 		{
 			delete[] dDatafile[i];
-			delete[] bValidEntry[i];
+			//delete[] bValidEntry[i];
 		}
 		delete[] dDatafile;
-		delete[] bValidEntry;
+		//delete[] bValidEntry;
 		dDatafile = 0;
-		bValidEntry = 0;
+		//bValidEntry = 0;
 
 		// --> Neuen Speicher mit neuer Groesse allozieren <--
 		dDatafile = new double*[nNewLines];
-		bValidEntry = new bool*[nNewLines];
+		//bValidEntry = new bool*[nNewLines];
 		for (long long int i = 0; i < nNewLines; i++)
 		{
-			bValidEntry[i] = new bool[nNewCols];
+			//bValidEntry[i] = new bool[nNewCols];
 			dDatafile[i] = new double[nNewCols];
 		}
 		sHeadLine = new string[nNewCols];
@@ -3288,14 +3296,14 @@ void Datafile::melt(Datafile& _cache)
 				}
 				if (i >= nOldLines)
 				{
-					dDatafile[i][j] = 0.0;			// Nullzeilen, falls noetig
-					bValidEntry[i][j] = false;
+					dDatafile[i][j] = NAN;			// Nullzeilen, falls noetig
+					//bValidEntry[i][j] = false;
 					continue;
 				}
 				else
 				{
 					dDatafile[i][j] = dDataFileOld[i][j];
-					bValidEntry[i][j] = bValidEntryOld[i][j];
+					//bValidEntry[i][j] = bValidEntryOld[i][j];
 				}
 
 			}
@@ -3318,13 +3326,13 @@ void Datafile::melt(Datafile& _cache)
 				}
 				if (i >= _cache.nLines)
 				{
-					dDatafile[i][j+nOldCols] = 0.0;		// Nullzeilen, falls noetig
-					bValidEntry[i][j+nOldCols] = false;
+					dDatafile[i][j+nOldCols] = NAN;		// Nullzeilen, falls noetig
+					//bValidEntry[i][j+nOldCols] = false;
 					continue;
 				}
 				else
 				{
-					bValidEntry[i][j+nOldCols] = _cache.bValidEntry[i][j];
+					//bValidEntry[i][j+nOldCols] = _cache.bValidEntry[i][j];
 					dDatafile[i][j+nOldCols] = _cache.dDatafile[i][j];
 				}
 			}
@@ -3340,10 +3348,10 @@ void Datafile::melt(Datafile& _cache)
 		for (long long int i = 0; i < nOldLines; i++)
 		{
 			delete[] dDataFileOld[i];
-			delete[] bValidEntryOld[i];
+			//delete[] bValidEntryOld[i];
 		}
 		delete[] dDataFileOld;
-		delete[] bValidEntryOld;
+		//delete[] bValidEntryOld;
 
 	}
 	return;
@@ -3407,16 +3415,16 @@ bool Datafile::qSort(int* nIndex, int nElements, int nKey, int nLeft, int nRight
     }
     if (nRight == nLeft)
         return true;
-    if (nRight - nLeft <= 1 && (nSign*dDatafile[nIndex[nLeft]][nKey] <= nSign*dDatafile[nIndex[nRight]][nKey] || !bValidEntry[nIndex[nRight]][nKey]))
+    if (nRight - nLeft <= 1 && (nSign*dDatafile[nIndex[nLeft]][nKey] <= nSign*dDatafile[nIndex[nRight]][nKey] || isnan(dDatafile[nIndex[nRight]][nKey])))
         return true;
-    else if (nRight - nLeft <= 1 && (nSign*dDatafile[nIndex[nRight]][nKey] <= nSign*dDatafile[nIndex[nLeft]][nKey] || !bValidEntry[nIndex[nLeft]][nKey]))
+    else if (nRight - nLeft <= 1 && (nSign*dDatafile[nIndex[nRight]][nKey] <= nSign*dDatafile[nIndex[nLeft]][nKey] || isnan(dDatafile[nIndex[nLeft]][nKey])))
     {
         int nTemp = nIndex[nLeft];
         nIndex[nLeft] = nIndex[nRight];
         nIndex[nRight] = nTemp;
         return true;
     }
-    while (!bValidEntry[nIndex[nRight]][nKey] && nRight >= nLeft)
+    while (isnan(dDatafile[nIndex[nRight]][nKey]) && nRight >= nLeft)
     {
         nRight--;
     }
@@ -3425,9 +3433,9 @@ bool Datafile::qSort(int* nIndex, int nElements, int nKey, int nLeft, int nRight
     int j = nRight-1;
     do
     {
-        while ((nSign*dDatafile[nIndex[i]][nKey] <= nPivot && bValidEntry[nIndex[i]][nKey]) && i < nRight)
+        while ((nSign*dDatafile[nIndex[i]][nKey] <= nPivot && !isnan(dDatafile[nIndex[i]][nKey])) && i < nRight)
             i++;
-        while ((nSign*dDatafile[nIndex[j]][nKey] >= nPivot || !bValidEntry[nIndex[j]][nKey]) && j > nLeft)
+        while ((nSign*dDatafile[nIndex[j]][nKey] >= nPivot || isnan(dDatafile[nIndex[j]][nKey])) && j > nLeft)
             j--;
         if (i < j)
         {
@@ -3438,13 +3446,13 @@ bool Datafile::qSort(int* nIndex, int nElements, int nKey, int nLeft, int nRight
     }
     while (i < j);
 
-    if (nSign*dDatafile[nIndex[i]][nKey] > nPivot || !bValidEntry[nIndex[i]][nKey])
+    if (nSign*dDatafile[nIndex[i]][nKey] > nPivot || isnan(dDatafile[nIndex[i]][nKey]))
     {
         int nTemp = nIndex[i];
         nIndex[i] = nIndex[nRight];
         nIndex[nRight] = nTemp;
     }
-    if (!bValidEntry[nIndex[nRight-1]][nKey])
+    if (isnan(dDatafile[nIndex[nRight-1]][nKey]))
     {
         int nTemp = nIndex[nRight-1];
         nIndex[nRight-1] = nIndex[nRight];
@@ -3473,7 +3481,7 @@ bool Datafile::sortElements(const string& sLine) // data -sort[[=desc]] cols=1[2
 
     int nIndex[nLines];
     bool bError = false;
-    bool bSortVector[nLines];
+    //bool bSortVector[nLines];
     double dSortVector[nLines];
     for (int i = 0; i < nLines; i++)
         nIndex[i] = i;
@@ -3505,13 +3513,13 @@ bool Datafile::sortElements(const string& sLine) // data -sort[[=desc]] cols=1[2
             {
                 //cerr << nIndex[j] << "; ";
                 dSortVector[j] = dDatafile[nIndex[j]][i];
-                bSortVector[j] = bValidEntry[nIndex[j]][i];
+                //bSortVector[j] = bValidEntry[nIndex[j]][i];
             }
 
             for (int j = 0; j < nLines-nAppendedZeroes[i]; j++)
             {
                 dDatafile[j][i] = dSortVector[j];
-                bValidEntry[j][i] = bSortVector[j];
+                //bValidEntry[j][i] = bSortVector[j];
                 //cerr << bSortVector[j] << "/" << bValidEntry[j][i] << "; ";
             }
             for (int j = 0; j < nLines; j++)
@@ -3545,12 +3553,12 @@ bool Datafile::sortElements(const string& sLine) // data -sort[[=desc]] cols=1[2
                     for (int j = 0; j < nLines-nAppendedZeroes[nKey]; j++)
                     {
                         dSortVector[j] = dDatafile[nIndex[j]][nKey];
-                        bSortVector[j] = bValidEntry[nIndex[j]][nKey];
+                        //bSortVector[j] = bValidEntry[nIndex[j]][nKey];
                     }
                     for (int j = 0; j < nLines-nAppendedZeroes[nKey]; j++)
                     {
                         dDatafile[j][nKey] = dSortVector[j];
-                        bValidEntry[j][nKey] = bSortVector[j];
+                        //bValidEntry[j][nKey] = bSortVector[j];
                     }
                 }
             }
@@ -3591,12 +3599,12 @@ bool Datafile::sortElements(const string& sLine) // data -sort[[=desc]] cols=1[2
                         for (int j = 0; j < nLines-nAppendedZeroes[i]; j++)
                         {
                             dSortVector[j] = dDatafile[nIndex[j]][i];
-                            bSortVector[j] = bValidEntry[nIndex[j]][i];
+                            //bSortVector[j] = bValidEntry[nIndex[j]][i];
                         }
                         for (int j = 0; j < nLines-nAppendedZeroes[i]; j++)
                         {
                             dDatafile[j][i] = dSortVector[j];
-                            bValidEntry[j][i] = bSortVector[j];
+                            //bValidEntry[j][i] = bSortVector[j];
                         }
                         for (int j = 0; j < nLines; j++)
                             nIndex[j] = j;
@@ -3655,13 +3663,13 @@ bool Datafile::sortElements(const string& sLine) // data -sort[[=desc]] cols=1[2
                     for (int j = 0; j < nLines-nAppendedZeroes[nKey]; j++)
                     {
                         dSortVector[j] = dDatafile[nIndex[j]][nKey];
-                        bSortVector[j] = bValidEntry[nIndex[j]][nKey];
+                        //bSortVector[j] = bValidEntry[nIndex[j]][nKey];
 
                     }
                     for (int j = 0; j < nLines-nAppendedZeroes[nKey]; j++)
                     {
                         dDatafile[j][nKey] = dSortVector[j];
-                        bValidEntry[j][nKey] = bSortVector[j];
+                        //bValidEntry[j][nKey] = bSortVector[j];
                     }
                     //cerr << nKey_1 << "; " << nKey_2 << endl;
                     for (int c = nKey_1; c < nKey_2; c++)
@@ -3671,12 +3679,12 @@ bool Datafile::sortElements(const string& sLine) // data -sort[[=desc]] cols=1[2
                         for (int j = 0; j < nLines-nAppendedZeroes[nKey]; j++)
                         {
                             dSortVector[j] = dDatafile[nIndex[j]][c];
-                            bSortVector[j] = bValidEntry[nIndex[j]][c];
+                            //bSortVector[j] = bValidEntry[nIndex[j]][c];
                         }
                         for (int j = 0; j < nLines-nAppendedZeroes[nKey]; j++)
                         {
                             dDatafile[j][c] = dSortVector[j];
-                            bValidEntry[j][c] = bSortVector[j];
+                            //bValidEntry[j][c] = bSortVector[j];
                         }
                     }
                     for (int j = 0; j < nLines; j++)
@@ -3702,7 +3710,7 @@ bool Datafile::sortElements(const string& sLine) // data -sort[[=desc]] cols=1[2
     {
         for (int j = nLines-1; j >= 0; j--)
         {
-            if (bValidEntry[j][i])
+            if (!isnan(dDatafile[j][i]))
             {
                 nAppendedZeroes[i] = nLines-j-1;
                 break;
@@ -3775,17 +3783,21 @@ bool Datafile::saveFile(const string& sCache, string _sFileName)
         file_out.write((char*)appendedzeroes, sizeof(long long int)*cols);
 
         double** data = 0;
-        bool** validelement = 0;
+        bool* validelement = new bool[cols];
 
         data = Datafile::dDatafile;
-        validelement = Datafile::bValidEntry;
+        //validelement = Datafile::bValidEntry;
         for (long long int i = 0; i < lines; i++)
         {
             file_out.write((char*)data[i], sizeof(double)*cols);
         }
         for (long long int i = 0; i < lines; i++)
         {
-            file_out.write((char*)validelement[i], sizeof(bool)*cols);
+            for (long long int j = 0; j < cols; j++)
+            {
+                validelement[j] = !isnan(data[i][j]);
+            }
+            file_out.write((char*)validelement, sizeof(bool)*cols);
         }
         file_out.close();
         for (long long int i = 0; i < cols; i++)
@@ -3793,6 +3805,8 @@ bool Datafile::saveFile(const string& sCache, string _sFileName)
             delete[] cHeadLine[i];
         }
         delete[] cHeadLine;
+        if (validelement)
+            delete[] validelement;
 
         return true;
     }
@@ -3904,7 +3918,7 @@ double Datafile::std(const string& sCache, long long int i1, long long int i2, l
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            if (!bValidEntry[i][j])
+            if (isnan(dDatafile[i][j]))
             {
                 nInvalid++;
                 continue;
@@ -3919,7 +3933,7 @@ double Datafile::std(const string& sCache, long long int i1, long long int i2, l
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            if (!bValidEntry[i][j])
+            if (isnan(dDatafile[i][j]))
                 continue;
             dStd += (dMean - dDatafile[i][j]) * (dMean - dDatafile[i][j]);
         }
@@ -3945,7 +3959,7 @@ double Datafile::std(const string& sCache, const vector<long long int>& _vLine, 
         {
             if (_vLine[i] < 0 || _vLine[i] >= getLines(sCache, false) || _vCol[j] < 0 || _vCol[j] >= getCols(sCache))
                 nInvalid++;
-            else if (isnan(dDatafile[_vLine[i]][_vCol[j]]) || !bValidEntry[_vLine[i]][_vCol[j]])
+            else if (isnan(dDatafile[_vLine[i]][_vCol[j]]))// || !bValidEntry[_vLine[i]][_vCol[j]])
                 nInvalid++;
             else
                 dStd += (dAvg - dDatafile[_vLine[i]][_vCol[j]])*(dAvg - dDatafile[_vLine[i]][_vCol[j]]);
@@ -3996,7 +4010,7 @@ double Datafile::avg(const string& sCache, long long int i1, long long int i2, l
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            if (!bValidEntry[i][j])
+            if (isnan(dDatafile[i][j]))
             {
                 nInvalid++;
                 continue;
@@ -4023,7 +4037,7 @@ double Datafile::avg(const string& sCache, const vector<long long int>& _vLine, 
         {
             if (_vLine[i] < 0 || _vLine[i] >= getLines(sCache, false) || _vCol[j] < 0 || _vCol[j] >= getCols(sCache))
                 nInvalid++;
-            else if (isnan(dDatafile[_vLine[i]][_vCol[j]]) || !bValidEntry[_vLine[i]][_vCol[j]])
+            else if (isnan(dDatafile[_vLine[i]][_vCol[j]]))// || !bValidEntry[_vLine[i]][_vCol[j]])
                 nInvalid++;
             else
                 dAvg += dDatafile[_vLine[i]][_vCol[j]];
@@ -4073,7 +4087,7 @@ double Datafile::max(const string& sCache, long long int i1, long long int i2, l
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            if (!bValidEntry[i][j])
+            if (isnan(dDatafile[i][j]))
                 continue;
             if (i == i1 && j == j1)
                 dMax = dDatafile[i][j];
@@ -4100,7 +4114,7 @@ double Datafile::max(const string& sCache, const vector<long long int>& _vLine, 
         {
             if (_vLine[i] < 0 || _vLine[i] >= getLines(sCache, false) || _vCol[j] < 0 || _vCol[j] >= getCols(sCache))
                 continue;
-            if (isnan(dDatafile[_vLine[i]][_vCol[j]]) || !bValidEntry[_vLine[i]][_vCol[j]])
+            if (isnan(dDatafile[_vLine[i]][_vCol[j]]))// || !bValidEntry[_vLine[i]][_vCol[j]])
                 continue;
             if (isnan(dMax))
                 dMax = dDatafile[_vLine[i]][_vCol[j]];
@@ -4150,7 +4164,7 @@ double Datafile::min(const string& sCache, long long int i1, long long int i2, l
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            if (!bValidEntry[i][j])
+            if (isnan(dDatafile[i][j]))
                 continue;
             if (i == i1 && j == j1)
                 dMin = dDatafile[i][j];
@@ -4177,7 +4191,7 @@ double Datafile::min(const string& sCache, const vector<long long int>& _vLine, 
         {
             if (_vLine[i] < 0 || _vLine[i] >= getLines(sCache, false) || _vCol[j] < 0 || _vCol[j] >= getCols(sCache))
                 continue;
-            if (isnan(dDatafile[_vLine[i]][_vCol[j]]) || !bValidEntry[_vLine[i]][_vCol[j]])
+            if (isnan(dDatafile[_vLine[i]][_vCol[j]]))// || !bValidEntry[_vLine[i]][_vCol[j]])
                 continue;
             if (isnan(dMin))
                 dMin = dDatafile[_vLine[i]][_vCol[j]];
@@ -4227,7 +4241,7 @@ double Datafile::prd(const string& sCache, long long int i1, long long int i2, l
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            if (!bValidEntry[i][j])
+            if (isnan(dDatafile[i][j]))
                 continue;
             dPrd *= dDatafile[i][j];
         }
@@ -4250,7 +4264,7 @@ double Datafile::prd(const string& sCache, const vector<long long int>& _vLine, 
         {
             if (_vLine[i] < 0 || _vLine[i] >= getLines(sCache, false) || _vCol[j] < 0 || _vCol[j] >= getCols(sCache))
                 continue;
-            if (isnan(dDatafile[_vLine[i]][_vCol[j]]) || !bValidEntry[_vLine[i]][_vCol[j]])
+            if (isnan(dDatafile[_vLine[i]][_vCol[j]]))// || !bValidEntry[_vLine[i]][_vCol[j]])
                 continue;
             dPrd *= dDatafile[_vLine[i]][_vCol[j]];
         }
@@ -4297,7 +4311,7 @@ double Datafile::sum(const string& sCache, long long int i1, long long int i2, l
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            if (!bValidEntry[i][j])
+            if (isnan(dDatafile[i][j]))
                 continue;
             dSum += dDatafile[i][j];
         }
@@ -4319,7 +4333,7 @@ double Datafile::sum(const string& sCache, const vector<long long int>& _vLine, 
         {
             if (_vLine[i] < 0 || _vLine[i] >= getLines(sCache, false) || _vCol[j] < 0 || _vCol[j] >= getCols(sCache))
                 continue;
-            if (isnan(dDatafile[_vLine[i]][_vCol[j]]) || !bValidEntry[_vLine[i]][_vCol[j]])
+            if (isnan(dDatafile[_vLine[i]][_vCol[j]]))// || !bValidEntry[_vLine[i]][_vCol[j]])
                 continue;
             dSum += dDatafile[_vLine[i]][_vCol[j]];
         }
@@ -4342,7 +4356,7 @@ double Datafile::num(const string& sCache, const vector<long long int>& _vLine, 
         {
             if (_vLine[i] < 0 || _vLine[i] >= getLines(sCache, false) || _vCol[j] < 0 || _vCol[j] >= getCols(sCache))
                 nInvalid++;
-            else if (isnan(dDatafile[_vLine[i]][_vCol[j]]) || !bValidEntry[_vLine[i]][_vCol[j]])
+            else if (isnan(dDatafile[_vLine[i]][_vCol[j]]))// || !bValidEntry[_vLine[i]][_vCol[j]])
                 nInvalid++;
         }
     }
@@ -4388,7 +4402,7 @@ double Datafile::num(const string& sCache, long long int i1, long long int i2, l
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            if (!bValidEntry[i][j])
+            if (isnan(dDatafile[i][j]))
                 nInvalid++;
         }
     }
@@ -4496,7 +4510,7 @@ double Datafile::norm(const string& sCache, long long int i1, long long int i2, 
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            if (!bValidEntry[i][j])
+            if (isnan(dDatafile[i][j]))
                 continue;
             dNorm += dDatafile[i][j]*dDatafile[i][j];
         }
@@ -4518,7 +4532,7 @@ double Datafile::norm(const string& sCache, const vector<long long int>& _vLine,
         {
             if (_vLine[i] < 0 || _vLine[i] >= getLines(sCache, false) || _vCol[j] < 0 || _vCol[j] >= getCols(sCache))
                 continue;
-            if (isnan(dDatafile[_vLine[i]][_vCol[j]]) || !bValidEntry[_vLine[i]][_vCol[j]])
+            if (isnan(dDatafile[_vLine[i]][_vCol[j]]))// || !bValidEntry[_vLine[i]][_vCol[j]])
                 continue;
             dNorm += dDatafile[_vLine[i]][_vCol[j]]*dDatafile[_vLine[i]][_vCol[j]];
         }
@@ -4568,7 +4582,7 @@ double Datafile::cmp(const string& sCache, long long int i1, long long int i2, l
     {
         for (long long int j = j1; j <= j2; j++)
         {
-            if (!bValidEntry[i][j])
+            if (isnan(dDatafile[i][j]))
                 continue;
             if (dDatafile[i][j] == dRef)
             {
@@ -4633,7 +4647,7 @@ double Datafile::cmp(const string& sCache, const vector<long long int>& _vLine, 
         {
             if (_vLine[i] < 0 || _vLine[i] >= getCacheLines(sCache, false) || _vCol[j] < 0 || _vCol[j] >= getCols(sCache))
                 continue;
-            if (isnan(dDatafile[_vLine[i]][_vCol[j]]) || !bValidEntry[_vLine[i]][_vCol[j]])
+            if (isnan(dDatafile[_vLine[i]][_vCol[j]]))// || !bValidEntry[_vLine[i]][_vCol[j]])
                 continue;
             if (dDatafile[_vLine[i]][_vCol[j]] == dRef)
             {
@@ -4725,17 +4739,17 @@ double Datafile::med(const string& sCache, long long int i1, long long int i2, l
         {
             if (i1 != i2 && j1 != j2)
             {
-                if (bValidEntry[i][j])
+                if (!isnan(dDatafile[i][j]))
                     _cache.writeToCache((j-j1)+(i-i1)*(j2-j1+1),0, "cache", dDatafile[i][j]);
             }
             else if (i1 != i2)
             {
-                if (bValidEntry[i][j])
+                if (!isnan(dDatafile[i][j]))
                     _cache.writeToCache(i-i1,j-j1,"cache",dDatafile[i][j]);
             }
             else
             {
-                if (bValidEntry[i][j])
+                if (!isnan(dDatafile[i][j]))
                     _cache.writeToCache(j-j1,i-i1,"cache",dDatafile[i][j]);
             }
         }
@@ -4769,7 +4783,7 @@ double Datafile::med(const string& sCache, const vector<long long int>& _vLine, 
         {
             if (_vLine[i] < 0 || _vLine[i] >= getLines(sCache, false) || _vCol[j] < 0 || _vCol[j] >= getCols(sCache))
                 nInvalid++;
-            if (isnan(dDatafile[_vLine[i]][_vCol[j]]) || !bValidEntry[_vLine[i]][_vCol[j]])
+            if (isnan(dDatafile[_vLine[i]][_vCol[j]]))// || !bValidEntry[_vLine[i]][_vCol[j]])
                 nInvalid++;
         }
     }
@@ -4841,17 +4855,17 @@ double Datafile::pct(const string& sCache, long long int i1, long long int i2, l
         {
             if (i1 != i2 && j1 != j2)
             {
-                if (bValidEntry[i][j])
+                if (!isnan(dDatafile[i][j]))
                     _cache.writeToCache((j-j1)+(i-i1)*(j2-j1+1),0, "cache", dDatafile[i][j]);
             }
             else if (i1 != i2)
             {
-                if (bValidEntry[i][j])
+                if (!isnan(dDatafile[i][j]))
                     _cache.writeToCache(i-i1,j-j1,"cache",dDatafile[i][j]);
             }
             else
             {
-                if (bValidEntry[i][j])
+                if (!isnan(dDatafile[i][j]))
                     _cache.writeToCache(j-j1,i-i1,"cache",dDatafile[i][j]);
             }
         }
@@ -4880,7 +4894,7 @@ double Datafile::pct(const string& sCache, const vector<long long int>& _vLine, 
         {
             if (_vLine[i] < 0 || _vLine[i] >= getLines(sCache, false) || _vCol[j] < 0 || _vCol[j] >= getCols(sCache))
                 nInvalid++;
-            if (isnan(dDatafile[_vLine[i]][_vCol[j]]) || !bValidEntry[_vLine[i]][_vCol[j]])
+            if (isnan(dDatafile[_vLine[i]][_vCol[j]]))// || !bValidEntry[_vLine[i]][_vCol[j]])
                 nInvalid++;
         }
     }

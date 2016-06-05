@@ -672,6 +672,15 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             doc_Help("extrema", _option);
         return 1;
     }
+    else if (findCommand(sCmd, "pulse").sString == "pulse" && sCommand != "help")
+    {
+        if (!parser_pulseAnalysis(sCmd, _parser, _data, _functions, _option))
+        {
+            doc_Help("pulse", _option);
+            return 1;
+        }
+        return 0;
+    }
     else if (findCommand(sCmd, "eval").sString == "eval" && sCommand != "help")
     {
         nPos = findCommand(sCmd, "eval").nPos;
@@ -3531,7 +3540,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             {
                 _out.setCompact(_option.getbCompact());
             }
-            if (matchParams(sCmd, "data") || sCmd.find("data()") != string::npos)
+            if (matchParams(sCmd, "data") || sCmd.find(" data()") != string::npos)
             {
                 BI_show_data(_data, _out, _option, "data", true, false);
             }
@@ -3539,7 +3548,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             {
                 BI_show_data(_data, _out, _option, _data.matchCache(sCmd), false, true);
             }
-            else if (_data.containsCacheElements(sCmd) || sCmd.find("data(") != string::npos)
+            else if (_data.containsCacheElements(sCmd) || sCmd.find(" data(") != string::npos)
             {
                 /*for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
                 {
@@ -4559,7 +4568,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         nArgument = 0;
                     if (matchParams(sCmd, "keepdim") || matchParams(sCmd, "complete"))
                         _data.setbLoadEmptyColsInNextFile(true);
-                    if (matchParams(sCmd, "tocache"))
+                    if (matchParams(sCmd, "tocache") && !matchParams(sCmd, "all"))
                     {
                         Datafile _cache;
                         _cache.setTokens(_option.getTokenPaths());
@@ -4583,6 +4592,47 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         }
                         if (_data.isValidCache() && _data.getCols(sArgument, false))
                             cerr << LineBreak("|-> " +_lang.get("BUILTIN_LOADDATA_SUCCESS", _cache.getDataFileName("data"), toString(_data.getLines(sArgument, false)), toString(_data.getCols(sArgument, false))), _option) << endl;
+                        return 1;
+                    }
+                    else if (matchParams(sCmd, "tocache") && matchParams(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
+                    {
+                        if (sArgument.find('/') == string::npos)
+                            sArgument = "<loadpath>/"+sArgument;
+                        vector<string> vFilelist = getFileList(sArgument, _option);
+                        if (!vFilelist.size())
+                            throw FILE_NOT_EXIST;
+                        string sPath = "<loadpath>/";
+                        if (sArgument.find('/') != string::npos)
+                            sPath = sArgument.substr(0,sArgument.rfind('/')+1);
+                        string sTarget = generateCacheName(sPath+vFilelist[0], _option);
+                        Datafile _cache;
+                        _cache.setTokens(_option.getTokenPaths());
+                        _cache.setPath(_data.getPath(), false, _data.getProgramPath());
+                        for (unsigned int i = 0; i < vFilelist.size(); i++)
+                        {
+                            _cache.openFile(sPath+vFilelist[i], _option, false, true, nArgument);
+                            sTarget = generateCacheName(sPath+vFilelist[i], _option);
+                            if (!_data.isCacheElement(sTarget+"()"))
+                                _data.addCache(sTarget+"()", _option);
+                            nArgument = _data.getCols(sTarget, false);
+                            for (long long int i = 0; i < _cache.getLines("data", false); i++)
+                            {
+                                for (long long int j = 0; j < _cache.getCols("data", false); j++)
+                                {
+                                    if (!i)
+                                        _data.setHeadLineElement(j+nArgument, sTarget, _cache.getHeadLineElement(j, "data"));
+                                    if (_cache.isValidEntry(i,j,"data"))
+                                    {
+                                        _data.writeToCache(i, j+nArgument, sTarget, _cache.getElement(i, j, "data"));
+                                    }
+                                }
+                            }
+                            _cache.removeData(false);
+                            nArgument = -1;
+                        }
+                        if (_data.isValidCache())
+                            cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString((int)vFilelist.size()), sArgument), _option) << endl;
+                            //cerr << LineBreak("|-> Alle Daten der Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
                         return 1;
                     }
                     if (matchParams(sCmd, "i") || matchParams(sCmd, "ignore"))
@@ -4768,7 +4818,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         nArgument = 0;
                     if (matchParams(sCmd, "keepdim") || matchParams(sCmd, "complete"))
                         _data.setbLoadEmptyColsInNextFile(true);
-                    if (matchParams(sCmd, "tocache"))
+                    if (matchParams(sCmd, "tocache") && !matchParams(sCmd, "all"))
                     {
                         Datafile _cache;
                         _cache.setTokens(_option.getTokenPaths());
@@ -4792,6 +4842,47 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         }
                         if (_data.isValidCache() && _data.getCols(sArgument, false))
                             cerr << LineBreak("|-> " +_lang.get("BUILTIN_LOADDATA_SUCCESS", _cache.getDataFileName("data"), toString(_data.getLines(sArgument, false)), toString(_data.getCols(sArgument, false))), _option) << endl;
+                        return 1;
+                    }
+                    else if (matchParams(sCmd, "tocache") && matchParams(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
+                    {
+                        if (sArgument.find('/') == string::npos)
+                            sArgument = "<loadpath>/"+sArgument;
+                        vector<string> vFilelist = getFileList(sArgument, _option);
+                        if (!vFilelist.size())
+                            throw FILE_NOT_EXIST;
+                        string sPath = "<loadpath>/";
+                        if (sArgument.find('/') != string::npos)
+                            sPath = sArgument.substr(0,sArgument.rfind('/')+1);
+                        string sTarget = generateCacheName(sPath+vFilelist[0], _option);
+                        Datafile _cache;
+                        _cache.setTokens(_option.getTokenPaths());
+                        _cache.setPath(_data.getPath(), false, _data.getProgramPath());
+                        for (unsigned int i = 0; i < vFilelist.size(); i++)
+                        {
+                            _cache.openFile(sPath+vFilelist[i], _option, false, true, nArgument);
+                            sTarget = generateCacheName(sPath+vFilelist[i], _option);
+                            if (!_data.isCacheElement(sTarget+"()"))
+                                _data.addCache(sTarget+"()", _option);
+                            nArgument = _data.getCols(sTarget, false);
+                            for (long long int i = 0; i < _cache.getLines("data", false); i++)
+                            {
+                                for (long long int j = 0; j < _cache.getCols("data", false); j++)
+                                {
+                                    if (!i)
+                                        _data.setHeadLineElement(j+nArgument, sTarget, _cache.getHeadLineElement(j, "data"));
+                                    if (_cache.isValidEntry(i,j,"data"))
+                                    {
+                                        _data.writeToCache(i, j+nArgument, sTarget, _cache.getElement(i, j, "data"));
+                                    }
+                                }
+                            }
+                            _cache.removeData(false);
+                            nArgument = -1;
+                        }
+                        if (_data.isValidCache())
+                            cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString((int)vFilelist.size()), sArgument), _option) << endl;
+                            //cerr << LineBreak("|-> Alle Daten der Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
                         return 1;
                     }
                     if (matchParams(sCmd, "i") || matchParams(sCmd, "ignore"))

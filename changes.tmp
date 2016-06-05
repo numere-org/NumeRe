@@ -7,3 +7,8 @@ Fixed	Ein sehr seltener Fehler im automatischen Zeilenumbruch, der ein Dollarzei
 Added	NumeRe kann nun Nutzer-Sprachdateien laden. NumeRe erzeugt hierzu die Ordnerstruktur "<>/user/lang" und "<>/user/docs". Die Inhalte der hierin gefunden Sprachdateien ueberschreiben die Inhalte der Standarddateien.
 Added	Die Option "target=CACHE()" wurde zu "datagrid" hinzugefuegt.
 Added	Die Option "tocache" wurde zu "load" hinzugefuegt.
+Removed	Die beiden validation arrays in "data()" und "cache()" wurden zugunsten der Verwendung von "isnan(VAL)" entfernt. Dies sollte den noetigen Speicherplatz um etwa ein achtel reduzieren. Kopiervorgaenge sollten damit auch beschleunigt werden.
+Fixed	"show" kann auch Daten in caches anzeigen, die mit "data()" aufhoeren.
+Fixed	Ein Segfault in der automatischen Speicherung wurde behoben.
+Fixed	Eine Endlosschleife, die beim Entfernen von "...cache()"-Caches aufgetreten ist, wurde behoben.
+New	Eine Pulsanalyse wurde ueber das Kommando "pulse" implementiert.

@@ -9642,6 +9642,8 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
         sTargetCache = getArgAtPos(sCmd, matchParams(sCmd, "target", '=')+6);
         _idx = parser_getIndices(sTargetCache, _parser, _data, _option);
         sTargetCache.erase(sTargetCache.find('('));
+        if (sTargetCache == "data")
+            throw READ_ONLY_DATA;
 
         if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
             throw INVALID_INDEX;
@@ -10732,4 +10734,123 @@ bool parser_regularize(string& sCmd, Parser& _parser, Datafile& _data, Define& _
     _data.setHeadLineElement(nLastCol+1, sDataset, sColHeaders[1]);
     return true;
 }
+
+bool parser_pulseAnalysis(string& _sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+{
+    string sDataset = "";
+    Indices _idx;
+    mglData _v;
+    vector<double> vPulseProperties;
+    double dXmin = NAN, dXmax = NAN;
+    double dSampleSize = NAN;
+    string sCmd = _sCmd.substr(findCommand(_sCmd, "pulse").nPos+5);
+    //_option.declareFileType(".wav");
+    //sCmd.erase(0,findCommand(sCmd).nPos + findCommand(sCmd).sString.length()); // Kommando entfernen
+
+    // Strings parsen
+    if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
+    {
+        string sDummy = "";
+        if (!parser_StringParser(sCmd, sDummy, _data, _parser, _option, true))
+            throw STRING_ERROR;
+    }
+    // Funktionen aufrufen
+    if (!_functions.call(sCmd, _option))
+        throw FUNCTION_ERROR;
+
+
+    // Indices lesen
+    //cerr << sCmd << endl;
+    _idx = parser_getIndices(sCmd, _parser, _data, _option);
+    sDataset = sCmd;
+    sDataset.erase(sDataset.find('('));
+    StripSpaces(sDataset);
+    //cerr << sDataset << endl;
+    if (_idx.vI.size() || _idx.vJ.size())
+    {
+        if (_idx.vJ.size() != 2)
+            return false;
+        //_x.Create(_data.cnt(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0])));
+        _v.Create(_data.cnt(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0])));
+        dXmin = _data.min(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0]));
+        dXmax = _data.max(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0]));
+        for (long long int i = 0; i < _idx.vI.size(); i++)
+        {
+            //_x.a[i] = _data.getElement(_idx.vI[i], _idx.vJ[0], sDataset);
+            _v.a[i] = _data.getElement(_idx.vI[i], _idx.vJ[1], sDataset);
+        }
+    }
+    else
+    {
+        if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
+            return false;
+        if (_idx.nI[1] == -1)
+            _idx.nI[1] = _idx.nI[0];
+        else if (_idx.nI[1] == -2)
+            _idx.nI[1] = _data.getLines(sDataset,false)-1;
+        if (_idx.nJ[1] == -1)
+            _idx.nJ[1] = _idx.nJ[0];
+        else if (_idx.nJ[1] == -2)
+        {
+            _idx.nJ[1] = _idx.nJ[0]+1;
+        }
+        if (_data.getCols(sDataset, false) <= _idx.nJ[1])
+            return false;
+        _v.Create(_data.cnt(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]));
+        //_x.Create(_data.cnt(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]));
+        for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
+        {
+            _v.a[i-_idx.nI[0]] = _data.getElement(i, _idx.nJ[1], sDataset);
+        }
+        dXmin = _data.min(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]);
+        dXmax = _data.max(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]);
+        /*for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
+        {
+            _x.a[i-_idx.nI[0]] = _data.getElement(i, _idx.nJ[0], sDataset);
+        }*/
+    }
+
+    /*cerr << _v.GetNx() << " " << _v.Minimal() << " " << _v.Maximal() << endl;
+    cerr << _x.GetNx() << " " << _x.Minimal() << " " << _x.Maximal() << endl;
+    cerr << dXmin << " " << dXmax << endl;*/
+
+    dSampleSize = (dXmax-dXmin)/((double)_v.GetNx()-1.0);
+    mglData _pulse(_v.Pulse('x'));
+    if (_pulse.GetNx() >= 5)
+    {
+        vPulseProperties.push_back(_pulse[0]); // max Amp
+        vPulseProperties.push_back(_pulse[1]*dSampleSize+dXmin); // pos max Amp
+        vPulseProperties.push_back(_pulse[2]*dSampleSize); // FWHM
+        vPulseProperties.push_back(_pulse[3]*dSampleSize); // Width near max
+        vPulseProperties.push_back(_pulse[4]*dSampleSize); // Energy (Integral pulse^2)
+    }
+    else
+    {
+        vPulseProperties.push_back(NAN);
+        _sCmd.replace(findCommand(_sCmd, "pulse").nPos, string::npos, "pulse[~_~]");
+        _parser.SetVectorVar("pulse[~_~]", vPulseProperties);
+
+        return true;
+    }
+    // Ausgabe
+    if (_option.getSystemPrintStatus())
+    {
+        make_hline();
+        cerr << LineBreak("|-> NUMERE: "+toUpperCase(_lang.get("PARSERFUNCS_PULSE_HEADLINE")), _option) << endl;
+        make_hline();
+        for (unsigned int i = 0; i < vPulseProperties.size(); i++)
+        {
+            cerr << LineBreak("|   " + _lang.get("PARSERFUNCS_PULSE_TABLE_" + toString((int)i+1) + "_*", toString(vPulseProperties[i], _option)), _option) << endl;
+        }
+        make_hline();
+    }
+
+    _sCmd.replace(findCommand(_sCmd, "pulse").nPos, string::npos, "pulse[~_~]");
+    _parser.SetVectorVar("pulse[~_~]", vPulseProperties);
+
+    return true;
+}
+
+
+
 

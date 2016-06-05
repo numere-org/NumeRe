@@ -73,7 +73,7 @@ class Cache : public FileSystem
 		long long int nCols;							// Spalten des Caches
 		long long int nLayers;
 		long long int** nAppendedZeroes;			    	// Pointer auf ein Array von ints, die fuer jede Spalte die Zahl der angehaengten Nullen beinhaelt
-		bool*** bValidElement;							// Pointer auf Pointer auf die Valid-Data-bool-Matrix
+		//bool*** bValidElement;							// Pointer auf Pointer auf die Valid-Data-bool-Matrix
 		double*** dCache;								// Pointer auf Pointer auf die Datenfile-double-Matrix
 		bool bValidData;								// TRUE, wenn die Instanz der Klasse auch Daten enthaelt
 		string** sHeadLine;								// Pointer auf ein string-Array fuer die Tabellenkoepfe
