@@ -56,6 +56,7 @@ Loop::Loop()
     bUseLoopParsingMode = false;
     bLockedPauseMode = false;
     nthRecursion = 0;
+    bLoopSupressAnswer = false;
 }
 
 Loop::Loop(int _nDefaultLength)
@@ -2333,7 +2334,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
         cerr << "|-> DEBUG: Silent-Mode = " << bSilent << endl;
 
     if (bSilent)
-        bSupressAnswer = true;
+        bLoopSupressAnswer = true;
 
     vVarArray = new value_type*[nVarArray];
     sVarArray = new string[nVarArray];
@@ -2368,8 +2369,9 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
                 {
                     if (sCmd[i][0].substr(j,(iter->first).length()) == iter->first)
                     {
-                        if ((!j && checkDelimiter(" "+sCmd[i][0].substr(j,(iter->first).length()+1)))
-                            || (j && checkDelimiter(sCmd[i][0].substr(j-1, (iter->first).length()+2))))
+                        if (((!j && checkDelimiter(" "+sCmd[i][0].substr(j,(iter->first).length()+1)))
+                                || (j && checkDelimiter(sCmd[i][0].substr(j-1, (iter->first).length()+2))))
+                            && !isInQuotes(sCmd[i][0], j, true))
                         {
                             sCmd[i][0].replace(j,(iter->first).length(), iter->second);
                             j += (iter->second).length()-(iter->first).length();
@@ -2388,8 +2390,9 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
                 {
                     if (sCmd[i][1].substr(j,(iter->first).length()) == iter->first)
                     {
-                        if ((!j && checkDelimiter(" "+sCmd[i][1].substr(j,(iter->first).length()+1)))
-                            || (j && checkDelimiter(sCmd[i][1].substr(j-1, (iter->first).length()+2))))
+                        if (((!j && checkDelimiter(" "+sCmd[i][1].substr(j,(iter->first).length()+1)))
+                                || (j && checkDelimiter(sCmd[i][1].substr(j-1, (iter->first).length()+2))))
+                            && !isInQuotes(sCmd[i][1], j, true))
                         {
                             sCmd[i][1].replace(j,(iter->first).length(), iter->second);
                             j += (iter->second).length()-(iter->first).length();
@@ -2570,16 +2573,16 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
     catch (...)
     {
         reset(_parser);
-        if (bSupressAnswer)
-            bSupressAnswer = false;
+        if (bLoopSupressAnswer)
+            bLoopSupressAnswer = false;
         if (bPrintedStatus)
             cerr << endl;
         throw;
     }
     reset(_parser);
 
-    if (bSupressAnswer)
-        bSupressAnswer = false;
+    if (bLoopSupressAnswer)
+        bLoopSupressAnswer = false;
     return;
 }
 
@@ -2709,6 +2712,8 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
         StripSpaces(sLine_Temp);
         if (_option.getUseDebugger())
         {
+            //cerr << "Debugger" << endl;
+            //cerr << sLine << endl << nCmd-nthCmd << endl << nVarArray << endl;
             _option._debug.gatherLoopBasedInformations(sLine, nCmd-nthCmd, mVarMap, vVarArray, sVarArray, nVarArray);
             evalDebuggerBreakPoint(_option, _data.getStringVars());
         }
@@ -2993,14 +2998,24 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
     }
     if (!bLockedPauseMode && bUseLoopParsingMode)
         _parser.PauseLoopMode();
-    switch (BI_CheckKeyword(sLine, _data, _out, _option, _parser, _functions, _pData, _script, true))
     {
-        case  0: break;
-        case  1:
-            SetConsTitle(_data, _option);
-            return 1;
-        case -1: return 1;
-        case  2: return 1;
+        bool bSupressAnswer_back = bSupressAnswer;
+        bSupressAnswer = bLoopSupressAnswer;
+        switch (BI_CheckKeyword(sLine, _data, _out, _option, _parser, _functions, _pData, _script, true))
+        {
+            case  0: break;
+            case  1:
+                SetConsTitle(_data, _option);
+                bSupressAnswer = bSupressAnswer_back;
+                return 1;
+            case -1:
+                bSupressAnswer = bSupressAnswer_back;
+                return 1;
+            case  2:
+                bSupressAnswer = bSupressAnswer_back;
+                return 1;
+        }
+        bSupressAnswer = bSupressAnswer_back;
     }
     if (!bLockedPauseMode && bUseLoopParsingMode)
         _parser.PauseLoopMode(false);

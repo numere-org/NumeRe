@@ -48,6 +48,12 @@ Procedure::Procedure() : Loop(), Plugin()
 Procedure::Procedure(const Procedure& _procedure) : Loop(), Plugin(_procedure)
 {
     Procedure();
+    sVars = 0;
+    dVars = 0;
+    sStrings = 0;
+
+    nVarSize = 0;
+    nStrSize = 0;
     sPath = _procedure.sPath;
     sWhere = _procedure.sWhere;
     sCallingNameSpace = _procedure.sCallingNameSpace;
@@ -788,11 +794,11 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 else
                     bAppendNextLine = false;
 
-                if (sProcCommandLine[sProcCommandLine.length()-1] == ';')
+                if (sProcCommandLine.back() == ';')
                 {
                     bProcSupressAnswer = true;
                     //bSupressAnswer = true;
-                    sProcCommandLine = sProcCommandLine.substr(0,sProcCommandLine.length()-1);
+                    sProcCommandLine.pop_back();
                 }
 
                 if (sProcCommandLine.find('$') != string::npos && sProcCommandLine.find('(', sProcCommandLine.find('$')) != string::npos)
@@ -1188,6 +1194,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
     while (!fProc_in.eof())
     {
         bProcSupressAnswer = false;
+        //cerr << nFlags << endl;
+
         //bSupressAnswer = false;
         if (!sCmdCache.length())
         {
@@ -1333,11 +1341,11 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     else
                         bAppendNextLine = false;
 
-                    if (sProcCommandLine[sProcCommandLine.length()-1] == ';')
+                    if (sProcCommandLine.back() == ';')
                     {
                         bProcSupressAnswer = true;
                         //bSupressAnswer = true;
-                        sProcCommandLine = sProcCommandLine.substr(0,sProcCommandLine.length()-1);
+                        sProcCommandLine.pop_back();
                     }
 
                     if (sProcCommandLine.find('$') != string::npos && sProcCommandLine.find('(', sProcCommandLine.find('$')) != string::npos)
@@ -1593,6 +1601,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             }
         }
 
+        //cerr << "nVarSize = " << nVarSize << " procedure line = " << nCurrentLine << endl;
+        //cerr << "cmdline = " << sProcCommandLine << endl;
         if (sProcCommandLine.substr(sProcCommandLine.find_first_not_of(' '),2) == "|>" && !getLoop())
         {
             sProcCommandLine.erase(sProcCommandLine.find_first_not_of(' '),2);
@@ -2656,6 +2666,7 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, Define& _funct
 {
     //cerr << sLine << endl;
     Procedure _procedure(*this);
+    //cerr << "interface: " << _procedure.nVarSize << endl;
     int nReturn = 1;
     if (sLine.find('$') != string::npos && sLine.find('(', sLine.find('$')) != string::npos)
     {
@@ -3000,6 +3011,7 @@ bool Procedure::isInline(const string& sProc)
     ifstream fProc_in;
     bool bBlockComment = false;
     string sProcCommandLine;
+    int nProcedureFlags = 0;
     if (sProc.find('$') == string::npos)
         return false;
     if (sProc.find('$') != string::npos && sProc.find('(', sProc.find('$')) != string::npos)
@@ -3117,11 +3129,11 @@ bool Procedure::isInline(const string& sProc)
                         {
                             unsigned int nMatch = sVarDeclarationList.find("::", getMatchingParenthesis(sVarDeclarationList));
                             if (sVarDeclarationList.find("explicit", nMatch) != string::npos)
-                                nFlags += 1;
+                                nProcedureFlags += 1;
                             if (sVarDeclarationList.find("inline", nMatch) != string::npos)
-                                nFlags += 2;
+                                nProcedureFlags += 2;
                         }
-                        if (!(nFlags & 2))
+                        if (!(nProcedureFlags & 2))
                         {
                             fProc_in.close();
                             return false;
@@ -3139,15 +3151,16 @@ bool Procedure::isInline(const string& sProc)
     }
     else
         return false;
-    return (nFlags & 2);
+    return (nProcedureFlags & 2);
  }
 
 void Procedure::evalDebuggerBreakPoint(Settings& _option, const map<string,string>& sStringMap)
 {
     string sTemp;
+    //cerr << "breakpoint" << endl;
     _option._debug.gatherInformations(sVars, nVarSize, dVars, sStrings, nStrSize, sStringMap, "",sCurrentProcedureName,nCurrentLine);
     make_hline();
-    cerr << "|-> " << toSystemCodePage(_lang.get("DBG_HEADLINE")) << endl;
+    cerr << "|-> " << toSystemCodePage(toUpperCase(_lang.get("DBG_HEADLINE"))) << endl;
     make_hline();
     cerr << "|   " << toUpperCase(_lang.get("DBG_MODULE")+": ") << std::setfill((char)196) << std::setw(_option.getWindow()-24) << (char)196 << endl;
     cerr << LineBreak("|   "+_option._debug.printNonErrorModuleInformations(), _option, false) << endl;

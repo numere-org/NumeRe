@@ -41,6 +41,7 @@ Settings::Settings() : Documentation()
 	bLoadEmptyCols = false;
 	bShowHints = true;
 	bUseESCinScripts = true;
+	bUseCustomLanguageFile = true;
 	nPrecision = 7;			// Standardmaessig setzen wir die Praezision auf 7
 	nAutoSaveInterval = 30; // 30 sec
 	sPath = "./";
@@ -202,6 +203,7 @@ void Settings::save(string _sWhere, bool bMkBackUp)
 	Settings_ini << "-ESCINSCRIPTS=" << bUseESCinScripts << endl;
 	Settings_ini << "-PLOTFONT=" << sDefaultfont << endl;
 	Settings_ini << "-USECOMPACTTABLES=" << bCompact << endl;
+	Settings_ini << "-USECUSTOMLANGFILE=" << bUseCustomLanguageFile << endl;
 	Settings_ini << "-DEFCONTROL=" << bDefineAutoLoad << endl;
 	Settings_ini << "-USEDRAFTMODE=" << bUseDraftMode << endl;
 	Settings_ini << "-EXTENDEDFILEINFO=" << bShowExtendedFileInfo << endl;
@@ -394,6 +396,11 @@ bool Settings::set(const string& _sOption)
     else if (matchParams(_sOption, "usecompacttables", '='))
     {
         bCompact = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
+        return true;
+    }
+    else if (matchParams(_sOption, "usecustomlangfile", '='))
+    {
+        bUseCustomLanguageFile = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
     else if (matchParams(_sOption, "extendedfileinfo", '='))

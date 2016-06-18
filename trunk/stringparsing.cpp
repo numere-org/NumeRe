@@ -330,7 +330,12 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 return 0;
             else
             {
-                sFile = _data.ValidFileName(sFile, ".dat");
+                FileSystem _fSys;
+                _fSys.setTokens(_option.getTokenPaths());
+                _fSys.setPath(_option.getExePath(), false, _option.getExePath());
+                if (sFile.rfind('.') != string::npos)
+                    _fSys.declareFileType(sFile.substr(sFile.rfind('.')));
+                sFile = _fSys.ValidFileName(sFile, sFile.substr(sFile.rfind('.')));
                 sLine = sLine.substr(0,n_pos) + toString((bool)fileExists(sFile)) + sLine.substr(nPos+1);
             }
         }
@@ -992,14 +997,63 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
         nPos += getMatchingParenthesis(sLine.substr(nPos));
         if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 13))))
         {
-            string sFileScheme = sLine.substr(n_pos+12, nPos-n_pos-12);
+            string sFileScheme = "";
+            string sFlags = sLine.substr(n_pos+12, nPos-n_pos-12);
+            int nFlags = 0;
+            sFileScheme = getNextArgument(sFlags, true);
+            if (sFlags.length())
+            {
+                _parser.SetExpr(sFlags);
+                nFlags = (int)_parser.Eval();
+            }
             if (containsStrings(sFileScheme) || _data.containsStringVars(sFileScheme))
             {
                 sFileScheme += " -nq";
                 if (!parser_StringParser(sFileScheme, sDummy, _data, _parser, _option, true))
                     return 0;
             }
-            vector<string> vFileList = getFileList(sFileScheme, _option);
+            vector<string> vFileList = getFileList(sFileScheme, _option, nFlags);
+            sFileScheme.clear();
+            for (unsigned int i = 0; i < vFileList.size(); i++)
+            {
+                sFileScheme += "\"" + vFileList[i] + "\"";
+                if (i < vFileList.size()-1)
+                    sFileScheme += ", ";
+            }
+            if (!sFileScheme.length())
+                sLine = sLine.substr(0,n_pos) + "\"\"" + sLine.substr(nPos+1);
+            else
+                sLine = sLine.substr(0,n_pos) + "{" + sFileScheme+ "}" + sLine.substr(nPos+1);
+        }
+        n_pos++;
+    }//getfilelist("path/with/wildcards")
+
+    n_pos = 0;
+    while (sLine.find("getfolderlist(", n_pos) != string::npos)
+    {
+        n_pos = sLine.find("getfolderlist(", n_pos);
+        unsigned int nPos = n_pos + 13;
+        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
+            throw UNMATCHED_PARENTHESIS;
+        nPos += getMatchingParenthesis(sLine.substr(nPos));
+        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 15))))
+        {
+            string sFileScheme = "";
+            string sFlags = sLine.substr(n_pos+14, nPos-n_pos-14);
+            int nFlags = 0;
+            sFileScheme = getNextArgument(sFlags, true);
+            if (sFlags.length())
+            {
+                _parser.SetExpr(sFlags);
+                nFlags = (int)_parser.Eval();
+            }
+            if (containsStrings(sFileScheme) || _data.containsStringVars(sFileScheme))
+            {
+                sFileScheme += " -nq";
+                if (!parser_StringParser(sFileScheme, sDummy, _data, _parser, _option, true))
+                    return 0;
+            }
+            vector<string> vFileList = getFolderList(sFileScheme, _option, nFlags);
             sFileScheme.clear();
             for (unsigned int i = 0; i < vFileList.size(); i++)
             {

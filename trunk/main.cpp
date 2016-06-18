@@ -211,7 +211,7 @@ int main(int argc, char* argv[])
 
     nextLoadMessage(50);
     cerr << toSystemCodePage(" -> Loading documentation index ... ");
-    _option.loadDocIndex();
+    _option.loadDocIndex(false);
     Sleep(50);
     cerr << "Done.";
     if (oLogFile.is_open())
@@ -227,9 +227,19 @@ int main(int argc, char* argv[])
         if (oLogFile.is_open())
             oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Documentation index was updated." << endl;
     }
+    if (_option.getUseCustomLanguageFiles())
+    {
+        nextLoadMessage(50);
+        cerr << toSystemCodePage(" -> Loading user documentation index ... ");
+        _option.loadDocIndex(_option.getUseCustomLanguageFiles());
+        Sleep(50);
+        cerr << "Done.";
+        if (oLogFile.is_open())
+                oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: User Documentation index was loaded." << endl;
+    }
     nextLoadMessage(50);
     cerr << toSystemCodePage(" -> Loading language files ... ");
-    _lang.loadStrings();
+    _lang.loadStrings(_option.getUseCustomLanguageFiles());
     Sleep(50);
     cerr << "Done.";
     if (oLogFile.is_open())
@@ -332,7 +342,7 @@ int main(int argc, char* argv[])
         _data.setPluginCommands(_procedure.getPluginNames());
         cerr << toSystemCodePage(_lang.get("COMMON_DONE")) << ".";
         if (oLogFile.is_open())
-            oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Plugin information were loaded." << endl;
+            oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Plugin information was loaded." << endl;
     }
     if (_option.getbDefineAutoLoad() && BI_FileExists(_option.getExePath() + "\\functions.def"))
     {
@@ -468,13 +478,13 @@ int main(int argc, char* argv[])
     {
         if (!exitsignal)
         {
-            char c = 0;
+            string c = "";
             cerr << LineBreak("|-> "+_lang.get("MAIN_UNSAVED_CACHE"), _option) << endl;
             //cerr << LineBreak("|-> Es sind ungesicherte Daten im Cache vorhanden! Sollen sie gespeichert werden? (j/n)", _option) << endl;
             cerr << "|" << endl;
             cerr << "|<- ";
-            cin >> c;
-            if (c == 'j')
+            getline(cin, c);
+            if (c == _lang.YES())
             {
                 _data.saveCache(); // MAIN_CACHE_SAVED
                 cerr << LineBreak("|-> "+_lang.get("MAIN_CACHE_SAVED"), _option) << endl;
@@ -514,7 +524,7 @@ int main(int argc, char* argv[])
 	cerr << "|" << endl;
 	if (oLogFile.is_open())
 	{
-        oLogFile << "--- NUMERE WAS SUCCESSFULLY TERMINATED ---" << endl << endl << endl;
+        oLogFile << "--- NUMERE WAS TERMINATED SUCCESSFULLY ---" << endl << endl << endl;
         oLogFile.close();
 	}
 	// --> Sleep, damit genug Zeit zum Lesen ist <--

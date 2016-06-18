@@ -39,7 +39,7 @@ class Language : public FileSystem
 
     public:
         Language();
-        void loadStrings();
+        void loadStrings(bool bloadUserFiles = true);
         string getKey(const string& sMessage);
         string get(const string& sMessage, const vector<string>& vTokens); //_lang.get("GREETING",vTokens);
         inline string get(const string& sMessage)

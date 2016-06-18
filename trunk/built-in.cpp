@@ -1144,6 +1144,27 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             cerr << "|-> HINTS: " << toString(_option.getbUseESCinScripts()) << endl;
             return 1;
         }
+        else if (matchParams(sCmd, "usecustomlang"))
+        {
+            if (matchParams(sCmd, "asval"))
+            {
+                if (!nPos)
+                    sCmd = toString(_option.getUseCustomLanguageFiles());
+                else
+                    sCmd.replace(nPos, sCommand.length(), toString(_option.getUseCustomLanguageFiles()));
+                return 0;
+            }
+            if (matchParams(sCmd, "asstr"))
+            {
+                if (!nPos)
+                    sCmd = "\"" + toString(_option.getUseCustomLanguageFiles()) + "\"";
+                else
+                    sCmd.replace(nPos, sCommand.length(), "\"" + toString(_option.getUseCustomLanguageFiles()) + "\"");
+                return 0;
+            }
+            cerr << "|-> USECUSTOMLANG: " << toString(_option.getUseCustomLanguageFiles()) << endl;
+            return 1;
+        }
         else if (matchParams(sCmd, "draftmode"))
         {
             if (matchParams(sCmd, "asval"))
@@ -1379,7 +1400,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
         nPos = findCommand(sCmd, "read").nPos;
         sArgument = extractCommandString(sCmd, findCommand(sCmd, "read"));
         sCommand = sArgument;
-        if (matchParams(sArgument, "file", '='))
+        if (sArgument.length() > 5) //matchParams(sArgument, "file", '='))
         {
             BI_readFromFile(sArgument, _parser, _data, _option);
             sCmd.replace(nPos, sCommand.length(), sArgument);
@@ -2636,6 +2657,16 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
 
             return 1;
         }
+        else if (sCommand == "stfa")
+        {
+            if (!parser_stfa(sCmd, sArgument, _parser, _data, _functions, _option))
+            {
+                doc_Help("stfa", _option);
+            }
+            else
+                cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYOWRD_STFA_SUCCESS", sArgument), _option) << endl;
+            return 1;
+        }
         else if (sCommand == "save")
         {
             if (matchParams(sCmd, "define"))
@@ -3274,6 +3305,26 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_ESC_IN_SCRIPTS"), _lang.get("COMMON_ACTIVE")), _option) << endl;
                     else
                         cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_ESC_IN_SCRIPTS"), _lang.get("COMMON_INACTIVE")), _option) << endl;
+                    /*cerr << toSystemCodePage("|-> NumeRe wird die ESC-Taste ");
+                    if (!nArgument)
+                        cerr << "nicht ";
+                    cerr << toSystemCodePage("in Scripts verwenden.") << endl;*/
+                }
+                return 1;
+            }
+            else if (matchParams(sCmd, "usecustomlang") || matchParams(sCmd, "usecustomlang", '='))
+            {
+                if (!parser_parseCmdArg(sCmd, "usecustomlang", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
+                {
+                    nArgument = !_option.getUseCustomLanguageFiles();
+                }
+                _option.setUserLangFiles((bool)nArgument);
+                if (_option.getSystemPrintStatus())
+                {
+                    if (nArgument)
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_CUSTOM_LANG"), _lang.get("COMMON_ACTIVE")), _option) << endl;
+                    else
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_CUSTOM_LANG"), _lang.get("COMMON_INACTIVE")), _option) << endl;
                     /*cerr << toSystemCodePage("|-> NumeRe wird die ESC-Taste ");
                     if (!nArgument)
                         cerr << "nicht ";
@@ -3920,22 +3971,6 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 doc_Help("brief", _option);*/
             return 1;
         }
-        /*else if (sCommand == "headedit")
-        {
-            if (matchParams(sCmd, "data"))
-            {
-                BI_edit_header(_data, _option);
-            }
-            else if (matchParams(sCmd, "cache"))
-            {
-                BI_edit_header(_data, _option);
-            }
-            else
-            {
-                cerr << LineBreak("|-> Diese Tabelle existiert nicht, oder es wurde keine spezifiziert!", _option) << endl;
-            }
-            return 1;
-        }*/
         else if (sCommand == "move")
         {
             if (sCmd.length() > 5)
@@ -5375,6 +5410,11 @@ void BI_ListOptions(Settings& _option)
         cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_26", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) << endl;
     else
         cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_26", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) << endl;
+    /// UserLangFiles
+    if (_option.getUseCustomLanguageFiles())
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_27", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) << endl;
+    else
+        cerr << LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_27", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) << endl;
 
 //////////////////////////////////////////////
     /*cerr << toSystemCodePage("|   Autosave-Intervall:        ") << _option.getAutoSaveInterval() << " [sec]" << endl;
@@ -5550,7 +5590,7 @@ string BI_Greeting(Settings& _option)
 {
     unsigned int nth_Greeting = 0;
     vector<string> vGreetings;
-    if (fileExists(_option.ValidFileName("<>/user/docs/greetings.ndb", ".ndb")))
+    if (_option.getUseCustomLanguageFiles() && fileExists(_option.ValidFileName("<>/user/docs/greetings.ndb", ".ndb")))
         vGreetings = getDBFileContent("<>/user/docs/greetings.ndb", _option);
     else
         vGreetings = getDBFileContent("<>/docs/greetings.ndb", _option);
@@ -8093,7 +8133,7 @@ bool BI_writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _o
     string sParams = "";
     string sArgument = "";
     bool bAppend = false;
-    bool bTrunc = false;
+    bool bTrunc = true;
     bool bNoQuotes = false;
 
     if (sCmd.find("-set") != string::npos || sCmd.find("--") != string::npos)
@@ -8134,11 +8174,13 @@ bool BI_writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _o
             bNoQuotes = true;
         if (matchParams(sParams, "mode", '='))
         {
-            if (getArgAtPos(sParams, matchParams(sParams, "mode", '=')+4) == "append")
+            if (getArgAtPos(sParams, matchParams(sParams, "mode", '=')+4) == "append"
+                || getArgAtPos(sParams, matchParams(sParams, "mode", '=')+4) == "app")
                 bAppend = true;
             else if (getArgAtPos(sParams, matchParams(sParams, "mode", '=')+4) == "trunc")
                 bTrunc = true;
-            else if (getArgAtPos(sParams, matchParams(sParams, "mode", '=')+4) == "override")
+            else if (getArgAtPos(sParams, matchParams(sParams, "mode", '=')+4) == "override"
+                || getArgAtPos(sParams, matchParams(sParams, "mode", '=')+4) == "overwrite")
             {
                 bAppend = false;
                 bTrunc = false;
@@ -8146,7 +8188,6 @@ bool BI_writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _o
             else
                 return false;
         }
-
     }
     if (!sFileName.length())
         throw NO_FILENAME;
@@ -8200,30 +8241,34 @@ bool BI_readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _
     string sFileName = "";
     string sInput = "";
     string sExt = ".txt";
+    string sCommentEscapeSequence = "";
+    string sParams = "";
+    if (sCmd.rfind('-') != string::npos && !isInQuotes(sCmd, sCmd.rfind('-')))
+    {
+        sParams = sCmd.substr(sCmd.rfind('-'));
+        sCmd.erase(sCmd.rfind('-'));
+    }
     ifstream fFile;
     FileSystem _fSys;
     _fSys.setTokens(_option.getTokenPaths());
     _fSys.setPath(_option.getExePath(), false, _option.getExePath());
-    /*if (matchParams(sCmd, "declext", '='))
-    {
-        sExt = getArgAtPos(sCmd, matchParams(sCmd, "declext", '=')+7);
-        if (sExt.find('.') == string::npos)
-            sExt = "."+sExt;
-        sExt.erase(0,sExt.find('.')); //ggf. alle Zeichen vor '.' entfernen
 
-        if (sExt == ".exe" || sExt == ".dll" || sExt == ".sys")
-        {
-            sErrorToken = sExt;
-            throw FILETYPE_MAY_NOT_BE_WRITTEN;
-        }
-        _fSys.declareFileType(sExt);
-    }*/
-    if (matchParams(sCmd, "file", '='))
+    //cerr << sCmd << endl << sParams << endl;
+    if (matchParams(sParams, "comments", '='))
     {
-        if (_data.containsStringVars(sCmd))
-            _data.getStringValues(sCmd);
-        addArgumentQuotes(sCmd, "file");
-        BI_parseStringArgs(sCmd, sFileName, _parser, _data, _option);
+        sCommentEscapeSequence = getArgAtPos(sParams, matchParams(sParams, "comments", '=')+8);
+        if (sCommentEscapeSequence != " ")
+            StripSpaces(sCommentEscapeSequence);
+        while (sCommentEscapeSequence.find("\\t") != string::npos)
+            sCommentEscapeSequence.replace(sCommentEscapeSequence.find("\\t"), 2, "\t");
+    }
+    if (matchParams(sParams, "file", '='))
+    {
+        if (_data.containsStringVars(sParams))
+            _data.getStringValues(sParams);
+        addArgumentQuotes(sParams, "file");
+        //cerr << sParams << endl;
+        BI_parseStringArgs(sParams, sFileName, _parser, _data, _option);
         StripSpaces(sFileName);
         if (!sFileName.length())
             return false;
@@ -8247,6 +8292,38 @@ bool BI_readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _
         sFileName = _fSys.ValidFileName(sFileName, sExt);
     }
     else
+    {
+        if (_data.containsStringVars(sCmd))
+            _data.getStringValues(sCmd);
+        sFileName = sCmd.substr(sCmd.find_first_not_of(' ', 4));
+        StripSpaces(sFileName);
+        if (!sFileName.length())
+            return false;
+        if (containsStrings(sFileName))
+        {
+            sFileName += " -nq";
+            parser_StringParser(sFileName, sCmd, _data, _parser, _option, true);
+        }
+        if (sFileName.find('.') != string::npos)
+        {
+            unsigned int nPos = sFileName.find_last_of('/');
+            if (nPos == string::npos)
+                nPos = 0;
+            if (sFileName.find('\\', nPos) != string::npos)
+                nPos = sFileName.find_last_of('\\');
+            if (sFileName.find('.', nPos) != string::npos)
+                sExt = sFileName.substr(sFileName.rfind('.'));
+
+            if (sExt == ".exe" || sExt == ".dll" || sExt == ".sys")
+            {
+                sErrorToken = sExt;
+                throw FILETYPE_MAY_NOT_BE_WRITTEN;
+            }
+            _fSys.declareFileType(sExt);
+        }
+        sFileName = _fSys.ValidFileName(sFileName, sExt);
+    }
+    if (!sFileName.length())
         throw NO_FILENAME;
 
     sCmd.clear();
@@ -8262,11 +8339,17 @@ bool BI_readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _
     {
         getline(fFile, sInput);
         //StripSpaces(sInput);
-        if (!sInput.length() || sInput == "\"\"")
+        if (!sInput.length() || sInput == "\"\"" || sInput == "\"")
             continue;
-        if (sInput[0] != '"')
+        if (sCommentEscapeSequence.length() && sInput.find(sCommentEscapeSequence) != string::npos)
+        {
+            sInput.erase(sInput.find(sCommentEscapeSequence));
+            if (!sInput.length() || sInput == "\"\"" || sInput == "\"")
+                continue;
+        }
+        if (sInput.front() != '"')
             sInput = '"' + sInput;
-        if (sInput[sInput.length()-1] != '"')
+        if (sInput.back() != '"')
             sInput += '"';
         for (unsigned int i = 1; i < sInput.length()-1; i++)
         {
@@ -8275,7 +8358,7 @@ bool BI_readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _
         }
         sCmd += sInput + ",";
     }
-    sCmd.erase(sCmd.length()-1);
+    sCmd.pop_back();
     fFile.close();
 
     return true;

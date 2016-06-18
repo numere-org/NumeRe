@@ -2388,7 +2388,10 @@ string getTimeStamp(bool bGetStamp)
 	else
 	{
 		Temp_str << ", ";	// Komma im regulaeren Datum
-		Temp_str << _lang.get("TOOLS_TIMESTAMP_AT");
+		if (_lang.get("TOOLS_TIMESTAMP_AT") == "TOOLS_TIMESTAMP_AT")
+            Temp_str << "at";
+        else
+            Temp_str << _lang.get("TOOLS_TIMESTAMP_AT");
 		Temp_str << " ";
 	}
 	if(ltm->tm_hour < 10)
@@ -2407,21 +2410,131 @@ string getTimeStamp(bool bGetStamp)
 	return Temp_str.str();
 }
 
-vector<string> getFileList(const string& sDirectory, const Settings& _option)
+vector<string> resolveChooseTokens(const string& sDirectory, const Settings& _option)
+{
+    vector<string> vResolved;
+    vResolved.push_back(sDirectory);
+    string sToken;
+    unsigned int nSize = 0, nth_choose = 0;
+    bool bResolvingPath = false;
+
+    if (sDirectory.find('|') != string::npos)
+    {
+        while (vResolved[0].find('|') != string::npos)
+        {
+            if (!vResolved[0].rfind('<'))
+                break;
+            sToken = vResolved[0].substr(vResolved[0].rfind('<')+1);
+            sToken.erase(sToken.find('>'));
+            nSize = vResolved.size();
+            nth_choose = 0;
+            while (sToken.find('|') != string::npos || sToken.length())
+            {
+                // so lange ein "|" in dem Token gefunden wird, muss der Baum dupliziert werden
+                if (sToken.find('|') != string::npos)
+                {
+                    for (unsigned int i = 0; i < nSize; i++)
+                        vResolved.push_back(vResolved[i+nth_choose*nSize]);
+                }
+                // Die Tokens ersetzen
+                for (unsigned int i = nth_choose*nSize; i < (nth_choose+1)*nSize; i++)
+                {
+                    if (!bResolvingPath && vResolved[i].rfind('/') != string::npos && vResolved[i].rfind('/') > vResolved[i].rfind('>'))
+                        bResolvingPath = true;
+                    vResolved[i].replace(vResolved[i].rfind('<'), vResolved[i].rfind('>')+1-vResolved[i].rfind('<'), sToken.substr(0,sToken.find('|')));
+                }
+                if (bResolvingPath
+                    && ((vResolved[nth_choose*nSize].find('*') != string::npos && vResolved[nth_choose*nSize].find('*') < vResolved[nth_choose*nSize].rfind('/'))
+                        || (vResolved[nth_choose*nSize].find('?') != string::npos && vResolved[nth_choose*nSize].find('?') < vResolved[nth_choose*nSize].rfind('/'))))
+                {
+                    // Platzhalter in Pfaden werden mit einer Rekursion geloest.
+                    vector<string> vFolderList = getFolderList(vResolved[nth_choose*nSize].substr(0,vResolved[nth_choose*nSize].rfind('/')), _option, 1);
+                    for (unsigned int j = 0; j < vFolderList.size(); j++)
+                    {
+                        if (vFolderList.size() > 1 && j < vFolderList.size()-1)
+                        {
+                            // ggf. Baum duplizieren
+                            for (unsigned int k = 0; k < nSize; k++)
+                            {
+                                vResolved.push_back(vResolved[k+(nth_choose+1)*nSize]);
+                                vResolved[k+(nth_choose+1)*nSize] = vResolved[k+nth_choose*nSize];
+                            }
+                        }
+                        for (unsigned int k = nth_choose*nSize; k < (nth_choose+1)*nSize; k++)
+                        {
+                            //cerr << vFolderList[j] << endl;
+                            vResolved[k].replace(0, vResolved[k].rfind('/'), vFolderList[j]);
+                        }
+                        if (vFolderList.size() > 1 && j < vFolderList.size()-1)
+                            nth_choose++;
+                    }
+                }
+                bResolvingPath = false;
+                nth_choose++;
+                if (sToken.find('|') != string::npos)
+                    sToken.erase(0,sToken.find('|')+1);
+                else
+                {
+                    sToken.clear();
+                    break;
+                }
+            }
+        }
+    }
+    if ((vResolved[0].find('*') != string::npos && vResolved[0].find('*') < vResolved[0].rfind('/'))
+        || (vResolved[0].find('?') != string::npos && vResolved[0].find('?') < vResolved[0].rfind('/')))
+    {
+        // Platzhalter in Pfaden werden mit einer Rekursion geloest.
+        vector<string> vFolderList = getFolderList(vResolved[0].substr(0,vResolved[0].rfind('/')), _option, 1);
+        //cerr << vFolderList.size();
+        nSize = vResolved.size();
+        //cerr << nSize << endl;
+        for (unsigned int i = 0; i < vFolderList.size()-1; i++)
+        {
+            // ggf. Baum duplizieren
+            for (unsigned int k = 0; k < nSize; k++)
+            {
+                vResolved.push_back(vResolved[k]);
+            }
+
+        }
+        for (unsigned int j = 0; j < vFolderList.size(); j++)
+        {
+            for (unsigned int k = j*nSize; k < (j+1)*nSize; k++)
+            {
+                //cerr << vFolderList[j] << endl;
+                vResolved[k].replace(0, vResolved[k].rfind('/'), vFolderList[j]);
+                //cerr << vResolved[k] << endl;
+            }
+        }
+    }
+
+    return vResolved;
+}
+
+vector<string> getFileList(const string& sDirectory, const Settings& _option, int nFlags)
 {
     vector<string> vFileList;
+    vector<string> vDirList;
     string sDir = replacePathSeparator(sDirectory);
-    if (sDir.rfind('.') == string::npos && sDir.find('*') == string::npos && sDir.find('?') == string::npos)
+    vDirList = resolveChooseTokens(sDir, _option);
+    for (unsigned int i = 0; i < vDirList.size(); i++)
     {
-        if (sDir[sDir.find_last_not_of(' ')] != '/')
-            sDir += '/';
-        sDir += "*";
-    }
-    else if (sDir.find('.') == string::npos || (sDir.find('.') != string::npos && sDir.find('/', sDir.find('.')) != string::npos))
-        sDir += "*";
-    //cerr << sDir << endl << sDirectory << endl;
-    WIN32_FIND_DATA FindFileData;
-    HANDLE hFind = INVALID_HANDLE_VALUE;
+        sDir = vDirList[i];
+        //cerr << sDir << endl;
+        if (sDir.rfind('.') == string::npos && sDir.find('*') == string::npos && sDir.find('?') == string::npos)
+        {
+            if (sDir[sDir.find_last_not_of(' ')] != '/')
+                sDir += '/';
+            sDir += "*";
+        }
+        else if ((sDir.find('.') == string::npos
+                || (sDir.find('.') != string::npos && sDir.find('/', sDir.find('.')) != string::npos))
+            && sDir.back() != '*')
+            sDir += "*";
+        //cerr << sDir << endl << sDirectory << endl;
+        WIN32_FIND_DATA FindFileData;
+        HANDLE hFind = INVALID_HANDLE_VALUE;
 
         if (sDir[0] == '.')
         {
@@ -2477,19 +2590,126 @@ vector<string> getFileList(const string& sDirectory, const Settings& _option)
         else
         {
             hFind = FindFirstFile(sDir.c_str(), &FindFileData);
+            if (sDir.find('/') != string::npos)
+                sDir.erase(sDir.rfind('/')+1);
         }
         if (hFind == INVALID_HANDLE_VALUE)
-            return vFileList;
+            continue;
 
         do
         {
             if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
                 continue;
-
-            vFileList.push_back(FindFileData.cFileName);
+            if (nFlags & 1)
+                vFileList.push_back(sDir + FindFileData.cFileName);
+            else
+                vFileList.push_back(FindFileData.cFileName);
         }
         while (FindNextFile(hFind, &FindFileData) != 0);
+        FindClose(hFind);
+    }
+    return vFileList;
+}
 
+vector<string> getFolderList(const string& sDirectory, const Settings& _option, int nFlags)
+{
+    vector<string> vFileList;
+    vector<string> vDirList;
+    string sDir = replacePathSeparator(sDirectory);
+    vDirList = resolveChooseTokens(sDir, _option);
+    for (unsigned int i = 0; i < vDirList.size(); i++)
+    {
+        sDir = vDirList[i];
+        if (sDir.rfind('.') == string::npos && sDir.find('*') == string::npos && sDir.find('?') == string::npos)
+        {
+            if (sDir[sDir.find_last_not_of(' ')] != '/')
+                sDir += '/';
+            sDir += "*";
+        }
+        else if ((sDir.find('.') == string::npos
+                || (sDir.find('.') != string::npos && sDir.find('/', sDir.find('.')) != string::npos))
+            && sDir.back() != '*')
+            sDir += "*";
+        //cerr << sDir << endl << sDirectory << endl;
+        WIN32_FIND_DATA FindFileData;
+        HANDLE hFind = INVALID_HANDLE_VALUE;
+
+        if (sDir[0] == '.')
+        {
+            hFind = FindFirstFile((_option.getExePath() + "\\" + sDir).c_str(), &FindFileData);
+            sDir = replacePathSeparator(_option.getExePath() + "/" + sDir);
+            sDir.erase(sDir.rfind('/')+1);
+        }
+        else if (sDir[0] == '<')
+        {
+            if (sDir.substr(0,10) == "<loadpath>")
+            {
+                hFind = FindFirstFile((_option.getLoadPath() + sDir.substr(sDir.find('>')+1)).c_str(), &FindFileData);
+                sDir = replacePathSeparator(_option.getLoadPath() + sDir.substr(sDir.find('>')+1));
+                sDir.erase(sDir.rfind('/')+1);
+            }
+            else if (sDir.substr(0,10) == "<savepath>")
+            {
+                hFind = FindFirstFile((_option.getSavePath() + sDir.substr(sDir.find('>')+1)).c_str(), &FindFileData);
+                sDir = replacePathSeparator(_option.getSavePath() + sDir.substr(sDir.find('>')+1));
+                sDir.erase(sDir.rfind('/')+1);
+            }
+            else if (sDir.substr(0,12) == "<scriptpath>")
+            {
+                hFind = FindFirstFile((_option.getScriptPath() + sDir.substr(sDir.find('>')+1)).c_str(), &FindFileData);
+                sDir = replacePathSeparator(_option.getScriptPath() + sDir.substr(sDir.find('>')+1));
+                sDir.erase(sDir.rfind('/')+1);
+            }
+            else if (sDir.substr(0,10) == "<plotpath>")
+            {
+                hFind = FindFirstFile((_option.getPlotOutputPath() + sDir.substr(sDir.find('>')+1)).c_str(), &FindFileData);
+                sDir = replacePathSeparator(_option.getPlotOutputPath() + sDir.substr(sDir.find('>')+1));
+                sDir.erase(sDir.rfind('/')+1);
+            }
+            else if (sDir.substr(0,10) == "<procpath>")
+            {
+                hFind = FindFirstFile((_option.getProcsPath()+sDir.substr(sDir.find('>')+1)).c_str(), &FindFileData);
+                sDir = replacePathSeparator(_option.getProcsPath() + sDir.substr(sDir.find('>')+1));
+                sDir.erase(sDir.rfind('/')+1);
+            }
+            else if (sDir.substr(0,2) == "<>")
+            {
+                hFind = FindFirstFile((_option.getExePath() + sDir.substr(sDir.find('>')+1)).c_str(), &FindFileData);
+                sDir = replacePathSeparator(_option.getExePath() + sDir.substr(sDir.find('>')+1));
+                sDir.erase(sDir.rfind('/')+1);
+            }
+            else if (sDir.substr(0,6) == "<this>")
+            {
+                hFind = FindFirstFile((_option.getExePath() + sDir.substr(sDir.find('>')+1)).c_str(), &FindFileData);
+                sDir = replacePathSeparator(_option.getExePath() + sDir.substr(sDir.find('>')+1));
+                sDir.erase(sDir.rfind('/')+1);
+            }
+        }
+        else
+        {
+            hFind = FindFirstFile(sDir.c_str(), &FindFileData);
+            if (sDir.find('/') != string::npos)
+                sDir.erase(sDir.rfind('/')+1);
+        }
+        if (hFind == INVALID_HANDLE_VALUE)
+            continue;
+
+        do
+        {
+            if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            {
+                if (nFlags & 1)
+                    vFileList.push_back(sDir + FindFileData.cFileName);
+                else
+                    vFileList.push_back(FindFileData.cFileName);
+            }
+            else
+                continue;
+
+        }
+        while (FindNextFile(hFind, &FindFileData) != 0);
+        FindClose(hFind);
+    }
     return vFileList;
 }
 
@@ -2805,4 +3025,17 @@ string generateCacheName(const string& sFilename, Settings& _option)
         sCacheName = "loaded_data";
     return sCacheName;
 }
+
+bool containsDataObject(const string& sExpr)
+{
+    for (unsigned int i = 0; i < sExpr.length()-5; i++)
+    {
+        if (!i && sExpr.substr(i,5) == "data(")
+            return true;
+        else if (i && sExpr.substr(i,5) == "data(" && checkDelimiter(sExpr.substr(i-1,6)))
+            return true;
+    }
+    return false;
+}
+
 

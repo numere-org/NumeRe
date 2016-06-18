@@ -190,7 +190,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                         if (!containsStrings(_pInfo.sPlotParams.substr(nPos+3, nPos_temp-nPos-3)) && !_data.containsStringVars(_pInfo.sPlotParams.substr(nPos+3, nPos_temp-nPos-3)))
                             continue;
                     }
-                    if (_pInfo.sPlotParams[nPos] == '(')
+                    /*if (_pInfo.sPlotParams[nPos] == '(')
                     {
                         int nPos_temp = getMatchingParenthesis(_pInfo.sPlotParams.substr(nPos))+nPos;
                         if (!containsStrings(_pInfo.sPlotParams.substr(nPos, nPos_temp-nPos)) && !_data.containsStringVars(_pInfo.sPlotParams.substr(nPos, nPos_temp-nPos)))
@@ -202,7 +202,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                                 nPos_temp++;
                             nPos = nPos_temp-1;
                         }
-                    }
+                    }*/
                     for (unsigned int i = nPos; i < _pInfo.sPlotParams.length(); i++)
                     {
                         if (_pInfo.sPlotParams[i] == '(')
@@ -221,6 +221,8 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                             {
                                 throw STRING_ERROR;
                             }
+                            if (_pInfo.sPlotParams[nPos] == '(' && sParsedString.front() != '(')
+                                sParsedString = "(" + sParsedString + ")";
                             if (i+1 == _pInfo.sPlotParams.length())
                                 _pInfo.sPlotParams.replace(nPos, string::npos, sParsedString);// = _pInfo.sPlotParams.substr(0, nPos) + sParsedString;
                             else
@@ -390,7 +392,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                         if (!containsStrings(_pInfo.sPlotParams.substr(nPos+3, nPos_temp-nPos-3)) && !_data.containsStringVars(_pInfo.sPlotParams.substr(nPos+3, nPos_temp-nPos-3)))
                             continue;
                     }
-                    if (_pInfo.sPlotParams[nPos] == '(')
+                    /*if (_pInfo.sPlotParams[nPos] == '(')
                     {
                         int nPos_temp = getMatchingParenthesis(_pInfo.sPlotParams.substr(nPos))+nPos;
                         if (!containsStrings(_pInfo.sPlotParams.substr(nPos, nPos_temp-nPos)) && !_data.containsStringVars(_pInfo.sPlotParams.substr(nPos, nPos_temp-nPos)))
@@ -402,7 +404,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                                 nPos_temp++;
                             nPos = nPos_temp-1;
                         }
-                    }
+                    }*/
                     for (unsigned int i = nPos; i < _pInfo.sPlotParams.length(); i++)
                     {
                         if (_pInfo.sPlotParams[i] == '(')
@@ -420,6 +422,10 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                             if (!parser_StringParser(sParsedString, sDummy, _data, _parser, _option, true))
                             {
                                 throw STRING_ERROR;
+                            }
+                            if (_pInfo.sPlotParams[nPos] == '(' && sParsedString.front() != '(')
+                            {
+                                sParsedString = "(" + sParsedString + ")";
                             }
                             if (i+1 == _pInfo.sPlotParams.length())
                                 _pInfo.sPlotParams.replace(nPos, string::npos, sParsedString);// = _pInfo.sPlotParams.substr(0, nPos) + sParsedString;
@@ -919,7 +925,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
          *    Dabei erlaubt die Syntax sowohl eine gezielte Wahl von Datenreihen (Spalten),
          *    als auch eine automatische. <--
          */
-        if (sFunc.find("data(") != string::npos || _data.containsCacheElements(sFunc))
+        if (containsDataObject(sFunc) || _data.containsCacheElements(sFunc))
         {
             string sFuncTemp = sFunc;
             string sToken = "";
@@ -930,9 +936,9 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                 StripSpaces(sToken);
                 if (_option.getbDebug())
                     cerr << "|-> DEBUG: sToken = " << sToken << endl;
-                if (sToken.find("data(") != string::npos || _data.containsCacheElements(sToken))
+                if (containsDataObject(sToken) || _data.containsCacheElements(sToken))
                 {
-                    if (sToken.find("data(") != string::npos && sToken.find("data("))
+                    if (sToken.find("data(") != string::npos && sToken.find("data(") && checkDelimiter(sToken.substr(sToken.find("data(")-1,6)))
                         throw DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING;
                     if (_data.containsCacheElements(sToken.substr(0, sToken.find("(")+1)) && !_data.isCacheElement(sToken.substr(0,sToken.find("("))))
                         throw DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING;
@@ -952,7 +958,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
             while(sFuncTemp.length())
             {
                 sToken = getNextArgument(sFuncTemp, true);
-                if (sToken.find("data(") != string::npos || _data.containsCacheElements(sToken))
+                if (containsDataObject(sToken) || _data.containsCacheElements(sToken))
                     sDataPlots += ";" + sToken;
                 else
                     sFunc += ","+sToken;
@@ -1017,7 +1023,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                                 || sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos).substr(sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos).find('('),2) == "()")
                             && sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos).find(')') != string::npos)
                     {
-                        if ((sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos).find("data(") != string::npos && !_data.isValid())
+                        if ((sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos).find("data(") != string::npos && checkDelimiter(sDataLabels.substr(sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos).find("data(")-1, 6)) && !_data.isValid())
                             || (_data.containsCacheElements(sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos)) && !_data.isValidCache()))
                         {
                             throw NO_DATA_AVAILABLE;
@@ -1206,7 +1212,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                     nPos_1 = sDataPlots.find(';', nPos);
 
                     // --> Ist da "cache" drin? Aktivieren wir den Cache-Status <--
-                    if (_data.containsCacheElements(sDataPlots.substr(nPos, nPos_1-nPos)) && sDataPlots.substr(nPos,5) != "data(" )
+                    if (_data.containsCacheElements(sDataPlots.substr(nPos, nPos_1-nPos)) && sDataPlots.substr(nPos,5) != "data(")
                     {
                         _data.setCacheStatus(true);
                         for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
@@ -1223,7 +1229,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                     si_pos[0] = sDataPlots.substr(nMatch, getMatchingParenthesis(sDataPlots.substr(nMatch))+1);
                     if (si_pos[0] == "()" || si_pos[0][si_pos[0].find_first_not_of(' ',1)] == ')')
                         si_pos[0] = "(:,:)";
-                    if (si_pos[0].find("data(") != string::npos || _data.containsCacheElements(si_pos[0]))
+                    if (containsDataObject(si_pos[0]) || _data.containsCacheElements(si_pos[0]))
                     {
                         parser_GetDataElement(si_pos[0], _parser, _data, _option);
                     }
@@ -1456,6 +1462,14 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                                 //cerr << nAppendedZeroes << endl;
                                 if (nAppendedZeroes > _data.getAppendedZeroes(j_pos[0]+k, sDataTable))
                                     nAppendedZeroes = _data.getAppendedZeroes(j_pos[0]+k, sDataTable);
+                            }
+                        }
+                        else if (_pInfo.b2D)
+                        {
+                            for (int j = j_pos[0]; j < j_pos[1]; j++)
+                            {
+                                if (nAppendedZeroes > _data.getAppendedZeroes(j, sDataTable))
+                                    nAppendedZeroes = _data.getAppendedZeroes(j, sDataTable);
                             }
                         }
                         else

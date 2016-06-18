@@ -56,6 +56,7 @@ class Settings : public Documentation
 		bool bShowHints;
 		bool bUseESCinScripts;
 		bool bUseDebugger;
+		bool bUseCustomLanguageFile;
 		int nPrecision;			    // Setzt die Genauigkeit der Ausgabe
 		int nAutoSaveInterval;      // Das Intervall fuer die automatische Speicherung
 		string sPath;               // Programm-Hauptpfad
@@ -283,6 +284,11 @@ class Settings : public Documentation
                 bUseDebugger = _debugger;
                 return;
             }
+        inline void setUserLangFiles(bool _langfiles)
+            {
+                bUseCustomLanguageFile = _langfiles;
+                return;
+            }
         // --> Keine inline-Methode, da hoehere Komplexitaet <--
 		void setViewerPath(const string& _sViewerPath);
 		void setEditorPath(const string& _sEditorPath);
@@ -372,6 +378,8 @@ class Settings : public Documentation
             {return bUseSystemPrints;}
         inline bool getUseDebugger() const
             {return bUseDebugger;}
+        inline bool getUseCustomLanguageFiles() const
+            {return bUseCustomLanguageFile;}
 
 };
 #endif
