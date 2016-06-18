@@ -117,6 +117,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
 bool parser_writeAudio(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
 bool parser_regularize(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
 bool parser_pulseAnalysis(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
+bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
 
 void parser_splash(Parser&);
 

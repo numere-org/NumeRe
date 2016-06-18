@@ -869,7 +869,7 @@ void doc_SearchFct(const string& sToLookFor, Settings& _option)
     string sToLookFor_cp = toLowerCase(sToLookFor);
     string sUsedIdxKeys = ";";
     static vector<vector<string> > vTopics;
-    if (!vTopics.size() && fileExists(_option.ValidFileName("<>/user/docs/find.ndb", ".ndb")))
+    if (!vTopics.size() && _option.getUseCustomLanguageFiles() && fileExists(_option.ValidFileName("<>/user/docs/find.ndb", ".ndb")))
     {
         vector<vector<string> > vStdTopics = getDataBase("<>/docs/find.ndb", _option);
         vector<vector<string> > vLangTopics = getDataBase("<>/user/docs/find.ndb", _option);
@@ -1120,132 +1120,13 @@ void doc_FirstStart(const Settings& _option)
         make_hline();
     }
 
-    /*cerr << "|-> NUMERE: ERSTER START [EINSTIEG -- SEITE 1/7]" << endl;
-    make_hline();
-    cerr << LineBreak("|-> HALLO UND WILLKOMMEN!$Ich bin NumeRe v " + sVersion + ", Framework für Numerische Rechnungen, und freue mich, dich zum ersten Mal zu begrüßen!", _option) << endl;
-    cerr << LineBreak("|-> Ich bin ausgelegt als eine Tabellenkalkulation, die rein auf der Konsole basiert, allerdings bin ich für die (Natur-)Wissenschaftliche Arbeit optimiert. So verfüge ich über die Möglichkeit, durch Scripte vordefinierte Abläufe zu automatisieren, graphische Plots in vielerlei Varianten zu erzeugen, oder einige andere Dinge.", _option) << endl;
-    cerr << LineBreak("|-> Diese Einführung werde ich nur dieses eine Mal automatisch anzeigen. Falls du sie später noch mal sehen willst, gebe einfach \"firststart\" in die Konsole ein. Außerdem gibt es die Möglichkeit, zu allen Themen eine Hilfe zu erhalten: gib einfach \"help THEMA\" ein, um meine Hilfe zum THEMA aufzurufen, oder lass' THEMA weg, um die Hilfeübersicht anzuzeigen. (Beispiel: \"help data\")", _option) << endl;
-    cerr << LineBreak("|-> Solltest du einmal ein Kommando oder eine Funktion nicht finden können, kannst du meine Stichwortsuche verwenden: \"find BEGRIFFE\". Wie durch BEGRIFFE angedeutet, kannst du hier auch mehrere Begriffe angeben, die durch Leerzeichen getrennt sein müssen. (Beispiel: \"find funktionen definieren\")", _option) << endl;
-    cerr << LineBreak("|-> HINWEIS: Dies ist nur eine knappe Einführung, in der für alle Feinheiten meiner Syntax kein Platz ist. Sieh dir einfach die Hilfeartikel an, die ich im Folgenden angeben werde, falls du irgendwo nicht weiterkommst, oder schau in die NumeRe-Onlinereferenz: <https://sites.google.com/site/numereframework/onlinereferenz>", _option) << endl;
-    cerr << LineBreak("|-> TIPP: Da dies mein erster Start auf deinem Rechner zu sein scheint, wirst du eben beobachtet haben, wie ich einen ausführlichen Test durchgeführt habe. Wenn du nicht möchtest, dass ich das nochmal mache, gib nach dieser Einführung (oder auch später) \"set -faststart=1\" ein.", _option) << endl;
-    cerr << "|   (ENTER ZUM FORTFAHREN / 0+ENTER ZUM ABBRECHEN) ";
-    getline(cin, sInput);
-    StripSpaces(sInput);
-    if (sInput == "0")
-    {
-        make_hline();
-        return;
-    }
-    else
-        sInput = "";
-    make_hline();
-    cerr << "|-> NUMERE: ERSTER START [EIN- & AUSGABE -- SEITE 2/7]" << endl;
-    make_hline();
-    cerr << LineBreak("|-> Als Framework für Numerische Rechnungen kann ich natürlich vor allem eines: eingegebene Ausdrücke numerisch auswerten. Dazu kannst du den Ausdruck, den ich dir auswerten soll, im Prinzip eingeben, wie du ihn in einen beliebigen Taschenrechner eintippen würdest. Der Unterschied liegt lediglich darin, dass ich mit Variablen umgehen kann und Leerstellen natürlich bedeutungslos sind. (Beispiel: \"5*23*x + 2*x^2 - 15*cos(2)\")", _option) << endl;
-    cerr << LineBreak("|-> Diese Variablen musst du nicht zuvor deklarieren. Ich erkenne auch Variablen, die mit einem Ausdruck eingegeben werden, als solche und werde sie entsprechend in meinem Speicher ablegen. Du brauchst dir also darüber keine Sorgen machen. (Allerdings solltest du beachten, dass neue Variablen stets den Wert 0 haben.)", _option) << endl;
-    cerr << LineBreak("|-> Deine Variablen können aus Buchstaben, Unterstrichen und Zahlen bestehen, jedoch dürfen sie niemals mit einer Ziffer beginnen. (Z.B.: \"x\", \"x0\", \"_var_Wert\", ...)", _option) << endl;
-    cerr << LineBreak("|-> Den numerischen Wert, den ich ausrechne, werde ich in der nächsten Zeile als \"ans = WERT\" ausgeben. Dabei werde ich diesen Wert eben auch der speziellen Variable \"ans\" zuweisen, so dass du beim nächsten Ausdruck damit weiterrechnen kannst.", _option) << endl;
-    cerr << LineBreak("|-> Ich kann auch numerisch Differenzieren und Integrieren, sowie Extrema und Nullstellen suchen. Die dazu nötigen Kommandos sowie eine komplette Liste aller anderen findest du unter \"list -cmd\".", _option) << endl;
-    cerr << LineBreak("|-> TIPP: Weiterführende Infos findest du unter \"help expression\", \"help var\", \"help integrate\", \"help diff\", \"help extrema\" und \"help zeroes\"", _option) << endl;
-    cerr << "|   (ENTER ZUM FORTFAHREN / 0+ENTER ZUM ABBRECHEN) ";
-    getline(cin, sInput);
-    StripSpaces(sInput);
-    if (sInput == "0")
-    {
-        make_hline();
-        return;
-    }
-    else
-        sInput = "";
-    make_hline();
-    cerr << "|-> NUMERE: ERSTER START [NUMERE EINRICHTEN & VERBESSERN -- SEITE 3/7]" << endl;
-    make_hline();
-    cerr << LineBreak("|-> Zwar wurde ich von meinem Entwickler schon mit vernünftigen Standardeinstellungen versehen, doch möglicherweise hast du einen anderen Workflow und möchtest deswegen etwas an meinen Einstellungen ändern. Dazu gibt es das Kommando \"set\":$set -EINSTELLUNG=WERT$(Manche Einstellungen haben nur die Werte 1/0, andere explizit numerische Werte und einige auch Zeichenketten. Die Bezeichnungen der Einstellungswerte findest du im entsprechenden Hilfeartikel.)", _option) << endl;
-    cerr << LineBreak("|-> Um meine Einstellungen zu lesen, verwendest du das Kommando \"get\" (get -EINSTELLUNG) und um sie in einer kompakten Liste anzeigen zu lassen \"list -settings\".", _option) << endl;
-    cerr << LineBreak("|-> Vielleicht findest du, dass bei mir etwas nicht so ganz stimmt, oder dass mir noch was ganz wichtiges fehlt. Sollte dem so sein, dann freut sich mein Entwickler über deine Nachricht. Schreibe ihm entweder per Mail <numere.developer@gmail.com>, oder trage deinen Wunsch/Fehler im Bug- und Requesttracker ein: <https://sites.google.com/site/numereframework/to-dos>", _option) << endl;
-    cerr << LineBreak("|-> TIPP: Weiterführende Infos findest du unter \"help set\", \"help get\" und \"about\"", _option) << endl;
-    cerr << "|   (ENTER ZUM FORTFAHREN / 0+ENTER ZUM ABBRECHEN) ";
-    getline(cin, sInput);
-    StripSpaces(sInput);
-    if (sInput == "0")
-    {
-        make_hline();
-        return;
-    }
-    else
-        sInput = "";
-    make_hline();
-    cerr << "|-> NUMERE: ERSTER START [DATENFILES -- SEITE 4/7]" << endl;
-    make_hline();
-    cerr << LineBreak("|-> Ich hatte eben einige Features angedeutet, die ich dir in den folgenden Zeilen vorstellen werde. Beginnen wir dabei zunächst mit der Arbeit mit Datensätzen:", _option) << endl;
-    cerr << LineBreak("|-> Ich fasse jeden Datensatz als eine Tabelle auf. Tabellen als Textdatei als *.dat oder *.txt kannst du mittels des Kommandos \"load DATEI\", wobei DATEI der Dateiname des Datensatzes ist, in meinen Arbeitsspeicher laden. Kommentare müssen dabei durch ein \"#\" am Anfang der Zeile auskommentiert werden, Dezimaltrennzeichen kann der Punkt oder das Komma (oder beides) sein und die einzelnen Spalten müssen durch mindestens ein Leerzeichen oder einen Tabulator getrennt sein. (Beispiel: \"load samples/data\")", _option) << endl;
-    cerr << LineBreak("|-> Ich kann des Weiteren auch die Tabelle aus einer CASSY(R)-LABX-Datei extrahieren, sie auswerten und ggf. in eine *.dat-Datei exportieren. Außerdem verstehe ich Comma Separated Value-Datafiles (*.csv), JCAMP-DX-Files (*.dx) und IGOR Binary Waves (*.ibw). Das zusätzliche \"NumeRe-Datafile\"-Format (*.ndat) verwende ich standardmäßig zum Speichern, allerdings handelt es sich dabei um ein binäres Format, das nur von mir gelesen werden kann. Ich kann die Daten aber auch in eine Text- oder eine TeXdatei exportieren, wenn das gewünscht ist.", _option) << endl;
-    cerr << LineBreak("|-> Die geladenen Daten kann ich rasch analysieren. Wenn du \"stats data()\" eingibst, berechne ich dir die Statistiken der Datensätze, und bei \"hist data()\" berechne ich dir ein Histogramm der Daten. Tiefergehendere oder ausführlichere Auswertungen kann ich dir machen, wenn du die dazu nötigen Gleichungen direkt eingibst, wobei die Daten in meinem Arbeitsspeicher durch \"data(ZEILE,SPALTE)\" repräsentiert sind. (Beispiel: \"7*exp(data(12,3)^2)\")", _option) << endl;
-    cerr << LineBreak("|-> TIPP: Weiterführende Infos findest du unter \"help data\", \"help load\", \"help stats\" und \"help hist\"", _option) << endl;
-    cerr << "|   (ENTER ZUM FORTFAHREN / 0+ENTER ZUM ABBRECHEN) ";
-    getline(cin, sInput);
-    StripSpaces(sInput);
-    if (sInput == "0")
-    {
-        make_hline();
-        return;
-    }
-    else
-        sInput = "";
-    make_hline();
-    cerr << "|-> NUMERE: ERSTER START [PLOTTEN -- SEITE 5/7]" << endl;
-    make_hline();
-    cerr << LineBreak("|-> Daneben verfüge ich über einen vielseitigen Plotalgorithmus, der dir eine graphische Darstellung von Funktionen oder Datensätzen in vielen Varianten ermöglicht.", _option) << endl;
-    cerr << LineBreak("|-> Einfache 1D-Plots (z.B. von f(x) = sin(x)) mache ich dir durch die Eingabe von \"plot FUNKTION -set OPTIONEN\". Dabei ist FUNKTION durch den Funktionsausdruck und OPTIONEN durch die gewünschten Plotoptionen zu ersetzen. Statt eines Funktionsausdrucks kann hierbei auch ein Datensatz angegeben werden. (Beispiel: \"plot sin(x) -set [-_pi:_pi]\" oder \"plot data(:,1:3) -set yerrorbars\")", _option) << endl;
-    cerr << LineBreak("|-> 2D-Plots von Funktionen der Form z = f(x,y) bekommst du durch \"mesh\", \"surf\", \"dens\" oder \"cont\", je nach gewünschter Darstellungsmethode. (z.B. \"surf exp(-norm(x,y)^2/5) -set [-5:5,-5:5] light\")", _option) << endl;
-    cerr << LineBreak("|-> 3D-Plots von Trajektorien oder Skalarfeldern (Phi = Phi(x,y,z)) erzeuge ich durch das zusätzliche Anhängen von \"3d\" an ein Kommando (z.B. \"surf3d\").", _option) << endl;
-    cerr << LineBreak("|-> Vektorfelder kann ich dir durch \"vect\" bzw. \"vect3d\" darstellen. (Beispiel: \"vect -y, x -set [-5:5,-5:5]\")", _option) << endl;
-    cerr << LineBreak("|-> Meine Plots haben verschiedene Qualitätsstufen: standardmäßig mache ich alle Plots in der mittleren Stufe, da dies Rechenzeit spart. Willst du eine hohe Qualität, so gib die Option \"hires\" an. Du kannst auch den Entwurfsmodus verwenden. Gib dafür \"set -draftmode=0\" ein.", _option) << endl;
-    cerr << LineBreak("|-> TIPP: Weiterführende Infos findest du unter \"help plot\", \"help plotoptions\", \"help plot3d\", \"help mesh\", \"help mesh3d\", \"help vect\" und \"help vect3d\"", _option) << endl;
-    cerr << "|   (ENTER ZUM FORTFAHREN / 0+ENTER ZUM ABBRECHEN) ";
-    getline(cin, sInput);
-    StripSpaces(sInput);
-    if (sInput == "0")
-    {
-        make_hline();
-        return;
-    }
-    else
-        sInput = "";
-    make_hline();
-    cerr << "|-> NUMERE: ERSTER START [AUTOMATISIEREN, SCRIPTE & PROZEDUREN -- SEITE 6/7]" << endl;
-    make_hline();
-    cerr << LineBreak("|-> Wie ich zuvor erwähnte, kann ich vordefinierte Abläufe automatisieren. Dazu stehen dir einfache Programmierfunktionen zur Verfügung, die du während der Laufzeit direkt eingeben, oder aber in ein sogenanntes \"NumeRe-Script\" (*.nscr) auslagern kannst.", _option) << endl;
-    cerr << LineBreak("|-> Als Funktionen stehen dir die Zählschleife (FOR-Schleife), die bedingte Schleife (WHILE-Schleife) und die bedingte Verzweigung (IF-Verzweigung) zur Verfügung, die im Wesentlichen über dieselben Fähigkeiten wie die entsprechenden Varianten aus C/C++ verfügen.", _option) << endl;
-    cerr << LineBreak("|-> Scripte kannst du durch das Kommando \"script -start=SCRIPT\", wobei SCRIPT durch den Dateinamen des Scripts zu ersetzen ist, starten. Wenn ein Script gestartet wurde, werde ich alle Ausdrücke zeilenweise abarbeiten, die ich in deinem Script finde. In meinem Unterverzeichnis \"samples\" sollten ein paar Beispielscripte zu finden sein, sofern du sie bei Installation nicht abgewählt hast. Teste einfach mal \"script -start=samples/sample\"", _option) << endl;
-    cerr << LineBreak("|-> Die größtmögliche Flexibilität bietet dir mein integrierter Interpreter, der in der Lage ist, komplexe Automatismen, \"NumeRe-Prozeduren\" (*.nprc) genannt, auszuführen. Diese Prozeduren kannst du verwenden, um deine eigenen Unterprogramme in meinem Framework zu entwickeln. Auch wenn die Vielfalt der Funktionen dieser Prozeduren vielleicht noch eingeschränkt erscheinen mag, so wird sie doch stetig erweitert.", _option) << endl;
-    cerr << LineBreak("|-> TIPP: Weiterführende Infos findest du unter \"help for\", \"help while\", \"help if\", \"help script\" und \"help procedure\"", _option) << endl;
-    cerr << "|   (ENTER ZUM FORTFAHREN / 0+ENTER ZUM ABBRECHEN) ";
-    getline(cin, sInput);
-    StripSpaces(sInput);
-    if (sInput == "0")
-    {
-        make_hline();
-        return;
-    }
-    else
-        sInput = "";
-    make_hline();
-    cerr << "|-> NUMERE: ERSTER START [FUNKTIONEN -- SEITE 7/7]" << endl;
-    make_hline();
-    cerr << LineBreak("|-> Außerdem besitze ich einen großen Satz vordefinierter Funktionen, Konstanten und Einheitenumrechnungen. Ich kann sie dir auflisten, wenn du \"list -func\" für die Funktionen, \"list -const\" für die Konstanten und \"list -units\" für die Einheitenumrechnungen eingibst.", _option) << endl;
-    cerr << LineBreak("|-> Zusätzlich kannst du auch noch eigene Funktionen definieren, mit denen du dann genauso wie mit meinen vordefinierten umgehen kannst. Dazu musst du mir aber erklären, was deine Funktion können soll. Die dazu nötige Definition machst du dabei durch das Schema \"define FUNKTIONSNAME(ARGUMENTE) := FUNKTIONSAUSDRUCK\", z.B. durch \"define f(x,y) := cos(x)+sin(y)\"", _option) << endl;
-    cerr << LineBreak("|-> TIPP: Weiterführende Infos erhältst du unter \"help func\" und \"help define\"", _option) << endl;
-    cerr << "|   (ENTER ZUM FORTFAHREN) ";
-    getline(cin, sInput);*/
-    //make_hline();
     return;
 }
 
 void doc_TipOfTheDay(Settings& _option)
 {
     vector<string> vTipList;
-    if (fileExists(_option.ValidFileName("<>/user/docs/hints.ndb", ".ndb")))
+    if (_option.getUseCustomLanguageFiles() && fileExists(_option.ValidFileName("<>/user/docs/hints.ndb", ".ndb")))
         vTipList = getDBFileContent("<>/user/docs/hints.ndb", _option);
     else
         vTipList = getDBFileContent("<>/docs/hints.ndb", _option);

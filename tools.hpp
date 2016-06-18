@@ -298,7 +298,8 @@ inline unsigned int countEscapeSymbols(const string& sLine)
     }
     return nCount;
 }
-vector<string> getFileList(const string& sDirectory, const Settings& _option);
+vector<string> getFileList(const string& sDirectory, const Settings& _option, int nFlags = 0);
+vector<string> getFolderList(const string& sDirectory, const Settings& _option, int nFlags = 0);
 string getClipboardText();
 
 namespace little_endian_io
@@ -339,7 +340,7 @@ namespace big_endian_io
     }
 }
 
-
+bool containsDataObject(const string& sExpr);
 void evalRecursiveExpressions(string& sExpr);
 
 

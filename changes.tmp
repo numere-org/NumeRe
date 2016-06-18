@@ -12,3 +12,18 @@ Fixed	"show" kann auch Daten in caches anzeigen, die mit "data()" aufhoeren.
 Fixed	Ein Segfault in der automatischen Speicherung wurde behoben.
 Fixed	Eine Endlosschleife, die beim Entfernen von "...cache()"-Caches aufgetreten ist, wurde behoben.
 New	Eine Pulsanalyse wurde ueber das Kommando "pulse" implementiert.
+New	Eine Einstellung zur (De-)Aktivierung einer benutzerdefinierten Sprache wurde hinzugefuegt.
+New	Eine Kurzzeit-Fourieranalyse wurde mittels des Kommandos "stfa DATASET()" implementiert.
+Fixed	Caches mit Namen "*data()" koennen nun auch bei "plot" und Konsorten verwendet werden.
+Fixed	Datagrids mit nicht gleich grossen Zeilen und Spalten (abzgl. der x- und y-Spalte) wurden nicht vollstaendig geplottet. Wurde behoben.
+Added	Die Funktion "findfile(STRING)" kann nun Dateien eines beliebigen Dateitypes finden.
+New	Die Funktion "getfolderlist(STRING)" listet aehnlich zu "getfilelist()" die Ordner in einem Verzeichnis, die auf das Schema zutreffen.
+Fixed	Die Ergebnisunterdrueckung von Ergebnissen aus Prozeduren, die Schleifen oder Verzweigungen enthalten, is wieder verfuegbar.
+Added	"read" kann nun mittels "comments=ESCAPESEQUENCE" Kommentare identifizieren und automatisch ignorieren.
+Cleaned	Schreibmodi bei "write" wurden umbenannt zu "app", "overwrite" und "trunc". Als Default ist nun nicht mehr "overwrite" sondern "trunc" aktiv.
+Added	"getfilelist()" und "getfolderlist()" koennen mit "ODER-Tokens" umgehen: "<PFAD|MIT|ODER>"
+Added	Wenn "getfilelist()" und "getfolderlist()" der Wert "true" als zusaetzliches Argument uebergeben wird, geben diese Funktionen die Dateipfade mit an.
+Cleaned	"read" kann nun auch in der Form "read FILE -comments=COMMENTSIGN" aufgerufen werden.
+Fixed	Ein seltener Segmentationfault im Debugger wurde behoben.
+Fixed	Die Dateierweiterungserkennung ist nicht mehr case sensitive.
+Fixed	Leerzeichenproblem in speziellen Plotoptionen behoben.

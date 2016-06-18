@@ -46,6 +46,7 @@ class Loop
     private:
         string sVarName;
         double* dVarAdress;
+        bool bLoopSupressAnswer;
 
     protected:
         string** sCmd;

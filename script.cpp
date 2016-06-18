@@ -618,7 +618,7 @@ string Script::getNextScriptCommand()
                 {
                     if (fLogFile.is_open())
                     {
-                        fLogFile << "--- INSTALLATION SUCCESSFULLY TERMINATED ---" << endl;
+                        fLogFile << "--- INSTALLATION TERMINATED SUCCESSFULLY ---" << endl;
                         fLogFile << endl << endl;
                         fLogFile.close();
                         if (!bDISABLE_SCREEN_OUTPUT)

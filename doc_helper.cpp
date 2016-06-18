@@ -150,33 +150,36 @@ bool Documentation::loadIndexFile(const string& sIndexFile)
 
 }
 
-void Documentation::loadDocIndex()
+void Documentation::loadDocIndex(bool bLoadUserLangFiles)
 {
     if (sDocIndexFile.find("<>") != string::npos)
         sDocIndexFile = FileSystem::ValidFileName(sDocIndexFile, ".hlpidx");
 
-    if (!fileExists(sDocIndexFile))
+    if (!bLoadUserLangFiles)
     {
-        cerr << endl << " ERROR: Documentation index was not found." << endl;
-        return;
-    }
-    if (!loadIndexFile(sDocIndexFile))
-    {
-        if (fileExists(FileSystem::ValidFileName("<>/update.hlpidx", ".hlpidx")))
+        if (!fileExists(sDocIndexFile))
         {
-            if (!loadIndexFile("<>/updata.hlpidx"))
+            cerr << endl << " ERROR: Documentation index was not found." << endl;
+            return;
+        }
+        if (!loadIndexFile(sDocIndexFile))
+        {
+            if (fileExists(FileSystem::ValidFileName("<>/update.hlpidx", ".hlpidx")))
+            {
+                if (!loadIndexFile("<>/update.hlpidx"))
+                {
+                    cerr << endl << " ERROR: Documentation index could not be read." << endl;
+                    return;
+                }
+            }
+            else
             {
                 cerr << endl << " ERROR: Documentation index could not be read." << endl;
                 return;
             }
         }
-        else
-        {
-            cerr << endl << " ERROR: Documentation index could not be read." << endl;
-            return;
-        }
     }
-    if (fileExists(FileSystem::ValidFileName("<>/user/numere.hlpidx")))
+    else if (bLoadUserLangFiles && fileExists(FileSystem::ValidFileName("<>/user/numere.hlpidx", ".hlpidx")))
     {
         if (!loadIndexFile("<>/user/numere.hlpidx"))
         {

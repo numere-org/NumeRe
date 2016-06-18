@@ -3086,7 +3086,7 @@ string parser_GetDataElement(string& sLine, Parser& _parser, Datafile& _data, co
     if (sLine.find("data(") != string::npos)
     {
         // --> Sind ueberhaupt Daten vorhanden? <--
-        if (!_data.isValid())
+        if (!_data.isValid() && (!sLine.find("data(") || checkDelimiter(sLine.substr(sLine.find("data(")-1,6))))
         {
             /* --> Nein? Mitteilen, BOOLEAN setzen (der die gesamte, weitere Auswertung abbricht)
              *     und zurueck zur aufrufenden Funktion <--
@@ -3759,6 +3759,7 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
     string sOprtChrs = "+-*/^&|!=?%";
     int i_pos[2] = {-1,-1};
     int j_pos[2] = {-1,-1};
+    unsigned int nPos = 0;
     bool bMultLin = false;
     bool bMultCol = false;
     //bool bWriteToCache = false;
@@ -3789,8 +3790,14 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
          *     Bereich bestimmen, allerdings (noch) keine Matrix. (Also entweder nur i oder j) <--
          * --> Speichere zunaechst den Teil des Strings nach "data(" in si_pos[0] <--
          */
-        si_pos[0] = sLine.substr(sLine.find(sEntity)+sEntity.length()-1);
-        sEntityOccurence = sLine.substr(sLine.find(sEntity));
+        si_pos[0] = sLine.substr(sLine.find(sEntity, nPos)+sEntity.length()-1);
+        sEntityOccurence = sLine.substr(sLine.find(sEntity, nPos));
+        nPos = sLine.find(sEntity, nPos);
+        if (nPos && !checkDelimiter(sLine.substr(nPos-1, sEntity.length()+1)))
+        {
+            nPos++;
+            continue;
+        }
         //sEntityOccurence = sEntityOccurence.substr(0,getMatchingParenthesis(sEntityOccurence.substr(sEntityOccurence.find('('))) + sEntityOccurence.find('(')+1);
         sEntityOccurence = sEntityOccurence.substr(0,getMatchingParenthesis(sEntityOccurence)+1);
         vEntityContents_onebased.clear();
@@ -4771,7 +4778,7 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
         bWriteFileName = false;
         bWriteStrings = false;
     }
-    while (sLine.find(sEntity) != string::npos);
+    while (sLine.find(sEntity, nPos) != string::npos);
 
     return;
 }
@@ -10820,8 +10827,8 @@ bool parser_pulseAnalysis(string& _sCmd, Parser& _parser, Datafile& _data, Defin
     {
         vPulseProperties.push_back(_pulse[0]); // max Amp
         vPulseProperties.push_back(_pulse[1]*dSampleSize+dXmin); // pos max Amp
-        vPulseProperties.push_back(_pulse[2]*dSampleSize); // FWHM
-        vPulseProperties.push_back(_pulse[3]*dSampleSize); // Width near max
+        vPulseProperties.push_back(2.0*_pulse[2]*dSampleSize); // FWHM
+        vPulseProperties.push_back(2.0*_pulse[3]*dSampleSize); // Width near max
         vPulseProperties.push_back(_pulse[4]*dSampleSize); // Energy (Integral pulse^2)
     }
     else
@@ -10847,6 +10854,171 @@ bool parser_pulseAnalysis(string& _sCmd, Parser& _parser, Datafile& _data, Defin
 
     _sCmd.replace(findCommand(_sCmd, "pulse").nPos, string::npos, "pulse[~_~]");
     _parser.SetVectorVar("pulse[~_~]", vPulseProperties);
+
+    return true;
+}
+
+bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+{
+    string sDataset = "";
+    Indices _idx, _target;
+    mglData _real, _imag, _result;
+    int nSamples = 0;
+
+    double dXmin = NAN, dXmax = NAN;
+    double dFmin = 0.0, dFmax = 1.0;
+    double dSampleSize = NAN;
+    sCmd.erase(0, findCommand(sCmd).nPos+4);
+
+    // Strings parsen
+    if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
+    {
+        string sDummy = "";
+        if (!parser_StringParser(sCmd, sDummy, _data, _parser, _option, true))
+            throw STRING_ERROR;
+    }
+    // Funktionen aufrufen
+    if (!_functions.call(sCmd, _option))
+        throw FUNCTION_ERROR;
+
+    if (matchParams(sCmd, "samples", '='))
+    {
+        _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "samples", '=')+7));
+        nSamples = _parser.Eval();
+        if (nSamples < 0)
+            nSamples = 0;
+    }
+    if (matchParams(sCmd, "target", '='))
+    {
+        sTargetCache = getArgAtPos(sCmd, matchParams(sCmd, "target", '=')+6);
+        _target = parser_getIndices(sTargetCache, _parser, _data, _option);
+        sTargetCache.erase(sTargetCache.find('('));
+        if (sTargetCache == "data")
+            throw READ_ONLY_DATA;
+
+        if (_target.nI[0] == -1 || _target.nJ[0] == -1)
+            throw INVALID_INDEX;
+    }
+    else
+    {
+        _target.nI[0] = 0;
+        _target.nI[1] = -2;
+        _target.nJ[0] = 0;
+        if (_data.isCacheElement("stfdat()"))
+            _target.nJ[0] += _data.getCols("stfdat", false);
+        sTargetCache = "stfdat";
+        _target.nJ[1] = -2;
+    }
+
+
+    // Indices lesen
+    //cerr << sCmd << endl;
+    _idx = parser_getIndices(sCmd, _parser, _data, _option);
+    sDataset = sCmd;
+    sDataset.erase(sDataset.find('('));
+    StripSpaces(sDataset);
+    //cerr << sDataset << endl;
+
+    if (_idx.vI.size() || _idx.vJ.size())
+    {
+        if (_idx.vJ.size() != 2)
+            return false;
+        //_x.Create(_data.cnt(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0])));
+        _real.Create(_data.cnt(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0])));
+        _imag.Create(_data.cnt(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0])));
+        dXmin = _data.min(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0]));
+        dXmax = _data.max(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0]));
+        for (long long int i = 0; i < _idx.vI.size(); i++)
+        {
+            //_x.a[i] = _data.getElement(_idx.vI[i], _idx.vJ[0], sDataset);
+            _real.a[i] = _data.getElement(_idx.vI[i], _idx.vJ[1], sDataset);
+        }
+        sDataset = _data.getHeadLineElement(_idx.vJ[0], sDataset);
+    }
+    else
+    {
+        if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
+            return false;
+        if (_idx.nI[1] == -1)
+            _idx.nI[1] = _idx.nI[0];
+        else if (_idx.nI[1] == -2)
+            _idx.nI[1] = _data.getLines(sDataset,false)-1;
+        if (_idx.nJ[1] == -1)
+            _idx.nJ[1] = _idx.nJ[0];
+        else if (_idx.nJ[1] == -2)
+        {
+            _idx.nJ[1] = _idx.nJ[0]+1;
+        }
+        if (_data.getCols(sDataset, false) <= _idx.nJ[1])
+            return false;
+        _real.Create(_data.cnt(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]));
+        _imag.Create(_data.cnt(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]));
+        //_x.Create(_data.cnt(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]));
+        for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
+        {
+            _real.a[i-_idx.nI[0]] = _data.getElement(i, _idx.nJ[1], sDataset);
+        }
+        dXmin = _data.min(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]);
+        dXmax = _data.max(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]);
+        /*for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
+        {
+            _x.a[i-_idx.nI[0]] = _data.getElement(i, _idx.nJ[0], sDataset);
+        }*/
+        sDataset = _data.getHeadLineElement(_idx.nJ[0], sDataset);
+    }
+    if (!nSamples || nSamples > _real.GetNx())
+    {
+        nSamples = _real.GetNx()/32;
+    }
+
+    // Tatsaechliche STFA
+    _result = mglSTFA(_real, _imag, nSamples);
+
+    dSampleSize = (dXmax-dXmin)/((double)_result.GetNx()-1.0);
+
+    // Nyquist: _real.GetNx()/(dXmax-dXmin)/2.0
+    dFmax = _real.GetNx()/(dXmax-dXmin)/2.0;
+
+    // Zielcache befuellen entsprechend der Fourier-Algorithmik
+
+    if (_target.nI[1] == -2 || _target.nI[1] == -1)
+        _target.nI[1] = _target.nI[0] + _result.GetNx();//?
+    if (_target.nJ[1] == -2 || _target.nJ[1] == -1)
+        _target.nJ[1] = _target.nJ[0] + _result.GetNy()+2;//?
+
+    //cerr << _result.GetNx() << endl;
+    //cerr << _result.GetNy() << endl;
+
+    if (!_data.isCacheElement(sTargetCache))
+        _data.addCache(sTargetCache, _option);
+    _data.setCacheStatus(true);
+    //long long int nFirstCol = _data.getCacheCols(sTargetCache, false);
+
+    // UPDATE DATA ELEMENTS
+    for (int i = 0; i < _result.GetNx(); i++)
+        _data.writeToCache(i, _target.nJ[0], sTargetCache, dXmin + i*dSampleSize);
+    _data.setHeadLineElement(_target.nJ[0], sTargetCache, sDataset);
+    //nFirstCol++;
+    dSampleSize = 2*(dFmax-dFmin) / ((double)_result.GetNy()-1.0);
+    for (int i = 0; i < _result.GetNy()/2; i++)
+        _data.writeToCache(i, _target.nJ[0]+1, sTargetCache, dFmin + i*dSampleSize); // Fourier f Hier ist was falsch
+    _data.setHeadLineElement(_target.nJ[0]+1, sTargetCache, "f [Hz]");
+    //nFirstCol++;
+
+    for (int i = 0; i < _result.GetNx(); i++)
+    {
+        if (i+_target.nI[0] >= _target.nI[1])
+            break;
+        for (int j = 0; j < _result.GetNy()/2; j++)
+        {
+            if (j+2+_target.nJ[0] >= _target.nJ[1])
+                break;
+            _data.writeToCache(_target.nI[0]+i, _target.nJ[0]+2+j, sTargetCache, _result[i+(j+_result.GetNy()/2)*_result.GetNx()]);
+            if (!i)
+                _data.setHeadLineElement(_target.nJ[0]+2+j, sTargetCache, "A["+toString((int)j+1)+"]");
+        }
+    }
+    _data.setCacheStatus(false);
 
     return true;
 }

@@ -75,7 +75,7 @@ map<string,string> Language::getLangFileContent(const string& sFile)
     return mLangFileContent;
 }
 
-void Language::loadStrings()
+void Language::loadStrings(bool bloadUserFiles)
 {
     //string sMainStrings = "<>/lang/main.nlng";
     //string sErrorStrings = "<>/lang/error.nlng";
@@ -92,99 +92,32 @@ void Language::loadStrings()
         mLangStrings[iter->first] = iter->second;
     mLangFileContent.clear();
 
-    if (fileExists(FileSystem::ValidFileName("<>/user/lang/main.nlng", ".nlng")))
+    if (bloadUserFiles)
     {
-        mLangFileContent = getLangFileContent("<>/user/lang/main.nlng");
-        if (mLangFileContent.size())
+        if (fileExists(FileSystem::ValidFileName("<>/user/lang/main.nlng", ".nlng")))
         {
-            for (auto iter = mLangFileContent.begin(); iter != mLangFileContent.end(); ++iter)
-                mLangStrings[iter->first] = iter->second;
-            //mLangStrings.insert(mLangFileContent.begin(), mLangFileContent.end());
-            mLangFileContent.clear();
-        }
-    }
-    if (fileExists(FileSystem::ValidFileName("<>/user/lang/error.nlng", ".nlng")))
-    {
-        mLangFileContent = getLangFileContent("<>/user/lang/error.nlng");
-        if (mLangFileContent.size())
-        {
-            for (auto iter = mLangFileContent.begin(); iter != mLangFileContent.end(); ++iter)
-                mLangStrings[iter->first] = iter->second;
-            //mLangStrings.insert(mLangFileContent.begin(), mLangFileContent.end());
-            mLangFileContent.clear();
-        }
-    }
-
-    /*sMainStrings = FileSystem::ValidFileName(sMainStrings, ".nlng");
-    sErrorStrings = FileSystem::ValidFileName(sErrorStrings, ".nlng");*/
-
-    /*fStrings_in.open(sMainStrings.c_str());
-    if (fStrings_in.fail())
-    {
-        fStrings_in.close();
-        return;
-    }
-
-    while (!fStrings_in.eof())
-    {
-        getline(fStrings_in, sLine);
-        StripSpaces(sLine);
-        if (!sLine.length())
-            continue;
-        if (sLine.front() == '#')
-            continue;
-        for (unsigned int i = 0; i < sLine.length(); i++)
-        {
-            if (sLine[i] == '\t')
-                sLine[i] = ' ';
-        }
-        for (unsigned int i = 1; i < sLine.find('='); i++)
-        {
-            if (sLine[i] == ' ')
+            mLangFileContent = getLangFileContent("<>/user/lang/main.nlng");
+            if (mLangFileContent.size())
             {
-                sLine.erase(i, 1);
-                i--;
+                for (auto iter = mLangFileContent.begin(); iter != mLangFileContent.end(); ++iter)
+                    mLangStrings[iter->first] = iter->second;
+                //mLangStrings.insert(mLangFileContent.begin(), mLangFileContent.end());
+                mLangFileContent.clear();
             }
         }
-        mLangStrings[sLine.substr(0,sLine.find('='))] = sLine.substr(sLine.find_first_not_of(' ', sLine.find('=')+1));
-    }
-
-    fStrings_in.close();
-    fStrings_in.open(sErrorStrings.c_str());
-
-    if (fStrings_in.fail())
-    {
-        fStrings_in.close();
-        return;
-    }
-
-    while (!fStrings_in.eof())
-    {
-        getline(fStrings_in, sLine);
-        StripSpaces(sLine);
-        if (!sLine.length())
-            continue;
-        if (sLine.front() == '#')
-            continue;
-        for (unsigned int i = 0; i < sLine.length(); i++)
+        if (fileExists(FileSystem::ValidFileName("<>/user/lang/error.nlng", ".nlng")))
         {
-            if (sLine[i] == '\t')
-                sLine[i] = ' ';
-        }
-        for (unsigned int i = 1; i < sLine.find('='); i++)
-        {
-            if (sLine[i] == ' ')
+            mLangFileContent = getLangFileContent("<>/user/lang/error.nlng");
+            if (mLangFileContent.size())
             {
-                sLine.erase(i, 1);
-                i--;
+                for (auto iter = mLangFileContent.begin(); iter != mLangFileContent.end(); ++iter)
+                    mLangStrings[iter->first] = iter->second;
+                //mLangStrings.insert(mLangFileContent.begin(), mLangFileContent.end());
+                mLangFileContent.clear();
             }
         }
-        mLangStrings[sLine.substr(0,sLine.find('='))] = sLine.substr(sLine.find_first_not_of(' ', sLine.find('=')+1));
+
     }
-
-    fStrings_in.close();*/
-
-    //cerr << "Loaded" << endl;
 
     for (auto iter = mLangStrings.begin(); iter != mLangStrings.end(); ++iter)
     {

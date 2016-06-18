@@ -19,12 +19,14 @@
 
 #include "filesystem.hpp"
 
+string toLowerCase(const string&);
+
 // --> Standard-Konstruktor <--
 FileSystem::FileSystem()
 {
     sPath = "";
     sWhere = "";
-    sValidExtensions = ";.dat;.DAT;.txt;.TXT;.tmp;.def;.nscr;.png;.gif;.eps;.svg;.tex;.labx;.LABX;.csv;.CSV;.cache;.ndat;.nprc;.nlng;.log;.LOG;.plugins;.hlpidx;.nhlp;.jdx;.JDX;.dx;.DX;.jcm;.JCM;.ibw;.IBW;.ndb;.ods;.ODS;.jpg;.bmp;.tga;.bps;.prc;.obj;.xyz;.stl;.json;.off;.pdf;.wav;.wave;.WAV;.WAVE;";
+    sValidExtensions = ";.dat;.txt;.tmp;.def;.nscr;.png;.gif;.eps;.svg;.tex;.labx;.csv;.cache;.ndat;.nprc;.nlng;.log;.plugins;.hlpidx;.nhlp;.jdx;.dx;.jcm;.ibw;.ndb;.ods;.jpg;.bmp;.tga;.bps;.prc;.obj;.xyz;.stl;.json;.off;.pdf;.wav;.wave;";
     for (int i = 0; i < 6; i++)
     {
         sTokens[i][0] = "";
@@ -36,6 +38,7 @@ FileSystem::FileSystem()
 string FileSystem::ValidFileName(string _sFileName, const string sExtension)
 {
 	string sValid = "";			// Variable fuer den gueltigen Dateinamen
+	sValidExtensions = toLowerCase(sValidExtensions);
 
     while (_sFileName.find('\\') != string::npos)
         _sFileName[_sFileName.find('\\')] = '/';
@@ -116,7 +119,7 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension)
             //cerr << sNewFileName.substr(sNewFileName.rfind('.')) << endl;
             if (sNewFileName.length() > 4
                 && sNewFileName.find('.') != string::npos
-                && sValidExtensions.find(";"+sNewFileName.substr(sNewFileName.rfind('.'))+";") != string::npos)
+                && sValidExtensions.find(";"+toLowerCase(sNewFileName.substr(sNewFileName.rfind('.')))+";") != string::npos)
                 break;
             else
                 sNewFileName = "";
@@ -168,7 +171,7 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension)
 		sValid = _sFileName.substr(nPos); // Genauer anschauen. Wie sieht der substr denn aus?
 		if (sValid[sValid.length()-1] == '"')
             sValid = sValid.substr(0,sValid.length()-1);
-		if (sValidExtensions.find(";"+sValid+";") != string::npos) // Nun, ich akzeptiere entweder "dat" oder "txt" ...
+		if (sValidExtensions.find(";"+toLowerCase(sValid)+";") != string::npos) // Nun, ich akzeptiere entweder "dat" oder "txt" ...
 		{
 			sValid = _sFileName;
 		}
@@ -195,7 +198,7 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension)
             sNewFileName = FindFileData.cFileName;
             if (sNewFileName.length() > 4
                 && sNewFileName.find('.') != string::npos
-                && sValidExtensions.find(";"+sNewFileName.substr(sNewFileName.rfind('.'))+";") != string::npos)
+                && sValidExtensions.find(";"+toLowerCase(sNewFileName.substr(sNewFileName.rfind('.')))+";") != string::npos)
                 break;
             else
                 sNewFileName = "";

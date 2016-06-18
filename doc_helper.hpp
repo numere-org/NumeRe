@@ -51,7 +51,7 @@ class Documentation : public FileSystem
         Documentation();
         ~Documentation();
 
-        void loadDocIndex();
+        void loadDocIndex(bool bLoadUserLangFiles = true);
         void updateDocIndex(string _sFilename = "<>/update.hlpidx");
         void addToDocIndex(string& _sIndexToAdd);
         void removeFromDocIndex(const string& _sID);
