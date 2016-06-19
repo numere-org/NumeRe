@@ -88,7 +88,7 @@ class Cache : public FileSystem
 		string sPredefinedCommands;
 		string sPluginCommands;
 
-		vector<string> sStrings;
+		vector<vector<string> > sStrings;
 		map<string,string> sStringVars;
 
 		bool isValidDisc(long long int _nLine, long long int _nCol, long long int _nLayer, unsigned int nSize);
@@ -236,37 +236,71 @@ class Cache : public FileSystem
         bool saveCache();
         bool loadCache();
 
-        bool writeString(const string& _sString, unsigned int _nthString = string::npos);
-        string readString(unsigned int _nthString = string::npos);
-        string maxString(unsigned int i1 = 0, unsigned int i2 = string::npos);
-        string minString(unsigned int i1 = 0, unsigned int i2 = string::npos);
-        string sumString(unsigned int i1 = 0, unsigned int i2 = string::npos);
-        inline unsigned int getStringElements() const
+        // STRINGFUNCS
+        bool writeString(const string& _sString, unsigned int _nthString = string::npos, unsigned int nCol = 0);
+        string readString(unsigned int _nthString = string::npos, unsigned int nCol = 0);
+        string maxString(unsigned int i1 = 0, unsigned int i2 = string::npos, unsigned int nCol = 0);
+        string minString(unsigned int i1 = 0, unsigned int i2 = string::npos, unsigned int nCol = 0);
+        string sumString(unsigned int i1 = 0, unsigned int i2 = string::npos, unsigned int nCol = 0);
+        inline unsigned int getStringElements(unsigned int nCol = string::npos) const
+            {
+                if (nCol == string::npos)
+                {
+                    unsigned int nCnt = 0;
+                    for (unsigned int i = 0; i < sStrings.size(); i++)
+                    {
+                        if (nCnt < sStrings[i].size())
+                            nCnt = sStrings[i].size();
+                    }
+                    return nCnt;
+                }
+                else if (nCol >= sStrings.size())
+                    return 0;
+                else
+                    return sStrings[nCol].size();
+                return 0;
+            }
+        inline unsigned int getStringCols() const
             {
                 return sStrings.size();
             }
-        inline bool clearStringElements()
+        inline bool clearStringElements(unsigned int nCol = 0)
             {
-                if (sStrings.size())
+                if (nCol < sStrings.size())
                 {
-                    sStrings.clear();
+                    if (sStrings[nCol].size())
+                        sStrings[nCol].clear();
                     return true;
                 }
                 return false;
             }
-        inline int getStringSize() const
+        inline int getStringSize(unsigned int nCol = string::npos) const
             {
-                if (sStrings.size())
+                if (nCol == string::npos)
                 {
-                    int nSize = 0;
+                    unsigned int nSize = 0;
                     for (unsigned int i = 0; i < sStrings.size(); i++)
-                        nSize += sStrings[i].size() * sizeof(char);
+                    {
+                        nSize += getStringSize(i);
+                    }
                     return nSize;
+                }
+                else if (nCol < sStrings.size())
+                {
+                    if (sStrings[nCol].size())
+                    {
+                        int nSize = 0;
+                        for (unsigned int i = 0; i < sStrings[nCol].size(); i++)
+                            nSize += sStrings[nCol][i].size() * sizeof(char);
+                        return nSize;
+                    }
+                    else
+                        return 0;
                 }
                 else
                     return 0;
             }
-
+        // STRINGVARFUNCS
         bool containsStringVars(const string& sLine) const;
         void getStringValues(string& sLine, unsigned int nPos = 0);
         void setStringValue(const string& sVar, const string& sValue);
@@ -276,6 +310,7 @@ class Cache : public FileSystem
                 return sStringVars;
             }
 
+        // MAFIMPLEMENTATIONS
         double std(long long int _nLayer, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
         double std(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
         double std(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);

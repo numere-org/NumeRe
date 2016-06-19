@@ -188,9 +188,6 @@ void Datafile::openLabx(Settings& _option)
     if (file_in.fail())
     {
         sErrorToken = sDataFile;
-
-        /*cerr << "|-> FEHLER: Aus der Datei \"" << sDataFile << "\"" << endl;
-        cerr << "|   kann nicht gelesen werden!" << endl;*/
         file_in.close();
         throw DATAFILE_NOT_EXIST;
     }
@@ -210,8 +207,6 @@ void Datafile::openLabx(Settings& _option)
     if (!sLabx.length() || sLabx.find("<allchannels count=") == string::npos)
     {
         sErrorToken = sDataFile;
-        /*cerr << "|-> FEHLER: Aus der Datei \"" << sDataFile << "\"" << endl;
-        cerr << "|   kann nicht gelesen werden!" << endl;*/
         file_in.close();
         throw CANNOT_READ_FILE;
     }
@@ -224,9 +219,6 @@ void Datafile::openLabx(Settings& _option)
     {
         sErrorToken = sDataFile;
         throw CANNOT_READ_FILE;
-        /*cerr << "|-> FEHLER: Aus der Datei \"" << sDataFile << "\"" << endl;
-        cerr << "|   kann nicht gelesen werden!" << endl;
-        return;*/
     }
 
     sCols = new string[nCols];
@@ -254,8 +246,6 @@ void Datafile::openLabx(Settings& _option)
     if (!nLine)
     {
         sErrorToken = sDataFile;
-        /*cerr << "|-> FEHLER: Aus der Datei \"" << sDataFile << "\"" << endl;
-        cerr << "|   kann nicht gelesen werden!" << endl;*/
         delete[] sCols;
         delete[] sHeadLine;
         throw CANNOT_READ_FILE;
@@ -364,9 +354,6 @@ void Datafile::openCSV(Settings& _option)
 		{
             sErrorToken = sDataFile;
             throw DATAFILE_NOT_EXIST;
-			/*cerr << "|-> FEHLER: Aus der Datei \"" << sDataFile << "\"" << endl;
-			cerr << "|   kann nicht gelesen werden!" << endl;
-			return;*/
 		}
 
 		while (!file_in.eof())		// Zaehlen wir mal die Zeilen der Datei
@@ -375,15 +362,9 @@ void Datafile::openCSV(Settings& _option)
 			{
                 sErrorToken = sDataFile;
                 throw DATAFILE_NOT_EXIST;
-				/*cerr << "|-> FEHLER: Aus der Datei \"" << sDataFile << "\"" << endl;
-				cerr << "|   kann nicht gelesen werden!" << endl;
-				return;*/
 			}
 			// --> Schnapp' dir pro forma eine Zeile <--
 			getline(file_in, s);
-
-			/*if (_option.getbDebug())
-				cerr << "|-> DEBUG: s = " << s << endl;*/
 
             stripTrailingSpaces(s);
 			// --> Erhoehe den Counter <--
@@ -422,11 +403,6 @@ void Datafile::openCSV(Settings& _option)
 			else
                 sLine[i] = s;
 
-			/*if(_option.getbDebug())
-			{
-				cerr << "|-> DEBUG: s = " << s << endl;
-				cerr << "|-> DEBUG: sLine[" << i << "] = " << sLine[i] << endl;
-			}*/
 		}
 
 		// --> Erst mal geschafft: Datei wieder schliessen <--
@@ -506,9 +482,7 @@ void Datafile::openCSV(Settings& _option)
             if (!nCols)
             {
                 s = "";
-                cerr << "|-> Der Spaltentrenner dieser CSV-Datei konnte nicht automatisch identifiziert" << endl
-                     << "|   werden. Bitte das Trennerzeichen aus den folgenden Zeilenbeispielen auswaeh-" << endl
-                     << "|   len und angeben:" << endl;
+                cerr << LineBreak("|-> "+_lang.get("DATA_OPENCSV_COLUMNSEPARATOR_NOTFOUND"), _option) << endl;
                 cerr << "|---<1>" << sLine[0].substr(0,65);
                 if (sLine[0].length() > 65)
                     cerr << "[...]";
@@ -536,9 +510,9 @@ void Datafile::openCSV(Settings& _option)
                 while (!s.length());
                 cSep = s[0];
                 if (cSep == ' ')
-                    cerr << "|-> Trennzeichen: Leerzeichen" << endl;
+                    cerr << LineBreak("|-> "+_lang.get("DATA_OPENCSV_SEPARATOR_WHITESPACE"), _option) << endl;
                 else
-                    cerr << "|-> Trennzeichen: \"" << cSep << "\"" << endl;
+                    cerr << LineBreak("|-> "+_lang.get("DATA_OPENCSV_SEPARATOR", s.substr(0,1)), _option) << endl;
             }
         }
 
@@ -799,9 +773,6 @@ void Datafile::openJDX(Settings& _option)
 		{
             sErrorToken = sDataFile;
             throw DATAFILE_NOT_EXIST;
-			/*cerr << "|-> FEHLER: Aus der Datei \"" << sDataFile << "\"" << endl;
-			cerr << "|   kann nicht gelesen werden!" << endl;
-			return;*/
 		}
 
 		while (!file_in.eof())		// Zaehlen wir mal die Zeilen der Datei
@@ -810,15 +781,10 @@ void Datafile::openJDX(Settings& _option)
 			{
                 sErrorToken = sDataFile;
                 throw DATAFILE_NOT_EXIST;
-				/*cerr << "|-> FEHLER: Aus der Datei \"" << sDataFile << "\"" << endl;
-				cerr << "|   kann nicht gelesen werden!" << endl;
-				return;*/
 			}
 			// --> Schnapp' dir pro forma eine Zeile <--
 			getline(file_in, s);
 
-			/*if (_option.getbDebug())
-				cerr << "|-> DEBUG: s = " << s << endl;*/
 
             stripTrailingSpaces(s);
             parseJDXDataLabel(s);
@@ -865,12 +831,6 @@ void Datafile::openJDX(Settings& _option)
 			}
 			else
                 sLine[i] = s;
-
-			/*if(_option.getbDebug())
-			{
-				cerr << "|-> DEBUG: s = " << s << endl;
-				cerr << "|-> DEBUG: sLine[" << i << "] = " << sLine[i] << endl;
-			}*/
 		}
 
 		// --> Erst mal geschafft: Datei wieder schliessen <--
@@ -1052,53 +1012,6 @@ void Datafile::openJDX(Settings& _option)
                             bValidEntry[j-vComment[i]+1][k] = true;*/
                     }
                 }
-                /*for (unsigned int k = 0; k < vDataMatrix[i][j].length(); k++)
-                {
-                    if (sNumericChars.find(vDataMatrix[i][j][k]) == string::npos || k+1 == vDataMatrix[i][j].length())
-                    {
-                        if (nCol == vCols[i])
-                            break;
-                        if (j == vComment[i]-1)
-                        {
-                            if (i)
-                            {
-                                sHeadLine[vCols[i-1]+nCol] = (nCol % 2 ? sYUnit : sXUnit);
-                            }
-                            else
-                            {
-                                sHeadLine[nCol] = (nCol % 2 ? sYUnit : sXUnit);
-                            }
-                        }
-                        if (i)
-                        {
-                            if (k+1 == vDataMatrix[i][j].length())
-                                dDatafile[j-vComment[i]+1][vCols[i-1]+nCol] = StrToDb(vDataMatrix[i][j]) * (nCol % 2 ? dYFactor : dXFactor);
-                            else
-                                dDatafile[j-vComment[i]+1][vCols[i-1]+nCol] = StrToDb(vDataMatrix[i][j].substr(0,k)) * (nCol % 2 ? dYFactor : dXFactor);
-                            if (!isnan(dDatafile[j-vComment[i]+1][vCols[i-1]+nCol]) && !isinf(dDatafile[j-vComment[i]+1][vCols[i-1]+nCol]))
-                                bValidEntry[j-vComment[i]+1][vCols[i-1]+nCol] = true;
-                        }
-                        else
-                        {
-                            if (k+1 == vDataMatrix[i][j].length())
-                                dDatafile[j-vComment[i]+1][nCol] = StrToDb(vDataMatrix[i][j]) * (nCol % 2 ? dYFactor : dXFactor);
-                            else
-                                dDatafile[j-vComment[i]+1][nCol] = StrToDb(vDataMatrix[i][j].substr(0,k)) * (nCol % 2 ? dYFactor : dXFactor);
-                            if (!isnan(dDatafile[j-vComment[i]+1][nCol]) && !isinf(dDatafile[j-vComment[i]+1][nCol]))
-                                bValidEntry[j-vComment[i]+1][nCol] = true;
-                        }
-                        nCol++;
-
-                        if (k+1 == vDataMatrix[i][j].length())
-                            break;
-                        while (sNumericChars.find(vDataMatrix[i][j][k]) == string::npos)
-                            k++;
-                        vDataMatrix[i][j].erase(0,k);
-                        if (_option.getbDebug() && j == vComment[i]-1)
-                            cerr << "|-> DEBUG: vDataMatrix[i][j] = " << vDataMatrix[i][j] << endl;
-                        k = 0;
-                    }
-                }*/
             }
         }
         bValidData = true;
@@ -1107,8 +1020,6 @@ void Datafile::openJDX(Settings& _option)
 
 		// --> Temporaeren Speicher wieder freigeben <--
 		delete[] sLine;
-        /*if (!bAutoSave && !(bIgnore || _nHeadline))
-            cin.ignore(1);*/
 	}
 	return;
 }
@@ -1723,9 +1634,6 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 		{
             sErrorToken = sDataFile;
             throw DATAFILE_NOT_EXIST;
-			/*cerr << "|-> FEHLER: Aus der Datei \"" << sDataFile << "\"" << endl;
-			cerr << "|   kann nicht gelesen werden!" << endl;
-			return;*/
 		}
 
 		while (!file_in.eof())		// Zaehlen wir mal die Zeilen der Datei
@@ -1735,15 +1643,9 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
                 sErrorToken = sDataFile;
                 sDataFile = "";
                 throw DATAFILE_NOT_EXIST;
-				/*cerr << "|-> FEHLER: Aus der Datei \"" << sDataFile << "\"" << endl;
-				cerr << "|   kann nicht gelesen werden!" << endl;
-				return;*/
 			}
 			// --> Schnapp' dir pro forma eine Zeile <--
 			getline(file_in, s);
-
-			/*if (_option.getbDebug())
-				cerr << "|-> DEBUG: s = " << s << endl;*/
 
             stripTrailingSpaces(s);
 			// --> Erhoehe den Counter <--
@@ -1780,12 +1682,6 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 			}
 			else
                 sLine[i] = s;
-
-			/*if(_option.getbDebug())
-			{
-				cerr << "|-> DEBUG: s = " << s << endl;
-				cerr << "|-> DEBUG: sLine[" << i << "] = " << sLine[i] << endl;
-			}*/
 		}
 
 		// --> Erst mal geschafft: Datei wieder schliessen <--
@@ -1794,9 +1690,6 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 		// --> Kommentare muessen auch noch escaped werden... <--
 		for (long long int i = 0; i < nLine; i++)
 		{
-			/*if(_option.getbDebug())
-				cerr << "|-> DEBUG: sLine[" << i << "][0] = " << sLine[i][0] << endl;*/
-
 			if (sLine[i][0] == '#' || !isNumeric(sLine[i]))	// ist das erste Zeichen ein #?
 			{
 				nComment++;			// Kommentarzeilen zaehlen
@@ -1864,8 +1757,6 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
                     // --> Sollte die Daten mit Kommata als Dezimaltrennzeichen vorliegen, werden die hier ersetzt <--
 					replaceDecimalSign(sDataMatrix[i-nComment][j]);
 					j++;
-					/*if(_option.getbDebug())
-						cerr << "|-> DEBUG: sDataMatrix[" << i-nComment << "][" << j-1 << "] = " << sDataMatrix[i-nComment][j-1] << endl;*/
 				}
 			}
 		}
@@ -2052,18 +1943,17 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
             string sInput = "";
             if (!bAutoSave)
             {
-                cerr << "|-> HINWEIS: Es wurden Kommentarzeilen gefunden." << endl;
-                cerr << "|   Enthalten sie Tabellenkoepfe? (j/n)" << endl;
+                cerr << LineBreak("|-> "+_lang.get("DATA_OPENFILE_TABLEHEADINGS"), _option) << endl;
                 cerr << "|" << endl;
                 cerr << "|<- ";
                 getline(cin, sInput);
             }
-			if (sInput == "j" || bAutoSave)	// Es gibt wohl welche. Nun, dann wird's etwas kompliziert ...
+			if (sInput == _lang.YES() || bAutoSave)	// Es gibt wohl welche. Nun, dann wird's etwas kompliziert ...
 			{
                 int nHeadLine = 0;
                 if (!bAutoSave)
                 {
-                    cerr << "|-> Die gefundenen Kommentarzeilen werden gelistet ..." << endl;
+                    cerr << LineBreak("|-> "+_lang.get("DATA_OPENFILE_LISTING_COMMENTS")+" ...", _option) << endl;
                     cerr << "|" << endl;
                     nComment = 0;
 
@@ -2082,8 +1972,7 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
                     }
 
                     cerr << "|" << endl;
-                    cerr << "|-> Bitte die Nummer der Zeile mit den gewuenschten" << endl;
-                    cerr << "|   Koepfen oder 0 zum Abbrechen eingeben:" << endl;
+                    cerr << LineBreak("|-> "+_lang.get("DATA_OPENFILE_ENTERNUMBER"), _option) << endl;
                     cerr << "|" << endl;
                     cerr << "|<- ";
                     getline(cin, sInput);
@@ -2096,8 +1985,7 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 				{
 					while (nHeadLine > nComment || nHeadLine < 0)	// Oha! Eine Zahl eingeben, die groesser als die Zahl an Kommentarzeilen ist, geht aber nicht!
 					{
-						cerr << "|-> HINWEIS: Diese Zeile existiert nicht!" << endl;
-						cerr << "|   Bitte neu waehlen:" << endl;
+						cerr << LineBreak("|-> "+_lang.get("DATA_OPENFILE_LINEDOESNTEXIST", toString(nComment)), _option) << endl;
 						cerr << "|" << endl;
                         cerr << "|<- ";
 						cin >> nHeadLine;
@@ -2120,8 +2008,7 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 								{
 									if (j == nCols)
 									{
-                                        cerr << "|-> HINWEIS: Die Koepfe konnten nicht korrekt identifiziert werden!" << endl;
-                                        cerr << "|   Es werden automatische Koepfe verwendet." << endl;
+                                        cerr << LineBreak("|-> "+_lang.get("DATA_OPENFILE_REPLACING_HEADS"), _option) << endl;
                                         for (n = 0; n < nCols; n++)
                                         {
                                             sHeadLine[n] = "Spalte_" + toString(n+1);
@@ -2145,8 +2032,7 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 				}
 				else
 				{
-					cerr << "|-> Es werden automatische Koepfe generiert!" << endl;
-					cerr << "|   Sie koennen spaeter noch bearbeitet werden." << endl;
+					cerr << LineBreak("|-> "+_lang.get("DATA_OPENFILE_AUTOMATIC_HEADS"), _option) << endl;
 
 					for (long long int i = 0; i < nCols; i++)
 					{
@@ -2156,22 +2042,21 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 			}
 			else				// Gibt es keine? Dann moechte man womoeglich selbst welche eingeben?
 			{
-				cerr << "|-> Moechten Sie Tabellenkoepfe eingeben? (j/n)" << endl;
+				cerr << LineBreak("|-> "+_lang.get("DATA_OPENFILE_ENTER_HEADINGS"), _option) << endl;
 				cerr << "|" << endl;
 				cerr << "|<- ";
                 getline(cin, sInput);
 
-				if (sInput == "j") // Ja? Dann viel Spaß...
+				if (sInput == _lang.YES()) // Ja? Dann viel Spaß...
 				{
-					cerr << "|-> Bitte die Koepfe eingeben. Leerzeichen werden" << endl;
-					cerr << "|   automatisch durch '_' ersetzt." << endl;
+					cerr << LineBreak("|-> "+_lang.get("DATA_OPENFILE_ENTERYOURHEADS"), _option) << endl;
 					cerr << "|" << endl;
 
 					string _sHead;
 					//cin.ignore(1);
 					for (long long int i = 0; i < nCols; i++)
 					{
-						cerr << "|-> Kopf zur Spalte " << i+1 << ":" << endl;
+						cerr << LineBreak("|-> "+_lang.get("DATA_OPENFILE_HEADFORCOLUMN", toString(i+1)), _option) << endl;
                         cerr << "|" << endl;
 						cerr << "|<- ";
 						getline(cin, _sHead);
@@ -2181,8 +2066,7 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 				}
 				else			// Nein? Dann generieren wir einfach welche...
 				{
-					cerr << "|-> Es werden automatische Koepfe generiert!" << endl;
-					cerr << "|   Sie koennen spaeter noch bearbeitet werden." << endl;
+					cerr << LineBreak("|-> "+_lang.get("DATA_OPENFILE_AUTOMATIC_HEADS"), _option) << endl;
 
 					for (long long int i = 0; i < nCols; i++)
 					{
@@ -2198,8 +2082,7 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
                 string sInput = "";
                 while (_nHeadline > nComment || _nHeadline < 0)	// Oha! Eine Zahl eingeben, die groesser als die Zahl an Kommentarzeilen ist, geht aber nicht!
                 {
-                    cerr << "|-> HINWEIS: Diese Kommentarzeile existiert nicht!" << endl;
-                    cerr << "|   Bitte neu waehlen: (Es wurden " << nComment << " Kommentarzeilen gefunden)" << endl;
+                    cerr << LineBreak("|-> "+_lang.get("DATA_OPENFILE_LINEDOESNTEXIST", toString(nComment)), _option) << endl;
                     cerr << "|" << endl;
                     cerr << "|<- ";
                     getline(cin, sInput);
@@ -2226,8 +2109,7 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
                         {
                             if (j == nCols)
                             {
-                                cerr << "|-> HINWEIS: Die Koepfe konnten nicht korrekt identifiziert werden!" << endl;
-                                cerr << "|   Es werden automatische Koepfe verwendet." << endl;
+                                cerr << LineBreak("|-> "+_lang.get("DATA_OPENFILE_REPLACING_HEADS"), _option) << endl;
                                 for (n = 0; n < nCols; n++)
                                 {
                                     sHeadLine[n] = "Spalte_" + toString(n+1);
@@ -2338,23 +2220,20 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 	}
 	else		// Oh! Es waren doch schon Daten vorhanden... Was jetzt? Anhaengen? / Ueberschreiben?
 	{
-		char cReplace = 0;
-		cerr << "|-> Die Speichergruppe bereits mit den Daten des Files" << endl;
-		cerr << "|   " << sDataFile << " besetzt!" << endl;
-		cerr << "|   Sollen die Daten ueberschrieben werden? (j/n)" << endl;
+		string cReplace = "";
+		cerr << LineBreak("|-> "+_lang.get("DATA_OPENFILE_OVERWRITE_DATA", sDataFile), _option) << endl;
 		cerr << "|" << endl;
         cerr << "|<- ";
-		cin >> cReplace;
+		getline(cin, cReplace);
 
-		if (cReplace == 'j')
+		if (cReplace == _lang.YES())
 		{
 			removeData();				// Zuerst mal die Daten loeschen
 			openFile(_sFile, _option, bAutoSave, bIgnore);	// Jetzt die Methode erneut aufrufen
-			cin.ignore(1);
 		}
 		else
 		{
-			cerr << "|-> ABBRUCH!" << endl;
+			cerr << toSystemCodePage("|-> "+_lang.get("COMMON_CANCEL")) << endl;
 		}
 
 	}
