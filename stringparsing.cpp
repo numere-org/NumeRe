@@ -395,13 +395,20 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     return 0;
                 if (sString.find(':') != string::npos)
                 {
-                    int i1 = 0, i2 = 0;
-                    string s1 = "(" + sString + ")", s2 = "";
+                    int i1 = 0, i2 = 0, nCol = 0;
+                    string s1 = "(" + sString + ")", s2 = "", sCol = "";
                     parser_SplitArgs(s1, s2, ':', _option);
+                    if (s2.find(',') != string::npos)
+                        parser_SplitArgs(s2, sCol, ',', _option, true);
                     if (parser_ExprNotEmpty(s1))
                     {
                         _parser.SetExpr(s1);
                         i1 = (unsigned int)_parser.Eval()-1;
+                    }
+                    if (parser_ExprNotEmpty(sCol))
+                    {
+                        _parser.SetExpr(sCol);
+                        nCol = (unsigned int)_parser.Eval()-1;
                     }
                     if (parser_ExprNotEmpty(s2))
                     {
@@ -409,7 +416,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                         i2 = (unsigned int)_parser.Eval();
                     }
                     else
-                        i2 = _data.getStringElements();
+                        i2 = _data.getStringElements(nCol);
                     parser_CheckIndices(i1, i2);
                     if (parser_CheckMultArgFunc(sLine.substr(0,n_pos), sLine.substr(nPos+1)))
                     {
@@ -418,20 +425,20 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                         if (sLeft.length() > 3 && sLeft.substr(sLeft.length()-4) == "num(")
                             sLine = sLeft.substr(0, sLeft.length()-4) + toString((int)(i2-i1)) + sLine.substr(sLine.find(')', nPos+1)+1);
                         else if (sLeft.length() > 3 && sLeft.substr(sLeft.length()-4) == "max(")
-                            sLine = sLeft.substr(0, sLeft.length()-4) + "\"" + _data.maxString(i1,i2) + "\"" + sLine.substr(sLine.find(')', nPos+1)+1);
+                            sLine = sLeft.substr(0, sLeft.length()-4) + "\"" + _data.maxString(i1,i2,nCol) + "\"" + sLine.substr(sLine.find(')', nPos+1)+1);
                         else if (sLeft.length() > 3 && sLeft.substr(sLeft.length()-4) == "min(")
-                            sLine = sLeft.substr(0, sLeft.length()-4) + "\"" + _data.minString(i1,i2) + "\"" + sLine.substr(sLine.find(')', nPos+1)+1);
+                            sLine = sLeft.substr(0, sLeft.length()-4) + "\"" + _data.minString(i1,i2,nCol) + "\"" + sLine.substr(sLine.find(')', nPos+1)+1);
                         else if (sLeft.length() > 3 && sLeft.substr(sLeft.length()-4) == "sum(")
-                            sLine = sLeft.substr(0, sLeft.length()-4) + "\"" + _data.sumString(i1,i2) + "\"" + sLine.substr(sLine.find(')', nPos+1)+1);
+                            sLine = sLeft.substr(0, sLeft.length()-4) + "\"" + _data.sumString(i1,i2,nCol) + "\"" + sLine.substr(sLine.find(')', nPos+1)+1);
                     }
                     else
                     {
-                        if (_data.getStringElements())
+                        if (_data.getStringElements(nCol))
                         {
                             sString = "";
                             for (int i = i1; i < i2; i++)
                             {
-                                sString += "\"" +  _data.readString((unsigned int)i) + "\"";
+                                sString += "\"" +  _data.readString((unsigned int)i, nCol) + "\"";
                                 if (i < i2-1)
                                     sString += ", ";
                             }
@@ -443,6 +450,22 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 }
                 else
                 {
+                    unsigned int nIndex = string::npos, nCol = 0;
+                    string s1 = "(" + sString + ")", sCol = "";
+                    if (s1.find(',') != string::npos)
+                        parser_SplitArgs(s1, sCol, ',', _option);
+                    if (parser_ExprNotEmpty(sCol))
+                    {
+                        _parser.SetExpr(sCol);
+                        nCol = (unsigned int)_parser.Eval()-1;
+                    }
+                    if (parser_ExprNotEmpty(s1))
+                    {
+                        _parser.SetExpr(s1);
+                        nIndex = (unsigned int)_parser.Eval()-1;
+                    }
+
+
                     if (parser_CheckMultArgFunc(sLine.substr(0,n_pos), sLine.substr(nPos+1)))
                     {
                         string sLeft = sLine.substr(0, n_pos);
@@ -451,16 +474,16 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                         if (sLeft.length() > 3 && sLeft.substr(sLeft.length()-4) == "num(")
                             sLine = sLeft.substr(0, sLeft.length()-4) + "1" + sLine.substr(sLine.find(')', nPos+1)+1);
                         else if (sLeft.length() > 3 && sLeft.substr(sLeft.length()-4) == "max(")
-                            sLine = sLeft.substr(0, sLeft.length()-4) + "\"" + _data.readString((unsigned int)_parser.Eval()-1) + "\"" + sLine.substr(sLine.find(')', nPos+1)+1);
+                            sLine = sLeft.substr(0, sLeft.length()-4) + "\"" + _data.readString(nIndex,nCol) + "\"" + sLine.substr(sLine.find(')', nPos+1)+1);
                         else if (sLeft.length() > 3 && sLeft.substr(sLeft.length()-4) == "min(")
-                            sLine = sLeft.substr(0, sLeft.length()-4) + "\"" + _data.readString((unsigned int)_parser.Eval()-1) + "\"" + sLine.substr(sLine.find(')', nPos+1)+1);
+                            sLine = sLeft.substr(0, sLeft.length()-4) + "\"" + _data.readString(nIndex,nCol) + "\"" + sLine.substr(sLine.find(')', nPos+1)+1);
                         else if (sLeft.length() > 3 && sLeft.substr(sLeft.length()-4) == "sum(")
-                            sLine = sLeft.substr(0, sLeft.length()-4) + "\"" + _data.readString((unsigned int)_parser.Eval()-1) + "\"" + sLine.substr(sLine.find(')', nPos+1)+1);
+                            sLine = sLeft.substr(0, sLeft.length()-4) + "\"" + _data.readString(nIndex,nCol) + "\"" + sLine.substr(sLine.find(')', nPos+1)+1);
                     }
                     else
                     {
                         _parser.SetExpr(sString);
-                        sLine = sLine.substr(0,n_pos) + "\"" + _data.readString((unsigned int)_parser.Eval()-1) + "\"" + sLine.substr(nPos+1);
+                        sLine = sLine.substr(0,n_pos) + "\"" + _data.readString(nIndex,nCol) + "\"" + sLine.substr(nPos+1);
                     }
                 }
             }
@@ -1990,7 +2013,8 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
         {
             string si = "";
             string sj = "";
-            int nIndex[2] = {0,0};
+            string sCol = "";
+            int nIndex[3] = {0,-2,0};
             si = sObject.substr(sObject.find("string(")+6);
             si = si.substr(1,getMatchingParenthesis(si)-1);
             StripSpaces(si);
@@ -2003,6 +2027,22 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     {
                         si = "(" + si + ")";
                         parser_SplitArgs(si, sj, ':', _option);
+                        if (sj.find(',') != string::npos)
+                        {
+                            parser_SplitArgs(sj, sCol, ',', _option, true);
+                        }
+                    }
+                    catch (...)
+                    {
+                        delete[] sFinal;
+                        throw;
+                    }
+                }
+                else if (si.find(',') != string::npos)
+                {
+                    try
+                    {
+                        parser_SplitArgs(si,sCol, ',', _option, true);
                     }
                     catch (...)
                     {
@@ -2012,29 +2052,33 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 }
                 else
                     sj = si;
-                if (parser_ExprNotEmpty(sj))
+
+                if (parser_ExprNotEmpty(sCol))
                 {
-                    _parser.SetExpr(sj);
-                    nIndex[0] = (int)_parser.Eval();
-                    nIndex[0]--;
+                    _parser.SetExpr(sCol);
+                    nIndex[2] = (unsigned int)_parser.Eval()-1;
                 }
                 if (parser_ExprNotEmpty(si))
                 {
                     _parser.SetExpr(si);
-                    nIndex[1] = (int)_parser.Eval();
-                    nIndex[1]--;
+                    nIndex[0] = (unsigned int)_parser.Eval()-1;
                 }
-                else
-                    nIndex[1] = _data.getStringElements();
-                parser_CheckIndices(nIndex[0], nIndex[1]);
+                if (parser_ExprNotEmpty(sj))
+                {
+                    _parser.SetExpr(sj);
+                    nIndex[1] = (unsigned int)_parser.Eval()-1;
+                }
+
+                if (nIndex[1] >= 0)
+                    parser_CheckIndices(nIndex[0], nIndex[1]);
 
                 //cerr << nIndex[0] << " " << nIndex[1] << endl;
 
                 for (int n = 0; n < (int)nStrings; n++)
                 {
-                    if (n+nIndex[0] == nIndex[1]+1)
+                    if (n+nIndex[0]-1 == nIndex[1])
                         break;
-                    _data.writeString(sFinal[n], n+nIndex[0]);
+                    _data.writeString(sFinal[n], n+nIndex[0], nIndex[2]);
                 }
             }
             else

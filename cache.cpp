@@ -42,7 +42,6 @@ Cache::Cache() : FileSystem()
 	sUserdefinedFuncs = "";
 	sPredefinedCommands =  ";abort;about;audio;break;compose;cont;cont3d;continue;copy;credits;data;datagrid;define;delete;dens;dens3d;diff;draw;draw3d;edit;else;endcompose;endfor;endif;endprocedure;endwhile;eval;explicit;export;extrema;fft;find;fit;for;get;global;grad;grad3d;graph;graph3d;help;hist;hline;if;ifndef;ifndefined;info;integrate;list;load;matop;mesh;mesh3d;move;mtrxop;namespace;new;odesolve;plot;plot3d;procedure;pulse;quit;random;read;readline;regularize;remove;rename;replaceline;resample;return;save;script;set;smooth;sort;stats;stfa;str;surf;surf3d;swap;taylor;throw;undef;undefine;var;vect;vect3d;while;write;zeroes;";
 	sPluginCommands = "";
-	sStrings.reserve(32);
 	mCachesMap["cache"] = 0;
 }
 
@@ -70,16 +69,6 @@ Cache::~Cache()
 		}
 		delete[] dCache;
 	}
-	/*if (bValidElement)
-	{
-		for (long long int i = 0; i < nLines; i++)
-		{
-            for (long long int j = 0; j < nCols; j++)
-                delete[] bValidElement[i][j];
-			delete[] bValidElement[i];
-		}
-		delete[] bValidElement;
-	}*/
 	if (sHeadLine)
 	{
         for (long long int i = 0; i < nLayers; i++)
@@ -4456,100 +4445,124 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
 }
 
 
-bool Cache::writeString(const string& _sString, unsigned int _nthString)
+
+
+bool Cache::writeString(const string& _sString, unsigned int _nthString, unsigned int nCol)
 {
+    //cerr << _sString << endl << _nthString << endl << nCol << endl;
     if (sStrings.empty())
     {
         if (_sString.length())
         {
+            for (unsigned int i = 0; i <= nCol; i++)
+            {
+                sStrings.push_back(vector<string>());
+            }
             if (_nthString == string::npos)
-                sStrings.assign(1, _sString);
+            {
+                sStrings[nCol].push_back(_sString);
+            }
             else
             {
-                sStrings.resize(_nthString+1,"");
-                sStrings[_nthString] = _sString;
+                sStrings[nCol].resize(_nthString+1,"");
+                sStrings[nCol][_nthString] = _sString;
             }
         }
         return true;
     }
+    if (nCol >= sStrings.size())
+    {
+        for (unsigned int i = sStrings.size(); i <= nCol; i++)
+            sStrings.push_back(vector<string>());
+    }
     if (_nthString == string::npos)
     {
         if (_sString.length())
-            sStrings.push_back(_sString);
+            sStrings[nCol].push_back(_sString);
         return true;
     }
-    while (_nthString >= sStrings.size() && _sString.length())
-        sStrings.resize(_nthString+1, "");
-    if (!_sString.length() && _nthString+1 == sStrings.size())
+    while (_nthString >= sStrings[nCol].size() && _sString.length())
+        sStrings[nCol].resize(_nthString+1, "");
+    if (!_sString.length() && _nthString+1 == sStrings[nCol].size())
     {
-        sStrings.pop_back();
-        while (sStrings.size() && !sStrings[sStrings.size()-1].length())
-            sStrings.pop_back();
+        sStrings[nCol].pop_back();
+        while (sStrings[nCol].size() && !sStrings[nCol].back().length())
+            sStrings[nCol].pop_back();
     }
     else
-        sStrings[_nthString] = _sString;
+        sStrings[nCol][_nthString] = _sString;
     return true;
 }
 
-string Cache::readString(unsigned int _nthString)
+string Cache::readString(unsigned int _nthString, unsigned int nCol)
 {
+    if (nCol >= sStrings.size())
+        return "";
     if (_nthString == string::npos)
     {
-        if (sStrings.size())
-            return sStrings.back();
+        if (sStrings[nCol].size())
+            return sStrings[nCol].back();
         return "";
     }
-    else if (_nthString >= sStrings.size())
+    else if (_nthString >= sStrings[nCol].size())
         return "";
     else
-        return sStrings[_nthString];
+        return sStrings[nCol][_nthString];
     return "";
 }
 
-string Cache::maxString(unsigned int i1, unsigned int i2)
+string Cache::maxString(unsigned int i1, unsigned int i2, unsigned int nCol)
 {
-    if (i2 == string::npos || i2 > sStrings.size())
-        i2 = sStrings.size();
-
-    if (!i2 || sStrings.empty())
+    if (nCol >= sStrings.size())
         return "";
-    string sMax = sStrings[i1];
+    if (i2 == string::npos || i2 > sStrings[nCol].size())
+        i2 = sStrings[nCol].size();
+
+    if (!i2 || sStrings[nCol].empty())
+        return "";
+    string sMax = sStrings[nCol][i1];
     for (unsigned int i = i1+1; i < i2; i++)
     {
-        if (sMax < sStrings[i])
-            sMax = sStrings[i];
+        if (sMax < sStrings[nCol][i])
+            sMax = sStrings[nCol][i];
     }
     return sMax;
 }
 
-string Cache::minString(unsigned int i1, unsigned int i2)
+string Cache::minString(unsigned int i1, unsigned int i2, unsigned int nCol)
 {
-    if (i2 == string::npos || i2 > sStrings.size())
-        i2 = sStrings.size();
-    if (!i2 || sStrings.empty())
+    if (nCol >= sStrings.size())
         return "";
-    string sMin = sStrings[i1];
+    if (i2 == string::npos || i2 > sStrings[nCol].size())
+        i2 = sStrings[nCol].size();
+    if (!i2 || sStrings[nCol].empty())
+        return "";
+    string sMin = sStrings[nCol][i1];
     for (unsigned int i = i1+1; i < i2; i++)
     {
-        if (sMin > sStrings[i])
-            sMin = sStrings[i];
+        if (sMin > sStrings[nCol][i])
+            sMin = sStrings[nCol][i];
     }
     return sMin;
 }
 
-string Cache::sumString(unsigned int i1, unsigned int i2)
+string Cache::sumString(unsigned int i1, unsigned int i2, unsigned int nCol)
 {
-    if (i2 == string::npos || i2 > sStrings.size())
-        i2 = sStrings.size();
-    if (!i2 || sStrings.empty())
+    if (nCol >= sStrings.size())
+        return "";
+    if (i2 == string::npos || i2 > sStrings[nCol].size())
+        i2 = sStrings[nCol].size();
+    if (!i2 || sStrings[nCol].empty())
         return "";
     string sSum = "";
     for (unsigned int i = i1; i < i2; i++)
     {
-        sSum += sStrings[i];
+        sSum += sStrings[nCol][i];
     }
     return sSum;
 }
+
+
 
 
 bool Cache::containsStringVars(const string& sLine) const

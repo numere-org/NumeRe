@@ -2594,7 +2594,7 @@ void parser_ListVar(mu::ParserBase& _parser, const Settings& _option, const Data
     //string_type sExprTemp = _parser.GetExpr();
     int nBytesSum = 0;
     string sDataSize = toString(_data.getLines("data",false)) + " x " + toString(_data.getCols("data"));
-    string sStringSize = toString((int)_data.getStringElements()) + " x 1";
+    string sStringSize = toString((int)_data.getStringElements()) + " x " + toString((int)_data.getStringCols());
     if (!VarMap.size())
     {
         cerr << "|-> " << toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_EMPTY")) << endl;
