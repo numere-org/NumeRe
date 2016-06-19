@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="NumeRe" />
+		<Option platforms="Windows;" />
+		<Option pch_mode="2" />
+		<Option compiler="tdmgcc" />
+		<Build>
+			<Target title="default">
+				<Option platforms="Windows;" />
+				<Option output="numere" prefix_auto="1" extension_auto="1" />
+				<Option type="1" />
+				<Option compiler="tdmgcc" />
+				<Option use_console_runner="0" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add option="-Wall" />
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="release">
+				<Option platforms="Windows;" />
+				<Option output="rc/NumeRe/numere" prefix_auto="1" extension_auto="1" />
+				<Option object_output=".objs/rc" />
+				<Option type="1" />
+				<Option compiler="tdmgcc" />
+				<Compiler>
+					<Add option="-O3" />
+					<Add option="-Wall" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-std=gnu++11" />
+			<Add option="-DWIN32" />
+			<Add directory="C:/CPP/NumeRe/" />
+		</Compiler>
+		<Linker>
+			<Add option="-lmgl" />
+			<Add option="-lmgl-qt5" />
+			<Add option="-lgsl" />
+			<Add option="-lgslcblas" />
+		</Linker>
+		<Unit filename="IgorLib/CrossPlatformFileIO.cpp" />
+		<Unit filename="IgorLib/CrossPlatformFileIO.h" />
+		<Unit filename="IgorLib/IgorBin.h" />
+		<Unit filename="IgorLib/ReadWave.cpp" />
+		<Unit filename="IgorLib/ReadWave.h" />
+		<Unit filename="ParserLib/muParser.cpp" />
+		<Unit filename="ParserLib/muParser.h" />
+		<Unit filename="ParserLib/muParserBase.cpp" />
+		<Unit filename="ParserLib/muParserBase.h" />
+		<Unit filename="ParserLib/muParserBytecode.cpp" />
+		<Unit filename="ParserLib/muParserBytecode.h" />
+		<Unit filename="ParserLib/muParserCallback.cpp" />
+		<Unit filename="ParserLib/muParserCallback.h" />
+		<Unit filename="ParserLib/muParserDef.h" />
+		<Unit filename="ParserLib/muParserError.cpp" />
+		<Unit filename="ParserLib/muParserError.h" />
+		<Unit filename="ParserLib/muParserFixes.h" />
+		<Unit filename="ParserLib/muParserInt.cpp" />
+		<Unit filename="ParserLib/muParserInt.h" />
+		<Unit filename="ParserLib/muParserStack.h" />
+		<Unit filename="ParserLib/muParserTemplateMagic.h" />
+		<Unit filename="ParserLib/muParserTest.cpp" />
+		<Unit filename="ParserLib/muParserTest.h" />
+		<Unit filename="ParserLib/muParserToken.h" />
+		<Unit filename="ParserLib/muParserTokenReader.cpp" />
+		<Unit filename="ParserLib/muParserTokenReader.h" />
+		<Unit filename="TTR-WS13_private.rc">
+			<Option compilerVar="WINDRES" />
+		</Unit>
+		<Unit filename="TTR-WS13_private.res" />
+		<Unit filename="built-in.cpp" />
+		<Unit filename="built-in.hpp" />
+		<Unit filename="cache.cpp" />
+		<Unit filename="cache.hpp" />
+		<Unit filename="datafile.cpp" />
+		<Unit filename="datafile.hpp" />
+		<Unit filename="debugger.cpp" />
+		<Unit filename="debugger.hpp" />
+		<Unit filename="define.cpp" />
+		<Unit filename="define.hpp" />
+		<Unit filename="doc_helper.cpp" />
+		<Unit filename="doc_helper.hpp" />
+		<Unit filename="documentation.cpp" />
+		<Unit filename="documentation.hpp" />
+		<Unit filename="error.hpp" />
+		<Unit filename="filesystem.cpp" />
+		<Unit filename="filesystem.hpp" />
+		<Unit filename="fitcontroller.cpp" />
+		<Unit filename="fitcontroller.hpp" />
+		<Unit filename="graph_helper.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="graph_helper.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="language.cpp" />
+		<Unit filename="language.hpp" />
+		<Unit filename="loop.cpp" />
+		<Unit filename="loop.hpp" />
+		<Unit filename="main.cpp" />
+		<Unit filename="matrixoperations.cpp" />
+		<Unit filename="odesolver.cpp" />
+		<Unit filename="odesolver.hpp" />
+		<Unit filename="output.cpp" />
+		<Unit filename="output.hpp" />
+		<Unit filename="parser.cpp" />
+		<Unit filename="parser.hpp" />
+		<Unit filename="parser_functions.cpp" />
+		<Unit filename="parser_functions.hpp" />
+		<Unit filename="plotdata.cpp" />
+		<Unit filename="plotdata.hpp" />
+		<Unit filename="plotting.cpp" />
+		<Unit filename="plugin.cpp" />
+		<Unit filename="plugin.hpp" />
+		<Unit filename="plugin_histogram.cpp" />
+		<Unit filename="plugin_random.cpp" />
+		<Unit filename="plugin_statistics.cpp" />
+		<Unit filename="plugins.hpp" />
+		<Unit filename="procedure.cpp" />
+		<Unit filename="procedure.hpp" />
+		<Unit filename="resampler.cpp" />
+		<Unit filename="resampler.h" />
+		<Unit filename="script.cpp" />
+		<Unit filename="script.hpp" />
+		<Unit filename="settings.cpp" />
+		<Unit filename="settings.hpp" />
+		<Unit filename="stringparsing.cpp" />
+		<Unit filename="tools.cpp" />
+		<Unit filename="tools.hpp" />
+		<Unit filename="unzip.cpp" />
+		<Unit filename="version.h" />
+		<Unit filename="zip++.cpp" />
+		<Unit filename="zip++.hpp" />
+		<Unit filename="zip.cpp" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<DoxyBlocks>
+				<comment_style block="1" line="0" />
+				<doxyfile_project />
+				<doxyfile_build />
+				<doxyfile_warnings />
+				<doxyfile_output />
+				<doxyfile_dot />
+				<general />
+			</DoxyBlocks>
+			<AutoVersioning>
+				<Scheme minor_max="9" build_max="9" rev_max="199" rev_rand_max="10" build_times_to_increment_minor="100" />
+				<Settings autoincrement="0" date_declarations="1" use_define="0" update_manifest="0" do_auto_increment="0" ask_to_increment="0" language="C++" svn="0" svn_directory="" header_path="version.h" />
+				<Changes_Log show_changes_editor="1" app_title='v %M.%m.%b &quot;%T&quot; rev. %r' changeslog_path="ChangesLog.txt" />
+				<Code header_guard="VERSION_H" namespace="AutoVersion" prefix="" />
+			</AutoVersioning>
+			<wxsmith version="1">
+				<gui name="wxWidgets" src="" main="" init_handlers="necessary" language="CPP" />
+			</wxsmith>
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
