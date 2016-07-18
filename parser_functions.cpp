@@ -2636,7 +2636,7 @@ void parser_ListVar(mu::ParserBase& _parser, const Settings& _option, const Data
     }
     if (_data.getStringElements())
     {
-        cerr << "|   string()" << std::setfill(' ') << std::setw((_option.getWindow(0)-32)/2-6 + _option.getWindow(0)%2) << "Dim:" << std::setfill(' ') << std::setw((_option.getWindow(0)-50)/2) << sStringSize << std::setw(19) << "[string]";
+        cerr << "|   string()" << std::setfill(' ') << std::setw((_option.getWindow(0)-32)/2-6 + _option.getWindow(0)%2) << "Dim:" << std::setfill(' ') << std::setw((_option.getWindow(0)-50)/2) << sStringSize << std::setw(19) << "[string x string]";
         if (_data.getStringSize() >= 1024*1024)
             cerr << std::setprecision(4) << std::setw(9) << _data.getStringSize()/(1024.0*1024.0) << " MBytes";
         else if (_data.getStringSize() >= 1024)

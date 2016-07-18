@@ -214,18 +214,18 @@ void Output::print_legal()		// Pro forma Kommentare in die Datei
     sBuild += "-";
     sBuild += AutoVersion::DATE;
 	print(sCommentSign);
-	print(sCommentSign + " Dieser Datensatz wurde erzeugt mit");
+	print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_LINE1"));
 	print(sCommentSign + " NumeRe: Framework für Numerische Rechnungen");
 	print(sCommentSign + "=============================================");
-	print(sCommentSign + " Version: " + sVersion + ", Build: " + sBuild);
-	print(sCommentSign + " Quellcode und Programm: (c) " + sBuild.substr(0,4) + ", Erik Hänel et al., lizensiert unter der GNU GPL v3.0");
+	print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_LINE2", sVersion, sBuild));
+	print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_LINE3", sBuild.substr(0,4)));
 	print(sCommentSign + "");
-	print(sCommentSign + " Diese Datei wurde erzeugt am " + getDate(false));
+	print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_LINE4", getDate(false)));
 	print(sCommentSign + "");
 	if (bPrintTeX)
-        print(sCommentSign + " (Kommentar-Standard und Formatierung sind für TeX optimiert. Es werden das booktabs- und ggf. das longtable-, sowie das multirow-Package vorausgesetzt.)");
+        print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_TEX"));
     else
-        print(sCommentSign + " (Kommentar-Standard und Formatierung sind für GNUPlot optimiert.)");
+        print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_STD"));
 	print(sCommentSign);
 	return;
 }
@@ -473,12 +473,12 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
 
     if (bFile && !bPrintTeX && !bPrintCSV)
     {
-        print("# Erstellt durch: " + sPluginName);	// Informative Ausgabe
+        print("# " + _lang.get("OUTPUT_FORMAT_COMMENTLINE", sPluginName));	// Informative Ausgabe
         print("#");
     }
     else if (bPrintTeX && !bPrintCSV)
     {
-        print("% Erstellt durch: " + sPluginName);
+        print("% " + _lang.get("OUTPUT_FORMAT_COMMENTLINE", sPluginName));
         print("%");
     }
 
@@ -502,7 +502,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
                 sPrint += "c";
             sPrint += "}";
             print(sPrint);
-            print("\\caption{Tabelle erzeugt durch: "+sPluginName+"}");
+            print("\\caption{" + _lang.get("OUTPUT_FORMAT_TEX_HEAD", sPluginName)+"}");
             print("\\label{tab:" + sLabel + "}\\\\");
             print("\\toprule");
             sPrint = "";
@@ -520,13 +520,13 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
             print(sPrint);
             print("\\midrule");
             print("\\endfirsthead");
-            print("\\caption{Fortsetzung}\\\\");
+            print("\\caption{"+_lang.get("OUTPUT_FORMAT_TEXLONG_CAPTION")+"}\\\\");
             print("\\toprule");
             print(sPrint);
             print("\\midrule");
             print("\\endhead");
             print("\\midrule");
-            print("\\multicolumn{" + toString(_nCol) + "}{c}{--- \\emph{Fortsetzung auf der n\\\"achsten Seite} ---}\\\\");
+            print("\\multicolumn{" + toString(_nCol) + "}{c}{--- \\emph{"+_lang.get("OUTPUT_FORMAT_TEXLONG_FOOT")+"} ---}\\\\");
             print("\\bottomrule");
             print("\\endfoot");
             print("\\bottomrule");
@@ -750,7 +750,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
     {
         print("\\bottomrule");
         print("\\end{tabular}");
-        print("\\caption{Tabelle erzeugt durch: " + sPluginName + "}");
+        print("\\caption{"+ _lang.get("OUTPUT_FORMAT_TEX_HEAD", sPluginName)+"}");
         print("\\label{tab:" + sLabel + "}");
         print("\\end{table}");
     }
@@ -768,11 +768,11 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
     {
         //print("|   " + sPrint);
         //print(sPrint);
-        sConsoleOut += "|   -- " + toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY", toString(_nCol), toString(_nLine-1), toString(_nCol*(_nLine-1)))) + " --";
+        sConsoleOut += "|   -- " + toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY", toString(_nCol), toString(_nLine-nHeadLineCount), toString(_nCol*(_nLine-nHeadLineCount)))) + " --";
         //sConsoleOut += "|   -- " + toString(_nCol) + " Spalte(n) und " + toString(_nLine-1) + " Zeile(n) [" + toString(_nCol*(_nLine-1)) + " Elemente] --";
     }
     else
-        sConsoleOut += "|-> "+toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY_FILE", toString(_nCol*(_nLine-1)), sFileName));
+        sConsoleOut += "|-> "+toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY_FILE", toString(_nCol*(_nLine-nHeadLineCount)), sFileName));
         //sConsoleOut += "|-> Eine Tabelle mit " + toString(_nCol*(_nLine-1)) + " Elementen ";
 
     if (_option.getSystemPrintStatus())

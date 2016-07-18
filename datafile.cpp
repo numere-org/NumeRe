@@ -20,8 +20,10 @@
 #include "datafile.hpp"
 
 bool fileExists(const string&);
+string wcstombs(const wstring&);
 using namespace std;
 using namespace boost;
+using namespace YExcel;
 
 /*
  * Realisierung der Datafile-Klasse
@@ -1540,6 +1542,397 @@ void Datafile::openODS(Settings& _option)
     return;
 }
 
+void Datafile::openXLS(Settings& _option)
+{
+    if (toLowerCase(sDataFile.substr(sDataFile.rfind('.'))) != ".xls")
+    {
+        //cerr << "Extension" << endl;
+        return;
+    }
+    BasicExcel _excel;
+    BasicExcelWorksheet* _sheet;
+    BasicExcelCell* _cell;
+    unsigned int nSheets = 0;
+    long long int nExcelLines = 0;
+    long long int nExcelCols = 0;
+    long long int nOffset = 0;
+    long long int nCommentLines = 0;
+    vector<long long int> vCommentLines;
+    bool bBreakSignal = false;
+    string sEntry;
+
+    if (!_excel.Load(sDataFile.c_str()))
+        return;
+
+    // get the total number
+    nSheets = _excel.GetTotalWorkSheets();
+    if (!nSheets)
+        return;
+
+    // get the total size
+    for (unsigned int n = 0; n < nSheets; n++)
+    {
+        _sheet = _excel.GetWorksheet(n);
+        bBreakSignal = false;
+        nCommentLines = 0;
+        for (unsigned int i = 0; i < _sheet->GetTotalRows(); i++)
+        {
+            for (unsigned int j = 0; j < _sheet->GetTotalCols(); j++)
+            {
+                if (_sheet->Cell(i,j)->Type() != BasicExcelCell::STRING
+                    && _sheet->Cell(i,j)->Type() != BasicExcelCell::WSTRING
+                    && _sheet->Cell(i,j)->Type() != BasicExcelCell::UNDEFINED)
+                {
+                    bBreakSignal = true;
+                    break;
+                }
+            }
+            if (bBreakSignal)
+                break;
+            nCommentLines++;
+        }
+        vCommentLines.push_back(nCommentLines);
+        if (nExcelLines < _sheet->GetTotalRows()-nCommentLines)
+            nExcelLines = _sheet->GetTotalRows()-nCommentLines;
+        nExcelCols += _sheet->GetTotalCols();
+    }
+
+    // create data
+    nLines = nExcelLines;
+    nCols = nExcelCols;
+    Allocate();
+
+    // copy data/strings
+    for (unsigned int n = 0; n < nSheets; n++)
+    {
+        _sheet = _excel.GetWorksheet(n);
+        nExcelCols = _sheet->GetTotalCols();
+        nExcelLines = _sheet->GetTotalRows();
+
+        for (long long int i = 0; i < vCommentLines[n]; i++)
+        {
+            if (i >= nExcelLines)
+                break;
+            for (long long int j = 0; j < nExcelCols; j++)
+            {
+                if (j+nOffset >= nCols)
+                    break;
+                _cell = _sheet->Cell(i,j);
+                if (_cell->Type() == BasicExcelCell::STRING)
+                    sEntry = _cell->GetString();
+                else if (_cell->Type() == BasicExcelCell::WSTRING)
+                    sEntry = wcstombs(_cell->GetWString());
+                else
+                    continue;
+                while (sEntry.find('\n') != string::npos)
+                    sEntry.replace(sEntry.find('\n'), 1, "\\n");
+                while (sEntry.find((char)10) != string::npos)
+                    sEntry.replace(sEntry.find((char)10), 1, "\\n");
+
+                if (sHeadLine[j+nOffset] == "Spalte_"+toString(j+1+nOffset))
+                {
+                    sHeadLine[j+nOffset] = utf8parser(sEntry);
+                }
+                else if (sHeadLine[j+nOffset] == utf8parser(sEntry))
+                    continue;
+                else
+                    sHeadLine[j+nOffset] += "\\n" + utf8parser(sEntry);
+            }
+        }
+        nOffset += nExcelCols;
+    }
+
+    nOffset = 0;
+
+    for (unsigned int n = 0; n < nSheets; n++)
+    {
+        _sheet = _excel.GetWorksheet(n);
+        nExcelCols = _sheet->GetTotalCols();
+        nExcelLines = _sheet->GetTotalRows();
+
+        for (long long int i = vCommentLines[n]; i < nExcelLines; i++)
+        {
+            if (i-vCommentLines[n] >= nLines)
+                break;
+            for (long long int j = 0; j < nExcelCols; j++)
+            {
+                if (j >= nCols)
+                    break;
+                _cell = _sheet->Cell(i,j);
+                sEntry.clear();
+                switch (_cell->Type())
+                {
+                    case BasicExcelCell::UNDEFINED:
+                        dDatafile[i-vCommentLines[n]][j+nOffset] = NAN;
+                        break;
+                    case BasicExcelCell::INT:
+                        dDatafile[i-vCommentLines[n]][j+nOffset] = (double)_cell->GetInteger();
+                        break;
+                    case BasicExcelCell::DOUBLE:
+                        dDatafile[i-vCommentLines[n]][j+nOffset] = _cell->GetDouble();
+                        break;
+                    case BasicExcelCell::STRING:
+                        dDatafile[i-vCommentLines[n]][j+nOffset] = NAN;
+                        sEntry = _cell->GetString();
+                        break;
+                    case BasicExcelCell::WSTRING:
+                        dDatafile[i-vCommentLines[n]][j+nOffset] = NAN;
+                        sEntry = wcstombs(_cell->GetWString());
+                        break;
+                    default:
+                        dDatafile[i-vCommentLines[n]][j+nOffset] = NAN;
+                }
+                if (sEntry.length())
+                {
+                    if (sHeadLine[j+nOffset] == "Spalte_"+toString(j+1+nOffset))
+                    {
+                        sHeadLine[j+nOffset] = utf8parser(sEntry);
+                    }
+                    else if (sHeadLine[j+nOffset] == utf8parser(sEntry))
+                        continue;
+                    else
+                        sHeadLine[j+nOffset] += "\\n" + utf8parser(sEntry);
+                }
+            }
+        }
+
+        nOffset += nExcelCols;
+    }
+    bValidData = true;
+    countAppendedZeroes();
+
+    return;
+}
+
+
+void Datafile::openXLSX(Settings& _option)
+{
+    if (toLowerCase(sDataFile.substr(sDataFile.rfind('.'))) != ".xlsx")
+    {
+        return;
+    }
+
+    using namespace tinyxml2;
+
+    unsigned int nSheets = 0;
+    long long int nExcelLines = 0;
+    long long int nExcelCols = 0;
+    long long int nOffset = 0;
+    int nLine = 0, nCol = 0;
+    int nLinemin = 0, nLinemax = 0;
+    int nColmin = 0, nColmax = 0;
+    bool bBreakSignal = false;
+
+    vector<long long int> vCommentLines;
+    string sEntry;
+    string sSheetContent;
+    string sStringsContent;
+    string sCellLocation;
+
+    XMLDocument _workbook;
+    XMLDocument _sheet;
+    XMLDocument _strings;
+    XMLNode* _node;
+    XMLElement* _element;
+    XMLElement* _stringelement;
+
+    Zipfile _zip;
+    if (!_zip.open(sDataFile))
+    {
+        _zip.close();
+        sErrorToken = sDataFile;
+        throw DATAFILE_NOT_EXIST;
+    }
+    sEntry = _zip.getZipItem("xl/workbook.xml");
+    //cerr << sEntry << endl;
+    if (!sEntry.length())
+    {
+        _zip.close();
+        sErrorToken = sDataFile;
+        throw CANNOT_READ_FILE;
+    }
+
+    // Get the number of sheets
+    _workbook.Parse(sEntry.c_str());
+    //cerr << "parsed" << endl;
+    if (_workbook.ErrorID())
+    {
+        _zip.close();
+        sErrorToken = sDataFile;
+        throw CANNOT_READ_FILE;
+    }
+    _node = _workbook.FirstChildElement()->FirstChildElement("sheets")->FirstChild();
+    //cerr << "node" << endl;
+    if (_node)
+        nSheets++;
+    while ((_node = _node->NextSibling()))
+        nSheets++;
+    //cerr << nSheets << endl;
+
+    if (!nSheets)
+    {
+        _zip.close();
+        sErrorToken = sDataFile;
+        throw CANNOT_READ_FILE;
+    }
+
+    // Walk through the sheets and extract the dimension info
+    for (unsigned int i = 0; i < nSheets; i++)
+    {
+        sSheetContent = _zip.getZipItem("xl/worksheets/sheet"+toString(i+1)+".xml");
+        //cerr << sSheetContent.length() << endl;
+        if (!sSheetContent.length())
+        {
+            _zip.close();
+            sErrorToken = sDataFile;
+            throw CANNOT_READ_FILE;
+        }
+        _sheet.Parse(sSheetContent.c_str());
+        if (_sheet.ErrorID())
+        {
+            _zip.close();
+            sErrorToken = sDataFile;
+            throw CANNOT_READ_FILE;
+        }
+        _element = _sheet.FirstChildElement()->FirstChildElement("dimension");
+        //cerr << "element" << endl;
+        sCellLocation = _element->Attribute("ref");
+        //cerr << sCellLocation << endl;
+        int nLinemin = 0, nLinemax = 0;
+        int nColmin = 0, nColmax = 0;
+
+        // Take care of comment lines => todo
+        evalExcelIndices(sCellLocation.substr(0,sCellLocation.find(':')), nLinemin, nColmin);
+        evalExcelIndices(sCellLocation.substr(sCellLocation.find(':')+1), nLinemax, nColmax);
+
+        vCommentLines.push_back(0);
+        _node = _sheet.FirstChildElement()->FirstChildElement("sheetData")->FirstChild();
+        if (!_node)
+            continue;
+        //cerr << "node" << endl;
+        do
+        {
+            _element = _node->ToElement()->FirstChildElement("c");
+            //cerr << "element" << endl;
+            do
+            {
+                if (_element->Attribute("t"))
+                {
+                    //cerr << _element->Attribute("t") << endl;
+                    if (_element->Attribute("t") != string("s"))
+                    {
+                        bBreakSignal = true;
+                        break;
+                    }
+                }
+                else
+                {
+                    bBreakSignal = true;
+                    break;
+                }
+            }
+            while ((_element = _element->NextSiblingElement()));
+            if (!bBreakSignal)
+                vCommentLines[i]++;
+            else
+                break;
+        }
+        while ((_node = _node->NextSibling()));
+        bBreakSignal = false;
+
+        if (nExcelLines < nLinemax-nLinemin+1-vCommentLines[i])
+            nExcelLines = nLinemax-nLinemin+1-vCommentLines[i];
+        nExcelCols += nColmax-nColmin+1;
+    }
+
+    nLines = nExcelLines;
+    nCols = nExcelCols;
+    //cerr << vCommentLines.size() << endl;
+    cerr << nLines << endl << nCols << endl;
+
+    //Allocate the memory
+    Allocate();
+
+    // Walk through the sheets and extract the contents to memory
+    sStringsContent = _zip.getZipItem("xl/sharedStrings.xml");
+    //cerr << sStringsContent << endl;
+    _strings.Parse(sStringsContent.c_str());
+    for (unsigned int i = 0; i < nSheets; i++)
+    {
+        //cerr << vCommentLines[i] << endl;
+        sSheetContent = _zip.getZipItem("xl/worksheets/sheet"+toString(i+1)+".xml");
+        _sheet.Parse(sSheetContent.c_str());
+        _node = _sheet.FirstChildElement()->FirstChildElement("sheetData")->FirstChild();
+        //cerr << _node << endl;
+        _element = _sheet.FirstChildElement()->FirstChildElement("dimension");
+        if (!_node)
+            continue;
+
+        sCellLocation = _element->Attribute("ref");
+        evalExcelIndices(sCellLocation.substr(0,sCellLocation.find(':')), nLinemin, nColmin);
+        evalExcelIndices(sCellLocation.substr(sCellLocation.find(':')+1), nLinemax, nColmax);
+        do
+        {
+            _element = _node->ToElement()->FirstChildElement("c");
+            if (!_element)
+                continue;
+            do
+            {
+                sCellLocation = _element->Attribute("r");
+                //cerr << sCellLocation;
+                evalExcelIndices(sCellLocation, nLine, nCol);
+                nCol -= nColmin;
+                nLine -= nLinemin;
+                if (nCol+nOffset >= nCols || nLine-vCommentLines[i] >= nLines)
+                    continue;
+                if (_element->Attribute("t"))
+                {
+                    if (_element->Attribute("t") == string("s"))
+                    {
+                        //Handle text
+                        int nPos = 0;
+                        _element->FirstChildElement("v")->QueryIntText(&nPos);
+                        _stringelement = _strings.FirstChildElement()->FirstChildElement("si");
+                        for (int k = 1; k <= nPos; k++)
+                        {
+                            _stringelement = _stringelement->NextSiblingElement();
+                        }
+                        if (_stringelement->FirstChildElement()->FirstChild())
+                            sEntry = _stringelement->FirstChildElement()->FirstChild()->ToText()->Value();
+                        else
+                            sEntry.clear();
+                        //cerr << sEntry << endl;
+                        if (sEntry.length())
+                        {
+                            if (sHeadLine[nCol+nOffset] == "Spalte_"+toString(nCol+1+nOffset))
+                            {
+                                sHeadLine[nCol+nOffset] = utf8parser(sEntry);
+                            }
+                            else if (sHeadLine[nCol+nOffset] == utf8parser(sEntry))
+                                continue;
+                            else
+                                sHeadLine[nCol+nOffset] += "\\n" + utf8parser(sEntry);
+                        }
+                        continue;
+                    }
+                }
+                //cerr << "   Loc: ";
+                if (_element->FirstChildElement("v"))
+                    _element->FirstChildElement("v")->QueryDoubleText(&dDatafile[nLine-vCommentLines[i]][nCol+nOffset]);
+                //cerr << nLine-vCommentLines[i] << ", " << nCol+nOffset << endl;
+            }
+            while ((_element = _element->NextSiblingElement()));
+        }
+        while ((_node = _node->NextSibling()));
+
+        nOffset += nColmax-nColmin+1;
+    }
+    _zip.close();
+    bValidData = true;
+    countAppendedZeroes();
+
+    return;
+}
 
 // --> Oeffne eine Datei, lies sie ein und interpretiere die Daten als Double <--
 void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool bIgnore, int _nHeadline)
@@ -1604,6 +1997,20 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
         {
             sDataFile = FileSystem::ValidFileName(_sFile, ".ods");
             Datafile::openODS(_option);
+            Datafile::condenseDataSet();
+            return;
+        }
+        else if (toLowerCase(sDataFile.substr(sDataFile.rfind('.'))) == ".xls")
+        {
+            sDataFile = FileSystem::ValidFileName(_sFile, ".xls");
+            Datafile::openXLS(_option);
+            Datafile::condenseDataSet();
+            return;
+        }
+        else if (toLowerCase(sDataFile.substr(sDataFile.rfind('.'))) == ".xlsx")
+        {
+            sDataFile = FileSystem::ValidFileName(_sFile, ".xlsx");
+            Datafile::openXLSX(_option);
             Datafile::condenseDataSet();
             return;
         }
@@ -1673,8 +2080,13 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 			getline(file_in, s);
 
 			// --> Ersetze ggf. Tabulatoren durch Leerzeichen <--
-			replaceTabSign(s);
-			stripTrailingSpaces(s);
+			if (!isNumeric(s))
+                replaceTabSign(s, true);
+            else
+            {
+                replaceTabSign(s);
+                stripTrailingSpaces(s);
+			}
 			if (!s.length())
 			{
                 i--;
@@ -1762,17 +2174,43 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 		}
 
 		// --> Tabellen benoetigen eine saubere Kopfzeile ... <--
-		if (!sHeadLine)
-            sHeadLine = new string[nCols]; // Machen wir schon einmal ein Array fuer die Kopfzeile
+		if (nLines && nCols) // Machen wir schon einmal ein Array fuer die Kopfzeile
+		{
+            Allocate();
+		}
+		else
+		{
+            for (long long int n = 0; n < nLines; n++)
+            {
+                delete[] sDataMatrix[n];
+            }
+            delete[] sDataMatrix;
+            delete[] sLine;
+            sErrorToken = sDataFile;
+            nCols = 0;
+            nLines = 0;
+            sDataFile = "";
+            throw CANNOT_READ_FILE;
+		}
 
         // --> Wurde die Datei schon von NumeRe erzeugt? Dann sind die Kopfzeilen einfach zu finden <--
         if (nComment && !_nHeadline)
         {
             string sCommentSign = "#";
             if (nLine > 14)
-                sCommentSign.append(sLine[14].length()-1, '=');
-            if (nComment >= 15 && sLine[2].substr(0,21) == "# NumeRe: Framework f" && sLine[14] == sCommentSign)
-                _nHeadline = 14;
+                sCommentSign.append(sLine[13].length()-1, '=');
+            if (nComment >= 15 && sLine[2].substr(0,21) == "# NumeRe: Framework f")
+            {
+                for (long long int k = 13; k < nLine; k++)
+                {
+                    if (sLine[k] == sCommentSign)
+                    {
+                        _nHeadline = 14;
+                        break;
+                    }
+                }
+                //_nHeadline = 14;
+            }
             else if (nComment == 1)
             {
                 for (long long int i = 0; i < nLine; i++)
@@ -2088,7 +2526,6 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
                     getline(cin, sInput);
                     _nHeadline = StrToInt(sInput);
                 }
-                cin.ignore(1);
             }
             long long int n = 0; 		// zweite Zaehlvariable
 
@@ -2100,38 +2537,109 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 
                     if (n == _nHeadline) // Da ist sie ja, die Zeile...
                     {
-                        tokenizer<char_separator<char> > tok(sLine[i], sep);
-                        long long int j = -1;
-                        if (sLine[i][0] != '#')
-                            j = 0;
-
-                        for (tokenizer<char_separator<char> >::iterator beg=tok.begin(); beg != tok.end(); ++beg)
+                        for (long long int k = i+1; k < nLine; k++)
                         {
-                            if (j == nCols)
+                            // TAB-Replace ignorieren
+                            if (sLine[k].find(" _ ") != string::npos || (sLine[k].find_first_not_of(" #") != string::npos && sLine[k][sLine[k].find_first_not_of(" #")] == '_') || sLine[k].back() == '_')
                             {
-                                cerr << LineBreak("|-> "+_lang.get("DATA_OPENFILE_REPLACING_HEADS"), _option) << endl;
-                                for (n = 0; n < nCols; n++)
-                                {
-                                    sHeadLine[n] = "Spalte_" + toString(n+1);
-                                }
                                 break;
                             }
 
-                            if (j == -1)	// Wir muessen den ersten Token ueberspringen: Er beinhaltet das '#'!
+                            if (sLine[k][0] != '#' && isNumeric(sLine[k]))
+                                break;
+                            if (sLine[k].substr(0,4) == "#===")
+                                break;
+                            if (sLine[k].length() == sLine[i].length())
                             {
+                                for (unsigned int l = 0; l < sLine[k].length(); l++)
+                                {
+                                    if (sLine[i][l] != ' ' && sLine[k][l] == ' ')
+                                        sLine[k][l] = '_';
+                                }
+                            }
+                            else if (sLine[k].length() < sLine[i].length() && sLine[i][sLine[k].length()-1] != ' ' && sLine[k].back() != ' ')
+                            {
+                                sLine[k].append(sLine[i].length()-sLine[k].length(),' ');
+                                for (unsigned int l = 0; l < sLine[k].length(); l++)
+                                {
+                                    if (sLine[i][l] != ' ' && sLine[k][l] == ' ')
+                                        sLine[k][l] = '_';
+                                }
+                            }
+                            else if (sLine[k].length() > sLine[i].length() && sLine[k][sLine[i].length()-1] != ' ' && sLine[i].back() != ' ')
+                            {
+                                for (unsigned int l = 0; l < sLine[i].length(); l++)
+                                {
+                                    if (sLine[i][l] != ' ' && sLine[k][l] == ' ')
+                                        sLine[k][l] = '_';
+                                }
+                            }
+                            else
+                                break;
+                        }
+                        bool bBreakSignal = false;
+
+                        for (long long int k = i; k < nLine; k++)
+                        {
+                            if (sLine[k][0] != '#' && isNumeric(sLine[k]))
+                                break;
+                            if (sLine[k].substr(0,4) == "#===")
+                                break;
+
+                            tokenizer<char_separator<char> > tok(sLine[k], sep);
+                            long long int j = -1;
+                            if (sLine[i][0] != '#')
+                                j = 0;
+
+                            for (tokenizer<char_separator<char> >::iterator beg=tok.begin(); beg != tok.end(); ++beg)
+                            {
+                                if (j == nCols)
+                                {
+                                    cerr << LineBreak("|-> "+_lang.get("DATA_OPENFILE_REPLACING_HEADS"), _option) << endl;
+                                    for (n = 0; n < nCols; n++)
+                                    {
+                                        sHeadLine[n] = "Spalte_" + toString(n+1);
+                                    }
+                                    bBreakSignal = true;
+                                    break;
+                                }
+
+                                if (j == -1)	// Wir muessen den ersten Token ueberspringen: Er beinhaltet das '#'!
+                                {
+                                    j++;
+                                    continue;
+                                }
+
+                                string sHead = *beg;
+                                if (sHead.find_first_not_of('_') == string::npos)
+                                {
+                                    j++;
+                                    continue;
+                                }
+                                while (sHead.front() == '_')
+                                    sHead.erase(0,1);
+                                while (sHead.back() == '_')
+                                    sHead.pop_back();
+
+                                if (sHeadLine[j] == "Spalte_"+toString(j+1))
+                                    sHeadLine[j] = sHead;
+                                else
+                                {
+                                    sHeadLine[j] += "\\n";
+                                    sHeadLine[j] += sHead;
+                                }
                                 j++;
-                                continue;
                             }
 
-                            sHeadLine[j] = *beg;
-                            j++;
-                        }
-                        if (j < nCols-i)
-                        {
-                            for (; j < nCols; j++)
+                            if (bBreakSignal)
+                                break;
+                            /*if (j < nCols-i)
                             {
-                                sHeadLine[j] = "Spalte_" + toString(j+1);
-                            }
+                                for (; j < nCols; j++)
+                                {
+                                    sHeadLine[j] = "Spalte_" + toString(j+1);
+                                }
+                            }*/
                         }
                         break; //Jetzt haben wir sie ja gefunden. Raus aus der Schleife!
                     }
@@ -2147,13 +2655,13 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
                 else
                     setHeadLineElement(0, "data", sDataFile.substr(sDataFile.rfind('/')+1, sDataFile.rfind('.')-1-sDataFile.rfind('/')));
 			}
-			else
+			/*else
 			{
 				for (long long int i = 0; i < nCols; i++)
 				{
 					sHeadLine[i] = "Spalte_" + toString(i+1);
 				}
-			}
+			}*/
 		}
 
 		/*
@@ -2168,7 +2676,7 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 			// --> Hier werden die strings in doubles konvertiert <--
 			for (long long int i = 0; i < nLines; i++)
 			{
-				if(_option.getbDebug())
+				if (_option.getbDebug())
 				{
 					cerr << "|-> DEBUG: dDatafile[" << i << "] = ";
 				}
@@ -2500,7 +3008,7 @@ void Datafile::pasteLoad(const Settings& _option)
                 {
                     if (sLine.length())
                     {
-                        if (!i)
+                        if (!i || sHeadLine[j] == "Spalte_" + toString(j+1))
                             sHeadLine[j] = sLine;
                         else
                             sHeadLine[j] += "\\n" + sLine;
@@ -2623,7 +3131,7 @@ string Datafile::expandODSLine(const string& sLine)
     //cerr << sLine << endl;
     for (unsigned int i = 0; i < sLine.length(); i++)
     {
-        if (sLine.substr(i,18) == "<table:table-cell ")
+        if (sLine.substr(i,17) == "<table:table-cell")
         {
             if (sLine[sLine.find('>',i)-1] != '/')
             {
@@ -2638,7 +3146,7 @@ string Datafile::expandODSLine(const string& sLine)
             }
             else
             {
-                if (sLine.find("<table:table-cell ", i+1) == string::npos && sLine.find("<table:covered-table-cell ", i+1) == string::npos)
+                if (sLine.find("<table:table-cell", i+1) == string::npos && sLine.find("<table:covered-table-cell", i+1) == string::npos)
                     break;
                 if (sLine.substr(i, sLine.find('>',i)+1-i).find("table:number-columns-repeated=") != string::npos)
                 {
@@ -2656,7 +3164,7 @@ string Datafile::expandODSLine(const string& sLine)
                     sExpandedLine += "<>";
             }
         }
-        else if (sLine.substr(i,26) == "<table:covered-table-cell ")
+        else if (sLine.substr(i,25) == "<table:covered-table-cell")
         {
             string sTemp = getArgAtPos(sLine, sLine.find("table:number-columns-repeated=", i)+30);
             if (sTemp.front() == '"')
@@ -2791,6 +3299,29 @@ vector<double> Datafile::parseJDXLine(const string& sLine)
     return vLine;
 }
 
+void Datafile::evalExcelIndices(const string& _sIndices, int& nLine, int& nCol)
+{
+    //A1 -> IV65536
+    string sIndices = toUpperCase(_sIndices);
+    for (unsigned int i = 0; i < sIndices.length(); i++)
+    {
+        if (!isalpha(sIndices[i]))
+        {
+            nLine = StrToInt(sIndices.substr(i))-1;
+            if (i == 2)
+            {
+                nCol = (sIndices[0]-'A'+1)*26+sIndices[1]-'A';
+            }
+            else if (i == 1)
+            {
+                nCol = sIndices[0]-'A';
+            }
+            break;
+        }
+    }
+    return;
+}
+
 bool Datafile::isNumeric(const string& _sString)
 {
     if (!_sString.length())
@@ -2810,9 +3341,12 @@ bool Datafile::isNumeric(const string& _sString)
             continue;
         else if (_sString.substr(i, 3) == "nan"
             || _sString.substr(i, 3) == "NaN"
-            || _sString.substr(i, 3) == "NAN")
+            || _sString.substr(i, 3) == "NAN"
+            || _sString.substr(i, 3) == "inf"
+            || _sString.substr(i, 3) == "INF"
+            )
         {
-            i += 3;
+            i += 2;
             continue;
         }
         else

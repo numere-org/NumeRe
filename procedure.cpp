@@ -1866,32 +1866,6 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             if (_option.getUseDebugger())
                                 _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                             deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, 0, 0, sVarMap, nVarMapSize);
-                            /*if (sLocalVars && dLocalVars)
-                            {
-                                for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                                {
-                                    _parser.RemoveVar(sLocalVars[i][1]);
-                                }
-                            }
-                            if (sVarMap)
-                            {
-                                for (unsigned int i = 0; i < nVarMapSize; i++)
-                                    delete[] sVarMap[i];
-                                delete[] sVarMap;
-                                sVarMap = 0;
-                            }
-                            if (sLocalVars)
-                            {
-                                for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                                    delete[] sLocalVars[i];
-                                delete[] sLocalVars;
-                                sLocalVars = 0;
-                            }
-                            if (dLocalVars)
-                            {
-                                delete[] dLocalVars;
-                                dLocalVars = 0;
-                            }*/
                             for (unsigned int j = 0; j <= i; j++)
                             {
                                 if (j < i)

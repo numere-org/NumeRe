@@ -167,26 +167,28 @@ bool getStringArgument(const string& sCmd, string& sArgument)
         return false;
     else
     {
-        nPos = sCmd.find('"');
-        if (sCmd.find('#') != string::npos && (sCmd.find('#') < nPos || nPos == string::npos))
-            nPos = sCmd.find('#');
-        if (sCmd.find("to_string(") != string::npos && (sCmd.find("to_string(") < nPos || nPos == string::npos))
-            nPos = sCmd.find("to_string(");
-        if (sCmd.find("string(") != string::npos && (sCmd.find("string(") < nPos || nPos == string::npos))
-            nPos = sCmd.find("string(");
-        if (sCmd.find("substr(") != string::npos && (sCmd.find("substr(") < nPos || nPos == string::npos))
-            nPos = sCmd.find("substr(");
-        if (sCmd.find("strlen(") != string::npos && (sCmd.find("strlen(") < nPos || nPos == string::npos))
-            nPos = sCmd.find("strlen(");
-        if (sCmd.find("strfnd(") != string::npos && (sCmd.find("strfnd(") < nPos || nPos == string::npos))
-            nPos = sCmd.find("strfnd(");
-        if (sCmd.find("ascii(") != string::npos && (sCmd.find("ascii(") < nPos || nPos == string::npos))
-            nPos = sCmd.find("ascii(");
-        if (sCmd.find("to_char(") != string::npos && (sCmd.find("to_char(") < nPos || nPos == string::npos))
-            nPos = sCmd.find("to_char(");
-        if (sCmd.find("char(") != string::npos && (sCmd.find("char(") < nPos || nPos == string::npos))
-            nPos = sCmd.find("char(");
-
+        if (sCmd.front() != '=')
+        {
+            nPos = sCmd.find('"');
+            if (sCmd.find('#') != string::npos && (sCmd.find('#') < nPos || nPos == string::npos))
+                nPos = sCmd.find('#');
+            if (sCmd.find("to_string(") != string::npos && (sCmd.find("to_string(") < nPos || nPos == string::npos))
+                nPos = sCmd.find("to_string(");
+            if (sCmd.find("string(") != string::npos && (sCmd.find("string(") < nPos || nPos == string::npos))
+                nPos = sCmd.find("string(");
+            if (sCmd.find("substr(") != string::npos && (sCmd.find("substr(") < nPos || nPos == string::npos))
+                nPos = sCmd.find("substr(");
+            if (sCmd.find("strlen(") != string::npos && (sCmd.find("strlen(") < nPos || nPos == string::npos))
+                nPos = sCmd.find("strlen(");
+            if (sCmd.find("strfnd(") != string::npos && (sCmd.find("strfnd(") < nPos || nPos == string::npos))
+                nPos = sCmd.find("strfnd(");
+            if (sCmd.find("ascii(") != string::npos && (sCmd.find("ascii(") < nPos || nPos == string::npos))
+                nPos = sCmd.find("ascii(");
+            if (sCmd.find("to_char(") != string::npos && (sCmd.find("to_char(") < nPos || nPos == string::npos))
+                nPos = sCmd.find("to_char(");
+            if (sCmd.find("char(") != string::npos && (sCmd.find("char(") < nPos || nPos == string::npos))
+                nPos = sCmd.find("char(");
+        }
         //cerr << nPos << endl;
         for (unsigned int i = nPos; i < sCmd.length(); i++)
         {
@@ -258,7 +260,8 @@ bool getStringArgument(const string& sCmd, string& sArgument)
             //cerr << i << endl;
         }
         //cerr << nPos << "   " << nPos_2 << endl;
-
+        if (sCmd.front() == '=')
+            nPos++;
         sArgument = sCmd.substr(nPos, nPos_2-nPos+1);
         //cerr << sArgument << endl;
         return true;
@@ -475,6 +478,19 @@ string toUpperCase(const string& sLowerCase)
     string sUpperCase = sLowerCase;
     for (unsigned int i = 0; i < sUpperCase.length(); i++)
     {
+        if ((!i || sUpperCase[i-1] != '\\') && (sUpperCase.substr(i,2) == "\\n" || sUpperCase.substr(i,2) == "\\t"))
+        {
+            i++;
+            continue;
+        }
+        else if (sUpperCase.substr(i,2) == "\\n")
+        {
+            sUpperCase.replace(i,2,"N");
+        }
+        else if (sUpperCase.substr(i,2) == "\\t")
+        {
+            sUpperCase.replace(i,2,"T");
+        }
         // --> Laufe alle Zeichen im String ab und pruefe, ob ihr CHAR-Wert zwischen a und z liegt
         if ((int)sUpperCase[i] >= (int)'a' && (int)sLowerCase[i] <= (int)'z')
         {
@@ -1500,6 +1516,19 @@ bool isToStringArg(const string& sExpr, unsigned int nPos)
 }
 
 
+string wcstombs(const wstring& wStr)
+{
+    string sReturn;
+    char* cBuf = new char[wStr.length()*2+1];
+    unsigned int nRet = wcstombs(cBuf, wStr.c_str(), wStr.length()*2+1);
+    if (nRet == wStr.length()*2+1)
+        cBuf[wStr.length()*2] = '\0';
+    if (nRet)
+        sReturn = cBuf;
+    delete[] cBuf;
+    return sReturn;
+}
+
 bool isDelimiter(char cChar)
 {
     string sDelimiter = "+-*/ ^&|!%<>,=";
@@ -1683,9 +1712,10 @@ string LineBreak(string sOutput, const Settings& _option, bool bAllowDashBreaks,
 {
     unsigned int nLastLineBreak = 0;     // Variable zum Speichern der Position des letzten Zeilenumbruchs
     string sIndent = "\n|";     // String fuer den Einzug der 2. und der folgenden Zeilen
+    //cerr << sOutput << endl;
     sOutput = toSystemCodePage(sOutput);
     // --> Falls der string kuerzer als die Zeilenlaenge ist, braucht nichts getan zu werden <--
-    if (sOutput.length() < _option.getWindow() - nFirstIndent && sOutput.find('$') == string::npos && sOutput.find("\\n") == string::npos)
+    if (sOutput.length() < _option.getWindow() - nFirstIndent && sOutput.find('$') == string::npos && sOutput.find("\\n") == string::npos && sOutput.find('\n') == string::npos)
         return sOutput;
 
     // --> Ergaenze den Einzug um die noetige Zahl an Leerstellen <--
@@ -1706,6 +1736,10 @@ string LineBreak(string sOutput, const Settings& _option, bool bAllowDashBreaks,
         {
             if (i == 1 || sOutput[i-2] != '\\')
                 nLastLineBreak = i;
+        }
+        if (sOutput[i] == '\n')
+        {
+            nLastLineBreak = i;
         }
         // --> Ist die maximale Zeilenlaenge erreicht? Dann muss ein Zeilenumbruch eingefuegt werden <--
         if ((i == _option.getWindow() - nFirstIndent && !nLastLineBreak)
@@ -1783,7 +1817,15 @@ string LineBreak(string sOutput, const Settings& _option, bool bAllowDashBreaks,
         if (sOutput[i] == '$' && sOutput[i-1] != '\\')
         {
             // --> Ersetze '$' durch den oben erstellten Einzug <--
-            sOutput = sOutput.substr(0,i) + sIndent + sOutput.substr(i+1);
+            sOutput.replace(i,1,sIndent);
+            i += sIndent.length()-1;
+            continue;
+        }
+        else if (sOutput[i] == '\n' && (i > sOutput.length()-sIndent.length() || sOutput.substr(i, sIndent.length()) != sIndent))
+        {
+            sOutput.replace(i,1,sIndent);
+            i += sIndent.length();
+            continue;
         }
         else if (sOutput[i] == 'n' && sOutput[i-1] == '\\' && sOutput[i-2] != '\\')
             sOutput = sOutput.substr(0,i-1) + sIndent + sOutput.substr(i+1);
@@ -2058,6 +2100,49 @@ string getNextArgument(string& sArgList, bool bCut)
     return sArg;
 }
 
+string getLastArgument(string& sArgList, bool bCut)
+{
+    if (!sArgList.length())
+        return "";
+    int nParenthesis = 0;
+    int nVektorbrace = 0;
+    unsigned int nPos = string::npos;
+    for (int i = sArgList.length()-1; i >= 0; i--)
+    {
+        //cerr << nParenthesis << " ";
+        if (sArgList[i] == '(' && !isInQuotes(sArgList, i, true))
+            nParenthesis++;
+        if (sArgList[i] == ')' && !isInQuotes(sArgList, i, true))
+            nParenthesis--;
+        if (sArgList[i] == '{' && !isInQuotes(sArgList, i, true))
+        {
+            nVektorbrace++;
+        }
+        if (sArgList[i] == '}' && !isInQuotes(sArgList, i, true))
+        {
+            nVektorbrace--;
+        }
+        if (sArgList[i] == ',' && !nParenthesis && !nVektorbrace && !isInQuotes(sArgList, i, true))
+        {
+            nPos = i;
+            break;
+        }
+    }
+    if (nPos == string::npos)
+        nPos = 0;
+    string sArg = "";
+    if (!nPos && sArgList[0] != ',')
+        sArg = sArgList;
+    else
+        sArg = sArgList.substr(nPos+1);
+    StripSpaces(sArg);
+    if (bCut && 0 < nPos)
+        sArgList.erase(nPos);
+    else if (bCut)
+        sArgList.clear();
+    return sArg;
+}
+
 void make_hline(int nLength)
 {
     if (nLength == -1)
@@ -2088,6 +2173,8 @@ void make_hline(int nLength)
 void make_progressBar(int nStep, int nFirstStep, int nFinalStep, const string& sType)
 {
     static int nLastStatusVal = -1;
+    static unsigned int nLastLineLength = -1;
+    //cerr << nStep << endl << nFirstStep << endl << nFinalStep << endl << sType << endl;
     int nStatusVal = 0;
     if (abs(nFinalStep-nFirstStep) < 9999
         && abs((nStep-nFirstStep) / (double)(nFinalStep-nFirstStep) * 20)
@@ -2101,17 +2188,20 @@ void make_progressBar(int nStep, int nFirstStep, int nFinalStep, const string& s
     {
         nStatusVal = abs((int)((nStep-nFirstStep) / (double)(nFinalStep-nFirstStep) * 100));
     }
-    if (nLastStatusVal < 0)
-        nLastStatusVal = nStatusVal;
-    else if (nLastStatusVal != nStatusVal)
-        nLastStatusVal = nStatusVal;
-    else
+    if (nLastStatusVal >= 0 && nLastStatusVal == nStatusVal && (sType != "cancel" && sType != "bcancel"))
         return;
 
-    cerr << "\r                                                                                ";
+    if (nLastLineLength > 0)
+        cerr << "\r" << std::setw(nLastLineLength) << std::setfill(' ') << " ";
     if (sType == "std")
     {
         cerr << "\r|-> " << _lang.get("COMMON_EVALUATING") << " ... " << nStatusVal << " %";
+        nLastLineLength = 14+_lang.get("COMMON_EVALUATING").length();
+    }
+    else if (sType == "cancel")
+    {
+        cerr << "\r|-> " << _lang.get("COMMON_EVALUATING") << " ... " << _lang.get("COMMON_CANCEL");
+        nStep = nFinalStep;
     }
     else if (sType == "bar")
     {
@@ -2124,9 +2214,24 @@ void make_progressBar(int nStep, int nFirstStep, int nFinalStep, const string& s
                 cerr << (char)176;
         }
         cerr << (char)186 << " (" << nStatusVal << " %)";
+        nLastLineLength = 34;
+    }
+    else if (sType == "bcancel")
+    {
+        cerr << "\r|-> " << (char)186;
+        for (int i = 0; i < 20; i++)
+        {
+            if (i < nLastStatusVal/5.0)
+                cerr << (char)178;
+            else
+                cerr << (char)176;
+        }
+        cerr << (char)186 << " (--- %)";
+        nFinalStep = nStep;
     }
     else
     {
+        nLastLineLength = 1;
         cerr << "\r|";
         for (unsigned int i = 0; i < sType.length(); i++)
         {
@@ -2142,6 +2247,7 @@ void make_progressBar(int nStep, int nFirstStep, int nFinalStep, const string& s
                 }
                 cerr << (char)186;
                 i += 4;
+                nLastLineLength += 22;
                 continue;
             }
             if (sType.substr(i,5) == "<Bar>")
@@ -2156,6 +2262,7 @@ void make_progressBar(int nStep, int nFirstStep, int nFinalStep, const string& s
                 }
                 cerr << (char)186;
                 i += 4;
+                nLastLineLength += 22;
                 continue;
             }
             if (sType.substr(i,5) == "<BAR>")
@@ -2170,33 +2277,42 @@ void make_progressBar(int nStep, int nFirstStep, int nFinalStep, const string& s
                 }
                 cerr << (char)186;
                 i += 4;
+                nLastLineLength += 22;
                 continue;
             }
             if (sType.substr(i,5) == "<val>")
             {
                 cerr << nStatusVal;
                 i += 4;
+                nLastLineLength += 3;
                 continue;
             }
             if (sType.substr(i,5) == "<Val>")
             {
                 cerr << std::setw(3) << std::setfill(' ') << nStatusVal;
                 i += 4;
+                nLastLineLength += 3;
                 continue;
             }
             if (sType.substr(i,5) == "<VAL>")
             {
                 cerr << std::setw(3) << std::setfill('0') << nStatusVal;
                 i += 4;
+                nLastLineLength += 3;
                 continue;
             }
             cerr << sType[i];
+            nLastLineLength++;
         }
     }
+
+    if (nLastStatusVal < 0 || nLastStatusVal != nStatusVal)
+        nLastStatusVal = nStatusVal;
     if (nFinalStep == nStep)
     {
         cerr << endl;
         nLastStatusVal = -1;
+        nLastLineLength = -1;
     }
     return;
 }
@@ -2449,15 +2565,50 @@ vector<string> resolveChooseTokens(const string& sDirectory, const Settings& _op
                 {
                     // Platzhalter in Pfaden werden mit einer Rekursion geloest.
                     vector<string> vFolderList = getFolderList(vResolved[nth_choose*nSize].substr(0,vResolved[nth_choose*nSize].rfind('/')), _option, 1);
+                    /*cerr << vFolderList.size() << endl; 0  2
+                    cerr << nSize << endl; 1  1
+                    cerr << vResolved.size() << endl; 2  2*/
+                    for (unsigned int j = 0; j < vFolderList.size(); j++)
+                    {
+                        if (vFolderList[j].substr(vFolderList[j].length()-3) == "/.." || vFolderList[j].substr(vFolderList[j].length()-2) == "/.")
+                        {
+                            vFolderList.erase(vFolderList.begin()+j);
+                            j--;
+                        }
+                    }
+
+                    if (!vFolderList.size())
+                    {
+                        bResolvingPath = false;
+                        nth_choose++;
+                        if (sToken.find('|') != string::npos)
+                            sToken.erase(0,sToken.find('|')+1);
+                        else
+                        {
+                            sToken.clear();
+                            break;
+                        }
+                        continue;
+                    }
                     for (unsigned int j = 0; j < vFolderList.size(); j++)
                     {
                         if (vFolderList.size() > 1 && j < vFolderList.size()-1)
                         {
                             // ggf. Baum duplizieren
-                            for (unsigned int k = 0; k < nSize; k++)
+                            if (vResolved.size() > (nth_choose+1)*nSize)
                             {
-                                vResolved.push_back(vResolved[k+(nth_choose+1)*nSize]);
-                                vResolved[k+(nth_choose+1)*nSize] = vResolved[k+nth_choose*nSize];
+                                for (unsigned int k = 0; k < nSize; k++)
+                                {
+                                    vResolved.push_back(vResolved[k+(nth_choose+1)*nSize]);
+                                    vResolved[k+(nth_choose+1)*nSize] = vResolved[k+nth_choose*nSize];
+                                }
+                            }
+                            else
+                            {
+                                for (unsigned int k = 0; k < nSize; k++)
+                                {
+                                    vResolved.push_back(vResolved[(nth_choose)*nSize]);
+                                }
                             }
                         }
                         for (unsigned int k = nth_choose*nSize; k < (nth_choose+1)*nSize; k++)
@@ -2489,8 +2640,20 @@ vector<string> resolveChooseTokens(const string& sDirectory, const Settings& _op
         //cerr << vFolderList.size();
         nSize = vResolved.size();
         //cerr << nSize << endl;
+        for (unsigned int j = 0; j < vFolderList.size(); j++)
+        {
+            if (vFolderList[j].substr(vFolderList[j].length()-3) == "/.." || vFolderList[j].substr(vFolderList[j].length()-2) == "/.")
+            {
+                vFolderList.erase(vFolderList.begin()+j);
+                j--;
+            }
+        }
+        if (!vFolderList.size())
+            return vResolved;
         for (unsigned int i = 0; i < vFolderList.size()-1; i++)
         {
+            if (vFolderList[i].find('*') != string::npos || vFolderList[i].find('?') != string::npos || !vFolderList[i].size())
+                continue;
             // ggf. Baum duplizieren
             for (unsigned int k = 0; k < nSize; k++)
             {
@@ -2500,6 +2663,8 @@ vector<string> resolveChooseTokens(const string& sDirectory, const Settings& _op
         }
         for (unsigned int j = 0; j < vFolderList.size(); j++)
         {
+            if (vFolderList[j].find('*') != string::npos || vFolderList[j].find('?') != string::npos || !vFolderList[j].size())
+                continue;
             for (unsigned int k = j*nSize; k < (j+1)*nSize; k++)
             {
                 //cerr << vFolderList[j] << endl;
