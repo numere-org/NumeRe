@@ -1,29 +1,20 @@
-Added	"new" verwendet nun Templatedateien in "<>/lang/tmpl_TYPE.nlng"
-New	NumeRe kann nun uebersetzt werden, indem die Sprachdateien (<>/lang/*.nlng), die Datenbanken und Hilfedateien (<>/doc/*.ndb und <>/doc/*.nhlp) uebersetzt werden.
-Cleaned	Kleinerer Speed-Up bei Rechnungen mit Datensaetzen.
-New	"plot3d" kann mit der Option "crust" nun eine 2D-Oberfläche aus beliebig verteilten x-y-z-Punkten rekonstruieren.
-Added	Eine "every"-Option wurde zu den MAF-Tabellenfunktionen hinzugefuegt.
-Fixed	Ein sehr seltener Fehler im automatischen Zeilenumbruch, der ein Dollarzeichen einfuegte statt die Zeile umzubrechen, wurde behoben.
-Added	NumeRe kann nun Nutzer-Sprachdateien laden. NumeRe erzeugt hierzu die Ordnerstruktur "<>/user/lang" und "<>/user/docs". Die Inhalte der hierin gefunden Sprachdateien ueberschreiben die Inhalte der Standarddateien.
-Added	Die Option "target=CACHE()" wurde zu "datagrid" hinzugefuegt.
-Added	Die Option "tocache" wurde zu "load" hinzugefuegt.
-Removed	Die beiden validation arrays in "data()" und "cache()" wurden zugunsten der Verwendung von "isnan(VAL)" entfernt. Dies sollte den noetigen Speicherplatz um etwa ein achtel reduzieren. Kopiervorgaenge sollten damit auch beschleunigt werden.
-Fixed	"show" kann auch Daten in caches anzeigen, die mit "data()" aufhoeren.
-Fixed	Ein Segfault in der automatischen Speicherung wurde behoben.
-Fixed	Eine Endlosschleife, die beim Entfernen von "...cache()"-Caches aufgetreten ist, wurde behoben.
-New	Eine Pulsanalyse wurde ueber das Kommando "pulse" implementiert.
-New	Eine Einstellung zur (De-)Aktivierung einer benutzerdefinierten Sprache wurde hinzugefuegt.
-New	Eine Kurzzeit-Fourieranalyse wurde mittels des Kommandos "stfa DATASET()" implementiert.
-Fixed	Caches mit Namen "*data()" koennen nun auch bei "plot" und Konsorten verwendet werden.
-Fixed	Datagrids mit nicht gleich grossen Zeilen und Spalten (abzgl. der x- und y-Spalte) wurden nicht vollstaendig geplottet. Wurde behoben.
-Added	Die Funktion "findfile(STRING)" kann nun Dateien eines beliebigen Dateitypes finden.
-New	Die Funktion "getfolderlist(STRING)" listet aehnlich zu "getfilelist()" die Ordner in einem Verzeichnis, die auf das Schema zutreffen.
-Fixed	Die Ergebnisunterdrueckung von Ergebnissen aus Prozeduren, die Schleifen oder Verzweigungen enthalten, is wieder verfuegbar.
-Added	"read" kann nun mittels "comments=ESCAPESEQUENCE" Kommentare identifizieren und automatisch ignorieren.
-Cleaned	Schreibmodi bei "write" wurden umbenannt zu "app", "overwrite" und "trunc". Als Default ist nun nicht mehr "overwrite" sondern "trunc" aktiv.
-Added	"getfilelist()" und "getfolderlist()" koennen mit "ODER-Tokens" umgehen: "<PFAD|MIT|ODER>"
-Added	Wenn "getfilelist()" und "getfolderlist()" der Wert "true" als zusaetzliches Argument uebergeben wird, geben diese Funktionen die Dateipfade mit an.
-Cleaned	"read" kann nun auch in der Form "read FILE -comments=COMMENTSIGN" aufgerufen werden.
-Fixed	Ein seltener Segmentationfault im Debugger wurde behoben.
-Fixed	Die Dateierweiterungserkennung ist nicht mehr case sensitive.
-Fixed	Leerzeichenproblem in speziellen Plotoptionen behoben.
+Fixed	Die neuen "string()" Dimensionen sollten nun in Schleifen und Verzweigungen funktionieren.
+Fixed	"to_uppercase()" interferiert nicht mehr mit Kontrollzeichen: "\n" und "\t"
+Fixed	"clear string(DIM)" kann nun auch fuer eine beliebige DIM des "string()"-objekts ausgefuehrt werden. 
+Added	"getindices()" kann nun auch mit den neuen "string()" Dimensionen umgehen.
+New	"string()" hat eine neue Dimension: es koennen nun beliebig viele "string()"-Objekte in Form von Spalten angelegt werden.
+New	NumeRe kann *.xls-Dateien lesen.
+New	NumeRe kann in *.xls-Dateien exportieren.
+Fixed	"showf" zaehlt nun nicht mehr die Zeilen der Spaltenueberschriften mit.
+Cleaned	"getfilelist()" und "getfolderlist()" loesen in Verbindung mit Platzhaltern inmitten des Pfades die speziellen Ordner "/.." und "/." nicht mehr auf.
+Fixed	globale Zeichenkettenvariablen werden in Prozeduren von "str" wieder erkannt => zusaetzlich die Erkennung von Zeichenkettenvariablen verbessert.
+Fixed	Strings koennen nun wieder bei "progress" verwendet werden.
+Fixed	Zeilenumbrueche koennen nun auch in "throw" verwendet werden.
+Added	Fortschrittsanzeigen koennen nun mit "type=cancel" bzw. "type=bcancel" auch abgebrochen werden.
+New	NumeRe kann nun *.xlsx-Dateien lesen.
+Cleaned	"clear string()" funktioniert nun wie "clear cache()". Fuer die einzelnen Dimensionen wurde "delete string(DIM)" eingefuehrt.
+Fixed	Stack overflow beim Lesen groesserer Dateien mit "read" wurde behoben.
+Fixed	"*ticklabels" kann nun mit Umlauten umgehen.
+Added	NumeRe kann nun auch Dateien mit mehrzeiligen Spaltentiteln (weitestgehend) korrekt einlesen.
+Fixed	Kleineres Problem beim Plotten von Caches mit "*cache()" als Namen wurde behoben.
+Fixed	NumeRe konnte bestimmte Varianten des ODS-Dateiformates nicht korrekt lesen. Wurde behoben.

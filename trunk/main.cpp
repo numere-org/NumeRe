@@ -286,6 +286,7 @@ int main(int argc, char* argv[])
                     || toLowerCase(sTemp.substr(sTemp.length()-4)) == ".ibw"
                     || toLowerCase(sTemp.substr(sTemp.length()-4)) == ".txt"
                     || toLowerCase(sTemp.substr(sTemp.length()-4)) == ".jdx"
+                    || toLowerCase(sTemp.substr(sTemp.length()-4)) == ".xls"
                     || toLowerCase(sTemp.substr(sTemp.length()-4)) == ".jcm"))
             {
                 sTemp = "data -load=\""+sTemp+"\"";

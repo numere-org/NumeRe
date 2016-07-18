@@ -96,6 +96,54 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 return -1;
         }
     }
+    else if (sLine.find('{') != string::npos
+        && sLine.find("string(") != string::npos
+        && sLine.find('=') != string::npos
+        && sLine.find("string(") < sLine.find('{')
+        && sLine.find('=') > sLine.find("string(")
+        && sLine.find('=') < sLine.find('{')
+        && sLine[sLine.find('=')-1] != '<'
+        && sLine[sLine.find('=')-1] != '>'
+        && sLine[sLine.find('=')-1] != '!'
+        && sLine[sLine.find('=')+1] != '='
+        )
+    {
+        for (unsigned int i = 0; i < sLine.find('='); i++)
+        {
+            if (sLine[i] != ' ')
+            {
+                if (sLine.substr(i, 7) == "string(")
+                {
+                    i += getMatchingParenthesis(sLine.substr(i+6))+6;
+                    if (sLine.find_first_not_of(' ', i) == sLine.find('='))
+                    {
+                        string sLeftSide = sLine.substr(0,sLine.find('=')+1);
+                        sLine.erase(0,sLine.find('=')+1);
+                        sLine += " -kmq";
+                        if (!parser_StringParser(sLine, sDummy, _data, _parser, _option, true))
+                            return 0;
+                        if (containsStrings(sLine))
+                        {
+                            sLine = sLeftSide + "{" + sLine + "}";
+                            parser_VectorToExpr(sLine, _option);
+                        }
+                        else
+                        {
+                            sLine = sLeftSide + sLine;
+                            if (!containsStrings(sLine) && !_data.containsStringVars(sLine))
+                                return -1;
+                        }
+                    }
+                    break;
+                }
+                else
+                {
+                    parser_VectorToExpr(sLine, _option);
+                    break;
+                }
+            }
+        }
+    }
     else if (sLine.find("{") != string::npos)
     {
         parser_VectorToExpr(sLine, _option);
@@ -103,7 +151,27 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
 
     if (sLine.find(',') != string::npos)
     {
-        string sThisRecursion = getNextArgument(sLine, true);
+        StripSpaces(sLine);
+        if (sLine != getLastArgument(sLine, false))
+        {
+            string sRecursion = "";
+            string sParsed = "";
+            while (sLine.length())
+            {
+                sRecursion = getLastArgument(sLine, true);
+                if (sLine.length())
+                {
+                    sRecursion += " -kmq";
+                    if (!parser_StringParser(sRecursion, sDummy, _data, _parser, _option, true))
+                        return 0;
+                }
+                if (sParsed.length())
+                    sRecursion += ", ";
+                sParsed = sRecursion + sParsed;
+            }
+            sLine = sParsed;
+        }
+        /*string sThisRecursion = getNextArgument(sLine, true);
         //cerr << "thisrecursion: " << sThisRecursion << endl;
         if (getNextArgument(sLine, false).length())
         {
@@ -114,7 +182,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             //cerr << sLine << endl;
         }
         else
-            sLine = sThisRecursion;
+            sLine = sThisRecursion;*/
     }
     //cerr << sLine << endl;
 
@@ -1131,11 +1199,13 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 vector<double> vIndices;
                 if (_sObject.find(':', _sObject.find("string(")+7) != string::npos)
                 {
-                    string s[2];
+                    string s[3];
                     s[0] = _sObject.substr(_sObject.find("string(")+6);
                     parser_SplitArgs(s[0], s[1], ':', _option);
                     StripSpaces(s[0]);
                     StripSpaces(s[1]);
+                    if (s[1].find(',') != string::npos)
+                        parser_SplitArgs(s[1],s[2],',',_option, true);
                     if (!s[0].length())
                         vIndices.push_back(1.0);
                     else
@@ -1143,27 +1213,51 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                         _parser.SetExpr(s[0]);
                         vIndices.push_back(_parser.Eval());
                     }
+                    vIndices.push_back(-1.0);
+                    if (!s[2].length())
+                        vIndices.push_back(1.0);
+                    else
+                    {
+                        _parser.SetExpr(s[2]);
+                        vIndices.push_back(_parser.Eval());
+                    }
                     if (!s[1].length() && nType == -1)
-                        vIndices.push_back(-1.0);
+                        vIndices[1] = -1.0;
                     else if (!s[1].length() && nType > 0)
-                        vIndices.push_back(vIndices[vIndices.size()-1]+1);
+                        vIndices[1] = vIndices.front()+1;
                     else if (!s[1].length())
-                        vIndices.push_back(_data.getStringElements());
+                    {
+                        vIndices[1] = _data.getStringElements((unsigned int)vIndices.back()-1);
+                        if (!vIndices[1])
+                            vIndices[1] = vIndices[0];
+                    }
                     else
                     {
                         _parser.SetExpr(s[1]);
-                        vIndices.push_back(_parser.Eval());
+                        vIndices[1] = _parser.Eval();
                     }
                 }
                 else
                 {
-                    if (parser_ExprNotEmpty(_sObject.substr(_sObject.find("string(")+7, _sObject.find(')', _sObject.find("string("))-_sObject.find("string(")-7)))
+                    string s1 = _sObject.substr(_sObject.find("string(")+7, getMatchingParenthesis(_sObject.substr(_sObject.find("string(")+6))-1), sCol = "";
+                    if (s1.find(',') != string::npos)
+                        parser_SplitArgs(s1, sCol, ',', _option, true);
+
+                    vIndices.push_back(1.0);
+                    if (parser_ExprNotEmpty(sCol))
                     {
-                        _parser.SetExpr(_sObject.substr(_sObject.find("string(")+7, _sObject.find(')', _sObject.find("string("))-_sObject.find("string(")-7));
+                        _parser.SetExpr(sCol);
                         vIndices.push_back(_parser.Eval());
                     }
                     else
-                        vIndices.push_back(_data.getStringElements());
+                        vIndices.push_back(1.0);
+                    if (parser_ExprNotEmpty(s1))
+                    {
+                        _parser.SetExpr(s1);
+                        vIndices[0] = _parser.Eval();
+                    }
+                    else
+                        vIndices[0] = _data.getStringElements((unsigned int)vIndices.back()-1);
                 }
                 _parser.SetVectorVar("indices["+ replaceToVectorname(_sObject) +"]", vIndices);
                 sLine = sLine.substr(0,n_pos) + "indices["+ replaceToVectorname(_sObject) +"]" + sLine.substr(nPos+1);
@@ -2014,7 +2108,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             string si = "";
             string sj = "";
             string sCol = "";
-            int nIndex[3] = {0,-2,0};
+            int nIndex[3] = {-2,-2,0};
             si = sObject.substr(sObject.find("string(")+6);
             si = si.substr(1,getMatchingParenthesis(si)-1);
             StripSpaces(si);
@@ -2043,6 +2137,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     try
                     {
                         parser_SplitArgs(si,sCol, ',', _option, true);
+                        sj = si;
                     }
                     catch (...)
                     {
@@ -2068,11 +2163,15 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     _parser.SetExpr(sj);
                     nIndex[1] = (unsigned int)_parser.Eval()-1;
                 }
+                if (nIndex[0] < 0 && nIndex[1] < 0)
+                    nIndex[0] = _data.getStringElements(nIndex[2]);
+                else
+                    nIndex[0] = 0;
 
                 if (nIndex[1] >= 0)
                     parser_CheckIndices(nIndex[0], nIndex[1]);
 
-                //cerr << nIndex[0] << " " << nIndex[1] << endl;
+                //cerr << nIndex[0] << " " << nIndex[1] << " " << nIndex[2] << endl;
 
                 for (int n = 0; n < (int)nStrings; n++)
                 {

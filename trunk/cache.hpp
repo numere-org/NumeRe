@@ -264,12 +264,21 @@ class Cache : public FileSystem
             {
                 return sStrings.size();
             }
-        inline bool clearStringElements(unsigned int nCol = 0)
+        inline bool removeStringElements(unsigned int nCol = 0)
             {
                 if (nCol < sStrings.size())
                 {
                     if (sStrings[nCol].size())
                         sStrings[nCol].clear();
+                    return true;
+                }
+                return false;
+            }
+        inline bool clearStringElements()
+            {
+                if (sStrings.size())
+                {
+                    sStrings.clear();
                     return true;
                 }
                 return false;

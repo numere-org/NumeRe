@@ -24,6 +24,45 @@
  * -> Bieten die grundlegende Funktionalitaet dieses Frameworks
  */
 
+void BI_export_excel(Datafile& _data, Settings& _option, const string& sCache, const string& sFileName)
+{
+    using namespace YExcel;
+
+    BasicExcel _excel;
+    BasicExcelWorksheet* _sheet;
+    BasicExcelCell* _cell;
+
+    string sHeadLine;
+
+    _excel.New(1);
+    _excel.RenameWorksheet(0u, sCache.c_str());
+
+    _sheet = _excel.GetWorksheet(0u);
+
+    for (long long int j = 0; j < _data.getCols(sCache); j++)
+    {
+        _cell = _sheet->Cell(0u,j);
+        sHeadLine = _data.getHeadLineElement(j, sCache);
+        while (sHeadLine.find("\\n") != string::npos)
+            sHeadLine.replace(sHeadLine.find("\\n"), 2, 1, (char)10);
+        _cell->SetString(sHeadLine.c_str());
+    }
+    for (long long int i = 0; i < _data.getLines(sCache); i++)
+    {
+        for (long long int j = 0; j < _data.getCols(sCache); j++)
+        {
+            _cell = _sheet->Cell(1+i, j);
+            if (_data.isValidEntry(i,j,sCache))
+                _cell->SetDouble(_data.getElement(i,j,sCache));
+            else
+                _cell->EraseContents();
+        }
+    }
+    _excel.SaveAs(sFileName.c_str());
+    cerr << LineBreak("|-> "+_lang.get("OUTPUT_FORMAT_SUMMARY_FILE", toString((_data.getLines(sCache)+1)*_data.getCols(sCache)), sFileName), _option) << endl;
+    return;
+}
+
 /* 2. Man moechte u.U. auch Daten einlesen, auf denen man agieren moechte.
  * Dies erlaubt diese Funktion in Verbindung mit dem Datafile-Objekt
  */
@@ -163,9 +202,41 @@ void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string
 		if (!nCol || nLine == 1)
             throw NO_CACHED_DATA;
 
-		if(_option.getbDebug())
+		if (_option.getbDebug())
 			cerr << "|-> DEBUG: nLine = " << nLine << ", nCol = " << nCol << endl;
-
+		if (bSave && bData)
+		{
+            if (bDefaultName)
+            {
+                sFileName = _data.getDataFileName(sCache);
+                if (sFileName.find_last_of("/") != string::npos)
+                    sFileName = sFileName.substr(sFileName.find_last_of("/")+1);
+                if (sFileName.find_last_of("\\") != string::npos)
+                    sFileName = sFileName.substr(sFileName.find_last_of("\\")+1);
+                sFileName = _out.getPath() + "/copy_of_" + sFileName;
+                if (sFileName.substr(sFileName.length()-5,5) == ".labx")
+                    sFileName = sFileName.substr(0,sFileName.length()-5) + ".dat";
+                if (_option.getbDebug())
+                    cerr << "|-> DEBUG: sFileName = " << sFileName << endl;
+                _out.setFileName(sFileName);
+            }
+            _out.setStatus(true);
+		}
+		else if (bSave && bCache)
+		{
+            if (bDefaultName)
+            {
+                _out.setPrefix(sCache);
+                _out.generateFileName();
+            }
+            _out.setStatus(true);
+		}
+		if (bSave && _out.getFileName().substr(_out.getFileName().rfind('.')) == ".xls")
+		{
+            BI_export_excel(_data, _option, sCache, _out.getFileName());
+            _out.reset();
+            return;
+		}
 		string** sOut = new string*[nLine];		// die eigentliche Ausgabematrix. Wird spaeter gefuellt an Output::format(string**,int,int,Output&) uebergeben
 		for (long long int i = 0; i < nLine; i++)
 		{
@@ -219,33 +290,7 @@ void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string
 			}
 		}
 
-		if (bSave && bData)
-		{
-            if (bDefaultName)
-            {
-                sFileName = _data.getDataFileName(sCache);
-                if (sFileName.find_last_of("/") != string::npos)
-                    sFileName = sFileName.substr(sFileName.find_last_of("/")+1);
-                if (sFileName.find_last_of("\\") != string::npos)
-                    sFileName = sFileName.substr(sFileName.find_last_of("\\")+1);
-                sFileName = _out.getPath() + "/copy_of_" + sFileName;
-                if (sFileName.substr(sFileName.length()-5,5) == ".labx")
-                    sFileName = sFileName.substr(0,sFileName.length()-5) + ".dat";
-                if (_option.getbDebug())
-                    cerr << "|-> DEBUG: sFileName = " << sFileName << endl;
-                _out.setFileName(sFileName);
-            }
-            _out.setStatus(true);
-		}
-		else if (bSave && bCache)
-		{
-            if (bDefaultName)
-            {
-                _out.setPrefix(sCache);
-                _out.generateFileName();
-            }
-            _out.setStatus(true);
-		}
+
 		if (_data.getCacheStatus() && !bSave)
 		{
 			_out.setPrefix("cache");
@@ -486,12 +531,14 @@ void BI_show_credits(Parser& _parser, Settings& _option)
     make_hline(-80);
     cerr << LineBreak("|-> "+_lang.get("BUILTIN_CREDITS_MEMBERS"), _option) << endl;
     //cerr << LineBreak("|-> Konzept/UI: Erik HÄNEL; Mathe-Parser: Ingo BERG; Plotting: Alexey BALAKIN; numerische Algorithmen: GNU Scientific Library; Tokenizer: Boost-Library; Matrix-Algorithmen: Eigen Library; Testing: D. BAMMERT, J. HÄNEL, R. HUTT, K. KILGUS, E. KLOSTER, K. KURZ, M. LÖCHNER, L. SAHINOVIC, D. SCHMID, V. SEHRA, G. STADELMANN, R. WANNER, F. WUNDER, J. ZINßER", _option) << endl;
-	cerr << "|-> muParser  v  " << _parser.GetVersion(pviBRIEF) << ",   " << (char)184 << " 2011, Ingo Berg             [MIT-Licence]" << endl;
-	cerr << "|-> MathGL    v  2.3.4,   " << (char)184 << " 2012, Alexey A. Balakin     [GNU GPL v2]" << endl;
-	cerr << "|-> GSL       v    1.8,   " << (char)184 << " 2006, M. Galassi et al.     [GNU GPL v2]" << endl;
-	cerr << "|-> Boost     v 1.56.0,   " << (char)184 << " 2006, Joe Coder             [Boost-Software-Licence]" << endl;
-	cerr << "|-> Eigen     v  3.2.7,   " << (char)184 << " 2008, Gael Guennebaud       [MPL v2]" << endl;
-	cerr << "|                         " << (char)184 << " 2007-2011, Benoit Jacob" << endl;
+	cerr << "|-> muParser   v  " << _parser.GetVersion(pviBRIEF) << ",   " << (char)184 << " 2011, Ingo Berg            [MIT-Licence]" << endl;
+	cerr << "|-> MathGL     v  2.3.5,   " << (char)184 << " 2012, Alexey A. Balakin    [GNU GPL v2]" << endl;
+	cerr << "|-> GSL        v    1.8,   " << (char)184 << " 2006, M. Galassi et al.    [GNU GPL v2]" << endl;
+	cerr << "|-> Boost      v 1.56.0,   " << (char)184 << " 2006, Joe Coder            [Boost-Software-Licence]" << endl;
+	cerr << "|-> Eigen      v  3.2.7,   " << (char)184 << " 2008, Gael Guennebaud      [MPL v2]" << endl;
+	cerr << "|                          " << (char)184 << " 2007-2011, Benoit Jacob" << endl;
+	cerr << "|-> TinyXML-2  v  2.0.2,   " << (char)184 << " 2014, Lee Thomason         [zLib-Licence]" << endl;
+	cerr << "|-> BasicExcel v   1.14,   " << (char)184 << " 2006, Yap Chun Wei" << endl;
 	cerr << LineBreak("|-> "+_lang.get("BUILTIN_CREDITS_BUGS_REQUESTS")+":", _option) << endl;
 	//cerr << "|-> Bugs und Feature-Requests gerne an:" << endl;
 	cerr << "|   <numere.developer" << (char)64 << "gmail.com>" << endl;
@@ -4446,16 +4493,32 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             }
             else if (sCmd.find("string()") != string::npos || sCmd.find("string(:)") != string::npos)
             {
-                if (_data.clearStringElements())
+                if (_data.removeStringElements(0))
                 {
                     if (_option.getSystemPrintStatus())
-                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_SUCCESS"), _option) << endl;
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_SUCCESS", "1"), _option) << endl;
                         //cerr << LineBreak("|-> Zeichenketten wurden erfolgreich entfernt.", _option) << endl;
                 }
                 else
-                    cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_EMPTY"), _option) << endl;
+                    cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_EMPTY", "1"), _option) << endl;
                     //cerr << LineBreak("|-> Es wurden keine Zeichenketten gefunden.", _option) << endl;
                 return 1;
+            }
+            else if (sCmd.find(" string(", findCommand(sCmd).nPos) != string::npos)
+            {
+                _parser.SetExpr(sCmd.substr(sCmd.find(" string(", findCommand(sCmd).nPos)+8, getMatchingParenthesis(sCmd.substr(sCmd.find(" string(", findCommand(sCmd).nPos)+7))-1));
+                nArgument = (int)_parser.Eval()-1;
+                if (_data.removeStringElements(nArgument))
+                {
+                    if (_option.getSystemPrintStatus())
+                        cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_SUCCESS", toString(nArgument+1)), _option) << endl;
+                        //cerr << LineBreak("|-> Zeichenketten wurden erfolgreich entfernt.", _option) << endl;
+                }
+                else
+                    cerr << LineBreak("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_EMPTY", toString(nArgument+1)), _option) << endl;
+                    //cerr << LineBreak("|-> Es wurden keine Zeichenketten gefunden.", _option) << endl;
+                return 1;
+
             }
             else
                 doc_Help("cache", _option);
@@ -5226,6 +5289,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     sArgument = getArgAtPos(sArgument, matchParams(sArgument, "type", '=')+4);
                     //sCmd.erase(matchParams(sCmd, "type", '=')-1, sArgument.length()+5);
                 }
+                else
+                    sArgument = "std";
             }
             else
             {
@@ -5659,9 +5724,10 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
         if (containsStrings(sReturn.substr(nPos, sReturn.find(' ', nPos)-nPos)) || _data.containsStringVars(sReturn.substr(nPos, sReturn.find(' ', nPos)-nPos)))
         {
             //cerr << "contains" << endl;
+            //sTemp = getArgAtPos(sReturn, nPos);
             if (_data.containsStringVars(sReturn.substr(nPos, sReturn.find(' ', nPos)-nPos)))
                 _data.getStringValues(sReturn);
-            if (!getStringArgument(sReturn.substr(nPos), sTemp))
+            if (!getStringArgument(sReturn.substr(nPos-1), sTemp)) // mit "=" uebergeben => fixes getStringArgument issues
                 return "";
             //cerr << sTemp << endl;
             if (sTemp.find('<') != string::npos && sTemp.find('>', sTemp.find('<')) != string::npos)
@@ -5695,7 +5761,8 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
             sReturn.replace(nPos, nLength, sTemp);
             //cerr << sReturn << endl;
         }
-        else if ((nPos > 5 && sReturn.substr(nPos-5,5) == "save=") || (nPos > 7 && sReturn.substr(nPos-7,7) == "export="))
+        else if ((nPos > 5 && sReturn.substr(nPos-5,5) == "save=")
+            || (nPos > 7 && sReturn.substr(nPos-7,7) == "export="))
         {
             sTemp = sReturn.substr(nPos, sReturn.find(' ', nPos)-nPos);
             if (sTemp.find('<') != string::npos && sTemp.find('>', sTemp.find('<')) != string::npos)
@@ -5723,7 +5790,8 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
             sTemp = "\""+sTemp+"\"";
             sReturn.replace(nPos, nLength, sTemp);
         }
-        else if (nPos > 8 && sReturn.substr(nPos-8, 8) == "tocache=")
+        else if ((nPos > 8 && sReturn.substr(nPos-8, 8) == "tocache=")
+            || (nPos > 5 && sReturn.substr(nPos-5,5) == "type="))
         {
             nPos++;
         }
@@ -6585,6 +6653,10 @@ bool BI_ListDirectory(const string& sDir, const string& sParams, const Settings&
                     sConnect += _lang.get("COMMON_FILETYPE_PLUGINS");
                 else if (sExt == ".ods")
                     sConnect += _lang.get("COMMON_FILETYPE_ODS");
+                else if (sExt == ".xls")
+                    sConnect += _lang.get("COMMON_FILETYPE_XLS");
+                else if (sExt == ".xlsx")
+                    sConnect += _lang.get("COMMON_FILETYPE_XLSX");
                 else if (sExt == ".wave" || sExt == ".wav")
                     sConnect += _lang.get("COMMON_FILETYPE_WAV");
                 else
@@ -8359,6 +8431,7 @@ bool BI_readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _
         sCmd += sInput + ",";
     }
     sCmd.pop_back();
+    sCmd = sCmd;
     fFile.close();
 
     return true;

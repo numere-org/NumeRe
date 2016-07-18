@@ -123,7 +123,7 @@ inline string toString(bool bBoolean)
 inline string condenseText(const string& sText)
 {
     string sReturn = sText;
-    string sToErase = " AaEeIiOoUuÄäÖöÜüß";
+    string sToErase = " AaEeIiOoUuÄäÖöÜüßYy";
     for (unsigned int i = 0; i < sReturn.length(); i++)
     {
         if (sToErase.find(sReturn[i]) != string::npos
@@ -141,7 +141,7 @@ inline string condenseText(const string& sText)
     }
     return sReturn;
 }
-
+string wcstombs(const wstring& wStr);
 void StripSpaces(string&);
 void SetConsTitle(const Datafile&, const Settings&, string sScript = "");
 int matchParams(const string& sCmd, const string& sParam, const char cFollowing = ' ');
@@ -246,6 +246,7 @@ inline double intPower(double dNumber, int nExponent)
         return 1.0/dResult;
 }
 string getNextArgument(string& sArgList, bool bCut = true);
+string getLastArgument(string& sArgList, bool bCut = true);
 
 inline string replacePathSeparator(const string& __sPath)
 {

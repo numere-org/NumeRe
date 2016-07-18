@@ -45,6 +45,8 @@
 			<Add option="-lgsl" />
 			<Add option="-lgslcblas" />
 		</Linker>
+		<Unit filename="BasicExcel.cpp" />
+		<Unit filename="BasicExcel.hpp" />
 		<Unit filename="IgorLib/CrossPlatformFileIO.cpp" />
 		<Unit filename="IgorLib/CrossPlatformFileIO.h" />
 		<Unit filename="IgorLib/IgorBin.h" />
@@ -132,6 +134,8 @@
 		<Unit filename="settings.cpp" />
 		<Unit filename="settings.hpp" />
 		<Unit filename="stringparsing.cpp" />
+		<Unit filename="tinyxml2.cpp" />
+		<Unit filename="tinyxml2.h" />
 		<Unit filename="tools.cpp" />
 		<Unit filename="tools.hpp" />
 		<Unit filename="unzip.cpp" />

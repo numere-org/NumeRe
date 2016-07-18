@@ -2923,6 +2923,8 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
             {
                 sArgument = getArgAtPos(sArgument, matchParams(sArgument, "type", '=')+4);
             }
+            else
+                sArgument = "std";
         }
         else
         {

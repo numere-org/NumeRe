@@ -28,6 +28,8 @@
 #include "cache.hpp"
 #include "IgorLib/ReadWave.h"
 #include "zip++.hpp"
+#include "BasicExcel.hpp"
+#include "tinyxml2.h"
 
 
 #ifndef DATAFILE_HPP
@@ -89,15 +91,27 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     return;
                 }
             }
-        inline void replaceTabSign(string& _sToReplace)
+        inline void replaceTabSign(string& _sToReplace, bool bAddPlaceholders = false)
             {
                 if (_sToReplace.find('\t') == string::npos)
                     return;
                 else
                 {
-                    while (_sToReplace.find('\t') != string::npos)
+                    for (unsigned int i = 0; i < _sToReplace.length(); i++)
                     {
-                        _sToReplace.replace(_sToReplace.find('\t'), 1, " ");
+                        if (_sToReplace[i] == '\t')
+                        {
+                            _sToReplace[i] = ' ';
+                            if (bAddPlaceholders)
+                            {
+                                if (!i)
+                                    _sToReplace.insert(0,1,'_');
+                                else if (_sToReplace[i-1] == ' ')
+                                    _sToReplace.insert(i,1,'_');
+                                if (i+1 == _sToReplace.length())
+                                    _sToReplace += "_";
+                            }
+                        }
                     }
                     return;
                 }
@@ -123,9 +137,12 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
         void openJDX(Settings& _option);
         void openIBW(Settings& _option, bool bXZSlice = false, bool bYZSlice = false);
         void openODS(Settings& _option);
+        void openXLS(Settings& _option);
+        void openXLSX(Settings& _option);
         void countAppendedZeroes(long long int nCol = -1);
         void condenseDataSet();
         string expandODSLine(const string& sLine);
+        void evalExcelIndices(const string& sIndices, int& nLine, int& nCol);
         vector<double> parseJDXLine(const string& sLine);
         vector<string> getPastedDataFromCmdLine(const Settings& _option, bool& bKeepEmptyTokens);
 

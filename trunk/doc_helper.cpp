@@ -157,11 +157,11 @@ void Documentation::loadDocIndex(bool bLoadUserLangFiles)
 
     if (!bLoadUserLangFiles)
     {
-        if (!fileExists(sDocIndexFile))
+        /*if (!fileExists(sDocIndexFile))
         {
             cerr << endl << " ERROR: Documentation index was not found." << endl;
             return;
-        }
+        }*/
         if (!loadIndexFile(sDocIndexFile))
         {
             if (fileExists(FileSystem::ValidFileName("<>/update.hlpidx", ".hlpidx")))
@@ -195,7 +195,7 @@ void Documentation::updateDocIndex(string _sFilename)
     _sFilename = FileSystem::ValidFileName(_sFilename, ".hlpidx");
     if (!vDocIndexTable.size())
     {
-        cerr << endl << "ERROR: A documentation index was not loaded." << endl;
+        cerr << endl << " ERROR: A documentation index was not loaded." << endl;
         return;
     }
     string sLine = "";

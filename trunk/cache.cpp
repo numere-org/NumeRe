@@ -1216,7 +1216,7 @@ bool Cache::loadCache()
                 nLength = 0;
                 nLayerIndex = 0;
                 cache_file.read((char*)&nLength, sizeof(size_t));
-                cCachesMap = new char[cachemapssize];
+                cCachesMap = new char[nLength];
                 cache_file.read(cCachesMap, sizeof(char)*nLength);
                 cache_file.read((char*)&nLayerIndex, sizeof(long long int));
                 string sTemp;
@@ -1229,6 +1229,7 @@ bool Cache::loadCache()
                 cCachesMap = 0;
                 mCachesMap[sTemp] = nLayerIndex;
             }
+            //cerr << tTime << endl << nLines << endl << nCols << endl << nLayers << endl;
         }
         else
             nLayers = 1;
@@ -1280,6 +1281,7 @@ bool Cache::loadCache()
         cache_file.close();
         setSaveStatus(true);
         bValidData = true;
+        //throw;
     }
     else
     {
@@ -4475,7 +4477,7 @@ bool Cache::writeString(const string& _sString, unsigned int _nthString, unsigne
         for (unsigned int i = sStrings.size(); i <= nCol; i++)
             sStrings.push_back(vector<string>());
     }
-    if (_nthString == string::npos)
+    if (_nthString == string::npos || !sStrings[nCol].size());
     {
         if (_sString.length())
             sStrings[nCol].push_back(_sString);
@@ -4565,20 +4567,18 @@ string Cache::sumString(unsigned int i1, unsigned int i2, unsigned int nCol)
 
 
 
-bool Cache::containsStringVars(const string& sLine) const
+bool Cache::containsStringVars(const string& _sLine) const
 {
     if (!sStringVars.size())
         return false;
+    string sLine = " " + _sLine + " ";
     for (auto iter = sStringVars.begin(); iter != sStringVars.end(); ++iter)
     {
         if (sLine == iter->first)
             return true;
         if (sLine.find(iter->first) != string::npos
             && sLine[sLine.find(iter->first)+(iter->first).length()] != '('
-            && ((sLine.find(iter->first)
-                    && checkDelimiter(sLine.substr(sLine.find(iter->first)-1, (iter->first).length()+2)))
-                || (sLine.find(iter->first) == 0
-                    && checkDelimiter(" " + sLine.substr(0, (iter->first).length()+1))))
+            && checkDelimiter(sLine.substr(sLine.find(iter->first)-1, (iter->first).length()+2))
             )
             return true;
     }

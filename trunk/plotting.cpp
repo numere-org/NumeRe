@@ -1217,7 +1217,9 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                         _data.setCacheStatus(true);
                         for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
                         {
-                            if (sDataPlots.substr(nPos, nPos_1-nPos).find(iter->first+"(") != string::npos)
+                            if (sDataPlots.substr(nPos, nPos_1-nPos).find(iter->first+"(") != string::npos
+                                && (!sDataPlots.substr(nPos, nPos_1-nPos).find(iter->first+"(")
+                                    || checkDelimiter(sDataPlots.substr(nPos, nPos_1-nPos).substr(sDataPlots.substr(nPos, nPos_1-nPos).find(iter->first+"(")-1, (iter->first).length()+2))))
                             {
                                 sDataTable = iter->first;
                                 break;
@@ -5723,7 +5725,7 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                             //cerr << _pInfo.dRanges[i][0] + (double)n*(_pInfo.dRanges[i][1]-_pInfo.dRanges[i][0])/(double)(nCount-1) << endl;
                         }
                     }
-                    _graph.SetTicksVal('x'+i, _mAxisRange, _pData.getCustomTick(i).c_str());
+                    _graph.SetTicksVal('x'+i, _mAxisRange, fromSystemCodePage(_pData.getCustomTick(i)).c_str());
                 }
                 else
                 {
@@ -5742,7 +5744,7 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                             _mAxisRange.a[n] = _pInfo.dColorRanges[0] + (double)n*(_pInfo.dColorRanges[1]-_pInfo.dColorRanges[0])/(double)(nCount-1);
                         }
                     }
-                    _graph.SetTicksVal('c', _mAxisRange, _pData.getCustomTick(i).c_str());
+                    _graph.SetTicksVal('c', _mAxisRange, fromSystemCodePage(_pData.getCustomTick(i)).c_str());
                 }
             }
         }
