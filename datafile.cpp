@@ -1562,13 +1562,17 @@ void Datafile::openXLS(Settings& _option)
     string sEntry;
 
     if (!_excel.Load(sDataFile.c_str()))
-        return;
+    {
+        sErrorToken = sDataFile;
+        throw CANNOT_READ_FILE;
+    }//cerr << "Loaded" << endl;
 
     // get the total number
     nSheets = _excel.GetTotalWorkSheets();
     if (!nSheets)
         return;
 
+    //cerr << "sheets = " << nSheets << endl;
     // get the total size
     for (unsigned int n = 0; n < nSheets; n++)
     {
@@ -2236,7 +2240,10 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
                             int n = 0;
                             tokenizer<char_separator<char> > tok(sLine[i], sep);
                             for (tokenizer<char_separator<char> >::iterator iter = tok.begin(); iter != tok.end(); ++iter)
-                                n++;
+                            {
+                                if (string(*iter).find_first_not_of('_') != string::npos)
+                                    n++;
+                            }
                             if (n-1 == nCols)
                                 _nHeadline = 1;
                         }
@@ -2247,7 +2254,10 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
                         int n = 0;
                         tokenizer<char_separator<char> > tok(sLine[i], sep);
                         for (tokenizer<char_separator<char> >::iterator iter = tok.begin(); iter != tok.end(); ++iter)
-                            n++;
+                        {
+                            if (string(*iter).find_first_not_of('_') != string::npos)
+                                n++;
+                        }
                         if (n == nCols)
                             _nHeadline = 1;
                     }
@@ -2281,7 +2291,10 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
                                 int n = 0;
                                 tokenizer<char_separator<char> > tok(sLine[i-1], sep);
                                 for (tokenizer<char_separator<char> >::iterator iter = tok.begin(); iter != tok.end(); ++iter)
-                                    n++;
+                                {
+                                    if (string(*iter).find_first_not_of('_') != string::npos)
+                                        n++;
+                                }
                                 if (n-1 == nCols)
                                 {
                                     _nHeadline = i;
@@ -2308,7 +2321,10 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
                                 int n = 0;
                                 tokenizer<char_separator<char> > tok(sLine[i-2], sep);
                                 for (tokenizer<char_separator<char> >::iterator iter = tok.begin(); iter != tok.end(); ++iter)
-                                    n++;
+                                {
+                                    if (string(*iter).find_first_not_of('_') != string::npos)
+                                        n++;
+                                }
                                 if (n-1 == nCols)
                                     _nHeadline = i-1;
                             }
@@ -2335,7 +2351,10 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
                                 int n = 0;
                                 tokenizer<char_separator<char> > tok(sLine[i-1], sep);
                                 for (tokenizer<char_separator<char> >::iterator iter = tok.begin(); iter != tok.end(); ++iter)
-                                    n++;
+                                {
+                                    if (string(*iter).find_first_not_of('_') != string::npos)
+                                        n++;
+                                }
                                 if (n == nCols)
                                 {
                                     _nHeadline = i;
@@ -2362,7 +2381,10 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
                                 int n = 0;
                                 tokenizer<char_separator<char> > tok(sLine[i-2], sep);
                                 for (tokenizer<char_separator<char> >::iterator iter = tok.begin(); iter != tok.end(); ++iter)
-                                    n++;
+                                {
+                                    if (string(*iter).find_first_not_of('_') != string::npos)
+                                        n++;
+                                }
                                 if (n == nCols)
                                     _nHeadline = i-1;
                             }
@@ -2547,7 +2569,7 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 
                             if (sLine[k][0] != '#' && isNumeric(sLine[k]))
                                 break;
-                            if (sLine[k].substr(0,4) == "#===")
+                            if (sLine[k].substr(0,4) == "#===" || sLine[k].substr(0,5) == "# ===")
                                 break;
                             if (sLine[k].length() == sLine[i].length())
                             {
@@ -2578,12 +2600,15 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
                                 break;
                         }
                         bool bBreakSignal = false;
+                        vector<string> vHeadline;
+                        vHeadline.reserve((unsigned int)(2*nCols));
 
                         for (long long int k = i; k < nLine; k++)
                         {
+                            //cerr << sLine[k] << endl;
                             if (sLine[k][0] != '#' && isNumeric(sLine[k]))
                                 break;
-                            if (sLine[k].substr(0,4) == "#===")
+                            if (sLine[k].substr(0,4) == "#===" || sLine[k].substr(0,5) == "# ===")
                                 break;
 
                             tokenizer<char_separator<char> > tok(sLine[k], sep);
@@ -2593,7 +2618,7 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 
                             for (tokenizer<char_separator<char> >::iterator beg=tok.begin(); beg != tok.end(); ++beg)
                             {
-                                if (j == nCols)
+                                /*if (j == nCols)
                                 {
                                     cerr << LineBreak("|-> "+_lang.get("DATA_OPENFILE_REPLACING_HEADS"), _option) << endl;
                                     for (n = 0; n < nCols; n++)
@@ -2602,13 +2627,21 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
                                     }
                                     bBreakSignal = true;
                                     break;
-                                }
+                                }*/
 
                                 if (j == -1)	// Wir muessen den ersten Token ueberspringen: Er beinhaltet das '#'!
                                 {
                                     j++;
                                     continue;
                                 }
+                                if (k == i)
+                                    vHeadline.push_back("");
+                                if (k != i && (unsigned)j > vHeadline.size())
+                                {
+                                    bBreakSignal = true;
+                                    break;
+                                }
+
 
                                 string sHead = *beg;
                                 if (sHead.find_first_not_of('_') == string::npos)
@@ -2621,13 +2654,21 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
                                 while (sHead.back() == '_')
                                     sHead.pop_back();
 
-                                if (sHeadLine[j] == "Spalte_"+toString(j+1))
+                                if (!vHeadline[j].length())
+                                    vHeadline[j] = sHead;
+                                else
+                                {
+                                    vHeadline[j] += "\\n";
+                                    vHeadline[j] += sHead;
+                                }
+
+                                /*if (sHeadLine[j] == "Spalte_"+toString(j+1))
                                     sHeadLine[j] = sHead;
                                 else
                                 {
                                     sHeadLine[j] += "\\n";
                                     sHeadLine[j] += sHead;
-                                }
+                                }*/
                                 j++;
                             }
 
@@ -2641,6 +2682,34 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
                                 }
                             }*/
                         }
+                        for (auto iter = vHeadline.begin(); iter != vHeadline.end(); ++iter)
+                        {
+                            if (!(iter->length()))
+                            {
+                                iter = vHeadline.erase(iter);
+                                iter--;
+                            }
+                        }
+
+                        if (vHeadline.size() <= nCols)
+                        {
+                            for (n = 0; n < nCols; n++)
+                            {
+                                if (vHeadline.size() > n)
+                                    sHeadLine[n] = vHeadline[n];
+                                else
+                                    sHeadLine[n] = "Spalte_" + toString(n+1);
+                            }
+                        }
+                        else
+                        {
+                            cerr << LineBreak("|-> "+_lang.get("DATA_OPENFILE_REPLACING_HEADS"), _option) << endl;
+                            for (n = 0; n < nCols; n++)
+                            {
+                                sHeadLine[n] = "Spalte_" + toString(n+1);
+                            }
+                        }
+
                         break; //Jetzt haben wir sie ja gefunden. Raus aus der Schleife!
                     }
                 }
@@ -2932,6 +3001,7 @@ void Datafile::pasteLoad(const Settings& _option)
             if (!vPaste.size())
                 return;
             nLines = vPaste.size();
+            nSkip = 0;
             //cerr << nLines << endl;
             for (unsigned int i = 0; i < vPaste.size(); i++)
             {
