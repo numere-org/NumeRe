@@ -1320,11 +1320,11 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                 if (_procedure.getLoop() == 0 && !_procedure.is_writing() && !sPlotCompose.length())
                 {
                     // --> Nein? Uebliche Eingabe <--
-                    if (_option.getbDebug())
+                    /*if (_option.getbDebug())
                     {
                         cerr << "|-> DEBUG: _data.getLastSaved() = " << _data.getLastSaved() << endl;
                         cerr << "|-> DEBUG: time(0) = " << time(0) << endl;
-                    }
+                    }*/
 
                     /* --> Falls ungespeicherte Eintraege im Cache liegen und der schon seit dem gegebenen
                      *     Intervall nicht mehr gespeichert wurde, wird das hier erledigt <--

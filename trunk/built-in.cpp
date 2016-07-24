@@ -6277,7 +6277,15 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
     }
 
     make_hline();
-    cerr << LineBreak("|-> NUMERE: " + toUpperCase(_lang.get("BUILTIN_LISTFILES_EXPLORER")) + "               " + sPattern, _option, true, 0, 28+_lang.get("BUILTIN_LISTFILES_EXPLORER").length()) << endl;
+    sConnect = "|-> NUMERE: " + toUpperCase(_lang.get("BUILTIN_LISTFILES_EXPLORER"));
+    if (sConnect.length() > nFirstColLength+6)
+    {
+        sConnect += "    ";
+    }
+    else
+        sConnect.append(nFirstColLength+6-sConnect.length(), ' ');
+    cerr << LineBreak(sConnect + sPattern, _option, true, 0, sConnect.length()) << endl;
+    //cerr << LineBreak("|-> NUMERE: " + toUpperCase(_lang.get("BUILTIN_LISTFILES_EXPLORER")) + "               " + sPattern, _option, true, 0, 28+_lang.get("BUILTIN_LISTFILES_EXPLORER").length()) << endl;
     //cerr << LineBreak("|-> NUMERE: DATEIEXPLORER               " + sPattern, _option, true, 0, 41) << endl;
     make_hline();
 
