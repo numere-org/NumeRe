@@ -18,3 +18,7 @@ Fixed	"*ticklabels" kann nun mit Umlauten umgehen.
 Added	NumeRe kann nun auch Dateien mit mehrzeiligen Spaltentiteln (weitestgehend) korrekt einlesen.
 Fixed	Kleineres Problem beim Plotten von Caches mit "*cache()" als Namen wurde behoben.
 Fixed	NumeRe konnte bestimmte Varianten des ODS-Dateiformates nicht korrekt lesen. Wurde behoben.
+Cleaned	Die Position der Darstellung des Filters bei "list -files" richtet sich nun automatisch nach der Dateitypspalte direkt darunter.
+Fixed	In seltenen Faellen erkannte "data -paste" nicht Zahlen und Ueberschriften, wenn diese haendisch eingegeben wurden. Wurde behoben.
+Cleaned	NumeRe beachtet nun beim Plotten die Reihenfolge der Funktionen und Datensaetze.
+Cleaned	"plot3d" kann nun auch Datensaetze mit nur zwei Spalten darstellen.
