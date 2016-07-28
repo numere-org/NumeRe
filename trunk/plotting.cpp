@@ -7,6 +7,9 @@ extern bool bSupressAnswer;
 extern mglGraph _fontData;
 extern Plugin _plugin;
 
+bool parser_plot_2d(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglData& _mData, mglData& _mMaskData, mglData _mAxisVals[2], mglData& _mContVec, const Settings& _option, int nFunctions, int nStyle, string* sContStyles);
+bool parser_plot_std(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], string* sLineStyles, string* sPointStyles, string* sConPointStyles, int& nStyle, const int nStyleMax, const short nType);
+bool parser_plot_std3d(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglData _mData[3], mglData _mData2[3], string* sLineStyles, string* sPointStyles, string* sConPointStyles, int& nStyle, const int nStyleMax, const short nType);
 bool checkMultiPlotArray(unsigned int nMultiPlot[2], unsigned int& nSubPlotMap, unsigned int nPlotPos, unsigned int nCols, unsigned int nLines);
 
 // --> Fuellt das Plotdata-Objekt mit Werten entsprechend sCmd und startet den Plot-Algorithmus <--
@@ -58,6 +61,9 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
 
     bool bAnimateVar = false;
     vector<string> vDrawVector;
+    vector<short> vType;
+    const short TYPE_DATA = -1;
+    const short TYPE_FUNC = 1;
     int nStyle = 0;                         // Nummer des aktuellen Plotstyles (automatische Variation des Styles)
     const int nStyleMax = 14;               // Gesamtzahl der Styles
     int nFunctions = 0;                     // Zahl der zu plottenden Funktionen
@@ -282,6 +288,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
 
     for (unsigned int nPlotCompose = 0; nPlotCompose < vPlotCompose.size(); nPlotCompose++)
     {
+        vType.clear();
         sCmd = vPlotCompose[nPlotCompose];
         _pInfo.sPlotParams = "";
         if (nPlotCompose)
@@ -959,9 +966,22 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
             {
                 sToken = getNextArgument(sFuncTemp, true);
                 if (containsDataObject(sToken) || _data.containsCacheElements(sToken))
+                {
                     sDataPlots += ";" + sToken;
+                    vType.push_back(TYPE_DATA);
+                }
                 else
+                {
                     sFunc += ","+sToken;
+                    _functions.call(sToken, _option);
+                    StripSpaces(sToken);
+                    if (sToken.front() == '{')
+                        sToken.front() = ' ';
+                    if (sToken.back() == '}')
+                        sToken.back() = ' ';
+                    while (getNextArgument(sToken, true).length())
+                        vType.push_back(TYPE_FUNC);
+                }
             }
             sFunc.erase(0,1);
             /* --> In dem string sFunc sind nun nur noch "gewoehnliche" Funktionen, die der Parser auswerten kann,
@@ -1345,6 +1365,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                     // --> Grenzen-Strings moeglichst sinnvoll auswerten <--
                     for (int k = 0; k <= j; k++)
                     {
+
                         // --> "inf" bedeutet "infinity". Ergo: die letztmoegliche Spalte <--
                         if (sj_pos[k] == "inf")
                         {
@@ -1378,6 +1399,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                                 _parser.SetExpr(sj_pos[k]);
                                 j_pos[k] = (int)_parser.Eval() - 1;
                             }
+                            //cerr << j_pos[k] << endl;
                         }
                         else if (!k)
                         {
@@ -1396,14 +1418,14 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
 
                     if (i_pos[1] > _data.getLines(sDataTable, false))
                         i_pos[1] = _data.getLines(sDataTable, false);
-                    if (j_pos[1] > _data.getCols(sDataTable)-1)
+                    if (j_pos[1] > _data.getCols(sDataTable)-1 && _pInfo.sCommand != "plot3d")
                         j_pos[1] = _data.getCols(sDataTable)-1;
                     if (!vLine.size() && !vCol.size() && (j_pos[0] < 0
                         || j_pos[1] < 0
                         || i_pos[0] > _data.getLines(sDataTable, false)
                         || i_pos[1] > _data.getLines(sDataTable, false)
-                        || j_pos[0] > _data.getCols(sDataTable)-1
-                        || j_pos[1] > _data.getCols(sDataTable)-1))
+                        || (j_pos[0] > _data.getCols(sDataTable)-1 && _pInfo.sCommand != "plot3d")
+                        || (j_pos[1] > _data.getCols(sDataTable)-1 && _pInfo.sCommand != "plot3d")))
                     {
                         delete[] _mDataPlots;
                         delete[] nDataDim;
@@ -1653,7 +1675,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                                 else if (_pData.getyError())
                                     _mDataPlots[i][2].a[l] = 0.0;
                             }
-                            else if (_data.getCols(sDataTable) <= j_pos[0])
+                            else if (_data.getCols(sDataTable) <= j_pos[0] && _pInfo.sCommand != "plot3d")
                             {
                                 // --> Dumme Spalten-Fehler abfangen! <--
                                 for (int i = 0; i < nDataPlots; i++)
@@ -1789,6 +1811,9 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                                                 else
                                                     _mDataPlots[i][q].a[l] = _data.getElement(l+i_pos[0], q + j_pos[0], sDataTable);
                                             }
+                                            else if (q == 2 && _pInfo.sCommand == "plot3d"
+                                                && !(_data.getLines(sDataTable, true)-_data.getAppendedZeroes(q+j_pos[0],sDataTable)-i_pos[0]))
+                                                _mDataPlots[i][q].a[l] = 0.0;
                                             else if (l)
                                                 _mDataPlots[i][q].a[l] = NAN;
                                             else
@@ -1834,6 +1859,9 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                                                 else
                                                     _mDataPlots[i][q].a[l] = _data.getElement(l+i_pos[0], j_pos[0]-q, sDataTable);
                                             }
+                                            else if (q == 2 && _pInfo.sCommand == "plot3d"
+                                                && !(_data.getLines(sDataTable, true)-_data.getAppendedZeroes(j_pos[0]-q, sDataTable)-i_pos[0]))
+                                                _mDataPlots[i][q].a[l] = 0.0;
                                             else if (l)
                                                 _mDataPlots[i][q].a[l] = NAN;
                                             else
@@ -1845,8 +1873,10 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                             else
                             {
                                 // --> Beliebige Spalten <--
+                                //cerr << "arbitrary" << endl;
                                 for (int k = 0; k < nDataDim[i]; k++)
                                 {
+                                    //cerr << j_pos[k] << " " << k << endl;
                                     if (_pInfo.b2D && k == 2)
                                     {
                                         for (int m = 0; m < i_pos[1]-i_pos[0]; m++)
@@ -1877,6 +1907,12 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                                                 _mDataPlots[i][k].a[l] = NAN;
                                             else
                                                 _mDataPlots[i][k].a[l] = _data.getElement(l+i_pos[0], j_pos[k], sDataTable);
+                                        }
+                                        else if (_pInfo.sCommand == "plot3d" && k < 3
+                                            && !(_data.getLines(sDataTable, true)-_data.getAppendedZeroes(j_pos[k], sDataTable)-i_pos[0]))
+                                        {
+                                            _mDataPlots[i][k].a[l] = 0.0;
+                                            //cerr << 0.0 << endl;
                                         }
                                         else if (l)
                                             _mDataPlots[i][k].a[l] = NAN;
@@ -2065,6 +2101,11 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
         }
         else
             sFunc = "<<empty>>";
+
+        if (nFunctions && !vType.size())
+        {
+            vType.assign((unsigned int)nFunctions, TYPE_FUNC);
+        }
 
         /* --> Die DatenPlots ueberschreiben ggf. die Ranges, allerdings haben vom Benutzer gegebene
          *     Ranges stets die hoechste Prioritaet (was eigentlich auch logisch ist) <--
@@ -3372,7 +3413,157 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
             // --> Nun kopieren wir die aufbereiteten Datenpunkte in ein mglData-Objekt und plotten die Daten aus diesem Objekt <--
             if (_pInfo.b2D)        // 2D-Plot
             {
-                if (sFunc != "<<empty>>")
+                if (_option.getbDebug())
+                    cerr << "|-> DEBUG: 2D-Data-Copy" << endl;
+                mglData _mData(_pInfo.nSamples, _pInfo.nSamples);
+                mglData _mMaskData;
+                mglData _mPlotAxes[2];
+                if (_pData.getColorMask() || _pData.getAlphaMask())
+                    _mMaskData.Create(_pInfo.nSamples, _pInfo.nSamples);
+
+                mglData _mContVec(35);
+                for (int nCont = 0; nCont < 35; nCont++)
+                {
+                    _mContVec.a[nCont] = nCont*(_pInfo.dRanges[2][1]-_pInfo.dRanges[2][0])/34.0+_pInfo.dRanges[2][0];
+                }
+                _mContVec.a[17] = (_pInfo.dRanges[2][1]-_pInfo.dRanges[2][0])/2.0 + _pInfo.dRanges[2][0];
+
+                int nPos[2] = {0,0};
+                int nTypeCounter[2] = {0,0};
+
+                for (unsigned int nType = 0; nType < vType.size(); nType++)
+                {
+                    if (vType[nType] == TYPE_FUNC)
+                    {
+                        StripSpaces(sLabels);
+                        _mData.Create(_pInfo.nSamples, _pInfo.nSamples);
+                        for (long int i = 0; i < _pInfo.nSamples; i++)
+                        {
+                            for (long int j = 0; j < _pInfo.nSamples; j++)
+                            {
+                                // --> Das Array im mglData-Objekt ist nur 1D vorhanden <--
+                                _mData.a[i+_pInfo.nSamples*j] = _pData.getData(i,j,nTypeCounter[0]);
+                                if ((_pData.getColorMask() || _pData.getAlphaMask()) && (vType.size() <= nType+1 || (vType.size() > nType+1 && vType[nType+1] == TYPE_FUNC)))
+                                    _mMaskData.a[i+_pInfo.nSamples*j] = _pData.getData(i,j,nTypeCounter[0]+1);
+                            }
+                        }
+                        _mPlotAxes[0] = _mAxisVals[0];
+                        _mPlotAxes[1] = _mAxisVals[1];
+                        if ((_pData.getColorMask() || _pData.getAlphaMask()) && vType.size() > nType+1 && vType[nType+1] == TYPE_DATA)
+                        {
+                            _mMaskData = _mDataPlots[nTypeCounter[1]][2];
+                            nTypeCounter[1]++;
+                        }
+                        else if ((_pData.getColorMask() || _pData.getAlphaMask()) && (vType.size() > nType+1 && vType[nType+1] == TYPE_FUNC))
+                            nTypeCounter[0]++;
+                    }
+                    else
+                    {
+                        StripSpaces(sDataLabels);
+                        if (_pData.getCoords())
+                            _mDataPlots[nTypeCounter[1]][0] = parser_fmod(_mDataPlots[nTypeCounter[1]][0], 2.0*M_PI);
+                        if (_pData.getCoords() == 2)
+                            _mDataPlots[nTypeCounter[1]][1] = parser_fmod(_mDataPlots[nTypeCounter[1]][1], 1.0*M_PI);
+
+                        _mData = _mDataPlots[nTypeCounter[1]][2];
+                        _mPlotAxes[0] = _mDataPlots[nTypeCounter[1]][0];
+                        _mPlotAxes[1] = _mDataPlots[nTypeCounter[1]][1];
+                        if ((_pData.getColorMask() || _pData.getAlphaMask()) && vType.size() > nType+1 && vType[nType+1] == TYPE_DATA)
+                        {
+                            _mMaskData = _mDataPlots[nTypeCounter[1]+1][2];
+                            nTypeCounter[1]++;
+                        }
+                        else if ((_pData.getColorMask() || _pData.getAlphaMask()) && (vType.size() <= nType+1 || (vType.size() > nType+1 && vType[nType+1] == TYPE_FUNC)))
+                        {
+                            for (long int i = 0; i < _pInfo.nSamples; i++)
+                            {
+                                for (long int j = 0; j < _pInfo.nSamples; j++)
+                                {
+                                    // --> Das Array im mglData-Objekt ist nur 1D vorhanden <--
+                                    _mData.a[i+_pInfo.nSamples*j] = _pData.getData(i,j,nTypeCounter[0]);
+                                    if ((_pData.getColorMask() || _pData.getAlphaMask()) && (vType.size() <= nType+1 || (vType.size() > nType+1 && vType[nType+1] == TYPE_FUNC)))
+                                        _mMaskData.a[i+_pInfo.nSamples*j] = _pData.getData(i,j,nTypeCounter[0]+1);
+                                }
+                            }
+                            nTypeCounter[0]++;
+                        }
+                    }
+                    if (!parser_plot_2d(_graph, _pData, _pInfo, _mData, _mMaskData, _mPlotAxes, _mContVec, _option, nFunctions, nStyle, sContStyles))
+                    {
+                        // --> Den gibt's nicht: Speicher freigeben und zurueck! <--
+                        if (_mDataPlots)
+                        {
+                            for (int i = 0; i < nDataPlots; i++)
+                                delete[] _mDataPlots[i];
+                            delete[] _mDataPlots;
+                            _mDataPlots = 0;
+                            delete[] nDataDim;
+                            nDataDim = 0;
+                        }
+                        return;
+                    }
+                    if (vType[nType] == TYPE_FUNC)
+                    {
+                        if ((nFunctions > 1 && !(_pData.getColorMask() || _pData.getAlphaMask()))
+                            || (nFunctions > 2 && (_pData.getColorMask() || _pData.getAlphaMask()))
+                            || (nFunctions && nDataPlots))
+                        {
+                            if (_pData.getContLabels() && _pInfo.sCommand.substr(0,4) != "cont")
+                            {
+                                _graph.Cont(_mAxisVals[0], _mAxisVals[1], _mData, ("t"+sContStyles[nStyle]).c_str());
+                            }
+                            else if (!_pData.getContLabels() && _pInfo.sCommand.substr(0,4) != "cont")
+                                _graph.Cont(_mAxisVals[0], _mAxisVals[1], _mData, sContStyles[nStyle].c_str());
+                            nPos[0] = sLabels.find(';');
+                            sConvLegends = sLabels.substr(0,nPos[0]);
+                            // --> Der String-Parser wertet Ausdruecke wie "Var " + #var aus <--
+                            parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
+                            sLabels = sLabels.substr(nPos[0]+1);
+                            if (sConvLegends != "\"\"")
+                            {
+                                _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), sContStyles[nStyle].c_str());
+                                nLegends++;
+                            }
+                            if (nStyle == nStyleMax-1)
+                                nStyle = 0;
+                            else
+                                nStyle++;
+                        }
+                        nTypeCounter[0]++;
+                    }
+                    else
+                    {
+                        if ((nDataPlots > 1 && !(_pData.getColorMask() || _pData.getAlphaMask()))
+                            || (nDataPlots > 2 && (_pData.getColorMask() || _pData.getAlphaMask()))
+                            || (nFunctions && nDataPlots))
+                        {
+                            if (_pData.getContLabels() && _pInfo.sCommand.substr(0,4) != "cont")
+                            {
+                                _graph.Cont(_mDataPlots[nTypeCounter[1]][2], ("t"+sContStyles[nStyle]).c_str());
+                            }
+                            else if (!_pData.getContLabels() && _pInfo.sCommand.substr(0,4) != "cont")
+                                _graph.Cont(_mDataPlots[nTypeCounter[1]][2], sContStyles[nStyle].c_str());
+                            nPos[1] = sDataLabels.find(';');
+                            sConvLegends = sDataLabels.substr(0,nPos[1]);
+                            // --> Der String-Parser wertet Ausdruecke wie "Var " + #var aus <--
+                            parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
+                            sDataLabels = sDataLabels.substr(nPos[1]+1);
+                            if (sConvLegends != "\"\"")
+                            {
+                                _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), sContStyles[nStyle].c_str());
+                                nLegends++;
+                            }
+                            if (nStyle == nStyleMax-1)
+                                nStyle = 0;
+                            else
+                                nStyle++;
+                        }
+                        nTypeCounter[1]++;
+                    }
+                    if ((_pData.getColorMask() || _pData.getAlphaMask()) && vType.size() > nType+1)
+                        nType++;
+                }
+                /*if (sFunc != "<<empty>>")
                 {
                     if (_option.getbDebug())
                         cerr << "|-> DEBUG: 2D-Data-Copy" << endl;
@@ -3525,9 +3716,6 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                                 _graph.ContF(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
                         }
 
-                        /* --> 2D-Fall und mehr als eine Funktion impliziert, dass wir ein Unterscheidungsmerkmal
-                         *     benoetigen: wir ergaenzen Konturlinien und eine Legende <--
-                         */
                         if ((nFunctions > 1 && !(_pData.getColorMask() || _pData.getAlphaMask()))
                             || (nFunctions > 2 && (_pData.getColorMask() || _pData.getAlphaMask()))
                             || (nFunctions && nDataPlots))
@@ -3724,7 +3912,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
 
                     }
 
-                }
+                }*/
                 // --> Position der Legende etwas aendern <--
                 if (nFunctions > 1 && nLegends && !_pData.getSchematic() && nPlotCompose+1 == vPlotCompose.size())
                 {
@@ -3733,7 +3921,200 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
             }
             else if (_pInfo.sCommand != "plot3d" && !_pInfo.b3D && !_pInfo.b3DVect && !_pInfo.b2DVect && !_pInfo.bDraw3D && !_pInfo.bDraw)      // Standardplot
             {
-                if (sFunc != "<<empty>>")
+                mglData _mData(_pInfo.nSamples);
+                mglData _mPlotAxes;
+                mglData _mData2[2];
+
+
+                int nPos[2] = {0,0};
+                int nTypeCounter[2] = {0,0};
+
+                for (unsigned int nType = 0; nType < vType.size(); nType++)
+                {
+                    for (int i = 0; i < 2; i++)
+                        _mData2[i].Create(_pInfo.nSamples);
+                    _mData.Create(_pInfo.nSamples);
+                    if (vType[nType] == TYPE_FUNC)
+                    {
+                        StripSpaces(sLabels);
+                        for (long int i = 0; i < _pInfo.nSamples; i++)
+                        {
+                            _mData.a[i] = _pData.getData(i,nTypeCounter[0]);
+                        }
+                        _mPlotAxes = _mAxisVals[0];
+                        if (_pData.getRegion() && vType.size() > nType+1 && vType[nType+1] == TYPE_DATA)
+                        {
+                            _mData2[0] = _mDataPlots[nTypeCounter[1]][1];
+                            nTypeCounter[1]++;
+                        }
+                        else if (_pData.getRegion() && vType.size() > nType+1 && vType[nType+1] == TYPE_FUNC)
+                        {
+                            for (long int i = 0; i < _pInfo.nSamples; i++)
+                                _mData2[0].a[i] = _pData.getData(i,nTypeCounter[0]+1);
+                            nTypeCounter[0]++;
+                        }
+                        else
+                        {
+                            for (long int i = 0; i < _pInfo.nSamples; i++)
+                                _mData2[0].a[i] = 0.0;
+                        }
+                    }
+                    else
+                    {
+                        StripSpaces(sDataLabels);
+                        if (_pData.getCoords())
+                            _mDataPlots[nTypeCounter[1]][0] = parser_fmod(_mDataPlots[nTypeCounter[1]][0], 2.0*M_PI);
+
+                        _mData = _mDataPlots[nTypeCounter[1]][1];
+                        _mPlotAxes = _mDataPlots[nTypeCounter[1]][0];
+
+                        if (_pData.getBoxplot()) ///
+                        {
+                            _mData2[0].Create(2);
+                            _mData2[0].a[0] = nTypeCounter[1]+0.5;
+                            _mData2[0].a[1] = nTypeCounter[1]+1.5;
+                            _mData = _mDataPlots[nTypeCounter[1]][1];
+                            _mData.Transpose();
+                        }
+                        else
+                        {
+                            if (_pData.getRegion() && vType.size() > nType+1 && vType[nType+1] == TYPE_DATA)
+                            {
+                                _mData2[0] = _mDataPlots[nTypeCounter[1]+1][1];
+                                nTypeCounter[1]++;
+                            }
+                            else if (_pData.getRegion() && vType.size() > nType+1 && vType[nType+1] == TYPE_FUNC)
+                            {
+                                for (long int i = 0; i < _pInfo.nSamples; i++)
+                                    _mData2[0].a[i] = _pData.getData(i,nTypeCounter[0]);
+                                nTypeCounter[0]++;
+                            }
+                            else
+                            {
+                                for (long int i = 0; i < _pInfo.nSamples; i++)
+                                    _mData2[0].a[i] = 0.0;
+                            }
+                            if (_pData.getxError() && _pData.getyError() && nDataDim[nTypeCounter[1]] >= 4)
+                            {
+                                _mData2[0] = _mDataPlots[nTypeCounter[1]][2];
+                                _mData2[1] = _mDataPlots[nTypeCounter[1]][3];
+                            }
+                            else if ((_pData.getyError() || _pData.getxError()) && nDataDim[nTypeCounter[1]] >= 3)
+                            {
+                                if (_pData.getyError() && !_pData.getxError())
+                                {
+                                    _mData2[1] = _mDataPlots[nTypeCounter[1]][2];
+                                    for (long int i = 0; i < _pInfo.nSamples; i++)
+                                        _mData2[0].a[i] = 0.0;
+                                }
+                                else if (_pData.getyError() && _pData.getxError())
+                                {
+                                    _mData2[0] = _mDataPlots[nTypeCounter[1]][2];
+                                    _mData2[1] = _mDataPlots[nTypeCounter[1]][2];
+                                }
+                                else
+                                {
+                                    _mData2[0] = _mDataPlots[nTypeCounter[1]][2];
+                                    for (long int i = 0; i < _pInfo.nSamples; i++)
+                                        _mData2[1].a[i] = 0.0;
+                                }
+                            }
+                        }
+                    }
+                    if (!parser_plot_std(_graph, _pData, _pInfo, _mData, _mPlotAxes, _mData2, sLineStyles, sPointStyles, sConPointStyles, nStyle, nStyleMax, vType[nType]))
+                    {
+                        // --> Den gibt's nicht: Speicher freigeben und zurueck! <--
+                        if (_mDataPlots)
+                        {
+                            for (int i = 0; i < nDataPlots; i++)
+                                delete[] _mDataPlots[i];
+                            delete[] _mDataPlots;
+                            _mDataPlots = 0;
+                            delete[] nDataDim;
+                            nDataDim = 0;
+                        }
+                        return;
+                    }
+                    if (vType[nType] == TYPE_FUNC)
+                    {
+                        if (_pData.getRegion() && vType.size() > nType+1)
+                        {
+                            for (int k = 0; k < 2; k++)
+                            {
+                                nPos[0] = sLabels.find(';');
+                                sConvLegends = sLabels.substr(0,nPos[0]) + " -nq";
+                                parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
+                                sConvLegends = "\"" + sConvLegends + "\"";
+                                sLabels = sLabels.substr(nPos[0]+1);
+                                if (sConvLegends != "\"\"")
+                                {
+                                    _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), sLineStyles[nStyle].c_str());
+                                    nLegends++;
+                                }
+
+                                if (nStyle == nStyleMax-1)
+                                    nStyle = 0;
+                                else
+                                    nStyle++;
+                            }
+                        }
+                        else
+                        {
+                            nPos[0] = sLabels.find(';');
+                            sConvLegends = sLabels.substr(0,nPos[0]) + " -nq";
+                            parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
+                            sConvLegends = "\"" + sConvLegends + "\"";
+                            sLabels = sLabels.substr(nPos[0]+1);
+                            if (sConvLegends != "\"\"")
+                            {
+                                _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sLineStyles[nStyle], _pData).c_str());
+                                nLegends++;
+                            }
+                            if (nStyle == nStyleMax-1)
+                                nStyle = 0;
+                            else
+                                nStyle++;
+                        }
+                        nTypeCounter[0]++;
+                    }
+                    else
+                    {
+                        nPos[1] = sDataLabels.find(';');
+                        sConvLegends = sDataLabels.substr(0,nPos[1]);
+                        parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
+                        sDataLabels = sDataLabels.substr(nPos[1]+1);
+                        if (sConvLegends != "\"\"")
+                        {
+                            nLegends++;
+                            if (_pData.getBoxplot())
+                            {
+                                _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sLineStyles[nStyle], _pData).c_str());
+                            }
+                            else if (!_pData.getxError() && !_pData.getyError())
+                            {
+                                if ((_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].GetNx() >= _pInfo.nSamples) || _pData.getBars())
+                                    _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sLineStyles[nStyle], _pData).c_str());
+                                else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].GetNx() >= 0.9 * _pInfo.nSamples))
+                                    _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sConPointStyles[nStyle], _pData).c_str());
+                                else
+                                    _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sPointStyles[nStyle], _pData).c_str());
+                            }
+                            else
+                                _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sPointStyles[nStyle], _pData).c_str());
+                        }
+                        if (nStyle == nStyleMax-1)
+                            nStyle = 0;
+                        else
+                            nStyle++;
+
+                        nTypeCounter[1]++;
+                    }
+                    if (_pData.getRegion() && vType.size() > nType+1)
+                        nType++;
+                }
+
+
+                /*if (sFunc != "<<empty>>")
                 {
                     mglData _mData(_pInfo.nSamples);
                     int nPos = 0;
@@ -3773,10 +4154,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                                     _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), sLineStyles[nStyle].c_str());
                                     nLegends++;
                                 }
-                                /*if (_pData.getDrawPoints())
-                                    _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), sConnectedDataPlotStyles[nStyle].c_str());
-                                else
-                                    _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), sColorStyles[nStyle].c_str());*/
+
 
                                 if (nStyle == nStyleMax-1)
                                     nStyle = 0;
@@ -3788,10 +4166,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                         }
                         else if (_pData.getArea() || _pData.getRegion())
                             _graph.Area(_mAxisVals[0], _mData, (sLineStyles[nStyle] + "{" + _pData.getColors()[nStyle] + "9}").c_str());
-                        /*if (_pData.getDrawPoints())
-                            _graph.Plot(_mData, sConnectedDataPlotStyles[nStyle].c_str());
-                        else
-                            _graph.Plot(_mData, sColorStyles[nStyle].c_str());*/
+
                         nPos = sLabels.find(';');
                         sConvLegends = sLabels.substr(0,nPos) + " -nq";
                         parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
@@ -3802,10 +4177,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                             _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sLineStyles[nStyle], _pData).c_str());
                             nLegends++;
                         }
-                        /*if (_pData.getDrawPoints())
-                            _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), sConnectedDataPlotStyles[nStyle].c_str());
-                        else
-                            _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), sColorStyles[nStyle].c_str());*/
+
                         if (nStyle == nStyleMax-1)
                             nStyle = 0;
                         else
@@ -3825,10 +4197,9 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                             _mBoxPlot.a[0] = j+0.5;
                             _mBoxPlot.a[1] = j+1.5;
                             _mDataPlots[j][1].Transpose();
-                            //cerr << _mBoxPlot.GetNx() << "  " << _mBoxPlot.GetNy() << endl;
-                            //cerr << _mDataPlots[j][1].GetNx() << "  " << _mDataPlots[j][1].GetNy() << endl;
+
                             _graph.BoxPlot(_mBoxPlot, _mDataPlots[j][1], sLineStyles[nStyle].c_str());
-                            //_graph.BoxPlot(_mDataPlots[j][1], sLineStyles[nStyle].c_str());
+
 
                             nPos = sDataLabels.find(';');
                             sConvLegends = sDataLabels.substr(0,nPos);
@@ -3867,13 +4238,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
 
                             if (!_pData.getxError() && !_pData.getyError())
                             {
-                                /* --> Falls die Option "interpolate" aktiv ist und der Datensatz aus ausreichend Datenpunkten besteht,
-                                 *     stellen wir die Datenpunkte als Kurve dar. Dabei werden diese jedoch nicht geordnet! <--
-                                 */
-                                //cerr << _pInfo.nSamples << endl;
-                                //cerr << _mDataPlots[j][0].GetNx() << endl;
-                                /*if (_pData.getInterpolate() && _mDataPlots[j][0].GetNx() < _pInfo.nSamples)
-                                    _mDataPlots[j][0] = _mDataPlots[j][0].Resize(_pInfo.nSamples);*/
+
                                 if (_pData.getInterpolate() && _mDataPlots[j][0].GetNx() >= _pInfo.nSamples)
                                 {
                                     if (!_pData.getArea() && !_pData.getBars() && !_pData.getRegion())
@@ -3951,7 +4316,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                                 nStyle++;
                         }
                     }
-                }
+                }*/
                 for (unsigned int i = 0; i < 3; i++)
                 {
                     if (_pData.getHLines(i).sDesc.length())
@@ -4950,8 +5315,281 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
             }
             else            // 3D-Trajektorie
             {
+                mglData _mData[3] = {mglData(_pInfo.nSamples), mglData(_pInfo.nSamples), mglData(_pInfo.nSamples)};
+                mglData _mData2[3] = {mglData(_pInfo.nSamples), mglData(_pInfo.nSamples), mglData(_pInfo.nSamples)};
+                int nLabels = 0;
+                int nPos[2] = {0,0};
+                int nTypeCounter[2] = {0,0};
+                unsigned int nCurrentType;
+                while (sLabels.find(';', nPos[0]) != string::npos)
+                {
+                    nPos[0] = sLabels.find(';', nPos[0]) + 1;
+                    nLabels++;
+                    if (nPos[0] >= (int)sLabels.length())
+                        break;
+                }
+
+                nPos[0] = 0;
+                if (nLabels > _pData.getLayers())
+                {
+                    for (int i = 0; i < _pData.getLayers(); i++)
+                    {
+                        for (int j = 0; j < 2; j++)
+                        {
+                            if (nLabels == 1)
+                                break;
+                            nPos[0] = sLabels.find(';', nPos[0]);
+                            sLabels = sLabels.substr(0,nPos[0]-1) + ", " + sLabels.substr(nPos[0]+2);
+                            nLabels--;
+                        }
+                        nPos[0] = sLabels.find(';', nPos[0]) + 1;
+                        nLabels--;
+                    }
+                    nPos[0] = 0;
+                }
+                if (_option.getbDebug())
+                    cerr << LineBreak("|-> DEBUG: sLabels = " + sLabels, _option) << endl;
+
+
                 if (_pData.getCutBox())
                     _graph.SetCutBox(parser_CalcCutBox(_pData.getRotateAngle(1), _pInfo.dRanges, 0, _pData.getCoords(), true), parser_CalcCutBox(_pData.getRotateAngle(1), _pInfo.dRanges, 1, _pData.getCoords(), true));
+
+
+                for (unsigned int nType = 0; nType < vType.size(); nType++)
+                {
+                    nCurrentType = nType;
+                    if (vType[nType] == TYPE_FUNC)
+                    {
+                        StripSpaces(sLabels);
+                        for (int i = 0; i < 3; i++)
+                        {
+                            _mData[i].Create(_pInfo.nSamples);
+                            _mData2[i].Create(_pInfo.nSamples);
+                        }
+
+                        for (long int i = 0; i < _pInfo.nSamples; i++)
+                        {
+                            for (int j = 0; j < 3; j++)
+                            {
+                                _mData[j].a[i] = _pData.getData(i,j,nTypeCounter[0]);
+                            }
+                        }
+                        if (_pData.getCoords())
+                            _mData[1] = parser_fmod(_mData[1],2.0*M_PI);
+                        if (_pData.getCoords() == 2)
+                            _mData[2] = parser_fmod(_mData[2],1.0*M_PI);
+
+                        if (_pData.getRegion() && vType.size() > nType+3 && vType[nType+3] == TYPE_DATA)
+                        {
+                            _mData2[0] = _mDataPlots[nTypeCounter[1]][0];
+                            _mData2[1] = _mDataPlots[nTypeCounter[1]][1];
+                            _mData2[2] = _mDataPlots[nTypeCounter[1]][2];
+                            if (_pData.getCoords())
+                                _mData2[1] = parser_fmod(_mData2[1],2.0*M_PI);
+                            if (_pData.getCoords() == 2)
+                                _mData2[2] = parser_fmod(_mData2[2],1.0*M_PI);
+                            nTypeCounter[1]++;
+                            nType += 3;
+                        }
+                        else if (_pData.getRegion() && vType.size() > nType+3 && vType[nType+3] == TYPE_FUNC)
+                        {
+                            for (long int i = 0; i < _pInfo.nSamples; i++)
+                            {
+                                for (int j = 0; j < 3; j++)
+                                {
+                                    _mData2[j].a[i] = _pData.getData(i,j,nTypeCounter[0]+1);
+                                }
+                            }
+                            if (_pData.getCoords())
+                                _mData2[1] = parser_fmod(_mData2[1],2.0*M_PI);
+                            if (_pData.getCoords() == 2)
+                                _mData2[2] = parser_fmod(_mData2[2],1.0*M_PI);
+                            nTypeCounter[0]++;
+                            nType++;
+                        }
+                        else
+                        {
+                            for (long int i = 0; i < _pInfo.nSamples; i++)
+                            {
+                                for (int j = 0; j < 3; j++)
+                                {
+                                    _mData2[j].a[i] = 0.0;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (_pData.getCoords())
+                            _mDataPlots[nTypeCounter[1]][1] = parser_fmod(_mDataPlots[nTypeCounter[1]][1], 2.0*M_PI);
+                        if (_pData.getCoords() == 2)
+                            _mDataPlots[nTypeCounter[1]][2] = parser_fmod(_mDataPlots[nTypeCounter[1]][2], 1.0*M_PI);
+
+                        StripSpaces(sDataLabels);
+                        if (_pData.getxError() || _pData.getyError())
+                        {
+                            for (long int i = 0; i < _mDataPlots[nTypeCounter[1]][0].GetNx(); i++)
+                            {
+                                if (_mDataPlots[nTypeCounter[1]][0].a[i] < _pInfo.dRanges[0][0] || _mDataPlots[nTypeCounter[1]][0].a[i] > _pInfo.dRanges[0][1]
+                                    || _mDataPlots[nTypeCounter[1]][1].a[i] < _pInfo.dRanges[1][0] || _mDataPlots[nTypeCounter[1]][1].a[i] > _pInfo.dRanges[1][1]
+                                    || _mDataPlots[nTypeCounter[1]][1].a[i] < _pInfo.dRanges[2][0] || _mDataPlots[nTypeCounter[1]][1].a[i] > _pInfo.dRanges[2][1])
+                                {
+                                    _mDataPlots[nTypeCounter[1]][0].a[i] = NAN;
+                                    _mDataPlots[nTypeCounter[1]][1].a[i] = NAN;
+                                    _mDataPlots[nTypeCounter[1]][2].a[i] = NAN;
+                                }
+                            }
+                        }
+
+                        _mData[0] = _mDataPlots[nTypeCounter[1]][0];
+                        _mData[1] = _mDataPlots[nTypeCounter[1]][1];
+                        _mData[2] = _mDataPlots[nTypeCounter[1]][2];
+
+                        if (_pData.getRegion() && vType.size() > nType+1 && vType[nType+1] == TYPE_DATA)
+                        {
+                            _mData2[0] = _mDataPlots[nTypeCounter[1]+1][0];
+                            _mData2[1] = _mDataPlots[nTypeCounter[1]+1][1];
+                            _mData2[2] = _mDataPlots[nTypeCounter[1]+1][2];
+                            if (_pData.getCoords())
+                                _mData2[1] = parser_fmod(_mData2[1],2.0*M_PI);
+                            if (_pData.getCoords() == 2)
+                                _mData2[2] = parser_fmod(_mData2[2],1.0*M_PI);
+                            nTypeCounter[1]++;
+                            nType++;
+                        }
+                        else if (_pData.getRegion() && vType.size() > nType+1 && vType[nType+1] == TYPE_FUNC)
+                        {
+                            for (long int i = 0; i < _pInfo.nSamples; i++)
+                            {
+                                for (int j = 0; j < 3; j++)
+                                {
+                                    _mData2[j].a[i] = _pData.getData(i,j,nTypeCounter[0]);
+                                }
+                            }
+                            if (_pData.getCoords())
+                                _mData2[1] = parser_fmod(_mData2[1],2.0*M_PI);
+                            if (_pData.getCoords() == 2)
+                                _mData2[2] = parser_fmod(_mData2[2],1.0*M_PI);
+                            nTypeCounter[0]++;
+                            nType+=3;
+                        }
+                        else if (_pData.getRegion())
+                        {
+                            for (long int i = 0; i < _pInfo.nSamples; i++)
+                            {
+                                for (int j = 0; j < 3; j++)
+                                {
+                                    _mData2[j].a[i] = 0.0;
+                                }
+                            }
+                        }
+
+                        if (_pData.getxError() && _pData.getyError())
+                        {
+                            _mData2[0] = _mDataPlots[nTypeCounter[1]][3];
+                            _mData2[1] = _mDataPlots[nTypeCounter[1]][4];
+                            _mData2[2] = _mDataPlots[nTypeCounter[1]][5];
+                        }
+                    }
+                    if (!parser_plot_std3d(_graph, _pData, _pInfo, _mData, _mData2, sLineStyles, sPointStyles, sConPointStyles, nStyle, nStyle, vType[nCurrentType]))
+                    {
+                        // --> Den gibt's nicht: Speicher freigeben und zurueck! <--
+                        if (_mDataPlots)
+                        {
+                            for (int i = 0; i < nDataPlots; i++)
+                                delete[] _mDataPlots[i];
+                            delete[] _mDataPlots;
+                            _mDataPlots = 0;
+                            delete[] nDataDim;
+                            nDataDim = 0;
+                        }
+                        return;
+                    }
+                    if (vType[nCurrentType] == TYPE_FUNC)
+                    {
+                        if (_pData.getRegion() && vType.size() > nCurrentType+1)
+                        {
+                            for (int k = 0; k < 2; k++)
+                            {
+                                nPos[0] = sLabels.find(';');
+                                sConvLegends = sLabels.substr(0,nPos[0]) + " -nq";
+                                parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
+                                sConvLegends = "\"" + sConvLegends + "\"";
+                                for (unsigned int l = 0; l < sConvLegends.length(); l++)
+                                {
+                                    if (sConvLegends[l] == '(')
+                                        l += getMatchingParenthesis(sConvLegends.substr(l));
+                                    if (sConvLegends[l] == ',')
+                                    {
+                                        sConvLegends = "\"[" + sConvLegends.substr(1,sConvLegends.length()-2) + "]\"";
+                                        break;
+                                    }
+                                }
+                                sLabels = sLabels.substr(nPos[0]+1);
+                                if (sConvLegends != "\"\"")
+                                {
+                                    _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), sLineStyles[nStyle].c_str());
+                                    nLegends++;
+                                }
+
+                                if (nStyle == nStyleMax-1)
+                                    nStyle = 0;
+                                else
+                                    nStyle++;
+                            }
+                        }
+                        else
+                        {
+                            nPos[0] = sLabels.find(';');
+                            sConvLegends = sLabels.substr(0,nPos[0]) + " -nq";
+                            parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
+                            sConvLegends = "\"" + sConvLegends + "\"";
+                            sLabels = sLabels.substr(nPos[0]+1);
+                            if (sConvLegends != "\"\"")
+                            {
+                                _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sLineStyles[nStyle], _pData).c_str());
+                                nLegends++;
+                            }
+                            if (nStyle == nStyleMax-1)
+                                nStyle = 0;
+                            else
+                                nStyle++;
+                        }
+                        nTypeCounter[0]++;
+                        nType += 2;
+                    }
+                    else
+                    {
+                        nPos[1] = sDataLabels.find(';');
+                        sConvLegends = sDataLabels.substr(0,nPos[1]);
+                        parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
+                        sDataLabels = sDataLabels.substr(nPos[1]+1);
+                        if (sConvLegends != "\"\"")
+                        {
+                            nLegends++;
+                            if (!_pData.getxError() && !_pData.getyError())
+                            {
+                                if ((_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].GetNx() >= _pInfo.nSamples) || _pData.getBars())
+                                    _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sLineStyles[nStyle], _pData).c_str());
+                                else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].GetNx() >= 0.9 * _pInfo.nSamples))
+                                    _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sConPointStyles[nStyle], _pData).c_str());
+                                else
+                                    _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sPointStyles[nStyle], _pData).c_str());
+                            }
+                            else
+                                _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sPointStyles[nStyle], _pData).c_str());
+                        }
+                        if (nStyle == nStyleMax-1)
+                            nStyle = 0;
+                        else
+                            nStyle++;
+
+                        nTypeCounter[1]++;
+                    }
+                }
+
+
+                /*
                 if (sFunc != "<<empty>>")
                 {
                     mglData _mData[3] = {mglData(_pInfo.nSamples), mglData(_pInfo.nSamples), mglData(_pInfo.nSamples)};
@@ -5201,7 +5839,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                         else
                             nStyle++;
                     }
-                }
+                }*/
                 if (_pData.getCutBox())
                     _graph.SetCutBox(mglPoint(0), mglPoint(0));
                 if (!((_pData.getMarks() || _pData.getCrust()) && _pInfo.sCommand.substr(0,6) == "plot3d") && nLegends && !_pData.getSchematic() && nPlotCompose+1 == vPlotCompose.size())
@@ -5278,6 +5916,271 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
 
     // --> Zurueck zur aufrufenden Funktion! <--
     return;
+}
+
+bool parser_plot_2d(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglData& _mData, mglData& _mMaskData, mglData _mAxisVals[2], mglData& _mContVec, const Settings& _option, int nFunctions, int nStyle, string* sContStyles)
+{
+    /*if (_option.getbDebug())
+        cerr << "|-> DEBUG: generating 2D-Plot..." << endl;*/
+
+    if (_pData.getCutBox()
+        && _pInfo.sCommand.substr(0,4) != "cont"
+        && _pInfo.sCommand.substr(0,4) != "grad"
+        && _pInfo.sCommand.substr(0,4) != "dens")
+        _graph.SetCutBox(parser_CalcCutBox(_pData.getRotateAngle(1), _pInfo.dRanges, 0, _pData.getCoords()), parser_CalcCutBox(_pData.getRotateAngle(1), _pInfo.dRanges, 1, _pData.getCoords()));
+
+    // --> Entsprechend dem gewuenschten Plotting-Style plotten <--
+    if (_pInfo.sCommand.substr(0,4) == "mesh")
+    {
+        if (_pData.getBars())
+            _graph.Boxs(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("#").c_str());
+        else
+            _graph.Mesh(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+    }
+    else if (_pInfo.sCommand.substr(0,4) == "surf")
+    {
+        if (_pData.getBars())
+            _graph.Boxs(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+        else if (_pData.getColorMask())
+            _graph.SurfC(_mAxisVals[0], _mAxisVals[1], _mData, _mMaskData, _pData.getColorScheme().c_str());
+        else if (_pData.getAlphaMask())
+            _graph.SurfA(_mAxisVals[0], _mAxisVals[1], _mData, _mMaskData, _pData.getColorScheme().c_str());
+        else
+            _graph.Surf(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+        //cerr << "\"" << _pData.getColorScheme().c_str() << "\" " << strlen(_pData.getColorScheme().c_str()) << endl;
+    }
+    else if (_pInfo.sCommand.substr(0,4) == "cont")
+    {
+        if (_pData.getContLabels())
+        {
+            if (_pData.getContFilled())
+                _graph.ContF(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+            _graph.Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("t").c_str());
+        }
+        else if (_pData.getContProj())
+        {
+            if (_pData.getContFilled())
+            {
+                _graph.ContF(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("_").c_str());
+                _graph.Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, "_k");
+            }
+            else
+                _graph.Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("_").c_str());
+        }
+        else if (_pData.getContFilled())
+        {
+            _graph.ContF(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+            _graph.Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, "k");
+        }
+        else
+            _graph.Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+    }
+    else if (_pInfo.sCommand.substr(0,4) == "grad")
+    {
+        if (_pData.getHighRes() || !_option.getbUseDraftMode())
+        {
+            if (_pData.getContFilled() && _pData.getContProj())
+                _graph.Grad(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorSchemeMedium().c_str(), "value 10");
+            else
+                _graph.Grad(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str(), "value 10");
+        }
+        else
+        {
+            if (_pData.getContFilled() && _pData.getContProj())
+                _graph.Grad(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorSchemeMedium().c_str());
+            else
+                _graph.Grad(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+        }
+        if (!(_pData.getContFilled() && _pData.getContProj()))
+            _graph.Dens(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorSchemeLight().c_str());
+    }
+    else if (_pInfo.sCommand.substr(0,4) == "dens")
+    {
+        if (_pData.getBars())
+            _graph.Tile(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+        else
+            _graph.Dens(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+    }
+    else
+        return false;
+
+    if (_pData.getCutBox()
+        && _pInfo.sCommand.substr(0,4) != "cont"
+        && _pInfo.sCommand.substr(0,4) != "grad"
+        && _pInfo.sCommand.substr(0,4) != "dens")
+        _graph.SetCutBox(mglPoint(0), mglPoint(0));
+    // --> Ggf. Konturlinien ergaenzen <--
+    if (_pData.getContProj() && _pInfo.sCommand.substr(0,4) != "cont")
+    {
+        if (_pData.getContFilled() && _pInfo.sCommand.substr(0,4) != "dens")
+        {
+            _graph.ContF(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("_").c_str());
+            _graph.Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, "_k");
+        }
+        else if (_pInfo.sCommand.substr(0,4) == "dens" && _pData.getContFilled())
+            _graph.Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, "_k");
+        else
+            _graph.Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("_").c_str());
+    }
+    if (_pData.getContLabels() && _pInfo.sCommand.substr(0,4) != "cont" && nFunctions == 1)
+    {
+        _graph.Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, ("t"+sContStyles[nStyle]).c_str());
+        if (_pData.getContFilled())
+            _graph.ContF(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+    }
+    return true;
+}
+
+bool parser_plot_std(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], string* sLineStyles, string* sPointStyles, string* sConPointStyles, int& nStyle, const int nStyleMax, const short nType)
+{
+    if (nType == 1)
+    {
+        if (!_pData.getArea() && !_pData.getRegion())
+            _graph.Plot(_mAxisVals, _mData, sLineStyles[nStyle].c_str());
+        else if (_pData.getRegion() && _mData2[0].GetNN())
+        {
+            if (nStyle == nStyleMax-1)
+                _graph.Region(_mAxisVals, _mData, _mData2[0], ("{"+_pData.getColors().substr(nStyle,1) + "7}{" + _pData.getColors().substr(0,1)+"7}").c_str());
+            else
+                _graph.Region(_mAxisVals, _mData, _mData2[0], ("{"+_pData.getColors().substr(nStyle,1) + "7}{" + _pData.getColors().substr(nStyle+1,1)+"7}").c_str());
+            _graph.Plot(_mAxisVals, _mData, sLineStyles[nStyle].c_str());
+            if (nStyle == nStyleMax-1)
+                _graph.Plot(_mAxisVals, _mData2[0], sLineStyles[0].c_str());
+            else
+                _graph.Plot(_mAxisVals, _mData2[0], sLineStyles[nStyle+1].c_str());
+        }
+        else if (_pData.getArea() || _pData.getRegion())
+            _graph.Area(_mAxisVals, _mData, (sLineStyles[nStyle] + "{" + _pData.getColors()[nStyle] + "9}").c_str());
+    }
+    else
+    {
+
+        if (_pData.getBoxplot())
+        {
+            _graph.BoxPlot(_mData2[0], _mData, sLineStyles[nStyle].c_str());
+        }
+        else if (!_pData.getxError() && !_pData.getyError())
+        {
+            if (_pData.getInterpolate() && _mAxisVals.GetNx() >= _pInfo.nSamples)
+            {
+                if (!_pData.getArea() && !_pData.getBars() && !_pData.getRegion())
+                    _graph.Plot(_mAxisVals, _mData, sLineStyles[nStyle].c_str());
+                else if (_pData.getBars() && !_pData.getArea() && !_pData.getRegion())
+                    _graph.Bars(_mAxisVals, _mData, (sLineStyles[nStyle]+"^").c_str());
+                else if (_pData.getArea() || _pData.getRegion())
+                    _graph.Area(_mAxisVals, _mData, (sLineStyles[nStyle] + "{" + _pData.getColors()[nStyle] + "9}").c_str());
+            }
+            else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mAxisVals.GetNx() >= 0.9 * _pInfo.nSamples))
+            {
+                if (!_pData.getArea() && !_pData.getBars())
+                    _graph.Plot(_mAxisVals, _mData, sConPointStyles[nStyle].c_str());
+                else if (_pData.getBars() && !_pData.getArea())
+                    _graph.Bars(_mAxisVals, _mData, (sLineStyles[nStyle]+"^").c_str());
+                else
+                    _graph.Area(_mAxisVals, _mData, (sLineStyles[nStyle] + "{" + _pData.getColors()[nStyle] + "9}").c_str());
+            }
+            else
+            {
+                if (!_pData.getArea() && !_pData.getBars() && !_pData.getHBars() && !_pData.getStepplot())
+                    _graph.Plot(_mAxisVals, _mData, sPointStyles[nStyle].c_str());
+                else if (_pData.getBars() && !_pData.getArea() && !_pData.getHBars() && !_pData.getStepplot())
+                    _graph.Bars(_mAxisVals, _mData, (sLineStyles[nStyle]+"^").c_str());
+                else if (!_pData.getBars() && !_pData.getArea() && _pData.getHBars() && !_pData.getStepplot())
+                    _graph.Barh(_mAxisVals, _mData, (sLineStyles[nStyle]+"^").c_str());
+                else if (!_pData.getBars() && !_pData.getArea() && !_pData.getHBars() && _pData.getStepplot())
+                    _graph.Step(_mAxisVals, _mData, (sLineStyles[nStyle]).c_str());
+                else
+                    _graph.Stem(_mAxisVals, _mData, sConPointStyles[nStyle].c_str());
+            }
+        }
+        else if (_pData.getxError() && _pData.getyError())
+            _graph.Error(_mAxisVals, _mData, _mData2[0], _mData2[1], sPointStyles[nStyle].c_str());
+    }
+    return true;
+}
+
+bool parser_plot_std3d(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglData _mData[3], mglData _mData2[3], string* sLineStyles, string* sPointStyles, string* sConPointStyles, int& nStyle, const int nStyleMax, const short nType)
+{
+    if (nType == 1)
+    {
+        if (!_pData.getArea() && !_pData.getRegion())
+            _graph.Plot(_mData[0], _mData[1], _mData[2], sLineStyles[nStyle].c_str());
+        else if (_pData.getRegion() && _mData2[0].GetNN())
+        {
+            if (nStyle == nStyleMax-1)
+                _graph.Region(_mData[0], _mData[1], _mData[2], _mData2[0], _mData2[1], _mData2[2], ("{"+_pData.getColors().substr(nStyle,1) + "7}{" + _pData.getColors().substr(0,1)+"7}").c_str());
+            else
+                _graph.Region(_mData[0], _mData[1], _mData[2], _mData2[0], _mData2[1], _mData2[2], ("{"+_pData.getColors().substr(nStyle,1) + "7}{" + _pData.getColors().substr(nStyle+1,1)+"7}").c_str());
+            _graph.Plot(_mData[0], _mData[1], _mData[2], sLineStyles[nStyle].c_str());
+            if (nStyle == nStyleMax-1)
+                _graph.Plot(_mData2[0], _mData2[1], _mData2[2], sLineStyles[0].c_str());
+            else
+                _graph.Plot(_mData2[0], _mData2[1], _mData2[2], sLineStyles[nStyle+1].c_str());
+        }
+        else
+            _graph.Area(_mData[0], _mData[1], _mData[2], (sLineStyles[nStyle] + "{" + _pData.getColors()[nStyle] + "9}").c_str());
+    }
+    else
+    {
+        if (!_pData.getxError() && !_pData.getyError())
+        {
+            // --> Interpolate-Schalter. Siehe weiter oben fuer Details <--
+            if (_pData.getInterpolate() && _mData[0].GetNx() >= _pInfo.nSamples)
+            {
+                if (!_pData.getArea() && !_pData.getBars() && !_pData.getRegion())
+                    _graph.Plot(_mData[0], _mData[1], _mData[2], sLineStyles[nStyle].c_str());
+                else if (_pData.getBars() && !_pData.getArea() && !_pData.getRegion())
+                    _graph.Bars(_mData[0], _mData[1], _mData[2], (sLineStyles[nStyle] + "^").c_str());
+                /*else if (_pData.getRegion() && j+1 < nDataPlots)
+                {
+                    if (nStyle == nStyleMax-1)
+                        _graph.Region(_mData[0], _mData[1], _mData[2], _mData2[0], _mData2[1], _mData2[2], ("{"+_pData.getColors().substr(nStyle,1) +"7}{"+ _pData.getColors().substr(0,1)+"7}").c_str());
+                    else
+                        _graph.Region(_mData[0], _mData[1], _mData[2], _mData2[0], _mData2[1], _mData2[2], ("{"+_pData.getColors().substr(nStyle,1) +"7}{"+ _pData.getColors().substr(nStyle+1,1)+"7}").c_str());
+                    _graph.Plot(_mData[0], _mData[1], _mData[2], sLineStyles[nStyle].c_str());
+                    j++;
+                    if (nStyle == nStyleMax-1)_mData
+                        _graph.Plot(_mData[0], _mData[1], _mData[2], sLineStyles[0].c_str());
+                    else
+                        _graph.Plot(_mData[0], _mData[1], _mData[2], sLineStyles[nStyle+1].c_str());
+                }*/
+                else
+                    _graph.Area(_mData[0], _mData[1], _mData[2], (sLineStyles[nStyle] + "{" + _pData.getColors()[nStyle] + "9}").c_str());
+            }
+            else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mData[0].GetNx() >= 0.9*_pInfo.nSamples))
+            {
+                if (!_pData.getArea() && !_pData.getBars())
+                    _graph.Plot(_mData[0], _mData[1], _mData[2], sConPointStyles[nStyle].c_str());
+                else if (_pData.getBars() && !_pData.getArea())
+                    _graph.Bars(_mData[0], _mData[1], _mData[2], (sLineStyles[nStyle]+"^").c_str());
+                else
+                    _graph.Area(_mData[0], _mData[1], _mData[2], (sLineStyles[nStyle] + "{" + _pData.getColors()[nStyle] + "9}").c_str());
+            }
+            else
+            {
+                if (!_pData.getArea() && !_pData.getMarks() && !_pData.getBars() && !_pData.getStepplot() && !_pData.getCrust())
+                    _graph.Plot(_mData[0], _mData[1], _mData[2], sPointStyles[nStyle].c_str());
+                else if (_pData.getMarks() && !_pData.getCrust() && !_pData.getBars() && !_pData.getArea() && !_pData.getStepplot())
+                    _graph.Dots(_mData[0], _mData[1], _mData[2], _pData.getColorScheme(toString(_pData.getMarks())).c_str());
+                else if (_pData.getCrust() && !_pData.getMarks() && !_pData.getBars() && !_pData.getArea() && !_pData.getStepplot())
+                    _graph.Crust(_mData[0], _mData[1], _mData[2], _pData.getColorScheme().c_str());
+                else if (_pData.getBars() && !_pData.getArea() && !_pData.getMarks() && !_pData.getStepplot() && !_pData.getCrust())
+                    _graph.Bars(_mData[0], _mData[1], _mData[2], (sLineStyles[nStyle]+"^").c_str());
+                else if (!_pData.getBars() && !_pData.getArea() && !_pData.getMarks() && _pData.getStepplot() && !_pData.getCrust())
+                    _graph.Step(_mData[0], _mData[1], _mData[2], (sLineStyles[nStyle]).c_str());
+                else
+                    _graph.Stem(_mData[0], _mData[1], _mData[2], sConPointStyles[nStyle].c_str());
+            }
+        }
+        else if (_pData.getxError() && _pData.getyError())
+        {
+            for (int m = 0; m < _mData[0].nx; m++)
+            {
+                _graph.Error(mglPoint(_mData[0].a[m], _mData[1].a[m], _mData[2].a[m]), mglPoint(_mData2[0].a[m], _mData2[1].a[m], _mData2[2].a[m]), sPointStyles[nStyle].c_str());
+            }
+        }
+    }
+    return true;
 }
 
 // --> Erledigt die nervenaufreibende Logscale-Logik <--
