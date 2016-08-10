@@ -27,7 +27,7 @@ FileSystem::FileSystem()
     sPath = "";
     sWhere = "";
     sValidExtensions = ";.dat;.txt;.tmp;.def;.nscr;.png;.gif;.eps;.svg;.tex;.labx;.csv;.cache;.ndat;.nprc;.nlng;.log;.plugins;.hlpidx;.nhlp;.jdx;.dx;.jcm;.ibw;.ndb;.ods;.jpg;.bmp;.tga;.bps;.prc;.obj;.xyz;.stl;.json;.off;.pdf;.wav;.wave;.xls;.xlsx;";
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < 7; i++)
     {
         sTokens[i][0] = "";
         sTokens[i][1] = "";
@@ -344,7 +344,7 @@ string FileSystem::getPath() const
 
 void FileSystem::setTokens(string _sTokens)
 {
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < 7; i++)
     {
         sTokens[i][0] = _sTokens.substr(0,_sTokens.find('='));
         sTokens[i][1] = _sTokens.substr(_sTokens.find('=')+1, _sTokens.find(';')-1-_sTokens.find('='));

@@ -55,6 +55,7 @@ Loop::Loop()
     dVarAdress = 0;
     bUseLoopParsingMode = false;
     bLockedPauseMode = false;
+    bFunctionsReplaced = false;
     nthRecursion = 0;
     bLoopSupressAnswer = false;
 }
@@ -164,11 +165,10 @@ int Loop::for_loop(Parser& _parser, Define& _functions, Datafile& _data, Setting
     int nNum = 0;
     value_type* v = 0;
 
-    /*if (_option.getbDebug())
-    {
-        cerr << "|-> DEBUG: Schleife " << nth_loop << endl;
-        cerr << "|-> DEBUG: sForHead = " << sForHead << endl;
-    }*/
+
+    //cerr << "|-> DEBUG: Schleife " << nth_loop << endl;
+    //cerr << "|-> DEBUG: sForHead = " << sForHead << endl;
+
     for (int i = 0; i < nVarArray; i++)
     {
         if (sVarArray[i] == sVar)
@@ -185,6 +185,14 @@ int Loop::for_loop(Parser& _parser, Define& _functions, Datafile& _data, Setting
     }*/
 
 //////////
+
+    if (!bFunctionsReplaced)
+    {
+        if (!_functions.call(sForHead, _option))
+        {
+            throw FUNCTION_ERROR;
+        }
+    }
     // --> Datafile- und Cache-Konstrukte abfangen <--
     if ((sForHead.find("data(") != string::npos || _data.containsCacheElements(sForHead))
         && (!containsStrings(sForHead) && !_data.containsStringVars(sForHead)))
@@ -481,6 +489,13 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
     // --> Datafile- und Cache-Konstrukte abfangen <--
     //StripSpaces(sWhile_Condition);
     //cerr << sWhile_Condition << endl;
+    if (!bFunctionsReplaced)
+    {
+        if (!_functions.call(sWhile_Condition, _option))
+        {
+            throw FUNCTION_ERROR;
+        }
+    }
     if (sWhile_Condition.find("data(") != string::npos || _data.containsCacheElements(sWhile_Condition))
     {
         if (!bLockedPauseMode && bUseLoopParsingMode)
@@ -749,6 +764,13 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
         if (sWhile_Condition != sWhile_Condition_Back || _data.containsCacheElements(sWhile_Condition_Back) || sWhile_Condition_Back.find("data(") != string::npos)
         {
             sWhile_Condition = sWhile_Condition_Back;
+            if (!bFunctionsReplaced)
+            {
+                if (!_functions.call(sWhile_Condition, _option))
+                {
+                    throw FUNCTION_ERROR;
+                }
+            }
             if (sWhile_Condition.find("data(") != string::npos || _data.containsCacheElements(sWhile_Condition))
             {
                 if (!bLockedPauseMode && bUseLoopParsingMode)
@@ -875,6 +897,13 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
     // --> Datafile- und Cache-Konstrukte abfangen <--
     //StripSpaces(sIf_Condition);
     //cerr << sIf_Condition << endl;
+    if (!bFunctionsReplaced)
+    {
+        if (!_functions.call(sIf_Condition, _option))
+        {
+            throw FUNCTION_ERROR;
+        }
+    }
     if (sIf_Condition.find("data(") != string::npos || _data.containsCacheElements(sIf_Condition))
     {
         if (!bLockedPauseMode && bUseLoopParsingMode)
@@ -1125,6 +1154,13 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
             // --> Datafile- und Cache-Konstrukte abfangen <--
             //StripSpaces(sIf_Condition);
             //cerr << sIf_Condition << endl;
+            if (!bFunctionsReplaced)
+            {
+                if (!_functions.call(sIf_Condition, _option))
+                {
+                    throw FUNCTION_ERROR;
+                }
+            }
             if (sIf_Condition.find("data(") != string::npos || _data.containsCacheElements(sIf_Condition))
             {
                 if (!bLockedPauseMode && bUseLoopParsingMode)
@@ -1567,12 +1603,20 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
     if (!sCmd)
         generateCommandArray();
 
-    if (!_functions.call(__sCmd, _option))
+    /*if (findCommand(__sCmd).sString != "define"
+        && findCommand(__sCmd).sString != "redef"
+        && findCommand(__sCmd).sString != "redefine"
+        && findCommand(__sCmd).sString != "undefine"
+        && findCommand(__sCmd).sString != "undef"
+        && findCommand(__sCmd).sString != "ifndef"
+        && findCommand(__sCmd).sString != "ifndefined")
     {
-        reset(_parser);
-        throw FUNCTION_ERROR;
-    }
-
+        if (!_functions.call(__sCmd, _option))
+        {
+            reset(_parser);
+            throw FUNCTION_ERROR;
+        }
+    }*/
 
     StripSpaces(__sCmd);
 
@@ -2152,6 +2196,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
     sVarName = "";
     dVarAdress = 0;
     bUseLoopParsingMode = false;
+    bFunctionsReplaced = false;
     //_bytecode = new ParserByteCode[nCmd+1];
     //nValidByteCode = new int[nCmd+1];
 
@@ -2319,6 +2364,40 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
                     bUseLoopParsingMode = false;
                     break;
                 }
+            }
+            bool bDefineCommands = false;
+            for (int i = 0; i <= nCmd; i++)
+            {
+                //cerr << findCommand(sCmd[i][1]).sString << "|" << endl;
+                if (findCommand(sCmd[i][1]).sString == "define"
+                    || findCommand(sCmd[i][1]).sString == "redefine"
+                    || findCommand(sCmd[i][1]).sString == "redef"
+                    || findCommand(sCmd[i][1]).sString == "undefine"
+                    || findCommand(sCmd[i][1]).sString == "undef"
+                    || findCommand(sCmd[i][1]).sString == "ifndefined"
+                    || findCommand(sCmd[i][1]).sString == "ifndef")
+                {
+                    bDefineCommands = true;
+                    break;
+                }
+            }
+            if (!bDefineCommands)
+            {
+                for (int i = 0; i <= nCmd; i++)
+                {
+                    if (!_functions.call(sCmd[i][0], _option))
+                    {
+                        reset(_parser);
+                        throw FUNCTION_ERROR;
+                    }
+                    if (!_functions.call(sCmd[i][1], _option))
+                    {
+                        reset(_parser);
+                        throw FUNCTION_ERROR;
+                    }
+                    StripSpaces(sCmd[i][0]);
+                }
+                bFunctionsReplaced = true;
             }
         }
     }
@@ -2526,6 +2605,13 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
     if (bUseLoopParsingMode && !bLockedPauseMode)
         _parser.ActivateLoopMode((unsigned int)(2*(nCmd+1)));
 
+    /*cerr << "bFunctionsReplaced = " << bFunctionsReplaced << endl;
+    for (int i = 0; i <= nCmd; i++)
+    {
+        cerr << sCmd[i][0] << endl;
+        cerr << sCmd[i][1] << endl;
+    }*/
+
     try
     {
         if (sCmd[0][0].substr(0,3) == "for")
@@ -2682,6 +2768,7 @@ void Loop::reset(Parser& _parser)
         bUseLoopParsingMode = false;
     }
     bLockedPauseMode = false;
+    bFunctionsReplaced = false;
     _parser.ClearVectorVars();
     return;
 }
@@ -2699,6 +2786,20 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
 //    static double* dVarAdress = 0;
 
     //cerr << sLine << endl;
+    if (!bFunctionsReplaced
+        && findCommand(sLine).sString != "define"
+        && findCommand(sLine).sString != "redef"
+        && findCommand(sLine).sString != "redefine"
+        && findCommand(sLine).sString != "undefine"
+        && findCommand(sLine).sString != "undef"
+        && findCommand(sLine).sString != "ifndef"
+        && findCommand(sLine).sString != "ifndefined")
+    {
+        if (!_functions.call(sLine, _option))
+        {
+            throw FUNCTION_ERROR;
+        }
+    }
     bool bMultLinCol[2] = {false, false};
     int i_pos[2];
     int j_pos[2];

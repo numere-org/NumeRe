@@ -283,9 +283,11 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
 
 
     // --> Wenn die call()-Methode FALSE zurueckgibt, ist etwas schief gelaufen! <--
-    if (!_functions.call(sLine, _option))
-        throw FUNCTION_ERROR;
-
+    if (!getLoop() && sLine.substr(0,3) != "for" && sLine.substr(0,2) != "if" && sLine.substr(0,5) != "while")
+    {
+        if (!_functions.call(sLine, _option))
+            throw FUNCTION_ERROR;
+    }
     // --> Nochmals ueberzaehlige Leerzeichen entfernen <--
     StripSpaces(sLine);
 

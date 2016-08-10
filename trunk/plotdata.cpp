@@ -105,7 +105,7 @@ void PlotData::setData(int _i, int _j, double dData, int _k)
 double PlotData::getData(int _i, int _j, int _k) const
 {
     if (!dPlotData || _i >= nLines || _j >= nRows || _k >= nLayers)
-        return 0.0;
+        return NAN;
     else
         return dPlotData[_i][_j][_k];
 }
@@ -684,15 +684,32 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
     if (matchParams(sCmd, "addxaxis", '=') && (!nType || nType == 1))
     {
         string sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "addxaxis", '=')+8);
-        if (sTemp.find(',') != string::npos)
+        if (sTemp.find(',') != string::npos || sTemp.find('"') != string::npos)
         {
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
-            _parser.SetExpr(getNextArgument(sTemp, true));
-            _AddAxes[0].dMin = _parser.Eval();
-            _parser.SetExpr(getNextArgument(sTemp, true));
-            _AddAxes[0].dMax = _parser.Eval();
-            if (getNextArgument(sTemp, false).length())
+            if (getNextArgument(sTemp, false).front() != '"')
+            {
+                _parser.SetExpr(getNextArgument(sTemp, true));
+                _AddAxes[0].dMin = _parser.Eval();
+                _parser.SetExpr(getNextArgument(sTemp, true));
+                _AddAxes[0].dMax = _parser.Eval();
+                if (getNextArgument(sTemp, false).length())
+                {
+                    _AddAxes[0].sLabel = "@{"+getArgAtPos(getNextArgument(sTemp, true),0)+"}";
+                    if (getNextArgument(sTemp, false).length())
+                    {
+                        _AddAxes[0].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
+                        if (!checkColorChars(_AddAxes[0].sStyle))
+                            _AddAxes[0].sStyle = "k";
+                    }
+                }
+                else
+                {
+                    _AddAxes[0].sLabel = "@{\\i x}";
+                }
+            }
+            else
             {
                 _AddAxes[0].sLabel = "@{"+getArgAtPos(getNextArgument(sTemp, true),0)+"}";
                 if (getNextArgument(sTemp, false).length())
@@ -702,37 +719,46 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                         _AddAxes[0].sStyle = "k";
                 }
             }
-            else
-            {
-                _AddAxes[0].sLabel = "@{\\i x}";
-            }
         }
         //replaceControlChars(_[1].sDesc);
     }
     if (matchParams(sCmd, "addyaxis", '=') && (!nType || nType == 1))
     {
         string sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "addyaxis", '=')+8);
-        if (sTemp.find(',') != string::npos)
+        if (sTemp.find(',') != string::npos || sTemp.find('"') != string::npos)
         {
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
-            _parser.SetExpr(getNextArgument(sTemp, true));
-            _AddAxes[1].dMin = _parser.Eval();
-            _parser.SetExpr(getNextArgument(sTemp, true));
-            _AddAxes[1].dMax = _parser.Eval();
-            if (getNextArgument(sTemp, false).length())
+            if (getNextArgument(sTemp, false).front() != '"')
             {
-                _AddAxes[1].sLabel = "@{"+getArgAtPos(getNextArgument(sTemp, true),0) + "}";
+                _parser.SetExpr(getNextArgument(sTemp, true));
+                _AddAxes[1].dMin = _parser.Eval();
+                _parser.SetExpr(getNextArgument(sTemp, true));
+                _AddAxes[1].dMax = _parser.Eval();
                 if (getNextArgument(sTemp, false).length())
                 {
-                    _AddAxes[1].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
-                    if (!checkColorChars(_AddAxes[0].sStyle))
-                        _AddAxes[1].sStyle = "k";
+                    _AddAxes[1].sLabel = "@{"+getArgAtPos(getNextArgument(sTemp, true),0) + "}";
+                    if (getNextArgument(sTemp, false).length())
+                    {
+                        _AddAxes[1].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
+                        if (!checkColorChars(_AddAxes[0].sStyle))
+                            _AddAxes[1].sStyle = "k";
+                    }
+                }
+                else
+                {
+                    _AddAxes[1].sLabel = "@{\\i y}";
                 }
             }
             else
             {
-                _AddAxes[1].sLabel = "@{\\i y}";
+                _AddAxes[1].sLabel = "@{"+getArgAtPos(getNextArgument(sTemp, true),0)+"}";
+                if (getNextArgument(sTemp, false).length())
+                {
+                    _AddAxes[1].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
+                    if (!checkColorChars(_AddAxes[1].sStyle))
+                        _AddAxes[1].sStyle = "k";
+                }
             }
         }
         //replaceControlChars(_[1].sDesc);
@@ -938,6 +964,71 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 if (sTemp[i] == ' ')
                     continue;
                 sColors[i] = sTemp[i];
+            }
+        }
+    }
+    if (matchParams(sCmd, "axisbind", '=') && (!nType || nType == 2))
+    {
+        unsigned int nPos = matchParams(sCmd, "axisbind", '=')+8;
+        string sTemp = getArgAtPos(__sCmd, nPos);
+        for (unsigned int i = 0; i < sTemp.length(); i++)
+        {
+            if (sTemp[i] == 'r' || sTemp[i] == 'l')
+            {
+                if (sTemp.length() > i+1 && (sTemp[i+1] == 't' || sTemp[i+1] == 'b'))
+                {
+                    sAxisBind += sTemp.substr(i,2);
+                    i++;
+                }
+                else if (sTemp.length() > i+1 && (sTemp[i+1] == ' ' || sTemp[i+1] == 'r' || sTemp[i+1] == 'l'))
+                {
+                    sAxisBind += sTemp.substr(i,1) + "b";
+                    if (sTemp[i+1] == ' ')
+                        i++;
+                }
+                else if (sTemp.length() == i+1)
+                    sAxisBind += sTemp.substr(i) + "b";
+                else
+                    sAxisBind += "lb";
+            }
+            else if (sTemp[i] == 't' || sTemp[i] == 'b')
+            {
+                if (sTemp.length() > i+1 && (sTemp[i+1] == 'l' || sTemp[i+1] == 'r'))
+                {
+                    sAxisBind += sTemp.substr(i+1,1) + sTemp.substr(i,1);
+                    i++;
+                }
+                else if (sTemp.length() > i+1 && (sTemp[i+1] == ' ' || sTemp[i+1] == 't' || sTemp[i+1] == 'b'))
+                {
+                    sAxisBind += "l" + sTemp.substr(i,1);
+                    if (sTemp[i+1] == ' ')
+                        i++;
+                }
+                else if (sTemp.length() == i+1)
+                    sAxisBind += "l" + sTemp.substr(i);
+                else
+                    sAxisBind += "lb";
+            }
+            else if (sTemp.substr(i,2) == "  ")
+            {
+                sAxisBind += "lb";
+                i++;
+            }
+        }
+        if (sAxisBind.find('l') == string::npos && sAxisBind.length())
+        {
+            for (unsigned int i = 0; i < sAxisBind.length(); i++)
+            {
+                if (sAxisBind[i] == 'r')
+                    sAxisBind[i] = 'l';
+            }
+        }
+        if (sAxisBind.find('b') == string::npos && sAxisBind.length())
+        {
+            for (unsigned int i = 0; i < sAxisBind.length(); i++)
+            {
+                if (sAxisBind[i] == 't')
+                    sAxisBind[i] = 'b';
             }
         }
     }
@@ -1533,6 +1624,7 @@ void PlotData::reset()
         dRanges[i][1] = 10.0;
         dOrigin[i] = 0.0;
         sAxisLabels[i] = "";
+        sAxisBind.clear();
         _lHlines[i].sDesc = "";
         _lHlines[i].sStyle = "k;2";
         _lHlines[i].dPos = 0.0;
@@ -1649,7 +1741,7 @@ void PlotData::deleteData()
             {
                 for (int k = 0; k < nLayers; k++)
                 {
-                    dPlotData[i][j][k] = 0.0;
+                    dPlotData[i][j][k] = NAN;
                 }
             }
         }
@@ -1684,6 +1776,8 @@ void PlotData::deleteData()
     sLineSizes = "00000000000000";
     sLineStylesGrey = "-|=;i:j|=;i:j-";
     nLegendstyle = 0;
+    sAxisBind.clear();
+    sFunctionAxisBind.clear();
     sBackground = "";
     dColorRange[0] = NAN;
     dColorRange[1] = NAN;
@@ -1738,6 +1832,15 @@ string PlotData::getParams(const Settings& _option, bool asstr) const
     sReturn += "aspect=" + toString(dAspect, 4) + sSepString;
     if (bAxis)
         sReturn += "axis" + sSepString;
+    if (sAxisBind.length())
+    {
+        sReturn += "axisbind=";
+        if (asstr)
+            sReturn += "\\\"" + sAxisBind + "\\\"";
+        else
+            sReturn += "\"" + sAxisBind + "\"";
+        sReturn += sSepString;
+    }
     sReturn += "axisscale=[";
     for (int i = 0; i < 4; i++)
     {
@@ -2027,7 +2130,7 @@ void PlotData::setDim(int _i, int _j, int _k)
                 dPlotData[i][j] = new double[nNLayers];
                 for (int k = 0; k < nNLayers; k++)
                 {
-                    dPlotData[i][j][k] = 0.0;
+                    dPlotData[i][j][k] = NAN;
                 }
             }
         }
@@ -2074,7 +2177,7 @@ void PlotData::setDim(int _i, int _j, int _k)
                     if (i < nLines && j < nRows && k < nLayers)
                         dPlotData[i][j][k] = dTemp[i][j][k];
                     else
-                        dPlotData[i][j][k] = 0.0;
+                        dPlotData[i][j][k] = NAN;
                 }
             }
         }
@@ -2118,22 +2221,48 @@ int PlotData::getLayers(bool bFull) const
 // --> Minimum aller Daten im Speicher lesen <--
 double PlotData::getMin(int nCol)
 {
-    double _dMin = 0.0;
+    double _dMin = NAN;
     if (dPlotData)
     {
         if (nCol == -1)
         {
             return dMin;
         }
+        else if (nCol == -2) // l
+        {
+            for (int j = 0; j < nRows; j++)
+            {
+                if (getFunctionAxisbind(j)[0] != 'l')
+                    continue;
+                for (int i = 0; i < nLines; i++)
+                {
+                    if (dPlotData[i][j][0] < _dMin || isnan(_dMin))
+                        _dMin = dPlotData[i][j][0];
+                }
+            }
+        }
+        else if (nCol == -3) // r
+        {
+            for (int j = 0; j < nRows; j++)
+            {
+                if (getFunctionAxisbind(j)[0] != 'r')
+                    continue;
+                for (int i = 0; i < nLines; i++)
+                {
+                    if (dPlotData[i][j][0] < _dMin || isnan(_dMin))
+                        _dMin = dPlotData[i][j][0];
+                }
+            }
+        }
         else if (nCol >= nRows)
-            return 0.0;
+            return NAN;
         else
         {
             for (int i = 0; i < nLines; i++)
             {
                 for (int k = 0; k < nLayers; k++)
                 {
-                    if (dPlotData[i][nCol][k] < _dMin || (i == 0 && k == 0))
+                    if (dPlotData[i][nCol][k] < _dMin || isnan(_dMin))
                         _dMin = dPlotData[i][nCol][k];
                 }
             }
@@ -2145,22 +2274,48 @@ double PlotData::getMin(int nCol)
 // --> Maximum aller Daten im Speicher lesen <--
 double PlotData::getMax(int nCol)
 {
-    double _dMax = 0.0;
+    double _dMax = NAN;
     if (dPlotData)
     {
         if (nCol == -1)
         {
             return dMax;
         }
+        else if (nCol == -2) // l
+        {
+            for (int j = 0; j < nRows; j++)
+            {
+                if (getFunctionAxisbind(j)[0] != 'l')
+                    continue;
+                for (int i = 0; i < nLines; i++)
+                {
+                    if (dPlotData[i][j][0] > _dMax || isnan(_dMax))
+                        _dMax = dPlotData[i][j][0];
+                }
+            }
+        }
+        else if (nCol == -3) // r
+        {
+            for (int j = 0; j < nRows; j++)
+            {
+                if (getFunctionAxisbind(j)[0] != 'r')
+                    continue;
+                for (int i = 0; i < nLines; i++)
+                {
+                    if (dPlotData[i][j][0] > _dMax || isnan(_dMax))
+                        _dMax = dPlotData[i][j][0];
+                }
+            }
+        }
         else if (nCol >= nRows)
-            return 0.0;
+            return NAN;
         else
         {
             for (int i = 0; i < nLines; i++)
             {
                 for (int k = 0; k < nLayers; k++)
                 {
-                    if (dPlotData[i][nCol][k] > _dMax || (i == 0 && k == 0))
+                    if (dPlotData[i][nCol][k] > _dMax || isnan(_dMax))
                         _dMax = dPlotData[i][nCol][k];
                 }
             }

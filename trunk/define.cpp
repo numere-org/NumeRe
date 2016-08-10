@@ -88,6 +88,7 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
                                 // String, um selbigen im Fehlerfall wiederherstellen zu koennen
     string sFunction = "";      // String, der die eigentliche Definition enthalten wird
     string sFunctionName = "";  // String, der den Funktionsnamen beinhalten wird
+    mu::varmap_type mAsVal;
 
     if (bRedefine && sExpr.find("()") != string::npos && matchParams(sExpr, "comment", '=') && nDefinedFunctions)
     {
@@ -179,6 +180,7 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
         sFunction = sFunction.substr(0, sFunction.rfind(" --"));
     }
     sFunctionName = sExpr.substr(0, sExpr.find(":="));
+
     StripSpaces(sFunction);
     StripSpaces(sFunctionName);
     // --> Fehler abfangen: Ziffern am Anfang eines Funktionsnamens und Operatoren in einem Funktionsnamen <--
@@ -199,7 +201,39 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
         }
     }
 
+    sFunction = " " + sFunction + " ";
+    if (matchParams(sExpr, "recursive"))
+    {
+        string sFuncOccurence = "";
+        for (unsigned int i = 0; i < sFunction.length(); i++)
+        {
+            if (sFunction.substr(i,sFunctionName.find('(')+1) == sFunctionName.substr(0, sFunctionName.find('(')+1)
+                && (!i || !isalnum(sFunction[i-1])))
+            {
+                sFuncOccurence = sFunction.substr(i, sFunction.find(')', i)+1-i);
+                if (!call(sFuncOccurence, _option))
+                {
+                    return false;
+                }
+                sFunction.replace(i,sFunction.find(')', i)+1-i, sFuncOccurence);
+            }
+        }
+    }
+    if (matchParams(sExpr, "asval", '='))
+    {
+        string sAsVal = getArgAtPos(sExpr, matchParams(sExpr, "asval", '=')+5);
+        if (sAsVal.front() == '{')
+            sAsVal.erase(0,1);
+        if (sAsVal.back() == '}')
+            sAsVal.pop_back();
+        _parser.SetExpr(sAsVal);
+        _parser.Eval();
+        mAsVal = _parser.GetUsedVar();
+    }
 
+    //cerr << sFunction << endl;
+
+    StripSpaces(sFunction);
     /* --> Dies ist ein Endlosschleifentest: Define::call() gibt FALSE zurueck, wenn die Rekursion nicht nach
      *     einer definierten Anzahl an Schritten abbricht. (Die Anzahl ist dabei von der Anzahl an definierten
      *     Funktionen abhaengig) <--
@@ -207,6 +241,36 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
     if (!call(sFunction, _option))
     {
         return false;
+    }
+
+
+    sFunction = " " + sExpr.substr(sExpr.find(":=")+2) + " ";
+    if (sFunction.rfind("-set") != string::npos)
+    {
+        sFunction = sFunction.substr(0, sFunction.rfind("-set")) + " ";
+    }
+    if (sFunction.rfind(" --") != string::npos)
+    {
+        sFunction = sFunction.substr(0, sFunction.rfind(" --")) + " ";
+    }
+
+    if (matchParams(sExpr, "recursive"))
+    {
+        string sFuncOccurence = "";
+        for (unsigned int i = 0; i < sFunction.length(); i++)
+        {
+            if (sFunction.substr(i,sFunctionName.find('(')+1) == sFunctionName.substr(0, sFunctionName.find('(')+1)
+                && (!i || !isalnum(sFunction[i-1])))
+            {
+                sFuncOccurence = sFunction.substr(i, sFunction.find(')', i)+1-i);
+                if (!call(sFuncOccurence, _option))
+                {
+                    return false;
+                }
+                StripSpaces(sFuncOccurence);
+                sFunction.replace(i,sFunction.find(')', i)+1-i, sFuncOccurence);
+            }
+        }
     }
 
     // --> Handelt es sich um eine Umdefinition? <--
@@ -254,9 +318,11 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
         }
     }
 
+
     // --> Gibt offenbar Platz: Kopieren wir schon mal die Eindeutigen Einstaege in die Datenbank <--
     sFunctions[nDefine][0] = sExpr.substr(0,sExpr.find('('));                   // Funktionsname
-    sFunctions[nDefine][1] = " " + sExpr.substr(sExpr.find(":=")+2) + " ";      // Funktionsausdruck; die Leerzeichen sind dazu da,
+    sFunctions[nDefine][1] = sFunction;
+    /*sFunctions[nDefine][1] = " " + sExpr.substr(sExpr.find(":=")+2) + " ";      // Funktionsausdruck; die Leerzeichen sind dazu da,
                                                                                 // sicher zu gehen, dass wenn man das Zeichen VOR
                                                                                 // dem Treffer untersuchen moechte, kein SEG-FAULT
                                                                                 // auftritt
@@ -267,9 +333,43 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
     if (sFunctions[nDefine][1].rfind(" --") != string::npos)
     {
         sFunctions[nDefine][1] = sFunctions[nDefine][1].substr(0, sFunctions[nDefine][1].rfind(" --")) + " ";
+    }*/
+
+    /*if (matchParams(sExpr, "recursive"))
+    {
+        string sFuncOccurence = "";
+        for (unsigned int i = 0; i < sFunctions[nDefine][1].length(); i++)
+        {
+            if (sFunctions[nDefine][1].substr(i,sFunctions[nDefine][0].length()+1) == sFunctions[nDefine][0]+"("
+                && (!i || !isalnum(sFunctions[nDefine][1][i-1])))
+            {
+                sFuncOccurence = sFunctions[nDefine][1].substr(i, sFunctions[nDefine][1].find(')', i)+1-i);
+                if (!call(sFuncOccurence, _option))
+                {
+                    return false;
+                }
+                sFunctions[nDefine][1].replace(i,sFunctions[nDefine][1].find(')', i)+1-i, sFuncOccurence);
+            }
+        }
+    }*/
+
+    if (matchParams(sExpr, "asval", '='))
+    {
+        for (auto iter = mAsVal.begin(); iter != mAsVal.end(); ++iter)
+        {
+            for (unsigned int i = 0; i < sFunctions[nDefine][1].length(); i++)
+            {
+                if (sFunctions[nDefine][1].substr(i, (iter->first).length()) == iter->first && checkDelimiter(sFunctions[nDefine][1].substr(i-1, (iter->first).length()+2)))
+                {
+                    sFunctions[nDefine][1].replace(i,(iter->first).length(), toString(*iter->second, _option));
+                }
+            }
+        }
     }
 
+    //cerr << sFunctions[nDefine][1] << endl;
 
+    // Warum mit Parameter?
     sFunctions[nDefine][2] = fromSystemCodePage(sExpr);                                             // Urspruengliche Definition
 
     // --> Hierein kommt die Argumentliste aus der Definition. Wir werden sie weiter unten weiterverarbeiten <--
@@ -665,6 +765,9 @@ bool Define::call(string& sExpr, const Settings& _option, int nRecursion)
     string sOperators = "+-*/^&|!?:{";
     bool bDoRecursion = false;      // BOOL; Ist TRUE, wenn eine Rekursion noetig ist
 
+    if (!sExpr.length())
+        return true;
+
     // --> Rekursionsabbruchbedingung: 2xDefinierteFunktionen+1 (da nDefinedFunctions auch 0 sein kann) <--
     if ((unsigned)nRecursion == nDefinedFunctions*2 + 1)
     {
@@ -909,12 +1012,13 @@ string Define::getImplemention(unsigned int _i) const
     if (_i >= nDefinedFunctions)
         return "";
     string sImplemention = sFunctions[_i][2].substr(sFunctions[_i][2].find(":=")+2);
-    if (matchParams(sImplemention, "comment", '='))
+
+    if (matchParams(sImplemention, "comment", '=') || matchParams(sImplemention, "recursive") || matchParams(sImplemention, "asval", '='))
     {
         if (sImplemention.find("-set"))
-            sImplemention.erase(sImplemention.rfind("-set", matchParams(sImplemention, "comment", '=')));
-        else
-            sImplemention.erase(sImplemention.rfind("--", matchParams(sImplemention, "comment", '=')));
+            sImplemention.erase(sImplemention.rfind("-set"));
+        else if (sImplemention.find("--"))
+            sImplemention.erase(sImplemention.rfind("--"));
     }
     StripSpaces(sImplemention);
     return sImplemention;

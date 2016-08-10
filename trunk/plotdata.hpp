@@ -59,6 +59,8 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         string sAxisLabels[3];      // Achsenbeschriftungen fuer alle drei Achsen
         string sPlotTitle;          // Titelzeile fuer den Plot
         string sFontStyle;
+        string sAxisBind;
+        string sFunctionAxisBind;
         double dMin;                // Globales Minimum
         double dMax;                // GLobales Maximum
         double dMaximum;            // Norm-Maximum
@@ -218,6 +220,26 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         inline void setFont(const string& Font)
             {
                 sFontStyle = Font;
+                return;
+            }
+        inline string getAxisbind(unsigned int i) const
+            {
+                if (2*i+1 < sAxisBind.length())
+                    return sAxisBind.substr(2*i,2);
+                else
+                    return "lb";
+            }
+        inline string getFunctionAxisbind(unsigned int i) const
+            {
+                if (2*i+1 < sFunctionAxisBind.length())
+                    return sFunctionAxisBind.substr(2*i,2);
+                else
+                    return "lb";
+            }
+        inline void setFunctionAxisbind(const string& sBind)
+            {
+                if (sBind.length())
+                    sFunctionAxisBind = sBind;
                 return;
             }
 
@@ -404,16 +426,30 @@ class PlotData : public FileSystem  // CHILD von Filesystem
                 else
                     return _lLine;
             }
-        inline Axis getAddAxes(unsigned int i = 0) const
+        inline Axis getAddAxis(unsigned int i = 0) const
             {
                 Axis _Axis;
                 _Axis.sLabel = "";
+                _Axis.sStyle = "k";
                 _Axis.dMax = NAN;
                 _Axis.dMin = NAN;
                 if (i < 2)
                     return _AddAxes[i];
                 else
                     return _Axis;
+            }
+        inline void setAddAxis(unsigned int i = 0, double _dMin = NAN, double _dMax = NAN)
+            {
+                if (i < 2 && isnan(_AddAxes[i].dMax) && isnan(_AddAxes[i].dMin) && !isnan(_dMin) && !isnan(_dMax))
+                {
+                    _AddAxes[i].dMin = _dMin;
+                    _AddAxes[i].dMax = _dMax;
+                    if (!i && !_AddAxes[i].sLabel.length())
+                        _AddAxes[i].sLabel = "@{\\i x}";
+                    else if (!_AddAxes[i].sLabel.length())
+                        _AddAxes[i].sLabel = "@{\\i y}";
+                }
+                return;
             }
 
         // --> Lesen der einzelnen Achsenbeschriftungen <--

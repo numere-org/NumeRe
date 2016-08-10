@@ -872,6 +872,19 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             cerr << "|-> LOADPATH: \"" << _option.getLoadPath() << "\"" << endl;
             return 1;
         }
+        else if (matchParams(sCmd, "workpath"))
+        {
+            if (matchParams(sCmd, "asstr"))
+            {
+                if (!nPos)
+                    sCmd = "\"" + _option.getWorkPath() + "\"";
+                else
+                    sCmd.replace(nPos, sCommand.length(), "\"" + _option.getWorkPath() + "\"");
+                return 0;
+            }
+            cerr << "|-> WORKPATH: \"" << _option.getWorkPath() << "\"" << endl;
+            return 1;
+        }
         else if (matchParams(sCmd, "viewer"))
         {
             if (_option.getViewerPath().length())
@@ -2008,16 +2021,6 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             doc_Help("edit", _option);
         return 1;
     }
-    else if (sCommand == "write")
-    {
-        if (sCmd.length() > 6 && matchParams(sCmd, "file", '='))
-        {
-            BI_writeToFile(sCmd, _parser, _data, _option);
-        }
-        else
-            doc_Help("write", _option);
-        return 1;
-    }
     else if (sCommand == "taylor")
     {
         if (sCmd.length() > 7)
@@ -2611,6 +2614,48 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
 
         return 0;
     }
+    else if (sCmd[0] == 'w')
+    {
+        if (sCommand == "write")
+        {
+            if (sCmd.length() > 6 && matchParams(sCmd, "file", '='))
+            {
+                BI_writeToFile(sCmd, _parser, _data, _option);
+            }
+            else
+                doc_Help("write", _option);
+            return 1;
+        }
+        else if (sCommand == "workpath")
+        {
+            if (sCmd.length() <= 8)
+                return 0;
+            if (sCmd.find_first_not_of(' ', findCommand(sCmd).nPos+8) == string::npos)
+                return 0;
+            if (sCmd.find('"') == string::npos)
+            {
+                sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos+8), 1, '"');
+                StripSpaces(sCmd);
+                sCmd += '"';
+            }
+            while (sCmd.find('\\') != string::npos)
+                sCmd[sCmd.find('\\')] = '/';
+
+            if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+            {
+                return 1;
+            }
+            FileSystem _fSys;
+            _fSys.setTokens(_option.getTokenPaths());
+            _fSys.setPath(sArgument, true, _data.getProgramPath());
+            _option.setWorkPath(_fSys.getPath());
+            if (_option.getSystemPrintStatus())
+                cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) << endl;
+                //cerr << "|-> Dateipfad erfolgreich aktualisiert." << endl;
+            return 1;
+        }
+        return 0;
+    }
     else if (sCmd[0] == 's')
     {
         if (sCommand == "stats")
@@ -2891,6 +2936,36 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 _data.setPath(sArgument, true, _data.getProgramPath());
                 _option.setLoadPath(_data.getPath());
+                if (_option.getSystemPrintStatus())
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) << endl;
+                    //cerr << "|-> Dateipfad erfolgreich aktualisiert." << endl;
+                return 1;
+            }
+            else if (matchParams(sCmd, "workpath") || matchParams(sCmd, "workpath", '='))
+            {
+                if (matchParams(sCmd, "workpath", '='))
+                {
+                    addArgumentQuotes(sCmd, "workpath");
+                }
+                while (sCmd.find('\\') != string::npos)
+                    sCmd[sCmd.find('\\')] = '/';
+
+                if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+                {
+                    cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH")+":") << endl;
+                    //cerr << "|-> Einen Pfad eingeben:" << endl;
+                    do
+                    {
+                        cerr << "|" << endl;
+                        cerr << "|<- ";
+                        getline(cin,sArgument);
+                    }
+                    while (!sArgument.length());
+                }
+                FileSystem _fSys;
+                _fSys.setTokens(_option.getTokenPaths());
+                _fSys.setPath(sArgument, true, _data.getProgramPath());
+                _option.setWorkPath(_fSys.getPath());
                 if (_option.getSystemPrintStatus())
                     cerr << toSystemCodePage("|-> "+_lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) << endl;
                     //cerr << "|-> Dateipfad erfolgreich aktualisiert." << endl;
@@ -6303,7 +6378,8 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
                 && sSpecified != "savepath"
                 && sSpecified != "plotpath"
                 && sSpecified != "scriptpath"
-                && sSpecified != "procpath")
+                && sSpecified != "procpath"
+                && sSpecified != "wp")
                 sSpecified = "";
         }
         else
@@ -6427,6 +6503,29 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
             if (!BI_ListDirectory("PLOTPATH", __sCmd, _option))
                 cerr << LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) << endl;
         }
+        if (sSpecified == "wp")
+        {
+            sConnect = _option.getWorkPath() + "  ";
+            if (sConnect.length() > nFirstColLength)
+            {
+                sConnect += "$";
+                sConnect.append(nFirstColLength, (char)249);
+            }
+            else
+                sConnect.append(nFirstColLength-sConnect.length(), (char)249);
+            sConnect += "  <" + toUpperCase(_lang.get("BUILTIN_LISTFILES_WORKPATH")) + ">  ";
+            if (sConnect.find('$') != string::npos)
+            {
+                sConnect.append(_option.getWindow()-4-sConnect.length()+sConnect.rfind('$'), (char)249);
+            }
+            else
+                sConnect.append(_option.getWindow()-4-sConnect.length(), (char)249);
+            if (!sSpecified.length())
+                cerr << "|" << endl;
+            cerr << LineBreak("|-> "+sConnect, _option) << endl;
+            if (!BI_ListDirectory("WORKPATH", __sCmd, _option))
+                cerr << LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) << endl;
+        }
     }
     else
     {
@@ -6523,6 +6622,11 @@ bool BI_ListDirectory(const string& sDir, const string& sParams, const Settings&
             hFind = FindFirstFile((_option.getProcsPath()+"\\"+sPattern).c_str(), &FindFileData);
             sDirectory = _option.getProcsPath();
         }
+        else if (sDir == "WORKPATH")
+        {
+            hFind = FindFirstFile((_option.getWorkPath()+"\\"+sPattern).c_str(), &FindFileData);
+            sDirectory = _option.getWorkPath();
+        }
         else
         {
             if (sDir[0] == '.')
@@ -6556,6 +6660,11 @@ bool BI_ListDirectory(const string& sDir, const string& sParams, const Settings&
                 {
                     hFind = FindFirstFile((_option.getProcsPath() + "\\" + sDir.substr(sDir.find('>')+1)+"\\"+sPattern).c_str(), &FindFileData);
                     sDirectory = _option.getProcsPath() + sDir.substr(10);
+                }
+                else if (sDir.substr(0,4) == "<wp>")
+                {
+                    hFind = FindFirstFile((_option.getWorkPath() + "\\" + sDir.substr(sDir.find('>')+1)+"\\"+sPattern).c_str(), &FindFileData);
+                    sDirectory = _option.getWorkPath() + sDir.substr(10);
                 }
                 else if (sDir.substr(0,2) == "<>" || sDir.substr(0,6) == "<this>")
                 {
@@ -8100,6 +8209,11 @@ bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _op
     else if (sObject.find("<procpath>") != string::npos || sObject.find(_option.getProcsPath()) != string::npos)
     {
         _fSys.setPath(_option.getProcsPath(), false, _option.getExePath());
+        sObject = _fSys.ValidFileName(sObject, ".nprc");
+    }
+    else if (sObject.find("<wp>") != string::npos || sObject.find(_option.getWorkPath()) != string::npos)
+    {
+        _fSys.setPath(_option.getWorkPath(), false, _option.getExePath());
         sObject = _fSys.ValidFileName(sObject, ".nprc");
     }
     else if (sObject.find("<>") != string::npos || sObject.find("<this>") != string::npos || sObject.find(_option.getExePath()) != string::npos)

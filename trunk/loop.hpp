@@ -68,6 +68,7 @@ class Loop
         Returnvalue ReturnVal;
         bool bUseLoopParsingMode;
         bool bLockedPauseMode;
+        bool bFunctionsReplaced;
         string sLoopPlotCompose;
         map<string,string> mVarMap;
 
