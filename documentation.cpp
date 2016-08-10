@@ -978,6 +978,7 @@ void doc_SearchFct(const string& sToLookFor, Settings& _option)
         {
             if (vTopics[i].size() < 3)
             {
+                //cerr << vTopics[i][0] << endl << vTopics[i].size() << endl;
                 if (sMultiTopics)
                     delete[] sMultiTopics;
                 make_hline();

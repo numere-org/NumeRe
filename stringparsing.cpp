@@ -149,7 +149,8 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
         parser_VectorToExpr(sLine, _option);
     }
 
-    if (sLine.find(',') != string::npos)
+    /// CHANGED: Nur Rekursionen durchfuehren, wenn auch '=' in dem String gefunden wurde. Nur dann ist sie naemlich noetig.
+    if (sLine.find(',') != string::npos && sLine.find('=') != string::npos)
     {
         StripSpaces(sLine);
         if (sLine != getLastArgument(sLine, false))
@@ -159,7 +160,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             while (sLine.length())
             {
                 sRecursion = getLastArgument(sLine, true);
-                if (sLine.length())
+                if (sLine.length() && sRecursion.find('=') != string::npos)
                 {
                     sRecursion += " -kmq";
                     if (!parser_StringParser(sRecursion, sDummy, _data, _parser, _option, true))
@@ -1802,6 +1803,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             {
                 if (sTemp.find("<>") == 0
                     || sTemp.find("<this>") == 0
+                    || sTemp.find("<wp>") == 0
                     || sTemp.find("<loadpath>") == 0
                     || sTemp.find("<savepath>") == 0
                     || sTemp.find("<plotpath>") == 0
@@ -1810,6 +1812,8 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 {
                     if (sTemp.find("<>") == 0 || sTemp.find("<this>") == 0)
                         sTemp_2 += replacePathSeparator(_option.getExePath()) + "\"";
+                    else if (sTemp.find("<wp>") == 0)
+                        sTemp_2 += replacePathSeparator(_option.getWorkPath()) + "\"";
                     else if (sTemp.find("<loadpath>") == 0)
                         sTemp_2 += replacePathSeparator(_option.getLoadPath()) + "\"";
                     else if (sTemp.find("<savepath>") == 0)
@@ -1956,6 +1960,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             || (sFinal[n].find('<') != string::npos
                 && sFinal[n].find("<>") != sFinal[n].find('<')
                 && sFinal[n].find("<this>") != sFinal[n].find('<')
+                && sFinal[n].find("<wp>") != sFinal[n].find('<')
                 && sFinal[n].find("<loadpath>") != sFinal[n].find('<')
                 && sFinal[n].find("<savepath>") != sFinal[n].find('<')
                 && sFinal[n].find("<plotpath>") != sFinal[n].find('<')
@@ -1964,6 +1969,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             || (sFinal[n].find('>') != string::npos
                 && sFinal[n].find("<>") != sFinal[n].find('>')-1
                 && sFinal[n].find("<this>") != sFinal[n].find('>')-5
+                && sFinal[n].find("<wp>") != sFinal[n].find('>')-5
                 && sFinal[n].find("<loadpath>") != sFinal[n].find('>')-9
                 && sFinal[n].find("<savepath>") != sFinal[n].find('>')-9
                 && sFinal[n].find("<plotpath>") != sFinal[n].find('>')-9

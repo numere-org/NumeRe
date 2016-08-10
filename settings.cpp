@@ -50,6 +50,7 @@ Settings::Settings() : Documentation()
 	sPlotOutputPath = "<>/plots";
 	sScriptpath = "<>/scripts";
 	sProcsPath = "<>/procedures";
+	sWorkPath = "<>";
 	sFramework = "calc";
 	sSettings_ini = "numere.ini";
 	sCmdCache = "";
@@ -615,7 +616,12 @@ void Settings::load(string _sWhere)
     }
 
     if (sPath == "./" || sPath == "<>")
+    {
         sPath = _sWhere;
+        sWorkPath = _sWhere;
+    }
+    if (sWorkPath == "<>")
+        sWorkPath = sPath;
     if (sLoadPath.substr(0,3) == "<>/")
         sLoadPath.replace(0,2,_sWhere);
     if (sSavePath.substr(0,3) == "<>/")

@@ -65,6 +65,7 @@ class Settings : public Documentation
 		string sLoadPath;		    // Pfad zum Einlesen
 		string sScriptpath;         // Pfad zu den Scripten
 		string sProcsPath;          // Pfad zu den Prozeduren
+		string sWorkPath;           // Pfad zu den Prozeduren
 		fstream Settings_ini;	    // file-stream fuer das Settings-ini-file
 		string sSettings_ini;       // Dateiname des INI-Files
 		string sFramework;          // string, der das Standard-Framework beim Start bestimmt
@@ -148,6 +149,12 @@ class Settings : public Documentation
             {
                 if (_sPath.length())
                     sPath = _sPath;
+                return;
+            }
+        inline void setWorkPath(const string& _sWorkPath)
+            {
+                if (_sWorkPath.length())
+                    sWorkPath = _sWorkPath;
                 return;
             }
 		inline void setSavePath(const string& _sSavePath)
@@ -332,6 +339,8 @@ class Settings : public Documentation
             {return nPrecision;}
         inline string getExePath() const
             {return sPath;}
+        inline string getWorkPath() const
+            {return sWorkPath;}
 		inline string getSavePath() const
             {return sSavePath;}
 		inline string getLoadPath() const
@@ -360,6 +369,7 @@ class Settings : public Documentation
             {return sDefaultfont;}
         inline string getTokenPaths() const
             {return "<>="+sPath
+                    +";<wp>="+sWorkPath
                     +";<savepath>="+sSavePath
                     +";<loadpath>="+sLoadPath
                     +";<plotpath>="+sPlotOutputPath

@@ -1399,7 +1399,7 @@ string getArgAtPos(const string& sCmd, unsigned int nPos)
     {
         for (unsigned int i = nPos; i < sCmd.length(); i++)
         {
-            if (sCmd[i] == '(' || sCmd[i] == '[')
+            if (sCmd[i] == '(' || sCmd[i] == '[' || sCmd[i] == '{')
                 i += getMatchingParenthesis(sCmd.substr(i));
             if (sCmd[i] == ' ')
             {

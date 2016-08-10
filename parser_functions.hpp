@@ -76,6 +76,7 @@ struct Indices
 struct PlotInfo
 {
     double dRanges[3][2];
+    double dSecAxisRanges[2][2];
     double dColorRanges[2];
     bool b2D;
     bool b3D;
@@ -86,7 +87,16 @@ struct PlotInfo
     string sCommand;
     string sPlotParams;
     int nSamples;
+    int nStyleMax;
     unsigned int nMaxPlotDim;
+    // Pointer-Variablen
+    int* nStyle;
+    int* nFunctions;
+    string* sLineStyles;
+    string* sContStyles;
+    string* sPointStyles;
+    string* sConPointStyles;
+
 };
 // Erster Index: No. of Line; zweiter Index: No. of Col (push_back verwendet dazu stets zeilen!)
 typedef vector<vector<double> > Matrix;

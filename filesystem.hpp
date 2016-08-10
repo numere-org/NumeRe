@@ -42,7 +42,7 @@ class FileSystem
 	protected:												// In allen CHILD-Klassen verfuegbar
 		string sPath;										// String-Variable fuer den Dateipfad
 		string sWhere;
-		string sTokens[6][2];
+		string sTokens[7][2];
 		string sValidExtensions;
 	public:
         FileSystem();

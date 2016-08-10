@@ -1,8 +1,8 @@
 # depslib dependency file v1.0
-1469164648 source:c:\cpp\numere\built-in.cpp
+1469168248 source:c:\cpp\numere\built-in.cpp
 	"built-in.hpp"
 
-1463296409 c:\cpp\numere\built-in.hpp
+1463300009 c:\cpp\numere\built-in.hpp
 	<iostream>
 	<fstream>
 	<sstream>
@@ -26,11 +26,11 @@
 	"documentation.hpp"
 	"odesolver.hpp"
 
-1463691746 c:\cpp\numere\error.hpp
+1463695346 c:\cpp\numere\error.hpp
 	<string>
 	"language.hpp"
 
-1468138582 c:\cpp\numere\datafile.hpp
+1468142182 c:\cpp\numere\datafile.hpp
 	<string>
 	<boost/tokenizer.hpp>
 	<vector>
@@ -44,7 +44,7 @@
 	"BasicExcel.hpp"
 	"tinyxml2.h"
 
-1465239898 c:\cpp\numere\settings.hpp
+1470722641 c:\cpp\numere\settings.hpp
 	<string>
 	<sstream>
 	<fstream>
@@ -54,7 +54,7 @@
 	"doc_helper.hpp"
 	"debugger.hpp"
 
-1465240307 c:\cpp\numere\doc_helper.hpp
+1465243907 c:\cpp\numere\doc_helper.hpp
 	<fstream>
 	<string>
 	<vector>
@@ -62,20 +62,20 @@
 	"filesystem.hpp"
 	"error.hpp"
 
-1463424012 c:\cpp\numere\filesystem.hpp
+1470722303 c:\cpp\numere\filesystem.hpp
 	<string>
 	<iostream>
 	<fstream>
 	<sstream>
 	<windows.h>
 
-1463633311 c:\cpp\numere\debugger.hpp
+1463636911 c:\cpp\numere\debugger.hpp
 	<vector>
 	<string>
 	<map>
 	"error.hpp"
 
-1467782261 c:\cpp\numere\cache.hpp
+1467785861 c:\cpp\numere\cache.hpp
 	<iostream>
 	<fstream>
 	<string>
@@ -91,7 +91,7 @@
 	"version.h"
 	"resampler.h"
 
-1467866850 c:\cpp\numere\tools.hpp
+1467870450 c:\cpp\numere\tools.hpp
 	<iostream>
 	<iomanip>
 	<sstream>
@@ -106,11 +106,11 @@
 	"settings.hpp"
 	"datafile.hpp"
 
-1466345173 c:\cpp\numere\version.h
+1466348773 c:\cpp\numere\version.h
 
 1456175462 c:\cpp\numere\resampler.h
 
-1431586600 c:\cpp\numere\igorlib\readwave.h
+1431590200 c:\cpp\numere\igorlib\readwave.h
 	<stdio.h>
 	<tchar.h>
 	<ctype.h>
@@ -120,11 +120,11 @@
 	"IgorLib/CrossPlatformFileIO.h"
 	"IgorLib/IgorBin.h"
 
-1431543500 c:\cpp\numere\\igorlib\crossplatformfileio.h
+1431547100 c:\cpp\numere\\igorlib\crossplatformfileio.h
 
-1431543589 c:\cpp\numere\\igorlib\igorbin.h
+1431547189 c:\cpp\numere\\igorlib\igorbin.h
 
-1445703211 c:\cpp\numere\zip++.hpp
+1445706811 c:\cpp\numere\zip++.hpp
 	<string>
 	<iostream>
 	<windows.h>
@@ -132,11 +132,11 @@
 	"zip.h"
 	"unzip.h"
 
-1122505742 c:\cpp\numere\zip.h
+1122509342 c:\cpp\numere\zip.h
 
-1122506480 c:\cpp\numere\unzip.h
+1122510080 c:\cpp\numere\unzip.h
 
-1444645398 c:\cpp\numere\output.hpp
+1444648998 c:\cpp\numere\output.hpp
 	<string>
 	<ctime>
 	"error.hpp"
@@ -160,19 +160,19 @@
 	"tools.hpp"
 	"plotdata.hpp"
 
-1463852533 c:\cpp\numere\plotdata.hpp
+1470518343 c:\cpp\numere\plotdata.hpp
 	<string>
 	<cmath>
 	"error.hpp"
 	"tools.hpp"
 	"ParserLib/muParser.h"
 
-1436771110 c:\cpp\numere\parserlib\muparser.h
+1436774710 c:\cpp\numere\parserlib\muparser.h
 	<vector>
 	"muParserBase.h"
 	"muParserTemplateMagic.h"
 
-1461081951 c:\cpp\numere\parserlib\muparserbase.h
+1461085551 c:\cpp\numere\parserlib\muparserbase.h
 	<cmath>
 	<string>
 	<iostream>
@@ -202,7 +202,7 @@
 	"muParserError.h"
 	"muParserToken.h"
 
-1463930414 c:\cpp\numere\parserlib\muparsererror.h
+1463934014 c:\cpp\numere\parserlib\muparsererror.h
 	<cassert>
 	<stdexcept>
 	<string>
@@ -236,7 +236,7 @@
 	"muParserDef.h"
 	"muParserToken.h"
 
-1413923092 c:\cpp\numere\parserlib\muparserbytecode.h
+1413926692 c:\cpp\numere\parserlib\muparserbytecode.h
 	<cassert>
 	<string>
 	<stack>
@@ -249,7 +249,7 @@
 	<cmath>
 	"muParserError.h"
 
-1465361855 c:\cpp\numere\parser_functions.hpp
+1469881644 c:\cpp\numere\parser_functions.hpp
 	<cmath>
 	<string>
 	<sstream>
@@ -285,7 +285,7 @@
 	"tools.hpp"
 	"ParserLib/muParser.h"
 
-1433683987 c:\cpp\numere\plugin.hpp
+1433687587 c:\cpp\numere\plugin.hpp
 	<iostream>
 	<fstream>
 	<string>
@@ -293,7 +293,7 @@
 	"tools.hpp"
 	"error.hpp"
 
-1433063222 c:\cpp\numere\graph_helper.hpp
+1433066822 c:\cpp\numere\graph_helper.hpp
 	<mgl2/wnd.h>
 	<mgl2/mgl.h>
 	<string>
@@ -317,7 +317,7 @@
 	"tools.hpp"
 	"error.hpp"
 
-1461006893 c:\cpp\numere\script.hpp
+1461010493 c:\cpp\numere\script.hpp
 	<iostream>
 	<string>
 	<fstream>
@@ -350,28 +350,28 @@
 	"settings.hpp"
 	"error.hpp"
 
-1469262419 source:c:\cpp\numere\datafile.cpp
+1469266019 source:c:\cpp\numere\datafile.cpp
 	"datafile.hpp"
 
-1466025553 source:c:\cpp\numere\debugger.cpp
+1466029153 source:c:\cpp\numere\debugger.cpp
 	"debugger.hpp"
 
-1465841460 source:c:\cpp\numere\define.cpp
+1470433832 source:c:\cpp\numere\define.cpp
 	"define.hpp"
 
-1466571877 source:c:\cpp\numere\doc_helper.cpp
+1466575477 source:c:\cpp\numere\doc_helper.cpp
 	"doc_helper.hpp"
 
-1465240474 source:c:\cpp\numere\documentation.cpp
+1470415891 source:c:\cpp\numere\documentation.cpp
 	"documentation.hpp"
 
-1467696003 source:c:\cpp\numere\filesystem.cpp
+1470722379 source:c:\cpp\numere\filesystem.cpp
 	"filesystem.hpp"
 
-1459624315 source:c:\cpp\numere\fitcontroller.cpp
+1459627915 source:c:\cpp\numere\fitcontroller.cpp
 	"fitcontroller.hpp"
 
-1432105055 source:c:\cpp\numere\igorlib\crossplatformfileio.cpp
+1432108655 source:c:\cpp\numere\igorlib\crossplatformfileio.cpp
 	<ctype.h>
 	<string.h>
 	<stdlib.h>
@@ -380,12 +380,12 @@
 	<Windows.h>
 	"CrossPlatformFileIO.h"
 
-1431543500 c:\cpp\numere\igorlib\crossplatformfileio.h
+1431547100 c:\cpp\numere\igorlib\crossplatformfileio.h
 
-1431974108 source:c:\cpp\numere\igorlib\readwave.cpp
+1431977708 source:c:\cpp\numere\igorlib\readwave.cpp
 	"IgorLib/ReadWave.h"
 
-1431586600 c:\cpp\numere\\igorlib\readwave.h
+1431590200 c:\cpp\numere\\igorlib\readwave.h
 	<stdio.h>
 	<tchar.h>
 	<ctype.h>
@@ -395,10 +395,10 @@
 	"IgorLib/CrossPlatformFileIO.h"
 	"IgorLib/IgorBin.h"
 
-1467556951 source:c:\cpp\numere\loop.cpp
+1470473576 source:c:\cpp\numere\loop.cpp
 	"loop.hpp"
 
-1465843548 c:\cpp\numere\loop.hpp
+1470432678 c:\cpp\numere\loop.hpp
 	<string>
 	<iostream>
 	"error.hpp"
@@ -413,7 +413,7 @@
 	"built-in.hpp"
 	"tools.hpp"
 
-1467090220 source:c:\cpp\numere\main.cpp
+1469734182 source:c:\cpp\numere\main.cpp
 	<iostream>
 	<string>
 	<fstream>
@@ -444,7 +444,7 @@
 	"language.hpp"
 	"ParserLib/muParser.h"
 
-1460301409 c:\cpp\numere\parser.hpp
+1460305009 c:\cpp\numere\parser.hpp
 	<cstdlib>
 	<cmath>
 	<fstream>
@@ -474,7 +474,7 @@
 	"ParserLib/muParserTest.h"
 	"ParserLib/muParser.h"
 
-1459788121 c:\cpp\numere\procedure.hpp
+1459791721 c:\cpp\numere\procedure.hpp
 	<iostream>
 	<string>
 	<cmath>
@@ -506,16 +506,16 @@
 	"muParserBase.h"
 	<vector>
 
-1463604620 source:c:\cpp\numere\matrixoperations.cpp
+1463608220 source:c:\cpp\numere\matrixoperations.cpp
 	"parser_functions.hpp"
 
-1463691005 source:c:\cpp\numere\odesolver.cpp
+1463694605 source:c:\cpp\numere\odesolver.cpp
 	"odesolver.hpp"
 
-1468059950 source:c:\cpp\numere\output.cpp
+1468063550 source:c:\cpp\numere\output.cpp
 	"output.hpp"
 
-1467783061 source:c:\cpp\numere\parser_functions.cpp
+1467786661 source:c:\cpp\numere\parser_functions.cpp
 	"parser_functions.hpp"
 
 1448240716 source:c:\cpp\numere\parserlib\muparser.cpp
@@ -525,7 +525,7 @@
 	<algorithm>
 	<numeric>
 
-1461703158 source:c:\cpp\numere\parserlib\muparserbase.cpp
+1461706758 source:c:\cpp\numere\parserlib\muparserbase.cpp
 	"muParserBase.h"
 	"muParserTemplateMagic.h"
 	<cassert>
@@ -537,7 +537,7 @@
 	<locale>
 	<omp.h>
 
-1413923211 source:c:\cpp\numere\parserlib\muparserbytecode.cpp
+1413926811 source:c:\cpp\numere\parserlib\muparserbytecode.cpp
 	"muParserBytecode.h"
 	<cassert>
 	<string>
@@ -553,7 +553,7 @@
 1324663300 source:c:\cpp\numere\parserlib\muparsercallback.cpp
 	"muParserCallback.h"
 
-1463931066 source:c:\cpp\numere\parserlib\muparsererror.cpp
+1463934666 source:c:\cpp\numere\parserlib\muparsererror.cpp
 	"muParserError.h"
 
 1327257068 source:c:\cpp\numere\parserlib\muparserint.cpp
@@ -562,7 +562,7 @@
 	<algorithm>
 	<numeric>
 
-1459373897 source:c:\cpp\numere\parserlib\muparsertest.cpp
+1459377497 source:c:\cpp\numere\parserlib\muparsertest.cpp
 	"muParserTest.h"
 	<cstdio>
 	<cmath>
@@ -579,20 +579,20 @@
 	"muParserTokenReader.h"
 	"muParserBase.h"
 
-1466246356 source:c:\cpp\numere\plotdata.cpp
+1470518300 source:c:\cpp\numere\plotdata.cpp
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1441547849 source:c:\cpp\numere\plugin.cpp
+1441551449 source:c:\cpp\numere\plugin.cpp
 	"plugin.hpp"
 
-1463721947 source:c:\cpp\numere\plugin_histogram.cpp
+1463725547 source:c:\cpp\numere\plugin_histogram.cpp
 	"plugins.hpp"
 
-1463813198 source:c:\cpp\numere\plugin_random.cpp
+1463816798 source:c:\cpp\numere\plugin_random.cpp
 	"plugins.hpp"
 
-1463814135 source:c:\cpp\numere\plugin_statistics.cpp
+1463817735 source:c:\cpp\numere\plugin_statistics.cpp
 	"plugins.hpp"
 
 1456185430 source:c:\cpp\numere\resampler.cpp
@@ -604,23 +604,23 @@
 	<iostream>
 	"resampler.h"
 
-1466237370 source:c:\cpp\numere\script.cpp
+1466240970 source:c:\cpp\numere\script.cpp
 	"script.hpp"
 
-1465240121 source:c:\cpp\numere\settings.cpp
+1465243721 source:c:\cpp\numere\settings.cpp
 	"settings.hpp"
 
-1468216437 source:c:\cpp\numere\stringparsing.cpp
+1470722750 source:c:\cpp\numere\stringparsing.cpp
 	"parser_functions.hpp"
 
-1468473339 source:c:\cpp\numere\tools.cpp
+1470471397 source:c:\cpp\numere\tools.cpp
 	"tools.hpp"
 
-1463115376 source:c:\cpp\numere\ttr-ws13_private.rc
+1463118976 source:c:\cpp\numere\ttr-ws13_private.rc
 	<windows.h>
 	"version.h"
 
-1122536206 source:c:\cpp\numere\unzip.cpp
+1122539806 source:c:\cpp\numere\unzip.cpp
 	<windows.h>
 	<stdio.h>
 	<stdlib.h>
@@ -628,28 +628,28 @@
 	<tchar.h>
 	"unzip.h"
 
-1445702186 source:c:\cpp\numere\zip++.cpp
+1445705786 source:c:\cpp\numere\zip++.cpp
 	"zip++.hpp"
 
-1122481068 source:c:\cpp\numere\zip.cpp
+1122484668 source:c:\cpp\numere\zip.cpp
 	<windows.h>
 	<stdio.h>
 	<tchar.h>
 	"zip.h"
 
-1468348273 source:c:\cpp\numere\cache.cpp
+1468351873 source:c:\cpp\numere\cache.cpp
 	"cache.hpp"
 
-1468907496 source:c:\cpp\numere\parser.cpp
+1468911096 source:c:\cpp\numere\parser.cpp
 	"parser.hpp"
 
-1467359742 source:c:\cpp\numere\procedure.cpp
+1470471057 source:c:\cpp\numere\procedure.cpp
 	"procedure.hpp"
 
-1469686454 source:c:\cpp\numere\plotting.cpp
+1470561424 source:c:\cpp\numere\plotting.cpp
 	"parser_functions.hpp"
 
-1465240181 c:\cpp\numere\language.hpp
+1465243781 c:\cpp\numere\language.hpp
 	<string>
 	<map>
 	<vector>
@@ -657,10 +657,10 @@
 	<fstream>
 	"filesystem.hpp"
 
-1465240221 source:c:\cpp\numere\language.cpp
+1465243821 source:c:\cpp\numere\language.cpp
 	"language.hpp"
 
-1465240181 c:\cpp\numere\\language.hpp
+1465243781 c:\cpp\numere\\language.hpp
 	<string>
 	<map>
 	<vector>
@@ -668,14 +668,14 @@
 	<fstream>
 	"filesystem.hpp"
 
-1463424012 c:\cpp\numere\\filesystem.hpp
+1470722303 c:\cpp\numere\\filesystem.hpp
 	<string>
 	<iostream>
 	<fstream>
 	<sstream>
 	<windows.h>
 
-1467057709 c:\cpp\numere\basicexcel.hpp
+1467061309 c:\cpp\numere\basicexcel.hpp
 	<algorithm>
 	<cmath>
 	<functional>
@@ -686,10 +686,10 @@
 	<vector>
 	<cstring>
 
-1467057632 source:c:\cpp\numere\basicexcel.cpp
+1467061232 source:c:\cpp\numere\basicexcel.cpp
 	"BasicExcel.hpp"
 
-1466715024 c:\cpp\numere\tinyxml2.h
+1466718624 c:\cpp\numere\tinyxml2.h
 	<ctype.h>
 	<limits.h>
 	<stdio.h>
@@ -704,7 +704,7 @@
 	<android/log.h>
 	<assert.h>
 
-1466715024 source:c:\cpp\numere\tinyxml2.cpp
+1466718624 source:c:\cpp\numere\tinyxml2.cpp
 	"tinyxml2.h"
 	<new>
 	<stddef.h>

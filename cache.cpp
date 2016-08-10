@@ -1204,7 +1204,7 @@ bool Cache::loadCache()
         cache_file.read((char*)&nLines, sizeof(long long int));
         cache_file.read((char*)&nCols, sizeof(long long int));
 
-        if (nMajor >= 1 && nMinor >= 0 && nBuild >= 7 && nLines < 0 && nCols < 0)
+        if (nMajor*100+nMinor*10+nBuild >= 107 && nLines < 0 && nCols < 0)
         {
             nLines *= -1;
             nCols *= -1;

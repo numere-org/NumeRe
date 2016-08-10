@@ -22,3 +22,9 @@ Cleaned	Die Position der Darstellung des Filters bei "list -files" richtet sich 
 Fixed	In seltenen Faellen erkannte "data -paste" nicht Zahlen und Ueberschriften, wenn diese haendisch eingegeben wurden. Wurde behoben.
 Cleaned	NumeRe beachtet nun beim Plotten die Reihenfolge der Funktionen und Datensaetze.
 Cleaned	"plot3d" kann nun auch Datensaetze mit nur zwei Spalten darstellen.
+Added	Die Option "axisbind" kann verwendet werden, um Funktionen und Datensaetze an verschiedene Achsen zu binden.
+Added	"define" kann nun rekursive Definitionen durch die Option "recursive" ausfuehren. Dabei werden alle bestehenden Funktionsaufrufe in der neuen Definition durch die vorherige Definition ersetzt.
+Added	Mit der Option "asval={VARS}" koennen variablen vorgegeben werden, die waehrend einer Funktionsdefinition durch ihre Werte ersetzt werden sollen.
+Cleaned	Es koennen nun auch Funktionendefinitionen in Schleifen und Verzweigungen durchgefuehrt werden.
+Added	NumeRe besitzt nun ein "Arbeitsverzeichnis", das durch "<wp>" indiziert wird und mittels "workpath PATH" fuer die aktuelle Sitzung geaendert werden kann.
+Fixed	Ein kleiner Bug beim automatischen Laden des Caches wurde behoben.
