@@ -97,6 +97,16 @@ struct PlotInfo
     string* sPointStyles;
     string* sConPointStyles;
 
+    inline ~PlotInfo()
+        {
+            nStyle = 0;
+            nFunctions = 0;
+            sLineStyles = 0;
+            sContStyles = 0;
+            sPointStyles = 0;
+            sConPointStyles = 0;
+        }
+
 };
 // Erster Index: No. of Line; zweiter Index: No. of Col (push_back verwendet dazu stets zeilen!)
 typedef vector<vector<double> > Matrix;
