@@ -56,7 +56,8 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
     _pInfo.bDraw = false;
     _pInfo.bDraw3D = false;
     _pInfo.nMaxPlotDim = 1;
-    _pInfo.nStyleMax = 14;                  // Gesamtzahl der Styles
+    const int STYLEMAX = 14;
+    _pInfo.nStyleMax = STYLEMAX;                  // Gesamtzahl der Styles
     int nStyle = 0;                         // Nummer des aktuellen Plotstyles (automatische Variation des Styles)
     _pInfo.nStyle = &nStyle;
     double dDataRanges[3][2];               // Fuer die berechneten Daten-Intervalle (hoehere Prioritaet)
@@ -276,12 +277,11 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
         vPlotCompose.push_back(sCmd);
     }
 
-
     // String-Arrays fuer die endgueltigen Styles:
-    string sLineStyles[_pInfo.nStyleMax];
-    string sContStyles[_pInfo.nStyleMax];
-    string sPointStyles[_pInfo.nStyleMax];
-    string sConPointStyles[_pInfo.nStyleMax];
+    string sLineStyles[STYLEMAX];
+    string sContStyles[STYLEMAX];
+    string sPointStyles[STYLEMAX];
+    string sConPointStyles[STYLEMAX];
 
     _pInfo.sLineStyles = sLineStyles;
     _pInfo.sContStyles = sContStyles;
@@ -2183,13 +2183,20 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
          */
         if (parser_ExprNotEmpty(sFunc) && !(_pInfo.bDraw3D || _pInfo.bDraw))
         {
-            _parser.SetExpr(sFunc);
+            try
+            {
+                _parser.SetExpr(sFunc);
+                _parser.Eval();
 
-            if (parser_CheckVarOccurence(_parser, "t"))
-                bAnimateVar = true;
-            _parser.Eval();
-            nFunctions = _parser.GetNumResults();
-            if ((_pData.getColorMask() || _pData.getAlphaMask()) && _pInfo.b2D && (nFunctions + nDataPlots) % 2)
+                if (parser_CheckVarOccurence(_parser, "t"))
+                    bAnimateVar = true;
+                nFunctions = _parser.GetNumResults();
+                if ((_pData.getColorMask() || _pData.getAlphaMask()) && _pInfo.b2D && (nFunctions + nDataPlots) % 2)
+                {
+                    throw NUMBER_OF_FUNCTIONS_NOT_MATCHING;
+                }
+            }
+            catch (...)
             {
                 if (_mDataPlots)
                 {
@@ -2200,7 +2207,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                     delete[] nDataDim;
                     nDataDim = 0;
                 }
-                throw NUMBER_OF_FUNCTIONS_NOT_MATCHING;
+                throw;
             }
         }
         else if (parser_ExprNotEmpty(sFunc) && (_pInfo.bDraw3D || _pInfo.bDraw))
@@ -3824,7 +3831,8 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                             }
                             else
                             {
-                                for (long int i = 0; i < _pInfo.nSamples; i++)
+                                _mData2[0].Create(_mData.GetNN());
+                                for (long int i = 0; i < _mData.GetNN(); i++)
                                     _mData2[0].a[i] = 0.0;
                             }
                             if (_pData.getxError() && _pData.getyError() && nDataDim[nTypeCounter[1]] >= 4)
@@ -3834,10 +3842,12 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                             }
                             else if ((_pData.getyError() || _pData.getxError()) && nDataDim[nTypeCounter[1]] >= 3)
                             {
+                                _mData2[0].Create(_mData.GetNN());
+                                _mData2[1].Create(_mData.GetNN());
                                 if (_pData.getyError() && !_pData.getxError())
                                 {
                                     _mData2[1] = _mDataPlots[nTypeCounter[1]][2];
-                                    for (long int i = 0; i < _pInfo.nSamples; i++)
+                                    for (long int i = 0; i < _mData.GetNN(); i++)
                                         _mData2[0].a[i] = 0.0;
                                 }
                                 else if (_pData.getyError() && _pData.getxError())
@@ -3848,14 +3858,27 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                                 else
                                 {
                                     _mData2[0] = _mDataPlots[nTypeCounter[1]][2];
-                                    for (long int i = 0; i < _pInfo.nSamples; i++)
+                                    for (long int i = 0; i < _mData.GetNN(); i++)
                                         _mData2[1].a[i] = 0.0;
                                 }
                             }
                         }
                         if (_pData.getAxisbind(nType)[1] == 't')
                         {
+                            for (int i = 0; i < _mPlotAxes.GetNN(); i++)
+                            {
+                                if (_mPlotAxes.a[i] < _pInfo.dSecAxisRanges[0][0] || _mPlotAxes.a[i] > _pInfo.dSecAxisRanges[0][1])
+                                    _mPlotAxes.a[i] = NAN;
+                            }
                             _mPlotAxes = (_mPlotAxes-_pInfo.dSecAxisRanges[0][0]) * (_pInfo.dRanges[0][1]-_pInfo.dRanges[0][0])/(_pInfo.dSecAxisRanges[0][1]-_pInfo.dSecAxisRanges[0][0]) + _pInfo.dRanges[0][0];
+                        }
+                        else
+                        {
+                            for (int i = 0; i < _mPlotAxes.GetNN(); i++)
+                            {
+                                if (_mPlotAxes.a[i] < _pInfo.dRanges[0][0] || _mPlotAxes.a[i] > _pInfo.dRanges[0][1])
+                                    _mPlotAxes.a[i] = NAN;
+                            }
                         }
                         if (_pData.getAxisbind(nType)[0] == 'r')
                         {
@@ -5096,6 +5119,15 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                         _mData[1] = _mDataPlots[nTypeCounter[1]][1];
                         _mData[2] = _mDataPlots[nTypeCounter[1]][2];
 
+                        for (int j = 0; j < 3; j++)
+                        {
+                            for (int i = 0; i < _mData[j].GetNN(); i++)
+                            {
+                                if (_mData[j].a[i] < _pInfo.dRanges[j][0] || _mData[j].a[i] > _pInfo.dRanges[j][1])
+                                    _mData[j].a[i] = NAN;
+                            }
+                        }
+
                         if (_pData.getRegion() && vType.size() > nType+1 && vType[nType+1] == TYPE_DATA)
                         {
                             _mData2[0] = _mDataPlots[nTypeCounter[1]+1][0];
@@ -5110,6 +5142,8 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                         }
                         else if (_pData.getRegion() && vType.size() > nType+1 && vType[nType+1] == TYPE_FUNC)
                         {
+                            for (int j = 0; j < 3; j++)
+                                _mData2[j].Create(_pInfo.nSamples);
                             for (long int i = 0; i < _pInfo.nSamples; i++)
                             {
                                 for (int j = 0; j < 3; j++)
@@ -5126,7 +5160,9 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                         }
                         else if (_pData.getRegion())
                         {
-                            for (long int i = 0; i < _pInfo.nSamples; i++)
+                            for (int j = 0; j < 3; j++)
+                                _mData2[j].Create(_mData[0].GetNN());
+                            for (long int i = 0; i < _mData[0].GetNN(); i++)
                             {
                                 for (int j = 0; j < 3; j++)
                                 {
@@ -5493,8 +5529,10 @@ bool parser_plot_std(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglDa
                     _graph.Stem(_mAxisVals, _mData, _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
             }
         }
-        else if (_pData.getxError() && _pData.getyError())
+        else if (_pData.getxError() || _pData.getyError())
+        {
             _graph.Error(_mAxisVals, _mData, _mData2[0], _mData2[1], _pInfo.sPointStyles[*_pInfo.nStyle].c_str());
+        }
     }
     return true;
 }
@@ -5572,7 +5610,7 @@ bool parser_plot_std3d(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mgl
                     _graph.Stem(_mData[0], _mData[1], _mData[2], _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
             }
         }
-        else if (_pData.getxError() && _pData.getyError())
+        else if (_pData.getxError() || _pData.getyError())
         {
             for (int m = 0; m < _mData[0].nx; m++)
             {

@@ -795,6 +795,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
     {
         if (sCmd.length() > sCommand.length()+1)
         {
+
             if (sCommand == "graph")
                 sCmd.replace(findCommand(sCmd).nPos, 5, "plot");
             if (sCommand == "graph3d")
@@ -821,6 +822,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             }
             else
                 parser_Plot(sCmd, _data, _parser, _option, _functions, _pData);
+
         }
         else
             doc_Help(sCommand, _option);
