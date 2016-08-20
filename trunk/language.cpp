@@ -208,10 +208,10 @@ vector<string> Language::getList(const string& sMessageScheme)
     if (sPrefix.find('[') != string::npos)
     {
         sPrefix.erase(sPrefix.find('['));
-        sType = sMessageScheme.substr(sMessageScheme.find('[')+1, sMessageScheme.find(']')-sMessageScheme.find(']')-1);
+        sType = sMessageScheme.substr(sMessageScheme.find('[')+1, sMessageScheme.find(']')-sMessageScheme.find('[')-1);
     }
     else if (sMessageScheme.find('[') != string::npos)
-        sType = sMessageScheme.substr(sMessageScheme.find('[')+1, sMessageScheme.find(']')-sMessageScheme.find(']')-1);
+        sType = sMessageScheme.substr(sMessageScheme.find('[')+1, sMessageScheme.find(']')-sMessageScheme.find('[')-1);
 
     for (auto iter = mLangStrings.begin(); iter != mLangStrings.end(); ++iter)
     {
@@ -222,17 +222,6 @@ vector<string> Language::getList(const string& sMessageScheme)
             string sCurrentType = (iter->first).substr((iter->first).find('['), (iter->first).find(']')+1-(iter->first).find('['));
             if (sCurrentType.find(sType) == string::npos)
                 continue;
-            /*bool bContinueSignal = false;
-            for (unsigned int i = 0; i < sType.length(); i++)
-            {
-                if (sCurrentType.find(sType[i]) == string::npos)
-                {
-                    bContinueSignal = true;
-                    break;
-                }
-            }
-            if (bContinueSignal)
-                continue;*/
         }
         vListResults.push_back(iter->second);
     }

@@ -1717,9 +1717,9 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     }
 
     //cerr << sObject << endl;
-    //cerr << sLine << endl;
+    //cerr << "'" << sLine << "'" << endl;
 
-    sTemp = sLine;
+    sTemp = sLine + " ";
     unsigned int nPos = 0;
     while (sTemp.find('#', nPos) != string::npos)
     {
@@ -1833,8 +1833,9 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 }
                 else
                 {
-                    sTemp_2 += sTemp.substr(0, sTemp.find(' ')) + "\"";
-                    sTemp = sTemp.substr(sTemp.find(' ')+1);
+                    throw STRING_ERROR;
+                    /*sTemp_2 += sTemp.substr(0, sTemp.find(' ')) + "\"";
+                    sTemp = sTemp.substr(sTemp.find(' ')+1);*/
                 }
                 continue;
             }
