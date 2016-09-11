@@ -2451,7 +2451,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
         else
             return 0;
     }
-    else if (sCmd[0] == 'c' || sCmd[0] == 'a' || sCmd[0] == 'i')
+    else if (sCommand[0] == 'c' || sCommand[0] == 'a' || sCommand[0] == 'i')
     {
         if (sCommand == "clear")
         {
@@ -2621,7 +2621,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
 
         return 0;
     }
-    else if (sCmd[0] == 'w')
+    else if (sCommand[0] == 'w')
     {
         if (sCommand == "write")
         {
@@ -2663,7 +2663,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
         }
         return 0;
     }
-    else if (sCmd[0] == 's')
+    else if (sCommand[0] == 's')
     {
         if (sCommand == "stats")
         {
@@ -3986,7 +3986,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
 
         return 0;
     }
-    else if (sCmd[0] == 'h' || sCmd[0] == 'm')
+    else if (sCommand[0] == 'h' || sCommand[0] == 'm')
     {
         if (sCommand.substr(0,4) == "hist")
         {
@@ -4157,7 +4157,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
 
         return 0;
     }
-    else if (sCmd[0] == 'r')
+    else if (sCommand[0] == 'r')
     {
         //cerr << "redefine" << endl;
         if (sCommand == "random")
@@ -4494,7 +4494,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
 
         return 0;
     }
-    else if (sCmd[0] == 'd')
+    else if (sCommand[0] == 'd')
     {
         //cerr << "define" << endl;
         if (sCommand == "define")
@@ -4621,7 +4621,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
 
         return 0;
     }
-    else if (sCmd[0] == 'l')
+    else if (sCommand[0] == 'l')
     {
         if (sCommand == "list")
         {
@@ -5171,7 +5171,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
 
         return 0;
     }
-    else if (sCmd[0] == 'e')
+    else if (sCommand[0] == 'e')
     {
         //cerr << "export" << endl;
         if (sCommand == "export")
@@ -5321,7 +5321,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
         }
         return 0;
     }
-    else if (sCmd[0] == 'p')
+    else if (sCommand[0] == 'p')
     {
         if (sCommand.substr(0,5) == "paste")
         {
@@ -8275,6 +8275,8 @@ bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _op
             _fSys.setPath(_option.getExePath(), false, _option.getExePath());
         sObject = _fSys.ValidFileName(sObject, ".dat");
     }
+    if (_option.getbDebug())
+        cerr << "|-> DEBUG: sObject = " << sObject << endl;
     if (sObject.find('.') == string::npos && (sObject.find('/') != string::npos || sObject.find('\\') != string::npos))
     {
         ShellExecute(NULL,NULL,sObject.c_str(),NULL,NULL,SW_SHOWNORMAL);

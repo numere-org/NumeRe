@@ -31,6 +31,7 @@ ID_ICON ICON ".res/icon.ico"
 1 VERSIONINFO
 FILEVERSION RC_FILEVERSION
 PRODUCTVERSION RC_FILEVERSION
+FILEOS VOS_NT_WINDOWS32
 FILETYPE VFT_APP
 {
     BLOCK "StringFileInfo"
@@ -42,7 +43,7 @@ FILETYPE VFT_APP
             VALUE "FileDescription", "NumeRe: Framework für Numerische Rechnungen"
             VALUE "InternalName", "NumeRe"
             VALUE "LegalCopyright", "(c) 2016, Erik Hänel et al. | GNU GPL v3.0"
-            VALUE "LegalTrademarks", "muParser Library, (c) 2011 Ingo Berg; Boost Library, (c) 2006 Joe Coder; MathGL Library, (c) 2012 Alexey A. Balakin"
+            VALUE "LegalTrademarks", "muParser, (c) 2011 Ingo Berg; Boost, (c) 2006 Joe Coder; MathGL, (c) 2012 Alexey A. Balakin; GSL, (c) 2006, M. Galassi et al.; Eigen (c) 2007-2011, Benoit Jacob et al.; TinyXML-2, (c) 2014, Lee Thomason; BasicExcel, (c) 2006, Yap Chun Wei"
             VALUE "OriginalFilename", "numere.exe"
             VALUE "ProductName", "NumeRe | Freie numerische Software unter der GNU GPL v3.0"
             VALUE "ProductVersion", RC_FILEVERSION_STRING
@@ -50,6 +51,6 @@ FILETYPE VFT_APP
     }
     BLOCK "VarFileInfo"
     {
-        VALUE "Translation", 0x0407, 1252
+        VALUE "Translation", 0x0407, 1252, 0x409, 1252
     }
 }

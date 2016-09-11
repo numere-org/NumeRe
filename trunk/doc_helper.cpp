@@ -1,6 +1,6 @@
 /*****************************************************************************
     NumeRe: Framework fuer Numerische Rechnungen
-    Copyright (C) 2014  Erik Haenel et al.
+    Copyright (C) 2016  Erik Haenel et al.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include "doc_helper.hpp"
+#include "version.h"
 
 bool fileExists(const string&);
 
@@ -47,6 +48,21 @@ void Documentation::updateIndexFile()
         sErrorToken = sDocIndexFile;
         throw CANNOT_READ_FILE;
     }
+    fDocument << "<!--" << endl;
+    fDocument << "  NumeRe: Framework fuer Numerische Rechnungen" << endl
+              << "  Copyright (C) " << AutoVersion::YEAR << "  Erik Haenel et al." << endl << endl
+              << "  This program is free software: you can redistribute it and/or modify" << endl
+              << "  it under the terms of the GNU General Public License as published by" << endl
+              << "  the Free Software Foundation, either version 3 of the License, or" << endl
+              << "  (at your option) any later version." << endl << endl
+              << "  This program is distributed in the hope that it will be useful," << endl
+              << "  but WITHOUT ANY WARRANTY; without even the implied warranty of" << endl
+              << "  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the" << endl
+              << "  GNU General Public License for more details." << endl << endl
+              << "  You should have received a copy of the GNU General Public License" << endl
+              << "  along with this program.  If not, see <http://www.gnu.org/licenses/>." << endl;
+    fDocument << "-->" << endl << endl;
+
     fDocument << "<helpindex>" << endl;
     map<string,int>::iterator mDocIndexIterator;
     for (int i = 0; i < (int)vDocIndexTable.size(); i++)
@@ -92,6 +108,16 @@ bool Documentation::loadIndexFile(const string& sIndexFile)
             sDocIndex += sLine;
     }
     fDocument.close();
+
+    while (sDocIndex.length() && sDocIndex.find("<!--") != string::npos)
+    {
+        unsigned int nEndPos = sDocIndex.find("-->", sDocIndex.find("<!--")+4);
+        if (nEndPos == string::npos)
+            sDocIndex.erase(sDocIndex.find("<!--"));
+        else
+            sDocIndex.erase(sDocIndex.find("<!--"), nEndPos - sDocIndex.find("<!--")+3);
+    }
+
     if (!sDocIndex.length())
     {
         return false;
@@ -222,6 +248,16 @@ void Documentation::updateDocIndex(string _sFilename)
             sDocIndex += sLine;
     }
     fDocument.close();
+
+    while (sDocIndex.length() && sDocIndex.find("<!--") != string::npos)
+    {
+        unsigned int nEndPos = sDocIndex.find("-->", sDocIndex.find("<!--")+4);
+        if (nEndPos == string::npos)
+            sDocIndex.erase(sDocIndex.find("<!--"));
+        else
+            sDocIndex.erase(sDocIndex.find("<!--"), nEndPos - sDocIndex.find("<!--")+3);
+    }
+
     if (!sDocIndex.length())
     {
         cerr << endl << " ERROR: Documentation index update file could not be read." << endl;
@@ -290,11 +326,17 @@ void Documentation::updateDocIndex(string _sFilename)
     return;
 }
 
-void Documentation::addToDocIndex(string& _sIndexToAdd)
+void Documentation::addToDocIndex(string& _sIndexToAdd, bool bUseUserLangFiles)
 {
     if (!vDocIndexTable.size())
         throw INVALID_HLPIDX;
 
+    if (bUseUserLangFiles)
+    {
+        vDocIndexTable.clear();
+        mDocumentationIndex.clear();
+        loadDocIndex(false);
+    }
     string sKeyWord = "";
     string sLine = "";
     vector<string> vEntry;
@@ -352,15 +394,24 @@ void Documentation::addToDocIndex(string& _sIndexToAdd)
 
     updateIndexFile();
 
+    if (bUseUserLangFiles)
+        loadDocIndex(true);
+
     return;
 }
 
-void Documentation::removeFromDocIndex(const string& _sID)
+void Documentation::removeFromDocIndex(const string& _sID, bool bUseUserLangFiles)
 {
     if (!vDocIndexTable.size())
         throw INVALID_HLPIDX;
     if (_sID == "<<NO_HLP_ENTRY>>")
         return;
+    if (bUseUserLangFiles)
+    {
+        vDocIndexTable.clear();
+        mDocumentationIndex.clear();
+        loadDocIndex(false);
+    }
     map<string,int>::iterator iter = mDocumentationIndex.begin();
     vector<vector<string> >::iterator vIter = vDocIndexTable.begin();
 
@@ -383,6 +434,9 @@ void Documentation::removeFromDocIndex(const string& _sID)
     }
 
     updateIndexFile();
+
+    if (bUseUserLangFiles)
+        loadDocIndex(true);
 
     return;
 }
@@ -449,6 +503,32 @@ vector<string> Documentation::getHelpArticle(const string& _sTheme)
             {
                 getline(fDocument, sLine);
                 StripSpaces(sLine);
+                if (!sLine.length())
+                    continue;
+                while (sLine.find("<!--") != string::npos)
+                {
+                    if (sLine.find("-->", sLine.find("<!--")+4) != string::npos)
+                    {
+                        sLine.erase(sLine.find("<!--"), sLine.find("-->", sLine.find("<!--")+4)+3 - sLine.find("<!--"));
+                    }
+                    else
+                    {
+                        sLine.erase(sLine.find("<!--"));
+                        string sLineTemp = "";
+                        while (!fDocument.eof())
+                        {
+                            getline(fDocument, sLineTemp);
+                            StripSpaces(sLineTemp);
+                            if (!sLineTemp.length())
+                                continue;
+                            if (sLineTemp.find("-->") != string::npos)
+                            {
+                                sLine += sLineTemp.substr(sLineTemp.find("-->")+3);
+                                break;
+                            }
+                        }
+                    }
+                }
                 if (!sLine.length())
                     continue;
                 if (sLine.find("<article ") != string::npos)

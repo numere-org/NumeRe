@@ -1,3 +1,11 @@
 Updated	Das Splash wurde ueberarbeitet.
 Fixed	Die Filterfunktion bei "list -func" funktioniert wieder korrekt.
 Fixed	Der "#<XYZ"-Bug wurde behoben.
+Added	Der Imaginaerteil der Kugelflaechenfunktionen wurde hinzugefuegt.
+Added	Hilfeartikel und Dokumentenindex koennen nun XML-Kommentare ("<!-- COMMENT -->") enthalten.
+Fixed	"string()" kann wieder eine Zeichenkette an einen spezifischen Index zugewiesen werden.
+Fixed	Der Dokumentationsindex wird nicht mehr mit der "user lang" ueberschrieben, wenn ein Plugin installiert wird.
+Fixed	"open <procpath>" funktioniert wieder.
+Cleaned	In seltenen Faellen wurde die Installinfo im "install.log" doppelt angezeigt. Dies wurde behoben.
+Fixed	Die Reihenfolge der Zeichenkettenauswertungen in einer einzigen Zeile ist nun von links nach rechts.
+Fixed	"<wp>" kann nun auch bei "move", "copy", etc. verwendet werden.

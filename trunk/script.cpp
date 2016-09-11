@@ -611,8 +611,10 @@ string Script::getNextScriptCommand()
                 }
 
                 if (sInstallInfoString.length())
+                {
                     fLogFile << "Installinfo: " << sInstallInfoString << endl;
-
+                    sInstallInfoString.clear();
+                }
 
                 if (sScriptCommand.substr(0,12) == "<endinstall>")
                 {

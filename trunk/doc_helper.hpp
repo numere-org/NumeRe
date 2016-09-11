@@ -53,8 +53,8 @@ class Documentation : public FileSystem
 
         void loadDocIndex(bool bLoadUserLangFiles = true);
         void updateDocIndex(string _sFilename = "<>/update.hlpidx");
-        void addToDocIndex(string& _sIndexToAdd);
-        void removeFromDocIndex(const string& _sID);
+        void addToDocIndex(string& _sIndexToAdd, bool bUseUserLangFiles);
+        void removeFromDocIndex(const string& _sID, bool bUseUserLangFiles);
         vector<string> getHelpArticle(const string& _sTheme);
         string getHelpIdxKey(const string& _sTheme);
         string getHelpArtclID(const string& _sTheme);
