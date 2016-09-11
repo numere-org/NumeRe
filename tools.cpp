@@ -2751,6 +2751,12 @@ vector<string> getFileList(const string& sDirectory, const Settings& _option, in
                 sDir = replacePathSeparator(_option.getExePath() + sDir.substr(sDir.find('>')+1));
                 sDir.erase(sDir.rfind('/')+1);
             }
+            else if (sDir.substr(0,4) == "<wp>")
+            {
+                hFind = FindFirstFile((_option.getWorkPath() + sDir.substr(sDir.find('>')+1)).c_str(), &FindFileData);
+                sDir = replacePathSeparator(_option.getWorkPath() + sDir.substr(sDir.find('>')+1));
+                sDir.erase(sDir.rfind('/')+1);
+            }
         }
         else
         {
@@ -2847,6 +2853,12 @@ vector<string> getFolderList(const string& sDirectory, const Settings& _option, 
             {
                 hFind = FindFirstFile((_option.getExePath() + sDir.substr(sDir.find('>')+1)).c_str(), &FindFileData);
                 sDir = replacePathSeparator(_option.getExePath() + sDir.substr(sDir.find('>')+1));
+                sDir.erase(sDir.rfind('/')+1);
+            }
+            else if (sDir.substr(0,4) == "<wp>")
+            {
+                hFind = FindFirstFile((_option.getWorkPath() + sDir.substr(sDir.find('>')+1)).c_str(), &FindFileData);
+                sDir = replacePathSeparator(_option.getWorkPath() + sDir.substr(sDir.find('>')+1));
                 sDir.erase(sDir.rfind('/')+1);
             }
         }

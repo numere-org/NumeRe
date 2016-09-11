@@ -152,8 +152,20 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     /// CHANGED: Nur Rekursionen durchfuehren, wenn auch '=' in dem String gefunden wurde. Nur dann ist sie naemlich noetig.
     if (sLine.find(',') != string::npos && sLine.find('=') != string::npos)
     {
+        string sStringObject = "";
+        if (sLine.substr(sLine.find_first_not_of(' '), 7) == "string(")
+        {
+            unsigned int nPos = getMatchingParenthesis(sLine);
+            nPos = sLine.find('=', nPos);
+            if (nPos == string::npos)
+                return 0;
+            if (sLine[nPos+1] == '=')
+                nPos++;
+            sStringObject = sLine.substr(0, nPos + 1);
+            sLine.erase(0,nPos+1);
+        }
         StripSpaces(sLine);
-        if (sLine != getLastArgument(sLine, false))
+        /*if (sLine != getLastArgument(sLine, false))
         {
             string sRecursion = "";
             string sParsed = "";
@@ -171,19 +183,28 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 sParsed = sRecursion + sParsed;
             }
             sLine = sParsed;
-        }
-        /*string sThisRecursion = getNextArgument(sLine, true);
-        //cerr << "thisrecursion: " << sThisRecursion << endl;
-        if (getNextArgument(sLine, false).length())
+        }*/
+        if (sLine != getNextArgument(sLine, false))
         {
-            sLine += " -kmq";
-            if (!parser_StringParser(sLine, sDummy, _data, _parser, _option, true))
-                return 0;
-            sLine = sThisRecursion + "," + sLine;
-            //cerr << sLine << endl;
+            string sRecursion = "";
+            string sParsed = "";
+            while (sLine.length())
+            {
+                sRecursion = getNextArgument(sLine, true);
+                if (sLine.length() || sRecursion.find('=') != string::npos)
+                {
+                    sRecursion += " -kmq";
+                    if (!parser_StringParser(sRecursion, sDummy, _data, _parser, _option, true))
+                        return 0;
+                }
+                if (sParsed.length())
+                    sParsed += ", ";
+                sParsed += sRecursion;
+            }
+            sLine = sParsed;
         }
-        else
-            sLine = sThisRecursion;*/
+        if (sStringObject.length())
+            sLine = sStringObject + sLine;
     }
     //cerr << sLine << endl;
 
@@ -2172,7 +2193,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 }
                 if (nIndex[0] < 0 && nIndex[1] < 0)
                     nIndex[0] = _data.getStringElements(nIndex[2]);
-                else
+                else if (nIndex[0] < 0)
                     nIndex[0] = 0;
 
                 if (nIndex[1] >= 0)
@@ -2182,7 +2203,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
 
                 for (int n = 0; n < (int)nStrings; n++)
                 {
-                    if (n+nIndex[0]-1 == nIndex[1])
+                    if (n+nIndex[0] == nIndex[1]+1)
                         break;
                     _data.writeString(sFinal[n], n+nIndex[0], nIndex[2]);
                 }

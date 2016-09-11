@@ -51,7 +51,7 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension)
         _sFileName.pop_back();
 	if (_sFileName[0] == '<')
 	{
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 7; i++)
         {
             if (_sFileName.substr(0,sTokens[i][0].length()) == sTokens[i][0])
             {

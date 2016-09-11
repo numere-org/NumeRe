@@ -4477,7 +4477,7 @@ bool Cache::writeString(const string& _sString, unsigned int _nthString, unsigne
         for (unsigned int i = sStrings.size(); i <= nCol; i++)
             sStrings.push_back(vector<string>());
     }
-    if (_nthString == string::npos || !sStrings[nCol].size());
+    if (_nthString == string::npos || !sStrings[nCol].size())
     {
         if (_sString.length())
             sStrings[nCol].push_back(_sString);

@@ -512,7 +512,7 @@ value_type parser_toDegree(value_type v)
     return v / M_PI * 180.0;
 }
 
-// --> Diese Funktion berechnet den numerischen Wert der Kugelflaechenfunktionen bis zur Ordnung l = 5 <--
+// --> Diese Funktion berechnet den numerischen Wert des Realteils der Kugelflaechenfunktionen bis zur Ordnung l = 5 <--
 value_type parser_SphericalHarmonics(value_type vl, value_type vm, value_type theta, value_type phi)
 {
     if (isinf(vl) || isnan(vl)
@@ -529,6 +529,27 @@ value_type parser_SphericalHarmonics(value_type vl, value_type vm, value_type th
     else
     {
         return sqrt((double)(2.0*l+1.0) * parser_Faculty(l-m) / (4.0 * M_PI * parser_Faculty(l+m)))*parser_AssociatedLegendrePolynomial(l,m,cos(theta))*cos(m*phi);
+    }
+    return 0.0;
+}
+
+// --> Diese Funktion berechnet den numerischen Wert des Imaginaerteils der Kugelflaechenfunktionen bis zur Ordnung l = 5 <--
+value_type parser_imSphericalHarmonics(value_type vl, value_type vm, value_type theta, value_type phi)
+{
+    if (isinf(vl) || isnan(vl)
+        || isinf(vm) || isnan(vm)
+        || isinf(theta) || isnan(theta)
+        || isinf(phi) || isnan(phi))
+        return NAN;
+    int l = (int)fabs(vl);
+    int m = (int)vm;
+    if (abs(m) > l)
+    {
+        return NAN;
+    }
+    else
+    {
+        return sqrt((double)(2.0*l+1.0) * parser_Faculty(l-m) / (4.0 * M_PI * parser_Faculty(l+m)))*parser_AssociatedLegendrePolynomial(l,m,cos(theta))*sin(m*phi);
     }
     return 0.0;
 }
@@ -1154,6 +1175,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
     _parser.DefineFun(_T("radian"), parser_toRadian, true);                         // radian(alpha)
     _parser.DefineFun(_T("degree"), parser_toDegree, true);                         // degree(x)
     _parser.DefineFun(_T("Y"), parser_SphericalHarmonics, true);                    // Y(l,m,theta,phi)
+    _parser.DefineFun(_T("imY"), parser_imSphericalHarmonics, true);                // imY(l,m,theta,phi)
     _parser.DefineFun(_T("sinc"), parser_SinusCardinalis, true);                    // sinc(x)
     _parser.DefineFun(_T("sbessel"), parser_SphericalBessel, true);                 // sbessel(n,x)
     _parser.DefineFun(_T("sneumann"), parser_SphericalNeumann, true);               // sneumann(n,x)
@@ -1416,7 +1438,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                 {
                     _procedure.addHelpIndex(sLine.substr(0,sLine.find("<<>>")),getArgAtPos(sLine, sLine.find("id=")+3));
                     sLine.erase(0,sLine.find("<<>>")+4);
-                    _option.addToDocIndex(sLine);
+                    _option.addToDocIndex(sLine, _option.getUseCustomLanguageFiles());
                     _plugin = _procedure;
                     continue;
                 }
@@ -1582,7 +1604,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                             sPlugin[sPlugin.find(';')] = ',';
                         while (sPlugin.length())
                         {
-                            _option.removeFromDocIndex(getNextArgument(sPlugin, true));
+                            _option.removeFromDocIndex(getNextArgument(sPlugin, true), _option.getUseCustomLanguageFiles());
                         }
                     }
                     cerr << LineBreak("|-> "+_lang.get("PARSER_PLUGINDELETED"), _option) << endl;

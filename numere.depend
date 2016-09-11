@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1471366080 source:c:\cpp\numere\built-in.cpp
+1473055267 source:c:\cpp\numere\built-in.cpp
 	"built-in.hpp"
 
 1463300009 c:\cpp\numere\built-in.hpp
@@ -54,7 +54,7 @@
 	"doc_helper.hpp"
 	"debugger.hpp"
 
-1465243907 c:\cpp\numere\doc_helper.hpp
+1472796165 c:\cpp\numere\doc_helper.hpp
 	<fstream>
 	<string>
 	<vector>
@@ -106,7 +106,7 @@
 	"settings.hpp"
 	"datafile.hpp"
 
-1471689950 c:\cpp\numere\version.h
+1473518491 c:\cpp\numere\version.h
 
 1456175462 c:\cpp\numere\resampler.h
 
@@ -356,16 +356,17 @@
 1466029153 source:c:\cpp\numere\debugger.cpp
 	"debugger.hpp"
 
-1470433832 source:c:\cpp\numere\define.cpp
+1472299409 source:c:\cpp\numere\define.cpp
 	"define.hpp"
 
-1466575477 source:c:\cpp\numere\doc_helper.cpp
+1472796506 source:c:\cpp\numere\doc_helper.cpp
 	"doc_helper.hpp"
+	"version.h"
 
 1470415891 source:c:\cpp\numere\documentation.cpp
 	"documentation.hpp"
 
-1470722379 source:c:\cpp\numere\filesystem.cpp
+1473056143 source:c:\cpp\numere\filesystem.cpp
 	"filesystem.hpp"
 
 1459627915 source:c:\cpp\numere\fitcontroller.cpp
@@ -444,7 +445,7 @@
 	"language.hpp"
 	"ParserLib/muParser.h"
 
-1460305009 c:\cpp\numere\parser.hpp
+1472299275 c:\cpp\numere\parser.hpp
 	<cstdlib>
 	<cmath>
 	<fstream>
@@ -604,19 +605,19 @@
 	<iostream>
 	"resampler.h"
 
-1466240970 source:c:\cpp\numere\script.cpp
+1473173717 source:c:\cpp\numere\script.cpp
 	"script.hpp"
 
 1470725915 source:c:\cpp\numere\settings.cpp
 	"settings.hpp"
 
-1471689756 source:c:\cpp\numere\stringparsing.cpp
+1473366119 source:c:\cpp\numere\stringparsing.cpp
 	"parser_functions.hpp"
 
 1470471397 source:c:\cpp\numere\tools.cpp
 	"tools.hpp"
 
-1463118976 source:c:\cpp\numere\ttr-ws13_private.rc
+1473519793 source:c:\cpp\numere\ttr-ws13_private.rc
 	<windows.h>
 	"version.h"
 
@@ -637,10 +638,10 @@
 	<tchar.h>
 	"zip.h"
 
-1470761673 source:c:\cpp\numere\cache.cpp
+1472664680 source:c:\cpp\numere\cache.cpp
 	"cache.hpp"
 
-1468911096 source:c:\cpp\numere\parser.cpp
+1472796634 source:c:\cpp\numere\parser.cpp
 	"parser.hpp"
 
 1470471057 source:c:\cpp\numere\procedure.cpp
