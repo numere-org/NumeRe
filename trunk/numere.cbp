@@ -158,8 +158,8 @@
 			</DoxyBlocks>
 			<AutoVersioning>
 				<Scheme minor_max="9" build_max="9" rev_max="199" rev_rand_max="10" build_times_to_increment_minor="100" />
-				<Settings autoincrement="0" date_declarations="1" use_define="0" update_manifest="0" do_auto_increment="0" ask_to_increment="0" language="C++" svn="0" svn_directory="" header_path="version.h" />
-				<Changes_Log show_changes_editor="1" app_title='v %M.%m.%b &quot;%T&quot; rev. %r' changeslog_path="ChangesLog.txt" />
+				<Settings autoincrement="0" date_declarations="1" use_define="0" update_manifest="0" do_auto_increment="0" ask_to_increment="0" language="C++" svn="1" svn_directory="C:\CPP\numere-source" header_path="version.h" />
+				<Changes_Log show_changes_editor="1" app_title='%p v %M.%m.%b &quot;%T&quot; (Built from SVN source rev. %s)' changeslog_path="ChangesLog.txt" />
 				<Code header_guard="VERSION_H" namespace="AutoVersion" prefix="" />
 			</AutoVersioning>
 			<wxsmith version="1">

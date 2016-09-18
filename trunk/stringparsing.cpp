@@ -1749,7 +1749,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
         if (!isInQuotes(sTemp, nPos, true))
         {
             string sPrefix = "";
-            sTemp_2 += sTemp.substr(0,nPos) + "\"";
+            sTemp_2 += sTemp.substr(0,nPos);
             sTemp = sTemp.substr(nPos+1);
             if (_option.getbDebug())
                 mu::console() << _T("|-> DEBUG: sTemp = ") << sTemp << endl;
@@ -1784,7 +1784,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                         sElement = getNextArgument(sExpr, true);
                         while (sElement.length() < sPrefix.length()+1)
                             sElement.insert(0,1,'0');
-                        sBlock += sElement;
+                        sBlock += "\"" + sElement + "\"";
                         if (getNextArgument(sExpr, false).length())
                         {
                             sBlock += ",";
@@ -1794,7 +1794,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     }
                     if (sBlock.front() == '{')
                         sBlock += "}";
-                    sTemp_2 += sBlock + "\"";
+                    sTemp_2 += sBlock;
                     if (parser_getDelimiterPos(sTemp.substr(n_pos)) < sTemp.length())
                         sTemp = sTemp.substr(parser_getDelimiterPos(sTemp.substr(n_pos)));
                     else
@@ -1813,7 +1813,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 string sExpr = sTemp.substr(1, sTemp.find('"', 1)-1);
                 while (sExpr.length() < sPrefix.length()+2)
                     sExpr.insert(0,1,'0');
-                sTemp_2 += sExpr + "\"";
+                sTemp_2 += "\"" + sExpr + "\"";
                 if (sTemp.find('"', 1) < sTemp.length()-1)
                     sTemp = sTemp.substr(sTemp.find('"', 1)+1);
                 else
@@ -1832,24 +1832,24 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     || sTemp.find("<scriptpath>") == 0)
                 {
                     if (sTemp.find("<>") == 0 || sTemp.find("<this>") == 0)
-                        sTemp_2 += replacePathSeparator(_option.getExePath()) + "\"";
+                        sTemp_2 += "\"" + replacePathSeparator(_option.getExePath()) + "\"";
                     else if (sTemp.find("<wp>") == 0)
-                        sTemp_2 += replacePathSeparator(_option.getWorkPath()) + "\"";
+                        sTemp_2 += "\"" + replacePathSeparator(_option.getWorkPath()) + "\"";
                     else if (sTemp.find("<loadpath>") == 0)
-                        sTemp_2 += replacePathSeparator(_option.getLoadPath()) + "\"";
+                        sTemp_2 += "\"" + replacePathSeparator(_option.getLoadPath()) + "\"";
                     else if (sTemp.find("<savepath>") == 0)
-                        sTemp_2 += replacePathSeparator(_option.getSavePath()) + "\"";
+                        sTemp_2 += "\"" + replacePathSeparator(_option.getSavePath()) + "\"";
                     else if (sTemp.find("<plotpath>") == 0)
-                        sTemp_2 += replacePathSeparator(_option.getPlotOutputPath()) + "\"";
+                        sTemp_2 += "\"" + replacePathSeparator(_option.getPlotOutputPath()) + "\"";
                     else if (sTemp.find("<procpath>") == 0)
-                        sTemp_2 += replacePathSeparator(_option.getProcsPath()) + "\"";
+                        sTemp_2 += "\"" + replacePathSeparator(_option.getProcsPath()) + "\"";
                     else
-                        sTemp_2 += replacePathSeparator(_option.getScriptPath()) + "\"";
+                        sTemp_2 += "\"" + replacePathSeparator(_option.getScriptPath()) + "\"";
                     sTemp = sTemp.substr(sTemp.find('>')+1);
                 }
                 else if (sTemp.find('>') != string::npos)
                 {
-                    sTemp_2 += sTemp.substr(1, sTemp.find('>')-1) + "\"";
+                    sTemp_2 += "\"" + sTemp.substr(1, sTemp.find('>')-1) + "\"";
                     sTemp = sTemp.substr(sTemp.find('>')+1);
                 }
                 else
@@ -1879,7 +1879,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                         sElement = toString(v[n], _option);
                     while (sElement.length() < sPrefix.length()+1)
                         sElement.insert(0,1,'0');
-                    sTemp_2 += sElement;
+                    sTemp_2 += "\"" + sElement + "\"";
                     if (nResults > 1)
                         sTemp_2 += ",";
                 }
@@ -1887,7 +1887,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     sTemp_2.back() = '}';
             }
 
-            sTemp_2 += "\"";
+            //sTemp_2 += "\"";
             if (parser_getDelimiterPos(sTemp.substr(n_pos)) < sTemp.length())
                 sTemp = sTemp.substr(parser_getDelimiterPos(sTemp.substr(n_pos)));
             else
@@ -1905,10 +1905,15 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     if (sTemp.length() && sTemp_2.length())
         sTemp_2 += sTemp;
 
+    if (sTemp_2.find('{') != string::npos)
+    {
+        parser_VectorToExpr(sTemp_2, _option);
+    }
     if (sTemp_2.length())
         sTemp = sTemp_2;
     else
         sTemp = sLine;
+
 
     if (_option.getbDebug())
         mu::console() << _T("|-> DEBUG: sTemp = ") << sTemp << endl;
@@ -2153,6 +2158,10 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                         {
                             parser_SplitArgs(sj, sCol, ',', _option, true);
                         }
+                        if (!parser_ExprNotEmpty(si))
+                        {
+                            si = "1";
+                        }
                     }
                     catch (...)
                     {
@@ -2312,8 +2321,10 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     && ((checkDelimiter(sFinal[j].substr(k,7)) && sFinal[j].length() >= k+7) || (sFinal[j].length() == k+6)))
                 && !(sFinal[j].substr(k+1,2) == "nu"
                     && ((checkDelimiter(sFinal[j].substr(k,4)) && sFinal[j].length() >= k+4) || (sFinal[j].length() == k+3)))
+                && !(sFinal[j].substr(k+1,3) == "neq"
+                    && ((checkDelimiter(sFinal[j].substr(k,5)) && sFinal[j].length() >= k+5) || (sFinal[j].length() == k+4)))
             )
-            {
+            {//\not\neq\ni
                 if (sFinal[j][k+1] == 'n')
                 {
                     sConsoleOut += "$";

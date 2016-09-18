@@ -9,3 +9,9 @@ Fixed	"open <procpath>" funktioniert wieder.
 Cleaned	In seltenen Faellen wurde die Installinfo im "install.log" doppelt angezeigt. Dies wurde behoben.
 Fixed	Die Reihenfolge der Zeichenkettenauswertungen in einer einzigen Zeile ist nun von links nach rechts.
 Fixed	"<wp>" kann nun auch bei "move", "copy", etc. verwendet werden.
+Fixed	Prozeduren, die pfadspezifische Symbole im Namen haben, koennen nun auch Werte zurueckgeben.
+Added	Funktionen fuer die elliptischen Integrale wurden hinzugefuegt.
+Fixed	Der "string(:) += SOMESTRING"-Bug wurde behoben.
+Fixed	Die Intervalleinschraenkung der elliptischen Integrale wurde aufgehoben.
+Fixed	Ein Languagestring fuer "new CACHE()" hat gefehlt.
+Fixed	Der Stringausdruck "#CACHE(:,1)+#CACHE(:,2)" kann wieder verwendet werden.

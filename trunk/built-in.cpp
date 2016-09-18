@@ -7856,9 +7856,9 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
         if (sReturnVal.length() && _option.getSystemPrintStatus())
         {
             if (matchParams(sCmd, "free"))
-                cerr << LineBreak("|-> " + sReturnVal + " wurde(n) erfolgreich als freie(r) Cache(s) erzeugt.", _option) << endl;
+                cerr << LineBreak("|-> " + _lang.get("BUILTIN_NEW_FREE_CACHES", sReturnVal), _option) << endl;
             else
-                cerr << LineBreak("|-> " + sReturnVal + " wurde(n) erfolgreich als Cache(s) erzeugt.", _option) << endl;
+                cerr << LineBreak("|-> " + _lang.get("BUILTIN_NEW_CACHES", sReturnVal), _option) << endl;
         }
         return true;
     }
@@ -7917,10 +7917,10 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
             if (sReturnVal.length() && _option.getSystemPrintStatus())
             {
                 if (matchParams(sCmd, "free"))
-                    cerr << LineBreak("|-> " + sReturnVal + " wurde(n) erfolgreich als freie(r) Cache(s) erzeugt.", _option) << endl;
+                    cerr << LineBreak("|-> " + _lang.get("BUILTIN_NEW_FREE_CACHES", sReturnVal), _option) << endl;
                 else
-                    cerr << LineBreak("|-> " + sReturnVal + " wurde(n) erfolgreich als Cache(s) erzeugt.", _option) << endl;
-            }
+                    cerr << LineBreak("|-> " + _lang.get("BUILTIN_NEW_CACHES", sReturnVal), _option) << endl;
+                }
             return true;
         }
     }

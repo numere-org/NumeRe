@@ -16,14 +16,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-
 #include "define.hpp"
 
 // --> Standard-Konstruktor: Deklariert auch die Inhalte der Built-In-Funktionen- und der Kommando-Strings <--
 Define::Define() : FileSystem()
 {
     nDefinedFunctions = 0;
-    sBuilt_In = ",abs(),acos(),acosh(),Ai(),asin(),asinh(),ascii(),atan(),atanh(),avg(),bessel(),betheweizsaecker(),Bi(),binom(),cache(),char(),cmp(),cnt(),cos(),cosh(),cot(),cross(),data(),date(),dblfacul(),degree(),det(),diag(),diagonalize(),eigenvals(),eigenvect(),erf(),erfc(),exp(),faculty(),findfile(),findparam(),floor(),gamma(),gauss(),gcd(),getfilelist(),getfolderlist(),getindices(),getmatchingparens(),getopt(),heaviside(),hermite(),identity(),imY(),invert(),is_data(),is_nan(),is_string(),laguerre(),laguerre_a(),lcm(),legendre(),legendre_a(),ln(),log(),log10(),log2(),matfc(),matfcf(),matfl(),matflf(),max(),med(),min(),neumann(),norm(),num(),one(),pct(),phi(),prd(),radian(),rand(),range(),rect(),repeat(),replace(),replaceall(),rint(),roof(),round(),sbessel(),sign(),sin(),sinc(),sinh(),sneumann(),solve(),split(),sqrt(),std(),strfnd(),strrfnd(),string_cast(),strlen(),student_t(),substr(),sum(),tan(),tanh(),theta(),time(),to_char(),to_cmd(),to_lowercase(),to_string(),to_uppercase(),to_value(),transpose(),valtostr(),version(),Y(),zero()";
+    sBuilt_In = ",abs(),acos(),acosh(),Ai(),asin(),asinh(),ascii(),atan(),atanh(),avg(),bessel(),betheweizsaecker(),Bi(),binom(),cache(),char(),cmp(),cnt(),cos(),cosh(),cot(),cross(),data(),date(),dblfacul(),degree(),det(),diag(),diagonalize(),ellipticD(),ellipticE(),ellipticF(),ellipticPi(),eigenvals(),eigenvect(),erf(),erfc(),exp(),faculty(),findfile(),findparam(),floor(),gamma(),gauss(),gcd(),getfilelist(),getfolderlist(),getindices(),getmatchingparens(),getopt(),heaviside(),hermite(),identity(),imY(),invert(),is_data(),is_nan(),is_string(),laguerre(),laguerre_a(),lcm(),legendre(),legendre_a(),ln(),log(),log10(),log2(),matfc(),matfcf(),matfl(),matflf(),max(),med(),min(),neumann(),norm(),num(),one(),pct(),phi(),prd(),radian(),rand(),range(),rect(),repeat(),replace(),replaceall(),rint(),roof(),round(),sbessel(),sign(),sin(),sinc(),sinh(),sneumann(),solve(),split(),sqrt(),std(),strfnd(),strrfnd(),string_cast(),strlen(),student_t(),substr(),sum(),tan(),tanh(),theta(),time(),to_char(),to_cmd(),to_lowercase(),to_string(),to_uppercase(),to_value(),transpose(),valtostr(),version(),Y(),zero()";
     sCommands = ",for,if,while,endfor,endwhile,endif,else,elseif,continue,break,explicit,procedure,endprocedure,throw,return,"; //",stats,hist,random,test,credits,copy,about,info,help,man,set,get,list,if,else,endif,break,continue,ifndef,undef,integrate,integrate2,for,endfor,define,redefine,resample,ifndef,search,smooth,find,plot,plot3d,mesh,mesh3d,surf,surf3d,cont,cont3d,grad,save,load,show,clear,headedit,script,start,del,quit,diff,extrema,zeroes,repl,dens,dens3d,vect,vect3d,while,endwhile,sort,taylor,global,var,procedure,endprocedure,throw,return,fit,fitw,readline,read,write,explicit,";
     sFileName = "<>/functions.def";
     sCaches = "";
