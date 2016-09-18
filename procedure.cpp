@@ -3165,10 +3165,19 @@ void Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnval
     }
     else if (_return.vNumVal.size())
     {
-        //std::cerr << sReplaceName << endl;
+        string __sRplcNm = sReplaceName;
+        if (sReplaceName.find('\\') != string::npos || sReplaceName.find('/') != string::npos || sReplaceName.find(':') != string::npos)
+        {
+            for (unsigned int i = 0; i < __sRplcNm.length(); i++)
+            {
+                if (__sRplcNm[i] == '\\' || __sRplcNm[i] == '/' || __sRplcNm[i] == ':')
+                    __sRplcNm[i] = '~';
+            }
+        }
+        //std::cerr << __sRplcNm << endl;
         //std::cerr << _return.vNumVal.size() << endl;
-        _parser.SetVectorVar(sReplaceName, _return.vNumVal);
-        sLine = sLine.substr(0,nPos) + sReplaceName +  sLine.substr(nPos2);
+        _parser.SetVectorVar(__sRplcNm, _return.vNumVal);
+        sLine = sLine.substr(0,nPos) + __sRplcNm +  sLine.substr(nPos2);
     }
     else
         sLine = sLine.substr(0,nPos) + "nan" + sLine.substr(nPos2);

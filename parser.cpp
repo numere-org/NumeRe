@@ -910,6 +910,90 @@ value_type parser_IrregularCylBessel(value_type n, value_type x)
         return -INFINITY;
 }
 
+// --> Elliptic integral F(phi,k) <--
+value_type parser_EllipticF(value_type phi, value_type k)
+{
+    if (isnan(k) || isnan(phi) || isinf(k) || isinf(phi))
+        return NAN;
+    if (k < 0 || k >= 1)
+        return NAN;
+    if (phi < 0 || phi > M_PI_2) /// FIXME
+    {
+        int nSign = 1;
+        int nMultiple = floor(fabs(phi/M_PI_2));
+        if (phi < 0)
+            nSign = -1;
+        if (!(nMultiple%2)) // even
+            return nSign*(nMultiple*gsl_sf_ellint_Kcomp(k,0) + gsl_sf_ellint_F(fabs(phi)-nMultiple*M_PI_2, k, 0));
+        else // odd
+            return nSign*((nMultiple+1)*gsl_sf_ellint_Kcomp(k,0) - gsl_sf_ellint_F(M_PI_2-(fabs(phi)-nMultiple*M_PI_2), k, 0));
+    }
+    return gsl_sf_ellint_F(phi, k, 0);
+}
+
+// --> Elliptic integral E(phi,k) <--
+value_type parser_EllipticE(value_type phi, value_type k)
+{
+    if (isnan(k) || isnan(phi) || isinf(k) || isinf(phi))
+        return NAN;
+    if (k < 0 || k >= 1)
+        return NAN;
+    if (phi < 0 || phi > M_PI_2) /// FIXME
+    {
+        int nSign = 1;
+        int nMultiple = floor(fabs(phi/M_PI_2));
+        if (phi < 0)
+            nSign = -1;
+        if (!(nMultiple%2)) // even
+            return nSign*(nMultiple*gsl_sf_ellint_Ecomp(k,0) + gsl_sf_ellint_E(fabs(phi)-nMultiple*M_PI_2, k, 0));
+        else // odd
+            return nSign*((nMultiple+1)*gsl_sf_ellint_Ecomp(k,0) - gsl_sf_ellint_E(M_PI_2-(fabs(phi)-nMultiple*M_PI_2), k, 0));
+    }
+    return gsl_sf_ellint_E(phi, k, 0);
+}
+
+// --> Elliptic integral Pi(phi, n, k) <--
+value_type parser_EllipticP(value_type phi, value_type n, value_type k)
+{
+    if (isnan(k) || isnan(phi) || isinf(k) || isinf(phi) || isnan(n) || isinf(n))
+        return NAN;
+    if (k < 0 || k >= 1)
+        return NAN;
+    if (phi < 0 || phi > M_PI_2) /// FIXME
+    {
+        int nSign = 1;
+        int nMultiple = floor(fabs(phi/M_PI_2));
+        if (phi < 0)
+            nSign = -1;
+        if (!(nMultiple%2)) // even
+            return nSign*(nMultiple*gsl_sf_ellint_P(M_PI_2,k,n,0) + gsl_sf_ellint_P(fabs(phi)-nMultiple*M_PI_2, k, n, 0));
+        else // odd
+            return nSign*((nMultiple+1)*gsl_sf_ellint_P(M_PI_2,k,n,0) - gsl_sf_ellint_P(M_PI_2-(fabs(phi)-nMultiple*M_PI_2), k, n, 0));
+    }
+    return gsl_sf_ellint_P(phi, k, n, 0);
+}
+
+// --> Elliptic integral D(phi, n, k) <--
+value_type parser_EllipticD(value_type phi, value_type n, value_type k)
+{
+    if (isnan(k) || isnan(phi) || isinf(k) || isinf(phi) || isnan(n) || isinf(n))
+        return NAN;
+    if (k < 0 || k >= 1)
+        return NAN;
+    if (phi < 0 || phi > M_PI_2) /// FIXME
+    {
+        int nSign = 1;
+        int nMultiple = floor(fabs(phi/M_PI_2));
+        if (phi < 0)
+            nSign = -1;
+        if (!(nMultiple%2)) // even
+            return nSign*(nMultiple*gsl_sf_ellint_D(M_PI_2,k,n,0) + gsl_sf_ellint_D(fabs(phi)-nMultiple*M_PI_2, k, n, 0));
+        else // odd
+            return nSign*((nMultiple+1)*gsl_sf_ellint_D(M_PI_2,k,n,0) - gsl_sf_ellint_D(M_PI_2-(fabs(phi)-nMultiple*M_PI_2), k, n, 0));
+    }
+    return gsl_sf_ellint_D(phi, k, n, 0);
+}
+
 // --> floor-Funktion <--
 value_type parser_floor(value_type x)
 {
@@ -1208,6 +1292,10 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
     _parser.DefineFun(_T("range"), parser_interval, true);                          // range(x,left,right)
     _parser.DefineFun(_T("Ai"), parser_AiryA, true);                                // Ai(x)
     _parser.DefineFun(_T("Bi"), parser_AiryB, true);                                // Bi(x)
+    _parser.DefineFun(_T("ellipticF"), parser_EllipticF, true);                     // ellipticF(x,k)
+    _parser.DefineFun(_T("ellipticE"), parser_EllipticE, true);                     // ellipticE(x,k)
+    _parser.DefineFun(_T("ellipticPi"), parser_EllipticP, true);                    // ellipticPi(x,n,k)
+    _parser.DefineFun(_T("ellipticD"), parser_EllipticD, true);                     // ellipticD(x,n,k)
     _parser.DefineFun(_T("cot"), parser_cot, true);                                 // cot(x)
     _parser.DefineFun(_T("floor"), parser_floor, true);                             // floor(x)
     _parser.DefineFun(_T("roof"), parser_roof, true);                               // roof(x)
@@ -1678,6 +1766,7 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
                             _procedure.replaceReturnVal(sLine, _parser, _rTemp, nPos-1, nParPos+1, "PROC~["+__sName+"~ROOT_"+toString(nProc)+"]");
                             nProc++;
                         }
+                        //cerr << sLine << endl;
                         /* if (_rTemp.sStringVal.length())
                             sLine = sLine.substr(0, nPos-1) + _rTemp.sStringVal + sLine.substr(nParPos+1);
                         else
