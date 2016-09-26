@@ -359,7 +359,7 @@
 1473835331 source:c:\cpp\numere\define.cpp
 	"define.hpp"
 
-1472796506 source:c:\cpp\numere\doc_helper.cpp
+1474910281 source:c:\cpp\numere\doc_helper.cpp
 	"doc_helper.hpp"
 	"version.h"
 
@@ -611,10 +611,10 @@
 1470725915 source:c:\cpp\numere\settings.cpp
 	"settings.hpp"
 
-1473879580 source:c:\cpp\numere\stringparsing.cpp
+1474106127 source:c:\cpp\numere\stringparsing.cpp
 	"parser_functions.hpp"
 
-1473582802 source:c:\cpp\numere\tools.cpp
+1474914197 source:c:\cpp\numere\tools.cpp
 	"tools.hpp"
 
 1473519793 source:c:\cpp\numere\ttr-ws13_private.rc

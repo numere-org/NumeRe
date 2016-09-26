@@ -337,6 +337,9 @@ void Documentation::addToDocIndex(string& _sIndexToAdd, bool bUseUserLangFiles)
         mDocumentationIndex.clear();
         loadDocIndex(false);
     }
+    if (!vDocIndexTable.size())
+        throw INVALID_HLPIDX;
+
     string sKeyWord = "";
     string sLine = "";
     vector<string> vEntry;

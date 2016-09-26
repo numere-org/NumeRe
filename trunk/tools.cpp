@@ -1734,8 +1734,12 @@ string LineBreak(string sOutput, const Settings& _option, bool bAllowDashBreaks,
             nLastLineBreak = i;
         if (sOutput[i] == 'n' && sOutput[i-1] == '\\')
         {
-            if (i == 1 || sOutput[i-2] != '\\')
+            if ((i == 1 || sOutput[i-2] != '\\')
+                && !(sOutput.substr(i,2) == "nu" && checkDelimiter(sOutput.substr(i-1,4)))
+                && !(sOutput.substr(i,3) == "neq" && checkDelimiter(sOutput.substr(i-1,5))))
                 nLastLineBreak = i;
+            else if (i != 1 && sOutput[i-2] != '\\')
+                sOutput.insert(i,"\\");
         }
         if (sOutput[i] == '\n')
         {
