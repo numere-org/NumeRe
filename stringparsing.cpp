@@ -10,7 +10,7 @@ extern Plugin _plugin;
 // --> Verarbeitet String-Ausdruecke <--
 int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& _parser, const Settings& _option, bool bSilent)
 {
-    string* sFinal;
+    vector<string> vFinal;
     string sTemp = "";
     string sTemp_2 = "";
     string sObject = sCache;
@@ -165,25 +165,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             sLine.erase(0,nPos+1);
         }
         StripSpaces(sLine);
-        /*if (sLine != getLastArgument(sLine, false))
-        {
-            string sRecursion = "";
-            string sParsed = "";
-            while (sLine.length())
-            {
-                sRecursion = getLastArgument(sLine, true);
-                if (sLine.length() && sRecursion.find('=') != string::npos)
-                {
-                    sRecursion += " -kmq";
-                    if (!parser_StringParser(sRecursion, sDummy, _data, _parser, _option, true))
-                        return 0;
-                }
-                if (sParsed.length())
-                    sRecursion += ", ";
-                sParsed = sRecursion + sParsed;
-            }
-            sLine = sParsed;
-        }*/
+
         if (sLine != getNextArgument(sLine, false))
         {
             string sRecursion = "";
@@ -415,17 +397,32 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
         nPos += getMatchingParenthesis(sLine.substr(nPos));
         if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 10))))
         {
-            string sFile = sLine.substr(n_pos+9, nPos-n_pos-9) + " -nq";
+            string sArgument = sLine.substr(n_pos+9, nPos-n_pos-9);
+            string sFile = getNextArgument(sArgument, true) + " -nq";
+            string sPath = _option.getExePath();
+            if (sArgument.length())
+            {
+                if (!parser_StringParser(sArgument, sDummy, _data, _parser, _option, true))
+                    return 0;
+                sPath = sArgument;
+            }
             if (!parser_StringParser(sFile, sDummy, _data, _parser, _option, true))
                 return 0;
             else
             {
                 FileSystem _fSys;
                 _fSys.setTokens(_option.getTokenPaths());
-                _fSys.setPath(_option.getExePath(), false, _option.getExePath());
+                _fSys.setPath(sPath, false, _option.getExePath());
+                string sExtension = ".dat";
                 if (sFile.rfind('.') != string::npos)
-                    _fSys.declareFileType(sFile.substr(sFile.rfind('.')));
-                sFile = _fSys.ValidFileName(sFile, sFile.substr(sFile.rfind('.')));
+                {
+                    sExtension = sFile.substr(sFile.rfind('.'));
+                    if (sExtension.find('*') != string::npos || sExtension.find('?') != string::npos)
+                        sExtension = ".dat";
+                    else
+                        _fSys.declareFileType(sExtension);
+                }
+                sFile = _fSys.ValidFileName(sFile, sExtension);
                 sLine = sLine.substr(0,n_pos) + toString((bool)fileExists(sFile)) + sLine.substr(nPos+1);
             }
         }
@@ -1457,8 +1454,8 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     sData += " -kmq";
                     if (!parser_StringParser(sData, sDummy, _data, _parser, _option, true))
                         return 0;
-                    StripSpaces(sData)
-;                    sLine = sLine.substr(0,n_pos) + sData + sLine.substr(nPos+1);
+                    StripSpaces(sData);
+                    sLine = sLine.substr(0,n_pos) + sData + sLine.substr(nPos+1);
                 }
             }
         }
@@ -1752,7 +1749,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             sTemp_2 += sTemp.substr(0,nPos);
             sTemp = sTemp.substr(nPos+1);
             if (_option.getbDebug())
-                mu::console() << _T("|-> DEBUG: sTemp = ") << sTemp << endl;
+                cerr << "|-> DEBUG: (#-parser) sTemp = " << sTemp.substr(0,100) << endl;
             if (sTemp[0] == '~')
             {
                 for (unsigned int i = 0; i < sTemp.length(); i++)
@@ -1863,7 +1860,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             else
                 _parser.SetExpr(sTemp.substr(0, parser_getDelimiterPos(sTemp.substr(n_pos))));
             if (_option.getbDebug())
-                mu::console() << _T("|-> DEBUG: parser_getDelimiterPos(sTemp) = ") << parser_getDelimiterPos(sTemp.substr(n_pos)) << endl;
+                cerr << "|-> DEBUG: parser_getDelimiterPos(sTemp) = " << parser_getDelimiterPos(sTemp.substr(n_pos)) << endl;
             {
                 int nResults = 0;
                 value_type* v = 0;
@@ -1893,7 +1890,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             else
                 sTemp = "";
             if (_option.getbDebug())
-                mu::console() << _T("|-> DEBUG: sTemp_2 = ") << sTemp_2 << endl;
+               cerr << "|-> DEBUG: (#-parser) sTemp_2 = " << sTemp_2.substr(0,100) << endl;
 
             nPos = 0;
         }
@@ -1916,126 +1913,98 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
 
 
     if (_option.getbDebug())
-        mu::console() << _T("|-> DEBUG: sTemp = ") << sTemp << endl;
+        mu::console() << _T("|-> DEBUG: (after vector parser) sTemp = ") << sTemp.substr(0,100) << endl;
 
-    for (unsigned int i = 0; i < sTemp.length(); i++)
-    {
-        if (sTemp[i] == ',' && !isInQuotes(sTemp, i))
-        {
-            nStrings++;
-        }
-    }
 
-    if (nStrings)
-        sFinal = new string[nStrings];
-    else
-        return 0;
+    while (sTemp.length())
+        vFinal.push_back(getNextArgument(sTemp, true));
 
     if (_option.getbDebug())
-        cerr << "|-> DEBUG: nStrings = " << nStrings << endl;
+        cerr << "|-> DEBUG: nStrings = " << vFinal.size() << endl;
+        //cerr << "|-> DEBUG: nStrings = " << nStrings << endl;
 
-    for (unsigned int j = 0; j < nStrings; j++)
-    {
-        sFinal[j] = "";
-    }
-    if (sTemp_2.length())
-        sLine = sTemp_2;
+    if (!vFinal.size())
+        return 0;
 
-    for (unsigned int i = 0; i < nStrings; i++)
-    {
-        if (i+1 == nStrings)
-        {
-            sFinal[i] = sLine;
-            break;
-        }
-        for (unsigned int j = 0; j < sLine.length(); j++)
-        {
-            if (sLine[j] == ',' && !isInQuotes(sLine, j))
-            {
-                sFinal[i] = sLine.substr(0,j);
-                sLine = sLine.substr(j+1);
-                break;
-            }
-        }
-    }
-
+    // Changed from sFinal to vFinal and commented the delete's
+    nStrings = vFinal.size();
     for (unsigned int n = 0; n < nStrings; n++)
     {
-        //cerr << sFinal[n] << endl;
-        StripSpaces(sFinal[n]);
-        if (!sFinal[n].length())
+        //cerr << vFinal[n] << endl;
+        StripSpaces(vFinal[n]);
+        if (!vFinal[n].length())
             continue;
         // Strings verknüpfen
-        if (sFinal[n].front() == '"' && sFinal[n].back() == '"')
+        if (vFinal[n].front() == '"' && vFinal[n].back() == '"')
         {
-            for (unsigned int j = 0; j < sFinal[n].length(); j++)
+            for (unsigned int j = 0; j < vFinal[n].length(); j++)
             {
-                if (sFinal[n][j] == '+' && !isInQuotes(sFinal[n], j))
+                if (vFinal[n][j] == '+' && !isInQuotes(vFinal[n], j))
                 {
                     unsigned int k = j;
-                    j = sFinal[n].rfind('"', j);
-                    sFinal[n] = sFinal[n].substr(0,sFinal[n].rfind('"', k)) + sFinal[n].substr(sFinal[n].find('"', k)+1);
+                    j = vFinal[n].rfind('"', j);
+                    vFinal[n] = vFinal[n].substr(0,vFinal[n].rfind('"', k)) + vFinal[n].substr(vFinal[n].find('"', k)+1);
                 }
             }
         }
-        if (sFinal[n].find("&&") != string::npos
-            || sFinal[n].find("||") != string::npos
-            || sFinal[n].find("<=") != string::npos
-            || sFinal[n].find(">=") != string::npos
-            || sFinal[n].find("==") != string::npos
-            || sFinal[n].find("!=") != string::npos
-            || (sFinal[n].find('<') != string::npos
-                && sFinal[n].find("<>") != sFinal[n].find('<')
-                && sFinal[n].find("<this>") != sFinal[n].find('<')
-                && sFinal[n].find("<wp>") != sFinal[n].find('<')
-                && sFinal[n].find("<loadpath>") != sFinal[n].find('<')
-                && sFinal[n].find("<savepath>") != sFinal[n].find('<')
-                && sFinal[n].find("<plotpath>") != sFinal[n].find('<')
-                && sFinal[n].find("<procpath>") != sFinal[n].find('<')
-                && sFinal[n].find("<scriptpath>") != sFinal[n].find('<'))
-            || (sFinal[n].find('>') != string::npos
-                && sFinal[n].find("<>") != sFinal[n].find('>')-1
-                && sFinal[n].find("<this>") != sFinal[n].find('>')-5
-                && sFinal[n].find("<wp>") != sFinal[n].find('>')-5
-                && sFinal[n].find("<loadpath>") != sFinal[n].find('>')-9
-                && sFinal[n].find("<savepath>") != sFinal[n].find('>')-9
-                && sFinal[n].find("<plotpath>") != sFinal[n].find('>')-9
-                && sFinal[n].find("<procpath>") != sFinal[n].find('>')-9
-                && sFinal[n].find("<scriptpath>") != sFinal[n].find('>')-11)
+        if (vFinal[n].find("&&") != string::npos
+            || vFinal[n].find("||") != string::npos
+            || vFinal[n].find("<=") != string::npos
+            || vFinal[n].find(">=") != string::npos
+            || vFinal[n].find("==") != string::npos
+            || vFinal[n].find("!=") != string::npos
+            || (vFinal[n].find('<') != string::npos
+                && vFinal[n].find("<>") != vFinal[n].find('<')
+                && vFinal[n].find("<this>") != vFinal[n].find('<')
+                && vFinal[n].find("<wp>") != vFinal[n].find('<')
+                && vFinal[n].find("<loadpath>") != vFinal[n].find('<')
+                && vFinal[n].find("<savepath>") != vFinal[n].find('<')
+                && vFinal[n].find("<plotpath>") != vFinal[n].find('<')
+                && vFinal[n].find("<procpath>") != vFinal[n].find('<')
+                && vFinal[n].find("<scriptpath>") != vFinal[n].find('<'))
+            || (vFinal[n].find('>') != string::npos
+                && vFinal[n].find("<>") != vFinal[n].find('>')-1
+                && vFinal[n].find("<this>") != vFinal[n].find('>')-5
+                && vFinal[n].find("<wp>") != vFinal[n].find('>')-5
+                && vFinal[n].find("<loadpath>") != vFinal[n].find('>')-9
+                && vFinal[n].find("<savepath>") != vFinal[n].find('>')-9
+                && vFinal[n].find("<plotpath>") != vFinal[n].find('>')-9
+                && vFinal[n].find("<procpath>") != vFinal[n].find('>')-9
+                && vFinal[n].find("<scriptpath>") != vFinal[n].find('>')-11)
             )
         {
             //bReturningLogicals = true;
             if (_option.getbDebug())
-                cerr << "|-> DEBUG: Final[n] = " << sFinal[n] << endl;
-            sFinal[n] = parser_evalStringLogic(sFinal[n], bReturningLogicals);
-            StripSpaces(sFinal[n]);
+                cerr << "|-> DEBUG: vFinal[n] = " << vFinal[n] << endl;
+            vFinal[n] = parser_evalStringLogic(vFinal[n], bReturningLogicals);
+            StripSpaces(vFinal[n]);
 
         }
-        if (sFinal[n].front() != '"' && sFinal[n].back() != '"')
+        if (vFinal[n].front() != '"' && vFinal[n].back() != '"')
         {
-            _parser.SetExpr(sFinal[n]);
-            sFinal[n] = toString(_parser.Eval(), _option);
+            _parser.SetExpr(vFinal[n]);
+            vFinal[n] = toString(_parser.Eval(), _option);
             vIsNoStringValue.push_back(true);
         }
         else
             vIsNoStringValue.push_back(false);
-        if ((sFinal[n].front() == '"' && sFinal[n].back() != '"')
-            || (sFinal[n].front() != '"' && sFinal[n].back() == '"'))
+        if ((vFinal[n].front() == '"' && vFinal[n].back() != '"')
+            || (vFinal[n].front() != '"' && vFinal[n].back() == '"'))
         {
-            if (sFinal[n].front() == '"')
-                sFinal[n].insert(0,1,'\\');
-            for (unsigned int q = 1; q < sFinal[n].length(); q++)
+            if (vFinal[n].front() == '"')
+                vFinal[n].insert(0,1,'\\');
+            for (unsigned int q = 1; q < vFinal[n].length(); q++)
             {
-                if (sFinal[n][q] == '"' && sFinal[n][q-1] != '\\')
-                    sFinal[n].insert(q,1,'\\');
+                if (vFinal[n][q] == '"' && vFinal[n][q-1] != '\\')
+                    vFinal[n].insert(q,1,'\\');
             }
         }
         else
         {
-            if (sFinal[n].front() == '"')
-                sFinal[n] = sFinal[n].substr(1);
-            if (sFinal[n].back() == '"')
-                sFinal[n].pop_back();
+            if (vFinal[n].front() == '"')
+                vFinal[n] = vFinal[n].substr(1);
+            if (vFinal[n].back() == '"')
+                vFinal[n].pop_back();
         }
     }
 
@@ -2064,15 +2033,8 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 }
                 _data.setCacheStatus(true);
             }
-            try
-            {
-                parser_SplitArgs(si, sj, ',', _option);
-            }
-            catch (...)
-            {
-                delete[] sFinal;
-                throw;
-            }
+            parser_SplitArgs(si, sj, ',', _option);
+
             if (si.find("#") != string::npos)
             {
                 if (sj.find(":") != string::npos)
@@ -2100,9 +2062,9 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     parser_CheckIndices(nIndex[0], nIndex[1]);
                     for (int n = 0; n < (int)nStrings; n++)
                     {
-                        if (!sFinal[n].length() || n+nIndex[0] == nIndex[1]+1 || n+nIndex[0] >= _data.getCols("data"))
+                        if (!vFinal[n].length() || n+nIndex[0] == nIndex[1]+1 || n+nIndex[0] >= _data.getCols("data"))
                             break;
-                        _data.setHeadLineElement(n+nIndex[0], "data", removeControlSymbols(sFinal[n]));
+                        _data.setHeadLineElement(n+nIndex[0], "data", removeControlSymbols(vFinal[n]));
                     }
 
                 }
@@ -2120,9 +2082,9 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                                 //nIndex[1] = _data.getCols(iter->first);
                             for (int n = 0; n < (int)nStrings; n++)
                             {
-                                if (!sFinal[n].length() || (nIndex[1] && n+nIndex[0] == nIndex[1]+1))// || n+nIndex[0] >= _data.getCols(iter->first))
+                                if (!vFinal[n].length() || (nIndex[1] && n+nIndex[0] == nIndex[1]+1))// || n+nIndex[0] >= _data.getCols(iter->first))
                                     break;
-                                _data.setHeadLineElement(n+nIndex[0], iter->first, removeControlSymbols(sFinal[n]));
+                                _data.setHeadLineElement(n+nIndex[0], iter->first, removeControlSymbols(vFinal[n]));
                             }
                             break;
                         }
@@ -2131,7 +2093,6 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             }
             else
             {
-                delete[] sFinal;
                 throw CANNOT_CONTAIN_STRINGS;
             }
             _data.setCacheStatus(false);
@@ -2165,7 +2126,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     }
                     catch (...)
                     {
-                        delete[] sFinal;
+                        //delete[] vFinal;
                         throw;
                     }
                 }
@@ -2178,7 +2139,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     }
                     catch (...)
                     {
-                        delete[] sFinal;
+                        //delete[] vFinal;
                         throw;
                     }
                 }
@@ -2214,16 +2175,16 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 {
                     if (n+nIndex[0] == nIndex[1]+1)
                         break;
-                    _data.writeString(sFinal[n], n+nIndex[0], nIndex[2]);
+                    _data.writeString(vFinal[n], n+nIndex[0], nIndex[2]);
                 }
             }
             else
             {
                 for (int n = 0; n < (int)nStrings; n++)
                 {
-                    /*if (!sFinal[n].length())
-                        break;*/
-                    _data.writeString(sFinal[n]);
+                    //if (!vFinal[n].length())
+                    //    break;
+                    _data.writeString(vFinal[n]);
                 }
             }
         }
@@ -2234,11 +2195,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 return 0;
             try
             {
-                _data.setStringValue(sObject, sFinal[0]);
+                _data.setStringValue(sObject, vFinal[0]);
             }
             catch (...)
             {
-                delete[] sFinal;
+                //delete[] vFinal;
                 throw;
             }
         }
@@ -2247,14 +2208,14 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             StripSpaces(sObject);
             if (sObject.find(' ') != string::npos)
             {
-                delete[] sFinal;
+                //delete[] vFinal;
                 return 0;
             }
             if (parser_GetVarAdress(sObject, _parser))
             {
                 if (!vIsNoStringValue[0])
                 {
-                    delete[] sFinal;
+                    //delete[] vFinal;
                     return 0;
                 }
             }
@@ -2264,13 +2225,13 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 {
                     int nResults = 0;
                     value_type* v = 0;
-                    _parser.SetExpr(sObject + " = " + sFinal[0]);
+                    _parser.SetExpr(sObject + " = " + vFinal[0]);
                     v = _parser.Eval(nResults);
                     vAns = v[0];
                 }
                 catch (...)
                 {
-                    delete[] sFinal;
+                    //delete[] vFinal;
                     throw;
                 }
             }
@@ -2278,11 +2239,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             {
                 try
                 {
-                    _data.setStringValue(sObject, sFinal[0]);
+                    _data.setStringValue(sObject, vFinal[0]);
                 }
                 catch (...)
                 {
-                    delete[] sFinal;
+                    //delete[] vFinal;
                     throw;
                 }
             }
@@ -2291,51 +2252,51 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
 
     sLine = "";
     string sConsoleOut = "|-> ";
-    /*if (!bSilent)
-        mu::console() << _T("|-> ");*/
+    //if (!bSilent)
+    //    mu::console() << _T("|-> ");
     for (unsigned int j = 0; j < nStrings; j++)
     {
         if (bKeepMaskedQuotes)
         {
             if (!bNoQuotes && !vIsNoStringValue[j])
-                sLine += "\"" + sFinal[j] + "\"";
+                sLine += "\"" + vFinal[j] + "\"";
             else
-                sLine += sFinal[j];
+                sLine += vFinal[j];
             if (j < nStrings - 1)
                 sLine += ",";
             continue;
         }
-        if (sFinal[j] != "\\n" && sFinal[j] != "\\t" && !bNoQuotes && !bReturningLogicals && !vIsNoStringValue[j])
+        if (vFinal[j] != "\\n" && vFinal[j] != "\\t" && !bNoQuotes && !bReturningLogicals && !vIsNoStringValue[j])
         {
             sConsoleOut += "\"";
             sLine += "\"";
         }
-        for (unsigned int k = 0; k < sFinal[j].length(); k++)
+        for (unsigned int k = 0; k < vFinal[j].length(); k++)
         {
-            if (k+1 < sFinal[j].length()
-                && sFinal[j][k] == '\\'
-                && (sFinal[j][k+1] == 'n' || sFinal[j][k+1] == 't' || sFinal[j][k+1] == '"')
-                && !(sFinal[j].substr(k+1,3) == "tau"
-                    && ((checkDelimiter(sFinal[j].substr(k,5)) && sFinal[j].length() >= k+5) || (sFinal[j].length() == k+4)))
-                && !(sFinal[j].substr(k+1,5) == "theta"
-                    && ((checkDelimiter(sFinal[j].substr(k,7)) && sFinal[j].length() >= k+7) || (sFinal[j].length() == k+6)))
-                && !(sFinal[j].substr(k+1,2) == "nu"
-                    && ((checkDelimiter(sFinal[j].substr(k,4)) && sFinal[j].length() >= k+4) || (sFinal[j].length() == k+3)))
-                && !(sFinal[j].substr(k+1,3) == "neq"
-                    && ((checkDelimiter(sFinal[j].substr(k,5)) && sFinal[j].length() >= k+5) || (sFinal[j].length() == k+4)))
+            if (k+1 < vFinal[j].length()
+                && vFinal[j][k] == '\\'
+                && (vFinal[j][k+1] == 'n' || vFinal[j][k+1] == 't' || vFinal[j][k+1] == '"')
+                && !(vFinal[j].substr(k+1,3) == "tau"
+                    && ((checkDelimiter(vFinal[j].substr(k,5)) && vFinal[j].length() >= k+5) || (vFinal[j].length() == k+4)))
+                && !(vFinal[j].substr(k+1,5) == "theta"
+                    && ((checkDelimiter(vFinal[j].substr(k,7)) && vFinal[j].length() >= k+7) || (vFinal[j].length() == k+6)))
+                && !(vFinal[j].substr(k+1,2) == "nu"
+                    && ((checkDelimiter(vFinal[j].substr(k,4)) && vFinal[j].length() >= k+4) || (vFinal[j].length() == k+3)))
+                && !(vFinal[j].substr(k+1,3) == "neq"
+                    && ((checkDelimiter(vFinal[j].substr(k,5)) && vFinal[j].length() >= k+5) || (vFinal[j].length() == k+4)))
             )
             {//\not\neq\ni
-                if (sFinal[j][k+1] == 'n')
+                if (vFinal[j][k+1] == 'n')
                 {
                     sConsoleOut += "$";
                     sLine += "\n";
                 }
-                else if (sFinal[j][k+1] == 't')
+                else if (vFinal[j][k+1] == 't')
                 {
                     sConsoleOut += "\t";
                     sLine += "\t";
                 }
-                else if (sFinal[j][k+1] == '"')
+                else if (vFinal[j][k+1] == '"')
                 {
                     sConsoleOut += "\"";
                     if (!bKeepMaskedQuotes)
@@ -2347,20 +2308,20 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             }
             else
             {
-                sConsoleOut += sFinal[j][k];
-                sLine += sFinal[j][k];
+                sConsoleOut += vFinal[j][k];
+                sLine += vFinal[j][k];
             }
         }
-        if (sFinal[j] != "\\n" && sFinal[j] != "\\t" && !bNoQuotes && !bReturningLogicals && !vIsNoStringValue[j])
+        if (vFinal[j] != "\\n" && vFinal[j] != "\\t" && !bNoQuotes && !bReturningLogicals && !vIsNoStringValue[j])
         {
             sConsoleOut += "\"";
             sLine += "\"";
         }
         if (j == nStrings - 1)
             break;
-        /*sif (!sFinal[j+1].length())
-            continue;*/
-        if (sFinal[j] != "\\n" && sFinal[j+1] != "\\n" && sFinal[j] != "\\t" && sFinal[j] != "\\t")
+        // if (!vFinal[j+1].length())
+        //    continue;
+        if (vFinal[j] != "\\n" && vFinal[j+1] != "\\n" && vFinal[j] != "\\t" && vFinal[j] != "\\t")
         {
             if (sLine.find_last_not_of("\" ") != string::npos && sLine[sLine.find_last_not_of("\" ")] == '\n')
             {
@@ -2381,9 +2342,6 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     if ((!bSilent || bPeek) && !bReturningLogicals)
         cerr << LineBreak(sConsoleOut, _option, false) << endl;
 
-
-    delete[] sFinal;
-    sFinal = 0;
     if (bReturningLogicals)
         return -1;
     else

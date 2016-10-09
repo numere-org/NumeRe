@@ -3029,7 +3029,7 @@ void parser_ListPlugins(Parser& _parser, Datafile& _data, const Settings& _optio
                 sLine += _plugin.getPluginCommand(i);
             sLine.append(23-sLine.length(), ' ');
 
-            sLine += "- [" + _plugin.getPluginName(i) + "] (v " + _plugin.getPluginVersion(i) + ") -- von "+_plugin.getPluginAuthor(i);
+            sLine += _lang.get("PARSERFUNCS_LISTPLUGINS_PLUGININFO", _plugin.getPluginName(i), _plugin.getPluginVersion(i), _plugin.getPluginAuthor(i));
             if (_plugin.getPluginDesc(i).length())
             {
                 sLine += "$" + _plugin.getPluginDesc(i);
@@ -3283,7 +3283,7 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
     }
     sScalars[32] = "";
     if (_option.getbDebug())
-        cerr << "|-> DEBUG: sLine = " << sTemp << endl;
+        cerr << "|-> DEBUG: sLine = " << sTemp.substr(0,100) << endl;
     do
     {
         nPos_2 = sTemp.find("{", nPos);
@@ -3458,7 +3458,7 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
     nPos = 0;
     nPos_2 = 0;
 
-    //cerr << sTemp << endl;
+    //cerr << sTemp.substr(0,100) << endl;
 
     do
     {
@@ -3472,14 +3472,14 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
             nPos++;
             continue;
         }
-        nDim_vec = 1;
-        if ((sTemp.find("{", nPos) != string::npos && sTemp.find("}", nPos) == string::npos)
-            || (sTemp.find("{", nPos) == string::npos && sTemp.find("}", nPos) != string::npos))
+        nDim_vec = 0;
+        if (getMatchingParenthesis(sTemp.substr(nPos)) == string::npos)
             throw INCOMPLETE_VECTOR_SYNTAX;
-        sVectors[nCount] = sTemp.substr(sTemp.find("{", nPos)+1, getMatchingParenthesis(sTemp.substr(sTemp.find('{', nPos)))-1);
-        if (sTemp.find("{", nPos) != 0)
-            sScalars[nScalars] += sTemp.substr(0, sTemp.find("{", nPos));
-        if (sVectors[nCount][0] == '{' && parser_CheckMultArgFunc(sScalars[nScalars], sTemp.substr(sTemp.find("}",nPos)+1)))
+        sVectors[nCount] = sTemp.substr(nPos+1, getMatchingParenthesis(sTemp.substr(nPos))-1);
+        //sVectors[nCount] = sTemp.substr(sTemp.find("{", nPos)+1, getMatchingParenthesis(sTemp.substr(sTemp.find('{', nPos)))-1);
+        if (sTemp.find('{', nPos) != 0)
+            sScalars[nScalars] += sTemp.substr(0, sTemp.find('{', nPos));
+        if (sVectors[nCount][0] == '{' && parser_CheckMultArgFunc(sScalars[nScalars], sTemp.substr(sTemp.find('}',nPos)+1)))
         {
             sVectors[nCount].erase(0,1);
             if (sVectors[nCount].back() == '}')
@@ -3488,31 +3488,32 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
             sTemp = sTemp.substr(sTemp.find("}}")+2);
             continue;
         }
-        else if (parser_CheckMultArgFunc(sScalars[nScalars], sTemp.substr(sTemp.find("}",nPos)+1)))
+        else if (parser_CheckMultArgFunc(sScalars[nScalars], sTemp.substr(sTemp.find('}',nPos)+1)))
         {
             sScalars[nScalars] += sVectors[nCount];
             sTemp = sTemp.substr(sTemp.find("}", nPos)+1);
             continue;
         }
-        /*if (_option.getbDebug())
-            cerr << "|-> DEBUG: sVectors[nCount] = " << sVectors[nCount] << ", sScalars[nScalars] = " << sScalars[nScalars] << endl;*/
+        if (_option.getbDebug())
+            cerr << "|-> DEBUG: sVectors[" << nCount << "] = " << sVectors[nCount].substr(0,100) << ", sScalars[" << nScalars << "] = " << sScalars[nScalars].substr(0,100) << endl;
         if (sVectors[nCount][0] == '{')
         {
             sVectors[nCount].erase(0,1);
             if (sVectors[nCount].back() == '}')
                 sVectors[nCount].pop_back();
-            sTemp.erase(0,sTemp.find("}", nPos)+2);
+            sTemp.erase(0,sTemp.find('}', nPos)+2);
         }
         else
             sTemp.erase(0,sTemp.find('}', nPos)+1);
-        for (unsigned int i = 0; i < sVectors[nCount].length(); i++)
+        nPos = 0;
+        if (sVectors[nCount].length())
         {
-            if (sVectors[nCount][i] == '(' && !isInQuotes(sVectors[nCount], i))
+            string sTempCopy = sVectors[nCount];
+            while (sTempCopy.length())
             {
-                i += getMatchingParenthesis(sVectors[nCount].substr(i));
+                if (getNextArgument(sTempCopy, true).length())
+                    nDim_vec++;
             }
-            else if (sVectors[nCount][i] == ',' && !isInQuotes(sVectors[nCount], i))
-                nDim_vec++;
         }
         if (nDim_vec > nDim)
             nDim = nDim_vec;
@@ -3521,7 +3522,7 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
         if (!sTemp.length())
             break;
     }
-    while (sTemp.find("{", nPos) != string::npos);
+    while (sTemp.find('{', nPos) != string::npos);
     if (sTemp.length())
     {
         sScalars[nScalars] += sTemp;
@@ -3543,47 +3544,22 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
             {
                 sLine += sScalars[j];
                 sTemp.clear();
-                if (sVectors[j].find(',') != string::npos)
-                {
-                    for (unsigned int n = 0; n < sVectors[j].length(); n++)
-                    {
-                        if (sVectors[j][n] == '(' && !isInQuotes(sVectors[j],n))
-                        {
-                            if (getMatchingParenthesis(sVectors[j].substr(n)) == string::npos)
-                            {
-                                throw UNMATCHED_PARENTHESIS;
-                            }
-                            n += getMatchingParenthesis(sVectors[j].substr(n));
-                        }
-                        else if (sVectors[j][n] == ',' && !isInQuotes(sVectors[j],n))
-                        {
-                            sTemp = sVectors[j].substr(0,n);
-                            sVectors[j].erase(0,n+1);
-                            break;
-                        }
-                    }
-                    if (!sTemp.length())
-                    {
-                        sTemp = sVectors[j];
-                        sVectors[j].clear();
-                    }
-                }
-                else if (sVectors[j].length())
-                {
-                    sTemp = sVectors[j];
-                    sVectors[j].clear();
-                }
+                if (sVectors[j].length())
+                    sTemp = getNextArgument(sVectors[j], true);
                 else
                 {
                     sTemp = parser_AddVectorComponent(sVectors[j], sScalars[j], sScalars[j+1], bIsStringExpression);
                 }
 
-                for (unsigned int n = 0; n < sDelim.length(); n++)
+                if (!bIsStringExpression)
                 {
-                    if (sTemp.find(sDelim[n]) != string::npos && !bIsStringExpression)
+                    for (unsigned int n = 0; n < sDelim.length(); n++)
                     {
-                        sTemp = "(" + sTemp + ")";
-                        break;
+                        if (sTemp.find(sDelim[n]) != string::npos)
+                        {
+                            sTemp = "(" + sTemp + ")";
+                            break;
+                        }
                     }
                 }
                 sLine += sTemp;
