@@ -1435,21 +1435,15 @@ bool isInQuotes(const string& sExpr, unsigned int nPos, bool bIgnoreVarParser)
             else
                 i += getMatchingParenthesis(sExpr.substr(i+11))+11;
         }
-        if (sExpr[i] == '"' && nQuotes)
+        if (sExpr[i] == '"')
         {
             if (i && sExpr[i-1] == '\\')
                 continue;
-            nQuotes = 0;
-        }
-        else if (sExpr[i] == '"')
-        {
-            if (i && sExpr[i-1] == '\\')
-                continue;
-            nQuotes = 1;
+            nQuotes++;
         }
     }
     //cerr << "nQuotes = " << nQuotes << endl;
-    if (nQuotes)
+    if (nQuotes % 2) // nQuotes % 2 == 1, wenn eine ungerade Zahl an Anfuehrungszeichen aufgetreten ist => die Position befindet sich als hinter einem geoeffneten Anfuehrungszeichen.
         return true;
     else if (!bIgnoreVarParser)
     {

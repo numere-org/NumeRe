@@ -1,3 +1,12 @@
+09 October 2016
+   NumeRe v 1.0.9 "Bethe" rev. 96
+
+     Change log:
+        -Fixed: Uebersetzung fuer "list -plugins" eingefuehrt.
+        -Fixed: "findfile()" kann nun wieder mit Wildcards umgehen und besitzt nun die Moeglichkeit, einen Standardsuchordner anzugeben.
+        -Fixed: "get -stringlist" gibt nun keine Exception mehr zurueck, wenn keine Strings verfuegbar sind.
+        -Fixed: Ein paar Laufzeitflaschenhaelse im Stringparser wurden beseitigt, die zu einer sehr langsamen Ausfuehrung von "#finalgrid(:,1) + "\t" + #finalgrid(:,2)" gefuehrt haben.
+
 26 September 2016
    NumeRe v 1.0.9 "Bethe" rev. 93
 

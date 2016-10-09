@@ -8630,6 +8630,8 @@ string BI_getVarList(const string& sCmd, Parser& _parser, Datafile& _data, Setti
             }
             sReturn += sSep;
         }
+        if (sReturn == "\"")
+            return "\"\"";
     }
     if (findCommand(sCmd).sString == "nums")
     {
@@ -8640,9 +8642,10 @@ string BI_getVarList(const string& sCmd, Parser& _parser, Datafile& _data, Setti
             sReturn += sSep;
         }
     }
-    if (matchParams(sCmd, "asstr"))
+
+    if (matchParams(sCmd, "asstr") && sReturn.length() > 2)
         sReturn.erase(sReturn.length()-3);
-    else
+    else if (!matchParams(sCmd, "asstr") && sReturn.length() > 1)
         sReturn.erase(sReturn.length()-2);
     return sReturn;
 }
