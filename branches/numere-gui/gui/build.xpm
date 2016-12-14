@@ -1,0 +1,26 @@
+/* XPM */
+static char *build_xpm[] = {
+/* columns rows colors chars-per-pixel */
+"16 16 4 1",
+"  c black",
+". c navy",
+"X c #ECE9D8",
+"o c gray100",
+/* pixels */
+"XXXXXXXXXXXXXXXX",
+"XXXXXXXXXXXXXXXX",
+"XX.XXXXX.XXXXX.X",
+"XXXXXXXXXXXXXXXX",
+"XX.XXXXX.XXXXX.X",
+"XX.X.X.X.X.X.X.X",
+"X...XXX...XXX...",
+"XX.XXXXX.XXXXX.X",
+"X               ",
+"X ooooooooooooo ",
+"X o o o o o o o ",
+"X ooooooooooooo ",
+"X o o o o o o o ",
+"X ooooooooooooo ",
+"X               ",
+"XXXXXXXXXXXXXXXX"
+};
