@@ -1,0 +1,1123 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_layout_file>
+	<FileVersion major="1" minor="0" />
+	<ActiveTarget name="Release Win32" />
+	<File name="gui\wxterm.h" open="1" top="0" tabpos="16" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2042" topLine="42" />
+		</Cursor>
+	</File>
+	<File name="common\Crc16.cpp" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
+		<Folding>
+			<Collapse line="11" />
+			<Collapse line="17" />
+			<Collapse line="54" />
+			<Collapse line="63" />
+			<Collapse line="71" />
+			<Collapse line="78" />
+			<Collapse line="84" />
+			<Collapse line="90" />
+			<Collapse line="93" />
+			<Collapse line="111" />
+			<Collapse line="125" />
+		</Folding>
+	</File>
+	<File name="network\actions.cpp" open="1" top="0" tabpos="20" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1497" topLine="39" />
+		</Cursor>
+		<Folding>
+			<Collapse line="5" />
+			<Collapse line="36" />
+			<Collapse line="86" />
+			<Collapse line="227" />
+			<Collapse line="231" />
+			<Collapse line="239" />
+			<Collapse line="242" />
+			<Collapse line="246" />
+			<Collapse line="260" />
+			<Collapse line="321" />
+			<Collapse line="326" />
+			<Collapse line="332" />
+			<Collapse line="336" />
+			<Collapse line="353" />
+			<Collapse line="370" />
+			<Collapse line="446" />
+			<Collapse line="450" />
+			<Collapse line="456" />
+			<Collapse line="458" />
+			<Collapse line="495" />
+			<Collapse line="497" />
+			<Collapse line="613" />
+			<Collapse line="615" />
+			<Collapse line="620" />
+			<Collapse line="629" />
+			<Collapse line="695" />
+			<Collapse line="699" />
+			<Collapse line="704" />
+			<Collapse line="731" />
+			<Collapse line="733" />
+			<Collapse line="737" />
+			<Collapse line="743" />
+			<Collapse line="754" />
+			<Collapse line="758" />
+			<Collapse line="764" />
+			<Collapse line="770" />
+			<Collapse line="777" />
+			<Collapse line="790" />
+			<Collapse line="808" />
+			<Collapse line="820" />
+			<Collapse line="835" />
+			<Collapse line="841" />
+			<Collapse line="844" />
+			<Collapse line="857" />
+			<Collapse line="866" />
+			<Collapse line="873" />
+			<Collapse line="917" />
+			<Collapse line="925" />
+			<Collapse line="927" />
+			<Collapse line="975" />
+			<Collapse line="977" />
+			<Collapse line="996" />
+			<Collapse line="998" />
+			<Collapse line="1027" />
+			<Collapse line="1055" />
+			<Collapse line="1061" />
+			<Collapse line="1068" />
+			<Collapse line="1075" />
+			<Collapse line="1082" />
+			<Collapse line="1088" />
+		</Folding>
+	</File>
+	<File name="kernel\kernel.hpp" open="1" top="0" tabpos="33" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="162" topLine="5" />
+		</Cursor>
+	</File>
+	<File name="gui\dialogs\CompilerOutputPanel.h" open="1" top="0" tabpos="12" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1269" topLine="16" />
+		</Cursor>
+		<Folding>
+			<Collapse line="14" />
+			<Collapse line="69" />
+		</Folding>
+	</File>
+	<File name="common\Crc16.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="168" topLine="0" />
+		</Cursor>
+		<Folding>
+			<Collapse line="14" />
+		</Folding>
+	</File>
+	<File name="network\LocalProcessManager.cpp" open="0" top="0" tabpos="30" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="187" topLine="0" />
+		</Cursor>
+		<Folding>
+			<Collapse line="13" />
+			<Collapse line="18" />
+			<Collapse line="44" />
+			<Collapse line="48" />
+			<Collapse line="63" />
+			<Collapse line="69" />
+		</Folding>
+	</File>
+	<File name="network\utils.cpp" open="1" top="0" tabpos="21" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="7535" topLine="293" />
+		</Cursor>
+		<Folding>
+			<Collapse line="309" />
+			<Collapse line="328" />
+			<Collapse line="330" />
+			<Collapse line="348" />
+			<Collapse line="354" />
+			<Collapse line="373" />
+			<Collapse line="387" />
+			<Collapse line="410" />
+			<Collapse line="424" />
+			<Collapse line="431" />
+			<Collapse line="435" />
+			<Collapse line="442" />
+			<Collapse line="446" />
+			<Collapse line="462" />
+			<Collapse line="464" />
+			<Collapse line="468" />
+			<Collapse line="481" />
+			<Collapse line="490" />
+			<Collapse line="524" />
+			<Collapse line="531" />
+		</Folding>
+	</File>
+	<File name="gui\dialogs\AboutChameleonDialog.h" open="1" top="0" tabpos="10" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="524" topLine="0" />
+		</Cursor>
+		<Folding>
+			<Collapse line="11" />
+			<Collapse line="14" />
+			<Collapse line="58" />
+			<Collapse line="67" />
+		</Folding>
+	</File>
+	<File name="gui\dialogs\OptionsDialog.cpp" open="1" top="0" tabpos="13" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2317" topLine="83" />
+		</Cursor>
+		<Folding>
+			<Collapse line="92" />
+		</Folding>
+	</File>
+	<File name="common\verinfo.h" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1617" topLine="4" />
+		</Cursor>
+		<Folding>
+			<Collapse line="23" />
+			<Collapse line="29" />
+			<Collapse line="34" />
+			<Collapse line="39" />
+			<Collapse line="40" />
+			<Collapse line="45" />
+			<Collapse line="46" />
+			<Collapse line="47" />
+			<Collapse line="72" />
+			<Collapse line="74" />
+		</Folding>
+	</File>
+	<File name="gui\ChameleonProjectManager.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="96" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="network\vt52_states.cpp" open="0" top="0" tabpos="28" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="247" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="network\PipedProcess.cpp" open="0" top="0" tabpos="31" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="3790" topLine="27" />
+		</Cursor>
+		<Folding>
+			<Collapse line="175" />
+		</Folding>
+	</File>
+	<File name="gui\dialogs\treelistctrl.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1091" topLine="21" />
+		</Cursor>
+		<Folding>
+			<Collapse line="28" />
+			<Collapse line="29" />
+			<Collapse line="74" />
+			<Collapse line="75" />
+			<Collapse line="86" />
+			<Collapse line="91" />
+			<Collapse line="100" />
+			<Collapse line="108" />
+			<Collapse line="119" />
+			<Collapse line="190" />
+			<Collapse line="205" />
+			<Collapse line="270" />
+			<Collapse line="282" />
+			<Collapse line="452" />
+		</Folding>
+	</File>
+	<File name="common\CommonHeaders.h" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1519" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="gui\dialogs\treelistctrl.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="161360" topLine="4110" />
+		</Cursor>
+		<Folding>
+			<Collapse line="811" />
+			<Collapse line="1714" />
+			<Collapse line="2003" />
+			<Collapse line="2012" />
+			<Collapse line="3039" />
+			<Collapse line="3042" />
+			<Collapse line="3052" />
+			<Collapse line="3055" />
+			<Collapse line="3066" />
+			<Collapse line="3069" />
+			<Collapse line="3080" />
+			<Collapse line="3083" />
+			<Collapse line="3093" />
+			<Collapse line="3108" />
+			<Collapse line="3124" />
+			<Collapse line="3128" />
+			<Collapse line="3136" />
+			<Collapse line="3144" />
+			<Collapse line="3148" />
+			<Collapse line="3156" />
+			<Collapse line="3163" />
+			<Collapse line="3167" />
+			<Collapse line="3172" />
+			<Collapse line="3177" />
+			<Collapse line="3181" />
+			<Collapse line="3184" />
+			<Collapse line="3191" />
+			<Collapse line="3194" />
+			<Collapse line="3211" />
+			<Collapse line="3221" />
+			<Collapse line="3222" />
+			<Collapse line="3237" />
+			<Collapse line="3251" />
+			<Collapse line="3252" />
+			<Collapse line="3258" />
+			<Collapse line="3262" />
+			<Collapse line="3277" />
+			<Collapse line="3287" />
+			<Collapse line="3304" />
+			<Collapse line="3316" />
+			<Collapse line="3323" />
+			<Collapse line="3326" />
+			<Collapse line="3382" />
+			<Collapse line="3390" />
+			<Collapse line="3421" />
+			<Collapse line="3429" />
+			<Collapse line="3911" />
+			<Collapse line="3934" />
+			<Collapse line="4523" />
+			<Collapse line="4525" />
+			<Collapse line="4526" />
+			<Collapse line="4538" />
+			<Collapse line="4550" />
+			<Collapse line="4556" />
+			<Collapse line="4562" />
+			<Collapse line="4563" />
+			<Collapse line="4571" />
+			<Collapse line="4576" />
+			<Collapse line="4578" />
+			<Collapse line="4588" />
+			<Collapse line="4590" />
+			<Collapse line="4596" />
+			<Collapse line="4598" />
+			<Collapse line="4599" />
+			<Collapse line="4604" />
+			<Collapse line="4609" />
+			<Collapse line="4616" />
+			<Collapse line="4617" />
+			<Collapse line="4621" />
+			<Collapse line="4628" />
+			<Collapse line="4629" />
+			<Collapse line="4632" />
+			<Collapse line="4633" />
+			<Collapse line="4644" />
+			<Collapse line="4645" />
+			<Collapse line="4648" />
+			<Collapse line="4649" />
+			<Collapse line="4656" />
+			<Collapse line="4658" />
+			<Collapse line="4667" />
+			<Collapse line="4668" />
+			<Collapse line="4677" />
+			<Collapse line="4679" />
+			<Collapse line="4680" />
+		</Folding>
+	</File>
+	<File name="debugger\cham_db.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="53657" topLine="36" />
+		</Cursor>
+		<Folding>
+			<Collapse line="50" />
+			<Collapse line="74" />
+			<Collapse line="98" />
+			<Collapse line="103" />
+			<Collapse line="122" />
+			<Collapse line="137" />
+			<Collapse line="140" />
+			<Collapse line="142" />
+			<Collapse line="153" />
+			<Collapse line="175" />
+			<Collapse line="181" />
+			<Collapse line="188" />
+			<Collapse line="199" />
+			<Collapse line="201" />
+			<Collapse line="214" />
+			<Collapse line="220" />
+			<Collapse line="225" />
+			<Collapse line="229" />
+			<Collapse line="255" />
+			<Collapse line="325" />
+			<Collapse line="338" />
+			<Collapse line="351" />
+			<Collapse line="364" />
+			<Collapse line="378" />
+			<Collapse line="391" />
+			<Collapse line="405" />
+			<Collapse line="418" />
+			<Collapse line="431" />
+			<Collapse line="433" />
+			<Collapse line="445" />
+			<Collapse line="449" />
+			<Collapse line="459" />
+			<Collapse line="461" />
+			<Collapse line="476" />
+			<Collapse line="500" />
+			<Collapse line="502" />
+			<Collapse line="504" />
+			<Collapse line="508" />
+			<Collapse line="513" />
+			<Collapse line="533" />
+			<Collapse line="557" />
+			<Collapse line="559" />
+			<Collapse line="576" />
+			<Collapse line="580" />
+			<Collapse line="593" />
+			<Collapse line="598" />
+			<Collapse line="629" />
+			<Collapse line="636" />
+			<Collapse line="641" />
+			<Collapse line="666" />
+			<Collapse line="669" />
+			<Collapse line="673" />
+			<Collapse line="705" />
+			<Collapse line="709" />
+			<Collapse line="720" />
+			<Collapse line="740" />
+			<Collapse line="744" />
+			<Collapse line="755" />
+			<Collapse line="775" />
+			<Collapse line="778" />
+			<Collapse line="806" />
+			<Collapse line="815" />
+			<Collapse line="817" />
+			<Collapse line="849" />
+			<Collapse line="869" />
+			<Collapse line="873" />
+			<Collapse line="881" />
+			<Collapse line="900" />
+			<Collapse line="903" />
+			<Collapse line="922" />
+			<Collapse line="925" />
+			<Collapse line="948" />
+			<Collapse line="950" />
+			<Collapse line="974" />
+			<Collapse line="980" />
+			<Collapse line="1000" />
+			<Collapse line="1005" />
+			<Collapse line="1009" />
+			<Collapse line="1015" />
+			<Collapse line="1018" />
+			<Collapse line="1024" />
+			<Collapse line="1030" />
+			<Collapse line="1042" />
+			<Collapse line="1046" />
+			<Collapse line="1061" />
+			<Collapse line="1075" />
+			<Collapse line="1096" />
+			<Collapse line="1099" />
+			<Collapse line="1125" />
+			<Collapse line="1134" />
+			<Collapse line="1146" />
+			<Collapse line="1149" />
+			<Collapse line="1151" />
+			<Collapse line="1157" />
+			<Collapse line="1172" />
+			<Collapse line="1193" />
+			<Collapse line="1206" />
+			<Collapse line="1208" />
+			<Collapse line="1212" />
+			<Collapse line="1237" />
+			<Collapse line="1242" />
+			<Collapse line="1246" />
+			<Collapse line="1254" />
+			<Collapse line="1259" />
+			<Collapse line="1265" />
+			<Collapse line="1291" />
+			<Collapse line="1294" />
+			<Collapse line="1299" />
+			<Collapse line="1309" />
+			<Collapse line="1316" />
+			<Collapse line="1320" />
+			<Collapse line="1324" />
+			<Collapse line="1331" />
+			<Collapse line="1338" />
+			<Collapse line="1345" />
+			<Collapse line="1356" />
+			<Collapse line="1366" />
+			<Collapse line="1375" />
+			<Collapse line="1377" />
+			<Collapse line="1379" />
+			<Collapse line="1382" />
+			<Collapse line="1392" />
+			<Collapse line="1398" />
+			<Collapse line="1424" />
+			<Collapse line="1430" />
+			<Collapse line="1433" />
+			<Collapse line="1435" />
+			<Collapse line="1442" />
+			<Collapse line="1494" />
+			<Collapse line="1501" />
+			<Collapse line="1506" />
+			<Collapse line="1537" />
+			<Collapse line="1539" />
+			<Collapse line="1556" />
+			<Collapse line="1561" />
+			<Collapse line="1637" />
+			<Collapse line="1639" />
+			<Collapse line="1642" />
+			<Collapse line="1653" />
+			<Collapse line="1659" />
+			<Collapse line="1666" />
+			<Collapse line="1671" />
+			<Collapse line="1691" />
+			<Collapse line="1701" />
+			<Collapse line="1717" />
+			<Collapse line="1721" />
+			<Collapse line="1723" />
+			<Collapse line="1731" />
+			<Collapse line="1733" />
+			<Collapse line="1738" />
+			<Collapse line="1761" />
+			<Collapse line="1799" />
+			<Collapse line="1805" />
+			<Collapse line="1807" />
+			<Collapse line="1815" />
+			<Collapse line="1834" />
+			<Collapse line="1852" />
+			<Collapse line="1854" />
+			<Collapse line="1862" />
+			<Collapse line="1881" />
+			<Collapse line="1894" />
+			<Collapse line="1903" />
+			<Collapse line="1913" />
+			<Collapse line="1915" />
+			<Collapse line="1964" />
+			<Collapse line="1967" />
+			<Collapse line="1974" />
+			<Collapse line="1980" />
+			<Collapse line="1987" />
+			<Collapse line="1990" />
+			<Collapse line="1996" />
+			<Collapse line="2003" />
+			<Collapse line="2024" />
+			<Collapse line="2046" />
+			<Collapse line="2066" />
+			<Collapse line="2079" />
+			<Collapse line="2111" />
+			<Collapse line="2113" />
+			<Collapse line="2122" />
+			<Collapse line="2140" />
+			<Collapse line="2159" />
+			<Collapse line="2177" />
+			<Collapse line="2193" />
+			<Collapse line="2195" />
+		</Folding>
+	</File>
+	<File name="network\gterm.hpp" open="1" top="0" tabpos="19" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="7308" topLine="69" />
+		</Cursor>
+		<Folding>
+			<Collapse line="110" />
+		</Folding>
+	</File>
+	<File name="gui\dialogs\OptionsDialog.h" open="1" top="0" tabpos="28" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="editor\editor.cpp" open="1" top="0" tabpos="14" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="28165" topLine="502" />
+		</Cursor>
+		<Folding>
+			<Collapse line="2" />
+			<Collapse line="28" />
+			<Collapse line="52" />
+			<Collapse line="227" />
+			<Collapse line="331" />
+			<Collapse line="341" />
+			<Collapse line="349" />
+			<Collapse line="353" />
+			<Collapse line="410" />
+			<Collapse line="428" />
+			<Collapse line="434" />
+			<Collapse line="486" />
+			<Collapse line="494" />
+			<Collapse line="501" />
+			<Collapse line="508" />
+			<Collapse line="514" />
+			<Collapse line="526" />
+			<Collapse line="572" />
+			<Collapse line="578" />
+			<Collapse line="701" />
+			<Collapse line="741" />
+			<Collapse line="766" />
+			<Collapse line="862" />
+			<Collapse line="891" />
+			<Collapse line="897" />
+			<Collapse line="915" />
+			<Collapse line="919" />
+			<Collapse line="985" />
+			<Collapse line="1005" />
+			<Collapse line="1012" />
+			<Collapse line="1272" />
+			<Collapse line="1278" />
+			<Collapse line="1280" />
+			<Collapse line="1284" />
+		</Folding>
+	</File>
+	<File name="network\keytrans.cpp" open="0" top="0" tabpos="25" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="9415" topLine="33" />
+		</Cursor>
+		<Folding>
+			<Collapse line="12" />
+			<Collapse line="25" />
+			<Collapse line="38" />
+			<Collapse line="66" />
+			<Collapse line="94" />
+			<Collapse line="123" />
+			<Collapse line="125" />
+			<Collapse line="272" />
+			<Collapse line="274" />
+			<Collapse line="281" />
+			<Collapse line="326" />
+			<Collapse line="329" />
+			<Collapse line="339" />
+		</Folding>
+	</File>
+	<File name="common\ChameleonPrintout.cpp" open="1" top="0" tabpos="32" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="editor\editor.h" open="1" top="0" tabpos="15" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1322" topLine="0" />
+		</Cursor>
+		<Folding>
+			<Collapse line="0" />
+			<Collapse line="19" />
+		</Folding>
+	</File>
+	<File name="network\networking.cpp" open="0" top="0" tabpos="20" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="19775" topLine="624" />
+		</Cursor>
+		<Folding>
+			<Collapse line="563" />
+		</Folding>
+	</File>
+	<File name="network\gterm.cpp" open="1" top="0" tabpos="18" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1161" topLine="21" />
+		</Cursor>
+		<Folding>
+			<Collapse line="3" />
+			<Collapse line="10" />
+			<Collapse line="88" />
+			<Collapse line="164" />
+			<Collapse line="170" />
+			<Collapse line="183" />
+			<Collapse line="187" />
+			<Collapse line="193" />
+			<Collapse line="196" />
+			<Collapse line="218" />
+			<Collapse line="239" />
+			<Collapse line="243" />
+			<Collapse line="248" />
+			<Collapse line="256" />
+		</Folding>
+	</File>
+	<File name="gui\ChameleonNotebook.h" open="1" top="0" tabpos="27" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="perms\p.cpp" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="7421" topLine="57" />
+		</Cursor>
+		<Folding>
+			<Collapse line="239" />
+		</Folding>
+	</File>
+	<File name="network\networking.h" open="0" top="0" tabpos="21" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="759" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="gui\dialogs\VariableWatchPanel.h" open="1" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1545" topLine="25" />
+		</Cursor>
+		<Folding>
+			<Collapse line="14" />
+		</Folding>
+	</File>
+	<File name="network\states.cpp" open="0" top="0" tabpos="29" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="674" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="network\TextManager.cpp" open="1" top="0" tabpos="22" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="17064" topLine="383" />
+		</Cursor>
+		<Folding>
+			<Collapse line="11" />
+			<Collapse line="186" />
+			<Collapse line="192" />
+			<Collapse line="201" />
+			<Collapse line="207" />
+			<Collapse line="213" />
+			<Collapse line="228" />
+			<Collapse line="246" />
+			<Collapse line="250" />
+			<Collapse line="252" />
+			<Collapse line="283" />
+			<Collapse line="287" />
+			<Collapse line="291" />
+			<Collapse line="343" />
+			<Collapse line="359" />
+			<Collapse line="403" />
+			<Collapse line="407" />
+			<Collapse line="427" />
+			<Collapse line="468" />
+			<Collapse line="485" />
+			<Collapse line="489" />
+			<Collapse line="495" />
+			<Collapse line="560" />
+			<Collapse line="589" />
+			<Collapse line="634" />
+			<Collapse line="639" />
+		</Folding>
+	</File>
+	<File name="common\debug.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="81" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="network\plinkconnect.cpp" open="0" top="0" tabpos="22" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="13112" topLine="314" />
+		</Cursor>
+		<Folding>
+			<Collapse line="275" />
+			<Collapse line="276" />
+			<Collapse line="279" />
+			<Collapse line="286" />
+			<Collapse line="291" />
+			<Collapse line="295" />
+			<Collapse line="305" />
+			<Collapse line="325" />
+			<Collapse line="328" />
+			<Collapse line="355" />
+			<Collapse line="381" />
+			<Collapse line="383" />
+			<Collapse line="389" />
+		</Folding>
+	</File>
+	<File name="gui\wxterm.cpp" open="1" top="1" tabpos="17" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="26684" topLine="338" />
+		</Cursor>
+		<Folding>
+			<Collapse line="39" />
+			<Collapse line="59" />
+			<Collapse line="73" />
+			<Collapse line="123" />
+			<Collapse line="505" />
+			<Collapse line="507" />
+			<Collapse line="512" />
+			<Collapse line="519" />
+			<Collapse line="582" />
+			<Collapse line="633" />
+			<Collapse line="658" />
+			<Collapse line="690" />
+			<Collapse line="695" />
+			<Collapse line="714" />
+			<Collapse line="724" />
+			<Collapse line="758" />
+			<Collapse line="778" />
+			<Collapse line="808" />
+			<Collapse line="809" />
+			<Collapse line="841" />
+			<Collapse line="875" />
+			<Collapse line="895" />
+			<Collapse line="925" />
+			<Collapse line="982" />
+			<Collapse line="1008" />
+			<Collapse line="1119" />
+			<Collapse line="1125" />
+			<Collapse line="1150" />
+			<Collapse line="1154" />
+			<Collapse line="1175" />
+			<Collapse line="1196" />
+			<Collapse line="1220" />
+			<Collapse line="1243" />
+			<Collapse line="1246" />
+			<Collapse line="1268" />
+			<Collapse line="1279" />
+			<Collapse line="1289" />
+			<Collapse line="1307" />
+			<Collapse line="1318" />
+			<Collapse line="1328" />
+			<Collapse line="1337" />
+			<Collapse line="1349" />
+			<Collapse line="1364" />
+			<Collapse line="1382" />
+			<Collapse line="1396" />
+			<Collapse line="1407" />
+			<Collapse line="1414" />
+			<Collapse line="1422" />
+			<Collapse line="1428" />
+			<Collapse line="1450" />
+			<Collapse line="1481" />
+			<Collapse line="1489" />
+			<Collapse line="1495" />
+			<Collapse line="1504" />
+			<Collapse line="1516" />
+			<Collapse line="1523" />
+			<Collapse line="1525" />
+			<Collapse line="1532" />
+			<Collapse line="1591" />
+			<Collapse line="1599" />
+			<Collapse line="1606" />
+			<Collapse line="1608" />
+			<Collapse line="1615" />
+			<Collapse line="1653" />
+			<Collapse line="1667" />
+			<Collapse line="1685" />
+			<Collapse line="1696" />
+			<Collapse line="1702" />
+			<Collapse line="1708" />
+			<Collapse line="1717" />
+			<Collapse line="1741" />
+			<Collapse line="1776" />
+			<Collapse line="1787" />
+			<Collapse line="1796" />
+			<Collapse line="1814" />
+			<Collapse line="1818" />
+			<Collapse line="1823" />
+			<Collapse line="1840" />
+			<Collapse line="1841" />
+			<Collapse line="1857" />
+			<Collapse line="1860" />
+			<Collapse line="1870" />
+			<Collapse line="1883" />
+			<Collapse line="1889" />
+			<Collapse line="1908" />
+			<Collapse line="1927" />
+			<Collapse line="1952" />
+			<Collapse line="1962" />
+			<Collapse line="1979" />
+			<Collapse line="2000" />
+			<Collapse line="2062" />
+			<Collapse line="2064" />
+			<Collapse line="2068" />
+			<Collapse line="2071" />
+			<Collapse line="2079" />
+			<Collapse line="2085" />
+			<Collapse line="2103" />
+			<Collapse line="2108" />
+			<Collapse line="2113" />
+			<Collapse line="2114" />
+			<Collapse line="2117" />
+			<Collapse line="2123" />
+			<Collapse line="2124" />
+			<Collapse line="2128" />
+			<Collapse line="2135" />
+			<Collapse line="2151" />
+			<Collapse line="2166" />
+			<Collapse line="2223" />
+		</Folding>
+	</File>
+	<File name="debugger\DebugManager.cpp" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="154" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="kernel\kernel.cpp" open="1" top="0" tabpos="34" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="889" topLine="24" />
+		</Cursor>
+	</File>
+	<File name="network\TextManager.h" open="1" top="0" tabpos="23" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="916" topLine="12" />
+		</Cursor>
+	</File>
+	<File name="gui\dialogs\wxTermContainer.cpp" open="1" top="0" tabpos="24" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="4047" topLine="131" />
+		</Cursor>
+		<Folding>
+			<Collapse line="11" />
+			<Collapse line="18" />
+			<Collapse line="32" />
+			<Collapse line="71" />
+			<Collapse line="76" />
+			<Collapse line="237" />
+			<Collapse line="248" />
+			<Collapse line="252" />
+			<Collapse line="266" />
+			<Collapse line="281" />
+			<Collapse line="294" />
+			<Collapse line="329" />
+			<Collapse line="337" />
+			<Collapse line="346" />
+			<Collapse line="354" />
+			<Collapse line="361" />
+			<Collapse line="370" />
+		</Folding>
+	</File>
+	<File name="network\gtelnet.cpp" open="0" top="0" tabpos="24" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="4069" topLine="0" />
+		</Cursor>
+		<Folding>
+			<Collapse line="7" />
+			<Collapse line="16" />
+			<Collapse line="22" />
+			<Collapse line="42" />
+			<Collapse line="48" />
+			<Collapse line="54" />
+			<Collapse line="61" />
+			<Collapse line="68" />
+			<Collapse line="76" />
+			<Collapse line="83" />
+			<Collapse line="98" />
+			<Collapse line="115" />
+			<Collapse line="124" />
+			<Collapse line="126" />
+			<Collapse line="137" />
+			<Collapse line="139" />
+			<Collapse line="144" />
+			<Collapse line="153" />
+			<Collapse line="162" />
+			<Collapse line="171" />
+			<Collapse line="179" />
+			<Collapse line="187" />
+			<Collapse line="194" />
+			<Collapse line="203" />
+			<Collapse line="209" />
+			<Collapse line="237" />
+			<Collapse line="240" />
+			<Collapse line="246" />
+			<Collapse line="257" />
+			<Collapse line="259" />
+			<Collapse line="269" />
+			<Collapse line="278" />
+			<Collapse line="290" />
+			<Collapse line="302" />
+			<Collapse line="314" />
+		</Folding>
+	</File>
+	<File name="common\ProjectInfo.cpp" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="12067" topLine="320" />
+		</Cursor>
+		<Folding>
+			<Collapse line="2" />
+			<Collapse line="142" />
+			<Collapse line="144" />
+			<Collapse line="170" />
+			<Collapse line="172" />
+			<Collapse line="396" />
+		</Folding>
+	</File>
+	<File name="gui\dialogs\wxTermContainer.h" open="1" top="0" tabpos="25" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1229" topLine="43" />
+		</Cursor>
+		<Folding>
+			<Collapse line="14" />
+		</Folding>
+	</File>
+	<File name="gui\IconManager.cpp" open="1" top="0" tabpos="30" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="285" topLine="0" />
+		</Cursor>
+		<Folding>
+			<Collapse line="14" />
+		</Folding>
+	</File>
+	<File name="common\datastructures.h" open="1" top="0" tabpos="26" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="415" topLine="0" />
+		</Cursor>
+		<Folding>
+			<Collapse line="300" />
+			<Collapse line="310" />
+			<Collapse line="317" />
+			<Collapse line="329" />
+		</Folding>
+	</File>
+	<File name="gui\wxssh.cpp" open="1" top="0" tabpos="35" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1279" topLine="28" />
+		</Cursor>
+		<Folding>
+			<Collapse line="8" />
+			<Collapse line="21" />
+			<Collapse line="66" />
+			<Collapse line="67" />
+			<Collapse line="84" />
+			<Collapse line="87" />
+			<Collapse line="97" />
+			<Collapse line="116" />
+			<Collapse line="119" />
+			<Collapse line="130" />
+			<Collapse line="141" />
+			<Collapse line="165" />
+			<Collapse line="167" />
+			<Collapse line="174" />
+			<Collapse line="180" />
+			<Collapse line="196" />
+			<Collapse line="222" />
+			<Collapse line="231" />
+			<Collapse line="233" />
+			<Collapse line="239" />
+			<Collapse line="243" />
+			<Collapse line="263" />
+			<Collapse line="282" />
+			<Collapse line="289" />
+			<Collapse line="295" />
+			<Collapse line="299" />
+			<Collapse line="314" />
+		</Folding>
+	</File>
+	<File name="debugger\cham_db.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="807" topLine="157" />
+		</Cursor>
+	</File>
+	<File name="gui\wxssh.h" open="0" top="0" tabpos="26" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1170" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="gui\dialogs\AboutChameleonDialog.cpp" open="1" top="0" tabpos="11" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="513" topLine="15" />
+		</Cursor>
+		<Folding>
+			<Collapse line="71" />
+			<Collapse line="83" />
+		</Folding>
+	</File>
+	<File name="Chameleon.rc" open="1" top="0" tabpos="31" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="564" topLine="3" />
+		</Cursor>
+	</File>
+	<File name="gui\Chameleon.cpp" open="1" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="14714" topLine="376" />
+		</Cursor>
+		<Folding>
+			<Collapse line="404" />
+			<Collapse line="414" />
+			<Collapse line="419" />
+			<Collapse line="461" />
+			<Collapse line="497" />
+			<Collapse line="511" />
+			<Collapse line="533" />
+			<Collapse line="537" />
+			<Collapse line="542" />
+			<Collapse line="546" />
+			<Collapse line="550" />
+			<Collapse line="566" />
+			<Collapse line="573" />
+			<Collapse line="575" />
+			<Collapse line="583" />
+			<Collapse line="588" />
+			<Collapse line="593" />
+			<Collapse line="598" />
+			<Collapse line="687" />
+			<Collapse line="694" />
+			<Collapse line="700" />
+			<Collapse line="706" />
+			<Collapse line="713" />
+			<Collapse line="715" />
+			<Collapse line="719" />
+			<Collapse line="868" />
+			<Collapse line="874" />
+			<Collapse line="876" />
+			<Collapse line="880" />
+			<Collapse line="1028" />
+			<Collapse line="1030" />
+			<Collapse line="1040" />
+			<Collapse line="1045" />
+			<Collapse line="1048" />
+			<Collapse line="1055" />
+			<Collapse line="1063" />
+			<Collapse line="1065" />
+			<Collapse line="1178" />
+			<Collapse line="1185" />
+			<Collapse line="1280" />
+			<Collapse line="1287" />
+			<Collapse line="1291" />
+			<Collapse line="1365" />
+			<Collapse line="1370" />
+			<Collapse line="1376" />
+			<Collapse line="1391" />
+			<Collapse line="1396" />
+			<Collapse line="1409" />
+			<Collapse line="1413" />
+			<Collapse line="1417" />
+			<Collapse line="1432" />
+			<Collapse line="1438" />
+			<Collapse line="1440" />
+			<Collapse line="1453" />
+			<Collapse line="1462" />
+			<Collapse line="1495" />
+			<Collapse line="1499" />
+			<Collapse line="1506" />
+			<Collapse line="1757" />
+			<Collapse line="1860" />
+			<Collapse line="1871" />
+			<Collapse line="1881" />
+			<Collapse line="1884" />
+			<Collapse line="1904" />
+			<Collapse line="1906" />
+			<Collapse line="1918" />
+			<Collapse line="2387" />
+			<Collapse line="2394" />
+			<Collapse line="2605" />
+			<Collapse line="2625" />
+			<Collapse line="2630" />
+			<Collapse line="2640" />
+			<Collapse line="2669" />
+			<Collapse line="2671" />
+			<Collapse line="2685" />
+			<Collapse line="2692" />
+			<Collapse line="2716" />
+			<Collapse line="2725" />
+			<Collapse line="2730" />
+			<Collapse line="2732" />
+			<Collapse line="2761" />
+			<Collapse line="2782" />
+			<Collapse line="2874" />
+			<Collapse line="2957" />
+		</Folding>
+	</File>
+	<File name="gui\NumeReWindow.h" open="1" top="0" tabpos="29" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="56" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="gui\ChameleonNotebook.cpp" open="1" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="941" topLine="68" />
+		</Cursor>
+		<Folding>
+			<Collapse line="166" />
+		</Folding>
+	</File>
+</CodeBlocks_layout_file>
