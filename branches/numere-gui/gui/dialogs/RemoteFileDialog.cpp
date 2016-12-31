@@ -503,7 +503,7 @@ void RemoteFileDialog::FillListView()
 
 	// should be getting just the name of the directory itself from Networking, so I
 	// can insert it directly into the listview and give it the folder icon
-	for(int i = 0; i < sortedDirs.GetCount(); i++)
+	for(auto i = 0; i < sortedDirs.GetCount(); i++)
 	{
 		m_list->InsertItem(m_list->GetItemCount(), sortedDirs[i], ICON_FOLDERCLOSED);
 		m_currentDirs.Add(sortedDirs[i]);
@@ -518,7 +518,7 @@ void RemoteFileDialog::FillListView()
 
 	int currentFileIconIndex = 0;
 
-	for(int i = 0; i < sortedFiles.GetCount(); i++)
+	for(auto i = 0; i < sortedFiles.GetCount(); i++)
 	{
 		wxLogNull disableLogging;
 

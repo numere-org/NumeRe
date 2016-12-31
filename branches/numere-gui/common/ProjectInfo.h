@@ -7,7 +7,7 @@
 #include <wx/treectrl.h>
 #include "datastructures.h"
 
-class ChameleonEditor;
+class NumeReEditor;
 
 class ProjectInfo
 {
@@ -22,8 +22,8 @@ public:
 	bool FileIncludedInBuild(wxString filename, FileFilterType filterType);
 	void SetFileBuildInclusion(wxString filename, FileFilterType filterType, bool enable);
 
-	void AddEditor(ChameleonEditor* edit);
-	void RemoveEditor(ChameleonEditor* edit);
+	void AddEditor(NumeReEditor* edit);
+	void RemoveEditor(NumeReEditor* edit);
 
 	wxArrayString GetSourcesToBuild();
 
@@ -61,7 +61,7 @@ private:
 	wxArrayString* SelectStringArray(FileFilterType filterType);
 	BoolArray* SelectBoolArray(FileFilterType filterType);
 	void MakeReadOnly(bool makeReadOnly);
-	
+
 	wxArrayString m_headerFiles;
 	wxArrayString m_sourceFiles;
 	wxArrayString m_libraryFiles;
@@ -88,6 +88,6 @@ private:
 	wxFileName m_projectFile;
 	wxFileName m_executableName;
 
-	
+
 };
 #endif

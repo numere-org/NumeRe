@@ -20,14 +20,17 @@
 #include <wx/treectrl.h>
 #include <wx/notebook.h>
 #include "wx/dnd.h"
+#include "../kernel/core/language.hpp"
+#include "../kernel/core/tools.hpp"
+#include <wx/tipdlg.h>
 
 // forward declarations
 
 class wxFileConfig;
-class ChameleonNotebook;
+class NumeReNotebook;
 class wxTreeCtrl;
 class wxTextCtrl;
-class ChameleonEditor;
+class NumeReEditor;
 class wxLogWindow;
 class wxTabCtrl;
 class IntIntHashmap;
@@ -64,6 +67,35 @@ class DebugManager;
 class ChameleonProjectManager;
 
 
+class MyTipProvider : public wxTipProvider
+{
+    private:
+        std::vector<std::string> vTip;
+        unsigned int nth_tip;
+    public:
+        MyTipProvider(const std::vector<std::string>& vTipList) : wxTipProvider(vTipList.size())
+            {
+                vTip = vTipList;
+                unsigned int nth_tip = 0;
+                // --> Einen Seed (aus der Zeit generiert) an die rand()-Funktion zuweisen <--
+                srand(time(NULL));
+
+                if (!vTip.size())
+                    return;
+                // --> Die aktuelle Begruessung erhalten wir als modulo(nGreetings)-Operation auf rand() <--
+                nth_tip = (rand() % vTip.size());
+                if (nth_tip >= vTip.size())
+                    nth_tip = 0;
+            }
+        virtual wxString GetTip()
+            {
+                nth_tip++;
+                if (nth_tip >= vTip.size())
+                    nth_tip = 0;
+                return vTip[nth_tip];
+            }
+};
+
 //----------------------------------------------------------------------
 
 class MyApp : public wxApp
@@ -78,7 +110,7 @@ class MyApp : public wxApp
 //----------------------------------------------------------------------
 
 
-
+extern Language _guilang;
 
 
 // Define a new frame type: this is going to be our main frame
@@ -109,11 +141,15 @@ class NumeReWindow : public wxFrame
 
         NetworkCallResult CheckNetworkStatus();
 
-        void OpenSourceFile(wxArrayString fnames);
+        void OpenSourceFile(wxArrayString fnames, unsigned int nLine = 0);
 
         Networking* GetNetworking();
 
         void PassImageList(wxImageList* imagelist);
+
+        MyTipProvider* tipProvider;
+        bool showTipAtStartup;
+        void updateTipAtStartupSetting(bool bTipAtStartup);
 
     private:
         void InitializeProgramOptions();
@@ -209,11 +245,11 @@ class NumeReWindow : public wxFrame
 
         // main widgets
         /*! Main editor notebook */
-        ChameleonNotebook* m_book;
+        NumeReNotebook* m_book;
         /*! Notebook for the terminal and debug-related widgets */
-        ChameleonNotebook*  m_noteTerm;
+        NumeReNotebook*  m_noteTerm;
         /*! Pointer to the currently active editor */
-        ChameleonEditor* m_currentEd;
+        NumeReEditor* m_currentEd;
         /*! Displays the files in the current project */
         wxTreeCtrl* m_projectTree;
         /*! The status bar */
@@ -308,13 +344,7 @@ class NumeReWindow : public wxFrame
 
 };
 
-class wxTreeItemData;
 
-class FileNameTreeData : public wxTreeItemData
-{
-    public:
-        wxString filename;
-};
 
 
 #if wxUSE_DRAG_AND_DROP

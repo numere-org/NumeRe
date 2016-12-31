@@ -318,7 +318,7 @@ wxArrayString ProjectInfo::GetSourcesToBuild()
 ///
 ///  @author Mark Erikson @date 04-23-2004
 //////////////////////////////////////////////////////////////////////////////
-void ProjectInfo::AddEditor(ChameleonEditor* edit)
+void ProjectInfo::AddEditor(NumeReEditor* edit)
 {
 	m_edPointers.Add(edit);
 }
@@ -333,7 +333,7 @@ void ProjectInfo::AddEditor(ChameleonEditor* edit)
 ///
 ///  @author Mark Erikson @date 04-23-2004
 //////////////////////////////////////////////////////////////////////////////
-void ProjectInfo::RemoveEditor(ChameleonEditor* edit)
+void ProjectInfo::RemoveEditor(NumeReEditor* edit)
 {
 	m_edPointers.Remove(edit);
 }
@@ -353,7 +353,7 @@ void ProjectInfo::MakeReadOnly(bool makeReadOnly)
 	m_isReadOnly = makeReadOnly;
 	for(int i = 0; i < (int)m_edPointers.GetCount(); i++)
 	{
-		ChameleonEditor* ed = m_edPointers[i];
+		NumeReEditor* ed = m_edPointers[i];
 		ed->SetReadOnly(makeReadOnly);
 	}
 }
@@ -389,15 +389,15 @@ FileFilterType ProjectInfo::GetFileType(wxString filename)
 
 	FileFilterType fileType = FILE_NONSOURCE;
 
-	if(extension == "h" || extension == "hpp")
+	if(extension == "nprc")
 	{
 		fileType = FILE_NPRC;
 	}
-	else if(extension == "c" || extension == "cpp" || extension == "nscr" || extension == "nprc")
+	else if (extension == "nscr")
 	{
 		fileType = FILE_NSCR;
 	}
-	else if(extension == "lib" || extension == "so" || extension == "o")
+	else if (extension == "ndat" || extension == "dat" || extension == "csv" || extension == "jdx" || extension == "dx" || extension == "jcm")
 	{
 		fileType = FILE_DATAFILES;
 	}

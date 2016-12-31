@@ -1811,7 +1811,7 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					continue;
 				}
 				else if (( sc.ch == 'e' || sc.ch == 'E' ) 
-					&& (sc.chNext == '+' || sc.chNext == '-' )) 
+					&& (sc.chNext == '+' || sc.chNext == '-' || isdigit(sc.chNext))) 
 				{
 					// Parse exponent sign in float literals: 2e+10 0x2e+10
 					continue;
@@ -1998,6 +1998,7 @@ void SCI_METHOD LexerNSCR::Fold(unsigned int startPos, int length, int initStyle
 	int styleNext = styler.StyleAt(startPos);
 	int style = initStyle;
 	bool foldAtElse = options.foldAtElse;
+	bool foundElse = false;
 	const bool userDefinedFoldMarkers = !options.foldExplicitStart.empty() && !options.foldExplicitEnd.empty();
 	for (unsigned int i = startPos; i < endPos; i++) 
 	{
@@ -2050,16 +2051,17 @@ void SCI_METHOD LexerNSCR::Fold(unsigned int startPos, int length, int initStyle
  		}
 		if (options.foldSyntaxBased && (style == SCE_NSCR_IDENTIFIER || style == SCE_NSCR_COMMAND)) 
 		{
-			if (styler.Match(i, "endif") || styler.Match(i, "endfor") || styler.Match(i, "endwhile") || styler.Match(i,"endprocedure")) 
+			if (styler.Match(i, "endif") || styler.Match(i, "endfor") || styler.Match(i, "endwhile") || styler.Match(i,"endprocedure") || styler.Match(i,"endcompose")) 
 			{
 				levelNext--;
+				foundElse = false;
 			}
 			else if (styler.SafeGetCharAt(i-1) != 'd' 
 				&& styler.SafeGetCharAt(i-1) != 'e'
 				&& (styler.Match(i, "if ") || styler.Match(i, "if(") 
 					|| styler.Match(i, "for ") || styler.Match(i, "for(") 
 					|| styler.Match(i, "while ") || styler.Match(i, "while(") 
-					|| styler.Match(i, "procedure"))) 
+					|| styler.Match(i, "procedure ") || styler.Match(i, "compose"))) 
 			{
 				// Measure the minimum before a '{' to allow
 				// folding on "} else {"
@@ -2071,12 +2073,14 @@ void SCI_METHOD LexerNSCR::Fold(unsigned int startPos, int length, int initStyle
 			}
 			else if (styler.Match(i, "else"))
 			{
-				int lev = levelMinCurrent | (levelNext-1) << 16;
-				if (visibleChars == 0 && options.foldCompact)
+				foundElse = true;
+				int lev = levelCurrent | (levelNext-1) << 16;
+				
+				/*if (visibleChars == 0 && options.foldCompact)
 					lev |= SC_FOLDLEVELWHITEFLAG;
 				if (levelMinCurrent < levelNext-1)
-					lev |= SC_FOLDLEVELHEADERFLAG;
-				if (lev != styler.LevelAt(lineCurrent-1)) 
+					lev |= SC_FOLDLEVELHEADERFLAG;*/
+				if (lev != styler.LevelAt(lineCurrent-1))
 				{
 					styler.SetLevel(lineCurrent-1, lev);
 				}
@@ -2099,7 +2103,7 @@ void SCI_METHOD LexerNSCR::Fold(unsigned int startPos, int length, int initStyle
 			int lev = levelUse | levelNext << 16;
 			if (visibleChars == 0 && options.foldCompact)
 				lev |= SC_FOLDLEVELWHITEFLAG;
-			if (levelUse < levelNext)
+			if (levelUse < levelNext || foundElse)
 				lev |= SC_FOLDLEVELHEADERFLAG;
 			if (lev != styler.LevelAt(lineCurrent)) 
 			{
@@ -2109,6 +2113,7 @@ void SCI_METHOD LexerNSCR::Fold(unsigned int startPos, int length, int initStyle
 			levelCurrent = levelNext;
 			levelMinCurrent = levelCurrent;
 			visibleChars = 0;
+			foundElse = false;
 		}
 		if (!IsASpace(ch))
 			visibleChars++;

@@ -1,8 +1,8 @@
 #include "ChameleonProjectManager.h"
-#include "ChameleonNotebook.h"
+#include "NumeReNotebook.h"
 #include "../editor/editor.h"
 
-ChameleonProjectManager::ChameleonProjectManager( ChameleonNotebook* notebook )
+ChameleonProjectManager::ChameleonProjectManager( NumeReNotebook* notebook )
 {
 	m_book = notebook;
 }
@@ -14,7 +14,7 @@ void ChameleonProjectManager::ClearDebugFocus()
 	int numPages = m_book->GetPageCount();
 	for(int i = 0; i < numPages; i++)
 	{
-		ChameleonEditor* pEdit = static_cast <ChameleonEditor* >(m_book->GetPage(i));
+		NumeReEditor* pEdit = static_cast <NumeReEditor* >(m_book->GetPage(i));
 		pEdit->MarkerDeleteAll(MARKER_FOCUSEDLINE);
 	}
 }

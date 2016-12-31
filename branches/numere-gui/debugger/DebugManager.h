@@ -23,7 +23,7 @@ public:
 	DebugManager(Debugger* debugger, wxSSH* debugTerminal, ChameleonProjectManager* projectManager,
 					NumeReWindow* mainFrame, VariableWatchPanel* watchPanel);
 
-	void OnDebugCommand(int eventID, ProjectInfo* project, ChameleonEditor* currentEditor);
+	void OnDebugCommand(int eventID, ProjectInfo* project, NumeReEditor* currentEditor);
 
 	void OnDebugEvent(wxDebugEvent &event);
 

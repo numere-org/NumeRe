@@ -1,5 +1,5 @@
 #include "../common/CommonHeaders.h"
-#include "ChameleonNotebook.h"
+#include "NumeReNotebook.h"
 #include "NumeReWindow.h"
 
 #include "../common/debug.h"
@@ -17,25 +17,25 @@
 #define new DEBUG_NEW
 #endif
 
-BEGIN_EVENT_TABLE(ChameleonNotebook, wxNotebook)
+BEGIN_EVENT_TABLE(NumeReNotebook, wxNotebook)
 //EVT_CONTEXT_MENU(ChameleonNotebook::TestMenu)
-	EVT_MIDDLE_UP	(ChameleonNotebook::OnTabMiddleClicked)
-	EVT_RIGHT_UP	( ChameleonNotebook::OnTabRightClicked)
-	EVT_SIZE(ChameleonNotebook::OnSize)
+	EVT_MIDDLE_UP	(NumeReNotebook::OnTabMiddleClicked)
+	EVT_RIGHT_UP	( NumeReNotebook::OnTabRightClicked)
+	EVT_SIZE(NumeReNotebook::OnSize)
 
 END_EVENT_TABLE()
 
-ChameleonNotebook::ChameleonNotebook(wxWindow* parent, wxWindowID id,
+NumeReNotebook::NumeReNotebook(wxWindow* parent, wxWindowID id,
 									 const wxPoint& pos /* = wxDefaultPosition */,
 									 const wxSize& size /* = wxDefaultSize */,
 									 long style /* = 0 */,
 									 const wxString& name /* = "notebook" */)
 :wxNotebook(parent, id, pos, size, style, name)
 {
-	m_parent = (NumeReWindow*)wxTheApp->GetTopWindow();
+	//m_top_parent = static_cast<NumeReWindow*>(parent);//(NumeReWindow*)wxTheApp->GetTopWindow();
 }
 
-ChameleonNotebook::~ChameleonNotebook ()
+NumeReNotebook::~NumeReNotebook ()
 {
 }
 
@@ -69,7 +69,7 @@ int ChameleonNotebook::HitTest(const wxPoint& pt, long& flags)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void ChameleonNotebook::OnTabRightClicked (wxMouseEvent &event)
+void NumeReNotebook::OnTabRightClicked (wxMouseEvent &event)
 {
 	wxPoint pt;
 	pt.x = event.GetX();
@@ -82,7 +82,7 @@ void ChameleonNotebook::OnTabRightClicked (wxMouseEvent &event)
 		return;
 	}
 
-	m_parent->SetIntVar(VN_CLICKEDTAB, pageNum);
+	m_top_parent->SetIntVar(VN_CLICKEDTAB, pageNum);
 	wxMenu popupMenu;
 	popupMenu.Append(ID_CLOSETAB, "Close");
 	PopupMenu(&popupMenu, pt);
@@ -130,7 +130,7 @@ void ChameleonNotebook::CreateBookMenus () {
 }
 */
 
-void ChameleonNotebook::OnSize(wxSizeEvent &event)
+void NumeReNotebook::OnSize(wxSizeEvent &event)
 {
 	event.Skip();
 }
@@ -145,7 +145,7 @@ void ChameleonNotebook::OnSize(wxSizeEvent &event)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-int ChameleonNotebook::FindPagePosition(wxNotebookPage* page)
+int NumeReNotebook::FindPagePosition(wxNotebookPage* page)
 {
 	int nPageCount = GetPageCount();
 	int nPage;
@@ -155,7 +155,7 @@ int ChameleonNotebook::FindPagePosition(wxNotebookPage* page)
 	return -1;
 }
 
-void ChameleonNotebook::OnTabMiddleClicked( wxMouseEvent &event )
+void NumeReNotebook::OnTabMiddleClicked( wxMouseEvent &event )
 {
 	wxPoint pt;
 	pt.x = event.GetX();
@@ -168,12 +168,12 @@ void ChameleonNotebook::OnTabMiddleClicked( wxMouseEvent &event )
 		return;
 	}
 
-	m_parent->SetIntVar(VN_CLICKEDTAB, pageNum);
+	m_top_parent->SetIntVar(VN_CLICKEDTAB, pageNum);
 
 
 	wxCommandEvent command;
 	command.SetId(ID_CLOSETAB);
-	command.SetEventType(10019);
-	m_parent->GetEventHandler()->AddPendingEvent(command);
+	command.SetEventType(wxEVT_MENU); //10019//wxEVT_MIDDLE_UP
+	/*m_parent->GetEventHandler()->*/m_top_parent->GetEventHandler()->ProcessEvent(command);
 
 }

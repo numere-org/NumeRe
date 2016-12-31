@@ -20,6 +20,8 @@
 //#include "../common/FixedSizeQueue.h"
 #include "TextManager.h"
 
+#include "../kernel/syntax.hpp"
+
 using namespace std;
 
 #define MAXWIDTH 320
@@ -273,6 +275,9 @@ class GTerm
         unsigned char *input_data;
         int data_len, q_mode, got_param, quote_mode;
 
+
+        NumeReSyntax _syntax;
+
         // terminal actions
     protected:
         int m_numCommandLines;
@@ -329,6 +334,8 @@ class GTerm
     public:
         GTerm(int w, int h);
         virtual ~GTerm();
+
+        NumeReSyntax* getSyntax(){return &_syntax;}
 
         // function to control terminal
         virtual void ProcessInput(int len, const string& sData);

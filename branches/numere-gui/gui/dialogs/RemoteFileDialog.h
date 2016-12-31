@@ -50,12 +50,12 @@ class wxBoxSizer;
 class wxListCtrl;
 ////@end forward declarations
 
-class ChameleonEditor;
+class NumeReEditor;
 class NumeReWindow;
 class Networking;
 class wxListEvent;
 class wxFileConfig;
-class ChameleonNotebook;
+class NumeReNotebook;
 class wxTreeCtrl;
 class wxTextCtrl;
 class wxLogWindow;

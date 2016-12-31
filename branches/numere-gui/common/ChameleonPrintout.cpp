@@ -1,4 +1,4 @@
-#include "ChameleonPrintout.h"
+#include "NumeRePrintout.h"
 #include "../editor/editor.h"
 #include "wx/printdlg.h"  // wxPageSetupDialog
 #include "wx/progdlg.h"   // wxProgressDialog
@@ -15,7 +15,7 @@
 extern wxPrintData *g_printData;
 extern wxPageSetupData *g_pageSetupData;
 
-ChameleonPrintout::ChameleonPrintout (ChameleonEditor *edit, Options* options, wxChar *title)
+NumeRePrintout::NumeRePrintout (NumeReEditor *edit, Options* options, wxChar *title)
 : wxPrintout(title) {
 	m_edit = edit;
 	m_printed = 0;
@@ -33,7 +33,7 @@ ChameleonPrintout::ChameleonPrintout (ChameleonEditor *edit, Options* options, w
 ///
 ///  @author Mark Erikson @date 04-23-2004
 //////////////////////////////////////////////////////////////////////////////
-bool ChameleonPrintout::OnPrintPage (int page) {
+bool NumeRePrintout::OnPrintPage (int page) {
 
 	wxDC *dc = GetDC();
 	if (!dc) return false;
@@ -45,7 +45,7 @@ bool ChameleonPrintout::OnPrintPage (int page) {
 	// right now it just does from the start
 	// print page
 	if (page == 1) m_printed = 0;
-	m_printed = m_edit->FormatRange (1, 
+	m_printed = m_edit->FormatRange (1,
 		//(int(m_pages.GetCount()) > page) ? m_pages[page - 1] : 0,
 		//m_edit->GetLength(),
 		m_pages[page-1],
@@ -66,10 +66,10 @@ bool ChameleonPrintout::OnPrintPage (int page) {
 ///
 ///  @author Mark Erikson @date 04-23-2004
 //////////////////////////////////////////////////////////////////////////////
-bool ChameleonPrintout::OnBeginDocument (int startPage, int endPage) {
+bool NumeRePrintout::OnBeginDocument (int startPage, int endPage) {
 
 	m_printed = 0;
-	
+
 
 	if(!m_options->GetLineNumberPrinting())
 	{
@@ -104,7 +104,7 @@ bool ChameleonPrintout::OnBeginDocument (int startPage, int endPage) {
 ///
 ///  @author Mark Erikson @date 04-23-2004
 //////////////////////////////////////////////////////////////////////////////
-void ChameleonPrintout::GetPageInfo (int *minPage, int *maxPage, int *selPageFrom, int *selPageTo) {
+void NumeRePrintout::GetPageInfo (int *minPage, int *maxPage, int *selPageFrom, int *selPageTo) {
 
 	// initialize values
 	*minPage = 0;
@@ -155,7 +155,7 @@ void ChameleonPrintout::GetPageInfo (int *minPage, int *maxPage, int *selPageFro
 		m_printed = m_edit->FormatRange (0, m_printed, length,
 			dc, dc, m_printRect, m_pageRect);
 		*maxPage += 1;
-		
+
 	}
 	if (*maxPage > 0) *minPage = 1;
 	*selPageFrom = *minPage;
@@ -172,7 +172,7 @@ void ChameleonPrintout::GetPageInfo (int *minPage, int *maxPage, int *selPageFro
 ///
 ///  @author Mark Erikson @date 04-23-2004
 //////////////////////////////////////////////////////////////////////////////
-bool ChameleonPrintout::HasPage (int page) {
+bool NumeRePrintout::HasPage (int page) {
 
 	//return (m_printed < m_edit->GetLength());
 	return (page > 0) && (page-1 < int(m_pages.GetCount())); // pages start at 1
@@ -188,7 +188,7 @@ bool ChameleonPrintout::HasPage (int page) {
 ///
 ///  @author Mark Erikson @date 04-23-2004
 //////////////////////////////////////////////////////////////////////////////
-bool ChameleonPrintout::PrintScaling (wxDC *dc){
+bool NumeRePrintout::PrintScaling (wxDC *dc){
 
 	// check for dc, return if none
 	if (!dc) return false;
@@ -220,7 +220,7 @@ bool ChameleonPrintout::PrintScaling (wxDC *dc){
 	return true;
 }
 
-void ChameleonPrintout::OnEndDocument()
+void NumeRePrintout::OnEndDocument()
 {
 	// Display line numbers now that printing's done.  If they were already displayed? No problem.
 	m_edit->SetMarginWidth(0, 40);

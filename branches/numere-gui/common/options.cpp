@@ -11,7 +11,7 @@
 #define new DEBUG_NEW
 #endif
 
-Options::Options() 
+Options::Options()
 {
 	// Set Some Default Values (perhaps these should not be set!)
 	m_pscpProg = "pscp.exe";
@@ -27,7 +27,7 @@ Options::Options()
 	m_printStyle = wxSTC_PRINT_BLACKONWHITE;
 
 	m_perms = new Permission();
-	
+
 	m_showToolbarText = true;
 	m_printLineNumbers = false;
 	m_combineWatchWindow = false;
@@ -67,9 +67,9 @@ bool Options::SetPlinkApp(wxString path_and_prog) {
 
 
 
-bool Options::SetMingwBasePath(wxString path) 
+bool Options::SetMingwBasePath(wxString path)
 {
-	if(wxFileName::DirExists(path)) 
+	if(wxFileName::DirExists(path))
 	{
 		m_mingwBasePath = path;
 		return true;
@@ -157,7 +157,7 @@ wxString Options::VerifyMingwPath(wxString mingwPath)
 
 	wxString errorMessage = wxEmptyString;
 	wxString messageBoxCaption = wxEmptyString;
-	int messageBoxOptions = wxOK;
+	//int messageBoxOptions = wxOK;
 
 	if(!wxFileName::DirExists(mingwPath))
 	{
@@ -167,7 +167,7 @@ wxString Options::VerifyMingwPath(wxString mingwPath)
 
 
 
-	for(int i = 0; i < mingwFiles.GetCount(); i++)
+	for(size_t i = 0; i < mingwFiles.GetCount(); i++)
 	{
 		wxString programName = mingwFiles[i];
 
@@ -203,6 +203,6 @@ Finished:
 
 		SetMingwBasePath(mingwPath);
 	}
-	
+
 	return errorMessage;
 }

@@ -1237,7 +1237,7 @@ void wxTreeListRenameTimer::Notify()
  bool wxEditLongValidator::TransferFromWindow()
  {
      wxString s=((wxTextCtrl*)m_validatorWindow)->GetValue();
-     float t;
+     long t;
      int r=sscanf(s.c_str()," %d",&t);
      if (r==1)
      {
@@ -1257,7 +1257,7 @@ void wxTreeListRenameTimer::Notify()
  bool wxEditLongValidator::Validate(wxWindow* parent)
  {
      wxString s=((wxTextCtrl*)m_validatorWindow)->GetValue();
-     float t;
+     long t;
      int r=sscanf(s.c_str()," %d",&t);
      if (r==1)
      {
@@ -2111,11 +2111,11 @@ void wxTreeListHeaderWindow::OnPaint( wxPaintEvent &WXUNUSED(event) )
     int more_w = m_owner->GetSize().x - x - HEADER_OFFSET_X;
     if (more_w > 0) {
         //DoDrawRect (&dc, x, HEADER_OFFSET_Y, more_w, h-2 );
-		int renderflag = 0;
+		/*int renderflag = 0;
 		if(! this->m_owner->IsEnabled())
 			renderflag = wxCONTROL_DISABLED;
 		else
-			renderflag = wxCONTROL_CURRENT;
+			renderflag = wxCONTROL_CURRENT;*/
 
 		wxRendererNative::GetDefault().DrawHeaderButton(this,dc,wxRect(x, HEADER_OFFSET_Y, more_w, h-2));
     }

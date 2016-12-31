@@ -22,7 +22,7 @@
 
 #include "../../common/CommonHeaders.h"
 #include "../../common/Options.h"
-
+#include "../../kernel/core/language.hpp"
 
 ////@begin includes
 ////@end includes
@@ -43,6 +43,7 @@
 #define new DEBUG_NEW
 #endif
 
+extern Language _guilang;
 ////@begin XPM images
 ////@end XPM images
 
@@ -95,11 +96,11 @@ OptionsDialog::OptionsDialog( wxWindow* parent, Options* options, wxWindowID id,
 	m_parentFrame = (NumeReWindow*)parent;
 	m_options = options;
 
-	wxTextValidator textval(wxFILTER_EXCLUDE_CHAR_LIST);
-	wxStringList exclude;
-	exclude.Add(wxT("\""));
-	m_password1->SetValidator(textval);
-	m_password2->SetValidator(textval);
+	//wxTextValidator textval(wxFILTER_EXCLUDE_CHAR_LIST);
+	//wxStringList exclude;
+	//exclude.Add(wxT("\""));
+	//m_password1->SetValidator(textval);
+	//m_password2->SetValidator(textval);
 }
 
 /*!
@@ -125,6 +126,24 @@ bool OptionsDialog::Create( wxWindow* parent, wxWindowID id, const wxString& cap
     m_showToolbarText = NULL;
     m_chkCombineWatchWindow = NULL;
     m_termHistory = NULL;
+
+    m_compactTables = nullptr;
+    m_AutoLoadDefines = nullptr;
+    m_showGreeting = nullptr;
+    m_LoadCompactTables = nullptr;
+    m_ExtendedInfo = nullptr;
+    m_ShowHints = nullptr;
+    m_CustomLanguage = nullptr;
+    m_ESCinScripts = nullptr;
+    m_UseLogfile = nullptr;
+    m_LoadPath = nullptr;
+    m_SavePath = nullptr;
+    m_ScriptPath = nullptr;
+    m_ProcPath = nullptr;
+    m_PlotPath = nullptr;
+    m_defaultFont = nullptr;
+    m_precision = nullptr;
+
 ////@end OptionsDialog member initialisation
 
 ////@begin OptionsDialog creation
@@ -153,9 +172,9 @@ void OptionsDialog::CreateControls()
     wxBoxSizer* itemBoxSizer2 = new wxBoxSizer(wxVERTICAL);
     itemDialog1->SetSizer(itemBoxSizer2);
 
-    m_optionsNotebook = new wxNotebook( itemDialog1, ID_NOTEBOOK, wxDefaultPosition, wxSize(400, 270), wxNB_DEFAULT|wxNB_TOP );
+    m_optionsNotebook = new wxNotebook( itemDialog1, ID_NOTEBOOK, wxDefaultPosition, wxSize(400, 300), wxNB_DEFAULT|wxNB_TOP );
 
-    wxPanel* itemPanel4 = new wxPanel( m_optionsNotebook, ID_PANELFEATURES, wxDefaultPosition, wxSize(100, 80), wxNO_BORDER|wxTAB_TRAVERSAL );
+    /**wxPanel* itemPanel4 = new wxPanel( m_optionsNotebook, ID_PANELFEATURES, wxDefaultPosition, wxSize(100, 80), wxNO_BORDER|wxTAB_TRAVERSAL );
     wxBoxSizer* itemBoxSizer5 = new wxBoxSizer(wxVERTICAL);
     itemPanel4->SetSizer(itemBoxSizer5);
 
@@ -192,37 +211,7 @@ void OptionsDialog::CreateControls()
 
     m_optionsNotebook->AddPage(itemPanel4, _("Features"));
 
-    wxPanel* itemPanel17 = new wxPanel( m_optionsNotebook, ID_PANELNETWORK, wxDefaultPosition, wxSize(100, 80), wxSUNKEN_BORDER|wxTAB_TRAVERSAL );
-    wxBoxSizer* itemBoxSizer18 = new wxBoxSizer(wxHORIZONTAL);
-    itemPanel17->SetSizer(itemBoxSizer18);
-
-    wxBoxSizer* itemBoxSizer19 = new wxBoxSizer(wxVERTICAL);
-    itemBoxSizer18->Add(itemBoxSizer19, 0, wxALIGN_TOP, 5);
-    wxStaticText* itemStaticText20 = new wxStaticText( itemPanel17, wxID_STATIC, _("Network server address:"), wxDefaultPosition, wxDefaultSize, 0 );
-    itemBoxSizer19->Add(itemStaticText20, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
-
-    m_hostname = new wxTextCtrl( itemPanel17, ID_HOSTNAME, _T(""), wxDefaultPosition, wxSize(160, -1), wxTE_PROCESS_ENTER );
-    itemBoxSizer19->Add(m_hostname, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
-
-    wxStaticText* itemStaticText22 = new wxStaticText( itemPanel17, wxID_STATIC, _("Username:"), wxDefaultPosition, wxDefaultSize, 0 );
-    itemBoxSizer19->Add(itemStaticText22, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
-
-    m_username = new wxTextCtrl( itemPanel17, ID_USERNAME, _T(""), wxDefaultPosition, wxSize(160, -1), wxTE_PROCESS_ENTER );
-    itemBoxSizer19->Add(m_username, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
-
-    wxStaticText* itemStaticText24 = new wxStaticText( itemPanel17, wxID_STATIC, _("Password (no quote marks allowed):"), wxDefaultPosition, wxDefaultSize, 0 );
-    itemBoxSizer19->Add(itemStaticText24, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
-
-    m_password1 = new wxTextCtrl( itemPanel17, ID_PASSWORD1, _T(""), wxDefaultPosition, wxSize(160, -1), wxTE_PROCESS_ENTER|wxTE_PASSWORD );
-    itemBoxSizer19->Add(m_password1, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
-
-    wxStaticText* itemStaticText26 = new wxStaticText( itemPanel17, wxID_STATIC, _("Confirm password:"), wxDefaultPosition, wxDefaultSize, 0 );
-    itemBoxSizer19->Add(itemStaticText26, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
-
-    m_password2 = new wxTextCtrl( itemPanel17, ID_PASSWORD2, _T(""), wxDefaultPosition, wxSize(160, -1), wxTE_PROCESS_ENTER|wxTE_PASSWORD );
-    itemBoxSizer19->Add(m_password2, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
-
-    m_optionsNotebook->AddPage(itemPanel17, _("Network"));
+*/
 
     wxPanel* itemPanel28 = new wxPanel( m_optionsNotebook, ID_PANELCOMPILER, wxDefaultPosition, wxDefaultSize, wxSUNKEN_BORDER|wxTAB_TRAVERSAL );
     wxBoxSizer* itemBoxSizer29 = new wxBoxSizer(wxVERTICAL);
@@ -232,27 +221,97 @@ void OptionsDialog::CreateControls()
     itemBoxSizer29->Add(itemBoxSizer30, 0, wxALIGN_LEFT|wxALL, 0);
     wxBoxSizer* itemBoxSizer31 = new wxBoxSizer(wxVERTICAL);
     itemBoxSizer30->Add(itemBoxSizer31, 0, wxALIGN_TOP|wxALL, 0);
-    wxStaticText* itemStaticText32 = new wxStaticText( itemPanel28, wxID_STATIC, _("MinGW installation path:"), wxDefaultPosition, wxDefaultSize, 0 );
-    itemBoxSizer31->Add(itemStaticText32, 0, wxALIGN_LEFT|wxALL, 5);
+    /*wxStaticText* itemStaticText32 = new wxStaticText( itemPanel28, wxID_STATIC, _("MinGW installation path:"), wxDefaultPosition, wxDefaultSize, 0 );
+    itemBoxSizer31->Add(itemStaticText32, 0, wxALIGN_LEFT|wxALL, 5);*/
 
-    wxBoxSizer* itemBoxSizer33 = new wxBoxSizer(wxHORIZONTAL);
-    itemBoxSizer31->Add(itemBoxSizer33, 0, wxALIGN_LEFT|wxALL, 5);
-    m_txtMingwPath = new wxTextCtrl( itemPanel28, ID_TEXTMINGWPATH, _T(""), wxDefaultPosition, wxSize(200, -1), 0 );
-    itemBoxSizer33->Add(m_txtMingwPath, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    //wxBoxSizer* itemBoxSizer33 = new wxBoxSizer(wxHORIZONTAL);
+    //itemBoxSizer31->Add(itemBoxSizer33, 0, wxALIGN_LEFT|wxALL, 5);
+    m_compactTables = new wxCheckBox( itemPanel28, wxID_ANY, _(_guilang.get("GUI_OPTIONS_COMPACTTABLES")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_compactTables->SetValue(false);
+    itemBoxSizer31->Add(m_compactTables, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
-    wxButton* itemButton35 = new wxButton( itemPanel28, ID_BTNFINDMINGW, _("Select"), wxDefaultPosition, wxSize(50, -1), 0 );
+    m_AutoLoadDefines = new wxCheckBox( itemPanel28, wxID_ANY, _(_guilang.get("GUI_OPTIONS_DEFCTRL")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_AutoLoadDefines->SetValue(false);
+    itemBoxSizer31->Add(m_AutoLoadDefines, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+
+    m_LoadCompactTables = new wxCheckBox( itemPanel28, wxID_ANY, _(_guilang.get("GUI_OPTIONS_EMPTYCOLS")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_LoadCompactTables->SetValue(false);
+    itemBoxSizer31->Add(m_LoadCompactTables, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+
+    m_ExtendedInfo = new wxCheckBox( itemPanel28, wxID_ANY, _(_guilang.get("GUI_OPTIONS_EXTENDEDINFO")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_ExtendedInfo->SetValue(false);
+    itemBoxSizer31->Add(m_ExtendedInfo, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+
+    m_CustomLanguage = new wxCheckBox( itemPanel28, wxID_ANY, _(_guilang.get("GUI_OPTIONS_CUSTOMLANG")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_CustomLanguage->SetValue(false);
+    itemBoxSizer31->Add(m_CustomLanguage, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+
+    m_ESCinScripts = new wxCheckBox( itemPanel28, wxID_ANY, _(_guilang.get("GUI_OPTIONS_ESCINSCRIPTS")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_ESCinScripts->SetValue(false);
+    itemBoxSizer31->Add(m_ESCinScripts, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+
+    m_UseLogfile = new wxCheckBox( itemPanel28, wxID_ANY, _(_guilang.get("GUI_OPTIONS_LOGFILE")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_UseLogfile->SetValue(false);
+    itemBoxSizer31->Add(m_UseLogfile, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+
+    /*wxButton* itemButton35 = new wxButton( itemPanel28, ID_BTNFINDMINGW, _("Select"), wxDefaultPosition, wxSize(50, -1), 0 );
     itemBoxSizer33->Add(itemButton35, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     wxButton* itemButton36 = new wxButton( itemPanel28, ID_BUTTON1, _("Verify"), wxDefaultPosition, wxSize(50, -1), 0 );
     itemBoxSizer33->Add(itemButton36, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     wxBoxSizer* itemBoxSizer37 = new wxBoxSizer(wxHORIZONTAL);
-    itemBoxSizer29->Add(itemBoxSizer37, 0, wxALIGN_LEFT|wxALL, 5);
-    m_chkShowCompileCommands = new wxCheckBox( itemPanel28, ID_CHECKBOX1, _("Show compiler command lines"), wxDefaultPosition, wxDefaultSize, 0 );
+    itemBoxSizer29->Add(itemBoxSizer37, 0, wxALIGN_LEFT|wxALL, 5);*/
+    /*m_chkShowCompileCommands = new wxCheckBox( itemPanel28, ID_CHECKBOX1, _("Show compiler command lines"), wxDefaultPosition, wxDefaultSize, 0 );
     m_chkShowCompileCommands->SetValue(false);
-    itemBoxSizer37->Add(m_chkShowCompileCommands, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    itemBoxSizer33->Add(m_chkShowCompileCommands, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);*/
 
-    m_optionsNotebook->AddPage(itemPanel28, _("Compiler"));
+    m_optionsNotebook->AddPage(itemPanel28, _(_guilang.get("GUI_OPTIONS_CONFIG")));
+
+    wxPanel* itemPanel17 = new wxPanel( m_optionsNotebook, ID_PANELNETWORK, wxDefaultPosition, wxSize(200, 200), wxSUNKEN_BORDER|wxTAB_TRAVERSAL );
+    wxBoxSizer* itemBoxSizer18 = new wxBoxSizer(wxHORIZONTAL);
+    itemPanel17->SetSizer(itemBoxSizer18);
+
+    wxBoxSizer* itemBoxSizer19 = new wxBoxSizer(wxVERTICAL);
+    itemBoxSizer18->Add(itemBoxSizer19, 0, wxALIGN_TOP, 5);
+    wxStaticText* itemStaticText20 = new wxStaticText( itemPanel17, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_LOADPATH")), wxDefaultPosition, wxDefaultSize, 0 );
+    itemBoxSizer19->Add(itemStaticText20, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
+
+    m_LoadPath = new wxTextCtrl( itemPanel17, wxID_ANY, _T(""), wxDefaultPosition, wxSize(350, -1), wxTE_PROCESS_ENTER );
+    m_LoadPath->SetValue("<loadpath>");
+    itemBoxSizer19->Add(m_LoadPath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+
+    wxStaticText* itemStaticText22 = new wxStaticText( itemPanel17, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_SAVEPATH")), wxDefaultPosition, wxDefaultSize, 0 );
+    itemBoxSizer19->Add(itemStaticText22, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
+
+    m_SavePath = new wxTextCtrl( itemPanel17, wxID_ANY, _T(""), wxDefaultPosition, wxSize(350, -1), wxTE_PROCESS_ENTER );
+    m_SavePath->SetValue("<savepath>");
+    itemBoxSizer19->Add(m_SavePath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+
+    wxStaticText* itemStaticText24 = new wxStaticText( itemPanel17, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_SCRIPTPATH")), wxDefaultPosition, wxDefaultSize, 0 );
+    itemBoxSizer19->Add(itemStaticText24, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
+
+    m_ScriptPath = new wxTextCtrl( itemPanel17, wxID_ANY, _T(""), wxDefaultPosition, wxSize(350, -1), wxTE_PROCESS_ENTER );
+    m_ScriptPath->SetValue("<scriptpath>");
+    itemBoxSizer19->Add(m_ScriptPath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+
+    wxStaticText* itemStaticText26 = new wxStaticText( itemPanel17, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_PROCPATH")), wxDefaultPosition, wxDefaultSize, 0 );
+    itemBoxSizer19->Add(itemStaticText26, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
+
+    m_ProcPath = new wxTextCtrl( itemPanel17, wxID_ANY, _T(""), wxDefaultPosition, wxSize(350, -1), wxTE_PROCESS_ENTER );
+    m_ProcPath->SetValue("<procpath>");
+    itemBoxSizer19->Add(m_ProcPath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+
+    wxStaticText* itemStaticText27 = new wxStaticText( itemPanel17, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_PLOTPATH")), wxDefaultPosition, wxDefaultSize, 0 );
+    itemBoxSizer19->Add(itemStaticText27, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
+
+    m_PlotPath = new wxTextCtrl( itemPanel17, wxID_ANY, _T(""), wxDefaultPosition, wxSize(350, -1), wxTE_PROCESS_ENTER );
+    m_PlotPath->SetValue("<plotpath>");
+    itemBoxSizer19->Add(m_PlotPath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+
+    m_optionsNotebook->AddPage(itemPanel17, _(_guilang.get("GUI_OPTIONS_PATHS")));
+
+
 
     wxPanel* itemPanel39 = new wxPanel( m_optionsNotebook, ID_PANELMISC, wxDefaultPosition, wxSize(100, 80), wxSUNKEN_BORDER|wxTAB_TRAVERSAL );
     wxBoxSizer* itemBoxSizer40 = new wxBoxSizer(wxHORIZONTAL);
@@ -260,47 +319,81 @@ void OptionsDialog::CreateControls()
 
     wxBoxSizer* itemBoxSizer41 = new wxBoxSizer(wxVERTICAL);
     itemBoxSizer40->Add(itemBoxSizer41, 1, wxALIGN_TOP, 5);
-    wxStaticText* itemStaticText42 = new wxStaticText( itemPanel39, wxID_STATIC, _("Print text in:"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxStaticText* itemStaticText42 = new wxStaticText( itemPanel39, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_PRINT")), wxDefaultPosition, wxDefaultSize, 0 );
     itemBoxSizer41->Add(itemStaticText42, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
 
     wxArrayString m_printStyleStrings;
-    m_printStyleStrings.Add(_("Black and white"));
-    m_printStyleStrings.Add(_("Color"));
-    m_printStyle = new wxComboBox( itemPanel39, ID_PRINTSTYLE, _("Black and white"), wxDefaultPosition, wxDefaultSize, m_printStyleStrings, wxCB_READONLY );
-    m_printStyle->SetStringSelection(_("Black and white"));
+    m_printStyleStrings.Add(_(_guilang.get("GUI_OPTIONS_PRINT_BW")));
+    m_printStyleStrings.Add(_(_guilang.get("GUI_OPTIONS_PRINT_COLOR")));
+    m_printStyle = new wxComboBox( itemPanel39, ID_PRINTSTYLE, _(_guilang.get("GUI_OPTIONS_PRINT_BW")), wxDefaultPosition, wxDefaultSize, m_printStyleStrings, wxCB_READONLY );
+    m_printStyle->SetStringSelection(_(_guilang.get("GUI_OPTIONS_PRINT_BW")));
     itemBoxSizer41->Add(m_printStyle, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
 
-    m_cbPrintLineNumbers = new wxCheckBox( itemPanel39, ID_PRINTLINENUMBERS, _("Print line numbers"), wxDefaultPosition, wxDefaultSize, wxCHK_2STATE );
+    wxStaticText* itemStaticText43 = new wxStaticText( itemPanel39, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_DEFAULTFONT")), wxDefaultPosition, wxDefaultSize, 0 );
+    itemBoxSizer41->Add(itemStaticText43, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
+
+    wxArrayString defaultFont;
+    defaultFont.Add("pagella");
+    defaultFont.Add("adventor");
+    defaultFont.Add("bonum");
+    defaultFont.Add("chorus");
+    defaultFont.Add("heros");
+    defaultFont.Add("heroscn");
+    defaultFont.Add("schola");
+    defaultFont.Add("termes");
+    m_defaultFont = new wxComboBox( itemPanel39, ID_PRINTSTYLE, "pagella", wxDefaultPosition, wxDefaultSize, defaultFont, wxCB_READONLY );
+    m_defaultFont->SetStringSelection("pagella");
+    itemBoxSizer41->Add(m_defaultFont, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+
+    m_cbPrintLineNumbers = new wxCheckBox( itemPanel39, ID_PRINTLINENUMBERS, _(_guilang.get("GUI_OPTIONS_PRINT_LINENUMBERS")), wxDefaultPosition, wxDefaultSize, wxCHK_2STATE );
     m_cbPrintLineNumbers->SetValue(false);
     itemBoxSizer41->Add(m_cbPrintLineNumbers, 0, wxALIGN_LEFT|wxALL, 5);
 
-    m_showToolbarText = new wxCheckBox( itemPanel39, ID_SHOWTOOLBARTEXT, _("Show text on toolbar buttons"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_showToolbarText = new wxCheckBox( itemPanel39, ID_SHOWTOOLBARTEXT, _(_guilang.get("GUI_OPTIONS_SHOW_TOOLBARTEXT")), wxDefaultPosition, wxDefaultSize, 0 );
     m_showToolbarText->SetValue(false);
     itemBoxSizer41->Add(m_showToolbarText, 1, wxGROW|wxALL, 5);
 
-    m_chkCombineWatchWindow = new wxCheckBox( itemPanel39, ID_COMBINEWATCH, _("Combine watch window and debug output into one tab"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_showGreeting = new wxCheckBox( itemPanel39, wxID_ANY, _(_guilang.get("GUI_OPTIONS_GREETING")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_showGreeting->SetValue(false);
+    itemBoxSizer41->Add(m_showGreeting, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+
+    m_ShowHints = new wxCheckBox( itemPanel39, wxID_ANY, _(_guilang.get("GUI_OPTIONS_HINTS")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_ShowHints->SetValue(false);
+    itemBoxSizer41->Add(m_ShowHints, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+
+    /**m_chkCombineWatchWindow = new wxCheckBox( itemPanel39, ID_COMBINEWATCH, _("Combine watch window and debug output into one tab"), wxDefaultPosition, wxDefaultSize, 0 );
     m_chkCombineWatchWindow->SetValue(false);
-    itemBoxSizer41->Add(m_chkCombineWatchWindow, 0, wxALIGN_LEFT|wxALL, 5);
+    itemBoxSizer41->Add(m_chkCombineWatchWindow, 0, wxALIGN_LEFT|wxALL, 5);*/
 
     wxBoxSizer* itemBoxSizer47 = new wxBoxSizer(wxHORIZONTAL);
     itemBoxSizer41->Add(itemBoxSizer47, 0, wxALIGN_LEFT|wxALL, 0);
-    wxStaticText* itemStaticText48 = new wxStaticText( itemPanel39, wxID_STATIC, _("Maximum history lines in the terminal:"), wxDefaultPosition, wxDefaultSize, 0 );
+
+    m_termHistory = new wxSpinCtrl( itemPanel39, ID_SPINCTRL, _T("0"), wxDefaultPosition, wxSize(60, -1), wxSP_ARROW_KEYS, 100, 300, 100 );
+    itemBoxSizer47->Add(m_termHistory, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    wxStaticText* itemStaticText48 = new wxStaticText( itemPanel39, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_HISTORY_LINES")), wxDefaultPosition, wxDefaultSize, 0 );
     itemBoxSizer47->Add(itemStaticText48, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxADJUST_MINSIZE, 5);
 
-    m_termHistory = new wxSpinCtrl( itemPanel39, ID_SPINCTRL, _T("0"), wxDefaultPosition, wxSize(60, -1), wxSP_ARROW_KEYS, 25, 2500, 0 );
-    itemBoxSizer47->Add(m_termHistory, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    wxBoxSizer* itemBoxSizer48 = new wxBoxSizer(wxHORIZONTAL);
+    itemBoxSizer41->Add(itemBoxSizer48, 0, wxALIGN_LEFT | wxALL, 0);
 
-    m_optionsNotebook->AddPage(itemPanel39, _("Miscellaneous"));
+    m_precision = new wxSpinCtrl( itemPanel39, ID_SPINCTRL, _T("0"), wxDefaultPosition, wxSize(60, -1), wxSP_ARROW_KEYS, 1, 14, 7 );
+    itemBoxSizer48->Add(m_precision, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    wxStaticText* itemStaticText49 = new wxStaticText( itemPanel39, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_PRECISION")), wxDefaultPosition, wxDefaultSize, 0 );
+    itemBoxSizer48->Add(itemStaticText49, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxADJUST_MINSIZE, 5);
+
+    m_optionsNotebook->AddPage(itemPanel39, _(_guilang.get("GUI_OPTIONS_MISC")));
+
+
 
     itemBoxSizer2->Add(m_optionsNotebook, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5);
 
     wxBoxSizer* itemBoxSizer50 = new wxBoxSizer(wxHORIZONTAL);
     itemBoxSizer2->Add(itemBoxSizer50, 0, wxALIGN_RIGHT|wxALL, 0);
 
-    wxButton* itemButton51 = new wxButton( itemDialog1, ID_BUTTON_OK, _("OK"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton* itemButton51 = new wxButton( itemDialog1, ID_BUTTON_OK, _(_guilang.get("GUI_OPTIONS_OK")), wxDefaultPosition, wxDefaultSize, 0 );
     itemBoxSizer50->Add(itemButton51, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
-    wxButton* itemButton52 = new wxButton( itemDialog1, ID_BUTTON_CANCEL, _("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton* itemButton52 = new wxButton( itemDialog1, ID_BUTTON_CANCEL, _(_guilang.get("GUI_OPTIONS_CANCEL")), wxDefaultPosition, wxDefaultSize, 0 );
     itemBoxSizer50->Add(itemButton52, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
 ////@end OptionsDialog content construction
@@ -382,7 +475,7 @@ void OptionsDialog::OnButtonCancelClick( wxCommandEvent& event )
 {
     // Insert custom code here
     event.Skip();
-	EndModal(wxCANCEL);
+	EndModal(wxID_CANCEL);
 	m_optionsNotebook->SetSelection(0);
 }
 
@@ -427,7 +520,7 @@ void OptionsDialog::OnEnter( wxCommandEvent& event )
 //////////////////////////////////////////////////////////////////////////////
 void OptionsDialog::ExitDialog()
 {
-	if(!m_mingwPathValidated && !VerifyMingwPath())
+	/**if(!m_mingwPathValidated && !VerifyMingwPath())
 	{
 		return;
 	}
@@ -441,18 +534,18 @@ void OptionsDialog::ExitDialog()
 	{
 		//Permission* perms = m_options->GetPerms();
 
-		if(EvaluateOptions())
-		{
-			UpdateChecklist();
-			EndModal(wxOK);
-			m_optionsNotebook->SetSelection(0);
-		}
-
 	}
 	else
 	{
 		wxMessageBox("Please enter the same password in both fields");
-	}
+	}*/
+    if(EvaluateOptions())
+    {
+        UpdateChecklist();
+        EndModal(wxID_OK);
+        m_optionsNotebook->SetSelection(0);
+    }
+
 }
 
 /*
@@ -528,7 +621,7 @@ void OptionsDialog::OnUpdateAuthCode( wxCommandEvent& event )
 //////////////////////////////////////////////////////////////////////////////
 void OptionsDialog::EnableServerSettings()
 {
-	wxColour white("white");
+	/**wxColour white("white");
 	m_hostname->SetEditable(true);
 	m_hostname->SetBackgroundColour(white);
 	m_username->SetEditable(true);
@@ -536,7 +629,7 @@ void OptionsDialog::EnableServerSettings()
 	m_password1->SetEditable(true);
 	m_password1->SetBackgroundColour(white);
 	m_password2->SetEditable(true);
-	m_password2->SetBackgroundColour(white);
+	m_password2->SetBackgroundColour(white);*/
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -549,7 +642,7 @@ void OptionsDialog::EnableServerSettings()
 //////////////////////////////////////////////////////////////////////////////
 void OptionsDialog::DisableServerSettings()
 {
-	wxColour grey("light grey");
+	/**wxColour grey("light grey");
 	m_hostname->SetEditable(false);
 	m_hostname->SetBackgroundColour(grey);
 	m_username->SetEditable(false);
@@ -557,7 +650,7 @@ void OptionsDialog::DisableServerSettings()
 	m_password1->SetEditable(false);
 	m_password1->SetBackgroundColour(grey);
 	m_password2->SetEditable(false);
-	m_password2->SetBackgroundColour(grey);
+	m_password2->SetBackgroundColour(grey);*/
 }
 
 /*
@@ -645,7 +738,7 @@ bool OptionsDialog::EvaluateOptions()
 
 	if(validOptions)
 	{
-		Permission* perms = m_options->GetPerms();
+		/**Permission* perms = m_options->GetPerms();
 		for(int i = 0; i < m_checkList->GetCount(); i++)
 		{
 			int mappedPerm = m_permMappings[i];
@@ -662,12 +755,30 @@ bool OptionsDialog::EvaluateOptions()
 
 		m_options->SetHostname(m_hostname->GetValue());
 		m_options->SetUsername(m_username->GetValue());
-		m_options->SetPassphrase(m_password1->GetValue());
+		m_options->SetPassphrase(m_password1->GetValue());*/
+
+		_option->setbCompact(m_compactTables->GetValue());
+		_option->setbDefineAutoLoad(m_AutoLoadDefines->GetValue());
+		_option->setbGreeting(m_showGreeting->GetValue());
+		_option->setbLoadEmptyCols(m_LoadCompactTables->GetValue());
+        _option->setbExtendedFileInfo(m_ExtendedInfo->GetValue());
+        _option->setbShowHints(m_ShowHints->GetValue());
+        _option->setUserLangFiles(m_CustomLanguage->GetValue());
+        _option->setbUseESCinScripts(m_ESCinScripts->GetValue());
+        _option->setbUseLogFile(m_UseLogfile->GetValue());
+        _option->setLoadPath(m_LoadPath->GetValue().ToStdString());
+        _option->setSavePath(m_SavePath->GetValue().ToStdString());
+        _option->setScriptPath(m_ScriptPath->GetValue().ToStdString());
+        _option->setProcPath(m_ProcPath->GetValue().ToStdString());
+        _option->setPlotOutputPath(m_PlotPath->GetValue().ToStdString());
+        _option->setprecision(m_precision->GetValue());
+        _option->setDefaultPlotFont(m_defaultFont->GetValue().ToStdString());
+
 		m_options->SetTerminalHistorySize(m_termHistory->GetValue());
 
 		wxString selectedPrintStyleString = m_printStyle->GetValue();
 
-		if(selectedPrintStyleString == "Color")
+		if(selectedPrintStyleString == _guilang.get("GUI_OPTIONS_PRINT_COLOR"))
 		{
 			m_options->SetPrintStyle(wxSTC_PRINT_COLOURONWHITE);
 		}
@@ -678,8 +789,8 @@ bool OptionsDialog::EvaluateOptions()
 
 		m_options->SetShowToolbarText(m_showToolbarText->IsChecked());
 		m_options->SetLineNumberPrinting(m_cbPrintLineNumbers->IsChecked());
-		m_options->SetCombineWatchWindow(m_chkCombineWatchWindow->IsChecked());
-		m_options->SetShowCompileCommands(m_chkShowCompileCommands->IsChecked());
+		///m_options->SetCombineWatchWindow(m_chkCombineWatchWindow->IsChecked());
+		///m_options->SetShowCompileCommands(m_chkShowCompileCommands->IsChecked());
 	}
 	else
 	{
@@ -699,7 +810,7 @@ bool OptionsDialog::EvaluateOptions()
 //////////////////////////////////////////////////////////////////////////////
 void OptionsDialog::InitializeDialog()
 {
-	Permission* perms = m_options->GetPerms();
+	/**Permission* perms = m_options->GetPerms();
 
 	UpdateChecklist();
 
@@ -707,20 +818,20 @@ void OptionsDialog::InitializeDialog()
 	m_username->SetValue(m_options->GetUsername());
 	wxString password = m_options->GetPassphrase();
 	m_password1->SetValue(password);
-	m_password2->SetValue(password);
+	m_password2->SetValue(password);*/
 
 	//m_txtMingwPath->SetValue(m_options->GetMingwPath());
 
-	m_authCodeLabel->SetLabel(perms->GetAuthCode());
+	///m_authCodeLabel->SetLabel(perms->GetAuthCode());
 
 	wxString printStyleString;
 	if(m_options->GetPrintStyle() == wxSTC_PRINT_COLOURONWHITE)
 	{
-		printStyleString = "Color";
+		printStyleString = _guilang.get("GUI_OPTIONS_PRINT_COLOR");
 	}
 	else
 	{
-		printStyleString = "Black and white";
+		printStyleString = _guilang.get("GUI_OPTIONS_PRINT_BW");
 	}
 
 	m_printStyle->SetValue(printStyleString);
@@ -728,12 +839,32 @@ void OptionsDialog::InitializeDialog()
 
 	m_showToolbarText->SetValue(m_options->GetShowToolbarText());
 	m_cbPrintLineNumbers->SetValue(m_options->GetLineNumberPrinting());
-	m_chkCombineWatchWindow->SetValue(m_options->GetCombineWatchWindow());
+
+    m_compactTables->SetValue(_option->getbCompact());
+    m_AutoLoadDefines->SetValue(_option->getbDefineAutoLoad());
+    m_showGreeting->SetValue(_option->getbGreeting());
+    m_LoadCompactTables->SetValue(_option->getbLoadEmptyCols());
+    m_ExtendedInfo->SetValue(_option->getbShowExtendedFileInfo());
+    m_ShowHints->SetValue(_option->getbShowHints());
+    m_CustomLanguage->SetValue(_option->getUseCustomLanguageFiles());
+    m_ESCinScripts->SetValue(_option->getbUseESCinScripts());
+    m_UseLogfile->SetValue(_option->getbUseLogFile());
+    m_LoadPath->SetValue(_option->getLoadPath());
+    m_SavePath->SetValue(_option->getSavePath());
+    m_ScriptPath->SetValue(_option->getScriptPath());
+    m_ProcPath->SetValue(_option->getProcsPath());
+    m_PlotPath->SetValue(_option->getPlotOutputPath());
+
+    m_defaultFont->SetValue(_option->getDefaultPlotFont());
+    m_precision->SetValue(_option->getPrecision());
+
+
+	/**m_chkCombineWatchWindow->SetValue(m_options->GetCombineWatchWindow());
 	m_chkShowCompileCommands->SetValue(m_options->GetShowCompileCommands());
 
 	m_txtMingwPath->SetValue(m_options->GetMingwBasePath());
 
-	VerifyMingwPath(false);
+	VerifyMingwPath(false);*/
 
 }
 
@@ -747,6 +878,7 @@ void OptionsDialog::InitializeDialog()
 //////////////////////////////////////////////////////////////////////////////
 void OptionsDialog::UpdateChecklist()
 {
+    return;
 	Permission* perms = m_options->GetPerms();
 	m_checkList->Clear();
 	m_permMappings.Clear();

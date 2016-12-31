@@ -30,9 +30,9 @@ class ChameleonProcessEvent : public wxEvent
 
 		int GetInt() const { return m_int; }
 		int GetPid() const
-		{ 
-			int pid = m_pid;
-			return m_pid; 
+		{
+			//int pid = m_pid;
+			return m_pid;
 		}
 		wxString GetString() const { return m_string; }
 

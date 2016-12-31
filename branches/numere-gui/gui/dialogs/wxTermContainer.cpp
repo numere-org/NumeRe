@@ -1,12 +1,12 @@
 /////////////////////////////////////////////////////////////////////////////
 // Name:        wxTermContainer.cpp
-// Purpose:     
-// Author:      
-// Modified by: 
+// Purpose:
+// Author:
+// Modified by:
 // Created:     03/18/04 01:08:08
-// RCS-ID:      
-// Copyright:   
-// Licence:     
+// RCS-ID:
+// Copyright:
+// Licence:
 /////////////////////////////////////////////////////////////////////////////
 
 #ifdef __GNUG__
@@ -56,6 +56,7 @@ BEGIN_EVENT_TABLE( wxTermContainer, wxPanel )
     EVT_COMMAND_SCROLL_PAGEUP( ID_SCROLLBAR, wxTermContainer::OnScrollbarScrollPageUp )
     EVT_COMMAND_SCROLL_PAGEDOWN( ID_SCROLLBAR, wxTermContainer::OnScrollbarScrollPageDown )
     EVT_COMMAND_SCROLL_THUMBTRACK( ID_SCROLLBAR, wxTermContainer::OnScrollbarScrollThumbtrack )
+    EVT_MOUSEWHEEL(wxTermContainer::OnWheelScroll)
 
 ////@end wxTermContainer event table entries
 
@@ -79,7 +80,7 @@ wxTermContainer::wxTermContainer( wxWindow* parent, wxWindowID id, const wxPoint
 
 	m_lastLinesReceived = 0;
 	m_lastThumbPosition = 0;
-	
+
 }
 
 /*!
@@ -106,7 +107,7 @@ bool wxTermContainer::Create( wxWindow* parent, wxWindowID id, const wxPoint& po
  */
 
 void wxTermContainer::CreateControls()
-{    
+{
 ////@begin wxTermContainer content construction
 
     wxTermContainer* item1 = this;
@@ -153,6 +154,11 @@ void wxTermContainer::OnScrollbarScrollLineUp( wxScrollEvent& event )
 
 	//wxLogDebug("OnScrollbarScrollPageUp()");
 	m_terminal->ScrollTerminal(1, true);
+}
+
+void wxTermContainer::OnWheelScroll(wxMouseEvent& event)
+{
+    m_terminal->ScrollTerminal(3, (event.GetWheelRotation() > 0));
 }
 
 /*!
@@ -280,21 +286,21 @@ bool wxTermContainer::ShowToolTips()
 //////////////////////////////////////////////////////////////////////////////
 void wxTermContainer::SetTerminal(wxTerm* terminal)
 {
-	
+
 	m_terminal = terminal;
 
 	m_sizer->Prepend(m_terminal, 1, wxGROW, 0);
 
 	int termHeight = m_terminal->Height();
 	m_scrollbar->SetScrollbar(100 - termHeight, termHeight, 100, 10);
-	
+
 	//m_scrollbar->SetScrollbar(90, 10, 100, 10);
 }
 
 void wxTermContainer::OnSize(wxSizeEvent &event)
 {
 	event.Skip();
-	
+
 	/*
 	int newHeight = 0;
 	int numLinesReceived = 0;
@@ -312,7 +318,7 @@ void wxTermContainer::OnSize(wxSizeEvent &event)
 	}
 	*/
 
-    
+
 
 }
 
@@ -328,7 +334,7 @@ void wxTermContainer::OnSize(wxSizeEvent &event)
 //////////////////////////////////////////////////////////////////////////////
 void wxTermContainer::OnUpdateUI(wxUpdateUIEvent &event)
 {
-	bool enableScrollbar = true;
+	//bool enableScrollbar = true;
 
 	int scrollHeight = m_terminal->GetScrollHeight();
 
@@ -339,7 +345,7 @@ void wxTermContainer::OnUpdateUI(wxUpdateUIEvent &event)
 		m_scrollbar->Disable();
 		return;
 	}
-	
+
 	m_scrollbar->Enable();
 	int pageSize = scrollHeight / 10;
 
@@ -347,9 +353,9 @@ void wxTermContainer::OnUpdateUI(wxUpdateUIEvent &event)
 	{
 		pageSize = 10;
 	}
-	
 
-	int thumbPosition = scrollHeight - thumbSize - m_terminal->GetScrollPosition();	
+
+	int thumbPosition = scrollHeight - thumbSize - m_terminal->GetScrollPosition();
 
 	if(scrollHeight != m_lastLinesReceived)
 	{
@@ -364,7 +370,7 @@ void wxTermContainer::OnUpdateUI(wxUpdateUIEvent &event)
 	}
 
 	event.Enable(true);
-	m_scrollbar->SetScrollbar(thumbPosition, thumbSize, scrollHeight, pageSize);	
+	m_scrollbar->SetScrollbar(thumbPosition, thumbSize, scrollHeight, pageSize);
 }
 
 void wxTermContainer::SetTerminalHistory(int newSize)

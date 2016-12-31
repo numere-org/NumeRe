@@ -806,9 +806,9 @@ void Debugger::killBreak(wxString srcFile, int lineNum)
 int Debugger::findBreakpoint(wxString fName, int lineNum, bool andRemove)
 {
 	//altered... added wxArrayInt & took (lineToNum[fName].lineNumbers) out
-	bool found = false;
+	//bool found = false;
 	int equivNum = 0;
-	int arrayCount = m_lineToNum[fName].lineNumbers.GetCount();
+	//int arrayCount = m_lineToNum[fName].lineNumbers.GetCount();
 	wxArrayInt tmp = m_lineToNum[fName].lineNumbers;
 
 	int lineIndex = tmp.Index(lineNum);
@@ -1000,7 +1000,7 @@ void Debugger::go()
 void Debugger::stop(bool pleaseRestart)
 {
 	int statBackup = m_status;
-	int classStatB = m_classStatus;
+	//int classStatB = m_classStatus;
 
 	if(m_status == DEBUG_RUNNING || m_status == DEBUG_ERROR)
 	{
@@ -1282,13 +1282,13 @@ bool Debugger::ParseVariableTypes( wxString &fromGDB )
 	wxArrayString fromWatch, ignoreVars;
 	bool watchStatus = false;
 	int lineBreak = 0, endQuote = 0, fromWatchIndex = 0, ampIdx = -1;
-	int promptIndex = -1;
-	bool singleLineItem = false;
+	//int promptIndex = -1;
+	//bool singleLineItem = false;
 	wxRegEx reTypeFinder(wxString("type = (\\(*([[:alnum:]]|_)+([[:blank:]]|\\*|&|\\[|]|[[:digit:]])*\\)*)"));
 
 	wxArrayString outputLines = wxStringTokenize(fromGDB, "`");
 
-	for(int i = 0; i < outputLines.GetCount(); i++)
+	for(size_t i = 0; i < outputLines.GetCount(); i++)
 	{
 		wxString outputLine = outputLines[i];
 		if(reTypeFinder.Matches(outputLine))
@@ -1464,9 +1464,9 @@ bool Debugger::parsePrintOutput(wxString fromGDB, wxArrayString &variableValues)
 {
 	wxString singleLine, match;
 	wxArrayString fromWatch, ignoreVars;
-	int lineBreak = 0, endQuote = 0, fromWatchIndex = 0;
-	bool singleLineItem = false;
-	bool parseError = false, stayIn = true;
+	//int lineBreak = 0, endQuote = 0, fromWatchIndex = 0;
+	//bool singleLineItem = false;
+	bool parseError = false;//, stayIn = true;
 
 	wxArrayString outputLines = wxStringTokenize(fromGDB, "`");
 	wxRegEx reVariableValue("\\$[[:digit:]]+ = (.+)");
@@ -1483,7 +1483,7 @@ bool Debugger::parsePrintOutput(wxString fromGDB, wxArrayString &variableValues)
 	 */
 
 	int variableIndex = 0;
-	for(int i = 0; i < outputLines.GetCount(); i++)
+	for(size_t i = 0; i < outputLines.GetCount(); i++)
 	{
 		wxString outputLine = outputLines[i];
 
@@ -1510,7 +1510,7 @@ bool Debugger::parsePrintOutput(wxString fromGDB, wxArrayString &variableValues)
 			variableIndex++;
 		}
 
-		int q = i;
+		//int q = i;
 	}
 
 	return !parseError;

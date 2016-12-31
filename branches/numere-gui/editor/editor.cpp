@@ -9,13 +9,14 @@
 #endif
 
 #include "../common/CommonHeaders.h"
+#include "../kernel/core/language.hpp"
 
 #include <wx/datetime.h>
 
 #include "editor.h"
 #include "../perms/p.h"
 #include "../gui/NumeReWindow.h"
-#include "../gui/ChameleonNotebook.h"
+#include "../gui/NumeReNotebook.h"
 #include "../common/datastructures.h"
 #include "../common/Options.h"
 #include "../common/DebugEvent.h"
@@ -25,28 +26,29 @@
 #include "../common/fixvsbug.h"
 
 #define MARGIN_FOLD 3
+#define HIGHLIGHT 20
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
 
-BEGIN_EVENT_TABLE(ChameleonEditor, wxStyledTextCtrl)
-	EVT_STC_CHARADDED	(-1, ChameleonEditor::OnChar)
-	EVT_STC_MODIFIED	(-1, ChameleonEditor::OnEditorModified)
-	EVT_KEY_DOWN        (ChameleonEditor::OnKeyDn)
-	EVT_KEY_UP          (ChameleonEditor::OnKeyRel)
-	EVT_LEFT_DOWN       (ChameleonEditor::OnMouseDn)
-	EVT_LEFT_UP         (ChameleonEditor::OnMouseUp)
-	EVT_RIGHT_DOWN		(ChameleonEditor::OnRightClick)
-	EVT_STC_MARGINCLICK (-1, ChameleonEditor::OnMarginClick)
-	EVT_MENU			(ID_DEBUG_ADD_BREAKPOINT, ChameleonEditor::OnAddBreakpoint)
-	EVT_MENU			(ID_DEBUG_REMOVE_BREAKPOINT, ChameleonEditor::OnRemoveBreakpoint)
-	EVT_MENU			(ID_DEBUG_CLEAR_ALL_BREAKPOINTS, ChameleonEditor::OnClearBreakpoints)
-	EVT_MENU			(ID_DEBUG_WATCH_SELECTION, ChameleonEditor::OnAddWatch)
-	EVT_MENU			(ID_DEBUG_DISPLAY_SELECTION, ChameleonEditor::OnDisplayVariable)
+BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
+	EVT_STC_CHARADDED	(-1, NumeReEditor::OnChar)
+	EVT_STC_MODIFIED	(-1, NumeReEditor::OnEditorModified)
+	EVT_KEY_DOWN        (NumeReEditor::OnKeyDn)
+	EVT_KEY_UP          (NumeReEditor::OnKeyRel)
+	EVT_LEFT_DOWN       (NumeReEditor::OnMouseDn)
+	EVT_LEFT_UP         (NumeReEditor::OnMouseUp)
+	EVT_RIGHT_DOWN		(NumeReEditor::OnRightClick)
+	EVT_STC_MARGINCLICK (-1, NumeReEditor::OnMarginClick)
+	EVT_MENU			(ID_DEBUG_ADD_BREAKPOINT, NumeReEditor::OnAddBreakpoint)
+	EVT_MENU			(ID_DEBUG_REMOVE_BREAKPOINT, NumeReEditor::OnRemoveBreakpoint)
+	EVT_MENU			(ID_DEBUG_CLEAR_ALL_BREAKPOINTS, NumeReEditor::OnClearBreakpoints)
+	EVT_MENU			(ID_DEBUG_WATCH_SELECTION, NumeReEditor::OnAddWatch)
+	EVT_MENU			(ID_DEBUG_DISPLAY_SELECTION, NumeReEditor::OnDisplayVariable)
 	//EVT_COMPILER_END	(ChameleonEditor::OnCompilerEnded)
-	EVT_MENU			(ID_DEBUG_RUNTOCURSOR, ChameleonEditor::OnRunToCursor)
+	EVT_MENU			(ID_DEBUG_RUNTOCURSOR, NumeReEditor::OnRunToCursor)
 END_EVENT_TABLE()
 
 int CompareInts(int n1, int n2)
@@ -55,6 +57,7 @@ int CompareInts(int n1, int n2)
 }
 
 
+extern Language _guilang;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -70,11 +73,11 @@ int CompareInts(int n1, int n2)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-ChameleonEditor::ChameleonEditor( NumeReWindow *mframe,
+NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 								 DebugManager* debugManager,
 								 Options* options,
 								 ProjectInfo* project,
-                                  wxWindow *parent,     wxWindowID id, const
+                                  wxWindow *parent,     wxWindowID id, NumeReSyntax* __syntax, const
                                       wxPoint & pos /* = wxDefaultPosition */,
                                   const wxSize & size /* = wxDefaultSize */,
                                   long style /* = 0 */, const
@@ -96,6 +99,7 @@ ChameleonEditor::ChameleonEditor( NumeReWindow *mframe,
 
 	m_lastRightClick.x = -1;
 	m_lastRightClick.y = -1;
+	_syntax = __syntax;
 
     this->SetTabWidth(4);
 
@@ -180,21 +184,21 @@ ChameleonEditor::ChameleonEditor( NumeReWindow *mframe,
 
 	this->UsePopUp(false);
 
-	m_popupMenu.Append(ID_CUT, "Cut");
-	m_popupMenu.Append(ID_COPY, "Copy");
-	m_popupMenu.Append(ID_PASTE, "Paste");
+	m_popupMenu.Append(ID_CUT, _guilang.get("GUI_MENU_EDITOR_CUT"));
+	m_popupMenu.Append(ID_COPY, _guilang.get("GUI_MENU_EDITOR_COPY"));
+	m_popupMenu.Append(ID_PASTE, _guilang.get("GUI_MENU_EDITOR_PASTE"));
 	m_popupMenu.AppendSeparator();
 
-	m_popupMenu.Append(ID_DEBUG_ADD_BREAKPOINT, "Add a breakpoint");
-	m_popupMenu.Append(ID_DEBUG_REMOVE_BREAKPOINT, "Remove this breakpoint");
-	m_popupMenu.Append(ID_DEBUG_CLEAR_ALL_BREAKPOINTS, "Clear all breakpoints");
+	m_popupMenu.Append(ID_DEBUG_ADD_BREAKPOINT, _guilang.get("GUI_MENU_EDITOR_ADDBP"));
+	m_popupMenu.Append(ID_DEBUG_REMOVE_BREAKPOINT, _guilang.get("GUI_MENU_EDITOR_REMOVEBP"));
+	m_popupMenu.Append(ID_DEBUG_CLEAR_ALL_BREAKPOINTS, _guilang.get("GUI_MENU_EDITOR_CLEARBP"));
 
-	m_popupMenu.Append(ID_DEBUG_RUNTOCURSOR, "Run to cursor");
+	//m_popupMenu.Append(ID_DEBUG_RUNTOCURSOR, "Run to cursor");
 
 	m_popupMenu.AppendSeparator();
 
-	m_menuAddWatch = m_popupMenu.Append(ID_DEBUG_WATCH_SELECTION, "Watch selection");
-	m_menuShowValue = m_popupMenu.Append(ID_DEBUG_DISPLAY_SELECTION, "Display selection");
+	//m_menuAddWatch = m_popupMenu.Append(ID_DEBUG_WATCH_SELECTION, "Watch selection");
+	m_menuShowValue = m_popupMenu.Append(ID_DEBUG_DISPLAY_SELECTION, _guilang.get("GUI_MENU_EDITOR_HIGHLIGHT", "selection"));
 
 
 	int modmask =	wxSTC_MOD_INSERTTEXT
@@ -218,7 +222,7 @@ ChameleonEditor::ChameleonEditor( NumeReWindow *mframe,
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-ChameleonEditor::~ChameleonEditor()
+NumeReEditor::~NumeReEditor()
 {
     if(m_project->IsSingleFile())
 	{
@@ -240,7 +244,7 @@ ChameleonEditor::~ChameleonEditor()
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-bool ChameleonEditor::SaveFileLocal()
+bool NumeReEditor::SaveFileLocal()
 {
 	return SaveFile(m_fileNameAndPath.GetFullPath());
 }
@@ -255,7 +259,7 @@ bool ChameleonEditor::SaveFileLocal()
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-bool ChameleonEditor::SaveFile( const wxString & filename )
+bool NumeReEditor::SaveFile( const wxString & filename )
 {
 
     // return if no change
@@ -275,7 +279,7 @@ bool ChameleonEditor::SaveFile( const wxString & filename )
 
     wxString buf = GetText();
 
-    bool okay = file.Write(buf);
+    bool okay = file.Write(buf.ToStdString().c_str(), buf.ToStdString().length());
 
     file.Close();
 
@@ -301,7 +305,7 @@ bool ChameleonEditor::SaveFile( const wxString & filename )
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-bool ChameleonEditor::LoadFileText(wxString fileContents)
+bool NumeReEditor::LoadFileText(wxString fileContents)
 {
 	if(fileContents.Length() > 0)
 	{
@@ -376,7 +380,7 @@ bool ChameleonEditor::LoadFileText(wxString fileContents)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-bool ChameleonEditor::Modified ()
+bool NumeReEditor::Modified ()
 {
     // return modified state
 	bool modified = GetModify();
@@ -399,13 +403,13 @@ bool ChameleonEditor::Modified ()
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void ChameleonEditor::OnChar( wxStyledTextEvent &event )
+void NumeReEditor::OnChar( wxStyledTextEvent &event )
 {
 
 	const wxChar chr = event.GetKey();
 	const int currentLine = GetCurrentLine();
-	const int tabWidth = GetTabWidth();
-	const int eolMode = GetEOLMode();
+	//const int tabWidth = GetTabWidth();
+	//const int eolMode = GetEOLMode();
 
     if( chr == WXK_TAB )
     {
@@ -440,7 +444,7 @@ void ChameleonEditor::OnChar( wxStyledTextEvent &event )
 
 	//if (((eolMode == CRLF || eolMode == LF) && chr == '\n')
 	//	|| (eolMode == CR && chr == '\r'))
-	if(chr == '\n' && m_options->GetPerms()->isEnabled(PERM_AUTOINDENT))
+	if(chr == '\n')// && m_options->GetPerms()->isEnabled(PERM_AUTOINDENT))
 	{
 		int previousLineInd = 0;
 
@@ -469,7 +473,7 @@ void ChameleonEditor::OnChar( wxStyledTextEvent &event )
 }
 
 
-void ChameleonEditor::MakeBraceCheck()
+void NumeReEditor::MakeBraceCheck()
 {
     char CurrentChar = this->GetCharAt(this->GetCurrentPos());
     char PrevChar = 0;
@@ -491,34 +495,34 @@ void ChameleonEditor::MakeBraceCheck()
     return;
 }
 
-void ChameleonEditor::OnKeyDn(wxKeyEvent &event)
+void NumeReEditor::OnKeyDn(wxKeyEvent &event)
 {
     //wxMessageBox(wxString((char)this->GetCharAt(this->GetCurrentPos())));
     OnKeyDown(event);
     MakeBraceCheck();
 }
 
-void ChameleonEditor::OnKeyRel(wxKeyEvent &event)
+void NumeReEditor::OnKeyRel(wxKeyEvent &event)
 {
     //wxMessageBox(wxString((char)this->GetCharAt(this->GetCurrentPos())));
     MakeBraceCheck();
     //OnKeyUp(event);
 }
 
-void ChameleonEditor::OnMouseUp(wxMouseEvent &event)
+void NumeReEditor::OnMouseUp(wxMouseEvent &event)
 {
     OnMouseLeftUp(event);
     MakeBraceCheck();
 }
 
-void ChameleonEditor::OnMouseDn(wxMouseEvent &event)
+void NumeReEditor::OnMouseDn(wxMouseEvent &event)
 {
     OnMouseLeftDown(event);
     MakeBraceCheck();
 }
 
 
-void ChameleonEditor::getMatchingBrace(int nPos)
+void NumeReEditor::getMatchingBrace(int nPos)
 {
     int nMatch = this->BraceMatch(nPos);
     if (nMatch == wxSTC_INVALID_POSITION)
@@ -540,7 +544,7 @@ void ChameleonEditor::getMatchingBrace(int nPos)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-bool ChameleonEditor::HasBeenSaved()
+bool NumeReEditor::HasBeenSaved()
 {
 	bool result = m_fileNameAndPath.GetFullPath() != wxEmptyString;
 	return result;
@@ -569,13 +573,12 @@ void ChameleonEditor::SetLocalFileNameAndPath(wxString path, wxString name)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void ChameleonEditor::UpdateSyntaxHighlighting()
+void NumeReEditor::UpdateSyntaxHighlighting()
 {
 	wxString filename = GetFileNameAndPath();
 
-	bool highlightingEnabled = m_options->GetPerms()->isEnabled(PERM_SYNTAXHIGHLIGHT);
 	bool isSourceFile = m_project->GetFileType(filename) != FILE_NONSOURCE;
-	if(  highlightingEnabled && ( m_bNewFile || isSourceFile || !HasBeenSaved()) )
+	if(m_bNewFile || isSourceFile || !HasBeenSaved())
 	{
 		this->SetLexer(wxSTC_LEX_NSCR);
 
@@ -625,14 +628,16 @@ void ChameleonEditor::UpdateSyntaxHighlighting()
         this->MarkerSetForeground (wxSTC_MARKNUM_FOLDERTAIL, grey);
         this->MarkerSetBackground (wxSTC_MARKNUM_FOLDERTAIL, grey);
 
-		this->SetKeyWords(0, "about append audio break clear compose cont cont3d continue contour contour3d copy credits datagrid define del delete dens dens3d density density3d diff draw draw3d edit eval explicit export extrema fft find fit fitw get global grad gradient grad3d gradient3d graph graph3d help hist hist2d hline ifndef ifndefined info integrate integrate2 integrate2d list load man matop mesh mesh3d meshgrid meshgrid3d move mtrxop new odesolve plot plot3d print progress pulse quit random read redef redefine regularize reload remove rename repl replaceline resample retoque save script search set show showf smooth sort stats stfa subplot surf surf3d surface surface3d swap taylor undef undefine uninstall vect vect3d vector vector3d view workpath write zeroes else elseif endfor endif endwhile endcompose explicit for if inline main namespace private readline return throw while procedure endprocedure str var");
-		this->SetKeyWords(1, "addxaxis addyaxis adventor all allmedium alpha alphamask animate app append area aspect asstr asval autosave axis axisbind background bar bars bcancel bgcolorscheme binlabel binomial bins bonum bottomleft bottomright box boxplot buffersize cancel cartesian chimap chorus clog cloudplot cmd coarse coast cold colorbar colormask colorrange colorscheme colortheme cols comment comments compact complete complex connect const copper coords countlabel cscale cticklabels cticks cursor cut defcontrol desc dir distrib draftmode editor eps errorbars every exprvar extendedfileinfo faststart fcont file files fine first flength flow font free freedman freedoms func fx0 gamma gauss greeting grey grid gridstyle hbars head heros heroscn hints hires hot ignore interpolate inverse iter keepdim last lborder lcont legend legendstyle light lines linesizes linestyles lnumctrl loademptycols loadpath logic logscale lyapunov map marks mask max maxline mean medium method min minline mode moy msg multiplot noalpha noalphamask noanimate noarea noaxis nobackground nobars nobox noboxplot noclog nocloudplot nocolorbar nocolormask noconnect nocut noerrorbars nofcont noflength noflow nogrid nohbars nohires nointerpolate nolcont nolight nologscale nomarks noopen noorthoproject nopcont nopipe nopoints noquotes noregion normal noschematic nosteps nosilent noxlog noyerrorbars noylog nozlog nq oeps ogif onlycolors onlystyles open opng order origin orthoproject osvg otex override pagella params pattern pcont peek perspective pipe plasma plotcolors plotfont plotparams plotpath plugin plugins points pointstyles poisson polar precision prob proc procpath rainbow rborder real recursive region reset restrict rk2 rk4 rk8pd rkck rkf45 rotate samples savepath saverr scale schematic schola scott scriptpath settings shape silent simpson single slices sliding spherical std steps student styles sv target termes textsize title tocache tol topleft topright transpose trapezoidal trunc type ubound uniform unique units usecustomlang useescinscripts var viridis viewer vline width windowsize with xerrorbars xlabel xlog xscale xticklabels xticks xvals xy xz yerrorbars ylabel ylog yscale yticklabels yticks zlabel zlog zscale zticklabels zticks");
-		this->SetKeyWords(2, "abs acos acosh Ai arc arcv arccos arcsin arctan arcosh arsinh artanh asin asinh ascii atan atanh avg bessel betheweizsaecker Bi binom char circle cmp cnt cone conev cos cosh cot cross cuboid curve date dblfacul degree det diag diagonalize drop eigenvals eigenvects ellipse ellipsev ellipticD ellipticE ellipticF ellipticPi erf erfc exp face facev faculty findfile findparam floor gamma gauss gcd getfilelist getfolderlist getindices getmatchingparens getopt heaviside hermite identity imY invert is_data is_nan is_string laguerre laguerre_a lcm legendre legendre_a ln log log10 log2 matfc matfcf matfl matflf max med min neumann norm num one pct phi point polygon polygonv prd radian rand range rect repeat replace replaceall rint roof round sbessel sign sin sinc sinh sneumann solve split sphere sqrt std strfnd string_cast strlen strrfnd student_t substr sum tan tanh text theta time to_char to_cmd to_lowercase to_string to_uppercase to_value trace tracev transpose triangle trianglev valtostr version Y zero");
-		this->SetKeyWords(3, "x y z t");
-		this->SetKeyWords(4, "_pi _2pi _g _R _alpha_fs _c _coul_norm _elek_feldkonst _elem_ladung _g _h _hbar _k_boltz _m_amu _m_elektron _m_erde _m_muon _m_neutron _m_proton _m_sonne _m_tau _magn_feldkonst _mu_bohr _mu_kern _n_avogadro _pi _r_bohr _r_erde _r_sonne _theta_weinberg");
-		this->SetKeyWords(5, "... ans cache data false inf nan string true void");
-		this->SetKeyWords(6, "<loadpath> <savepath> <scriptpath> <procpath> <plotpath> <this> <wp> 'Torr 'eV 'fm 'A 'b 'AU 'ly 'pc 'mile 'yd 'ft 'in 'cal 'TC 'TF 'Ci 'G 'kmh 'kn 'l 'mph 'psi 'Ps 'mol 'Gs 'M 'k 'm 'mu 'n");
-
+        if (_syntax)
+        {
+            this->SetKeyWords(0, _syntax->getCommands());//"about append audio break clear compose cont cont3d continue contour contour3d copy credits datagrid define del delete dens dens3d density density3d diff draw draw3d edit eval explicit export extrema fft find fit fitw get global grad gradient grad3d gradient3d graph graph3d help hist hist2d hline ifndef ifndefined info integrate integrate2 integrate2d list load man matop mesh mesh3d meshgrid meshgrid3d move mtrxop new odesolve plot plot3d print progress pulse quit random read redef redefine regularize reload remove rename repl replaceline resample retoque save script search set show showf smooth sort stats stfa subplot surf surf3d surface surface3d swap taylor undef undefine uninstall vect vect3d vector vector3d view workpath write zeroes else elseif endfor endif endwhile endcompose explicit for if inline main namespace private readline return throw while procedure endprocedure str var");
+            this->SetKeyWords(1, _syntax->getOptions());//"addxaxis addyaxis adventor all allmedium alpha alphamask animate app append area aspect asstr asval autosave axis axisbind background bar bars bcancel bgcolorscheme binlabel binomial bins bonum bottomleft bottomright box boxplot buffersize cancel cartesian chimap chorus clog cloudplot cmd coarse coast cold colorbar colormask colorrange colorscheme colortheme cols comment comments compact complete complex connect const copper coords countlabel cscale cticklabels cticks cursor cut defcontrol desc dir distrib draftmode editor eps errorbars every exprvar extendedfileinfo faststart fcont file files fine first flength flow font free freedman freedoms func fx0 gamma gauss greeting grey grid gridstyle hbars head heros heroscn hints hires hot ignore interpolate inverse iter keepdim last lborder lcont legend legendstyle light lines linesizes linestyles lnumctrl loademptycols loadpath logic logscale lyapunov map marks mask max maxline mean medium method min minline mode moy msg multiplot noalpha noalphamask noanimate noarea noaxis nobackground nobars nobox noboxplot noclog nocloudplot nocolorbar nocolormask noconnect nocut noerrorbars nofcont noflength noflow nogrid nohbars nohires nointerpolate nolcont nolight nologscale nomarks noopen noorthoproject nopcont nopipe nopoints noquotes noregion normal noschematic nosteps nosilent noxlog noyerrorbars noylog nozlog nq oeps ogif onlycolors onlystyles open opng order origin orthoproject osvg otex override pagella params pattern pcont peek perspective pipe plasma plotcolors plotfont plotparams plotpath plugin plugins points pointstyles poisson polar precision prob proc procpath rainbow rborder real recursive region reset restrict rk2 rk4 rk8pd rkck rkf45 rotate samples savepath saverr scale schematic schola scott scriptpath settings shape silent simpson single slices sliding spherical std steps student styles sv target termes textsize title tocache tol topleft topright transpose trapezoidal trunc type ubound uniform unique units usecustomlang useescinscripts var viridis viewer vline width windowsize with xerrorbars xlabel xlog xscale xticklabels xticks xvals xy xz yerrorbars ylabel ylog yscale yticklabels yticks zlabel zlog zscale zticklabels zticks");
+            this->SetKeyWords(2, _syntax->getFunctions());//"abs acos acosh Ai arc arcv arccos arcsin arctan arcosh arsinh artanh asin asinh ascii atan atanh avg bessel betheweizsaecker Bi binom char circle cmp cnt cone conev cos cosh cot cross cuboid curve date dblfacul degree det diag diagonalize drop eigenvals eigenvects ellipse ellipsev ellipticD ellipticE ellipticF ellipticPi erf erfc exp face facev faculty findfile findparam floor gamma gauss gcd getfilelist getfolderlist getindices getmatchingparens getopt heaviside hermite identity imY invert is_data is_nan is_string laguerre laguerre_a lcm legendre legendre_a ln log log10 log2 matfc matfcf matfl matflf max med min neumann norm num one pct phi point polygon polygonv prd radian rand range rect repeat replace replaceall rint roof round sbessel sign sin sinc sinh sneumann solve split sphere sqrt std strfnd string_cast strlen strrfnd student_t substr sum tan tanh text theta time to_char to_cmd to_lowercase to_string to_uppercase to_value trace tracev transpose triangle trianglev valtostr version Y zero");
+            this->SetKeyWords(3, "x y z t");
+            this->SetKeyWords(4, _syntax->getConstants());//"_pi _2pi _g _R _alpha_fs _c _coul_norm _elek_feldkonst _elem_ladung _g _h _hbar _k_boltz _m_amu _m_elektron _m_erde _m_muon _m_neutron _m_proton _m_sonne _m_tau _magn_feldkonst _mu_bohr _mu_kern _n_avogadro _pi _r_bohr _r_erde _r_sonne _theta_weinberg");
+            this->SetKeyWords(5, _syntax->getSpecial());//"... ans cache data false inf nan string true void");
+            this->SetKeyWords(6, _syntax->getOperators());//"<loadpath> <savepath> <scriptpath> <procpath> <plotpath> <this> <wp> 'Torr 'eV 'fm 'A 'b 'AU 'ly 'pc 'mile 'yd 'ft 'in 'cal 'TC 'TF 'Ci 'G 'kmh 'kn 'l 'mph 'psi 'Ps 'mol 'Gs 'M 'k 'm 'mu 'n");
+        }
 		this->SetCaretLineVisible(true);
 		this->SetCaretLineBackground(wxColour(196,211,255));
 		this->SetIndentationGuides(true);
@@ -720,7 +725,7 @@ void ChameleonEditor::UpdateSyntaxHighlighting()
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void ChameleonEditor::SetFilename(wxFileName filename, bool fileIsRemote)
+void NumeReEditor::SetFilename(wxFileName filename, bool fileIsRemote)
 {
 	m_bLastSavedRemotely = fileIsRemote;
 
@@ -792,9 +797,9 @@ void ChameleonEditor::SetFilename(wxFileName filename, bool fileIsRemote)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-wxString ChameleonEditor::GetFileNameAndPath()
+wxString NumeReEditor::GetFileNameAndPath()
 {
-	wxString nameAndPath = m_fileNameAndPath.GetFullPath(m_bLastSavedRemotely ? wxPATH_UNIX : wxPATH_DOS);
+	wxString nameAndPath = m_fileNameAndPath.GetFullPath();//m_bLastSavedRemotely ? wxPATH_UNIX : wxPATH_DOS);
 	return nameAndPath;
 }
 
@@ -806,7 +811,7 @@ wxString ChameleonEditor::GetFileNameAndPath()
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-wxString ChameleonEditor::GetFilenameString()
+wxString NumeReEditor::GetFilenameString()
 {
 	return m_fileNameAndPath.GetFullName();
 }
@@ -819,7 +824,7 @@ wxString ChameleonEditor::GetFilenameString()
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-wxFileName ChameleonEditor::GetFileName() {
+wxFileName NumeReEditor::GetFileName() {
 	return m_fileNameAndPath;
 }
 
@@ -831,7 +836,7 @@ wxFileName ChameleonEditor::GetFileName() {
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-wxString ChameleonEditor::GetFilePath()
+wxString NumeReEditor::GetFilePath()
 {
 	return m_fileNameAndPath.GetPath(false, m_bLastSavedRemotely ? wxPATH_UNIX : wxPATH_DOS);
 }
@@ -844,7 +849,7 @@ wxString ChameleonEditor::GetFilePath()
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void ChameleonEditor::ResetEditor()
+void NumeReEditor::ResetEditor()
 {
 	ClearAll();
 
@@ -877,7 +882,7 @@ void ChameleonEditor::ResetEditor()
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void ChameleonEditor::OnRightClick(wxMouseEvent &event)
+void NumeReEditor::OnRightClick(wxMouseEvent &event)
 {
 	m_lastRightClick = event.GetPosition();
 	int charpos = PositionFromPoint(m_lastRightClick);
@@ -886,22 +891,22 @@ void ChameleonEditor::OnRightClick(wxMouseEvent &event)
 	bool breakpointOnLine = BreakpointOnLine(linenum);
 
 	bool breakpointsAllowed = true;
-	bool isDebugging = m_debugManager->IsDebugging();//m_mainFrame->IsDebugging();
+	bool isDebugging = true; //m_debugManager->IsDebugging();//m_mainFrame->IsDebugging();
 
-	if(m_popupMenu.FindItem(ID_DEBUG_WATCH_SELECTION) != NULL)
+	if(m_popupMenu.FindItem(ID_DEBUG_DISPLAY_SELECTION) != NULL)
 	{
-		m_popupMenu.Remove(ID_DEBUG_WATCH_SELECTION);
+		//m_popupMenu.Remove(ID_DEBUG_WATCH_SELECTION);
 		m_popupMenu.Remove(ID_DEBUG_DISPLAY_SELECTION);
 	}
 
-	if(isDebugging)
+	/*if(isDebugging)
 	{
 		breakpointsAllowed = m_debugManager->IsDebuggerPaused();//m_mainFrame->IsDebuggerPaused();
-	}
+	}*/
 
 	m_popupMenu.Enable(ID_DEBUG_ADD_BREAKPOINT, breakpointsAllowed && !breakpointOnLine);
 	m_popupMenu.Enable(ID_DEBUG_REMOVE_BREAKPOINT, breakpointsAllowed && breakpointOnLine);
-	m_popupMenu.Enable(ID_DEBUG_RUNTOCURSOR, breakpointsAllowed && isDebugging);
+	//m_popupMenu.Enable(ID_DEBUG_RUNTOCURSOR, breakpointsAllowed && isDebugging);
 
 	// returns a copy of a member variable, which would seem sort of pointless, but
 	// GetBreakpoints cleans up any stray marker IDs in the list before returning
@@ -912,20 +917,20 @@ void ChameleonEditor::OnRightClick(wxMouseEvent &event)
 	m_popupMenu.Enable(ID_DEBUG_CLEAR_ALL_BREAKPOINTS, canClearBreakpoints);
 
 
-	if(!isDebugging || isDebugging && breakpointsAllowed)
+	if(!isDebugging || (isDebugging && breakpointsAllowed))
 	{
 		wxString clickedWord = FindClickedWord();
 
 		if(clickedWord.Length() > 0)
 		{
-			wxString watchWord = wxString::Format("Watch \"%s\"", clickedWord);
-			wxString displayWord = wxString::Format("Display \"%s\"", clickedWord);
+			//wxString watchWord = wxString::Format("Watch \"%s\"", clickedWord);
+			//wxString displayWord = wxString::Format("Display \"%s\"", clickedWord);
 
-			m_popupMenu.Append(m_menuAddWatch);
+			//m_popupMenu.Append(m_menuAddWatch);
 			m_popupMenu.Append(m_menuShowValue);
 
-			m_menuAddWatch->SetText(watchWord);
-			m_menuShowValue->SetText(displayWord);
+			//m_menuAddWatch->SetText(watchWord);
+			m_menuShowValue->SetText(_guilang.get("GUI_MENU_EDITOR_HIGHLIGHT", clickedWord.ToStdString()));
 		}
 	}
 
@@ -942,7 +947,7 @@ void ChameleonEditor::OnRightClick(wxMouseEvent &event)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void ChameleonEditor::OnEditorModified(wxStyledTextEvent &event)
+void NumeReEditor::OnEditorModified(wxStyledTextEvent &event)
 {
 	m_project->SetCompiled(false);
 }
@@ -957,7 +962,7 @@ void ChameleonEditor::OnEditorModified(wxStyledTextEvent &event)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void ChameleonEditor::OnAddBreakpoint(wxCommandEvent &event)
+void NumeReEditor::OnAddBreakpoint(wxCommandEvent &event)
 {
 	//int charpos = PositionFromPoint(m_lastRightClick);
 	int linenum = GetLineForBreakpointOperation(); //LineFromPosition(charpos);
@@ -982,7 +987,7 @@ void ChameleonEditor::OnAddBreakpoint(wxCommandEvent &event)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void ChameleonEditor::OnRemoveBreakpoint(wxCommandEvent &event)
+void NumeReEditor::OnRemoveBreakpoint(wxCommandEvent &event)
 {
 	int linenum = GetLineForBreakpointOperation();
 
@@ -1002,7 +1007,7 @@ void ChameleonEditor::OnRemoveBreakpoint(wxCommandEvent &event)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void ChameleonEditor::OnClearBreakpoints(wxCommandEvent &event)
+void NumeReEditor::OnClearBreakpoints(wxCommandEvent &event)
 {
 	// m_breakpoints should have been cleared of any orphaned marker
 	// handles during the right-click that led us here
@@ -1028,7 +1033,7 @@ void ChameleonEditor::OnClearBreakpoints(wxCommandEvent &event)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-wxArrayInt ChameleonEditor::GetBreakpoints()
+wxArrayInt NumeReEditor::GetBreakpoints()
 {
 	wxArrayInt linenumbers;
 	wxArrayInt invalidBreakpoints;
@@ -1067,7 +1072,7 @@ wxArrayInt ChameleonEditor::GetBreakpoints()
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-bool ChameleonEditor::HasBeenCompiled()
+bool NumeReEditor::HasBeenCompiled()
 {
 	return m_project->IsCompiled();
 }
@@ -1080,7 +1085,7 @@ bool ChameleonEditor::HasBeenCompiled()
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void ChameleonEditor::SetCompiled()
+void NumeReEditor::SetCompiled()
 {
 	m_project->SetCompiled(true);
 }
@@ -1096,7 +1101,7 @@ void ChameleonEditor::SetCompiled()
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void ChameleonEditor::FocusOnLine(int linenumber, bool showMarker)
+void NumeReEditor::FocusOnLine(int linenumber, bool showMarker)
 {
 	GotoLine(linenumber);
 	if(showMarker)
@@ -1116,7 +1121,7 @@ void ChameleonEditor::FocusOnLine(int linenumber, bool showMarker)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void ChameleonEditor::CreateBreakpointEvent(int linenumber, bool addBreakpoint)
+void NumeReEditor::CreateBreakpointEvent(int linenumber, bool addBreakpoint)
 {
 	wxDebugEvent dbg;
 	wxString filename = m_fileNameAndPath.GetFullPath(wxPATH_UNIX);
@@ -1143,7 +1148,7 @@ void ChameleonEditor::CreateBreakpointEvent(int linenumber, bool addBreakpoint)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void ChameleonEditor::SetProject(ProjectInfo* project)
+void NumeReEditor::SetProject(ProjectInfo* project)
 {
 	if(m_project != NULL && m_project->IsSingleFile())
 	{
@@ -1164,7 +1169,7 @@ void ChameleonEditor::SetProject(ProjectInfo* project)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void ChameleonEditor::OnRunToCursor(wxCommandEvent &event)
+void NumeReEditor::OnRunToCursor(wxCommandEvent &event)
 {
 	/*
 	int charpos = PositionFromPoint(m_lastRightClick);
@@ -1183,7 +1188,7 @@ void ChameleonEditor::OnRunToCursor(wxCommandEvent &event)
 	ResetRightClickLocation();
 }
 
-int ChameleonEditor::GetLineForBreakpointOperation()
+int NumeReEditor::GetLineForBreakpointOperation()
 {
 	int lineNum = 0;
 
@@ -1202,13 +1207,13 @@ int ChameleonEditor::GetLineForBreakpointOperation()
 	return lineNum;
 }
 
-void ChameleonEditor::ResetRightClickLocation()
+void NumeReEditor::ResetRightClickLocation()
 {
 	m_lastRightClick.x = -1;
 	m_lastRightClick.y = -1;
 }
 
-wxString ChameleonEditor::FindClickedWord()
+wxString NumeReEditor::FindClickedWord()
 {
 	int charpos = PositionFromPoint(m_lastRightClick);
 	int startPosition = WordStartPosition(charpos, true);
@@ -1220,7 +1225,7 @@ wxString ChameleonEditor::FindClickedWord()
 	return clickedWord;
 }
 
-void ChameleonEditor::OnAddWatch(wxCommandEvent &event)
+void NumeReEditor::OnAddWatch(wxCommandEvent &event)
 {
 	wxDebugEvent dbg;
 
@@ -1244,9 +1249,32 @@ void ChameleonEditor::OnAddWatch(wxCommandEvent &event)
 	m_debugManager->AddPendingEvent(dbg);//m_mainFrame->AddPendingEvent(dbg);
 }
 
-void ChameleonEditor::OnDisplayVariable(wxCommandEvent &event)
+void NumeReEditor::OnDisplayVariable(wxCommandEvent &event)
 {
-	wxDebugEvent dbg;
+    long int maxpos = this->GetLastPosition();
+    this->IndicatorClearRange(0,maxpos);
+    this->IndicatorSetStyle(HIGHLIGHT, wxSTC_INDIC_ROUNDBOX);
+    this->IndicatorSetAlpha(HIGHLIGHT, 100);
+    this->IndicatorSetForeground(HIGHLIGHT, wxColor(255,0,0));
+
+    unsigned int nPos = 0;
+    unsigned int nCurr = 0;
+    vector<unsigned int> vSelectionList;
+
+    while ((nPos = this->FindText(nCurr, maxpos, m_clickedWord, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD)) != string::npos)
+    {
+        vSelectionList.push_back(nPos);
+        nCurr = nPos + m_clickedWord.length();
+    }
+
+    this->SetIndicatorCurrent(HIGHLIGHT);
+
+    for (size_t i = 0; i < vSelectionList.size(); i++)
+    {
+        this->IndicatorFillRange(vSelectionList[i], m_clickedWord.length());
+    }
+
+	/*wxDebugEvent dbg;
 
 	dbg.SetId(ID_DEBUG_DISPLAY_SELECTION);
 
@@ -1254,14 +1282,14 @@ void ChameleonEditor::OnDisplayVariable(wxCommandEvent &event)
 	vars.Add(m_clickedWord);
 	dbg.SetVariableNames(vars);
 
-	m_debugManager->AddPendingEvent(dbg);//m_mainFrame->AddPendingEvent(dbg);
+	m_debugManager->AddPendingEvent(dbg);*///m_mainFrame->AddPendingEvent(dbg);
 
 
 	// TODO Need to signal that it's a one-shot, which needs to be
 	// handled appropriately in the debugger.
 }
 
-void ChameleonEditor::OnMarginClick( wxStyledTextEvent &event )
+void NumeReEditor::OnMarginClick( wxStyledTextEvent &event )
 {
 	// we know it's margin 2, because that's the only sensitive margin
 
@@ -1288,7 +1316,7 @@ void ChameleonEditor::OnMarginClick( wxStyledTextEvent &event )
     }
 }
 
-void ChameleonEditor::AddBreakpoint( int linenum )
+void NumeReEditor::AddBreakpoint( int linenum )
 {
 	int markerNum = this->MarkerAdd(linenum, MARKER_BREAKPOINT);
 
@@ -1296,7 +1324,7 @@ void ChameleonEditor::AddBreakpoint( int linenum )
 	CreateBreakpointEvent(linenum, true);
 }
 
-bool ChameleonEditor::BreakpointOnLine( int linenum )
+bool NumeReEditor::BreakpointOnLine( int linenum )
 {
 	int markerLineBitmask = this->MarkerGet(linenum);
 
@@ -1305,7 +1333,7 @@ bool ChameleonEditor::BreakpointOnLine( int linenum )
 	return breakpointOnLine;
 }
 
-void ChameleonEditor::RemoveBreakpoint( int linenum )
+void NumeReEditor::RemoveBreakpoint( int linenum )
 {
 	// need to remove the marker handle from the array - use
 	// LineFromHandle on debug start and clean up then

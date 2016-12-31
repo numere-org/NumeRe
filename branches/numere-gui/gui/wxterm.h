@@ -34,6 +34,7 @@
 #pragma interface
 #endif
 
+#include "NumeReWindow.h"
 #include "../network/gterm.hpp"
 #include "../network/gtelnet.hpp"
 #include "../kernel/kernel.hpp"
@@ -113,7 +114,7 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
         wxTimer
         m_timer;
 
-        wxFrame* m_wxParent;
+        NumeReWindow* m_wxParent;
 
     public:
         enum BOLDSTYLE
@@ -124,7 +125,7 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
             FONT = 2
         };
 
-        void SetParent(wxFrame* frame)
+        void SetParent(NumeReWindow* frame)
         {
             if (frame && !m_wxParent)
                 m_wxParent = frame;
@@ -147,6 +148,8 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
 
     public:
         void pass_command(const string& command);
+        Settings getKernelSettings();
+        void setKernelSettings(const Settings&);
         wxTerm(wxWindow* parent, wxWindowID id,
                const wxPoint& pos = wxDefaultPosition,
                int width = 80, int height = 24,
@@ -221,6 +224,8 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
         void StartKernelTask();
         void OnThreadUpdate(wxThreadEvent& event);
         void OnClose(wxCloseEvent& event);
+
+        vector<string> getPathSettings();
     protected:
         virtual wxThread::ExitCode Entry();
         NumeReKernel _kernel;
