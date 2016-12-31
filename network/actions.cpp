@@ -43,7 +43,7 @@ void GTerm::normal_input()
     //if (* input_data<32)
     //n = abs((unsigned char)sInput_Data[0]);
 
-    if (abs((unsigned char)sInput_Data[0])<32)
+    if (abs((unsigned char)sInput_Data[0])<32 && (unsigned char)sInput_Data[0] != '\r' && (unsigned char)sInput_Data[0] != '\t')
         return;
 
     if (cursor_x >= width)
@@ -67,7 +67,7 @@ void GTerm::normal_input()
     if (mode_flags & NOEOLWRAP)
     {
         //while (input_data[n]>31 && n<data_len)
-        while (abs((unsigned char)sInput_Data[n]) > 31 && n < sInput_Data.length())
+        while ((abs((unsigned char)sInput_Data[n]) > 31 || sInput_Data[n] == '\r' || sInput_Data[n] == '\t') && n < sInput_Data.length())
             n++;
 
         n_taken = n;
@@ -78,7 +78,7 @@ void GTerm::normal_input()
     else
     {
         //while (input_data[n]>31 && n<data_len && cursor_x + n<width)
-        while (abs((unsigned char)sInput_Data[n]) > 31 && n < sInput_Data.length())//&& cursor_x + n<width)
+        while ((abs((unsigned char)sInput_Data[n]) > 31 || sInput_Data[n] == '\r' || sInput_Data[n] == '\t') && n < sInput_Data.length())//&& cursor_x + n<width)
             n++;
 
         n_taken = n;
@@ -131,11 +131,34 @@ void GTerm::normal_input()
         //test;
         //text[y + cursor_x] = input_data[i];
 		//tm.SetCharAdjusted(cursor_y, cursor_x, input_data[i]);
+		if (sInput_Data[i] == '\r')
+		{
+            cr();
+            continue;
+		}
+		if (sInput_Data[i] == '\t')
+		{
+            tab();
+            continue;
+		}
 		tm.SetCharAdjusted(cursor_y, cursor_x, sInput_Data[i]);
 
         //color[y + cursor_x] = c;
 		tm.SetColorAdjusted(cursor_y, cursor_x, c);
         cursor_x++;
+        if (i+1 == n)
+        {
+            string sLine = tm.GetLineAdjusted(cursor_y);
+
+            string colors = _syntax.highlightLine(sLine);
+
+            for (unsigned int j = 0; j < colors.length(); j++)
+            {
+                tm.SetColorAdjusted(cursor_y, j, calc_color((int)(colors[j]-'0'), bg_color, mode_flags));
+            }
+
+            changed_line(cursor_y, 0, cursor_x);
+        }
         if (cursor_x >= width)
         {
             if (m_numCommandLines == -1 && n == 1)
@@ -222,6 +245,16 @@ void GTerm::bs()
     }
     if (cursor_x>0)
         move_cursor(cursor_x - 1, cursor_y);
+    string sLine = tm.GetLineAdjusted(cursor_y);
+
+    string colors = _syntax.highlightLine(sLine);
+
+    for (unsigned int j = 0; j < colors.length(); j++)
+    {
+        tm.SetColorAdjusted(cursor_y, j, calc_color((int)(colors[j]-'0'), bg_color, mode_flags));
+    }
+
+    changed_line(cursor_y, cursor_x-1, cursor_x+1);
 
 }
 
@@ -640,7 +673,9 @@ void GTerm::erase_display()
 
 void GTerm::erase_line()
 {
-    switch (param[0])
+    clear_area(0, cursor_y, width-1, cursor_y);
+    move_cursor(0,cursor_y);
+    /*switch (param[0])
     {
         case 0:
             clear_area(cursor_x, cursor_y, width - 1, cursor_y);
@@ -653,7 +688,7 @@ void GTerm::erase_line()
         case 2:
             clear_area(0, cursor_y, width - 1, cursor_y);
             break;
-    }
+    }*/
 }
 
 void GTerm::insert_line()

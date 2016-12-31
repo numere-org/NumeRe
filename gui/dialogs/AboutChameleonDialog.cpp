@@ -26,6 +26,7 @@
 
 #include "AboutChameleonDialog.h"
 #include "../../common/verinfo.h"
+#include "../../kernel/core/language.hpp"
 
 ////@begin XPM images
 #include "chamlogo_1.xpm"
@@ -50,6 +51,9 @@ BEGIN_EVENT_TABLE( AboutChameleonDialog, wxDialog )
 ////@end AboutChameleonDialog event table entries
 
 END_EVENT_TABLE()
+
+extern Language _guilang;
+extern const string sVersion;
 
 /*!
  * AboutChameleonDialog constructors
@@ -100,7 +104,7 @@ bool AboutChameleonDialog::Create( wxWindow* parent, wxWindowID id, const wxStri
 	wxString versionString = wxString::Format("Version %d.%d.%d.%d", major, minor, build, revision);
 
 
-	m_lblVersion->SetLabel(versionString);
+	m_lblVersion->SetLabel("v"+sVersion); //(versionString);
 	m_sizerProgram->Layout();
     return TRUE;
 }
@@ -132,11 +136,11 @@ void AboutChameleonDialog::CreateControls()
     itemPanel4->SetSizer(m_sizerProgram);
 
     wxBitmap itemStaticBitmap6Bitmap(itemDialog1->GetBitmapResource(wxT("chamlogo_1.xpm")));
-    wxStaticBitmap* itemStaticBitmap6 = new wxStaticBitmap( itemPanel4, wxID_STATIC, itemStaticBitmap6Bitmap, wxDefaultPosition, wxSize(225, 142), 0 );
+    wxStaticBitmap* itemStaticBitmap6 = new wxStaticBitmap( itemPanel4, wxID_STATIC, itemStaticBitmap6Bitmap, wxDefaultPosition, wxSize(300, 300), 0 );
     itemStaticBitmap6->SetBackgroundColour(wxColour(255, 255, 255));
     m_sizerProgram->Add(itemStaticBitmap6, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5);
 
-    wxStaticText* itemStaticText7 = new wxStaticText( itemPanel4, wxID_STATIC, _("Chameleon\nThe Adaptive Instructional IDE"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
+    wxStaticText* itemStaticText7 = new wxStaticText( itemPanel4, wxID_STATIC, _("NumeRe:\nFramework für Numerische Rechnungen"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
     itemStaticText7->SetForegroundColour(wxColour(0, 0, 0));
     itemStaticText7->SetBackgroundColour(wxColour(255, 255, 255));
     itemStaticText7->SetFont(wxFont(12, wxSWISS, wxNORMAL, wxBOLD, false, _T("Verdana")));
@@ -148,11 +152,11 @@ void AboutChameleonDialog::CreateControls()
     m_lblVersion->SetFont(wxFont(12, wxSWISS, wxNORMAL, wxBOLD, false, _T("Verdana")));
     m_sizerProgram->Add(m_lblVersion, 0, wxALIGN_CENTER_HORIZONTAL|wxALL|wxADJUST_MINSIZE, 5);
 
-    wxStaticText* itemStaticText9 = new wxStaticText( itemPanel4, wxID_STATIC, _("Chameleon is licensed under the General Public License, \navailable at http://www.gnu.org/licenses/gpl.html"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxStaticText* itemStaticText9 = new wxStaticText( itemPanel4, wxID_STATIC, _(_guilang.get("GUI_ABOUT_LICENCE_SHORT")), wxDefaultPosition, wxDefaultSize, 0 );
     itemStaticText9->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
     m_sizerProgram->Add(itemStaticText9, 0, wxALIGN_CENTER_HORIZONTAL|wxALL|wxADJUST_MINSIZE, 5);
 
-    itemNotebook3->AddPage(itemPanel4, _("The Program"));
+    itemNotebook3->AddPage(itemPanel4, _("NumeRe"));
 
     wxPanel* itemPanel10 = new wxPanel( itemNotebook3, ID_TEAMPANEL, wxDefaultPosition, wxDefaultSize, wxSUNKEN_BORDER|wxTAB_TRAVERSAL );
     itemPanel10->SetForegroundColour(wxColour(255, 255, 255));
@@ -160,24 +164,24 @@ void AboutChameleonDialog::CreateControls()
     wxBoxSizer* itemBoxSizer11 = new wxBoxSizer(wxVERTICAL);
     itemPanel10->SetSizer(itemBoxSizer11);
 
-    wxStaticText* itemStaticText12 = new wxStaticText( itemPanel10, wxID_STATIC, _("Chameleon was brought to you by:"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxStaticText* itemStaticText12 = new wxStaticText( itemPanel10, wxID_STATIC, _(_guilang.get("GUI_ABOUT_TEAM_INTRO")), wxDefaultPosition, wxDefaultSize, 0 );
     itemStaticText12->SetForegroundColour(wxColour(0, 0, 0));
     itemStaticText12->SetBackgroundColour(wxColour(255, 255, 255));
     itemStaticText12->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Verdana")));
     itemBoxSizer11->Add(itemStaticText12, 0, wxALIGN_CENTER_HORIZONTAL|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
 
-    wxBitmap itemStaticBitmap13Bitmap(itemDialog1->GetBitmapResource(wxT("team_1.xpm")));
+    /**wxBitmap itemStaticBitmap13Bitmap(itemDialog1->GetBitmapResource(wxT("team_1.xpm")));
     wxStaticBitmap* itemStaticBitmap13 = new wxStaticBitmap( itemPanel10, wxID_STATIC, itemStaticBitmap13Bitmap, wxDefaultPosition, wxSize(340, 175), 0 );
     itemStaticBitmap13->SetBackgroundColour(wxColour(255, 255, 255));
-    itemBoxSizer11->Add(itemStaticBitmap13, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5);
+    itemBoxSizer11->Add(itemStaticBitmap13, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5);*/
 
-    wxStaticText* itemStaticText14 = new wxStaticText( itemPanel10, wxID_STATIC, _("Ben Carhart\n - Requirements, Quality Assurance, Testing Lead\n - Debugger, Permissions\nDavid Czechowski\n - Design Lead, Configuration Management \n - Networking, Compiler\nMark Erikson\n - Team Lead, Project Lead\n - GUI, Editor, Terminal"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+    wxStaticText* itemStaticText14 = new wxStaticText( itemPanel10, wxID_STATIC, _(_guilang.get("GUI_ABOUT_TEAM")), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
     itemStaticText14->SetForegroundColour(wxColour(0, 0, 0));
     itemStaticText14->SetBackgroundColour(wxColour(255, 255, 255));
     itemStaticText14->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Verdana")));
     itemBoxSizer11->Add(itemStaticText14, 0, wxGROW|wxALL|wxADJUST_MINSIZE, 5);
 
-    itemNotebook3->AddPage(itemPanel10, _("The Team"));
+    itemNotebook3->AddPage(itemPanel10, _("Team"));
 
     wxPanel* itemPanel15 = new wxPanel( itemNotebook3, ID_CREDITSPANEL, wxDefaultPosition, wxDefaultSize, wxSUNKEN_BORDER|wxTAB_TRAVERSAL );
     itemPanel15->SetForegroundColour(wxColour(0, 0, 0));
@@ -185,11 +189,11 @@ void AboutChameleonDialog::CreateControls()
     wxBoxSizer* itemBoxSizer16 = new wxBoxSizer(wxVERTICAL);
     itemPanel15->SetSizer(itemBoxSizer16);
 
-    wxStaticText* itemStaticText17 = new wxStaticText( itemPanel15, wxID_STATIC, _("Chameleon wouldn't have been possible without the tools,\nexamples, parts, and programs we were able to use.  \nWe'd like to recognize them here:\n\n* The wxWidgets toolkit, which made development\n   a lot easier than it could have been.\n* Neil Hodgson, author of the Scintilla editor widget.\n* Robin Dunn, who created the wxStyledTextCtrl \n   wrapper for Scintilla.\n* Simon Tatham, author of the incredible Putty suite of \n   SSH clients.  Without his Plink tool, our project \n   would have been effectively impossible.\n* Otto Wyss, creator of the wxGuide example program .\n* Derry Bryson, creator of the wxTerm terminal widget\n   class, and Timothy Miller, who wrote the GTerm \n   core that wxTerm is based on.\n* Jan van de Baard, who wrote some checksum \n   routines that came in handy.\n* Anyone else whose code we ever looked at or used."), wxDefaultPosition, wxDefaultSize, 0 );
+    wxStaticText* itemStaticText17 = new wxStaticText( itemPanel15, wxID_STATIC, _(_guilang.get("GUI_ABOUT_CREDITS")), wxDefaultPosition, wxDefaultSize, 0 );
     itemStaticText17->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
     itemBoxSizer16->Add(itemStaticText17, 1, wxGROW|wxALL|wxADJUST_MINSIZE, 5);
 
-    itemNotebook3->AddPage(itemPanel15, _("The Credits"));
+    itemNotebook3->AddPage(itemPanel15, _("Credits"));
 
     wxPanel* itemPanel18 = new wxPanel( itemNotebook3, ID_STATSPANEL, wxDefaultPosition, wxDefaultSize, wxSUNKEN_BORDER|wxTAB_TRAVERSAL );
     itemPanel18->SetForegroundColour(wxColour(0, 0, 0));
@@ -197,11 +201,11 @@ void AboutChameleonDialog::CreateControls()
     wxBoxSizer* itemBoxSizer19 = new wxBoxSizer(wxVERTICAL);
     itemPanel18->SetSizer(itemBoxSizer19);
 
-    wxStaticText* itemStaticText20 = new wxStaticText( itemPanel18, wxID_STATIC, _("* Total lines of code: ~24,000\n   - ~8,300 statements\n   - ~8,000 lines of comments\n* ~820 CVS commmits, totaling 41,000 lines of changes\n* Number of source files: ~100\n* Project length: 221 days (9/18/03 - 4/26/04)\n* Number of times Mark broke CVS: at least 15\n* Number of times Ben had to rewrite the debugger: 4\n* Number of bugs fixed the night before the final \n   presentation: 15\n* Number of bugs Mark introduced the night before the \n   final presentation that showed up during the demo: 2\n* Number of beta releases: 5\n* Number of beta comments we got back: 2\n* Number of times David asked to discuss something\n  over the phone instead of AIM: too many to count\n* Number of all-nighters: technically none\n* Number of times one of us was up past 5:00 AM\n   writing code: we lost track\n* Amount of caffeine consumed: immeasurable"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxStaticText* itemStaticText20 = new wxStaticText( itemPanel18, wxID_STATIC, _(_guilang.get("GUI_ABOUT_STATS")), wxDefaultPosition, wxDefaultSize, 0 );
     itemStaticText20->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
     itemBoxSizer19->Add(itemStaticText20, 1, wxGROW|wxALL|wxADJUST_MINSIZE, 5);
 
-    itemNotebook3->AddPage(itemPanel18, _("The Stats"));
+    itemNotebook3->AddPage(itemPanel18, _("Stats"));
 
 #if !wxCHECK_VERSION(2,5,2)
     itemBoxSizer2->Add(itemNotebook3Sizer, 0, wxGROW|wxALL, 5);
@@ -250,14 +254,14 @@ wxBitmap AboutChameleonDialog::GetBitmapResource( const wxString& name )
     wxUnusedVar(name);
     if (name == _T("chamlogo_1.xpm"))
     {
-        wxBitmap bitmap(chamlogo_1_xpm);
+        wxBitmap bitmap("folder.png", wxBITMAP_TYPE_PNG);
         return bitmap;
     }
-    else if (name == _T("team_1.xpm"))
+    /*else if (name == _T("team_1.xpm"))
     {
         wxBitmap bitmap(team_1_xpm);
         return bitmap;
-    }
+    }*/
     return wxNullBitmap;
 ////@end AboutChameleonDialog bitmap retrieval
 }

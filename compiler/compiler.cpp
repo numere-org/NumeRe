@@ -140,7 +140,7 @@ void Compiler::StartNextFile()
 		compileCommand +=  " -o " + outFile.GetFullPath(wxPATH_DOS) + " ";
 		compileCommand +=  inFile.GetFullPath(wxPATH_DOS);
 		//cmd +=  " && echo C_O_M_P_I_L_E_SUCCESS || echo C_O_M_P_I_L_E_FAILED";
-		
+
 
 		cmd = CreateLocalCommand(compileCommand);
 
@@ -183,12 +183,12 @@ void Compiler::StartLinking() {
 	outputFile.SetPath(path);
 	outputFile.SetName(name);
 
-	if(isRemote) 
+	if(isRemote)
 	{
 		//name += "/" + name + ".out";
 		outputFile.SetExt("out");
 	}
-	else 
+	else
 	{
 		//name += "\\" + name + ".exe";
 		outputFile.SetExt("exe");
@@ -211,9 +211,9 @@ void Compiler::StartLinking() {
 		cmd +=  " && echo C_O_M_P_I_L_E_SUCCESS || echo C_O_M_P_I_L_E_FAILED";
 	}
 	else {
-		
+
 		wxString linkCommand;
-		
+
 		//wxFileName compilerPath(m_mingwPath);
 		//compilerPath.AppendDir("bin");
 		//compilerPath.SetFullName("g++.exe");
@@ -221,7 +221,7 @@ void Compiler::StartLinking() {
 		wxFileName compilerPath = executableNames["g++.exe"];
 
 		//cmd +=  m_mingwPath + "/bin/g++.exe\" "; // compiler
-		
+
 		linkCommand += "\"";
 		linkCommand += compilerPath.GetFullPath();
 
@@ -230,7 +230,7 @@ void Compiler::StartLinking() {
 		//cmd +=  " && echo C_O_M_P_I_L_E_SUCCESS || echo C_O_M_P_I_L_E_FAILED";
 
 		cmd = CreateLocalCommand(linkCommand);
-		
+
 		//wxLogDebug("Error: seriously, you can't compile anything locally yet!");
 	}
 	//wxLogDebug("Starting to Link with cmd= \"%s\"", + cmd);
@@ -455,7 +455,7 @@ wxString Compiler::CreateLocalCommand(wxString actualCommand )
 
 	wxArrayString mingwBinPaths = m_options->GetMingwBinPaths();
 
-	for(int i = 0; i < mingwBinPaths.GetCount(); i++)
+	for(size_t i = 0; i < mingwBinPaths.GetCount(); i++)
 	{
 		wxString binPath = mingwBinPaths[i];
 		cmd += "\"";

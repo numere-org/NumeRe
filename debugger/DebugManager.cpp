@@ -20,7 +20,7 @@ DebugManager::DebugManager( Debugger* debugger, wxSSH* debugTerminal, ChameleonP
 	m_watchPanel = watchPanel;
 }
 
-void DebugManager::OnDebugCommand( int eventID, ProjectInfo* project, ChameleonEditor* currentEditor)
+void DebugManager::OnDebugCommand( int eventID, ProjectInfo* project, NumeReEditor* currentEditor)
 {
 	wxDebugEvent debugEvent;
 
@@ -45,7 +45,7 @@ void DebugManager::OnDebugCommand( int eventID, ProjectInfo* project, ChameleonE
 			int numOpenProjEds = edList.GetCount();
 			for(int i = 0; i < numOpenProjEds; i++)
 			{
-				ChameleonEditor* ed = edList[i];
+				NumeReEditor* ed = edList[i];
 				wxArrayInt breaks = ed->GetBreakpoints();
 				if(breaks.GetCount() > 0)
 				{

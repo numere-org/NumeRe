@@ -95,7 +95,7 @@ void GTerm::update_changes ()
                     else
 					{
 						// Ditto with the previous cast
-						DrawText( (c >> 4) & 7, (c >> 8) & 7, c, start_x, y, x - start_x, (unsigned char*)substringText);
+						DrawText( (c >> 4) & 0xf, (c >> 8) & 0xf, c, start_x, y, x - start_x, (unsigned char*)substringText);
                         //DrawText( 1,0,0, start_x, y, x - start_x, (unsigned char*)substringText);
 
                         //DrawText((c >> 4) & 7, (c >> 8) & 7, c/*&15*/, start_x, y, x
@@ -104,7 +104,7 @@ void GTerm::update_changes ()
                 }
                 else
                 {
-                    ClearChars((c >> 8) & 7, start_x, y, x - start_x, 1);
+                    ClearChars((c >> 8) & 0xf, start_x, y, x - start_x, 1);
                 }
 
                 start_x = x;
@@ -139,7 +139,7 @@ void GTerm::update_changes ()
 			}
             else
 			{
-				DrawText((c >> 4) & 7, (c >> 8) & 7, c/*&15*/, start_x, y, x
+				DrawText((c >> 4) & 0xf, (c >> 8) & 0xf, c/*&15*/, start_x, y, x
 					- start_x, (unsigned char*)substringText);
 
                 //DrawText((c >> 4) & 7, (c >> 8) & 7, c/*&15*/, start_x, y, x
@@ -148,7 +148,7 @@ void GTerm::update_changes ()
         }
         else
         {
-            ClearChars((c >> 8) & 7, start_x, y, x - start_x, 1);
+            ClearChars((c >> 8) & 0xf, start_x, y, x - start_x, 1);
         }
 
         dirty_endx[y] = 0;
@@ -177,7 +177,7 @@ void GTerm::update_changes ()
 		}
         else
 		{
-			DrawCursor((c >> 4) & 7, (c >> 8) & 7, c & 15, x, cursor_y, cursorChar);
+			DrawCursor((c >> 4) & 0xf, (c >> 8) & 0xf, c & 15, x, cursor_y, cursorChar);
             //DrawCursor((c >> 4) & 7, (c >> 8) & 7, c & 15, x, cursor_y, text[yp]);
 		}
     }
@@ -430,7 +430,8 @@ void GTerm::clear_area( int start_x, int start_y, int end_x, int end_y )
 
 		if(num > 0)
 		{
-			tm[start_y].replace(start_x, num, num, ' ');
+			//tm[start_y].replace(start_x, num, num, ' ');
+			tm.SetLineAdjusted(start_y, tm.GetLineAdjusted(start_y).replace(start_x, num, num, ' '));
 		}
 		else
 		{

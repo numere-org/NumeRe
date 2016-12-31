@@ -290,9 +290,9 @@ void CompilerOutputPanel::OnCompilerProblem(CompilerEvent &event)
 		if(reParseOutput.Matches(line))
 		{
 			m_numErrors++;
-			size_t start = 0;
-			size_t length = 0;
-			int counter = 1;
+			//size_t start = 0;
+			//size_t length = 0;
+			//int counter = 1;
 
 			wxString parsedFile = reParseOutput.GetMatch(line, 1);
 			wxString parsedLine = reParseOutput.GetMatch(line, 2);

@@ -1931,14 +1931,14 @@
 	<wx/wx.h>
 	"../common/datastructures.h"
 
-1481645146 c:\cpp\chameleon\common\datastructures.h
+1483015283 c:\cpp\chameleon\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
 	<wx/dynarray.h>
 	<wx/filename.h>
 
-1480053966 source:c:\cpp\chameleon\chameleon.rc
+1482938772 source:c:\cpp\chameleon\chameleon.rc
 	<wx/msw/wx.rc>
 
 1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wx.rc
@@ -1962,8 +1962,8 @@
 
 1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\lib\gcc_dll\mswu\wx\setup.h
 
-1265486086 source:c:\cpp\chameleon\common\chameleonprintout.cpp
-	"ChameleonPrintout.h"
+1481826887 source:c:\cpp\chameleon\common\chameleonprintout.cpp
+	"NumeRePrintout.h"
 	"../editor/editor.h"
 	"wx/printdlg.h"
 	"wx/progdlg.h"
@@ -2001,12 +2001,13 @@
 1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\printps.h
 	"wx/prntbase.h"
 
-1480053133 c:\cpp\chameleon\editor\editor.h
+1483006285 c:\cpp\chameleon\editor\editor.h
 	<wx/stc/stc.h>
 	<wx/menu.h>
 	<wx/dynarray.h>
 	"../common/datastructures.h"
 	"../compiler/compilerevent.h"
+	"../kernel/syntax.hpp"
 
 1479642933 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stc\stc.h
 	"wx/defs.h"
@@ -2071,7 +2072,7 @@
 	"chameleonprocessevent.h"
 	"../common/debug.h"
 
-1265486086 c:\cpp\chameleon\common\chameleonprocessevent.h
+1483181052 c:\cpp\chameleon\common\chameleonprocessevent.h
 	<wx/process.h>
 	<wx/event.h>
 
@@ -2090,7 +2091,7 @@
 	"datastructures.h"
 	"ProjectInfo.h"
 
-1265486086 c:\cpp\chameleon\common\projectinfo.h
+1481728441 c:\cpp\chameleon\common\projectinfo.h
 	<wx/string.h>
 	<wx/filename.h>
 	<wx/dynarray.h>
@@ -2129,7 +2130,7 @@
 	"wx/treebase.h"
 	"wx/hashmap.h"
 
-1265486086 source:c:\cpp\chameleon\common\options.cpp
+1482585386 source:c:\cpp\chameleon\common\options.cpp
 	"Options.h"
 	<wx/filename.h>
 	<wx/arrstr.h>
@@ -2142,7 +2143,7 @@
 	"wx/string.h"
 	"wx/filefn.h"
 
-1481645146 source:c:\cpp\chameleon\common\projectinfo.cpp
+1483003765 source:c:\cpp\chameleon\common\projectinfo.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"ProjectInfo.h"
@@ -2237,7 +2238,7 @@
 
 1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\arrimpl.cpp
 
-1480053133 source:c:\cpp\chameleon\debugger\debugmanager.cpp
+1481728441 source:c:\cpp\chameleon\debugger\debugmanager.cpp
 	"DebugManager.h"
 	"../editor/editor.h"
 	"../gui/wxssh.h"
@@ -2245,7 +2246,7 @@
 	"../gui/NumeReWindow.h"
 	"../gui/dialogs/VariableWatchPanel.h"
 
-1480053133 c:\cpp\chameleon\debugger\debugmanager.h
+1481728441 c:\cpp\chameleon\debugger\debugmanager.h
 	<wx/string.h>
 	<wx/dynarray.h>
 	<wx/event.h>
@@ -2477,7 +2478,7 @@
 	"wx/defs.h"
 	"wx/stream.h"
 
-1481367447 c:\cpp\chameleon\network\gterm.hpp
+1483004162 c:\cpp\chameleon\network\gterm.hpp
 	<string.h>
 	<cstring>
 	<stdlib.h>
@@ -2487,8 +2488,9 @@
 	<deque>
 	<string>
 	"TextManager.h"
+	"../kernel/syntax.hpp"
 
-1481364274 c:\cpp\chameleon\network\textmanager.h
+1482426439 c:\cpp\chameleon\network\textmanager.h
 	<vector>
 	<deque>
 	<string>
@@ -2499,12 +2501,13 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1481559145 c:\cpp\chameleon\gui\wxterm.h
+1482923807 c:\cpp\chameleon\gui\wxterm.h
+	"NumeReWindow.h"
 	"../network/gterm.hpp"
 	"../network/gtelnet.hpp"
 	"../kernel/kernel.hpp"
 
-1265486086 c:\cpp\chameleon\gui\chameleonprojectmanager.h
+1481728441 c:\cpp\chameleon\gui\chameleonprojectmanager.h
 
 1480052814 c:\cpp\chameleon\gui\chameleonwindow.h
 	"wx/wxprec.h"
@@ -2539,15 +2542,16 @@
 	<set>
 	<queue>
 
-1480053133 source:c:\cpp\chameleon\editor\editor.cpp
+1483010986 source:c:\cpp\chameleon\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
+	"../kernel/core/language.hpp"
 	<wx/datetime.h>
 	"editor.h"
 	"../perms/p.h"
 	"../gui/NumeReWindow.h"
-	"../gui/ChameleonNotebook.h"
+	"../gui/NumeReNotebook.h"
 	"../common/datastructures.h"
 	"../common/Options.h"
 	"../common/DebugEvent.h"
@@ -2559,7 +2563,7 @@
 1480053133 c:\cpp\chameleon\gui\chameleonnotebook.h
 	<wx/notebook.h>
 
-1481645774 source:c:\cpp\chameleon\gui\chameleon.cpp
+1483098668 source:c:\cpp\chameleon\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -2576,17 +2580,18 @@
 	<wx/printdlg.h>
 	<wx/mimetype.h>
 	<wx/stdpaths.h>
+	<wx/filename.h>
 	<math.h>
 	"../common/fixvsbug.h"
 	"../editor/editor.h"
-	"ChameleonNotebook.h"
+	"NumeReNotebook.h"
 	"dialogs/OptionsDialog.h"
 	"dialogs/RemoteFileDialog.h"
 	"dialogs/wxTermContainer.h"
 	"dialogs/VariableWatchPanel.h"
 	"dialogs/CompilerOutputPanel.h"
 	"dialogs/AboutChameleonDialog.h"
-	"../common/ChameleonPrintout.h"
+	"../common/NumeRePrintout.h"
 	"../perms/p.h"
 	"../common/ProjectInfo.h"
 	"../network/networking.h"
@@ -2595,6 +2600,7 @@
 	"../debugger/cham_db.h"
 	"../debugger/DebugManager.h"
 	"../common/DebugEvent.h"
+	"DirTraverser.hpp"
 	"wxssh.h"
 	"../compiler/compilerevent.h"
 	"IconManager.h"
@@ -2620,6 +2626,8 @@
 	"breakpoint_octagon_crossed.xpm"
 	"breakpoint_octagon_disable.xpm"
 	"../common/debug.h"
+	"../kernel/core/version.h"
+	"../kernel/core/tools.hpp"
 
 1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\mimetype.h
 	"wx/defs.h"
@@ -2641,9 +2649,10 @@
 
 1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\stdpaths.h
 
-1480053133 c:\cpp\chameleon\gui\dialogs\optionsdialog.h
+1483013148 c:\cpp\chameleon\gui\dialogs\optionsdialog.h
 	"wx/notebook.h"
 	"wx/spinctrl.h"
+	"../../kernel/core/settings.hpp"
 
 1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\spinctrl.h
 	"wx/defs.h"
@@ -2690,12 +2699,12 @@
 	"wx/window.h"
 	"wx/containr.h"
 
-1480053133 c:\cpp\chameleon\gui\dialogs\remotefiledialog.h
+1481728441 c:\cpp\chameleon\gui\dialogs\remotefiledialog.h
 	"wx/listctrl.h"
 	<wx/dynarray.h>
 	"../../common/datastructures.h"
 
-1478952452 c:\cpp\chameleon\gui\dialogs\wxtermcontainer.h
+1483033859 c:\cpp\chameleon\gui\dialogs\wxtermcontainer.h
 
 1480053133 c:\cpp\chameleon\gui\dialogs\compileroutputpanel.h
 	"wx/grid.h"
@@ -2761,9 +2770,9 @@
 
 1265486086 c:\cpp\chameleon\gui\breakpoint_octagon_disable.xpm
 
-1480053133 source:c:\cpp\chameleon\gui\chameleonnotebook.cpp
+1482244343 source:c:\cpp\chameleon\gui\chameleonnotebook.cpp
 	"../common/CommonHeaders.h"
-	"ChameleonNotebook.h"
+	"NumeReNotebook.h"
 	"NumeReWindow.h"
 	"../common/debug.h"
 	<wx/wx.h>
@@ -2773,16 +2782,17 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1265486086 source:c:\cpp\chameleon\gui\chameleonprojectmanager.cpp
+1481728441 source:c:\cpp\chameleon\gui\chameleonprojectmanager.cpp
 	"ChameleonProjectManager.h"
-	"ChameleonNotebook.h"
+	"NumeReNotebook.h"
 	"../editor/editor.h"
 
-1478446066 source:c:\cpp\chameleon\gui\dialogs\aboutchameleondialog.cpp
+1482921935 source:c:\cpp\chameleon\gui\dialogs\aboutchameleondialog.cpp
 	"wx/wxprec.h"
 	<wx/msw/private.h>
 	"AboutChameleonDialog.h"
 	"../../common/verinfo.h"
+	"../../kernel/core/language.hpp"
 	"chamlogo_1.xpm"
 	"team_1.xpm"
 
@@ -2807,10 +2817,11 @@
 	"../NumeReWindow.h"
 	<wx/regex.h>
 
-1480053133 source:c:\cpp\chameleon\gui\dialogs\optionsdialog.cpp
+1483014836 source:c:\cpp\chameleon\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
+	"../../kernel/core/language.hpp"
 	<wx/checklst.h>
 	<wx/valtext.h>
 	<wx/dirdlg.h>
@@ -2941,7 +2952,7 @@
 	"../../common/tree.h"
 	"../../common/fixvsbug.h"
 
-1265486086 source:c:\cpp\chameleon\gui\dialogs\wxtermcontainer.cpp
+1483034419 source:c:\cpp\chameleon\gui\dialogs\wxtermcontainer.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	"wx/scrolbar.h"
@@ -2967,7 +2978,7 @@
 	"wxssh.h"
 	"../common/debug.h"
 
-1481559396 source:c:\cpp\chameleon\gui\wxterm.cpp
+1483034511 source:c:\cpp\chameleon\gui\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -2977,7 +2988,7 @@
 	"wxterm.h"
 	"../common/debug.h"
 
-1481367446 source:c:\cpp\chameleon\network\actions.cpp
+1483017978 source:c:\cpp\chameleon\network\actions.cpp
 	"gterm.hpp"
 	"../common/debug.h"
 
@@ -3058,7 +3069,7 @@
 	"gterm.hpp"
 	"../common/debug.h"
 
-1481188174 source:c:\cpp\chameleon\network\utils.cpp
+1482161949 source:c:\cpp\chameleon\network\utils.cpp
 	"gterm.hpp"
 	"../common/debug.h"
 
@@ -3326,7 +3337,7 @@
 	<_mingw.h>
 	<stddef.h>
 
-1481632522 c:\cpp\chameleon\gui\numerewindow.h
+1483020363 c:\cpp\chameleon\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -3335,11 +3346,772 @@
 	<wx/treectrl.h>
 	<wx/notebook.h>
 	"wx/dnd.h"
+	"../kernel/core/language.hpp"
+	"../kernel/core/tools.hpp"
+	<wx/tipdlg.h>
 
-1481559962 c:\cpp\chameleon\kernel\kernel.hpp
+1483179432 c:\cpp\chameleon\kernel\kernel.hpp
 	<string>
+	<fstream>
+	"core/error.hpp"
+	"core/settings.hpp"
+	"core/output.hpp"
+	"core/datafile.hpp"
+	"core/plugins.hpp"
+	"core/version.h"
+	"core/parser.hpp"
+	"core/tools.hpp"
+	"core/built-in.hpp"
+	"core/parser_functions.hpp"
+	"core/define.hpp"
+	"core/plotdata.hpp"
+	"core/script.hpp"
+	"core/loop.hpp"
+	"core/procedure.hpp"
+	"core/plugin.hpp"
+	"core/language.hpp"
+	"core/ParserLib/muParser.h"
 
-1481559975 source:c:\cpp\chameleon\kernel\kernel.cpp
+1483177440 source:c:\cpp\chameleon\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
+
+1481728441 c:\cpp\chameleon\common\numereprintout.h
+	"wx/print.h"
+
+1482244345 c:\cpp\chameleon\gui\numerenotebook.h
+	<wx/notebook.h>
+
+1483004533 c:\cpp\chameleon\kernel\syntax.hpp
+	<string>
+	<vector>
+
+1482492499 source:c:\cpp\chameleon\kernel\syntax.cpp
+	"syntax.hpp"
+
+1463691746 c:\cpp\chameleon\kernel\core\error.hpp
+	<string>
+	"language.hpp"
+
+1465240181 c:\cpp\chameleon\kernel\core\language.hpp
+	<string>
+	<map>
+	<vector>
+	<iostream>
+	<fstream>
+	"filesystem.hpp"
+
+1470718703 c:\cpp\chameleon\kernel\core\filesystem.hpp
+	<string>
+	<iostream>
+	<fstream>
+	<sstream>
+	<windows.h>
+
+1483014146 c:\cpp\chameleon\kernel\core\settings.hpp
+	<string>
+	<sstream>
+	<fstream>
+	<iostream>
+	<windows.h>
+	"error.hpp"
+	"doc_helper.hpp"
+	"debugger.hpp"
+
+1472792565 c:\cpp\chameleon\kernel\core\doc_helper.hpp
+	<fstream>
+	<string>
+	<vector>
+	<map>
+	"filesystem.hpp"
+	"error.hpp"
+
+1482314293 c:\cpp\chameleon\kernel\core\debugger.hpp
+	<vector>
+	<string>
+	<map>
+	"error.hpp"
+
+1444645398 c:\cpp\chameleon\kernel\core\output.hpp
+	<string>
+	<ctime>
+	"error.hpp"
+	"filesystem.hpp"
+	"settings.hpp"
+	"version.h"
+	"tools.hpp"
+
+1482999533 c:\cpp\chameleon\kernel\core\version.h
+
+1482247896 c:\cpp\chameleon\kernel\core\tools.hpp
+	<iostream>
+	<iomanip>
+	<sstream>
+	<string>
+	<windows.h>
+	<conio.h>
+	<cstdlib>
+	<fstream>
+	<ctime>
+	<vector>
+	"error.hpp"
+	"settings.hpp"
+	"datafile.hpp"
+
+1468138582 c:\cpp\chameleon\kernel\core\datafile.hpp
+	<string>
+	<boost/tokenizer.hpp>
+	<vector>
+	<gsl/gsl_statistics.h>
+	<gsl/gsl_sort.h>
+	"error.hpp"
+	"settings.hpp"
+	"cache.hpp"
+	"IgorLib/ReadWave.h"
+	"zip++.hpp"
+	"BasicExcel.hpp"
+	"tinyxml2.h"
+
+1467782261 c:\cpp\chameleon\kernel\core\cache.hpp
+	<iostream>
+	<fstream>
+	<string>
+	<ctime>
+	<cmath>
+	<vector>
+	<gsl/gsl_statistics.h>
+	<gsl/gsl_sort.h>
+	"error.hpp"
+	"settings.hpp"
+	"tools.hpp"
+	"filesystem.hpp"
+	"version.h"
+	"resampler.h"
+
+1456171862 c:\cpp\chameleon\kernel\core\resampler.h
+
+1482314148 c:\cpp\chameleon\kernel\core\igorlib\readwave.h
+	<stdio.h>
+	<tchar.h>
+	<ctype.h>
+	<string.h>
+	<stdlib.h>
+	<stddef.h>
+	"./CrossPlatformFileIO.h"
+	"./IgorBin.h"
+
+1445703211 c:\cpp\chameleon\kernel\core\zip++.hpp
+	<string>
+	<iostream>
+	<windows.h>
+	<tchar.h>
+	"zip.h"
+	"unzip.h"
+
+1122505742 c:\cpp\chameleon\kernel\core\zip.h
+
+1122506480 c:\cpp\chameleon\kernel\core\unzip.h
+
+1467057709 c:\cpp\chameleon\kernel\core\basicexcel.hpp
+	<algorithm>
+	<cmath>
+	<functional>
+	<iostream>
+	<iomanip>
+	<fstream>
+	<map>
+	<vector>
+	<cstring>
+
+1466715024 c:\cpp\chameleon\kernel\core\tinyxml2.h
+	<ctype.h>
+	<limits.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<stddef.h>
+	<cctype>
+	<climits>
+	<cstdio>
+	<cstdlib>
+	<cstring>
+	<android/log.h>
+	<assert.h>
+
+1445885548 c:\cpp\chameleon\kernel\core\plugins.hpp
+	<string>
+	<cmath>
+	<ctime>
+	<random>
+	<iomanip>
+	<mgl2/mgl.h>
+	<boost/math/distributions/students_t.hpp>
+	"error.hpp"
+	"datafile.hpp"
+	"output.hpp"
+	"settings.hpp"
+	"tools.hpp"
+	"plotdata.hpp"
+
+1470514743 c:\cpp\chameleon\kernel\core\plotdata.hpp
+	<string>
+	<cmath>
+	"error.hpp"
+	"tools.hpp"
+	"ParserLib/muParser.h"
+
+1436771110 c:\cpp\chameleon\kernel\core\parserlib\muparser.h
+	<vector>
+	"muParserBase.h"
+	"muParserTemplateMagic.h"
+
+1461081951 c:\cpp\chameleon\kernel\core\parserlib\muparserbase.h
+	<cmath>
+	<string>
+	<iostream>
+	<map>
+	<memory>
+	<locale>
+	"muParserDef.h"
+	"muParserStack.h"
+	"muParserTokenReader.h"
+	"muParserBytecode.h"
+	"muParserError.h"
+
+1482760603 c:\cpp\chameleon\kernel\core\parserlib\muparserdef.h
+	<iostream>
+	<string>
+	<sstream>
+	<map>
+	"muParserFixes.h"
+
+1326735254 c:\cpp\chameleon\kernel\core\parserlib\muparserfixes.h
+
+1482760303 c:\cpp\chameleon\kernel\core\parserlib\muparserstack.h
+	<cassert>
+	<string>
+	<stack>
+	<vector>
+	"muParserError.h"
+	"muParserToken.h"
+
+1482760212 c:\cpp\chameleon\kernel\core\parserlib\muparsererror.h
+	<cassert>
+	<stdexcept>
+	<string>
+	<sstream>
+	<vector>
+	<memory>
+	"../language.hpp"
+	"muParserDef.h"
+
+1326735254 c:\cpp\chameleon\kernel\core\parserlib\muparsertoken.h
+	<cassert>
+	<string>
+	<stack>
+	<vector>
+	<memory>
+	"muParserError.h"
+	"muParserCallback.h"
+
+1327254158 c:\cpp\chameleon\kernel\core\parserlib\muparsercallback.h
+	"muParserDef.h"
+
+1324932760 c:\cpp\chameleon\kernel\core\parserlib\muparsertokenreader.h
+	<cassert>
+	<cstdio>
+	<cstring>
+	<list>
+	<map>
+	<memory>
+	<stack>
+	<string>
+	"muParserDef.h"
+	"muParserToken.h"
+
+1413923092 c:\cpp\chameleon\kernel\core\parserlib\muparserbytecode.h
+	<cassert>
+	<string>
+	<stack>
+	<vector>
+	"muParserDef.h"
+	"muParserError.h"
+	"muParserToken.h"
+
+1482760270 c:\cpp\chameleon\kernel\core\parserlib\muparsertemplatemagic.h
+	<cmath>
+	"muParserError.h"
+
+1473800315 c:\cpp\chameleon\kernel\core\parser.hpp
+	<cstdlib>
+	<cmath>
+	<fstream>
+	<string>
+	<iostream>
+	<locale>
+	<limits>
+	<ios>
+	<iomanip>
+	<numeric>
+	<ctime>
+	<random>
+	<csignal>
+	<boost/math/common_factor.hpp>
+	<gsl/gsl_sf.h>
+	<boost/math/distributions/students_t.hpp>
+	"error.hpp"
+	"settings.hpp"
+	"tools.hpp"
+	"built-in.hpp"
+	"define.hpp"
+	"plotdata.hpp"
+	"parser_functions.hpp"
+	"script.hpp"
+	"loop.hpp"
+	"procedure.hpp"
+	"ParserLib/muParserTest.h"
+	"ParserLib/muParser.h"
+
+1463296409 c:\cpp\chameleon\kernel\core\built-in.hpp
+	<iostream>
+	<fstream>
+	<sstream>
+	<string>
+	<conio.h>
+	<windows.h>
+	<cmath>
+	<vector>
+	"error.hpp"
+	"datafile.hpp"
+	"settings.hpp"
+	"output.hpp"
+	"plugins.hpp"
+	"ParserLib/muParser.h"
+	"tools.hpp"
+	"parser_functions.hpp"
+	"define.hpp"
+	"plotdata.hpp"
+	"script.hpp"
+	"version.h"
+	"documentation.hpp"
+	"odesolver.hpp"
+
+1482397465 c:\cpp\chameleon\kernel\core\parser_functions.hpp
+	<cmath>
+	<string>
+	<sstream>
+	<iostream>
+	<ios>
+	<iomanip>
+	<mgl2/qt.h>
+	<vector>
+	<boost/tokenizer.hpp>
+	<gsl/gsl_sort.h>
+	<gsl/gsl_statistics.h>
+	<Eigen/Dense>
+	"error.hpp"
+	"settings.hpp"
+	"datafile.hpp"
+	"tools.hpp"
+	"ParserLib/muParser.h"
+	"define.hpp"
+	"plotdata.hpp"
+	"plugin.hpp"
+	"graph_helper.hpp"
+	"fitcontroller.hpp"
+
+1454400515 c:\cpp\chameleon\kernel\core\define.hpp
+	<string>
+	<iostream>
+	<fstream>
+	<map>
+	<vector>
+	"error.hpp"
+	"filesystem.hpp"
+	"settings.hpp"
+	"tools.hpp"
+	"ParserLib/muParser.h"
+
+1433683987 c:\cpp\chameleon\kernel\core\plugin.hpp
+	<iostream>
+	<fstream>
+	<string>
+	"filesystem.hpp"
+	"tools.hpp"
+	"error.hpp"
+
+1482314461 c:\cpp\chameleon\kernel\core\graph_helper.hpp
+	<mgl2/wnd.h>
+	<mgl2/mgl.h>
+	<string>
+	<vector>
+	"plotdata.hpp"
+	"datafile.hpp"
+	"define.hpp"
+	"settings.hpp"
+	"ParserLib/muParser.h"
+	"tools.hpp"
+	"error.hpp"
+
+1482315073 c:\cpp\chameleon\kernel\core\fitcontroller.hpp
+	<iostream>
+	<vector>
+	<string>
+	<gsl/gsl_multifit_nlin.h>
+	<gsl/gsl_blas.h>
+	<gsl/gsl_vector.h>
+	"ParserLib/muParser.h"
+	"tools.hpp"
+	"error.hpp"
+
+1461006893 c:\cpp\chameleon\kernel\core\script.hpp
+	<iostream>
+	<string>
+	<fstream>
+	"error.hpp"
+	"filesystem.hpp"
+	"tools.hpp"
+	"version.h"
+
+1455300048 c:\cpp\chameleon\kernel\core\documentation.hpp
+	<iostream>
+	<iomanip>
+	<string>
+	<fstream>
+	"error.hpp"
+	"tools.hpp"
+	"settings.hpp"
+
+1447745189 c:\cpp\chameleon\kernel\core\odesolver.hpp
+	<iostream>
+	<string>
+	<vector>
+	<gsl/gsl_matrix.h>
+	<gsl/gsl_errno.h>
+	<gsl/gsl_odeiv.h>
+	"ParserLib/muParser.h"
+	"tools.hpp"
+	"datafile.hpp"
+	"define.hpp"
+	"parser_functions.hpp"
+	"settings.hpp"
+	"error.hpp"
+
+1470429078 c:\cpp\chameleon\kernel\core\loop.hpp
+	<string>
+	<iostream>
+	"error.hpp"
+	"ParserLib/muParser.h"
+	"datafile.hpp"
+	"define.hpp"
+	"settings.hpp"
+	"output.hpp"
+	"plotdata.hpp"
+	"script.hpp"
+	"parser_functions.hpp"
+	"built-in.hpp"
+	"tools.hpp"
+
+1459788121 c:\cpp\chameleon\kernel\core\procedure.hpp
+	<iostream>
+	<string>
+	<cmath>
+	<iomanip>
+	<fstream>
+	"error.hpp"
+	"ParserLib/muParser.h"
+	"datafile.hpp"
+	"settings.hpp"
+	"tools.hpp"
+	"built-in.hpp"
+	"parser_functions.hpp"
+	"plotdata.hpp"
+	"loop.hpp"
+	"plugin.hpp"
+	"define.hpp"
+	"filesystem.hpp"
+	"output.hpp"
+	"script.hpp"
+
+1482760404 c:\cpp\chameleon\kernel\core\parserlib\muparsertest.h
+	<string>
+	<cstdlib>
+	<numeric>
+	"muParser.h"
+	"muParserInt.h"
+
+1324932760 c:\cpp\chameleon\kernel\core\parserlib\muparserint.h
+	"muParserBase.h"
+	<vector>
+
+1431543500 c:\cpp\chameleon\kernel\core\igorlib\crossplatformfileio.h
+
+1431543589 c:\cpp\chameleon\kernel\core\igorlib\igorbin.h
+
+1467057632 source:c:\cpp\chameleon\kernel\core\basicexcel.cpp
+	"BasicExcel.hpp"
+
+1483020708 source:c:\cpp\chameleon\kernel\core\built-in.cpp
+	"built-in.hpp"
+	"../kernel.hpp"
+
+1482765146 source:c:\cpp\chameleon\kernel\core\cache.cpp
+	"cache.hpp"
+	"../kernel.hpp"
+
+1482838929 source:c:\cpp\chameleon\kernel\core\datafile.cpp
+	"datafile.hpp"
+	"../kernel.hpp"
+
+1482314271 source:c:\cpp\chameleon\kernel\core\debugger.cpp
+	"debugger.hpp"
+
+1482776072 source:c:\cpp\chameleon\kernel\core\define.cpp
+	"define.hpp"
+	"../kernel.hpp"
+
+1474906681 source:c:\cpp\chameleon\kernel\core\doc_helper.cpp
+	"doc_helper.hpp"
+	"version.h"
+
+1482777213 source:c:\cpp\chameleon\kernel\core\documentation.cpp
+	"documentation.hpp"
+	"../kernel.hpp"
+
+1483017130 source:c:\cpp\chameleon\kernel\core\filesystem.cpp
+	"filesystem.hpp"
+	"../kernel.hpp"
+
+1459624315 source:c:\cpp\chameleon\kernel\core\fitcontroller.cpp
+	"fitcontroller.hpp"
+
+1432105055 source:c:\cpp\chameleon\kernel\core\igorlib\crossplatformfileio.cpp
+	<ctype.h>
+	<string.h>
+	<stdlib.h>
+	<stdio.h>
+	<stddef.h>
+	<Windows.h>
+	"CrossPlatformFileIO.h"
+
+1482315420 source:c:\cpp\chameleon\kernel\core\igorlib\readwave.cpp
+	"./ReadWave.h"
+
+1482853359 source:c:\cpp\chameleon\kernel\core\language.cpp
+	"language.hpp"
+
+1483177947 source:c:\cpp\chameleon\kernel\core\loop.cpp
+	"loop.hpp"
+	"../kernel.hpp"
+
+1482246115 source:c:\cpp\chameleon\kernel\core\main.cpp
+	<iostream>
+	<string>
+	<fstream>
+	<unistd.h>
+	<sstream>
+	<cmath>
+	<cstdlib>
+	<windows.h>
+	<conio.h>
+	<mgl2/mgl.h>
+	<ctime>
+	"error.hpp"
+	"settings.hpp"
+	"output.hpp"
+	"datafile.hpp"
+	"plugins.hpp"
+	"version.h"
+	"parser.hpp"
+	"tools.hpp"
+	"built-in.hpp"
+	"parser_functions.hpp"
+	"define.hpp"
+	"plotdata.hpp"
+	"script.hpp"
+	"loop.hpp"
+	"procedure.hpp"
+	"plugin.hpp"
+	"language.hpp"
+	"ParserLib/muParser.h"
+
+1482409407 source:c:\cpp\chameleon\kernel\core\matrixoperations.cpp
+	"parser_functions.hpp"
+	"../kernel.hpp"
+
+1406662210 source:c:\cpp\chameleon\kernel\core\menues.cpp
+	"menues.hpp"
+
+1395867123 c:\cpp\chameleon\kernel\core\menues.hpp
+	<iostream>
+	"settings.hpp"
+	"plotdata.hpp"
+
+1482412114 source:c:\cpp\chameleon\kernel\core\odesolver.cpp
+	"odesolver.hpp"
+	"../kernel.hpp"
+
+1482777364 source:c:\cpp\chameleon\kernel\core\output.cpp
+	"output.hpp"
+	"../kernel.hpp"
+
+1482775489 source:c:\cpp\chameleon\kernel\core\parser.cpp
+	"parser.hpp"
+
+1483173554 source:c:\cpp\chameleon\kernel\core\parser_functions.cpp
+	"parser_functions.hpp"
+	"../kernel.hpp"
+
+1482760018 source:c:\cpp\chameleon\kernel\core\parserlib\muparser.cpp
+	"muParser.h"
+	"muParserTemplateMagic.h"
+	<cmath>
+	<algorithm>
+	<numeric>
+
+1482760109 source:c:\cpp\chameleon\kernel\core\parserlib\muparserbase.cpp
+	"muParserBase.h"
+	"muParserTemplateMagic.h"
+	<cassert>
+	<cmath>
+	<memory>
+	<vector>
+	<deque>
+	<sstream>
+	<locale>
+	<omp.h>
+
+1482760107 source:c:\cpp\chameleon\kernel\core\parserlib\muparserbytecode.cpp
+	"muParserBytecode.h"
+	<cassert>
+	<string>
+	<stack>
+	<vector>
+	<iostream>
+	"muParserDef.h"
+	"muParserError.h"
+	"muParserToken.h"
+	"muParserStack.h"
+	"muParserTemplateMagic.h"
+
+1324659700 source:c:\cpp\chameleon\kernel\core\parserlib\muparsercallback.cpp
+	"muParserCallback.h"
+
+1482760186 source:c:\cpp\chameleon\kernel\core\parserlib\muparsererror.cpp
+	"muParserError.h"
+
+1482760303 source:c:\cpp\chameleon\kernel\core\parserlib\muparserint.cpp
+	"muParserInt.h"
+	<cmath>
+	<algorithm>
+	<numeric>
+
+1482760301 source:c:\cpp\chameleon\kernel\core\parserlib\muparsertest.cpp
+	"muParserTest.h"
+	<cstdio>
+	<cmath>
+	<iostream>
+	<limits>
+
+1482760426 source:c:\cpp\chameleon\kernel\core\parserlib\muparsertokenreader.cpp
+	<cassert>
+	<cstdio>
+	<cstring>
+	<map>
+	<stack>
+	<string>
+	"muParserTokenReader.h"
+	"muParserBase.h"
+
+1470514700 source:c:\cpp\chameleon\kernel\core\plotdata.cpp
+	<mgl2/mgl.h>
+	"plotdata.hpp"
+
+1482408042 source:c:\cpp\chameleon\kernel\core\plotting.cpp
+	"parser_functions.hpp"
+	"../kernel.hpp"
+
+1441547849 source:c:\cpp\chameleon\kernel\core\plugin.cpp
+	"plugin.hpp"
+
+1482413008 source:c:\cpp\chameleon\kernel\core\plugin_histogram.cpp
+	"plugins.hpp"
+	"../kernel.hpp"
+
+1482413081 source:c:\cpp\chameleon\kernel\core\plugin_random.cpp
+	"plugins.hpp"
+	"../kernel.hpp"
+
+1482414106 source:c:\cpp\chameleon\kernel\core\plugin_statistics.cpp
+	"plugins.hpp"
+	"../kernel.hpp"
+
+1483021766 source:c:\cpp\chameleon\kernel\core\procedure.cpp
+	"procedure.hpp"
+	"../kernel.hpp"
+
+1456181830 source:c:\cpp\chameleon\kernel\core\resampler.cpp
+	<stdlib.h>
+	<math.h>
+	<float.h>
+	<assert.h>
+	<string.h>
+	<iostream>
+	"resampler.h"
+
+1482776662 source:c:\cpp\chameleon\kernel\core\script.cpp
+	"script.hpp"
+	"../kernel.hpp"
+
+1483015539 source:c:\cpp\chameleon\kernel\core\settings.cpp
+	"settings.hpp"
+	"../kernel.hpp"
+
+1482760509 source:c:\cpp\chameleon\kernel\core\stringparsing.cpp
+	"parser_functions.hpp"
+	"../kernel.hpp"
+
+1466715024 source:c:\cpp\chameleon\kernel\core\tinyxml2.cpp
+	"tinyxml2.h"
+	<new>
+	<stddef.h>
+	<stdarg.h>
+	<cstddef>
+	<cstdarg>
+
+1483175952 source:c:\cpp\chameleon\kernel\core\tools.cpp
+	"tools.hpp"
+	"../kernel.hpp"
+
+1122536206 source:c:\cpp\chameleon\kernel\core\unzip.cpp
+	<windows.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<tchar.h>
+	"unzip.h"
+
+1445702186 source:c:\cpp\chameleon\kernel\core\zip++.cpp
+	"zip++.hpp"
+
+1122481068 source:c:\cpp\chameleon\kernel\core\zip.cpp
+	<windows.h>
+	<stdio.h>
+	<tchar.h>
+	"zip.h"
+
+1482832695 c:\cpp\chameleon\gui\dirtraverser.hpp
+	"wx/wx.h"
+	"wx/dir.h"
+	<string>
+	<vector>
+	"IconManager.h"
+	"../common/datastructures.h"
+
+1482833862 source:c:\cpp\chameleon\gui\dirtraverser.cpp
+	"DirTraverser.hpp"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tipdlg.h
+	"wx/defs.h"
+	"wx/textfile.h"
 

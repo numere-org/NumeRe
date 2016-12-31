@@ -6,24 +6,25 @@
 #include <wx/dynarray.h>
 #include "../common/datastructures.h"
 #include "../compiler/compilerevent.h"
+#include "../kernel/syntax.hpp"
 //#include <wx/wx.h>
 
 class NumeReWindow;
-class ChameleonNotebook;
+class NumeReNotebook;
 class wxFileName;
 class Options;
 class ProjectInfo;
 class DebugManager;
 
 
-class ChameleonEditor : public wxStyledTextCtrl
+class NumeReEditor : public wxStyledTextCtrl
 {
 public:
-	ChameleonEditor(NumeReWindow* mframe, DebugManager* debugManager, Options* options, ProjectInfo* project,
-					wxWindow *parent, wxWindowID id, const wxPoint& pos = wxDefaultPosition,
+	NumeReEditor(NumeReWindow* mframe, DebugManager* debugManager, Options* options, ProjectInfo* project,
+					wxWindow *parent, wxWindowID id, NumeReSyntax* __syntax, const wxPoint& pos = wxDefaultPosition,
 					const wxSize& size = wxDefaultSize, long style = 0,
 					const wxString& name = wxSTCNameStr);
-	~ChameleonEditor();
+	~NumeReEditor();
 
 
 	//bool LoadFile ();
@@ -79,6 +80,7 @@ public:
 
 	void AddBreakpoint( int linenum );
 	void RemoveBreakpoint( int linenum );
+	void SetSyntax(NumeReSyntax* __syntax) {if (!_syntax){_syntax = __syntax;}}
 
 private:
 
@@ -114,6 +116,8 @@ private:
 	wxString m_clickedWord;
 	wxMenuItem* m_menuAddWatch;
 	wxMenuItem* m_menuShowValue;
+
+	NumeReSyntax* _syntax;
 
 	bool m_bLoadingFile;
 	bool m_bLastSavedRemotely;

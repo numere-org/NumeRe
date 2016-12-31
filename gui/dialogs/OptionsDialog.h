@@ -23,6 +23,8 @@
 ////@begin includes
 #include "wx/notebook.h"
 #include "wx/spinctrl.h"
+
+#include "../../kernel/core/settings.hpp"
 ////@end includes
 
 
@@ -181,6 +183,26 @@ public:
     wxTextCtrl* m_password1;
     wxTextCtrl* m_password2;
     wxTextCtrl* m_txtMingwPath;
+
+    wxCheckBox* m_compactTables;
+    wxCheckBox* m_AutoLoadDefines;
+    wxCheckBox* m_showGreeting;
+    wxCheckBox* m_LoadCompactTables;
+
+    wxCheckBox* m_ExtendedInfo;
+    wxCheckBox* m_ShowHints;
+    wxCheckBox* m_CustomLanguage;
+    wxCheckBox* m_ESCinScripts;
+    wxCheckBox* m_UseLogfile;
+    wxTextCtrl* m_LoadPath;
+    wxTextCtrl* m_SavePath;
+    wxTextCtrl* m_ScriptPath;
+    wxTextCtrl* m_ProcPath;
+    wxTextCtrl* m_PlotPath;
+
+    wxComboBox* m_defaultFont;
+    wxSpinCtrl* m_precision;
+
     wxCheckBox* m_chkShowCompileCommands;
     wxComboBox* m_printStyle;
     wxCheckBox* m_cbPrintLineNumbers;
@@ -191,6 +213,7 @@ public:
 
 	NumeReWindow* m_parentFrame;
 	Options* m_options;
+	Settings* _option;
 
 	wxArrayInt m_permMappings;
 

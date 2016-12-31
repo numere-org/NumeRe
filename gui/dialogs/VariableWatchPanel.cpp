@@ -302,7 +302,7 @@ void VariableWatchPanel::AddWatchedVariables(wxDebugEvent debug)
 
 	//wxTreeItemId root = m_tree->GetRootItem();
 
-	for(int i = 0; i < variableNames.size(); i++)
+	for(auto i = 0; i < variableNames.size(); i++)
 	{
 
 		wxString varName = variableNames[i];
@@ -500,15 +500,15 @@ void VariableWatchPanel::DisplayParsedValue(wxTreeItemId currentNodeId, ParseTre
 
 		ParseTreeNode* parentNode = it.node;
 		ParseTreeNode* rootNode = parentNode;
-		ParseTreeNode* previousNode = parentNode;
-		int oldDepth = tree.depth(it);
+		//ParseTreeNode* previousNode = parentNode;
+		//int oldDepth = tree.depth(it);
 		wxTreeItemId currentParentId = currentNodeId;
 
 		it++;
 
 		while(it!=end)
 		{
-			int currentDepth = tree.depth(it);
+			//int currentDepth = tree.depth(it);
 
 			if(it.node->parent != parentNode && it.node->parent != rootNode)
 			{
@@ -517,7 +517,7 @@ void VariableWatchPanel::DisplayParsedValue(wxTreeItemId currentNodeId, ParseTre
 			}
 
 			wxString data = it.node->data;
-			ParseTreeNode* currentNode = it.node;
+			//ParseTreeNode* currentNode = it.node;
 
 
 			wxTreeItemId addedId = m_tree->AppendItem(currentParentId, data);
@@ -654,13 +654,13 @@ wxIcon VariableWatchPanel::GetIconResource( const wxString& name )
 
 void VariableWatchPanel::OnSize( wxSizeEvent& event )
 {
-	wxSize size = event.GetSize();
-	int width = size.GetWidth();
+	/*wxSize size = event.GetSize();
+	//int width = size.GetWidth();
 	int height = size.GetHeight();
 
 	int i = 42;
 	int q = i;
-	i = q;
+	i = q;*/
 
 
     event.Skip();

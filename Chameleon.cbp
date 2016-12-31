@@ -101,16 +101,22 @@
 				</Linker>
 			</Target>
 		</Build>
+		<Linker>
+			<Add option="-lmgl" />
+			<Add option="-lmgl-wnd" />
+			<Add option="-lgsl" />
+			<Add option="-lgslcblas" />
+		</Linker>
 		<Unit filename="Chameleon.rc">
 			<Option compilerVar="WINDRES" />
 		</Unit>
 		<Unit filename="common/ChameleonPrintout.cpp" />
-		<Unit filename="common/ChameleonPrintout.h" />
 		<Unit filename="common/CommonHeaders.h" />
 		<Unit filename="common/Crc16.cpp" />
 		<Unit filename="common/Crc16.h" />
 		<Unit filename="common/DebugEvent.cpp" />
 		<Unit filename="common/DebugEvent.h" />
+		<Unit filename="common/NumeRePrintout.h" />
 		<Unit filename="common/Options.h" />
 		<Unit filename="common/ProjectInfo.cpp" />
 		<Unit filename="common/ProjectInfo.h" />
@@ -137,11 +143,13 @@
 		<Unit filename="editor/editor.h" />
 		<Unit filename="gui/Chameleon.cpp" />
 		<Unit filename="gui/ChameleonNotebook.cpp" />
-		<Unit filename="gui/ChameleonNotebook.h" />
 		<Unit filename="gui/ChameleonProjectManager.cpp" />
 		<Unit filename="gui/ChameleonProjectManager.h" />
+		<Unit filename="gui/DirTraverser.cpp" />
+		<Unit filename="gui/DirTraverser.hpp" />
 		<Unit filename="gui/IconManager.cpp" />
 		<Unit filename="gui/IconManager.h" />
+		<Unit filename="gui/NumeReNotebook.h" />
 		<Unit filename="gui/NumeReWindow.h" />
 		<Unit filename="gui/dialogs/AboutChameleonDialog.cpp" />
 		<Unit filename="gui/dialogs/AboutChameleonDialog.h" />
@@ -164,8 +172,114 @@
 		<Unit filename="gui/wxssh.h" />
 		<Unit filename="gui/wxterm.cpp" />
 		<Unit filename="gui/wxterm.h" />
+		<Unit filename="kernel/core/BasicExcel.cpp" />
+		<Unit filename="kernel/core/BasicExcel.hpp" />
+		<Unit filename="kernel/core/IgorLib/CrossPlatformFileIO.cpp" />
+		<Unit filename="kernel/core/IgorLib/CrossPlatformFileIO.h" />
+		<Unit filename="kernel/core/IgorLib/IgorBin.h" />
+		<Unit filename="kernel/core/IgorLib/ReadWave.cpp" />
+		<Unit filename="kernel/core/IgorLib/ReadWave.h" />
+		<Unit filename="kernel/core/ParserLib/muParser.cpp" />
+		<Unit filename="kernel/core/ParserLib/muParser.h" />
+		<Unit filename="kernel/core/ParserLib/muParserBase.cpp" />
+		<Unit filename="kernel/core/ParserLib/muParserBase.h" />
+		<Unit filename="kernel/core/ParserLib/muParserBytecode.cpp" />
+		<Unit filename="kernel/core/ParserLib/muParserBytecode.h" />
+		<Unit filename="kernel/core/ParserLib/muParserCallback.cpp" />
+		<Unit filename="kernel/core/ParserLib/muParserCallback.h" />
+		<Unit filename="kernel/core/ParserLib/muParserDef.h" />
+		<Unit filename="kernel/core/ParserLib/muParserError.cpp" />
+		<Unit filename="kernel/core/ParserLib/muParserError.h" />
+		<Unit filename="kernel/core/ParserLib/muParserFixes.h" />
+		<Unit filename="kernel/core/ParserLib/muParserInt.cpp" />
+		<Unit filename="kernel/core/ParserLib/muParserInt.h" />
+		<Unit filename="kernel/core/ParserLib/muParserStack.h" />
+		<Unit filename="kernel/core/ParserLib/muParserTemplateMagic.h" />
+		<Unit filename="kernel/core/ParserLib/muParserTest.cpp" />
+		<Unit filename="kernel/core/ParserLib/muParserTest.h" />
+		<Unit filename="kernel/core/ParserLib/muParserToken.h" />
+		<Unit filename="kernel/core/ParserLib/muParserTokenReader.cpp" />
+		<Unit filename="kernel/core/ParserLib/muParserTokenReader.h" />
+		<Unit filename="kernel/core/built-in.cpp" />
+		<Unit filename="kernel/core/built-in.hpp" />
+		<Unit filename="kernel/core/cache.cpp" />
+		<Unit filename="kernel/core/cache.hpp" />
+		<Unit filename="kernel/core/datafile.cpp" />
+		<Unit filename="kernel/core/datafile.hpp" />
+		<Unit filename="kernel/core/debugger.cpp" />
+		<Unit filename="kernel/core/debugger.hpp" />
+		<Unit filename="kernel/core/define.cpp" />
+		<Unit filename="kernel/core/define.hpp" />
+		<Unit filename="kernel/core/doc_helper.cpp" />
+		<Unit filename="kernel/core/doc_helper.hpp" />
+		<Unit filename="kernel/core/documentation.cpp" />
+		<Unit filename="kernel/core/documentation.hpp" />
+		<Unit filename="kernel/core/error.hpp" />
+		<Unit filename="kernel/core/filesystem.cpp" />
+		<Unit filename="kernel/core/filesystem.hpp" />
+		<Unit filename="kernel/core/fitcontroller.cpp" />
+		<Unit filename="kernel/core/fitcontroller.hpp" />
+		<Unit filename="kernel/core/graph_helper.cpp">
+			<Option target="Debug Win32" />
+		</Unit>
+		<Unit filename="kernel/core/graph_helper.hpp">
+			<Option target="Debug Win32" />
+		</Unit>
+		<Unit filename="kernel/core/language.cpp" />
+		<Unit filename="kernel/core/language.hpp" />
+		<Unit filename="kernel/core/loop.cpp" />
+		<Unit filename="kernel/core/loop.hpp" />
+		<Unit filename="kernel/core/main.cpp">
+			<Option target="Debug Win32" />
+		</Unit>
+		<Unit filename="kernel/core/matrixoperations.cpp" />
+		<Unit filename="kernel/core/menues.cpp">
+			<Option target="Debug Win32" />
+		</Unit>
+		<Unit filename="kernel/core/menues.hpp">
+			<Option target="Debug Win32" />
+		</Unit>
+		<Unit filename="kernel/core/odesolver.cpp" />
+		<Unit filename="kernel/core/odesolver.hpp" />
+		<Unit filename="kernel/core/output.cpp" />
+		<Unit filename="kernel/core/output.hpp" />
+		<Unit filename="kernel/core/parser.cpp" />
+		<Unit filename="kernel/core/parser.hpp" />
+		<Unit filename="kernel/core/parser_functions.cpp" />
+		<Unit filename="kernel/core/parser_functions.hpp" />
+		<Unit filename="kernel/core/plotdata.cpp" />
+		<Unit filename="kernel/core/plotdata.hpp" />
+		<Unit filename="kernel/core/plotting.cpp" />
+		<Unit filename="kernel/core/plugin.cpp" />
+		<Unit filename="kernel/core/plugin.hpp" />
+		<Unit filename="kernel/core/plugin_histogram.cpp" />
+		<Unit filename="kernel/core/plugin_random.cpp" />
+		<Unit filename="kernel/core/plugin_statistics.cpp" />
+		<Unit filename="kernel/core/plugins.hpp" />
+		<Unit filename="kernel/core/procedure.cpp" />
+		<Unit filename="kernel/core/procedure.hpp" />
+		<Unit filename="kernel/core/resampler.cpp" />
+		<Unit filename="kernel/core/resampler.h" />
+		<Unit filename="kernel/core/script.cpp" />
+		<Unit filename="kernel/core/script.hpp" />
+		<Unit filename="kernel/core/settings.cpp" />
+		<Unit filename="kernel/core/settings.hpp" />
+		<Unit filename="kernel/core/stringparsing.cpp" />
+		<Unit filename="kernel/core/tinyxml2.cpp" />
+		<Unit filename="kernel/core/tinyxml2.h" />
+		<Unit filename="kernel/core/tools.cpp" />
+		<Unit filename="kernel/core/tools.hpp" />
+		<Unit filename="kernel/core/unzip.cpp" />
+		<Unit filename="kernel/core/unzip.h" />
+		<Unit filename="kernel/core/version.h" />
+		<Unit filename="kernel/core/zip++.cpp" />
+		<Unit filename="kernel/core/zip++.hpp" />
+		<Unit filename="kernel/core/zip.cpp" />
+		<Unit filename="kernel/core/zip.h" />
 		<Unit filename="kernel/kernel.cpp" />
 		<Unit filename="kernel/kernel.hpp" />
+		<Unit filename="kernel/syntax.cpp" />
+		<Unit filename="kernel/syntax.hpp" />
 		<Unit filename="network/LocalProcessManager.cpp" />
 		<Unit filename="network/LocalProcessManager.h" />
 		<Unit filename="network/PipedProcess.cpp" />
@@ -193,6 +307,12 @@
 			<envvars />
 			<debugger />
 			<lib_finder disable_auto="1" />
+			<AutoVersioning>
+				<Scheme minor_max="9" build_max="9" rev_max="0" rev_rand_max="10" build_times_to_increment_minor="100" />
+				<Settings autoincrement="0" date_declarations="1" use_define="0" update_manifest="0" do_auto_increment="0" ask_to_increment="0" language="C++" svn="0" svn_directory="" header_path="kernel\core\version.h" />
+				<Changes_Log show_changes_editor="0" app_title='%p v %M.%m.%b &quot;%T&quot; rev. %r' changeslog_path="Release\ChangesLog.txt" />
+				<Code header_guard="VERSION_H" namespace="AutoVersion" prefix="" />
+			</AutoVersioning>
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>

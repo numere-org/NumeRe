@@ -35,7 +35,7 @@ wxTextOutputStream* LocalProcessManager::StartLocalCommand( wxString command, wx
 	p->stdinStream = new wxTextOutputStream(*pProcess->GetOutputStream(), wxEOL_NATIVE);
 	p->outputBuf = "";
 	p->owner = parent; // set when process gets used
-	
+
 	m_processes.Add(p);
 
 	return p->stdinStream;
@@ -57,7 +57,7 @@ void LocalProcessManager::OnProcessTerminated( ChameleonProcessEvent& event)//wx
 		delete p->stdinStream;
 		delete p;
 	}
-	
+
 }
 
 void LocalProcessManager::OnProcessOutput( ChameleonProcessEvent& event )
@@ -76,7 +76,7 @@ ProcessInfo* LocalProcessManager::FindProcess(int pid)
 {
 	int index = -1;
 
-	for(int i = 0; i < m_processes.GetCount(); i++)
+	for(size_t i = 0; i < m_processes.GetCount(); i++)
 	{
 		if(m_processes[i]->pid == pid)
 		{

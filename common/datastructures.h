@@ -12,7 +12,7 @@
 //#include <wx/treectrl.h>
 
 class wxWindow;
-class ChameleonEditor;
+class NumeReEditor;
 class wxTextOutputStream;
 
 enum VariableNames
@@ -41,6 +41,8 @@ enum WindowID
 	ID_SAVE_SOURCE_REMOTE,
 	ID_OPEN_SOURCE_LOCAL,
 	ID_OPEN_SOURCE_REMOTE,
+	ID_OPEN_FILE,
+	ID_EDIT_FILE,
 	ID_CLOSEPAGE,
 	ID_CLOSEALL,
 	ID_CLOSETAB,
@@ -89,6 +91,7 @@ enum WindowID
 
 	// tools menu items
 	ID_OPTIONS,
+	ID_DEBUGGER,
 	ID_STARTCONNECT,
 	ID_DISCONNECT,
 
@@ -193,7 +196,7 @@ enum CompileResult {
 #pragma warning(disable : 4284)
 
 WX_DEFINE_ARRAY(wxWindow*, WindowPointerArray);
-WX_DEFINE_ARRAY(ChameleonEditor*, EditorPointerArray);
+WX_DEFINE_ARRAY(NumeReEditor*, EditorPointerArray);
 WX_DEFINE_ARRAY_INT(bool, BoolArray);
 
 #pragma warning(pop)

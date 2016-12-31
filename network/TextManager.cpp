@@ -492,10 +492,10 @@ void TextManager::SetColorAdjusted(int y, int x, unsigned short value)
 		return;
 	}
 
-	if(value != m_blankColor)
+	/*if(value != m_blankColor)
 	{
 		int q = 42;
-	}
+	}*/
 	m_color[actualLine][x] = value;
 }
 

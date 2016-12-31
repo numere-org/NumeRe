@@ -80,6 +80,9 @@ public:
     /// wxEVT_SCROLL_THUMBTRACK event handler for ID_SCROLLBAR
     void OnScrollbarScrollThumbtrack( wxScrollEvent& event );
 
+    /// wxEVT_MOUSEWHEEL event handler
+    void OnWheelScroll(wxMouseEvent& event);
+
 ////@end wxTermContainer event handler declarations
 
 	void OnSize(wxSizeEvent &event);

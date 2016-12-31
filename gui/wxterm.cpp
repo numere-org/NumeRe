@@ -119,7 +119,7 @@ wxTerm::TermKeyMap wxTerm::keyMapTable[] =
     { (wxKeyCode)0, GTelnet::KEY_NULL }
 };
 
-static unsigned char
+/*static unsigned char
 xCharMap[] =
 {
     0, // 0
@@ -378,7 +378,7 @@ xCharMap[] =
     253, // 253
     254, // 254
     255  // 255
-};
+};*/
 
 BEGIN_EVENT_TABLE(wxTerm, wxWindow)
     EVT_PAINT						(wxTerm::OnPaint)
@@ -483,7 +483,7 @@ wxTerm::wxTerm(wxWindow* parent, wxWindowID id,
 
     SetCursor(wxCursor(wxCURSOR_IBEAM));
 
-    wxFont monospacedFont(10, wxMODERN, wxNORMAL, wxNORMAL, false, "Consolas");
+    wxFont monospacedFont(8, wxMODERN, wxNORMAL, wxNORMAL, false, "Consolas");//10
     SetFont(monospacedFont);
 
     // 10pt Courier New is 8 pixels wide and 16 pixels high... set up
@@ -500,6 +500,28 @@ wxTerm::~wxTerm()
         delete m_bitmap;
     }
 }
+
+
+vector<string> wxTerm::getPathSettings()
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    vector<string> vPaths = _kernel.getPathSettings();
+    return vPaths;
+}
+
+Settings wxTerm::getKernelSettings()
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    Settings _option(_kernel.getKernelSettings());
+    return _option;
+}
+
+void wxTerm::setKernelSettings(const Settings& _settings)
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    _kernel.setKernelSettings(_settings);
+}
+
 
 
 void wxTerm::StartKernelTask()
@@ -520,6 +542,11 @@ wxThread::ExitCode wxTerm::Entry()
 {
     string sCommand = "";
     bool bCommandAvailable = false;
+
+    //NumeReKernel::toggleTableStatus();
+    _kernel.printVersionInfo();
+    //NumeReKernel::toggleTableStatus();
+    //NumeReKernel::printPreFmt("|\n|<- ");
     while (!GetThread()->TestDestroy())
     {
         Sleep(100);
@@ -528,6 +555,14 @@ wxThread::ExitCode wxTerm::Entry()
             wxCriticalSectionLocker lock(m_kernelCS);
             bCommandAvailable = m_bCommandAvailable;
             sCommand = m_sCommandLine;
+            m_bCommandAvailable = false;
+            m_sCommandLine.clear();
+            if (!sCommand.length() && bCommandAvailable)
+            {
+                m_KernelStatus = NumeReKernel::NUMERE_PENDING;
+                wxQueueEvent(GetEventHandler(), new wxThreadEvent());
+                continue;
+            }
         }
         if (bCommandAvailable) // A command is available
         {
@@ -535,8 +570,6 @@ wxThread::ExitCode wxTerm::Entry()
             if (m_KernelStatus > 0) // solve errors and quits
             {
                 wxCriticalSectionLocker lock(m_kernelCS);
-                m_bCommandAvailable = false;
-                m_sCommandLine.clear();
                 switch (m_KernelStatus)
                 {
                     // fallthrough is intended
@@ -556,17 +589,16 @@ wxThread::ExitCode wxTerm::Entry()
             {
                 break;
             }
-            else if (m_KernelStatus == NumeReKernel::NUMERE_ERROR)
+            /*else if (m_KernelStatus == NumeReKernel::NUMERE_ERROR)
             {
                 wxCriticalSectionLocker lock(m_kernelCS);
-                m_sAnswer = "ERROR IN NUMERE::KERNEL";
-                m_bCommandAvailable = false;
-                m_sCommandLine.clear();
-            }
+                //m_sAnswer = "ERROR IN NUMERE::KERNEL";
+            }*/
             wxQueueEvent(GetEventHandler(), new wxThreadEvent());
         }
     }
     _kernel.CloseSession();
+    m_KernelStatus = NumeReKernel::NUMERE_QUIT;
     wxQueueEvent(GetEventHandler(), new wxThreadEvent());
     return (wxThread::ExitCode)0;
 }
@@ -587,14 +619,20 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
         wxCriticalSectionLocker lock(m_kernelCS);
         switch (m_KernelStatus)
         {
+            case NumeReKernel::NUMERE_ANSWER_READ:
+            case NumeReKernel::NUMERE_PENDING_SPECIAL:
+                return;
             // fallthrough is intended
             case NumeReKernel::NUMERE_DONE:
-            case NumeReKernel::NUMERE_ERROR:
                 sAnswer = "|-> " + m_sAnswer + "\n|\n|<- ";
                 break;
-            case NumeReKernel::NUMERE_CALC_UPDATE:
-            case NumeReKernel::NUMERE_PRINTLINE:
-                sAnswer = "|-> " + m_sAnswer + "\n";
+            case NumeReKernel::NUMERE_ERROR:
+            case NumeReKernel::NUMERE_DONE_KEYWORD:
+                sAnswer = m_sAnswer + "|\n|<- ";
+                break;
+            case NumeReKernel::NUMERE_EDIT_FILE:
+                sAnswer = m_sAnswer;//+ "|\n|<- ";
+                m_wxParent->OpenSourceFile(wxArrayString(1, _kernel.ReadFileName()), _kernel.ReadLineNumber());
                 break;
             case NumeReKernel::NUMERE_PENDING:
                 sAnswer = "|<- ";
@@ -607,6 +645,7 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
                 sAnswer = m_sAnswer;
         }
         m_sAnswer.clear();
+        m_KernelStatus = NumeReKernel::NUMERE_ANSWER_READ;
     }
     if (Closing)
     {
@@ -714,15 +753,15 @@ wxTerm::GetDefVTColors(wxColour colors[16], wxTerm::BOLDSTYLE boldStyle)
     }
     else
     {
-        colors[0] = wxColour(255, 255, 255);                             // black
-        colors[1] = wxColour(170, 0, 0);                           // red
-        colors[2] = wxColour(0, 170, 0);                           // green
-        colors[3] = wxColour(170, 0, 170);                         // yellow
-        colors[4] = wxColour(0, 0, 170);                           // blue
-        colors[5] = wxColour(170, 170, 0);                         // magenta
-        colors[6] = wxColour(0, 170, 170);                         // cyan
-        colors[7] = wxColour(0, 0, 100);                       // white
-//    colors[7] = wxColour(170, 170, 170);                       // white
+        colors[0]                               = wxColour(255, 255, 255);                       // white (background)
+        colors[NumeReSyntax::SYNTAX_COMMAND]    = wxColour(0, 128, 255);                         // bright blue (commands)
+        colors[NumeReSyntax::SYNTAX_OPTION]     = wxColour(0, 128, 100);                         // cyan
+        colors[NumeReSyntax::SYNTAX_FUNCTION]   = wxColour(0, 0, 255);                         // magenta
+        colors[NumeReSyntax::SYNTAX_CONSTANT]   = wxColour(255, 0, 128);                         // blue
+        colors[NumeReSyntax::SYNTAX_SPECIALVAL] = wxColour(0, 0, 0);                          // bold black
+        colors[NumeReSyntax::SYNTAX_STRING]     = wxColour(128, 128, 255);                           // dark green (strings)
+        colors[NumeReSyntax::SYNTAX_STD]        = wxColour(0, 0, 100);                           // dark blue (standard pen)
+//    colors[7] = wxColour(170, 170, 170);                         // white
 #if 0
         colors[8] = wxColour(85, 85, 85);                          // bold black
         colors[9] = wxColour(255, 85, 85);                         // bold red
@@ -733,9 +772,9 @@ wxTerm::GetDefVTColors(wxColour colors[16], wxTerm::BOLDSTYLE boldStyle)
         colors[14] = wxColour(85, 255, 255);                       // bold cyan
         colors[15] = wxColour(255, 255, 255);                      // bold white
 #else
-        colors[8] = wxColour(85, 85, 85);                          // bold black
-        colors[9] = wxColour(255, 0, 0);                         // bold red
-        colors[10] = wxColour(0, 255, 0);                        // bold green
+        colors[NumeReSyntax::SYNTAX_OPERATOR] = wxColour(255, 0, 0);                         // bold red
+        colors[NumeReSyntax::SYNTAX_PROCEDURE]  = wxColour(128, 0, 0);                           // dark red (procedures)
+        colors[NumeReSyntax::SYNTAX_NUMBER] = wxColour(255, 128, 64);                        // bold green
         colors[11] = wxColour(255, 0, 255);                       // bold yellow
         colors[12] = wxColour(0, 0, 255);                        // bold blue
         colors[13] = wxColour(255, 255, 0);                       // bold magenta
@@ -958,13 +997,10 @@ void wxTerm::pipe_command()
         sCommand = GetTM()->GetLineAdjusted(m_curY-1);
     if (sCommand.substr(0,3) == "|<-")
         sCommand.erase(0,3);
+    else if (sCommand.front() == '|' && sCommand.find('>') != string::npos && sCommand.find_first_not_of("-?IFORWHLPCMSE|") == sCommand.find('>')) // -?IFORWHLPCM
+        sCommand.erase(0,sCommand.find('>')+1);
     while (sCommand.length() && sCommand.front() == ' ')
         sCommand.erase(0,1);
-    if (!sCommand.length())
-    {
-        ProcessInput(4, "|<- ");
-        return;
-    }
     m_sCommandLine = sCommand; // the commandline from tm...
     m_bCommandAvailable = true;
 }
@@ -973,8 +1009,15 @@ void wxTerm::pass_command(const string& command)
 {
     if (!command.length())
         return;
+    if(GTerm::IsScrolledUp())
+    {
+        GTerm::Scroll(MAXHEIGHT, false);
+        GTerm::Update();
+        Refresh();
+    }
     wxCriticalSectionLocker lock(m_kernelCS);
-    next_line();
+    erase_line();
+    //next_line();
     m_sCommandLine = command;
     m_bCommandAvailable = true;
 }
@@ -1060,6 +1103,7 @@ wxTerm::OnChar(wxKeyEvent& event)
         {
             GTerm::bs();
             GTerm::update_changes();
+            Refresh();
             return;
         }
         else if (keyCode == WXK_TAB)
@@ -1494,8 +1538,8 @@ wxTerm::DrawText(int fg_color, int bg_color, int flags,
     int
     t;
 
-    if(flags & BOLD && m_boldStyle == COLOR)
-        fg_color = (fg_color % 8) + 8;
+    /*if(flags & BOLD && m_boldStyle == COLOR)
+        fg_color = (fg_color % 8) + 8;*/
 
     if(flags & SELECTED)
     {
@@ -1903,7 +1947,10 @@ void wxTerm::UpdateSize()
             m_linesDisplayed = numLinesShown;
             // tell the GTerm core to resize itself
             ResizeTerminal(numCharsInLine, numLinesShown);
-
+            {
+                wxCriticalSectionLocker lock(m_kernelCS);
+                _kernel.updateLineLenght(numCharsInLine);
+            }
             //UpdateRemoteSize(m_charsInLine, m_linesDisplayed);
             /*
             wxString remoteResizeCommand = wxString::Format("stty rows %d cols %d", m_linesDisplayed, m_charsInLine);

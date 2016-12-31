@@ -42,6 +42,11 @@
 			<Collapse line="360" />
 		</Folding>
 	</File>
+	<File name="common\Crc16.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="481" topLine="3" />
+		</Cursor>
+	</File>
 	<File name="perms\p.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="6652" topLine="151" />
@@ -63,10 +68,5 @@
 			<Collapse line="284" />
 			<Collapse line="287" />
 		</Folding>
-	</File>
-	<File name="common\Crc16.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="481" topLine="3" />
-		</Cursor>
 	</File>
 </CodeBlocks_layout_file>

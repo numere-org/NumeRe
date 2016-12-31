@@ -12,7 +12,7 @@ class GTerm;
 class TextManager
 {
     public:
-        TextManager(GTerm* parent = NULL, int width = 80, int height = 24, int maxWidth = 160, int maxHeight = 100);
+        TextManager(GTerm* parent = NULL, int width = 80, int height = 24, int maxWidth = 160, int maxHeight = 300);
 
         int GetSize();
         int GetMaxSize();
