@@ -19,6 +19,7 @@
 #include <wx/fdrepdlg.h>
 #include <wx/treectrl.h>
 #include <wx/notebook.h>
+#include <wx/fswatcher.h>
 #include "wx/dnd.h"
 #include "../kernel/core/language.hpp"
 #include "../kernel/core/tools.hpp"
@@ -142,6 +143,7 @@ class NumeReWindow : public wxFrame
         NetworkCallResult CheckNetworkStatus();
 
         void OpenSourceFile(wxArrayString fnames, unsigned int nLine = 0);
+        void openImage(wxFileName filename);
 
         Networking* GetNetworking();
 
@@ -150,6 +152,7 @@ class NumeReWindow : public wxFrame
         MyTipProvider* tipProvider;
         bool showTipAtStartup;
         void updateTipAtStartupSetting(bool bTipAtStartup);
+        void EvaluateOptions();
 
     private:
         void InitializeProgramOptions();
@@ -198,6 +201,10 @@ class NumeReWindow : public wxFrame
         void OnPageChange(wxBookCtrlEvent& event);
 
         void OnFindEvent(wxFindDialogEvent& event);
+        void addFileToTree(const std::string& sFilePath);
+        void removeFileFromTree(const std::string& sFilePath);
+
+        void OnFileSystemEvent(wxFileSystemWatcherEvent& event);
 
         void NewFile();
         wxArrayString OpenFile(FileFilterType filterType );
@@ -227,7 +234,9 @@ class NumeReWindow : public wxFrame
         int FindString(const wxString &findString, int start_pos = -1, int flags = -1, bool highlight = TRUE);
         int ReplaceAllStrings(const wxString &findString, const wxString &replaceString, int flags = -1);
 
-        void EvaluateOptions();
+        void deleteFile();
+        void insertCopiedFile();
+        void renameFile();
 
         bool CheckForBlankPassword();
         bool AskUserForPassword();
@@ -252,6 +261,7 @@ class NumeReWindow : public wxFrame
         NumeReEditor* m_currentEd;
         /*! Displays the files in the current project */
         wxTreeCtrl* m_projectTree;
+        wxFileSystemWatcher* m_watcher;
         /*! The status bar */
         wxStatusBar* m_statusBar;
         //wxPanel* panelEd;
@@ -298,9 +308,11 @@ class NumeReWindow : public wxFrame
         wxFindReplaceData m_findData;
 
         /*! The IDs for the file type folders in the project tree */
-        wxTreeItemId m_projectFileFolders[4];
+        wxTreeItemId m_projectFileFolders[5];
         /*! The last clicked item in the project tree */
         wxTreeItemId m_clickedTreeItem;
+        /*! The last copied item in the project tree */
+        wxTreeItemId m_copiedTreeItem;
         /*! The file type that corresponds to the last clicked project folder */
         FileFilterType m_projectSelectedFolderType;
 
@@ -333,7 +345,9 @@ class NumeReWindow : public wxFrame
         wxString m_filterNSCRFiles;
         wxString m_filterNPRCFiles;
         wxString m_filterNumeReFiles;
-        wxString m_filterLibraryFiles;
+        wxString m_filterExecutableFiles;
+        wxString m_filterDataFiles;
+        wxString m_filterImageFiles;
         wxString m_filterAllFiles;
 
         wxCHMHelpController* m_helpController;

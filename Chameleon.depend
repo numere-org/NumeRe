@@ -1931,14 +1931,16 @@
 	<wx/wx.h>
 	"../common/datastructures.h"
 
-1483015283 c:\cpp\chameleon\common\datastructures.h
+1483804373 c:\cpp\chameleon\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
 	<wx/dynarray.h>
 	<wx/filename.h>
 
-1482938772 source:c:\cpp\chameleon\chameleon.rc
+1483737311 source:c:\cpp\chameleon\chameleon.rc
+	<windows.h>
+	"kernel/core/version.h"
 	<wx/msw/wx.rc>
 
 1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wx.rc
@@ -2001,7 +2003,7 @@
 1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\printps.h
 	"wx/prntbase.h"
 
-1483006285 c:\cpp\chameleon\editor\editor.h
+1483985122 c:\cpp\chameleon\editor\editor.h
 	<wx/stc/stc.h>
 	<wx/menu.h>
 	<wx/dynarray.h>
@@ -2130,7 +2132,7 @@
 	"wx/treebase.h"
 	"wx/hashmap.h"
 
-1482585386 source:c:\cpp\chameleon\common\options.cpp
+1483892686 source:c:\cpp\chameleon\common\options.cpp
 	"Options.h"
 	<wx/filename.h>
 	<wx/arrstr.h>
@@ -2143,7 +2145,7 @@
 	"wx/string.h"
 	"wx/filefn.h"
 
-1483003765 source:c:\cpp\chameleon\common\projectinfo.cpp
+1483793750 source:c:\cpp\chameleon\common\projectinfo.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"ProjectInfo.h"
@@ -2159,7 +2161,7 @@
 	<TChar.h>
 	<crtdbg.h>
 
-1265486088 source:c:\cpp\chameleon\compiler\compiler.cpp
+1483182592 source:c:\cpp\chameleon\compiler\compiler.cpp
 	"compiler.h"
 	<wx/filename.h>
 	<wx/txtstrm.h>
@@ -2191,7 +2193,7 @@
 1265486088 source:c:\cpp\chameleon\compiler\compilerevent.cpp
 	"compilerevent.h"
 
-1478439156 source:c:\cpp\chameleon\debugger\cham_db.cpp
+1483182592 source:c:\cpp\chameleon\debugger\cham_db.cpp
 	"cham_db.h"
 	"../common/ProjectInfo.h"
 	"../common/Options.h"
@@ -2478,7 +2480,7 @@
 	"wx/defs.h"
 	"wx/stream.h"
 
-1483004162 c:\cpp\chameleon\network\gterm.hpp
+1483956665 c:\cpp\chameleon\network\gterm.hpp
 	<string.h>
 	<cstring>
 	<stdlib.h>
@@ -2490,7 +2492,7 @@
 	"TextManager.h"
 	"../kernel/syntax.hpp"
 
-1482426439 c:\cpp\chameleon\network\textmanager.h
+1483884547 c:\cpp\chameleon\network\textmanager.h
 	<vector>
 	<deque>
 	<string>
@@ -2542,12 +2544,14 @@
 	<set>
 	<queue>
 
-1483010986 source:c:\cpp\chameleon\editor\editor.cpp
+1483987509 source:c:\cpp\chameleon\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
 	"../kernel/core/language.hpp"
+	"../kernel/core/tools.hpp"
 	<wx/datetime.h>
+	<wx/stdpaths.h>
 	"editor.h"
 	"../perms/p.h"
 	"../gui/NumeReWindow.h"
@@ -2563,7 +2567,7 @@
 1480053133 c:\cpp\chameleon\gui\chameleonnotebook.h
 	<wx/notebook.h>
 
-1483098668 source:c:\cpp\chameleon\gui\chameleon.cpp
+1483984054 source:c:\cpp\chameleon\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -2594,6 +2598,7 @@
 	"../common/NumeRePrintout.h"
 	"../perms/p.h"
 	"../common/ProjectInfo.h"
+	"../common/recycler.hpp"
 	"../network/networking.h"
 	"../compiler/compiler.h"
 	"../common/Options.h"
@@ -2606,6 +2611,7 @@
 	"IconManager.h"
 	"wxProportionalSplitterWindow.h"
 	"ChameleonProjectManager.h"
+	"imagepanel.hpp"
 	<wx/msw/helpchm.h>
 	"newfile.xpm"
 	"openremote.xpm"
@@ -2807,7 +2813,7 @@
 1265486086 c:\cpp\chameleon\gui\dialogs\addvariablewatch.h
 	"wx/wx.h"
 
-1480053133 source:c:\cpp\chameleon\gui\dialogs\compileroutputpanel.cpp
+1483182332 source:c:\cpp\chameleon\gui\dialogs\compileroutputpanel.cpp
 	"wx/wxprec.h"
 	"CompilerOutputPanel.h"
 	"wx/generic/gridctrl.h"
@@ -2817,7 +2823,7 @@
 	"../NumeReWindow.h"
 	<wx/regex.h>
 
-1483014836 source:c:\cpp\chameleon\gui\dialogs\optionsdialog.cpp
+1483891636 source:c:\cpp\chameleon\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
@@ -2831,7 +2837,7 @@
 	"../../perms/p.h"
 	"../../common/debug.h"
 
-1480053133 source:c:\cpp\chameleon\gui\dialogs\remotefiledialog.cpp
+1483181660 source:c:\cpp\chameleon\gui\dialogs\remotefiledialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	<wx/filename.h>
@@ -2881,7 +2887,7 @@
 
 1265486084 c:\cpp\chameleon\gui\dialogs\homehs.xpm
 
-1478501722 source:c:\cpp\chameleon\gui\dialogs\treelistctrl.cpp
+1483182332 source:c:\cpp\chameleon\gui\dialogs\treelistctrl.cpp
 	"wx/wxprec.h"
 	<wx/wx.h>
 	<wx/msw/private.h>
@@ -2944,7 +2950,7 @@
 1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\datectrl.h
 	"wx/compositewin.h"
 
-1480053133 source:c:\cpp\chameleon\gui\dialogs\variablewatchpanel.cpp
+1483182332 source:c:\cpp\chameleon\gui\dialogs\variablewatchpanel.cpp
 	"wx/wxprec.h"
 	<wx/textdlg.h>
 	"VariableWatchPanel.h"
@@ -2952,7 +2958,7 @@
 	"../../common/tree.h"
 	"../../common/fixvsbug.h"
 
-1483034419 source:c:\cpp\chameleon\gui\dialogs\wxtermcontainer.cpp
+1483892686 source:c:\cpp\chameleon\gui\dialogs\wxtermcontainer.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	"wx/scrolbar.h"
@@ -2974,11 +2980,11 @@
 
 1265486084 c:\cpp\chameleon\gui\dialogs\exe.xpm
 
-1478953618 source:c:\cpp\chameleon\gui\wxssh.cpp
+1483527677 source:c:\cpp\chameleon\gui\wxssh.cpp
 	"wxssh.h"
 	"../common/debug.h"
 
-1483034511 source:c:\cpp\chameleon\gui\wxterm.cpp
+1484042261 source:c:\cpp\chameleon\gui\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -2988,7 +2994,7 @@
 	"wxterm.h"
 	"../common/debug.h"
 
-1483017978 source:c:\cpp\chameleon\network\actions.cpp
+1484041855 source:c:\cpp\chameleon\network\actions.cpp
 	"gterm.hpp"
 	"../common/debug.h"
 
@@ -2996,15 +3002,18 @@
 	"gterm.hpp"
 	"gtelnet.hpp"
 
-1480238307 source:c:\cpp\chameleon\network\gterm.cpp
+1483961856 source:c:\cpp\chameleon\network\gterm.cpp
 	"gterm.hpp"
 	"../common/debug.h"
+	<wx/stdpaths.h>
+	<wx/wx.h>
+	<wx/filename.h>
 
 1265486086 source:c:\cpp\chameleon\network\keytrans.cpp
 	"gterm.hpp"
 	<ctype.h>
 
-1265486088 source:c:\cpp\chameleon\network\localprocessmanager.cpp
+1483182332 source:c:\cpp\chameleon\network\localprocessmanager.cpp
 	"LocalProcessManager.h"
 	"PipedProcess.h"
 	"../common/chameleonprocessevent.h"
@@ -3058,7 +3067,7 @@
 1265486086 source:c:\cpp\chameleon\network\states.cpp
 	"gterm.hpp"
 
-1480238098 source:c:\cpp\chameleon\network\textmanager.cpp
+1483963068 source:c:\cpp\chameleon\network\textmanager.cpp
 	"TextManager.h"
 	<iostream>
 	<stdlib.h>
@@ -3069,7 +3078,7 @@
 	"gterm.hpp"
 	"../common/debug.h"
 
-1482161949 source:c:\cpp\chameleon\network\utils.cpp
+1483905555 source:c:\cpp\chameleon\network\utils.cpp
 	"gterm.hpp"
 	"../common/debug.h"
 
@@ -3337,7 +3346,7 @@
 	<_mingw.h>
 	<stddef.h>
 
-1483020363 c:\cpp\chameleon\gui\numerewindow.h
+1483786470 c:\cpp\chameleon\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -3345,12 +3354,13 @@
 	<wx/fdrepdlg.h>
 	<wx/treectrl.h>
 	<wx/notebook.h>
+	<wx/fswatcher.h>
 	"wx/dnd.h"
 	"../kernel/core/language.hpp"
 	"../kernel/core/tools.hpp"
 	<wx/tipdlg.h>
 
-1483179432 c:\cpp\chameleon\kernel\kernel.hpp
+1484042899 c:\cpp\chameleon\kernel\kernel.hpp
 	<string>
 	<fstream>
 	"core/error.hpp"
@@ -3372,7 +3382,7 @@
 	"core/language.hpp"
 	"core/ParserLib/muParser.h"
 
-1483177440 source:c:\cpp\chameleon\kernel\kernel.cpp
+1483989265 source:c:\cpp\chameleon\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 
@@ -3382,12 +3392,15 @@
 1482244345 c:\cpp\chameleon\gui\numerenotebook.h
 	<wx/notebook.h>
 
-1483004533 c:\cpp\chameleon\kernel\syntax.hpp
+1484042911 c:\cpp\chameleon\kernel\syntax.hpp
 	<string>
 	<vector>
+	<map>
+	<fstream>
 
-1482492499 source:c:\cpp\chameleon\kernel\syntax.cpp
+1483879832 source:c:\cpp\chameleon\kernel\syntax.cpp
 	"syntax.hpp"
+	"core/tools.hpp"
 
 1463691746 c:\cpp\chameleon\kernel\core\error.hpp
 	<string>
@@ -3408,7 +3421,7 @@
 	<sstream>
 	<windows.h>
 
-1483014146 c:\cpp\chameleon\kernel\core\settings.hpp
+1483891356 c:\cpp\chameleon\kernel\core\settings.hpp
 	<string>
 	<sstream>
 	<fstream>
@@ -3441,7 +3454,7 @@
 	"version.h"
 	"tools.hpp"
 
-1482999533 c:\cpp\chameleon\kernel\core\version.h
+1483989771 c:\cpp\chameleon\kernel\core\version.h
 
 1482247896 c:\cpp\chameleon\kernel\core\tools.hpp
 	<iostream>
@@ -3851,7 +3864,7 @@
 1467057632 source:c:\cpp\chameleon\kernel\core\basicexcel.cpp
 	"BasicExcel.hpp"
 
-1483020708 source:c:\cpp\chameleon\kernel\core\built-in.cpp
+1483989075 source:c:\cpp\chameleon\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
@@ -3958,7 +3971,7 @@
 1482775489 source:c:\cpp\chameleon\kernel\core\parser.cpp
 	"parser.hpp"
 
-1483173554 source:c:\cpp\chameleon\kernel\core\parser_functions.cpp
+1483798865 source:c:\cpp\chameleon\kernel\core\parser_functions.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -4027,14 +4040,14 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1482408042 source:c:\cpp\chameleon\kernel\core\plotting.cpp
+1483696249 source:c:\cpp\chameleon\kernel\core\plotting.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
 1441547849 source:c:\cpp\chameleon\kernel\core\plugin.cpp
 	"plugin.hpp"
 
-1482413008 source:c:\cpp\chameleon\kernel\core\plugin_histogram.cpp
+1483796736 source:c:\cpp\chameleon\kernel\core\plugin_histogram.cpp
 	"plugins.hpp"
 	"../kernel.hpp"
 
@@ -4063,7 +4076,7 @@
 	"script.hpp"
 	"../kernel.hpp"
 
-1483015539 source:c:\cpp\chameleon\kernel\core\settings.cpp
+1483891683 source:c:\cpp\chameleon\kernel\core\settings.cpp
 	"settings.hpp"
 	"../kernel.hpp"
 
@@ -4079,11 +4092,11 @@
 	<cstddef>
 	<cstdarg>
 
-1483175952 source:c:\cpp\chameleon\kernel\core\tools.cpp
+1483696231 source:c:\cpp\chameleon\kernel\core\tools.cpp
 	"tools.hpp"
 	"../kernel.hpp"
 
-1122536206 source:c:\cpp\chameleon\kernel\core\unzip.cpp
+1483782775 source:c:\cpp\chameleon\kernel\core\unzip.cpp
 	<windows.h>
 	<stdio.h>
 	<stdlib.h>
@@ -4100,7 +4113,7 @@
 	<tchar.h>
 	"zip.h"
 
-1482832695 c:\cpp\chameleon\gui\dirtraverser.hpp
+1484042858 c:\cpp\chameleon\gui\dirtraverser.hpp
 	"wx/wx.h"
 	"wx/dir.h"
 	<string>
@@ -4108,10 +4121,77 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1482833862 source:c:\cpp\chameleon\gui\dirtraverser.cpp
+1483794749 source:c:\cpp\chameleon\gui\dirtraverser.cpp
 	"DirTraverser.hpp"
 
 1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tipdlg.h
 	"wx/defs.h"
 	"wx/textfile.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\fswatcher.h
+	"wx/defs.h"
+	"wx/log.h"
+	"wx/event.h"
+	"wx/evtloop.h"
+	"wx/filename.h"
+	"wx/dir.h"
+	"wx/hashmap.h"
+	"wx/unix/fswatcher_inotify.h"
+	"wx/unix/fswatcher_kqueue.h"
+	"wx/msw/fswatcher.h"
+	"wx/generic/fswatcher.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\evtloop.h
+	"wx/event.h"
+	"wx/utils.h"
+	"wx/osx/core/evtloop.h"
+	"wx/unix/evtloop.h"
+	"wx/msw/evtloopconsole.h"
+	"wx/msw/evtloop.h"
+	"wx/cocoa/evtloop.h"
+	"wx/osx/evtloop.h"
+	"wx/dfb/evtloop.h"
+	"wx/gtk/evtloop.h"
+	"wx/stopwatch.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\evtloop.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\evtloopconsole.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\evtloop.h
+	"wx/dynarray.h"
+	"wx/msw/wrapwin.h"
+	"wx/window.h"
+	"wx/msw/evtloopconsole.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\fswatcher_inotify.h
+	"wx/defs.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\fswatcher_kqueue.h
+	"wx/defs.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\fswatcher.h
+	"wx/defs.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\fswatcher.h
+	"wx/defs.h"
+
+1484040413 source:c:\cpp\chameleon\gui\imagepanel.cpp
+	"imagepanel.hpp"
+
+1484042813 c:\cpp\chameleon\gui\imagepanel.hpp
+	<wx/wx.h>
+	<wx/sizer.h>
+
+1483739173 c:\tdm-gcc-32\wxwidgets-3.0.2\lib\gcc_lib\mswu\wx\msw\rcdefs.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\lib\gcc_lib\mswu\wx\setup.h
+
+1483983481 source:c:\cpp\chameleon\common\recycler.cpp
+	"recycler.hpp"
+	<tchar.h>
+
+1483983476 c:\cpp\chameleon\common\recycler.hpp
+	<windows.h>
+	<shellapi.h>
 

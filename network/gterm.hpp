@@ -25,7 +25,7 @@
 using namespace std;
 
 #define MAXWIDTH 320
-#define MAXHEIGHT 100
+#define MAXHEIGHT 500
 
 /*#ifndef min
 #define min(x,y) ((x)<(y)?(x):(y))
@@ -275,7 +275,6 @@ class GTerm
         unsigned char *input_data;
         int data_len, q_mode, got_param, quote_mode;
 
-
         NumeReSyntax _syntax;
 
         // terminal actions
@@ -290,8 +289,14 @@ class GTerm
         void param_digit();
         void next_param();
 
+        // autocomp params
+        int nTabStartPos;
+        string sAutoCompWordStart;
+        string sAutoCompList;
+        void resetAutoComp();
+
         // non-printing characters
-        void cr(), lf(), ff(), bell(), tab(), bs();
+        void cr(), lf(), ff(), bell(), tab(), visualtab(), bs();
 
         // escape sequence actions
         void keypad_numeric();

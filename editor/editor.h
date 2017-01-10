@@ -47,6 +47,8 @@ public:
 	void OnKeyRel(wxKeyEvent &event);
 	void OnMouseUp(wxMouseEvent &event);
 	void OnMouseDn(wxMouseEvent &event);
+	void OnMouseDblClk(wxMouseEvent& event);
+	void ClearDblClkIndicator();
 	void MakeBraceCheck();
 
 	void getMatchingBrace(int nPos);
@@ -82,9 +84,13 @@ public:
 	void RemoveBreakpoint( int linenum );
 	void SetSyntax(NumeReSyntax* __syntax) {if (!_syntax){_syntax = __syntax;}}
 
+	void ApplyAutoIndentation();
+	void ToggleLineWrap();
+	bool getWrapMode();
+
 private:
 
-
+    int determineIndentationLevel(std::string sLine, bool& bIsElseCase);
 	void OnEditorModified(wxStyledTextEvent &event);
 
 	void OnRunToCursor(wxCommandEvent &event);
@@ -109,6 +115,8 @@ private:
 	//wxFileName m_remoteFileName;
 	//wxFileName m_localFileName;
 	wxString m_simpleFileName;
+	wxString m_watchedString;
+	wxString m_dblclkString;
 	wxDateTime m_filetime;
 
 	wxArrayInt m_breakpoints;
@@ -123,6 +131,9 @@ private:
 	bool m_bLastSavedRemotely;
 	bool m_bHasBeenCompiled;
 	bool m_bNewFile;
+
+	bool m_bWrapMode;
+	FileFilterType m_fileType;
 
 
 	wxMenu m_popupMenu;

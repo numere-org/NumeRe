@@ -428,7 +428,7 @@ wxTerm::wxTerm(wxWindow* parent, wxWindowID id,
     if(m_curBlinkRate)
         m_timer.Start(m_curBlinkRate);
 
-    m_boldStyle = COLOR;
+    m_boldStyle = FONT;
 
     GetDefVTColors(m_vt_colors);
     GetDefPCColors(m_pc_colors);
@@ -614,6 +614,9 @@ void wxTerm::OnClose(wxCloseEvent& event)
 void wxTerm::OnThreadUpdate(wxThreadEvent& event)
 {
     bool Closing = false;
+    bool changedSettings = false;
+    string sFileName = "";
+    unsigned int nLineNumber = 0;
     string sAnswer = "";
     {
         wxCriticalSectionLocker lock(m_kernelCS);
@@ -632,7 +635,8 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
                 break;
             case NumeReKernel::NUMERE_EDIT_FILE:
                 sAnswer = m_sAnswer;//+ "|\n|<- ";
-                m_wxParent->OpenSourceFile(wxArrayString(1, _kernel.ReadFileName()), _kernel.ReadLineNumber());
+                sFileName = _kernel.ReadFileName();
+                nLineNumber = _kernel.ReadLineNumber();
                 break;
             case NumeReKernel::NUMERE_PENDING:
                 sAnswer = "|<- ";
@@ -645,6 +649,7 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
                 sAnswer = m_sAnswer;
         }
         m_sAnswer.clear();
+        changedSettings = _kernel.SettingsModified();
         m_KernelStatus = NumeReKernel::NUMERE_ANSWER_READ;
     }
     if (Closing)
@@ -652,6 +657,25 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
         wxMilliSleep(300);
         m_wxParent->Close();
         return;
+    }
+    if (sFileName.length())
+    {
+        if (sFileName.find(".png") != string::npos
+            || sFileName.find(".jpg") != string::npos
+            || sFileName.find(".jpeg") != string::npos
+            || sFileName.find(".gif") != string::npos
+            || sFileName.find(".bmp") != string::npos)
+        {
+            m_wxParent->openImage(wxFileName(sFileName));
+        }
+        else
+        {
+            m_wxParent->OpenSourceFile(wxArrayString(1, sFileName), nLineNumber);
+        }
+    }
+    if (changedSettings)
+    {
+        m_wxParent->EvaluateOptions();
     }
     ProcessInput(sAnswer.length(), sAnswer);
     Refresh();
@@ -732,7 +756,7 @@ wxTerm::GetDefVTColors(wxColour colors[16], wxTerm::BOLDSTYLE boldStyle)
     if(boldStyle == DEFAULT)
         boldStyle = m_boldStyle;
 
-    if(boldStyle != COLOR)
+    if(boldStyle != COLOR && boldStyle != FONT)
     {
         colors[0] = wxColour(255, 255, 255);                             // black
         colors[1] = wxColour(255, 0, 0);                           // red
@@ -1101,6 +1125,7 @@ wxTerm::OnChar(wxKeyEvent& event)
         }
         else if (keyCode == WXK_BACK)
         {
+            GTerm::resetAutoComp();
             GTerm::bs();
             GTerm::update_changes();
             Refresh();
@@ -1110,32 +1135,38 @@ wxTerm::OnChar(wxKeyEvent& event)
         {
             GTerm::tab();
             GTerm::update_changes();
+            Refresh();
             return;
         }
         else if (keyCode == WXK_LEFT)
         {
+            GTerm::resetAutoComp();
             GTerm::cursor_left();
             GTerm::update_changes();
             return;
         }
         else if (keyCode == WXK_RIGHT)
         {
+            GTerm::resetAutoComp();
             GTerm::cursor_right();
             GTerm::update_changes();
             return;
         }
         else if (keyCode == WXK_UP)
         {
+            GTerm::resetAutoComp();
             GTerm::cursor_up();
             GTerm::update_changes();
             return;
         }
         else if (keyCode == WXK_DOWN)
         {
+            GTerm::resetAutoComp();
             GTerm::cursor_down();
             GTerm::update_changes();
             return;
         }
+        GTerm::resetAutoComp();
         //buf[0] = '\b';
         /*else if (keyCode == WXK_LEFT)
             buf[0] = GTelnet::KEY_LEFT;*/
@@ -1628,8 +1659,8 @@ wxTerm::DoDrawCursor(int fg_color, int bg_color, int flags,
     }
     int
     t;
-    flags |= UNDERLINE;
-    flags |= BOLD;
+    /*flags |= UNDERLINE;*/
+    //flags |= BOLD;
 
     if(flags & BOLD && m_boldStyle == COLOR)
         fg_color = (fg_color % 8) + 8;
@@ -1648,6 +1679,8 @@ wxTerm::DoDrawCursor(int fg_color, int bg_color, int flags,
     c = xCharMap[c];
 #endif
 
+    /*if (flags & UNDERLINE && c != ' ')
+        c = '_';*/
     wxString
     str((char)c);
 
@@ -1764,9 +1797,9 @@ wxTerm::OnTimer(wxTimerEvent& WXUNUSED(event))
     {
         m_curState++;
         if(m_curState & 1 && m_curX != -1 && m_curY != -1)
-            DoDrawCursor(m_curFG, m_curBG, m_curFlags, m_curX, m_curY, m_curChar);
-        else
             DoDrawCursor(m_curBG, m_curFG, m_curFlags, m_curX, m_curY, m_curChar);
+        else
+            DoDrawCursor(m_curFG, m_curBG, m_curFlags, m_curX, m_curY, m_curChar);
     }
 
     if(dc)

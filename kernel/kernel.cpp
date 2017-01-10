@@ -1,5 +1,23 @@
-//#include "kernel.hpp"
-//#include <windows.h>
+/*****************************************************************************
+    NumeRe: Framework fuer Numerische Rechnungen
+    Copyright (C) 2017  Erik Haenel et al.
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
+
+
+
 #include "wx/wx.h"
 #include "../gui/wxterm.h"
 
@@ -26,6 +44,7 @@ string NumeReKernel::sFileToEdit = "";
 unsigned int NumeReKernel::nLineToGoTo = 0;
 int NumeReKernel::nLastStatusVal = 0;
 unsigned int NumeReKernel::nLastLineLength = 0;
+bool NumeReKernel::modifiedSettings = false;
 
 typedef BOOL (WINAPI *LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
 bool IsWow64()
@@ -558,7 +577,7 @@ void NumeReKernel::printVersionInfo()
     BI_splash();
 	//BI_hline(80);
 	//cerr << "|-> Copyright " << (char)184 << " " << AutoVersion::YEAR << toSystemCodePage(", E. Hänel et al.  +  +  +  siehe \"about\" für rechtl. Info |") << endl;
-	printPreFmt("|-> Copyright (c) " + string(AutoVersion::YEAR) + toSystemCodePage(", E. Hänel et al.") + strfill(toSystemCodePage(_lang.get("MAIN_ABOUT_NBR")), _option.getWindow()-40) + "\n"); //toSystemCodePage("Über: siehe \"about\" |") << endl; //MAIN_ABOUT
+	printPreFmt("|-> Copyright (c) 2013-" + string(AutoVersion::YEAR) + toSystemCodePage(", E. Hänel et al.") + strfill(toSystemCodePage(_lang.get("MAIN_ABOUT_NBR")), _option.getWindow()-45) + "\n"); //toSystemCodePage("Über: siehe \"about\" |") << endl; //MAIN_ABOUT
 	printPreFmt("|   Version: " + sVersion + strfill("Build: ", _option.getWindow()-24-sVersion.length()) + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + "\n");
 	make_hline();
 
@@ -640,6 +659,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
     {
         bSupressAnswer = false;
         bWriteToCache = false;
+        sCache = "";
         // --> Bei jedem Schleifendurchlauf muessen die benoetigten Variablen zurueckgesetzt werden <--
         for (int i = 0; i < 2; i++)
         {
@@ -1564,7 +1584,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
              */
             if (e.GetExpr().length() > 63 && nErrorPos > 31 && nErrorPos < e.GetExpr().length()-32)
             {
-                printPreFmt("|  |Position:| \"..."+e.GetExpr().substr(nErrorPos-29,57) + "...\"\n");
+                printPreFmt("|   Position:  \"..."+e.GetExpr().substr(nErrorPos-29,57) + "...\"\n");
                 //printPreFmt("|  "+ ( (char)218 + string("Position:") + (char)191) + " \"..."+e.GetExpr().substr(nErrorPos-29,57) + "...\"\n");
                 printPreFmt(pointToError(32));
                 //cerr << "|  " << (char)218 << "Position:" << (char)191 << " \"..." << e.GetExpr().substr(nErrorPos-29,57) << "...\"\n";
@@ -1572,7 +1592,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             }
             else if (nErrorPos < 32)
             {
-                string sErrorExpr = "|  |Position:| \"";
+                string sErrorExpr = "|   Position:  \"";
                 //cerr << "|  " << (char)218 << "Position:" << (char)191 << " \"";
                 if (e.GetExpr().length() > 63)
                     sErrorExpr += e.GetExpr().substr(0,60) + "...\"";
@@ -1586,7 +1606,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             }
             else if (nErrorPos > e.GetExpr().length()-32)
             {
-                string sErrorExpr = "|  |Position:| \"";
+                string sErrorExpr = "|   Position:  \"";
                 //cerr << "|  " << (char)218 << "Position:" << (char)191 << " \"";
                 if (e.GetExpr().length() > 63)
                 {
@@ -1925,6 +1945,13 @@ unsigned int NumeReKernel::ReadLineNumber()
     return nLine;
 }
 
+bool NumeReKernel::SettingsModified()
+{
+    bool modified = modifiedSettings;
+    modifiedSettings = false;
+    return modified;
+}
+
 vector<string> NumeReKernel::getPathSettings() const
 {
     vector<string> vPaths;
@@ -2185,7 +2212,8 @@ void NumeReKernel::gotoLine(const string& sFile, unsigned int nLine)
     if (!m_parent)
         return;
     sFileToEdit = sFile;
-    nLineToGoTo = nLine-1;
+    if (nLine)
+        nLineToGoTo = nLine-1;
     m_parent->m_KernelStatus = NUMERE_EDIT_FILE;
     wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
     Sleep(100);

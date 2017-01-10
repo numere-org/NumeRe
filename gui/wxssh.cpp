@@ -44,7 +44,7 @@ wxSSH::~wxSSH()
 	{
 		// "No time for pleasantries"
 		m_networking->ForceKillProcess(m_plinkStdIn);
-		wxUsleep(250);
+		wxMilliSleep(250);
 		wxLogDebug("wxSSH force killed m_plink.");
 	}
 }

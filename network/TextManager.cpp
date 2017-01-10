@@ -326,6 +326,7 @@ string& TextManager::GetLine(int index)
 string& TextManager::GetLineAdjusted(int index)
 {
 	int actualLine = AdjustIndex(index);
+	int nsize = m_text.size();
 	return m_text[actualLine];
 }
 
@@ -388,6 +389,47 @@ void TextManager::SetCharAdjusted(int y, int x, char c)
 	}
 	m_text[actualLine][x] = c;
 }
+
+
+
+string TextManager::GetWordAt(int y, int x)
+{
+    int actualLine = AdjustIndex(y);
+    if (actualLine > m_maxHeight || y >= m_viewportHeight)
+        return "";
+    string sWord = m_text[actualLine];
+    for (int pos = x; pos >= 0; pos--)
+    {
+        if (isalnum(sWord[pos]) || sWord[pos] == '_')
+            continue;
+        sWord.erase(0,pos+1);
+        break;
+    }
+    for (size_t pos = 0; pos < sWord.length(); pos++)
+    {
+        if (isalnum(sWord[pos]) || sWord[pos] == '_')
+            continue;
+        return sWord.substr(0,pos);
+    }
+}
+
+string TextManager::GetWordStartAt(int y, int x)
+{
+    if (x < 2)
+        return "";
+    int actualLine = AdjustIndex(y);
+    if (actualLine > m_maxHeight || y >= m_viewportHeight)
+        return "";
+    string sWord = m_text[actualLine].substr(0,x);
+    for (int pos = x-1; pos >= 0; pos--)
+    {
+        if (isalnum(sWord[pos]) || sWord[pos] == '_')
+            continue;
+        return sWord.substr(pos+1);
+    }
+}
+
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public GetCharAdjusted
@@ -620,6 +662,12 @@ void TextManager::SetMaxSize(int newSize)
 	}
 
 	m_maxHeight = newSize;
+	m_bottomLine = m_maxHeight - 1;
+	m_topLine = m_bottomLine - m_viewportHeight + 1;
+	if (m_linesReceived > m_maxHeight)
+        m_linesReceived = m_maxHeight;
+    if (m_numLinesScrolledUp > m_maxHeight)
+        m_numLinesScrolledUp = m_maxHeight;
 }
 
 

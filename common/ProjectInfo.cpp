@@ -401,6 +401,10 @@ FileFilterType ProjectInfo::GetFileType(wxString filename)
 	{
 		fileType = FILE_DATAFILES;
 	}
+	else if (extension == "tex")
+	{
+        fileType = FILE_TEXSOURCE;
+	}
 
 
 	/*

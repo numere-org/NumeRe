@@ -412,6 +412,7 @@ void GTerm::clear_area( int start_x, int start_y, int end_x, int end_y )
 	//wxLogDebug("clear_area");
     int x, y, c, yp, w;
 
+
     c = calc_color(fg_color, bg_color, mode_flags);
 
     w = end_x - start_x + 1;
@@ -431,7 +432,10 @@ void GTerm::clear_area( int start_x, int start_y, int end_x, int end_y )
 		if(num > 0)
 		{
 			//tm[start_y].replace(start_x, num, num, ' ');
-			tm.SetLineAdjusted(start_y, tm.GetLineAdjusted(start_y).replace(start_x, num, num, ' '));
+			string& sref = tm.GetLineAdjusted(start_y);
+			sref.erase(start_x, num);
+			sref.append(num, ' ');
+			//tm.SetLineAdjusted(start_y, tm.GetLineAdjusted(start_y).replace(start_x, num, num, ' '));
 		}
 		else
 		{

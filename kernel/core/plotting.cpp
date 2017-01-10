@@ -5325,12 +5325,18 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
         NumeReKernel::printPreFmt(LineBreak("|   " +_lang.get("PLOT_SAVE_LOCATION", sOutputName), _option, 0) + "\n");
     }
     // --> Ist ein ImageViewer angegeben und der "openImage" TRUE? Dann oeffnen wir das erzeugte Bild mit diesem <--
-    if (_option.getViewerPath().length() && _option.getEditorPath().length() && _pData.getOpenImage() && !_pData.getSilentMode() && _option.getSystemPrintStatus())
+    if (_pData.getOpenImage() && !_pData.getSilentMode() && _option.getSystemPrintStatus())
     {
         // --> Wenn wir das Bild oeffnen, haelt das Programm an und wartet so lange, wie der Viewer nicht geschlossen wird <--
         //cerr << toSystemCodePage("|-> Viewer-Fenster schlieﬂen, um fortzufahren ... ");
-        if (sOutputName.substr(sOutputName.rfind('.')) == ".tex")
-            openExternally(sOutputName, _option.getEditorPath(), _pData.getPath());
+        if (sOutputName.substr(sOutputName.rfind('.')) == ".tex"
+            || sOutputName.substr(sOutputName.rfind('.')) == ".png"
+            || sOutputName.substr(sOutputName.rfind('.')) == ".gif"
+            || sOutputName.substr(sOutputName.rfind('.')) == ".jpg"
+            || sOutputName.substr(sOutputName.rfind('.')) == ".jpeg"
+            || sOutputName.substr(sOutputName.rfind('.')) == ".bmp")
+            NumeReKernel::gotoLine(sOutputName);
+            //openExternally(sOutputName, _option.getEditorPath(), _pData.getPath());
         else
             openExternally(sOutputName, _option.getViewerPath(), _pData.getPath());
         //cerr << "OK" << endl;

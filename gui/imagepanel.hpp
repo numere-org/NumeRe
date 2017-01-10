@@ -16,37 +16,39 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <wx/wx.h>
+#include <wx/sizer.h>
 
-#include "wx/wx.h"
-#include "wx/dir.h"
-#include <string>
-#include <vector>
-#include "IconManager.h"
-#include "../common/datastructures.h"
-
-using namespace std;
-class wxTreeItemData;
-
-class FileNameTreeData : public wxTreeItemData
+class ImagePanel : public wxPanel
 {
-    public:
-        wxString filename;
+    wxImage image;
+    wxBitmap resized;
+    int w, h, sized_w, sized_h;
+
+public:
+    ImagePanel(wxFrame* parent, wxString file, wxBitmapType format);
+
+    void paintEvent(wxPaintEvent & evt);
+    void paintNow();
+    void OnSize(wxSizeEvent& event);
+    void render(wxDC& dc);
+
+    double getRelation() const
+        {return w/(double)h;}
+
+    // some useful events
+    /*
+     void mouseMoved(wxMouseEvent& event);
+     void mouseDown(wxMouseEvent& event);
+     void mouseWheelMoved(wxMouseEvent& event);
+     void mouseReleased(wxMouseEvent& event);
+     void rightClick(wxMouseEvent& event);
+     void mouseLeftWindow(wxMouseEvent& event);*/
+    void keyPressed(wxKeyEvent& event);
+    //void keyReleased(wxKeyEvent& event);
+
+
+    DECLARE_EVENT_TABLE()
 };
 
-class DirTraverser : public wxDirTraverser
-{
-    private:
-        wxTreeCtrl* rootNode;
-        IconManager* iconManager;
-        wxTreeItemId id;
-        FileFilterType fileSpec;
-        wxString path;
-        vector<wxTreeItemId> vcurrentnodes;
-        unsigned int ncurrentdepth;
-    public:
-        DirTraverser(wxTreeCtrl* therootNode, IconManager* theiconmanager, wxTreeItemId theid, const wxString& thepath, FileFilterType thefilespec);
-
-        virtual wxDirTraverseResult OnFile(const wxString& filename);
-        virtual wxDirTraverseResult OnDir(const wxString& dirname);
-};
 
