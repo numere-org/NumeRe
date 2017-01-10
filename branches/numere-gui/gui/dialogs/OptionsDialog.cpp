@@ -368,7 +368,7 @@ void OptionsDialog::CreateControls()
     wxBoxSizer* itemBoxSizer47 = new wxBoxSizer(wxHORIZONTAL);
     itemBoxSizer41->Add(itemBoxSizer47, 0, wxALIGN_LEFT|wxALL, 0);
 
-    m_termHistory = new wxSpinCtrl( itemPanel39, ID_SPINCTRL, _T("0"), wxDefaultPosition, wxSize(60, -1), wxSP_ARROW_KEYS, 100, 300, 100 );
+    m_termHistory = new wxSpinCtrl( itemPanel39, ID_SPINCTRL, _T("0"), wxDefaultPosition, wxSize(60, -1), wxSP_ARROW_KEYS, 100, 500, 100 );
     itemBoxSizer47->Add(m_termHistory, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
     wxStaticText* itemStaticText48 = new wxStaticText( itemPanel39, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_HISTORY_LINES")), wxDefaultPosition, wxDefaultSize, 0 );
     itemBoxSizer47->Add(itemStaticText48, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxADJUST_MINSIZE, 5);
@@ -773,7 +773,7 @@ bool OptionsDialog::EvaluateOptions()
         _option->setPlotOutputPath(m_PlotPath->GetValue().ToStdString());
         _option->setprecision(m_precision->GetValue());
         _option->setDefaultPlotFont(m_defaultFont->GetValue().ToStdString());
-
+        _option->setWindowBufferSize(0, m_termHistory->GetValue());
 		m_options->SetTerminalHistorySize(m_termHistory->GetValue());
 
 		wxString selectedPrintStyleString = m_printStyle->GetValue();
@@ -835,7 +835,7 @@ void OptionsDialog::InitializeDialog()
 	}
 
 	m_printStyle->SetValue(printStyleString);
-	m_termHistory->SetValue(m_options->GetTerminalHistorySize());
+	m_termHistory->SetValue(_option->getBuffer(1));//m_options->GetTerminalHistorySize());
 
 	m_showToolbarText->SetValue(m_options->GetShowToolbarText());
 	m_cbPrintLineNumbers->SetValue(m_options->GetLineNumberPrinting());

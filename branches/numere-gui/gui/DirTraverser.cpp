@@ -1,3 +1,22 @@
+/*****************************************************************************
+    NumeRe: Framework fuer Numerische Rechnungen
+    Copyright (C) 2017  Erik Haenel et al.
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
+
+
 
 #include "DirTraverser.hpp"
 
@@ -41,7 +60,7 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
         case FILE_NUMERE:
             if (filename.length() < 6)
                 return wxDIR_CONTINUE;
-            filespec = "*.nscr;*.nprc;*.ndat";
+            filespec = "*.nscr;*.nprc;*.ndat;";
             if (filespec.find(extension+";") == string::npos)
             {
                 return wxDIR_CONTINUE;
@@ -50,8 +69,17 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
         case FILE_DATAFILES:
             if (filename.length() < 4)
                 return wxDIR_CONTINUE;
-            filespec = "*.ndat;*.dat;*.xls;*.xlsx;*.ods;*.csv;*.txt;*.labx;*.ibw;*.jdx;*.jcm;*.dx";
+            filespec = "*.ndat;*.dat;*.xls;*.xlsx;*.ods;*.csv;*.txt;*.labx;*.ibw;*.jdx;*.jcm;*.dx;*.png;*.log;*.tex;";
             if (filespec.find(extension + ";") == string::npos)
+            {
+                return wxDIR_CONTINUE;
+            }
+            break;
+        case FILE_IMAGEFILES:
+            if (filename.length() < 5)
+                return wxDIR_CONTINUE;
+            filespec = "*.png;*.jpg;*.jpeg;*.eps;*.svg;*.gif;*.bmp;";
+            if (filespec.find(extension+";") == string::npos)
             {
                 return wxDIR_CONTINUE;
             }
@@ -101,7 +129,9 @@ wxDirTraverseResult DirTraverser::OnDir(const wxString& dirname)
     if (ndepth > ncurrentdepth)
         ncurrentdepth = ndepth;
 
-    vcurrentnodes.push_back(rootNode->AppendItem(vcurrentnodes.back(), dirname.substr(dirname.rfind('\\')+1), iconManager->GetIconIndex("FOLDERCLOSED"), iconManager->GetIconIndex("FOLDEROPEN")));
+    FileNameTreeData* data = new FileNameTreeData();
+    data->filename = dirname;
+    vcurrentnodes.push_back(rootNode->AppendItem(vcurrentnodes.back(), dirname.substr(dirname.rfind('\\')+1), iconManager->GetIconIndex("FOLDERCLOSED"), iconManager->GetIconIndex("FOLDEROPEN"), data));
 
     return wxDIR_CONTINUE;
 }

@@ -21,7 +21,7 @@ Options::Options()
 	m_hostname = "localhost";
 	m_password = "";
 	m_remoteCompileOut = "a.out";
-	m_terminalSize = 100;
+	m_terminalSize = 300;
 
 	// Default to printing with black text, white background
 	m_printStyle = wxSTC_PRINT_BLACKONWHITE;

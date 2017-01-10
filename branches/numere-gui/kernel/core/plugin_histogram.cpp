@@ -1153,7 +1153,8 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 string sPath = sHistSavePath.substr(0,sHistSavePath.length()-sFileName.length()-1);
 
                 //cerr << "|-> Viewer-Fenster schliessen, um fortzufahren ... ";
-                openExternally(sPath + "/" + sFileName, _option.getViewerPath(), sPath);
+                NumeReKernel::gotoLine(sPath+"/"+sFileName);
+                //openExternally(sPath + "/" + sFileName, _option.getViewerPath(), sPath);
                 //cerr << "OK" << endl;
             }
             _out.reset();
@@ -2059,7 +2060,8 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 string sPath = sHistSavePath.substr(0,sHistSavePath.length()-sFileName.length()-1);
 
                 //cerr << "|-> Viewer-Fenster schliessen, um fortzufahren ... ";
-                openExternally(sPath + "/" + sFileName, _option.getViewerPath(), sPath);
+                NumeReKernel::gotoLine(sPath+"/"+sFileName);
+                //openExternally(sPath + "/" + sFileName, _option.getViewerPath(), sPath);
                 //cerr << "OK" << endl;
             }
             _out.reset();

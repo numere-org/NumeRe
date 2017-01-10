@@ -1,3 +1,23 @@
+/*****************************************************************************
+    NumeRe: Framework fuer Numerische Rechnungen
+    Copyright (C) 2017  Erik Haenel et al.
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
+
+
+
 #include <string>
 #include <fstream>
 
@@ -57,6 +77,7 @@ class NumeReKernel
         static unsigned int nLineToGoTo;
         static int nLastStatusVal;
         static unsigned int nLastLineLength;
+        static bool modifiedSettings;
         bool bSupressAnswer;
         ofstream oLogFile;
         // return values indicating status:
@@ -85,6 +106,8 @@ class NumeReKernel
         string ReadFileName();
         unsigned int ReadLineNumber();
         string ReadAnswer();
+        bool SettingsModified();
+
         void StartUp(wxTerm* _parent);
         KernelStatus MainLoop(const string& sCommand);
         void CloseSession();
@@ -146,8 +169,8 @@ inline string sectionHeadline(const string& sString, char cHeadLineSep = '-')
 //cerr << "|  " << (char)192 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)193 << (char)196 << (char)196 << std::setfill((char)196) << std::setw(nErrorPos+1) << (char)217 << endl;
 inline string pointToError(unsigned int nPos)
 {
-    string sErrorPointer = "|  ";
+    string sErrorPointer = "|   ";
     //sErrorPointer += (char)192 + strfill(string(1,(char)193), 10, 196) + strfill(string(1,(char)217), nPos+2, 196) + "\n";
-    sErrorPointer += "+" + strfill("+", 10, '-') + strfill("^", nPos+2, '-') + "\n";
+    sErrorPointer += strfill("^^^", nPos+13) + "\n";
     return sErrorPointer;
 }

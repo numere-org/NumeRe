@@ -675,6 +675,8 @@ void Settings::copySettings(const Settings& _settings)
     sPlotOutputPath = _settings.sPlotOutputPath;
     sDefaultfont = _settings.sDefaultfont;
     nPrecision = _settings.nPrecision;
+    nBuffer_x = _settings.nBuffer_x;
+    nBuffer_y = _settings.nBuffer_y;
     bUseDebugger = _settings.bUseDebugger;
     setTokens(_settings.getTokenPaths());
 }

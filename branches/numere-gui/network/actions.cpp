@@ -138,7 +138,7 @@ void GTerm::normal_input()
 		}
 		if (sInput_Data[i] == '\t')
 		{
-            tab();
+            visualtab();
             continue;
 		}
 		tm.SetCharAdjusted(cursor_y, cursor_x, sInput_Data[i]);
@@ -154,7 +154,15 @@ void GTerm::normal_input()
 
             for (unsigned int j = 0; j < colors.length(); j++)
             {
-                tm.SetColorAdjusted(cursor_y, j, calc_color((int)(colors[j]-'0'), bg_color, mode_flags));
+                if ((int)(colors[j]-'0') == NumeReSyntax::SYNTAX_COMMAND)
+                    tm.SetColorAdjusted(cursor_y, j, calc_color((int)(colors[j]-'0'), bg_color, mode_flags | BOLD | UNDERLINE));
+                else if ((int)(colors[j]-'0') == NumeReSyntax::SYNTAX_FUNCTION
+                    || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_CONSTANT
+                    || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_SPECIALVAL
+                    || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_PROCEDURE)
+                    tm.SetColorAdjusted(cursor_y, j, calc_color((int)(colors[j]-'0'), bg_color, mode_flags | BOLD));
+                else
+                    tm.SetColorAdjusted(cursor_y, j, calc_color((int)(colors[j]-'0'), bg_color, mode_flags));
             }
 
             changed_line(cursor_y, 0, cursor_x);
@@ -180,6 +188,15 @@ void GTerm::normal_input()
 
     //input_data += n_taken - 1;
     //data_len -= n_taken - 1;
+}
+
+void GTerm::resetAutoComp()
+{
+    if (nTabStartPos == -1)
+        return;
+    nTabStartPos = -1;
+    sAutoCompList.clear();
+    sAutoCompWordStart.clear();
 }
 
 void GTerm::cr()
@@ -211,6 +228,33 @@ void GTerm::ff()
 }
 
 void GTerm::tab()
+{
+    if (nTabStartPos == -1)
+    {
+        nTabStartPos = cursor_x;
+        sAutoCompWordStart = tm.GetWordStartAt(cursor_y, cursor_x);
+        sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart);
+
+        if (!sAutoCompList.length() || !sAutoCompWordStart.length())
+        {
+            resetAutoComp();
+            return;
+        }
+    }
+    else
+    {
+        if (!sAutoCompList.length())
+            sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart);
+        clear_area(nTabStartPos, cursor_y, cursor_x, cursor_y);
+        move_cursor(nTabStartPos, cursor_y);
+    }
+    sInput_Data = sAutoCompList.substr(sAutoCompWordStart.length(), sAutoCompList.find('?')-sAutoCompWordStart.length());
+    data_len = sInput_Data.length();
+    sAutoCompList.erase(0, sAutoCompList.find(' ')+1);
+    normal_input();
+}
+
+void GTerm::visualtab()
 {
     int i, x = 0;
 
@@ -251,7 +295,15 @@ void GTerm::bs()
 
     for (unsigned int j = 0; j < colors.length(); j++)
     {
-        tm.SetColorAdjusted(cursor_y, j, calc_color((int)(colors[j]-'0'), bg_color, mode_flags));
+        if ((int)(colors[j]-'0') == NumeReSyntax::SYNTAX_COMMAND)
+            tm.SetColorAdjusted(cursor_y, j, calc_color((int)(colors[j]-'0'), bg_color, mode_flags | BOLD | UNDERLINE));
+        else if ((int)(colors[j]-'0') == NumeReSyntax::SYNTAX_FUNCTION
+            || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_CONSTANT
+            || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_SPECIALVAL
+            || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_PROCEDURE)
+            tm.SetColorAdjusted(cursor_y, j, calc_color((int)(colors[j]-'0'), bg_color, mode_flags | BOLD));
+        else
+            tm.SetColorAdjusted(cursor_y, j, calc_color((int)(colors[j]-'0'), bg_color, mode_flags));
     }
 
     changed_line(cursor_y, cursor_x-1, cursor_x+1);

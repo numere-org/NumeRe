@@ -1200,6 +1200,8 @@ void openExternally(const string& sFile, const string& sProgramm, const string& 
     /* --> Dies simuliert im Wesentlichen einen cd zur Datei, den Aufruf mit dem anderen
      *     Programm und die Rueckkehr zum alten Pfad (NumeRe-Stammverzeichnis) <--
      */
+    if (!sProgramm.length())
+        return;
     char* cFile = 0;
     if (sFile[0] != '"')
         cFile = (char*)string("\"" + sFile + "\"").c_str();

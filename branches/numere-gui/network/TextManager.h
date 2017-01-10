@@ -21,6 +21,8 @@ class TextManager
         int GetLinesReceived();
         string& GetLine(int index);
         string& GetLineAdjusted(int index);
+        string GetWordAt(int y, int x);
+        string GetWordStartAt(int y, int x);
         char GetCharAdjusted(int y, int x);
         unsigned short GetColor(int y, int x);
         unsigned short GetColorAdjusted(int y, int x);

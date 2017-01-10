@@ -2321,7 +2321,7 @@ void parser_ListDefine(const Define& _functions, const Settings& _option)
     make_hline();
     if (!_functions.getDefinedFunctions())
     {
-        NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_EMPTY")));
+        NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_EMPTY")));
     }
     else
     {
@@ -2753,7 +2753,7 @@ void parser_ListPlugins(Parser& _parser, Datafile& _data, const Settings& _optio
         NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_LISTPLUGINS_EMPTY")));
     else
     {
-        NumeReKernel::printPreFmt(LineBreak("|   "+_lang.get("PARSERFUNCS_LISTPLUGINS_TABLEHEAD"), _option, 0));
+        NumeReKernel::printPreFmt(LineBreak("|   "+_lang.get("PARSERFUNCS_LISTPLUGINS_TABLEHEAD"), _option, 0) + "\n");
         NumeReKernel::printPreFmt("|\n");
         for (unsigned int i = 0; i < _plugin.getPluginCount(); i++)
         {

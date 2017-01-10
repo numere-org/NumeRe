@@ -127,7 +127,7 @@ void wxTermContainer::CreateControls()
 
     wxScrollBar* item4 = new wxScrollBar( item1, ID_SCROLLBAR, wxPoint(this->GetSize().GetX() - 18, 0), wxSize(18, -1), wxSB_VERTICAL );
     m_scrollbar = item4;
-    item4->SetScrollbar(90, 10, 100, 10);
+    item4->SetScrollbar(90, 10, 300, 10);
     item2->Add(item4, 0, wxGROW, 5);
 
 ////@end wxTermContainer content construction

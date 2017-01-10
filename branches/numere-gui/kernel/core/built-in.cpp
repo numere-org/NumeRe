@@ -514,22 +514,26 @@ void BI_clear_cache(Datafile& _data, Settings& _option, bool bIgnore)
 // 9. Dies zeigt einfach nur ein paar rechtliche Infos zu diesem Programm an
 void BI_show_credits(Parser& _parser, Settings& _option)
 {
-    /**BI_splash();
-	NumeReKernel::print("|-> Version: " + sVersion );
-	NumeReKernel::print(  _lang.get("BUILTIN_CREDITS_BUILD") + ": " + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE );
+    NumeReKernel::toggleTableStatus();
+    make_hline();
+    BI_splash();
+	NumeReKernel::printPreFmt("|-> Version: " + sVersion);
+	NumeReKernel::printPreFmt(" | " + _lang.get("BUILTIN_CREDITS_BUILD") + ": " + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE +"\n");
 	//NumeReKernel::print("|-> Build-Datum: " + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE );
-	NumeReKernel::print("|-> Copyright " + (char)184 + " " + AutoVersion::YEAR + toSystemCodePage(", Erik HÄNEL et al.") );
-	NumeReKernel::print("|   <numere.developer" + (char)64 + "gmail.com>" );
+	NumeReKernel::print("Copyright (c) 2013-" + (AutoVersion::YEAR + toSystemCodePage(", Erik HÄNEL et al.")) );
+	NumeReKernel::printPreFmt("|   <numere.developer@gmail.com>\n" );
 	NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CREDITS_VERSIONINFO"), _option) );
 	//NumeReKernel::print(LineBreak("|-> RELEASE CANDIDATE: ein Release Candidate trägt keinen Eigennamen. Außerdem wird NICHT garantiert, dass die gesamte derzeitig Funktionalität erhalten bleibt, wie sie in diesem Release Candidate vorliegt. Auf den Fortgang der Entwicklung kann durch eine Mail an obige Mailadresse Einfluss genommen werden. Sollten Bugs gefunden werden, oder eine Funktionalität noch nicht den erwünschten Umfang haben, sollte dies per Mail übermittelt werden.", _option) );
     make_hline(-80);
     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CREDITS_LICENCE_1"), _option) );
     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CREDITS_LICENCE_2"), _option) );
     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CREDITS_LICENCE_3"), _option) );
+    NumeReKernel::toggleTableStatus();
+    make_hline();
     //NumeReKernel::print(LineBreak("|-> Dieses Programm ist freie Software. Sie können es unter den Bedingungen der GNU General Public Licence, wie von der Free Software Foundation veröffentlicht, weitergeben und/oder modifizieren, entweder gemäß Version 3 der Lizenz, oder (nach Ihrer Option) jeder späteren Version.", _option) );
     //NumeReKernel::print(LineBreak("|-> Die Veröffentlichung dieses Programms erfolgt in der Hoffnung, dass es Ihnen von Nutzen sein wird, aber OHNE IRGENDEINE GARANTIE, sogar ohne die implizite Garantie der MARKTREIFE oder der VERWENDBARKEIT FÜR EINEN BESTIMMTEN ZWECK. Details stehen in der GNU General Public Licence." , _option) );
     //NumeReKernel::print(LineBreak("|-> Sie sollten ein Exemplar der GNU GPL zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.org/licenses/>.", _option) );
-    make_hline(-80);
+    /*make_hline(-80);
     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CREDITS_MEMBERS"), _option) );
     //NumeReKernel::print(LineBreak("|-> Konzept/UI: Erik HÄNEL; Mathe-Parser: Ingo BERG; Plotting: Alexey BALAKIN; numerische Algorithmen: GNU Scientific Library; Tokenizer: Boost-Library; Matrix-Algorithmen: Eigen Library; Testing: D. BAMMERT, J. HÄNEL, R. HUTT, K. KILGUS, E. KLOSTER, K. KURZ, M. LÖCHNER, L. SAHINOVIC, D. SCHMID, V. SEHRA, G. STADELMANN, R. WANNER, F. WUNDER, J. ZINßER", _option) );
 	NumeReKernel::print("|-> muParser   v  " + _parser.GetVersion(pviBRIEF) + ",   " + (char)184 + " 2011, Ingo Berg            [MIT-Licence]" );
@@ -542,8 +546,8 @@ void BI_show_credits(Parser& _parser, Settings& _option)
 	NumeReKernel::print("|-> BasicExcel v   1.14,   " + (char)184 + " 2006, Yap Chun Wei" );
 	NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CREDITS_BUGS_REQUESTS")+":", _option) );
 	//NumeReKernel::print("|-> Bugs und Feature-Requests gerne an:" );
-	NumeReKernel::print("|   <numere.developer" + (char)64 + "gmail.com>" );
-	make_hline();*/
+	NumeReKernel::print("|   <numere.developer" + (char)64 + "gmail.com>" );*/
+	/*make_hline();*/
     return;
 }
 
@@ -2930,6 +2934,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_option.getSystemPrintStatus())
                     NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) );
                     //NumeReKernel::print("|-> Dateipfad erfolgreich aktualisiert." );
+                NumeReKernel::modifiedSettings = true;
                 return 1;
             }
             else if (matchParams(sCmd, "loadpath") || matchParams(sCmd, "loadpath", '='))
@@ -2957,6 +2962,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_option.getSystemPrintStatus())
                     NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) );
                     //NumeReKernel::print("|-> Dateipfad erfolgreich aktualisiert." );
+                NumeReKernel::modifiedSettings = true;
                 return 1;
             }
             else if (matchParams(sCmd, "workpath") || matchParams(sCmd, "workpath", '='))
@@ -2986,6 +2992,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_option.getSystemPrintStatus())
                     NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) );
                     //NumeReKernel::print("|-> Dateipfad erfolgreich aktualisiert." );
+                NumeReKernel::modifiedSettings = true;
                 return 1;
             }
             else if (matchParams(sCmd, "viewer") || matchParams(sCmd, "viewer", '='))
@@ -3058,6 +3065,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_option.getSystemPrintStatus())
                     NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) );
                     //NumeReKernel::print("|-> Dateipfad erfolgreich aktualisiert." );
+                NumeReKernel::modifiedSettings = true;
                 return 1;
             }
             else if (matchParams(sCmd, "plotpath") || matchParams(sCmd, "plotpath", '='))
@@ -3082,6 +3090,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_option.getSystemPrintStatus())
                     NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) );
                     //NumeReKernel::print("|-> Dateipfad erfolgreich aktualisiert." );
+                NumeReKernel::modifiedSettings = true;
                 return 1;
             }
             else if (matchParams(sCmd, "procpath") || matchParams(sCmd, "procpath", '='))
@@ -3105,6 +3114,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (_option.getSystemPrintStatus())
                     NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) );
                     //NumeReKernel::print("|-> Dateipfad erfolgreich aktualisiert." );
+                NumeReKernel::modifiedSettings = true;
                 return 1;
             }
             else if (matchParams(sCmd, "plotfont") || matchParams(sCmd, "plotfont", '='))
@@ -3529,14 +3539,15 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     while (nArgument < 300);
                 }
                 _option.setWindowBufferSize(0,(unsigned)nArgument);
-                if (ResizeConsole(_option))
+                //if (ResizeConsole(_option))
                 {
                     if (_option.getSystemPrintStatus())
                         NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_BUFFERSIZE"))) );
                     //NumeReKernel::print("|-> Buffer erfolgreich aktualisiert." );
                 }
-                else
-                    throw;
+                /*else
+                    throw;*/
+                NumeReKernel::modifiedSettings = true;
                 return 1;
             }
             else if (matchParams(sCmd, "windowsize"))
@@ -8255,11 +8266,11 @@ bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _op
         || sObject.substr(sObject.rfind('.')) == ".nscr"
         || sObject.substr(sObject.rfind('.')) == ".nprc"
         || sObject.substr(sObject.rfind('.')) == ".nhlp"
+        || sObject.substr(sObject.rfind('.')) == ".png"
+        || sObject.substr(sObject.rfind('.')) == ".gif"
         || sObject.substr(sObject.rfind('.')) == ".log")
         nType = 1;
-    else if (sObject.substr(sObject.rfind('.')) == ".png"
-        || sObject.substr(sObject.rfind('.')) == ".svg"
-        || sObject.substr(sObject.rfind('.')) == ".gif"
+    else if (sObject.substr(sObject.rfind('.')) == ".svg"
         || sObject.substr(sObject.rfind('.')) == ".eps")
         nType = 2;
     if (!nType)

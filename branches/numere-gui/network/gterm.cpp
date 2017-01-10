@@ -7,6 +7,9 @@
 
 #include "gterm.hpp"
 #include "../common/debug.h"
+#include <wx/stdpaths.h>
+#include <wx/wx.h>
+#include <wx/filename.h>
 
 #ifdef _DEBUG
 
@@ -43,6 +46,7 @@ void GTerm::ProcessInput(int len, const string& sData)
 	//input_data = data;
 	//strcpy((char*)input_data,(const char*)data);
 	mode_flags |= DESTRUCTBS;
+	mode_flags |= INSERT;
 	normal_input();
 	update_changes();
 	return;
@@ -156,6 +160,8 @@ GTerm::GTerm(int w, int h) : width(w), height(h)
 	TextManager temptm(this, w, h, MAXWIDTH, MAXHEIGHT);
 
 	tm = temptm;
+	wxFileName f(wxStandardPaths::Get().GetExecutablePath());
+	_syntax.loadSyntax(f.GetPath(true).ToStdString());
 
 
 	// could make this dynamic
@@ -178,6 +184,7 @@ GTerm::GTerm(int w, int h) : width(w), height(h)
 	save_y = 0;
         mode_flags = 0;
 	reset();
+	resetAutoComp();
 }
 
 GTerm::~GTerm()
