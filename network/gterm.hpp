@@ -266,8 +266,8 @@ class GTerm
         void shift_text(int y, int start_x, int end_x, int num); // ditto
         void clear_area(int start_x, int start_y, int end_x, int end_y);
         void changed_line(int y, int start_x, int end_x);
-        void move_cursor(int x, int y);
         int calc_color(int fg, int bg, int flags);
+        void move_cursor(int x, int y);
 
         // action parameters
         int nparam, param[30];
@@ -281,13 +281,17 @@ class GTerm
     protected:
         int m_numCommandLines;
 
+        // move cursor by clicking
+        void move_cursor_editable_area(int x, int y);
         void update_changes();
         void normal_input();
+        void normal_output();
         void set_q_mode();
         void set_quote_mode();
         void clear_param();
         void param_digit();
         void next_param();
+
 
         // autocomp params
         int nTabStartPos;
@@ -345,10 +349,7 @@ class GTerm
         // function to control terminal
         virtual void ProcessInput(int len, const string& sData);
         //virtual void ProcessInput(int len, unsigned const char *data);
-        virtual void ProcessOutput(int len, unsigned char *data)
-        {
-            SendBack(len, (char *)data);
-        }
+        virtual void ProcessOutput(int len, const string& sData);
         virtual void ResizeTerminal(int width, int height);
         int Width()
         {
@@ -422,6 +423,7 @@ class GTerm
         virtual int IsSelected(int x, int y);
         virtual void Select(int x, int y, int select);
         virtual unsigned char GetChar(int x, int y);
+        string get_selected_text();
 };
 
 #endif

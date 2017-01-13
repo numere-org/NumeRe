@@ -526,6 +526,12 @@ void GTerm::move_cursor( int x, int y )
 	tm.SetCursorLine(y);
 }
 
+void GTerm::move_cursor_editable_area( int x, int y )
+{
+    if (tm.IsEditable(y,x))
+        move_cursor(x,y);
+}
+
 void GTerm::set_mode_flag( int flag )
 {
     mode_flags |= flag;

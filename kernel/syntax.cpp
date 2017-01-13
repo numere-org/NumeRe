@@ -23,7 +23,8 @@
 
 NumeReSyntax::NumeReSyntax()
 {
-    vCommands.push_back("NO_SYNTAX_ELEMENTS");
+    vNSCRCommands.push_back("NO_SYNTAX_ELEMENTS");
+    vNPRCCommands.push_back("NO_SYNTAX_ELEMENTS");
     vFunctions.push_back("NO_SYNTAX_ELEMENTS");
     vOptions.push_back("NO_SYNTAX_ELEMENTS");
     vConstants.push_back("NO_SYNTAX_ELEMENTS");
@@ -56,16 +57,18 @@ void NumeReSyntax::loadSyntax(const string& sPath)
         if (sLine.front() == '#')
             continue;
         if (sLine.find("NSCR_COMMANDS") != string::npos)
-            vCommands = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.find("NSCR_FUNCTIONS") != string::npos)
+            vNSCRCommands = splitString(sLine.substr(sLine.find('=')+1));
+        if (sLine.find("NPRC_COMMANDS") != string::npos)
+            vNPRCCommands = splitString(sLine.substr(sLine.find('=')+1));
+        else if (sLine.find("FUNCTIONS") != string::npos)
             vFunctions = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.find("NSCR_OPTIONS") != string::npos)
+        else if (sLine.find("OPTIONS") != string::npos)
             vOptions = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.find("NSCR_CONSTANTS") != string::npos)
+        else if (sLine.find("CONSTANTS") != string::npos)
             vConstants = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.find("NSCR_SPECIALVALS") != string::npos)
+        else if (sLine.find("SPECIALVALS") != string::npos)
             vSpecialValues = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.find("NSCR_OPERATORS") != string::npos)
+        else if (sLine.find("OPERATORS") != string::npos)
             vOperators = splitString(sLine.substr(sLine.find('=')+1));
     }
 }
@@ -219,9 +222,13 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
             {
                 colors[i+nLen] = '0'+SYNTAX_OPERATOR;
             }
-            if (matchItem(vCommands, sCommandLine.substr(i,nLen)))
+            if (matchItem(vNSCRCommands, sCommandLine.substr(i,nLen)))
             {
                 colors.replace(i, nLen, nLen, '0'+SYNTAX_COMMAND);
+            }
+            if (matchItem(vNPRCCommands, sCommandLine.substr(i,nLen)))
+            {
+                colors.replace(i, nLen, nLen, '0'+SYNTAX_PROCEDURE);
             }
             else if (i+nLen < sCommandLine.length()
                 && sCommandLine[i+nLen] == '('
@@ -248,13 +255,15 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
     return colors;
 }
 
-string NumeReSyntax::getAutoCompList(string sFirstChars)
+string NumeReSyntax::getAutoCompList(string sFirstChars, string sType)
 {
     string sAutoCompList;
     if (!mAutoCompList.size())
     {
-        for (size_t i = 0; i < vCommands.size(); i++)
-            mAutoCompList[toLowerCase(vCommands[i])+" |"+vCommands[i]] = SYNTAX_COMMAND;
+        for (size_t i = 0; i < vNSCRCommands.size(); i++)
+            mAutoCompList[toLowerCase(vNSCRCommands[i])+" |"+vNSCRCommands[i]] = SYNTAX_COMMAND;
+        for (size_t i = 0; i < vNPRCCommands.size(); i++)
+            mAutoCompList[toLowerCase(vNPRCCommands[i])+" |"+vNPRCCommands[i]] = SYNTAX_COMMAND;
         for (size_t i = 0; i < vFunctions.size(); i++)
             mAutoCompList[toLowerCase(vFunctions[i])+" |"+vFunctions[i]+"("] = SYNTAX_FUNCTION;
         for (size_t i = 0; i < vOptions.size(); i++)
@@ -271,8 +280,15 @@ string NumeReSyntax::getAutoCompList(string sFirstChars)
     {
         if ((iter->first).front() == sFirstChars.front())
         {
+            if (sType == "NSCR" && iter->second == SYNTAX_NPRC_COMMAND)
+                continue;
             if (sFirstChars == (iter->first).substr(0,sFirstChars.length()))
-                sAutoCompList += (iter->first).substr((iter->first).find('|')+1) + "?" + toString((int)(iter->second)) + " ";
+            {
+                if (iter->second == SYNTAX_NPRC_COMMAND)
+                    sAutoCompList += (iter->first).substr((iter->first).find('|')+1) + "?" + toString((int)(SYNTAX_COMMAND)) + " ";
+                else
+                    sAutoCompList += (iter->first).substr((iter->first).find('|')+1) + "?" + toString((int)(iter->second)) + " ";
+            }
         }
         else if ((iter->first).front() > sFirstChars.front())
             break;

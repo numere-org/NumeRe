@@ -130,7 +130,11 @@ void NumeReKernel::StartUp(wxTerm* _parent)
     GetVersionExA(&_osversioninfo);
     GetModuleFileNameA(NULL, __cPath, 1024);
     string sPath = __cPath;
+#ifdef RELEASE
+    sPath = sPath.substr(0,sPath.rfind("\\numere.exe"));
+#else
     sPath = sPath.substr(0,sPath.rfind("\\NumeRe.exe"));
+#endif
     while (sPath.find('\\') != string::npos)
         sPath[sPath.find('\\')] = '/';
     //Sleep(50);
@@ -577,7 +581,7 @@ void NumeReKernel::printVersionInfo()
     BI_splash();
 	//BI_hline(80);
 	//cerr << "|-> Copyright " << (char)184 << " " << AutoVersion::YEAR << toSystemCodePage(", E. Hänel et al.  +  +  +  siehe \"about\" für rechtl. Info |") << endl;
-	printPreFmt("|-> Copyright (c) 2013-" + string(AutoVersion::YEAR) + toSystemCodePage(", E. Hänel et al.") + strfill(toSystemCodePage(_lang.get("MAIN_ABOUT_NBR")), _option.getWindow()-45) + "\n"); //toSystemCodePage("Über: siehe \"about\" |") << endl; //MAIN_ABOUT
+	printPreFmt("|-> Copyright (c) 2013-" + string(AutoVersion::YEAR) + toSystemCodePage(", Erik A. Hänel et al.") + strfill(toSystemCodePage(_lang.get("MAIN_ABOUT_NBR")), _option.getWindow()-50) + "\n"); //toSystemCodePage("Über: siehe \"about\" |") << endl; //MAIN_ABOUT
 	printPreFmt("|   Version: " + sVersion + strfill("Build: ", _option.getWindow()-24-sVersion.length()) + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + "\n");
 	make_hline();
 
@@ -590,11 +594,10 @@ void NumeReKernel::printVersionInfo()
         //cerr << toSystemCodePage(BI_Greeting(_option));
         //cerr << "|" << endl;
     }
-    /**if (_option.getbShowHints())  //Dies muss eigentlich nun ein PopUp werden...
-        doc_TipOfTheDay(_option);*/
-    printPreFmt("|<- ");
+    print(LineBreak(_lang.get("PARSER_INTRO"), _option));;
+    printPreFmt("|\n|<- ");
+    flush();
     bWritingTable = false;
-    printPreFmt("");
 
 }
 
@@ -2285,7 +2288,7 @@ void NumeReKernel::flush()
     if (!m_parent)
         return;
     wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
-    Sleep(5);
+    Sleep(1);
 }
 
 

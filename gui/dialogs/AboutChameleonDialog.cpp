@@ -16,6 +16,8 @@
 // For compilers that support precompilation, includes "wx/wx.h".
 #include "wx/wxprec.h"
 #include <wx/msw/private.h>
+#include <wx/filename.h>
+#include <wx/stdpaths.h>
 
 #ifdef __BORLANDC__
 #pragma hdrstop
@@ -251,10 +253,11 @@ wxBitmap AboutChameleonDialog::GetBitmapResource( const wxString& name )
 {
     // Bitmap retrieval
 ////@begin AboutChameleonDialog bitmap retrieval
+    wxFileName f(wxStandardPaths::Get().GetExecutablePath());
     wxUnusedVar(name);
     if (name == _T("chamlogo_1.xpm"))
     {
-        wxBitmap bitmap("folder.png", wxBITMAP_TYPE_PNG);
+        wxBitmap bitmap(f.GetPath(true)+"icons\\folder.png", wxBITMAP_TYPE_PNG);
         return bitmap;
     }
     /*else if (name == _T("team_1.xpm"))

@@ -2595,6 +2595,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             }
             else if (sCmd.length() > findCommand(sCmd).nPos+7 && sCmd.find_first_not_of(' ', findCommand(sCmd).nPos+7) != string::npos)
             {
+                NumeReKernel::printPreFmt("\r");
                 if (_data.containsStringVars(sCmd))
                     _data.getStringValues(sCmd);
                 if (sCmd[sCmd.find_first_not_of(' ',findCommand(sCmd).nPos+7)] != '"' && sCmd.find("string(") == string::npos)
@@ -4664,6 +4665,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 if (sArgument == "num" || sArgument == "numerical")
                     parser_ListFunc(_option, "num");
+                else if (sArgument == "mat" || sArgument == "matrix" || sArgument == "vec" || sArgument == "vector")
+                    parser_ListFunc(_option, "mat");
                 else if (sArgument == "string")
                     parser_ListFunc(_option, "string");
                 else if (sArgument == "trigonometric")

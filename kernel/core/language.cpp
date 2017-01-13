@@ -86,6 +86,8 @@ void Language::loadStrings(bool bloadUserFiles)
     //ifstream fStrings_in;
     string sLine;
     map<string,string> mLangFileContent;
+    if (mLangStrings.size())
+        mLangStrings.clear();
 
     mLangFileContent = getLangFileContent("<>/lang/main.nlng");
     mLangStrings.insert(mLangFileContent.begin(), mLangFileContent.end());

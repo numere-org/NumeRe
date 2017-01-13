@@ -24,15 +24,19 @@ class TextManager
         string GetWordAt(int y, int x);
         string GetWordStartAt(int y, int x);
         char GetCharAdjusted(int y, int x);
+        bool IsUserText(int y, int x);
+        bool IsEditable(int y, int x);
         unsigned short GetColor(int y, int x);
         unsigned short GetColorAdjusted(int y, int x);
 
 
         void CursorDown();
         void CursorUp();
+        void ChangeEditableState();
 
+        void SetEditable(int y, int x);
         void SetMaxSize(int newSize);
-        void SetCharAdjusted(int y, int x, char c);
+        void SetCharAdjusted(int y, int x, char c, bool isUserText = false);
         void SetCursorLine(int line);
         void SetLine(int index, string line);
         void SetLineAdjusted(int index, string line);
@@ -70,7 +74,8 @@ class TextManager
         int m_blankColor;
         string m_blankline;
 
-        deque< vector<unsigned short> > m_color;
+        deque<vector<unsigned short> > m_color;
+        deque<vector<short> > m_userText;
         deque<string> m_text;
 
         GTerm* m_parent;

@@ -8536,29 +8536,29 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
             if (bUseErrors)
             {
                 if (log10(dNormChisq) > -1.0 && log10(dNormChisq) < 0.5 && dErrorPercentageSum < 50.0)
-                    oFitLog << LineBreak(_lang.get("PARSERFUNCS_FIT_GOOD_W_ERROR"), _option) << endl;
+                    oFitLog << _lang.get("PARSERFUNCS_FIT_GOOD_W_ERROR") << endl;
                 else if (log10(dNormChisq) <= -1.0 && dErrorPercentageSum < 20.0)
-                    oFitLog << LineBreak(_lang.get("PARSERFUNCS_FIT_BETTER_W_ERROR"), _option) << endl;
+                    oFitLog << _lang.get("PARSERFUNCS_FIT_BETTER_W_ERROR") << endl;
                 else if (log10(dNormChisq) >= 0.5 && log10(dNormChisq) < 1.5 && dErrorPercentageSum < 100.0)
-                    oFitLog << LineBreak(_lang.get("PARSERFUNCS_FIT_NOT_GOOD_W_ERROR"), _option) << endl;
+                    oFitLog << _lang.get("PARSERFUNCS_FIT_NOT_GOOD_W_ERROR") << endl;
                 else
-                    oFitLog << LineBreak(_lang.get("PARSERFUNCS_FIT_BAD_W_ERROR"), _option) << endl;
+                    oFitLog << _lang.get("PARSERFUNCS_FIT_BAD_W_ERROR") << endl;
             }
             else
             {
                 if (log10(dNormChisq) < -3.0 && dErrorPercentageSum < 20.0)
-                    oFitLog << LineBreak(_lang.get("PARSERFUNCS_FIT_GOOD_WO_ERROR"), _option) << endl;
+                    oFitLog << _lang.get("PARSERFUNCS_FIT_GOOD_WO_ERROR") << endl;
                 else if (log10(dNormChisq) < 0.0 && dErrorPercentageSum < 50.0)
-                    oFitLog << LineBreak(_lang.get("PARSERFUNCS_FIT_IMPROVABLE_WO_ERROR"), _option) << endl;
+                    oFitLog << _lang.get("PARSERFUNCS_FIT_IMPROVABLE_WO_ERROR") << endl;
                 else if (log10(dNormChisq) >= 0.0 && log10(dNormChisq) < 0.5 && dErrorPercentageSum < 100.0)
-                    oFitLog << LineBreak(_lang.get("PARSERFUNCS_FIT_NOT_GOOD_WO_ERROR"), _option) << endl;
+                    oFitLog << _lang.get("PARSERFUNCS_FIT_NOT_GOOD_WO_ERROR") << endl;
                 else
-                    oFitLog << LineBreak(_lang.get("PARSERFUNCS_FIT_BAD_WO_ERROR"), _option) << endl;
+                    oFitLog << _lang.get("PARSERFUNCS_FIT_BAD_WO_ERROR") << endl;
             }
         }
         else
         {
-            oFitLog << LineBreak(_lang.get("PARSERFUNCS_FIT_OVERFITTING"), _option) << endl;
+            oFitLog << _lang.get("PARSERFUNCS_FIT_OVERFITTING") << endl;
         }
     }
     oFitLog << std::setw(76) << std::setfill('=') << '=' << endl;

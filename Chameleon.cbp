@@ -6,61 +6,110 @@
 		<Option pch_mode="2" />
 		<Option compiler="tdm-gcc" />
 		<Build>
-			<Target title="Debug Win32">
-				<Option output="Debug/Chameleon" prefix_auto="1" extension_auto="1" />
+			<Target title="Debug">
+				<Option output="Debug/NumeRe" prefix_auto="1" extension_auto="1" />
 				<Option object_output="Debug" />
 				<Option type="0" />
 				<Option compiler="tdm-gcc" />
 				<Compiler>
-					<Add option="/DWIN32" />
-					<Add option="/D_DEBUG" />
-					<Add option="/D_WINDOWS" />
-					<Add option="/D__WXMSW__" />
-					<Add option="/DWINVER=0x0400" />
-					<Add option="/D__WXDEBUG__" />
-					<Add option="/D_X86_" />
-					<Add option="/D$(NOINHERIT)" />
-					<Add option="/W3" />
-					<Add option="/ZI" />
-					<Add option="/Od" />
-					<Add option="/MDd" />
-					<Add option="/EHa" />
+					<Add option="-Wall" />
+					<Add option="-g" />
+					<Add option="-std=gnu++11" />
+					<Add option="-DDLLVER_MAJOR_MASK" />
+					<Add option="-DwxUSE_REGEX" />
+					<Add option="-DwxDIALOG_MODAL" />
+					<Add option="-DwxUSE_UNICODE" />
+					<Add option="-D__GNUWIN32__" />
+					<Add option="-D__WXMSW__" />
+					<Add directory="$(#wx)/lib/gcc_lib/mswu" />
+					<Add directory="$(#wx)/include" />
 				</Compiler>
+				<ResourceCompiler>
+					<Add directory="$(#wx)/include/" />
+				</ResourceCompiler>
 				<Linker>
-					<Add option="/NODEFAULTLIB:MSVCRTD.lib" />
-					<Add option="/NODEFAULTLIB:LIBCMT.lib" />
-					<Add option="/NODEFAULTLIB:LIBC.lib" />
-					<Add option="/NODEFAULTLIB:LIBCMTD.lib" />
-					<Add option="/NODEFAULTLIB:LIBCD.lib" />
-					<Add option="/pdb:Debug\Chameleon.pdb" />
-					<Add library="wxbase28d" />
-					<Add library="wxbase28d_net" />
-					<Add library="wxbase28d_xml" />
-					<Add library="wxmsw28d_core" />
-					<Add library="wxmsw28d_adv" />
-					<Add library="wxmsw28d_gl" />
-					<Add library="wxmsw28d_html" />
-					<Add library="wxmsw28d_stc" />
-					<Add library="wxjpegd" />
-					<Add library="wxregexd" />
-					<Add library="wxpngd" />
-					<Add library="wxtiffd" />
-					<Add library="wxzlibd" />
+					<Add library="wxmsw30u_stc" />
+					<Add library="wxscintilla" />
+					<Add library="wxmsw30u_media" />
+					<Add library="wxmsw30u_adv" />
+					<Add library="wxmsw30u_gl" />
+					<Add library="wxmsw30u_html" />
+					<Add library="wxexpat" />
+					<Add library="wxbase30u_xml" />
+					<Add library="wxbase30u_net" />
+					<Add library="wxmsw30u_core" />
+					<Add library="wxbase30u" />
+					<Add library="wxregexu" />
+					<Add library="wxjpeg" />
+					<Add library="wxpng" />
+					<Add library="wxtiff" />
+					<Add library="wxzlib" />
+					<Add library="rpcrt4" />
+					<Add library="winmm" />
+					<Add library="advapi32" />
+					<Add library="version" />
+					<Add library="wsock32" />
+					<Add library="comctl32" />
+					<Add library="ole32" />
+					<Add library="uuid" />
+					<Add library="winspool" />
+					<Add library="oleaut32" />
+					<Add directory="$(#wx)/lib/gcc_lib" />
+				</Linker>
+			</Target>
+			<Target title="Release_dynamic">
+				<Option output="Release/NumeRe" prefix_auto="1" extension_auto="1" />
+				<Option object_output="Release_dynamic" />
+				<Option type="0" />
+				<Option compiler="tdm-gcc" />
+				<Compiler>
+					<Add option="-O3" />
+					<Add option="-std=gnu++11" />
+					<Add option="-DDLLVER_MAJOR_MASK" />
+					<Add option="-DwxUSE_REGEX" />
+					<Add option="-DwxDIALOG_MODAL" />
+					<Add option="-DwxUSE_UNICODE" />
+					<Add option="-D__GNUWIN32__" />
+					<Add option="-D__WXMSW__" />
+					<Add option="-DWXUSINGDLL" />
+					<Add directory="$(#wx)/lib/gcc_dll/mswu" />
+					<Add directory="$(#wx)/include" />
+				</Compiler>
+				<ResourceCompiler>
+					<Add directory="$(#wx)/include/" />
+				</ResourceCompiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="wxbase30u" />
+					<Add library="wxbase30u_net" />
+					<Add library="wxbase30u_xml" />
+					<Add library="wxmsw30u_core" />
+					<Add library="wxmsw30u_adv" />
+					<Add library="wxmsw30u_gl" />
+					<Add library="wxmsw30u_html" />
+					<Add library="wxmsw30u_stc" />
+					<Add library="wxjpeg" />
+					<Add library="wxregexu" />
+					<Add library="wxpng" />
+					<Add library="wxtiff" />
+					<Add library="wxzlib" />
 					<Add library="comctl32" />
 					<Add library="rpcrt4" />
 					<Add library="winmm" />
 					<Add library="advapi32" />
 					<Add library="wsock32" />
-					<Add library="msvcrtd" />
-					<Add library="oldnames" />
+					<Add library="ole32" />
+					<Add library="version" />
+					<Add directory="$(#wx)/lib/gcc_dll" />
 				</Linker>
 			</Target>
-			<Target title="Release Win32">
-				<Option output="Release/NumeRe" prefix_auto="1" extension_auto="1" />
-				<Option object_output="Release" />
+			<Target title="Debug_dynamic">
+				<Option output="Debug/NumeRe" prefix_auto="1" extension_auto="1" />
+				<Option object_output="Debug_dynamic" />
 				<Option type="0" />
 				<Option compiler="tdm-gcc" />
 				<Compiler>
+					<Add option="-Wall" />
 					<Add option="-g" />
 					<Add option="-std=gnu++11" />
 					<Add option="-DDLLVER_MAJOR_MASK" />
@@ -100,6 +149,58 @@
 					<Add directory="$(#wx)/lib/gcc_dll" />
 				</Linker>
 			</Target>
+			<Target title="Release">
+				<Option output="Release/NumeRe" prefix_auto="1" extension_auto="1" />
+				<Option object_output="Release" />
+				<Option type="0" />
+				<Option compiler="tdm-gcc" />
+				<Compiler>
+					<Add option="-O3" />
+					<Add option="-Wall" />
+					<Add option="-std=gnu++11" />
+					<Add option="-DDLLVER_MAJOR_MASK" />
+					<Add option="-DwxUSE_REGEX" />
+					<Add option="-DwxDIALOG_MODAL" />
+					<Add option="-DwxUSE_UNICODE" />
+					<Add option="-D__GNUWIN32__" />
+					<Add option="-D__WXMSW__" />
+					<Add directory="$(#wx)/lib/gcc_lib/mswu" />
+					<Add directory="$(#wx)/include" />
+				</Compiler>
+				<ResourceCompiler>
+					<Add directory="$(#wx)/include/" />
+				</ResourceCompiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="wxmsw30u_stc" />
+					<Add library="wxscintilla" />
+					<Add library="wxmsw30u_media" />
+					<Add library="wxmsw30u_adv" />
+					<Add library="wxmsw30u_gl" />
+					<Add library="wxmsw30u_html" />
+					<Add library="wxexpat" />
+					<Add library="wxbase30u_xml" />
+					<Add library="wxbase30u_net" />
+					<Add library="wxmsw30u_core" />
+					<Add library="wxbase30u" />
+					<Add library="wxregexu" />
+					<Add library="wxjpeg" />
+					<Add library="wxpng" />
+					<Add library="wxtiff" />
+					<Add library="wxzlib" />
+					<Add library="rpcrt4" />
+					<Add library="winmm" />
+					<Add library="advapi32" />
+					<Add library="version" />
+					<Add library="wsock32" />
+					<Add library="comctl32" />
+					<Add library="ole32" />
+					<Add library="uuid" />
+					<Add library="winspool" />
+					<Add library="oleaut32" />
+					<Add directory="$(#wx)/lib/gcc_lib" />
+				</Linker>
+			</Target>
 		</Build>
 		<Linker>
 			<Add option="-lmgl" />
@@ -126,6 +227,8 @@
 		<Unit filename="common/debug.h" />
 		<Unit filename="common/fixvsbug.h" />
 		<Unit filename="common/options.cpp" />
+		<Unit filename="common/recycler.cpp" />
+		<Unit filename="common/recycler.hpp" />
 		<Unit filename="common/tree.h" />
 		<Unit filename="common/tree_msvc.h" />
 		<Unit filename="common/tree_util.h" />
@@ -167,6 +270,8 @@
 		<Unit filename="gui/dialogs/treelistctrl.h" />
 		<Unit filename="gui/dialogs/wxTermContainer.cpp" />
 		<Unit filename="gui/dialogs/wxTermContainer.h" />
+		<Unit filename="gui/imagepanel.cpp" />
+		<Unit filename="gui/imagepanel.hpp" />
 		<Unit filename="gui/wxProportionalSplitterWindow.h" />
 		<Unit filename="gui/wxssh.cpp" />
 		<Unit filename="gui/wxssh.h" />
@@ -220,24 +325,24 @@
 		<Unit filename="kernel/core/fitcontroller.cpp" />
 		<Unit filename="kernel/core/fitcontroller.hpp" />
 		<Unit filename="kernel/core/graph_helper.cpp">
-			<Option target="Debug Win32" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="kernel/core/graph_helper.hpp">
-			<Option target="Debug Win32" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="kernel/core/language.cpp" />
 		<Unit filename="kernel/core/language.hpp" />
 		<Unit filename="kernel/core/loop.cpp" />
 		<Unit filename="kernel/core/loop.hpp" />
 		<Unit filename="kernel/core/main.cpp">
-			<Option target="Debug Win32" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="kernel/core/matrixoperations.cpp" />
 		<Unit filename="kernel/core/menues.cpp">
-			<Option target="Debug Win32" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="kernel/core/menues.hpp">
-			<Option target="Debug Win32" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="kernel/core/odesolver.cpp" />
 		<Unit filename="kernel/core/odesolver.hpp" />

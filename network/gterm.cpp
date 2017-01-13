@@ -36,39 +36,24 @@ void GTerm::Update()
 //void GTerm::ProcessInput(int len, unsigned const char *data)
 void GTerm::ProcessInput(int len, const string& sData)
 {
-//printf("ProcessInput called...\n");
-	int i;
-	StateOption *last_state;
-
 	data_len = sData.length();
 	sInput_Data = sData;
-	//sInput_Data = string((const char*)data);
-	//input_data = data;
-	//strcpy((char*)input_data,(const char*)data);
+
 	mode_flags |= DESTRUCTBS;
 	mode_flags |= INSERT;
 	normal_input();
 	update_changes();
 	return;
 
-	/*while (data_len) {
-//printf("ProcessInput() processing %d...\n", *input_data);
-		i = 0;
-		while (current_state[i].byte != -1 &&
-		       current_state[i].byte != *input_data) i++;
+}
 
-		// action must be allowed to redirect state change
-		last_state = current_state+i;
-		current_state = last_state->next_state;
-		if (last_state->action)
-			(this->*(last_state->action))();
-		input_data++;
-		data_len--;
-	}
-
-    normal_input();
-	if (!(mode_flags & DEFERUPDATE) ||
-	    (pending_scroll > scroll_bot-scroll_top)) update_changes();*/
+void GTerm::ProcessOutput(int len, const string& sData)
+{
+	data_len = sData.length();
+	sInput_Data = sData;
+	normal_output();
+	update_changes();
+	return;
 }
 
 void GTerm::Reset()
@@ -246,31 +231,31 @@ void
 GTerm::Select(int x, int y, int select)
 {
 	unsigned short firstColor = tm.GetColorAdjusted(0, 0);
-  if(color && x >= 0 && x < Width() && y >= 0 && y < Height())
-  //if( (firstColor != 0) && x >= 0 && x < Width() && y >= 0 && y < Height())
-  {
-	  int idx1 = linenumbers[y];
-	  int idx2 = idx1 * MAXWIDTH;
-	  int idx3 = idx2 + x;
-    if(select)
-	{
-      //color[(linenumbers[y] * MAXWIDTH) + x] |= SELECTED;
-	  color[idx3] |= SELECTED;
-	  int tempcolor = tm.GetColorAdjusted(y, x);
-	  tempcolor |= SELECTED;
-	  tm.SetColorAdjusted(y, x, tempcolor);
-	}
-    else
-	{
-     // color[(linenumbers[y] * MAXWIDTH) + x] &= ~SELECTED;
-	 color[idx3] &= ~SELECTED;
-	 int tempcolor = tm.GetColorAdjusted(y, x);
-	 tempcolor &= ~SELECTED;
-	 tm.SetColorAdjusted(y, x, tempcolor);
-	}
-    changed_line(y, x, x);
-//    update_changes();
-  }
+    if(color && x >= 0 && x < Width() && y >= 0 && y < Height())
+    //if( (firstColor != 0) && x >= 0 && x < Width() && y >= 0 && y < Height())
+    {
+        int idx1 = linenumbers[y];
+        int idx2 = idx1 * MAXWIDTH;
+        int idx3 = idx2 + x;
+        if(select)
+        {
+            //color[(linenumbers[y] * MAXWIDTH) + x] |= SELECTED;
+            color[idx3] |= SELECTED;
+            int tempcolor = tm.GetColorAdjusted(y, x);
+            tempcolor |= SELECTED;
+            tm.SetColorAdjusted(y, x, tempcolor);
+        }
+        else
+        {
+            // color[(linenumbers[y] * MAXWIDTH) + x] &= ~SELECTED;
+            color[idx3] &= ~SELECTED;
+            int tempcolor = tm.GetColorAdjusted(y, x);
+            tempcolor &= ~SELECTED;
+            tm.SetColorAdjusted(y, x, tempcolor);
+        }
+        changed_line(y, x, x);
+        //    update_changes();
+    }
 }
 
 unsigned char
@@ -281,6 +266,24 @@ GTerm::GetChar(int x, int y)
 	return tm.GetCharAdjusted(y, x);
 
   return 0;
+}
+
+string GTerm::get_selected_text()
+{
+    string sSelection;
+    for (int i = 0; i < Height(); i++)
+    {
+        for (int j = 0; j < Width(); j++)
+        {
+            if (tm.GetColorAdjusted(i,j) & SELECTED)
+                sSelection.append(1, tm.GetCharAdjusted(i,j));
+        }
+        if (sSelection.length() && sSelection.back() != '\n' && sSelection.back() != '\r')
+            sSelection += "\n";
+    }
+    while (sSelection.back() == '\n' || sSelection.back() == '\r')
+        sSelection.pop_back();
+    return sSelection;
 }
 
 TextManager* GTerm::GetTM()

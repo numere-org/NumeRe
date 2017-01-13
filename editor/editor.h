@@ -4,6 +4,7 @@
 #include <wx/stc/stc.h>
 #include <wx/menu.h>
 #include <wx/dynarray.h>
+#include "../gui/wxterm.h"
 #include "../common/datastructures.h"
 #include "../compiler/compilerevent.h"
 #include "../kernel/syntax.hpp"
@@ -21,12 +22,16 @@ class NumeReEditor : public wxStyledTextCtrl
 {
 public:
 	NumeReEditor(NumeReWindow* mframe, DebugManager* debugManager, Options* options, ProjectInfo* project,
-					wxWindow *parent, wxWindowID id, NumeReSyntax* __syntax, const wxPoint& pos = wxDefaultPosition,
+					wxWindow *parent, wxWindowID id, NumeReSyntax* __syntax, wxTerm* __terminal, const wxPoint& pos = wxDefaultPosition,
 					const wxSize& size = wxDefaultSize, long style = 0,
 					const wxString& name = wxSTCNameStr);
 	~NumeReEditor();
 
-
+    enum EditorSettings
+    {
+        SETTING_WRAPEOL = 1,
+        SETTING_DISPCTRLCHARS = 2
+    };
 	//bool LoadFile ();
 	bool LoadLocalFile (const wxString &filename);
 	bool LoadFileText(wxString fileContents);
@@ -48,6 +53,7 @@ public:
 	void OnMouseUp(wxMouseEvent &event);
 	void OnMouseDn(wxMouseEvent &event);
 	void OnMouseDblClk(wxMouseEvent& event);
+	void OnMouseDwell(wxStyledTextEvent& event);
 	void ClearDblClkIndicator();
 	void MakeBraceCheck();
 
@@ -79,18 +85,22 @@ public:
 	void OnClearBreakpoints(wxCommandEvent &event);
 	void OnAddWatch(wxCommandEvent &event);
 	void OnDisplayVariable(wxCommandEvent &event);
+	void OnFindProcedure(wxCommandEvent &event);
 
 	void AddBreakpoint( int linenum );
 	void RemoveBreakpoint( int linenum );
 	void SetSyntax(NumeReSyntax* __syntax) {if (!_syntax){_syntax = __syntax;}}
+	void SetTerminal(wxTerm* _terminal) {if (!m_terminal){m_terminal = _terminal;}}
+	void SetUnsaved();
 
 	void ApplyAutoIndentation();
-	void ToggleLineWrap();
-	bool getWrapMode();
+	void ToggleSettings(EditorSettings _setting);
+	bool getEditorSetting(EditorSettings _setting);
 
 private:
 
     int determineIndentationLevel(std::string sLine, bool& bIsElseCase);
+    string addLinebreaks(const string& sLine);
 	void OnEditorModified(wxStyledTextEvent &event);
 
 	void OnRunToCursor(wxCommandEvent &event);
@@ -99,6 +109,8 @@ private:
 	int GetLineForBreakpointOperation();
 	void ResetRightClickLocation();
 	wxString FindClickedWord();
+	wxString FindClickedProcedure();
+	wxString FindMarkedProcedure(int charpos);
 
 	void CreateBreakpointEvent(int linenumber, bool addBreakpoint);
 	bool BreakpointOnLine(int linenum);
@@ -122,17 +134,21 @@ private:
 	wxArrayInt m_breakpoints;
 	wxPoint m_lastRightClick;
 	wxString m_clickedWord;
+	wxString m_clickedProcedure;
 	wxMenuItem* m_menuAddWatch;
 	wxMenuItem* m_menuShowValue;
+	wxMenuItem* m_menuFindProcedure;
 
 	NumeReSyntax* _syntax;
+	wxTerm* m_terminal;
 
 	bool m_bLoadingFile;
 	bool m_bLastSavedRemotely;
 	bool m_bHasBeenCompiled;
 	bool m_bNewFile;
+	bool m_bSetUnsaved;
 
-	bool m_bWrapMode;
+	int m_nEditorSetting;
 	FileFilterType m_fileType;
 
 

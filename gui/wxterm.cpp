@@ -54,6 +54,8 @@
 #include "../network/gterm.hpp"
 #include "../network/gtelnet.hpp"
 #include "wxterm.h"
+#include <wx/clipbrd.h>
+#include <wx/dataobj.h>
 
 #include "../common/debug.h"
 
@@ -119,282 +121,22 @@ wxTerm::TermKeyMap wxTerm::keyMapTable[] =
     { (wxKeyCode)0, GTelnet::KEY_NULL }
 };
 
-/*static unsigned char
-xCharMap[] =
-{
-    0, // 0
-    1, // 1
-    2, // 2
-    3, // 3
-    1, // 4
-    5, // 5
-    6, // 6
-    7, // 7
-    8, // 8
-    9, // 9
-    10, // 10
-    11, // 11
-    12, // 12
-    13, // 13
-    14, // 14
-    15, // 15
-    62, // 16
-    60, // 17
-    18, // 18
-    19, // 19
-    20, // 20
-    21, // 21
-    22, // 22
-    23, // 23
-    24, // 24
-    25, // 25
-    26, // 26
-    27, // 27
-    28, // 28
-    29, // 29
-    94, // 30
-    31, // 31
-    32, // 32
-    33, // 33
-    34, // 34
-    35, // 35
-    36, // 36
-    37, // 37
-    38, // 38
-    39, // 39
-    40, // 40
-    41, // 41
-    42, // 42
-    43, // 43
-    44, // 44
-    45, // 45
-    46, // 46
-    47, // 47
-    48, // 48
-    49, // 49
-    50, // 50
-    51, // 51
-    52, // 52
-    53, // 53
-    54, // 54
-    55, // 55
-    56, // 56
-    57, // 57
-    58, // 58
-    59, // 59
-    60, // 60
-    61, // 61
-    62, // 62
-    63, // 63
-    64, // 64
-    65, // 65
-    66, // 66
-    67, // 67
-    68, // 68
-    69, // 69
-    70, // 70
-    71, // 71
-    72, // 72
-    73, // 73
-    74, // 74
-    75, // 75
-    76, // 76
-    77, // 77
-    78, // 78
-    79, // 79
-    80, // 80
-    81, // 81
-    82, // 82
-    83, // 83
-    84, // 84
-    85, // 85
-    86, // 86
-    87, // 87
-    88, // 88
-    89, // 89
-    90, // 90
-    91, // 91
-    92, // 92
-    93, // 93
-    94, // 94
-    95, // 95
-    96, // 96
-    97, // 97
-    98, // 98
-    99, // 99
-    100, // 100
-    101, // 101
-    102, // 102
-    103, // 103
-    104, // 104
-    105, // 105
-    106, // 106
-    107, // 107
-    108, // 108
-    109, // 109
-    110, // 110
-    111, // 111
-    112, // 112
-    113, // 113
-    114, // 114
-    115, // 115
-    116, // 116
-    117, // 117
-    118, // 118
-    119, // 119
-    120, // 120
-    121, // 121
-    122, // 122
-    123, // 123
-    124, // 124
-    125, // 125
-    126, // 126
-    127, // 127
-    128, // 128
-    129, // 129
-    130, // 130
-    131, // 131
-    132, // 132
-    133, // 133
-    134, // 134
-    135, // 135
-    136, // 136
-    137, // 137
-    138, // 138
-    139, // 139
-    140, // 140
-    141, // 141
-    142, // 142
-    143, // 143
-    144, // 144
-    145, // 145
-    146, // 146
-    147, // 147
-    148, // 148
-    149, // 149
-    150, // 150
-    151, // 151
-    152, // 152
-    153, // 153
-    154, // 154
-    155, // 155
-    156, // 156
-    157, // 157
-    158, // 158
-    159, // 159
-    160, // 160
-    161, // 161
-    162, // 162
-    163, // 163
-    164, // 164
-    165, // 165
-    166, // 166
-    167, // 167
-    168, // 168
-    169, // 169
-    170, // 170
-    171, // 171
-    172, // 172
-    173, // 173
-    174, // 174
-    175, // 175
-    2, // 176
-    2, // 177
-    2, // 178
-    25, // 179
-    22, // 180
-    22, // 181
-    22, // 182
-    12, // 183
-    12, // 184
-    22, // 185
-    25, // 186
-    12, // 187
-    11, // 188
-    11, // 189
-    11, // 190
-    12, // 191
-    14, // 192
-    23, // 193
-    24, // 194
-    21, // 195
-    18, // 196
-    15, // 197
-    21, // 198
-    21, // 199
-    14, // 200
-    13, // 201
-    23, // 202
-    24, // 203
-    21, // 204
-    18, // 205
-    15, // 206
-    23, // 207
-    23, // 208
-    24, // 209
-    24, // 210
-    14, // 211
-    14, // 212
-    13, // 213
-    13, // 214
-    15, // 215
-    15, // 216
-    11, // 217
-    13, // 218
-    0, // 219
-    220, // 220
-    221, // 221
-    222, // 222
-    223, // 223
-    224, // 224
-    225, // 225
-    226, // 226
-    227, // 227
-    228, // 228
-    229, // 229
-    230, // 230
-    231, // 231
-    232, // 232
-    233, // 233
-    234, // 234
-    235, // 235
-    236, // 236
-    237, // 237
-    238, // 238
-    239, // 239
-    240, // 240
-    241, // 241
-    242, // 242
-    243, // 243
-    244, // 244
-    245, // 245
-    246, // 246
-    247, // 247
-    248, // 248
-    249, // 249
-    250, // 250
-    251, // 251
-    252, // 252
-    253, // 253
-    254, // 254
-    255  // 255
-};*/
 
 BEGIN_EVENT_TABLE(wxTerm, wxWindow)
     EVT_PAINT						(wxTerm::OnPaint)
     EVT_CHAR						(wxTerm::OnChar)
     EVT_LEFT_DOWN					(wxTerm::OnLeftDown)
-    EVT_LEFT_UP					(wxTerm::OnLeftUp)
-    EVT_MOTION					(wxTerm::OnMouseMove)
+    EVT_LEFT_UP					    (wxTerm::OnLeftUp)
+    EVT_MOTION					    (wxTerm::OnMouseMove)
     EVT_TIMER						(-1, wxTerm::OnTimer)
-#if 0
-    EVT_KEY_DOWN(wxTerm::OnKeyDown)
-#endif
+
+    EVT_KEY_DOWN                    (wxTerm::OnKeyDown)
+
 
     EVT_SIZE						(wxTerm::OnSize)
     EVT_SET_FOCUS					(wxTerm::OnGainFocus)
-    EVT_KILL_FOCUS				(wxTerm::OnLoseFocus)
-    EVT_CLOSE                   (wxTerm::OnClose)
+    EVT_KILL_FOCUS				    (wxTerm::OnLoseFocus)
+    EVT_CLOSE                       (wxTerm::OnClose)
 END_EVENT_TABLE()
 
 wxTerm::wxTerm(wxWindow* parent, wxWindowID id,
@@ -603,11 +345,17 @@ wxThread::ExitCode wxTerm::Entry()
     return (wxThread::ExitCode)0;
 }
 
+void wxTerm::EndKernelTask()
+{
+    if (GetThread() && GetThread()->IsRunning())
+        GetThread()->Delete();
+}
+
 void wxTerm::OnClose(wxCloseEvent& event)
 {
     if (GetThread() && GetThread()->IsRunning())
         GetThread()->Wait();
-
+    wxMilliSleep(200);
     Destroy();
 }
 
@@ -677,7 +425,9 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
     {
         m_wxParent->EvaluateOptions();
     }
-    ProcessInput(sAnswer.length(), sAnswer);
+    ProcessOutput(sAnswer.length(), sAnswer);
+    //GetTM()->SetEditable(m_curY, m_curX);
+    //ProcessInput(sAnswer.length(), sAnswer);
     Refresh();
     //do something
 }
@@ -777,7 +527,7 @@ wxTerm::GetDefVTColors(wxColour colors[16], wxTerm::BOLDSTYLE boldStyle)
     }
     else
     {
-        colors[0]                               = wxColour(255, 255, 255);                       // white (background)
+        colors[0]                               = wxColour(255, 255, 255);                       // white (background, foreground for selection)
         colors[NumeReSyntax::SYNTAX_COMMAND]    = wxColour(0, 128, 255);                         // bright blue (commands)
         colors[NumeReSyntax::SYNTAX_OPTION]     = wxColour(0, 128, 100);                         // cyan
         colors[NumeReSyntax::SYNTAX_FUNCTION]   = wxColour(0, 0, 255);                         // magenta
@@ -803,7 +553,7 @@ wxTerm::GetDefVTColors(wxColour colors[16], wxTerm::BOLDSTYLE boldStyle)
         colors[12] = wxColour(0, 0, 255);                        // bold blue
         colors[13] = wxColour(255, 255, 0);                       // bold magenta
         colors[14] = wxColour(0, 255, 255);                       // bold cyan
-        colors[15] = wxColour(255, 255, 255);                      // bold white
+        colors[15] = wxColour(0, 0, 0);                      // bold white (background for selection)
 #endif
     }
 }
@@ -1039,8 +789,8 @@ void wxTerm::pass_command(const string& command)
         GTerm::Update();
         Refresh();
     }
-    wxCriticalSectionLocker lock(m_kernelCS);
     erase_line();
+    wxCriticalSectionLocker lock(m_kernelCS);
     //next_line();
     m_sCommandLine = command;
     m_bCommandAvailable = true;
@@ -1083,8 +833,36 @@ wxTerm::OnChar(wxKeyEvent& event)
         /*
         **  Map control characters
         */
-        if(event.ControlDown())
+        /*if(event.GetKeyCode() == WXK_CONTROL_C || event.GetKeyCode() == WXK_CONTROL_C)
         {
+            if (event.GetKeyCode() == WXK_CONTROL_C && HasSelection())
+            {
+                wxString sSelection = GetSelection();
+                if (!sSelection.length())
+                    return;
+                if (wxTheClipboard->Open())
+                {
+                    wxTheClipboard->SetData(new wxTextDataObject(sSelection));
+                    wxTheClipboard->Close();
+                }
+            }
+            else if (event.GetKeyCode() == 'v')
+            {
+                if (HasSelection())
+                    ClearSelection();
+                if (wxTheClipboard->Open())
+                {
+                    if (wxTheClipboard->IsSupported(wxDF_TEXT))
+                    {
+                        wxTextDataObject data;
+                        wxTheClipboard->GetData(data);
+                        ProcessInput(data.GetTextLength(), data.GetText().ToStdString());
+                    }
+                    wxTheClipboard->Close();
+                }
+            }
+            return;
+
             if(event.GetKeyCode() >= 'a' && event.GetKeyCode() <= 'z')
                 keyCode = event.GetKeyCode() - 'a' + 1;
             else if(event.GetKeyCode() >= '[' && event.GetKeyCode() <= '_')
@@ -1093,7 +871,7 @@ wxTerm::OnChar(wxKeyEvent& event)
                 keyCode = 0x1e;
             else if(event.GetKeyCode() == '-')
                 keyCode = 0x1f;
-        }
+        }*/
 
         if(!keyCode )//&& !(keyCode = MapKeyCode((int)event.GetKeyCode())))
         {
@@ -1112,11 +890,14 @@ wxTerm::OnChar(wxKeyEvent& event)
             keyCode = (int)event.GetKeyCode();
         }
         buf[0] = (char)keyCode;
+        if (HasSelection())
+            ClearSelection();
         if (keyCode == WXK_RETURN)
         {
             GTerm::cr();
             GTerm::lf();
             //synchronize();
+            GetTM()->ChangeEditableState();
             GTerm::update_changes();
             //ProcessInput(4, "|\n|<- ");
             //Refresh();
@@ -1143,6 +924,7 @@ wxTerm::OnChar(wxKeyEvent& event)
             GTerm::resetAutoComp();
             GTerm::cursor_left();
             GTerm::update_changes();
+            Refresh();
             return;
         }
         else if (keyCode == WXK_RIGHT)
@@ -1150,6 +932,7 @@ wxTerm::OnChar(wxKeyEvent& event)
             GTerm::resetAutoComp();
             GTerm::cursor_right();
             GTerm::update_changes();
+            Refresh();
             return;
         }
         else if (keyCode == WXK_UP)
@@ -1157,6 +940,7 @@ wxTerm::OnChar(wxKeyEvent& event)
             GTerm::resetAutoComp();
             GTerm::cursor_up();
             GTerm::update_changes();
+            Refresh();
             return;
         }
         else if (keyCode == WXK_DOWN)
@@ -1164,6 +948,7 @@ wxTerm::OnChar(wxKeyEvent& event)
             GTerm::resetAutoComp();
             GTerm::cursor_down();
             GTerm::update_changes();
+            Refresh();
             return;
         }
         GTerm::resetAutoComp();
@@ -1200,7 +985,7 @@ wxTerm::OnChar(wxKeyEvent& event)
             /*if((GetMode() & LOCALECHO) && !(GetMode() & PC))
               ProcessInput(len, buf);*/
         }
-        else if(!(GetMode() & PC))
+        /*else if(!(GetMode() & PC))
         {
             if((GetMode() & NEWLINE) && !(GetMode() & PC) && (keyCode == 10))
             {
@@ -1216,7 +1001,7 @@ wxTerm::OnChar(wxKeyEvent& event)
             ProcessOutput(len, buf);
             if((GetMode() & LOCALECHO) && !(GetMode() & PC))
                 ProcessInput(len, string((char*)buf));
-        }
+        }*/
         else
             event.Skip();
     }
@@ -1235,13 +1020,42 @@ wxTerm::OnChar(wxKeyEvent& event)
 void
 wxTerm::OnKeyDown(wxKeyEvent& event)
 {
-    if(!(GetMode() & PC) && event.AltDown())
+    if (!(GetMode() & PC) && event.AltDown())
         event.Skip();
-    else if(event.AltDown())
+    else if (event.ControlDown() && event.ShiftDown())
     {
-//    wxLogMessage("OnKeyDown() got KeyCode = %d", event.KeyCode());
-//    if(event.KeyCode() != 309)
-//      OnChar(event);
+        if(event.GetKeyCode() == 'C' || event.GetKeyCode() == 'V')
+        {
+            if (event.GetKeyCode() == 'C' && HasSelection())
+            {
+                wxString sSelection = GetSelection();
+                if (!sSelection.length())
+                    return;
+                if (wxTheClipboard->Open())
+                {
+                    wxTheClipboard->SetData(new wxTextDataObject(sSelection));
+                    wxTheClipboard->Close();
+                }
+            }
+            else if (event.GetKeyCode() == 'V')
+            {
+                if (HasSelection())
+                    ClearSelection();
+                if (wxTheClipboard->Open())
+                {
+                    if (wxTheClipboard->IsSupported(wxDF_TEXT))
+                    {
+                        wxTextDataObject data;
+                        wxTheClipboard->GetData(data);
+                        wxTerm::ProcessInput(data.GetTextLength(), data.GetText().ToStdString());
+                        Refresh();
+                    }
+                    wxTheClipboard->Close();
+                }
+            }
+            return;
+        }
+        //event.Skip();
     }
     else
         event.Skip();
@@ -1283,13 +1097,11 @@ wxTerm::OnLeftDown(wxMouseEvent& event)
 {
     SetFocus();
 
-    /*
-      ClearSelection();
-      m_selx1 = m_selx2 = event.GetX() / m_charWidth;
-      m_sely1 = m_sely2 = event.GetY() / m_charHeight;
-      m_selecting = true;
-      CaptureMouse();
-    */
+    ClearSelection();
+    m_selx1 = m_selx2 = event.GetX() / m_charWidth;
+    m_sely1 = m_sely2 = event.GetY() / m_charHeight;
+    m_selecting = true;
+    CaptureMouse();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1305,14 +1117,13 @@ wxTerm::OnLeftDown(wxMouseEvent& event)
 void
 wxTerm::OnLeftUp(wxMouseEvent& event)
 {
-    /*
-      m_selecting = false;
-      if(GetCapture() == this)
-      {
-    	ReleaseMouse();
-      }
-    */
-
+    m_selecting = false;
+    if(GetCapture() == this)
+    {
+        ReleaseMouse();
+        Refresh();
+    }
+    move_cursor_editable_area(m_selx2, m_sely2);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1338,7 +1149,11 @@ wxTerm::OnMouseMove(wxMouseEvent& event)
         if(m_sely2 >= Height())
             m_sely2 = Height() - 1;
 
-        MarkSelection();
+        if (event.AltDown())
+            MarkSelection(true);
+        else
+            MarkSelection();
+        Refresh();
     }
 }
 
@@ -1353,6 +1168,8 @@ wxTerm::OnMouseMove(wxMouseEvent& event)
 void
 wxTerm::ClearSelection()
 {
+    if (!HasSelection())
+        return;
     int
     x,
     y;
@@ -1371,7 +1188,6 @@ wxTerm::ClearSelection()
     for(y = 0; y < Height(); y++)
         for(x = 0; x < Width(); x++)
             Select(x, y, 0);
-
     if(dc)
     {
         this->wxWindow::Update();
@@ -1390,7 +1206,7 @@ wxTerm::ClearSelection()
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::MarkSelection()
+wxTerm::MarkSelection(bool bRectangular)
 {
     int
     x,
@@ -1401,53 +1217,73 @@ wxTerm::MarkSelection()
 
     m_marking = true;
 
-    if(!m_curDC)
+    if (!m_curDC)
     {
         dc = new wxClientDC(this);
         m_curDC = dc;
     }
 
-    for(y = 0; y < Height(); y++)
-        for(x = 0; x < Width(); x++)
+    for (y = 0; y < Height(); y++)
+    {
+        for (x = 0; x < Width(); x++)
             Select(x, y, 0);
-
-    if(m_sely1 == m_sely2)
-    {
-        if(m_selx1 >= m_selx2)
-            for(x = m_selx1; x <= m_selx2; x++)
-                Select(x, m_sely1, 1);
-        else
-            for(x = m_selx2; x >= m_selx1; x--)
-                Select(x, m_sely1, 1);
     }
-    else if(m_sely1 < m_sely2)
+    if (bRectangular)
     {
-        for(x = m_selx1; x < Width(); x++)
-            Select(x, m_sely1, 1);
-
-        for(y = m_sely1 + 1; y < m_sely2; y++)
-            for(x = 0; x < Width(); x++)
-                Select(x, y, 1);
-
-        for(x = 0; x <= m_selx2; x++)
-            Select(x, m_sely2, 1);
+        for (y = min(m_sely1, m_sely2); y <= max(m_sely1, m_sely2); y++)
+        {
+            for (x = min(m_selx1, m_selx2); x <= max(m_selx1, m_selx2); x++)
+            {
+                Select(x,y,1);
+            }
+        }
     }
     else
     {
-        for(x = 0; x <= m_selx1; x++)
-            Select(x, m_sely1, 1);
+        if (m_sely1 == m_sely2)
+        {
+            if (m_selx1 > m_selx2)
+            {
+                for (x = m_selx2; x <= m_selx1; x++)
+                    Select(x, m_sely1, 1);
+            }
+            else
+            {
+                for (x = m_selx1; x <= m_selx2; x++)
+                    Select(x, m_sely1, 1);
+            }
+        }
+        else if (m_sely1 < m_sely2)
+        {
+            for (x = m_selx1; x < Width(); x++)
+                Select(x, m_sely1, 1);
 
-        for(y = m_sely2 + 1; y < m_sely1; y++)
-            for(x = 0; x < Width(); x++)
-                Select(x, y, 1);
+            for (y = m_sely1 + 1; y < m_sely2; y++)
+            {
+                for (x = 0; x < Width(); x++)
+                    Select(x, y, 1);
+            }
+            for (x = 0; x <= m_selx2; x++)
+                Select(x, m_sely2, 1);
+        }
+        else
+        {
+            for (x = 0; x <= m_selx1; x++)
+                Select(x, m_sely1, 1);
 
-        for(x = m_selx2; x < Width(); x++)
-            Select(x, m_sely2, 1);
+            for (y = m_sely2 + 1; y < m_sely1; y++)
+            {
+                for (x = 0; x < Width(); x++)
+                    Select(x, y, 1);
+            }
+            for (x = m_selx2; x < Width(); x++)
+                Select(x, m_sely2, 1);
+        }
     }
+    //Refresh();
+    //this->wxWindow::Update();
 
-    this->wxWindow::Update();
-
-    if(dc)
+    if (dc)
     {
         m_curDC = 0;
         delete dc;
@@ -1481,23 +1317,36 @@ wxTerm::HasSelection()
 wxString
 wxTerm::GetSelection()
 {
-    int
+    /*int
     x1,
     y1,
     x2,
-    y2;
+    y2;*/
 
-    wxString
-    sel;
+    wxString sel = get_selected_text();
 
-    if(m_sely1 <= m_sely2)
+    /*if (m_sely1 <= m_sely2 && m_selx1 <= m_selx2)
     {
         x1 = m_selx1;
         y1 = m_sely1;
         x2 = m_selx2;
         y2 = m_sely2;
     }
-    else
+    else if (m_sely1 <= m_sely2 && m_selx1 > m_selx2)
+    {
+        x1 = m_selx2;
+        y1 = m_sely1;
+        x2 = m_selx1;
+        y2 = m_sely2;
+    }
+    else if (m_sely1 > m_sely2 && m_selx1 <= m_selx2)
+    {
+        x1 = m_selx1;
+        y1 = m_sely2;
+        x2 = m_selx2;
+        y2 = m_sely1;
+    }
+    else if (m_sely1 > m_sely2 && m_selx1 > m_selx2)
     {
         x1 = m_selx2;
         y1 = m_sely2;
@@ -1519,7 +1368,7 @@ wxTerm::GetSelection()
         }
     }
     if(GetChar(x1, y1))
-        sel.Append(GetChar(x1, y1));
+        sel.Append(GetChar(x1, y1));*/
 
     return sel;
 }
@@ -1711,7 +1560,7 @@ wxTerm::DoDrawCursor(int fg_color, int bg_color, int flags,
 
     x = x * m_charWidth;
     y = y * m_charHeight;
-    if (!(flags & UNDERLINE))
+    //if (!(flags & UNDERLINE))
         m_curDC->SetBackgroundMode(wxSOLID);
     m_curDC->SetTextBackground(m_colors[fg_color]);
     m_curDC->SetTextForeground(m_colors[bg_color]);
@@ -2105,7 +1954,6 @@ wxTerm::RequestSizeChange(int w, int h)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-//wxTerm::ProcessInput(int len, unsigned const char *data)
 wxTerm::ProcessInput(int len, const string& sData)
 {
     wxClientDC
@@ -2114,6 +1962,18 @@ wxTerm::ProcessInput(int len, const string& sData)
     //ClearSelection();
     m_curDC = &dc;
     GTerm::ProcessInput(len, sData);
+    m_curDC = 0;
+}
+
+void
+wxTerm::ProcessOutput(int len, const string& sData)
+{
+    if (HasSelection())
+        ClearSelection();
+    wxClientDC
+    dc(this);
+    m_curDC = &dc;
+    GTerm::ProcessOutput(len, sData);
     m_curDC = 0;
 }
 

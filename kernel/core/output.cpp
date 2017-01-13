@@ -103,15 +103,17 @@ string Output::replaceTeXControls(const string& _sText)
         if (sReturn[i] == 'ü' || sReturn[i] == (char)129)
             sReturn.replace(i,1,"\\\"u");
         if (sReturn[i] == 'ß' || sReturn[i] == (char)225)
-            sReturn.replace(i,1,"\\ss");
+            sReturn.replace(i,1,"\\ss ");
         if (sReturn[i] == '°' || sReturn[i] == (char)248)
             sReturn.replace(i,1,"$^\\circ$");
         if (sReturn[i] == (char)196 || sReturn[i] == (char)249)
-            sReturn.replace(i,1,"\\pm");
+            sReturn.replace(i,1,"\\pm ");
         if (sReturn[i] == (char)171 || sReturn[i] == (char)174)
             sReturn.replace(i,1,"\"<");
         if (sReturn[i] == (char)187 || sReturn[i] == (char)175)
             sReturn.replace(i,1,"\">");
+        if ((!i && sReturn[i] == '_') || (i && sReturn[i] == '_' && sReturn[i-1] != '\\'))
+            sReturn.insert(i,1,'\\');
     }
     return sReturn;
 }
