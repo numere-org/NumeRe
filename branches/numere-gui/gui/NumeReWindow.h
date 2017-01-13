@@ -153,6 +153,8 @@ class NumeReWindow : public wxFrame
         bool showTipAtStartup;
         void updateTipAtStartupSetting(bool bTipAtStartup);
         void EvaluateOptions();
+        void EvaluateCommandLine(wxArrayString& wxArgV);
+        wxString getProgramFolder();
 
     private:
         void InitializeProgramOptions();
@@ -201,12 +203,12 @@ class NumeReWindow : public wxFrame
         void OnPageChange(wxBookCtrlEvent& event);
 
         void OnFindEvent(wxFindDialogEvent& event);
-        void addFileToTree(const std::string& sFilePath);
-        void removeFileFromTree(const std::string& sFilePath);
+        /*void addFileToTree(const std::string& sFilePath);
+        void removeFileFromTree(const std::string& sFilePath);*/
 
         void OnFileSystemEvent(wxFileSystemWatcherEvent& event);
 
-        void NewFile();
+        void NewFile(FileFilterType _filetype = FILE_NONSOURCE);
         wxArrayString OpenFile(FileFilterType filterType );
         bool SaveFile(bool saveas, bool askLocalRemote, FileFilterType filterType);
         bool GetFileContents(wxString fileToLoad, wxString &fileContents, wxString &fileName);
@@ -244,6 +246,8 @@ class NumeReWindow : public wxFrame
         void UpdateMenuBar();
         void UpdateToolbar();
         void UpdateTerminalNotebook();
+        void toggleConsole();
+        void showConsole();
 
         //void CleanupDropMenu();
 
@@ -334,6 +338,8 @@ class NumeReWindow : public wxFrame
         /*! The last clicked tab in the editor notebook */
         int m_clickedTabNum;
         int m_splitterPos;
+
+        float fSplitPercentage;
 
         bool m_appClosing;
         bool m_setSelection;

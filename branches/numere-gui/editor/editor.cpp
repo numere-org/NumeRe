@@ -14,11 +14,14 @@
 
 #include <wx/datetime.h>
 #include <wx/stdpaths.h>
+#include <vector>
+#include <string>
 
 #include "editor.h"
 #include "../perms/p.h"
 #include "../gui/NumeReWindow.h"
 #include "../gui/NumeReNotebook.h"
+
 #include "../common/datastructures.h"
 #include "../common/Options.h"
 #include "../common/DebugEvent.h"
@@ -45,12 +48,14 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
 	EVT_LEFT_UP         (NumeReEditor::OnMouseUp)
 	EVT_RIGHT_DOWN		(NumeReEditor::OnRightClick)
 	EVT_LEFT_DCLICK		(NumeReEditor::OnMouseDblClk)
+	EVT_STC_DWELLSTART  (-1, NumeReEditor::OnMouseDwell)
 	EVT_STC_MARGINCLICK (-1, NumeReEditor::OnMarginClick)
 	EVT_MENU			(ID_DEBUG_ADD_BREAKPOINT, NumeReEditor::OnAddBreakpoint)
 	EVT_MENU			(ID_DEBUG_REMOVE_BREAKPOINT, NumeReEditor::OnRemoveBreakpoint)
 	EVT_MENU			(ID_DEBUG_CLEAR_ALL_BREAKPOINTS, NumeReEditor::OnClearBreakpoints)
 	EVT_MENU			(ID_DEBUG_WATCH_SELECTION, NumeReEditor::OnAddWatch)
 	EVT_MENU			(ID_DEBUG_DISPLAY_SELECTION, NumeReEditor::OnDisplayVariable)
+	EVT_MENU			(ID_FIND_PROCEDURE, NumeReEditor::OnFindProcedure)
 	//EVT_COMPILER_END	(ChameleonEditor::OnCompilerEnded)
 	EVT_MENU			(ID_DEBUG_RUNTOCURSOR, NumeReEditor::OnRunToCursor)
 END_EVENT_TABLE()
@@ -62,7 +67,7 @@ int CompareInts(int n1, int n2)
 
 
 extern Language _guilang;
-
+using namespace std;
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public constructor ChameleonEditor
@@ -81,8 +86,8 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 								 DebugManager* debugManager,
 								 Options* options,
 								 ProjectInfo* project,
-                                  wxWindow *parent,     wxWindowID id, NumeReSyntax* __syntax, const
-                                      wxPoint & pos /* = wxDefaultPosition */,
+                                  wxWindow *parent,     wxWindowID id, NumeReSyntax* __syntax, wxTerm* __terminal,
+                                  const wxPoint & pos /* = wxDefaultPosition */,
                                   const wxSize & size /* = wxDefaultSize */,
                                   long style /* = 0 */, const
                                       wxString & name /* = wxSTCNameStr */ ) :
@@ -98,7 +103,7 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 	m_watchedString = "";
 	m_dblclkString = "";
 
-	m_bWrapMode = false;
+	m_nEditorSetting = 0;
 	m_fileType = FILE_NONSOURCE;
 
 	m_bLoadingFile = false;
@@ -110,11 +115,13 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 	m_lastRightClick.x = -1;
 	m_lastRightClick.y = -1;
 	_syntax = __syntax;
+	m_terminal = __terminal;
 
     this->SetTabWidth(4);
     this->SetIndent(4);
     this->SetUseTabs(true);
 
+    this->SetMultipleSelection(true);
     this->SetAdditionalSelectionTyping(true);
 
     this->SetMarginWidth(0, 40);
@@ -140,6 +147,8 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
     this->StyleSetFont(wxSTC_STYLE_DEFAULT, font);
 
     this->StyleClearAll();
+
+    this->SetMouseDwellTime(250);
 
     // Editor style setup
 
@@ -180,7 +189,7 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 	this->SetSelForeground(true, wxColour("white"));*/
 
     this->EmptyUndoBuffer();
-
+    m_bSetUnsaved = false;
 	m_bNewFile = true;
 	UpdateSyntaxHighlighting();
 	m_bNewFile = false;
@@ -221,6 +230,7 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 	m_popupMenu.AppendSeparator();
 
 	//m_menuAddWatch = m_popupMenu.Append(ID_DEBUG_WATCH_SELECTION, "Watch selection");
+	m_menuFindProcedure = m_popupMenu.Append(ID_FIND_PROCEDURE, _guilang.get("GUI_MENU_EDITOR_FINDPROC", "$procedure"));
 	m_menuShowValue = m_popupMenu.Append(ID_DEBUG_DISPLAY_SELECTION, _guilang.get("GUI_MENU_EDITOR_HIGHLIGHT", "selection"));
 
 
@@ -312,7 +322,7 @@ bool NumeReEditor::SaveFile( const wxString & filename )
     SetSavePoint();
 
     m_filetime = fn.GetModificationTime();
-
+    m_bSetUnsaved = false;
     return true;
 }
 
@@ -412,7 +422,7 @@ bool NumeReEditor::Modified ()
 
 
 
-	bool isModified = modified && readonly && canundo;
+	bool isModified = (modified && readonly && canundo) || m_bSetUnsaved;
     return isModified;
 }
 
@@ -500,7 +510,10 @@ void NumeReEditor::OnChar( wxStyledTextEvent &event )
         && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
         && GetStyleAt(wordstartpos) != wxSTC_NSCR_COMMENT_LINE
         && GetStyleAt(wordstartpos) != wxSTC_NSCR_COMMENT_BLOCK
-        && GetStyleAt(wordstartpos) != wxSTC_NSCR_STRING)
+        && GetStyleAt(wordstartpos) != wxSTC_NSCR_STRING
+        && GetStyleAt(wordstartpos) != wxSTC_NPRC_COMMENT_LINE
+        && GetStyleAt(wordstartpos) != wxSTC_NPRC_COMMENT_BLOCK
+        && GetStyleAt(wordstartpos) != wxSTC_NPRC_STRING)
     {
         this->AutoCompSetIgnoreCase(true);
         this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
@@ -538,7 +551,8 @@ void NumeReEditor::OnKeyDn(wxKeyEvent &event)
     //wxMessageBox(wxString((char)this->GetCharAt(this->GetCurrentPos())));
     OnKeyDown(event);
     MakeBraceCheck();
-    ClearDblClkIndicator();
+    if (!event.ControlDown())
+        ClearDblClkIndicator();
 }
 
 void NumeReEditor::OnKeyRel(wxKeyEvent &event)
@@ -557,17 +571,24 @@ void NumeReEditor::OnMouseUp(wxMouseEvent &event)
 void NumeReEditor::OnMouseDn(wxMouseEvent &event)
 {
     OnMouseLeftDown(event);
-    ClearDblClkIndicator();
+    if (!event.ControlDown())
+        ClearDblClkIndicator();
     MakeBraceCheck();
 }
 
 void NumeReEditor::OnMouseDblClk(wxMouseEvent& event)
 {
-    m_lastRightClick = event.GetPosition();
-    wxString selection = FindClickedWord();
+    int charpos = PositionFromPoint(event.GetPosition());
+	int startPosition = WordStartPosition(charpos, true);
+	int endPosition = WordEndPosition(charpos, true);
+    wxString selection = this->GetTextRange(startPosition, endPosition);
     if (!selection.length())
         return;
 
+    if (event.ControlDown() && this->HasSelection())
+        this->AddSelection(endPosition, startPosition);
+    else
+        this->SetSelection(startPosition, endPosition);
     m_dblclkString = selection;
     long int maxpos = this->GetLastPosition();
     this->SetIndicatorCurrent(HIGHLIGHT_DBLCLK);
@@ -595,27 +616,215 @@ void NumeReEditor::OnMouseDblClk(wxMouseEvent& event)
 
 }
 
-
-bool NumeReEditor::getWrapMode()
+void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 {
-    return m_bWrapMode;
+    if (m_fileType != FILE_NSCR && m_fileType != FILE_NPRC)
+        return;
+    //wxPoint pos = event.GetPosition();
+    int charpos = event.GetPosition(); //PositionFromPoint(pos);
+	int startPosition = WordStartPosition(charpos, true);
+	int endPosition = WordEndPosition(charpos, true);
+
+	wxString selection = this->GetTextRange(startPosition, endPosition);
+	if (this->CallTipActive())
+        this->CallTipCancel();
+    if (this->GetStyleAt(charpos) == wxSTC_NSCR_FUNCTION || this->GetStyleAt(charpos) == wxSTC_NPRC_FUNCTION)
+    {
+        if (selection == "arcsin")
+            selection = "asin";
+        else if (selection == "arccos")
+            selection = "acos";
+        else if (selection == "arctan")
+            selection = "atan";
+        else if (selection == "arsinh")
+            selection = "asinh";
+        else if (selection == "arcosh")
+            selection = "acosh";
+        else if (selection == "artanh")
+            selection = "atanh";
+        this->CallTipShow(charpos, addLinebreaks(_guilang.get("PARSERFUNCS_LISTFUNC_FUNC_"+toUpperCase(selection.ToStdString())+"_*")));
+        this->CallTipSetHighlight(0,23);
+    }
+    else if (this->GetStyleAt(charpos) == wxSTC_NSCR_COMMAND || this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURE_COMMANDS || this->GetStyleAt(charpos) == wxSTC_NPRC_COMMAND)
+    {
+        if (selection == "showf")
+            selection = "show";
+        else if (selection == "view")
+            selection = "edit";
+        else if (selection == "undef")
+            selection = "undefine";
+        else if (selection == "ifndef")
+            selection = "ifndefined";
+        else if (selection == "redef")
+            selection = "redefine";
+        else if (selection == "del")
+            selection = "delete";
+        else if (selection == "search")
+            selection = "find";
+        else if (selection == "vector")
+            selection = "vect";
+        else if (selection == "vector3d")
+            selection = "vect3d";
+        else if (selection == "graph")
+            selection = "plot";
+        else if (selection == "graph3d")
+            selection = "plot3d";
+        else if (selection == "gradient")
+            selection = "grad";
+        else if (selection == "gradient3d")
+            selection = "grad3d";
+        else if (selection == "surface")
+            selection = "surf";
+        else if (selection == "surface3d")
+            selection = "surf3d";
+        else if (selection == "meshgrid")
+            selection = "mesh";
+        else if (selection == "meshgrid3d")
+            selection = "mesh3d";
+        else if (selection == "density")
+            selection = "dens";
+        else if (selection == "density3d")
+            selection = "dens3d";
+        else if (selection == "contour")
+            selection = "cont";
+        else if (selection == "contour3d")
+            selection = "cont3d";
+        else if (selection == "mtrxop")
+            selection = "matop";
+        else if (selection == "man")
+            selection = "help";
+        else if (selection == "credits" || selection == "info")
+            selection = "about";
+        else if (selection == "integrate2" || selection == "integrate2d")
+            selection = "integrate";
+
+        if (selection == "if" || selection == "endif" || selection == "else" || selection == "elseif")
+        {
+            size_t nLength = 0;
+            string sBlock = addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_IF")) + "\n    (...)\n";
+            if (selection != "if")
+                nLength = sBlock.length();
+
+            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ELSEIF")) + "\n    (...)\n";
+            if (selection != "if" && selection != "elseif")
+                nLength = sBlock.length()+1;
+
+            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ELSE")) + "\n    (...)\n";
+            if (selection != "if" && selection != "elseif" && selection != "else")
+                nLength = sBlock.length()+2;
+
+            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDIF"));
+            this->CallTipShow(charpos, sBlock);
+            this->CallTipSetHighlight(nLength,13+nLength);
+        }
+        else if (selection == "for" || selection == "endfor")
+        {
+            size_t nLength = 0;
+            string sBlock = addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_FOR")) + "\n    (...)\n";
+            if (selection != "for")
+                nLength = sBlock.length();
+            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDFOR"));
+            this->CallTipShow(charpos, sBlock);
+            this->CallTipSetHighlight(nLength,13+nLength);
+        }
+        else if (selection == "while" || selection == "endwhile")
+        {
+            size_t nLength = 0;
+            string sBlock = addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_WHILE")) + "\n    (...)\n";
+            if (selection != "while")
+                nLength = sBlock.length();
+            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDWHILE"));
+            this->CallTipShow(charpos, sBlock);
+            this->CallTipSetHighlight(nLength,13+nLength);
+        }
+        else if (selection == "procedure" || selection == "endprocedure")
+        {
+            size_t nLength = 0;
+            string sBlock = addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_PROCEDURE")) + "\n    (...)\n";
+            if (selection != "procedure")
+                nLength = sBlock.length();
+            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDPROCEDURE"));
+            this->CallTipShow(charpos, sBlock);
+            this->CallTipSetHighlight(nLength,13+nLength);
+        }
+        else if (selection == "compose" || selection == "endcompose")
+        {
+            size_t nLength = 0;
+            string sBlock = addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_COMPOSE")) + "\n    (...)\n";
+            if (selection != "compose")
+                nLength = sBlock.length();
+            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDCOMPOSE"));
+            this->CallTipShow(charpos, sBlock);
+            this->CallTipSetHighlight(nLength,13+nLength);
+        }
+        else
+        {
+            this->CallTipShow(charpos, addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"+toUpperCase(selection.ToStdString()))));
+            this->CallTipSetHighlight(0,13);
+        }
+    }
+    else if (this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURES || this->GetStyleAt(charpos) == wxSTC_NPRC_PROCEDURES)
+    {
+        wxString proc = FindMarkedProcedure(charpos);
+        if (!proc.length())
+            return;
+        this->CallTipShow(charpos, _guilang.get("GUI_EDITOR_CALLTIP_PROC1") + " " + m_clickedProcedure+"(...)\n" + _guilang.get("GUI_EDITOR_CALLTIP_PROC2"));
+        this->CallTipSetHighlight(_guilang.get("GUI_EDITOR_CALLTIP_PROC1").length()+1,6+m_clickedProcedure.length()+_guilang.get("GUI_EDITOR_CALLTIP_PROC1").length());
+    }
+    else if (this->GetStyleAt(charpos) == wxSTC_NSCR_OPTION || this->GetStyleAt(charpos) == wxSTC_NPRC_OPTION)
+    {
+        selection = _guilang.get("GUI_EDITOR_CALLTIP_OPT_"+toUpperCase(selection.ToStdString()));
+        size_t highlightlength = selection.length();
+        if (selection.find(' ') != string::npos)
+            highlightlength = selection.find(' ');
+        this->CallTipShow(charpos, "Option: " + selection);
+        this->CallTipSetHighlight(8,8+highlightlength);
+    }
+    else if (this->GetStyleAt(charpos) == wxSTC_NSCR_PREDEFS || this->GetStyleAt(charpos) == wxSTC_NPRC_PREDEFS)
+    {
+        this->CallTipShow(charpos, _guilang.get("GUI_EDITOR_CALLTIP_"+toUpperCase(selection.ToStdString())));
+        this->CallTipSetHighlight(0, 10);
+    }
 }
 
-void NumeReEditor::ToggleLineWrap()
+
+bool NumeReEditor::getEditorSetting(EditorSettings _setting)
 {
-    if (!m_bWrapMode)
+    return m_nEditorSetting & _setting;
+}
+
+void NumeReEditor::ToggleSettings(EditorSettings _setting)
+{
+    this->SetWhitespaceForeground(true, wxColor(170,190,210));
+    this->SetWhitespaceSize(2);
+    if (!(m_nEditorSetting & _setting))
     {
-        m_bWrapMode = true;
-        this->SetWrapMode(wxSTC_WRAP_WORD);
-        this->SetWrapIndentMode(wxSTC_WRAPINDENT_INDENT);
-        this->SetWrapStartIndent(1);
-        this->SetWrapVisualFlags(wxSTC_WRAPVISUALFLAG_END);
-        this->SetWrapVisualFlagsLocation(wxSTC_WRAPVISUALFLAGLOC_END_BY_TEXT);
+        m_nEditorSetting |= _setting;
+
+        if (_setting == SETTING_WRAPEOL)
+        {
+            this->SetWrapMode(wxSTC_WRAP_WORD);
+            this->SetWrapIndentMode(wxSTC_WRAPINDENT_INDENT);
+            this->SetWrapStartIndent(1);
+            this->SetWrapVisualFlags(wxSTC_WRAPVISUALFLAG_END);
+            this->SetWrapVisualFlagsLocation(wxSTC_WRAPVISUALFLAGLOC_END_BY_TEXT);
+        }
+        else if (_setting == SETTING_DISPCTRLCHARS)
+        {
+            this->SetViewWhiteSpace(wxSTC_WS_VISIBLEALWAYS);
+            this->SetViewEOL(true);
+        }
     }
     else
     {
-        m_bWrapMode = false;
-        this->SetWrapMode(wxSTC_WRAP_NONE);
+        m_nEditorSetting &= ~_setting;
+        if (_setting == SETTING_WRAPEOL)
+            this->SetWrapMode(wxSTC_WRAP_NONE);
+        else if (_setting == SETTING_DISPCTRLCHARS)
+        {
+            this->SetViewEOL(false);
+            this->SetViewWhiteSpace(wxSTC_WS_INVISIBLE);
+        }
     }
 }
 
@@ -644,7 +853,12 @@ void NumeReEditor::getMatchingBrace(int nPos)
 bool NumeReEditor::HasBeenSaved()
 {
 	bool result = m_fileNameAndPath.GetFullPath() != wxEmptyString;
-	return result;
+	return result;// && !m_bSetUnsaved;
+}
+
+void NumeReEditor::SetUnsaved()
+{
+    m_bSetUnsaved = true;
 }
 
 /*
@@ -675,18 +889,24 @@ void NumeReEditor::UpdateSyntaxHighlighting()
 	wxString filename = GetFileNameAndPath();
 
 	FileFilterType filetype = m_project->GetFileType(filename);
-	m_fileType = filetype;
+	if (m_fileType != filetype)
+        m_fileType = filetype;
+    else
+        return;
     this->SetCaretLineVisible(true);
     this->SetIndentationGuides(true);
     this->SetCaretLineBackground(wxColour(196,211,255));
 
-	if (m_bNewFile || filetype == FILE_NSCR || filetype == FILE_NPRC || !HasBeenSaved())
+
+	if (filetype == FILE_NSCR)
 	{
         m_fileType = FILE_NSCR;
 		this->SetLexer(wxSTC_LEX_NSCR);
 
 		this->SetProperty("fold", "1");
 		//this->SetProperty("fold.comment", "1");
+		this->SetFoldFlags(wxSTC_FOLDFLAG_LINEAFTER_CONTRACTED);
+
 		this->SetMarginType(MARGIN_FOLD, wxSTC_MARGIN_SYMBOL);
 		this->SetMarginWidth(MARGIN_FOLD, 15);
 		this->SetMarginMask(MARGIN_FOLD, wxSTC_MASK_FOLDERS);
@@ -740,6 +960,7 @@ void NumeReEditor::UpdateSyntaxHighlighting()
             this->SetKeyWords(4, _syntax->getConstants());//"_pi _2pi _g _R _alpha_fs _c _coul_norm _elek_feldkonst _elem_ladung _g _h _hbar _k_boltz _m_amu _m_elektron _m_erde _m_muon _m_neutron _m_proton _m_sonne _m_tau _magn_feldkonst _mu_bohr _mu_kern _n_avogadro _pi _r_bohr _r_erde _r_sonne _theta_weinberg");
             this->SetKeyWords(5, _syntax->getSpecial());//"... ans cache data false inf nan string true void");
             this->SetKeyWords(6, _syntax->getOperators());//"<loadpath> <savepath> <scriptpath> <procpath> <plotpath> <this> <wp> 'Torr 'eV 'fm 'A 'b 'AU 'ly 'pc 'mile 'yd 'ft 'in 'cal 'TC 'TF 'Ci 'G 'kmh 'kn 'l 'mph 'psi 'Ps 'mol 'Gs 'M 'k 'm 'mu 'n");
+            this->SetKeyWords(7, _syntax->getNPRCCommands());//"<loadpath> <savepath> <scriptpath> <procpath> <plotpath> <this> <wp> 'Torr 'eV 'fm 'A 'b 'AU 'ly 'pc 'mile 'yd 'ft 'in 'cal 'TC 'TF 'Ci 'G 'kmh 'kn 'l 'mph 'psi 'Ps 'mol 'Gs 'M 'k 'm 'mu 'n");
         }
 		/*this->SetCaretLineVisible(true);
 		this->SetCaretLineBackground(wxColour(196,211,255));
@@ -787,6 +1008,12 @@ void NumeReEditor::UpdateSyntaxHighlighting()
 
 		this->StyleSetForeground(wxSTC_NSCR_PROCEDURES, wxColour(128,0,0));
 		this->StyleSetBold(wxSTC_NSCR_PROCEDURES, true);
+		this->StyleSetForeground(wxSTC_NSCR_PROCEDURE_COMMANDS, wxColour(128,0,0));
+		this->StyleSetBold(wxSTC_NSCR_PROCEDURE_COMMANDS, true);
+
+		this->StyleSetForeground(wxSTC_NSCR_INSTALL, wxColour(128,128,128));
+		this->StyleSetBold(wxSTC_NSCR_INSTALL, false);
+		this->StyleSetItalic(wxSTC_NSCR_INSTALL, false);
 
         this->StyleSetForeground(wxSTC_NSCR_DEFAULT_VARS, wxColour(0, 0, 160));
 		this->StyleSetBold(wxSTC_NSCR_DEFAULT_VARS, true);
@@ -800,9 +1027,141 @@ void NumeReEditor::UpdateSyntaxHighlighting()
         this->StyleSetForeground(34, wxColour(0,150,0));
         this->StyleSetBackground(34, wxColour(0,220,0));
         this->StyleSetBold(34, true);
+        this->StyleSetSize(34, this->StyleGetSize(0)+1);
         this->StyleSetForeground(35, wxColour(150,0,0));
         this->StyleSetBackground(35, wxColour(220,0,0));
         this->StyleSetBold(35, true);
+        this->StyleSetSize(35, this->StyleGetSize(0)+1);
+		this->Colourise(0, -1);
+	}
+	else if (filetype == FILE_NPRC)
+	{
+		this->SetLexer(wxSTC_LEX_NPRC);
+
+		this->SetProperty("fold", "1");
+		//this->SetProperty("fold.comment", "1");
+		this->SetFoldFlags(wxSTC_FOLDFLAG_LINEAFTER_CONTRACTED);
+
+		this->SetMarginType(MARGIN_FOLD, wxSTC_MARGIN_SYMBOL);
+		this->SetMarginWidth(MARGIN_FOLD, 15);
+		this->SetMarginMask(MARGIN_FOLD, wxSTC_MASK_FOLDERS);
+		this->SetMarginSensitive(MARGIN_FOLD, true);
+		this->StyleSetBackground(MARGIN_FOLD, wxColor(200, 200, 200) );
+        this->SetMarginSensitive(MARGIN_FOLD, true);
+
+        //this->BraceBadLightIndicator(true, wxSTC_NSCR_DEFAULT);
+        //this->BraceHighlightIndicator(true, wxSTC_NSCR_COMMENT_LINE);
+
+        // Properties found from http://www.scintilla.org/SciTEDoc.html
+        //text->SetProperty (wxT("fold"),         wxT("1") );
+        //text->SetProperty (wxT("fold.comment"), wxT("1") );
+        //text->SetProperty (wxT("fold.compact"), wxT("1") );
+
+        wxColor grey( 100, 100, 100 );
+        this->MarkerDefine (wxSTC_MARKNUM_FOLDER, wxSTC_MARK_BOXPLUS);
+        this->MarkerSetForeground (wxSTC_MARKNUM_FOLDER, "WHITE");
+        this->MarkerSetBackground (wxSTC_MARKNUM_FOLDER, grey);
+
+        this->MarkerDefine (wxSTC_MARKNUM_FOLDEROPEN,    wxSTC_MARK_BOXMINUS);
+        this->MarkerSetForeground (wxSTC_MARKNUM_FOLDEROPEN, "WHITE");
+        this->MarkerSetBackground (wxSTC_MARKNUM_FOLDEROPEN, grey);
+
+        this->MarkerDefine (wxSTC_MARKNUM_FOLDERSUB,     wxSTC_MARK_VLINE);
+        this->MarkerSetForeground (wxSTC_MARKNUM_FOLDERSUB, grey);
+        this->MarkerSetBackground (wxSTC_MARKNUM_FOLDERSUB, grey);
+
+        this->MarkerDefine (wxSTC_MARKNUM_FOLDEREND,     wxSTC_MARK_BOXPLUSCONNECTED);
+        this->MarkerSetForeground (wxSTC_MARKNUM_FOLDEREND, "WHITE");
+        this->MarkerSetBackground (wxSTC_MARKNUM_FOLDEREND, grey);
+
+        this->MarkerDefine (wxSTC_MARKNUM_FOLDEROPENMID, wxSTC_MARK_BOXMINUSCONNECTED);
+        this->MarkerSetForeground (wxSTC_MARKNUM_FOLDEROPENMID, "WHITE");
+        this->MarkerSetBackground (wxSTC_MARKNUM_FOLDEROPENMID, grey);
+
+        this->MarkerDefine (wxSTC_MARKNUM_FOLDERMIDTAIL, wxSTC_MARK_TCORNER);
+        this->MarkerSetForeground (wxSTC_MARKNUM_FOLDERMIDTAIL, grey);
+        this->MarkerSetBackground (wxSTC_MARKNUM_FOLDERMIDTAIL, grey);
+
+        this->MarkerDefine (wxSTC_MARKNUM_FOLDERTAIL,    wxSTC_MARK_LCORNER);
+        this->MarkerSetForeground (wxSTC_MARKNUM_FOLDERTAIL, grey);
+        this->MarkerSetBackground (wxSTC_MARKNUM_FOLDERTAIL, grey);
+
+        if (_syntax)
+        {
+            this->SetKeyWords(0, _syntax->getCommands()+_syntax->getNPRCCommands());//"about append audio break clear compose cont cont3d continue contour contour3d copy credits datagrid define del delete dens dens3d density density3d diff draw draw3d edit eval explicit export extrema fft find fit fitw get global grad gradient grad3d gradient3d graph graph3d help hist hist2d hline ifndef ifndefined info integrate integrate2 integrate2d list load man matop mesh mesh3d meshgrid meshgrid3d move mtrxop new odesolve plot plot3d print progress pulse quit random read redef redefine regularize reload remove rename repl replaceline resample retoque save script search set show showf smooth sort stats stfa subplot surf surf3d surface surface3d swap taylor undef undefine uninstall vect vect3d vector vector3d view workpath write zeroes else elseif endfor endif endwhile endcompose explicit for if inline main namespace private readline return throw while procedure endprocedure str var");
+            this->SetKeyWords(1, _syntax->getOptions());//"addxaxis addyaxis adventor all allmedium alpha alphamask animate app append area aspect asstr asval autosave axis axisbind background bar bars bcancel bgcolorscheme binlabel binomial bins bonum bottomleft bottomright box boxplot buffersize cancel cartesian chimap chorus clog cloudplot cmd coarse coast cold colorbar colormask colorrange colorscheme colortheme cols comment comments compact complete complex connect const copper coords countlabel cscale cticklabels cticks cursor cut defcontrol desc dir distrib draftmode editor eps errorbars every exprvar extendedfileinfo faststart fcont file files fine first flength flow font free freedman freedoms func fx0 gamma gauss greeting grey grid gridstyle hbars head heros heroscn hints hires hot ignore interpolate inverse iter keepdim last lborder lcont legend legendstyle light lines linesizes linestyles lnumctrl loademptycols loadpath logic logscale lyapunov map marks mask max maxline mean medium method min minline mode moy msg multiplot noalpha noalphamask noanimate noarea noaxis nobackground nobars nobox noboxplot noclog nocloudplot nocolorbar nocolormask noconnect nocut noerrorbars nofcont noflength noflow nogrid nohbars nohires nointerpolate nolcont nolight nologscale nomarks noopen noorthoproject nopcont nopipe nopoints noquotes noregion normal noschematic nosteps nosilent noxlog noyerrorbars noylog nozlog nq oeps ogif onlycolors onlystyles open opng order origin orthoproject osvg otex override pagella params pattern pcont peek perspective pipe plasma plotcolors plotfont plotparams plotpath plugin plugins points pointstyles poisson polar precision prob proc procpath rainbow rborder real recursive region reset restrict rk2 rk4 rk8pd rkck rkf45 rotate samples savepath saverr scale schematic schola scott scriptpath settings shape silent simpson single slices sliding spherical std steps student styles sv target termes textsize title tocache tol topleft topright transpose trapezoidal trunc type ubound uniform unique units usecustomlang useescinscripts var viridis viewer vline width windowsize with xerrorbars xlabel xlog xscale xticklabels xticks xvals xy xz yerrorbars ylabel ylog yscale yticklabels yticks zlabel zlog zscale zticklabels zticks");
+            this->SetKeyWords(2, _syntax->getFunctions());//"abs acos acosh Ai arc arcv arccos arcsin arctan arcosh arsinh artanh asin asinh ascii atan atanh avg bessel betheweizsaecker Bi binom char circle cmp cnt cone conev cos cosh cot cross cuboid curve date dblfacul degree det diag diagonalize drop eigenvals eigenvects ellipse ellipsev ellipticD ellipticE ellipticF ellipticPi erf erfc exp face facev faculty findfile findparam floor gamma gauss gcd getfilelist getfolderlist getindices getmatchingparens getopt heaviside hermite identity imY invert is_data is_nan is_string laguerre laguerre_a lcm legendre legendre_a ln log log10 log2 matfc matfcf matfl matflf max med min neumann norm num one pct phi point polygon polygonv prd radian rand range rect repeat replace replaceall rint roof round sbessel sign sin sinc sinh sneumann solve split sphere sqrt std strfnd string_cast strlen strrfnd student_t substr sum tan tanh text theta time to_char to_cmd to_lowercase to_string to_uppercase to_value trace tracev transpose triangle trianglev valtostr version Y zero");
+            this->SetKeyWords(3, "x y z t");
+            this->SetKeyWords(4, _syntax->getConstants());//"_pi _2pi _g _R _alpha_fs _c _coul_norm _elek_feldkonst _elem_ladung _g _h _hbar _k_boltz _m_amu _m_elektron _m_erde _m_muon _m_neutron _m_proton _m_sonne _m_tau _magn_feldkonst _mu_bohr _mu_kern _n_avogadro _pi _r_bohr _r_erde _r_sonne _theta_weinberg");
+            this->SetKeyWords(5, _syntax->getSpecial());//"... ans cache data false inf nan string true void");
+            this->SetKeyWords(6, _syntax->getOperators());//"<loadpath> <savepath> <scriptpath> <procpath> <plotpath> <this> <wp> 'Torr 'eV 'fm 'A 'b 'AU 'ly 'pc 'mile 'yd 'ft 'in 'cal 'TC 'TF 'Ci 'G 'kmh 'kn 'l 'mph 'psi 'Ps 'mol 'Gs 'M 'k 'm 'mu 'n");
+        }
+		/*this->SetCaretLineVisible(true);
+		this->SetCaretLineBackground(wxColour(196,211,255));
+		this->SetIndentationGuides(true);*/
+
+		this->StyleSetForeground(wxSTC_NPRC_DEFAULT, wxColour(0,0,0));
+		this->StyleSetItalic(wxSTC_NPRC_DEFAULT, true);
+
+		this->StyleSetForeground(wxSTC_NPRC_IDENTIFIER, wxColour(0,0,0));
+		this->StyleSetItalic(wxSTC_NPRC_IDENTIFIER, true);
+
+		this->StyleSetForeground(wxSTC_NPRC_NUMBERS, wxColour(255,128,64));
+
+		this->StyleSetForeground(wxSTC_NPRC_COMMENT_LINE, wxColour(0,128,0));
+		this->StyleSetBackground(wxSTC_NPRC_COMMENT_LINE, wxColour(255,255,183));
+		this->StyleSetBold(wxSTC_NPRC_COMMENT_LINE, true);
+
+		this->StyleSetForeground(wxSTC_NPRC_COMMENT_BLOCK, wxColour(0,128,0));
+		this->StyleSetBackground(wxSTC_NPRC_COMMENT_BLOCK, wxColour(255,255,183));
+		this->StyleSetBold(wxSTC_NPRC_COMMENT_BLOCK, true);
+
+		this->StyleSetForeground(wxSTC_NPRC_COMMAND, wxColour(0, 128, 255));
+		this->StyleSetBold(wxSTC_NPRC_COMMAND, true);
+		this->StyleSetUnderline(wxSTC_NPRC_COMMAND, true);
+
+		this->StyleSetForeground(wxSTC_NPRC_OPTION, wxColour(0, 128, 128));
+		this->StyleSetBold(wxSTC_NPRC_OPTION, false);
+
+        this->StyleSetForeground(wxSTC_NPRC_CONSTANTS, wxColour(255, 0, 128));
+		this->StyleSetBold(wxSTC_NPRC_CONSTANTS, true);
+
+        this->StyleSetForeground(wxSTC_NPRC_FUNCTION, wxColour(0, 0, 255));
+		this->StyleSetBold(wxSTC_NPRC_FUNCTION, true);
+
+        this->StyleSetForeground(wxSTC_NPRC_PREDEFS, wxColour(0, 0, 0));
+		this->StyleSetBold(wxSTC_NPRC_PREDEFS, true);
+
+		this->StyleSetForeground(wxSTC_NPRC_STRING, wxColour(128,128,255));
+
+		this->StyleSetForeground(wxSTC_NPRC_STRING_PARSER, wxColour(0,128,192));
+		this->StyleSetBold(wxSTC_NPRC_STRING_PARSER, true);
+
+		this->StyleSetForeground(wxSTC_NPRC_INCLUDES, wxColour(128,0,0));
+		this->StyleSetBold(wxSTC_NPRC_INCLUDES, true);
+
+		this->StyleSetForeground(wxSTC_NPRC_PROCEDURES, wxColour(128,0,0));
+		this->StyleSetBold(wxSTC_NPRC_PROCEDURES, true);
+		this->StyleSetForeground(wxSTC_NPRC_FLAGS, wxColour(128,0,0));
+		this->StyleSetBold(wxSTC_NPRC_FLAGS, true);
+
+        this->StyleSetForeground(wxSTC_NPRC_DEFAULT_VARS, wxColour(0, 0, 160));
+		this->StyleSetBold(wxSTC_NPRC_DEFAULT_VARS, true);
+		this->StyleSetItalic(wxSTC_NPRC_DEFAULT_VARS, true);
+
+        this->StyleSetForeground(wxSTC_NPRC_CUSTOM_FUNCTION, wxColour(0, 0, 160));
+
+        this->StyleSetForeground(wxSTC_NPRC_OPERATORS, wxColour(255, 0, 0));
+        this->StyleSetForeground(wxSTC_NPRC_OPERATOR_KEYWORDS, wxColour(255, 0, 0));
+
+        this->StyleSetForeground(34, wxColour(0,150,0));
+        this->StyleSetBackground(34, wxColour(0,220,0));
+        this->StyleSetBold(34, true);
+        this->StyleSetSize(34, this->StyleGetSize(0)+1);
+        this->StyleSetForeground(35, wxColour(150,0,0));
+        this->StyleSetBackground(35, wxColour(220,0,0));
+        this->StyleSetBold(35, true);
+        this->StyleSetSize(35, this->StyleGetSize(0)+1);
 		this->Colourise(0, -1);
 	}
 	else if (filetype == FILE_TEXSOURCE)
@@ -824,9 +1183,11 @@ void NumeReEditor::UpdateSyntaxHighlighting()
         this->StyleSetForeground(34, wxColour(0,150,0));
         this->StyleSetBackground(34, wxColour(0,220,0));
         this->StyleSetBold(34, true);
+        this->StyleSetSize(34, this->StyleGetSize(0)+1);
         this->StyleSetForeground(35, wxColour(150,0,0));
         this->StyleSetBackground(35, wxColour(220,0,0));
         this->StyleSetBold(35, true);
+        this->StyleSetSize(35, this->StyleGetSize(0)+1);
         this->Colourise(0,-1);
 	}
 	else if (filetype == FILE_DATAFILES)
@@ -843,9 +1204,11 @@ void NumeReEditor::UpdateSyntaxHighlighting()
         this->StyleSetForeground(34, wxColour(0,150,0));
         this->StyleSetBackground(34, wxColour(0,220,0));
         this->StyleSetBold(34, true);
+        this->StyleSetSize(34, this->StyleGetSize(0)+1);
         this->StyleSetForeground(35, wxColour(150,0,0));
         this->StyleSetBackground(35, wxColour(220,0,0));
         this->StyleSetBold(35, true);
+        this->StyleSetSize(35, this->StyleGetSize(0)+1);
         this->Colourise(0,-1);
 	}
 	else
@@ -853,6 +1216,15 @@ void NumeReEditor::UpdateSyntaxHighlighting()
 		this->SetLexer(wxSTC_LEX_NULL);
 		this->StyleSetItalic(0,false);
 		this->ClearDocumentStyle();
+
+        this->StyleSetForeground(34, wxColour(0,150,0));
+        this->StyleSetBackground(34, wxColour(0,220,0));
+        this->StyleSetBold(34, true);
+        this->StyleSetSize(34, this->StyleGetSize(0)+1);
+        this->StyleSetForeground(35, wxColour(150,0,0));
+        this->StyleSetBackground(35, wxColour(220,0,0));
+        this->StyleSetBold(35, true);
+        this->StyleSetSize(35, this->StyleGetSize(0)+1);
 	}
 }
 
@@ -1035,10 +1407,15 @@ void NumeReEditor::OnRightClick(wxMouseEvent &event)
 	bool breakpointsAllowed = true;
 	bool isDebugging = true; //m_debugManager->IsDebugging();//m_mainFrame->IsDebugging();
 
-	if(m_popupMenu.FindItem(ID_DEBUG_DISPLAY_SELECTION) != NULL)
+	if(m_popupMenu.FindItem(ID_DEBUG_DISPLAY_SELECTION) != nullptr)
 	{
 		//m_popupMenu.Remove(ID_DEBUG_WATCH_SELECTION);
 		m_popupMenu.Remove(ID_DEBUG_DISPLAY_SELECTION);
+	}
+	if(m_popupMenu.FindItem(ID_FIND_PROCEDURE) != nullptr)
+	{
+		//m_popupMenu.Remove(ID_DEBUG_WATCH_SELECTION);
+		m_popupMenu.Remove(ID_FIND_PROCEDURE);
 	}
 
 	/*if(isDebugging)
@@ -1059,12 +1436,21 @@ void NumeReEditor::OnRightClick(wxMouseEvent &event)
 	m_popupMenu.Enable(ID_DEBUG_CLEAR_ALL_BREAKPOINTS, canClearBreakpoints);
 
 
-	if(!isDebugging || (isDebugging && breakpointsAllowed))
+	//if(!isDebugging || (isDebugging && breakpointsAllowed))
 	{
 		wxString clickedWord = FindClickedWord();
 
 		if(clickedWord.Length() > 0)
 		{
+            if (this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURES)
+            {
+                wxString clickedProc = FindClickedProcedure();
+                if (clickedProc.length())
+                {
+                    m_popupMenu.Append(m_menuFindProcedure);
+                    m_menuFindProcedure->SetText(_guilang.get("GUI_MENU_EDITOR_FINDPROC", clickedProc.ToStdString()));
+                }
+            }
 			//wxString watchWord = wxString::Format("Watch \"%s\"", clickedWord);
 			//wxString displayWord = wxString::Format("Display \"%s\"", clickedWord);
 
@@ -1368,6 +1754,65 @@ wxString NumeReEditor::FindClickedWord()
 	return clickedWord;
 }
 
+
+wxString NumeReEditor::FindClickedProcedure()
+{
+	int charpos = PositionFromPoint(m_lastRightClick);
+	return FindMarkedProcedure(charpos);
+}
+
+wxString NumeReEditor::FindMarkedProcedure(int charpos)
+{
+	int startPosition = WordStartPosition(charpos, true);
+	while (startPosition && GetStyleAt(startPosition-1) == wxSTC_NSCR_PROCEDURES)
+        startPosition--;
+	int endPosition = WordEndPosition(charpos, true);
+	while (endPosition < GetLastPosition() && GetStyleAt(endPosition) == wxSTC_NSCR_PROCEDURES)
+        endPosition++;
+
+    wxString currentline = this->GetLine(LineFromPosition(startPosition));
+    if (currentline.find("procedure") != string::npos && currentline[currentline.find_first_not_of(' ', currentline.find("procedure")+9)] == '$')
+        return "";
+
+	wxString clickedWord = this->GetTextRange(startPosition, endPosition);
+    FileFilterType file = m_fileType;
+	if (m_fileType == FILE_NPRC && clickedWord.find('~') == string::npos)
+	{
+        int minpos = 0;
+        int maxpos = charpos;
+        while (minpos < charpos && FindText(minpos, maxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) != string::npos)
+        {
+            minpos = FindText(minpos, maxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD)+1;
+        }
+        if (FindText(minpos, maxpos, "namespace", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) != string::npos)
+        {
+            while (minpos < charpos && FindText(minpos, maxpos, "namespace", wxSTC_FIND_WHOLEWORD | wxSTC_FIND_MATCHCASE) != string::npos)
+            {
+                minpos = FindText(minpos, maxpos, "namespace", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD)+1;
+            }
+            string currentNamespace = GetLine(LineFromPosition(minpos)).ToStdString();
+            currentNamespace.erase(0,currentNamespace.find("namespace")+9);
+            while (currentNamespace.back() == '\r' || currentNamespace.back() =='\n')
+                currentNamespace.pop_back();
+            StripSpaces(currentNamespace);
+
+            if (clickedWord[0] == '$')
+                clickedWord.insert(1,currentNamespace + "~");
+            else
+                clickedWord = "$"+currentNamespace + "~" + clickedWord;
+        }
+	}
+
+	m_clickedProcedure = clickedWord;
+
+	if (clickedWord.find('~') != string::npos)
+        clickedWord.erase(1, clickedWord.rfind('~'));
+    if (clickedWord[0] != '$')
+        clickedWord.insert(0,1,'$');
+
+	return clickedWord + "()";
+}
+
 void NumeReEditor::OnAddWatch(wxCommandEvent &event)
 {
 	wxDebugEvent dbg;
@@ -1433,6 +1878,53 @@ void NumeReEditor::OnDisplayVariable(wxCommandEvent &event)
 	// TODO Need to signal that it's a one-shot, which needs to be
 	// handled appropriately in the debugger.
 }
+
+void NumeReEditor::OnFindProcedure(wxCommandEvent &event)
+{
+    if (!m_clickedProcedure.length())
+        return;
+    vector<std::string> vPaths = m_terminal->getPathSettings();
+    wxString pathname = m_clickedProcedure;
+    if (pathname.find("$this~") != string::npos)
+    {
+        wxString thispath = GetFileNameAndPath();
+        pathname.replace(pathname.find("$this~"), 6, thispath.substr(0,thispath.rfind('\\')+1));
+    }
+    else if (pathname.find("$thisfile~") != string::npos)
+    {
+        wxString procedurename = pathname.substr(pathname.rfind('~')+1);
+        wxString procedureline;
+        int nminpos = 0;
+        int nmaxpos = GetLastPosition();
+        while (nminpos < nmaxpos && FindText(nminpos, nmaxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) != string::npos)
+        {
+            nminpos = FindText(nminpos, nmaxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) + 1;
+            procedureline = GetLine(LineFromPosition(nminpos));
+            if (procedureline.find("$"+procedurename) != string::npos && procedureline[procedureline.find_first_not_of(' ', procedureline.find("$"+procedurename)+procedurename.length()+1)] == '(')
+            {
+                this->SetFocus();
+                this->EnsureVisible(LineFromPosition(nminpos));
+                this->GotoLine(LineFromPosition(nminpos));
+                return;
+            }
+        }
+    }
+    else
+    {
+        if (pathname.find("$main~") != string::npos)
+            pathname.erase(pathname.find("$main~")+1,5);
+        while (pathname.find('~') != string::npos)
+            pathname[pathname.find('~')] = '/';
+        if (pathname[0] == '$')
+            pathname.replace(0,1,vPaths[5]+"/");
+        else
+            pathname.insert(0,vPaths[5]);
+    }
+    wxArrayString pathnames;
+    pathnames.Add(pathname+".nprc");
+    m_mainFrame->OpenSourceFile(pathnames);
+}
+
 
 void NumeReEditor::ClearDblClkIndicator()
 {
@@ -1527,6 +2019,38 @@ int NumeReEditor::determineIndentationLevel(std::string sLine, bool& bIsElseCase
     Match _mMatch;
     while (sLine.length())
     {
+        if (sLine.find("<install>") != string::npos
+            || sLine.find("<info>") != string::npos
+            || sLine.find("<helpindex>") != string::npos
+            || sLine.find("<helpfile>") != string::npos
+            || sLine.find("<article") != string::npos
+            || sLine.find("<keywords>") != string::npos
+            || sLine.find("<keyword>") != string::npos
+            || sLine.find("<codeblock>") != string::npos
+            || sLine.find("<exprblock>") != string::npos
+            || sLine.find("<example") != string::npos
+            || sLine.find("<item") != string::npos
+            || sLine.find("<list") != string::npos)
+        {
+            nIndentCount++;
+            sLine.erase(0,sLine.find('>')+1);
+        }
+        if (sLine.find("<endinstall>") != string::npos
+            || sLine.find("<endinfo>") != string::npos
+            || sLine.find("</helpindex>") != string::npos
+            || sLine.find("</helpfile>") != string::npos
+            || sLine.find("</article>") != string::npos
+            || sLine.find("</keywords>") != string::npos
+            || sLine.find("</keyword>") != string::npos
+            || sLine.find("</codeblock>") != string::npos
+            || sLine.find("</exprblock>") != string::npos
+            || sLine.find("</example>") != string::npos
+            || sLine.find("</item>") != string::npos
+            || sLine.find("</list>") != string::npos)
+        {
+            nIndentCount--;
+            sLine.erase(0,sLine.find('>')+1);
+        }
         _mMatch = findCommand(sLine);
         if (_mMatch.nPos == string::npos)
             return nIndentCount;
@@ -1556,6 +2080,64 @@ int NumeReEditor::determineIndentationLevel(std::string sLine, bool& bIsElseCase
     return nIndentCount;
 }
 
+string NumeReEditor::addLinebreaks(const string& sLine)
+{
+    const unsigned int nMAXLINE = 80;
+    if (sLine.length() < nMAXLINE)
+        return sLine;
+
+    string sReturn = sLine;
+    unsigned int nIndentPos = sReturn.find("- ")+2;
+    unsigned int nLastLineBreak = 0;
+    for (unsigned int i = 0; i < sReturn.length(); i++)
+    {
+        if (sReturn[i] == '\n')
+            nLastLineBreak = i;
+        if ((i == nMAXLINE && !nLastLineBreak)
+            || (nLastLineBreak && i - nLastLineBreak == nMAXLINE))
+        {
+            for (int j = i; j >= 0; j--)
+            {
+                if (sReturn[j] == ' ')
+                {
+                    sReturn[j] = '\n';
+                    sReturn.insert(j+1, nIndentPos, ' ');
+                    nLastLineBreak = j;
+                    break;
+                }
+                else if (sReturn[j] == '-' && j != i)
+                {
+                    // --> Minuszeichen: nicht immer ist das Trennen an dieser Stelle sinnvoll. Wir pruefen die einfachsten Faelle <--
+                    if (j &&
+                        (sReturn[j-1] == ' '
+                        || sReturn[j-1] == '('
+                        || sReturn[j+1] == ')'
+                        || sReturn[j-1] == '['
+                        || (sReturn[j+1] >= '0' && sReturn[j+1] <= '9')
+                        || sReturn[j+1] == ','
+                        || (sReturn[j+1] == '"' && sReturn[j-1] == '"')
+                        ))
+                        continue;
+                    sReturn.insert(j+1, "\n");
+                    sReturn.insert(j+2, nIndentPos, ' ');
+                    nLastLineBreak = j+1;
+                    break;
+                }
+                else if (sReturn[j] == ',' && j != i && sReturn[j+1] != ' ')
+                {
+                    sReturn.insert(j+1, "\n");
+                    sReturn.insert(j+2, nIndentPos, ' ');
+                    nLastLineBreak = j+1;
+                    break;
+                }
+            }
+        }
+    }
+    return sReturn;
+}
+
+
+
 void NumeReEditor::ApplyAutoIndentation()
 {
     int nIndentCount = 0;
@@ -1565,6 +2147,7 @@ void NumeReEditor::ApplyAutoIndentation()
     bool bBlockComment = false;
     bool bIsElseCase = false;
     this->SetTabWidth(4);
+    this->BeginUndoAction();
     //this->SetUseTabs(true);
     for (size_t i = 0; i < nLines; i++)
     {
@@ -1618,6 +2201,7 @@ void NumeReEditor::ApplyAutoIndentation()
             nIndentCount += nCurrentIndent;
         }
     }
+    this->EndUndoAction();
 }
 
 

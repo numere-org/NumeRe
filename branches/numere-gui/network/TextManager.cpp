@@ -55,7 +55,9 @@ void TextManager::Reset()
 	// black background, white text
 	m_blankColor = 112;
 	vector<unsigned short> colorline(m_maxWidth, m_blankColor);
-	m_color = deque< vector< unsigned short> >(m_maxHeight, colorline);
+	m_color = deque<vector<unsigned short> >(m_maxHeight, colorline);
+	vector<short> usertext(m_maxWidth, 0);
+	m_userText = deque<vector<short> >(m_maxHeight, usertext);
 
 	m_bottomLine = m_maxHeight - 1;
 	m_topLine = m_bottomLine - m_viewportHeight + 1;
@@ -99,6 +101,9 @@ void TextManager::AddNewLine(string newline)
 	vector<unsigned short> linecolors;
 	linecolors.resize(m_maxWidth, m_blankColor);
 	m_color.push_back(linecolors);
+	vector<short> usertext;
+	usertext.resize(m_maxWidth, 0);
+	m_userText.push_back(usertext);
 
 	m_linesReceived++;
 
@@ -107,6 +112,7 @@ void TextManager::AddNewLine(string newline)
 	{
 		m_text.pop_front();
 		m_color.pop_front();
+		m_userText.pop_front();
 	}
 	else
 	{
@@ -253,6 +259,7 @@ void TextManager::Resize(int width, int height)
         {
             m_text[i].resize(width, ' ');
             m_color[i].resize(width, m_blankColor);
+            m_userText[i].resize(width, 0);
         }
         m_maxWidth = width;
 	}
@@ -376,7 +383,7 @@ void TextManager::SetLineAdjusted(int index, string line)
 ///
 ///  @author Mark Erikson @date 04-23-2004
 //////////////////////////////////////////////////////////////////////////////
-void TextManager::SetCharAdjusted(int y, int x, char c)
+void TextManager::SetCharAdjusted(int y, int x, char c, bool isUserInput)
 {
 	int actualLine = AdjustIndex(y);
 
@@ -388,6 +395,7 @@ void TextManager::SetCharAdjusted(int y, int x, char c)
 		return;
 	}
 	m_text[actualLine][x] = c;
+	m_userText[actualLine][x] = 2*isUserInput;
 }
 
 
@@ -453,6 +461,45 @@ char TextManager::GetCharAdjusted(int y, int x)
 	}
 
 	return m_text[actualLine][x];
+}
+
+bool TextManager::IsUserText(int y, int x)
+{
+	int actualLine = AdjustIndex(y);
+
+	if( (actualLine > m_maxHeight) || (y >= m_viewportHeight))
+	{
+		wxLogDebug("Bad Y value in TextManager::GetCharAdjusted.  y = %d, viewport height = %d", y, m_viewportHeight);
+		return ' ';
+	}
+
+	return m_userText[actualLine][x];
+}
+
+bool TextManager::IsEditable(int y, int x)
+{
+	int actualLine = AdjustIndex(y);
+
+	if( (actualLine > m_maxHeight) || (y >= m_viewportHeight))
+	{
+		wxLogDebug("Bad Y value in TextManager::GetCharAdjusted.  y = %d, viewport height = %d", y, m_viewportHeight);
+		return ' ';
+	}
+    int n = m_userText[actualLine][x];
+	return (m_userText[actualLine][x] == 2);
+}
+
+void TextManager::SetEditable(int y, int x)
+{
+	int actualLine = AdjustIndex(y);
+
+	if( (actualLine > m_maxHeight) || (y >= m_viewportHeight))
+	{
+		wxLogDebug("Bad Y value in TextManager::GetCharAdjusted.  y = %d, viewport height = %d", y, m_viewportHeight);
+		return;
+	}
+
+	m_userText[actualLine][x] = 2;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -591,6 +638,16 @@ void TextManager::CursorDown()
 	m_linesReceived++;
 }
 
+void TextManager::ChangeEditableState()
+{
+    for (size_t i = 0; i < m_userText.size(); i++)
+    {
+        for (size_t j = 0; j < m_userText[i].size(); j++)
+            if (m_userText[i][j] == 2)
+                m_userText[i][j] = 1;
+    }
+}
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public CursorUp
 ///  Moves the cursor up a line
@@ -657,6 +714,7 @@ void TextManager::SetMaxSize(int newSize)
 		for(int i = 0; i < linesToPitch; i++)
 		{
 			m_color.pop_front();
+			m_userText.pop_front();
 			m_text.pop_front();
 		}
 	}

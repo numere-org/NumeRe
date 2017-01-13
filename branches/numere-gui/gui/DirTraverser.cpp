@@ -131,7 +131,7 @@ wxDirTraverseResult DirTraverser::OnDir(const wxString& dirname)
 
     FileNameTreeData* data = new FileNameTreeData();
     data->filename = dirname;
-    vcurrentnodes.push_back(rootNode->AppendItem(vcurrentnodes.back(), dirname.substr(dirname.rfind('\\')+1), iconManager->GetIconIndex("FOLDERCLOSED"), iconManager->GetIconIndex("FOLDEROPEN"), data));
+    vcurrentnodes.push_back(rootNode->AppendItem(vcurrentnodes.back(), dirname.substr(dirname.rfind('\\')+1), iconManager->GetIconIndex("FOLDEROPEN"), -1, data));
 
     return wxDIR_CONTINUE;
 }

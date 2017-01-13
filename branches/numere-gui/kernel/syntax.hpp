@@ -32,7 +32,8 @@ using namespace std;
 class NumeReSyntax
 {
     private:
-        vector<string> vCommands;
+        vector<string> vNSCRCommands;
+        vector<string> vNPRCCommands;
         vector<string> vOptions;
         vector<string> vFunctions;
         vector<string> vConstants;
@@ -56,14 +57,17 @@ class NumeReSyntax
             SYNTAX_STD,
             SYNTAX_OPERATOR,
             SYNTAX_PROCEDURE,
-            SYNTAX_NUMBER
+            SYNTAX_NUMBER,
+            SYNTAX_NPRC_COMMAND
         };
         NumeReSyntax();
         NumeReSyntax(const string& sPath);
 
         void loadSyntax(const string& sPath);
         string getCommands() const
-            {return constructString(vCommands);}
+            {return constructString(vNSCRCommands);}
+        string getNPRCCommands() const
+            {return constructString(vNPRCCommands);}
         string getOptions() const
             {return constructString(vOptions);}
         string getFunctions() const
@@ -74,7 +78,7 @@ class NumeReSyntax
             {return constructString(vSpecialValues);}
         string getOperators() const
             {return constructString(vOperators);}
-        string getAutoCompList(string sFirstChars);
+        string getAutoCompList(string sFirstChars, string sType = "NSCR");
 
         string highlightLine(const string& sCommandLine);
 

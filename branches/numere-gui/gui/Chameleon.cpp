@@ -100,7 +100,10 @@ wxPrintData *g_printData = (wxPrintData*) NULL;
 wxPageSetupData *g_pageSetupData = (wxPageSetupData*) NULL;
 
 BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
-	EVT_MENU						(ID_NEW_SOURCE, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_NEW_EMPTY, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_NEW_SCRIPT, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_NEW_PROCEDURE, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_NEW_PLUGIN, NumeReWindow::OnMenuEvent)
 	EVT_MENU_RANGE					(ID_OPEN_SOURCE_LOCAL, ID_OPEN_SOURCE_REMOTE, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_QUIT,  NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_ABOUT, NumeReWindow::OnMenuEvent)
@@ -110,6 +113,7 @@ BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
 	EVT_MENU						(ID_CLOSEPAGE, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_CLOSETAB, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_CLOSEALL, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_TOGGLE_CONSOLE, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_STARTCONNECT, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_DISCONNECT, NumeReWindow::OnMenuEvent)
 	EVT_MENU_RANGE					(ID_COMPILE, ID_COMPILE_PROJECT, NumeReWindow::OnMenuEvent)
@@ -131,6 +135,7 @@ BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
 	EVT_MENU						(ID_RENAME_FILE, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_AUTOINDENT, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_LINEWRAP, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_DISPCTRLCHARS, NumeReWindow::OnMenuEvent)
 	EVT_FIND						(-1, NumeReWindow::OnFindEvent)
 	EVT_FIND_NEXT					(-1, NumeReWindow::OnFindEvent)
 	EVT_FIND_REPLACE				(-1, NumeReWindow::OnFindEvent)
@@ -178,12 +183,10 @@ bool MyApp::OnInit()
 {
     wxFileName f(wxStandardPaths::Get().GetExecutablePath());
     //wxString appPath(f.GetPath());
-    _guilang.setTokens("<>="+replacePathSeparator(f.GetPath(true).ToStdString())+";");
-    _guilang.loadStrings();
-    //wxInitAllImageHandlers();
+
     wxImage::AddHandler(new wxPNGHandler());
     wxBitmap splashImage;
-    if (splashImage.LoadFile(f.GetPath(true)+"splash.png", wxBITMAP_TYPE_PNG))
+    if (splashImage.LoadFile(f.GetPath(true)+"icons\\splash.png", wxBITMAP_TYPE_PNG))
     {
         wxSplashScreen* splash = new wxSplashScreen(splashImage, wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_NO_TIMEOUT, 4000, nullptr, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSTAY_ON_TOP | wxNO_BORDER);
         wxApp::Yield();
@@ -197,6 +200,15 @@ bool MyApp::OnInit()
 
     frame->Show(true);
     frame->Maximize();
+
+    // Passed commandline items
+    wxArrayString wxArgV;
+    for (size_t i = 0; i < argc; i++)
+    {
+        wxArgV.Add(argv[i]);
+    }
+    frame->EvaluateCommandLine(wxArgV);
+    // Tip of the day
     if (frame->showTipAtStartup)
         frame->updateTipAtStartupSetting(wxShowTip(frame, frame->tipProvider));
     delete frame->tipProvider;
@@ -241,6 +253,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_projectManager = nullptr;
     m_watcher = nullptr;
     m_currentEd = nullptr;
+    fSplitPercentage = 0.65f;
 
     m_copiedTreeItem = 0;
 
@@ -250,11 +263,13 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	wxLog::SetActiveTarget(logWindow);
 #endif
 
+	wxString programPath = getProgramFolder();
+
 	m_updateTimer = NULL;
 
 	//wxIcon icon(wxICON(IDI_APPICON));
 	//SetIcon(icon);
-	SetIcon(wxIcon("icon.ico", wxBITMAP_TYPE_ICO));
+	SetIcon(wxIcon(programPath + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
 
 	m_remoteMode = true;
 
@@ -287,7 +302,6 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_compiler = new Compiler(m_options, m_network);
 	m_debugger = new Debugger(m_network, m_options, this);
 
-	m_optionsDialog = new OptionsDialog(this, m_options, ID_OPTIONSDIALOG, _guilang.get("GUI_DLG_OPTIONS"));
 
 	/**m_splitEditorOutput = new wxProportionalSplitterWindow(this, ID_SPLITEDITOROUTPUT, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
 	m_splitProjectEditor = new wxSplitterWindow(m_splitEditorOutput, ID_SPLITPROJECTEDITOR, wxDefaultPosition, wxDefaultSize, wxSP_NOBORDER);
@@ -307,7 +321,15 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_terminal->set_mode_flag(GTerm::CURSORINVISIBLE);
 	m_termContainer->SetTerminal(m_terminal);
 	m_terminal->SetParent(this);
+	_guilang.setTokens("<>="+getProgramFolder().ToStdString()+";");
+	if (m_terminal->getKernelSettings().getUseCustomLanguageFiles())
+	{
+        _guilang.loadStrings(true);
+	}
+	else
+        _guilang.loadStrings(false);
 
+	m_optionsDialog = new OptionsDialog(this, m_options, ID_OPTIONSDIALOG, _guilang.get("GUI_DLG_OPTIONS"));
 	//m_debugTerminal = new wxSSH(m_debugTermContainer, ID_DEBUGTERMINAL, m_network, wxPoint(0, 0));
 	//m_debugTerminal->set_mode_flag(GTerm::CURSORINVISIBLE);
 	//m_debugTermContainer->SetTerminal(m_debugTerminal);
@@ -344,7 +366,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
 	// project setup
 	m_projMultiFiles = NULL;
-	m_projectTree = new wxTreeCtrl(m_splitProjectEditor, ID_PROJECTTREE);
+	m_projectTree = new wxTreeCtrl(m_splitProjectEditor, ID_PROJECTTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT);
 	m_projectTree->Hide();
 	m_watcher = new wxFileSystemWatcher();
 	m_watcher->SetOwner(this);
@@ -366,12 +388,12 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_remoteFileDialog->SetIconManager(m_iconManager);
 
 
-	wxTreeItemId rootNode = m_projectTree->AddRoot(_guilang.get("GUI_TREE_WORKSPACE"), idxFolderClosed, idxFolderOpen);
-	m_projectFileFolders[0] = m_projectTree->AppendItem(rootNode, _guilang.get("GUI_TREE_DATAFILES"), idxFolderClosed, idxFolderOpen);
-	m_projectFileFolders[1] = m_projectTree->AppendItem(rootNode, _guilang.get("GUI_TREE_SAVEDFILES"), idxFolderClosed, idxFolderOpen);
-	m_projectFileFolders[2] = m_projectTree->AppendItem(rootNode, _guilang.get("GUI_TREE_SCRIPTS"), idxFolderClosed, idxFolderOpen);
-	m_projectFileFolders[3] = m_projectTree->AppendItem(rootNode, _guilang.get("GUI_TREE_PROCEDURES"), idxFolderClosed, idxFolderOpen);
-	m_projectFileFolders[4] = m_projectTree->AppendItem(rootNode, _guilang.get("GUI_TREE_PLOTS"), idxFolderClosed, idxFolderOpen);
+	wxTreeItemId rootNode = m_projectTree->AddRoot(_guilang.get("GUI_TREE_WORKSPACE"), idxFolderOpen);
+	m_projectFileFolders[0] = m_projectTree->AppendItem(rootNode, _guilang.get("GUI_TREE_DATAFILES"), idxFolderOpen);
+	m_projectFileFolders[1] = m_projectTree->AppendItem(rootNode, _guilang.get("GUI_TREE_SAVEDFILES"), idxFolderOpen);
+	m_projectFileFolders[2] = m_projectTree->AppendItem(rootNode, _guilang.get("GUI_TREE_SCRIPTS"), idxFolderOpen);
+	m_projectFileFolders[3] = m_projectTree->AppendItem(rootNode, _guilang.get("GUI_TREE_PROCEDURES"), idxFolderOpen);
+	m_projectFileFolders[4] = m_projectTree->AppendItem(rootNode, _guilang.get("GUI_TREE_PLOTS"), idxFolderOpen);
 
 
 
@@ -391,7 +413,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	int debuggerchars = 25;
 
 	const int widths[] = {fileNameChars * charWidth, filetypeChars * charWidth, readEditChars * charWidth, lineColChars * charWidth, debuggerchars * charWidth};
-    const int styles[] = {wxSB_FLAT, wxSB_FLAT, wxSB_FLAT, wxSB_FLAT, wxSB_FLAT};
+    const int styles[] = {wxSB_NORMAL, wxSB_NORMAL, wxSB_NORMAL, wxSB_NORMAL, wxSB_NORMAL};
 	m_statusBar = CreateStatusBar (WXSIZEOF(widths), wxST_SIZEGRIP);
 	//m_statusBar = new wxStatusBar(this);
 	//m_statusBar->SetFieldsCount(WXSIZEOF(widths), widths);
@@ -410,6 +432,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_book->Show();
 
 
+    wxMilliSleep(500);
 	EvaluateOptions();
 
 	// create the initial blank open file
@@ -460,10 +483,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	if (pStr != NULL)
 		*(++pStr)='\0';
 
-	wxStandardPaths systemPaths = wxStandardPaths::Get();
-	wxString appPath = systemPaths.GetExecutablePath();
-	wxFileName fullProgramPath(appPath);
-	wxString programPath = fullProgramPath.GetPath();
+
 
 	wxFileName helpFile(programPath + "\\docs", "numerehelp.chm");
 	m_helpController = new wxCHMHelpController();
@@ -553,6 +573,14 @@ void NumeReWindow::updateTipAtStartupSetting(bool bTipAtStartup)
         return;
     _option.setbShowHints(bTipAtStartup);
     m_terminal->setKernelSettings(_option);
+}
+
+wxString NumeReWindow::getProgramFolder()
+{
+    wxStandardPaths systemPaths = wxStandardPaths::Get();
+	wxString appPath = systemPaths.GetExecutablePath();
+	wxFileName fullProgramPath(appPath);
+	return fullProgramPath.GetPath();
 }
 
 void NumeReWindow::InitializeProgramOptions()
@@ -716,6 +744,11 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
 	{
 		m_terminal->Disconnect();
 	}
+	if (m_terminal->IsWorking())
+	{
+        m_terminal->EndKernelTask();
+        wxMilliSleep(200);
+	}
 
 	/*if(m_debugTerminal->IsConnected())
 	{
@@ -761,7 +794,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             {
                 command = "append \"" + command + "\"";
             }
-
+            showConsole();
             m_terminal->pass_command(command);
 
             break;
@@ -800,13 +833,33 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         }
         case ID_LINEWRAP:
         {
-            m_currentEd->ToggleLineWrap();
+            m_currentEd->ToggleSettings(NumeReEditor::SETTING_WRAPEOL);
+            break;
+        }
+        case ID_DISPCTRLCHARS:
+        {
+            m_currentEd->ToggleSettings(NumeReEditor::SETTING_DISPCTRLCHARS);
             break;
         }
 
-		case ID_NEW_SOURCE:
+		case ID_NEW_EMPTY:
 		{
 			NewFile();
+			break;
+		}
+		case ID_NEW_SCRIPT:
+		{
+			NewFile(FILE_NSCR);
+			break;
+		}
+		case ID_NEW_PROCEDURE:
+		{
+			NewFile(FILE_NPRC);
+			break;
+		}
+		case ID_NEW_PLUGIN:
+		{
+			NewFile(FILE_PLUGIN);
 			break;
 		}
 
@@ -871,6 +924,12 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 		{
 			CloseAllFiles();
 			break;
+		}
+
+		case ID_TOGGLE_CONSOLE:
+		{
+            toggleConsole();
+            break;
 		}
 
 
@@ -1084,6 +1143,7 @@ void NumeReWindow::OnDebugCommand(wxCommandEvent &event)
         {
             command = "start \"" + command + "\"";
         }
+        showConsole();
         m_terminal->pass_command(command);
         return;
 		/*if(m_projMultiFiles != NULL)
@@ -1131,35 +1191,15 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
         {
             if (sEventpath.find(replacePathSeparator(vPaths[i])) != string::npos)
             {
-                /*if (sEventpath == replacePathSeparator(vPaths[i]))
-                {
-                    //oh-oh
-                }
-                else*/
-                {
-                    m_projectTree->DeleteChildren(m_projectFileFolders[i-2]);
-                    LoadFilesToTree(vPaths[i], fileType[i-2], m_projectFileFolders[i-2]);
-                }
+                m_projectTree->DeleteChildren(m_projectFileFolders[i-2]);
+                LoadFilesToTree(vPaths[i], fileType[i-2], m_projectFileFolders[i-2]);
                 break;
             }
         }
-        //removeFileFromTree(sEventpath);
     }
-    /*else if (type == wxFSW_EVENT_CREATE)
-    {
-        string sEventpath = replacePathSeparator(event.GetPath().GetFullPath().ToStdString());
-        addFileToTree(sEventpath);
-    }
-    else if (type == wxFSW_EVENT_RENAME)
-    {
-        string sOldpath = replacePathSeparator(event.GetPath().GetFullPath().ToStdString());
-        string sNewpath = replacePathSeparator(event.GetNewPath().GetFullPath().ToStdString());
-        removeFileFromTree(sOldpath);
-        addFileToTree(sNewpath);
-    }*/
 }
 
-void NumeReWindow::addFileToTree(const std::string& sFilePath)
+/*void NumeReWindow::addFileToTree(const std::string& sFilePath)
 {
     FileNameTreeData* data = nullptr;
     vector<string> vPaths = m_terminal->getPathSettings();
@@ -1187,32 +1227,6 @@ void NumeReWindow::addFileToTree(const std::string& sFilePath)
             )
             return;
     }
-
-    /*for (size_t i = 2; i < 6; i++)
-    {
-        if (sFilePath.find(vPaths[i]) != string::npos)
-        {
-            auto item = m_projectFileFolders[i-2];
-            for (; item.IsOk(); item = m_projectTree->GetNextItem(item))
-            {
-                if (!m_projectTree->GetNextItem(item).IsOk())
-                    break;
-                if (!m_projectTree->GetItemData(m_projectTree->GetNextItem(item)))
-                    continue;
-                data = m_projectTree->GetItemData(m_projectTree->GetNextItem(item));
-                if (replacePathSeparator(data->filename.ToStdString()) > eventpath)
-                {
-                    data = new FileNameTreeData();
-                    data->filename = sFilePath;
-                    m_projectTree->InsertItem(m_projectTree->GetItemParent(item), item, filename.substr(filename.rfind('/')+1), m_iconManager->GetIconIndex(extension),-1,data);
-                    break;
-                }
-            }
-        }
-        else
-            continue;
-        break;
-    }*/
 }
 
 
@@ -1228,21 +1242,15 @@ void NumeReWindow::removeFileFromTree(const std::string& sFilePath)
             return;
         }
     }
-    /*for (auto item = m_projectTree->GetFirstItem(); item.IsOk(); item = m_projectTree->GetNextItem(item))
-    {
-        if (!m_projectTree->GetItemData(item))
-            continue;
-        data = m_projectTree->GetItemData(item);
-        if (replacePathSeparator(data->filename.ToStdString()) == sFilePath)
-        {
-            m_projectTree->Delete(item);
-            break;
-        }
-    }*/
-}
+}*/
 
 void NumeReWindow::openImage(wxFileName filename)
 {
+	wxStandardPaths systemPaths = wxStandardPaths::Get();
+	wxString appPath = systemPaths.GetExecutablePath();
+	wxFileName fullProgramPath(appPath);
+	wxString programPath = fullProgramPath.GetPath();
+
     wxFrame* frame = new wxFrame(this, wxID_ANY, "NumeRe: ImageViewer [" + filename.GetName() + "]", wxDefaultPosition, wxDefaultSize, wxFRAME_FLOAT_ON_PARENT | wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX | wxMAXIMIZE_BOX);
     wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
 
@@ -1264,8 +1272,9 @@ void NumeReWindow::openImage(wxFileName filename)
     sizer->Add(_panel, 1, wxEXPAND);
     frame->SetSize(_panel->getRelation()*570,600);
     frame->SetSizer(sizer);
-    frame->SetIcon(wxIcon("icon.ico", wxBITMAP_TYPE_ICO));
+    frame->SetIcon(wxIcon(programPath + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
     frame->Show();
+    frame->SetFocus();
 }
 
 
@@ -1326,6 +1335,40 @@ void NumeReWindow::renameFile()
 }
 
 
+void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
+{
+    wxArrayString filestoopen;
+    wxString ext;
+    for (size_t i = 1; i < wxArgV.size(); i++)
+    {
+        if (wxArgV[i].find('.') == string::npos)
+            continue;
+        if (wxArgV[i].find(".exe") != string::npos)
+            continue;
+        ext = toLowerCase(wxArgV[i].substr(wxArgV[i].rfind('.')).ToStdString());
+        if (ext == ".nscr")
+            filestoopen.Add(wxArgV[i]);
+        if (ext == ".nprc")
+            filestoopen.Add(wxArgV[i]);
+        if (ext == ".dat"
+            || ext == ".txt"
+            || ext == ".tex")
+            filestoopen.Add(wxArgV[i]);
+        if (ext == ".ods"
+            || ext == ".ibw"
+            || ext == ".csv"
+            || ext == ".jdx"
+            || ext == ".jcm"
+            || ext == ".dx"
+            || ext == ".xls"
+            || ext == ".xlsx"
+            || ext == ".labx"
+            || ext == ".ndat")
+            m_terminal->pass_command("append \"" + replacePathSeparator(wxArgV[i].ToStdString()) + "\"");
+    }
+    if (filestoopen.size())
+        OpenSourceFile(filestoopen);
+}
 
 
 // File and editor manipulation code begins here
@@ -1338,24 +1381,116 @@ void NumeReWindow::renameFile()
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::NewFile()
+void NumeReWindow::NewFile(FileFilterType _filetype)
 {
-	m_fileNum += 1;
+    if (_filetype == FILE_NONSOURCE)
+    {
+        m_fileNum += 1;
 
-	//wxString locationPrefix = "(?) ";
+        //wxString locationPrefix = "(?) ";
 
-	wxString noname = _guilang.get("GUI_NEWFILE_UNTITLED") + " " + wxString::Format ("%d", m_fileNum);
-	ProjectInfo* singleFileProject = new ProjectInfo();
-	NumeReEditor* edit = new NumeReEditor (this, m_debugManager, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax());
-	//edit->SetSyntax(m_terminal->getSyntax());
+        wxString noname = _guilang.get("GUI_NEWFILE_UNTITLED") + " " + wxString::Format ("%d", m_fileNum);
+        ProjectInfo* singleFileProject = new ProjectInfo();
+        NumeReEditor* edit = new NumeReEditor (this, m_debugManager, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
+        //edit->SetSyntax(m_terminal->getSyntax());
 
-#if wxUSE_DRAG_AND_DROP
-	edit->SetDropTarget(new ChameleonFileDropTarget(this));
-#endif
+    #if wxUSE_DRAG_AND_DROP
+        edit->SetDropTarget(new ChameleonFileDropTarget(this));
+    #endif
 
-	m_currentEd = edit;
-	m_currentPage = m_book->GetPageCount();
-	m_book->AddPage (edit, noname, true);
+        m_currentEd = edit;
+        m_currentEd->SetText("\n");
+
+        m_currentEd->EmptyUndoBuffer();
+        m_currentPage = m_book->GetPageCount();
+        m_book->AddPage (edit, noname, true);
+    }
+    else
+    {
+        wxString filename;
+        wxString proc_namespace;
+        wxTextEntryDialog* textentry;
+        if (_filetype == FILE_NSCR)
+            textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNSCR_QUESTION"), _guilang.get("GUI_DLG_NEWNSCR"), _guilang.get("GUI_DLG_NEWNSCR_DFLT"));
+        else if (_filetype == FILE_NPRC)
+            textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNPRC_QUESTION"), _guilang.get("GUI_DLG_NEWNPRC"), _guilang.get("GUI_DLG_NEWNPRC_DFLT"));
+        else
+            textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWPLUGIN_QUESTION"), _guilang.get("GUI_DLG_NEWPLUGIN"), _guilang.get("GUI_DLG_NEWPLUGIN_DFLT"));
+        int retval = textentry->ShowModal();
+
+        if (retval == wxID_CANCEL)
+            return;
+
+        filename = textentry->GetValue();
+        if (filename.find('$') != string::npos)
+            filename.erase(filename.find('$'),1);
+        if (filename.find('~') != string::npos)
+        {
+            proc_namespace = filename.substr(0, filename.rfind('~')+1);
+            filename.erase(0, filename.rfind('~')+1);
+        }
+        if (proc_namespace.length())
+        {
+            while (proc_namespace.find('~') != string::npos)
+                proc_namespace[proc_namespace.find('~')] = '\\';
+        }
+        if (proc_namespace == "main\\")
+            proc_namespace.clear();
+        else
+            proc_namespace.insert(0,"\\");
+
+        wxString template_file, dummy, timestamp;
+        if (_filetype == FILE_NSCR)
+            dummy = "tmpl_script.nlng";
+        else if (_filetype == FILE_PLUGIN)
+            dummy = "tmpl_plugin.nlng";
+        else
+            dummy = "tmpl_procedure.nlng";
+        timestamp = getTimeStamp(false);
+
+        if (m_terminal->getKernelSettings().getUseCustomLanguageFiles() && wxFileExists(getProgramFolder() + "\\user\\lang\\"+dummy))
+            GetFileContents(getProgramFolder() + "\\user\\lang\\"+dummy, template_file, dummy);
+        else
+            GetFileContents(getProgramFolder() + "\\lang\\"+dummy, template_file, dummy);
+
+        while (template_file.find("%%1%%") != string::npos)
+            template_file.replace(template_file.find("%%1%%"), 5, filename);
+        while (template_file.find("%%2%%") != string::npos)
+            template_file.replace(template_file.find("%%2%%"), 5, timestamp);
+
+        if (_filetype == FILE_NSCR)
+            filename += ".nscr";
+        else if (_filetype == FILE_PLUGIN)
+            filename = "plgn_" + filename + ".nscr";
+        else
+            filename += ".nprc";
+
+        vector<string> vPaths = m_terminal->getPathSettings();
+
+        m_fileNum += 1;
+
+        ProjectInfo* singleFileProject = new ProjectInfo();
+        NumeReEditor* edit = new NumeReEditor (this, m_debugManager, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
+
+        m_currentEd = edit;
+        m_currentEd->SetText(template_file);
+        if (_filetype == FILE_NSCR || _filetype == FILE_PLUGIN)
+            m_currentEd->SetFilename(wxFileName(vPaths[4], filename), false);
+        else
+            m_currentEd->SetFilename(wxFileName(vPaths[5] + proc_namespace, filename), false);
+        if (_filetype == FILE_NSCR)
+            m_currentEd->GotoLine(13);
+        else if (_filetype == FILE_NPRC)
+            m_currentEd->GotoLine(6);
+        else
+            m_currentEd->GotoLine(28);
+        m_currentEd->EmptyUndoBuffer();
+        m_currentPage = m_book->GetPageCount();
+        m_currentEd->UpdateSyntaxHighlighting();
+        m_currentEd->SetUnsaved();
+        m_book->AddPage (edit, filename, true);
+
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1408,7 +1543,10 @@ void NumeReWindow::PageHasChanged (int pageNr)
 	m_book->Refresh();
 	if(m_currentEd != NULL)
 	{
-		m_currentEd->Refresh();
+        wxMenu* tools = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
+        tools->Check(ID_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
+        tools->Check(ID_DISPCTRLCHARS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_DISPCTRLCHARS));
+        m_currentEd->Refresh();
 
 		wxString tabText = m_book->GetPageText(m_currentPage);
 		wxString statusText;
@@ -1854,9 +1992,9 @@ void NumeReWindow::OpenSourceFile (wxArrayString fnames, unsigned int nLine)
 			}
 
 			// current buffer is empty and untouched, so load the file into it
-			if ((!m_currentEd->Modified() &&
-				 !m_currentEd->HasBeenSaved() &&
-				  m_currentEd->GetText().IsEmpty()) )
+			if ((!m_currentEd->Modified()
+                && !m_currentEd->HasBeenSaved()
+                && (m_currentEd->GetText().IsEmpty() || m_currentEd->GetText() == "\n")) )
 			{
 				m_book->SetPageText(m_currentPage, /*locationPrefix + */fileNameNoPath);
 				m_currentEd->SetProject(proj);
@@ -1864,7 +2002,7 @@ void NumeReWindow::OpenSourceFile (wxArrayString fnames, unsigned int nLine)
 			// need to create a new buffer for the file
 			else
 			{
-				NumeReEditor *edit = new NumeReEditor (this, m_debugManager, m_options, proj, m_book, -1, m_terminal->getSyntax());
+				NumeReEditor *edit = new NumeReEditor (this, m_debugManager, m_options, proj, m_book, -1, m_terminal->getSyntax(), m_terminal);
 #if wxUSE_DRAG_AND_DROP
 				edit->SetDropTarget(new ChameleonFileDropTarget(this));
 #endif
@@ -1973,30 +2111,6 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 
 	wxString filterString = ConstructFilterString(filterType);
 
-	/*if(doSaveAs && askLocalRemote)
-	{
-		// default to saving remotely
-		m_remoteMode = false;
-
-		if(m_options->GetPerms()->isEnabled(PERM_LOCALMODE))
-		{
-			wxArrayString choices;
-			choices.Add("Remote");
-			choices.Add("Local");
-			wxString choice = wxGetSingleChoice("Would you like to save this file: \n\n1) Remotely (on the server) \n2) Locally (on the computer you're using)?",
-				"Save File - location",choices);
-			if(choice == "Local")
-			{
-				m_remoteMode = false;
-			}
-			else if(choice == wxEmptyString)
-			{
-				// user hit Cancel - don't save
-				m_remoteMode = originalRemoteMode;
-				return false;
-			}
-		}
-	}*/
 
 	if(isSourceFile)
 	{
@@ -2036,6 +2150,12 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 		else
 		{
 			filename = m_currentEd->GetFileNameAndPath();
+			string sPath = filename.ToStdString();
+			sPath = replacePathSeparator(sPath);
+			sPath.erase(sPath.rfind('/'));
+			FileSystem _fSys;
+			// Make the folder, if it doesn't exist
+			_fSys.setPath(sPath, true, replacePathSeparator(getProgramFolder().ToStdString()));
 		}
 
 		if(isSourceFile)
@@ -2146,6 +2266,7 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 	{
 		m_currentEd->EmptyUndoBuffer();
 		m_currentEd->SetSavePoint();
+        m_currentEd->UpdateSyntaxHighlighting();
 		m_book->Refresh();
 	}
 	else
@@ -2741,7 +2862,7 @@ void NumeReWindow::EvaluateOptions()
 
 	if (true) //(perms->isEnabled(PERM_PROJECTS))
 	{
-		if(m_projectTree)
+		if (m_projectTree)
 		{
             if (!m_projectTree->IsShown())
             {
@@ -2877,9 +2998,17 @@ void NumeReWindow::UpdateMenuBar()
 	menuBar = new wxMenuBar();
 	SetMenuBar(menuBar);
 
+	wxMenu* menuNewFile = new wxMenu();
+
+	menuNewFile->Append(ID_NEW_EMPTY, _guilang.get("GUI_MENU_NEW_EMPTYFILE"), _guilang.get("GUI_MENU_NEW_EMPTYFILE_TTP"));
+	menuNewFile->AppendSeparator();
+	menuNewFile->Append(ID_NEW_SCRIPT, _guilang.get("GUI_MENU_NEW_NSCR"), _guilang.get("GUI_MENU_NEW_NSCR_TTP"));
+	menuNewFile->Append(ID_NEW_PROCEDURE, _guilang.get("GUI_MENU_NEW_NPRC"), _guilang.get("GUI_MENU_NEW_NPRC_TTP"));
+	menuNewFile->Append(ID_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
+
 	wxMenu* menuFile = new wxMenu();
 
-	menuFile->Append(ID_NEW_SOURCE, _guilang.get("GUI_MENU_NEWFILE"), _guilang.get("GUI_MENU_NEWFILE_TTP"));
+	menuFile->Append(wxID_ANY, _guilang.get("GUI_MENU_NEWFILE"), menuNewFile, _guilang.get("GUI_MENU_NEWFILE_TTP"));
 	//menuFile->Append(ID_NEW_SOURCE, "&New File\tCtrl-N", "Create a new file");
 	//if(localModeEnabled)
 	//{
@@ -2988,6 +3117,7 @@ void NumeReWindow::UpdateMenuBar()
 	wxMenu* menuTools = new wxMenu();
 
 	menuTools->Append(ID_OPTIONS, _guilang.get("GUI_MENU_OPTIONS"));
+	menuTools->Append(ID_TOGGLE_CONSOLE, _guilang.get("GUI_MENU_TOGGLE_CONSOLE"));
 	menuTools->AppendSeparator();
 	menuTools->Append(ID_DEBUG_START, _guilang.get("GUI_MENU_EXECUTE"), _guilang.get("GUI_MENU_EXECUTE_TTP"));
 	menuTools->Append(ID_AUTOINDENT, _guilang.get("GUI_MENU_AUTOINDENT"), _guilang.get("GUI_MENU_AUTOINDENT_TTP"));
@@ -2995,11 +3125,17 @@ void NumeReWindow::UpdateMenuBar()
 	menuTools->Append(ID_DEBUGGER, _guilang.get("GUI_MENU_DEBUGGER"), _guilang.get("GUI_MENU_DEBUGGER_TTP"), true);
 	menuTools->Check(ID_DEBUGGER, m_terminal->getKernelSettings().getUseDebugger());
 	menuTools->Append(ID_LINEWRAP, _guilang.get("GUI_MENU_LINEWRAP"), _guilang.get("GUI_MENU_LINEWRAP_TTP"), true);
+	menuTools->Append(ID_DISPCTRLCHARS, _guilang.get("GUI_MENU_DISPCTRLCHARS"), _guilang.get("GUI_MENU_DISPCTRLCHARS_TTP"), true);
 	if (m_currentEd)
-        menuTools->Check(ID_LINEWRAP, m_currentEd->getWrapMode());
+	{
+        menuTools->Check(ID_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
+        menuTools->Check(ID_DISPCTRLCHARS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_DISPCTRLCHARS));
+    }
     else
+    {
         menuTools->Check(ID_LINEWRAP, false);
-
+        menuTools->Check(ID_DISPCTRLCHARS, false);
+    }
 	///menuTools->Append(ID_OPTIONS, "&Options");
 
 	/*if(perms->isEnabled(PERM_TERMINAL))
@@ -3052,7 +3188,7 @@ void NumeReWindow::UpdateToolbar()
 	//SetToolBar(t);
 
 	wxBitmap bmNew(newfile_xpm);
-	t->AddTool(ID_NEW_SOURCE, _guilang.get("GUI_TB_NEW"), bmNew, _guilang.get("GUI_TB_NEW_TTP"));
+	t->AddTool(ID_NEW_EMPTY, _guilang.get("GUI_TB_NEW"), bmNew, _guilang.get("GUI_TB_NEW_TTP"));
 
 	//wxBitmap bmOpen((open_xpm);
 
@@ -3253,7 +3389,7 @@ void NumeReWindow::UpdateTerminalNotebook()
 		if(!m_splitEditorOutput->IsSplit())
 		{
 			///m_splitEditorOutput->SplitHorizontally(m_splitProjectEditor, m_termContainer, 0.6f);//-260);//-200);
-			m_splitEditorOutput->SplitHorizontally(m_book, m_termContainer, 0.65f);//-260);//-200);
+			m_splitEditorOutput->SplitHorizontally(m_book, m_termContainer, fSplitPercentage);//-260);//-200);
 			///m_splitEditorOutput->SplitHorizontally(m_splitProjectEditor, m_noteTerm, 0.6f);//-260);//-200);
 			m_splitEditorOutput->SetMinimumPaneSize(20);
 			m_terminal->UpdateSize();
@@ -3268,6 +3404,36 @@ void NumeReWindow::UpdateTerminalNotebook()
 	m_book->Refresh();
 
 	//m_watchPanel->Refresh();
+}
+
+void NumeReWindow::toggleConsole()
+{
+    if (m_termContainer->IsShown())
+    {
+        m_termContainer->Hide();
+        fSplitPercentage = m_splitEditorOutput->GetSplitPercentage();
+        m_splitEditorOutput->Unsplit(m_termContainer);
+    }
+    else
+    {
+        m_splitEditorOutput->SplitHorizontally(m_book, m_termContainer, fSplitPercentage);
+        m_splitEditorOutput->SetMinimumPaneSize(20);
+        m_terminal->UpdateSize();
+        m_termContainer->Show();
+    }
+    m_book->Refresh();
+}
+
+void NumeReWindow::showConsole()
+{
+    if (!m_termContainer->IsShown())
+    {
+        m_splitEditorOutput->SplitHorizontally(m_book, m_termContainer, fSplitPercentage);
+        m_splitEditorOutput->SetMinimumPaneSize(20);
+        m_terminal->UpdateSize();
+        m_termContainer->Show();
+        m_book->Refresh();
+    }
 }
 
 // Project code begins here
@@ -3569,6 +3735,7 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
 		|| item == m_projectFileFolders[3]
 		|| item == m_projectFileFolders[4])
 	{
+        m_projectTree->Toggle(item);
 		return;
 	}
 
@@ -3580,6 +3747,13 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
 		FileNameTreeData* data = static_cast <FileNameTreeData* > (m_projectTree->GetItemData(item));
         wxArrayString filesToOpen;
         wxFileName pathname = data->filename;
+        if (data->filename.find('.') == string::npos && m_projectTree->HasChildren(item))
+        {
+            m_projectTree->Toggle(item);
+            return;
+        }
+        else if (data->filename.find('.') == string::npos)
+            return;
 
         if (pathname.GetExt() == "nscr" || pathname.GetExt() == "nprc" || pathname.GetExt() == "txt" || pathname.GetExt() == "dat" || pathname.GetExt() == "log" || pathname.GetExt() == "tex")
         {
@@ -3593,7 +3767,8 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
         }
         else
         {
-            wxString path = "append \"" + pathname.GetFullPath() + "\"";
+            wxString path = "append \"" + replacePathSeparator(pathname.GetFullPath().ToStdString()) + "\"";
+            showConsole();
             m_terminal->pass_command(path.ToStdString());
             return;
         }

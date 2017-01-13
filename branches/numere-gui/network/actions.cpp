@@ -84,6 +84,169 @@ void GTerm::normal_input()
         n_taken = n;
     }
 
+    if (mode_flags & INSERT)
+    {
+        changed_line(cursor_y, cursor_x, width - 1);
+    }
+    else
+    {
+        changed_line(cursor_y, cursor_x, cursor_x + n - 1);
+    }
+
+	// IMPORTANT Here's where the text pointer gets assigned.
+    y = linenumbers[cursor_y] * MAXWIDTH;
+
+	int altY = m_nextLineCounter * MAXWIDTH;
+
+	// MPE: moves the text after the cursor to the right N spaces (inserting)
+    if (mode_flags & INSERT)
+    {
+        for (i = width - 1; i>=cursor_x + n; i--)
+        {
+            //text[y + i] = text[y + i - n];
+
+			char c = tm.GetCharAdjusted(cursor_y, i - n);
+			tm.SetCharAdjusted(cursor_y, i, c, tm.IsEditable(cursor_y, i-n));
+
+            //color[y + i] = color[y + i - n];
+
+			unsigned short tempcolor = tm.GetColorAdjusted(cursor_y, i - n);
+			tm.SetColorAdjusted(cursor_y, i, tempcolor);
+        }
+    }
+    c = calc_color(fg_color, bg_color, mode_flags);
+
+	// MPE: inserts the new received text, overwriting what was there already
+    for (i = 0; i<n; i++)
+    {
+        //test = sInput_Data[i];
+        //test;
+        //text[y + cursor_x] = input_data[i];
+		//tm.SetCharAdjusted(cursor_y, cursor_x, input_data[i]);
+		if (sInput_Data[i] == '\r')
+		{
+            cr();
+            continue;
+		}
+		if (sInput_Data[i] == '\t')
+		{
+            visualtab();
+            continue;
+		}
+		tm.SetCharAdjusted(cursor_y, cursor_x, sInput_Data[i], true);
+
+        //color[y + cursor_x] = c;
+		tm.SetColorAdjusted(cursor_y, cursor_x, c);
+        cursor_x++;
+        if (i+1 == n)
+        {
+            string sLine = tm.GetLineAdjusted(cursor_y);
+
+            string colors = _syntax.highlightLine(sLine);
+
+            for (unsigned int j = 0; j < colors.length(); j++)
+            {
+                if ((int)(colors[j]-'0') == NumeReSyntax::SYNTAX_COMMAND)
+                    tm.SetColorAdjusted(cursor_y, j, calc_color((int)(colors[j]-'0'), bg_color, mode_flags | BOLD | UNDERLINE));
+                else if ((int)(colors[j]-'0') == NumeReSyntax::SYNTAX_FUNCTION
+                    || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_CONSTANT
+                    || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_SPECIALVAL
+                    || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_PROCEDURE)
+                    tm.SetColorAdjusted(cursor_y, j, calc_color((int)(colors[j]-'0'), bg_color, mode_flags | BOLD));
+                else
+                    tm.SetColorAdjusted(cursor_y, j, calc_color((int)(colors[j]-'0'), bg_color, mode_flags));
+            }
+
+            changed_line(cursor_y, 0, cursor_x);
+        }
+        if (cursor_x >= width)
+        {
+            if (m_numCommandLines == -1 && n == 1)
+                m_numCommandLines = 1;
+            else if (m_numCommandLines != -1)
+                m_numCommandLines++;
+            next_line();
+        }
+    }
+
+    if (sRemainingInput.length())
+    {
+        next_line();
+        sInput_Data = sRemainingInput;
+        normal_input();
+    }
+    else if (bNextLine)
+        next_line();
+    tm.SetEditable(cursor_y, cursor_x);
+
+    //input_data += n_taken - 1;
+    //data_len -= n_taken - 1;
+}
+
+
+void GTerm::normal_output()
+{
+    int n, n_taken, i, c, y;
+    bool bNextLine = false;
+    string sRemainingInput = "";
+    if (sInput_Data.find('\n') != string::npos)
+    {
+        sRemainingInput = sInput_Data.substr(sInput_Data.find('\n')+1);
+        if (!sRemainingInput.length())
+            bNextLine = true;
+        sInput_Data.erase(sInput_Data.find('\n'));
+    }
+    //char test = 0;
+#if 0
+
+    char str[100];
+
+#endif
+
+    //if (* input_data<32)
+    //n = abs((unsigned char)sInput_Data[0]);
+
+    if (abs((unsigned char)sInput_Data[0])<32 && (unsigned char)sInput_Data[0] != '\r' && (unsigned char)sInput_Data[0] != '\t')
+        return;
+
+    if (cursor_x >= width)
+    {
+        if (mode_flags & NOEOLWRAP)
+        {
+            cursor_x = width - 1;
+        }
+        else
+        {
+            if (m_numCommandLines == -1)
+                m_numCommandLines = 1;
+            else if (m_numCommandLines != -1)
+                m_numCommandLines++;
+            next_line();
+        }
+    }
+
+    n = 0;
+
+    if (mode_flags & NOEOLWRAP)
+    {
+        //while (input_data[n]>31 && n<data_len)
+        while ((abs((unsigned char)sInput_Data[n]) > 31 || sInput_Data[n] == '\r' || sInput_Data[n] == '\t') && n < sInput_Data.length())
+            n++;
+
+        n_taken = n;
+
+        if (cursor_x + n>=width)
+            n = width - cursor_x;
+    }
+    else
+    {
+        //while (input_data[n]>31 && n<data_len && cursor_x + n<width)
+        while ((abs((unsigned char)sInput_Data[n]) > 31 || sInput_Data[n] == '\r' || sInput_Data[n] == '\t') && n < sInput_Data.length())//&& cursor_x + n<width)
+            n++;
+
+        n_taken = n;
+    }
+
 #if 0
 
     memcpy(str, input_data, n);
@@ -181,10 +344,11 @@ void GTerm::normal_input()
     {
         next_line();
         sInput_Data = sRemainingInput;
-        normal_input();
+        normal_output();
     }
     else if (bNextLine)
         next_line();
+    tm.SetEditable(cursor_y, cursor_x);
 
     //input_data += n_taken - 1;
     //data_len -= n_taken - 1;
@@ -283,11 +447,13 @@ void GTerm::visualtab()
 
 void GTerm::bs()
 {
-    if (mode_flags & DESTRUCTBS && cursor_x > 0)
+    if (mode_flags & DESTRUCTBS && cursor_x > 0 && tm.IsEditable(cursor_y, cursor_x-1))
     {
         clear_area(cursor_x-1, cursor_y, cursor_x, cursor_y);
     }
-    if (cursor_x>0)
+    else
+        return;
+    if (cursor_x>0 && tm.IsEditable(cursor_y, cursor_x-1))
         move_cursor(cursor_x - 1, cursor_y);
     string sLine = tm.GetLineAdjusted(cursor_y);
 
@@ -420,6 +586,8 @@ void GTerm::next_param() { nparam++;
 
 void GTerm::cursor_left()
 {
+    if (!cursor_x || !tm.IsEditable(cursor_y, cursor_x-1))
+        return;
     int n, x;
 
     n = param[0];
@@ -437,6 +605,8 @@ void GTerm::cursor_left()
 
 void GTerm::cursor_right()
 {
+    if (cursor_x+1 >= width || !tm.IsEditable(cursor_y, cursor_x+1))
+        return;
     int n, x;
 
     n = param[0];
@@ -454,6 +624,8 @@ void GTerm::cursor_right()
 
 void GTerm::cursor_up()
 {
+    if (!tm.IsEditable(cursor_y-1, cursor_x))
+        return;
     int n, y;
 
     n = param[0];
@@ -471,6 +643,8 @@ void GTerm::cursor_up()
 
 void GTerm::cursor_down()
 {
+    if (!tm.IsEditable(cursor_y+1, cursor_x))
+        return;
     int n, y;
 
     n = param[0];
@@ -514,7 +688,7 @@ void GTerm::device_attrib()
 {
     char * str = "\033[?1;2c";
 
-    ProcessOutput(strlen(str), (unsigned char * )str);
+    //ProcessOutput(strlen(str), (unsigned char * )str);
 }
 
 void GTerm::delete_char()
@@ -626,7 +800,7 @@ void GTerm::request_param()
     char str[40];
 
     sprintf(str, "\033[%d;1;1;120;120;1;0x", param[0] + 2);
-    ProcessOutput(strlen(str), (unsigned char * )str);
+    //ProcessOutput(strlen(str), (unsigned char * )str);
 }
 
 void GTerm::set_margins()
@@ -685,13 +859,13 @@ void GTerm::status_report()
     {
         char * str = "\033[0n";
 
-        ProcessOutput(strlen(str), (unsigned char * )str);
+        //ProcessOutput(strlen(str), (unsigned char * )str);
     }
     else if (param[0] == 6)
     {
         sprintf(str, "\033[%d;%dR", cursor_y + 1, cursor_x + 1);
 
-        ProcessOutput(strlen(str), (unsigned char * )str);
+        //ProcessOutput(strlen(str), (unsigned char * )str);
     }
 }
 
@@ -923,7 +1097,7 @@ void GTerm::vt52_ident()
 {
     char * str = "\033/Z";
 
-    ProcessOutput(strlen(str), (unsigned char * )str);
+    //ProcessOutput(strlen(str), (unsigned char * )str);
 }
 
 #ifdef GTERM_PC
@@ -934,7 +1108,7 @@ void GTerm::pc_begin( void )
     set_mode_flag(PC);
 
     //printf("pc_begin: mode_flags = %x\n", mode_flags);
-    ProcessOutput((unsigned int)strlen(pc_machinename) + 1, (unsigned char * )pc_machinename);
+    //ProcessOutput((unsigned int)strlen(pc_machinename) + 1, (unsigned char * )pc_machinename);
     pc_oldWidth = Width();
     pc_oldHeight = Height();
     ResizeTerminal(80, 25);

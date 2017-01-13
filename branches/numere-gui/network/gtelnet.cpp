@@ -125,9 +125,9 @@ GTelnet::ProcessOutput(int len, unsigned char *data)
 {
     while(len)
     {
-        if(telnet_binary_send && *data == 255)
+        /*if(telnet_binary_send && *data == 255)
             GTerm::ProcessOutput(1, data);
-        GTerm::ProcessOutput(1, data);
+        GTerm::ProcessOutput(1, data);*/
         data++;
         len--;
     }

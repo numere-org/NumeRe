@@ -58,9 +58,9 @@ Settings::Settings() : Documentation()
 	sViewer = "";
 	sEditor = "notepad.exe";
 	sDefaultfont = "pagella";
-	nBuffer_x = 81;
+	nBuffer_x = 141;
 	nBuffer_y = 300;
-	nWindow_x = 80;
+	nWindow_x = 140;
 	nWindow_y = 34;
 	nColorTheme = 0;
 }

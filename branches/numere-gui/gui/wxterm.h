@@ -184,6 +184,10 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
         wxString GetSelection();
         void SelectAll();
 
+        bool IsWorking()
+            {return GetThread() && GetThread()->IsRunning();}
+        void EndKernelTask();
+
         void UpdateSize();
         //void UpdateSize(int &termheight, int &linesReceived);
         //void UpdateSize(wxSizeEvent &event);
@@ -205,6 +209,7 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
         virtual void RequestSizeChange(int w, int h);
 
         virtual void ProcessInput(int len, const string& sData);
+        virtual void ProcessOutput(int len, const string& sData);
         //virtual void ProcessInput(int len, unsigned const char *data);
 //  virtual void ProcessOutput(int len, unsigned char *data);
 
@@ -237,7 +242,7 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
 
     private:
         int MapKeyCode(int keyCode);
-        void MarkSelection();
+        void MarkSelection(bool bRectangular = false);
         void DoDrawCursor(int fg_color, int bg_color, int flags,
                           int x, int y, unsigned char c);
 
