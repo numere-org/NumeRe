@@ -349,6 +349,7 @@ void GTerm::normal_output()
     else if (bNextLine)
         next_line();
     tm.SetEditable(cursor_y, cursor_x);
+    tm.ResetVirtualCursorLine();
 
     //input_data += n_taken - 1;
     //data_len -= n_taken - 1;
@@ -445,14 +446,16 @@ void GTerm::visualtab()
     }
 }
 
-void GTerm::bs()
+bool GTerm::bs()
 {
     if (mode_flags & DESTRUCTBS && cursor_x > 0 && tm.IsEditable(cursor_y, cursor_x-1))
     {
         clear_area(cursor_x-1, cursor_y, cursor_x, cursor_y);
+        /*if (!tm.IsEditable(cursor_y, cursor_x+1))
+            tm.UnsetEditable(cursor_y, cursor_x);*/
     }
     else
-        return;
+        return false;
     if (cursor_x>0 && tm.IsEditable(cursor_y, cursor_x-1))
         move_cursor(cursor_x - 1, cursor_y);
     string sLine = tm.GetLineAdjusted(cursor_y);
@@ -473,7 +476,7 @@ void GTerm::bs()
     }
 
     changed_line(cursor_y, cursor_x-1, cursor_x+1);
-
+    return true;
 }
 
 void GTerm::bell() { Bell();
@@ -625,7 +628,18 @@ void GTerm::cursor_right()
 void GTerm::cursor_up()
 {
     if (!tm.IsEditable(cursor_y-1, cursor_x))
+    {
+        string sHistory = tm.GetInputHistory(true);
+        if (sHistory.length())
+        {
+            erase_usercontent_line();
+            sInput_Data = sHistory;
+            data_len = sHistory.length();
+            normal_input();
+        }
         return;
+    }
+
     int n, y;
 
     n = param[0];
@@ -644,7 +658,17 @@ void GTerm::cursor_up()
 void GTerm::cursor_down()
 {
     if (!tm.IsEditable(cursor_y+1, cursor_x))
+    {
+        string sHistory = tm.GetInputHistory(false);
+        if (sHistory.length())
+        {
+            erase_usercontent_line();
+            sInput_Data = sHistory;
+            data_len = sHistory.length();
+            normal_input();
+        }
         return;
+    }
     int n, y;
 
     n = param[0];
@@ -658,6 +682,22 @@ void GTerm::cursor_down()
         y = height - 1;
 
     move_cursor(cursor_x, y);
+}
+
+void GTerm::home()
+{
+    int n = cursor_x;
+    while (tm.IsEditable(cursor_y, n-1))
+        n--;
+    move_cursor(n, cursor_y);
+}
+
+void GTerm::end()
+{
+    int n = cursor_x;
+    while (tm.IsEditable(cursor_y, n+1))
+        n++;
+    move_cursor(n, cursor_y);
 }
 
 void GTerm::cursor_position()
@@ -915,6 +955,25 @@ void GTerm::erase_line()
             clear_area(0, cursor_y, width - 1, cursor_y);
             break;
     }*/
+}
+
+void GTerm::erase_usercontent_line()
+{
+    if (!tm.IsEditable(cursor_y, cursor_x))
+        return;
+
+    int nFirstPos = -1;
+    for (size_t i = 0; i < tm.GetLineAdjusted(cursor_y).length(); i++)
+    {
+        if (nFirstPos < 0 && tm.IsEditable(cursor_y, i))
+            nFirstPos = i;
+        if (nFirstPos >= 0 && !tm.IsEditable(cursor_y, i))
+        {
+            clear_area(nFirstPos, cursor_y, i, cursor_y);
+            move_cursor(nFirstPos, cursor_y);
+            return;
+        }
+    }
 }
 
 void GTerm::insert_line()

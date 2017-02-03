@@ -375,6 +375,10 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
     // --> Hierein kommt die Argumentliste aus der Definition. Wir werden sie weiter unten weiterverarbeiten <--
     //sFunctions[nDefine][3] = sExpr.substr(sExpr.find('('),sExpr.find(')')-sExpr.find('(')+1);
     sFunctions[nDefine][3] = getArgAtPos(sExpr, sExpr.find('('));
+    if (sFunctions[nDefine][3].front() == '('
+        && getMatchingParenthesis(sFunctions[nDefine][3]) != string::npos
+        && getMatchingParenthesis(sFunctions[nDefine][3]) != sFunctions[nDefine][3].length()-1)
+        sFunctions[nDefine][3].erase(getMatchingParenthesis(sFunctions[nDefine][3])+1);
     if (getMatchingParenthesis(sFunctions[nDefine][3]) != string::npos && sFunctions[nDefine][3].front() == '(' && sFunctions[nDefine][3].back() == ')')
     {
         sFunctions[nDefine][3].erase(0,1);

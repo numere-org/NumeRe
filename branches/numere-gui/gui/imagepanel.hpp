@@ -45,6 +45,9 @@ public:
      void rightClick(wxMouseEvent& event);
      void mouseLeftWindow(wxMouseEvent& event);*/
     void keyPressed(wxKeyEvent& event);
+    void OnEnter(wxMouseEvent& event);
+    void OnFocus(wxFocusEvent& event);
+    void OnLoseFocus(wxFocusEvent& event);
     //void keyReleased(wxKeyEvent& event);
 
 

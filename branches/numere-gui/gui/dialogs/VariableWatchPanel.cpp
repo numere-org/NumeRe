@@ -302,7 +302,7 @@ void VariableWatchPanel::AddWatchedVariables(wxDebugEvent debug)
 
 	//wxTreeItemId root = m_tree->GetRootItem();
 
-	for(auto i = 0; i < variableNames.size(); i++)
+	for(size_t i = 0; i < variableNames.size(); i++)
 	{
 
 		wxString varName = variableNames[i];

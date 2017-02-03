@@ -46,9 +46,11 @@ void doc_Help(const string& __sTopic, Settings& _option)
         make_hline();
         return;
     }
-    else if (matchParams(__sTopic, "html")) // HTML-Export generieren
+    else if (matchParams(__sTopic, "html") || _option.getUseExternalViewer()) // HTML-Export generieren
     {
         ofstream fHTML;
+        string sHTML;
+        bool generateFile = (bool)matchParams(__sTopic, "html");
         FileSystem _fSys;
         _fSys.setTokens(_option.getTokenPaths());
         _fSys.setPath("docs/htmlexport", true, _option.getExePath());
@@ -56,51 +58,86 @@ void doc_Help(const string& __sTopic, Settings& _option)
         _option.declareFileType(".html");
         sFilename = _option.ValidFileName(sFilename,".html");
 
-        fHTML.open(sFilename.c_str());
-        if (fHTML.fail())
+        if (generateFile)
         {
-            sErrorToken = sFilename;
-            throw CANNOT_GENERATE_FILE;
+            fHTML.open(sFilename.c_str());
+            if (fHTML.fail())
+            {
+                sErrorToken = sFilename;
+                throw CANNOT_GENERATE_FILE;
+            }
+            // Header schreiben
+            fHTML << "<!DOCTYPE html>" << endl
+                  << "<html>" << endl
+                  << "<head>" << endl;
         }
-        // Header schreiben
-        fHTML << "<!DOCTYPE html>" << endl
-              << "<html>" << endl
-              << "<head>" << endl;
+        else
+        {
+            sHTML = "<!DOCTYPE html>\n<html>\n<head>\n";
+        }
         for (unsigned int i = 0; i < vDocArticle.size(); i++)
         {
             if (!i)
             {
-                // Header fertigstellen
-                fHTML << "<title>NUMERE-HILFE: " + toUpperCase(vDocArticle[i])
-                      << "</title>" << endl
-                      << "</head>" << endl << endl
-                      << "<body>" << endl
-                      << "<!-- START COPYING HERE -->" << endl;
-                fHTML << "<h4>Beschreibung:</h4>" << endl;
+                if (generateFile)
+                {
+                    // Header fertigstellen
+                    fHTML << "<title>NUMERE-HILFE: " + toUpperCase(vDocArticle[i])
+                          << "</title>" << endl
+                          << "</head>" << endl << endl
+                          << "<body>" << endl
+                          << "<!-- START COPYING HERE -->" << endl;
+                    fHTML << "<h4>Beschreibung:</h4>" << endl;
+                }
+                else
+                {
+                    // Header fertigstellen
+                    sHTML += "<title>" + vDocArticle[i] + "</title>\n</head>\n\n<body>\n<h2>"+vDocArticle[i]+"</h2>\n<h4>Beschreibung:</h4>\n";
+                }
                 continue;
             }
 
             if (vDocArticle[i].find("<example ") != string::npos) // Beispiel-Tags
             {
-                fHTML << "<h4>Beispiel</h4>" << endl;
+                if (generateFile)
+                    fHTML << "<h4>Beispiel</h4>" << endl;
+                else
+                    sHTML += "<h4>Beispiel</h4>\n";
                 bool bVerb = false;
                 if (vDocArticle[i].find("type=") && getArgAtPos(vDocArticle[i], vDocArticle[i].find("type=")+5) == "verbatim")
                     bVerb = true;
+                string sDescription = getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5);
 
-                doc_ReplaceTokensForHTML(vDocArticle[i], _option);
-                fHTML << "<p>" << (getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5)) << "</p>" << endl;
-                fHTML << "<div style=\"margin-left:40px;\"><code>" << endl;
+                doc_ReplaceTokensForHTML(sDescription, _option);
+                if (generateFile)
+                {
+                    fHTML << "<p>" << sDescription << "</p>" << endl;
+                    fHTML << "<div style=\"margin-left:40px;\"><code>" << endl;
+                }
+                else
+                {
+                    sHTML += "<p>" + sDescription + "</p>\n<div>\n<code><span style=\"color:#00008B;\">\n";
+                }
                 for (unsigned int j = i+1; j < vDocArticle.size(); j++)
                 {
                     if (vDocArticle[j].find("</example>") != string::npos)
                     {
                         i = j;
-                        fHTML << "</code></div>" << endl;
+                        if (generateFile)
+                            fHTML << "</code></div>" << endl;
+                        else
+                        {
+                            sHTML.erase(sHTML.length()-5);
+                            sHTML += "\n</span></code>\n</div>\n";
+                        }
                         break;
                     }
                     if (vDocArticle[j] == "[...]")
                     {
-                        fHTML << "[...]<br>" << endl;
+                        if (generateFile)
+                            fHTML << "[...]<br>" << endl;
+                        else
+                            sHTML += "[...]<br>\n";
                         continue;
                     }
 
@@ -110,20 +147,39 @@ void doc_Help(const string& __sTopic, Settings& _option)
                     {
                         if (((i+1) % 2 && j % 2) || (!((i+1) % 2) && !(j % 2)))
                         {
-                            fHTML << "|&lt;- ";
-                            fHTML << (vDocArticle[j]) << "<br>" << endl;
+                            if (generateFile)
+                            {
+                                fHTML << "|&lt;- ";
+                                fHTML << (vDocArticle[j]) << "<br>" << endl;
+                            }
+                            else
+                            {
+                                sHTML += "|&lt;- " + (vDocArticle[j]) + "<br>\n";
+                            }
                         }
                         else
                         {
-                            fHTML << "|-&gt; ";
-                            fHTML << (vDocArticle[j]) << "<br>" << endl;
-                            if (vDocArticle[j+1].find("</example>") == string::npos)
-                                fHTML << "|<br>" << endl;
+                            if (generateFile)
+                            {
+                                fHTML << "|-&gt; ";
+                                fHTML << (vDocArticle[j]) << "<br>" << endl;
+                                if (vDocArticle[j+1].find("</example>") == string::npos)
+                                    fHTML << "|<br>" << endl;
+                            }
+                            else
+                            {
+                                sHTML += "|-&gt; " + (vDocArticle[j]) + "<br>\n";
+                                if (vDocArticle[j+1].find("</example>") == string::npos)
+                                    sHTML += "|<br>\n";
+                            }
                         }
                     }
                     else
                     {
-                        fHTML << (vDocArticle[j]) << "<br>" << endl;
+                        if (generateFile)
+                            fHTML << (vDocArticle[j]) << "<br>" << endl;
+                        else
+                            sHTML += (vDocArticle[j]) + "<br>\n";
                     }
                 }
             }
@@ -143,22 +199,42 @@ void doc_Help(const string& __sTopic, Settings& _option)
                             if (sExprBlock.substr(k,2) == "\\t")
                                 sExprBlock.replace(k,2,"&nbsp;&nbsp;&nbsp;&nbsp;");
                         }
-                        vDocArticle[i].replace(vDocArticle[i].find("<exprblock>"), vDocArticle[i].find("</exprblock>")+12-vDocArticle[i].find("<exprblock>"), "</p><div style=\"font-style: italic;margin-left: 40px\">" + sExprBlock + "</div><p>");
+                        if (generateFile)
+                            vDocArticle[i].replace(vDocArticle[i].find("<exprblock>"), vDocArticle[i].find("</exprblock>")+12-vDocArticle[i].find("<exprblock>"), "</p><div style=\"font-style: italic;margin-left: 40px\">" + sExprBlock + "</div><p>");
+                        else
+                            vDocArticle[i].replace(vDocArticle[i].find("<exprblock>"), vDocArticle[i].find("</exprblock>")+12-vDocArticle[i].find("<exprblock>"), "</p><blockquote><span style=\"font-style: italic;\">" + sExprBlock + "</span></blockquote><p>");
                     }
-
-                    fHTML << "<p>" << (vDocArticle[i]) << "</p>" << endl;
+                    if (generateFile)
+                        fHTML << "<p>" << (vDocArticle[i]) << "</p>" << endl;
+                    else
+                        sHTML += "<p>" + (vDocArticle[i]) + "</p>\n";
                 }
                 else
                 {
-                    if (vDocArticle[i] != "<exprblock>")
-                        fHTML << "<p>" << (vDocArticle[i].substr(0,vDocArticle[i].find("<exprblock>"))) << "</p>" << endl;
-                    fHTML << "<div style=\"font-style: italic;margin-left: 40px\">" << endl;
+                    if (generateFile)
+                    {
+                        if (vDocArticle[i] != "<exprblock>")
+                            fHTML << "<p>" << (vDocArticle[i].substr(0,vDocArticle[i].find("<exprblock>"))) << "</p>" << endl;
+                        fHTML << "<div style=\"font-style: italic;margin-left: 40px\">" << endl;
+                    }
+                    else
+                    {
+                        if (vDocArticle[i] != "<exprblock>")
+                            sHTML += "<p>" + (vDocArticle[i].substr(0,vDocArticle[i].find("<exprblock>"))) + "</p>\n";
+                        sHTML += "<blockquote><span style=\"font-style: italic;\">\n";
+                    }
                     for (unsigned int j = i+1; j < vDocArticle.size(); j++)
                     {
                         if (vDocArticle[j].find("</exprblock>") != string::npos)
                         {
                             i = j;
-                            fHTML << "</div>" << endl;
+                            if (generateFile)
+                                fHTML << "</div>" << endl;
+                            else
+                            {
+                                sHTML.erase(sHTML.length()-5);
+                                sHTML += "\n</span></blockquote>\n";
+                            }
                             break;
                         }
 
@@ -168,7 +244,10 @@ void doc_Help(const string& __sTopic, Settings& _option)
                         while (vDocArticle[j].find("\\t") != string::npos)
                             vDocArticle[j].replace(vDocArticle[j].find("\\t"), 2, "&nbsp;&nbsp;&nbsp;&nbsp;");
 
-                        fHTML << (vDocArticle[j]) << "<br>" << endl;
+                        if (generateFile)
+                            fHTML << (vDocArticle[j]) << "<br>" << endl;
+                        else
+                            sHTML += (vDocArticle[j]) + "<br>\n";
                     }
                 }
             }
@@ -187,21 +266,42 @@ void doc_Help(const string& __sTopic, Settings& _option)
                             if (sExprBlock.substr(k,2) == "\\t")
                                 sExprBlock.replace(k,2,"&nbsp;&nbsp;&nbsp;&nbsp;");
                         }
-                        vDocArticle[i].replace(vDocArticle[i].find("<codeblock>"), vDocArticle[i].find("</codeblock>")+12-vDocArticle[i].find("<codeblock>"), "</p><div class=\"sites-codeblock sites-codesnippet-block\"><code>" + sExprBlock + "</code></div><p>");
+                        if (generateFile)
+                            vDocArticle[i].replace(vDocArticle[i].find("<codeblock>"), vDocArticle[i].find("</codeblock>")+12-vDocArticle[i].find("<codeblock>"), "</p><div class=\"sites-codeblock sites-codesnippet-block\"><code>" + sExprBlock + "</code></div><p>");
+                        else
+                            vDocArticle[i].replace(vDocArticle[i].find("<codeblock>"), vDocArticle[i].find("</codeblock>")+12-vDocArticle[i].find("<codeblock>"), "</p><blockquote><code><span style=\"color:#00008B;\">" + sExprBlock + "</span></code></blockquote><p>");
                     }
-                    fHTML << "<p>" << (vDocArticle[i]) << "</p>" << endl;
+                    if (generateFile)
+                        fHTML << "<p>" << (vDocArticle[i]) << "</p>" << endl;
+                    else
+                        sHTML += "<p>" + (vDocArticle[i]) + "</p>\n";
                 }
                 else
                 {
-                    if (vDocArticle[i] != "<codeblock>")
-                        fHTML << "<p>" << (vDocArticle[i].substr(0,vDocArticle[i].find("<codeblock>"))) << "</p>" << endl;
-                    fHTML << "<div class=\"sites-codeblock sites-codesnippet-block\"><code>" << endl;
+                    if (generateFile)
+                    {
+                        if (vDocArticle[i] != "<codeblock>")
+                            fHTML << "<p>" << (vDocArticle[i].substr(0,vDocArticle[i].find("<codeblock>"))) << "</p>" << endl;
+                        fHTML << "<div class=\"sites-codeblock sites-codesnippet-block\"><code>" << endl;
+                    }
+                    else
+                    {
+                        if (vDocArticle[i] != "<codeblock>")
+                            sHTML += "<p>" + (vDocArticle[i].substr(0,vDocArticle[i].find("<codeblock>"))) + "</p>\n";
+                        sHTML += "<blockquote><code><span style=\"color:#00008B;\">\n";
+                    }
                     for (unsigned int j = i+1; j < vDocArticle.size(); j++)
                     {
                         if (vDocArticle[j].find("</codeblock>") != string::npos)
                         {
                             i = j;
-                            fHTML << "</code></div>" << endl;
+                            if (generateFile)
+                                fHTML << "</code></div>" << endl;
+                            else
+                            {
+                                sHTML.erase(sHTML.length()-5);
+                                sHTML += "\n</span></code></blockquote>\n";
+                            }
                             break;
                         }
 
@@ -209,48 +309,87 @@ void doc_Help(const string& __sTopic, Settings& _option)
                         while (vDocArticle[j].find("\\t") != string::npos)
                             vDocArticle[j].replace(vDocArticle[j].find("\\t"), 2, "&nbsp;&nbsp;&nbsp;&nbsp;");
 
-                        fHTML << (vDocArticle[j]) << "<br>" << endl;
+                        if (generateFile)
+                            fHTML << (vDocArticle[j]) << "<br>" << endl;
+                        else
+                            sHTML += (vDocArticle[j]) + "<br>\n";
                     }
                 }
             }
             else if (vDocArticle[i].find("<list") != string::npos) // Alle LIST-Tags (umgewandelt zu TABLE)
             {
-                fHTML << "<h4>Optionen:</h4>" << endl;
-                fHTML << "<table style=\"border-collapse:collapse; border-color:rgb(136,136,136);border-width:1px\" border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">" << endl << "  <tbody>" << endl;
+                if (generateFile)
+                {
+                    fHTML << "<h4>Optionen:</h4>" << endl;
+                    fHTML << "<table style=\"border-collapse:collapse; border-color:rgb(136,136,136);border-width:1px\" border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">" << endl << "  <tbody>" << endl;
+                }
+                else
+                {
+                    sHTML += "<h4>Optionen:</h4>\n<table border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">\n  <tbody>\n";
+                }
                 for (unsigned int j = i+1; j < vDocArticle.size(); j++)
                 {
                     if (vDocArticle[j].find("</list>") != string::npos)
                     {
-                        fHTML << "  </tbody>" << endl
-                             << "</table>" << endl;
+                        if (generateFile)
+                        {
+                            fHTML << "  </tbody>" << endl
+                                 << "</table>" << endl;
+                        }
+                        else
+                        {
+                            sHTML += "  </tbody>\n</table>\n";
+                        }
                         i = j;
                         break;
                     }
                     else
                     {
                         doc_ReplaceTokensForHTML(vDocArticle[j], _option);
-                        fHTML << "    <tr>" << endl;
-                        fHTML << "      <td style=\"width:200px;height:19px\"><code>"
-                             << (getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5))
-                             << "</code></td>" << endl
-                             << "      <td style=\"width:400px;height:19px\">"
-                             << (vDocArticle[j].substr(vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)+1, vDocArticle[j].find("</item>")-1-vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)))
-                             << "</td>" << endl;
-                        fHTML << "    </tr>" << endl;
+                        if (generateFile)
+                        {
+                            fHTML << "    <tr>" << endl;
+                            fHTML << "      <td style=\"width:200px;height:19px\"><code>"
+                                 << (getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5))
+                                 << "</code></td>" << endl
+                                 << "      <td style=\"width:400px;height:19px\">"
+                                 << (vDocArticle[j].substr(vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)+1, vDocArticle[j].find("</item>")-1-vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)))
+                                 << "</td>" << endl;
+                            fHTML << "    </tr>" << endl;
+                        }
+                        else
+                        {
+                            sHTML += "    <tr>\n      <td width=\"200\"><code><span style=\"color:#00008B;\">"
+                                  + (getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5))
+                                  + "</span></code></td>\n      <td>"
+                                  +(vDocArticle[j].substr(vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)+1, vDocArticle[j].find("</item>")-1-vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)))
+                                  + "</td>\n    </tr>\n";
+                        }
                     }
                 }
             }
             else // Normaler Paragraph
             {
                 doc_ReplaceTokensForHTML(vDocArticle[i], _option);
-                fHTML << "<p>" << (vDocArticle[i]) << "</p>" << endl;
+                if (generateFile)
+                    fHTML << "<p>" << (vDocArticle[i]) << "</p>" << endl;
+                else
+                    sHTML += "<p>" + (vDocArticle[i]) + "</p>\n";
             }
         }
-        fHTML << "<!-- END COPYING HERE -->" << endl
-              << "</body>" << endl
-              << "</html>" << endl;
-        fHTML.close();
-        NumeReKernel::print(LineBreak(_lang.get("DOC_HELP_HTMLEXPORT", _option.getHelpArticleTitle(_option.getHelpIdxKey(sTopic)), sFilename), _option));
+        if (generateFile)
+        {
+            fHTML << "<!-- END COPYING HERE -->" << endl
+                  << "</body>" << endl
+                  << "</html>" << endl;
+            fHTML.close();
+            NumeReKernel::print(LineBreak(_lang.get("DOC_HELP_HTMLEXPORT", _option.getHelpArticleTitle(_option.getHelpIdxKey(sTopic)), sFilename), _option));
+        }
+        else
+        {
+            sHTML += "</body>\n</html>\n";
+            NumeReKernel::setDocumentation(sHTML);
+        }
         return;
     }
     else // Hilfeartikel anzeigen
@@ -718,6 +857,8 @@ void doc_ReplaceTokensForHTML(string& sDocParagraph, const Settings& _option)
         }
         if (sDocParagraph.substr(k,6) == "<code>" && sDocParagraph.find("</code>", k+6) != string::npos)
         {
+            sDocParagraph.insert(k+6, "<span style=\"color:#00008B;\">");
+            sDocParagraph.insert(sDocParagraph.find("</code>", k+6), "</span>");
             string sCode = sDocParagraph.substr(k+6, sDocParagraph.find("</code>", k+6)-k-6);
             for (unsigned int i = 0; i < sCode.length(); i++)
             {

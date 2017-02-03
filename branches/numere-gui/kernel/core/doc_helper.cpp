@@ -556,7 +556,7 @@ vector<string> Documentation::getHelpArticle(const string& _sTheme)
                 }
                 if (sLine.find("<title ") != string::npos)
                 {
-                    vReturn.push_back(toUpperCase(getArgAtPos(sLine, sLine.find("string=", sLine.find("<title "))+7)));
+                    vReturn.push_back(getArgAtPos(sLine, sLine.find("string=", sLine.find("<title "))+7));
                     sLine.erase(0, sLine.find("/>", sLine.find("<title "))+2);
                     StripSpaces(sLine);
                     if (!sLine.length())

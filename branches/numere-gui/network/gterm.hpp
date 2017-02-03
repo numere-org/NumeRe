@@ -300,7 +300,8 @@ class GTerm
         void resetAutoComp();
 
         // non-printing characters
-        void cr(), lf(), ff(), bell(), tab(), visualtab(), bs();
+        void cr(), lf(), ff(), bell(), tab(), visualtab();
+        bool bs();
 
         // escape sequence actions
         void keypad_numeric();
@@ -317,6 +318,8 @@ class GTerm
         void cursor_down();
         void cursor_right();
         void cursor_up();
+        void home();
+        void end();
         void cursor_position();
         void device_attrib();
         void delete_char();
@@ -328,6 +331,7 @@ class GTerm
         void status_report();
         void erase_display();
         void erase_line();
+        void erase_usercontent_line();
         void insert_line();
         void set_colors();
         void clear_tab();
@@ -367,7 +371,7 @@ class GTerm
         virtual void ExposeArea(int x, int y, int w, int h);
         virtual void Reset();
 
-        void Scroll(int numLines, bool scrollUp);
+        bool Scroll(int numLines, bool scrollUp);
         int GetScrollHeight();
         int GetScrollPosition();
         TextManager* GetTM();

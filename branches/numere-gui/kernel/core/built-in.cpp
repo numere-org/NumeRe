@@ -178,6 +178,8 @@ void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string
             throw NO_DATA_AVAILABLE;
         }
         int nHeadlineCount = 1;
+        if (_option.getUseExternalViewer())
+            _out.setCompact(false);
         if (!_out.isCompact())
         {
             for (long long int j = 0; j < _data.getCols(sCache); j++)
@@ -295,18 +297,23 @@ void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string
 				_out.generateFileName();
 		}
 		_out.setPluginName("Datenanzeige der Daten aus " + _data.getDataFileName(sCache)); // Anzeige-Plugin-Parameter: Nur Kosmetik
-		if (!_out.isFile())
+		if (_option.getUseExternalViewer())
+            NumeReKernel::showTable(sOut, nCol, nLine, sCache);
+        else
         {
-            NumeReKernel::toggleTableStatus();
-            make_hline();
-            NumeReKernel::print("NUMERE: " + toUpperCase(sCache) + "()");
-            make_hline();
-        }
-		_out.format(sOut, nCol, nLine, _option, (bData || bCache), nHeadlineCount);		// Eigentliche Ausgabe
-		if (!_out.isFile())
-		{
-            NumeReKernel::toggleTableStatus();
-            make_hline();
+            if (!_out.isFile())
+            {
+                NumeReKernel::toggleTableStatus();
+                make_hline();
+                NumeReKernel::print("NUMERE: " + toUpperCase(sCache) + "()");
+                make_hline();
+            }
+            _out.format(sOut, nCol, nLine, _option, (bData || bCache), nHeadlineCount);		// Eigentliche Ausgabe
+            if (!_out.isFile())
+            {
+                NumeReKernel::toggleTableStatus();
+                make_hline();
+            }
 		}
 		_out.reset();						// Ggf. bFile in der Klasse = FALSE setzen
 		if ((bCache || _data.getCacheStatus()) && bSave)
@@ -1237,6 +1244,27 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 return 0;
             }
             NumeReKernel::print("USECUSTOMLANG: " + toString(_option.getUseCustomLanguageFiles()));
+            return 1;
+        }
+        else if (matchParams(sCmd, "externaldocwindow"))
+        {
+            if (matchParams(sCmd, "asval"))
+            {
+                if (!nPos)
+                    sCmd = toString(_option.getUseExternalViewer());
+                else
+                    sCmd.replace(nPos, sCommand.length(), toString(_option.getUseExternalViewer()));
+                return 0;
+            }
+            if (matchParams(sCmd, "asstr"))
+            {
+                if (!nPos)
+                    sCmd = "\"" + toString(_option.getUseExternalViewer()) + "\"";
+                else
+                    sCmd.replace(nPos, sCommand.length(), "\"" + toString(_option.getUseExternalViewer()) + "\"");
+                return 0;
+            }
+            NumeReKernel::print("EXTERNALDOCWINDOW: " + toString(_option.getUseExternalViewer()));
             return 1;
         }
         else if (matchParams(sCmd, "draftmode"))
@@ -3474,6 +3502,26 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 return 1;
             }
+            else if (matchParams(sCmd, "externaldocwindow") || matchParams(sCmd, "externaldocwindow", '='))
+            {
+                if (!parser_parseCmdArg(sCmd, "externaldocwindow", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
+                {
+                    nArgument = !_option.getUseExternalViewer();
+                }
+                _option.setExternalDocViewer((bool)nArgument);
+                if (_option.getSystemPrintStatus())
+                {
+                    if (nArgument)
+                        NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DOC_VIEWER"), _lang.get("COMMON_ACTIVE")), _option) );
+                    else
+                        NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DOC_VIEWER"), _lang.get("COMMON_INACTIVE")), _option) );
+                    /*NumeReKernel::print(toSystemCodePage("|-> NumeRe wird die ESC-Taste ");
+                    if (!nArgument)
+                        NumeReKernel::print("nicht ";
+                    NumeReKernel::print(toSystemCodePage("in Scripts verwenden.") );*/
+                }
+                return 1;
+            }
             else if (matchParams(sCmd, "defcontrol") || matchParams(sCmd, "defcontrol", '='))
             {
                 if (!parser_parseCmdArg(sCmd, "defcontrol", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
@@ -3777,34 +3825,36 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                             parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
 
                             _cache.setCacheSize(_idx.nI[1]-_idx.nI[0]+1, _idx.nJ[1]-_idx.nJ[0]+1, 1);
-                            _cache.renameCache("cache", toUpperCase(iter->first), true);
+                            if (iter->first != "cache")
+                                _cache.renameCache("cache", (iter->first), true);
                             for (unsigned int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
                             {
                                 for (unsigned int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
                                 {
                                     if (i == _idx.nI[0])
                                     {
-                                        _cache.setHeadLineElement(j-_idx.nJ[0], toUpperCase(iter->first), _data.getHeadLineElement(j, iter->first));
+                                        _cache.setHeadLineElement(j-_idx.nJ[0], (iter->first), _data.getHeadLineElement(j, iter->first));
                                     }
                                     if (_data.isValidEntry(i,j,iter->first))
-                                        _cache.writeToCache(i-_idx.nI[0], j-_idx.nJ[0], toUpperCase(iter->first), _data.getElement(i,j, iter->first));
+                                        _cache.writeToCache(i-_idx.nI[0], j-_idx.nJ[0], (iter->first), _data.getElement(i,j, iter->first));
                                 }
                             }
                         }
                         else
                         {
                             _cache.setCacheSize(_idx.vI.size(), _idx.vJ.size(), 1);
-                            _cache.renameCache("cache", toUpperCase(iter->first), true);
+                            if (iter->first != "cache")
+                                _cache.renameCache("cache", (iter->first), true);
                             for (unsigned int i = 0; i < _idx.vI.size(); i++)
                             {
                                 for (unsigned int j = 0; j < _idx.vJ.size(); j++)
                                 {
                                     if (!i)
                                     {
-                                        _cache.setHeadLineElement(j, toUpperCase(iter->first), _data.getHeadLineElement(_idx.vJ[j], iter->first));
+                                        _cache.setHeadLineElement(j, (iter->first), _data.getHeadLineElement(_idx.vJ[j], iter->first));
                                     }
                                     if (_data.isValidEntry(_idx.vI[i], _idx.vJ[j], iter->first))
-                                        _cache.writeToCache(i, j, toUpperCase(iter->first), _data.getElement(_idx.vI[i], _idx.vJ[j], iter->first));
+                                        _cache.writeToCache(i, j, (iter->first), _data.getElement(_idx.vI[i], _idx.vJ[j], iter->first));
                                 }
                             }
                         }
@@ -3815,7 +3865,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
 
                         //NumeReKernel::print(sCmd );
                         _data.setCacheStatus(false);
-                        BI_show_data(_cache, _out, _option, toUpperCase(iter->first), false, true);
+                        BI_show_data(_cache, _out, _option, (iter->first), false, true);
                         return 1;
                     }
                 }
@@ -5575,6 +5625,11 @@ void BI_ListOptions(Settings& _option)
         NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_27", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option)+"\n");
     else
         NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_27", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) +"\n");
+    ///  ExternalDocViewer
+    if (_option.getUseExternalViewer())
+        NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_28", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option)+"\n");
+    else
+        NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_28", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) +"\n");
 
     NumeReKernel::printPreFmt("|\n" );
     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LISTOPT_FOOTNOTE"), _option) );

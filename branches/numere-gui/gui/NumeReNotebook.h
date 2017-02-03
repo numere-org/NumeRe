@@ -26,13 +26,19 @@ public:
 
 	void OnTabRightClicked (wxMouseEvent &event);
 	void OnTabMiddleClicked(wxMouseEvent &event);
+	void OnTabScroll(wxMouseEvent& event);
+	void OnEnter(wxMouseEvent& event);
+	void OnLeave(wxMouseEvent& event);
 
 	void OnSize(wxSizeEvent &event);
+
+	bool GetMouseFocus() {return m_mouseFocus;}
 
 private:
 	//void CreateBookMenus();
 
 	NumeReWindow* m_top_parent;
+	bool m_mouseFocus;
 
 
 	DECLARE_EVENT_TABLE()

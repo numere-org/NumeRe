@@ -1,6 +1,7 @@
 #ifndef EDITOR__H
 #define EDITOR_H
 
+#include <wx/wx.h>
 #include <wx/stc/stc.h>
 #include <wx/menu.h>
 #include <wx/dynarray.h>
@@ -9,6 +10,10 @@
 #include "../compiler/compilerevent.h"
 #include "../kernel/syntax.hpp"
 //#include <wx/wx.h>
+
+#define RM_WS_BOTH 0
+#define RM_WS_FRONT 1
+#define RM_WS_BACK 2
 
 class NumeReWindow;
 class NumeReNotebook;
@@ -30,7 +35,8 @@ public:
     enum EditorSettings
     {
         SETTING_WRAPEOL = 1,
-        SETTING_DISPCTRLCHARS = 2
+        SETTING_DISPCTRLCHARS = 2,
+        SETTING_USETXTADV = 4
     };
 	//bool LoadFile ();
 	bool LoadLocalFile (const wxString &filename);
@@ -53,6 +59,7 @@ public:
 	void OnMouseUp(wxMouseEvent &event);
 	void OnMouseDn(wxMouseEvent &event);
 	void OnMouseDblClk(wxMouseEvent& event);
+	void OnEnter(wxMouseEvent& event);
 	void OnMouseDwell(wxStyledTextEvent& event);
 	void ClearDblClkIndicator();
 	void MakeBraceCheck();
@@ -86,6 +93,7 @@ public:
 	void OnAddWatch(wxCommandEvent &event);
 	void OnDisplayVariable(wxCommandEvent &event);
 	void OnFindProcedure(wxCommandEvent &event);
+	void OnChangeCase(wxCommandEvent& event);
 
 	void AddBreakpoint( int linenum );
 	void RemoveBreakpoint( int linenum );
@@ -96,12 +104,32 @@ public:
 	void ApplyAutoIndentation();
 	void ToggleSettings(EditorSettings _setting);
 	bool getEditorSetting(EditorSettings _setting);
+	void ToggleCommentLine();
+	void ToggleCommentSelection();
+	void FoldAll();
+	void UnfoldAll();
+	void MoveSelection(bool down = true)
+        {
+            if (down)
+                MoveSelectedLinesDown();
+            else
+                MoveSelectedLinesUp();
+        }
+    void removeWhiteSpaces(int nType = RM_WS_BOTH);
+    void sortSelection(bool ascending = true);
+	FileFilterType getFileType() {return m_fileType;}
 
 private:
 
+    void updateDefaultHighlightSettings();
+    void applyStrikeThrough();
     int determineIndentationLevel(std::string sLine, bool& bIsElseCase);
     string addLinebreaks(const string& sLine);
 	void OnEditorModified(wxStyledTextEvent &event);
+	void OnStartDrag(wxStyledTextEvent& event);
+	void OnDragOver(wxStyledTextEvent& event);
+	void OnDrop(wxStyledTextEvent & event);
+	void OnMouseMotion(wxMouseEvent& event);
 
 	void OnRunToCursor(wxCommandEvent &event);
 	//void OnCompilerEnded(CompilerEvent &event);
@@ -111,6 +139,8 @@ private:
 	wxString FindClickedWord();
 	wxString FindClickedProcedure();
 	wxString FindMarkedProcedure(int charpos);
+
+	wxString generateAutoCompList(const wxString& wordstart, string sPreDefList);
 
 	void CreateBreakpointEvent(int linenumber, bool addBreakpoint);
 	bool BreakpointOnLine(int linenum);
@@ -135,6 +165,7 @@ private:
 	wxPoint m_lastRightClick;
 	wxString m_clickedWord;
 	wxString m_clickedProcedure;
+	size_t m_clickedWordLength;
 	wxMenuItem* m_menuAddWatch;
 	wxMenuItem* m_menuShowValue;
 	wxMenuItem* m_menuFindProcedure;
@@ -147,6 +178,8 @@ private:
 	bool m_bHasBeenCompiled;
 	bool m_bNewFile;
 	bool m_bSetUnsaved;
+	bool m_PopUpActive;
+	bool m_dragging;
 
 	int m_nEditorSetting;
 	FileFilterType m_fileType;

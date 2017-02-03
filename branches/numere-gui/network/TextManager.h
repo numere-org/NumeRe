@@ -21,6 +21,7 @@ class TextManager
         int GetLinesReceived();
         string& GetLine(int index);
         string& GetLineAdjusted(int index);
+        string GetInputHistory(bool vcursorup = true);
         string GetWordAt(int y, int x);
         string GetWordStartAt(int y, int x);
         char GetCharAdjusted(int y, int x);
@@ -35,9 +36,13 @@ class TextManager
         void ChangeEditableState();
 
         void SetEditable(int y, int x);
+        void UnsetEditable(int y, int x);
+        void RemoveEditableArea(int y, int x, size_t nLength);
+
         void SetMaxSize(int newSize);
         void SetCharAdjusted(int y, int x, char c, bool isUserText = false);
         void SetCursorLine(int line);
+        void ResetVirtualCursorLine() {m_virtualCursor = m_cursorLine;}
         void SetLine(int index, string line);
         void SetLineAdjusted(int index, string line);
         void SetColor(int y, int x, unsigned short value);
@@ -52,7 +57,7 @@ class TextManager
 
         void AddNewLine();
         void AddNewLine(string newline);
-        void Scroll(int numLines, bool scrollUp);
+        bool Scroll(int numLines, bool scrollUp);
         void Resize(int width, int height);
         void Reset();
 
@@ -61,16 +66,18 @@ class TextManager
         int AdjustIndex(int index);
     private:
 
+        GTerm* m_parent;
 
         int m_topLine;
         int m_bottomLine;
         int m_numLinesScrolledUp;
-        int m_viewportHeight;
         int m_viewportWidth;
+        int m_viewportHeight;
         int m_linesReceived;
-        int m_maxHeight;
         int m_maxWidth;
+        int m_maxHeight;
         int m_cursorLine;
+        int m_virtualCursor;
         int m_blankColor;
         string m_blankline;
 
@@ -78,7 +85,6 @@ class TextManager
         deque<vector<short> > m_userText;
         deque<string> m_text;
 
-        GTerm* m_parent;
 };
 
 

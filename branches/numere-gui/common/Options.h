@@ -42,6 +42,7 @@ class Options
 		void SetShowToolbarText(bool useText);
 		void SetShowCompileCommands(bool showCommands);
 		void SetLineNumberPrinting(bool printLineNumbers);
+		void SetSaveSession(bool saveSession) {m_saveSession = saveSession;}
 		void SetTerminalHistorySize(int size);
 		void SetMingwBinPaths(wxArrayString paths);
 		void SetMingwExecutables(StringFilenameHash files);
@@ -61,6 +62,7 @@ class Options
 		bool GetLineNumberPrinting() {return m_printLineNumbers; }
 		bool GetCombineWatchWindow() { return m_combineWatchWindow; }
 		bool GetShowCompileCommands() { return m_showCompileCommands; }
+		bool GetSaveSession() {return m_saveSession;}
 		int GetTerminalHistorySize() { return m_terminalSize; }
 		wxArrayString GetMingwProgramNames() { return m_mingwProgramNames; }
 		StringFilenameHash GetMingwExecutables() { return m_mingwExecutableNames; }
@@ -87,6 +89,7 @@ class Options
 		bool m_printLineNumbers;
 		bool m_combineWatchWindow;
 		bool m_showCompileCommands;
+		bool m_saveSession;
 
 		StringFilenameHash m_mingwExecutableNames;
 		wxArrayString m_mingwBinPaths;

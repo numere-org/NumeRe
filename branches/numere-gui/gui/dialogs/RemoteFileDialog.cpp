@@ -51,15 +51,15 @@ WX_DEFINE_OBJARRAY(ThreeDStringVector)
 ////@begin XPM images
 ////@end XPM images
 
-#include "cpp.xpm"
-#include "c.xpm"
-#include "h.xpm"
-#include "lib.xpm"
+//#include "cpp.xpm"
+//#include "c.xpm"
+//#include "h.xpm"
+//#include "lib.xpm"
 //#include "folder256.xpm"
-#include "closedfolder16x1632bpp.xpm"
-#include "openfolder16x1632bpp.xpm"
-#include "defaultfile.xpm"
-#include "doc.xpm"
+//#include "closedfolder16x1632bpp.xpm"
+//#include "openfolder16x1632bpp.xpm"
+//#include "defaultfile.xpm"
+//#include "doc.xpm"
 
 #include "upfolder.xpm"
 #include "refresh.xpm"
@@ -491,7 +491,6 @@ bool RemoteFileDialog::ShowDirectory(wxString dirname, bool refresh, bool showHi
 void RemoteFileDialog::FillListView()
 {
 	// disables VS's 4018 warning: "signed/unsigned mismatch" relating to the GetCount() comparison
-#pragma warning( disable : 4018)
 
 	m_list->ClearAll();
 
@@ -503,7 +502,7 @@ void RemoteFileDialog::FillListView()
 
 	// should be getting just the name of the directory itself from Networking, so I
 	// can insert it directly into the listview and give it the folder icon
-	for(auto i = 0; i < sortedDirs.GetCount(); i++)
+	for(size_t i = 0; i < sortedDirs.GetCount(); i++)
 	{
 		m_list->InsertItem(m_list->GetItemCount(), sortedDirs[i], ICON_FOLDERCLOSED);
 		m_currentDirs.Add(sortedDirs[i]);
@@ -518,7 +517,7 @@ void RemoteFileDialog::FillListView()
 
 	int currentFileIconIndex = 0;
 
-	for(auto i = 0; i < sortedFiles.GetCount(); i++)
+	for(size_t i = 0; i < sortedFiles.GetCount(); i++)
 	{
 		wxLogNull disableLogging;
 
@@ -569,7 +568,7 @@ void RemoteFileDialog::FillListView()
 	m_list->SetFocus();
 
 	// turn the size_t warning back on
-#pragma warning( default : 4018 )
+
 }
 
 /*

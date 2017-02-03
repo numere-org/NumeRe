@@ -38,6 +38,7 @@
 #include "../network/gterm.hpp"
 #include "../network/gtelnet.hpp"
 #include "../kernel/kernel.hpp"
+#include "../kernel/debugmessenger.hpp"
 
 #define wxEVT_COMMAND_TERM_RESIZE        wxEVT_USER_FIRST + 1000
 #define wxEVT_COMMAND_TERM_NEXT          wxEVT_USER_FIRST + 1001
@@ -130,6 +131,7 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
             if (frame && !m_wxParent)
                 m_wxParent = frame;
         }
+        int getTextHeight() {return m_charHeight;}
     private:
         void pipe_command();
         BOLDSTYLE
@@ -147,6 +149,7 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
         static TermKeyMap keyMapTable[];
 
     public:
+        Debugmessenger _guimessenger;
         void pass_command(const string& command);
         Settings getKernelSettings();
         void setKernelSettings(const Settings&);
@@ -187,6 +190,7 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
         bool IsWorking()
             {return GetThread() && GetThread()->IsRunning();}
         void EndKernelTask();
+        void CancelCalculation();
 
         void UpdateSize();
         //void UpdateSize(int &termheight, int &linesReceived);
@@ -252,6 +256,7 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
         void OnLeftDown(wxMouseEvent& event);
         void OnLeftUp(wxMouseEvent& event);
         void OnMouseMove(wxMouseEvent& event);
+        void OnEnter(wxMouseEvent& event);
         void OnTimer(wxTimerEvent& event);
         void OnActivate(wxActivateEvent &event);
         void OnSize(wxSizeEvent &event);

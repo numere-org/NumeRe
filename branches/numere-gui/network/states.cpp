@@ -16,7 +16,7 @@ StateOption GTerm::normal_state[] = {
     { 10, &GTerm::lf,      normal_state },
     { 12, &GTerm::ff,      normal_state },
     { 9,  &GTerm::tab,     normal_state },
-    { 8,  &GTerm::bs,      normal_state },
+    //{ 8,  &GTerm::bs,      normal_state },
     { 7,  &GTerm::bell,        normal_state },
 	{ 27, 0,		esc_state },
     { -1, &GTerm::normal_input,    normal_state} };
@@ -37,13 +37,13 @@ StateOption GTerm::esc_state[] = {
 	{ '#', 0,		hash_state },
 #ifdef GTERM_PC
         { '!', &GTerm::pc_begin,       pc_cmd_state },
-#endif        
+#endif
 
     { 13, &GTerm::cr,      esc_state },    // standard VT100 wants
     { 10, &GTerm::lf,      esc_state },    // cursor controls in
-    { 12, &GTerm::ff,      esc_state },    // the middle of ESC 
+    { 12, &GTerm::ff,      esc_state },    // the middle of ESC
     { 9,  &GTerm::tab,     esc_state },    // sequences
-    { 8,  &GTerm::bs,      esc_state },
+    //{ 8,  &GTerm::bs,      esc_state },
     { 7,  &GTerm::bell,        esc_state },
 	{ -1, 0, normal_state} };
 
@@ -107,9 +107,9 @@ StateOption GTerm::bracket_state[] = {
 
     { 13, &GTerm::cr,      bracket_state },// standard VT100 wants
     { 10, &GTerm::lf,      bracket_state },// cursor controls in
-    { 12, &GTerm::ff,      bracket_state },// the middle of ESC 
+    { 12, &GTerm::ff,      bracket_state },// the middle of ESC
     { 9,  &GTerm::tab,     bracket_state },// sequences
-    { 8,  &GTerm::bs,      bracket_state },
+    //{ 8,  &GTerm::bs,      bracket_state },
     { 7,  &GTerm::bell,        bracket_state },
 	{ -1, 0, normal_state} };
 

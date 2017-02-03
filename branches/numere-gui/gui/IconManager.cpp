@@ -13,9 +13,10 @@
 #include "dialogs/exe.xpm"
 
 
-IconManager::IconManager()
+IconManager::IconManager(const wxString& programPath)
 {
 	m_images = new wxImageList(16, 16);
+
 
 	m_iconExtensionMapping["cpj"] = m_images->GetImageCount();
 	m_iconExtensionMapping["DEFAULTFILEEXTENSION"] = m_images->GetImageCount();
@@ -29,6 +30,42 @@ IconManager::IconManager()
 	wxBitmap openfolder(openfolder16x1632bpp_xpm);
 	m_iconExtensionMapping["FOLDEROPEN"] = m_images->GetImageCount();
 	m_images->Add(openfolder);
+
+	wxIcon NSCR(programPath + "\\icons\\nscr.ico", wxBITMAP_TYPE_ICO, 16,16);
+	m_iconExtensionMapping["nscr"] = m_images->GetImageCount();
+	m_iconExtensionMapping[".nscr"] = m_images->GetImageCount();
+	m_images->Add(NSCR);
+
+	wxIcon NPRC(programPath + "\\icons\\nprc.ico", wxBITMAP_TYPE_ICO, 16,16);
+	m_iconExtensionMapping["nprc"] = m_images->GetImageCount();
+	m_iconExtensionMapping[".nprc"] = m_images->GetImageCount();
+	m_images->Add(NPRC);
+
+	wxIcon NDAT(programPath + "\\icons\\ndat.ico", wxBITMAP_TYPE_ICO, 16,16);
+	m_iconExtensionMapping["ndat"] = m_images->GetImageCount();
+	m_iconExtensionMapping[".ndat"] = m_images->GetImageCount();
+	m_images->Add(NDAT);
+
+	wxIcon JDX(programPath + "\\icons\\jdx.ico", wxBITMAP_TYPE_ICO, 16,16);
+	m_iconExtensionMapping["jdx"] = m_images->GetImageCount();
+	m_iconExtensionMapping["dx"] = m_images->GetImageCount();
+	m_iconExtensionMapping["jcm"] = m_images->GetImageCount();
+	m_iconExtensionMapping[".jdx"] = m_images->GetImageCount();
+	m_iconExtensionMapping[".dx"] = m_images->GetImageCount();
+	m_iconExtensionMapping[".jcm"] = m_images->GetImageCount();
+	m_images->Add(JDX);
+
+	wxIcon LABX(programPath + "\\icons\\labx.ico", wxBITMAP_TYPE_ICO, 16,16);
+	m_iconExtensionMapping["labx"] = m_images->GetImageCount();
+	m_iconExtensionMapping[".labx"] = m_images->GetImageCount();
+	m_images->Add(LABX);
+
+	wxIcon IBW(programPath + "\\icons\\ibw.ico", wxBITMAP_TYPE_ICO, 16,16);
+	m_iconExtensionMapping["ibw"] = m_images->GetImageCount();
+	m_iconExtensionMapping[".ibw"] = m_images->GetImageCount();
+	m_images->Add(IBW);
+
+
 
 	AddIconToList("c");
 	AddIconToList("cpp");

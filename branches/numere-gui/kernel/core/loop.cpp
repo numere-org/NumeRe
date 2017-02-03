@@ -2876,7 +2876,7 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
         }
         bReturnSignal = true;
     }
-    if (GetAsyncKeyState(VK_ESCAPE))
+    if (NumeReKernel::GetAsyncCancelState())//GetAsyncKeyState(VK_ESCAPE))
     {
         if (bPrintedStatus)
             NumeReKernel::printPreFmt(" ABBRUCH!");

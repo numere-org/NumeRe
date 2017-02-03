@@ -15,6 +15,7 @@
 					<Add option="-Wall" />
 					<Add option="-g" />
 					<Add option="-std=gnu++11" />
+					<Add option="-mthreads" />
 					<Add option="-DDLLVER_MAJOR_MASK" />
 					<Add option="-DwxUSE_REGEX" />
 					<Add option="-DwxDIALOG_MODAL" />
@@ -72,6 +73,7 @@
 					<Add option="-D__GNUWIN32__" />
 					<Add option="-D__WXMSW__" />
 					<Add option="-DWXUSINGDLL" />
+					<Add option="-DRELEASE" />
 					<Add directory="$(#wx)/lib/gcc_dll/mswu" />
 					<Add directory="$(#wx)/include" />
 				</Compiler>
@@ -150,7 +152,7 @@
 				</Linker>
 			</Target>
 			<Target title="Release">
-				<Option output="Release/NumeRe" prefix_auto="1" extension_auto="1" />
+				<Option output="../NumeRe/rc/NumeRe/numere" prefix_auto="1" extension_auto="1" />
 				<Option object_output="Release" />
 				<Option type="0" />
 				<Option compiler="tdm-gcc" />
@@ -164,6 +166,7 @@
 					<Add option="-DwxUSE_UNICODE" />
 					<Add option="-D__GNUWIN32__" />
 					<Add option="-D__WXMSW__" />
+					<Add option="-DRELEASE" />
 					<Add directory="$(#wx)/lib/gcc_lib/mswu" />
 					<Add directory="$(#wx)/include" />
 				</Compiler>
@@ -266,12 +269,26 @@
 		<Unit filename="gui/dialogs/RemoteFileDialog.h" />
 		<Unit filename="gui/dialogs/VariableWatchPanel.cpp" />
 		<Unit filename="gui/dialogs/VariableWatchPanel.h" />
+		<Unit filename="gui/dialogs/fndrpldialog.cpp" />
+		<Unit filename="gui/dialogs/fndrpldialog.hpp" />
+		<Unit filename="gui/dialogs/tipdialog.cpp" />
+		<Unit filename="gui/dialogs/tipdialog.hpp" />
 		<Unit filename="gui/dialogs/treelistctrl.cpp" />
 		<Unit filename="gui/dialogs/treelistctrl.h" />
 		<Unit filename="gui/dialogs/wxTermContainer.cpp" />
 		<Unit filename="gui/dialogs/wxTermContainer.h" />
+		<Unit filename="gui/filetree.cpp" />
+		<Unit filename="gui/filetree.hpp" />
+		<Unit filename="gui/helpviewer.cpp" />
+		<Unit filename="gui/helpviewer.hpp" />
 		<Unit filename="gui/imagepanel.cpp" />
 		<Unit filename="gui/imagepanel.hpp" />
+		<Unit filename="gui/viewerbook.cpp" />
+		<Unit filename="gui/viewerbook.hpp" />
+		<Unit filename="gui/viewerframe.cpp" />
+		<Unit filename="gui/viewerframe.hpp" />
+		<Unit filename="gui/viewerpanel.cpp" />
+		<Unit filename="gui/viewerpanel.hpp" />
 		<Unit filename="gui/wxProportionalSplitterWindow.h" />
 		<Unit filename="gui/wxssh.cpp" />
 		<Unit filename="gui/wxssh.h" />
@@ -381,6 +398,8 @@
 		<Unit filename="kernel/core/zip++.hpp" />
 		<Unit filename="kernel/core/zip.cpp" />
 		<Unit filename="kernel/core/zip.h" />
+		<Unit filename="kernel/debugmessenger.cpp" />
+		<Unit filename="kernel/debugmessenger.hpp" />
 		<Unit filename="kernel/kernel.cpp" />
 		<Unit filename="kernel/kernel.hpp" />
 		<Unit filename="kernel/syntax.cpp" />
@@ -415,7 +434,7 @@
 			<AutoVersioning>
 				<Scheme minor_max="9" build_max="9" rev_max="0" rev_rand_max="10" build_times_to_increment_minor="100" />
 				<Settings autoincrement="0" date_declarations="1" use_define="0" update_manifest="0" do_auto_increment="0" ask_to_increment="0" language="C++" svn="0" svn_directory="" header_path="kernel\core\version.h" />
-				<Changes_Log show_changes_editor="0" app_title='%p v %M.%m.%b &quot;%T&quot; rev. %r' changeslog_path="Release\ChangesLog.txt" />
+				<Changes_Log show_changes_editor="0" app_title='NumeRe v %M.%m.%b &quot;%T&quot; rev. %r' changeslog_path="Release\ChangesLog.txt" />
 				<Code header_guard="VERSION_H" namespace="AutoVersion" prefix="" />
 			</AutoVersioning>
 		</Extensions>
