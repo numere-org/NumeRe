@@ -435,6 +435,7 @@ void GTerm::clear_area( int start_x, int start_y, int end_x, int end_y )
 			string& sref = tm.GetLineAdjusted(start_y);
 			sref.erase(start_x, num);
 			sref.append(num, ' ');
+			tm.RemoveEditableArea(start_y, start_x, num);
 			//tm.SetLineAdjusted(start_y, tm.GetLineAdjusted(start_y).replace(start_x, num, num, ' '));
 		}
 		else

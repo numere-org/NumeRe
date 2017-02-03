@@ -10,7 +10,7 @@
 class IconManager
 {
 public:
-	IconManager();
+	IconManager(const wxString& programPath);
 	~IconManager();
 
 	int GetIconIndex(wxString iconInfo);

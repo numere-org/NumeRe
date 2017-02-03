@@ -1,5 +1,5 @@
 /* XPM */
-static char *openfolder16x1632bpp_xpm[] = {
+static const char *openfolder16x1632bpp_xpm[] = {
 "16 16 40 1",
 " 	c None",
 ".	c #CEA221",

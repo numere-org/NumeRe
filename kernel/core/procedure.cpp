@@ -99,7 +99,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
     if (_script.wasLastCommand() && _option.getSystemPrintStatus())
         cerr << LineBreak("|-> "+_lang.get("PARSER_SCRIPT_FINIHED", _script.getScriptFileName()), _option) << endl;
 
-    if (GetAsyncKeyState(VK_ESCAPE))
+    if (NumeReKernel::GetAsyncCancelState())//GetAsyncKeyState(VK_ESCAPE))
     {
         throw PROCESS_ABORTED_BY_USER;
     }
@@ -843,7 +843,9 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             }
         }
         //cerr << sProcCommandLine << endl;
+
         nCurrentLine++;
+
         StripSpaces(sProcCommandLine);
         if (!sProcCommandLine.length())
             continue;
@@ -1209,8 +1211,12 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 while (!sProcCommandLine.length() || sProcCommandLine.substr(0,2) == "##")
                 {
                     getline(fProc_in, sProcCommandLine);
-                    nCurrentLine++;
+                    //NumeReKernel::print(toString(NumeReKernel::_messenger.hasBreakpoints(sCurrentProcedureName)));
+                    //NumeReKernel::print(toString(NumeReKernel::_messenger.isBreakpoint(sCurrentProcedureName, nCurrentLine)));
                     StripSpaces(sProcCommandLine);
+                    if (_option.getUseDebugger() && NumeReKernel::_messenger.isBreakpoint(sCurrentProcedureName, nCurrentLine) && sProcCommandLine.substr(0,2) != "|>")
+                        sProcCommandLine.insert(0, "|> ");
+                    nCurrentLine++;
                     //cerr << sProcCommandLine << endl;
 
                     if (!sProcCommandLine.length())

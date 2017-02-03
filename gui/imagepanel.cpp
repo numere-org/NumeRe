@@ -32,12 +32,14 @@ BEGIN_EVENT_TABLE(ImagePanel, wxPanel)
  EVT_KEY_UP(wxImagePanel::keyReleased)
  EVT_MOUSEWHEEL(wxImagePanel::mouseWheelMoved)
  */
-
-    EVT_KEY_DOWN(ImagePanel::keyPressed)
+    EVT_ENTER_WINDOW    (ImagePanel::OnEnter)
+    EVT_SET_FOCUS       (ImagePanel::OnFocus)
+    EVT_KILL_FOCUS      (ImagePanel::OnLoseFocus)
+    EVT_KEY_DOWN        (ImagePanel::keyPressed)
     // catch paint events
-    EVT_PAINT(ImagePanel::paintEvent)
+    EVT_PAINT           (ImagePanel::paintEvent)
     //Size event
-    EVT_SIZE(ImagePanel::OnSize)
+    EVT_SIZE            (ImagePanel::OnSize)
 END_EVENT_TABLE()
 
 
@@ -103,7 +105,8 @@ void ImagePanel::render(wxDC&  dc)
             sized_w = neww;
             sized_h = h/(double)w*neww;
         }
-        resized = wxBitmap(image.Scale(sized_w, sized_h, wxIMAGE_QUALITY_HIGH));
+        // BICUBIC may be slow, but in this case it doesn't have to be fast. However, in most cases the images will be mase smaller and the default quality is bad in this case
+        resized = wxBitmap(image.Scale(sized_w, sized_h, wxIMAGE_QUALITY_BICUBIC));
         dc.DrawBitmap( resized, 0, 0, false );
     }
     else
@@ -130,4 +133,24 @@ void ImagePanel::keyPressed(wxKeyEvent& event)
     if (event.GetKeyCode() == WXK_ESCAPE)
         m_parent->Close();
 }
+
+void ImagePanel::OnEnter(wxMouseEvent& event)
+{
+    this->SetFocus();
+    event.Skip();
+}
+
+
+void ImagePanel::OnFocus(wxFocusEvent& event)
+{
+    //m_parent->SetTransparent(wxIMAGE_ALPHA_OPAQUE);
+    event.Skip();
+}
+
+void ImagePanel::OnLoseFocus(wxFocusEvent& event)
+{
+    //m_parent->SetTransparent(80);
+    event.Skip();
+}
+
 

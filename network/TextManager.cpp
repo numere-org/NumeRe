@@ -177,7 +177,7 @@ string &TextManager::operator [](int index)
 ///
 ///  @author Mark Erikson @date 04-23-2004
 //////////////////////////////////////////////////////////////////////////////
-void TextManager::Scroll(int numLines, bool scrollUp)
+bool TextManager::Scroll(int numLines, bool scrollUp)
 {
 	int actualLinesToScroll = numLines;
 
@@ -187,7 +187,7 @@ void TextManager::Scroll(int numLines, bool scrollUp)
 		if( ( (m_topLine - m_numLinesScrolledUp) == 0) ||
 			( (m_numLinesScrolledUp + m_viewportHeight) >= (m_linesReceived -1)))
 		{
-			return;
+			return false;
 		}
 		if(m_topLine < actualLinesToScroll)
 		{
@@ -206,7 +206,7 @@ void TextManager::Scroll(int numLines, bool scrollUp)
 	{
 		if( (m_bottomLine - m_numLinesScrolledUp) == (m_text.size() - 1))
 		{
-			return;
+			return false;
 		}
 
 		int linesBelow = m_text.size() - (m_bottomLine - m_numLinesScrolledUp) - 1;
@@ -221,6 +221,7 @@ void TextManager::Scroll(int numLines, bool scrollUp)
 			m_numLinesScrolledUp = 0;
 		}
 	}
+	return true;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -333,8 +334,67 @@ string& TextManager::GetLine(int index)
 string& TextManager::GetLineAdjusted(int index)
 {
 	int actualLine = AdjustIndex(index);
-	int nsize = m_text.size();
+	//int nsize = m_text.size();
 	return m_text[actualLine];
+}
+
+string TextManager::GetInputHistory(bool vcursorup)
+{
+    int nActualLine = AdjustIndex(m_virtualCursor);
+    if (vcursorup)
+    {
+        m_virtualCursor--;
+        nActualLine--;
+        while (nActualLine)
+        {
+            for (size_t i = 0; i < m_userText[nActualLine].size(); i++)
+            {
+                if (m_userText[nActualLine][i] == 1)
+                {
+                    for (size_t j = i; j < m_userText[nActualLine].size(); j++)
+                    {
+                        if (m_userText[nActualLine][j] == 0)
+                        {
+                            return m_text[nActualLine].substr(i, j-i-1);
+                        }
+                    }
+                    return m_text[nActualLine].substr(i);
+                }
+            }
+            m_virtualCursor--;
+            nActualLine--;
+        }
+        return GetInputHistory(false);
+    }
+    else
+    {
+        if (m_virtualCursor == m_cursorLine)
+            return "";
+        m_virtualCursor++;
+        nActualLine++;
+        while (nActualLine < (int)m_userText.size() && m_virtualCursor < m_cursorLine)
+        {
+            for (size_t i = 0; i < m_userText[nActualLine].size(); i++)
+            {
+                if (m_userText[nActualLine][i] == 1)
+                {
+                    for (size_t j = i; j < m_userText[nActualLine].size(); j++)
+                    {
+                        if (m_userText[nActualLine][j] == 0)
+                        {
+                            return m_text[nActualLine].substr(i, j-i-1);
+                        }
+                    }
+                    return m_text[nActualLine].substr(i);
+                }
+            }
+            nActualLine++;
+            m_virtualCursor++;
+        }
+        if (m_virtualCursor == m_cursorLine)
+            return "";
+    }
+    return "";
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -419,6 +479,7 @@ string TextManager::GetWordAt(int y, int x)
             continue;
         return sWord.substr(0,pos);
     }
+    return "";
 }
 
 string TextManager::GetWordStartAt(int y, int x)
@@ -435,6 +496,7 @@ string TextManager::GetWordStartAt(int y, int x)
             continue;
         return sWord.substr(pos+1);
     }
+    return "";
 }
 
 
@@ -470,7 +532,7 @@ bool TextManager::IsUserText(int y, int x)
 	if( (actualLine > m_maxHeight) || (y >= m_viewportHeight))
 	{
 		wxLogDebug("Bad Y value in TextManager::GetCharAdjusted.  y = %d, viewport height = %d", y, m_viewportHeight);
-		return ' ';
+		return false;
 	}
 
 	return m_userText[actualLine][x];
@@ -483,9 +545,9 @@ bool TextManager::IsEditable(int y, int x)
 	if( (actualLine > m_maxHeight) || (y >= m_viewportHeight))
 	{
 		wxLogDebug("Bad Y value in TextManager::GetCharAdjusted.  y = %d, viewport height = %d", y, m_viewportHeight);
-		return ' ';
+		return false;
 	}
-    int n = m_userText[actualLine][x];
+    //int n = m_userText[actualLine][x];
 	return (m_userText[actualLine][x] == 2);
 }
 
@@ -500,6 +562,34 @@ void TextManager::SetEditable(int y, int x)
 	}
 
 	m_userText[actualLine][x] = 2;
+}
+
+void TextManager::UnsetEditable(int y, int x)
+{
+	int actualLine = AdjustIndex(y);
+
+	if( (actualLine > m_maxHeight) || (y >= m_viewportHeight))
+	{
+		wxLogDebug("Bad Y value in TextManager::GetCharAdjusted.  y = %d, viewport height = %d", y, m_viewportHeight);
+		return;
+	}
+
+	m_userText[actualLine][x] = 0;
+}
+
+void TextManager::RemoveEditableArea(int y, int x, size_t nLength)
+{
+	int actualLine = AdjustIndex(y);
+
+	if( (actualLine > m_maxHeight) || (y >= m_viewportHeight))
+	{
+		wxLogDebug("Bad Y value in TextManager::GetCharAdjusted.  y = %d, viewport height = %d", y, m_viewportHeight);
+		return;
+	}
+    auto iter_first = m_userText[actualLine].begin() + x;
+    auto iter_last = m_userText[actualLine].begin() + x + nLength;
+	m_userText[actualLine].erase(iter_first, iter_last);
+	m_userText[actualLine].resize(m_userText[actualLine].size()+nLength, 0);
 }
 
 //////////////////////////////////////////////////////////////////////////////

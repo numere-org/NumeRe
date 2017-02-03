@@ -17,7 +17,7 @@ class NumeRePrintout: public wxPrintout
 public:
 
 	//! constructor
-	NumeRePrintout (NumeReEditor *edit, Options* options, wxChar *title = _T(""));
+	NumeRePrintout (NumeReEditor *edit, Options* options, const wxString& title = "");
 
 	//! event handlers
 	bool OnPrintPage (int page);

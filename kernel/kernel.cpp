@@ -41,10 +41,15 @@ wxTerm* NumeReKernel::m_parent = nullptr;
 int NumeReKernel::nLINE_LENGTH = 80;
 bool NumeReKernel::bWritingTable = false;
 string NumeReKernel::sFileToEdit = "";
+string NumeReKernel::sDocumentation = "";
 unsigned int NumeReKernel::nLineToGoTo = 0;
 int NumeReKernel::nLastStatusVal = 0;
 unsigned int NumeReKernel::nLastLineLength = 0;
 bool NumeReKernel::modifiedSettings = false;
+bool NumeReKernel::bCancelSignal = false;
+stringmatrix NumeReKernel::sTable;
+string NumeReKernel::sTableName = "";
+Debugmessenger NumeReKernel::_messenger;
 
 typedef BOOL (WINAPI *LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
 bool IsWow64()
@@ -84,7 +89,6 @@ NumeReKernel::NumeReKernel()
     //RecievedCommand = false;
     sCommandLine.clear();
     sAnswer.clear();
-    bCancelSignal = false;
 
     bSupressAnswer = false;
     //oLogFile.open();
@@ -231,70 +235,6 @@ void NumeReKernel::StartUp(wxTerm* _parent)
         oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Language files were loaded." << endl;
 
 
-
-	// --> Kommandozeilen-Optionen einlesen und in die Instanz der Settings-Klasse uebertragen <--
-    /**if (argc > 1)
-    {
-        //nextLoadMessage(50);
-        //cerr << " -> " + _lang.get("MAIN_LOADING_CMDLINE") + " ... ";
-        string sTemp = "";
-        if (oLogFile.is_open())
-            oLogFile << toString(time(0) - tTimeZero, true) << "> SYSTEM: Command line: \"numere";
-        for (int i = 1; i < argc; i++)
-        {
-            sTemp = argv[i];
-            if (oLogFile.is_open())
-                oLogFile << " " << sTemp;
-            sTemp = replacePathSeparator(sTemp);
-            //cerr << sTemp << endl;
-            if (sTemp == "-d")
-                _option.setbDebug(true);
-            else if (sTemp == "-p")
-                _option.setprecision(14);
-            else if (sTemp.length() > 5 && sTemp.substr(sTemp.length()-5) == ".nscr")
-            {
-                sScriptName = sTemp;
-            }
-            else if (sTemp.length() > 5 && sTemp.substr(sTemp.length()-5) == ".ndat")
-            {
-                _data.openFromCmdLine(_option, sTemp, false);
-            }
-            else if (sTemp.length() > 5 && sTemp.substr(sTemp.length()-5) == ".nprc")
-            {
-                sTemp = "$'" + sTemp.substr(0,sTemp.rfind('.')) + "'()";
-                _option.cacheCmd(sTemp);
-            }
-            else if (sTemp.length() > 4
-                && (toLowerCase(sTemp.substr(sTemp.length()-4)) == ".dat"
-                    || toLowerCase(sTemp.substr(sTemp.length()-4)) == ".csv"
-                    || toLowerCase(sTemp.substr(sTemp.length()-4)) == ".ods"
-                    || toLowerCase(sTemp.substr(sTemp.length()-4)) == ".ibw"
-                    || toLowerCase(sTemp.substr(sTemp.length()-4)) == ".txt"
-                    || toLowerCase(sTemp.substr(sTemp.length()-4)) == ".jdx"
-                    || toLowerCase(sTemp.substr(sTemp.length()-4)) == ".xls"
-                    || toLowerCase(sTemp.substr(sTemp.length()-4)) == ".jcm"))
-            {
-                sTemp = "data -load=\""+sTemp+"\"";
-                _option.cacheCmd(sTemp);
-            }
-            else if (sTemp.length() > 3 && toLowerCase(sTemp.substr(sTemp.length()-3)) == ".dx")
-            {
-                sTemp = "data -load=\""+sTemp+"\"";
-                _option.cacheCmd(sTemp);
-            }
-            else if (sTemp.length() > 5 && toLowerCase(sTemp.substr(sTemp.length()-5)) == ".labx")
-            {
-                sTemp = "data -load=\"" + sTemp+"\"";
-                _option.cacheCmd(sTemp);
-            }
-        }
-        //cerr << toSystemCodePage(_lang.get("COMMON_DONE")) << ".";
-        if (oLogFile.is_open())
-        {
-            oLogFile << "\"" << endl << toString(time(0)-tTimeZero, true) << "> SYSTEM: Command line parameters were processed." << endl;
-        }
-    }*/
-
     //if (_option.getbDebug())
     //    cerr << "PATH: " << __cPath << endl;
 
@@ -388,37 +328,6 @@ void NumeReKernel::StartUp(wxTerm* _parent)
     /**else
         cerr << toSystemCodePage(_lang.get("MAIN_LOADING_AUTOSAVE_NOT_FOUND"));*/
 
-    /*nextLoadMessage(50);
-    cerr << LineBreak(" -> "+_lang.get("MAIN_LOADING_USER_INTERFACE")+" ... ", _option);
-    Sleep(50);
-    cerr << toSystemCodePage(_lang.get("COMMON_DONE")) << ".";
-    nextLoadMessage(50);
-    cerr << LineBreak(" -> "+_lang.get("MAIN_LOADING_COLORTHEME")+" ... ", _option);
-    Sleep(200);
-
-    // --> Farben der Console aendern <--
-    if (!ColorTheme(_option))
-    {
-        cerr << endl << LineBreak(" -> "+_lang.get("MAIN_LOADING_COLORTHEME_ERROR"), _option) << endl;
-    }*/
-	// --> Mach' einen netten Header <--
-	//BI_hline(80);
-	///BI_splash();
-	//BI_hline(80);
-	//cerr << "|-> Copyright " << (char)184 << " " << AutoVersion::YEAR << toSystemCodePage(", E. Hänel et al.  +  +  +  siehe \"about\" für rechtl. Info |") << endl;
-	///printPreFmt("|-> Copyright " + string((char)184, 1) + " " + AutoVersion::YEAR + toSystemCodePage(", E. Hänel et al.") + strfill(toSystemCodePage(_lang.get("MAIN_ABOUT_NBR")), _option.getWindow()-37) + "\n"); //toSystemCodePage("Über: siehe \"about\" |") << endl; //MAIN_ABOUT
-	///printPreFmt("|   Version: " + sVersion + strfill("Build: ", _option.getWindow()-25-sVersion.length()) + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + "\n");
-	///make_hline();
-
-	///printPreFmt("|\n");
-	//cerr << "|" << endl;
-
-	//if (_option.getbGreeting() && BI_FileExists(_option.getExePath()+"\\numere.ini"))
-	//{
-        ///printPreFmt(BI_Greeting(_option) + "\n|\n");
-        //cerr << toSystemCodePage(BI_Greeting(_option));
-        //cerr << "|" << endl;
-//    }
 
 	if (sScriptName.length())
 	{
@@ -885,7 +794,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             }
             if (oLogFile.is_open())
                 oLogFile << toString(time(0) - tTimeZero, true) << "> " << sLine << endl;
-            if (GetAsyncKeyState(VK_ESCAPE) && _script.isValid() && _script.isOpen())
+            if (GetAsyncCancelState() && _script.isValid() && _script.isOpen())
             {
                 if (_option.getbUseESCinScripts())
                     throw PROCESS_ABORTED_BY_USER;
@@ -1155,6 +1064,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                                 _data.setPluginCommands(_procedure.getPluginNames());
                             }
                             sCommandLine.clear();
+                            bCancelSignal = false;
                             /*if (sFileToEdit.length())
                                 return NUMERE_EDIT_FILE;*/
                             return NUMERE_DONE_KEYWORD;
@@ -1178,6 +1088,10 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                                 // --> Sleep, damit genug Zeit zum Lesen ist <--
                                 //Sleep(1500);
                                 Sleep(500);
+                            }
+                            else
+                            {
+                                _data.clearCache();
                             }
                         }
                         return NUMERE_QUIT;  // Keyword "quit"
@@ -1289,6 +1203,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                             print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
                             _data.setPluginCommands(_procedure.getPluginNames());
                         }
+                        bCancelSignal = false;
                         return NUMERE_DONE_KEYWORD;
                     }
                     return NUMERE_PENDING_SPECIAL;
@@ -1338,6 +1253,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                                 _data.setPluginCommands(_procedure.getPluginNames());
                             }
                             sCommandLine.clear();
+                            bCancelSignal = false;
                             return NUMERE_DONE_KEYWORD;
                         }
                         else
@@ -1662,6 +1578,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 sCmdCache.clear();
             _parser.DeactivateLoopMode();
             sCommandLine.clear();
+            bCancelSignal = false;
             return NUMERE_ERROR;
         }
         catch (const std::bad_alloc &e)
@@ -1687,6 +1604,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             if (sCmdCache.length())
                 sCmdCache.clear();
             sCommandLine.clear();
+            bCancelSignal = false;
             return NUMERE_ERROR;
         }
         catch (const std::exception &e)
@@ -1734,6 +1652,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 sCmdCache.clear();
             _parser.DeactivateLoopMode();
             sCommandLine.clear();
+            bCancelSignal = false;
             return NUMERE_ERROR;
         }
         catch (errorcode& e)
@@ -1821,6 +1740,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 sCmdCache.clear();
             _parser.DeactivateLoopMode();
             sCommandLine.clear();
+            bCancelSignal = false;
             return NUMERE_ERROR;
         }
         catch (...)
@@ -1841,6 +1761,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 sCmdCache.clear();
             _parser.DeactivateLoopMode();
             sCommandLine.clear();
+            bCancelSignal = false;
             return NUMERE_ERROR;
         }
         //print(toString(vAns,7));
@@ -1849,7 +1770,10 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
             _data.setPluginCommands(_procedure.getPluginNames());
             if (!sCmdCache.length())
+            {
+                bCancelSignal = false;
                 return NUMERE_DONE_KEYWORD;
+            }
         }
     }
     while ((_script.isValid() && _script.isOpen()) || sCmdCache.length());
@@ -1860,6 +1784,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
     /*if (sCommandLine == "quit")
         return NumeReKernel::NUMERE_QUIT;*/
     //sCommandLine.clear();
+    bCancelSignal = false;
     if (_script.wasLastCommand())
     {
         print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
@@ -1886,7 +1811,7 @@ void NumeReKernel::saveData()
     if (!_data.getSaveStatus()) // MAIN_UNSAVED_CACHE
     {
         _data.saveCache(); // MAIN_CACHE_SAVED
-        //print(LineBreak(_lang.get("MAIN_CACHE_SAVED"), _option));
+        print(LineBreak(_lang.get("MAIN_CACHE_SAVED"), _option));
         //cerr << LineBreak("|-> Cache wurde erfolgreich gespeichert.", _option) << endl;
         Sleep(500);
     }
@@ -1948,6 +1873,14 @@ unsigned int NumeReKernel::ReadLineNumber()
     return nLine;
 }
 
+string NumeReKernel::ReadDoc()
+{
+    string Doc = sDocumentation;
+    sDocumentation.clear();
+    return Doc;
+}
+
+
 bool NumeReKernel::SettingsModified()
 {
     bool modified = modifiedSettings;
@@ -1968,30 +1901,6 @@ vector<string> NumeReKernel::getPathSettings() const
 
     return vPaths;
 }
-
-/*switch (m_KernelStatus)
-        {
-            // fallthrough is intended
-            case NumeReKernel::NUMERE_DONE:
-            case NumeReKernel::NUMERE_ERROR:
-                sAnswer = "|-> " + m_sAnswer + "\n|\n|<- ";
-                break;
-            case NumeReKernel::NUMERE_CALC_UPDATE:
-            case NumeReKernel::NUMERE_PRINTLINE:
-                sAnswer = "|-> " + m_sAnswer + "\n";
-                break;
-            case NumeReKernel::NUMERE_DONE_KEYWORD:
-                sAnswer = "|\n|<- ";
-                break;
-            case NumeReKernel::NUMERE_PENDING:
-                sAnswer = "|<- ";
-                break;
-            case NumeReKernel::NUMERE_QUIT:
-                Closing = true;
-                break;
-            default:
-                //All other cases
-        }*/
 
 void NumeReKernel::printResult(const string& sLine, const string& sCmdCache, bool bScriptRunning)
 {
@@ -2214,14 +2123,54 @@ void NumeReKernel::gotoLine(const string& sFile, unsigned int nLine)
 {
     if (!m_parent)
         return;
-    sFileToEdit = sFile;
-    if (nLine)
-        nLineToGoTo = nLine-1;
-    m_parent->m_KernelStatus = NUMERE_EDIT_FILE;
+    else
+    {
+        wxCriticalSectionLocker lock(m_parent->m_kernelCS);
+        sFileToEdit = sFile;
+        if (nLine)
+            nLineToGoTo = nLine-1;
+        m_parent->m_KernelStatus = NUMERE_EDIT_FILE;
+    }
     wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
     Sleep(100);
 }
 
+void NumeReKernel::setDocumentation(const string& _sDocumentation)
+{
+    if (!m_parent)
+        return;
+    else
+    {
+        wxCriticalSectionLocker lock(m_parent->m_kernelCS);
+        sDocumentation = _sDocumentation;
+        m_parent->m_KernelStatus = NUMERE_OPEN_DOC;
+    }
+    wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
+    Sleep(100);
+}
+
+void NumeReKernel::showTable(string** __stable, size_t cols, size_t lines, string __name)
+{
+    if (!m_parent)
+        return;
+    else
+    {
+        wxCriticalSectionLocker lock(m_parent->m_kernelCS);
+        sTable.clear();
+        for (size_t i = 0; i < lines; i++)
+        {
+            sTable.push_back(vector<string>(cols, ""));
+            for (size_t j = 0; j < cols; j++)
+            {
+                sTable[i][j] = __stable[i][j];
+            }
+        }
+        sTableName = __name;
+        m_parent->m_KernelStatus = NUMERE_SHOW_TABLE;
+    }
+    wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
+    Sleep(100);
+}
 
 void NumeReKernel::getline(string& sLine)
 {
@@ -2252,7 +2201,7 @@ void make_hline(int nLength)
 {
     if (nLength == -1)
     {
-        NumeReKernel::printPreFmt(strfill(string(1,'='), NumeReKernel::nLINE_LENGTH-1, '=') + "\n");
+        NumeReKernel::printPreFmt("\r"+strfill(string(1,'='), NumeReKernel::nLINE_LENGTH-1, '=') + "\n");
         /*for (int i = 0; i < NumeReKernel::nLINE_LENGTH; i++)
         {
             cerr << (char)205;
@@ -2260,7 +2209,7 @@ void make_hline(int nLength)
 	}
 	else if (nLength < -1)
 	{
-        NumeReKernel::printPreFmt(strfill(string(1,'-'), NumeReKernel::nLINE_LENGTH-1, '-') + "\n");
+        NumeReKernel::printPreFmt("\r"+strfill(string(1,'-'), NumeReKernel::nLINE_LENGTH-1, '-') + "\n");
         /*for (int i = 0; i < NumeReKernel::nLINE_LENGTH; i++)
         {
             cerr << (char)196;
@@ -2268,7 +2217,7 @@ void make_hline(int nLength)
 	}
 	else
 	{
-        NumeReKernel::printPreFmt(strfill(string(1,'='), nLength, '=') + "\n");
+        NumeReKernel::printPreFmt("\r"+strfill(string(1,'='), nLength, '=') + "\n");
         /*for (int i = 0; i < nLength; i++)
         {
             cerr << (char)205;
@@ -2291,6 +2240,13 @@ void NumeReKernel::flush()
     Sleep(1);
 }
 
-
+bool NumeReKernel::GetAsyncCancelState()
+{
+    bool bCancel = bCancelSignal;
+    bCancelSignal = false;
+    if (bCancel || GetAsyncKeyState(VK_ESCAPE))
+        return true;
+    return false;
+}
 
 

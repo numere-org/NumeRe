@@ -20,7 +20,7 @@ StateOption GTerm::vt52_normal_state[] = {
     { 10, &GTerm::lf,      vt52_normal_state },
     { 12, &GTerm::ff,      vt52_normal_state },
     { 9,  &GTerm::tab,     vt52_normal_state },
-    { 8,  &GTerm::bs,      vt52_normal_state },
+    //{ 8,  &GTerm::bs,      vt52_normal_state },
     { 7,  &GTerm::bell,        vt52_normal_state },
     { 27, &GTerm::clear_param, vt52_esc_state },
     { -1, &GTerm::normal_input,    vt52_normal_state } };

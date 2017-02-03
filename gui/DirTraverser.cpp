@@ -42,17 +42,17 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
     if (filename.find('.') == string::npos)
         return wxDIR_CONTINUE;
     wxString filespec;
-    wxString extension = filename.substr(filename.rfind('.'));
+    wxString extension = filename.substr(filename.rfind('.')+1);
     switch (fileSpec)
     {
         case FILE_NSCR:
-            if (filename.length() < 6 || extension != ".nscr")
+            if (filename.length() < 6 || extension != "nscr")
             {
                 return wxDIR_CONTINUE;
             }
             break;
         case FILE_NPRC:
-            if (filename.length() < 6 || extension != ".nprc")
+            if (filename.length() < 6 || extension != "nprc")
             {
                 return wxDIR_CONTINUE;
             }
@@ -61,7 +61,7 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
             if (filename.length() < 6)
                 return wxDIR_CONTINUE;
             filespec = "*.nscr;*.nprc;*.ndat;";
-            if (filespec.find(extension+";") == string::npos)
+            if (filespec.find("*."+extension+";") == string::npos)
             {
                 return wxDIR_CONTINUE;
             }
@@ -70,7 +70,7 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
             if (filename.length() < 4)
                 return wxDIR_CONTINUE;
             filespec = "*.ndat;*.dat;*.xls;*.xlsx;*.ods;*.csv;*.txt;*.labx;*.ibw;*.jdx;*.jcm;*.dx;*.png;*.log;*.tex;";
-            if (filespec.find(extension + ";") == string::npos)
+            if (filespec.find("*."+extension + ";") == string::npos)
             {
                 return wxDIR_CONTINUE;
             }
@@ -79,7 +79,7 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
             if (filename.length() < 5)
                 return wxDIR_CONTINUE;
             filespec = "*.png;*.jpg;*.jpeg;*.eps;*.svg;*.gif;*.bmp;";
-            if (filespec.find(extension+";") == string::npos)
+            if (filespec.find("*."+extension+";") == string::npos)
             {
                 return wxDIR_CONTINUE;
             }
@@ -131,6 +131,7 @@ wxDirTraverseResult DirTraverser::OnDir(const wxString& dirname)
 
     FileNameTreeData* data = new FileNameTreeData();
     data->filename = dirname;
+    data->isDir = true;
     vcurrentnodes.push_back(rootNode->AppendItem(vcurrentnodes.back(), dirname.substr(dirname.rfind('\\')+1), iconManager->GetIconIndex("FOLDEROPEN"), -1, data));
 
     return wxDIR_CONTINUE;

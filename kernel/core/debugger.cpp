@@ -58,6 +58,11 @@ void NumeReDebugger::pushStackItem(const string& sStackItem)
         if ((!i && vStackTrace.back()[i] == '$') || (i && vStackTrace.back()[i] == '$' && vStackTrace.back()[i-1] != '\\'))
             vStackTrace.back().insert(i,1,'\\');
     }
+    if (vStackTrace.back().find('/') != string::npos && vStackTrace.back().find('/') < vStackTrace.back().find('('))
+    {
+        vStackTrace.back().insert(vStackTrace.back().find('$')+1, "'");
+        vStackTrace.back().insert(vStackTrace.back().find('('), "'");
+    }
     return;
 }
 

@@ -1,5 +1,5 @@
-/* XPM */ 
-static char * breakpoint_crossed_xpm[] = {
+/* XPM */
+static const char * breakpoint_crossed_xpm[] = {
 "16 16 48 1",
 " 	c None",
 "!	c black",

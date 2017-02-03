@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include "fitcontroller.hpp"
+#include "../kernel.hpp"
 
 Parser* Fitcontroller::_fitParser = 0;
 int Fitcontroller::nDimensions = 0;
@@ -544,7 +545,7 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
         }
         nStatus = gsl_multifit_test_delta(solver->dx, solver->x, _fData.dPrecision, _fData.dPrecision);
         nIterations++;
-        if (GetAsyncKeyState(VK_ESCAPE))
+        if (NumeReKernel::GetAsyncCancelState())//GetAsyncKeyState(VK_ESCAPE))
         {
             gsl_multifit_fdfsolver_free(solver);
             throw PROCESS_ABORTED_BY_USER;

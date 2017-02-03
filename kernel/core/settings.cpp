@@ -43,6 +43,7 @@ Settings::Settings() : Documentation()
 	bShowHints = true;
 	bUseESCinScripts = true;
 	bUseCustomLanguageFile = true;
+	bUseExternalDocViewer = false;
 	nPrecision = 7;			// Standardmaessig setzen wir die Praezision auf 7
 	nAutoSaveInterval = 30; // 30 sec
 	sPath = "./";
@@ -211,6 +212,7 @@ void Settings::save(string _sWhere, bool bMkBackUp)
 	Settings_ini << "-PLOTFONT=" << sDefaultfont << endl;
 	Settings_ini << "-USECOMPACTTABLES=" << bCompact << endl;
 	Settings_ini << "-USECUSTOMLANGFILE=" << bUseCustomLanguageFile << endl;
+	Settings_ini << "-USEEXTERNALVIEWER=" << bUseExternalDocViewer << endl;
 	Settings_ini << "-DEFCONTROL=" << bDefineAutoLoad << endl;
 	Settings_ini << "-USEDRAFTMODE=" << bUseDraftMode << endl;
 	Settings_ini << "-EXTENDEDFILEINFO=" << bShowExtendedFileInfo << endl;
@@ -223,8 +225,8 @@ void Settings::save(string _sWhere, bool bMkBackUp)
 
 	// --> Datei auf jeden Fall wieder schliessen, Erfolgsmeldung ausgeben und zurueck zur aufrufenden Stelle <--
 	Settings_ini.close();
-	/*if (!bMkBackUp)
-        NumeReKernel::print(toSystemCodePage(_lang.get("SETTINGS_SAVE_SUCCESS")));*/
+	if (!bMkBackUp)
+        NumeReKernel::print(toSystemCodePage(_lang.get("SETTINGS_SAVE_SUCCESS"))+"\n");
 	return;
 }
 
@@ -408,6 +410,11 @@ bool Settings::set(const string& _sOption)
     else if (matchParams(_sOption, "usecustomlangfile", '='))
     {
         bUseCustomLanguageFile = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
+        return true;
+    }
+    else if (matchParams(_sOption, "useexternaldocviewer", '=') || matchParams(_sOption, "useexternalviewer", '='))
+    {
+        bUseExternalDocViewer = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
     else if (matchParams(_sOption, "extendedfileinfo", '='))
@@ -678,6 +685,7 @@ void Settings::copySettings(const Settings& _settings)
     nBuffer_x = _settings.nBuffer_x;
     nBuffer_y = _settings.nBuffer_y;
     bUseDebugger = _settings.bUseDebugger;
+    bUseExternalDocViewer = _settings.bUseExternalDocViewer;
     setTokens(_settings.getTokenPaths());
 }
 

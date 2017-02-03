@@ -72,6 +72,12 @@ BEGIN_EVENT_TABLE( OptionsDialog, wxDialog )
 
     EVT_BUTTON( ID_BUTTON_CANCEL, OptionsDialog::OnButtonCancelClick )
 
+    EVT_BUTTON(ID_BTN_LOADPATH, OptionsDialog::OnButtonClick)
+    EVT_BUTTON(ID_BTN_SAVEPATH, OptionsDialog::OnButtonClick)
+    EVT_BUTTON(ID_BTN_SCRIPTPATH, OptionsDialog::OnButtonClick)
+    EVT_BUTTON(ID_BTN_PROCPATH, OptionsDialog::OnButtonClick)
+    EVT_BUTTON(ID_BTN_PLOTPATH, OptionsDialog::OnButtonClick)
+
 ////@end OptionsDialog event table entries
 	EVT_CHAR(OptionsDialog::OnChar)
 	EVT_TEXT_ENTER( ID_PROFCODE, OptionsDialog::OnEnter )
@@ -81,6 +87,8 @@ BEGIN_EVENT_TABLE( OptionsDialog, wxDialog )
 	EVT_TEXT_ENTER(ID_PASSWORD2, OptionsDialog::OnEnter)
 
 END_EVENT_TABLE()
+
+std::string replacePathSeparator(const std::string&);
 
 /*!
  * OptionsDialog constructors
@@ -124,7 +132,7 @@ bool OptionsDialog::Create( wxWindow* parent, wxWindowID id, const wxString& cap
     m_printStyle = NULL;
     m_cbPrintLineNumbers = NULL;
     m_showToolbarText = NULL;
-    m_chkCombineWatchWindow = NULL;
+    m_saveSession = NULL;
     m_termHistory = NULL;
 
     m_compactTables = nullptr;
@@ -136,6 +144,7 @@ bool OptionsDialog::Create( wxWindow* parent, wxWindowID id, const wxString& cap
     m_CustomLanguage = nullptr;
     m_ESCinScripts = nullptr;
     m_UseLogfile = nullptr;
+    m_UseExternalViewer = nullptr;
     m_LoadPath = nullptr;
     m_SavePath = nullptr;
     m_ScriptPath = nullptr;
@@ -172,7 +181,7 @@ void OptionsDialog::CreateControls()
     wxBoxSizer* itemBoxSizer2 = new wxBoxSizer(wxVERTICAL);
     itemDialog1->SetSizer(itemBoxSizer2);
 
-    m_optionsNotebook = new wxNotebook( itemDialog1, ID_NOTEBOOK, wxDefaultPosition, wxSize(400, 300), wxNB_DEFAULT|wxNB_TOP );
+    m_optionsNotebook = new wxNotebook( itemDialog1, ID_NOTEBOOK, wxDefaultPosition, wxSize(400, 350), wxNB_DEFAULT|wxNB_TOP );
 
     /**wxPanel* itemPanel4 = new wxPanel( m_optionsNotebook, ID_PANELFEATURES, wxDefaultPosition, wxSize(100, 80), wxNO_BORDER|wxTAB_TRAVERSAL );
     wxBoxSizer* itemBoxSizer5 = new wxBoxSizer(wxVERTICAL);
@@ -254,6 +263,10 @@ void OptionsDialog::CreateControls()
     m_UseLogfile->SetValue(false);
     itemBoxSizer31->Add(m_UseLogfile, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
+    m_UseExternalViewer = new wxCheckBox( itemPanel28, wxID_ANY, _(_guilang.get("GUI_OPTIONS_EXTERNALVIEWER")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_UseExternalViewer->SetValue(false);
+    itemBoxSizer31->Add(m_UseExternalViewer, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+
     /*wxButton* itemButton35 = new wxButton( itemPanel28, ID_BTNFINDMINGW, _("Select"), wxDefaultPosition, wxSize(50, -1), 0 );
     itemBoxSizer33->Add(itemButton35, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
@@ -277,37 +290,57 @@ void OptionsDialog::CreateControls()
     wxStaticText* itemStaticText20 = new wxStaticText( itemPanel17, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_LOADPATH")), wxDefaultPosition, wxDefaultSize, 0 );
     itemBoxSizer19->Add(itemStaticText20, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
 
-    m_LoadPath = new wxTextCtrl( itemPanel17, wxID_ANY, _T(""), wxDefaultPosition, wxSize(350, -1), wxTE_PROCESS_ENTER );
+    wxBoxSizer* itemBoxSizer19_1 = new wxBoxSizer(wxHORIZONTAL);
+    itemBoxSizer19->Add(itemBoxSizer19_1, wxALIGN_LEFT);
+    m_LoadPath = new wxTextCtrl( itemPanel17, wxID_ANY, _T(""), wxDefaultPosition, wxSize(280, -1), wxTE_PROCESS_ENTER );
     m_LoadPath->SetValue("<loadpath>");
-    itemBoxSizer19->Add(m_LoadPath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+    itemBoxSizer19_1->Add(m_LoadPath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+    wxButton* loadbutton = new wxButton(itemPanel17, ID_BTN_LOADPATH, _guilang.get("GUI_OPTIONS_CHOOSE"));
+    itemBoxSizer19_1->Add(loadbutton, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
 
     wxStaticText* itemStaticText22 = new wxStaticText( itemPanel17, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_SAVEPATH")), wxDefaultPosition, wxDefaultSize, 0 );
     itemBoxSizer19->Add(itemStaticText22, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
 
-    m_SavePath = new wxTextCtrl( itemPanel17, wxID_ANY, _T(""), wxDefaultPosition, wxSize(350, -1), wxTE_PROCESS_ENTER );
+    wxBoxSizer* itemBoxSizer19_2 = new wxBoxSizer(wxHORIZONTAL);
+    itemBoxSizer19->Add(itemBoxSizer19_2, wxALIGN_LEFT);
+    m_SavePath = new wxTextCtrl( itemPanel17, wxID_ANY, _T(""), wxDefaultPosition, wxSize(280, -1), wxTE_PROCESS_ENTER );
     m_SavePath->SetValue("<savepath>");
-    itemBoxSizer19->Add(m_SavePath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+    itemBoxSizer19_2->Add(m_SavePath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+    wxButton* savebutton = new wxButton(itemPanel17, ID_BTN_SAVEPATH, _guilang.get("GUI_OPTIONS_CHOOSE"));
+    itemBoxSizer19_2->Add(savebutton, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
 
     wxStaticText* itemStaticText24 = new wxStaticText( itemPanel17, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_SCRIPTPATH")), wxDefaultPosition, wxDefaultSize, 0 );
     itemBoxSizer19->Add(itemStaticText24, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
 
-    m_ScriptPath = new wxTextCtrl( itemPanel17, wxID_ANY, _T(""), wxDefaultPosition, wxSize(350, -1), wxTE_PROCESS_ENTER );
+    wxBoxSizer* itemBoxSizer19_3 = new wxBoxSizer(wxHORIZONTAL);
+    itemBoxSizer19->Add(itemBoxSizer19_3, wxALIGN_LEFT);
+    m_ScriptPath = new wxTextCtrl( itemPanel17, wxID_ANY, _T(""), wxDefaultPosition, wxSize(280, -1), wxTE_PROCESS_ENTER );
     m_ScriptPath->SetValue("<scriptpath>");
-    itemBoxSizer19->Add(m_ScriptPath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+    itemBoxSizer19_3->Add(m_ScriptPath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+    wxButton* scriptbutton = new wxButton(itemPanel17, ID_BTN_SCRIPTPATH, _guilang.get("GUI_OPTIONS_CHOOSE"));
+    itemBoxSizer19_3->Add(scriptbutton, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
 
     wxStaticText* itemStaticText26 = new wxStaticText( itemPanel17, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_PROCPATH")), wxDefaultPosition, wxDefaultSize, 0 );
     itemBoxSizer19->Add(itemStaticText26, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
 
-    m_ProcPath = new wxTextCtrl( itemPanel17, wxID_ANY, _T(""), wxDefaultPosition, wxSize(350, -1), wxTE_PROCESS_ENTER );
+    wxBoxSizer* itemBoxSizer19_4 = new wxBoxSizer(wxHORIZONTAL);
+    itemBoxSizer19->Add(itemBoxSizer19_4, wxALIGN_LEFT);
+    m_ProcPath = new wxTextCtrl( itemPanel17, wxID_ANY, _T(""), wxDefaultPosition, wxSize(280, -1), wxTE_PROCESS_ENTER );
     m_ProcPath->SetValue("<procpath>");
-    itemBoxSizer19->Add(m_ProcPath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+    itemBoxSizer19_4->Add(m_ProcPath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+    wxButton* procbutton = new wxButton(itemPanel17, ID_BTN_PROCPATH, _guilang.get("GUI_OPTIONS_CHOOSE"));
+    itemBoxSizer19_4->Add(procbutton, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
 
     wxStaticText* itemStaticText27 = new wxStaticText( itemPanel17, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_PLOTPATH")), wxDefaultPosition, wxDefaultSize, 0 );
     itemBoxSizer19->Add(itemStaticText27, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
 
-    m_PlotPath = new wxTextCtrl( itemPanel17, wxID_ANY, _T(""), wxDefaultPosition, wxSize(350, -1), wxTE_PROCESS_ENTER );
+    wxBoxSizer* itemBoxSizer19_5 = new wxBoxSizer(wxHORIZONTAL);
+    itemBoxSizer19->Add(itemBoxSizer19_5, wxALIGN_LEFT);
+    m_PlotPath = new wxTextCtrl( itemPanel17, wxID_ANY, _T(""), wxDefaultPosition, wxSize(280, -1), wxTE_PROCESS_ENTER );
     m_PlotPath->SetValue("<plotpath>");
-    itemBoxSizer19->Add(m_PlotPath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+    itemBoxSizer19_5->Add(m_PlotPath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+    wxButton* plotbutton = new wxButton(itemPanel17, ID_BTN_PLOTPATH, _guilang.get("GUI_OPTIONS_CHOOSE"));
+    itemBoxSizer19_5->Add(plotbutton, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
 
     m_optionsNotebook->AddPage(itemPanel17, _(_guilang.get("GUI_OPTIONS_PATHS")));
 
@@ -348,6 +381,10 @@ void OptionsDialog::CreateControls()
     m_cbPrintLineNumbers = new wxCheckBox( itemPanel39, ID_PRINTLINENUMBERS, _(_guilang.get("GUI_OPTIONS_PRINT_LINENUMBERS")), wxDefaultPosition, wxDefaultSize, wxCHK_2STATE );
     m_cbPrintLineNumbers->SetValue(false);
     itemBoxSizer41->Add(m_cbPrintLineNumbers, 0, wxALIGN_LEFT|wxALL, 5);
+
+    m_saveSession = new wxCheckBox( itemPanel39, wxID_ANY, _(_guilang.get("GUI_OPTIONS_SAVE_SESSION")), wxDefaultPosition, wxDefaultSize, wxCHK_2STATE );
+    m_saveSession->SetValue(false);
+    itemBoxSizer41->Add(m_saveSession, 0, wxALIGN_LEFT|wxALL, 5);
 
     m_showToolbarText = new wxCheckBox( itemPanel39, ID_SHOWTOOLBARTEXT, _(_guilang.get("GUI_OPTIONS_SHOW_TOOLBARTEXT")), wxDefaultPosition, wxDefaultSize, 0 );
     m_showToolbarText->SetValue(false);
@@ -477,6 +514,51 @@ void OptionsDialog::OnButtonCancelClick( wxCommandEvent& event )
     event.Skip();
 	EndModal(wxID_CANCEL);
 	m_optionsNotebook->SetSelection(0);
+}
+
+void OptionsDialog::OnButtonClick(wxCommandEvent& event)
+{
+    wxString defaultpath;
+    switch (event.GetId())
+    {
+        case ID_BTN_LOADPATH:
+            defaultpath = m_LoadPath->GetValue();
+            break;
+        case ID_BTN_SAVEPATH:
+            defaultpath = m_SavePath->GetValue();
+            break;
+        case ID_BTN_SCRIPTPATH:
+            defaultpath = m_ScriptPath->GetValue();
+            break;
+        case ID_BTN_PROCPATH:
+            defaultpath = m_ProcPath->GetValue();
+            break;
+        case ID_BTN_PLOTPATH:
+            defaultpath = m_PlotPath->GetValue();
+            break;
+    }
+    wxDirDialog dialog(this, _guilang.get("GUI_OPTIONS_CHOOSEPATH"), defaultpath);
+    int ret = dialog.ShowModal();
+    if (ret != wxID_OK)
+        return;
+    switch (event.GetId())
+    {
+        case ID_BTN_LOADPATH:
+            m_LoadPath->SetValue(replacePathSeparator(dialog.GetPath().ToStdString()));
+            break;
+        case ID_BTN_SAVEPATH:
+            m_SavePath->SetValue(replacePathSeparator(dialog.GetPath().ToStdString()));
+            break;
+        case ID_BTN_SCRIPTPATH:
+            m_ScriptPath->SetValue(replacePathSeparator(dialog.GetPath().ToStdString()));
+            break;
+        case ID_BTN_PROCPATH:
+            m_ProcPath->SetValue(replacePathSeparator(dialog.GetPath().ToStdString()));
+            break;
+        case ID_BTN_PLOTPATH:
+            m_PlotPath->SetValue(replacePathSeparator(dialog.GetPath().ToStdString()));
+            break;
+    }
 }
 
 void OptionsDialog::OnChar(wxKeyEvent &event)
@@ -766,6 +848,7 @@ bool OptionsDialog::EvaluateOptions()
         _option->setUserLangFiles(m_CustomLanguage->GetValue());
         _option->setbUseESCinScripts(m_ESCinScripts->GetValue());
         _option->setbUseLogFile(m_UseLogfile->GetValue());
+        _option->setExternalDocViewer(m_UseExternalViewer->GetValue());
         _option->setLoadPath(m_LoadPath->GetValue().ToStdString());
         _option->setSavePath(m_SavePath->GetValue().ToStdString());
         _option->setScriptPath(m_ScriptPath->GetValue().ToStdString());
@@ -789,6 +872,7 @@ bool OptionsDialog::EvaluateOptions()
 
 		m_options->SetShowToolbarText(m_showToolbarText->IsChecked());
 		m_options->SetLineNumberPrinting(m_cbPrintLineNumbers->IsChecked());
+		m_options->SetSaveSession(m_saveSession->IsChecked());
 		///m_options->SetCombineWatchWindow(m_chkCombineWatchWindow->IsChecked());
 		///m_options->SetShowCompileCommands(m_chkShowCompileCommands->IsChecked());
 	}
@@ -839,6 +923,7 @@ void OptionsDialog::InitializeDialog()
 
 	m_showToolbarText->SetValue(m_options->GetShowToolbarText());
 	m_cbPrintLineNumbers->SetValue(m_options->GetLineNumberPrinting());
+    m_saveSession->SetValue(m_options->GetSaveSession());
 
     m_compactTables->SetValue(_option->getbCompact());
     m_AutoLoadDefines->SetValue(_option->getbDefineAutoLoad());
@@ -849,6 +934,7 @@ void OptionsDialog::InitializeDialog()
     m_CustomLanguage->SetValue(_option->getUseCustomLanguageFiles());
     m_ESCinScripts->SetValue(_option->getbUseESCinScripts());
     m_UseLogfile->SetValue(_option->getbUseLogFile());
+    m_UseExternalViewer->SetValue(_option->getUseExternalViewer());
     m_LoadPath->SetValue(_option->getLoadPath());
     m_SavePath->SetValue(_option->getSavePath());
     m_ScriptPath->SetValue(_option->getScriptPath());

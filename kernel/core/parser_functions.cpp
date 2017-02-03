@@ -696,7 +696,7 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
                         NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)((parser_iVars.vValue[0][0]-parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 100)) + " %");
                     }
                 }
-                if (GetAsyncKeyState(VK_ESCAPE))
+                if (NumeReKernel::GetAsyncCancelState())//GetAsyncKeyState(VK_ESCAPE))
                 {
                     NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + _lang.get("COMMON_CANCEL") + ".\n");
                     throw PROCESS_ABORTED_BY_USER;
@@ -1719,7 +1719,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
                         NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)((parser_iVars.vValue[0][0]-parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 100)) + " %");
                     }
                 }
-                if (GetAsyncKeyState(VK_ESCAPE))
+                if (NumeReKernel::GetAsyncCancelState())//GetAsyncKeyState(VK_ESCAPE))
                 {
                     NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + _lang.get("COMMON_CANCEL") + "!\n");
                     throw PROCESS_ABORTED_BY_USER;
@@ -4705,7 +4705,7 @@ string parser_Prompt(const string& __sCommand)
     while (sReturn.find("??") != string::npos);
 
     GetAsyncKeyState(VK_ESCAPE);
-
+    //NumeReKernel::GetAsyncCancelState();
     // --> Jetzt enthaelt der String sReturn "??" an keiner Stelle mehr und kann zurueckgegeben werden <--
     return sReturn;
 }

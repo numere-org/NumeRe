@@ -16,14 +16,16 @@
 
 #include "../common/datastructures.h"
 #include "../common/DebugEvent.h"
-#include <wx/fdrepdlg.h>
+#include "dialogs/fndrpldialog.hpp"
 #include <wx/treectrl.h>
 #include <wx/notebook.h>
-#include <wx/fswatcher.h>
+#include "../common/filewatcher.hpp"
 #include "wx/dnd.h"
 #include "../kernel/core/language.hpp"
 #include "../kernel/core/tools.hpp"
-#include <wx/tipdlg.h>
+#include "dialogs/tipdialog.hpp"
+#include "viewerframe.hpp"
+#include "filetree.hpp"
 
 // forward declarations
 
@@ -68,34 +70,6 @@ class DebugManager;
 class ChameleonProjectManager;
 
 
-class MyTipProvider : public wxTipProvider
-{
-    private:
-        std::vector<std::string> vTip;
-        unsigned int nth_tip;
-    public:
-        MyTipProvider(const std::vector<std::string>& vTipList) : wxTipProvider(vTipList.size())
-            {
-                vTip = vTipList;
-                unsigned int nth_tip = 0;
-                // --> Einen Seed (aus der Zeit generiert) an die rand()-Funktion zuweisen <--
-                srand(time(NULL));
-
-                if (!vTip.size())
-                    return;
-                // --> Die aktuelle Begruessung erhalten wir als modulo(nGreetings)-Operation auf rand() <--
-                nth_tip = (rand() % vTip.size());
-                if (nth_tip >= vTip.size())
-                    nth_tip = 0;
-            }
-        virtual wxString GetTip()
-            {
-                nth_tip++;
-                if (nth_tip >= vTip.size())
-                    nth_tip = 0;
-                return vTip[nth_tip];
-            }
-};
 
 //----------------------------------------------------------------------
 
@@ -144,6 +118,8 @@ class NumeReWindow : public wxFrame
 
         void OpenSourceFile(wxArrayString fnames, unsigned int nLine = 0);
         void openImage(wxFileName filename);
+        void openHTML(wxString HTMLcontent);
+        void openTable(const vector<vector<string> >& sTable, const string& sTableName);
 
         Networking* GetNetworking();
 
@@ -155,6 +131,8 @@ class NumeReWindow : public wxFrame
         void EvaluateOptions();
         void EvaluateCommandLine(wxArrayString& wxArgV);
         wxString getProgramFolder();
+
+        string m_UnrecoverableFiles;
 
     private:
         void InitializeProgramOptions();
@@ -246,8 +224,14 @@ class NumeReWindow : public wxFrame
         void UpdateMenuBar();
         void UpdateToolbar();
         void UpdateTerminalNotebook();
+        void UpdateWindowTitle(const wxString& filename);
         void toggleConsole();
+        void toggleFiletree();
         void showConsole();
+        void gotoLine();
+        void setEditorFocus();
+        void setViewerFocus();
+
 
         //void CleanupDropMenu();
 
@@ -263,9 +247,11 @@ class NumeReWindow : public wxFrame
         NumeReNotebook*  m_noteTerm;
         /*! Pointer to the currently active editor */
         NumeReEditor* m_currentEd;
+
+        ViewerFrame* m_currentView;
         /*! Displays the files in the current project */
-        wxTreeCtrl* m_projectTree;
-        wxFileSystemWatcher* m_watcher;
+        FileTree* m_projectTree;
+        Filewatcher* m_watcher;
         /*! The status bar */
         wxStatusBar* m_statusBar;
         //wxPanel* panelEd;
@@ -294,7 +280,7 @@ class NumeReWindow : public wxFrame
         // dialogs
         OptionsDialog*  m_optionsDialog;
         RemoteFileDialog* m_remoteFileDialog;
-        wxFindReplaceDialog *m_findReplace;
+        FindReplaceDialog* m_findReplace;
 
         /* Responsible for writing the Chameleon settings to the INI file */
         wxFileConfig* m_config;
@@ -342,11 +328,14 @@ class NumeReWindow : public wxFrame
         float fSplitPercentage;
 
         bool m_appClosing;
+        bool m_sessionSaved;
         bool m_setSelection;
         bool m_remoteMode;
         bool m_appStarting;
         bool m_currentlyDebugging;
         bool m_compileProject;
+        bool m_multiRowState;
+
 
         wxString m_filterNSCRFiles;
         wxString m_filterNPRCFiles;
@@ -355,6 +344,10 @@ class NumeReWindow : public wxFrame
         wxString m_filterDataFiles;
         wxString m_filterImageFiles;
         wxString m_filterAllFiles;
+        wxString m_filterTeXSource;
+        wxString m_filterNonsource;
+
+        wxString m_currentSavedFile;
 
         wxCHMHelpController* m_helpController;
 

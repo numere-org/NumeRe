@@ -40,6 +40,7 @@
 #include "core/procedure.hpp"
 #include "core/plugin.hpp"
 #include "core/language.hpp"
+#include "debugmessenger.hpp"
 // --> PARSER-HEADER <--
 #include "core/ParserLib/muParser.h"
 
@@ -48,10 +49,11 @@ using namespace mu;
 
 class wxTerm;
 
+typedef std::vector<std::vector<std::string> > stringmatrix;
+
 class NumeReKernel
 {
     private:
-        bool bCancelSignal;
         string sCommandLine;
         string sAnswer;
 
@@ -73,11 +75,16 @@ class NumeReKernel
         static wxTerm* m_parent;
         static int nLINE_LENGTH;
         static bool bWritingTable;
+        static bool bCancelSignal;
         static string sFileToEdit;
+        static string sDocumentation;
         static unsigned int nLineToGoTo;
         static int nLastStatusVal;
         static unsigned int nLastLineLength;
         static bool modifiedSettings;
+        static stringmatrix sTable;
+        static string sTableName;
+        static Debugmessenger _messenger;
         bool bSupressAnswer;
         ofstream oLogFile;
         // return values indicating status:
@@ -94,6 +101,8 @@ class NumeReKernel
             NUMERE_CALC_UPDATE,
             NUMERE_STATUSBAR_UPDATE,
             NUMERE_EDIT_FILE,
+            NUMERE_OPEN_DOC,
+            NUMERE_SHOW_TABLE,
             NUMERE_ANSWER_READ
         };
 
@@ -106,6 +115,7 @@ class NumeReKernel
         string ReadFileName();
         unsigned int ReadLineNumber();
         string ReadAnswer();
+        string ReadDoc();
         bool SettingsModified();
 
         void StartUp(wxTerm* _parent);
@@ -129,6 +139,9 @@ class NumeReKernel
         static void statusBar(int nStep, int nFirstStep, int nFinalStep, const string& sType);
         static void getline(string& sLine);
         static void gotoLine(const string& sFile, unsigned int nLine = 0);
+        static void setDocumentation(const string& _sDocumentation);
+        static bool GetAsyncCancelState();
+        static void showTable(string** __stable, size_t cols, size_t lines, string __name);
 };
 
 

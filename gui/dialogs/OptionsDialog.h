@@ -57,6 +57,11 @@ class NumeReWindow;
 #define ID_PASSWORD2 10011
 #define ID_PANELCOMPILER 10015
 #define ID_TEXTMINGWPATH 10014
+#define ID_BTN_LOADPATH 10030
+#define ID_BTN_SAVEPATH 10031
+#define ID_BTN_SCRIPTPATH 10032
+#define ID_BTN_PROCPATH 10033
+#define ID_BTN_PLOTPATH 10034
 #define ID_BTNFINDMINGW 10020
 #define ID_BUTTON1 10021
 #define ID_CHECKBOX1 10023
@@ -122,6 +127,8 @@ public:
 
     /// wxEVT_COMMAND_BUTTON_CLICKED event handler for ID_BUTTON_CANCEL
     void OnButtonCancelClick( wxCommandEvent& event );
+
+    void OnButtonClick(wxCommandEvent& event);
 
 ////@end OptionsDialog event handler declarations
 
@@ -194,6 +201,7 @@ public:
     wxCheckBox* m_CustomLanguage;
     wxCheckBox* m_ESCinScripts;
     wxCheckBox* m_UseLogfile;
+    wxCheckBox* m_UseExternalViewer;
     wxTextCtrl* m_LoadPath;
     wxTextCtrl* m_SavePath;
     wxTextCtrl* m_ScriptPath;
@@ -207,7 +215,7 @@ public:
     wxComboBox* m_printStyle;
     wxCheckBox* m_cbPrintLineNumbers;
     wxCheckBox* m_showToolbarText;
-    wxCheckBox* m_chkCombineWatchWindow;
+    wxCheckBox* m_saveSession;
     wxSpinCtrl* m_termHistory;
 ////@end OptionsDialog member variables
 

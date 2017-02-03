@@ -1,5 +1,5 @@
-/* XPM */ 
-static char * exe_xpm[] = {
+/* XPM */
+static const char * exe_xpm[] = {
 "16 16 147 2",
 "  	c None",
 "! 	c black",

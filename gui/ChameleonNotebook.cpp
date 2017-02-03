@@ -20,9 +20,11 @@
 BEGIN_EVENT_TABLE(NumeReNotebook, wxNotebook)
 //EVT_CONTEXT_MENU(ChameleonNotebook::TestMenu)
 	EVT_MIDDLE_UP	(NumeReNotebook::OnTabMiddleClicked)
-	EVT_RIGHT_UP	( NumeReNotebook::OnTabRightClicked)
-	EVT_SIZE(NumeReNotebook::OnSize)
-
+	EVT_RIGHT_UP	(NumeReNotebook::OnTabRightClicked)
+	EVT_MOUSEWHEEL  (NumeReNotebook::OnTabScroll)
+	EVT_ENTER_WINDOW(NumeReNotebook::OnEnter)
+	EVT_LEAVE_WINDOW(NumeReNotebook::OnLeave)
+	EVT_SIZE        (NumeReNotebook::OnSize)
 END_EVENT_TABLE()
 
 NumeReNotebook::NumeReNotebook(wxWindow* parent, wxWindowID id,
@@ -32,6 +34,7 @@ NumeReNotebook::NumeReNotebook(wxWindow* parent, wxWindowID id,
 									 const wxString& name /* = "notebook" */)
 :wxNotebook(parent, id, pos, size, style, name)
 {
+    m_mouseFocus = false;
 	//m_top_parent = static_cast<NumeReWindow*>(parent);//(NumeReWindow*)wxTheApp->GetTopWindow();
 }
 
@@ -86,6 +89,48 @@ void NumeReNotebook::OnTabRightClicked (wxMouseEvent &event)
 	wxMenu popupMenu;
 	popupMenu.Append(ID_CLOSETAB, _guilang.get("GUI_EDITOR_TAB_CLOSE"));
 	PopupMenu(&popupMenu, pt);
+}
+
+void NumeReNotebook::OnTabScroll(wxMouseEvent &event)
+{
+	wxPoint pt;
+	pt.x = event.GetX();
+	pt.y = event.GetY();
+
+	long flags = 0;
+	int pageNum = this->HitTest (pt, &flags);
+	if (pageNum < 0 || GetPageCount() <= 1)
+	{
+		return;
+	}
+	size_t currentPage = GetSelection();
+	if (event.GetWheelRotation() < 0)
+	{
+        if (currentPage + 1 == GetPageCount())
+            SetSelection(0);
+        else
+            SetSelection(currentPage+1);
+	}
+	else
+	{
+        if (!currentPage)
+            SetSelection(GetPageCount()-1);
+        else
+            SetSelection(currentPage-1);
+	}
+}
+
+void NumeReNotebook::OnEnter(wxMouseEvent& event)
+{
+    this->SetFocus();
+    m_mouseFocus = true;
+    event.Skip();
+}
+
+void NumeReNotebook::OnLeave(wxMouseEvent& event)
+{
+    m_mouseFocus = false;
+    event.Skip();
 }
 
 /*

@@ -1,5 +1,5 @@
 /* XPM */
-static char *stepover_xpm[] = {
+static const char *stepover_xpm[] = {
 "16 16 3 1",
 " 	c #C0C0C0",
 ".	c #4D4DA6",

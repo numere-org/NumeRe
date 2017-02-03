@@ -30,6 +30,8 @@ class wxTreeItemData;
 class FileNameTreeData : public wxTreeItemData
 {
     public:
+        FileNameTreeData() : isDir(false) {};
+        bool isDir;
         wxString filename;
 };
 

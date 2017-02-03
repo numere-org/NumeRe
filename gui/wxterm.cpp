@@ -128,6 +128,7 @@ BEGIN_EVENT_TABLE(wxTerm, wxWindow)
     EVT_LEFT_DOWN					(wxTerm::OnLeftDown)
     EVT_LEFT_UP					    (wxTerm::OnLeftUp)
     EVT_MOTION					    (wxTerm::OnMouseMove)
+    EVT_ENTER_WINDOW                (wxTerm::OnEnter)
     EVT_TIMER						(-1, wxTerm::OnTimer)
 
     EVT_KEY_DOWN                    (wxTerm::OnKeyDown)
@@ -171,6 +172,20 @@ wxTerm::wxTerm(wxWindow* parent, wxWindowID id,
         m_timer.Start(m_curBlinkRate);
 
     m_boldStyle = FONT;
+    int w, h;
+
+    /*
+    **  Determine window size from current font
+    */
+    wxClientDC
+    dc(this);
+
+    if(m_boldStyle != FONT)
+        dc.SetFont(m_normalFont);
+    else
+        dc.SetFont(m_boldFont);
+    dc.GetTextExtent("M", &m_charWidth, &h); // EKHL: Changed because Heigth made no sense
+    dc.GetTextExtent("My", &w, &m_charHeight);
 
     GetDefVTColors(m_vt_colors);
     GetDefPCColors(m_pc_colors);
@@ -305,6 +320,8 @@ wxThread::ExitCode wxTerm::Entry()
                 wxQueueEvent(GetEventHandler(), new wxThreadEvent());
                 continue;
             }
+            if (bCommandAvailable)
+                NumeReKernel::_messenger = _guimessenger;
         }
         if (bCommandAvailable) // A command is available
         {
@@ -348,7 +365,10 @@ wxThread::ExitCode wxTerm::Entry()
 void wxTerm::EndKernelTask()
 {
     if (GetThread() && GetThread()->IsRunning())
+    {
+        erase_line();
         GetThread()->Delete();
+    }
 }
 
 void wxTerm::OnClose(wxCloseEvent& event)
@@ -363,7 +383,10 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
 {
     bool Closing = false;
     bool changedSettings = false;
+    bool openDoc = false;
+    bool done = false;
     string sFileName = "";
+    stringmatrix sTable;
     unsigned int nLineNumber = 0;
     string sAnswer = "";
     {
@@ -376,15 +399,27 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
             // fallthrough is intended
             case NumeReKernel::NUMERE_DONE:
                 sAnswer = "|-> " + m_sAnswer + "\n|\n|<- ";
+                done = true;
                 break;
             case NumeReKernel::NUMERE_ERROR:
             case NumeReKernel::NUMERE_DONE_KEYWORD:
                 sAnswer = m_sAnswer + "|\n|<- ";
+                done = true;
                 break;
             case NumeReKernel::NUMERE_EDIT_FILE:
                 sAnswer = m_sAnswer;//+ "|\n|<- ";
                 sFileName = _kernel.ReadFileName();
                 nLineNumber = _kernel.ReadLineNumber();
+                break;
+            case NumeReKernel::NUMERE_OPEN_DOC:
+                sAnswer = m_sAnswer;//+ "|\n|<- ";
+                sFileName = _kernel.ReadDoc();
+                openDoc = true;
+                break;
+            case NumeReKernel::NUMERE_SHOW_TABLE:
+                sAnswer = m_sAnswer;//+ "|\n|<- ";
+                sTable = NumeReKernel::sTable;
+                sFileName = NumeReKernel::sTableName;
                 break;
             case NumeReKernel::NUMERE_PENDING:
                 sAnswer = "|<- ";
@@ -400,13 +435,27 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
         changedSettings = _kernel.SettingsModified();
         m_KernelStatus = NumeReKernel::NUMERE_ANSWER_READ;
     }
+    if (done)
+    {
+        wxToolBar* tb = m_wxParent->GetToolBar();
+		tb->EnableTool(ID_DEBUG_START, true);
+		tb->EnableTool(ID_DEBUG_STOP, false);
+    }
     if (Closing)
     {
         wxMilliSleep(300);
         m_wxParent->Close();
         return;
     }
-    if (sFileName.length())
+    if (sTable.size())
+    {
+        m_wxParent->openTable(sTable, sFileName);
+    }
+    else if (openDoc)
+    {
+        m_wxParent->openHTML(sFileName);
+    }
+    else if (sFileName.length())
     {
         if (sFileName.find(".png") != string::npos
             || sFileName.find(".jpg") != string::npos
@@ -796,6 +845,13 @@ void wxTerm::pass_command(const string& command)
     m_bCommandAvailable = true;
 }
 
+void wxTerm::CancelCalculation()
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    //next_line();
+    _kernel.CancelCalculation();
+}
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnChar
 ///  Handles user keyboard input and begins processing the server's response
@@ -907,9 +963,11 @@ wxTerm::OnChar(wxKeyEvent& event)
         else if (keyCode == WXK_BACK)
         {
             GTerm::resetAutoComp();
-            GTerm::bs();
-            GTerm::update_changes();
-            Refresh();
+            if (GTerm::bs())
+            {
+                GTerm::update_changes();
+                Refresh();
+            }
             return;
         }
         else if (keyCode == WXK_TAB)
@@ -947,6 +1005,22 @@ wxTerm::OnChar(wxKeyEvent& event)
         {
             GTerm::resetAutoComp();
             GTerm::cursor_down();
+            GTerm::update_changes();
+            Refresh();
+            return;
+        }
+        else if (keyCode == WXK_HOME)
+        {
+            GTerm::resetAutoComp();
+            GTerm::home();
+            GTerm::update_changes();
+            Refresh();
+            return;
+        }
+        else if (keyCode == WXK_END)
+        {
+            GTerm::resetAutoComp();
+            GTerm::end();
             GTerm::update_changes();
             Refresh();
             return;
@@ -1139,7 +1213,6 @@ wxTerm::OnLeftUp(wxMouseEvent& event)
 void
 wxTerm::OnMouseMove(wxMouseEvent& event)
 {
-
     if(m_selecting)
     {
         m_selx2 = event.GetX() / m_charWidth;
@@ -1155,6 +1228,13 @@ wxTerm::OnMouseMove(wxMouseEvent& event)
             MarkSelection();
         Refresh();
     }
+}
+
+
+void wxTerm::OnEnter(wxMouseEvent& event)
+{
+    this->SetFocus();
+    event.Skip();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1844,7 +1924,7 @@ void wxTerm::UpdateSize()
     }
 
     m_inUpdateSize = false;
-
+    Refresh();
     if(dc)
     {
         delete dc;
@@ -1882,7 +1962,8 @@ wxTerm::ResizeTerminal(int width, int height)
         dc.SetFont(m_normalFont);
     else
         dc.SetFont(m_boldFont);
-    dc.GetTextExtent("M", &m_charWidth, &m_charHeight);
+    dc.GetTextExtent("M", &m_charWidth, &h); // EKHL: Changed because Heigth made no sense
+    dc.GetTextExtent("My", &w, &m_charHeight);
     w = width * m_charWidth;
     h = height * m_charHeight;
 
@@ -2151,9 +2232,8 @@ void wxTerm::OnLoseFocus(wxFocusEvent &event)
 //////////////////////////////////////////////////////////////////////////////
 void wxTerm::ScrollTerminal(int numLines, bool scrollUp /* = true */)
 {
-    GTerm::Scroll(numLines, scrollUp);
-    Refresh();
-
+    if (GTerm::Scroll(numLines, scrollUp))
+        Refresh();
 }
 
 //////////////////////////////////////////////////////////////////////////////

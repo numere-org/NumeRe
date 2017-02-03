@@ -403,7 +403,7 @@ bool Odesolver::solve(const string& sCmd)
         {
             NumeReKernel::printPreFmt(toSystemCodePage("\r|-> " + _lang.get("ODESOLVER_SOLVE_SYSTEM") + " ... " + toString((int)(i*100.0/(double)nSamples)) + " %"));
         }
-        if (GetAsyncKeyState(VK_ESCAPE))
+        if (NumeReKernel::GetAsyncCancelState())//GetAsyncKeyState(VK_ESCAPE))
         {
             NumeReKernel::printPreFmt(" " + toSystemCodePage(_lang.get("COMMON_CANCEL")) + ".\n");
             gsl_odeiv_evolve_free(odeEvolve);

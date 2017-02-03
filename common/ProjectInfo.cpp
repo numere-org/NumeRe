@@ -143,18 +143,20 @@ wxArrayString* ProjectInfo::SelectStringArray(FileFilterType filterType)
 {
 	switch(filterType)
 	{
-	case FILE_NSCR:
-		return &m_sourceFiles;
-	case FILE_NPRC:
-		return &m_headerFiles;
-	case FILE_DATAFILES:
-		return &m_libraryFiles;
-	case FILE_NONSOURCE:
-		return &m_nonSourceFiles;
+        case FILE_NSCR:
+            return &m_sourceFiles;
+        case FILE_NPRC:
+            return &m_headerFiles;
+        case FILE_DATAFILES:
+            return &m_libraryFiles;
+        case FILE_NONSOURCE:
+            return &m_nonSourceFiles;
+        default:
+            return nullptr;
 	}
 	// shouldn't ever get here, just eliminating the "not all code paths
 	// return a value" warning
-	return NULL;
+	return nullptr;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -171,17 +173,19 @@ BoolArray* ProjectInfo::SelectBoolArray(FileFilterType filterType)
 {
 	switch(filterType)
 	{
-	case FILE_NSCR:
-		return &m_sourcesEnabled;
-	case FILE_NPRC:
-		return &m_headersEnabled;
-	case FILE_DATAFILES:
-		return &m_librariesEnabled;
-	case FILE_NONSOURCE:
-		return &m_nonSourcesEnabled;
+        case FILE_NSCR:
+            return &m_sourcesEnabled;
+        case FILE_NPRC:
+            return &m_headersEnabled;
+        case FILE_DATAFILES:
+            return &m_librariesEnabled;
+        case FILE_NONSOURCE:
+            return &m_nonSourcesEnabled;
+        default:
+            return nullptr;
 	}
 	// shouldn't ever get here
-	return NULL;
+	return nullptr;
 }
 
 //////////////////////////////////////////////////////////////////////////////

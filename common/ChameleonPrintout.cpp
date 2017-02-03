@@ -15,7 +15,7 @@
 extern wxPrintData *g_printData;
 extern wxPageSetupData *g_pageSetupData;
 
-NumeRePrintout::NumeRePrintout (NumeReEditor *edit, Options* options, wxChar *title)
+NumeRePrintout::NumeRePrintout (NumeReEditor *edit, Options* options, const wxString& title)
 : wxPrintout(title) {
 	m_edit = edit;
 	m_printed = 0;
