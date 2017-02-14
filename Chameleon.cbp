@@ -228,6 +228,8 @@
 		<Unit filename="common/chameleonprocessevent.h" />
 		<Unit filename="common/datastructures.h" />
 		<Unit filename="common/debug.h" />
+		<Unit filename="common/filewatcher.cpp" />
+		<Unit filename="common/filewatcher.hpp" />
 		<Unit filename="common/fixvsbug.h" />
 		<Unit filename="common/options.cpp" />
 		<Unit filename="common/recycler.cpp" />
@@ -283,6 +285,10 @@
 		<Unit filename="gui/helpviewer.hpp" />
 		<Unit filename="gui/imagepanel.cpp" />
 		<Unit filename="gui/imagepanel.hpp" />
+		<Unit filename="gui/tableeditpanel.cpp" />
+		<Unit filename="gui/tableeditpanel.hpp" />
+		<Unit filename="gui/tableviewer.cpp" />
+		<Unit filename="gui/tableviewer.hpp" />
 		<Unit filename="gui/viewerbook.cpp" />
 		<Unit filename="gui/viewerbook.hpp" />
 		<Unit filename="gui/viewerframe.cpp" />

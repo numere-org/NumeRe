@@ -50,6 +50,7 @@ bool NumeReKernel::bCancelSignal = false;
 stringmatrix NumeReKernel::sTable;
 string NumeReKernel::sTableName = "";
 Debugmessenger NumeReKernel::_messenger;
+bool NumeReKernel::bSupressAnswer = false;
 
 typedef BOOL (WINAPI *LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
 bool IsWow64()
@@ -90,7 +91,6 @@ NumeReKernel::NumeReKernel()
     sCommandLine.clear();
     sAnswer.clear();
 
-    bSupressAnswer = false;
     //oLogFile.open();
 
     //StartUp();
@@ -733,6 +733,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     sLine = sKeep;
                     sKeep = "";
                 }
+
             }
             if ((sCmdCache.length() || sLine.find(';') != string::npos) && !_procedure.is_writing() && findCommand(sLine).sString != "procedure")
             {
@@ -902,7 +903,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                             if (_procedure.getLoop() > 1)
                                 printPreFmt("--");
                         }
-                        printPreFmt(strfill("> ", 2*_procedure.getLoop()-2, '-'));
+                        printPreFmt(strfill("> ", 2*_procedure.getLoop(), '-'));
                         //cerr << std::setfill('-') << std::setw(2*_procedure.getLoop()-2) << "> ";
                     }
                     else if (_procedure.is_writing())
@@ -1185,7 +1186,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                             if (_procedure.getLoop() > 1)
                                 printPreFmt("--");
                         }
-                        printPreFmt(strfill("> ", 2*_procedure.getLoop()-2, '-'));
+                        printPreFmt(strfill("> ", 2*_procedure.getLoop(), '-'));
                         //cerr << std::setfill('-') << std::setw(2*_procedure.getLoop()-2) << "> ";
                     }
                     else if (_procedure.is_writing())
@@ -1906,8 +1907,10 @@ void NumeReKernel::printResult(const string& sLine, const string& sCmdCache, boo
 {
     if (!m_parent)
         return;
-    if (sCmdCache.length() || bScriptRunning)
+    if (sCmdCache.length() || bScriptRunning )
     {
+        if (bSupressAnswer)
+            return;
         {
             wxCriticalSectionLocker lock(m_parent->m_kernelCS);
             m_parent->m_sAnswer += "|-> " + sLine + "\n";
@@ -1942,7 +1945,7 @@ void NumeReKernel::print(const string& sLine)
 // This is the virtual cout function. The port from the kernel of course needs some tweaking
 void NumeReKernel::printPreFmt(const string& sLine)
 {
-    if (!m_parent)
+    if (!m_parent || bSupressAnswer)
         return;
     else
     {
@@ -2149,7 +2152,7 @@ void NumeReKernel::setDocumentation(const string& _sDocumentation)
     Sleep(100);
 }
 
-void NumeReKernel::showTable(string** __stable, size_t cols, size_t lines, string __name)
+void NumeReKernel::showTable(string** __stable, size_t cols, size_t lines, string __name, bool openeditable)
 {
     if (!m_parent)
         return;
@@ -2166,10 +2169,37 @@ void NumeReKernel::showTable(string** __stable, size_t cols, size_t lines, strin
             }
         }
         sTableName = __name;
-        m_parent->m_KernelStatus = NUMERE_SHOW_TABLE;
+        if (openeditable)
+            m_parent->m_KernelStatus = NUMERE_EDIT_TABLE;
+        else
+            m_parent->m_KernelStatus = NUMERE_SHOW_TABLE;
     }
     wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
     Sleep(100);
+}
+
+stringmatrix NumeReKernel::getTable()
+{
+    if (!m_parent)
+        return stringmatrix();
+    bool bHasTable = false;
+    bool bWasCanceled = false;
+    do
+    {
+        Sleep(100);
+        {
+            wxCriticalSectionLocker lock(m_parent->m_kernelCS);
+            bHasTable = m_parent->m_bTableEditAvailable;
+            bWasCanceled = m_parent->m_bTableEditCanceled;
+            m_parent->m_bTableEditAvailable = false;
+            m_parent->m_bTableEditCanceled = false;
+        }
+    }
+    while (!bHasTable && !bWasCanceled);
+
+    if (bWasCanceled)
+        return stringmatrix();
+    return sTable;
 }
 
 void NumeReKernel::getline(string& sLine)
@@ -2179,6 +2209,7 @@ void NumeReKernel::getline(string& sLine)
     bool bgotline = false;
     do
     {
+        Sleep(100);
         {
             wxCriticalSectionLocker lock(m_parent->m_kernelCS);
             bgotline = m_parent->m_bCommandAvailable;
@@ -2186,7 +2217,6 @@ void NumeReKernel::getline(string& sLine)
             m_parent->m_bCommandAvailable = false;
             m_parent->m_sCommandLine.clear();
         }
-        Sleep(100);
     }
     while (!bgotline);
     StripSpaces(sLine);

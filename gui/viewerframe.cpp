@@ -23,6 +23,7 @@ BEGIN_EVENT_TABLE(ViewerFrame, wxFrame)
     EVT_KEY_DOWN        (ViewerFrame::OnKeyDown)
     EVT_SET_FOCUS       (ViewerFrame::OnFocus)
     EVT_ENTER_WINDOW    (ViewerFrame::OnEnter)
+    EVT_CLOSE           (ViewerFrame::OnClose)
 END_EVENT_TABLE()
 
 void ViewerFrame::OnKeyDown(wxKeyEvent& event)
@@ -48,3 +49,11 @@ void ViewerFrame::OnEnter(wxMouseEvent& event)
         this->SetFocus();
     event.Skip();
 }
+
+void ViewerFrame::OnClose(wxCloseEvent& event)
+{
+    if (this->GetChildren().size())
+        this->GetChildren().front()->Close();
+    event.Skip();
+}
+

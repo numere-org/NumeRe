@@ -182,9 +182,9 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
                 dKurt += (_data.getElement(i,j,sDatatable)-dAverage)*(_data.getElement(i,j,sDatatable)-dAverage)*(_data.getElement(i,j,sDatatable)-dAverage)*(_data.getElement(i,j,sDatatable)-dAverage);
 			}
 
-			dSkew /= _data.num(sDatatable,0,nLine,j);
+			dSkew /= _data.num(sDatatable,0,nLine,j) / (dError*dError*dError);
+			dKurt /= _data.num(sDatatable,0,nLine,j) / (dError*dError*dError*dError);
 			dKurt -= 3;
-			dKurt /= _data.num(sDatatable,0,nLine,j);
 
 			sOut[nLine+1][j] = "<<SUMBAR>>"; // Schreiben der berechneten Werte in die letzten drei Zeilen der Ausgabe
 			sOut[nLine+2][j] = _lang.get("STATS_TYPE_AVG") + ": " + toString(dAverage, nPrecision);

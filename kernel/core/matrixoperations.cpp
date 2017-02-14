@@ -20,7 +20,7 @@
 #include "../kernel.hpp"
 
 
-extern bool bSupressAnswer;
+//extern bool bSupressAnswer;
 
 Matrix parser_matrixMultiplication(const Matrix& _mLeft, const Matrix& _mRight)
 {
@@ -2115,7 +2115,7 @@ Matrix parser_getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _
 
 void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _option)
 {
-    if (!_option.getSystemPrintStatus() || bSupressAnswer)
+    if (!_option.getSystemPrintStatus() || NumeReKernel::bSupressAnswer)
         return;
     //(_option.getWindow()-1-15) / (_option.getPrecision()+9) _mResult.size() > (_option.getWindow()-1-15) / (4+9)
     if (_mResult.size() > 10)

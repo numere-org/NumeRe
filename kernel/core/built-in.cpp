@@ -177,7 +177,7 @@ void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string
         {
             throw NO_DATA_AVAILABLE;
         }
-        int nHeadlineCount = 1;
+        /*int nHeadlineCount = 1;
         if (_option.getUseExternalViewer())
             _out.setCompact(false);
         if (!_out.isCompact())
@@ -195,11 +195,12 @@ void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string
                 if (nLinebreak+1 > nHeadlineCount)
                     nHeadlineCount = nLinebreak+1;
             }
-        }
-		long long int nLine = _data.getLines(sCache)+nHeadlineCount;		// Wir muessen Zeilen fuer die Kopfzeile hinzufuegen
-		long long int nCol = _data.getCols(sCache);
-		if (!nCol || nLine == 1)
-            throw NO_CACHED_DATA;
+        }*/
+		long long int nLine = 0;// = _data.getLines(sCache)+nHeadlineCount;		// Wir muessen Zeilen fuer die Kopfzeile hinzufuegen
+		long long int nCol = 0;// = _data.getCols(sCache);
+		int nHeadlineCount = 0;
+		/*if (!nCol || nLine == 1)
+            throw NO_CACHED_DATA;*/
 
 		if (_option.getbDebug())
 			NumeReKernel::print("DEBUG: nLine = " + toString(nLine) + ", nCol = " + toString(nCol) );
@@ -236,8 +237,8 @@ void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string
             _out.reset();
             return;
 		}
-		string** sOut = new string*[nLine];		// die eigentliche Ausgabematrix. Wird spaeter gefuellt an Output::format(string**,int,int,Output&) uebergeben
-		for (long long int i = 0; i < nLine; i++)
+		string** sOut = BI_make_stringmatrix(_data, _out, _option, sCache, nLine, nCol, nHeadlineCount, bSave);// = new string*[nLine];		// die eigentliche Ausgabematrix. Wird spaeter gefuellt an Output::format(string**,int,int,Output&) uebergeben
+		/*for (long long int i = 0; i < nLine; i++)
 		{
 			sOut[i] = new string[nCol];			// Vollstaendig Allozieren!
 		}
@@ -287,7 +288,7 @@ void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string
 				else
                     sOut[i][j] = toString(_data.getElement(i-nHeadlineCount,j, sCache),_option);		// Daten aus _data in die Ausgabematrix uebertragen
 			}
-		}
+		}*/
 
 
 		if (_data.getCacheStatus() && !bSave)
@@ -335,6 +336,90 @@ void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string
             throw NO_DATA_AVAILABLE;
 	}
 	return;
+}
+
+string** BI_make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, const string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, bool bSave)
+{
+    nHeadlineCount = 1;
+    if (_option.getUseExternalViewer())
+        _out.setCompact(false);
+    if (!_out.isCompact())
+    {
+        for (long long int j = 0; j < _data.getCols(sCache); j++)
+        {
+            if (_data.getHeadLineElement(j, sCache).find("\\n") == string::npos)
+                continue;
+            int nLinebreak = 0;
+            for (unsigned int n = 0; n < _data.getHeadLineElement(j, sCache).length()-2; n++)
+            {
+                if (_data.getHeadLineElement(j, sCache).substr(n,2) == "\\n")
+                    nLinebreak++;
+            }
+            if (nLinebreak+1 > nHeadlineCount)
+                nHeadlineCount = nLinebreak+1;
+        }
+    }
+    nLines = _data.getLines(sCache)+nHeadlineCount;		// Wir muessen Zeilen fuer die Kopfzeile hinzufuegen
+    nCols = _data.getCols(sCache);
+    if (!nCols || nLines == 1)
+        throw NO_CACHED_DATA;
+
+    if (_option.getbDebug())
+        NumeReKernel::print("DEBUG: nLine = " + toString(nLines) + ", nCol = " + toString(nCols) );
+
+    string** sOut = new string*[nLines];		// die eigentliche Ausgabematrix. Wird spaeter gefuellt an Output::format(string**,int,int,Output&) uebergeben
+    for (long long int i = 0; i < nLines; i++)
+    {
+        sOut[i] = new string[nCols];			// Vollstaendig Allozieren!
+    }
+
+    for (long long int i = 0; i < nLines; i++)
+    {
+        for (long long int j = 0; j < nCols; j++)
+        {
+            if (!i)						// Erste Zeile? -> Kopfzeilen uebertragen
+            {
+                if (_out.isCompact())
+                    sOut[i][j] = _data.getTopHeadLineElement(j, sCache);
+                else
+                    sOut[i][j] = _data.getHeadLineElement(j, sCache);
+                if (_out.isCompact() && (int)sOut[i][j].length() > 11 && !bSave)
+                {
+                    //sOut[i][j].replace(4, sOut[i][j].length()-9, "...");
+                    sOut[i][j].replace(8, string::npos, "...");
+                }
+                else if (nHeadlineCount > 1 && sOut[i][j].find("\\n") != string::npos)
+                {
+                    string sHead = sOut[i][j];
+                    int nCount = 0;
+                    for (unsigned int n = 0; n < sHead.length(); n++)
+                    {
+                        if (sHead.substr(n,2) == "\\n")
+                        {
+                            sOut[i+nCount][j] = sHead.substr(0,n);
+                            sHead.erase(0,n+2);
+                            n = 0;
+                            nCount++;
+                        }
+                    }
+                    sOut[i+nCount][j] = sHead;
+                }
+                if (j == nCols-1)
+                    i = nHeadlineCount-1;
+                continue;
+            }
+            if (!_data.isValidEntry(i-nHeadlineCount,j, sCache))
+            {
+                sOut[i][j] = "---";			// Nullzeile? -> Da steht ja in Wirklichkeit auch kein Wert drin...
+                continue;
+            }
+            if (_out.isCompact() && !bSave)
+                sOut[i][j] = toString(_data.getElement(i-nHeadlineCount,j, sCache), 4);		// Daten aus _data in die Ausgabematrix uebertragen
+            else
+                sOut[i][j] = toString(_data.getElement(i-nHeadlineCount,j, sCache),_option);		// Daten aus _data in die Ausgabematrix uebertragen
+        }
+    }
+    return sOut;
 }
 
 // 4. Sehr spannend: Einzelne Datenreihen zu einer einzelnen Tabelle verknuepfen
@@ -8251,7 +8336,7 @@ bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _op
         _fSys.setPath(_option.getExePath(), false, _option.getExePath());
         sObject = _fSys.ValidFileName(sObject, ".dat");
     }
-    else
+    else if (!_data.containsCacheElements(sObject))
     {
         if (sObject.find('.') == string::npos && (sObject.find('/') != string::npos || sObject.find('\\') != string::npos))
         {
@@ -8298,9 +8383,85 @@ bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _op
     }
     if (_option.getbDebug())
         NumeReKernel::print("DEBUG: sObject = " + sObject );
-    if (sObject.find('.') == string::npos && (sObject.find('/') != string::npos || sObject.find('\\') != string::npos))
+    if (!_data.containsCacheElements(sObject) && sObject.find('.') == string::npos && (sObject.find('/') != string::npos || sObject.find('\\') != string::npos))
     {
         ShellExecute(NULL,NULL,sObject.c_str(),NULL,NULL,SW_SHOWNORMAL);
+        return true;
+    }
+    if (_data.containsCacheElements(sObject))
+    {
+        StripSpaces(sObject);
+        Indices _idx = parser_getIndices(sObject, _parser, _data, _option);
+        string sTableName = sObject.substr(0,sObject.find('('));
+        long long int nLine = 0;
+        long long int nCol = 0;
+        int nHeadlineCount = 0;
+        Output _out;
+        _out.setCompact(false);
+        string** sTable = 0;
+        if (!_data.getCols(sTableName))
+        {
+            sTable = new string*[2];
+            for (size_t i = 0; i < 2; i++)
+                sTable[i] = new string[1];
+            nLine = 2;
+            nCol = 1;
+            sTable[0][0] = "Spalte_1";
+            sTable[1][0] = "";
+        }
+        else
+        {
+            sTable = BI_make_stringmatrix(_data, _out, _option, sTableName, nLine, nCol, nHeadlineCount);
+        }
+        stringmatrix _sTable;
+        NumeReKernel::showTable(sTable, nCol, nLine, sTableName, true);
+        NumeReKernel::printPreFmt("|-> "+_lang.get("BUILTIN_WAITINGFOREDIT") + " ... ");
+        for (size_t i = 0; i < nLine; i++)
+        {
+            delete[] sTable[i];
+        }
+        delete[] sTable;
+        sTable = 0;
+        _sTable = NumeReKernel::getTable();
+        NumeReKernel::printPreFmt(_lang.get("COMMON_DONE") + ".\n");
+        if (!_sTable.size())
+            return true;
+
+        if (_data.getCols(sTableName))
+            _data.deleteBulk(sTableName, 0, _data.getLines(sTableName, true)-1, 0, _data.getCols(sTableName, true)-1);
+
+        size_t nFirstRow = 0;
+        while (_sTable[nFirstRow][0].front() == '#' && nFirstRow < _sTable.size())
+            nFirstRow++;
+
+        for (size_t i = nFirstRow; i < _sTable.size(); i++)
+        {
+            for (size_t j = 0; j < _sTable[i].size(); j++)
+            {
+                if (_sTable[i][j] == "---"
+                    || toLowerCase(_sTable[i][j]) == "nan"
+                    || toLowerCase(_sTable[i][j]) == "inf"
+                    || toLowerCase(_sTable[i][j]) == "-inf")
+                    continue;
+                _data.writeToCache(i-nFirstRow, j, sTableName, StrToDb(_sTable[i][j]));
+            }
+        }
+        for (size_t i = 0; i < nFirstRow; i++)
+        {
+            for (size_t j = 0; j < _sTable[i].size(); j++)
+            {
+                if (!j)
+                    _sTable[i][j].erase(0, 1);
+                if (!i && _sTable[i][j].length())
+                    _data.setHeadLineElement(j, sTableName, _sTable[i][j]);
+                else
+                {
+                    if (_sTable[i][j].length())
+                        _data.setHeadLineElement(j, sTableName, _data.getHeadLineElement(j, sTableName) + "\\n" + _sTable[i][j]);
+                }
+            }
+        }
+
         return true;
     }
     if (!BI_FileExists(sObject) || sObject.find('.') == string::npos)

@@ -22,7 +22,7 @@
 #include "../kernel.hpp"
 
 extern value_type vAns;
-extern bool bSupressAnswer;
+//extern bool bSupressAnswer;
 
 Loop::Loop()
 {
@@ -3123,23 +3123,23 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
     if (!bLockedPauseMode && bUseLoopParsingMode)
         _parser.PauseLoopMode();
     {
-        bool bSupressAnswer_back = bSupressAnswer;
-        bSupressAnswer = bLoopSupressAnswer;
+        bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
+        NumeReKernel::bSupressAnswer = bLoopSupressAnswer;
         switch (BI_CheckKeyword(sLine, _data, _out, _option, _parser, _functions, _pData, _script, true))
         {
             case  0: break;
             case  1:
                 SetConsTitle(_data, _option);
-                bSupressAnswer = bSupressAnswer_back;
+                NumeReKernel::bSupressAnswer = bSupressAnswer_back;
                 return 1;
             case -1:
-                bSupressAnswer = bSupressAnswer_back;
+                NumeReKernel::bSupressAnswer = bSupressAnswer_back;
                 return 1;
             case  2:
-                bSupressAnswer = bSupressAnswer_back;
+                NumeReKernel::bSupressAnswer = bSupressAnswer_back;
                 return 1;
         }
-        bSupressAnswer = bSupressAnswer_back;
+        NumeReKernel::bSupressAnswer = bSupressAnswer_back;
     }
     if (!bLockedPauseMode && bUseLoopParsingMode)
         _parser.PauseLoopMode(false);

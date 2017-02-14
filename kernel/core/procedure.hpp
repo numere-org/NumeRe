@@ -46,7 +46,7 @@
 using namespace std;
 using namespace mu;
 
-extern bool bSupressAnswer;
+//extern bool bSupressAnswer;
 
 class Procedure : /*public FileSystem,*/ public Loop, public Plugin
 {
