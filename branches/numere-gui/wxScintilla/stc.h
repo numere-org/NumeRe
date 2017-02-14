@@ -494,6 +494,7 @@ class WXDLLIMPEXP_FWD_CORE wxScrollBar;
 #define wxSTC_LEX_VISUALPROLOG 107
 #define wxSTC_LEX_NSCR 108
 #define wxSTC_LEX_NPRC 109
+#define wxSTC_LEX_TXTADV 110
 
 /// When a lexer specifies its language as SCLEX_AUTOMATIC it receives a
 /// value assigned in sequence from SCLEX_AUTOMATIC+1.
@@ -2201,6 +2202,8 @@ class WXDLLIMPEXP_FWD_CORE wxScrollBar;
 #define wxSTC_NSCR_INCLUDES 15
 #define wxSTC_NSCR_NUMBERS 16
 #define wxSTC_NSCR_CUSTOM_FUNCTION 17
+#define wxSTC_NSCR_INSTALL 18
+#define wxSTC_NSCR_PROCEDURE_COMMANDS 19
 
 /// Lexical states for SCLEX_NPRC
 #define wxSTC_NPRC_DEFAULT 0
@@ -2222,6 +2225,18 @@ class WXDLLIMPEXP_FWD_CORE wxScrollBar;
 #define wxSTC_NPRC_NUMBERS 16
 #define wxSTC_NPRC_CUSTOM_FUNCTION 17
 #define wxSTC_NPRC_FLAGS 18
+
+/// Lexical states for SCLEX_TXTADV
+#define wxSTC_TXTADV_DEFAULT 0
+#define wxSTC_TXTADV_MODIFIER 1
+#define wxSTC_TXTADV_ITALIC 2
+#define wxSTC_TXTADV_BOLD 3
+#define wxSTC_TXTADV_BOLD_ITALIC 4
+#define wxSTC_TXTADV_UNDERLINE 5
+#define wxSTC_TXTADV_STRIKETHROUGH 6
+#define wxSTC_TXTADV_URL 7
+#define wxSTC_TXTADV_HEAD 8
+#define wxSTC_TXTADV_BIGHEAD 9
 
 //}}}
 //----------------------------------------------------------------------

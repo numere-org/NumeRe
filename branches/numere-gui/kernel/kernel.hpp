@@ -85,7 +85,7 @@ class NumeReKernel
         static stringmatrix sTable;
         static string sTableName;
         static Debugmessenger _messenger;
-        bool bSupressAnswer;
+        static bool bSupressAnswer;
         ofstream oLogFile;
         // return values indicating status:
         enum KernelStatus
@@ -103,6 +103,7 @@ class NumeReKernel
             NUMERE_EDIT_FILE,
             NUMERE_OPEN_DOC,
             NUMERE_SHOW_TABLE,
+            NUMERE_EDIT_TABLE,
             NUMERE_ANSWER_READ
         };
 
@@ -141,7 +142,8 @@ class NumeReKernel
         static void gotoLine(const string& sFile, unsigned int nLine = 0);
         static void setDocumentation(const string& _sDocumentation);
         static bool GetAsyncCancelState();
-        static void showTable(string** __stable, size_t cols, size_t lines, string __name);
+        static void showTable(string** __stable, size_t cols, size_t lines, string __name, bool openeditable = false);
+        static stringmatrix getTable();
 };
 
 

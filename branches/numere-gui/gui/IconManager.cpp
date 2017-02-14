@@ -27,7 +27,8 @@ IconManager::IconManager(const wxString& programPath)
 	m_iconExtensionMapping["FOLDERCLOSED"] = m_images->GetImageCount();
 	m_images->Add(closedfolder);
 
-	wxBitmap openfolder(openfolder16x1632bpp_xpm);
+	//wxBitmap openfolder(openfolder16x1632bpp_xpm);
+	wxIcon openfolder(programPath + "\\icons\\folder.ico", wxBITMAP_TYPE_ICO, 16,16);
 	m_iconExtensionMapping["FOLDEROPEN"] = m_images->GetImageCount();
 	m_images->Add(openfolder);
 
@@ -35,6 +36,10 @@ IconManager::IconManager(const wxString& programPath)
 	m_iconExtensionMapping["nscr"] = m_images->GetImageCount();
 	m_iconExtensionMapping[".nscr"] = m_images->GetImageCount();
 	m_images->Add(NSCR);
+
+	wxIcon ICON(programPath + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO, 16,16);
+	m_iconExtensionMapping["WORKPLACE"] = m_images->GetImageCount();
+	m_images->Add(ICON);
 
 	wxIcon NPRC(programPath + "\\icons\\nprc.ico", wxBITMAP_TYPE_ICO, 16,16);
 	m_iconExtensionMapping["nprc"] = m_images->GetImageCount();

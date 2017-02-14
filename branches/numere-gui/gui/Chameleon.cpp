@@ -60,6 +60,7 @@
 #include "imagepanel.hpp"
 #include "helpviewer.hpp"
 #include "tableviewer.hpp"
+#include "tableeditpanel.hpp"
 
 
 #include <wx/msw/helpchm.h>
@@ -318,7 +319,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	InitializeProgramOptions();
 
 
-	wxFileName plinkPath(wxGetCwd(), "plink.exe");
+	/*wxFileName plinkPath(wxGetCwd(), "plink.exe");
 
 	if (!plinkPath.FileExists())
 	{
@@ -335,7 +336,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 		wxLogDebug("PSCP.exe not found! Path used: %s", pscpPath.GetFullPath());
 	}
 
-	m_options->SetPscpApp(pscpPath.GetFullPath());
+	m_options->SetPscpApp(pscpPath.GetFullPath());*/
 
 
 	m_network = new Networking(m_options);
@@ -429,7 +430,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_remoteFileDialog->SetIconManager(m_iconManager);
 
 
-	wxTreeItemId rootNode = m_projectTree->AddRoot(_guilang.get("GUI_TREE_WORKSPACE"), idxFolderOpen);
+	wxTreeItemId rootNode = m_projectTree->AddRoot(_guilang.get("GUI_TREE_WORKSPACE"), m_iconManager->GetIconIndex("WORKPLACE"));
 	m_projectFileFolders[0] = m_projectTree->AppendItem(rootNode, _guilang.get("GUI_TREE_DATAFILES"), idxFolderOpen);
 	m_projectFileFolders[1] = m_projectTree->AppendItem(rootNode, _guilang.get("GUI_TREE_SAVEDFILES"), idxFolderOpen);
 	m_projectFileFolders[2] = m_projectTree->AppendItem(rootNode, _guilang.get("GUI_TREE_SCRIPTS"), idxFolderOpen);
@@ -1512,6 +1513,20 @@ void NumeReWindow::openTable(const vector<vector<string> >& sTable, const string
     frame->SetFocus();
 }
 
+void NumeReWindow::editTable(const vector<vector<string> >& sTable, const string& sTableName)
+{
+    ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + sTableName + "()");
+    frame->SetSize(800,600);
+    TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY);
+    panel->SetTerminal(m_terminal);
+    panel->grid->SetTableReadOnly(false);
+    panel->grid->SetData(sTable);
+    frame->SetSize(min(800u, panel->grid->GetWidth()), min(600u, panel->grid->GetHeight()+30));
+    frame->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    frame->Show();
+    frame->SetFocus();
+}
+
 void NumeReWindow::deleteFile()
 {
     FileNameTreeData* data = static_cast<FileNameTreeData*>(m_projectTree->GetItemData(m_clickedTreeItem));
@@ -1769,6 +1784,10 @@ void NumeReWindow::PageHasChanged (int pageNr)
 	// activate the selected page
 	if (pageNr >= 0)
 	{
+        if (m_currentEd->AutoCompActive())
+            m_currentEd->AutoCompCancel();
+        if (m_currentEd->CallTipActive())
+            m_currentEd->CallTipCancel();
 		m_currentPage = pageNr;
 		m_currentEd = static_cast< NumeReEditor * > (m_book->GetPage (m_currentPage));
 		m_book->SetSelection(pageNr);
@@ -3482,7 +3501,14 @@ void NumeReWindow::UpdateToolbar()
 	//SetToolBar(t);
 
 	wxBitmap bmNew(newfile_xpm);
-	t->AddTool(ID_NEW_EMPTY, _guilang.get("GUI_TB_NEW"), bmNew, _guilang.get("GUI_TB_NEW_TTP"));
+	t->AddTool(ID_NEW_EMPTY, _guilang.get("GUI_TB_NEW"), bmNew, _guilang.get("GUI_TB_NEW_TTP"), wxITEM_DROPDOWN);
+	wxMenu* menuNewFile = new wxMenu();
+	menuNewFile->Append(ID_NEW_EMPTY, _guilang.get("GUI_MENU_NEW_EMPTYFILE"), _guilang.get("GUI_MENU_NEW_EMPTYFILE_TTP"));
+	menuNewFile->AppendSeparator();
+	menuNewFile->Append(ID_NEW_SCRIPT, _guilang.get("GUI_MENU_NEW_NSCR"), _guilang.get("GUI_MENU_NEW_NSCR_TTP"));
+	menuNewFile->Append(ID_NEW_PROCEDURE, _guilang.get("GUI_MENU_NEW_NPRC"), _guilang.get("GUI_MENU_NEW_NPRC_TTP"));
+	menuNewFile->Append(ID_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
+	t->SetDropdownMenu(ID_NEW_EMPTY, menuNewFile);
 
 	//wxBitmap bmOpen((open_xpm);
 
@@ -5104,6 +5130,7 @@ void NumeReWindow::OnPrintPreview()
 	frame->Centre(wxBOTH);
 	frame->Initialize();
 	frame->Show(true);
+	frame->Maximize();
 }
 
 void NumeReWindow::OnPrintSetup()

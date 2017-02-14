@@ -2505,7 +2505,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1485244047 c:\cpp\chameleon\gui\wxterm.h
+1486821115 c:\cpp\chameleon\gui\wxterm.h
 	"NumeReWindow.h"
 	"../network/gterm.hpp"
 	"../network/gtelnet.hpp"
@@ -2547,7 +2547,7 @@
 	<set>
 	<queue>
 
-1486103406 source:c:\cpp\chameleon\editor\editor.cpp
+1486892510 source:c:\cpp\chameleon\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -2572,7 +2572,7 @@
 1480053133 c:\cpp\chameleon\gui\chameleonnotebook.h
 	<wx/notebook.h>
 
-1486103352 source:c:\cpp\chameleon\gui\chameleon.cpp
+1486904837 source:c:\cpp\chameleon\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -2621,6 +2621,7 @@
 	"imagepanel.hpp"
 	"helpviewer.hpp"
 	"tableviewer.hpp"
+	"tableeditpanel.hpp"
 	<wx/msw/helpchm.h>
 	"newfile.xpm"
 	"openlocal.xpm"
@@ -2960,7 +2961,7 @@
 	"../wxTerm.h"
 	"../../common/debug.h"
 
-1484590422 source:c:\cpp\chameleon\gui\iconmanager.cpp
+1486448435 source:c:\cpp\chameleon\gui\iconmanager.cpp
 	"IconManager.h"
 	<string>
 	<wx/icon.h>
@@ -2978,7 +2979,7 @@
 	"wxssh.h"
 	"../common/debug.h"
 
-1485930649 source:c:\cpp\chameleon\gui\wxterm.cpp
+1486821069 source:c:\cpp\chameleon\gui\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -3342,7 +3343,7 @@
 	<_mingw.h>
 	<stddef.h>
 
-1485708861 c:\cpp\chameleon\gui\numerewindow.h
+1486622768 c:\cpp\chameleon\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -3358,7 +3359,7 @@
 	"viewerframe.hpp"
 	"filetree.hpp"
 
-1485708352 c:\cpp\chameleon\kernel\kernel.hpp
+1486621522 c:\cpp\chameleon\kernel\kernel.hpp
 	<string>
 	<fstream>
 	"core/error.hpp"
@@ -3381,7 +3382,7 @@
 	"debugmessenger.hpp"
 	"core/ParserLib/muParser.h"
 
-1485709785 source:c:\cpp\chameleon\kernel\kernel.cpp
+1486821000 source:c:\cpp\chameleon\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 
@@ -3397,7 +3398,7 @@
 	<map>
 	<fstream>
 
-1484229674 source:c:\cpp\chameleon\kernel\syntax.cpp
+1486584082 source:c:\cpp\chameleon\kernel\syntax.cpp
 	"syntax.hpp"
 	"core/tools.hpp"
 
@@ -3684,7 +3685,7 @@
 	"ParserLib/muParserTest.h"
 	"ParserLib/muParser.h"
 
-1463296409 c:\cpp\chameleon\kernel\core\built-in.hpp
+1486889834 c:\cpp\chameleon\kernel\core\built-in.hpp
 	<iostream>
 	<fstream>
 	<sstream>
@@ -3824,7 +3825,7 @@
 	"built-in.hpp"
 	"tools.hpp"
 
-1459788121 c:\cpp\chameleon\kernel\core\procedure.hpp
+1486573263 c:\cpp\chameleon\kernel\core\procedure.hpp
 	<iostream>
 	<string>
 	<cmath>
@@ -3863,7 +3864,7 @@
 1467057632 source:c:\cpp\chameleon\kernel\core\basicexcel.cpp
 	"BasicExcel.hpp"
 
-1485969980 source:c:\cpp\chameleon\kernel\core\built-in.cpp
+1486969603 source:c:\cpp\chameleon\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
@@ -3913,7 +3914,7 @@
 1484325721 source:c:\cpp\chameleon\kernel\core\language.cpp
 	"language.hpp"
 
-1484931217 source:c:\cpp\chameleon\kernel\core\loop.cpp
+1486573263 source:c:\cpp\chameleon\kernel\core\loop.cpp
 	"loop.hpp"
 	"../kernel.hpp"
 
@@ -3948,7 +3949,7 @@
 	"language.hpp"
 	"ParserLib/muParser.h"
 
-1482409407 source:c:\cpp\chameleon\kernel\core\matrixoperations.cpp
+1486573264 source:c:\cpp\chameleon\kernel\core\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -3971,7 +3972,7 @@
 1482775489 source:c:\cpp\chameleon\kernel\core\parser.cpp
 	"parser.hpp"
 
-1484931089 source:c:\cpp\chameleon\kernel\core\parser_functions.cpp
+1486573263 source:c:\cpp\chameleon\kernel\core\parser_functions.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -4040,7 +4041,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1483696249 source:c:\cpp\chameleon\kernel\core\plotting.cpp
+1486573264 source:c:\cpp\chameleon\kernel\core\plotting.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -4055,11 +4056,11 @@
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1482414106 source:c:\cpp\chameleon\kernel\core\plugin_statistics.cpp
+1486820300 source:c:\cpp\chameleon\kernel\core\plugin_statistics.cpp
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1485285081 source:c:\cpp\chameleon\kernel\core\procedure.cpp
+1486573264 source:c:\cpp\chameleon\kernel\core\procedure.cpp
 	"procedure.hpp"
 	"../kernel.hpp"
 
@@ -4072,7 +4073,7 @@
 	<iostream>
 	"resampler.h"
 
-1485285090 source:c:\cpp\chameleon\kernel\core\script.cpp
+1486573660 source:c:\cpp\chameleon\kernel\core\script.cpp
 	"script.hpp"
 	"../kernel.hpp"
 
@@ -4080,7 +4081,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1482760509 source:c:\cpp\chameleon\kernel\core\stringparsing.cpp
+1486583754 source:c:\cpp\chameleon\kernel\core\stringparsing.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -4355,10 +4356,10 @@
 1484686803 source:c:\cpp\chameleon\gui\helpviewer.cpp
 	"helpviewer.hpp"
 
-1484763622 source:c:\cpp\chameleon\gui\viewerframe.cpp
+1486923183 source:c:\cpp\chameleon\gui\viewerframe.cpp
 	"viewerframe.hpp"
 
-1484763628 c:\cpp\chameleon\gui\viewerframe.hpp
+1486922384 c:\cpp\chameleon\gui\viewerframe.hpp
 	<wx/wx.h>
 
 1484501545 c:\cpp\chameleon\gui\dialogs\tipdialog.hpp
@@ -4452,14 +4453,26 @@
 1485691343 source:c:\cpp\chameleon\common\filewatcher.cpp
 	"filewatcher.hpp"
 
-1485932778 c:\cpp\chameleon\gui\tableviewer.hpp
+1487083360 c:\cpp\chameleon\gui\tableviewer.hpp
 	<wx/wx.h>
 	<wx/grid.h>
 	<vector>
 	<string>
 
-1485970100 source:c:\cpp\chameleon\gui\tableviewer.cpp
+1487082028 source:c:\cpp\chameleon\gui\tableviewer.cpp
 	"tableviewer.hpp"
+	"../kernel/core/language.hpp"
 	<wx/clipbrd.h>
 	<wx/dataobj.h>
+	<wx/tokenzr.h>
+
+1486921885 source:c:\cpp\chameleon\gui\tableeditpanel.cpp
+	"tableeditpanel.hpp"
+
+1486921742 c:\cpp\chameleon\gui\tableeditpanel.hpp
+	<wx/wx.h>
+	<wx/panel.h>
+	"tableviewer.hpp"
+	"wxterm.h"
+	"../kernel/core/language.hpp"
 

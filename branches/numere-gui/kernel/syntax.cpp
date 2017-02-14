@@ -143,7 +143,7 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
         c = c_string;
         for (size_t k = sCommandLine.find('"'); k < sCommandLine.length(); k++)
         {
-            if (c == c_normal && sCommandLine[k] == '"')
+            if (c == c_normal && sCommandLine[k] == '"' && (!k || sCommandLine[k-1] != '\\'))
             {
                 c = c_string;
                 colors[k] = c;
@@ -152,7 +152,7 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
 
             colors[k] = c;
 
-            if (c == c_string && sCommandLine[k] == '"' && k > sCommandLine.find('"'))
+            if (c == c_string && sCommandLine[k] == '"' && k > sCommandLine.find('"') && sCommandLine[k-1] != '\\')
             {
                 c = c_normal;
             }

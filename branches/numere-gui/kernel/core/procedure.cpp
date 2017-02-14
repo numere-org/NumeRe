@@ -264,22 +264,22 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
         || sLine.substr(0,4) == "mode"
         || sLine.substr(0,5) == "menue")
     {
-        bool bSupressAnswer_back = bSupressAnswer;
-        bSupressAnswer = bProcSupressAnswer;
+        bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
+        NumeReKernel::bSupressAnswer = bProcSupressAnswer;
         switch (BI_CheckKeyword(sLine, _data, _out, _option, _parser, _functions, _pData, _script, true))
         {
             case  0: break; // Kein Keywort: Mit dem Parser auswerten
             case  1:        // Keywort: Naechster Schleifendurchlauf!
                 SetConsTitle(_data, _option);
                 thisReturnVal.vNumVal.push_back(NAN);
-                bSupressAnswer = bSupressAnswer_back;
+                NumeReKernel::bSupressAnswer = bSupressAnswer_back;
                 return thisReturnVal;
             default:
                 thisReturnVal.vNumVal.push_back(NAN);
-                bSupressAnswer = bSupressAnswer_back;
+                NumeReKernel::bSupressAnswer = bSupressAnswer_back;
                 return thisReturnVal;  // Keywort "mode"
         }
-        bSupressAnswer = bSupressAnswer_back;
+        NumeReKernel::bSupressAnswer = bSupressAnswer_back;
     }
 
 

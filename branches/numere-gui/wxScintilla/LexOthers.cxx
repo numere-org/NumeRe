@@ -1531,6 +1531,19 @@ static void ColouriseNullDoc(unsigned int startPos, int length, int, WordList *[
 #define SCE_NPRC_INCLUDES 13
 #define SCE_NPRC_NUMBERS 14
 #define SCE_NPRC_FLAGS 15
+
+#define SCE_TXTADV_DEFAULT 0
+#define SCE_TXTADV_MODIFIER 1
+#define SCE_TXTADV_ITALIC 2
+#define SCE_TXTADV_BOLD 3
+#define SCE_TXTADV_BOLD_ITALIC 4
+#define SCE_TXTADV_UNDERLINE 5
+#define SCE_TXTADV_STRIKETHROUGH 6
+#define SCE_TXTADV_URL 7
+#define SCE_TXTADV_HEAD 8
+#define SCE_TXTADV_BIGHEAD 9
+
+
 */
 
 /* Nested comments require keeping the value of the nesting level for every
@@ -1620,6 +1633,7 @@ static const char * const NSCRWordLists[] = {
 			"Constants",
 			"Special predefs",
 			"Operator keywords",
+			"Procedure commands",
 			0,
 		};
 
@@ -1664,6 +1678,7 @@ class LexerNSCR : public ILexer {
 	WordList keywords5;
 	WordList keywords6;
 	WordList keywords7;
+	WordList keywords8;
 	/*
 	"Commands",
 	"Options",
@@ -1747,6 +1762,9 @@ int SCI_METHOD LexerNSCR::WordListSet(int n, const char *wl) {
 		break;
 	case 6:
 		wordListN = &keywords7;
+		break;
+	case 7:
+		wordListN = &keywords8;
 		break;
 	}
 	int firstModification = -1;
@@ -1873,6 +1891,10 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					else if (keywords7.InList(s)) 
 					{
 						sc.ChangeState(SCE_NSCR_OPERATOR_KEYWORDS);
+					}					
+					else if (keywords8.InList(s)) 
+					{
+						sc.ChangeState(SCE_NSCR_PROCEDURE_COMMANDS);
 					}
 					else if (sc.ch == '(')
 					{
@@ -1882,7 +1904,7 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					{
 						sc.ChangeState(SCE_NSCR_OPTION);
 					} 					
-					sc.SetState(SCE_D_DEFAULT);
+					sc.SetState(SCE_NSCR_DEFAULT);
 				}
 				break;
 			case SCE_NSCR_COMMENT_BLOCK:
@@ -1908,6 +1930,13 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 				else if (sc.ch == '"')
 				{
 					sc.ForwardSetState(SCE_NSCR_DEFAULT);
+				}
+				break;
+			case SCE_NSCR_INSTALL:
+				if (sc.Match("<endinstall>")) 
+				{
+					sc.Forward(12);
+					sc.SetState(SCE_NSCR_DEFAULT);
 				}
 				break;
 			case SCE_NSCR_FUNCTION:
@@ -1963,6 +1992,10 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					&& (sc.Match("<wp>") || sc.Match("<this>") || sc.Match("<loadpath>") || sc.Match("<savepath>") || sc.Match("<plotpath>") || sc.Match("<procpath>") || sc.Match("<scriptpath>")))
 				{
 					sc.SetState(SCE_NSCR_OPERATOR_KEYWORDS);
+				}
+				else if ((sc.ch == '<') && sc.Match("<install>"))
+				{
+					sc.SetState(SCE_NSCR_INSTALL);
 				}
 				else
 				{
@@ -2049,9 +2082,25 @@ void SCI_METHOD LexerNSCR::Fold(unsigned int startPos, int length, int initStyle
 				}
  			}
  		}
-		if (options.foldSyntaxBased && (style == SCE_NSCR_IDENTIFIER || style == SCE_NSCR_COMMAND)) 
+		if (options.foldSyntaxBased && (style == SCE_NSCR_IDENTIFIER || style == SCE_NSCR_COMMAND || style == SCE_NSCR_INSTALL || style == SCE_NSCR_PROCEDURE_COMMANDS)) 
 		{
-			if (styler.Match(i, "endif") || styler.Match(i, "endfor") || styler.Match(i, "endwhile") || styler.Match(i,"endprocedure") || styler.Match(i,"endcompose")) 
+			if (styler.Match(i, "endif") 
+				|| styler.Match(i, "endfor") 
+				|| styler.Match(i, "endwhile") 
+				|| styler.Match(i, "endprocedure") 
+				|| styler.Match(i, "endcompose") 
+				|| styler.Match(i, "<endinstall>")				
+				|| styler.Match(i, "<endinfo>")				
+				|| styler.Match(i, "</helpindex>")				
+				|| styler.Match(i, "</helpfile>")				
+				|| styler.Match(i, "</article>")				
+				|| styler.Match(i, "</keywords>")				
+				|| styler.Match(i, "</keyword>")				
+				|| styler.Match(i, "</codeblock>")				
+				|| styler.Match(i, "</exprblock>")				
+				|| styler.Match(i, "</example>")				
+				|| styler.Match(i, "</item>")				
+				|| styler.Match(i, "</list>"))			
 			{
 				levelNext--;
 				foundElse = false;
@@ -2061,7 +2110,20 @@ void SCI_METHOD LexerNSCR::Fold(unsigned int startPos, int length, int initStyle
 				&& (styler.Match(i, "if ") || styler.Match(i, "if(") 
 					|| styler.Match(i, "for ") || styler.Match(i, "for(") 
 					|| styler.Match(i, "while ") || styler.Match(i, "while(") 
-					|| styler.Match(i, "procedure ") || styler.Match(i, "compose"))) 
+					|| styler.Match(i, "procedure ") || styler.Match(i, "compose")
+					|| styler.Match(i, "<install>")
+					|| styler.Match(i, "<info>")
+					|| styler.Match(i, "<helpindex>")
+					|| styler.Match(i, "<helpfile>")
+					|| styler.Match(i, "<article")
+					|| styler.Match(i, "<keywords>")
+					|| styler.Match(i, "<keyword>")
+					|| styler.Match(i, "<codeblock>")
+					|| styler.Match(i, "<exprblock>")
+					|| styler.Match(i, "<example")
+					|| styler.Match(i, "<item")
+					|| styler.Match(i, "<list")
+				)) 
 			{
 				// Measure the minimum before a '{' to allow
 				// folding on "} else {"
@@ -2071,20 +2133,20 @@ void SCI_METHOD LexerNSCR::Fold(unsigned int startPos, int length, int initStyle
 				}*/
 				levelNext++;
 			}
-			else if (styler.Match(i, "else"))
+			/*else if (styler.Match(i, "else"))
 			{
 				foundElse = true;
 				int lev = levelCurrent | (levelNext-1) << 16;
 				
-				/*if (visibleChars == 0 && options.foldCompact)
-					lev |= SC_FOLDLEVELWHITEFLAG;
-				if (levelMinCurrent < levelNext-1)
-					lev |= SC_FOLDLEVELHEADERFLAG;*/
+				//if (visibleChars == 0 && options.foldCompact)
+				//	lev |= SC_FOLDLEVELWHITEFLAG;
+				//if (levelMinCurrent < levelNext-1)
+				//	lev |= SC_FOLDLEVELHEADERFLAG;
 				if (lev != styler.LevelAt(lineCurrent-1))
 				{
 					styler.SetLevel(lineCurrent-1, lev);
 				}
-			}
+			}*/
 		}
 		if (atEOL || (i == endPos-1)) 
 		{
@@ -2120,11 +2182,1018 @@ void SCI_METHOD LexerNSCR::Fold(unsigned int startPos, int length, int initStyle
 	}
 }
 
-LexerModule lmD(SCLEX_NSCR, LexerNSCR::LexerFactoryNSCR, "NSCR", NSCRWordLists);
+
+
+struct OptionsNPRC {
+	bool fold;
+	bool foldSyntaxBased;
+	bool foldComment;
+	bool foldCommentMultiline;
+	bool foldCommentExplicit;
+	std::string foldExplicitStart;
+	std::string foldExplicitEnd;
+	bool foldExplicitAnywhere;
+	bool foldCompact;
+	bool foldAtElse;
+	OptionsNPRC() {
+		fold = false;
+		foldSyntaxBased = true;
+		foldComment = false;
+		foldCommentMultiline = true;
+		foldCommentExplicit = true;
+		foldExplicitStart = "";
+		foldExplicitEnd   = "";
+		foldExplicitAnywhere = false;
+		foldCompact = false;
+		foldAtElse = true;
+	}
+};
+
+static const char * const NPRCWordLists[] = {
+			"Commands",
+			"Options",
+			"Functions",
+			"Predefined variables",
+			"Constants",
+			"Special predefs",
+			"Operator keywords",
+			0,
+		};
+
+struct OptionSetNPRC : public OptionSet<OptionsNPRC> {
+	OptionSetNPRC() {
+		DefineProperty("fold", &OptionsNPRC::fold);
+
+		DefineProperty("fold.nscr.syntax.based", &OptionsNPRC::foldSyntaxBased,
+			"Set this property to 0 to disable syntax based folding.");
+
+		DefineProperty("fold.comment", &OptionsNPRC::foldComment);
+
+		DefineProperty("fold.nscr.comment.multiline", &OptionsNPRC::foldCommentMultiline,
+			"Set this property to 0 to disable folding multi-line comments when fold.comment=1.");
+
+		DefineProperty("fold.nscr.comment.explicit", &OptionsNPRC::foldCommentExplicit,
+			"Set this property to 0 to disable folding explicit fold points when fold.comment=1.");
+
+		DefineProperty("fold.nscr.explicit.start", &OptionsNPRC::foldExplicitStart,
+			"The string to use for explicit fold start points, replacing the standard //{.");
+
+		DefineProperty("fold.nscr.explicit.end", &OptionsNPRC::foldExplicitEnd,
+			"The string to use for explicit fold end points, replacing the standard //}.");
+
+		DefineProperty("fold.nscr.explicit.anywhere", &OptionsNPRC::foldExplicitAnywhere,
+			"Set this property to 1 to enable explicit fold points anywhere, not just in line comments.");
+
+		DefineProperty("fold.compact", &OptionsNPRC::foldCompact);
+
+		DefineProperty("fold.at.else", &OptionsNPRC::foldAtElse);
+
+		DefineWordListSets(NPRCWordLists);
+	}
+};
+
+class LexerNPRC : public ILexer {
+	bool caseSensitive;
+	WordList keywords;
+	WordList keywords2;
+	WordList keywords3;
+	WordList keywords4;
+	WordList keywords5;
+	WordList keywords6;
+	WordList keywords7;
+	/*
+	"Commands",
+	"Options",
+	"Functions",
+	"Predefined variables",
+	"Constants",
+	"Special predefs",
+	"Operator keywords",
+	0,
+	*/
+	OptionsNPRC options;
+	OptionSetNPRC osNPRC;
+public:
+	LexerNPRC(bool caseSensitive_) :
+		caseSensitive(caseSensitive_) {
+	}
+	virtual ~LexerNPRC() {
+	}
+	void SCI_METHOD Release() {
+		delete this;
+	}
+	int SCI_METHOD Version() const {
+		return lvOriginal;
+	}
+	const char * SCI_METHOD PropertyNames() {
+		return osNPRC.PropertyNames();
+	}
+	int SCI_METHOD PropertyType(const char *name) {
+		return osNPRC.PropertyType(name);
+	}
+	const char * SCI_METHOD DescribeProperty(const char *name) {
+		return osNPRC.DescribeProperty(name);
+	}
+	int SCI_METHOD PropertySet(const char *key, const char *val);
+	const char * SCI_METHOD DescribeWordListSets() {
+		return osNPRC.DescribeWordListSets();
+	}
+	int SCI_METHOD WordListSet(int n, const char *wl);
+	void SCI_METHOD Lex(unsigned int startPos, int length, int initStyle, IDocument *pAccess);
+	void SCI_METHOD Fold(unsigned int startPos, int length, int initStyle, IDocument *pAccess);
+
+	void * SCI_METHOD PrivateCall(int, void *) {
+		return 0;
+	}
+
+	static ILexer *LexerFactoryNPRC() {
+		return new LexerNPRC(true);
+	}
+	static ILexer *LexerFactoryNPRCInsensitive() {
+		return new LexerNPRC(false);
+	}
+};
+
+int SCI_METHOD LexerNPRC::PropertySet(const char *key, const char *val) {
+	if (osNPRC.PropertySet(&options, key, val)) {
+		return 0;
+	}
+	return -1;
+}
+
+int SCI_METHOD LexerNPRC::WordListSet(int n, const char *wl) {
+	WordList *wordListN = 0;
+	switch (n) {
+	case 0:
+		wordListN = &keywords;
+		break;
+	case 1:
+		wordListN = &keywords2;
+		break;
+	case 2:
+		wordListN = &keywords3;
+		break;
+	case 3:
+		wordListN = &keywords4;
+		break;
+	case 4:
+		wordListN = &keywords5;
+		break;
+	case 5:
+		wordListN = &keywords6;
+		break;
+	case 6:
+		wordListN = &keywords7;
+		break;
+	}
+	int firstModification = -1;
+	if (wordListN) {
+		WordList wlNew;
+		wlNew.Set(wl);
+		if (*wordListN != wlNew) {
+			wordListN->Set(wl);
+			firstModification = 0;
+		}
+	}
+	return firstModification;
+}
+
+void SCI_METHOD LexerNPRC::Lex(unsigned int startPos, int length, int initStyle, IDocument *pAccess)
+{
+	LexAccessor styler(pAccess);
+
+	int styleBeforeDCKeyword = SCE_NPRC_DEFAULT;
+
+	StyleContext sc(startPos, length, initStyle, styler);
+
+	int curLine = styler.GetLine(startPos);
+	int curNcLevel = curLine > 0? styler.GetLineState(curLine-1): 0;
+	bool numFloat = false; // Float literals have '+' and '-' signs
+	bool numHex = false;
+
+	for (; sc.More(); sc.Forward()) {
+
+		if (sc.atLineStart) {
+			curLine = styler.GetLine(sc.currentPos);
+			styler.SetLineState(curLine, curNcLevel);
+		}
+
+		// Determine if the current state should terminate.
+		switch (sc.state) {
+			case SCE_NPRC_OPERATORS:
+				sc.SetState(SCE_NPRC_DEFAULT);
+				break;
+			case SCE_NPRC_OPERATOR_KEYWORDS:
+				if (sc.ch == '>')
+				{
+					sc.ForwardSetState(SCE_NPRC_DEFAULT);
+				}
+				break;
+			case SCE_NPRC_NUMBERS:
+				// We accept almost anything because of hex. and number suffixes
+				if (isdigit(sc.ch)) 
+				{
+					continue;
+				}
+				else if (sc.ch == '.' && sc.chNext != '.' && !numFloat)
+				{
+					// Don't parse 0..2 as number.
+					numFloat=true;
+					continue;
+				} 
+				else if (( sc.ch == '-' || sc.ch == '+' ) 
+					&& (sc.chPrev == 'e' || sc.chPrev == 'E' )) 
+				{
+					// Parse exponent sign in float literals: 2e+10 0x2e+10
+					continue;
+				}
+				else if (( sc.ch == 'e' || sc.ch == 'E' ) 
+					&& (sc.chNext == '+' || sc.chNext == '-' || isdigit(sc.chNext))) 
+				{
+					// Parse exponent sign in float literals: 2e+10 0x2e+10
+					continue;
+				}
+				else
+				{
+					sc.SetState(SCE_NPRC_DEFAULT);
+				}
+				break;
+			case SCE_NPRC_STRING_PARSER:
+				if (!IsWord(sc.ch) && sc.ch != '~')
+				{
+					sc.SetState(SCE_NPRC_DEFAULT);
+				}
+				break;
+			case SCE_NPRC_IDENTIFIER:
+				if (!IsWord(sc.ch)) /** TODO*/
+				{
+					// reverse identify the currently marched identifiers depending on the word list
+					char s[1000];
+					if (caseSensitive)
+					{
+						sc.GetCurrent(s, sizeof(s));
+					}
+					else
+					{
+						sc.GetCurrentLowered(s, sizeof(s));
+					}
+					/*
+					"Commands",
+					"Options",
+					"Functions",
+					"Predefined variables",
+					"Constants",
+					"Special predefs",
+					"Operator keywords",
+					0,
+					*/
+					if (keywords.InList(s))
+					{
+						sc.ChangeState(SCE_NPRC_COMMAND);
+					} 
+					else if (keywords3.InList(s) && sc.ch == '(') 
+					{
+						sc.ChangeState(SCE_NPRC_FUNCTION);
+					} 
+					else if (keywords4.InList(s)) 
+					{
+						sc.ChangeState(SCE_NPRC_DEFAULT_VARS);
+					} 
+					else if (keywords5.InList(s)) 
+					{
+						sc.ChangeState(SCE_NPRC_CONSTANTS);
+					} 
+					else if (keywords6.InList(s)) 
+					{
+						sc.ChangeState(SCE_NPRC_PREDEFS);
+					}
+					else if (keywords7.InList(s)) 
+					{
+						sc.ChangeState(SCE_NPRC_OPERATOR_KEYWORDS);
+					}
+					else if (sc.ch == '(')
+					{
+						sc.ChangeState(SCE_NPRC_CUSTOM_FUNCTION);
+					}
+					else if (keywords2.InList(s)) 
+					{
+						sc.ChangeState(SCE_NPRC_OPTION);
+					} 					
+					sc.SetState(SCE_NPRC_DEFAULT);
+				}
+				break;
+			case SCE_NPRC_COMMENT_BLOCK:
+				if (sc.Match('*', '#')) {
+					sc.Forward();
+					sc.ForwardSetState(SCE_NPRC_DEFAULT);
+				}
+				break;
+			case SCE_NPRC_INCLUDES:
+			case SCE_NPRC_FLAGS:
+			case SCE_NPRC_COMMENT_LINE:
+				if (sc.atLineStart) {
+					sc.SetState(SCE_NSCR_DEFAULT);
+				}
+				break;
+			case SCE_NPRC_STRING:
+				if (sc.ch == '\\')
+				{
+					if (sc.chNext == '"' || sc.chNext == '\\') 
+					{
+						sc.Forward();
+					}
+				}
+				else if (sc.ch == '"')
+				{
+					sc.ForwardSetState(SCE_NPRC_DEFAULT);
+				}
+				break;
+			case SCE_NPRC_FUNCTION:
+			case SCE_NPRC_PROCEDURES:
+				if (sc.ch == ' ' || sc.ch == '(') 
+				{
+					sc.SetState(SCE_NPRC_DEFAULT);
+				}
+				break;
+		}
+
+		// Determine if a new state should be entered.
+		if (sc.state == SCE_NPRC_DEFAULT) 
+		{
+			if (IsADigit(sc.ch) || (sc.ch == '.' && IsADigit(sc.chNext)))
+			{
+				sc.SetState(SCE_NSCR_NUMBERS);
+				numFloat = sc.ch == '.';
+			} 
+			else if (IsWordStart(static_cast<char>(sc.ch)))
+			{
+				sc.SetState(SCE_NPRC_IDENTIFIER);
+			}
+			else if (sc.ch == '$')
+			{
+				sc.SetState(SCE_NPRC_PROCEDURES);
+			}
+			else if (sc.Match('#', '*'))
+			{
+				sc.SetState(SCE_NPRC_COMMENT_BLOCK);
+				sc.Forward();   // Eat the * so it isn't used for the end of the comment
+			}
+			else if (sc.Match('#', '#'))
+			{
+				sc.SetState(SCE_NPRC_COMMENT_LINE);
+				sc.Forward();
+			}
+			else if (sc.ch == '"')
+			{
+				sc.SetState(SCE_NPRC_STRING);
+			}
+			else if (sc.ch == '#')
+			{
+				sc.SetState(SCE_NPRC_STRING_PARSER);
+			}
+			else if (sc.ch == '@')
+			{
+				sc.SetState(SCE_NPRC_INCLUDES);
+			}
+			else if (IsOperator(static_cast<char>(sc.ch)))
+			{
+				if (sc.ch == '<' 
+					&& (sc.Match("<wp>") || sc.Match("<this>") || sc.Match("<loadpath>") || sc.Match("<savepath>") || sc.Match("<plotpath>") || sc.Match("<procpath>") || sc.Match("<scriptpath>")))
+				{
+					sc.SetState(SCE_NPRC_OPERATOR_KEYWORDS);
+				}
+				else if (sc.ch == ':' && sc.chNext == ':')
+				{
+					sc.SetState(SCE_NPRC_FLAGS);
+				}
+				else
+				{
+					sc.SetState(SCE_NPRC_OPERATORS);
+				}
+			}
+		}
+	}
+	sc.Complete();
+}
+
+// Store both the current line's fold level and the next lines in the
+// level store to make it easy to pick up with each increment
+// and to make it possible to fiddle the current level for "} else {".
+
+void SCI_METHOD LexerNPRC::Fold(unsigned int startPos, int length, int initStyle, IDocument *pAccess) 
+{
+
+	if (!options.fold)
+		return;
+
+	LexAccessor styler(pAccess);
+
+	unsigned int endPos = startPos + length;
+	int visibleChars = 0;
+	int lineCurrent = styler.GetLine(startPos);
+	int levelCurrent = SC_FOLDLEVELBASE;
+	if (lineCurrent > 0)
+		levelCurrent = styler.LevelAt(lineCurrent-1) >> 16;
+	int levelMinCurrent = levelCurrent;
+	int levelNext = levelCurrent;
+	char chNext = styler[startPos];
+	int styleNext = styler.StyleAt(startPos);
+	int style = initStyle;
+	bool foldAtElse = options.foldAtElse;
+	bool foundElse = false;
+	const bool userDefinedFoldMarkers = !options.foldExplicitStart.empty() && !options.foldExplicitEnd.empty();
+	for (unsigned int i = startPos; i < endPos; i++) 
+	{
+		char ch = chNext;
+		chNext = styler.SafeGetCharAt(i + 1);
+		int stylePrev = style;
+		style = styleNext;
+		styleNext = styler.StyleAt(i + 1);
+		bool atEOL = (ch == '\r' && chNext != '\n') || (ch == '\n');
+		if (options.foldComment && options.foldCommentMultiline) 
+		{
+			if (!(stylePrev == SCE_NPRC_COMMENT_BLOCK)) 
+			{
+				levelNext++;
+			} 
+			else if (!(styleNext == SCE_NPRC_COMMENT_BLOCK) && !atEOL) 
+			{
+				// Comments don't end at end of line and the next character may be unstyled.
+				levelNext--;
+			}
+		}
+		if (options.foldComment && options.foldCommentExplicit && ((style == SCE_NPRC_COMMENT_LINE) || options.foldExplicitAnywhere)) 
+		{
+			if (userDefinedFoldMarkers) 
+			{
+				if (styler.Match(i, options.foldExplicitStart.c_str())) 
+				{
+ 					levelNext++;
+				} 
+				else if (styler.Match(i, options.foldExplicitEnd.c_str())) 
+				{
+ 					levelNext--;
+ 				}
+			} 
+			else 
+			{
+				if ((ch == '#') && (chNext == '#'))  //##{
+				{
+					char chNext2 = styler.SafeGetCharAt(i + 2);
+					if (chNext2 == '{') 
+					{
+						levelNext++;
+					} 
+					else if (chNext2 == '}') 
+					{
+						levelNext--;
+					}
+				}
+ 			}
+ 		}
+		if (options.foldSyntaxBased && (style == SCE_NPRC_IDENTIFIER || style == SCE_NPRC_COMMAND)) 
+		{
+			if (styler.Match(i, "endif") 
+				|| styler.Match(i, "endfor") 
+				|| styler.Match(i, "endwhile") 
+				|| styler.Match(i, "endprocedure") 
+				|| styler.Match(i, "endcompose"))			
+			{
+				levelNext--;
+				foundElse = false;
+			}
+			else if (styler.SafeGetCharAt(i-1) != 'd' 
+				&& styler.SafeGetCharAt(i-1) != 'e'
+				&& (styler.Match(i, "if ") || styler.Match(i, "if(") 
+					|| styler.Match(i, "for ") || styler.Match(i, "for(") 
+					|| styler.Match(i, "while ") || styler.Match(i, "while(") 
+					|| styler.Match(i, "procedure ") || styler.Match(i, "compose"))) 
+			{
+				// Measure the minimum before a '{' to allow
+				// folding on "} else {"
+				/*if (levelMinCurrent > levelNext) 
+				{
+					levelMinCurrent = levelNext;
+				}*/
+				levelNext++;
+			}
+			/*else if (styler.Match(i, "else"))
+			{
+				foundElse = true;
+				int lev = levelCurrent | (levelNext-1) << 16;
+				
+				//if (visibleChars == 0 && options.foldCompact)
+				//	lev |= SC_FOLDLEVELWHITEFLAG;
+				//if (levelMinCurrent < levelNext-1)
+				//	lev |= SC_FOLDLEVELHEADERFLAG;
+				if (lev != styler.LevelAt(lineCurrent-1))
+				{
+					styler.SetLevel(lineCurrent-1, lev);
+				}
+			}*/
+		}
+		if (atEOL || (i == endPos-1)) 
+		{
+			if (options.foldComment && options.foldCommentMultiline) 
+			{  // Handle nested comments
+				int nc;
+				nc =  styler.GetLineState(lineCurrent);
+				nc -= lineCurrent>0? styler.GetLineState(lineCurrent-1): 0;
+				levelNext += nc;
+			}
+			int levelUse = levelCurrent;
+			if (options.foldSyntaxBased && foldAtElse) 
+			{
+				levelUse = levelMinCurrent;
+			}
+			int lev = levelUse | levelNext << 16;
+			if (visibleChars == 0 && options.foldCompact)
+				lev |= SC_FOLDLEVELWHITEFLAG;
+			if (levelUse < levelNext || foundElse)
+				lev |= SC_FOLDLEVELHEADERFLAG;
+			if (lev != styler.LevelAt(lineCurrent)) 
+			{
+				styler.SetLevel(lineCurrent, lev);
+			}
+			lineCurrent++;
+			levelCurrent = levelNext;
+			levelMinCurrent = levelCurrent;
+			visibleChars = 0;
+			foundElse = false;
+		}
+		if (!IsASpace(ch))
+			visibleChars++;
+	}
+}
 
 
 
 
+class LexerTXTADV : public ILexer {
+	bool caseSensitive;
+	/*WordList keywords;
+	WordList keywords2;
+	WordList keywords3;
+	WordList keywords4;
+	WordList keywords5;
+	WordList keywords6;
+	WordList keywords7;
+	WordList keywords8;*/
+	/*
+	"Commands",
+	"Options",
+	"Functions",
+	"Predefined variables",
+	"Constants",
+	"Special predefs",
+	"Operator keywords",
+	0,
+	*/
+	//OptionsNSCR options;
+	//OptionSetNSCR osNSCR;
+public:
+	LexerTXTADV(bool caseSensitive_) :
+		caseSensitive(caseSensitive_) {
+	}
+	virtual ~LexerTXTADV() {
+	}
+	void SCI_METHOD Release() {
+		delete this;
+	}
+	int SCI_METHOD Version() const {
+		return lvOriginal;
+	}
+	const char * SCI_METHOD PropertyNames() {
+		return "";
+	}
+	int SCI_METHOD PropertyType(const char *name) {
+		return 0;
+	}
+	const char * SCI_METHOD DescribeProperty(const char *name) {
+		return "";
+	}
+	int SCI_METHOD PropertySet(const char *key, const char *val) {return 0;}
+	const char * SCI_METHOD DescribeWordListSets() {
+		return "";
+	}
+	int SCI_METHOD WordListSet(int n, const char *wl) {return 0;}
+	void SCI_METHOD Lex(unsigned int startPos, int length, int initStyle, IDocument *pAccess);
+	void SCI_METHOD Fold(unsigned int startPos, int length, int initStyle, IDocument *pAccess) {return;};
+
+	void * SCI_METHOD PrivateCall(int, void *) {
+		return 0;
+	}
+
+	static ILexer *LexerFactoryTXTADV() {
+		return new LexerTXTADV(true);
+	}
+	static ILexer *LexerFactoryTXTADVInsensitive() {
+		return new LexerTXTADV(false);
+	}
+};
+
+/*int SCI_METHOD LexerNSCR::PropertySet(const char *key, const char *val) {
+	if (osNSCR.PropertySet(&options, key, val)) {
+		return 0;
+	}
+	return -1;
+}
+
+int SCI_METHOD LexerNSCR::WordListSet(int n, const char *wl) {
+	WordList *wordListN = 0;
+	switch (n) {
+	case 0:
+		wordListN = &keywords;
+		break;
+	case 1:
+		wordListN = &keywords2;
+		break;
+	case 2:
+		wordListN = &keywords3;
+		break;
+	case 3:
+		wordListN = &keywords4;
+		break;
+	case 4:
+		wordListN = &keywords5;
+		break;
+	case 5:
+		wordListN = &keywords6;
+		break;
+	case 6:
+		wordListN = &keywords7;
+		break;
+	case 7:
+		wordListN = &keywords8;
+		break;
+	}
+	int firstModification = -1;
+	if (wordListN) {
+		WordList wlNew;
+		wlNew.Set(wl);
+		if (*wordListN != wlNew) {
+			wordListN->Set(wl);
+			firstModification = 0;
+		}
+	}
+	return firstModification;
+}*/
+
+// helper defines
+#define SCE_TXTADV_POSSIB_URL 20
+void SCI_METHOD LexerTXTADV::Lex(unsigned int startPos, int length, int initStyle, IDocument *pAccess)
+{
+	LexAccessor styler(pAccess);
+
+	int styleBeforeDCKeyword = SCE_TXTADV_DEFAULT;
+
+	StyleContext sc(startPos, length, initStyle, styler);
+
+	int curLine = styler.GetLine(startPos);
+	int curNcLevel = curLine > 0? styler.GetLineState(curLine-1): 0;
+	
+	for (; sc.More(); sc.Forward()) {
+
+		if (sc.atLineStart) {
+			curLine = styler.GetLine(sc.currentPos);
+			styler.SetLineState(curLine, curNcLevel);
+		}
+
+		// Determine if the current state should terminate.
+		switch (sc.state) 
+		{
+			case SCE_TXTADV_MODIFIER:
+				sc.SetState(SCE_TXTADV_DEFAULT);
+				break;
+			case SCE_TXTADV_BOLD:
+			case SCE_TXTADV_ITALIC:
+			case SCE_TXTADV_BOLD_ITALIC:
+				if (sc.ch == '*')
+				{
+					if (sc.state == SCE_TXTADV_BOLD_ITALIC)
+					{
+						if (sc.Match("***"))
+						{
+							sc.SetState(SCE_TXTADV_MODIFIER);
+							sc.ForwardSetState(SCE_TXTADV_MODIFIER);
+							sc.ForwardSetState(SCE_TXTADV_MODIFIER);
+							sc.ForwardSetState(SCE_TXTADV_DEFAULT);
+						}						
+						else if (sc.Match("**"))
+						{
+							sc.SetState(SCE_TXTADV_MODIFIER);
+							sc.ForwardSetState(SCE_TXTADV_MODIFIER);
+							sc.ForwardSetState(SCE_TXTADV_ITALIC);
+						}
+						else
+						{
+							sc.SetState(SCE_TXTADV_MODIFIER);
+							sc.ForwardSetState(SCE_TXTADV_BOLD);
+						}
+					}
+					else if (sc.state == SCE_TXTADV_BOLD)
+					{
+						if (sc.Match("***"))
+						{
+							sc.SetState(SCE_TXTADV_MODIFIER);
+							sc.ForwardSetState(SCE_TXTADV_MODIFIER);
+							sc.ForwardSetState(SCE_TXTADV_MODIFIER);
+							sc.ForwardSetState(SCE_TXTADV_ITALIC);
+						}						
+						else if (sc.Match("**"))
+						{
+							sc.SetState(SCE_TXTADV_MODIFIER);
+							sc.ForwardSetState(SCE_TXTADV_MODIFIER);
+							sc.ForwardSetState(SCE_TXTADV_DEFAULT);
+						}
+						else
+						{
+							sc.SetState(SCE_TXTADV_MODIFIER);
+							sc.ForwardSetState(SCE_TXTADV_BOLD_ITALIC);
+						}
+					}
+					else
+					{
+						if (sc.Match("***"))
+						{
+							sc.SetState(SCE_TXTADV_MODIFIER);
+							sc.ForwardSetState(SCE_TXTADV_MODIFIER);
+							sc.ForwardSetState(SCE_TXTADV_MODIFIER);
+							sc.ForwardSetState(SCE_TXTADV_BOLD);
+						}						
+						else if (sc.Match("**"))
+						{
+							sc.SetState(SCE_TXTADV_MODIFIER);
+							sc.ForwardSetState(SCE_TXTADV_MODIFIER);
+							sc.ForwardSetState(SCE_TXTADV_BOLD_ITALIC);
+						}
+						else
+						{
+							sc.SetState(SCE_TXTADV_MODIFIER);
+							sc.ForwardSetState(SCE_TXTADV_DEFAULT);
+						}
+					}
+				}
+				break;
+			case SCE_TXTADV_HEAD:
+			case SCE_TXTADV_BIGHEAD:
+				if (sc.atLineStart)
+					sc.SetState(SCE_TXTADV_DEFAULT);
+				break;
+			case SCE_TXTADV_POSSIB_URL:
+				if (sc.ch == ' ' || sc.ch == '\t' || sc.ch == '*' || sc.ch == '_' || sc.ch == '-' || sc.atLineStart)
+					sc.ChangeState(SCE_TXTADV_DEFAULT);
+				else if (sc.Match("://"))
+					sc.ChangeState(SCE_TXTADV_URL);
+				break;
+			case SCE_TXTADV_URL:
+				if (sc.ch == ' ' || sc.atLineStart)
+					sc.SetState(SCE_TXTADV_DEFAULT);
+				break;
+			case SCE_TXTADV_STRIKETHROUGH:
+				if (sc.ch == '-' && (sc.chPrev == ' ' || sc.chNext == ' '))
+				{
+					sc.SetState(SCE_TXTADV_MODIFIER);
+					sc.ForwardSetState(SCE_TXTADV_DEFAULT);
+				}
+				break;
+			case SCE_TXTADV_UNDERLINE:
+				if (sc.ch == '_' && (sc.chPrev == ' ' || sc.chNext == ' '))
+				{
+					sc.SetState(SCE_TXTADV_MODIFIER);
+					sc.ForwardSetState(SCE_TXTADV_DEFAULT);
+				}
+				break;
+		}
+
+		// Determine if a new state should be entered.
+		if (sc.state == SCE_TXTADV_DEFAULT) 
+		{
+			if (sc.ch == '*')
+			{
+				if (sc.Match("***"))
+				{
+					sc.SetState(SCE_TXTADV_MODIFIER);
+					sc.ForwardSetState(SCE_TXTADV_MODIFIER);
+					sc.ForwardSetState(SCE_TXTADV_MODIFIER);
+					sc.ForwardSetState(SCE_TXTADV_BOLD_ITALIC);
+				}
+				else if (sc.Match("**"))
+				{
+					sc.SetState(SCE_TXTADV_MODIFIER);
+					sc.ForwardSetState(SCE_TXTADV_MODIFIER);
+					sc.ForwardSetState(SCE_TXTADV_BOLD);
+				}
+				else
+				{
+					sc.SetState(SCE_TXTADV_MODIFIER);
+					sc.ForwardSetState(SCE_TXTADV_ITALIC);
+				}
+			}
+			else if (sc.ch == '_' && sc.chPrev == ' ')
+			{
+				sc.SetState(SCE_TXTADV_MODIFIER);
+				sc.ForwardSetState(SCE_TXTADV_UNDERLINE);
+			}			
+			else if (sc.ch == '#')
+			{
+				if (sc.Match("##"))
+				{
+					sc.SetState(SCE_TXTADV_MODIFIER);
+					sc.ForwardSetState(SCE_TXTADV_MODIFIER);
+					sc.ForwardSetState(SCE_TXTADV_HEAD);
+				}
+				else
+				{
+					sc.SetState(SCE_TXTADV_MODIFIER);
+					sc.ForwardSetState(SCE_TXTADV_BIGHEAD);
+				}
+			}
+			else if (sc.ch == '-')
+			{
+				if (sc.Match("--"))
+				{
+					sc.Forward();
+				}
+				else if (sc.chPrev == ' ')
+				{
+					sc.SetState(SCE_TXTADV_MODIFIER);
+					sc.ForwardSetState(SCE_TXTADV_STRIKETHROUGH);
+				}
+			}
+			else if (isalpha(sc.ch))
+				sc.SetState(SCE_TXTADV_POSSIB_URL);
+		}
+	}
+	sc.Complete();
+}
+
+// Store both the current line's fold level and the next lines in the
+// level store to make it easy to pick up with each increment
+// and to make it possible to fiddle the current level for "} else {".
+/*
+void SCI_METHOD LexerNSCR::Fold(unsigned int startPos, int length, int initStyle, IDocument *pAccess) 
+{
+
+	if (!options.fold)
+		return;
+
+	LexAccessor styler(pAccess);
+
+	unsigned int endPos = startPos + length;
+	int visibleChars = 0;
+	int lineCurrent = styler.GetLine(startPos);
+	int levelCurrent = SC_FOLDLEVELBASE;
+	if (lineCurrent > 0)
+		levelCurrent = styler.LevelAt(lineCurrent-1) >> 16;
+	int levelMinCurrent = levelCurrent;
+	int levelNext = levelCurrent;
+	char chNext = styler[startPos];
+	int styleNext = styler.StyleAt(startPos);
+	int style = initStyle;
+	bool foldAtElse = options.foldAtElse;
+	bool foundElse = false;
+	const bool userDefinedFoldMarkers = !options.foldExplicitStart.empty() && !options.foldExplicitEnd.empty();
+	for (unsigned int i = startPos; i < endPos; i++) 
+	{
+		char ch = chNext;
+		chNext = styler.SafeGetCharAt(i + 1);
+		int stylePrev = style;
+		style = styleNext;
+		styleNext = styler.StyleAt(i + 1);
+		bool atEOL = (ch == '\r' && chNext != '\n') || (ch == '\n');
+		if (options.foldComment && options.foldCommentMultiline) 
+		{
+			if (!(stylePrev == SCE_NSCR_COMMENT_BLOCK)) 
+			{
+				levelNext++;
+			} 
+			else if (!(styleNext == SCE_NSCR_COMMENT_BLOCK) && !atEOL) 
+			{
+				// Comments don't end at end of line and the next character may be unstyled.
+				levelNext--;
+			}
+		}
+		if (options.foldComment && options.foldCommentExplicit && ((style == SCE_NSCR_COMMENT_LINE) || options.foldExplicitAnywhere)) 
+		{
+			if (userDefinedFoldMarkers) 
+			{
+				if (styler.Match(i, options.foldExplicitStart.c_str())) 
+				{
+ 					levelNext++;
+				} 
+				else if (styler.Match(i, options.foldExplicitEnd.c_str())) 
+				{
+ 					levelNext--;
+ 				}
+			} 
+			else 
+			{
+				if ((ch == '#') && (chNext == '#'))  //##{
+				{
+					char chNext2 = styler.SafeGetCharAt(i + 2);
+					if (chNext2 == '{') 
+					{
+						levelNext++;
+					} 
+					else if (chNext2 == '}') 
+					{
+						levelNext--;
+					}
+				}
+ 			}
+ 		}
+		if (options.foldSyntaxBased && (style == SCE_NSCR_IDENTIFIER || style == SCE_NSCR_COMMAND || style == SCE_NSCR_INSTALL || style == SCE_NSCR_PROCEDURE_COMMANDS)) 
+		{
+			if (styler.Match(i, "endif") 
+				|| styler.Match(i, "endfor") 
+				|| styler.Match(i, "endwhile") 
+				|| styler.Match(i, "endprocedure") 
+				|| styler.Match(i, "endcompose") 
+				|| styler.Match(i, "<endinstall>")				
+				|| styler.Match(i, "<endinfo>")				
+				|| styler.Match(i, "</helpindex>")				
+				|| styler.Match(i, "</helpfile>")				
+				|| styler.Match(i, "</article>")				
+				|| styler.Match(i, "</keywords>")				
+				|| styler.Match(i, "</keyword>")				
+				|| styler.Match(i, "</codeblock>")				
+				|| styler.Match(i, "</exprblock>")				
+				|| styler.Match(i, "</example>")				
+				|| styler.Match(i, "</item>")				
+				|| styler.Match(i, "</list>"))			
+			{
+				levelNext--;
+				foundElse = false;
+			}
+			else if (styler.SafeGetCharAt(i-1) != 'd' 
+				&& styler.SafeGetCharAt(i-1) != 'e'
+				&& (styler.Match(i, "if ") || styler.Match(i, "if(") 
+					|| styler.Match(i, "for ") || styler.Match(i, "for(") 
+					|| styler.Match(i, "while ") || styler.Match(i, "while(") 
+					|| styler.Match(i, "procedure ") || styler.Match(i, "compose")
+					|| styler.Match(i, "<install>")
+					|| styler.Match(i, "<info>")
+					|| styler.Match(i, "<helpindex>")
+					|| styler.Match(i, "<helpfile>")
+					|| styler.Match(i, "<article")
+					|| styler.Match(i, "<keywords>")
+					|| styler.Match(i, "<keyword>")
+					|| styler.Match(i, "<codeblock>")
+					|| styler.Match(i, "<exprblock>")
+					|| styler.Match(i, "<example")
+					|| styler.Match(i, "<item")
+					|| styler.Match(i, "<list")
+				)) 
+			{
+				// Measure the minimum before a '{' to allow
+				// folding on "} else {"
+
+				levelNext++;
+			}
+
+		}
+		if (atEOL || (i == endPos-1)) 
+		{
+			if (options.foldComment && options.foldCommentMultiline) 
+			{  // Handle nested comments
+				int nc;
+				nc =  styler.GetLineState(lineCurrent);
+				nc -= lineCurrent>0? styler.GetLineState(lineCurrent-1): 0;
+				levelNext += nc;
+			}
+			int levelUse = levelCurrent;
+			if (options.foldSyntaxBased && foldAtElse) 
+			{
+				levelUse = levelMinCurrent;
+			}
+			int lev = levelUse | levelNext << 16;
+			if (visibleChars == 0 && options.foldCompact)
+				lev |= SC_FOLDLEVELWHITEFLAG;
+			if (levelUse < levelNext || foundElse)
+				lev |= SC_FOLDLEVELHEADERFLAG;
+			if (lev != styler.LevelAt(lineCurrent)) 
+			{
+				styler.SetLevel(lineCurrent, lev);
+			}
+			lineCurrent++;
+			levelCurrent = levelNext;
+			levelMinCurrent = levelCurrent;
+			visibleChars = 0;
+			foundElse = false;
+		}
+		if (!IsASpace(ch))
+			visibleChars++;
+	}
+}
+*/
+
+
+
+
+LexerModule lmNSCR(SCLEX_NSCR, LexerNSCR::LexerFactoryNSCR, "NSCR", NSCRWordLists);
+LexerModule lmNPRC(SCLEX_NPRC, LexerNPRC::LexerFactoryNPRC, "NPRC", NPRCWordLists);
+LexerModule lmTXTADV(SCLEX_TXTADV, LexerTXTADV::LexerFactoryTXTADV, "TXTADV", emptyWordListDesc);
 
 LexerModule lmBatch(SCLEX_BATCH, ColouriseBatchDoc, "batch", 0, batchWordListDesc);
 LexerModule lmDiff(SCLEX_DIFF, ColouriseDiffDoc, "diff", FoldDiffDoc, emptyWordListDesc);

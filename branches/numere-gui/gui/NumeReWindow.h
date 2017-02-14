@@ -120,6 +120,7 @@ class NumeReWindow : public wxFrame
         void openImage(wxFileName filename);
         void openHTML(wxString HTMLcontent);
         void openTable(const vector<vector<string> >& sTable, const string& sTableName);
+        void editTable(const vector<vector<string> >& sTable, const string& sTableName);
 
         Networking* GetNetworking();
 

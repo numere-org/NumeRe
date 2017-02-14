@@ -64,6 +64,7 @@ extern const string sParserVersion;
  */
 void BI_load_data(Datafile& _data, Settings& _option, Parser& _parser, string sFileName = "");
 void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string& sCache, bool bData = false, bool bCache = false, bool bSave = false, bool bDefaultName = true);
+string** BI_make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, const string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, bool bSave = true);
 void BI_remove_data(Datafile& _data, Settings& _option, bool bIgnore = false);
 //void BI_edit_header(Datafile&, Settings&);
 void BI_append_data(const string& sCmd, Datafile& _data, Settings& _option, Parser& _parser);

@@ -869,7 +869,7 @@ string Script::getNextScriptCommand()
             fLogFile << ">> Installing: \"" << sScriptCommand.substr(sScriptCommand.find('$'), sScriptCommand.find('(', sScriptCommand.find('$'))-sScriptCommand.find('$')) << "\" ..." << endl;
             if (!bDISABLE_SCREEN_OUTPUT)
             {
-                NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("SCRIPT_INSTALLING_PROC", sScriptCommand.substr(sScriptCommand.find('$'), sScriptCommand.find('(', sScriptCommand.find('$'))-sScriptCommand.find('$')))));
+                NumeReKernel::print(toSystemCodePage(_lang.get("SCRIPT_INSTALLING_PROC", sScriptCommand.substr(sScriptCommand.find('$'), sScriptCommand.find('(', sScriptCommand.find('$'))-sScriptCommand.find('$')))));
                 //cerr << "|-> Installiere \"" << sScriptCommand.substr(sScriptCommand.find('$'), sScriptCommand.find('(', sScriptCommand.find('$'))-sScriptCommand.find('$')) << "\" ..." << endl;
             }
         }

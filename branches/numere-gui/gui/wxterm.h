@@ -235,12 +235,16 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
         void OnClose(wxCloseEvent& event);
 
         vector<string> getPathSettings();
+        void passEditedTable(const vector<vector<string> >& sTable);
+        void cancelTableEdit() {m_bTableEditCanceled = true;}
     protected:
         virtual wxThread::ExitCode Entry();
         NumeReKernel _kernel;
         wxCriticalSection m_kernelCS;
         NumeReKernel::KernelStatus m_KernelStatus;
         bool m_bCommandAvailable;
+        bool m_bTableEditAvailable;
+        bool m_bTableEditCanceled;
         string m_sCommandLine;
         string m_sAnswer;
 

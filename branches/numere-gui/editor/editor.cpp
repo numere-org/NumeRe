@@ -1676,11 +1676,11 @@ void NumeReEditor::applyStrikeThrough()
         || m_fileType == FILE_TEXSOURCE
         || m_fileType == FILE_DATAFILES)
         return;
-    for (size_t i = 0; i < GetLastPosition(); i++)
+    for (int i = 0; i < GetLastPosition(); i++)
     {
         if (GetStyleAt(i) == wxSTC_TXTADV_STRIKETHROUGH)
         {
-            for (size_t j = i; j < GetLastPosition(); j++)
+            for (int j = i; j < GetLastPosition(); j++)
             {
                 if (GetStyleAt(j) == wxSTC_TXTADV_MODIFIER || j == GetLastPosition()-1)
                 {
@@ -2356,7 +2356,7 @@ wxString NumeReEditor::generateAutoCompList(const wxString& wordstart, string sP
     unsigned int nPos = 0;
     while ((nPos = this->FindText(nPos, this->GetLastPosition(), wordstart, wxSTC_FIND_WORDSTART)) != string::npos)
     {
-        if (nPos > this->GetCurrentPos() || WordEndPosition(nPos+1, true) < this->GetCurrentPos())
+        if (nPos > (size_t)this->GetCurrentPos() || WordEndPosition(nPos+1, true) < this->GetCurrentPos())
             mAutoCompMap[toLowerCase(this->GetTextRange(nPos, WordEndPosition(nPos+1, true)).ToStdString()) + " |" + this->GetTextRange(nPos, WordEndPosition(nPos+1, true))] = 1;
         nPos++;
     }

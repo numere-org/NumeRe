@@ -16,24 +16,38 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#ifndef TABLEEDITPANEL_HPP
+#define TABLEEDITPANEL_HPP
+
 #include <wx/wx.h>
+#include <wx/panel.h>
+#include "tableviewer.hpp"
+#include "wxterm.h"
+#include "../kernel/core/language.hpp"
 
-#ifndef VIEWERFRAME_HPP
-#define VIEWERFRAME_HPP
+extern Language _guilang;
 
-class ViewerFrame : public wxFrame
+class TableEditPanel : public wxPanel
 {
-    public:
-        ViewerFrame(wxWindow* parent, const wxString& title) : wxFrame(parent, wxID_ANY, title, wxDefaultPosition, wxDefaultSize, wxFRAME_FLOAT_ON_PARENT | wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX | wxMAXIMIZE_BOX | wxMINIMIZE_BOX) {};
-
     private:
-        void OnKeyDown(wxKeyEvent& event);
-        void OnFocus(wxFocusEvent& event);
-        void OnEnter(wxMouseEvent& event);
+        wxTerm* m_terminal;
+        wxBoxSizer* vsizer;
+        wxBoxSizer* hsizer;
+        bool finished;
+
+    public:
+        TableViewer* grid;
+
+        TableEditPanel(wxFrame* parent, wxWindowID id);
+
+        void SetTerminal(wxTerm* term) {m_terminal = term;}
+
+        void OnButtonOk(wxCommandEvent& event);
+        void OnButtonCancel(wxCommandEvent& event);
         void OnClose(wxCloseEvent& event);
 
         DECLARE_EVENT_TABLE();
 };
 
-#endif
+#endif // TABLEEDITPANEL_HPP
 

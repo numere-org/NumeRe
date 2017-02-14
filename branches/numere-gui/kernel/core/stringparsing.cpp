@@ -4,7 +4,7 @@
 
 extern value_type vAns;
 extern Integration_Vars parser_iVars;
-extern bool bSupressAnswer;
+//extern bool bSupressAnswer;
 extern mglGraph _fontData;
 extern Plugin _plugin;
 
@@ -699,7 +699,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
         nPos += getMatchingParenthesis(sLine.substr(nPos));
         if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 8))))
         {
-            string sStrFind = sLine.substr(n_pos+7, nPos-n_pos-7);
+            string sStrFind = sLine.substr(n_pos+7, nPos-n_pos-7) + " -kmq";
             if (!parser_StringParser(sStrFind, sDummy, _data, _parser, _option, true))
                 return 0;
             else
@@ -727,7 +727,8 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                         nPosition = 0;
                 }
 
-                sToFindIn = sToFindIn.substr(sToFindIn.find('"')+1, sToFindIn.rfind('"')-sToFindIn.find('"')-1);
+                if (sToFindIn.front() == '"')
+                    sToFindIn = sToFindIn.substr(sToFindIn.find('"')+1, sToFindIn.rfind('"')-sToFindIn.find('"')-1);
                 sLine = sLine.substr(0,n_pos) + toString((int)sToFindIn.find(sToFind, nPosition)+1) + sLine.substr(nPos+1);
             }
         }
@@ -745,7 +746,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
         nPos += getMatchingParenthesis(sLine.substr(nPos));
         if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 9))))
         {
-            string sStrFind = sLine.substr(n_pos+8, nPos-n_pos-8);
+            string sStrFind = sLine.substr(n_pos+8, nPos-n_pos-8) + " -kmq";
             if (!parser_StringParser(sStrFind, sDummy, _data, _parser, _option, true))
                 return 0;
             else
@@ -773,7 +774,8 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                         nPosition = 0;
                 }
 
-                sToFindIn = sToFindIn.substr(sToFindIn.find('"')+1, sToFindIn.rfind('"')-sToFindIn.find('"')-1);
+                if (sToFindIn.front() == '"')
+                    sToFindIn = sToFindIn.substr(sToFindIn.find('"')+1, sToFindIn.rfind('"')-sToFindIn.find('"')-1);
                 sLine = sLine.substr(0,n_pos) + toString((int)sToFindIn.rfind(sToFind, nPosition)+1) + sLine.substr(nPos+1);
             }
         }
@@ -1720,7 +1722,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
         return -1;
     }
 
-    if (bSupressAnswer)
+    if (NumeReKernel::bSupressAnswer)
         bSilent = true;
 
     if (sLine.find('=') != string::npos

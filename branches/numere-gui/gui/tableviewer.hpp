@@ -36,24 +36,64 @@ class TableViewer : public wxGrid
         size_t nHeight;
         size_t nWidth;
         size_t nFirstNumRow;
+        bool readOnly;
+        wxColor HeadlineColor;
+        wxColor FrameColor;
 
         void OnKeyDown(wxKeyEvent& event);
+        void OnChar(wxKeyEvent& event);
         void OnEnter(wxMouseEvent& event);
+        void OnCellChange(wxGridEvent& event);
+        void updateFrame();
+        void deleteSelection();
+        int findEmptyHeadline(int nCol);
+        int findLastElement(int nCol);
         wxString GetRowLabelValue(int row);
         wxString GetColLabelValue(int col);
         bool isNumerical(const string& sCell);
         wxString replaceCtrlChars(const wxString& sStr);
         void copyContents();
+        void pasteContents();
+        vector<wxString> getLinesFromPaste(const wxString& data);
+        void replaceDecimalSign(wxString& text);
+        void replaceTabSign(wxString& text);
+        wxGridCellCoords CreateEmptyGridSpace(int rows, int headrows, int cols);
+
+        wxString copyCell(int row, int col);
+
+        wxMenu m_popUpMenu;
+        wxGridCellCoords m_lastRightClick;
 
 
     public:
         TableViewer(wxWindow* parent, wxWindowID id, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxWANTS_CHARS, const wxString& name = wxGridNameStr);
 
         void SetData(const vector<vector<string> >& vData);
+        vector<vector<string> > GetData();
+
+        void SetTableReadOnly(bool isReadOnly = true);
+        void SetDefaultSize(size_t rows = 1, size_t cols = 1);
+        void OnLabelRightClick(wxGridEvent& event);
+        void OnCellRightClick(wxGridEvent& event);
+        void OnMenu(wxCommandEvent& event);
+        void insertElement(int id);
+        void removeElement(int id);
 
 
         size_t GetHeight() {return nHeight;}
         size_t GetWidth() {return nWidth;}
+
+        enum TableViewerIDs
+        {
+            ID_MENU_INSERT_ROW = 15000,
+            ID_MENU_INSERT_COL,
+            ID_MENU_INSERT_CELL,
+            ID_MENU_REMOVE_ROW,
+            ID_MENU_REMOVE_COL,
+            ID_MENU_REMOVE_CELL,
+            ID_MENU_COPY,
+            ID_MENU_PASTE
+        };
 
         DECLARE_EVENT_TABLE();
 };

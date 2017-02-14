@@ -226,6 +226,8 @@ wxTerm::wxTerm(wxWindow* parent, wxWindowID id,
     StartKernelTask();
     m_KernelStatus = NumeReKernel::NUMERE_DONE;
     m_bCommandAvailable = false;
+    m_bTableEditAvailable = false;
+    m_bTableEditCanceled = false;
     m_sCommandLine = "";
     m_sAnswer = "";
     m_wxParent = nullptr;
@@ -264,6 +266,13 @@ vector<string> wxTerm::getPathSettings()
     wxCriticalSectionLocker lock(m_kernelCS);
     vector<string> vPaths = _kernel.getPathSettings();
     return vPaths;
+}
+
+void wxTerm::passEditedTable(const vector<vector<string> >& _sTable)
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    NumeReKernel::sTable = _sTable;
+    m_bTableEditAvailable = true;
 }
 
 Settings wxTerm::getKernelSettings()
@@ -385,6 +394,7 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
     bool changedSettings = false;
     bool openDoc = false;
     bool done = false;
+    bool editTable = false;
     string sFileName = "";
     stringmatrix sTable;
     unsigned int nLineNumber = 0;
@@ -421,6 +431,12 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
                 sTable = NumeReKernel::sTable;
                 sFileName = NumeReKernel::sTableName;
                 break;
+            case NumeReKernel::NUMERE_EDIT_TABLE:
+                sAnswer = m_sAnswer;//+ "|\n|<- ";
+                sTable = NumeReKernel::sTable;
+                sFileName = NumeReKernel::sTableName;
+                editTable = true;
+                break;
             case NumeReKernel::NUMERE_PENDING:
                 sAnswer = "|<- ";
                 break;
@@ -449,7 +465,10 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
     }
     if (sTable.size())
     {
-        m_wxParent->openTable(sTable, sFileName);
+        if (editTable)
+            m_wxParent->editTable(sTable, sFileName);
+        else
+            m_wxParent->openTable(sTable, sFileName);
     }
     else if (openDoc)
     {
