@@ -309,6 +309,18 @@ bool TableViewer::isNumerical(const string& sCell)
     return sCell.find_first_not_of(sNums) == string::npos;
 }
 
+bool TableViewer::isEmptyCol(int col)
+{
+    if (col >= this->GetCols() || col < 0)
+        return false;
+    for (int i = nFirstNumRow; i < this->GetRows()-1; i++)
+    {
+        if (this->GetCellValue(i,col).length())
+            return false;
+    }
+    return true;
+}
+
 wxString TableViewer::replaceCtrlChars(const wxString& sStr)
 {
     wxString sReturn = sStr;
@@ -512,12 +524,18 @@ wxGridCellCoords TableViewer::CreateEmptyGridSpace(int rows, int headrows, int c
 
     for (int i = this->GetCols()-1; i >= 0; i--)
     {
-        if (this->GetCellValue(0,i).length())
+        if (!isEmptyCol(i)) //(this->GetCellValue(0,i).length())
         {
             if (this->GetCols()-i-1 < cols+1)
                 this->AppendCols(cols-(this->GetCols()-(i+1))+1);
             topLeft.SetCol(i+1);
             break;
+        }
+        if (!i)
+        {
+            if (this->GetCols()-1 < cols)
+                this->AppendCols(cols-(this->GetCols()-1));
+            topLeft.SetCol(0);
         }
     }
     for (int i = 0; i < this->GetRows(); i++)
@@ -686,7 +704,8 @@ void TableViewer::SetData(const vector<vector<string> >& vData)
             {
                 this->SetCellAlignment(i, j, wxALIGN_RIGHT, wxALIGN_CENTER);
             }
-            this->SetCellValue(i, j, replaceCtrlChars(vData[i][j]));
+            if (vData[i][j].length())
+                this->SetCellValue(i, j, replaceCtrlChars(vData[i][j]));
             this->SetReadOnly(i, j, readOnly);
         }
     }
@@ -822,7 +841,11 @@ void TableViewer::OnMenu(wxCommandEvent& event)
 void TableViewer::insertElement(int id)
 {
     if (id == ID_MENU_INSERT_ROW)
+    {
+        if (m_lastRightClick.GetRow() < nFirstNumRow)
+            nFirstNumRow++;
         this->InsertRows(m_lastRightClick.GetRow());
+    }
     else if (id == ID_MENU_INSERT_COL)
         this->InsertCols(m_lastRightClick.GetCol());
     else
@@ -842,9 +865,15 @@ void TableViewer::insertElement(int id)
 void TableViewer::removeElement(int id)
 {
     if (id == ID_MENU_REMOVE_ROW)
+    {
+        if (m_lastRightClick.GetRow() < nFirstNumRow)
+            nFirstNumRow--;
         this->DeleteRows(m_lastRightClick.GetRow());
+    }
     else if (id == ID_MENU_REMOVE_COL)
+    {
         this->DeleteCols(m_lastRightClick.GetCol());
+    }
     else
     {
         int nLastLine = findLastElement(m_lastRightClick.GetCol());
@@ -869,7 +898,7 @@ vector<vector<string> > TableViewer::GetData()
                 vTableContents[i][j] = "#"+this->GetCellValue(i,j);
             else if (this->GetCellBackgroundColour(i,j) == *wxRED)
                 vTableContents[i][j] == "---";
-            else
+            else if (this->GetCellValue(i,j).length())
                 vTableContents[i][j] = this->GetCellValue(i,j);
         }
     }

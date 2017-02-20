@@ -576,13 +576,13 @@ void NumeReEditor::MakeBraceCheck()
     char PrevChar = 0;
     if (this->GetCurrentPos())
         PrevChar = this->GetCharAt(this->GetCurrentPos()-1);
-    if (CurrentChar == '(' || CurrentChar == ')'
-        || CurrentChar == '[' || CurrentChar == ']'
-        || CurrentChar == '{' || CurrentChar == '}')
+    if (CurrentChar == ')' || CurrentChar == ']' || CurrentChar == '}')
         getMatchingBrace(this->GetCurrentPos());
-    else if (PrevChar == '(' || PrevChar == ')'
-        || PrevChar == '[' || PrevChar == ']'
-        || PrevChar == '{' || PrevChar == '}')
+    else if (PrevChar == '(' || PrevChar == '[' || PrevChar == '{')
+        getMatchingBrace(this->GetCurrentPos()-1);
+    else if (CurrentChar == '(' || CurrentChar == '[' || CurrentChar == '{')
+        getMatchingBrace(this->GetCurrentPos());
+    else if (PrevChar == ')' || PrevChar == ']' || PrevChar == '}')
         getMatchingBrace(this->GetCurrentPos()-1);
     else
     {
@@ -2316,6 +2316,8 @@ wxString NumeReEditor::FindMarkedProcedure(int charpos)
             while (currentNamespace.back() == '\r' || currentNamespace.back() =='\n')
                 currentNamespace.pop_back();
             StripSpaces(currentNamespace);
+            while (currentNamespace.back() == '~')
+                currentNamespace.pop_back();
 
             if (clickedWord[0] == '$')
                 clickedWord.insert(1,currentNamespace + "~");

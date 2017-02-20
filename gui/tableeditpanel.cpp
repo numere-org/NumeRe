@@ -64,7 +64,19 @@ void TableEditPanel::OnButtonCancel(wxCommandEvent& event)
 void TableEditPanel::OnClose(wxCloseEvent& event)
 {
     if (!finished)
+    {
         m_terminal->cancelTableEdit();
+        finished = true;
+    }
+    m_parent->Destroy();
     event.Skip();
 }
+
+/*void TableEditPanel::OnKeyDown(wxKeyEvent& event)
+{
+    if (event.GetKeyCode() == WXK_ESCAPE)
+        m_parent->Close();
+    else
+        event.Skip();
+}*/
 

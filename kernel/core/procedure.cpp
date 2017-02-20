@@ -648,6 +648,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
 
     fProc_in.clear();
     fProc_in.open(sCurrentProcedureName.c_str());
+    //NumeReKernel::print("sCurr = " +sCurrentProcedureName);
     if (fProc_in.fail())
     {
         fProc_in.close();
@@ -663,11 +664,16 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
         if (sProc[i] == '\\' || sProc[i] == '/' || sProc[i] == '~')
         {
             sThisNameSpace = sProc.substr(0,i);
-            for (unsigned int j = 0; j < sThisNameSpace.length(); j++)
+            //NumeReKernel::print("NameSpace = " + sThisNameSpace);
+            if (sThisNameSpace.find(':') == string::npos)
             {
-                if (sThisNameSpace[j] == '\\' || sThisNameSpace[j] == '/')
-                    sThisNameSpace[j] = '~';
+                for (unsigned int j = 0; j < sThisNameSpace.length(); j++)
+                {
+                    if (sThisNameSpace[j] == '\\' || sThisNameSpace[j] == '/')
+                        sThisNameSpace[j] = '~';
+                }
             }
+            //NumeReKernel::print("NameSpace = " + sThisNameSpace);
             break;
         }
         if (!i)

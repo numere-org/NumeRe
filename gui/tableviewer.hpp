@@ -51,6 +51,7 @@ class TableViewer : public wxGrid
         wxString GetRowLabelValue(int row);
         wxString GetColLabelValue(int col);
         bool isNumerical(const string& sCell);
+        bool isEmptyCol(int col);
         wxString replaceCtrlChars(const wxString& sStr);
         void copyContents();
         void pasteContents();

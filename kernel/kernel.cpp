@@ -1099,11 +1099,9 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     //case  2: return 1;  // Keyword "mode"
                 }
             }
-
             // --> Wenn die call()-Methode FALSE zurueckgibt, ist etwas schief gelaufen! <--
             if (!_functions.call(sLine, _option))
                 throw FUNCTION_ERROR;
-
             // --> Prozeduren abarbeiten <--
             if (sLine.find('$') != string::npos && sLine.find('(', sLine.find('$')) != string::npos && !_procedure.getLoop())
             {
@@ -1146,15 +1144,13 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 sLine = "";
                 continue;
             }
-
             // --> Nochmals ueberzaehlige Leerzeichen entfernen <--
             StripSpaces(sLine);
-
             if (!_procedure.getLoop())
             {
+                // this is obviously a time consuming task => to be investigated
                 evalRecursiveExpressions(sLine);
             }
-
             /*if (_option.getbDebug())
                 cerr << "|-> DEBUG: sLine = " << sLine << endl;*/
 
@@ -1170,6 +1166,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 {
                     if (_procedure.getLoop())
                     {
+                        toggleTableStatus();
                         // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
                         printPreFmt("|" + _procedure.getCurrentBlock());
                         if (_procedure.getCurrentBlock() == "IF")
@@ -1186,6 +1183,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                             if (_procedure.getLoop() > 1)
                                 printPreFmt("--");
                         }
+                        toggleTableStatus();
                         printPreFmt(strfill("> ", 2*_procedure.getLoop(), '-'));
                         //cerr << std::setfill('-') << std::setw(2*_procedure.getLoop()-2) << "> ";
                     }
@@ -1211,11 +1209,9 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 }
                 continue;
             }
-
             // --> Gibt es "??" ggf. nochmal? Dann rufe die Prompt-Funktion auf <--
             if (sLine.find("??") != string::npos)
                 sLine = parser_Prompt(sLine);
-
             // --> Gibt es "data(" oder "cache("? Dann rufe die GetDataElement-Methode auf <--
             if (!containsStrings(sLine)
                 && !_data.containsStringVars(sLine)
@@ -1237,7 +1233,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             {
                 sLine.erase(sLine.find(":="),1);
             }
-
             // --> String-Syntax ("String" oder #VAR)? String-Parser aufrufen und mit dem naechsten Schleifendurchlauf fortfahren <--
             if (containsStrings(sLine) || _data.containsStringVars(sLine))
             {
