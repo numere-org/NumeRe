@@ -182,8 +182,8 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
                 dKurt += (_data.getElement(i,j,sDatatable)-dAverage)*(_data.getElement(i,j,sDatatable)-dAverage)*(_data.getElement(i,j,sDatatable)-dAverage)*(_data.getElement(i,j,sDatatable)-dAverage);
 			}
 
-			dSkew /= _data.num(sDatatable,0,nLine,j) / (dError*dError*dError);
-			dKurt /= _data.num(sDatatable,0,nLine,j) / (dError*dError*dError*dError);
+			dSkew /= _data.num(sDatatable,0,nLine,j) * (dError*dError*dError);
+			dKurt /= _data.num(sDatatable,0,nLine,j) * (dError*dError*dError*dError);
 			dKurt -= 3;
 
 			sOut[nLine+1][j] = "<<SUMBAR>>"; // Schreiben der berechneten Werte in die letzten drei Zeilen der Ausgabe

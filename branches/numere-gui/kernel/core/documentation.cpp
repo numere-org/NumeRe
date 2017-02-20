@@ -82,17 +82,17 @@ void doc_Help(const string& __sTopic, Settings& _option)
                 if (generateFile)
                 {
                     // Header fertigstellen
-                    fHTML << "<title>NUMERE-HILFE: " + toUpperCase(vDocArticle[i])
+                    fHTML << "<title>" + toUpperCase(_lang.get("DOC_HELP_HEADLINE", vDocArticle[i]))
                           << "</title>" << endl
                           << "</head>" << endl << endl
                           << "<body>" << endl
                           << "<!-- START COPYING HERE -->" << endl;
-                    fHTML << "<h4>Beschreibung:</h4>" << endl;
+                    fHTML << "<h4>" << _lang.get("DOC_HELP_DESC_HEADLINE") << "</h4>" << endl;
                 }
                 else
                 {
                     // Header fertigstellen
-                    sHTML += "<title>" + vDocArticle[i] + "</title>\n</head>\n\n<body>\n<h2>"+vDocArticle[i]+"</h2>\n<h4>Beschreibung:</h4>\n";
+                    sHTML += "<title>" + vDocArticle[i] + "</title>\n</head>\n\n<body>\n<h2>"+vDocArticle[i]+"</h2>\n<h4>" + _lang.get("DOC_HELP_DESC_HEADLINE") + "</h4>\n";
                 }
                 continue;
             }
@@ -100,9 +100,9 @@ void doc_Help(const string& __sTopic, Settings& _option)
             if (vDocArticle[i].find("<example ") != string::npos) // Beispiel-Tags
             {
                 if (generateFile)
-                    fHTML << "<h4>Beispiel</h4>" << endl;
+                    fHTML << "<h4>"+ _lang.get("DOC_HELP_EXAMPLE_HEADLINE") +"</h4>" << endl;
                 else
-                    sHTML += "<h4>Beispiel</h4>\n";
+                    sHTML += "<h4>"+ _lang.get("DOC_HELP_EXAMPLE_HEADLINE") +"</h4>\n";
                 bool bVerb = false;
                 if (vDocArticle[i].find("type=") && getArgAtPos(vDocArticle[i], vDocArticle[i].find("type=")+5) == "verbatim")
                     bVerb = true;
@@ -320,12 +320,12 @@ void doc_Help(const string& __sTopic, Settings& _option)
             {
                 if (generateFile)
                 {
-                    fHTML << "<h4>Optionen:</h4>" << endl;
+                    fHTML << "<h4>"+ _lang.get("DOC_HELP_OPTIONS_HEADLINE") +"</h4>" << endl;
                     fHTML << "<table style=\"border-collapse:collapse; border-color:rgb(136,136,136);border-width:1px\" border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">" << endl << "  <tbody>" << endl;
                 }
                 else
                 {
-                    sHTML += "<h4>Optionen:</h4>\n<table border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">\n  <tbody>\n";
+                    sHTML += "<h4>"+ _lang.get("DOC_HELP_OPTIONS_HEADLINE") +"</h4>\n<table border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">\n  <tbody>\n";
                 }
                 for (unsigned int j = i+1; j < vDocArticle.size(); j++)
                 {

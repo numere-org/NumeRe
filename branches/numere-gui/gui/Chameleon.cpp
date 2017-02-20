@@ -455,7 +455,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	int debuggerchars = 25;
 
 	const int widths[] = {fileNameChars * charWidth, filetypeChars * charWidth, readEditChars * charWidth, lineColChars * charWidth, debuggerchars * charWidth};
-    const int styles[] = {wxSB_NORMAL, wxSB_NORMAL, wxSB_NORMAL, wxSB_NORMAL, wxSB_NORMAL};
+    const int styles[] = {wxSB_RAISED, wxSB_RAISED, wxSB_RAISED, wxSB_RAISED, wxSB_RAISED};
 	m_statusBar = CreateStatusBar (WXSIZEOF(widths), wxST_SIZEGRIP);
 	//m_statusBar = new wxStatusBar(this);
 	//m_statusBar->SetFieldsCount(WXSIZEOF(widths), widths);
@@ -1477,8 +1477,11 @@ void NumeReWindow::openImage(wxFileName filename)
         return;
     }
     sizer->Add(_panel, 1, wxEXPAND);
-    frame->SetSize(_panel->getRelation()*570,600);
+    //int width = _panel->getRelation()*600;
+    _panel->SetSize(_panel->getRelation()*600,600);
     frame->SetSizer(sizer);
+    //frame->SetSize(_panel->getRelation()*600,600+30);
+    frame->SetClientSize(_panel->GetSize());
     frame->SetIcon(wxIcon(programPath + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
     m_currentView = frame;
     frame->Show();
@@ -2781,6 +2784,13 @@ void NumeReWindow::OnUpdateDebugUI()
 
 	wxToolBar* tb = GetToolBar();
 
+    if (!tb->GetToolEnabled(ID_DEBUG_STOP))
+    {
+        tb->EnableTool(ID_DEBUG_START, true);
+        tb->EnableTool(ID_DEBUG_STOP, false);
+    }
+    if (!m_currentEd)
+        return;
 	if (m_currentEd->GetFileName().GetExt() == "nscr" || m_currentEd->GetFileName().GetExt() == "nprc")
 	{
         tb->EnableTool(ID_DEBUG_ADDEDITORBREAKPOINT, true);
@@ -3586,6 +3596,8 @@ void NumeReWindow::UpdateToolbar()
 	//}
 
 	t->Realize();
+
+	OnUpdateDebugUI();
 
 
 	m_config->Write("Interface/ShowToolbarText", showText ? "true" : "false");

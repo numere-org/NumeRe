@@ -140,8 +140,9 @@ void BI_load_data(Datafile& _data, Settings& _option, Parser& _parser, string sF
 }
 
 // 3. Zur Kontrolle (oder aus anderen Gruenden) moechte man die eingelesenen Daten vielleicht auch betrachten. Wird hier erledigt
-void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string& sCache, bool bData, bool bCache, bool bSave, bool bDefaultName)
+void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string& _sCache, bool bData, bool bCache, bool bSave, bool bDefaultName)
 {
+    string sCache = _sCache;
     string sFileName = "";
 	if (_data.isValid() || _data.isValidCache())		// Sind ueberhaupt Daten vorhanden?
 	{
@@ -238,59 +239,8 @@ void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string
             return;
 		}
 		string** sOut = BI_make_stringmatrix(_data, _out, _option, sCache, nLine, nCol, nHeadlineCount, bSave);// = new string*[nLine];		// die eigentliche Ausgabematrix. Wird spaeter gefuellt an Output::format(string**,int,int,Output&) uebergeben
-		/*for (long long int i = 0; i < nLine; i++)
-		{
-			sOut[i] = new string[nCol];			// Vollstaendig Allozieren!
-		}
-
-		for (long long int i = 0; i < nLine; i++)
-		{
-			for (long long int j = 0; j < nCol; j++)
-			{
-				if (!i)						// Erste Zeile? -> Kopfzeilen uebertragen
-				{
-                    if (_out.isCompact())
-                        sOut[i][j] = _data.getTopHeadLineElement(j, sCache);
-					else
-                        sOut[i][j] = _data.getHeadLineElement(j, sCache);
-					if (_out.isCompact() && (int)sOut[i][j].length() > 11 && !bSave)
-					{
-                        //sOut[i][j].replace(4, sOut[i][j].length()-9, "...");
-                        sOut[i][j].replace(8, string::npos, "...");
-					}
-					else if (nHeadlineCount > 1 && sOut[i][j].find("\\n") != string::npos)
-					{
-                        string sHead = sOut[i][j];
-                        int nCount = 0;
-                        for (unsigned int n = 0; n < sHead.length(); n++)
-                        {
-                            if (sHead.substr(n,2) == "\\n")
-                            {
-                                sOut[i+nCount][j] = sHead.substr(0,n);
-                                sHead.erase(0,n+2);
-                                n = 0;
-                                nCount++;
-                            }
-                        }
-                        sOut[i+nCount][j] = sHead;
-					}
-					if (j == nCol-1)
-                        i = nHeadlineCount-1;
-					continue;
-				}
-				if (!_data.isValidEntry(i-nHeadlineCount,j, sCache))
-				{
-					sOut[i][j] = "---";			// Nullzeile? -> Da steht ja in Wirklichkeit auch kein Wert drin...
-					continue;
-				}
-				if (_out.isCompact() && !bSave)
-                    sOut[i][j] = toString(_data.getElement(i-nHeadlineCount,j, sCache), 4);		// Daten aus _data in die Ausgabematrix uebertragen
-				else
-                    sOut[i][j] = toString(_data.getElement(i-nHeadlineCount,j, sCache),_option);		// Daten aus _data in die Ausgabematrix uebertragen
-			}
-		}*/
-
-
+        if (sCache.front() == '*')
+            sCache.erase(0,1); // Vorangestellten Unterstrich wieder entfernen
 		if (_data.getCacheStatus() && !bSave)
 		{
 			_out.setPrefix("cache");
@@ -3910,36 +3860,36 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                             parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
 
                             _cache.setCacheSize(_idx.nI[1]-_idx.nI[0]+1, _idx.nJ[1]-_idx.nJ[0]+1, 1);
-                            if (iter->first != "cache")
-                                _cache.renameCache("cache", (iter->first), true);
+                            //if (iter->first != "cache")
+                                _cache.renameCache("cache", "*"+(iter->first), true);
                             for (unsigned int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
                             {
                                 for (unsigned int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
                                 {
                                     if (i == _idx.nI[0])
                                     {
-                                        _cache.setHeadLineElement(j-_idx.nJ[0], (iter->first), _data.getHeadLineElement(j, iter->first));
+                                        _cache.setHeadLineElement(j-_idx.nJ[0], "*"+(iter->first), _data.getHeadLineElement(j, iter->first));
                                     }
                                     if (_data.isValidEntry(i,j,iter->first))
-                                        _cache.writeToCache(i-_idx.nI[0], j-_idx.nJ[0], (iter->first), _data.getElement(i,j, iter->first));
+                                        _cache.writeToCache(i-_idx.nI[0], j-_idx.nJ[0], "*"+(iter->first), _data.getElement(i,j, iter->first));
                                 }
                             }
                         }
                         else
                         {
                             _cache.setCacheSize(_idx.vI.size(), _idx.vJ.size(), 1);
-                            if (iter->first != "cache")
-                                _cache.renameCache("cache", (iter->first), true);
+                            //if (iter->first != "cache")
+                                _cache.renameCache("cache", "*"+(iter->first), true);
                             for (unsigned int i = 0; i < _idx.vI.size(); i++)
                             {
                                 for (unsigned int j = 0; j < _idx.vJ.size(); j++)
                                 {
                                     if (!i)
                                     {
-                                        _cache.setHeadLineElement(j, (iter->first), _data.getHeadLineElement(_idx.vJ[j], iter->first));
+                                        _cache.setHeadLineElement(j, "*"+(iter->first), _data.getHeadLineElement(_idx.vJ[j], iter->first));
                                     }
                                     if (_data.isValidEntry(_idx.vI[i], _idx.vJ[j], iter->first))
-                                        _cache.writeToCache(i, j, (iter->first), _data.getElement(_idx.vI[i], _idx.vJ[j], iter->first));
+                                        _cache.writeToCache(i, j, "*"+(iter->first), _data.getElement(_idx.vI[i], _idx.vJ[j], iter->first));
                                 }
                             }
                         }
@@ -3950,7 +3900,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
 
                         //NumeReKernel::print(sCmd );
                         _data.setCacheStatus(false);
-                        BI_show_data(_cache, _out, _option, (iter->first), false, true);
+                        BI_show_data(_cache, _out, _option, "*"+(iter->first), false, true);
                         return 1;
                     }
                 }
@@ -6034,10 +5984,10 @@ bool BI_deleteCacheEntry(string& sCmd, Parser& _parser, Datafile& _data, const S
         string sCache = getNextArgument(sCmd, true);
         if (sCache.substr(0,5) == "data(")
             continue;
-
+        StripSpaces(sCache);
         for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
         {
-            if (sCache.find(iter->first+"(") != string::npos)
+            if (sCache.substr(0,sCache.find('(')) == iter->first) //(sCache.find(iter->first+"(") != string::npos)
             {
                 _iDeleteIndex = parser_getIndices(sCache.substr(sCache.find('(')), _parser, _data, _option);
                 if ((_iDeleteIndex.nI[0] == -1 && !_iDeleteIndex.vI.size()) || (_iDeleteIndex.nJ[0] == -1 && !_iDeleteIndex.vJ.size()))
@@ -8391,7 +8341,7 @@ bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _op
     if (_data.containsCacheElements(sObject))
     {
         StripSpaces(sObject);
-        Indices _idx = parser_getIndices(sObject, _parser, _data, _option);
+        //Indices _idx = parser_getIndices(sObject, _parser, _data, _option);
         string sTableName = sObject.substr(0,sObject.find('('));
         long long int nLine = 0;
         long long int nCol = 0;
@@ -8439,6 +8389,7 @@ bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _op
             for (size_t j = 0; j < _sTable[i].size(); j++)
             {
                 if (_sTable[i][j] == "---"
+                    || !_sTable[i][j].length()
                     || toLowerCase(_sTable[i][j]) == "nan"
                     || toLowerCase(_sTable[i][j]) == "inf"
                     || toLowerCase(_sTable[i][j]) == "-inf")
@@ -8746,7 +8697,8 @@ bool BI_readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _
         sCmd += sInput + ",";
     }
     sCmd.pop_back();
-    sCmd = sCmd;
+    //NumeReKernel::print(sCmd);
+    //sCmd = sCmd;
     fFile.close();
 
     return true;

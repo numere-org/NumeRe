@@ -45,6 +45,7 @@ class TableEditPanel : public wxPanel
         void OnButtonOk(wxCommandEvent& event);
         void OnButtonCancel(wxCommandEvent& event);
         void OnClose(wxCloseEvent& event);
+        //void OnKeyDown(wxKeyEvent& event);
 
         DECLARE_EVENT_TABLE();
 };

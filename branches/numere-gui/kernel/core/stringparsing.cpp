@@ -72,6 +72,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
         bPeek = true;
     }
 
+    //NumeReKernel::print(sLine);
     if (sLine.find("{") != string::npos
         && sLine.find('=') != string::npos
         && sLine.find("{") < sLine.find('=')
@@ -80,21 +81,27 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
         && sLine.find('!') != sLine.find('=')-1
         && sLine[sLine.find('=')+1] != '=')
     {
-        string sLeftSide = sLine.substr(0,sLine.find('=')+1);
-        sLine.erase(0,sLine.find('=')+1);
-        sLine += " -kmq";
-        if (!parser_StringParser(sLine, sDummy, _data, _parser, _option, true))
-            return 0;
-        if (containsStrings(sLine))
+        size_t eq_pos = sLine.find('=');
+        while (isInQuotes(sLine, eq_pos) && sLine.find('=', eq_pos+1) != string::npos)
+            eq_pos = sLine.find('=', eq_pos+1);
+        if (!isInQuotes(sLine, eq_pos))
         {
-            sLine = sLeftSide + "{" + sLine + "}";
-            parser_VectorToExpr(sLine, _option);
-        }
-        else
-        {
-            sLine = sLeftSide + sLine;
-            if (!containsStrings(sLine) && !_data.containsStringVars(sLine))
-                return -1;
+            string sLeftSide = sLine.substr(0,eq_pos+1);
+            sLine.erase(0,eq_pos+1);
+            sLine += " -kmq";
+            if (!parser_StringParser(sLine, sDummy, _data, _parser, _option, true))
+                return 0;
+            if (containsStrings(sLine))
+            {
+                sLine = sLeftSide + "{" + sLine + "}";
+                parser_VectorToExpr(sLine, _option);
+            }
+            else
+            {
+                sLine = sLeftSide + sLine;
+                if (!containsStrings(sLine) && !_data.containsStringVars(sLine))
+                    return -1;
+            }
         }
     }
     else if (sLine.find('{') != string::npos
@@ -174,7 +181,8 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             while (sLine.length())
             {
                 sRecursion = getNextArgument(sLine, true);
-                if (sLine.length() || sRecursion.find('=') != string::npos)
+                //NumeReKernel::print(sRecursion);
+                if (sLine.length() && sRecursion.find('=') != string::npos)
                 {
                     sRecursion += " -kmq";
                     if (!parser_StringParser(sRecursion, sDummy, _data, _parser, _option, true))
@@ -189,7 +197,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
         if (sStringObject.length())
             sLine = sStringObject + sLine;
     }
-    //cerr << sLine << endl;
+
 
     unsigned int n_pos = 0;
 
@@ -430,6 +438,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     } /*findfile("FILENAME")*/
 
     n_pos = 0;
+    //NumeReKernel::print(sLine);
     //cerr << "sline = " << sLine << endl;
 
     if (sLine.find('=') != string::npos
@@ -458,7 +467,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
 
     //cerr << "sline = " << sLine << endl;
     //cerr << "n_pos = " << n_pos << endl;
-
+    //NumeReKernel::print(sLine);
     if (_data.containsStringVars(sLine.substr(n_pos)))
         _data.getStringValues(sLine, n_pos);
     //cerr << "replacedline = " << sLine << endl;
@@ -1739,7 +1748,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
 
     //cerr << sObject << endl;
     //cerr << "'" << sLine << "'" << endl;
-
+    //NumeReKernel::print(sLine);
     sTemp = sLine + " ";
     unsigned int nPos = 0;
     while (sTemp.find('#', nPos) != string::npos)
@@ -1752,7 +1761,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             sTemp_2 += sTemp.substr(0,nPos);
             sTemp = sTemp.substr(nPos+1);
             if (_option.getbDebug())
-                cerr << "|-> DEBUG: (#-parser) sTemp = " << sTemp.substr(0,100) << endl;
+                NumeReKernel::print("DEBUG: (#-parser) sTemp = " + sTemp.substr(0,100));
             if (sTemp[0] == '~')
             {
                 for (unsigned int i = 0; i < sTemp.length(); i++)
