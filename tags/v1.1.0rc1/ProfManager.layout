@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_layout_file>
+	<FileVersion major="1" minor="0" />
+	<ActiveTarget name="Release Win32" />
+	<File name="common\Crc16.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="4085" topLine="15" />
+		</Cursor>
+		<Folding>
+			<Collapse line="11" />
+			<Collapse line="17" />
+			<Collapse line="54" />
+			<Collapse line="63" />
+			<Collapse line="71" />
+			<Collapse line="78" />
+			<Collapse line="84" />
+			<Collapse line="90" />
+			<Collapse line="93" />
+			<Collapse line="125" />
+		</Folding>
+	</File>
+	<File name="profmanager\ProfOptionsDialog.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="8974" topLine="208" />
+		</Cursor>
+		<Folding>
+			<Collapse line="11" />
+			<Collapse line="18" />
+			<Collapse line="75" />
+			<Collapse line="79" />
+			<Collapse line="88" />
+			<Collapse line="102" />
+			<Collapse line="115" />
+			<Collapse line="270" />
+			<Collapse line="281" />
+			<Collapse line="286" />
+			<Collapse line="295" />
+			<Collapse line="300" />
+			<Collapse line="311" />
+			<Collapse line="316" />
+			<Collapse line="349" />
+			<Collapse line="360" />
+		</Folding>
+	</File>
+	<File name="common\Crc16.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="481" topLine="3" />
+		</Cursor>
+	</File>
+	<File name="perms\p.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="6652" topLine="151" />
+		</Cursor>
+		<Folding>
+			<Collapse line="43" />
+			<Collapse line="47" />
+			<Collapse line="75" />
+			<Collapse line="82" />
+			<Collapse line="107" />
+			<Collapse line="125" />
+			<Collapse line="140" />
+			<Collapse line="155" />
+			<Collapse line="157" />
+			<Collapse line="175" />
+			<Collapse line="239" />
+			<Collapse line="255" />
+			<Collapse line="268" />
+			<Collapse line="284" />
+			<Collapse line="287" />
+		</Folding>
+	</File>
+</CodeBlocks_layout_file>
