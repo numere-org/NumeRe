@@ -331,7 +331,7 @@ wxString TableViewer::replaceCtrlChars(const wxString& sStr)
 }
 
 
-void TableViewer::copyContents()
+void TableViewer::copyContents() // maybe this should consider the language and convert the decimal dots correspondingly
 {
     wxString sSelection;
     if (!(GetSelectedCells().size() || GetSelectedCols().size() || GetSelectedRows().size() || GetSelectionBlockTopLeft().size() || GetSelectionBlockBottomRight().size()))
@@ -899,7 +899,11 @@ vector<vector<string> > TableViewer::GetData()
             else if (this->GetCellBackgroundColour(i,j) == *wxRED)
                 vTableContents[i][j] == "---";
             else if (this->GetCellValue(i,j).length())
-                vTableContents[i][j] = this->GetCellValue(i,j);
+            {
+                wxString content = this->GetCellValue(i,j);
+                replaceDecimalSign(content);
+                vTableContents[i][j] = content;
+            }
         }
     }
     return vTableContents;

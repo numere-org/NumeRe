@@ -822,14 +822,16 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
         else if (selection == "integrate2" || selection == "integrate2d")
             selection = "integrate";
 
+        size_t lastpos = 0;
         if (selection == "if" || selection == "endif" || selection == "else" || selection == "elseif")
         {
             size_t nLength = 0;
-            string sBlock = addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_IF")) + "\n    (...)\n";
+            size_t lastpos2 = 0;
+            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_IF"), lastpos)) + "\n    (...)\n";
             if (selection != "if")
                 nLength = sBlock.length();
 
-            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ELSEIF")) + "\n    (...)\n";
+            sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ELSEIF"), lastpos2)) + "\n    (...)\n";
             if (selection != "if" && selection != "elseif")
                 nLength = sBlock.length()+1;
 
@@ -839,37 +841,53 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 
             sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDIF"));
             this->CallTipShow(charpos, sBlock);
-            this->CallTipSetHighlight(nLength,13+nLength);
+            if (selection == "if")
+                this->CallTipSetHighlight(nLength,lastpos+nLength);
+            else if (selection == "elseif")
+                this->CallTipSetHighlight(nLength,lastpos2+nLength);
+            else
+                this->CallTipSetHighlight(nLength,13+nLength);
         }
         else if (selection == "for" || selection == "endfor")
         {
             size_t nLength = 0;
-            string sBlock = addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_FOR")) + "\n    (...)\n";
+            size_t lastpos2 = 0;
+            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_FOR"), lastpos)) + "\n    (...)\n";
             if (selection != "for")
                 nLength = sBlock.length();
-            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDFOR"));
+            sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDFOR"), lastpos2));
             this->CallTipShow(charpos, sBlock);
-            this->CallTipSetHighlight(nLength,13+nLength);
+            if (nLength)
+                this->CallTipSetHighlight(nLength,lastpos2+nLength);
+            else
+                this->CallTipSetHighlight(nLength,lastpos+nLength);
         }
         else if (selection == "while" || selection == "endwhile")
         {
             size_t nLength = 0;
-            string sBlock = addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_WHILE")) + "\n    (...)\n";
+            size_t lastpos2 = 0;
+            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_WHILE"), lastpos)) + "\n    (...)\n";
             if (selection != "while")
                 nLength = sBlock.length();
-            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDWHILE"));
+            sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDWHILE"), lastpos2));
             this->CallTipShow(charpos, sBlock);
-            this->CallTipSetHighlight(nLength,13+nLength);
+            if (nLength)
+                this->CallTipSetHighlight(nLength,lastpos2+nLength);
+            else
+                this->CallTipSetHighlight(nLength,lastpos+nLength);
         }
         else if (selection == "procedure" || selection == "endprocedure")
         {
             size_t nLength = 0;
-            string sBlock = addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_PROCEDURE")) + "\n    (...)\n";
+            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_PROCEDURE"), lastpos)) + "\n    (...)\n";
             if (selection != "procedure")
                 nLength = sBlock.length();
             sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDPROCEDURE"));
             this->CallTipShow(charpos, sBlock);
-            this->CallTipSetHighlight(nLength,13+nLength);
+            if (nLength)
+                this->CallTipSetHighlight(nLength,13+nLength);
+            else
+                this->CallTipSetHighlight(nLength,lastpos+nLength);
         }
         else if (selection == "compose" || selection == "endcompose")
         {
@@ -883,8 +901,8 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
         }
         else
         {
-            this->CallTipShow(charpos, addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"+toUpperCase(selection.ToStdString()))));
-            this->CallTipSetHighlight(0,13);
+            this->CallTipShow(charpos, addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"+toUpperCase(selection.ToStdString())), lastpos)));
+            this->CallTipSetHighlight(0,lastpos);
         }
     }
     else if (this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURES || this->GetStyleAt(charpos) == wxSTC_NPRC_PROCEDURES)
@@ -2677,6 +2695,20 @@ int NumeReEditor::determineIndentationLevel(std::string sLine, bool& bIsElseCase
         sLine.erase(0,_mMatch.nPos+_mMatch.sString.length());
     }
     return nIndentCount;
+}
+
+string NumeReEditor::realignLangString(string sLine, size_t& lastpos)
+{
+    lastpos = sLine.find(' ');
+    size_t firstpos = sLine.find_first_not_of(' ', lastpos);
+    if (sLine.find("- ") == firstpos)
+        return sLine;
+    if (firstpos-lastpos > 2)
+    {
+        sLine.erase(lastpos, firstpos-lastpos-2);
+        sLine.insert(sLine.find("- "), firstpos-lastpos-2, ' ');
+    }
+    return sLine;
 }
 
 string NumeReEditor::addLinebreaks(const string& sLine)

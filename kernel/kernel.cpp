@@ -1141,8 +1141,25 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             }
             else if (sLine.find('$') != string::npos && sLine.find('(', sLine.find('$')) == string::npos)
             {
-                sLine = "";
-                continue;
+                size_t i = sLine.find('$');
+                bool isnotinquotes = true;
+                while (isInQuotes(sLine, i))
+                {
+                    if (sLine.find('$', i+1) != string::npos)
+                    {
+                        i = sLine.find('$', i+1);
+                    }
+                    else
+                    {
+                        isnotinquotes = false;
+                        break;
+                    }
+                }
+                if (isnotinquotes)
+                {
+                    sLine = "";
+                    continue;
+                }
             }
             // --> Nochmals ueberzaehlige Leerzeichen entfernen <--
             StripSpaces(sLine);

@@ -71,7 +71,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     {
         bPeek = true;
     }
-
+//NumeReKernel::print("DOT1");
     //NumeReKernel::print(sLine);
     if (sLine.find("{") != string::npos
         && sLine.find('=') != string::npos
@@ -156,7 +156,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     {
         parser_VectorToExpr(sLine, _option);
     }
-
+//NumeReKernel::print("DOT2");
     /// CHANGED: Nur Rekursionen durchfuehren, wenn auch '=' in dem String gefunden wurde. Nur dann ist sie naemlich noetig.
     if (sLine.find(',') != string::npos && sLine.find('=') != string::npos)
     {
@@ -181,8 +181,8 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             while (sLine.length())
             {
                 sRecursion = getNextArgument(sLine, true);
-                //NumeReKernel::print(sRecursion);
-                if (sLine.length() && sRecursion.find('=') != string::npos)
+                //NumeReKernel::print("recurs: " + sRecursion);
+                if (sLine.length() || sRecursion.find('=') != string::npos)
                 {
                     sRecursion += " -kmq";
                     if (!parser_StringParser(sRecursion, sDummy, _data, _parser, _option, true))
@@ -204,6 +204,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("to_string(", n_pos) != string::npos)
     {
         n_pos = sLine.find("to_string(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 9;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -229,6 +234,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("to_uppercase(", n_pos) != string::npos)
     {
         n_pos = sLine.find("to_uppercase(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 12;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -249,6 +259,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("to_lowercase(", n_pos) != string::npos)
     {
         n_pos = sLine.find("to_lowercase(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 12;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -271,6 +286,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("string_cast(", n_pos) != string::npos)
     {
         n_pos = sLine.find("string_cast(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 11;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -298,6 +318,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("to_char(", n_pos) != string::npos)
     {
         n_pos = sLine.find("to_char(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 7;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -334,6 +359,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("to_value(", n_pos) != string::npos)
     {
         n_pos = sLine.find("to_value(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 8;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -353,7 +383,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("to_cmd(", n_pos) != string::npos)
     {
         n_pos = sLine.find("to_cmd(", n_pos) + 6;
-        if (isInQuotes(sLine, n_pos))
+        if (isInQuotes(sLine, n_pos, true))
             continue;
         unsigned int nParPos = getMatchingParenthesis(sLine.substr(n_pos));
         if (nParPos == string::npos)
@@ -377,6 +407,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("is_string(", n_pos) != string::npos)
     {
         n_pos = sLine.find("is_string(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 9;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -400,6 +435,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("findfile(", n_pos) != string::npos)
     {
         n_pos = sLine.find("findfile(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 8;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -438,7 +478,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     } /*findfile("FILENAME")*/
 
     n_pos = 0;
-    //NumeReKernel::print(sLine);
+    //NumeReKernel::print("sLine = " + sLine);
     //cerr << "sline = " << sLine << endl;
 
     if (sLine.find('=') != string::npos
@@ -467,13 +507,18 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
 
     //cerr << "sline = " << sLine << endl;
     //cerr << "n_pos = " << n_pos << endl;
-    //NumeReKernel::print(sLine);
+    //NumeReKernel::print("n_pos = " + toString(n_pos));
     if (_data.containsStringVars(sLine.substr(n_pos)))
         _data.getStringValues(sLine, n_pos);
     //cerr << "replacedline = " << sLine << endl;
     while (sLine.find("string(", n_pos) != string::npos)
     {
         n_pos = sLine.find("string(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 6;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -607,11 +652,16 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
         n_pos++;
         //cerr << sLine << endl;
     }
-
+    //NumeReKernel::print("after string:" + sLine);
     n_pos = 0;
     while (sLine.find("split(", n_pos) != string::npos)
     {
         n_pos = sLine.find("split(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 5;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -656,6 +706,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("strlen(", n_pos) != string::npos)
     {
         n_pos = sLine.find("strlen(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 6;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -675,6 +730,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("ascii(", n_pos) != string::npos)
     {
         n_pos = sLine.find("ascii(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 5;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -702,6 +762,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     {
         unsigned int nPosition = 0;
         n_pos = sLine.find("strfnd(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 6;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -749,6 +814,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     {
         unsigned int nPosition = string::npos;
         n_pos = sLine.find("strrfnd(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 7;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -795,6 +865,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("findparam(", n_pos) != string::npos)
     {
         n_pos = sLine.find("findparam(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 9;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -845,6 +920,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("substr(", n_pos) != string::npos)
     {
         n_pos = sLine.find("substr(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 6;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -890,6 +970,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("repeat(", n_pos) != string::npos)
     {
         n_pos = sLine.find("repeat(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 6;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -926,6 +1011,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("replace(", n_pos) != string::npos)
     {
         n_pos = sLine.find("replace(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 7;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -972,6 +1062,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("replaceall(", n_pos) != string::npos)
     {
         n_pos = sLine.find("replaceall(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 10;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -1042,6 +1137,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("char(", n_pos) != string::npos)
     {
         n_pos = sLine.find("char(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 4;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -1077,6 +1177,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("getopt(", n_pos) != string::npos)
     {
         n_pos = sLine.find("getopt(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 6;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -1113,6 +1218,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("getfilelist(", n_pos) != string::npos)
     {
         n_pos = sLine.find("getfilelist(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 11;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -1154,6 +1264,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("getfolderlist(", n_pos) != string::npos)
     {
         n_pos = sLine.find("getfolderlist(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 13;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -1195,6 +1310,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("getindices(", n_pos) != string::npos)
     {
         n_pos = sLine.find("getindices(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 10;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -1363,6 +1483,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("getmatchingparens(", n_pos) != string::npos)
     {
         n_pos = sLine.find("getmatchingparens(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 17;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -1385,6 +1510,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("is_data(", n_pos) != string::npos)
     {
         n_pos = sLine.find("is_data(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 7;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && !isInQuotes(sLine, nPos))
             throw UNMATCHED_PARENTHESIS;
@@ -1414,6 +1544,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("data(", n_pos) != string::npos)
     {
         n_pos = sLine.find("data(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 4;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && !isInQuotes(sLine, nPos))
             throw UNMATCHED_PARENTHESIS;
@@ -1447,6 +1582,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             if (sLine.find(iter->first+"(", n_pos) != string::npos)
             {
                 n_pos = sLine.find(iter->first+"(", n_pos);
+                if (isInQuotes(sLine, n_pos, true))
+                {
+                    n_pos++;
+                    continue;
+                }
                 unsigned int nPos = n_pos + (iter->first).length();
                 if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && !isInQuotes(sLine, nPos))
                     throw UNMATCHED_PARENTHESIS;
@@ -1478,6 +1618,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("valtostr(", n_pos) != string::npos)
     {
         n_pos = sLine.find("valtostr(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 8;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -1551,6 +1696,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("num(", n_pos) != string::npos)
     {
         n_pos = sLine.find("num(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 3;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -1572,6 +1722,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("cnt(", n_pos) != string::npos)
     {
         n_pos = sLine.find("cnt(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 3;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -1593,6 +1748,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("min(", n_pos) != string::npos)
     {
         n_pos = sLine.find("min(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 3;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -1614,6 +1774,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("max(", n_pos) != string::npos)
     {
         n_pos = sLine.find("max(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 3;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -1635,6 +1800,11 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     while (sLine.find("sum(", n_pos) != string::npos)
     {
         n_pos = sLine.find("sum(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
         unsigned int nPos = n_pos + 3;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
@@ -1653,6 +1823,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     }
 
     //cerr << sLine << endl;
+    //NumeReKernel::print("before stringvar replacement");
     if (!containsStrings(sLine) && !_data.containsStringVars(sLine))
     {
         if (sObject.length() && !sCache.length())
@@ -1673,36 +1844,69 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
         return -1;
     }
     n_pos = 0;
-    while (sLine.find('(', n_pos) != string::npos)
+    if (sLine.find('(') != string::npos)
     {
-        n_pos = sLine.find('(', n_pos);
-        unsigned int nPos = n_pos;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && !isInQuotes(sLine, n_pos))
-            throw UNMATCHED_PARENTHESIS;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && isInQuotes(sLine, n_pos))
+        size_t nQuotes = 0;
+        for (size_t i = 0; i < sLine.length(); i++)
         {
-            n_pos++;
-            continue;
-        }
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos)
-            && !isInQuotes(sLine, n_pos)
-            && (n_pos < 6 || ( n_pos >= 6 && sLine.substr(n_pos-6,6) != "string")))
-        {
-            string sString = sLine.substr(n_pos+1, nPos-n_pos-1);
-            if (n_pos > 0 && !checkDelimiter(sLine.substr(n_pos-1, nPos-n_pos+2)))
-                return 0;
-            if (containsStrings(sString) || _data.containsStringVars(sString))
+            if (sLine[i] == '"')
             {
-                if (!parser_StringParser(sString, sDummy, _data, _parser, _option, true))
-                    return 0;
-                else
-                    sLine = sLine.substr(0,n_pos) + sString + sLine.substr(nPos+1);
+                if (i && sLine[i-1] == '\\')
+                    continue;
+                nQuotes++;
+            }
+            if (sLine[i] == '(' && !(nQuotes % 2))
+            {
+                if (getMatchingParenthesis(sLine.substr(i)) == string::npos)
+                    throw UNMATCHED_PARENTHESIS;
+
+                size_t nPos = getMatchingParenthesis(sLine.substr(i)) + i;
+                if (i < 6 || (i >= 6 && sLine.substr(i-6,6) != "string"))
+                {
+                    string sString = sLine.substr(i+1, nPos-i-1);
+                    if (i > 0 && !checkDelimiter(sLine.substr(i-1, nPos-i+2)))
+                        return 0;
+                    if (containsStrings(sString) || _data.containsStringVars(sString))
+                    {
+                        if (!parser_StringParser(sString, sDummy, _data, _parser, _option, true))
+                            return 0;
+                        else
+                            sLine = sLine.substr(0,i) + sString + sLine.substr(nPos+1);
+                    }
+                }
             }
         }
-        n_pos++;
+        /*while (sLine.find('(', n_pos) != string::npos)
+        {
+            n_pos = sLine.find('(', n_pos);
+            unsigned int nPos = n_pos;
+            if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && !isInQuotes(sLine, n_pos))
+                throw UNMATCHED_PARENTHESIS;
+            if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && isInQuotes(sLine, n_pos))
+            {
+                n_pos++;
+                continue;
+            }
+            nPos += getMatchingParenthesis(sLine.substr(nPos));
+            if (!isInQuotes(sLine, nPos)
+                && !isInQuotes(sLine, n_pos)
+                && (n_pos < 6 || ( n_pos >= 6 && sLine.substr(n_pos-6,6) != "string")))
+            {
+                string sString = sLine.substr(n_pos+1, nPos-n_pos-1);
+                if (n_pos > 0 && !checkDelimiter(sLine.substr(n_pos-1, nPos-n_pos+2)))
+                    return 0;
+                if (containsStrings(sString) || _data.containsStringVars(sString))
+                {
+                    if (!parser_StringParser(sString, sDummy, _data, _parser, _option, true))
+                        return 0;
+                    else
+                        sLine = sLine.substr(0,n_pos) + sString + sLine.substr(nPos+1);
+                }
+            }
+            n_pos++;
+        }*/
     }
-
+//NumeReKernel::print("DOT3");
     if (sLine.find("{") != string::npos)
     {
         n_pos = 0;
@@ -1748,7 +1952,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
 
     //cerr << sObject << endl;
     //cerr << "'" << sLine << "'" << endl;
-    //NumeReKernel::print(sLine);
+    //NumeReKernel::print("after stringvarreplacement:" + sLine);
     sTemp = sLine + " ";
     unsigned int nPos = 0;
     while (sTemp.find('#', nPos) != string::npos)
@@ -2182,7 +2386,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     parser_CheckIndices(nIndex[0], nIndex[1]);
 
                 //cerr << nIndex[0] << " " << nIndex[1] << " " << nIndex[2] << endl;
-
+                //NumeReKernel::print(toString(vFinal.size()));
                 for (int n = 0; n < (int)nStrings; n++)
                 {
                     if (n+nIndex[0] == nIndex[1]+1)
@@ -2261,6 +2465,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             }
         }
     }
+
 
     sLine = "";
     string sConsoleOut = "|-> ";

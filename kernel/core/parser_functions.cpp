@@ -3013,6 +3013,7 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
     int nScalars = 0;
     unsigned int nPos = 0;
     unsigned int nPos_2 = 0;
+    size_t nQuotes = 0;
     bool bIsStringExpression = containsStrings(sLine);
 
     for (int i = 0; i < 32; i++)
@@ -3023,14 +3024,26 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
     sScalars[32] = "";
     if (_option.getbDebug())
         cerr << "|-> DEBUG: sLine = " << sTemp.substr(0,100) << endl;
-    do
+    for (nPos_2 = 0; nPos_2 < sTemp.length(); nPos_2++)
+    //do
     {
-        nPos_2 = sTemp.find("{", nPos);
-        if (isInQuotes(sTemp, nPos_2, false) || isToStringArg(sTemp, nPos_2))
+        if (sTemp[nPos_2] == '"')
+        {
+            if (!nPos_2 || (nPos_2 && sTemp[nPos_2-1] != '\\'))
+                nQuotes++;
+        }
+        if ((nQuotes % 2) || sTemp[nPos_2] != '{')
+            //nPos_2 = sTemp.find("{", nPos);
+            continue;
+        if (isToStringArg(sTemp, nPos_2))
+            continue;
+
+
+        /*if (isInQuotes(sTemp, nPos_2, false) || isToStringArg(sTemp, nPos_2))
         {
             nPos++;
             continue;
-        }
+        }*/
         //nPos_2 = sTemp.find("{{", nPos);
         if (isMultiValue(sTemp.substr(nPos, nPos_2-nPos), true))
         {
@@ -3115,14 +3128,14 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
         else
             nPos++;
     }
-    while (sTemp.find("{", nPos) != string::npos);
+    //while (sTemp.find("{", nPos) != string::npos);
     //cerr << nPos << endl;
 
-    if (isMultiValue(sTemp.substr(nPos), true) && !isToStringArg(sTemp, nPos))
+    /*if (isMultiValue(sTemp.substr(nPos), true) && !isToStringArg(sTemp, nPos))
     {
         sInterVector = sTemp.substr(nPos);
-        /*if (_option.getbDebug())
-            cerr << "|" << endl << "|-> DEBUG: sInterVector = " << sInterVector << endl;*/
+        //if (_option.getbDebug())
+        //    cerr << "|" << endl << "|-> DEBUG: sInterVector = " << sInterVector << endl;
         int nParenthesis = 0;
         for (unsigned int i = 0; i < sInterVector.length(); i++)
         {
@@ -3192,25 +3205,36 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
         if (_option.getbDebug())
             cerr << LineBreak("|-> DEBUG: sLine = " + sLine, _option) << endl;
         return;
-    }
+    }*/
 
     nPos = 0;
     nPos_2 = 0;
+    nQuotes = 0;
 
     //cerr << sTemp.substr(0,100) << endl;
 
-    do
+    for (nPos = 0; nPos < sTemp.length(); nPos++)
+    //do
     {
+        if (sTemp[nPos] == '"')
+        {
+            if (!nPos || (nPos && sTemp[nPos-1] != '\\'))
+                nQuotes++;
+        }
         if (nCount == 31)
         {
             throw TOO_MANY_VECTORS;
         }
-        nPos = sTemp.find('{', nPos);
+        if (sTemp[nPos] != '{' || (nQuotes % 2))
+            continue;
+        if (isToStringArg(sTemp, nPos))
+            continue;
+        /*nPos = sTemp.find('{', nPos);
         if (isInQuotes(sTemp, nPos, false) || isToStringArg(sTemp, nPos))
         {
             nPos++;
             continue;
-        }
+        }*/
         nDim_vec = 0;
         if (getMatchingParenthesis(sTemp.substr(nPos)) == string::npos)
             throw INCOMPLETE_VECTOR_SYNTAX;
@@ -3261,7 +3285,7 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
         if (!sTemp.length())
             break;
     }
-    while (sTemp.find('{', nPos) != string::npos);
+    //while (sTemp.find('{', nPos) != string::npos);
     if (sTemp.length())
     {
         sScalars[nScalars] += sTemp;
