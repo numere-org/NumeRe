@@ -2003,7 +2003,7 @@
 1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\printps.h
 	"wx/prntbase.h"
 
-1486103227 c:\cpp\chameleon\editor\editor.h
+1487660052 c:\cpp\chameleon\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -2547,7 +2547,7 @@
 	<set>
 	<queue>
 
-1487515772 source:c:\cpp\chameleon\editor\editor.cpp
+1487662359 source:c:\cpp\chameleon\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -3382,7 +3382,7 @@
 	"debugmessenger.hpp"
 	"core/ParserLib/muParser.h"
 
-1487418454 source:c:\cpp\chameleon\kernel\kernel.cpp
+1487745529 source:c:\cpp\chameleon\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 
@@ -3864,11 +3864,11 @@
 1467057632 source:c:\cpp\chameleon\kernel\core\basicexcel.cpp
 	"BasicExcel.hpp"
 
-1487519772 source:c:\cpp\chameleon\kernel\core\built-in.cpp
+1487745267 source:c:\cpp\chameleon\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
-1482765146 source:c:\cpp\chameleon\kernel\core\cache.cpp
+1487882844 source:c:\cpp\chameleon\kernel\core\cache.cpp
 	"cache.hpp"
 	"../kernel.hpp"
 
@@ -3972,7 +3972,7 @@
 1482775489 source:c:\cpp\chameleon\kernel\core\parser.cpp
 	"parser.hpp"
 
-1486573263 source:c:\cpp\chameleon\kernel\core\parser_functions.cpp
+1487793576 source:c:\cpp\chameleon\kernel\core\parser_functions.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -4060,7 +4060,7 @@
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1487146256 source:c:\cpp\chameleon\kernel\core\procedure.cpp
+1487874842 source:c:\cpp\chameleon\kernel\core\procedure.cpp
 	"procedure.hpp"
 	"../kernel.hpp"
 
@@ -4081,7 +4081,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1487422669 source:c:\cpp\chameleon\kernel\core\stringparsing.cpp
+1487882867 source:c:\cpp\chameleon\kernel\core\stringparsing.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -4459,14 +4459,14 @@
 	<vector>
 	<string>
 
-1487519251 source:c:\cpp\chameleon\gui\tableviewer.cpp
+1488290641 source:c:\cpp\chameleon\gui\tableviewer.cpp
 	"tableviewer.hpp"
 	"../kernel/core/language.hpp"
 	<wx/clipbrd.h>
 	<wx/dataobj.h>
 	<wx/tokenzr.h>
 
-1486921885 source:c:\cpp\chameleon\gui\tableeditpanel.cpp
+1487524429 source:c:\cpp\chameleon\gui\tableeditpanel.cpp
 	"tableeditpanel.hpp"
 
 1487524429 c:\cpp\chameleon\gui\tableeditpanel.hpp

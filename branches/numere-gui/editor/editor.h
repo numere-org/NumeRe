@@ -124,6 +124,7 @@ private:
     void updateDefaultHighlightSettings();
     void applyStrikeThrough();
     int determineIndentationLevel(std::string sLine, bool& bIsElseCase);
+    string realignLangString(string sLine, size_t& lastpos);
     string addLinebreaks(const string& sLine);
 	void OnEditorModified(wxStyledTextEvent &event);
 	void OnStartDrag(wxStyledTextEvent& event);

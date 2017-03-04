@@ -1024,6 +1024,8 @@ bool Cache::saveCache()
     long long int nColMax = 0;
     long long int nLineMax = 0;
     bool* bValidElement = 0;
+    if (!bValidData)
+        return false;
 
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
@@ -1198,6 +1200,11 @@ bool Cache::loadCache()
     {
         time_t tTime = 0;
         cache_file.read((char*)&nMajor, sizeof(long int));
+        if (cache_file.fail() || cache_file.eof())
+        {
+            cache_file.close();
+            return false;
+        }
         cache_file.read((char*)&nMinor, sizeof(long int));
         cache_file.read((char*)&nBuild, sizeof(long int));
         cache_file.read((char*)&tTime, sizeof(time_t));
@@ -4452,7 +4459,7 @@ bool Cache::resample(long long int _nLayer, long long int i1, long long int i2, 
 
 bool Cache::writeString(const string& _sString, unsigned int _nthString, unsigned int nCol)
 {
-    //cerr << _sString << endl << _nthString << endl << nCol << endl;
+    //NumeReKernel::print(_sString + toString(_nthString) + toString(nCol));
     if (sStrings.empty())
     {
         if (_sString.length())
@@ -4492,7 +4499,7 @@ bool Cache::writeString(const string& _sString, unsigned int _nthString, unsigne
         while (sStrings[nCol].size() && !sStrings[nCol].back().length())
             sStrings[nCol].pop_back();
     }
-    else
+    else if (_sString.length())
         sStrings[nCol][_nthString] = _sString;
     return true;
 }
@@ -4591,6 +4598,7 @@ void Cache::getStringValues(string& sLine, unsigned int nPos)
     if (!sStringVars.size())
         return;
     unsigned int __nPos = nPos;
+    sLine += " ";
     for (auto iter = sStringVars.begin(); iter != sStringVars.end(); ++iter)
     {
         __nPos = nPos;

@@ -3044,7 +3044,6 @@ bool Procedure::isInline(const string& sProc)
                     }
                     else
                     {
-                        __sFileName = FileSystem::ValidFileName(__sFileName, ".nprc");
                         for (unsigned int i = 0; i < __sFileName.length(); i++)
                         {
                             if (__sFileName[i] == '~')
@@ -3057,6 +3056,7 @@ bool Procedure::isInline(const string& sProc)
                         }
                     }
                 }
+                        __sFileName = FileSystem::ValidFileName(__sFileName, ".nprc");
                 //cerr << __sFileName << endl;
                 fProc_in.clear();
                 fProc_in.open(__sFileName.c_str());
