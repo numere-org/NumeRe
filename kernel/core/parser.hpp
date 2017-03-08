@@ -113,6 +113,8 @@ value_type parser_toRadian(value_type);
 value_type parser_toDegree(value_type);
 value_type parser_SphericalHarmonics(value_type, value_type, value_type, value_type);
 value_type parser_imSphericalHarmonics(value_type, value_type, value_type, value_type);
+value_type parser_Zernike(value_type, value_type, value_type, value_type);
+value_type parser_ZernikeRadial(int, int, value_type);
 value_type parser_SinusCardinalis(value_type);
 value_type parser_SphericalBessel(value_type, value_type);
 value_type parser_SphericalNeumann(value_type, value_type);

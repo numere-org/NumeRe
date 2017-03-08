@@ -63,8 +63,11 @@ public:
 	void OnMouseDwell(wxStyledTextEvent& event);
 	void ClearDblClkIndicator();
 	void MakeBraceCheck();
+	void MakeBlockCheck();
 
 	void getMatchingBrace(int nPos);
+	void getMatchingBlock(int nPos);
+	vector<int> BlockMatch(int nPos);
 
 
 	void UpdateSyntaxHighlighting();
@@ -124,6 +127,7 @@ private:
     void updateDefaultHighlightSettings();
     void applyStrikeThrough();
     int determineIndentationLevel(std::string sLine, bool& bIsElseCase);
+    int countUmlauts(const string& sStr);
     string realignLangString(string sLine, size_t& lastpos);
     string addLinebreaks(const string& sLine);
 	void OnEditorModified(wxStyledTextEvent &event);

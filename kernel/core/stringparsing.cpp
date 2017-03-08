@@ -1855,6 +1855,26 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     continue;
                 nQuotes++;
             }
+            // Consider the var parsing feature
+            if (sLine[i] == '#' && !(nQuotes % 2))
+            {
+                for (size_t j = i; j < sLine.length(); j++)
+                {
+                    if (sLine[j] == '"')
+                        return 0;
+                    if ((sLine[j] == '(' || sLine[j] == '{') && getMatchingParenthesis(sLine.substr(j)) != string::npos)
+                        j += getMatchingParenthesis(sLine.substr(j));
+                    if (sLine[j] == ' ' || sLine[j] == '+')
+                    {
+                        i = j;
+                        break;
+                    }
+                    if (j + 1 == sLine.length())
+                    {
+                        i = j;
+                    }
+                }
+            }
             if (sLine[i] == '(' && !(nQuotes % 2))
             {
                 if (getMatchingParenthesis(sLine.substr(i)) == string::npos)

@@ -36,6 +36,8 @@
 #define HIGHLIGHT_DBLCLK 26
 #define HIGHLIGHT_MATCHING_BRACE 27
 #define HIGHLIGHT_STRIKETHROUGH 28
+#define HIGHLIGHT_MATCHING_BLOCK 29
+#define HIGHLIGHT_NOT_MATCHING_BLOCK 30
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -596,6 +598,38 @@ void NumeReEditor::MakeBraceCheck()
     return;
 }
 
+void NumeReEditor::MakeBlockCheck()
+{
+    if (this->m_fileType != FILE_NSCR && this->m_fileType != FILE_NPRC)
+        return;
+    this->SetIndicatorCurrent(HIGHLIGHT_MATCHING_BLOCK);
+    this->IndicatorClearRange(0, GetLastPosition());
+    this->SetIndicatorCurrent(HIGHLIGHT_NOT_MATCHING_BLOCK);
+    this->IndicatorClearRange(0, GetLastPosition());
+    if (GetStyleAt(GetCurrentPos()) != wxSTC_NSCR_COMMAND && GetStyleAt(GetCurrentPos()) != wxSTC_NPRC_COMMAND
+        && !(GetCurrentPos() && (GetStyleAt(GetCurrentPos()-1) == wxSTC_NSCR_COMMAND || GetStyleAt(GetCurrentPos()-1) == wxSTC_NPRC_COMMAND)))
+    {
+        return;
+    }
+    wxString currentWord = this->GetTextRange(WordStartPosition(GetCurrentPos(), true), WordEndPosition(GetCurrentPos(), true));
+    if (currentWord == "if"
+        || currentWord == "else"
+        || currentWord == "elseif"
+        || currentWord == "endif"
+        || currentWord == "for"
+        || currentWord == "endfor"
+        || currentWord == "while"
+        || currentWord == "endwhile"
+        || currentWord == "compose"
+        || currentWord == "endcompose"
+        || currentWord == "procedure"
+        || currentWord == "endprocedure"
+        )
+    {
+        getMatchingBlock(GetCurrentPos());
+    }
+}
+
 void NumeReEditor::OnKeyDn(wxKeyEvent &event)
 {
     //wxMessageBox(wxString((char)this->GetCharAt(this->GetCurrentPos())));
@@ -615,6 +649,7 @@ void NumeReEditor::OnKeyDn(wxKeyEvent &event)
                 this->GotoPos(selEnd+1);
             this->EndUndoAction();
             MakeBraceCheck();
+            MakeBlockCheck();
             return;
         }
         else if (event.ShiftDown() && chr == '2')
@@ -627,6 +662,7 @@ void NumeReEditor::OnKeyDn(wxKeyEvent &event)
             this->GotoPos(selEnd+1);
             this->EndUndoAction();
             MakeBraceCheck();
+            MakeBlockCheck();
             return;
         }
         else if (event.ControlDown() && event.AltDown() && (chr == '8' || chr == '9')) // Alt Gr means CTRL+ALT
@@ -642,6 +678,7 @@ void NumeReEditor::OnKeyDn(wxKeyEvent &event)
                 this->GotoPos(selEnd+1);
             this->EndUndoAction();
             MakeBraceCheck();
+            MakeBlockCheck();
             return;
         }
         else if (event.ControlDown() && event.AltDown() && (chr == '7' || chr == '0'))
@@ -657,11 +694,13 @@ void NumeReEditor::OnKeyDn(wxKeyEvent &event)
                 this->GotoPos(selEnd+1);
             this->EndUndoAction();
             MakeBraceCheck();
+            MakeBlockCheck();
             return;
         }
     }
     OnKeyDown(event);
     MakeBraceCheck();
+    MakeBlockCheck();
     if (!event.ControlDown() && !event.ShiftDown())
         ClearDblClkIndicator();
     //event.Skip();
@@ -671,6 +710,7 @@ void NumeReEditor::OnKeyRel(wxKeyEvent &event)
 {
     //wxMessageBox(wxString((char)this->GetCharAt(this->GetCurrentPos())));
     MakeBraceCheck();
+    MakeBlockCheck();
     event.Skip();
     //OnKeyUp(event);
 }
@@ -679,6 +719,7 @@ void NumeReEditor::OnMouseUp(wxMouseEvent &event)
 {
     //OnMouseLeftUp(event);
     MakeBraceCheck();
+    MakeBlockCheck();
     event.Skip();
 }
 
@@ -688,6 +729,7 @@ void NumeReEditor::OnMouseDn(wxMouseEvent &event)
     if (!event.ControlDown())
         ClearDblClkIndicator();
     MakeBraceCheck();
+    MakeBlockCheck();
     event.Skip();
 }
 
@@ -833,11 +875,11 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 
             sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ELSEIF"), lastpos2)) + "\n    (...)\n";
             if (selection != "if" && selection != "elseif")
-                nLength = sBlock.length()+1;
+                nLength = sBlock.length()+countUmlauts(sBlock);
 
             sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ELSE")) + "\n    (...)\n";
             if (selection != "if" && selection != "elseif" && selection != "else")
-                nLength = sBlock.length()+2;
+                nLength = sBlock.length()+countUmlauts(sBlock);
 
             sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDIF"));
             this->CallTipShow(charpos, sBlock);
@@ -854,7 +896,7 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
             size_t lastpos2 = 0;
             string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_FOR"), lastpos)) + "\n    (...)\n";
             if (selection != "for")
-                nLength = sBlock.length();
+                nLength = sBlock.length()+countUmlauts(sBlock);
             sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDFOR"), lastpos2));
             this->CallTipShow(charpos, sBlock);
             if (nLength)
@@ -868,7 +910,7 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
             size_t lastpos2 = 0;
             string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_WHILE"), lastpos)) + "\n    (...)\n";
             if (selection != "while")
-                nLength = sBlock.length();
+                nLength = sBlock.length() + countUmlauts(sBlock);
             sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDWHILE"), lastpos2));
             this->CallTipShow(charpos, sBlock);
             if (nLength)
@@ -881,7 +923,7 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
             size_t nLength = 0;
             string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_PROCEDURE"), lastpos)) + "\n    (...)\n";
             if (selection != "procedure")
-                nLength = sBlock.length();
+                nLength = sBlock.length() + countUmlauts(sBlock);
             sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDPROCEDURE"));
             this->CallTipShow(charpos, sBlock);
             if (nLength)
@@ -894,7 +936,7 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
             size_t nLength = 0;
             string sBlock = addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_COMPOSE")) + "\n    (...)\n";
             if (selection != "compose")
-                nLength = sBlock.length();
+                nLength = sBlock.length()+countUmlauts(sBlock);
             sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDCOMPOSE"));
             this->CallTipShow(charpos, sBlock);
             this->CallTipSetHighlight(nLength,13+nLength);
@@ -1304,6 +1346,192 @@ void NumeReEditor::getMatchingBrace(int nPos)
             this->IndicatorFillRange(nPos+1, nMatch-nPos-1);
         }
     }
+}
+
+void NumeReEditor::getMatchingBlock(int nPos)
+{
+    vector<int> vMatch = this->BlockMatch(nPos);
+    if (vMatch.size() == 1 && vMatch[0] == wxSTC_INVALID_POSITION)
+        return;
+
+    if (vMatch.front() == wxSTC_INVALID_POSITION || vMatch.back() == wxSTC_INVALID_POSITION)
+        this->SetIndicatorCurrent(HIGHLIGHT_NOT_MATCHING_BLOCK);
+    else
+        this->SetIndicatorCurrent(HIGHLIGHT_MATCHING_BLOCK);
+
+    this->IndicatorClearRange(0, GetLastPosition());
+    this->IndicatorSetStyle(HIGHLIGHT_MATCHING_BLOCK, wxSTC_INDIC_ROUNDBOX);
+    this->IndicatorSetAlpha(HIGHLIGHT_MATCHING_BLOCK, 100);
+    this->IndicatorSetForeground(HIGHLIGHT_MATCHING_BLOCK, wxColour(0,220,0));
+    this->IndicatorSetStyle(HIGHLIGHT_NOT_MATCHING_BLOCK, wxSTC_INDIC_ROUNDBOX);
+    this->IndicatorSetAlpha(HIGHLIGHT_NOT_MATCHING_BLOCK, 128);
+    this->IndicatorSetForeground(HIGHLIGHT_NOT_MATCHING_BLOCK, wxColour(255,0,0));
+
+    for (size_t i = 0; i < vMatch.size(); i++)
+    {
+        if (vMatch[i] == wxSTC_INVALID_POSITION)
+            continue;
+        this->IndicatorFillRange(vMatch[i], WordEndPosition(vMatch[i], true)-vMatch[i]);
+    }
+}
+
+// returnes a vector. If first element is invalid, the word is no command.
+// If the last one is invalid, there's no matching partner. It returnes more than two elements for "if" blocks
+// If there's no first "if", if one currently focussing on an "else...", the first element may be invalid, but more can be returned.
+vector<int> NumeReEditor::BlockMatch(int nPos)
+{
+    int nFor = 0;
+    int nIf = 0;
+    int nWhile = 0;
+    int nCompose = 0;
+    int nProcedure = 0;
+    int nStartPos = WordStartPosition(nPos, true);
+    vector<int> vPos;
+    wxString startblock;
+    wxString endblock;
+    bool bSearchForIf = false; //if we search for an if block element. If yes => also mark the "else..." parts.
+    int nSearchDir = 1; //direction in which to search for the matching block partner
+    if (this->GetStyleAt(nPos) == wxSTC_NSCR_COMMAND || this->GetStyleAt(nPos) == wxSTC_NPRC_COMMAND)
+    {
+        if (nPos && (this->GetStyleAt(nPos-1) == wxSTC_NSCR_COMMAND || this->GetStyleAt(nPos-1) == wxSTC_NPRC_COMMAND))
+            nPos--;
+        else
+        {
+            vPos.push_back(wxSTC_INVALID_POSITION);
+            return vPos;
+        }
+    }
+
+
+    startblock = this->GetTextRange(WordStartPosition(nPos, true), WordEndPosition(nPos, true));
+    if (startblock.substr(0,3) == "end")
+    {
+        endblock = startblock.substr(3);
+        nSearchDir = -1;
+    }
+    else if (startblock == "else" || startblock == "elseif")
+    {
+        // search for starting "if"
+        // adding 1 to nIf, because we're already inside of an "if"
+        nIf++;
+        for (int i = WordEndPosition(nPos, true); i >= 0; i--)
+        {
+            if (this->GetStyleAt(i) == wxSTC_NSCR_COMMAND || this->GetStyleAt(i) == wxSTC_NPRC_COMMAND)
+            {
+                wxString currentWord = this->GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
+                if (currentWord == "for")
+                    nFor--; //if we iterate upwards, the closing blocks shall increment and the opening blocks decrement the counter
+                else if (currentWord == "endfor")
+                    nFor++;
+                else if (currentWord == "while")
+                    nWhile--;
+                else if (currentWord == "endwhile")
+                    nWhile++;
+                else if (currentWord == "if")
+                    nIf--;
+                else if (currentWord == "endif")
+                    nIf++;
+                else if (currentWord == "compose")
+                    nCompose--;
+                else if (currentWord == "endcompose")
+                    nCompose++;
+                else if (currentWord == "procedure")
+                    nProcedure--;
+                else if (currentWord == "endprocedure")
+                    nProcedure++;
+                if (currentWord == "if" && !nFor && !nIf && !nWhile && !nCompose && !nProcedure)
+                {
+                    nStartPos = WordStartPosition(i, true);
+                    break;
+                }
+                i -= currentWord.length();
+            }
+            if (nFor < 0 || nWhile < 0 || nIf < 0 || nCompose < 0 || nProcedure < 0)
+            {
+                // There's no matching partner
+                // set the first to invalid but do not return
+                vPos.push_back(wxSTC_INVALID_POSITION);
+                break;
+            }
+        }
+
+        if (nFor > 0 || nWhile > 0 || nIf > 0 || nCompose > 0 || nProcedure > 0)
+        {
+            // There's no matching partner
+            // set the first to invalid but do not return
+            vPos.push_back(wxSTC_INVALID_POSITION);
+            nIf = 1;
+        }
+        else
+            nIf = 0;
+        nFor = 0;
+        nWhile = 0;
+        nCompose = 0;
+        nProcedure = 0;
+
+        bSearchForIf = true;
+        endblock = "endif";
+    }
+    else
+    {
+        endblock = "end" + startblock;
+    }
+
+    if (startblock == "if" || endblock == "if")
+        bSearchForIf = true;
+
+    vPos.push_back(nStartPos);
+
+    if (nSearchDir == -1)
+        nStartPos = WordEndPosition(nPos, true);
+    for (int i = nStartPos; (i < this->GetLastPosition() && i >= 0); i += nSearchDir) // iterates down, if nSearchDir == 1, and up of nSearchDir == -1
+    {
+        if (this->GetStyleAt(i) == wxSTC_NSCR_COMMAND || this->GetStyleAt(i) == wxSTC_NPRC_COMMAND)
+        {
+            wxString currentWord = this->GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
+            if (currentWord == "for")
+                nFor += nSearchDir; //if we iterate upwards, the closing blocks shall increment and the opening blocks decrement the counter
+            else if (currentWord == "endfor")
+                nFor -= nSearchDir;
+            else if (currentWord == "while")
+                nWhile += nSearchDir;
+            else if (currentWord == "endwhile")
+                nWhile -= nSearchDir;
+            else if (currentWord == "if")
+                nIf += nSearchDir;
+            else if (currentWord == "endif")
+                nIf -= nSearchDir;
+            else if (currentWord == "compose")
+                nCompose += nSearchDir;
+            else if (currentWord == "endcompose")
+                nCompose -= nSearchDir;
+            else if (currentWord == "procedure")
+                nProcedure += nSearchDir;
+            else if (currentWord == "endprocedure")
+                nProcedure -= nSearchDir;
+            if (bSearchForIf && nIf == 1 && !nFor && !nWhile && !nProcedure && !nCompose // only in the current if block
+                && (currentWord == "else" || currentWord == "elseif"))
+            {
+                vPos.push_back(WordStartPosition(i, true));
+            }
+            if (currentWord == endblock && !nFor && !nIf && !nWhile && !nProcedure && !nCompose)
+            {
+                vPos.push_back(WordStartPosition(i,true));
+                break;
+            }
+            i += nSearchDir*currentWord.length();
+        }
+        if (nFor < 0 || nWhile < 0 || nIf < 0 || nProcedure < 0 || nCompose < 0)
+        {
+            // There's no matching partner
+            vPos.push_back(wxSTC_INVALID_POSITION);
+            break;
+        }
+    }
+    if (!vPos.size()
+        || (nFor > 0 || nWhile > 0 || nIf > 0 || nProcedure > 0 || nCompose > 0))
+        vPos.push_back(wxSTC_INVALID_POSITION);
+    return vPos;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2519,7 +2747,15 @@ void NumeReEditor::OnFindProcedure(wxCommandEvent &event)
     }
     wxArrayString pathnames;
     pathnames.Add(pathname+".nprc");
-    m_mainFrame->OpenSourceFile(pathnames);
+    if (!fileExists((pathname+".nprc").ToStdString()))
+    {
+        int ret = wxMessageBox(_guilang.get("GUI_DLG_PROC_NEXISTS_CREATE", m_clickedProcedure.ToStdString()), _guilang.get("GUI_DLG_PROC_NEXISTS_CREATE_HEADLINE"), wxCENTER | wxICON_WARNING | wxYES_NO, this);
+        if (ret != wxYES)
+            return;
+        m_mainFrame->NewFile(FILE_NPRC, m_clickedProcedure);
+    }
+    else
+        m_mainFrame->OpenSourceFile(pathnames);
 }
 
 void NumeReEditor::OnChangeCase(wxCommandEvent& event)
@@ -2695,6 +2931,31 @@ int NumeReEditor::determineIndentationLevel(std::string sLine, bool& bIsElseCase
         sLine.erase(0,_mMatch.nPos+_mMatch.sString.length());
     }
     return nIndentCount;
+}
+
+int NumeReEditor::countUmlauts(const string& sStr)
+{
+    int nUmlauts = 0;
+    for (size_t i = 0; i < sStr.length(); i++)
+    {
+        if (sStr[i] == 'Ä'
+            || sStr[i] == 'ä'
+            || sStr[i] == 'Ö'
+            || sStr[i] == 'ö'
+            || sStr[i] == 'Ü'
+            || sStr[i] == 'ü'
+            || sStr[i] == 'ß'
+            || sStr[i] == (char)142
+            || sStr[i] == (char)132
+            || sStr[i] == (char)153
+            || sStr[i] == (char)148
+            || sStr[i] == (char)154
+            || sStr[i] == (char)129
+            || sStr[i] == (char)225
+            )
+            nUmlauts++;
+    }
+    return nUmlauts;
 }
 
 string NumeReEditor::realignLangString(string sLine, size_t& lastpos)

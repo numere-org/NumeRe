@@ -6507,6 +6507,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
     vector<double> vInitialVals;
 
     ofstream oFitLog;
+    ofstream oTeXExport;
     string sFitLog = "<savepath>/numerefit.log";
     sFitLog = _data.ValidFileName(sFitLog, ".log");
     unsigned int nDim = 1;
@@ -6520,6 +6521,8 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
     bool bMaskDialog = false;
     bool bNoParams = false;
     bool b1DChiMap = false;
+    bool bTeXExport = false;
+    string sTeXExportFile = "<savepath>/fit.tex";
     double dMin = NAN;
     double dMax = NAN;
     double dMinY = NAN;
@@ -6586,6 +6589,24 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
                 sChiMap_Vars[1] = _data.getHeadLineElement(_idx.vJ[1], sChiMap);
             }
         }
+    }
+    if (matchParams(sCmd, "export", '='))
+    {
+        bTeXExport = true;
+        sTeXExportFile = getArgAtPos(sCmd, matchParams(sCmd, "export", '=')+6);
+        eraseToken(sCmd, "export", true);
+    }
+    else if (matchParams(sCmd, "export"))
+    {
+        bTeXExport = true;
+        eraseToken(sCmd, "export", false);
+    }
+
+    if (bTeXExport)
+    {
+        sTeXExportFile = _data.ValidFileName(sTeXExportFile, ".tex");
+        if (sTeXExportFile.substr(sTeXExportFile.rfind('.')) != ".tex")
+            sTeXExportFile.replace(sTeXExportFile.rfind('.'), string::npos, ".tex");
     }
 
     for (unsigned int i = 0; i < sCmd.length(); i++)
@@ -6695,43 +6716,6 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
             _parser.Eval();
         }
     }
-    /*if (matchParams(sFitFunction, "chimap", '='))
-    {
-        sChiMap = getArgAtPos(sFitFunction, matchParams(sFitFunction, "chimap", '=')+6);
-        eraseToken(sCmd, "chimap", true);
-        eraseToken(sFitFunction, "chimap", true);
-
-        if (sChiMap.length())
-        {
-            if (sChiMap.substr(0,sChiMap.find('(')) == "data")
-                throw READ_ONLY_DATA;
-            _idx = parser_getIndices(sChiMap, _parser, _data, _option);
-            if ((_idx.nI[0] == -1 || _idx.nJ[0] == -1) && (!_idx.vI.size() && !_idx.vJ.size()))
-                throw INVALID_INDEX;
-            if (_idx.vJ.size() && _idx.vJ.size() < 2)
-                throw INVALID_INDEX;
-            parser_evalIndices(sChiMap, _idx, _data);
-            sChiMap.erase(sChiMap.find('('));
-            if (!_idx.vJ.size())
-            {
-                if (_idx.nJ[1] < _idx.nJ[0])
-                {
-                    sChiMap_Vars[0] = _data.getHeadLineElement(_idx.nJ[0], sChiMap);
-                    sChiMap_Vars[1] = _data.getHeadLineElement(_idx.nJ[0]-1, sChiMap);
-                }
-                else
-                {
-                    sChiMap_Vars[0] = _data.getHeadLineElement(_idx.nJ[0], sChiMap);
-                    sChiMap_Vars[1] = _data.getHeadLineElement(_idx.nJ[0]+1, sChiMap);
-                }
-            }
-            else
-            {
-                sChiMap_Vars[0] = _data.getHeadLineElement(_idx.vJ[0], sChiMap);
-                sChiMap_Vars[1] = _data.getHeadLineElement(_idx.vJ[1], sChiMap);
-            }
-        }
-    }*/
     if (!matchParams(sFitFunction, "params", '='))
     {
         //throw NO_PARAMS_FOR_FIT;
@@ -8219,8 +8203,8 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
 
     if (!bMaskDialog && _option.getSystemPrintStatus())
         reduceLogFilesize(sFitLog);
-    oFitLog.open(sFitLog.c_str(), ios_base::ate | ios_base::app);
     sFittedFunction = _fControl.getFitFunction(); //_graph.GetFit();
+    oFitLog.open(sFitLog.c_str(), ios_base::ate | ios_base::app);
     if (oFitLog.fail())
     {
         oFitLog.close();
@@ -8228,15 +8212,143 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
         NumeReKernel::printPreFmt("\n");
         throw CANNOT_OPEN_FITLOG;
     }
+    if (bTeXExport)
+    {
+        oTeXExport.open(sTeXExportFile.c_str(), ios_base::trunc);
+        if (oTeXExport.fail())
+        {
+            oTeXExport.close();
+            _data.setCacheStatus(false);
+            NumeReKernel::printPreFmt("\n");
+            sErrorToken = sTeXExportFile;
+            throw CANNOT_OPEN_TARGET;
+        }
+    }
+    ///FITLOG
+    oFitLog << std::setw(76) << std::setfill('=') << '=' << endl;
+    oFitLog << toUpperCase(_lang.get("PARSERFUNCS_FIT_HEADLINE")) <<": " << getTimeStamp(false) << endl;
+    oFitLog << std::setw(76) << std::setfill('=') << '=' << endl;
+    oFitLog << (_lang.get("PARSERFUNCS_FIT_FUNCTION", sFuncDisplay)) << endl;
+    oFitLog << (_lang.get("PARSERFUNCS_FIT_FITTED_FUNC", sFittedFunction)) << endl;
+    oFitLog << (_lang.get("PARSERFUNCS_FIT_DATASET")) << " ";
+    if (nDim == 2)
+    {
+        oFitLog << j_pos[0]+1;
+        if (j)
+        {
+            oFitLog << ", " << j_pos[1]+1;
+        }
+    }
+    else if (nDim == 4)
+    {
+        int nErrorCols = 2;
+        if (j == 1)
+        {
+            if (abs(j_pos[1]-j_pos[0]) == 3)
+                nErrorCols = 1;
+        }
+        else if (j == 3)
+            nErrorCols = 2;
+
+        if (j == 1)
+        {
+            if (j_pos[0] < j_pos[1])
+            {
+                oFitLog << j_pos[0]+1 << ", " << j_pos[0]+2 << ", " << j_pos[0]+3;
+                if (nErrorCols == 2)
+                    oFitLog << ", " << j_pos[0]+4;
+            }
+            else
+            {
+                oFitLog << j_pos[0]+1 << ", " << j_pos[0] << ", " << j_pos[0]-1;
+                if (nErrorCols == 2)
+                    oFitLog << ", " << j_pos[0]-2;
+            }
+        }
+        else
+        {
+            oFitLog << j_pos[0]+1 << ", " << j_pos[1]+1 << ", " << j_pos[2]+1 << ", " << j_pos[3]+1;
+        }
+    }
+    else if ((nFitVars & 2))
+    {
+        if (j == 1 && j_pos[1] > j_pos[0])
+        {
+            oFitLog << j_pos[0]+1 << ", " << j_pos[0]+2 << ", " << j_pos[0]+3 << "-" << j_pos[0]+2+i_pos[1]-i_pos[0];
+            if (bUseErrors)
+                oFitLog << ", " << j_pos[2]+3+i_pos[1]-i_pos[0] << "-" << j_pos[0]+2+2*(i_pos[1]-i_pos[0]);
+        }
+        else if (j == 1)
+        {
+            oFitLog << j_pos[0]+1 << ", " << j_pos[0] << ", " << j_pos[0]-1 << "-" << j_pos[0]-2-i_pos[1]+i_pos[0];
+            if (bUseErrors)
+                oFitLog << ", " << j_pos[2]-3-i_pos[1]+i_pos[0] << "-" << j_pos[0]-2-2*(i_pos[1]-i_pos[0]);
+        }
+        else
+        {
+            oFitLog << j_pos[0]+1 << ", " << j_pos[1]+1 << ", " << j_pos[2]+1 << "-" << j_pos[2]+i_pos[1]-i_pos[0];
+            if (bUseErrors)
+            {
+                if (j > 2)
+                    oFitLog << ", " << j_pos[3]+1 << "-" << j_pos[3]+(i_pos[1]-i_pos[0]);
+                else
+                    oFitLog << ", " << j_pos[2]+i_pos[1]-i_pos[0]+1 << "-" << j_pos[0]+2*(i_pos[1]-i_pos[0]);
+            }
+        }
+    }
     else
     {
-        oFitLog << std::setw(76) << std::setfill('=') << '=' << endl;
-        oFitLog << toUpperCase(_lang.get("PARSERFUNCS_FIT_HEADLINE")) <<": " << getTimeStamp(false) << endl;
-        oFitLog << std::setw(76) << std::setfill('=') << '=' << endl;
-        oFitLog << (_lang.get("PARSERFUNCS_FIT_FUNCTION", sFuncDisplay)) << endl;
-        oFitLog << (_lang.get("PARSERFUNCS_FIT_FITTED_FUNC", sFittedFunction)) << endl;
-        oFitLog << (_lang.get("PARSERFUNCS_FIT_DATASET")) << " ";
-        if (nDim == 2)
+        for (int k = 0; k < (int)nDim; k++)
+        {
+            oFitLog << j_pos[k]+1;
+            if (k+1 < (int)nDim)
+                oFitLog << ", ";
+        }
+    }
+    oFitLog << " " << _lang.get("PARSERFUNCS_FIT_FROM") << " " << _data.getDataFileName(sDataTable) << endl;
+    if (bUseErrors)
+        oFitLog << (_lang.get("PARSERFUNCS_FIT_POINTS_W_ERR", toString((int)nSize))) << endl;
+    else
+        oFitLog << (_lang.get("PARSERFUNCS_FIT_POINTS_WO_ERR", toString((int)nSize))) << endl;
+    if (bRestrictXVals)
+        oFitLog << (_lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "x", toString(dMin, 5), toString(dMax, 5))) << endl;
+    if (bRestrictYVals)
+        oFitLog << (_lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "y", toString(dMinY, 5), toString(dMaxY, 5))) << endl;
+    if (sRestrictions.length())
+        oFitLog << _lang.get("PARSERFUNCS_FIT_PARAM_RESTRICTS", sRestrictions) << endl;
+    oFitLog << _lang.get("PARSERFUNCS_FIT_FREEDOMS", toString((int)nSize - paramsMap.size())) << endl;
+    oFitLog << _lang.get("PARSERFUNCS_FIT_ALGORITHM_SETTINGS", toString(dPrecision, 5), toString(nMaxIterations)) << endl;
+    oFitLog << _lang.get("PARSERFUNCS_FIT_ITERATIONS", toString(_fControl.getIterations())) << endl;
+    if (nSize != paramsMap.size() /*_fitParams.GetNx()*/ && !(nFitVars & 2))
+    {
+        oFitLog << _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7)) << endl;
+        oFitLog << _lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7)) << endl;
+        oFitLog << _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) << endl;
+    }
+    else if (nFitVars & 2 && nSize != paramsMap.size() /*_fitParams.GetNx()*/)
+    {
+        oFitLog << _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7)) << endl;
+        oFitLog << _lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7)) << endl;
+        oFitLog << _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) << endl;
+    }
+    //oFitLog << "Normierte Varianz der Residuen:         " << dNormChisq / (double)(nSize - _fitParams.GetNx()) << endl;
+    oFitLog << endl;
+    if (bUseErrors)
+        oFitLog << _lang.get("PARSERFUNCS_FIT_LOG_TABLEHEAD1") << endl;
+    else
+        oFitLog << _lang.get("PARSERFUNCS_FIT_LOG_TABLEHEAD2") << endl;
+    oFitLog << std::setw(76) << std::setfill('-') << '-' << endl;
+
+    ///TEXEXPORT
+    if (bTeXExport)
+    {
+        oTeXExport << "%\n% " << _lang.get("OUTPUT_PRINTLEGAL_TEX") << "\n%" << endl;
+        oTeXExport << "\\section{" << _lang.get("PARSERFUNCS_FIT_HEADLINE") <<": " << getTimeStamp(false)  << "}" << endl;
+        oTeXExport << "\\begin{itemize}" << endl;
+        oTeXExport << "\t\\item " << (_lang.get("PARSERFUNCS_FIT_FUNCTION", "$" + replaceToTeX(sFuncDisplay, true) + "$")) << endl;
+        oTeXExport << "\t\\item " << (_lang.get("PARSERFUNCS_FIT_FITTED_FUNC", "$" + replaceToTeX(sFittedFunction, true) + "$")) << endl;
+        //oTeXExport << "\t\\item " << (_lang.get("PARSERFUNCS_FIT_DATASET")) << " ";
+        /*if (nDim == 2)
         {
             oFitLog << j_pos[0]+1;
             if (j)
@@ -8310,39 +8422,53 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
                     oFitLog << ", ";
             }
         }
-        oFitLog << " " << _lang.get("PARSERFUNCS_FIT_FROM") << " " << _data.getDataFileName(sDataTable) << endl;
+        oFitLog << " " << _lang.get("PARSERFUNCS_FIT_FROM") << " " << _data.getDataFileName(sDataTable) << endl;*/
         if (bUseErrors)
-            oFitLog << (_lang.get("PARSERFUNCS_FIT_POINTS_W_ERR", toString((int)nSize))) << endl;
+            oTeXExport << "\t\\item " << (_lang.get("PARSERFUNCS_FIT_POINTS_W_ERR", toString((int)nSize))) << endl;
         else
-            oFitLog << (_lang.get("PARSERFUNCS_FIT_POINTS_WO_ERR", toString((int)nSize))) << endl;
+            oTeXExport << "\t\\item " << (_lang.get("PARSERFUNCS_FIT_POINTS_WO_ERR", toString((int)nSize))) << endl;
         if (bRestrictXVals)
-            oFitLog << (_lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "x", toString(dMin, 5), toString(dMax, 5))) << endl;
+            oTeXExport << "\t\\item " << (_lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "x", toString(dMin, 5), toString(dMax, 5))) << endl;
         if (bRestrictYVals)
-            oFitLog << (_lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "y", toString(dMinY, 5), toString(dMaxY, 5))) << endl;
+            oTeXExport << "\t\\item " << (_lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "y", toString(dMinY, 5), toString(dMaxY, 5))) << endl;
         if (sRestrictions.length())
-            oFitLog << _lang.get("PARSERFUNCS_FIT_PARAM_RESTRICTS", sRestrictions) << endl;
-        oFitLog << _lang.get("PARSERFUNCS_FIT_FREEDOMS", toString((int)nSize - paramsMap.size())) << endl;
-        oFitLog << _lang.get("PARSERFUNCS_FIT_ALGORITHM_SETTINGS", toString(dPrecision, 5), toString(nMaxIterations)) << endl;
-        oFitLog << _lang.get("PARSERFUNCS_FIT_ITERATIONS", toString(_fControl.getIterations())) << endl;
+            oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_PARAM_RESTRICTS", "$" + replaceToTeX(sRestrictions, true) + "$") << endl;
+        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_FREEDOMS", toString((int)nSize - paramsMap.size())) << endl;
+        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_ALGORITHM_SETTINGS", toString(dPrecision, 5), toString(nMaxIterations)) << endl;
+        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_ITERATIONS", toString(_fControl.getIterations())) << endl;
         if (nSize != paramsMap.size() /*_fitParams.GetNx()*/ && !(nFitVars & 2))
         {
-            oFitLog << _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7)) << endl;
-            oFitLog << _lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7)) << endl;
-            oFitLog << _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) << endl;
+            string sChiReplace = _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7));
+            sChiReplace.replace(sChiReplace.find("chi^2"), 5, "$\\chi^2$");
+            oTeXExport << "\t\\item " << sChiReplace << endl;
+            sChiReplace = _lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7));
+            sChiReplace.replace(sChiReplace.find("chi^2"), 5, "$\\chi^2$");
+            oTeXExport << "\t\\item " << sChiReplace << endl;
+            oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) << endl;
         }
         else if (nFitVars & 2 && nSize != paramsMap.size() /*_fitParams.GetNx()*/)
         {
-            oFitLog << _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7)) << endl;
-            oFitLog << _lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7)) << endl;
-            oFitLog << _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) << endl;
+            string sChiReplace = _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7));
+            sChiReplace.replace(sChiReplace.find("chi^2"), 5, "$\\chi^2$");
+            oTeXExport << "\t\\item " << sChiReplace << endl;
+            sChiReplace = _lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7));
+            sChiReplace.replace(sChiReplace.find("chi^2"), 5, "$\\chi^2$");
+            oTeXExport << "\t\\item " << sChiReplace << endl;
+            oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) << endl;
         }
         //oFitLog << "Normierte Varianz der Residuen:         " << dNormChisq / (double)(nSize - _fitParams.GetNx()) << endl;
-        oFitLog << endl;
+        oTeXExport << "\\end{itemize}" << endl << "\\begin{table}[htb]" << endl << "\t\\centering\n\t\\begin{tabular}{cccc}" << endl << "\t\t\\toprule" << endl;
         if (bUseErrors)
-            oFitLog << _lang.get("PARSERFUNCS_FIT_LOG_TABLEHEAD1") << endl;
+            oTeXExport << "\t\t" << _lang.get("PARSERFUNCS_FIT_PARAM") << " & "
+                       << _lang.get("PARSERFUNCS_FIT_INITIAL") << " & "
+                       << _lang.get("PARSERFUNCS_FIT_FITTED") << " & "
+                       << _lang.get("PARSERFUNCS_FIT_PARAM_DEV") << "\\\\" << endl;
         else
-            oFitLog << _lang.get("PARSERFUNCS_FIT_LOG_TABLEHEAD2") << endl;
-        oFitLog << std::setw(76) << std::setfill('-') << '-' << endl;
+            oTeXExport << "\t\t" << _lang.get("PARSERFUNCS_FIT_PARAM") << " & "
+                       << _lang.get("PARSERFUNCS_FIT_INITIAL") << " & "
+                       << _lang.get("PARSERFUNCS_FIT_FITTED") << " & "
+                       << _lang.get("PARSERFUNCS_FIT_ASYMPTOTIC_ERROR") << "\\\\" << endl;
+        oTeXExport << "\t\t\\midrule" << endl;
     }
     _data.setCacheStatus(false);
 
@@ -8441,6 +8567,19 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
         else
             oFitLog << endl;
 
+        if (bTeXExport)
+        {
+            oTeXExport << "\t\t$" <<  replaceToTeX(pItem->first, true) << "$ & $"
+                       << vInitialVals[n] << "$ & $"
+                       << *(pItem->second) << "$ & $\\pm"
+                       << sqrt(abs(vz_w[n][n]));
+            if (vz_w[n][n])
+            {
+                oTeXExport << " \\quad (" + toString(abs(sqrt(abs(vz_w[n][n]/(*(pItem->second))))*100.0), 4) + "\\%)$\\\\" << endl;
+            }
+            else
+                oTeXExport << "$\\\\" << endl;
+        }
         if (_option.getSystemPrintStatus() && !bMaskDialog)
         {
             NumeReKernel::printPreFmt("|   " + pItem->first + "    "
@@ -8475,6 +8614,10 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
     _parser.SetExpr("chi = "+toCmdString(sqrt(dChisq)));
     _parser.Eval();
     oFitLog << std::setw(76) << std::setfill('-') << '-' << endl;
+    if (bTeXExport)
+    {
+        oTeXExport << "\t\t\\bottomrule" << endl << "\t\\end{tabular}" << endl << "\\end{table}" << endl;
+    }
     if (_option.getSystemPrintStatus() && !bMaskDialog)
         NumeReKernel::printPreFmt("|   "+strfill("-", _option.getWindow()-4, '-') + "\n");
         ///cerr << "|   " << std::setw(_option.getWindow()-4) << std::setfill((char)196) << (char)196 << endl;
@@ -8502,6 +8645,24 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
             else
                 oFitLog << " |";
             oFitLog << endl;
+        }
+
+        if (bTeXExport)
+        {
+            oTeXExport << endl << "\\subsection{" << _lang.get("PARSERFUNCS_FIT_CORRELMAT_HEAD") << "}" << endl;
+            oTeXExport << "\\[" << endl << "\t\\begin{pmatrix}" << endl;
+            for (unsigned int n = 0; n < paramsMap.size(); n++)
+            {
+                oTeXExport << "\t\t";
+                for (unsigned int k = 0; k < paramsMap.size(); k++)
+                {
+                    oTeXExport << vz_w[n][k] / sqrt(fabs(vz_w[n][n]*vz_w[k][k]));
+                    if (k+1 < paramsMap.size())
+                        oTeXExport << " & ";
+                }
+                oTeXExport << "\\\\" << endl;
+            }
+            oTeXExport << "\t\\end{pmatrix}" << endl << "\\]" << endl;
         }
 
         if (_option.getSystemPrintStatus() && !bMaskDialog)
@@ -8547,6 +8708,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
     dNormChisq /= (double)(nSize - paramsMap.size() /*_fitParams.GetNx()*/);
     if (nFitVars & 2)
         dNormChisq = sqrt(dNormChisq);
+    ///FITLOG
     oFitLog << endl;
     oFitLog << _lang.get("PARSERFUNCS_FIT_ANALYSIS") <<":" << endl;
     if (_fControl.getIterations() == nMaxIterations)
@@ -8585,8 +8747,46 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
             oFitLog << _lang.get("PARSERFUNCS_FIT_OVERFITTING") << endl;
         }
     }
-    oFitLog << std::setw(76) << std::setfill('=') << '=' << endl;
-    oFitLog << endl << std::setw(42) << std::setfill(' ') << "********" << endl << endl;
+    ///TEXEXPORT
+    oTeXExport << endl;
+    oTeXExport << "\\subsection{" << _lang.get("PARSERFUNCS_FIT_ANALYSIS") << "}" << endl;
+    if (_fControl.getIterations() == nMaxIterations)
+    {
+        oTeXExport << LineBreak(_lang.get("PARSERFUNCS_FIT_MAXITER_REACHED"), _option) << endl;
+    }
+    else
+    {
+        if (nSize != paramsMap.size() /*_fitParams.GetNx()*/)
+        {
+            if (bUseErrors)
+            {
+                if (log10(dNormChisq) > -1.0 && log10(dNormChisq) < 0.5 && dErrorPercentageSum < 50.0)
+                    oTeXExport << _lang.get("PARSERFUNCS_FIT_GOOD_W_ERROR") << endl;
+                else if (log10(dNormChisq) <= -1.0 && dErrorPercentageSum < 20.0)
+                    oTeXExport << _lang.get("PARSERFUNCS_FIT_BETTER_W_ERROR") << endl;
+                else if (log10(dNormChisq) >= 0.5 && log10(dNormChisq) < 1.5 && dErrorPercentageSum < 100.0)
+                    oTeXExport << _lang.get("PARSERFUNCS_FIT_NOT_GOOD_W_ERROR") << endl;
+                else
+                    oTeXExport << _lang.get("PARSERFUNCS_FIT_BAD_W_ERROR") << endl;
+            }
+            else
+            {
+                if (log10(dNormChisq) < -3.0 && dErrorPercentageSum < 20.0)
+                    oTeXExport << _lang.get("PARSERFUNCS_FIT_GOOD_WO_ERROR") << endl;
+                else if (log10(dNormChisq) < 0.0 && dErrorPercentageSum < 50.0)
+                    oTeXExport << _lang.get("PARSERFUNCS_FIT_IMPROVABLE_WO_ERROR") << endl;
+                else if (log10(dNormChisq) >= 0.0 && log10(dNormChisq) < 0.5 && dErrorPercentageSum < 100.0)
+                    oTeXExport << _lang.get("PARSERFUNCS_FIT_NOT_GOOD_WO_ERROR") << endl;
+                else
+                    oTeXExport << _lang.get("PARSERFUNCS_FIT_BAD_WO_ERROR") << endl;
+            }
+        }
+        else
+        {
+            oTeXExport << _lang.get("PARSERFUNCS_FIT_OVERFITTING") << endl;
+        }
+    }
+
     if (_option.getSystemPrintStatus() && !bMaskDialog)
     {
         NumeReKernel::printPreFmt("|\n|-> "+_lang.get("PARSERFUNCS_FIT_ANALYSIS") + ":\n");

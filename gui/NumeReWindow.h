@@ -116,6 +116,7 @@ class NumeReWindow : public wxFrame
 
         NetworkCallResult CheckNetworkStatus();
 
+        void NewFile(FileFilterType _filetype = FILE_NONSOURCE, const wxString& defaultfilename = "");
         void OpenSourceFile(wxArrayString fnames, unsigned int nLine = 0);
         void openImage(wxFileName filename);
         void openHTML(wxString HTMLcontent);
@@ -187,7 +188,6 @@ class NumeReWindow : public wxFrame
 
         void OnFileSystemEvent(wxFileSystemWatcherEvent& event);
 
-        void NewFile(FileFilterType _filetype = FILE_NONSOURCE);
         wxArrayString OpenFile(FileFilterType filterType );
         bool SaveFile(bool saveas, bool askLocalRemote, FileFilterType filterType);
         bool GetFileContents(wxString fileToLoad, wxString &fileContents, wxString &fileName);

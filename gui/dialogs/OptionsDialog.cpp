@@ -152,6 +152,7 @@ bool OptionsDialog::Create( wxWindow* parent, wxWindowID id, const wxString& cap
     m_PlotPath = nullptr;
     m_defaultFont = nullptr;
     m_precision = nullptr;
+    m_autosaveinterval = nullptr;
 
 ////@end OptionsDialog member initialisation
 
@@ -266,6 +267,12 @@ void OptionsDialog::CreateControls()
     m_UseExternalViewer = new wxCheckBox( itemPanel28, wxID_ANY, _(_guilang.get("GUI_OPTIONS_EXTERNALVIEWER")), wxDefaultPosition, wxDefaultSize, 0 );
     m_UseExternalViewer->SetValue(false);
     itemBoxSizer31->Add(m_UseExternalViewer, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    wxBoxSizer* itemBoxSizer51 = new wxBoxSizer(wxHORIZONTAL);
+    itemBoxSizer31->Add(itemBoxSizer51);
+    m_autosaveinterval = new wxSpinCtrl( itemPanel28, ID_SPINCTRL, _T("0"), wxDefaultPosition, wxSize(60, -1), wxSP_ARROW_KEYS, 10, 600, 30);
+    itemBoxSizer51->Add(m_autosaveinterval, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    wxStaticText* itemStaticText50 = new wxStaticText( itemPanel28, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_AUTOSAVE")), wxDefaultPosition, wxDefaultSize, 0 );
+    itemBoxSizer51->Add(itemStaticText50, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxADJUST_MINSIZE, 5);
 
     /*wxButton* itemButton35 = new wxButton( itemPanel28, ID_BTNFINDMINGW, _("Select"), wxDefaultPosition, wxSize(50, -1), 0 );
     itemBoxSizer33->Add(itemButton35, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
@@ -857,6 +864,7 @@ bool OptionsDialog::EvaluateOptions()
         _option->setprecision(m_precision->GetValue());
         _option->setDefaultPlotFont(m_defaultFont->GetValue().ToStdString());
         _option->setWindowBufferSize(0, m_termHistory->GetValue());
+        _option->setAutoSaveInterval(m_autosaveinterval->GetValue());
 		m_options->SetTerminalHistorySize(m_termHistory->GetValue());
 
 		wxString selectedPrintStyleString = m_printStyle->GetValue();
@@ -943,6 +951,7 @@ void OptionsDialog::InitializeDialog()
 
     m_defaultFont->SetValue(_option->getDefaultPlotFont());
     m_precision->SetValue(_option->getPrecision());
+    m_autosaveinterval->SetValue(_option->getAutoSaveInterval());
 
 
 	/**m_chkCombineWatchWindow->SetValue(m_options->GetCombineWatchWindow());

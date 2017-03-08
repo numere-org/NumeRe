@@ -111,6 +111,12 @@ void NumeReKernel::setKernelSettings(const Settings& _settings)
     _option.copySettings(_settings);
 }
 
+void NumeReKernel::Autosave()
+{
+    _data.saveCache();
+    return;
+}
+
 void NumeReKernel::StartUp(wxTerm* _parent)
 {
     if (_parent && m_parent == nullptr)
@@ -428,6 +434,7 @@ void NumeReKernel::StartUp(wxTerm* _parent)
     _parser.DefineFun(_nrT("degree"), parser_toDegree, true);                         // degree(x)
     _parser.DefineFun(_nrT("Y"), parser_SphericalHarmonics, true);                    // Y(l,m,theta,phi)
     _parser.DefineFun(_nrT("imY"), parser_imSphericalHarmonics, true);                // imY(l,m,theta,phi)
+    _parser.DefineFun(_nrT("Z"), parser_Zernike, true);                               // Z(n,m,rho,phi)
     _parser.DefineFun(_nrT("sinc"), parser_SinusCardinalis, true);                    // sinc(x)
     _parser.DefineFun(_nrT("sbessel"), parser_SphericalBessel, true);                 // sbessel(n,x)
     _parser.DefineFun(_nrT("sneumann"), parser_SphericalNeumann, true);               // sneumann(n,x)
@@ -487,12 +494,16 @@ void NumeReKernel::StartUp(wxTerm* _parent)
 void NumeReKernel::printVersionInfo()
 {
     bWritingTable = true;
+    make_hline(80);
+    printPreFmt("| ");
     BI_splash();
-	//BI_hline(80);
-	//cerr << "|-> Copyright " << (char)184 << " " << AutoVersion::YEAR << toSystemCodePage(", E. Hänel et al.  +  +  +  siehe \"about\" für rechtl. Info |") << endl;
-	printPreFmt("|-> Copyright (c) 2013-" + string(AutoVersion::YEAR) + toSystemCodePage(", Erik A. Hänel et al.") + strfill(toSystemCodePage(_lang.get("MAIN_ABOUT_NBR")), _option.getWindow()-50) + "\n"); //toSystemCodePage("Über: siehe \"about\" |") << endl; //MAIN_ABOUT
-	printPreFmt("|   Version: " + sVersion + strfill("Build: ", _option.getWindow()-24-sVersion.length()) + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + "\n");
-	make_hline();
+    printPreFmt("                                  |\n");
+	printPreFmt("| Version: " + sVersion + strfill("Build: ", 79-22-sVersion.length()) + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + " |\n");
+	printPreFmt("| Copyright (c) 2013-" + string(AutoVersion::YEAR) + toSystemCodePage(", Erik A. Hänel et al.") + strfill(toSystemCodePage(_lang.get("MAIN_ABOUT_NBR")), 79-48) + " |\n"); //toSystemCodePage("Über: siehe \"about\" |") << endl; //MAIN_ABOUT
+
+	//printPreFmt("|-> Copyright (c) 2013-" + string(AutoVersion::YEAR) + toSystemCodePage(", Erik A. Hänel et al.") + strfill(toSystemCodePage(_lang.get("MAIN_ABOUT_NBR")), _option.getWindow()-50) + "\n"); //toSystemCodePage("Über: siehe \"about\" |") << endl; //MAIN_ABOUT
+	//printPreFmt("|   Version: " + sVersion + strfill("Build: ", _option.getWindow()-24-sVersion.length()) + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + "\n");
+	make_hline(80);
 
 	printPreFmt("|\n");
 	//cerr << "|" << endl;
@@ -1674,7 +1685,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             make_hline();
             if (e == PROCESS_ABORTED_BY_USER)
             {
-               print(toUpperCase(_lang.get("ERR_PROCESS_CANCELLED_HEAD")));
+                print(toUpperCase(_lang.get("ERR_PROCESS_CANCELLED_HEAD")));
                 make_hline();
                 print(LineBreak(_lang.get("ERR_NR_3200_0_PROCESS_ABORTED_BY_USER"), _option, false));
                 //cerr << LineBreak("|-> Siehe auch \"help procedure\"", _option) << endl;
@@ -1687,6 +1698,8 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     // --> Script beenden! Mit einem Fehler ist es unsinnig weiterzurechnen <--
                     _script.close();
                 }
+                if (_option.getUseDebugger())
+                    _option._debug.reset();
             }
             else
             {

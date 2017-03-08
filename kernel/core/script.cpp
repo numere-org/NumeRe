@@ -60,6 +60,52 @@ Script::~Script()
     }
 }
 
+string Script::stripLineComments(const string& sLine)
+{
+    size_t nQuotes = 0;
+
+    for (size_t i = 0; i < sLine.length(); i++)
+    {
+        if (sLine[i] == '"'
+            && (!i || (i && sLine[i-1] != '\\')))
+            nQuotes++;
+        if (sLine.substr(i,2) == "##" && !(nQuotes % 2))
+            return sLine.substr(0,i);
+    }
+    return sLine;
+}
+
+string Script::stripBlockComments(const string& sLine)
+{
+    size_t nQuotes = 0;
+    string sReturn = sLine;
+
+    for (size_t i = 0; i < sReturn.length(); i++)
+    {
+        if (sReturn[i] == '"'
+            && (!i || (i && sReturn[i-1] != '\\')))
+            nQuotes++;
+        if (sReturn.substr(i,2) == "#*" && !(nQuotes % 2))
+        {
+            for (size_t j = i+2; j < sReturn.length(); j++)
+            {
+                if (sReturn.substr(j,2) == "*#")
+                {
+                    sReturn.erase(i,j+2-i);
+                    break;
+                }
+                if (j+1 == sReturn.length())
+                {
+                    sReturn.erase(i);
+                    bBlockComment = true;
+                    break;
+                }
+            }
+        }
+    }
+    return sReturn;
+}
+
 void Script::openScript()
 {
     if (fScript.is_open())
@@ -193,7 +239,9 @@ string Script::getNextScriptCommand()
                     continue;
                 }
                 if (sScriptCommand.find("##") != string::npos)
-                    sScriptCommand.erase(sScriptCommand.find("##"));
+                {
+                    sScriptCommand = stripLineComments(sScriptCommand);
+                }
                 if (sScriptCommand.substr(0,9) == "<install>" && !bInstallProcedures)
                 {
                     while (!fScript.eof())
@@ -284,7 +332,9 @@ string Script::getNextScriptCommand()
                                 nLine++;
                                 StripSpaces(sTemp);
                                 if (sTemp.find("##") != string::npos)
-                                    sTemp.erase(sTemp.find("##"));
+                                {
+                                    sTemp = stripLineComments(sTemp);
+                                }
                                 if (sTemp.find("<endinfo>") == string::npos)
                                     sScriptCommand += " " + sTemp;
                                 else
@@ -400,7 +450,7 @@ string Script::getNextScriptCommand()
                             nLine++;
                             StripSpaces(sTemp);
                             if (sTemp.find("##") != string::npos)
-                                sTemp.erase(sTemp.find("##"));
+                                sTemp = stripLineComments(sTemp);
                             if (sTemp.find("<endinfo>") == string::npos)
                                 sScriptCommand += " " + sTemp;
                             else
@@ -471,7 +521,7 @@ string Script::getNextScriptCommand()
                             nLine++;
                             StripSpaces(sTemp);
                             if (sTemp.find("##") != string::npos)
-                                sTemp.erase(sTemp.find("##"));
+                                sTemp = stripLineComments(sTemp);
                             if (sTemp.find("</helpindex>") == string::npos)
                                 sScriptCommand += sTemp;
                             else
@@ -540,7 +590,7 @@ string Script::getNextScriptCommand()
                                 nLine++;
                                 StripSpaces(sTemp);
                                 if (sTemp.find("##") != string::npos)
-                                    sTemp.erase(sTemp.find("##"));
+                                    sTemp = stripLineComments(sTemp);
                                 if (sTemp.find("</helpfile>") == string::npos)
                                 {
                                     if (sTemp.length() > 10 && sTemp.find("<article") != string::npos)
@@ -782,10 +832,12 @@ string Script::getNextScriptCommand()
 
     if (sScriptCommand.find("##") != string::npos)
     {
-        sScriptCommand = sScriptCommand.substr(0,sScriptCommand.find("##"));
+        sScriptCommand = stripLineComments(sScriptCommand);
     }
 
-    while (sScriptCommand.find("#*") != string::npos)
+    if (sScriptCommand.find("#*") != string::npos)
+        sScriptCommand = stripBlockComments(sScriptCommand);
+    /*while (sScriptCommand.find("#*") != string::npos)
     {
         if (sScriptCommand.find("*#", sScriptCommand.find("#*")+2) != string::npos)
             sScriptCommand = sScriptCommand.substr(0,sScriptCommand.find("#*")) + sScriptCommand.substr(sScriptCommand.find("*#", sScriptCommand.find("#*")+2)+2);
@@ -795,7 +847,7 @@ string Script::getNextScriptCommand()
             bBlockComment = true;
             break;
         }
-    }
+    }*/
 
     //cerr << sScriptFileName.substr(0,sScriptFileName.rfind('/')) << endl;
     while (sScriptCommand.find("<this>") != string::npos)

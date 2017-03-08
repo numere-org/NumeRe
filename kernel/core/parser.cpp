@@ -554,6 +554,51 @@ value_type parser_imSphericalHarmonics(value_type vl, value_type vm, value_type 
     return 0.0;
 }
 
+// --> Zernikepolynome <--
+value_type parser_Zernike(value_type vn, value_type vm, value_type rho, value_type phi)
+{
+    if (isinf(vn) || isnan(vn)
+        || isinf(vm) || isnan(vm)
+        || isinf(rho) || isnan(rho)
+        || isinf(phi) || isnan(phi))
+        return NAN;
+    int n = (int)vn;
+    int m = (int)vm;
+    if (n < abs(m))
+        return NAN;
+    if (m < 0)
+    {
+        return parser_ZernikeRadial(n, -m, rho) * sin(-m*phi);
+    }
+    else
+    {
+        return parser_ZernikeRadial(n, m, rho) * cos(m*phi);
+    }
+}
+
+// --> Radialteil der Zernikepolynome <--
+value_type parser_ZernikeRadial(int n, int m, value_type rho)
+{
+    value_type vReturn = 0;
+    value_type vNorm = 0;
+    if ((n-m) % 2)
+        return 0.0;
+    for (int k = 0; k <= (n-m)/2; k++)
+    {
+        if (k % 2)
+        {
+            vReturn -= parser_Faculty(n-k)*intPower(rho, n-2*k)/(parser_Faculty(k)*parser_Faculty((n+m)/2.0-k)*parser_Faculty((n-m)/2.0-k));
+            vNorm -= parser_Faculty(n-k)/(parser_Faculty(k)*parser_Faculty((n+m)/2.0-k)*parser_Faculty((n-m)/2.0-k));
+        }
+        else
+        {
+            vReturn += parser_Faculty(n-k)*intPower(rho, n-2*k)/(parser_Faculty(k)*parser_Faculty((n+m)/2.0-k)*parser_Faculty((n-m)/2.0-k));
+            vNorm += parser_Faculty(n-k)/(parser_Faculty(k)*parser_Faculty((n+m)/2.0-k)*parser_Faculty((n-m)/2.0-k));
+        }
+    }
+    return vReturn/vNorm;
+}
+
 // --> Diese Funktion berechneten den sinc(x) <--
 value_type parser_SinusCardinalis(value_type v)
 {
