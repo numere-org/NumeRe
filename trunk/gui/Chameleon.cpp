@@ -1635,7 +1635,7 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::NewFile(FileFilterType _filetype)
+void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfilename)
 {
     if (_filetype == FILE_NONSOURCE)
     {
@@ -1664,21 +1664,26 @@ void NumeReWindow::NewFile(FileFilterType _filetype)
         wxString filename;
         wxString proc_namespace;
         wxTextEntryDialog* textentry;
-        if (_filetype == FILE_NSCR)
-            textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNSCR_QUESTION"), _guilang.get("GUI_DLG_NEWNSCR"), _guilang.get("GUI_DLG_NEWNSCR_DFLT"));
-        else if (_filetype == FILE_NPRC)
-            textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNPRC_QUESTION"), _guilang.get("GUI_DLG_NEWNPRC"), _guilang.get("GUI_DLG_NEWNPRC_DFLT"));
-        else
-            textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWPLUGIN_QUESTION"), _guilang.get("GUI_DLG_NEWPLUGIN"), _guilang.get("GUI_DLG_NEWPLUGIN_DFLT"));
-        int retval = textentry->ShowModal();
-
-        if (retval == wxID_CANCEL)
+        if (!defaultfilename.length())
         {
+            if (_filetype == FILE_NSCR)
+                textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNSCR_QUESTION"), _guilang.get("GUI_DLG_NEWNSCR"), _guilang.get("GUI_DLG_NEWNSCR_DFLT"));
+            else if (_filetype == FILE_NPRC)
+                textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNPRC_QUESTION"), _guilang.get("GUI_DLG_NEWNPRC"), _guilang.get("GUI_DLG_NEWNPRC_DFLT"));
+            else
+                textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWPLUGIN_QUESTION"), _guilang.get("GUI_DLG_NEWPLUGIN"), _guilang.get("GUI_DLG_NEWPLUGIN_DFLT"));
+            int retval = textentry->ShowModal();
+
+            if (retval == wxID_CANCEL)
+            {
+                delete textentry;
+                return;
+            }
+            filename = textentry->GetValue();
             delete textentry;
-            return;
         }
-        filename = textentry->GetValue();
-        delete textentry;
+        else
+            filename = defaultfilename;
         if (filename.find('$') != string::npos)
             filename.erase(filename.find('$'),1);
         if (filename.find('~') != string::npos)
@@ -2249,6 +2254,7 @@ void NumeReWindow::OpenSourceFile (wxArrayString fnames, unsigned int nLine)
 		{
             if (nLine)
             {
+                PageHasChanged(pageNr);
                 m_currentEd->FocusOnLine(nLine, true);
                 //m_currentEd->GotoLine(nLine);
             }

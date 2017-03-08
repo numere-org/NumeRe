@@ -210,6 +210,7 @@ public:
 
     wxComboBox* m_defaultFont;
     wxSpinCtrl* m_precision;
+    wxSpinCtrl* m_autosaveinterval;
 
     wxCheckBox* m_chkShowCompileCommands;
     wxComboBox* m_printStyle;

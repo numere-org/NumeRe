@@ -264,7 +264,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
         || sLine.substr(0,4) == "mode"
         || sLine.substr(0,5) == "menue")
     {
-        bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
+        //bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
         NumeReKernel::bSupressAnswer = bProcSupressAnswer;
         switch (BI_CheckKeyword(sLine, _data, _out, _option, _parser, _functions, _pData, _script, true))
         {
@@ -272,14 +272,14 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
             case  1:        // Keywort: Naechster Schleifendurchlauf!
                 SetConsTitle(_data, _option);
                 thisReturnVal.vNumVal.push_back(NAN);
-                NumeReKernel::bSupressAnswer = bSupressAnswer_back;
+                //NumeReKernel::bSupressAnswer = bSupressAnswer_back;
                 return thisReturnVal;
             default:
                 thisReturnVal.vNumVal.push_back(NAN);
-                NumeReKernel::bSupressAnswer = bSupressAnswer_back;
+                //NumeReKernel::bSupressAnswer = bSupressAnswer_back;
                 return thisReturnVal;  // Keywort "mode"
         }
-        NumeReKernel::bSupressAnswer = bSupressAnswer_back;
+        //NumeReKernel::bSupressAnswer = bSupressAnswer_back;
     }
 
 
@@ -645,6 +645,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
     bReturnSignal = false;
     nthRecursion = nth_procedure;
     //cerr << "sCurrentProcedureName: " << sCurrentProcedureName << endl;
+    bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
 
     fProc_in.clear();
     fProc_in.open(sCurrentProcedureName.c_str());
@@ -1371,7 +1372,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                         {
                             if (_option.getUseDebugger())
                                 _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                            deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
+                            deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                             throw INLINE_PROCEDURE_IS_NOT_INLINE;
                         }
 
@@ -1394,7 +1395,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                         }
                         catch (...)
                         {
-                            deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
+                            deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                             throw;
                         }
                     }
@@ -1407,7 +1408,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     {
                         if (_option.getUseDebugger())
                             _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                        deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
+                        deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                         throw;
                     }
 
@@ -1665,7 +1666,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                         {
                             if (_option.getUseDebugger())
                                     _option._debug.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                            deleteVars(_parser, _data, 0, 0, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
+                            deleteVars(_parser, _data, bSupressAnswer_back, 0, 0, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                             /*if (sVarMap)
                             {
                                 for (unsigned int j = 0; j < nVarMapSize; j++)
@@ -1707,7 +1708,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                         {
                             if (_option.getUseDebugger())
                                 _option._debug.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                            deleteVars(_parser, _data, 0, 0, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
+                            deleteVars(_parser, _data, bSupressAnswer_back, 0, 0, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                             /*if (sVarMap)
                             {
                                 for (unsigned int j = 0; j < nVarMapSize; j++)
@@ -1745,7 +1746,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             {
                                 if (_option.getUseDebugger())
                                     _option._debug.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                                deleteVars(_parser, _data, 0, 0, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
+                                deleteVars(_parser, _data, bSupressAnswer_back, 0, 0, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                                 /*if (sVarMap)
                                 {
                                     for (unsigned int j = 0; j < nVarMapSize; j++)
@@ -1803,7 +1804,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     {
                         if (_option.getUseDebugger())
                             _option._debug.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                        deleteVars(_parser, _data, 0, 0, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
+                        deleteVars(_parser, _data, bSupressAnswer_back, 0, 0, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                         /*if (sVarMap)
                         {
                             for (unsigned int j = 0; j < nVarMapSize; j++)
@@ -1882,7 +1883,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                         {
                             if (_option.getUseDebugger())
                                 _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                            deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, 0, 0, sVarMap, nVarMapSize);
+                            deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, 0, 0, sVarMap, nVarMapSize);
                             for (unsigned int j = 0; j <= i; j++)
                             {
                                 if (j < i)
@@ -1908,7 +1909,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                         {
                             if (_option.getUseDebugger())
                                 _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                            deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, 0, 0, sVarMap, nVarMapSize);
+                            deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, 0, 0, sVarMap, nVarMapSize);
                             /*if (sLocalVars && dLocalVars)
                             {
                                 for (unsigned int i = 0; i < nLocalVarMapSize; i++)
@@ -1976,7 +1977,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             {
                                 if (_option.getUseDebugger())
                                     _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                                deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, 0, 0, sVarMap, nVarMapSize);
+                                deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, 0, 0, sVarMap, nVarMapSize);
                                 /*if (sLocalVars && dLocalVars)
                                 {
                                     for (unsigned int i = 0; i < nLocalVarMapSize; i++)
@@ -2026,7 +2027,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     }
                     catch (...)
                     {
-                        deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, 0, 0, sVarMap, nVarMapSize);
+                        deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, 0, 0, sVarMap, nVarMapSize);
                         /*if (sLocalVars && dLocalVars)
                         {
                             for (unsigned int i = 0; i < nLocalVarMapSize; i++)
@@ -2078,7 +2079,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 {
                     if (_option.getUseDebugger())
                         _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                    deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, 0, 0, sVarMap, nVarMapSize);
+                    deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, 0, 0, sVarMap, nVarMapSize);
                     /*if (sLocalVars && dLocalVars)
                     {
                         for (unsigned int i = 0; i < nLocalVarMapSize; i++)
@@ -2204,7 +2205,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 fInclude.close();
                 if (_option.getUseDebugger())
                     _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
+                deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                 throw SCRIPT_NOT_EXIST;
             }
             sProcCommandLine = "";
@@ -2223,7 +2224,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             {
                 if (_option.getUseDebugger())
                     _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
+                deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                /* if (sLocalVars && dLocalVars)
                 {
                     for (unsigned int i = 0; i < nLocalVarMapSize; i++)
@@ -2271,7 +2272,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             {
                 if (_option.getUseDebugger())
                     _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
+                deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                 /*if (sLocalVars && dLocalVars)
                 {
                     for (unsigned int i = 0; i < nLocalVarMapSize; i++)
@@ -2340,7 +2341,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 {
                     if (_option.getUseDebugger())
                         _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                    deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
+                    deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                     /*if (sVarMap)
                     {
                         for (unsigned int i = 0; i < nVarMapSize; i++)
@@ -2416,7 +2417,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     {
                         if (_option.getUseDebugger())
                             _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                        deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
+                        deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                         /*if (sLocalVars && dLocalVars)
                         {
                             for (unsigned int i = 0; i < nLocalVarMapSize; i++)
@@ -2479,7 +2480,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             {
                 if (_option.getUseDebugger())
                     _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
+                deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                 throw INLINE_PROCEDURE_IS_NOT_INLINE;
             }
 
@@ -2533,7 +2534,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
         {
             if (_option.getUseDebugger())
                 _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-            deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
+            deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
             /*if (sLocalVars && dLocalVars)
             {
                 for (unsigned int i = 0; i < nLocalVarMapSize; i++)
@@ -2586,7 +2587,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             }
             if (_option.getUseDebugger())
                 _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-            deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
+            deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
 
             throw PROCEDURE_THROW;
         }
@@ -2616,7 +2617,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             {
                 if (_option.getUseDebugger())
                     _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
+                deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                 throw;
             }
         }
@@ -2635,7 +2636,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             {
                 if (_option.getUseDebugger())
                     _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
+                deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
                 throw;
             }
         }
@@ -2646,7 +2647,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
 
     if (_option.getUseDebugger())
         _option._debug.popStackItem();
-    deleteVars(_parser, _data, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
+    deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
 
     if (nReturnType && !_ReturnVal.vNumVal.size() && !_ReturnVal.vStringVal.size())
         _ReturnVal.vNumVal.push_back(1.0);
@@ -3202,7 +3203,7 @@ void Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnval
     return;
 }
 
-void Procedure::deleteVars(Parser& _parser, Datafile& _data, string** sLocalVars, unsigned int nLocalVarMapSize, double* dLocalVars, string** sLocalStrings, unsigned int nLocalStrMapSize, string** sVarMap, unsigned int nVarMapSize)
+void Procedure::deleteVars(Parser& _parser, Datafile& _data, bool bSupressAnswer, string** sLocalVars, unsigned int nLocalVarMapSize, double* dLocalVars, string** sLocalStrings, unsigned int nLocalStrMapSize, string** sVarMap, unsigned int nVarMapSize)
 {
     if (sLocalVars && dLocalVars)
     {
@@ -3242,6 +3243,7 @@ void Procedure::deleteVars(Parser& _parser, Datafile& _data, string** sLocalVars
     sCallingNameSpace = "main";
     sThisNameSpace = "";
     mVarMap.clear();
+    NumeReKernel::bSupressAnswer = bSupressAnswer;
     _parser.mVarMapPntr = 0;
     if (sProcNames.length())
     {

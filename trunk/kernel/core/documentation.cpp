@@ -368,6 +368,47 @@ void doc_Help(const string& __sTopic, Settings& _option)
                     }
                 }
             }
+            else if (vDocArticle[i].find("<table") != string::npos) // Table-Tags
+            {
+                if (generateFile)
+                {
+                    //fHTML << "<h4>"+ _lang.get("DOC_HELP_OPTIONS_HEADLINE") +"</h4>" << endl;
+                    fHTML << "<div align=\"center\"><table style=\"border-collapse:collapse; border-color:rgb(136,136,136);border-width:1px\" border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">" << endl << "  <tbody>" << endl;
+                }
+                else
+                {
+                    sHTML += "<div align=\"center\"><table border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">\n  <tbody>\n";
+                }
+                for (unsigned int j = i+1; j < vDocArticle.size(); j++)
+                {
+                    if (vDocArticle[j].find("</table>") != string::npos)
+                    {
+                        if (generateFile)
+                        {
+                            fHTML << "  </tbody>" << endl
+                                 << "</table></div>" << endl;
+                        }
+                        else
+                        {
+                            sHTML += "  </tbody>\n</table></div>\n";
+                        }
+                        i = j;
+                        break;
+                    }
+                    else
+                    {
+                        doc_ReplaceTokensForHTML(vDocArticle[j], _option);
+                        if (generateFile)
+                        {
+                            fHTML << vDocArticle[j] << endl;
+                        }
+                        else
+                        {
+                            sHTML += vDocArticle[j] + "\n";
+                        }
+                    }
+                }
+            }
             else // Normaler Paragraph
             {
                 doc_ReplaceTokensForHTML(vDocArticle[i], _option);
@@ -571,7 +612,7 @@ void doc_Help(const string& __sTopic, Settings& _option)
 
                             if (vDocArticle[k].find("type=") != string::npos && getArgAtPos(vDocArticle[k], vDocArticle[k].find("type=")+5) == "verbatim")
                             {
-                                NumeReKernel::printPreFmt("|     " + sNode);;
+                                NumeReKernel::printPreFmt("|     " + sNode);
                                 nIndent = sNode.length()+6;
                                 sLine.append(nLengthMax+9-nIndent, ' ');
                                 sLine += "- " + sRemainingLine;
@@ -739,6 +780,65 @@ void doc_Help(const string& __sTopic, Settings& _option)
 
                         if (nLengthMax < getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()-countEscapeSymbols(getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5)))
                             nLengthMax = getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()-countEscapeSymbols(getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5));
+                    }
+                }
+            }
+            else if (vDocArticle[i].find("<table") != string::npos) // TABLE-Tags
+            {
+                string sTable = vDocArticle[i].substr(vDocArticle[i].find("<table"));
+                for (unsigned int j = i+1; j < vDocArticle.size(); j++)
+                {
+                    if (vDocArticle[j].find("</table>") != string::npos)
+                    {
+                        sTable += vDocArticle[j].substr(0,vDocArticle[j].find("</table>")+8);
+                        // Send the whole content to the table reader and render the obtained table on the screen.
+                        vector<vector<string> > vTable = doc_readTokenTable(sTable, _option);
+                        vector<size_t> vFieldSizes;
+                        for (size_t v = 0; v < vTable.size(); v++)
+                        {
+                            for (size_t w = 0; w < vTable[v].size(); w++)
+                            {
+                                if (vFieldSizes.size() < w+1)
+                                    vFieldSizes.push_back(vTable[v][w].length());
+                                else
+                                {
+                                    if (vFieldSizes[w] < vTable[v][w].length())
+                                        vFieldSizes[w] = vTable[v][w].length();
+                                }
+                            }
+                        }
+
+                        for (size_t v = 0; v < vTable.size(); v++)
+                        {
+                            NumeReKernel::printPreFmt("|     ");
+                            for (size_t w = 0; w < vTable[v].size(); w++)
+                            {
+                                NumeReKernel::printPreFmt(strlfill(vTable[v][w], vFieldSizes[w]+2));
+                            }
+                            NumeReKernel::printPreFmt("\n");
+                        }
+
+                        i = j;
+                        break;
+                    }
+                    else
+                    {
+                        sTable += vDocArticle[j];
+                        /*doc_ReplaceTokens(vDocArticle[j], _option);
+
+                        string sNode = getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5);
+                        for (unsigned int k = 0; k < sNode.length(); k++)
+                        {
+                            if (sNode[k] == '$' && k && sNode[k-1] != '\\')
+                            {
+                                if (nLengthMax < k-countEscapeSymbols(sNode.substr(0,k)))
+                                    nLengthMax = k-countEscapeSymbols(sNode.substr(0,k));
+                                sNode.erase(0,k+1);
+                                k = -1;
+                            }
+                        }
+                        if (nLengthMax < sNode.length()-countEscapeSymbols(sNode))
+                            nLengthMax = sNode.length()-countEscapeSymbols(sNode);*/
                     }
                 }
             }
@@ -1003,6 +1103,39 @@ void doc_ReplaceExprContentForHTML(string& sExpr, const Settings& _option)
         if (sExpr.substr(i,2) == "\\n")
             sExpr.replace(i,2,"<br>");
     }
+}
+
+vector<vector<string> > doc_readTokenTable(const string& sTable, const Settings& _option)
+{
+    vector<vector<string> > vTable;
+    vector<string> vLine;
+    for (size_t i = 0; i < sTable.length(); i++) // <table> <tr> <td>
+    {
+        if (sTable.substr(i,4) == "<td>")
+        {
+            for (size_t j = i+4; j < sTable.length(); j++)
+            {
+                if (sTable.substr(j,5) == "</td>")
+                {
+                    vLine.push_back(sTable.substr(i+4, j-i-4));
+                    doc_ReplaceTokens(vLine[vLine.size()-1], _option);
+                    i = j+4;
+                    break;
+                }
+            }
+        }
+        if (sTable.substr(i,5) == "</tr>")
+        {
+            vTable.push_back(vLine);
+            vLine.clear();
+            i += 4;
+        }
+        if (sTable.substr(i,8) == "</table>")
+        {
+            break;
+        }
+    }
+    return vTable;
 }
 
 void doc_SearchFct(const string& sToLookFor, Settings& _option)

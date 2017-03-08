@@ -153,7 +153,7 @@ unsigned int getMatchingParenthesis(const string&);
 string toLowerCase(const string& sUpperCase);
 string toUpperCase(const string& sLowerCase);
 bool isMultiValue(const string& sExpr, bool bIgnoreClosingParenthesis = false);
-string replaceToTeX(const string&);
+string replaceToTeX(const string& sString, bool replaceForTeXFile = false);
 Match findCommand(const string& sCmd, string sCommand = "");
 string extractCommandString(const string& sCmd, const Match& _mMatch);
 void removeArgSep(string&);

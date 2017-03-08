@@ -60,6 +60,9 @@ class Script : public FileSystem
         vector<string> vInstallPackages;
         unsigned int nCurrentPackage;
 
+        string stripLineComments(const string& sLine);
+        string stripBlockComments(const string& sLine);
+
     public:
         Script();
         Script(const string& _sScriptFileName);

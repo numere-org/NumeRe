@@ -118,6 +118,9 @@ class NumeReKernel
         string ReadAnswer();
         string ReadDoc();
         bool SettingsModified();
+        int getAutosaveInterval() {return _option.getAutoSaveInterval();}
+        long long int getLastSavedTime() {return _data.getLastSaved();}
+        void Autosave();
 
         void StartUp(wxTerm* _parent);
         KernelStatus MainLoop(const string& sCommand);

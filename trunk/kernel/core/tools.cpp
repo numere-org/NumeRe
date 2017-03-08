@@ -553,7 +553,7 @@ bool isMultiValue(const string& sExpr, bool bIgnoreClosingParenthesis)
 }
 
 // --> Ersetzt Tokens in einem String mit dem entsprechenden TeX-Befehl <--
-string replaceToTeX(const string& sString)
+string replaceToTeX(const string& sString, bool replaceForTeXFile) // bool-flag for true TeX files. The graph needs more tweaking
 {
     string sReturn = " " + sString + " ";   // Rueckgabe-String
     string sTemp = "";                      // Temporaerer String, erleichert das Einfuegen von strings
@@ -671,6 +671,12 @@ string replaceToTeX(const string& sString)
         // --> Positions-Indices zuruecksetzen <--
         nPos = 0;
         nPos_2 = 0;
+
+        if (replaceForTeXFile)
+        {
+            if (i == 1)
+                i = 8;
+        }
 
         // --> So lange in dem String ab der Position nPos das Token auftritt <--
         while (sReturn.find(sCodepage[i][0], nPos) != string::npos)

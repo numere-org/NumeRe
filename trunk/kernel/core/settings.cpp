@@ -682,6 +682,7 @@ void Settings::copySettings(const Settings& _settings)
     sPlotOutputPath = _settings.sPlotOutputPath;
     sDefaultfont = _settings.sDefaultfont;
     nPrecision = _settings.nPrecision;
+    nAutoSaveInterval = _settings.nAutoSaveInterval;
     nBuffer_x = _settings.nBuffer_x;
     nBuffer_y = _settings.nBuffer_y;
     bUseDebugger = _settings.bUseDebugger;

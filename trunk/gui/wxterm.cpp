@@ -364,6 +364,8 @@ wxThread::ExitCode wxTerm::Entry()
             }*/
             wxQueueEvent(GetEventHandler(), new wxThreadEvent());
         }
+        if (time(0)-_kernel.getLastSavedTime() >= _kernel.getAutosaveInterval())
+            _kernel.Autosave();
     }
     _kernel.CloseSession();
     m_KernelStatus = NumeReKernel::NUMERE_QUIT;

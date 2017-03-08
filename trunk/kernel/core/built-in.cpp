@@ -596,7 +596,7 @@ void BI_show_credits(Parser& _parser, Settings& _option)
 // 10. Diese Funktion zeigt das Logo an
 void BI_splash()
 {
-    NumeReKernel::print("NUMERE: FRAMEWORK FÜR NUMERISCHE RECHNUNGEN");
+    NumeReKernel::printPreFmt("NUMERE: FRAMEWORK FÜR NUMERISCHE RECHNUNGEN");
     /**int nLINE_LENGTH = NumeReKernel::nLINE_LENGTH;
     NumeReKernel::print((char)201;
     for (int i = 0; i < nLINE_LENGTH-2; i++)
