@@ -2289,7 +2289,7 @@ void parser_ListFunc(const Settings& _option, const string& sType) //PRSRFUNC_LI
     NumeReKernel::printPreFmt("|-> NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_LISTFUNC_HEADLINE")));
     if (sType != "all")
     {
-        NumeReKernel::printPreFmt("  [" + toUpperCase(_lang.get("PARSERFUNCS_LISTFUNC_"+toUpperCase(sType))) + "]");
+        NumeReKernel::printPreFmt("  [" + toUpperCase(_lang.get("PARSERFUNCS_LISTFUNC_TYPE_"+toUpperCase(sType))) + "]");
     }
     NumeReKernel::printPreFmt("\n");
     make_hline();
@@ -2302,7 +2302,7 @@ void parser_ListFunc(const Settings& _option, const string& sType) //PRSRFUNC_LI
 
     for (unsigned int i = 0; i < vFuncs.size(); i++)
     {
-        NumeReKernel::printPreFmt(LineBreak("|   " + vFuncs[i], _option, false, 0, 36)+"\n");
+        NumeReKernel::printPreFmt(LineBreak("|   " + vFuncs[i], _option, false, 0, 41)+"\n");
     }
     NumeReKernel::printPreFmt("|\n");
     NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTFUNC_FOOTNOTE1"), _option));

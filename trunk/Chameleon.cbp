@@ -231,6 +231,7 @@
 		<Unit filename="common/filewatcher.cpp" />
 		<Unit filename="common/filewatcher.hpp" />
 		<Unit filename="common/fixvsbug.h" />
+		<Unit filename="common/globals.hpp" />
 		<Unit filename="common/options.cpp" />
 		<Unit filename="common/recycler.cpp" />
 		<Unit filename="common/recycler.hpp" />
@@ -247,8 +248,12 @@
 		<Unit filename="debugger/DebugManager.h" />
 		<Unit filename="debugger/cham_db.cpp" />
 		<Unit filename="debugger/cham_db.h" />
+		<Unit filename="debugger/debugviewer.cpp" />
+		<Unit filename="debugger/debugviewer.hpp" />
 		<Unit filename="editor/editor.cpp" />
 		<Unit filename="editor/editor.h" />
+		<Unit filename="editor/history.cpp" />
+		<Unit filename="editor/history.hpp" />
 		<Unit filename="gui/Chameleon.cpp" />
 		<Unit filename="gui/ChameleonNotebook.cpp" />
 		<Unit filename="gui/ChameleonProjectManager.cpp" />
@@ -275,8 +280,12 @@
 		<Unit filename="gui/dialogs/fndrpldialog.hpp" />
 		<Unit filename="gui/dialogs/tipdialog.cpp" />
 		<Unit filename="gui/dialogs/tipdialog.hpp" />
-		<Unit filename="gui/dialogs/treelistctrl.cpp" />
-		<Unit filename="gui/dialogs/treelistctrl.h" />
+		<Unit filename="gui/dialogs/treelistctrl.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="gui/dialogs/treelistctrl.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="gui/dialogs/wxTermContainer.cpp" />
 		<Unit filename="gui/dialogs/wxTermContainer.h" />
 		<Unit filename="gui/filetree.cpp" />

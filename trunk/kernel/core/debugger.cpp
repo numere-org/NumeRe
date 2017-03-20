@@ -219,3 +219,52 @@ string NumeReDebugger::printLocalStrings()
     return sLocalStrings;
 }
 
+vector<string> NumeReDebugger::getModuleInformations()
+{
+    vector<string> vModule;
+    vModule.push_back(sErraticCommand);
+    vModule.push_back(sErraticModule);
+    vModule.push_back(toString(nLineNumber));
+    return vModule;
+}
+
+vector<string> NumeReDebugger::getStackTrace()
+{
+    vector<string> vStack;
+    if (!vStackTrace.size())
+    {
+        vStack.push_back(_lang.get("DBG_STACK_EMPTY"));
+        return vStack;
+    }
+    for (int i = vStackTrace.size()-1; i >= 0; i--)
+    {
+        if (i == vStackTrace.size()-1)
+            vStack.push_back("-> $" + vStackTrace[i]);
+        else
+            vStack.push_back("$" + vStackTrace[i]);
+    }
+    return vStack;
+}
+
+vector<string> NumeReDebugger::getNumVars()
+{
+    vector<string> vNumVars;
+    for (auto iter = mLocalVars.begin(); iter != mLocalVars.end(); ++iter)
+    {
+        vNumVars.push_back(iter->first + "\t" + toString(iter->second, 7));
+    }
+    return vNumVars;
+}
+
+vector<string> NumeReDebugger::getStringVars()
+{
+    vector<string> vStringVars;
+    for (auto iter = mLocalStrings.begin(); iter != mLocalStrings.end(); ++iter)
+    {
+        vStringVars.push_back(iter->first + "\t\"" + iter->second + "\"");
+    }
+    return vStringVars;
+}
+
+
+

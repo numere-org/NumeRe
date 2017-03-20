@@ -241,6 +241,8 @@ string Script::getNextScriptCommand()
                 if (sScriptCommand.find("##") != string::npos)
                 {
                     sScriptCommand = stripLineComments(sScriptCommand);
+                    if (!sScriptCommand.length())
+                        continue;
                 }
                 if (sScriptCommand.substr(0,9) == "<install>" && !bInstallProcedures)
                 {
@@ -281,7 +283,6 @@ string Script::getNextScriptCommand()
                         {
                             sInstallInfoString = sScriptCommand.substr(sScriptCommand.find("<info>")+6, sScriptCommand.find("<endinfo>")-sScriptCommand.find("<info>")-6);
                             sScriptCommand = sScriptCommand.substr(sScriptCommand.find("<endinfo>")+9);
-                            bFirstPassedInstallCommand = true;
                             sInstallID = getArgAtPos(sInstallInfoString, sInstallInfoString.find("name=")+5);
                             if (sInstallInfoString.find("requirepackages=") != string::npos)
                             {
@@ -345,7 +346,6 @@ string Script::getNextScriptCommand()
                             }
                             sInstallInfoString = sScriptCommand;
                             sScriptCommand = sTemp.substr(sTemp.find("<endinfo>")+9);
-                            bFirstPassedInstallCommand = true;
                             sInstallID = getArgAtPos(sInstallInfoString, sInstallInfoString.find("name=")+5);
                             if (sInstallInfoString.find("requirepackages=") != string::npos)
                             {
@@ -397,11 +397,11 @@ string Script::getNextScriptCommand()
                 {
                     unsigned int nNumereVersion = AutoVersion::MAJOR*100+AutoVersion::MINOR*10+AutoVersion::BUILD;
                     unsigned int nRequiredVersion = nNumereVersion;
+                    bFirstPassedInstallCommand = true;
                     if (sScriptCommand.find("<endinfo>") != string::npos)
                     {
                         sInstallInfoString = sScriptCommand.substr(sScriptCommand.find("<info>")+6, sScriptCommand.find("<endinfo>")-sScriptCommand.find("<info>")-6);
                         sScriptCommand = sScriptCommand.substr(sScriptCommand.find("<endinfo>")+9);
-                        bFirstPassedInstallCommand = true;
                         sInstallID = getArgAtPos(sInstallInfoString, sInstallInfoString.find("name=")+5);
                         if (sInstallInfoString.find("requirepackages=") != string::npos)
                         {
@@ -461,7 +461,6 @@ string Script::getNextScriptCommand()
                         }
                         sInstallInfoString = sScriptCommand;
                         sScriptCommand = sTemp.substr(sTemp.find("<endinfo>")+9);
-                        bFirstPassedInstallCommand = true;
                         sInstallID = getArgAtPos(sInstallInfoString, sInstallInfoString.find("name=")+5);
                         if (sInstallInfoString.find("requirepackages=") != string::npos)
                         {
@@ -666,7 +665,8 @@ string Script::getNextScriptCommand()
                 if (sInstallInfoString.length())
                 {
                     fLogFile << "Installinfo: " << sInstallInfoString << endl;
-                    sInstallInfoString.clear();
+                    if (!bFirstPassedInstallCommand)
+                        sInstallInfoString.clear();
                 }
 
                 if (sScriptCommand.substr(0,12) == "<endinstall>")

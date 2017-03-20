@@ -34,6 +34,7 @@
 #pragma interface
 #endif
 
+#include <map>
 #include "NumeReWindow.h"
 #include "../network/gterm.hpp"
 #include "../network/gtelnet.hpp"
@@ -44,6 +45,8 @@
 #define wxEVT_COMMAND_TERM_NEXT          wxEVT_USER_FIRST + 1001
 
 #define EVT_TERM_RESIZE(id, fn) { wxEVT_COMMAND_TERM_RESIZE, id, -1, (wxObjectEventFunction) (wxEventFunction) (wxCommandEventFunction) &fn, (wxObject *)NULL },
+
+using namespace std;
 
 class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
 {
@@ -236,7 +239,10 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
 
         vector<string> getPathSettings();
         void passEditedTable(const vector<vector<string> >& sTable);
-        void cancelTableEdit() {m_bTableEditCanceled = true;}
+        void cancelTableEdit() {wxCriticalSectionLocker lock(m_kernelCS); m_bTableEditCanceled = true;}
+        void continueDebug() {wxCriticalSectionLocker lock(m_kernelCS); m_bContinueDebug = true;}
+        string getDocumentation(const string& sCommand);
+        map<string,string> getPluginLanguageStrings();
     protected:
         virtual wxThread::ExitCode Entry();
         NumeReKernel _kernel;
@@ -245,6 +251,7 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
         bool m_bCommandAvailable;
         bool m_bTableEditAvailable;
         bool m_bTableEditCanceled;
+        bool m_bContinueDebug;
         string m_sCommandLine;
         string m_sAnswer;
 

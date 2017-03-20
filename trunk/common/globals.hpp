@@ -16,21 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "filetree.hpp"
-#include "../common/globals.hpp"
+#include "../gui/dialogs/fndrpldialog.hpp"
 
-BEGIN_EVENT_TABLE(FileTree, wxTreeCtrl)
-    EVT_ENTER_WINDOW    (FileTree::OnEnter)
-END_EVENT_TABLE()
-
-void FileTree::OnEnter(wxMouseEvent& event)
-{
-    if (m_findReplace != nullptr && m_findReplace->IsShown())
-    {
-        event.Skip();
-        return;
-    }
-    this->SetFocus();
-    event.Skip();
-}
-
+// reference to the global pointer to the find&replace dialog for suppressing the focus moving
+extern FindReplaceDialog* m_findReplace;

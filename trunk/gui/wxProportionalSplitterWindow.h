@@ -73,7 +73,7 @@ public:
 		wxWindow *window2,
 		float proportion = 0)
 	{
-		int splitSize = initSplitSize(proportion, true);
+		int splitSize = initSplitSize(proportion, false);
 		return wxSplitterWindow::SplitVertically( window1,
 			window2, splitSize );
 	}

@@ -48,9 +48,11 @@ unsigned int NumeReKernel::nLastLineLength = 0;
 bool NumeReKernel::modifiedSettings = false;
 bool NumeReKernel::bCancelSignal = false;
 stringmatrix NumeReKernel::sTable;
+vector<string> NumeReKernel::vDebugInfos;
 string NumeReKernel::sTableName = "";
 Debugmessenger NumeReKernel::_messenger;
 bool NumeReKernel::bSupressAnswer = false;
+bool NumeReKernel::bGettingLine = false;
 
 typedef BOOL (WINAPI *LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
 bool IsWow64()
@@ -620,61 +622,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     _script.openScript();
                 }
 
-                // --> Werden die Eingaben gerade in "_procedure" geschrieben ? <--
-                /**if (_procedure.getLoop() == 0 && !_procedure.is_writing() && !sPlotCompose.length())
-                {
-                    /* --> Falls ungespeicherte Eintraege im Cache liegen und der schon seit dem gegebenen
-                     *     Intervall nicht mehr gespeichert wurde, wird das hier erledigt <--
-                     *
-                    //if (time(0) - _data.getLastSaved() >= _option.getAutoSaveInterval())
-                    //    BI_Autosave(_data, _out, _option);
-
-                    // --> Wenn gerade ein Script ausgefuehrt wird, brauchen wir die Eingabe-Pfeile nicht <--
-                    /*if (!(_script.isValid() && _script.isOpen()) && !_option.readCmdCache().length())
-                    {
-                        if (!sKeep.length())
-                            cerr << "|" << endl;
-                        cerr << "|<- ";
-                    }
-                    if (_option.readCmdCache().length())
-                        cerr << "|" << endl;*
-                }
-                else if (_procedure.getLoop() && !(_script.isValid() && _script.isOpen()))
-                {
-                    // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
-                    printPreFmt("|" + _procedure.getCurrentBlock());
-                    if (_procedure.getCurrentBlock() == "IF")
-                    {
-                        if (_procedure.getLoop() > 1)
-                            printPreFmt("---");
-                        else
-                            printPreFmt("-");
-                    }
-                    else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getLoop() > 1)
-                        printPreFmt("-");
-                    else
-                    {
-                        if (_procedure.getLoop() > 1)
-                            printPreFmt("--");
-                    }
-                    printPreFmt(strfill("> ", 2*_procedure.getLoop()-2, '-'));
-                    //cerr << std::setfill('-') << std::setw(2*_procedure.getLoop()-2) << "> ";
-                }
-                else if (_procedure.is_writing() && !(_script.isValid() && _script.isOpen()))
-                {
-                    printPreFmt("|PROC> ");
-                }
-                else if (!_procedure.is_writing() && !(_script.isValid() && _script.isOpen()) && sPlotCompose.length())
-                {
-                    printPreFmt("|COMP> ");
-                }*/
-
                 _data.setCacheStatus(false);
-                // --> Erneuere den Fenstertitel der Konsole <--
-                ///SetConsTitle(_data, _option, _script.getScriptFileNameShort());
-
-                // --> Einlese-Variable <--
-                //sLine = "";
 
                 // --> Wenn gerade ein Script aktiv ist, lese dessen naechste Zeile, sonst nehme eine Zeile von std::cin <--
                 if (_script.isValid() && _script.isOpen())
@@ -1502,11 +1450,9 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             // --> Vernuenftig formatierte Fehlermeldungen <--
             unsigned int nErrorPos = (int)e.GetPos();
             make_hline();
-            if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
-                print(toUpperCase(_lang.get("ERR_MUP_HEAD_DBG")));
-            else
-                print(toUpperCase(_lang.get("ERR_MUP_HEAD")));
+            print(toUpperCase(_lang.get("ERR_MUP_HEAD")));
             make_hline();
+            showDebugError(_lang.get("ERR_MUP_HEAD_DBG"));
 
             // --> Eigentliche Fehlermeldung <--
             print(LineBreak(e.GetMsg(), _option));
@@ -1574,7 +1520,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 // --> Script beenden! Mit einem Fehler ist es unsinnig weiterzurechnen <--
                 _script.close();
             }
-            if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
+            /*if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
             {
                 printPreFmt(sectionHeadline(_lang.get("DBG_MODULE")));
                 //cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_MODULE")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_MODULE").length()) << (char)196 << endl;
@@ -1590,7 +1536,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 printPreFmt(LineBreak("|   "+_option._debug.printLocalStrings(), _option, false)+"\n");
                 gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber());
                 _option._debug.reset();
-            }
+            }*/
             make_hline();
 
             // --> Alle Variablen zuerst zuruecksetzen! <--
@@ -1636,11 +1582,9 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             _option.setSystemPrintStatus(true);
             // --> Alle anderen Standard-Exceptions <--
             make_hline();
-            if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
-                print(toUpperCase(_lang.get("ERR_STD_INTERNAL_HEAD_DBG")));
-            else
-                print(toUpperCase(_lang.get("ERR_STD_INTERNAL_HEAD")));
+            print(toUpperCase(_lang.get("ERR_STD_INTERNAL_HEAD")));
             make_hline();
+            showDebugError(_lang.get("ERR_STD_INTERNAL_HEAD_DBG"));
             print(LineBreak(string(e.what()), _option));
             print(LineBreak(_lang.get("ERR_STD_INTERNAL"), _option));
 
@@ -1651,7 +1595,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 // --> Script beenden! Mit einem Fehler ist es unsinnig weiterzurechnen <--
                 _script.close();
             }
-            if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
+            /*if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
             {
                     printPreFmt(sectionHeadline(_lang.get("DBG_MODULE")));
                     //cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_MODULE")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_MODULE").length()) << (char)196 << endl;
@@ -1667,7 +1611,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     printPreFmt(LineBreak("|   "+_option._debug.printLocalStrings(), _option, false)+"\n");
                     gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber());
                     _option._debug.reset();
-            }
+            }*/
             _pData.setFileName("");
             make_hline();
             if (oLogFile.is_open())
@@ -1703,11 +1647,9 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             }
             else
             {
-                if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
-                    print(toUpperCase(_lang.get("ERR_NR_HEAD_DBG")));
-                else
-                    print(toUpperCase(_lang.get("ERR_NR_HEAD")));
+                print(toUpperCase(_lang.get("ERR_NR_HEAD")));
                 make_hline();
+                showDebugError(_lang.get("ERR_NR_HEAD_DBG"));
 
                 if (sErrorToken.length() && (e == PROCEDURE_THROW || e == LOOP_THROW))
                 {
@@ -1739,7 +1681,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     // --> Script beenden! Mit einem Fehler ist es unsinnig weiterzurechnen <--
                     _script.close();
                 }
-                if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
+                /*if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
                 {
                     printPreFmt(sectionHeadline(_lang.get("DBG_MODULE")));
                     //cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_MODULE")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_MODULE").length()) << (char)196 << endl;
@@ -1755,7 +1697,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     printPreFmt(LineBreak("|   "+_option._debug.printLocalStrings(), _option, false)+"\n");
                     gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber());
                     _option._debug.reset();
-                }
+                }*/
             }
             _pData.setFileName("");
             make_hline();
@@ -1885,6 +1827,29 @@ string NumeReKernel::ReadAnswer()
     return sAns;
 }
 
+map<string,string> NumeReKernel::getPluginLanguageStrings()
+{
+    map<string,string> mPluginLangStrings;
+    for (size_t i = 0; i < _procedure.getPluginCount(); i++)
+    {
+        string sDesc = _procedure.getPluginCommand(i)+ "     - " + _procedure.getPluginDesc(i);
+        while (sDesc.find("\\\"") != string::npos)
+            sDesc.erase(sDesc.find("\\\""), 1);
+
+        mPluginLangStrings["PARSERFUNCS_LISTCMD_CMD_"+toUpperCase(_procedure.getPluginCommand(i))+"_[PLUGINS]"] = sDesc;
+    }
+    return mPluginLangStrings;
+}
+
+vector<string> NumeReKernel::getPluginCommands()
+{
+    vector<string> vPluginCommands;
+
+    for (size_t i = 0; i < _procedure.getPluginCount(); i++)
+        vPluginCommands.push_back(_procedure.getPluginCommand(i));
+    return vPluginCommands;
+}
+
 string NumeReKernel::ReadFileName()
 {
     string sFile = sFileToEdit;
@@ -1906,6 +1871,10 @@ string NumeReKernel::ReadDoc()
     return Doc;
 }
 
+string NumeReKernel::getDocumentation(const string& sCommand)
+{
+    return doc_HelpAsHTML(sCommand, false, _option);
+}
 
 bool NumeReKernel::SettingsModified()
 {
@@ -1970,7 +1939,7 @@ void NumeReKernel::print(const string& sLine)
 // This is the virtual cout function. The port from the kernel of course needs some tweaking
 void NumeReKernel::printPreFmt(const string& sLine)
 {
-    if (!m_parent || bSupressAnswer)
+    if (!m_parent)
         return;
     else
     {
@@ -2227,10 +2196,69 @@ stringmatrix NumeReKernel::getTable()
     return sTable;
 }
 
+void NumeReKernel::showDebugError(const string& sTitle)
+{
+    if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
+    {
+        showDebugEvent(sTitle, _option._debug.getModuleInformations(), _option._debug.getStackTrace(), _option._debug.getNumVars(), _option._debug.getStringVars());
+        gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber());
+        _option._debug.reset();
+    }
+}
+
+void NumeReKernel::showDebugEvent(const string& sTitle, const vector<string>& vModule, const vector<string>& vStacktrace, const vector<string>& vNumVars, const vector<string>& vStringVars)
+{
+    if (!m_parent)
+        return;
+    else
+    {
+        wxCriticalSectionLocker lock(m_parent->m_kernelCS);
+        vDebugInfos.clear();
+
+        // note the size of the fields
+        vDebugInfos.push_back(toString(vModule.size())+";"+toString(vStacktrace.size())+";"+toString(vNumVars.size())+";");
+        vDebugInfos.push_back(sTitle);
+
+        vDebugInfos.insert(vDebugInfos.end(), vModule.begin(), vModule.end());
+        vDebugInfos.insert(vDebugInfos.end(), vStacktrace.begin(), vStacktrace.end());
+        if (vNumVars.size())
+            vDebugInfos.insert(vDebugInfos.end(), vNumVars.begin(), vNumVars.end());
+        if (vStringVars.size())
+            vDebugInfos.insert(vDebugInfos.end(), vStringVars.begin(), vStringVars.end());
+
+        m_parent->m_KernelStatus = NUMERE_DEBUG_EVENT;
+    }
+    wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
+    Sleep(100);
+}
+
+void NumeReKernel::waitForContinue()
+{
+    if (!m_parent)
+        return;
+    bool bContinue = false;
+    do
+    {
+        Sleep(100);
+        {
+            wxCriticalSectionLocker lock(m_parent->m_kernelCS);
+            bContinue = m_parent->m_bContinueDebug;
+            m_parent->m_bContinueDebug = false;
+        }
+    }
+    while (!bContinue);
+
+    return;
+}
+
 void NumeReKernel::getline(string& sLine)
 {
     if (!m_parent)
         return;
+    {
+        wxCriticalSectionLocker lock(m_parent->m_kernelCS);
+        bGettingLine = true;
+    }
     bool bgotline = false;
     do
     {
@@ -2244,6 +2272,11 @@ void NumeReKernel::getline(string& sLine)
         }
     }
     while (!bgotline);
+    {
+        wxCriticalSectionLocker lock(m_parent->m_kernelCS);
+        bGettingLine = false;
+    }
+
     StripSpaces(sLine);
 }
 

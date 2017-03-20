@@ -56,6 +56,7 @@
 #include "wxterm.h"
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
+#include "../common/globals.hpp"
 
 #include "../common/debug.h"
 
@@ -228,6 +229,7 @@ wxTerm::wxTerm(wxWindow* parent, wxWindowID id,
     m_bCommandAvailable = false;
     m_bTableEditAvailable = false;
     m_bTableEditCanceled = false;
+    m_bContinueDebug = false;
     m_sCommandLine = "";
     m_sAnswer = "";
     m_wxParent = nullptr;
@@ -249,6 +251,11 @@ wxTerm::wxTerm(wxWindow* parent, wxWindowID id,
     // a default client size to match
     SetClientSize(m_charsInLine * 8, m_linesDisplayed * 16);
     UpdateSize();
+
+    {
+        wxCriticalSectionLocker lock(m_kernelCS);
+        getSyntax()->addPlugins(_kernel.getPluginCommands());
+    }
 }
 
 wxTerm::~wxTerm()
@@ -273,6 +280,18 @@ void wxTerm::passEditedTable(const vector<vector<string> >& _sTable)
     wxCriticalSectionLocker lock(m_kernelCS);
     NumeReKernel::sTable = _sTable;
     m_bTableEditAvailable = true;
+}
+
+string wxTerm::getDocumentation(const string& sCommand)
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    return _kernel.getDocumentation(sCommand);
+}
+
+map<string,string>  wxTerm::getPluginLanguageStrings()
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    return _kernel.getPluginLanguageStrings();
 }
 
 Settings wxTerm::getKernelSettings()
@@ -399,6 +418,7 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
     bool editTable = false;
     string sFileName = "";
     stringmatrix sTable;
+    vector<string> vDebugInfo;
     unsigned int nLineNumber = 0;
     string sAnswer = "";
     {
@@ -439,6 +459,11 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
                 sFileName = NumeReKernel::sTableName;
                 editTable = true;
                 break;
+             case NumeReKernel::NUMERE_DEBUG_EVENT:
+                sAnswer = m_sAnswer;//+ "|\n|<- ";
+                m_bContinueDebug = false;
+                vDebugInfo = NumeReKernel::vDebugInfos;
+                break;
             case NumeReKernel::NUMERE_PENDING:
                 sAnswer = "|<- ";
                 break;
@@ -471,6 +496,10 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
             m_wxParent->editTable(sTable, sFileName);
         else
             m_wxParent->openTable(sTable, sFileName);
+    }
+    else if (vDebugInfo.size())
+    {
+        m_wxParent->evaluateDebugInfo(vDebugInfo);
     }
     else if (openDoc)
     {
@@ -846,6 +875,8 @@ void wxTerm::pipe_command()
     while (sCommand.length() && sCommand.front() == ' ')
         sCommand.erase(0,1);
     m_sCommandLine = sCommand; // the commandline from tm...
+    if (!NumeReKernel::bGettingLine) //only add the line to the history, if the kernel isn't currently fetching a line with NumeReKernel::getline()
+        m_wxParent->AddToHistory(sCommand);
     m_bCommandAvailable = true;
 }
 
@@ -862,6 +893,7 @@ void wxTerm::pass_command(const string& command)
     erase_line();
     wxCriticalSectionLocker lock(m_kernelCS);
     //next_line();
+    m_wxParent->AddToHistory(command);
     m_sCommandLine = command;
     m_bCommandAvailable = true;
 }
@@ -1254,6 +1286,11 @@ wxTerm::OnMouseMove(wxMouseEvent& event)
 
 void wxTerm::OnEnter(wxMouseEvent& event)
 {
+    if (m_findReplace != nullptr && m_findReplace->IsShown())
+    {
+        event.Skip();
+        return;
+    }
     this->SetFocus();
     event.Skip();
 }

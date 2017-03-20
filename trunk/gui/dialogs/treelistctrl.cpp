@@ -2274,8 +2274,8 @@ void wxTreeListHeaderWindow::AddColumn (const wxTreeListColumnInfo& colInfo) {
 
 #if defined(__WXMSW__) &&  defined(_NATIVE_WIN32_)
 	int inPos = m_columns.GetCount();
-	if (inPos != 0)
-		inPos = inPos - 1;
+	/*if (inPos != 0)
+		inPos = inPos - 1;*/
 	DoInsertItem(m_hndlHeader,inPos,colInfo.GetWidth(), colInfo.GetText().c_str());
 #endif
     m_columns.Add (colInfo);

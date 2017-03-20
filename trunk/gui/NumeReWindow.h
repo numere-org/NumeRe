@@ -16,7 +16,7 @@
 
 #include "../common/datastructures.h"
 #include "../common/DebugEvent.h"
-#include "dialogs/fndrpldialog.hpp"
+#include "../common/globals.hpp"
 #include <wx/treectrl.h>
 #include <wx/notebook.h>
 #include "../common/filewatcher.hpp"
@@ -25,6 +25,7 @@
 #include "../kernel/core/tools.hpp"
 #include "dialogs/tipdialog.hpp"
 #include "viewerframe.hpp"
+#include "viewerbook.hpp"
 #include "filetree.hpp"
 
 // forward declarations
@@ -34,6 +35,7 @@ class NumeReNotebook;
 class wxTreeCtrl;
 class wxTextCtrl;
 class NumeReEditor;
+class NumeReHistory;
 class wxLogWindow;
 class wxTabCtrl;
 class IntIntHashmap;
@@ -67,7 +69,9 @@ class IconManager;
 class wxProportionalSplitterWindow;
 class wxCHMHelpController;
 class DebugManager;
+class DebugViewer;
 class ChameleonProjectManager;
+
 
 
 
@@ -122,6 +126,7 @@ class NumeReWindow : public wxFrame
         void openHTML(wxString HTMLcontent);
         void openTable(const vector<vector<string> >& sTable, const string& sTableName);
         void editTable(const vector<vector<string> >& sTable, const string& sTableName);
+        void evaluateDebugInfo(const vector<string>& vDebugInfo);
 
         Networking* GetNetworking();
 
@@ -133,6 +138,7 @@ class NumeReWindow : public wxFrame
         void EvaluateOptions();
         void EvaluateCommandLine(wxArrayString& wxArgV);
         wxString getProgramFolder();
+        void AddToHistory(const wxString& sCommand);
 
         string m_UnrecoverableFiles;
 
@@ -178,7 +184,11 @@ class NumeReWindow : public wxFrame
         void OnSize(wxSizeEvent &event);
 
         void OnTreeItemRightClick(wxTreeEvent& event);
-        void OnTreeItemActivated(wxTreeEvent &event);
+        void OnTreeItemActivated(wxTreeEvent& event);
+        void OnTreeItemToolTip(wxTreeEvent& event);
+        void OnTreeDragDrop(wxTreeEvent& event);
+
+        wxString addLinebreaks(const wxString& sLine);
 
         void OnPageChange(wxBookCtrlEvent& event);
 
@@ -191,7 +201,7 @@ class NumeReWindow : public wxFrame
         wxArrayString OpenFile(FileFilterType filterType );
         bool SaveFile(bool saveas, bool askLocalRemote, FileFilterType filterType);
         bool GetFileContents(wxString fileToLoad, wxString &fileContents, wxString &fileName);
-        void CloseFile(int pageNr = -1);
+        void CloseFile(int pageNr = -1, bool askforsave = true);
         void CloseAllFiles();
         void CloseTab();
         void PageHasChanged (int pageNr = -1);
@@ -228,10 +238,15 @@ class NumeReWindow : public wxFrame
         void UpdateWindowTitle(const wxString& filename);
         void toggleConsole();
         void toggleFiletree();
+        void toggleHistory();
         void showConsole();
         void gotoLine();
         void setEditorFocus();
         void setViewerFocus();
+
+        void prepareFunctionTree();
+
+        string prepareTooltip(const string& sTooltiptext);
 
 
         //void CleanupDropMenu();
@@ -246,18 +261,27 @@ class NumeReWindow : public wxFrame
         NumeReNotebook* m_book;
         /*! Notebook for the terminal and debug-related widgets */
         NumeReNotebook*  m_noteTerm;
+        /*! Notebook for the tree controls on the right side */
+        ViewerBook* m_treeBook;
         /*! Pointer to the currently active editor */
         NumeReEditor* m_currentEd;
+
+        NumeReHistory* m_history;
 
         ViewerFrame* m_currentView;
         /*! Displays the files in the current project */
         FileTree* m_projectTree;
         Filewatcher* m_watcher;
+
+        /*! Displays functions and commands */
+        FileTree* m_functionTree;
         /*! The status bar */
         wxStatusBar* m_statusBar;
         //wxPanel* panelEd;
         /*! Holds the editor/project group and the output notebook */
-        wxProportionalSplitterWindow*  m_splitEditorOutput;
+        wxProportionalSplitterWindow* m_splitEditorOutput;
+        /*! Holds the command window and the history window*/
+        wxProportionalSplitterWindow* m_splitCommandHistory;
         /*! Holds the project tree and the editor notebook */
         wxSplitterWindow* m_splitProjectEditor;
         /*! Displays the output from the compiler */
@@ -281,7 +305,7 @@ class NumeReWindow : public wxFrame
         // dialogs
         OptionsDialog*  m_optionsDialog;
         RemoteFileDialog* m_remoteFileDialog;
-        FindReplaceDialog* m_findReplace;
+
 
         /* Responsible for writing the Chameleon settings to the INI file */
         wxFileConfig* m_config;
@@ -314,6 +338,7 @@ class NumeReWindow : public wxFrame
         ProjectInfo* m_projMultiFiles;
         Debugger* m_debugger;
         DebugManager* m_debugManager;
+        DebugViewer* m_debugViewer;
         IconManager* m_iconManager;
         ChameleonProjectManager* m_projectManager;
 
@@ -327,6 +352,7 @@ class NumeReWindow : public wxFrame
         int m_splitterPos;
 
         float fSplitPercentage;
+        float fVerticalSplitPercentage;
 
         bool m_appClosing;
         bool m_sessionSaved;
