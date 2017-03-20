@@ -1,4 +1,4 @@
-#ifndef EDITOR__H
+#ifndef EDITOR_H
 #define EDITOR_H
 
 #include <wx/wx.h>
@@ -105,7 +105,7 @@ public:
 	void SetUnsaved();
 
 	void ApplyAutoIndentation();
-	void ToggleSettings(EditorSettings _setting);
+	void ToggleSettings(int _setting);
 	bool getEditorSetting(EditorSettings _setting);
 	void ToggleCommentLine();
 	void ToggleCommentSelection();
@@ -121,6 +121,7 @@ public:
     void removeWhiteSpaces(int nType = RM_WS_BOTH);
     void sortSelection(bool ascending = true);
 	FileFilterType getFileType() {return m_fileType;}
+	int getSettings() {return m_nEditorSetting;}
 
 private:
 

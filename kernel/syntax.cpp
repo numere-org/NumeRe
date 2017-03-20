@@ -73,6 +73,13 @@ void NumeReSyntax::loadSyntax(const string& sPath)
     }
 }
 
+void NumeReSyntax::addPlugins(const vector<string>& vPlugins)
+{
+    if (!vPlugins.size())
+        return;
+    vNSCRCommands.insert(vNSCRCommands.end(), vPlugins.begin(), vPlugins.end());
+}
+
 string NumeReSyntax::constructString(const vector<string>& vVector) const
 {
     string sReturn = "";

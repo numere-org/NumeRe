@@ -4778,6 +4778,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     parser_ListFunc(_option, "random");
                 else if (sArgument == "coords")
                     parser_ListFunc(_option, "coords");
+                else if (sArgument == "draw")
+                    parser_ListFunc(_option, "draw");
                 else
                     parser_ListFunc(_option, "all");
                 return 1;

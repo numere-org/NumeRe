@@ -149,6 +149,16 @@ void Language::loadStrings(bool bloadUserFiles)
     return;
 }
 
+void Language::addToLanguage(const map<string,string>& _langstrings)
+{
+    if (!_langstrings.size())
+        return;
+    for (auto iter = _langstrings.begin(); iter != _langstrings.end(); ++iter)
+    {
+        mLangStrings[iter->first] = iter->second;
+    }
+}
+
 string Language::getKey(const string& sMessage)
 {
     string sKey = sMessage;

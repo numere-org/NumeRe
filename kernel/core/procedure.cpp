@@ -614,8 +614,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
         if (sProc[i] == ' ')
             sProc[i] = '_';
     }*/
-    if (_option.getUseDebugger())
-        _option._debug.pushStackItem(sProc + "(" + sVarList + ")");
+    _option._debug.pushStackItem(sProc + "(" + sVarList + ")");
     if (!setProcName(sProc))
         throw INVALID_PROCEDURE_NAME;
     //cerr << "Procedure started: " << sProc << endl;
@@ -2645,8 +2644,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
     }
     fProc_in.close();
 
-    if (_option.getUseDebugger())
-        _option._debug.popStackItem();
+    _option._debug.popStackItem();
     deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
 
     if (nReturnType && !_ReturnVal.vNumVal.size() && !_ReturnVal.vStringVal.size())
@@ -3041,7 +3039,7 @@ bool Procedure::isInline(const string& sProc)
                             sErrorToken = "thisfile";
                             throw PRIVATE_PROCEDURE_CALLED;
                         }
-                        __sFileName = FileSystem::ValidFileName(__sFileName, ".nprc");
+                        __sFileName = ValidFileName(__sFileName, ".nprc");
                     }
                     else
                     {
@@ -3057,7 +3055,12 @@ bool Procedure::isInline(const string& sProc)
                         }
                     }
                 }
-                        __sFileName = FileSystem::ValidFileName(__sFileName, ".nprc");
+                __sFileName = ValidFileName(__sFileName, ".nprc");
+                if (__sFileName[1] != ':')
+                {
+                    __sFileName = "<procpath>/" + __sFileName;
+                    __sFileName = ValidFileName(__sFileName, ".nprc");
+                }
                 //cerr << __sFileName << endl;
                 fProc_in.clear();
                 fProc_in.open(__sFileName.c_str());
@@ -3150,8 +3153,12 @@ void Procedure::evalDebuggerBreakPoint(Settings& _option, const map<string,strin
 {
     string sTemp;
     //cerr << "breakpoint" << endl;
-    _option._debug.gatherInformations(sVars, nVarSize, dVars, sStrings, nStrSize, sStringMap, "",sCurrentProcedureName,nCurrentLine);
-    NumeReKernel::toggleTableStatus();
+    _option._debug.gatherInformations(sVars, nVarSize, dVars, sStrings, nStrSize, sStringMap, "", sCurrentProcedureName, nCurrentLine);
+    NumeReKernel::showDebugEvent(_lang.get("DBG_HEADLINE"), _option._debug.getModuleInformations(), _option._debug.getStackTrace(), _option._debug.getNumVars(), _option._debug.getStringVars());
+    NumeReKernel::gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber());
+    _option._debug.resetBP();
+    NumeReKernel::waitForContinue();
+    /*NumeReKernel::toggleTableStatus();
     make_hline();
     NumeReKernel::print(toSystemCodePage(toUpperCase(_lang.get("DBG_HEADLINE"))));
     make_hline();
@@ -3168,7 +3175,7 @@ void Procedure::evalDebuggerBreakPoint(Settings& _option, const map<string,strin
     NumeReKernel::toggleTableStatus();
     NumeReKernel::printPreFmt("|\n" + toSystemCodePage("|-> " + _lang.get("DBG_PRESS_ENTER") + " ... "));
     NumeReKernel::getline(sTemp);
-    make_hline();
+    make_hline();*/
     return;
 }
 

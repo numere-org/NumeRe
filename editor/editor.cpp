@@ -29,6 +29,7 @@
 #include "../debugger/DebugManager.h"
 #include "../common/debug.h"
 #include "../common/fixvsbug.h"
+#include "../common/globals.hpp"
 
 #define MARGIN_FOLD 3
 #define MARKER_LINEINDICATOR 2
@@ -164,7 +165,7 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 
     this->StyleClearAll();
 
-    this->SetMouseDwellTime(250);
+    this->SetMouseDwellTime(500);
 
     // Editor style setup
 
@@ -633,7 +634,11 @@ void NumeReEditor::MakeBlockCheck()
 void NumeReEditor::OnKeyDn(wxKeyEvent &event)
 {
     //wxMessageBox(wxString((char)this->GetCharAt(this->GetCurrentPos())));
-    if (this->HasSelection() && event.GetKeyCode() != WXK_SHIFT)
+    if (this->HasSelection()
+        && event.GetKeyCode() != WXK_SHIFT
+        && event.GetKeyCode() != WXK_CAPITAL
+        && event.GetKeyCode() != WXK_END
+        && event.GetKeyCode() != WXK_HOME)
     {
         char chr = event.GetKeyCode();
         if (event.ShiftDown() && (chr == '8' || chr == '9'))
@@ -778,6 +783,11 @@ void NumeReEditor::OnMouseDblClk(wxMouseEvent& event)
 
 void NumeReEditor::OnEnter(wxMouseEvent& event)
 {
+    if (m_findReplace != nullptr && m_findReplace->IsShown())
+    {
+        event.Skip();
+        return;
+    }
     this->SetFocus();
     event.Skip();
 }
@@ -808,8 +818,9 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
             selection = "acosh";
         else if (selection == "artanh")
             selection = "atanh";
-        this->CallTipShow(charpos, addLinebreaks(_guilang.get("PARSERFUNCS_LISTFUNC_FUNC_"+toUpperCase(selection.ToStdString())+"_*")));
-        this->CallTipSetHighlight(0,22);
+        size_t lastpos = 22;
+        this->CallTipShow(charpos, addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTFUNC_FUNC_"+toUpperCase(selection.ToStdString())+"_*"), lastpos)));
+        this->CallTipSetHighlight(0,lastpos);
     }
     else if (this->GetStyleAt(charpos) == wxSTC_NSCR_COMMAND || this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURE_COMMANDS || this->GetStyleAt(charpos) == wxSTC_NPRC_COMMAND)
     {
@@ -869,19 +880,19 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
         {
             size_t nLength = 0;
             size_t lastpos2 = 0;
-            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_IF"), lastpos)) + "\n    (...)\n";
+            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_IF_*"), lastpos)) + "\n  [...]\n";
             if (selection != "if")
                 nLength = sBlock.length();
 
-            sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ELSEIF"), lastpos2)) + "\n    (...)\n";
+            sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ELSEIF_*"), lastpos2)) + "\n  [...]\n";
             if (selection != "if" && selection != "elseif")
                 nLength = sBlock.length()+countUmlauts(sBlock);
 
-            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ELSE")) + "\n    (...)\n";
+            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ELSE_*")) + "\n  [...]\n";
             if (selection != "if" && selection != "elseif" && selection != "else")
                 nLength = sBlock.length()+countUmlauts(sBlock);
 
-            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDIF"));
+            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDIF_*"));
             this->CallTipShow(charpos, sBlock);
             if (selection == "if")
                 this->CallTipSetHighlight(nLength,lastpos+nLength);
@@ -894,10 +905,10 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
         {
             size_t nLength = 0;
             size_t lastpos2 = 0;
-            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_FOR"), lastpos)) + "\n    (...)\n";
+            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_FOR_*"), lastpos)) + "\n  [...]\n";
             if (selection != "for")
                 nLength = sBlock.length()+countUmlauts(sBlock);
-            sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDFOR"), lastpos2));
+            sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDFOR_*"), lastpos2));
             this->CallTipShow(charpos, sBlock);
             if (nLength)
                 this->CallTipSetHighlight(nLength,lastpos2+nLength);
@@ -908,10 +919,10 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
         {
             size_t nLength = 0;
             size_t lastpos2 = 0;
-            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_WHILE"), lastpos)) + "\n    (...)\n";
+            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_WHILE_*"), lastpos)) + "\n  [...]\n";
             if (selection != "while")
                 nLength = sBlock.length() + countUmlauts(sBlock);
-            sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDWHILE"), lastpos2));
+            sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDWHILE_*"), lastpos2));
             this->CallTipShow(charpos, sBlock);
             if (nLength)
                 this->CallTipSetHighlight(nLength,lastpos2+nLength);
@@ -921,10 +932,10 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
         else if (selection == "procedure" || selection == "endprocedure")
         {
             size_t nLength = 0;
-            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_PROCEDURE"), lastpos)) + "\n    (...)\n";
+            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_PROCEDURE_*"), lastpos)) + "\n  [...]\n";
             if (selection != "procedure")
                 nLength = sBlock.length() + countUmlauts(sBlock);
-            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDPROCEDURE"));
+            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDPROCEDURE_*"));
             this->CallTipShow(charpos, sBlock);
             if (nLength)
                 this->CallTipSetHighlight(nLength,13+nLength);
@@ -934,16 +945,16 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
         else if (selection == "compose" || selection == "endcompose")
         {
             size_t nLength = 0;
-            string sBlock = addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_COMPOSE")) + "\n    (...)\n";
+            string sBlock = addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_COMPOSE_*")) + "\n  [...]\n";
             if (selection != "compose")
                 nLength = sBlock.length()+countUmlauts(sBlock);
-            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDCOMPOSE"));
+            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDCOMPOSE_*"));
             this->CallTipShow(charpos, sBlock);
             this->CallTipSetHighlight(nLength,13+nLength);
         }
         else
         {
-            this->CallTipShow(charpos, addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"+toUpperCase(selection.ToStdString())), lastpos)));
+            this->CallTipShow(charpos, addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"+toUpperCase(selection.ToStdString())+"_*"), lastpos)));
             this->CallTipSetHighlight(0,lastpos);
         }
     }
@@ -1286,7 +1297,7 @@ bool NumeReEditor::getEditorSetting(EditorSettings _setting)
     return m_nEditorSetting & _setting;
 }
 
-void NumeReEditor::ToggleSettings(EditorSettings _setting)
+void NumeReEditor::ToggleSettings(int _setting)
 {
     this->SetWhitespaceForeground(true, wxColor(170,190,210));
     this->SetWhitespaceSize(2);
@@ -1294,7 +1305,7 @@ void NumeReEditor::ToggleSettings(EditorSettings _setting)
     {
         m_nEditorSetting |= _setting;
 
-        if (_setting == SETTING_WRAPEOL)
+        if (_setting & SETTING_WRAPEOL)
         {
             this->SetWrapMode(wxSTC_WRAP_WORD);
             this->SetWrapIndentMode(wxSTC_WRAPINDENT_INDENT);
@@ -1302,7 +1313,7 @@ void NumeReEditor::ToggleSettings(EditorSettings _setting)
             this->SetWrapVisualFlags(wxSTC_WRAPVISUALFLAG_END);
             this->SetWrapVisualFlagsLocation(wxSTC_WRAPVISUALFLAGLOC_END_BY_TEXT);
         }
-        else if (_setting == SETTING_DISPCTRLCHARS)
+        if (_setting & SETTING_DISPCTRLCHARS)
         {
             this->SetViewWhiteSpace(wxSTC_WS_VISIBLEALWAYS);
             this->SetViewEOL(true);
@@ -1391,7 +1402,7 @@ vector<int> NumeReEditor::BlockMatch(int nPos)
     wxString endblock;
     bool bSearchForIf = false; //if we search for an if block element. If yes => also mark the "else..." parts.
     int nSearchDir = 1; //direction in which to search for the matching block partner
-    if (this->GetStyleAt(nPos) == wxSTC_NSCR_COMMAND || this->GetStyleAt(nPos) == wxSTC_NPRC_COMMAND)
+    if (this->GetStyleAt(nPos) != wxSTC_NSCR_COMMAND && this->GetStyleAt(nPos) != wxSTC_NPRC_COMMAND)
     {
         if (nPos && (this->GetStyleAt(nPos-1) == wxSTC_NSCR_COMMAND || this->GetStyleAt(nPos-1) == wxSTC_NPRC_COMMAND))
             nPos--;
@@ -2961,13 +2972,22 @@ int NumeReEditor::countUmlauts(const string& sStr)
 string NumeReEditor::realignLangString(string sLine, size_t& lastpos)
 {
     lastpos = sLine.find(' ');
-    size_t firstpos = sLine.find_first_not_of(' ', lastpos);
-    if (sLine.find("- ") == firstpos)
+    if (lastpos == string::npos)
         return sLine;
-    if (firstpos-lastpos > 2)
+    size_t firstpos = sLine.find_first_not_of(' ', lastpos);
+    if (sLine.find(')') < lastpos)
     {
-        sLine.erase(lastpos, firstpos-lastpos-2);
-        sLine.insert(sLine.find("- "), firstpos-lastpos-2, ' ');
+        sLine.replace(lastpos, firstpos-lastpos, " -> ");
+    }
+    else
+    {
+        if (sLine.find("- ") == firstpos)
+            return sLine;
+        if (firstpos-lastpos > 2)
+        {
+            sLine.erase(lastpos, firstpos-lastpos-2);
+            sLine.insert(sLine.find("- "), firstpos-lastpos-2, ' ');
+        }
     }
     return sLine;
 }
@@ -2975,13 +2995,21 @@ string NumeReEditor::realignLangString(string sLine, size_t& lastpos)
 string NumeReEditor::addLinebreaks(const string& sLine)
 {
     const unsigned int nMAXLINE = 80;
-    if (sLine.length() < nMAXLINE)
-        return sLine;
+    /*if (sLine.length() < nMAXLINE)
+        return sLine;*/
 
     string sReturn = sLine;
-    unsigned int nIndentPos = sReturn.find("- ")+2;
+    /*unsigned int nIndentPos = sReturn.find("- ")+2;
     unsigned int nLastLineBreak = 0;
-    for (unsigned int i = 0; i < sReturn.length(); i++)
+    for (unsigned int i = 0; i < sReturn.length(); i++)*/
+    unsigned int nDescStart = sReturn.find("- ");
+    unsigned int nIndentPos = 4;//
+    unsigned int nLastLineBreak = 0;
+    if (nDescStart == string::npos)
+        return sLine;
+    sReturn.replace(nDescStart, 2,"\n    ");
+    nLastLineBreak = nDescStart;
+    for (unsigned int i = nDescStart; i < sReturn.length(); i++)
     {
         if (sReturn[i] == '\n')
             nLastLineBreak = i;

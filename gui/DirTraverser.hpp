@@ -30,9 +30,12 @@ class wxTreeItemData;
 class FileNameTreeData : public wxTreeItemData
 {
     public:
-        FileNameTreeData() : isDir(false) {};
+        FileNameTreeData() : isDir(false), isFunction(false), isCommand(false) {};
         bool isDir;
+        bool isFunction;
+        bool isCommand;
         wxString filename;
+        wxString tooltip;
 };
 
 class DirTraverser : public wxDirTraverser

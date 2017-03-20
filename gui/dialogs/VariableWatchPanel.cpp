@@ -485,48 +485,48 @@ void VariableWatchPanel::UpdateVariableInfo(wxDebugEvent event)
 void VariableWatchPanel::DisplayParsedValue(wxTreeItemId currentNodeId, ParseTree& tree)
 {
 
-	if(m_tree->GetChildrenCount(currentNodeId) > 0)
-	{
-		// assume we have already inserted everything
-	}
-	else
-	{
-		// insert stuff
-		ParseTree::breadth_first_iterator it = tree.begin_breadth_first();
-
-		ParseTree::breadth_first_iterator end = tree.end_breadth_first();
-
-		NodeIdHash addedNodes;
-
-		ParseTreeNode* parentNode = it.node;
-		ParseTreeNode* rootNode = parentNode;
-		//ParseTreeNode* previousNode = parentNode;
-		//int oldDepth = tree.depth(it);
-		wxTreeItemId currentParentId = currentNodeId;
-
-		it++;
-
-		while(it!=end)
-		{
-			//int currentDepth = tree.depth(it);
-
-			if(it.node->parent != parentNode && it.node->parent != rootNode)
-			{
-				parentNode = it.node->parent;
-				currentParentId = addedNodes[parentNode];
-			}
-
-			wxString data = it.node->data;
-			//ParseTreeNode* currentNode = it.node;
-
-
-			wxTreeItemId addedId = m_tree->AppendItem(currentParentId, data);
-			addedNodes[it.node] = addedId;
-
-			//it.node->parent->data
-			++it;
-		}
-	}
+//	if(m_tree->GetChildrenCount(currentNodeId) > 0)
+//	{
+//		// assume we have already inserted everything
+//	}
+//	else
+//	{
+//		// insert stuff
+//		ParseTree::breadth_first_iterator it = tree.begin_breadth_first();
+//
+//		ParseTree::breadth_first_iterator end = tree.end_breadth_first();
+//
+//		NodeIdHash addedNodes;
+//
+//		ParseTreeNode* parentNode = it.node;
+//		ParseTreeNode* rootNode = parentNode;
+//		//ParseTreeNode* previousNode = parentNode;
+//		//int oldDepth = tree.depth(it);
+//		wxTreeItemId currentParentId = currentNodeId;
+//
+//		it++;
+//
+//		while(it!=end)
+//		{
+//			//int currentDepth = tree.depth(it);
+//
+//			if(it.node->parent != parentNode && it.node->parent != rootNode)
+//			{
+//				parentNode = it.node->parent;
+//				currentParentId = addedNodes[parentNode];
+//			}
+//
+//			wxString data = it.node->data;
+//			//ParseTreeNode* currentNode = it.node;
+//
+//
+//			wxTreeItemId addedId = m_tree->AppendItem(currentParentId, data);
+//			addedNodes[it.node] = addedId;
+//
+//			//it.node->parent->data
+//			++it;
+//		}
+//	}
 
 }
 
@@ -674,19 +674,19 @@ void VariableWatchPanel::DebuggerExited()
 
 void VariableWatchPanel::TestParsing()
 {
-	ParseTree tree;
-	PTIterator top = tree.begin();
-	PTIterator first = tree.insert(top, "sparky");
-
-	wxTreeItemId item = m_tree->GetRootItem();
-
-	//wxString copiedValue = "{age = 12, numbers = {1, 2, 4, 8, 16, 32}, name = {static npos = 4294967295, _M_dataplus = {<allocator<char>> = {<new_allocator<char>> = {<No data fields>}, <No data fields>}, _M_p = \"Sparky the Wonder Dog\"}}}";
-
-	wxString testString = "$1 = {{age = 3, name = {static npos = 4294967295,_M_dataplus = {<allocator<char>> = {<new_allocator<char>> = {<No data fields>}, <No data fields>}, _M_p = 0x3210c4 \"Fred\"}}, sparky = 2003325944}, {age = 4, name = {static npos = 4294967295,_M_dataplus = {<allocator<char>> = {<new_allocator<char>> = {<No data fields>}, <No data fields>}, _M_p = 0x3210f4 \"George\"}}, sparky = 2003442721}, {age = 5, name = {static npos = 4294967295,_M_dataplus = {<allocator<char>> = {<new_allocator<char>> = {<No data fields>}, <No data fields>}, _M_p = 0x321124 \"Bob\"}}, sparky = 3280624}}";
-
-	ParseEntry(tree, first, testString);
-
-	DisplayParsedValue(item, tree);
+//	ParseTree tree;
+//	PTIterator top = tree.begin();
+//	PTIterator first = tree.insert(top, "sparky");
+//
+//	wxTreeItemId item = m_tree->GetRootItem();
+//
+//	//wxString copiedValue = "{age = 12, numbers = {1, 2, 4, 8, 16, 32}, name = {static npos = 4294967295, _M_dataplus = {<allocator<char>> = {<new_allocator<char>> = {<No data fields>}, <No data fields>}, _M_p = \"Sparky the Wonder Dog\"}}}";
+//
+//	wxString testString = "$1 = {{age = 3, name = {static npos = 4294967295,_M_dataplus = {<allocator<char>> = {<new_allocator<char>> = {<No data fields>}, <No data fields>}, _M_p = 0x3210c4 \"Fred\"}}, sparky = 2003325944}, {age = 4, name = {static npos = 4294967295,_M_dataplus = {<allocator<char>> = {<new_allocator<char>> = {<No data fields>}, <No data fields>}, _M_p = 0x3210f4 \"George\"}}, sparky = 2003442721}, {age = 5, name = {static npos = 4294967295,_M_dataplus = {<allocator<char>> = {<new_allocator<char>> = {<No data fields>}, <No data fields>}, _M_p = 0x321124 \"Bob\"}}, sparky = 3280624}}";
+//
+//	ParseEntry(tree, first, testString);
+//
+//	DisplayParsedValue(item, tree);
 }
 
 

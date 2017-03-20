@@ -34,6 +34,7 @@ using namespace std;
 extern const string sVersion;
 
 void doc_Help(const string&, Settings&);
+string doc_HelpAsHTML(const string&, bool, Settings& _option);
 void doc_ReplaceTokens(string& sDocParagraph, const Settings& _option);
 void doc_ReplaceTokensForHTML(string& sDocParagraph, const Settings& _option);
 void doc_ReplaceExprContentForHTML(string& sExpr, const Settings& _option);

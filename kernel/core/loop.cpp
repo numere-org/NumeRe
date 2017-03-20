@@ -2212,6 +2212,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
     dVarAdress = 0;
     bUseLoopParsingMode = false;
     bFunctionsReplaced = false;
+    bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
     //_bytecode = new ParserByteCode[nCmd+1];
     //nValidByteCode = new int[nCmd+1];
 
@@ -2419,6 +2420,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
     catch (...)
     {
         reset(_parser);
+        NumeReKernel::bSupressAnswer = bSupressAnswer_back;
         throw;
     }
 
@@ -2674,6 +2676,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
     catch (...)
     {
         reset(_parser);
+        NumeReKernel::bSupressAnswer = bSupressAnswer_back;
         if (bLoopSupressAnswer)
             bLoopSupressAnswer = false;
         if (bPrintedStatus)

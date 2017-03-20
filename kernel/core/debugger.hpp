@@ -82,6 +82,11 @@ class NumeReDebugger
         string printStackTrace();
         string printLocalVars();
         string printLocalStrings();
+
+        vector<string> getModuleInformations();
+        vector<string> getStackTrace();
+        vector<string> getNumVars();
+        vector<string> getStringVars();
 };
 
 

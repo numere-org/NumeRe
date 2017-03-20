@@ -9,7 +9,7 @@
 
 #include "dialogs/defaultfile.xpm"
 #include "dialogs/closedfolder16x1632bpp.xpm"
-#include "dialogs/openfolder16x1632bpp.xpm"
+//#include "dialogs/openfolder16x1632bpp.xpm"
 #include "dialogs/exe.xpm"
 
 
@@ -31,6 +31,14 @@ IconManager::IconManager(const wxString& programPath)
 	wxIcon openfolder(programPath + "\\icons\\folder.ico", wxBITMAP_TYPE_ICO, 16,16);
 	m_iconExtensionMapping["FOLDEROPEN"] = m_images->GetImageCount();
 	m_images->Add(openfolder);
+
+	wxIcon functions(programPath + "\\icons\\fnc.ico", wxBITMAP_TYPE_ICO, 16,16);
+	m_iconExtensionMapping["FUNCTIONS"] = m_images->GetImageCount();
+	m_images->Add(functions);
+
+	wxIcon commands(programPath + "\\icons\\cmd.ico", wxBITMAP_TYPE_ICO, 16,16);
+	m_iconExtensionMapping["COMMANDS"] = m_images->GetImageCount();
+	m_images->Add(commands);
 
 	wxIcon NSCR(programPath + "\\icons\\nscr.ico", wxBITMAP_TYPE_ICO, 16,16);
 	m_iconExtensionMapping["nscr"] = m_images->GetImageCount();

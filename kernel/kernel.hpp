@@ -57,8 +57,6 @@ class NumeReKernel
         string sCommandLine;
         string sAnswer;
 
-
-
         //datasets
         Settings _option;
         Output _out;
@@ -83,9 +81,11 @@ class NumeReKernel
         static unsigned int nLastLineLength;
         static bool modifiedSettings;
         static stringmatrix sTable;
+        static vector<string> vDebugInfos;
         static string sTableName;
         static Debugmessenger _messenger;
         static bool bSupressAnswer;
+        static bool bGettingLine;
         ofstream oLogFile;
         // return values indicating status:
         enum KernelStatus
@@ -104,6 +104,7 @@ class NumeReKernel
             NUMERE_OPEN_DOC,
             NUMERE_SHOW_TABLE,
             NUMERE_EDIT_TABLE,
+            NUMERE_DEBUG_EVENT,
             NUMERE_ANSWER_READ
         };
 
@@ -113,10 +114,13 @@ class NumeReKernel
         static void toggleTableStatus();
         static void flush();
 
+        map<string,string> getPluginLanguageStrings();
+        vector<string> getPluginCommands();
         string ReadFileName();
         unsigned int ReadLineNumber();
         string ReadAnswer();
         string ReadDoc();
+        string getDocumentation(const string& sCommand);
         bool SettingsModified();
         int getAutosaveInterval() {return _option.getAutoSaveInterval();}
         long long int getLastSavedTime() {return _data.getLastSaved();}
@@ -134,6 +138,7 @@ class NumeReKernel
         void setKernelSettings(const Settings& _settings);
         vector<string> getPathSettings() const;
         void printVersionInfo();
+        void showDebugError(const string& sTitle);
 
         void updateLineLenght(int nLength);
 
@@ -147,6 +152,8 @@ class NumeReKernel
         static bool GetAsyncCancelState();
         static void showTable(string** __stable, size_t cols, size_t lines, string __name, bool openeditable = false);
         static stringmatrix getTable();
+        static void showDebugEvent(const string& sTitle, const vector<string>& vModule, const vector<string>& vStacktrace, const vector<string>& vNumVars, const vector<string>& vStringVars);
+        static void waitForContinue();
 };
 
 
@@ -171,7 +178,6 @@ inline string strlfill(const string& sString, unsigned int nWidth, char cFill = 
     return sReturn;
 }
 
-// cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_MODULE")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_MODULE").length()) << (char)196 << endl;
 inline string sectionHeadline(const string& sString, char cHeadLineSep = '-')
 {
     string sSectionHeadline = "|\n|   " + toUpperCase(sString);
@@ -184,11 +190,9 @@ inline string sectionHeadline(const string& sString, char cHeadLineSep = '-')
     return sSectionHeadline;
 }
 
-//cerr << "|  " << (char)192 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)193 << (char)196 << (char)196 << std::setfill((char)196) << std::setw(nErrorPos+1) << (char)217 << endl;
 inline string pointToError(unsigned int nPos)
 {
     string sErrorPointer = "|   ";
-    //sErrorPointer += (char)192 + strfill(string(1,(char)193), 10, 196) + strfill(string(1,(char)217), nPos+2, 196) + "\n";
     sErrorPointer += strfill("^^^", nPos+13) + "\n";
     return sErrorPointer;
 }

@@ -249,7 +249,7 @@ void Output::print(string sOutput)
 {
     if (!bFile)
     {
-        for (unsigned int i = 0; i < sOutput.length(); i++)
+        /*for (unsigned int i = 0; i < sOutput.length(); i++)
         {
             if (sOutput[i] == 'Ä')
                 sOutput[i] = (char)142;
@@ -275,7 +275,7 @@ void Output::print(string sOutput)
                 sOutput[i] = (char)175;
             else
                 continue;
-        }
+        }*/
 	}
 	if (sOutput.find("---------") != string::npos || sOutput.find("<<SUMBAR>>") != string::npos)
     {

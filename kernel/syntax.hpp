@@ -64,6 +64,7 @@ class NumeReSyntax
         NumeReSyntax(const string& sPath);
 
         void loadSyntax(const string& sPath);
+        void addPlugins(const vector<string>& vPlugins);
         string getCommands() const
             {return constructString(vNSCRCommands);}
         string getNPRCCommands() const

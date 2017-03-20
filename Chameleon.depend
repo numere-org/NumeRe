@@ -1931,7 +1931,7 @@
 	<wx/wx.h>
 	"../common/datastructures.h"
 
-1486017087 c:\cpp\chameleon\common\datastructures.h
+1489643339 c:\cpp\chameleon\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -2003,7 +2003,7 @@
 1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\printps.h
 	"wx/prntbase.h"
 
-1488905421 c:\cpp\chameleon\editor\editor.h
+1489694038 c:\cpp\chameleon\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -2505,7 +2505,8 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1486821115 c:\cpp\chameleon\gui\wxterm.h
+1489912522 c:\cpp\chameleon\gui\wxterm.h
+	<map>
 	"NumeReWindow.h"
 	"../network/gterm.hpp"
 	"../network/gtelnet.hpp"
@@ -2524,7 +2525,7 @@
 	<wx/notebook.h>
 	"wx/dnd.h"
 
-1480053133 c:\cpp\chameleon\gui\dialogs\variablewatchpanel.h
+1489924710 c:\cpp\chameleon\gui\dialogs\variablewatchpanel.h
 	"wx/listctrl.h"
 	"treelistctrl.h"
 	"../../common/tree.h"
@@ -2547,7 +2548,7 @@
 	<set>
 	<queue>
 
-1488958459 source:c:\cpp\chameleon\editor\editor.cpp
+1489869570 source:c:\cpp\chameleon\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -2568,11 +2569,12 @@
 	"../debugger/DebugManager.h"
 	"../common/debug.h"
 	"../common/fixvsbug.h"
+	"../common/globals.hpp"
 
 1480053133 c:\cpp\chameleon\gui\chameleonnotebook.h
 	<wx/notebook.h>
 
-1488922309 source:c:\cpp\chameleon\gui\chameleon.cpp
+1489913573 source:c:\cpp\chameleon\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -2594,6 +2596,7 @@
 	<math.h>
 	"../common/fixvsbug.h"
 	"../editor/editor.h"
+	"../editor/history.hpp"
 	"NumeReNotebook.h"
 	"dialogs/OptionsDialog.h"
 	"dialogs/RemoteFileDialog.h"
@@ -2610,6 +2613,7 @@
 	"../common/Options.h"
 	"../debugger/cham_db.h"
 	"../debugger/DebugManager.h"
+	"../debugger/debugviewer.hpp"
 	"../common/DebugEvent.h"
 	"DirTraverser.hpp"
 	"wxssh.h"
@@ -2726,7 +2730,7 @@
 	"../common/CommonHeaders.h"
 	"../common/datastructures.h"
 
-1484774759 c:\cpp\chameleon\gui\wxproportionalsplitterwindow.h
+1489472562 c:\cpp\chameleon\gui\wxproportionalsplitterwindow.h
 	<wx/wxprec.h>
 	<wx/splitter.h>
 	<cmath>
@@ -2882,7 +2886,7 @@
 
 1484471625 c:\cpp\chameleon\gui\dialogs\homehs.xpm
 
-1483182332 source:c:\cpp\chameleon\gui\dialogs\treelistctrl.cpp
+1489941007 source:c:\cpp\chameleon\gui\dialogs\treelistctrl.cpp
 	"wx/wxprec.h"
 	<wx/wx.h>
 	<wx/msw/private.h>
@@ -2945,7 +2949,7 @@
 1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\datectrl.h
 	"wx/compositewin.h"
 
-1484600705 source:c:\cpp\chameleon\gui\dialogs\variablewatchpanel.cpp
+1489830568 source:c:\cpp\chameleon\gui\dialogs\variablewatchpanel.cpp
 	"wx/wxprec.h"
 	<wx/textdlg.h>
 	"VariableWatchPanel.h"
@@ -2961,7 +2965,7 @@
 	"../wxTerm.h"
 	"../../common/debug.h"
 
-1487502418 source:c:\cpp\chameleon\gui\iconmanager.cpp
+1489470460 source:c:\cpp\chameleon\gui\iconmanager.cpp
 	"IconManager.h"
 	<string>
 	<wx/icon.h>
@@ -2970,7 +2974,6 @@
 	<wx/bitmap.h>
 	"dialogs/defaultfile.xpm"
 	"dialogs/closedfolder16x1632bpp.xpm"
-	"dialogs/openfolder16x1632bpp.xpm"
 	"dialogs/exe.xpm"
 
 1484471728 c:\cpp\chameleon\gui\dialogs\exe.xpm
@@ -2979,7 +2982,7 @@
 	"wxssh.h"
 	"../common/debug.h"
 
-1488779360 source:c:\cpp\chameleon\gui\wxterm.cpp
+1489913975 source:c:\cpp\chameleon\gui\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -2989,6 +2992,7 @@
 	"wxterm.h"
 	<wx/clipbrd.h>
 	<wx/dataobj.h>
+	"../common/globals.hpp"
 	"../common/debug.h"
 
 1485930562 source:c:\cpp\chameleon\network\actions.cpp
@@ -3343,12 +3347,12 @@
 	<_mingw.h>
 	<stddef.h>
 
-1488738919 c:\cpp\chameleon\gui\numerewindow.h
+1489836038 c:\cpp\chameleon\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
 	"../common/DebugEvent.h"
-	"dialogs/fndrpldialog.hpp"
+	"../common/globals.hpp"
 	<wx/treectrl.h>
 	<wx/notebook.h>
 	"../common/filewatcher.hpp"
@@ -3357,9 +3361,10 @@
 	"../kernel/core/tools.hpp"
 	"dialogs/tipdialog.hpp"
 	"viewerframe.hpp"
+	"viewerbook.hpp"
 	"filetree.hpp"
 
-1488779137 c:\cpp\chameleon\kernel\kernel.hpp
+1489913109 c:\cpp\chameleon\kernel\kernel.hpp
 	<string>
 	<fstream>
 	"core/error.hpp"
@@ -3382,7 +3387,7 @@
 	"debugmessenger.hpp"
 	"core/ParserLib/muParser.h"
 
-1488923294 source:c:\cpp\chameleon\kernel\kernel.cpp
+1489916373 source:c:\cpp\chameleon\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 
@@ -3392,13 +3397,13 @@
 1484683489 c:\cpp\chameleon\gui\numerenotebook.h
 	<wx/notebook.h>
 
-1484228358 c:\cpp\chameleon\kernel\syntax.hpp
+1489912989 c:\cpp\chameleon\kernel\syntax.hpp
 	<string>
 	<vector>
 	<map>
 	<fstream>
 
-1486584082 source:c:\cpp\chameleon\kernel\syntax.cpp
+1489915618 source:c:\cpp\chameleon\kernel\syntax.cpp
 	"syntax.hpp"
 	"core/tools.hpp"
 
@@ -3406,7 +3411,7 @@
 	<string>
 	"language.hpp"
 
-1465240181 c:\cpp\chameleon\kernel\core\language.hpp
+1489911651 c:\cpp\chameleon\kernel\core\language.hpp
 	<string>
 	<map>
 	<vector>
@@ -3439,7 +3444,7 @@
 	"filesystem.hpp"
 	"error.hpp"
 
-1482314293 c:\cpp\chameleon\kernel\core\debugger.hpp
+1489836679 c:\cpp\chameleon\kernel\core\debugger.hpp
 	<vector>
 	<string>
 	<map>
@@ -3454,7 +3459,7 @@
 	"version.h"
 	"tools.hpp"
 
-1488519817 c:\cpp\chameleon\kernel\core\version.h
+1489988405 c:\cpp\chameleon\kernel\core\version.h
 
 1488872930 c:\cpp\chameleon\kernel\core\tools.hpp
 	<iostream>
@@ -3786,7 +3791,7 @@
 	"tools.hpp"
 	"version.h"
 
-1488962870 c:\cpp\chameleon\kernel\core\documentation.hpp
+1489581212 c:\cpp\chameleon\kernel\core\documentation.hpp
 	<iostream>
 	<iomanip>
 	<string>
@@ -3865,7 +3870,7 @@
 1467057632 source:c:\cpp\chameleon\kernel\core\basicexcel.cpp
 	"BasicExcel.hpp"
 
-1488918266 source:c:\cpp\chameleon\kernel\core\built-in.cpp
+1489314246 source:c:\cpp\chameleon\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
@@ -3877,7 +3882,7 @@
 	"datafile.hpp"
 	"../kernel.hpp"
 
-1485284495 source:c:\cpp\chameleon\kernel\core\debugger.cpp
+1489838338 source:c:\cpp\chameleon\kernel\core\debugger.cpp
 	"debugger.hpp"
 
 1488714015 source:c:\cpp\chameleon\kernel\core\define.cpp
@@ -3888,7 +3893,7 @@
 	"doc_helper.hpp"
 	"version.h"
 
-1488963424 source:c:\cpp\chameleon\kernel\core\documentation.cpp
+1489582141 source:c:\cpp\chameleon\kernel\core\documentation.cpp
 	"documentation.hpp"
 	"../kernel.hpp"
 
@@ -3912,10 +3917,10 @@
 1482315420 source:c:\cpp\chameleon\kernel\core\igorlib\readwave.cpp
 	"./ReadWave.h"
 
-1484325721 source:c:\cpp\chameleon\kernel\core\language.cpp
+1489915596 source:c:\cpp\chameleon\kernel\core\language.cpp
 	"language.hpp"
 
-1486573263 source:c:\cpp\chameleon\kernel\core\loop.cpp
+1488984347 source:c:\cpp\chameleon\kernel\core\loop.cpp
 	"loop.hpp"
 	"../kernel.hpp"
 
@@ -3966,14 +3971,14 @@
 	"odesolver.hpp"
 	"../kernel.hpp"
 
-1484162279 source:c:\cpp\chameleon\kernel\core\output.cpp
+1489609902 source:c:\cpp\chameleon\kernel\core\output.cpp
 	"output.hpp"
 	"../kernel.hpp"
 
 1488716295 source:c:\cpp\chameleon\kernel\core\parser.cpp
 	"parser.hpp"
 
-1488876568 source:c:\cpp\chameleon\kernel\core\parser_functions.cpp
+1489310073 source:c:\cpp\chameleon\kernel\core\parser_functions.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -4061,7 +4066,7 @@
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1488956966 source:c:\cpp\chameleon\kernel\core\procedure.cpp
+1489840268 source:c:\cpp\chameleon\kernel\core\procedure.cpp
 	"procedure.hpp"
 	"../kernel.hpp"
 
@@ -4074,7 +4079,7 @@
 	<iostream>
 	"resampler.h"
 
-1488651950 source:c:\cpp\chameleon\kernel\core\script.cpp
+1489919046 source:c:\cpp\chameleon\kernel\core\script.cpp
 	"script.hpp"
 	"../kernel.hpp"
 
@@ -4115,7 +4120,7 @@
 	<tchar.h>
 	"zip.h"
 
-1486022139 c:\cpp\chameleon\gui\dirtraverser.hpp
+1489223897 c:\cpp\chameleon\gui\dirtraverser.hpp
 	"wx/wx.h"
 	"wx/dir.h"
 	<string>
@@ -4398,8 +4403,9 @@
 	<wx/wx.h>
 	<wx/treectrl.h>
 
-1484685094 source:c:\cpp\chameleon\gui\filetree.cpp
+1489774427 source:c:\cpp\chameleon\gui\filetree.cpp
 	"filetree.hpp"
+	"../common/globals.hpp"
 
 1485154202 c:\cpp\chameleon\gui\dialogs\fndrpldialog.hpp
 	<wx/fdrepdlg.h>
@@ -4476,4 +4482,55 @@
 	"tableviewer.hpp"
 	"wxterm.h"
 	"../kernel/core/language.hpp"
+
+1489645003 source:c:\cpp\chameleon\editor\history.cpp
+	"../common/CommonHeaders.h"
+	"../kernel/core/language.hpp"
+	"../kernel/core/tools.hpp"
+	<wx/datetime.h>
+	<wx/stdpaths.h>
+	<vector>
+	<string>
+	"history.hpp"
+
+1489642979 c:\cpp\chameleon\editor\history.hpp
+	<wx/wx.h>
+	<wx/stc/stc.h>
+	<wx/menu.h>
+	<wx/dynarray.h>
+	"editor.h"
+	"../gui/wxterm.h"
+	"../common/datastructures.h"
+	"../compiler/compilerevent.h"
+	"../kernel/syntax.hpp"
+
+1489772910 c:\cpp\chameleon\common\globals.hpp
+	"../gui/dialogs/fndrpldialog.hpp"
+
+1489952887 source:c:\cpp\chameleon\debugger\debugviewer.cpp
+	"debugviewer.hpp"
+	<wx/statbox.h>
+	"../kernel/core/language.hpp"
+
+1489951792 c:\cpp\chameleon\debugger\debugviewer.hpp
+	"../gui/viewerframe.hpp"
+	"../gui/wxterm.h"
+	"../gui/dialogs/treelistctrl.h"
+	<wx/listctrl.h>
+	<wx/panel.h>
+	<string>
+	<vector>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\treelist.h
+	"wx/defs.h"
+	"wx/compositewin.h"
+	"wx/containr.h"
+	"wx/headercol.h"
+	"wx/itemid.h"
+	"wx/vector.h"
+	"wx/window.h"
+	"wx/withimages.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\headercol.h
+	"wx/bitmap.h"
 
