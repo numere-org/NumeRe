@@ -1,0 +1,57 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="2dplots">
+	<title string="Gitter-, Kontur-, Dichte- oder Flächenplots" />
+	Die Kommandos <code>mesh</code>, <code>cont</code>, <code>dens</code> bzw. <code>surf</code> ermöglichen Darstellungen von Funktionen der Form <expr>z = f(x,y)</expr>, also Funktionen, deren <expr>z</expr>-Koordinate durch eine Funktion von <expr>x</expr> und <expr>y</expr> gegeben ist. <code>mesh</code> erzeugt dabei einen Gitter-, <code>cont</code> ein Konturlinien- (Niveaulinien-), <code>dens</code> einen Dichte- (Farben entsprechen <expr>z</expr>-Werten) und <code>surf</code> einen Oberflächenplot.
+	Plotvariablen sind <expr>x</expr> und <expr>y</expr>. Alle anderen Variablen werden als Parameter betrachtet.
+	Um Datensätze mit diesen Kommandos darzustellen, müssen diese in Form eines Datengitters vorliegen. Ein solches kann mit <code>datagrid</code> aus einem Datensatz erzeugt werden. Siehe "help datagrid" für die entsprechenden Erläuterungen zu dieser Funktion.
+	Dieser Plot-Modus führt ein drittes Intervall ein, das als Option beeinflusst werden kann, also <code>[x1:x2,y1:y2,z1:z2]</code>.
+	Zusätzliche Parameter für <code>mesh</code>, <code>cont</code>, <code>dens</code> und <code>surf</code> sind die folgenden:
+	<list>
+		<item node="clog/noclog">Farbschema logarithmisch skalieren</item>
+		<item node="colorbar/nocolorbar">Farbskala ein-/ausschalten</item>
+		<item node="colorrange=C1:C2">Das Intervall der Farbskala auf [C1,C2] anpassen</item>
+		<item node="colorscheme=SCHEMA">Das Farbschema SCHEMA wählen. Einige vordefinierte Schemata sind <code>rainbow</code>, <code>grey</code>, <code>hot</code>, <code>cold</code> und <code>map</code>. Siehe "help colorscheme" für weitere Schemata</item>
+		<item node="cscale=WERT">Skalierungsfaktor WERT der Farbskala angeben</item>
+		<item node="cticklabels=LABELS">Selbstdefinierte Farbskalenskalierung festlegen. Die Skaleneinheiten werden äquidistant verteilt. Die LABELS sind als Zeichenkette anzugeben, wobei die Skalenwerte durch "\\n" voneinander getrennt sein müssen.</item>
+		<item node="cticks=FORMAT">Die Formatierung der Farbskalenbeschriftung auf FORMAT setzen. Siehe auch "help ticks"</item>
+		<item node="fcont/nofcont">Farbliche Konturfüllung aus-/einschalten</item>
+		<item node="lcont/nolcont">Mit Werten versehene Konturen aus-/einschalten</item>
+		<item node="orthoproject/<br>  noorthoproject">Orthogonale Projektion von 2D- und 3D-Plots auf xy-, xz- und yz-Ebene ein-/ausschalten. Erzeugt alle vier Plots als Unterplots in der gewünschten Ausgabedatei. Verfügbar für Oberflächen- und Gitterplots, sowie 3D-Trajektorien und 3D-Vektorfelder.</item>
+		<item node="pcont/nopcont">Konturprojektion auf die untere Ebene aus-/einschalten</item>
+		<item node="rotate=THETA,PHI">Die Ansicht des Graphen um die Winkel PHI und THETA drehen. PHI dreht den Graphen um die <expr>z</expr>-Achse und THETA kippt ihn</item>
+	</list>
+	<code>lcont</code> verwendet bei den Kommandos <code>mesh</code> und <code>surf</code> automatisch die zugehörigen Konturlinienstile. Im Falle von <code>cont</code> sind sie entsprechend dem <expr>z</expr>-Wert gefärbt.
+	Die Option <code>rotate</code> benötigt nicht zwingend zwei Winkel. Es kann auch nur der zu ändernde Winkel mittels <code>rotate=THETA,</code> bzw. <code>rotate=,PHI</code> angegeben werden. Das Komma ist dabei allerdings essentiell. Die Standardwinkel sind THETA=60 und PHI=115.
+	Für <code>mesh</code> und <code>surf</code> existiert noch die spezielle Option <code>cut/nocut</code>, die die beiden nach vorne gewandten Oktanten aus- bzw. einblendet und dadurch den Blick auf das Zentrum des Plots sichtbar machen kann.
+	Für das Kommando <code>surf</code> gibt es noch zwei zusätzliche Optionen, die aktiviert werden können:
+	<list>
+		<item node="alpha/noalpha">Oberflächen-Transparenz aus-/einschalten</item>
+		<item node="alphamask/<br>  noalphamask">Surf-Transparenz entsprechend eines zweiten Datensatzes/Funktion berechnen.</item>
+		<item node="colormask/<br>  nocolormask">Die Oberfläche entsprechend eines zweiten Datensatzes/Funktion färben. Die Farbskala muss ggf. mittels <code>colorrange=c1:c2</code> angepasst werden</item>
+		<item node="light[=TYP]/<br>  nolight">plastischen 3D-Lichteffekt aus-/einschalten. TYP ist optional: TYP=smooth oder TYP=soft schalten auf weicheres Licht um</item>
+	</list>
+	<example desc="Oberflächenplot einer Gaußglocke mit den Optionen <code>box light opng=gauss</code>:" type="verbatim">
+		|&lt;- surf exp(-(x^2+y^2)/5) -set box light opng=gauss
+		|-&gt; Berechne Daten für 2D-Oberflächen-Plot ...
+		|-&gt; Speichern ... Erfolg!
+		|   Gespeichert unter "&PLOTPATH&/gauss.png"
+	</example>
+	<em>Siehe auch:</em> "help plot", "help grad" und "help datagrid"
+</article>

@@ -1,0 +1,36 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="pulse">
+	<title string="Pulse Analysis" />
+	NumeRe may determine the properties of a pulse, if the (columnwise orientated) data set of the pulse is passed to the command <code>pulse</code>:<codeblock>pulse DATA(I1:I2,J1:J2)</codeblock>
+	The command expects 2 columns: the <expr>x</expr> in the first and the <expr>y</expr> values in the second column. In addition, NumeRe expects that the function values are sorted according their <expr>x</expr> values and that the <expr>x</expr> values are equidistantly distributed (meaning: "regularized").
+	As result of the pulse analysis (if a result can be calculated), NumeRe returns the following values:
+	<list>
+		<item node="Maximal amplitude">The maximal function value of the determined pulse. This doesn't have to be the corresponding <expr>y</expr> value</item>
+		<item node="Position of maximum">The <expr>x</expr> value, where the maximum of the pulse is located</item>
+		<item node="Full width at half of maximum">The width of the pulse at <expr>exp(-1)*maxAmpl</expr></item>
+		<item node="Width of the actual pulse">The width of the total pulse</item>
+		<item node="Energy in first pulse">The calculated energy transported in this pulse</item>
+	</list>
+	The command <code>pulse</code> returns the determined values directly. You can assign them to data objects of temporary columns.
+	<example desc="Determination of the pulse properties of the data in the cache and assignment of the results to a temporary column:">
+		{maxAmpl, x0, fwhm, width, energy} = pulse cache(:,1:2)
+	</example>
+	<em>Tip:</em> The pulse analysis can be used for the analysis of statistical distributions.
+</article>

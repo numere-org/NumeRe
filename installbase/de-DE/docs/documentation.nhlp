@@ -1,0 +1,72 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="documentation">
+	<title string="Dokumentation" />
+	Alle Hilfeartikel der NumeRe-Hilfe liegen in Form von NumeRe-Hilfedateien (*.nhlp) im Unterverzeichnis "./docs" vor. Da es sich hierbei im Prinzip um XML-Dateien handelt, können sie ohne Probleme mit einem beliebigen Texteditor bearbeitet werden. Allerdings ist zu beachten, dass die standardmäßigen Hilfedateien während eines Updates <em>überschrieben</em> werden.
+	Plugins können bei der Installation Hilfedateien zum bereits vorhandenen Satz und entsprechende Einträge zum Dokumentationsverzeichnis hinzufügen. Die Hilfedateien werden dabei in einem speziellen Unterverzeichnis "./docs/plugins" abgelegt, um ein etwaiges Überschreiben zu verhindern.
+	Um Hilfedateien während der Installation hinzuzufügen, müssen innerhalb des <code>&lt;install&gt;...&lt;endinstall&gt;</code>-Blocks zwei weitere Blöcke vorhanden sein: ein <code>&lt;helpindex&gt;...&lt;/helpindex&gt;</code>- und ein <code>&lt;helpfile&gt;...&lt;/helpfile&gt;</code>-Block. Im ersteren müssen die Indexinformationen des Hilfeartikels; im zweiten der eigentliche Hilfeartikel. Um Kommentare in die Dateien einzubinden, kann die XML-Kommentarsyntax verwendet werden:<codeblock>&lt;!-- DIES IST DER KOMMENTAR --&gt;</codeblock>Des Weiteren können <code>&lt;example&gt;</code>-, <code>&lt;list&gt;</code>- oder andere Umgebungen verwendet werden.
+	<list>
+		<item node="&lt;article ...&gt;">Der eindeutige Schlüssel, der Hilfeartikel mit dem entsprechenden Eintrag im Dokumentationsverzeichnis verknüpft (<code>id=</code>)</item>
+		<item node="&lt;title .../&gt;">Der Titel (<code>string=</code>) und die Indexschlüssel (<code>idxkey=</code>) für das Dokumentationsverzeichnis, also die Schlüsselwörter, die für den Artikel während "help idx" angezeigt werden</item>
+		<item node="&lt;keyword&gt;">Schlüsselwort unter welchem der Artikel gefunden werden kann. Je mehr, desto besser. Es muss sich hierbei nicht um ein ganzes Wort handeln. <em>Wichtig</em>: Die hier angegebenen Schlüsselwörter können die Schlüsselwörter der standardmäßigen Hilfeartikel überschreiben!</item>
+		<item node="&lt;list&gt;">Listen-Umgebung für eine Auflistung wie diese hier. Fasst weitere <code>&lt;item&gt;</code>-Umgebungen, die die jeweiligen Listenpunkte bezeichnen</item>
+		<item node="&lt;table&gt;">Tabellen-Umgebung für eine Tabelle. Fasst weitere <code>&lt;tr&gt;</code>- und <code>&lt;td&gt;</code>-Umgebungen, die die jeweiligen Zeilen bzw. Zellen bezeichnen</item>
+		<item node="&lt;br&gt;">Fügt einen Zeilenumbruch ein (Absatzumbrüche werden durch Zeilenumbrüche in der Hilfedatei repräsentiert)</item>
+		<item node="&lt;em&gt;">Fasst zu betonende Abschnitte. Wird durch <em>Großbuchstaben</em> (bzw. kursiv und fett im HTML-Format) umgesetzt</item>
+		<item node="&lt;code&gt;">Fasst nicht zu interpretierende Zeichenketten, wie z.B. NumeRe-Code (außer spitze Klammern)</item>
+		<item node="&lt;expr&gt;">Für (einfache) mathematische Ausdrücke. Wird nur im HTML-Format interpretiert.</item>
+		<item node="&lt;codeblock&gt;">Abgesetzter Block für NumeRe-Code</item>
+		<item node="&lt;exprblock&gt;">Abgesetzter Block für (einfache) mathematische Ausdrücke</item>
+		<item node="&lt;item ...&gt;">Listenpunkt mit entsprechendem Bezeichner (<code>node=</code>)</item>
+		<item node="&lt;example ...&gt;">Beispielumgebung mit einer Beschreibung (<code>desc=</code>) und ggf. selbst gewählter Formatierung (<code>type='verbatim'</code>)</item>
+	</list>
+	Hilfeartikel können in Form einer HTML-Datei ausgegeben werden. Dazu muss der Parameter <code>-html</code> an den Hilfeaufruf übergeben werden:<codeblock>help THEMA -html</codeblock>
+	Gewöhnlicher Text kann einfach eingegeben werden. Dabei wird die Zeichenkette bis zum nächsten Zeilenumbruch als ein Abschnitt betrachtet und entsprechend angezeigt.
+	Im folgenden Beispiel wird dies für diesen Artikel stark verkürzt dargestellt.
+	<example desc="Beispielhafte Hilfeartikeldeklaration: <code>help documentation</code>" type="verbatim">
+	|   &lt;helpindex&gt;
+	|       &lt;article id="documentation"&gt;
+	|           &lt;title string="Dokumentation" idxkey="documentation" /&gt;
+	|           &lt;keywords&gt;
+	|               &lt;keyword&gt;help&lt;/keyword&gt;
+	|               &lt;keyword&gt;docum&lt;/keyword&gt;
+	|               &lt;keyword&gt;dokum&lt;/keyword&gt;
+	|           &lt;/keywords&gt;
+	|      &lt;/article&gt;
+	|   &lt;/helpindex&gt;
+	|	
+	|   &lt;helpfile&gt;
+	|       &lt;article id="documentation"&gt;
+	|           &lt;title string="Dokumentation" /&gt;
+	|           Alle Hilfeartikel (...)
+	|           Plugins können bei(...)
+	|           Um Hilfedateien wä(...)
+	|           &lt;list&gt;
+	|               &lt;item node="(...)"&gt;(...)&lt;/item&gt;
+	|               (...)
+	|               &lt;item note="(...)"&gt;(...)&lt;/item&gt;
+	|           &lt;/list&gt;
+	|           &lt;example desc="Beispielhafte (...)" type="verbatim"&gt;
+	|           (...)
+	|           &lt;/example&gt;
+	|       &lt;/article&gt;
+	|   &lt;/helpfile&gt;
+	</example>
+	<em>Siehe auch:</em> "help install" und "help plugin"
+</article>

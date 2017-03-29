@@ -1,0 +1,36 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="taylor">
+	<title string="Taylorpolynome" />
+	NumeRe kann Funktionen in Abhängigkeit von einer Variablen mittels des Taylor-Verfahrens durch ein Polynom der Ordnung <expr>n >= 0</expr> approximieren. Dieses Polynom muss allerdings (außer an der Entwicklungsstelle) nirgends mit der approximierten Funktion übereinstimmen (dies ist eine Eigenschaft der Taylorentwicklung und keine Problematik in NumeRe selbst).
+	Die Approximation geschieht rein numerisch. Dadurch kommt es zu unvermeidlichen Rundungsfehlern, die für die niedrigen Ordnungen der Entwicklung begrenzt sind. Bis <em>etwa</em> zur Ordnung <expr>n = 10</expr> kann NumeRe gute Koeffizienten bestimmen, oberhalb davon kommt es jedoch zu starken Abweichungen im Vergleich zu einer analytischen Berechnung.
+	Die Taylorentwicklung einer Funktion <code>FUNKTION(VAR)</code> wird durch das Kommando <code>taylor</code> gestartet, worauf die Funktion <code>FUNKTION(VAR)</code> folgen muss. Außerdem müssen mit dem Parameter <code>-set</code> die Variable VAR, über die, und die Stelle POS, an der die Funktion <code>FUNKTION(VAR)</code> entwickelt werden soll, angegeben werden:<codeblock>taylor FUNKTION(VAR) -set VAR=POS</codeblock>
+	Optional gibt es noch die folgenden, weiteren Optionen:
+	<list>
+		<item node="n=Ordnung">Die Ordnung der Entwicklung angeben. Wenn diese Option nicht angegeben wird, wird automatisch bis zur sechsten Ordnung entwickelt</item>
+		<item node="unique">Einen "eindeutigen" Funktionsnamen für das erzeugte Taylorpolynom generieren. Dieser enthält die Ordnung und die entwickelte Funktion. (Bietet sich an, wenn mehrere Entwicklungen zugleich verwendet werden sollen)</item>
+	</list>
+	Das entwickelte Polynom wird automatisch als eine Funktion im Funktionenspeicher definiert. Im Allgemeinen wird als Funktionsname <code>Taylor(x)</code> gewählt, wenn allerdings die Option <code>unique</code> übergeben wurde, ist der Funktionsname deutlich komplexer.<br><em>Achtung:</em> Funktionen, die mit demselben Namen im Funktionsspeicher vorhanden sind, werden dabei überschrieben!
+	<example desc="Taylorentwicklung der Funktion <expr>f(x) = cos(x)*exp(-x/2)</expr> an der Stelle <expr>x = 1</expr> bis zur Ordnung 4:" type="verbatim">
+		|&lt;- taylor cos(x)*exp(-x/2) -set x=1 n=4
+		|-&gt; Taylor(x) := 0.3277099 - 0.6742329*(x-1) + 0.1315407*(x-1)^2 +
+		|       0.09649409*(x-1)^3 - 0.03757564*(x-1)^4
+		|-&gt; Funktion "Taylor" wurde erfolgreich definiert!
+	</example>
+</article>

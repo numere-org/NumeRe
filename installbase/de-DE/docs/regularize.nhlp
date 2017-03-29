@@ -1,0 +1,24 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="regularize">
+	<title string="Datenpunkte regularisieren" />
+	NumeRe kann aus unregelmäßigen <expr>x</expr>-<expr>y</expr>-Datenpunkte in einem Cache Datenreihen generieren, deren <expr>x</expr>-Werte äquidistant verteilt sind. Dieser Prozess wird "regularisieren" genannt. Dabei werden zwei neue Datenreihen im aktuellen Cache generiert und rechts angehängt.
+	Um Datenreihen zu regularisieren, muss der gewünschte Cache dem Kommando <code>regularize</code> übergeben werden:<codeblock>regularize CACHE(i1:i2,j1:j2)</codeblock>Dabei agiert <code>regularize</code> spaltenweise und es müssen stets zwei Spalten angegeben werden, wobei die erste Spalte die <expr>x</expr>-, die zweite die <expr>y</expr>-Werte enthält und beide Spalten gleich viele Datenpunkte enthalten müssen.
+	Standardmäßig enthalten die neuen Datenreihen so viele <expr>x</expr>-Datenpunkte wie die vorgegebenen Daten. Um dieses Verhalten zu überschreiben, kann der Parameter <code>samples=SAMPLES</code> angegeben werden, wobei SAMPLES für die neue Zahl der <expr>x</expr>-Datenpunkte steht.
+</article>

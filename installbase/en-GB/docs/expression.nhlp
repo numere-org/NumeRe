@@ -1,0 +1,36 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="expression">
+	<title string="Entering of expressions" />
+	NumeRe is designed to evaluate every entered expression ("inquiry") and print its result as "answer" in the next line, if the inquiry was not closed with a semicolon <code>;</code> (this suppresses the printing but not the evaluation). The result will be, if it has a numerical value, assigned automatically to the variable <code>ans</code>.
+	NumeRe expects either mathematical-numerical or logical evaluationable expressions or even strings (which shall be surrounded with qoutation marks) as input. If NumeRe cannot parse a given expression, it will return a corresponding error message.
+	The expression syntax orientates itself to the common programming languages (C/C++), as well as to the mathematics itself.
+	Definitions of variables and the assignment of their values will be done with the variables name followed by <code>=</code> and their desired value. Even the result of an expression may be assigned to a variable as a numerical value.
+	Numerical values may only be assigned to numerical, strings only to string variables. A conversion of the variables type is not possible (however, the conversion of their values is, if you use <code>#NUMVAR</code> and <code>to_value(STRINGVAR)</code>).
+	You may use arbitrary combinations of upper- and lowercase letters and the underscore <code>_</code> to create the variables' names. You may use numbers as well, but the first character of a variable's name may not be a number.
+	NumeRe owns a large set of predefined constants, which may be listed with the command <code>list -const</code> (including their physical units, if applicable). All constants have in common that their first letter is an underscore.
+	The set of predefined functions is even larger and may be displayed by invoking <code>list -func</code>.
+	<example desc="Assignment of cos(_pi) to the variable x and 'Hello World' to Sentence:">
+		x = cos(_pi)
+		ans = -1
+		Sentence = "Hello World"
+		"Hello World"
+	</example>
+	<em>See also:</em> "help cache", "help string", "help list", "help var" and "help func"
+</article>

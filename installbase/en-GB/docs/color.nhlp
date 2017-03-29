@@ -1,0 +1,54 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="color">
+	<title string="Coloring schemes and line coloring for plots" />
+	The coloring schemes, which NumeRe uses in its 2D and 3D plots, can be customized--as well as the line colors in usual plots and 3D trajectories. While plotting, simply pass the option <code>colorscheme=SCHEME</code> or <code>plotcolors=COLORS</code>, repectively.
+	There exists some predefined schemes for 2D and 3D plots. The default coloring scheme is called <code>viridis</code>:
+	<list>
+		<item node="coast">Caribbean coast: going from dark blue through cyan and yellow to white</item>
+		<item node="cold">A cold color gradient from black through dar blue and cyan to white</item>
+		<item node="copper">Going from black through shades of copper to white</item>
+		<item node="grey">A simple grey scale coloring scheme</item>
+		<item node="hot">A warm color gradient from black through red and yellow to white</item>
+		<item node="map">The typical color gradient of a physical map: going from violet and dark blue through green/yellow and orange to red and finally grey</item>
+		<item node="moy">"Magenta-Orange-Yellow": going from black through magenta, orange and yellow to white</item>
+		<item node="plasma">A color gradient going from dark blue through violet to light yellow</item>
+		<item node="rainbow">The well-known rainbow coloring scheme going from dark blue through green/yellow to dark red</item>
+		<item node="viridis">Similar to <code>coast</code>, but slightly more green and blue and a more uniform brightness. Default coloring scheme</item>
+	</list>
+	The schemes <code>rainbow</code> and <code>map</code> should not be used, if the resulting plot probably may be printed in greyscales, because the brightest point is not at the upper end of the scale.
+	Apart from this, custom coloring schemes can be defined. The colors, which shall be used and which are represented by single characters, have to appended in the corresponding order and passed in additional quotation marks as SCHEME to the <code>colorscheme</code> option:<codeblock>colorscheme="BbcyrR"    (color set of the rainbow coloring scheme)</codeblock>The colors will be interpolated linearly for the final gradient.
+	The colors should be passed going from the color for the lowest to the color for the highest function value. The number of colors (maximal 32 colors are possible) should be chosen depending on the desired level of detail. In most cases 2-3 colors are sufficient; choose about 5-7 colors for many details.
+	Using the two symbols <code>#</code> and <code>|</code> you can take further influence on the resulting scheme: <code>#</code> draws an additional mesh ontop of surface, density and gradient plots. If this characters is used in the coloring scheme for <code>surf3d</code>, the plot will generate the same figure as <code>mesh3d</code>. The character <code>|</code> deactivates the color interpolation in the current coloring scheme.
+	The color of each line in usual plot or 3D trajectories, respectively, is represented by one single letter. The first letter corresponds to the first line, the second to the second line, and so on.
+	Maximal 14 colors can be entered; the 15. line will carry the color of the first line. You don't have to pass all 14 letters; if you pass fewer, then only their number of styles will be overwritten:<codeblock>plotcolors="rrr"   (draws the first three lines in red)</codeblock>If a whitespace is entered instead of a color, then the corresponding line color won't be overwritten. If the coloring scheme <code>grey</code> is active, then all line styles will be automatically switched to grey values.
+	The available colors are represented by the following letters:
+	<table>
+		<tr><td><code>w</code></td><td>white</td><td><code>y</code></td><td>yellow</td><td><code>n</code></td><td>pastel blue</td></tr>
+		<tr><td><code>W</code></td><td>light grey</td><td><code>E</code></td><td>dark yellow-green</td><td><code>B</code></td><td>dark blue</td></tr>
+		<tr><td><code>h</code></td><td>grey</td><td><code>e</code></td><td>yellow-green</td><td><code>b</code></td><td>blue</td></tr>
+		<tr><td><code>H</code></td><td>dark grey</td><td><code>G</code></td><td>dark green</td><td><code>U</code></td><td>dark violet</td></tr>
+		<tr><td><code>k</code></td><td>black</td><td><code>g</code></td><td>green</td><td><code>u</code></td><td>violet</td></tr>
+		<tr><td><code>R</code></td><td>dark red</td><td><code>L</code></td><td>dark fir green</td><td><code>M</code></td><td>dark magenta</td></tr>
+		<tr><td><code>r</code></td><td>red</td><td><code>l</code></td><td>fir green</td><td><code>m</code></td><td>magenta</td></tr>
+		<tr><td><code>Q</code></td><td>dark orange</td><td><code>C</code></td><td>dark cyan</td><td><code>P</code></td><td>dark purple</td></tr>
+		<tr><td><code>q</code></td><td>orange</td><td><code>c</code></td><td>cyan</td><td><code>p</code></td><td>purple</td></tr>
+		<tr><td><code>Y</code></td><td>dark yellow</td><td><code>N</code></td><td>dark pastel blue</td></tr>
+	</table>	
+</article>

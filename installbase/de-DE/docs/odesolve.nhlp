@@ -1,0 +1,49 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="odesolve">
+	<title string="Lösen von Differentialgleichungen" />
+	NumeRe kann mittels des Kommandos <code>odesolve</code> Differentialgleichungen <em>erster</em> Ordnungen numerisch lösen. Dazu wird die Differentialgleichung <expr>DGL(x,y1,y2,...)</expr> (oder das System aus Differentialgleichungen) über einen vorgegeben <expr>x</expr>-Bereich integriert und die entsprechenden <expr>y</expr>-Punkte berechnet:
+	<codeblock>
+		odesolve DGL(x,y1,y2,...) -set [x0:x1] OPTIONEN
+	</codeblock>
+	Das Differentialgleichungssystem kann dabei aus ein oder mehreren Teilgleichungen bestehen. Diese Gleichungen müssen dem folgenden Schema genügen:<exprblock>dy1/dx = f1(x,y1,y2,...)\ndy2/dx = f2(x,y1,y2,...)\n...,</exprblock>wobei <em>nur</em> die Funktionen <expr>f1()</expr> bis <expr>fn()</expr> in dieser Reihenfolge durch Kommata getrennt angegeben werden müssen. <expr>x</expr> ist hierbei die Integrationsvariable und <expr>y1</expr> bis <expr>yn</expr> sind vordefinierte Funktionsvariablen, in denen NumeRe die Ergebnisse des letzten Integrationsschritts ablegt. Alle anderen Variablen werden als Parameter betrachtet.
+	<em>Wichtig:</em> NumeRe wird die Zahl der Funktionsvariablen entsprechend der Zahl der Gleichungen bereitstellen: bei einer Gleichung ist nur <code>y1</code> verfügbar, bei zwei <code>y1</code> und <code>y2</code>, etc. Werden mehr Variablen benötigt (um z.B. ein vektorielles Problem zu lösen), können "0"-Gleichungen als entsprechende Gleichung eingeführt werden, die Variable wird dann jedoch als Konstante betrachtet.
+	Differentialgleichungen <em>n-ter</em> Ordnung <expr>DGL(x,y,y',y'',...,y^n)</expr> können stets in ein System von <expr>n</expr> Differentialgleichungen erster Ordnung überführt werden, indem <expr>(n-1)</expr> zusätzliche Funktionen eingeführt werden: <expr>y' = dy1/dx = y2, y'' = dy2/dx = y3, ...</expr> Ein solches System folgt dann dem Schema:
+	<exprblock>
+		dy1/dx = y2
+		dy2/dx = y3
+		...
+		dyn/dx = DGL(x,y1,y2,...,y(n-1))
+	</exprblock>
+	Die Ergebnisse der Integration werden standardmäßig in den Cache <code>ode()</code> als Tabelle geschrieben. Die erste Spalte enthält dabei die <expr>x</expr>-Werte und die folgenden Spalten die dazu integrierten Funktionswerte.
+	Mit den Optionen kann weiter Einfluss auf die Auswertung des ODE-Solvers genommen werden:
+	<list>
+		<item node="method=METHODE">Dies bestimmt den Integrationsalgorithmus, der von NumeRe für diese DGL verwendet werden soll. Zur Wahl stehen<br>  rk2     - Runge-Kutta (2,3)<br>  rk4     - Runge-Kutta 4. Ordnung (Standard)<br>  rkck    - Runge-Kutta Cash-Carp (4,5)<br>  rkf45   - Runge-Kutta-Fehlberg (4,5)<br>  rk8pd   - Runge-Kutta Prince-Dormand (8,9)</item>
+		<item node="tol=TOLERANZEN">Legt die Toleranzen für den Algorithmus fest. Es können relative und absolute Toleranzen getrennt [REL,ABS] oder als gemeinsamer Wert angegeben werden.</item>
+		<item node="samples=SAMPLES">Bestimmt die Zahl der Stützstellen, die integriert werden. Standard ist 100</item>
+		<item node="target=CACHE()">Ändert den Speichercache von <code>ode()</code> zu <code>CACHE()</code>. Falls nötig wird der Cache <code>CACHE()</code> im Rahmen dieses Kommandos erzeugt</item>
+		<item node="fx0=STARTWERTE">Hiermit können die Startwerte der einzelnen Funktionsvariablen vorgegeben werden <code>[Y01,Y02,...,Y0n]</code>. Wenn keine oder zu wenig vorgegeben werden, wird 0 für die Startwerte verwendet</item>
+		<item node="lyapunov">Berechnet zusätzlich den Kurzzeit-Lyapunov-Exponenten in zwei weiteren Datenreihen, der angibt, ob die berechnete Lösung des DGL-Systems chaotisch ist: ist der Exponent positiv, ist es chaotisch, ist er negativ, ist es regulär</item>
+	</list>
+	Die Auswertung kann mit der <code>ESC</code>-Taste abgebrochen werden, falls sie zu viel Zeit in Anspruch nimmt.
+	<example desc="Numerisches Lösen des physikalischen Pendels:">
+		odesolve y2,-sin(y1) -set [0:20] samples=200 fx0=[0,1]
+	</example>
+	<em>Tipp:</em> Um die Lesbarkeit zu erhöhen, könnten die DGLS im obigen Beispiel auch durch <code>dy1 = y2, dy2 = -sin(y1)</code> übergeben werden.
+</article>

@@ -1,0 +1,32 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="edit">
+	<title string="Editing and opening of files and folders" />
+	Using the command <code>edit</code> NumeRe may open most of the files and folders, which are used by NumeRe itself in the editor, the viewer or an external program. To achieve this, NumeRe may be linked to an image viewer, which will be used for opening. Folders will be opened using the Windows Explorer.
+	Exceptions are the system files of NumeRe (configuration, function definitions, EXE file, DLLs, NumeRe cache) and the files in the NumeRe data file or IGOR binary waves format, because the latter are binary formats which can only be read by NumeRe (or IGOR Pro, respectively).
+	<code>edit</code> may be used to edit the contents of a cache. To calll the corresponding editor, enter<codeblock>edit CACHE()</codeblock>into the console. NumeRe will wait for the edit of the user. It is not possible to carry out further calculations while the user is editing a cache in the table editor.
+	The commands <code>view</code> and <code>open</code> are synonyms to this command.
+	To ensure that NumeRe will find the correct file, you shall pass the path to the desired file. This may eiter done absolutely, relatively from the root directory or by using the path placeholders <code>&lt;PATH&gt;</code>. To suppress ambiguity, it may be helpful, to pass the file extension as well. NumeRe will always use the first file matching to the passed file scheme. Only if there's no matching file, a matching folder name will be searched.
+	If the desired file is located in a standard file path, the passing of the corresponding file extension may be enough to find the correct file. The location of the file may be verified using the NumeRe file explorer (<code>list -files</code>).
+	If procedures shall be edited, then the syntax for calling the procedure without any arguments may be used:<codeblock>edit $NAMESPACE~PROCEDURENAME</codeblock>
+	<example desc="Editing of the file '&EXEPATH&/samples/data.dat':">
+		edit &lt;&gt;/samples/data.dat
+	</example>
+	<em>See also:</em> "help explorer", "help editor" or "help viewer"
+</article>

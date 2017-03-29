@@ -1,0 +1,36 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="pulse">
+	<title string="Puls-Analyse" />
+	NumeRe kann die Eigenschaften eines Pulses bestimmen, indem der (spaltenweise orientierte) Datensatz des Pulses an das Kommando <code>pulse</code> übergeben wird:<codeblock>pulse DATEN(I1:I2,J1:J2)</codeblock>
+	Dabei werden 2 Spalten erwartet: die <expr>x</expr>- in der ersten und die <expr>y</expr>-Werte in der zweiten Spalte. Außerdem geht NumeRe davon aus, dass die Funktionswerte nach der ersten Spalte aufsteigend sortiert wurden. Ebenso werden regularisierte Daten erwartet, also Daten mit äquidistanten <expr>x</expr>-Werten.
+	NumeRe gibt als Ergebnis der Puls-Analyse (sofern ein Ergebnis erzielt werden kann) die folgenden Werte zurück:
+	<list>
+		<item node="Maximale Amplitude">Der maximale Funktionswert des bestimmten Pulses. Das muss nicht zwingend der entsprechende <expr>y</expr>-Wert sein</item>
+		<item node="Position des Maximums">Der <expr>x</expr>-Wert, an dem der maximale Funktionswert bestimmt wurde</item>
+		<item node="Halbwertsbreite">Die Breite des Pulses bei <expr>exp(-1)*maxAmpl</expr></item>
+		<item node="Breite des Pulses">Die Breite des gesamten Pulses</item>
+		<item node="Energie im ersten Puls">Die bestimmte Energie, die in diesem Puls transportiert wird</item>
+	</list>
+	Das Kommando <code>pulse</code> gibt die bestimmten Werte direkt zurück. Sie können an Datenobjekte oder temporäre Spalten zugewiesen werden.
+	<example desc="Bestimmung der Puls-Eigenschaften der Daten im Cache und Zuweisen der Ergebnisse an eine temporäre Spalte:">
+		{maxAmpl, x0, fwhm, width, energy} = pulse cache(:,1:2)
+	</example>
+	<em>Tipp:</em> Die Puls-Analyse kann auch für die Analyse von statistischen Verteilungen verwendet werden.
+</article>

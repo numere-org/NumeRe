@@ -1,0 +1,46 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="data_and_fileops">
+	<title string="Kopieren und Löschen von Datensätzen und Dateien" />
+	NumeRe kann Datensätze zeilen- oder spaltenweise kopieren und gleichzeitig Rechenoperationen auf den Einträgen der Spalten/Zeilen ausführen. Dies bietet natürlich viele Freiräume; im Falle eines einfachen Übertragens der Einträge von einem Datenobjekt in das andere oder von einer Stelle des Datenobjekts an eine andere ist das jedoch viel zu umständlich. Hierfür existiert die Funktion <code>copy</code>.
+	<code>copy DATENOBJEKT(i1:i2,j1:j2)</code> kopiert die Einträge der Spalten <expr>i1</expr> bis <expr>i2</expr> und der Zeilen <expr>j1</expr> bis <expr>j2</expr> aus dem DATENOBJEKT an eine freie Stelle des aktuellen Caches (rechts von bereits existierenden Einträgen). Mit dem zusätzlichen Parameter <code>-target=CACHE(i1:i2,j1:j2)</code> kann der zu überschreibende Bereich eines Caches angegeben werden. Falls der zu überschreibende Bereich <em>kleiner</em> als der zu kopierende ist, werden nur so viele Einträge kopiert, wie im Zielbereich Platz haben. Falls der Zielbereich bereits Einträge enthielt, werden diese dabei <em>überschrieben</em>.
+	Ähnlich funktioniert auch die Funktion <code>move</code>, nur dass in diesem Fall auf jeden Fall ein Ziel durch <code>-target=ZIEL</code> angegeben werden muss und dass der gesamte Datensatz verschoben wird. Diese Funktion kann <em>nicht</em> auf geladene Daten eines Datenfiles angewendet werden.
+	Bei <code>copy</code> und <code>move</code> kann außerdem noch die Option <code>-transpose</code> übergeben werden. Dadurch werden während des Kopier- bzw. Verschiebevorgangs die Zeilen mit den Spalten des kopierten bzw. verschobenen Abschnittes vertauscht.
+	Neben der Möglichkeit, Zeilen und Spalten des aktuellen Caches mittels des Werts <code>nan</code> zu löschen, kann ein Element/Bereich des aktuellen Caches auch gelöscht werden, indem die Funktion <code>delete</code> verwendet wird.
+	Die Funktion <code>delete CACHE(i1:i2,j1:j2)</code> löscht die Einträge der Zeilen <expr>i1</expr> bis <expr>i2</expr> und der Spalten <expr>j1</expr> bis <expr>j2</expr> unwiderbringlich aus dem gewählten Cache. Diese Funktion kann nicht auf die Einträge eines Datenfiles angewendet werden. Um die automatische Sicherheitsabfrage zu unterdrücken, kann der Parameter <code>-ignore</code> an den gesamten Ausdruck angehängt werden.
+	Um selbst erzeugte Caches wieder zu entfernen, kann entweder der Parameter <code>-clear</code> auf ein beliebigen Cache angewendet werden. Dabei werden dann alle Caches entfernt und der Speicher freigegeben. Oder es kann das Kommando <code>remove</code> verwendet werden, um gezielt Caches zu entfernen:<codeblock>remove CACHE1(), CACHE2(), ...</codeblock>
+	Die beiden Kommandos <code>copy</code> und <code>move</code> können auch verwendet werden, um Dateien zu kopieren oder zu verschieben. In beiden Fällen ist dabei die Quell- und die Zieldatei (ggf. mit umschließenden Anführungszeichen) anzugeben:<codeblock>copy QUELLE -target=ZIEL</codeblock>beziehungsweise<codeblock>move QUELLE -target=ZIEL</codeblock>NumeRe wird nur Dateien kopieren/verschieben, deren Dateiendungen auch von NumeRe selbst verwendet werden. Bestehende Dateien mit gleichem Dateinamen am Zielort werden überschrieben!
+	NumeRe kann auch <em>Dateien</em> löschen. Hierzu existiert das Kommando <code>remove DATEI</code>. Um die Sicherheitsabfrage zu unterdrücken, kann der Parameter <code>-ignore</code> angehängt werden. NumeRe wird nur Dateien löschen, deren Dateiendungen auch von NumeRe selbst verwendet werden.<br><em>Achtung:</em> Die Datei DATEI wird dauerhaft und unwiderbringlich gelöscht!
+	In allen Fällen sollten QUELLE, ZIEL und DATEI relativ vom Stammverzeichnis, absolut oder mithilfe der <code>&lt;PFAD&gt;</code>-Platzhalter (siehe "help explorer") angegeben werden. Um Dateien ohne Umbenennen zu verschieben oder zu kopieren, sollte der der Zielpfad mit dem Zielordner und ein darauffolgendes <code>/</code> oder <code>/*</code> enden. Des Weiteren können selbstverständlich auch Zeichenkettenoperationen in den Dateipfaden verwendet werden.
+	Die verschobenen/kopierten Dateien können auch nach automatisch bestimmten Schemata benannt werden. Dazu sind die entsprechenden Schema-Platzhalter in den Zieldateinamen einzufügen:
+	<list>
+		<item node="&lt;#&gt;">Wird durch die aktuelle Nummer der verschobenen/kopierten Datei ersetzt. Wenn an <code>#</code> ein oder mehrere <code>~</code> angehängt werden, wird die Nummer durch vorne angefügte <code>0</code> auf entsprechend viele Zeichen ergänzt</item>
+		<item node="&lt;fname&gt;">Wird durch den Dateinamen (ohne Pfad und Dateierweiterung) der aktuell verschobenen/kopierten Datei ersetzt.</item>
+	</list>
+	Außerdem kann bei Dateioperationen auch der Parameter <code>-all</code> verwendet werden, wenn die Dateinamen mit Wildcards (<code>*</code> und <code>?</code>) ausgewählt werden. In diesem Fall werden alle Dateien, die durch diese Wildcards beschrieben werden, kopiert/verschoben/gelöscht. Auch hier werden aber auch nur Dateien modifiziert, die von NumeRe selbst verwendet werden.
+	<example desc="Kopieren eines Datensatzes in den Cache und Verschieben der Ursprungsdatei:">
+		data -load=&lt;&gt;/samples/data
+		Daten aus "&EXEPATH&/samples/data.dat" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus 25 Zeile(n) und 4 Spalte(n).
+		copy data(:,:)
+		Datensatz erfolgreich kopiert.
+		move &lt;&gt;/samples/data.dat -target=&lt;loadpath&gt;/
+		Die Datei "&EXEPATH&/samples/data.dat" wurde erfolgreich verschoben.
+	</example>
+	<em>Siehe auch:</em> "help data", "help cache", "help new", "help string" und "help explorer"
+</article>

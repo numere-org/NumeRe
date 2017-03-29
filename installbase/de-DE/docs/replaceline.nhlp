@@ -1,0 +1,30 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="replaceline">
+	<title string="Eingabekorrektur in Schleifen und Bedingungen" />
+	Mit dem Befehl <code>replaceline</code> können in Schleifen oder IF-Verzweigungen einfache Korrekturen der Eingabe durchgeführt werden (z.B. Tippfehler oder Vergleichbares). Dieses Kommando ist jedoch <em>nicht</em> zu komplexen Korrekturen in der Lage.
+	Es können Recheninstruktionen ersetzt oder die Deklarationen der Schleifen bzw. der IF-Verzweigungen bearbeitet werden. Keinesfalls können Deklarationen durch Recheninstruktionen oder umgekehrt ersetzt werden. Außerdem können weder <code>elseif</code> noch <code>else</code> noch <code>endif</code> noch <code>endfor</code> noch <code>endwhile</code> ersetzt oder mit diesem Kommando eingefügt werden.
+	Die korrigierte Eingabe muss diesem Kommando in Anführungszeichen mit übergeben werden. Falls nicht die zuletzt eingegebene Zeile korrigiert werden soll, kann die gewünschte Zeile mittels dem Parameter <code>-line=ZEILE</code> angegeben werden. Die Zeile kann dabei entweder absolut von der ersten Zeile ab gezählt oder relativ von der letzten Zeile angegeben werden. Im letzteren Fall ist die Numerierung negativ anzugeben.
+	<example desc="Korrigieren einer Schleifendeklaration:" type="verbatim">
+		|&lt;- for (i = 1:10)
+		|FOR&gt; i++
+		|FOR&gt; replaceline "for (i = 1:100)" -line=-2
+		|FOR&gt; [...]
+	</example>
+</article>

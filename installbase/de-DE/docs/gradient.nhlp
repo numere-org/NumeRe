@@ -1,0 +1,25 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="gradient">
+	<title string="Gradientenplot" />
+	Mit dem Kommando <code>grad</code> kann von einer Funktion der Form <expr>z = f(x,y)</expr>, also eine Funktion, die der <expr>z</expr>-Koordinate einen Wert in Abhängigkeit von <expr>x</expr> und <expr>y</expr> zuweist, ein Gradientenplot erzeugt werden. Dabei detektiert NumeRe einige Pfade (lange nicht alle), entlang denen die Funktion <expr>f(x,y)</expr> sich besonders stark ändert.
+	Es wird das Standard-Farbschema verwendet. Wenn <expr>f(x,y)</expr> sich positiv ändert, wird das als ein großer Wert interpretiert, bei einer negativen Änderung hingegen als ein kleiner Wert. Extrema werden gesondert hell hervorgehoben.
+	Für <code>grad</code> können dieselben Optionen wie für <code>mesh</code> verwendet werden.
+	<em>Siehe auch:</em> "help plot" und "help mesh"
+</article>

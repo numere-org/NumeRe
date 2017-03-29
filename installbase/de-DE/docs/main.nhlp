@@ -1,0 +1,47 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="main">
+	<title string="Übersicht" />
+	NumeRe wird im Allgemeinen durch Eingabe von (Text-)Kommandos bedient. Eine Maus ist zur Bedienung nicht nötig.
+	Kommandos können (in den meisten Fällen) durch Parameter ergänzt werden. Diese werden dann durch ein vorangestelltes Minuszeichen <code>-</code> indiziert.
+	Grundlegende Kommandos sind dabei die folgenden:
+	<list>
+		<item node="find BEGRIFFE">Nach BEGRIFFE suchen</item>
+		<item node="help">Zeigt diese Hilfe</item>
+		<item node="help THEMA">Zeigt den Hilfeartikel zum THEMA</item>
+		<item node="list -OBJEKT">Listet Objekte und Befehle</item>
+		<item node="quit">Beendet NumeRe</item>
+	</list>
+	Aus dem großen Satz an existierenden Kommandos (<code>list -cmd</code>) sollte man die folgenden auf jeden Fall kennen:
+	<list>
+		<item node="load DATEI">Lädt den Inhalt der DATEI in den Speicher</item>
+		<item node="stats">Startet die Statistik-Funktion</item>
+		<item node="hist">Startet die Histogramm-Funktion</item>
+		<item node="plot">Startet den Plotalgorithmus</item>
+		<item node="fit">Ruft den Fitalgorithmus auf</item>
+		<item node="script">Ein "NumeRe-Script" laden und verwenden</item>
+		<item node="set -SETTING">Eine Einstellung tätigen</item>
+		<item node="get -SETTING">Den Wert einer Einstellung abfragen</item>
+		<item node="data">Ruft Methoden zu Datenfiles auf</item>
+		<item node="cache">Ruft Methoden zu den Caches auf</item>
+	</list>
+	Zu allen hier gelisteten Kommandos existiert ein Artikel in der NumeRe-Hilfe. Um diesen aufzurufen, einfach <code>help KOMMANDO</code> eintippen. Diese Artikel enthalten auch die Informationen zu Parametern und Optionen, die auf das KOMMANDO angewendet werden können.
+	<em>Wichtig:</em> Wenn Parametern und Optionen Werte durch ein <code>=</code> übergeben werden, sollten hier keine zusätzlichen Leerzeichen verwendet werden, da Leerzeichen die einzelnen Parameter/Optionen trennen.
+	<em>Tipp:</em> Eine komplette Liste aller Kommandos wird durch <code>list -cmd</code> angezeigt (allerdings werden keine Pluginkommandos gelistet). Um eine Liste aller Hilfethemen anzuzeigen, <code>help index</code> eingeben.
+</article>

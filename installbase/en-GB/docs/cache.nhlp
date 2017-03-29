@@ -1,0 +1,47 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="cache">
+	<title string="Cache" />
+	The cache is an active part of NumeRe's memory, which is capable of storing modified tabular data. This gives you the possibility to continue your evaluations on modified data.
+	The cache <code>cache()</code> exists per default. Additional caches with other names can be created by invoking the command <code>new</code>:<codeblock>new CACHE1(), CACHE2(), ...</codeblock>The newly created caches declare a corresponding command themselves (see below).
+	Single elements of a cache can be read with the syntax <code>CACHE(LINE,COLUMN)</code>. You can write new values to a cache with in similar way. Treat caches just like usual variables, to gain the possibility of using tabular data in expressions. The indication of the elements in a cache is done with integral numbers <em>greater than</em> zero: 1,2,3,...
+	Whole ranges of elements can be obtained by modifing the syntax to <code>FIRST INDEX:LAST INDEX</code>. If one index is omitted, then it will be automatically replaced with the corresponding minimal or maximal index, respectively. If both indices are omitted, then the whole range of indices will be selected. You may use lines or columns of other caches and data files as an index set for the current cache.
+	Column headlines can be read and modified in a similar way: <code>CACHE(#,COLUMN)</code> or <code>CACHE(#,COLUMN) = COLUMNHEAD</code>
+	Parameters for the command <code>cache</code> or the corresponding commands obtained by custom created caches are the following:
+	<list>
+		<item node="-clear">Remove all caches and the automatic backup</item>
+		<item node="-show">Show data stored in the current cache</item>
+		<item node="-showf">Force showing all data stored in the current cache</item>
+		<item node="-rename=NAME">Rename the current cache to NAME. This cannot be applied to <code>cache</code>!</item>
+		<item node="-swap=CACHE">Swap the contents of the current cache with the passed CACHE</item>
+		<item node="-save=NAME">Save the contents of the current cache to the file NAME (*.ndat). Filenames including whitespaces must be surrounded with quotation marks</item>
+		<item node="-export=NAME">Export the contents of the current cache to the text file NAME (*.dat). Filenames including whitespaces must be surrounded woth quotatin marks. (A TeX source file will be created, if the file extension *.tex is used, a CSV file will be created, if the extension is *.csv and a Excel(R) Workbook is created, if the extension is *.xls)</item>
+		<item node="-sort[...]">Sort the data in the current cache columnwise. The call without any options sorts the whole cache ascending. To reverse the direction, pass the parameter according <code>-sort=desc</code>. Single columns can be sorted with the option <code>cols=COLUMNS[COLUMNGROUP]</code>with the format <code>COLUMN1:COLUMN2</code>, wherein only the columns will be sorted. The columns belonging to the columngroup will be sorted according the new order of the prefixed column. This can be used, if there exists a relation between the columns (e.g. <expr>x-y</expr> value pairs)</item>
+		<item node="-MAF">Applies the multi argument function MAF to all elements and returns the result. Multi argument functions are <code>avg</code>, <code>std</code>, <code>sum</code>, <code>prd</code>, <code>med</code>, <code>min</code>, <code>max</code>, <code>num</code>, <code>cnt</code> and <code>norm</code>. The evaluation can be restricted to line- or columnwise execution with the additional parameters <code>-lines</code> and <code>-cols</code>; using <code>-grid</code> will force NumeRe to interpret the cache as a data grid and only apply the evaluation to the corresponding <expr>z</expr> values of the data grid
+	</list>
+	A special command is <code>delete CACHE(i1:i2,j1:j2)</code>. This will unrecoverably delete all elements in the ranges lines <expr>i1</expr> to <expr>i2</expr> and columns <expr>j1</expr> to <expr>j2</expr>. Of course only a single element can be chosen as well.
+	Custom created caches can be removed with the command <code>remove</code>:<codeblock>remove CACHE1(), CACHE2(), ...</codeblock>
+	You may append <code>-ignore</code> to the commands <code>clear</code> or <code>delete</code> to suppress the required confirmation.
+	<example desc="Show the data stored in cache and sorting the columns 3-6 according column 1 afterwards:">
+		cache -show
+		[...]
+		cache -sort cols=1[3:6]
+	</example>
+	<em>See also</em> "help new", "help remove", "help datagrid", "help save", "help string" and "help delete"
+</article>

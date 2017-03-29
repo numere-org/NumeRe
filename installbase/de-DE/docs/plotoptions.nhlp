@@ -1,0 +1,90 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="plotoptions">
+	<title string="Optionen für Plots" />
+	Durch Anhängen des Parameters <code>-set</code> und darauffolgende Optionen kann die Darstellung des Plots entscheidend angepasst werden. Die Optionen sind dabei die folgenden:
+	<list>
+		<item node="[x1:x2,y1:y2]">Darstellungsintervall einstellen. Dabei kann auch nur das <expr>x</expr>-Intervall angegeben werden. Das <expr>y</expr>-Intervall wird passend berechnet. Wenn kein Intervall angegeben wird, werden Standardwerte oder die Datenbereiche der Datensätze verwendet</item>
+		<item node="addxaxis=AXIS/<br>  addyaxis=AXIS">Ergänzt eine zusätzliche Achse für die <expr>x</expr>- bzw. <expr>y</expr>-Achse. Dies erfordert eine umfassende Box mittels <code>box</code>. Die gewünschte Achse wird mittels AXIS in der Form <code>(MIN,MAX[,LABEL[,COLOR]])</code> oder <code>(LABEL[,COLOR])</code>, wenn nur Beschriftung und Farbe geändert werden soll, wobei LABEL und COLOR Zeichenketten sein müssen und optionale Werte sind, angegeben. Kann nur bei <code>plot</code> verwendet werden.</item>
+		<item node="animate/<br>  noanimate">Aktiviert die Erzeugung einer GIF-Animation, wobei <expr>t</expr> als Zeitparameter verwendet wird. Die Ausgabe erfolgt stets als GIF; falsch eingegebene Dateinamen werden ggf. automatisch geändert. Mit <code>animate=FRAMES</code> kann die Zahl der berechneten Frames bestimmt werden. Standardmäßig werden 50 verwendet</item>
+		<item node="area/noarea">Den Bereich zwischen der Kurve und der <expr>x</expr>-Achse bzw. der <expr>x-y</expr>-Ebene farblich ausfüllen. Es wird automatisch ein Farbverlauf angewendet.</item>
+		<item node="aspect=WERT">Das Verhältnis von Breite zu Höhe des Plots einstellen. Werte kleiner 1 ergeben hochformatige, Werte größer 1 querformatige Plots	</item>
+		<item node="axis/noaxis">Achsen ein-/ausschalten</item>
+		<item node="axisbind=AXIS">Funktionen und Datensätze mit Achsen verknüpfen. Die Achsen sind durch die Zeichen <code>lbrt</code> repräsentiert. Jedes Plotobjekt ist jeweils einer horizontalen (<code>tb</code>) und einer vertikalen Achse (<code>lr</code>) zugeordnet. Es muss <em>mindestens</em> ein Objekt an die linke und eines an die untere Achse zugewiesen werden. Benötigt <code>box</code> und kann nur bei <code>plot</code> verwendet werden. Die Farbe und Beschriftungen der zusätzlichen Achsen können mit <code>add*axis</code> beeinflusst werden.</item>
+		<item node="background=BG/<br>  nobackground">Die PNG-Datei BG als Hintergrund für einen Plot laden. Die PNG-Datei wird entsprechend des Achsenverhältnisses skaliert</item>
+		<item node="bars/nobars">Vertikale Balken statt Punkte bei Datenplots anzeigen. Erfordert äquidistant verteilte <expr>x</expr>-Werte zur korrekten Darstellung. Mit <code>bars=BREITE</code> kann die prozentuale Breite der Balken bestimmt werden; standardmäßig werden 90% verwendet</item>
+		<item node="bgcolorscheme=SCHEMA">Das Farbschema SCHEMA für den Hintergrund wählen. Einige vordefinierte Schemata sind <code>real</code>, <code>rainbow</code>, <code>viridis</code>, <code>grey</code>, <code>hot</code>, <code>cold</code> und <code>map</code>. Siehe "help colorscheme" für weitere Schemata</item>
+		<item node="box/nobox">Umfassende Box ein-/ausschalten (beeinflusst die Darstellung der Achsen)</item>
+		<item node="boxplot/<br>  noboxplot">Boxplot-Modus (de-)aktivieren (Minimum, Maximum &amp; Quartile). Jede Datenreihe (es werden nur <expr>y</expr>-Werte verwendet) erzeugt einen einzelnen Boxplot-Marker im endgültigen Plot.</item>
+		<item node="connect/<br>  noconnect">Verbindungen zwischen Datenpunkten ein-/ausschalten</item>
+		<item node="coords=KOORDINATEN">Den Koordinatensatz KOORDINATEN auswählen. Zur Verfügung stehen <code>cartesian</code> (kartesisch), <code>polar</code> (polar/zylindrisch) und <code>spherical</code> (sphärisch). Je nach gewähltem Plotstil sind die Koordinatenzuordnungen unterschiedlich. Siehe "help coords" für weitere Details.</item>
+		<item node="crust/nocrust">Rekonstruiert eine 2D-Oberfläche aus beliebig verteilten <expr>x-y-z</expr>-Punkten. Es wird das aktuelle Farbschema verwendet</item>
+		<item node="errorbars/<br>  noerrorbars">Fehlerbalken in <expr>x</expr>- und <expr>y</expr>-Richtung anzeigen/deaktivieren. Benötigt 4 Spalten: <expr>x, y, delta_x, delta_y</expr></item>
+		<item node="font=SCHRIFTART">Verwendet die Schriftart SCHRIFTART für die Beschriftungen der folgenden Plots. Standardmäßig wird <code>pagella</code> geladen; zur Wahl stehen außerdem <code>termes</code>, <code>cursor</code>, <code>adventor</code>, <code>bonum</code>, <code>heros</code>, <code>heroscn</code>, <code>chorus</code> &amp; <code>schola</code></item>
+		<item node="grid=TYP/nogrid">Gitter des Typs TYP ein-/ausschalten. Es steht entweder <code>coarse</code> für ein grobes und <code>fine</code> für ein feines Gitter zur Verfügung</item>
+		<item node="gridstyle=STYLE">Den Stil des Gitters ändern: die ersten drei Zeichen beeinflussen Stil, Farbe und Dicke des Standardgitters, die zweiten drei Zeichen stehen für die durchgezogenen Linien des feinen Gitters sowie das Gitter der Vektorplots</item>
+		<item node="hbars/nohbars">Horizontale Balken statt Punkte bei Datenplots anzeigen. Erfordert äquidistant verteilte <expr>y</expr>-Werte zur korrekten Darstellung. Mit <code>hbars=BREITE</code> kann die prozentuale Breite der Balken bestimmt werden; standardmäßig werden 90% verwendet</item>
+		<item node="hires/nohires">Ausgabe in hoher Auflösung/Qualität erzeugen. Mit der Einstellung <code>hires=all</code> wird die hohe Auflösung für diese NumeRe-Sitzung dauerhaft aktiviert. <code>hires=medium</code> aktiviert eine mittlere Auflösung für den aktuellen Plot und <code>hires=allmedium</code> aktiviert die mittlere Auflösung für die gesamte NumeRe-Sitzung</item>
+		<item node="hline=(POS,KOMNTR)">Zeichnet eine horizontale Linie durch den <expr>y</expr>-Wert POS und versieht selbige mit dem KOMNTR. Durch einen KOMNTR in der Form TEXT,STYLE kann die Darstellung der Linie beeinflusst werden</item>
+		<item node="interpolate/<br>  nointerplate">Datensätze mit genügend Punkten (mindestens so viele wie der Wert von <code>samples</code>) als Funktionswerte interpretieren und verbinden</item>
+		<item node="lborder=(POS,KOMNTR)">Zeichnet eine vertikale Linie durch den <expr>x</expr>-Wert POS und versieht selbige mit dem KOMNTR. Durch einen KOMNTR in der Form TEXT,STYLE kann die Darstellung der Linie beeinflusst werden</item>
+		<item node="legend=POS">Position der Legende bei <code>plot</code>, <code>hist</code> und Spezialfällen von <code>plot3d</code> festlegen. POS kann <code>topleft</code>, <code>topright</code>, <code>bottomleft</code>, <code>bottomright</code> sein</item>
+		<item node="legendstyle=STYLE">Legendensymbole bei <code>plot</code> und <code>plot3d</code> beeinflussen: <code>onlycolors</code> zeigt nur die Farben, <code>onlystyles</code> nur die Styles der Kurven/Punkte</item>
+		<item node="linesizes=SIZES">Die Liniendicke in Plots ändern. Jede Ziffer in SIZES steht für einen Plot und kann alle Werte zwischen 0 und 9 umfassen.</item>
+		<item node="linestyles=STYLE">Den Linienstil in Plots ändern. Siehe "help linestyles" für weitere Details.</item>
+		<item node="logscale/<br>  nologscale">Logarithmische Skalierung aller Achsen ein-/ausschalten</item>
+		<item node="marks=WERT/<br>  nomarks">(Nur bei <code>plot3d</code>) Zeichnet Kreise der Größe WERT an den <expr>x-y-(z-)</expr>Koordinaten, wobei die Kreise gemäß des <expr>z</expr>-Werts und des Farbschemas gefüllt sind</item>
+		<item node="maxline=KOMNTR">Zeichnet eine horizontale Linie durch den maximalen Funktionswert eines Plots und versieht selbige mit dem KOMNTR. In der Form <code>maxline=(TEXT,STYLE)</code> kann die Darstellung der Linie beeinflusst werden</item>
+		<item node="minline=KOMNTR">Zeichnet eine horizontale Linie durch den minimalen Funktionswert eines Plots und versieht selbige mit dem KOMNTR. In der Form <code>maxline=(TEXT,STYLE)</code> kann die Darstellung der Linie beeinflusst werden</item>
+		<item node="open/noopen">Erzeugte Graphik in einem externen Viewer (sofern vorhanden) anzeigen/nicht anzeigen</item>
+		<item node="oeps=NAME">Erzeugt anstatt einer PNG-Datei eine EPS-Datei unter NAME</item>
+		<item node="opng=NAME">Dateiname der erzeugten PNG-Datei auf NAME setzen. Vorhandene Dateien werden überschrieben! Lange Dateinamen (mit Leerzeichen) können mit umschließenden Anführungszeichen angegeben werden</item>
+		<item node="origin=URSPRUNG">Den Koordinatenursprung beeinflussen: <code>origin=std</code> ist das Standardverhalten, mit <code>origin=sliding</code> gehen die Achsen durch mindestens eine 0, falls vorhanden, und mit <code>origin=X,Y,Z</code> (wobei Werte für X,Y,Z nötig sind) kann der Ursprung auf eine beliebige Position verschoben werden (falls dieser nicht Teil des Plots ist, wird das Verhalten von <code>origin=sliding</code> angewendet).</item>
+		<item node="osvg=NAME">Wie <code>oeps</code>, allerdings wird eine SVG-Datei erzeugt</item>
+		<item node="otex=NAME">Wie <code>oeps</code>, allerdings wird eine TeX-Datei (mithilfe von TikZ) erzeugt</item>
+		<item node="perspective=WERT">Perspektivische Ansicht aktivieren. Der Wert WERT darf im Interall [0,1) liegen und beschreibt die Stärke der Perspektive</item>
+		<item node="plotcolors=FARBEN">Die FARBEN der Linien in gewöhnlichen Plots und 3D-Trajektorien einstellen. Siehe "help plotcolors" für weitere Details</item>
+		<item node="pointstyles=STYLE">Das Erscheinungsbild der Punkte in Plots einstellen. Siehe "help pointstyles" für weitere Details</item>
+		<item node="points/nopoints">Berechnete Stützstellen der Funktionen ein-/ausschalten</item>
+		<item node="rborder=(POS,KOMNTR)">Zeichnet eine vertikale Linie durch den <expr>x</expr>-Wert POS und versieht selbige mit dem KOMNTR. Durch einen KOMNTR in der Form TEXT,STYLE kann die Darstellung der Linie beeinflusst werden</item>
+		<item node="region/noregion">Füllt den Raum zwischen zwei Kurven mit den interpolierten Farben der beiden Kurven. Wenn nur eine Kurve (oder eine ungerade Zahl an Kurven) angegeben wird, wird <code>area</code> verwendet. Verfügbar bei <code>plot</code> und <code>plot3d</code></item>
+		<item node="reset">Alle Einstellungen auf Ursprungswerte zurücksetzen. Diese Option wird stets als erstes ausgewertet; kann also auch in Kombination mit anderen Optionen verwendet werden</item>
+		<item node="samples=WERT">Zahl der zur Darstellung berechneten Punkte auf WERT setzen</item>
+		<item node="schematic/<br>  noschematic">Einen schematischen Plot erzeugen. Deaktiviert sämtliche Basisinformationen wie Achsenbeschriftung, Skalenwerte und Legende. Wenn jedoch eine Achsenbeschriftung durch <code>xlabel</code>, <code>ylabel</code> oder <code>zlabel</code> gewünscht wird, werden alle Achsenbeschriftungen automatisch wieder eingeblendet</item>
+		<item node="silent/nosilent">Unterdrückt/aktiviert sämtliche Bildschirmausgaben. Das evtl. Öffnen des Plots in einem externen Programm wird damit ebenfalls verhindert</item>
+		<item node="steps/nosteps">Zeigt verbundene Stufen statt Datenpunkte an</item>
+		<item node="styles=STYLES">Farbe, Liniendicke und -typ, sowie Punkttypen in der Zeichenkette STYLES angeben. Für jede Kurve müssen 4 Zeichen übergeben werden (oder entsprechend Leerzeichen). Wird <code>#</code> in den 4 Zeichen gefunden, werden 5 verwendet.</item>
+		<item node="textsize=GRÖSSE">Die Textgröße des gesamten Plots auf GRÖSSE setzen. Abstufungen (1-9) haben einen linearen Effekt auf die Größe. 5 ist der Standardwert, der für Plots verwendet wird.</item>
+		<item node="title=TITEL">Den optionalen Titel TITEL über dem Graphen anzeigen. Lange Titel (mit Leerzeichen) müssen mit umschließenden Anführungszeichen angegeben werden.</item>
+		<item node="vline=(POS,KOMNTR)">Zeichnet eine vertikale Linie durch den <expr>x</expr>-Wert POS und versieht selbige mit dem KOMNTR. Durch einen KOMNTR in der Form TEXT,STYLE kann die Darstellung der Linie beeinflusst werden</item>
+		<item node="*label=LABEL">Das Label der *-Achse auf LABEL setzen. Lange Labels (mit Leerzeichen) können mit umschließenden Anführungszeichen angegeben werden</item>
+		<item node="*log/no*log">*-Achse logarithmisch skalieren</item>
+		<item node="*scale=WERT">*-Achsenskalierungsfaktor WERT festlegen</item>
+		<item node="*ticklabels=LABELS">Selbstdefinierte *-Achsenskalierung festlegen. Die Skaleneinheiten werden äquidistant verteilt. Die LABELS sind als Zeichenkette anzugeben, wobei die Skalenwerte durch "\\n" voneinander getrennt sein müssen.</item>
+		<item node="*ticks=FORMAT">Die Formatierung der *-Skalenbeschriftung auf FORMAT setzen. Siehe auch "help ticks"</item>
+		<item node="xerrorbars/<br>  noxerrorbars">Fehlerbalken in <expr>x</expr>-Richtung anzeigen/deaktivieren. Benötigt 3 Spalten: <expr>x, y, delta_x</expr></item>
+		<item node="yerrorbars/<br>  noyerrorbars">Fehlerbalken in <expr>y</expr>-Richtung anzeigen/deaktivieren. Benötigt 3 Spalten: <expr>x, y, delta_y</expr></item>
+	</list>
+	("*" steht für <expr>x, y &amp; z</expr>)
+	STYLE ist eine Zeichenkette, die je nach Option nur Farben, nur Liniendicke, nur Linien-/Punkttypen oder alle drei Informationen enthalten kann. Die Styleinformationen sind jeweils einzelne Zeichen, die in "help colors" und "help linestyles" erläutert werden. Die Liniendicke ist eine Ziffer von 0 bis 9.
+	<em>Wichtig:</em> Auf Leerzeichen sollte weitestgehend verzichtet werden, da sie zum Separieren der Optionen verwendet werden. Sollten sie bei <code>title=</code>, <code>*label=</code> oder dem Dateinamen nötig sein, muss das gesamte Argument in Anführungszeichen gesetzt werden.
+	Optionen, die einmal gesetzt wurden, werden für die weitere Verwendung gespeichert und (so lange sie nicht widerrufen werden) bei allen weiteren Plots automatisch verwendet. Ausnahmen sind hierbei hohe Auflösung, Dateinamen, Titel, Plotintervalle, Linienfarben und Achsenbeschriftungen.
+	<em>Tipp:</em> Optionen, die von Plot zu Plot gespeichert werden, können auch durch die Syntax <code>plot -set OPTIONEN</code> (ohne eine zu plottende Funktion) außerhalb eines Plots gesetzt werden.
+	<em>Siehe auch:</em> "help plot", "help colors" und "help linestyles"
+</article>

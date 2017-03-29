@@ -1,0 +1,30 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="debugger">
+	<title string="Debugger" />
+	NumeRe ist mit einer unterstützenden Funktion zur Fehlersuche in Prozeduren und Plugins ausgestattet: der NumeRe-Debugger. Diese Funktion, die mittels <code>set -mode=debug</code> oder im entsprechenden Menüpunkt oder mittels Strg-Shift-D aktiviert wird, liefert zusätzliche Informationen, wenn eine Prozedur oder ein Plugin durch einen unerwarteten Fehler abbricht.
+	Der NumeRe-Debugger berichtet dabei aus drei Kategorien:
+	<list>
+		<item node="Modulinformationen">Liefert Informationen zum fehlerhaften Ausdruck, zum fehlerhaften Modul (bzw. Datei) und zur Zeilennummer, in welcher der Fehler aufgetreten ist. Die Zeilennummer kann dabei (speziell in Schleifen) auch um ein paar wenige Zeilen daneben liegen, wenn viele Schleifen ineinander verschachtelt oder Zeilen auskommentiert wurden.</item>
+		<item node="Stacktrace">Die Stacktrace ist eine Auflistung der aufgerufenen Prozeduren bis zum Fehler. Der Stack wird während des Prozedurablaufes von unten nach oben aufgebaut. Verlässt NumeRe eine Prozedur, so wird diese auch vom Stack entfernt. Mittels der Stacktrace kann der Programmablauf rekonstruiert werden. Die übergebenen Werte werden dabei mitprotokolliert.</item>
+		<item node="lokale Variablen">Dieser Abschnitt liefert die aktuellen lokalen Variablen (numerische und Zeichenketten) zusammen mit ihren Werten, die zum Zeitpunkt des Fehlers definiert waren.</item>
+	</list>
+	Zusätzlich zum Abbruch aufgrund eines Fehlers können auch sogenannte "Breakpoints" gesetzt werden, die die Auswertung unter- aber nicht abbrechen. Ein solcher Breakpoint wird entweder temporär durch die entsprechende Funktion im Editor oder dauerhaft durch die Zeichen <code>|&gt;</code> am Anfang einer Zeile gesetzt. NumeRe wird die Auswertung unterbrechen, <em>bevor</em> die aktuelle Zeile ausgewertet wird und die Werte der lokalen Variablen zeigen. Durch ein Betätigen der <code>ENTER</code>-Taste wird die Auswertung anschließend fortgesetzt.
+	<em>Wichtig:</em> NumeRe wird die Zeichen <code>|&gt;</code> am Anfang der Zeile selbstverständlich ignorieren, wenn der NumeRe-Debugger nicht aktiviert wurde.
+</article>

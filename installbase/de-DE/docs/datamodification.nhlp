@@ -1,0 +1,27 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="datamodification">
+	<title string="Modifikation von Datensätzen" />
+	NumeRe kann die Daten aus ein oder mehreren Datenreihen zur einfacheren Analyse modifizieren. Hierzu stehen die Kommandos <code>smooth</code>, <code>resample</code> und <code>retoque</code> zur Verfügung. <code>smooth</code> glättet die Datensätze, um etwaiges Rauschen zu reduzieren, <code>resample</code> erhöht oder verringert die Anzahl an Datenpunkten, wobei ein Lanczos-Filter angewandt wird, und <code>retoque</code> entfernt ungültige Werte aus Datensätzen durch lineare Interpolation. Diese Kommandos können nur auf Datensätze in einem Cache angewendet werden.
+	Das Kommando <code>smooth</code> benötigt den Datenbereich, auf den es angewendet werden soll, sowie die Ordnung der Linearisierung, die verwendet werden soll:<codeblock>smooth CACHE(I1:I2, J1:J2) -order=ORDNUNG</codeblock>Im Allgemeinen bieten sich die Ordnungen zwischen 1 und 4 an, wenn wirklich nur Rauschen entfernt werden soll. Ordnungen darüber können (je nach Datensatz) auch wichtige Teile des Datensatzes entfernen. Als Test bietet sich an, die geglätten Daten von den verrauschten abzuziehen und das Ergebnis zu plotten. Wenn dieses Ergebnis ein reines, gleichförmiges Rauschspektrum zeigt, wurde wirklich weitestgehend nur das Rauschen verringert.
+	<code>resample</code> benötigt ebenso einen Datenbereich, auf den dieses Kommando angewendet werden soll, sowie die neue Zahl der Stützstellen/Datenpunkte, die verwendet werden sollen:<codeblock>resample CACHE(I1:I2, J1:J2) -samples=STÜTZSTELLEN</codeblock>Wenn die neue Zahl der Stützstellen größer als die bisherige ist, geht beim Resampeln keine Information verloren. Wenn sie jedoch kleiner ist, müssen die Werte der neuen Stützstellen aus den bisherigen interpoliert werden, wobei es zwangsläufig zu Informationsverlust kommt.
+	<code>retoque</code> muss bloß der Datensatz, welcher retuschiert werden soll, vorgegeben werden:<codeblock>retoque CACHE(I1:I2,J1:J2)</codeblock>
+	<em>Wichtig:</em> Standardmäßig wendet NumeRe diese drei Kommandos auf einen 2D-Datensatz an, sofern dies Sinn macht. Um dieses Verhalten auf spalten- oder zeilenweise Anwendung umzuschalten, muss der entsprechende zusätzliche Parameter <code>cols</code> bzw. <code>lines</code> an das gewünschte Kommando angehängt werden. Um eines dieser Kommandos direkt auf ein Datengitter anzuwenden, kann der Parameter <code>grid</code> verwendet werden. Die Reihenfolge der <expr>x</expr>- oder <expr>y</expr>-Punkte wird dabei jedoch nicht beachtet (NumeRe geht davon aus, dass die <expr>x-y</expr>-Werte bereits geordnet sind). Im Falle zweidimensionaler Glättung wird NumeRe zuvor intern <code>retoque</code> aufrufen, um die nicht interpolierbaren und ungültigen Datenpunkte zu entfernen.
+	<em>Siehe auch:</em> "help plot" und "help cache"
+</article>

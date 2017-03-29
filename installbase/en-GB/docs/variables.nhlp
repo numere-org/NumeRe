@@ -1,0 +1,31 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="variables">
+	<title string="Variables" />
+	Variables are one of the core functionalities of NumeRe. They may store values, which may be easily used at a later point. Their names may be composed out of an arbitrary combination of numbers, letters and underscores, as long as they do not start with a number. They may even carry the same name as a function, because functions are identified by their parentheses:<codeblock>Variable "func"  vs.  function "func()"</codeblock>
+	Variables will be declared, if their desired name is entered directly. Optionally, values may be assigned to these variables during initialization in the form<codeblock>VARIABLE = VALUE</codeblock> Otherwise they will be initialized with the value of 0.
+	In the case that an unknown variable is used in an expression, it will be initialized with the value of 0.
+	There is a special variable called <expr>ans</expr>, which automatically stores the last calculated result. In addition, the four standard variables <expr>x, y, z</expr> and <expr>t</expr> are predefined and known from start-up.
+	Data objects are another variable type in NumeRe. These data objects use a similar signature as functions, but they are capable of using the interval operator <code>A:B</code>. As default, loaded data is found inside of the data object <code>data()</code> (a read-only data object). Another data object is <code>cache()</code>, which is a cache and therefore an interactive data object.
+	<example desc="Declaring of the variable x with value 1:">
+		x = 1
+		ans = 1
+	</example>
+	<em>See also:</em> "help data" and "help cache"
+</article>

@@ -1,0 +1,30 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="find">
+	<title string="Keyword search" />
+	The command <code>find</code> grants the possibility, to search for a function or another command inside of this program, if the corresponding keywords are passed to this command. The command <code>search</code> is a synonym to this command.
+	If a whole expression with whitespaces shall be used as <em>single</em> keyword, then it has to be passed surrounded by quotation marks.
+	NumeRe sorts the obtained results corresponding to their relevance to the passed keyword. This is calculated out of the number of keywords matching to the result and with an interal weighting, which determines, how well the single keywords match to the results.
+	<example desc="Search for the keywords 'cos hyp cosh':" type="verbatim">
+		|&lt;- find cos hyp cosh
+		[...]
+		|-&gt; [100%]   acosh(x) -- [...]
+		[...]
+	</example>
+</article>

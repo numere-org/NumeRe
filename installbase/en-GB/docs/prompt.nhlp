@@ -1,0 +1,29 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="prompt">
+	<title string="Prompt for input" />
+	Using the syntax <code>??</code> you mark a position inside of an expression, at which NumeRe will expect an input. With this possibility the input of a variable or a parameter may be shifted to a later time point. This is of special interest in the context of loops, forks and procedures.
+	If <code>[DEFAULT]</code> was appended to <code>??</code>, where DEFAULT may be a value or a whole expression, the input prompt gets an default value, which will be used, if the user doesn't pass an input.
+	<example desc="Assignement of a variable value with the default value of 0.0:" type="verbatim">
+		|&lt;- x = ??[0.0]
+		|-??&gt; x = 
+		|-&gt; ans = 0
+	</example>
+	<em>See also:</em> "help for", "help while", "help if" and "help procedure"
+</article>

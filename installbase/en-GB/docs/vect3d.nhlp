@@ -1,0 +1,29 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="vect3d">
+	<title string="3D vector field plots" />
+	The command <code>vect3d</code> allows the visualization of a three dimensional vector field <expr>A(x,y,z) := Ax(x,y,z)ex + Ay(x,y,z)ey + Az(x,y,z)ez</expr> in all three spatial directions. As in the two dimensional variant <code>vect</code> only one vector field can be shown in a plot.
+	The vector field <expr>A(x,y,z)</expr> has to be passed in the form <code>Ax(x,y,z), Ay(x,y,z), Az(x,y,z)</code>, where <expr>Ax, Ay</expr> and <expr>Az</expr> are functions of all three spatial directions.
+	<code>vect3d</code> knows three options: <code>flength</code>, <code>flow</code> and <code>pipe</code>. Their effects are similar to the two dimensional case and they are described in the corresponding documentation article (see "help vect"). In addition, <code>vect3d</code> will reduce the number of calculated samples to an even number.
+	The colorscheme used for vector plots is identical to the one used for two and three dimensional plots. You may modify this colorscheme with the option <code>colorscheme=COLORSCHEME</code>.
+	<example desc="Vector field of a dipole aligned to the z axis using the NumeRe vector syntax:">
+		vect3d {x,y,z-2}/norm(x,y,z-2)^3 - {x,y,z+2}/norm(x,y,z+2)^3
+	</example>
+	<em>See also:</em> "help vect", "help colorscheme", "help multiresult" and "help plot"
+</article>

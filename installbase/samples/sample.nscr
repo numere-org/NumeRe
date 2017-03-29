@@ -1,0 +1,103 @@
+#*  _____    __                            ______        
+ * |     \  |  |  __ __   _______   ____  |  __  \  ____ 
+ * |  |\  \ |  | |  |  | |       \ / __ \ |   ___/ / __ \
+ * |  | \  \|  | |  |  | |  Y Y  | | ___/ |     \  | ___/
+ * |__|  \_____| |____/  |__|_|__| \____) |__|\__\ \____)
+ * ~ ~ ~ ~  Framework fuer Numerische Rechnungen  ~ ~ ~ ~
+ * ======================================================
+ * | ++ (c) 2014, E. Haenel et al. +++ GNU GPL v 3.0 ++ |
+ * ======================================================
+ *
+ *******************************************************************************
+ * Dieses Script ist freie Software. Sie können es unter den Bedingungen       *
+ * der GNU General Public License, wie von der Free Software Foundation        *
+ * veröffentlicht, weitergeben und/oder modifizieren, entweder gemäß Version 3 *
+ * der Lizenz, oder (nach Ihrer Option) jeder späteren Version.                *
+ * Die Veröffentlichung dieses Scripts erfolgt in der Hoffnung, dass es        *
+ * Ihnen von Nutzen sein wird, aber OHNE IRGENDEINE GARANTIE, sogar ohne die   *
+ * implizite Garantie der MARKTREIFE oder der VERWENDBARKEIT FÜR EINEN         *
+ * BESTIMMTEN ZWECK. Details stehen in der GNU General Public Licence          *
+ * Sie sollten ein Exemplar der GNU GPL zusammen mit diesem Script erhalten    *
+ * haben. Falls nicht, siehe <http://www.gnu.org/licenses/>.                   *
+ *******************************************************************************
+ *
+ * Dies ist ein Beispielscript fuer NumeRe ab Version v 0.9.5
+ * Geschrieben am 2014-01-16
+ * Dieses Script kann in Numere durch das Kommando 'script -start=samples/sample'
+ * aufgerufen werden.
+ * In diesem Script wird die Flaeche eines Kreises mit zwei verschiedenen Integrationen
+ * berechnet. Die dazu noetigen Funktionen werden zuvor definiert.
+ *
+ * Fuer notepad++ existiert eine Syntax-Highlighting (numere_synt_highlight.xml) 
+ * fuer NumeRe-Scripte mit der Dateiendung '*.nscr'
+ *
+ * (Alles, was hinter '##' geschrieben wird, ist ein Kommentar und wird bei der Auswertung
+ * ignoriert)
+ *#
+ 
+## Alles was zwischen #*...*# steht, ist ein Blockkommentar und wird ebenfalls ignoriert
+
+## Der Parameter "-noquotes" unterdrueckt die Anfuehrungszeichen in der Ausgabe:
+"Willkommen bei diesem 1. Beispielscript\n------------------------------------------------------\n(Funktionsdefinitionen, Integrieren & Textformatieren)\n" -noquotes
+#* 
+ * Definieren der Funktionen: mit ifndefined sorgen wir dafuer, dass dieses Script
+ * auch mehrmals aufgerufen werden kann, da vor dem Versuch einer Definition geprueft
+ * wird, ob die zu definierende Funktion nicht bereits definiert ist. Allerdings verhindert
+ * dies auch, dass dieses Script korrekt durchlaeuft, wenn die Funktionen bereits anders
+ * als von diesem Script versucht definiert waren. Wer sicher gehen moechte, der ersetze
+ * "ifndefined" mit "redefine".
+ *
+ * "kreis" ist eine Funktion fuer eine 2D-, "root" fuer eine 1D-Integration eines Einheitskreises
+ *#
+ifndefined kreis(x,y) := x -set comment="2D-Jacobian für Polarkoordinaten"
+ifndefined root(x) := 4*sqrt(1-x^2) -set comment="Einheitskreisbedingung: x^2+y^2=1"
+
+#*
+ * Anpassen der Praezision, damit die leichten Differenzen in der Genauigkeit ueberhaupt
+ * erkennbar werden:
+ *#
+set -precision=14
+
+#*
+ * Deklarieren von Speichervariablen: Diese koennen genauso heissen, wie die zugehoerigen, zu integrierenden 
+ * Funktionen, da Funktionen stets durch ihren Namen und ihre Argumentliste identifiziert werden. Das abschliessende
+ * Semikolon unterdrueckt die Ausgabe der ans-Zeile in NumeRe. (Die Bedeutung der Syntax '#1' wird im dritten Schritt
+ * erklaert)
+ *#
+kreis, root;
+
+"Schritt " + #1 + ":\nBerechnen der 1D-Integration von root(x):\n-----------------------------------------" -noquotes
+#*
+ * Integration der root-Funktion (es spielt keine Rolle, ob Zehnerpotenzen mit einem grossen
+ * oder einem kleinen 'E' eingegeben werden). Wir speichern das Ergebnis (welches automatisch 
+ * in die Variable 'ans' gespeichert wurde), in die Variable 'root', um es spaeter weiterverwenden
+ * zu koennen
+ *#
+root = integrate root(x) -set x=0:1 precision=1E-7;
+
+"Schritt " + #2 + ":\nBerechnen der 2D-Integration von kreis(x,y):\n--------------------------------------------" -noquotes
+#*
+ * 2D-Integration der kreis-Funktion: Es faellt vermutlich auf, dass diese Funktion gerade der 
+ * Jacobian fuer Polarkoordinaten ist, wenn x = r und y = phi ist. _2pi ist eine vordefinierte Konstante
+ * fuer 2*pi. Generell beginnen alle Konstanten in NumeRe mit einem vorangestellten Unterstrich '_' (und
+ * der gesamte Satz an Konstanten kann im Programm durch 'list -const' abgerufen werden)
+ *#
+kreis = integrate kreis(x,y) -set x=0:1 y=0:_2pi precision=1E-6;
+
+## Prozentuale Abweichungen ausrechnen: Die Flaeche des Einheitskreises ist natuerlich genau _pi!
+abw_k = abs(kreis - _pi) / _pi * 100, abw_r = abs(root - _pi) / _pi * 100;
+
+#*
+ * Hier sollen einmal die Text-Formatierungsfaehigkeiten von NumeRe dargestellt werden: '\n' erzeugt
+ * einen Zeilenumbruch, '\t' einen horizontalen Tabulator und '#variable' wandelt den Wert der Variablen
+ * 'variable' in eine Zeichenkette um
+ *#
+"Schritt " + #3 + ":\nVergleichen mit dem tatsächlichen Wert von PI:\n----------------------------------------------\nroot = " + #root + "\t\t\tkreis = " + #kreis, "\n", "abw_r = " + #abw_r + " %" + "\tabw_k = " + #abw_k  + " %", "\n" -noquotes
+
+#*
+ * Zuruecksetzen der Praezision auf den Default (das ist natuerlich nicht zwingend
+ * noetig und kann auch auf 14 belassen werden. NumeRe speichert dies zum Programmende
+ * und wird beim naechsten Start dann mit der hoeheren Praezision starten):
+ *#
+set -precision=7
+"Ende des Beispielscripts" -noquotes

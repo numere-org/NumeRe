@@ -1,0 +1,47 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="histogramm">
+	<title string="Histograms" />
+	The command <code>hist</code> creates the data set for visualizing a histogram out of a passed data row. Either the width or the number of bins may be set. If neither was set, NumeRe will automatically determine them according to the <em>Sturges-Rule</em>. The new created table may be saved afterwards.
+	During evaluation NumeRe creates the graphical visualisation of the histogram data set itself. Options, which shall be used for this histogram, have to be set in advance using <code>plot -set OPTIONS</code>.
+	<code>hist</code> may create multiple histograms for more than one data row at once, but the bins are in this case identical for all data rows and the results will be written to one table with multiple columns. The graphical representation will include all histograms and will be written to a PNG bitmap file.
+	This command needs of course data rows, which were loaded in advance, or data rows, which are available in a cache. These may be passed in the following way:<codeblock>hist DATAOBJECT(I1:I2,J1:J2) -set OPTIONS</codeblock>
+	For data sets, which describe <expr>(x,y,z)</expr> data points (e.g, vector tuples or data grids), the variant <code>hist2d</code> may be used. For vector tuples a prevalence analysis in <expr>x</expr> and <expr>y</expr> direction will be done; in the case of data grids, they will be summed up in <expr>x</expr> and <expr>y</expr> direction, because data grids cannot contain prevalences in these directions. Both cases will be displayed together with their <expr>(x,y,z)</expr> data points. A single histogram of their <expr>z</expr> values may be created by invoking <code>hist ... -set grid</code>.
+	The desired options may be directly passed to the command <code>hist</code>:
+	<list>
+		<item node="export=FILENAME">The desired output filename of the created histogram. Filenames containing whitespaces must be surrunded with quotation marks. (Using the file extension *.tex this option will create a TeX file.) If no filename was passed (but <code>export</code> was passed), NumeRe will generate a fitting filename</item>
+		<item node="tocache">Writes a copy of the result table to the cache. The cache may be specified with <code>tocache=CACHENAME</code> and it will be generated, if it doesn't exist.</item>
+		<item node="bins=BINS">Specify the number of bins</item>
+		<item node="width=INTERVALWIDTH">Specify the width of the bins. <em>Careful:</em> if the number of bins is already specified, this value won't be considered.</item>
+		<item node="x=XMIN:XMAX">Restrict the <expr>x</expr> axis to [XMIN,XMAX]</item>
+		<item node="y=YMIN:YMAX">Restrict the <expr>y</expr> axis for the summation in <expr>x</expr> direction for <code>hist2d</code> to [YMIN,YMAX]</item>
+		<item node="z=ZMIN:ZMAX">Restrict the <expr>z</expr> axis in the case of <code>grid</code> to [ZMIN,ZMAX]. In this case the <expr>x</expr> and <expr>y</expr> intervals restrict only the relevant part of the data grid.</item>
+		<item node="binlabel=LABEL">Set the axis label for the category axis (<expr>x</expr> axis)</item>
+		<item node="countlabel=LABEL">Set the axis label for the prevalence axis (<expr>y</expr> axis)</item>
+		<item node="silent">Supresses all displayed messages</item>
+		<item node="sum">Activates the summation of the <expr>z</expr> values in the case of vector tuples</item>
+		<item node="grid">Interpretes the passed data set as data grid and determines in combination with <code>hist</code> a single histogram of its <expr>z</expr> values</item>
+		<item node="method=METHOD">Changes the method for determining the bin width. The default setting is the <em>Sturges-Rule</em>, with <code>scott</code> NumeRe uses the <em>Scott-Rule</em> and with <code>freedman</code> it will use the <em>Freedman-Diaconis-Rule</em>.</item>
+		<item node="xlabel=LABEL">Set the axis label for the <expr>x</expr> axis. The corresponding options for the other axes are <code>ylabel</code> and <code>zlabel</code>.</item>
+	</list>
+	<example desc="Histogram of the columns 1-3 of a data file using 128 bins each and exporting the results to 'hist.dat':">
+		hist data(:,1:3) -set bins=128 export=hist
+	</example>
+	<em>See also:</em> "help plotoptions"
+</article>

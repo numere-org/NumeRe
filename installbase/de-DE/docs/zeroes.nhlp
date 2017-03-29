@@ -1,0 +1,38 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="zeroes">
+	<title string="Numerische Nullstellenbestimmung" />
+	Das Kommando <code>zeroes</code> bestimmt alle Nullstellen (also alle Stellen <expr>x0</expr>, für die <expr>f(x0) = 0</expr>) eines gegebenen Ausdrucks in einem vorgegebenen Intervall. Der Ausdruck darf in dem Intervall dabei nicht zu stark oszillieren. Liegt ein solcher Ausdruck vor, so sollte das Intervall deutlich kleiner gewählt werden.
+	An das Kommando <code>zeroes</code> muss direkt der zu untersuchende Ausdruck folgen. Im Anschluss daran ist nach dem Schlüsselwort <code>-set</code> sind die Optionen erforderlich. Diese lauten wie folgt:
+	<list>
+		<item node="VAR=POS1:POS2">Die linke (POS1) und die rechte (POS2) Intervallgrenze der Variablen VAR festlegen</item>
+		<item node="up">Das Ergebnis auf steigende Flanken begrenzen (<em>optional</em>)</item>
+		<item node="down">Das Ergebnis auf fallende Flanken begrenzen (<em>optional</em>)</item>
+		<item node="samples=STÜTZSTELLEN">Die Zahl der Stützstellen für die Basisauflösung übergeben. Das Minimum ist hierbei 21; das nominelle Maximum 10001. Die Zahl wird jedoch in gewissem Maße an die Intervallbreite angeglichen.</item>
+	</list>
+	Auch die Nullstellen eines Datensatzes können bestimmt werden. Dazu müssen die <expr>y</expr>-Werte Teil des zu untersuchenden Ausdrucks sein:<codeblock>zeroes AUSDRUCK(DATENPUNKTE(I1:I2,J1:J2))</codeblock>Die <expr>x</expr>-Werte können über den Parameter <code>x=x-DATENPUNKTE()</code> übergeben werden. Der <expr>x</expr>-Datensatz kann auch eine andere Zahl an Datenpunkten enthalten. In diesem Fall wird die Zahl der <expr>y</expr>-Werte verwendet und die fehlenden <expr>x</expr>-Werte ggf. durch 0.0 ergänzt. Werden keine <expr>x</expr>-Werte übergeben, gibt das Kommando die Indices zurück, die am nächsten an einer Nullstelle liegen. Werden <expr>x</expr>-Werte übergeben, gibt <code>zeroes</code> linear interpolierte <expr>x</expr>-Werte als Ergebnis zurück.
+	<em>Hinweis:</em> Wenn keine <expr>x</expr>-Werte übergeben werden, kann es vorkommen, dass Indices doppelt zurückgegeben werden. Das ist <em>kein</em> Fehler, sondern tritt auf, wenn ein Index direkt zwischen zwei Nullstellen liegt und zusätzlich noch gleichzeitig der nächste Punkt zu diesen beiden Nullstellen ist.
+	<example desc="Nullstellen der Funktion <expr>f(x) = x^3-x</expr> im Intervall -5 bis 5 und Nullstellen eines Datensatzes:">
+		zeroes x^3-x -set x=-5:5
+		ans = {    -1,     0,     1}
+		zeroes data(:,2) -set x=data(:,1)
+		ans = { 3.445, 8.314, 9.862,  (...)}
+	</example>
+	<em>Tipp:</em> Diese Funktion kann auch die Schnittpunkte zweier Funktionen in einem Intervall [<expr>x0,x1</expr>] finden:<codeblock>zeroes f(x)-g(x) -set x=x0:x1</codeblock>
+</article>

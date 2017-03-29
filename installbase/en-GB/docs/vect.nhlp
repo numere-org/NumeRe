@@ -1,0 +1,34 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="vect">
+	<title string="(2D) vector field plots" />
+	The command <code>vect</code> allows the visualization of two dimensional vector fields <expr>A(x,y) := Ax(x,y)ex + Ay(x,y)ey</expr> in the two spatial directions <expr>x</expr> and <expr>y</expr>. In each plot only one vector field may be displayed.
+	The vector field <expr>A(x,y)</expr> has to be passed in the form <code>Ax(x,y), Ay(x,y)</code>. Here are <expr>Ax</expr> and <expr>Ay</expr> functions of the spatial directions <expr>x</expr> and <expr>y</expr>.
+	<code>vect</code> knows three additional options:
+	<list>
+		<item node="flength/noflength">The length of the vector field arrows will be calculated according to the field amplitude by default. This option dis-/enables this functionality</item>
+		<item node="flow/noflow">Replaces the vector field arrows with "flow lines"</item>
+		<item node="pipe/nopipe">Similar to <code>flow</code>, but the line thickness will be calculated according to the field amplitude. Using <code>light</code>  will convert this to a three dimensional effect</item>
+	</list>
+	The colorscheme used for vector plots is identical to the one used for two and three dimensional plots. You may modify this with the option <code>colorscheme=COLORSCHEME</code>.
+	<example desc="2D rotational vector field with the option <code>flength</code>:">
+		vect -y,x -set flength
+	</example>
+	<em>See also:</em> "help plot", "help colorscheme" and "help vect3d"
+</article>

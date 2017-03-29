@@ -1,0 +1,34 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="3dplots">
+	<title string="3D-Gitter-, 3D-Kontur-, 3D-Dichte- oder 3D-Flächenplots" />
+	Die Kommandos <code>mesh3d</code>, <code>cont3d</code>, <code>dens3d</code> bzw. <code>surf3d</code> ermöglichen Darstellungen von Funktionen der Form <expr>Phi = Phi(x,y,z)</expr>, also skalarer Felder, deren Funktionswert an jedem Punkt <expr>(x,y,z)</expr> im betrachteten Volumen durch eine Funktion von <expr>x, y</expr> und <expr>z</expr> gegeben ist. <code>mesh3d</code> erzeugt dabei einen 3D-Gitter-, <code>cont3d</code> ein 3D-Konturlinien- (Niveaulinien-), <code>dens3d</code> einen 3D-Dichte- (Farben entsprechen Feldamplituden) und <code>surf3d</code> einen 3D-Oberflächenplot. <code>surf3d</code> und <code>mesh3d</code> zeigen dabei eine Auswahl der Äquipotentialflächen, die im Falle von <code>cont3d</code> durch Konturlinien angedeutet werden.
+	Plotvariablen sind <expr>x, y</expr> und <expr>z</expr>. Alle anderen Variablen werden als Parameter betrachtet.
+	Dieser Plot-Modus benötigt die Angabe eines dritten Intervalls, das als Option beeinflusst werden kann, also <code>[x1:x2,y1:y2,z1:z2]</code>.
+	Die zusätzlichen Parameter für diese Plotstile entsprechen den Plotstilen der 2D-Varianten mit Ausnahme von <code>cloudplot/nocloudplot</code> und <code>slices=X,Y,Z</code>. Siehe hierzu z.B. "help surf"
+	<code>dens3d</code> erzeugt mit der zusätzlichen Option <code>cloudplot</code> einen raumfüllenden Dichteplot (anstatt der 3 diskreten Scheiben). Wenn zusätzlich auch noch <code>alpha</code> übergeben wird, so geht die Transparenz des erzeugten "Wolkenplots" mit der Feldamplitude einher.
+	Die Option <code>slices=X,Y,Z</code> kann bei <code>cont3d</code> und <code>dens3d</code> angewendet werden und gibt die Anzahl der dargestellten Schnitte orthogonal zur entsprechenden Raumrichtung an. Es müssen stets alle Raumrichtungen angegeben werden und die Anzahlen müssen jeweils im Bereich [0,5] liegen, z.B.:<codeblock>slices=1,4,2</codeblock>
+	<example desc="3D-Meshgrid eines Dipols mit <expr>z1 = -4</expr> und <expr>z2 = +4</expr> mit den Optionen <code>box light opng=dipol cut pcont</code>:" type="verbatim">
+		|&lt;- mesh3d 10/sqrt(x^2+y^2+(z-4)^2)-10/sqrt(x^2+y^2+(z+4)^2) -set box light opng=dipol cut pcont
+		|-&gt; Berechne Daten für 3D-Meshgrid-Plot ...
+		|-&gt; Speichern ... Erfolg!
+		|   Gespeichert unter "&PLOTPATH&/dipol.png"
+	</example>
+	<em>Siehe auch:</em> "help plot" und "help mesh"
+</article>

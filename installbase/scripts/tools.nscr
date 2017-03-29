@@ -1,0 +1,138 @@
+#*
+ * Dieses Script wurde automatisch von NumeRe erzeugt
+ * SCRIPTNAME:  tools
+ * ERZEUGT:     2016-09-04, um 15:15:00
+ * ==================================================
+ *
+ * Die Befehle direkt im Anschluss angeben oder mittels der Syntax
+ * @SCRIPT Definitionen und globale Ausdrücke aus dem Script SCRIPT
+ * in dieses Script laden.
+ *
+ * (Falls dieses Script veröffentlich werden soll, bietet sich an dieser
+ * Stelle auch die Nennung der Lizenz an)
+ *#
+
+## Mit "requirepackages" wird die Installinfo doppelt angezeigt *
+## is_string() könnte auch mehrere Ergebnisse zurückgegeben. *
+ 
+<install> 
+	<info>
+		-author="Erik Hänel"
+		-version=<AUTO>
+		-flags=ENABLE_FULL_LOGGING,DISABLE_SCREEN_OUTPUT
+		-type=TYPE_UNSPECIFIED
+		-name="tools"
+	<endinfo>
+	## Globale Prozedur zum Lesen der Tabellenparameter: Tabellenname und Tabellenindices
+	procedure $tools~extractTableParams(sTable = "", type = 0) :: explicit
+		var i1,i2,j1,j2
+		str sTablename = to_string(sTable)
+		if (!is_data(sTablename) || !strlen(sTablename))
+			throw "Kein Datensatz angegeben."
+		endif
+		{i1,i2,j1,j2} = getindices(sTablename, type);
+		sTablename = substr(sTablename,1, strfnd("(", sTablename)-1);
+		sTablename = $tools~stripSpaces(sTablename);
+		return {sTablename, i1, i2, j1, j2};
+	endprocedure
+	
+	## Globale Prozedur zum Entfernen von Leerzeichen
+	procedure $tools~stripSpaces(sString = "") :: explicit
+		str sToStrip = to_string(sString)
+		var i = 1
+		while (char(sToStrip,i) == " ")
+			i++
+		endwhile -mask
+		sToStrip = substr(sToStrip,i);
+		i = strlen(sToStrip);
+		while (char(sToStrip,i) == " ")
+			i--
+		endwhile -mask
+		return substr(sToStrip, 1, i);
+	endprocedure
+	
+	## Globale Prozedur zum Lesen einer Spalte eines Datensatzes auf Basis von Tabellenname und Indices
+	procedure $tools~getColFromTable(sTable = "", col = 1, line0 = 1, line1 = inf) :: explicit
+		str sTablename = $tools~getTableName(sTable)
+		return to_value(sTablename + "(" + #line0 + ":" + #line1 + "," + #col + ")");
+	endprocedure
+	
+	## Globale Prozedur zum Lesen einer Zeile eines Datensatzes auf Basis von Tabellenname und Indices
+	procedure $tools~getLineFromTable(sTable = "", line = 1, col0 = 1, col1 = inf) :: explicit
+		str sTablename = $tools~getTableName(sTable)
+		return to_value(sTablename + "(" + #line + "," + #col0 +  ":" + #col1 + ")");
+	endprocedure
+	
+	## Private Prozedur zum Extrahieren des Tabellennamens
+	procedure $tools~getTableName(sTable = "") :: private explicit
+		str sTablename = to_string(sTable)
+		if (!is_data(sTablename+"()") || !strlen(sTablename))
+			throw "Kein Datensatz angegeben."
+		endif
+		if (strfnd("(", sTablename))
+			sTablename = substr(sTablename, 1, strfnd("(", sTablename)-1)
+		endif
+		return sTablename;
+	endprocedure
+	
+	## Globale Prozedur zum sukzessivem Lesen einer Argumentliste (Liste, deren Argumente durch Kommata getrennt sind). Die Liste wird dabei immer kürzer.
+	## Usage: {ARG,LIST} = $tools~getNextArgument(LIST)
+	procedure $tools~getNextArgument(sArgList = "") :: explicit
+		str sArgument, sList = to_string(sArgList)
+		if (!strlen(sList))
+			return {"", ""};
+		endif
+		for (i = 1:strlen(sList))
+			if (char(sList, i) == ",")
+				sArgument = substr(sList,1,i-1), sList = substr(sList, i+1)
+				break
+			elseif (char(sList, i) == "(" || char(sList, i) == "[" || char(sList, i) == "{")
+				i += getmatchingparens(substr(sList,i))-1
+			endif
+		endfor -mask
+		if (!strlen(sArgument) && strlen(sList))
+			return {sList, sArgument}; ## Vertauschen, wenn es offensichtlich nur ein einziges Argument gibt
+		endif
+		return {sArgument, sList};
+	endprocedure
+
+	<helpindex>
+		<article id="tools">
+			<title string="Tool-Prozeduren" idxkey="tools" />
+			<keywords>
+				<keyword>tools</keyword>
+				<keyword>getnextarg</keyword>
+				<keyword>getcol</keyword>
+				<keyword>getline</keyword>
+				<keyword>stripsp</keyword>
+				<keyword>extract</keyword>
+			</keywords>
+		</article>
+	</helpindex>
+	
+	<helpfile>
+		<article id="tools">
+			<title string="Tool-Prozeduren" />
+			Dieses Package bringt den Namensraum <code>tools</code> in NumeRe ein, der Prozeduren enthält, die einfache und wiederkehrende Tätigkeiten zusammenfassen und damit den Blick auf die wesentliche Programmierung fokussieren können.
+			Die enthaltenen Prozeduren lauten wie folgt:
+			<list>
+				<item node="\$extractTableParams(sTable, type)">Extrahiert Tabellenname und Indices in dem übergebenen Tabellenaufruf <code>sTable</code>. Der <code>type</code> bestimmt, wie die Indices interpretiert werden sollen (siehe die Beschreibung zu <code>getindices()</code>). Die Ergebnisse werden als <code>{sTablename, i1, i2, j1, j2}</code> zurückgegeben.</item>
+				<item node="\$stripSpaces(sString)">Entfernt alle umgebenden Leerzeichen in der Zeichenkette <code>sString</code>. Die Prozedur gibt die gekürzte Zeichenkette in einem neuen String zurück.</item>
+				<item node="\$getColFromTable(sTable, col, line0, line1)">Gibt die Spalte <code>col</code> von Zeile <code>line0</code> bis <code>line1</code> der Tabelle <code>sTable</code> zurück.</item>
+				<item node="\$getLineFromTable(sTable, line, col0, col1)">Gibt die Zeile <code>line</code> von Spalte <code>col0</code> bis <code>col1</code> der Tabelle <code>sTable</code> zurück.</item>
+				<item node="\$getNextArgument(sArgList)">Gibt das nächste Argument einer Argumentliste (Liste, deren Argumente durch Kommata getrennt sind) zurück. Die verbleibende Liste wird ebenfalls durch <code>{sArgument, sList}</code> zurückgegeben.</item>
+			</list>
+			Viele dieser Prozeduren geben mehrere Werte zugleich zurück. Diese können mit zum Beispiel<codeblock>{Arg,List} = \$getNextArgument(...)</codeblock>gefangen werden. Falls nicht alle Werte benötigt werden, können auch nur manche von ihnen gefangen werden, indem z.B.<codeblock>Arg = \$getNextArgument(...)</codeblock>
+			<example desc="Extrahieren eines Arguments einer Argumentliste:">
+				\$tools~getNextArgument("sin(norm(x,y)),x,y^2")
+				"sin(norm(x,y))", "x,y^2"
+			</example>
+		</article>
+	</helpfile>
+<endinstall>
+
+#* Ende des Scripts
+ * NumeRe: Framework für Numerische Rechnungen | Freie numerische Software unter der GNU GPL v3
+ * https://sites.google.com/site/numereframework/
+ *#
+

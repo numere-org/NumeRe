@@ -1,0 +1,797 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<helpindex>
+	<article id="audio">
+		<file path="<>/docs/audio.nhlp" />
+		<title string="Creating audio files" idxkey="audio" />
+		<keywords>
+			<keyword>audio</keyword>
+			<keyword>wav</keyword>
+			<keyword>pcm</keyword>
+			<keyword>sound</keyword>
+		</keywords>
+	</article>
+	<article id="main">
+		<file path="<>/docs/main.nhlp" />
+		<title string="Overview" idxkey="main" />
+		<keywords>
+			<keyword>brief</keyword>
+			<keyword>main</keyword>
+			<keyword>numere</keyword>
+		</keywords>
+	</article>
+	<article id="cache">
+		<file path="<>/docs/cache.nhlp" />
+		<title string="Cache" idxkey="cache" />
+		<keywords>
+			<keyword>cache</keyword>
+			<keyword>rename</keyword>
+			<keyword>swap</keyword>
+		</keywords>
+	</article>
+	<article id="calc">
+		<file path="<>/docs/calc.nhlp" />
+		<title string="Calculator mode" idxkey="calc" />
+		<keywords>
+			<keyword>calc</keyword>
+			<keyword>rech</keyword>
+		</keywords>
+	</article>
+	<article id="color">
+		<file path="<>/docs/color.nhlp" />
+		<title string="Coloring schemes and line coloring for plots" idxkey="colors" />
+		<keywords>
+			<keyword>color</keyword>
+			<keyword>farbs</keyword>
+			<keyword>plotcol</keyword>
+		</keywords>
+	</article>
+	<article id="compose">
+		<file path="<>/docs/compose.nhlp" />
+		<title string="Composition of custom plotting styles" idxkey="compose" />
+		<keywords>
+			<keyword>compose</keyword>
+			<keyword>kompon</keyword>
+			<keyword>verbind</keyword>
+		</keywords>
+	</article>
+	<article id="coords">
+		<file path="<>/docs/coords.nhlp" />
+		<title string="Coordinate sets for plots" idxkey="coords" />
+		<keywords>
+			<keyword>coord</keyword>
+			<keyword>koord</keyword>
+			<keyword>polar</keyword>
+			<keyword>spheri</keyword>
+			<keyword>zylind</keyword>
+		</keywords>
+	</article>
+	<article id="define">
+		<file path="<>/docs/define.nhlp" />
+		<title string="Function definitions" idxkey="define" />
+		<keywords>
+			<keyword>def</keyword>
+			<keyword>ifndef</keyword>
+			<keyword>redef</keyword>
+			<keyword>undef</keyword>
+		</keywords>
+	</article>
+	<article id="2dplots">
+		<file path="<>/docs/2dplots.nhlp" />
+		<title string="Meshgrid, contour, density or surface plots" idxkey="cont, dens, mesh, surf" />
+		<keywords>
+			<keyword>cont</keyword>
+			<keyword>dens</keyword>
+			<keyword>mesh</keyword>
+			<keyword>surf</keyword>
+			<keyword>alpha</keyword>
+			<keyword>light</keyword>
+		</keywords>
+	</article>
+	<article id="3dplots">
+		<file path="<>/docs/3dplots.nhlp" />
+		<title string="3D-Meshgrid, 3D-contour, 3D-density or 3D-surface plots" idxkey="cont3d, dens3d, mesh3d, surf3d" />
+		<keywords>
+			<keyword>cont3d</keyword>
+			<keyword>contour3d</keyword>
+			<keyword>dens3d</keyword>
+			<keyword>density3d</keyword>
+			<keyword>mesh3d</keyword>
+			<keyword>meshgrid3d</keyword>
+			<keyword>surf3d</keyword>
+			<keyword>surface3d</keyword>
+		</keywords>
+	</article>
+	<article id="data_and_fileops">
+		<file path="<>/docs/data_and_fileops.nhlp" />
+		<title string="Copying and removing of data sets and files" idxkey="copy, move, remove, delete" />
+		<keywords>
+			<keyword>copy</keyword>
+			<keyword>delet</keyword>
+			<keyword>move</keyword>
+			<keyword>remove</keyword>
+		</keywords>
+	</article>
+	<article id="data">
+		<file path="<>/docs/data.nhlp" />
+		<title string="Data files" idxkey="data" />
+		<keywords>
+			<keyword>data</keyword>
+			<keyword>daten</keyword>
+		</keywords>
+	</article>
+	<article id="diff">
+		<file path="<>/docs/diff.nhlp" />
+		<title string="Numerical differentiation" idxkey="diff" />
+		<keywords>
+			<keyword>ableit</keyword>
+			<keyword>diff</keyword>
+		</keywords>
+	</article>
+	<article id="edit">
+		<file path="<>/docs/edit.nhlp" />
+		<title string="Editing and opening of files and folders" idxkey="edit" />
+		<keywords>
+			<keyword>bearb</keyword>
+			<keyword>edit</keyword>
+			<keyword>view</keyword>
+		</keywords>
+	</article>
+	<article id="eval">
+		<file path="<>/docs/eval.nhlp" />
+		<title string="Calculation of samples" idxkey="eval" />
+		<keywords>
+			<keyword>eval</keyword>
+			<keyword>samples</keyword>
+		</keywords>
+	</article>
+	<article id="external_programs">
+		<file path="<>/docs/external_programs.nhlp" />
+		<title string="Viewer and editor" idxkey="editor, viewer" />
+		<keywords>
+			<keyword>editor</keyword>
+			<keyword>viewer</keyword>
+		</keywords>
+	</article>
+	<article id="explorer">
+		<file path="<>/docs/explorer.nhlp" />
+		<title string="File explorer" idxkey="explorer" />
+		<keywords>
+			<keyword>datei</keyword>
+			<keyword>dir</keyword>
+			<keyword>explo</keyword>
+			<keyword>file</keyword>
+			<keyword>verzeich</keyword>
+		</keywords>
+	</article>
+	<article id="expression">
+		<file path="<>/docs/expression.nhlp" />
+		<title string="Entering of expressions" idxkey="expression" />
+		<keywords>
+			<keyword>expr</keyword>
+			<keyword>input</keyword>
+		</keywords>
+	</article>
+	<article id="extrema">
+		<file path="<>/docs/extrema.nhlp" />
+		<title string="Numerical localization of extrema" idxkey="extrema" />
+		<keywords>
+			<keyword>extrem</keyword>
+			<keyword>maxim</keyword>
+			<keyword>minim</keyword>
+		</keywords>
+	</article>
+	<article id="fft">
+		<file path="<>/docs/fft.nhlp" />
+		<title string="Fourier transformation of data sets" idxkey="fft" />
+		<keywords>
+			<keyword>fft</keyword>
+			<keyword>fourier</keyword>
+		</keywords>
+	</article>
+	<article id="find">
+		<file path="<>/docs/find.nhlp" />
+		<title string="Keyword search" idxkey="find" />
+		<keywords>
+			<keyword>find</keyword>
+			<keyword>search</keyword>
+			<keyword>suche</keyword>
+		</keywords>
+	</article>
+	<article id="fitting">
+		<file path="<>/docs/fitting.nhlp" />
+		<title string="Fitting functions to data sets" idxkey="fit" />
+		<keywords>
+			<keyword>anpass</keyword>
+			<keyword>fit</keyword>
+		</keywords>
+	</article>
+	<article id="fitting_chimap">
+		<file path="<>/docs/fitting.nhlp" />
+		<title string="chi^2 convergence data sets" idxkey="chimap" />
+		<keywords>
+			<keyword>chi</keyword>
+			<keyword>Konvergenz</keyword>
+		</keywords>
+	</article>
+	<article id="fitting_restrictions">
+		<file path="<>/docs/fitting.nhlp" />
+		<title string="Fit parameter restrictions" idxkey="restrict" />
+		<keywords>
+			<keyword>restrict</keyword>
+			<keyword>einschränk</keyword>
+			<keyword>param</keyword>
+		</keywords>
+	</article>
+	<article id="for_loop">
+		<file path="<>/docs/for_loop.nhlp" />
+		<title string="FOR loops" idxkey="for" />
+		<keywords>
+			<keyword>endfor</keyword>
+			<keyword>for</keyword>
+		</keywords>
+	</article>
+	<article id="functions">
+		<file path="<>/docs/functions.nhlp" />
+		<title string="Predefined mathematical functions" idxkey="func" />
+		<keywords>
+			<keyword>func</keyword>
+			<keyword>funk</keyword>
+		</keywords>
+	</article>
+	<article id="get">
+		<file path="<>/docs/get.nhlp" />
+		<title string="Reading of configuration values" idxkey="get" />
+		<keywords>
+			<keyword>get</keyword>
+		</keywords>
+	</article>
+	<article id="gradient">
+		<file path="<>/docs/gradient.nhlp" />
+		<title string="Gradient plot" idxkey="grad" />
+		<keywords>
+			<keyword>grad</keyword>
+		</keywords>
+	</article>
+	<article id="gradient3d">
+		<file path="<>/docs/gradient3d.nhlp" />
+		<title string="3D gradient plot" idxkey="grad3d" />
+		<keywords>
+			<keyword>grad3d</keyword>
+		</keywords>
+	</article>
+	<article id="histogramm">
+		<file path="<>/docs/histogramm.nhlp" />
+		<title string="Histograms" idxkey="hist" />
+		<keywords>
+			<keyword>hist</keyword>
+		</keywords>
+	</article>
+	<article id="if_cond">
+		<file path="<>/docs/if_cond.nhlp" />
+		<title string="Conditions" idxkey="if" />
+		<keywords>
+			<keyword>beding</keyword>
+			<keyword>cond</keyword>
+			<keyword>else</keyword>
+			<keyword>endif</keyword>
+			<keyword>if</keyword>
+		</keywords>
+	</article>
+	<article id="incr_decr">
+		<file path="<>/docs/incr_decr.nhlp" />
+		<title string="Increment and decrement" idxkey="decrement, increment" />
+		<keywords>
+			<keyword>++</keyword>
+			<keyword>--</keyword>
+			<keyword>dekr</keyword>
+			<keyword>inkr</keyword>
+		</keywords>
+	</article>
+	<article id="install">
+		<file path="<>/docs/install.nhlp" />
+		<title string="Procedure installation" idxkey="install" />
+		<keywords>
+			<keyword>instal</keyword>
+		</keywords>
+	</article>
+	<article id="integrate">
+		<file path="<>/docs/integrate.nhlp" />
+		<title string="Numerical integration" idxkey="integrate" />
+		<keywords>
+			<keyword>integ</keyword>
+		</keywords>
+	</article>
+	<article id="list">
+		<file path="<>/docs/list.nhlp" />
+		<title string="Listing objects" idxkey="list" />
+		<keywords>
+			<keyword>list</keyword>
+		</keywords>
+	</article>
+	<article id="load_save">
+		<file path="<>/docs/load_save.nhlp" />
+		<title string="Loading and saving" idxkey="load, save, append" />
+		<keywords>
+			<keyword>app</keyword>
+			<keyword>csv</keyword>
+			<keyword>dx</keyword>
+			<keyword>ods</keyword>
+			<keyword>export</keyword>
+			<keyword>jcamp</keyword>
+			<keyword>jcm</keyword>
+			<keyword>jdx</keyword>
+			<keyword>ibw</keyword>
+			<keyword>labx</keyword>
+			<keyword>laden</keyword>
+			<keyword>load</keyword>
+			<keyword>save</keyword>
+			<keyword>speich</keyword>
+		</keywords>
+	</article>
+	<article id="datamodification">
+		<file path="<>/docs/datamodification.nhlp" />
+		<title string="Modification of data sets" idxkey="resample, smooth, retoque" />
+		<keywords>
+			<keyword>modifi</keyword>
+			<keyword>resamp</keyword>
+			<keyword>retoq</keyword>
+			<keyword>smooth</keyword>
+		</keywords>
+	</article>
+	<article id="multiresult">
+		<file path="<>/docs/multiresult.nhlp" />
+		<title string="Parallel and multi expression evaluations" idxkey="multiresult" />
+		<keywords>
+			<keyword>mehrf</keyword>
+			<keyword>multi</keyword>
+			<keyword>spalt</keyword>
+			<keyword>vektor</keyword>
+			<keyword>{</keyword>
+		</keywords>
+	</article>
+	<article id="new">
+		<file path="<>/docs/new.nhlp" />
+		<title string="Creation of new caches, files and directories" idxkey="new" />
+		<keywords>
+			<keyword>new</keyword>
+		</keywords>
+	</article>
+	<article id="rekurs_oprt">
+		<file path="<>/docs/rekurs_oprt.nhlp" />
+		<title string="Recursive operators" idxkey="recursive, operator" />
+		<keywords>
+			<keyword>*=</keyword>
+			<keyword>+=</keyword>
+			<keyword>-=</keyword>
+			<keyword>/=</keyword>
+			<keyword>operat</keyword>
+			<keyword>rekurs</keyword>
+		</keywords>
+	</article>
+	<article id="plot">
+		<file path="<>/docs/plot.nhlp" />
+		<title string="Plotting of data and functions" idxkey="plot" />
+		<keywords>
+			<keyword>graph</keyword>
+			<keyword>plot</keyword>
+		</keywords>
+	</article>
+	<article id="plot3d">
+		<file path="<>/docs/plot3d.nhlp" />
+		<title string="Plotting of 3D data sets and 3D trajectories" idxkey="plot3d" />
+		<keywords>
+			<keyword>plot3d</keyword>
+			<keyword>trajek</keyword>
+		</keywords>
+	</article>
+	<article id="plotoptions">
+		<file path="<>/docs/plotoptions.nhlp" />
+		<title string="Options for plots" idxkey="plotoptions" />
+		<keywords>
+			<keyword>plotopt</keyword>
+			<keyword>alpham</keyword>
+			<keyword>anim</keyword>
+			<keyword>area</keyword>
+			<keyword>aspect</keyword>
+			<keyword>backgr</keyword>
+			<keyword>box</keyword>
+			<keyword>boxplot</keyword>
+			<keyword>logscale</keyword>
+			<keyword>label</keyword>
+			<keyword>connect</keyword>
+			<keyword>koord</keyword>
+			<keyword>errorb</keyword>
+			<keyword>font</keyword>
+			<keyword>grid</keyword>
+			<keyword>interpol</keyword>
+			<keyword>legend</keyword>
+			<keyword>origin</keyword>
+			<keyword>perspec</keyword>
+			<keyword>style</keyword>
+			<keyword>region</keyword>
+			<keyword>samples</keyword>
+			<keyword>schematic</keyword>
+			<keyword>title</keyword>
+			<keyword>textsize</keyword>
+		</keywords>
+	</article>
+	<article id="plugins">
+		<file path="<>/docs/plugins.nhlp" />
+		<title string="Plugins" idxkey="plugin" />
+		<keywords>
+			<keyword>explic</keyword>
+			<keyword>plugin</keyword>
+			<keyword>uninst</keyword>
+		</keywords>
+	</article>
+	<article id="procedure">
+		<file path="<>/docs/procedure.nhlp" />
+		<title string="NumeRe Procedures" idxkey="procedure" />
+		<keywords>
+			<keyword>$</keyword>
+			<keyword>namesp</keyword>
+			<keyword>proced</keyword>
+			<keyword>program</keyword>
+			<keyword>prozed</keyword>
+			<keyword>readli</keyword>
+			<keyword>return</keyword>
+			<keyword>throw</keyword>
+		</keywords>
+	</article>
+	<article id="procedure_commands">
+		<file path="<>/docs/procedure.nhlp" />
+		<title string="Procedure commands" idxkey="proccmd" />
+		<keywords>
+			<keyword>proccmd</keyword>
+			<keyword>proccomman</keyword>
+			<keyword>readli</keyword>
+			<keyword>return</keyword>
+			<keyword>readli</keyword>
+			<keyword>namesp</keyword>
+			<keyword>localvars</keyword>
+		</keywords>
+	</article>
+	<article id="prompt">
+		<file path="<>/docs/prompt.nhlp" />
+		<title string="Prompt for input" idxkey="prompt" />
+		<keywords>
+			<keyword>??</keyword>
+			<keyword>prompt</keyword>
+		</keywords>
+	</article>
+	<article id="quit">
+		<file path="<>/docs/quit.nhlp" />
+		<title string="Quitting NumeRe" idxkey="quit" />
+		<keywords>
+			<keyword>ende</keyword>
+			<keyword>quit</keyword>
+		</keywords>
+	</article>
+	<article id="random">
+		<file path="<>/docs/random.nhlp" />
+		<title string="Random number generator" idxkey="random" />
+		<keywords>
+			<keyword>random</keyword>
+			<keyword>zufall</keyword>
+		</keywords>
+	</article>
+	<article id="read_write">
+		<file path="<>/docs/read_write.nhlp" />
+		<title string="Reading from and writing to files" idxkey="read, write" />
+		<keywords>
+			<keyword>lesen</keyword>
+			<keyword>read</keyword>
+			<keyword>schreib</keyword>
+			<keyword>write</keyword>
+		</keywords>
+	</article>
+	<article id="replaceline">
+		<file path="<>/docs/replaceline.nhlp" />
+		<title string="Input correction in loops and forks" idxkey="replaceline" />
+		<keywords>
+			<keyword>corr</keyword>
+			<keyword>repl</keyword>
+		</keywords>
+	</article>
+	<article id="script">
+		<file path="<>/docs/script.nhlp" />
+		<title string="NumeRe scripts" idxkey="script" />
+		<keywords>
+			<keyword>automat</keyword>
+			<keyword>global</keyword>
+			<keyword>inclu</keyword>
+			<keyword>script</keyword>
+		</keywords>
+	</article>
+	<article id="set">
+		<file path="<>/docs/set.nhlp" />
+		<title string="Configuring NumeRe" idxkey="set" />
+		<keywords>
+			<keyword>autosave</keyword>
+			<keyword>buffersize</keyword>
+			<keyword>colortheme</keyword>
+			<keyword>compact</keyword>
+			<keyword>config</keyword>
+			<keyword>defcontrol</keyword>
+			<keyword>draftmode</keyword>
+			<keyword>extendedfileinfo</keyword>
+			<keyword>faststart</keyword>
+			<keyword>greeting</keyword>
+			<keyword>konfig</keyword>
+			<keyword>logfile</keyword>
+			<keyword>option</keyword>
+			<keyword>precision</keyword>
+			<keyword>set</keyword>
+			<keyword>windowsize</keyword>
+		</keywords>
+	</article>
+	<article id="show">
+		<file path="<>/docs/show.nhlp" />
+		<title string="Displaying data sets" idxkey="show" />
+		<keywords>
+			<keyword>show</keyword>
+			<keyword>anzeig</keyword>
+		</keywords>
+	</article>
+	<article id="stats">
+		<file path="<>/docs/stats.nhlp" />
+		<title string="Statistics" idxkey="stats" />
+		<keywords>
+			<keyword>stat</keyword>
+		</keywords>
+	</article>
+	<article id="string">
+		<file path="<>/docs/string.nhlp" />
+		<title string="Strings" idxkey="string" />
+		<keywords>
+			<keyword>#</keyword>
+			<keyword>\"</keyword>
+			<keyword>\t</keyword>
+			<keyword>\n</keyword>
+			<keyword>noquot</keyword>
+			<keyword>peek</keyword>
+			<keyword>print</keyword>
+			<keyword>string</keyword>
+			<keyword>zeich</keyword>
+		</keywords>
+	</article>
+	<article id="syntax">
+		<file path="<>/docs/syntax.nhlp" />
+		<title string="Command syntax" idxkey="syntax" />
+		<keywords>
+			<keyword>command</keyword>
+			<keyword>syntax</keyword>
+		</keywords>
+	</article>
+	<article id="taylor">
+		<file path="<>/docs/taylor.nhlp" />
+		<title string="Taylor polynomials" idxkey="taylor" />
+		<keywords>
+			<keyword>reihe</keyword>
+			<keyword>serie</keyword>
+			<keyword>tayl</keyword>
+		</keywords>
+	</article>
+	<article id="units">
+		<file path="<>/docs/units.nhlp" />
+		<title string="Conversion of units" idxkey="units" />
+		<keywords>
+			<keyword>einheit</keyword>
+			<keyword>unit</keyword>
+		</keywords>
+	</article>
+	<article id="variables">
+		<file path="<>/docs/variables.nhlp" />
+		<title string="Variables" idxkey="var" />
+		<keywords>
+			<keyword>ans</keyword>
+			<keyword>double</keyword>
+			<keyword>var</keyword>
+		</keywords>
+	</article>
+	<article id="vect">
+		<file path="<>/docs/vect.nhlp" />
+		<title string="(2D) vector field plots" idxkey="vect" />
+		<keywords>
+			<keyword>quiv</keyword>
+			<keyword>vect</keyword>
+			<keyword>vector</keyword>
+		</keywords>
+	</article>
+	<article id="vect3d">
+		<file path="<>/docs/vect3d.nhlp" />
+		<title string="3D vector field plots" idxkey="vect3d" />
+		<keywords>
+			<keyword>quiver3d</keyword>
+			<keyword>vect3d</keyword>
+			<keyword>vector3d</keyword>
+		</keywords>
+	</article>
+	<article id="while_loop">
+		<file path="<>/docs/while_loop.nhlp" />
+		<title string="WHILE loops" idxkey="while" />
+		<keywords>
+			<keyword>endwhile</keyword>
+			<keyword>while</keyword>
+		</keywords>
+	</article>
+	<article id="zeroes">
+		<file path="<>/docs/zeroes.nhlp" />
+		<title string="Numerical determination of zeroes" idxkey="zeroes" />
+		<keywords>
+			<keyword>null</keyword>
+			<keyword>schnitt</keyword>
+			<keyword>zero</keyword>
+		</keywords>
+	</article>
+	<article id="documentation">
+		<file path="<>/docs/documentation.nhlp" />
+		<title string="Documentation" idxkey="documentation" />
+		<keywords>
+			<keyword>docum</keyword>
+			<keyword>dokum</keyword>
+			<keyword>help</keyword>
+		</keywords>
+	</article>
+	<article id="drawing">
+		<file path="<>/docs/drawing.nhlp" />
+		<title string="Drawings and annotations" idxkey="draw" />
+		<keywords>
+			<keyword>anmerk</keyword>
+			<keyword>annot</keyword>
+			<keyword>draw</keyword>
+			<keyword>illus</keyword>
+			<keyword>zeichn</keyword>
+		</keywords>
+	</article>
+	<article id="3ddrawing">
+		<file path="<>/docs/3ddrawing.nhlp" />
+		<title string="3D drawings and annotations" idxkey="draw3d" />
+		<keywords>
+			<keyword>3dzeichn</keyword>
+			<keyword>draw3d</keyword>
+		</keywords>
+	</article>
+	<article id="linestyles">
+		<file path="<>/docs/linestyles.nhlp" />
+		<title string="Line and point styles" idxkey="linestyles, pointstyles" />
+		<keywords>
+			<keyword>arrow</keyword>
+			<keyword>linesty</keyword>
+			<keyword>linienst</keyword>
+			<keyword>pfeil</keyword>
+			<keyword>pointsty</keyword>
+			<keyword>punktst</keyword>
+		</keywords>
+	</article>
+	<article id="tickformatting">
+		<file path="<>/docs/tickformatting.nhlp" />
+		<title string="Formatting of the labels of the axis ticks" idxkey="ticks" />
+		<keywords>
+			<keyword>achse</keyword>
+			<keyword>axis</keyword>
+			<keyword>scale</keyword>
+			<keyword>skal</keyword>
+			<keyword>tick</keyword>
+		</keywords>
+	</article>
+	<article id="datagrid">
+		<file path="<>/docs/datagrid.nhlp" />
+		<title string="Data grids for 2D plots" idxkey="datagrid" />
+		<keywords>
+			<keyword>datagr</keyword>
+			<keyword>datengit</keyword>
+		</keywords>
+	</article>
+	<article id="progress">
+		<file path="<>/docs/progress.nhlp" />
+		<title string="Progress display" idxkey="progress" />
+		<keywords>
+			<keyword>balken</keyword>
+			<keyword>fortschritt</keyword>
+			<keyword>progress</keyword>
+		</keywords>
+	</article>
+	<article id="matop">
+		<file path="<>/docs/matop" />
+		<title string="Matrix operations" idxkey="matop" />
+		<keywords>
+			<keyword>matop</keyword>
+			<keyword>mtrxop</keyword>
+			<keyword>matri</keyword>
+			<keyword>determ</keyword>
+			<keyword>invert</keyword>
+		</keywords>
+	</article>
+	<article id="matop_functions">
+		<file path="<>/docs/matop" />
+		<title string="Matrix functions" idxkey="matfunc" />
+		<keywords>
+			<keyword>determ</keyword>
+			<keyword>invert</keyword>
+			<keyword>diagona</keyword>
+			<keyword>eigenval</keyword>
+			<keyword>eigenvec</keyword>
+			<keyword>transpos</keyword>
+			<keyword>matfunc</keyword>
+			<keyword>matfunk</keyword>
+		</keywords>
+	</article>
+	<article id="odesolve">
+		<file path="<>/docs/odesolve" />
+		<title string="Solving ordinary differential equations" idxkey="odesolve" />
+		<keywords>
+			<keyword>odesol</keyword>
+			<keyword>dgl</keyword>
+			<keyword>differen</keyword>
+		</keywords>
+	</article>
+	<article id="regularize">
+		<file path="<>/docs/regularize" />
+		<title string="Regularize data points" idxkey="regularize" />
+		<keywords>
+			<keyword>regular</keyword>
+			<keyword>interpol</keyword>
+		</keywords>
+	</article>
+	<article id="debugger">
+		<file path="<>/docs/debugger.nhlp" />
+		<title string="Debugger" idxkey="debugger" />
+		<keywords>
+			<keyword>debug</keyword>
+			<keyword>bug</keyword>
+			<keyword>fehler</keyword>
+			<keyword>error</keyword>
+		</keywords>
+	</article>	
+	<article id="subplot">
+		<file path="<>/docs/subplot.nhlp" />
+		<title string="Subplots" idxkey="subplot" />
+		<keywords>
+			<keyword>subpl</keyword>
+			<keyword>unterpl</keyword>
+		</keywords>
+	</article>
+	<article id="pulse">
+		<file path="<>/docs/pulse.nhlp" />
+		<title string="Pulse Analysis" idxkey="pulse" />
+		<keywords>
+			<keyword>puls</keyword>
+		</keywords>
+	</article>
+	<article id="stfa">
+		<file path="<>/docs/stfa.nhlp" />
+		<title string="Short-time Fourier analysis" idxkey="stfa" />
+		<keywords>
+			<keyword>stfa</keyword>
+			<keyword>kurzzeit</keyword>
+			<keyword>shorttime</keyword>
+		</keywords>
+	</article>
+	<article id="language">
+		<file path="<>/docs/language.nhlp" />
+		<title string="Adding languages" idxkey="language" />
+		<keywords>
+			<keyword>lang</keyword>
+			<keyword>sprach</keyword>
+			<keyword>transl</keyword>
+		</keywords>
+	</article>
+</helpindex>

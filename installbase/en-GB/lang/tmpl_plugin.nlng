@@ -1,0 +1,61 @@
+#*
+ * This plugin template was automatically created by NumeRe
+ * PLUGIN NAME:  %%1%%
+ * GENERATED:    %%2%%
+ * ===========================================================
+ *
+ * This script contains the install routines for the %%1%% plugin as template,
+ * which may be installed used the command "install plgn_%%1%%".
+ *#
+
+<install>
+	<info>
+		-type=TYPE_PLUGIN
+		-author="YOUR NAME"
+		-flags=ENABLE_DEFAULTS
+		-name="%%1%%"
+		-plugincommand="%%1%%"
+		-pluginmain=$plugins~%%1%%~main(<CMDSTRING>)
+		-plugindesc="DESCRIPTION OF YOUR PLUGIN"
+		-version=<AUTO>
+		-requireversion="1.0.9"
+	<endinfo>
+
+	procedure $plugins~%%1%%~main(cmdstring) :: explicit
+		#* This is the main procedure for your new plugin.
+		 * Add all commands and calculations, which your plugin shall do, at this place.
+		 * If your plugin shall call other procedures, copy them including their namespace in this install routine. *#
+		namespace plugins~%%1%% ## Standard namespace. You may use "this" as well.
+		
+		## If you want to return a value, you should switch the type to "TYPE_PLUGIN_WITH_RETURN_VALUE".
+		return void
+	endprocedure
+
+	## You may include further procedures at this place.
+
+	## The following lines give you the ability, to add your own entry to the NumeRe documentation.
+	<helpindex>
+		<article id="plgn_%%1%%">
+			<title string="%%1%%" idxkey="%%1%%" />
+			<keywords>
+				<keyword>%%1%%</keyword>
+			</keywords>
+		</article>
+	</helpindex>
+
+	<helpfile>
+		<article id="plgn_%%1%%">
+			<title string="%%1%%" />
+			DESCRIBE THE FUNCTIONALTY OF YOUR PLUGIN
+			EACH LINE IS A NEW PARAGRAPH
+			<example desc="Execution of %%1%%">
+				%%1%%
+			</example>
+		</article>
+	</helpfile>
+<endinstall>
+
+#* End of plugin template
+ * NumeRe: Framework für Numerische Rechnungen | Free numerical software licenced under GNU GPL v3
+ * https://sites.google.com/site/numereframework/
+ *#

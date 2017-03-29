@@ -1,0 +1,150 @@
+#*  _____    __                            ______        
+ * |     \  |  |  __ __   _______   ____  |  __  \  ____ 
+ * |  |\  \ |  | |  |  | |       \ / __ \ |   ___/ / __ \
+ * |  | \  \|  | |  |  | |  Y Y  | | ___/ |     \  | ___/
+ * |__|  \_____| |____/  |__|_|__| \____) |__|\__\ \____)
+ * ~ ~ ~ ~  Framework fuer Numerische Rechnungen  ~ ~ ~ ~
+ * ======================================================
+ * | ++ (c) 2014, E. Haenel et al. +++ GNU GPL v 3.0 ++ |
+ * ======================================================
+ *
+ *******************************************************************************
+ * Dieses Script ist freie Software. Sie können es unter den Bedingungen       *
+ * der GNU General Public License, wie von der Free Software Foundation        *
+ * veröffentlicht, weitergeben und/oder modifizieren, entweder gemäß Version 3 *
+ * der Lizenz, oder (nach Ihrer Option) jeder späteren Version.                *
+ * Die Veröffentlichung dieses Scripts erfolgt in der Hoffnung, dass es        *
+ * Ihnen von Nutzen sein wird, aber OHNE IRGENDEINE GARANTIE, sogar ohne die   *
+ * implizite Garantie der MARKTREIFE oder der VERWENDBARKEIT FÜR EINEN         *
+ * BESTIMMTEN ZWECK. Details stehen in der GNU General Public Licence          *
+ * Sie sollten ein Exemplar der GNU GPL zusammen mit diesem Script erhalten    *
+ * haben. Falls nicht, siehe <http://www.gnu.org/licenses/>.                   *
+ *******************************************************************************
+ *
+ * Dies ist ein Beispielscript fuer NumeRe ab Version v 0.9.9 "Angstroem"
+ * Geschrieben am 2014-03-06
+ * Dieses Script kann in NumeRe durch das Kommando 'script -start=samples/sample_2'
+ * (oder ausserhalb von NumeRe durch Doppelklicken auf dieses File) aufgerufen werden.
+ * In diesem Script werden die Ableitungsfunktionalitaet, Extrema- und Nullstellensuche,
+ * sowie die Plottingfunktionalitaet demonstriert.
+ *
+ * Fuer notepad++ existiert eine Syntax-Highlighting (numere_synt_highlight.xml) 
+ * fuer NumeRe-Scripte mit der Dateiendung '*.nscr'
+ *
+ * (Alles, was hinter '##' geschrieben wird, ist ein Kommentar und wird bei der Auswertung
+ * ignoriert)
+ *#
+ 
+## Alles was zwischen #*...*# steht, ist ein Blockkommentar und wird ebenfalls ignoriert
+
+## Der Parameter "-noquotes" unterdrueckt die Anfuehrungszeichen in der Ausgabe:
+"Willkommen bei diesem 2. Beispielscript\n----------------------------------------------\n(Ableiten, Extrem-/Nullstellensuche & Plotten)" -noquotes
+
+## Falls bereits Daten im Cache vorhanden sind, müssen wir diese entfernen:
+if (cache())
+	cache -save
+	delete cache() -ignore
+endif
+
+#*
+ * Wir definieren zuvor eine Funktion, die durch eine Ueberlagerung von sin(x) und cos(x) realisiert
+ * sein soll. (Mehr Extremstellen und Nullstellen)
+ *#
+ifndefined f(x) := 0.4*sin(4*x)+cos(x) -set comment="Überlagerung von sin(x) und cos(x) zur Berechnung von Null- und Extremstellen"
+
+#*
+ * Diese Funktion soll nun auf Nullstellen und auf Extrema untersucht werden. Wir beschraenken uns dabei
+ * auf das Intervall [0,2pi] und speichern die Werte in den Cache:
+ *#
+
+"\nBerechnen der x-Werte der Extrema und der Nullstellen:\n------------------------------------------------------" -noquotes
+#* 
+ * extrema f(x) lokalisiert die x-Werte aller Extremstellen im Intervall x=[0,2pi]. Wenn zusaetzlich 'min' bzw. 'max' 
+ * angehaengt werden, kann die Extremstellensuche auf Minima bzw. Maxima eingeschraenkt werden.
+ *#
+"x-Werte der Extremstellen:" -noquotes
+cache(:,1) = extrema f(x) -set x=0:_2pi
+## zeroes f(x) lokalisiert alle Nullstellen im Intervall x=[0,2pi]
+"x-Werte der Nullstellen:" -noquotes
+cache(:,3) = zeroes f(x) -set x=0:_2pi
+
+#*
+ * Um die ganzen Stellen besser darstellen zu koennen, berechnen wir nun noch die zu den berechneten
+ * x-Werten gehoerenden Funktionswerte. Dabei soll die FOR-Schleife natuerlich alle berechneten x-Werte
+ * abklappern. Da wir deren Anzahl a priori jedoch nicht kennen (und sie fuer Extrem- und Nullstellen 
+ * unterschiedlich ist), lassen wir sie durch die Funktion 'num()' automatisch berechnen:
+ *#
+"\nBerechnen der zugehörigen Funktionswerte:\n------------------------------------------" -noquotes
+for (i = 1:num(cache(:,1)))
+	cache(i,2) = f(cache(i,1))
+endfor
+## Durch den folgenden Aufruf werden die Werte einfach nur auf dem Bildschirm dargestellt:
+"Funktionswerte der Extremstellen:" -noquotes
+cache(:,2)
+#*
+ * Allerdings ist NumeRe so clever, dass die obige FOR-Schleife im Grunde gar nicht noetig ist, denn NumeRe kann
+ * auch mehrere Ausdruecke zugleich auswerten. Dazu gehoert auch, die Funktionswerte mehrerer
+ * x-Werte gleichzeitig zu bestimmen. Man beachte ausserdem, dass hier "eigentlich" nur Nullen herauskommen 
+ * sollten ...
+ *#
+"Funktionswerte der \"Nullstellen\":" -noquotes
+cache(:,4) = f(cache(:,3))
+#* 
+ * Um diese Kurzschreibweise ausserhalb von den Datenobjekten verwenden zu koennen, muessen die Werte in der
+ * NumeRe-Vektorsyntax eingegeben werden: f({{x1,x2,x3,x4,...}}) != f(x1,x2,x3,x4,...)
+ * Allerdings hat diese Faehigkeit auch einen Nachteil: sollten mehrere Funktionsargumente benoetigt sein und sind
+ * diese in einem Datenobjekt gespeichert, so kann dies nicht durch z.B 'function(cache(1,1:3))' fuer drei Argumente
+ * aufgerufen werden, sondern es muss jedes Argument einzeln angegeben werden: function(cache(1,1), cache(1,2), cache(1,3))
+ *
+ * Ausserdem wollen wir noch die Ableitung der Funktion darstellen. Wir rechnen im gewuenschten Intervall
+ * 100 Datenpunkte aus (Ebenso wie die Funktion 'plot' standardmaessig) und speichern sie in den cache. Wir
+ * Werden sie aber nicht wie oben auf dem Bildschirm darstellen, da das ca. 70 Zeilen benoetigen wuerde: 
+ * 3 Werte je Zeile ==> 100/3 = 34 Zeilen je Datensatz...
+ *#
+"\nBerechnen der Ableitung von f(x):\n---------------------------------" -noquotes
+for (i = 1:100)
+	cache(i,5) = (i-1)*_2pi/99
+	## diff f(x) bildet die numerische Ableitung an der Stelle x=cache(i,5)
+	cache(i,6) = diff f(x) -set x=cache(i,5)
+endfor
+
+#*
+ * Jetzt haben wir sechs Spalten im Cache: Extrema in 1 und 2, Nullstellen in 3 und 4, sowie die
+ * Ableitung in 5 und 6. Dies wollen wir nun zusammen in einem Plot darstellen:
+ *#
+"\nPlotten der Funktion, der Ableitung, der Extrema und der Nullstellen:\n---------------------------------------------------------------------" -noquotes
+#*
+ * Vor '-set' koennen beliebig viele Funktionen/Datensaetze angegeben werden. Zu beachten ist, dass sie intern umgeordnet werden, 
+ * so dass zuerst die Funktionen und erst im Anschluss die Datensatze geplottet werden. Die Legendenbezeichnungen in Anfuehrungszeichen
+ * koennen auch weggelassen werden. Dann wird einfach der angegebene Bezeichner der Funktion fuer die Legende verwendet.
+ * Die eckigen Klammern nach '-set' schraenken das darzustellende Intervall ein. Die y-Werte koennten dabei durch [0:_2pi, y0:y1] 
+ * eingeschraenkt werden. Wenn sie das nicht werden, werden sie automatisch berechnet, allerdings mit dem Grundsatz, dass sie stets 5% groesser
+ * bzw. kleiner als die maximal bzw. minimal benoetigte y-Koordinate sind. Auf diese Art liegen naemlich keine Kurven/Datenpunkte auf dem
+ * Rand des Plots.
+ * 'grid' macht ein Gitter im Hintergrund sichtbar und 'box' aktiviert den umschliessenden Rahmen. 
+ * (Dabei werden die Achsen ebenfalls auf den Rand des Plots geschoben). 'opng="Dateiname"' gibt den Speicherort/Dateinamen der Ausgabe an. 
+ * Ist dies nicht gesetzt, wird automatisch ein Default-Wert gesetzt. (Bei 'plot' ist das dann "plot.png", bei 'mesh' ist das "meshgrid.png", etc.)
+ *
+ * Plotoptionen werden von Plot zu Plot beibehalten (bis auf div. Ausnahmen) und koennen durch ein explizites 'no' vor der Option wieder
+ * deaktiviert werden. Z.B. deaktiviert 'nogrid' das Gitter. Es spielt auch keine Rolle, in welcher Reihenfolge die Optionen angegeben werden!
+ *
+ * NumeRe-Plots besitzen per Default die Minimal-Information, die ein Plot besitzen muss: Legende, Achsen und Achsenbeschriftung. Die Achsen koennen
+ * dabei durch 'noaxis' deaktiviert werden, doch wird davon explizit abgeraten. Die Legende wird direkt durch die angegebenen Legendenbezeichnungen
+ * festgelegt bzw. ggf. automatisch bestimmt. Auf die Achsenbeschriftungen kann mittels 'xlabel="x-Achsenbeschriftung"', 'ylabel="..."', bzw. 
+ * 'zlabel="..."' Einfluss genommen werden. Hier wird auch TeX-Code akzeptiert. Mittels 'title="Titel"' kann auch ein Titel ueber dem Plot
+ * angezeigt werden.
+ *
+ * Seit Version 1.0.0 "Biot" gibt es die neuen Optionen "interpolate" und "hires": "interpolate" interpretiert Datensaetze als Funktionswerte, wenn
+ * sie aus genuegend Datenpunkten bestehen (mindestens der Anzahl an samples, die fuer den Plot verwendet werden sollen, wobei dieser Wert durch
+ * die Plotoption 'samples=WERT' beeinflusst werden kann). "interpolate" bietet sich in diesem Fall daher fuer die Darstellung der Ableitung an, welche
+ * aus 100 Datenpunkten besteht. (Der Standardwert fuer "samples" ist ebenfalls 100.)
+ * Die Option "hires" ist per default deaktiviert und spart dadurch Rechen- und Speicherzeit. Plots, die ohne diese Option erzeugt werden, 
+ * sind daher als "Entwurf" zu betrachten. Wenn man mit dem endgueltigen Ergebnis einverstanden ist, sollte "hires" aktiviert werden und der Plot ein
+ * weiteres Mal durchgefuehrt werden.
+ * Plots ohne "hires" haben die Abmasse 800*600 und eine sehr grobe Aufloesung. Plots mit "hires" haben mehr als FullHD-Aufloesung (1920*1440) und 
+ * groesstmoegliche Qualitaetswerte.
+ *#
+plot f(x), cache(:,5:6) "df/dx", cache(:,1:2) "Extrema", cache(:,3:4) "Nullstellen" -set [0:_2pi] grid opng="sample_2" box interpolate title="Standardqualität"
+plot f(x), cache(:,5:6) "df/dx", cache(:,1:2) "Extrema", cache(:,3:4) "Nullstellen" -set [0:_2pi] opng="sample_2_hires" hires title="Hohe Qualität"
+
+"Ende des Beispielscripts" -noquotes

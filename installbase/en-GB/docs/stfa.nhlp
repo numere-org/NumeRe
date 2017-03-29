@@ -1,0 +1,31 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="stfa">
+	<title string="Short-time Fourier analysis" />
+	NumeRe may apply a short-time Fourier analysis (STFA) to data sets, to create a so-called spectrogram. Simply pass the data set to the command <code>stfa</code>:<codeblock>stfa DATA(I1:I2,J1:J2)</codeblock>NumeRe expects two columns: <expr>x</expr> and <expr>y</expr> values.
+	NumeRe assumes that the passed data is sorted in their <code>x</code> values and regularized as well, meaning that the <expr>x</expr> values are distributed equidistantly in their interval. Use <code>sort</code> and <code>regularize</code>, if that's not the case.
+	NumeRe will determine the window size of the short-time Fourier analysis according to the number of data points divided by 32. The result of the analysis will be written to the cache <code>stfdat()</code>, which will be created automatically, if it doesn't exist.
+	The preferences may be altered using the following options:
+	<list>
+		<item node="samples=VALUE">Set the windowsize from 1/32 of all points to a custom value</item>
+		<item node="target=CACHE">Choose a target cache. It will be created, if it doesn't exist</item>
+	</list>
+	The result of a short-time Fourier analysis is a data grid, with the original <expr>x</expr> values on the <expr>x</expr> axis (note that the number of points are reduced by the factor <expr>1/samples</expr>) and the corresponding frequency values on the <expr>y</expr> axis. This data grid may be displayed using for example the the command <code>dens</code>.
+	<em>See also:</em> "help dens" and "help regularize"
+</article>

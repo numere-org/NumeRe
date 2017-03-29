@@ -1,0 +1,39 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="new">
+	<title string="Erzeugen neuer Caches, Dateien und Verzeichnisse" />
+	NumeRe kann mittels des Kommandos <code>new</code> neue Caches, Dateien und Verzeichnisse erzeugen. Dazu ist ein Parameter und der Name des neuen Objekts erforderlich:<codeblock>new -PARAMETER=OBJEKTNAME</codeblock>
+	Als Parameter sind die folgenden verfügbar:
+	<list>
+		<item node="-dir=PFAD">Ein neues Verzeichnis am Ort PFAD erzeugen</item>
+		<item node="-proc=PFAD">Eine neue Prozedur am Ort PFAD erzeugen. Fehlende Zwischenordner werden ggf. erzeugt</item>
+		<item node="-script=PFAD">Ein neues Script am Ort PFAD erzeugen. Fehlende Zwischenordner werden ggf. erzeugt</item>
+		<item node="-file=PFAD">Eine neue Datei am Ort PFAD erzeugen. Fehlende Zwischenordner werden ggf. erzeugt</item>
+		<item node="-plugin=CMD">Ein Template für eine Plugininstallation mit dem Kommando CMD erzeugen. Dieses umfasst den Installationsframe, die Installationsinformationen, die Hauptprozedur und ein Template für einen Eintrag in die Hilfedatenbank.</item>
+		<item node="-cache=CACHES">Ein oder mehrere neue Caches erzeugen. Mit dem optionalen Parameter <code>-free</code> werden eventuell vorhandene Daten in den erzeugten Caches gelöscht</item>
+	</list>
+	Es können die Pfadplatzhalter <code>&lt;PFAD&gt;</code> verwendet werden, um die Pfade zu verkürzen. Außerdem können die Pfade absolut oder relativ vom passenden Stammverzeichnis (<code>-dir</code> und <code>-file</code>: NumeRe-Stammverzeichnis, <code>-proc</code>: Standardprozedurenordner und <code>-script</code>: Standardscriptordner) angegeben werden.
+	Um neue Caches oder neue Prozeduren zu erzeugen, können auch die <em>Kurzschreibweisen</em><codeblock>new CACHE1(), CACHE2(), ...</codeblock>bzw.<codeblock>new $PROCEDURE</codeblock>verwendet werden.
+	Es wird <em>nicht</em> geprüft, ob eine Datei bereits existiert. Bereits vorhandene Dateien werden folglich <em>vollständig</em> überschrieben. Dies gilt jedoch nicht für den Parameter <code>-dir=PFAD</code>. Bereits vorhandene Caches werden ebenfalls nicht überschrieben, sofern nicht <code>-free</code> mit angegeben wurde.
+	<example desc="Erzeugen eines neues Scriptes am Ort '<scriptpath>/Aktuell/Simulation':">
+		new -script=&lt;scriptpath&gt;/Aktuell/Simulation
+		Das Script "&SCRIPTPATH&/Aktuell/Simulation.nscr" wurde erfolgreich erzeugt.
+	</example>
+	<em>Siehe auch:</em> "help cache", "help procedure" und "help script"
+</article>

@@ -1,0 +1,48 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="if_cond">
+	<title string="Conditions" />
+	Using the command <code>if (COND)</code> the evaluation will be forked according to the condition in multiple cases (<code>if...elseif...else...endif</code>). <code>COND</code> represents a logical expression, which will be evaluated before NumeRe enters the corresponding fork. A fork contains at least one <code>if</code> and one <code>endif</code>. In between, you may use as many <code>elseif</code> as needed and at most one <code>else</code> (in this order).
+	In an IF construct NumeRe will only evaluate the case, whose condition was fulfilled. If <code>if</code> is evaluated to <code>false</code>, NumeRe will examine the following <code>elseif</code> conditions until a fulfilled one was found. The ELSE fork will only be executed, if all previous conditions were evaluated to <code>false</code>.
+	<codeblock>
+		if (COND1)
+		\tExpressions
+		elseif (COND2)
+		\tExpressions
+		[...]
+		else
+		\tExpressions
+		endif
+	</codeblock>
+	A fork doesn't have to contain an ELSE fork or an ELSEIF fork. If the condition for the IF fork was not fulfilled, NumeRe will jump over the whole construct and continue after <code>endif</code>.
+	The end of the whole construct will always be <code>endif</code>. As with FOR and WHILE loops you may append the parameter <code>-sv</code> to this command, which shows als intermediate results. If the parameter <code>-mask</code> was appended instead, then all notifications about the current execution will be suppressed.
+	An IF construct may contain an arbitrary number of FOR and WHILE loops and other IF constructs.
+	The declaration may be canceled using the command <code>abort</code>. All entered commands for the current IF construct will be deleted. This is in contrast to the command <code>break</code>, which will be evaluated at runtime.
+	You may check, if a data file was loaded or if there is data available in the cache CACHE, if you use <code>if (data())</code> or <code>if (CACHE())</code>, respectively. This may be used inside of scripts, which will need for example an empty cache. <em>Careful:</em> if <code>CACHE()</code> doesn't exist, a global error will be thrown and the evaluation will be canceled.
+	IF constructs inside of loops may influence them using the commands <code>break</code> and <code>continue</code> (See "help for" and "help while" for information about these commands). Inside of an IF construct, these commands have the same effect, as if <code>endif</code> would be present at its location (they cancel the evaluation of the current fork at this point), and they will be passed outside as long as they reach a surrounding loop or the outermost IF construct, which in this case will be aborted, too.
+	For simple corrections you may use the command <code>replaceline</code>. See "help replaceline" for further information.
+	<example desc="A simple fork, which simulates the max() function:" type="verbatim">
+		|&lt;- if (a &gt; b)
+		|IF-&gt; ans = a
+		|IF-&gt; else
+		|ELSE&gt; ans = b
+		|ELSE&gt; endif
+	</example>
+	<em>See also:</em> "help list", "help for", "help while", "help cache", "help data" and "list -logic"
+</article>

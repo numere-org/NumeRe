@@ -1,0 +1,44 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="for_loop">
+	<title string="FOR-Schleifen" />
+	FOR-Schleifen sind wiederholte Aufrufe derselben <expr>N</expr> Ausdrücke. Dabei können die Ausdrücke sich auch auf die Ergebnisse des vorherigen Aufrufs beziehen. Um einen Schleifendurchlauf eindeutig zu identifizieren, wird der Schleifenindex verwendet, der direkt im Anschluss an <code>for</code> zu deklarieren ist, Mit diesen Indices kann natürlich wie mit normalen Variablen umgegangen werden.
+	Die Grenzen der Schleifenindices müssen vor den eigentlichen auszuwertenden Ausdrücken angegeben werden. Dabei sind die Grenzen in der Form <code>(INDEX = a:b)</code> in einer Zeile anzugeben, wobei <code>a</code> den initialen und <code>b</code> den finalen Wert des Indexes angibt. Die Werte für die Indices müssen ganze Zahlen sein. Sollte <expr>b &lt; a</expr> gewählt werden, so wird NumeRe in dieser Schleife rückwärts zählen. Datenobjekte (<code>data()</code>, <code>cache()</code> und <code>string()</code>) können jedoch nicht mit negativen Indices umgehen - hier kann die <code>abs()</code>-Funktion angewendet werden.
+	<codeblock>
+		for (INDEX = a:b)
+		\tAusdrücke
+		endfor
+	</codeblock>
+	FOR-Schleifen werden durch den Befehl <code>endfor</code> geschlossen. Dieser Befehl ist für jede zuvor geöffnete Schleife nötig. Mit dem Schließen der äußersten Schleife wird die Auswertung automatisch gestartet. Wird der optionale Parameter <code>-sv</code> beim Schließen einer (egal, welcher) Schleife übergeben, so werden <em>alle</em> Schritte der Auswertung angezeigt. Wird stattdessen der optionale Parameter <code>-mask</code> angegeben, so wird auch die Fortschrittsanzeige unterdrückt. Der Parameter <code>-lnumctrl</code> bricht alle Schleifen nach maximal 1000 Iterationen ab. Die Zahl der Iterationen kann mittels <code>-lnumctrl=WERT</code> beeinflusst werden.
+	Eine FOR-Schleife kann eine beliebige Zahl an anderen FOR-Schleifen, WHILE-Schleifen oder IF-Verzweigungen enthalten.
+	Die Deklaration kann mit dem Kommando <code>abort</code> abgebrochen werden, ohne dass die bisher eingegebenen Befehle ausgeführt werden. Dies steht im Gegensatz zu dem Kommando <code>break</code>, das erst während der Laufzeit ausgewertet wird.
+	Erweiterte Kontrolle über die Zählschleife geben die beiden Kommandos <code>break</code> und <code>continue</code>, die auch innerhalb einer IF-Bedingung (die selbst Teil der Zählschleife ist) stehen können und von dort Einfluss auf die Auswertung nehmen:
+	<list>
+		<item node="break">Bricht die Auswertung der aktuellen Zählschleife an dieser Stelle ab und springt in die (evtl. vorhandene) äußere FOR-/WHILE-Schleife/IF-Bedingung. Falls die aktuelle Schleife bereits die äußerste ist, wird die gesamte Auswertung abgebrochen</item>
+		<item node="continue">Bricht die Auswertung des aktuellen Schleifendurchlaufes an dieser Stelle ab und fährt sofort mit dem nächsten Durchlauf fort</item>
+	</list>
+	Die Auswertung kann auch mit der <code>ESC</code>-Taste abgebrochen werden, falls sie zu viel Zeit in Anspruch nimmt.
+	Für einfache Korrekturen steht der Befehl <code>replaceline</code> zur Verfügung. Siehe hierzu: "help replaceline"
+	<example desc="FOR-Schleife, die von 1 bis 10 zählt:" type="verbatim">
+		|&lt;- for (i = 1:10)
+		|FOR&gt; i
+		|FOR&gt; endfor -sv
+	</example>
+	<em>Siehe auch:</em> "help if", "help while", "help data", "help cache" und "help string"
+</article>

@@ -1,0 +1,34 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="functions">
+	<title string="Predefined mathematical functions" />
+	NumeRe contains a big set of predefined mathematical functions. This set can be listed using the command <code>list -func</code>. Although most of the functions are self-describing, this article gives some advices for using these functions.
+	The arguments of trigonometric functions as well as the result of their inverse functions are always in radian. The conversion from degree to radian can be achieved by using <code>radian()</code>; its inverse is the function <code>degree()</code>.
+	Some functions are capable of processing an arbitrary number of arguments (just like <code>avg()</code> or <code>std()</code>). If these functions shall be combined with the columns or the lines of a data set, then these have to be passed in the form <codeblock>FUNC(DATA(I1:I2,J))<codeblock>or<codeblock>FUNC(DATA(I,J1:J2))</codeblock>respectively, where <code>DATA()</code> describes a data object. Excluding <code>cnt()</code>, these functions will ignore <code>nan</code> or <code>inf</code> values.
+	In contrast, all other functions applied to data objects will process the content of the data object elementwise, which means that these functions will return as many values as the the number of elements contained in the data set.
+	Most functions are only defined in their definition interval and return <code>nan</code>("not a number") outside of their interval. This definition interval may be given in one of the following ways: <code>R; [a,b]; (a,b); R \ {a,b,c,...}</code> or combinations hereof. It is:
+	<list>
+		<item node="R">The interval of all real numbers.</item>
+		<item node="R \ {a,b,c,...}">The interval of all real numbers, excluding the positions <expr>a,b,c,...</expr>.</item>
+		<item node="[a,b]">The function is only defined in the interval <expr>a &lt;= x &lt;= b</expr>.</item>
+		<item node="(a,b)">the function is only defined in the interval <expr>a &lt; x &lt; b</expr>. (Note the difference in the parentheses.)</item>
+	</list>
+	The value "inf" describres "infinity" and "PI" is the value of <expr>pi = 3.1415926...</expr>.
+	<em>Tip:</em> Using the command <code>define</code> you may define your own functions. See "help -define" for further information.
+</article>

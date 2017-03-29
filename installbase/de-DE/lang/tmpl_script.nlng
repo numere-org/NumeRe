@@ -1,0 +1,19 @@
+#*
+ * Dieses Script wurde automatisch von NumeRe erzeugt
+ * SCRIPTNAME:  %%1%%
+ * ERZEUGT:     %%2%%
+ * ==================================================
+ *
+ * Die Befehle direkt im Anschluss angeben oder mittels der Syntax
+ * @SCRIPT Definitionen und globale Ausdrücke aus dem Script SCRIPT
+ * in dieses Script laden.
+ *
+ * (Falls dieses Script veröffentlich werden soll, bietet sich an dieser
+ * Stelle auch die Nennung der Lizenz an)
+ *#
+
+
+#* Ende des Scripts
+ * NumeRe: Framework für Numerische Rechnungen | Freie numerische Software unter der GNU GPL v3
+ * https://sites.google.com/site/numereframework/
+ *#

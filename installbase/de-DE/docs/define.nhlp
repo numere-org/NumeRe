@@ -1,0 +1,51 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="define">
+	<title string="Funktionsdefinitionen" />
+	Das Kommando <code>define</code> erlaubt es, eigene Funktionen für den wiederholten Aufruf in einer laufenden NumeRe-Sitzung zu definieren. Dabei sind bis zu 100 Definitionen möglich.
+	Die Definition muss mit dem Funktionsnamen, worauf die Funktionsargumente in Klammern direkt darauf angegeben werden müssen, begonnen werden. NumeRe unterstützt im Augenblick bis zu zehn Variablen je Funktion bzw. beliebig viele in Form einer speziellen Syntax. Eine Funktion muss jedoch nicht zwingend Argumente besitzen; auch leere Argumentklammern sind möglich. Der Funktionsname darf dabei keine mathematischen Operatoren enthalten und nicht mit einer Ziffer beginnen.
+	Die Syntax <code>:=</code> leitet dann die eigentliche Deklaration des Ausdrucks und der Funktion an sich ein, wobei mit dem Parameter <code>-set</code> zusätzliche Optionen angegeben werden können:<codeblock>define FUNKTION(ARGUMENTE) := AUSDRUCK(ARGUMENTE) [-set OPTIONEN]</codeblock>
+	Als Optionen stehen die folgenden drei zur Verfügung:
+	<list>
+		<item node="comment=KOMMENTAR">Einen zusätzlichen Kommentar zur Funktionsdefinition angeben. Ein Kommentar mit Leerzeichen muss von Anführungszeichen umschlossen sein.</item>
+		<item node="asval=VARIABLEN">Einen Satz an Variablen angeben, die während der Definition durch ihre Werte ersetzt werden sollen. Mehrere Variablen müssen in geschweiften Klammern angegeben werden</item>
+		<item node="recursive">In Kombination mit dem Kommando <code>redefine</code> kann eine Funktion auf eine vorherige Version ihrer selbst verweisen. Die vorherige Version wird dabei durch die neue Definition ersetzt.</item>
+	</list>
+	Die definierte Funktion kann nach der erfolgreichen Definition durch Angabe des Variablennamens und (Werten für) die Variablen aufgerufen werden.
+	Wenn das letzte Argument in der Form <code>...</code> angegeben wird, so kann für dieses Argument von einem bis beliebig viele Werte übergeben werden. Es wird jedoch mindestens <code>0.0</code> angegeben, auch wenn hierfür eigentlich kein Wert übergeben wurde. Zu beachten ist jedoch, dass die Funktion auch mit beliebig vielen Argumenten umgehen können muss, z.B.:<codeblock>define function(x,y,...) := abs(x)*sign(y)+num(...)</codeblock>
+	NumeRe prüft bei jeder Funktionsdefinition, ob diese Funktion ggf. eine Endlosschleife durch eine rekursive Definition erzeugt und wird die Definition in diesem Fall ablehnen.
+	Mit dem Kommando <code>redefine</code> (und der sonst gleichen Syntax) kann eine bereits definierte Funktion neu definiert werden. Mit diesem Kommando kann eine Funktion (die ohne Argumente übergeben werden muss) auch nachträglich mit einem Kommentar versehen werden:<codeblock>redefine FUNKTION() -set comment=KOMMENTAR</codeblock>
+	Mit <code>ifndefined</code> (und der sonst gleichen Syntax) wird vor dem Versuch einer Definition geprüft, ob die zu definierende Funktion nicht bereits existiert und nur, wenn dies nicht der Fall ist, die Definition vollzogen.
+	Das Kommando <code>undefine</code> entfernt eine zuvor getätigte Definition aus dem Speicher. Dabei muss der Funktionsname mit leeren Argumentklammern angegeben werden:<codeblock>undefine FUNKTION()</codeblock>
+	Von NumeRe vordefinierte Funktionen (z.B. <expr>sin(x)</expr>) können nicht neu definiert werden.
+	<code>define</code> versteht des Weiteren drei erweiterte Parameter:
+	<list>
+		<item node="-save">Definierte Funktionen in die Definitionsdatei (&lt;&gt;/functions.def) speichern. Während des Speichervorganges werden nur aktualisierte Definitionen überschrieben. Die noch nicht verhandenen Definitionen werden an die bestehenden angehängt.</item>
+		<item node="-load">Funktionen aus der Definitionsdatei (&lt;&gt;/functions.def) lesen. Definitionen im Speicher werden währenddessen überschrieben!</item>
+		<item node="-set">Leitet zusätzliche Optionen (wie z.B. <code>comment=KOMMENTAR</code>) ein</item>
+	</list>
+	<example desc="Definition der Funktion <expr>func(x) = sqrt(exp(-x))</expr> mit einem Kommentar und Aufruf mit dem Wert <expr>x = 2.5</expr>:" type="verbatim">
+		|&lt;- define func(x) := sqrt(exp(-x)) -set comment="Modell des Vorgangs"
+		|-&gt; Funktion "func" wurde erfolgreich definiert!
+		|
+		|&lt;- func(2.5)
+		|-&gt; ans = 0.2865048
+	</example>
+	<em>Siehe auch:</em> help list
+</article>

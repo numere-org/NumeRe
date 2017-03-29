@@ -1,0 +1,71 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="procedure">
+	<title string="NumeRe-Prozeduren" />
+	Neben der Möglichkeit, Scripte auszuführen, ist NumeRe auch mit der mächtigen Fähigkeit ausgestattet, <em>komplexe Prozeduren</em> durchzuführen. Diese Prozeduren haben in etwa den Stellenwert einer Funktion in der gewöhnlichen Programmierung mit C/C++ oder anderen Programmiersprachen. So können auch komplexe Aufgaben mithilfe von Prozeduren gelöst werden, da selbige u.A. auch rekursiv aufgerufen werden können.
+	Prozedurdefinitionen werden durch das Schlüsselwort <code>procedure</code> eingeleitet und durch <code>endprocedure</code> abgeschlossen. Auf das einleitende Schlüsselwort <code>procedure</code> muss der Name der Prozedur mit einem vorangestellten <code>$</code> und die Variablenliste angegeben werden. Direkt danach können nach <code>::</code> noch <em>optionale Flags</em> übergeben werden, die auf die gesamte Prozedur Einfluss haben. Zwischen den Schlüsselwörtern <code>procedure</code> und <code>endprocedure</code> befindet sich dann der Rumpf der Prozedur, in welchem die eigentlichen Befehle abgearbeitet werden:
+	<codeblock>
+		procedure $PROZEDURNAME(VARLIST) :: FLAGS    ## Prozedurenkopf
+		\tPROZEDURENRUMPF                          ## Ausdrücke und Befehle
+		endprocedure                                 ## Prozedurenfuß
+	</codeblock>
+	Prozeduren müssen einzeln als "NumeRe-Prozedur" (*.nprc) im Prozedurenordner vorliegen, wobei der Dateiname mit dem Prozedurennamen übereinstimmen muss. Wer sicher gehen will, kann die Prozedur(en) auch in ein NumeRe-Script in einen <code>&lt;install&gt; ... &lt;endinstall&gt;</code>-Block schreiben und das Script mit dem zusätzlichen Parameter <code>install</code> oder durch <code>install SCRIPT</code> ausführen. NumeRe wird dann automatisch eine (oder mehrere) NumeRe-Prozedur(en) mit dem passenden Dateinamen und am richtigen Ort anlegen. (NumeRe kann auch Prozeduren aus anderen Ordnern laden, wenn der absolute oder relative Dateipfad in <em>einfachen</em> Anführungszeichen als Prozedurname angegeben wird: <code>$'PFAD_ZUR_PROZEDUR'(VARLIST)</code>. Wegen der Fehleranfälligkeit solch langer Dateinamen wird allerdings davon abgeraten.)
+	Es können auch mehrere Prozeduren in eine Datei gefasst werden, so lange eine davon den Namen der Datei trägt. Die weiteren Prozeduren können dann aus der namensgebenden Prozedur mit der speziellen Syntax <code>$thisfile~...</code> (s.u.) aufgerufen werden.
+	Als Flags für den Prozedurenkopf existieren die folgenden:
+	<list>
+		<item node="private">Eine Prozedur mit diesem Flag kann <em>nur</em> von einer Prozedur aus dem gleichen Namensraum aufgerufen werden. Eine derartige Deklaration macht z.B. Sinn, wenn eine Prozedur eine Voraussetzung besitzt, die von einer anderen Prozedur zuvor erfüllt werden muss. (Prozeduren, die mittels <code>$thisfile~...</code> (s.u.) aufgerufen werden und nicht Namensgeber der Datei sind, sind implizit <code>private</code>)</item>
+		<item node="explicit">Dieser Flag verhindert, dass in der Prozedur Plugins verwendet werden. Dies kann bei zeitkritischen Berechnungen von Vorteil sein, oder um zu verhindern, dass in der eigenen Plugindeklaration eine Endlosschleife auftritt.</item>
+		<item node="inline">Eine als <code>inline</code> geflagte Prozedur kann innerhalb einer Schleife schneller ausgeführt werden. Allerdings darf eine "inline-Prozedur" keine Schleifen, Prozeduren oder Plugins enthalten.</item>
+	</list>
+	Prozeduren können durch das <code>$</code> mit darauffolgendem Prozedurennamen und der Variablenliste aufgerufen werden. Dies kann sowohl direkt in der NumeRe-Konsole, als auch in einer Schleife oder einem Script passieren. NumeRe wird dann den bisherigen Programmablauf unterbrechen und die gewünschte Prozedur ausführen. Falls die Prozedur einen Rückgabewert (Signalisiert durch das Kommando <code>return</code>) besitzt, kann dieser auch an eine Variable zugewiesen oder damit gerechnet werden.
+	Ähnlich wie C++ ist NumeRe mit sogenannten Namensräumen ausgestattet, die verwendet werden können, um Namenskonflikte mit anderen Prozeduren zu vermeiden oder um ganze Projekte zu untergliedern. Die Syntax, um eine Prozedur aus einem bestimmten Namensraum aufzurufen, lautet <codeblock>$NAMENSRAUM~PROZEDUR(ARGUMENTE)</codeblock>Diese Namensräume werden durch Unterordner im Standard-Prozedurordner, die nach dem jeweiligen Namensraum benannt sind, umgesetzt (und nicht etwa durch <code>procedure $NAMENSRAUM~PROZEDUR(ARGUMENTE) ...</code>). Der Namensraum <code>main</code> ist der globale Namensraum (oder der Standard-Prozedurordner); der Namensraum <code>this</code> ist der Namensraum der aktuellen Prozedur. Eine Sonderstellung nimmt der Namensraum <code>thisfile</code> ein: dieser Namensraum ist auf die aktuelle Datei beschränkt. Alle Prozeduren in dieser Datei, die nicht den Namen der Datei tragen, sind außerdem automatisch <code>private</code>.
+	Mit dem Kommando <code>namespace NSP</code> kann der Namensraum NSP für die nachfolgenden Prozeduren aktiviert werden, um nicht bei jeder Prozedur den Namensraum angeben zu müssen. Prozeduren aus anderen Namenräumen können allerdings immer noch aufgerufen werden, indem der Namensraum direkt bei der Prozedur angegeben wird.
+	Falls eine Prozedur mithilfe eines Scripts oder der direkten Konsoleneingabe erzeugt werden soll und falls selbige in einem anderen Namensraum als <code>main</code> liegen soll, muss dieser im Prozedurkopf durch<codeblock>procedure $NAMENSRAUM~PROZEDUR(ARGUMENTE)\n\t...\nendprocedure</codeblock>angegeben werden. (Dies dient jedoch nur zur Identifikation des Namenraumes und wird nicht in die Prozedur-Datei geschrieben.)
+	In Prozeduren können auch Teile von Scripten durch die Syntax <code>@SCRIPT</code> eingeladen werden. Dies entspricht dem identischen Ausdruck, der in einem Script verwendet werden kann. Ebenso sind hier die Parameter <code>@SCRIPT: globals</code> und <code>@SCRIPT: defines</code> verfügbar.
+	In Prozeduren kann neben den Pfadplatzhaltern <code>&lt;loadpath&gt;</code>, <code>&lt;scriptpath&gt;</code>, etc. auch der spezielle Platzhalter <code>&lt;this&gt;</code> verwendet werden, der das Verzeichnis, in welchem sich die Prozedur befindet, beinhält.
+	<em>Wichtig:</em> Neben den üblichen Kommandos und Ausdrücken kann der Rumpf einer Prozedur noch spezielle Kommandos mit prozedurenspezifischer Bedeutung enthalten. Diese sind unter "help proccmd" aufgelistet.
+	Die Auswertung kann auch mit der <code>ESC</code>-Taste abgebrochen werden, falls sie zu viel Zeit in Anspruch nimmt.
+	Prozeduren können auch verwendet werden, um die Funktionalität von NumeRe mithilfe von Plugins (welche durch ein Kommando aufgerufen werden können) zu erweitern. Die Deklaration eines solchen Plugins kann jedoch nur innerhalb eines <code>&lt;install&gt; ... &lt;endinstall&gt;</code>-Blocks in einem NumeRe-Script geschehen. (Siehe hierzu "help plugin")
+	<example desc="Eine Prozedur, die eine Datenanalyse automatisiert (wird in NumeRe aufgerufen durch <code>$analyse_data(DATAFILENAME)</code>):" type="verbatim">
+        |   procedure $analyse_data(datafile)
+        |       if (!data())
+        |           load to_string(datafile)
+        |       else
+        |           return false
+        |       endif
+        |       stats data() -export="stats_" + to_string(datafile)
+        |       hist data() -export="hist_" + to_string(datafile) bins=32
+        |       return true;
+        |   endprocedure	
+	</example>
+	<em>Siehe auch:</em> "help script", "help install", "help plugin", "help if", "help for" und "help while"
+</article>
+
+<article id="procedure_commands">
+	<title string="Prozedur-Kommandos" />
+	Der Rumpf einer Prozedur kann die üblichen Kommandos und Ausdrücke beinhalten, die auch direkt in die Konsole eingegeben werden könnten. Zusätzlich gibt es aber noch spezielle Kommandos mit prozedurenspezifischer Bedeutung:
+	<list>
+		<item node="var VARIABLEN">Damit werden prozedureninterne Variablen deklariert, die nur innerhalb der aktuellen Prozedur verwendet werden sollen und können (sie sind auch dann eindeutig, wenn die Prozedur sich selbst rekursiv aufruft). Es können auch gleich die Initialwerte der Variablen in der Form <code>var VAR1 = WERT, VAR2 = WERT, ...</code> angegeben werden. Dieses Kommando darf pro Prozedur <em>nur einmal</em> erscheinen; jedes weitere Auftreten wird ignoriert.</item>
+		<item node="str STRINGVARS">Dies deklariert prozedureninterne Zeichenkettenvariablen, die nur in der aktuellen Prozedur verwendet werden können. Auch hier können die Initialwerte der Variablen in der Form <code>str SVAR1 = ZEICHENKETTE, SVAR2 = ZEICHENKETTE</code> angegeben werden. Dieses Kommando darf pro Prozedur <em>nur einmal</em> erscheinen; jedes weitere Auftreten wird ignoriert.</item>
+		<item node="return WERT">Trifft NumeRe während der Auswertung auf dieses Kommando, so verlässt NumeRe die Prozedur an dieser Stelle (egal, ob dieses Kommando inmitten oder am Ende einer Prozedur erscheint. Kommandos, die in den darauffolgenden Zeilen stehen, werden nicht mehr ausgeführt). <code>return</code> kann auch mehrfach in einer Prozedur verwendet werden, z.B. um den Rückgabewert von einer Bedingung abhängig zu machen. Ebenso ist dieses Kommando nicht zwingend erforderlich; Prozeduren geben standardmäßig den Wert <code>true</code> zurück, wenn kein <code>return</code> oder ein <code>return</code> ohne Wert gefunden wurde. Neben numerischen Werten kann WERT auch Zeichenketten oder eine Mischung beider Variablentypen zum Inhalt haben. Ein spezieller Wert ist <code>void</code>. Dieser teilt NumeRe mit, dass die Prozedur definitiv keinen Rückgabewert besitzt.</item>
+		<item node="readline">Bietet die Möglichkeit, (im Gegensatz zu <code>??</code>) eine formatierte Eingabe abzufragen. Parameter sind <code>-asstr</code> (wandelt die Eingabe direkt in eine Zeichenkette um), <code>-msg=NACHRICHT</code> (Schreibt die NACHRICHT an den Anfang der Zeile, z.B. als Erläuterung) und <code>-dflt=STANDARD</code> (Definiert einen Defaultwert STANDARD). Die Eingabe kann durch <code>VAR = readline</code> bzw. <code>string() = readline -asstr</code> direkt in eine Variable oder das <code>string()</code>-Objekt gespeichert werden.</item>
+		<item node="namespace NSP">Wechselt an dieser Stelle in den Namensraum NSP. Wenn für NSP <code>main</code> oder nichts angegeben wird, wechselt NumeRe in den globalen Namensraum; mit <code>this</code> in den Namensraum der aktuellen Prozedur. <code>thisfile</code> beschränkt den Namensraum auf die aktuelle Datei.</item>
+		<item node="throw">Wenn ein Ereignis auftritt, das in einer Prozedur nicht vorgesehen ist (was z.B. ein unsinniger Wert sein kann), so dass die weitere Auswertung unnötig/fehlerhaft wird, kann dieses Kommando verwendet werden, um sofort alle Prozeduren zu beenden. Die Wirkungsweise entspricht einer Exception in C++ (und wird intern auch so ausgewertet). Es kann eine eigene Fehlermeldung ausgegeben werden, wenn diese als Zeichenkette angehängt wird. (<code>throw "FEHLERMELDUNG"</code>)</item>
+	</list>
+</article>

@@ -1,0 +1,38 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="zeroes">
+	<title string="Numerical determination of zeroes" />
+	The command <code>zeroes</code> determines all zeroes (i.e. roots, which are the positions <expr>x0</expr>, where <expr>f(x0) = 0</expr>) of a passed expression in a predefined interval. The expression mustn't oscillate too strongly in the corresponding interval. If such an expression is present, then you should choose the interval much smaller.
+	The expression, which shall be examined, has to be directly passed to the command <code>zeroes</code>. After the additional parameter <code>-set</code> the options are mandatory. These are as follows:
+	<list>
+		<item node="VAR=POS1:POS2">Define the left (POS1) and the right (POS2) interval border of the variable VAR</item>
+		<item node="up">Restrict the results to positive slopes (<em>optional</em>)</item>
+		<item node="down">Restrict the results to negative slopes (<em>optional</em>)</item>
+		<item node="samples=SAMPLES">Define the number of samples for the basic resolution. The minimal value is 21; the nominal maximal value is 10001. However, this number will be slightly fitted to the size of the interval.</item>
+	</list>
+	Zeroes of data sets may be determined as well. The corresponding <expr>y</expr> values have to be part of the expression, which shall be evaluated:<codeblock>zeroes EXPRESSION(DATAPOINTS(I1:I2,J1:J2))</codeblock>The corresponding <expr>x</expr> values may passed with the parameter <code>x=x-DATAPOINTS()</code>. The <expr>x</expr> data set may have a different number of data points. In this case, the number of <expr>y</expr> values will be used and the eventual missing <expr>x</expr> values will be replaced with 0.0, if applicable. If no <expr>x</expr> values were passed, the command returns the indices, which are nearest to the zeroes. If the <expr>x</expr> values are available, <code>zeroes</code> returns linear interpolated <expr>x</expr> values of the actual zeroes.
+	<em>Note:</em> If no <expr>x</expr> values were passed, it is possible that indices will be returned twice. This is <em>not</em> an error, but occures, if the index is located in between of two zeroes and if it is as well the nearest point to both zeroes.
+	<example desc="Zeroes of the function <expr>f(x) = x^3-x</expr> in the interval -5 to 5 and zeroes of a data set:">
+		zeroes x^3-x -set x=-5:5
+		ans = {    -1,     0,     1}
+		zeroes data(:,2) -set x=data(:,1)
+		ans = { 3.445, 8.314, 9.862,  (...)}
+	</example>
+	<em>Tip:</em> This function may determine the intersections of two functions in an interval [<expr>x0,x1</expr>]:<codeblock>zeroes f(x)-g(x) -set x=x0:x1</codeblock>
+</article>

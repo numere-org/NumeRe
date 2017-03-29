@@ -1,0 +1,29 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="vect3d">
+	<title string="3D-Vektorfeldplots" />
+	Das Kommando <code>vect3d</code> erlaubt die Darstellung eines dreidimensionalen Vektorfeldes <expr>A(x,y,z) := Ax(x,y,z)ex + Ay(x,y,z)ey + Az(x,y,z)ez</expr> in allen drei Raumrichtungen. Wie bei der zweidimensionalen Variante <code>vect</code> kann dabei nur ein Vektorfeld je Plot angezeigt werden.
+	Das Vektorfeld <expr>A(x,y,z)</expr> muss dabei in der Form <code>Ax(x,y,z), Ay(x,y,z), Az(x,y,z)</code> eingegeben werden, wobei <expr>Ax, Ay</expr> und <expr>Az</expr> Funktionen der drei Raumrichtungen sind.
+	<code>vect3d</code> kennt drei zusätzliche Optionen: <code>flength</code>, <code>flow</code> und <code>pipe</code>. Ihre Auswirkungen entsprechen dem 2D-Fall und werden dort erläutert (siehe "help vect"). Zusätzlich werden bei <code>vect3d</code> die Anzahl der berechneten Stützstellen (samples) automatisch auf eine gerade Zahl reduziert.
+	Für Vektorplots wird dasselbe Farbschema wie für alle anderen Plots verwendet. Dieses kann mittels der Option <code>colorscheme=FARBSCHEMA</code> geändert werden.
+	<example desc="Vektorfeld eines Dipols entlang der z-Achse mithilfe der NumeRe-Spaltensyntax:">
+		vect3d {x,y,z-2}/norm(x,y,z-2)^3 - {x,y,z+2}/norm(x,y,z+2)^3
+	</example>
+	<em>Siehe auch:</em> "help vect", "help colorscheme", "help multiresult" und "help plot"
+</article>

@@ -1,0 +1,41 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="datagrid">
+	<title string="Datengitter für 2D-Plots" />
+	Wenn Daten in 2D-Plots (wie z.B. <code>surf</code> oder <code>mesh</code>) dargestellt werden sollen, müssen sie eine spezielle Form haben bzw. dürfen auch nicht als <expr>x-y-z</expr>-Werte vorliegen. 2D-Plots erwarten die Daten in Form eines <em>Datengitters</em>: <expr>x</expr>- und <expr>y</expr>-Werte als in den ersten zwei Spalten und die zugehörigen <expr>z</expr>-Werte als Matrix, die die Dimensionen der ersten beiden Spalten besitzt:
+	<codeblock>
+		\t\t\t- - - - - - - - y - - - - - - &gt;
+		/  x1  y1  z(x1,y1)  z(x1,y2)  ...  z(x1,ym)  \  |
+		|  x2  y2  z(x2,y1)  z(x2,y2)  ...  z(x2,ym)  |  |x
+		| ... ...       ...       ...  ...       ...  |  |
+		\  xn  ym  z(xn,y1)  z(xn,y2)  ...  z(xn,ym)  /  V
+	</codeblock>
+	NumeRe kann diese Datengitter selbst erstellen. Dazu existiert die Funktion <code>datagrid</code>:<codeblock>datagrid Z-WERTE -set x=X-WERTE y=Y-WERTE samples=STÜTZSTELLEN</codeblock>
+	Dabei können die Werte für <expr>x</expr> und <expr>y</expr> auf verschiedene Weisen gegeben werden: entweder als Intervall in der gemeinsamen Form <code>[x0:x1,y0:y1]</code> oder einzeln durch <code>x=x0:x1</code> oder als Spalte/Zeile eines Datensatzes wie <code>y=data(:,3)</code>.
+	Für <expr>z</expr> stehen ebenfalls mehrere Möglichkeiten zur Verfügung: entweder als Funktion von <expr>x</expr> und <expr>y</expr> (<expr>f(x,y) = cos(x)*exp(-y)</expr>), als Matrix eines Datensatzes (<code>cache(3:,7:100)</code>) oder als einzelne Spalte/Zeile eines Datensatzes (<code>data(4,2:)</code>). Im letzteren Fall versucht NumeRe, die dadurch definierten <expr>(x,y,z)</expr>-Punkte durch Triangulation zu verbinden, und ein Gitter durch lineare Interpolation zu erzeugen.
+	Der Parameter <code>samples=STÜTZSTELLEN</code> ist optional und beschreibt nur, wie viele Stützstellen berechnet werden sollen, falls eine Komponente des Datengitters berechnet werden muss. Standardmäßig werden (wie bei den 2D-Plots) 100 x 100 Stützstellen berechnet.
+	Der Parameter <code>target=CACHE()</code> ist ebenfalls optional und legt das Ziel des Datengitters fest. Hier kann auch festgelegt werden, dass bereits vorhandene Daten überschrieben werden sollen.
+	Falls die <expr>x</expr>- und <expr>y</expr>-Achse der Datenpunkte zum obigen Schema vertauscht sind, kann <code>datagrid</code> noch der Parameter <code>transpose</code> übergeben werden. Dadurch werden Zeilen und Spalten beim Erzeugen des Datengitters vertauscht.
+	Das erzeugte Datengitter wird dabei automatisch an eine freie Stelle im Cache <code>grid()</code> (oder dem vorgegebenen, wird automatisch erzeugt, falls erforderlich) rechts von bereits bestehenden Daten kopiert und kann von dort aus geplottet werden.
+	<example desc="Erstellen eines Datengitters aus drei Spalten in <code>data()</code>:">
+		datagrid data(:,3) -set x=data(:,1) y=data(:,2)
+		Das Datengitter wurde erfolgreich in "grid()" erzeugt.
+	</example>
+	<em>Siehe auch:</em> "help surf", "help mesh", "help plot", "help data" und "help cache"
+</article>

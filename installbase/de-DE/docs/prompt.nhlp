@@ -1,0 +1,29 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="prompt">
+	<title string="Eingabeaufforderung" />
+	Durch die Syntax <code>??</code> kann eine Stelle in einem Ausdruck markiert werden, für die NumeRe bei der Auswertung eine Eingabe erwartet. Damit kann die Eingabe einer Variable oder eines Parameters auf einen späteren Zeitpunkt verschoben werden. Dies ist speziell im Zusammenhang mit Schleifen, bedingten Verzweigungen und Prozeduren von Interesse.
+	Wird <code>??</code> durch <code>[DEFAULT]</code> (wobei DEFAULT für einen Wert oder einen ganzen Ausdruck stehen kann) ergänzt, so kann der Eingabeaufforderung dadurch ein Default-Wert übergeben werden, der verwendet wird, wenn der Benutzer keine Eingabe tätigt.
+	<example desc="Zuweisen eines Variablenwertes mit einem Defaultwert von 0.0:" type="verbatim">
+		|&lt;- x = ??[0.0]
+		|-??&gt; x = 
+		|-&gt; ans = 0
+	</example>
+	<em>Siehe auch:</em> "help for", "help while", "help if" und "help procedure"
+</article>

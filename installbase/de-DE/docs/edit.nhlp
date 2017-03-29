@@ -1,0 +1,32 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="edit">
+	<title string="Bearbeiten und Öffnen von Dateien und Ordnern" />
+	NumeRe kann mittels des Kommandos <code>edit</code> die meisten Dateien und Ordner, die von NumeRe selbst verwendet werden, entweder im Editor, im Viewer oder in einem externen Programm öffnen. Dazu kann NumeRe mit einem Bildbetrachter ("Imageviewer") verknüpft werden, der hierfür verwendet werden kann, wenn der Dateityp nicht von NumeRe selbst unterstützt wird. Ordner werden im Windows Explorer geöffnet.
+	Hiervon ausgenommen sind NumeRes Systemdateien (Konfiguration, Funktionendefinition, EXE-Datei, DLLs, NumeRe-Cache) und die Dateien im NumeRe-Datenfile- oder IGOR Binärwellenformat, da letztere binäre Formate sind, die nur von NumeRe (bzw. IGOR Pro) gelesen werden können.
+	<code>edit</code> kann auch verwendet werden, um den Inhalte eines Caches zu bearbeiten. Dazu muss<codeblock>edit CACHE()</codeblock>in die Konsole eingeben werden. NumeRe wird auf die Bearbeitung des Benutzers warten. Es ist nicht möglich, weitere Berechnungen durchzuführen, während eine Tabelle im Tabelleneditor bearbeitet wird.
+	Die Kommandos <code>view</code> und <code>open</code> sind Synonyme zu diesem Kommando.
+	Damit NumeRe die korrekte Datei finden kann, sollte der Pfad zur Datei angegeben werden. Dies kann entweder absolut, relativ vom NumeRe-Stammverzeichnis oder mithilfe der Pfadplatzhalter <code>&lt;PFAD&gt;</code> geschehen. Um eine Mehrdeutigkeit zu vermeiden, kann es außerdem hilfreich sein, die Dateiendung mit anzugeben. NumeRe wird stets die erste Datei verwenden, die auf das Dateischema zutrifft. Erst wenn keine Datei gefunden wird, auf die das Dateischema zutrifft, wird nach einem Ordner mit dem entsprechenden Ordner gesucht.
+	Wenn die zu öffnende/bearbeitende Datei im passenden Standardordner vorliegt, kann auch die Angabe der zugehörigen Dateiendung genügen, um die Datei zu finden. Ggf. kann der Ort der Datei mit dem NumeRe-Dateiexplorer (<code>list -files</code>) verifiziert werden.
+	Um Prozeduren zu editieren, kann die Syntax zum Aufrufen der Prozedur ohne Argumente verwendet werden:<codeblock>edit $NAMENSRAUM~PROZEDURNAME</codeblock>
+	<example desc="Bearbeiten der Datei '&EXEPATH&/samples/data.dat':">
+		edit &lt;&gt;/samples/data.dat
+	</example>
+	<em>Siehe auch:</em> "help explorer", "help editor" oder "help viewer"
+</article>

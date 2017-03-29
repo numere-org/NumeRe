@@ -1,0 +1,31 @@
+## Definieren der Variablen:
+int = 0, int_current = 0, steps = 10, precision = 1e-4, a = 0, b = 0, rekursion = 0;
+"Rekursive Berechnung des Integrals über \"sin(x)^3\" mit beliebig wählbaren Grenzen:" -nq
+"Linke Grenze: [0]" -nq
+a = ??[0]
+"Rechte Grenze: [_2pi]" -nq
+b = ??[_2pi]
+time_0 = time();
+## Schleifen zur eigentlichen Berechnung. Die aeussere simuliert eine Rekursion
+while (true)
+	"Bestimme Rekursion " + #rekursion + " ... [" + #steps + " Rechenschritte]" -print
+	## Diese Schleife berechnet ein Integral, wobei das Intervall in steps Teile geteilt wird
+	for (j = 1:steps)
+		int_current = int_current + (b-a)/steps * sin(a + j*(b-a)/steps)^3
+	endfor
+	
+	## Falls int != 0 und die Abweichung kleiner als precision ist, breche ab
+	if (int && abs(int - int_current) <= precision)
+		break
+	endif
+	
+	## Anderenfalls wiederhole die Berechnung mit fuenfmal feinerer Einteilung
+	int = int_current, int_current = 0, steps *= 5, rekursion++
+endwhile
+
+## Ausgabe in Form eines Strings
+"ERGEBNIS:\n-------------------------------------\nint \t\t= " + #int\\
+ + "\nint_current \t= " + #int_current + "\nRekursionen \t= " + #rekursion\\
+ + "\n\nPARAMETER:\n-------------------------------------\na \t\t\t= " + #a\\
+ + "\nb \t\t\t= " + #b + "\nRechendauer:\t" + #(time()-time_0) + " sec." -nq
+

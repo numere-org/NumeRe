@@ -1,0 +1,36 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="compose">
+	<title string="Composition of custom plotting styles" />
+	NumeRe supports the <em>combination</em> of different plotting styles to a new, custom plotting style; e.g. the linkage between a vector to a density or contour plot, to visualize a force field together with its potential.
+	To link multiple plots together, all these different plots have to be gathered in a common <code>compose...endcompose</code> block:<codeblock>compose\n\tPLOT1\n\tPLOT2\n\t[...]\nendcompose</codeblock>
+	The order of the passed plots doesn't have much influence, because internally they'll be reordered in a reasonable order (meaning that, for instance, a density plot will be shown behind a vector plot, although the vector plot was calculated first). Some plot options will be processed before the first plot will be calculated, resulting in an indifference on the actual plotting command. They will be applied automatically to all plots in the <code>compose...endcompose</code> block. These plot options are similar to <code>grid</code>, <code>box</code>, <code>coords=COORDS</code>, <code>xlabel=LABEL</code> (and others) and <code>title=TITLE</code>.
+	All plotting styles may be combined, but not every combination results in a good visualized or informative output. For instance, the combination of a vector plot with itself (using the option <code>flow</code> for one of them) is one of these useless results.
+	An additional restriction is that the plotting intervals passed or calculated for the first plot are used for the whole combination. It may be an advantage, passing the desired plotting interval for the first plot, although it may not use all three intervals. (If multiple intervals are passed through <code>[...]</code>, then only the first will be used for the output.)
+	The declaration of a plot combination can be aborted by invoking the corresponding command <code>abort</code> (similar to loops and clauses)
+	In a <code>compose ... endcompose</code> block only plotting commands may be used. Every other expression (except of <code>quit</code>, <code>abort</code> and <code>help</code>) will be ignored.
+	Multiple plots can be gathered in one single file with this mode, too. See additional details in "help subplot".
+	<example desc="Representation of a monopole force field and its potential using the NumeRe column syntax" type="verbatim">
+		|&lt;- compose
+		|COMP&gt; vect3d {x,y,z}/norm(x,y,z)^3
+		|COMP&gt; dens3d 1/norm(x,y,z) -set alpha
+		|COMP&gt; endcompose
+	</example>
+	<em>See also:</em> "help plot", "help plotoptions", "help multiresult", "help subplot", "help for", "help while" and "help if"
+</article>

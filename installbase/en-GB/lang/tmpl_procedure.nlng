@@ -1,0 +1,14 @@
+#**********************************************************************************************
+ * NUMERE-PROCEDURE: $%%1%%()
+ * ============================================================================================
+ * Generated: %%2%% *#
+
+procedure $%%1%%()
+	## Insert your commands and expressions here.
+	return true
+endprocedure
+
+#* End of the procedure
+ * NumeRe: Framework für Numerische Rechnungen | Free numerical software licenced under GNU GPL v3
+ * https://sites.google.com/site/numereframework/
+ **********************************************************************************************#

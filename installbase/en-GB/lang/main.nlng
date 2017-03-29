@@ -1,0 +1,1550 @@
+#
+# NumeRe: Framework für Numerische Rechnungen
+# Copyright (C) 2016  Erik Haenel et al.
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# ========================================================================
+# LANGUAGE FILE: main.nlng
+# LANGUAGE: en-GB
+#
+# COMMON:
+# =================================
+COMMON_CANCEL=CANCEL
+COMMON_YES_NO=y/n
+COMMON_WITH=with
+COMMON_WITHOUT=without
+COMMON_ACTIVE=active
+COMMON_INACTIVE=inactive
+COMMON_LINES=line(s)
+COMMON_LINE=line
+COMMON_COLS=column(s)
+COMMON_COL=column
+COMMON_SUCCESS=Success
+COMMON_FAILURE=Failure
+COMMON_DONE=Done
+COMMON_EVALUATING=Evaluating
+COMMON_FREQUENCY=Frequency
+COMMON_AMPLITUDE=Amplitude
+COMMON_PHASE=Phase
+COMMON_TIME=Time
+COMMON_SIGNAL=Signal
+COMMON_PROCEDURE=Procedure
+COMMON_FILENAME=Filename
+COMMON_FILETYPE_NOEXT=File
+COMMON_FILETYPE_DAT=Data file
+COMMON_FILETYPE_NSCR=NumeRe script
+COMMON_FILETYPE_NHLP=NumeRe help file
+COMMON_FILETYPE_NLNG=NumeRe language file
+COMMON_FILETYPE_HLPIDX=Documentation index
+COMMON_FILETYPE_LABX=CASSYLab file
+COMMON_FILETYPE_JDX=JCAMP-DX spectrum
+COMMON_FILETYPE_IBW=IGOR Binary Waves
+COMMON_FILETYPE_PNG=PNG bitmap
+COMMON_FILETYPE_TEX=TeX source
+COMMON_FILETYPE_EPS=EPS vector graphic
+COMMON_FILETYPE_GIF=GIF bitmap
+COMMON_FILETYPE_SVG=SVG vector graphic
+COMMON_FILETYPE_ZIP=ZIP archive
+COMMON_FILETYPE_DLL=Application library
+COMMON_FILETYPE_EXE=Application
+COMMON_FILETYPE_INI=Configuration file
+COMMON_FILETYPE_TXT=Text file
+COMMON_FILETYPE_DEF=Definition file
+COMMON_FILETYPE_CSV=Comma Separated Values
+COMMON_FILETYPE_BACK=Config backup
+COMMON_FILETYPE_CACHE=NumeRe cache
+COMMON_FILETYPE_NDAT=NumeRe data file
+COMMON_FILETYPE_NPRC=NumeRe procedure
+COMMON_FILETYPE_NDB=NumeRe database
+COMMON_FILETYPE_LOG=Log file
+COMMON_FILETYPE_VFM=Font file
+COMMON_FILETYPE_PLUGINS=Plugin information
+COMMON_FILETYPE_ODS=OpenDoc spreadsheet
+COMMON_FILETYPE_XLS=Excel (97-2003) sheet
+COMMON_FILETYPE_XLSX=Excel workbook
+COMMON_FILETYPE_WAV=WAVE audio file
+# MAIN:
+# =================================
+MAIN_LOADING_CMDLINE=Processing command line parameters
+MAIN_LOADING_PARSER_SELFTEST=Initializing parser selftest
+MAIN_LOADING_IOSTREAM=Starting I/O stream
+MAIN_LOADING_PLUGINS=Loading plugin information
+MAIN_LOADING_FONT=Loading font face "%%1%%" for graph
+MAIN_LOADING_AUTOSAVE_SEARCH=Searching for automatic backups
+MAIN_LOADING_AUTOSAVE_FOUND=Backup found.
+MAIN_LOADING_AUTOSAVE_NOT_FOUND=No backup found.
+MAIN_LOADING_AUTOSAVE=Loading automatic backup
+MAIN_LOADING_AUTOSAVE_ERROR_LOADING=ERROR: Could not load the automatic backup.
+MAIN_LOADING_AUTOSAVE_ERROR_SAVING=ERROR: Could not save the automatic backup.
+MAIN_LOADING_AUTOSAVE_TRANSLATING=Parsing to new file format
+MAIN_LOADING_USER_INTERFACE=Starting NumeRe user interface
+MAIN_LOADING_COLORTHEME=Activating color theme
+MAIN_LOADING_COLORTHEME_ERROR=ERROR: Could not load the color theme.
+MAIN_ABOUT_NBR=About: see "about"
+MAIN_BYE_NBR=See you later!
+MAIN_UNSAVED_CACHE=There are unsaved elements in the cache. Shall they be saved? (%%COMMON_YES_NO%%)
+MAIN_CACHE_SAVED=Cache was saved successfully.
+MAIN_QUIT=NumeRe v %%1%% was terminated successfully.
+# BUILTIN:
+# =================================
+BUILTIN_LOADDATA_ENTER_NAME=Please enter a filename of the data file. If no file path is supplied, the file will be searched in the directory "%%1%%".$(0 for aborting)
+BUILTIN_LOADDATA_ASK_APPEND=ERROR: The memory is already blocked with the data of the file "%%1%%". Shall the new data be appended to the existing data table? (%%COMMON_YES_NO%%)$(0 for aborting)
+BUILTIN_LOADDATA_ASK_OVERRIDE=The data won't be appended. Shall the existing table be overwritten? (%%COMMON_YES_NO%%)
+BUILTIN_LOADDATA_SUCCESS=The data from "%%1%%" was successfully loaded into memory: the data set consists %%2%% %%COMMON_LINES%% and %%3%% %%COMMON_COLS%%.
+BUILTIN_APPENDDATA_ALL_SUCCESS=All data of the %%1%% files "%%2%%" was successfully merged in memory: the data set now consists %%3%% %%COMMON_LINES%% and %%4%% %%COMMON_COLS%%.
+BUILTIN_APPENDDATA_SUCCESS=The data from "%%1%%" was successfully merged with the data in memory: the data set now consists %%2%% %%COMMON_LINES%% and %%3%% %%COMMON_COLS%%.
+BUILTIN_REMOVEDATA_CONFIRM=The saved data will be removed from memory.$Are you sure? (%%COMMON_YES_NO%%)
+BUILTIN_REMOVEDATA_SUCCESS=The memory was freed successfully.
+BUILTIN_REMOVEDATA_NO_DATA=The memory is already empty.
+BUILTIN_CLEARCACHE_CONFIRM_NOTSAFED=All caches and the automatic backup will be deleted, although they were not saved.$Are you sure? (%%COMMON_YES_NO%%)
+BUILTIN_CLEARCACHE_CONFIRM=All caches and the automatic backup will be deleted.$Are you sure? (%%COMMON_YES_NO%%)
+BUILTIN_CLEARCACHE_SUCCESS=All caches were removed and the memory was freed successfully.
+BUILTIN_CLEARCACHE_EMPTY=The cache is already empty.
+BUILTIN_CREDITS_BUILD=Build date
+BUILTIN_CREDITS_VERSIONINFO=Hans BETHE (1906-2005) was a german-US-american physicist, who won the Nobel prize in physics in the year 1967 for his works concerning the energy transformation in stars. Most of his works were focused on nuclear physics.
+#BUILTIN_CREDITS_VERSIONINFO=RELEASE CANDIDATE: a Release Candidate doesn't carry a version name. It is not guaranteed that the total current functionality from this Release Candidate will be available in the final stable release. You may influence the further process of the development through writing an e-mail to the upper address. If you find some bugs or a functionality does not possess the desired extent, do not hesitate and notify the developer.
+BUILTIN_CREDITS_LICENCE_1=This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+BUILTIN_CREDITS_LICENCE_2=This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+BUILTIN_CREDITS_LICENCE_3=You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+BUILTIN_CREDITS_MEMBERS=Concept/UI: Erik HÄNEL; Mathematical parser: Ingo BERG; Plotting: Alexey BALAKIN; numerical algorithms: GNU Scientific Library; Tokenizer: Boost-Library; Matrix-Algorithmen: Eigen Library; BasicExcel: YAP Chun Wei; TinyXML-2: Lee THOMASON; Testing: D. BAMMERT, J. HÄNEL, R. HUTT, K. KILGUS, E. KLOSTER, K. KURZ, M. LÖCHNER, L. SAHINOVIC, D. SCHMID, V. SEHRA, G. STADELMANN, R. WANNER, F. WUNDER, J. ZINßER
+BUILTIN_CREDITS_BUGS_REQUESTS=Bugs and feature requests are welcome at
+BUILTIN_CHECKKEYWORD_FIND_CANNOT_READ=Cannot identify the search term.
+BUILTIN_CHECKKEYWORD_PLOTPARAMS=Plotting parameters updated.
+BUILTIN_CHECKKEYWORD_UNDEF_FAIL=This function does not exist or was not named correctly. See "help define" for further information.
+BUILTIN_CHECKKEYWORD_UNDEF_SUCCESS=The function was successfully removed from memory.
+BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS=All data of the %%1%% files "%%2%%" was successfully loaded into memory: the data set consists %%3%% %%COMMON_LINES%% and %%4%% %%COMMON_COLS%%.
+BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS=All data of the %%1%% files "%%2%%" was successfully loaded to the corresponding caches in memory.
+BUILTIN_CHECKKEYWORD_PASTE_SUCCESS=The data was pasted successfully: the data set now consists %%1%% %%COMMON_LINES%% and %%2%% %%COMMON_COLS%%.
+BUILTIN_CHECKKEYWORD_RELOAD_FILE_SUCCESS=The data from "%%1%%" was updated successfully.
+BUILTIN_CHECKKEYWORD_RELOAD_SUCCESS=The data was updated successfully.
+BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS=The data set was successfully saved to "%%1%%".
+BUILTIN_CHECKKEYOWRD_STFA_SUCCESS=The STFA data set was successfully created in "%%1%%()".
+BUILTIN_CHECKKEYWORD_SORT_SUCCESS=%%COMMON_COLS%% were sorted successfully.
+BUILTIN_CHECKKEYWORD_RENAME_CACHE=The cache was successfully renamed to "%%1%%".
+BUILTIN_CHECKKEYWORD_SWAP_CACHE=The contents of "%%1%%" and "%%2%%" were swapped successfully.
+BUILTIN_CHECKKEYWORD_CLEARSTRINGS_SUCCESS=All strings in the "string()" object were removed and the "string()" object was resetted successfully.
+BUILTIN_CHECKKEYWORD_CLEARSTRINGS_EMPTY=No strings were found.
+BUILTIN_CHECKKEYWORD_COPYDATA_SUCCESS=The data set was copied successfully.
+BUILTIN_CHECKKEYWORD_COPYFILE_SUCCESS=The file "%%1%%" was copied successfully.
+BUILTIN_CHECKKEYWORD_COPYFILE_ALL_SUCCESS=The files "%%1%%" were copied successfully.
+BUILTIN_CHECKKEYWORD_AUDIO_SUCCESS=The audio file was created successfully.
+BUILTIN_CHECKKEYWORD_SET_GIVEPATH=Enter a path
+BUILTIN_CHECKKEYWORD_SET_PATH=File path updated successfully.
+BUILTIN_CHECKKEYWORD_SET_PROGRAM=%%1%% declared successfully.
+BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE=%%1%% was adopted successfully.
+BUILTIN_CHECKKEYWORD_SET_ENTER_VALUE=Enter %%1%%:
+BUILTIN_CHECKKEYWORD_SET_PARSERTEST=In the future, NumeRe will start %%1%% a parser selftest.
+BUILTIN_CHECKKEYWORD_SET_MODE=%%1%% is now %%2%%.
+BUILTIN_CHECKKEYWORD_DEFAULTFONT=Default font
+BUILTIN_CHECKKEYWORD_PRECISION=Precision
+BUILTIN_CHECKKEYWORD_DRAFTMODE=Draft mode
+BUILTIN_CHECKKEYWORD_EXTENDEDINFO=Extended file information
+BUILTIN_CHECKKEYWORD_LOADEMPTYCOLS=Loading of empty columns
+BUILTIN_CHECKKEYWORD_LOGFILE=Logging
+BUILTIN_CHECKKEYWORD_DEBUGGER=Debugger
+BUILTIN_CHECKKEYWORD_COMPACT=Compact table view
+BUILTIN_CHECKKEYWORD_GREETING=Greeting
+BUILTIN_CHECKKEYWORD_HINTS=Tips and Tricks
+BUILTIN_CHECKKEYWORD_ESC_IN_SCRIPTS=ESC key in scripts
+BUILTIN_CHECKKEYWORD_CUSTOM_LANG=Custom language
+BUILTIN_CHECKKEYWORD_DOC_VIEWER=Documentation in external window
+BUILTIN_CHECKKEYWORD_DEFCONTROL=Automatic define control
+BUILTIN_CHECKKEYWORD_AUTOSAVE=Interval for automatic backup
+BUILTIN_CHECKKEYWORD_BUFFERSIZE=Buffersize
+BUILTIN_CHECKKEYWORD_WINDOWSIZE=Windowsize
+BUILTIN_CHECKKEYWORD_SCRIPTNAME=Script filename
+BUILTIN_CHECKKEYWORD_SET_RESTART_REQUIRED=Setting will be activated after a restart.
+BUILTIN_CHECKKEYWORD_SET_DEVMODE_ACTIVE=DEVELOPER MODE will be activated. This mode lists intermediated results to make internal debugging easier. This mode is not recommended for productive usage. A password is required for activating:$(0 for aborting)
+BUILTIN_CHECKKEYWORD_SET_DEVMODE_SUCCESS=DEVELOPER MODE was activated successfully.
+BUILTIN_CHECKKEYWORD_SET_DEVMODE_INACTIVE=DEVELOPER MODE will be deactivated.
+BUILTIN_CHECKKEYWORD_START_ERRORTOKEN=Already loaded script
+BUILTIN_CHECKKEYWORD_SCRIPTLOAD_SUCCESS=The script "%%1%%" was loaded successfully.
+BUILTIN_CHECKKEYWORD_SMOOTH=%%1%% were smoothed successfully.
+BUILTIN_CHECKKEYWORD_RETOQUE=%%1%% were retouched successfully.
+BUILTIN_CHECKKEYWORD_REGULARIZE=The desired cache was regularized successfully.
+BUILTIN_CHECKKEYWORD_REMOVECACHE=Cache(s) %%1%% were removed successfully.
+BUILTIN_CHECKKEYWORD_DELETESTRINGS_SUCCESS=The strings in "string(%%1%%)" were removed successfully.
+BUILTIN_CHECKKEYWORD_DELETESTRINGS_EMPTY=No strings were found in "string(%%1%%)".
+BUILTIN_CHECKKEYWORD_REMOVE_ALL_FILE=The files were removed successfully.
+BUILTIN_CHECKKEYWORD_REMOVE_FILE=The file was removed successfully.
+BUILTIN_CHECKKEYWORD_RESAMPLE=%%1%% was resampled successfully.
+BUILTIN_CHECKKEYWORD_HELP_DEF=See "help define" for further information.
+BUILTIN_CHECKKEYWORD_DEF_EMPTY=No functions were defined yet.
+BUILTIN_CHECKKEYWORD_DELETE_SUCCESS=Element(s) were deleted successfully.
+BUILTIN_CHECKKEYWORD_DELETE_CONFIRM=One or more elements will be deleted irreversibly.$Are you sure? (%%COMMON_YES_NO%%)
+BUILTIN_CHECKKEYWORD_DATAGRID_SUCCESS=The datagrid was successfully created in "%%1%%()".
+BUILTIN_AUTOSAVE=Automatic backup
+BUILTIN_REMOVEFILE_CONFIRM=The file "%%1%%" will be deleted irreversibly - this cannot be undone.$Are you sure? (%%COMMON_YES_NO%%)
+# Layout des Settings-Dialoges
+BUILTIN_LISTOPT_SETTINGS=Settings
+BUILTIN_LISTOPT_1=NumeRe was configured with the following parameters:
+# Dateipfade
+BUILTIN_LISTOPT_2=File paths:
+BUILTIN_LISTOPT_3=Save path:           "%%1%%"
+BUILTIN_LISTOPT_4=Load path:           "%%1%%"
+BUILTIN_LISTOPT_5=Script path:         "%%1%%"
+BUILTIN_LISTOPT_6=Procedure path:      "%%1%%"
+BUILTIN_LISTOPT_7=Plot path:           "%%1%%"
+BUILTIN_LISTOPT_8=Image viewer:        %%1%%
+BUILTIN_LISTOPT_9=Text editor:         %%1%%
+# Eigentliche Konfiguration
+BUILTIN_LISTOPT_10=Program configuration:
+BUILTIN_LISTOPT_11=Autosave-Interval:         %%1%% [sec]
+BUILTIN_LISTOPT_12=Greeting:                  %%1%%
+BUILTIN_LISTOPT_13=Buffersize:                %%1%% %%COMMON_LINES%%
+BUILTIN_LISTOPT_14=Color theme:               %%1%%
+BUILTIN_LISTOPT_15=Draft mode:                %%1%%
+BUILTIN_LISTOPT_16=Extended file information: %%1%%
+BUILTIN_LISTOPT_17=ESC in scripts:            %%1%%
+BUILTIN_LISTOPT_18=Windowsize:                x=%%1%%, y=%%2%%
+BUILTIN_LISTOPT_19=Definition control:        %%1%%
+BUILTIN_LISTOPT_20=Compact table view:        %%1%%
+BUILTIN_LISTOPT_21=Loading of empty columns:  %%1%%
+BUILTIN_LISTOPT_22=Precision:                 %%1%% numbers
+BUILTIN_LISTOPT_23=Logging:                   %%1%%
+BUILTIN_LISTOPT_24=Fast start:                %%1%%
+BUILTIN_LISTOPT_25=Default plot font:         "%%1%%"
+BUILTIN_LISTOPT_26=Tips and tricks:           %%1%%
+BUILTIN_LISTOPT_27=Custom language:           %%1%%
+BUILTIN_LISTOPT_28=External windows:          %%1%%
+BUILTIN_LISTOPT_FOOTNOTE=All settings can be changed with the use of "set -OPTION". You may find further information at "help set".
+BUILTIN_LISTOPT_NOVIEWER=No viewer declared
+# ===================================
+BUILTIN_LISTFILES_EXPLORER=File explorer
+BUILTIN_LISTFILES_FILTEREDFOR=[filtered for: %%1%%]
+BUILTIN_LISTFILES_LOADPATH=Load path
+BUILTIN_LISTFILES_SAVEPATH=Save path
+BUILTIN_LISTFILES_SCRIPTPATH=Script path
+BUILTIN_LISTFILES_PROCPATH=Procedure path
+BUILTIN_LISTFILES_PLOTPATH=Plot path
+BUILTIN_LISTFILES_WORKPATH=Work path
+BUILTIN_LISTFILES_ROOTPATH=Root path
+BUILTIN_LISTFILES_CUSTOMPATH=Directory
+BUILTIN_LISTFILES_NOFILES=NumeRe could not find any files/directories
+BUILTIN_LISTFILES_NODIRS=NumeRe could not find any directories
+BUILTIN_LISTFILES_SUMMARY=%%1%% file(s) and %%2%% directory(ies)
+BUILTIN_LISTFILES_DIR_SUMMARY=%%1%% directory(ies)
+BUILTIN_NEW_FOLDERCREATED=The folder "%%1%%" was created successfully.
+BUILTIN_NEW_SCRIPTCREATED=The script "%%1%%" was created successfully.
+BUILTIN_NEW_FILECREATED=The file "%%1%%" was created successfully.
+BUILTIN_NEW_ENTERYOURCODE=Enter your commands and expressions here
+BUILTIN_NEW_PROCCREATED=The procedure "%%1%%" was created successfully.
+BUILTIN_NEW_PLUGINCREATED=A template for the plugin "%%1%%" was successfully created in "%%2%%".
+BUILTIN_NEW_CACHES=%%1%% was/were successfully created as cache(s).
+BUILTIN_NEW_FREE_CACHES=%%1%% was/were successfully created as free cache(s).
+BUILTIN_WAITINGFOREDIT=Waiting for edit
+# PARSER:
+#=====================================
+PARSER_FIRSTSTART_INTRO=This is enough information, which you'll need for the first time. Now it's your turn, to get a look into everything. Don't hesitate and try a commando or an expression for yourself!$If there's something going wrong: you'll find help at "help TOPIC" or "find TERMS". And if I don't understand at all, what you want me to do, then I will try to find the matching article in the documentation by myself ...$(Type "quit" to close me)
+PARSER_INTRO=Enter an expression or a command ...$(See "help" or "help expression" for further information)
+PARSER_STARTINGSCRIPT=Starting script "%%1%%" ...
+PARSER_SCRIPT_FINISHED=The execution of the script "%%1%%" was finished successfully.
+PARSER_ABORTED=Declaration aborted.
+PARSER_PLUGINDELETED=The plugin was removed successfully.
+PARSER_PLUGINNOTFOUND=The plugin was not found.
+PARSER_CANNOTCREATEPROC=ERROR: Could not write the procedure to a file.
+PARSER_RESULTSLOCATEDAT=Results are written in column %%1%% starting with element %%2%%.
+# Willkommensdialog:
+PARSER_HELP_HEAD=Welcome
+PARSER_HELP_INTRO=To operate with NumeRe, you'll have to use textual commands. The most use- and helpful commands are the following:
+PARSER_HELP_ITEM_1=find TERMS      - Search for TERMS
+PARSER_HELP_ITEM_2=help            - Shows the documentation overview
+PARSER_HELP_ITEM_3=help TOPIC      - Shows the documentation for the TOPIC. The documentation doesn't care about lower- and uppercase letters
+PARSER_HELP_ITEM_4=list -OBJECT    - Lists OBJECT. OBJECT may be written with lower- or uppercase letters
+PARSER_HELP_ITEM_5=quit            - Exits NumeRe
+PARSER_ADD_VAR_1=New variable "%%1%%" [double]
+PARSER_ADD_VAR_2=(Free memory: %%1%% variables)
+PARSER_ADD_VAR_ERROR=There is no more free space for variables available.
+# PARSERFUNCS:
+#======================================
+PARSERFUNCS_INTEGRATE_BOUNDARYDEPENDENCE=ERROR: The boundaries must not depend on %%1%%.
+PARSERFUNCS_INTEGRATE_BOUNDARYINVALID=ERROR: The boundaries are invalid.
+PARSERFUNCS_INTEGRATE_PRECISIONGREATERZERO=ERROR: Precision must not be identical to 0.
+PARSERFUNCS_INTEGRATE_PRECISIONGREATERINTERVAL=ERROR: The precision must not be larger than the integration interval.
+PARSERFUNCS_INTEGRATE_ANALYTICAL=Analytical solution
+PARSERFUNCS_INTEGRATE_CONSTANT=Constant function. Calculating integral
+PARSERFUNCS_INTEGRATE2_BOUNDARYDEPENDENCE=ERROR: %%1%%-Boundaries must not depend on %%1%% or %%2%%.
+PARSERFUNCS_INTEGRATE2_BOUNDARYSELFDEPENDENCE=ERROR: %%1%%-Boundaries must not depend on %%1%% itself.
+PARSERFUNCS_INTEGRATE2_SWAPVARS=Swapping %%1%%- and %%2%%-Integration for performance reasons
+PARSERFUNCS_LISTFUNC_HEADLINE=Predefined functions
+PARSERFUNCS_LISTFUNC_TYPE_NUM=Numerics
+PARSERFUNCS_LISTFUNC_TYPE_MAT=Matrix and vector
+PARSERFUNCS_LISTFUNC_TYPE_STRING=String
+PARSERFUNCS_LISTFUNC_TYPE_TRIGONOMETRIC=Trigonometry
+PARSERFUNCS_LISTFUNC_TYPE_HYPERBOLIC=Hyperbolic functions
+PARSERFUNCS_LISTFUNC_TYPE_TIME=Time
+PARSERFUNCS_LISTFUNC_TYPE_STATS=Statistics
+PARSERFUNCS_LISTFUNC_TYPE_RANDOM=Random
+PARSERFUNCS_LISTFUNC_TYPE_PHYSICS=Physics
+PARSERFUNCS_LISTFUNC_TYPE_ANGULAR=Angles
+PARSERFUNCS_LISTFUNC_TYPE_DISTRIB=Distributions
+PARSERFUNCS_LISTFUNC_TYPE_LOGARITHMIC=Logarithms
+PARSERFUNCS_LISTFUNC_TYPE_LOGIC=Logic
+PARSERFUNCS_LISTFUNC_TYPE_COORDS=Coordinates
+PARSERFUNCS_LISTFUNC_TYPE_POLYNOMIAL=Polynomials
+PARSERFUNCS_LISTFUNC_TYPE_DRAW=Drawings
+# Funktionentabelle
+PARSERFUNCS_LISTFUNC_TABLEHEAD=								Function:                 Type:    Result:
+PARSERFUNCS_LISTFUNC_FUNC_ABS_[NUM]=						abs(x)                    VAL      - Absolute value of x
+PARSERFUNCS_LISTFUNC_FUNC_ACOS_[NUM_TRIGONOMETRIC]=			acos(x)                   VAL      - Inverse cosine of x. Defined in the range [-1,1] (Synonym: "arccos(x)")
+PARSERFUNCS_LISTFUNC_FUNC_ACOSH_[NUM_HYPERBOLIC]=			acosh(x)                  VAL      - Inverse hyperbolic cosine of x. Defined in the range [1,inf) (Synonym: "arcosh(x)")
+PARSERFUNCS_LISTFUNC_FUNC_AI_[NUM_PHYSICS]=					Ai(x)                     VAL      - Airy function Ai(x). Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_ASIN_[NUM_TRIGONOMETRIC]=			asin(x)                   VAL      - Inverse sine of x. Defined in the range [-1,1] (Synonym: "arcsin(x)")
+PARSERFUNCS_LISTFUNC_FUNC_ASINH_[NUM_HYPERBOLIC]=			asinh(x)                  VAL      - Inverse hyperbolic sine of x. Defined everywhere in R (Synonym: "arsinh(x)")
+PARSERFUNCS_LISTFUNC_FUNC_ASCII_[STRING]=					ascii(STRING)            {VAL}     - Returns the ASCII values of the characters in STRING
+PARSERFUNCS_LISTFUNC_FUNC_ATAN_[NUM_TRIGONOMETRIC]=			atan(x)                   VAL      - Inverse tangent of x. Defined everywhere in R (Synonym: "arctan(x)")
+PARSERFUNCS_LISTFUNC_FUNC_ATANH_[NUM_HYPERBOLIC]=			atanh(x)                  VAL      - Inverse hyperbolic tangent of x. Defined in the range (-1,1) (Synonym: "artanh(x)")
+PARSERFUNCS_LISTFUNC_FUNC_AVG_[NUM_STATS]=					avg(x,y,z,...)            VAL      - Returns the average of x,y,z,...
+PARSERFUNCS_LISTFUNC_FUNC_BESSEL_[NUM_PHYSICS]=				bessel(n,x)               VAL      - Bessel function of the first kind with the order n at the point x. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_BETHEWEIZSAECKER_[PHYSICS]=		betheweizsaecker(N,Z)     VAL      - Nuclear binding energy of the nuclid (N,Z) in MeV calculated with the Bethe-Weizsäcker mass formula. Defined for N, Z > 0
+PARSERFUNCS_LISTFUNC_FUNC_BI_[NUM_PHYSICS]=					Bi(x)                     VAL      - Airy function Bi(x). Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_BINOM_[NUM]=						binom(n,k)                VAL      - Binomial coefficient of n and k. Defined for integral numbers >= 0
+PARSERFUNCS_LISTFUNC_FUNC_CHAR_[STRING]=					char(STRING,POS)          STR      - Return the character at the position POS in STRING
+PARSERFUNCS_LISTFUNC_FUNC_CMP_[NUM_STATS]=					cmp(x,y,z,...,CMP,T)      VAL      - Compares the values x,y,z,... with CMP and returns a value corresponding to T = {-2,-1,0,1,2}: T = 0 returns the index of the element, which is equal to CMP. T = -1 returns the index of the largest element, which is smaller than or equal to CMP, T = 1 returns the index of smallest one being larger than or equal to CMP. T = -2 and 2 returns the corresponding values instead of the indices. If no element is found, the function returns "nan". Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_CNT_[NUM_STATS_STRING]=			cnt(x,y,z,...)            VAL      - Returns the number of elements in its argument (even the invalid ones). May be applied to strings, but returns at least 1 in this case.
+PARSERFUNCS_LISTFUNC_FUNC_COS_[NUM_TRIGONOMETRIC]=			cos(x)                    VAL      - Cosine of x. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_COSH_[NUM_HYPERBOLIC]=			cosh(x)                   VAL      - Hyperbolic cosine of x. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_COT_[NUM_TRIGONOMETRIC]=			cot(x)                    VAL      - Cotangent of x. Defined in R \ {n*PI}. n is an integral value.
+PARSERFUNCS_LISTFUNC_FUNC_CROSS_[MAT]=						cross(MAT)                VEC      - Calculates the n dimensional cross product (vector product) of the vectors, which form the n-1 columns of the matrix MAT.
+PARSERFUNCS_LISTFUNC_FUNC_DATE_[TIME]=						date(TIME,TYPE)           VAL      - Formats TIME corresponding to TYPE: TYPE = 0 returns YYYYMMDDhhmmss, TYPE = 1...6 returns YYYY ... ss, TYPE = -1 returns YYYYMMDD and TYPE = -2 returns only hhmmss
+PARSERFUNCS_LISTFUNC_FUNC_DBLFACUL_[NUM]=					dblfacul(n)               VAL      - Double faculty of the integral number n [n!! = n*(n-2)*(n-4)*...]. Defined for integral numbers >= 0
+PARSERFUNCS_LISTFUNC_FUNC_DEGREE_[NUM_ANGULAR]=				degree(x)                 VAL      - Degree value of x [rad]. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_DET_[MAT]=						det(MAT)                  VAL      - Calculates the determinant of the matrix MAT, if MAT is a square matrix.
+PARSERFUNCS_LISTFUNC_FUNC_DIAG_[MAT]=						diag(x,y,z,...)           MAT      - Creates a diagnonal matrix with the elements x,y,z,...< as main diagonal.
+PARSERFUNCS_LISTFUNC_FUNC_DIAGONALIZE_[MAT]=				diagonalize(MAT)          MAT      - Diagonalizes the square matrix MAT. If the calculated diagonal elements should be complex, then a n x 2n matrix will be returned with the real parts on the lower and the imaginary parts on the upper first diagonal.
+PARSERFUNCS_LISTFUNC_FUNC_EIGENVALS_[MAT]=					eigenvals(MAT)            MAT      - Calculates the eigenvalues of the square matrix MAT and returns them in the shape of a vector. If the eigenvalues are complex, then they will be returned as a matrix with two columns, where the first contains the real and the second contains the imaginary part.
+PARSERFUNCS_LISTFUNC_FUNC_EIGENVECTS_[MAT]=					eigenvects(MAT)           MAT      - Calculates the eigenvectors of the square matrix MAT and returns them in the shape of a matrix, where each column is one eigenvector. If the eigenvectors are complex, then a n x 2n matrix will be returned with the real parts in the odd and the imaginary parts in the even columns.
+PARSERFUNCS_LISTFUNC_FUNC_ELLIPTICD_[NUM]=					ellipticD(x,n,k)          VAL      - Value of the elliptic integral D(x,n,k) at the position x with 0 <= k < 1. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_ELLIPTICE_[NUM]=					ellipticE(x,k)            VAL      - Value of the elliptic integral E(x,k) at the position x with 0 <= k < 1. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_ELLIPTICF_[NUM]=					ellipticF(x,k)            VAL      - Value of the elliptic integral F(x,k) at the position x with 0 <= k < 1. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_ELLIPTICPI_[NUM]=					ellipticPi(x,n,k)         VAL      - Value of the elliptic integral Pi(x,n,k) at the position x with 0 <= k < 1. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_ERF_[NUM_DISTRIB]=				erf(x)                    VAL      - Value of the gaussian error function at the position x. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_ERFC_[NUM_DISTRIB]=				erfc(x)                   VAL      - Value of the complementary gaussian error function (erfc(x) := 1-erf(x)) at the position x. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_EXP_[NUM_LOGARITHMIC]=			exp(x)                    VAL      - Exponential function of x. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_FACULTY_[NUM]=					faculty(n)                VAL      - Faculty of the integral number n [n! = n*(n-1)*(n-2)*...*1]. Defined for integral numbers >= 0
+PARSERFUNCS_LISTFUNC_FUNC_FINDFILE_[STRING_LOGIC]=			findfile(STR1,STR2)       LOG      - Returns true, if the file STR1 exists, false otherwise. The file must be passed as a string. STR2 is an optional standard search path, which defaults to the NumeRe root path
+PARSERFUNCS_LISTFUNC_FUNC_FINDPARAM_[STRING]=				findparam(PAR,STR,C)      VAL      - Returns the position, where the parameter PAR in the string STR was found, and 0, if PAR was not found. If PAR shall be followed by a special character (e.g. '='), you may pass this character with C, leave it away otherwise. If C is passed, the position will be shifted right corresponding to the number of whitespaces between PAR and C.
+PARSERFUNCS_LISTFUNC_FUNC_FLOOR_[NUM]=						floor(x)                  VAL      - Rounds x to the nearest lower integral value
+PARSERFUNCS_LISTFUNC_FUNC_GAMMA_[NUM_DISTRIB]=				gamma(x)                  VAL      - Value of the gamma function at the position x. Defined in R \ {-n, 0}, where n is an integral number > 0.
+PARSERFUNCS_LISTFUNC_FUNC_GAUSS_[NUM_RANDOM_DISTRIB]=		gauss(x0,x1)              VAL      - Creates a (real and normal distributed) random number, with the distribution parameters average x0 and FWHM x1
+PARSERFUNCS_LISTFUNC_FUNC_GCD_[NUM]=						gcd(n,k)                  VAL      - Calculates the greatest common divisor of the integral numbers n and k
+PARSERFUNCS_LISTFUNC_FUNC_GETFILELIST_[STRING]=				getfilelist(STR,T)       {STR}     - Returns a list of strings containing all files matching to the naming scheme STR. STR may contain additional placeholders or with "|" linked "choose tokens" ("<CHOOSE|TOKEN>"). The function only returns the filenames and the extensions of the files without their paths. T is a optional parameter and returns the corresponding paths if set to 1.
+PARSERFUNCS_LISTFUNC_FUNC_GETFOLDERLIST_[STRING]=			getfolderlist(STR,T)     {STR}     - Returns a list of strings containing all directories matching to the naming scheme STR. STR may contain additional placeholders or with "|" linked "choose tokens" ("<CHOOSE|TOKEN>"). The function only returns the directory names without their paths. T is a optional parameter and returns the corresponding paths if set to 1.
+PARSERFUNCS_LISTFUNC_FUNC_GETINDICES_[STRING]=				getindices(STRING,T)     {VAL}     - Returns the indices of the data object access, which was passed as a string, in the format I1,I2,J1,J2. T is an optional parameter and determines, how the access shall be interpreted: matrix-like (T=0), column- (T=1) or linewise (T=2). Passing T=-1 returns uninterpreted indices: 0 for non-existing and -1 for open interval boundaries. E.g.: getindices("data(5:,3)",-1) = 5,-1,3,0
+PARSERFUNCS_LISTFUNC_FUNC_GETMATCHINGPARENS_[STRING]=	    getmatchingparens(STR)    VAL      - Returns the position of the closing parenthesis matching to the first open parenthesis in the string STR. Note that this applies to brackets and braces as well.
+PARSERFUNCS_LISTFUNC_FUNC_GETOPT_[STRING]=					getopt(STRING,POS)        STR      - Returns the value of a parameter in the string STRING with the value's first character at position POS (e.g. after "=") as a string. Note that all whitespaces between POS and the actual position of the value will be ignored.
+PARSERFUNCS_LISTFUNC_FUNC_HEAVISIDE_[NUM_DISTRIB]=			heaviside(x)              VAL      - Heaviside (or Theta) function. 0 for x < 0, 1 otherwise. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_HERMITE_[NUM_POLYNOMIAL]=			hermite(n,x)              VAL      - Numerical value of the Hermite polynomial with the order n >= 0 at the position x. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_IDENTITY_[MAT]=					identity(n)               MAT      - Creates a n dimensional identity matrix
+PARSERFUNCS_LISTFUNC_FUNC_IMY_[NUM_POLYNOMIAL]=				imY(l,m,theta,phi)        VAL      - Imaginary part of the spherical harmonics with the orders l >= 0 and m = [-l,l] at the angles theta in the interval [0,PI] and phi in the interval [0,2*PI)
+PARSERFUNCS_LISTFUNC_FUNC_INVERT_[MAT]=						invert(MAT)               MAT      - Inverts the matrix MAT, if an inverse matrix exists. invert() checks in advance, if MAT is a square matrix.
+PARSERFUNCS_LISTFUNC_FUNC_IS_DATA_[STRING_LOGIC]=			is_data(STRING)           LOG      - Returns true, if STRING is a data object, false otherwise
+PARSERFUNCS_LISTFUNC_FUNC_IS_NAN_[NUM_LOGIC]=				is_nan(x)                 LOG      - Returns true, if x has the value nan, false otherwise
+PARSERFUNCS_LISTFUNC_FUNC_IS_STRING_[STRING_LOGIC]=			is_string(EXPR)           LOG      - Returns true, if EXPR contains strings, false otherwise
+PARSERFUNCS_LISTFUNC_FUNC_LAGUERRE_[NUM_POLYNOMIAL]=		laguerre(n,x)             VAL      - Numerical value of the Laguerre polynomial with the order n >= 0 at the position x. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_LAGUERRE_A_[NUM_POLYNOMIAL]=		laguerre_a(n,k,x)         VAL      - Numerical value of the associate Laguerre polynomial with the orders n >= 0 and k = [0,n] at the position x. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_LCM_[NUM]=						lcm(n,k)                  VAL      - Calculates the least common multiple of the integral numbers n and k
+PARSERFUNCS_LISTFUNC_FUNC_LEGENDRE_[NUM_POLYNOMIAL]=		legendre(n,x)             VAL      - Numerical value of the Legendre polynomial with the order n >= 0 at the position x. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_LEGENDRE_A_[NUM_POLYNOMIAL]=		legendre_a(l,m,x)         VAL      - Numerical value of the associate Legendre polynomial with the orders l >= 0 and m = [-l,l] at the position x. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_LN_[NUM_LOGARITHMIC]=				ln(x)                     VAL      - Natural logarithm of x. Defined in the range (0,inf)
+PARSERFUNCS_LISTFUNC_FUNC_LOG10_[NUM_LOGARITHMIC]=			log10(x)                  VAL      - Logarithm with base 10 of x. Can be passed as 'log(x)'. Defined in the range (0,inf)
+PARSERFUNCS_LISTFUNC_FUNC_LOG2_[NUM_LOGARITHMIC]=			log2(x)                   VAL      - Logarithm with base 2 of x. Defined in the range (0,inf)
+PARSERFUNCS_LISTFUNC_FUNC_MATFC_[MAT]=						matfc(X,Y,Z,...)          MAT      - Creates a matrix out of the columns X,Y,Z,... If the number of elements is not sufficient for the maximal dimension, the missing ones will be replaced by 0.
+PARSERFUNCS_LISTFUNC_FUNC_MATFCF_[MAT]=						matfcf(X,Y,Z,...)         MAT      - Creates a matrix out of the columns X,Y,Z,... If the number of elements is not sufficient for the maximal dimension, the missing ones will be logically generated out of the already present ones.
+PARSERFUNCS_LISTFUNC_FUNC_MATFL_[MAT]=						matfl(X,Y,Z,...)          MAT      - Creates a matrix out of the lines X,Y,Z,... If the number of elements is not sufficient for the maximal dimension, the missing ones will be replaced by 0.
+PARSERFUNCS_LISTFUNC_FUNC_MATFLF_[MAT]=						matflf(X,Y,Z,...)         MAT      - Creates a matrix out of the lines X,Y,Z,... If the number of elements is not sufficient for the maximal dimension, the missing ones will be logically generated out of the already present ones.
+PARSERFUNCS_LISTFUNC_FUNC_MAX_[NUM_STATS_STRING]=			max(x,y,z,...)            ARG      - Returns the maximal value of x,y,z,... Can be applied to strings, where it will use string logic
+PARSERFUNCS_LISTFUNC_FUNC_MED_[NUM_STATS]=					med(x,y,z,...)            VAL      - Returns the median of x,y,z,...
+PARSERFUNCS_LISTFUNC_FUNC_MIN_[NUM_STATS_STRING]=			min(x,y,z,...)            ARG      - Returns the minimal value of x,y,z,... Can be applied to strings, where it will use string logic
+PARSERFUNCS_LISTFUNC_FUNC_NEUMANN_[NUM_PHYSICS]=			neumann(n,x)              VAL      - Neumann function (Bessel function of the second kind) with the order n at the position x. Defined in R \ {0}
+PARSERFUNCS_LISTFUNC_FUNC_NORM_[NUM_STATS_COORDS]=			norm(x,y,z,...)           VAL      - Calculates the euklidian vector norm: ||(x,y,z,...)|| := sqrt(x^2+y^2+z^2+...). Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_NUM_[NUM_STATS]=					num(x,y,z,...)            VAL      - returns the number of valid arguments x,y,z,... Can be applied to strings and counts every non-empty string
+PARSERFUNCS_LISTFUNC_FUNC_ONE_[MAT]=						one(n,m)                  MAT      - Creates a n x m matrix, which is filled with ones. If only one argument was passend, then a square matrix will be created.
+PARSERFUNCS_LISTFUNC_FUNC_PCT_[NUM_STATS]=					pct(x,y,z,...,p)          VAL      - p-th percentile of x,y,z,...
+PARSERFUNCS_LISTFUNC_FUNC_PHI_[NUM_ANGULAR_COORDS]=			phi(x,y)                  VAL      - Calculates the angle between the x axis and the vector (x,y). Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_PRD_[NUM_STATS]=					prd(x,y,z,...)            VAL      - Returns the product of the arguments x,y,z,...
+PARSERFUNCS_LISTFUNC_FUNC_RADIAN_[NUM_ANGULAR]=				radian(alpha)             VAL      - Calculates the radians of the angle alpha [Degree]. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_RAND_[NUM_RANDOM_DISTRIB]=		rand(x0,x1)               VAL      - Creates a (real and uniform distributed) random number in the interval [x0,x1)
+PARSERFUNCS_LISTFUNC_FUNC_RANGE_[NUM]=						range(VAR,LFT,RGHT)       VAL      - Restricts VAR to the interval [LFT,RGHT]
+PARSERFUNCS_LISTFUNC_FUNC_RECT_[NUM_DISTRIB]=				rect(x,x0,x1)             VAL      - Rectangular function: 1 for x in [x0,x1]; 0 otherwise
+PARSERFUNCS_LISTFUNC_FUNC_REPEAT_[STRING]=					repeat(STRING,n)          STR      - Returns n copies of STRING
+PARSERFUNCS_LISTFUNC_FUNC_REPLACE_[STRING]=					replace(S,P,L,T)          STR      - Replaces L letters starting with the position P in string S with the string T
+PARSERFUNCS_LISTFUNC_FUNC_REPLACEALL_[STRING]=				replaceall(S,T,U,P,Q)     STR      - Replaces all occurrences of the second string T in the first string S with the third string U. The variables P and Q are optional values limiting the action to start (P) and end position (Q) in S
+PARSERFUNCS_LISTFUNC_FUNC_RINT_[NUM]=						rint(x)                   VAL      - Rounds x to the nearest integral value
+PARSERFUNCS_LISTFUNC_FUNC_ROOF_[NUM]=						roof(x)                   VAL      - Rounds x to the nearest and larger integral number
+PARSERFUNCS_LISTFUNC_FUNC_ROUND_[NUM]=						round(x,n)                VAL      - Rounds x to n decimals
+PARSERFUNCS_LISTFUNC_FUNC_SBESSEL_[NUM_POLYNOMIAL_PHYSICS]=	sbessel(n,x)              VAL      - Spherical Bessel function of the order n. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_SIGN_[NUM]=						sign(x)                   VAL      - Returns the sign of x
+PARSERFUNCS_LISTFUNC_FUNC_SIN_[NUM_TRIGONOMETRIC]=			sin(x)                    VAL      - Sine of x. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_SINC_[NUM_TRIGONOMETRIC]=			sinc(x)                   VAL      - Cardinal sine of x. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_SINH_[NUM_HYPERBOLIC]=			sinh(x)                   VAL      - Hyperbolic sine of x. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_SNEUMANN_[NUM_POLYNOMIAL_PHYSICS]=sneumann(n,x)             VAL      - Spherical Neumann function of the order n. Defined in R \ {0}
+PARSERFUNCS_LISTFUNC_FUNC_SOLVE_[MAT]=						solve(MAT)                VEC      - Solves the linear system of equations, which is described by the matrix MAT, with the Gaussian algorithm.
+PARSERFUNCS_LISTFUNC_FUNC_SPLIT_[STRING]=					split(STRING,CHAR)       {STR}     - Splits the string STRING at the characters CHAR in separate strings
+PARSERFUNCS_LISTFUNC_FUNC_SQRT_[NUM]=						sqrt(x)                   VAL      - Square root of x. Defined in the range [0, inf)
+PARSERFUNCS_LISTFUNC_FUNC_STD_[NUM_STATS]=					std(x,y,z,...)            VAL      - Returns the standard deviation of x,y,z,...
+PARSERFUNCS_LISTFUNC_FUNC_STRFND_[STRING]=					strfnd(STR1,STR2,P)       VAL      - Returns the position of the first occurrence of STR1 in STR2, with the search starting from the position P. P is an optional value with the default value 1. The function returns false, if STR1 is not found.
+PARSERFUNCS_LISTFUNC_FUNC_STRING_CAST_[STRING]=				string_cast(EXPR)         STR      - Transforms EXPR directly to a string and ignores possible string expressions (#(EXPR) would calculate the numerical value of EXPR first)
+PARSERFUNCS_LISTFUNC_FUNC_STRLEN_[STRING]=					strlen(STRING)            VAL      - Returns the length of the string STRING
+PARSERFUNCS_LISTFUNC_FUNC_STRRFND_[STRING]=					strrfnd(STR1,STR2,P)      VAL      - Returns the position of the last occurrence of STR1 in STR2, with the search starting from the position P. P is an optional value with the default value P = strlen(STR2). The function returns false, if STR1 is not found.
+PARSERFUNCS_LISTFUNC_FUNC_STUDENT_T_[NUM_DISTRIB_STATS]=	student_t(n,c)            VAL      - Calculates the twosided Student factor t for n measurements and the confidence interval 0 < c < 1
+PARSERFUNCS_LISTFUNC_FUNC_SUBSTR_[STRING]=					substr(STRING,n,l)        STR      - Returns l characters starting with the n-th letter from STRING as a new string
+PARSERFUNCS_LISTFUNC_FUNC_SUM_[NUM_STATS_STRING]=			sum(x,y,z,...)            ARG      - Sums x,y,z,... Can be applied to strings and will concatenate them
+PARSERFUNCS_LISTFUNC_FUNC_TAN_[NUM_TRIGONOMETRIC]=			tan(x)                    VAL      - Tangent of x. Defined in R \ {-n*PI/2, n*PI/2}. n is an integral number > 0.
+PARSERFUNCS_LISTFUNC_FUNC_TANH_[NUM_HYPERBOLIC]=			tanh(x)                   VAL      - Hyperbolic tangent of x. Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_THETA_[NUM_ANGULAR_COORDS]=		theta(x,y,z)              VAL      - Calculates the angle between the z axis and the vector (x,y,z). Defined everywhere in R
+PARSERFUNCS_LISTFUNC_FUNC_TIME_[TIME]=						time()                    VAL      - Returns the number of seconds since 1.1.1970
+PARSERFUNCS_LISTFUNC_FUNC_TO_CHAR_[STRING]=					to_char(x,y,z,...)        STR      - Interprets x,y,z,... as ASCII values and returns their corresponding characters as one string
+PARSERFUNCS_LISTFUNC_FUNC_TO_CMD_[STRING]=					to_cmd(STRING)            CMD      - Transforms the passed string STRING to a command expression
+PARSERFUNCS_LISTFUNC_FUNC_TO_LOWERCASE_[STRING]=			to_lowercase(STRING)      STR      - Transforms the uppercase letters in STRING to lowercase
+PARSERFUNCS_LISTFUNC_FUNC_TO_STRING_[STRING]=				to_string(EXPR)           STR      - Transforms EXPR to a string, if it is not already one (#(EXPR) would calculate the numerical value of EXPR first)
+PARSERFUNCS_LISTFUNC_FUNC_TO_UPPERCASE_[STRING]=			to_uppercase(STRING)      STR      - Transforms the lowercase letters in STRING to uppercase
+PARSERFUNCS_LISTFUNC_FUNC_TO_VALUE_[STRING]=				to_value(STRING)          VAL      - Evaluates the string STRING and transforms it to a numerical value afterwards
+PARSERFUNCS_LISTFUNC_FUNC_TRACE_[MAT]=						trace(MAT)                VAL      - Calculates the trace of the square matrix MAT.
+PARSERFUNCS_LISTFUNC_FUNC_TRANSPOSE_[MAT]=					transpose(MAT)            MAT      - Transposes the matrix MAT (column and line indices will be exchanged)
+PARSERFUNCS_LISTFUNC_FUNC_VALTOSTR_[STRING]=				valtostr(x,C,n)           VAL      - Evaluates x and transforms it to a string. C is an optional character, inserted before x, to fill it to n characters
+PARSERFUNCS_LISTFUNC_FUNC_VERSION_[TIME]=					version()                 VAL      - Returns the version number of NumeRe as an integral number: v1.0.8 will be returned as 108
+PARSERFUNCS_LISTFUNC_FUNC_Y_[NUM_POLYNOMIAL]=				Y(l,m,theta,phi)          VAL      - Real part of the spherical harmonics with the orders l >= 0 and m = [-l,l] at the angles theta in the interval [0,PI] and phi in the interval [0,2*PI)
+PARSERFUNCS_LISTFUNC_FUNC_Z_[NUM_POLYNOMIAL]=				Z(n,m,rho,phi)            VAL      - Value of the Zernike polynomials of the order n >= 0 with m = [-n,n] at the position rho >= 0 at the angle phi in the interval [0,2*PI)
+PARSERFUNCS_LISTFUNC_FUNC_ZERO_[MAT]=						zero(n,m)                 MAT      - Creates a n x m matrix, which is filled with zeroes. If only one argument was passend, then a square matrix will be created.
+PARSERFUNCS_LISTFUNC_FUNC_ARCV_[DRAW]=						arcv(P,[D,]D,a,STYLE)     {}       - Draws an arc with the angle a around the point P starting from point P+D. The optional direction D defines the normal vector, the default is the z axis. The orientation of the arc is counter-clockwise. The style of the arc may be modified with STYLE.
+PARSERFUNCS_LISTFUNC_FUNC_ARC_[DRAW]=						arc(P,[D,]P,a,STYLE)      {}       - Draws an arc with the angle a around the point P starting from point P. The optional direction D defines the normal vector, the default is the z axis. The orientation of the arc is counter-clockwise. The style of the arc may be modified with STYLE.
+PARSERFUNCS_LISTFUNC_FUNC_CIRCLE_[DRAW]=					circle(P,r,STYLE)         {}       - Draws a circle around the point P with the radius r. The filling and the style of the circle may be modified using STYLE. polygon() with n >= 30 generates similar results and allows "tilting" of the circle.
+PARSERFUNCS_LISTFUNC_FUNC_CONEV_[DRAW]=						conev(P,D,r,r,STYLE)      {}       - Draws a cone shell with the radius r going from P to P+D. Using the second radius r will truncate the cone. Top and bottom faces will be displayed by passing @to STYLE. Passing 4, 6 or 8 to STYLE will draw a 4, 6 or 8 sided (truncated) pyramid instead of the cone.
+PARSERFUNCS_LISTFUNC_FUNC_CONE_[DRAW]=						cone(P,P,r,r,STYLE)       {}       - Draws a cone shell with the radius r going from P to P. Using the second radius r will truncate the cone. Top and bottom faces will be displayed by passing @to STYLE. Passing 4, 6 or 8 to STYLE will draw a 4, 6 or 8 sided (truncated) pyramid instead of the cone.
+PARSERFUNCS_LISTFUNC_FUNC_CUBOID_[DRAW]=					cuboid(P,D,D,D,STYLE)     {}       - This function allows the display of a parallelepiped: displays a cube with the lower left edge at P, which marks the origin of the body-owned coordinate system. The direction D defines the x direction of the body. The y direction will be chosen orthogonal, leaving the z coordinate as it was. The z direction will be calculated out of the other two. If a second direction was passed, then this defines the y direction of the body and the z direction will be calculated. You'll obtain a real parallelepiped, if you define all three directions.
+PARSERFUNCS_LISTFUNC_FUNC_CURVE_[DRAW]=						curve(P,D,P,D,STYLE)      {}       - Draws a "bezier" line from P to P. The direction vectors D determine the corresponding curvature of the curve. Please note that the coordinate system at the second point will be rotated by 180 degrees (additional signs are probably needed for the second direction vector). Color, shape and line endings may be modified using STYLE.
+PARSERFUNCS_LISTFUNC_FUNC_DROP_[DRAW]=						drop(P,D,s,a,STYLE)       {}       - Draws a three dimensional drop at the point P, which is tilted in the direction D. The optional parameters s and a may be used, to modify the shape of the drop. The color may be modified with STYLE and the plot option light makes the 3D effect visible.
+PARSERFUNCS_LISTFUNC_FUNC_ELLIPSEV_[DRAW]=					ellipsev(P,D,r,STYLE)     {}       - Generates an ellipse with the focus points P and P+D and the ellipse radius r. The filling and the style of the ellipse may be modified using STYLE.
+PARSERFUNCS_LISTFUNC_FUNC_ELLIPSE_[DRAW]=					ellipse(P,P,r,STYLE)      {}       - Generates an ellipse with the focus points P and P and the ellipse radius r. The filling and the style of the ellipse may be modified using STYLE.
+PARSERFUNCS_LISTFUNC_FUNC_FACEV_[DRAW]=						facev(P,D,D,D,STYLE)      {}       - Draws a quadrangle. You may pass from two to four edges. If you pass two, NumeRe will draw an square, passing three edges will result in a parallelogram and all four edges will draw a custom quadrangle. The first two vectors are the lower and the left border and the last is the diagonal opposite one. The filling of the quadrangle may be modified using STYLE.
+PARSERFUNCS_LISTFUNC_FUNC_FACE_[DRAW]=						face(P,P,P,P,STYLE)       {}       - Draws a quadrangle. You may pass from two to four edges. If you pass two, NumeRe will draw an square, passing three edges will result in a parallelogram and all four edges will draw a custom quadrangle. The edges are numbered going from lower left in counter-clockwise order. The filling of the quadrangle may be modified using STYLE.
+PARSERFUNCS_LISTFUNC_FUNC_POINT_[DRAW]=						point(P,STYLE)            {}       - Draws a point at the position P. The shape of the point an its color may be modified using STYLE.
+PARSERFUNCS_LISTFUNC_FUNC_POLYGONV_[DRAW]=					polygonv(P,D,n,STYLE)     {}       - Draws a regular n-edged polygon around the point P going from point P+D. The filling of the polygon may be modified using STYLE.
+PARSERFUNCS_LISTFUNC_FUNC_POLYGON_[DRAW]=					polygon(P,P,n,STYLE)      {}       - Draws a regular n-edged polygon around the point P going from point P. The filling of the polygon may be modified using STYLE.
+PARSERFUNCS_LISTFUNC_FUNC_SPHERE_[DRAW]=					sphere(P,r,STYLE)         {}       - Draws a sphere with the radius r at the coordinates P. The color may be modified using STYLE. The plot option light makes the 3d effect visible.
+PARSERFUNCS_LISTFUNC_FUNC_TEXT_[DRAW]=						text(P,P,TEXT,STYLE)      {}       - Prints the text TEXT at the position P. The justification and the color may be modified, in which justification and shape have to be separated with : from the color information. The justification is represented using LRC (Left-Right-Centered) and the shape with rib (roman-italic-bold). The second coordinate pair may be used, if the text shall not printed horizontally.
+PARSERFUNCS_LISTFUNC_FUNC_TRACEV_[DRAW]=					tracev(P,D,STYLE)         {}       - Draws a straight line from P to P+D. If only one point is passed, then the second will be located at the origin. Color, shape and line endings may be modified using STYLE.
+PARSERFUNCS_LISTFUNC_FUNC_TRACE_[DRAW]=						trace(P,P,STYLE)          {}       - Draws a straight line from P to P. If only one point is passed, then the second will be located at the origin. Color, shape and line endings may be modified using STYLE.
+PARSERFUNCS_LISTFUNC_FUNC_TRIANGLEV_[DRAW]=					trianglev(P,D,D,STYLE)    {}       - Draws a triangle. You may pass either two or three edges. If you pass two edges, NumeRe will draw an equal-sided triangle, if you pass all three, then it will be a custom one. The edges are numbered going from lower left in counter-clockwise order. The filling of the triangle may be modified with STYLE.
+PARSERFUNCS_LISTFUNC_FUNC_TRIANGLE_[DRAW]=					triangle(P,P,P,STYLE)     {}       - Draws a triangle. You may pass either two or three edges. If you pass two edges, NumeRe will draw an equal-sided triangle, if you pass all three, then it will be a custom one. The edges are numbered going from lower left in counter-clockwise order. The filling of the triangle may be modified with STYLE.
+# Ende Funktionentabelle
+PARSERFUNCS_LISTFUNC_FOOTNOTE1=The type of the return value is schematically indicated via VAL = numerical value, STR = string, LOG = logical value (true or false), MAT = matrix, VEC = vector and ARG = type of the argument(s). Return values in braces indicate that the function will return multiple values; empty braces indicate no return value.
+PARSERFUNCS_LISTFUNC_FOOTNOTE2=Further information concerning the predefined mathematical functions can be found in the NumeRe-Help at "help function".
+PARSERFUNCS_LISTDEFINE_HEADLINE=Custom defined functions
+PARSERFUNCS_LISTDEFINE_EMPTY=No custom defined functions.
+PARSERFUNCS_LISTDEFINE_DESCRIPTION=	Description:     %%1%%
+PARSERFUNCS_LISTDEFINE_DEFINITION=	Definition:      %%1%% := %%2%%
+PARSERFUNCS_LISTDEFINE_FUNCTIONS=Functions
+PARSERFUNCS_LISTLOGICAL_HEADLINE=Logical expressions
+PARSERFUNCS_LISTLOGICAL_TABLEHEAD=	Expression:  Result:
+PARSERFUNCS_LISTLOGICAL_ITEM01=		A            - TRUE, if A is TRUE, FALSE otherwise
+PARSERFUNCS_LISTLOGICAL_ITEM02=		!A           - TRUE, if A is FALSE, FALSE otherwise
+PARSERFUNCS_LISTLOGICAL_ITEM03=		A && B       - TRUE, if A and B are TRUE, FALSE otherwise
+PARSERFUNCS_LISTLOGICAL_ITEM04=		A || B       - TRUE, if A or B is TRUE, FALSE otherwise
+PARSERFUNCS_LISTLOGICAL_ITEM05=		A ||| B      - TRUE, if either A or B is TRUE, FALSE otherwise
+PARSERFUNCS_LISTLOGICAL_ITEM06=		A ? x : y    - If A is TRUE, then x, otherwise y
+PARSERFUNCS_LISTLOGICAL_ITEM07=		x & y        - Binary AND
+PARSERFUNCS_LISTLOGICAL_ITEM08=		x | y        - Binary OR
+PARSERFUNCS_LISTLOGICAL_ITEM09=		x < y        - TRUE, if x is smaller than y, FALSE otherwise
+PARSERFUNCS_LISTLOGICAL_ITEM10=		x > y        - TRUE, if x is larger than y, FALSE otherwise
+PARSERFUNCS_LISTLOGICAL_ITEM11=		x <= y       - TRUE, if x is smaller than or equal to y, FALSE otherwise
+PARSERFUNCS_LISTLOGICAL_ITEM12=		x >= y       - TRUE, if x is larger than or equal to y, FALSE otherwise
+PARSERFUNCS_LISTLOGICAL_ITEM13=		x == y       - TRUE, if x is equal to y, FALSE otherwise
+PARSERFUNCS_LISTLOGICAL_ITEM14=		x != y       - TRUE, if x is not equal to y, FALSE otherwise
+PARSERFUNCS_LISTLOGICAL_FOOTNOTE1=TRUE corresponds to the value 1, FALSE to 0. Logical expressions can be applied to strings, see "help string". Binary operators compare the bit values directly and may return values not equal to {1,0}.
+PARSERFUNCS_LISTLOGICAL_FOOTNOTE2=A concatenation of multiple logical expression should be done with AND and OR operators. Otherwise the result of the previous expression (1 or 0) will be used for evaluating the current one. For example: if you like to check, if the value of the variable x lies in the interval [a,b], you have to check, if the expression "x >= a && x <= b" is TRUE. Of course, this can be achieved easier via "!is_nan(range(x,a,b))"
+PARSERFUNCS_LISTVAR_HEADLINE=Defined variables
+PARSERFUNCS_LISTVAR_EMPTY=No variables are defined.
+PARSERFUNCS_LISTVAR_VARS_AND=Variable(s) and
+PARSERFUNCS_LISTVAR_DATATABLES=Data table(s)
+PARSERFUNCS_LISTCONST_HEADLINE=Defined constants
+PARSERFUNCS_LISTCONST_EMPTY=No constants defined.
+PARSERFUNCS_LISTCONST_FOOTNOTE1=The constants are---if applicable---stored in SI units:$[kg, J, K, m, s, A, mol, T]
+PARSERFUNCS_LISTCONST_FOOTNOTE2=Special constants/values are "nan" (no real value), "inf" (infinity), "true" (TRUE), "false" (FALSE) and "void" (empty/no value).
+PARSERFUNCS_LISTEXPRVAR_HEADLINE=Variables in expression
+PARSERFUNCS_LISTEXPRVAR_EMPTY=No expression passed.
+PARSERFUNCS_LISTEXPRVAR_EXPR=Expression: %%1%%
+PARSERFUNCS_LISTEXPRVAR_NOVARS=Expression doesn't contain any variables.
+PARSERFUNCS_LISTEXPRVAR_FOOTNOTE=%%1%% variable(s)
+PARSERFUNCS_LISTCMD_HEADLINE=command set
+# Kommandotabelle
+PARSERFUNCS_LISTCMD_TYPE_FLOWCTRL=Control flow
+PARSERFUNCS_LISTCMD_TYPE_DATACTRL=Data control
+PARSERFUNCS_LISTCMD_TYPE_DATACREATION=Data creation
+PARSERFUNCS_LISTCMD_TYPE_LOADSAVE=Loading and saving
+PARSERFUNCS_LISTCMD_TYPE_EVAL=Evaluation
+PARSERFUNCS_LISTCMD_TYPE_PLOTTING=Plotting
+PARSERFUNCS_LISTCMD_TYPE_PROC=Prozeduren
+PARSERFUNCS_LISTCMD_TYPE_DEF=Definitions
+PARSERFUNCS_LISTCMD_TYPE_CTRL=Control
+PARSERFUNCS_LISTCMD_TYPE_MISC=Miscellaneous
+PARSERFUNCS_LISTCMD_TYPE_PLUGINS=Plugins
+PARSERFUNCS_LISTCMD_TABLEHEAD=							Befehl:      Syntax:        Funktion:
+PARSERFUNCS_LISTCMD_CMD_ABORT_[FLOWCTRL]=				abort                       - Aborts the declaration of the current loop, fork or plot composition
+PARSERFUNCS_LISTCMD_CMD_ABOUT_[MAINCTRL]=				about                       - Legal information about NumeRe
+PARSERFUNCS_LISTCMD_CMD_APPEND_[LOADSAVE]=				append       NM [-PAR]      - Append data files to data already loaded to memory
+PARSERFUNCS_LISTCMD_CMD_AUDIO_[LOADSAVE]=				audio        OB [-PAR]      - Creates a WAVE audio file from a given data set
+PARSERFUNCS_LISTCMD_CMD_BREAK_[FLOWCTRL]=				break                       - Aborts the execution of a loop
+PARSERFUNCS_LISTCMD_CMD_CACHE_[DATACTRL]=				cache        -PAR           - Options applied to the elements in a cache
+PARSERFUNCS_LISTCMD_CMD_CLEAR_[DATACTRL]=				clear        OB [-PAR]      - Irreversibly removes all caches/all elements in the string() object from this computer
+PARSERFUNCS_LISTCMD_CMD_COMPOSE_[PLOTTING]=				compose                     - Starts the composition of multiple plotting styles
+PARSERFUNCS_LISTCMD_CMD_CONT_[PLOTTING]=				cont         EX [-set PAR]  - Creates a contour line plot
+PARSERFUNCS_LISTCMD_CMD_CONT3D_[PLOTTING]=				cont3d       EX [-set PAR]  - Creates a 3D contour line plot
+PARSERFUNCS_LISTCMD_CMD_CONTINUE_[FLOWCTRL]=			continue                    - Jumps over the following commands of the current loop execution and starts the next execution
+PARSERFUNCS_LISTCMD_CMD_COPY_[MAINCTRL]=				copy         OB [-PAR]      - Copies (depending on the actual expression) entries/columns/subtables between data objects or complete files.
+PARSERFUNCS_LISTCMD_CMD_DATA_[DATACTRL]=				data         -PAR           - Options applied to the elements of the loaded data file
+PARSERFUNCS_LISTCMD_CMD_DATAGRID_[DATACREATION]=		datagrid     EX -PAR        - Creates a data grid
+PARSERFUNCS_LISTCMD_CMD_DEFINE_[DEF]=					define       EX [-set PAR]  - Defines custom functions
+PARSERFUNCS_LISTCMD_CMD_DELETE_[DATACTRL_MAINCTRL]=		delete       OB [-PAR]      - Removes elements from a cache/from the string() object
+PARSERFUNCS_LISTCMD_CMD_DENS_[PLOTTING]=				dens         EX [-set PAR]  - Creates a density plot
+PARSERFUNCS_LISTCMD_CMD_DENS3D_[PLOTTING]=				dens3d       EX [-set PAR]  - Creates a 3D density plot
+PARSERFUNCS_LISTCMD_CMD_DIFF_[EVAL]=					diff         EX -set PAR    - Calls the function for numerical differentation of a function or a data set
+PARSERFUNCS_LISTCMD_CMD_DRAW_[PLOTTING]=				draw         EX [-set PAR]  - Drawing mode.
+PARSERFUNCS_LISTCMD_CMD_DRAW3D_[PLOTTING]=				draw3d       EX [-set PAR]  - 3D drawing mode.
+PARSERFUNCS_LISTCMD_CMD_EDIT_[MAINCTRL]=				edit         OB             - Opens a cache, a file or a directory for editing its contents
+PARSERFUNCS_LISTCMD_CMD_ELSE_[FLOWCTRL]=				else                        - Starts the definition of expressions and commands, which shall be executed, if all "if" and "elseif" forks fail.
+PARSERFUNCS_LISTCMD_CMD_ELSEIF_[FLOWCTRL]=				elseif       (EX)           - Starts the definition of expressions and commands, which shall be executed, if the previous "if" and "elseif" forks fail.
+PARSERFUNCS_LISTCMD_CMD_ENDCOMPOSE_[PLOTTING]=			endcompose                  - Ends the definition of the previous initiated plot composition
+PARSERFUNCS_LISTCMD_CMD_ENDFOR_[FLOWCTRL]=				endfor       [-PAR]         - Ends the definition of a previous initiated FOR loop
+PARSERFUNCS_LISTCMD_CMD_ENDIF_[FLOWCTRL]=				endif                       - Ends the definition of a previous initiated IF construct
+PARSERFUNCS_LISTCMD_CMD_ENDPROCEDURE_[FLOWCTRL_PROC]=	endprocedure                - Ends the definition of a previous initiated NumeRe procedure
+PARSERFUNCS_LISTCMD_CMD_ENDWHILE_[FLOWCTRL]=			endwhile     [-PAR]         - Ends the definition of a previous initiated WHILE loop
+PARSERFUNCS_LISTCMD_CMD_EVAL_[DATACREATION]=			eval         EX -set PAR    - Calculates function values of the passed expression at distinct points (samples)
+PARSERFUNCS_LISTCMD_CMD_EXPLICIT_[MAINCTRL]=			explicit     CMD            - Deactivates all plugins for the current command
+PARSERFUNCS_LISTCMD_CMD_EXPORT_[LOADSAVE]=				export       OB [-PAR]      - Textual export of the passed data set
+PARSERFUNCS_LISTCMD_CMD_EXTREMA_[EVAL]=					extrema      EX -set PAR    - Calls the function for the numerical determination of the extrema of the passed expression or data set.
+PARSERFUNCS_LISTCMD_CMD_FFT_[EVAL]=						fft          OB [-PAR]      - Fourier transformation of the passed data set
+PARSERFUNCS_LISTCMD_CMD_FIND_[MAINCTRL]=				find         NM             - NumeRe keyword search
+PARSERFUNCS_LISTCMD_CMD_FIT_[EVAL]=						fit          OB -PAR        - Fit functions to data sets via parameters
+PARSERFUNCS_LISTCMD_CMD_FITW_[EVAL]=					fitw         OB -PAR        - Fit functions to data sets via parameters and concern the additional error values of the data set
+PARSERFUNCS_LISTCMD_CMD_FOR_[FLOWCTRL]=					for          (EX)           - Starts the definition of a FOR loop.
+PARSERFUNCS_LISTCMD_CMD_GET_[MAINCTRL]=					get          -PAR           - Returns the current settings of NumeRe
+PARSERFUNCS_LISTCMD_CMD_GLOBAL_[MISC]=					global       EX/CMD         - Declares the current expression as global
+PARSERFUNCS_LISTCMD_CMD_GRAD_[PLOTTING]=				grad         EX [-set PAR]  - Creates a gradient plot
+PARSERFUNCS_LISTCMD_CMD_GRAD3D_[PLOTTING]=				grad3d       EX [-set PAR]  - Creates a 3D gradient plot
+PARSERFUNCS_LISTCMD_CMD_HELP_[MAINCTRL]=				help         [NM]           - NumeRe documentation
+PARSERFUNCS_LISTCMD_CMD_HIST_[EVAL]=					hist         OB [-PAR]      - Creates a histogram
+PARSERFUNCS_LISTCMD_CMD_HIST2D_[EVAL]=					hist2d       OB [-PAR]      - Creates a 2D histogram of a (x,y,z) data set. Expects either a data grid or (x,y,z) tupels
+PARSERFUNCS_LISTCMD_CMD_HLINE_[MISC]=					hline        [-PAR]         - Draws a double horizontal line. Using the parameter "-single", this command will only draw one single line
+PARSERFUNCS_LISTCMD_CMD_IF_[FLOWCTRL]=					if           (EX)           - Starts the definition of an IF construct
+PARSERFUNCS_LISTCMD_CMD_IFNDEFINED_[DEF]=				ifndefined   EX [-set PAR]  - Checks before the actual definition, if the current function is not already defined.
+PARSERFUNCS_LISTCMD_CMD_INSTALL_[MAINCTRL]=				install      NM             - Executes the install routines in the script NM. May only be used directly in the console
+PARSERFUNCS_LISTCMD_CMD_INTEGRATE_[EVAL]=				integrate    EX -set PAR    - Calls the function for the numerical integration of a function f(x) or f(x,y).
+PARSERFUNCS_LISTCMD_CMD_LIST_[MAINCTRL]=				list         -PAR           - Lists objects
+PARSERFUNCS_LISTCMD_CMD_LOAD_[LOADSAVE]=				load         NM [-PAR]      - Loads the data of a file
+PARSERFUNCS_LISTCMD_CMD_MATOP_[EVAL]=					matop        EX             - Matrix based evaluation of the expression EX. ("mtrxop" is a synonym)
+PARSERFUNCS_LISTCMD_CMD_MESH_[PLOTTING]=				mesh         EX [-set PAR]  - Creates a meshgrid plot
+PARSERFUNCS_LISTCMD_CMD_MESH3D_[PLOTTING]=				mesh3d       EX [-set PAR]  - Creates a 3D meshgrid plot
+PARSERFUNCS_LISTCMD_CMD_MOVE_[MAINCTRL]=				move         OB -PAR        - Moves (depending on the actual expression) entries/columns/subtables in caches or complete files.
+PARSERFUNCS_LISTCMD_CMD_NAMESPACE_[PROC]=				namespace    [NM]           - Changes the current namespace in procedures
+PARSERFUNCS_LISTCMD_CMD_NEW_[MAINCTRL]=					new          -PAR           - Creates new directories, scripts, procedures, files and caches
+PARSERFUNCS_LISTCMD_CMD_ODESOLVE_[EVAL]=				odesolve     EX -set PAR    - Numerically solves the ordinary differential equations, which were passed as expression
+PARSERFUNCS_LISTCMD_CMD_PLOT_[PLOTTING]=				plot         EX [-set PAR]  - Graphical plotting of functions and data sets
+PARSERFUNCS_LISTCMD_CMD_PLOT3D_[PLOTTING]=				plot3d       EX [-set PAR]  - Graphical plotting of three dimensional data sets and trajectories.
+PARSERFUNCS_LISTCMD_CMD_PRINT_[MISC_MAINCTRL]=			print        STR            - Prints the passed string STR without the quotation marks as message on the screen
+PARSERFUNCS_LISTCMD_CMD_PROCEDURE_[FLOWCTRL_PROC]=		procedure    $NM(ARGS)      - Defines a NumeRe procedure
+PARSERFUNCS_LISTCMD_CMD_PROGRESS_[MISC_FLOWCTRL]=		progress     EX [-set PAR]  - Shows a the status of a progress. Only suitable for scripts and procedures
+PARSERFUNCS_LISTCMD_CMD_PULSE_[EVAL]=					pulse        OB             - Determines the pulse properties of the passed data set.
+PARSERFUNCS_LISTCMD_CMD_QUIT_[MAINCTRL]=				quit         [-PAR]         - Exits NumeRe
+PARSERFUNCS_LISTCMD_CMD_RANDOM_[DATACREATION]=			random       -PAR           - Random number generator with freely choosable distributions
+PARSERFUNCS_LISTCMD_CMD_READ_[LOADSAVE]=				read         NM [-PAR]      - Reads the content of a file and returns its lines as separate strings
+PARSERFUNCS_LISTCMD_CMD_READLINE_[PROC]=				readline     [-PAR]         - Formatted prompt
+PARSERFUNCS_LISTCMD_CMD_REDEFINE_[DEF]=					redefine     EX [-set PAR]  - Redefines an already existing, custom defined function.
+PARSERFUNCS_LISTCMD_CMD_REGULARIZE_[EVAL]=				regularize   OB [-PAR]      - Regularizes data rows with arbitrary distributed x values
+PARSERFUNCS_LISTCMD_CMD_RELOAD_[LOADSAVE]=				reload       -OB            - Updates the data in memory, if the data file was modified externally
+PARSERFUNCS_LISTCMD_CMD_REMOVE_[MAINCONTROL]=			remove       OB [-PAR]      - Irreversibly removes caches or the passed files from this computer
+PARSERFUNCS_LISTCMD_CMD_RENAME_[DATACTRL]=				rename       -OB            - Renames an already available cache.
+PARSERFUNCS_LISTCMD_CMD_REPLACELINE_[FLOWCTRL]=			replaceline  STR [-PAR]     - Simple corrections of loops and forks
+PARSERFUNCS_LISTCMD_CMD_RESAMPLE_[EVAL]=				resample     OB -PAR        - Resamples data sets (changes the sampling frequency)
+PARSERFUNCS_LISTCMD_CMD_RETOQUE_[EVAL]=					retoque      OB [-PAR]      - Removes invalid values from data sets
+PARSERFUNCS_LISTCMD_CMD_RETURN_[FLOWCTRL_PROC]=			return       [EX]           - Declares the return value of procedures
+PARSERFUNCS_LISTCMD_CMD_SAVE_[LOADSAVE]=				save         -OB            - Saves the passed object
+PARSERFUNCS_LISTCMD_CMD_SCRIPT_[MISC_MAINCTRL]=			script       -PAR           - Loads and starts scripts
+PARSERFUNCS_LISTCMD_CMD_SET_[MAINCTRL]=					set          -PAR           - Change the current program's setting
+PARSERFUNCS_LISTCMD_CMD_SHOW_[DATACTRL]=				show         OB             - Shows the content of the passed data object
+PARSERFUNCS_LISTCMD_CMD_SMOOTH_[EVAL]=					smooth       OB -PAR        - Smoothes the passed data set by linearizing depending on the requested order.
+PARSERFUNCS_LISTCMD_CMD_SORT_[DATACTRL]=				sort         -OB PAR        - Sorts a data set
+PARSERFUNCS_LISTCMD_CMD_START_[MISC]=					start        NM             - Starts the named script
+PARSERFUNCS_LISTCMD_CMD_STATS_[EVAL]=					stats        OB [-PAR]      - Calculates the statistics of the passed data set
+PARSERFUNCS_LISTCMD_CMD_STFA_[EVAL]=					stfa         OB [-PAR]      - Calculates a short-time Fourier analysis of the passed data set
+PARSERFUNCS_LISTCMD_CMD_STR_[PROC]=						str          EX             - Defines the local string variables in the current procedure
+PARSERFUNCS_LISTCMD_CMD_SUBPLOT_[PLOTTING]=				subplot      [EX -set PAR]  - Starts a new subplot in the multiplot mode of compose
+PARSERFUNCS_LISTCMD_CMD_SURF_[PLOTTING]=				surf         EX [-set PAR]  - Creates surface plots
+PARSERFUNCS_LISTCMD_CMD_SURF3D_[PLOTTING]=				surf3d       EX [-set PAR]  - Creates 3D surface plots
+PARSERFUNCS_LISTCMD_CMD_SWAP_[DATACTRL]=				swap         -OB            - Swaps the contents of two caches
+PARSERFUNCS_LISTCMD_CMD_TAYLOR_[EVAL]=					taylor       EX -set PAR    - Expands the passed expression in a taylor polynomial of the order n.
+PARSERFUNCS_LISTCMD_CMD_THROW_[FLOWCTRL_PROC]=			throw        [STR]          - Aborts the procedure execution in case of an error
+PARSERFUNCS_LISTCMD_CMD_UNDEFINE_[DEF]=					undefine     EX             - Removes a custom function definition
+PARSERFUNCS_LISTCMD_CMD_UNINSTALL_[MAINCTRL]=			uninstall    NM             - Removes the named plugin. May only be used directly in the console
+PARSERFUNCS_LISTCMD_CMD_VAR_[PROC]=						var          EX             - Defines the local numerical variables in the current procedure
+PARSERFUNCS_LISTCMD_CMD_VECT_[PLOTTING]=				vect         EX [-set PAR]  - Creates a vector plot
+PARSERFUNCS_LISTCMD_CMD_VECT3D_[PLOTTING]=				vect3d       EX [-set PAR]  - Creates a 3D vector plot
+PARSERFUNCS_LISTCMD_CMD_WHILE_[FLOWCTRL]=				while        (EX)           - Starts the definition of a WHILE loop
+PARSERFUNCS_LISTCMD_CMD_WORKPATH_[MISC_MAINCTRL]=		workpath     NM             - Changes the current working directory for this session
+PARSERFUNCS_LISTCMD_CMD_WRITE_[LOADSAVE]=				write        STR -set PAR   - Writes the passed strings to a file
+PARSERFUNCS_LISTCMD_CMD_ZEROES_[EVAL]=					zeroes       EX -set PAR    - Calls the function for numerical calculation of the intersection with zero of functions and data sets.
+# Ende der Kommandotabelle
+PARSERFUNCS_LISTCMD_FOOTNOTE1=The syntax is given in schematic manner: EX = expression, PAR = parameter, OB = (data) object, STR = string, CMD = command und NM = name. Syntax elements in brackets are optional.
+PARSERFUNCS_LISTCMD_FOOTNOTE2=SEE ALSO: There exists an entry in the documentation for each of the listed commands. It can be accessed via "help COMMAND".
+PARSERFUNCS_LISTUNITS_HEADLINE=Unit conversion
+PARSERFUNCS_LISTUNITS_SYMBOL=Symbol
+PARSERFUNCS_LISTUNITS_DESCRIPTION=Description
+PARSERFUNCS_LISTUNITS_DIMENSION=Dimension
+PARSERFUNCS_LISTUNITS_UNIT=Conversion     Unit
+PARSERFUNCS_LISTUNITS_UNIT_ANGSTROEM=(Angstroem)
+PARSERFUNCS_LISTUNITS_UNIT_ASTRO_UNIT=(Astronom. Unit)
+PARSERFUNCS_LISTUNITS_UNIT_BARN=(barn)
+PARSERFUNCS_LISTUNITS_UNIT_CALORY=(Calory)
+PARSERFUNCS_LISTUNITS_UNIT_CURIE=(Curie)
+PARSERFUNCS_LISTUNITS_UNIT_ELECTRONVOLT=(Elektronvolts)
+PARSERFUNCS_LISTUNITS_UNIT_FERMI=(Fermi)
+PARSERFUNCS_LISTUNITS_UNIT_FOOT=(Foot)
+PARSERFUNCS_LISTUNITS_UNIT_GAUSS=(Gauss)
+PARSERFUNCS_LISTUNITS_UNIT_INCH=(inch)
+PARSERFUNCS_LISTUNITS_UNIT_VELOCITY=(Velocity)
+PARSERFUNCS_LISTUNITS_UNIT_KNOTS=(Knots)
+PARSERFUNCS_LISTUNITS_UNIT_LITERS=(Litres)
+PARSERFUNCS_LISTUNITS_UNIT_LIGHTYEAR=(Lightyear)
+PARSERFUNCS_LISTUNITS_UNIT_MILE=(Mile)
+PARSERFUNCS_LISTUNITS_UNIT_MOL=(mol. quantity)
+PARSERFUNCS_LISTUNITS_UNIT_POISE=(Poise)
+PARSERFUNCS_LISTUNITS_UNIT_PARSEC=(Parsec)
+PARSERFUNCS_LISTUNITS_UNIT_PSI=(Pounds/inch^2)
+PARSERFUNCS_LISTUNITS_UNIT_CELSIUS=(Celsius)
+PARSERFUNCS_LISTUNITS_UNIT_FAHRENHEIT=(Fahrenheit)
+PARSERFUNCS_LISTUNITS_UNIT_TORR=(mmHg)
+PARSERFUNCS_LISTUNITS_UNIT_YARD=(Yard)
+PARSERFUNCS_LISTUNITS_FOOTNOTE=The dimensions of the units are given with the abbreviations L, M, T, ... The symbol L corresponds to "length", M to "mass", T to "time", N to "quantity" and Theta to "temperature".
+PARSERFUNCS_LISTPLUGINS_HEADLINE=Installed Plugins
+PARSERFUNCS_LISTPLUGINS_EMPTY=No Plugins were installed.
+PARSERFUNCS_LISTPLUGINS_PLUGININFO=- [%%1%%] (v %%2%%) -- by %%3%%
+PARSERFUNCS_LISTPLUGINS_TABLEHEAD=Command:           Description:
+PARSERFUNCS_TAYLOR_MISSINGPARAMS=ERROR: Not all necessary parameters were passed.$See "help taylor" for further information.
+PARSERFUNCS_TAYLOR_CONSTEXPR=ERROR: The expression is constant in terms of the variable "%%1%%". It cannot be expanded into a Taylor polynomial.
+PARSERFUNCS_TAYLOR_DEFINESTRING=-set comment="Taylor expansion of the expression '%%1%%' at the position %%2%%=%%3%% with the order %%4%%"
+PARSERFUNCS_FIT_FITTING=Fitting "%%1%%" ...
+PARSERFUNCS_FIT_DEFINECOMMENT=-set comment="Fitted function"
+PARSERFUNCS_FIT_CHIMAPLOCATION=The chi^2 map was successfully created in %%1%%().
+PARSERFUNCS_FIT_HEADLINE=Fitting result
+PARSERFUNCS_FIT_FUNCTION=Function: %%1%%
+PARSERFUNCS_FIT_FITTED_FUNC=Fitted: %%1%%
+PARSERFUNCS_FIT_DATASET=Data set: Column(s)
+PARSERFUNCS_FIT_FROM=from
+PARSERFUNCS_FIT_POINTS_W_ERR=			Data points:                            %%1%% with weighting factors
+PARSERFUNCS_FIT_POINTS_WO_ERR=			Data points:                            %%1%% without weighting factors
+PARSERFUNCS_FIT_COORD_RESTRICTS=	%%1%% values restricted to:                 [%%2%%,%%3%%]
+PARSERFUNCS_FIT_PARAM_RESTRICTS=		Parameter restrictions:                 [%%1%%]
+PARSERFUNCS_FIT_FREEDOMS=				Degrees of freedom:                     %%1%%
+PARSERFUNCS_FIT_ALGORITHM_SETTINGS=		Parameters for the algorithm:           TOL=%%1%%, MAXITER=%%2%%
+PARSERFUNCS_FIT_ITERATIONS=				Iterations:                             %%1%%
+PARSERFUNCS_FIT_CHI2=					Weighted Sum of the residuals (chi^2):  %%1%%
+PARSERFUNCS_FIT_RED_CHI2=				Variance of the residuals (red. chi^2): %%1%%
+PARSERFUNCS_FIT_STD_DEV=				Standard deviation of the residuals:    %%1%%
+PARSERFUNCS_FIT_LOG_TABLEHEAD1=Parameter      Initial value         Fitted    Calculated standard deviation
+PARSERFUNCS_FIT_LOG_TABLEHEAD2=Parameter      Initial value         Fitted        Asymptotic standard error
+PARSERFUNCS_FIT_PARAM=Parameter
+PARSERFUNCS_FIT_FITTED=Fitted
+PARSERFUNCS_FIT_INITIAL=Initial value
+PARSERFUNCS_FIT_PARAM_DEV=Calculated standard deviation
+PARSERFUNCS_FIT_ASYMPTOTIC_ERROR=Asymptotic standard error
+PARSERFUNCS_FIT_CORRELMAT_HEAD=Correlation matrix of the fitted parameters
+PARSERFUNCS_FIT_ANALYSIS=Fitting result analysis
+PARSERFUNCS_FIT_MAXITER_REACHED=The maximal number of iterations was reached. Most likely, the algorithm returned an incorrect result.
+PARSERFUNCS_FIT_GOOD_W_ERROR=The fitted function seems to describe the trend of the data points quite well. The passed weighting factors were guessed appropriately.
+PARSERFUNCS_FIT_BETTER_W_ERROR=The fitted function describes the trend of the data points more exact than expected. Either the guesses of the weighting factors are too large or the fitting function was chosen too general (too many fitting parameters/overfitting).
+PARSERFUNCS_FIT_NOT_GOOD_W_ERROR=The fitted function could describe the trend of the data points, but maybe there is some improvement possible. The guesses of the weighting factors are probably too small or strong outliers distort the result.
+PARSERFUNCS_FIT_BAD_W_ERROR=The function cannot describe the data points or the fit was quite bad. The chosen model is possibly not suitable for this data set, you used too many parameters or the weighting factors were guessed more than a magnitude too small.
+PARSERFUNCS_FIT_GOOD_WO_ERROR=The fitted function seems to describe the trend of the data points quite well.
+PARSERFUNCS_FIT_IMPROVABLE_WO_ERROR=The fitted function could describe the trend of the data points, but there is some room for optimisation.
+PARSERFUNCS_FIT_NOT_GOOD_WO_ERROR=The fitted function could describe the trend of the data points, but maybe there is some improvement possible. The result probably gets better, if additional guesses for weighting factors are passed to the algorithm.
+PARSERFUNCS_FIT_BAD_WO_ERROR=The function cannot describe the data points or the fit was quite bad. The chosen model is possibly not suitable for this data set, strong outliers are distorting the result or the model may describe the data points only by using large guesses for weighting factors.
+PARSERFUNCS_FIT_OVERFITTING=The amount of data points is exactly equal to the number of parameters. Most likely, the fitted function describes the dataset exactly. If this function is a reasonable model, is subject to further discussions.
+PARSERFUNCS_FFT_FOURIERTRANSFORMING=Fourier transforming columns %%1%% and %%2%%:$Nyquist boundary frequency is %%3%% Hz ...
+PARSERFUNCS_FFT_INVERSE_FOURIERTRANSFORMING=Inverse Fourier transforming columns %%1%% and %%2%%:$Resulting time interval is %%3%% s ...
+PARSERFUNCS_PULSE_HEADLINE=Pulse analysis
+PARSERFUNCS_PULSE_TABLE_1_MAXAMP=		Maximum amplitude:               %%1%%
+PARSERFUNCS_PULSE_TABLE_2_POSMAX=		Position of maximum:             %%1%%
+PARSERFUNCS_PULSE_TABLE_3_FWHM=			Full width at half of maximum:   %%1%%
+PARSERFUNCS_PULSE_TABLE_4_WIDTHNEARMAX=	Width of the actual pulse:       %%1%%
+PARSERFUNCS_PULSE_TABLE_5_ENERGY=		Energy in first pulse:           %%1%%
+# MATOP
+# =============================
+MATOP_SOLVELGSSYMBOLIC_DEFINECOMMENT=-set comment="Solution of the system of linear equations"
+# PLOT
+# =============================
+PLOT_CALCULATING_DATA_FOR=Calculating data for
+PLOT_ANIMATION=animation: Please wait
+PLOT_DRAWING=drawing
+PLOT_MESHGRID=meshgrid
+PLOT_SURFACE=surface
+PLOT_CONTOUR=contour
+PLOT_GRADIENT=gradient
+PLOT_DENSITY=density
+PLOT_VECTOR=vector field
+PLOT_LOADING_BACKGROUND=Loading background
+PLOT_RENDERING_BACKGROUND=Rendering background
+PLOT_RENDERING_FRAME=Rendering frame %%1%% out of %%2%%
+PLOT_SAVING=Saving
+PLOT_SAVE_LOCATION=Saved at: "%%1%%"
+# LOOP
+# =============================
+LOOP_SETCOMMAND_ABORT=Declaration aborted.
+LOOP_SUPPLY_BORDERS_AND_VAR=Please supply borders and the corresponding counting variable
+LOOP_SUPPLY_FULFILLABLE_CONDITION=Please enter a realizable condition
+LOOP_MISSING_COMMAND=No new command was entered.
+LOOP_LINE_NOT_EXISTENT=This line does not exist.
+# SCRIPT
+# =============================
+SCRIPT_START_INSTALL=Starting installation
+SCRIPT_INSTALL_SUCCESS=Installation was terminated successfully.
+SCRIPT_INSTALLING_PROC=Installing "%%1%%" ...
+# DEFINE
+# =============================
+DEFINE_FUNCTION_COMMENTED=The function "%%1%%" was commented successfully.
+DEFINE_FUNCTION_NOT_EXISTING=The function "%%1%%" does not exist.
+DEFINE_NEW_FUNCTION=This function does not exist. A new function will be defined
+DEFINE_NO_SPACE=No more free space for function definitions available. Remove definitions, you're not needing any more, to gain free space.
+DEFINE_UNDOING_REDEFINE=The redefinition will be reverted
+DEFINE_REDEFINE_SUCCESS=Function "%%1%%" was updated successfully.
+DEFINE_NEW_FUNCTION_SUCCESS=Function "%%1%%" was defined successfully.
+DEFINE_FREE_SPACE=free memory: %%1%% functions
+DEFINE_SAVING_FUNCTIONS=Saving function definitions
+DEFINE_ASK_OVERRIDE=All defined functions currently present in memory will be overwritten.$Are you sure? (%%COMMON_YES_NO%%)
+DEFINE_LOADING_FUNCTIONS=Loading function definitions
+DEFINE_DONE_AUTOLOADING=%%COMMON_DONE%% [%%1%% functions].
+DEFINE_DONE_LOADING=The definitions for %%1%% function(s) were loaded successfully.
+# DOC
+# ============================
+DOC_HELP_NO_ENTRY_FOUND=No entry was found for the topic "%%1%%". The topic was probably misspelled or the topic does not exist (yet). A synonym or a keyword search with "find %%1%%" may lead to the requested information as well.
+DOC_HELP_HTMLEXPORT=A copy of the article "%%1%%" was saved to "%%2%%".
+DOC_HELP_HEADLINE=NumeRe Documentation: %%1%%
+DOC_HELP_EXAMPLE=EXAMPLE: %%1%%
+DOC_HELP_EXAMPLE_HEADLINE=Example
+DOC_HELP_DESC_HEADLINE=Description
+DOC_HELP_OPTIONS_HEADLINE=Options
+DOC_SEARCHFCT_DB_ERROR=The keyword search database is damaged. Reinstall NumeRe, to solve this problem. If this doesn't help, address your issue to the developer.
+DOC_SEARCHFCT_TABLEHEAD=Relevance:  Search result:
+DOC_SEARCHFCT_RESULT=The NumeRe keyword search returned %%1%% hits.
+DOC_SEARCHFCT_NO_RESULTS=There was no result for your query "%%1%%". Maybe a synonym can help you out, or it is simply a typographic error, which distorted the search algorithm.
+DOC_TIPOFTHEDAY_HEADLINE=NUMERE: DID YOU KNOW?  [No. %%1%%/%%2%%]
+DOC_FIRSTSTART_HEADLINE_PREFIX=NumeRe: First Start [%%1%% -- Page %%2%%/%%3%%]
+DOC_FIRSTSTART_NEXTPAGE=PRESS ENTER TO RESUME / 0+ENTER TO ABORT
+# Firststart-DB
+DOC_FIRSTSTART_PAGE_1_HEAD=Prelude
+DOC_FIRSTSTART_PAGE_1_LINE_1=HELLO AND WELCOME!$I am NumeRe v %%1%%, Framework für Numerische Rechnungen (meaning: framework for numerical calculations), and I'm joyful that I can greet you for the first time!
+DOC_FIRSTSTART_PAGE_1_LINE_2=I was designed as a table calculation based purely on the console, but I am optimized for the scientific work. I'm featuring the possibilities to automate predefined processes, generate graphical plots in many different styles and many other things.
+DOC_FIRSTSTART_PAGE_1_LINE_3=I will show this introduction only once. If you like to look into it in the future, you can invoke the command "firststart". Apart from this, there is another way to get help: simply enter "help TOPIC", to open my internal documentation about the TOPIC. Leave TOPIC away and you'll get the overview. (Example: "help data")
+DOC_FIRSTSTART_PAGE_1_LINE_4=If you cannot find a command or a function, you may use my keyword search: "find TERMS". You may enter multiple terms at once, if you separate them with whitespaces. (Example: "find define function")
+DOC_FIRSTSTART_PAGE_1_LINE_5=NOTE: This is only a brief introduction and there is no room for all the subtleties of my syntax. Just look into the documentation articles, which I will name in the following if you got stuck somewhere, or look into the online reference: <https://sites.google.com/site/numereframework/onlinereferenz>
+DOC_FIRSTSTART_PAGE_1_LINE_6=HINT: It seems that this my first start onto your system. Therefore you may have noticed that I passed an extensive selftest. If you don't like this, enter "set -faststart" after this introduction (or at any later time).
+# ------------------------
+DOC_FIRSTSTART_PAGE_2_HEAD=Input & output
+DOC_FIRSTSTART_PAGE_2_LINE_1=Because I'm a framework for numerical calculations, I'm especially good at the evaluation of numerical expressions. You can enter the expressions, which I shall evaluate, exactly the way you would enter them into a pocket calculator. The only difference is that I'm capable of using variables and that whitespaces are not of great interest. (Example: "5*23*x + 2*x^2 - 15*cos(2)")
+DOC_FIRSTSTART_PAGE_2_LINE_2=You don't need to declare these variables in advance. I'll recognize variables just in the moment, in which they are passed, and will store them in my memory. Although you don't need to care about this, you should keep in mind that new variables always contain the value 0.
+DOC_FIRSTSTART_PAGE_2_LINE_3=Your variable names may contain letters, underscores and numbers, but they must not begin with a number. (E.g.: "x", "x0", "_var_value", ...)
+DOC_FIRSTSTART_PAGE_2_LINE_4=The numerical value, which I calculate, will be printed in the next line as "ans = VALUE". This value will be stored in the special variable "ans" as well so that you can directly resume your calculations with this value.
+DOC_FIRSTSTART_PAGE_2_LINE_5=I'm capable of numerical differentation and integration, as well as searching for extrema or intersections with 0. You'll find the necessary commands at "list -cmd".
+DOC_FIRSTSTART_PAGE_2_LINE_6=HINT: You'll find further information at "help expression", "help var", "help integrate", "help diff", "help extrema" and "help zeroes"
+# ------------------------
+DOC_FIRSTSTART_PAGE_3_HEAD=Customize & improve NumeRe
+DOC_FIRSTSTART_PAGE_3_LINE_1=My default settings were of course chosen quite reasonable, but you may have some other work flow and therefore you would like to change my settings. You can use the command "set":$set -SETTING=VALUE$to customize my settings. (Some settings only have the values 1 or 0, others have explicit values and the last group contains strings. You'll find the names of the settings in the corresponding documentation article.)
+DOC_FIRSTSTART_PAGE_3_LINE_2=To read my settings, you can invoke the command "get" (get -SETTING) and, to list all settings at once, just enter "list -settings".
+DOC_FIRSTSTART_PAGE_3_LINE_3=Probably you may think that I have some issue or that I'm missing some great feature. If this is the case, then don't hesitate. My developer is always thankful for detected bugs, change requests and other ideas. Either write him an email at <numere.developer@gmail.com> or enter your request in the ticket system: <https://sourceforge.net/p/numere/tickets/>
+DOC_FIRSTSTART_PAGE_3_LINE_4=HINT: You'll find further information at "help set", "help get" and "about"
+# ------------------------
+DOC_FIRSTSTART_PAGE_4_HEAD=Data files
+DOC_FIRSTSTART_PAGE_4_LINE_1=Previously I mentioned some features, which I'd like to present in the following lines. We'll begin with the actions that can be applied to data files:
+DOC_FIRSTSTART_PAGE_4_LINE_2=Every data set, which I will process, will be interpreted as a table. Tables in textual files, such as *.dat or *.txt files, can be loaded to memory with the command "load FILE", in which FILE is the filename of the data set. If there are some comments in the file, these must be escaped with an "#" at the beginning of their lines. Either dots or commas can be used as decimal separators (even both in the same file) and the columns have to be separated by either at least a whitespace or a tabulator sign. (Example: "load samples/data")
+DOC_FIRSTSTART_PAGE_4_LINE_3=Additionally I can extract the table from a CASSY(R)-LABX file, evaluate its data and export it into a *.dat file. I understand also Comma Separated Value files (*.csv), JCAMP-DX files (*.dx), IGOR Binary Waves (*.ibw), OpenDocument Spreadsheets (*.ods) and Excel(R) Workbooks (*.xls and *.xlsx). I use the additional "NumeRe data file" file format (*.ndat) as the default saving file type, although this file is a binary file type and can only be read by me. If you like to, then I can export the data to a text file, a TeX file or an Excel(R) Workbook, too.
+DOC_FIRSTSTART_PAGE_4_LINE_4=I can apply a straightforward and fast analysis of the loaded data set. If you type "stats data()", then I'll calculate the statistics of the data, and if you enter "hist data()", then I'll calculate a histogram of the data, each based on the columns of the table. Custom or more extensive evaluations can be done, if you enter the equations directly. The data points can be accessed by the syntax "data(LINE,COLUMN)". (Example: "7*exp(data(12,3)^2)")
+DOC_FIRSTSTART_PAGE_4_LINE_5=HINT: You'll find further information at "help data", "help load", "help stats" and "help hist"
+# ------------------------
+DOC_FIRSTSTART_PAGE_5_HEAD=Plotting
+DOC_FIRSTSTART_PAGE_5_LINE_1=I have a versatile plotting algorithm, which allows creating a graphical representation of functions and datasets in many different variants.
+DOC_FIRSTSTART_PAGE_5_LINE_2=I can create simple 1D plots (e.g. of f(x) = sin(x)), if you enter "plot FUNCTION -set OPTIONS". Herein you have to replace FUNCTION with the function expression and OPTIONS with the desired plot options. Instead of a function expression you may pass a data set. (Example: "plot sin(x) -set [-_pi:_pi]" or "plot data(:,1:3) -set yerrorbars")
+DOC_FIRSTSTART_PAGE_5_LINE_3=You can obtain 2D plots of functions according z = f(x,y) or data grids through the commands "mesh", "surf", "dens" or "cont". (E.g. "surf exp(-norm(x,y)^2/5) -set [-5:5,-5:5] light")
+DOC_FIRSTSTART_PAGE_5_LINE_4=I can create 3D plots of trajectories or scalar fields (Phi = Phi(x,y,z)), if you append "3d" to the current command (e.g. "surf3d").
+DOC_FIRSTSTART_PAGE_5_LINE_5=Vector fields can be obtained with "vect" and "vect3d", respectively. (Example: "vect -y, x -set [-5:5,-5:5]")
+DOC_FIRSTSTART_PAGE_5_LINE_6=The plots I create can have different levels of quality: as default I choose the middle level, which is a good compromise between speed and quality. If you like to have high quality, then pass the option "hires". The lower level (called "draft mode") has to be activated via settings. Enter "set -draftmode=1", if you want to use it.
+DOC_FIRSTSTART_PAGE_5_LINE_7=HINT: You'll find further information at "help plot", "help plotoptions", "help plot3d", "help mesh", "help mesh3d", "help vect" and "help vect3d"
+# ------------------------
+DOC_FIRSTSTART_PAGE_6_HEAD=Automating, scripts & procedures
+DOC_FIRSTSTART_PAGE_6_LINE_1=As I mentioned before, I can automate predefined sequences of commands and expressions. To achieve this, I grant you simple programming functions, which you may use at running time or you can outsource them in a so-called "NumeRe script" (*.nscr).
+DOC_FIRSTSTART_PAGE_6_LINE_2=These functions (flow controls) are the counting (FOR) loop, the conditioned (WHILE) loop and the conditioned fork (IF construct). These controls own similar features like their pendants in usual programming languages such as C/C++.
+DOC_FIRSTSTART_PAGE_6_LINE_3=Scripts can be startet by invoking the command "start SCRIPT", in which SCRIPT has to be replaced by the filename of the corresponding script. If a script has been started, I'll separately execute every line that I find in this file. You should find some example scripts in my subdirectory "samples", if you have chosen this option during installation. If you like, you may test "start samples/sample" afterwards.
+DOC_FIRSTSTART_PAGE_6_LINE_4=You can obtain the greatest possible flexibility by using my integrated interpreter, which is capable of executing complex automatisms, so-called "NumeRe procedures" (*.nprc). You can use these procedures, to develop a whole subprogram running in my framework. Although the varity of the executable functions in these procedures may appear quite limited, they will be extended constantly.
+DOC_FIRSTSTART_PAGE_6_LINE_5=HINT: You'll find further information at "help for", "help while", "help if", "help script" and "help procedure"
+# ------------------------
+DOC_FIRSTSTART_PAGE_7_HEAD=Functions
+DOC_FIRSTSTART_PAGE_7_LINE_1=In addition, I own a great number of predefined functions, constants and unit coversions. I can list them for you, if you enter "list -func" for the functions, "list -const" for the constants and "list -units" for unit conversions.
+DOC_FIRSTSTART_PAGE_7_LINE_2=You may define your own functions, which are useable just like the predefined functions. In advance you have to declare, what your functions shall do. The necessary function definition is done by invoking "define FUNCTIONNAME(ARGUMENTS) := FUNCTIONEXPRESSION(ARGUMENTS)", e.g. through "define f(x,y) := cos(x)+sin(y)"
+DOC_FIRSTSTART_PAGE_7_LINE_3=HINT: You'll find further information at "help func" and "help define"
+# DOCHELPER
+# =================================
+DOCHELPER_KEYWORDS_AND_ARTICLES=Keywords and linked articles in this documentation
+DOCHELPER_KEYWORDS_AND_ARTICLES_NUMBERS=%%1%% Keywords and %%2%% articles
+# ODESOLVER
+# =================================
+ODESOLVER_SOLVE_SYSTEM=Solving ODE system
+# OUTPUT
+# =================================
+OUTPUT_PRINT_INACCESSIBLE1=ATTENTION: IRRECOVERABLE ERROR
+OUTPUT_PRINT_INACCESSIBLE2=To the file
+OUTPUT_PRINT_INACCESSIBLE3=cannot be written.
+OUTPUT_PRINT_INACCESSIBLE4=The output is redirected to the console.
+OUTPUT_FORMAT_SUMMARY=%%1%% %%COMMON_COLS%% and %%2%% %%COMMON_LINES%% [%%3%% elements]
+OUTPUT_FORMAT_SUMMARY_FILE=A table with %%1%% elements was successfully written to the file "%%2%%".
+OUTPUT_FORMAT_ASK_FILEOUT=Shall a copy be saved to a file? (%%COMMON_YES_NO%%)
+OUTPUT_FORMAT_ASK_FILENAME=A copy will be created.$Choose a filename, enter 0 for the default.
+OUTPUT_FORMAT_CONFIRMDEFAULT=Default %%COMMON_FILENAME%% was chosen.
+OUTPUT_FORMAT_NOFILECREATED=No copy was created.
+OUTPUT_FORMAT_TEX_HEAD=Table created with: %%1%%
+OUTPUT_FORMAT_TEXLONG_CAPTION=Continuation
+OUTPUT_FORMAT_TEXLONG_FOOT=Continued on the next page
+OUTPUT_FORMAT_COMMENTLINE=Generated with: %%1%%
+OUTPUT_PRINTLEGAL_LINE1=This dataset was created with
+OUTPUT_PRINTLEGAL_LINE2=Version: %%1%%, Build: %%2%%
+OUTPUT_PRINTLEGAL_LINE3=Sourcecode and program: (c) %%1%%, Erik Hänel et al., licenced through GNU GPL v3.0
+OUTPUT_PRINTLEGAL_LINE4=This file was created on %%1%%
+OUTPUT_PRINTLEGAL_TEX=(Commenting style and formatting are optimized for TeX. The booktabs, the longtable and the multirow package are prerequisites, if applicable.)
+OUTPUT_PRINTLEGAL_STD=(Commenting style and formatting are optimized for Gnuplot.)
+# HIST
+# ================================
+HIST_HEADLINE=Histogram
+HIST_ONLY_CACHE=Only the cache contains data points. These will be used.
+HIST_ASK_DATASET=There is data in the cache as well as in the data object. Which data shall be used? (c/d)$(0 to abort)
+HIST_CONFIRM_DATASET=The loaded data out of %%COMMON_FILETYPE_DAT%% "%%1%%" will be used.
+HIST_GENERATING_DATASETS=%%1%% histogram data sets will be created.
+HIST_ASK_BINWIDTH=The bins shall be how wide?
+HIST_OUT_COMMENTLINE=The bins name always the middle of their interval. The allover minimum value is %%1%%, the maximum is %%2%%. The width of each interval is %%3%%.
+HIST_OUT_COMMENTLINE2D=The bins name always the middle of their interval. The allover minimum x value is %%1%%, the maximum is %%2%%. The width of each x interval is %%3%%. The minimum y value is %%4%%, the maximum is %%5%%. The width of each y interval is %%6%%.
+HIST_OUT_PLGNINFO=Histogram (v %%1%%) using the data rows %%2%%-%%3%% out of %%4%%
+HIST_GENERATING_PLOT=Creating graphical representation
+HIST_SAVED_AT=Saved at "%%1%%"
+# RANDOM
+# ================================
+RANDOM_RESERVING_MEM=Reserving memory
+RANDOM_SUCCESS=%%1%% %%2%% random numbers were successfully written to the cache.
+RANDOM_DISTRIB_TYPE_GAUSS=normal distributed
+RANDOM_DISTRIB_TYPE_POISSON=poisson distributed
+RANDOM_DISTRIB_TYPE_GAMMA=gamma distributed
+RANDOM_DISTRIB_TYPE_UNIFORM=uniform distributed
+RANDOM_DISTRIB_TYPE_BINOMIAL=binomial distributed
+RANDOM_DISTRIB_TYPE_STUDENT=student-t distributed
+# STATS_OUT_COMMENTLINE
+# ================================
+STATS_HEADLINE=Statistics
+STATS_TYPE_AVG=Avg
+STATS_TYPE_STD=+/-
+STATS_TYPE_CONFINT=CnfInt
+STATS_TYPE_STDERR=StdErr
+STATS_TYPE_MED=Med
+STATS_TYPE_RMS=RMS
+STATS_TYPE_SKEW=Skew
+STATS_TYPE_EXCESS=Exc
+STATS_OUT_PLGNINFO=Statistics (v %%1%%) using the data out of %%2%%
+STATS_OUT_COMMENTLINE=Legend: %%STATS_TYPE_AVG%% = average, %%STATS_TYPE_STD%% = standard deviation, %%STATS_TYPE_CONFINT%% = percentage in confidence interval, %%STATS_TYPE_STDERR%% = standard error, %%STATS_TYPE_MED%% = median, Q1 = lower quartile, Q3 = upper quartile, %%STATS_TYPE_RMS%% = root mean square, %%STATS_TYPE_SKEW%% = skewness, %%STATS_TYPE_EXCESS%% = excess, min = minimum, max = maximum, num = number of elements, cnt = number of lines, s_t = Student factor
+# SETTINGS
+# ===============================
+SETTINGS_SAVE_SUCCESS=Configuration was saved successfully.
+# TOOLS
+# ===============================
+TOOLS_TIMESTAMP_AT=at
+# PROC
+# ===============================
+PROC_NAMESPACE_THISFILE_MESSAGE=Following procedures are implicit 'private'.
+PROC_ADDED_DATE=Added
+PROC_END_OF_PROCEDURE=End of procedure
+PROC_FOOTER=NumeRe: Framework für Numerische Rechnungen | Free numerical software licenced under GNU GPL v3
+# CACHE
+# ===============================
+CACHE_WARNING_CMD_OVERLAP=WARNING: "%%1%%" matches with a built-in command. "%%1%%" may be used in numerical expressions, but not as a command expression.$(Many commands on data sets exist in a inverted writing)
+CACHE_WARNING_PLUGIN_OVERLAP=WARNING: "%%1%%" matches with a plugin command. "%%1%%" may be used in numerical expressions, but not as a command expression.$(Many commands on data sets exist in a inverted writing)
+# DATA
+# ===============================
+DATA_PASTE_HEADLINE=Paste data
+DATA_PASTE_DESCRIPTION=Paste you data here (Either directly with the "paste" option of the context menue, or by entering of the values linewise. This mode will be closed, if you enter "endpaste".):
+DATA_COULD_NOT_IDENTIFY_PASTED_CONTENT=The pasted content could not be identified as a table containing numerical values.
+DATA_OPENCSV_COLUMNSEPARATOR_NOTFOUND=The column separator of this CSV file could not be identified. Please choose and enter the separator from the following exemplary lines:
+DATA_OPENCSV_SEPARATOR=Separator: "%%1%%"
+DATA_OPENCSV_SEPARATOR_WHITESPACE=Separator: Whitespace
+DATA_OPENFILE_TABLEHEADINGS=NOTE: There were comment lines found. Do they contain table headings? (%%COMMON_YES_NO%%)
+DATA_OPENFILE_LISTING_COMMENTS=Listing the found comment lines
+DATA_OPENFILE_ENTERNUMBER=Please enter the number of the line with the desired headings or enter 0 to abort:
+DATA_OPENFILE_LINEDOESNTEXIST=NOTE: This line doesn't exist. Please make a new choice:$(There were %%1%% comment lines found)
+DATA_OPENFILE_REPLACING_HEADS=NOTE: The headings could not be identified correctly. Automatic headings will be created.
+DATA_OPENFILE_AUTOMATIC_HEADS=Automatic headings will be created. They may be modified afterwards.
+DATA_OPENFILE_ENTER_HEADINGS=Do you want to enter table headings? (%%COMMON_YES_NO%%)
+DATA_OPENFILE_ENTERYOURHEADS=Please enter the headings. Whitespaces will be automatically replaced with "_".
+DATA_OPENFILE_HEADFORCOLUMN=Table heading for column %%1%%:
+DATA_OPENFILE_OVERWRITE_DATA=The memory is already blocked with the data of the file "%%1%%". Shall the exisiting data be overwritten? (%%COMMON_YES_NO%%)
+# GUI STRINGS: All strings for the new GUI
+# ========================================
+GUI_DLG_OPTIONS=NumeRe: Options
+GUI_DLG_OPEN=NumeRe: Open file
+GUI_DLG_SAVEAS=NumeRe: Save file as
+GUI_DLG_FIND=Find
+GUI_DLG_REPLACE=Find and replace
+GUI_DLG_FNDRPLC_SEARCHFOR=Search for:
+GUI_DLG_FNDRPLC_REPLACEWITH=Replace with:
+GUI_DLG_FNDRPLC_MATCHCASE=Match case
+GUI_DLG_FNDRPLC_WHOLEWORD=Whole word
+GUI_DLG_FNDRPLC_WRAPAROUND=Wrap around search
+GUI_DLG_FNDRPLC_DIRECTION=Search direction
+GUI_DLG_FNDRPLC_DIR_UP=Up
+GUI_DLG_FNDRPLC_DIR_DOWN=Down
+GUI_DLG_FNDRPLC_BTN_FIND=&Find
+GUI_DLG_FNDRPLC_BTN_REPLACE=&Replace
+GUI_DLG_FNDRPLC_BTN_REPLACEALL=Replace &all
+GUI_DLG_FNDRPLC_BTN_CANCEL=&Cancel
+GUI_DLG_DELETE=NumeRe: Remove
+GUI_DLG_DELETE_QUESTION=The file "%%1%%" will be removed. Are you sure?
+GUI_DLG_COPY=NumeRe: Copy
+GUI_DLG_COPY_ERROR=The file could not be copied, because another file with the same name already exists.
+GUI_DLG_RENAME=NumeRe: Rename
+GUI_DLG_RENAME_QUESTION=Please supply a new name for this file:
+GUI_DLG_RENAME_ERROR=The file could not be renamed, because another file with the same name already exists.
+GUI_DLG_NEWNSCR=NumeRe: New script
+GUI_DLG_NEWNSCR_QUESTION=Please enter the desired name of the script:
+GUI_DLG_NEWNSCR_DFLT=new_script
+GUI_DLG_NEWNPRC=NumeRe: New procedure
+GUI_DLG_NEWNPRC_QUESTION=Please enter the desired name of the procedure:
+GUI_DLG_NEWNPRC_DFLT=new_procedure
+GUI_DLG_NEWPLUGIN=NumeRe: New plugin
+GUI_DLG_NEWPLUGIN_QUESTION=Please enter the desired plugin command:
+GUI_DLG_NEWPLUGIN_DFLT=newcommand
+GUI_DLG_GOTO=NumeRe: Goto line
+GUI_DLG_GOTO_QUESTION=Insert a line number: 1-%%1%%
+GUI_DLG_GOTO_ERROR=This line doesn't exist.
+GUI_DLG_SESSION_ERROR=NumeRe: Session recovery
+GUI_DLG_SESSION_RECREATIONERROR=NumeRe could not recreate the file(s):%%LINEBREAK%%%%1%%It/they was/were probably deleted.
+GUI_DLG_FILEMODIFIED=NumeRe: Reload
+GUI_DLG_FILEMODIFIED_QUESTION=%%1%%%%LINEBREAK%%%%LINEBREAK%%This file was modified externally or through a script or a procedure. Shall NumeRe reload this file?%%LINEBREAK%%%%LINEBREAK%%(Your changes will get lost.)
+GUI_DLG_PROC_NEXISTS_CREATE=It seems that the procedure %%1%%() doesn't exist. Shall it be created?
+GUI_DLG_PROC_NEXISTS_CREATE_HEADLINE=NumeRe: Procedure doesn't exist
+# Tips & Tricks dialog
+GUI_TIPOTD_HEAD=NumeRe: Tips and Tricks
+GUI_TIPOTD_DYK=Did you know ...?
+GUI_TIPOTD_NEXT=&Next tip
+GUI_TIPOTD_STAS=&Show tips at start up
+GUI_TIPOTD_CLOSE=&Close
+# Tableeditor
+GUI_TABLEEDITOR=NumeRe-TableEditor:
+# Search & replace dialogs
+GUI_SEARCH_END=No further occurence of "%%1%%" was found in this file.
+GUI_SEARCH_END_HEAD=NumeRe: Searching finished
+GUI_REPLACE_END=%%1%% occurences of%%LINEBREAK%%"%%2%%" were replaced with "%%3%%".
+GUI_REPLACE_END_HEAD=NumeRe: Replacing finished
+# Options dialog
+GUI_OPTIONS_AUTOSAVE=[sec] Cache autosave interval
+GUI_OPTIONS_GREETING=Show greeting at start-up
+GUI_OPTIONS_COLORTHEME=Color-Theme
+GUI_OPTIONS_EXTENDEDINFO=Extended file information (in the "list -files" dialog)
+GUI_OPTIONS_ESCINSCRIPTS=ESC in scripts
+GUI_OPTIONS_DEFCTRL=Definition control%%LINEBREAK%%(automatic loading and saving of custom defined functions)
+GUI_OPTIONS_COMPACTTABLES=Compact table view
+GUI_OPTIONS_EMPTYCOLS=Loading of empty cols
+GUI_OPTIONS_LOGFILE=Logging of console input
+GUI_OPTIONS_HINTS=Show the "Tip of the day" at start-up
+GUI_OPTIONS_CUSTOMLANG=Custom defined language (requires a restart)%%LINEBREAK%%See also "help language"
+GUI_OPTIONS_EXTERNALVIEWER=Use external windows for "show" and "help"
+GUI_OPTIONS_CONFIG=Configuration
+GUI_OPTIONS_LOADPATH=Loading path | <loadpath> =
+GUI_OPTIONS_SAVEPATH=Saving path | <savepath> =
+GUI_OPTIONS_SCRIPTPATH=Script path | <scriptpath> =
+GUI_OPTIONS_PROCPATH=Procedure path | <procpath> =
+GUI_OPTIONS_PLOTPATH=Plot output path | <plotpath> =
+GUI_OPTIONS_CHOOSE=Choose
+GUI_OPTIONS_CHOOSEPATH=NumeRe: Choose a path
+GUI_OPTIONS_PATHS=Directories
+GUI_OPTIONS_PRINT=Print text in:
+GUI_OPTIONS_PRINT_BW=Black/White
+GUI_OPTIONS_PRINT_COLOR=Colour
+GUI_OPTIONS_DEFAULTFONT=Default font for plots:
+GUI_OPTIONS_PRINT_LINENUMBERS=Print linenumbers
+GUI_OPTIONS_SAVE_SESSION=Session recovery%%LINEBREAK%%(Only saved changes are recoverable)
+GUI_OPTIONS_SHOW_TOOLBARTEXT=Show text on the toolbar
+GUI_OPTIONS_HISTORY_LINES=Buffersize of the NumeRe console
+GUI_OPTIONS_PRECISION=Precision (Decimals int the console)
+GUI_OPTIONS_MISC=Miscellaneous
+GUI_OPTIONS_OK=Apply
+GUI_OPTIONS_CANCEL=Cancel
+# About dialog
+GUI_ABOUT_TITLE=About NumeRe
+GUI_ABOUT_LICENCE_SHORT=Fitting | Data analysis | Plotting | Matrix operations | FFT%%LINEBREAK%%Extensible framework | Multiple file formats | Programmable%%LINEBREAK%%Open source | Free for everyone%%LINEBREAK%%%%LINEBREAK%%Copyright (c) 2013-2017, Erik A. Hänel et al.%%LINEBREAK%%%%LINEBREAK%%NumeRe is licenced under the GNU General Public License v3, %%LINEBREAK%%available at http://www.gnu.org/licenses/gpl.html
+GUI_ABOUT_TEAM_INTRO=NumeRe was created by:
+GUI_ABOUT_TEAM=Project lead:%%LINEBREAK%%   Erik HÄNEL%%LINEBREAK%%Concept/UI:%%LINEBREAK%%   Erik HÄNEL%%LINEBREAK%%Mathematical parser:%%LINEBREAK%%   Ingo BERG%%LINEBREAK%%   Erik HÄNEL%%LINEBREAK%%Plotting:%%LINEBREAK%%   Alexey BALAKIN%%LINEBREAK%%numerical algorithms:%%LINEBREAK%%   GNU Scientific Library%%LINEBREAK%%   Erik HÄNEL%%LINEBREAK%%   Alexey BALAKIN%%LINEBREAK%%Tokenizer:%%LINEBREAK%%   Boost-Library%%LINEBREAK%%Matrix algorithms:%%LINEBREAK%%   Eigen Library%%LINEBREAK%%BasicExcel:%%LINEBREAK%%   YAP Chun Wei%%LINEBREAK%%TinyXML-2:%%LINEBREAK%%   Lee THOMASON%%LINEBREAK%%The (patient) testers:%%LINEBREAK%%   D. BAMMERT, J. HÄNEL, R. HUTT, K. KILGUS, E. KLOSTER,%%LINEBREAK%%   K. KURZ, M. LÖCHNER, L. SAHINOVIC, D. SCHMID,%%LINEBREAK%%   V. SEHRA, G. STADELMANN, R. WANNER, F. WUNDER,%%LINEBREAK%%   J. ZINßER
+GUI_ABOUT_CREDITS=NumeRe wouldn't be possible without the used libraries, the patient support%%LINEBREAK%%of the testers and all the tutorials in the internet.%%LINEBREAK%%%%LINEBREAK%%In addition we'd like to thank all the creators of the open source codes,%%LINEBREAK%%which in some cases gave us the needed inspirations for our own solutions.%%LINEBREAK%%%%LINEBREAK%%Why is NumeRe free for all?%%LINEBREAK%%%%LINEBREAK%%NumeRe: Framework für Numerische Rechnungen is totally free software%%LINEBREAK%%and out of any charges. There shall never be any fees for using this%%LINEBREAK%%software. It's intended for educational and scientific use and we want%%LINEBREAK%%you to keep your money in your pockets. We believe that there's no%%LINEBREAK%%need for paying to get knowledge or education. In our opinion,%%LINEBREAK%%knowledge has no monetary value, it's just invaluable. Education is%%LINEBREAK%%also one reason you're paying taxes to your government—so ask yourself:%%LINEBREAK%%%%LINEBREAK%%why paying twice?
+GUI_ABOUT_STATS=Lines of C++ code:%%LINEBREAK%%  ~24 000 (GUI)%%LINEBREAK%%  ~70 000 (Kernel)%%LINEBREAK%%SVN commits:%%LINEBREAK%%  ~50%%LINEBREAK%%Number of source files:%%LINEBREAK%%  ~150 (GUI)%%LINEBREAK%%  ~100 (Kernel)%%LINEBREAK%%Languages:%%LINEBREAK%%  2 (German and English)%%LINEBREAK%%Begin of the project:%%LINEBREAK%%  End of October 2013%%LINEBREAK%%End of the projects:%%LINEBREAK%%  Not in sight%%LINEBREAK%%Number of fixed bugs:%%LINEBREAK%%  ~40 (Documented)%%LINEBREAK%%  ~400 (Undocumented)%%LINEBREAK%%Number of (new) bugs, which made it in a RC:%%LINEBREAK%%  ~30%%LINEBREAK%%Number of the (public) releases:%%LINEBREAK%%  ~25%%LINEBREAK%%Number of the comments about NumeRe:%%LINEBREAK%%  ~10 (Compliments)%%LINEBREAK%%  ~20 (Problems)%%LINEBREAK%%  ~80 (Bugs)%%LINEBREAK%%Number of overnighters:%%LINEBREAK%%  None%%LINEBREAK%%Number of "Ops" during a presentation:%%LINEBREAK%%  ~50%%LINEBREAK%%Amount of consumend caffeine:%%LINEBREAK%%  unmeasurable
+# tree ctrl strings
+GUI_FILETREE=Files
+GUI_FUNCTIONTREE=Symbols
+GUI_TREE_WORKSPACE=Workplace
+GUI_TREE_DATAFILES=Data files
+GUI_TREE_SAVEDFILES=Saved files
+GUI_TREE_SCRIPTS=Scripts
+GUI_TREE_PROCEDURES=Procedures
+GUI_TREE_PLOTS=Plots
+GUI_TREE_COMMANDS=Commands
+GUI_TREE_FUNCTIONS=Functions
+GUI_TREE_FUNC_KEYLIST=num mat string trigonometric hyperbolic time stats random physics angular distrib logarithmic logic coords polynomial draw
+GUI_TREE_CMD_KEYLIST=flowctrl datactrl datacreation loadsave eval plotting proc def mainctrl misc plugins
+# tree pop-up menu
+GUI_TREE_PUP_LOAD=Load file
+GUI_TREE_PUP_START=Start script
+GUI_TREE_PUP_RUN=Execute procedure
+GUI_TREE_PUP_EDIT=Edit
+GUI_TREE_PUP_OPENIMAGE=Show graphic
+GUI_TREE_PUP_DELETEFILE=Remove
+GUI_TREE_PUP_COPYFILE=Copy
+GUI_TREE_PUP_INSERTFILE=Insert copied file
+GUI_TREE_PUP_RENAMEFILE=Rename
+GUI_TREE_PUP_INSERT_EDITOR=Insert in editor
+GUI_TREE_PUP_INSERT_CONSOLE=Insert in console
+GUI_TREE_PUP_HELPONITEM=Help on '%%1%%'
+GUI_TREE_PUP_SHOW_DESCRIPTION=Show description
+# The history widget
+GUI_HISTORY_DELETELINE=Delete this line
+GUI_HISTORY_COPYLINE=Copy this line
+# Filter strings for the file dialog
+GUI_FILTER_SCRIPTS=NumeRe scripts
+GUI_FILTER_PROCEDURES=NumeRe procedures
+GUI_FILTER_NUMEREFILES=NumeRe files
+GUI_FILTER_ALLFILES=All files
+GUI_FILTER_EXECUTABLES=Executable foles
+#GUI_FILTER_DATAFILES=Data sets
+GUI_FILTER_DATAFILES=%%COMMON_FILETYPE_DAT%% (*.dat)|*.dat|%%COMMON_FILETYPE_TXT%% (*.txt)|*.txt|%%COMMON_FILETYPE_CSV%% (*.csv)|*.csv|%%COMMON_FILETYPE_JDX%% (*.jdx, *.dx, *.jcm)|*.jdx;*.dx;*.jcm
+GUI_FILTER_IMAGEFILES=Image files
+GUI_FILTER_TEXSOURCE=TeX-Source
+GUI_FILTER_NONSOURCE=%%COMMON_FILETYPE_TXT%% (*.txt)|*.txt|%%COMMON_FILETYPE_LOG%% (*.log)|*.log|%%COMMON_FILETYPE_DAT%% (*.dat)|*.dat|%%COMMON_FILETYPE_CSV%% (*.csv)|*.csv
+
+GUI_NEWFILE_UNTITLED=<Unnamed>
+GUI_SAVE_QUESTION=NumeRe: Save?
+GUI_UNSAVEDFILE=The file "%%1%%" was modified and was not saved.
+GUI_UNSAVEDFILE_CLOSE=Shall these changes be saved before closing?
+GUI_UNSAVEDFILE_EXECUTE=Shall these changes be saved before executing? (Unsaved changes cannot be executed)
+# Statusbar
+GUI_STATUSBAR_NPRC=%%COMMON_FILETYPE_NPRC%%
+GUI_STATUSBAR_NSCR=%%COMMON_FILETYPE_NSCR%%
+GUI_STATUSBAR_DAT=%%COMMON_FILETYPE_DAT%%
+GUI_STATUSBAR_CSV=%%COMMON_FILETYPE_CSV%%
+GUI_STATUSBAR_TEX=%%COMMON_FILETYPE_TEX%%
+GUI_STATUSBAR_TXT=%%COMMON_FILETYPE_TXT%%
+GUI_STATUSBAR_JDX=%%COMMON_FILETYPE_JDX%%
+GUI_STATUSBAR_DX=%%COMMON_FILETYPE_JDX%%
+GUI_STATUSBAR_JCM=%%COMMON_FILETYPE_JDX%%
+GUI_STATUSBAR_LOG=%%COMMON_FILETYPE_LOG%%
+GUI_STATUSBAR_INI=%%COMMON_FILETYPE_INI%%
+GUI_STATUSBAR_NHLP=%%COMMON_FILETYPE_NHLP%%
+GUI_STATUSBAR_NDB=%%COMMON_FILETYPE_NDB%%
+GUI_STATUSBAR_UNSAVEDFILE=Unsaved file
+GUI_STATUSBAR_UNKNOWN=%%1%% file
+GUI_STATUSBAR_LINECOL=Line: %d, Column: %d
+GUI_STATUSBAR_DEBUGGER=NumeRe debugger: active
+# Menu strings:
+# please note, that the ampersands mark the hotkeys for keyboard navigation
+# and you may change the shortcuts (e.g Ctrl-N) in this file, but always use the
+# english key identifiers (e.g. "Ctrl" and not "Strg")
+# -----------
+# File menu
+GUI_MENU_NEWFILE=&New ...
+GUI_MENU_NEWFILE_TTP=Create a new file
+GUI_MENU_NEW_EMPTYFILE=empty &file%%TAB%%Ctrl-N
+GUI_MENU_NEW_EMPTYFILE_TTP=Create an empty file
+GUI_MENU_NEW_NSCR=&Script%%TAB%%Ctrl-Shift-S
+GUI_MENU_NEW_NSCR_TTP=Create a template for a new script (requires a name)
+GUI_MENU_NEW_NPRC=&Procedure%%TAB%%Ctrl-Shift-P
+GUI_MENU_NEW_NPRC_TTP=Create a template for a new procedure (requires a name)
+GUI_MENU_NEW_PLUGIN=P&lugin%%TAB%%Ctrl-Shift-L
+GUI_MENU_NEW_PLUGIN_TTP=Creates a template for a new plugin (requires its command)
+GUI_MENU_OPENFILE=&Open ...
+GUI_MENU_OPENFILE_TTP=Open an existing file
+GUI_MENU_CLOSEFILE=&Close file
+GUI_MENU_CLOSEFILE_TTP=Close the active file
+GUI_MENU_CLOSEALLFILES=Close all files
+GUI_MENU_SAVEFILE=&Save%%TAB%%Ctrl-S
+GUI_MENU_SAVEFILE_TTP=Save the active file
+GUI_MENU_SAVEFILEAS=Save &as ...
+GUI_MENU_SAVEFILEAS_TTP=Save the active file under another name
+GUI_MENU_PRINT=&Print%%TAB%%Ctrl-P
+GUI_MENU_PRINT_TTP=Print the active file
+GUI_MENU_PRINTPREVIEW=Printing preview
+GUI_MENU_PRINTSETUP=Printer settings
+GUI_MENU_EXIT=&Quit%%TAB%%Alt-F4
+GUI_MENU_EXIT_TTP=Exit NumeRe
+GUI_MENU_FILE=&File
+# Edit menu
+GUI_MENU_UNDO=&Undo%%TAB%%Ctrl-Z
+GUI_MENU_REDO=&Redo%%TAB%%Ctrl-Y
+GUI_MENU_CUT=C&ut%%TAB%%Ctrl-X
+GUI_MENU_COPY=&Copy%%TAB%%Ctrl-C
+GUI_MENU_PASTE=&Insert%%TAB%%Ctrl-V
+GUI_MENU_FIND=&Find%%TAB%%Ctrl-F
+GUI_MENU_REPLACE=Find and &replace%%TAB%%Ctrl-H
+GUI_MENU_SELECT_UP=Move line(s) up%%TAB%%Alt-Up
+GUI_MENU_SELECT_UP_TTP=Moves the selected line(s) one line upwards
+GUI_MENU_SELECT_DOWN=Move line(s) down%%TAB%%Alt-Down
+GUI_MENU_SELECT_DOWN_TTP=Moves the selected line(s) one line downwards
+GUI_MENU_EDIT=&Edit
+# View menu
+GUI_MENU_LINEWRAP=Automatic line &wrap%%TAB%%Ctrl-Alt-W
+GUI_MENU_LINEWRAP_TTP=Wraps long lines at the screen border
+GUI_MENU_DISPCTRLCHARS=&Show control characters
+GUI_MENU_DISPCTRLCHARS_TTP=Shows control characters such as tabulator and whitespaces
+GUI_MENU_TOGGLE_CONSOLE=Show/hide the &console%%TAB%%F2
+GUI_MENU_TOGGLE_FILETREE=Show/hide the file &browser%%TAB%%F3
+GUI_MENU_TOGGLE_FILETREE=Show/hide the input &history%%TAB%%F4
+GUI_MENU_GOTOLINE=&Goto ...%%TAB%%Ctrl-G
+GUI_MENU_GOTOLINE_TTP=Goto a line in the active file
+GUI_MENU_MULTIROW=&Multirow tabs
+GUI_MENU_MULTIROW_TTP=Activates or deactives tabs in multiple rows
+GUI_MENU_FOLDALL=&Fold all%%TAB%%Ctrl-Alt-F
+GUI_MENU_FOLDALL_TTP=Folds all lines
+GUI_MENU_UNFOLDALL=&Unfold all%%TAB%%Ctrl-Alt-U
+GUI_MENU_UNFOLDALL_TTP=Unfolds all lines
+GUI_MENU_USETXTADV=Markup text using "#", "*", "-" and "_"
+GUI_MENU_USETXTADV_TTP=Use markup highlighting for text-only files using "#", "*", "-" and "_"
+GUI_MENU_VIEW=&View
+# Tools menu
+GUI_MENU_OPTIONS=&Options
+GUI_MENU_DEBUGGER=NumeRe &debugger%%TAB%%Ctrl-Shift-D
+GUI_MENU_DEBUGGER_TTP=Activates or deactivates the debugger
+GUI_MENU_AUTOINDENT=Adjust &intendations%%TAB%%Ctrl-Shift-I
+GUI_MENU_AUTOINDENT_TTP=Adjusts the indentation of the lines to the current block
+GUI_MENU_EXECUTE=%%GUI_TB_RUN%%%%TAB%%F5
+GUI_MENU_EXECUTE_TTP=%%GUI_TB_RUN_TTP%%
+GUI_MENU_COMMENTLINE=(Un-)Comment &active Lines%%TAB%%Ctrl-Q
+GUI_MENU_COMMENTLINE_TTP=Comments or uncomments the active &line(s)
+GUI_MENU_COMMENTSELECTION=(Un-)Comment current s&election%%TAB%%Ctrl-Shift-Q
+GUI_MENU_COMMENTSELECTION_TTP=Comments or uncomments the current selection
+GUI_MENU_STRIP=Remove whitespace characters ...
+GUI_MENU_STRIP_BOTH=Leading and trailing
+GUI_MENU_STRIP_BOTH_TTP=Removes leading and trailing whitespaces/tabulators in the current line(s)
+GUI_MENU_STRIP_FRONT=Only leading
+GUI_MENU_STRIP_FRONT_TTP=Removes only leading whitespaces/tabulators in the current line(s)
+GUI_MENU_STRIP_BACK=Only trailing
+GUI_MENU_STRIP_BACK_TTP=Removes only trailing whitespaces/tabulators in the current line(s)
+GUI_MENU_SORT_ASC=Sort lines ascending
+GUI_MENU_SORT_ASC_TTP=Sorts the current lines in ascending order
+GUI_MENU_SORT_DESC=Sort lines descending
+GUI_MENU_SORT_DESC_TTP=Sorts the current lines in descending order
+GUI_MENU_TOOLS=&Tools
+# Help menu
+GUI_MENU_SHOWHELP=&Help topics%%TAB%%F1
+GUI_MENU_ABOUT=&About NumeRe
+GUI_MENU_ABOUT_TTP=Show informations about NumeRe
+GUI_MENU_HELP=&Help
+# Editor
+GUI_EDITOR_TAB_CLOSE=Close tab
+# Tooltips
+GUI_EDITOR_CALLTIP_PROC1=%%COMMON_FILETYPE_NPRC%%:
+GUI_EDITOR_CALLTIP_PROC2=Click right to search its definition
+GUI_EDITOR_CALLTIP_...=		...       - Allows an arbitrary number of arguments
+GUI_EDITOR_CALLTIP_ANS=		ans       - Contains the result of the last calculation
+GUI_EDITOR_CALLTIP_CACHE=	cache()   - Standard cache object. Its contents may be modified
+GUI_EDITOR_CALLTIP_DATA=	data()    - Data object. Contains all loaded data. Read-Only
+GUI_EDITOR_CALLTIP_FALSE=	false     - Constant for 0
+GUI_EDITOR_CALLTIP_INF=		inf       - Constant for the symbolic value infinity
+GUI_EDITOR_CALLTIP_NAN=		nan       - Constant for an invalid value
+GUI_EDITOR_CALLTIP_STRING=	string()  - String object. May contain an arbitrary number of strings
+GUI_EDITOR_CALLTIP_TRUE=	true      - Constant for 1
+GUI_EDITOR_CALLTIP_VOID=	void      - Constant for an empty value. Will sometimes be interpreted as "nan"
+# Option tooltips
+GUI_EDITOR_CALLTIP_COMMON_CONVERSION=Conversion
+GUI_EDITOR_CALLTIP_COMMON_PLOTTING=Plot option
+GUI_EDITOR_CALLTIP_COMMON_FONTTYPE=Font face
+GUI_EDITOR_CALLTIP_COMMON_FILEWRITE=File writing mode
+GUI_EDITOR_CALLTIP_COMMON_FILEREAD=File reading mode
+GUI_EDITOR_CALLTIP_COMMON_SETTING=Setting
+GUI_EDITOR_CALLTIP_COMMON_MAF=Multi argument function on data sets
+GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR=Option for
+GUI_EDITOR_CALLTIP_COMMON_METHODFOR=Method for
+GUI_EDITOR_CALLTIP_OPT_ADDXAXIS=addxaxis=(MIN,MAX,[LABEL[,COLOR]]) [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_ADDYAXIS=addyaxis=(MIN,MAX,[LABEL[,COLOR]]) [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_ADVENTOR=adventor [%%GUI_EDITOR_CALLTIP_COMMON_FONTTYPE%%]
+GUI_EDITOR_CALLTIP_OPT_ALL=all
+GUI_EDITOR_CALLTIP_OPT_ALLMEDIUM=hires=allmedium [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_ALPHA=alpha [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_ALPHAMASK=alphamask [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_ANIMATE=animate[=FRAMES] [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_APP=mode=app [%%GUI_EDITOR_CALLTIP_COMMON_FILEWRITE%%]
+GUI_EDITOR_CALLTIP_OPT_AREA=area [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_ASPECT=aspect=VAL [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_ASSTR=asstr [%%GUI_EDITOR_CALLTIP_COMMON_CONVERSION%%]
+GUI_EDITOR_CALLTIP_OPT_ASVAL=asval[={VARSET}] [%%GUI_EDITOR_CALLTIP_COMMON_CONVERSION%%]
+GUI_EDITOR_CALLTIP_OPT_AUTOSAVE=autosave [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_AVG=avg [%%GUI_EDITOR_CALLTIP_COMMON_MAF%%]
+GUI_EDITOR_CALLTIP_OPT_AXIS=axis [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_AXISBIND=axisbind="rltb" [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_BACKGROUND=background=FILENAME [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_BAR=type=bar [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% progress]
+GUI_EDITOR_CALLTIP_OPT_BARS=bars[=WIDTH] [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_BCANCEL=type=bcancel [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% progress]
+GUI_EDITOR_CALLTIP_OPT_BGCOLORSCHEME=bgcolorscheme=COLORSCHEME [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_BINLABEL=binlabel=LABEL [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% hist]
+GUI_EDITOR_CALLTIP_OPT_BINOMIAL=distrib=binomial [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% random]
+GUI_EDITOR_CALLTIP_OPT_BINS=bins=VAL [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% hist]
+GUI_EDITOR_CALLTIP_OPT_BONUM=bonum [%%GUI_EDITOR_CALLTIP_COMMON_FONTTYPE%%]
+GUI_EDITOR_CALLTIP_OPT_BOTTOMLEFT=legend=bottomleft [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_BOTTOMRIGHT=legend=bottomright [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_BOX=box [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_BOXPLOT=boxplot [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_BUFFERSIZE=buffersize=VAL [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_CANCEL=type=cancel [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% progress]
+GUI_EDITOR_CALLTIP_OPT_CARTESIAN=coords=cartesian [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_CHIMAP=chimap=CHIMAP() [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% fit]
+GUI_EDITOR_CALLTIP_OPT_CHORUS=chorus [%%GUI_EDITOR_CALLTIP_COMMON_FONTTYPE%%]
+GUI_EDITOR_CALLTIP_OPT_CLOG=clog [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_CLOUDPLOT=cloudplot [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_CMD=cmd
+GUI_EDITOR_CALLTIP_OPT_CNT=cnt [%%GUI_EDITOR_CALLTIP_COMMON_MAF%%]
+GUI_EDITOR_CALLTIP_OPT_COARSE=grid=coarse [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_COAST=colorscheme=coast [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_COLD=colorscheme=cold [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_COLORBAR=colorbar [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_COLORMASK=colormask [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_COLORRANGE=colorrange=MIN:MAX [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_COLORSCHEME=colorscheme=COLORSCHEME [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_COLORTHEME=colortheme [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_COLS=cols[=VAL]
+GUI_EDITOR_CALLTIP_OPT_COMMENT=comment=COMMENT
+GUI_EDITOR_CALLTIP_OPT_COMMENTS=comments=COMMENTSIGN
+GUI_EDITOR_CALLTIP_OPT_COMPACT=compact [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_COMPLETE=complete [%%GUI_EDITOR_CALLTIP_COMMON_FILEREAD%%]
+GUI_EDITOR_CALLTIP_OPT_COMPLEX=complex [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% fft]
+GUI_EDITOR_CALLTIP_OPT_CONNECT=connect [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_CONST=const
+GUI_EDITOR_CALLTIP_OPT_COPPER=colorscheme=copper [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_COORDS=coords=COORDINATESET [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_COUNTLABEL=countlabel=LABEL [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% hist]
+GUI_EDITOR_CALLTIP_OPT_CSCALE=cscale=VAL [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_CTICKLABELS=cticklabels=LABELS [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_CTICKS=cticks=TICKSTYLE [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_CURSOR=cursor [%%GUI_EDITOR_CALLTIP_COMMON_FONTTYPE%%]
+GUI_EDITOR_CALLTIP_OPT_CUT=cut [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_DEFCONTROL=defcontrol [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_DESC=sort=desc [Sorting direction]
+GUI_EDITOR_CALLTIP_OPT_DIR=dir[=DIRNAME]
+GUI_EDITOR_CALLTIP_OPT_DISTRIB=distrib=DISTRIBUTION [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% random]
+GUI_EDITOR_CALLTIP_OPT_DOWN=down [Zeroes mode]
+GUI_EDITOR_CALLTIP_OPT_DRAFTMODE=draftmode [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_EDITOR=editor[=PATH/TO/EDITOR] [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_EPS=eps=PRECISION
+GUI_EDITOR_CALLTIP_OPT_ERRORBARS=errorbars [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_EVERY=every=FIRST,INCREMENT
+GUI_EDITOR_CALLTIP_OPT_EXPRVAR=exprvar
+GUI_EDITOR_CALLTIP_OPT_EXTENDEDFILEINFO=extendedfileinfo [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_EXTERNALDOCWINDOW=externaldocwindow [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_FASTSTART=faststart [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_FCONT=fcont [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_FILE=file=FILENAME
+GUI_EDITOR_CALLTIP_OPT_FILES=files[=FILEPATH]
+GUI_EDITOR_CALLTIP_OPT_FINE=grid=fine [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_FIRST=first=VAL [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% progress]
+GUI_EDITOR_CALLTIP_OPT_FLENGTH=flength [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_FLOW=flow [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_FONT=font=FONTTYPE [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_FREE=free [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% new]
+GUI_EDITOR_CALLTIP_OPT_FREEDMAN=method=freedman [%%GUI_EDITOR_CALLTIP_COMMON_METHODFOR%% hist]
+GUI_EDITOR_CALLTIP_OPT_FREEDOMS=freedoms=VAL [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% random]
+GUI_EDITOR_CALLTIP_OPT_FUNC=func[=TYPE]
+GUI_EDITOR_CALLTIP_OPT_FX0=fx0=[STARTVALS] [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% odesolve]
+GUI_EDITOR_CALLTIP_OPT_GAMMA=distrib=gamma [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% random]
+GUI_EDITOR_CALLTIP_OPT_GAUSS=distrib=gauss [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% random]
+GUI_EDITOR_CALLTIP_OPT_GREETING=greeting [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_GREY=colorscheme=grey [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_GRID=grid[=TYPE]
+GUI_EDITOR_CALLTIP_OPT_GRIDSTYLE=gridstyle=STYLE [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_HBARS=hbars[=WIDTH] [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_HEAD=head=LINENUMBER
+GUI_EDITOR_CALLTIP_OPT_HEROS=heros [%%GUI_EDITOR_CALLTIP_COMMON_FONTTYPE%%]
+GUI_EDITOR_CALLTIP_OPT_HEROSCN=heroscn [%%GUI_EDITOR_CALLTIP_COMMON_FONTTYPE%%]
+GUI_EDITOR_CALLTIP_OPT_HINTS=hints [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_HIRES=hires[=MODE] [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_HOT=colorscheme=hot [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_HTML=html
+GUI_EDITOR_CALLTIP_OPT_IGNORE=ignore
+GUI_EDITOR_CALLTIP_OPT_INTERPOLATE=interpolate [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_INVERSE=inverse [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% fft]
+GUI_EDITOR_CALLTIP_OPT_ITER=iter=VAL
+GUI_EDITOR_CALLTIP_OPT_KEEPDIM=keepdim [%%GUI_EDITOR_CALLTIP_COMMON_FILEREAD%%]
+GUI_EDITOR_CALLTIP_OPT_LAST=last=VAL [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% progress]
+GUI_EDITOR_CALLTIP_OPT_LBORDER=lborder=(POS,STRING) [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_LCONT=lcont [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_LEGEND=legend=POSITION [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_LEGENDSTYLE=legendstyle=LEGENDSTYLE [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_LIGHT=light[=MODE] [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_LINES=lines[=VAL]
+GUI_EDITOR_CALLTIP_OPT_LINESIZES=linesizes=VALS [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_LINESTYLES=linestyles=STYLES [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_LNUMCTRL=lnumctrl[=VAL]
+GUI_EDITOR_CALLTIP_OPT_LOADEMPTYCOLS=loademptycols [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_LOADPATH=loadpath[=PATH] [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_LOGIC=logic
+GUI_EDITOR_CALLTIP_OPT_LOGSCALE=logscale
+GUI_EDITOR_CALLTIP_OPT_LYAPUNOV=lyapunov [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% odesolve]
+GUI_EDITOR_CALLTIP_OPT_MAIN=main [Namespace]
+GUI_EDITOR_CALLTIP_OPT_MAP=colorscheme=map [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_MARKS=marks=SIZE [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_MASK=mask
+GUI_EDITOR_CALLTIP_OPT_MAX=max
+GUI_EDITOR_CALLTIP_OPT_MAXLINE=maxline=STRING [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_MEAN=mean=VAL [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% random]
+GUI_EDITOR_CALLTIP_OPT_MED=med [%%GUI_EDITOR_CALLTIP_COMMON_MAF%%]
+GUI_EDITOR_CALLTIP_OPT_MEDIUM=hires=medium [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_METHOD=method=METHOD
+GUI_EDITOR_CALLTIP_OPT_MIN=min
+GUI_EDITOR_CALLTIP_OPT_MINLINE=minline=STRING [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_MODE=mode=MODE
+GUI_EDITOR_CALLTIP_OPT_MOY=colorscheme=moy [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_MSG=msg=MESSAGE
+GUI_EDITOR_CALLTIP_OPT_MULTIPLOT=multiplot=LINES,COLS
+GUI_EDITOR_CALLTIP_OPT_NOALPHA=noalpha [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOALPHAMASK=noalphamask [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOANIMATE=noanimate [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOAREA=noarea [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOAXIS=noaxis [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOBACKGROUND=nobackground [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOBARS=nobars [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOBOX=nobox [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOBOXPLOT=noboxplot [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOCLOG=noclog [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOCLOUDPLOT=nocloudplot [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOCOLORBAR=nocolorbar [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOCOLORMASK=nocolormask [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOCONNECT=noconnect [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOCUT=nocut [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOERRORBARS=noerrorbars [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOFCONT=nofcont [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOFLENGTH=noflength [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOFLOW=noflow [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOGRID=nogrid [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOHBARS=nohbars [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOHIRES=nohires [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOINTERPOLATE=nointerpolate [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOLCONT=nolcont [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOLIGHT=nolight [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOLOGSCALE=nologscale [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOMARKS=nomarks [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOOPEN=noopen [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOORTHOPROJECT=noorthoproject [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOPCONT=nopcont [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOPIPE=nopipe [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOPOINTS=nopoints [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOQUOTES=noquotes [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOREGION=noregion [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NORM=norm [%%GUI_EDITOR_CALLTIP_COMMON_MAF%%]
+GUI_EDITOR_CALLTIP_OPT_NORMAL=distrib=normal [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% random]
+GUI_EDITOR_CALLTIP_OPT_NOSCHEMATIC=noschematic [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOSTEPS=nosteps [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOSILENT=nosilent [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOXLOG=noxlog [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOYERRORBARS=noyerrorbars [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOYLOG=noylog [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOZLOG=nozlog [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NQ=nq
+GUI_EDITOR_CALLTIP_OPT_NUM=num [%%GUI_EDITOR_CALLTIP_COMMON_MAF%%]
+GUI_EDITOR_CALLTIP_OPT_OEPS=oeps=FILENAME [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_OGIF=ogif=FILENAME [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_ONLYCOLORS=legendstyle=onlycolors [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_ONLYSTYLES=legendstyle=onlystyles [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_OPEN=open [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_OPNG=opng=FILENAME [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_ORDER=order=VAL
+GUI_EDITOR_CALLTIP_OPT_ORIGIN=origin=TYPE [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_ORTHOPROJECT=orthoproject [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_OSVG=osvg=FILENAME [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_OTEX=otex=FILENAME [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_OVERRIDE=mode=override [%%GUI_EDITOR_CALLTIP_COMMON_FILEWRITE%%]
+GUI_EDITOR_CALLTIP_OPT_OVERWRITE=mode=overwrite [%%GUI_EDITOR_CALLTIP_COMMON_FILEWRITE%%]
+GUI_EDITOR_CALLTIP_OPT_PAGELLA=pagella [%%GUI_EDITOR_CALLTIP_COMMON_FONTTYPE%%]
+GUI_EDITOR_CALLTIP_OPT_PARAMS=params=[PARAMS]
+GUI_EDITOR_CALLTIP_OPT_PATTERN=pattern=FILEPATTERN
+GUI_EDITOR_CALLTIP_OPT_PCONT=pcont [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_PEEK=peek
+GUI_EDITOR_CALLTIP_OPT_PERSPECTIVE=perspective=VAL [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_PIPE=pipe [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_PLASMA=colorscheme=plasma [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_PLOTCOLORS=plotcolors=COLORS [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_PLOTFONT=plotfont=FONTTYPE [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_PLOTPARAMS=plotparams
+GUI_EDITOR_CALLTIP_OPT_PLOTPATH=plotpath[=PATH] [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_PLUGIN=plugin=PLUGINCOMMAND [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% new]
+GUI_EDITOR_CALLTIP_OPT_PLUGINS=plugins
+GUI_EDITOR_CALLTIP_OPT_POINTS=points[=VAL]
+GUI_EDITOR_CALLTIP_OPT_POINTSTYLES=pointstyles=STYLES [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_POISSON=distrib=poisson [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% random]
+GUI_EDITOR_CALLTIP_OPT_POLAR=coords=polar [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_PRD=prd [%%GUI_EDITOR_CALLTIP_COMMON_MAF%%]
+GUI_EDITOR_CALLTIP_OPT_PRECISION=precision=VAL
+GUI_EDITOR_CALLTIP_OPT_PROB=prob=VAL [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% random]
+GUI_EDITOR_CALLTIP_OPT_PROC=proc=PROCNAME [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% new]
+GUI_EDITOR_CALLTIP_OPT_PROCPATH=procpath[=PATH] [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_RAINBOW=colorscheme=rainbow [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_RBORDER=rborder=(POS,STRING) [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_REAL=bgcolorscheme=real [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_RECURSIVE=recursive [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% define]
+GUI_EDITOR_CALLTIP_OPT_REGION=region [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_RESET=reset [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_RESTRICT=restrict=[RESTRICTIONS] [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% fit]
+GUI_EDITOR_CALLTIP_OPT_RK2=method=rk2 [%%GUI_EDITOR_CALLTIP_COMMON_METHODFOR%% odesolve]
+GUI_EDITOR_CALLTIP_OPT_RK4=method=rk4 [%%GUI_EDITOR_CALLTIP_COMMON_METHODFOR%% odesolve]
+GUI_EDITOR_CALLTIP_OPT_RK8PD=method=rk8pd [%%GUI_EDITOR_CALLTIP_COMMON_METHODFOR%% odesolve]
+GUI_EDITOR_CALLTIP_OPT_RKCK=method=rkck [%%GUI_EDITOR_CALLTIP_COMMON_METHODFOR%% odesolve]
+GUI_EDITOR_CALLTIP_OPT_RKF45=method=rkf45 [%%GUI_EDITOR_CALLTIP_COMMON_METHODFOR%% odesolve]
+GUI_EDITOR_CALLTIP_OPT_ROTATE=rotate=THETA,PHI [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_SAMPLES=samples=VAL
+GUI_EDITOR_CALLTIP_OPT_SAVEPATH=savepath[=PATH] [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_SAVERR=saverr [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% fit]
+GUI_EDITOR_CALLTIP_OPT_SCALE=scale=VAL [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% random]
+GUI_EDITOR_CALLTIP_OPT_SCHEMATIC=schematic [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_SCHOLA=schola [%%GUI_EDITOR_CALLTIP_COMMON_FONTTYPE%%]
+GUI_EDITOR_CALLTIP_OPT_SCOTT=method=scott [%%GUI_EDITOR_CALLTIP_COMMON_METHODFOR%% hist]
+GUI_EDITOR_CALLTIP_OPT_SCRIPTPATH=scriptpath[=PATH] [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_SETTINGS=settings
+GUI_EDITOR_CALLTIP_OPT_SHAPE=shape=VAL [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% random]
+GUI_EDITOR_CALLTIP_OPT_SILENT=silent [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_SIMPSON=method=simpson [%%GUI_EDITOR_CALLTIP_COMMON_METHODFOR%% integrate]
+GUI_EDITOR_CALLTIP_OPT_SINGLE=single
+GUI_EDITOR_CALLTIP_OPT_SLICES=slices=SLICES
+GUI_EDITOR_CALLTIP_OPT_SLIDING=origin=sliding [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_SPHERICAL=coords=spherical [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_STD=std
+GUI_EDITOR_CALLTIP_OPT_STEPS=steps[=VAL]
+GUI_EDITOR_CALLTIP_OPT_STUDENT=distrib=student [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% random]
+GUI_EDITOR_CALLTIP_OPT_STYLES=styles=STYLES [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_SUM=sum [%%GUI_EDITOR_CALLTIP_COMMON_MAF%%]
+GUI_EDITOR_CALLTIP_OPT_SV=sv
+GUI_EDITOR_CALLTIP_OPT_TARGET=target=TARGET
+GUI_EDITOR_CALLTIP_OPT_TERMES=termes [%%GUI_EDITOR_CALLTIP_COMMON_FONTTYPE%%]
+GUI_EDITOR_CALLTIP_OPT_TEXTSIZE=textsize=VAL [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_THIS=this [Namespace]
+GUI_EDITOR_CALLTIP_OPT_THISFILE=thisfile [Namespace]
+GUI_EDITOR_CALLTIP_OPT_TITLE=title=TITLE [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_TOCACHE=tocache[=CACHE()]
+GUI_EDITOR_CALLTIP_OPT_TOL=tol=VAL
+GUI_EDITOR_CALLTIP_OPT_TOPLEFT=legend=topleft [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_TOPRIGHT=legend=topright [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_TRANSPOSE=transpose
+GUI_EDITOR_CALLTIP_OPT_TRAPEZOIDAL=method=trapezoidal [%%GUI_EDITOR_CALLTIP_COMMON_METHODFOR%% integrate]
+GUI_EDITOR_CALLTIP_OPT_TRUNC=mode=trunc [%%GUI_EDITOR_CALLTIP_COMMON_FILEWRITE%%]
+GUI_EDITOR_CALLTIP_OPT_TYPE=type=TYPE
+GUI_EDITOR_CALLTIP_OPT_UBOUND=ubound=VAL [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% random]
+GUI_EDITOR_CALLTIP_OPT_UNIFORM=distrib=uniform [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% random]
+GUI_EDITOR_CALLTIP_OPT_UNIQUE=unique
+GUI_EDITOR_CALLTIP_OPT_UNITS=units
+GUI_EDITOR_CALLTIP_OPT_UP=up [Zeroes mode]
+GUI_EDITOR_CALLTIP_OPT_USECUSTOMLANG=usecustomlang [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_USEESCINSCRIPTS=useescinscripts [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_VAR=var
+GUI_EDITOR_CALLTIP_OPT_VIRIDIS=colorscheme=viridis [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_VIEWER=viewer[=PATH/TO/VIEWER] [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_VLINE=vline=(POS,STRING) [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_WIDTH=width=VAL [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% random]
+GUI_EDITOR_CALLTIP_OPT_WINDOWSIZE=windowsize [%%GUI_EDITOR_CALLTIP_COMMON_SETTING%%]
+GUI_EDITOR_CALLTIP_OPT_WITH=with=FUNCTION(x,PARAMS) [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% fit]
+GUI_EDITOR_CALLTIP_OPT_XERRORBARS=xerrorbars [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_XLABEL=xlabel=LABEL [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_XLOG=xlog [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_XSCALE=xscale=VAL [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_XTICKLABELS=xticklabels=LABELS [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_XTICKS=xticks=TICKSTYLE [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_XVALS=xvals
+GUI_EDITOR_CALLTIP_OPT_XY=slices=xy [%%GUI_EDITOR_CALLTIP_COMMON_FILEREAD%%]
+GUI_EDITOR_CALLTIP_OPT_XZ=slices=xz [%%GUI_EDITOR_CALLTIP_COMMON_FILEREAD%%]
+GUI_EDITOR_CALLTIP_OPT_YERRORBARS=yerrorbars [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_YLABEL=ylabel=LABEL [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_YLOG=ylog [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_YSCALE=yscale=VAL [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_YTICKLABELS=yticklabels=LABELS [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_YTICKS=yticks=TICKSTYLE [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_ZLABEL=zlabel=LABEL [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_ZLOG=zlog [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_ZSCALE=zscale=VAL [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_ZTICKLABELS=zticklabels=LABELS [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_ZTICKS=zticks=TICKSTYLE [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+# Constants tooltips
+GUI_EDITOR_CALLTIP_CONST_G=_g = 9.80665 [m/s^2]
+GUI_EDITOR_CALLTIP_CONST_C=_c = 299792458 [m/s]
+GUI_EDITOR_CALLTIP_CONST_ELEK_FELDKONST=_elek_feldkonst = 8.8541878e-12 [A s/(V m)]
+GUI_EDITOR_CALLTIP_CONST_N_AVOGADRO=_n_avogadro = 6.02214129e23 [1/mol]
+GUI_EDITOR_CALLTIP_CONST_K_BOLTZ=_k_boltz = 1.3806488e-23 [J/K]
+GUI_EDITOR_CALLTIP_CONST_ELEM_LADUNG=_elem_ladung = 1.602176565e-19 [A s]
+GUI_EDITOR_CALLTIP_CONST_H=_h = 6.62606957e-34 [J s]
+GUI_EDITOR_CALLTIP_CONST_HBAR=_hbar = 1.05457173e-34 [J s]
+GUI_EDITOR_CALLTIP_CONST_M_ELEKTRON=_m_elektron = 9.10938291e-31 [kg]
+GUI_EDITOR_CALLTIP_CONST_M_PROTON=_m_proton = 1.67262178e-27 [kg]
+GUI_EDITOR_CALLTIP_CONST_M_NEUTRON=_m_neutron = 1.67492735e-27 [kg]
+GUI_EDITOR_CALLTIP_CONST_M_MUON=_m_muon = 1.88353148e-28 [kg]
+GUI_EDITOR_CALLTIP_CONST_M_TAU=_m_tau = 3.16747e-27 [kg]
+GUI_EDITOR_CALLTIP_CONST_MAGN_FELDKONST=_magn_feldkonst = 1.25663706e-6 [V s/(A m)]
+GUI_EDITOR_CALLTIP_CONST_M_ERDE=_m_erde = 5.9726e24 [kg]
+GUI_EDITOR_CALLTIP_CONST_M_SONNE=_m_sonne = 1.9885e30 [kg]
+GUI_EDITOR_CALLTIP_CONST_R_ERDE=_r_erde = 6.378137e6 [m]
+GUI_EDITOR_CALLTIP_CONST_R_SONNE=_r_sonne = 6.9551e8 [m]
+GUI_EDITOR_CALLTIP_CONST_THETA_WEINBERG=_theta_weinberg = 0.490976214
+GUI_EDITOR_CALLTIP_CONST_2PI=_2pi = 6.28318531
+GUI_EDITOR_CALLTIP_CONST_PI=_pi = 3.14159265
+GUI_EDITOR_CALLTIP_CONST_R=_R = 8.3144622 [J/(mol K)]
+GUI_EDITOR_CALLTIP_CONST_ALPHA_FS=_alpha_fs = 7.29735257e-3
+GUI_EDITOR_CALLTIP_CONST_MU_BOHR=_mu_bohr = 9.27400968e-24 [J/T]
+GUI_EDITOR_CALLTIP_CONST_MU_KERN=_mu_kern = 5.05078353e-27 [J/T]
+GUI_EDITOR_CALLTIP_CONST_M_AMU=_m_amu = 1.66053892e-27 [kg]
+GUI_EDITOR_CALLTIP_CONST_R_BOHR=_r_bohr = 5.29177211e-11 [m]
+GUI_EDITOR_CALLTIP_CONST_GRAV=_G = 6.67384e-11 [m^3/(kg s^2)]
+GUI_EDITOR_CALLTIP_CONST_COUL_NORM=_coul_norm = 8.98755179e9 [V m/(A s)]
+# Editor pop-up menu
+GUI_MENU_EDITOR_CUT=Cut
+GUI_MENU_EDITOR_COPY=Copy
+GUI_MENU_EDITOR_PASTE=Insert
+GUI_MENU_EDITOR_ADDBP=Add breakpoint
+GUI_MENU_EDITOR_REMOVEBP=Remove breakpoint
+GUI_MENU_EDITOR_CLEARBP=Remove all breakpoints
+GUI_MENU_EDITOR_HIGHLIGHT=Highlight '%%1%%' permanently
+GUI_MENU_EDITOR_FINDPROC=Find the definition of: '%%1%%'
+GUI_MENU_EDITOR_UPPERCASE=Convert to UPPERCASE
+GUI_MENU_EDITOR_LOWERCASE=Convert to lowercase
+# Toolbar strings
+GUI_TB_NEW=New
+GUI_TB_NEW_TTP=New file
+GUI_TB_OPEN=Open
+GUI_TB_OPEN_TTP=Open a file
+GUI_TB_SAVE=Save
+GUI_TB_SAVE_TTP=Save the current file
+GUI_TB_RUN=Execute
+GUI_TB_RUN_TTP=Execute the current file
+GUI_TB_STOP=Abort
+GUI_TB_STOP_TTP=Abort the execution
+GUI_TB_ADD=Add
+GUI_TB_ADD_TTP=Add a breakpoint at the current line
+GUI_TB_REMOVE=Remove
+GUI_TB_REMOVE_TTP=Remove a breakpoint from the current line
+GUI_TB_CLEAR=Remove all
+GUI_TB_CLEAR_TTP=Remove all breakpoints
+# Printing dialogs
+GUI_PRINT_ERROR=A problem was detected during printing.%%LINEBREAK%%Please check the printer settings and try again.
+GUI_PRINT_ERROR_HEAD=NumeRe: Printing failed
+GUI_PREVIEW_ERROR=A problem was detected during creation of the preview.%%LINEBREAK%%Please check the printer settings and try again.
+GUI_PREVIEW_ERROR_HEAD=NumeRe: Preview failed
+GUI_PREVIEW_HEAD=NumeRe: Printing preview
+# Table viewer pop-up menu
+GUI_INSERT_TABLE_ROW=Insert row
+GUI_INSERT_TABLE_COL=Insert col
+GUI_INSERT_TABLE_CELL=Insert cell
+GUI_REMOVE_TABLE_ROW=Remove row
+GUI_REMOVE_TABLE_COL=Remove col
+GUI_REMOVE_TABLE_CELL=Remove cell
+GUI_COPY_TABLE_CONTENTS=Copy
+GUI_PASTE_TABLE_CONTENTS=Paste

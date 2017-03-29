@@ -1,0 +1,30 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="replaceline">
+	<title string="Input correction in loops and forks" />
+	You may apply simple corrections (e.g. typos or similar errors) in loops and forks during their entry in the NumeRe console by the usage of the command <code>replaceline</code>. This command is not capable of applying more complex corrections.
+	You may replace calculation instructions or modify declarations of loops or forks. But you never may replace declarations with calculation instructions or the other way around. In addition, you may not replace <code>elseif</code>, <code>else</code>, <code>endif</code>, <code>endfor</code> or <code>endwhile</code> with calculation instructions or introduce them with this command.
+	The corrected input has to be passed inside of quotations marks to this command. If it's not the last line, which shall be corrected, you can specify the desired line with the parameter <code>-line=LINE</code>. This line may either be numbered absolute from the first line or relative from the last entered line. In the latter case, you have to pass it as a negative integral number.
+	<example desc="Correcting a loop's declaration:" type="verbatim">
+		|&lt;- for (i = 1:10)
+		|FOR&gt; i++
+		|FOR&gt; replaceline "for (i = 1:100)" -line=-2
+		|FOR&gt; [...]
+	</example>
+</article>

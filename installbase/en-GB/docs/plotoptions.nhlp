@@ -1,0 +1,90 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="plotoptions">
+	<title string="Options for plots" />
+	By appending the parameter <code>-set</code> and the following options, the appearance of a plot may be modified to customize nearly everything. The options are as follows:
+	<list>
+		<item node="[x1:x2,y1:y2]">Set the plotting interval. You may only modify the <expr>x</expr> interval, the <expr>y</expr> interval will be calculated correspondingly. If no interval was passed, the default values or the data ranges of the data sets will be used</item>
+		<item node="addxaxis=AXIS/<br>  addyaxis=AXIS">Adds an additional axis for the <expr>x</expr> or <expr>y</expr> axis, respectively. This needs the surrounding box with <code>box</code>. The desired axis has to be passed as <code>(MIN,MAX[,LABEL[,COLOR]])</code> or <code>(LABEL[,COLOR])</code>, if only the label and the color shall be modified. LABEL and COLOR are strings. May only be used with the command <code>plot</code>.</item>
+		<item node="animate/<br>  noanimate">Activates the creation of a GIF animation, where <expr>t</expr> is used as time parameter. The output will always be a GIF; filenames with wrong extensions will be corrected automatically. With <code>animate=FRAMES</code> the number of calculated frames may be modified. The default value is 50</item>
+		<item node="area/noarea">Fill the area between the curve and the <expr>x</expr> axis or the <expr>x-y</expr> plane with the color of the curve. NumeRe will apply a gradient to white.</item>
+		<item node="aspect=VALUE">Modify the ratio of height to width of the plot. Values smaller than 1 result in portrait, values larger than 1 in landscape images</item>
+		<item node="axis/noaxis">(De-)activates the axes</item>
+		<item node="axisbind=AXIS">Bind functions and data sets to axes. The axes are represented with the characters <code>lbrt</code>. Each plot object is assigned to a horizontal (<code>tb</code>) and to a vertical (<code>lr</code>) axis. At <em>least</em> one object must be assigned to the left and one to the bottom axis. Needs <code>box</code>and may only be used for the command <code>plot</code>. Colors and labels of the secondary axes may be modified with <code>add*axis</code>.</item>
+		<item node="background=BG/<br>  nobackground">Load a PNG bitmap as background of the plot. The PNG file will be scaled according to the current set axis ratio</item>
+		<item node="bars/nobars">Show vertical bars instead of points for data plots. Requires equidistant distributed <expr>x</expr> values for correct display. Using <code>bars=WIDTH</code> you may modify the percentage of the bar width; the default value is 90%</item>
+		<item node="bgcolorscheme=SCHEME">Choose the colorscheme for the background. Predefined schemes are <code>real</code>, <code>rainbow</code>, <code>viridis</code>, <code>grey</code>, <code>hot</code>, <code>cold</code> and <code>map</code>. See "help colorscheme" for further schemes</item>
+		<item node="box/nobox">(De-)activates the surrounding box (modifies how the axis are displayed)</item>
+		<item node="boxplot/<br>  noboxplot">(De-)activates the boxplot mode (Minimal, maximal value &amp; quartiles). Each data row (only <expr>y</expr> values will be used) creates a single boxplot marker in the final plot.</item>
+		<item node="connect/<br>  noconnect">(De-)activates the connections between data points</item>
+		<item node="coords=COORDS">Choose the coordinates COORDS. You may choose out of <code>cartesian</code>, <code>polar</code> (cylindrical) and <code>spherical</code>. Depending on the chosen plotting style the coordinate assignements are different. See "help coords" for further details.</item>
+		<item node="crust/nocrust">Reconstructs a 2D surface out of arbitrary distributed <expr>x-y-z</expr> points. The current colorscheme will be used</item>
+		<item node="errorbars/<br>  noerrorbars">(De-)activates errorbars in <expr>x</expr> and <expr>y</expr> direction. Needs 4 columns: <expr>x, y, delta_x, delta_y</expr></item>
+		<item node="font=FONT">Uses the chosen font for the following plots. The default font is <code>pagella</code>; you may choose out of <code>termes</code>, <code>cursor</code>, <code>adventor</code>, <code>bonum</code>, <code>heros</code>, <code>heroscn</code>, <code>chorus</code> &amp; <code>schola</code></item>
+		<item node="grid=TYPE/nogrid">(De-)activates a grid of the type TYPE. You may choose out of <code>coarse</code> for a coarse grid and <code>fine</code> for a grid with subintervals</item>
+		<item node="gridstyle=STYLE">Modify the style of the grid: the first three characters modify style, color and thickness of the standard grid, the second three characters represent the solid (coarse) lines of the fine grid as well as the grid of the vector plots</item>
+		<item node="hbars/nohbars">Show horizontal bars instead of points for data plots. Requires equidistant distributed <expr>y</expr> values for correct display. Using <code>hbars=WIDTH</code> you may modify the percentage of the bar width; the default value is 90%</item>
+		<item node="hires/nohires">Create an output with high resolution/quality. The setting <code>hires=all</code> activates the high resolution for all plots of this session. <code>hires=medium</code> activates a medium resolution for the current plot and <code>hires=allmedium</code> activates the medium resolution for the whole session</item>
+		<item node="hline=(POS,COMMENT)">Draws a horizontal line through the <expr>y</expr> value POS and adds the COMMENT. Using COMMENT in the form TEXT,STYLE the display of the line may be modified</item>
+		<item node="interpolate/<br>  nointerplate">Interpretes data sets with enough points (at least as many as the value of <code>samples</code>) as function values and connects them</item>
+		<item node="lborder=(POS,COMMENT)">Draws a vertical line through the <expr>x</expr> value POS and adds the COMMENT. Using COMMENT in the form TEXT,STYLE the display of the line may be modified</item>
+		<item node="legend=POS">Modify the position of the legend for <code>plot</code>, <code>hist</code> and some special cases of <code>plot3d</code>. POS may be one of <code>topleft</code>, <code>topright</code>, <code>bottomleft</code>, <code>bottomright</code></item>
+		<item node="legendstyle=STYLE">Modify the legend symbols for <code>plot</code> and <code>plot3d</code>: <code>onlycolors</code> shows only the corresponding colors, <code>onlystyles</code> shows only the styles of the curves/points</item>
+		<item node="linesizes=SIZES">Modify the line thicknesses in the plots. Each number in SIZES represents one plot object and may lay between 0 and 9.</item>
+		<item node="linestyles=STYLE">Modify the line style of plots. See "help linestyles" for further details.</item>
+		<item node="logscale/<br>  nologscale">(De-)activates the logarithmic scale of all axes</item>
+		<item node="marks=VALUE/<br>  nomarks">(Only for <code>plot3d</code>) Draws circles of the size VALUE at the <expr>x-y(-z)</expr> coordinates, where the circles are filled according the <expr>z</expr> values and the current color scheme</item>
+		<item node="maxline=COMMENT">Draws a horizontal line through the maximal function value of a plot and adds the COMMENT. In the form <code>maxline=(TEXT,STYLE)</code> the display of the line may be modified</item>
+		<item node="minline=COMMENT">Draws a horizontal line through the minimal function value of a plot and adds the COMMENT. In the form <code>minline=(TEXT,STYLE)</code> the display of the line may be modified</item>
+		<item node="oeps=NAME">Creates an EPS file instead of a PNG file with the filename NAME</item>
+		<item node="open/noopen">Show/don't show the created graphic in an external viewer (if available)</item>
+		<item node="opng=NAME">Set the filename of the created PNG file to NAME. Already present files will be overwritten. Filenames containing whitespaces have to be passed inside of quotation marks</item>
+		<item node="origin=ORIGIN">Modify the coordinate origin: <code>origin=std</code> actives the default behavior, with <code>origin=sliding</code> the axes run through at least one 0 if available, and with <code>origin=X,Y,Z</code> (where values for X,Y,Z are mandatory) the origin may be moved to the desired position (if it is available. Otherwise the behavior of <code>origin=sliding</code> will be applied).</item>
+		<item node="osvg=NAME">Similar to <code>oeps</code>, but creates an SVG file</item>
+		<item node="otex=NAME">Similar to <code>oeps</code>, but creates an TeX file (with the use of TikZ)</item>
+		<item node="perspective=VALUE">Actives the perspective view. The value may be in the interval [0,1) and describes the strength of the perspective</item>
+		<item node="pointstyles=STYLE">Modify the appearance of the points in the plot. See "help pointstyles" for further details</item>
+		<item node="plotcolors=COLORS">Modify the COLORS of the lines in plots and 3D trajectories. See "help plotcolors" for further details</item>
+		<item node="points/nopoints">(De-)activates the display of the calculated samples of functions</item>
+		<item node="rborder=(POS,COMMENT)">Draws a vertical line through the <expr>x</expr> value POS and adds the COMMENT. Using COMMENT in the form TEXT,STYLE the display of the line may be modified</item>
+		<item node="region/noregion">Fills the region between two curves with a color gradient of both colors. If only one curve (or an odd number of curves) is available, then the behavior of <code>area</code> will be applied. May be used with <code>plot</code> and <code>plot3d</code></item>
+		<item node="reset">Resets all settings to their default values. This option will be evaluated first; therefore you may combine it with all other options</item>
+		<item node="samples=VALUE">Set the number of calculated samples to VALUE</item>
+		<item node="schematic/<br>  noschematic">Create a schematic plot. Deactivates all basic information like axis labels, axis ticks and the legend. However, if at least one of the labels through <code>xlabel</code>, <code>ylabel</code> or <code>zlabel</code> is desired, then all axis labels will be displayed again</item>
+		<item node="silent/nosilent">Supresses all displayed messages. This will as well suppress that the resulting plot will be opened in an external viewer</item>
+		<item node="steps/nosteps">Display connected steps instead of data points</item>
+		<item node="styles=STYLES">Define color, line thickness and type, as well as point appearance in the string STYLES. For each curve you have to pass 4 characters (or corresponding whitespaces). If <code>#</code> will be found inside of the 4 characters, then NumeRe will use 5 characters for this plot object.</item>
+		<item node="textsize=SIZE">Set the text size of the whole plot to SIZE. The values (1-9) have a linear effect on the size. 5 is the standard value, which will be used for plots.</item>
+		<item node="title=TITLE">Display the optional title TITLE over the graph. Titles containing whitespaces have to be passed inside of quotations marks.</item>
+		<item node="vline=(POS,COMMENT)">Draws a vertical line through the <expr>x</expr> value POS and adds the COMMENT. Using COMMENT in the form TEXT,STYLE the display of the line may be modified</item>
+		<item node="*label=LABEL">Set the label of the * axis to LABEL. Labels containing whitespaces have to be passed inside of quotation marks</item>
+		<item node="*log/no*log">Use logarithmic scale for the * axis</item>
+		<item node="*scale=VALUE">Set the axis scale for the * axis to VALUE</item>
+		<item node="*ticklabels=LABELS">Pass custom defined axis ticks for the * axis. The ticks will be distributed equidistantly. The LABELS have to be passed as strings separated with "\\n".</item>
+		<item node="*ticks=FORMAT">Set the ticks format of the * axis to FORMAT. See also "help ticks"</item>
+		<item node="xerrorbars/<br>  noxerrorbars">(De-)activates errorbars in <expr>x</expr> direction. Needs three columns: <expr>x, y, delta_x</expr></item>
+		<item node="yerrorbars/<br>  noyerrorbars">(De-)activates errorbars in <expr>y</expr> direction. Needs three columns: <expr>x, y, delta_y</expr></item>
+	</list>
+	("*" is a placeholder for <expr>x, y &amp; z</expr>)
+	STYLE is a string, which, depending on the current option, contains only colors, line thicknesses, line and point types or all three types of information. The style information consists of single characters, which are described in "help colors" and "help linestyles". The line thickness is a number from 0 to 9.
+	<em>Important:</em> you should omit whitespace wherever possible, because they are used to separate the options. If they are necessary for <code>title=</code>, <code>*label=</code> or the file name, then the whole argument has to be passed surrounded by quotation marks.
+	Options, which were set once, are stored for the further usage and (as long as they aren't revised) will be used for all further plots automatically. Exceptions are high resolution, filename, title, plotting intervals and axis labels.
+	<em>Tip:</em> Options, which are saved from plot to plot, may be set outside of an actual plot using the the syntax <code>plot -set OPTIONS</code> (without an actual function).
+	<em>See also:</em> "help plot", "help colors" and "help linestyles"
+</article>

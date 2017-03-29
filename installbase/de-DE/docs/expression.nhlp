@@ -1,0 +1,36 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="expression">
+	<title string="Eingabe von Ausdrücken" />
+	NumeRe ist so ausgelegt, dass es jeden eingegebenen Ausdruck ("Anfrage") auswertet und das Ergebnis als "Antwort" in der nächsten Zeile ausgibt, sofern die Anfrage nicht mit einem Semikolon <code>;</code> abgeschlossen wurde (Dieses unterdrückt zwar Ausgabe aber nicht die Auswertung). Das Ergebnis wird, falls es einen numerischen Wert hat, automatisch der Variablen <code>ans</code> zugewiesen.
+	NumeRe erwartet entweder mathematisch-numerisch oder logisch verwertbare Ausdrücke oder auch Zeichenketten (mit Anführungszeichen umschlossen) als Eingabe. Falls NumeRe einen Ausdruck nicht übersetzen kann, liefert es eine entsprechende Fehlermeldung.
+	Die Syntax orientiert sich sowohl an geläufigen Programmiersprachen (C/C++), als auch an der Mathematik selbst.
+	Variablendefinitionen und Wertzuweisungen werden dabei stets durch den Variablennamen gefolgt von <code>=</code> und dem gewünschten Wert durchgeführt. Auch das Ergebnis eines Ausdrucks kann einer Variable als Wert zugewiesen werden.
+	Numerische Werte können nur numerischen, Zeichenketten nur Zeichenkettenvariablen zugewiesen werden. Eine Konvertierung der Variablentypen ist nicht möglich (wohl aber die Umwandlung der enthaltenen Werte mittels <code>#NUMVAR</code> und <code>to_value(STRINGVAR)</code>).
+	Als Variablennamen können beliebige Kombinationen aus dem Satz von Groß- und Kleinbuchstaben sowie dem Unterstrich <code>_</code> verwendet werden. Es können auch Ziffern verwendet werden, jedoch dürfen die Variablennamen niemals mit einer Ziffer beginnen.
+	NumeRe besitzt einen großen Satz an vordefinierten Konstanten, die mittels dem Kommando <code>list -const</code> (inklusive der phys. Einheit, sofern vorhanden) angezeigt werden können. Diesen Konstanten ist gemein, dass sie stets mit einem vorangestellten Unterstrich beginnen.
+	Die vordefinierten Funktionen weisen sogar eine noch größere Anzahl auf und können mittels <code>list -func</code> aufgelistet werden.
+	<example desc="Zuweisen von cos(_pi) an die Variable x und 'Hallo Welt' an Satz:">
+		x = cos(_pi)
+		ans = -1
+		Satz = "Hallo Welt"
+		"Hallo Welt"
+	</example>
+	<em>Siehe auch:</em> "help cache", "help string", "help list", "help var" und "help func"
+</article>

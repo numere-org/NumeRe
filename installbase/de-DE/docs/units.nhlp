@@ -1,0 +1,29 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="units">
+	<title string="Einheitenumrechnung" />
+	NumeRe versteht viele (nicht-SI-)Einheiten, die mittels der Syntax <code>WERT'EINHEIT</code> eingegeben wurden. Dabei ist <code>EINHEIT</code> durch das Einheitensymbol (oder ein passendes Pendant) zu ersetzen.
+	NumeRe rechnet den Wert in den numerischen Wert der passenden SI-Basis-Einheiten um, ehe die Auswertung weiter fortgeführt wird. Allerdings erfolgt die endgültige Auswertung dann rein numerisch; es wird auf keine Einheiten Rücksicht genommen.
+	Die vollständige Liste der definierten Einheiten kann mittels des Kommandos <code>list -units</code> angezeigt werden.
+	<example desc="Umrechnen von 125 keV in Joule:">
+		125e3'eV
+		ans = 2.0027207e-014
+	</example>
+	<em>Siehe auch:</em> "help list"
+</article>

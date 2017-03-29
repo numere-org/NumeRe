@@ -1,0 +1,45 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="integrate">
+	<title string="Numerical integration" />
+	NumeRe contains functions for the numerical integration of expression and data sets. The command is <code>integrate</code> and depending on the passed options (see below), NumeRe will perform either an one or a two dimensional integration. The integration variable in the one dimensional case is <expr>x</expr>; in the two dimensional integration it's <expr>y</expr> as additional variable.
+	The functions <expr>f(x)</expr> or <expr>f(x,y)</expr>, respectively, have to be passed directly to <code>integrate</code>. You may integrate multiple functions at once, if their integration intervals are matching. Used variables (except of <expr>x</expr> and <expr>y</expr>, if applicable) have to be declared in advance.
+	The boundaries, the numerical resolution of the integration and the integration method have to be passed to the command as options through the parameter <code>-set</code>. If you pass only boundaries for <expr>x</expr>, then NumeRe will perform a 1D integration. If you pass both boundaries, then it will be a 2D integration. The boundaries may be passed for each variable separately as listed below or gathered in the form <code>[x0:x1,y0:y1]</code>.
+	<list>
+		<item node="x=VALUE1:VALUE2">Set the <expr>x</expr> to [VALUE1, VALUE2]</item>
+		<item node="y=VALUE1:VALUE2">Set the <expr>y</expr> to [VALUE1, VALUE2]</item>
+		<item node="precision=RESOLUTION">Set the numerical resolution to the value of RESOLUTION. If this option is omitted, then the default value of 1e-3 will be used. <code>eps=RESOLUTION</code> is an alias for this option</item>
+		<item node="method=METHODE">Choose the numerical method for the integration. You may choose out of <code>trapezoidal</code> (default) for quite smooth or constant and <code>simpson</code> for quite rough functions. As a conclusion of <code>simpson</code> being a quadratic method, it will be much slower than the trapezoidal method. And for constant functions it will typical return worse results than <code>trapezoidal</code>.</item>
+		<item node="steps=STEPS">Instead of passing the numerical resolution, you may explicit define the number of integration steps for the passed interval.</item>
+		<item node="points">Returns the numerical antiderivative of the first passed function as data set</item>
+		<item node="xvals">Determines the corresponding <expr>x</expr> values of the antiderivative (will only be executed, if <code>points</code> is not passed)</item>
+	</list>
+	<code>integrate</code> may integrate 1D data sets as well. These data sets have to be passed instead of the functions: if only one column was passed, then only the sum of the data set will be calculated. If two columns were passed, then the first one will be interpreted as <expr>x</expr>, the second as the corresponding <expr>y</expr> values and the integral thereof will be calculated.
+	The numerical resolution determines, how fine or how coarse the integration interval will be sampled. Note: with finer resolution comes increasing calculation time. And there are of course numerical rounding errors, which limit the precision as well.
+	The execution may be canceled with the <code>ESC</code> key, if it needs too much time.
+	<example desc="Integration of the function <expr>f(x) = x^2</expr> from <expr>x = 1</expr> to <expr>x = 2</expr> with the numerical resolution of dx = 1e-3 and integration of the function <expr>f(x,y) = x</expr> from <expr>x = 0</expr> to <expr>x = 1</expr> and <expr>y = 0</expr> to <expr>y = _2pi</expr> with the numerical resolution of <expr>dx,dy = 1e-4</expr>:" type="verbatim">
+		|&lt;- integrate x^2 -set [1:2]
+		|-&gt; ans = 2.333333
+		|
+		|&lt;- integrate x -set x=0:1 y=0:_2pi precision=1e-4
+		|INTEGRATE&gt; Evaluating ... 100 %: Success.
+		|-&gt; ans = 3.141593
+	</example>
+	<em>Tip:</em> in most cases a numerical resolution of 1e-3 will be sufficient for a usable result of a first guess. A higher resolution shall only be used, if the integral seems to vanish although it shouldn't, or if a higher precision is really needed.
+</article>

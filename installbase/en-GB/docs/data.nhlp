@@ -1,0 +1,51 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="data">
+	<title string="Data files" />
+	NumeRe can read data files, may apply actions to the loaded data and write their results in new data files.
+	Allowed data types are ASCII text files (ANSI encoded) with the file extensions *.dat and *.txt, as well as the NumeRe-declared "NumeRe data file" format (*.ndat). Text or comments have to be escaped by a <code>#</code> sign at the <em>beginning</em> of the corresponding line.
+	The contained columns may be separated using whitespaces or tabulators and as decimal separator you may use a dot <code>.</code> or a comma <code>,</code>. (In the latter case NumeRe will replace the commata with dots)
+	The reading of "invalid" (e.g. from faulty measurements) entries is also supported. Thoese "invalid" values must be represented in the loaded table with either <code>---</code>, <code>NAN</code>, <code>nan</code>, <code>NaN</code>, <code>inf</code> or <code>-inf</code>.
+	Partly supported file types are CASSY(R)-LABX files (*.labx), Comma separated value data files (*.csv), IGOR(R) binary waves (*.ibw), OpenDocument spreadsheets (*.ods), Excel(R) (97-2003) workbooks (*.xls), Excel(R) workbooks (*.xlsx) and JCAMP-DX spectra (*.jdx, *.dx or *.jcm) until version 5.1. NumeRe will extract the numerical values from these file types and interprete them as a table.
+	Single elements of a loaded file can be read using the syntax <code>data(LINE,COLUMN)</code>. The indexing uses integral numbers <em>greater</em> than zero: 1,2,3,... You <em>cannot</em> modify the contents of loaded data files directly.
+	Whole ranges of elements can be obtained using the syntax <code>FIRST INDEX:LAST INDEX</code>. If one of the indices is omitted, it will be automatically replaced with the minimal or maximal possible one, respectively. If both indices are omitted, then the whole range of elements is selected. You may also use lines or columns from other data sets as index sets.
+	The column headings can be read (and also modified) in similar way: <code>data(#,COLUMN)</code> or <code>data(#,COLUMN) = HEADING</code>
+	Parameters for the command <code>data</code> are the following:
+	<list>
+		<item node="-clear">Remove the loaded data from memory</item>
+		<item node="-load=FILE">Load the data from the file FILE. Filenames containing whitespaces have to be surrounded with quotation marks. Placeholders like <code>*</code> or <code>?</code> can be used as well (see "help explorer" for an explanation). If you use the additional parameter <code>-all</code>, then all files, which are following the naming scheme FILE, will be loaded to memory</item>
+		<item node="-reload">Reload the contents of the currently loaded file (e.g. after the modification of the actual file). If multiple files were loaded to memory, then this parameter cannot be used</item>
+		<item node="-app=FILE">Append the data of the file FILE to already loaded data in memory. You may use placeholders in FILE. If you use the additional parameter <code>-all</code>, then all files, which are following the naming scheme FILE, will be appended</item>
+		<item node="-paste">Allows the direct pasting of tabular data out of for example a table calculation. The column separator can be the tabulator, whitespaces, comma or semicolon; the decimal sign is either a dot or a comma, but only a dot, if the column separator is already a comma. Text in the first lines will be interpreted as table headings.$If NumeRe cannot open the clipboard, <code>|PASTE&gt;</code> will appear at the beginning of the line. You have to copy the data directly to the console and close this mode by entering the command <code>endpaste</code>. If there's already data in memory, then the pasted data will be appended to it</item>
+		<item node="-show">Show the data loaded to memory</item>
+		<item node="-showf">Force showing the full loaded data set</item>
+		<item node="-save=NAME">Save the data to the data file NAME (*.ndat). Filenames containing whitespaces have to be surrounded with quotation marks.</item>
+		<item node="-export=NAME">Export the data to the text file NAME (*.ndat). Filenames containing whitespaces have to surrounded with quotation marks, too. (Using the file extension *.tex will create a TeX source file, using *.csv will create a CSV file and using *.xls will create an Excel (97-2003) Workbook)</item>
+		<item node="-sort[...]">Sort the loaded data columnwise. The call without any options will sort the whole data set ascending. If you want to sort it descending, you have to pass <code>-sort=desc</code>. Single columns can be selected with the option <code>cols=COLUMNS[COLUMNGROUP]</code> using the format <code>COLUMN1:COLUMN2</code>. The columns entered as <em>column group</em> will be sorted using the prefixed column as index set. This can be used, if there's a fixed relation between the different columns, for example <expr>x-y</expr> value pairs</item>
+		<item node="-MAF">Applies the multi argument function MAF to all elements and returns the result. Multi argument functions are <code>avg</code>, <code>std</code>, <code>sum</code>, <code>prd</code>, <code>med</code>, <code>min</code>, <code>max</code>, <code>num</code>, <code>cnt</code> and <code>norm</code>. You can restrict the calculation with the additional parameters <code>-lines</code> and <code>-cols</code> (line- or columnwise, will return a result set) and <code>-grid</code> (will interprete the elements as part of a data grid and apply the multi argument functions only to its <expr>z</expr> values)
+	</list>
+	Igor binary wave files can be contain more than two dimensions. While loading these data sets, the third dimension will be enrolled to one single table. With the option <code>slices=SLICE</code> you can define which dimensions shall be gathered to slices: <code>slices=xy</code> is the default and creates slices out of <expr>x-y</expr> coordinates; <code>slices=xz</code> creates the slices out of the <expr>x-z</expr> coordinates.
+	The option <code>ignore</code> can be appended to <code>clear</code> and <code>load</code> and will suppress every possible confirmation. In addition you may add <code>head=LINE</code> to <code>load</code> and <code>app</code> to pass the LINE of the table headings, if NumeRe is not capable of identifying them by itself. As default, NumeRe will omit empty columns to save RAM. To force loading them, this can be permanently (see "help set") or temporarily switched of with the additional options <code>keepdim</code> or <code>complete</code>.
+	<example desc="Loading the data out of the file 'samples/data.dat' and listing of all elements in the column 2:">
+		data -load=samples/data
+		The data of "samples/data.dat" was successfully loaded to memory: the data set contains 25 line(s) and 4 column(s).
+		data(:,2)
+	</example>
+	<em>See also:</em> "help load", "help save", "help string", "help datagrid" and "help explorer"
+</article>

@@ -1,0 +1,55 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="drawing">
+	<title string="Zeichnungen und Anmerkungen" />
+	In NumeRe können auch einfache Zeichnungen mit Anmerkungen erstellt werden. Das dazu nötige Kommando ist <code>draw</code>, welches im Wesentlichen dieselbe Syntax wie <code>plot</code> und Konsorten verwendet. Jedes Objekt, das in diesem Modus in die Zeichenfläche (die natürlich ebenfalls ein Koordinatensystem enthält, das i.A. auch dargestellt wird) integriert werden soll, wird durch eine spezielle Funktion dargestellt.
+	Die Funktionen für den Zeichenmodus können nur im Zeichenmodus verwendet werden. Außerhalb desselben werden sie nicht als solche erkannt. Ihre Wirkungen werden im Folgenden aufgelistet. Dabei werden die folgenden Abkürzungen verwendet:
+	<list>
+		<item node="PNT">Bezeichnet ein <expr>x-y</expr>-Koordinatenpaar, das in der Form <code>x,y</code> einzugeben ist.</item>
+		<item node="STL">Dies ist der stets optionale Style-String, in dem Formatierungsoptionen angegeben werden können. Die Formatierungsoptionen werden durch einzelne Zeichen dargestellt und ohne zusätzliche Trennzeichen als Zeichenkette angegeben, z.B. <code>r</code> für rote Färbung.</item>
+		<item node="DIR">Dies bezeichnet einen Tangenten-Richtungsvektor, in dessen Richtung beispielsweise die Kurve von <code>curve()</code> biegen soll. Muss ebenfalls in der Form <code>x,y</code> angegeben werden, jedoch stets als "Differenzenvektor".</item>
+		<item node="ANG">Die Funktion <code>arc()</code> benötigt die Angabe eines Winkels. Dieser wird hierdurch angedeutet. Die Angabe erfolgt dabei in Grad.</item>
+		<item node="RAD">Der Radius eines Kreises, einer Kugel oder einer Ellipse</item>
+		<item node="SFT">Spezialparameter für die Funktion <code>drop()</code>. Bezeichnet eine zusätzliche Verschiebung.</item>
+		<item node="ASP">Spezialparameter für die Funktion <code>drop()</code>. Bezeichnet die Stärke der Asphärität</item>
+		<item node="TXT">Eine Zeichenkette, die an einen anzugebenen Punkt gesetzt werden soll. Die Angabe erfolgt in Anführungszeichen.</item>
+	</list>
+	Im Zeichenmodus können die folgenden Funktionen in beliebiger Reihenfolge und Kombination verwendet werden, so lange sie durch Kommata voneinander getrennt werden.
+	<list>
+		<item node="point(PNT,STL)">Zeichnet einen Punkt an die Stelle PNT unter Verwendung von STL. Die Form des Punktes und seine Farbe kann mittels STL beeinflusst werden.</item>
+		<item node="trace(PNT,PNT,STL)<br>tracev(PNT,DIR,STL)">Zeichnet eine gerade Linie von PNT nach PNT bzw. PNT+DIR. Falls nur ein Punkt angegeben wird, wird der fehlende Punkt in den Ursprung gelegt. Die Farbe, Form und die Enden der Linie können mittels STL beeinflusst werden.</item>
+		<item node="curve(PNT,DIR,PNT,DIR,STL)">Zeichnet eine "Bezier"-Linie von PNT nach PNT. Die Richtungsvektoren DIR geben die jeweilige Krümmung der Kurve an. Zu beachten ist, dass das Koordinatensystem beim zweiten Punkt um PI gedreht ist (Ggf. sind zusätzliche Vorzeichen beim zweiten Richtungsvektor nötig). Farbe, Form und Linienenden können mittels STL geändert werden.</item>
+		<item node="arc(PNT,PNT,ANG,STL)<br>arcv(PNT,DIR,ANG,STL)">Zeichnet einen Kreisbogen des Winkels ANG um den Punkt PNT vom Punkt PNT bzw. PNT+DIR an. Der Umlaufsinn ist entgegen des Uhrzeigers. Der Stil der Kreisbogenlinie kann mittels STL geändert werden.</item>
+		<item node="triangle(PNT,PNT[,PNT],STL)<br>trianglev(PNT,DIR[,DIR],STL)">Zeichnet ein Dreieck. Dabei können zwei oder drei Ecken angegeben werden. Bei zwei Ecken zeichnet NumeRe ein gleichseitiges Dreieck; bei drei ein allgemeines Dreieck. Die Ecken sind dabei von unten links an entgegen des Uhrzeigersinns numeriert. Die Füllung des Dreiecks kann mit STL beeinflusst werden.</item>
+		<item node="face(PNT,PNT[,PNT,PNT],STL)<br>facev(PNT,DIR[,DIR,DIR],STL)">Zeichnet ein Viereck. Dabei können zwei bis vier Ecken angegeben werden. Bei zwei Ecken zeichnet NumeRe ein Quadrat, bei drei Ecken ein Parallelogramm und bei allen vier Ecken ein allgemeines Viereck. Die Ecken sind dabei von unten links an entgegen des Uhrzeigersinns numeriert. Bei <code>facev()</code> sind die ersten beiden Richtungsvektoren die untere und linke Kante und der letzte die Diagonale. Die Füllung des Vierecks kann mit STL beeinflusst werden.</item>
+		<item node="polygon(PNT,PNT,N,STL)<br>polygonv(PNT,DIR,N,STL)">Zeichnet ein regelmäßiges N-Eck um den Punkt PNT vom Punkt PNT bzw. PNT+DIR an. Die Füllung und der Stil des n-Ecks kann mittels STL geändert werden.</item>
+		<item node="circle(PNT,RAD,STL)">Zeichnet einen Kreis um den Punkt PNT mit dem Radius RAD. Die Füllung und der Stil des Kreises kann mittels STL geändert werden. <code>polygon()</code> mit N >= 30 erzielt ähnliche Ergebnisse.</item>
+		<item node="ellipse(PNT,PNT,RAD,STL)<br>ellipsev(PNT,DIR,RAD,STL)">Generiert eine Ellipse mit den Brennpunkten PNT bzw. PNT+DIR und dem Ellipsenradius RAD. Die Füllung und der Stil kann durch STL geändert werden.</item>
+		<item node="sphere(PNT,RAD,STL)">Zeichnet eine Kugel mit Radius RAD an den Koordinaten PNT. Die Farbe kann mittels STL beeinflusst werden. Die Plotoption <code>light</code> macht den 3D-Effekt sichtbar.</item>
+		<item node="drop(PNT,DIR[,SFT,ASP],STL)">Zeichnet einen dreidimensionalen Tropfen am Punkt PNT, der in die Richtung DIR geneigt ist. Die optionalen Parameter SFT und ASP können verwendet werden, um die Form des Tropfens zu verändern. Die Farbe kann mittels STL geändert werden und die Plotoption <code>light</code> macht den 3D-Effekt sichtbar.</item>
+		<item node="text(PNT[,PNT],TXT,STL)">Druckt den Text TXT an der Stelle PNT. Die Ausrichtung und Farbe kann mittels STL beeinflusst werden, wobei die Ausrichtung und die Gestalt durch <code>:</code> von der Farbe getrennt werden muss. Die Textfarben werden wie alle anderen Farben entsprechend "help colors" bestimmt; die Ausrichtung durch <code>LRC</code> (Left-Right-Centered) und die Gestalt durch <code>rib</code> (roman-italic-bold). Das optionale zweite Koordinatenpaar kann verwendet werden, wenn der Text nicht horizontal gedruckt werden soll.</item>
+	</list>
+	Die Farben, die in den Style-Strings verwendet werden können, sind dieselben, die auch unter "help colors" zu finden sind. Die Linienenden von <code>trace()</code>, <code>curve()</code> und <code>arc()</code>, die Linienvarianten aller Linienplots und die Erscheinungsformen der Punkte für <code>point()</code> werden durch die unter "help linestyles" aufgeführte Liste beschrieben.
+	Bei gefüllten Objekten (wie <code>circle()</code>, <code>face()</code> und <code>ellipse()</code>) reduziert die zusätzliche <code>#</code> in STL die Form auf ihre Umrandung bzw. macht selbige sichtbar. Außer <code>face()</code> und <code>triangle()</code> können alle Flächenobjekt auch mit <code>@</code>, welches Umrandung und Flächeninhalt anzeigt, modifiziert werden. Außerdem können die Liniendicken mittels der Zahlen 0-9, die dem Style-String mit übergeben werden, beeinflusst werden.
+	In Verbindung mit dem Kompositionsmodus von Plots, kann der Zeichenmodus auch verwendet werden, um in andere Plots hinein zu zeichnen oder zusätzliche Anmerkungen hinzu zu fügen.
+	<example desc="Zeichnen eines blauen Quadrates und eines darauf deutenden Pfeils, der mit einer Bemerkung versehen ist:">
+		draw face(0,0,2,0,"b"), trace(-3.3,-3.3,-0.2,-0.2,"kA"), text(-3,-3,0,0,"Quadrat","k:L")
+	</example>
+	<em>Siehe auch:</em> "help plot", "help draw3d", "help colors", "help linestyles" und "help compose"
+</article>

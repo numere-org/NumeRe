@@ -1,0 +1,47 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="cache">
+	<title string="Cache" />
+	Der Cache ist ein aktiver Speicher in NumeRe, der tabellare Daten zwischenspeichern kann, damit selbige weiterverarbeitet werden können.
+	Standardmäßig existiert der Cache <code>cache()</code>. Mit dem Kommando <code>new</code> können aber weitere Caches mit anderen Namen erzeugt werden. Die neu erzeugten Caches deklarieren ihrerseits auch gleich ein zugehöriges Kommando (siehe unten).
+	Einzelne Elemente des Caches können auch mit der Syntax <code>CACHE(ZEILE, SPALTE)</code> ausgelesen werden. Ebenso können damit auch Werte in den Cache geschrieben werden. Dabei ist der Cache wie eine gewöhnliche Variable zu behandeln. Die Indizierung erfolgt dabei durch natürliche Zahlen <em>größer</em> Null: 1,2,3,...
+	Bereiche von Elementen können dabei mit der Syntax <code>ERSTER INDEX:ZWEITER INDEX</code> erhalten werden. Wird dabei einer der beiden Indices weggelassen, wird er automatisch durch den minimalen bzw. maximalen Index ergänzt. Fehlen beide Indices, wird folglich der gesamte, mögliche Bereich ausgewählt. Es können auch Zeilen/Spalten aus anderen Caches oder Datenfiles als Indexmenge verwendet werden.
+	Die Spaltenüberschriften können ähnlich gelesen und bearbeitet werden: <code>CACHE(#,SPALTE)</code> bzw. <code>CACHE(#,SPALTE) = KOPF</code>
+	Parameter für das Kommando <code>cache</code> bzw. für die selbst erzeugten Caches sind die folgenden:
+	<list>
+		<item node="-clear">Alle Caches und die automatische Sicherung löschen</item>
+		<item node="-show">Daten aus dem entsprechenden Cache anzeigen</item>
+		<item node="-showf">Vollständigen Datensatz anzeigen</item>
+		<item node="-rename=NAME">Den gewählten Cache zu NAME umbenennen. Dies kann nicht auf <code>cache</code> angewendet werden!</item>
+		<item node="-swap=CACHE">Den Inhalt des gewählten Caches mit dem Inhalt von CACHE vertauschen</item>
+		<item node="-save=NAME">Daten aus dem gewählten Cache in die Datei NAME (*.ndat) speichern. Dateinamen mit Leerzeichen müssen von Anführungszeichen umschlossen sein</item>
+		<item node="-export=NAME">Daten aus dem gewählten Cache in die Textdatei NAME (*.dat) exportieren. Dateinamen mit Leerzeichen müssen ebenfalls von Anführungszeichen umschlossen sein. (Mit der Endung *.tex wird eine TeX-Datei, mit *.csv eine CSV-Datei und mit *.xls wird eine Excel(R)-Mappe erzeugt)</item>
+		<item node="-sort[...]">Daten im gewählten Cache spaltenweise sortieren. Der Aufruf ohne weitere Option sortiert den gesamten Cache aufsteigend. Um ihn absteigend zu sortieren, muss <code>-sort=desc</code> übergeben werden. Einzelne Spalten können mit der Option <code>cols=SPALTEN[SPALTENGRUPPE]</code> im Format <code>SPALTE1:SPALTE2</code> ausgewählt werden, wobei nur Spalten sortiert werden. Spaltengruppen werden nach der vorangehenden Spalte sortiert. Kann z.B. verwendet werden, wenn zwischen den Elementen verschiedener Spalten eine feste Beziehung besteht (z.B.: <expr>x-y</expr>-Wertepaare)</item>
+		<item node="-MAF">Führt die Multiargumentfunktion MAF auf alle Elemente aus und gibt das Ergebnis zurück. Multiargumentfunktionen sind <code>avg</code>, <code>std</code>, <code>sum</code>, <code>prd</code>, <code>med</code>, <code>min</code>, <code>max</code>, <code>num</code>, <code>cnt</code> und <code>norm</code>. Mit den zusätzlichen Parametern <code>-lines</code> und <code>-cols</code> wird die Berechnung Zeilenweise bzw. Spaltenweise durchgeführt und als Vektor zurückgegeben; mit <code>-grid</code> werden die Elemente als Teil eines Datengitters betrachtet und die Multiargumentfunktionen auf die <expr>z</expr>-Werte des Datengitters beschränkt. Die <code>-every=FIRST,INCR</code>-Option ermöglicht es mit <code>lines</code> oder <code>cols</code>, die erste Spalte/Zeile und das Inkrement (jede => INCR=1, jede zweite => INCR=2, etc.) vorzugeben. Wird dieser Option nur ein Wert vorgegeben, so wird dieser für beide Werte verwendet
+	</list>
+	Ein spezielles Kommando ist <code>delete CACHE(i1:i2,j1:j2)</code>. Dieses wird alle Einträge von Zeile <expr>i1</expr> bis <expr>i2</expr> und von Spalte <expr>j1</expr> bis <expr>j2</expr> unwiderruflich löschen. Dabei kann natürlich auch nur ein einziges Element ausgewählt werden.
+	Selbst erzeugte Caches können mit dem Kommando <code>remove</code> wieder entfernt werden:<codeblock>remove CACHE1(), CACHE2(),...</codeblock>
+	An <code>clear</code> und <code>delete</code> kann <code>-ignore</code> angehängt werden, um die erforderliche Bestätigung zu unterdrücken.
+	<example desc="Daten im Cache anzeigen und anschließendes aufsteigendes Sortieren der Spalten 3-6 nach Spalte 1:">
+		cache -show
+		[...]
+		cache -sort cols=1[3:6]
+	</example>
+	<em>Siehe auch:</em> "help new", "help remove", "help datagrid", "help save", "help string" und "help delete"
+</article>

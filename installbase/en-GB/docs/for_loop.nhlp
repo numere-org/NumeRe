@@ -1,0 +1,44 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="for_loop">
+	<title string="FOR loops" />
+	FOR loops are repeated calls of a set of <expr>N</expr> expressions and commands. The expressions may of course refer to the results of the previous call. NumeRe provides a loop index, which associates each loop runthrough with a number. This index has to be declared right after the command <code>for</code> and it can be used in the loop statements just like each other variable.
+	The boundaries of the loop index have to be passed before the actual expressions are entered. These borders have to be passed in the form <code>(INDEX = a:b)</code> in a line, where <code>a</code> is the initial and <code>b</code> the final value of the index. The values of the index have to be integral numbers. If <expr>b &lt; a</expr>, then NumeRe will count backwards in this loop. However, data objects (e.g. <code>data()</code>, <code>cache()</code> and <code>string()</code>) are not capable of using negative indices. You'll have to use the <code>abs()</code> function in this case.
+	<codeblock>
+		for (INDEX = a:b)
+		\tEXPRESSIONS
+		endfor
+	</codeblock>
+	FOR loops are closed with the command <code>endfor</code>. This command is needed for each previously opened loop. If the outermost loop is closed, then the execution of the whole block will start immediately. With the optional parameter <code>-sv</code>, which has to be appended to one <code>endfor</code> (doesn't matter, which), <em>all</em> steps of the evaluation will be shown on screen. If the parameter <code>-mask</code> is passed instead, then all screen output (including the progress value) will be suppressed. The parameter <code>-lnumctrl</code> canceles all loops after a maximum number of 1000 iterations. This number can be modified with <code>-lnumctrl=VALUE</code>.
+	A FOR loop may contain an arbitrary number of other FOR loops, WHILE loops or IF constructs (conditional forks).
+	A declaration may be canceled with the command <code>abort</code> without executing any of the previously entered commands. This is in contrast to the command <code>break</code>, which will be evaluated at runtime.
+	The two commands <code>break</code> and <code>continue</code> give extended control over a FOR loop. They may be passed inside of an IF construct (which is part of the actual FOR loop) and may influence the evaluation of the surrounding FOR loop:
+	<list>
+		<item node="break">Canceles the evaluation of the actual FOR loop at this point and jumps to the the surrounding block (if applicable). If the current loop is the outermost block, then the evaluation of the whole block will be canceled</item>
+		<item node="continue">Canceles the evaluation of the current loop iteration at this point and continues directly with the next iteration step</item>
+	</list>
+	The evaluation may be canceled with the <code>ESC</code> key, if it takes too much time or seems to result in an endless loop.
+	The command <code>replaceline</code> may be used for simple corrections while loop declaration. See "help replaceline" for further details.
+	<example desc="FOR loop, which counts from 1 to 10:" type="verbatim">
+		|&lt;- for (i = 1:10)
+		|FOR&gt; i
+		|FOR&gt; endfor -sv
+	</example>
+	<em>See also:</em> "help if", "help while", "help data", "help cache" and "help string"
+</article>

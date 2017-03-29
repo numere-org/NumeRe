@@ -1,0 +1,52 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="subplot">
+	<title string="Subplots" />
+	You may use the <code>compose</code> mode to gather and align multiple corresponding plots in one single file. You need two more syntax elemenents: the parameter <code>multiplot=LINES,COLS</code> creates the grid in the file and the command <code>subplot</code> creates a new subplot in the just created grid:
+	<codeblock>
+		compose -multiplot=LINES,COLS
+		\tsubplot
+		\tplot [...]
+		\tsubplot
+		\tplot [...]
+		\t[...]
+		endcompose
+	</codeblock>
+	The command <code>subplot</code> is capable of two additional abilities: you may (but you don't have to) either directly (through <code>subplot LINE,COL</code>) or logically (through <code>subplot PLOTNo.</code>) pass the grid coordinates for a subplot. The "PLOTNo." is enumerated linewise and starts with 1 (grid coordinates are in parentheses):
+	<codeblock>
+		|-----------------------------------------------------|
+		|         1 (1,1) |         2 (1,2) | ... |   n (1,n) |
+		|       n+1 (2,1) |       n+2 (2,2) | ... |  2n (2,n) |
+		|       ...       |       ...       | ... |    ...    |
+		| n*(m-1)+1 (m,1) | n*(m-1)+2 (m,2) | ... | m*n (m,n) |
+		|-----------------------------------------------------|
+	</codeblock>
+	Subplots may span over multiple grid cells as well, if they shall be larger, higher or wider than the surrounding plots. In this case, you have to pass the options <code>lines=LINES</code> or <code>cols=COLS</code> after the parameter <code>set</code> to <code>subplot</code> (you only have to pass both options, if the plot shall span over multiple lines <em>and</em> multiple columns):<codeblock>subplot -set cols=COLS lines=LINES</codeblock>You have to take care that there is enough space in the created grid. The desired position may be specified like above and defines itself the top-left edge.
+	<example desc="Three plots in a 2x2 grid, where the last one shall span over two columns:" type="verbatim">
+	|   compose -multiplot=2,2
+	|       subplot
+	|       plot sin(x)
+	|       subplot
+	|       plot cos(x)
+	|       subplot -set cols=2
+	|       plot sin(x), cos(x)
+	|   endcompose
+	</example>
+	<em>See also:</em> "help compose" and "help plot"
+</article>

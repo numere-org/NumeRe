@@ -1,0 +1,137 @@
+#*
+ * Dieses Script wurde automatisch von NumeRe erzeugt
+ * ==================================================
+ *
+ * Die Befehle direkt im Anschluss angeben oder mittels der Syntax
+ * @SCRIPT Definitionen und globale Ausdrücke aus dem Script SCRIPT
+ * in dieses Script laden.
+ *
+ * (Falls dieses Script veröffentlich werden soll, bietet sich an dieser
+ * Stelle auch die Nennung der Lizenz an)
+ *#
+
+<install>
+	<info>
+		-author="Erik Hänel"
+		-version="0.0.4"
+		-type=TYPE_PLUGIN
+		-flags=ENABLE_FULL_LOGGING,DISABLE_SCREEN_OUTPUT
+		-name="Faltung"
+		-pluginmain=$plugins~convolute~convolute_helper(<EXPRESSION>)
+		-plugincommand="convolute"
+		-plugindesc="Dieses Plugin berechnet die Faltung zweier Datensätze und gibt das Ergebnis in \"conv()\" zurück. Siehe auch \"help convolute\""
+		-requireversion="1.0.9"
+		-requirepackages="cmplx"
+	<endinfo>
+	
+	procedure $plugins~convolute~convolute_helper(expression) :: explicit
+		str sf, sg, sExpression = to_string(expression)
+		if (!strfnd("(", sExpression) || !strfnd(")", sExpression))
+			throw "Es wurden keine Datenobjekte übergeben. \"convolute\" benötigt Datenobjekte, um die Faltung zu berechnen."
+		endif
+		
+		if (!strfnd(",", sExpression))
+			throw "Es wurde nur ein Datenobjekt übergeben. \"convolute\" benötigt zwei Datenobjekte zur Ausführung."
+		endif
+		if (!getmatchingparens(sExpression))
+			throw "Klammern passen nicht zusammen."
+		endif
+		## Neue Funktionen: getmatchingparens(STRING), is_data(STRING)
+		sf = substr(sExpression, 1, strfnd(",", sExpression, getmatchingparens(sExpression))-1), sg = substr(sExpression, strfnd(",", sExpression, getmatchingparens(sExpression))+1);
+		if (!is_data(sf) || !is_data(sg))
+			throw "Ein oder mehrere Argumente sind keine Datenobjekte. \"convolute\" kann nur auf Datenobjekte angewendet werden."
+		endif
+		$plugins~convolute~convolute(sf,sg)
+		"Die Faltung von "+sf+" und "+sg+" wurde in \"conv()\" gespeichert."
+		return void
+	endprocedure
+	
+	procedure $plugins~convolute~convolute(f,g) :: explicit private
+		var f_i1, f_i2, f_j1, f_j2,  g_i1, g_i2, g_j1, g_j2,  smpl_f, smpl_g
+		## str sf = substr(to_string(f), 1, strfnd("(", to_string(f))-1), sg = substr(to_string(g), 1, strfnd("(", to_string(g))-1)
+		str sf, sg
+		sf = substr(to_string(f), 1, strfnd("(", to_string(f))-1), sg = substr(to_string(g), 1, strfnd("(", to_string(g))-1);
+		## Speicher erzeugen
+		new conv_f_temp(), conv_g_temp(), conv()
+		delete conv_f_temp(), conv_g_temp(), conv() -ignore
+		## Indices lesen
+		{{f_i1, f_i2, f_j1, f_j2}} = getindices(to_string(f));
+		{{g_i1, g_i2, g_j1, g_j2}} = getindices(to_string(g));
+
+		## Daten kopieren
+		conv_f_temp(:,1) = to_value(sf + "("+#f_i1+":"+#f_i2+","+#f_j1+")");
+		conv_f_temp(:,2) = to_value(sf + "("+#f_i1+":"+#f_i2+","+#f_j2+")");
+
+		conv_g_temp(:,1) = to_value(sg + "("+#g_i1+":"+#g_i2+","+#g_j1+")");
+		conv_g_temp(:,2) = to_value(sg + "("+#g_i1+":"+#g_i2+","+#g_j2+")");
+		
+		## Samplefrequenz bestimmen
+		smpl_f = cnt(conv_f_temp(:,1))/(max(conv_f_temp(:,1))-min(conv_f_temp(:,1)));
+		smpl_g = cnt(conv_g_temp(:,1))/(max(conv_g_temp(:,1))-min(conv_g_temp(:,1)));
+		
+		## Wenn ungleich -> resamplen (Nyquist muss in beiden Fällen gleich sein)
+		if (smpl_f != smpl_g)
+			## Immer upsamplen
+			if (smpl_f > smpl_g)
+				resample conv_g_temp(:,:) -samples=rint(smpl_f*(max(conv_g_temp(:,1))-min(conv_g_temp(:,1))))
+			else
+				resample conv_f_temp(:,:) -samples=rint(smpl_g*(max(conv_f_temp(:,1))-min(conv_f_temp(:,1))))
+			endif
+		endif
+		
+		## Fourier-Transformieren
+		fft conv_f_temp(:,1:2) -complex
+		fft conv_g_temp(:,1:2) -complex
+		
+		## Falls die Trafos nicht gleich viele Punkte haben -> resamplen
+		if (cnt(conv_f_temp(:,3)) != cnt(conv_g_temp(:,3)))
+			## Immer upsamplen
+			if (cnt(conv_f_temp(:,3)) > cnt(conv_g_temp(:,3)))
+				resample conv_g_temp(:,3:5) -samples=cnt(conv_f_temp(:,3))
+			else
+				resample conv_f_temp(:,3:5) -samples=cnt(conv_g_temp(:,3))
+			endif
+		endif
+		
+		## komplex mulitplizieren
+		$cmplx~multiply(conv_f_temp(:,4),conv_f_temp(:,5), conv_g_temp(:,4),conv_g_temp(:,5), conv(:,2),conv(:,3))
+		
+		## Frequenzachse zuweisen
+		conv(:,1) = conv_f_temp(:,1);
+		
+		## Rücktransformieren
+		fft conv(:,1:2:3) -complex inverse
+		
+		## Datensatz verschieben
+		move conv(:,4:) -target=conv(:,1:)
+		
+		## Temporäre Datenobjekte löschen
+		remove conv_f_temp(), conv_g_temp()
+
+		return void
+	endprocedure
+	
+	<helpindex>
+		<article id="convolute">
+			<title string="Faltung" idxkey="convolute" />
+			<keywords>
+				<keyword>convo</keyword>
+				<keyword>konvo</keyword>
+				<keyword>falt</keyword>
+			</keywords>
+		</article>
+	</helpindex>
+	
+	<helpfile>
+		<article id="convolute">
+			<title string="Faltung" />
+			Das Faltungs-Plugin, das mit dem Kommando "convolute" aufgerufen wird, berechnet die Faltung zweier Datensätze und gibt das Ergebnis im ggf. automatisch erzeugten Cache "conv()" zurück. Daten die bereits in "conv()" enthalten waren, werden durch dieses Plugin vollständig überschrieben.
+			Um die Faltung berechnen zu können, müssen zwei Datensätze in der Form "DATEN1(), DATEN2()" übergeben werden:$convolute DATEN1(I1:I2,J1:J2), DATEN2(i1:i2,j1:j2)$Für die Berechnung der Faltung ist es erforderlich, dass jeweils zwei Spalten mit x- und y-Werten übergeben werden.
+		</article>
+	</helpfile>
+<endinstall>
+
+#* Ende des Scripts
+ * NumeRe: Framework für Numerische Rechnungen | Freie numerische Software unter der GNU GPL v3
+ * https://sites.google.com/site/numereframework/
+ *#

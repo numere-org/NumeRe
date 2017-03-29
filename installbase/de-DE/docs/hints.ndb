@@ -1,0 +1,70 @@
+#****************************************************************************
+#   NumeRe: Framework fuer Numerische Rechnungen
+#   Copyright (C) 2016  Erik Haenel et al.
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#****************************************************************************
+# DATABASE FILE: hints.ndb
+# LANGUAGE: de-DE
+#
+# Diese Datenbank enthält die "Tipps-des-Tages".
+#
+# Basics
+Plots und Graphen können auf etliche Arten modifiziert werden. "help plotoptions" zeigt einen großen Teil der Optionen, die "plot" und Konsorten übergeben werden können.
+Komplexe oder häufig wiederkehrende Eingaben können in Scripte oder in mehr abstrahierter Form in Prozeduren ausgelagert werden. "help script" und "help procedure" geben hierzu Hinweise.
+NumeRe kann mit dem Kommando "set" konfiguriert werden. "help set" zeigt eine Liste aller Einstellungen; "list -settings" die aktuelle Konfiguration.
+Mit Datenreihen kann wie mit den Spalten einer Tabellenkalkulation gerechnet werden. Allerdings können die Daten in "data()" nicht überschrieben werden.
+Mit "new CACHE()" kann ein neuer Cache mit dem Namen CACHE erzeugt werden. "remove CACHE()" entfernt ihn wieder und "delete CACHE()" löscht nur den Inhalt.
+Mit "fit" und "fitw" können Funktionen an Datenreihen angepasst werden. Hier hilft "help fit" weiter. Die Ergebnisse einer Anpassung werden in "<savepath>/numerefit.log" protokolliert und die angepasste Funktion in "Fit(x)" bzw. "Fitw(x)" definiert.
+Numerische Variablen und Zeichenkettenvariablen werden automatisch anhand ihrer zugewiesenen Werte erkannt. Bei Mehrdeutigkeit werden die Variablen als numerisch identifiziert.
+NumeRe kann mit einem Texteditor und einem Imageviewer verknüpft werden. "help viewer" enthält die dazu nötigen Hinweise.
+Daten, die in NumeRe's Speicher geladen wurden, sind stets schreibgeschützt, damit die Rohdaten nicht aus Versehen überschrieben werden können.
+Spaltenüberschriften von Datensätzen können mittels "DATEN(#,J1:J2) = KOPFJ1, ..., KOPFJ2" bearbeitet und gelesen werden. Siehe hierzu auch "help string".
+# Documentation
+Zu allen Kommandos gibt es einen Artikel in der NumeRe-Hilfe. Dazu einfach "help KOMMANDO" eintippen.
+Eine Liste aller Funktionen erhält man durch "list -func", eine Liste aller Kommandos durch "list -cmd", eine Liste aller Konstanten mittels "list -const", eine Liste aller Variablen durch "list -var" und eine Liste aller Einheitenumrechnungen durch "list -units".
+Die Stichwortsuche ist ein mächtiges Tool, wenn nach einer Funktion oder einem Kommando gesucht wird. "find BEGRIFFE" zeigt eine nach Relevanz geordnete Liste an Einträgen, die mit BEGRIFFE assoziiert sind.
+"help idx" oder "help index" zeigt eine Liste aller Einträge in der NumeRe-Hilfe an.
+Zusätzliche Informationen zu Kommandos und Funktionen gibt es auch in der NumeRe-Onlinereferenz: <https://sites.google.com/site/numereframework/onlinereferenz/>
+Trivia: "NumeRe" steht für "Numerische Rechnungen". "numere" ist aber auch der Vokativ singular des lateinischen "numerus", was wiederum für Zahl oder Menge steht.
+Der Cache verfügt über eine Autosave-Funktion: die automatische Sicherung wird beim Start auch automatisch geladen. Das gilt natürlich ebenso für selbst erzeugte Caches.
+Alle Eingaben in die NumeRe-Konsole und alle Fehler werden in der Datei "<>/numere.log" protokolliert.
+Schon die NumeRe-Dokumention als PDF gesehen? Du findest sie im NumeRe-Verzeichnis im Ordner "docs" oder als Verlinkung im Startmenü.
+# Advanced
+Es können eigene Kommandos zu NumeRe hinzugefügt oder (fast alle) bereits vorhandenen mit einem eigenen Verhalten überschrieben werden. "help plugins" enthält die Hinweise, um ein dazu nötiges Plugin zu schreiben.
+Das Kommando "eval" kann eine Spalte/Zeile automatisch mit Funktionswerten füllen. Siehe hierzu "help eval".
+Datenreihen können mittels "fft" fouriertransformiert werden. "help fft" enthält Informationen, um das Kommando einzusetzen.
+Mit "datagrid" können Datengitter (2D-Datensätze) aus anderen Datensätzen oder mit Funktionswerten erzeugt werden. "help datagrid" enthält die nötigen Informationen dazu.
+Mit "install" können Plugins und Prozeduren aus Scripten installiert werden. "help install" hilft hier weiter. Im Unterordner "scripts" könnten entsprechende Scripte zu finden sein.
+Mit dem Ausdruck "??" kann eine Eingabe in einem Script oder einer Prozedur während der Auswertung abgefragt werden. Siehe "help ??" für weitere Details.
+"data -paste" startet den Einfüge-Modus. Nun können auch tabellarische Daten aus dem Clipboard eingefügt werden. Hinweise finden sich in "help data".
+Ergebnisse von Funktionen und Kommandos, die mehrere Werte oder Zeichenketten zugleich zurückliefern, können entweder an Datenobjekte oder an "temporäre Spalten" ("{x,y,z,...}" bzw. "{str1,str2,str3,...}") zugewiesen werden.
+Das Kommando "matop" erlaubt Matrizenoperationen (siehe "help matop" für Details). Dabei sind auch Determinanten, Invertierungen und spezielle Matrizen möglich.
+"zeroes" und "extrema" können auch Nullstellen bzw. Extrema von Datensätzen bestimmen. Siehe "help zeroes" und "help extrema".
+Datensätze können als Indexmenge anderer Datensätze genutzt werden, wenn sie für die entsprechende Dimension (Zeile bzw. Spalte) angegeben werden.
+"taylor" bestimmt eine numerische Taylorentwicklung einer Funktion und definiert diese in der Funktion "Taylor(x)". Siehe "help taylor" für Details.
+Differentialgleichungen erster Ordnung können mit "odesolve" gelöst werden. Siehe "help odesolve" für weitere Informationen.
+Fehler oder Schwierigkeiten beim Programmieren von Prozeduren? Der NumeRe-Debugger ("set -mode=debug") bringt zusätzliche Informationen.
+Der "compose"-Modus bietet auch die Möglichkeit, mehrere Unterplots in eine Datei zu fassen und diese darin an einem Gitter anordnen zu lassen. Siehe "help subplot" oder "help compose" für weitere Details.
+# Tweaks
+Plotintervalle mit invertierten Intervallgrenzen (z.B. "[10:-10]") werden auch invertiert geplottet.
+Der Parameter "-set" kann fast immer mit "--" abgekürzt werden; taucht beides in einem Kommandoausdruck auf, so hat "-set" die Priorität.
+Im NumeRe-Stammverzeichnis liegen zwei Syntaxhighlightings für Notepad++. Damit können Kommandos und Funktionen farblich hervorgehoben werden.
+Das Intervall der Farbskala kann auch durch das vierte Plotintervall angegeben werden: [x1:x2,y1:y2,z1:z2,c1:c2]
+Mit "edit", "view" oder "open" kann auch der Windows Explorer für den entsprechenden Ordner aufgerufen werden.
+Langwierige Auswertungen können mittels der Taste "ESC" abgebrochen werden. Dies gilt auch für Scripte, Prozeduren und Plugins.
+Die Größe des NumeRe-Fensters kann mittels "set -windowsize x=BREITE y=HÖHE" auf die persönlichen Wünsche angepasst werden.
+# Call to Action
+Einen Fehler gefunden? Oder fehlt ein wichtiges Feature? Dann direkt an den Entwickler melden: <numere.developer@gmail.com>
+Wenn du NumeRe hilfreich findest, kannst du die Entwicklung unterstützen, indem du eine Rezension bei SourceForge veröffentlichst.

@@ -1,0 +1,36 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="plot">
+	<title string="Plotting of data and functions" />
+	The command <code>plot</code> initiates the plotting algorithm. The functions and/or data sets, which are separated with commata, have to be appended directly to this command. They will be displayed as a graphical plot, which will be saved to a file afterwards.
+	The plotting variable for functions is <expr>x</expr>. All other variables will be regarded as constant parameters.
+	The legend, which is shown in the plot, will be directly constructed out of the passed expressions. It may be modified, if the desired legend entry is directly passed after the function/data set as a string (surrounded by quotation marks or with the variable parser <code>#</code>), but before an eventual separating comma to the next expression. If an empty legend (<code>""</code>) was passed, then the legend entry for this expression will be suppressed.
+	Please note that only columns will be plotted for data sets (not lines). You may select the desired columns with the usual syntax. If you select one colum, then its content will be used for the <expr>y</expr> values and the corresponding line index will act as the <expr>x</expr> value. In the case of two or more columns, the first one will be used for the <expr>x</expr> and the second for the corresponding <expr>y</expr> values. You may select whole ranges of columns (through <code>a:b</code>, where b does <em>not</em> have to be larger than a), or each column separately (using <code>a:b:c:d:...</code>, where in general as well <expr>a &lt; b &lt; c &lt; d ...</expr> does <em>not</em> have to be valid).
+	By appending the parameter <code>-set</code> and the additional options, you may further modifiy your graphical representation of the plot. The rather extensive options are listed at "help plotoptions".
+	<em>Important:</em> You should avoid whitespaces in the values of your options, because they are used for separating the options themselves. If they are needed for <code>title=</code>, <code>*label=</code> or the filename, then the whole option value has to be passed surrounded by quotation marks.
+	Options, which were set once, will be saved for further usage and (as long as they won't be reverted) are automatically used for all further plots in the current session. Exceptions thereof are high resolution, filenames, title, plotting intervals, line styles and axis labels.
+	If the output format TeX (through <code>otex</code>) was chosen, NumeRe will create two files: a file with the desired filename and a further file, with <code>main</code> appended to the filename. This acts as TeX main file, which will include the previous file while a TeX compilation run.
+	<example desc="Plotting of the function <expr>f(x)=x^2</expr> and the columns 2 and 3 out of the cache with the options <code>box grid title='Plot of a parabola' opng=Parabola</code> and a custom legend to the cache:" type="verbatim">
+		|&lt;- plot x^2, cache(:,2:3) "Approximation" -set box grid title="Plot of a parabola" opng=Parabola
+		|-&gt; Calculating data for Plot ...
+		|-&gt; Saving ... Success.
+		|   Saved at: "&PLOTPATH&/Parabola.png"
+	</example>
+	SEE ALSO: "help mesh", "help plot3d", "help get", "help grad" and "help plotoptions"
+</article>

@@ -1,0 +1,28 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="fft">
+	<title string="Fourier transformation of data sets" />
+	NumeRe contains an algorithm for fast fourier transforming of data sets (<em>fft</em>), which may decompose data sets to their corresponding frequencies for analysis. This algorithm may be started with the command <code>fft</code>, to which the data rows must be passed in the following way:<codeblock>fft DATAOBJECT(I1:I2,J1:J2)</codeblock>
+	NumeRe expects at least two columns for a fourier transformation: the axis values (Time or frequency, respectively) and the corresponding amplitude. If three columns are passed, they will be interpreted as axis values, amplitude and phase, or---if the additional option <code>complex</code> has been passed---as axis values, real and imaginary part of the amplitude. The option <code>complex</code> doesn't have any effect, if only two columns have been passed.
+	The result of the fourier transformation will be stored as new data rows in the current cache (or directly in <code>cache()</code>, if the data were taken from <code>data()</code>). Sticking to the default, NumeRe will create three columns: frequency [Hz], amplitude and phase [rad]. Using the additional option <code>complex</code>, NumeRe will create the real and imaginary parts of the amplitude instead of the absolut value of the amplitude and the corresponding phase and save them to the cache.
+	NumeRe may initiate an inverse fourier transformation of data sets, if the additional option <code>inverse</code> is passed.
+	<example desc="Fourier transformation of the columns 2 and 3 in <code>data()</code>, in which the time values are contained in column 3, and with the output as real and imaginary part:">
+		fft data(:,3:2) -complex
+	</example>
+</article>

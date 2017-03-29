@@ -1,0 +1,60 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="set">
+	<title string="Configuring NumeRe" />
+	The NumeRe command <code>set</code> is used to modify a configuration setting in NumeRe. You have to pass a parameter to <code>set</code>.
+	You may append the new value of the desired configuration settings directly to the corresponding parameter after an equal sign. If the value is a textual string and if it shall contain whitespaces, then you have to pass it inside of quotation marks. Numbers may be passed directly.
+	Changed configuration settings will be saved at program's end and will be available again after a restart.
+	Parameters for the command <code>set</code> are as follows:
+	<list>
+		<item node="-autosave=VALUE">Interval [in sec] for the automatic backup</item>
+		<item node="-buffersize=VALUE">Change the buffersize</item>
+		<item node="-colortheme=VALUE">Choose the colors of the NumeRe console (see <code>set -colortheme</code> for the current list)</item>
+		<item node="-compact=VALUE">Show tables in a compact view</item>
+		<item node="-defcontrol=VALUE">(De-)activates the automatic loading/saving of custom defined functions</item>
+		<item node="-draftmode=VALUE">(De-)activates the draft mode for plots</item>
+		<item node="-editor=PATH">Set the path to the text editor</item>
+		<item node="-extendedfileinfo=VALUE">(De-)activates the display of extended file information</item>
+		<item node="-externaldocwindow=VALUE">(De-)activates the display of the NumeRe documentation in an external window</item>
+		<item node="-faststart=VALUE">(De-)activates a fast startup of NumeRe</item>
+		<item node="-greeting=VALUE">(De-)activates the greeting</item>
+		<item node="-hints=VALUE">(De-)activates the "Did-you-knows"</item>
+		<item node="-loademptycols=VALUE">(De-)activates the loading of empty columns (As default, NumeRe will skip empty columns to save memory)</item>
+		<item node="-loadpath=PATH">Set the path to the default loading location</item>
+		<item node="-logfile=VALUE">(De-)activates the protocoling of the entries in the NumeRe console</item>
+		<item node="-plotfont=FONT">Choose the default font for plots</item>
+		<item node="-plotpath=PATH">Set the path to the default plot output location</item>
+		<item node="-precision=VALUE">Change the display's precision (i.e. number of shown decimals)</item>
+		<item node="-procpath=PATH">Set the path to the default procedure saving location</item>
+		<item node="-save">Save the configuration manually</item>
+		<item node="-savepath=PATH">Set the path to the default saving location</item>
+		<item node="-scriptpath=PATH">Set the path to default script saving location</item>
+		<item node="-usecustomlang=VALUE">(De-)activates the usage of a custom defined language</item>
+		<item node="-useescinscripts=VALUE">(De-)activates the usage of the <code>ESC</code> key in scripts</item>
+		<item node="-viewer=PATH">Set the path to the image viewer</item>
+		<item node="-windowsize <x=X> <y=Y>">Modify the window size (x and y values). The order of the values doesn't play any role and you may only modify one value</item>
+		<item node="-workpath=PATH">Set the path to the current working directory. A faster possibility is the command <code>workpath PATH</code></item>
+	</list>
+	<example desc="Changing the default loading location to 'data/import' in the NumeRe root directory:">
+		set -loadpath=data/import
+		File path was updated successfully.
+	</example>
+	<em>See also:</em> "help get", "help editor" or "help viewer"
+	<em>Tip:</em> Use <code>list -settings</code> to display all configuration settings in a clean list.
+</article>

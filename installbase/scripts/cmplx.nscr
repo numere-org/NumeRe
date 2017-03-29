@@ -1,0 +1,70 @@
+#*
+ * Dieses Script wurde automatisch von NumeRe erzeugt
+ * ==================================================
+ *
+ * Die Befehle direkt im Anschluss angeben oder mittels der Syntax
+ * @SCRIPT Definitionen und globale Ausdrücke aus dem Script SCRIPT
+ * in dieses Script laden.
+ *
+ * (Falls dieses Script veröffentlich werden soll, bietet sich an dieser
+ * Stelle auch die Nennung der Lizenz an)
+ *#
+
+<install>
+	<info>
+		-author="Erik Hänel"
+		-flags=DISABLE_SCREEN_OUTPUT
+		-name="cmplx"
+	<endinfo>
+	procedure $cmplx~divide(a = 1, b = 0, c = 1, d = 0, re, im)
+		re = (a*c + b*d)/(c^2+d^2);
+		im = (b*c - a*d)/(c^2+d^2);
+		return void
+	endprocedure
+	procedure $cmplx~multiply(a = 1, b = 0, c = 1, d = 0, re, im)
+		re = (a*c - b*d);
+		im = (b*c + a*d);
+		return void
+	endprocedure
+	procedure $cmplx~r2polar(a = 1, b = 0, amp, phase)
+		amp = norm(a,b);
+		phase = phi(a,b);
+		return void
+	endprocedure
+	procedure $cmplx~p2rect(amp = 1, phase = 0, re, im)
+		re = amp * cos(phase);
+		im = amp * sin(phase);
+		return void
+	endprocedure
+	
+	<helpindex>
+		<article id="cmplx">
+			<title string="Rechnen mit komplexen Zahlen" idxkey="cmplx" />
+			<keywords>
+				<keyword>cmplx</keyword>
+				<keyword>complex</keyword>
+				<keyword>komplex</keyword>
+			</keywords>
+		</article>
+	</helpindex>
+	
+	<helpfile>
+		<article id="cmplx">
+			<title string="Rechnen mit komplexen Zahlen" />
+			NumeRe ist nur für Rechenaufgaben mit reellen Zahlen ausgelegt. Um mit komplexen Zahlen rechnen zu können, müssen diese in Real- und Imaginärteile zerlegt werden.
+			Der Prozeduren-Namensraum "cmplx" stellt Prozeduren für den Umgang mit komplexen Zahlen zur Verfügung. Diese können entweder in Scripten, in weiteren Prozeduren oder direkt in der NumeRe-Konsole verwendet werden:
+			<list>
+				<item node="\$multiply(a,b,c,d,re,im)">Multipliziert (a,b)*(c,d) und speichert das Ergebnis in (re,im)</item>
+				<item node="\$divide(a,b,c,d,re,im)">Dividiert (a,b)/(c,d) und speichert das Ergebnis in (re,im)</item>
+				<item node="\$r2polar(a,b,amp,phase)">Führt (a,b) in Polardarstellung über: amp*exp(i*phase)</item>
+				<item node="\$p2rect(amp,phase,re,im)">Führt die Polardarstellung amp*exp(i*phase) in Real- und Imaginärteil (re,im) über</item>
+			</list>
+			Bei allen Prozeduren dürfen die Zielvariablen nicht mit Quellvariablen übereinstimmen:<br>\$cmplx~divide(a,b,c,d,a,b) ist NICHT möglich und wird kein korrektes Ergebnis liefern.
+		</article>
+	</helpfile>
+<endinstall>
+
+#* Ende des Scripts
+ * NumeRe: Framework für Numerische Rechnungen | Freie numerische Software unter der GNU GPL v3
+ * https://sites.google.com/site/numereframework
+ *#

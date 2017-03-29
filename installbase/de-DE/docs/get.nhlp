@@ -1,0 +1,60 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="get">
+	<title string="Konfigurationswerte auslesen" />
+	Das NumeRe-Kommando <code>get</code> kann genutzt werden, um eine aktuelle Einstellung von NumeRe abzufragen. Dazu ist einer der unten gelisteten Parameter notwendig. Außerdem können noch die Optionen <code>asstr</code> und <code>asval</code> übergeben werden. Dabei gibt <code>asstr</code> den Wert der Einstellung als eine auswertbare Zeichenkette, <code>asval</code> ggf. (nur, wenn die Einstellung einen numerischen Wert besitzt) als ein auswertbaren, numerischen Wert zurück.
+	<list>
+		<item node="-autosave">Speicherintervall abfragen</item>
+		<item node="-buffersize">Einstellung der Buffergröße abfragen</item>
+		<item node="-colortheme">Einstellung zu den Farben des Fensters abfragen</item>
+		<item node="-compact">Tabellendarstellung abfragen</item>
+		<item node="-defcontrol">Einstellung zum automatischen Laden/Speichern der definierten Funktionen abfragen</item>
+		<item node="-draftmode">Einstellung zum Entwurfsmodus abfragen</item>
+		<item node="-editor">Aktuellen Texteditor abfragen</item>
+		<item node="-extendedfileinfo">Einstellung zu den erweiterten Dateiinformationen abfragen</item>
+		<item node="-externaldocwindow">Einstellung zum Anzeigen der NumeRe-Hilfe in einem externen Fenster abfragen</item>
+		<item node="-faststart">Programmstart ohne Prüfung</item>
+		<item node="-greeting">Einstellung zur Begrüßung abfragen</item>
+		<item node="-hints">Einstellung zum Tip-des-Tages abfragen</item>
+		<item node="-loademptycols">Einstellung zum Laden leerer Spalten abfragen</item>
+		<item node="-loadpath">Aktueller Importordner</item>
+		<item node="-logfile">Einstellung der Protokollierung abfragen</item>
+		<item node="-numlist">Alle deklarierten numerischen Variablen abrufen</item>
+		<item node="-plotfont">Standard-Plotschriftart lesen</item>
+		<item node="-plotparams">Aktuelle Plotparameter abfragen</item>
+		<item node="-plotpath">Aktueller Plot-Speicherordner</item>
+		<item node="-precision">Aktuelle Präzision</item>
+		<item node="-procpath">Aktueller Prozeduren-Speicherordner</item>
+		<item node="-savepath">Aktueller Speicherordner</item>
+		<item node="-scriptpath">Aktuellen Script-Ordner abfragen</item>
+		<item node="-stringlist">Alle deklarierten Zeichenkettenvariablen abrufen</item>
+		<item node="-usecustomlang">Einstellung zur Verwendung einer benutzerdefinierten Sprache abfragen</item>
+		<item node="-useescinscripts">Einstellung zur Verwendung der <code>ESC</code>-Taste in Scripts abfragen</item>
+		<item node="-varlist">Alle deklarierten numerischen und Zeichenkettenvariablen in einer gemeinsamen Liste abrufen</item>
+		<item node="-viewer">Aktuellen Imageviewer abfragen</item>
+		<item node="-windowsize">Einstellung der Fenstergröße abfragen</item>
+		<item node="-workpath">Das aktuelle Arbeitsverzeichnis abfragen</item>
+	</list>
+	<example desc="Lesen des Standard-Scriptpfades:">
+		get -scriptpath
+		SCRIPTPATH: "&SCRIPTPATH&"
+	</example>
+	<em>Siehe auch:</em> "help set", "help editor" oder "help viewer"
+	<em>Tipp:</em> Verwende <code>list -settings</code> um alle Einstellungen in einer übersichtlichen Liste anzeigen zu lassen.
+</article>

@@ -1,0 +1,25 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="gradient3d">
+	<title string="3D gradient plot" />
+	Using the command <code>grad3d</code> you may calculate a three dimensional gradient plot out of a function of the form <expr>phi = f(x,y,z)</expr>, which is a function, where every coordinate tuple <expr>x,y,z</expr> has exactly one value. NumeRe detects some (of course not all) paths, along the function <expr>f(x,y,z)</expr> derivates very strong.
+	The standard color scheme will be used. If the function <expr>f(x,y,z)</expr> derivates positively, this will be interpreted as a large value, if it derivates negatively, it's a small value. Extrema will be highlighted separately.
+	You may use the same options for <code>grad3d</code> as for <code>grad</code>.
+	<em>See also:</em> "help plot" and "help grad"
+</article>

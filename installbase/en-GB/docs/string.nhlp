@@ -1,0 +1,50 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="string">
+	<title string="Strings" />
+	NumeRe is capable of working with strings, which are objects of the type "text". This may for example be used to automatically define the table heads of the data file or a cache object. Strings may also be saved into string vars, which will be automatically recognized by NumeRe, if one assignes them a string during initialization:<codeblock>STRINGVAR = "STRING", STRINGVAR2 = "STRING2", ...</codeblock>Conversion of the variable type from numerical to string and the other way around is not possible.
+	Additionally, the <code>string()</code> object is available for multiple strings. This object may save an arbitrary number of strings and allows access to an arbitrary string.
+	Strings must be entered surrounded by quotation marks. Two or more strings may be concatenated with the <code>+</code> operator located in between. Multiple strings may be processed, if they are separated with <code>,</code>.
+	Strings may be assigned to the <code>string()</code> object through<codeblock>string(INDEX) = "STRING"</codeblock>If INDEX is empty, a new string will be created and appended to the end of <code>string()</code>, otherwise the string at position INDEX will be overwritten. The content of the string at position INDEX may be read by entering <code>string(INDEX)</code>. If INDEX is empty in this case, the last string will be selected automatically.
+	INDEX may be passed in form of the range syntax so that a whole range of strings may be read and modified. In addition, the INDEX may be passed two dimensionally:<codeblock>string(a:b,c)</codeblock>If needed, additional columns will be created inside of <code>string()</code>.
+	The command <code>clear string()</code> removes all strings in the whole <code>string()</code> object directly and resets it. To remove single columns you may use the command <code>delete string(COLUMN)</code>.
+	The five functions <code>num()</code>, <code>cnt()</code>, <code>min()</code>, <code>max()</code> and <code>sum()</code> are overloaded for the work with strings: <code>num()</code> counts the non-empty strings, <code>cnt()</code> counts all strings, <code>min()</code> returns the smallest and <code>max()</code> returns the largest string. The function <code>sum()</code> concatenates all passed strings to a single string.
+	The following modificators may be used in strings, to modify the display of a string:
+	<list>
+		<item node="\n" type="verbatim">creates a line break at its position</item>
+		<item node="\t">creates a horizontal tabulator at its position</item>
+		<item node="\&quot;">creates a (non-suppressable) quotation mark at its position</item>
+	</list>
+	NumeRe may convert the value of a numerical value to a string, if the variable was called with a prefixed <code>#</code>. If one or more <code>~</code> are inserted between the variable's name and <code>#</code>, then NumeRe will prefix as many <code>0</code> as needed to get a string of the length of the number of <code>~</code>+1. If the value of the string already has enough characters, then NumeRe will ignore the <code>~</code>. Additionally, the results of whole expressions may be parsed through <code>#(EXPRESSION)</code>, as well as from functions through <code>#FUNCTION(ARGS)</code> and from path placeholders with <code>#&lt;PATH&gt;</code>.
+	The table heads of the data objects may be read and modified with the syntax <code>data(#,COLUMN)</code> or <code>CACHE(#,COLUMN)</code>, respectively. The filename of the loaded data file may be read with <code>data(#,#)</code>.
+	NumeRe is capable of processing logic operations with strings. The relational operators <code>==</code>, <code>!=</code>, <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code> and <code>&gt;=</code> may be used to compare two strings. These operators compare the ASCII character codes of the two strings characterwise. In addition, logical expressions may be connected with <code>&&</code> and <code>||</code>.
+	The display of strings may be modified with the following parameters:
+	<list>
+		<item node="-noquotes">Suppresses the quotation marks in the output. (May be abbreviated with <code>-nq</code>)</item>
+		<item node="-peek">Displays the output in loops and forks even then, when the loop parameter <code>-sv</code> was <em>not</em> passed.</item>
+		<item node="-print">Combines <code>-noquotes</code> and <code>-peek</code> and is especially useful inside of NumeRe procedures to force an output on the NumeRe console.</item>
+	</list>
+	To check, if the variable, which was passed to a NumeRe procedure, is a string, you may use the function <code>is_string(EXPR)</code>, which will return <code>true</code>, if EXPR contains one or more strings. To convert a string (consisting numbers or variable names) to a numerical value, you may use the function <code>to_value(string)</code>. The function <code>to_string(EXPR)</code> converts EXPR into a string and ignores eventual calculation operations in EXPR, however, strings will be evaluated. <code>string_cast(EXPR)</code> is even more brutal: it will convert everything into a literal string, even string variable names. The function <code>to_cmd(STRING)</code> will convert the string STRING into a command expression.
+	<example desc="Automatic filling of the cache table heads in a FOR loop, where the number of the current loop shall be extended to at least two characters:" type="verbatim">
+		|FOR&gt; [...]
+		|FOR&gt; cache(#,i) = "Column_" + #~i		(will append a 0 if applicable)
+		|FOR&gt; [...]
+	</example>
+	<em>See also:</em> "help procedure" and "help explorer"
+</article>

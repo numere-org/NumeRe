@@ -1,0 +1,48 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="if_cond">
+	<title string="Bedingungen" />
+	Mit dem Befehl <code>if (COND)</code> wird in NumeRe die Auswertung einer Verzweigung (<code>if...elseif...else...endif</code>) gestartet. Dabei steht <code>COND</code> für einen logischen Ausdruck, der vor dem weiteren Ablauf der Verzweigung ausgewertet wird. Eine Verzweigung besteht mindestens aus einem <code>if</code> und einem <code>endif</code>. Dazwischen können beliebig viele <code>elseif</code> sowie ein <code>else</code> (nur in dieser Reihenfolge) verwendet werden.
+	NumeRe wird in einer IF-Verzweigung nur den Teil auswerten, dessen Bedingung erfüllt wird. Falls <code>if</code> zu <code>false</code> evaluiert wird, werden nacheinander alle weiteren auftretenden <code>elseif</code> Bedingungen der Reihe nach geprüft. Der ELSE-Zweig wird ausgeführt, wenn der IF- und alle zuvor aufgetretenen ELSEIF-Zweige zu <code>false</code> evaluiert wurden.
+	<codeblock>
+		if (COND1)
+		\tAusdrücke
+		elseif (COND2)
+		\tAusdrücke
+		[...]
+		else
+		\tAusdrücke
+		endif
+	</codeblock>
+	Eine Verzweigung muss weder einen ELSE-Zweig noch einen ELSEIF-Zweig besitzen. Sollte die Bedingung für den IF-Zweig nicht erfüllt werden, wird in diesem Fall einfach kein Ausdruck in der Verzweigung ausgewertet.
+	Das Ende der Verzweigung wird stets mit dem Befehl <code>endif</code> deklariert. Wie auch bei FOR-/WHILE-Schleifen kann hierbei der Parameter <code>-sv</code> angehängt werden, welcher alle Zwischenergebnisse zeigt. Wird stattdessen der optionale Parameter <code>-mask</code> angegeben, so wird auch die Benachrichtigung, dass NumeRe am Auswerten ist, unterdrückt.
+	Eine IF-Bedingung kann eine beliebige Zahl an FOR-Schleifen, WHILE-Schleifen oder anderen IF-Verzweigungen enthalten.
+	Die Deklaration kann mit dem Kommando <code>abort</code> abgebrochen werden, ohne dass die bisher eingegebenen Befehle ausgeführt werden. Dies steht im Gegensatz zu dem Kommando <code>break</code>, dass erst während der Laufzeit ausgewertet wird.
+	Mit <code>if (data())</code> bzw. <code>if (CACHE())</code> kann geprüft werden, ob ein Datenfile geladen bzw. Daten im Cache <code>CACHE</code> vorhanden sind. Dies kann z.B. in Scripten verwendet werden, die möglicherweise einen leeren Cache benötigen. <em>Vorsicht:</em> wenn <code>CACHE()</code> nicht existiert, wird dies als globaler Fehler evaluiert und die Auswertung abgebrochen.
+	IF-Bedingungen innerhalb von Schleifen können durch die Kommandos <code>break</code> und <code>continue</code> Einfluss auf ihre aufrufende Schleife nehmen (Siehe "help for" und "help while" für Infos zu diesen Kommandos). Diese Kommandos haben innerhalb einer IF-Bedingung dieselbe Wirkung wie <code>endif</code> (brechen also die Auswertung der aktuellen Bedingung an dieser Stelle ab) und werden so lange nach Außen weitergereicht, bis sie entweder eine FOR-Schleife erreichen, oder die äußerste IF-Bedingung erreicht wird, welche ebenfalls abgebrochen wird.
+	Für einfache Korrekturen steht der Befehl <code>replaceline</code> zur Verfügung. Siehe hierzu: "help replaceline"
+	<example desc="Eine einfache Verzweigung, welche die max()-Funktion simuliert:" type="verbatim">
+		|&lt;- if (a &gt; b)
+		|IF-&gt; ans = a
+		|IF-&gt; else
+		|ELSE&gt; ans = b
+		|ELSE&gt; endif
+	</example>
+	<em>Siehe auch:</em> "help list", "help for", "help while", "help cache", "help data" und "list -logic"
+</article>

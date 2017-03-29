@@ -1,0 +1,31 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="coords">
+	<title string="Koordinatensätze für Plots" />
+	NumeRe ist mit drei wesentlichen Koordinatensätzen ausgestattet: kartesisch <expr>(x,y,z)</expr>, polar/zylindrisch <expr>(rho,phi[,z])</expr> und sphärisch <expr>(r,phi,theta)</expr>. Diese Koordinatensätze können beim Plotten mit der Option <code>coords=KOORDINATEN</code> ausgewählt werden, wobei <code>cartesian</code> kartesische, <code>polar</code> polare/zylindrische und <code>spherical</code> sphärische Koordinaten verwendet.
+	Allerdings unterscheidet sich die Koordinatentransformation zwischen den Plotstilen mit "3d" im Namen (z.B. <code>plot3d</code>, <code>surf3d</code>, ...) und ohne (z.B. <code>mesh</code>, <code>surf</code>, ...). Dies wurde so gewählt, da die Plotstile ohne "3d" im Namen nur eine Oberfläche, während die anderen ein gesamtes Volumen darstellen können. Vektorplots verwenden ebenfalls die Zuordnung der "3d-Plots".
+	<list>
+		<item node="polar/zylindrisch">3D: <expr>x = rho, y = phi, z = z</expr><br>Andere: <expr>x = phi, y = z, z = rho</expr></item>
+		<item node="sphärisch">3D: <expr>x = r, y = phi, z = theta</expr><br>Andere: <expr>x = phi, y = theta, z = r</expr></item>
+	</list>
+	NumeRe wählt automatisch die Plotintervalle [<expr>0,2PI</expr>] für <expr>phi</expr> und [<expr>0,PI</expr>] für <expr>theta</expr>, sofern nichts anderes vorgegeben wird. Die Darstellung der entsprechenden Achsen erfolgt dann jedoch auf <expr>PI</expr> normiert.
+	<example desc="Darstellen der Kugelflächenfunktion <expr>Y(3,2,theta,phi)</expr> in sphärischen Koordinaten:">
+		surf Y(3, 2, y, x) -set coords=spherical
+	</example>
+</article>

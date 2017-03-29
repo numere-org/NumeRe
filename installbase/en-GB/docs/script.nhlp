@@ -1,0 +1,44 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="script">
+	<title string="NumeRe scripts" />
+	Complex command routines may be outsourced to so-called "scripts". These have to be written using an external editor and saved with the file extension "*.nscr". The default folder, out of which NumeRe loads scripts, if no path was specified, may be read with <code>get -scriptpath</code> and modified using <code>set -scriptpath=PATH</code>.
+	The commands may be written to the script just like they were typed to the NumeRe console, but note that either only one expression or command is allowed each line or that they have to be separated using semicola otherwise:<codeblock>EXPRESSION;COMMAND;COMMAND;EXPRESSION...</codeblock>
+	The string <code>##</code> may be used to comment a line with some additional information which won't be interpreted by NumeRe. During evaluation, NumeRe will ignore the part of the line starting with <code>##</code> until the end of the line.
+	You may exclude whole blocks from the evaluation: everything starting from <code>#*</code> until the next <code>*#</code> won't be interpreted. These blocks may span over multiple lines and you may use them for some information about the evaluation or to exclude multiple expressions and commands from execution.
+	The string <code>\\</code> at the end of a line suppresses the execution of this line and will append the following line to the current line. If the next line is ended with <code>\\</code> as well, then this will repeated until a line without <code>\\</code> was found. After this, the concatenated line will be exectued.
+	The syntax <code>@SCRIPT</code> loads all definitions and "global expressions" out of the script SCRIPT to the current script at this point. NumeRe won't execute any other commands out of SCRIPT and as conclusion no other <code>@SCRIPT</code>, which were found inside of SCRIPT, as well. If the name of SCRIPT shall contain whitespaces, then you'll have to pass it surrounded with quotation marks (<code>@"SCRIPT"</code>). 
+	If only global expressions or only definitions shall be loaded, then this may be restricted further using the following instructions:<codeblock>@SCRIPT: defines   (loads only definitions)\n@SCRIPT: globals   (loads only globals expressions)</codeblock>
+	Global expressions are expressions and commands, which were invoked with the prefixed command <code>global</code>:<codeblock>global EXPRESSION</codeblock>or<codeblock>global COMMAND</codeblock>The command <code>global</code> itself doesn't have any influence on the actual execution.
+	Beside of the standard path placeholders <code>&lt;loadpath&gt;</code>, <code>&lt;scriptpath&gt;</code>, etc., the special placeholder <code>&lt;this&gt;</code> may be used inside of scripts. It points to the directory, in which the script is located.
+	The parameters, which may be applied to the command <code>script</code> are as follows:
+	<list>
+		<item node="-load=SCRIPT">Loads the script SCRIPT out of the standard script directory. It won't be started automatically. Filenames containing whitespaces have to be surrounded with quotation marks</item>
+		<item node="-start">Executes the already loaded script</item>
+		<item node="-start=SCRIPT">Loads the script SCRIPT and directly starts its execution. Filenames containing whitespaces have to be surrounded with quotation marks. This command may be simplified with <code>start SCRIPT</code>
+		<item node="-install">Executes the install routines in the currently executed script to install procedures. May only be used in combination with <code>-start</code></item>
+	</list>
+	The execution may be canceled using the <code>ESC</code> key, if it needs too much time.
+	<example desc="Loading of the script 'script.nscr' and its execution:">
+		script -load=script
+		The script "&SCRIPTPATH&/script.nscr" was loaded successfully.
+		script -start
+	</example>
+	<em>See also:</em> "help install", "help explorer" and "help procedure"
+</article>

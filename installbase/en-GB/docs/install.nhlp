@@ -1,0 +1,37 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="install">
+	<title string="Procedure installation" />
+	Since the version 1.0.5 "Brillouin" NumeRe <em>denies</em> the uncontrolled copying of procedures out of NumeRe scripts. This was blocked for security reasons so that procedures won't be overwritten or copied by mistake or that eventual bad code won't be executed uncontrolled or accidentally.
+	Procedures have to be surrounded with the additional <code>&lt;install&gt; ... &lt;endinstall&gt;</code> blocks, which will be ignored during the usual execution of scripts:<codeblock>&lt;install&gt;\n\tPROCEDURESn&lt;endinstall&gt;</codeblock>Procedures, which will be found outside of such blocks, will raise an error and cancel the script evaluation. Procedures, which are gathered in the mentioned blocks, are sometimes called "packages".
+	To execute all <code>&lt;install&gt; ... &lt;endinstall&gt;</code> blocks in a script, the script must be started out of the NumeRe console (and only there) with the command <code>install SCRIPT</code>(For compatibility reasons, NumeRe supports <code>script -start=SCRIPT install</code> as well)
+	Installations will always be protocoled in the file <code>install.log</code> in the NumeRe root directory so that its obvious, which procedures were installed and where errors may be possible.
+	Additional information may be assigned to installations. You may add a <code>&lt;info&gt; ... &lt;endinfo&gt;</code> block inside of a <code>&lt;install&gt; ... &lt;endinstall&gt;</code> to get the possibility to add information:<codeblock>&lt;install&gt;\n\t&lt;info&gt;\n\t\tINSTALLINFO\n\t&lt;endinfo&gt;\n\tPROCEDURES\n&lt;endinstall&gt;</codeblock>The <code>INSTALLINFO</code> section may contain the following values:
+	<list>
+		<item node="-author=AUTHOR">The author (programmer) of the package. Has to be surrounded with quotation marks</item>
+		<item node="-flags=FLAGS">Flags, which shall be used for the installation. Available are <code>ENABLE_FULL_LOGGING</code>, <code>DISABLE_SCREEN_OUTPUT</code> and <code>ENABLE_DEFAULTS</code>, where the last one is the default value</item>
+		<item node="-type=TYPE">Installation type. As default the type <code>TYPE_UNSPECIFIED</code> is used. If a plugin shall be installed, this has to be <code>TYPE_PLUGIN</code> or <code>TYPE_PLUGIN_WITH_RETURN_VALUE</code>, respectively</item>
+		<item node="-name=NAME">The name of the installation/the plugin. Has to be surrounded by quotation marks</item>
+		<item node="-requireversion=VERSION">Checks, if the current version of NumeRe is sufficient for the required VERSION of this package. This field won't be interpreted before v1.0.9 and has to be surrounded with quotations marks.</item>
+		<item node="-requirepackages=PACKAGELIST">Installs the passed packages, which have to be separated with commata, on-the-fly. (Packages are procedures inside of <code>&lt;install&gt;</code> tags) This field won't be interpreted before v1.0.9 and has to be surrounded with quotations marks.</item>
+	</list>
+	The flags for the installation have different meanings: <code>ENABLE_FULL_LOGGING</code> activates the protocoling of each evaluated line instead of only the procedure name, <code>DISABLE_SCREEN_OUTPUT</code> deactivates the protocol on the NumeRe console and <code>ENABLE_DEFAULTS</code> reverts the previous flags.
+	During the installation of packages you may add entries to the NumeRe documentation. The needed information may added to the <code>&lt;install&gt; ... &lt;endinstall&gt;</code> block as well. Further information may be found at "help documentation".
+	<em>See also:</em> "help plugin", "help procedure", "help script" and "help documentation"
+</article>

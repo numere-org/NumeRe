@@ -1,0 +1,52 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="matop">
+	<title string="Matrix-Operationen" />
+	NumeRe kann auch Operationen mit <em>ganzen Matrizen</em> durchführen, wenn das Kommando <code>matop</code> verwendet wird:<codeblock>matop AUSDRUCK(data(),CACHES())</codeblock>Das Kommando <code>mtrxop</code> ist ein Synonym zu diesem Kommando.
+	Alle Berechnungen finden hier immer noch elementweise statt. Matrix-Matrix- und Matrix-Vektor-Multiplikationen erreicht man mittels des <code>**</code>-Operators:<codeblock>matop MATRIX1() ** MATRIX2()</codeblock>Der <code>**</code>-Operator hat die höchste Priorität aller Operatoren. Ggf. ist es also nötig, entsprechend zu klammern. Außerdem achtet <code>**</code> auf die korrekte Dimensionen der entsprechenden Matrizen.
+	Im Ausdruck kann der Zielcache der Matrix-Operation spezifiziert werden. Wenn er das <em>nicht</em> wird, wird automatisch <code>matrix()</code> als Ziel verwendet. Sollte der Zielcache nicht existieren, so wird er im Rahmen dieses Kommmandos automatisch erzeugt.
+	<em>Wichtig:</em> <code>matop</code> kennt einen großen Satz zusätzlicher, spezieller Matrixfunktionen. Diese sind unter "help matfunc" aufgelistet.
+	<example desc="Multiplizieren der Elemente in <code>cache()</code> mit den Elementen in <code>data()</code>:">
+		matop cache() *= data()
+	</example>
+</article>
+
+<article id="matop_functions">
+	<title string="Matrix-Funktionen" />
+	Innerhalb des <code>matop</code>-Kommandos können noch folgende zusätzliche Funktionen verwendet werden:
+	<list>
+		<item node="cross(MAT)">Berechnet das <expr>n</expr>-dimensionale Kreuzprodukt der Vektoren, welche die <expr>n-1</expr> Spalten der Matrix MAT bilden.</item>
+		<item node="det(MAT)">Berechnet die Determinante der Matrix MAT, falls die Matrix quadratisch ist.</item>
+		<item node="diag(x,y,z,...)">Erzeugt eine Diagonalmatrix mit den Elementen <code>x,y,z,...</code> auf der Hauptdiagonalen.</item>
+		<item node="diagonalize(MAT)">Diagonalisiert die quadratische Matrix MAT. Sollten die berechneten Diagonalelemente komplex sein, wird eine <expr>n x 2n</expr>-Matrix zurückgegeben, mit den Realteilen auf der unteren und den Imaginärteilen auf der oberen ersten Nebendiagonalen.</item>
+		<item node="eigenvals(MAT)">Berechnet die Eigenwerte der quadratischen Matrix MAT und gibt diese in Form eines Vektors zurück. Sind die Eigenwerte komplex, werden sie als zweispaltige Matrix zurückgegeben, mit dem Realteil in der ersten und dem Imaginärteil in der zweiten Spalte.</item>
+		<item node="eigenvects(MAT)">Berechnet die Eigenvektoren der quadratischen Matrix MAT und gibt diese in Form einer Matrix mit den Eigenvektoren als Spalten zurück. Sind die Eigenvektoren komplex, werden sie als <expr>n x 2n</expr>-Matrix zurückgegeben, mit den Realteilen in den ungeraden und den Imaginärteilen der Vektorkomponenten in den geraden Spalten.</item>
+		<item node="identity(n)">Erzeugt eine <expr>n</expr>-dimensionale, quadratische Einheitsmatrix.</item>
+		<item node="invert(MAT)">Invertiert die Matrix MAT, falls eine Inverse der Matrix existiert. <code>invert()</code> prüft auch, ob die Dimensionen der übergebenen Matrix übereinstimmen.</item>
+		<item node="matfc(X,Y,Z,...)">Erzeugt eine Matrix aus den Spalten <code>X,Y,Z,...</code> Werden für die maximale Dimension nicht ausreichend Elemente vorgegeben, so werden die fehlenden durch 0 ergänzt.</item>
+		<item node="matfcf(X,Y,Z,...)">Erzeugt eine Matrix aus den Spalten <code>X,Y,Z,...</code> Werden für die maximale Dimension nicht ausreichend Elemente vorgegeben, so werden die fehlenden aus den vorhandenen <em>logisch</em> ergänzt.</item>
+		<item node="matfl(X,Y,Z,...)">Erzeugt eine Matrix aus den Zeilen <code>X,Y,Z,...</code> Werden für die maximale Dimension nicht ausreichend Elemente vorgegeben, so werden die fehlenden durch 0 ergänzt.</item>
+		<item node="matflf(X,Y,Z,...)">Erzeugt eine Matrix aus den Zeilen <code>X,Y,Z,...</code> Werden für die maximale Dimension nicht ausreichend Elemente vorgegeben, so werden die fehlenden aus den vorhandenen <em>logisch</em> ergänzt.</item>
+		<item node="one(n,m)">Erzeugt eine <expr>n x m</expr>-Matrix, die mit Einsen gefüllt ist. Wenn nur ein Argument angegeben wird, wird eine symmetrische Matrix erzeugt.</item>
+		<item node="solve(MAT)">Löst das Lineare Gleichungssystem, das durch die Matrix MAT beschrieben wird, mittels des Gauß-Algorithmus.</item>
+		<item node="trace(MAT)">Berechnet die Spur der quadratischen Matrix MAT.</item>
+		<item node="transpose(MAT)">Transponiert die Matrix MAT (Zeilen- und Spaltenindices werden vertauscht)</item>
+		<item node="zero(n,m)">Erzeugt eine <expr>n x m</expr>-Matrix, die mit Nullen gefüllt ist. Wenn nur ein Argument angegeben wird, wird eine symmetrische Matrix erzeugt.</item>
+	</list>
+</article>

@@ -1,0 +1,44 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="script">
+	<title string="NumeRe-Scripte" />
+	Komplexe Befehlsroutinen können in NumeRe in sogenannte "Scripte" ausgelagert werden. Diese müssen mit einem externen Editor geschrieben werden und als Textdatei mit der Endung ".nscr" gespeichert werden. Der Ordner, aus dem NumeRe die Scripte standardmäßig lädt, kann mittels <code>get -scriptpath</code> erhalten und durch <code>set -scriptpath=PFAD</code> bearbeitet werden.
+	Die Befehle können in das Script geschrieben werden, wie sie direkt in NumeRe eingegeben werden, allerdings ist zu beachten, dass nur ein Befehl/Ausdruck je Zeile geschrieben werden darf, oder dass die Befehle/Ausdrücke durch Semikola voneinander getrennt werden:<codeblock>AUSDRUCK;KOMMANDO;KOMMANDO;AUSDRUCK...</codeblock>
+	Die Zeichenkette <code>##</code> kann genutzt werden, um eine Zeile auszukommentieren, oder ein Teil des Scripts zur Übersicht mit zusätzlichen Infos zu versehen. NumeRe wird den Teil der Zeile ab <code>##</code> während der Auswertung ignorieren.
+	In NumeRe-Scripten können auch ganze Blöcke auskommentiert werden: Dazu muss vor dem auszukommentierendem Teil <code>#*</code> und am Ende dieses Blocks <code>*#</code> stehen. Diese Blöcke können sich über mehrere Zeilen erstrecken. Ebenfalls können auch mehrere dieser Blockkommentare in einer Zeile auftreten. NumeRe entfernt die entsprechenden Kommentare vor der Auswertung.
+	Die Zeichenkette <code>\\</code> am Ende einer Zeile unterbricht die Auswertung der Zeile und hängt die darauffolgende Zeile an die vorhergehende an. Wird diese ebenfalls durch <code>\\</code> abgeschlossen, so wird dies wiederholt, bis eine Zeile ohne <code>\\</code> am Ende gefunden wird.
+	Die Syntax <code>@SCRIPT</code> lädt alle Definitionen und "globale Ausdrücke" aus dem Script SCRIPT an dieser Stelle in das auszuführende Script ein. Es werden dabei keine weiteren Befehle abgearbeitet und dementsprechend auch nicht weitere <code>@SCRIPT</code>, die in dem Script SCRIPT gefunden werden. Falls SCRIPT Leerzeichen enthalten soll, ist SCRIPT in Anführungszeichen (<code>@"SCRIPT"</code>) anzugeben.
+	Falls nur globale Ausdrücke oder nur Definitionen geladen werden sollen, lässt sich <code>@SCRIPT</code> noch weiter einschränken:<codeblock>@SCRIPT: defines   (lädt nur Definitionen)\n@SCRIPT: globals   (lädt nur globale Ausdrücke)</codeblock>
+	Globale Ausdrücke sind Ausdrücke und Kommandos, die ihrerseits von dem Kommando <code>global</code> begonnen werden:<codeblock>global AUSDRUCK</codeblock>oder<codeblock>global KOMMANDO</codeblock>Das Kommando <code>global</code> hat ansonsten keinen weiteren Einfluss auf die Auswertung.
+	In Scripten kann neben den Pfadplatzhaltern <code>&lt;loadpath&gt;</code>, <code>&lt;scriptpath&gt;</code>, etc. auch der spezielle Platzhalter <code>&lt;this&gt;</code> verwendet werden, der das Verzeichnis, in welchem sich das Script befindet, beinhält.
+	Auf das Kommando <code>script</code> können die folgenden Parameter angewendet werden:
+	<list>
+		<item node="-load=SCRIPT">Das Script SCRIPT aus dem Standardordner laden. Es wird nicht automatisch gestartet. Dateinamen mit Leerzeichen müssen von Anführungszeichen umgeben sein</item>
+		<item node="-start">Das zuvor geladene Script ausführen</item>
+		<item node="-start=SCRIPT">Das Script SCRIPT laden und sofort starten. Dateinamen mit Leerstellen müssen von Anführungszeichen umschlossen sein. Vereinfacht lässt sich dies auch mit dem Kommando <code>start SCRIPT</code> erreichen</item>
+		<item node="-install">Die Installationsroutinen aus dem auszuführenden Script mit ausführen, um Prozeduren zu installieren. Kann nur in Verbindung mit <code>-start</code> verwendet werden</item>
+	</list>
+	Die Auswertung kann mit der <code>ESC</code>-Taste abgebrochen werden, falls sie zu viel Zeit in Anspruch nimmt.
+	<example desc="Laden des Scripts 'script.nscr' und anschließendes Starten:">
+		script -load=script
+		Script "&SCRIPTPATH&/script.nscr" wurde erfolgreich geladen.
+		script -start
+	</example>
+	<em>Siehe auch:</em> "help install", "help explorer" und "help procedure"
+</article>

@@ -1,0 +1,38 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="extrema">
+	<title string="Numerische Extremumsbestimmung" />
+	Das Kommando <code>extrema</code> bestimmt alle Extrema (also alle Stellen <expr>x0</expr>, für die <expr>df/dx = 0</expr>) eines gegebenen Ausdrucks in einem vorgegebenen Intervall. Die Werte des Ausdrucks dürfen dabei nicht zu stark oszillieren. Liegt ein solcher Ausdruck vor, so sollte das Intervall deutlich kleiner gewählt werden.
+	Werden im Intervall keine Extrema gefunden, werden die Intervallgrenzen untersucht und ggf. als Extrema deklariert.
+	An das Kommando <code>extrema</code> muss direkt der zu untersuchende Ausdruck folgen. Im Anschluss daran sind nach dem Schlüsselwort <code>-set</code> die Optionen erforderlich. Diese lauten wie folgt:
+	<list>
+		<item node="VAR=POS1:POS2">Die linke (<code>POS1</code>) und die rechte (<code>POS2</code>) Intervallgrenze der Variablen VAR festlegen</item>
+		<item node="min">Das Ergebnis auf Minima begrenzen (<em>optional</em>)</item>
+		<item node="max">Das Ergebnis auf Maxima begrenzen (<em>optional</em>)</item>
+		<item node="samples=STÜTZSTELLEN">Die Zahl der Stützstellen für die Basisauflösung übergeben. Das Minimum ist hierbei 21; das nominelle Maximum 10001. Die Zahl wird jedoch in gewissem Maße an die Intervallbreite angeglichen.</item>
+	</list>
+	Auch die Extrema eines Datensatzes können bestimmt werden. Dazu müssen die <expr>y</expr>-Werte Teil des zu untersuchenden Ausdrucks sein:<codeblock>extrema AUSDRUCK(DATENPUNKTE(I1:I2,J1:J2))</codeblock>Die <expr>x</expr>-Werte können über den Parameter <code>x=x-DATENPUNKTE()</code> übergeben werden. Der <expr>x</expr>-Datensatz kann auch eine andere Zahl an Datenpunkten enthalten. In diesem Fall wird die Zahl der <expr>y</expr>-Werte verwendet und die fehlenden <expr>x</expr>-Werte ggf. durch 0.0 ergänzt. Werden keine <expr>x</expr>-Werte übergeben, gibt das Kommando die Indices zurück, die am nächsten an einem Extremum liegen. Werden <expr>x</expr>-Werte übergeben, gibt <code>extrema</code> die entsprechenden <expr>x</expr>-Werte als Ergebnis zurück.
+	Die Erkennung von Maxima kann bei sehr verrauschten Datenreihen sehr ungenau werden, da dann auch Rauschspitzen als Maxima identifiziert werden. Mit der Option <code>points=PUNKTE</code> (Standard 5, Minimum 3 und Maximum Zahl der DATENPUNKTE / 2) kann die Zahl der Punkte erhöht werden, die ein Maximum umfassen sollte.
+	<example desc="Extrema der Funktion <expr>f(x) = sin(x)</expr> im Intervall von 0 bis <expr>2PI</expr> und Maxima eines Datensatzes:">
+		extrema sin(x) -set x=0:_2pi
+		ans = {1.5707963, 4.712389}
+		extrema data(:,2) -set x=data(:,1) max
+		ans = {1.5708038, 7.8539976}
+	</example>
+</article>

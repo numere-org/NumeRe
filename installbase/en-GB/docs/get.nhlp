@@ -1,0 +1,60 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2016  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="get">
+	<title string="Reading of configuration values" />
+	The NumeRe command <code>get</code> may be used to read a current configuration setting of NumeRe. This needs one of the parameters, which are listed below. In addition, you may pass the options <code>asstr</code> and <code>asval</code>. The option <code>asstr</code> returns the value of the configuration setting as a string, <code>asval</code> as a numerical value, if applicable (means: only if the configuration setting contains a numerical value).
+	<list>
+		<item node="-autosave">Read autosave time interval</item>
+		<item node="-buffersize">Read the current buffersize</item>
+		<item node="-colortheme">Get the current colortheme</item>
+		<item node="-compact">Read, if tables shall be displayed more compact</item>
+		<item node="-defcontrol">Read, if custom defined functions shall be loaded and saved automatically</item>
+		<item node="-draftmode">Get the draft mode setting</item>
+		<item node="-editor">Get the current text editor</item>
+		<item node="-extendedfileinfo">Read, if extended file information shall be displayed</item>
+		<item node="-externaldocwindow">Read, if the documentation shall be displayed in an external window</item>
+		<item node="-faststart">Program start-up without internal checks</item>
+		<item node="-greeting">Read, if NumeRe shall greet at start-up</item>
+		<item node="-hints">Read, if the "Did-you-knows" shall be displayed</item>
+		<item node="-loademptycols">Read, if empty columns shall be preserved while loading a file</item>
+		<item node="-loadpath">Get the current loading path</item>
+		<item node="-logfile">Read, if a log file shall be created</item>
+		<item node="-numlist">Get all declared numerical variables including their values</item>
+		<item node="-plotfont">Get the current default plot font</item>
+		<item node="-plotparams">Get the current plot settings</item>
+		<item node="-plotpath">Get the current plot output path</item>
+		<item node="-precision">Get the current display precision (i.e. number of decimals on display)</item>
+		<item node="-procpath">Get the current procedure path</item>
+		<item node="-savepath">Get the current saving and exporting path</item>
+		<item node="-scriptpath">Get the current script path</item>
+		<item node="-stringlist">Get all declared string variables including their values</item>
+		<item node="-usecustomlang">Read, if a custom language shall be used</item>
+		<item node="-useescinscripts">Read, if the <code>ESC</code> key shall be used to abort scripts</item>
+		<item node="-varlist">Get all declared numerical and all string variables in a common list</item>
+		<item node="-viewer">Get the current image viewer</item>
+		<item node="-windowsize">Get the current windowsize</item>
+		<item node="-workpath">Get the current working directory</item>
+	</list>
+	<example desc="Reading the current script path:">
+		get -scriptpath
+		SCRIPTPATH: "&SCRIPTPATH&"
+	</example>
+	<em>See also:</em> "help set", "help editor" or "help viewer"
+	<em>Tip:</em> Use <code>list -settings</code> to display all relevant configuration setting in a complete list.
+</article>
