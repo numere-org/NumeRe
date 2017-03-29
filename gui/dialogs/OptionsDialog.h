@@ -23,6 +23,7 @@
 ////@begin includes
 #include "wx/notebook.h"
 #include "wx/spinctrl.h"
+#include <wx/clrpicker.h>
 
 #include "../../kernel/core/settings.hpp"
 ////@end includes
@@ -73,6 +74,12 @@ class NumeReWindow;
 #define ID_SPINCTRL 10019
 #define ID_BUTTON_OK 10002
 #define ID_BUTTON_CANCEL 10003
+
+#define ID_CLRSPIN 10040
+#define ID_CLRPICKR_FORE 10041
+#define ID_CLRPICKR_BACK 10042
+#define ID_RESETCOLOR 10043
+
 #define SYMBOL_OPTIONSDIALOG_STYLE wxCAPTION|wxRESIZE_BORDER|wxSYSTEM_MENU|wxCLOSE_BOX
 #define SYMBOL_OPTIONSDIALOG_TITLE _("Options")
 #define SYMBOL_OPTIONSDIALOG_IDNAME ID_DIALOG
@@ -127,6 +134,10 @@ public:
 
     /// wxEVT_COMMAND_BUTTON_CLICKED event handler for ID_BUTTON_CANCEL
     void OnButtonCancelClick( wxCommandEvent& event );
+
+    void OnColorPickerChange(wxColourPickerEvent& event);
+
+    void OnColorTypeChange(wxCommandEvent& event);
 
     void OnButtonClick(wxCommandEvent& event);
 
@@ -195,6 +206,10 @@ public:
     wxCheckBox* m_AutoLoadDefines;
     wxCheckBox* m_showGreeting;
     wxCheckBox* m_LoadCompactTables;
+    wxComboBox* m_colorType;
+    wxColourPickerCtrl* m_foreColor;
+    wxColourPickerCtrl* m_backColor;
+    wxButton* m_resetButton;
 
     wxCheckBox* m_ExtendedInfo;
     wxCheckBox* m_ShowHints;

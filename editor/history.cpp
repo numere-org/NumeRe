@@ -123,12 +123,11 @@ NumeReHistory::~NumeReHistory()
 }
 
 
-void NumeReHistory::UpdateSyntaxHighlighting()
+void NumeReHistory::UpdateSyntaxHighlighting(bool forceUpdate)
 {
     this->SetLexer(wxSTC_LEX_NSCR);
 
     this->SetProperty("fold", "0");
-    //this->SetProperty("fold.comment", "1");
     this->SetFoldFlags(wxSTC_FOLDFLAG_LINEAFTER_CONTRACTED | wxSTC_FOLDFLAG_LINEAFTER_EXPANDED);
 
     this->SetMarginType(MARGIN_FOLD, wxSTC_MARGIN_SYMBOL);
@@ -137,14 +136,6 @@ void NumeReHistory::UpdateSyntaxHighlighting()
     this->SetMarginSensitive(MARGIN_FOLD, true);
     this->StyleSetBackground(MARGIN_FOLD, wxColor(200, 200, 200) );
     this->SetMarginSensitive(MARGIN_FOLD, true);
-
-    //this->BraceBadLightIndicator(true, wxSTC_NSCR_DEFAULT);
-    //this->BraceHighlightIndicator(true, wxSTC_NSCR_COMMENT_LINE);
-
-    // Properties found from http://www.scintilla.org/SciTEDoc.html
-    //text->SetProperty (wxT("fold"),         wxT("1") );
-    //text->SetProperty (wxT("fold.comment"), wxT("1") );
-    //text->SetProperty (wxT("fold.compact"), wxT("1") );
 
     wxColor grey( 100, 100, 100 );
     this->MarkerDefine (wxSTC_MARKNUM_FOLDER, wxSTC_MARK_BOXPLUS);
@@ -180,73 +171,84 @@ void NumeReHistory::UpdateSyntaxHighlighting()
         this->SetKeyWords(0, _syntax->getCommands());
         this->SetKeyWords(1, _syntax->getOptions());
         this->SetKeyWords(2, _syntax->getFunctions());
-        this->SetKeyWords(3, "x y z t");
-        this->SetKeyWords(4, _syntax->getConstants());
-        this->SetKeyWords(5, _syntax->getSpecial());
-        this->SetKeyWords(6, _syntax->getOperators());
-        this->SetKeyWords(7, _syntax->getNPRCCommands());
+        this->SetKeyWords(3, _syntax->getMethods());
+        this->SetKeyWords(4, "x y z t");
+        this->SetKeyWords(5, _syntax->getConstants());
+        this->SetKeyWords(6, _syntax->getSpecial());
+        this->SetKeyWords(7, _syntax->getOperators());
+        this->SetKeyWords(8, _syntax->getNPRCCommands());
     }
-    /*this->SetCaretLineVisible(true);
-    this->SetCaretLineBackground(wxColour(196,211,255));
-    this->SetIndentationGuides(true);*/
 
-    this->StyleSetForeground(wxSTC_NSCR_DEFAULT, wxColour(0,0,0));
-    this->StyleSetItalic(wxSTC_NSCR_DEFAULT, true);
+    for (int i = 0; i <= wxSTC_NSCR_PROCEDURE_COMMANDS; i++)
+    {
+        SyntaxStyles _style;
+        switch (i)
+        {
+            case wxSTC_NSCR_DEFAULT:
+            case wxSTC_NSCR_IDENTIFIER:
+                _style = m_options->GetSyntaxStyle(Options::STANDARD);
+                break;
+            case wxSTC_NSCR_NUMBERS:
+                _style = m_options->GetSyntaxStyle(Options::NUMBER);
+                break;
+            case wxSTC_NSCR_COMMENT_BLOCK:
+            case wxSTC_NSCR_COMMENT_LINE:
+                _style = m_options->GetSyntaxStyle(Options::COMMENT);
+                break;
+            case wxSTC_NSCR_COMMAND:
+                _style = m_options->GetSyntaxStyle(Options::COMMAND);
+                break;
+            case wxSTC_NSCR_OPTION:
+                _style = m_options->GetSyntaxStyle(Options::OPTION);
+                break;
+            case wxSTC_NSCR_CONSTANTS:
+                _style = m_options->GetSyntaxStyle(Options::CONSTANT);
+                break;
+            case wxSTC_NSCR_FUNCTION:
+                _style = m_options->GetSyntaxStyle(Options::FUNCTION);
+                break;
+            case wxSTC_NSCR_METHOD:
+                _style = m_options->GetSyntaxStyle(Options::METHODS);
+                break;
+            case wxSTC_NSCR_PREDEFS:
+                _style = m_options->GetSyntaxStyle(Options::SPECIALVAL);
+                break;
+            case wxSTC_NSCR_STRING:
+                _style = m_options->GetSyntaxStyle(Options::STRING);
+                break;
+            case wxSTC_NSCR_STRING_PARSER:
+                _style = m_options->GetSyntaxStyle(Options::STRINGPARSER);
+                break;
+            case wxSTC_NSCR_INCLUDES:
+                _style = m_options->GetSyntaxStyle(Options::INCLUDES);
+                break;
+            case wxSTC_NSCR_PROCEDURES:
+                _style = m_options->GetSyntaxStyle(Options::PROCEDURE);
+                break;
+            case wxSTC_NSCR_PROCEDURE_COMMANDS:
+                _style = m_options->GetSyntaxStyle(Options::PROCEDURE_COMMAND);
+                break;
+            case wxSTC_NSCR_INSTALL:
+                _style = m_options->GetSyntaxStyle(Options::INSTALL);
+                break;
+            case wxSTC_NSCR_DEFAULT_VARS:
+                _style = m_options->GetSyntaxStyle(Options::DEFAULT_VARS);
+                break;
+            case wxSTC_NSCR_CUSTOM_FUNCTION:
+                _style = m_options->GetSyntaxStyle(Options::CUSTOM_FUNCTION);
+                break;
+            case wxSTC_NSCR_OPERATORS:
+            case wxSTC_NSCR_OPERATOR_KEYWORDS:
+                _style = m_options->GetSyntaxStyle(Options::OPERATOR);
+                break;
+        }
 
-    this->StyleSetForeground(wxSTC_NSCR_IDENTIFIER, wxColour(0,0,0));
-    this->StyleSetItalic(wxSTC_NSCR_IDENTIFIER, true);
-
-    this->StyleSetForeground(wxSTC_NSCR_NUMBERS, wxColour(255,128,64));
-
-    this->StyleSetForeground(wxSTC_NSCR_COMMENT_LINE, wxColour(0,128,0));
-    this->StyleSetBackground(wxSTC_NSCR_COMMENT_LINE, wxColour(255,255,183));
-    this->StyleSetBold(wxSTC_NSCR_COMMENT_LINE, true);
-
-    this->StyleSetForeground(wxSTC_NSCR_COMMENT_BLOCK, wxColour(0,128,0));
-    this->StyleSetBackground(wxSTC_NSCR_COMMENT_BLOCK, wxColour(255,255,183));
-    this->StyleSetBold(wxSTC_NSCR_COMMENT_BLOCK, true);
-
-    this->StyleSetForeground(wxSTC_NSCR_COMMAND, wxColour(0, 128, 255));
-    this->StyleSetBold(wxSTC_NSCR_COMMAND, true);
-    this->StyleSetUnderline(wxSTC_NSCR_COMMAND, true);
-
-    this->StyleSetForeground(wxSTC_NSCR_OPTION, wxColour(0, 128, 128));
-    this->StyleSetBold(wxSTC_NSCR_OPTION, false);
-
-    this->StyleSetForeground(wxSTC_NSCR_CONSTANTS, wxColour(255, 0, 128));
-    this->StyleSetBold(wxSTC_NSCR_CONSTANTS, true);
-
-    this->StyleSetForeground(wxSTC_NSCR_FUNCTION, wxColour(0, 0, 255));
-    this->StyleSetBold(wxSTC_NSCR_FUNCTION, true);
-
-    this->StyleSetForeground(wxSTC_NSCR_PREDEFS, wxColour(0, 0, 0));
-    this->StyleSetBold(wxSTC_NSCR_PREDEFS, true);
-
-    this->StyleSetForeground(wxSTC_NSCR_STRING, wxColour(128,128,255));
-
-    this->StyleSetForeground(wxSTC_NSCR_STRING_PARSER, wxColour(0,128,192));
-    this->StyleSetBold(wxSTC_NSCR_STRING_PARSER, true);
-
-    this->StyleSetForeground(wxSTC_NSCR_INCLUDES, wxColour(128,0,0));
-    this->StyleSetBold(wxSTC_NSCR_INCLUDES, true);
-
-    this->StyleSetForeground(wxSTC_NSCR_PROCEDURES, wxColour(128,0,0));
-    this->StyleSetBold(wxSTC_NSCR_PROCEDURES, true);
-    this->StyleSetForeground(wxSTC_NSCR_PROCEDURE_COMMANDS, wxColour(128,0,0));
-    this->StyleSetBold(wxSTC_NSCR_PROCEDURE_COMMANDS, true);
-
-    this->StyleSetForeground(wxSTC_NSCR_INSTALL, wxColour(128,128,128));
-    this->StyleSetBold(wxSTC_NSCR_INSTALL, false);
-    this->StyleSetItalic(wxSTC_NSCR_INSTALL, false);
-
-    this->StyleSetForeground(wxSTC_NSCR_DEFAULT_VARS, wxColour(0, 0, 160));
-    this->StyleSetBold(wxSTC_NSCR_DEFAULT_VARS, true);
-    this->StyleSetItalic(wxSTC_NSCR_DEFAULT_VARS, true);
-
-    this->StyleSetForeground(wxSTC_NSCR_CUSTOM_FUNCTION, wxColour(0, 0, 160));
-
-    this->StyleSetForeground(wxSTC_NSCR_OPERATORS, wxColour(255, 0, 0));
-    this->StyleSetForeground(wxSTC_NSCR_OPERATOR_KEYWORDS, wxColour(255, 0, 0));
+        this->StyleSetForeground(i, _style.foreground);
+        this->StyleSetBackground(i, _style.background);
+        this->StyleSetBold(i, _style.bold);
+        this->StyleSetItalic(i, _style.italics);
+        this->StyleSetUnderline(i, _style.underline);
+    }
 	//updateDefaultHighlightSettings();
     this->Colourise(0,-1);
 }

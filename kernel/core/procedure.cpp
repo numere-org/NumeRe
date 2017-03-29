@@ -1513,7 +1513,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             nPos += sLocalStrings[i][0].length();
                             continue;
                         }
-                        if (checkDelimiter(sProcCommandLine.substr(nPos-1, sLocalStrings[i][0].length()+2))
+                        if (checkDelimiter(sProcCommandLine.substr(nPos-1, sLocalStrings[i][0].length()+2), true)
                             && (!isInQuotes(sProcCommandLine, nPos, true) || isToCmd(sProcCommandLine, nPos)))
                         {
                             //cerr << sLocalVars[i][0] << " ==> " << sLocalVars[i][1] << endl;

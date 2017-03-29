@@ -17,8 +17,8 @@ BEGIN_EVENT_TABLE(wxSSH, wxTerm)
 	EVT_PROCESS_ENDED(wxSSH::OnPlinkTerm)
 END_EVENT_TABLE()
 
-wxSSH::wxSSH(wxWindow* parent, wxWindowID id, Networking* network, const wxPoint& pos, int width, int height, const wxString& name)
-	: wxTerm(parent, id, pos, width, height, name)
+wxSSH::wxSSH(wxWindow* parent, wxWindowID id, Networking* network, Options* _option, const wxPoint& pos, int width, int height, const wxString& name)
+	: wxTerm(parent, id, _option, pos, width, height, name)
 {
 	m_connected = false;
 	m_networking = network;

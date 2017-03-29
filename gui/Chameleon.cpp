@@ -73,6 +73,9 @@
 #include "openlocal.xpm"
 #include "savefile.xpm"
 
+#include "stock_redo.xpm"
+#include "stock_undo.xpm"
+
 //#include "build.xpm"
 //#include "compilestop.xpm"
 //#include "button.xpm"
@@ -81,7 +84,7 @@
 //#include "disconnect16.xpm"
 
 #include "newstart1.xpm"
-//#include "newcontinue1.xpm"
+#include "newcontinue1.xpm"
 #include "newstop1.xpm"
 //#include "stepnext.xpm"
 //#include "stepout.xpm"
@@ -152,6 +155,7 @@ BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
 	EVT_MENU						(ID_LINEWRAP, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_DISPCTRLCHARS, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_USETXTADV, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_USEANALYZER, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_GOTOLINE, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_TOGGLE_NOTEBOOK_MULTIROW, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_TOGGLE_COMMENT_LINE, NumeReWindow::OnMenuEvent)
@@ -362,7 +366,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_splitProjectEditor = new wxSplitterWindow(m_splitEditorOutput, ID_SPLITPROJECTEDITOR, wxDefaultPosition, wxDefaultSize, wxSP_NOBORDER);
 	m_book = new NumeReNotebook(m_splitProjectEditor, ID_NOTEBOOK_ED);*/
 
-	m_splitProjectEditor = new wxSplitterWindow(this, ID_SPLITPROJECTEDITOR, wxDefaultPosition, wxDefaultSize, wxSP_NOBORDER);
+	m_splitProjectEditor = new wxSplitterWindow(this, ID_SPLITPROJECTEDITOR, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME);
 	m_splitEditorOutput = new wxProportionalSplitterWindow(m_splitProjectEditor, ID_SPLITEDITOROUTPUT, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
 	m_splitCommandHistory = new wxProportionalSplitterWindow(m_splitEditorOutput, wxID_ANY, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
 	m_book = new NumeReNotebook(m_splitEditorOutput, ID_NOTEBOOK_ED);
@@ -373,7 +377,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_termContainer = new wxTermContainer(m_splitCommandHistory, ID_CONTAINER_TERM);
     //m_debugTermContainer = new wxTermContainer(m_noteTerm, ID_CONTAINER_DEBUGTERM);
 
-	m_terminal = new wxSSH(m_termContainer, ID_TERMINAL, m_network, wxPoint(0, 0));
+	m_terminal = new wxSSH(m_termContainer, ID_TERMINAL, m_network, m_options, wxPoint(0, 0));
 	m_terminal->set_mode_flag(GTerm::CURSORINVISIBLE);
 	m_termContainer->SetTerminal(m_terminal);
 	m_terminal->SetParent(this);
@@ -461,6 +465,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_projectFileFolders[4] = m_projectTree->AppendItem(rootNode, _guilang.get("GUI_TREE_PLOTS"), idxFolderOpen);
 
 	_guilang.addToLanguage(m_terminal->getPluginLanguageStrings());
+	_guilang.addToLanguage(m_terminal->getFunctionLanguageStrings());
     prepareFunctionTree();
 	/*m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_SCRIPTS"), idxFolderOpen);
 	m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_PROCEDURES"), idxFolderOpen);
@@ -814,6 +819,8 @@ void NumeReWindow::InitializeProgramOptions()
         else
             m_options->SetTerminalHistorySize(300);
 
+        m_options->readColoursFromConfig(m_config);
+
 		//authorizedCode = m_config->Read("Permissions/authorized", defaultAuthorizedCode);
 		//enabledCode = m_config->Read("Permissions/enabled", defaultEnableCode);
 
@@ -859,6 +866,7 @@ void NumeReWindow::InitializeProgramOptions()
 		m_config->Write("Miscellaneous/PrintInColor", "false");
 		m_config->Write("Miscellaneous/PrintLineNumbers", "false");
 		m_config->Write("Miscellaneous/SaveSession", "false");
+		m_options->writeColoursToConfig(m_config);
 	}
 
 	/*if(authorizedCode == wxEmptyString)
@@ -1065,6 +1073,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_USETXTADV:
         {
             m_currentEd->ToggleSettings(NumeReEditor::SETTING_USETXTADV);
+            break;
+        }
+        case ID_USEANALYZER:
+        {
+            m_currentEd->ToggleSettings(NumeReEditor::SETTING_USEANALYZER);
             break;
         }
         case ID_GOTOLINE:
@@ -1317,6 +1330,10 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             Settings _option = m_terminal->getKernelSettings();
             _option.setDebbuger(!_option.getUseDebugger());
             m_terminal->setKernelSettings(_option);
+            wxToolBar* tb = GetToolBar();
+            tb->ToggleTool(ID_DEBUGGER, _option.getUseDebugger());
+            wxMenu* view = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
+            view->Check(ID_DEBUGGER, _option.getUseDebugger());
             break;
 		}
 
@@ -1955,6 +1972,8 @@ void NumeReWindow::PageHasChanged (int pageNr)
         view->Check(ID_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
         view->Check(ID_DISPCTRLCHARS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_DISPCTRLCHARS));
         view->Check(ID_USETXTADV, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USETXTADV));
+        view = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
+        view->Check(ID_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
         m_currentEd->Refresh();
 
 		wxString tabText = m_book->GetPageText(m_currentPage);
@@ -3176,8 +3195,12 @@ void NumeReWindow::UpdateStatusBar()
 	{
 		SetStatusText (linecol, 3);
 	}
-	if (m_terminal->getKernelSettings().getUseDebugger())
+	if (m_terminal->getKernelSettings().getUseDebugger() && m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER))
+        SetStatusText(_guilang.get("GUI_STATUSBAR_DEBUGGER_ANALYZER"), 4);
+	else if (m_terminal->getKernelSettings().getUseDebugger() && !m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER))
         SetStatusText(_guilang.get("GUI_STATUSBAR_DEBUGGER"), 4);
+	else if (!m_terminal->getKernelSettings().getUseDebugger() && m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER))
+        SetStatusText(_guilang.get("GUI_STATUSBAR_ANALYZER"), 4);
     else
         SetStatusText("", 4);
 }
@@ -3471,6 +3494,8 @@ void NumeReWindow::EvaluateOptions()
 	bool saveSession = m_options->GetSaveSession();
 	m_config->Write("Miscellaneous/SaveSession", saveSession ? "true" : "false");
 
+	m_options->writeColoursToConfig(m_config);
+
 	/*bool combineWatchWindow = m_options->GetCombineWatchWindow();
 	m_config->Write("Miscellaneous/CombineWatchWindow", combineWatchWindow ? "true" : "false");*/
 
@@ -3627,6 +3652,16 @@ void NumeReWindow::UpdateMenuBar()
 	menuTools->Append(ID_SORT_SELECTION_ASC, _guilang.get("GUI_MENU_SORT_ASC"), _guilang.get("GUI_MENU_SORT_ASC_TTP"));
 	menuTools->Append(ID_SORT_SELECTION_DESC, _guilang.get("GUI_MENU_SORT_DESC"), _guilang.get("GUI_MENU_SORT_DESC_TTP"));
 	menuTools->AppendSeparator();
+	menuTools->Append(ID_USEANALYZER, _guilang.get("GUI_MENU_ANALYZER"), _guilang.get("GUI_MENU_ANALYZER_TTP"), true);
+    if (m_currentEd)
+	{
+        menuTools->Check(ID_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
+    }
+    else
+    {
+        menuTools->Check(ID_USEANALYZER, false);
+    }
+
 	menuTools->Append(ID_DEBUGGER, _guilang.get("GUI_MENU_DEBUGGER"), _guilang.get("GUI_MENU_DEBUGGER_TTP"), true);
 	menuTools->Check(ID_DEBUGGER, m_terminal->getKernelSettings().getUseDebugger());
 
@@ -3710,6 +3745,14 @@ void NumeReWindow::UpdateToolbar()
 
 	//if(perms->isEnabled(PERM_DEBUG))
 	//{
+        t->AddSeparator();
+
+        wxBitmap bmUndo(undo_xpm);
+        t->AddTool(ID_UNDO, _guilang.get("GUI_TB_UNDO"), bmUndo, _guilang.get("GUI_TB_UNDO"));
+
+        wxBitmap bmRedo(stock_redo_xpm);
+        t->AddTool(ID_REDO, _guilang.get("GUI_TB_REDO"), bmRedo, _guilang.get("GUI_TB_REDO"));
+
 		t->AddSeparator();
 		wxBitmap bmStart(newstart1_xpm);
 		t->AddTool(ID_DEBUG_START, _guilang.get("GUI_TB_RUN"), bmStart, _guilang.get("GUI_TB_RUN_TTP"));
@@ -3733,6 +3776,10 @@ void NumeReWindow::UpdateToolbar()
 			"Run all the code in the current function");*/
 
 		t->AddSeparator();
+
+		wxBitmap bmStartDebugger(newcontinue1_xpm);
+		t->AddTool(ID_DEBUGGER, _guilang.get("GUI_TB_DEBUGGER"), bmStartDebugger, _guilang.get("GUI_TB_DEBUGGER_TTP"), wxITEM_CHECK);
+		t->ToggleTool(ID_DEBUGGER, m_terminal->getKernelSettings().getUseDebugger());
 
 		wxBitmap bmAddBreakpoint(breakpoint_xpm);
 		t->AddTool(ID_DEBUG_ADDEDITORBREAKPOINT, _guilang.get("GUI_TB_ADD"), bmAddBreakpoint,
@@ -4436,6 +4483,8 @@ wxString NumeReWindow::addLinebreaks(const wxString& sLine)
         return sLine;*/
 
     wxString sReturn = sLine;
+    while (sReturn.find("\\$") != string::npos)
+        sReturn.erase(sReturn.find("\\$"),1);
     unsigned int nDescStart = sReturn.find("- ");
     unsigned int nIndentPos = 6;//
     unsigned int nLastLineBreak = 0;
@@ -5397,6 +5446,13 @@ void NumeReWindow::OnOptions()
         // For the same reason, ALWAYS re-evaluate the options.  If the user canceled
         // the dialog, things won't have changed.
         EvaluateOptions();
+        m_history->UpdateSyntaxHighlighting();
+        m_terminal->UpdateColors();
+        for (size_t i = 0; i < m_book->GetPageCount(); i++)
+        {
+            NumeReEditor* edit = static_cast<NumeReEditor*>(m_book->GetPage(i));
+            edit->UpdateSyntaxHighlighting(true);
+        }
     }
 	m_currentEd->SetFocus();
 }

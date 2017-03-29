@@ -167,7 +167,7 @@ bool isInQuotes(const string& sExpr, unsigned int nPos, bool bIgnoreVarParser = 
 bool isToStringArg(const string& sExpr, unsigned int nPos);
 bool isDelimiter(char cChar);
 bool addLegends(string&);
-bool checkDelimiter(const string&);
+bool checkDelimiter(const string& sToken, bool stringdelim = false);
 string LineBreak(string sOutput, const Settings& _option, bool bAllowDashBreaks = true, int nFirstIndent = 4, int nIndent = 4);
 bool ResizeConsole(const Settings& _option);
 bool ColorTheme(const Settings& _option);

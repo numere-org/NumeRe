@@ -1,0 +1,15 @@
+Applied	Ein Rechtsklick auf ein Kommando im Editor zeigt nun auch "Hilfe zu KOMMAND" als Menuepunkt.
+Cleaned	Eine zusaetzliche Abgrenzung wurde zwischen Toolbar und restlichem Fenster eingebaut.
+Added	Es wurden einige Tools zur Toolbar hinzugefuegt.
+Fixed	Der Editor kann nun auch nach Prozeduren suchen, deren Pfad explizit angegeben wurde.
+Added	Der Editor hat nun einen statischen Code-Analyzer, der nach Verbesserungen und offensichtlichen Fehlern im Code suchen kann.
+Added	Selbstdefinierte Funktionen werden nun auch in der Funktionsliste angezeigt.
+Cleaned	Das Flackern der Konsole bei nicht stattgefundenen Aktionen wurde verringert.
+Added	Zeichenkettenvariablen besitzen nun ein paar Methoden, die einige Funktionalitaeten kompakter darstellen koennen.
+Added	Neue Zeichenkettenfunktionen und ihre korrespondierenden Methoden wurden hinzugefuegt.
+Cleaned	Syntaxstyles werden nun global fuer alle Objekte verwaltet.
+Added	Die Syntaxstyles werden nun in der GUI config abgelegt.
+Added	Die Farben der Syntaxhervorhebung koennen nun in den Optionen geaendert werden. Es gibt auch ein Ruecksetzen-Button.
+Cleaned	Die ENTF-Taste wurde in der Konsole implementiert.
+Fixed	Es koennen nun keine Breakpoints mehr in reine Kommentarzeilen gesetzt werden.
+Cleaned	Der calltip zu Prozeduren zeigt nun deren Signatur an, wenn die Prozedur gefunden werden kann.

@@ -5,8 +5,13 @@
 #include <wx/validate.h>
 #include <wx/valgen.h>
 #include <wx/valtext.h>
+#include <wx/fileconf.h>
+
+#include <vector>
 
 #include "datastructures.h"
+
+using namespace std;
 
 class Permission;
 
@@ -17,6 +22,16 @@ class Permission;
 // PrintColourMode - text stays coloured, but all background is forced to be white for printing.
 #define wxSTC_PRINT_COLOURONWHITE 3
 
+struct SyntaxStyles
+{
+    SyntaxStyles() : foreground(*wxBLACK), background(*wxWHITE), bold(false), italics(false), underline(false)
+        {}
+    wxColour foreground;
+    wxColour background;
+    bool bold;
+    bool italics;
+    bool underline;
+};
 
 class Options
 {
@@ -70,6 +85,46 @@ class Options
 
 		wxString VerifyMingwPath(wxString mingwPath);
 
+		enum Styles
+		{
+            STANDARD,
+            CONSOLE_STD,
+            COMMAND,
+            COMMENT,
+            OPTION,
+            FUNCTION,
+            CUSTOM_FUNCTION,
+            CONSTANT,
+            SPECIALVAL, // ans cache ...
+            STRING,
+            STRINGPARSER,
+            INCLUDES,
+            OPERATOR,
+            PROCEDURE,
+            NUMBER,
+            PROCEDURE_COMMAND,
+            METHODS,
+            INSTALL,
+            DEFAULT_VARS, // x y z t
+            STYLE_END
+		};
+
+        SyntaxStyles GetDefaultSyntaxStyle(size_t i);
+		inline SyntaxStyles GetSyntaxStyle(size_t i) const
+            {
+                if (vSyntaxStyles.size() > i && i < Styles::STYLE_END)
+                    return vSyntaxStyles[i];
+                return SyntaxStyles();
+            }
+
+        void readColoursFromConfig(wxFileConfig* _config);
+        void writeColoursToConfig(wxFileConfig* _config);
+
+        void SetStyleForeground(size_t i, const wxColour& color);
+        void SetStyleBackground(size_t i, const wxColour& color);
+        wxArrayString GetStyleIdentifier();
+        size_t GetIdByIdentifier(const wxString& identifier);
+
 	private:
 		wxString m_pscpProg;
 		wxString m_plinkProg;
@@ -96,6 +151,14 @@ class Options
 		wxArrayString m_mingwProgramNames;
 
 		Permission* m_perms;
+
+		vector<SyntaxStyles> vSyntaxStyles;
+
+		void setDefaultSyntaxStyles();
+		wxString convertToString(const SyntaxStyles& _style);
+		SyntaxStyles convertFromString(const wxString& styleString);
+		wxString toString(const wxColour& color);
+		wxColour StrToColor(wxString colorstring);
 };
 
 

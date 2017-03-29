@@ -1691,7 +1691,7 @@ bool addLegends(string& sExpr)
 }
 
 // --> Prueft, ob der erste und der letzte Char eines strings zu den Delimitern gehoert: z.B. zur Variablen-/Tokendetektion <--
-bool checkDelimiter(const string& sString)
+bool checkDelimiter(const string& sString, bool stringdelim)
 {
     bool isDelimitedLeft = false;
     bool isDelimitedRight = false;
@@ -1700,9 +1700,9 @@ bool checkDelimiter(const string& sString)
     // --> Versuche jeden Delimiter, der dir bekannt ist und setze bei einem Treffer den entsprechenden BOOL auf TRUE <--
     for (unsigned int i = 0; i < sDelimiter.length(); i++)
     {
-        if (sDelimiter[i] == sString[0])
+        if (sDelimiter[i] == sString.front())
             isDelimitedLeft = true;
-        if (sDelimiter[i] == sString[sString.length()-1])
+        if (sDelimiter[i] == sString.back() || (stringdelim && sString.back() == '.'))
             isDelimitedRight = true;
     }
 

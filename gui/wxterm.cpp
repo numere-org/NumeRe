@@ -142,6 +142,7 @@ BEGIN_EVENT_TABLE(wxTerm, wxWindow)
 END_EVENT_TABLE()
 
 wxTerm::wxTerm(wxWindow* parent, wxWindowID id,
+               Options* _option,
                const wxPoint& pos,
                int width, int height,
                const wxString& name) :
@@ -173,6 +174,7 @@ wxTerm::wxTerm(wxWindow* parent, wxWindowID id,
         m_timer.Start(m_curBlinkRate);
 
     m_boldStyle = FONT;
+    m_options = _option;
     int w, h;
 
     /*
@@ -185,23 +187,10 @@ wxTerm::wxTerm(wxWindow* parent, wxWindowID id,
         dc.SetFont(m_normalFont);
     else
         dc.SetFont(m_boldFont);
-    dc.GetTextExtent("M", &m_charWidth, &h); // EKHL: Changed because Heigth made no sense
+    dc.GetTextExtent("M", &m_charWidth, &h); // EKHL: Changed because Height made no sense
     dc.GetTextExtent("My", &w, &m_charHeight);
 
-    GetDefVTColors(m_vt_colors);
-    GetDefPCColors(m_pc_colors);
-
-    m_colors = m_vt_colors;
-
-    SetBackgroundColour(m_colors[0]);
-
-    for(i = 0; i < 16; i++)
-        m_vt_colorPens[i] = wxPen(m_vt_colors[i], 1, wxSOLID);
-
-    for(i = 0; i < 16; i++)
-        m_pc_colorPens[i] = wxPen(m_pc_colors[i], 1, wxSOLID);
-
-    m_colorPens = m_vt_colorPens;
+    UpdateColors();
 
     m_width = width;
     m_height = height;
@@ -288,10 +277,16 @@ string wxTerm::getDocumentation(const string& sCommand)
     return _kernel.getDocumentation(sCommand);
 }
 
-map<string,string>  wxTerm::getPluginLanguageStrings()
+map<string,string> wxTerm::getPluginLanguageStrings()
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     return _kernel.getPluginLanguageStrings();
+}
+
+map<string,string> wxTerm::getFunctionLanguageStrings()
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    return _kernel.getFunctionLanguageStrings();
 }
 
 Settings wxTerm::getKernelSettings()
@@ -600,61 +595,60 @@ wxTerm::SetFont(const wxFont& font)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::GetDefVTColors(wxColour colors[16], wxTerm::BOLDSTYLE boldStyle)
+wxTerm::GetDefColors(wxColour colors[16], wxTerm::BOLDSTYLE boldStyle)
 {
     if(boldStyle == DEFAULT)
         boldStyle = m_boldStyle;
 
-    if(boldStyle != COLOR && boldStyle != FONT)
+    for (size_t i = 0; i <= NumeReSyntax::SYNTAX_METHODS; i++)
     {
-        colors[0] = wxColour(255, 255, 255);                             // black
-        colors[1] = wxColour(255, 0, 0);                           // red
-        colors[2] = wxColour(0, 255, 0);                           // green
-        colors[3] = wxColour(255, 0, 255);                         // yellow
-        colors[4] = wxColour(0, 0, 255);                           // blue
-        colors[5] = wxColour(255, 255, 0);                         // magenta
-        colors[6] = wxColour(0, 255, 255);                         // cyan
-        colors[7] = wxColour(255, 255, 255);                       // white
-        colors[8] = wxColour(0, 0, 0);                             // black
-        colors[9] = wxColour(255, 0, 0);                           // red
-        colors[10] = wxColour(0, 255, 0);                          // green
-        colors[11] = wxColour(255, 0, 255);                        // yellow
-        colors[12] = wxColour(0, 0, 255);                          // blue
-        colors[13] = wxColour(255, 255, 0);                        // magenta
-        colors[14] = wxColour(0, 255, 255);                        // cyan
-        colors[15] = wxColour(255, 255, 255);                      // white
+        switch (i)
+        {
+            case 0:
+                colors[0] = m_options->GetSyntaxStyle(i).background;
+                break;
+            case NumeReSyntax::SYNTAX_COMMAND:
+                colors[NumeReSyntax::SYNTAX_COMMAND] = m_options->GetSyntaxStyle(Options::COMMAND).foreground;
+                break;
+            case NumeReSyntax::SYNTAX_OPTION:
+                colors[NumeReSyntax::SYNTAX_OPTION] = m_options->GetSyntaxStyle(Options::OPTION).foreground;
+                break;
+            case NumeReSyntax::SYNTAX_FUNCTION:
+                colors[NumeReSyntax::SYNTAX_FUNCTION] = m_options->GetSyntaxStyle(Options::FUNCTION).foreground;
+                break;
+            case NumeReSyntax::SYNTAX_CONSTANT:
+                colors[NumeReSyntax::SYNTAX_CONSTANT] = m_options->GetSyntaxStyle(Options::CONSTANT).foreground;
+                break;
+            case NumeReSyntax::SYNTAX_SPECIALVAL:
+                colors[NumeReSyntax::SYNTAX_SPECIALVAL] = m_options->GetSyntaxStyle(Options::SPECIALVAL).foreground;
+                break;
+            case NumeReSyntax::SYNTAX_STRING:
+                colors[NumeReSyntax::SYNTAX_STRING] = m_options->GetSyntaxStyle(Options::STRING).foreground;
+                break;
+            case NumeReSyntax::SYNTAX_STD:
+                colors[NumeReSyntax::SYNTAX_STD] = m_options->GetSyntaxStyle(Options::CONSOLE_STD).foreground;
+                break;
+            case NumeReSyntax::SYNTAX_OPERATOR:
+                colors[NumeReSyntax::SYNTAX_OPERATOR] = m_options->GetSyntaxStyle(Options::OPERATOR).foreground;
+                break;
+            case NumeReSyntax::SYNTAX_PROCEDURE:
+                colors[NumeReSyntax::SYNTAX_PROCEDURE] = m_options->GetSyntaxStyle(Options::PROCEDURE).foreground;
+                break;
+            case NumeReSyntax::SYNTAX_NUMBER:
+                colors[NumeReSyntax::SYNTAX_NUMBER] = m_options->GetSyntaxStyle(Options::NUMBER).foreground;
+                break;
+            case NumeReSyntax::SYNTAX_NPRC_COMMAND:
+                colors[NumeReSyntax::SYNTAX_NPRC_COMMAND] = m_options->GetSyntaxStyle(Options::PROCEDURE_COMMAND).foreground;
+                break;
+            case NumeReSyntax::SYNTAX_METHODS:
+                colors[NumeReSyntax::SYNTAX_METHODS] = m_options->GetSyntaxStyle(Options::METHODS).foreground;
+                break;
+        }
     }
-    else
-    {
-        colors[0]                               = wxColour(255, 255, 255);                       // white (background, foreground for selection)
-        colors[NumeReSyntax::SYNTAX_COMMAND]    = wxColour(0, 128, 255);                         // bright blue (commands)
-        colors[NumeReSyntax::SYNTAX_OPTION]     = wxColour(0, 128, 100);                         // cyan
-        colors[NumeReSyntax::SYNTAX_FUNCTION]   = wxColour(0, 0, 255);                         // magenta
-        colors[NumeReSyntax::SYNTAX_CONSTANT]   = wxColour(255, 0, 128);                         // blue
-        colors[NumeReSyntax::SYNTAX_SPECIALVAL] = wxColour(0, 0, 0);                          // bold black
-        colors[NumeReSyntax::SYNTAX_STRING]     = wxColour(128, 128, 255);                           // dark green (strings)
-        colors[NumeReSyntax::SYNTAX_STD]        = wxColour(0, 0, 100);                           // dark blue (standard pen)
-//    colors[7] = wxColour(170, 170, 170);                         // white
-#if 0
-        colors[8] = wxColour(85, 85, 85);                          // bold black
-        colors[9] = wxColour(255, 85, 85);                         // bold red
-        colors[10] = wxColour(85, 255, 85);                        // bold green
-        colors[11] = wxColour(255, 85, 255);                       // bold yellow
-        colors[12] = wxColour(85, 85, 255);                        // bold blue
-        colors[13] = wxColour(255, 255, 85);                       // bold magenta
-        colors[14] = wxColour(85, 255, 255);                       // bold cyan
-        colors[15] = wxColour(255, 255, 255);                      // bold white
-#else
-        colors[NumeReSyntax::SYNTAX_OPERATOR] = wxColour(255, 0, 0);                         // bold red
-        colors[NumeReSyntax::SYNTAX_PROCEDURE]  = wxColour(128, 0, 0);                           // dark red (procedures)
-        colors[NumeReSyntax::SYNTAX_NUMBER] = wxColour(255, 128, 64);                        // bold green
-        colors[11] = wxColour(255, 0, 255);                       // bold yellow
-        colors[12] = wxColour(0, 0, 255);                        // bold blue
-        colors[13] = wxColour(255, 255, 0);                       // bold magenta
-        colors[14] = wxColour(0, 255, 255);                       // bold cyan
-        colors[15] = wxColour(0, 0, 0);                      // bold white (background for selection)
-#endif
-    }
+    // remaining, free colours
+    colors[13] = wxColour(255, 255, 0);
+    colors[14] = wxColour(0, 255, 255);
+    colors[15] = wxColour(0, 0, 0);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1033,49 +1027,71 @@ wxTerm::OnChar(wxKeyEvent& event)
         else if (keyCode == WXK_LEFT)
         {
             GTerm::resetAutoComp();
-            GTerm::cursor_left();
-            GTerm::update_changes();
-            Refresh();
+            if (GTerm::cursor_left())
+            {
+                GTerm::update_changes();
+                Refresh();
+            }
             return;
         }
         else if (keyCode == WXK_RIGHT)
         {
             GTerm::resetAutoComp();
-            GTerm::cursor_right();
-            GTerm::update_changes();
-            Refresh();
+            if (GTerm::cursor_right())
+            {
+                GTerm::update_changes();
+                Refresh();
+            }
             return;
         }
         else if (keyCode == WXK_UP)
         {
             GTerm::resetAutoComp();
-            GTerm::cursor_up();
-            GTerm::update_changes();
-            Refresh();
+            if (GTerm::cursor_up())
+            {
+                GTerm::update_changes();
+                Refresh();
+            }
             return;
         }
         else if (keyCode == WXK_DOWN)
         {
             GTerm::resetAutoComp();
-            GTerm::cursor_down();
-            GTerm::update_changes();
-            Refresh();
+            if (GTerm::cursor_down())
+            {
+                GTerm::update_changes();
+                Refresh();
+            }
             return;
         }
         else if (keyCode == WXK_HOME)
         {
             GTerm::resetAutoComp();
-            GTerm::home();
-            GTerm::update_changes();
-            Refresh();
+            if (GTerm::home())
+            {
+                GTerm::update_changes();
+                Refresh();
+            }
             return;
         }
         else if (keyCode == WXK_END)
         {
             GTerm::resetAutoComp();
-            GTerm::end();
-            GTerm::update_changes();
-            Refresh();
+            if (GTerm::end())
+            {
+                GTerm::update_changes();
+                Refresh();
+            }
+            return;
+        }
+        else if (keyCode == WXK_DELETE)
+        {
+            GTerm::resetAutoComp();
+            if (GTerm::del())
+            {
+                GTerm::update_changes();
+                Refresh();
+            }
             return;
         }
         GTerm::resetAutoComp();
@@ -1988,6 +2004,20 @@ void wxTerm::UpdateSize()
         delete dc;
         m_curDC = 0;
     }
+}
+
+void wxTerm::UpdateColors()
+{
+    GetDefColors(m_vt_colors);
+
+    m_colors = m_vt_colors;
+
+    SetBackgroundColour(m_colors[0]);
+
+    for (int i = 0; i < 16; i++)
+        m_vt_colorPens[i] = wxPen(m_vt_colors[i], 1, wxSOLID);
+
+    m_colorPens = m_vt_colorPens;
 }
 
 //////////////////////////////////////////////////////////////////////////////

@@ -151,6 +151,7 @@ void GTerm::normal_input()
                 else if ((int)(colors[j]-'0') == NumeReSyntax::SYNTAX_FUNCTION
                     || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_CONSTANT
                     || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_SPECIALVAL
+                    || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_METHODS
                     || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_PROCEDURE)
                     tm.SetColorAdjusted(cursor_y, j, calc_color((int)(colors[j]-'0'), bg_color, mode_flags | BOLD));
                 else
@@ -322,6 +323,7 @@ void GTerm::normal_output()
                 else if ((int)(colors[j]-'0') == NumeReSyntax::SYNTAX_FUNCTION
                     || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_CONSTANT
                     || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_SPECIALVAL
+                    || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_METHODS
                     || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_PROCEDURE)
                     tm.SetColorAdjusted(cursor_y, j, calc_color((int)(colors[j]-'0'), bg_color, mode_flags | BOLD));
                 else
@@ -469,6 +471,40 @@ bool GTerm::bs()
         else if ((int)(colors[j]-'0') == NumeReSyntax::SYNTAX_FUNCTION
             || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_CONSTANT
             || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_SPECIALVAL
+            || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_METHODS
+            || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_PROCEDURE)
+            tm.SetColorAdjusted(cursor_y, j, calc_color((int)(colors[j]-'0'), bg_color, mode_flags | BOLD));
+        else
+            tm.SetColorAdjusted(cursor_y, j, calc_color((int)(colors[j]-'0'), bg_color, mode_flags));
+    }
+
+    changed_line(cursor_y, cursor_x-1, cursor_x+1);
+    return true;
+}
+
+bool GTerm::del()
+{
+    if (mode_flags & DESTRUCTBS && cursor_x > 0 && tm.IsEditable(cursor_y, cursor_x) && tm.IsEditable(cursor_y, cursor_x+1))
+    {
+        clear_area(cursor_x, cursor_y, cursor_x+1, cursor_y);
+        /*if (!tm.IsEditable(cursor_y, cursor_x+1))
+            tm.UnsetEditable(cursor_y, cursor_x);*/
+    }
+    else
+        return false;
+
+    string sLine = tm.GetLineAdjusted(cursor_y);
+
+    string colors = _syntax.highlightLine(sLine);
+
+    for (unsigned int j = 0; j < colors.length(); j++)
+    {
+        if ((int)(colors[j]-'0') == NumeReSyntax::SYNTAX_COMMAND)
+            tm.SetColorAdjusted(cursor_y, j, calc_color((int)(colors[j]-'0'), bg_color, mode_flags | BOLD | UNDERLINE));
+        else if ((int)(colors[j]-'0') == NumeReSyntax::SYNTAX_FUNCTION
+            || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_CONSTANT
+            || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_SPECIALVAL
+            || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_METHODS
             || (int)(colors[j]-'0') == NumeReSyntax::SYNTAX_PROCEDURE)
             tm.SetColorAdjusted(cursor_y, j, calc_color((int)(colors[j]-'0'), bg_color, mode_flags | BOLD));
         else
@@ -587,10 +623,10 @@ void GTerm::param_digit()
 void GTerm::next_param() { nparam++;
 }
 
-void GTerm::cursor_left()
+bool GTerm::cursor_left()
 {
     if (!cursor_x || !tm.IsEditable(cursor_y, cursor_x-1))
-        return;
+        return false;
     int n, x;
 
     n = param[0];
@@ -604,12 +640,13 @@ void GTerm::cursor_left()
         x = 0;
 
     move_cursor(x, cursor_y);
+    return true;
 }
 
-void GTerm::cursor_right()
+bool GTerm::cursor_right()
 {
     if (cursor_x+1 >= width || !tm.IsEditable(cursor_y, cursor_x+1))
-        return;
+        return false;
     int n, x;
 
     n = param[0];
@@ -623,9 +660,10 @@ void GTerm::cursor_right()
         x = width - 1;
 
     move_cursor(x, cursor_y);
+    return true;
 }
 
-void GTerm::cursor_up()
+bool GTerm::cursor_up()
 {
     if (!tm.IsEditable(cursor_y-1, cursor_x))
     {
@@ -636,8 +674,9 @@ void GTerm::cursor_up()
             sInput_Data = sHistory;
             data_len = sHistory.length();
             normal_input();
+            return true;
         }
-        return;
+        return false;
     }
 
     int n, y;
@@ -653,9 +692,10 @@ void GTerm::cursor_up()
         y = 0;
 
     move_cursor(cursor_x, y);
+    return true;
 }
 
-void GTerm::cursor_down()
+bool GTerm::cursor_down()
 {
     if (!tm.IsEditable(cursor_y+1, cursor_x))
     {
@@ -666,8 +706,9 @@ void GTerm::cursor_down()
             sInput_Data = sHistory;
             data_len = sHistory.length();
             normal_input();
+            return true;
         }
-        return;
+        return false;
     }
     int n, y;
 
@@ -682,22 +723,29 @@ void GTerm::cursor_down()
         y = height - 1;
 
     move_cursor(cursor_x, y);
+    return true;
 }
 
-void GTerm::home()
+bool GTerm::home()
 {
     int n = cursor_x;
     while (tm.IsEditable(cursor_y, n-1))
         n--;
+    if (n == cursor_x)
+        return false;
     move_cursor(n, cursor_y);
+    return true;
 }
 
-void GTerm::end()
+bool GTerm::end()
 {
     int n = cursor_x;
     while (tm.IsEditable(cursor_y, n+1))
         n++;
+    if (n == cursor_x)
+        return false;
     move_cursor(n, cursor_y);
+    return true;
 }
 
 void GTerm::cursor_position()
