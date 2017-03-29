@@ -39,6 +39,9 @@
 #define HIGHLIGHT_STRIKETHROUGH 28
 #define HIGHLIGHT_MATCHING_BLOCK 29
 #define HIGHLIGHT_NOT_MATCHING_BLOCK 30
+#define ANNOTATION_NOTE 22
+#define ANNOTATION_WARN 23
+#define ANNOTATION_ERROR 24
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -69,6 +72,7 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
 	EVT_MENU			(ID_FIND_PROCEDURE, NumeReEditor::OnFindProcedure)
 	EVT_MENU            (ID_UPPERCASE, NumeReEditor::OnChangeCase)
 	EVT_MENU            (ID_LOWERCASE, NumeReEditor::OnChangeCase)
+	EVT_MENU            (ID_HELP_ON_ITEM, NumeReEditor::OnHelpOnSelection)
 	//EVT_COMPILER_END	(ChameleonEditor::OnCompilerEnded)
 	EVT_MENU			(ID_DEBUG_RUNTOCURSOR, NumeReEditor::OnRunToCursor)
 END_EVENT_TABLE()
@@ -156,6 +160,7 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 	this->RegisterImage(NumeReSyntax::SYNTAX_CONSTANT, wxBitmap(f.GetPath(true)+"icons\\cnst.png", wxBITMAP_TYPE_PNG));
 	this->RegisterImage(NumeReSyntax::SYNTAX_SPECIALVAL, wxBitmap(f.GetPath(true)+"icons\\spv.png", wxBITMAP_TYPE_PNG));
 	this->RegisterImage(NumeReSyntax::SYNTAX_OPERATOR, wxBitmap(f.GetPath(true)+"icons\\opr.png", wxBITMAP_TYPE_PNG));
+	this->RegisterImage(NumeReSyntax::SYNTAX_METHODS, wxBitmap(f.GetPath(true)+"icons\\mthd.png", wxBITMAP_TYPE_PNG));
 
     //wxFont font(10, wxMODERN, wxNORMAL, wxNORMAL);
     wxFont font;
@@ -249,6 +254,7 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 	//m_menuAddWatch = m_popupMenu.Append(ID_DEBUG_WATCH_SELECTION, "Watch selection");
 	m_menuFindProcedure = m_popupMenu.Append(ID_FIND_PROCEDURE, _guilang.get("GUI_MENU_EDITOR_FINDPROC", "$procedure"));
 	m_menuShowValue = m_popupMenu.Append(ID_DEBUG_DISPLAY_SELECTION, _guilang.get("GUI_MENU_EDITOR_HIGHLIGHT", "selection"));
+	m_menuHelpOnSelection = m_popupMenu.Append(ID_HELP_ON_ITEM, _guilang.get("GUI_TREE_PUP_HELPONITEM", "..."));
 	m_popupMenu.AppendSeparator();
 	m_popupMenu.Append(ID_UPPERCASE, _guilang.get("GUI_MENU_EDITOR_UPPERCASE"));
 	m_popupMenu.Append(ID_LOWERCASE, _guilang.get("GUI_MENU_EDITOR_LOWERCASE"));
@@ -717,6 +723,7 @@ void NumeReEditor::OnKeyRel(wxKeyEvent &event)
     MakeBraceCheck();
     MakeBlockCheck();
     event.Skip();
+    AnalyseCode();
     //OnKeyUp(event);
 }
 
@@ -963,8 +970,12 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
         wxString proc = FindMarkedProcedure(charpos);
         if (!proc.length())
             return;
-        this->CallTipShow(charpos, _guilang.get("GUI_EDITOR_CALLTIP_PROC1") + " " + m_clickedProcedure+"(...)\n" + _guilang.get("GUI_EDITOR_CALLTIP_PROC2"));
-        this->CallTipSetHighlight(_guilang.get("GUI_EDITOR_CALLTIP_PROC1").length()+1,6+m_clickedProcedure.length()+_guilang.get("GUI_EDITOR_CALLTIP_PROC1").length());
+        wxString procdef = FindProcedureDefinition();
+        if (!procdef.length())
+            procdef = m_clickedProcedure+"(...)";
+
+        this->CallTipShow(charpos, _guilang.get("GUI_EDITOR_CALLTIP_PROC1") + " " + procdef + "\n" + _guilang.get("GUI_EDITOR_CALLTIP_PROC2"));
+        this->CallTipSetHighlight(_guilang.get("GUI_EDITOR_CALLTIP_PROC1").length()+1,1+procdef.length()+_guilang.get("GUI_EDITOR_CALLTIP_PROC1").length());
     }
     else if (this->GetStyleAt(charpos) == wxSTC_NSCR_OPTION || this->GetStyleAt(charpos) == wxSTC_NPRC_OPTION)
     {
@@ -974,6 +985,15 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
             highlightlength = selection.find(' ');
         this->CallTipShow(charpos, "Option: " + selection);
         this->CallTipSetHighlight(8,8+highlightlength);
+    }
+    else if (this->GetStyleAt(charpos) == wxSTC_NSCR_METHOD || this->GetStyleAt(charpos) == wxSTC_NPRC_METHOD)
+    {
+        selection = "STRINGVAR." + _guilang.get("PARSERFUNCS_LISTFUNC_METHOD_"+toUpperCase(selection.ToStdString())+"_*");
+        size_t highlightlength;
+        if (selection.find(' ') != string::npos)
+            highlightlength = selection.find(' ');
+        this->CallTipShow(charpos, addLinebreaks(realignLangString(selection.ToStdString(), highlightlength)));
+        this->CallTipSetHighlight(10,highlightlength);
     }
     else if (this->GetStyleAt(charpos) == wxSTC_NSCR_PREDEFS || this->GetStyleAt(charpos) == wxSTC_NPRC_PREDEFS)
     {
@@ -1209,6 +1229,427 @@ void NumeReEditor::UnfoldAll()
     }
 }
 
+void NumeReEditor::AnalyseCode()
+{
+    this->AnnotationClearAll();
+    if (!getEditorSetting(SETTING_USEANALYZER) || (m_fileType != FILE_NSCR && m_fileType != FILE_NPRC))
+        return;
+    this->AnnotationSetVisible(wxSTC_ANNOTATION_BOXED);
+    this->StyleSetBackground(ANNOTATION_NOTE, wxColour(230,230,230));
+    this->StyleSetForeground(ANNOTATION_NOTE, wxColour(120,120,120));
+    this->StyleSetSize(ANNOTATION_NOTE, this->StyleGetSize(0)-2);
+    this->StyleSetItalic(ANNOTATION_NOTE, true);
+    this->StyleSetBackground(ANNOTATION_WARN, wxColour(255,255,220));
+    this->StyleSetForeground(ANNOTATION_WARN, wxColour(160,160,0));
+    this->StyleSetSize(ANNOTATION_WARN, this->StyleGetSize(0)-2);
+    this->StyleSetItalic(ANNOTATION_WARN, true);
+    this->StyleSetBackground(ANNOTATION_ERROR, wxColour(255,200,200));
+    this->StyleSetForeground(ANNOTATION_ERROR, wxColour(170,0,0));
+    this->StyleSetSize(ANNOTATION_ERROR, this->StyleGetSize(0)-2);
+    this->StyleSetItalic(ANNOTATION_ERROR, true);
+    int wordstart, wordend, currentLine = 0;
+    bool canContinue = false;
+    string sCurrentLine = "";
+    string sStyles = "";
+    string sNote = _guilang.get("GUI_ANALYZER_NOTE");
+    string sWarn = _guilang.get("GUI_ANALYZER_WARN");
+    string sError = _guilang.get("GUI_ANALYZER_ERROR");
+    for (int i = 0; i < this->GetLastPosition(); i++)
+    {
+        if (this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_LINE || this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_BLOCK)
+            continue;
+        // catch constant expressions
+        if (currentLine < this->LineFromPosition(i))
+        {
+            string sLine = this->GetLine(currentLine).ToStdString();
+            StripSpaces(sLine);
+            if (sLine.length() && sLine.find_first_not_of("\n\r\t") != string::npos && sLine.find_first_not_of("0123456789+-*/.,^(){} \t\r\n") == string::npos)
+                addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sLine.substr(0,sLine.find_last_not_of("0123456789+-*/.,^()")), sWarn, _guilang.get("GUI_ANALYZER_CONSTEXPR")), ANNOTATION_WARN);
+            if (sCurrentLine.length())
+            {
+                this->AnnotationSetText(currentLine, sCurrentLine);
+                this->AnnotationSetStyles(currentLine, sStyles);
+            }
+            currentLine = this->LineFromPosition(i);
+            sCurrentLine = "";
+            sStyles = "";
+        }
+        if (this->GetStyleAt(i) == wxSTC_NSCR_COMMAND
+            || this->GetStyleAt(i) == wxSTC_NSCR_PROCEDURE_COMMANDS)
+        {
+            canContinue = false;
+            wordstart = this->WordStartPosition(i, true);
+            wordend = this->WordEndPosition(i, true);
+            string sSyntaxElement = this->GetTextRange(wordstart, wordend).ToStdString();
+
+            // add a message to "throw"
+            if (sSyntaxElement == "throw")
+            {
+                for (int j = wordend; j < this->GetLineEndPosition(currentLine); j++)
+                {
+                    if (this->GetStyleAt(j) == wxSTC_NSCR_STRING || this->GetStyleAt(j) == wxSTC_NSCR_STRING_PARSER)
+                    {
+                        canContinue = true;
+                        break;
+                    }
+                }
+                if (!canContinue)
+                {
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_THROW_ADDMESSAGE")) , ANNOTATION_NOTE);
+                }
+            }
+            if (sSyntaxElement == "namespace")
+            {
+                string sArgs = this->GetTextRange(wordend, this->GetLineEndPosition(currentLine)).ToStdString();
+                while (sArgs.back() == '\r' || sArgs.back() == '\n')
+                    sArgs.pop_back();
+                StripSpaces(sArgs);
+                if (!sArgs.length())
+                {
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_NAMESPACE_ALWAYSMAIN")) , ANNOTATION_WARN);
+                }
+            }
+            if (sSyntaxElement == "progress")
+            {
+                addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_PROGRESS_RUNTIME")), ANNOTATION_NOTE);
+            }
+            if (sSyntaxElement == "install" || sSyntaxElement == "uninstall" || sSyntaxElement == "start")
+            {
+                addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_NOTALLOWED")), ANNOTATION_ERROR);
+            }
+            if (sSyntaxElement == "clear" || sSyntaxElement == "delete" || sSyntaxElement == "remove")
+            {
+                string sArgs = this->GetTextRange(wordend, this->GetLineEndPosition(currentLine)).ToStdString();
+                while (sArgs.back() == '\r' || sArgs.back() == '\n')
+                    sArgs.pop_back();
+                if (!matchParams(sArgs, "ignore") && !matchParams(sArgs, "i"))
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_APPENDIGNORE")), ANNOTATION_NOTE);
+            }
+            if (sSyntaxElement != "hline"
+                && sSyntaxElement != "continue"
+                && sSyntaxElement != "break"
+                && sSyntaxElement != "else"
+                && sSyntaxElement != "endif"
+                && sSyntaxElement != "endfor"
+                && sSyntaxElement != "endwhile"
+                && sSyntaxElement != "endprocedure"
+                && sSyntaxElement != "endcompose"
+                && sSyntaxElement != "about"
+                && sSyntaxElement != "abort"
+                && sSyntaxElement != "compose"
+                && sSyntaxElement != "help"
+                && sSyntaxElement != "quit"
+                && sSyntaxElement != "return"
+                && sSyntaxElement != "subplot"
+                && sSyntaxElement != "throw"
+                && sSyntaxElement != "namespace" //warning
+                )
+            {
+                canContinue = false;
+                string sArgs = this->GetTextRange(wordend, this->GetLineEndPosition(currentLine)).ToStdString();
+                while (sArgs.back() == '\r' || sArgs.back() == '\n')
+                    sArgs.pop_back();
+                StripSpaces(sArgs);
+                if (!sArgs.length())
+                {
+                    // is used as a parameter (legacy)
+                    for (int j = wordstart; j >= PositionFromLine(currentLine); j--)
+                    {
+                        if (GetCharAt(j) == '-')
+                            canContinue = true;
+                    }
+                    if (!canContinue)
+                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_EMPTYEXPRESSION")), ANNOTATION_ERROR);
+                }
+            }
+            if (sSyntaxElement == "zeroes"
+                || sSyntaxElement == "extrema"
+                || sSyntaxElement == "integrate"
+                || sSyntaxElement == "eval"
+                || sSyntaxElement == "get"
+                || sSyntaxElement == "read"
+                || sSyntaxElement == "pulse"
+                || sSyntaxElement == "diff")
+            {
+                canContinue = false;
+                for (int j = PositionFromLine(currentLine); j < wordstart; j++)
+                {
+                    if (GetCharAt(j) == '=')
+                    {
+                        canContinue = true;
+                        break;
+                    }
+                }
+                if (!canContinue)
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_NOTE);
+            }
+            if (sSyntaxElement == "if" || sSyntaxElement == "elseif")
+            {
+                for (int j = wordend; j < this->GetLineEndPosition(currentLine); j++)
+                {
+                    if (this->GetCharAt(j) == '(')
+                    {
+                        int nPos = this->BraceMatch(j);
+                        if (nPos < 0)
+                        {
+                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+                            break;
+                        }
+                        string sArgument = this->GetTextRange(j+1,nPos).ToStdString();
+                        StripSpaces(sArgument);
+                        if (!sArgument.length())
+                        {
+                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
+                            break;
+                        }
+                        if (sArgument == "true" || (sArgument.find_first_not_of("1234567890") == string::npos && sArgument != "0"))
+                        {
+                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_IF_ALWAYSTRUE")), ANNOTATION_NOTE);
+                        }
+                        else if (sArgument == "false" || sArgument == "0")
+                        {
+                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_IF_ALWAYSFALSE")), ANNOTATION_NOTE);
+                        }
+                        else if (containsAssignment(sArgument))
+                        {
+                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_ASSIGNMENTINARGUMENT")), ANNOTATION_WARN);
+                        }
+                        break;
+                    }
+                }
+                if (sSyntaxElement == "if")
+                {
+                    for (int line = currentLine; line <= LineFromPosition(GetLastPosition()); line++)
+                    {
+                        if (this->GetLine(line).find("endif") != string::npos)
+                        {
+                            if (line - currentLine < 5)
+                            {
+                                canContinue = false;
+                                for (int pos = wordend; pos <= GetLineEndPosition(line); pos++)
+                                {
+                                    if (this->GetStyleAt(pos) == wxSTC_NSCR_COMMAND
+                                        && this->GetTextRange(WordStartPosition(pos, true), WordEndPosition(pos, true)) != "if"
+                                        && this->GetTextRange(WordStartPosition(pos, true), WordEndPosition(pos, true)) != "else"
+                                        && this->GetTextRange(WordStartPosition(pos, true), WordEndPosition(pos, true)) != "endif")
+                                    {
+                                        canContinue = true;
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        pos = WordEndPosition(pos, true);
+                                    }
+                                }
+                                if (!canContinue)
+                                {
+                                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_USEINLINEIF")), ANNOTATION_NOTE);
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            if (sSyntaxElement == "while")
+            {
+                for (int j = wordend; j < this->GetLineEndPosition(currentLine); j++)
+                {
+                    if (this->GetCharAt(j) == '(')
+                    {
+                        int nPos = this->BraceMatch(j);
+                        if (nPos < 0)
+                        {
+                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+                            break;
+                        }
+                        string sArgument = this->GetTextRange(j+1,nPos).ToStdString();
+                        StripSpaces(sArgument);
+                        if (!sArgument.length())
+                        {
+                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
+                            break;
+                        }
+                        if (sArgument == "true" || (sArgument.find_first_not_of("1234567890") == string::npos && sArgument != "0"))
+                        {
+                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_WHILE_ALWAYSTRUE")), ANNOTATION_WARN);
+                        }
+                        else if (sArgument == "false" || sArgument == "0")
+                        {
+                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_WHILE_ALWAYSFALSE")), ANNOTATION_NOTE);
+                        }
+                        else if (containsAssignment(sArgument))
+                        {
+                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_ASSIGNMENTINARGUMENT")), ANNOTATION_WARN);
+                        }
+                        break;
+                    }
+                }
+            }
+            if (sSyntaxElement == "for")
+            {
+                for (int j = wordend; j < this->GetLineEndPosition(currentLine); j++)
+                {
+                    if (this->GetCharAt(j) == '(')
+                    {
+                        int nPos = this->BraceMatch(j);
+                        if (nPos < 0)
+                        {
+                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+                            break;
+                        }
+                        string sArgument = this->GetTextRange(j+1,nPos).ToStdString();
+                        StripSpaces(sArgument);
+                        if (!sArgument.length())
+                        {
+                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
+                            break;
+                        }
+                        if (sArgument.find(':') == string::npos || sArgument.find('=') == string::npos)
+                        {
+                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_FOR_INTERVALERROR")), ANNOTATION_ERROR);
+                        }
+                        break;
+                    }
+                }
+            }
+            if (m_fileType == FILE_NPRC && (sSyntaxElement == "var" || sSyntaxElement == "str"))
+            {
+                int nNextLine = this->GetLineEndPosition(currentLine)+1;
+                int nProcedureEnd = this->FindText(nNextLine, this->GetLastPosition(), "endprocedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD);
+                string sArgs = this->GetTextRange(wordend, this->GetLineEndPosition(currentLine)).ToStdString();
+                while (sArgs.back() == '\r' || sArgs.back() == '\n')
+                    sArgs.pop_back();
+                StripSpaces(sArgs);
+                if (nProcedureEnd == -1)
+                {
+                    nProcedureEnd = this->GetLastPosition();
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
+                }
+
+                if (sArgs.length())
+                {
+                    string currentArg = "";
+                    while (getNextArgument(sArgs, false).length())
+                    {
+                        currentArg = getNextArgument(sArgs, true);
+                        if (currentArg.find('=') != string::npos)
+                            currentArg.erase(currentArg.find('='));
+                        StripSpaces(currentArg);
+                        if (this->FindText(nNextLine, nProcedureEnd, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) == -1)
+                        {
+                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_UNUSEDVARIABLE", currentArg)), ANNOTATION_WARN);
+                        }
+                    }
+                }
+                else
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_NOVARIABLES")), ANNOTATION_ERROR);
+            }
+            if (m_fileType == FILE_NPRC && sSyntaxElement == "procedure")
+            {
+                int nProcedureEnd = this->FindText(i, this->GetLastPosition(), "endprocedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD);
+                if (nProcedureEnd == -1)
+                {
+                    nProcedureEnd = this->GetLastPosition();
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
+                }
+                else
+                {
+                    for (int line = currentLine; line <= LineFromPosition(GetLastPosition()); line++)
+                    {
+                        if (this->GetLine(line).find("endprocedure") != string::npos)
+                        {
+                            if (line - currentLine < 5)
+                            {
+                                addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_INLINING")), ANNOTATION_WARN);
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            if (m_fileType == FILE_NPRC && sSyntaxElement == "return")
+            {
+                int nProcedureEnd = this->FindText(i, this->GetLastPosition(), "endprocedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD);
+                string sArgs = this->GetTextRange(wordend, this->GetLineEndPosition(currentLine)).ToStdString();
+                while (sArgs.back() == '\r' || sArgs.back() == '\n')
+                    sArgs.pop_back();
+                StripSpaces(sArgs);
+                if (nProcedureEnd == -1)
+                {
+                    nProcedureEnd = this->GetLastPosition();
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
+                }
+                if (sArgs.length())
+                {
+                    if (sArgs.back() != ';' && sArgs != "void")
+                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_RETURN_ADDSEMICOLON")), ANNOTATION_NOTE);
+                }
+                else
+                {
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_RETURN_ALWAYSTRUE")), ANNOTATION_NOTE);
+                }
+            }
+            i = wordend;
+        }
+        else if (this->GetStyleAt(i) == wxSTC_NSCR_FUNCTION || this->GetStyleAt(i) == wxSTC_NSCR_METHOD)
+        {
+            canContinue = false;
+            wordstart = this->WordStartPosition(i, true);
+            wordend = this->WordEndPosition(i, true);
+            string sSyntaxElement = this->GetTextRange(wordstart, wordend).ToStdString() + "()";
+            if (sSyntaxElement == "len()")
+                sSyntaxElement = "len";
+            if (this->GetStyleAt(i) == wxSTC_NSCR_METHOD)
+                sSyntaxElement.insert(0, "VAR.");
+            if (this->PositionFromLine(currentLine) == wordstart)
+            {
+                addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_NOTE);
+            }
+            else
+            {
+                for (int j = PositionFromLine(currentLine); j < wordstart; j++)
+                {
+                    if (GetCharAt(j) == '=' || this->GetStyleAt(j) == wxSTC_NSCR_COMMAND || this->GetStyleAt(j) == wxSTC_NSCR_PROCEDURE_COMMANDS || this->GetStyleAt(j) == wxSTC_NSCR_PROCEDURES)
+                    {
+                        canContinue = true;
+                        break;
+                    }
+                }
+                if (!canContinue)
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_NOTE);
+            }
+            if (this->BraceMatch(wordend) < 0 && sSyntaxElement != "VAR.len")
+            {
+                addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+            }
+            else if (sSyntaxElement != "time()" && sSyntaxElement != "version()" && sSyntaxElement != "VAR.len")
+            {
+                int nPos = this->BraceMatch(wordend);
+                string sArgument = this->GetTextRange(wordend+1,nPos).ToStdString();
+                StripSpaces(sArgument);
+                if (!sArgument.length())
+                {
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
+                }
+            }
+            i = wordend;
+        }
+        else if (this->GetStyleAt(i) == wxSTC_NSCR_PROCEDURES)
+        {
+            wordend = this->WordEndPosition(i, true);
+            string sSyntaxElement = FindMarkedProcedure(i).ToStdString();
+            if (!sSyntaxElement.length())
+                continue;
+            wordend += sSyntaxElement.length();
+            if (!FindProcedureDefinition().length())
+            {
+                addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_PROCEDURENOTFOUND")), ANNOTATION_ERROR);
+            }
+            i = wordend;
+        }
+    }
+}
 
 void NumeReEditor::removeWhiteSpaces(int nType)
 {
@@ -1331,6 +1772,7 @@ void NumeReEditor::ToggleSettings(int _setting)
         }
     }
     UpdateSyntaxHighlighting();
+    AnalyseCode();
 }
 
 void NumeReEditor::getMatchingBrace(int nPos)
@@ -1587,28 +2029,24 @@ void ChameleonEditor::SetLocalFileNameAndPath(wxString path, wxString name)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void NumeReEditor::UpdateSyntaxHighlighting()
+void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
 {
 	wxString filename = GetFileNameAndPath();
 
 	FileFilterType filetype = m_project->GetFileType(filename);
 	if (m_fileType != filetype)
         m_fileType = filetype;
-    else if (m_fileType == FILE_NSCR
+    else if (!forceUpdate && (m_fileType == FILE_NSCR
         || m_fileType == FILE_NPRC
         || m_fileType == FILE_TEXSOURCE
-        || m_fileType == FILE_DATAFILES)
+        || m_fileType == FILE_DATAFILES))
         return;
 
 
-	if (filetype == FILE_NSCR)
-	{
-        m_fileType = FILE_NSCR;
-		this->SetLexer(wxSTC_LEX_NSCR);
-
-		this->SetProperty("fold", "1");
-		//this->SetProperty("fold.comment", "1");
-		this->SetFoldFlags(wxSTC_FOLDFLAG_LINEAFTER_CONTRACTED);
+    // make it for both: NSCR and NPRC
+    if (filetype == FILE_NSCR || filetype == FILE_NPRC)
+    {
+        this->SetFoldFlags(wxSTC_FOLDFLAG_LINEAFTER_CONTRACTED);
 
 		this->SetMarginType(MARGIN_FOLD, wxSTC_MARGIN_SYMBOL);
 		this->SetMarginWidth(MARGIN_FOLD, 15);
@@ -1616,14 +2054,6 @@ void NumeReEditor::UpdateSyntaxHighlighting()
 		this->SetMarginSensitive(MARGIN_FOLD, true);
 		this->StyleSetBackground(MARGIN_FOLD, wxColor(200, 200, 200) );
         this->SetMarginSensitive(MARGIN_FOLD, true);
-
-        //this->BraceBadLightIndicator(true, wxSTC_NSCR_DEFAULT);
-        //this->BraceHighlightIndicator(true, wxSTC_NSCR_COMMENT_LINE);
-
-        // Properties found from http://www.scintilla.org/SciTEDoc.html
-        //text->SetProperty (wxT("fold"),         wxT("1") );
-        //text->SetProperty (wxT("fold.comment"), wxT("1") );
-        //text->SetProperty (wxT("fold.compact"), wxT("1") );
 
         wxColor grey( 100, 100, 100 );
         this->MarkerDefine (wxSTC_MARKNUM_FOLDER, wxSTC_MARK_BOXPLUS);
@@ -1653,187 +2083,179 @@ void NumeReEditor::UpdateSyntaxHighlighting()
         this->MarkerDefine (wxSTC_MARKNUM_FOLDERTAIL,    wxSTC_MARK_LCORNER);
         this->MarkerSetForeground (wxSTC_MARKNUM_FOLDERTAIL, grey);
         this->MarkerSetBackground (wxSTC_MARKNUM_FOLDERTAIL, grey);
-
+    }
+	if (filetype == FILE_NSCR)
+	{
+        m_fileType = FILE_NSCR;
+		this->SetLexer(wxSTC_LEX_NSCR);
+		this->SetProperty("fold", "1");
         if (_syntax)
         {
             this->SetKeyWords(0, _syntax->getCommands());
             this->SetKeyWords(1, _syntax->getOptions());
             this->SetKeyWords(2, _syntax->getFunctions());
-            this->SetKeyWords(3, "x y z t");
-            this->SetKeyWords(4, _syntax->getConstants());
-            this->SetKeyWords(5, _syntax->getSpecial());
-            this->SetKeyWords(6, _syntax->getOperators());
-            this->SetKeyWords(7, _syntax->getNPRCCommands());
+            this->SetKeyWords(3, _syntax->getMethods());
+            this->SetKeyWords(4, "x y z t");
+            this->SetKeyWords(5, _syntax->getConstants());
+            this->SetKeyWords(6, _syntax->getSpecial());
+            this->SetKeyWords(7, _syntax->getOperators());
+            this->SetKeyWords(8, _syntax->getNPRCCommands());
         }
-		/*this->SetCaretLineVisible(true);
-		this->SetCaretLineBackground(wxColour(196,211,255));
-		this->SetIndentationGuides(true);*/
 
-		this->StyleSetForeground(wxSTC_NSCR_DEFAULT, wxColour(0,0,0));
-		this->StyleSetItalic(wxSTC_NSCR_DEFAULT, true);
+        for (int i = 0; i <= wxSTC_NSCR_PROCEDURE_COMMANDS; i++)
+        {
+            SyntaxStyles _style;
+            switch (i)
+            {
+                case wxSTC_NSCR_DEFAULT:
+                case wxSTC_NSCR_IDENTIFIER:
+                    _style = m_options->GetSyntaxStyle(Options::STANDARD);
+                    break;
+                case wxSTC_NSCR_NUMBERS:
+                    _style = m_options->GetSyntaxStyle(Options::NUMBER);
+                    break;
+                case wxSTC_NSCR_COMMENT_BLOCK:
+                case wxSTC_NSCR_COMMENT_LINE:
+                    _style = m_options->GetSyntaxStyle(Options::COMMENT);
+                    break;
+                case wxSTC_NSCR_COMMAND:
+                    _style = m_options->GetSyntaxStyle(Options::COMMAND);
+                    break;
+                case wxSTC_NSCR_OPTION:
+                    _style = m_options->GetSyntaxStyle(Options::OPTION);
+                    break;
+                case wxSTC_NSCR_CONSTANTS:
+                    _style = m_options->GetSyntaxStyle(Options::CONSTANT);
+                    break;
+                case wxSTC_NSCR_FUNCTION:
+                    _style = m_options->GetSyntaxStyle(Options::FUNCTION);
+                    break;
+                case wxSTC_NSCR_METHOD:
+                    _style = m_options->GetSyntaxStyle(Options::METHODS);
+                    break;
+                case wxSTC_NSCR_PREDEFS:
+                    _style = m_options->GetSyntaxStyle(Options::SPECIALVAL);
+                    break;
+                case wxSTC_NSCR_STRING:
+                    _style = m_options->GetSyntaxStyle(Options::STRING);
+                    break;
+                case wxSTC_NSCR_STRING_PARSER:
+                    _style = m_options->GetSyntaxStyle(Options::STRINGPARSER);
+                    break;
+                case wxSTC_NSCR_INCLUDES:
+                    _style = m_options->GetSyntaxStyle(Options::INCLUDES);
+                    break;
+                case wxSTC_NSCR_PROCEDURES:
+                    _style = m_options->GetSyntaxStyle(Options::PROCEDURE);
+                    break;
+                case wxSTC_NSCR_PROCEDURE_COMMANDS:
+                    _style = m_options->GetSyntaxStyle(Options::PROCEDURE_COMMAND);
+                    break;
+                case wxSTC_NSCR_INSTALL:
+                    _style = m_options->GetSyntaxStyle(Options::INSTALL);
+                    break;
+                case wxSTC_NSCR_DEFAULT_VARS:
+                    _style = m_options->GetSyntaxStyle(Options::DEFAULT_VARS);
+                    break;
+                case wxSTC_NSCR_CUSTOM_FUNCTION:
+                    _style = m_options->GetSyntaxStyle(Options::CUSTOM_FUNCTION);
+                    break;
+                case wxSTC_NSCR_OPERATORS:
+                case wxSTC_NSCR_OPERATOR_KEYWORDS:
+                    _style = m_options->GetSyntaxStyle(Options::OPERATOR);
+                    break;
+            }
 
-		this->StyleSetForeground(wxSTC_NSCR_IDENTIFIER, wxColour(0,0,0));
-		this->StyleSetItalic(wxSTC_NSCR_IDENTIFIER, true);
-
-		this->StyleSetForeground(wxSTC_NSCR_NUMBERS, wxColour(255,128,64));
-
-		this->StyleSetForeground(wxSTC_NSCR_COMMENT_LINE, wxColour(0,128,0));
-		this->StyleSetBackground(wxSTC_NSCR_COMMENT_LINE, wxColour(255,255,183));
-		this->StyleSetBold(wxSTC_NSCR_COMMENT_LINE, true);
-
-		this->StyleSetForeground(wxSTC_NSCR_COMMENT_BLOCK, wxColour(0,128,0));
-		this->StyleSetBackground(wxSTC_NSCR_COMMENT_BLOCK, wxColour(255,255,183));
-		this->StyleSetBold(wxSTC_NSCR_COMMENT_BLOCK, true);
-
-		this->StyleSetForeground(wxSTC_NSCR_COMMAND, wxColour(0, 128, 255));
-		this->StyleSetBold(wxSTC_NSCR_COMMAND, true);
-		this->StyleSetUnderline(wxSTC_NSCR_COMMAND, true);
-
-		this->StyleSetForeground(wxSTC_NSCR_OPTION, wxColour(0, 128, 128));
-		this->StyleSetBold(wxSTC_NSCR_OPTION, false);
-
-        this->StyleSetForeground(wxSTC_NSCR_CONSTANTS, wxColour(255, 0, 128));
-		this->StyleSetBold(wxSTC_NSCR_CONSTANTS, true);
-
-        this->StyleSetForeground(wxSTC_NSCR_FUNCTION, wxColour(0, 0, 255));
-		this->StyleSetBold(wxSTC_NSCR_FUNCTION, true);
-
-        this->StyleSetForeground(wxSTC_NSCR_PREDEFS, wxColour(0, 0, 0));
-		this->StyleSetBold(wxSTC_NSCR_PREDEFS, true);
-
-		this->StyleSetForeground(wxSTC_NSCR_STRING, wxColour(128,128,255));
-
-		this->StyleSetForeground(wxSTC_NSCR_STRING_PARSER, wxColour(0,128,192));
-		this->StyleSetBold(wxSTC_NSCR_STRING_PARSER, true);
-
-		this->StyleSetForeground(wxSTC_NSCR_INCLUDES, wxColour(128,0,0));
-		this->StyleSetBold(wxSTC_NSCR_INCLUDES, true);
-
-		this->StyleSetForeground(wxSTC_NSCR_PROCEDURES, wxColour(128,0,0));
-		this->StyleSetBold(wxSTC_NSCR_PROCEDURES, true);
-		this->StyleSetForeground(wxSTC_NSCR_PROCEDURE_COMMANDS, wxColour(128,0,0));
-		this->StyleSetBold(wxSTC_NSCR_PROCEDURE_COMMANDS, true);
-
-		this->StyleSetForeground(wxSTC_NSCR_INSTALL, wxColour(128,128,128));
-		this->StyleSetBold(wxSTC_NSCR_INSTALL, false);
-		this->StyleSetItalic(wxSTC_NSCR_INSTALL, false);
-
-        this->StyleSetForeground(wxSTC_NSCR_DEFAULT_VARS, wxColour(0, 0, 160));
-		this->StyleSetBold(wxSTC_NSCR_DEFAULT_VARS, true);
-		this->StyleSetItalic(wxSTC_NSCR_DEFAULT_VARS, true);
-
-        this->StyleSetForeground(wxSTC_NSCR_CUSTOM_FUNCTION, wxColour(0, 0, 160));
-
-        this->StyleSetForeground(wxSTC_NSCR_OPERATORS, wxColour(255, 0, 0));
-        this->StyleSetForeground(wxSTC_NSCR_OPERATOR_KEYWORDS, wxColour(255, 0, 0));
+            this->StyleSetForeground(i, _style.foreground);
+            this->StyleSetBackground(i, _style.background);
+            this->StyleSetBold(i, _style.bold);
+            this->StyleSetItalic(i, _style.italics);
+            this->StyleSetUnderline(i, _style.underline);
+        }
 	}
 	else if (filetype == FILE_NPRC)
 	{
+        m_fileType = FILE_NPRC;
 		this->SetLexer(wxSTC_LEX_NPRC);
-
 		this->SetProperty("fold", "1");
-		//this->SetProperty("fold.comment", "1");
-		this->SetFoldFlags(wxSTC_FOLDFLAG_LINEAFTER_CONTRACTED);
-
-		this->SetMarginType(MARGIN_FOLD, wxSTC_MARGIN_SYMBOL);
-		this->SetMarginWidth(MARGIN_FOLD, 15);
-		this->SetMarginMask(MARGIN_FOLD, wxSTC_MASK_FOLDERS);
-		this->SetMarginSensitive(MARGIN_FOLD, true);
-		this->StyleSetBackground(MARGIN_FOLD, wxColor(200, 200, 200) );
-        this->SetMarginSensitive(MARGIN_FOLD, true);
-
-        wxColor grey( 100, 100, 100 );
-        this->MarkerDefine (wxSTC_MARKNUM_FOLDER, wxSTC_MARK_BOXPLUS);
-        this->MarkerSetForeground (wxSTC_MARKNUM_FOLDER, "WHITE");
-        this->MarkerSetBackground (wxSTC_MARKNUM_FOLDER, grey);
-
-        this->MarkerDefine (wxSTC_MARKNUM_FOLDEROPEN,    wxSTC_MARK_BOXMINUS);
-        this->MarkerSetForeground (wxSTC_MARKNUM_FOLDEROPEN, "WHITE");
-        this->MarkerSetBackground (wxSTC_MARKNUM_FOLDEROPEN, grey);
-
-        this->MarkerDefine (wxSTC_MARKNUM_FOLDERSUB,     wxSTC_MARK_VLINE);
-        this->MarkerSetForeground (wxSTC_MARKNUM_FOLDERSUB, grey);
-        this->MarkerSetBackground (wxSTC_MARKNUM_FOLDERSUB, grey);
-
-        this->MarkerDefine (wxSTC_MARKNUM_FOLDEREND,     wxSTC_MARK_BOXPLUSCONNECTED);
-        this->MarkerSetForeground (wxSTC_MARKNUM_FOLDEREND, "WHITE");
-        this->MarkerSetBackground (wxSTC_MARKNUM_FOLDEREND, grey);
-
-        this->MarkerDefine (wxSTC_MARKNUM_FOLDEROPENMID, wxSTC_MARK_BOXMINUSCONNECTED);
-        this->MarkerSetForeground (wxSTC_MARKNUM_FOLDEROPENMID, "WHITE");
-        this->MarkerSetBackground (wxSTC_MARKNUM_FOLDEROPENMID, grey);
-
-        this->MarkerDefine (wxSTC_MARKNUM_FOLDERMIDTAIL, wxSTC_MARK_TCORNER);
-        this->MarkerSetForeground (wxSTC_MARKNUM_FOLDERMIDTAIL, grey);
-        this->MarkerSetBackground (wxSTC_MARKNUM_FOLDERMIDTAIL, grey);
-
-        this->MarkerDefine (wxSTC_MARKNUM_FOLDERTAIL,    wxSTC_MARK_LCORNER);
-        this->MarkerSetForeground (wxSTC_MARKNUM_FOLDERTAIL, grey);
-        this->MarkerSetBackground (wxSTC_MARKNUM_FOLDERTAIL, grey);
-
         if (_syntax)
         {
             this->SetKeyWords(0, _syntax->getCommands()+_syntax->getNPRCCommands());
             this->SetKeyWords(1, _syntax->getOptions());
             this->SetKeyWords(2, _syntax->getFunctions());
-            this->SetKeyWords(3, "x y z t");
-            this->SetKeyWords(4, _syntax->getConstants());
-            this->SetKeyWords(5, _syntax->getSpecial());
-            this->SetKeyWords(6, _syntax->getOperators());
+            this->SetKeyWords(3, _syntax->getMethods());
+            this->SetKeyWords(4, "x y z t");
+            this->SetKeyWords(5, _syntax->getConstants());
+            this->SetKeyWords(6, _syntax->getSpecial());
+            this->SetKeyWords(7, _syntax->getOperators());
         }
-		this->StyleSetForeground(wxSTC_NPRC_DEFAULT, wxColour(0,0,0));
-		this->StyleSetItalic(wxSTC_NPRC_DEFAULT, true);
 
-		this->StyleSetForeground(wxSTC_NPRC_IDENTIFIER, wxColour(0,0,0));
-		this->StyleSetItalic(wxSTC_NPRC_IDENTIFIER, true);
 
-		this->StyleSetForeground(wxSTC_NPRC_NUMBERS, wxColour(255,128,64));
+        for (int i = 0; i <= wxSTC_NPRC_FLAGS; i++)
+        {
+            SyntaxStyles _style;
+            switch (i)
+            {
+                case wxSTC_NPRC_DEFAULT:
+                case wxSTC_NPRC_IDENTIFIER:
+                    _style = m_options->GetSyntaxStyle(Options::STANDARD);
+                    break;
+                case wxSTC_NPRC_NUMBERS:
+                    _style = m_options->GetSyntaxStyle(Options::NUMBER);
+                    break;
+                case wxSTC_NPRC_COMMENT_BLOCK:
+                case wxSTC_NPRC_COMMENT_LINE:
+                    _style = m_options->GetSyntaxStyle(Options::COMMENT);
+                    break;
+                case wxSTC_NPRC_COMMAND:
+                    _style = m_options->GetSyntaxStyle(Options::COMMAND);
+                    break;
+                case wxSTC_NPRC_OPTION:
+                    _style = m_options->GetSyntaxStyle(Options::OPTION);
+                    break;
+                case wxSTC_NPRC_CONSTANTS:
+                    _style = m_options->GetSyntaxStyle(Options::CONSTANT);
+                    break;
+                case wxSTC_NPRC_FUNCTION:
+                    _style = m_options->GetSyntaxStyle(Options::FUNCTION);
+                    break;
+                case wxSTC_NPRC_METHOD:
+                    _style = m_options->GetSyntaxStyle(Options::METHODS);
+                    break;
+                case wxSTC_NPRC_PREDEFS:
+                    _style = m_options->GetSyntaxStyle(Options::SPECIALVAL);
+                    break;
+                case wxSTC_NPRC_STRING:
+                    _style = m_options->GetSyntaxStyle(Options::STRING);
+                    break;
+                case wxSTC_NPRC_STRING_PARSER:
+                    _style = m_options->GetSyntaxStyle(Options::STRINGPARSER);
+                    break;
+                case wxSTC_NPRC_INCLUDES:
+                    _style = m_options->GetSyntaxStyle(Options::INCLUDES);
+                    break;
+                case wxSTC_NPRC_PROCEDURES:
+                case wxSTC_NPRC_FLAGS:
+                    _style = m_options->GetSyntaxStyle(Options::PROCEDURE);
+                    break;
+                case wxSTC_NPRC_DEFAULT_VARS:
+                    _style = m_options->GetSyntaxStyle(Options::DEFAULT_VARS);
+                    break;
+                case wxSTC_NPRC_CUSTOM_FUNCTION:
+                    _style = m_options->GetSyntaxStyle(Options::CUSTOM_FUNCTION);
+                    break;
+                case wxSTC_NPRC_OPERATORS:
+                case wxSTC_NPRC_OPERATOR_KEYWORDS:
+                    _style = m_options->GetSyntaxStyle(Options::OPERATOR);
+                    break;
+            }
 
-		this->StyleSetForeground(wxSTC_NPRC_COMMENT_LINE, wxColour(0,128,0));
-		this->StyleSetBackground(wxSTC_NPRC_COMMENT_LINE, wxColour(255,255,183));
-		this->StyleSetBold(wxSTC_NPRC_COMMENT_LINE, true);
-
-		this->StyleSetForeground(wxSTC_NPRC_COMMENT_BLOCK, wxColour(0,128,0));
-		this->StyleSetBackground(wxSTC_NPRC_COMMENT_BLOCK, wxColour(255,255,183));
-		this->StyleSetBold(wxSTC_NPRC_COMMENT_BLOCK, true);
-
-		this->StyleSetForeground(wxSTC_NPRC_COMMAND, wxColour(0, 128, 255));
-		this->StyleSetBold(wxSTC_NPRC_COMMAND, true);
-		this->StyleSetUnderline(wxSTC_NPRC_COMMAND, true);
-
-		this->StyleSetForeground(wxSTC_NPRC_OPTION, wxColour(0, 128, 128));
-		this->StyleSetBold(wxSTC_NPRC_OPTION, false);
-
-        this->StyleSetForeground(wxSTC_NPRC_CONSTANTS, wxColour(255, 0, 128));
-		this->StyleSetBold(wxSTC_NPRC_CONSTANTS, true);
-
-        this->StyleSetForeground(wxSTC_NPRC_FUNCTION, wxColour(0, 0, 255));
-		this->StyleSetBold(wxSTC_NPRC_FUNCTION, true);
-
-        this->StyleSetForeground(wxSTC_NPRC_PREDEFS, wxColour(0, 0, 0));
-		this->StyleSetBold(wxSTC_NPRC_PREDEFS, true);
-
-		this->StyleSetForeground(wxSTC_NPRC_STRING, wxColour(128,128,255));
-
-		this->StyleSetForeground(wxSTC_NPRC_STRING_PARSER, wxColour(0,128,192));
-		this->StyleSetBold(wxSTC_NPRC_STRING_PARSER, true);
-
-		this->StyleSetForeground(wxSTC_NPRC_INCLUDES, wxColour(128,0,0));
-		this->StyleSetBold(wxSTC_NPRC_INCLUDES, true);
-
-		this->StyleSetForeground(wxSTC_NPRC_PROCEDURES, wxColour(128,0,0));
-		this->StyleSetBold(wxSTC_NPRC_PROCEDURES, true);
-		this->StyleSetForeground(wxSTC_NPRC_FLAGS, wxColour(128,0,0));
-		this->StyleSetBold(wxSTC_NPRC_FLAGS, true);
-
-        this->StyleSetForeground(wxSTC_NPRC_DEFAULT_VARS, wxColour(0, 0, 160));
-		this->StyleSetBold(wxSTC_NPRC_DEFAULT_VARS, true);
-		this->StyleSetItalic(wxSTC_NPRC_DEFAULT_VARS, true);
-
-        this->StyleSetForeground(wxSTC_NPRC_CUSTOM_FUNCTION, wxColour(0, 0, 160));
-
-        this->StyleSetForeground(wxSTC_NPRC_OPERATORS, wxColour(255, 0, 0));
-        this->StyleSetForeground(wxSTC_NPRC_OPERATOR_KEYWORDS, wxColour(255, 0, 0));
+            this->StyleSetForeground(i, _style.foreground);
+            this->StyleSetBackground(i, _style.background);
+            this->StyleSetBold(i, _style.bold);
+            this->StyleSetItalic(i, _style.italics);
+            this->StyleSetUnderline(i, _style.underline);
+        }
 	}
 	else if (filetype == FILE_TEXSOURCE)
 	{
@@ -2060,7 +2482,8 @@ wxString NumeReEditor::GetFilenameString()
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-wxFileName NumeReEditor::GetFileName() {
+wxFileName NumeReEditor::GetFileName()
+{
 	return m_fileNameAndPath;
 }
 
@@ -2142,6 +2565,11 @@ void NumeReEditor::OnRightClick(wxMouseEvent &event)
 		//m_popupMenu.Remove(ID_DEBUG_WATCH_SELECTION);
 		m_popupMenu.Remove(ID_FIND_PROCEDURE);
 	}
+	if(m_popupMenu.FindItem(ID_HELP_ON_ITEM) != nullptr)
+	{
+		//m_popupMenu.Remove(ID_DEBUG_WATCH_SELECTION);
+		m_popupMenu.Remove(ID_HELP_ON_ITEM);
+	}
 
 	/*if(isDebugging)
 	{
@@ -2186,6 +2614,11 @@ void NumeReEditor::OnRightClick(wxMouseEvent &event)
                     //m_popupMenu.Append(m_menuFindProcedure);
                     m_menuFindProcedure->SetItemLabel(_guilang.get("GUI_MENU_EDITOR_FINDPROC", clickedProc.ToStdString()));
                 }
+            }
+            if (this->GetStyleAt(charpos) == wxSTC_NSCR_COMMAND || this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURE_COMMANDS)
+            {
+                m_popupMenu.Insert(9, m_menuHelpOnSelection);
+                m_menuHelpOnSelection->SetItemLabel(_guilang.get("GUI_TREE_PUP_HELPONITEM", clickedWord.ToStdString()));
             }
 			//wxString watchWord = wxString::Format("Watch \"%s\"", clickedWord);
 			//wxString displayWord = wxString::Format("Display \"%s\"", clickedWord);
@@ -2272,8 +2705,7 @@ void NumeReEditor::OnAddBreakpoint(wxCommandEvent &event)
 	//int charpos = PositionFromPoint(m_lastRightClick);
 	int linenum = GetLineForBreakpointOperation(); //LineFromPosition(charpos);
 
-	AddBreakpoint(linenum);
-
+    AddBreakpoint(linenum);
 
 	ResetRightClickLocation();
 }
@@ -2593,6 +3025,116 @@ wxString NumeReEditor::FindMarkedProcedure(int charpos)
 	return clickedWord + "()";
 }
 
+wxString NumeReEditor::FindProcedureDefinition()
+{
+    if (!m_clickedProcedure.length())
+        return "";
+    vector<std::string> vPaths = m_terminal->getPathSettings();
+    wxString pathname = m_clickedProcedure;
+    wxString procedurename = pathname.substr(pathname.rfind('~')+1); // contains a "$", if it's not used for the "thisfile~" case
+    if (pathname.find("$this~") != string::npos)
+    {
+        wxString thispath = GetFileNameAndPath();
+        pathname.replace(pathname.find("$this~"), 6, thispath.substr(0,thispath.rfind('\\')+1));
+    }
+    else if (pathname.find("$thisfile~") != string::npos)
+    {
+        wxString procedureline;
+        int nminpos = 0;
+        int nmaxpos = GetLastPosition();
+        while (nminpos < nmaxpos && FindText(nminpos, nmaxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) != -1)
+        {
+            nminpos = FindText(nminpos, nmaxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) + 1;
+            procedureline = GetLine(LineFromPosition(nminpos));
+            if (procedureline.find("$"+procedurename) != string::npos && procedureline[procedureline.find_first_not_of(' ', procedureline.find("$"+procedurename)+procedurename.length()+1)] == '(')
+            {
+                return procedureline.substr(procedureline.find("$"+procedurename), procedureline.find(')', procedureline.find("$"+procedurename))+1-procedureline.find("$"+procedurename));
+            }
+        }
+    }
+    else
+    {
+        if (pathname.find("$main~") != string::npos)
+            pathname.erase(pathname.find("$main~")+1,5);
+        while (pathname.find('~') != string::npos)
+            pathname[pathname.find('~')] = '/';
+        if (pathname[0] == '$' && pathname.find(':') == string::npos)
+            pathname.replace(0,1,vPaths[5]+"/");
+        else if (pathname.find(':') == string::npos)
+            pathname.insert(0,vPaths[5]);
+        else // pathname.find(':') != string::npos
+        {
+            pathname = pathname.substr(pathname.find('\'')+1, pathname.rfind('\'')-pathname.find('\'')-1);
+        }
+    }
+
+    while (procedurename.find('\'') != string::npos)
+        procedurename.erase(procedurename.find('\''), 1);
+    if (procedurename.find('/') != string::npos)
+        procedurename = "$" + procedurename.substr(procedurename.rfind('/')+1);
+    if (procedurename.find('\\') != string::npos)
+        procedurename = "$" + procedurename.substr(procedurename.rfind('\\')+1);
+    if (procedurename[0] != '$')
+        procedurename.insert(0,1,'$');
+
+    if (!fileExists((pathname+".nprc").ToStdString()))
+    {
+        return "";
+    }
+    else
+    {
+        ifstream procedure_in;
+        string sProcCommandLine;
+        bool bBlockComment = false;
+        procedure_in.open((pathname+".nprc").c_str());
+        if (!procedure_in.good())
+            return "";
+        while (!procedure_in.eof())
+        {
+            getline(procedure_in, sProcCommandLine);
+            StripSpaces(sProcCommandLine);
+            if (!sProcCommandLine.length())
+                continue;
+            if (sProcCommandLine.substr(0,2) == "##")
+                continue;
+            if (sProcCommandLine.find("##") != string::npos)
+                sProcCommandLine = sProcCommandLine.substr(0, sProcCommandLine.find("##"));
+            if (sProcCommandLine.substr(0,2) == "#*" && sProcCommandLine.find("*#",2) == string::npos)
+            {
+                bBlockComment = true;
+                continue;
+            }
+            if (bBlockComment && sProcCommandLine.find("*#") != string::npos)
+            {
+                bBlockComment = false;
+                if (sProcCommandLine.find("*#") == sProcCommandLine.length()-2)
+                {
+                    continue;
+                }
+                else
+                    sProcCommandLine = sProcCommandLine.substr(sProcCommandLine.find("*#")+2);
+            }
+            else if (bBlockComment && sProcCommandLine.find("*#") == string::npos)
+            {
+                continue;
+            }
+            if (sProcCommandLine[0] != '@' && findCommand(sProcCommandLine).sString != "procedure")
+                continue;
+            else if (sProcCommandLine[0] == '@')
+                continue;
+            if (findCommand(sProcCommandLine).sString != "procedure")
+                continue;
+            if (sProcCommandLine.find(procedurename.ToStdString()) == string::npos || sProcCommandLine.find('(') == string::npos)
+                continue;
+            else
+            {
+                return sProcCommandLine.substr(sProcCommandLine.find(procedurename.ToStdString()), sProcCommandLine.find(')', sProcCommandLine.find(procedurename.ToStdString()))+1-sProcCommandLine.find(procedurename.ToStdString()));
+            }
+        }
+    }
+    return "";
+}
+
 wxString NumeReEditor::generateAutoCompList(const wxString& wordstart, string sPreDefList)
 {
     map<wxString,int> mAutoCompMap;
@@ -2715,6 +3257,11 @@ void NumeReEditor::OnDisplayVariable(wxCommandEvent &event)
 	// handled appropriately in the debugger.
 }
 
+void NumeReEditor::OnHelpOnSelection(wxCommandEvent& event)
+{
+    m_mainFrame->openHTML(m_terminal->getDocumentation(m_clickedWord.ToStdString()));
+}
+
 void NumeReEditor::OnFindProcedure(wxCommandEvent &event)
 {
     if (!m_clickedProcedure.length())
@@ -2751,10 +3298,14 @@ void NumeReEditor::OnFindProcedure(wxCommandEvent &event)
             pathname.erase(pathname.find("$main~")+1,5);
         while (pathname.find('~') != string::npos)
             pathname[pathname.find('~')] = '/';
-        if (pathname[0] == '$')
+        if (pathname[0] == '$' && pathname.find(':') == string::npos)
             pathname.replace(0,1,vPaths[5]+"/");
-        else
+        else if (pathname.find(':') == string::npos)
             pathname.insert(0,vPaths[5]);
+        else // pathname.find(':') != string::npos
+        {
+            pathname = pathname.substr(pathname.find('\'')+1, pathname.rfind('\'')-pathname.find('\'')-1);
+        }
     }
     wxArrayString pathnames;
     pathnames.Add(pathname+".nprc");
@@ -2851,11 +3402,23 @@ void NumeReEditor::OnMarginClick( wxStyledTextEvent &event )
 
 void NumeReEditor::AddBreakpoint( int linenum )
 {
-	int markerNum = this->MarkerAdd(linenum, MARKER_BREAKPOINT);
+    for (int i = this->PositionFromLine(linenum); i < this->GetLineEndPosition(linenum); i++)
+	{
+        if (this->GetStyleAt(i) != wxSTC_NSCR_COMMENT_BLOCK
+            && this->GetStyleAt(i) != wxSTC_NSCR_COMMENT_LINE
+            && this->GetCharAt(i) != '\r'
+            && this->GetCharAt(i) != '\n'
+            && this->GetCharAt(i) != ' '
+            && this->GetCharAt(i) != '\t')
+        {
+            int markerNum = this->MarkerAdd(linenum, MARKER_BREAKPOINT);
 
-	m_breakpoints.Add(markerNum);
-	CreateBreakpointEvent(linenum, true);
-	m_terminal->_guimessenger.addBreakpoint(GetFileNameAndPath().ToStdString(), linenum);
+            m_breakpoints.Add(markerNum);
+            CreateBreakpointEvent(linenum, true);
+            m_terminal->_guimessenger.addBreakpoint(GetFileNameAndPath().ToStdString(), linenum);
+            break;
+        }
+    }
 }
 
 bool NumeReEditor::BreakpointOnLine( int linenum )
@@ -2975,7 +3538,7 @@ string NumeReEditor::realignLangString(string sLine, size_t& lastpos)
     if (lastpos == string::npos)
         return sLine;
     size_t firstpos = sLine.find_first_not_of(' ', lastpos);
-    if (sLine.find(')') < lastpos)
+    if (sLine.find(')') < lastpos || sLine.find('.') < lastpos)
     {
         sLine.replace(lastpos, firstpos-lastpos, " -> ");
     }
@@ -3002,6 +3565,10 @@ string NumeReEditor::addLinebreaks(const string& sLine)
     /*unsigned int nIndentPos = sReturn.find("- ")+2;
     unsigned int nLastLineBreak = 0;
     for (unsigned int i = 0; i < sReturn.length(); i++)*/
+    while (sReturn.find("\\$") != string::npos)
+    {
+        sReturn.erase(sReturn.find("\\$"), 1);
+    }
     unsigned int nDescStart = sReturn.find("- ");
     unsigned int nIndentPos = 4;//
     unsigned int nLastLineBreak = 0;
@@ -3056,7 +3623,36 @@ string NumeReEditor::addLinebreaks(const string& sLine)
     return sReturn;
 }
 
+void NumeReEditor::addToAnnotation(string& sCurrentLine, string& sStyles, const string& sMessage, int nStyle)
+{
+    int chartoadd = 0;
+    if (sCurrentLine.length())
+    {
+        sCurrentLine += "\n";
+        chartoadd++;
+    }
+    sCurrentLine += sMessage;
+    chartoadd += countUmlauts(sMessage);
 
+    sStyles.append(sMessage.length()+chartoadd, nStyle);
+}
+
+bool NumeReEditor::containsAssignment(const string& sCurrentLine)
+{
+    if (sCurrentLine.find('=') == string::npos)
+        return false;
+    for (size_t i = 1; i < sCurrentLine.length()-1; i++)
+    {
+        if (sCurrentLine[i] == '='
+            && sCurrentLine[i-1] != '<'
+            && sCurrentLine[i-1] != '>'
+            && sCurrentLine[i-1] != '!'
+            && sCurrentLine[i-1] != '='
+            && sCurrentLine[i+1] != '=')
+            return true;
+    }
+    return false;
+}
 
 void NumeReEditor::ApplyAutoIndentation()
 {

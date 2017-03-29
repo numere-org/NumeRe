@@ -44,7 +44,7 @@ public:
 					const wxString& name = wxSTCNameStr);
 	~NumeReHistory();
 
-    void UpdateSyntaxHighlighting();
+    void UpdateSyntaxHighlighting(bool forceUpdate = false);
     void AddToHistory(const wxString& commandstring);
     void OnMarginClick(wxStyledTextEvent &event);
     void OnMouseDblClk(wxMouseEvent& event);

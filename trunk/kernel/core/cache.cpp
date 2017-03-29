@@ -4573,7 +4573,199 @@ string Cache::sumString(unsigned int i1, unsigned int i2, unsigned int nCol)
 }
 
 
+bool Cache::checkStringvarDelimiter(const string& sToken) const
+{
+    bool isDelimitedLeft = false;
+    bool isDelimitedRight = false;
+    string sDelimiter = "+-*/ ()={}^&|!<>,.\\%#~[]?:\";";
 
+    // --> Versuche jeden Delimiter, der dir bekannt ist und setze bei einem Treffer den entsprechenden BOOL auf TRUE <--
+    for (unsigned int i = 0; i < sDelimiter.length(); i++)
+    {
+        if (sDelimiter[i] == sToken[0] && sDelimiter[i] != '.')
+            isDelimitedLeft = true;
+        if (sDelimiter[i] == '(')
+            continue;
+        if (sDelimiter[i] == sToken[sToken.length()-1])
+            isDelimitedRight = true;
+    }
+
+    // --> Gib die Auswertung dieses logischen Ausdrucks zurueck <--
+    return (isDelimitedLeft && isDelimitedRight);
+}
+
+void Cache::replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const string& sVarValue)
+{
+    if (sLine[nPos+nLength] != '.')
+    {
+        sLine.replace(nPos, nLength, "\"" + sVarValue + "\"");
+        return;
+    }
+    string sDelimiter = "+-*/ ={^&|!,\\%#~?:\";";
+    string sMethod = "";
+    string sArgument = "";
+    size_t nFinalPos = 0;
+    for (size_t i = nPos+nLength+1; i < sLine.length(); i++)
+    {
+        if (sLine[i] == '(')
+        {
+            sMethod = sLine.substr(nPos+nLength+1, i-(nPos+nLength+1));
+            sArgument = sLine.substr(i, getMatchingParenthesis(sLine.substr(i))+1);
+            nFinalPos = i += getMatchingParenthesis(sLine.substr(i))+1;
+            break;
+        }
+        else if (sDelimiter.find(sLine[i]) != string::npos)
+        {
+            sMethod = sLine.substr(nPos+nLength+1, i-(nPos+nLength+1));
+            nFinalPos = i;
+            break;
+        }
+    }
+    if (!sArgument.length())
+        sArgument = "()";
+    if (sMethod == "len")
+    {
+        sLine.replace(nPos, nFinalPos-nPos, "strlen(\"" + sVarValue + "\")");
+    }
+    else if (sMethod == "at")
+    {
+        if (sArgument == "()")
+            sArgument = "(\"" + sVarValue + "\", 1)";
+        else
+            sArgument.insert(1, "\"" + sVarValue + "\", ");
+        sLine.replace(nPos, nFinalPos-nPos, "char" + sArgument);
+    }
+    else if (sMethod == "sub")
+    {
+        if (sArgument == "()")
+            sArgument = "(\"" + sVarValue + "\", 1)";
+        else
+            sArgument.insert(1, "\"" + sVarValue + "\", ");
+        sLine.replace(nPos, nFinalPos-nPos, "substr" + sArgument);
+    }
+    else if (sMethod == "fnd")
+    {
+        if (sArgument == "()")
+            sArgument = "(\"" + sVarValue + "\", \"" + sVarValue + "\")";
+        else if (sArgument.find(',') == string::npos)
+            sArgument.insert(sArgument.length()-1, ", \"" + sVarValue + "\"");
+        else
+        {
+            string sTemp = "(";
+            sArgument.erase(0,1);
+            sTemp += getNextArgument(sArgument, true);
+            sTemp += ", \"" + sVarValue + "\"";
+            if (sArgument[sArgument.find_first_not_of(' ')] == ')')
+                sArgument = sTemp + ")";
+            else
+                sArgument = sTemp + ", " + sArgument;
+        }
+        sLine.replace(nPos, nFinalPos-nPos, "strfnd" + sArgument);
+    }
+    else if (sMethod == "rfnd")
+    {
+        if (sArgument == "()")
+            sArgument = "(\"" + sVarValue + "\", \"" + sVarValue + "\")";
+        else if (sArgument.find(',') == string::npos)
+            sArgument.insert(sArgument.length()-1, ", \"" + sVarValue + "\"");
+        else
+        {
+            string sTemp = "(";
+            sArgument.erase(0,1);
+            sTemp += getNextArgument(sArgument, true);
+            sTemp += ", \"" + sVarValue + "\"";
+            if (sArgument[sArgument.find_first_not_of(' ')] == ')')
+                sArgument = sTemp + ")";
+            else
+                sArgument = sTemp + ", " + sArgument;
+        }
+        sLine.replace(nPos, nFinalPos-nPos, "strrfnd" + sArgument);
+    }
+    else if (sMethod == "mtch")
+    {
+        if (sArgument == "()")
+            sArgument = "(\"" + sVarValue + "\", \"" + sVarValue + "\")";
+        else if (sArgument.find(',') == string::npos)
+            sArgument.insert(sArgument.length()-1, ", \"" + sVarValue + "\"");
+        else
+        {
+            string sTemp = "(";
+            sArgument.erase(0,1);
+            sTemp += getNextArgument(sArgument, true);
+            sTemp += ", \"" + sVarValue + "\"";
+            if (sArgument[sArgument.find_first_not_of(' ')] == ')')
+                sArgument = sTemp + ")";
+            else
+                sArgument = sTemp + ", " + sArgument;
+        }
+        sLine.replace(nPos, nFinalPos-nPos, "strmatch" + sArgument);
+    }
+    else if (sMethod == "rmtch")
+    {
+        if (sArgument == "()")
+            sArgument = "(\"" + sVarValue + "\", \"" + sVarValue + "\")";
+        else if (sArgument.find(',') == string::npos)
+            sArgument.insert(sArgument.length()-1, ", \"" + sVarValue + "\"");
+        else
+        {
+            string sTemp = "(";
+            sArgument.erase(0,1);
+            sTemp += getNextArgument(sArgument, true);
+            sTemp += ", \"" + sVarValue + "\"";
+            if (sArgument[sArgument.find_first_not_of(' ')] == ')')
+                sArgument = sTemp + ")";
+            else
+                sArgument = sTemp + ", " + sArgument;
+        }
+        sLine.replace(nPos, nFinalPos-nPos, "strrmatch" + sArgument);
+    }
+    else if (sMethod == "nmtch")
+    {
+        if (sArgument == "()")
+            sArgument = "(\"" + sVarValue + "\", \"" + sVarValue + "\")";
+        else if (sArgument.find(',') == string::npos)
+            sArgument.insert(sArgument.length()-1, ", \"" + sVarValue + "\"");
+        else
+        {
+            string sTemp = "(";
+            sArgument.erase(0,1);
+            sTemp += getNextArgument(sArgument, true);
+            sTemp += ", \"" + sVarValue + "\"";
+            if (sArgument[sArgument.find_first_not_of(' ')] == ')')
+                sArgument = sTemp + ")";
+            else
+                sArgument = sTemp + ", " + sArgument;
+        }
+        sLine.replace(nPos, nFinalPos-nPos, "str_not_match" + sArgument);
+    }
+    else if (sMethod == "nrmtch")
+    {
+        if (sArgument == "()")
+            sArgument = "(\"" + sVarValue + "\", \"" + sVarValue + "\")";
+        else if (sArgument.find(',') == string::npos)
+            sArgument.insert(sArgument.length()-1, ", \"" + sVarValue + "\"");
+        else
+        {
+            string sTemp = "(";
+            sArgument.erase(0,1);
+            sTemp += getNextArgument(sArgument, true);
+            sTemp += ", \"" + sVarValue + "\"";
+            if (sArgument[sArgument.find_first_not_of(' ')] == ')')
+                sArgument = sTemp + ")";
+            else
+                sArgument = sTemp + ", " + sArgument;
+        }
+        sLine.replace(nPos, nFinalPos-nPos, "str_not_rmatch" + sArgument);
+    }
+    else if (sMethod == "splt")
+    {
+        if (sArgument == "()")
+            sArgument = "(\"" + sVarValue + "\", \",\")";
+        else
+            sArgument.insert(1, "\"" + sVarValue + "\", ");
+        sLine.replace(nPos, nFinalPos-nPos, "split" + sArgument);
+    }
+}
 
 bool Cache::containsStringVars(const string& _sLine) const
 {
@@ -4586,7 +4778,7 @@ bool Cache::containsStringVars(const string& _sLine) const
             return true;
         if (sLine.find(iter->first) != string::npos
             && sLine[sLine.find(iter->first)+(iter->first).length()] != '('
-            && checkDelimiter(sLine.substr(sLine.find(iter->first)-1, (iter->first).length()+2))
+            && checkStringvarDelimiter(sLine.substr(sLine.find(iter->first)-1, (iter->first).length()+2))
             )
             return true;
     }
@@ -4609,15 +4801,27 @@ void Cache::getStringValues(string& sLine, unsigned int nPos)
                 continue;
             if (__nPos == 1)
             {
-                if (checkDelimiter(" " + sLine.substr(0, (iter->first).length()+1)) && !isInQuotes(sLine, 0, true))
+                if (checkStringvarDelimiter(" " + sLine.substr(0, (iter->first).length()+1)) && !isInQuotes(sLine, 0, true))
                 {
-                    sLine.replace(0,(iter->first).length(), "\"" + iter->second + "\"");
+                    if (sLine[(iter->first).length()] == '.')
+                    {
+                        replaceStringMethod(sLine, 0, (iter->first).length(), iter->second);
+                    }
+                    else
+                    {
+                        sLine.replace(0,(iter->first).length(), "\"" + iter->second + "\"");
+                    }
                 }
                 continue;
             }
-            if (checkDelimiter(sLine.substr(__nPos-2, (iter->first).length()+2)) && !isInQuotes(sLine, __nPos-1, true))
+            if (checkStringvarDelimiter(sLine.substr(__nPos-2, (iter->first).length()+2)) && !isInQuotes(sLine, __nPos-1, true))
             {
-                sLine.replace(__nPos-1,(iter->first).length(), "\"" + iter->second + "\"");
+                if (sLine[__nPos+(iter->first).length()-1] == '.')
+                {
+                    replaceStringMethod(sLine, __nPos-1, (iter->first).length(), iter->second);
+                }
+                else
+                    sLine.replace(__nPos-1,(iter->first).length(), "\"" + iter->second + "\"");
             }
         }
     }

@@ -58,7 +58,7 @@ void doc_Help(const string& __sTopic, Settings& _option)
         _option.declareFileType(".html");
         sFilename = _option.ValidFileName(sFilename,".html");
 
-        sHTML = doc_HelpAsHTML(__sTopic, generateFile, _option);
+        sHTML = doc_HelpAsHTML(sTopic, generateFile, _option);
         if (generateFile)
         {
             fHTML.open(sFilename.c_str());

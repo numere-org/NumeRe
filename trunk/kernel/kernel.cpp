@@ -1841,6 +1841,20 @@ map<string,string> NumeReKernel::getPluginLanguageStrings()
     return mPluginLangStrings;
 }
 
+map<string,string> NumeReKernel::getFunctionLanguageStrings()
+{
+    map<string,string> mFunctionLangStrings;
+    for (size_t i = 0; i < _functions.getDefinedFunctions(); i++)
+    {
+        string sDesc = _functions.getFunction(i)+ "     ARG   - " + _functions.getComment(i);
+        while (sDesc.find("\\\"") != string::npos)
+            sDesc.erase(sDesc.find("\\\""), 1);
+
+        mFunctionLangStrings["PARSERFUNCS_LISTFUNC_FUNC_"+toUpperCase(_functions.getFunction(i).substr(0,_functions.getFunction(i).rfind('(')))+"_[DEFINE]"] = sDesc;
+    }
+    return mFunctionLangStrings;
+}
+
 vector<string> NumeReKernel::getPluginCommands()
 {
     vector<string> vPluginCommands;
@@ -2202,8 +2216,8 @@ void NumeReKernel::showDebugError(const string& sTitle)
     {
         showDebugEvent(sTitle, _option._debug.getModuleInformations(), _option._debug.getStackTrace(), _option._debug.getNumVars(), _option._debug.getStringVars());
         gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber());
-        _option._debug.reset();
     }
+    _option._debug.reset();
 }
 
 void NumeReKernel::showDebugEvent(const string& sTitle, const vector<string>& vModule, const vector<string>& vStacktrace, const vector<string>& vNumVars, const vector<string>& vStringVars)

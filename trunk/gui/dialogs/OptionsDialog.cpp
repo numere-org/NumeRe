@@ -77,6 +77,11 @@ BEGIN_EVENT_TABLE( OptionsDialog, wxDialog )
     EVT_BUTTON(ID_BTN_SCRIPTPATH, OptionsDialog::OnButtonClick)
     EVT_BUTTON(ID_BTN_PROCPATH, OptionsDialog::OnButtonClick)
     EVT_BUTTON(ID_BTN_PLOTPATH, OptionsDialog::OnButtonClick)
+    EVT_BUTTON(ID_RESETCOLOR, OptionsDialog::OnButtonClick)
+
+    EVT_COMBOBOX(ID_CLRSPIN, OptionsDialog::OnColorTypeChange)
+    EVT_COLOURPICKER_CHANGED(ID_CLRPICKR_FORE, OptionsDialog::OnColorPickerChange)
+    EVT_COLOURPICKER_CHANGED(ID_CLRPICKR_BACK, OptionsDialog::OnColorPickerChange)
 
 ////@end OptionsDialog event table entries
 	EVT_CHAR(OptionsDialog::OnChar)
@@ -100,9 +105,9 @@ OptionsDialog::OptionsDialog( )
 
 OptionsDialog::OptionsDialog( wxWindow* parent, Options* options, wxWindowID id,  const wxString& caption, const wxPoint& pos, const wxSize& size, long style )
 {
-    Create(parent, id, caption, pos, size, style);
 	m_parentFrame = (NumeReWindow*)parent;
 	m_options = options;
+    Create(parent, id, caption, pos, size, style);
 
 	//wxTextValidator textval(wxFILTER_EXCLUDE_CHAR_LIST);
 	//wxStringList exclude;
@@ -182,7 +187,7 @@ void OptionsDialog::CreateControls()
     wxBoxSizer* itemBoxSizer2 = new wxBoxSizer(wxVERTICAL);
     itemDialog1->SetSizer(itemBoxSizer2);
 
-    m_optionsNotebook = new wxNotebook( itemDialog1, ID_NOTEBOOK, wxDefaultPosition, wxSize(400, 350), wxNB_DEFAULT|wxNB_TOP );
+    m_optionsNotebook = new wxNotebook( itemDialog1, ID_NOTEBOOK, wxDefaultPosition, wxSize(400, 400), wxNB_DEFAULT|wxNB_TOP );
 
     /**wxPanel* itemPanel4 = new wxPanel( m_optionsNotebook, ID_PANELFEATURES, wxDefaultPosition, wxSize(100, 80), wxNO_BORDER|wxTAB_TRAVERSAL );
     wxBoxSizer* itemBoxSizer5 = new wxBoxSizer(wxVERTICAL);
@@ -274,19 +279,27 @@ void OptionsDialog::CreateControls()
     wxStaticText* itemStaticText50 = new wxStaticText( itemPanel28, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_AUTOSAVE")), wxDefaultPosition, wxDefaultSize, 0 );
     itemBoxSizer51->Add(itemStaticText50, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxADJUST_MINSIZE, 5);
 
-    /*wxButton* itemButton35 = new wxButton( itemPanel28, ID_BTNFINDMINGW, _("Select"), wxDefaultPosition, wxSize(50, -1), 0 );
-    itemBoxSizer33->Add(itemButton35, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    wxStaticText* styleStaticText = new wxStaticText(itemPanel28, wxID_STATIC, _guilang.get("GUI_OPTIONS_SYNTAXHIGHLIGHTING"));
+    itemBoxSizer31->Add(styleStaticText, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    wxBoxSizer* itemColorSizer = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer* itemColorControlSizer = new wxBoxSizer(wxHORIZONTAL);
+    itemBoxSizer31->Add(itemColorSizer);
+    itemBoxSizer31->Add(itemColorControlSizer);
+    wxArrayString styles = m_options->GetStyleIdentifier();
+    m_colorType = new wxComboBox( itemPanel28, ID_CLRSPIN, styles[0], wxDefaultPosition, wxDefaultSize, styles, wxCB_READONLY );
+    m_colorType->SetStringSelection(styles[0]);
+    m_foreColor = new wxColourPickerCtrl(itemPanel28, ID_CLRPICKR_FORE, m_options->GetSyntaxStyle(0).foreground);
+    m_backColor = new wxColourPickerCtrl(itemPanel28, ID_CLRPICKR_BACK, m_options->GetSyntaxStyle(0).background);
+    m_resetButton = new wxButton(itemPanel28, ID_RESETCOLOR, _guilang.get("GUI_OPTIONS_RESETHIGHLIGHT"), wxDefaultPosition, wxDefaultSize, 0);
 
-    wxButton* itemButton36 = new wxButton( itemPanel28, ID_BUTTON1, _("Verify"), wxDefaultPosition, wxSize(50, -1), 0 );
-    itemBoxSizer33->Add(itemButton36, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
-
-    wxBoxSizer* itemBoxSizer37 = new wxBoxSizer(wxHORIZONTAL);
-    itemBoxSizer29->Add(itemBoxSizer37, 0, wxALIGN_LEFT|wxALL, 5);*/
-    /*m_chkShowCompileCommands = new wxCheckBox( itemPanel28, ID_CHECKBOX1, _("Show compiler command lines"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_chkShowCompileCommands->SetValue(false);
-    itemBoxSizer33->Add(m_chkShowCompileCommands, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);*/
+    itemColorSizer->Add(m_foreColor, 1, wxALIGN_CENTER_VERTICAL | wxALL | wxADJUST_MINSIZE, 5);
+    itemColorSizer->Add(m_backColor, 1, wxALIGN_CENTER_VERTICAL | wxALL | wxADJUST_MINSIZE, 5);
+    itemColorControlSizer->Add(m_colorType, 1, wxALIGN_CENTER_VERTICAL | wxALL | wxEXPAND, 5);
+    itemColorControlSizer->Add(m_resetButton, 1, wxALIGN_CENTER_VERTICAL | wxALL | wxADJUST_MINSIZE, 5);
 
     m_optionsNotebook->AddPage(itemPanel28, _(_guilang.get("GUI_OPTIONS_CONFIG")));
+
+
 
     wxPanel* itemPanel17 = new wxPanel( m_optionsNotebook, ID_PANELNETWORK, wxDefaultPosition, wxSize(200, 200), wxSUNKEN_BORDER|wxTAB_TRAVERSAL );
     wxBoxSizer* itemBoxSizer18 = new wxBoxSizer(wxHORIZONTAL);
@@ -523,6 +536,24 @@ void OptionsDialog::OnButtonCancelClick( wxCommandEvent& event )
 	m_optionsNotebook->SetSelection(0);
 }
 
+
+void OptionsDialog::OnColorPickerChange(wxColourPickerEvent& event)
+{
+    size_t id = m_options->GetIdByIdentifier(m_colorType->GetValue());
+    if (event.GetId() == ID_CLRPICKR_FORE)
+        m_options->SetStyleForeground(id, m_foreColor->GetColour());
+    else
+        m_options->SetStyleBackground(id, m_backColor->GetColour());
+}
+
+void OptionsDialog::OnColorTypeChange(wxCommandEvent& event)
+{
+    size_t id = m_options->GetIdByIdentifier(m_colorType->GetValue());
+
+    m_foreColor->SetColour(m_options->GetSyntaxStyle(id).foreground);
+    m_backColor->SetColour(m_options->GetSyntaxStyle(id).background);
+}
+
 void OptionsDialog::OnButtonClick(wxCommandEvent& event)
 {
     wxString defaultpath;
@@ -543,6 +574,15 @@ void OptionsDialog::OnButtonClick(wxCommandEvent& event)
         case ID_BTN_PLOTPATH:
             defaultpath = m_PlotPath->GetValue();
             break;
+        case ID_RESETCOLOR:
+        {
+            size_t id = m_options->GetIdByIdentifier(m_colorType->GetValue());
+            m_foreColor->SetColour(m_options->GetDefaultSyntaxStyle(id).foreground);
+            m_backColor->SetColour(m_options->GetDefaultSyntaxStyle(id).background);
+            m_options->SetStyleForeground(id, m_foreColor->GetColour());
+            m_options->SetStyleBackground(id, m_backColor->GetColour());
+            return;
+        }
     }
     wxDirDialog dialog(this, _guilang.get("GUI_OPTIONS_CHOOSEPATH"), defaultpath);
     int ret = dialog.ShowModal();

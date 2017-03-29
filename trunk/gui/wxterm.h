@@ -36,6 +36,7 @@
 
 #include <map>
 #include "NumeReWindow.h"
+#include "../common/Options.h"
 #include "../network/gterm.hpp"
 #include "../network/gtelnet.hpp"
 #include "../kernel/kernel.hpp"
@@ -120,6 +121,8 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
 
         NumeReWindow* m_wxParent;
 
+        Options* m_options;
+
     public:
         enum BOLDSTYLE
         {
@@ -157,6 +160,7 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
         Settings getKernelSettings();
         void setKernelSettings(const Settings&);
         wxTerm(wxWindow* parent, wxWindowID id,
+               Options* _option,
                const wxPoint& pos = wxDefaultPosition,
                int width = 80, int height = 24,
                const wxString& name = "wxTerm");
@@ -165,7 +169,7 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
 
         bool SetFont(const wxFont& font);
 
-        void GetDefVTColors(wxColor colors[16], wxTerm::BOLDSTYLE boldStyle = wxTerm::DEFAULT);
+        void GetDefColors(wxColor colors[16], wxTerm::BOLDSTYLE boldStyle = wxTerm::DEFAULT);
         void GetVTColors(wxColour colors[16]);
         void SetVTColors(wxColour colors[16]);
         void GetDefPCColors(wxColour colors[16]);
@@ -196,6 +200,7 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
         void CancelCalculation();
 
         void UpdateSize();
+        void UpdateColors();
         //void UpdateSize(int &termheight, int &linesReceived);
         //void UpdateSize(wxSizeEvent &event);
 
@@ -243,6 +248,7 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
         void continueDebug() {wxCriticalSectionLocker lock(m_kernelCS); m_bContinueDebug = true;}
         string getDocumentation(const string& sCommand);
         map<string,string> getPluginLanguageStrings();
+        map<string,string> getFunctionLanguageStrings();
     protected:
         virtual wxThread::ExitCode Entry();
         NumeReKernel _kernel;

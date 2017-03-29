@@ -26,6 +26,7 @@ NumeReSyntax::NumeReSyntax()
     vNSCRCommands.push_back("NO_SYNTAX_ELEMENTS");
     vNPRCCommands.push_back("NO_SYNTAX_ELEMENTS");
     vFunctions.push_back("NO_SYNTAX_ELEMENTS");
+    vMethods.push_back("NO_SYNTAX_ELEMENTS");
     vOptions.push_back("NO_SYNTAX_ELEMENTS");
     vConstants.push_back("NO_SYNTAX_ELEMENTS");
     vSpecialValues.push_back("NO_SYNTAX_ELEMENTS");
@@ -62,6 +63,8 @@ void NumeReSyntax::loadSyntax(const string& sPath)
             vNPRCCommands = splitString(sLine.substr(sLine.find('=')+1));
         else if (sLine.find("FUNCTIONS") != string::npos)
             vFunctions = splitString(sLine.substr(sLine.find('=')+1));
+        else if (sLine.find("METHODS") != string::npos)
+            vMethods = splitString(sLine.substr(sLine.find('=')+1));
         else if (sLine.find("OPTIONS") != string::npos)
             vOptions = splitString(sLine.substr(sLine.find('=')+1));
         else if (sLine.find("CONSTANTS") != string::npos)
@@ -238,6 +241,13 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
                 colors.replace(i, nLen, nLen, '0'+SYNTAX_PROCEDURE);
             }
             else if (i+nLen < sCommandLine.length()
+                && sCommandLine.find('.', i) < i+nLen
+                && matchItem(vMethods, sCommandLine.substr(sCommandLine.find('.', i)+1, i+nLen-sCommandLine.find('.', i)-1)))
+            {
+                size_t new_len = i+nLen-sCommandLine.find('.', i)-1;
+                colors.replace(sCommandLine.find('.', i)+1, new_len, new_len, '0'+SYNTAX_METHODS);
+            }
+            else if (i+nLen < sCommandLine.length()
                 && sCommandLine[i+nLen] == '('
                 && matchItem(vFunctions, sCommandLine.substr(i,nLen)))
             {
@@ -273,6 +283,8 @@ string NumeReSyntax::getAutoCompList(string sFirstChars, string sType)
             mAutoCompList[toLowerCase(vNPRCCommands[i])+" |"+vNPRCCommands[i]] = SYNTAX_COMMAND;
         for (size_t i = 0; i < vFunctions.size(); i++)
             mAutoCompList[toLowerCase(vFunctions[i])+" |"+vFunctions[i]+"("] = SYNTAX_FUNCTION;
+        for (size_t i = 0; i < vMethods.size(); i++)
+            mAutoCompList[toLowerCase(vMethods[i])+" |"+vMethods[i]+"("] = SYNTAX_METHODS; // should be SYNTAX_METHODS, however icon is needed first
         for (size_t i = 0; i < vOptions.size(); i++)
             mAutoCompList[toLowerCase(vOptions[i])+" |"+vOptions[i]] = SYNTAX_OPTION;
         for (size_t i = 0; i < vConstants.size(); i++)

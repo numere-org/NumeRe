@@ -115,6 +115,7 @@ class NumeReKernel
         static void flush();
 
         map<string,string> getPluginLanguageStrings();
+        map<string,string> getFunctionLanguageStrings();
         vector<string> getPluginCommands();
         string ReadFileName();
         unsigned int ReadLineNumber();

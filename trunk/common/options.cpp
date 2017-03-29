@@ -11,6 +11,9 @@
 #define new DEBUG_NEW
 #endif
 
+int StrToInt(const string&);
+string toString(int);
+
 Options::Options()
 {
 	// Set Some Default Values (perhaps these should not be set!)
@@ -36,11 +39,73 @@ Options::Options()
 	m_mingwProgramNames.Add("g++.exe");
 	m_mingwProgramNames.Add("cc1plus.exe");
 	m_mingwProgramNames.Add("gdb.exe");
+
+	setDefaultSyntaxStyles();
 }
 
 Options::~Options()
 {
 	delete m_perms;
+}
+
+void Options::setDefaultSyntaxStyles()
+{
+    for (int i = Styles::STANDARD; i < Styles::STYLE_END; i++)
+    {
+        SyntaxStyles _style = GetDefaultSyntaxStyle(i);
+
+        vSyntaxStyles.push_back(_style);
+    }
+}
+
+wxString Options::convertToString(const SyntaxStyles& _style)
+{
+    wxString sReturn;
+    sReturn = this->toString(_style.foreground);
+    sReturn += this->toString(_style.background);
+    sReturn += _style.bold ? "1" : "0";
+    sReturn += _style.italics ? "1" : "0";
+    sReturn += _style.underline ? "1" : "0";
+    return sReturn;
+}
+
+SyntaxStyles Options::convertFromString(const wxString& styleString)
+{
+    SyntaxStyles _style;
+    if (styleString.length() < 21)
+        return _style;
+    _style.foreground = StrToColor(styleString.substr(0,9));
+    _style.background = StrToColor(styleString.substr(9,9));
+    if (styleString[18] == '1')
+        _style.bold = true;
+    if (styleString[19] == '1')
+        _style.italics = true;
+    if (styleString[20] == '1')
+        _style.underline = true;
+    return _style;
+}
+
+wxString Options::toString(const wxColour& color)
+{
+    wxString colstring = "";
+    colstring += ::toString((int)color.Red());
+    if (colstring.length() < 3)
+        colstring.insert(0,3-colstring.length(), '0');
+    colstring += ::toString((int)color.Green());
+    if (colstring.length() < 6)
+        colstring.insert(3,6-colstring.length(), '0');
+    colstring += ::toString((int)color.Blue());
+    if (colstring.length() < 9)
+        colstring.insert(6,9-colstring.length(), '0');
+    return colstring;
+}
+
+wxColour Options::StrToColor(wxString colorstring)
+{
+    unsigned char channel_r = StrToInt(colorstring.substr(0,3).ToStdString());
+    unsigned char channel_g = StrToInt(colorstring.substr(3,3).ToStdString());
+    unsigned char channel_b = StrToInt(colorstring.substr(6,3).ToStdString());
+    return wxColour(channel_r, channel_g, channel_b);
 }
 
 
@@ -207,3 +272,203 @@ Finished:
 
 	return errorMessage;
 }
+
+SyntaxStyles Options::GetDefaultSyntaxStyle(size_t i)
+{
+    SyntaxStyles _style;
+    switch (i)
+    {
+        case Styles::STANDARD:
+            _style.italics = true;
+            break;
+        case Styles::CONSOLE_STD:
+            _style.foreground = wxColour(0,0,100);
+            break;
+        case Styles::COMMAND:
+            _style.foreground = wxColour(0,128,255);
+            _style.bold = true;
+            _style.underline = true;
+            break;
+        case Styles::COMMENT:
+            _style.foreground = wxColour(0,128,0);
+            _style.background = wxColour(255,255,183);
+            _style.bold = true;
+            break;
+        case Styles::OPTION:
+            _style.foreground = wxColour(0,128,100);
+            break;
+        case Styles::FUNCTION:
+            _style.foreground = wxColour(0,0,255);
+            _style.bold = true;
+            break;
+        case Styles::CUSTOM_FUNCTION:
+            _style.foreground = wxColour(0,0,160);
+            break;
+        case Styles::CONSTANT:
+            _style.foreground = wxColour(255,0,128);
+            _style.bold = true;
+            break;
+        case Styles::SPECIALVAL: // ans cache ...
+            _style.bold = true;
+            break;
+        case Styles::STRING:
+            _style.foreground = wxColour(128,128,255);
+            break;
+        case Styles::STRINGPARSER:
+            _style.foreground = wxColour(0,128,192);
+            _style.bold = true;
+            break;
+        case Styles::OPERATOR:
+            _style.foreground = wxColour(255,0,0);
+            break;
+        case Styles::INCLUDES:
+        case Styles::PROCEDURE:
+        case Styles::PROCEDURE_COMMAND:
+            _style.foreground = wxColour(128,0,0);
+            _style.bold = true;
+            break;
+        case Styles::NUMBER:
+            _style.foreground = wxColour(255,128,64);
+            break;
+        case Styles::METHODS:
+            _style.foreground = wxColour(0,180,50);
+            _style.bold = true;
+            break;
+        case Styles::INSTALL:
+            _style.foreground = wxColour(128,128,128);
+            break;
+        case Styles::DEFAULT_VARS: // x y z t
+            _style.foreground = wxColour(0,0,160);
+            _style.bold = true;
+            _style.italics = true;
+            break;
+        case Styles::STYLE_END:
+            break;
+        // missing default intended => will result in warning, if a enum case is not handled in switch
+    }
+    return _style;
+}
+
+void Options::readColoursFromConfig(wxFileConfig* _config)
+{
+    if (!_config->HasGroup("Styles"))
+        return;
+    wxString KeyValues[] = {
+        "STANDARD",
+        "CONSOLE_STD",
+        "COMMAND",
+        "COMMENT",
+        "OPTION",
+        "FUNCTION",
+        "CUSTOM_FUNCTION",
+        "CONSTANT",
+        "SPECIALVAL", // ans cache ...
+        "STRING",
+        "STRINGPARSER",
+        "INCLUDES",
+        "OPERATOR",
+        "PROCEDURE",
+        "NUMBER",
+        "PROCEDURE_COMMAND",
+        "METHODS",
+        "INSTALL",
+        "DEFAULT_VARS", // x y z t
+        "STYLE_END"
+    };
+    wxString val;
+    for (size_t i = 0; i < Styles::STYLE_END; i++)
+    {
+        if (_config->Read("Styles/"+KeyValues[i], &val))
+        {
+            vSyntaxStyles[i] = convertFromString(val);
+        }
+    }
+}
+
+void Options::writeColoursToConfig(wxFileConfig* _config)
+{
+    wxString KeyValues[] = {
+        "STANDARD",
+        "CONSOLE_STD",
+        "COMMAND",
+        "COMMENT",
+        "OPTION",
+        "FUNCTION",
+        "CUSTOM_FUNCTION",
+        "CONSTANT",
+        "SPECIALVAL", // ans cache ...
+        "STRING",
+        "STRINGPARSER",
+        "INCLUDES",
+        "OPERATOR",
+        "PROCEDURE",
+        "NUMBER",
+        "PROCEDURE_COMMAND",
+        "METHODS",
+        "INSTALL",
+        "DEFAULT_VARS", // x y z t
+        "STYLE_END"
+    };
+    for (size_t i = 0; i < Styles::STYLE_END; i++)
+    {
+        _config->Write("Styles/"+KeyValues[i], convertToString(vSyntaxStyles[i]));
+    }
+}
+
+void Options::SetStyleForeground(size_t i, const wxColour& color)
+{
+    if (i < Styles::STYLE_END)
+    {
+        vSyntaxStyles[i].foreground = color;
+    }
+}
+
+void Options::SetStyleBackground(size_t i, const wxColour& color)
+{
+    if (i < Styles::STYLE_END)
+    {
+        vSyntaxStyles[i].background = color;
+    }
+}
+
+wxArrayString Options::GetStyleIdentifier()
+{
+    wxArrayString sReturn;
+    sReturn.Add("STANDARD");
+    sReturn.Add("CONSOLE_STD");
+    sReturn.Add("COMMAND");
+    sReturn.Add("COMMENT");
+    sReturn.Add("OPTION");
+    sReturn.Add("FUNCTION");
+    sReturn.Add("CUSTOM_FUNCTION");
+    sReturn.Add("CONSTANT");
+    sReturn.Add("SPECIALVAL");
+    sReturn.Add("STRING");
+    sReturn.Add("STRINGPARSER");
+    sReturn.Add("INCLUDES");
+    sReturn.Add("OPERATOR");
+    sReturn.Add("PROCEDURE");
+    sReturn.Add("NUMBER");
+    sReturn.Add("PROCEDURE_COMMAND");
+    sReturn.Add("METHODS");
+    sReturn.Add("INSTALL");
+    sReturn.Add("DEFAULT_VARS");
+
+    return sReturn;
+}
+
+
+size_t Options::GetIdByIdentifier(const wxString& identifier)
+{
+    wxArrayString identifiers = GetStyleIdentifier();
+
+    return identifiers.Index(identifier);
+}
+
+
+
+
+
+
+
+

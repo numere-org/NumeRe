@@ -94,6 +94,8 @@ class Cache : public FileSystem
 		bool isValidDisc(long long int _nLine, long long int _nCol, long long int _nLayer, unsigned int nSize);
 		bool retoqueRegion(long long int _nLayer, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, unsigned int nOrder = 1, AppDir Direction = ALL);
 		bool retoqueRegion(RetoqueRegion& _region);
+		bool checkStringvarDelimiter(const string& sToken) const;
+		void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const string& sVarValue);
 
 
 	protected:

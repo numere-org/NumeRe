@@ -25,6 +25,7 @@ class wxSSH : public wxTerm
 	public:
 		wxSSH(wxWindow* parent, wxWindowID id,
 				Networking* network,
+				Options* _option,
 				const wxPoint& pos = wxDefaultPosition,
 				int width = 80, int height = 25,
 				const wxString& name = "wxSSH");
@@ -51,7 +52,7 @@ class wxSSH : public wxTerm
 		bool m_isInESCsequence;
 		bool m_startingDebugConnection;
 
-	
+
 	DECLARE_EVENT_TABLE()
 };
 

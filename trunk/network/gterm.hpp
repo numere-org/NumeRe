@@ -301,7 +301,7 @@ class GTerm
 
         // non-printing characters
         void cr(), lf(), ff(), bell(), tab(), visualtab();
-        bool bs();
+        bool bs(), del();
 
         // escape sequence actions
         void keypad_numeric();
@@ -314,12 +314,12 @@ class GTerm
         void next_line();
         void reset();
 
-        void cursor_left();
-        void cursor_down();
-        void cursor_right();
-        void cursor_up();
-        void home();
-        void end();
+        bool cursor_left();
+        bool cursor_down();
+        bool cursor_right();
+        bool cursor_up();
+        bool home();
+        bool end();
         void cursor_position();
         void device_attrib();
         void delete_char();

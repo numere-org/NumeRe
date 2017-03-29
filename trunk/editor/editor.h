@@ -36,7 +36,8 @@ public:
     {
         SETTING_WRAPEOL = 1,
         SETTING_DISPCTRLCHARS = 2,
-        SETTING_USETXTADV = 4
+        SETTING_USETXTADV = 4,
+        SETTING_USEANALYZER = 8
     };
 	//bool LoadFile ();
 	bool LoadLocalFile (const wxString &filename);
@@ -70,7 +71,7 @@ public:
 	vector<int> BlockMatch(int nPos);
 
 
-	void UpdateSyntaxHighlighting();
+	void UpdateSyntaxHighlighting(bool forceUpdate = false);
 	void FocusOnLine(int linenumber, bool showMarker = true);
 
 
@@ -95,6 +96,7 @@ public:
 	void OnClearBreakpoints(wxCommandEvent &event);
 	void OnAddWatch(wxCommandEvent &event);
 	void OnDisplayVariable(wxCommandEvent &event);
+	void OnHelpOnSelection(wxCommandEvent& event);
 	void OnFindProcedure(wxCommandEvent &event);
 	void OnChangeCase(wxCommandEvent& event);
 
@@ -111,6 +113,7 @@ public:
 	void ToggleCommentSelection();
 	void FoldAll();
 	void UnfoldAll();
+	void AnalyseCode();
 	void MoveSelection(bool down = true)
         {
             if (down)
@@ -123,6 +126,9 @@ public:
 	FileFilterType getFileType() {return m_fileType;}
 	int getSettings() {return m_nEditorSetting;}
 
+protected:
+	Options* m_options;
+
 private:
 
     void updateDefaultHighlightSettings();
@@ -131,6 +137,9 @@ private:
     int countUmlauts(const string& sStr);
     string realignLangString(string sLine, size_t& lastpos);
     string addLinebreaks(const string& sLine);
+    void addToAnnotation(string& sCurrentLine, string& sStyles, const string& sMessage, int nStyle);
+    bool containsAssignment(const string& sCurrentLine);
+
 	void OnEditorModified(wxStyledTextEvent &event);
 	void OnStartDrag(wxStyledTextEvent& event);
 	void OnDragOver(wxStyledTextEvent& event);
@@ -145,6 +154,7 @@ private:
 	wxString FindClickedWord();
 	wxString FindClickedProcedure();
 	wxString FindMarkedProcedure(int charpos);
+	wxString FindProcedureDefinition();
 
 	wxString generateAutoCompList(const wxString& wordstart, string sPreDefList);
 
@@ -154,7 +164,6 @@ private:
 
 	NumeReWindow* m_mainFrame;
 	//ChameleonNotebook* m_parentNotebook;
-	Options* m_options;
 	DebugManager* m_debugManager;
 	ProjectInfo* m_project;
 
@@ -175,6 +184,7 @@ private:
 	wxMenuItem* m_menuAddWatch;
 	wxMenuItem* m_menuShowValue;
 	wxMenuItem* m_menuFindProcedure;
+	wxMenuItem* m_menuHelpOnSelection;
 
 	NumeReSyntax* _syntax;
 	wxTerm* m_terminal;

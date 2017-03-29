@@ -810,6 +810,110 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     }//strfnd("string1", "string2", POS)
 
     n_pos = 0;
+    while (sLine.find("strmatch(", n_pos) != string::npos)
+    {
+        unsigned int nPosition = 0;
+        n_pos = sLine.find("strmatch(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
+        unsigned int nPos = n_pos + 8;
+        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
+            throw UNMATCHED_PARENTHESIS;
+        nPos += getMatchingParenthesis(sLine.substr(nPos));
+        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 10))))
+        {
+            string sStrFind = sLine.substr(n_pos+9, nPos-n_pos-9) + " -kmq";
+            if (!parser_StringParser(sStrFind, sDummy, _data, _parser, _option, true))
+                return 0;
+            else
+            {
+                string sToFind = getNextArgument(sStrFind, true) + " -nq";
+                string sToFindIn = getNextArgument(sStrFind, true) + " -nq";
+                string sPos = "";
+                if (getNextArgument(sStrFind, false).length())
+                    sPos = getNextArgument(sStrFind, true);
+                if (!parser_StringParser(sToFind, sDummy, _data, _parser, _option, true))
+                    return 0;
+                if (!parser_StringParser(sToFindIn, sDummy, _data, _parser, _option, true))
+                    return 0;
+                if (sPos.length() && (containsStrings(sPos) || _data.containsStringVars(sPos)))
+                {
+                    sPos += " -nq";
+                    if (!parser_StringParser(sPos, sDummy, _data, _parser, _option, true))
+                        return 0;
+                }
+                if (parser_ExprNotEmpty(sPos))
+                {
+                    _parser.SetExpr(sPos);
+                    nPosition = (unsigned int)(_parser.Eval()-1);
+                    if (nPosition == string::npos || nPosition > sToFindIn.length())
+                        nPosition = 0;
+                }
+
+                if (sToFindIn.front() == '"')
+                    sToFindIn = sToFindIn.substr(sToFindIn.find('"')+1, sToFindIn.rfind('"')-sToFindIn.find('"')-1);
+                sLine = sLine.substr(0,n_pos) + toString((int)sToFindIn.find_first_of(sToFind, nPosition)+1) + sLine.substr(nPos+1);
+            }
+        }
+        n_pos++;
+    }//strfnd("string1", "string2", POS)
+
+    n_pos = 0;
+    while (sLine.find("str_not_match(", n_pos) != string::npos)
+    {
+        unsigned int nPosition = 0;
+        n_pos = sLine.find("str_not_match(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
+        unsigned int nPos = n_pos + 13;
+        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
+            throw UNMATCHED_PARENTHESIS;
+        nPos += getMatchingParenthesis(sLine.substr(nPos));
+        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 15))))
+        {
+            string sStrFind = sLine.substr(n_pos+14, nPos-n_pos-14) + " -kmq";
+            if (!parser_StringParser(sStrFind, sDummy, _data, _parser, _option, true))
+                return 0;
+            else
+            {
+                string sToFind = getNextArgument(sStrFind, true) + " -nq";
+                string sToFindIn = getNextArgument(sStrFind, true) + " -nq";
+                string sPos = "";
+                if (getNextArgument(sStrFind, false).length())
+                    sPos = getNextArgument(sStrFind, true);
+                if (!parser_StringParser(sToFind, sDummy, _data, _parser, _option, true))
+                    return 0;
+                if (!parser_StringParser(sToFindIn, sDummy, _data, _parser, _option, true))
+                    return 0;
+                if (sPos.length() && (containsStrings(sPos) || _data.containsStringVars(sPos)))
+                {
+                    sPos += " -nq";
+                    if (!parser_StringParser(sPos, sDummy, _data, _parser, _option, true))
+                        return 0;
+                }
+                if (parser_ExprNotEmpty(sPos))
+                {
+                    _parser.SetExpr(sPos);
+                    nPosition = (unsigned int)(_parser.Eval()-1);
+                    if (nPosition == string::npos || nPosition > sToFindIn.length())
+                        nPosition = 0;
+                }
+
+                if (sToFindIn.front() == '"')
+                    sToFindIn = sToFindIn.substr(sToFindIn.find('"')+1, sToFindIn.rfind('"')-sToFindIn.find('"')-1);
+                sLine = sLine.substr(0,n_pos) + toString((int)sToFindIn.find_first_not_of(sToFind, nPosition)+1) + sLine.substr(nPos+1);
+            }
+        }
+        n_pos++;
+    }//strfnd("string1", "string2", POS)
+
+    n_pos = 0;
     while (sLine.find("strrfnd(", n_pos) != string::npos)
     {
         unsigned int nPosition = string::npos;
@@ -856,6 +960,110 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 if (sToFindIn.front() == '"')
                     sToFindIn = sToFindIn.substr(sToFindIn.find('"')+1, sToFindIn.rfind('"')-sToFindIn.find('"')-1);
                 sLine = sLine.substr(0,n_pos) + toString((int)sToFindIn.rfind(sToFind, nPosition)+1) + sLine.substr(nPos+1);
+            }
+        }
+        n_pos++;
+    }//strrfnd("string1", "string2", POS)
+
+    n_pos = 0;
+    while (sLine.find("strrmatch(", n_pos) != string::npos)
+    {
+        unsigned int nPosition = string::npos;
+        n_pos = sLine.find("strrmatch(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
+        unsigned int nPos = n_pos + 9;
+        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
+            throw UNMATCHED_PARENTHESIS;
+        nPos += getMatchingParenthesis(sLine.substr(nPos));
+        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 11))))
+        {
+            string sStrFind = sLine.substr(n_pos+10, nPos-n_pos-10) + " -kmq";
+            if (!parser_StringParser(sStrFind, sDummy, _data, _parser, _option, true))
+                return 0;
+            else
+            {
+                string sToFind = getNextArgument(sStrFind, true) + " -nq";
+                string sToFindIn = getNextArgument(sStrFind, true) + " -nq";
+                string sPos = "";
+                if (getNextArgument(sStrFind, false).length())
+                    sPos = getNextArgument(sStrFind, true);
+                if (!parser_StringParser(sToFind, sDummy, _data, _parser, _option, true))
+                    return 0;
+                if (!parser_StringParser(sToFindIn, sDummy, _data, _parser, _option, true))
+                    return 0;
+                if (sPos.length() && (containsStrings(sPos) || _data.containsStringVars(sPos)))
+                {
+                    sPos += " -nq";
+                    if (!parser_StringParser(sPos, sDummy, _data, _parser, _option, true))
+                        return 0;
+                }
+                if (parser_ExprNotEmpty(sPos))
+                {
+                    _parser.SetExpr(sPos);
+                    nPosition = (unsigned int)(_parser.Eval()-1);
+                    if (nPosition == string::npos)
+                        nPosition = 0;
+                }
+
+                if (sToFindIn.front() == '"')
+                    sToFindIn = sToFindIn.substr(sToFindIn.find('"')+1, sToFindIn.rfind('"')-sToFindIn.find('"')-1);
+                sLine = sLine.substr(0,n_pos) + toString((int)sToFindIn.find_last_of(sToFind, nPosition)+1) + sLine.substr(nPos+1);
+            }
+        }
+        n_pos++;
+    }//strrfnd("string1", "string2", POS)
+
+    n_pos = 0;
+    while (sLine.find("str_not_rmatch(", n_pos) != string::npos)
+    {
+        unsigned int nPosition = string::npos;
+        n_pos = sLine.find("str_not_rmatch(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
+        unsigned int nPos = n_pos + 14;
+        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
+            throw UNMATCHED_PARENTHESIS;
+        nPos += getMatchingParenthesis(sLine.substr(nPos));
+        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 16))))
+        {
+            string sStrFind = sLine.substr(n_pos+15, nPos-n_pos-15) + " -kmq";
+            if (!parser_StringParser(sStrFind, sDummy, _data, _parser, _option, true))
+                return 0;
+            else
+            {
+                string sToFind = getNextArgument(sStrFind, true) + " -nq";
+                string sToFindIn = getNextArgument(sStrFind, true) + " -nq";
+                string sPos = "";
+                if (getNextArgument(sStrFind, false).length())
+                    sPos = getNextArgument(sStrFind, true);
+                if (!parser_StringParser(sToFind, sDummy, _data, _parser, _option, true))
+                    return 0;
+                if (!parser_StringParser(sToFindIn, sDummy, _data, _parser, _option, true))
+                    return 0;
+                if (sPos.length() && (containsStrings(sPos) || _data.containsStringVars(sPos)))
+                {
+                    sPos += " -nq";
+                    if (!parser_StringParser(sPos, sDummy, _data, _parser, _option, true))
+                        return 0;
+                }
+                if (parser_ExprNotEmpty(sPos))
+                {
+                    _parser.SetExpr(sPos);
+                    nPosition = (unsigned int)(_parser.Eval()-1);
+                    if (nPosition == string::npos)
+                        nPosition = 0;
+                }
+
+                if (sToFindIn.front() == '"')
+                    sToFindIn = sToFindIn.substr(sToFindIn.find('"')+1, sToFindIn.rfind('"')-sToFindIn.find('"')-1);
+                sLine = sLine.substr(0,n_pos) + toString((int)sToFindIn.find_last_not_of(sToFind, nPosition)+1) + sLine.substr(nPos+1);
             }
         }
         n_pos++;

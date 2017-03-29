@@ -36,6 +36,7 @@ class NumeReSyntax
         vector<string> vNPRCCommands;
         vector<string> vOptions;
         vector<string> vFunctions;
+        vector<string> vMethods;
         vector<string> vConstants;
         vector<string> vSpecialValues;
         vector<string> vOperators;
@@ -58,7 +59,8 @@ class NumeReSyntax
             SYNTAX_OPERATOR,
             SYNTAX_PROCEDURE,
             SYNTAX_NUMBER,
-            SYNTAX_NPRC_COMMAND
+            SYNTAX_NPRC_COMMAND,
+            SYNTAX_METHODS
         };
         NumeReSyntax();
         NumeReSyntax(const string& sPath);
@@ -73,6 +75,8 @@ class NumeReSyntax
             {return constructString(vOptions);}
         string getFunctions() const
             {return constructString(vFunctions);}
+        string getMethods() const
+            {return constructString(vMethods);}
         string getConstants() const
             {return constructString(vConstants);}
         string getSpecial() const

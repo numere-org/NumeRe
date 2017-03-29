@@ -26,10 +26,10 @@ StateOption GTerm::vt52_normal_state[] = {
     { -1, &GTerm::normal_input,    vt52_normal_state } };
 
 StateOption GTerm::vt52_esc_state[] = {
-    { 'D', &GTerm::cursor_left,    vt52_normal_state },
-    { 'B', &GTerm::cursor_down,    vt52_normal_state },
-    { 'C', &GTerm::cursor_right,   vt52_normal_state },
-    { 'A', &GTerm::cursor_up,  vt52_normal_state },
+    //{ 'D', &GTerm::cursor_left,    vt52_normal_state },
+    //{ 'B', &GTerm::cursor_down,    vt52_normal_state },
+    //{ 'C', &GTerm::cursor_right,   vt52_normal_state },
+    //{ 'A', &GTerm::cursor_up,  vt52_normal_state },
 	{ 'Y', 0,		vt52_cursory_state },
     { 'J', &GTerm::erase_display,  vt52_normal_state },
     { 'K', &GTerm::erase_line, vt52_normal_state },
