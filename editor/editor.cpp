@@ -1682,7 +1682,10 @@ void NumeReEditor::AnalyseCode()
                 size_t shift = 0;
                 if (sSyntaxElement[0] == '_' && m_fileType == FILE_NPRC)
                     shift++;
-                if ((sSyntaxElement[shift] != 'n' && sSyntaxElement[shift] != 's' && sSyntaxElement[shift] != 'x' && sSyntaxElement[shift] != 'y' && sSyntaxElement[shift] != 'z' && sSyntaxElement[shift] != 't')
+                // numerical/int string float standard vars (x,y,z,t)
+                string sFirstChars = "nsfbxyzt";
+
+                if (sFirstChars.find(sSyntaxElement[shift]) == string::npos
                     || ((sSyntaxElement[shift+1] < 'A' || sSyntaxElement[shift+1] > 'Z') && sSyntaxElement[shift+1] != '_'))
                 {
                     // var not type-oriented
