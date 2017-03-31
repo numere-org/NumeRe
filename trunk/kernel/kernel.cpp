@@ -142,11 +142,10 @@ void NumeReKernel::StartUp(wxTerm* _parent)
     GetVersionExA(&_osversioninfo);
     GetModuleFileNameA(NULL, __cPath, 1024);
     string sPath = __cPath;
-#ifdef RELEASE
+
     sPath = sPath.substr(0,sPath.rfind("\\numere.exe"));
-#else
-    sPath = sPath.substr(0,sPath.rfind("\\NumeRe.exe"));
-#endif
+
+
     while (sPath.find('\\') != string::npos)
         sPath[sPath.find('\\')] = '/';
     //Sleep(50);

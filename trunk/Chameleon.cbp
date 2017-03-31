@@ -4,13 +4,21 @@
 	<Project>
 		<Option title="Chameleon" />
 		<Option pch_mode="2" />
-		<Option compiler="tdm-gcc" />
+		<Option compiler="gcc" />
+		<MakeCommands>
+			<Build command="" />
+			<CompileFile command="" />
+			<Clean command="" />
+			<DistClean command="" />
+			<AskRebuildNeeded command="" />
+			<SilentBuild command=" &gt; $(CMD_NULL)" />
+		</MakeCommands>
 		<Build>
 			<Target title="Debug">
-				<Option output="Debug/NumeRe" prefix_auto="1" extension_auto="1" />
+				<Option output="../../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
 				<Option object_output="Debug" />
 				<Option type="0" />
-				<Option compiler="tdm-gcc" />
+				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-Wall" />
 					<Add option="-g" />
@@ -62,7 +70,7 @@
 				<Option output="Release/NumeRe" prefix_auto="1" extension_auto="1" />
 				<Option object_output="Release_dynamic" />
 				<Option type="0" />
-				<Option compiler="tdm-gcc" />
+				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O3" />
 					<Add option="-std=gnu++11" />
@@ -109,7 +117,7 @@
 				<Option output="Debug/NumeRe" prefix_auto="1" extension_auto="1" />
 				<Option object_output="Debug_dynamic" />
 				<Option type="0" />
-				<Option compiler="tdm-gcc" />
+				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-Wall" />
 					<Add option="-g" />
@@ -152,10 +160,10 @@
 				</Linker>
 			</Target>
 			<Target title="Release">
-				<Option output="../NumeRe/rc/NumeRe/numere" prefix_auto="1" extension_auto="1" />
+				<Option output="../../Software/rc/NumeRe/numere" prefix_auto="1" extension_auto="1" />
 				<Option object_output="Release" />
 				<Option type="0" />
-				<Option compiler="tdm-gcc" />
+				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O3" />
 					<Add option="-Wall" />
@@ -281,10 +289,12 @@
 		<Unit filename="gui/dialogs/tipdialog.cpp" />
 		<Unit filename="gui/dialogs/tipdialog.hpp" />
 		<Unit filename="gui/dialogs/treelistctrl.cpp">
-			<Option target="&lt;{~None~}&gt;" />
+			<Option target="Debug" />
+			<Option target="Release" />
 		</Unit>
 		<Unit filename="gui/dialogs/treelistctrl.h">
-			<Option target="&lt;{~None~}&gt;" />
+			<Option target="Debug" />
+			<Option target="Release" />
 		</Unit>
 		<Unit filename="gui/dialogs/wxTermContainer.cpp" />
 		<Unit filename="gui/dialogs/wxTermContainer.h" />
