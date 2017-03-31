@@ -1249,6 +1249,8 @@ void NumeReEditor::AnalyseCode()
     this->StyleSetItalic(ANNOTATION_ERROR, true);
     int wordstart, wordend, currentLine = 0;
     bool canContinue = false;
+    bool isContinuedLine = false;
+    bool hasProcedureDefinition = false;
     string sCurrentLine = "";
     string sStyles = "";
     string sNote = _guilang.get("GUI_ANALYZER_NOTE");
@@ -1265,6 +1267,13 @@ void NumeReEditor::AnalyseCode()
             StripSpaces(sLine);
             if (sLine.length() && sLine.find_first_not_of("\n\r\t") != string::npos && sLine.find_first_not_of("0123456789+-*/.,^(){} \t\r\n") == string::npos)
                 addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sLine.substr(0,sLine.find_last_not_of("0123456789+-*/.,^()")), sWarn, _guilang.get("GUI_ANALYZER_CONSTEXPR")), ANNOTATION_WARN);
+            if (sLine.find("\\\\") != string::npos)
+                isContinuedLine = true;
+            else
+            {
+                isContinuedLine = false;
+                hasProcedureDefinition = false;
+            }
             if (sCurrentLine.length())
             {
                 this->AnnotationSetText(currentLine, sCurrentLine);
@@ -1548,6 +1557,7 @@ void NumeReEditor::AnalyseCode()
             if (m_fileType == FILE_NPRC && sSyntaxElement == "procedure")
             {
                 int nProcedureEnd = this->FindText(i, this->GetLastPosition(), "endprocedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD);
+                hasProcedureDefinition = true;
                 if (nProcedureEnd == -1)
                 {
                     nProcedureEnd = this->GetLastPosition();
@@ -1602,7 +1612,7 @@ void NumeReEditor::AnalyseCode()
                 sSyntaxElement = "len";
             if (this->GetStyleAt(i) == wxSTC_NSCR_METHOD)
                 sSyntaxElement.insert(0, "VAR.");
-            if (this->PositionFromLine(currentLine) == wordstart)
+            if (this->PositionFromLine(currentLine) == wordstart && !isContinuedLine)
             {
                 addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_NOTE);
             }
@@ -1616,7 +1626,7 @@ void NumeReEditor::AnalyseCode()
                         break;
                     }
                 }
-                if (!canContinue)
+                if (!canContinue && !isContinuedLine)
                     addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_NOTE);
             }
             if (this->BraceMatch(wordend) < 0 && sSyntaxElement != "VAR.len")
@@ -1641,10 +1651,47 @@ void NumeReEditor::AnalyseCode()
             string sSyntaxElement = FindMarkedProcedure(i).ToStdString();
             if (!sSyntaxElement.length())
                 continue;
-            wordend += sSyntaxElement.length();
+            wordend += sSyntaxElement.find('(');
             if (!FindProcedureDefinition().length())
             {
                 addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_PROCEDURENOTFOUND")), ANNOTATION_ERROR);
+            }
+            i = wordend;
+        }
+        else if ((this->GetStyleAt(i) == wxSTC_NSCR_DEFAULT || this->GetStyleAt(i) == wxSTC_NSCR_IDENTIFIER)
+            && this->GetCharAt(i) != ' '
+            && this->GetCharAt(i) != '\t'
+            && this->GetCharAt(i) != '\r'
+            && this->GetCharAt(i) != '\n')
+        {
+            canContinue = false;
+            wordstart = this->WordStartPosition(i, true);
+            wordend = this->WordEndPosition(i, true);
+            if (this->GetCharAt(wordend) == '.' && this->GetStyleAt(wordend+1) != wxSTC_NSCR_METHOD)
+                wordend = this->WordEndPosition(wordend+1, true);
+            string sSyntaxElement = this->GetTextRange(wordstart, wordend).ToStdString();
+
+            if (sSyntaxElement.length() < 4 && sSyntaxElement.length() > 1 && sSyntaxElement.find_first_not_of("\r\n") != string::npos && sSyntaxElement.find('.') == string::npos)
+            {
+                // Too short
+                if (!(sSyntaxElement.length() == 2 && ((sSyntaxElement[1] >= '0' && sSyntaxElement[1] <= '9') || sSyntaxElement[0] == 'd')))
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_VARNAMETOOSHORT")), ANNOTATION_NOTE);
+            }
+            if (sSyntaxElement.length() > 2 && sSyntaxElement.find_first_not_of("\r\n") != string::npos && sSyntaxElement.find('.') == string::npos)
+            {
+                size_t shift = 0;
+                if (sSyntaxElement[0] == '_' && m_fileType == FILE_NPRC)
+                    shift++;
+                if ((sSyntaxElement[shift] != 'n' && sSyntaxElement[shift] != 's' && sSyntaxElement[shift] != 'x' && sSyntaxElement[shift] != 'y' && sSyntaxElement[shift] != 'z' && sSyntaxElement[shift] != 't')
+                    || ((sSyntaxElement[shift+1] < 'A' || sSyntaxElement[shift+1] > 'Z') && sSyntaxElement[shift+1] != '_'))
+                {
+                    // var not type-oriented
+                    if (hasProcedureDefinition && !shift)
+                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_VARNOTTYPEORIENTED")), ANNOTATION_NOTE);
+                }
+                else if (hasProcedureDefinition && !shift)
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
             }
             i = wordend;
         }
@@ -3048,7 +3095,21 @@ wxString NumeReEditor::FindProcedureDefinition()
             procedureline = GetLine(LineFromPosition(nminpos));
             if (procedureline.find("$"+procedurename) != string::npos && procedureline[procedureline.find_first_not_of(' ', procedureline.find("$"+procedurename)+procedurename.length()+1)] == '(')
             {
-                return procedureline.substr(procedureline.find("$"+procedurename), procedureline.find(')', procedureline.find("$"+procedurename))+1-procedureline.find("$"+procedurename));
+                string sProcDef = procedureline.substr(procedureline.find("$"+procedurename), procedureline.find(')', procedureline.find("$"+procedurename))+1-procedureline.find("$"+procedurename)).ToStdString();
+                size_t nFirstParens = sProcDef.find('(');
+                string sArgList = sProcDef.substr(nFirstParens+1, getMatchingParenthesis(sProcDef.substr(nFirstParens))-1);
+                sProcDef.erase(nFirstParens+1);
+                while (sArgList.length())
+                {
+                    string currentarg = getNextArgument(sArgList, true);
+                    if (currentarg.front() == '_')
+                        currentarg.erase(0,1);
+                    sProcDef += currentarg;
+                    if (sArgList.length())
+                        sProcDef += ", ";
+                }
+                sProcDef += ")";
+                return sProcDef;
             }
         }
     }
@@ -3128,7 +3189,21 @@ wxString NumeReEditor::FindProcedureDefinition()
                 continue;
             else
             {
-                return sProcCommandLine.substr(sProcCommandLine.find(procedurename.ToStdString()), sProcCommandLine.find(')', sProcCommandLine.find(procedurename.ToStdString()))+1-sProcCommandLine.find(procedurename.ToStdString()));
+                string sProcDef = sProcCommandLine.substr(sProcCommandLine.find(procedurename.ToStdString()), sProcCommandLine.find(')', sProcCommandLine.find(procedurename.ToStdString()))+1-sProcCommandLine.find(procedurename.ToStdString()));
+                size_t nFirstParens = sProcDef.find('(');
+                string sArgList = sProcDef.substr(nFirstParens+1, getMatchingParenthesis(sProcDef.substr(nFirstParens))-1);
+                sProcDef.erase(nFirstParens+1);
+                while (sArgList.length())
+                {
+                    string currentarg = getNextArgument(sArgList, true);
+                    if (currentarg.front() == '_')
+                        currentarg.erase(0,1);
+                    sProcDef += currentarg;
+                    if (sArgList.length())
+                        sProcDef += ", ";
+                }
+                sProcDef += ")";
+                return sProcDef;
             }
         }
     }
