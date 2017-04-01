@@ -15,3 +15,4 @@ Fixed	Es koennen nun keine Breakpoints mehr in reine Kommentarzeilen gesetzt wer
 Cleaned	Der calltip zu Prozeduren zeigt nun deren Signatur an, wenn die Prozedur gefunden werden kann.
 Added	Es wurden einige Funktionalitaeten zum statischen Codeanalyzer hinzugefuegt.
 Added	Die Breakpoint-Funktionalitaet wurde fuer Scripte freigeschalten.
+Fixed	Das Problem der fehlenden Icons auf Hi-DPI Anzeigen wurde behoben.

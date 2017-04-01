@@ -19,7 +19,7 @@
 
 #include <windows.h> // include for version info constants
 #include "kernel/core/version.h"
-#define wxUSE_NO_MANIFEST 0
+#define wxUSE_NO_MANIFEST  0
 #include <wx/msw/wx.rc>
 //#define MANIFEST_RESOURCE_ID 1
 //MANIFEST_RESOURCE_ID RT_MANIFEST "numere.exe.manifest"
