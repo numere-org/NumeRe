@@ -87,6 +87,8 @@ class NumeReKernel
         static bool bSupressAnswer;
         static bool bGettingLine;
         ofstream oLogFile;
+        static size_t nScriptLine;
+        static string sScriptFileName;
         // return values indicating status:
         enum KernelStatus
         {
@@ -155,6 +157,7 @@ class NumeReKernel
         static stringmatrix getTable();
         static void showDebugEvent(const string& sTitle, const vector<string>& vModule, const vector<string>& vStacktrace, const vector<string>& vNumVars, const vector<string>& vStringVars);
         static void waitForContinue();
+        static void evalDebuggerBreakPoint(Settings& _option, const map<string,string>& sStringMap, const string& sCurrentCommand = "", Parser* _parser = nullptr);
 };
 
 

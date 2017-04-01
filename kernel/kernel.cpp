@@ -53,6 +53,8 @@ string NumeReKernel::sTableName = "";
 Debugmessenger NumeReKernel::_messenger;
 bool NumeReKernel::bSupressAnswer = false;
 bool NumeReKernel::bGettingLine = false;
+size_t NumeReKernel::nScriptLine = 0;
+string NumeReKernel::sScriptFileName = "";
 
 typedef BOOL (WINAPI *LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
 bool IsWow64()
@@ -75,17 +77,6 @@ bool IsWow64()
     }
     return (bool)bIsWow64;
 }
-
-
-
-
-
-
-
-
-
-
-
 
 NumeReKernel::NumeReKernel()
 {
@@ -522,6 +513,7 @@ void NumeReKernel::printVersionInfo()
 
 }
 
+/// --> Main Loop <--
 NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 {
     if (!m_parent)
@@ -605,16 +597,13 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     _data.openFromCmdLine(_option, "", true);
                     if (_data.isValid())
                     {
-                        //cerr << "|" << endl;
                         print(LineBreak(_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option, true, 4));
-                        //cerr << LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) << endl;
                         if (oLogFile.is_open())
                             oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Data out of " <<_data.getDataFileName("data") << " was successfully loaded." << endl;
                     }
                 }
                 if (_script.getAutoStart())
                 {
-                    //cerr << "|" << endl;
                     print(LineBreak(_lang.get("PARSER_STARTINGSCRIPT", _script.getScriptFileName()), _option, true, 4));
                     if (oLogFile.is_open())
                         oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Starting Script " << _script.getScriptFileName() << endl;
@@ -625,18 +614,17 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 
                 // --> Wenn gerade ein Script aktiv ist, lese dessen naechste Zeile, sonst nehme eine Zeile von std::cin <--
                 if (_script.isValid() && _script.isOpen())
+                {
                     sLine = _script.getNextScriptCommand();
+                    sScriptFileName = _script.getScriptFileName();
+                    nScriptLine = _script.getCurrentLine();
+                }
                 else if (_option.readCmdCache().length())
                 {
                     if (oLogFile.is_open())
                         oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Processing command line parameters:" << endl;
                     sLine = _option.readCmdCache(true);
                 }
-                //print("DEBUG: " +sLine);
-                /*else
-                {
-                    std::getline(std::cin, sLine);
-                }*/
                 // --> Leerzeichen und Tabulatoren entfernen <--
                 StripSpaces(sLine);
                 for (unsigned int i = 0; i < sLine.length(); i++)
@@ -695,8 +683,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             }
             if ((sCmdCache.length() || sLine.find(';') != string::npos) && !_procedure.is_writing() && findCommand(sLine).sString != "procedure")
             {
-                //cerr << sCmdCache << endl;
-                //cerr << sLine << endl;
                 if (sCmdCache.length())
                 {
                     while (sCmdCache.front() == ';' || sCmdCache.front() == ' ')
@@ -751,6 +737,18 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     }
                 }
             }
+
+            // Eval debugger breakpoints from scripts
+            if (sLine.substr(0,2) == "|>"
+                && _script.isValid()
+                && !_procedure.is_writing()
+                && !_procedure.getLoop())
+            {
+                sLine.erase(0,2);
+                if (_option.getUseDebugger())
+                    evalDebuggerBreakPoint(_option, _data.getStringVars(), sLine, &_parser);
+            }
+
             if (oLogFile.is_open())
                 oLogFile << toString(time(0) - tTimeZero, true) << "> " << sLine << endl;
             if (GetAsyncCancelState() && _script.isValid() && _script.isOpen())
@@ -862,7 +860,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                                 printPreFmt("--");
                         }
                         printPreFmt(strfill("> ", 2*_procedure.getLoop(), '-'));
-                        //cerr << std::setfill('-') << std::setw(2*_procedure.getLoop()-2) << "> ";
                     }
                     else if (_procedure.is_writing())
                     {
@@ -903,7 +900,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             // --> Prozeduren abarbeiten <--
             if (sLine.find('$') != string::npos && sLine.find('(', sLine.find('$')) != string::npos && !_procedure.getLoop())
             {
-                //cerr << sLine << endl;
                 unsigned int nPos = 0;
                 int nProc = 0;
                 while (sLine.find('$', nPos) != string::npos && sLine.find('(', sLine.find('$', nPos)) != string::npos)
@@ -925,7 +921,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 
                     if (!isInQuotes(sLine, nPos, true))
                     {
-                        //cerr << "__sName = " << __sName << endl;
                         Returnvalue _rTemp = _procedure.execute(__sName, __sVarList, _parser, _functions, _data, _option, _out, _pData, _script);
                         if (!_procedure.getReturnType())
                             sLine = sLine.substr(0, nPos-1) + sLine.substr(nParPos+1);
@@ -934,29 +929,14 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                             _procedure.replaceReturnVal(sLine, _parser, _rTemp, nPos-1, nParPos+1, "PROC~["+__sName+"~ROOT_"+toString(nProc)+"]");
                             nProc++;
                         }
-                        //cerr << sLine << endl;
-                        /* if (_rTemp.sStringVal.length())
-                            sLine = sLine.substr(0, nPos-1) + _rTemp.sStringVal + sLine.substr(nParPos+1);
-                        else
-                            sLine = sLine.substr(0,nPos-1) + toCmdString(_rTemp.dNumVal) + sLine.substr(nParPos+1);*/
                     }
                     nPos += __sName.length() + __sVarList.length()+1;
-
-                    //sCurrentProcedureName = sProcNames.substr(sProcNames.rfind(';',sProcNames.rfind(';')-1)+1, sProcNames.rfind(';')-sProcNames.rfind(';',sProcNames.rfind(';')-1)-1);
-                    //sProcNames = sProcNames.substr(0,sProcNames.rfind(';'));
                 }
                 StripSpaces(sLine);
                 if (!sLine.length())
                     continue;
             }
 
-            // --> Ist das letzte Zeichen ein ';'? Dann weise bSupressAnswer TRUE zu <--
-            /*while (sLine.back() == ';')
-            {
-                sLine.pop_back();
-                StripSpaces(sLine);
-                bSupressAnswer = true;
-            }*/
             // --> Gibt es "??"? Dann rufe die Prompt-Funktion auf <--
             if (!_procedure.getLoop() && sLine.find("??") != string::npos && sLine.substr(0,4) != "help")
                 sLine = parser_Prompt(sLine);
@@ -990,13 +970,11 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     continue;
                 }
             }
-            //cerr << sLine << endl;
             if (findCommand(sLine, "explicit").sString == "explicit")
             {
                 sLine.erase(findCommand(sLine, "explicit").nPos,8);
                 StripSpaces(sLine);
             }
-            //cerr << sLine << endl;
             /* --> Die Keyword-Suche soll nur funktionieren, wenn keine Schleife eingegeben wird, oder wenn eine
              *     eine Schleife eingegeben wird, dann nur in den wenigen Spezialfaellen, die zum Nachschlagen
              *     eines Keywords noetig sind ("list", "help", "find", etc.) <--
@@ -1014,7 +992,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 {
                     case  0: break; // Kein Keyword: Mit dem Parser auswerten
                     case  1:        // Keyword: Naechster Schleifendurchlauf!
-                        //SetConsTitle(_data, _option);
                         if (!sCmdCache.length() && !(_script.isValid() && _script.isOpen()))
                         {
                             if (_script.wasLastCommand())
@@ -1024,8 +1001,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                             }
                             sCommandLine.clear();
                             bCancelSignal = false;
-                            /*if (sFileToEdit.length())
-                                return NUMERE_EDIT_FILE;*/
                             return NUMERE_DONE_KEYWORD;
                         }
                         else
@@ -1036,16 +1011,12 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                         {
                             string c = "";
                             print(LineBreak(_lang.get("MAIN_UNSAVED_CACHE"), _option));
-                            //cerr << LineBreak("|-> Es sind ungesicherte Daten im Cache vorhanden! Sollen sie gespeichert werden? (j/n)", _option) << endl;
                             printPreFmt("|\n|<- ");
                             NumeReKernel::getline(c);
                             if (c == _lang.YES())
                             {
                                 _data.saveCache(); // MAIN_CACHE_SAVED
                                 print(LineBreak(_lang.get("MAIN_CACHE_SAVED"), _option));
-                                //cerr << LineBreak("|-> Cache wurde erfolgreich gespeichert.", _option) << endl;
-                                // --> Sleep, damit genug Zeit zum Lesen ist <--
-                                //Sleep(1500);
                                 Sleep(500);
                             }
                             else
@@ -1085,10 +1056,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                             _procedure.replaceReturnVal(sLine, _parser, _rTemp, nPos-1, nParPos+1, "PROC~["+__sName+"~ROOT_"+toString(nProc)+"]");
                             nProc++;
                         }
-                        /*if (_rTemp.sStringVal.length())
-                            sLine = sLine.substr(0,nPos-1) + _rTemp.sStringVal + sLine.substr(nParPos+1);
-                        else
-                            sLine = sLine.substr(0,nPos-1) + toCmdString(_rTemp.dNumVal) + sLine.substr(nParPos+1);*/
                     }
                     nPos += __sName.length() + __sVarList.length()+1;
 
@@ -1160,7 +1127,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                         }
                         toggleTableStatus();
                         printPreFmt(strfill("> ", 2*_procedure.getLoop(), '-'));
-                        //cerr << std::setfill('-') << std::setw(2*_procedure.getLoop()-2) << "> ";
                     }
                     else if (_procedure.is_writing())
                     {
@@ -1197,12 +1163,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 if (sCache.length() && sCache.find('#') == string::npos)
                     bWriteToCache = true;
             }
-            // --> Moeglicherweise erscheint nun "{{". Dies muss ersetzt werden <--
-            /*if (sLine.find("{{") != string::npos && (containsStrings(sLine) || _data.containsStringVars(sLine)))
-            {
-                parser_VectorToExpr(sLine, _option);
-            }*/
-
             // --> Workaround fuer den x = x+1-Bug: In diesem Fall sollte die Eingabe x := x+1 lauten und wird hier weiterverarbeitet <--
             while (sLine.find(":=") != string::npos)
             {
@@ -1370,25 +1330,18 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 vAns = v[0];
                 if (!bSupressAnswer)
                 {
-                    //cerr << std::setprecision(_option.getPrecision());
                     int nLineBreak = parser_LineBreak(_option);
                     string sAns = "ans = {";
-                    //cerr << "|-> ans = {";
                     for (int i = 0; i < nNum; ++i)
                     {
                         sAns += strfill(toString(v[i], _option), _option.getPrecision()+7);
-                        //cerr << std::setfill(' ') << std::setw(_option.getPrecision()+7) << std::setprecision(_option.getPrecision()) << v[i];
                         if (i < nNum-1)
                             sAns += ", ";
-                            //cerr << ", ";
                         if (nNum + 1 > nLineBreak && !((i+1) % nLineBreak) && i < nNum-1)
-                            sAns += "...\n|          "; /// evtl printPreFmt schon an dieser Stelle ...?
-                            //cerr << "...\n|          ";
+                            sAns += "...\n|          ";
                     }
                     sAns += "}";
-                    //printPreFmt(sAns);
                     printResult(sAns, sCmdCache, _script.isValid() && _script.isOpen());
-                    //cerr << "}" << endl;
                 }
                 if (bWriteToCache)
                 {
@@ -1427,16 +1380,9 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             }
             else
             {
-                //vAns = _parser.Eval();
                 vAns = v[0];
-                /*if (isinf(vAns))
-                {
-                    cerr << "INF catch!" << endl;
-                }*/
                 if (bWriteToCache)
                 {
-                    /*if (_option.getbDebug())
-                        mu::console() << _nrT("|-> DEBUG: i_pos = ") << i_pos[0] <<  _nrT(", j_pos = ") << j_pos[0] << endl;*/
                     _data.writeToCache(i_pos[0], j_pos[0], sCache.substr(0,sCache.find('(')), (double)vAns);
                 }
                 if (!bSupressAnswer)
@@ -1464,7 +1410,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             // --> Fehlerhaftes/Unerwartetes Objekt <--
             if (e.GetToken().length())
                 print(toSystemCodePage(_lang.get("ERR_OBJECT", e.GetToken())));
-                //cerr << "|   Objekt:    \"" << e.GetToken()    << "\"" << endl;
 
             /* --> Position des Fehlers im Ausdruck: Wir stellen um den Fehler nur einen Ausschnitt
              *     des Ausdrucks in der Laenge von etwa 63 Zeichen dar und markieren die Fehlerposition
@@ -1473,42 +1418,30 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             if (e.GetExpr().length() > 63 && nErrorPos > 31 && nErrorPos < e.GetExpr().length()-32)
             {
                 printPreFmt("|   Position:  \"..."+e.GetExpr().substr(nErrorPos-29,57) + "...\"\n");
-                //printPreFmt("|  "+ ( (char)218 + string("Position:") + (char)191) + " \"..."+e.GetExpr().substr(nErrorPos-29,57) + "...\"\n");
                 printPreFmt(pointToError(32));
-                //cerr << "|  " << (char)218 << "Position:" << (char)191 << " \"..." << e.GetExpr().substr(nErrorPos-29,57) << "...\"\n";
-                //cerr << "|  " << (char)192 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)193 << (char)196 << (char)196 << std::setfill((char)196) << std::setw(32) << (char)217 << endl;
             }
             else if (nErrorPos < 32)
             {
                 string sErrorExpr = "|   Position:  \"";
-                //cerr << "|  " << (char)218 << "Position:" << (char)191 << " \"";
                 if (e.GetExpr().length() > 63)
                     sErrorExpr += e.GetExpr().substr(0,60) + "...\"";
-                    //cerr << e.GetExpr().substr(0,60) << "...\"" << endl;
                 else
                     sErrorExpr += e.GetExpr() + "\"";
-                    //cerr << e.GetExpr() << "\"" << endl;
                 printPreFmt(sErrorExpr+"\n");
                 printPreFmt(pointToError(nErrorPos+1));
-                //cerr << "|  " << (char)192 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)193 << (char)196 << (char)196 << std::setfill((char)196) << std::setw(nErrorPos+1) << (char)217 << endl;
             }
             else if (nErrorPos > e.GetExpr().length()-32)
             {
                 string sErrorExpr = "|   Position:  \"";
-                //cerr << "|  " << (char)218 << "Position:" << (char)191 << " \"";
                 if (e.GetExpr().length() > 63)
                 {
                     printPreFmt(sErrorExpr + "..." + e.GetExpr().substr(e.GetExpr().length()-60) + "\"\n");
-                    //cerr << _nrT("...") << e.GetExpr().substr(e.GetExpr().length()-60) << "\"" << endl;
                     printPreFmt(pointToError(65-(e.GetExpr().length()-nErrorPos)-2));
-                    //cerr << "|  " << (char)192 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)193 << (char)196 << (char)196 << std::setfill((char)196) << std::setw(65-(e.GetExpr().length()-nErrorPos)-2) << (char)217 << endl;
                 }
                 else
                 {
-                    //mu::console() << e.GetExpr() << _nrT("\"\n");
                     printPreFmt(sErrorExpr + e.GetExpr() + "\"\n");
                     printPreFmt(pointToError(nErrorPos));
-                    //cerr << "|  " << (char)192 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)196 << (char)193 << (char)196 << (char)196 << std::setfill((char)196) << std::setw(nErrorPos) << (char)217 << endl;
                 }
             }
 
@@ -1519,23 +1452,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 // --> Script beenden! Mit einem Fehler ist es unsinnig weiterzurechnen <--
                 _script.close();
             }
-            /*if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
-            {
-                printPreFmt(sectionHeadline(_lang.get("DBG_MODULE")));
-                //cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_MODULE")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_MODULE").length()) << (char)196 << endl;
-                printPreFmt(LineBreak("|   "+_option._debug.printModuleInformations(), _option, false, 0)+"\n");
-                printPreFmt(sectionHeadline(_lang.get("DBG_STACKTRACE")));
-                //cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_STACKTRACE")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_STACKTRACE").length()) << (char)196 << endl;
-                printPreFmt(LineBreak("|   "+_option._debug.printStackTrace(), _option, false, 0)+"\n");
-                printPreFmt(sectionHeadline(_lang.get("DBG_LOCALVARS")));
-                //cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_LOCALVARS")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_LOCALVARS").length()) << (char)196 << endl;
-                printPreFmt(LineBreak("|   "+_option._debug.printLocalVars(), _option, false, 0)+"\n");
-                printPreFmt(sectionHeadline(_lang.get("DBG_LOCALSTRINGS")));
-                //cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_LOCALSTRINGS")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_LOCALSTRINGS").length()) << (char)196 << endl;
-                printPreFmt(LineBreak("|   "+_option._debug.printLocalStrings(), _option, false)+"\n");
-                gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber());
-                _option._debug.reset();
-            }*/
+
             make_hline();
 
             // --> Alle Variablen zuerst zuruecksetzen! <--
@@ -1594,23 +1511,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 // --> Script beenden! Mit einem Fehler ist es unsinnig weiterzurechnen <--
                 _script.close();
             }
-            /*if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
-            {
-                    printPreFmt(sectionHeadline(_lang.get("DBG_MODULE")));
-                    //cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_MODULE")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_MODULE").length()) << (char)196 << endl;
-                    printPreFmt(LineBreak("|   "+_option._debug.printModuleInformations(), _option, false, 0)+"\n");
-                    printPreFmt(sectionHeadline(_lang.get("DBG_STACKTRACE")));
-                    //cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_STACKTRACE")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_STACKTRACE").length()) << (char)196 << endl;
-                    printPreFmt(LineBreak("|   "+_option._debug.printStackTrace(), _option, false, 0)+"\n");
-                    printPreFmt(sectionHeadline(_lang.get("DBG_LOCALVARS")));
-                    //cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_LOCALVARS")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_LOCALVARS").length()) << (char)196 << endl;
-                    printPreFmt(LineBreak("|   "+_option._debug.printLocalVars(), _option, false, 0)+"\n");
-                    printPreFmt(sectionHeadline(_lang.get("DBG_LOCALSTRINGS")));
-                    //cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_LOCALSTRINGS")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_LOCALSTRINGS").length()) << (char)196 << endl;
-                    printPreFmt(LineBreak("|   "+_option._debug.printLocalStrings(), _option, false)+"\n");
-                    gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber());
-                    _option._debug.reset();
-            }*/
             _pData.setFileName("");
             make_hline();
             if (oLogFile.is_open())
@@ -1680,23 +1580,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     // --> Script beenden! Mit einem Fehler ist es unsinnig weiterzurechnen <--
                     _script.close();
                 }
-                /*if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
-                {
-                    printPreFmt(sectionHeadline(_lang.get("DBG_MODULE")));
-                    //cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_MODULE")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_MODULE").length()) << (char)196 << endl;
-                    printPreFmt(LineBreak("|   "+_option._debug.printModuleInformations(), _option, false, 0)+"\n");
-                    printPreFmt(sectionHeadline(_lang.get("DBG_STACKTRACE")));
-                    //cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_STACKTRACE")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_STACKTRACE").length()) << (char)196 << endl;
-                    printPreFmt(LineBreak("|   "+_option._debug.printStackTrace(), _option, false, 0)+"\n");
-                    printPreFmt(sectionHeadline(_lang.get("DBG_LOCALVARS")));
-                    //cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_LOCALVARS")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_LOCALVARS").length()) << (char)196 << endl;
-                    printPreFmt(LineBreak("|   "+_option._debug.printLocalVars(), _option, false, 0)+"\n");
-                    printPreFmt(sectionHeadline(_lang.get("DBG_LOCALSTRINGS")));
-                    //cerr << "|" << endl << "|   " << toUpperCase(_lang.get("DBG_LOCALSTRINGS")) << ": " << std::setfill((char)196) << std::setw(_option.getWindow()-6-_lang.get("DBG_LOCALSTRINGS").length()) << (char)196 << endl;
-                    printPreFmt(LineBreak("|   "+_option._debug.printLocalStrings(), _option, false)+"\n");
-                    gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber());
-                    _option._debug.reset();
-                }*/
             }
             _pData.setFileName("");
             make_hline();
@@ -1745,12 +1628,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
     }
     while ((_script.isValid() && _script.isOpen()) || sCmdCache.length());
 
-    //NumeReKernel::print("Das ist ein test");
-    //Sleep(2000);
-
-    /*if (sCommandLine == "quit")
-        return NumeReKernel::NUMERE_QUIT;*/
-    //sCommandLine.clear();
     bCancelSignal = false;
     if (_script.wasLastCommand())
     {
@@ -1779,7 +1656,6 @@ void NumeReKernel::saveData()
     {
         _data.saveCache(); // MAIN_CACHE_SAVED
         print(LineBreak(_lang.get("MAIN_CACHE_SAVED"), _option));
-        //cerr << LineBreak("|-> Cache wurde erfolgreich gespeichert.", _option) << endl;
         Sleep(500);
     }
 
@@ -1803,9 +1679,6 @@ void NumeReKernel::CloseSession()
         Sleep(100);
 	}
 	_option.save(_option.getExePath()); // MAIN_QUIT
-	//cerr << LineBreak("|-> "+_lang.get("MAIN_QUIT", sVersion), _option) << endl;
-	//cerr << LineBreak("|-> NumeRe v " + sVersion + " wurde erfolgreich beendet.", _option) << endl;
-	//cerr << "|" << endl;
 	if (oLogFile.is_open())
 	{
         oLogFile << "--- NUMERE WAS TERMINATED SUCCESSFULLY ---" << endl << endl << endl;
@@ -1990,66 +1863,35 @@ void NumeReKernel::statusBar(int nStep, int nFirstStep, int nFinalStep, const st
     toggleTableStatus();
     if (nLastLineLength > 0)
         printPreFmt("\r" + strfill(" ", nLastLineLength));
-        ///cerr << "\r" << std::setw(nLastLineLength) << std::setfill(' ') << " ";
     if (sType == "std")
     {
         printPreFmt("\r|-> " + _lang.get("COMMON_EVALUATING") + " ... " + toString(nStatusVal) + " %");
-        ///cerr << "\r|-> " << _lang.get("COMMON_EVALUATING") << " ... " << nStatusVal << " %";
         nLastLineLength = 14+_lang.get("COMMON_EVALUATING").length();
     }
     else if (sType == "cancel")
     {
         printPreFmt("\r|-> " + _lang.get("COMMON_EVALUATING") + " ... " + _lang.get("COMMON_CANCEL"));
-        ///cerr << "\r|-> " << _lang.get("COMMON_EVALUATING") << " ... " << _lang.get("COMMON_CANCEL");
         nStep = nFinalStep;
     }
     else if (sType == "bar")
     {
         printPreFmt("\r|-> [" + strfill("#", (int)(nStatusVal/5.0), '#') + strfill(" ", 20-(int)(nStatusVal/5.0)) + "] (" + toString(nStatusVal) + " %)");
-        /**cerr << "\r|-> " << (char)186;
-        for (int i = 0; i < 20; i++)
-        {
-            if (i < nStatusVal/5.0)
-                cerr << (char)178;
-            else
-                cerr << (char)176;
-        }
-        cerr << (char)186 << " (" << nStatusVal << " %)";*/
         nLastLineLength = 34;
     }
     else if (sType == "bcancel")
     {
         printPreFmt("\r|-> [" + strfill("#", (int)(nLastStatusVal/5.0), '#') + strfill(" ", 20-(int)(nLastStatusVal/5.0)) + "] (--- %)");
-        /**cerr << "\r|-> " << (char)186;
-        for (int i = 0; i < 20; i++)
-        {
-            if (i < nLastStatusVal/5.0)
-                cerr << (char)178;
-            else
-                cerr << (char)176;
-        }
-        cerr << (char)186 << " (--- %)";*/
         nFinalStep = nStep;
     }
     else
     {
         nLastLineLength = 1;
         printPreFmt("\r|");
-        ///cerr << "\r|";
         for (unsigned int i = 0; i < sType.length(); i++)
         {
             if (sType.substr(i,5) == "<bar>")
             {
                 printPreFmt("[" + strfill("#", (int)(nStatusVal/5.0), '#') + strfill(" ", 20-(int)(nStatusVal/5.0)) + "]");
-                /**cerr << (char)186;
-                for (int j = 0; j < 20; j++)
-                {
-                    if (j < nStatusVal/5.0)
-                        cerr << (char)178;
-                    else
-                        cerr << (char)176;
-                }
-                cerr << (char)186;*/
                 i += 4;
                 nLastLineLength += 22;
                 continue;
@@ -2057,15 +1899,6 @@ void NumeReKernel::statusBar(int nStep, int nFirstStep, int nFinalStep, const st
             if (sType.substr(i,5) == "<Bar>")
             {
                 printPreFmt("[" + strfill("#", (int)(nStatusVal/5.0), '#') + strfill(" ", 20-(int)(nStatusVal/5.0), '-') + "]");
-                /**cerr << (char)186;
-                for (int j = 0; j < 20; j++)
-                {
-                    if (j < nStatusVal/5.0)
-                        cerr << (char)178;
-                    else
-                        cerr << " ";
-                }
-                cerr << (char)186;*/
                 i += 4;
                 nLastLineLength += 22;
                 continue;
@@ -2073,15 +1906,6 @@ void NumeReKernel::statusBar(int nStep, int nFirstStep, int nFinalStep, const st
             if (sType.substr(i,5) == "<BAR>")
             {
                 printPreFmt("[" + strfill("#", (int)(nStatusVal/5.0), '#') + strfill(" ", 20-(int)(nStatusVal/5.0), '=') + "]");
-                /**cerr << (char)186;
-                for (int j = 0; j < 20; j++)
-                {
-                    if (j < nStatusVal/5.0)
-                        cerr << (char)219;
-                    else
-                        cerr << (char)176;
-                }
-                cerr << (char)186;*/
                 i += 4;
                 nLastLineLength += 22;
                 continue;
@@ -2089,7 +1913,6 @@ void NumeReKernel::statusBar(int nStep, int nFirstStep, int nFinalStep, const st
             if (sType.substr(i,5) == "<val>")
             {
                 printPreFmt(toString(nStatusVal));
-                ///cerr << nStatusVal;
                 i += 4;
                 nLastLineLength += 3;
                 continue;
@@ -2097,7 +1920,6 @@ void NumeReKernel::statusBar(int nStep, int nFirstStep, int nFinalStep, const st
             if (sType.substr(i,5) == "<Val>")
             {
                 printPreFmt(strfill(toString(nStatusVal), 3));
-                ///cerr << std::setw(3) << std::setfill(' ') << nStatusVal;
                 i += 4;
                 nLastLineLength += 3;
                 continue;
@@ -2105,7 +1927,6 @@ void NumeReKernel::statusBar(int nStep, int nFirstStep, int nFinalStep, const st
             if (sType.substr(i,5) == "<VAL>")
             {
                 printPreFmt(strfill(toString(nStatusVal), 3, '0'));
-                ///cerr << std::setw(3) << std::setfill('0') << nStatusVal;
                 i += 4;
                 nLastLineLength += 3;
                 continue;
@@ -2120,7 +1941,6 @@ void NumeReKernel::statusBar(int nStep, int nFirstStep, int nFinalStep, const st
     if (nFinalStep == nStep)
     {
         printPreFmt("\n");
-        ///cerr << endl;
         nLastStatusVal = 0;
         nLastLineLength = 0;
     }
@@ -2264,6 +2084,69 @@ void NumeReKernel::waitForContinue()
     return;
 }
 
+void NumeReKernel::evalDebuggerBreakPoint(Settings& _option, const map<string,string>& sStringMap, const string& sCurrentCommand, Parser* _parser)
+{
+    mu::varmap_type varmap;
+    string** sLocalVars = nullptr;
+    double* dLocalVars = nullptr;
+    size_t nLocalVarMapSize = 0;
+    size_t nLocalVarMapSkip = 0;
+    string** sLocalStrings = nullptr;
+    size_t nLocalStringMapSize = 0;
+    if (_parser)
+    {
+        varmap = _parser->GetVar();
+        nLocalVarMapSize = varmap.size();
+        sLocalVars = new string*[nLocalVarMapSize];
+        dLocalVars = new double[nLocalVarMapSize];
+        size_t i = 0;
+        for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
+        {
+            sLocalVars[i+nLocalVarMapSkip] = new string[2];
+            if ((iter->first).front() == '~')
+            {
+                nLocalVarMapSkip++;
+                continue;
+            }
+            sLocalVars[i][0] = iter->first;
+            sLocalVars[i][1] = iter->first;
+            dLocalVars[i] = *(iter->second);
+            i++;
+        }
+
+        nLocalStringMapSize = sStringMap.size();
+        if (nLocalStringMapSize)
+        {
+            sLocalStrings = new string*[nLocalStringMapSize];
+            i = 0;
+            for (auto iter = sStringMap.begin(); iter != sStringMap.end(); ++iter)
+            {
+                sLocalStrings[i] = new string[2];
+                sLocalStrings[i][0] = iter->first;
+                sLocalStrings[i][1] = iter->first;
+            }
+        }
+    }
+    _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize-nLocalVarMapSkip, dLocalVars, sLocalStrings, nLocalStringMapSize, sStringMap, sCurrentCommand, sScriptFileName, nScriptLine);
+    showDebugEvent(_lang.get("DBG_HEADLINE"), _option._debug.getModuleInformations(), _option._debug.getStackTrace(), _option._debug.getNumVars(), _option._debug.getStringVars());
+    gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber());
+    _option._debug.resetBP();
+    if (sLocalVars)
+    {
+        delete[] dLocalVars;
+        for (size_t i = 0; i < nLocalVarMapSize; i++)
+            delete[] sLocalVars[i];
+        delete[] sLocalVars;
+    }
+    if (sLocalStrings)
+    {
+        for (size_t i = 0; i < nLocalStringMapSize; i++)
+            delete[] sLocalStrings[i];
+        delete[] sLocalStrings;
+    }
+    waitForContinue();
+}
+
 void NumeReKernel::getline(string& sLine)
 {
     if (!m_parent)
@@ -2303,28 +2186,15 @@ void make_hline(int nLength)
     if (nLength == -1)
     {
         NumeReKernel::printPreFmt("\r"+strfill(string(1,'='), NumeReKernel::nLINE_LENGTH-1, '=') + "\n");
-        /*for (int i = 0; i < NumeReKernel::nLINE_LENGTH; i++)
-        {
-            cerr << (char)205;
-        }*/
 	}
 	else if (nLength < -1)
 	{
         NumeReKernel::printPreFmt("\r"+strfill(string(1,'-'), NumeReKernel::nLINE_LENGTH-1, '-') + "\n");
-        /*for (int i = 0; i < NumeReKernel::nLINE_LENGTH; i++)
-        {
-            cerr << (char)196;
-        }*/
 	}
 	else
 	{
         NumeReKernel::printPreFmt("\r"+strfill(string(1,'='), nLength, '=') + "\n");
-        /*for (int i = 0; i < nLength; i++)
-        {
-            cerr << (char)205;
-        }*/
 	}
-	//cerr << endl;
 	return;
 }
 

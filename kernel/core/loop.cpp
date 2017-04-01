@@ -2447,7 +2447,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
             vVars[sVarArray[i]] = parser_GetVarAdress(sVarArray[i], _parser);
         else
         {
-            mVarMap[sVarArray[i]] = "LOOP_"+sVarArray[i]+"_"+toString(nthRecursion);
+            mVarMap[sVarArray[i]] = "~LOOP_"+sVarArray[i]+"_"+toString(nthRecursion);
             sVarArray[i] = mVarMap[sVarArray[i]];
         }
         _parser.DefineVar(sVarArray[i], &vVarArray[i][0]);
@@ -2834,7 +2834,7 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
             //cerr << "Debugger" << endl;
             //cerr << sLine << endl << nCmd-nthCmd << endl << nVarArray << endl;
             _option._debug.gatherLoopBasedInformations(sLine, nCmd-nthCmd, mVarMap, vVarArray, sVarArray, nVarArray);
-            evalDebuggerBreakPoint(_option, _data.getStringVars());
+            evalDebuggerBreakPoint(_parser, _option, _data.getStringVars());
         }
     }
 
@@ -3519,7 +3519,7 @@ void Loop::replaceLocalVars(string& sLine)
     return;
 }
 
-void Loop::evalDebuggerBreakPoint(Settings& _option, const map<string,string>& sStringMap)
+void Loop::evalDebuggerBreakPoint(Parser& _parser, Settings& _option, const map<string,string>& sStringMap)
 {
     return;
 }
