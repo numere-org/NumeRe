@@ -218,7 +218,7 @@ string Script::getNextScriptCommand()
                 getline(fScript, sScriptCommand);
                 nLine++;
                 StripSpaces(sScriptCommand);
-                if (NumeReKernel::_messenger.isBreakpoint(sScriptFileName, nLine) && sScriptCommand.substr(0,2) != "|>")
+                if (NumeReKernel::_messenger.isBreakpoint(sScriptFileName, nLine-1) && sScriptCommand.substr(0,2) != "|>")
                     sScriptCommand.insert(0, "|> ");
                 if (!sScriptCommand.length())
                     continue;

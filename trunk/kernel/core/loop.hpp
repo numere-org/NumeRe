@@ -89,7 +89,7 @@ class Loop
         virtual int procedureCmdInterface(string& sLine);
         virtual int procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command);
         virtual bool isInline(const string& sProc);
-        virtual void evalDebuggerBreakPoint(Settings& _option, const map<string,string>& sStringMap);
+        virtual void evalDebuggerBreakPoint(Parser& _parser, Settings& _option, const map<string,string>& sStringMap);
 
     public:
         Loop();

@@ -101,14 +101,20 @@ void NumeReDebugger::gatherInformations(string** sLocalVars,
     bAlreadyThrown = true;
     for (unsigned int i = 0; i < nLocalVarMapSize; i++)
     {
-        while (sErraticCommand.find(sLocalVars[i][1]) != string::npos)
-            sErraticCommand.replace(sErraticCommand.find(sLocalVars[i][1]), sLocalVars[i][1].length(), sLocalVars[i][0]);
+        if (sLocalVars[i][0] != sLocalVars[i][1])
+        {
+            while (sErraticCommand.find(sLocalVars[i][1]) != string::npos)
+                sErraticCommand.replace(sErraticCommand.find(sLocalVars[i][1]), sLocalVars[i][1].length(), sLocalVars[i][0]);
+        }
         mLocalVars[sLocalVars[i][0]] = dLocalVars[i];
     }
     for (unsigned int i = 0; i < nLocalStrMapSize; i++)
     {
-        while (sErraticCommand.find(sLocalStrings[i][1]) != string::npos)
-            sErraticCommand.replace(sErraticCommand.find(sLocalStrings[i][1]), sLocalStrings[i][1].length(), sLocalStrings[i][0]);
+        if (sLocalStrings[i][0] != sLocalStrings[i][1])
+        {
+            while (sErraticCommand.find(sLocalStrings[i][1]) != string::npos)
+                sErraticCommand.replace(sErraticCommand.find(sLocalStrings[i][1]), sLocalStrings[i][1].length(), sLocalStrings[i][0]);
+        }
         mLocalStrings[sLocalStrings[i][0]] = sStringMap.at(sLocalStrings[i][1]);
     }
 

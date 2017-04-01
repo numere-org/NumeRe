@@ -6847,7 +6847,7 @@
 	"filesystem.hpp"
 	"error.hpp"
 
-1490791550 d:\cpp\numere-source\trunk\kernel\core\debugger.hpp
+1491035164 d:\cpp\numere-source\trunk\kernel\core\debugger.hpp
 	<vector>
 	<string>
 	<map>
@@ -6997,7 +6997,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1490798687 d:\cpp\numere-source\trunk\kernel\kernel.hpp
+1491042970 d:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	"core/error.hpp"
@@ -7289,7 +7289,7 @@
 	"settings.hpp"
 	"error.hpp"
 
-1490791551 d:\cpp\numere-source\trunk\kernel\core\loop.hpp
+1491044757 d:\cpp\numere-source\trunk\kernel\core\loop.hpp
 	<string>
 	<iostream>
 	"error.hpp"
@@ -7304,7 +7304,7 @@
 	"built-in.hpp"
 	"tools.hpp"
 
-1490791550 d:\cpp\numere-source\trunk\kernel\core\procedure.hpp
+1491044661 d:\cpp\numere-source\trunk\kernel\core\procedure.hpp
 	<iostream>
 	<string>
 	<cmath>
@@ -7706,7 +7706,7 @@
 	<string>
 	<vector>
 
-1490822883 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1490999360 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -8339,7 +8339,7 @@
 	"datafile.hpp"
 	"../kernel.hpp"
 
-1490791550 source:d:\cpp\numere-source\trunk\kernel\core\debugger.cpp
+1491044192 source:d:\cpp\numere-source\trunk\kernel\core\debugger.cpp
 	"debugger.hpp"
 
 1490798687 source:d:\cpp\numere-source\trunk\kernel\core\define.cpp
@@ -8377,7 +8377,7 @@
 1490791550 source:d:\cpp\numere-source\trunk\kernel\core\language.cpp
 	"language.hpp"
 
-1490791550 source:d:\cpp\numere-source\trunk\kernel\core\loop.cpp
+1491045198 source:d:\cpp\numere-source\trunk\kernel\core\loop.cpp
 	"loop.hpp"
 	"../kernel.hpp"
 
@@ -8484,7 +8484,7 @@
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1490798667 source:d:\cpp\numere-source\trunk\kernel\core\procedure.cpp
+1491045581 source:d:\cpp\numere-source\trunk\kernel\core\procedure.cpp
 	"procedure.hpp"
 	"../kernel.hpp"
 
@@ -8497,7 +8497,7 @@
 	<iostream>
 	"resampler.h"
 
-1490791550 source:d:\cpp\numere-source\trunk\kernel\core\script.cpp
+1491038102 source:d:\cpp\numere-source\trunk\kernel\core\script.cpp
 	"script.hpp"
 	"../kernel.hpp"
 
@@ -8542,7 +8542,7 @@
 	"debugmessenger.hpp"
 	"core/tools.hpp"
 
-1490798690 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1491044446 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 

@@ -60,6 +60,8 @@ class NumeReDebugger
             {return nLineNumber;}
         inline string getErrorModule()
             {return sErraticModule;}
+        inline size_t getStackSize()
+            {return vStackTrace.size();}
         void reset();
         void resetBP();
         void pushStackItem(const string& sStackItem);
