@@ -28,43 +28,43 @@ IconManager::IconManager(const wxString& programPath)
 	m_images->Add(closedfolder);
 
 	//wxBitmap openfolder(openfolder16x1632bpp_xpm);
-	wxIcon openfolder(programPath + "\\icons\\folder.ico", wxBITMAP_TYPE_ICO, 16,16);
+	wxIcon openfolder(programPath + "\\icons\\folder.ico", wxBITMAP_TYPE_ICO);
 	m_iconExtensionMapping["FOLDEROPEN"] = m_images->GetImageCount();
 	m_images->Add(openfolder);
 
-	wxIcon functions(programPath + "\\icons\\fnc.ico", wxBITMAP_TYPE_ICO, 16,16);
+	wxIcon functions(programPath + "\\icons\\fnc.ico", wxBITMAP_TYPE_ICO);
 	m_iconExtensionMapping["FUNCTIONS"] = m_images->GetImageCount();
 	m_images->Add(functions);
 
-	wxIcon commands(programPath + "\\icons\\cmd.ico", wxBITMAP_TYPE_ICO, 16,16);
+	wxIcon commands(programPath + "\\icons\\cmd.ico", wxBITMAP_TYPE_ICO);
 	m_iconExtensionMapping["COMMANDS"] = m_images->GetImageCount();
 	m_images->Add(commands);
 
-	wxIcon NSCR(programPath + "\\icons\\nscr.ico", wxBITMAP_TYPE_ICO, 16,16);
+	wxIcon NSCR(programPath + "\\icons\\nscr.ico", wxBITMAP_TYPE_ICO);
 	m_iconExtensionMapping["nscr"] = m_images->GetImageCount();
 	m_iconExtensionMapping[".nscr"] = m_images->GetImageCount();
 	m_images->Add(NSCR);
 
-	wxIcon ICON(programPath + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO, 16,16);
+	wxIcon ICON(programPath + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO);
 	m_iconExtensionMapping["WORKPLACE"] = m_images->GetImageCount();
 	m_images->Add(ICON);
 
-	wxIcon NPRC(programPath + "\\icons\\nprc.ico", wxBITMAP_TYPE_ICO, 16,16);
+	wxIcon NPRC(programPath + "\\icons\\nprc.ico", wxBITMAP_TYPE_ICO);
 	m_iconExtensionMapping["nprc"] = m_images->GetImageCount();
 	m_iconExtensionMapping[".nprc"] = m_images->GetImageCount();
 	m_images->Add(NPRC);
 
-	wxIcon NDAT(programPath + "\\icons\\ndat.ico", wxBITMAP_TYPE_ICO, 16,16);
+	wxIcon NDAT(programPath + "\\icons\\ndat.ico", wxBITMAP_TYPE_ICO);
 	m_iconExtensionMapping["ndat"] = m_images->GetImageCount();
 	m_iconExtensionMapping[".ndat"] = m_images->GetImageCount();
 	m_images->Add(NDAT);
 
-	wxIcon DAT(programPath + "\\icons\\dat.ico", wxBITMAP_TYPE_ICO, 16,16);
+	wxIcon DAT(programPath + "\\icons\\dat.ico", wxBITMAP_TYPE_ICO);
 	m_iconExtensionMapping["dat"] = m_images->GetImageCount();
 	m_iconExtensionMapping[".dat"] = m_images->GetImageCount();
 	m_images->Add(DAT);
 
-	wxIcon JDX(programPath + "\\icons\\jdx.ico", wxBITMAP_TYPE_ICO, 16,16);
+	wxIcon JDX(programPath + "\\icons\\jdx.ico", wxBITMAP_TYPE_ICO);
 	m_iconExtensionMapping["jdx"] = m_images->GetImageCount();
 	m_iconExtensionMapping["dx"] = m_images->GetImageCount();
 	m_iconExtensionMapping["jcm"] = m_images->GetImageCount();
@@ -73,12 +73,12 @@ IconManager::IconManager(const wxString& programPath)
 	m_iconExtensionMapping[".jcm"] = m_images->GetImageCount();
 	m_images->Add(JDX);
 
-	wxIcon LABX(programPath + "\\icons\\labx.ico", wxBITMAP_TYPE_ICO, 16,16);
+	wxIcon LABX(programPath + "\\icons\\labx.ico", wxBITMAP_TYPE_ICO);
 	m_iconExtensionMapping["labx"] = m_images->GetImageCount();
 	m_iconExtensionMapping[".labx"] = m_images->GetImageCount();
 	m_images->Add(LABX);
 
-	wxIcon IBW(programPath + "\\icons\\ibw.ico", wxBITMAP_TYPE_ICO, 16,16);
+	wxIcon IBW(programPath + "\\icons\\ibw.ico", wxBITMAP_TYPE_ICO);
 	m_iconExtensionMapping["ibw"] = m_images->GetImageCount();
 	m_iconExtensionMapping[".ibw"] = m_images->GetImageCount();
 	m_images->Add(IBW);

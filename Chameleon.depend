@@ -4534,7 +4534,7 @@
 1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\headercol.h
 	"wx/bitmap.h"
 
-1490791551 source:d:\cpp\numere-source\trunk\chameleon.rc
+1491062000 source:d:\cpp\numere-source\trunk\chameleon.rc
 	<windows.h>
 	"kernel/core/version.h"
 	<wx/msw/wx.rc>
@@ -8542,7 +8542,7 @@
 	"debugmessenger.hpp"
 	"core/tools.hpp"
 
-1491044446 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1491045868 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 
