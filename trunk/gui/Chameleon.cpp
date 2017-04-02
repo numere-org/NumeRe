@@ -105,7 +105,7 @@ const string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)
 std::string replacePathSeparator(const std::string&);
 
 Language _guilang;
-FindReplaceDialog* m_findReplace;
+FindReplaceDialog* g_findReplace;
 
 //! global print data, to remember settings during the session
 wxPrintData *g_printData = (wxPrintData*) NULL;
@@ -231,7 +231,7 @@ bool MyApp::OnInit()
         splash->Destroy();
     }
 
-    m_findReplace = nullptr;
+    g_findReplace = nullptr;
 
 
     NumeReWindow *frame = new NumeReWindow("NumeRe: Framework für Numerische Rechnungen (v" + sVersion + ")", wxDefaultPosition, wxDefaultSize);
@@ -639,7 +639,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
 	m_projMultiFiles = nullptr;
 
-	m_findReplace = nullptr;
+	g_findReplace = nullptr;
 
 	/// Interesting Bug: obviously it is necessary to declare the paper size first
 	g_printData = new wxPrintData;
@@ -704,9 +704,9 @@ NumeReWindow::~NumeReWindow()
 
 	delete m_helpController;
 
-	if(m_findReplace != nullptr)
+	if(g_findReplace != nullptr)
 	{
-		delete m_findReplace;
+		delete g_findReplace;
 	}
 
 	if (m_updateTimer)
@@ -5065,7 +5065,9 @@ void NumeReWindow::OnFindEvent(wxFindDialogEvent& event)
 		wxBusyCursor busy;
 		int count = ReplaceAllStrings(findString, replaceString, flags);
 
+		g_findReplace->toggleSkipFocus();
 		wxMessageBox(_guilang.get("GUI_REPLACE_END", toString(count), findString.ToStdString(), replaceString.ToStdString()), _guilang.get("GUI_REPLACE_END_HEAD"), wxOK, this);
+		g_findReplace->toggleSkipFocus();
 	}
 	else if (type == wxEVT_COMMAND_FIND_CLOSE)
 	{
@@ -5073,7 +5075,7 @@ void NumeReWindow::OnFindEvent(wxFindDialogEvent& event)
 		{
 			((wxDialog*)event.GetEventObject())->Destroy();
 		}
-		m_findReplace = nullptr;
+		g_findReplace = nullptr;
 	}
 }
 
@@ -5391,9 +5393,9 @@ void NumeReWindow::OnFindReplace(int id)
 {
     if (m_currentEd->HasSelection())
         m_findData.SetFindString(m_currentEd->GetSelectedText());
-	if (m_findReplace != nullptr)
+	if (g_findReplace != nullptr)
 	{
-		bool isReplaceDialog = m_findReplace->GetWindowStyle() & wxFR_REPLACEDIALOG;
+		bool isReplaceDialog = g_findReplace->GetWindowStyle() & wxFR_REPLACEDIALOG;
 
 		if( (isReplaceDialog && (id == ID_REPLACE)) ||
 			(!isReplaceDialog && (id == ID_FIND)) )
@@ -5402,7 +5404,7 @@ void NumeReWindow::OnFindReplace(int id)
 		}
 		else
 		{
-			delete m_findReplace;
+			delete g_findReplace;
 		}
 	}
 	else
@@ -5413,8 +5415,9 @@ void NumeReWindow::OnFindReplace(int id)
 	wxString title = showFind ? _guilang.get("GUI_DLG_FIND") : _guilang.get("GUI_DLG_REPLACE");
 
 
-	m_findReplace = new FindReplaceDialog(this,	&m_findData, title, dialogFlags);
-	m_findReplace->Show(true);
+	g_findReplace = new FindReplaceDialog(this,	&m_findData, title, dialogFlags);
+	g_findReplace->Show(true);
+	g_findReplace->SetFocus();
 }
 
 void NumeReWindow::OnOptions()

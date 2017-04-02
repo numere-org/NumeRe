@@ -34,7 +34,7 @@ BEGIN_EVENT_TABLE(FindReplaceDialog, wxDialog)
     EVT_UPDATE_UI(wxID_REPLACE_ALL, FindReplaceDialog::OnUpdateFindUI)
 
     EVT_ENTER_WINDOW(FindReplaceDialog::OnEnter)
-    //EVT_SET_FOCUS(FindReplaceDialog::OnGainFocus)
+    EVT_SET_FOCUS(FindReplaceDialog::OnGainFocus)
     //EVT_KILL_FOCUS(FindReplaceDialog::OnLoseFocus)
 
     EVT_CLOSE(FindReplaceDialog::OnCloseWindow)
@@ -65,6 +65,8 @@ void FindReplaceDialog::Init()
     m_textRepl = nullptr;
 
     m_tabs = nullptr;
+
+    m_skipFocusing = false;
 }
 
 bool FindReplaceDialog::Create(wxWindow *parent,
@@ -359,13 +361,22 @@ void FindReplaceDialog::OnCancel(wxCommandEvent& WXUNUSED(event))
 
 void FindReplaceDialog::OnEnter(wxMouseEvent& event)
 {
-    this->SetFocus();
+    if (!m_skipFocusing)
+        this->SetFocus();
     event.Skip();
 }
 
 void FindReplaceDialog::OnGainFocus(wxFocusEvent& event)
 {
-    this->SetTransparent(wxIMAGE_ALPHA_OPAQUE);
+    m_tabs->GetCurrentPage()->SetFocus();
+    if (m_tabs->GetSelection()) // findreplace
+    {
+        m_textFindRepl->SetFocus();
+    }
+    else // find
+    {
+        m_textFind->SetFocus();
+    }
     event.Skip();
 }
 
@@ -386,4 +397,15 @@ void FindReplaceDialog::OnCloseWindow(wxCloseEvent &)
     SendEvent(wxEVT_FIND_CLOSE);
 }
 
-
+void FindReplaceDialog::SetFocus()
+{
+    m_tabs->GetCurrentPage()->SetFocus();
+    if (m_tabs->GetSelection()) // findreplace
+    {
+        m_textFindRepl->SetFocus();
+    }
+    else // find
+    {
+        m_textFind->SetFocus();
+    }
+}

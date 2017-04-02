@@ -19,4 +19,4 @@
 #include "../gui/dialogs/fndrpldialog.hpp"
 
 // reference to the global pointer to the find&replace dialog for suppressing the focus moving
-extern FindReplaceDialog* m_findReplace;
+extern FindReplaceDialog* g_findReplace;

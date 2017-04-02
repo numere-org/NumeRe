@@ -57,6 +57,14 @@ class FindReplaceDialog : public wxFindReplaceDialogBase
                     const wxString& title,
                     int style = 0);
 
+        inline void toggleSkipFocus()
+            {
+                m_skipFocusing = !m_skipFocusing;
+                m_tabs->toggleSkipFocus();
+                (static_cast<ViewerPanel*>(m_tabs->GetCurrentPage()))->toggleSkipFocus();
+            }
+
+        void SetFocus();
     protected:
         void Init();
 
@@ -93,6 +101,8 @@ class FindReplaceDialog : public wxFindReplaceDialogBase
                    *m_textRepl;
 
         ViewerBook *m_tabs;
+
+        bool m_skipFocusing;
 
     private:
         DECLARE_DYNAMIC_CLASS(FindReplaceDialog)

@@ -26,9 +26,16 @@ class ViewerBook : public wxNotebook
 {
     public:
         ViewerBook(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& position = wxDefaultPosition, const wxSize& size = wxDefaultSize, int style = 0, const wxString& name = wxNotebookNameStr)
-            : wxNotebook(parent, id, position, size, style, name) {}
+            : wxNotebook(parent, id, position, size, style, name), m_skipFocus(false) {}
 
         void OnEnter(wxMouseEvent& event);
+        inline void toggleSkipFocus()
+            {
+                m_skipFocus = !m_skipFocus;
+            }
+
+        private:
+            bool m_skipFocus;
 
         DECLARE_EVENT_TABLE();
 };

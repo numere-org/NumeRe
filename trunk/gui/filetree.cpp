@@ -25,7 +25,7 @@ END_EVENT_TABLE()
 
 void FileTree::OnEnter(wxMouseEvent& event)
 {
-    if (m_findReplace != nullptr && m_findReplace->IsShown())
+    if (g_findReplace != nullptr && g_findReplace->IsShown())
     {
         event.Skip();
         return;

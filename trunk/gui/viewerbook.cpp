@@ -24,7 +24,8 @@ END_EVENT_TABLE()
 
 void ViewerBook::OnEnter(wxMouseEvent& event)
 {
-    this->SetFocus();
+    if (!m_skipFocus)
+        this->SetFocus();
     event.Skip();
 }
 
