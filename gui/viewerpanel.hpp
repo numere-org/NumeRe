@@ -27,9 +27,15 @@ class ViewerPanel : public wxPanel
 {
     public:
         ViewerPanel(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& position = wxDefaultPosition, const wxSize& size = wxDefaultSize, int style = 0, const wxString& name = wxPanelNameStr)
-            : wxPanel(parent, id, position, size, style, name) {}
+            : wxPanel(parent, id, position, size, style, name), m_skipFocus(false) {}
 
         void OnEnter(wxMouseEvent& event);
+        inline void toggleSkipFocus()
+            {
+                m_skipFocus = !m_skipFocus;
+            }
+    private:
+        bool m_skipFocus;
 
         DECLARE_EVENT_TABLE();
 };

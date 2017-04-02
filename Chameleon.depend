@@ -6657,10 +6657,10 @@
 	"wx/treebase.h"
 	"wx/hashmap.h"
 
-1490791550 d:\cpp\numere-source\trunk\common\globals.hpp
+1491133201 d:\cpp\numere-source\trunk\common\globals.hpp
 	"../gui/dialogs/fndrpldialog.hpp"
 
-1490791550 d:\cpp\numere-source\trunk\gui\dialogs\fndrpldialog.hpp
+1491135672 d:\cpp\numere-source\trunk\gui\dialogs\fndrpldialog.hpp
 	<wx/fdrepdlg.h>
 	<wx/wx.h>
 	<wx/intl.h>
@@ -6685,7 +6685,7 @@
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\fdrepdlg.h
 
-1490791550 d:\cpp\numere-source\trunk\gui\viewerbook.hpp
+1491133959 d:\cpp\numere-source\trunk\gui\viewerbook.hpp
 	<wx/wx.h>
 	<wx/notebook.h>
 
@@ -6730,7 +6730,7 @@
 	"wx/event.h"
 	"wx/control.h"
 
-1490791550 d:\cpp\numere-source\trunk\gui\viewerpanel.hpp
+1491133892 d:\cpp\numere-source\trunk\gui\viewerpanel.hpp
 	<wx/wx.h>
 	<wx/panel.h>
 
@@ -7706,7 +7706,7 @@
 	<string>
 	<vector>
 
-1490999360 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1491133201 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -7766,7 +7766,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1490798658 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1491135298 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -8158,7 +8158,7 @@
 	"../NumeReWindow.h"
 	<wx/regex.h>
 
-1490791550 source:d:\cpp\numere-source\trunk\gui\dialogs\fndrpldialog.cpp
+1491135026 source:d:\cpp\numere-source\trunk\gui\dialogs\fndrpldialog.cpp
 	"fndrpldialog.hpp"
 	"../../kernel/core/language.hpp"
 
@@ -8244,14 +8244,14 @@
 1490791550 source:d:\cpp\numere-source\trunk\gui\dirtraverser.cpp
 	"DirTraverser.hpp"
 
-1490791550 source:d:\cpp\numere-source\trunk\gui\filetree.cpp
+1491133198 source:d:\cpp\numere-source\trunk\gui\filetree.cpp
 	"filetree.hpp"
 	"../common/globals.hpp"
 
 1490791550 source:d:\cpp\numere-source\trunk\gui\helpviewer.cpp
 	"helpviewer.hpp"
 
-1490791550 source:d:\cpp\numere-source\trunk\gui\iconmanager.cpp
+1491063480 source:d:\cpp\numere-source\trunk\gui\iconmanager.cpp
 	"IconManager.h"
 	<string>
 	<wx/icon.h>
@@ -8298,20 +8298,20 @@
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\clipbrd.h
 
-1490791550 source:d:\cpp\numere-source\trunk\gui\viewerbook.cpp
+1491133979 source:d:\cpp\numere-source\trunk\gui\viewerbook.cpp
 	"viewerbook.hpp"
 
 1490791550 source:d:\cpp\numere-source\trunk\gui\viewerframe.cpp
 	"viewerframe.hpp"
 
-1490791550 source:d:\cpp\numere-source\trunk\gui\viewerpanel.cpp
+1491133847 source:d:\cpp\numere-source\trunk\gui\viewerpanel.cpp
 	"viewerpanel.hpp"
 
 1490798667 source:d:\cpp\numere-source\trunk\gui\wxssh.cpp
 	"wxssh.h"
 	"../common/debug.h"
 
-1490798687 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
+1491133201 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
