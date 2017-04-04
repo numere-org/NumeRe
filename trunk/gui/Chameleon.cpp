@@ -765,6 +765,11 @@ void NumeReWindow::AddToHistory(const wxString& sCommand)
     m_history->AddToHistory(sCommand);
 }
 
+wxString NumeReWindow::GetDocContent(wxString docid)
+{
+    return m_terminal->getDocumentation(docid.ToStdString());
+}
+
 void NumeReWindow::InitializeProgramOptions()
 {
 	// Open up the configuration file, assumed to be in the user's home directory
@@ -1606,7 +1611,8 @@ void NumeReWindow::openHTML(wxString HTMLcontent)
         return;
 
     ViewerFrame* frame = new ViewerFrame(this, "NumeRe-Hilfe:");
-    HelpViewer* html = new HelpViewer(frame);
+    frame->CreateStatusBar();
+    HelpViewer* html = new HelpViewer(frame, this);
     html->SetRelatedFrame(frame, _guilang.get("DOC_HELP_HEADLINE", "%s"));
     html->SetRelatedStatusBar(0);
     html->SetPage(HTMLcontent);

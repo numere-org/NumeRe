@@ -1173,6 +1173,13 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
     }
     else
     {
+        sHTML += "<hr><h4>"+_lang.get("DOC_HELP_NAVIGATION")+"</h4>\n"
+                "<table cellspacing=\"0\" width=\"100%\" bgcolor=\"#DDDDDD\"><tr>"
+                "<td align=\"center\"><a href=\"nhlp://numere?frame=self\">"+_lang.get("DOC_HELP_START")+"</a></td>"
+                "<td align=\"center\"><a href=\"history://back?frame=self\">&lt;&lt; "+_lang.get("DOC_HELP_BACK")+"</a></td>"
+                "<td align=\"center\"><a href=\"history://forward?frame=self\">"+_lang.get("DOC_HELP_FORWARD")+" &gt;&gt;</a></td>"
+                "<td align=\"center\"><a href=\"nhlp://index?frame=self\">"+_lang.get("DOC_HELP_INDEX")+"</a></td>"
+                "</tr></table>\n";
         sHTML += "</body>\n</html>\n";
     }
     return sHTML;
@@ -1196,6 +1203,11 @@ void doc_ReplaceTokens(string& sDocParagraph, const Settings& _option)
                     sExpr.replace(i,2,"\n");*/
             }
             sDocParagraph.replace(k, sDocParagraph.find("</expr>",k+6)+7-k, sExpr);
+        }
+        if (sDocParagraph.substr(k,3) == "<a " && sDocParagraph.find("</a>", k+3) != string::npos)
+        {
+            string sExpr = sDocParagraph.substr(sDocParagraph.find('>', k+3)+1, sDocParagraph.find("</a>", k+3)-sDocParagraph.find('>', k+3)-1);
+            sDocParagraph.replace(k, sDocParagraph.find("</a>",k)+4-k, sExpr);
         }
         if (sDocParagraph.substr(k,6) == "<code>" && sDocParagraph.find("</code>", k+6) != string::npos)
         {
