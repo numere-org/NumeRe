@@ -582,7 +582,7 @@ vector<string> Documentation::getHelpArticle(const string& _sTheme)
     else
     {
         string sKeyList = "";
-        vReturn.push_back("INDEX");
+        vReturn.push_back("Index");
         map<string,string> mIdx;
         for (unsigned int i = 0; i < vDocIndexTable.size(); i++)
         {
@@ -594,7 +594,6 @@ vector<string> Documentation::getHelpArticle(const string& _sTheme)
                 StripSpaces(sKeyList);
             }
             mIdx[sKeyList] = vDocIndexTable[i][2];
-            //mIdx[vDocIndexTable[i][2]] = vDocIndexTable[i][3];
         }
         map<string,string>::iterator iter = mIdx.begin();
         vReturn.push_back(_lang.get("DOCHELPER_KEYWORDS_AND_ARTICLES")+ ":");
@@ -604,17 +603,7 @@ vector<string> Documentation::getHelpArticle(const string& _sTheme)
             vReturn.push_back("<item node=\"" + iter->first + "\">" + iter->second + "</item>");
         }
         vReturn.push_back("</list>");
-        vReturn.push_back("\r|   -- " + _lang.get("DOCHELPER_KEYWORDS_AND_ARTICLES_NUMBERS", toString((int)vReturn.size()-4), toString((int)vDocIndexTable.size())) + " --");
-        //vReturn.push_back("\r|   -- " + toString((int)vReturn.size()-4) + " Schlüsselwörter und " + toString(vDocIndexTable.size()) + " Artikel --");
-        //map<string,int>::iterator iter = mDocumentationIndex.begin();
-        /*string sEntry = "";
-        for (; iter != mDocumentationIndex.end(); ++iter)
-        {
-            sEntry = "-" + vDocIndexTable[iter->second][1];
-            sEntry.append(18-sEntry.length(), ' ');
-            sEntry += vDocIndexTable[iter->second][3];
-            vReturn.push_back(sEntry);
-        }*/
+        vReturn.push_back(_lang.get("DOCHELPER_KEYWORDS_AND_ARTICLES_NUMBERS", toString((int)vReturn.size()-4), toString((int)vDocIndexTable.size())));
     }
 
     return vReturn;
