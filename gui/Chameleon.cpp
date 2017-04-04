@@ -661,13 +661,6 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     tb->EnableTool(ID_DEBUG_STOP, false);
 
 
-
-	wxFileName helpFile(programPath + "\\docs", "numerehelp.chm");
-	m_helpController = new wxCHMHelpController();
-	m_helpController->Initialize(helpFile.GetFullPath());
-	//m_terminal->ProcessInput(4, "|-> WILLKOMMEN BEI NUMERE\n|-> Ein Kommando oder ein Ausdruck eingeben\n|\n|<- ");
-	//m_terminal->ProcessInput(4, "|<- ");
-
 	///Msgbox
 	Settings _option = m_terminal->getKernelSettings();
     vector<string> vTipList;
@@ -701,8 +694,6 @@ NumeReWindow::~NumeReWindow()
 
 	delete g_printData;
 	delete g_pageSetupData;
-
-	delete m_helpController;
 
 	if(g_findReplace != nullptr)
 	{
@@ -5538,7 +5529,7 @@ void NumeReWindow::OnPrintSetup()
 
 void NumeReWindow::OnHelp()
 {
-	m_helpController->DisplayContents();
+    this->openHTML(m_terminal->getDocumentation("numere"));
 }
 
 void NumeReWindow::OnAbout()

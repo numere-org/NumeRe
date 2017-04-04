@@ -377,8 +377,6 @@ class NumeReWindow : public wxFrame
 
         wxString m_currentSavedFile;
 
-        wxCHMHelpController* m_helpController;
-
 
         DECLARE_EVENT_TABLE()
 

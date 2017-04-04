@@ -6555,7 +6555,7 @@
 	"../kernel/kernel.hpp"
 	"../kernel/debugmessenger.hpp"
 
-1491166086 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1491299609 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -8352,7 +8352,7 @@
 	"doc_helper.hpp"
 	"version.h"
 
-1491298704 source:d:\cpp\numere-source\trunk\kernel\core\documentation.cpp
+1491298782 source:d:\cpp\numere-source\trunk\kernel\core\documentation.cpp
 	"documentation.hpp"
 	"../kernel.hpp"
 
