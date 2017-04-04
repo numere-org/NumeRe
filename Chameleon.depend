@@ -6555,7 +6555,7 @@
 	"../kernel/kernel.hpp"
 	"../kernel/debugmessenger.hpp"
 
-1490791550 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1491166086 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -7766,7 +7766,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1491135298 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1491166310 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -7930,9 +7930,10 @@
 	<wx/wx.h>
 	<wx/sizer.h>
 
-1490791550 d:\cpp\numere-source\trunk\gui\helpviewer.hpp
+1491251317 d:\cpp\numere-source\trunk\gui\helpviewer.hpp
 	<wx/wxhtml.h>
 	<wx/wx.h>
+	<vector>
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxhtml.h
 	"wx/html/htmldefs.h"
@@ -8158,7 +8159,7 @@
 	"../NumeReWindow.h"
 	<wx/regex.h>
 
-1491135026 source:d:\cpp\numere-source\trunk\gui\dialogs\fndrpldialog.cpp
+1491135765 source:d:\cpp\numere-source\trunk\gui\dialogs\fndrpldialog.cpp
 	"fndrpldialog.hpp"
 	"../../kernel/core/language.hpp"
 
@@ -8248,8 +8249,9 @@
 	"filetree.hpp"
 	"../common/globals.hpp"
 
-1490791550 source:d:\cpp\numere-source\trunk\gui\helpviewer.cpp
+1491251325 source:d:\cpp\numere-source\trunk\gui\helpviewer.cpp
 	"helpviewer.hpp"
+	"NumeReWindow.h"
 
 1491063480 source:d:\cpp\numere-source\trunk\gui\iconmanager.cpp
 	"IconManager.h"
@@ -8350,7 +8352,7 @@
 	"doc_helper.hpp"
 	"version.h"
 
-1490798667 source:d:\cpp\numere-source\trunk\kernel\core\documentation.cpp
+1491252154 source:d:\cpp\numere-source\trunk\kernel\core\documentation.cpp
 	"documentation.hpp"
 	"../kernel.hpp"
 

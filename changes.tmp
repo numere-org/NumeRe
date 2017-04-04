@@ -17,3 +17,5 @@ Added	Es wurden einige Funktionalitaeten zum statischen Codeanalyzer hinzugefueg
 Added	Die Breakpoint-Funktionalitaet wurde fuer Scripte freigeschalten.
 Fixed	Das Problem der fehlenden Icons auf Hi-DPI Anzeigen wurde behoben.
 Fixed	Der Suchen & Ersetzen Dialog bekommt beim Aufrufen nun immer den Fokus.
+Added	Eine Statusbar wurde zum Hilfefenster hinzugefuegt, um die Adresse e.g. eines Links anzeigen zu koennen.
+Added	Ein Linktprotokoll fuer die Hilfe im Hilfefenster wurde hinzugefuegt, so dass die Artikel nun untereinander verlinkt werden koennen.

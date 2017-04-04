@@ -139,6 +139,7 @@ class NumeReWindow : public wxFrame
         void EvaluateCommandLine(wxArrayString& wxArgV);
         wxString getProgramFolder();
         void AddToHistory(const wxString& sCommand);
+        wxString GetDocContent(wxString docid);
 
         string m_UnrecoverableFiles;
 
