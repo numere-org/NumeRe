@@ -8348,11 +8348,11 @@
 	"define.hpp"
 	"../kernel.hpp"
 
-1490791551 source:d:\cpp\numere-source\trunk\kernel\core\doc_helper.cpp
+1491298170 source:d:\cpp\numere-source\trunk\kernel\core\doc_helper.cpp
 	"doc_helper.hpp"
 	"version.h"
 
-1491252154 source:d:\cpp\numere-source\trunk\kernel\core\documentation.cpp
+1491298704 source:d:\cpp\numere-source\trunk\kernel\core\documentation.cpp
 	"documentation.hpp"
 	"../kernel.hpp"
 

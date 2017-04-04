@@ -515,6 +515,8 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
         return "";
     }
 
+    bool isIndex = (vDocArticle[0] == "Index");
+
     string sHTML;
 
     sHTML = "<!DOCTYPE html>\n<html>\n<head>\n";
@@ -751,11 +753,22 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
                     }
                     else
                     {
-                        sHTML += "    <tr>\n      <td width=\"200\"><code><span style=\"color:#00008B;\">"
-                              + (getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5))
-                              + "</span></code></td>\n      <td>"
-                              +(vDocArticle[j].substr(vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)+1, vDocArticle[j].find("</item>")-1-vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)))
-                              + "</td>\n    </tr>\n";
+                        if (isIndex)
+                        {
+                            sHTML += "    <tr>\n      <td width=\"200\"><a href=\"nhlp://"+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5)+"?frame=self\"><code><span style=\"color:#00008B;\">"
+                                  + getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5)
+                                  + "</span></code></a></td>\n      <td>"
+                                  + vDocArticle[j].substr(vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)+1, vDocArticle[j].find("</item>")-1-vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2))
+                                  + "</td>\n    </tr>\n";
+                        }
+                        else
+                        {
+                            sHTML += "    <tr>\n      <td width=\"200\"><code><span style=\"color:#00008B;\">"
+                                  + getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5)
+                                  + "</span></code></td>\n      <td>"
+                                  + vDocArticle[j].substr(vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)+1, vDocArticle[j].find("</item>")-1-vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2))
+                                  + "</td>\n    </tr>\n";
+                        }
                     }
                 }
             }
