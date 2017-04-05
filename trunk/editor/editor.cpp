@@ -1390,7 +1390,7 @@ void NumeReEditor::AnalyseCode()
                     }
                 }
                 if (!canContinue)
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_NOTE);
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
             }
             if (sSyntaxElement == "if" || sSyntaxElement == "elseif")
             {
@@ -1614,7 +1614,7 @@ void NumeReEditor::AnalyseCode()
                 sSyntaxElement.insert(0, "VAR.");
             if (this->PositionFromLine(currentLine) == wordstart && !isContinuedLine)
             {
-                addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_NOTE);
+                addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
             }
             else
             {
@@ -1627,7 +1627,7 @@ void NumeReEditor::AnalyseCode()
                     }
                 }
                 if (!canContinue && !isContinuedLine)
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_NOTE);
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
             }
             if (this->BraceMatch(wordend) < 0 && sSyntaxElement != "VAR.len")
             {
