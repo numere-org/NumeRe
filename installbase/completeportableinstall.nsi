@@ -166,9 +166,9 @@ Section /o "Deutsch" German
 	# Dokumentationsverzeichnis
 	SetOutPath "$INSTDIR\docs"
 	File "de-DE\docs\*.nhlp"
-	File "de-DE\docs\*.chm"
 	File "de-DE\docs\*.ndb"
 	File "de-DE\docs\*.pdf"	
+	File "de-DE\docs\*.png"	
 SectionEnd
 
 Section /o "English" English
@@ -181,9 +181,9 @@ Section /o "English" English
 	# Dokumentationsverzeichnis
 	SetOutPath "$INSTDIR\docs"
 	File "en-GB\docs\*.nhlp"
-	File "en-GB\docs\*.chm"
 	File "en-GB\docs\*.ndb"
 	File "en-GB\docs\*.pdf"	
+	File "en-GB\docs\*.png"	
 SectionEnd
 
 #---ENGLISH---------------
