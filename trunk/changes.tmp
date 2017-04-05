@@ -20,3 +20,5 @@ Fixed	Der Suchen & Ersetzen Dialog bekommt beim Aufrufen nun immer den Fokus.
 Added	Eine Statusbar wurde zum Hilfefenster hinzugefuegt, um die Adresse e.g. eines Links anzeigen zu koennen.
 Added	Ein Linktprotokoll fuer die Hilfe im Hilfefenster wurde hinzugefuegt, so dass die Artikel nun untereinander verlinkt werden koennen.
 Removed	Die bisherige "Windows-Style" Hilfe wurde entfernt. Es wird nun das NumeRe-eigene Format verwendet.
+Added	Der "<IMG .../>" tag kann nun in Dokumentationsartikeln verwendet werden. Die Dateien muessen lokal angelegt sein.
+Fixed	Ein Problem mit dem Plotting-Algorithmus auf neuen Intel Prozessoren wurde behoben.
