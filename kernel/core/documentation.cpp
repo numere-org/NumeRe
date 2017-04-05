@@ -847,6 +847,10 @@ void doc_ReplaceTokens(string& sDocParagraph, const Settings& _option)
             string sExpr = sDocParagraph.substr(sDocParagraph.find('>', k+3)+1, sDocParagraph.find("</a>", k+3)-sDocParagraph.find('>', k+3)-1);
             sDocParagraph.replace(k, sDocParagraph.find("</a>",k)+4-k, sExpr);
         }
+        if (sDocParagraph.substr(k,5) == "<img " && sDocParagraph.find("/>", k+5) != string::npos)
+        {
+            sDocParagraph.erase(k, sDocParagraph.find("/>",k)+5-k);
+        }
         if (sDocParagraph.substr(k,6) == "<code>" && sDocParagraph.find("</code>", k+6) != string::npos)
         {
             string sCode = sDocParagraph.substr(k+6, sDocParagraph.find("</code>", k+6)-k-6);
@@ -904,6 +908,9 @@ void doc_ReplaceTokens(string& sDocParagraph, const Settings& _option)
 // Definierte Tokens durch ggf. passende HTML-Tokens ersetzen
 void doc_ReplaceTokensForHTML(string& sDocParagraph, const Settings& _option)
 {
+    FileSystem _fSys;
+    _fSys.setTokens(_option.getTokenPaths());
+
     for (unsigned int k = 0; k < sDocParagraph.length(); k++)
     {
         if (sDocParagraph.substr(k,2) == "\\$")
@@ -937,6 +944,22 @@ void doc_ReplaceTokensForHTML(string& sDocParagraph, const Settings& _option)
             }
             //sDocParagraph.replace(k, sDocParagraph.find("</code>",k+6)+7-k, "'"+sCode+"'");
             k += sCode.length();
+        }
+        if (sDocParagraph.substr(k,5) == "<img " && sDocParagraph.find("/>", k+5) != string::npos)
+        {
+            string sImg = sDocParagraph.substr(k, sDocParagraph.find("/>", k+5)+2-k);
+            if (sImg.find("src") != string::npos)
+            {
+                string sImgSrc = getArgAtPos(sImg, sImg.find('=', sImg.find("src"))+1);
+                sImgSrc = _fSys.ValidFileName(sImgSrc, ".png");
+                sImg = "<img src=\"" + sImgSrc + "\" />";
+                sImg = "<div align=\"center\">" + sImg + "</div>";
+            }
+            else
+                sImg.clear();
+
+            sDocParagraph.replace(k, sDocParagraph.find("/>", k+5)+2-k, sImg);
+            k += sImg.length();
         }
         if (sDocParagraph.substr(k,10) == "&PLOTPATH&")
             sDocParagraph.replace(k,10,"&lt;plotpath&gt;");
