@@ -4577,7 +4577,7 @@ bool Cache::checkStringvarDelimiter(const string& sToken) const
 {
     bool isDelimitedLeft = false;
     bool isDelimitedRight = false;
-    string sDelimiter = "+-*/ ()={}^&|!<>,.\\%#~[]?:\";";
+    string sDelimiter = "+-*/ ()={}^&|!<>,.\\%#[]?:\";";
 
     // --> Versuche jeden Delimiter, der dir bekannt ist und setze bei einem Treffer den entsprechenden BOOL auf TRUE <--
     for (unsigned int i = 0; i < sDelimiter.length(); i++)
@@ -4601,7 +4601,7 @@ void Cache::replaceStringMethod(string& sLine, size_t nPos, size_t nLength, cons
         sLine.replace(nPos, nLength, "\"" + sVarValue + "\"");
         return;
     }
-    string sDelimiter = "+-*/ ={^&|!,\\%#~?:\";";
+    string sDelimiter = "+-*/ ={^&|!,\\%#?:\";";
     string sMethod = "";
     string sArgument = "";
     size_t nFinalPos = 0;
@@ -4830,7 +4830,7 @@ void Cache::getStringValues(string& sLine, unsigned int nPos)
 
 void Cache::setStringValue(const string& sVar, const string& sValue)
 {
-    string sValidChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_1234567890";
+    string sValidChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_1234567890~";
 
     if (sVar[0] >= '0' && sVar[0] <= '9')
         throw STRINGVARS_MUSTNT_BEGIN_WITH_A_NUMBER;

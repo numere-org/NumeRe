@@ -2447,7 +2447,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
             vVars[sVarArray[i]] = parser_GetVarAdress(sVarArray[i], _parser);
         else
         {
-            mVarMap[sVarArray[i]] = "~LOOP_"+sVarArray[i]+"_"+toString(nthRecursion);
+            mVarMap[sVarArray[i]] = "_~LOOP_"+sVarArray[i]+"_"+toString(nthRecursion);
             sVarArray[i] = mVarMap[sVarArray[i]];
         }
         _parser.DefineVar(sVarArray[i], &vVarArray[i][0]);
