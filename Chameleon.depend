@@ -8333,7 +8333,7 @@
 	"built-in.hpp"
 	"../kernel.hpp"
 
-1490798667 source:d:\cpp\numere-source\trunk\kernel\core\cache.cpp
+1491415235 source:d:\cpp\numere-source\trunk\kernel\core\cache.cpp
 	"cache.hpp"
 	"../kernel.hpp"
 
@@ -8352,7 +8352,7 @@
 	"doc_helper.hpp"
 	"version.h"
 
-1491378796 source:d:\cpp\numere-source\trunk\kernel\core\documentation.cpp
+1491408583 source:d:\cpp\numere-source\trunk\kernel\core\documentation.cpp
 	"documentation.hpp"
 	"../kernel.hpp"
 
@@ -8467,7 +8467,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1491392521 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
+1491415707 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 

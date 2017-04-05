@@ -957,9 +957,9 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     }
                     else if (!_rTemp.vStringVal.size() && sLine.find("<<RETURNVAL>>") != string::npos)
                     {
-                        sLine.replace(sLine.find("<<RETURNVAL>>"), 13, "~PLUGIN["+_procedure.getPluginProcName()+"~ROOT]");
+                        sLine.replace(sLine.find("<<RETURNVAL>>"), 13, "_~PLUGIN["+_procedure.getPluginProcName()+"~ROOT]");
                         vAns = _rTemp.vNumVal[0];
-                        _parser.SetVectorVar("~PLUGIN["+_procedure.getPluginProcName()+"~ROOT]", _rTemp.vNumVal);
+                        _parser.SetVectorVar("_~PLUGIN["+_procedure.getPluginProcName()+"~ROOT]", _rTemp.vNumVal);
                     }
                     _option.setSystemPrintStatus(true);
                     if (!sLine.length())
@@ -2103,7 +2103,7 @@ void NumeReKernel::evalDebuggerBreakPoint(Settings& _option, const map<string,st
         for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
         {
             sLocalVars[i+nLocalVarMapSkip] = new string[2];
-            if ((iter->first).front() == '~')
+            if ((iter->first).substr(0,2) == "_~")
             {
                 nLocalVarMapSkip++;
                 continue;

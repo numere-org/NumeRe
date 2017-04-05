@@ -3145,8 +3145,8 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                     int nMinbars = -1;
                     for (int k = 0; k < nDataPlots; k++)
                     {
-                        if (nMinbars == -1 || nMinbars > _mDataPlots[k][0].GetNx())
-                            nMinbars = _mDataPlots[k][0].GetNx();
+                        if (nMinbars == -1 || nMinbars > _mDataPlots[k][0].nx)
+                            nMinbars = _mDataPlots[k][0].nx;
                     }
                     if (nMinbars < 2)
                         nMinbars = 2;
@@ -3332,8 +3332,8 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                         int nMinbars = -1;
                         for (int k = 0; k < nDataPlots; k++)
                         {
-                            if (nMinbars == -1 || nMinbars > _mDataPlots[k][0].GetNx())
-                                nMinbars = _mDataPlots[k][0].GetNx();
+                            if (nMinbars == -1 || nMinbars > _mDataPlots[k][0].nx)
+                                nMinbars = _mDataPlots[k][0].nx;
                         }
                         if (nMinbars < 2)
                             nMinbars = 2;
@@ -3971,9 +3971,9 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                             }
                             else if (!_pData.getxError() && !_pData.getyError())
                             {
-                                if ((_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].GetNx() >= _pInfo.nSamples) || _pData.getBars())
+                                if ((_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].nx >= _pInfo.nSamples) || _pData.getBars())
                                     _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sLineStyles[nStyle], _pData).c_str());
-                                else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].GetNx() >= 0.9 * _pInfo.nSamples))
+                                else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].nx >= 0.9 * _pInfo.nSamples))
                                     _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sConPointStyles[nStyle], _pData).c_str());
                                 else
                                     _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sPointStyles[nStyle], _pData).c_str());
@@ -5104,7 +5104,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                         StripSpaces(sDataLabels);
                         if (_pData.getxError() || _pData.getyError())
                         {
-                            for (long int i = 0; i < _mDataPlots[nTypeCounter[1]][0].GetNx(); i++)
+                            for (long int i = 0; i < _mDataPlots[nTypeCounter[1]][0].nx; i++)
                             {
                                 if (_mDataPlots[nTypeCounter[1]][0].a[i] < _pInfo.dRanges[0][0] || _mDataPlots[nTypeCounter[1]][0].a[i] > _pInfo.dRanges[0][1]
                                     || _mDataPlots[nTypeCounter[1]][1].a[i] < _pInfo.dRanges[1][0] || _mDataPlots[nTypeCounter[1]][1].a[i] > _pInfo.dRanges[1][1]
@@ -5258,9 +5258,9 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                             nLegends++;
                             if (!_pData.getxError() && !_pData.getyError())
                             {
-                                if ((_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].GetNx() >= _pInfo.nSamples) || _pData.getBars())
+                                if ((_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].nx >= _pInfo.nSamples) || _pData.getBars())
                                     _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sLineStyles[nStyle], _pData).c_str());
-                                else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].GetNx() >= 0.9 * _pInfo.nSamples))
+                                else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].nx >= 0.9 * _pInfo.nSamples))
                                     _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sConPointStyles[nStyle], _pData).c_str());
                                 else
                                     _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sPointStyles[nStyle], _pData).c_str());
@@ -5505,7 +5505,7 @@ bool parser_plot_std(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglDa
         }
         else if (!_pData.getxError() && !_pData.getyError())
         {
-            if (_pData.getInterpolate() && _mAxisVals.GetNx() >= _pInfo.nSamples)
+            if (_pData.getInterpolate() && _mAxisVals.nx >= _pInfo.nSamples)
             {
                 if (!_pData.getArea() && !_pData.getBars() && !_pData.getRegion())
                     _graph.Plot(_mAxisVals, _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
@@ -5514,7 +5514,7 @@ bool parser_plot_std(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglDa
                 else if (_pData.getArea() || _pData.getRegion())
                     _graph.Area(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
             }
-            else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mAxisVals.GetNx() >= 0.9 * _pInfo.nSamples))
+            else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mAxisVals.nx >= 0.9 * _pInfo.nSamples))
             {
                 if (!_pData.getArea() && !_pData.getBars())
                     _graph.Plot(_mAxisVals, _mData, _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
@@ -5571,7 +5571,7 @@ bool parser_plot_std3d(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mgl
         if (!_pData.getxError() && !_pData.getyError())
         {
             // --> Interpolate-Schalter. Siehe weiter oben fuer Details <--
-            if (_pData.getInterpolate() && _mData[0].GetNx() >= _pInfo.nSamples)
+            if (_pData.getInterpolate() && _mData[0].nx >= _pInfo.nSamples)
             {
                 if (!_pData.getArea() && !_pData.getBars() && !_pData.getRegion())
                     _graph.Plot(_mData[0], _mData[1], _mData[2], _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
@@ -5593,7 +5593,7 @@ bool parser_plot_std3d(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mgl
                 else
                     _graph.Area(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
             }
-            else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mData[0].GetNx() >= 0.9*_pInfo.nSamples))
+            else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mData[0].nx >= 0.9*_pInfo.nSamples))
             {
                 if (!_pData.getArea() && !_pData.getBars())
                     _graph.Plot(_mData[0], _mData[1], _mData[2], _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
@@ -5981,7 +5981,7 @@ mglData parser_fmod(const mglData& _mData, double dDenominator)
 {
     if (!getNN(_mData))
         return _mData;
-    mglData _mReturn(_mData.GetNx(), _mData.GetNy(), _mData.GetNz());
+    mglData _mReturn(_mData.nx, _mData.ny, _mData.nz);
 
     for (long int i = 0; i < getNN(_mData); i++)
     {
@@ -6202,7 +6202,7 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                         _graph.Grid("xyzt!", _pData.getGridStyle().c_str());
                         _graph.Grid("xyzt", _pData.getFineGridStyle().c_str());
                     }
-                    if (_mAxisVals[1].GetNx())
+                    if (_mAxisVals[1].nx)
                     {
                         for (int y = 0; y < _pInfo.nSamples; y++)
                         {
@@ -6258,7 +6258,7 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                     }
                     _graph.SetFunc("x*cos(y)*sin(z)","x*sin(y)*sin(z)","x*cos(z)");
                     _graph.SetOrigin(_pInfo.dRanges[0][1], 0.0, 0.5*M_PI);
-                    if (_mAxisVals[1].GetNx() && _mAxisVals[2].GetNx())
+                    if (_mAxisVals[1].nx && _mAxisVals[2].nx)
                     {
                         _mAxisVals[1] = parser_fmod(_mAxisVals[1], 2.0*M_PI);
                         _mAxisVals[2] = parser_fmod(_mAxisVals[2], 1.0*M_PI);
