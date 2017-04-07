@@ -161,6 +161,9 @@ private:
 	void CreateBreakpointEvent(int linenumber, bool addBreakpoint);
 	bool BreakpointOnLine(int linenum);
 
+	int calculateCyclomaticComplexity(int startline, int endline);
+	int calculateLinesOfCode(int startline, int endline);
+	int countNumberOfComments(int startline, int endline);
 
 	NumeReWindow* m_mainFrame;
 	//ChameleonNotebook* m_parentNotebook;
