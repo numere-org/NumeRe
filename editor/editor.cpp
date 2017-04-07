@@ -1251,6 +1251,7 @@ void NumeReEditor::AnalyseCode()
     bool canContinue = false;
     bool isContinuedLine = false;
     bool hasProcedureDefinition = false;
+    bool isAlreadyMeasured = false;
     string sCurrentLine = "";
     string sStyles = "";
     string sNote = _guilang.get("GUI_ANALYZER_NOTE");
@@ -1282,6 +1283,31 @@ void NumeReEditor::AnalyseCode()
             currentLine = this->LineFromPosition(i);
             sCurrentLine = "";
             sStyles = "";
+        }
+        // Get code metrics form scripts if not already done
+        if (m_fileType == FILE_NSCR && !isAlreadyMeasured)
+        {
+            string sLine = this->GetLine(currentLine).ToStdString();
+            StripSpaces(sLine);
+            if (sLine.length() && sLine.find_first_not_of(" \n\r\t") != string::npos)
+            {
+                string sSyntaxElement =  GetFilenameString().ToStdString();
+                isAlreadyMeasured = true;
+                int nCyclomaticComplexity = calculateCyclomaticComplexity(currentLine, this->LineFromPosition(this->GetLastPosition()));
+                int nLinesOfCode = calculateLinesOfCode(currentLine, this->LineFromPosition(this->GetLastPosition()));
+                int nNumberOfComments = countNumberOfComments(currentLine, this->LineFromPosition(this->GetLastPosition()));
+                double dCommentDensity = (double)nNumberOfComments / (double)nLinesOfCode;
+                if (nLinesOfCode < 5)
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_INLINING")), ANNOTATION_WARN);
+                if (nCyclomaticComplexity > 20)
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_WARN);
+                if (nLinesOfCode > 100)
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_MANYLINES", toString(nLinesOfCode))), ANNOTATION_NOTE);
+                if (dCommentDensity < 0.8)
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_LOWCOMMENTDENSITY", toString(dCommentDensity*100, 3))), ANNOTATION_NOTE);
+                if (dCommentDensity > 1.5)
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMMENTDENSITY", toString(dCommentDensity*100, 3))), ANNOTATION_NOTE);
+            }
         }
         if (this->GetStyleAt(i) == wxSTC_NSCR_COMMAND
             || this->GetStyleAt(i) == wxSTC_NSCR_PROCEDURE_COMMANDS)
@@ -1565,17 +1591,22 @@ void NumeReEditor::AnalyseCode()
                 }
                 else
                 {
-                    for (int line = currentLine; line <= LineFromPosition(GetLastPosition()); line++)
-                    {
-                        if (this->GetLine(line).find("endprocedure") != string::npos)
-                        {
-                            if (line - currentLine < 5)
-                            {
-                                addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_INLINING")), ANNOTATION_WARN);
-                            }
-                            break;
-                        }
-                    }
+                    int nCyclomaticComplexity = calculateCyclomaticComplexity(currentLine, LineFromPosition(nProcedureEnd));
+                    int nLinesOfCode = calculateLinesOfCode(currentLine, LineFromPosition(nProcedureEnd));
+                    int nNumberOfComments = countNumberOfComments(currentLine, LineFromPosition(nProcedureEnd));
+                    double dCommentDensity = (double)nNumberOfComments / (double)nLinesOfCode;
+
+                    if (nLinesOfCode < 5)
+                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_INLINING")), ANNOTATION_WARN);
+                    if (nCyclomaticComplexity > 20)
+                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_WARN);
+                    if (nLinesOfCode > 100)
+                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_MANYLINES", toString(nLinesOfCode))), ANNOTATION_NOTE);
+                    if (dCommentDensity < 0.8)
+                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_LOWCOMMENTDENSITY", toString(dCommentDensity*100, 3))), ANNOTATION_NOTE);
+                    if (dCommentDensity > 1.5)
+                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMMENTDENSITY", toString(dCommentDensity*100, 3))), ANNOTATION_NOTE);
+
                 }
             }
             if (m_fileType == FILE_NPRC && sSyntaxElement == "return")
@@ -3506,6 +3537,73 @@ bool NumeReEditor::BreakpointOnLine( int linenum )
 	bool breakpointOnLine = (markerLineBitmask & (1 << MARKER_BREAKPOINT));
 
 	return breakpointOnLine;
+}
+
+int NumeReEditor::calculateCyclomaticComplexity(int startline, int endline)
+{
+    int nCycComplx = 1;
+    for (int i = this->PositionFromLine(startline); i < this->GetLineEndPosition(endline); i++)
+    {
+        if (this->GetStyleAt(i) == wxSTC_NSCR_COMMAND)
+        {
+            int wordstart = this->WordStartPosition(i, true);
+            int wordend = this->WordEndPosition(i, true);
+            if (this->GetTextRange(wordstart, wordend) == "if" || this->GetTextRange(wordstart, wordend) == "elseif")
+                nCycComplx++;
+            i = wordend;
+        }
+    }
+    return nCycComplx;
+}
+
+int NumeReEditor::calculateLinesOfCode(int startline, int endline)
+{
+    int nLinesOfCode = 0;
+    string currentline;
+    for (int i = startline; i <= endline; i++)
+    {
+        currentline = this->GetLine(i).ToStdString();
+        if (currentline.find_first_not_of(" \t\r\n") != string::npos)
+        {
+            for (size_t j = this->PositionFromLine(i); j < currentline.length()+this->PositionFromLine(i); j++)
+            {
+                if (this->GetStyleAt(j) != wxSTC_NSCR_COMMENT_BLOCK
+                    && this->GetStyleAt(j) != wxSTC_NSCR_COMMENT_LINE
+                    && this->GetCharAt(j) != ' '
+                    && this->GetCharAt(j) != '\t'
+                    && this->GetCharAt(j) != '\r'
+                    && this->GetCharAt(j) != '\n')
+                {
+                    nLinesOfCode++;
+                    break;
+                }
+            }
+        }
+    }
+    return nLinesOfCode;
+}
+
+int NumeReEditor::countNumberOfComments(int startline, int endline)
+{
+    int nComments = 0;
+    for (int i = this->PositionFromLine(startline); i < this->GetLineEndPosition(endline); i++)
+    {
+        if (this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_BLOCK || this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_LINE)
+        {
+            nComments++;
+            for (int j = i; j < this->GetLineEndPosition(endline); j++)
+            {
+                if (this->GetStyleAt(j) != wxSTC_NSCR_COMMENT_BLOCK && this->GetStyleAt(j) != wxSTC_NSCR_COMMENT_LINE)
+                {
+                    i = j;
+                    break;
+                }
+                if (j > i+1 && this->PositionFromLine(this->LineFromPosition(j)) == j)
+                    nComments++;
+            }
+        }
+    }
+    return nComments;
 }
 
 void NumeReEditor::RemoveBreakpoint( int linenum )
