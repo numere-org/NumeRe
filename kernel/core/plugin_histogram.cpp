@@ -1143,7 +1143,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
                 NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("HIST_SAVED_AT", sHistSavePath), _option)+"\n");
             }
-            if (_option.getViewerPath().length() && _pData.getOpenImage() && !(_pData.getSilentMode() || bSilent))
+            if (_pData.getOpenImage() && !(_pData.getSilentMode() || bSilent))
             {
                 string sFileName = sHistSavePath;
                 if (sFileName.find('/') != string::npos)
@@ -2050,7 +2050,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
             if (!_out.isFile() && _option.getSystemPrintStatus() && !bSilent)
                 NumeReKernel::printPreFmt(LineBreak("|   "+_lang.get("HIST_SAVED_AT", sHistSavePath), _option) + "\n");
-            if (_option.getViewerPath().length() && _pData.getOpenImage() && !_pData.getSilentMode())
+            if (_pData.getOpenImage() && !_pData.getSilentMode())
             {
                 string sFileName = sHistSavePath;
                 if (sFileName.find('/') != string::npos)
