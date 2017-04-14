@@ -122,8 +122,10 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension)
                 && sNewFileName.find('.') != string::npos
                 && sValidExtensions.find(";"+toLowerCase(sNewFileName.substr(sNewFileName.rfind('.')))+";") != string::npos)
                 break;
-            else
+            else if (sNewFileName.find('.') != string::npos)
                 sNewFileName = "";
+            else if (sNewFileName.find('.') == string::npos)
+                sNewFileName += ".*";
         }
         while (FindNextFile(hFind, &FindFileData) != 0);
         FindClose(hFind);
@@ -178,8 +180,13 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension)
 		}
 		else					// Ist es das nicht? Dann ersetzen wir die Endung doch einfach...
 		{
-			NumeReKernel::printPreFmt("|-> WARNUNG: Dieser Datentyp ist unbekannt oder geschuetzt! Die Endung wurde\n|   automatisch durch \".dat\" ersetzt!\n");
-			sValid = _sFileName.substr(0,nPos) + ".dat";
+            if (sValid == ".*")
+                sValid = _sFileName.substr(0,nPos);
+            else
+            {
+                NumeReKernel::printPreFmt("|-> WARNUNG: Dieser Datentyp ist unbekannt oder geschuetzt! Die Endung wurde\n|   automatisch durch \".dat\" ersetzt!\n");
+                sValid = _sFileName.substr(0,nPos) + ".dat";
+            }
 		}
 	}
 
