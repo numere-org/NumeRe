@@ -39,9 +39,11 @@ DebugViewer::DebugViewer(wxWindow* parent, const wxString& title) : ViewerFrame(
     wxBoxSizer* vsizer = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer* hsizer = new wxBoxSizer(wxHORIZONTAL);
     wxBoxSizer* buttonsizer = new wxBoxSizer(wxHORIZONTAL);
+
     wxStaticBoxSizer* moduleBox = new wxStaticBoxSizer(wxHORIZONTAL, panel, _guilang.get("DBG_MODULE"));
     wxStaticBoxSizer* stackBox = new wxStaticBoxSizer(wxHORIZONTAL,panel, _guilang.get("DBG_STACKTRACE"));
     wxStaticBoxSizer* varBox = new wxStaticBoxSizer(wxHORIZONTAL,panel, _guilang.get("DBG_LOCALS"));
+
     m_moduleinfos = new wxListCtrl(moduleBox->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize(600, 100), wxLC_REPORT);
     m_moduleinfos->AppendColumn(_guilang.get("DBG_TYPE"));
     m_moduleinfos->AppendColumn(_guilang.get("DBG_VALUE"));
@@ -49,11 +51,12 @@ DebugViewer::DebugViewer(wxWindow* parent, const wxString& title) : ViewerFrame(
     m_moduleinfos->InsertItem(1,_guilang.get("DBG_FILE"));
     m_moduleinfos->InsertItem(2,_guilang.get("DBG_LINENO"));
     m_moduleinfos->SetColumnWidth(0, wxLIST_AUTOSIZE);
-    //m_moduleinfos->EnableAlternateRowColours(true);
+
     m_stacktrace = new wxListCtrl(stackBox->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize(200, 400), wxLC_REPORT);
     m_stacktrace->AppendColumn("Stack");
-    //m_stacktrace->EnableAlternateRowColours(true);
+
     m_vartreelist = new wxTreeListCtrl(varBox->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_FULL_ROW_HIGHLIGHT | wxTR_ROW_LINES | wxTR_NO_LINES | wxTR_HIDE_ROOT);
+
     moduleBox->Add(m_moduleinfos, 1, wxALIGN_CENTER_HORIZONTAL | wxALL);
     stackBox->Add(m_stacktrace, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL);
     varBox->Add(m_vartreelist, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL);

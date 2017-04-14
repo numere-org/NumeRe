@@ -9,6 +9,7 @@
 #include "../common/datastructures.h"
 #include "../compiler/compilerevent.h"
 #include "../kernel/syntax.hpp"
+#include "../gui/dialogs/duplicatecodedialog.hpp"
 //#include <wx/wx.h>
 
 #define RM_WS_BOTH 0
@@ -99,6 +100,9 @@ public:
 	void OnHelpOnSelection(wxCommandEvent& event);
 	void OnFindProcedure(wxCommandEvent &event);
 	void OnChangeCase(wxCommandEvent& event);
+	void InitDuplicateCode();
+	void OnFindDuplicateCode(int nDuplicateFlag = 1); // 0 = direct comparison, 1 = use var semanticals, 2 = use string semanticals, 3 = use all semanticals
+	void IndicateDuplicatedLine(int nStart1, int nEnd1, int nStart2, int nEnd2);
 
 	void AddBreakpoint( int linenum );
 	void RemoveBreakpoint( int linenum );
@@ -125,6 +129,7 @@ public:
     void sortSelection(bool ascending = true);
 	FileFilterType getFileType() {return m_fileType;}
 	int getSettings() {return m_nEditorSetting;}
+	string GetStrippedLine(int nLine);
 
 protected:
 	Options* m_options;
@@ -164,6 +169,11 @@ private:
 	int calculateCyclomaticComplexity(int startline, int endline);
 	int calculateLinesOfCode(int startline, int endline);
 	int countNumberOfComments(int startline, int endline);
+	vector<string> detectCodeDuplicates(int startline, int endline, int nDuplicateFlags);
+	double compareCodeLines(int nLine1, int nLine2, int nDuplicateFlags);
+	string getSemanticLine(int nLine, int nDuplicateFlags);
+	map<int,int> getDifferences(int nStart1, int nEnd1, int nStart2, int nEnd2);
+	wxString getNextToken(int& nPos);
 
 	NumeReWindow* m_mainFrame;
 	//ChameleonNotebook* m_parentNotebook;
@@ -191,6 +201,8 @@ private:
 
 	NumeReSyntax* _syntax;
 	wxTerm* m_terminal;
+
+	DuplicateCodeDialog* m_duplicateCode;
 
 	bool m_bLoadingFile;
 	bool m_bLastSavedRemotely;

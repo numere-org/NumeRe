@@ -33,15 +33,21 @@
 
 #define MARGIN_FOLD 3
 #define MARKER_LINEINDICATOR 2
+#define MARKER_DUPLICATEINDICATOR_ONE 3
+#define MARKER_DUPLICATEINDICATOR_TWO 4
 #define HIGHLIGHT 25
 #define HIGHLIGHT_DBLCLK 26
-#define HIGHLIGHT_MATCHING_BRACE 27
-#define HIGHLIGHT_STRIKETHROUGH 28
-#define HIGHLIGHT_MATCHING_BLOCK 29
-#define HIGHLIGHT_NOT_MATCHING_BLOCK 30
+#define HIGHLIGHT_MATCHING_BRACE 6
+#define HIGHLIGHT_STRIKETHROUGH 7
+#define HIGHLIGHT_MATCHING_BLOCK 8
+#define HIGHLIGHT_NOT_MATCHING_BLOCK 9
+#define HIGHLIGHT_DIFFERENCES 10
+#define HIGHLIGHT_DIFFERENCE_SOURCE 11
 #define ANNOTATION_NOTE 22
 #define ANNOTATION_WARN 23
 #define ANNOTATION_ERROR 24
+
+#define DUPLICATE_CODE_LENGTH 6
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -116,6 +122,7 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 	m_options = options;
 	m_project = project;
 	m_project->AddEditor(this);
+	m_duplicateCode = nullptr;
 
 	m_watchedString = "";
 	m_dblclkString = "";
@@ -171,44 +178,6 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
     this->StyleClearAll();
 
     this->SetMouseDwellTime(500);
-
-    // Editor style setup
-
-    /*// whitespace
-    //this->StyleSetForeground(0, wxColour(0x80, 0x80, 0x80));
-
-    // comment
-    this->StyleSetForeground(1, wxColour(0x00, 0x7f, 0x00));
-
-    // line comment
-    this->StyleSetForeground(2, wxColour(0x00, 0x7f, 0x00));
-
-    // numbers
-    this->StyleSetForeground(4, wxColour("Red"));
-
-    // keywords
-    this->StyleSetForeground(5, wxColour("Blue"));
-
-    this->StyleSetBold(5, TRUE);
-
-    // double-quoted strings
-    this->StyleSetForeground(6, wxColour(0x00, 0x80, 0x80));
-
-    // single-quoted strings
-    this->StyleSetForeground(7, wxColour(0x00, 0x80, 0x80));
-
-    // preprocessor
-    this->StyleSetForeground(9, wxColour("Purple"));
-
-    // operators
-    this->StyleSetForeground(10, wxColour(0x00, 0x00, 0x00));
-
-    this->StyleSetForeground(11, wxColour(0x00, 0x00, 0x00));
-
-    this->StyleSetBold(10, TRUE);
-
-	this->SetSelBackground(true, wxColour(49, 106, 197));
-	this->SetSelForeground(true, wxColour("white"));*/
 
     this->EmptyUndoBuffer();
     m_bSetUnsaved = false;
@@ -1235,18 +1204,7 @@ void NumeReEditor::AnalyseCode()
     if (!getEditorSetting(SETTING_USEANALYZER) || (m_fileType != FILE_NSCR && m_fileType != FILE_NPRC))
         return;
     this->AnnotationSetVisible(wxSTC_ANNOTATION_BOXED);
-    this->StyleSetBackground(ANNOTATION_NOTE, wxColour(230,230,230));
-    this->StyleSetForeground(ANNOTATION_NOTE, wxColour(120,120,120));
-    this->StyleSetSize(ANNOTATION_NOTE, this->StyleGetSize(0)-2);
-    this->StyleSetItalic(ANNOTATION_NOTE, true);
-    this->StyleSetBackground(ANNOTATION_WARN, wxColour(255,255,220));
-    this->StyleSetForeground(ANNOTATION_WARN, wxColour(160,160,0));
-    this->StyleSetSize(ANNOTATION_WARN, this->StyleGetSize(0)-2);
-    this->StyleSetItalic(ANNOTATION_WARN, true);
-    this->StyleSetBackground(ANNOTATION_ERROR, wxColour(255,200,200));
-    this->StyleSetForeground(ANNOTATION_ERROR, wxColour(170,0,0));
-    this->StyleSetSize(ANNOTATION_ERROR, this->StyleGetSize(0)-2);
-    this->StyleSetItalic(ANNOTATION_ERROR, true);
+
     int wordstart, wordend, currentLine = 0;
     bool canContinue = false;
     bool isContinuedLine = false;
@@ -1811,6 +1769,17 @@ void NumeReEditor::sortSelection(bool ascending)
     this->EndUndoAction();
 }
 
+string NumeReEditor::GetStrippedLine(int nLine)
+{
+    string sCurrentLine = this->GetLine(nLine).ToStdString();
+    if (sCurrentLine.find_first_not_of(" \t\r\n") == string::npos)
+        return "";
+    else
+        sCurrentLine.erase(0, sCurrentLine.find_first_not_of(" \t\r\n"));
+    if (sCurrentLine.find_last_not_of(" \r\t\n") != string::npos)
+        sCurrentLine.erase(sCurrentLine.find_last_not_of(" \r\t\n")+1);
+    return sCurrentLine;
+}
 
 bool NumeReEditor::getEditorSetting(EditorSettings _setting)
 {
@@ -2408,10 +2377,10 @@ void NumeReEditor::updateDefaultHighlightSettings()
 {
     this->SetCaretLineVisible(true);
     this->SetIndentationGuides(true);
-    //this->SetCaretLineBackground(wxColour(196,211,255));
-    //this->SetCaretLineBackground(wxColour(206,219,255));
+
     this->SetCaretLineBackground(wxColour(221,230,255));
 
+    // standard settings for the brace highlighting
     this->StyleSetForeground(wxSTC_STYLE_BRACELIGHT, wxColour(0,150,0));
     this->StyleSetBackground(wxSTC_STYLE_BRACELIGHT, wxColour(0,220,0));
     this->StyleSetBold(wxSTC_STYLE_BRACELIGHT, true);
@@ -2420,6 +2389,20 @@ void NumeReEditor::updateDefaultHighlightSettings()
     this->StyleSetBackground(wxSTC_STYLE_BRACEBAD, wxColour(220,0,0));
     this->StyleSetBold(wxSTC_STYLE_BRACEBAD, true);
     this->StyleSetSize(wxSTC_STYLE_BRACEBAD, this->StyleGetSize(0)+1);
+
+    // Style settings for the displayed annotations
+    this->StyleSetBackground(ANNOTATION_NOTE, wxColour(230,230,230));
+    this->StyleSetForeground(ANNOTATION_NOTE, wxColour(120,120,120));
+    this->StyleSetSize(ANNOTATION_NOTE, this->StyleGetSize(0)-2);
+    this->StyleSetItalic(ANNOTATION_NOTE, true);
+    this->StyleSetBackground(ANNOTATION_WARN, wxColour(255,255,220));
+    this->StyleSetForeground(ANNOTATION_WARN, wxColour(160,160,0));
+    this->StyleSetSize(ANNOTATION_WARN, this->StyleGetSize(0)-2);
+    this->StyleSetItalic(ANNOTATION_WARN, true);
+    this->StyleSetBackground(ANNOTATION_ERROR, wxColour(255,200,200));
+    this->StyleSetForeground(ANNOTATION_ERROR, wxColour(170,0,0));
+    this->StyleSetSize(ANNOTATION_ERROR, this->StyleGetSize(0)-2);
+    this->StyleSetItalic(ANNOTATION_ERROR, true);
 }
 
 void NumeReEditor::applyStrikeThrough()
@@ -2694,7 +2677,9 @@ void NumeReEditor::OnRightClick(wxMouseEvent &event)
                     m_menuFindProcedure->SetItemLabel(_guilang.get("GUI_MENU_EDITOR_FINDPROC", clickedProc.ToStdString()));
                 }
             }
-            if (this->GetStyleAt(charpos) == wxSTC_NSCR_COMMAND || this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURE_COMMANDS)
+            if (this->GetStyleAt(charpos) == wxSTC_NSCR_COMMAND
+                || this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURE_COMMANDS
+                || this->GetStyleAt(charpos) == wxSTC_NSCR_OPTION)
             {
                 m_popupMenu.Insert(9, m_menuHelpOnSelection);
                 m_menuHelpOnSelection->SetItemLabel(_guilang.get("GUI_TREE_PUP_HELPONITEM", clickedWord.ToStdString()));
@@ -3444,6 +3429,65 @@ void NumeReEditor::OnChangeCase(wxCommandEvent& event)
     }
 }
 
+void NumeReEditor::InitDuplicateCode()
+{
+    m_duplicateCode = new DuplicateCodeDialog(this, "NumeRe: " + _guilang.get("GUI_DUPCODE_TITLE") + " [" + this->GetFilenameString() + "]");
+    m_duplicateCode->SetIcon(wxIcon(m_mainFrame->getProgramFolder() + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    m_duplicateCode->Show();
+    m_duplicateCode->SetFocus();
+    m_duplicateCode->Refresh();
+}
+
+void NumeReEditor::OnFindDuplicateCode(int nDuplicateFlag)
+{
+    vector<string> vResult = detectCodeDuplicates(0, this->LineFromPosition(this->GetLastPosition()), nDuplicateFlag);
+    m_duplicateCode->SetResult(vResult);
+}
+
+void NumeReEditor::IndicateDuplicatedLine(int nStart1, int nEnd1, int nStart2, int nEnd2)
+{
+    this->MarkerDefine(MARKER_DUPLICATEINDICATOR_ONE, wxSTC_MARK_BACKGROUND);
+	this->MarkerSetBackground(MARKER_DUPLICATEINDICATOR_ONE, wxColour(220,255,220));
+    this->MarkerDefine(MARKER_DUPLICATEINDICATOR_TWO, wxSTC_MARK_BACKGROUND);
+	this->MarkerSetBackground(MARKER_DUPLICATEINDICATOR_TWO, wxColour(255,220,220));
+    this->MarkerDeleteAll(MARKER_DUPLICATEINDICATOR_ONE);
+    this->MarkerDeleteAll(MARKER_DUPLICATEINDICATOR_TWO);
+
+    this->SetIndicatorCurrent(HIGHLIGHT_DIFFERENCES);
+    this->IndicatorSetStyle(HIGHLIGHT_DIFFERENCES, wxSTC_INDIC_ROUNDBOX);
+    this->IndicatorSetAlpha(HIGHLIGHT_DIFFERENCES, 64);
+    this->IndicatorSetForeground(HIGHLIGHT_DIFFERENCES, wxColour(128,0,128));
+
+    this->IndicatorClearRange(0, GetLastPosition());
+
+    this->SetIndicatorCurrent(HIGHLIGHT_DIFFERENCE_SOURCE);
+    this->IndicatorSetStyle(HIGHLIGHT_DIFFERENCE_SOURCE, wxSTC_INDIC_ROUNDBOX);
+    this->IndicatorSetAlpha(HIGHLIGHT_DIFFERENCE_SOURCE, 64);
+    this->IndicatorSetForeground(HIGHLIGHT_DIFFERENCE_SOURCE, wxColour(0,128,128));
+
+    this->IndicatorClearRange(0, GetLastPosition());
+
+    if (nStart1 == -1 && nStart2 == -1 && nEnd1 == -1 && nEnd2 == -1)
+        return;
+
+    for (int i = nStart1; i <= nEnd1; i++)
+        this->MarkerAdd(i, MARKER_DUPLICATEINDICATOR_ONE);
+    for (int i = nStart2; i <= nEnd2; i++)
+        this->MarkerAdd(i, MARKER_DUPLICATEINDICATOR_TWO);
+
+    map<int,int> mDifferences = this->getDifferences(nStart1, nEnd1, nStart2, nEnd2);
+
+    for (auto iter = mDifferences.begin(); iter != mDifferences.end(); ++iter)
+    {
+        if ((iter->first) < 0)
+            this->SetIndicatorCurrent(HIGHLIGHT_DIFFERENCE_SOURCE);
+        else
+            this->SetIndicatorCurrent(HIGHLIGHT_DIFFERENCES);
+
+        this->IndicatorFillRange(abs(iter->first), iter->second);
+    }
+}
+
 void NumeReEditor::ClearDblClkIndicator()
 {
     if (!m_dblclkString.length())
@@ -3602,6 +3646,239 @@ int NumeReEditor::countNumberOfComments(int startline, int endline)
         }
     }
     return nComments;
+}
+
+vector<string> NumeReEditor::detectCodeDuplicates(int startline, int endline, int nDuplicateFlags)
+{
+    vector<string> vCodeDuplicates;
+    double dMatch = 0.0;
+    int nLongestMatch = 0;
+    int nBlankLines = 0;
+    int nLastStatusVal = 0;
+
+    for (int i = startline; i <= endline-DUPLICATE_CODE_LENGTH; i++)
+    {
+        if (m_duplicateCode && m_duplicateCode->IsShown())
+        {
+            if ((int)(double)i / (double)(endline-DUPLICATE_CODE_LENGTH-startline) != nLastStatusVal)
+            {
+                nLastStatusVal = (int)(double)i / (double)(endline-DUPLICATE_CODE_LENGTH-startline);
+                m_duplicateCode->SetProgress((double)i / (double)(endline-DUPLICATE_CODE_LENGTH-startline));
+            }
+        }
+        for (int j = i+DUPLICATE_CODE_LENGTH; j <= endline-DUPLICATE_CODE_LENGTH; j++)
+        {
+            dMatch = compareCodeLines(i, j, nDuplicateFlags);
+            if (dMatch >= 0.75)
+            {
+                double dComp;
+                for (int k = 1; k <= endline-j; k++)
+                {
+                    dComp = compareCodeLines(i+k, j+k, nDuplicateFlags);
+                    if (dComp == -1.0)
+                    {
+                        nBlankLines++;
+                        continue;
+                    }
+                    else if (dComp < 0.75 || i+k == j)
+                    {
+                        if (k - nBlankLines > DUPLICATE_CODE_LENGTH)
+                        {
+                            vCodeDuplicates.push_back(toString(i+1) + "-" + toString(i+k) + " == " + toString(j+1) + "-" + toString(j+k) + " [" + toString(dMatch * 100.0/(double)(k-nBlankLines), 3) + " %]");
+                            if (nLongestMatch < k-1-nBlankLines)
+                                nLongestMatch = k-1-nBlankLines;
+                        }
+                        break;
+                    }
+                    else
+                        dMatch += dComp;
+                }
+                nBlankLines = 0;
+            }
+            else if (dMatch < 0.0) // empty line at pos i
+                break;
+        }
+        i += nLongestMatch;
+        nLongestMatch = 0;
+    }
+
+    return vCodeDuplicates;
+}
+
+// semantic comparison between two code lines. Will return a double representing a matching percentage
+// This double is constructed out of the actual matching of the characters and out of a semantic
+// match. If the characters match completely, the semantic comparison is omitted.
+double NumeReEditor::compareCodeLines(int nLine1, int nLine2, int nDuplicateFlag)
+{
+
+    size_t nMatchedCount = 0;
+    string sSemLine1 = this->getSemanticLine(nLine1, nDuplicateFlag);
+    string sSemLine2 = this->getSemanticLine(nLine2, nDuplicateFlag);
+
+    // It is possible that the lines are semantical identical although they may contain different vars
+    if (!sSemLine1.length() && sSemLine2.length())
+        return -2.0;
+    else if (!sSemLine1.length() && !sSemLine2.length())
+        return -1.0;
+    else if (sSemLine1 == sSemLine2)
+        return 1.0;
+    else if (sSemLine1.length() * 1.5 < sSemLine2.length() || sSemLine1.length() > sSemLine2.length() * 1.5)
+        return 0.0;
+
+    for (size_t i = 0; i < sSemLine1.length(); i++)
+    {
+        if (i >= sSemLine2.length())
+            break;
+        if (sSemLine1[i] == sSemLine2[i])
+            nMatchedCount++;
+    }
+
+    return (double)nMatchedCount / (double)max(sSemLine1.length(), sSemLine2.length());
+}
+
+// 0 = direct comparison, 1 = use var semanticals, 2 = use string semanticals, 4 = use numeric semanticals
+string NumeReEditor::getSemanticLine(int nLine, int nDuplicateFlag)
+{
+    string sSemLine = "";
+    for (int i = this->PositionFromLine(nLine); i < this->GetLineEndPosition(nLine); i++)
+    {
+        if (this->GetCharAt(i) == ' '
+            || this->GetCharAt(i) == '\t'
+            || this->GetCharAt(i) == '\r'
+            || this->GetCharAt(i) == '\n'
+            || this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_BLOCK
+            || this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_LINE)
+            continue;
+        else if ((nDuplicateFlag & 1)
+            && (this->GetStyleAt(i) == wxSTC_NSCR_DEFAULT
+                || this->GetStyleAt(i) == wxSTC_NSCR_DEFAULT_VARS
+                || this->GetStyleAt(i) == wxSTC_NSCR_IDENTIFIER))
+        {
+            // replace vars with a placeholder
+            i = this->WordEndPosition(i, true)-1;
+            while (this->GetStyleAt(i+1) == wxSTC_NSCR_DEFAULT
+            || this->GetStyleAt(i+1) == wxSTC_NSCR_DEFAULT_VARS
+            || this->GetStyleAt(i+1) == wxSTC_NSCR_IDENTIFIER)
+                i++;
+            sSemLine += "VAR";
+        }
+        else if ((nDuplicateFlag & 2) && this->GetStyleAt(i) == wxSTC_NSCR_STRING)
+        {
+            // replace string literals with a placeholder
+            i++;
+            while (this->GetStyleAt(i+1) == wxSTC_NSCR_STRING)
+                i++;
+            sSemLine += "STR";
+        }
+        else if ((nDuplicateFlag & 4) && this->GetStyleAt(i) == wxSTC_NSCR_NUMBERS)
+        {
+            // replace string literals with a placeholder
+            while (this->GetStyleAt(i+1) == wxSTC_NSCR_NUMBERS)
+                i++;
+            if (sSemLine.back() == '-' || sSemLine.back() == '+')
+            {
+                if (sSemLine.length() == 1)
+                    sSemLine.clear();
+                else
+                {
+                    char cDelim = sSemLine[sSemLine.length()-2];
+                    if (cDelim == ':' || cDelim == '=' || cDelim == '?' || cDelim == ',' || cDelim == ';' || cDelim == '(' || cDelim == '[' || cDelim == '{')
+                        sSemLine.pop_back();
+                }
+            }
+            sSemLine += "NUM";
+        }
+        else
+            sSemLine += this->GetCharAt(i);
+
+    }
+    return sSemLine;
+}
+
+map<int,int> NumeReEditor::getDifferences(int nStart1, int nEnd1, int nStart2, int nEnd2)
+{
+    map<int,int> mDifferences;
+    int nLinePos1 = 0;
+    int nLinePos2 = 0;
+    wxString sToken1;
+    wxString sToken2;
+
+    for (int i = 0; i <= nEnd1-nStart1; i++)
+    {
+        nLinePos1 = this->PositionFromLine(nStart1+i);
+        nLinePos2 = this->PositionFromLine(nStart2+i);
+        while (nLinePos1 < this->GetLineEndPosition(nStart1+i) || nLinePos2 < this->GetLineEndPosition(nStart2+i))
+        {
+            sToken1 = getNextToken(nLinePos1);
+            sToken2 = getNextToken(nLinePos2);
+
+            if (!sToken1.length() && !sToken2.length())
+                break;
+            if (sToken1.length() && !sToken2.length())
+            {
+                mDifferences[-nLinePos1] = sToken1.length();
+            }
+            else if (sToken2.length() && !sToken1.length())
+            {
+                mDifferences[nLinePos2] = sToken2.length();
+            }
+            else
+            {
+                if (sToken1 != sToken2)
+                {
+                    mDifferences[-nLinePos1] = sToken1.length();
+                    mDifferences[nLinePos2] = sToken2.length();
+                }
+            }
+            nLinePos1 += sToken1.length();
+            nLinePos2 += sToken2.length();
+            if (nLinePos1 > this->GetLineEndPosition(nStart1+i))
+                nLinePos1 = this->GetLineEndPosition(nStart1+i);
+            if (nLinePos2 > this->GetLineEndPosition(nStart2+i))
+                nLinePos2 = this->GetLineEndPosition(nStart2+i);
+        }
+    }
+    return mDifferences;
+}
+
+wxString NumeReEditor::getNextToken(int& nPos)
+{
+    int nCurrentLineEnd = this->GetLineEndPosition(this->LineFromPosition(nPos));
+
+    // return nothing, if already at line end
+    if (nPos >= nCurrentLineEnd)
+        return "";
+    int nCurrentStyle;
+    int nEndPos;
+
+    // forward over all whitespace characters
+    while (this->GetCharAt(nPos) == ' '
+        || this->GetCharAt(nPos) == '\t'
+        || this->GetCharAt(nPos) == '\r'
+        || this->GetCharAt(nPos) == '\n')
+        nPos++;
+
+    // return nothing, if already at line end (set position to line end)
+    if (nPos >= nCurrentLineEnd)
+    {
+        nPos = nCurrentLineEnd;
+        return "";
+    }
+
+    // get the current style
+    nCurrentStyle = this->GetStyleAt(nPos);
+    nEndPos = nPos;
+
+    // while the style is identical forward the end position
+    while (this->GetStyleAt(nEndPos) == nCurrentStyle)
+    {
+        nEndPos++;
+    }
+
+    // it is possible that we walked over the last position
+    if (nEndPos > nCurrentLineEnd)
+        return this->GetTextRange(nPos, nCurrentLineEnd);
+    return this->GetTextRange(nPos, nEndPos);
 }
 
 void NumeReEditor::RemoveBreakpoint( int linenum )

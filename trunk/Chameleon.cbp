@@ -284,6 +284,8 @@
 		<Unit filename="gui/dialogs/RemoteFileDialog.h" />
 		<Unit filename="gui/dialogs/VariableWatchPanel.cpp" />
 		<Unit filename="gui/dialogs/VariableWatchPanel.h" />
+		<Unit filename="gui/dialogs/duplicatecodedialog.cpp" />
+		<Unit filename="gui/dialogs/duplicatecodedialog.hpp" />
 		<Unit filename="gui/dialogs/fndrpldialog.cpp" />
 		<Unit filename="gui/dialogs/fndrpldialog.hpp" />
 		<Unit filename="gui/dialogs/tipdialog.cpp" />

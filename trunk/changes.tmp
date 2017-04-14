@@ -23,3 +23,6 @@ Removed	Die bisherige "Windows-Style" Hilfe wurde entfernt. Es wird nun das Nume
 Added	Der "<IMG .../>" tag kann nun in Dokumentationsartikeln verwendet werden. Die Dateien muessen lokal angelegt sein.
 Fixed	Ein Problem mit dem Plotting-Algorithmus auf neuen Intel Prozessoren wurde behoben.
 Added	Codemetriken wurden hinzugefuegt: cyclomatic complexity, lines of code und comment density.
+Added	NumeRe besitzt nun eine Suche nach dupliziertem Code in einer Datei.
+Cleaned	Codeaenderung: Styleinformationen im Editor werden nun zentral verwaltet.
+Added	Die tatsaechlichen Unterschiede im duplizierten Code werden nun beim Klicken auf die entsprechende Zeile hervorgehoben.
