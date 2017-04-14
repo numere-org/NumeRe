@@ -8334,7 +8334,7 @@
 	"cache.hpp"
 	"../kernel.hpp"
 
-1490791551 source:d:\cpp\numere-source\trunk\kernel\core\datafile.cpp
+1492195988 source:d:\cpp\numere-source\trunk\kernel\core\datafile.cpp
 	"datafile.hpp"
 	"../kernel.hpp"
 
@@ -8353,7 +8353,7 @@
 	"documentation.hpp"
 	"../kernel.hpp"
 
-1490791551 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
+1492195480 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
 	"filesystem.hpp"
 	"../kernel.hpp"
 
@@ -8471,7 +8471,7 @@
 1490791551 source:d:\cpp\numere-source\trunk\kernel\core\plugin.cpp
 	"plugin.hpp"
 
-1490791551 source:d:\cpp\numere-source\trunk\kernel\core\plugin_histogram.cpp
+1492177555 source:d:\cpp\numere-source\trunk\kernel\core\plugin_histogram.cpp
 	"plugins.hpp"
 	"../kernel.hpp"
 

@@ -27,3 +27,4 @@ Added	NumeRe besitzt nun eine Suche nach dupliziertem Code in einer Datei.
 Cleaned	Codeaenderung: Styleinformationen im Editor werden nun zentral verwaltet.
 Added	Die tatsaechlichen Unterschiede im duplizierten Code werden nun beim Klicken auf die entsprechende Zeile hervorgehoben.
 Fixed	Histogramme werden im ImageViewer auch angezeigt, wenn kein externer Viewer deklariert ist.
+Fixed	NumeRe erlaubt nun auch das Laden von Dateien ohne Endung, es muessen sich jedoch um Klartextdateien handeln (keine binaeren).

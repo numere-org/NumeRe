@@ -1955,37 +1955,43 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 		if(_option.getbDebug())
 			cerr << "|-> DEBUG: sDataFile = " << sDataFile << endl;
 
-        if (toLowerCase(sDataFile.substr(sDataFile.rfind('.'))) == ".labx")
+        string sExt = "";
+        if (sDataFile.find('.') != string::npos)
+            sExt = toLowerCase(sDataFile.substr(sDataFile.rfind('.')));
+        else
+            sExt = ".NOEXT";
+
+        if (sExt == ".labx")
         {
             sDataFile = FileSystem::ValidFileName(_sFile, ".labx");
             Datafile::openLabx(_option);
             Datafile::condenseDataSet();
             return;
         }
-        else if (toLowerCase(sDataFile.substr(sDataFile.rfind('.'))) == ".csv")
+        else if (sExt == ".csv")
         {
             sDataFile = FileSystem::ValidFileName(_sFile, ".csv");
             Datafile::openCSV(_option);
             Datafile::condenseDataSet();
             return;
         }
-        else if (toLowerCase(sDataFile.substr(sDataFile.rfind('.'))) == ".ndat")
+        else if (sExt == ".ndat")
         {
             sDataFile = FileSystem::ValidFileName(_sFile, ".ndat");
             Datafile::openNDAT(_option);
             Datafile::condenseDataSet();
             return;
         }
-        else if (toLowerCase(sDataFile.substr(sDataFile.rfind('.'))) == ".jdx"
-            || toLowerCase(sDataFile.substr(sDataFile.rfind('.'))) == ".dx"
-            || toLowerCase(sDataFile.substr(sDataFile.rfind('.'))) == ".jcm")
+        else if (sExt == ".jdx"
+            || sExt == ".dx"
+            || sExt == ".jcm")
         {
             sDataFile = FileSystem::ValidFileName(_sFile, ".jdx");
             Datafile::openJDX(_option);
             Datafile::condenseDataSet();
             return;
         }
-        else if (toLowerCase(sDataFile.substr(sDataFile.rfind('.'))) == ".ibw")
+        else if (sExt == ".ibw")
         {
             sDataFile = FileSystem::ValidFileName(_sFile, ".ibw");
             if (_nHeadline == -1)
@@ -1997,29 +2003,30 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
             Datafile::condenseDataSet();
             return;
         }
-        else if (toLowerCase(sDataFile.substr(sDataFile.rfind('.'))) == ".ods")
+        else if (sExt == ".ods")
         {
             sDataFile = FileSystem::ValidFileName(_sFile, ".ods");
             Datafile::openODS(_option);
             Datafile::condenseDataSet();
             return;
         }
-        else if (toLowerCase(sDataFile.substr(sDataFile.rfind('.'))) == ".xls")
+        else if (sExt == ".xls")
         {
             sDataFile = FileSystem::ValidFileName(_sFile, ".xls");
             Datafile::openXLS(_option);
             Datafile::condenseDataSet();
             return;
         }
-        else if (toLowerCase(sDataFile.substr(sDataFile.rfind('.'))) == ".xlsx")
+        else if (sExt == ".xlsx")
         {
             sDataFile = FileSystem::ValidFileName(_sFile, ".xlsx");
             Datafile::openXLSX(_option);
             Datafile::condenseDataSet();
             return;
         }
-        else if (toLowerCase(sDataFile.substr(sDataFile.rfind('.'))) != ".dat"
-            && toLowerCase(sDataFile.substr(sDataFile.rfind('.'))) != ".txt")
+        else if (sExt != ".dat"
+            && sExt != ".txt"
+            && sExt != ".NOEXT")
         {
             sErrorToken = sDataFile;
             sDataFile = "";
