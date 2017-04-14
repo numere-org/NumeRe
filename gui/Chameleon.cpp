@@ -25,6 +25,7 @@
 #include <wx/mimetype.h>
 #include <wx/stdpaths.h>
 #include <wx/filename.h>
+#include <wx/artprov.h>
 #include <fstream>
 
 
@@ -68,13 +69,13 @@
 #include <wx/msw/helpchm.h>
 //#include "mmDropMenu.h"
 
-#include "newfile.xpm"
+//#include "newfile.xpm"
 //#include "openremote.xpm"
-#include "openlocal.xpm"
-#include "savefile.xpm"
+//#include "openlocal.xpm"
+//#include "savefile.xpm"
 
-#include "stock_redo.xpm"
-#include "stock_undo.xpm"
+//#include "stock_redo.xpm"
+//#include "stock_undo.xpm"
 
 //#include "build.xpm"
 //#include "compilestop.xpm"
@@ -166,6 +167,7 @@ BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
 	EVT_MENU						(ID_SELECTION_DOWN, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_SORT_SELECTION_ASC, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_SORT_SELECTION_DESC, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_FIND_DUPLICATES, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_STRIP_SPACES_BOTH, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_STRIP_SPACES_FRONT, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_STRIP_SPACES_BACK, NumeReWindow::OnMenuEvent)
@@ -1128,6 +1130,12 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_SORT_SELECTION_DESC:
         {
             m_currentEd->sortSelection(false);
+            break;
+        }
+        case ID_FIND_DUPLICATES:
+        {
+            m_currentEd->InitDuplicateCode();
+            m_currentEd->OnFindDuplicateCode();
             break;
         }
         case ID_STRIP_SPACES_BOTH:
@@ -3658,7 +3666,7 @@ void NumeReWindow::UpdateMenuBar()
     {
         menuTools->Check(ID_USEANALYZER, false);
     }
-
+    menuTools->Append(ID_FIND_DUPLICATES, _guilang.get("GUI_MENU_FIND_DUPLICATES"), _guilang.get("GUI_MENU_FIND_DUPLICATES_TTP"));
 	menuTools->Append(ID_DEBUGGER, _guilang.get("GUI_MENU_DEBUGGER"), _guilang.get("GUI_MENU_DEBUGGER_TTP"), true);
 	menuTools->Check(ID_DEBUGGER, m_terminal->getKernelSettings().getUseDebugger());
 
@@ -3699,8 +3707,8 @@ void NumeReWindow::UpdateToolbar()
 	t = CreateToolBar(style);//new wxToolBar(this, -1, wxDefaultPosition, wxDefaultSize, style);
 	//SetToolBar(t);
 
-	wxBitmap bmNew(newfile_xpm);
-	t->AddTool(ID_NEW_EMPTY, _guilang.get("GUI_TB_NEW"), bmNew, _guilang.get("GUI_TB_NEW_TTP"), wxITEM_DROPDOWN);
+	//wxBitmap bmNew(newfile_xpm);
+	t->AddTool(ID_NEW_EMPTY, _guilang.get("GUI_TB_NEW"), wxArtProvider::GetBitmap(wxART_NEW, wxART_TOOLBAR), _guilang.get("GUI_TB_NEW_TTP"), wxITEM_DROPDOWN);
 	wxMenu* menuNewFile = new wxMenu();
 	menuNewFile->Append(ID_NEW_EMPTY, _guilang.get("GUI_MENU_NEW_EMPTYFILE"), _guilang.get("GUI_MENU_NEW_EMPTYFILE_TTP"));
 	menuNewFile->AppendSeparator();
@@ -3709,92 +3717,75 @@ void NumeReWindow::UpdateToolbar()
 	menuNewFile->Append(ID_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
 	t->SetDropdownMenu(ID_NEW_EMPTY, menuNewFile);
 
-	//wxBitmap bmOpen((open_xpm);
+    //wxBitmap bmOpenLocal(openlocal_xpm);
+    t->AddTool(ID_OPEN_SOURCE_LOCAL, _guilang.get("GUI_TB_OPEN"), wxArtProvider::GetBitmap(wxART_FILE_OPEN, wxART_TOOLBAR), _guilang.get("GUI_TB_OPEN_TTP"));
 
-	//if(perms->isEnabled(PERM_LOCALMODE))
-	//{
-		wxBitmap bmOpenLocal(openlocal_xpm);
-		t->AddTool(ID_OPEN_SOURCE_LOCAL, _guilang.get("GUI_TB_OPEN"), bmOpenLocal, _guilang.get("GUI_TB_OPEN_TTP"));
-	//}
-	//wxBitmap bmOpenRemote(openremote_xpm);
-	//t->AddTool(ID_OPEN_SOURCE_REMOTE, "Open (R)", bmOpenRemote, "Open a file from the remote server");
 
-	wxBitmap bmSave(savefile_xpm);
-	t->AddTool(ID_SAVE, _guilang.get("GUI_TB_SAVE"), bmSave, _guilang.get("GUI_TB_SAVE_TTP"));
+	//wxBitmap bmSave(savefile_xpm);
+	t->AddTool(ID_SAVE, _guilang.get("GUI_TB_SAVE"), wxArtProvider::GetBitmap(wxART_FILE_SAVE, wxART_TOOLBAR), _guilang.get("GUI_TB_SAVE_TTP"));
 
-	/*if(perms->isEnabled(PERM_TERMINAL))
-	{
-		t->AddSeparator();
+    t->AddSeparator();
 
-		wxBitmap bmConnect(connect16_xpm);
-		t->AddTool(ID_STARTCONNECT, "Connect", bmConnect, "Connect the terminal to the remote server");
+    //wxBitmap bmUndo(undo_xpm);
+    t->AddTool(ID_UNDO, _guilang.get("GUI_TB_UNDO"), wxArtProvider::GetBitmap(wxART_UNDO, wxART_TOOLBAR), _guilang.get("GUI_TB_UNDO"));
 
-		wxBitmap bmDisconnect(disconnect16_xpm);
-		t->AddTool(ID_DISCONNECT, "Disconnect", bmDisconnect, "Disconnect the terminal from the remote server");
-	}*/
+    //wxBitmap bmRedo(stock_redo_xpm);
+    t->AddTool(ID_REDO, _guilang.get("GUI_TB_REDO"), wxArtProvider::GetBitmap(wxART_REDO, wxART_TOOLBAR), _guilang.get("GUI_TB_REDO"));
 
-	/*if(perms->isEnabled(PERM_COMPILE))
-	{
-		t->AddSeparator();
-		wxBitmap bmCompile(build_xpm);
-		t->AddTool(ID_COMPILE, "Compile", bmCompile, "Compile the current project or file");
-	}*/
+    t->AddSeparator();
+    t->AddTool(ID_CUT, _guilang.get("GUI_TB_CUT"), wxArtProvider::GetBitmap(wxART_CUT, wxART_TOOLBAR), _guilang.get("GUI_TB_CUT"));
+    t->AddTool(ID_COPY, _guilang.get("GUI_TB_COPY"), wxArtProvider::GetBitmap(wxART_COPY, wxART_TOOLBAR), _guilang.get("GUI_TB_COPY"));
+    t->AddTool(ID_PASTE, _guilang.get("GUI_TB_PASTE"), wxArtProvider::GetBitmap(wxART_PASTE, wxART_TOOLBAR), _guilang.get("GUI_TB_PASTE"));
 
-	//if(perms->isEnabled(PERM_DEBUG))
-	//{
-        t->AddSeparator();
+    t->AddSeparator();
+    t->AddTool(ID_FIND, _guilang.get("GUI_TB_SEARCH"), wxArtProvider::GetBitmap(wxART_FIND, wxART_TOOLBAR), _guilang.get("GUI_TB_SEARCH"));
+    t->AddTool(ID_REPLACE, _guilang.get("GUI_TB_REPLACE"), wxArtProvider::GetBitmap(wxART_FIND_AND_REPLACE, wxART_TOOLBAR), _guilang.get("GUI_TB_REPLACE"));
 
-        wxBitmap bmUndo(undo_xpm);
-        t->AddTool(ID_UNDO, _guilang.get("GUI_TB_UNDO"), bmUndo, _guilang.get("GUI_TB_UNDO"));
+    t->AddSeparator();
+    wxBitmap bmStart(newstart1_xpm);
+    t->AddTool(ID_DEBUG_START, _guilang.get("GUI_TB_RUN"), bmStart, _guilang.get("GUI_TB_RUN_TTP"));
 
-        wxBitmap bmRedo(stock_redo_xpm);
-        t->AddTool(ID_REDO, _guilang.get("GUI_TB_REDO"), bmRedo, _guilang.get("GUI_TB_REDO"));
+    wxBitmap bmStop(newstop1_xpm);
+    t->AddTool(ID_DEBUG_STOP, _guilang.get("GUI_TB_STOP"), bmStop, _guilang.get("GUI_TB_STOP_TTP"));
 
-		t->AddSeparator();
-		wxBitmap bmStart(newstart1_xpm);
-		t->AddTool(ID_DEBUG_START, _guilang.get("GUI_TB_RUN"), bmStart, _guilang.get("GUI_TB_RUN_TTP"));
+    /*wxBitmap bmContinue(newcontinue1_xpm);
+    t->AddTool(ID_DEBUG_CONTINUE, "Continue", bmContinue, "Resume when paused at a breakpoint");*/
 
-		wxBitmap bmStop(newstop1_xpm);
-		t->AddTool(ID_DEBUG_STOP, _guilang.get("GUI_TB_STOP"), bmStop, _guilang.get("GUI_TB_STOP_TTP"));
+    /*wxBitmap bmStepNext(stepnext_xpm);
+    t->AddTool(ID_DEBUG_STEPNEXT, "Step next", bmStepNext,
+        "Run the next line of code, stepping into it if it's a function call");
 
-		/*wxBitmap bmContinue(newcontinue1_xpm);
-		t->AddTool(ID_DEBUG_CONTINUE, "Continue", bmContinue, "Resume when paused at a breakpoint");*/
+    wxBitmap bmStepOver(stepover_xpm);
+    t->AddTool(ID_DEBUG_STEPOVER, "Step over", bmStepOver,
+        "Run the next line of code, but don't go inside if it's a function call");
 
-		/*wxBitmap bmStepNext(stepnext_xpm);
-		t->AddTool(ID_DEBUG_STEPNEXT, "Step next", bmStepNext,
-			"Run the next line of code, stepping into it if it's a function call");
+    wxBitmap bmStepOut(stepout_xpm);
+    t->AddTool(ID_DEBUG_STEPOUT, "Step out", bmStepOut,
+        "Run all the code in the current function");*/
 
-		wxBitmap bmStepOver(stepover_xpm);
-		t->AddTool(ID_DEBUG_STEPOVER, "Step over", bmStepOver,
-			"Run the next line of code, but don't go inside if it's a function call");
+    t->AddSeparator();
 
-		wxBitmap bmStepOut(stepout_xpm);
-		t->AddTool(ID_DEBUG_STEPOUT, "Step out", bmStepOut,
-			"Run all the code in the current function");*/
+    wxBitmap bmStartDebugger(newcontinue1_xpm);
+    t->AddTool(ID_DEBUGGER, _guilang.get("GUI_TB_DEBUGGER"), bmStartDebugger, _guilang.get("GUI_TB_DEBUGGER_TTP"), wxITEM_CHECK);
+    t->ToggleTool(ID_DEBUGGER, m_terminal->getKernelSettings().getUseDebugger());
 
-		t->AddSeparator();
+    wxBitmap bmAddBreakpoint(breakpoint_xpm);
+    t->AddTool(ID_DEBUG_ADDEDITORBREAKPOINT, _guilang.get("GUI_TB_ADD"), bmAddBreakpoint,
+        _guilang.get("GUI_TB_ADD_TTP"));
 
-		wxBitmap bmStartDebugger(newcontinue1_xpm);
-		t->AddTool(ID_DEBUGGER, _guilang.get("GUI_TB_DEBUGGER"), bmStartDebugger, _guilang.get("GUI_TB_DEBUGGER_TTP"), wxITEM_CHECK);
-		t->ToggleTool(ID_DEBUGGER, m_terminal->getKernelSettings().getUseDebugger());
+    wxBitmap bmRemoveBreakpoint(breakpoint_octagon_disable_xpm);
+    t->AddTool(ID_DEBUG_REMOVEEDITORBREAKPOINT, _guilang.get("GUI_TB_REMOVE"), bmRemoveBreakpoint,
+        _guilang.get("GUI_TB_REMOVE_TTP"));
 
-		wxBitmap bmAddBreakpoint(breakpoint_xpm);
-		t->AddTool(ID_DEBUG_ADDEDITORBREAKPOINT, _guilang.get("GUI_TB_ADD"), bmAddBreakpoint,
-			_guilang.get("GUI_TB_ADD_TTP"));
+    wxBitmap bmClearBreakpoint(breakpoint_crossed_xpm);
+    t->AddTool(ID_DEBUG_CLEAREDITORBREAKPOINTS, _guilang.get("GUI_TB_CLEAR"), bmClearBreakpoint,
+        _guilang.get("GUI_TB_CLEAR_TTP"));
 
-		wxBitmap bmRemoveBreakpoint(breakpoint_octagon_disable_xpm);
-		t->AddTool(ID_DEBUG_REMOVEEDITORBREAKPOINT, _guilang.get("GUI_TB_REMOVE"), bmRemoveBreakpoint,
-			_guilang.get("GUI_TB_REMOVE_TTP"));
+    for(int i = ID_DEBUG_IDS_FIRST; i < ID_DEBUG_IDS_LAST; i++)
+    {
+        t->EnableTool(i, false);
+    }
 
-		wxBitmap bmClearBreakpoint(breakpoint_crossed_xpm);
-		t->AddTool(ID_DEBUG_CLEAREDITORBREAKPOINTS, _guilang.get("GUI_TB_CLEAR"), bmClearBreakpoint,
-			_guilang.get("GUI_TB_CLEAR_TTP"));
-
-		for(int i = ID_DEBUG_IDS_FIRST; i < ID_DEBUG_IDS_LAST; i++)
-		{
-			t->EnableTool(i, false);
-		}
-	//}
 
 	t->Realize();
 

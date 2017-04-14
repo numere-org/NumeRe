@@ -5662,7 +5662,7 @@
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\printps.h
 	"wx/prntbase.h"
 
-1491510304 d:\cpp\numere-source\trunk\editor\editor.h
+1492063558 d:\cpp\numere-source\trunk\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -5671,6 +5671,7 @@
 	"../common/datastructures.h"
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
+	"../gui/dialogs/duplicatecodedialog.hpp"
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wx.h
 	"wx/defs.h"
@@ -6605,7 +6606,7 @@
 	<commdlg.h>
 	"wx/msw/winundef.h"
 
-1490798689 d:\cpp\numere-source\trunk\common\datastructures.h
+1491746867 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -7692,7 +7693,7 @@
 	<set>
 	<queue>
 
-1490791550 source:d:\cpp\numere-source\trunk\debugger\debugviewer.cpp
+1491846255 source:d:\cpp\numere-source\trunk\debugger\debugviewer.cpp
 	"debugviewer.hpp"
 	<wx/statbox.h>
 	"../kernel/core/language.hpp"
@@ -7706,7 +7707,7 @@
 	<string>
 	<vector>
 
-1491547874 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1492167345 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -7766,7 +7767,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1491299607 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1491996058 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -7784,6 +7785,7 @@
 	<wx/mimetype.h>
 	<wx/stdpaths.h>
 	<wx/filename.h>
+	<wx/artprov.h>
 	<fstream>
 	<math.h>
 	"../common/fixvsbug.h"
@@ -7819,11 +7821,6 @@
 	"tableviewer.hpp"
 	"tableeditpanel.hpp"
 	<wx/msw/helpchm.h>
-	"newfile.xpm"
-	"openlocal.xpm"
-	"savefile.xpm"
-	"stock_redo.xpm"
-	"stock_undo.xpm"
 	"newstart1.xpm"
 	"newcontinue1.xpm"
 	"newstop1.xpm"
@@ -8738,4 +8735,17 @@
 
 1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\colourdata.h
 	"wx/colour.h"
+
+1491889444 d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.hpp
+	"../viewerframe.hpp"
+	<wx/panel.h>
+	<wx/gauge.h>
+	<wx/listctrl.h>
+	<string>
+	<vector>
+
+1491889502 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
+	"duplicatecodedialog.hpp"
+	"../../kernel/core/language.hpp"
+	"../../editor/editor.h"
 
