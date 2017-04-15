@@ -17,8 +17,13 @@
 ******************************************************************************/
 
 
-
+#include <wx/artprov.h>
+#include <wx/dir.h>
+#include <wx/clipbrd.h>
 #include "imagepanel.hpp"
+#include "../kernel/core/language.hpp"
+
+extern Language _guilang;
 
 
 BEGIN_EVENT_TABLE(ImagePanel, wxPanel)
@@ -40,6 +45,11 @@ BEGIN_EVENT_TABLE(ImagePanel, wxPanel)
     EVT_PAINT           (ImagePanel::paintEvent)
     //Size event
     EVT_SIZE            (ImagePanel::OnSize)
+
+    EVT_MENU            (ID_SAVEIMAGE, ImagePanel::OnSaveAs)
+    EVT_MENU            (ID_COPYIMAGE, ImagePanel::OnCopy)
+    EVT_MENU            (ID_NEXTIMAGE, ImagePanel::OnNextImage)
+    EVT_MENU            (ID_PREVIOUSIMAGE, ImagePanel::OnPreviousImage)
 END_EVENT_TABLE()
 
 
@@ -48,12 +58,51 @@ ImagePanel::ImagePanel(wxFrame* parent, wxString file, wxBitmapType format) : wx
 {
     // load the file... ideally add a check to see if loading was successful
     wxInitAllImageHandlers();
-    image.LoadFile(file, format);
+    parentFrame = parent;
+
+    this->LoadImage(file, format, false);
+
+    toptoolbar = parentFrame->CreateToolBar(wxTB_HORIZONTAL | wxTB_FLAT);
+    toptoolbar->AddTool(ID_SAVEIMAGE, _guilang.get("GUI_TB_SAVE"), wxArtProvider::GetBitmap(wxART_FILE_SAVE, wxART_TOOLBAR), _guilang.get("GUI_TB_SAVE_TTP"));
+    toptoolbar->AddTool(ID_COPYIMAGE, _guilang.get("GUI_TB_COPY"), wxArtProvider::GetBitmap(wxART_COPY, wxART_TOOLBAR), _guilang.get("GUI_TB_COPY"));
+    toptoolbar->AddSeparator();
+    toptoolbar->AddTool(ID_PREVIOUSIMAGE, _guilang.get("GUI_TB_PREVIOUSIMAGE"), wxArtProvider::GetBitmap(wxART_GO_BACK, wxART_TOOLBAR), _guilang.get("GUI_TB_PREVIOUSIMAGE"));
+    toptoolbar->AddTool(ID_NEXTIMAGE, _guilang.get("GUI_TB_NEXTIMAGE"), wxArtProvider::GetBitmap(wxART_GO_FORWARD, wxART_TOOLBAR), _guilang.get("GUI_TB_NEXTIMAGE"));
+    toptoolbar->Realize();
+
+    parentFrame->Bind(wxEVT_MENU, &ImagePanel::OnSaveAs, this, ID_SAVEIMAGE);
+    parentFrame->Bind(wxEVT_MENU, &ImagePanel::OnCopy, this, ID_COPYIMAGE);
+    parentFrame->Bind(wxEVT_MENU, &ImagePanel::OnNextImage, this, ID_NEXTIMAGE);
+    parentFrame->Bind(wxEVT_MENU, &ImagePanel::OnPreviousImage, this, ID_PREVIOUSIMAGE);
+}
+
+
+void ImagePanel::LoadImage(const wxString& filename, wxBitmapType format, bool doUpdateFrame)
+{
+    image.LoadFile(filename, format);
     w = image.GetWidth();
     h = image.GetHeight();
     sized_w = -1;
     sized_h = -1;
+    currentFile = filename;
+    if (doUpdateFrame)
+    {
+        this->SetSize(this->getRelation()*600,600);
+        parentFrame->SetClientSize(this->GetSize());
+        parentFrame->SetTitle("NumeRe-ImageViewer: " + wxFileName(filename).GetName());
+        this->paintNow();
+    }
 }
+
+
+wxArrayString ImagePanel::getFileList(const wxString& dirname)
+{
+    wxArrayString filelist;
+    if (wxDir::GetAllFiles(dirname, &filelist, "*.*", wxDIR_FILES))
+        return filelist;
+    return wxArrayString();
+}
+
 
 /*
  * Called by the system of by wxWidgets when the panel needs
@@ -151,6 +200,98 @@ void ImagePanel::OnLoseFocus(wxFocusEvent& event)
 {
     //m_parent->SetTransparent(80);
     event.Skip();
+}
+
+
+void ImagePanel::OnSaveAs(wxCommandEvent& event)
+{
+    wxString title = _guilang.get("GUI_DLG_SAVEAS");
+    wxString filterString = "PNG (*.png)|*.png|Bitmap (*.bmp)|*.bmp|JPEG (*.jpg)|*.jpg";
+    wxFileName fileName = currentFile;
+    wxFileDialog dlg(this, title, fileName.GetPath(true), fileName.GetName(), filterString, wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxFD_CHANGE_DIR);
+
+    // ie, user clicked cancel
+    if(dlg.ShowModal() != wxID_OK)
+    {
+        return;
+    }
+
+    fileName = wxFileName(dlg.GetPath());
+
+    image.SaveFile(fileName.GetFullName());
+}
+
+void ImagePanel::OnCopy(wxCommandEvent& event)
+{
+    if (wxTheClipboard->Open())
+    {
+        wxTheClipboard->SetData(new wxBitmapDataObject(wxBitmap(image)));
+        wxTheClipboard->Close();
+    }
+}
+
+void ImagePanel::OnNextImage(wxCommandEvent& event)
+{
+    wxFileName filename(currentFile);
+    wxArrayString filelist = getFileList(filename.GetPath(true));
+    if (!filelist.size())
+        return;
+    int nIndex = filelist.Index(filename.GetPath(wxPATH_GET_SEPARATOR) + filename.GetFullName());
+    if (nIndex == wxNOT_FOUND)
+        return;
+
+    for (size_t i = 1; i < filelist.size(); i++)
+    {
+        if (nIndex+i == filelist.size())
+            nIndex = -(int)i;
+        wxFileName currentFileName(filelist[i+nIndex]);
+        if (currentFileName.GetExt() == "png" || currentFileName.GetExt() == "bmp" || currentFileName.GetExt() == "jpg" || currentFileName.GetExt() == "gif")
+        {
+            wxBitmapType format;
+            if (currentFileName.GetExt() == "png")
+                format = wxBITMAP_TYPE_PNG;
+            if (currentFileName.GetExt() == "bmp")
+                format = wxBITMAP_TYPE_BMP;
+            if (currentFileName.GetExt() == "jpg")
+                format = wxBITMAP_TYPE_JPEG;
+            if (currentFileName.GetExt() == "gif")
+                format = wxBITMAP_TYPE_GIF;
+            this->LoadImage(filename.GetVolume() +":"+ filelist[i+nIndex], format);
+            return;
+        }
+    }
+}
+
+void ImagePanel::OnPreviousImage(wxCommandEvent& event)
+{
+    wxFileName filename(currentFile);
+    wxArrayString filelist = getFileList(filename.GetPath(true));
+    if (!filelist.size())
+        return;
+    int nIndex = filelist.Index(filename.GetPath(wxPATH_GET_SEPARATOR) + filename.GetFullName());
+    if (nIndex == wxNOT_FOUND)
+        return;
+
+    for (int i = -1; i > -(int)filelist.size(); i--)
+    {
+        if (nIndex+i < 0)
+            nIndex = filelist.size()-i-1;
+        wxFileName currentFileName(filelist[nIndex+i]);
+        if (currentFileName.GetExt() == "png" || currentFileName.GetExt() == "bmp" || currentFileName.GetExt() == "jpg" || currentFileName.GetExt() == "gif")
+        {
+            wxBitmapType format;
+            if (currentFileName.GetExt() == "png")
+                format = wxBITMAP_TYPE_PNG;
+            if (currentFileName.GetExt() == "bmp")
+                format = wxBITMAP_TYPE_BMP;
+            if (currentFileName.GetExt() == "jpg")
+                format = wxBITMAP_TYPE_JPEG;
+            if (currentFileName.GetExt() == "gif")
+                format = wxBITMAP_TYPE_GIF;
+            this->LoadImage(filename.GetVolume() +":"+ filelist[i+nIndex], format);
+            return;
+        }
+    }
 }
 
 
