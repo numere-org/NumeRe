@@ -1134,8 +1134,9 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         }
         case ID_FIND_DUPLICATES:
         {
-            m_currentEd->InitDuplicateCode();
-            m_currentEd->OnFindDuplicateCode();
+            // only if the file type is matching
+            if (m_currentEd->InitDuplicateCode())
+                m_currentEd->OnFindDuplicateCode();
             break;
         }
         case ID_STRIP_SPACES_BOTH:

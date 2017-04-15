@@ -3429,13 +3429,18 @@ void NumeReEditor::OnChangeCase(wxCommandEvent& event)
     }
 }
 
-void NumeReEditor::InitDuplicateCode()
+bool NumeReEditor::InitDuplicateCode()
 {
-    m_duplicateCode = new DuplicateCodeDialog(this, "NumeRe: " + _guilang.get("GUI_DUPCODE_TITLE") + " [" + this->GetFilenameString() + "]");
-    m_duplicateCode->SetIcon(wxIcon(m_mainFrame->getProgramFolder() + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
-    m_duplicateCode->Show();
-    m_duplicateCode->SetFocus();
-    m_duplicateCode->Refresh();
+    if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+    {
+        m_duplicateCode = new DuplicateCodeDialog(this, "NumeRe: " + _guilang.get("GUI_DUPCODE_TITLE") + " [" + this->GetFilenameString() + "]");
+        m_duplicateCode->SetIcon(wxIcon(m_mainFrame->getProgramFolder() + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+        m_duplicateCode->Show();
+        m_duplicateCode->SetFocus();
+        m_duplicateCode->Refresh();
+        return true;
+    }
+    return false;
 }
 
 void NumeReEditor::OnFindDuplicateCode(int nDuplicateFlag)

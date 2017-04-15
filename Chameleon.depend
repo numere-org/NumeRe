@@ -5662,7 +5662,7 @@
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\printps.h
 	"wx/prntbase.h"
 
-1492063558 d:\cpp\numere-source\trunk\editor\editor.h
+1492255795 d:\cpp\numere-source\trunk\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -8268,7 +8268,7 @@
 
 1490791550 d:\cpp\numere-source\trunk\gui\dialogs\exe.xpm
 
-1492251337 source:d:\cpp\numere-source\trunk\gui\imagepanel.cpp
+1492252552 source:d:\cpp\numere-source\trunk\gui\imagepanel.cpp
 	<wx/artprov.h>
 	<wx/dir.h>
 	<wx/clipbrd.h>

@@ -100,7 +100,7 @@ public:
 	void OnHelpOnSelection(wxCommandEvent& event);
 	void OnFindProcedure(wxCommandEvent &event);
 	void OnChangeCase(wxCommandEvent& event);
-	void InitDuplicateCode();
+	bool InitDuplicateCode();
 	void OnFindDuplicateCode(int nDuplicateFlag = 1); // 0 = direct comparison, 1 = use var semanticals, 2 = use string semanticals, 3 = use all semanticals
 	void IndicateDuplicatedLine(int nStart1, int nEnd1, int nStart2, int nEnd2);
 
