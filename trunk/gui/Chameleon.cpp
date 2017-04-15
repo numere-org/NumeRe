@@ -1592,10 +1592,8 @@ void NumeReWindow::openImage(wxFileName filename)
         return;
     }
     sizer->Add(_panel, 1, wxEXPAND);
-    //int width = _panel->getRelation()*600;
     _panel->SetSize(_panel->getRelation()*600,600);
     frame->SetSizer(sizer);
-    //frame->SetSize(_panel->getRelation()*600,600+30);
     frame->SetClientSize(_panel->GetSize());
     frame->SetIcon(wxIcon(programPath + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
     m_currentView = frame;

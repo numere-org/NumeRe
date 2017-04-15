@@ -19,11 +19,19 @@
 #include <wx/wx.h>
 #include <wx/sizer.h>
 
+#include "../common/datastructures.h"
+
 class ImagePanel : public wxPanel
 {
     wxImage image;
     wxBitmap resized;
+    wxToolBar* toptoolbar;
+    wxString currentFile;
+    wxFrame* parentFrame;
     int w, h, sized_w, sized_h;
+    wxArrayString getFileList(const wxString& dirname);
+    void LoadImage(const wxString& filename, wxBitmapType = wxBITMAP_TYPE_ANY, bool doUpdateFrame = true);
+
 
 public:
     ImagePanel(wxFrame* parent, wxString file, wxBitmapType format);
@@ -35,6 +43,8 @@ public:
 
     double getRelation() const
         {return w/(double)h;}
+
+    wxToolBar* getToolbar() {return toptoolbar;}
 
     // some useful events
     /*
@@ -49,6 +59,11 @@ public:
     void OnFocus(wxFocusEvent& event);
     void OnLoseFocus(wxFocusEvent& event);
     //void keyReleased(wxKeyEvent& event);
+
+    void OnSaveAs(wxCommandEvent& event);
+    void OnCopy(wxCommandEvent& event);
+    void OnNextImage(wxCommandEvent& event);
+    void OnPreviousImage(wxCommandEvent& event);
 
 
     DECLARE_EVENT_TABLE()

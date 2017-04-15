@@ -194,6 +194,12 @@ enum WindowID
 	ID_DEBUG_BREAKPOINT,
 	ID_DEBUG_EXIT_NORMAL,
 	ID_DEBUG_EXIT_ERROR,
+
+	// ImagePanel Ids
+	ID_SAVEIMAGE,
+	ID_COPYIMAGE,
+	ID_NEXTIMAGE,
+	ID_PREVIOUSIMAGE
 };
 
 // IMPORTANT!!!  Any changes to this enum need to be reflected in the

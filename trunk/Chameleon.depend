@@ -6606,7 +6606,7 @@
 	<commdlg.h>
 	"wx/msw/winundef.h"
 
-1491746867 d:\cpp\numere-source\trunk\common\datastructures.h
+1492247983 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -7767,7 +7767,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1491996058 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1492248912 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -7923,9 +7923,10 @@
 	<wx/splitter.h>
 	<cmath>
 
-1490791550 d:\cpp\numere-source\trunk\gui\imagepanel.hpp
+1492252223 d:\cpp\numere-source\trunk\gui\imagepanel.hpp
 	<wx/wx.h>
 	<wx/sizer.h>
+	"../common/datastructures.h"
 
 1491251317 d:\cpp\numere-source\trunk\gui\helpviewer.hpp
 	<wx/wxhtml.h>
@@ -8267,8 +8268,12 @@
 
 1490791550 d:\cpp\numere-source\trunk\gui\dialogs\exe.xpm
 
-1490791550 source:d:\cpp\numere-source\trunk\gui\imagepanel.cpp
+1492251337 source:d:\cpp\numere-source\trunk\gui\imagepanel.cpp
+	<wx/artprov.h>
+	<wx/dir.h>
+	<wx/clipbrd.h>
 	"imagepanel.hpp"
+	"../kernel/core/language.hpp"
 
 1490791550 source:d:\cpp\numere-source\trunk\gui\tableeditpanel.cpp
 	"tableeditpanel.hpp"
@@ -8353,7 +8358,7 @@
 	"documentation.hpp"
 	"../kernel.hpp"
 
-1492195480 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
+1492196796 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
 	"filesystem.hpp"
 	"../kernel.hpp"
 
