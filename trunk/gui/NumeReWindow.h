@@ -385,17 +385,4 @@ class NumeReWindow : public wxFrame
 
 
 
-
-#if wxUSE_DRAG_AND_DROP
-class  ChameleonFileDropTarget : public wxFileDropTarget
-{
-    public:
-        ChameleonFileDropTarget(NumeReWindow *owner) : m_owner(owner) {}
-        virtual bool OnDropFiles(wxCoord x, wxCoord y, const wxArrayString& filenames);
-
-        NumeReWindow *m_owner;
-};
-#endif //wxUSE_DRAG_AND_DROP
-
-
 #endif

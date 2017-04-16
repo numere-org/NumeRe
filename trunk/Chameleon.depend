@@ -6556,7 +6556,7 @@
 	"../kernel/kernel.hpp"
 	"../kernel/debugmessenger.hpp"
 
-1491299609 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1492339042 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -7707,7 +7707,7 @@
 	<string>
 	<vector>
 
-1492172457 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1492255840 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -7767,7 +7767,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1492248912 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1492342419 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -7805,6 +7805,7 @@
 	"../network/networking.h"
 	"../compiler/compiler.h"
 	"../common/Options.h"
+	"../common/numeredroptarget.hpp"
 	"../debugger/cham_db.h"
 	"../debugger/DebugManager.h"
 	"../debugger/debugviewer.hpp"
@@ -8753,4 +8754,31 @@
 	"duplicatecodedialog.hpp"
 	"../../kernel/core/language.hpp"
 	"../../editor/editor.h"
+
+1492343918 source:d:\cpp\numere-source\trunk\common\numeredroptarget.cpp
+	"numeredroptarget.hpp"
+	"../gui/NumeReWindow.h"
+	"../editor/editor.h"
+	<wx/richtext/richtextbuffer.h>
+
+1492341411 d:\cpp\numere-source\trunk\common\numeredroptarget.hpp
+	<wx/wx.h>
+	<wx/dnd.h>
+
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\richtext\richtextbuffer.h
+	"wx/defs.h"
+	"wx/list.h"
+	"wx/textctrl.h"
+	"wx/bitmap.h"
+	"wx/image.h"
+	"wx/cmdproc.h"
+	"wx/txtstrm.h"
+	"wx/variant.h"
+	"wx/position.h"
+	"wx/dataobj.h"
+
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\cmdproc.h
+	"wx/defs.h"
+	"wx/object.h"
+	"wx/list.h"
 

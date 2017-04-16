@@ -49,6 +49,7 @@
 #include "../network/networking.h"
 #include "../compiler/compiler.h"
 #include "../common/Options.h"
+#include "../common/numeredroptarget.hpp"
 #include "../debugger/cham_db.h"
 #include "../debugger/DebugManager.h"
 #include "../debugger/debugviewer.hpp"
@@ -886,7 +887,7 @@ void NumeReWindow::InitializeProgramOptions()
 	}*/
 
 #if wxUSE_DRAG_AND_DROP
-	SetDropTarget(new ChameleonFileDropTarget(this));
+	SetDropTarget(new NumeReDropTarget(this, this, NumeReDropTarget::NUMEREWINDOW));
 #endif //wxUSE_DRAG_AND_DROP
 }
 
@@ -1810,8 +1811,8 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         NumeReEditor* edit = new NumeReEditor (this, m_debugManager, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
         //edit->SetSyntax(m_terminal->getSyntax());
 
-    #if 0//wxUSE_DRAG_AND_DROP
-        edit->SetDropTarget(new ChameleonFileDropTarget(this));
+    #if wxUSE_DRAG_AND_DROP
+        edit->SetDropTarget(new NumeReDropTarget(this, edit, NumeReDropTarget::EDITOR));
     #endif
 
         m_currentEd = edit;
@@ -2480,8 +2481,8 @@ void NumeReWindow::OpenSourceFile (wxArrayString fnames, unsigned int nLine)
 			else
 			{
 				NumeReEditor *edit = new NumeReEditor (this, m_debugManager, m_options, proj, m_book, -1, m_terminal->getSyntax(), m_terminal);
-#if 0// wxUSE_DRAG_AND_DROP
-				edit->SetDropTarget(new ChameleonFileDropTarget(this));
+#if wxUSE_DRAG_AND_DROP
+				edit->SetDropTarget(new NumeReDropTarget(this, edit, NumeReDropTarget::EDITOR));
 #endif
 				m_currentEd = edit;
 				m_currentPage = m_book->GetPageCount();
@@ -5529,21 +5530,3 @@ void NumeReWindow::OnAbout()
 	//m_watchPanel->TestParsing();
 }
 
-
-
-#if wxUSE_DRAG_AND_DROP
-
-bool ChameleonFileDropTarget::OnDropFiles(wxCoord WXUNUSED(x), wxCoord WXUNUSED(y),
-												const wxArrayString& filenames)
-{
-	wxCHECK_MSG(m_owner, false, wxT("Invalid drop target"));
-	const size_t count = filenames.GetCount();
-	if (count == 0)
-		return false;
-
-	m_owner->SetRemoteMode(false);
-	m_owner->OpenSourceFile(filenames);
-	return true;
-}
-
-#endif //wxUSE_DRAG_AND_DROP
