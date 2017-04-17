@@ -250,6 +250,16 @@ WX_DEFINE_ARRAY(NumeReEditor*, EditorPointerArray);
 WX_DEFINE_ARRAY_INT(bool, BoolArray);
 
 
+enum PathID {
+    EXEPATH,
+    WORKPATH,
+    LOADPATH,
+    SAVEPATH,
+    SCRIPTPATH,
+    PROCPATH,
+    PLOTPATH
+};
+
 
 typedef struct
 {

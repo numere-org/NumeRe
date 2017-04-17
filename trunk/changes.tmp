@@ -30,3 +30,5 @@ Fixed	Histogramme werden im ImageViewer auch angezeigt, wenn kein externer Viewe
 Fixed	NumeRe erlaubt nun auch das Laden von Dateien ohne Endung, es muessen sich jedoch um Klartextdateien handeln (keine binaeren).
 Added	Der ImageViewer kann nun das aktuell geoeffnete Bild kopieren, unter anderem Namen speichern, das naechste und das vorherige Bild laden.
 Fixed	Das Problem mit dem Text- und Datei-Drag'n'Drop wurde behoben.
+Added	Drag'n'Drop wurde zum Filetree hinzugefuegt.
+Cleaned	Das Drag'n'Drop-Verhalten der einzelnen GUI-Komponenten wurde verbessert und logischer gestaltet.
