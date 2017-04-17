@@ -29,11 +29,13 @@ class NumeReDropTarget : public wxDropTarget
 {
     public:
         enum parentType {NUMEREWINDOW, EDITOR, FILETREE, CONSOLE};
+        enum fileType {TEXTFILE, BINARYFILE, EXECUTABLE, NOTSUPPORTED};
 
         NumeReDropTarget(wxWindow* topwindow, wxWindow* owner, parentType type);
 
         wxDragResult OnDragOver(wxCoord x, wxCoord y, wxDragResult defaultDragResult);
         wxDragResult OnData(wxCoord x, wxCoord y, wxDragResult defaultDragResult);
+        fileType getFileType(const wxString& filename);
 
     private:
         wxWindow* m_owner;

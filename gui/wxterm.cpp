@@ -149,9 +149,8 @@ wxTerm::wxTerm(wxWindow* parent, wxWindowID id,
     wxWindow(parent, id, pos, wxSize(-1, -1), wxWANTS_CHARS, name),
     GTerm(width, height)
 {
-    int
-    i;
     Bind(wxEVT_THREAD, &wxTerm::OnThreadUpdate, this);
+
     m_inUpdateSize = false;
     m_isActive = false;
     m_scrollBarWidth = wxSystemSettings::GetMetric(wxSYS_VSCROLL_ARROW_X);

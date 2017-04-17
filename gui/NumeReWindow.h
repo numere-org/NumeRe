@@ -143,6 +143,9 @@ class NumeReWindow : public wxFrame
 
         string m_UnrecoverableFiles;
 
+        wxSSH* getTerminal() {return m_terminal;}
+        vector<string> getPathDefs();
+
     private:
         void InitializeProgramOptions();
 

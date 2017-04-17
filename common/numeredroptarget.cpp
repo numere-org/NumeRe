@@ -20,17 +20,25 @@
 #include "numeredroptarget.hpp"
 #include "../gui/NumeReWindow.h"
 #include "../editor/editor.h"
+#include "../gui/wxssh.h"
+#include "../gui/filetree.hpp"
 
+#define wxUSE_DRAG_AND_DROP 1
 
+#if wxUSE_DRAG_AND_DROP
 
-
-#if 1 //wxUSE_DRAG_AND_DROP
+string replacePathSeparator(const string&);
 
 NumeReDropTarget::NumeReDropTarget(wxWindow* topwindow, wxWindow* owner, parentType type) : m_owner(owner), m_topWindow(topwindow), m_type(type)
 {
     wxDataObjectComposite* dataobj = new wxDataObjectComposite();
-    dataobj->Add(new wxTextDataObject(), true);
-    dataobj->Add(new wxFileDataObject());
+    if (type == EDITOR || type == CONSOLE)
+    {
+        dataobj->Add(new wxTextDataObject(), true);
+        dataobj->Add(new wxFileDataObject());
+    }
+    else
+        dataobj->Add(new wxFileDataObject(), true);
     SetDataObject(dataobj);
 }
 
@@ -40,6 +48,14 @@ wxDragResult NumeReDropTarget::OnDragOver(wxCoord x, wxCoord y, wxDragResult def
     {
         NumeReEditor* edit = static_cast<NumeReEditor*>(m_owner);
         defaultDragResult = edit->DoDragOver(x, y, defaultDragResult);
+    }
+    else if (m_type == FILETREE)
+    {
+        this->GetData();
+        wxDataObjectComposite* dataobj = static_cast<wxDataObjectComposite*>(GetDataObject());
+        wxDataFormat format = dataobj->GetReceivedFormat();
+        if (format.GetType() == wxDF_TEXT || format.GetType() == wxDF_UNICODETEXT)
+            return wxDragNone;
     }
     return defaultDragResult;
 }
@@ -55,8 +71,120 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
         case wxDF_FILENAME:
         {
             wxFileDataObject* filedata = static_cast<wxFileDataObject*>(data);
+            wxArrayString filenames = filedata->GetFilenames();
+
             NumeReWindow* top = static_cast<NumeReWindow*>(m_topWindow);
-            top->OpenSourceFile(filedata->GetFilenames());
+            if (m_type == EDITOR)
+            {
+                // clear out the passed filenames
+                for (size_t i = 0; i < filenames.size(); i++)
+                {
+                    while (filenames.size()
+                        && (getFileType(filenames[i]) == NOTSUPPORTED
+                            || getFileType(filenames[i]) == BINARYFILE))
+                    {
+                        filenames.erase(filenames.begin()+i);
+                    }
+                }
+                // return error, if nothing remained
+                if (!filenames.size())
+                    return wxDragNone;
+
+                top->OpenSourceFile(filenames);
+            }
+            else if (m_type == CONSOLE)
+            {
+                string sExecutables;
+                string sLoadables;
+                // clear out the passed filenames
+                for (size_t i = 0; i < filenames.size(); i++)
+                {
+                    while (filenames.size()
+                        && getFileType(filenames[i]) == NOTSUPPORTED)
+                    {
+                        filenames.erase(filenames.begin()+i);
+                    }
+                    if (!filenames.size())
+                        break;
+                    if (getFileType(filenames[i]) == EXECUTABLE)
+                    {
+                        if (sExecutables.length())
+                            sExecutables += ";";
+                        if (filenames[i].find(".nscr") != string::npos)
+                            sExecutables += "start \"" + replacePathSeparator(filenames[i].ToStdString()) + "\"";
+                        else
+                        {
+                            string sProcName = replacePathSeparator(filenames[i].ToStdString());
+                            sProcName.erase(sProcName.rfind(".nprc"));
+                            sExecutables += "$'" + sProcName + "'()";
+                        }
+                    }
+                    else
+                    {
+                        if (sLoadables.length())
+                            sLoadables += ";";
+                        sLoadables += "load \"" + replacePathSeparator(filenames[i].ToStdString()) + "\" -app -ignore";
+                    }
+                }
+                // return error, if nothing remained
+                if (!filenames.size())
+                    return wxDragNone;
+
+                if (sLoadables.length())
+                    top->getTerminal()->pass_command(sLoadables);
+                if (sExecutables.length())
+                    top->getTerminal()->pass_command(sExecutables);
+            }
+            else if (m_type == FILETREE)
+            {
+                // FileTree* tree = static_cast<FileTree*>(m_owner);
+                vector<string> vPaths = top->getPathDefs();
+                // check, if file already exists in the location
+                for (size_t i = 0; i < filenames.size(); i++)
+                {
+                    while (filenames.size()
+                        && getFileType(filenames[i]) == NOTSUPPORTED)
+                    {
+                        filenames.erase(filenames.begin()+i);
+                    }
+                    if (!filenames.size())
+                        return wxDragNone;
+                    fileType type = getFileType(filenames[i]);
+                    string sFileName = replacePathSeparator(filenames[i].ToStdString());
+                    if (type == TEXTFILE || type == BINARYFILE)
+                    {
+                        // load or savepath
+                        // already exists
+                        if (sFileName.substr(vPaths[LOADPATH].length()) == vPaths[LOADPATH]
+                            || sFileName.substr(vPaths[SAVEPATH].length()) == vPaths[SAVEPATH])
+                            continue;
+                        if (wxFileExists(vPaths[LOADPATH] + sFileName.substr(sFileName.rfind('/')))
+                            || wxFileExists(vPaths[SAVEPATH] + sFileName.substr(sFileName.rfind('/'))))
+                            continue;
+                        wxCopyFile(sFileName, vPaths[LOADPATH] + sFileName.substr(sFileName.rfind('/')));
+                    }
+                    else if (type == EXECUTABLE)
+                    {
+                        // script or procpath
+                        // already exists
+                        if (sFileName.substr(vPaths[SCRIPTPATH].length()) == vPaths[SCRIPTPATH]
+                            || sFileName.substr(vPaths[PROCPATH].length()) == vPaths[PROCPATH])
+                            continue;
+
+                        PathID pathID;
+                        if (sFileName.find(".nscr") != string::npos)
+                            pathID = SCRIPTPATH;
+                        else
+                            pathID = PROCPATH;
+
+                        if (wxFileExists(vPaths[pathID] + sFileName.substr(sFileName.rfind('/'))))
+                            continue;
+                        wxCopyFile(sFileName, vPaths[pathID] + sFileName.substr(sFileName.rfind('/')));
+                    }
+                }
+
+                // if no: copy the file to the fitting location
+            }
             break;
         }
         case wxDF_TEXT:
@@ -66,14 +194,37 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
             {
                 wxTextDataObject* textdata = static_cast<wxTextDataObject*>(data);
                 NumeReEditor* edit = static_cast<NumeReEditor*>(m_owner);
-                //defaultDragResult = edit->DoDragOver(x, y, defaultDragResult);
                 edit->DoDropText(x, y, textdata->GetText());
-                //todo
+            }
+            else if (m_type == CONSOLE)
+            {
+                wxTextDataObject* textdata = static_cast<wxTextDataObject*>(data);
+                NumeReWindow* top = static_cast<NumeReWindow*>(m_topWindow);
+                top->getTerminal()->ProcessInput(textdata->GetText().length(), textdata->GetText().ToStdString());
             }
             break;
         }
     }
     return defaultDragResult;
+}
+
+NumeReDropTarget::fileType NumeReDropTarget::getFileType(const wxString& filename)
+{
+    if (filename.find('.') == string::npos)
+        return NOTSUPPORTED;
+    wxString textExtensions = ";txt;dat;log;tex;csv;jdx;jcm;dx;";
+    wxString binaryExtensions = ";ndat;xls;xlsx;ods;labx;ibw;";
+    wxString execExtensions = ";nscr;nprc;";
+
+    wxString extension = ";"+filename.substr(filename.rfind('.')+1)+";";
+    if (textExtensions.find(extension) != string::npos)
+        return TEXTFILE;
+    if (binaryExtensions.find(extension) != string::npos)
+        return BINARYFILE;
+    if (execExtensions.find(extension) != string::npos)
+        return EXECUTABLE;
+
+    return NOTSUPPORTED;
 }
 
 #endif //wxUSE_DRAG_AND_DROP

@@ -193,6 +193,7 @@ BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
 	EVT_TREE_ITEM_ACTIVATED			(ID_FUNCTIONTREE, NumeReWindow::OnTreeItemActivated)
 	EVT_TREE_ITEM_GETTOOLTIP        (ID_FUNCTIONTREE, NumeReWindow::OnTreeItemToolTip)
 	EVT_TREE_BEGIN_DRAG             (ID_FUNCTIONTREE, NumeReWindow::OnTreeDragDrop)
+	EVT_TREE_BEGIN_DRAG             (ID_PROJECTTREE, NumeReWindow::OnTreeDragDrop)
 	EVT_MENU						(ID_NEW_PROJECT, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_OPEN_PROJECT_LOCAL, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_OPEN_PROJECT_REMOTE, NumeReWindow::OnMenuEvent)
@@ -474,6 +475,12 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_PROCEDURES"), idxFolderOpen);
 	m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_PLOTS"), idxFolderOpen);*/
 
+
+#if wxUSE_DRAG_AND_DROP
+	//SetDropTarget(new NumeReDropTarget(this, this, NumeReDropTarget::NUMEREWINDOW));
+	m_projectTree->SetDropTarget(new NumeReDropTarget(this, m_projectTree, NumeReDropTarget::FILETREE));
+	m_terminal->SetDropTarget(new NumeReDropTarget(this, m_terminal, NumeReDropTarget::CONSOLE));
+#endif //wxUSE_DRAG_AND_DROP
 
 
 	m_currentPage = 0;
@@ -764,6 +771,11 @@ wxString NumeReWindow::GetDocContent(wxString docid)
     return m_terminal->getDocumentation(docid.ToStdString());
 }
 
+vector<string> NumeReWindow::getPathDefs()
+{
+    return m_terminal->getPathSettings();
+}
+
 void NumeReWindow::InitializeProgramOptions()
 {
 	// Open up the configuration file, assumed to be in the user's home directory
@@ -886,9 +898,7 @@ void NumeReWindow::InitializeProgramOptions()
 		perms->setGlobalEnabled(enabledCode);
 	}*/
 
-#if wxUSE_DRAG_AND_DROP
-	SetDropTarget(new NumeReDropTarget(this, this, NumeReDropTarget::NUMEREWINDOW));
-#endif //wxUSE_DRAG_AND_DROP
+
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1534,12 +1544,12 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
         string sEventpath = replacePathSeparator(event.GetPath().GetFullPath().ToStdString());
         vector<string> vPaths = m_terminal->getPathSettings();
         const FileFilterType fileType[] = {FILE_DATAFILES,FILE_DATAFILES,FILE_NSCR,FILE_NPRC,FILE_IMAGEFILES};
-        for (size_t i = 2; i < vPaths.size(); i++)
+        for (size_t i = LOADPATH; i < vPaths.size(); i++)
         {
             if (sEventpath.find(replacePathSeparator(vPaths[i])) != string::npos)
             {
-                m_projectTree->DeleteChildren(m_projectFileFolders[i-2]);
-                LoadFilesToTree(vPaths[i], fileType[i-2], m_projectFileFolders[i-2]);
+                m_projectTree->DeleteChildren(m_projectFileFolders[i-LOADPATH]);
+                LoadFilesToTree(vPaths[i], fileType[i-LOADPATH], m_projectFileFolders[i-LOADPATH]);
                 break;
             }
         }
@@ -1900,9 +1910,9 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         m_currentEd = edit;
         m_currentEd->SetText(template_file);
         if (_filetype == FILE_NSCR || _filetype == FILE_PLUGIN)
-            m_currentEd->SetFilename(wxFileName(vPaths[4], filename), false);
+            m_currentEd->SetFilename(wxFileName(vPaths[SCRIPTPATH], filename), false);
         else
-            m_currentEd->SetFilename(wxFileName(vPaths[5] + proc_namespace, filename), false);
+            m_currentEd->SetFilename(wxFileName(vPaths[PROCPATH] + proc_namespace, filename), false);
         if (_filetype == FILE_NSCR)
             m_currentEd->GotoLine(13);
         else if (_filetype == FILE_NPRC)
@@ -2616,13 +2626,13 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 			int i = 0;
 
             if (m_currentEd->getFileType() == FILE_NSCR)
-                i = 4;
+                i = SCRIPTPATH;
             else if (m_currentEd->getFileType() == FILE_NPRC)
-                i = 5;
+                i = PROCPATH;
             else if (m_currentEd->getFileType() == FILE_DATAFILES
                 || m_currentEd->getFileType() == FILE_TEXSOURCE
                 || m_currentEd->getFileType() == FILE_NONSOURCE)
-                i = 3;
+                i = SAVEPATH;
 			wxFileDialog dlg (this, title, vPaths[i], "", filterString,
 				wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxFD_CHANGE_DIR);
 
@@ -3451,11 +3461,11 @@ void NumeReWindow::EvaluateOptions()
                 m_projectTree->Toggle(m_projectTree->GetRootItem());
 
 			vector<string> vPaths = m_terminal->getPathSettings();
-			LoadFilesToTree(vPaths[2], FILE_DATAFILES, m_projectFileFolders[0]);
-			LoadFilesToTree(vPaths[3], FILE_DATAFILES, m_projectFileFolders[1]);
-			LoadFilesToTree(vPaths[4], FILE_NSCR, m_projectFileFolders[2]);
-			LoadFilesToTree(vPaths[5], FILE_NPRC, m_projectFileFolders[3]);
-			LoadFilesToTree(vPaths[6], FILE_IMAGEFILES, m_projectFileFolders[4]);
+			LoadFilesToTree(vPaths[LOADPATH], FILE_DATAFILES, m_projectFileFolders[0]);
+			LoadFilesToTree(vPaths[SAVEPATH], FILE_DATAFILES, m_projectFileFolders[1]);
+			LoadFilesToTree(vPaths[SCRIPTPATH], FILE_NSCR, m_projectFileFolders[2]);
+			LoadFilesToTree(vPaths[PROCPATH], FILE_NPRC, m_projectFileFolders[3]);
+			LoadFilesToTree(vPaths[PLOTPATH], FILE_IMAGEFILES, m_projectFileFolders[4]);
 
 			if (m_watcher)
 			{
@@ -4405,7 +4415,7 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
             }
             else
             {
-                wxString path = "append \"" + replacePathSeparator(pathname.GetFullPath().ToStdString()) + "\"";
+                wxString path = "load \"" + replacePathSeparator(pathname.GetFullPath().ToStdString()) + "\" -app -ignore";
                 showConsole();
                 m_terminal->pass_command(path.ToStdString());
                 return;
@@ -4448,20 +4458,41 @@ void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
 
 void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
 {
-    wxTreeItemId item = event.GetItem();
-    FileNameTreeData* data = static_cast<FileNameTreeData*>(m_functionTree->GetItemData(item));
-    if (!data->isCommand && !data->isFunction)
-        return;
-    wxString token = data->tooltip;
-    token.erase(token.find(' '));
-    if (token.find('(') != string::npos)
-        token.erase(token.find('(')+1);
+    if (m_treeBook->GetCurrentPage() == m_functionTree)
+    {
+        wxTreeItemId item = event.GetItem();
+        FileNameTreeData* data = static_cast<FileNameTreeData*>(m_functionTree->GetItemData(item));
+        if (!data->isCommand && !data->isFunction)
+            return;
+        wxString token = data->tooltip;
+        token.erase(token.find(' '));
+        if (token.find('(') != string::npos)
+            token.erase(token.find('(')+1);
+        else
+            token += " ";
+        wxTextDataObject _dataObject(token);
+        wxDropSource dragSource(this);
+        dragSource.SetData(_dataObject);
+        dragSource.DoDragDrop(true);
+    }
     else
-        token += " ";
-    wxTextDataObject _dataObject(token);
-    wxDropSource dragSource(this);
-    dragSource.SetData(_dataObject);
-    dragSource.DoDragDrop(true);
+    {
+        wxTreeItemId item = event.GetItem();
+        FileNameTreeData* data = static_cast<FileNameTreeData*>(m_projectTree->GetItemData(item));
+        if (data->isDir)
+            return;
+        wxFileName pathname = data->filename;
+        wxString dragableExtensions = ";nscr;nprc;ndat;txt;dat;log;tex;csv;xls;xlsx;ods;jdx;jcm;dx;labx;ibw;";
+        if (dragableExtensions.find(";" + pathname.GetExt() + ";") != string::npos)
+        {
+            wxFileDataObject _dataObject;
+            _dataObject.AddFile(pathname.GetFullPath());
+            wxDropSource dragSource(this);
+            dragSource.SetData(_dataObject);
+            dragSource.DoDragDrop(true);
+        }
+
+    }
 }
 
 wxString NumeReWindow::addLinebreaks(const wxString& sLine)
