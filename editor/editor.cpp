@@ -2131,6 +2131,8 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
         this->MarkerDefine (wxSTC_MARKNUM_FOLDERTAIL,    wxSTC_MARK_LCORNER);
         this->MarkerSetForeground (wxSTC_MARKNUM_FOLDERTAIL, grey);
         this->MarkerSetBackground (wxSTC_MARKNUM_FOLDERTAIL, grey);
+
+        this->MarkerEnableHighlight(true);
     }
 	if (filetype == FILE_NSCR)
 	{

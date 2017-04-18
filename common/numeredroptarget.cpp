@@ -74,6 +74,7 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
             wxArrayString filenames = filedata->GetFilenames();
 
             NumeReWindow* top = static_cast<NumeReWindow*>(m_topWindow);
+            vector<string> vPaths = top->getPathDefs();
             if (m_type == EDITOR)
             {
                 // clear out the passed filenames
@@ -111,12 +112,32 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                         if (sExecutables.length())
                             sExecutables += ";";
                         if (filenames[i].find(".nscr") != string::npos)
-                            sExecutables += "start \"" + replacePathSeparator(filenames[i].ToStdString()) + "\"";
+                        {
+                            string sScriptName = replacePathSeparator(filenames[i].ToStdString());
+                            sScriptName.erase(sScriptName.rfind(".nscr"));
+                            if (sScriptName.substr(0, vPaths[SCRIPTPATH].length()) == vPaths[SCRIPTPATH])
+                                sScriptName.erase(0, vPaths[SCRIPTPATH].length());
+                            while (sScriptName.front() == '/')
+                                sScriptName.erase(0,1);
+                            if (sScriptName.find(' ') != string::npos)
+                                sScriptName = "\"" + sScriptName + "\"";
+                            sExecutables += "start " + sScriptName;
+                        }
                         else
                         {
                             string sProcName = replacePathSeparator(filenames[i].ToStdString());
                             sProcName.erase(sProcName.rfind(".nprc"));
-                            sExecutables += "$'" + sProcName + "'()";
+                            if (sProcName.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
+                            {
+                                sProcName.erase(0, vPaths[PROCPATH].length());
+                                while (sProcName.front() == '/')
+                                    sProcName.erase(0,1);
+                                while (sProcName.find('/') != string::npos)
+                                    sProcName[sProcName.find('/')] = '~';
+                            }
+                            else
+                                sProcName = "'" + sProcName + "'";
+                            sExecutables += "$" + sProcName + "()";
                         }
                     }
                     else
@@ -138,7 +159,7 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
             else if (m_type == FILETREE)
             {
                 // FileTree* tree = static_cast<FileTree*>(m_owner);
-                vector<string> vPaths = top->getPathDefs();
+
                 // check, if file already exists in the location
                 for (size_t i = 0; i < filenames.size(); i++)
                 {

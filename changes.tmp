@@ -33,3 +33,5 @@ Fixed	Das Problem mit dem Text- und Datei-Drag'n'Drop wurde behoben.
 Added	Drag'n'Drop wurde zum Filetree hinzugefuegt.
 Cleaned	Das Drag'n'Drop-Verhalten der einzelnen GUI-Komponenten wurde verbessert und logischer gestaltet.
 Fixed	Die Druckeinstellungen werden nun automatisch angezeigt, wenn eine Druckerinformation fehlt.
+Cleaned	Kosmetische Aenderung: Prozeduren und Scripte, die sich in den Standardpfaden befinden, werden beim Starten durch GUI Funktionen nun ohne den obsoleten Pfad aufgerufen.
+Added	Kosmetische Aenderung: der Faltungsmarker wird nun im aktuellen Block rot hervorgehoben.
