@@ -165,6 +165,7 @@ class NumeReWindow : public wxFrame
         void OnStartConnect();
         void OnSaveSourceFile( int id );
         void OnOpenSourceFile( int id );
+        void OnExecuteFile(const string& sFileName);
         void OnDebugCommand(wxCommandEvent &event);
         void OnDebugBreakpointCommand(wxCommandEvent &event);
 

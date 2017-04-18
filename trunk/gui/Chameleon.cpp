@@ -978,25 +978,8 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 	{
         case ID_OPEN_FILE:
         {
-			FileNameTreeData* data = static_cast <FileNameTreeData* > (m_projectTree->GetItemData(m_clickedTreeItem));
-
-            string command = replacePathSeparator(data->filename.ToStdString());
-
-            if (command.rfind(".nprc") != string::npos)
-            {
-                command = "$'" + command.substr(0,command.rfind(".nprc")) + "'()";
-            }
-            else if (command.rfind(".nscr") != string::npos)
-            {
-                command = "start \"" + command + "\"";
-            }
-            else
-            {
-                command = "append \"" + command + "\"";
-            }
-            showConsole();
-            m_terminal->pass_command(command);
-
+            FileNameTreeData* data = static_cast <FileNameTreeData* > (m_projectTree->GetItemData(m_clickedTreeItem));
+            OnExecuteFile(data->filename.ToStdString());
             break;
         }
         case ID_EDIT_FILE:
@@ -1474,28 +1457,7 @@ void NumeReWindow::OnDebugCommand(wxCommandEvent &event)
 			}
 		}
         string command = replacePathSeparator((m_currentEd->GetFileName()).GetFullPath().ToStdString());
-        wxToolBar* tb = GetToolBar();
-        if (!command.length())
-            return;
-        if (command.rfind(".nprc") != string::npos)
-        {
-            command = "$'" + command.substr(0,command.rfind(".nprc")) + "'()";
-            tb->EnableTool(ID_DEBUG_START, false);
-            tb->EnableTool(ID_DEBUG_STOP, true);
-        }
-        else if (command.rfind(".nscr") != string::npos)
-        {
-            command = "start \"" + command + "\"";
-            tb->EnableTool(ID_DEBUG_START, false);
-            tb->EnableTool(ID_DEBUG_STOP, true);
-        }
-        else
-        {
-            command = "append \"" + command + "\"";
-        }
-        showConsole();
-        m_terminal->pass_command(command);
-
+        OnExecuteFile(command);
 
         return;
 		/*if(m_projMultiFiles != NULL)
@@ -5342,6 +5304,51 @@ void NumeReWindow::OnSaveSourceFile( int id )
 		m_remoteMode = true;
 	}
 	SaveFile(true, false, FILE_ALLSOURCETYPES);
+}
+
+void NumeReWindow::OnExecuteFile(const string& sFileName)
+{
+    if (!sFileName.length())
+        return;
+    wxToolBar* tb = GetToolBar();
+    string command = replacePathSeparator(sFileName);
+    vector<string> vPaths = m_terminal->getPathSettings();
+    if (command.rfind(".nprc") != string::npos)
+    {
+        command.erase(command.rfind(".nprc"));
+        if (command.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
+        {
+            command.erase(0, vPaths[PROCPATH].length());
+            while (command.front() == '/')
+                command.erase(0, 1);
+            while (command.find('/') != string::npos)
+                command[command.find('/')] = '~';
+        }
+        else
+            command = "'" + command + "'";
+        command = "$" + command + "()";
+        tb->EnableTool(ID_DEBUG_START, false);
+        tb->EnableTool(ID_DEBUG_STOP, true);
+    }
+    else if (command.rfind(".nscr") != string::npos)
+    {
+        command.erase(command.rfind(".nscr"));
+        if (command.substr(0, vPaths[SCRIPTPATH].length()) == vPaths[SCRIPTPATH])
+            command.erase(0, vPaths[SCRIPTPATH].length());
+        while (command.front() == '/')
+            command.erase(0, 1);
+        if (command.find(' ') != string::npos)
+            command = "\"" + command + "\"";
+        command = "start " + command;
+        tb->EnableTool(ID_DEBUG_START, false);
+        tb->EnableTool(ID_DEBUG_STOP, true);
+    }
+    else
+    {
+        command = "load \"" + command + "\" -app -ignore";
+    }
+    showConsole();
+    m_terminal->pass_command(command);
 }
 
 void NumeReWindow::OnStartConnect()
