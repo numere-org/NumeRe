@@ -6556,7 +6556,7 @@
 	"../kernel/kernel.hpp"
 	"../kernel/debugmessenger.hpp"
 
-1492426563 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1492508457 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -7767,7 +7767,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1492426701 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1492431642 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -8755,11 +8755,12 @@
 	"../../kernel/core/language.hpp"
 	"../../editor/editor.h"
 
-1492424040 source:d:\cpp\numere-source\trunk\common\numeredroptarget.cpp
+1492430654 source:d:\cpp\numere-source\trunk\common\numeredroptarget.cpp
 	"numeredroptarget.hpp"
 	"../gui/NumeReWindow.h"
 	"../editor/editor.h"
 	"../gui/wxssh.h"
+	"../gui/filetree.hpp"
 
 1492422183 d:\cpp\numere-source\trunk\common\numeredroptarget.hpp
 	<wx/wx.h>

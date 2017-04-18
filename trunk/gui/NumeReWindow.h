@@ -252,6 +252,8 @@ class NumeReWindow : public wxFrame
 
         string prepareTooltip(const string& sTooltiptext);
 
+        wxPrintData* setDefaultPrinterSettings();
+
 
         //void CleanupDropMenu();
 
