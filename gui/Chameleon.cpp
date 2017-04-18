@@ -652,8 +652,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	g_findReplace = nullptr;
 
 	/// Interesting Bug: obviously it is necessary to declare the paper size first
-	g_printData = new wxPrintData;
-	g_printData->SetPaperId(wxPAPER_A4);
+	g_printData = this->setDefaultPrinterSettings();
 	g_pageSetupData = new wxPageSetupDialogData(*g_printData);
 
 	m_appStarting = false;
@@ -4135,6 +4134,17 @@ string NumeReWindow::prepareTooltip(const string& sTooltiptext)
     return sTooltip;
 }
 
+wxPrintData* NumeReWindow::setDefaultPrinterSettings()
+{
+    wxPrintData* printdata = new wxPrintData();
+    printdata->SetPaperId(wxPAPER_A4);
+    printdata->SetBin(wxPRINTBIN_AUTO);
+    printdata->SetOrientation(wxPORTRAIT);
+    printdata->SetQuality(wxPRINT_QUALITY_HIGH);
+    printdata->SetPrinterName(wxEmptyString);
+    return printdata;
+}
+
 // Project code begins here
 
 //////////////////////////////////////////////////////////////////////////////
@@ -4473,7 +4483,7 @@ void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
         wxTextDataObject _dataObject(token);
         wxDropSource dragSource(this);
         dragSource.SetData(_dataObject);
-        dragSource.DoDragDrop(true);
+        dragSource.DoDragDrop(wxDrag_AllowMove);
     }
     else
     {
@@ -4489,7 +4499,7 @@ void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
             _dataObject.AddFile(pathname.GetFullPath());
             wxDropSource dragSource(this);
             dragSource.SetData(_dataObject);
-            dragSource.DoDragDrop(true);
+            dragSource.DoDragDrop(wxDrag_AllowMove);
         }
 
     }
@@ -5502,6 +5512,8 @@ void NumeReWindow::OnProjectIncludeExcludeFile( int id )
 void NumeReWindow::OnPrintPage()
 {
 	m_currentEd->SetPrintColourMode(m_options->GetPrintStyle());
+    if (!g_printData->IsOk())
+        this->OnPrintSetup();
 	wxPrintDialogData printDialogData( *g_printData);
 	wxPrinter printer (&printDialogData);
 	NumeRePrintout printout (m_currentEd, m_options);
@@ -5521,6 +5533,8 @@ void NumeReWindow::OnPrintPage()
 void NumeReWindow::OnPrintPreview()
 {
 	m_currentEd->SetPrintColourMode(m_options->GetPrintStyle());
+	if (!g_printData->IsOk())
+        this->OnPrintSetup();
 	wxPrintDialogData printDialogData( *g_printData);
 	//printDialogData.SetToPage(999);
 	wxPrintPreview *preview = new wxPrintPreview (new NumeRePrintout (m_currentEd, m_options), new NumeRePrintout (m_currentEd, m_options), &printDialogData);
