@@ -31,6 +31,7 @@ void ViewerFrame::OnKeyDown(wxKeyEvent& event)
     // connecting the ESC Key with closing the image
     if (event.GetKeyCode() == WXK_ESCAPE)
         this->Close();
+    event.Skip();
 }
 
 void ViewerFrame::OnFocus(wxFocusEvent& event)
