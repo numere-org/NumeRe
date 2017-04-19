@@ -2564,7 +2564,7 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 	wxString filterString = ConstructFilterString(m_currentEd->getFileType());
 
 
-	if(isSourceFile)
+	if (isSourceFile)
 	{
 		fileContents = m_currentEd->GetText();
 	}
@@ -2650,7 +2650,6 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
                 }
 			}
 		}
-
 		else
 		{
 			filename = m_currentEd->GetFileNameAndPath();
@@ -2662,7 +2661,7 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 			_fSys.setPath(sPath, true, replacePathSeparator(getProgramFolder().ToStdString()));
 		}
 
-		if(isSourceFile)
+		if (isSourceFile)
 		{
 			m_currentEd->SetFocus();
 

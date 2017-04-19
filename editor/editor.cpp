@@ -32,9 +32,6 @@
 #include "../common/globals.hpp"
 
 #define MARGIN_FOLD 3
-#define MARKER_LINEINDICATOR 2
-#define MARKER_DUPLICATEINDICATOR_ONE 3
-#define MARKER_DUPLICATEINDICATOR_TWO 4
 #define HIGHLIGHT 25
 #define HIGHLIGHT_DBLCLK 26
 #define HIGHLIGHT_MATCHING_BRACE 6
@@ -70,6 +67,7 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
 	//EVT_STC_START_DRAG  (-1, NumeReEditor::OnStartDrag)
 	EVT_STC_DRAG_OVER   (-1, NumeReEditor::OnDragOver)
 	//EVT_STC_DO_DROP     (-1, NumeReEditor::OnDrop)
+	EVT_STC_SAVEPOINTREACHED (-1, NumeReEditor::OnSavePointReached)
 	EVT_MENU			(ID_DEBUG_ADD_BREAKPOINT, NumeReEditor::OnAddBreakpoint)
 	EVT_MENU			(ID_DEBUG_REMOVE_BREAKPOINT, NumeReEditor::OnRemoveBreakpoint)
 	EVT_MENU			(ID_DEBUG_CLEAR_ALL_BREAKPOINTS, NumeReEditor::OnClearBreakpoints)
@@ -194,6 +192,11 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 	this->MarkerDefine(MARKER_FOCUSEDLINE, wxSTC_MARK_SHORTARROW);
 	this->MarkerSetBackground(MARKER_FOCUSEDLINE, wxColour("yellow"));
 
+	this->MarkerDefine(MARKER_MODIFIED, wxSTC_MARK_LEFTRECT);
+	this->MarkerSetBackground(MARKER_MODIFIED, wxColour(255, 220, 0));
+	this->MarkerDefine(MARKER_SAVED, wxSTC_MARK_LEFTRECT);
+	this->MarkerSetBackground(MARKER_SAVED, wxColour("green"));
+
 	this->SetMarginSensitive(1, true);
 
 
@@ -313,6 +316,7 @@ bool NumeReEditor::SaveFile( const wxString & filename )
 
     if(!okay) { return false; }
 
+    markSaved();
     EmptyUndoBuffer();
     SetSavePoint();
 
@@ -440,6 +444,7 @@ void NumeReEditor::OnChar( wxStyledTextEvent &event )
 	const int wordstartpos = WordStartPosition(currentPos, true);
 	//const int tabWidth = GetTabWidth();
 	//const int eolMode = GetEOLMode();
+
     MarkerDeleteAll(MARKER_FOCUSEDLINE);
     if (chr == WXK_TAB)
     {
@@ -476,10 +481,12 @@ void NumeReEditor::OnChar( wxStyledTextEvent &event )
 	//	|| (eolMode == CR && chr == '\r'))
 	if (chr == '\n')// && m_options->GetPerms()->isEnabled(PERM_AUTOINDENT))
 	{
+        markModified(currentLine);
 		int previousLineInd = 0;
 
 		if (currentLine > 0)
 		{
+            markModified(currentLine-1);
 			previousLineInd = GetLineIndentation(currentLine - 1);
 		}
 
@@ -609,6 +616,16 @@ void NumeReEditor::MakeBlockCheck()
 void NumeReEditor::OnKeyDn(wxKeyEvent &event)
 {
     //wxMessageBox(wxString((char)this->GetCharAt(this->GetCurrentPos())));
+    if (event.GetKeyCode() < WXK_START)
+    {
+        if (this->HasSelection())
+        {
+            for (int i = LineFromPosition(this->GetSelectionStart()); i <= LineFromPosition(this->GetSelectionEnd()); i++)
+                markModified(i);
+        }
+        else
+            markModified(this->GetCurrentLine());
+    }
     if (this->HasSelection()
         && event.GetKeyCode() != WXK_SHIFT
         && event.GetKeyCode() != WXK_CAPITAL
@@ -977,6 +994,12 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
         this->CallTipShow(charpos, sCalltip);
         this->CallTipSetHighlight(0, sCalltip.find('='));
     }
+}
+
+void NumeReEditor::OnSavePointReached(wxStyledTextEvent& event)
+{
+    markSaved();
+    event.Skip();
 }
 
 void NumeReEditor::ToggleCommentLine()
@@ -2704,6 +2727,36 @@ void NumeReEditor::OnRightClick(wxMouseEvent &event)
 	PopupMenu(&m_popupMenu, m_lastRightClick);
 	m_PopUpActive = false;
 }
+
+
+// MARKER_MODIFIED
+// MARKER_SAVED
+void NumeReEditor::markModified(int nLine)
+{
+    int nMarkSaved = 1 << (MARKER_SAVED);
+    int nMarkModified = 1 << (MARKER_MODIFIED);
+    while (this->MarkerGet(nLine) & nMarkSaved)
+        this->MarkerDelete(nLine, MARKER_SAVED);
+
+    if (!(this->MarkerGet(nLine) & nMarkModified))
+        this->MarkerAdd(nLine, MARKER_MODIFIED);
+}
+
+void NumeReEditor::markSaved()
+{
+    int nMarkModified = 1 << (MARKER_MODIFIED);
+    int nMarkSaved = 1 << (MARKER_SAVED);
+    int nNextLine = 0;
+    while ((nNextLine = this->MarkerNext(0, nMarkModified)) != -1)
+    {
+        this->MarkerDelete(nNextLine, MARKER_MODIFIED);
+
+        if (!(this->MarkerGet(nNextLine) & nMarkSaved))
+            this->MarkerAdd(nNextLine, MARKER_SAVED);
+    }
+    this->MarkerDeleteAll(MARKER_MODIFIED);
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnEditorModified

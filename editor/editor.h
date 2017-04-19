@@ -63,6 +63,7 @@ public:
 	void OnMouseDblClk(wxMouseEvent& event);
 	void OnEnter(wxMouseEvent& event);
 	void OnMouseDwell(wxStyledTextEvent& event);
+	void OnSavePointReached(wxStyledTextEvent& event);
 	void ClearDblClkIndicator();
 	void MakeBraceCheck();
 	void MakeBlockCheck();
@@ -144,6 +145,9 @@ private:
     string addLinebreaks(const string& sLine);
     void addToAnnotation(string& sCurrentLine, string& sStyles, const string& sMessage, int nStyle);
     bool containsAssignment(const string& sCurrentLine);
+
+    void markModified(int nLine);
+    void markSaved();
 
 	void OnEditorModified(wxStyledTextEvent &event);
 	void OnStartDrag(wxStyledTextEvent& event);

@@ -35,3 +35,4 @@ Cleaned	Das Drag'n'Drop-Verhalten der einzelnen GUI-Komponenten wurde verbessert
 Fixed	Die Druckeinstellungen werden nun automatisch angezeigt, wenn eine Druckerinformation fehlt.
 Cleaned	Kosmetische Aenderung: Prozeduren und Scripte, die sich in den Standardpfaden befinden, werden beim Starten durch GUI Funktionen nun ohne den obsoleten Pfad aufgerufen.
 Added	Kosmetische Aenderung: der Faltungsmarker wird nun im aktuellen Block rot hervorgehoben.
+Added	Der Editor kann nun Aenderungen nachverfolgen. Dies wird mit farbigen Indikatoren auf dem Rand realisiert.
