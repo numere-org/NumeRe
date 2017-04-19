@@ -240,6 +240,8 @@
 		<Unit filename="common/filewatcher.hpp" />
 		<Unit filename="common/fixvsbug.h" />
 		<Unit filename="common/globals.hpp" />
+		<Unit filename="common/numeredroptarget.cpp" />
+		<Unit filename="common/numeredroptarget.hpp" />
 		<Unit filename="common/options.cpp" />
 		<Unit filename="common/recycler.cpp" />
 		<Unit filename="common/recycler.hpp" />
