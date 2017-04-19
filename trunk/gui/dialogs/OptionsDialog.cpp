@@ -228,6 +228,7 @@ void OptionsDialog::CreateControls()
 
 */
 
+    /// Configuration panel
     wxPanel* itemPanel28 = new wxPanel( m_optionsNotebook, ID_PANELCOMPILER, wxDefaultPosition, wxDefaultSize, wxSUNKEN_BORDER|wxTAB_TRAVERSAL );
     wxBoxSizer* itemBoxSizer29 = new wxBoxSizer(wxVERTICAL);
     itemPanel28->SetSizer(itemBoxSizer29);
@@ -281,26 +282,37 @@ void OptionsDialog::CreateControls()
 
     wxStaticText* styleStaticText = new wxStaticText(itemPanel28, wxID_STATIC, _guilang.get("GUI_OPTIONS_SYNTAXHIGHLIGHTING"));
     itemBoxSizer31->Add(styleStaticText, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
-    wxBoxSizer* itemColorSizer = new wxBoxSizer(wxHORIZONTAL);
-    wxBoxSizer* itemColorControlSizer = new wxBoxSizer(wxHORIZONTAL);
-    itemBoxSizer31->Add(itemColorSizer);
-    itemBoxSizer31->Add(itemColorControlSizer);
+    //wxBoxSizer* itemColorSizer = new wxBoxSizer(wxVERTICAL);
+    //wxBoxSizer* itemColorControlSizer = new wxBoxSizer(wxVERTICAL);
+    wxFlexGridSizer* colorGroupSizer = new wxFlexGridSizer(2, 0, 5);
+
     wxArrayString styles = m_options->GetStyleIdentifier();
     m_colorType = new wxComboBox( itemPanel28, ID_CLRSPIN, styles[0], wxDefaultPosition, wxDefaultSize, styles, wxCB_READONLY );
     m_colorType->SetStringSelection(styles[0]);
+
     m_foreColor = new wxColourPickerCtrl(itemPanel28, ID_CLRPICKR_FORE, m_options->GetSyntaxStyle(0).foreground);
     m_backColor = new wxColourPickerCtrl(itemPanel28, ID_CLRPICKR_BACK, m_options->GetSyntaxStyle(0).background);
+
     m_resetButton = new wxButton(itemPanel28, ID_RESETCOLOR, _guilang.get("GUI_OPTIONS_RESETHIGHLIGHT"), wxDefaultPosition, wxDefaultSize, 0);
 
-    itemColorSizer->Add(m_foreColor, 1, wxALIGN_CENTER_VERTICAL | wxALL | wxADJUST_MINSIZE, 5);
-    itemColorSizer->Add(m_backColor, 1, wxALIGN_CENTER_VERTICAL | wxALL | wxADJUST_MINSIZE, 5);
-    itemColorControlSizer->Add(m_colorType, 1, wxALIGN_CENTER_VERTICAL | wxALL | wxEXPAND, 5);
-    itemColorControlSizer->Add(m_resetButton, 1, wxALIGN_CENTER_VERTICAL | wxALL | wxADJUST_MINSIZE, 5);
+//    itemColorSizer->Add(m_foreColor, 1, wxALL | wxADJUST_MINSIZE, 5);
+//    itemColorSizer->Add(m_backColor, 1, wxALL | wxADJUST_MINSIZE, 5);
+//    itemColorControlSizer->Add(m_colorType, 1, wxALL, 5);
+//    itemColorControlSizer->Add(m_resetButton, 1, wxALL, 5);
+
+    colorGroupSizer->Add(m_foreColor, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+    colorGroupSizer->Add(m_colorType, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+    colorGroupSizer->Add(m_backColor, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+    colorGroupSizer->Add(m_resetButton, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+
+    //colorGroupSizer->Add(itemColorSizer);
+    //colorGroupSizer->Add(itemColorControlSizer);
+    itemBoxSizer31->Add(colorGroupSizer, 1, wxALIGN_LEFT, 5);
 
     m_optionsNotebook->AddPage(itemPanel28, _(_guilang.get("GUI_OPTIONS_CONFIG")));
 
 
-
+    /// Path settings panel
     wxPanel* itemPanel17 = new wxPanel( m_optionsNotebook, ID_PANELNETWORK, wxDefaultPosition, wxSize(200, 200), wxSUNKEN_BORDER|wxTAB_TRAVERSAL );
     wxBoxSizer* itemBoxSizer18 = new wxBoxSizer(wxHORIZONTAL);
     itemPanel17->SetSizer(itemBoxSizer18);
@@ -365,7 +377,7 @@ void OptionsDialog::CreateControls()
     m_optionsNotebook->AddPage(itemPanel17, _(_guilang.get("GUI_OPTIONS_PATHS")));
 
 
-
+    /// Misc panel
     wxPanel* itemPanel39 = new wxPanel( m_optionsNotebook, ID_PANELMISC, wxDefaultPosition, wxSize(100, 80), wxSUNKEN_BORDER|wxTAB_TRAVERSAL );
     wxBoxSizer* itemBoxSizer40 = new wxBoxSizer(wxHORIZONTAL);
     itemPanel39->SetSizer(itemBoxSizer40);

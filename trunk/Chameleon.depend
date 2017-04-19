@@ -5662,7 +5662,7 @@
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\printps.h
 	"wx/prntbase.h"
 
-1492255795 d:\cpp\numere-source\trunk\editor\editor.h
+1492536171 d:\cpp\numere-source\trunk\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -6606,7 +6606,7 @@
 	<commdlg.h>
 	"wx/msw/winundef.h"
 
-1492426264 d:\cpp\numere-source\trunk\common\datastructures.h
+1492548075 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -7707,7 +7707,7 @@
 	<string>
 	<vector>
 
-1492255840 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1492547938 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -7767,7 +7767,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1492521500 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1492530837 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -8162,7 +8162,7 @@
 	"fndrpldialog.hpp"
 	"../../kernel/core/language.hpp"
 
-1490798667 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1492593946 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
