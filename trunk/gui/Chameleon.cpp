@@ -297,7 +297,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
        : wxFrame((wxFrame *)NULL, -1, title, pos, size)
 {
 	// should be approximately 80x15 for the terminal
-	this->SetSize(800, 600);
+	this->SetSize(1024, 768);
     m_optionsDialog = nullptr;
     m_compiler = nullptr;
     m_config = nullptr;
