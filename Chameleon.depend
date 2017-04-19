@@ -7767,7 +7767,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1492530837 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1492604461 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -7924,7 +7924,7 @@
 	<wx/splitter.h>
 	<cmath>
 
-1492252223 d:\cpp\numere-source\trunk\gui\imagepanel.hpp
+1492621244 d:\cpp\numere-source\trunk\gui\imagepanel.hpp
 	<wx/wx.h>
 	<wx/sizer.h>
 	"../common/datastructures.h"
@@ -8269,7 +8269,7 @@
 
 1490791550 d:\cpp\numere-source\trunk\gui\dialogs\exe.xpm
 
-1492252552 source:d:\cpp\numere-source\trunk\gui\imagepanel.cpp
+1492621370 source:d:\cpp\numere-source\trunk\gui\imagepanel.cpp
 	<wx/artprov.h>
 	<wx/dir.h>
 	<wx/clipbrd.h>
@@ -8306,7 +8306,7 @@
 1491133979 source:d:\cpp\numere-source\trunk\gui\viewerbook.cpp
 	"viewerbook.hpp"
 
-1490791550 source:d:\cpp\numere-source\trunk\gui\viewerframe.cpp
+1492620763 source:d:\cpp\numere-source\trunk\gui\viewerframe.cpp
 	"viewerframe.hpp"
 
 1491133847 source:d:\cpp\numere-source\trunk\gui\viewerpanel.cpp

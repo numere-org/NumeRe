@@ -41,6 +41,7 @@ BEGIN_EVENT_TABLE(ImagePanel, wxPanel)
     EVT_SET_FOCUS       (ImagePanel::OnFocus)
     EVT_KILL_FOCUS      (ImagePanel::OnLoseFocus)
     EVT_KEY_DOWN        (ImagePanel::keyPressed)
+    EVT_NAVIGATION_KEY  (ImagePanel::OnNavigationKey)
     // catch paint events
     EVT_PAINT           (ImagePanel::paintEvent)
     //Size event
@@ -181,6 +182,16 @@ void ImagePanel::keyPressed(wxKeyEvent& event)
     // connecting the ESC Key with closing the image
     if (event.GetKeyCode() == WXK_ESCAPE)
         m_parent->Close();
+}
+
+void ImagePanel::OnNavigationKey(wxNavigationKeyEvent& event)
+{
+    // connect the navigation keys with next and previous image
+    wxCommandEvent commandevent;
+    if (event.GetDirection())
+        OnNextImage(commandevent);
+    else
+        OnPreviousImage(commandevent);
 }
 
 void ImagePanel::OnEnter(wxMouseEvent& event)
