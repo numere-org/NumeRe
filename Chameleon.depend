@@ -8269,7 +8269,7 @@
 
 1490791550 d:\cpp\numere-source\trunk\gui\dialogs\exe.xpm
 
-1492621370 source:d:\cpp\numere-source\trunk\gui\imagepanel.cpp
+1492621491 source:d:\cpp\numere-source\trunk\gui\imagepanel.cpp
 	<wx/artprov.h>
 	<wx/dir.h>
 	<wx/clipbrd.h>
@@ -8470,7 +8470,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1491415707 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
+1492786198 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
