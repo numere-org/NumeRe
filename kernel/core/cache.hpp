@@ -79,6 +79,7 @@ class Cache : public FileSystem
 		string** sHeadLine;								// Pointer auf ein string-Array fuer die Tabellenkoepfe
 		bool AllocateCache(long long int _nNLines, long long int _nNCols, long long int _nNLayers);	// Methode, um dem Pointer dCache die finale Matrix zuzuweisen
 		bool bIsSaved;                                  // Boolean: TRUE fuer gespeicherte Daten
+		bool bSaveMutex;
 		long long int nLastSaved;                       // Integer, der den Zeitpunkt des letzten Speicherns speichert
 		fstream cache_file;
 		string sCache_file;

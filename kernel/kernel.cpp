@@ -106,7 +106,8 @@ void NumeReKernel::setKernelSettings(const Settings& _settings)
 
 void NumeReKernel::Autosave()
 {
-    _data.saveCache();
+    if (!_data.getSaveStatus())
+        _data.saveCache();
     return;
 }
 
