@@ -36,6 +36,7 @@ Cache::Cache() : FileSystem()
 	nAppendedZeroes = 0;
 	//bValidElement = 0;
 	bValidData = false;
+	bSaveMutex = false;
 	bIsSaved = true;
 	nLastSaved = time(0);
 	sCache_file = "<>/numere.cache";
@@ -391,19 +392,19 @@ void Cache::removeCachedData()
 {
 	if(bValidData)	// Sind ueberhaupt Daten vorhanden?
 	{
+        if (bSaveMutex)
+            return;
+        bSaveMutex = true;
 		// --> Speicher, wo denn noetig freigeben <--
 		for (long long int i = 0; i < nLines; i++)
 		{
             for (long long int j = 0; j < nCols; j++)
             {
                 delete[] dCache[i][j];
-                //delete[] bValidElement[i][j];
             }
 			delete[] dCache[i];
-			//delete[] bValidElement[i];
 		}
 		delete[] dCache;
-		//delete[] bValidElement;
 		if (nAppendedZeroes)
 		{
             for (long long int i = 0; i < nLayers; i++)
@@ -424,14 +425,12 @@ void Cache::removeCachedData()
 		nCols = 8;
 		nLayers = 4;
 		dCache = 0;
-		//bValidElement = 0;
 		bValidData = false;
+		bSaveMutex = false;
 		bIsSaved = true;
 		nLastSaved = time(0);
 		mCachesMap.clear();
 		mCachesMap["cache"] = 0;
-
-		//cerr << "|-> Alle Caches wurden entfernt und der Speicher wurde erfolgreich freigegeben." << endl;
 	}
 	return;
 }
@@ -1018,6 +1017,9 @@ void Cache::setCacheFileName(string _sFileName)
 
 bool Cache::saveCache()
 {
+    if (bSaveMutex)
+        return false;
+    bSaveMutex = true;
     long long int nSavingLayers = 4;
     long long int nSavingCols = 8;
     long long int nSavingLines = 128;
@@ -1025,8 +1027,10 @@ bool Cache::saveCache()
     long long int nLineMax = 0;
     bool* bValidElement = 0;
     if (!bValidData)
+    {
+        bSaveMutex = false;
         return false;
-
+    }
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
         if (getCacheCols(iter->second, false) > nColMax)
@@ -1086,6 +1090,7 @@ bool Cache::saveCache()
     //cerr << 1.3 << endl;
     if (bValidData && cache_file.good())
     {
+        setSaveStatus(true);
         long long int nDimTemp = -nSavingLines;
         time_t tTime = time(0);
         cache_file.write((char*)&nMajor, sizeof(long));
@@ -1141,7 +1146,6 @@ bool Cache::saveCache()
         }
         //cerr << 6 << endl;
         cache_file.close();
-        setSaveStatus(true);
     }
     else
     {
@@ -1161,6 +1165,7 @@ bool Cache::saveCache()
         for (unsigned int i = 0; i < mCachesMap.size(); i++)
             delete[] cCachesList[i];
         delete[] cCachesList;
+        bSaveMutex = false;
         return false;
     }
     for (long long int i = 0; i < nSavingLayers; i++)
@@ -1177,11 +1182,15 @@ bool Cache::saveCache()
     for (unsigned int i = 0; i < mCachesMap.size(); i++)
         delete[] cCachesList[i];
     delete[] cCachesList;
+    bSaveMutex = false;
     return true;
 }
 
 bool Cache::loadCache()
 {
+    if (bSaveMutex)
+        return false;
+    bSaveMutex = true;
     sCache_file = FileSystem::ValidFileName(sCache_file, ".cache");
     char*** cHeadLine = 0;
     char* cCachesMap = 0;
@@ -1203,6 +1212,7 @@ bool Cache::loadCache()
         if (cache_file.fail() || cache_file.eof())
         {
             cache_file.close();
+            bSaveMutex = false;
             return false;
         }
         cache_file.read((char*)&nMinor, sizeof(long int));
@@ -1237,7 +1247,6 @@ bool Cache::loadCache()
                 cCachesMap = 0;
                 mCachesMap[sTemp] = nLayerIndex;
             }
-            //cerr << tTime << endl << nLines << endl << nCols << endl << nLayers << endl;
         }
         else
             nLayers = 1;
@@ -1259,12 +1268,9 @@ bool Cache::loadCache()
                 for (unsigned int k = 0; k < nLength-1; k++)
                 {
                     sHeadLine[i][j][k] = cHeadLine[i][j][k];
-                    //cerr << sHeadLine[i][j] << " " << cHeadLine[i][j] << endl;
                 }
-                //cerr << sHeadLine[i] << " " << cHeadLine[i] << " " << sHeadLine[i].length() << endl;
             }
         }
-        //cerr << endl << nMajor << " " << nMinor << " " << nBuild << " " << nLines << " " << nCols << endl;
         for (long long int i = 0; i < nLayers; i++)
             cache_file.read((char*)nAppendedZeroes[i], sizeof(long long int)*nCols);
         for (long long int i = 0; i < nLines; i++)
@@ -1272,7 +1278,6 @@ bool Cache::loadCache()
             for (long long int j = 0; j < nCols; j++)
                 cache_file.read((char*)dCache[i][j], sizeof(double)*nLayers);
         }
-        //cerr << endl << nMajor << " " << nMinor << " " << nBuild << " " << nLines << " " << nCols << endl;
         for (long long int i = 0; i < nLines; i++)
         {
             for (long long int j = 0; j < nCols; j++)
@@ -1285,14 +1290,13 @@ bool Cache::loadCache()
                 }
             }
         }
-        //cerr << endl << nMajor << " " << nMinor << " " << nBuild << " " << nLines << " " << nCols << endl;
         cache_file.close();
         setSaveStatus(true);
         bValidData = true;
-        //throw;
     }
     else
     {
+        bSaveMutex = false;
         if (cHeadLine)
         {
             for (long long int i = 0; i < nLayers; i++)
@@ -1305,6 +1309,7 @@ bool Cache::loadCache()
         }
         return false;
     }
+    bSaveMutex = false;
     if (cHeadLine)
     {
         for (long long int i = 0; i < nLayers; i++)
