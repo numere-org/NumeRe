@@ -1209,15 +1209,31 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         int nPos = matchParams(sCmd, "coords", '=')+6;
         if (getArgAtPos(sCmd, nPos) == "cartesian" || getArgAtPos(sCmd, nPos) == "std")
         {
-            nCoords = 0;
+            nCoords = CARTESIAN;
         }
-        else if (getArgAtPos(sCmd, nPos) == "polar" || getArgAtPos(sCmd, nPos) == "cylindrical")
+        else if (getArgAtPos(sCmd, nPos) == "polar" || getArgAtPos(sCmd, nPos) == "polar_pz" || getArgAtPos(sCmd, nPos) == "cylindrical")
         {
-            nCoords = 1;
+            nCoords = POLAR_PZ;
         }
-        else if (getArgAtPos(sCmd, nPos) == "spherical")
+        else if (getArgAtPos(sCmd, nPos) == "polar_rp")
         {
-            nCoords = 2;
+            nCoords = POLAR_RP;
+        }
+        else if (getArgAtPos(sCmd, nPos) == "polar_rz")
+        {
+            nCoords = POLAR_RZ;
+        }
+        else if (getArgAtPos(sCmd, nPos) == "spherical" || getArgAtPos(sCmd, nPos) == "spherical_pt")
+        {
+            nCoords = SPHERICAL_PT;
+        }
+        else if (getArgAtPos(sCmd, nPos) == "spherical_rp")
+        {
+            nCoords = SPHERICAL_RP;
+        }
+        else if (getArgAtPos(sCmd, nPos) == "spherical_rt")
+        {
+            nCoords = SPHERICAL_RT;
         }
     }
     if (matchParams(sCmd, "font", '=') && (!nType || nType == 1))
@@ -1719,7 +1735,7 @@ void PlotData::reset()
     nTextsize = 5;
     sFileName = "";
     sPlotTitle = "";
-    nCoords = 0;
+    nCoords = CARTESIAN;
     nLegendPosition = 3;
     nLegendstyle = 0;
     if (sFontStyle != "pagella")
@@ -2525,3 +2541,96 @@ void PlotData::replaceControlChars(string& sString)
     }
     return;
 }
+
+// --> Lesen der einzelnen Achsenbeschriftungen <--
+string PlotData::getxLabel() const
+{
+    if (sAxisLabels[0].length())
+        return replaceToTeX(sAxisLabels[0]);
+    else
+    {
+        switch (nCoords)
+        {
+            case CARTESIAN:
+                return "@{\\i x}";
+            case POLAR_PZ:
+            case SPHERICAL_PT:
+                return "@{\\varphi  [\\pi]}";
+            case POLAR_RP:
+            case POLAR_RZ:
+                return "@{\\rho}";
+            case SPHERICAL_RP:
+            case SPHERICAL_RT:
+                return "@{\\i r}";
+        }
+    }
+    return "";
+}
+
+string PlotData::getyLabel() const
+{
+    if (sAxisLabels[1].length())
+        return replaceToTeX(sAxisLabels[1]);
+    else
+    {
+        switch (nCoords)
+        {
+            case CARTESIAN:
+                return "@{\\i y}";
+            case POLAR_PZ:
+            case POLAR_RZ:
+                return "@{\\i z}";
+            case POLAR_RP:
+            case SPHERICAL_RP:
+                return "@{\\varphi  [\\pi]}";
+            case SPHERICAL_PT:
+            case SPHERICAL_RT:
+                return "@{\\vartheta  [\\pi]}";
+        }
+    }
+    return "";
+}
+
+string PlotData::getzLabel() const
+{
+    if (sAxisLabels[2].length())
+        return replaceToTeX(sAxisLabels[2]);
+    else
+    {
+        switch (nCoords)
+        {
+            case CARTESIAN:
+            case POLAR_RP:
+                return "@{\\i z}";
+            case POLAR_PZ:
+                return "@{\\rho}";
+            case SPHERICAL_PT:
+                return "@{\\i r}";
+            case SPHERICAL_RP:
+                return "@{\\vartheta  [\\pi]}";
+            case POLAR_RZ:
+            case SPHERICAL_RT:
+                return "@{\\varphi  [\\pi]}";
+        }
+    }
+    return "";
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

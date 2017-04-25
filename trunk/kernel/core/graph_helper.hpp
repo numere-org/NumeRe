@@ -40,11 +40,13 @@ void parser_CheckIndices(int&, int&);
 void parser_CheckIndices(long long int&, long long int&);
 void parser_VectorToExpr(string&, const Settings&);
 // --> Integration_Vars-Structure: Name, Werte und Grenzen der Integrationsvariablen. Erlaubt bis zu 3D-Integration <--
+
 struct Integration_Vars
 {
     string sName[4] = {"x", "y", "z", "t"};
     value_type vValue[4][4];
 };
+
 extern Integration_Vars parser_iVars;
 extern mglGraph _fontData;
 mglPoint parser_CalcCutBox(double, double dRanges[3][2], int, int, bool);

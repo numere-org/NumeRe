@@ -36,3 +36,4 @@ Fixed	Die Druckeinstellungen werden nun automatisch angezeigt, wenn eine Drucker
 Cleaned	Kosmetische Aenderung: Prozeduren und Scripte, die sich in den Standardpfaden befinden, werden beim Starten durch GUI Funktionen nun ohne den obsoleten Pfad aufgerufen.
 Added	Kosmetische Aenderung: der Faltungsmarker wird nun im aktuellen Block rot hervorgehoben.
 Added	Der Editor kann nun Aenderungen nachverfolgen. Dies wird mit farbigen Indikatoren auf dem Rand realisiert.
+Added	Die krummlinigen Koordinaten bei "plot", "surf", "mesh", "dens" und "cont" koennen nun auch aus anderen Koordinatenpaaren waehlen indem diese speziell durch "polar_pz", "polar_rp", "polar_rz", "spherical_pt", "spherical_rp", "spherical_rt" angegeben werden.
