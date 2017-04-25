@@ -59,11 +59,7 @@ extern int nLINE_LENGTH;
 
 
 // --> Integration_Vars-Structure: Name, Werte und Grenzen der Integrationsvariablen. Erlaubt bis zu 3D-Integration <--
-/*struct Integration_Vars
-{
-    string_type sName[4] = {"x", "y", "z", "t"};
-    value_type vValue[4][4];
-};*/
+
 struct Indices
 {
     long long int nI[2];
@@ -71,7 +67,6 @@ struct Indices
     vector<long long int> vI;
     vector<long long int> vJ;
 };
-
 
 struct PlotInfo
 {

@@ -180,6 +180,16 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         PlotData(int _nLines, int _nRows = 1, int _nLayers = 1);
         ~PlotData();
 
+        enum Coordinates {
+            CARTESIAN = 0,
+            POLAR_PZ = 10,
+            POLAR_RP,
+            POLAR_RZ,
+            SPHERICAL_PT = 100,
+            SPHERICAL_RP,
+            SPHERICAL_RT
+        };
+
 //        mglFLTK* _graph;
 
         // --> Wichtigste Funktionen: Daten in Speicher schreiben und daraus lesen <---
@@ -453,46 +463,10 @@ class PlotData : public FileSystem  // CHILD von Filesystem
             }
 
         // --> Lesen der einzelnen Achsenbeschriftungen <--
-        inline string getxLabel() const
-            {
-                if (sAxisLabels[0].length())
-                    return replaceToTeX(sAxisLabels[0]);
-                else
-                {
-                    if (!nCoords)
-                        return "@{\\i x}";
-                    else
-                        return "@{\\varphi  [\\pi]}";
-                }
-            }
-        inline string getyLabel() const
-            {
-                if (sAxisLabels[1].length())
-                    return replaceToTeX(sAxisLabels[1]);
-                else
-                {
-                    if (!nCoords)
-                        return "@{\\i y}";
-                    else if (nCoords == 1)
-                        return "@{\\i z}";
-                    else
-                        return "@{\\vartheta  [\\pi]}";
-                }
-            }
-        inline string getzLabel() const
-            {
-                if (sAxisLabels[2].length())
-                    return replaceToTeX(sAxisLabels[2]);
-                else
-                {
-                    if (!nCoords)
-                        return "@{\\i z}";
-                    else if (nCoords == 1)
-                        return "@{\\rho}";
-                    else
-                        return "@{\\i r}";
-                }
-            }
+        string getxLabel() const;
+        string getyLabel() const;
+        string getzLabel() const;
+
 
         inline string getTickTemplate(int nAxis = 0) const
             {

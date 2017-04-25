@@ -6868,7 +6868,7 @@
 	"BasicExcel.hpp"
 	"tinyxml2.h"
 
-1490798690 d:\cpp\numere-source\trunk\kernel\core\cache.hpp
+1493131160 d:\cpp\numere-source\trunk\kernel\core\cache.hpp
 	<iostream>
 	<fstream>
 	<string>
@@ -7045,7 +7045,7 @@
 	"tools.hpp"
 	"plotdata.hpp"
 
-1490791551 d:\cpp\numere-source\trunk\kernel\core\plotdata.hpp
+1492947863 d:\cpp\numere-source\trunk\kernel\core\plotdata.hpp
 	<string>
 	<cmath>
 	"error.hpp"
@@ -7188,7 +7188,7 @@
 	"documentation.hpp"
 	"odesolver.hpp"
 
-1490791551 d:\cpp\numere-source\trunk\kernel\core\parser_functions.hpp
+1492882632 d:\cpp\numere-source\trunk\kernel\core\parser_functions.hpp
 	<cmath>
 	<string>
 	<sstream>
@@ -7232,7 +7232,7 @@
 	"tools.hpp"
 	"error.hpp"
 
-1490791551 d:\cpp\numere-source\trunk\kernel\core\graph_helper.hpp
+1492882629 d:\cpp\numere-source\trunk\kernel\core\graph_helper.hpp
 	<mgl2/wnd.h>
 	<mgl2/mgl.h>
 	<string>
@@ -8336,7 +8336,7 @@
 	"built-in.hpp"
 	"../kernel.hpp"
 
-1491415235 source:d:\cpp\numere-source\trunk\kernel\core\cache.cpp
+1493131548 source:d:\cpp\numere-source\trunk\kernel\core\cache.cpp
 	"cache.hpp"
 	"../kernel.hpp"
 
@@ -8466,11 +8466,11 @@
 	"muParserTokenReader.h"
 	"muParserBase.h"
 
-1490791551 source:d:\cpp\numere-source\trunk\kernel\core\plotdata.cpp
+1492948524 source:d:\cpp\numere-source\trunk\kernel\core\plotdata.cpp
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1492786198 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
+1493106800 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -8547,7 +8547,7 @@
 	"debugmessenger.hpp"
 	"core/tools.hpp"
 
-1491416860 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1493130805 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 

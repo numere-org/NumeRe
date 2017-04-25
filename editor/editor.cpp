@@ -616,7 +616,7 @@ void NumeReEditor::MakeBlockCheck()
 void NumeReEditor::OnKeyDn(wxKeyEvent &event)
 {
     //wxMessageBox(wxString((char)this->GetCharAt(this->GetCurrentPos())));
-    if (event.GetKeyCode() < WXK_START)
+    if (event.GetKeyCode() < WXK_START && event.GetKeyCode() != WXK_ESCAPE)
     {
         if (this->HasSelection())
         {
