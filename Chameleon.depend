@@ -6998,7 +6998,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1491042970 d:\cpp\numere-source\trunk\kernel\kernel.hpp
+1493271969 d:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	"core/error.hpp"
@@ -7707,7 +7707,7 @@
 	<string>
 	<vector>
 
-1492547938 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1493142977 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -7767,7 +7767,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1492604461 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1493242200 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -8470,7 +8470,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1493106800 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
+1493139712 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 

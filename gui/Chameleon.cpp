@@ -1586,7 +1586,7 @@ void NumeReWindow::openHTML(wxString HTMLcontent)
     html->SetRelatedFrame(frame, _guilang.get("DOC_HELP_HEADLINE", "%s"));
     html->SetRelatedStatusBar(0);
     html->SetPage(HTMLcontent);
-    frame->SetSize(800,600);
+    frame->SetSize(1000,600);
     frame->SetIcon(wxIcon(programPath + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
     frame->Show();
     frame->SetFocus();
