@@ -80,13 +80,9 @@ bool IsWow64()
 
 NumeReKernel::NumeReKernel()
 {
-    //RecievedCommand = false;
     sCommandLine.clear();
     sAnswer.clear();
-
-    //oLogFile.open();
-
-    //StartUp();
+    sPlotCompose.clear();
 }
 
 NumeReKernel::~NumeReKernel()
@@ -533,7 +529,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
     string sKeep = "";          // Zwei '\' am Ende einer Zeile ermoeglichen es, dass die Eingabe auf mehrere Zeilen verteilt wird.
                                 // Die vorherige Zeile wird hierin zwischengespeichert
     string sCmdCache = "";
-    string sPlotCompose = "";
     string sLine = "";
     value_type* v = 0;          // Ergebnisarray
     int nNum = 0;               // Zahl der Ergebnisse in value_type* v
@@ -772,6 +767,38 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     {
                         sPlotCompose += "-multiplot=" + getArgAtPos(sLine, matchParams(sLine, "multiplot",'=')+9) + " <<COMPOSE>> ";
                     }
+                    if (!(_script.isValid() && _script.isOpen()) && !sCmdCache.length())
+                    {
+                        if (_procedure.getLoop())
+                        {
+                            // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
+                            printPreFmt("|" + _procedure.getCurrentBlock());
+                            if (_procedure.getCurrentBlock() == "IF")
+                            {
+                                if (_procedure.getLoop() > 1)
+                                    printPreFmt("---");
+                                else
+                                    printPreFmt("-");
+                            }
+                            else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getLoop() > 1)
+                                printPreFmt("-");
+                            else
+                            {
+                                if (_procedure.getLoop() > 1)
+                                    printPreFmt("--");
+                            }
+                            printPreFmt(strfill("> ", 2*_procedure.getLoop(), '-'));
+                        }
+                        else if (_procedure.is_writing())
+                        {
+                            printPreFmt("|PROC> ");
+                        }
+                        else if (!_procedure.is_writing() && sPlotCompose.length())
+                        {
+                            printPreFmt("|COMP> ");
+                        }
+                        return NUMERE_PENDING_SPECIAL;
+                    }
                     continue;
                 }
                 else if (findCommand(sLine).sString == "abort")
@@ -792,7 +819,41 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                         || sCommand.substr(0,4) == "cont"
                         || sCommand.substr(0,4) == "surf"
                         || sCommand.substr(0,4) == "mesh")
+                    {
                         sPlotCompose += sLine + " <<COMPOSE>> ";
+                        if (!(_script.isValid() && _script.isOpen()) && !sCmdCache.length())
+                        {
+                            if (_procedure.getLoop())
+                            {
+                                // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
+                                printPreFmt("|" + _procedure.getCurrentBlock());
+                                if (_procedure.getCurrentBlock() == "IF")
+                                {
+                                    if (_procedure.getLoop() > 1)
+                                        printPreFmt("---");
+                                    else
+                                        printPreFmt("-");
+                                }
+                                else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getLoop() > 1)
+                                    printPreFmt("-");
+                                else
+                                {
+                                    if (_procedure.getLoop() > 1)
+                                        printPreFmt("--");
+                                }
+                                printPreFmt(strfill("> ", 2*_procedure.getLoop(), '-'));
+                            }
+                            else if (_procedure.is_writing())
+                            {
+                                printPreFmt("|PROC> ");
+                            }
+                            else if (!_procedure.is_writing() && sPlotCompose.length())
+                            {
+                                printPreFmt("|COMP> ");
+                            }
+                            return NUMERE_PENDING_SPECIAL;
+                        }
+                    }
                     continue;
                 }
                 else

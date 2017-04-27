@@ -56,6 +56,7 @@ class NumeReKernel
     private:
         string sCommandLine;
         string sAnswer;
+        string sPlotCompose;
 
         //datasets
         Settings _option;

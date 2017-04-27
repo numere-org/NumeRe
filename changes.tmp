@@ -38,3 +38,4 @@ Added	Kosmetische Aenderung: der Faltungsmarker wird nun im aktuellen Block rot 
 Added	Der Editor kann nun Aenderungen nachverfolgen. Dies wird mit farbigen Indikatoren auf dem Rand realisiert.
 Added	Die krummlinigen Koordinaten bei "plot", "surf", "mesh", "dens" und "cont" koennen nun auch aus anderen Koordinatenpaaren waehlen indem diese speziell durch "polar_pz", "polar_rp", "polar_rz", "spherical_pt", "spherical_rp", "spherical_rt" angegeben werden.
 Cleaned	Das Hilfefenster wurde verbreitert. 800*600 Bilder sollten nun besser dargestellt werden.
+Fixed	Der "compose"-Modus ist nun wieder direkt von der Konsole aus verwendbar.
