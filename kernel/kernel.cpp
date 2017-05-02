@@ -1960,14 +1960,14 @@ void NumeReKernel::statusBar(int nStep, int nFirstStep, int nFinalStep, const st
             }
             if (sType.substr(i,5) == "<Bar>")
             {
-                printPreFmt("[" + strfill("#", (int)(nStatusVal/5.0), '#') + strfill(" ", 20-(int)(nStatusVal/5.0), '-') + "]");
+                printPreFmt("[" + strfill("#", (int)(nStatusVal/5.0), '#') + strfill("-", 20-(int)(nStatusVal/5.0), '-') + "]");
                 i += 4;
                 nLastLineLength += 22;
                 continue;
             }
             if (sType.substr(i,5) == "<BAR>")
             {
-                printPreFmt("[" + strfill("#", (int)(nStatusVal/5.0), '#') + strfill(" ", 20-(int)(nStatusVal/5.0), '=') + "]");
+                printPreFmt("[" + strfill("#", (int)(nStatusVal/5.0), '#') + strfill("=", 20-(int)(nStatusVal/5.0), '=') + "]");
                 i += 4;
                 nLastLineLength += 22;
                 continue;

@@ -558,7 +558,10 @@ void BI_show_credits(Parser& _parser, Settings& _option)
 {
     NumeReKernel::toggleTableStatus();
     make_hline();
+    NumeReKernel::printPreFmt("|-> ");
     BI_splash();
+    NumeReKernel::printPreFmt("\n");
+    make_hline();
 	NumeReKernel::printPreFmt("|-> Version: " + sVersion);
 	NumeReKernel::printPreFmt(" | " + _lang.get("BUILTIN_CREDITS_BUILD") + ": " + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE +"\n");
 	//NumeReKernel::print("|-> Build-Datum: " + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE );

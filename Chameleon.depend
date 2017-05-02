@@ -8470,7 +8470,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1493139712 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
+1493629268 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -8547,7 +8547,7 @@
 	"debugmessenger.hpp"
 	"core/tools.hpp"
 
-1493130805 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1493272519 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 
