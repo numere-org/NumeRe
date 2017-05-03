@@ -173,6 +173,7 @@ class PlotData : public FileSystem  // CHILD von Filesystem
                 return true;
             }
         void replaceControlChars(string& sString);
+        void rangeByPercentage(double* dData, size_t nLength, double dLowerPercentage, double dUpperPercentage, vector<double>& vRanges);
 
     public:
         // --> Konstruktoren und Destruktoren <--
@@ -188,6 +189,13 @@ class PlotData : public FileSystem  // CHILD von Filesystem
             SPHERICAL_PT = 100,
             SPHERICAL_RP,
             SPHERICAL_RT
+        };
+
+        enum RangeType {
+            ALLRANGES = -1,
+            ONLYLEFT = -2,
+            ONLYRIGHT = -3,
+            COLSTART = 0
         };
 
 //        mglFLTK* _graph;
@@ -506,8 +514,9 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         int getLayers(bool bFull = false) const;
 
         // --> Maximum und Minimum aller Werte im Speicher lesen <--
-        double getMin(int nCol = -1);
-        double getMax(int nCol = -1);
+        double getMin(int nCol = ALLRANGES);
+        double getMax(int nCol = ALLRANGES);
+        vector<double> getWeightedRanges(int nCol = ALLRANGES, double dLowerPercentage = 0.75, double dUpperPercentage = 0.75);
 
         // --> Intervallgrenzen lesen <--
         double getRanges(int _j, int _i = 0);

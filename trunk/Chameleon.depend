@@ -6811,7 +6811,7 @@
 	<sstream>
 	<windows.h>
 
-1490798667 d:\cpp\numere-source\trunk\kernel\core\tools.hpp
+1493798452 d:\cpp\numere-source\trunk\kernel\core\tools.hpp
 	<iostream>
 	<iomanip>
 	<sstream>
@@ -7045,7 +7045,7 @@
 	"tools.hpp"
 	"plotdata.hpp"
 
-1492947863 d:\cpp\numere-source\trunk\kernel\core\plotdata.hpp
+1493796155 d:\cpp\numere-source\trunk\kernel\core\plotdata.hpp
 	<string>
 	<cmath>
 	"error.hpp"
@@ -8332,7 +8332,7 @@
 1490791550 source:d:\cpp\numere-source\trunk\kernel\core\basicexcel.cpp
 	"BasicExcel.hpp"
 
-1490791550 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1493743321 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
@@ -8466,11 +8466,11 @@
 	"muParserTokenReader.h"
 	"muParserBase.h"
 
-1492948524 source:d:\cpp\numere-source\trunk\kernel\core\plotdata.cpp
+1493825419 source:d:\cpp\numere-source\trunk\kernel\core\plotdata.cpp
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1493629268 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
+1493802264 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -8522,9 +8522,10 @@
 	<cstddef>
 	<cstdarg>
 
-1490798687 source:d:\cpp\numere-source\trunk\kernel\core\tools.cpp
+1493798762 source:d:\cpp\numere-source\trunk\kernel\core\tools.cpp
 	"tools.hpp"
 	"../kernel.hpp"
+	<cstdlib>
 
 1490791551 source:d:\cpp\numere-source\trunk\kernel\core\unzip.cpp
 	<windows.h>
@@ -8547,7 +8548,7 @@
 	"debugmessenger.hpp"
 	"core/tools.hpp"
 
-1493272519 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1493743190 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 

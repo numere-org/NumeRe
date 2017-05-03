@@ -2240,11 +2240,11 @@ double PlotData::getMin(int nCol)
     double _dMin = NAN;
     if (dPlotData)
     {
-        if (nCol == -1)
+        if (nCol == ALLRANGES)
         {
             return dMin;
         }
-        else if (nCol == -2) // l
+        else if (nCol == ONLYLEFT) // l
         {
             for (int j = 0; j < nRows; j++)
             {
@@ -2257,7 +2257,7 @@ double PlotData::getMin(int nCol)
                 }
             }
         }
-        else if (nCol == -3) // r
+        else if (nCol == ONLYRIGHT) // r
         {
             for (int j = 0; j < nRows; j++)
             {
@@ -2293,11 +2293,11 @@ double PlotData::getMax(int nCol)
     double _dMax = NAN;
     if (dPlotData)
     {
-        if (nCol == -1)
+        if (nCol == ALLRANGES)
         {
             return dMax;
         }
-        else if (nCol == -2) // l
+        else if (nCol == ONLYLEFT) // l
         {
             for (int j = 0; j < nRows; j++)
             {
@@ -2310,7 +2310,7 @@ double PlotData::getMax(int nCol)
                 }
             }
         }
-        else if (nCol == -3) // r
+        else if (nCol == ONLYRIGHT) // r
         {
             for (int j = 0; j < nRows; j++)
             {
@@ -2338,6 +2338,100 @@ double PlotData::getMax(int nCol)
         }
     }
     return _dMax;
+}
+
+vector<double> PlotData::getWeightedRanges(int nCol, double dLowerPercentage, double dUpperPercentage)
+{
+    vector<double> vRanges(2, NAN);
+    size_t nLength = 0;
+
+    if (dPlotData)
+    {
+        if (nCol == ALLRANGES)
+        {
+            double* dData = new double[nRows*nLayers*nLines];
+
+            for (int i = 0; i < nLines; i++)
+            {
+                for (int j = 0; j < nRows; j++)
+                {
+                    for (int k = 0; k < nLayers; k++)
+                        dData[i+j*nLines+k*nLines*nRows] = dPlotData[i][j][k];
+                }
+            }
+
+            nLength = qSortDouble(dData, nRows*nLayers*nLines);
+
+            rangeByPercentage(dData, nLength, dLowerPercentage, dUpperPercentage, vRanges);
+
+            delete[] dData;
+        }
+        else if (nCol == ONLYLEFT) // l
+        {
+            double* dData = new double[nRows*nLines];
+            int row = 0;
+
+            for (int j = 0; j < nRows; j++)
+            {
+                if (getFunctionAxisbind(j)[0] != 'l')
+                    continue;
+                for (int i = 0; i < nLines; i++)
+                {
+                    dData[i + row*nLines] = dPlotData[i][j][0];
+                }
+                row++;
+            }
+
+            nLength = qSortDouble(dData, nLines*row);
+
+            rangeByPercentage(dData, nLength, dLowerPercentage, dUpperPercentage, vRanges);
+
+            delete[] dData;
+        }
+        else if (nCol == ONLYRIGHT) // r
+        {
+            double* dData = new double[nRows*nLines];
+            int row = 0;
+
+            for (int j = 0; j < nRows; j++)
+            {
+                if (getFunctionAxisbind(j)[0] != 'r')
+                    continue;
+                for (int i = 0; i < nLines; i++)
+                {
+                    dData[i+row*nLines] = dPlotData[i][j][0];
+                }
+                row++;
+            }
+
+            nLength = qSortDouble(dData, nLines*row);
+
+            rangeByPercentage(dData, nLength, dLowerPercentage, dUpperPercentage, vRanges);
+
+            delete[] dData;
+        }
+        else if (nCol >= nRows)
+            return vRanges;
+        else
+        {
+            double* dData = new double[nLines*nLayers];
+
+            for (int i = 0; i < nLines; i++)
+            {
+                for (int k = 0; k < nLayers; k++)
+                {
+                    dData[i+k*nLines] = dPlotData[i][nCol][k];
+                }
+            }
+
+            nLength = qSortDouble(dData, nLines*nLayers);
+
+            rangeByPercentage(dData, nLength, dLowerPercentage, dUpperPercentage, vRanges);
+
+            delete[] dData;
+        }
+    }
+    return vRanges;
 }
 
 // --> Ein spezifisches Plot-Intervall einstellen <--
@@ -2540,6 +2634,29 @@ void PlotData::replaceControlChars(string& sString)
             sString.replace(i,1,"\\n");
     }
     return;
+}
+
+void PlotData::rangeByPercentage(double* dData, size_t nLength, double dLowerPercentage, double dUpperPercentage, vector<double>& vRanges)
+{
+    if (dLowerPercentage == 1.0)
+    {
+        vRanges[0] = dData[0];
+        size_t pos = dUpperPercentage*nLength;
+        vRanges[1] = dData[pos];
+    }
+    else if (dUpperPercentage == 1.0)
+    {
+        size_t pos = (1.0-dLowerPercentage)*nLength;
+        vRanges[1] = dData[nLength-1];
+        vRanges[0] = dData[pos];
+    }
+    else
+    {
+        size_t lowerpos = (1.0-dLowerPercentage)/2.0*(nLength);
+        size_t upperpos = (dUpperPercentage/2.0+0.5)*(nLength);
+        vRanges[0] = dData[lowerpos];
+        vRanges[1] = dData[upperpos];
+    }
 }
 
 // --> Lesen der einzelnen Achsenbeschriftungen <--
