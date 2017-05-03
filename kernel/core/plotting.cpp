@@ -39,6 +39,7 @@ void parser_plot_applyLighting(mglGraph& _graph, PlotData& _pData, PlotInfo& _pI
 void parser_plot_applyGrid(mglGraph& _graph, const PlotData& _pData);
 double parser_plot_getLabelPosition(const PlotData& _pData, int nCoord);
 mglPoint parser_plot_createMglPoint(int nCoords, double r, double phi, double theta, bool b3D = false);
+void parser_plot_weightedRange(int nCol, double& dMin, double& dMax, PlotData& _pData);
 
 // These definitions are for easier understanding of the different ranges
 #define XCOORD 0
@@ -352,10 +353,10 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                 || _pInfo.sCommand.substr(0,4) == "cont"))
             _pInfo.nSamples = 1000;
         else
-            _pInfo.nSamples = 100;
+            _pInfo.nSamples = _pData.getSamples();
 
-        if (_pInfo.nSamples > 100 && _pInfo.b3D)
-            _pInfo.nSamples = 100;
+        if (_pInfo.nSamples > 151 && _pInfo.b3D)
+            _pInfo.nSamples = 151;
 
 
         // --> Ggf. waehlen eines Default-Dateinamens <--
@@ -1340,6 +1341,9 @@ void parser_plot_create3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pIn
         mglData _mContVec(15);
         double dMin = _pData.getMin();
         double dMax = _pData.getMax();
+
+        parser_plot_weightedRange(PlotData::ALLRANGES, dMin, dMax, _pData);
+
         if (!isnan(_pData.getColorRange()))
         {
             dMin = _pData.getColorRange();
@@ -1379,7 +1383,9 @@ void parser_plot_create3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pIn
         if (_pInfo.sCommand.substr(0,4) == "mesh")
             _graph.Surf3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("#").c_str(), "value 11");
         else if (_pInfo.sCommand.substr(0,4) == "surf" && !_pData.getTransparency())
+        {
             _graph.Surf3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str(), "value 11");
+        }
         else if (_pInfo.sCommand.substr(0,4) == "surf" && _pData.getTransparency())
             _graph.Surf3A(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _mData, _pData.getColorScheme().c_str(), "value 11");
         else if (_pInfo.sCommand.substr(0,4) == "cont")
@@ -2991,10 +2997,10 @@ void parser_plot_displayMessage(PlotData& _pData, PlotInfo& _pInfo, mglGraph& _g
         _pInfo.b3D = true;
         if (_pInfo.nSamples > 51)
         {
-            if (_pData.getHighRes() == 2 && _pInfo.nSamples > 101)
-                _pInfo.nSamples = 101;
-            else if ((_pData.getHighRes() == 1 || !_option.getbUseDraftMode()) && _pInfo.nSamples > 74)
-                _pInfo.nSamples = 101;
+            if (_pData.getHighRes() == 2 && _pInfo.nSamples > 151)
+                _pInfo.nSamples = 151;
+            else if ((_pData.getHighRes() == 1 || !_option.getbUseDraftMode()) && _pInfo.nSamples > 151)
+                _pInfo.nSamples = 151;
             else
                 _pInfo.nSamples = 51;
         }
@@ -4826,30 +4832,38 @@ void parser_plot_fitPlotRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
         {
             if (sFunc != "<<empty>>")
             {
-                if (_mDataPlots && _pData.getMin(-2) < _pInfo.dRanges[YCOORD][0])
-                    _pInfo.dRanges[YCOORD][0] = _pData.getMin(-2);
-                if (_mDataPlots && _pData.getMax(-2) > _pInfo.dRanges[YCOORD][1])
-                    _pInfo.dRanges[YCOORD][1] = _pData.getMax(-2);
+                double dMinl = _pData.getMin(PlotData::ONLYLEFT);
+                double dMaxl = _pData.getMax(PlotData::ONLYLEFT);
+                double dMinr = _pData.getMin(PlotData::ONLYRIGHT);
+                double dMaxr = _pData.getMax(PlotData::ONLYRIGHT);
+
+                parser_plot_weightedRange(PlotData::ONLYLEFT, dMinl, dMaxl, _pData);
+                parser_plot_weightedRange(PlotData::ONLYRIGHT, dMaxl, dMaxr, _pData);
+
+                if (_mDataPlots && dMinl < _pInfo.dRanges[YCOORD][0])
+                    _pInfo.dRanges[YCOORD][0] = dMinl;
+                if (_mDataPlots && dMaxl > _pInfo.dRanges[YCOORD][1])
+                    _pInfo.dRanges[YCOORD][1] = dMaxl;
                 if (!_mDataPlots)
                 {
-                    _pInfo.dRanges[YCOORD][0] = _pData.getMin(-2);
-                    _pInfo.dRanges[YCOORD][1] = _pData.getMax(-2);
+                    _pInfo.dRanges[YCOORD][0] = dMinl;
+                    _pInfo.dRanges[YCOORD][1] = dMaxl;
                 }
-                if (_mDataPlots && (_pData.getMin(-3) < _pInfo.dSecAxisRanges[1][0] || isnan(_pInfo.dSecAxisRanges[1][0])))
-                    _pInfo.dSecAxisRanges[1][0] = _pData.getMin(-3);
-                if (_mDataPlots && (_pData.getMax(-3) > _pInfo.dSecAxisRanges[1][1] || isnan(_pInfo.dSecAxisRanges[1][1])))
-                    _pInfo.dSecAxisRanges[1][1] = _pData.getMax(-3);
+                if (_mDataPlots && (dMinr < _pInfo.dSecAxisRanges[1][0] || isnan(_pInfo.dSecAxisRanges[1][0])))
+                    _pInfo.dSecAxisRanges[1][0] = dMinr;
+                if (_mDataPlots && (dMaxr > _pInfo.dSecAxisRanges[1][1] || isnan(_pInfo.dSecAxisRanges[1][1])))
+                    _pInfo.dSecAxisRanges[1][1] = dMaxr;
                 if (!_mDataPlots)
                 {
-                    _pInfo.dSecAxisRanges[1][0] = _pData.getMin(-3);
-                    _pInfo.dSecAxisRanges[1][1] = _pData.getMax(-3);
+                    _pInfo.dSecAxisRanges[1][0] = dMinr;
+                    _pInfo.dSecAxisRanges[1][1] = dMaxr;
                     if (!isnan(_pData.getAddAxis(1).dMin))
                     {
                         _pInfo.dSecAxisRanges[1][0] = _pData.getAddAxis(1).dMin;
                         _pInfo.dSecAxisRanges[1][1] = _pData.getAddAxis(1).dMax;
                     }
                 }
-                if ((isnan(_pData.getMin(-2)) || isnan(_pInfo.dRanges[YCOORD][0])) && isnan(dDataRanges[1][0]))
+                if ((isnan(dMinl) || isnan(_pInfo.dRanges[YCOORD][0])) && isnan(dDataRanges[1][0]))
                 {
                     _pInfo.dRanges[YCOORD][0] = _pInfo.dSecAxisRanges[1][0];
                     _pInfo.dRanges[YCOORD][0] = _pInfo.dSecAxisRanges[1][1];
@@ -4883,18 +4897,24 @@ void parser_plot_fitPlotRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
         {
             if (sFunc != "<<empty>>")
             {
+                double dMin, dMax;
                 for (int i = 0; i < 3; i++)
                 {
+                    dMin = _pData.getMin(i);
+                    dMax = _pData.getMax(i);
+
+                    parser_plot_weightedRange(i, dMin, dMax, _pData);
+
                     if (_pData.getGivenRanges() >= i+1 && _pData.getRangeSetting(i))
                         continue;
-                    if (_mDataPlots && _pData.getMin(i) < _pInfo.dRanges[i][0])
-                        _pInfo.dRanges[i][0] = _pData.getMin(i);
-                    if (_mDataPlots && _pData.getMax(i) > _pInfo.dRanges[i][1])
-                        _pInfo.dRanges[i][1] = _pData.getMax(i);
+                    if (_mDataPlots && dMin < _pInfo.dRanges[i][0])
+                        _pInfo.dRanges[i][0] = dMin;
+                    if (_mDataPlots && dMax > _pInfo.dRanges[i][1])
+                        _pInfo.dRanges[i][1] = dMax;
                     if (!_mDataPlots)
                     {
-                        _pInfo.dRanges[i][0] = _pData.getMin(i);
-                        _pInfo.dRanges[i][1] = _pData.getMax(i);
+                        _pInfo.dRanges[i][0] = dMin;
+                        _pInfo.dRanges[i][1] = dMax;
                     }
                     double dInt = fabs(_pInfo.dRanges[i][1] - _pInfo.dRanges[i][0]);
                     if (dInt == 0.0 || dInt < 1e-4 * _pInfo.dRanges[i][0])
@@ -4915,14 +4935,19 @@ void parser_plot_fitPlotRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
         {
             if (sFunc != "<<empty>>")
             {
-                if (_mDataPlots && _pData.getMin() < _pInfo.dRanges[ZCOORD][0])
-                    _pInfo.dRanges[ZCOORD][0] = _pData.getMin();
-                if (_mDataPlots && _pData.getMax() > _pInfo.dRanges[ZCOORD][1])
-                    _pInfo.dRanges[ZCOORD][1] = _pData.getMax();
+                    double dMin = _pData.getMin();
+                    double dMax = _pData.getMax();
+
+                parser_plot_weightedRange(PlotData::ALLRANGES, dMin, dMax, _pData);
+
+                if (_mDataPlots && dMin < _pInfo.dRanges[ZCOORD][0])
+                    _pInfo.dRanges[ZCOORD][0] = dMin;
+                if (_mDataPlots && dMax > _pInfo.dRanges[ZCOORD][1])
+                    _pInfo.dRanges[ZCOORD][1] = dMax;
                 if (!_mDataPlots)
                 {
-                    _pInfo.dRanges[ZCOORD][0] = _pData.getMin();
-                    _pInfo.dRanges[ZCOORD][1] = _pData.getMax();
+                    _pInfo.dRanges[ZCOORD][0] = dMin;
+                    _pInfo.dRanges[ZCOORD][1] = dMax;
                 }
             }
             double dInt = fabs(_pInfo.dRanges[ZCOORD][1] - _pInfo.dRanges[ZCOORD][0]);
@@ -4942,8 +4967,13 @@ void parser_plot_fitPlotRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
         {
             if (_pData.getGivenRanges() < 3)
             {
-                _pInfo.dRanges[ZCOORD][0] = _pData.getMin();
-                _pInfo.dRanges[ZCOORD][1] = _pData.getMax();
+                double dMin = _pData.getMin();
+                double dMax = _pData.getMax();
+
+                parser_plot_weightedRange(PlotData::ALLRANGES, dMin, dMax, _pData);
+
+                _pInfo.dRanges[ZCOORD][0] = dMin;
+                _pInfo.dRanges[ZCOORD][1] = dMax;
             }
             if (_pData.getCoords() != PlotData::CARTESIAN)
             {
@@ -5069,10 +5099,15 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
     {
         double dColorMin = dDataRanges[2][0]/_pData.getAxisScale(3);
         double dColorMax = dDataRanges[2][1]/_pData.getAxisScale(3);
-        if (_pData.getMax() > dColorMax && sFunc != "<<empty>>" && _pInfo.sCommand == "plot3d")
-            dColorMax = _pData.getMax(2)/_pData.getAxisScale(3);
-        if (_pData.getMin() < dColorMin && sFunc != "<<empty>>" && _pInfo.sCommand == "plot3d")
-            dColorMin = _pData.getMin(2)/_pData.getAxisScale(3);
+        double dMin = _pData.getMin(2);
+        double dMax = _pData.getMax(2);
+
+        parser_plot_weightedRange(2, dMin, dMax, _pData);
+
+        if (dMax > dColorMax && sFunc != "<<empty>>" && _pInfo.sCommand == "plot3d")
+            dColorMax = dMax/_pData.getAxisScale(3);
+        if (dMin < dColorMin && sFunc != "<<empty>>" && _pInfo.sCommand == "plot3d")
+            dColorMin = dMin/_pData.getAxisScale(3);
         if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dColorMin <= 0.0 && dColorMax <= 0.0)
         {
             parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
@@ -5132,28 +5167,33 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
         }
         else
         {
-            if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && ((_pData.getMin() <= 0.0 && _pData.getMax()) || _pData.getAxisScale(3) <= 0.0))
+            double dMax = _pData.getMax();
+            double dMin = _pData.getMin();
+
+            parser_plot_weightedRange(PlotData::ALLRANGES, dMin, dMax, _pData);
+
+            if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && ((dMin <= 0.0 && dMax) || _pData.getAxisScale(3) <= 0.0))
             {
                 parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
                 throw WRONG_PLOT_INTERVAL_FOR_LOGSCALE;
             }
-            else if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && _pData.getMin() <= 0.0)
+            else if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dMin <= 0.0)
             {
-                _graph.SetRange('c', _pData.getMax()*1e-3/_pData.getAxisScale(3), (_pData.getMax()+0.05*(_pData.getMax()-_pData.getMin()))/_pData.getAxisScale(3));
-                _pInfo.dColorRanges[0] = _pData.getMax()*1e-3/_pData.getAxisScale(3);
-                _pInfo.dColorRanges[1] = (_pData.getMax()+0.05*(_pData.getMax()-_pData.getMin()))/_pData.getAxisScale(3);
+                _graph.SetRange('c', dMax*1e-3/_pData.getAxisScale(3), (dMax+0.05*(dMax-dMin))/_pData.getAxisScale(3));
+                _pInfo.dColorRanges[0] = dMax*1e-3/_pData.getAxisScale(3);
+                _pInfo.dColorRanges[1] = (dMax+0.05*(dMax-dMin))/_pData.getAxisScale(3);
             }
             else if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect))
             {
-                _graph.SetRange('c', _pData.getMin()*0.95/_pData.getAxisScale(3), _pData.getMax()*1.05/_pData.getAxisScale(3));
-                _pInfo.dColorRanges[0] = _pData.getMin()*0.95/_pData.getAxisScale(3);
-                _pInfo.dColorRanges[1] = _pData.getMax()*1.05/_pData.getAxisScale(3);
+                _graph.SetRange('c', dMin*0.95/_pData.getAxisScale(3), dMax*1.05/_pData.getAxisScale(3));
+                _pInfo.dColorRanges[0] = dMin*0.95/_pData.getAxisScale(3);
+                _pInfo.dColorRanges[1] = dMax*1.05/_pData.getAxisScale(3);
             }
             else
             {
-                _graph.SetRange('c', (_pData.getMin()-0.05*(_pData.getMax()-_pData.getMin()))/_pData.getAxisScale(3), (_pData.getMax()+0.05*(_pData.getMax()-_pData.getMin()))/_pData.getAxisScale(3));
-                _pInfo.dColorRanges[0] = (_pData.getMin()-0.05*(_pData.getMax()-_pData.getMin()))/_pData.getAxisScale(3);
-                _pInfo.dColorRanges[1] = (_pData.getMax()+0.05*(_pData.getMax()-_pData.getMin()))/_pData.getAxisScale(3);
+                _graph.SetRange('c', (dMin-0.05*(dMax-dMin))/_pData.getAxisScale(3), (dMax+0.05*(dMax-dMin))/_pData.getAxisScale(3));
+                _pInfo.dColorRanges[0] = (dMin-0.05*(dMax-dMin))/_pData.getAxisScale(3);
+                _pInfo.dColorRanges[1] = (dMax+0.05*(dMax-dMin))/_pData.getAxisScale(3);
             }
         }
     }
@@ -5217,10 +5257,16 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
         {
             double dColorMin = dDataRanges[2][0];
             double dColorMax = dDataRanges[2][1];
-            if (_pData.getMax() > dColorMax && sFunc != "<<empty>>" && _pInfo.sCommand == "plot3d")
-                dColorMax = _pData.getMax(2);
-            if (_pData.getMin() < dColorMin && sFunc != "<<empty>>" && _pInfo.sCommand == "plot3d")
-                dColorMin = _pData.getMin(2);
+
+            double dMin = _pData.getMin(2);
+            double dMax = _pData.getMax(2);
+
+            parser_plot_weightedRange(2, dMin, dMax, _pData);
+
+            if (dMax > dColorMax && sFunc != "<<empty>>" && _pInfo.sCommand == "plot3d")
+                dColorMax = dMax;
+            if (dMin < dColorMin && sFunc != "<<empty>>" && _pInfo.sCommand == "plot3d")
+                dColorMin = dMin;
 
             if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dColorMin <= 0.0 && dColorMax <= 0.0)
             {
@@ -5249,28 +5295,33 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
         }
         else
         {
-            if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && _pData.getMin() <= 0.0 && _pData.getMax())
+            double dMin = _pData.getMin();
+            double dMax = _pData.getMax();
+
+            parser_plot_weightedRange(PlotData::ALLRANGES, dMin, dMax, _pData);
+
+            if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dMin <= 0.0 && dMax)
             {
                 parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
                 throw WRONG_PLOT_INTERVAL_FOR_LOGSCALE;
             }
-            else if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && _pData.getMin() <= 0.0)
+            else if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dMin <= 0.0)
             {
-                _graph.SetRange('c', _pData.getMax()*1e-3, (_pData.getMax()+0.05*(_pData.getMax()-_pData.getMin())));
-                _pInfo.dColorRanges[0] = _pData.getMax()*1e-3;
-                _pInfo.dColorRanges[1] = (_pData.getMax()+0.05*(_pData.getMax()-_pData.getMin()));
+                _graph.SetRange('c', dMax*1e-3, (dMax+0.05*(dMax-dMin)));
+                _pInfo.dColorRanges[0] = dMax*1e-3;
+                _pInfo.dColorRanges[1] = (dMax+0.05*(dMax-dMin));
             }
             else if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect))
             {
-                _graph.SetRange('c', _pData.getMin()*0.95, _pData.getMax()*1.05);
-                _pInfo.dColorRanges[0] = _pData.getMin()*0.95;
-                _pInfo.dColorRanges[1] = _pData.getMax()*1.05;
+                _graph.SetRange('c', dMin*0.95, dMax*1.05);
+                _pInfo.dColorRanges[0] = dMin*0.95;
+                _pInfo.dColorRanges[1] = dMax*1.05;
             }
             else
             {
-                _graph.SetRange('c', (_pData.getMin()-0.05*(_pData.getMax()-_pData.getMin())), (_pData.getMax()+0.05*(_pData.getMax()-_pData.getMin())));
-                _pInfo.dColorRanges[0] = (_pData.getMin()-0.05*(_pData.getMax()-_pData.getMin()));
-                _pInfo.dColorRanges[1] = (_pData.getMax()+0.05*(_pData.getMax()-_pData.getMin()));
+                _graph.SetRange('c', (dMin-0.05*(dMax-dMin)), (dMax+0.05*(dMax-dMin)));
+                _pInfo.dColorRanges[0] = (dMin-0.05*(dMax-dMin));
+                _pInfo.dColorRanges[1] = (dMax+0.05*(dMax-dMin));
             }
         }
     }
@@ -6709,3 +6760,35 @@ bool checkMultiPlotArray(unsigned int nMultiPlot[2], unsigned int& nSubPlotMap, 
     }
     return true;
 }
+
+
+void parser_plot_weightedRange(int nCol, double& dMin, double& dMax, PlotData& _pData)
+{
+    if (log(dMax-dMin) > 5)
+    {
+        const double dPercentage = 0.975;
+        if (log(fabs(dMin)) <= 1)
+        {
+            vector<double> vRanges = _pData.getWeightedRanges(nCol, 1.0, dPercentage);
+            dMin = vRanges[0];
+            dMax = vRanges[1];
+        }
+        else if (log(fabs(dMax)) <= 1)
+        {
+            vector<double> vRanges = _pData.getWeightedRanges(nCol, dPercentage, 1.0);
+            dMin = vRanges[0];
+            dMax = vRanges[1];
+        }
+        else
+        {
+            vector<double> vRanges = _pData.getWeightedRanges(nCol, dPercentage, dPercentage);
+            dMin = vRanges[0];
+            dMax = vRanges[1];
+        }
+    }
+}
+
+
+
+
+

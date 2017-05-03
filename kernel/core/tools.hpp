@@ -344,6 +344,9 @@ namespace big_endian_io
 bool containsDataObject(const string& sExpr);
 void evalRecursiveExpressions(string& sExpr);
 
+int compareDouble(const void* p1, const void* p2);
+size_t qSortDouble(double* dArray, size_t nlength);
+
 
 #endif
 

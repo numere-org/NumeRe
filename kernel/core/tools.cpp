@@ -19,6 +19,7 @@
 
 #include "tools.hpp"
 #include "../kernel.hpp"
+#include <cstdlib>
 
 
 string toString(int nNumber)
@@ -3249,6 +3250,40 @@ bool containsDataObject(const string& sExpr)
             return true;
     }
     return false;
+}
+
+int compareDouble(const void* p1, const void* p2)
+{
+    if (isnan(*(double*)p1) && isnan(*(double*)p2))
+        return 0;
+    if (isnan(*(double*)p1))
+        return 1;
+    if (isnan(*(double*)p2))
+        return -1;
+    if (isinf(*(double*)p1) && isinf(*(double*)p2))
+        return 0;
+    if (isinf(*(double*)p1))
+        return 1;
+    if (isinf(*(double*)p2))
+        return -1;
+    if (*(double*)p1 < *(double*)p2)
+        return -1;
+    if (*(double*)p1 == *(double*)p2)
+        return 0;
+    if (*(double*)p1 > *(double*)p2)
+        return 1;
+    return 0;
+}
+
+size_t qSortDouble(double* dArray, size_t nlength)
+{
+    qsort((void*)dArray, nlength, sizeof(double), compareDouble);
+    for (int i = nlength-1; i >= 0; i--)
+    {
+        if (!isnan(dArray[i]) && !isinf(dArray[i]))
+            return i+1;
+    }
+    return 0;
 }
 
 
