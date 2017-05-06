@@ -571,6 +571,7 @@ vector<string> Documentation::getHelpArticle(const string& _sTheme)
                 }
                 vReturn.push_back(sLine);
             }
+            fDocument.close();
             if (!vReturn.size())
                 vReturn.push_back("NO_ENTRY_FOUND");
         }
