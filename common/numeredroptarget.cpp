@@ -220,8 +220,11 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
             else if (m_type == CONSOLE)
             {
                 wxTextDataObject* textdata = static_cast<wxTextDataObject*>(data);
+                string sText = textdata->GetText().ToStdString();
+                while (sText.find('\n') != string::npos)
+                    sText[sText.find('\n')] = ';';
                 NumeReWindow* top = static_cast<NumeReWindow*>(m_topWindow);
-                top->getTerminal()->ProcessInput(textdata->GetText().length(), textdata->GetText().ToStdString());
+                top->getTerminal()->ProcessInput(sText.length(), sText);
             }
             break;
         }
@@ -232,8 +235,8 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
 NumeReDropTarget::fileType NumeReDropTarget::getFileType(const wxString& filename)
 {
     if (filename.find('.') == string::npos)
-        return NOTSUPPORTED;
-    wxString textExtensions = ";txt;dat;log;tex;csv;jdx;jcm;dx;";
+        return NOEXTENSION;
+    wxString textExtensions = ";txt;dat;log;tex;csv;jdx;jcm;dx;nhlp;ndb;nlng;def;ini;hlpidx;m;";
     wxString binaryExtensions = ";ndat;xls;xlsx;ods;labx;ibw;";
     wxString execExtensions = ";nscr;nprc;";
 
