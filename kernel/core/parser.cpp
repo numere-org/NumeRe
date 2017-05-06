@@ -581,6 +581,8 @@ value_type parser_ZernikeRadial(int n, int m, value_type rho)
 {
     value_type vReturn = 0;
     value_type vNorm = 0;
+    if (fabs(rho) > 1.0)
+        return NAN;
     if ((n-m) % 2)
         return 0.0;
     for (int k = 0; k <= (n-m)/2; k++)
