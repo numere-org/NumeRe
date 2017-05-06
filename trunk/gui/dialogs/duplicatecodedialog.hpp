@@ -48,6 +48,8 @@ class DuplicateCodeDialog : public ViewerFrame
         void OnButtonStart(wxCommandEvent& event);
         void OnItemClick(wxListEvent& event);
 
+        void OnStart();
+
         DECLARE_EVENT_TABLE();
 };
 
