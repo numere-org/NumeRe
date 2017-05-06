@@ -103,16 +103,7 @@ void DuplicateCodeDialog::OnButtonOK(wxCommandEvent& event)
 
 void DuplicateCodeDialog::OnButtonStart(wxCommandEvent& event)
 {
-    int nFlags = 0;
-    if (m_varSemantics->IsChecked())
-        nFlags |= 1;
-    if (m_StringSemantics->IsChecked())
-        nFlags |= 2;
-    if (m_NumSemantics->IsChecked())
-        nFlags |= 4;
-    m_resultList->DeleteAllItems();
-    NumeReEditor* edit = static_cast<NumeReEditor*>(m_parent);
-    edit->OnFindDuplicateCode(nFlags);
+    CallAfter(DuplicateCodeDialog::OnStart);
 }
 
 void DuplicateCodeDialog::OnItemClick(wxListEvent& event)
@@ -130,3 +121,16 @@ void DuplicateCodeDialog::OnItemClick(wxListEvent& event)
     edit->IndicateDuplicatedLine(nStart1-1, nEnd1-1, nStart2-1, nEnd2-1);
 }
 
+void DuplicateCodeDialog::OnStart()
+{
+    int nFlags = 0;
+    if (m_varSemantics->IsChecked())
+        nFlags |= 1;
+    if (m_StringSemantics->IsChecked())
+        nFlags |= 2;
+    if (m_NumSemantics->IsChecked())
+        nFlags |= 4;
+    m_resultList->DeleteAllItems();
+    NumeReEditor* edit = static_cast<NumeReEditor*>(m_parent);
+    edit->OnFindDuplicateCode(nFlags);
+}
