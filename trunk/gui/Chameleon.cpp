@@ -88,6 +88,7 @@
 #include "newstart1.xpm"
 #include "newcontinue1.xpm"
 #include "newstop1.xpm"
+#include "gtk-apply.xpm"
 //#include "stepnext.xpm"
 //#include "stepout.xpm"
 //#include "stepover.xpm"
@@ -1068,7 +1069,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         }
         case ID_USEANALYZER:
         {
+            wxToolBar* t = GetToolBar();
             m_currentEd->ToggleSettings(NumeReEditor::SETTING_USEANALYZER);
+            t->ToggleTool(ID_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
+            wxMenu* tools = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
+            tools->Check(ID_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
             break;
         }
         case ID_GOTOLINE:
@@ -1128,8 +1133,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_FIND_DUPLICATES:
         {
             // only if the file type is matching
-            if (m_currentEd->InitDuplicateCode())
-                m_currentEd->OnFindDuplicateCode();
+            m_currentEd->InitDuplicateCode();
             break;
         }
         case ID_STRIP_SPACES_BOTH:
@@ -1942,7 +1946,7 @@ void NumeReWindow::PageHasChanged (int pageNr)
 		m_currentEd = NULL;
 	}
 	m_book->Refresh();
-	if(m_currentEd != NULL)
+	if (m_currentEd != NULL)
 	{
         wxMenu* view = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_VIEW")));
         view->Check(ID_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
@@ -2149,7 +2153,7 @@ void NumeReWindow::OnPageChange (wxNotebookEvent &WXUNUSED(event))
 {
 	if (!m_setSelection)
 	{
-        OnUpdateDebugUI();
+        ToolbarStatusUpdate();
 		PageHasChanged();
 	}
 }
@@ -2906,7 +2910,7 @@ void NumeReWindow::OnStatusTimer(wxTimerEvent &WXUNUSED(event))
 		m_updateTimer->Stop();
 		UpdateStatusBar();
 		OnUpdateSaveUI();
-		OnUpdateDebugUI();
+		ToolbarStatusUpdate();
 		OnUpdateConnectionUI();
 		OnUpdateCompileUI();
 		OnUpdateProjectUI();
@@ -2921,7 +2925,7 @@ void NumeReWindow::OnStatusTimer(wxTimerEvent &WXUNUSED(event))
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::OnUpdateDebugUI()
+void NumeReWindow::ToolbarStatusUpdate()
 {
 	/*if(!m_options->GetPerms()->isEnabled(PERM_DEBUG))
 	{
@@ -2944,12 +2948,16 @@ void NumeReWindow::OnUpdateDebugUI()
         tb->EnableTool(ID_DEBUG_ADDEDITORBREAKPOINT, true);
         tb->EnableTool(ID_DEBUG_REMOVEEDITORBREAKPOINT, true);
         tb->EnableTool(ID_DEBUG_CLEAREDITORBREAKPOINTS, true);
+        tb->EnableTool(ID_USEANALYZER, true);
+        tb->ToggleTool(ID_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
 	}
 	else
 	{
         tb->EnableTool(ID_DEBUG_ADDEDITORBREAKPOINT, false);
         tb->EnableTool(ID_DEBUG_REMOVEEDITORBREAKPOINT, false);
         tb->EnableTool(ID_DEBUG_CLEAREDITORBREAKPOINTS, false);
+        tb->EnableTool(ID_USEANALYZER, false);
+        tb->ToggleTool(ID_USEANALYZER, false);
 	}
 
 	/*if(isDebugging)
@@ -3756,10 +3764,15 @@ void NumeReWindow::UpdateToolbar()
         t->EnableTool(i, false);
     }
 
+    t->AddSeparator();
+    wxBitmap bmAnalyzer(gtk_apply_xpm);
+    t->AddTool(ID_USEANALYZER, _guilang.get("GUI_TB_ANALYZER"), bmAnalyzer, _guilang.get("GUI_TB_ANALYZER_TTP"), wxITEM_CHECK);
+    t->ToggleTool(ID_USEANALYZER, false);
+    t->EnableTool(ID_USEANALYZER, false);
 
 	t->Realize();
 
-	OnUpdateDebugUI();
+	ToolbarStatusUpdate();
 
 
 	m_config->Write("Interface/ShowToolbarText", showText ? "true" : "false");

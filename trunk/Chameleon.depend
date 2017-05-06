@@ -6556,7 +6556,7 @@
 	"../kernel/kernel.hpp"
 	"../kernel/debugmessenger.hpp"
 
-1492520794 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1494088700 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -7707,7 +7707,7 @@
 	<string>
 	<vector>
 
-1493142977 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1494075296 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -7767,7 +7767,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1493242200 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1494089560 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -7825,6 +7825,7 @@
 	"newstart1.xpm"
 	"newcontinue1.xpm"
 	"newstop1.xpm"
+	"gtk-apply.xpm"
 	"breakpoint_octagon.xpm"
 	"breakpoint_octagon_crossed.xpm"
 	"breakpoint_octagon_disable.xpm"
@@ -8743,7 +8744,7 @@
 1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\colourdata.h
 	"wx/colour.h"
 
-1491889444 d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.hpp
+1494096349 d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.hpp
 	"../viewerframe.hpp"
 	<wx/panel.h>
 	<wx/gauge.h>
@@ -8751,7 +8752,7 @@
 	<string>
 	<vector>
 
-1491889502 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
+1494096411 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
 	"duplicatecodedialog.hpp"
 	"../../kernel/core/language.hpp"
 	"../../editor/editor.h"
@@ -8783,4 +8784,6 @@
 	"wx/defs.h"
 	"wx/object.h"
 	"wx/list.h"
+
+1494087637 d:\cpp\numere-source\trunk\gui\gtk-apply.xpm
 

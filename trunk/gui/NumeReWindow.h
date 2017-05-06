@@ -175,7 +175,7 @@ class NumeReWindow : public wxFrame
         void Test(wxCommandEvent& event);
 
         void OnUpdateSaveUI();//wxUpdateUIEvent &event);
-        void OnUpdateDebugUI();//wxUpdateUIEvent &event);
+        void ToolbarStatusUpdate();//wxUpdateUIEvent &event);
         void OnUpdateConnectionUI();//wxUpdateUIEvent &event);
         void OnUpdateCompileUI();//wxUpdateUIEvent &event);
         void OnUpdateProjectUI();//wxUpdateUIEvent &event);
