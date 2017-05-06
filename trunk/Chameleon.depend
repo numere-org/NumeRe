@@ -8470,7 +8470,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1493802264 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
+1493825743 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -8756,14 +8756,14 @@
 	"../../kernel/core/language.hpp"
 	"../../editor/editor.h"
 
-1492520407 source:d:\cpp\numere-source\trunk\common\numeredroptarget.cpp
+1494062444 source:d:\cpp\numere-source\trunk\common\numeredroptarget.cpp
 	"numeredroptarget.hpp"
 	"../gui/NumeReWindow.h"
 	"../editor/editor.h"
 	"../gui/wxssh.h"
 	"../gui/filetree.hpp"
 
-1492422183 d:\cpp\numere-source\trunk\common\numeredroptarget.hpp
+1494061934 d:\cpp\numere-source\trunk\common\numeredroptarget.hpp
 	<wx/wx.h>
 	<wx/dnd.h>
 

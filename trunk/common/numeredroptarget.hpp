@@ -22,14 +22,14 @@
 #include <wx/wx.h>
 #include <wx/dnd.h>
 
-#if 1
+#if wxUSE_DRAG_AND_DROP
 
 
 class NumeReDropTarget : public wxDropTarget
 {
     public:
         enum parentType {NUMEREWINDOW, EDITOR, FILETREE, CONSOLE};
-        enum fileType {TEXTFILE, BINARYFILE, EXECUTABLE, NOTSUPPORTED};
+        enum fileType {NOEXTENSION, TEXTFILE, BINARYFILE, EXECUTABLE, NOTSUPPORTED};
 
         NumeReDropTarget(wxWindow* topwindow, wxWindow* owner, parentType type);
 
