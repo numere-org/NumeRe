@@ -630,6 +630,7 @@ void BI_splash()
 int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _option, Parser& _parser, Define& _functions, PlotData& _pData, Script& _script, bool bParserActive)
 {
     string sArgument = "";  // String fuer das evtl. uebergebene Argument
+    StripSpaces(sCmd);
     sCmd += " ";
     string sCommand = findCommand(sCmd).sString;
     int nArgument = -1;     // Integer fuer das evtl. uebergebene Argument

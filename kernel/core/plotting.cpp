@@ -271,12 +271,13 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
             sLabels = "";
         }
         _pInfo.sCommand = findCommand(sCmd).sString;
+        size_t nOffset = findCommand(sCmd).nPos;
         if (sCmd.find("-set") != string::npos && !isInQuotes(sCmd, sCmd.find("-set")))
-            sFunc = sCmd.substr(_pInfo.sCommand.length(), sCmd.find("-set")-_pInfo.sCommand.length());
+            sFunc = sCmd.substr(nOffset+_pInfo.sCommand.length(), sCmd.find("-set")-_pInfo.sCommand.length()-nOffset);
         else if (sCmd.find("--") != string::npos && !isInQuotes(sCmd, sCmd.find("--")))
-            sFunc = sCmd.substr(_pInfo.sCommand.length(), sCmd.find("--")-_pInfo.sCommand.length());
+            sFunc = sCmd.substr(nOffset+_pInfo.sCommand.length(), sCmd.find("--")-_pInfo.sCommand.length()-nOffset);
         else
-            sFunc = sCmd.substr(_pInfo.sCommand.length());
+            sFunc = sCmd.substr(nOffset+_pInfo.sCommand.length());
 
         // --> Unnoetige Leerstellen entfernen <--
         StripSpaces(sFunc);

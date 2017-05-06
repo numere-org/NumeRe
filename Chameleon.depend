@@ -8352,7 +8352,7 @@
 	"define.hpp"
 	"../kernel.hpp"
 
-1491298170 source:d:\cpp\numere-source\trunk\kernel\core\doc_helper.cpp
+1494108160 source:d:\cpp\numere-source\trunk\kernel\core\doc_helper.cpp
 	"doc_helper.hpp"
 	"version.h"
 
@@ -8471,7 +8471,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1493825743 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
+1494113252 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -8511,7 +8511,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1490798690 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1494111325 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -8523,7 +8523,7 @@
 	<cstddef>
 	<cstdarg>
 
-1493798762 source:d:\cpp\numere-source\trunk\kernel\core\tools.cpp
+1494109393 source:d:\cpp\numere-source\trunk\kernel\core\tools.cpp
 	"tools.hpp"
 	"../kernel.hpp"
 	<cstdlib>

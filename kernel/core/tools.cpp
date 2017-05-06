@@ -102,6 +102,7 @@ int matchParams(const string& sCmd, const string& sParam, const char cFollowing)
                             || __sCmd[nPos-1] == '-')
                         && (__sCmd[nPos+sParam.length()] == ' '
                             || __sCmd[nPos+sParam.length()] == '-'
+                            || __sCmd[nPos+sParam.length()] == '='
                             || __sCmd[nPos+sParam.length()] == '"')
                     )
                     {

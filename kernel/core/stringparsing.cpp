@@ -160,8 +160,10 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     /// CHANGED: Nur Rekursionen durchfuehren, wenn auch '=' in dem String gefunden wurde. Nur dann ist sie naemlich noetig.
     if (sLine.find(',') != string::npos && sLine.find('=') != string::npos)
     {
-        string sStringObject = "";
-        if (sLine.substr(sLine.find_first_not_of(' '), 7) == "string(")
+        string sStringObject = sLine.substr(0, sLine.find('='));
+        if (sStringObject.substr(sStringObject.find_first_not_of(' '), 7) == "string("
+            || sStringObject.substr(sStringObject.find_first_not_of(' '), 5) == "data("
+            || _data.containsCacheElements(sStringObject))
         {
             unsigned int nPos = getMatchingParenthesis(sLine);
             nPos = sLine.find('=', nPos);
@@ -172,6 +174,8 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             sStringObject = sLine.substr(0, nPos + 1);
             sLine.erase(0,nPos+1);
         }
+        else
+            sStringObject.clear();
         StripSpaces(sLine);
 
         if (sLine != getNextArgument(sLine, false))
