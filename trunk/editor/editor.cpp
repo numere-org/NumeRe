@@ -3692,7 +3692,10 @@ int NumeReEditor::calculateCyclomaticComplexity(int startline, int endline)
         {
             int wordstart = this->WordStartPosition(i, true);
             int wordend = this->WordEndPosition(i, true);
-            if (this->GetTextRange(wordstart, wordend) == "if" || this->GetTextRange(wordstart, wordend) == "elseif")
+            if (this->GetTextRange(wordstart, wordend) == "if"
+                || this->GetTextRange(wordstart, wordend) == "elseif"
+                || this->GetTextRange(wordstart, wordend) == "while"
+                || this->GetTextRange(wordstart, wordend) == "for")
                 nCycComplx++;
             i = wordend;
         }
