@@ -164,6 +164,7 @@ private:
 	wxString FindClickedProcedure();
 	wxString FindMarkedProcedure(int charpos);
 	wxString FindProcedureDefinition();
+	int FindNamingProcedure();
 
 	wxString generateAutoCompList(const wxString& wordstart, string sPreDefList);
 

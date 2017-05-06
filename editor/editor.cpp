@@ -1570,6 +1570,18 @@ void NumeReEditor::AnalyseCode()
                 }
                 else
                 {
+                    // check the name of the procedure - is there a naming procedure?
+                    int nNamingProcedure = FindNamingProcedure();
+                    if (nNamingProcedure == wxNOT_FOUND)
+                    {
+                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_NONAMINGPROCEDURE")), ANNOTATION_ERROR);
+                    }
+                    else if (nNamingProcedure != currentLine)
+                    {
+                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_THISFILEPROCEDURE")), ANNOTATION_WARN);
+                    }
+
+                    // Apply metrics
                     int nCyclomaticComplexity = calculateCyclomaticComplexity(currentLine, LineFromPosition(nProcedureEnd));
                     int nLinesOfCode = calculateLinesOfCode(currentLine, LineFromPosition(nProcedureEnd));
                     int nNumberOfComments = countNumberOfComments(currentLine, LineFromPosition(nProcedureEnd));
@@ -3280,6 +3292,36 @@ wxString NumeReEditor::FindProcedureDefinition()
         }
     }
     return "";
+}
+
+int NumeReEditor::FindNamingProcedure()
+{
+    wxString sNamingProcedure = "$" + this->GetFilenameString();
+    if (sNamingProcedure.find('.') != string::npos)
+        sNamingProcedure.erase(sNamingProcedure.find('.'));
+    sNamingProcedure += "(";
+    for (int i = 0; i < this->LineFromPosition(this->GetLastPosition()); i++)
+    {
+        wxString currentline = this->GetLine(i);
+        if (currentline.find("procedure") != string::npos && currentline.find(sNamingProcedure) != string::npos)
+        {
+            int linepos = this->PositionFromLine(i);
+            int offset = 0;
+            while (currentline.find("procedure", offset) != string::npos && this->GetStyleAt(linepos+currentline.find("procedure", offset)+1) != wxSTC_NPRC_COMMAND)
+                offset = currentline.find("procedure", offset)+10;
+
+            if (currentline.find("procedure", offset) != string::npos && this->GetStyleAt(linepos+currentline.find("procedure", offset)+1) == wxSTC_NPRC_COMMAND)
+            {
+                int procloc = currentline.find("procedure", offset)+9;
+                while (currentline.find(sNamingProcedure, procloc) != string::npos && this->GetStyleAt(linepos+currentline.find(sNamingProcedure, procloc)+1) != wxSTC_NPRC_PROCEDURES)
+                    procloc = currentline.find(sNamingProcedure, procloc)+1+sNamingProcedure.length();
+
+                if (currentline.find(sNamingProcedure, procloc) != string::npos && this->GetStyleAt(linepos+currentline.find(sNamingProcedure)+1) == wxSTC_NPRC_PROCEDURES)
+                    return i;
+            }
+        }
+    }
+    return wxNOT_FOUND;
 }
 
 wxString NumeReEditor::generateAutoCompList(const wxString& wordstart, string sPreDefList)
