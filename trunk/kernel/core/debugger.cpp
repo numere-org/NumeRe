@@ -123,6 +123,8 @@ void NumeReDebugger::gatherInformations(string** sLocalVars,
 
 void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand, unsigned int _nLineNumber, map<string,string>& mVarMap, double** vVarArray, string* sVarArray, int nVarArray)
 {
+    if (bAlreadyThrown)
+        return;
     sErraticCommand = _sErraticCommand;
     nLineNumber = _nLineNumber;
     for (int i = 0; i < nVarArray; i++)
