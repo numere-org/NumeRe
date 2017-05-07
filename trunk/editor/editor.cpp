@@ -4204,7 +4204,8 @@ bool NumeReEditor::containsAssignment(const string& sCurrentLine)
             && sCurrentLine[i-1] != '>'
             && sCurrentLine[i-1] != '!'
             && sCurrentLine[i-1] != '='
-            && sCurrentLine[i+1] != '=')
+            && sCurrentLine[i+1] != '='
+            && !isInQuotes(sCurrentLine, i))
             return true;
     }
     return false;
