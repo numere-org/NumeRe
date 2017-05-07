@@ -4534,7 +4534,7 @@
 1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\headercol.h
 	"wx/bitmap.h"
 
-1491062000 source:d:\cpp\numere-source\trunk\chameleon.rc
+1494155443 source:d:\cpp\numere-source\trunk\chameleon.rc
 	<windows.h>
 	"kernel/core/version.h"
 	<wx/msw/wx.rc>
@@ -7707,7 +7707,7 @@
 	<string>
 	<vector>
 
-1494149636 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1494165653 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -8356,7 +8356,7 @@
 	"doc_helper.hpp"
 	"version.h"
 
-1491408583 source:d:\cpp\numere-source\trunk\kernel\core\documentation.cpp
+1494151217 source:d:\cpp\numere-source\trunk\kernel\core\documentation.cpp
 	"documentation.hpp"
 	"../kernel.hpp"
 
