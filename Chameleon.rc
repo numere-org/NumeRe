@@ -45,7 +45,7 @@ FILETYPE VFT_APP
             VALUE "FileVersion", RC_FILEVERSION_STRING
             VALUE "FileDescription", "NumeRe: Framework für Numerische Rechnungen"
             VALUE "InternalName", "NumeRe"
-            VALUE "LegalCopyright", "(c) 2016, Erik Hänel et al. | GNU GPL v3.0"
+            VALUE "LegalCopyright", "(c) 2017, Erik Hänel et al. | GNU GPL v3.0"
             VALUE "LegalTrademarks", "muParser, (c) 2011 Ingo Berg; Boost, (c) 2006 Joe Coder; MathGL, (c) 2012 Alexey A. Balakin; GSL, (c) 2006, M. Galassi et al.; Eigen (c) 2007-2011, Benoit Jacob et al.; TinyXML-2, (c) 2014, Lee Thomason; BasicExcel, (c) 2006, Yap Chun Wei"
             VALUE "OriginalFilename", "numere.exe"
             VALUE "ProductName", "NumeRe | Freie numerische Software unter der GNU GPL v3.0"

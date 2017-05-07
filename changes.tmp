@@ -40,3 +40,13 @@ Added	Die krummlinigen Koordinaten bei "plot", "surf", "mesh", "dens" und "cont"
 Cleaned	Das Hilfefenster wurde verbreitert. 800*600 Bilder sollten nun besser dargestellt werden.
 Fixed	Der "compose"-Modus ist nun wieder direkt von der Konsole aus verwendbar.
 New	Sinuglaritaeten in Plots werden nun als solche erkannt und der Datenbereich wird nicht mehr uebertrieben davon beeinflusst.
+Fixed	Die Darstellung von Exponenten in Hilfedateien wurde verbessert.
+Added	Der Codeanalyzer zeigt nun, wenn eine Prozedurdatei keine namensgebende Prozedur enthaelt.
+Fixed	Ein Stringparser-Fehler wurde behoben.
+Fixed	Ein Fehler beim Installieren von Plugins wurde behoben.
+Added	Der Codeanalyzer hat nun ein Toolbar Element.
+Fixed	Die Berechnung der zyklomatischen Komplexitaet wurde an die Definition angepasst.
+Fixed	Der Radialteil der Zernikepolynome wurde an die Definition angepasst.
+Cleaned	Der DuplicateCodeDialog laesst NumeRe nun nicht mehr so schnell einfrieren.
+Fixed	Ein kleinerer Fehler bei der Zeilenberechnung des Debuggers wurde behoben.
+Fixed	Das Problem mit der rechteckigen Auswahl wurde behoben.

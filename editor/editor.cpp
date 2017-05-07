@@ -116,7 +116,6 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 {
     m_mainFrame = mframe;
 	m_debugManager = debugManager;
-	//m_parentNotebook = (ChameleonNotebook*)parent;
 	m_options = options;
 	m_project = project;
 	m_project->AddEditor(this);
@@ -148,10 +147,9 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
     this->SetMultipleSelection(true);
     this->SetVirtualSpaceOptions(wxSTC_SCVS_RECTANGULARSELECTION);
     this->SetAdditionalSelectionTyping(true);
-    this->SetMultiPaste(true);
+    this->SetMultiPaste(wxSTC_MULTIPASTE_EACH);
 
     this->SetMarginWidth(0, 40);
-
     this->SetMarginType(0, wxSTC_MARGIN_NUMBER);
 
 	this->SetMarginWidth(1, 16);
@@ -186,27 +184,16 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 	this->MarkerDefine(MARKER_BREAKPOINT, wxSTC_MARK_CIRCLE);
 	this->MarkerSetBackground(MARKER_BREAKPOINT, wxColour("red"));
 
-	//this->MarkerDefine(1, wxSTC_MARK_CIRCLE);
-	//this->MarkerSetForeground(1, wxColour("red"));
-
 	this->MarkerDefine(MARKER_FOCUSEDLINE, wxSTC_MARK_SHORTARROW);
 	this->MarkerSetBackground(MARKER_FOCUSEDLINE, wxColour("yellow"));
 
 	this->MarkerDefine(MARKER_MODIFIED, wxSTC_MARK_LEFTRECT);
 	this->MarkerSetBackground(MARKER_MODIFIED, wxColour(255, 220, 0));
+
 	this->MarkerDefine(MARKER_SAVED, wxSTC_MARK_LEFTRECT);
 	this->MarkerSetBackground(MARKER_SAVED, wxColour("green"));
 
 	this->SetMarginSensitive(1, true);
-
-
-	/*
-	for(int i = 0; i <= wxSTC_MARK_PLUS; i++)
-	{
-		this->MarkerDefine(i, i);
-		this->MarkerAdd(i, i);
-	}
-	*/
 
 	this->UsePopUp(false);
 
@@ -239,10 +226,6 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 					| wxSTC_PERFORMED_REDO;
 
 	this->SetModEventMask(modmask);
-
-
-
-
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -615,17 +598,6 @@ void NumeReEditor::MakeBlockCheck()
 
 void NumeReEditor::OnKeyDn(wxKeyEvent &event)
 {
-    //wxMessageBox(wxString((char)this->GetCharAt(this->GetCurrentPos())));
-    if (event.GetKeyCode() < WXK_START && event.GetKeyCode() != WXK_ESCAPE)
-    {
-        if (this->HasSelection())
-        {
-            for (int i = LineFromPosition(this->GetSelectionStart()); i <= LineFromPosition(this->GetSelectionEnd()); i++)
-                markModified(i);
-        }
-        else
-            markModified(this->GetCurrentLine());
-    }
     if (this->HasSelection()
         && event.GetKeyCode() != WXK_SHIFT
         && event.GetKeyCode() != WXK_CAPITAL
@@ -696,7 +668,8 @@ void NumeReEditor::OnKeyDn(wxKeyEvent &event)
         }
     }
     OnKeyDown(event);
-    MakeBraceCheck();
+    if (this->GetSelections() <= 1)
+        MakeBraceCheck();
     MakeBlockCheck();
     if (!event.ControlDown() && !event.ShiftDown())
         ClearDblClkIndicator();
@@ -706,7 +679,8 @@ void NumeReEditor::OnKeyDn(wxKeyEvent &event)
 void NumeReEditor::OnKeyRel(wxKeyEvent &event)
 {
     //wxMessageBox(wxString((char)this->GetCharAt(this->GetCurrentPos())));
-    MakeBraceCheck();
+    if (this->GetSelections() <= 1)
+        MakeBraceCheck();
     MakeBlockCheck();
     event.Skip();
     AnalyseCode();
@@ -2621,6 +2595,8 @@ void NumeReEditor::ResetEditor()
 
 	MarkerDeleteAll(MARKER_BREAKPOINT);
 	MarkerDeleteAll(MARKER_FOCUSEDLINE);
+	MarkerDeleteAll(MARKER_MODIFIED);
+	MarkerDeleteAll(MARKER_SAVED);
 
 	if(m_project != NULL && m_project->IsSingleFile())
 	{
@@ -2783,6 +2759,24 @@ void NumeReEditor::markSaved()
 void NumeReEditor::OnEditorModified(wxStyledTextEvent &event)
 {
 	m_project->SetCompiled(false);
+	if (!m_bLoadingFile && (event.GetModificationType() & wxSTC_MOD_INSERTTEXT || event.GetModificationType() & wxSTC_MOD_DELETETEXT))
+	{
+        int nLine = this->LineFromPosition(event.GetPosition());
+        int nLinesAdded = event.GetLinesAdded();
+        if (nLinesAdded > 0)
+        {
+            for (int i = 0; i <= nLinesAdded; i++)
+            {
+                this->markModified(i+nLine);
+            }
+        }
+        else if (nLinesAdded < 0)
+        {
+            this->markModified(nLine);
+        }
+        else
+            this->markModified(nLine);
+	}
 	event.Skip();
 }
 
