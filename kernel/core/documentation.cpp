@@ -1040,41 +1040,18 @@ void doc_ReplaceExprContentForHTML(string& sExpr, const Settings& _option)
                 i += sHTMLEntities[n][1].length()-1;
             }
         }
-
-        /*if (sExpr.substr(i,3) == "chi" && (!i || !isalpha(sExpr[i-1])) && (i + 3 == sExpr.length() || !isalpha(sExpr[i+3])))
-        {
-            sExpr.replace(i,3,"&chi;");
-            i += 4;
-        }
-        if (sExpr.substr(i,3) == "Phi" && (!i || !isalpha(sExpr[i-1])) && (i + 3 == sExpr.length() || !isalpha(sExpr[i+3])))
-        {
-            sExpr.replace(i,3,"&Phi;");
-            i += 4;
-        }
-        if (sExpr.substr(i,3) == "phi" && (!i || !isalpha(sExpr[i-1])) && (i + 3 == sExpr.length() || !isalpha(sExpr[i+3])))
-        {
-            sExpr.replace(i,3,"&phi;");
-            i += 4;
-        }
-        if (sExpr.substr(i,3) == "rho" && (!i || !isalpha(sExpr[i-1])) && (i + 3 == sExpr.length() || !isalpha(sExpr[i+3])))
-        {
-            sExpr.replace(i,3,"&rho;");
-            i += 4;
-        }
-        if (sExpr.substr(i,5) == "theta" && (!i || !isalpha(sExpr[i-1])) && (i + 5 == sExpr.length() || !isalpha(sExpr[i+5])))
-        {
-            sExpr.replace(i,5,"&theta;");
-            i += 7;
-        }
-        if (sExpr.substr(i,5) == "delta" && (!i || !isalpha(sExpr[i-1])) && (i + 5 == sExpr.length() || !isalpha(sExpr[i+5])))
-        {
-            sExpr.replace(i,5,"&delta;");
-            i += 7;
-        }*/
         if (sExpr[i] == '^')
         {
-            sExpr.insert(i+2,"</sup>");
-            sExpr.replace(i,1,"<sup>");
+            if (sExpr[i+1] == '(')
+            {
+                sExpr.replace(getMatchingParenthesis(sExpr.substr(i))+i, 1, "</sup>");
+                sExpr.replace(i, 2, "<sup>");
+            }
+            else
+            {
+                sExpr.insert(i+2, "</sup>");
+                sExpr.replace(i, 1, "<sup>");
+            }
         }
         if (sExpr[i] == '_')
         {
