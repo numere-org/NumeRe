@@ -62,6 +62,8 @@ public:
 	void OnMouseDn(wxMouseEvent &event);
 	void OnMouseDblClk(wxMouseEvent& event);
 	void OnEnter(wxMouseEvent& event);
+	void OnLeave(wxMouseEvent& event);
+	void OnLoseFocus(wxFocusEvent& event);
 	void OnMouseDwell(wxStyledTextEvent& event);
 	void OnSavePointReached(wxStyledTextEvent& event);
 	void ClearDblClkIndicator();
