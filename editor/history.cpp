@@ -292,6 +292,8 @@ void NumeReHistory::loadHistory()
     if (fileExists(sFileName.ToStdString()))
     {
         this->LoadFile(sFileName);
+        if (this->GetLineCount() > 10000)
+            this->DeleteRange(0, this->PositionFromLine(this->GetLineCount()-99999));
         this->GotoPos(this->GetLastPosition());
     }
     addHeader();
