@@ -685,7 +685,7 @@ void NumeReEditor::OnKeyRel(wxKeyEvent &event)
         MakeBraceCheck();
     MakeBlockCheck();
     event.Skip();
-    AnalyseCode();
+    //AnalyseCode();
     //OnKeyUp(event);
 }
 
@@ -1324,10 +1324,14 @@ void NumeReEditor::AnalyseCode()
             }
             if (sSyntaxElement == "clear" || sSyntaxElement == "delete" || sSyntaxElement == "remove")
             {
+                if (sSyntaxElement == "remove" && this->GetStyleAt(this->WordStartPosition(wordend+1, true)) == wxSTC_NSCR_PREDEFS)
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_CANNOTREMOVEPREDEFS")), ANNOTATION_ERROR);
                 string sArgs = this->GetTextRange(wordend, this->GetLineEndPosition(currentLine)).ToStdString();
                 while (sArgs.back() == '\r' || sArgs.back() == '\n')
                     sArgs.pop_back();
-                if (!matchParams(sArgs, "ignore") && !matchParams(sArgs, "i"))
+                if (!matchParams(sArgs, "ignore")
+                    && !matchParams(sArgs, "i")
+                    && (sSyntaxElement != "remove" || this->GetStyleAt(this->WordStartPosition(wordend+1, true)) != wxSTC_NSCR_CUSTOM_FUNCTION))
                     addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_APPENDIGNORE")), ANNOTATION_NOTE);
             }
             if (sSyntaxElement != "hline"
@@ -2419,7 +2423,7 @@ void NumeReEditor::updateDefaultHighlightSettings()
     this->StyleSetSize(wxSTC_STYLE_BRACEBAD, this->StyleGetSize(0)+1);
 
     // Style settings for the displayed annotations
-    this->StyleSetBackground(ANNOTATION_NOTE, wxColour(230,230,230));
+    this->StyleSetBackground(ANNOTATION_NOTE, wxColour(240,240,240));
     this->StyleSetForeground(ANNOTATION_NOTE, wxColour(120,120,120));
     this->StyleSetSize(ANNOTATION_NOTE, this->StyleGetSize(0)-2);
     this->StyleSetItalic(ANNOTATION_NOTE, true);
@@ -2794,6 +2798,8 @@ void NumeReEditor::OnEditorModified(wxStyledTextEvent &event)
         else
             this->markModified(nLine);
 	}
+	if (getEditorSetting(SETTING_USEANALYZER))
+        CallAfter(NumeReEditor::AnalyseCode);
 	event.Skip();
 }
 
