@@ -5662,7 +5662,7 @@
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\printps.h
 	"wx/prntbase.h"
 
-1494072023 d:\cpp\numere-source\trunk\editor\editor.h
+1494312539 d:\cpp\numere-source\trunk\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -7707,7 +7707,7 @@
 	<string>
 	<vector>
 
-1494165653 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1494279343 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"

@@ -62,6 +62,8 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
 	EVT_LEFT_DCLICK		(NumeReEditor::OnMouseDblClk)
 	//EVT_MOTION          (NumeReEditor::OnMouseMotion)
 	EVT_ENTER_WINDOW    (NumeReEditor::OnEnter)
+	EVT_LEAVE_WINDOW    (NumeReEditor::OnLeave)
+	EVT_KILL_FOCUS      (NumeReEditor::OnLoseFocus)
 	EVT_STC_DWELLSTART  (-1, NumeReEditor::OnMouseDwell)
 	EVT_STC_MARGINCLICK (-1, NumeReEditor::OnMarginClick)
 	//EVT_STC_START_DRAG  (-1, NumeReEditor::OnStartDrag)
@@ -759,9 +761,24 @@ void NumeReEditor::OnEnter(wxMouseEvent& event)
     event.Skip();
 }
 
+void NumeReEditor::OnLeave(wxMouseEvent& event)
+{
+    if (this->CallTipActive())
+        this->CallTipCancel();
+    event.Skip();
+}
+
+
+void NumeReEditor::OnLoseFocus(wxFocusEvent& event)
+{
+    if (this->CallTipActive())
+        this->CallTipCancel();
+    event.Skip();
+}
+
 void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 {
-    if ((m_fileType != FILE_NSCR && m_fileType != FILE_NPRC) || m_PopUpActive)
+    if ((m_fileType != FILE_NSCR && m_fileType != FILE_NPRC) || m_PopUpActive || !this->HasFocus())
         return;
     //wxPoint pos = event.GetPosition();
     int charpos = event.GetPosition(); //PositionFromPoint(pos);
@@ -2765,7 +2782,7 @@ void NumeReEditor::OnEditorModified(wxStyledTextEvent &event)
         int nLinesAdded = event.GetLinesAdded();
         if (nLinesAdded > 0)
         {
-            for (int i = 0; i <= nLinesAdded; i++)
+            for (int i = 0; i < nLinesAdded; i++)
             {
                 this->markModified(i+nLine);
             }
@@ -3582,6 +3599,7 @@ void NumeReEditor::IndicateDuplicatedLine(int nStart1, int nEnd1, int nStart2, i
 
         this->IndicatorFillRange(abs(iter->first), iter->second);
     }
+    this->ScrollToLine(nStart1);
 }
 
 void NumeReEditor::ClearDblClkIndicator()
