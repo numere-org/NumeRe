@@ -223,6 +223,8 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                 string sText = textdata->GetText().ToStdString();
                 while (sText.find('\n') != string::npos)
                     sText[sText.find('\n')] = ';';
+                while (sText.find('\t') != string::npos)
+                    sText[sText.find('\t')] = ' ';
                 NumeReWindow* top = static_cast<NumeReWindow*>(m_topWindow);
                 top->getTerminal()->ProcessInput(sText.length(), sText);
                 defaultDragResult = wxDragCopy;
