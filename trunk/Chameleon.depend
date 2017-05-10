@@ -7707,7 +7707,7 @@
 	<string>
 	<vector>
 
-1494279343 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1494350603 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -7746,7 +7746,7 @@
 1490791550 d:\cpp\numere-source\trunk\gui\numerenotebook.h
 	<wx/notebook.h>
 
-1490798689 source:d:\cpp\numere-source\trunk\editor\history.cpp
+1494362667 source:d:\cpp\numere-source\trunk\editor\history.cpp
 	"../common/CommonHeaders.h"
 	"../kernel/core/language.hpp"
 	"../kernel/core/tools.hpp"
@@ -7840,7 +7840,7 @@
 	"wx/arrstr.h"
 	<stdarg.h>
 
-1490798689 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
+1494364120 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
 	"wx/notebook.h"
 	"wx/spinctrl.h"
 	<wx/clrpicker.h>
@@ -8163,7 +8163,7 @@
 	"fndrpldialog.hpp"
 	"../../kernel/core/language.hpp"
 
-1492595749 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1494365113 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
