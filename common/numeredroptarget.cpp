@@ -225,6 +225,7 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                     sText[sText.find('\n')] = ';';
                 NumeReWindow* top = static_cast<NumeReWindow*>(m_topWindow);
                 top->getTerminal()->ProcessInput(sText.length(), sText);
+                defaultDragResult = wxDragCopy;
             }
             break;
         }
