@@ -536,6 +536,16 @@ void OptionsDialog::OnButtonOkClick( wxCommandEvent& event )
 	ExitDialog();
 }
 
+
+void OptionsDialog::synchronizeColors()
+{
+    for (size_t i = 0; i < m_colorOptions.GetStyleIdentifier().size(); i++)
+    {
+        m_options->SetStyleForeground(i, m_colorOptions.GetSyntaxStyle(i).foreground);
+        m_options->SetStyleBackground(i, m_colorOptions.GetSyntaxStyle(i).background);
+    }
+}
+
 /*!
  * wxEVT_COMMAND_BUTTON_CLICKED event handler for ID_BUTTON_CANCEL
  */
@@ -551,19 +561,19 @@ void OptionsDialog::OnButtonCancelClick( wxCommandEvent& event )
 
 void OptionsDialog::OnColorPickerChange(wxColourPickerEvent& event)
 {
-    size_t id = m_options->GetIdByIdentifier(m_colorType->GetValue());
+    size_t id = m_colorOptions.GetIdByIdentifier(m_colorType->GetValue());
     if (event.GetId() == ID_CLRPICKR_FORE)
-        m_options->SetStyleForeground(id, m_foreColor->GetColour());
+        m_colorOptions.SetStyleForeground(id, m_foreColor->GetColour());
     else
-        m_options->SetStyleBackground(id, m_backColor->GetColour());
+        m_colorOptions.SetStyleBackground(id, m_backColor->GetColour());
 }
 
 void OptionsDialog::OnColorTypeChange(wxCommandEvent& event)
 {
-    size_t id = m_options->GetIdByIdentifier(m_colorType->GetValue());
+    size_t id = m_colorOptions.GetIdByIdentifier(m_colorType->GetValue());
 
-    m_foreColor->SetColour(m_options->GetSyntaxStyle(id).foreground);
-    m_backColor->SetColour(m_options->GetSyntaxStyle(id).background);
+    m_foreColor->SetColour(m_colorOptions.GetSyntaxStyle(id).foreground);
+    m_backColor->SetColour(m_colorOptions.GetSyntaxStyle(id).background);
 }
 
 void OptionsDialog::OnButtonClick(wxCommandEvent& event)
@@ -588,11 +598,11 @@ void OptionsDialog::OnButtonClick(wxCommandEvent& event)
             break;
         case ID_RESETCOLOR:
         {
-            size_t id = m_options->GetIdByIdentifier(m_colorType->GetValue());
-            m_foreColor->SetColour(m_options->GetDefaultSyntaxStyle(id).foreground);
-            m_backColor->SetColour(m_options->GetDefaultSyntaxStyle(id).background);
-            m_options->SetStyleForeground(id, m_foreColor->GetColour());
-            m_options->SetStyleBackground(id, m_backColor->GetColour());
+            size_t id = m_colorOptions.GetIdByIdentifier(m_colorType->GetValue());
+            m_foreColor->SetColour(m_colorOptions.GetDefaultSyntaxStyle(id).foreground);
+            m_backColor->SetColour(m_colorOptions.GetDefaultSyntaxStyle(id).background);
+            m_colorOptions.SetStyleForeground(id, m_foreColor->GetColour());
+            m_colorOptions.SetStyleBackground(id, m_backColor->GetColour());
             return;
         }
     }
@@ -935,6 +945,8 @@ bool OptionsDialog::EvaluateOptions()
 		m_options->SetSaveSession(m_saveSession->IsChecked());
 		///m_options->SetCombineWatchWindow(m_chkCombineWatchWindow->IsChecked());
 		///m_options->SetShowCompileCommands(m_chkShowCompileCommands->IsChecked());
+
+        synchronizeColors();
 	}
 	else
 	{
@@ -1005,6 +1017,17 @@ void OptionsDialog::InitializeDialog()
     m_precision->SetValue(_option->getPrecision());
     m_autosaveinterval->SetValue(_option->getAutoSaveInterval());
 
+
+    for (size_t i = 0; i < m_options->GetStyleIdentifier().size(); i++)
+    {
+        m_colorOptions.SetStyleForeground(i, m_options->GetSyntaxStyle(i).foreground);
+        m_colorOptions.SetStyleBackground(i, m_options->GetSyntaxStyle(i).background);
+    }
+
+    size_t id = m_colorOptions.GetIdByIdentifier(m_colorType->GetValue());
+
+    m_foreColor->SetColour(m_colorOptions.GetSyntaxStyle(id).foreground);
+    m_backColor->SetColour(m_colorOptions.GetSyntaxStyle(id).background);
 
 	/**m_chkCombineWatchWindow->SetValue(m_options->GetCombineWatchWindow());
 	m_chkShowCompileCommands->SetValue(m_options->GetShowCompileCommands());

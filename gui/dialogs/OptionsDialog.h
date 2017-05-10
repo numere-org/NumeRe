@@ -145,6 +145,7 @@ public:
 
 	void OnChar(wxKeyEvent &event);
 
+	void synchronizeColors();
 
 
 ////@begin OptionsDialog member function declarations
@@ -237,6 +238,7 @@ public:
 
 	NumeReWindow* m_parentFrame;
 	Options* m_options;
+	Options m_colorOptions;
 	Settings* _option;
 
 	wxArrayInt m_permMappings;
