@@ -6768,15 +6768,21 @@ void parser_plot_weightedRange(int nCol, double& dMin, double& dMax, PlotData& _
     if (log(dMax-dMin) > 5)
     {
         const double dPercentage = 0.975;
+        const double dSinglePercentageValue = 0.99;
+        double dSinglePercentageUse;
+        if (nCol == PlotData::ALLRANGES)
+            dSinglePercentageUse = dSinglePercentageValue;
+        else
+            dSinglePercentageUse = dPercentage;
         if (log(fabs(dMin)) <= 1)
         {
-            vector<double> vRanges = _pData.getWeightedRanges(nCol, 1.0, dPercentage);
+            vector<double> vRanges = _pData.getWeightedRanges(nCol, 1.0, dSinglePercentageUse);
             dMin = vRanges[0];
             dMax = vRanges[1];
         }
         else if (log(fabs(dMax)) <= 1)
         {
-            vector<double> vRanges = _pData.getWeightedRanges(nCol, dPercentage, 1.0);
+            vector<double> vRanges = _pData.getWeightedRanges(nCol, dSinglePercentageUse, 1.0);
             dMin = vRanges[0];
             dMax = vRanges[1];
         }
