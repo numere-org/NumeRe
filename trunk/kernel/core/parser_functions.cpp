@@ -5052,28 +5052,42 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
         v = _parser.Eval(nResults);
         if (nResults > 1)
         {
-            if (nOrder >= nResults/2)
-                nOrder = nResults/2;
+            if (nOrder >= nResults/3)
+                nOrder = nResults/3;
+
             double dMedian = 0.0, dExtremum = 0.0;
             double* data = 0;
             data = new double[nOrder];
             int nDir = 0;
+            int nanShift = 0;
             vector<double> vResults;
-            for (int i = 0; i < nResults; i++)
+            if (nOrder < 3)
+            {
+                vResults.push_back(NAN);
+                return false;
+            }
+            for (int i = 0; i+nanShift < nResults; i++)
             {
                 if (i == nOrder)
                     break;
-                data[i] = v[i];
+                while (isnan(v[i+nanShift]) && i+nanShift < nResults-1)
+                    nanShift++;
+                data[i] = v[i+nanShift];
             }
             gsl_sort(data, 1, nOrder);
             dExtremum = gsl_stats_median_from_sorted_data(data, 1, nOrder);
             //cerr << dExtremum << endl;
             //for (int i = 1; i < nResults-1; i++)
-            for (int i = nOrder; i < nResults-nOrder; i++)
+            for (int i = nOrder; i+nanShift < nResults-nOrder; i++)
             {
+                int currNanShift = 0;
                 dMedian = 0.0;
                 for (int j = i; j < i+nOrder; j++)
-                    data[j-i] = v[j];
+                {
+                    while (isnan(v[j+nanShift+currNanShift]) && j+nanShift+currNanShift < nResults-1)
+                        currNanShift++;
+                    data[j-i] = v[j+nanShift+currNanShift];
+                }
                 gsl_sort(data, 1, nOrder);
                 dMedian = gsl_stats_median_from_sorted_data(data, 1, nOrder);
                 //cerr << dMedian << endl;
@@ -5097,9 +5111,9 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
                         {
                             if (!nMode || nMode == 1)
                             {
-                                int nExtremum = i;
-                                double dExtremum = v[i];
-                                for (long long int k = i; k >= 0; k--)
+                                int nExtremum = i+nanShift;
+                                double dExtremum = v[i+nanShift];
+                                for (long long int k = i+nanShift; k >= 0; k--)
                                 {
                                     if (k == i-nOrder)
                                         break;
@@ -5123,9 +5137,9 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
                         {
                             if (!nMode || nMode == -1)
                             {
-                                int nExtremum = i;
-                                double dExtremum = v[i];
-                                for (long long int k = i; k >= 0; k--)
+                                int nExtremum = i+nanShift;
+                                double dExtremum = v[i+nanShift];
+                                for (long long int k = i+nanShift; k >= 0; k--)
                                 {
                                     if (k == i-nOrder)
                                         break;
@@ -5144,6 +5158,7 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
                         dExtremum = dMedian;
                     }
                 }
+                nanShift += currNanShift;
             }
             if (data)
                 delete[] data;
