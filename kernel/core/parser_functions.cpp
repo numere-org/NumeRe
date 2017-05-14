@@ -3128,84 +3128,6 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
         else
             nPos++;
     }
-    //while (sTemp.find("{", nPos) != string::npos);
-    //cerr << nPos << endl;
-
-    /*if (isMultiValue(sTemp.substr(nPos), true) && !isToStringArg(sTemp, nPos))
-    {
-        sInterVector = sTemp.substr(nPos);
-        //if (_option.getbDebug())
-        //    cerr << "|" << endl << "|-> DEBUG: sInterVector = " << sInterVector << endl;
-        int nParenthesis = 0;
-        for (unsigned int i = 0; i < sInterVector.length(); i++)
-        {
-            if (sInterVector[i] == '(')
-                nParenthesis++;
-            if (sInterVector[i] == ')')
-                nParenthesis--;
-            if (sInterVector[i] == ',' && nParenthesis <= 0)
-            {
-                if (!nParenthesis)
-                {
-                    sExprParts[0] = sInterVector.substr(0,i);
-                    sExprParts[2] = sInterVector.substr(i+1);
-                    break;
-                }
-                else
-                {
-                    for (int j = sTemp.rfind("{", nPos); j >= 0; j--)
-                    {
-                        if (sTemp[j] == '(')
-                            nParenthesis++;
-                        else if (sTemp[j] == ')')
-                            nParenthesis--;
-                        if (!nParenthesis)
-                            break;
-                    }
-                    if (!nParenthesis)
-                    {
-                        sExprParts[0] = sInterVector.substr(0,i);
-                        sExprParts[2] = sInterVector.substr(i+1);
-                        break;
-                    }
-                    else
-                    {
-                        sLine = "";
-                        throw UNMATCHED_PARENTHESIS;
-                    }
-                }
-            }
-        }
-        if (_option.getbDebug())
-            cerr << "|-> DEBUG: sExprParts[0] = " << sExprParts[0] << "; sExprParts[2] = " << sExprParts[2] << endl;
-        while (isMultiValue(sExprParts[2]))
-        {
-            // sExprParts[2] = "(" + sExprParts[2] + ")";
-            parser_SplitArgs(sExprParts[2], sExprParts[1], ',', _option, true);
-            sExprParts[2] = sExprParts[1];
-        }
-        sExprParts[1] = sInterVector.substr(sExprParts[0].length(),sInterVector.length()-sExprParts[0].length()-sExprParts[2].length());
-        sExprParts[0] = sTemp.substr(0,nPos) + sExprParts[0];
-
-        if (_option.getbDebug())
-        {
-            cerr << "|-> DEBUG: ";
-            for (int i = 0; i < 3; i++)
-            {
-                cerr << "sExprParts[" << i << "] = " << sExprParts[i] << "; ";
-            }
-            cerr << endl;
-        }
-
-        if (sExprParts[0].find("{") != string::npos)
-            parser_VectorToExpr(sExprParts[0], _option);
-        if (sExprParts[2].find("{") != string::npos)
-            parser_VectorToExpr(sExprParts[2], _option);
-        sLine = sExprParts[0] + sExprParts[1] + sExprParts[2];
-        if (_option.getbDebug())
-            cerr << LineBreak("|-> DEBUG: sLine = " + sLine, _option) << endl;
-        return;
-    }*/
 
     nPos = 0;
     nPos_2 = 0;
@@ -3341,9 +3263,6 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
 // --> Diese Funktion ergaenzt Vektorkomponenten entsprechend einer Heuristik <--
 string parser_AddVectorComponent(const string& sVectorComponent, const string& sLeft, const string& sRight, bool bAddStrings)
 {
-    char cLeft = 0;
-    char cRight = 0;
-    string sOne = "()";
     bool bOneLeft = false;
     bool bOneRight = false;
     if (sVectorComponent.length())
@@ -3362,7 +3281,21 @@ string parser_AddVectorComponent(const string& sVectorComponent, const string& s
         {
             if (sLeft[i] != ' ')
             {
-                cLeft = sLeft[i];
+                if (sLeft[i] == '(')
+                {
+                    for (int j = i-1; j >= 0; j--)
+                    {
+                        if (sLeft[j] == '(')
+                        {
+                            bOneLeft = true;
+                            break;
+                        }
+                        if (sLeft[j] == '/')
+                            return "1";
+                    }
+                }
+                else if (sLeft[i] == '/')
+                    return "1";
                 break;
             }
         }
@@ -3370,23 +3303,22 @@ string parser_AddVectorComponent(const string& sVectorComponent, const string& s
         {
             if (sRight[i] != ' ')
             {
-                cRight = sRight[i];
+                if (sRight[i] == ')')
+                {
+                    for (unsigned int j = i+1; j < sRight.length(); j++)
+                    {
+                        if (sRight[j] == ')')
+                        {
+                            bOneRight = true;
+                            break;
+                        }
+                    }
+                }
                 break;
             }
         }
-        if (cLeft == '/')
+        if ((bOneLeft && bOneRight))
             return "1";
-        for (int i = 0; i < 2; i++)
-        {
-            if (sOne[i] == cLeft)
-                bOneLeft = true;
-            if (sOne[i] == cRight)
-                bOneRight = true;
-        }
-        if (bOneLeft && bOneRight)
-            return "1";
-        else
-            return "0";
     }
     return "0";
 }
@@ -3443,8 +3375,14 @@ bool parser_CheckMultArgFunc(const string& sLeft, const string& sRight)
             break;
         }
     }
-
-    if (nPos >= 3)
+    if (nPos == 2)
+    {
+        sFunc = sLeft.substr(nPos - 2,2);
+        if (sFunc == "or" && !bCMP)
+            return true;
+        return false;
+    }
+    else if (nPos >= 3)
     {
         sFunc = sLeft.substr(nPos - 3,3);
         if (sFunc == "max" && !bCMP)
@@ -3466,6 +3404,10 @@ bool parser_CheckMultArgFunc(const string& sLeft, const string& sRight)
         else if (sFunc == "std" && !bCMP)
             return true;
         else if (sFunc == "prd" && !bCMP)
+            return true;
+        else if (sFunc == "and" && !bCMP)
+            return true;
+        else if (sFunc.substr(1) == "or" && !bCMP)
             return true;
         else if (sFunc == "cmp" && bCMP)
         {
@@ -3579,7 +3521,7 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
         if (_option.getbDebug())
             cerr << "|-> DEBUG: si_pos[0] = " << si_pos[0] << ", sj_pos[0] = " << sj_pos[0] << endl;
         // --> Sind in i- und j-Grenzen ":" zu finden? Dass koennen wir (noch) nicht verarbeiten. Abbruch! <--
-        if (si_pos[0].find(":") != string::npos && sj_pos[0].find(":") != string::npos)
+        if (si_pos[0].find(':') != string::npos && sj_pos[0].find(':') != string::npos)
         {
             throw NO_MATRIX;
         }
@@ -3617,143 +3559,24 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
                     string sLeft = sLine.substr(0,sLine.find(sEntityOccurence));
                     StripSpaces(sLeft);
                     //cerr << sLeft << endl;
-                    if (sLeft.length() < 4)
+                    if (sLeft.length() < 3)
                     {
                         sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_zerobased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
                         continue;
                     }
-                    if (sLeft.substr(sLeft.length()-4) == "std(")
+                    else if (sLeft.length() == 3)
                     {
-                        sLine = sLine.substr(0, sLine.rfind("std(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.std(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "avg(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("avg(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.avg(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "max(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("max(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.max(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "min(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("min(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.min(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "prd(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("prd(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.prd(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "sum(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("sum(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.sum(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "num(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("num(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.num(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "cnt(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("cnt(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.cnt(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "med(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("med(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.med(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.length() >= 5 && sLeft.substr(sLeft.length()-5) == "norm(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("norm(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.norm(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "cmp(")
-                    {
-                        double dRef = 0.0;
-                        int nType = 0;
-                        string sArg = "";
-                        sLeft = sLine.substr(sLeft.length()+1, getMatchingParenthesis(sLine.substr(sLeft.length()-1))-2);
-                        sArg = getNextArgument(sLeft, true);
-                        sArg = getNextArgument(sLeft, true);
-                        if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
-                            parser_GetDataElement(sArg, _parser, _data, _option);
-                        _parser.SetExpr(sArg);
-                        dRef = (double)_parser.Eval();
-                        sArg = getNextArgument(sLeft, true);
-                        if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
-                            parser_GetDataElement(sArg, _parser, _data, _option);
-                        _parser.SetExpr(sArg);
-                        nType = (int)_parser.Eval();
-                        sLine = sLine.replace(sLine.rfind("cmp(", sLine.find(sEntityOccurence)),
-                            getMatchingParenthesis(sLine.substr(sLine.rfind("cmp(", sLine.find(sEntityOccurence))+3))+4,
-                            toCmdString(_data.cmp(sEntity.substr(0,sEntity.find('(')), vLine, vCol, dRef, nType)));
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "pct(")
-                    {
-                        double dPct = 0.5;
-                        string sArg = "";
-                        sLeft = sLine.substr(sLeft.length()+1, getMatchingParenthesis(sLine.substr(sLeft.length()-1))-2);
-                        sArg = getNextArgument(sLeft, true);
-                        sArg = getNextArgument(sLeft, true);
-                        if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
-                            parser_GetDataElement(sArg, _parser, _data, _option);
-                        _parser.SetExpr(sArg);
-                        dPct = _parser.Eval();
-                        sLine = sLine.replace(sLine.rfind("pct(", sLine.find(sEntityOccurence)),
-                            getMatchingParenthesis(sLine.substr(sLine.rfind("pct(", sLine.find(sEntityOccurence))+3))+4,
-                            toCmdString(_data.pct(sEntity.substr(0,sEntity.find('(')), vLine, vCol, dPct)));
-                    }
-                    else
-                        sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_zerobased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
-                }
-                si_pos[0] = "";
-                sj_pos[0] = "";
-                i_pos[0] = -1;
-                j_pos[0] = -1;
-                StripSpaces(sLine);
-                continue;
-
-            }
-            else
-            {
-                i_pos[0] = (int)v[0]-1;
-                _parser.SetExpr(sj_pos[0]);
-                v = _parser.Eval(nResults);
-                if (nResults > 1)
-                {
-                    vLine.push_back(i_pos[0]);
-                    for (int i = 0; i < nResults; i++)
-                        vCol.push_back((int)v[i]-1);
-                    vEntityContents_zerobased = _data.getElement(vLine, vCol, sEntity.substr(0,sEntity.find('(')));
-                    sEntityReplacement_zerobased = replaceToVectorname(sEntityOccurence);
-                    _parser.SetVectorVar(sEntityReplacement_zerobased, vEntityContents_zerobased);
-                    sLine = " " + sLine + " ";
-                    //sLine = sLine.substr(0,sLine.find(sEntity)) + sEntityReplacement_zerobased + sLine.substr(nFinalParenthesis+1);
-                    while (sLine.find(sEntityOccurence) != string::npos)
-                    {
-                        string sLeft = sLine.substr(0,sLine.find(sEntityOccurence));
-                        StripSpaces(sLeft);
-                        //cerr << sLeft << endl;
-                        if (sLeft.length() < 4)
+                        if (sLeft.substr(sLeft.length()-3) == "or(")
                         {
-                            sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_zerobased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
-                            continue;
+                            sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
+                                + toCmdString(_data.or_func(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
+                                + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
                         }
+                        else
+                            sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_zerobased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
+                    }
+                    else if (sLeft.length() >= 4)
+                    {
                         if (sLeft.substr(sLeft.length()-4) == "std(")
                         {
                             sLine = sLine.substr(0, sLine.rfind("std(", sLine.find(sEntityOccurence)))
@@ -3796,6 +3619,18 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
                                 + toCmdString(_data.num(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
                                 + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
                         }
+                        else if (sLeft.substr(sLeft.length()-4) == "and(")
+                        {
+                            sLine = sLine.substr(0, sLine.rfind("and(", sLine.find(sEntityOccurence)))
+                                + toCmdString(_data.and_func(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
+                                + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                        }
+                        else if (sLeft.substr(sLeft.length()-3) == "or(")
+                        {
+                            sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
+                                + toCmdString(_data.or_func(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
+                                + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                        }
                         else if (sLeft.substr(sLeft.length()-4) == "cnt(")
                         {
                             sLine = sLine.substr(0, sLine.rfind("cnt(", sLine.find(sEntityOccurence)))
@@ -3833,7 +3668,7 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
                             nType = (int)_parser.Eval();
                             sLine = sLine.replace(sLine.rfind("cmp(", sLine.find(sEntityOccurence)),
                                 getMatchingParenthesis(sLine.substr(sLine.rfind("cmp(", sLine.find(sEntityOccurence))+3))+4,
-                                toCmdString(_data.cmp(sEntity.substr(0,sEntity.find('(')), i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1, dRef, nType)));
+                                toCmdString(_data.cmp(sEntity.substr(0,sEntity.find('(')), vLine, vCol, dRef, nType)));
                         }
                         else if (sLeft.substr(sLeft.length()-4) == "pct(")
                         {
@@ -3848,11 +3683,171 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
                             dPct = _parser.Eval();
                             sLine = sLine.replace(sLine.rfind("pct(", sLine.find(sEntityOccurence)),
                                 getMatchingParenthesis(sLine.substr(sLine.rfind("pct(", sLine.find(sEntityOccurence))+3))+4,
-                                toCmdString(_data.pct(sEntity.substr(0,sEntity.find('(')), i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1, dPct)));
+                                toCmdString(_data.pct(sEntity.substr(0,sEntity.find('(')), vLine, vCol, dPct)));
                         }
                         else
                             sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_zerobased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
-                    }                    si_pos[0] = "";
+                    }
+                }
+                si_pos[0] = "";
+                sj_pos[0] = "";
+                i_pos[0] = -1;
+                j_pos[0] = -1;
+                StripSpaces(sLine);
+                continue;
+
+            }
+            else
+            {
+                i_pos[0] = (int)v[0]-1;
+                _parser.SetExpr(sj_pos[0]);
+                v = _parser.Eval(nResults);
+                if (nResults > 1)
+                {
+                    vLine.push_back(i_pos[0]);
+                    for (int i = 0; i < nResults; i++)
+                        vCol.push_back((int)v[i]-1);
+                    vEntityContents_zerobased = _data.getElement(vLine, vCol, sEntity.substr(0,sEntity.find('(')));
+                    sEntityReplacement_zerobased = replaceToVectorname(sEntityOccurence);
+                    _parser.SetVectorVar(sEntityReplacement_zerobased, vEntityContents_zerobased);
+                    sLine = " " + sLine + " ";
+                    //sLine = sLine.substr(0,sLine.find(sEntity)) + sEntityReplacement_zerobased + sLine.substr(nFinalParenthesis+1);
+                    while (sLine.find(sEntityOccurence) != string::npos)
+                    {
+                        string sLeft = sLine.substr(0,sLine.find(sEntityOccurence));
+                        StripSpaces(sLeft);
+                        //cerr << sLeft << endl;
+                        if (sLeft.length() < 3)
+                        {
+                            sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_zerobased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
+                            continue;
+                        }
+                        else if (sLeft.length() == 3)
+                        {
+                            if (sLeft.substr(sLeft.length()-3) == "or(")
+                            {
+                                sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
+                                    + toCmdString(_data.or_func(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
+                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                            }
+                            else
+                                sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_zerobased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
+                        }
+                        else if (sLeft.length() >= 4)
+                        {
+                            if (sLeft.substr(sLeft.length()-4) == "std(")
+                            {
+                                sLine = sLine.substr(0, sLine.rfind("std(", sLine.find(sEntityOccurence)))
+                                    + toCmdString(_data.std(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
+                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                            }
+                            else if (sLeft.substr(sLeft.length()-4) == "avg(")
+                            {
+                                sLine = sLine.substr(0, sLine.rfind("avg(", sLine.find(sEntityOccurence)))
+                                    + toCmdString(_data.avg(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
+                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                            }
+                            else if (sLeft.substr(sLeft.length()-4) == "max(")
+                            {
+                                sLine = sLine.substr(0, sLine.rfind("max(", sLine.find(sEntityOccurence)))
+                                    + toCmdString(_data.max(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
+                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                            }
+                            else if (sLeft.substr(sLeft.length()-4) == "min(")
+                            {
+                                sLine = sLine.substr(0, sLine.rfind("min(", sLine.find(sEntityOccurence)))
+                                    + toCmdString(_data.min(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
+                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                            }
+                            else if (sLeft.substr(sLeft.length()-4) == "prd(")
+                            {
+                                sLine = sLine.substr(0, sLine.rfind("prd(", sLine.find(sEntityOccurence)))
+                                    + toCmdString(_data.prd(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
+                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                            }
+                            else if (sLeft.substr(sLeft.length()-4) == "sum(")
+                            {
+                                sLine = sLine.substr(0, sLine.rfind("sum(", sLine.find(sEntityOccurence)))
+                                    + toCmdString(_data.sum(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
+                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                            }
+                            else if (sLeft.substr(sLeft.length()-4) == "num(")
+                            {
+                                sLine = sLine.substr(0, sLine.rfind("num(", sLine.find(sEntityOccurence)))
+                                    + toCmdString(_data.num(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
+                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                            }
+                            else if (sLeft.substr(sLeft.length()-4) == "and(")
+                            {
+                                sLine = sLine.substr(0, sLine.rfind("and(", sLine.find(sEntityOccurence)))
+                                    + toCmdString(_data.and_func(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
+                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                            }
+                            else if (sLeft.substr(sLeft.length()-3) == "or(")
+                            {
+                                sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
+                                    + toCmdString(_data.or_func(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
+                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                            }
+                            else if (sLeft.substr(sLeft.length()-4) == "cnt(")
+                            {
+                                sLine = sLine.substr(0, sLine.rfind("cnt(", sLine.find(sEntityOccurence)))
+                                    + toCmdString(_data.cnt(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
+                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                            }
+                            else if (sLeft.substr(sLeft.length()-4) == "med(")
+                            {
+                                sLine = sLine.substr(0, sLine.rfind("med(", sLine.find(sEntityOccurence)))
+                                    + toCmdString(_data.med(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
+                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                            }
+                            else if (sLeft.length() >= 5 && sLeft.substr(sLeft.length()-5) == "norm(")
+                            {
+                                sLine = sLine.substr(0, sLine.rfind("norm(", sLine.find(sEntityOccurence)))
+                                    + toCmdString(_data.norm(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
+                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                            }
+                            else if (sLeft.substr(sLeft.length()-4) == "cmp(")
+                            {
+                                double dRef = 0.0;
+                                int nType = 0;
+                                string sArg = "";
+                                sLeft = sLine.substr(sLeft.length()+1, getMatchingParenthesis(sLine.substr(sLeft.length()-1))-2);
+                                sArg = getNextArgument(sLeft, true);
+                                sArg = getNextArgument(sLeft, true);
+                                if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
+                                    parser_GetDataElement(sArg, _parser, _data, _option);
+                                _parser.SetExpr(sArg);
+                                dRef = (double)_parser.Eval();
+                                sArg = getNextArgument(sLeft, true);
+                                if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
+                                    parser_GetDataElement(sArg, _parser, _data, _option);
+                                _parser.SetExpr(sArg);
+                                nType = (int)_parser.Eval();
+                                sLine = sLine.replace(sLine.rfind("cmp(", sLine.find(sEntityOccurence)),
+                                    getMatchingParenthesis(sLine.substr(sLine.rfind("cmp(", sLine.find(sEntityOccurence))+3))+4,
+                                    toCmdString(_data.cmp(sEntity.substr(0,sEntity.find('(')), i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1, dRef, nType)));
+                            }
+                            else if (sLeft.substr(sLeft.length()-4) == "pct(")
+                            {
+                                double dPct = 0.5;
+                                string sArg = "";
+                                sLeft = sLine.substr(sLeft.length()+1, getMatchingParenthesis(sLine.substr(sLeft.length()-1))-2);
+                                sArg = getNextArgument(sLeft, true);
+                                sArg = getNextArgument(sLeft, true);
+                                if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
+                                    parser_GetDataElement(sArg, _parser, _data, _option);
+                                _parser.SetExpr(sArg);
+                                dPct = _parser.Eval();
+                                sLine = sLine.replace(sLine.rfind("pct(", sLine.find(sEntityOccurence)),
+                                    getMatchingParenthesis(sLine.substr(sLine.rfind("pct(", sLine.find(sEntityOccurence))+3))+4,
+                                    toCmdString(_data.pct(sEntity.substr(0,sEntity.find('(')), i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1, dPct)));
+                            }
+                            else
+                                sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_zerobased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
+                        }
+                    }
+                    si_pos[0] = "";
                     sj_pos[0] = "";
                     i_pos[0] = -1;
                     j_pos[0] = -1;
@@ -3930,11 +3925,11 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
         /* --> Nachdem wir das ausgeschlossen haben, koennen wir nun den si_pos[0] am ":" teilen. Ausserdem
          *     muessen wir auch den passenden BOOLEAN fuer die Zeilen auf TRUE setzen <--
          */
-        if (si_pos[0].find("#") != string::npos)
+        if (si_pos[0].find('#') != string::npos)
         {
             bWriteStrings = true;
         }
-        if (si_pos[0].find(":") != string::npos && !bWriteStrings)
+        if (si_pos[0].find(':') != string::npos && !bWriteStrings)
         {
             si_pos[1] = si_pos[0].substr(si_pos[0].find(":")+1);
             si_pos[0] = si_pos[0].substr(0,si_pos[0].find(":"));
@@ -3944,7 +3939,7 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
         // --> Dasselbe fuer sj_pos[0] <--
         if (sj_pos[0].find('#') != string::npos && bWriteStrings)
             bWriteFileName = true;
-        if (sj_pos[0].find(":") != string::npos && !bWriteFileName)
+        if (sj_pos[0].find(':') != string::npos && !bWriteFileName)
         {
             sj_pos[1] = sj_pos[0].substr(sj_pos[0].find(":")+1);
             sj_pos[0] = sj_pos[0].substr(0,sj_pos[0].find(":"));
@@ -4047,7 +4042,7 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
         }
         else if (bMultLin) // Ist zumindest bMultLin == TRUE? Dann waehle einfach das letzte Element der Spalte als oberen Index
         {
-            i_pos[1] = _data.getLines(sEntity.substr(0,sEntity.find('(')),true) - 1 - _data.getAppendedZeroes(j_pos[0], sEntity.substr(0,sEntity.find('(')));
+            i_pos[1] = _data.getLines(sEntity.substr(0,sEntity.find('(')), true) - 1 - _data.getAppendedZeroes(j_pos[0], sEntity.substr(0,sEntity.find('(')));
             //cerr << i_pos[1] << endl;
             if (i_pos[1] == -1)
             {
@@ -4130,6 +4125,18 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
                                     + "nan"
                                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
                             }
+                            else if (sLeft.substr(sLeft.length()-4) == "and(")
+                            {
+                                sLine = sLine.substr(0, sLine.rfind("and(", sLine.find(sEntityOccurence)))
+                                    + "0.0"
+                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                            }
+                            else if (sLeft.substr(sLeft.length()-3) == "or(")
+                            {
+                                sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
+                                    + "0.0"
+                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                            }
                             else if (sLeft.substr(sLeft.length()-4) == "cnt(")
                             {
                                 sLine = sLine.substr(0, sLine.rfind("cnt(", sLine.find(sEntityOccurence)))
@@ -4159,7 +4166,7 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
                         }
                         else
                         {
-                            if (parser_AddVectorComponent("",sLine.substr(0,sLine.find(sEntityOccurence)),sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length()),false) == "0")
+                            if (parser_AddVectorComponent("", sLine.substr(0,sLine.find(sEntityOccurence)), sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length()), false) == "0")
                             {
                                 sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_zerobased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
                                 bUsedZeroBased = true;
@@ -4253,14 +4260,6 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
                     vEntityContents_zerobased.push_back(_data.getElement(i,j,sEntity.substr(0,sEntity.find('('))));
                     if (i_pos[0] == i_pos[1] && j_pos[0] == j_pos[1])
                         si_pos[0] = toCmdString(_data.getElement(i, j, sEntity.substr(0,sEntity.find('('))));
-                    //si_pos[1] += toCmdString(_data.getElement(i, j));
-                    //if ((i_pos[0] < i_pos[1] || j_pos[0] < j_pos[1]) && (i < i_pos[1] || j < j_pos[1]))
-                    //{
-                    //    si_pos[0] += ",";
-                        //si_pos[1] += ",";
-                    //}
-                    /*if (_option.getbDebug())
-                        mu::console() << _nrT("|-> DEBUG: Element = ") << _data.getElement(i,j) << endl;*/
                 }
                 else if (bWriteFileName)
                 {
@@ -4314,30 +4313,9 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
         if (vEntityContents_onebased.size() && vEntityContents_zerobased.size()) //+ \p\, - \m\, * \ml\, / \d\, ^ \e\, && \a\, || \o\, ||| \xo\, % \md\, ! \n\, == \eq\, != \ne\, >= \ge\, <= \le\, ? \q\//
         {
             sEntityReplacement_onebased = replaceToVectorname(sEntityOccurence);
-            /*while (sEntityReplacement_onebased.find("|||") != string::npos)
-                sEntityReplacement_onebased.replace(sEntityReplacement_onebased.find("|||"),3,"\\xo\\");
-            while (sEntityReplacement_onebased.find(' ') != string::npos)
-                sEntityReplacement_onebased.erase(sEntityReplacement_onebased.find(' '),1);
-            for (auto iter = mOprtRplc.begin(); iter != mOprtRplc.end(); ++iter)
-            {
-                while (sEntityReplacement_onebased.find(iter->first) != string::npos)
-                    sEntityReplacement_onebased.replace(sEntityReplacement_onebased.find(iter->first), (iter->first).length(), iter->second);
-            }*/
+
             sEntityReplacement_zerobased = sEntityReplacement_onebased+"_0";
             sEntityReplacement_onebased += "_1";
-            /*for (unsigned int i = 0; i < sEntityOccurence.length(); i++)
-            {
-                if (sOprtChrs.find(sEntityOccurence[i]) != string::npos)
-                {
-                    sEntityReplacement_onebased = sEntity.substr(0,sEntity.find('(')) + "[" + toString(i_pos[0]) + "~"+toString(i_pos[1]) + "_" + toString(j_pos[0])+"~"+toString(j_pos[1]) + "]_1";
-                    sEntityReplacement_zerobased = sEntity.substr(0,sEntity.find('(')) + "[" + toString(i_pos[0]) + "~"+toString(i_pos[1]) + "_" + toString(j_pos[0])+"~"+toString(j_pos[1]) + "]_0";
-                    while (sEntityReplacement_onebased.find('-') != string::npos)
-                        sEntityReplacement_onebased.replace(sEntityReplacement_onebased.find('-'),1,"_");
-                    while (sEntityReplacement_zerobased.find('-') != string::npos)
-                        sEntityReplacement_zerobased.replace(sEntityReplacement_zerobased.find('-'),1,"_");
-                    break;
-                }
-            }*/
             if (!sEntityReplacement_onebased.length())
             {
                 sEntityReplacement_onebased = sEntityOccurence;
@@ -4355,12 +4333,6 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
                 sEntityReplacement_zerobased = sEntityReplacement_onebased + "_0";
                 sEntityReplacement_onebased += "_1";
             }
-
-            /*if (_option.getbDebug())
-            {
-                cerr << "|-> DEBUG: sEntityReplacement_onebased = " << sEntityReplacement_onebased << endl;
-                cerr << "|-> DEBUG: sEntityReplacement_zerobased = " << sEntityReplacement_zerobased << endl;
-            }*/
         }
         if (_option.getbDebug())
             cerr << "|-> DEBUG: " << sLine << ", " << i_pos[0] << ", " << i_pos[1] << ", " << j_pos[0] << ", " << j_pos[1] << endl;
@@ -4371,104 +4343,126 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
                 string sLeft = sLine.substr(0,sLine.find(sEntityOccurence));
                 StripSpaces(sLeft);
                 //cerr << sLeft << endl;
-                if (sLeft.substr(sLeft.length()-4) == "std(")
+                if (sLeft.length() == 3)
                 {
-                    sLine = sLine.substr(0, sLine.rfind("std(", sLine.find(sEntityOccurence)))
-                        + toCmdString(_data.std(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                    if (sLeft.substr(sLeft.length()-3) == "or(")
+                    {
+                        sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
+                            + toCmdString(_data.or_func(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
+                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                    }
                 }
-                else if (sLeft.substr(sLeft.length()-4) == "avg(")
+                else if (sLeft.length() >= 4)
                 {
-                    sLine = sLine.substr(0, sLine.rfind("avg(", sLine.find(sEntityOccurence)))
-                        + toCmdString(_data.avg(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                    if (sLeft.substr(sLeft.length()-4) == "std(")
+                    {
+                        sLine = sLine.substr(0, sLine.rfind("std(", sLine.find(sEntityOccurence)))
+                            + toCmdString(_data.std(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
+                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                    }
+                    else if (sLeft.substr(sLeft.length()-4) == "avg(")
+                    {
+                        sLine = sLine.substr(0, sLine.rfind("avg(", sLine.find(sEntityOccurence)))
+                            + toCmdString(_data.avg(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
+                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                    }
+                    else if (sLeft.substr(sLeft.length()-4) == "max(")
+                    {
+                        sLine = sLine.substr(0, sLine.rfind("max(", sLine.find(sEntityOccurence)))
+                            + toCmdString(_data.max(sEntity.substr(0,sEntity.find('(')), i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
+                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                    }
+                    else if (sLeft.substr(sLeft.length()-4) == "min(")
+                    {
+                        sLine = sLine.substr(0, sLine.rfind("min(", sLine.find(sEntityOccurence)))
+                            + toCmdString(_data.min(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
+                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                    }
+                    else if (sLeft.substr(sLeft.length()-4) == "prd(")
+                    {
+                        sLine = sLine.substr(0, sLine.rfind("prd(", sLine.find(sEntityOccurence)))
+                            + toCmdString(_data.prd(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
+                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                    }
+                    else if (sLeft.substr(sLeft.length()-4) == "sum(")
+                    {
+                        sLine = sLine.substr(0, sLine.rfind("sum(", sLine.find(sEntityOccurence)))
+                            + toCmdString(_data.sum(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
+                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                    }
+                    else if (sLeft.substr(sLeft.length()-4) == "num(")
+                    {
+                        sLine = sLine.substr(0, sLine.rfind("num(", sLine.find(sEntityOccurence)))
+                            + toCmdString(_data.num(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
+                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                    }
+                    else if (sLeft.substr(sLeft.length()-4) == "and(")
+                    {
+                        sLine = sLine.substr(0, sLine.rfind("and(", sLine.find(sEntityOccurence)))
+                            + toCmdString(_data.and_func(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
+                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                    }
+                    else if (sLeft.substr(sLeft.length()-3) == "or(")
+                    {
+                        sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
+                            + toCmdString(_data.or_func(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
+                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                    }
+                    else if (sLeft.substr(sLeft.length()-4) == "cnt(")
+                    {
+                        sLine = sLine.substr(0, sLine.rfind("cnt(", sLine.find(sEntityOccurence)))
+                            + toCmdString(_data.cnt(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
+                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                    }
+                    else if (sLeft.substr(sLeft.length()-4) == "med(")
+                    {
+                        sLine = sLine.substr(0, sLine.rfind("med(", sLine.find(sEntityOccurence)))
+                            + toCmdString(_data.med(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
+                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                    }
+                    else if (sLeft.length() >= 5 && sLeft.substr(sLeft.length()-5) == "norm(")
+                    {
+                        sLine = sLine.substr(0, sLine.rfind("norm(", sLine.find(sEntityOccurence)))
+                            + toCmdString(_data.norm(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
+                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+                    }
+                    else if (sLeft.substr(sLeft.length()-4) == "cmp(")
+                    {
+                        double dRef = 0.0;
+                        int nType = 0;
+                        string sArg = "";
+                        sLeft = sLine.substr(sLeft.length()+1, getMatchingParenthesis(sLine.substr(sLeft.length()-1))-2);
+                        sArg = getNextArgument(sLeft, true);
+                        sArg = getNextArgument(sLeft, true);
+                        if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
+                            parser_GetDataElement(sArg, _parser, _data, _option);
+                        _parser.SetExpr(sArg);
+                        dRef = (double)_parser.Eval();
+                        sArg = getNextArgument(sLeft, true);
+                        if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
+                            parser_GetDataElement(sArg, _parser, _data, _option);
+                        _parser.SetExpr(sArg);
+                        nType = (int)_parser.Eval();
+                        sLine = sLine.replace(sLine.rfind("cmp(", sLine.find(sEntityOccurence)),
+                            getMatchingParenthesis(sLine.substr(sLine.rfind("cmp(", sLine.find(sEntityOccurence))+3))+4,
+                            toCmdString(_data.cmp(sEntity.substr(0,sEntity.find('(')), i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1, dRef, nType)));
+                    }
+                    else if (sLeft.substr(sLeft.length()-4) == "pct(")
+                    {
+                        double dPct = 0.5;
+                        string sArg = "";
+                        sLeft = sLine.substr(sLeft.length()+1, getMatchingParenthesis(sLine.substr(sLeft.length()-1))-2);
+                        sArg = getNextArgument(sLeft, true);
+                        sArg = getNextArgument(sLeft, true);
+                        if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
+                            parser_GetDataElement(sArg, _parser, _data, _option);
+                        _parser.SetExpr(sArg);
+                        dPct = _parser.Eval();
+                        sLine = sLine.replace(sLine.rfind("pct(", sLine.find(sEntityOccurence)),
+                            getMatchingParenthesis(sLine.substr(sLine.rfind("pct(", sLine.find(sEntityOccurence))+3))+4,
+                            toCmdString(_data.pct(sEntity.substr(0,sEntity.find('(')), i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1, dPct)));
+                    }
                 }
-                else if (sLeft.substr(sLeft.length()-4) == "max(")
-                {
-                    sLine = sLine.substr(0, sLine.rfind("max(", sLine.find(sEntityOccurence)))
-                        + toCmdString(_data.max(sEntity.substr(0,sEntity.find('(')), i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                }
-                else if (sLeft.substr(sLeft.length()-4) == "min(")
-                {
-                    sLine = sLine.substr(0, sLine.rfind("min(", sLine.find(sEntityOccurence)))
-                        + toCmdString(_data.min(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                }
-                else if (sLeft.substr(sLeft.length()-4) == "prd(")
-                {
-                    sLine = sLine.substr(0, sLine.rfind("prd(", sLine.find(sEntityOccurence)))
-                        + toCmdString(_data.prd(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                }
-                else if (sLeft.substr(sLeft.length()-4) == "sum(")
-                {
-                    sLine = sLine.substr(0, sLine.rfind("sum(", sLine.find(sEntityOccurence)))
-                        + toCmdString(_data.sum(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                }
-                else if (sLeft.substr(sLeft.length()-4) == "num(")
-                {
-                    sLine = sLine.substr(0, sLine.rfind("num(", sLine.find(sEntityOccurence)))
-                        + toCmdString(_data.num(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                }
-                else if (sLeft.substr(sLeft.length()-4) == "cnt(")
-                {
-                    sLine = sLine.substr(0, sLine.rfind("cnt(", sLine.find(sEntityOccurence)))
-                        + toCmdString(_data.cnt(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                }
-                else if (sLeft.substr(sLeft.length()-4) == "med(")
-                {
-                    sLine = sLine.substr(0, sLine.rfind("med(", sLine.find(sEntityOccurence)))
-                        + toCmdString(_data.med(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                }
-                else if (sLeft.length() >= 5 && sLeft.substr(sLeft.length()-5) == "norm(")
-                {
-                    sLine = sLine.substr(0, sLine.rfind("norm(", sLine.find(sEntityOccurence)))
-                        + toCmdString(_data.norm(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                        + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                }
-                else if (sLeft.substr(sLeft.length()-4) == "cmp(")
-                {
-                    double dRef = 0.0;
-                    int nType = 0;
-                    string sArg = "";
-                    sLeft = sLine.substr(sLeft.length()+1, getMatchingParenthesis(sLine.substr(sLeft.length()-1))-2);
-                    sArg = getNextArgument(sLeft, true);
-                    sArg = getNextArgument(sLeft, true);
-                    if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
-                        parser_GetDataElement(sArg, _parser, _data, _option);
-                    _parser.SetExpr(sArg);
-                    dRef = (double)_parser.Eval();
-                    sArg = getNextArgument(sLeft, true);
-                    if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
-                        parser_GetDataElement(sArg, _parser, _data, _option);
-                    _parser.SetExpr(sArg);
-                    nType = (int)_parser.Eval();
-                    sLine = sLine.replace(sLine.rfind("cmp(", sLine.find(sEntityOccurence)),
-                        getMatchingParenthesis(sLine.substr(sLine.rfind("cmp(", sLine.find(sEntityOccurence))+3))+4,
-                        toCmdString(_data.cmp(sEntity.substr(0,sEntity.find('(')), i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1, dRef, nType)));
-                }
-                else if (sLeft.substr(sLeft.length()-4) == "pct(")
-                {
-                    double dPct = 0.5;
-                    string sArg = "";
-                    sLeft = sLine.substr(sLeft.length()+1, getMatchingParenthesis(sLine.substr(sLeft.length()-1))-2);
-                    sArg = getNextArgument(sLeft, true);
-                    sArg = getNextArgument(sLeft, true);
-                    if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
-                        parser_GetDataElement(sArg, _parser, _data, _option);
-                    _parser.SetExpr(sArg);
-                    dPct = _parser.Eval();
-                    sLine = sLine.replace(sLine.rfind("pct(", sLine.find(sEntityOccurence)),
-                        getMatchingParenthesis(sLine.substr(sLine.rfind("pct(", sLine.find(sEntityOccurence))+3))+4,
-                        toCmdString(_data.pct(sEntity.substr(0,sEntity.find('(')), i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1, dPct)));
-                }
-                /*else
-                    sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + si_pos[1] + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());*/
             }
             else if ((i_pos[0] < i_pos[1] || j_pos[0] < j_pos[1]) && !bWriteStrings)
             {

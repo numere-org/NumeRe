@@ -484,6 +484,30 @@ value_type parser_compare(const value_type* vElements, int nElements)
         return nKeep+1;
 }
 
+// --> Ver-undet seine Inputargumente <--
+value_type parser_and(const value_type* vElements, int nElements)
+{
+    for (int i = 0; i < nElements; i++)
+    {
+        if (isnan(vElements[i]) || vElements[i] == 0)
+            return 0.0;
+    }
+
+    return 1.0;
+}
+
+// --> Verodert seine Inputargumente <--
+value_type parser_or(const value_type* vElements, int nElements)
+{
+    for (int i = 0; i < nElements; i++)
+    {
+        if (vElements[i] != 0 && !isnan(vElements[i]))
+            return 1.0;
+    }
+
+    return 0.0;
+}
+
 // --> Diese Funktion rundet einen Wert auf eine angegebene Zahl an Nachkommastellen <--
 value_type parser_round(value_type vToRound, value_type vDecimals)
 {
@@ -1324,6 +1348,8 @@ int parser_Calc(Datafile& _data, Output& _out, Parser& _parser, Settings& _optio
     _parser.DefineFun("norm", parser_Norm, true);                               // norm(x,y,z,...)
     _parser.DefineFun("med", parser_Med, true);                                 // med(x,y,z,...)
     _parser.DefineFun("pct", parser_Pct, true);                                 // pct(x,y,z,...)
+    _parser.DefineFun("and", parser_and, true);                                 // and(x,y,z,...)
+    _parser.DefineFun("or", parser_or, true);                                   // or(x,y,z,...)
     _parser.DefineFun("rand", parser_Random, false);                            // rand(left,right)
     _parser.DefineFun("gauss", parser_gRandom, false);                          // gauss(mean,std)
     _parser.DefineFun("erf", parser_erf, false);                                // erf(x)

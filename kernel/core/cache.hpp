@@ -349,8 +349,16 @@ class Cache : public FileSystem
         double sum(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
         double num(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
         double num(long long int _nLayer, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
-        double num(long long int _nLayer, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
         double num(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
+        double num(long long int _nLayer, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
+        double and_func(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
+        double and_func(long long int _nLayer, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
+        double and_func(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
+        double and_func(long long int _nLayer, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
+        double or_func(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
+        double or_func(long long int _nLayer, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
+        double or_func(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
+        double or_func(long long int _nLayer, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
         double cnt(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
         double cnt(long long int _nLayer, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
         double cnt(long long int _nLayer, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
