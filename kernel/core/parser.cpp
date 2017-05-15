@@ -508,6 +508,72 @@ value_type parser_or(const value_type* vElements, int nElements)
     return 0.0;
 }
 
+
+value_type parser_Sum(const value_type* vElements, int nElements)
+{
+    value_type fRes = 0;
+    for (int i = 0; i < nElements; ++i)
+    {
+        if (!isnan(vElements[i]))
+            fRes += vElements[i];
+    }
+    return fRes;
+}
+
+value_type parser_Avg(const value_type* vElements, int nElements)
+{
+    value_type fRes = 0;
+    int nNaNs = 0;
+    for (int i = 0; i < nElements; ++i)
+    {
+        if (!isnan(vElements[i]))
+            fRes += vElements[i];
+        else
+            nNaNs++;
+    }
+    return fRes/(value_type)(nElements-nNaNs);
+}
+
+value_type parser_Min(const value_type* vElements, int nElements)
+{
+    value_type fRes = vElements[0];
+    for (int i = 0; i < nElements; ++i)
+    {
+        if (!isnan(fRes))
+            break;
+        if (!isnan(vElements[i]))
+            fRes = vElements[i];
+    }
+    if (isnan(fRes))
+        return fRes;
+    for (int i = 0; i < nElements; ++i)
+    {
+        if (!isnan(vElements[i]))
+            fRes = std::min(fRes, vElements[i]);
+    }
+    return fRes;
+}
+
+value_type parser_Max(const value_type* vElements, int nElements)
+{
+    value_type fRes = vElements[0];
+    for (int i = 0; i < nElements; ++i)
+    {
+        if (!isnan(fRes))
+            break;
+        if (!isnan(vElements[i]))
+            fRes = vElements[i];
+    }
+    if (isnan(fRes))
+        return fRes;
+    for (int i = 0; i < nElements; ++i)
+    {
+        if (!isnan(vElements[i]))
+            fRes = std::max(fRes, vElements[i]);
+    }
+    return fRes;
+}
+
 // --> Diese Funktion rundet einen Wert auf eine angegebene Zahl an Nachkommastellen <--
 value_type parser_round(value_type vToRound, value_type vDecimals)
 {
