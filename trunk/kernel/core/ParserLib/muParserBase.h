@@ -204,6 +204,8 @@ private:
     int GetNumResults() const;
 
     void SetExpr(const string_type &a_sExpr);
+    void PreEvaluateVectors(std::string& sExpr);
+    size_t FindMultiArgFunc(const std::string& sExpr, size_t nPos, std::string& sMultArgFunc);
     void SetVarFactory(facfun_type a_pFactory, void *pUserData = NULL);
 
     void SetDecSep(char_type cDecSep);
