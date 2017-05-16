@@ -155,6 +155,7 @@ BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
 	EVT_MENU						(ID_INSERT_FILE, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_RENAME_FILE, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_AUTOINDENT, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_INDENTONTYPE, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_LINEWRAP, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_DISPCTRLCHARS, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_USETXTADV, NumeReWindow::OnMenuEvent)
@@ -1076,6 +1077,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             tools->Check(ID_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
             break;
         }
+        case ID_INDENTONTYPE:
+        {
+            m_currentEd->ToggleSettings(NumeReEditor::SETTING_INDENTONTYPE);
+            break;
+        }
         case ID_GOTOLINE:
         {
             gotoLine();
@@ -1954,6 +1960,7 @@ void NumeReWindow::PageHasChanged (int pageNr)
         view->Check(ID_USETXTADV, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USETXTADV));
         view = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
         view->Check(ID_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
+        view->Check(ID_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
         m_currentEd->Refresh();
 
 		wxString tabText = m_book->GetPageText(m_currentPage);
@@ -3628,6 +3635,7 @@ void NumeReWindow::UpdateMenuBar()
 	menuTools->AppendSeparator();
 	menuTools->Append(ID_DEBUG_START, _guilang.get("GUI_MENU_EXECUTE"), _guilang.get("GUI_MENU_EXECUTE_TTP"));
 	menuTools->Append(ID_AUTOINDENT, _guilang.get("GUI_MENU_AUTOINDENT"), _guilang.get("GUI_MENU_AUTOINDENT_TTP"));
+	menuTools->Append(ID_INDENTONTYPE, _guilang.get("GUI_MENU_INDENTONTYPE"), _guilang.get("GUI_MENU_INDENTONTYPE_TTP"), true);
 	menuTools->Append(ID_TOGGLE_COMMENT_LINE, _guilang.get("GUI_MENU_COMMENTLINE"), _guilang.get("GUI_MENU_COMMENTLINE_TTP"));
 	menuTools->Append(ID_TOGGLE_COMMENT_SELECTION, _guilang.get("GUI_MENU_COMMENTSELECTION"), _guilang.get("GUI_MENU_COMMENTSELECTION_TTP"));
 	menuTools->AppendSeparator();
@@ -3638,10 +3646,12 @@ void NumeReWindow::UpdateMenuBar()
 	menuTools->Append(ID_USEANALYZER, _guilang.get("GUI_MENU_ANALYZER"), _guilang.get("GUI_MENU_ANALYZER_TTP"), true);
     if (m_currentEd)
 	{
+        menuTools->Check(ID_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
         menuTools->Check(ID_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
     }
     else
     {
+        menuTools->Check(ID_INDENTONTYPE, false);
         menuTools->Check(ID_USEANALYZER, false);
     }
     menuTools->Append(ID_FIND_DUPLICATES, _guilang.get("GUI_MENU_FIND_DUPLICATES"), _guilang.get("GUI_MENU_FIND_DUPLICATES_TTP"));

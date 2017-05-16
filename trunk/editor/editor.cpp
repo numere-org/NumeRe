@@ -462,6 +462,10 @@ void NumeReEditor::OnChar( wxStyledTextEvent &event )
         }
     }
 
+    /*if (this->getEditorSetting(SETTING_INDENTONTYPE) && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC))
+        CallAfter(NumeReEditor::ApplyAutoIndentation, 0, this->GetCurrentLine()+1);*/
+    //ApplyAutoIndentation(0, this->GetCurrentLine()+1);
+
 	//if (((eolMode == CRLF || eolMode == LF) && chr == '\n')
 	//	|| (eolMode == CR && chr == '\r'))
 	if (chr == '\n')// && m_options->GetPerms()->isEnabled(PERM_AUTOINDENT))
@@ -2798,11 +2802,18 @@ void NumeReEditor::OnEditorModified(wxStyledTextEvent &event)
         else
             this->markModified(nLine);
 	}
-	if (getEditorSetting(SETTING_USEANALYZER))
-        CallAfter(NumeReEditor::AnalyseCode);
+    CallAfter(NumeReEditor::AsynchOnModified);
 	event.Skip();
 }
 
+
+void NumeReEditor::AsynchOnModified()
+{
+    if (!this->AutoCompActive() && this->getEditorSetting(SETTING_INDENTONTYPE) && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC))
+        ApplyAutoIndentation(0, this->GetCurrentLine()+1);
+	if (getEditorSetting(SETTING_USEANALYZER))
+        AnalyseCode();
+}
 
 void NumeReEditor::OnStartDrag(wxStyledTextEvent& event)
 {
@@ -4229,18 +4240,23 @@ bool NumeReEditor::containsAssignment(const string& sCurrentLine)
     return false;
 }
 
-void NumeReEditor::ApplyAutoIndentation()
+void NumeReEditor::ApplyAutoIndentation(int nFirstLine, int nLastLine) // int nFirstLine = 0, int nLastLine = -1
 {
+    if (nFirstLine < 0)
+        nFirstLine = 0;
+    if (nLastLine <= 0 || nLastLine > this->GetLineCount())
+        nLastLine = this->GetLineCount();
+
     int nIndentCount = 0;
     int nCurrentIndent = 0;
-    unsigned int nLines = this->GetLineCount();
+
     string currentLine = "";
     bool bBlockComment = false;
     bool bIsElseCase = false;
     this->SetTabWidth(4);
     this->BeginUndoAction();
     //this->SetUseTabs(true);
-    for (size_t i = 0; i < nLines; i++)
+    for (int i = nFirstLine; i < nLastLine; i++)
     {
         bIsElseCase = false;
         currentLine = this->GetLine(i).ToStdString();
