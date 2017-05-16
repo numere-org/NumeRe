@@ -5662,7 +5662,7 @@
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\printps.h
 	"wx/prntbase.h"
 
-1494312539 d:\cpp\numere-source\trunk\editor\editor.h
+1494919121 d:\cpp\numere-source\trunk\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -6606,7 +6606,7 @@
 	<commdlg.h>
 	"wx/msw/winundef.h"
 
-1492548075 d:\cpp\numere-source\trunk\common\datastructures.h
+1494918032 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -7767,7 +7767,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1494096645 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1494918200 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -8413,7 +8413,7 @@
 	<algorithm>
 	<numeric>
 
-1494777462 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
+1494795828 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
 	"muParserBase.h"
 	"muParserTemplateMagic.h"
 	<cassert>

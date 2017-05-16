@@ -38,7 +38,8 @@ public:
         SETTING_WRAPEOL = 1,
         SETTING_DISPCTRLCHARS = 2,
         SETTING_USETXTADV = 4,
-        SETTING_USEANALYZER = 8
+        SETTING_USEANALYZER = 8,
+        SETTING_INDENTONTYPE = 16
     };
 	//bool LoadFile ();
 	bool LoadLocalFile (const wxString &filename);
@@ -113,7 +114,7 @@ public:
 	void SetTerminal(wxTerm* _terminal) {if (!m_terminal){m_terminal = _terminal;}}
 	void SetUnsaved();
 
-	void ApplyAutoIndentation();
+	void ApplyAutoIndentation(int nFirstLine = 0, int nLastLine = -1);
 	void ToggleSettings(int _setting);
 	bool getEditorSetting(EditorSettings _setting);
 	void ToggleCommentLine();
@@ -138,6 +139,8 @@ protected:
 	Options* m_options;
 
 private:
+
+    void AsynchOnModified();
 
     void updateDefaultHighlightSettings();
     void applyStrikeThrough();

@@ -51,3 +51,6 @@ Cleaned	Der DuplicateCodeDialog laesst NumeRe nun nicht mehr so schnell einfrier
 Fixed	Ein kleinerer Fehler bei der Zeilenberechnung des Debuggers wurde behoben.
 Fixed	Das Problem mit der rechteckigen Auswahl wurde behoben.
 Fixed	Der Tooltip im Editor verschwindet nun, wenn der Editor den Fokus verliert.
+Added	Neue Logikfunktionen wurden hinzugefuegt: "and()" und "or()"
+Cleaned	Multiargumentfunktionen, die auf Vektoren angewendet werden, verwenden diese nun als Eingabeliste, z.B. wird "norm({a,b})" die korrekte Norm des Vektors {a,b} berechnen.
+Added	Der Editor kann nun auch die Einzuege bereits waehrend der Eingabe anpassen. Dies kann im "Werkzeuge" Menue ausgewaehlt werden.
