@@ -550,41 +550,33 @@ namespace mu
                 }
                 else
                 {
-                    for (unsigned int j = i + 1; j < sExpr.length(); j++)
+                    size_t j = getMatchingParenthesis(sExpr.substr(i));
+                    if (j != std::string::npos)
                     {
-                        if (sExpr.substr(j, 2) == "}}")
+                        j += i;
+                        SetExpr(sExpr.substr(i + 1, j - i - 1));
+                        v = Eval(nResults);
+                        for (int n = 0; n < nResults; n++)
                         {
-                            j++;
-                            continue;
+                            vResults.push_back(v[n]);
                         }
-                        if (sExpr[j] == '}')
+                        if (sExpr.find_first_not_of(' ') == i
+                                && sExpr.find('=', j) != std::string::npos
+                                && sExpr.find('=', j) < sExpr.length() - 1
+                                && sExpr.find('!', j) != sExpr.find('=', j) - 1
+                                && sExpr.find('<', j) != sExpr.find('=', j) - 1
+                                && sExpr.find('>', j) != sExpr.find('=', j) - 1
+                                && sExpr[sExpr.find('=', j) + 1] != '=')
                         {
-                            SetExpr(sExpr.substr(i + 1, j - i - 1));
-                            v = Eval(nResults);
-                            for (int n = 0; n < nResults; n++)
-                            {
-                                vResults.push_back(v[n]);
-                            }
-                            if (sExpr.find_first_not_of(' ') == i
-                                    && sExpr.find('=', j) != std::string::npos
-                                    && sExpr.find('=', j) < sExpr.length() - 1
-                                    && sExpr.find('!', j) != sExpr.find('=', j) - 1
-                                    && sExpr.find('<', j) != sExpr.find('=', j) - 1
-                                    && sExpr.find('>', j) != sExpr.find('=', j) - 1
-                                    && sExpr[sExpr.find('=', j) + 1] != '=')
-                            {
-                                sTargets = sExpr.substr(i + 1, j - i - 1);
-                                SetVectorVar("~TRGTVCT[~]", vResults);
-                                sExpr.replace(i, j + 1 - i, "~TRGTVCT[~]");
-                                mTargets = GetUsedVar();
-                            }
-                            else
-                            {
-                                sExpr.replace(i, j + 1 - i, "~TV[" + toString(nVectorIndex) + "]");
-                                SetVectorVar("~TV[" + toString(nVectorIndex) + "]", vResults);
-                            }
-                            //nVectors++;
-                            break;
+                            sTargets = sExpr.substr(i + 1, j - i - 1);
+                            SetVectorVar("~TRGTVCT[~]", vResults);
+                            sExpr.replace(i, j + 1 - i, "~TRGTVCT[~]");
+                            mTargets = GetUsedVar();
+                        }
+                        else
+                        {
+                            sExpr.replace(i, j + 1 - i, "~TV[" + toString(nVectorIndex) + "]");
+                            SetVectorVar("~TV[" + toString(nVectorIndex) + "]", vResults);
                         }
                     }
                 }
