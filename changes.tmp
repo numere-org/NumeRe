@@ -54,3 +54,4 @@ Fixed	Der Tooltip im Editor verschwindet nun, wenn der Editor den Fokus verliert
 Added	Neue Logikfunktionen wurden hinzugefuegt: "and()" und "or()"
 Cleaned	Multiargumentfunktionen, die auf Vektoren angewendet werden, verwenden diese nun als Eingabeliste, z.B. wird "norm({a,b})" die korrekte Norm des Vektors {a,b} berechnen.
 Added	Der Editor kann nun auch die Einzuege bereits waehrend der Eingabe anpassen. Dies kann im "Werkzeuge" Menue ausgewaehlt werden.
+Fixed	Der Parser ignoriert nun mehrere geschweifte Klammern, die ineinander verschachtelt wurden.
