@@ -5662,7 +5662,7 @@
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\printps.h
 	"wx/prntbase.h"
 
-1494919121 d:\cpp\numere-source\trunk\editor\editor.h
+1495046549 d:\cpp\numere-source\trunk\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -8413,7 +8413,7 @@
 	<algorithm>
 	<numeric>
 
-1494971840 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
+1495001945 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
 	"muParserBase.h"
 	"muParserTemplateMagic.h"
 	<cassert>
@@ -8511,7 +8511,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1494111325 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1495009337 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
