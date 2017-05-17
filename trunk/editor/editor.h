@@ -140,7 +140,7 @@ protected:
 
 private:
 
-    void AsynchOnModified();
+    void AsynchActions();
 
     void updateDefaultHighlightSettings();
     void applyStrikeThrough();

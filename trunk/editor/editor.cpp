@@ -423,12 +423,11 @@ bool NumeReEditor::Modified ()
 void NumeReEditor::OnChar( wxStyledTextEvent &event )
 {
     ClearDblClkIndicator();
+    CallAfter(NumeReEditor::AsynchActions);
 	const wxChar chr = event.GetKey();
 	const int currentLine = GetCurrentLine();
 	const int currentPos = GetCurrentPos();
 	const int wordstartpos = WordStartPosition(currentPos, true);
-	//const int tabWidth = GetTabWidth();
-	//const int eolMode = GetEOLMode();
 
     MarkerDeleteAll(MARKER_FOCUSEDLINE);
     if (chr == WXK_TAB)
@@ -462,13 +461,7 @@ void NumeReEditor::OnChar( wxStyledTextEvent &event )
         }
     }
 
-    /*if (this->getEditorSetting(SETTING_INDENTONTYPE) && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC))
-        CallAfter(NumeReEditor::ApplyAutoIndentation, 0, this->GetCurrentLine()+1);*/
-    //ApplyAutoIndentation(0, this->GetCurrentLine()+1);
-
-	//if (((eolMode == CRLF || eolMode == LF) && chr == '\n')
-	//	|| (eolMode == CR && chr == '\r'))
-	if (chr == '\n')// && m_options->GetPerms()->isEnabled(PERM_AUTOINDENT))
+	if (chr == '\n')
 	{
         markModified(currentLine);
 		int previousLineInd = 0;
@@ -2802,33 +2795,21 @@ void NumeReEditor::OnEditorModified(wxStyledTextEvent &event)
         else
             this->markModified(nLine);
 	}
-    CallAfter(NumeReEditor::AsynchOnModified);
+	if (getEditorSetting(SETTING_USEANALYZER))
+        AnalyseCode();
 	event.Skip();
 }
 
 
-void NumeReEditor::AsynchOnModified()
+void NumeReEditor::AsynchActions()
 {
     if (!this->AutoCompActive() && this->getEditorSetting(SETTING_INDENTONTYPE) && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC))
         ApplyAutoIndentation(0, this->GetCurrentLine()+1);
-	if (getEditorSetting(SETTING_USEANALYZER))
-        AnalyseCode();
 }
 
 void NumeReEditor::OnStartDrag(wxStyledTextEvent& event)
 {
-    /*wxTextDataObject curr_selection(this->GetSelectedText());
-    wxDropSource dragSource(this);
-    dragSource.SetData(curr_selection);
-    wxDragResult result = dragSource.DoDragDrop(true);*/
     wxString gtxt = event.GetDragText();
-    //event.SetDragText("");
-    //event.SetDragResult(wxDragNone);
-    //event.SetDragFlags(wxDrag_AllowMove);
-    //event.SetDragResult(wxDragMove);
-    //m_dragging = true;
-    //DoDragOver(event.GetX(), event.GetY(), wxDragMove);
-    //event.Skip();
 }
 
 void NumeReEditor::OnDragOver(wxStyledTextEvent& event)
