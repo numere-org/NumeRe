@@ -8,6 +8,567 @@ extern Integration_Vars parser_iVars;
 extern mglGraph _fontData;
 extern Plugin _plugin;
 
+#define DEFAULT_NUM_ARG INT_MIN
+
+
+typedef std::vector<std::string> s_vect;
+typedef std::vector<int> n_vect;
+
+struct StringFuncArgs
+{
+    string sArg1, sArg2, sArg3;
+    s_vect sMultiArg;
+    int nArg1, nArg2;
+    n_vect nMultiArg;
+    const Settings* opt;
+};
+
+typedef std::string (*StringFunc)(StringFuncArgs&);
+
+enum FunctionSignatureType
+{
+    PARSER_INT,
+    VAL,
+
+    PARSER_STRING,
+    STR,
+
+    PARSER_STRING_INT_INT,
+    STR_VAL,
+    STR_VALOPT,
+    STR_VAL_VALOPT,
+
+    PARSER_STRING_INT_INT_STRING,
+    STR_VAL_VALOPT_STROPT,
+
+    PARSER_STRING_STRING_INT_INT,
+    STR_STR,
+    STR_STROPT,
+    STR_STROPT_VALOPT,
+    STR_STR_VALOPT,
+    STR_STR_VALOPT_VALOPT,
+
+    PARSER_STRING_STRING_STRING_INT_INT,
+    STR_STR_STROPT,
+    STR_STR_STR_VALOPT_VALOPT
+};
+
+struct StringFuncHandle
+{
+    StringFuncHandle() {}
+    StringFuncHandle(FunctionSignatureType _fType, StringFunc _fHandle, bool _bTakesMultiArguments) : fType(_fType), fHandle(_fHandle), bTakesMultiArguments(_bTakesMultiArguments) {}
+
+    FunctionSignatureType fType;
+    StringFunc fHandle;
+    bool bTakesMultiArguments;
+};
+
+
+// Function handler:
+// ======================
+string parser_ApplySpecialStringFuncs(string sLine, Datafile&, Parser&, const Settings&);
+string parser_ApplyStringFuncs(string sLine, Datafile&, Parser&, const Settings&);
+void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile&, Parser&, const Settings&, StringFuncHandle);
+map<string, StringFuncHandle> parser_getStringFuncHandles();
+string removeMaskedStrings(const string& sString);
+string addMaskedStrings(const string& sString);
+string listToVector(const string& sString);
+string removeQuotationMarks(const string& sString);
+
+string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser, const Settings& _option);
+int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string sObject, Datafile& _data, Parser& _parser, const Settings& _option);
+string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string& sLine, bool bNoQuotes, bool bReturningLogicals, bool bKeepMaskedQuotes);
+void parser_ApplyElementaryStringOperations(vector<string>& vFinal, vector<bool>& vIsNoStringValue, Parser& _parser, const Settings& _option, bool& bReturningLogicals);
+//
+// String functions:
+// ======================
+// string STRINGFUNC(ARGS)
+//
+// Parser functions:
+size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, n_vect&);
+size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, s_vect&);
+size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, s_vect&, n_vect&, n_vect&);
+size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, s_vect&, n_vect&, n_vect&, s_vect&);
+size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, s_vect&, s_vect&, n_vect&, n_vect&);
+size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&);
+//
+
+
+// Function signatures
+// ====================
+// bool PARSER(const string&, string&)
+// STR__STR
+// str = to_string(EXPR)
+string strfnc_to_string(StringFuncArgs& funcArgs)
+{
+    if (funcArgs.sArg1.find('"') == string::npos)
+        return "\"" + funcArgs.sArg1 + "\"";
+    return funcArgs.sArg1;
+}
+// str = string_cast(EXPR)
+//string strfnc_string_cast(StringFuncArgs& funcArgs);
+// STR__STR
+// str = to_uppercase(str)
+string strfnc_to_uppercase(StringFuncArgs& funcArgs)
+{
+    return "\"" + toUpperCase(funcArgs.sArg1) + "\"";
+}
+// str = to_lowercase(str)
+string strfnc_to_lowercase(StringFuncArgs& funcArgs)
+{
+    return "\"" + toLowerCase(funcArgs.sArg1) + "\"";
+}
+// cmd = to_cmd(str)
+//string strfnc_to_cmd(StringFuncArgs& funcArgs);
+// {str} = getfilelist(str, [val])
+string strfnc_getfilelist(StringFuncArgs& funcArgs)
+{
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
+        funcArgs.nArg1 = 0;
+
+    vector<string> vFileList = getFileList(removeMaskedStrings(funcArgs.sArg1), *(funcArgs.opt), funcArgs.nArg1);
+    string sFileList = "";
+    for (unsigned int i = 0; i < vFileList.size(); i++)
+    {
+        sFileList += "\"" + vFileList[i] + "\"";
+        if (i < vFileList.size()-1)
+            sFileList += ", ";
+    }
+    if (!sFileList.length())
+        return "\"\"";
+    else
+        return sFileList;
+}
+// {str} = getfolderlist(str, [val])
+string strfnc_getfolderlist(StringFuncArgs& funcArgs)
+{
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
+        funcArgs.nArg1 = 0;
+
+    vector<string> vFolderList = getFolderList(removeMaskedStrings(funcArgs.sArg1), *(funcArgs.opt), funcArgs.nArg1);
+    string sFolderList = "";
+    for (unsigned int i = 0; i < vFolderList.size(); i++)
+    {
+        sFolderList += "\"" + vFolderList[i] + "\"";
+        if (i < vFolderList.size()-1)
+            sFolderList += ", ";
+    }
+    if (!sFolderList.length())
+        return "\"\"";
+    else
+        return sFolderList;
+}
+// VAL__STR
+// val = to_value(str)
+string strfnc_to_value(StringFuncArgs& funcArgs)
+{
+    return funcArgs.sArg1;
+}
+// val = strlen(str)
+string strfnc_strlen(StringFuncArgs& funcArgs)
+{
+    return toString((int)removeMaskedStrings(funcArgs.sArg1).length());
+}
+// val = getmatchingparens(str)
+string strfnc_getmatchingparens(StringFuncArgs& funcArgs)
+{
+    return toString((int)getMatchingParenthesis(removeMaskedStrings(funcArgs.sArg1))+1);
+}
+// {val} = ascii(str)
+string strfnc_ascii(StringFuncArgs& funcArgs)
+{
+    string sCodes = "";
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
+    {
+        sCodes += toString((int)funcArgs.sArg1[i]);
+        if (i+1 < funcArgs.sArg1.length())
+            sCodes += ",";
+    }
+    return sCodes;
+}
+// LOG__STR
+// log = is_string(EXPR)
+//string strfnc_is_string(StringFuncArgs& funcArgs)
+// log = is_data(EXPR)
+//string strfnc_is_data(StringFuncArgs& funcArgs);
+// ----------------------------
+// bool PARSER(const string&, int&)
+// STR__VAL
+// str = to_char(num)
+string strfnc_to_char(StringFuncArgs& funcArgs)
+{
+    string sToChar = "";
+    for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
+    {
+        sToChar += (char)(funcArgs.nMultiArg[i]);
+    }
+    return "\"" + sToChar + "\"";;
+}
+// ----------------------------
+// bool PARSER(const string&, string&, string&)
+// LOG__STR_STROPT
+// log = findfile(str, [str])
+string strfnc_findfile(StringFuncArgs& funcArgs)
+{
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    FileSystem _fSys;
+    _fSys.setTokens(funcArgs.opt->getTokenPaths());
+    if (funcArgs.sArg2.length())
+        _fSys.setPath(removeMaskedStrings(funcArgs.sArg2), false, funcArgs.opt->getExePath());
+    else
+        _fSys.setPath(funcArgs.opt->getExePath(), false, funcArgs.opt->getExePath());
+    string sExtension = ".dat";
+    if (funcArgs.sArg1.rfind('.') != string::npos)
+    {
+        sExtension = funcArgs.sArg1.substr(funcArgs.sArg1.rfind('.'));
+        if (sExtension.find('*') != string::npos || sExtension.find('?') != string::npos)
+            sExtension = ".dat";
+        else
+            _fSys.declareFileType(sExtension);
+    }
+    funcArgs.sArg1 = _fSys.ValidFileName(funcArgs.sArg1, sExtension);
+    if (fileExists(funcArgs.sArg1))
+        return "true";
+    return "false";
+}
+// STR__STR_STR
+// {str} = split(str, str)
+string strfnc_split(StringFuncArgs& funcArgs)
+{
+    string sSplittedString = "";
+    if (!funcArgs.sArg2.length())
+        return "";
+    boost::char_separator<char> cSep(funcArgs.sArg2.substr(0,1).c_str());
+    tokenizer<char_separator<char> > tok(funcArgs.sArg1, cSep);
+    for (tokenizer<char_separator<char> >::iterator iter = tok.begin(); iter != tok.end(); ++iter)
+    {
+        sSplittedString += "\"";
+        sSplittedString += *iter;
+        sSplittedString += "\", ";
+    }
+    return sSplittedString.substr(0, sSplittedString.length()-2);
+}
+// STR__STR_STROPT
+// str = valtostr(EXPR, [str], [val])
+//string strfnc_valtostr(StringFuncArgs& funcArgs)
+// ----------------------------
+// bool PARSER(const string&, string&, string&, int&)
+// VAL__STR_STR_VALOPT
+// val = strfnd(str, str, [val])
+string strfnc_strfnd(StringFuncArgs& funcArgs)
+{
+    if (!funcArgs.sArg2.length())
+        return "0";
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 < 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
+        funcArgs.nArg1 = 1;
+
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+
+    if (funcArgs.sArg2.front() == '"')
+        funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"')+1, funcArgs.sArg2.rfind('"')-funcArgs.sArg2.find('"')-1);
+    return toString((int)funcArgs.sArg2.find(funcArgs.sArg1, funcArgs.nArg1-1)+1);
+}
+// val = strmatch(str, str, [val])
+string strfnc_strmatch(StringFuncArgs& funcArgs)
+{
+    if (!funcArgs.sArg2.length())
+        return "0";
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 < 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
+        funcArgs.nArg1 = 1;
+
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+
+    if (funcArgs.sArg2.front() == '"')
+        funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"')+1, funcArgs.sArg2.rfind('"')-funcArgs.sArg2.find('"')-1);
+    return toString((int)funcArgs.sArg2.find_first_of(funcArgs.sArg1, funcArgs.nArg1-1)+1);
+}
+
+// val = str_not_match(str, str, [val])
+string strfnc_str_not_match(StringFuncArgs& funcArgs)
+{
+    if (!funcArgs.sArg2.length())
+        return "0";
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 < 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
+        funcArgs.nArg1 = 1;
+
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+
+    if (funcArgs.sArg2.front() == '"')
+        funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"')+1, funcArgs.sArg2.rfind('"')-funcArgs.sArg2.find('"')-1);
+    return toString((int)funcArgs.sArg2.find_first_not_of(funcArgs.sArg1, funcArgs.nArg1-1)+1);
+}
+
+// val = strrfnd(str, str, [val])
+string strfnc_strrfnd(StringFuncArgs& funcArgs)
+{
+    if (!funcArgs.sArg2.length())
+        return "0";
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 < 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
+        funcArgs.nArg1 = funcArgs.sArg2.length()+1;
+
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+
+    if (funcArgs.sArg2.front() == '"')
+        funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"')+1, funcArgs.sArg2.rfind('"')-funcArgs.sArg2.find('"')-1);
+    return toString((int)funcArgs.sArg2.rfind(funcArgs.sArg1, funcArgs.nArg1-1)+1);
+}
+
+// val = strrmatch(str, str, [val])
+string strfnc_strrmatch(StringFuncArgs& funcArgs)
+{
+    if (!funcArgs.sArg2.length())
+        return "0";
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 < 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
+        funcArgs.nArg1 = funcArgs.sArg2.length()+1;
+
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+
+    if (funcArgs.sArg2.front() == '"')
+        funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"')+1, funcArgs.sArg2.rfind('"')-funcArgs.sArg2.find('"')-1);
+    return toString((int)funcArgs.sArg2.find_last_of(funcArgs.sArg1, funcArgs.nArg1-1)+1);
+}
+
+// val = str_not_rmatch(str, str, [val])
+string strfnc_str_not_rmatch(StringFuncArgs& funcArgs)
+{
+    if (!funcArgs.sArg2.length())
+        return "0";
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 < 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
+        funcArgs.nArg1 = funcArgs.sArg2.length()+1;
+
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+
+    if (funcArgs.sArg2.front() == '"')
+        funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"')+1, funcArgs.sArg2.rfind('"')-funcArgs.sArg2.find('"')-1);
+    return toString((int)funcArgs.sArg2.find_last_not_of(funcArgs.sArg1, funcArgs.nArg1-1)+1);
+}
+
+// ----------------------------
+// bool PARSER(const string&, string&, string&, string&)
+// VAL__STR_STR_STROPT
+// val = findparam(str, str, [str])
+string strfnc_findparam(StringFuncArgs& funcArgs)
+{
+    if (!funcArgs.sArg2.length())
+        return "0";
+    size_t nMatch;
+
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+    funcArgs.sArg3 = removeMaskedStrings(funcArgs.sArg3);
+
+    if (funcArgs.sArg3.length())
+    {
+        nMatch = matchParams(funcArgs.sArg2, funcArgs.sArg1, funcArgs.sArg3[0]);
+    }
+    else
+    {
+        nMatch = matchParams(funcArgs.sArg2, funcArgs.sArg1);
+    }
+    if (nMatch != string::npos)
+        return toString((int)(nMatch+1));
+    else
+        return "0";
+}
+// ----------------------------
+// bool PARSER(const string&, string&, int&, int&)
+// STR__STR_VAL_VALOPT
+// str = substr(str, val, [val])
+string strfnc_substr(StringFuncArgs& funcArgs)
+{
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    if (funcArgs.nArg1 < 1)
+        funcArgs.nArg1 = 1;
+    if ((size_t)funcArgs.nArg1 > funcArgs.sArg1.length())
+        funcArgs.nArg1 = funcArgs.sArg1.length();
+    if (funcArgs.nArg2 == DEFAULT_NUM_ARG)
+        funcArgs.nArg2 = -1;
+    return "\"" + funcArgs.sArg1.substr(funcArgs.nArg1-1, funcArgs.nArg2) + "\"";
+}
+// ----------------------------
+// bool PARSER(const string&, string&, int&)
+// STR__STR_VAL
+// str = repeat(str, val)
+string strfnc_repeat(StringFuncArgs& funcArgs)
+{
+    if (funcArgs.nArg1 <= 1)
+        return "\"" + funcArgs.sArg1 + "\"";
+    else
+    {
+        string sReturn;
+        for (int i = 0; i < funcArgs.nArg1; i++)
+            sReturn += funcArgs.sArg1;
+        return "\"" + sReturn + "\"";
+    }
+}
+
+// str = char(str, val)
+string strfnc_char(StringFuncArgs& funcArgs)
+{
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    if (funcArgs.nArg1 <= 1)
+        return "\"" + funcArgs.sArg1.substr(0,1) + "\"";
+    if ((size_t)funcArgs.nArg1 >= funcArgs.sArg1.length())
+        return "\"" + funcArgs.sArg1.substr(funcArgs.sArg1.length()-1) + "\"";
+    return "\"" + funcArgs.sArg1.substr(funcArgs.nArg1-1, 1) + "\"";
+}
+
+// str = getopt(str, val)
+string strfnc_getopt(StringFuncArgs& funcArgs)
+{
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    if (funcArgs.nArg1 <= 1)
+        funcArgs.nArg1 = 1;
+    if ((size_t)funcArgs.nArg1 > funcArgs.sArg1.length())
+        return "\"\"";
+
+    return "\"" + getArgAtPos(funcArgs.sArg1, funcArgs.nArg1-1) + "\"";
+}
+
+// VAL__STR_VALOPT
+// {val} = getindices(str, [val])
+//string strfnc_getindices(StringFuncArgs& funcArgs);
+// ----------------------------
+// bool PARSER(const string&, string&, string&, int&, int&)
+// STR__STR_STR_VALOPT_VALOPT
+// str = replace(str, str, [val], [val])
+string strfnc_replace(StringFuncArgs& funcArgs)
+{
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+
+    if (funcArgs.nArg1 < 1)
+        funcArgs.nArg1 = 1;
+    if ((size_t)funcArgs.nArg1 > funcArgs.sArg1.length())
+        funcArgs.nArg1 = funcArgs.sArg1.length();
+    if (funcArgs.nArg2 == DEFAULT_NUM_ARG)
+        funcArgs.nArg2 = -1;
+    return "\"" + funcArgs.sArg1.replace(funcArgs.nArg1-1, funcArgs.nArg2, funcArgs.sArg2) + "\"";
+}
+// ----------------------------
+// bool PARSER(const string&, string&, string&, string&, int&, int&)
+// STR__STR_STR_STR_VALOPT_VALOPT
+// str = replaceall(str, str, str, [val], [val])
+string strfnc_replaceall(StringFuncArgs& funcArgs)
+{
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+    funcArgs.sArg3 = removeMaskedStrings(funcArgs.sArg3);
+
+    if (funcArgs.nArg1 < 1)
+        funcArgs.nArg1 = 1;
+    if ((size_t)funcArgs.nArg1 > funcArgs.sArg1.length())
+        funcArgs.nArg1 = funcArgs.sArg1.length();
+    if (funcArgs.nArg2 == DEFAULT_NUM_ARG)
+        funcArgs.nArg2 = funcArgs.sArg1.length()+1;
+    if (!funcArgs.sArg2.length())
+        return "\"" + funcArgs.sArg1 + "\"";
+
+    for (int i = funcArgs.nArg1-1; i < funcArgs.nArg2-1; i++)
+    {
+        if ((size_t)i == funcArgs.sArg1.length())
+            break;
+        if (funcArgs.sArg1.substr(i, funcArgs.sArg2.length()) == funcArgs.sArg2)
+        {
+            funcArgs.sArg1.replace(i, funcArgs.sArg2.length(), funcArgs.sArg3);
+            funcArgs.nArg2 += funcArgs.sArg3.length()-funcArgs.sArg2.length()+1;
+            i += funcArgs.sArg3.length()-1;
+        }
+    }
+
+    return "\"" + funcArgs.sArg1 + "\"";
+}
+// ----------------------------
+// bool PARSER(const string&, string&)
+// VAL__STR
+// val = num({str})
+string strfnc_num(StringFuncArgs& funcArgs)
+{
+    if (funcArgs.sMultiArg.size())
+    {
+        return toString((int)funcArgs.sMultiArg.size());
+    }
+    else if (funcArgs.nMultiArg.size())
+        return toString((int)funcArgs.nMultiArg.size());
+    return "0";
+}
+// val = cnt({str})
+string strfnc_cnt(StringFuncArgs& funcArgs)
+{
+    if (funcArgs.sMultiArg.size())
+    {
+        int nRet = 0;
+        for (size_t i = 0; i < funcArgs.sMultiArg.size(); i++)
+        {
+            if (funcArgs.sMultiArg[i].length())
+                nRet++;
+        }
+        return toString(nRet);
+    }
+    else if (funcArgs.nMultiArg.size())
+    {
+        return toString((int)funcArgs.nMultiArg.size());
+    }
+    return "0";
+}
+// STR__STR
+// str = min({str})
+string strfnc_min(StringFuncArgs& funcArgs)
+{
+    if (!funcArgs.sMultiArg.size())
+        return "\"\"";
+    string sMin = funcArgs.sMultiArg[0];
+    for (size_t i = 1; i < funcArgs.sMultiArg.size(); i++)
+    {
+        if (sMin > funcArgs.sMultiArg[i])
+            sMin = funcArgs.sMultiArg[i];
+    }
+    return "\"" + sMin + "\"";
+}
+// str = max({str})
+string strfnc_max(StringFuncArgs& funcArgs)
+{
+    if (!funcArgs.sMultiArg.size())
+        return "\"\"";
+    string sMax = funcArgs.sMultiArg[0];
+    for (size_t i = 1; i < funcArgs.sMultiArg.size(); i++)
+    {
+        if (sMax < funcArgs.sMultiArg[i])
+            sMax = funcArgs.sMultiArg[i];
+    }
+    return "\"" + sMax + "\"";
+}
+// str = sum({str})
+string strfnc_sum(StringFuncArgs& funcArgs)
+{
+    if (funcArgs.sMultiArg.size())
+    {
+        string sRet = "";
+        for (size_t i = 0; i < funcArgs.sMultiArg.size(); i++)
+            sRet += funcArgs.sMultiArg[i];
+        return "\"" + sRet + "\"";
+    }
+    else if (funcArgs.nMultiArg.size())
+    {
+        int nRet = 0;
+        for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
+            nRet += funcArgs.nMultiArg[i];
+        return toString(nRet);
+    }
+    return "\"\"";
+}
+//
+//
+
+
+
 // --> Verarbeitet String-Ausdruecke <--
 int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& _parser, const Settings& _option, bool bSilent)
 {
@@ -16,18 +577,15 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     string sTemp_2 = "";
     string sObject = sCache;
     string sDummy = "";
-    string sParams = "";
-    unsigned int nStrings = 1;
+
+    vector<bool> vIsNoStringValue;
     bool bNoQuotes = false;
     bool bPeek = false;
     bool bReturningLogicals = false;
     bool bKeepMaskedQuotes = false;
-    vector<bool> vIsNoStringValue;
 
     sLine = " " + sLine + " ";
 
-    if (_option.getbDebug())
-        cerr << "|-> DEBUG: Parsing sLine = " + sLine << endl;
     if (matchParams(sLine, "noquotes")
         || matchParams(sLine, "nq")
         || matchParams(sLine, "peek")
@@ -36,46 +594,38 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     {
         int nPos = (int)sLine.length();
         if (matchParams(sLine, "noquotes") < nPos && matchParams(sLine, "noquotes"))
+        {
             nPos = matchParams(sLine, "noquotes");
+            bNoQuotes = true;
+        }
         if (matchParams(sLine, "nq") < nPos && matchParams(sLine, "nq"))
+        {
             nPos = matchParams(sLine, "nq");
+            bNoQuotes = true;
+        }
         if (matchParams(sLine, "peek") < nPos && matchParams(sLine, "peek"))
+        {
             nPos = matchParams(sLine, "peek");
+            bPeek = true;
+        }
         if (matchParams(sLine, "kmq") < nPos && matchParams(sLine, "kmq"))
+        {
             nPos = matchParams(sLine, "kmq");
+            bKeepMaskedQuotes = true;
+        }
         if (matchParams(sLine, "print")  < nPos && matchParams(sLine, "print"))
+        {
             nPos = matchParams(sLine, "print");
+            bNoQuotes = true;
+            bPeek = true;
+        }
         nPos = sLine.rfind('-', nPos);
-        sParams = sLine.substr(nPos);
         sLine = sLine.substr(0, nPos);
     }
 
-    if (matchParams(sParams, "print"))
-    {
-        bNoQuotes = true;
-        bPeek = true;
-    }
-    if (matchParams(sParams, "noquotes"))
-    {
-        bNoQuotes = true;
-    }
-    if (matchParams(sParams, "nq"))
-    {
-        bNoQuotes = true;
-    }
-    if (matchParams(sParams, "kmq"))
-    {
-        bKeepMaskedQuotes = true;
-    }
-    if (matchParams(sParams, "peek"))
-    {
-        bPeek = true;
-    }
-//NumeReKernel::print("DOT1");
-    //NumeReKernel::print(sLine);
-    if (sLine.find("{") != string::npos
+    if (sLine.find('{') != string::npos
         && sLine.find('=') != string::npos
-        && sLine.find("{") < sLine.find('=')
+        && sLine.find('{') < sLine.find('=')
         && sLine.find('<') != sLine.find('=')-1
         && sLine.find('>') != sLine.find('=')-1
         && sLine.find('!') != sLine.find('=')-1
@@ -203,287 +753,12 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     }
 
 
+    // NEW: String func handler
+    sLine = parser_ApplyStringFuncs(sLine, _data, _parser, _option);
+
+    sLine = parser_ApplySpecialStringFuncs(sLine, _data, _parser, _option);
+
     unsigned int n_pos = 0;
-
-    while (sLine.find("to_string(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("to_string(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 9;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, n_pos, true) && !isInQuotes(sLine, nPos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 11))))
-        {
-            string sToString = sLine.substr(n_pos+10, nPos-n_pos-10);
-            if (containsStrings(sToString) || _data.containsStringVars(sToString))
-            {
-                sToString += " -nq kmq";
-                if (!parser_StringParser(sToString, sDummy, _data, _parser, _option, true))
-                    return 0;
-                for (unsigned int i = 0; i < sToString.length(); i++)
-                {
-                    if (i && sToString[i] == '"' && sToString[i-1] != '\\')
-                        sToString.insert(i,1,'\\');
-                }
-            }
-            sLine = sLine.substr(0,n_pos) + "\"" + sToString + "\"" + sLine.substr(nPos+1);
-        }
-        n_pos++;
-    }
-    while (sLine.find("to_uppercase(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("to_uppercase(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 12;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, n_pos, true) && !isInQuotes(sLine, nPos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 14))))
-        {
-            string sToString = sLine.substr(n_pos+13, nPos-n_pos-13);
-            if (containsStrings(sToString) || _data.containsStringVars(sToString))
-            {
-                sToString += " -nq kmq";
-                if (!parser_StringParser(sToString, sDummy, _data, _parser, _option, true))
-                    return 0;
-            }
-            sLine = sLine.substr(0,n_pos) + "\"" + toUpperCase(sToString) + "\"" + sLine.substr(nPos+1);
-        }
-        n_pos++;
-    }
-    while (sLine.find("to_lowercase(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("to_lowercase(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 12;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, n_pos, true) && !isInQuotes(sLine, nPos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 14))))
-        {
-            string sToString = sLine.substr(n_pos+13, nPos-n_pos-13);
-            if (containsStrings(sToString) || _data.containsStringVars(sToString))
-            {
-                sToString += " -nq kmq";
-                if (!parser_StringParser(sToString, sDummy, _data, _parser, _option, true))
-                    return 0;
-            }
-            sLine = sLine.substr(0,n_pos) + "\"" + toLowerCase(sToString) + "\"" + sLine.substr(nPos+1);
-        }
-        n_pos++;
-    }
-
-    n_pos = 0;
-    while (sLine.find("string_cast(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("string_cast(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 11;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, n_pos, true) && !isInQuotes(sLine, nPos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 13))))
-        {
-            string sToString = sLine.substr(n_pos+12, nPos-n_pos-12);
-            if (sToString.find('"') != string::npos || sToString.find('#') != string::npos)
-            {
-                sToString += " -nq";
-                if (!parser_StringParser(sToString, sDummy, _data, _parser, _option, true))
-                    return 0;
-                for (unsigned int i = 0; i < sToString.length(); i++)
-                {
-                    if (i && sToString[i] == '"' && sToString[i-1] != '\\')
-                        sToString.insert(i,1,'\\');
-                }
-            }
-            sLine = sLine.substr(0,n_pos) + "\"" + sToString + "\"" + sLine.substr(nPos+1);
-        }
-        n_pos++;
-    }
-
-    n_pos = 0;
-    while (sLine.find("to_char(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("to_char(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 7;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, n_pos, true) && !isInQuotes(sLine, nPos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 9))))
-        {
-            string sToChar = sLine.substr(n_pos+8, nPos-n_pos-8);
-            int nChars = 0;
-            value_type* v = 0;
-            if (containsStrings(sToChar) || _data.containsStringVars(sToChar))
-            {
-                sToChar += " -nq";
-                if (!parser_StringParser(sToChar, sDummy, _data, _parser, _option, true))
-                    return 0;
-            }
-            // --> Moeglicherweise erscheint nun "{{". Dies muss ersetzt werden <--
-            if (sToChar.find("{") != string::npos)
-            {
-                parser_VectorToExpr(sToChar, _option);
-            }
-            _parser.SetExpr(sToChar);
-            v = _parser.Eval(nChars);
-            sToChar = "";
-            for (int i = 0; i < nChars; i++)
-            {
-                sToChar += (char)((int)v[i]);
-            }
-            sLine = sLine.substr(0,n_pos) + "\"" + sToChar + "\"" + sLine.substr(nPos+1);
-        }
-        n_pos++;
-    }
-
-    n_pos = 0;
-    while (sLine.find("to_value(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("to_value(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 8;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 10))))
-        {
-            string sToValue = sLine.substr(n_pos+9, nPos-n_pos-9) + " -nq";
-            if (!parser_StringParser(sToValue, sDummy, _data, _parser, _option, true))
-                return 0;
-            else
-                sLine = sLine.substr(0,n_pos) + sToValue + sLine.substr(nPos+1);
-        }
-        n_pos++;
-    }
-
-    n_pos = 0;
-    while (sLine.find("to_cmd(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("to_cmd(", n_pos) + 6;
-        if (isInQuotes(sLine, n_pos, true))
-            continue;
-        unsigned int nParPos = getMatchingParenthesis(sLine.substr(n_pos));
-        if (nParPos == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        if (!isInQuotes(sLine, nParPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 8))))
-        {
-            string sCmdString = sLine.substr(n_pos+1, nParPos-1);
-            StripSpaces(sCmdString);
-            if (containsStrings(sCmdString) || _data.containsStringVars(sCmdString))
-            {
-                sCmdString += " -nq";
-                parser_StringParser(sCmdString, sDummy, _data, _parser, _option, true);
-                sCache = "";
-            }
-            sLine = sLine.substr(0, n_pos-6) + sCmdString + sLine.substr(n_pos + nParPos+1);
-            n_pos -= 5;
-        }
-    }
-
-    n_pos = 0;
-    while (sLine.find("is_string(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("is_string(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 9;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true)
-            && !isInQuotes(sLine, n_pos, true)
-            && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 11)))
-            && (containsStrings(sLine.substr(n_pos+10, nPos - n_pos-10))
-                || _data.containsStringVars(sLine.substr(n_pos+10, nPos - n_pos-10)))/*sLine.substr(n_pos, nPos - n_pos).find('"') != string::npos
-                || sLine.substr(n_pos, nPos - n_pos).find('#') != string::npos
-                || sLine.substr(n_pos, nPos - n_pos).find("string(") != string::npos)*/)
-            sLine = sLine.substr(0, n_pos) + "true" + sLine.substr(nPos+1);
-        else if (isInQuotes(sLine, nPos)
-            || isInQuotes(sLine, n_pos))
-            n_pos++;
-        else
-            sLine = sLine.substr(0, n_pos) + "false" + sLine.substr(nPos+1);
-    }
-
-    n_pos = 0;
-    while (sLine.find("findfile(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("findfile(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 8;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 10))))
-        {
-            string sArgument = sLine.substr(n_pos+9, nPos-n_pos-9);
-            string sFile = getNextArgument(sArgument, true) + " -nq";
-            string sPath = _option.getExePath();
-            if (sArgument.length())
-            {
-                if (!parser_StringParser(sArgument, sDummy, _data, _parser, _option, true))
-                    return 0;
-                sPath = sArgument;
-            }
-            if (!parser_StringParser(sFile, sDummy, _data, _parser, _option, true))
-                return 0;
-            else
-            {
-                FileSystem _fSys;
-                _fSys.setTokens(_option.getTokenPaths());
-                _fSys.setPath(sPath, false, _option.getExePath());
-                string sExtension = ".dat";
-                if (sFile.rfind('.') != string::npos)
-                {
-                    sExtension = sFile.substr(sFile.rfind('.'));
-                    if (sExtension.find('*') != string::npos || sExtension.find('?') != string::npos)
-                        sExtension = ".dat";
-                    else
-                        _fSys.declareFileType(sExtension);
-                }
-                sFile = _fSys.ValidFileName(sFile, sExtension);
-                sLine = sLine.substr(0,n_pos) + toString((bool)fileExists(sFile)) + sLine.substr(nPos+1);
-            }
-        }
-    } /*findfile("FILENAME")*/
-
-    n_pos = 0;
-    //NumeReKernel::print("sLine = " + sLine);
-    //cerr << "sline = " << sLine << endl;
 
     if (sLine.find('=') != string::npos
         && sLine.find('=') != sLine.find("==")
@@ -509,12 +784,10 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
         && !isInQuotes(sLine, sLine.find('=')))
         n_pos = sLine.find('=') + 1;
 
-    //cerr << "sline = " << sLine << endl;
-    //cerr << "n_pos = " << n_pos << endl;
-    //NumeReKernel::print("n_pos = " + toString(n_pos));
     if (_data.containsStringVars(sLine.substr(n_pos)))
         _data.getStringValues(sLine, n_pos);
-    //cerr << "replacedline = " << sLine << endl;
+
+    // {str} = string(...)
     while (sLine.find("string(", n_pos) != string::npos)
     {
         n_pos = sLine.find("string(", n_pos);
@@ -657,779 +930,249 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
         //cerr << sLine << endl;
     }
     //NumeReKernel::print("after string:" + sLine);
-    n_pos = 0;
-    while (sLine.find("split(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("split(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 5;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, n_pos, true) && !isInQuotes(sLine, nPos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 7))))
-        {
-            string sStrToSplit = sLine.substr(n_pos+6, nPos-n_pos-6);
-            if (!parser_StringParser(sStrToSplit, sDummy, _data, _parser, _option, true))
-                return 0;
-            else
-            {
-                string sToSplit = getNextArgument(sStrToSplit, true) + " -nq";
-                string sSepChar = "";
-                if (getNextArgument(sStrToSplit, false).length())
-                    sSepChar = getNextArgument(sStrToSplit, true) + " -nq";
-                else
-                    return 0;
-                if (!parser_StringParser(sToSplit, sDummy, _data, _parser, _option, true))
-                    return 0;
-                if (!parser_StringParser(sSepChar, sDummy, _data, _parser, _option, true))
-                    return 0;
-                boost::char_separator<char> cSep(sSepChar.substr(0,1).c_str());
-                tokenizer<char_separator<char> > tok(sToSplit, cSep);
-                sStrToSplit = "";
-                for (tokenizer<char_separator<char> >::iterator iter = tok.begin(); iter != tok.end(); ++iter)
-                {
-                    sStrToSplit += "\"";
-                    sStrToSplit += *iter;
-                    sStrToSplit += "\", ";
-                }
-                if (sStrToSplit.length())
-                    sLine = sLine.substr(0,n_pos) + "{" + sStrToSplit.substr(0,sStrToSplit.length()-2) + "}" + sLine.substr(nPos+1);
-                else
-                    return 0;
-            }
-        }
-        n_pos++;
-        //cerr << sLine << endl;
-    }
 
     n_pos = 0;
-    while (sLine.find("strlen(", n_pos) != string::npos)
+    // val = data(...)
+    while (sLine.find("data(", n_pos) != string::npos)
     {
-        n_pos = sLine.find("strlen(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 6;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 8))))
-        {
-            string sLength = sLine.substr(n_pos+7, nPos-n_pos-7) + " -nq";
-            if (!parser_StringParser(sLength, sDummy, _data, _parser, _option, true))
-                return 0;
-            else
-                sLine = sLine.substr(0,n_pos) + toString((int)sLength.length()) + sLine.substr(nPos+1);
-        }
-        n_pos++;
-    }
-
-    n_pos = 0;
-    while (sLine.find("ascii(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("ascii(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 5;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 7))))
-        {
-            string sAscii = sLine.substr(n_pos+6, nPos-n_pos-6) + " -nq";
-            if (!parser_StringParser(sAscii, sDummy, _data, _parser, _option, true))
-                return 0;
-            string sCodes = "";
-            for (unsigned int i = 0; i < sAscii.length(); i++)
-            {
-                sCodes += toString((int)sAscii[i]) + ",";
-            }
-            if (sCodes.length())
-                sLine = sLine.substr(0,n_pos) + "{" + sCodes.substr(0,sCodes.length()-1) + "}" + sLine.substr(nPos+1);
-            else
-                sLine = sLine.substr(0,n_pos) + sLine.substr(nPos+1);
-        }
-        n_pos++;
-    }//ascii(STRING)
-
-    n_pos = 0;
-    while (sLine.find("strfnd(", n_pos) != string::npos)
-    {
-        unsigned int nPosition = 0;
-        n_pos = sLine.find("strfnd(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 6;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 8))))
-        {
-            string sStrFind = sLine.substr(n_pos+7, nPos-n_pos-7) + " -kmq";
-            if (!parser_StringParser(sStrFind, sDummy, _data, _parser, _option, true))
-                return 0;
-            else
-            {
-                string sToFind = getNextArgument(sStrFind, true) + " -nq";
-                string sToFindIn = getNextArgument(sStrFind, true) + " -nq";
-                string sPos = "";
-                if (getNextArgument(sStrFind, false).length())
-                    sPos = getNextArgument(sStrFind, true);
-                if (!parser_StringParser(sToFind, sDummy, _data, _parser, _option, true))
-                    return 0;
-                if (!parser_StringParser(sToFindIn, sDummy, _data, _parser, _option, true))
-                    return 0;
-                if (sPos.length() && (containsStrings(sPos) || _data.containsStringVars(sPos)))
-                {
-                    sPos += " -nq";
-                    if (!parser_StringParser(sPos, sDummy, _data, _parser, _option, true))
-                        return 0;
-                }
-                if (parser_ExprNotEmpty(sPos))
-                {
-                    _parser.SetExpr(sPos);
-                    nPosition = (unsigned int)(_parser.Eval()-1);
-                    if (nPosition == string::npos || nPosition > sToFindIn.length())
-                        nPosition = 0;
-                }
-
-                if (sToFindIn.front() == '"')
-                    sToFindIn = sToFindIn.substr(sToFindIn.find('"')+1, sToFindIn.rfind('"')-sToFindIn.find('"')-1);
-                sLine = sLine.substr(0,n_pos) + toString((int)sToFindIn.find(sToFind, nPosition)+1) + sLine.substr(nPos+1);
-            }
-        }
-        n_pos++;
-    }//strfnd("string1", "string2", POS)
-
-    n_pos = 0;
-    while (sLine.find("strmatch(", n_pos) != string::npos)
-    {
-        unsigned int nPosition = 0;
-        n_pos = sLine.find("strmatch(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 8;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 10))))
-        {
-            string sStrFind = sLine.substr(n_pos+9, nPos-n_pos-9) + " -kmq";
-            if (!parser_StringParser(sStrFind, sDummy, _data, _parser, _option, true))
-                return 0;
-            else
-            {
-                string sToFind = getNextArgument(sStrFind, true) + " -nq";
-                string sToFindIn = getNextArgument(sStrFind, true) + " -nq";
-                string sPos = "";
-                if (getNextArgument(sStrFind, false).length())
-                    sPos = getNextArgument(sStrFind, true);
-                if (!parser_StringParser(sToFind, sDummy, _data, _parser, _option, true))
-                    return 0;
-                if (!parser_StringParser(sToFindIn, sDummy, _data, _parser, _option, true))
-                    return 0;
-                if (sPos.length() && (containsStrings(sPos) || _data.containsStringVars(sPos)))
-                {
-                    sPos += " -nq";
-                    if (!parser_StringParser(sPos, sDummy, _data, _parser, _option, true))
-                        return 0;
-                }
-                if (parser_ExprNotEmpty(sPos))
-                {
-                    _parser.SetExpr(sPos);
-                    nPosition = (unsigned int)(_parser.Eval()-1);
-                    if (nPosition == string::npos || nPosition > sToFindIn.length())
-                        nPosition = 0;
-                }
-
-                if (sToFindIn.front() == '"')
-                    sToFindIn = sToFindIn.substr(sToFindIn.find('"')+1, sToFindIn.rfind('"')-sToFindIn.find('"')-1);
-                sLine = sLine.substr(0,n_pos) + toString((int)sToFindIn.find_first_of(sToFind, nPosition)+1) + sLine.substr(nPos+1);
-            }
-        }
-        n_pos++;
-    }//strfnd("string1", "string2", POS)
-
-    n_pos = 0;
-    while (sLine.find("str_not_match(", n_pos) != string::npos)
-    {
-        unsigned int nPosition = 0;
-        n_pos = sLine.find("str_not_match(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 13;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 15))))
-        {
-            string sStrFind = sLine.substr(n_pos+14, nPos-n_pos-14) + " -kmq";
-            if (!parser_StringParser(sStrFind, sDummy, _data, _parser, _option, true))
-                return 0;
-            else
-            {
-                string sToFind = getNextArgument(sStrFind, true) + " -nq";
-                string sToFindIn = getNextArgument(sStrFind, true) + " -nq";
-                string sPos = "";
-                if (getNextArgument(sStrFind, false).length())
-                    sPos = getNextArgument(sStrFind, true);
-                if (!parser_StringParser(sToFind, sDummy, _data, _parser, _option, true))
-                    return 0;
-                if (!parser_StringParser(sToFindIn, sDummy, _data, _parser, _option, true))
-                    return 0;
-                if (sPos.length() && (containsStrings(sPos) || _data.containsStringVars(sPos)))
-                {
-                    sPos += " -nq";
-                    if (!parser_StringParser(sPos, sDummy, _data, _parser, _option, true))
-                        return 0;
-                }
-                if (parser_ExprNotEmpty(sPos))
-                {
-                    _parser.SetExpr(sPos);
-                    nPosition = (unsigned int)(_parser.Eval()-1);
-                    if (nPosition == string::npos || nPosition > sToFindIn.length())
-                        nPosition = 0;
-                }
-
-                if (sToFindIn.front() == '"')
-                    sToFindIn = sToFindIn.substr(sToFindIn.find('"')+1, sToFindIn.rfind('"')-sToFindIn.find('"')-1);
-                sLine = sLine.substr(0,n_pos) + toString((int)sToFindIn.find_first_not_of(sToFind, nPosition)+1) + sLine.substr(nPos+1);
-            }
-        }
-        n_pos++;
-    }//strfnd("string1", "string2", POS)
-
-    n_pos = 0;
-    while (sLine.find("strrfnd(", n_pos) != string::npos)
-    {
-        unsigned int nPosition = string::npos;
-        n_pos = sLine.find("strrfnd(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 7;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 9))))
-        {
-            string sStrFind = sLine.substr(n_pos+8, nPos-n_pos-8) + " -kmq";
-            if (!parser_StringParser(sStrFind, sDummy, _data, _parser, _option, true))
-                return 0;
-            else
-            {
-                string sToFind = getNextArgument(sStrFind, true) + " -nq";
-                string sToFindIn = getNextArgument(sStrFind, true) + " -nq";
-                string sPos = "";
-                if (getNextArgument(sStrFind, false).length())
-                    sPos = getNextArgument(sStrFind, true);
-                if (!parser_StringParser(sToFind, sDummy, _data, _parser, _option, true))
-                    return 0;
-                if (!parser_StringParser(sToFindIn, sDummy, _data, _parser, _option, true))
-                    return 0;
-                if (sPos.length() && (containsStrings(sPos) || _data.containsStringVars(sPos)))
-                {
-                    sPos += " -nq";
-                    if (!parser_StringParser(sPos, sDummy, _data, _parser, _option, true))
-                        return 0;
-                }
-                if (parser_ExprNotEmpty(sPos))
-                {
-                    _parser.SetExpr(sPos);
-                    nPosition = (unsigned int)(_parser.Eval()-1);
-                    if (nPosition == string::npos)
-                        nPosition = 0;
-                }
-
-                if (sToFindIn.front() == '"')
-                    sToFindIn = sToFindIn.substr(sToFindIn.find('"')+1, sToFindIn.rfind('"')-sToFindIn.find('"')-1);
-                sLine = sLine.substr(0,n_pos) + toString((int)sToFindIn.rfind(sToFind, nPosition)+1) + sLine.substr(nPos+1);
-            }
-        }
-        n_pos++;
-    }//strrfnd("string1", "string2", POS)
-
-    n_pos = 0;
-    while (sLine.find("strrmatch(", n_pos) != string::npos)
-    {
-        unsigned int nPosition = string::npos;
-        n_pos = sLine.find("strrmatch(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 9;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 11))))
-        {
-            string sStrFind = sLine.substr(n_pos+10, nPos-n_pos-10) + " -kmq";
-            if (!parser_StringParser(sStrFind, sDummy, _data, _parser, _option, true))
-                return 0;
-            else
-            {
-                string sToFind = getNextArgument(sStrFind, true) + " -nq";
-                string sToFindIn = getNextArgument(sStrFind, true) + " -nq";
-                string sPos = "";
-                if (getNextArgument(sStrFind, false).length())
-                    sPos = getNextArgument(sStrFind, true);
-                if (!parser_StringParser(sToFind, sDummy, _data, _parser, _option, true))
-                    return 0;
-                if (!parser_StringParser(sToFindIn, sDummy, _data, _parser, _option, true))
-                    return 0;
-                if (sPos.length() && (containsStrings(sPos) || _data.containsStringVars(sPos)))
-                {
-                    sPos += " -nq";
-                    if (!parser_StringParser(sPos, sDummy, _data, _parser, _option, true))
-                        return 0;
-                }
-                if (parser_ExprNotEmpty(sPos))
-                {
-                    _parser.SetExpr(sPos);
-                    nPosition = (unsigned int)(_parser.Eval()-1);
-                    if (nPosition == string::npos)
-                        nPosition = 0;
-                }
-
-                if (sToFindIn.front() == '"')
-                    sToFindIn = sToFindIn.substr(sToFindIn.find('"')+1, sToFindIn.rfind('"')-sToFindIn.find('"')-1);
-                sLine = sLine.substr(0,n_pos) + toString((int)sToFindIn.find_last_of(sToFind, nPosition)+1) + sLine.substr(nPos+1);
-            }
-        }
-        n_pos++;
-    }//strrfnd("string1", "string2", POS)
-
-    n_pos = 0;
-    while (sLine.find("str_not_rmatch(", n_pos) != string::npos)
-    {
-        unsigned int nPosition = string::npos;
-        n_pos = sLine.find("str_not_rmatch(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 14;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 16))))
-        {
-            string sStrFind = sLine.substr(n_pos+15, nPos-n_pos-15) + " -kmq";
-            if (!parser_StringParser(sStrFind, sDummy, _data, _parser, _option, true))
-                return 0;
-            else
-            {
-                string sToFind = getNextArgument(sStrFind, true) + " -nq";
-                string sToFindIn = getNextArgument(sStrFind, true) + " -nq";
-                string sPos = "";
-                if (getNextArgument(sStrFind, false).length())
-                    sPos = getNextArgument(sStrFind, true);
-                if (!parser_StringParser(sToFind, sDummy, _data, _parser, _option, true))
-                    return 0;
-                if (!parser_StringParser(sToFindIn, sDummy, _data, _parser, _option, true))
-                    return 0;
-                if (sPos.length() && (containsStrings(sPos) || _data.containsStringVars(sPos)))
-                {
-                    sPos += " -nq";
-                    if (!parser_StringParser(sPos, sDummy, _data, _parser, _option, true))
-                        return 0;
-                }
-                if (parser_ExprNotEmpty(sPos))
-                {
-                    _parser.SetExpr(sPos);
-                    nPosition = (unsigned int)(_parser.Eval()-1);
-                    if (nPosition == string::npos)
-                        nPosition = 0;
-                }
-
-                if (sToFindIn.front() == '"')
-                    sToFindIn = sToFindIn.substr(sToFindIn.find('"')+1, sToFindIn.rfind('"')-sToFindIn.find('"')-1);
-                sLine = sLine.substr(0,n_pos) + toString((int)sToFindIn.find_last_not_of(sToFind, nPosition)+1) + sLine.substr(nPos+1);
-            }
-        }
-        n_pos++;
-    }//strrfnd("string1", "string2", POS)
-
-    n_pos = 0;
-    while (sLine.find("findparam(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("findparam(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 9;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 11))))
-        {
-            string sParamFind = sLine.substr(n_pos+10, nPos-n_pos-10) + " -kmq";
-            if (!parser_StringParser(sParamFind, sDummy, _data, _parser, _option, true))
-                return 0;
-            else
-            {
-                string sParam = getNextArgument(sParamFind, true) + " -nq";
-                string sString = getNextArgument(sParamFind, true) + " -nq";
-                string sChar = "";
-                if (getNextArgument(sParamFind, false).length())
-                    sChar = getNextArgument(sParamFind, true) + " -nq";
-                if (!parser_StringParser(sParam, sDummy, _data, _parser, _option, true))
-                    return 0;
-                if (!parser_StringParser(sString, sDummy, _data, _parser, _option, true))
-                    return 0;
-                if (sChar.length())
-                {
-                    if (!parser_StringParser(sChar, sDummy, _data, _parser, _option, true))
-                        return 0;
-                }
-                if (sChar.length())
-                {
-                    if (matchParams(sString, sParam, sChar[0]))
-                        sLine = sLine.substr(0,n_pos) + toString((int)matchParams(sString, sParam, sChar[0])+1) + sLine.substr(nPos+1);
-                    else
-                        sLine = sLine.substr(0,n_pos) + "0" + sLine.substr(nPos+1);
-
-                }
-                else
-                {
-                    if (matchParams(sString, sParam))
-                        sLine = sLine.substr(0,n_pos) + toString((int)matchParams(sString, sParam)) + sLine.substr(nPos+1);
-                    else
-                        sLine = sLine.substr(0,n_pos) + "0" + sLine.substr(nPos+1);
-                }
-            }
-        }
-        n_pos++;
-    }//findparam("param", "string","char")
-
-    //cerr << "sLine = " << sLine << endl;
-    n_pos = 0;
-    while (sLine.find("substr(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("substr(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 6;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 8))))
-        {
-            string sSubstr = sLine.substr(n_pos+7, nPos-n_pos-7);
-            //cerr << "substr: " << sSubstr << endl;
-            string sString = getNextArgument(sSubstr, true);
-            string sIndex = getNextArgument(sSubstr, true);
-            string sLength = "-1";
-            if (getNextArgument(sSubstr, false).length())
-                sLength = getNextArgument(sSubstr, true);
-            unsigned int nIndex = 0;
-            unsigned int nLength = 0;
-            if (containsStrings(sLength) || _data.containsStringVars(sLength))
-            {
-                sLength += " -nq";
-                if (!parser_StringParser(sLength, sDummy, _data, _parser, _option, true))
-                    return 0;
-            }
-            if (containsStrings(sIndex) || _data.containsStringVars(sIndex))
-            {
-                sIndex += " -nq";
-                if (!parser_StringParser(sIndex, sDummy, _data, _parser, _option, true))
-                    return 0;
-            }
-            sString += " -nq";
-            if (!parser_StringParser(sString, sDummy, _data, _parser, _option, true))
-                return 0;
-            _parser.SetExpr(sIndex);
-            nIndex = (unsigned int)_parser.Eval()-1;
-            if (nIndex == string::npos)
-                nIndex = 0;
-            _parser.SetExpr(sLength);
-            nLength = (unsigned int)_parser.Eval();
-            sLine = sLine.substr(0,n_pos) + "\"" + sString.substr(nIndex, nLength) + "\"" + sLine.substr(nPos+1);
-        }
-        n_pos++;
-    }//substr("string", index, length)
-
-    n_pos = 0;
-    while (sLine.find("repeat(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("repeat(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 6;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 8))))
-        {
-            string sReplace = sLine.substr(n_pos+7, nPos-n_pos-7);
-            string sString = getNextArgument(sReplace, true);
-            string sNumber = getNextArgument(sReplace, true);
-            unsigned int nNumber = 0;
-            if (containsStrings(sNumber) || _data.containsStringVars(sNumber))
-            {
-                sNumber += " -nq";
-                if (!parser_StringParser(sNumber, sDummy, _data, _parser, _option, true))
-                    return 0;
-            }
-            sString += " -nq kmq";
-            if (!parser_StringParser(sString, sDummy, _data, _parser, _option, true))
-                return 0;
-            _parser.SetExpr(sNumber);
-            nNumber = (unsigned int)_parser.Eval();
-            if (nNumber == string::npos)
-                nNumber = 0;
-            sReplace.clear();
-            for (unsigned int i = 0; i < nNumber; i++)
-                sReplace += sString;
-
-            sLine = sLine.substr(0,n_pos) + "\"" + sReplace + "\"" + sLine.substr(nPos+1);
-        }
-        n_pos++;
-    }//replace("string", index, length, "string")
-
-    n_pos = 0;
-    while (sLine.find("replace(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("replace(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 7;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 9))))
-        {
-            string sReplace = sLine.substr(n_pos+8, nPos-n_pos-8);
-            string sString = getNextArgument(sReplace, true);
-            string sIndex = getNextArgument(sReplace, true);
-            string sLength = getNextArgument(sReplace, true);
-            sReplace = getNextArgument(sReplace, true);
-            unsigned int nIndex = 0;
-            unsigned int nLength = 0;
-            if (containsStrings(sLength) || _data.containsStringVars(sLength))
-            {
-                sLength += " -nq";
-                if (!parser_StringParser(sLength, sDummy, _data, _parser, _option, true))
-                    return 0;
-            }
-            if (containsStrings(sIndex) || _data.containsStringVars(sIndex))
-            {
-                sIndex += " -nq";
-                if (!parser_StringParser(sIndex, sDummy, _data, _parser, _option, true))
-                    return 0;
-            }
-            sString += " -nq kmq";
-            if (!parser_StringParser(sString, sDummy, _data, _parser, _option, true))
-                return 0;
-            sReplace += " -nq kmq";
-            if (!parser_StringParser(sReplace, sDummy, _data, _parser, _option, true))
-                return 0;
-            _parser.SetExpr(sIndex);
-            nIndex = (unsigned int)_parser.Eval()-1;
-            if (nIndex == string::npos)
-                nIndex = 0;
-            _parser.SetExpr(sLength);
-            nLength = (unsigned int)_parser.Eval();
-            sLine = sLine.substr(0,n_pos) + "\"" + sString.replace(nIndex, nLength, sReplace) + "\"" + sLine.substr(nPos+1);
-        }
-        n_pos++;
-    }//replace("string", index, length, "string")
-
-    n_pos = 0;
-    while (sLine.find("replaceall(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("replaceall(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 10;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 12))))
-        {
-            unsigned int nPosition1 = 0;
-            unsigned int nPosition2 = string::npos;
-            string sReplace = sLine.substr(n_pos+11, nPos-n_pos-11);
-            string sString = getNextArgument(sReplace, true);
-            string sString2 = getNextArgument(sReplace, true);
-            string sString3 = getNextArgument(sReplace, true);
-            if (getNextArgument(sReplace, false).length())
-            {
-                string sPos1 = getNextArgument(sReplace, true);
-                if (containsStrings(sPos1) || _data.containsStringVars(sPos1))
-                {
-                    sPos1 += " -nq";
-                    if (!parser_StringParser(sPos1, sDummy, _data, _parser, _option, true))
-                        return 0;
-                }
-                _parser.SetExpr(sPos1);
-                nPosition1 = (unsigned int)_parser.Eval()-1;
-                if (nPosition1 == string::npos)
-                    nPosition1 = 0;
-            }
-            if (getNextArgument(sReplace, false).length())
-            {
-                string sPos2 = getNextArgument(sReplace, true);
-                if (containsStrings(sPos2) || _data.containsStringVars(sPos2))
-                {
-                    sPos2 += " -nq";
-                    if (!parser_StringParser(sPos2, sDummy, _data, _parser, _option, true))
-                        return 0;
-                }
-                _parser.SetExpr(sPos2);
-                nPosition2 = (unsigned int)_parser.Eval()-1;
-            }
-            sString += " -nq kmq";
-            if (!parser_StringParser(sString, sDummy, _data, _parser, _option, true))
-                return 0;
-            sString2 += " -nq kmq";
-            if (!parser_StringParser(sString2, sDummy, _data, _parser, _option, true))
-                return 0;
-            sString3 += " -nq kmq";
-            if (!parser_StringParser(sString3, sDummy, _data, _parser, _option, true))
-                return 0;
-            if (nPosition2 == string::npos)
-                nPosition2 = sString.length();
-            for (unsigned int i = nPosition1; i < nPosition2; i++)
-            {
-                if (i == sString.length())
-                    break;
-                if (sString.substr(i,sString2.length()) == sString2)
-                {
-                    sString.replace(i,sString2.length(), sString3);
-                    nPosition2 += sString3.length()-sString2.length();
-                    i += sString3.length()-1;
-                }
-            }
-
-            sLine = sLine.substr(0,n_pos) + "\"" + sString + "\"" + sLine.substr(nPos+1);
-        }
-        n_pos++;
-    }//replaceall("string", "string", "string"[, pos, pos])
-
-    n_pos = 0;
-    while (sLine.find("char(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("char(", n_pos);
+        n_pos = sLine.find("data(", n_pos);
         if (isInQuotes(sLine, n_pos, true))
         {
             n_pos++;
             continue;
         }
         unsigned int nPos = n_pos + 4;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
+        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && !isInQuotes(sLine, nPos))
             throw UNMATCHED_PARENTHESIS;
         nPos += getMatchingParenthesis(sLine.substr(nPos));
         if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 6))))
         {
-            string sCharString = sLine.substr(n_pos+5, nPos-n_pos-5);
-            string sString = getNextArgument(sCharString, true);
-            string sIndex = getNextArgument(sCharString, true);
-            unsigned int nIndex = 0;
-            if (containsStrings(sIndex) || _data.containsStringVars(sIndex))
+            if (parser_CheckMultArgFunc(sLine.substr(0,n_pos),sLine.substr(nPos+1)))
             {
-                sIndex += " -nq";
-                if (!parser_StringParser(sIndex, sDummy, _data, _parser, _option, true))
-                    return 0;
+                if (n_pos > 4 && sLine.substr(sLine.rfind('(',n_pos)-4,5) == "norm(")
+                    n_pos -= 5;
+                else
+                    n_pos -= 4;
+                nPos++;
             }
-            sString += " -nq";
-            if (!parser_StringParser(sString, sDummy, _data, _parser, _option, true))
+            string sData = sLine.substr(n_pos, nPos-n_pos+1);
+            //cerr << sData << endl;
+            parser_GetDataElement(sData, _parser, _data, _option);
+            sData += " -kmq";
+            if (!parser_StringParser(sData, sDummy, _data, _parser, _option, true))
                 return 0;
-            _parser.SetExpr(sIndex);
-            nIndex = (unsigned int)_parser.Eval()-1;
-            if (nIndex == string::npos || nIndex >= sString.length())
-                nIndex = 0;
-            if (nIndex < sString.length())
-                sLine = sLine.substr(0,n_pos) + "\"" + sString[nIndex] + "\"" + sLine.substr(nPos+1);
-            else
-                sLine = sLine.substr(0,n_pos) + sLine.substr(nPos+1);
+            StripSpaces(sData);
+            sLine = sLine.substr(0,n_pos) + sData + sLine.substr(nPos+1);
         }
         n_pos++;
-    }//char("string", index)
-
+    }
     n_pos = 0;
-    while (sLine.find("getopt(", n_pos) != string::npos)
+    while (n_pos < sLine.length() && _data.containsCacheElements(sLine.substr(n_pos)))
     {
-        n_pos = sLine.find("getopt(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
+        for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
         {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 6;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 8))))
-        {
-            string sGetOpt = sLine.substr(n_pos+7, nPos-n_pos-7);
-            string sString = getNextArgument(sGetOpt, true);
-            string sIndex = getNextArgument(sGetOpt, true);
-            unsigned int nIndex = 0;
-            if (containsStrings(sIndex) || _data.containsStringVars(sIndex))
+            if (sLine.find(iter->first+"(", n_pos) != string::npos)
             {
-                sIndex += " -nq";
-                if (!parser_StringParser(sIndex, sDummy, _data, _parser, _option, true))
-                    return 0;
+                n_pos = sLine.find(iter->first+"(", n_pos);
+                if (isInQuotes(sLine, n_pos, true))
+                {
+                    n_pos++;
+                    continue;
+                }
+                unsigned int nPos = n_pos + (iter->first).length();
+                if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && !isInQuotes(sLine, nPos))
+                    throw UNMATCHED_PARENTHESIS;
+                nPos += getMatchingParenthesis(sLine.substr(nPos));
+                if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, (iter->first).length()+2))))
+                {
+                    if (parser_CheckMultArgFunc(sLine.substr(0,n_pos),sLine.substr(nPos+1)))
+                    {
+                        if (n_pos > 4 && sLine.substr(sLine.rfind('(',n_pos)-4,5) == "norm(")
+                            n_pos -= 5;
+                        else
+                            n_pos -= 4;
+                        nPos++;
+                    }
+                    string sData = sLine.substr(n_pos, nPos-n_pos+1);
+                    parser_GetDataElement(sData, _parser, _data, _option);
+                    sData += " -kmq";
+                    if (!parser_StringParser(sData, sDummy, _data, _parser, _option, true))
+                        return 0;
+                    StripSpaces(sData);
+                    sLine = sLine.substr(0,n_pos) + sData + sLine.substr(nPos+1);
+                }
             }
-            sString += " -nq";
-            if (!parser_StringParser(sString, sDummy, _data, _parser, _option, true))
-                return 0;
-            _parser.SetExpr(sIndex);
-            sString += " ";
-            nIndex = (unsigned int)_parser.Eval()-1;
-            if (nIndex != string::npos)
-            {
-                sLine = sLine.substr(0,n_pos) + "\"" + getArgAtPos(sString, nIndex) + "\"" + sLine.substr(nPos+1);
-            }
-            else
-                sLine = sLine.substr(0,n_pos) + "\"\"" + sLine.substr(nPos+1);
         }
         n_pos++;
-    }//getopt("string", index)
+    }
 
-    n_pos = 0;
-    while (sLine.find("getfilelist(", n_pos) != string::npos)
+    if (!containsStrings(sLine) && !_data.containsStringVars(sLine))
     {
-        n_pos = sLine.find("getfilelist(", n_pos);
+        if (sObject.length() && !sCache.length())
+            sCache = sObject;
+        if (sLine.find("string(") != string::npos || _data.containsStringVars(sLine))
+            return 0;
+        if (bKeepMaskedQuotes)
+        {
+            int nResults = 0;
+            value_type* v = 0;
+            _parser.SetExpr(sLine);
+            v = _parser.Eval(nResults);
+            vAns = v[0];
+            if (sLine.find('=') != string::npos)
+                sLine.erase(0,sLine.find('=')+1);
+            StripSpaces(sLine);
+        }
+        return -1;
+    }
+    n_pos = 0;
+    if (sLine.find('(') != string::npos)
+    {
+        size_t nQuotes = 0;
+        for (size_t i = 0; i < sLine.length(); i++)
+        {
+            if (sLine[i] == '"')
+            {
+                if (i && sLine[i-1] == '\\')
+                    continue;
+                nQuotes++;
+            }
+            // Consider the var parsing feature
+            if (sLine[i] == '#' && !(nQuotes % 2))
+            {
+                for (size_t j = i; j < sLine.length(); j++)
+                {
+                    if (sLine[j] == '"')
+                        return 0;
+                    if ((sLine[j] == '(' || sLine[j] == '{') && getMatchingParenthesis(sLine.substr(j)) != string::npos)
+                        j += getMatchingParenthesis(sLine.substr(j));
+                    if (sLine[j] == ' ' || sLine[j] == '+')
+                    {
+                        i = j;
+                        break;
+                    }
+                    if (j + 1 == sLine.length())
+                    {
+                        i = j;
+                    }
+                }
+            }
+            if (sLine[i] == '(' && !(nQuotes % 2))
+            {
+                if (getMatchingParenthesis(sLine.substr(i)) == string::npos)
+                    throw UNMATCHED_PARENTHESIS;
+
+                size_t nPos = getMatchingParenthesis(sLine.substr(i)) + i;
+                if (i < 6 || (i >= 6 && sLine.substr(i-6,6) != "string"))
+                {
+                    string sString = sLine.substr(i+1, nPos-i-1);
+                    if (i > 0 && !checkDelimiter(sLine.substr(i-1, nPos-i+2)))
+                        return 0;
+                    if (containsStrings(sString) || _data.containsStringVars(sString))
+                    {
+                        if (!parser_StringParser(sString, sDummy, _data, _parser, _option, true))
+                            return 0;
+                        else
+                            sLine = sLine.substr(0,i) + sString + sLine.substr(nPos+1);
+                    }
+                }
+            }
+        }
+    }
+//NumeReKernel::print("DOT3");
+    if (sLine.find("{") != string::npos)
+    {
+        n_pos = 0;
+        if (sLine.find('=') != string::npos
+            && sLine.find('=') != sLine.find("==")
+            && sLine.find('=') != sLine.find("!=")+1
+            && sLine.find('=') != sLine.find("<=")+1
+            && sLine.find('=') != sLine.find(">=")+1
+            && !sObject.length()
+            && !isInQuotes(sLine, sLine.find('=')))
+            n_pos = sLine.find('=') + 1;
+        string sVectortemp = sLine.substr(0,n_pos);
+        sLine.erase(0,n_pos);
+        parser_VectorToExpr(sLine, _option);
+        sLine = sVectortemp + sLine;
+    }
+    StripSpaces(sLine);
+    if (!sLine.length())
+        return 1;
+    if (sLine.find('"') == string::npos && sLine.find('#') == string::npos)
+    {
+        if (sObject.length() && !sCache.length())
+            sCache = sObject;
+        if (sLine.find("string(") != string::npos || _data.containsStringVars(sLine))
+            return 0;
+        return -1;
+    }
+
+    if (NumeReKernel::bSupressAnswer)
+        bSilent = true;
+
+    if (sLine.find('=') != string::npos
+        && sLine.find('=') != sLine.find("==")
+        && sLine.find('=') != sLine.find("!=")+1
+        && sLine.find('=') != sLine.find("<=")+1
+        && sLine.find('=') != sLine.find(">=")+1
+        && !sObject.length()
+        && !isInQuotes(sLine, sLine.find('=')))
+    {
+        sObject = sLine.substr(0,sLine.find('='));
+        sLine = sLine.substr(sLine.find('=')+1);
+    }
+
+    // Apply the "#" parser to the string
+    sTemp = parser_NumToString(sLine, _data, _parser, _option);
+
+    while (sTemp.length())
+        vFinal.push_back(getNextArgument(sTemp, true));
+
+    if (!vFinal.size())
+        return 0;
+
+    // Apply some elementary operations such as concatenation and logical operations
+    parser_ApplyElementaryStringOperations(vFinal, vIsNoStringValue, _parser, _option, bReturningLogicals);
+
+    // store the string results in the variables or inb "string()" respectively
+    if (!parser_StoreStringResults(vFinal, vIsNoStringValue, sObject, _data, _parser, _option))
+        return 0;
+
+    string sConsoleOut = parser_CreateStringOutput(vFinal, vIsNoStringValue, sLine, bNoQuotes, bReturningLogicals, bKeepMaskedQuotes);
+
+    if (bPeek)
+        NumeReKernel::printPreFmt("\r                                                       \r");
+    if ((!bSilent || bPeek) && !bReturningLogicals)
+        NumeReKernel::printPreFmt(LineBreak(sConsoleOut, _option, false, 0) + "\n");
+
+    if (bReturningLogicals)
+        return -1;
+    else
+        return 1;
+}
+
+
+string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _parser, const Settings& _option)
+{
+    unsigned int n_pos = 0;
+    string sDummy;
+
+    if (sLine.find('=') != string::npos
+        && sLine.find('=') != sLine.find("==")
+        && sLine.find('=') != sLine.find("!=")+1
+        && sLine.find('=') != sLine.find("<=")+1
+        && sLine.find('=') != sLine.find(">=")+1
+        && !isInQuotes(sLine, sLine.find('=')))
+        n_pos = sLine.find('=') + 1;
+
+    if (_data.containsStringVars(sLine.substr(n_pos)))
+        _data.getStringValues(sLine, n_pos);
+
+    // str string_cast(EXPR)
+    while (sLine.find("string_cast(", n_pos) != string::npos)
+    {
+        n_pos = sLine.find("string_cast(", n_pos);
         if (isInQuotes(sLine, n_pos, true))
         {
             n_pos++;
@@ -1439,86 +1182,78 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
         nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 13))))
+        if (!isInQuotes(sLine, n_pos, true) && !isInQuotes(sLine, nPos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 13))))
         {
-            string sFileScheme = "";
-            string sFlags = sLine.substr(n_pos+12, nPos-n_pos-12);
-            int nFlags = 0;
-            sFileScheme = getNextArgument(sFlags, true);
-            if (sFlags.length())
+            string sToString = sLine.substr(n_pos+12, nPos-n_pos-12);
+            if (sToString.find('"') != string::npos || sToString.find('#') != string::npos)
             {
-                _parser.SetExpr(sFlags);
-                nFlags = (int)_parser.Eval();
+                sToString += " -nq";
+                if (!parser_StringParser(sToString, sDummy, _data, _parser, _option, true))
+                    throw STRING_ERROR;
+                for (unsigned int i = 0; i < sToString.length(); i++)
+                {
+                    if (i && sToString[i] == '"' && sToString[i-1] != '\\')
+                        sToString.insert(i,1,'\\');
+                }
             }
-            if (containsStrings(sFileScheme) || _data.containsStringVars(sFileScheme))
-            {
-                sFileScheme += " -nq";
-                if (!parser_StringParser(sFileScheme, sDummy, _data, _parser, _option, true))
-                    return 0;
-            }
-            vector<string> vFileList = getFileList(sFileScheme, _option, nFlags);
-            sFileScheme.clear();
-            for (unsigned int i = 0; i < vFileList.size(); i++)
-            {
-                sFileScheme += "\"" + vFileList[i] + "\"";
-                if (i < vFileList.size()-1)
-                    sFileScheme += ", ";
-            }
-            if (!sFileScheme.length())
-                sLine = sLine.substr(0,n_pos) + "\"\"" + sLine.substr(nPos+1);
-            else
-                sLine = sLine.substr(0,n_pos) + "{" + sFileScheme+ "}" + sLine.substr(nPos+1);
+            sLine = sLine.substr(0,n_pos) + "\"" + sToString + "\"" + sLine.substr(nPos+1);
         }
         n_pos++;
-    }//getfilelist("path/with/wildcards")
+    }
 
     n_pos = 0;
-    while (sLine.find("getfolderlist(", n_pos) != string::npos)
+    // cmd to_cmd(str)
+    while (sLine.find("to_cmd(", n_pos) != string::npos)
     {
-        n_pos = sLine.find("getfolderlist(", n_pos);
+        n_pos = sLine.find("to_cmd(", n_pos) + 6;
+        if (isInQuotes(sLine, n_pos, true))
+            continue;
+        unsigned int nParPos = getMatchingParenthesis(sLine.substr(n_pos));
+        if (nParPos == string::npos)
+            throw UNMATCHED_PARENTHESIS;
+        if (!isInQuotes(sLine, nParPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 8))))
+        {
+            string sCmdString = sLine.substr(n_pos+1, nParPos-1);
+            StripSpaces(sCmdString);
+            if (containsStrings(sCmdString) || _data.containsStringVars(sCmdString))
+            {
+                sCmdString += " -nq";
+                parser_StringParser(sCmdString, sDummy, _data, _parser, _option, true);
+            }
+            sLine = sLine.substr(0, n_pos-6) + sCmdString + sLine.substr(n_pos + nParPos+1);
+            n_pos -= 5;
+        }
+    }
+
+    n_pos = 0;
+    // log is_string(EXPR)
+    while (sLine.find("is_string(", n_pos) != string::npos)
+    {
+        n_pos = sLine.find("is_string(", n_pos);
         if (isInQuotes(sLine, n_pos, true))
         {
             n_pos++;
             continue;
         }
-        unsigned int nPos = n_pos + 13;
+        unsigned int nPos = n_pos + 9;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
             throw UNMATCHED_PARENTHESIS;
         nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 15))))
-        {
-            string sFileScheme = "";
-            string sFlags = sLine.substr(n_pos+14, nPos-n_pos-14);
-            int nFlags = 0;
-            sFileScheme = getNextArgument(sFlags, true);
-            if (sFlags.length())
-            {
-                _parser.SetExpr(sFlags);
-                nFlags = (int)_parser.Eval();
-            }
-            if (containsStrings(sFileScheme) || _data.containsStringVars(sFileScheme))
-            {
-                sFileScheme += " -nq";
-                if (!parser_StringParser(sFileScheme, sDummy, _data, _parser, _option, true))
-                    return 0;
-            }
-            vector<string> vFileList = getFolderList(sFileScheme, _option, nFlags);
-            sFileScheme.clear();
-            for (unsigned int i = 0; i < vFileList.size(); i++)
-            {
-                sFileScheme += "\"" + vFileList[i] + "\"";
-                if (i < vFileList.size()-1)
-                    sFileScheme += ", ";
-            }
-            if (!sFileScheme.length())
-                sLine = sLine.substr(0,n_pos) + "\"\"" + sLine.substr(nPos+1);
-            else
-                sLine = sLine.substr(0,n_pos) + "{" + sFileScheme+ "}" + sLine.substr(nPos+1);
-        }
-        n_pos++;
-    }//getfilelist("path/with/wildcards")
+        if (!isInQuotes(sLine, nPos, true)
+            && !isInQuotes(sLine, n_pos, true)
+            && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 11)))
+            && (containsStrings(sLine.substr(n_pos+10, nPos - n_pos-10))
+                || _data.containsStringVars(sLine.substr(n_pos+10, nPos - n_pos-10))))
+            sLine = sLine.substr(0, n_pos) + "true" + sLine.substr(nPos+1);
+        else if (isInQuotes(sLine, nPos)
+            || isInQuotes(sLine, n_pos))
+            n_pos++;
+        else
+            sLine = sLine.substr(0, n_pos) + "false" + sLine.substr(nPos+1);
+    }
 
     n_pos = 0;
+    // {val} = getindices(str, [val])
     while (sLine.find("getindices(", n_pos) != string::npos)
     {
         n_pos = sLine.find("getindices(", n_pos);
@@ -1535,7 +1270,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
         {
             string _sObject = sLine.substr(n_pos+11, nPos-n_pos-11);
             if (!parser_StringParser(_sObject, sDummy, _data, _parser, _option, true))
-                return 0;
+                throw STRING_ERROR;
             string sType = _sObject;
             int nType = 0;
             _sObject = getNextArgument(sType, true);
@@ -1670,7 +1405,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     {
                         if (_sObject.find(iter->first+"(") != string::npos
                             && (!_sObject.find(iter->first+"(")
-                                || (_sObject.find(iter->first+"(") && checkDelimiter(_sObject.substr(sObject.find(iter->first+"(")-1, (iter->first).length()+2)))))
+                                || (_sObject.find(iter->first+"(") && checkDelimiter(_sObject.substr(_sObject.find(iter->first+"(")-1, (iter->first).length()+2)))))
                         {
                             if (_mIndex.nI[1] == -2)
                                 _mIndex.nI[1] = _data.getLines(iter->first, false)-1;
@@ -1692,33 +1427,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     }
 
     n_pos = 0;
-    while (sLine.find("getmatchingparens(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("getmatchingparens(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 17;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 19))))
-        {
-            string _sObject = sLine.substr(n_pos+18, nPos-n_pos-18);
-            if (!parser_StringParser(_sObject, sDummy, _data, _parser, _option, true))
-                return 0;
-            if (_sObject[0] == '"')
-                _sObject.erase(0,1);
-            if (_sObject[_sObject.length()-1] == '"')
-                _sObject.erase(_sObject.length()-1);
-            sLine = sLine.substr(0,n_pos) + toString((int)(getMatchingParenthesis(_sObject)+1)) + sLine.substr(nPos+1);
-        }
-        n_pos++;
-    }
-
-    n_pos = 0;
+    // log = is_data(EXPR)
     while (sLine.find("is_data(", n_pos) != string::npos)
     {
         n_pos = sLine.find("is_data(", n_pos);
@@ -1737,7 +1446,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             if (containsStrings(sData))
             {
                 if (!parser_StringParser(sData, sDummy, _data, _parser, _option, true))
-                    return 0;
+                    throw STRING_ERROR;
             }
             if (sData[0] == '"')
                 sData.erase(0,1);
@@ -1753,80 +1462,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     }
 
     n_pos = 0;
-    while (sLine.find("data(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("data(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 4;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && !isInQuotes(sLine, nPos))
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 6))))
-        {
-            if (parser_CheckMultArgFunc(sLine.substr(0,n_pos),sLine.substr(nPos+1)))
-            {
-                if (n_pos > 4 && sLine.substr(sLine.rfind('(',n_pos)-4,5) == "norm(")
-                    n_pos -= 5;
-                else
-                    n_pos -= 4;
-                nPos++;
-            }
-            string sData = sLine.substr(n_pos, nPos-n_pos+1);
-            //cerr << sData << endl;
-            parser_GetDataElement(sData, _parser, _data, _option);
-            sData += " -kmq";
-            if (!parser_StringParser(sData, sDummy, _data, _parser, _option, true))
-                return 0;
-            StripSpaces(sData);
-            sLine = sLine.substr(0,n_pos) + sData + sLine.substr(nPos+1);
-        }
-        n_pos++;
-    }
-    n_pos = 0;
-    while (n_pos < sLine.length() && _data.containsCacheElements(sLine.substr(n_pos)))
-    {
-        for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-        {
-            if (sLine.find(iter->first+"(", n_pos) != string::npos)
-            {
-                n_pos = sLine.find(iter->first+"(", n_pos);
-                if (isInQuotes(sLine, n_pos, true))
-                {
-                    n_pos++;
-                    continue;
-                }
-                unsigned int nPos = n_pos + (iter->first).length();
-                if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && !isInQuotes(sLine, nPos))
-                    throw UNMATCHED_PARENTHESIS;
-                nPos += getMatchingParenthesis(sLine.substr(nPos));
-                if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, (iter->first).length()+2))))
-                {
-                    if (parser_CheckMultArgFunc(sLine.substr(0,n_pos),sLine.substr(nPos+1)))
-                    {
-                        if (n_pos > 4 && sLine.substr(sLine.rfind('(',n_pos)-4,5) == "norm(")
-                            n_pos -= 5;
-                        else
-                            n_pos -= 4;
-                        nPos++;
-                    }
-                    string sData = sLine.substr(n_pos, nPos-n_pos+1);
-                    parser_GetDataElement(sData, _parser, _data, _option);
-                    sData += " -kmq";
-                    if (!parser_StringParser(sData, sDummy, _data, _parser, _option, true))
-                        return 0;
-                    StripSpaces(sData);
-                    sLine = sLine.substr(0,n_pos) + sData + sLine.substr(nPos+1);
-                }
-            }
-        }
-        n_pos++;
-    }
-
-    n_pos = 0;
+    // str = valtostr(EXPR, [str])
     while (sLine.find("valtostr(", n_pos) != string::npos)
     {
         n_pos = sLine.find("valtostr(", n_pos);
@@ -1852,7 +1488,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 {
                     sChar += " -nq kmq";
                     if (!parser_StringParser(sChar, sDummy, _data, _parser, _option, true))
-                        return 0;
+                        throw STRING_ERROR;
                 }
                 string sCnt = getNextArgument(sToString, true);
                 if (sCnt.length())
@@ -1893,7 +1529,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             {
                 sExpr += " -nq";
                 if (!parser_StringParser(sExpr, sDummy, _data, _parser, _option, true))
-                    return 0;
+                    throw STRING_ERROR;
                 while (sExpr.length() < nCount && sChar.length())
                     sExpr.insert(0,sChar);
                 sToString = sExpr;
@@ -1903,325 +1539,666 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
         }
         n_pos++;
     }
+    return sLine;
+}
 
-    n_pos = 0;
-    while (sLine.find("num(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("num(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 3;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 5))))
-        {
-            string sEnum = sLine.substr(n_pos+4, nPos-n_pos-4);
-            if (!parser_StringParser(sEnum, sDummy, _data, _parser, _option, true))
-                return 0;
-            if (containsStrings(sEnum) || _data.containsStringVars(sEnum))
-                sLine = sLine.substr(0,n_pos) + toString(parser_numStrings(sEnum)) + sLine.substr(nPos+1);
-            else
-                sLine = sLine.substr(0,n_pos+4) + sEnum + sLine.substr(nPos);
-        }
-        n_pos++;
-    }
-
-    n_pos = 0;
-    while (sLine.find("cnt(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("cnt(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 3;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 5))))
-        {
-            string sEnum = sLine.substr(n_pos+4, nPos-n_pos-4);
-            if (!parser_StringParser(sEnum, sDummy, _data, _parser, _option, true))
-                return 0;
-            if (containsStrings(sEnum) || _data.containsStringVars(sEnum))
-                sLine = sLine.substr(0,n_pos) + toString(parser_countStrings(sEnum)) + sLine.substr(nPos+1);
-            else
-                sLine = sLine.substr(0,n_pos+4) + sEnum + sLine.substr(nPos);
-        }
-        n_pos++;
-    }
-
-    n_pos = 0;
-    while (sLine.find("min(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("min(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 3;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 5))))
-        {
-            string sMin = sLine.substr(n_pos+4, nPos-n_pos-4);
-            if (!parser_StringParser(sMin, sDummy, _data, _parser, _option, true))
-                return 0;
-            if (containsStrings(sMin) || _data.containsStringVars(sMin))
-                sLine = sLine.substr(0,n_pos) + parser_getMinString(sMin) + sLine.substr(nPos+1);
-            else
-                sLine = sLine.substr(0,n_pos+4) + sMin + sLine.substr(nPos);
-        }
-        n_pos++;
-    }
-
-    n_pos = 0;
-    while (sLine.find("max(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("max(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 3;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 5))))
-        {
-            string sMax = sLine.substr(n_pos+4, nPos-n_pos-4);
-            if (!parser_StringParser(sMax, sDummy, _data, _parser, _option, true))
-                return 0;
-            if (containsStrings(sMax) || _data.containsStringVars(sMax))
-                sLine = sLine.substr(0,n_pos) + parser_getMaxString(sMax) + sLine.substr(nPos+1);
-            else
-                sLine = sLine.substr(0,n_pos+4) + sMax + sLine.substr(nPos);
-        }
-        n_pos++;
-    }
-
-    n_pos = 0;
-    while (sLine.find("sum(", n_pos) != string::npos)
-    {
-        n_pos = sLine.find("sum(", n_pos);
-        if (isInQuotes(sLine, n_pos, true))
-        {
-            n_pos++;
-            continue;
-        }
-        unsigned int nPos = n_pos + 3;
-        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
-        nPos += getMatchingParenthesis(sLine.substr(nPos));
-        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 5))))
-        {
-            string sSum = sLine.substr(n_pos+4, nPos-n_pos-4);
-            if (!parser_StringParser(sSum, sDummy, _data, _parser, _option, true))
-                return 0;
-            if (containsStrings(sSum) || _data.containsStringVars(sSum))
-                sLine = sLine.substr(0,n_pos) + parser_getSumString(sSum) + sLine.substr(nPos+1);
-            else
-                sLine = sLine.substr(0,n_pos+4) + sSum + sLine.substr(nPos);
-        }
-        n_pos++;
-    }
-
-    //cerr << sLine << endl;
-    //NumeReKernel::print("before stringvar replacement");
-    if (!containsStrings(sLine) && !_data.containsStringVars(sLine))
-    {
-        if (sObject.length() && !sCache.length())
-            sCache = sObject;
-        if (sLine.find("string(") != string::npos || _data.containsStringVars(sLine))
-            return 0;
-        if (bKeepMaskedQuotes)
-        {
-            int nResults = 0;
-            value_type* v = 0;
-            _parser.SetExpr(sLine);
-            v = _parser.Eval(nResults);
-            vAns = v[0];
-            if (sLine.find('=') != string::npos)
-                sLine.erase(0,sLine.find('=')+1);
-            StripSpaces(sLine);
-        }
-        return -1;
-    }
-    n_pos = 0;
-    if (sLine.find('(') != string::npos)
-    {
-        size_t nQuotes = 0;
-        for (size_t i = 0; i < sLine.length(); i++)
-        {
-            if (sLine[i] == '"')
-            {
-                if (i && sLine[i-1] == '\\')
-                    continue;
-                nQuotes++;
-            }
-            // Consider the var parsing feature
-            if (sLine[i] == '#' && !(nQuotes % 2))
-            {
-                for (size_t j = i; j < sLine.length(); j++)
-                {
-                    if (sLine[j] == '"')
-                        return 0;
-                    if ((sLine[j] == '(' || sLine[j] == '{') && getMatchingParenthesis(sLine.substr(j)) != string::npos)
-                        j += getMatchingParenthesis(sLine.substr(j));
-                    if (sLine[j] == ' ' || sLine[j] == '+')
-                    {
-                        i = j;
-                        break;
-                    }
-                    if (j + 1 == sLine.length())
-                    {
-                        i = j;
-                    }
-                }
-            }
-            if (sLine[i] == '(' && !(nQuotes % 2))
-            {
-                if (getMatchingParenthesis(sLine.substr(i)) == string::npos)
-                    throw UNMATCHED_PARENTHESIS;
-
-                size_t nPos = getMatchingParenthesis(sLine.substr(i)) + i;
-                if (i < 6 || (i >= 6 && sLine.substr(i-6,6) != "string"))
-                {
-                    string sString = sLine.substr(i+1, nPos-i-1);
-                    if (i > 0 && !checkDelimiter(sLine.substr(i-1, nPos-i+2)))
-                        return 0;
-                    if (containsStrings(sString) || _data.containsStringVars(sString))
-                    {
-                        if (!parser_StringParser(sString, sDummy, _data, _parser, _option, true))
-                            return 0;
-                        else
-                            sLine = sLine.substr(0,i) + sString + sLine.substr(nPos+1);
-                    }
-                }
-            }
-        }
-        /*while (sLine.find('(', n_pos) != string::npos)
-        {
-            n_pos = sLine.find('(', n_pos);
-            unsigned int nPos = n_pos;
-            if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && !isInQuotes(sLine, n_pos))
-                throw UNMATCHED_PARENTHESIS;
-            if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && isInQuotes(sLine, n_pos))
-            {
-                n_pos++;
-                continue;
-            }
-            nPos += getMatchingParenthesis(sLine.substr(nPos));
-            if (!isInQuotes(sLine, nPos)
-                && !isInQuotes(sLine, n_pos)
-                && (n_pos < 6 || ( n_pos >= 6 && sLine.substr(n_pos-6,6) != "string")))
-            {
-                string sString = sLine.substr(n_pos+1, nPos-n_pos-1);
-                if (n_pos > 0 && !checkDelimiter(sLine.substr(n_pos-1, nPos-n_pos+2)))
-                    return 0;
-                if (containsStrings(sString) || _data.containsStringVars(sString))
-                {
-                    if (!parser_StringParser(sString, sDummy, _data, _parser, _option, true))
-                        return 0;
-                    else
-                        sLine = sLine.substr(0,n_pos) + sString + sLine.substr(nPos+1);
-                }
-            }
-            n_pos++;
-        }*/
-    }
-//NumeReKernel::print("DOT3");
-    if (sLine.find("{") != string::npos)
-    {
-        n_pos = 0;
-        if (sLine.find('=') != string::npos
-            && sLine.find('=') != sLine.find("==")
-            && sLine.find('=') != sLine.find("!=")+1
-            && sLine.find('=') != sLine.find("<=")+1
-            && sLine.find('=') != sLine.find(">=")+1
-            && !sObject.length()
-            && !isInQuotes(sLine, sLine.find('=')))
-            n_pos = sLine.find('=') + 1;
-        string sVectortemp = sLine.substr(0,n_pos);
-        sLine.erase(0,n_pos);
-        parser_VectorToExpr(sLine, _option);
-        sLine = sVectortemp + sLine;
-    }
-    StripSpaces(sLine);
-    if (!sLine.length())
-        return 1;
-    if (sLine.find('"') == string::npos && sLine.find('#') == string::npos)
-    {
-        if (sObject.length() && !sCache.length())
-            sCache = sObject;
-        if (sLine.find("string(") != string::npos || _data.containsStringVars(sLine))
-            return 0;
-        return -1;
-    }
-
-    if (NumeReKernel::bSupressAnswer)
-        bSilent = true;
-
+string parser_ApplyStringFuncs(string sLine, Datafile& _data, Parser& _parser, const Settings& _option)
+{
+    static map<string, StringFuncHandle> mFuncHandleTable = parser_getStringFuncHandles();
+    unsigned int n_pos = 0;
     if (sLine.find('=') != string::npos
         && sLine.find('=') != sLine.find("==")
         && sLine.find('=') != sLine.find("!=")+1
         && sLine.find('=') != sLine.find("<=")+1
         && sLine.find('=') != sLine.find(">=")+1
-        && !sObject.length()
         && !isInQuotes(sLine, sLine.find('=')))
-    {
-        sObject = sLine.substr(0,sLine.find('='));
-        sLine = sLine.substr(sLine.find('=')+1);
-    }
+        n_pos = sLine.find('=') + 1;
+    if (_data.containsStringVars(sLine.substr(n_pos)))
+        _data.getStringValues(sLine, n_pos);
 
-    //cerr << sObject << endl;
-    //cerr << "'" << sLine << "'" << endl;
-    //NumeReKernel::print("after stringvarreplacement:" + sLine);
-    sTemp = sLine + " ";
-    unsigned int nPos = 0;
-    while (sTemp.find('#', nPos) != string::npos)
+    for (auto iter = mFuncHandleTable.begin(); iter != mFuncHandleTable.end(); ++iter)
     {
-        nPos = sTemp.find('#', nPos);
-        //cerr << isInQuotes(sTemp, nPos) << " " << nPos << endl;
-        if (!isInQuotes(sTemp, nPos, true))
+        if (sLine.find(iter->first + "(") != string::npos)
+            parser_StringFuncHandler(sLine, iter->first, _data, _parser, _option, iter->second);
+    }
+    return sLine;
+}
+
+map<string, StringFuncHandle> parser_getStringFuncHandles()
+{
+    map<string, StringFuncHandle> mHandleTable;
+
+    mHandleTable["strlen"]              = StringFuncHandle(STR, strfnc_strlen, false);
+    mHandleTable["ascii"]               = StringFuncHandle(STR, strfnc_ascii, false);
+    mHandleTable["to_string"]           = StringFuncHandle(STR, strfnc_to_string, false);
+    mHandleTable["to_value"]            = StringFuncHandle(STR, strfnc_to_value, false);
+    mHandleTable["to_uppercase"]        = StringFuncHandle(STR, strfnc_to_uppercase, false);
+    mHandleTable["to_lowercase"]        = StringFuncHandle(STR, strfnc_to_lowercase, false);
+    //mHandleTable["is_string"]           = StringFuncHandle(STR, strfnc_is_string, false); //fehler
+    mHandleTable["getmatchingparens"]   = StringFuncHandle(STR, strfnc_getmatchingparens, false);
+    mHandleTable["findfile"]            = StringFuncHandle(STR_STROPT, strfnc_findfile, false);
+    mHandleTable["split"]               = StringFuncHandle(STR_STR, strfnc_split, false);
+    mHandleTable["strfnd"]              = StringFuncHandle(STR_STR_VALOPT, strfnc_strfnd, false);
+    mHandleTable["strmatch"]            = StringFuncHandle(STR_STR_VALOPT, strfnc_strmatch, false);
+    mHandleTable["str_not_match"]       = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_match, false);
+    mHandleTable["strrfnd"]             = StringFuncHandle(STR_STR_VALOPT, strfnc_strrfnd, false);
+    mHandleTable["strrmatch"]           = StringFuncHandle(STR_STR_VALOPT, strfnc_strrmatch, false);
+    mHandleTable["str_not_rmatch"]      = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_rmatch, false);
+    mHandleTable["findparam"]           = StringFuncHandle(STR_STR_STROPT, strfnc_findparam, false);
+    mHandleTable["substr"]              = StringFuncHandle(STR_VAL_VALOPT, strfnc_substr, false);
+    mHandleTable["repeat"]              = StringFuncHandle(STR_VAL, strfnc_repeat, false);
+    mHandleTable["char"]                = StringFuncHandle(STR_VAL, strfnc_char, false);
+    mHandleTable["getopt"]              = StringFuncHandle(STR_VAL, strfnc_getopt, false);
+    mHandleTable["replace"]             = StringFuncHandle(STR_VAL_VALOPT_STROPT, strfnc_replace, false); // fehler
+    mHandleTable["replaceall"]          = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_replaceall, false);
+    mHandleTable["getfilelist"]         = StringFuncHandle(STR_VALOPT, strfnc_getfilelist, false);
+    mHandleTable["getfolderlist"]       = StringFuncHandle(STR_VALOPT, strfnc_getfolderlist, false);
+    mHandleTable["to_char"]             = StringFuncHandle(VAL, strfnc_to_char, true);
+    mHandleTable["num"]                 = StringFuncHandle(STR, strfnc_num, true);
+    mHandleTable["cnt"]                 = StringFuncHandle(STR, strfnc_cnt, true);
+    mHandleTable["min"]                 = StringFuncHandle(STR, strfnc_min, true);
+    mHandleTable["max"]                 = StringFuncHandle(STR, strfnc_max, true);
+    mHandleTable["sum"]                 = StringFuncHandle(STR, strfnc_sum, true);
+    //mHandleTable["valtostr"]            = StringFuncHandle(STR_STROPT_VALOPT, strfnc_valtostr, true);
+
+    return mHandleTable;
+}
+
+string removeMaskedStrings(const string& sString)
+{
+    if (sString.find("\\\"") != string::npos)
+        return sString;
+    string sRet = sString;
+    while (sRet.find("\\\"") != string::npos)
+        sRet.erase(sRet.find("\\\""), 1);
+    return sRet;
+}
+
+string addMaskedStrings(const string& sString)
+{
+    if (sString.find('"') != string::npos)
+        return sString;
+    string sRet = sString;
+    for (size_t i = 1; i < sRet.length()-1; i++)
+    {
+        if (sRet[i] == '"' && sRet[i-1] != '\\')
+        {
+            sRet.insert(i-1, "\\");
+            i++;
+        }
+    }
+    return sRet;
+}
+
+string listToVector(const string& sString)
+{
+    if (sString.find('"') == string::npos && (sString.find(',') == string::npos || sString.find('{') != string::npos))
+        return sString;
+    else if (sString.find('"') == string::npos)
+        return "{" + sString + "}";
+    else if (sString.find('"') != string::npos && sString.find(',') != string::npos && sString.find('{') == string::npos)
+    {
+        int nQuotes = 0;
+        for (size_t i = 0; i < sString.length(); i++)
+        {
+            if (sString[i] == '"' && (!i || sString[i-1] != '\\'))
+                nQuotes++;
+            if (sString[i] == ',' && !(nQuotes % 2))
+            {
+                return "{" + sString + "}";
+            }
+        }
+    }
+    return sString;
+}
+
+string removeQuotationMarks(const string& sString)
+{
+    if (sString.find('"') == string::npos)
+        return sString;
+    return sString.substr(1,sString.length()-2);
+}
+
+void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& _data, Parser& _parser, const Settings& _option, StringFuncHandle funcHandle)
+{
+    size_t n_pos = 0;
+
+    // While the function signature can be found
+    while (sLine.find(sFuncName + "(", n_pos) != string::npos)
+    {
+        n_pos = sLine.find(sFuncName + "(", n_pos);
+
+        // Ignore false positives
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
+
+        unsigned int nPos = n_pos + sFuncName.length();
+
+        // If no matching parenthesis is found, throw an error
+        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
+            throw UNMATCHED_PARENTHESIS;
+
+        nPos += getMatchingParenthesis(sLine.substr(nPos));
+
+        // Extract the argument of the current found function and process it
+        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, sFuncName.length()+2))))
+        {
+            string sFunctionArgument = sLine.substr(n_pos+sFuncName.length()+1, nPos-n_pos-sFuncName.length()-1);
+            vector<string> vReturnValues;
+            StringFuncArgs stringArgs;
+            stringArgs.opt = &_option;
+
+            // Apply the parser as specified by the function signature. After that call the corresponding
+            // string function with the returned arguments as many times as it's needed
+            if (funcHandle.fType >= PARSER_INT && funcHandle.fType < PARSER_STRING)
+            {
+                n_vect nIntArg;
+                size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, nIntArg);
+                if (!nMaxArgs)
+                {
+                    throw STRING_ERROR;
+                }
+                if (funcHandle.bTakesMultiArguments)
+                {
+                    stringArgs.nMultiArg = nIntArg;
+                    vReturnValues.push_back(funcHandle.fHandle(stringArgs));
+                }
+                else
+                {
+                    for (size_t i = 0; i < nMaxArgs; i++)
+                    {
+                        stringArgs.nArg1 = nIntArg[i];
+                        vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
+                    }
+                }
+            }
+            else if (funcHandle.fType >= PARSER_STRING && funcHandle.fType < PARSER_STRING_INT_INT)
+            {
+                s_vect sStringArg;
+                size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, sStringArg);
+                if (!nMaxArgs)
+                {
+                    throw STRING_ERROR;
+                }
+                if (funcHandle.bTakesMultiArguments)
+                {
+                    stringArgs.sMultiArg = sStringArg;
+                    vReturnValues.push_back(funcHandle.fHandle(stringArgs));
+                }
+                else
+                {
+                    for (size_t i = 0; i < nMaxArgs; i++)
+                    {
+                        stringArgs.sArg1 = sStringArg[i];
+                        vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
+                    }
+                }
+            }
+            else if (funcHandle.fType >= PARSER_STRING_INT_INT && funcHandle.fType < PARSER_STRING_INT_INT_STRING)
+            {
+                s_vect sStringArg;
+                n_vect nIntArg1, nIntArg2;
+                size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, sStringArg, nIntArg1, nIntArg2);
+                if (!nMaxArgs)
+                {
+                    throw STRING_ERROR;
+                }
+                for (size_t i = 0; i < nMaxArgs; i++)
+                {
+                    if (i < sStringArg.size())
+                        stringArgs.sArg1 = sStringArg[i];
+                    else if (sStringArg.size() == 1)
+                        stringArgs.sArg1 = sStringArg[0];
+                    else
+                        stringArgs.sArg1 = "";
+                    if (i < nIntArg1.size())
+                        stringArgs.nArg1 = nIntArg1[i];
+                    else if (nIntArg1.size() == 1)
+                        stringArgs.nArg1 = nIntArg1[0];
+                    else
+                        stringArgs.nArg1 = DEFAULT_NUM_ARG;
+                    if (i < nIntArg2.size())
+                        stringArgs.nArg2 = nIntArg2[i];
+                    else if (nIntArg2.size() == 1)
+                        stringArgs.nArg2 = nIntArg2[0];
+                    else
+                        stringArgs.nArg2 = DEFAULT_NUM_ARG;
+
+                    vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
+                }
+
+            }
+            else if (funcHandle.fType >= PARSER_STRING_INT_INT_STRING && funcHandle.fType < PARSER_STRING_STRING_INT_INT)
+            {
+                s_vect sStringArg1, sStringArg2;
+                n_vect nIntArg1, nIntArg2;
+                size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, sStringArg1, nIntArg1, nIntArg2, sStringArg2);
+                if (!nMaxArgs)
+                {
+                    throw STRING_ERROR;
+                }
+                for (size_t i = 0; i < nMaxArgs; i++)
+                {
+                    if (i < sStringArg1.size())
+                        stringArgs.sArg1 = sStringArg1[i];
+                    else if (sStringArg1.size() == 1)
+                        stringArgs.sArg1 = sStringArg1[0];
+                    else
+                        stringArgs.sArg1 = "";
+                    if (i < sStringArg2.size())
+                        stringArgs.sArg2 = sStringArg2[i];
+                    else if (sStringArg2.size() == 1)
+                        stringArgs.sArg2 = sStringArg2[0];
+                    else
+                        stringArgs.sArg2 = "";
+                    if (i < nIntArg1.size())
+                        stringArgs.nArg1 = nIntArg1[i];
+                    else if (nIntArg1.size() == 1)
+                        stringArgs.nArg1 = nIntArg1[0];
+                    else
+                        stringArgs.nArg1 = DEFAULT_NUM_ARG;
+                    if (i < nIntArg2.size())
+                        stringArgs.nArg2 = nIntArg2[i];
+                    else if (nIntArg2.size() == 1)
+                        stringArgs.nArg2 = nIntArg2[0];
+                    else
+                        stringArgs.nArg2 = DEFAULT_NUM_ARG;
+
+                    vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
+                }
+            }
+            else if (funcHandle.fType >= PARSER_STRING_STRING_INT_INT && funcHandle.fType < PARSER_STRING_STRING_STRING_INT_INT)
+            {
+                s_vect sStringArg1, sStringArg2;
+                n_vect nIntArg1, nIntArg2;
+                size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, sStringArg1, sStringArg2, nIntArg1, nIntArg2);
+                if (!nMaxArgs)
+                {
+                    throw STRING_ERROR;
+                }
+                for (size_t i = 0; i < nMaxArgs; i++)
+                {
+                    if (i < sStringArg1.size())
+                        stringArgs.sArg1 = sStringArg1[i];
+                    else if (sStringArg1.size() == 1)
+                        stringArgs.sArg1 = sStringArg1[0];
+                    else
+                        stringArgs.sArg1 = "";
+                    if (i < sStringArg2.size())
+                        stringArgs.sArg2 = sStringArg2[i];
+                    else if (sStringArg2.size() == 1)
+                        stringArgs.sArg2 = sStringArg2[0];
+                    else
+                        stringArgs.sArg2 = "";
+                    if (i < nIntArg1.size())
+                        stringArgs.nArg1 = nIntArg1[i];
+                    else if (nIntArg1.size() == 1)
+                        stringArgs.nArg1 = nIntArg1[0];
+                    else
+                        stringArgs.nArg1 = DEFAULT_NUM_ARG;
+                    if (i < nIntArg2.size())
+                        stringArgs.nArg2 = nIntArg2[i];
+                    else if (nIntArg2.size() == 1)
+                        stringArgs.nArg2 = nIntArg2[0];
+                    else
+                        stringArgs.nArg2 = DEFAULT_NUM_ARG;
+
+                    vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
+                }
+            }
+            else if (funcHandle.fType >= PARSER_STRING_STRING_STRING_INT_INT)
+            {
+                s_vect sStringArg1, sStringArg2, sStringArg3;
+                n_vect nIntArg1, nIntArg2;
+                size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2);
+                if (!nMaxArgs)
+                {
+                    throw STRING_ERROR;
+                }
+                for (size_t i = 0; i < nMaxArgs; i++)
+                {
+                    if (i < sStringArg1.size())
+                        stringArgs.sArg1 = sStringArg1[i];
+                    else if (sStringArg1.size() == 1)
+                        stringArgs.sArg1 = sStringArg1[0];
+                    else
+                        stringArgs.sArg1 = "";
+                    if (i < sStringArg2.size())
+                        stringArgs.sArg2 = sStringArg2[i];
+                    else if (sStringArg2.size() == 1)
+                        stringArgs.sArg2 = sStringArg2[0];
+                    else
+                        stringArgs.sArg2 = "";
+                    if (i < sStringArg3.size())
+                        stringArgs.sArg3 = sStringArg3[i];
+                    else if (sStringArg3.size() == 1)
+                        stringArgs.sArg3 = sStringArg3[0];
+                    else
+                        stringArgs.sArg3 = "";
+                    if (i < nIntArg1.size())
+                        stringArgs.nArg1 = nIntArg1[i];
+                    else if (nIntArg1.size() == 1)
+                        stringArgs.nArg1 = nIntArg1[0];
+                    else
+                        stringArgs.nArg1 = DEFAULT_NUM_ARG;
+                    if (i < nIntArg2.size())
+                        stringArgs.nArg2 = nIntArg2[i];
+                    else if (nIntArg2.size() == 1)
+                        stringArgs.nArg2 = nIntArg2[0];
+                    else
+                        stringArgs.nArg2 = DEFAULT_NUM_ARG;
+
+                    vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
+                }
+            }
+
+            // copy the return values to the final variable
+            string sFuncReturnValue = "";
+
+            if (vReturnValues.size() == 1)
+                sFuncReturnValue = listToVector(vReturnValues[0]); // Consider multiple return values in one line
+            else
+            {
+                sFuncReturnValue = "{";
+                for (size_t i = 0; i < vReturnValues.size(); i++)
+                {
+                    sFuncReturnValue += vReturnValues[i];
+                    if (i+1 < vReturnValues.size())
+                        sFuncReturnValue += ",";
+                }
+                sFuncReturnValue += "}";
+            }
+
+            // replace the function with the return value
+            sLine.replace(n_pos, nPos+1-n_pos, sFuncReturnValue);
+        }
+        n_pos++;
+    }
+}
+
+size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, n_vect& nArg)
+{
+    string sFuncArgument = __sFuncArgument;
+    string sDummy;
+    value_type* v = 0;
+    int nReturn = 0;
+    if (containsStrings(sFuncArgument) || _data.containsStringVars(sFuncArgument))
+    {
+        sFuncArgument += " -nq";
+        if (!parser_StringParser(sFuncArgument, sDummy, _data, _parser, _option, true))
+            return 0;
+    }
+    // --> Moeglicherweise erscheint nun "{{". Dies muss ersetzt werden <--
+    if (sFuncArgument.find('{') != string::npos)
+    {
+        parser_VectorToExpr(sFuncArgument, _option);
+    }
+    _parser.SetExpr(sFuncArgument);
+    v = _parser.Eval(nReturn);
+    for (int i = 0; i < nReturn; i++)
+    {
+        nArg.push_back((int)v[i]);
+    }
+    return (size_t)nReturn;
+}
+
+size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, s_vect& sArg)
+{
+    string sFuncArgument = __sFuncArgument;
+    string sDummy;
+    if (containsStrings(sFuncArgument) || _data.containsStringVars(sFuncArgument))
+    {
+        sFuncArgument += " -kmq";
+        if (!parser_StringParser(sFuncArgument, sDummy, _data, _parser, _option, true))
+            return 0;
+    }
+    if (sFuncArgument.find('{') != string::npos || sFuncArgument.find(',') != string::npos)
+    {
+        parser_VectorToExpr(sFuncArgument, _option);
+        while (sFuncArgument.length())
+            sArg.push_back(removeQuotationMarks(getNextArgument(sFuncArgument, true)));
+    }
+    else
+        sArg.push_back(removeQuotationMarks(sFuncArgument));
+    return sArg.size();
+}
+
+size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, s_vect& sArg1, n_vect& nArg1, n_vect& nArg2)
+{
+    string sFuncArgument = __sFuncArgument;
+    size_t nMaxLength = 0;
+
+    string sString = getNextArgument(sFuncArgument, true);
+    string sNumVal1 = "";
+    string sNumVal2 = "";
+
+    if (sFuncArgument.length())
+        sNumVal1 = getNextArgument(sFuncArgument, true);
+    if (sFuncArgument.length())
+        sNumVal2 = getNextArgument(sFuncArgument, true);
+
+    nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString, sArg1);
+    if (!nMaxLength)
+        return 0;
+
+    if (sNumVal1.length())
+    {
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal1, nArg1);
+        if (!nReturn)
+            return 0;
+        if (nMaxLength < nReturn)
+            nMaxLength = nReturn;
+    }
+    if (sNumVal2.length())
+    {
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal2, nArg2);
+        if (!nReturn)
+            return 0;
+        if (nMaxLength < nReturn)
+            nMaxLength = nReturn;
+    }
+    return nMaxLength;
+}
+
+size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, s_vect& sArg1, n_vect& nArg1, n_vect& nArg2, s_vect& sArg2)
+{
+    string sFuncArgument = __sFuncArgument;
+    size_t nMaxLength = 0;
+
+    string sString1 = getNextArgument(sFuncArgument, true);
+    string sString2 = "";
+    string sNumVal1 = "";
+    string sNumVal2 = "";
+
+    if (sFuncArgument.length())
+        sNumVal1 = getNextArgument(sFuncArgument, true);
+    if (sFuncArgument.length())
+        sNumVal2 = getNextArgument(sFuncArgument, true);
+    if (sFuncArgument.length())
+        sString2 = getNextArgument(sFuncArgument, true);
+
+    nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString1, sArg1);
+    if (!nMaxLength)
+        return 0;
+    if (sString2.length())
+    {
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sString2, sArg2);
+        if (!nReturn)
+            return 0;
+        if (nMaxLength < nReturn)
+            nMaxLength = nReturn;
+    }
+    if (sNumVal1.length())
+    {
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal1, nArg1);
+        if (!nReturn)
+            return 0;
+        if (nMaxLength < nReturn)
+            nMaxLength = nReturn;
+    }
+    if (sNumVal2.length())
+    {
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal2, nArg2);
+        if (!nReturn)
+            return 0;
+        if (nMaxLength < nReturn)
+            nMaxLength = nReturn;
+    }
+    return nMaxLength;
+}
+
+size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, s_vect& sArg1, s_vect& sArg2, n_vect& nArg1, n_vect& nArg2)
+{
+    string sFuncArgument = __sFuncArgument;
+    size_t nMaxLength = 0;
+
+    string sString1 = getNextArgument(sFuncArgument, true);
+    string sString2 = "";
+    string sNumVal1 = "";
+    string sNumVal2 = "";
+
+    if (sFuncArgument.length())
+        sString2 = getNextArgument(sFuncArgument, true);
+    if (sFuncArgument.length())
+        sNumVal1 = getNextArgument(sFuncArgument, true);
+    if (sFuncArgument.length())
+        sNumVal2 = getNextArgument(sFuncArgument, true);
+
+    nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString1, sArg1);
+    if (!nMaxLength)
+        return 0;
+    if (sString2.length())
+    {
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sString2, sArg2);
+        if (!nReturn)
+            return 0;
+        if (nMaxLength < nReturn)
+            nMaxLength = nReturn;
+    }
+    if (sNumVal1.length())
+    {
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal1, nArg1);
+        if (!nReturn)
+            return 0;
+        if (nMaxLength < nReturn)
+            nMaxLength = nReturn;
+    }
+    if (sNumVal2.length())
+    {
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal2, nArg2);
+        if (!nReturn)
+            return 0;
+        if (nMaxLength < nReturn)
+            nMaxLength = nReturn;
+    }
+    return nMaxLength;
+}
+
+size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, s_vect& sArg1, s_vect& sArg2, s_vect& sArg3, n_vect& nArg1, n_vect& nArg2)
+{
+    string sFuncArgument = __sFuncArgument;
+    size_t nMaxLength = 0;
+
+    string sString1 = getNextArgument(sFuncArgument, true);
+    string sString2 = "";
+    string sString3 = "";
+    string sNumVal1 = "";
+    string sNumVal2 = "";
+
+    if (sFuncArgument.length())
+        sString2 = getNextArgument(sFuncArgument, true);
+    if (sFuncArgument.length())
+        sString3 = getNextArgument(sFuncArgument, true);
+    if (sFuncArgument.length())
+        sNumVal1 = getNextArgument(sFuncArgument, true);
+    if (sFuncArgument.length())
+        sNumVal2 = getNextArgument(sFuncArgument, true);
+
+    nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString1, sArg1);
+    if (!nMaxLength)
+        return 0;
+    if (sString2.length())
+    {
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sString2, sArg2);
+        if (!nReturn)
+            return 0;
+        if (nMaxLength < nReturn)
+            nMaxLength = nReturn;
+    }
+    if (sString3.length())
+    {
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sString3, sArg3);
+        if (!nReturn)
+            return 0;
+        if (nMaxLength < nReturn)
+            nMaxLength = nReturn;
+    }
+    if (sNumVal1.length())
+    {
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal1, nArg1);
+        if (!nReturn)
+            return 0;
+        if (nMaxLength < nReturn)
+            nMaxLength = nReturn;
+    }
+    if (sNumVal2.length())
+    {
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal2, nArg2);
+        if (!nReturn)
+            return 0;
+        if (nMaxLength < nReturn)
+            nMaxLength = nReturn;
+    }
+    return nMaxLength;
+}
+
+
+string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser, const Settings& _option)
+{
+    if (sLine.find('#') == string::npos)
+        return sLine + " ";
+    string sLineToParsed = sLine + " ";
+    string sLineToParsedTemp;
+    string sDummy = "";
+    unsigned int nPos = 0;
+    unsigned int n_pos = 0;
+    while (sLineToParsed.find('#', nPos) != string::npos)
+    {
+        nPos = sLineToParsed.find('#', nPos);
+        if (!isInQuotes(sLineToParsed, nPos, true))
         {
             string sPrefix = "";
-            sTemp_2 += sTemp.substr(0,nPos);
-            sTemp = sTemp.substr(nPos+1);
+            sLineToParsedTemp += sLineToParsed.substr(0,nPos);
+            sLineToParsed = sLineToParsed.substr(nPos+1);
             if (_option.getbDebug())
-                NumeReKernel::print("DEBUG: (#-parser) sTemp = " + sTemp.substr(0,100));
-            if (sTemp[0] == '~')
+                NumeReKernel::print("DEBUG: (#-parser) sLineToParsed = " + sLineToParsed.substr(0,100));
+            if (sLineToParsed[0] == '~')
             {
-                for (unsigned int i = 0; i < sTemp.length(); i++)
+                for (unsigned int i = 0; i < sLineToParsed.length(); i++)
                 {
-                    if (sTemp[i] != '~')
+                    if (sLineToParsed[i] != '~')
                     {
-                        sPrefix = sTemp.substr(0,i);
-                        sTemp = sTemp.substr(i);
+                        sPrefix = sLineToParsed.substr(0,i);
+                        sLineToParsed = sLineToParsed.substr(i);
                         break;
                     }
                 }
             }
-            if (sTemp[0] == '-' || sTemp[0] == '+')
+            if (sLineToParsed[0] == '-' || sLineToParsed[0] == '+')
                 n_pos = 1;
             else
                 n_pos = 0;
-            if (sTemp[0] == '(' || sTemp[0] == '{')
+            if (sLineToParsed[0] == '(' || sLineToParsed[0] == '{')
             {
-                string sExpr = sTemp.substr(1,getMatchingParenthesis(sTemp)-1);
+                string sExpr = sLineToParsed.substr(1,getMatchingParenthesis(sLineToParsed)-1);
                 if (containsStrings(sExpr))
                 {
                     sExpr += " -nq";
                     if (!parser_StringParser(sExpr, sDummy, _data, _parser, _option, true))
-                        return 0;
+                        throw STRING_ERROR;
                     string sElement = "";
                     string sBlock = "";
                     while (getNextArgument(sExpr, false).length())
@@ -2239,144 +2216,124 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     }
                     if (sBlock.front() == '{')
                         sBlock += "}";
-                    sTemp_2 += sBlock;
-                    if (parser_getDelimiterPos(sTemp.substr(n_pos)) < sTemp.length())
-                        sTemp = sTemp.substr(parser_getDelimiterPos(sTemp.substr(n_pos)));
+                    sLineToParsedTemp += sBlock;
+                    if (parser_getDelimiterPos(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
+                        sLineToParsed = sLineToParsed.substr(parser_getDelimiterPos(sLineToParsed.substr(n_pos)));
                     else
-                        sTemp = "";
+                        sLineToParsed = "";
                     if (_option.getbDebug())
-                        mu::console() << _nrT("|-> DEBUG: sTemp_2 = ") << sTemp_2 << endl;
+                        mu::console() << _nrT("|-> DEBUG: sLineToParsedTemp = ") << sLineToParsedTemp << endl;
 
                     nPos = 0;
                     continue;
                 }
                 _parser.SetExpr(sExpr);
-                //_parser.SetExpr(sTemp.substr(1, getMatchingParenthesis(sTemp)-1));
             }
-            else if (sTemp[0] == '"')
+            else if (sLineToParsed[0] == '"')
             {
-                string sExpr = sTemp.substr(1, sTemp.find('"', 1)-1);
+                string sExpr = sLineToParsed.substr(1, sLineToParsed.find('"', 1)-1);
                 while (sExpr.length() < sPrefix.length()+2)
                     sExpr.insert(0,1,'0');
-                sTemp_2 += "\"" + sExpr + "\"";
-                if (sTemp.find('"', 1) < sTemp.length()-1)
-                    sTemp = sTemp.substr(sTemp.find('"', 1)+1);
+                sLineToParsedTemp += "\"" + sExpr + "\"";
+                if (sLineToParsed.find('"', 1) < sLineToParsed.length()-1)
+                    sLineToParsed = sLineToParsed.substr(sLineToParsed.find('"', 1)+1);
                 else
-                    sTemp = "";
+                    sLineToParsed = "";
                 continue;
             }
-            else if (sTemp[0] == '<')
+            else if (sLineToParsed[0] == '<')
             {
-                if (sTemp.find("<>") == 0
-                    || sTemp.find("<this>") == 0
-                    || sTemp.find("<wp>") == 0
-                    || sTemp.find("<loadpath>") == 0
-                    || sTemp.find("<savepath>") == 0
-                    || sTemp.find("<plotpath>") == 0
-                    || sTemp.find("<procpath>") == 0
-                    || sTemp.find("<scriptpath>") == 0)
+                if (sLineToParsed.find("<>") == 0
+                    || sLineToParsed.find("<this>") == 0
+                    || sLineToParsed.find("<wp>") == 0
+                    || sLineToParsed.find("<loadpath>") == 0
+                    || sLineToParsed.find("<savepath>") == 0
+                    || sLineToParsed.find("<plotpath>") == 0
+                    || sLineToParsed.find("<procpath>") == 0
+                    || sLineToParsed.find("<scriptpath>") == 0)
                 {
-                    if (sTemp.find("<>") == 0 || sTemp.find("<this>") == 0)
-                        sTemp_2 += "\"" + replacePathSeparator(_option.getExePath()) + "\"";
-                    else if (sTemp.find("<wp>") == 0)
-                        sTemp_2 += "\"" + replacePathSeparator(_option.getWorkPath()) + "\"";
-                    else if (sTemp.find("<loadpath>") == 0)
-                        sTemp_2 += "\"" + replacePathSeparator(_option.getLoadPath()) + "\"";
-                    else if (sTemp.find("<savepath>") == 0)
-                        sTemp_2 += "\"" + replacePathSeparator(_option.getSavePath()) + "\"";
-                    else if (sTemp.find("<plotpath>") == 0)
-                        sTemp_2 += "\"" + replacePathSeparator(_option.getPlotOutputPath()) + "\"";
-                    else if (sTemp.find("<procpath>") == 0)
-                        sTemp_2 += "\"" + replacePathSeparator(_option.getProcsPath()) + "\"";
+                    if (sLineToParsed.find("<>") == 0 || sLineToParsed.find("<this>") == 0)
+                        sLineToParsedTemp += "\"" + replacePathSeparator(_option.getExePath()) + "\"";
+                    else if (sLineToParsed.find("<wp>") == 0)
+                        sLineToParsedTemp += "\"" + replacePathSeparator(_option.getWorkPath()) + "\"";
+                    else if (sLineToParsed.find("<loadpath>") == 0)
+                        sLineToParsedTemp += "\"" + replacePathSeparator(_option.getLoadPath()) + "\"";
+                    else if (sLineToParsed.find("<savepath>") == 0)
+                        sLineToParsedTemp += "\"" + replacePathSeparator(_option.getSavePath()) + "\"";
+                    else if (sLineToParsed.find("<plotpath>") == 0)
+                        sLineToParsedTemp += "\"" + replacePathSeparator(_option.getPlotOutputPath()) + "\"";
+                    else if (sLineToParsed.find("<procpath>") == 0)
+                        sLineToParsedTemp += "\"" + replacePathSeparator(_option.getProcsPath()) + "\"";
                     else
-                        sTemp_2 += "\"" + replacePathSeparator(_option.getScriptPath()) + "\"";
-                    sTemp = sTemp.substr(sTemp.find('>')+1);
+                        sLineToParsedTemp += "\"" + replacePathSeparator(_option.getScriptPath()) + "\"";
+                    sLineToParsed = sLineToParsed.substr(sLineToParsed.find('>')+1);
                 }
-                else if (sTemp.find('>') != string::npos)
+                else if (sLineToParsed.find('>') != string::npos)
                 {
-                    sTemp_2 += "\"" + sTemp.substr(1, sTemp.find('>')-1) + "\"";
-                    sTemp = sTemp.substr(sTemp.find('>')+1);
+                    sLineToParsedTemp += "\"" + sLineToParsed.substr(1, sLineToParsed.find('>')-1) + "\"";
+                    sLineToParsed = sLineToParsed.substr(sLineToParsed.find('>')+1);
                 }
                 else
                 {
                     throw STRING_ERROR;
-                    /*sTemp_2 += sTemp.substr(0, sTemp.find(' ')) + "\"";
-                    sTemp = sTemp.substr(sTemp.find(' ')+1);*/
                 }
                 continue;
             }
             else
-                _parser.SetExpr(sTemp.substr(0, parser_getDelimiterPos(sTemp.substr(n_pos))));
-            if (_option.getbDebug())
-                cerr << "|-> DEBUG: parser_getDelimiterPos(sTemp) = " << parser_getDelimiterPos(sTemp.substr(n_pos)) << endl;
-            {
-                int nResults = 0;
-                value_type* v = 0;
-                v = _parser.Eval(nResults);
-                if (nResults > 1)
-                    sTemp_2 += "{";
-                string sElement = "";
-                for (int n = 0; n < nResults; n++)
-                {
-                    if (fabs(rint(v[n])-v[n]) < 1e-14 && fabs(v[n]) >= 1.0)
-                        sElement = toString((long long int)rint(v[n]));
-                    else
-                        sElement = toString(v[n], _option);
-                    while (sElement.length() < sPrefix.length()+1)
-                        sElement.insert(0,1,'0');
-                    sTemp_2 += "\"" + sElement + "\"";
-                    if (nResults > 1)
-                        sTemp_2 += ",";
-                }
-                if (nResults > 1)
-                    sTemp_2.back() = '}';
-            }
+                _parser.SetExpr(sLineToParsed.substr(0, parser_getDelimiterPos(sLineToParsed.substr(n_pos))));
 
-            //sTemp_2 += "\"";
-            if (parser_getDelimiterPos(sTemp.substr(n_pos)) < sTemp.length())
-                sTemp = sTemp.substr(parser_getDelimiterPos(sTemp.substr(n_pos)));
+            int nResults = 0;
+            value_type* v = 0;
+            v = _parser.Eval(nResults);
+            if (nResults > 1)
+                sLineToParsedTemp += "{";
+            string sElement = "";
+            for (int n = 0; n < nResults; n++)
+            {
+                if (fabs(rint(v[n])-v[n]) < 1e-14 && fabs(v[n]) >= 1.0)
+                    sElement = toString((long long int)rint(v[n]));
+                else
+                    sElement = toString(v[n], _option);
+                while (sElement.length() < sPrefix.length()+1)
+                    sElement.insert(0, 1, '0');
+                sLineToParsedTemp += "\"" + sElement + "\"";
+                if (nResults > 1)
+                    sLineToParsedTemp += ",";
+            }
+            if (nResults > 1)
+                sLineToParsedTemp.back() = '}';
+
+            if (parser_getDelimiterPos(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
+                sLineToParsed = sLineToParsed.substr(parser_getDelimiterPos(sLineToParsed.substr(n_pos)));
             else
-                sTemp = "";
+                sLineToParsed = "";
             if (_option.getbDebug())
-               cerr << "|-> DEBUG: (#-parser) sTemp_2 = " << sTemp_2.substr(0,100) << endl;
+               cerr << "|-> DEBUG: (#-parser) sLineToParsedTemp = " << sLineToParsedTemp.substr(0,100) << endl;
 
             nPos = 0;
         }
         else
             nPos++;
-        //cerr << nPos << endl;
     }
 
-    if (sTemp.length() && sTemp_2.length())
-        sTemp_2 += sTemp;
+    if (sLineToParsed.length() && sLineToParsedTemp.length())
+        sLineToParsedTemp += sLineToParsed;
 
-    if (sTemp_2.find('{') != string::npos)
+    if (sLineToParsedTemp.find('{') != string::npos)
     {
-        parser_VectorToExpr(sTemp_2, _option);
+        parser_VectorToExpr(sLineToParsedTemp, _option);
     }
-    if (sTemp_2.length())
-        sTemp = sTemp_2;
+    if (sLineToParsedTemp.length())
+        sLineToParsed = sLineToParsedTemp;
     else
-        sTemp = sLine;
+        sLineToParsed = sLine;
+    return sLineToParsed;
+}
 
 
-    if (_option.getbDebug())
-        mu::console() << _nrT("|-> DEBUG: (after vector parser) sTemp = ") << sTemp.substr(0,100) << endl;
-
-
-    while (sTemp.length())
-        vFinal.push_back(getNextArgument(sTemp, true));
-
-    if (_option.getbDebug())
-        cerr << "|-> DEBUG: nStrings = " << vFinal.size() << endl;
-        //cerr << "|-> DEBUG: nStrings = " << nStrings << endl;
-
-    if (!vFinal.size())
-        return 0;
-
-    // Changed from sFinal to vFinal and commented the delete's
-    nStrings = vFinal.size();
-    for (unsigned int n = 0; n < nStrings; n++)
+void parser_ApplyElementaryStringOperations(vector<string>& vFinal, vector<bool>& vIsNoStringValue, Parser& _parser, const Settings& _option, bool& bReturningLogicals)
+{
+    for (unsigned int n = 0; n < vFinal.size(); n++)
     {
         //cerr << vFinal[n] << endl;
         StripSpaces(vFinal[n]);
@@ -2421,12 +2378,8 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 && vFinal[n].find("<scriptpath>") != vFinal[n].find('>')-11)
             )
         {
-            //bReturningLogicals = true;
-            if (_option.getbDebug())
-                cerr << "|-> DEBUG: vFinal[n] = " << vFinal[n] << endl;
             vFinal[n] = parser_evalStringLogic(vFinal[n], bReturningLogicals);
             StripSpaces(vFinal[n]);
-
         }
         if (vFinal[n].front() != '"' && vFinal[n].back() != '"')
         {
@@ -2455,11 +2408,13 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 vFinal[n].pop_back();
         }
     }
+}
 
+int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string sObject, Datafile& _data, Parser& _parser, const Settings& _option)
+{
     if (sObject.length())
     {
-        if (_option.getbDebug())
-            cerr << "|-> DEBUG: sObject = " << sObject << endl;
+        size_t nStrings = vFinal.size();
         if (sObject.find("data(") != string::npos || _data.containsCacheElements(sObject))
         {
             string si = "";
@@ -2527,10 +2482,9 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                             if (nIndex[1])
                                 parser_CheckIndices(nIndex[0], nIndex[1]);
 
-                                //nIndex[1] = _data.getCols(iter->first);
                             for (int n = 0; n < (int)nStrings; n++)
                             {
-                                if (!vFinal[n].length() || (nIndex[1] && n+nIndex[0] == nIndex[1]+1))// || n+nIndex[0] >= _data.getCols(iter->first))
+                                if (!vFinal[n].length() || (nIndex[1] && n+nIndex[0] == nIndex[1]+1))
                                     break;
                                 _data.setHeadLineElement(n+nIndex[0], iter->first, removeControlSymbols(vFinal[n]));
                             }
@@ -2554,7 +2508,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             si = sObject.substr(sObject.find("string(")+6);
             si = si.substr(1,getMatchingParenthesis(si)-1);
             StripSpaces(si);
-            //cerr << si << endl;
+
             if (si.length())
             {
                 if (si.find(":") != string::npos)
@@ -2574,7 +2528,6 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     }
                     catch (...)
                     {
-                        //delete[] vFinal;
                         throw;
                     }
                 }
@@ -2587,7 +2540,6 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                     }
                     catch (...)
                     {
-                        //delete[] vFinal;
                         throw;
                     }
                 }
@@ -2617,8 +2569,6 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 if (nIndex[1] >= 0)
                     parser_CheckIndices(nIndex[0], nIndex[1]);
 
-                //cerr << nIndex[0] << " " << nIndex[1] << " " << nIndex[2] << endl;
-                //NumeReKernel::print(toString(vFinal.size()));
                 for (int n = 0; n < (int)nStrings; n++)
                 {
                     if (n+nIndex[0] == nIndex[1]+1)
@@ -2630,8 +2580,6 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             {
                 for (int n = 0; n < (int)nStrings; n++)
                 {
-                    //if (!vFinal[n].length())
-                    //    break;
                     _data.writeString(vFinal[n]);
                 }
             }
@@ -2647,7 +2595,6 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             }
             catch (...)
             {
-                //delete[] vFinal;
                 throw;
             }
         }
@@ -2656,14 +2603,12 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             StripSpaces(sObject);
             if (sObject.find(' ') != string::npos)
             {
-                //delete[] vFinal;
                 return 0;
             }
             if (parser_GetVarAdress(sObject, _parser))
             {
                 if (!vIsNoStringValue[0])
                 {
-                    //delete[] vFinal;
                     return 0;
                 }
             }
@@ -2679,7 +2624,6 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 }
                 catch (...)
                 {
-                    //delete[] vFinal;
                     throw;
                 }
             }
@@ -2691,19 +2635,19 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 }
                 catch (...)
                 {
-                    //delete[] vFinal;
                     throw;
                 }
             }
         }
     }
+    return 1;
+}
 
-
-    sLine = "";
+string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string& sLine, bool bNoQuotes, bool bReturningLogicals, bool bKeepMaskedQuotes)
+{
+    sLine.clear();
     string sConsoleOut = "|-> ";
-    //if (!bSilent)
-    //    mu::console() << _nrT("|-> ");
-    for (unsigned int j = 0; j < nStrings; j++)
+    for (unsigned int j = 0; j < vFinal.size(); j++)
     {
         if (bKeepMaskedQuotes)
         {
@@ -2711,7 +2655,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
                 sLine += "\"" + vFinal[j] + "\"";
             else
                 sLine += vFinal[j];
-            if (j < nStrings - 1)
+            if (j < vFinal.size() - 1)
                 sLine += ",";
             continue;
         }
@@ -2766,10 +2710,9 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             sConsoleOut += "\"";
             sLine += "\"";
         }
-        if (j == nStrings - 1)
+        if (j == vFinal.size() - 1)
             break;
-        // if (!vFinal[j+1].length())
-        //    continue;
+
         if (vFinal[j] != "\\n" && vFinal[j+1] != "\\n" && vFinal[j] != "\\t" && vFinal[j] != "\\t")
         {
             if (sLine.find_last_not_of("\" ") != string::npos && sLine[sLine.find_last_not_of("\" ")] == '\n')
@@ -2786,16 +2729,55 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
             sLine += ", ";
         }
     }
-    if (bPeek)
-        NumeReKernel::printPreFmt("\r                                                       \r");
-    if ((!bSilent || bPeek) && !bReturningLogicals)
-        NumeReKernel::printPreFmt(LineBreak(sConsoleOut, _option, false, 0) + "\n");
-
-    if (bReturningLogicals)
-        return -1;
-    else
-        return 1;
+    return sConsoleOut;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 int parser_countStrings(const string& sCmd)
 {
