@@ -263,7 +263,7 @@ int Loop::for_loop(Parser& _parser, Define& _functions, Datafile& _data, Setting
     {
         if (!bLockedPauseMode && bUseLoopParsingMode)
             _parser.PauseLoopMode();
-        int nReturn = parser_StringParser(sForHead, sCache, _data, _parser, _option);
+        int nReturn = parser_StringParser(sForHead, sCache, _data, _parser, _option, true);
         if (nReturn)
         {
             if (nReturn == 1)
@@ -588,7 +588,7 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
     {
         if (!bLockedPauseMode && bUseLoopParsingMode)
             _parser.PauseLoopMode();
-        int nReturn = parser_StringParser(sWhile_Condition, sCache, _data, _parser, _option);
+        int nReturn = parser_StringParser(sWhile_Condition, sCache, _data, _parser, _option, true);
         if (nReturn)
         {
             if (nReturn == 1)
@@ -858,7 +858,7 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
             {
                 if (!bLockedPauseMode && bUseLoopParsingMode)
                     _parser.PauseLoopMode();
-                int nReturn = parser_StringParser(sWhile_Condition, sCache, _data, _parser, _option);
+                int nReturn = parser_StringParser(sWhile_Condition, sCache, _data, _parser, _option, true);
                 if (nReturn)
                 {
                     if (nReturn == 1)

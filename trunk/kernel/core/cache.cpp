@@ -4660,7 +4660,7 @@ bool Cache::writeString(const string& _sString, unsigned int _nthString, unsigne
         while (sStrings[nCol].size() && !sStrings[nCol].back().length())
             sStrings[nCol].pop_back();
     }
-    else if (_sString.length())
+    else// if (_sString.length())
         sStrings[nCol][_nthString] = _sString;
     return true;
 }
