@@ -71,11 +71,12 @@ struct StringResult
 {
     StringResult() {bOnlyLogicals = false;}
     StringResult(vector<string>& _vResult, vector<bool>& _vNoStringVal, bool _bOnlyLogicals) : vResult(_vResult), vNoStringVal(_vNoStringVal), bOnlyLogicals(_bOnlyLogicals) {}
-    StringResult(const string& sRet)
+    StringResult(const string& sRet, bool _bOnlyLogicals = false)
         {
             StringResult();
             vResult.push_back(sRet);
-            bOnlyLogicals = false;
+            vNoStringVal.push_back(sRet.find('"') == string::npos);
+            bOnlyLogicals = _bOnlyLogicals;
         }
 
     vector<string> vResult;
@@ -86,37 +87,38 @@ struct StringResult
 
 // Function handler:
 // ======================
-string parser_ApplySpecialStringFuncs(string sLine, Datafile&, Parser&, const Settings&);
-string parser_ApplyStringFuncs(string sLine, Datafile&, Parser&, const Settings&);
-void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile&, Parser&, const Settings&, StringFuncHandle);
+string parser_ApplySpecialStringFuncs(string sLine, Datafile&, Parser&, const Settings&, map<string, vector<string> >&);
+string parser_ApplyStringFuncs(string sLine, Datafile&, Parser&, const Settings&, map<string, vector<string> >&);
+void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile&, Parser&, const Settings&, map<string, vector<string> >&, StringFuncHandle);
 map<string, StringFuncHandle> parser_getStringFuncHandles();
 string removeMaskedStrings(const string& sString);
 string addMaskedStrings(const string& sString);
 string listToVector(const string& sString);
 string removeQuotationMarks(const string& sString);
 
-StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _data, Parser& _parser, const Settings& _option, map<string,vector<string> > mStringVectorVars, bool bSilent = true);
+StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _data, Parser& _parser, const Settings& _option, map<string,vector<string> > mStringVectorVars, bool bParseNumericals = true);
 
-string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, const Settings& _option);
-string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser, const Settings& _option);
+string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars, size_t n_pos);
+string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars);
 int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string sObject, Datafile& _data, Parser& _parser, const Settings& _option);
 string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string& sLine, bool bNoQuotes, bool bReturningLogicals, bool bKeepMaskedQuotes);
 vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFinal, Parser& _parser, const Settings& _option, bool& bReturningLogicals);
 string parser_CreateStringVectorVar(const vector<string>& vStringVector, map<string, vector<string> >& mStringVectorVars);
 bool parser_containsStringVectorVars(const string& sLine, const map<string, vector<string> >& mStringVectorVars);
 vector<string> parser_EvaluateStringVectors(string sLine, const map<string, vector<string> >& mStringVectorVars);
+void parser_ExpandStringVectorComponents(vector<string>& vStringVector);
 
 // String functions:
 // ======================
 // string STRINGFUNC(ARGS)
 //
 // Parser functions:
-size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, n_vect&);
-size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, s_vect&);
-size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, s_vect&, n_vect&, n_vect&);
-size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, s_vect&, n_vect&, n_vect&, s_vect&);
-size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, s_vect&, s_vect&, n_vect&, n_vect&);
-size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&);
+size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, n_vect&);
+size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&);
+size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&, n_vect&, n_vect&);
+size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&, n_vect&, n_vect&, s_vect&);
+size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&, s_vect&, n_vect&, n_vect&);
+size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&);
 //
 
 
@@ -623,16 +625,8 @@ string strfnc_sum(StringFuncArgs& funcArgs)
 // --> Verarbeitet String-Ausdruecke <--
 int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& _parser, const Settings& _option, bool bSilent)
 {
-    vector<string> vFinal;
-    string sTemp = "";
-    string sTemp_2 = "";
-    string sObject = sCache;
-    string sDummy = "";
-
-
     bool bNoQuotes = false;
     bool bPeek = false;
-    bool bReturningLogicals = false;
     bool bKeepMaskedQuotes = false;
 
     sLine = " " + sLine + " ";
@@ -676,350 +670,45 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     }
 
 //-------------------------
-// vector = parser_core(string, ...)
-// vector -> vector var
-// at the end -> expand
-    // Identify target vectors and parse this as a list
-    if (sLine.find('{') != string::npos
-        && sLine.find('=') != string::npos
-        && sLine.find('{') < sLine.find('=')
-        && sLine.find('<') != sLine.find('=')-1
-        && sLine.find('>') != sLine.find('=')-1
-        && sLine.find('!') != sLine.find('=')-1
-        && sLine[sLine.find('=')+1] != '=')
-    {
-        size_t eq_pos = sLine.find('=');
-        while (isInQuotes(sLine, eq_pos) && sLine.find('=', eq_pos+1) != string::npos)
-            eq_pos = sLine.find('=', eq_pos+1);
-        if (!isInQuotes(sLine, eq_pos))
-        {
-            string sLeftSide = sLine.substr(0,eq_pos+1);
-            sLine.erase(0,eq_pos+1);
-            sLine += " -kmq";
-            if (!parser_StringParser(sLine, sDummy, _data, _parser, _option, true))
-                return 0;
-            if (containsStrings(sLine))
-            {
-                sLine = sLeftSide + "{" + sLine + "}";
-                parser_VectorToExpr(sLine, _option);
-            }
-            else
-            {
-                sLine = sLeftSide + sLine;
-                if (!containsStrings(sLine) && !_data.containsStringVars(sLine))
-                    return -1;
-            }
-        }
-    }
-    else if (sLine.find('{') != string::npos
-        && sLine.find("string(") != string::npos
-        && sLine.find('=') != string::npos
-        && sLine.find("string(") < sLine.find('{')
-        && sLine.find('=') > sLine.find("string(")
-        && sLine.find('=') < sLine.find('{')
-        && sLine[sLine.find('=')-1] != '<'
-        && sLine[sLine.find('=')-1] != '>'
-        && sLine[sLine.find('=')-1] != '!'
-        && sLine[sLine.find('=')+1] != '='
-        )
-    {
-        for (unsigned int i = 0; i < sLine.find('='); i++)
-        {
-            if (sLine[i] != ' ')
-            {
-                if (sLine.substr(i, 7) == "string(")
-                {
-                    i += getMatchingParenthesis(sLine.substr(i+6))+6;
-                    if (sLine.find_first_not_of(' ', i) == sLine.find('='))
-                    {
-                        string sLeftSide = sLine.substr(0,sLine.find('=')+1);
-                        sLine.erase(0,sLine.find('=')+1);
-                        sLine += " -kmq";
-                        if (!parser_StringParser(sLine, sDummy, _data, _parser, _option, true))
-                            return 0;
-                        if (containsStrings(sLine))
-                        {
-                            sLine = sLeftSide + "{" + sLine + "}";
-                            parser_VectorToExpr(sLine, _option);
-                        }
-                        else
-                        {
-                            sLine = sLeftSide + sLine;
-                            if (!containsStrings(sLine) && !_data.containsStringVars(sLine))
-                                return -1;
-                        }
-                    }
-                    break;
-                }
-                else
-                {
-                    parser_VectorToExpr(sLine, _option);
-                    break;
-                }
-            }
-        }
-    }
-    else if (sLine.find('{') != string::npos)
-    {
-        parser_VectorToExpr(sLine, _option);
-    }
+// new: string core functionality
+    map<string, vector<string> > mStringVectorVars;
+    StringResult StrRes = parser_StringParserCore(sLine, sCache, _data, _parser, _option, mStringVectorVars);
+//-------------------------
 
-    // Recurse for multiple store targets
-    // Nur Rekursionen durchfuehren, wenn auch '=' in dem String gefunden wurde. Nur dann ist sie naemlich noetig.
-    if (sLine.find(',') != string::npos && sLine.find('=') != string::npos)
-    {
-        string sStringObject = sLine.substr(0, sLine.find('='));
-        if (sStringObject.substr(sStringObject.find_first_not_of(' '), 7) == "string("
-            || sStringObject.substr(sStringObject.find_first_not_of(' '), 5) == "data("
-            || _data.containsCacheElements(sStringObject))
-        {
-            unsigned int nPos = getMatchingParenthesis(sLine);
-            nPos = sLine.find('=', nPos);
-            if (nPos == string::npos)
-                return 0;
-            if (sLine[nPos+1] == '=')
-                nPos++;
-            sStringObject = sLine.substr(0, nPos + 1);
-            sLine.erase(0,nPos+1);
-        }
-        else
-            sStringObject.clear();
-        StripSpaces(sLine);
+    string sConsoleOut = parser_CreateStringOutput(StrRes.vResult, StrRes.vNoStringVal, sLine, bNoQuotes, StrRes.bOnlyLogicals, bKeepMaskedQuotes);
 
-        if (sLine != getNextArgument(sLine, false))
-        {
-            string sRecursion = "";
-            string sParsed = "";
-            while (sLine.length())
-            {
-                sRecursion = getNextArgument(sLine, true);
-                if (sLine.length() || sRecursion.find('=') != string::npos)
-                {
-                    sRecursion += " -kmq";
-                    if (!parser_StringParser(sRecursion, sDummy, _data, _parser, _option, true))
-                        return 0;
-                }
-                if (sParsed.length())
-                    sParsed += ", ";
-                sParsed += sRecursion;
-            }
-            sLine = sParsed;
-        }
-        if (sStringObject.length())
-            sLine = sStringObject + sLine;
-    }
-
-
-    // NEW: String func handler
-    sLine = parser_ApplyStringFuncs(sLine, _data, _parser, _option);
-
-    sLine = parser_ApplySpecialStringFuncs(sLine, _data, _parser, _option);
-
-    unsigned int n_pos = 0;
-
-    // Extract target object
-    if (!sObject.length()
-        && !isInQuotes(sLine, sLine.find('=')
-        && sLine.find('=') != string::npos
-        && sLine.find('=') != sLine.find("==")
-        && sLine.find('=') != sLine.find("!=")+1
-        && sLine.find('=') != sLine.find("<=")+1
-        && sLine.find('=') != sLine.find(">=")+1))
-    {
-        if (sLine.substr(0,sLine.find('=')).find("data(") != string::npos || _data.containsCacheElements(sLine.substr(0, sLine.find('='))))
-        {
-            sObject = sLine.substr(0, sLine.find('='));
-            sLine.erase(0, sLine.find('=')+1);
-        }
-    }
-
-    // Get string variables if not already done
-    if (!sObject.length()
-        && !isInQuotes(sLine, sLine.find('=')
-        && sLine.find('=') != string::npos
-        && sLine.find('=') != sLine.find("==")
-        && sLine.find('=') != sLine.find("!=")+1
-        && sLine.find('=') != sLine.find("<=")+1
-        && sLine.find('=') != sLine.find(">=")+1))
-        n_pos = sLine.find('=') + 1;
-
-    if (_data.containsStringVars(sLine.substr(n_pos)))
-        _data.getStringValues(sLine, n_pos);
-
-    // Get the contents of "string()", "data()" and the other caches
-    sLine = parser_GetDataForString(sLine, _data, _parser, _option);
-
-    if (!containsStrings(sLine) && !_data.containsStringVars(sLine))
-    {
-        if (sObject.length() && !sCache.length())
-            sCache = sObject;
-        if (sLine.find("string(") != string::npos || _data.containsStringVars(sLine))
-            return 0;
-        if (bKeepMaskedQuotes)
-        {
-            int nResults = 0;
-            value_type* v = 0;
-            _parser.SetExpr(sLine);
-            v = _parser.Eval(nResults);
-            vAns = v[0];
-            if (sLine.find('=') != string::npos)
-                sLine.erase(0,sLine.find('=')+1);
-            StripSpaces(sLine);
-        }
-        return -1;
-    }
-    n_pos = 0;
-    if (sLine.find('(') != string::npos)
-    {
-        size_t nQuotes = 0;
-        for (size_t i = 0; i < sLine.length(); i++)
-        {
-            if (sLine[i] == '"')
-            {
-                if (i && sLine[i-1] == '\\')
-                    continue;
-                nQuotes++;
-            }
-            // Consider the var parsing feature
-            if (sLine[i] == '#' && !(nQuotes % 2))
-            {
-                for (size_t j = i; j < sLine.length(); j++)
-                {
-                    if (sLine[j] == '"')
-                        return 0;
-                    if ((sLine[j] == '(' || sLine[j] == '{') && getMatchingParenthesis(sLine.substr(j)) != string::npos)
-                        j += getMatchingParenthesis(sLine.substr(j));
-                    if (sLine[j] == ' ' || sLine[j] == '+')
-                    {
-                        i = j;
-                        break;
-                    }
-                    if (j + 1 == sLine.length())
-                    {
-                        i = j;
-                    }
-                }
-            }
-            if (sLine[i] == '(' && !(nQuotes % 2))
-            {
-                if (getMatchingParenthesis(sLine.substr(i)) == string::npos)
-                    throw UNMATCHED_PARENTHESIS;
-
-                size_t nPos = getMatchingParenthesis(sLine.substr(i)) + i;
-                if (i < 6 || (i >= 6 && sLine.substr(i-6,6) != "string"))
-                {
-                    string sString = sLine.substr(i+1, nPos-i-1);
-                    if (i > 0 && !checkDelimiter(sLine.substr(i-1, nPos-i+2)))
-                        return 0;
-                    if (containsStrings(sString) || _data.containsStringVars(sString))
-                    {
-                        if (!parser_StringParser(sString, sDummy, _data, _parser, _option, true))
-                            return 0;
-                        else
-                            sLine = sLine.substr(0,i) + sString + sLine.substr(nPos+1);
-                    }
-                }
-            }
-        }
-    }
-//NumeReKernel::print("DOT3");
-    if (sLine.find('{') != string::npos)
-    {
-        n_pos = 0;
-        if (sLine.find('=') != string::npos
-            && sLine.find('=') != sLine.find("==")
-            && sLine.find('=') != sLine.find("!=")+1
-            && sLine.find('=') != sLine.find("<=")+1
-            && sLine.find('=') != sLine.find(">=")+1
-            && !sObject.length()
-            && !isInQuotes(sLine, sLine.find('=')))
-            n_pos = sLine.find('=') + 1;
-        string sVectortemp = sLine.substr(0,n_pos);
-        sLine.erase(0,n_pos);
-        parser_VectorToExpr(sLine, _option);
-        sLine = sVectortemp + sLine;
-    }
-
-    StripSpaces(sLine);
-    if (!sLine.length())
-        return 1;
-
-    if (sLine.find('"') == string::npos && sLine.find('#') == string::npos)
-    {
-        if (sObject.length() && !sCache.length())
-            sCache = sObject;
-        if (sLine.find("string(") != string::npos || _data.containsStringVars(sLine))
-            return 0;
-        return -1;
-    }
 
     if (NumeReKernel::bSupressAnswer)
         bSilent = true;
 
-    // Extract the object, if not already done
-    if (!sObject.length()
-        && !isInQuotes(sLine, sLine.find('=')
-        && sLine.find('=') != string::npos
-        && sLine.find('=') != sLine.find("==")
-        && sLine.find('=') != sLine.find("!=")+1
-        && sLine.find('=') != sLine.find("<=")+1
-        && sLine.find('=') != sLine.find(">=")+1))
-    {
-        sObject = sLine.substr(0,sLine.find('='));
-        sLine = sLine.substr(sLine.find('=')+1);
-    }
-
-    // Apply the "#" parser to the string
-    sTemp = parser_NumToString(sLine, _data, _parser, _option);
-
-    // Split the list to a vector
-    while (sTemp.length())
-        vFinal.push_back(getNextArgument(sTemp, true));
-
-    if (!vFinal.size())
-        return 0;
-
-    // Apply some elementary operations such as concatenation and logical operations
-    vector<bool> vIsNoStringValue = parser_ApplyElementaryStringOperations(vFinal, _parser, _option, bReturningLogicals);
-//-----------------
-    // store the string results in the variables or inb "string()" respectively
-    if (!parser_StoreStringResults(vFinal, vIsNoStringValue, sObject, _data, _parser, _option))
-        return 0;
-
-    string sConsoleOut = parser_CreateStringOutput(vFinal, vIsNoStringValue, sLine, bNoQuotes, bReturningLogicals, bKeepMaskedQuotes);
-
     if (bPeek)
         NumeReKernel::printPreFmt("\r                                                       \r");
-    if ((!bSilent || bPeek) && !bReturningLogicals)
+    if ((!bSilent || bPeek) && !StrRes.bOnlyLogicals)
         NumeReKernel::printPreFmt(LineBreak(sConsoleOut, _option, false, 0) + "\n");
 
-    if (bReturningLogicals)
+    if (StrRes.bOnlyLogicals)
         return -1;
     else
         return 1;
 }
 
 
-StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _data, Parser& _parser, const Settings& _option, map<string,vector<string> > mStringVectorVars, bool bSilent)
+StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _data, Parser& _parser, const Settings& _option, map<string,vector<string> > mStringVectorVars, bool bParseNumericals)
 {
-// vector = parser_core(string, ...)
-// vector -> vector var
-// at the end -> expand
-
     StringResult strRes;
 
     string sObject;
 
     // Identify target vectors and parse this as a list
+    size_t eq_pos = sLine.find('=');
     if (sLine.find('{') != string::npos
-        && sLine.find('=') != string::npos
-        && sLine.find('{') < sLine.find('=')
-        && sLine.find('<') != sLine.find('=')-1
-        && sLine.find('>') != sLine.find('=')-1
-        && sLine.find('!') != sLine.find('=')-1
-        && sLine[sLine.find('=')+1] != '=')
+        && eq_pos != string::npos
+        && sLine.find('{') < eq_pos
+        && sLine.find('<') != eq_pos-1
+        && sLine.find('>') != eq_pos-1
+        && sLine.find('!') != eq_pos-1
+        && sLine[eq_pos+1] != '=')
     {
-        size_t eq_pos = sLine.find('=');
         while (isInQuotes(sLine, eq_pos) && sLine.find('=', eq_pos+1) != string::npos)
             eq_pos = sLine.find('=', eq_pos+1);
         if (!isInQuotes(sLine, eq_pos))
@@ -1027,7 +716,7 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
             string sLeftSide = sLine.substr(0,eq_pos+1);
             sLine.erase(0,eq_pos+1);
 
-            StringResult _res = parser_StringParserCore(sLine, "", _data, _parser, _option, mStringVectorVars, true);
+            StringResult _res = parser_StringParserCore(sLine, "", _data, _parser, _option, mStringVectorVars);
             string strvar = parser_CreateStringVectorVar(_res.vResult, mStringVectorVars);
 
             if (!strvar.length())
@@ -1041,14 +730,14 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
     }
     else if (sLine.find('{') != string::npos
         && sLine.find("string(") != string::npos
-        && sLine.find('=') != string::npos
+        && eq_pos != string::npos
         && sLine.find("string(") < sLine.find('{')
-        && sLine.find('=') > sLine.find("string(")
+        && eq_pos > sLine.find("string(")
         && sLine.find('=') < sLine.find('{')
-        && sLine[sLine.find('=')-1] != '<'
-        && sLine[sLine.find('=')-1] != '>'
-        && sLine[sLine.find('=')-1] != '!'
-        && sLine[sLine.find('=')+1] != '='
+        && sLine[eq_pos-1] != '<'
+        && sLine[eq_pos-1] != '>'
+        && sLine[eq_pos-1] != '!'
+        && sLine[eq_pos+1] != '='
         )
     {
         for (unsigned int i = 0; i < sLine.find('='); i++)
@@ -1063,7 +752,7 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
                         string sLeftSide = sLine.substr(0,sLine.find('=')+1);
                         sLine.erase(0,sLine.find('=')+1);
 
-                        StringResult _res = parser_StringParserCore(sLine, "", _data, _parser, _option, mStringVectorVars, true);
+                        StringResult _res = parser_StringParserCore(sLine, "", _data, _parser, _option, mStringVectorVars);
 
                         string strvar = parser_CreateStringVectorVar(_res.vResult, mStringVectorVars);
 
@@ -1091,6 +780,7 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
 
     // Recurse for multiple store targets
     // Nur Rekursionen durchfuehren, wenn auch '=' in dem String gefunden wurde. Nur dann ist sie naemlich noetig.
+
     if (sLine.find(',') != string::npos && sLine.find('=') != string::npos)
     {
         string sStringObject = sLine.substr(0, sLine.find('='));
@@ -1115,67 +805,64 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
         {
             string sRecursion = "";
             string sParsed = "";
+            vector<string> vResult;
             while (sLine.length())
             {
                 sRecursion = getNextArgument(sLine, true);
                 if (sLine.length() || sRecursion.find('=') != string::npos)
                 {
-                    StringResult _res = parser_StringParserCore(sRecursion, "", _data, _parser, _option, mStringVectorVars, true);
-                    string strvar = parser_CreateStringVectorVar(_res.vResult, mStringVectorVars);
-
-                    if (!strvar.length())
-                        throw STRING_ERROR;
-                    sRecursion = strvar;
+                    StringResult _res = parser_StringParserCore(sRecursion, "", _data, _parser, _option, mStringVectorVars);
+                    for (size_t n = 0; n < _res.vResult.size(); n++)
+                        vResult.push_back(_res.vResult[n]);
                 }
-                if (sParsed.length())
-                    sParsed += ", ";
-                sParsed += sRecursion;
+                else if (sRecursion.find('=') == string::npos)
+                    vResult.push_back(sRecursion);
             }
-            sLine = sParsed;
+            sLine = parser_CreateStringVectorVar(vResult, mStringVectorVars);
         }
         if (sStringObject.length())
             sLine = sStringObject + sLine;
     }
 
-/// Modify for vectors
-    // NEW: String func handler
-    sLine = parser_ApplyStringFuncs(sLine, _data, _parser, _option);
-
-    sLine = parser_ApplySpecialStringFuncs(sLine, _data, _parser, _option);
-
+    // Get the string variables
     unsigned int n_pos = 0;
-
-    // Extract target object
+    eq_pos = sLine.find('=');
     if (!sObject.length()
-        && !isInQuotes(sLine, sLine.find('=')
-        && sLine.find('=') != string::npos
-        && sLine.find('=') != sLine.find("==")
-        && sLine.find('=') != sLine.find("!=")+1
-        && sLine.find('=') != sLine.find("<=")+1
-        && sLine.find('=') != sLine.find(">=")+1))
-    {
-        if (sLine.substr(0,sLine.find('=')).find("data(") != string::npos || _data.containsCacheElements(sLine.substr(0, sLine.find('='))))
-        {
-            sObject = sLine.substr(0, sLine.find('='));
-            sLine.erase(0, sLine.find('=')+1);
-        }
-    }
-
-    // Get string variables if not already done
-    if (!sObject.length()
-        && !isInQuotes(sLine, sLine.find('=')
-        && sLine.find('=') != string::npos
-        && sLine.find('=') != sLine.find("==")
-        && sLine.find('=') != sLine.find("!=")+1
-        && sLine.find('=') != sLine.find("<=")+1
-        && sLine.find('=') != sLine.find(">=")+1))
-        n_pos = sLine.find('=') + 1;
+        && eq_pos != string::npos
+        && !isInQuotes(sLine, eq_pos)
+        && eq_pos != sLine.find("==")
+        && eq_pos != sLine.find("!=")+1
+        && eq_pos != sLine.find("<=")+1
+        && eq_pos != sLine.find(">=")+1)
+        n_pos = eq_pos + 1;
 
     if (_data.containsStringVars(sLine.substr(n_pos)))
         _data.getStringValues(sLine, n_pos);
 
+    // NEW: String func handler
+    sLine = parser_ApplyStringFuncs(sLine, _data, _parser, _option, mStringVectorVars);
+
+    sLine = parser_ApplySpecialStringFuncs(sLine, _data, _parser, _option, mStringVectorVars);
+
+    eq_pos = sLine.find('=');
+    // Extract target object
+    if (!sObject.length()
+        && eq_pos != string::npos
+        && !isInQuotes(sLine, eq_pos)
+        && eq_pos != sLine.find("==")
+        && eq_pos != sLine.find("!=")+1
+        && eq_pos != sLine.find("<=")+1
+        && eq_pos != sLine.find(">=")+1)
+    {
+        if (sLine.substr(0, eq_pos).find("data(") != string::npos || _data.containsCacheElements(sLine.substr(0, eq_pos)))
+        {
+            sObject = sLine.substr(0, eq_pos);
+            sLine.erase(0, eq_pos+1);
+        }
+    }
+
     // Get the contents of "string()", "data()" and the other caches
-    sLine = parser_GetDataForString(sLine, _data, _parser, _option);
+    sLine = parser_GetDataForString(sLine, _data, _parser, _option, mStringVectorVars, n_pos);
 
     if (!containsStrings(sLine) && !_data.containsStringVars(sLine) && !parser_containsStringVectorVars(sLine, mStringVectorVars))
     {
@@ -1184,16 +871,19 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
         if (sLine.find("string(") != string::npos || _data.containsStringVars(sLine))
             throw STRING_ERROR;
 
-        int nResults = 0;
-        value_type* v = 0;
-        _parser.SetExpr(sLine);
-        v = _parser.Eval(nResults);
-        vAns = v[0];
-        if (sLine.find('=') != string::npos)
-            sLine.erase(0,sLine.find('=')+1);
-        StripSpaces(sLine);
-
-        return StringResult(sLine);
+        // make sure that there are parseable characters
+        if (sLine.find_first_not_of("+-*/:?!.,;%&<>=^ ") != string::npos && bParseNumericals)
+        {
+            int nResults = 0;
+            value_type* v = 0;
+            _parser.SetExpr(sLine);
+            v = _parser.Eval(nResults);
+            vAns = v[0];
+            if (sLine.find('=') != string::npos)
+                sLine.erase(0,sLine.find('=')+1);
+            StripSpaces(sLine);
+        }
+        return StringResult(sLine, true);
     }
 
     n_pos = 0;
@@ -1241,7 +931,7 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
                         throw STRING_ERROR;
                     if (containsStrings(sString) || _data.containsStringVars(sString))
                     {
-                        StringResult _res = parser_StringParserCore(sString, "", _data, _parser, _option, mStringVectorVars, true);
+                        StringResult _res = parser_StringParserCore(sString, "", _data, _parser, _option, mStringVectorVars);
                         string strvar = parser_CreateStringVectorVar(_res.vResult, mStringVectorVars);
 
                         if (!strvar.length())
@@ -1283,24 +973,22 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
         return StringResult(sLine);
     }
 
-    if (NumeReKernel::bSupressAnswer)
-        bSilent = true;
-
     // Extract the object, if not already done
+    eq_pos = sLine.find('=');
     if (!sObject.length()
-        && !isInQuotes(sLine, sLine.find('=')
-        && sLine.find('=') != string::npos
-        && sLine.find('=') != sLine.find("==")
-        && sLine.find('=') != sLine.find("!=")+1
-        && sLine.find('=') != sLine.find("<=")+1
-        && sLine.find('=') != sLine.find(">=")+1))
+        && eq_pos != string::npos
+        && !isInQuotes(sLine, eq_pos)
+        && eq_pos != sLine.find("==")
+        && eq_pos != sLine.find("!=")+1
+        && eq_pos != sLine.find("<=")+1
+        && eq_pos != sLine.find(">=")+1)
     {
-        sObject = sLine.substr(0,sLine.find('='));
-        sLine = sLine.substr(sLine.find('=')+1);
+        sObject = sLine.substr(0, eq_pos);
+        sLine = sLine.substr(eq_pos+1);
     }
 
     // Apply the "#" parser to the string
-    string sTemp = parser_NumToString(sLine, _data, _parser, _option);
+    string sTemp = parser_NumToString(sLine, _data, _parser, _option, mStringVectorVars);
 
     // Split the list to a vector
 //    while (sTemp.length())
@@ -1354,57 +1042,67 @@ bool parser_containsStringVectorVars(const string& sLine, const map<string, vect
 vector<string> parser_EvaluateStringVectors(string sLine, const map<string, vector<string> >& mStringVectorVars)
 {
     vector<string> vRes;
-    if (!parser_containsStringVectorVars(sLine, mStringVectorVars))
+
+    while (sLine.length())
     {
-        while (sLine.length())
-            vRes.push_back(getNextArgument(sLine, true));
-    }
-    else
-    {
-        size_t currentcomponent = 0;
-        while (true)
+        string sCurrentComponent = getNextArgument(sLine, true);
+
+        if (!parser_containsStringVectorVars(sCurrentComponent, mStringVectorVars))
+            vRes.push_back(sCurrentComponent);
+        else
         {
-            string currentline = sLine;
-            bool bHasComponents = false;
-            for (auto iter = mStringVectorVars.begin(); iter != mStringVectorVars.end(); ++iter)
+            size_t nCurrentComponent = 0;
+            while (true)
             {
-                size_t nMatch = 0;
-                while ((nMatch = currentline.find(iter->first)) != string::npos)
+                string currentline = sCurrentComponent;
+                bool bHasComponents = false;
+                for (auto iter = mStringVectorVars.begin(); iter != mStringVectorVars.end(); ++iter)
                 {
-                    if ((iter->second).size() > currentcomponent)
+                    size_t nMatch = 0;
+                    while ((nMatch = currentline.find(iter->first)) != string::npos)
                     {
-                        bHasComponents = true;
-                        currentline.replace(nMatch, (iter->first).length(), (iter->second)[currentcomponent]);
+                        if ((iter->second).size() > nCurrentComponent)
+                        {
+                            bHasComponents = true;
+                            currentline.replace(nMatch, (iter->first).length(), (iter->second)[nCurrentComponent]);
+                        }
+                        else
+                            currentline.replace(nMatch, (iter->first).length(), "\"\"");
                     }
-                    else
-                        currentline.replace(nMatch, (iter->first).length(), "\"\"");
                 }
+                if (!bHasComponents)
+                    break;
+                vRes.push_back(currentline);
+                nCurrentComponent++;
             }
-            if (!bHasComponents)
-                break;
-            vRes.push_back(currentline);
-            currentcomponent++;
         }
     }
 
     return vRes;
 }
 
-string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _parser, const Settings& _option)
+void parser_ExpandStringVectorComponents(vector<string>& vStringVector)
+{
+    for (size_t i = 0; i < vStringVector.size(); i++)
+    {
+        if (getNextArgument(vStringVector[i], false) != vStringVector[i])
+        {
+            string sComponent = vStringVector[i];
+            vStringVector[i] = getNextArgument(sComponent, true);
+            size_t nComponent = 1;
+            while (sComponent.length())
+            {
+                vStringVector.insert(vStringVector.begin()+i+nComponent, getNextArgument(sComponent, true));
+                nComponent++;
+            }
+            i += nComponent;
+        }
+    }
+}
+
+string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars)
 {
     unsigned int n_pos = 0;
-    string sDummy;
-
-    if (sLine.find('=') != string::npos
-        && sLine.find('=') != sLine.find("==")
-        && sLine.find('=') != sLine.find("!=")+1
-        && sLine.find('=') != sLine.find("<=")+1
-        && sLine.find('=') != sLine.find(">=")+1
-        && !isInQuotes(sLine, sLine.find('=')))
-        n_pos = sLine.find('=') + 1;
-
-    if (_data.containsStringVars(sLine.substr(n_pos)))
-        _data.getStringValues(sLine, n_pos);
 
     // str string_cast(EXPR)
     while (sLine.find("string_cast(", n_pos) != string::npos)
@@ -1424,16 +1122,23 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
             string sToString = sLine.substr(n_pos+12, nPos-n_pos-12);
             if (sToString.find('"') != string::npos || sToString.find('#') != string::npos)
             {
-                sToString += " -nq";
-                if (!parser_StringParser(sToString, sDummy, _data, _parser, _option, true))
+                StringResult strRes = parser_StringParserCore(sToString, "", _data, _parser, _option, mStringVectorVars);
+                if (!strRes.vResult.size())
                     throw STRING_ERROR;
-                for (unsigned int i = 0; i < sToString.length(); i++)
-                {
-                    if (i && sToString[i] == '"' && sToString[i-1] != '\\')
-                        sToString.insert(i,1,'\\');
-                }
+//                for (size_t n = 0; n < strRes.vResult.size(); n++)
+//                {
+//                    for (unsigned int i = 0; i < strRes.vResult[n].length(); i++)
+//                    {
+//                        if (i && strRes.vResult[n][i] == '"' && strRes.vResult[n][i-1] != '\\')
+//                            strRes.vResult[n].insert(i,1,'\\');
+//                    }
+//                    //strRes.vResult[n] = "\"" + strRes.vResult[n] + "\"";
+//                }
+                sToString = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
             }
-            sLine = sLine.substr(0,n_pos) + "\"" + sToString + "\"" + sLine.substr(nPos+1);
+            else
+                sToString = "\"" + sToString + "\"";
+            sLine = sLine.substr(0,n_pos) + sToString + sLine.substr(nPos+1);
         }
         n_pos++;
     }
@@ -1452,10 +1157,13 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
         {
             string sCmdString = sLine.substr(n_pos+1, nParPos-1);
             StripSpaces(sCmdString);
-            if (containsStrings(sCmdString) || _data.containsStringVars(sCmdString))
+            if (containsStrings(sCmdString) || _data.containsStringVars(sCmdString) || parser_containsStringVectorVars(sCmdString, mStringVectorVars))
             {
-                sCmdString += " -nq";
-                parser_StringParser(sCmdString, sDummy, _data, _parser, _option, true);
+                StringResult strRes = parser_StringParserCore(sCmdString, "", _data, _parser, _option, mStringVectorVars);
+                if (!strRes.vResult.size())
+                    throw STRING_ERROR;
+                // use only the first one
+                sCmdString = strRes.vResult[0];
             }
             sLine = sLine.substr(0, n_pos-6) + sCmdString + sLine.substr(n_pos + nParPos+1);
             n_pos -= 5;
@@ -1506,9 +1214,11 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
         if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 12))))
         {
             string _sObject = sLine.substr(n_pos+11, nPos-n_pos-11);
-            if (!parser_StringParser(_sObject, sDummy, _data, _parser, _option, true))
+            StringResult strRes = parser_StringParserCore(_sObject, "", _data, _parser, _option, mStringVectorVars);
+            if (!strRes.vResult.size())
                 throw STRING_ERROR;
-            string sType = _sObject;
+            // use only first one
+            string sType = strRes.vResult[0];
             int nType = 0;
             _sObject = getNextArgument(sType, true);
             if (!sType.length())
@@ -1520,10 +1230,12 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
             if (_sObject[_sObject.length()-1] == '"')
                 _sObject.erase(_sObject.length()-1);
             StripSpaces(_sObject);
-            if (containsStrings(sType))
+            if (containsStrings(sType) || parser_containsStringVectorVars(sType, mStringVectorVars))
             {
-                sType += " -nq";
-                parser_StringParser(sType, sDummy, _data, _parser, _option, true);
+                StringResult strRes = parser_StringParserCore(sType, "", _data, _parser, _option, mStringVectorVars);
+                if (!strRes.vResult.size())
+                    throw STRING_ERROR;
+                sType = strRes.vResult[0];
             }
             _parser.SetExpr(sType);
             nType = (int)_parser.Eval();
@@ -1680,10 +1392,13 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
         if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 9))))
         {
             string sData = sLine.substr(n_pos+8,nPos-n_pos-8);
-            if (containsStrings(sData))
+            if (containsStrings(sData) || parser_containsStringVectorVars(sData, mStringVectorVars))
             {
-                if (!parser_StringParser(sData, sDummy, _data, _parser, _option, true))
+                StringResult strRes = parser_StringParserCore(sData, "", _data, _parser, _option, mStringVectorVars);
+                if (!strRes.vResult.size())
                     throw STRING_ERROR;
+                // use only first one
+                sData = strRes.vResult[0];
             }
             if (sData[0] == '"')
                 sData.erase(0,1);
@@ -1723,9 +1438,11 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
                 sChar = getNextArgument(sToString, true);
                 if (containsStrings(sChar) || _data.containsStringVars(sChar))
                 {
-                    sChar += " -nq kmq";
-                    if (!parser_StringParser(sChar, sDummy, _data, _parser, _option, true))
+                    StringResult strRes = parser_StringParserCore(sChar, "", _data, _parser, _option, mStringVectorVars);
+                    if (!strRes.vResult.size())
                         throw STRING_ERROR;
+                    // use only first one
+                    sChar = removeQuotationMarks(strRes.vResult[0]);
                 }
                 string sCnt = getNextArgument(sToString, true);
                 if (sCnt.length())
@@ -1734,7 +1451,7 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
                     nCount = (unsigned int)fabs(_parser.Eval());
                 }
             }
-            if (!containsStrings(sExpr) && !_data.containsStringVars(sExpr))
+            if (!containsStrings(sExpr) && !_data.containsStringVars(sExpr) && !parser_containsStringVectorVars(sExpr, mStringVectorVars))
             {
                 int nResults = 0;
                 value_type* v = 0;
@@ -1761,43 +1478,36 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
                 {
                     sToString.back() = '}';
                 }
+                sToString = "\"" + sToString + "\"";
             }
             else
             {
-                sExpr += " -nq";
-                if (!parser_StringParser(sExpr, sDummy, _data, _parser, _option, true))
+                StringResult strRes = parser_StringParserCore(sExpr, "", _data, _parser, _option, mStringVectorVars);
+                if (!strRes.vResult.size())
                     throw STRING_ERROR;
-                while (sExpr.length() < nCount && sChar.length())
-                    sExpr.insert(0,sChar);
-                sToString = sExpr;
+                for (size_t i = 0; i < strRes.vResult.size(); i++)
+                {
+                    while (strRes.vResult[i].length() < nCount && sChar.length())
+                        strRes.vResult[i].insert(0,sChar);
+                }
+                sToString = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
             }
 
-            sLine = sLine.substr(0,n_pos) + "\"" + sToString + "\"" + sLine.substr(nPos+1);
+            sLine = sLine.substr(0,n_pos) + sToString + sLine.substr(nPos+1);
         }
         n_pos++;
     }
     return sLine;
 }
 
-string parser_ApplyStringFuncs(string sLine, Datafile& _data, Parser& _parser, const Settings& _option)
+string parser_ApplyStringFuncs(string sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars)
 {
     static map<string, StringFuncHandle> mFuncHandleTable = parser_getStringFuncHandles();
-    unsigned int n_pos = 0;
-
-    if (sLine.find('=') != string::npos
-        && sLine.find('=') != sLine.find("==")
-        && sLine.find('=') != sLine.find("!=")+1
-        && sLine.find('=') != sLine.find("<=")+1
-        && sLine.find('=') != sLine.find(">=")+1
-        && !isInQuotes(sLine, sLine.find('=')))
-        n_pos = sLine.find('=') + 1;
-    if (_data.containsStringVars(sLine.substr(n_pos)))
-        _data.getStringValues(sLine, n_pos);
 
     for (auto iter = mFuncHandleTable.begin(); iter != mFuncHandleTable.end(); ++iter)
     {
         if (sLine.find(iter->first + "(") != string::npos)
-            parser_StringFuncHandler(sLine, iter->first, _data, _parser, _option, iter->second);
+            parser_StringFuncHandler(sLine, iter->first, _data, _parser, _option, mStringVectorVars, iter->second);
     }
     return sLine;
 }
@@ -1844,7 +1554,7 @@ map<string, StringFuncHandle> parser_getStringFuncHandles()
 
 string removeMaskedStrings(const string& sString)
 {
-    if (sString.find("\\\"") != string::npos)
+    if (sString.find("\\\"") == string::npos)
         return sString;
     string sRet = sString;
     while (sRet.find("\\\"") != string::npos)
@@ -1854,14 +1564,14 @@ string removeMaskedStrings(const string& sString)
 
 string addMaskedStrings(const string& sString)
 {
-    if (sString.find('"') != string::npos)
+    if (sString.find('"') == string::npos)
         return sString;
     string sRet = sString;
     for (size_t i = 1; i < sRet.length()-1; i++)
     {
         if (sRet[i] == '"' && sRet[i-1] != '\\')
         {
-            sRet.insert(i-1, "\\");
+            sRet.insert(i, "\\");
             i++;
         }
     }
@@ -1897,7 +1607,7 @@ string removeQuotationMarks(const string& sString)
     return sString.substr(1,sString.length()-2);
 }
 
-void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& _data, Parser& _parser, const Settings& _option, StringFuncHandle funcHandle)
+void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars, StringFuncHandle funcHandle)
 {
     size_t n_pos = 0;
 
@@ -1934,7 +1644,7 @@ void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& 
             if (funcHandle.fType >= PARSER_INT && funcHandle.fType < PARSER_STRING)
             {
                 n_vect nIntArg;
-                size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, nIntArg);
+                size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, mStringVectorVars, nIntArg);
                 if (!nMaxArgs)
                 {
                     throw STRING_ERROR;
@@ -1956,7 +1666,7 @@ void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& 
             else if (funcHandle.fType >= PARSER_STRING && funcHandle.fType < PARSER_STRING_INT_INT)
             {
                 s_vect sStringArg;
-                size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, sStringArg);
+                size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, mStringVectorVars, sStringArg);
                 if (!nMaxArgs)
                 {
                     throw STRING_ERROR;
@@ -1979,7 +1689,7 @@ void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& 
             {
                 s_vect sStringArg;
                 n_vect nIntArg1, nIntArg2;
-                size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, sStringArg, nIntArg1, nIntArg2);
+                size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, mStringVectorVars, sStringArg, nIntArg1, nIntArg2);
                 if (!nMaxArgs)
                 {
                     throw STRING_ERROR;
@@ -2013,7 +1723,7 @@ void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& 
             {
                 s_vect sStringArg1, sStringArg2;
                 n_vect nIntArg1, nIntArg2;
-                size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, sStringArg1, nIntArg1, nIntArg2, sStringArg2);
+                size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, mStringVectorVars, sStringArg1, nIntArg1, nIntArg2, sStringArg2);
                 if (!nMaxArgs)
                 {
                     throw STRING_ERROR;
@@ -2052,7 +1762,7 @@ void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& 
             {
                 s_vect sStringArg1, sStringArg2;
                 n_vect nIntArg1, nIntArg2;
-                size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, sStringArg1, sStringArg2, nIntArg1, nIntArg2);
+                size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, mStringVectorVars, sStringArg1, sStringArg2, nIntArg1, nIntArg2);
                 if (!nMaxArgs)
                 {
                     throw STRING_ERROR;
@@ -2091,7 +1801,7 @@ void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& 
             {
                 s_vect sStringArg1, sStringArg2, sStringArg3;
                 n_vect nIntArg1, nIntArg2;
-                size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2);
+                size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, mStringVectorVars, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2);
                 if (!nMaxArgs)
                 {
                     throw STRING_ERROR;
@@ -2136,19 +1846,9 @@ void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& 
             // copy the return values to the final variable
             string sFuncReturnValue = "";
 
-            if (vReturnValues.size() == 1)
-                sFuncReturnValue = listToVector(vReturnValues[0]); // Consider multiple return values in one line
-            else
-            {
-                sFuncReturnValue = "{";
-                for (size_t i = 0; i < vReturnValues.size(); i++)
-                {
-                    sFuncReturnValue += vReturnValues[i];
-                    if (i+1 < vReturnValues.size())
-                        sFuncReturnValue += ",";
-                }
-                sFuncReturnValue += "}";
-            }
+            parser_ExpandStringVectorComponents(vReturnValues);
+
+            sFuncReturnValue = parser_CreateStringVectorVar(vReturnValues, mStringVectorVars);
 
             // replace the function with the return value
             sLine.replace(n_pos, nPos+1-n_pos, sFuncReturnValue);
@@ -2157,17 +1857,18 @@ void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& 
     }
 }
 
-size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, n_vect& nArg)
+size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, n_vect& nArg)
 {
     string sFuncArgument = __sFuncArgument;
-    string sDummy;
     value_type* v = 0;
     int nReturn = 0;
-    if (containsStrings(sFuncArgument) || _data.containsStringVars(sFuncArgument))
+    if (containsStrings(sFuncArgument) || _data.containsStringVars(sFuncArgument) || parser_containsStringVectorVars(sFuncArgument, mStringVectorVars))
     {
-        sFuncArgument += " -nq";
-        if (!parser_StringParser(sFuncArgument, sDummy, _data, _parser, _option, true))
-            return 0;
+        StringResult strRes = parser_StringParserCore(sFuncArgument, "", _data, _parser, _option, mStringVectorVars);
+
+        for (size_t i = 0; i < strRes.vResult.size(); i++)
+            nArg.push_back(StrToInt(strRes.vResult[i]));
+        return strRes.vResult.size();
     }
     // --> Moeglicherweise erscheint nun "{{". Dies muss ersetzt werden <--
     if (sFuncArgument.find('{') != string::npos)
@@ -2183,15 +1884,15 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
     return (size_t)nReturn;
 }
 
-size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, s_vect& sArg)
+size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg)
 {
     string sFuncArgument = __sFuncArgument;
-    string sDummy;
-    if (containsStrings(sFuncArgument) || _data.containsStringVars(sFuncArgument))
+    if (containsStrings(sFuncArgument) || _data.containsStringVars(sFuncArgument) || parser_containsStringVectorVars(sFuncArgument, mStringVectorVars))
     {
-        sFuncArgument += " -kmq";
-        if (!parser_StringParser(sFuncArgument, sDummy, _data, _parser, _option, true))
-            return 0;
+        StringResult strRes = parser_StringParserCore(sFuncArgument, "", _data, _parser, _option, mStringVectorVars);
+        for (size_t i = 0; i < strRes.vResult.size(); i++)
+            sArg.push_back(removeQuotationMarks(strRes.vResult[i]));
+        return strRes.vResult.size();
     }
     if (sFuncArgument.find('{') != string::npos || sFuncArgument.find(',') != string::npos)
     {
@@ -2204,7 +1905,7 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
     return sArg.size();
 }
 
-size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, s_vect& sArg1, n_vect& nArg1, n_vect& nArg2)
+size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg1, n_vect& nArg1, n_vect& nArg2)
 {
     string sFuncArgument = __sFuncArgument;
     size_t nMaxLength = 0;
@@ -2218,13 +1919,13 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
     if (sFuncArgument.length())
         sNumVal2 = getNextArgument(sFuncArgument, true);
 
-    nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString, sArg1);
+    nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString, mStringVectorVars, sArg1);
     if (!nMaxLength)
         return 0;
 
     if (sNumVal1.length())
     {
-        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal1, nArg1);
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal1, mStringVectorVars, nArg1);
         if (!nReturn)
             return 0;
         if (nMaxLength < nReturn)
@@ -2232,7 +1933,7 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
     }
     if (sNumVal2.length())
     {
-        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal2, nArg2);
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal2, mStringVectorVars, nArg2);
         if (!nReturn)
             return 0;
         if (nMaxLength < nReturn)
@@ -2241,7 +1942,7 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
     return nMaxLength;
 }
 
-size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, s_vect& sArg1, n_vect& nArg1, n_vect& nArg2, s_vect& sArg2)
+size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg1, n_vect& nArg1, n_vect& nArg2, s_vect& sArg2)
 {
     string sFuncArgument = __sFuncArgument;
     size_t nMaxLength = 0;
@@ -2258,12 +1959,12 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
     if (sFuncArgument.length())
         sString2 = getNextArgument(sFuncArgument, true);
 
-    nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString1, sArg1);
+    nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString1, mStringVectorVars, sArg1);
     if (!nMaxLength)
         return 0;
     if (sString2.length())
     {
-        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sString2, sArg2);
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sString2, mStringVectorVars, sArg2);
         if (!nReturn)
             return 0;
         if (nMaxLength < nReturn)
@@ -2271,7 +1972,7 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
     }
     if (sNumVal1.length())
     {
-        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal1, nArg1);
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal1, mStringVectorVars, nArg1);
         if (!nReturn)
             return 0;
         if (nMaxLength < nReturn)
@@ -2279,7 +1980,7 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
     }
     if (sNumVal2.length())
     {
-        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal2, nArg2);
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal2, mStringVectorVars, nArg2);
         if (!nReturn)
             return 0;
         if (nMaxLength < nReturn)
@@ -2288,7 +1989,7 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
     return nMaxLength;
 }
 
-size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, s_vect& sArg1, s_vect& sArg2, n_vect& nArg1, n_vect& nArg2)
+size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg1, s_vect& sArg2, n_vect& nArg1, n_vect& nArg2)
 {
     string sFuncArgument = __sFuncArgument;
     size_t nMaxLength = 0;
@@ -2305,12 +2006,12 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
     if (sFuncArgument.length())
         sNumVal2 = getNextArgument(sFuncArgument, true);
 
-    nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString1, sArg1);
+    nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString1, mStringVectorVars, sArg1);
     if (!nMaxLength)
         return 0;
     if (sString2.length())
     {
-        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sString2, sArg2);
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sString2, mStringVectorVars, sArg2);
         if (!nReturn)
             return 0;
         if (nMaxLength < nReturn)
@@ -2318,7 +2019,7 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
     }
     if (sNumVal1.length())
     {
-        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal1, nArg1);
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal1, mStringVectorVars, nArg1);
         if (!nReturn)
             return 0;
         if (nMaxLength < nReturn)
@@ -2326,7 +2027,7 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
     }
     if (sNumVal2.length())
     {
-        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal2, nArg2);
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal2, mStringVectorVars, nArg2);
         if (!nReturn)
             return 0;
         if (nMaxLength < nReturn)
@@ -2335,7 +2036,7 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
     return nMaxLength;
 }
 
-size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, s_vect& sArg1, s_vect& sArg2, s_vect& sArg3, n_vect& nArg1, n_vect& nArg2)
+size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg1, s_vect& sArg2, s_vect& sArg3, n_vect& nArg1, n_vect& nArg2)
 {
     string sFuncArgument = __sFuncArgument;
     size_t nMaxLength = 0;
@@ -2355,12 +2056,12 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
     if (sFuncArgument.length())
         sNumVal2 = getNextArgument(sFuncArgument, true);
 
-    nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString1, sArg1);
+    nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString1, mStringVectorVars, sArg1);
     if (!nMaxLength)
         return 0;
     if (sString2.length())
     {
-        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sString2, sArg2);
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sString2, mStringVectorVars, sArg2);
         if (!nReturn)
             return 0;
         if (nMaxLength < nReturn)
@@ -2368,7 +2069,7 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
     }
     if (sString3.length())
     {
-        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sString3, sArg3);
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sString3, mStringVectorVars, sArg3);
         if (!nReturn)
             return 0;
         if (nMaxLength < nReturn)
@@ -2376,7 +2077,7 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
     }
     if (sNumVal1.length())
     {
-        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal1, nArg1);
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal1, mStringVectorVars, nArg1);
         if (!nReturn)
             return 0;
         if (nMaxLength < nReturn)
@@ -2384,7 +2085,7 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
     }
     if (sNumVal2.length())
     {
-        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal2, nArg2);
+        size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sNumVal2, mStringVectorVars, nArg2);
         if (!nReturn)
             return 0;
         if (nMaxLength < nReturn)
@@ -2393,10 +2094,9 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
     return nMaxLength;
 }
 
-string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, const Settings& _option)
+string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars, size_t n_pos)
 {
     // Get the contents of "string()", "data()" and the other caches
-    unsigned int n_pos = 0;
     string sDummy;
 
     // {str} = string(...)
@@ -2422,8 +2122,10 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
             }
             if (sString.length())
             {
-                if (!parser_StringParser(sString, sDummy, _data, _parser, _option, true))
+                StringResult strRes = parser_StringParserCore(sString, "", _data, _parser, _option, mStringVectorVars, false);
+                if (!strRes.vResult.size())
                     throw STRING_ERROR;
+                sString = strRes.vResult[0];
                 if (sString.find(':') != string::npos)
                 {
                     int i1 = 0, i2 = 0, nCol = 0;
@@ -2569,9 +2271,10 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
             string sData = sLine.substr(n_pos, nPos-n_pos+1);
             //cerr << sData << endl;
             parser_GetDataElement(sData, _parser, _data, _option);
-            sData += " -kmq";
-            if (!parser_StringParser(sData, sDummy, _data, _parser, _option, true))
+            StringResult strRes = parser_StringParserCore(sData, "", _data, _parser, _option, mStringVectorVars);
+            if (!strRes.vResult.size())
                 throw STRING_ERROR;
+            sData = strRes.vResult[0];
             StripSpaces(sData);
             sLine = sLine.substr(0,n_pos) + sData + sLine.substr(nPos+1);
         }
@@ -2607,9 +2310,10 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
                     }
                     string sData = sLine.substr(n_pos, nPos-n_pos+1);
                     parser_GetDataElement(sData, _parser, _data, _option);
-                    sData += " -kmq";
-                    if (!parser_StringParser(sData, sDummy, _data, _parser, _option, true))
+                    StringResult strRes = parser_StringParserCore(sData, "", _data, _parser, _option, mStringVectorVars);
+                    if (!strRes.vResult.size())
                         throw STRING_ERROR;
+                    sData = strRes.vResult[0];
                     StripSpaces(sData);
                     sLine = sLine.substr(0,n_pos) + sData + sLine.substr(nPos+1);
                 }
@@ -2620,13 +2324,13 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
     return sLine;
 }
 
-string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser, const Settings& _option)
+string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars)
 {
     if (sLine.find('#') == string::npos)
         return sLine + " ";
     string sLineToParsed = sLine + " ";
     string sLineToParsedTemp;
-    string sDummy = "";
+
     unsigned int nPos = 0;
     unsigned int n_pos = 0;
     while (sLineToParsed.find('#', nPos) != string::npos)
@@ -2637,8 +2341,6 @@ string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser,
             string sPrefix = "";
             sLineToParsedTemp += sLineToParsed.substr(0,nPos);
             sLineToParsed = sLineToParsed.substr(nPos+1);
-            if (_option.getbDebug())
-                NumeReKernel::print("DEBUG: (#-parser) sLineToParsed = " + sLineToParsed.substr(0,100));
             if (sLineToParsed[0] == '~')
             {
                 for (unsigned int i = 0; i < sLineToParsed.length(); i++)
@@ -2660,10 +2362,18 @@ string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser,
                 string sExpr = sLineToParsed.substr(1,getMatchingParenthesis(sLineToParsed)-1);
                 if (containsStrings(sExpr))
                 {
-                    sExpr += " -nq";
-                    if (!parser_StringParser(sExpr, sDummy, _data, _parser, _option, true))
+                    StringResult strRes = parser_StringParserCore(sExpr, "", _data, _parser, _option, mStringVectorVars);
+                    if (!strRes.vResult.size())
                         throw STRING_ERROR;
-                    string sElement = "";
+                    sExpr = "{";
+                    for (size_t i = 0; i < strRes.vResult.size(); i++)
+                    {
+                        sExpr += strRes.vResult[i];
+                        if (i+1 < strRes.vResult.size())
+                            sExpr += ",";
+                    }
+                    sExpr += "}";
+                    /*string sElement = "";
                     string sBlock = "";
                     while (getNextArgument(sExpr, false).length())
                     {
@@ -2680,13 +2390,12 @@ string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser,
                     }
                     if (sBlock.front() == '{')
                         sBlock += "}";
-                    sLineToParsedTemp += sBlock;
+                    sLineToParsedTemp += sBlock;*/
+                    sLineToParsedTemp += sExpr;
                     if (parser_getDelimiterPos(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
                         sLineToParsed = sLineToParsed.substr(parser_getDelimiterPos(sLineToParsed.substr(n_pos)));
                     else
                         sLineToParsed = "";
-                    if (_option.getbDebug())
-                        mu::console() << _nrT("|-> DEBUG: sLineToParsedTemp = ") << sLineToParsedTemp << endl;
 
                     nPos = 0;
                     continue;
@@ -2771,8 +2480,6 @@ string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser,
                 sLineToParsed = sLineToParsed.substr(parser_getDelimiterPos(sLineToParsed.substr(n_pos)));
             else
                 sLineToParsed = "";
-            if (_option.getbDebug())
-               cerr << "|-> DEBUG: (#-parser) sLineToParsedTemp = " << sLineToParsedTemp.substr(0,100) << endl;
 
             nPos = 0;
         }
@@ -2853,7 +2560,8 @@ vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFinal, Pars
         }
         else
             vIsNoStringValue.push_back(false);
-        if ((vFinal[n].front() == '"' && vFinal[n].back() != '"')
+
+        /*if ((vFinal[n].front() == '"' && vFinal[n].back() != '"')
             || (vFinal[n].front() != '"' && vFinal[n].back() == '"'))
         {
             if (vFinal[n].front() == '"')
@@ -2870,72 +2578,41 @@ vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFinal, Pars
                 vFinal[n] = vFinal[n].substr(1);
             if (vFinal[n].back() == '"')
                 vFinal[n].pop_back();
+        }*/
+    }
+    // check, whether there's a string left
+    bReturningLogicals = true;
+    for (size_t i = 0; i < vIsNoStringValue.size(); i++)
+    {
+        if (!vIsNoStringValue[i])
+        {
+            bReturningLogicals = false;
+            break;
         }
     }
     return vIsNoStringValue;
 }
 
-int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string sObject, Datafile& _data, Parser& _parser, const Settings& _option)
+int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string __sObject, Datafile& _data, Parser& _parser, const Settings& _option)
 {
-    if (sObject.length())
+    if (__sObject.length())
     {
+        if (__sObject.find('{') != string::npos)
+            parser_VectorToExpr(__sObject, _option);
+        string sObject;
         size_t nStrings = vFinal.size();
-        if (sObject.find("data(") != string::npos || _data.containsCacheElements(sObject))
+        size_t nCurrentComponent = 0;
+
+        while (__sObject.length())
         {
-            string si = "";
-            string sj = "";
-            int nIndex[2] = {0,0};
-            if (sObject.find("data(") != string::npos)
-                si = sObject.substr(sObject.find("data(")+4);
-            else
+            sObject = getNextArgument(__sObject, true);
+            if (sObject.find("data(") != string::npos || _data.containsCacheElements(sObject))
             {
-                for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-                {
-                    if (sObject.find(iter->first+"(") != string::npos
-                        && (!sObject.find(iter->first+"(")
-                            || (sObject.find(iter->first+"(") && checkDelimiter(sObject.substr(sObject.find(iter->first+"(")-1, (iter->first).length()+2)))))
-                    {
-                        si = sObject.substr(sObject.find(iter->first+"(")+(iter->first).length());
-                        break;
-                    }
-                }
-                _data.setCacheStatus(true);
-            }
-            parser_SplitArgs(si, sj, ',', _option);
-
-            if (si.find("#") != string::npos)
-            {
-                if (sj.find(":") != string::npos)
-                {
-                    si = sj.substr(0,sj.find(":"));
-                    sj = sj.substr(sj.find(":")+1);
-                }
-                else
-                    si = sj;
-                if (parser_ExprNotEmpty(si))
-                {
-                    _parser.SetExpr(si);
-                    nIndex[0] = (int)_parser.Eval();
-                    nIndex[0]--;
-                }
-                if (parser_ExprNotEmpty(sj))
-                {
-                    _parser.SetExpr(sj);
-                    nIndex[1] = (int)_parser.Eval();
-                }
+                string si = "";
+                string sj = "";
+                int nIndex[2] = {0,0};
                 if (sObject.find("data(") != string::npos)
-                {
-                    if (!nIndex[1])
-                        nIndex[1] = _data.getCols("data");
-                    parser_CheckIndices(nIndex[0], nIndex[1]);
-                    for (int n = 0; n < (int)nStrings; n++)
-                    {
-                        if (!vFinal[n].length() || n+nIndex[0] == nIndex[1]+1 || n+nIndex[0] >= _data.getCols("data"))
-                            break;
-                        _data.setHeadLineElement(n+nIndex[0], "data", removeControlSymbols(vFinal[n]));
-                    }
-
-                }
+                    si = sObject.substr(sObject.find("data(")+4);
                 else
                 {
                     for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
@@ -2944,64 +2621,245 @@ int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& 
                             && (!sObject.find(iter->first+"(")
                                 || (sObject.find(iter->first+"(") && checkDelimiter(sObject.substr(sObject.find(iter->first+"(")-1, (iter->first).length()+2)))))
                         {
-                            if (nIndex[1])
-                                parser_CheckIndices(nIndex[0], nIndex[1]);
-
-                            for (int n = 0; n < (int)nStrings; n++)
-                            {
-                                if (!vFinal[n].length() || (nIndex[1] && n+nIndex[0] == nIndex[1]+1))
-                                    break;
-                                _data.setHeadLineElement(n+nIndex[0], iter->first, removeControlSymbols(vFinal[n]));
-                            }
+                            si = sObject.substr(sObject.find(iter->first+"(")+(iter->first).length());
                             break;
                         }
                     }
+                    _data.setCacheStatus(true);
+                }
+                parser_SplitArgs(si, sj, ',', _option);
+
+                if (si.find('#') != string::npos)
+                {
+                    if (sj.find(':') != string::npos)
+                    {
+                        si = sj.substr(0,sj.find(':'));
+                        sj = sj.substr(sj.find(':')+1);
+                    }
+                    else
+                        si = sj;
+                    if (parser_ExprNotEmpty(si))
+                    {
+                        _parser.SetExpr(si);
+                        nIndex[0] = (int)_parser.Eval();
+                        nIndex[0]--;
+                    }
+                    if (parser_ExprNotEmpty(sj))
+                    {
+                        _parser.SetExpr(sj);
+                        nIndex[1] = (int)_parser.Eval();
+                    }
+                    if (sObject.find("data(") != string::npos)
+                    {
+                        if (!nIndex[1])
+                            nIndex[1] = _data.getCols("data");
+                        parser_CheckIndices(nIndex[0], nIndex[1]);
+                        for (int n = nCurrentComponent; n < (int)nStrings; n++)
+                        {
+                            if (!vFinal[n].length() || n+nIndex[0] == nIndex[1]+1 || n+nIndex[0] >= _data.getCols("data"))
+                                break;
+                            _data.setHeadLineElement(n+nIndex[0], "data", removeControlSymbols(removeQuotationMarks(vFinal[n])));
+                        }
+                        nCurrentComponent = nStrings;
+                    }
+                    else
+                    {
+                        for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
+                        {
+                            if (sObject.find(iter->first+"(") != string::npos
+                                && (!sObject.find(iter->first+"(")
+                                    || (sObject.find(iter->first+"(") && checkDelimiter(sObject.substr(sObject.find(iter->first+"(")-1, (iter->first).length()+2)))))
+                            {
+                                if (nIndex[1])
+                                    parser_CheckIndices(nIndex[0], nIndex[1]);
+
+                                for (int n = nCurrentComponent; n < (int)nStrings; n++)
+                                {
+                                    if (!vFinal[n].length() || (nIndex[1] && n+nIndex[0] == nIndex[1]+1))
+                                        break;
+                                    _data.setHeadLineElement(n+nIndex[0], iter->first, removeControlSymbols(removeQuotationMarks(vFinal[n])));
+                                }
+                                nCurrentComponent = nStrings;
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    Indices _idx = parser_getIndices(sObject, _parser, _data, _option);
+
+                    string sTable;
+                    if (sObject.find("data(") != string::npos)
+                       throw READ_ONLY_DATA;
+                    else
+                    {
+                        for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
+                        {
+                            if (sObject.find(iter->first+"(") != string::npos
+                                && (!sObject.find(iter->first+"(")
+                                    || (sObject.find(iter->first+"(") && checkDelimiter(sObject.substr(sObject.find(iter->first+"(")-1, (iter->first).length()+2)))))
+                                sTable = iter->first;
+                        }
+                    }
+
+                    if (_idx.nI[1] == -1)
+                        _idx.nI[1] = _idx.nI[0];
+                    if (_idx.nJ[1] == -1)
+                        _idx.nJ[1] = _idx.nJ[0];
+
+                    for (size_t i = nCurrentComponent; i < vFinal.size(); i++)
+                    {
+                        if (_idx.nI[0] == _idx.nI[1] && _idx.nJ[0] != _idx.nJ[1])
+                        {
+                            if (_idx.nJ[0] + i > _idx.nJ[1] && _idx.nJ[1] != -2)
+                                break;
+                            _data.writeToCache(_idx.nI[0], _idx.nJ[0]+1, sTable, StrToDb(vFinal[i]));
+                        }
+                        else if (_idx.nI[0] != _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
+                        {
+                            if (_idx.nI[0] + i > _idx.nI[1] && _idx.nI[1] != -2)
+                                break;
+                            _data.writeToCache(_idx.nI[0]+i, _idx.nJ[0], sTable, StrToDb(vFinal[i]));
+                        }
+                        else if (_idx.nI[0] == _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
+                        {
+                            _data.writeToCache(_idx.nI[0], _idx.nJ[0], sTable, StrToDb(vFinal[i]));
+                            break;
+                        }
+
+                    }
+                    nCurrentComponent = nStrings;
+                    // throw CANNOT_CONTAIN_STRINGS;
+                }
+                _data.setCacheStatus(false);
+            }
+            else if (sObject.find("string(") != string::npos)
+            {
+                string si = "";
+                string sj = "";
+                string sCol = "";
+                int nIndex[3] = {-2,-2,0};
+                si = sObject.substr(sObject.find("string(")+6);
+                si = si.substr(1,getMatchingParenthesis(si)-1);
+                StripSpaces(si);
+
+                if (si.length())
+                {
+                    if (si.find(':') != string::npos)
+                    {
+                        try
+                        {
+                            si = "(" + si + ")";
+                            parser_SplitArgs(si, sj, ':', _option);
+                            if (sj.find(',') != string::npos)
+                            {
+                                parser_SplitArgs(sj, sCol, ',', _option, true);
+                            }
+                            if (!parser_ExprNotEmpty(si))
+                            {
+                                si = "1";
+                            }
+                        }
+                        catch (...)
+                        {
+                            throw;
+                        }
+                    }
+                    else if (si.find(',') != string::npos)
+                    {
+                        try
+                        {
+                            parser_SplitArgs(si,sCol, ',', _option, true);
+                            sj = si;
+                        }
+                        catch (...)
+                        {
+                            throw;
+                        }
+                    }
+                    else
+                        sj = si;
+
+                    if (parser_ExprNotEmpty(sCol))
+                    {
+                        _parser.SetExpr(sCol);
+                        nIndex[2] = (unsigned int)_parser.Eval()-1;
+                    }
+                    if (parser_ExprNotEmpty(si))
+                    {
+                        _parser.SetExpr(si);
+                        nIndex[0] = (unsigned int)_parser.Eval()-1;
+                    }
+                    if (parser_ExprNotEmpty(sj))
+                    {
+                        _parser.SetExpr(sj);
+                        nIndex[1] = (unsigned int)_parser.Eval()-1;
+                    }
+                    if (nIndex[0] < 0 && nIndex[1] < 0)
+                        nIndex[0] = _data.getStringElements(nIndex[2]);
+                    else if (nIndex[0] < 0)
+                        nIndex[0] = 0;
+
+                    if (nIndex[1] >= 0)
+                        parser_CheckIndices(nIndex[0], nIndex[1]);
+
+                    for (int n = nCurrentComponent; n < (int)nStrings; n++)
+                    {
+                        if (n+nIndex[0] == nIndex[1]+1)
+                            break;
+                        _data.writeString(removeQuotationMarks(vFinal[n]), n+nIndex[0], nIndex[2]);
+                    }
+                    nCurrentComponent = nStrings;
+                }
+                else
+                {
+                    for (int n = nCurrentComponent; n < (int)nStrings; n++)
+                    {
+                        _data.writeString(removeQuotationMarks(vFinal[n]));
+                    }
+                    nCurrentComponent = nStrings;
+                }
+            }
+            else if (_data.containsStringVars(sObject))
+            {
+                StripSpaces(sObject);
+                if (sObject.find(' ') != string::npos)
+                    return 0;
+                try
+                {
+                    _data.setStringValue(sObject, removeQuotationMarks(vFinal[nCurrentComponent]));
+                    nCurrentComponent++;
+                }
+                catch (...)
+                {
+                    throw;
                 }
             }
             else
             {
-                throw CANNOT_CONTAIN_STRINGS;
-            }
-            _data.setCacheStatus(false);
-        }
-        else if (sObject.find("string(") != string::npos)
-        {
-            string si = "";
-            string sj = "";
-            string sCol = "";
-            int nIndex[3] = {-2,-2,0};
-            si = sObject.substr(sObject.find("string(")+6);
-            si = si.substr(1,getMatchingParenthesis(si)-1);
-            StripSpaces(si);
-
-            if (si.length())
-            {
-                if (si.find(":") != string::npos)
+                StripSpaces(sObject);
+                if (sObject.find(' ') != string::npos)
                 {
-                    try
+                    return 0;
+                }
+                if (parser_GetVarAdress(sObject, _parser))
+                {
+                    if (!vIsNoStringValue[nCurrentComponent])
                     {
-                        si = "(" + si + ")";
-                        parser_SplitArgs(si, sj, ':', _option);
-                        if (sj.find(',') != string::npos)
-                        {
-                            parser_SplitArgs(sj, sCol, ',', _option, true);
-                        }
-                        if (!parser_ExprNotEmpty(si))
-                        {
-                            si = "1";
-                        }
-                    }
-                    catch (...)
-                    {
-                        throw;
+                        return 0;
                     }
                 }
-                else if (si.find(',') != string::npos)
+                if (vIsNoStringValue[nCurrentComponent])
                 {
                     try
                     {
-                        parser_SplitArgs(si,sCol, ',', _option, true);
-                        sj = si;
+                        int nResults = 0;
+                        value_type* v = 0;
+                        _parser.SetExpr(sObject + " = " + vFinal[nCurrentComponent]);
+                        v = _parser.Eval(nResults);
+                        vAns = v[0];
+                        nCurrentComponent++;
                     }
                     catch (...)
                     {
@@ -3009,98 +2867,16 @@ int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& 
                     }
                 }
                 else
-                    sj = si;
-
-                if (parser_ExprNotEmpty(sCol))
                 {
-                    _parser.SetExpr(sCol);
-                    nIndex[2] = (unsigned int)_parser.Eval()-1;
-                }
-                if (parser_ExprNotEmpty(si))
-                {
-                    _parser.SetExpr(si);
-                    nIndex[0] = (unsigned int)_parser.Eval()-1;
-                }
-                if (parser_ExprNotEmpty(sj))
-                {
-                    _parser.SetExpr(sj);
-                    nIndex[1] = (unsigned int)_parser.Eval()-1;
-                }
-                if (nIndex[0] < 0 && nIndex[1] < 0)
-                    nIndex[0] = _data.getStringElements(nIndex[2]);
-                else if (nIndex[0] < 0)
-                    nIndex[0] = 0;
-
-                if (nIndex[1] >= 0)
-                    parser_CheckIndices(nIndex[0], nIndex[1]);
-
-                for (int n = 0; n < (int)nStrings; n++)
-                {
-                    if (n+nIndex[0] == nIndex[1]+1)
-                        break;
-                    _data.writeString(vFinal[n], n+nIndex[0], nIndex[2]);
-                }
-            }
-            else
-            {
-                for (int n = 0; n < (int)nStrings; n++)
-                {
-                    _data.writeString(vFinal[n]);
-                }
-            }
-        }
-        else if (_data.containsStringVars(sObject))
-        {
-            StripSpaces(sObject);
-            if (sObject.find(' ') != string::npos)
-                return 0;
-            try
-            {
-                _data.setStringValue(sObject, vFinal[0]);
-            }
-            catch (...)
-            {
-                throw;
-            }
-        }
-        else
-        {
-            StripSpaces(sObject);
-            if (sObject.find(' ') != string::npos)
-            {
-                return 0;
-            }
-            if (parser_GetVarAdress(sObject, _parser))
-            {
-                if (!vIsNoStringValue[0])
-                {
-                    return 0;
-                }
-            }
-            if (vIsNoStringValue[0])
-            {
-                try
-                {
-                    int nResults = 0;
-                    value_type* v = 0;
-                    _parser.SetExpr(sObject + " = " + vFinal[0]);
-                    v = _parser.Eval(nResults);
-                    vAns = v[0];
-                }
-                catch (...)
-                {
-                    throw;
-                }
-            }
-            else
-            {
-                try
-                {
-                    _data.setStringValue(sObject, vFinal[0]);
-                }
-                catch (...)
-                {
-                    throw;
+                    try
+                    {
+                        _data.setStringValue(sObject, removeQuotationMarks(vFinal[nCurrentComponent]));
+                        nCurrentComponent++;
+                    }
+                    catch (...)
+                    {
+                        throw;
+                    }
                 }
             }
         }
@@ -3111,6 +2887,11 @@ int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& 
 string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string& sLine, bool bNoQuotes, bool bReturningLogicals, bool bKeepMaskedQuotes)
 {
     sLine.clear();
+
+    // remove the quotation marks
+    for (size_t i = 0; i < vFinal.size(); i++)
+        vFinal[i] = removeQuotationMarks(vFinal[i]);
+
     string sConsoleOut = "|-> ";
     for (unsigned int j = 0; j < vFinal.size(); j++)
     {
