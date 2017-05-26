@@ -423,7 +423,7 @@ bool NumeReEditor::Modified ()
 void NumeReEditor::OnChar( wxStyledTextEvent &event )
 {
     ClearDblClkIndicator();
-    CallAfter(NumeReEditor::AsynchActions);
+    //CallAfter(NumeReEditor::AsynchActions);
 	const wxChar chr = event.GetKey();
 	const int currentLine = GetCurrentLine();
 	const int currentPos = GetCurrentPos();
@@ -452,8 +452,10 @@ void NumeReEditor::OnChar( wxStyledTextEvent &event )
         {
             int lineIndent = this->GetLineIndentation(i);
 
-            if(doIndent)
-                { this->SetLineIndentation(i, lineIndent + indentWidth); }
+            if (doIndent)
+            {
+                this->SetLineIndentation(i, lineIndent + indentWidth);
+            }
             else
             {
                 this->SetLineIndentation(i, lineIndent - indentWidth);
@@ -682,6 +684,7 @@ void NumeReEditor::OnKeyRel(wxKeyEvent &event)
         MakeBraceCheck();
     MakeBlockCheck();
     event.Skip();
+    CallAfter(NumeReEditor::AsynchActions);
     //AnalyseCode();
     //OnKeyUp(event);
 }
@@ -691,6 +694,7 @@ void NumeReEditor::OnMouseUp(wxMouseEvent &event)
     //OnMouseLeftUp(event);
     MakeBraceCheck();
     MakeBlockCheck();
+    CallAfter(NumeReEditor::AsynchActions);
     event.Skip();
 }
 
@@ -2795,16 +2799,17 @@ void NumeReEditor::OnEditorModified(wxStyledTextEvent &event)
         else
             this->markModified(nLine);
 	}
-	if (getEditorSetting(SETTING_USEANALYZER))
-        AnalyseCode();
+	/*if (getEditorSetting(SETTING_USEANALYZER))
+        CallAfter(AnalyseCode);*/
 	event.Skip();
 }
-
 
 void NumeReEditor::AsynchActions()
 {
     if (!this->AutoCompActive() && this->getEditorSetting(SETTING_INDENTONTYPE) && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC))
         ApplyAutoIndentation(0, this->GetCurrentLine()+1);
+    if (getEditorSetting(SETTING_USEANALYZER))
+        AnalyseCode();
 }
 
 void NumeReEditor::OnStartDrag(wxStyledTextEvent& event)

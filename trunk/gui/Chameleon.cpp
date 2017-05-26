@@ -89,7 +89,8 @@
 #include "newcontinue1.xpm"
 #include "newstop1.xpm"
 #include "gtk-apply.xpm"
-//#include "stepnext.xpm"
+#include "stepnext.xpm"
+#include "wraparound.xpm"
 //#include "stepout.xpm"
 //#include "stepover.xpm"
 #include "breakpoint_octagon.xpm"
@@ -1055,7 +1056,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         }
         case ID_LINEWRAP:
         {
+            wxToolBar* t = GetToolBar();
             m_currentEd->ToggleSettings(NumeReEditor::SETTING_WRAPEOL);
+            t->ToggleTool(ID_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
+            wxMenu* tools = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_VIEW")));
+            tools->Check(ID_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
             break;
         }
         case ID_DISPCTRLCHARS:
@@ -1079,7 +1084,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         }
         case ID_INDENTONTYPE:
         {
+            wxToolBar* t = GetToolBar();
             m_currentEd->ToggleSettings(NumeReEditor::SETTING_INDENTONTYPE);
+            t->ToggleTool(ID_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+            wxMenu* tools = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
+            tools->Check(ID_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
             break;
         }
         case ID_GOTOLINE:
@@ -2957,6 +2966,8 @@ void NumeReWindow::ToolbarStatusUpdate()
         tb->EnableTool(ID_DEBUG_CLEAREDITORBREAKPOINTS, true);
         tb->EnableTool(ID_USEANALYZER, true);
         tb->ToggleTool(ID_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
+        tb->EnableTool(ID_INDENTONTYPE, true);
+        tb->ToggleTool(ID_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
 	}
 	else
 	{
@@ -2965,7 +2976,10 @@ void NumeReWindow::ToolbarStatusUpdate()
         tb->EnableTool(ID_DEBUG_CLEAREDITORBREAKPOINTS, false);
         tb->EnableTool(ID_USEANALYZER, false);
         tb->ToggleTool(ID_USEANALYZER, false);
+        tb->EnableTool(ID_INDENTONTYPE, false);
+        tb->ToggleTool(ID_INDENTONTYPE, false);
 	}
+	tb->ToggleTool(ID_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
 
 	/*if(isDebugging)
 	{
@@ -3728,6 +3742,14 @@ void NumeReWindow::UpdateToolbar()
     t->AddSeparator();
     t->AddTool(ID_FIND, _guilang.get("GUI_TB_SEARCH"), wxArtProvider::GetBitmap(wxART_FIND, wxART_TOOLBAR), _guilang.get("GUI_TB_SEARCH"));
     t->AddTool(ID_REPLACE, _guilang.get("GUI_TB_REPLACE"), wxArtProvider::GetBitmap(wxART_FIND_AND_REPLACE, wxART_TOOLBAR), _guilang.get("GUI_TB_REPLACE"));
+
+    t->AddSeparator();
+    wxBitmap bmIndent(stepnext_xpm);
+    t->AddTool(ID_INDENTONTYPE, _guilang.get("GUI_TB_INDENTONTYPE"), bmIndent, _guilang.get("GUI_TB_INDENTONTYPE_TTP"), wxITEM_CHECK);
+    t->ToggleTool(ID_INDENTONTYPE, false);
+    t->EnableTool(ID_INDENTONTYPE, false);
+    wxBitmap bmWrapAround(wraparound_xpm);
+    t->AddTool(ID_LINEWRAP, _guilang.get("GUI_TB_LINEWRAP"), bmWrapAround, _guilang.get("GUI_TB_LINEWRAP_TTP"), wxITEM_CHECK);
 
     t->AddSeparator();
     wxBitmap bmStart(newstart1_xpm);
