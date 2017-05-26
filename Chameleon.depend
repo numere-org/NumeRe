@@ -5662,7 +5662,7 @@
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\printps.h
 	"wx/prntbase.h"
 
-1495046549 d:\cpp\numere-source\trunk\editor\editor.h
+1495795833 d:\cpp\numere-source\trunk\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -7707,7 +7707,7 @@
 	<string>
 	<vector>
 
-1494920447 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1495796921 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -7767,7 +7767,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1494918200 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1495825624 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -7826,6 +7826,8 @@
 	"newcontinue1.xpm"
 	"newstop1.xpm"
 	"gtk-apply.xpm"
+	"stepnext.xpm"
+	"wraparound.xpm"
 	"breakpoint_octagon.xpm"
 	"breakpoint_octagon_crossed.xpm"
 	"breakpoint_octagon_disable.xpm"
@@ -8337,7 +8339,7 @@
 	"built-in.hpp"
 	"../kernel.hpp"
 
-1494702229 source:d:\cpp\numere-source\trunk\kernel\core\cache.cpp
+1495628874 source:d:\cpp\numere-source\trunk\kernel\core\cache.cpp
 	"cache.hpp"
 	"../kernel.hpp"
 
@@ -8383,7 +8385,7 @@
 1490791550 source:d:\cpp\numere-source\trunk\kernel\core\language.cpp
 	"language.hpp"
 
-1491416417 source:d:\cpp\numere-source\trunk\kernel\core\loop.cpp
+1495610415 source:d:\cpp\numere-source\trunk\kernel\core\loop.cpp
 	"loop.hpp"
 	"../kernel.hpp"
 
@@ -8511,7 +8513,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1495009337 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1495803462 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -8786,4 +8788,8 @@
 	"wx/list.h"
 
 1494087637 d:\cpp\numere-source\trunk\gui\gtk-apply.xpm
+
+1495825086 d:\cpp\numere-source\trunk\gui\stepnext.xpm
+
+1495825759 d:\cpp\numere-source\trunk\gui\wraparound.xpm
 
