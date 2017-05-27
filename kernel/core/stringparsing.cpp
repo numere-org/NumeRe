@@ -9,7 +9,8 @@ extern mglGraph _fontData;
 extern Plugin _plugin;
 
 #define DEFAULT_NUM_ARG INT_MIN
-
+#define NEWSTRING (char)23
+// define the "End of transmission block" as string seperator
 
 typedef std::vector<std::string> s_vect;
 typedef std::vector<int> n_vect;
@@ -165,7 +166,7 @@ string strfnc_getfilelist(StringFuncArgs& funcArgs)
     {
         sFileList += "\"" + vFileList[i] + "\"";
         if (i < vFileList.size()-1)
-            sFileList += ", ";
+            sFileList += NEWSTRING;
     }
     if (!sFileList.length())
         return "\"\"";
@@ -184,7 +185,7 @@ string strfnc_getfolderlist(StringFuncArgs& funcArgs)
     {
         sFolderList += "\"" + vFolderList[i] + "\"";
         if (i < vFolderList.size()-1)
-            sFolderList += ", ";
+            sFolderList += NEWSTRING;
     }
     if (!sFolderList.length())
         return "\"\"";
@@ -280,16 +281,16 @@ string strfnc_split(StringFuncArgs& funcArgs)
 {
     string sSplittedString = "";
     if (!funcArgs.sArg2.length())
-        return "";
+        return "\"\"";
     boost::char_separator<char> cSep(funcArgs.sArg2.substr(0,1).c_str());
     tokenizer<char_separator<char> > tok(funcArgs.sArg1, cSep);
     for (tokenizer<char_separator<char> >::iterator iter = tok.begin(); iter != tok.end(); ++iter)
     {
-        sSplittedString += "\"";
-        sSplittedString += *iter;
-        sSplittedString += "\", ";
+        if (sSplittedString.length())
+            sSplittedString += NEWSTRING;
+        sSplittedString += "\"" + string(*iter) + "\"";
     }
-    return sSplittedString.substr(0, sSplittedString.length()-2);
+    return sSplittedString;
 }
 
 // STR__STR_STROPT
@@ -1564,15 +1565,21 @@ string removeMaskedStrings(const string& sString)
 
 string addMaskedStrings(const string& sString)
 {
-    if (sString.find('"') == string::npos)
+    if (sString.find('"') == string::npos && sString.find(NEWSTRING) == string::npos)
         return sString;
     string sRet = sString;
     for (size_t i = 1; i < sRet.length()-1; i++)
     {
-        if (sRet[i] == '"' && sRet[i-1] != '\\')
+        if (sRet[i] == '"' && sRet[i-1] != '\\' && sRet[i+1] != NEWSTRING)
         {
             sRet.insert(i, "\\");
             i++;
+        }
+        if (sRet[i] == NEWSTRING)
+        {
+            sRet[i] = ',';
+            if (sRet[i+1] == '"')
+                i++;
         }
     }
     return sRet;
@@ -2169,13 +2176,13 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
                         if (_data.getStringElements(nCol))
                         {
                             sString = "";
+                            vector<string> vStrings;
                             for (int i = i1; i < i2; i++)
                             {
-                                sString += "\"" +  _data.readString((unsigned int)i, nCol) + "\"";
-                                if (i < i2-1)
-                                    sString += ", ";
+                                vStrings.push_back("\"" +  _data.readString((unsigned int)i, nCol) + "\"");
                             }
-                            sLine = sLine.substr(0, n_pos) + "{"+sString+"}" + sLine.substr(nPos+1);
+                            sString = parser_CreateStringVectorVar(vStrings, mStringVectorVars);
+                            sLine = sLine.substr(0, n_pos) + sString + sLine.substr(nPos+1);
                         }
                         else
                             sLine = sLine.substr(0, n_pos) + "\"\"" + sLine.substr(nPos+1);
@@ -2215,7 +2222,6 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
                     }
                     else
                     {
-                        _parser.SetExpr(sString);
                         sLine = sLine.substr(0,n_pos) + "\"" + _data.readString(nIndex,nCol) + "\"" + sLine.substr(nPos+1);
                     }
                 }
