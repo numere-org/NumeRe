@@ -10,7 +10,7 @@ extern Plugin _plugin;
 
 #define DEFAULT_NUM_ARG INT_MIN
 #define NEWSTRING (char)23
-// define the "End of transmission block" as string seperator
+// define the "End of transmission block" as string separator
 
 typedef std::vector<std::string> s_vect;
 typedef std::vector<int> n_vect;
@@ -244,7 +244,30 @@ string strfnc_to_char(StringFuncArgs& funcArgs)
     {
         sToChar += (char)(funcArgs.nMultiArg[i]);
     }
-    return "\"" + sToChar + "\"";;
+    return "\"" + sToChar + "\"";
+}
+
+// val = and(num)
+string strfnc_and(StringFuncArgs& funcArgs)
+{
+    for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
+    {
+        if (!funcArgs.nMultiArg[i])
+            return "false";
+    }
+    return "true";
+}
+
+// val = or(num)
+string strfnc_or(StringFuncArgs& funcArgs)
+{
+    string sToChar = "";
+    for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
+    {
+        if (funcArgs.nMultiArg[i])
+            return "true";
+    }
+    return "false";
 }
 
 // ----------------------------
@@ -928,22 +951,36 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
                 if (i < 6 || (i >= 6 && sLine.substr(i-6,6) != "string"))
                 {
                     string sString = sLine.substr(i+1, nPos-i-1);
-                    if (i > 0 && !checkDelimiter(sLine.substr(i-1, nPos-i+2)))
-                        throw STRING_ERROR;
-                    if (containsStrings(sString) || _data.containsStringVars(sString))
-                    {
-                        StringResult _res = parser_StringParserCore(sString, "", _data, _parser, _option, mStringVectorVars);
-                        string strvar = parser_CreateStringVectorVar(_res.vResult, mStringVectorVars);
 
-                        if (!strvar.length())
-                            throw STRING_ERROR;
-                        sLine = sLine.substr(0,i) + strvar + sLine.substr(nPos+1);
+                    if (i > 0 && !checkDelimiter(sLine.substr(i-1, nPos-i+2))) // this is probably a numerical function. Keep the parentheses
+                    {
+                        if (containsStrings(sString) || _data.containsStringVars(sString))
+                        {
+                            StringResult _res = parser_StringParserCore(sString, "", _data, _parser, _option, mStringVectorVars);
+                            string strvar = parser_CreateStringVectorVar(_res.vResult, mStringVectorVars);
+
+                            if (!strvar.length())
+                                throw STRING_ERROR;
+                            sLine = sLine.substr(0,i+1) + strvar + sLine.substr(nPos);
+                        }
+                    }
+                    else // replace the whole parenthesis
+                    {
+                        if (containsStrings(sString) || _data.containsStringVars(sString))
+                        {
+                            StringResult _res = parser_StringParserCore(sString, "", _data, _parser, _option, mStringVectorVars);
+                            string strvar = parser_CreateStringVectorVar(_res.vResult, mStringVectorVars);
+
+                            if (!strvar.length())
+                                throw STRING_ERROR;
+                            sLine = sLine.substr(0,i) + strvar + sLine.substr(nPos+1);
+                        }
                     }
                 }
             }
         }
     }
-//NumeReKernel::print("DOT3");
+
     if (sLine.find('{') != string::npos)
     {
         n_pos = 0;
@@ -989,12 +1026,10 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
     }
 
     // Apply the "#" parser to the string
-    string sTemp = parser_NumToString(sLine, _data, _parser, _option, mStringVectorVars);
+    sLine = parser_NumToString(sLine, _data, _parser, _option, mStringVectorVars);
 
     // Split the list to a vector
-//    while (sTemp.length())
-//        strRes.vResult.push_back(getNextArgument(sTemp, true));
-    strRes.vResult = parser_EvaluateStringVectors(sTemp, mStringVectorVars);
+    strRes.vResult = parser_EvaluateStringVectors(sLine, mStringVectorVars);
 
     if (!strRes.vResult.size())
         throw STRING_ERROR;
@@ -1543,6 +1578,8 @@ map<string, StringFuncHandle> parser_getStringFuncHandles()
     mHandleTable["getfilelist"]         = StringFuncHandle(STR_VALOPT, strfnc_getfilelist, false);
     mHandleTable["getfolderlist"]       = StringFuncHandle(STR_VALOPT, strfnc_getfolderlist, false);
     mHandleTable["to_char"]             = StringFuncHandle(VAL, strfnc_to_char, true);
+    mHandleTable["and"]                 = StringFuncHandle(VAL, strfnc_and, true);
+    mHandleTable["or"]                  = StringFuncHandle(VAL, strfnc_or, true);
     mHandleTable["num"]                 = StringFuncHandle(STR, strfnc_num, true);
     mHandleTable["cnt"]                 = StringFuncHandle(STR, strfnc_cnt, true);
     mHandleTable["min"]                 = StringFuncHandle(STR, strfnc_min, true);
@@ -1555,11 +1592,20 @@ map<string, StringFuncHandle> parser_getStringFuncHandles()
 
 string removeMaskedStrings(const string& sString)
 {
-    if (sString.find("\\\"") == string::npos)
+    if (sString.find("\\\"") == string::npos && sString.find("\\t") == string::npos && sString.find("\\n") == string::npos)
         return sString;
     string sRet = sString;
-    while (sRet.find("\\\"") != string::npos)
-        sRet.erase(sRet.find("\\\""), 1);
+
+    for (size_t i = 0; i < sRet.length(); i++)
+    {
+        if (sRet.substr(i,2) == "\\\"")
+            sRet.erase(i,1);
+        if (sRet.substr(i,2) == "\\t" && sRet.substr(i,4) != "\\tau" && sRet.substr(i,6) != "\\theta")
+            sRet.replace(i,2,"\t");
+        if (sRet.substr(i,2) == "\\n" && sRet.substr(i,3) != "\\nu")
+            sRet.replace(i,2,"\n");
+    }
+
     return sRet;
 }
 
@@ -1581,6 +1627,10 @@ string addMaskedStrings(const string& sString)
             if (sRet[i+1] == '"')
                 i++;
         }
+        if (sRet[i] == '\t')
+            sRet.replace(i,1,"\\t");
+        if (sRet[i] == '\n')
+            sRet.replace(i,1,"\\n");
     }
     return sRet;
 }
@@ -2555,7 +2605,7 @@ vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFinal, Pars
                 && vFinal[n].find("<scriptpath>") != vFinal[n].find('>')-11)
             )
         {
-            vFinal[n] = parser_evalStringLogic(vFinal[n], bReturningLogicals);
+            vFinal[n] = addMaskedStrings(parser_evalStringLogic(removeMaskedStrings(vFinal[n]), bReturningLogicals));
             StripSpaces(vFinal[n]);
         }
         if (vFinal[n].front() != '"' && vFinal[n].back() != '"')
