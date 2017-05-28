@@ -1616,7 +1616,7 @@ string addMaskedStrings(const string& sString)
     string sRet = sString;
     for (size_t i = 1; i < sRet.length()-1; i++)
     {
-        if (sRet[i] == '"' && sRet[i-1] != '\\' && sRet[i+1] != NEWSTRING)
+        if (sRet[i] == '"' && sRet[i-1] != '\\' && sRet[i+1] != NEWSTRING && sRet.find('"', i+1) != string::npos)
         {
             sRet.insert(i, "\\");
             i++;

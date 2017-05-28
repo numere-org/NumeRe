@@ -8404,7 +8404,7 @@
 1494776943 source:d:\cpp\numere-source\trunk\kernel\core\parser.cpp
 	"parser.hpp"
 
-1494754541 source:d:\cpp\numere-source\trunk\kernel\core\parser_functions.cpp
+1495990887 source:d:\cpp\numere-source\trunk\kernel\core\parser_functions.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -8513,7 +8513,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1495901064 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1495990865 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -8787,7 +8787,7 @@
 	"wx/object.h"
 	"wx/list.h"
 
-1494087637 d:\cpp\numere-source\trunk\gui\gtk-apply.xpm
+1495992217 d:\cpp\numere-source\trunk\gui\gtk-apply.xpm
 
 1495825086 d:\cpp\numere-source\trunk\gui\stepnext.xpm
 

@@ -6466,6 +6466,7 @@ string parser_evalStringLogic(string sLine, bool& bReturningLogicals)
         else
             return "false";
     }
+    StripSpaces(sLine);
     return sLine;
 }
 
