@@ -6281,6 +6281,11 @@ string parser_evalStringLogic(string sLine, bool& bReturningLogicals)
 {
     if (!sLine.length())
         return "false";
+    if (sLine.find('"') == string::npos)
+    {
+        bReturningLogicals = true;
+        return sLine;
+    }
 
     sLine += " ";
     //cerr << sLine << endl;
