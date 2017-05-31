@@ -797,10 +797,10 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
             }
         }
     }
-    else if (sLine.find('{') != string::npos)
+    /*else if (sLine.find('{') != string::npos)
     {
         parser_VectorToExpr(sLine, _option);
-    }
+    }*/
 
     // Recurse for multiple store targets
     // Nur Rekursionen durchfuehren, wenn auch '=' in dem String gefunden wurde. Nur dann ist sie naemlich noetig.
@@ -903,8 +903,15 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
             _parser.SetExpr(sLine);
             v = _parser.Eval(nResults);
             vAns = v[0];
-            if (sLine.find('=') != string::npos)
-                sLine.erase(0,sLine.find('=')+1);
+            eq_pos = sLine.find('=');
+            if (eq_pos != string::npos
+                && eq_pos
+                && eq_pos < sLine.length()+1
+                && sLine[eq_pos+1] != '='
+                && sLine[eq_pos-1] != '!'
+                && sLine[eq_pos-1] != '<'
+                && sLine[eq_pos-1] != '>')
+                sLine.erase(0,eq_pos+1);
             StripSpaces(sLine);
         }
         return StringResult(sLine, true);
@@ -1924,7 +1931,13 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
         StringResult strRes = parser_StringParserCore(sFuncArgument, "", _data, _parser, _option, mStringVectorVars);
 
         for (size_t i = 0; i < strRes.vResult.size(); i++)
-            nArg.push_back(StrToInt(strRes.vResult[i]));
+        {
+            _parser.SetExpr(strRes.vResult[i]);
+            v = _parser.Eval(nReturn);
+            for (int n = 0; n < nReturn; n++)
+                nArg.push_back((int)v[n]);
+            //nArg.push_back(StrToInt(strRes.vResult[i]));
+        }
         return strRes.vResult.size();
     }
     // --> Moeglicherweise erscheint nun "{{". Dies muss ersetzt werden <--
@@ -2610,6 +2623,7 @@ vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFinal, Pars
         }
         if (vFinal[n].front() != '"' && vFinal[n].back() != '"')
         {
+            string test = vFinal[n];
             _parser.SetExpr(vFinal[n]);
             vFinal[n] = toString(_parser.Eval(), _option);
             vIsNoStringValue.push_back(true);
