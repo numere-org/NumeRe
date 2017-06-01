@@ -806,7 +806,7 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
     // Recurse for multiple store targets
     // Nur Rekursionen durchfuehren, wenn auch '=' in dem String gefunden wurde. Nur dann ist sie naemlich noetig.
 
-    if (sLine.find(',') != string::npos && sLine.find('=') != string::npos)
+    if (sLine.find(',') != string::npos && sLine.find('=') != string::npos && !isInQuotes(sLine, sLine.find('=')))
     {
         string sStringObject = sLine.substr(0, sLine.find('='));
         if (sStringObject.substr(sStringObject.find_first_not_of(' '), 7) == "string("
