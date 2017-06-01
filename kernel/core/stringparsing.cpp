@@ -562,8 +562,8 @@ string strfnc_replaceall(StringFuncArgs& funcArgs)
 // ----------------------------
 // bool PARSER(const string&, string&)
 // VAL__STR
-// val = num({str})
-string strfnc_num(StringFuncArgs& funcArgs)
+// val = cnt({str})
+string strfnc_cnt(StringFuncArgs& funcArgs)
 {
     if (funcArgs.sMultiArg.size())
     {
@@ -574,8 +574,8 @@ string strfnc_num(StringFuncArgs& funcArgs)
     return "0";
 }
 
-// val = cnt({str})
-string strfnc_cnt(StringFuncArgs& funcArgs)
+// val = num({str})
+string strfnc_num(StringFuncArgs& funcArgs)
 {
     if (funcArgs.sMultiArg.size())
     {
@@ -2444,7 +2444,7 @@ string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser,
             if (sLineToParsed[0] == '(' || sLineToParsed[0] == '{')
             {
                 string sExpr = sLineToParsed.substr(1,getMatchingParenthesis(sLineToParsed)-1);
-                if (containsStrings(sExpr))
+                if (containsStrings(sExpr) || parser_containsStringVectorVars(sExpr, mStringVectorVars))
                 {
                     StringResult strRes = parser_StringParserCore(sExpr, "", _data, _parser, _option, mStringVectorVars);
                     if (!strRes.vResult.size())
@@ -2534,18 +2534,23 @@ string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser,
                 }
                 continue;
             }
-            else if (parser_containsStringVectorVars(sLineToParsed, mStringVectorVars))
+            else if (parser_containsStringVectorVars(sLineToParsed.substr(0, parser_getDelimiterPos(sLineToParsed.substr(n_pos))), mStringVectorVars))
             {
-                StringResult strRes = parser_StringParserCore(sLineToParsed, "", _data, _parser, _option, mStringVectorVars);
+                string sExpr = sLineToParsed.substr(0, parser_getDelimiterPos(sLineToParsed.substr(n_pos)));
+                StringResult strRes = parser_StringParserCore(sExpr, "", _data, _parser, _option, mStringVectorVars);
                 if (!strRes.vResult.size())
                     throw STRING_ERROR;
                 for (size_t i = 0; i < strRes.vResult.size(); i++)
                 {
                     strRes.vResult[i] = addQuotationMarks(strRes.vResult[i]);
                 }
-                sLineToParsed = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
-                sLineToParsedTemp += sLineToParsed;
-                sLineToParsed.clear();
+                sExpr = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
+                sLineToParsedTemp += sExpr;
+                if (parser_getDelimiterPos(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
+                    sLineToParsed = sLineToParsed.substr(parser_getDelimiterPos(sLineToParsed.substr(n_pos)));
+                else
+                    sLineToParsed.clear();
+
                 continue;
             }
             else
