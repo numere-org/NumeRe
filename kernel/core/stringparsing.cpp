@@ -96,6 +96,7 @@ string removeMaskedStrings(const string& sString);
 string addMaskedStrings(const string& sString);
 string listToVector(const string& sString);
 string removeQuotationMarks(const string& sString);
+string addQuotationMarks(const string& sString);
 
 StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _data, Parser& _parser, const Settings& _option, map<string,vector<string> > mStringVectorVars, bool bParseNumericals = true);
 
@@ -1536,6 +1537,8 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
                 {
                     while (strRes.vResult[i].length() < nCount && sChar.length())
                         strRes.vResult[i].insert(0,sChar);
+                    // add quotation marks, if they are missing
+                    strRes.vResult[i] = addQuotationMarks(strRes.vResult[i]);
                 }
                 sToString = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
             }
@@ -1673,6 +1676,14 @@ string removeQuotationMarks(const string& sString)
     if (sString.find('"') == string::npos)
         return sString;
     return sString.substr(1,sString.length()-2);
+}
+
+string addQuotationMarks(const string& sString)
+{
+    if (sString.front() == '"' && sString.back() == '"')
+        return sString;
+    else
+        return "\"" + sString + "\"";
 }
 
 void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars, StringFuncHandle funcHandle)
@@ -2438,14 +2449,12 @@ string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser,
                     StringResult strRes = parser_StringParserCore(sExpr, "", _data, _parser, _option, mStringVectorVars);
                     if (!strRes.vResult.size())
                         throw STRING_ERROR;
-                    sExpr = "{";
+
                     for (size_t i = 0; i < strRes.vResult.size(); i++)
                     {
-                        sExpr += strRes.vResult[i];
-                        if (i+1 < strRes.vResult.size())
-                            sExpr += ",";
+                        strRes.vResult[i] = addQuotationMarks(strRes.vResult[i]);
                     }
-                    sExpr += "}";
+                    sExpr = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
                     /*string sElement = "";
                     string sBlock = "";
                     while (getNextArgument(sExpr, false).length())
@@ -2468,7 +2477,7 @@ string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser,
                     if (parser_getDelimiterPos(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
                         sLineToParsed = sLineToParsed.substr(parser_getDelimiterPos(sLineToParsed.substr(n_pos)));
                     else
-                        sLineToParsed = "";
+                        sLineToParsed.clear();
 
                     nPos = 0;
                     continue;
@@ -2484,7 +2493,7 @@ string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser,
                 if (sLineToParsed.find('"', 1) < sLineToParsed.length()-1)
                     sLineToParsed = sLineToParsed.substr(sLineToParsed.find('"', 1)+1);
                 else
-                    sLineToParsed = "";
+                    sLineToParsed.clear();
                 continue;
             }
             else if (sLineToParsed[0] == '<')
@@ -2525,15 +2534,29 @@ string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser,
                 }
                 continue;
             }
+            else if (parser_containsStringVectorVars(sLineToParsed, mStringVectorVars))
+            {
+                StringResult strRes = parser_StringParserCore(sLineToParsed, "", _data, _parser, _option, mStringVectorVars);
+                if (!strRes.vResult.size())
+                    throw STRING_ERROR;
+                for (size_t i = 0; i < strRes.vResult.size(); i++)
+                {
+                    strRes.vResult[i] = addQuotationMarks(strRes.vResult[i]);
+                }
+                sLineToParsed = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
+                sLineToParsedTemp += sLineToParsed;
+                sLineToParsed.clear();
+                continue;
+            }
             else
                 _parser.SetExpr(sLineToParsed.substr(0, parser_getDelimiterPos(sLineToParsed.substr(n_pos))));
 
             int nResults = 0;
             value_type* v = 0;
-            v = _parser.Eval(nResults);
-            if (nResults > 1)
-                sLineToParsedTemp += "{";
+            vector<string> vResults;
             string sElement = "";
+            v = _parser.Eval(nResults);
+
             for (int n = 0; n < nResults; n++)
             {
                 if (fabs(rint(v[n])-v[n]) < 1e-14 && fabs(v[n]) >= 1.0)
@@ -2542,17 +2565,17 @@ string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser,
                     sElement = toString(v[n], _option);
                 while (sElement.length() < sPrefix.length()+1)
                     sElement.insert(0, 1, '0');
-                sLineToParsedTemp += "\"" + sElement + "\"";
-                if (nResults > 1)
-                    sLineToParsedTemp += ",";
+                vResults.push_back(addQuotationMarks(sElement));
             }
-            if (nResults > 1)
-                sLineToParsedTemp.back() = '}';
+
+            sElement = parser_CreateStringVectorVar(vResults, mStringVectorVars);
+
+            sLineToParsedTemp += sElement;
 
             if (parser_getDelimiterPos(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
                 sLineToParsed = sLineToParsed.substr(parser_getDelimiterPos(sLineToParsed.substr(n_pos)));
             else
-                sLineToParsed = "";
+                sLineToParsed.clear();
 
             nPos = 0;
         }
