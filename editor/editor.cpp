@@ -1230,6 +1230,13 @@ void NumeReEditor::AnalyseCode()
     string sNote = _guilang.get("GUI_ANALYZER_NOTE");
     string sWarn = _guilang.get("GUI_ANALYZER_WARN");
     string sError = _guilang.get("GUI_ANALYZER_ERROR");
+
+    const double MINCOMMENTDENSITY = 0.6;
+    const double MAXCOMMENTDENSITY = 1.5;
+    const int MAXCOMPLEXITYNOTIFY = 15;
+    const int MAXCOMPLEXITYWARN = 20;
+    const int MAXLINESOFCODE = 100;
+
     for (int i = 0; i < this->GetLastPosition(); i++)
     {
         if (this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_LINE || this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_BLOCK)
@@ -1270,14 +1277,16 @@ void NumeReEditor::AnalyseCode()
                 int nLinesOfCode = calculateLinesOfCode(currentLine, this->LineFromPosition(this->GetLastPosition()));
                 int nNumberOfComments = countNumberOfComments(currentLine, this->LineFromPosition(this->GetLastPosition()));
                 double dCommentDensity = (double)nNumberOfComments / (double)nLinesOfCode;
-                if (nCyclomaticComplexity > 20)
+                if (nCyclomaticComplexity > MAXCOMPLEXITYWARN)
                     addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_WARN);
-                if (nLinesOfCode > 100)
+                else if (nCyclomaticComplexity > MAXCOMPLEXITYNOTIFY)
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_NOTE);
+                if (nLinesOfCode > MAXLINESOFCODE)
                     addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_MANYLINES", toString(nLinesOfCode))), ANNOTATION_NOTE);
-                if (dCommentDensity < 0.8)
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_LOWCOMMENTDENSITY", toString(dCommentDensity*100, 3))), ANNOTATION_NOTE);
-                if (dCommentDensity > 1.5)
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMMENTDENSITY", toString(dCommentDensity*100, 3))), ANNOTATION_NOTE);
+                if (dCommentDensity < MINCOMMENTDENSITY)
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_LOWCOMMENTDENSITY", toString(dCommentDensity*100.0, 3))), ANNOTATION_NOTE);
+                if (dCommentDensity > MAXCOMMENTDENSITY)
+                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMMENTDENSITY", toString(dCommentDensity*100.0, 3))), ANNOTATION_NOTE);
             }
         }
         if (this->GetStyleAt(i) == wxSTC_NSCR_COMMAND
@@ -1585,14 +1594,16 @@ void NumeReEditor::AnalyseCode()
 
                     if (nLinesOfCode < 5)
                         addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_INLINING")), ANNOTATION_WARN);
-                    if (nCyclomaticComplexity > 20)
+                    if (nCyclomaticComplexity > MAXCOMPLEXITYWARN)
                         addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_WARN);
-                    if (nLinesOfCode > 100)
+                    else if (nCyclomaticComplexity > MAXCOMPLEXITYNOTIFY)
+                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_NOTE);
+                    if (nLinesOfCode > MAXLINESOFCODE)
                         addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_MANYLINES", toString(nLinesOfCode))), ANNOTATION_NOTE);
-                    if (dCommentDensity < 0.8)
-                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_LOWCOMMENTDENSITY", toString(dCommentDensity*100, 3))), ANNOTATION_NOTE);
-                    if (dCommentDensity > 1.5)
-                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMMENTDENSITY", toString(dCommentDensity*100, 3))), ANNOTATION_NOTE);
+                    if (dCommentDensity < MINCOMMENTDENSITY)
+                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_LOWCOMMENTDENSITY", toString(dCommentDensity*100.0, 3))), ANNOTATION_NOTE);
+                    if (dCommentDensity > MAXCOMMENTDENSITY)
+                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMMENTDENSITY", toString(dCommentDensity*100.0, 3))), ANNOTATION_NOTE);
 
                 }
             }
