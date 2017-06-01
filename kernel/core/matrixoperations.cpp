@@ -2118,13 +2118,13 @@ void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _option)
     if (!_option.getSystemPrintStatus() || NumeReKernel::bSupressAnswer)
         return;
     //(_option.getWindow()-1-15) / (_option.getPrecision()+9) _mResult.size() > (_option.getWindow()-1-15) / (4+9)
+    NumeReKernel::toggleTableStatus();
     if (_mResult.size() > 10)
     {
         for (unsigned int i = 0; i < _mResult.size(); i++)
         {
             if (!i)
             {
-                NumeReKernel::toggleTableStatus();
                 NumeReKernel::printPreFmt("|   /");
             }
             else if (i+1 == _mResult.size())
@@ -2176,7 +2176,6 @@ void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _option)
                 NumeReKernel::printPreFmt(" \\\n");
             else if (i+1 == _mResult.size())
             {
-                NumeReKernel::toggleTableStatus();
                 NumeReKernel::printPreFmt(" /\n");
             }
             else
@@ -2189,7 +2188,6 @@ void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _option)
             NumeReKernel::print("(" + toString(_mResult[0][0], _option) + ")");
         else
         {
-            NumeReKernel::toggleTableStatus();
             NumeReKernel::printPreFmt("|-> (");
             for (unsigned int i = 0; i < _mResult[0].size(); i++)
             {
@@ -2207,7 +2205,6 @@ void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _option)
                     NumeReKernel::printPreFmt(", ");
                     ///cerr << ", ";
             }
-            NumeReKernel::toggleTableStatus();
             NumeReKernel::printPreFmt(" )\n");
             ///cerr << " )" << endl;
         }
@@ -2216,7 +2213,7 @@ void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _option)
     {
         for (unsigned int i = 0; i < _mResult.size(); i++)
         {
-            NumeReKernel::toggleTableStatus();
+
             if (!i && _mResult.size() == 2)
                 NumeReKernel::printPreFmt("|-> /");
             else if (!i)
@@ -2247,13 +2244,14 @@ void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _option)
                 NumeReKernel::printPreFmt(" \\\n");
             else if (i+1 == _mResult.size())
             {
-                NumeReKernel::toggleTableStatus();
                 NumeReKernel::printPreFmt(" /\n");
             }
             else
                 NumeReKernel::printPreFmt(" |\n");
         }
     }
+    NumeReKernel::flush();
+    NumeReKernel::toggleTableStatus();
     return;
 }
 
