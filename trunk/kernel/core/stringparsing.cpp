@@ -1109,6 +1109,10 @@ vector<string> parser_EvaluateStringVectors(string sLine, const map<string, vect
                             bHasComponents = true;
                             currentline.replace(nMatch, (iter->first).length(), (iter->second)[nCurrentComponent]);
                         }
+                        else if ((iter->second).size() == 1)
+                        {
+                            currentline.replace(nMatch, (iter->first).length(), (iter->second)[0]);
+                        }
                         else
                             currentline.replace(nMatch, (iter->first).length(), "\"\"");
                     }
@@ -2623,32 +2627,12 @@ vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFinal, Pars
         }
         if (vFinal[n].front() != '"' && vFinal[n].back() != '"')
         {
-            string test = vFinal[n];
             _parser.SetExpr(vFinal[n]);
             vFinal[n] = toString(_parser.Eval(), _option);
             vIsNoStringValue.push_back(true);
         }
         else
             vIsNoStringValue.push_back(false);
-
-        /*if ((vFinal[n].front() == '"' && vFinal[n].back() != '"')
-            || (vFinal[n].front() != '"' && vFinal[n].back() == '"'))
-        {
-            if (vFinal[n].front() == '"')
-                vFinal[n].insert(0,1,'\\');
-            for (unsigned int q = 1; q < vFinal[n].length(); q++)
-            {
-                if (vFinal[n][q] == '"' && vFinal[n][q-1] != '\\')
-                    vFinal[n].insert(q,1,'\\');
-            }
-        }
-        else
-        {
-            if (vFinal[n].front() == '"')
-                vFinal[n] = vFinal[n].substr(1);
-            if (vFinal[n].back() == '"')
-                vFinal[n].pop_back();
-        }*/
     }
     // check, whether there's a string left
     bReturningLogicals = true;
