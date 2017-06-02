@@ -62,6 +62,7 @@ public:
 	void OnMouseUp(wxMouseEvent &event);
 	void OnMouseDn(wxMouseEvent &event);
 	void OnMouseDblClk(wxMouseEvent& event);
+	void OnMouseCaptureLost(wxMouseCaptureLostEvent& event);
 	void OnEnter(wxMouseEvent& event);
 	void OnLeave(wxMouseEvent& event);
 	void OnLoseFocus(wxFocusEvent& event);

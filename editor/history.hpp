@@ -51,6 +51,7 @@ public:
     void OnMouseDn(wxMouseEvent &event);
     void OnRightClick(wxMouseEvent &event);
     void OnMenuEvent(wxCommandEvent& event);
+    void OnMouseCaptureLost(wxMouseCaptureLostEvent& event);
 
 private:
     void deleteLine();

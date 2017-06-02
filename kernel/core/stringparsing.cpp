@@ -829,7 +829,6 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
         if (sLine != getNextArgument(sLine, false))
         {
             string sRecursion = "";
-            string sParsed = "";
             vector<string> vResult;
             while (sLine.length())
             {

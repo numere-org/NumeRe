@@ -127,6 +127,7 @@ BEGIN_EVENT_TABLE(wxTerm, wxWindow)
     EVT_PAINT						(wxTerm::OnPaint)
     EVT_CHAR						(wxTerm::OnChar)
     EVT_LEFT_DOWN					(wxTerm::OnLeftDown)
+    EVT_MOUSE_CAPTURE_LOST          (wxTerm::OnLoseMouseCapture)
     EVT_LEFT_UP					    (wxTerm::OnLeftUp)
     EVT_MOTION					    (wxTerm::OnMouseMove)
     EVT_ENTER_WINDOW                (wxTerm::OnEnter)
@@ -1246,6 +1247,15 @@ wxTerm::OnLeftDown(wxMouseEvent& event)
     CaptureMouse();
 }
 
+void wxTerm::OnLoseMouseCapture(wxMouseCaptureLostEvent& event)
+{
+    if (GetCapture() == this)
+    {
+        m_selecting = false;
+        ReleaseMouse();
+        Refresh();
+    }
+}
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnLeftUp
 ///  Ends text selection
