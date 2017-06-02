@@ -40,6 +40,7 @@ BEGIN_EVENT_TABLE(NumeReHistory, wxStyledTextCtrl)
 	//EVT_LEFT_UP         (NumeReEditor::OnMouseUp)
 	EVT_RIGHT_DOWN		(NumeReHistory::OnRightClick)
 	EVT_LEFT_DCLICK		(NumeReHistory::OnMouseDblClk)
+	EVT_MOUSE_CAPTURE_LOST(NumeReHistory::OnMouseCaptureLost)
 	/*EVT_ENTER_WINDOW    (NumeReEditor::OnEnter)
 	EVT_STC_DWELLSTART  (-1, NumeReEditor::OnMouseDwell)*/
 	EVT_STC_MARGINCLICK (-1, NumeReHistory::OnMarginClick)
@@ -263,6 +264,15 @@ void NumeReHistory::OnMenuEvent(wxCommandEvent& event)
         case ID_COPY_FROM_HISTORY:
             copyLine();
             break;
+    }
+}
+
+void NumeReHistory::OnMouseCaptureLost(wxMouseCaptureLostEvent& event)
+{
+    if (GetCapture() == this)
+    {
+        ReleaseMouse();
+        Refresh();
     }
 }
 

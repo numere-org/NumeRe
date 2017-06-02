@@ -271,6 +271,7 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
         void OnKeyDown(wxKeyEvent& event);
         void OnPaint(wxPaintEvent& event);
         void OnLeftDown(wxMouseEvent& event);
+        void OnLoseMouseCapture(wxMouseCaptureLostEvent& event);
         void OnLeftUp(wxMouseEvent& event);
         void OnMouseMove(wxMouseEvent& event);
         void OnEnter(wxMouseEvent& event);

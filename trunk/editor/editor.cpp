@@ -60,6 +60,7 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
 	EVT_LEFT_UP         (NumeReEditor::OnMouseUp)
 	EVT_RIGHT_DOWN		(NumeReEditor::OnRightClick)
 	EVT_LEFT_DCLICK		(NumeReEditor::OnMouseDblClk)
+	EVT_MOUSE_CAPTURE_LOST(NumeReEditor::OnMouseCaptureLost)
 	//EVT_MOTION          (NumeReEditor::OnMouseMotion)
 	EVT_ENTER_WINDOW    (NumeReEditor::OnEnter)
 	EVT_LEAVE_WINDOW    (NumeReEditor::OnLeave)
@@ -749,6 +750,15 @@ void NumeReEditor::OnMouseDblClk(wxMouseEvent& event)
         this->IndicatorFillRange(vSelectionList[i], nLength); //selection.length());
     }
     event.Skip();
+}
+
+void NumeReEditor::OnMouseCaptureLost(wxMouseCaptureLostEvent& event)
+{
+    if (GetCapture() == this)
+    {
+        ReleaseMouse();
+        Refresh();
+    }
 }
 
 void NumeReEditor::OnEnter(wxMouseEvent& event)
