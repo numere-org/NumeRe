@@ -251,6 +251,8 @@ string strfnc_to_char(StringFuncArgs& funcArgs)
 // val = and(num)
 string strfnc_and(StringFuncArgs& funcArgs)
 {
+    if (!funcArgs.nMultiArg.size())
+        return "false";
     for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
     {
         if (!funcArgs.nMultiArg[i])
@@ -329,7 +331,7 @@ string strfnc_strfnd(StringFuncArgs& funcArgs)
 {
     if (!funcArgs.sArg2.length())
         return "0";
-    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 < 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
         funcArgs.nArg1 = 1;
 
     funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
@@ -344,7 +346,7 @@ string strfnc_strmatch(StringFuncArgs& funcArgs)
 {
     if (!funcArgs.sArg2.length())
         return "0";
-    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 < 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
         funcArgs.nArg1 = 1;
 
     funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
@@ -360,7 +362,7 @@ string strfnc_str_not_match(StringFuncArgs& funcArgs)
 {
     if (!funcArgs.sArg2.length())
         return "0";
-    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 < 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
         funcArgs.nArg1 = 1;
 
     funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
@@ -376,7 +378,7 @@ string strfnc_strrfnd(StringFuncArgs& funcArgs)
 {
     if (!funcArgs.sArg2.length())
         return "0";
-    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 < 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
         funcArgs.nArg1 = funcArgs.sArg2.length()+1;
 
     funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
@@ -392,7 +394,7 @@ string strfnc_strrmatch(StringFuncArgs& funcArgs)
 {
     if (!funcArgs.sArg2.length())
         return "0";
-    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 < 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
         funcArgs.nArg1 = funcArgs.sArg2.length()+1;
 
     funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
@@ -408,7 +410,7 @@ string strfnc_str_not_rmatch(StringFuncArgs& funcArgs)
 {
     if (!funcArgs.sArg2.length())
         return "0";
-    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 < 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
         funcArgs.nArg1 = funcArgs.sArg2.length()+1;
 
     funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
@@ -454,11 +456,13 @@ string strfnc_findparam(StringFuncArgs& funcArgs)
 string strfnc_substr(StringFuncArgs& funcArgs)
 {
     funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    if (!funcArgs.sArg1.length())
+        return "\"\"";
     if (funcArgs.nArg1 < 1)
         funcArgs.nArg1 = 1;
     if ((size_t)funcArgs.nArg1 > funcArgs.sArg1.length())
         funcArgs.nArg1 = funcArgs.sArg1.length();
-    if (funcArgs.nArg2 == DEFAULT_NUM_ARG)
+    if (funcArgs.nArg2 <= 0)
         funcArgs.nArg2 = -1;
     return "\"" + funcArgs.sArg1.substr(funcArgs.nArg1-1, funcArgs.nArg2) + "\"";
 }
@@ -516,6 +520,9 @@ string strfnc_replace(StringFuncArgs& funcArgs)
     funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
     funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
 
+    if (!funcArgs.sArg1.length())
+        return "\"\"";
+
     if (funcArgs.nArg1 < 1)
         funcArgs.nArg1 = 1;
     if ((size_t)funcArgs.nArg1 > funcArgs.sArg1.length())
@@ -534,6 +541,9 @@ string strfnc_replaceall(StringFuncArgs& funcArgs)
     funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
     funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
     funcArgs.sArg3 = removeMaskedStrings(funcArgs.sArg3);
+
+    if (!funcArgs.sArg1.length())
+        return "\"\"";
 
     if (funcArgs.nArg1 < 1)
         funcArgs.nArg1 = 1;
