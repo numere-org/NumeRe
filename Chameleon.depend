@@ -7707,7 +7707,7 @@
 	<string>
 	<vector>
 
-1496383331 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1496383839 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -7746,7 +7746,7 @@
 1490791550 d:\cpp\numere-source\trunk\gui\numerenotebook.h
 	<wx/notebook.h>
 
-1494362667 source:d:\cpp\numere-source\trunk\editor\history.cpp
+1496383808 source:d:\cpp\numere-source\trunk\editor\history.cpp
 	"../common/CommonHeaders.h"
 	"../kernel/core/language.hpp"
 	"../kernel/core/tools.hpp"
@@ -8319,7 +8319,7 @@
 	"wxssh.h"
 	"../common/debug.h"
 
-1496383365 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
+1496383876 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -8513,7 +8513,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1496338300 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1496426200 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
