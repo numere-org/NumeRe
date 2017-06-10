@@ -933,49 +933,6 @@ wxTerm::OnChar(wxKeyEvent& event)
         unsigned char
         buf[10];
 
-        /*
-        **  Map control characters
-        */
-        /*if(event.GetKeyCode() == WXK_CONTROL_C || event.GetKeyCode() == WXK_CONTROL_C)
-        {
-            if (event.GetKeyCode() == WXK_CONTROL_C && HasSelection())
-            {
-                wxString sSelection = GetSelection();
-                if (!sSelection.length())
-                    return;
-                if (wxTheClipboard->Open())
-                {
-                    wxTheClipboard->SetData(new wxTextDataObject(sSelection));
-                    wxTheClipboard->Close();
-                }
-            }
-            else if (event.GetKeyCode() == 'v')
-            {
-                if (HasSelection())
-                    ClearSelection();
-                if (wxTheClipboard->Open())
-                {
-                    if (wxTheClipboard->IsSupported(wxDF_TEXT))
-                    {
-                        wxTextDataObject data;
-                        wxTheClipboard->GetData(data);
-                        ProcessInput(data.GetTextLength(), data.GetText().ToStdString());
-                    }
-                    wxTheClipboard->Close();
-                }
-            }
-            return;
-
-            if(event.GetKeyCode() >= 'a' && event.GetKeyCode() <= 'z')
-                keyCode = event.GetKeyCode() - 'a' + 1;
-            else if(event.GetKeyCode() >= '[' && event.GetKeyCode() <= '_')
-                keyCode = event.GetKeyCode() - '[' + 0x1b;
-            else if(event.GetKeyCode() == '6')
-                keyCode = 0x1e;
-            else if(event.GetKeyCode() == '-')
-                keyCode = 0x1f;
-        }*/
-
         if(!keyCode )//&& !(keyCode = MapKeyCode((int)event.GetKeyCode())))
         {
             /*
@@ -1094,15 +1051,10 @@ wxTerm::OnChar(wxKeyEvent& event)
             }
             return;
         }
+        else if (keyCode >= WXK_START)
+            return;
         GTerm::resetAutoComp();
-        //buf[0] = '\b';
-        /*else if (keyCode == WXK_LEFT)
-            buf[0] = GTelnet::KEY_LEFT;*/
-        /*if(GetMode() & PC)
-          rc = TranslateKeyCode(keyCode, &len, (char *)buf, event.ShiftDown(),
-                            event.ControlDown(), event.AltDown());
-        else
-          rc = TranslateKeyCode(keyCode, &len, (char *)buf);*/
+
         rc = 1;
         len = 1;
         if(rc)
@@ -1128,23 +1080,6 @@ wxTerm::OnChar(wxKeyEvent& event)
             /*if((GetMode() & LOCALECHO) && !(GetMode() & PC))
               ProcessInput(len, buf);*/
         }
-        /*else if(!(GetMode() & PC))
-        {
-            if((GetMode() & NEWLINE) && !(GetMode() & PC) && (keyCode == 10))
-            {
-                len = 2;
-                buf[0] = 13;
-                buf[1] = keyCode;
-            }
-            else
-            {
-                len = 1;
-                buf[0] = keyCode;
-            }
-            ProcessOutput(len, buf);
-            if((GetMode() & LOCALECHO) && !(GetMode() & PC))
-                ProcessInput(len, string((char*)buf));
-        }*/
         else
             event.Skip();
     }
