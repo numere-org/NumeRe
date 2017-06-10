@@ -5662,7 +5662,7 @@
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\printps.h
 	"wx/prntbase.h"
 
-1496383233 d:\cpp\numere-source\trunk\editor\editor.h
+1496946505 d:\cpp\numere-source\trunk\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -6606,7 +6606,7 @@
 	<commdlg.h>
 	"wx/msw/winundef.h"
 
-1494918032 d:\cpp\numere-source\trunk\common\datastructures.h
+1496946641 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -7707,7 +7707,7 @@
 	<string>
 	<vector>
 
-1496383839 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1496947713 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -7767,7 +7767,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1495825624 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1496857936 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -8319,7 +8319,7 @@
 	"wxssh.h"
 	"../common/debug.h"
 
-1496383876 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
+1496858529 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -8513,7 +8513,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1496426200 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1497107348 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
