@@ -8702,7 +8702,10 @@ bool BI_readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _
         }
         sCmd += sInput + ",";
     }
-    sCmd.pop_back();
+    if (sCmd.length())
+        sCmd.pop_back();
+    else
+        sCmd = "\"\"";
     //NumeReKernel::print(sCmd);
     //sCmd = sCmd;
     fFile.close();
