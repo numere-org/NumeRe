@@ -79,6 +79,7 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
 	EVT_MENU			(ID_FIND_PROCEDURE, NumeReEditor::OnFindProcedure)
 	EVT_MENU            (ID_UPPERCASE, NumeReEditor::OnChangeCase)
 	EVT_MENU            (ID_LOWERCASE, NumeReEditor::OnChangeCase)
+	EVT_MENU            (ID_FOLD_CURRENT_BLOCK, NumeReEditor::OnFoldCurrentBlock)
 	EVT_MENU            (ID_HELP_ON_ITEM, NumeReEditor::OnHelpOnSelection)
 	//EVT_COMPILER_END	(ChameleonEditor::OnCompilerEnded)
 	EVT_MENU			(ID_DEBUG_RUNTOCURSOR, NumeReEditor::OnRunToCursor)
@@ -203,6 +204,9 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 	m_popupMenu.Append(ID_CUT, _guilang.get("GUI_MENU_EDITOR_CUT"));
 	m_popupMenu.Append(ID_COPY, _guilang.get("GUI_MENU_EDITOR_COPY"));
 	m_popupMenu.Append(ID_PASTE, _guilang.get("GUI_MENU_EDITOR_PASTE"));
+	m_popupMenu.AppendSeparator();
+
+	m_popupMenu.Append(ID_FOLD_CURRENT_BLOCK, _guilang.get("GUI_MENU_EDITOR_FOLDCURRENTBLOCK"));
 	m_popupMenu.AppendSeparator();
 
 	m_popupMenu.Append(ID_DEBUG_ADD_BREAKPOINT, _guilang.get("GUI_MENU_EDITOR_ADDBP"));
@@ -1870,6 +1874,11 @@ void NumeReEditor::ToggleSettings(int _setting)
             this->SetViewEOL(false);
             this->SetViewWhiteSpace(wxSTC_WS_INVISIBLE);
         }
+        else if (_setting == SETTING_USETXTADV)
+        {
+            this->SetIndicatorCurrent(HIGHLIGHT_STRIKETHROUGH);
+            this->IndicatorClearRange(0, this->GetLastPosition());
+        }
     }
     UpdateSyntaxHighlighting();
     AnalyseCode();
@@ -2025,9 +2034,14 @@ vector<int> NumeReEditor::BlockMatch(int nPos)
         bSearchForIf = true;
         endblock = "endif";
     }
-    else
+    else if (startblock == "if" || startblock == "for" || startblock == "while" || startblock == "compose" || startblock == "procedure")
     {
         endblock = "end" + startblock;
+    }
+    else
+    {
+        vPos.push_back(wxSTC_INVALID_POSITION);
+        return vPos;
     }
 
     if (startblock == "if" || endblock == "if")
@@ -2106,17 +2120,6 @@ void NumeReEditor::SetUnsaved()
     m_bSetUnsaved = true;
 }
 
-/*
-void ChameleonEditor::SetRemoteFileNameAndPath(wxString path, wxString name)
-{
-	m_remoteFileName.Assign(path, name, wxPATH_UNIX);
-}
-
-void ChameleonEditor::SetLocalFileNameAndPath(wxString path, wxString name)
-{
-	m_localFileName.Assign(path, name, wxPATH_DOS);
-}
-*/
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public UpdateSyntaxHighlighting
@@ -2461,16 +2464,16 @@ void NumeReEditor::updateDefaultHighlightSettings()
 
 void NumeReEditor::applyStrikeThrough()
 {
-    this->SetIndicatorCurrent(HIGHLIGHT_STRIKETHROUGH);
-    this->IndicatorClearRange(0, GetLastPosition());
-    this->IndicatorSetStyle(HIGHLIGHT_STRIKETHROUGH, wxSTC_INDIC_STRIKE);
-    this->IndicatorSetForeground(HIGHLIGHT_STRIKETHROUGH, wxColor(255,0,0));
     if (!getEditorSetting(SETTING_USETXTADV)
         || m_fileType == FILE_NSCR
         || m_fileType == FILE_NPRC
         || m_fileType == FILE_TEXSOURCE
         || m_fileType == FILE_DATAFILES)
         return;
+    this->SetIndicatorCurrent(HIGHLIGHT_STRIKETHROUGH);
+    this->IndicatorClearRange(0, GetLastPosition());
+    this->IndicatorSetStyle(HIGHLIGHT_STRIKETHROUGH, wxSTC_INDIC_STRIKE);
+    this->IndicatorSetForeground(HIGHLIGHT_STRIKETHROUGH, wxColor(255,0,0));
     for (int i = 0; i < GetLastPosition(); i++)
     {
         if (GetStyleAt(i) == wxSTC_TXTADV_STRIKETHROUGH)
@@ -2694,6 +2697,8 @@ void NumeReEditor::OnRightClick(wxMouseEvent &event)
 		breakpointsAllowed = m_debugManager->IsDebuggerPaused();//m_mainFrame->IsDebuggerPaused();
 	}*/
 
+	m_popupMenu.Enable(ID_FOLD_CURRENT_BLOCK, breakpointsAllowed);
+
 	m_popupMenu.Enable(ID_DEBUG_ADD_BREAKPOINT, breakpointsAllowed && !breakpointOnLine);
 	m_popupMenu.Enable(ID_DEBUG_REMOVE_BREAKPOINT, breakpointsAllowed && breakpointOnLine);
 	//m_popupMenu.Enable(ID_DEBUG_RUNTOCURSOR, breakpointsAllowed && isDebugging);
@@ -2721,14 +2726,14 @@ void NumeReEditor::OnRightClick(wxMouseEvent &event)
 	{
 		wxString clickedWord = FindClickedWord();
 
-		if(clickedWord.Length() > 0)
+		if (clickedWord.Length() > 0)
 		{
             if (this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURES)
             {
                 wxString clickedProc = FindClickedProcedure();
                 if (clickedProc.length())
                 {
-                    m_popupMenu.Insert(9, m_menuFindProcedure);
+                    m_popupMenu.Insert(11, m_menuFindProcedure);
                     //m_popupMenu.Append(m_menuFindProcedure);
                     m_menuFindProcedure->SetItemLabel(_guilang.get("GUI_MENU_EDITOR_FINDPROC", clickedProc.ToStdString()));
                 }
@@ -2737,7 +2742,7 @@ void NumeReEditor::OnRightClick(wxMouseEvent &event)
                 || this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURE_COMMANDS
                 || this->GetStyleAt(charpos) == wxSTC_NSCR_OPTION)
             {
-                m_popupMenu.Insert(9, m_menuHelpOnSelection);
+                m_popupMenu.Insert(11, m_menuHelpOnSelection);
                 m_menuHelpOnSelection->SetItemLabel(_guilang.get("GUI_TREE_PUP_HELPONITEM", clickedWord.ToStdString()));
             }
 			//wxString watchWord = wxString::Format("Watch \"%s\"", clickedWord);
@@ -2824,6 +2829,24 @@ void NumeReEditor::OnEditorModified(wxStyledTextEvent &event)
         CallAfter(AnalyseCode);*/
 	event.Skip();
 }
+
+void NumeReEditor::FoldCurrentBlock(int nLine)
+{
+    // Get parent line
+    int nParentline = this->GetFoldParent(nLine);
+    // Probably the current line is also a parent line -> take this one
+    if (this->GetFoldLevel(nLine) & wxSTC_FOLDLEVELHEADERFLAG)
+        nParentline = nLine;
+    // if not found -> return
+    if (nParentline == -1)
+        return;
+    // if already folded -> return
+    if (!this->GetFoldExpanded(nLine))
+        return;
+    // toggle the fold state of the current header line -> only folds because of previous condition
+    this->ToggleFold(nParentline);
+}
+
 
 void NumeReEditor::AsynchActions()
 {
@@ -3561,6 +3584,11 @@ void NumeReEditor::OnChangeCase(wxCommandEvent& event)
     }
 }
 
+void NumeReEditor::OnFoldCurrentBlock(wxCommandEvent& event)
+{
+    FoldCurrentBlock(this->LineFromPosition(this->PositionFromPoint(m_lastRightClick)));
+}
+
 bool NumeReEditor::InitDuplicateCode()
 {
     if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
@@ -3635,29 +3663,6 @@ void NumeReEditor::ClearDblClkIndicator()
     this->SetIndicatorCurrent(HIGHLIGHT_DBLCLK);
     long int maxpos = this->GetLastPosition();
     this->IndicatorClearRange(0,maxpos);
-    /*if (m_watchedString.length())
-    {
-        this->IndicatorSetStyle(HIGHLIGHT, wxSTC_INDIC_ROUNDBOX);
-        this->IndicatorSetAlpha(HIGHLIGHT, 100);
-        this->IndicatorSetForeground(HIGHLIGHT, wxColor(255,0,0));
-
-        unsigned int nPos = 0;
-        unsigned int nCurr = 0;
-        vector<unsigned int> vSelectionList;
-
-        while ((nPos = this->FindText(nCurr, maxpos, m_watchedString, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD)) != string::npos)
-        {
-            vSelectionList.push_back(nPos);
-            nCurr = nPos + m_watchedString.length();
-        }
-
-        this->SetIndicatorCurrent(HIGHLIGHT);
-
-        for (size_t i = 0; i < vSelectionList.size(); i++)
-        {
-            this->IndicatorFillRange(vSelectionList[i], m_watchedString.length());
-        }
-    }*/
 }
 
 void NumeReEditor::OnMarginClick( wxStyledTextEvent &event )
