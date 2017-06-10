@@ -1253,6 +1253,8 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 		case ID_TOGGLE_CONSOLE:
 		{
             toggleConsole();
+            if (m_termContainer->IsShown())
+                m_terminal->SetFocus();
             break;
 		}
 
