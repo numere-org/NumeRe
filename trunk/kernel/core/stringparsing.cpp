@@ -97,6 +97,8 @@ string addMaskedStrings(const string& sString);
 string listToVector(const string& sString);
 string removeQuotationMarks(const string& sString);
 string addQuotationMarks(const string& sString);
+bool parser_detectStringLogicals(const string& sString);
+size_t parser_detectPathTokens(const string& sString, size_t nPos);
 
 StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _data, Parser& _parser, const Settings& _option, map<string,vector<string> > mStringVectorVars, bool bParseNumericals = true);
 
@@ -2633,31 +2635,7 @@ vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFinal, Pars
                 }
             }
         }
-        if (vFinal[n].find("&&") != string::npos
-            || vFinal[n].find("||") != string::npos
-            || vFinal[n].find("<=") != string::npos
-            || vFinal[n].find(">=") != string::npos
-            || vFinal[n].find("==") != string::npos
-            || vFinal[n].find("!=") != string::npos
-            || (vFinal[n].find('<') != string::npos
-                && vFinal[n].find("<>") != vFinal[n].find('<')
-                && vFinal[n].find("<this>") != vFinal[n].find('<')
-                && vFinal[n].find("<wp>") != vFinal[n].find('<')
-                && vFinal[n].find("<loadpath>") != vFinal[n].find('<')
-                && vFinal[n].find("<savepath>") != vFinal[n].find('<')
-                && vFinal[n].find("<plotpath>") != vFinal[n].find('<')
-                && vFinal[n].find("<procpath>") != vFinal[n].find('<')
-                && vFinal[n].find("<scriptpath>") != vFinal[n].find('<'))
-            || (vFinal[n].find('>') != string::npos
-                && vFinal[n].find("<>") != vFinal[n].find('>')-1
-                && vFinal[n].find("<this>") != vFinal[n].find('>')-5
-                && vFinal[n].find("<wp>") != vFinal[n].find('>')-5
-                && vFinal[n].find("<loadpath>") != vFinal[n].find('>')-9
-                && vFinal[n].find("<savepath>") != vFinal[n].find('>')-9
-                && vFinal[n].find("<plotpath>") != vFinal[n].find('>')-9
-                && vFinal[n].find("<procpath>") != vFinal[n].find('>')-9
-                && vFinal[n].find("<scriptpath>") != vFinal[n].find('>')-11)
-            )
+        if (parser_detectStringLogicals(vFinal[n]))
         {
             vFinal[n] = addMaskedStrings(parser_evalStringLogic(removeMaskedStrings(vFinal[n]), bReturningLogicals));
             StripSpaces(vFinal[n]);
@@ -3070,8 +3048,64 @@ string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIs
 }
 
 
+bool parser_detectStringLogicals(const string& sString)
+{
+    if (!sString.length())
+        return false;
 
+    int nQuotes = 0;
+    for (size_t i = 0; i < sString.length(); i++)
+    {
+        if (sString[i] == '"' && (!i || sString[i-1] != '\\'))
+        {
+            nQuotes++;
+            continue;
+        }
+        if (sString[i] == '<')
+        {
+            size_t nAdv = parser_detectPathTokens(sString, i);
+            if (nAdv)
+            {
+                i += nAdv;
+                continue;
+            }
+        }
+        if (!(nQuotes % 2))
+        {
+            if (sString.substr(i,2) == "&&"
+                || sString.substr(i,2) == "||"
+                || sString.substr(i,2) == "<="
+                || sString.substr(i,2) == ">="
+                || sString.substr(i,2) == "!="
+                || sString.substr(i,2) == "=="
+                || sString[i] == '<'
+                || sString[i] == '>')
+                return true;
+        }
+    }
+    return false;
+}
 
+size_t parser_detectPathTokens(const string& sString, size_t nPos)
+{
+    if (sString.substr(nPos,2) == "<>")
+        return 1u;
+    if (sString.substr(nPos,4) == "<wp>")
+        return 3u;
+    if (sString.substr(nPos,6) == "<this>")
+        return 5u;
+    if (sString.substr(nPos,10) == "<loadpath>")
+        return 9u;
+    if (sString.substr(nPos,10) == "<savepath>")
+        return 9u;
+    if (sString.substr(nPos,10) == "<procpath>")
+        return 9u;
+    if (sString.substr(nPos,10) == "<plotpath>")
+        return 9u;
+    if (sString.substr(nPos,12) == "<scriptpath>")
+        return 11u;
+    return 0u;
+}
 
 
 
