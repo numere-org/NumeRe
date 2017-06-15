@@ -70,8 +70,8 @@ void Plugin::updatePluginFile()
     fPlugins.open(sPlugins.c_str(), ios_base::trunc | ios_base::out);
     if (fPlugins.fail())
     {
-        sErrorToken = sPlugins;
-        throw CANNOT_READ_FILE;
+        //sErrorToken = sPlugins;
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sPlugins);
     }
     for (unsigned int i = 0; i < nPlugins; i++)
     {
@@ -94,8 +94,8 @@ bool Plugin::loadPlugins()
     fPlugins.open(sPlugins.c_str());
     if (fPlugins.fail())
     {
-        sErrorToken = sPlugins;
-        throw CANNOT_READ_FILE;
+        //sErrorToken = sPlugins;
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sPlugins);
     }
 
     while (!fPlugins.eof())
@@ -238,9 +238,9 @@ bool Plugin::declareNewPlugin(const string& sInstallInfoString)
         if (vPlugin[i] == "<AUTO>" || !vPlugin[i].length())
         {
             if (i == 0)
-                throw PLUGIN_HAS_NO_CMD;
+                throw SyntaxError(SyntaxError::PLUGIN_HAS_NO_CMD, "", SyntaxError::invalid_position);
             if (i == 1)
-                throw PLUGIN_HAS_NO_MAIN;
+                throw SyntaxError(SyntaxError::PLUGIN_HAS_NO_MAIN, "", SyntaxError::invalid_position);
             if (i == 4)
                 vPlugin[i] = "Plugin";
             if (i == 5)
@@ -252,8 +252,8 @@ bool Plugin::declareNewPlugin(const string& sInstallInfoString)
 
     if (sProtectedCommands.find(";" + vPlugin[0] + ";") != string::npos)
     {
-        sErrorToken = vPlugin[0];
-        throw PLUGIN_MAY_NOT_OVERRIDE;
+        //sErrorToken = vPlugin[0];
+        throw SyntaxError(SyntaxError::PLUGIN_MAY_NOT_OVERRIDE, "", SyntaxError::invalid_position, vPlugin[0]);
     }
 
     if (vPlugin[1].find('$') == string::npos || vPlugin[1].find('(') == string::npos)
@@ -273,11 +273,12 @@ bool Plugin::declareNewPlugin(const string& sInstallInfoString)
                     {
                         if (vPluginInfo[j][4] == vPlugin[4] && (vPluginInfo[j][0] != vPlugin[0] || vPluginInfo[j][6] != vPlugin[6]))
                         {
+                            string sErrorToken;
                             if (vPlugin[4][0] == '(' && vPlugin[4][vPlugin[4].length()-1] == ')')
                                 sErrorToken = vPlugin[4].substr(1, vPlugin[4].length()-2);
                             else
                                 sErrorToken = vPlugin[4];
-                            throw PLUGINNAME_ALREADY_EXISTS;
+                            throw SyntaxError(SyntaxError::PLUGINNAME_ALREADY_EXISTS, "", SyntaxError::invalid_position, sErrorToken);
                         }
                     }
                     for (unsigned int j = 0; j < 8; j++)
@@ -313,8 +314,8 @@ bool Plugin::declareNewPlugin(const string& sInstallInfoString)
                 }
                 else
                 {
-                    sErrorToken = vPlugin[0];
-                    throw PLUGINCMD_ALREADY_EXISTS;
+                    //sErrorToken = vPlugin[0];
+                    throw SyntaxError(SyntaxError::PLUGINCMD_ALREADY_EXISTS, "", SyntaxError::invalid_position, vPlugin[0]);
                 }
                 break;
             }
@@ -322,11 +323,12 @@ bool Plugin::declareNewPlugin(const string& sInstallInfoString)
             {
                 if (vPluginInfo[i][0] != vPlugin[0] || vPluginInfo[i][6] != vPlugin[6])
                 {
+                    string sErrorToken;
                     if (vPlugin[4][0] == '(' && vPlugin[4][vPlugin[4].length()-1] == ')')
                         sErrorToken = vPlugin[4].substr(1, vPlugin[4].length()-2);
                     else
                         sErrorToken = vPlugin[4];
-                    throw PLUGINNAME_ALREADY_EXISTS;
+                    throw SyntaxError(SyntaxError::PLUGINNAME_ALREADY_EXISTS, "", SyntaxError::invalid_position, sErrorToken);
                 }
             }
             if (i == nPlugins-1)

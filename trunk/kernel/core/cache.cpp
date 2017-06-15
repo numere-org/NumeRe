@@ -93,7 +93,8 @@ bool Cache::AllocateCache(long long int _nNLines, long long int _nNCols, long lo
     //cerr << _nNLines << " " << _nNCols << " " << _nNLayers << endl;
 	if (_nNCols * _nNLines * _nNLayers > 1e8)
 	{
-        throw TOO_LARGE_CACHE;
+        //throw TOO_LARGE_CACHE;
+        throw SyntaxError(SyntaxError::TOO_LARGE_CACHE, "", SyntaxError::invalid_position);
 	}
 	else if (!dCache && !nAppendedZeroes && !sHeadLine)// && !bValidElement)
 	{
@@ -1356,30 +1357,35 @@ bool Cache::addCache(const string& sCache, const Settings& _option)
 
     //cerr << sCache << endl;
     if ((sCacheName[0] >= '0' && sCacheName[0] <= '9') || sCacheName == "data" || sCacheName == "string")
-        throw INVALID_CACHE_NAME;
+        //throw INVALID_CACHE_NAME;
+        throw SyntaxError(SyntaxError::INVALID_CACHE_NAME, "", SyntaxError::invalid_position, sCacheName);
     if (sPredefinedFuncs.find(","+sCacheName+"()") != string::npos)
     {
-        sErrorToken = sCacheName+"()";
-        throw FUNCTION_IS_PREDEFINED;
+        //sErrorToken = sCacheName+"()";
+        //throw FUNCTION_IS_PREDEFINED;
+        throw SyntaxError(SyntaxError::FUNCTION_IS_PREDEFINED, "", SyntaxError::invalid_position, sCacheName+"()");
     }
     if (sUserdefinedFuncs.length() && sUserdefinedFuncs.find(";"+sCacheName+";") != string::npos)
     {
-        sErrorToken = sCacheName;
-        throw FUNCTION_ALREADY_EXISTS;
+        //sErrorToken = sCacheName;
+        //throw FUNCTION_ALREADY_EXISTS;
+        throw SyntaxError(SyntaxError::FUNCTION_ALREADY_EXISTS, "", SyntaxError::invalid_position, sCacheName);
     }
 
     for (unsigned int i = 0; i < sCacheName.length(); i++)
     {
         if (sValidChars.find(sCacheName[i]) == string::npos)
-            throw INVALID_CACHE_NAME;
+            //throw INVALID_CACHE_NAME;
+            throw SyntaxError(SyntaxError::INVALID_CACHE_NAME, "", SyntaxError::invalid_position, sCacheName);
     }
 
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
         if (iter->first == sCacheName)
         {
-            sErrorToken = sCacheName + "()";
-            throw CACHE_ALREADY_EXISTS;
+            //sErrorToken = sCacheName + "()";
+            //throw CACHE_ALREADY_EXISTS;
+            throw SyntaxError(SyntaxError::CACHE_ALREADY_EXISTS, "", SyntaxError::invalid_position, sCacheName+"()");
         }
     }
 
@@ -4994,13 +5000,14 @@ void Cache::setStringValue(const string& sVar, const string& sValue)
     string sValidChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_1234567890~";
 
     if (sVar[0] >= '0' && sVar[0] <= '9')
-        throw STRINGVARS_MUSTNT_BEGIN_WITH_A_NUMBER;
+        //throw STRINGVARS_MUSTNT_BEGIN_WITH_A_NUMBER;
+        throw SyntaxError(SyntaxError::STRINGVARS_MUSTNT_BEGIN_WITH_A_NUMBER, "", SyntaxError::invalid_position, sVar);
     for (unsigned int i = 0; i < sVar.length(); i++)
     {
         if (sValidChars.find(sVar[i]) == string::npos)
         {
-            sErrorToken = sVar[i];
-            throw STRINGVARS_MUSTNT_CONTAIN;
+            //sErrorToken = sVar[i];
+            throw SyntaxError(SyntaxError::STRINGVARS_MUSTNT_CONTAIN, "", SyntaxError::invalid_position, sVar.substr(i,1));
         }
     }
 

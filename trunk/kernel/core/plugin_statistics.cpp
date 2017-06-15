@@ -103,7 +103,7 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
             sDatatable = _data.matchCache(sCmd);
         }
         if (!_data.getLines(sDatatable) || !_data.getCols(sDatatable))
-            throw NO_CACHED_DATA;
+            throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);
 
 		int nLine = _data.getLines(sDatatable);
 		int nCol = _data.getCols(sDatatable);
@@ -263,7 +263,7 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 	}
 	else				// Oh! Das sind offensichtlich keine Daten vorhanden... Sollte man dem Benutzer wohl mitteilen
 	{
-        throw NO_DATA_AVAILABLE;
+        throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
 	}
 	//cerr << "|-> Das Plugin wurde erfolgreich beendet." << endl;
 

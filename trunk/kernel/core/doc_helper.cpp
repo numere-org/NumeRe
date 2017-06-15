@@ -36,7 +36,7 @@ Documentation::~Documentation()
 void Documentation::updateIndexFile()
 {
     if (!vDocIndexTable.size())
-        throw INVALID_HLPIDX;
+        throw SyntaxError(SyntaxError::INVALID_HLPIDX, "", SyntaxError::invalid_position);
     if (sDocIndexFile.find("<>") != string::npos)
         sDocIndexFile = FileSystem::ValidFileName(sDocIndexFile, ".hlpidx");
     if (fDocument.is_open())
@@ -45,8 +45,8 @@ void Documentation::updateIndexFile()
     if (fDocument.fail())
     {
         fDocument.close();
-        sErrorToken = sDocIndexFile;
-        throw CANNOT_READ_FILE;
+        //sErrorToken = sDocIndexFile;
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDocIndexFile);
     }
     fDocument << "<!--" << endl;
     fDocument << "  NumeRe: Framework fuer Numerische Rechnungen" << endl
@@ -329,7 +329,7 @@ void Documentation::updateDocIndex(string _sFilename)
 void Documentation::addToDocIndex(string& _sIndexToAdd, bool bUseUserLangFiles)
 {
     if (!vDocIndexTable.size())
-        throw INVALID_HLPIDX;
+        throw SyntaxError(SyntaxError::INVALID_HLPIDX, "", SyntaxError::invalid_position);
 
     if (bUseUserLangFiles)
     {
@@ -338,7 +338,7 @@ void Documentation::addToDocIndex(string& _sIndexToAdd, bool bUseUserLangFiles)
         loadDocIndex(false);
     }
     if (!vDocIndexTable.size())
-        throw INVALID_HLPIDX;
+        throw SyntaxError(SyntaxError::INVALID_HLPIDX, "", SyntaxError::invalid_position);
 
     string sKeyWord = "";
     string sLine = "";
@@ -406,7 +406,7 @@ void Documentation::addToDocIndex(string& _sIndexToAdd, bool bUseUserLangFiles)
 void Documentation::removeFromDocIndex(const string& _sID, bool bUseUserLangFiles)
 {
     if (!vDocIndexTable.size())
-        throw INVALID_HLPIDX;
+        throw SyntaxError(SyntaxError::INVALID_HLPIDX, "", SyntaxError::invalid_position);
     if (_sID == "<<NO_HLP_ENTRY>>")
         return;
     if (bUseUserLangFiles)
@@ -451,7 +451,7 @@ vector<string> Documentation::getHelpArticle(const string& _sTheme)
     string sLine = "";
 
     if (!vDocIndexTable.size())
-        throw INVALID_HLPIDX;
+        throw SyntaxError(SyntaxError::INVALID_HLPIDX, "", SyntaxError::invalid_position);
 
     if (_sTheme != "idx" && _sTheme != "index")
     {
@@ -498,8 +498,8 @@ vector<string> Documentation::getHelpArticle(const string& _sTheme)
             if (fDocument.fail())
             {
                 fDocument.close();
-                sErrorToken = vDocIndexTable[nIndex][1];
-                throw HLP_FILE_MISSING;
+                //sErrorToken = vDocIndexTable[nIndex][1];
+                throw SyntaxError(SyntaxError::HLP_FILE_MISSING, "", SyntaxError::invalid_position, vDocIndexTable[nIndex][1]);
             }
 
             while (!fDocument.eof())

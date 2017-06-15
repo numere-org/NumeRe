@@ -32,8 +32,6 @@ mglGraph _fontData;
 extern Plugin _plugin;
 extern value_type vAns;
 extern Integration_Vars parser_iVars;
-extern int nErrorIndices[2];
-extern string sErrorToken;
 time_t tTimeZero = time(0);
 
 
@@ -636,7 +634,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     && (sLine.find('(') != string::npos || sLine.find('{') != string::npos))
                 {
                     if (!validateParenthesisNumber(sLine))
-                        throw UNMATCHED_PARENTHESIS;
+                        throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, sLine.find('('));
                 }
 
                 // --> Keine Laenge? Ignorieren! <--
@@ -752,7 +750,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             if (GetAsyncCancelState() && _script.isValid() && _script.isOpen())
             {
                 if (_option.getbUseESCinScripts())
-                    throw PROCESS_ABORTED_BY_USER;
+                    throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
             }
             GetAsyncKeyState(VK_ESCAPE);
             if ((findCommand(sLine).sString == "compose"
@@ -948,7 +946,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                         continue;
                     unsigned int nParPos = getMatchingParenthesis(sLine.substr(nPos));
                     if (nParPos == string::npos)
-                        throw UNMATCHED_PARENTHESIS;
+                        throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
                     string sCmdString = sLine.substr(nPos+1, nParPos-1);
                     StripSpaces(sCmdString);
                     if (containsStrings(sCmdString) || _data.containsStringVars(sCmdString))
@@ -1094,7 +1092,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             }
             // --> Wenn die call()-Methode FALSE zurueckgibt, ist etwas schief gelaufen! <--
             if (!_functions.call(sLine, _option))
-                throw FUNCTION_ERROR;
+                throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
             // --> Prozeduren abarbeiten <--
             if (sLine.find('$') != string::npos && sLine.find('(', sLine.find('$')) != string::npos && !_procedure.getLoop())
             {
@@ -1259,7 +1257,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 }
                 else
                 {
-                    throw STRING_ERROR;
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                 }
             }
 
@@ -1329,7 +1327,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     }
                     if (bMultLinCol[0] && bMultLinCol[1])
                     {
-                        throw NO_MATRIX;
+                        throw SyntaxError(SyntaxError::NO_MATRIX, sCache, SyntaxError::invalid_position);
                     }
                     if (parser_ExprNotEmpty(si_pos[0]))
                     {
@@ -1586,11 +1584,11 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             bCancelSignal = false;
             return NUMERE_ERROR;
         }
-        catch (errorcode& e)
+        catch (SyntaxError& e)
         {
             _option.setSystemPrintStatus(true);
             make_hline();
-            if (e == PROCESS_ABORTED_BY_USER)
+            if (e.errorcode == SyntaxError::PROCESS_ABORTED_BY_USER)
             {
                 print(toUpperCase(_lang.get("ERR_PROCESS_CANCELLED_HEAD")));
                 make_hline();
@@ -1614,17 +1612,17 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 make_hline();
                 showDebugError(_lang.get("ERR_NR_HEAD_DBG"));
 
-                if (sErrorToken.length() && (e == PROCEDURE_THROW || e == LOOP_THROW))
+                if (e.getToken().length() && (e.errorcode == SyntaxError::PROCEDURE_THROW || e.errorcode == SyntaxError::LOOP_THROW))
                 {
-                    print(LineBreak(sErrorToken, _option));
+                    print(LineBreak(e.getToken(), _option));
                     if (oLogFile.is_open())
-                        oLogFile << toString(time(0)-tTimeZero, true) << "> " << toUpperCase(_lang.get("ERR_ERROR")) << ": " << sErrorToken << endl;
+                        oLogFile << toString(time(0)-tTimeZero, true) << "> " << toUpperCase(_lang.get("ERR_ERROR")) << ": " << e.getToken() << endl;
                 }
                 else
                 {
-                    string sErrLine_0 = _lang.get("ERR_NR_"+toString((int)e)+"_0_*", sErrorToken, toString(nErrorIndices[0]), toString(nErrorIndices[1]));
-                    string sErrLine_1 = _lang.get("ERR_NR_"+toString((int)e)+"_1_*", sErrorToken, toString(nErrorIndices[0]), toString(nErrorIndices[1]));
-                    string sErrIDString = _lang.getKey("ERR_NR_"+toString((int)e)+"_0_*");
+                    string sErrLine_0 = _lang.get("ERR_NR_"+toString((int)e.errorcode)+"_0_*", e.getToken(), toString(e.getIndices()[0]), toString(e.getIndices()[1]), toString(e.getIndices()[2]), toString(e.getIndices()[3]));
+                    string sErrLine_1 = _lang.get("ERR_NR_"+toString((int)e.errorcode)+"_1_*", e.getToken(), toString(e.getIndices()[0]), toString(e.getIndices()[1]), toString(e.getIndices()[2]), toString(e.getIndices()[3]));
+                    string sErrIDString = _lang.getKey("ERR_NR_"+toString((int)e.errorcode)+"_0_*");
 
                     if (sErrLine_0.substr(0,7) == "ERR_NR_")
                     {
@@ -1634,6 +1632,46 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     }
                     print(LineBreak(sErrLine_0, _option));
                     print(LineBreak(sErrLine_1, _option));
+                    if (e.getExpr().length())
+                    {
+                        print(LineBreak(_lang.get("ERR_EXPRESSION", e.getExpr()), _option, true, 4, 15));
+                        if (e.getPosition() != SyntaxError::invalid_position)
+                        {
+                            /* --> Position des Fehlers im Ausdruck: Wir stellen um den Fehler nur einen Ausschnitt
+                             *     des Ausdrucks in der Laenge von etwa 63 Zeichen dar und markieren die Fehlerposition
+                             *     durch ein darunter angezeigten Zirkumflex "^" <--
+                             */
+                            if (e.getExpr().length() > 63 && e.getPosition() > 31 && e.getPosition() < e.getExpr().length()-32)
+                            {
+                                printPreFmt("|   Position:  \"..."+e.getExpr().substr(e.getPosition()-29,57) + "...\"\n");
+                                printPreFmt(pointToError(32));
+                            }
+                            else if (e.getPosition() < 32)
+                            {
+                                string sErrorExpr = "|   Position:  \"";
+                                if (e.getExpr().length() > 63)
+                                    sErrorExpr += e.getExpr().substr(0,60) + "...\"";
+                                else
+                                    sErrorExpr += e.getExpr() + "\"";
+                                printPreFmt(sErrorExpr+"\n");
+                                printPreFmt(pointToError(e.getPosition()+1));
+                            }
+                            else if (e.getPosition() > e.getExpr().length()-32)
+                            {
+                                string sErrorExpr = "|   Position:  \"";
+                                if (e.getExpr().length() > 63)
+                                {
+                                    printPreFmt(sErrorExpr + "..." + e.getExpr().substr(e.getExpr().length()-60) + "\"\n");
+                                    printPreFmt(pointToError(65-(e.getExpr().length()-e.getPosition())-2));
+                                }
+                                else
+                                {
+                                    printPreFmt(sErrorExpr + e.getExpr() + "\"\n");
+                                    printPreFmt(pointToError(e.getPosition()));
+                                }
+                            }
+                        }
+                    }
                     if (oLogFile.is_open())
                         oLogFile << toString(time(0)-tTimeZero, true) << "> " << toUpperCase(_lang.get("ERR_ERROR")) << ": " << sErrIDString << endl;
                 }
@@ -1647,9 +1685,9 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             }
             _pData.setFileName("");
             make_hline();
-            sErrorToken = "";
-            nErrorIndices[0] = -1;
-            nErrorIndices[1] = -1;
+            //sErrorToken = "";
+            //nErrorIndices[0] = -1;
+            //nErrorIndices[1] = -1;
             if (sCmdCache.length())
                 sCmdCache.clear();
             _parser.DeactivateLoopMode();

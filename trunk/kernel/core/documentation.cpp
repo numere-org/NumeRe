@@ -64,8 +64,8 @@ void doc_Help(const string& __sTopic, Settings& _option)
             fHTML.open(sFilename.c_str());
             if (fHTML.fail())
             {
-                sErrorToken = sFilename;
-                throw CANNOT_GENERATE_FILE;
+                //sErrorToken = sFilename;
+                throw SyntaxError(SyntaxError::CANNOT_GENERATE_FILE, "", SyntaxError::invalid_position, sFilename);
             }
             // content schreiben
             fHTML << sHTML;

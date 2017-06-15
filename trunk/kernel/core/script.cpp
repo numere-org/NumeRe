@@ -116,10 +116,10 @@ void Script::openScript()
         bScriptOpen = true;
         if (fScript.fail())
         {
-            sErrorToken = sScriptFileName;
+            string sErrorToken = sScriptFileName;
             close();
             sScriptFileName = "";
-            throw SCRIPT_NOT_EXIST;
+            throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, "", SyntaxError::invalid_position, sErrorToken);
         }
         bReadFromInclude = false;
         bAppendNextLine = false;
@@ -261,7 +261,7 @@ string Script::getNextScriptCommand()
                 {
                     fLogFile.open((sTokens[0][1] + "\\install.log").c_str(), /*ios_base::ate |*/ ios_base::in | ios_base::out | ios_base::app);
                     if (fLogFile.fail())
-                        throw CANNOT_OPEN_LOGFILE;
+                        throw SyntaxError(SyntaxError::CANNOT_OPEN_LOGFILE, sScriptCommand, SyntaxError::invalid_position, sTokens[0][1] + "\\install.log");
                     fLogFile << "--- INSTALLATION " << getTimeStamp(false) << " ---" << endl;
                     sInstallInfoString = "-flags=ENABLE_DEFAULTS -type=TYPE_UNSPECIFIED -name=<AUTO> -author=<AUTO>";
                     sInstallID = getArgAtPos(sInstallInfoString, sInstallInfoString.find("name=")+5);
@@ -387,7 +387,7 @@ string Script::getNextScriptCommand()
                                 continue;
                         }
                         if (nRequiredVersion > nNumereVersion)
-                            throw INSUFFICIENT_NUMERE_VERSION;
+                            throw SyntaxError(SyntaxError::INSUFFICIENT_NUMERE_VERSION, sScriptCommand, SyntaxError::invalid_position, toString(nRequiredVersion));
                         if (!sScriptCommand.length())
                             continue;
                     }
@@ -500,7 +500,7 @@ string Script::getNextScriptCommand()
                         }
                     }
                     if (nRequiredVersion > nNumereVersion)
-                        throw INSUFFICIENT_NUMERE_VERSION;
+                        throw SyntaxError(SyntaxError::INSUFFICIENT_NUMERE_VERSION, sScriptCommand, SyntaxError::invalid_position, toString(nRequiredVersion));
                     if (!sScriptCommand.length())
                         continue;
                 }
@@ -544,7 +544,7 @@ string Script::getNextScriptCommand()
                 {
                     if (!sHelpID.length())
                     {
-                        throw HLPIDX_ENTRY_IS_MISSING;
+                        throw SyntaxError(SyntaxError::HLPIDX_ENTRY_IS_MISSING, sScriptCommand, SyntaxError::invalid_position);
                     }
                     if (sScriptCommand.find("</helpfile>") != string::npos)
                     {
@@ -558,8 +558,8 @@ string Script::getNextScriptCommand()
                         else
                         {
                             fHelpfile.close();
-                            sErrorToken = sHelpfileName;
-                            throw CANNOT_READ_FILE;
+                            //sErrorToken = sHelpfileName;
+                            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sScriptCommand, SyntaxError::invalid_position, sHelpfileName);
                         }
                         fHelpfile.close();
                     }
@@ -612,8 +612,8 @@ string Script::getNextScriptCommand()
                         else
                         {
                             fHelpfile.close();
-                            sErrorToken = sHelpfileName;
-                            throw CANNOT_READ_FILE;
+                            //sErrorToken = sHelpfileName;
+                            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sScriptCommand, SyntaxError::invalid_position, sHelpfileName);
                         }
                         fHelpfile.close();
                     }
@@ -900,10 +900,10 @@ string Script::getNextScriptCommand()
         fInclude.open(sIncludeFileName.c_str());
         if (fInclude.fail())
         {
-            sErrorToken = sIncludeFileName;
+            //sErrorToken = sIncludeFileName;
             bReadFromInclude = false;
             fInclude.close();
-            throw SCRIPT_NOT_EXIST;
+            throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sScriptCommand, SyntaxError::invalid_position, sIncludeFileName);
         }
         return "";
     }
@@ -911,7 +911,7 @@ string Script::getNextScriptCommand()
     if (!bInstallProcedures
         && sScriptCommand.find("procedure") != string::npos
         && sScriptCommand.find('$', sScriptCommand.find("procedure")) != string::npos)
-        throw PROCEDURE_WITHOUT_INSTALL_FOUND;
+        throw SyntaxError(SyntaxError::PROCEDURE_WITHOUT_INSTALL_FOUND, sScriptCommand, SyntaxError::invalid_position);
 
     if (fLogFile.is_open() && bInstallProcedures)
     {

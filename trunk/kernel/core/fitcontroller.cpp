@@ -548,7 +548,7 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
         if (NumeReKernel::GetAsyncCancelState())//GetAsyncKeyState(VK_ESCAPE))
         {
             gsl_multifit_fdfsolver_free(solver);
-            throw PROCESS_ABORTED_BY_USER;
+            throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
         }
     }
     while (nStatus == GSL_CONTINUE && nIterations < nMaxIterations);

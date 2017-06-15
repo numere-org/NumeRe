@@ -139,30 +139,32 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
         // --> Passende Fehlermeldungen ausgeben <--
         if (sExpr.find(":=") == string::npos)
         {
-            throw CANNOT_FIND_DEFINE_OPRT;
+            //throw CANNOT_FIND_DEFINE_OPRT;
+            throw SyntaxError(SyntaxError::CANNOT_FIND_DEFINE_OPRT, sExpr, SyntaxError::invalid_position);
         }
         else if (sExpr.find('(') == string::npos || (sExpr.find('(') != string::npos && sExpr.find('(') > sExpr.find(":=")))
         {
-            throw CANNOT_FIND_FUNCTION_ARGS;
+            //throw CANNOT_FIND_FUNCTION_ARGS;
+            throw SyntaxError(SyntaxError::CANNOT_FIND_FUNCTION_ARGS, sExpr, SyntaxError::invalid_position);
         }
         else if (sBuilt_In.find(","+sExpr.substr(0,sExpr.find('(')+1)) != string::npos)
         {
-            sErrorToken = sExpr.substr(0,sExpr.find('('));
-            throw FUNCTION_IS_PREDEFINED;
+            //sErrorToken = sExpr.substr(0,sExpr.find('('));
+            throw SyntaxError(SyntaxError::FUNCTION_IS_PREDEFINED, sExpr, SyntaxError::invalid_position, sExpr.substr(0,sExpr.find('(')));
         }
         else if (sCaches.length() && sCaches.find(";"+sExpr.substr(0,sExpr.find('('))+";") != string::npos)
         {
-            sErrorToken = sExpr.substr(0,sExpr.find('('));
-            throw CACHE_ALREADY_EXISTS;
+            //sErrorToken = sExpr.substr(0,sExpr.find('('));
+            throw SyntaxError(SyntaxError::CACHE_ALREADY_EXISTS, sExpr, SyntaxError::invalid_position, sExpr.substr(0,sExpr.find('(')));
         }
         else if (sCommands.find(","+sExpr.substr(0,sExpr.find('('))+",") != string::npos)
         {
-            sErrorToken = sExpr.substr(0,sExpr.find('('));
-            throw FUNCTION_STRING_IS_COMMAND;
+            //sErrorToken = sExpr.substr(0,sExpr.find('('));
+            throw SyntaxError(SyntaxError::FUNCTION_STRING_IS_COMMAND, sExpr, SyntaxError::invalid_position, sExpr.substr(0,sExpr.find('(')));
         }
         else
         {
-            throw CANNOT_FIND_FUNCTION_ARGS;
+            throw SyntaxError(SyntaxError::CANNOT_FIND_FUNCTION_ARGS, sExpr, SyntaxError::invalid_position);
         }
 
         // --> FALSE zurueckgeben <--
@@ -186,7 +188,7 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
     // --> Fehler abfangen: Ziffern am Anfang eines Funktionsnamens und Operatoren in einem Funktionsnamen <--
     if (sFunctionName[0] >= '0' && sFunctionName[0] <= '9')
     {
-        throw NO_NUMBER_AT_POS_1;
+        throw SyntaxError(SyntaxError::NO_NUMBER_AT_POS_1, sExpr, SyntaxError::invalid_position, sFunctionName);
     }
 
     string sDelim = "+-*/^!=&| ><()?[]{}$%§~#:.,;";
@@ -194,8 +196,8 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
     {
         if (sDelim.find(sFunctionName[i]) != string::npos)
         {
-            sErrorToken = sFunctionName.substr(i,1);
-            throw FUNCTION_NAMES_MUST_NOT_CONTAIN_SIGN;
+            //sErrorToken = sFunctionName.substr(i,1);
+            throw SyntaxError(SyntaxError::FUNCTION_NAMES_MUST_NOT_CONTAIN_SIGN, sExpr, SyntaxError::invalid_position, sFunctionName.substr(i,1));
             //cerr << LineBreak("|-> FEHLER: Funktionsnamen dürfen nicht \"" + sFunctionName.substr(i,1) + "\" enthalten!", _option) << endl;
             return false;
         }
@@ -399,7 +401,7 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
                 {
                     sFunctions[nDefine][j] = "";
                 }
-                throw FUNCTION_ALREADY_EXISTS;
+                throw SyntaxError(SyntaxError::FUNCTION_ALREADY_EXISTS, sExpr, SyntaxError::invalid_position, sFunctions[i][0]);
                 //cerr << LineBreak("|-> FEHLER: Dieser Funktionsname ist bereits belegt!", _option) << endl;
                 return false;
             }
@@ -415,8 +417,8 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
     }
     if (sFunctions[nDefine][3].find('(') != string::npos || sFunctions[nDefine][3].find(')') != string::npos)
     {
-        sErrorToken = "()";
-        throw FUNCTION_ARGS_MUST_NOT_CONTAIN_SIGN;
+        //sErrorToken = "()";
+        throw SyntaxError(SyntaxError::FUNCTION_ARGS_MUST_NOT_CONTAIN_SIGN, sExpr, SyntaxError::invalid_position, "()");
     }
 
     /* --> Pruefen wir, ob in der Argumentliste nicht das ein oder andere Komma enthalten ist
@@ -433,12 +435,12 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
             {
                 parser_SplitArgs(sFunctions[nDefine][i], sFunctions[nDefine][i+1], ',', _option, true);
             }
-            catch (errorcode &e)
+            catch (SyntaxError &e)
             {
-                if (e == SEPARATOR_NOT_FOUND)
+                if (e.errorcode == SyntaxError::SEPARATOR_NOT_FOUND)
                 {
-                    sErrorToken = ",";
-                    throw FUNCTION_ARGS_MUST_NOT_CONTAIN_SIGN;
+                    //sErrorToken = ",";
+                    throw SyntaxError(SyntaxError::FUNCTION_ARGS_MUST_NOT_CONTAIN_SIGN, sExpr, SyntaxError::invalid_position, ",");
                 }
                 else
                     throw;
@@ -454,7 +456,7 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
                     for (int u = 0; u < 6; u++)
                         sFunctions[nDefine][u] = "";
                 }
-                throw ELLIPSIS_MUST_BE_LAST_ARG;
+                throw SyntaxError(SyntaxError::ELLIPSIS_MUST_BE_LAST_ARG, sExpr, SyntaxError::invalid_position);
             }
             if (sFunctions[nDefine][i] != "...")
             {
@@ -462,8 +464,8 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
                 {
                     if (sFunctions[nDefine][i].find(sDelim[n]) != string::npos)
                     {
-                        sErrorToken = sDelim[n];
-                        throw FUNCTION_ARGS_MUST_NOT_CONTAIN_SIGN;
+                        //sErrorToken = sDelim[n];
+                        throw SyntaxError(SyntaxError::FUNCTION_ARGS_MUST_NOT_CONTAIN_SIGN, sExpr, SyntaxError::invalid_position, sDelim.substr(n,1));
                     }
                 }
             }
@@ -478,7 +480,7 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
                         for (int u = 0; u < 6; u++)
                             sFunctions[nDefine][u] = "";
                     }
-                    throw ELLIPSIS_MUST_BE_LAST_ARG;
+                    throw SyntaxError(SyntaxError::ELLIPSIS_MUST_BE_LAST_ARG, sExpr, SyntaxError::invalid_position);
                 }
                 //sFunctions[nDefine][i+1] = "(" + sFunctions[nDefine][i+1] + ")";
             }
@@ -495,7 +497,7 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
                     for (int u = 0; u < 6; u++)
                         sFunctions[nDefine][u] = "";
                 }
-                throw TOO_MANY_ARGS_FOR_DEFINE;
+                throw SyntaxError(SyntaxError::TOO_MANY_ARGS_FOR_DEFINE, sExpr, SyntaxError::invalid_position);
             }
             else
                 break;
@@ -611,7 +613,7 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
             defineFunc(sFallback, _parser, _option, true, true);
         }
 
-        throw INCOMPLETE_VECTOR_SYNTAX;
+        throw SyntaxError(SyntaxError::INCOMPLETE_VECTOR_SYNTAX, sExpr, SyntaxError::invalid_position);
     }
 
     if (_option.getbDebug())
@@ -775,7 +777,7 @@ bool Define::call(string& sExpr, const Settings& _option, int nRecursion)
     // --> Rekursionsabbruchbedingung: 2xDefinierteFunktionen+1 (da nDefinedFunctions auch 0 sein kann) <--
     if ((unsigned)nRecursion == nDefinedFunctions*2 + 1)
     {
-        throw TOO_MANY_FUNCTION_CALLS;
+        throw SyntaxError(SyntaxError::TOO_MANY_FUNCTION_CALLS, sExpr, SyntaxError::invalid_position);
     }
 
     /* --> Ergaenze ggf. Leerzeichen vor und nach dem Ausdruck, damit die Untersuchung der Zeichen vor und
@@ -831,7 +833,7 @@ bool Define::call(string& sExpr, const Settings& _option, int nRecursion)
                 // --> Pruefen, ob eine Klammer gefunden wurde <--
                 if (nPos_2 == string::npos)
                 {
-                    throw UNMATCHED_PARENTHESIS;
+                    throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sExpr, nPos);
                 }
 
                 // --> Trenne den Teil nach der schliessenden Klammer ab <--
@@ -890,7 +892,7 @@ bool Define::call(string& sExpr, const Settings& _option, int nRecursion)
                 {
                     // --> Gibt's das n-te Argument nicht? Abbrechen! <--
                     if (!sFunctions[i][n].length() && vArg.size() > n-3 && vArg[n-3].length())
-                        throw TOO_MANY_ARGS_FOR_DEFINE;
+                        throw SyntaxError(SyntaxError::TOO_MANY_ARGS_FOR_DEFINE, sExpr, SyntaxError::invalid_position);
                     else if (!sFunctions[i][n].length())
                         break;
 
@@ -1190,7 +1192,7 @@ bool Define::load(const Settings& _option, bool bAutoLoad)
         NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_FAILURE")) + ".\n");
         //cerr << LineBreak("|-> FEHLER: Aus der Datei \"" + sFileName + "\" kann nicht gelesen werden oder die Datei existiert nicht!", _option) << endl;
         Defines_def.close();
-        throw FILE_NOT_EXIST;
+        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sFileName, SyntaxError::invalid_position, sFileName);
     }
     getline(Defines_def, sIn);
 
@@ -1200,7 +1202,7 @@ bool Define::load(const Settings& _option, bool bAutoLoad)
         NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_FAILURE")) + ".\n");
         //cerr << LineBreak("|-> FEHLER: Aus der Datei \"" + sFileName + "\" kann nicht gelesen werden oder die Datei existiert nicht!", _option) << endl;
         Defines_def.close();
-        throw FILE_NOT_EXIST;
+        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sFileName, SyntaxError::invalid_position, sFileName);
     }
 
     int i = 0;

@@ -1142,7 +1142,7 @@ string extractCommandString(const string& sCmd, const Match& _mMatch)
                     break;
                 }
                 else
-                    throw UNMATCHED_PARENTHESIS;
+                    throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sCmd, i);
             }
             if (!i)
                 break;
@@ -1228,13 +1228,13 @@ void openExternally(const string& sFile, const string& sProgramm, const string& 
     {
         if (nErrorCode == ERROR_FILE_NOT_FOUND || nErrorCode == SE_ERR_FNF)
         {
-            sErrorToken = sProgramm;
-            throw EXTERNAL_PROGRAM_NOT_FOUND;
+            //sErrorToken = sProgramm;
+            throw SyntaxError(SyntaxError::EXTERNAL_PROGRAM_NOT_FOUND, "", SyntaxError::invalid_position, sProgramm);
         }
         else
         {
-            sErrorToken = sFile;
-            throw CANNOT_READ_FILE;
+            //sErrorToken = sFile;
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sFile);
         }
 
     }
@@ -1249,9 +1249,9 @@ void moveFile(const string& sFile, const string& sNewFileName)
     ofstream NewFile(sNewFileName.c_str(), ios_base::binary);
 
     if (!File.good())
-        throw CANNOT_OPEN_SOURCE;
+        throw SyntaxError(SyntaxError::CANNOT_OPEN_SOURCE, "", SyntaxError::invalid_position, sFile);
     if (!NewFile.good())
-        throw CANNOT_OPEN_TARGET;
+        throw SyntaxError(SyntaxError::CANNOT_OPEN_TARGET, "", SyntaxError::invalid_position, sNewFileName);
 
     // --> Schreibe den ReadBuffer in NewFile <--
     NewFile << File.rdbuf();
@@ -1280,7 +1280,7 @@ void writeTeXMain(const string& sTeXFile)
     // --> Fuege vor ".tex" den String "main"  ein <--
     ofstream TexMain((sTeXFile.substr(0,sTeXFile.find(".tex"))+"main.tex").c_str());
     if (!TexMain.good())
-        throw CANNOT_OPEN_TARGET;
+        throw SyntaxError(SyntaxError::CANNOT_OPEN_TARGET, "", SyntaxError::invalid_position, sTeXFile.substr(0,sTeXFile.find(".tex"))+"main.tex");
     TexMain << "\\documentclass{scrartcl}    % KOMA-SCRIPT-KLASSE (Kann durch \"article\" ersetzt werden)" << endl << endl;
     TexMain << "% Ein paar hilfreiche Packages:" << endl;
     TexMain << "\\usepackage[utf8]{inputenc} % Sonderzeichen in der Eingabe" << endl;
@@ -1562,7 +1562,7 @@ bool addLegends(string& sExpr)
     }
     if (nParenthesis)
     {
-        throw UNMATCHED_PARENTHESIS;
+        throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sExpr, sExpr.find('('));
         /*cerr << "|-> FEHLER: Klammern im Ausdruck passen nicht zusammen!" << endl;
         return false;*/
     }
