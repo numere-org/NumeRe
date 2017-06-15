@@ -176,7 +176,8 @@ void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string
             _data.setCacheStatus(false);
         else
         {
-            throw NO_DATA_AVAILABLE;
+            //throw NO_DATA_AVAILABLE;
+            throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, "", SyntaxError::invalid_position);
         }
         /*int nHeadlineCount = 1;
         if (_option.getUseExternalViewer())
@@ -281,9 +282,11 @@ void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string
 	else		// Offenbar sind gar keine Daten geladen. Was soll ich also anzeigen?
 	{
 		if (bCache)
-            throw NO_CACHED_DATA;
+            //throw NO_CACHED_DATA;
+            throw SyntaxError(SyntaxError::NO_CACHED_DATA, "", SyntaxError::invalid_position);
         else
-            throw NO_DATA_AVAILABLE;
+            //throw NO_DATA_AVAILABLE;
+            throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, "", SyntaxError::invalid_position);
 	}
 	return;
 }
@@ -312,7 +315,8 @@ string** BI_make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, 
     nLines = _data.getLines(sCache)+nHeadlineCount;		// Wir muessen Zeilen fuer die Kopfzeile hinzufuegen
     nCols = _data.getCols(sCache);
     if (!nCols || nLines == 1)
-        throw NO_CACHED_DATA;
+        //throw NO_CACHED_DATA;
+        throw SyntaxError(SyntaxError::NO_CACHED_DATA, "", SyntaxError::invalid_position);
 
     if (_option.getbDebug())
         NumeReKernel::print("DEBUG: nLine = " + toString(nLines) + ", nCol = " + toString(nCols) );
@@ -392,7 +396,10 @@ void BI_append_data(const string& __sCmd, Datafile& _data, Settings& _option, Pa
                 sArgument = "<loadpath>/"+sArgument;
             vector<string> vFilelist = getFileList(sArgument, _option);
             if (!vFilelist.size())
-                throw FILE_NOT_EXIST;
+            {
+                //throw FILE_NOT_EXIST;
+                throw SyntaxError(SyntaxError::FILE_NOT_EXIST, __sCmd, SyntaxError::invalid_position, sArgument);
+            }
             string sPath = "<loadpath>/";
             if (sArgument.find('/') != string::npos)
                 sPath = sArgument.substr(0,sArgument.rfind('/')+1);
@@ -1602,7 +1609,10 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                             sArgument = "<loadpath>/"+sArgument;
                         vector<string> vFilelist = getFileList(sArgument, _option);
                         if (!vFilelist.size())
-                            throw FILE_NOT_EXIST;
+                        {
+                            //throw FILE_NOT_EXIST;
+                            throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
+                        }
                         string sPath = "<loadpath>/";
                         if (sArgument.find('/') != string::npos)
                             sPath = sArgument.substr(0,sArgument.rfind('/')+1);
@@ -1647,7 +1657,10 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         //NumeReKernel::print(sArgument );
                         vector<string> vFilelist = getFileList(sArgument, _option);
                         if (!vFilelist.size())
-                            throw FILE_NOT_EXIST;
+                        {
+                            //throw FILE_NOT_EXIST;
+                            throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
+                        }
                         string sPath = "<loadpath>/";
                         if (sArgument.find('/') != string::npos)
                             sPath = sArgument.substr(0,sArgument.rfind('/')+1);
@@ -1699,7 +1712,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
         else if (matchParams(sCmd, "reload") || matchParams(sCmd, "reload", '='))
         {
             if ((_data.getDataFileName("data") == "Merged Data" || _data.getDataFileName("data") == "Pasted Data") && !matchParams(sCmd, "reload", '='))
-                throw CANNOT_RELOAD_DATA;
+                //throw CANNOT_RELOAD_DATA;
+                throw SyntaxError(SyntaxError::CANNOT_RELOAD_DATA, "", SyntaxError::invalid_position);
             if (_data.containsStringVars(sCmd))
                 _data.getStringValues(sCmd);
             if (matchParams(sCmd, "reload", '='))
@@ -1775,7 +1789,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             if (_data.isValid())
                 plugin_statistics(sArgument, _data, _out, _option, false, true);
             else
-                throw NO_DATA_AVAILABLE;
+                //throw NO_DATA_AVAILABLE;
+                throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, sArgument, sArgument);
             return 1;
         }
         else if (matchParams(sCmd, "hist"))
@@ -1784,7 +1799,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             if (_data.isValid())
                 plugin_histogram(sArgument, _data, _data, _out, _option, _pData, false, true);
             else
-                throw NO_DATA_AVAILABLE;
+                //throw NO_DATA_AVAILABLE;
+                throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, sArgument, sArgument);
             return 1;
         }
         else if (matchParams(sCmd, "save") || matchParams(sCmd, "save", '='))
@@ -1803,7 +1819,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         //NumeReKernel::print(LineBreak("|-> Daten wurden erfolgreich nach \"" + _data.getOutputFileName() + "\" gespeichert.", _option) );
                 }
                 else
-                    throw CANNOT_SAVE_FILE;
+                    //throw CANNOT_SAVE_FILE;
+                    throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sArgument, sArgument);
                     //NumeReKernel::print(LineBreak("|-> FEHLER: Daten konnten nicht gespeichert werden!", _option) );
             }
             else
@@ -1822,7 +1839,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         //NumeReKernel::print(LineBreak("|-> Daten wurden erfolgreich nach \"" + _data.getOutputFileName() + "\" gespeichert.", _option) );
                 }
                 else
-                    throw CANNOT_SAVE_FILE;
+                    //throw CANNOT_SAVE_FILE;
+                    throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sArgument, sArgument);
                     //NumeReKernel::print(LineBreak("|-> FEHLER: Daten konnten nicht gespeichert werden!", _option) );
             }
             return 1;
@@ -1830,7 +1848,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
         else if (matchParams(sCmd, "sort", '=') || matchParams(sCmd, "sort"))
         {
             if (!_data.sortElements(sCmd))
-                throw CANNOT_SORT_DATA;
+                //throw CANNOT_SORT_DATA;
+                throw SyntaxError(SyntaxError::CANNOT_SORT_DATA, sCmd, SyntaxError::invalid_position);
                 //NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht sortiert werden! Siehe \"help -data\" für weitere Details.", _option) );
             else if (_option.getSystemPrintStatus())
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SORT_SUCCESS"), _option) );
@@ -1865,7 +1884,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             && (matchParams(sCmd, "lines") || matchParams(sCmd, "cols")))
         {
             if (!_data.isValid())
-                throw NO_DATA_AVAILABLE;
+                //throw NO_DATA_AVAILABLE;
+                throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
             string sEvery = "";
             if (matchParams(sCmd, "every", '='))
             {
@@ -2032,12 +2052,14 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             )
         {
             if (!_data.isValid())
-                throw NO_DATA_AVAILABLE;
+                //throw NO_DATA_AVAILABLE;
+                throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
             nPos = findCommand(sCmd, "data").nPos;
             sArgument = extractCommandString(sCmd, findCommand(sCmd, "data"));
             sCommand = sArgument;
             if (matchParams(sCmd, "grid") && _data.getCols("data") < 3)
-                throw TOO_FEW_COLS;
+                //throw TOO_FEW_COLS;
+                throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, "data", "data");
             else if (matchParams(sCmd, "grid"))
                 nArgument = 2;
             else
@@ -2200,7 +2222,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             if (_data.isValidCache())
                 plugin_histogram(sArgument, _data, _data, _out, _option, _pData, true, false);
             else
-                throw NO_DATA_AVAILABLE;
+                //throw NO_DATA_AVAILABLE;
+                throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
             return 1;
         }
         else if (matchParams(sCmd, "stats"))
@@ -2220,7 +2243,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             if (_data.isValidCache())
                 plugin_statistics(sArgument, _data, _out, _option, true, false);
             else
-                throw NO_DATA_AVAILABLE;
+                //throw NO_DATA_AVAILABLE;
+                throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
             return 1;
         }
         else if (matchParams(sCmd, "save") || matchParams(sCmd, "save", '='))
@@ -2242,7 +2266,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 else
                 {
                     _data.setCacheStatus(false);
-                    throw CANNOT_SAVE_FILE;
+                    //throw CANNOT_SAVE_FILE;
+                    throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sArgument, sArgument);
                     //NumeReKernel::print(LineBreak("|-> FEHLER: Daten konnten nicht gespeichert werden!", _option) );
                 }
                 _data.setCacheStatus(false);
@@ -2259,7 +2284,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 else
                 {
                     _data.setCacheStatus(false);
-                    throw CANNOT_SAVE_FILE;
+                    //throw CANNOT_SAVE_FILE;
+                    throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sArgument, sArgument);
                     //NumeReKernel::print(LineBreak("|-> FEHLER: Daten konnten nicht gespeichert werden!", _option) );
                 }
                 _data.setCacheStatus(false);
@@ -2269,7 +2295,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
         else if (matchParams(sCmd, "sort") || matchParams(sCmd, "sort", '='))
         {
             if (!_data.sortElements(sCmd))
-                throw CANNOT_SORT_CACHE;
+                //throw CANNOT_SORT_CACHE;
+                throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sCmd, SyntaxError::invalid_position);
                 //NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht sortiert werden! Siehe \"help -cache\" für weitere Details.", _option) );
             else if (_option.getSystemPrintStatus())
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SORT_SUCCESS"), _option) );
@@ -2327,7 +2354,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             && (matchParams(sCmd, "lines") || matchParams(sCmd, "cols")))
         {
             if (!_data.isValidCache() || !_data.getCacheCols(sCacheCmd, false))
-                throw NO_CACHED_DATA;
+                //throw NO_CACHED_DATA;
+                throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, sCacheCmd, sCacheCmd);
             string sEvery = "";
             if (matchParams(sCmd, "every", '='))
             {
@@ -2494,12 +2522,14 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             )
         {
             if (!_data.isValidCache() || !_data.getCacheCols(sCacheCmd, false))
-                throw NO_CACHED_DATA;
+                //throw NO_CACHED_DATA;
+                throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, sCacheCmd, sCacheCmd);
             nPos = findCommand(sCmd, sCacheCmd).nPos;
             sArgument = extractCommandString(sCmd, findCommand(sCmd, sCacheCmd));
             sCommand = sArgument;
             if (matchParams(sCmd, "grid") && _data.getCacheCols(sCacheCmd, false) < 3)
-                throw TOO_FEW_COLS;
+                //throw TOO_FEW_COLS;
+                throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, sCacheCmd, sCacheCmd);
             else if (matchParams(sCmd, "grid"))
                 nArgument = 2;
             else
@@ -2568,7 +2598,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             }
             else
             {
-                throw TABLE_DOESNT_EXIST;
+                //throw TABLE_DOESNT_EXIST;
+                throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
             }
             return 1;
         }
@@ -2622,7 +2653,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         //NumeReKernel::print(LineBreak("|-> Der Datensatz wurde erfolgreich kopiert.", _option) );
                 }
                 else
-                    throw CANNOT_COPY_DATA;
+                    //throw CANNOT_COPY_DATA;
+                    throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, sCmd, SyntaxError::invalid_position);
                     //NumeReKernel::print(LineBreak("|-> FEHLER: Der Datensatz konnte nicht kopiert werden!$Siehe \"help -copy\" für weitere Details.", _option) );
             }
             else if ((matchParams(sCmd, "target", '=') || matchParams(sCmd, "t", '=')) && sCmd.length() > 5)
@@ -2645,8 +2677,9 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 else
                 {
-                    sErrorToken = sCmd;
-                    throw CANNOT_COPY_FILE;
+                    //sErrorToken = sCmd;
+                    //throw CANNOT_COPY_FILE;
+                    throw SyntaxError(SyntaxError::CANNOT_COPY_FILE, sCmd, SyntaxError::invalid_position, sCmd);
                 }
                     //NumeReKernel::print(LineBreak("|-> Die Datei \"" + sCmd + "\" konnte nicht kopiert werden oder existiert nicht!", _option) );
             }
@@ -2697,7 +2730,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
         else if (sCommand == "audio")
         {
             if (!parser_writeAudio(sCmd, _parser, _data, _functions, _option))
-                throw CANNOT_SAVE_FILE;
+                //throw CANNOT_SAVE_FILE;
+                throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, SyntaxError::invalid_position);
             else if (_option.getSystemPrintStatus())
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_AUDIO_SUCCESS"), _option) );
                 //NumeReKernel::print(LineBreak("|-> Die Audiodatei wurde erfolgreich erzeugt.", _option) );
@@ -2778,7 +2812,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                             _data.setCacheStatus(true);
                         if ((_idx.nI[0] == -1 && !_idx.vI.size())
                             || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
-                            throw INVALID_INDEX;
+                            //throw INVALID_INDEX;
+                            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
                         if (!_idx.vI.size())
                         {
                             if (_idx.nI[1] == -1)
@@ -2883,7 +2918,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                             _data.setCacheStatus(true);
                         if ((_idx.nI[0] == -1 && !_idx.vI.size())
                             || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
-                            throw CANNOT_SAVE_FILE;
+                            //throw CANNOT_SAVE_FILE;
+                            throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, SyntaxError::invalid_position);
                         if (!_idx.vI.size())
                         {
                             if (_idx.nI[1] == -1)
@@ -2952,7 +2988,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                                 return 1;
                             }
                             else
-                                throw CANNOT_SAVE_FILE;
+                                //throw CANNOT_SAVE_FILE;
+                                throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sArgument, sArgument);
                         }
                         else
                             _cache.setPrefix(iter->second == -1 ? "copy_of_"+(iter->first) : (iter->first));
@@ -2963,7 +3000,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                                 //NumeReKernel::print(LineBreak("|-> Daten wurden erfolgreich nach \"" + _cache.getOutputFileName() + "\" gespeichert.", _option) );
                         }
                         else
-                            throw CANNOT_SAVE_FILE;
+                            //throw CANNOT_SAVE_FILE;
+                            throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, SyntaxError::invalid_position);
                         return 1;
                     }
                 }
@@ -3708,7 +3746,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
         else if (sCommand == "start")
         {
             if (_script.isOpen())
-                throw CANNOT_CALL_SCRIPT_RECURSIVELY;
+                //throw CANNOT_CALL_SCRIPT_RECURSIVELY;
+                throw SyntaxError(SyntaxError::CANNOT_CALL_SCRIPT_RECURSIVELY, sCmd, SyntaxError::invalid_position, sCommand);
             if (matchParams(sCmd, "script") || matchParams(sCmd, "script", '='))
             {
                 if (_data.containsStringVars(sCmd))
@@ -3739,8 +3778,9 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                             _script.openScript();
                         else
                         {
-                            sErrorToken = "["+_lang.get("BUILTIN_CHECKKEYWORD_START_ERRORTOKEN")+"]";
-                            throw SCRIPT_NOT_EXIST;
+                            //sErrorToken = "["+_lang.get("BUILTIN_CHECKKEYWORD_START_ERRORTOKEN")+"]";
+                            //throw SCRIPT_NOT_EXIST;
+                            throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sCmd, sArgument, "["+_lang.get("BUILTIN_CHECKKEYWORD_START_ERRORTOKEN")+"]");
                         }
                         return 1;
                     }
@@ -3779,19 +3819,22 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     }
                     else
                     {
-                        sErrorToken = _script.getScriptFileName();
+                        string sErrorToken = _script.getScriptFileName();
                         sArgument = "";
                         _script.setScriptFileName(sArgument);
-                        throw SCRIPT_NOT_EXIST;
+                        //throw SCRIPT_NOT_EXIST;
+                        throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sCmd, sErrorToken, sErrorToken);
                     }
                 }
                 else
-                    throw CANNOT_CALL_SCRIPT_RECURSIVELY;
+                    //throw CANNOT_CALL_SCRIPT_RECURSIVELY;
+                    throw SyntaxError(SyntaxError::CANNOT_CALL_SCRIPT_RECURSIVELY, sCmd, SyntaxError::invalid_position, sCommand);
             }
             else if (matchParams(sCmd, "start") || matchParams(sCmd, "start", '='))
             {
                 if (_script.isOpen())
-                    throw CANNOT_CALL_SCRIPT_RECURSIVELY;
+                    //throw CANNOT_CALL_SCRIPT_RECURSIVELY;
+                    throw SyntaxError(SyntaxError::CANNOT_CALL_SCRIPT_RECURSIVELY, sCmd, SyntaxError::invalid_position, sCommand);
                 if (_data.containsStringVars(sCmd))
                     _data.getStringValues(sCmd);
                 if (matchParams(sCmd, "install"))
@@ -3849,7 +3892,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                             _data.setCacheStatus(true);
                         if ((_idx.nI[0] == -1 && !_idx.vI.size())
                             || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
-                            throw TABLE_DOESNT_EXIST;
+                            //throw TABLE_DOESNT_EXIST;
+                            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, iter->first+"(", iter->first+"()");
                         if (!_idx.vI.size())
                         {
                             if (_idx.nI[1] == -1)
@@ -3908,11 +3952,13 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         return 1;
                     }
                 }
-                throw TABLE_DOESNT_EXIST;
+                //throw TABLE_DOESNT_EXIST;
+                throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
             }
             else
             {
-                throw TABLE_DOESNT_EXIST;//NumeReKernel::print(LineBreak("|-> Diese Tabelle existiert nicht, oder es wurde keine spezifiziert!", _option) );
+                //throw TABLE_DOESNT_EXIST;
+                throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
             }
             return 1;
 
@@ -3936,7 +3982,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             if (_data.matchCache(sCmd).length() || _data.matchCache(sCmd, '=').length())
             {
                 if (!_data.sortElements(sCmd))
-                    throw CANNOT_SORT_CACHE;
+                    //throw CANNOT_SORT_CACHE;
+                    throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sCmd, SyntaxError::invalid_position);
                     //NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht sortiert werden! Siehe \"help -cache\" für weitere Details.", _option) );
                 else if (_option.getSystemPrintStatus())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SORT_SUCCESS"), _option) );
@@ -3945,7 +3992,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             else if (matchParams(sCmd, "data", '=') || matchParams(sCmd, "data"))
             {
                 if (!_data.sortElements(sCmd))
-                    throw CANNOT_SORT_DATA;
+                    //throw CANNOT_SORT_DATA;
+                    throw SyntaxError(SyntaxError::CANNOT_SORT_DATA, sCmd, SyntaxError::invalid_position);
                     //NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht sortiert werden! Siehe \"help -data\" für weitere Details.", _option) );
                 else if (_option.getSystemPrintStatus())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SORT_SUCCESS"), _option) );
@@ -3988,7 +4036,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             //NumeReKernel::print(sArgument );
             _idx = parser_getIndices(sArgument, _parser, _data, _option);
             if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
-                throw INVALID_INDEX;
+                //throw INVALID_INDEX;
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sArgument);
             if (_idx.nI[1] == -2)
                 _idx.nI[1] = _data.getLines(sArgument.substr(0,sArgument.find('(')), false);
             if (_idx.nJ[1] == -2)
@@ -4003,7 +4052,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 else
                 {
-                    throw CANNOT_SMOOTH_CACHE;
+                    //throw CANNOT_SMOOTH_CACHE;
+                    throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, sArgument, sArgument);
                     //NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht geglättet werden! Siehe \"help -smooth\" für weitere Details.", _option) );
                 }
             }
@@ -4017,7 +4067,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 else
                 {
-                    throw CANNOT_SMOOTH_CACHE;
+                    //throw CANNOT_SMOOTH_CACHE;
+                    throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, sArgument, sArgument);
                     //NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht geglättet werden! Siehe \"help -smooth\" für weitere Details.", _option) );
                 }
             }
@@ -4031,7 +4082,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 else
                 {
-                    throw CANNOT_SMOOTH_CACHE;
+                    //throw CANNOT_SMOOTH_CACHE;
+                    throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, sArgument, sArgument);
                     //NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht geglättet werden! Siehe \"help -smooth\" für weitere Details.", _option) );
                 }
             }
@@ -4045,7 +4097,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 else
                 {
-                    throw CANNOT_SMOOTH_CACHE;
+                    //throw CANNOT_SMOOTH_CACHE;
+                    throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, sArgument, sArgument);
                     //NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht geglättet werden! Siehe \"help -smooth\" für weitere Details.", _option) );
                 }
             }
@@ -4115,7 +4168,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                             _data.setCacheStatus(true);
                         if ((_idx.nI[0] == -1 && !_idx.vI.size())
                             || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
-                            throw INVALID_INDEX;
+                            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, iter->first+"(", iter->first);
                         if (!_idx.vI.size())
                         {
                             if (_idx.nI[1] == -1)
@@ -4211,7 +4264,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                             NumeReKernel::print(LineBreak("|-> Der Datensatz wurde erfolgreich verschoben.", _option) );
                     }
                     else
-                        throw CANNOT_MOVE_DATA;
+                        throw SyntaxError(SyntaxError::CANNOT_MOVE_DATA, sCmd, SyntaxError::invalid_position);
                         //NumeReKernel::print(LineBreak("|-> FEHLER: Der Datensatz konnte nicht verschoben werden!", _option) );
                 }
                 else
@@ -4232,8 +4285,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     }
                     else
                     {
-                        sErrorToken = sCmd;
-                        throw CANNOT_MOVE_FILE;
+                        //sErrorToken = sCmd;
+                        throw SyntaxError(SyntaxError::CANNOT_MOVE_FILE, sCmd, SyntaxError::invalid_position, sCmd);
                         //NumeReKernel::print(LineBreak("|-> Die Datei \"" + sCmd + "\" konnte nicht verschoben werden oder existiert nicht!", _option) );
                     }
                 }
@@ -4320,7 +4373,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             }
             _idx = parser_getIndices(sArgument, _parser, _data, _option);
             if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
-                throw INVALID_INDEX;
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sArgument, sArgument);
             if (_idx.nI[1] == -2)
                 _idx.nI[1] = _data.getLines(sArgument.substr(0,sArgument.find('(')), false);
             if (_idx.nJ[1] == -2)
@@ -4335,7 +4388,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 else
                 {
-                    throw CANNOT_RESAMPLE_CACHE;
+                    throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, sArgument.substr(0,sArgument.find('(')), sArgument.substr(0,sArgument.find('(')-1));
                 }
             }
             else if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
@@ -4348,7 +4401,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 else
                 {
-                    throw CANNOT_RESAMPLE_CACHE;
+                    throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, sArgument.substr(0,sArgument.find('(')), sArgument.substr(0,sArgument.find('(')-1));
                 }
             }
             else if (matchParams(sCmd, "cols"))
@@ -4361,7 +4414,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 else
                 {
-                    throw CANNOT_RESAMPLE_CACHE;
+                    throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, sArgument.substr(0,sArgument.find('(')), sArgument.substr(0,sArgument.find('(')-1));
                 }
             }
             else if (matchParams(sCmd, "lines"))
@@ -4374,7 +4427,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 else
                 {
-                    throw CANNOT_RESAMPLE_CACHE;
+                    throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, sArgument.substr(0,sArgument.find('(')), sArgument.substr(0,sArgument.find('(')-1));
                 }
             }
             return 1;
@@ -4412,8 +4465,8 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     nArgument = 0;
                 if (!BI_removeFile(sCmd, _parser, _data, _option))
                 {
-                    sErrorToken = sCmd;
-                    throw CANNOT_REMOVE_FILE;
+                    //sErrorToken = sCmd;
+                    throw SyntaxError(SyntaxError::CANNOT_REMOVE_FILE, sCmd, SyntaxError::invalid_position, sCmd);
                     //NumeReKernel::print(LineBreak("|-> Die Datei \"" + sCmd + "\" konnte nicht gelöscht werden oder existiert nicht!", _option) );
                 }
                 else if (_option.getSystemPrintStatus())
@@ -4430,7 +4483,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             }
             else
             {
-                throw NO_FILENAME;
+                throw SyntaxError(SyntaxError::NO_FILENAME, sCmd, SyntaxError::invalid_position);
                 //NumeReKernel::print(LineBreak("|-> FEHLER: Keine zu löschende Datei angegeben!", _option) );
             }
             return 1;
@@ -4484,7 +4537,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 else if (_data.isValid())
                 {
                     if ((_data.getDataFileName("data") == "Merged Data" || _data.getDataFileName("data") == "Pasted Data") && !matchParams(sCmd, "data", '='))
-                        throw CANNOT_RELOAD_DATA;
+                        throw SyntaxError(SyntaxError::CANNOT_RELOAD_DATA, sCmd, SyntaxError::invalid_position);
                     if (matchParams(sCmd, "keepdim") || matchParams(sCmd, "complete"))
                         _data.setbLoadEmptyColsInNextFile(true);
                     sArgument = _data.getDataFileName("data");
@@ -4517,7 +4570,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             //NumeReKernel::print(sArgument );
             _idx = parser_getIndices(sArgument, _parser, _data, _option);
             if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
-                throw INVALID_INDEX;
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sArgument, sArgument);
             if (_idx.nI[1] == -2)
                 _idx.nI[1] = _data.getLines(sArgument.substr(0,sArgument.find('(')), false);
             if (_idx.nJ[1] == -2)
@@ -4532,7 +4585,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 else
                 {
-                    throw CANNOT_RETOQUE_CACHE;
+                    throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, sArgument.substr(0,sArgument.find('(')), sArgument.substr(0,sArgument.find('(')-1));
                     //NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht geglättet werden! Siehe \"help -smooth\" für weitere Details.", _option) );
                 }
             }
@@ -4546,7 +4599,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 else
                 {
-                    throw CANNOT_RETOQUE_CACHE;
+                    throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, sArgument.substr(0,sArgument.find('(')), sArgument.substr(0,sArgument.find('(')-1));
                     //NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht geglättet werden! Siehe \"help -smooth\" für weitere Details.", _option) );
                 }
             }
@@ -4560,7 +4613,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 else
                 {
-                    throw CANNOT_RETOQUE_CACHE;
+                    throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, sArgument.substr(0,sArgument.find('(')), sArgument.substr(0,sArgument.find('(')-1));
                     //NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht geglättet werden! Siehe \"help -smooth\" für weitere Details.", _option) );
                 }
             }
@@ -4574,7 +4627,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 }
                 else
                 {
-                    throw CANNOT_RETOQUE_CACHE;
+                    throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, sArgument.substr(0,sArgument.find('(')), sArgument.substr(0,sArgument.find('(')-1));
                     //NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht geglättet werden! Siehe \"help -smooth\" für weitere Details.", _option) );
                 }
             }
@@ -4583,7 +4636,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
         else if (sCommand == "regularize")
         {
             if (!parser_regularize(sCmd, _parser, _data, _functions, _option))
-                throw CANNOT_REGULARIZE_CACHE;
+                throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, SyntaxError::invalid_position);
             else if (_option.getSystemPrintStatus())
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_REGULARIZE"), _option) );
                 //NumeReKernel::print(LineBreak("|-> Der gewünschte Cache wurde erfolgreich regularisiert.", _option) );
@@ -4641,7 +4694,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                             //NumeReKernel::print(LineBreak("|-> Element(e) wurde(n) erfolgreich gelöscht.", _option) );
                     }
                     else
-                        throw CANNOT_DELETE_ELEMENTS;
+                        throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, SyntaxError::invalid_position);
                         //NumeReKernel::print(LineBreak("|-> FEHLER: Element(e) konnte(n) nicht gelöscht werden!", _option) );
                 else
                 {
@@ -4658,7 +4711,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         BI_deleteCacheEntry(sCmd, _parser, _data, _option);
                     else
                     {
-                        NumeReKernel::print(  _lang.get("COMMON_CANCEL") );
+                        NumeReKernel::print(_lang.get("COMMON_CANCEL") );
                         return 1;
                     }
                 }
@@ -4882,7 +4935,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                             sArgument = "<loadpath>/"+sArgument;
                         vector<string> vFilelist = getFileList(sArgument, _option);
                         if (!vFilelist.size())
-                            throw FILE_NOT_EXIST;
+                            throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
                         string sPath = "<loadpath>/";
                         if (sArgument.find('/') != string::npos)
                             sPath = sArgument.substr(0,sArgument.rfind('/')+1);
@@ -4932,7 +4985,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                                 sArgument = "<loadpath>/"+sArgument;
                             vector<string> vFilelist = getFileList(sArgument, _option);
                             if (!vFilelist.size())
-                                throw FILE_NOT_EXIST;
+                                throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
                             string sPath = "<loadpath>/";
                             if (sArgument.find('/') != string::npos)
                                 sPath = sArgument.substr(0,sArgument.rfind('/')+1);
@@ -4976,7 +5029,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                                 sArgument = "<loadpath>/"+sArgument;
                             vector<string> vFilelist = getFileList(sArgument, _option);
                             if (!vFilelist.size())
-                                throw FILE_NOT_EXIST;
+                                throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
                             string sPath = "<loadpath>/";
                             if (sArgument.find('/') != string::npos)
                                 sPath = sArgument.substr(0,sArgument.rfind('/')+1);
@@ -5045,10 +5098,10 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                     }
                     else
                     {
-                        sErrorToken = _script.getScriptFileName();
+                        string sErrorToken = _script.getScriptFileName();
                         sArgument = "";
                         _script.setScriptFileName(sArgument);
-                        throw SCRIPT_NOT_EXIST;
+                        throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sCmd, sErrorToken, sErrorToken);
                     }
                 }
                 return 1;
@@ -5132,7 +5185,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                             sArgument = "<loadpath>/"+sArgument;
                         vector<string> vFilelist = getFileList(sArgument, _option);
                         if (!vFilelist.size())
-                            throw FILE_NOT_EXIST;
+                            throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
                         string sPath = "<loadpath>/";
                         if (sArgument.find('/') != string::npos)
                             sPath = sArgument.substr(0,sArgument.rfind('/')+1);
@@ -5182,7 +5235,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                                 sArgument = "<loadpath>/"+sArgument;
                             vector<string> vFilelist = getFileList(sArgument, _option);
                             if (!vFilelist.size())
-                                throw FILE_NOT_EXIST;
+                                throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
                             string sPath = "<loadpath>/";
                             if (sArgument.find('/') != string::npos)
                                 sPath = sArgument.substr(0,sArgument.rfind('/')+1);
@@ -5226,7 +5279,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                                 sArgument = "<loadpath>/"+sArgument;
                             vector<string> vFilelist = getFileList(sArgument, _option);
                             if (!vFilelist.size())
-                                throw FILE_NOT_EXIST;
+                                throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
                             string sPath = "<loadpath>/";
                             if (sArgument.find('/') != string::npos)
                                 sPath = sArgument.substr(0,sArgument.rfind('/')+1);
@@ -5324,7 +5377,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                             _data.setCacheStatus(true);
                         if ((_idx.nI[0] == -1 && !_idx.vI.size())
                             || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
-                            throw CANNOT_EXPORT_DATA;
+                            throw SyntaxError(SyntaxError::CANNOT_EXPORT_DATA, sCmd, iter->first+"(", iter->first);
                         if (!_idx.vI.size())
                         {
                             if (_idx.nI[1] == -1)
@@ -5534,7 +5587,7 @@ void BI_Autosave(Datafile& _data, Output& _out, Settings& _option)
         {
             if (_option.getSystemPrintStatus())
                 NumeReKernel::printPreFmt("\n");
-            throw CANNOT_SAVE_CACHE;
+            throw SyntaxError(SyntaxError::CANNOT_SAVE_CACHE, "", SyntaxError::invalid_position);
         }
     }
     return;
@@ -5747,8 +5800,8 @@ bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, 
                 {
                     if (_option.getTokenPaths().find(sToken) == string::npos)
                     {
-                        sErrorToken = sToken;
-                        throw UNKNOWN_PATH_TOKEN;
+                        //sErrorToken = sToken;
+                        throw SyntaxError(SyntaxError::UNKNOWN_PATH_TOKEN, sCmd, sToken, sToken);
                     }
                 }
                 i = sArgument.find('>', i);
@@ -7517,7 +7570,7 @@ bool BI_moveFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings&
     }
     else
     {
-        throw NO_TARGET;
+        throw SyntaxError(SyntaxError::NO_TARGET, sCmd, SyntaxError::invalid_position);
     }
 
     StripSpaces(sCmd);
@@ -7696,7 +7749,7 @@ bool BI_copyFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings&
     }
     else
     {
-        throw NO_TARGET;
+        throw SyntaxError(SyntaxError::NO_TARGET, sCmd, SyntaxError::invalid_position);
     }
     StripSpaces(sCmd);
     while (sCmd[sCmd.length()-1] == '-' && sCmd[sCmd.length()-2] == ' ')
@@ -7991,7 +8044,7 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
     BI_parseStringArgs(sCmd, sObject, _parser, _data, _option);
     StripSpaces(sObject);
     if (!sObject.length())
-        throw NO_FILENAME;
+        throw SyntaxError(SyntaxError::NO_FILENAME, sCmd, SyntaxError::invalid_position);
     if (_option.getbDebug())
         NumeReKernel::print("DEBUG: sObject = " + sObject );
 
@@ -8027,16 +8080,16 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
         {
             if (!BI_generateTemplate(sObject, "<>/user/lang/tmpl_script.nlng", vTokens, _option))
             {
-                sErrorToken = sObject;
-                throw CANNOT_GENERATE_SCRIPT;
+                //sErrorToken = sObject;
+                throw SyntaxError(SyntaxError::CANNOT_GENERATE_SCRIPT, sCmd, sObject, sObject);
             }
         }
         else
         {
             if (!BI_generateTemplate(sObject, "<>/lang/tmpl_script.nlng", vTokens, _option))
             {
-                sErrorToken = sObject;
-                throw CANNOT_GENERATE_SCRIPT;
+                //sErrorToken = sObject;
+                throw SyntaxError(SyntaxError::CANNOT_GENERATE_SCRIPT, sCmd, sObject, sObject);
             }
         }
         if (_option.getSystemPrintStatus())
@@ -8097,8 +8150,8 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
         fProcedure.open(sObject.c_str());
         if (fProcedure.fail())
         {
-            sErrorToken = sObject;
-            throw CANNOT_GENERATE_PROCEDURE;
+            //sErrorToken = sObject;
+            throw SyntaxError(SyntaxError::CANNOT_GENERATE_PROCEDURE, sCmd, sObject, sObject);
         }
         unsigned int nLength = _lang.get("COMMON_PROCEDURE").length();
         fProcedure << "#*********" << std::setfill('*') << std::setw(nLength+2) << "***" << std::setfill('*') << std::setw(max(21u,sProcedure.length()+2)) << "*" << endl;
@@ -8161,16 +8214,16 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
         {
             if (!BI_generateTemplate(sObject, "<>/user/lang/tmpl_file.nlng", vTokens, _option))
             {
-                sErrorToken = sObject;
-                throw CANNOT_GENERATE_FILE;
+                //sErrorToken = sObject;
+                throw SyntaxError(SyntaxError::CANNOT_GENERATE_FILE, sCmd, SyntaxError::invalid_position, sObject);
             }
         }
         else
         {
             if (!BI_generateTemplate(sObject, "<>/lang/tmpl_file.nlng", vTokens, _option))
             {
-                sErrorToken = sObject;
-                throw CANNOT_GENERATE_FILE;
+                //sErrorToken = sObject;
+                throw SyntaxError(SyntaxError::CANNOT_GENERATE_FILE, sCmd, SyntaxError::invalid_position, sObject);
             }
         }
         if (_option.getSystemPrintStatus())
@@ -8208,16 +8261,16 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
         {
             if (!BI_generateTemplate(sObject, "<>/user/lang/tmpl_plugin.nlng", vTokens, _option))
             {
-                sErrorToken = sObject;
-                throw CANNOT_GENERATE_SCRIPT;
+                //sErrorToken = sObject;
+                throw SyntaxError(SyntaxError::CANNOT_GENERATE_SCRIPT, sCmd, SyntaxError::invalid_position, sObject);
             }
         }
         else
         {
             if (!BI_generateTemplate(sObject, "<>/lang/tmpl_plugin.nlng", vTokens, _option))
             {
-                sErrorToken = sObject;
-                throw CANNOT_GENERATE_SCRIPT;
+                //sErrorToken = sObject;
+                throw SyntaxError(SyntaxError::CANNOT_GENERATE_SCRIPT, sCmd, SyntaxError::invalid_position, sObject);
             }
         }
         if (_option.getSystemPrintStatus())
@@ -8236,7 +8289,7 @@ bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _op
     _fSys.setTokens(_option.getTokenPaths());
 
     if (!sObject.length())
-        throw FILE_NOT_EXIST;
+        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, SyntaxError::invalid_position);
     if (_option.getbDebug())
         NumeReKernel::print("DEBUG: sObject = " + sObject );
     if (sObject[0] == '$'  && sObject[1] != '\'')
@@ -8428,7 +8481,7 @@ bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _op
             sObject.erase(sObject.rfind('*'));
         if ((int)ShellExecute(NULL,NULL,sObject.c_str(),NULL,NULL,SW_SHOWNORMAL) > 32)
             return true;
-        throw FILE_NOT_EXIST;
+        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, SyntaxError::invalid_position, sObject);
     }
 
     if (sObject.substr(sObject.rfind('.')) == ".dat"
@@ -8451,8 +8504,8 @@ bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _op
         nType = 2;
     if (!nType)
     {
-        sErrorToken = sObject;
-        throw CANNOT_EDIT_FILE_TYPE;
+        //sErrorToken = sObject;
+        throw SyntaxError(SyntaxError::CANNOT_EDIT_FILE_TYPE, sCmd, SyntaxError::invalid_position, sObject);
     }
 
     if (nType == 1)
@@ -8505,13 +8558,14 @@ bool BI_writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _o
             sFileName = _data.ValidFileName(sFileName, ".txt");
             if (sFileName.substr(sFileName.rfind('.')) == ".nprc" || sFileName.substr(sFileName.rfind('.')) == ".nscr" || sFileName.substr(sFileName.rfind('.')) == ".ndat")
             {
+                string sErrorToken;
                 if (sFileName.substr(sFileName.rfind('.')) == ".nprc")
                     sErrorToken = "NumeRe-Prozedur";
                 else if (sFileName.substr(sFileName.rfind('.')) == ".nscr")
                     sErrorToken = "NumeRe-Script";
                 else if (sFileName.substr(sFileName.rfind('.')) == ".ndat")
                     sErrorToken = "NumeRe-Datenfile";
-                throw FILETYPE_MAY_NOT_BE_WRITTEN;
+                throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, sCmd, SyntaxError::invalid_position, sErrorToken);
             }
         }
         if (matchParams(sParams, "noquotes") || matchParams(sParams, "nq"))
@@ -8534,7 +8588,7 @@ bool BI_writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _o
         }
     }
     if (!sFileName.length())
-        throw NO_FILENAME;
+        throw SyntaxError(SyntaxError::NO_FILENAME, sCmd, SyntaxError::invalid_position);
     sExpression = sCmd.substr(findCommand(sCmd).nPos + findCommand(sCmd).sString.length());
     if (containsStrings(sExpression) || _data.containsStringVars(sExpression))
     {
@@ -8542,7 +8596,7 @@ bool BI_writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _o
         parser_StringParser(sExpression, sDummy, _data, _parser, _option, true);
     }
     else
-        throw NO_STRING_FOR_WRITING;
+        throw SyntaxError(SyntaxError::NO_STRING_FOR_WRITING, sCmd, SyntaxError::invalid_position);
     if (bAppend)
         fFile.open(sFileName.c_str(), ios_base::app | ios_base::out | ios_base::ate);
     else if (bTrunc)
@@ -8555,12 +8609,12 @@ bool BI_writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _o
     }
     if (fFile.fail())
     {
-        sErrorToken = sFileName;
-        throw CANNOT_READ_FILE;
+        //sErrorToken = sFileName;
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sCmd, SyntaxError::invalid_position, sFileName);
     }
 
     if (!sExpression.length() || sExpression == "\"\"")
-        throw NO_STRING_FOR_WRITING;
+        throw SyntaxError(SyntaxError::NO_STRING_FOR_WRITING, sCmd, SyntaxError::invalid_position);
 
     while (sExpression.length())
     {
@@ -8628,8 +8682,8 @@ bool BI_readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _
 
             if (sExt == ".exe" || sExt == ".dll" || sExt == ".sys")
             {
-                sErrorToken = sExt;
-                throw FILETYPE_MAY_NOT_BE_WRITTEN;
+                //sErrorToken = sExt;
+                throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, sCmd, SyntaxError::invalid_position, sExt);
             }
             _fSys.declareFileType(sExt);
         }
@@ -8660,23 +8714,23 @@ bool BI_readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _
 
             if (sExt == ".exe" || sExt == ".dll" || sExt == ".sys")
             {
-                sErrorToken = sExt;
-                throw FILETYPE_MAY_NOT_BE_WRITTEN;
+                //sErrorToken = sExt;
+                throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, sCmd, SyntaxError::invalid_position, sExt);
             }
             _fSys.declareFileType(sExt);
         }
         sFileName = _fSys.ValidFileName(sFileName, sExt);
     }
     if (!sFileName.length())
-        throw NO_FILENAME;
+        throw SyntaxError(SyntaxError::NO_FILENAME, sCmd, SyntaxError::invalid_position);
 
     sCmd.clear();
 
     fFile.open(sFileName.c_str());
     if (fFile.fail())
     {
-        sErrorToken = sFileName;
-        throw CANNOT_READ_FILE;
+        //sErrorToken = sFileName;
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sFileName);
     }
 
     while (!fFile.eof())

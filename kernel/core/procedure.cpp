@@ -101,7 +101,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
 
     if (NumeReKernel::GetAsyncCancelState())//GetAsyncKeyState(VK_ESCAPE))
     {
-        throw PROCESS_ABORTED_BY_USER;
+        throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
     }
     // --> Erneuere den Fenstertitel der Konsole <--
     SetConsTitle(_data, _option, _script.getScriptFileNameShort());
@@ -212,7 +212,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
                 continue;
             unsigned int nParPos = getMatchingParenthesis(sLine.substr(nPos));
             if (nParPos == string::npos)
-                throw UNMATCHED_PARENTHESIS;
+                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
             string sCmdString = sLine.substr(nPos+1, nParPos-1);
             StripSpaces(sCmdString);
             if (containsStrings(sCmdString) || _data.containsStringVars(sCmdString))
@@ -229,6 +229,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
 
     if (findCommand(sLine).sString == "throw" && !getLoop())
     {
+        string sErrorToken;
         if (sLine.length() > 6 && (containsStrings(sLine) || _data.containsStringVars(sLine)))
         {
             if (_data.containsStringVars(sLine))
@@ -237,7 +238,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
             sErrorToken += " -nq";
             parser_StringParser(sErrorToken, sCache, _data, _parser, _option, true);
         }
-        throw PROCEDURE_THROW;
+        throw SyntaxError(SyntaxError::PROCEDURE_THROW, sLine, SyntaxError::invalid_position, sErrorToken);
     }
     // --> Ist das letzte Zeichen ein ';'? Dann weise bProcSupressAnswer TRUE zu <--
     while (sLine.back() == ';')
@@ -287,7 +288,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
     if (!getLoop() && sLine.substr(0,3) != "for" && sLine.substr(0,2) != "if" && sLine.substr(0,5) != "while")
     {
         if (!_functions.call(sLine, _option))
-            throw FUNCTION_ERROR;
+            throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
     }
     // --> Nochmals ueberzaehlige Leerzeichen entfernen <--
     StripSpaces(sLine);
@@ -360,7 +361,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
         }
         else if (!nReturn)
         {
-            throw STRING_ERROR;
+            throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
         }
         if (sCache.length() && _data.containsCacheElements(sCache) && !bWriteToCache)
             bWriteToCache = true;
@@ -423,7 +424,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
             if (bMultLinCol[0] && bMultLinCol[1])
             {
                 thisReturnVal.vNumVal.push_back(NAN);
-                throw NO_MATRIX;
+                throw SyntaxError(SyntaxError::NO_MATRIX, sCache, SyntaxError::invalid_position);
                 //return thisReturnVal;
             }
             if (parser_ExprNotEmpty(si_pos[0]))
@@ -616,7 +617,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
     }*/
     _option._debug.pushStackItem(sProc + "(" + sVarList + ")");
     if (!setProcName(sProc))
-        throw INVALID_PROCEDURE_NAME;
+        throw SyntaxError(SyntaxError::INVALID_PROCEDURE_NAME, sProc, SyntaxError::invalid_position);
     //cerr << "Procedure started: " << sProc << endl;
     //cerr << "sVarList: " << sVarList << endl;
     sVarList = " " + sVarList + " ";
@@ -654,7 +655,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
         fProc_in.close();
         if (_option.getUseDebugger())
             _option._debug.popStackItem();
-        throw FILE_NOT_EXIST;
+        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "", SyntaxError::invalid_position, sCurrentProcedureName);
     }
     if (sProc.length() > 5 && sProc.substr(sProc.length()-5) == ".nprc")
         sProc = sProc.substr(0, sProc.rfind('.'));
@@ -821,7 +822,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                         {
                             _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                         }
-                        throw PROCEDURE_ERROR;
+                        throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sProcCommandLine, SyntaxError::invalid_position);
                     }
                     else if (nReturn == -2)
                     {
@@ -925,12 +926,12 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             fInclude.open(sIncludeFileName.c_str());
             if (fInclude.fail())
             {
-                sErrorToken = sIncludeFileName;
+                //sErrorToken = sIncludeFileName;
                 bReadingFromInclude = false;
                 fInclude.close();
                 if (_option.getUseDebugger())
                     _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                throw SCRIPT_NOT_EXIST;
+                throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sProcCommandLine, SyntaxError::invalid_position, sIncludeFileName);
             }
             continue;
         }
@@ -944,7 +945,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
         {
             string sVarDeclarationList = sProcCommandLine.substr(sProcCommandLine.find('('));
             if (getMatchingParenthesis(sVarDeclarationList) == string::npos)
-                throw UNMATCHED_PARENTHESIS;
+                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sProcCommandLine, sProcCommandLine.find('('));
             if (sVarDeclarationList.find("::", getMatchingParenthesis(sVarDeclarationList)) != string::npos)
             {
                 unsigned int nMatch = sVarDeclarationList.find("::", getMatchingParenthesis(sVarDeclarationList));
@@ -954,13 +955,14 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 {
                     if (sThisNameSpace != sCallingNameSpace)
                     {
+                        string sErrorToken;
                         if (sCallingNameSpace == "main")
                             sErrorToken = "\"" + sThisNameSpace + "\" aus dem globalen Namensraum";
                         else
                             sErrorToken = "\"" + sThisNameSpace + "\" aus dem Namensraum \"" + sCallingNameSpace + "\"";
                         if (_option.getUseDebugger())
                             _option._debug.popStackItem();
-                        throw PRIVATE_PROCEDURE_CALLED;
+                        throw SyntaxError(SyntaxError::PRIVATE_PROCEDURE_CALLED, sProcCommandLine, SyntaxError::invalid_position, sErrorToken);
                     }
                 }
                 if (sVarDeclarationList.find("inline", nMatch) != string::npos)
@@ -974,15 +976,15 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             {
                 if (_option.getUseDebugger())
                     _option._debug.gatherInformations(0, 0, 0, 0, 0, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                sErrorToken = "var";
-                throw WRONG_ARG_NAME;
+                //sErrorToken = "var";
+                throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "var");
             }
             if (findCommand(sVarList, "str").sString == "str" || findCommand(sVarDeclarationList, "str").sString == "str")
             {
                 if (_option.getUseDebugger())
                     _option._debug.gatherInformations(0, 0, 0, 0, 0, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                sErrorToken = "str";
-                throw WRONG_ARG_NAME;
+                //sErrorToken = "str";
+                throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "str");
             }
             StripSpaces(sVarDeclarationList);
             StripSpaces(sVarList);
@@ -990,7 +992,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             {
                 if (_option.getUseDebugger())
                     _option._debug.popStackItem();
-                throw TOO_MANY_ARGS;
+                throw SyntaxError(SyntaxError::TOO_MANY_ARGS, sProcCommandLine, SyntaxError::invalid_position);
             }
             if (sVarDeclarationList.length())
             {
@@ -1000,7 +1002,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 {
                     if (_option.getUseDebugger())
                         _option._debug.gatherInformations(0, 0, 0, 0, 0, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                    throw UNMATCHED_PARENTHESIS;
+                    throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sProcCommandLine, SyntaxError::invalid_position);
                 }
                 for (unsigned int i = 0; i < sVarDeclarationList.length(); i++)
                 {
@@ -1015,7 +1017,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 {
                     if (_option.getUseDebugger())
                         _option._debug.gatherInformations(0, 0, 0, 0, 0, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                    throw UNMATCHED_PARENTHESIS;
+                    throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sProcCommandLine, SyntaxError::invalid_position);
                 }
                 nVarMapSize = nVars;
                 //cerr << "nVars: " << nVars << endl;
@@ -1032,8 +1034,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                         delete[] sVarMap;
                         if (_option.getUseDebugger())
                             _option._debug.gatherInformations(0, 0, 0, 0, 0, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                        sErrorToken = "var";
-                        throw WRONG_ARG_NAME;
+                        //sErrorToken = "var";
+                        throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "var");
                     }
                     if (findCommand(sVarMap[i][0]).sString == "str")
                     {
@@ -1042,8 +1044,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                         delete[] sVarMap;
                         if (_option.getUseDebugger())
                             _option._debug.gatherInformations(0, 0, 0, 0, 0, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                        sErrorToken = "str";
-                        throw WRONG_ARG_NAME;
+                        //sErrorToken = "str";
+                        throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "str");
                     }
 
                     if (i < nVarMapSize-1 && sVarList.length() && sVarList.find(',') != string::npos)
@@ -1057,8 +1059,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             delete[] sVarMap;
                             if (_option.getUseDebugger())
                                 _option._debug.gatherInformations(0, 0, 0, 0, 0, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                            sErrorToken = "var";
-                            throw WRONG_ARG_NAME;
+                            //sErrorToken = "var";
+                            throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "var");
                         }
                         if (findCommand(sVarMap[i][1]).sString == "str")
                         {
@@ -1067,8 +1069,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             delete[] sVarMap;
                             if (_option.getUseDebugger())
                                 _option._debug.gatherInformations(0, 0, 0, 0, 0, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                            sErrorToken = "str";
-                            throw WRONG_ARG_NAME;
+                            //sErrorToken = "str";
+                            throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "str");
                         }
                         if (sVarMap[i][1].length() && sVarMap[i][0].find('=') != string::npos)
                         {
@@ -1089,7 +1091,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             delete[] sVarMap;
                             if (_option.getUseDebugger())
                                 _option._debug.popStackItem();
-                            throw MISSING_DEFAULT_VALUE;
+                            throw SyntaxError(SyntaxError::MISSING_DEFAULT_VALUE, sProcCommandLine, sVarMap[i][0], sVarMap[i][0]);
                         }
                     }
                     else if (sVarList.length())
@@ -1104,8 +1106,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             delete[] sVarMap;
                             if (_option.getUseDebugger())
                                 _option._debug.gatherInformations(0, 0, 0, 0, 0, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                            sErrorToken = "var";
-                            throw WRONG_ARG_NAME;
+                            //sErrorToken = "var";
+                            throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "var");
                         }
                         if (findCommand(sVarMap[i][1]).sString == "str")
                         {
@@ -1114,8 +1116,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             delete[] sVarMap;
                             if (_option.getUseDebugger())
                                 _option._debug.gatherInformations(0, 0, 0, 0, 0, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                            sErrorToken = "str";
-                            throw WRONG_ARG_NAME;
+                            //sErrorToken = "str";
+                            throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "str");
                         }
                         if (sVarMap[i][0].find('=') != string::npos)
                         {
@@ -1139,7 +1141,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             delete[] sVarMap;
                             if (_option.getUseDebugger())
                                 _option._debug.popStackItem();
-                            throw MISSING_DEFAULT_VALUE;
+                            throw SyntaxError(SyntaxError::MISSING_DEFAULT_VALUE, sProcCommandLine, sVarMap[i][0], sVarMap[i][0]);
                         }
                     }
                 }
@@ -1156,7 +1158,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             for (unsigned int j = 0; j < nVarMapSize; j++)
                                 delete[] sVarMap[j];
                             delete[] sVarMap;
-                            throw INLINE_PROCEDURE_IS_NOT_INLINE;
+                            throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sProcCommandLine, SyntaxError::invalid_position);
                         }
                         try
                         {
@@ -1166,7 +1168,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                                 if (_option.getUseDebugger())
                                     _option._debug.gatherInformations(0, 0, 0, 0, 0, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
 
-                                throw PROCEDURE_ERROR;
+                                throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sProcCommandLine, SyntaxError::invalid_position);
                             }
                             else if (nReturn == -2)
                                 sVarMap[i][1] = "false";
@@ -1201,7 +1203,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
         mVarMap.clear();
         if (_option.getUseDebugger())
             _option._debug.popStackItem();
-        throw PROCEDURE_NOT_FOUND;
+        throw SyntaxError(SyntaxError::PROCEDURE_NOT_FOUND, "", SyntaxError::invalid_position, sProc);
     }
     sProcCommandLine = "";
     while (!fProc_in.eof())
@@ -1372,7 +1374,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             if (_option.getUseDebugger())
                                 _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                             deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
-                            throw INLINE_PROCEDURE_IS_NOT_INLINE;
+                            throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sProcCommandLine, SyntaxError::invalid_position);
                         }
 
                         try
@@ -1382,7 +1384,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                             {
                                 if (_option.getUseDebugger())
                                     _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                                throw PROCEDURE_ERROR;
+                                throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sProcCommandLine, SyntaxError::invalid_position);
                             }
                             else if (nReturn == -2)
                             {
@@ -1458,7 +1460,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 {
                     if (_option.getUseDebugger())
                         _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                    throw UNMATCHED_PARENTHESIS;
+                    throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sProcCommandLine, SyntaxError::invalid_position);
                 }
             }
 
@@ -1673,14 +1675,14 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                                 delete[] sLocalVars[j];
                             }
                             delete[] sLocalVars;
-                            throw INLINE_PROCEDURE_IS_NOT_INLINE;
+                            throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sProcCommandLine, SyntaxError::invalid_position);
                         }
                         try
                         {
                             int nReturn = procedureInterface(sVarValue, _parser, _functions, _data, _out, _pData, _script, _option, nth_procedure);
                             if (nReturn == -1)
                             {
-                                throw PROCEDURE_ERROR;
+                                throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sProcCommandLine, SyntaxError::invalid_position);
                             }
                             else if (nReturn == -2)
                                 sVarValue = "false";
@@ -1717,7 +1719,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                                     delete[] sLocalVars[j];
                                 }
                                 delete[] sLocalVars;
-                                throw STRING_ERROR;
+                                throw SyntaxError(SyntaxError::STRING_ERROR, sProcCommandLine, SyntaxError::invalid_position);
                             }
                         }
                         if (sVarValue.find("data(") != string::npos || _data.containsCacheElements(sVarValue))
@@ -1816,14 +1818,14 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                                 delete[] sLocalStrings[j];
                             }
                             delete[] sLocalStrings;
-                            throw INLINE_PROCEDURE_IS_NOT_INLINE;
+                            throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sProcCommandLine, SyntaxError::invalid_position);
                         }
                         try
                         {
                             int nReturn = procedureInterface(sVarValue, _parser, _functions, _data, _out, _pData, _script, _option, nth_procedure);
                             if (nReturn == -1)
                             {
-                                throw PROCEDURE_ERROR;
+                                throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sProcCommandLine, SyntaxError::invalid_position);
                             }
                             else if (nReturn == -2)
                                 sVarValue = "false";
@@ -1907,7 +1909,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                                     delete[] sLocalStrings[j];
                                 }
                                 delete[] sLocalStrings;
-                                throw STRING_ERROR;
+                                throw SyntaxError(SyntaxError::STRING_ERROR, sProcCommandLine, SyntaxError::invalid_position);
                             }
                         }
 
@@ -2033,13 +2035,13 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             fInclude.open(sIncludeFileName.c_str());
             if (fInclude.fail())
             {
-                sErrorToken = sIncludeFileName;
+                //sErrorToken = sIncludeFileName;
                 bReadingFromInclude = false;
                 fInclude.close();
                 if (_option.getUseDebugger())
                     _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                 deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
-                throw SCRIPT_NOT_EXIST;
+                throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sProcCommandLine, SyntaxError::invalid_position, sIncludeFileName);
             }
             sProcCommandLine = "";
             continue;
@@ -2058,44 +2060,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 if (_option.getUseDebugger())
                     _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                 deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
-               /* if (sLocalVars && dLocalVars)
-                {
-                    for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                    {
-                        _parser.RemoveVar(sLocalVars[i][1]);
-                    }
-                }
-                if (sLocalStrings)
-                {
-                    for (unsigned int i = 0; i < nLocalStrMapSize; i++)
-                    {
-                        _data.removeStringVar(sLocalStrings[i][1]);
-                        delete[] sLocalStrings[i];
-                    }
-                    delete[] sLocalStrings;
-                }
-                if (sVarMap)
-                {
-                    for (unsigned int i = 0; i < nVarMapSize; i++)
-                        delete[] sVarMap[i];
-                    delete[] sVarMap;
-                    sVarMap = 0;
-                }
-                if (sLocalVars)
-                {
-                    for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                        delete[] sLocalVars[i];
-                    delete[] sLocalVars;
-                    sLocalVars = 0;
-                }
-                if (dLocalVars)
-                {
-                    delete[] dLocalVars;
-                    dLocalVars = 0;
-                }
-                sCallingNameSpace = "main";
-                mVarMap.clear();*/
-                throw INLINE_PROCEDURE_IS_NOT_INLINE;
+                throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sProcCommandLine, SyntaxError::invalid_position);
             }
         }
 
@@ -2106,44 +2071,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 if (_option.getUseDebugger())
                     _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                 deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
-                /*if (sLocalVars && dLocalVars)
-                {
-                    for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                    {
-                        _parser.RemoveVar(sLocalVars[i][1]);
-                    }
-                }
-                if (sLocalStrings)
-                {
-                    for (unsigned int i = 0; i < nLocalStrMapSize; i++)
-                    {
-                        _data.removeStringVar(sLocalStrings[i][1]);
-                        delete[] sLocalStrings[i];
-                    }
-                    delete[] sLocalStrings;
-                }
-                if (sVarMap)
-                {
-                    for (unsigned int i = 0; i < nVarMapSize; i++)
-                        delete[] sVarMap[i];
-                    delete[] sVarMap;
-                    sVarMap = 0;
-                }
-                if (sLocalVars)
-                {
-                    for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                        delete[] sLocalVars[i];
-                    delete[] sLocalVars;
-                    sLocalVars = 0;
-                }
-                if (dLocalVars)
-                {
-                    delete[] dLocalVars;
-                    dLocalVars = 0;
-                }
-                sCallingNameSpace = "main";
-                mVarMap.clear();*/
-                throw INLINE_PROCEDURE_IS_NOT_INLINE;
+
+                throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sProcCommandLine, SyntaxError::invalid_position);
             }
 
             Procedure _procedure(*this);
@@ -2175,35 +2104,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     if (_option.getUseDebugger())
                         _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                     deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
-                    /*if (sVarMap)
-                    {
-                        for (unsigned int i = 0; i < nVarMapSize; i++)
-                            delete[] sVarMap[i];
-                        delete[] sVarMap;
-                    }
-                    if (sLocalVars)
-                    {
-                        for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                        {
-                            _parser.RemoveVar(sLocalVars[i][1]);
-                            delete[] sLocalVars[i];
-                        }
-                        delete[] sLocalVars;
-                        delete[] dLocalVars;
-                    }
-                    if (sLocalStrings)
-                    {
-                        for (unsigned int i = 0; i < nLocalStrMapSize; i++)
-                        {
-                            _data.removeStringVar(sLocalStrings[i][1]);
-                            delete[] sLocalStrings[i];
-                        }
-                        delete[] sLocalStrings;
-                    }
-
-                    sCallingNameSpace = "main";
-                    mVarMap.clear();*/
-                    throw UNMATCHED_PARENTHESIS;
+                    throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sProcCommandLine, nParPos);
                 }
                 nParPos += getMatchingParenthesis(sProcCommandLine.substr(nParPos));
                 __sVarList = __sVarList.substr(1,getMatchingParenthesis(__sVarList)-1);
@@ -2259,7 +2160,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 if (_option.getUseDebugger())
                     _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                 deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
-                throw INLINE_PROCEDURE_IS_NOT_INLINE;
+                throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sProcCommandLine, SyntaxError::invalid_position);
             }
 
             Procedure _procedure(*this);
@@ -2313,47 +2214,11 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             if (_option.getUseDebugger())
                 _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
             deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
-            /*if (sLocalVars && dLocalVars)
-            {
-                for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                {
-                    _parser.RemoveVar(sLocalVars[i][1]);
-                }
-            }
-            if (sLocalStrings)
-            {
-                for (unsigned int i = 0; i < nLocalStrMapSize; i++)
-                {
-                    _data.removeStringVar(sLocalStrings[i][1]);
-                    delete[] sLocalStrings[i];
-                }
-                delete[] sLocalStrings;
-            }
-            if (sVarMap)
-            {
-                for (unsigned int i = 0; i < nVarMapSize; i++)
-                    delete[] sVarMap[i];
-                delete[] sVarMap;
-                sVarMap = 0;
-            }
-            if (sLocalVars)
-            {
-                for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-                    delete[] sLocalVars[i];
-                delete[] sLocalVars;
-                sLocalVars = 0;
-            }
-            if (dLocalVars)
-            {
-                delete[] dLocalVars;
-                dLocalVars = 0;
-            }
-            sCallingNameSpace = "main";
-            mVarMap.clear();*/
-            throw INSTALL_CMD_FOUND;
+            throw SyntaxError(SyntaxError::INSTALL_CMD_FOUND, sProcCommandLine, SyntaxError::invalid_position);
         }
         if (findCommand(sProcCommandLine).sString == "throw" && !getLoop())
         {
+            string sErrorToken;
             if (sProcCommandLine.length() > 7 && (containsStrings(sProcCommandLine) || _data.containsStringVars(sProcCommandLine)))
             {
                 if (_data.containsStringVars(sProcCommandLine))
@@ -2367,7 +2232,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
             deleteVars(_parser, _data, bSupressAnswer_back, sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sVarMap, nVarMapSize);
 
-            throw PROCEDURE_THROW;
+            throw SyntaxError(SyntaxError::PROCEDURE_THROW, sProcCommandLine, SyntaxError::invalid_position, sErrorToken);
         }
         if (findCommand(sProcCommandLine).sString == "return" && !getLoop())
         {
@@ -2465,7 +2330,7 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, Define& _funct
             __sVarList = sLine.substr(nParPos);
             if (getMatchingParenthesis(sLine.substr(nParPos)) == string::npos)
             {
-                throw UNMATCHED_PARENTHESIS;
+                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nParPos);
             }
             nParPos += getMatchingParenthesis(sLine.substr(nParPos));
             __sVarList = __sVarList.substr(1,getMatchingParenthesis(__sVarList)-1);
@@ -2492,13 +2357,7 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, Define& _funct
                 {
                     replaceReturnVal(sLine, _parser, tempreturnval, nPos-1, nParPos+1, "PROC~["+__sName+"~"+toString(nProc)+"_"+toString((int)nth_procedure)+"_"+toString((int)(nth_command+nth_procedure))+"]");
                 }
-                 /*if (tempreturnval.vStringVal.size())
-                    sLine = sLine.substr(0,nPos-1) + tempreturnval.sStringVal + sLine.substr(nParPos+1);
-                else
-                    sLine = sLine.substr(0,nPos-1) + toCmdString(tempreturnval.dNumVal) + sLine.substr(nParPos+1);*/
-                //cerr << sLine << endl;
-//                sCurrentProcedureName = sProcNames.substr(sProcNames.rfind(';',sProcNames.rfind(';')-1)+1, sProcNames.rfind(';')-sProcNames.rfind(';',sProcNames.rfind(';')-1)-1);
-//                sProcNames = sProcNames.substr(0,sProcNames.rfind(';'));
+
                 nReturnType = 1;
             }
             nPos += __sName.length() + __sVarList.length() + 1;
@@ -2764,8 +2623,8 @@ bool Procedure::writeProcedure(string sProcedureLine)
         fProcedure.close();
         if (nthBlock)
         {
-            sErrorToken = sCurrentProcedureName;
-            throw IF_OR_LOOP_SEEMS_NOT_TO_BE_CLOSED;
+            //sErrorToken = sCurrentProcedureName;
+            throw SyntaxError(SyntaxError::IF_OR_LOOP_SEEMS_NOT_TO_BE_CLOSED, sProcedureLine, SyntaxError::invalid_position, sCurrentProcedureName);
         }
         sCurrentProcedureName = "";
     }
@@ -2815,8 +2674,8 @@ bool Procedure::isInline(const string& sProc)
                             __sFileName = sProcNames.substr(sProcNames.rfind(';')+1);
                         else
                         {
-                            sErrorToken = "thisfile";
-                            throw PRIVATE_PROCEDURE_CALLED;
+                            //sErrorToken = "thisfile";
+                            throw SyntaxError(SyntaxError::PRIVATE_PROCEDURE_CALLED, sProc, SyntaxError::invalid_position, "thisfile");
                         }
                         __sFileName = ValidFileName(__sFileName, ".nprc");
                     }
@@ -2846,7 +2705,7 @@ bool Procedure::isInline(const string& sProc)
                 if (fProc_in.fail())
                 {
                     fProc_in.close();
-                    throw FILE_NOT_EXIST;
+                    throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sProc, SyntaxError::invalid_position, __sFileName);
                 }
                 if (__sName.find('/') != string::npos)
                 {
@@ -2898,7 +2757,7 @@ bool Procedure::isInline(const string& sProc)
                     {
                         string sVarDeclarationList = sProcCommandLine.substr(sProcCommandLine.find('('));
                         if (getMatchingParenthesis(sVarDeclarationList) == string::npos)
-                            throw UNMATCHED_PARENTHESIS;
+                            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sProcCommandLine, sProcCommandLine.find('('));
                         if (sVarDeclarationList.find("::", getMatchingParenthesis(sVarDeclarationList)) != string::npos)
                         {
                             unsigned int nMatch = sVarDeclarationList.find("::", getMatchingParenthesis(sVarDeclarationList));
@@ -2917,7 +2776,7 @@ bool Procedure::isInline(const string& sProc)
                 }
                 if (fProc_in.is_open() && fProc_in.eof())
                 {
-                    throw PROCEDURE_NOT_FOUND;
+                    throw SyntaxError(SyntaxError::PROCEDURE_NOT_FOUND, sProcCommandLine, SyntaxError::invalid_position, sProc);
                 }
             }
             //cerr << nPos << endl;

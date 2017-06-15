@@ -757,7 +757,7 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
             string strvar = parser_CreateStringVectorVar(_res.vResult, mStringVectorVars);
 
             if (!strvar.length())
-                throw STRING_ERROR;
+                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
             sLine = sLeftSide + strvar;
 
 //            if (!containsStrings(sLine) && !_data.containsStringVars(sLine))
@@ -794,7 +794,7 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
                         string strvar = parser_CreateStringVectorVar(_res.vResult, mStringVectorVars);
 
                         if (!strvar.length())
-                            throw STRING_ERROR;
+                            throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                         sLine = sLeftSide + strvar;
 
             //            if (!containsStrings(sLine) && !_data.containsStringVars(sLine))
@@ -828,7 +828,7 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
             unsigned int nPos = getMatchingParenthesis(sLine);
             nPos = sLine.find('=', nPos);
             if (nPos == string::npos)
-                throw STRING_ERROR;
+                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
             if (sLine[nPos+1] == '=')
                 nPos++;
             sStringObject = sLine.substr(0, nPos + 1);
@@ -905,7 +905,7 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
         if (sObject.length() && !sCache.length())
             sCache = sObject;
         if (sLine.find("string(") != string::npos || _data.containsStringVars(sLine))
-            throw STRING_ERROR;
+            throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
         // make sure that there are parseable characters
         if (sLine.find_first_not_of("+-*/:?!.,;%&<>=^ ") != string::npos && bParseNumericals)
@@ -947,7 +947,7 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
                 for (size_t j = i; j < sLine.length(); j++)
                 {
                     if (sLine[j] == '"')
-                        throw STRING_ERROR;
+                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                     if ((sLine[j] == '(' || sLine[j] == '{') && getMatchingParenthesis(sLine.substr(j)) != string::npos)
                         j += getMatchingParenthesis(sLine.substr(j));
                     if (sLine[j] == ' ' || sLine[j] == '+')
@@ -964,7 +964,7 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
             if (sLine[i] == '(' && !(nQuotes % 2))
             {
                 if (getMatchingParenthesis(sLine.substr(i)) == string::npos)
-                    throw UNMATCHED_PARENTHESIS;
+                    throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, i);
 
                 size_t nPos = getMatchingParenthesis(sLine.substr(i)) + i;
                 if (i < 6 || (i >= 6 && sLine.substr(i-6,6) != "string"))
@@ -979,7 +979,7 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
                             string strvar = parser_CreateStringVectorVar(_res.vResult, mStringVectorVars);
 
                             if (!strvar.length())
-                                throw STRING_ERROR;
+                                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                             sLine = sLine.substr(0,i+1) + strvar + sLine.substr(nPos);
                         }
                     }
@@ -991,7 +991,7 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
                             string strvar = parser_CreateStringVectorVar(_res.vResult, mStringVectorVars);
 
                             if (!strvar.length())
-                                throw STRING_ERROR;
+                                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                             sLine = sLine.substr(0,i) + strvar + sLine.substr(nPos+1);
                         }
                     }
@@ -1026,7 +1026,7 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
         if (sObject.length() && !sCache.length())
             sCache = sObject;
         if (sLine.find("string(") != string::npos || _data.containsStringVars(sLine))
-            throw STRING_ERROR;
+            throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
         return StringResult(sLine);
     }
 
@@ -1051,14 +1051,14 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
     strRes.vResult = parser_EvaluateStringVectors(sLine, mStringVectorVars);
 
     if (!strRes.vResult.size())
-        throw STRING_ERROR;
+        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
     // Apply some elementary operations such as concatenation and logical operations
     strRes.vNoStringVal = parser_ApplyElementaryStringOperations(strRes.vResult, _parser, _option, strRes.bOnlyLogicals);
 
         // store the string results in the variables or inb "string()" respectively
     if (!parser_StoreStringResults(strRes.vResult, strRes.vNoStringVal, sObject, _data, _parser, _option))
-        throw STRING_ERROR;
+        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
     return strRes;
 }
@@ -1074,7 +1074,7 @@ string parser_CreateStringVectorVar(const vector<string>& vStringVector, map<str
 
     // Does it already exist?
     if (mStringVectorVars.find(strVectName) != mStringVectorVars.end())
-        throw STRING_ERROR;
+        throw SyntaxError(SyntaxError::STRING_ERROR, strVectName, SyntaxError::invalid_position);
 
     // save the vector
     mStringVectorVars[strVectName] = vStringVector;
@@ -1174,7 +1174,7 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
         }
         unsigned int nPos = n_pos + 11;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
+            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
         nPos += getMatchingParenthesis(sLine.substr(nPos));
         if (!isInQuotes(sLine, n_pos, true) && !isInQuotes(sLine, nPos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 13))))
         {
@@ -1183,7 +1183,7 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
             {
                 StringResult strRes = parser_StringParserCore(sToString, "", _data, _parser, _option, mStringVectorVars);
                 if (!strRes.vResult.size())
-                    throw STRING_ERROR;
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 //                for (size_t n = 0; n < strRes.vResult.size(); n++)
 //                {
 //                    for (unsigned int i = 0; i < strRes.vResult[n].length(); i++)
@@ -1211,7 +1211,7 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
             continue;
         unsigned int nParPos = getMatchingParenthesis(sLine.substr(n_pos));
         if (nParPos == string::npos)
-            throw UNMATCHED_PARENTHESIS;
+            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, n_pos);
         if (!isInQuotes(sLine, nParPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 8))))
         {
             string sCmdString = sLine.substr(n_pos+1, nParPos-1);
@@ -1220,7 +1220,7 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
             {
                 StringResult strRes = parser_StringParserCore(sCmdString, "", _data, _parser, _option, mStringVectorVars);
                 if (!strRes.vResult.size())
-                    throw STRING_ERROR;
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                 // use only the first one
                 sCmdString = strRes.vResult[0];
             }
@@ -1241,7 +1241,7 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
         }
         unsigned int nPos = n_pos + 9;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
+            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
         nPos += getMatchingParenthesis(sLine.substr(nPos));
         if (!isInQuotes(sLine, nPos, true)
             && !isInQuotes(sLine, n_pos, true)
@@ -1268,14 +1268,14 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
         }
         unsigned int nPos = n_pos + 10;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
+            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
         nPos += getMatchingParenthesis(sLine.substr(nPos));
         if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 12))))
         {
             string _sObject = sLine.substr(n_pos+11, nPos-n_pos-11);
             StringResult strRes = parser_StringParserCore(_sObject, "", _data, _parser, _option, mStringVectorVars);
             if (!strRes.vResult.size())
-                throw STRING_ERROR;
+                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
             // use only first one
             string sType = strRes.vResult[0];
             int nType = 0;
@@ -1293,7 +1293,7 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
             {
                 StringResult strRes = parser_StringParserCore(sType, "", _data, _parser, _option, mStringVectorVars);
                 if (!strRes.vResult.size())
-                    throw STRING_ERROR;
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                 sType = strRes.vResult[0];
             }
             _parser.SetExpr(sType);
@@ -1446,7 +1446,7 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
         }
         unsigned int nPos = n_pos + 7;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && !isInQuotes(sLine, nPos))
-            throw UNMATCHED_PARENTHESIS;
+            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
         nPos += getMatchingParenthesis(sLine.substr(nPos));
         if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 9))))
         {
@@ -1455,7 +1455,7 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
             {
                 StringResult strRes = parser_StringParserCore(sData, "", _data, _parser, _option, mStringVectorVars);
                 if (!strRes.vResult.size())
-                    throw STRING_ERROR;
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                 // use only first one
                 sData = strRes.vResult[0];
             }
@@ -1484,7 +1484,7 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
         }
         unsigned int nPos = n_pos + 8;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
+            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
         nPos += getMatchingParenthesis(sLine.substr(nPos));
         if (!isInQuotes(sLine, n_pos, true) && !isInQuotes(sLine, nPos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 10))))
         {
@@ -1499,7 +1499,7 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
                 {
                     StringResult strRes = parser_StringParserCore(sChar, "", _data, _parser, _option, mStringVectorVars);
                     if (!strRes.vResult.size())
-                        throw STRING_ERROR;
+                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                     // use only first one
                     sChar = removeQuotationMarks(strRes.vResult[0]);
                 }
@@ -1543,7 +1543,7 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
             {
                 StringResult strRes = parser_StringParserCore(sExpr, "", _data, _parser, _option, mStringVectorVars);
                 if (!strRes.vResult.size())
-                    throw STRING_ERROR;
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                 for (size_t i = 0; i < strRes.vResult.size(); i++)
                 {
                     while (strRes.vResult[i].length() < nCount && sChar.length())
@@ -1717,7 +1717,7 @@ void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& 
 
         // If no matching parenthesis is found, throw an error
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
+            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
 
         nPos += getMatchingParenthesis(sLine.substr(nPos));
 
@@ -1737,7 +1737,7 @@ void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& 
                 size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, mStringVectorVars, nIntArg);
                 if (!nMaxArgs)
                 {
-                    throw STRING_ERROR;
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                 }
                 if (funcHandle.bTakesMultiArguments)
                 {
@@ -1759,7 +1759,7 @@ void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& 
                 size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, mStringVectorVars, sStringArg);
                 if (!nMaxArgs)
                 {
-                    throw STRING_ERROR;
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                 }
                 if (funcHandle.bTakesMultiArguments)
                 {
@@ -1782,7 +1782,7 @@ void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& 
                 size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, mStringVectorVars, sStringArg, nIntArg1, nIntArg2);
                 if (!nMaxArgs)
                 {
-                    throw STRING_ERROR;
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                 }
                 for (size_t i = 0; i < nMaxArgs; i++)
                 {
@@ -1816,7 +1816,7 @@ void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& 
                 size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, mStringVectorVars, sStringArg1, nIntArg1, nIntArg2, sStringArg2);
                 if (!nMaxArgs)
                 {
-                    throw STRING_ERROR;
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                 }
                 for (size_t i = 0; i < nMaxArgs; i++)
                 {
@@ -1855,7 +1855,7 @@ void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& 
                 size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, mStringVectorVars, sStringArg1, sStringArg2, nIntArg1, nIntArg2);
                 if (!nMaxArgs)
                 {
-                    throw STRING_ERROR;
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                 }
                 for (size_t i = 0; i < nMaxArgs; i++)
                 {
@@ -1894,7 +1894,7 @@ void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& 
                 size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, mStringVectorVars, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2);
                 if (!nMaxArgs)
                 {
-                    throw STRING_ERROR;
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                 }
                 for (size_t i = 0; i < nMaxArgs; i++)
                 {
@@ -2206,7 +2206,7 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
         }
         unsigned int nPos = n_pos + 6;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-            throw UNMATCHED_PARENTHESIS;
+            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
         nPos += getMatchingParenthesis(sLine.substr(nPos));
         if (!isInQuotes(sLine, n_pos, true) && !isInQuotes(sLine, nPos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 8))))
         {
@@ -2220,7 +2220,7 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
             {
                 StringResult strRes = parser_StringParserCore(sString, "", _data, _parser, _option, mStringVectorVars, false);
                 if (!strRes.vResult.size())
-                    throw STRING_ERROR;
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                 sString = strRes.vResult[0];
                 if (sString.find(':') != string::npos)
                 {
@@ -2351,7 +2351,7 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
         }
         unsigned int nPos = n_pos + 4;
         if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && !isInQuotes(sLine, nPos))
-            throw UNMATCHED_PARENTHESIS;
+            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
         nPos += getMatchingParenthesis(sLine.substr(nPos));
         if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 6))))
         {
@@ -2368,7 +2368,7 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
             parser_GetDataElement(sData, _parser, _data, _option);
             StringResult strRes = parser_StringParserCore(sData, "", _data, _parser, _option, mStringVectorVars);
             if (!strRes.vResult.size())
-                throw STRING_ERROR;
+                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
             sData = strRes.vResult[0];
             StripSpaces(sData);
             sLine = sLine.substr(0,n_pos) + sData + sLine.substr(nPos+1);
@@ -2391,7 +2391,7 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
                 }
                 unsigned int nPos = n_pos + (iter->first).length();
                 if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && !isInQuotes(sLine, nPos))
-                    throw UNMATCHED_PARENTHESIS;
+                    throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
                 nPos += getMatchingParenthesis(sLine.substr(nPos));
                 if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, (iter->first).length()+2))))
                 {
@@ -2407,7 +2407,7 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
                     parser_GetDataElement(sData, _parser, _data, _option);
                     StringResult strRes = parser_StringParserCore(sData, "", _data, _parser, _option, mStringVectorVars);
                     if (!strRes.vResult.size())
-                        throw STRING_ERROR;
+                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                     sData = strRes.vResult[0];
                     StripSpaces(sData);
                     sLine = sLine.substr(0,n_pos) + sData + sLine.substr(nPos+1);
@@ -2459,7 +2459,7 @@ string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser,
                 {
                     StringResult strRes = parser_StringParserCore(sExpr, "", _data, _parser, _option, mStringVectorVars);
                     if (!strRes.vResult.size())
-                        throw STRING_ERROR;
+                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
                     for (size_t i = 0; i < strRes.vResult.size(); i++)
                     {
@@ -2541,7 +2541,7 @@ string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser,
                 }
                 else
                 {
-                    throw STRING_ERROR;
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                 }
                 continue;
             }
@@ -2550,7 +2550,7 @@ string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser,
                 string sExpr = sLineToParsed.substr(0, parser_getDelimiterPos(sLineToParsed.substr(n_pos)));
                 StringResult strRes = parser_StringParserCore(sExpr, "", _data, _parser, _option, mStringVectorVars);
                 if (!strRes.vResult.size())
-                    throw STRING_ERROR;
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                 for (size_t i = 0; i < strRes.vResult.size(); i++)
                 {
                     strRes.vResult[i] = addQuotationMarks(strRes.vResult[i]);
@@ -2760,7 +2760,7 @@ int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& 
 
                     string sTable;
                     if (sObject.find("data(") != string::npos)
-                       throw READ_ONLY_DATA;
+                       throw SyntaxError(SyntaxError::READ_ONLY_DATA, sObject, SyntaxError::invalid_position);
                     else
                     {
                         for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)

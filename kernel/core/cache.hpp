@@ -202,16 +202,21 @@ class Cache : public FileSystem
             {
                 if (isCacheElement(sNewName))
                 {
-                    sErrorToken = sNewName+"()";
-                    throw CACHE_ALREADY_EXISTS;
+                    //sErrorToken = sNewName+"()";
+                    //throw CACHE_ALREADY_EXISTS;
+                    throw SyntaxError(SyntaxError::CACHE_ALREADY_EXISTS, "", SyntaxError::invalid_position, sNewName+"()");
                 }
                 if (!isCacheElement(sCache))
                 {
-                    sErrorToken = sCache;
-                    throw CACHE_DOESNT_EXIST;
+                    //sErrorToken = sCache;
+                    //throw CACHE_DOESNT_EXIST;
+                    throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sCache);
                 }
                 if (sCache == "cache" && !bForceRenaming)
-                    throw CACHE_CANNOT_BE_RENAMED;
+                {
+                    //throw CACHE_CANNOT_BE_RENAMED;
+                    throw SyntaxError(SyntaxError::CACHE_CANNOT_BE_RENAMED, "", SyntaxError::invalid_position, "cache");
+                }
                 mCachesMap[sNewName] = mCachesMap[sCache];
                 mCachesMap.erase(sCache);
                 return;
@@ -220,13 +225,15 @@ class Cache : public FileSystem
             {
                 if (!isCacheElement(sCache1))
                 {
-                    sErrorToken = sCache1;
-                    throw CACHE_DOESNT_EXIST;
+                    //sErrorToken = sCache1;
+                    //throw CACHE_DOESNT_EXIST;
+                    throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sCache1);
                 }
                 if (!isCacheElement(sCache2))
                 {
-                    sErrorToken = sCache2;
-                    throw CACHE_DOESNT_EXIST;
+                    //sErrorToken = sCache2;
+                    //throw CACHE_DOESNT_EXIST;
+                    throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sCache2);
                 }
                 long long int nTemp = mCachesMap[sCache1];
                 mCachesMap[sCache1] = mCachesMap[sCache2];

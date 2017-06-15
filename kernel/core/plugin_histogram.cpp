@@ -82,7 +82,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 		if (_data.matchCache(sCmd).length())
             sDatatable = _data.matchCache(sCmd);
 		if (!_data.getCols(sDatatable) || !_data.getLines(sDatatable))
-            throw NO_CACHED_DATA;
+            throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);
         string sTargettable = "cache";
 		string sBinLabel = "Bins";
 		string sCountLabel = "Counts";
@@ -377,7 +377,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 		{
             if (_data.getCols(sDatatable) > 1 && !nDataRow)		// Besteht der Datensatz aus mehr als eine Reihe? -> Welche soll denn dann verwendet werden?
             {
-                throw NO_COLS;
+                throw SyntaxError(SyntaxError::NO_COLS, sCmd, SyntaxError::invalid_position);
             }
 
             if (nDataRow >= _data.getCols(sDatatable)+1)
@@ -432,7 +432,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 {
                     if (dMin > _data.max(sDatatable,0,_data.getLines(sDatatable),nDataRow,nDataRow+1)
                         || dMax < _data.min(sDatatable,0,_data.getLines(sDatatable),nDataRow,nDataRow+1))
-                        throw INVALID_INTERVAL;
+                        throw SyntaxError(SyntaxError::INVALID_INTERVAL, sCmd, SyntaxError::invalid_position);
                 }
 
                 // y-Range
@@ -462,7 +462,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 {
                     if (dMinY > _data.max(sDatatable,0,_data.getLines(sDatatable),nDataRow+1,nDataRow+2)
                         || dMaxY < _data.min(sDatatable,0,_data.getLines(sDatatable),nDataRow+1,nDataRow+2))
-                        throw INVALID_INTERVAL;
+                        throw SyntaxError(SyntaxError::INVALID_INTERVAL, sCmd, SyntaxError::invalid_position);
                 }
 
                 // z-Range
@@ -492,7 +492,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 {
                     if (dMinZ > _data.max(sDatatable,0,_data.getLines(sDatatable),nDataRow+2,nDataRowFinal)
                         || dMaxZ < _data.min(sDatatable,0,_data.getLines(sDatatable),nDataRow+2,nDataRowFinal))
-                        throw INVALID_INTERVAL;
+                        throw SyntaxError(SyntaxError::INVALID_INTERVAL, sCmd, SyntaxError::invalid_position);
                 }
                 /*cerr << dMin << " " << dMax << endl;
                 cerr << dMinY << " " << dMaxY << endl;
@@ -528,7 +528,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 {
                     if (dMin > _data.max(sDatatable,0,_data.getLines(sDatatable),nDataRow,nDataRowFinal)
                         || dMax < _data.min(sDatatable,0,_data.getLines(sDatatable),nDataRow,nDataRowFinal))
-                        throw INVALID_INTERVAL;
+                        throw SyntaxError(SyntaxError::INVALID_INTERVAL, sCmd, SyntaxError::invalid_position);
                 }
             }
 
@@ -606,7 +606,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 // --> Gut. Dann berechnen wir daraus die Anzahl der Bins -> Es kann nun aber sein, dass der letzte Bin ueber
                 //     das Intervall hinauslaeuft <--
                 if (dIntervallLength > dMax - dMin)
-                    throw TOO_LARGE_BINWIDTH;
+                    throw SyntaxError(SyntaxError::TOO_LARGE_BINWIDTH, sCmd, SyntaxError::invalid_position);
 
                 for (int i = 0; (i * dIntervallLength)+dMin < dMax+dIntervallLength; i++)
                 {
@@ -1164,7 +1164,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
         {
             if (_data.getCols(sDatatable) > 1 && !nDataRow)		// Besteht der Datensatz aus mehr als eine Reihe? -> Welche soll denn dann verwendet werden?
             {
-                throw NO_COLS;
+                throw SyntaxError(SyntaxError::NO_COLS, sCmd, SyntaxError::invalid_position);
             }
 
             if (nDataRow >= _data.getCols(sDatatable)+1)
@@ -1187,7 +1187,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
             }
 
             if (nDataRowFinal-nDataRow < 3)
-                throw TOO_FEW_COLS;
+                throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
 
             if (isnan(dMin) && isnan(dMax))
             {
@@ -1217,11 +1217,11 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
             {
                 if (dMin > _data.max(sDatatable,0,_data.getLines(sDatatable),nDataRow,nDataRow+1)
                     || dMax < _data.min(sDatatable,0,_data.getLines(sDatatable),nDataRow,nDataRow+1))
-                    throw INVALID_INTERVAL;
+                    throw SyntaxError(SyntaxError::INVALID_INTERVAL, sCmd, SyntaxError::invalid_position);
             }
 
             if (_pData.getxLogscale() && dMax < 0.0)
-                throw WRONG_PLOT_INTERVAL_FOR_LOGSCALE;
+                throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
             else if (_pData.getxLogscale())
             {
                 if (dMin < 0.0)
@@ -1256,11 +1256,11 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
             {
                 if (dMinY > _data.max(sDatatable,0,_data.getLines(sDatatable),nDataRow+1,nDataRow+2)
                     || dMaxY < _data.min(sDatatable,0,_data.getLines(sDatatable),nDataRow+1,nDataRow+2))
-                    throw INVALID_INTERVAL;
+                    throw SyntaxError(SyntaxError::INVALID_INTERVAL, sCmd, SyntaxError::invalid_position);
             }
 
             if (_pData.getyLogscale() && dMaxY < 0.0)
-                throw WRONG_PLOT_INTERVAL_FOR_LOGSCALE;
+                throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
             else if (_pData.getyLogscale())
             {
                 if (dMinY < 0.0)
@@ -1310,7 +1310,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 // --> Gut. Dann berechnen wir daraus die Anzahl der Bins -> Es kann nun aber sein, dass der letzte Bin ueber
                 //     das Intervall hinauslaeuft <--
                 if (dIntervallLength > dMax - dMin)
-                    throw TOO_LARGE_BINWIDTH;
+                    throw SyntaxError(SyntaxError::TOO_LARGE_BINWIDTH, sCmd, SyntaxError::invalid_position);
 
                 for (int i = 0; (i * dIntervallLength)+dMin < dMax+dIntervallLength; i++)
                 {
@@ -1682,7 +1682,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                     for (int k = 0; k < nBin+1; k++)
                         delete[] sOut[k];
                     delete[] sOut;
-                    throw WRONG_PLOT_INTERVAL_FOR_LOGSCALE;
+                    throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
                 }
                 else
                     _histGraph.SetRanges(dMin, dMax, 0.0, _histData.Maximal()+dIntervallLength/10.0);
@@ -1739,7 +1739,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                     for (int k = 0; k < nBin+1; k++)
                         delete[] sOut[k];
                     delete[] sOut;
-                    throw WRONG_PLOT_INTERVAL_FOR_LOGSCALE;
+                    throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
                 }
                 if (_pData.getzLogscale())
                 {
@@ -1771,7 +1771,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                     for (int k = 0; k < nBin+1; k++)
                         delete[] sOut[k];
                     delete[] sOut;
-                    throw WRONG_PLOT_INTERVAL_FOR_LOGSCALE;
+                    throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
                 }
                 if (_pData.getzLogscale())
                 {
@@ -1922,7 +1922,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                     for (int k = 0; k < nBin+1; k++)
                         delete[] sOut[k];
                     delete[] sOut;
-                    throw WRONG_PLOT_INTERVAL_FOR_LOGSCALE;
+                    throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
                 }
                 else
                     _histGraph.SetRanges(0.0, _histData.Maximal()+dIntervallLength/10.0, dMinY, dMaxY);
@@ -2070,7 +2070,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
     }
 	else
 	{
-		throw NO_DATA_AVAILABLE;
+		throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
 	}
 
 	//cerr << "|-> Das Plugin wurde erfolgreich beendet." << endl;

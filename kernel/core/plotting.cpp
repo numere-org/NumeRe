@@ -305,7 +305,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
         if (!sFunc.length() && vPlotCompose.size() > 1 && _pInfo.sCommand != "subplot")
             continue;
         else if (!sFunc.length() && _pInfo.sCommand != "subplot")
-            throw PLOT_ERROR;
+            throw SyntaxError(SyntaxError::PLOT_ERROR, sCmd, SyntaxError::invalid_position);
 
         if (!nPlotCompose)
         {
@@ -404,7 +404,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
 
         // --> Ersetze Definitionen durch die tatsaechlichen Ausdruecke <--
         if (!_functions.call(sFunc, _option))
-            throw FUNCTION_ERROR;
+            throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
 
         // --> Ruf' ggf. nochmals den Prompt auf (nicht dass es wirklich zu erwarten waere) <--
         if (sFunc.find("??") != string::npos)
@@ -420,7 +420,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
 
         StripSpaces(sFunc);
         if (!sFunc.length() && !_mDataPlots)
-            throw PLOT_ERROR;
+            throw SyntaxError(SyntaxError::PLOT_ERROR, sCmd, SyntaxError::invalid_position);
 
 
         // --> Zuweisen der uebergebliebenen Funktionen an den "Legenden-String". Ebenfalls extrem fummelig <--
@@ -434,7 +434,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
         if ((containsStrings(sFunc) || _data.containsStringVars(sFunc)) && !(_pInfo.bDraw3D || _pInfo.bDraw))
         {
             parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
-            throw CANNOT_PLOT_STRINGS;
+            throw SyntaxError(SyntaxError::CANNOT_PLOT_STRINGS, sCmd, SyntaxError::invalid_position);
         }
 
         /* --> Wenn der Funktionen-String nicht leer ist, weise ihn dem Parser zu; anderenfalls verwende das
@@ -452,7 +452,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                 nFunctions = _parser.GetNumResults();
                 if ((_pData.getColorMask() || _pData.getAlphaMask()) && _pInfo.b2D && (nFunctions + nDataPlots) % 2)
                 {
-                    throw NUMBER_OF_FUNCTIONS_NOT_MATCHING;
+                    throw SyntaxError(SyntaxError::NUMBER_OF_FUNCTIONS_NOT_MATCHING, sCmd, SyntaxError::invalid_position);
                 }
             }
             catch (...)
@@ -2634,7 +2634,7 @@ void parser_plot_evaluatePlotParamString(PlotInfo& _pInfo, Parser& _parser, Data
         _pInfo.sPlotParams = parser_Prompt(_pInfo.sPlotParams);
     }
     if (!_functions.call(_pInfo.sPlotParams, _option))
-        throw FUNCTION_ERROR;
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, _pInfo.sPlotParams, SyntaxError::invalid_position);
     if ((containsStrings(_pInfo.sPlotParams) || _data.containsStringVars(_pInfo.sPlotParams))
         && _pInfo.sPlotParams.find('=') != string::npos)
     {
@@ -2703,7 +2703,7 @@ void parser_plot_evaluatePlotParamString(PlotInfo& _pInfo, Parser& _parser, Data
                         sParsedString = _pInfo.sPlotParams.substr(nPos, i-nPos);
                     if (!parser_StringParser(sParsedString, sDummy, _data, _parser, _option, true))
                     {
-                        throw STRING_ERROR;
+                        throw SyntaxError(SyntaxError::STRING_ERROR, sParsedString, SyntaxError::invalid_position);
                     }
                     if (_pInfo.sPlotParams[nPos] == '(' && sParsedString.front() != '(')
                     {
@@ -2865,7 +2865,7 @@ void parser_plot_evaluateSubplot(mglGraph& _graph, PlotData& _pData, Parser& _pa
         if (sSubPlotIDX.length())
         {
             if (!_functions.call(sSubPlotIDX, _option))
-                throw FUNCTION_ERROR;
+                throw SyntaxError(SyntaxError::FUNCTION_ERROR, sSubPlotIDX, SyntaxError::invalid_position);
             if (_data.containsCacheElements(sSubPlotIDX) || sSubPlotIDX.find("data(") != string::npos)
             {
                 parser_GetDataElement(sSubPlotIDX, _parser, _data, _option);
@@ -2878,24 +2878,24 @@ void parser_plot_evaluateSubplot(mglGraph& _graph, PlotData& _pData, Parser& _pa
                 if (v[0] < 1)
                     v[0] = 1;
                 if ((unsigned int)v[0]-1 >= nMultiplots[0]*nMultiplots[1])
-                    throw INVALID_SUBPLOT_INDEX;
+                    throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (unsigned int)(v[0]-1), nMultiCols, nMultiLines))
-                    throw INVALID_SUBPLOT_INDEX;
+                    throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 _graph.MultiPlot(nMultiplots[0], nMultiplots[1], (unsigned int)v[0]-1, nMultiCols, nMultiLines);
             }   // cols, lines
             else
             {
                 if ((unsigned int)(v[1]-1+(v[0]-1)*nMultiplots[1]) >= nMultiplots[0]*nMultiplots[1])
-                    throw INVALID_SUBPLOT_INDEX;
+                    throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (unsigned int)((v[1]-1)+(v[0]-1)*nMultiplots[0]), nMultiCols, nMultiLines))
-                    throw INVALID_SUBPLOT_INDEX;
+                    throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 _graph.MultiPlot(nMultiplots[0], nMultiplots[1], (unsigned int)((v[1]-1)+(v[0]-1)*nMultiplots[0]), nMultiCols, nMultiLines);
             }
         }
         else
         {
             if (nSubPlots >= nMultiplots[0]*nMultiplots[1])
-                throw INVALID_SUBPLOT_INDEX;
+                throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
             int nPlotPos = 1;
             for (unsigned int nSub = 0; nSub < nMultiplots[0]*nMultiplots[1]; nSub++)
             {
@@ -2904,13 +2904,13 @@ void parser_plot_evaluateSubplot(mglGraph& _graph, PlotData& _pData, Parser& _pa
                 else
                 {
                     if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, nSub, nMultiCols, nMultiLines))
-                        throw INVALID_SUBPLOT_INDEX;
+                        throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                     _graph.MultiPlot(nMultiplots[0], nMultiplots[1], nSub, nMultiCols, nMultiLines);
                     break;
                 }
                 if (nSub == nMultiplots[0]*nMultiplots[1]-1)
                 {
-                    throw INVALID_SUBPLOT_INDEX;
+                    throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 }
             }
         }
@@ -2920,7 +2920,7 @@ void parser_plot_evaluateSubplot(mglGraph& _graph, PlotData& _pData, Parser& _pa
         if (sSubPlotIDX.length())
         {
             if (!_functions.call(sSubPlotIDX, _option))
-                throw FUNCTION_ERROR;
+                throw SyntaxError(SyntaxError::FUNCTION_ERROR, sSubPlotIDX, SyntaxError::invalid_position);
             if (_data.containsCacheElements(sSubPlotIDX) || sSubPlotIDX.find("data(") != string::npos)
             {
                 parser_GetDataElement(sSubPlotIDX, _parser, _data, _option);
@@ -2933,23 +2933,23 @@ void parser_plot_evaluateSubplot(mglGraph& _graph, PlotData& _pData, Parser& _pa
                 if (v[0] < 1)
                     v[0] = 1;
                 if ((unsigned int)v[0]-1 >= nMultiplots[0]*nMultiplots[1])
-                    throw INVALID_SUBPLOT_INDEX;
+                    throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 if ((unsigned int)v[0] != 1)
                     nRes <<= (unsigned int)(v[0]-1);
                 if (nRes & nSubPlotMap)
-                    throw INVALID_SUBPLOT_INDEX;
+                    throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 nSubPlotMap |= nRes;
                 _graph.SubPlot(nMultiplots[0], nMultiplots[1], (unsigned int)v[0]-1);
             }
             else
             {
                 if ((unsigned int)(v[1]-1+(v[0]-1)*nMultiplots[0]) >= nMultiplots[0]*nMultiplots[1])
-                    throw INVALID_SUBPLOT_INDEX;
+                    throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 nRes = 1;
                 if ((unsigned int)((v[1])+(v[0]-1)*nMultiplots[0]) != 1)
                     nRes <<= (unsigned int)((v[1]-1)+(v[0]-1)*nMultiplots[0]);
                 if (nRes & nSubPlotMap)
-                    throw INVALID_SUBPLOT_INDEX;
+                    throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 nSubPlotMap |= nRes;
                 _graph.SubPlot(nMultiplots[0], nMultiplots[1], (unsigned int)((v[1]-1)+(v[0]-1)*nMultiplots[0]));
             }
@@ -2957,7 +2957,7 @@ void parser_plot_evaluateSubplot(mglGraph& _graph, PlotData& _pData, Parser& _pa
         else
         {
             if (nSubPlots >= nMultiplots[0]*nMultiplots[1])
-                throw INVALID_SUBPLOT_INDEX;
+                throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
             int nPlotPos = 1;
             for (unsigned int nSub = 0; nSub < nMultiplots[0]*nMultiplots[1]; nSub++)
             {
@@ -2971,7 +2971,7 @@ void parser_plot_evaluateSubplot(mglGraph& _graph, PlotData& _pData, Parser& _pa
                 }
                 if (nSub == nMultiplots[0]*nMultiplots[1]-1)
                 {
-                    throw INVALID_SUBPLOT_INDEX;
+                    throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 }
             }
         }
@@ -3112,12 +3112,12 @@ void parser_plot_evaluateDataPlots(PlotData& _pData, PlotInfo& _pInfo, Parser& _
             if (containsDataObject(sToken) || _data.containsCacheElements(sToken))
             {
                 if (sToken.find("data(") != string::npos && sToken.find("data(") && checkDelimiter(sToken.substr(sToken.find("data(")-1,6)))
-                    throw DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING;
+                    throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, "", SyntaxError::invalid_position, sToken);
                 if (_data.containsCacheElements(sToken.substr(0, sToken.find("(")+1)) && !_data.isCacheElement(sToken.substr(0,sToken.find("("))))
-                    throw DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING;
+                    throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, "", SyntaxError::invalid_position, sToken);
                 string sSubstr = sToken.substr(getMatchingParenthesis(sToken.substr(sToken.find('(')))+sToken.find('(')+1);
                 if (sSubstr[sSubstr.find_first_not_of(' ')] != '"')
-                    throw DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING;
+                    throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, "", SyntaxError::invalid_position, sToken);
             }
         }
 
@@ -3204,7 +3204,7 @@ void parser_plot_evaluateDataPlots(PlotData& _pData, PlotInfo& _pInfo, Parser& _
                     if ((sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos).find("data(") != string::npos && checkDelimiter(sDataLabels.substr(sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos).find("data(")-1, 6)) && !_data.isValid())
                         || (_data.containsCacheElements(sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos)) && !_data.isValidCache()))
                     {
-                        throw NO_DATA_AVAILABLE;
+                        throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sDataLabels, SyntaxError::invalid_position);
                     }
                     string sTemp = sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos);
                     StripSpaces(sTemp);
@@ -3212,7 +3212,7 @@ void parser_plot_evaluateDataPlots(PlotData& _pData, PlotInfo& _pInfo, Parser& _
                     if (sTableName[0] == ';' || sTableName[0] == '"')
                         sTableName.erase(0,1);
                     if (getMatchingParenthesis(sTemp.substr(sTemp.find('('))) == string::npos)
-                        throw UNMATCHED_PARENTHESIS;
+                        throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sTemp, sTemp.find('('));
                     string sArgs = sTemp.substr(sTemp.find('('), getMatchingParenthesis(sTemp.substr(sTemp.find('(')))+1);
                     if (sArgs == "()")
                         sArgs = "(:,:)";
@@ -3227,9 +3227,9 @@ void parser_plot_evaluateDataPlots(PlotData& _pData, PlotInfo& _pInfo, Parser& _
                         {
                             parser_SplitArgs(sArg_1, sArg_2, ':', _option);
                         }
-                        catch (errorcode& e)
+                        catch (SyntaxError& e)
                         {
-                            if (e == SEPARATOR_NOT_FOUND)
+                            if (e.errorcode == SyntaxError::SEPARATOR_NOT_FOUND)
                             {
                                 n_dpos = sDataLabels.find(';', n_dpos)+1;
                                 continue;
@@ -3585,7 +3585,7 @@ void parser_plot_evaluateDataPlots(PlotData& _pData, PlotInfo& _pInfo, Parser& _
                 {
                     delete[] _mDataPlots;
                     delete[] nDataDim;
-                    throw INVALID_INDEX;
+                    throw SyntaxError(SyntaxError::INVALID_INDEX, sDataTable, SyntaxError::invalid_position);
                 }
 
 
@@ -3626,7 +3626,7 @@ void parser_plot_evaluateDataPlots(PlotData& _pData, PlotInfo& _pInfo, Parser& _
                 {
                     delete[] nDataDim;
                     delete[] _mDataPlots;
-                    throw PLOT_ERROR;
+                    throw SyntaxError(SyntaxError::PLOT_ERROR, sDataTable, SyntaxError::invalid_position);
                 }
 
                 // --> Jetzt wissen wir die Spalten: Suchen wir im Falle von si_pos[1] == inf nach der laengsten <--
@@ -3894,7 +3894,7 @@ void parser_plot_evaluateDataPlots(PlotData& _pData, PlotInfo& _pInfo, Parser& _
                             delete[] nDataDim;
                             nDataDim = 0;
                             _data.setCacheStatus(false);
-                            throw TOO_FEW_COLS;
+                            throw SyntaxError(SyntaxError::TOO_FEW_COLS, sDataTable, SyntaxError::invalid_position);
                         }
                         else if (nDataDim[i] == 2 && j == 1)
                         {
@@ -3976,7 +3976,7 @@ void parser_plot_evaluateDataPlots(PlotData& _pData, PlotInfo& _pInfo, Parser& _
                                 delete[] nDataDim;
                                 nDataDim = 0;
                                 _data.setCacheStatus(false);
-                                throw TOO_FEW_COLS;
+                                throw SyntaxError(SyntaxError::TOO_FEW_COLS, sDataTable, SyntaxError::invalid_position);
                             }
                         }
                         else if (nDataDim[i] >= 3 && j == 1)
@@ -4332,7 +4332,7 @@ void parser_plot_defaultRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
                 if ((isinf(dDataRanges[i][0]) || isnan(dDataRanges[i][0])) && (unsigned)i < _pInfo.nMaxPlotDim)
                 {
                     parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
-                    throw PLOTDATA_IS_NAN;
+                    throw SyntaxError(SyntaxError::PLOTDATA_IS_NAN, "", SyntaxError::invalid_position);
                 }
                 else if (!(isinf(dDataRanges[i][0]) || isnan(dDataRanges[i][0])))
                     _pInfo.dRanges[i][0] = dDataRanges[i][0];
@@ -4354,7 +4354,7 @@ void parser_plot_defaultRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
                 if ((isinf(dDataRanges[i][1]) || isnan(dDataRanges[i][1])) && (unsigned)i < _pInfo.nMaxPlotDim)
                 {
                     parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
-                    throw PLOTDATA_IS_NAN;
+                    throw SyntaxError(SyntaxError::PLOTDATA_IS_NAN, "", SyntaxError::invalid_position);
                 }
                 else if (!(isinf(dDataRanges[i][1]) || isnan(dDataRanges[i][1])))
                     _pInfo.dRanges[i][1] = dDataRanges[i][1];
@@ -4404,7 +4404,7 @@ void parser_plot_defaultRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
             else if (_pInfo.dRanges[XCOORD][0] < 0 && _pInfo.dRanges[XCOORD][1] <= 0)
             {
                 parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
-                throw WRONG_PLOT_INTERVAL_FOR_LOGSCALE;
+                throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
             }
         }
 
@@ -4417,7 +4417,7 @@ void parser_plot_defaultRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
             else if (_pInfo.dRanges[YCOORD][0] < 0 && _pInfo.dRanges[YCOORD][1] <= 0)
             {
                 parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
-                throw WRONG_PLOT_INTERVAL_FOR_LOGSCALE;
+                throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
             }
         }
 
@@ -4430,7 +4430,7 @@ void parser_plot_defaultRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
             else if (_pInfo.dRanges[ZCOORD][0] < 0 && _pInfo.dRanges[ZCOORD][1] <= 0)
             {
                 parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
-                throw WRONG_PLOT_INTERVAL_FOR_LOGSCALE;
+                throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
             }
         }
     }
@@ -4824,7 +4824,7 @@ void parser_plot_fitPlotRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
         if (isnan(_pData.getMin()) || isnan(_pData.getMax()) || isinf(_pData.getMin()) || isinf(_pData.getMax()))
         {
             parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
-            throw PLOTDATA_IS_NAN;
+            throw SyntaxError(SyntaxError::PLOTDATA_IS_NAN, "", SyntaxError::invalid_position);
         }
     }
     if (!(_pInfo.b3D || _pInfo.b3DVect || _pInfo.b2DVect) && (!nPlotCompose || bNewSubPlot) && !(_pInfo.bDraw3D || _pInfo.bDraw))
@@ -4990,7 +4990,7 @@ void parser_plot_fitPlotRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
             if ((_pInfo.dRanges[XCOORD][0] <= 0 && _pInfo.dRanges[XCOORD][1] <= 0) || _pData.getAxisScale() <= 0.0)
             {
                 parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
-                throw WRONG_PLOT_INTERVAL_FOR_LOGSCALE;
+                throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
             }
             else if (_pInfo.dRanges[XCOORD][0] <= 0)
                 _pInfo.dRanges[XCOORD][0] = _pInfo.dRanges[XCOORD][1]*1e-3;
@@ -5000,7 +5000,7 @@ void parser_plot_fitPlotRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
             if ((_pInfo.dRanges[YCOORD][0] <= 0 && _pInfo.dRanges[YCOORD][1] <= 0) || _pData.getAxisScale(1) <= 0.0)
             {
                 parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
-                throw WRONG_PLOT_INTERVAL_FOR_LOGSCALE;
+                throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
             }
             else if (_pInfo.dRanges[YCOORD][0] <= 0)
                 _pInfo.dRanges[YCOORD][0] = _pInfo.dRanges[YCOORD][1]*1e-3;
@@ -5010,7 +5010,7 @@ void parser_plot_fitPlotRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
             if ((_pInfo.dRanges[ZCOORD][0] <= 0 && _pInfo.dRanges[ZCOORD][1] <= 0) || _pData.getAxisScale(2) <= 0.0)
             {
                 parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
-                throw WRONG_PLOT_INTERVAL_FOR_LOGSCALE;
+                throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
             }
             else if (_pInfo.dRanges[ZCOORD][0] <= 0)
                 _pInfo.dRanges[ZCOORD][0] = _pInfo.dRanges[ZCOORD][1]*1e-3;
@@ -5081,7 +5081,7 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
         if (_pData.getcLogscale() && ((_pData.getColorRange() <= 0.0 && _pData.getColorRange(1) <= 0.0) || _pData.getAxisScale(3) <= 0.0))
         {
             parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
-            throw WRONG_PLOT_INTERVAL_FOR_LOGSCALE;
+            throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
         }
         else if (_pData.getcLogscale() && _pData.getColorRange() <= 0.0)
         {
@@ -5112,7 +5112,7 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
         if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dColorMin <= 0.0 && dColorMax <= 0.0)
         {
             parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
-            throw WRONG_PLOT_INTERVAL_FOR_LOGSCALE;
+            throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
         }
         else if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dColorMin <= 0.0)
         {
@@ -5176,7 +5176,7 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
             if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && ((dMin <= 0.0 && dMax) || _pData.getAxisScale(3) <= 0.0))
             {
                 parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
-                throw WRONG_PLOT_INTERVAL_FOR_LOGSCALE;
+                throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
             }
             else if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dMin <= 0.0)
             {
@@ -5272,7 +5272,7 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
             if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dColorMin <= 0.0 && dColorMax <= 0.0)
             {
                 parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
-                throw WRONG_PLOT_INTERVAL_FOR_LOGSCALE;
+                throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
             }
             else if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dColorMin <= 0.0)
             {
@@ -5304,7 +5304,7 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
             if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dMin <= 0.0 && dMax)
             {
                 parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
-                throw WRONG_PLOT_INTERVAL_FOR_LOGSCALE;
+                throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
             }
             else if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dMin <= 0.0)
             {

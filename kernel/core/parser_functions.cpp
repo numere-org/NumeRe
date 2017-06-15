@@ -97,8 +97,8 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
 
     if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
     {
-        sErrorToken = "integrate";
-        throw STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD;
+        //sErrorToken = "integrate";
+        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, sCmd, SyntaxError::invalid_position, "integrate");
     }
 
     if (_option.getSystemPrintStatus())
@@ -118,7 +118,7 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
         sInt_Line[3] = sCmd.substr(9);
     StripSpaces(sInt_Line[3]);
     if (!sInt_Line[3].length())
-        throw NO_INTEGRATION_FUNCTION;
+        throw SyntaxError(SyntaxError::NO_INTEGRATION_FUNCTION, sCmd, SyntaxError::invalid_position);
     if (sInt_Line[3].length() && sInt_Line[3].find("??") != string::npos)
         sInt_Line[3] = parser_Prompt(sInt_Line[3]);
     StripSpaces(sInt_Line[3]);
@@ -252,7 +252,7 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
     {
         sInt_Line[3] = "";
         sLabel = "";
-        throw NO_INTEGRATION_FUNCTION;
+        throw SyntaxError(SyntaxError::NO_INTEGRATION_FUNCTION, sCmd, SyntaxError::invalid_position);
     }
     if (sParams.length())
     {
@@ -355,12 +355,12 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
                     }
                 }
                 if (sInt_Line[0].length() && sInt_Line[1].length() && parser_iVars.vValue[0][1] == parser_iVars.vValue[0][2])
-                    throw INVALID_INTEGRATION_RANGES;
+                    throw SyntaxError(SyntaxError::INVALID_INTEGRATION_RANGES, sCmd, SyntaxError::invalid_position);
                 if (!sInt_Line[0].length() || !sInt_Line[1].length())
-                    throw INVALID_INTEGRATION_RANGES;
+                    throw SyntaxError(SyntaxError::INVALID_INTEGRATION_RANGES, sCmd, SyntaxError::invalid_position);
             }
             else
-                throw NO_INTEGRATION_RANGES;
+                throw SyntaxError(SyntaxError::NO_INTEGRATION_RANGES, sCmd, SyntaxError::invalid_position);
         }
         if (matchParams(sParams, "method", '='))
         {
@@ -592,7 +592,7 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
         if ((parser_iVars.vValue[0][2]-parser_iVars.vValue[0][1]) / parser_iVars.vValue[0][3] >= 9.9e6)
             bLargeInterval = true;
         if ((parser_iVars.vValue[0][2]-parser_iVars.vValue[0][1]) / parser_iVars.vValue[0][3] > 1e10)
-            throw INVALID_INTEGRATION_PRECISION;
+            throw SyntaxError(SyntaxError::INVALID_INTEGRATION_PRECISION, sCmd, SyntaxError::invalid_position);
         /*if (_option.getSystemPrintStatus())
             cerr << "|INTEGRATE> Werte aus ... 0 %";*/
 
@@ -699,7 +699,7 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
                 if (NumeReKernel::GetAsyncCancelState())//GetAsyncKeyState(VK_ESCAPE))
                 {
                     NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + _lang.get("COMMON_CANCEL") + ".\n");
-                    throw PROCESS_ABORTED_BY_USER;
+                    throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
                 }
             }
         }
@@ -806,8 +806,8 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
 
     if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
     {
-        sErrorToken = "integrate";
-        throw STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD;
+        //sErrorToken = "integrate";
+        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, sCmd, SyntaxError::invalid_position, "integrate");
     }
     if (_option.getSystemPrintStatus())
         NumeReKernel::printPreFmt("                                              \r");
@@ -826,7 +826,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
         sInt_Fct = sCmd.substr(__sCmd.length());
     StripSpaces(sInt_Fct);
     if (!sInt_Fct.length())
-        throw NO_INTEGRATION_FUNCTION;
+        throw SyntaxError(SyntaxError::NO_INTEGRATION_FUNCTION, sCmd, SyntaxError::invalid_position);
     if (sInt_Fct.length() && sInt_Fct.find("??") != string::npos)
         sInt_Fct = parser_Prompt(sInt_Fct);
     if (sInt_Fct.find("{") != string::npos)
@@ -836,7 +836,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
     {
         sInt_Fct = "";
         sLabel = "";
-        throw NO_INTEGRATION_FUNCTION;
+        throw SyntaxError(SyntaxError::NO_INTEGRATION_FUNCTION, sCmd, SyntaxError::invalid_position);
     }
     if (sParams.length())
     {
@@ -945,12 +945,12 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
                     }
                 }
                 if (sInt_Line[0][0].length() && sInt_Line[0][1].length() && parser_iVars.vValue[0][1] == parser_iVars.vValue[0][2])
-                    throw INVALID_INTEGRATION_RANGES;
+                    throw SyntaxError(SyntaxError::INVALID_INTEGRATION_RANGES, sCmd, SyntaxError::invalid_position);
                 if (!sInt_Line[0][0].length() || !sInt_Line[0][1].length())
-                    throw INVALID_INTEGRATION_RANGES;
+                    throw SyntaxError(SyntaxError::INVALID_INTEGRATION_RANGES, sCmd, SyntaxError::invalid_position);
             }
             else
-                throw NO_INTEGRATION_RANGES;
+                throw SyntaxError(SyntaxError::NO_INTEGRATION_RANGES, sCmd, SyntaxError::invalid_position);
         }
         if (matchParams(sParams, "y", '='))
         {
@@ -996,12 +996,12 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
                     }
                 }
                 if (sInt_Line[1][0].length() && sInt_Line[1][1].length() && parser_iVars.vValue[1][1] == parser_iVars.vValue[1][2])
-                    throw INVALID_INTEGRATION_RANGES;
+                    throw SyntaxError(SyntaxError::INVALID_INTEGRATION_RANGES, sCmd, SyntaxError::invalid_position);
                 if (!sInt_Line[1][0].length() || !sInt_Line[1][1].length())
-                    throw INVALID_INTEGRATION_RANGES;
+                    throw SyntaxError(SyntaxError::INVALID_INTEGRATION_RANGES, sCmd, SyntaxError::invalid_position);
             }
             else
-                throw NO_INTEGRATION_RANGES;
+                throw SyntaxError(SyntaxError::NO_INTEGRATION_RANGES, sCmd, SyntaxError::invalid_position);
         }
         if (matchParams(sParams, "method", '='))
         {
@@ -1401,7 +1401,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
             bLargeArray = true;
         if (((parser_iVars.vValue[0][1]-parser_iVars.vValue[0][0])*(parser_iVars.vValue[1][1]-parser_iVars.vValue[1][0]) / parser_iVars.vValue[0][3] > 1e10 && bIntVar[0] && bIntVar[1])
             || ((parser_iVars.vValue[0][1]-parser_iVars.vValue[0][0])*(parser_iVars.vValue[1][1]-parser_iVars.vValue[1][0]) / parser_iVars.vValue[0][3] > 1e10 && (bIntVar[0] || bIntVar[1])))
-            throw INVALID_INTEGRATION_PRECISION;
+            throw SyntaxError(SyntaxError::INVALID_INTEGRATION_PRECISION, sCmd, SyntaxError::invalid_position);
         // --> Kleine Info an den Benutzer, dass der Code arbeitet <--
 
         if (_option.getSystemPrintStatus())
@@ -1722,7 +1722,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
                 if (NumeReKernel::GetAsyncCancelState())//GetAsyncKeyState(VK_ESCAPE))
                 {
                     NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + _lang.get("COMMON_CANCEL") + "!\n");
-                    throw PROCESS_ABORTED_BY_USER;
+                    throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
                 }
             }
         }
@@ -1988,8 +1988,8 @@ vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data,
 
     if (containsStrings(sExpr) || _data.containsStringVars(sExpr))
     {
-        sErrorToken = "diff";
-        throw STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD;
+        //sErrorToken = "diff";
+        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, sCmd, SyntaxError::invalid_position, "diff");
     }
 
     if (sExpr.find("-set") != string::npos)
@@ -2000,7 +2000,7 @@ vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data,
         //sExpr = sCmd.substr(findCommand(sCmd).sString.length(), sCmd.find("--")-findCommand(sCmd).sString.length());
 
     if (!_functions.call(sExpr, _option))
-        throw FUNCTION_ERROR;
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sExpr, sExpr);
     StripSpaces(sExpr);
 
     if ((sExpr.find("data(") == string::npos && !_data.containsCacheElements(sExpr))
@@ -2017,7 +2017,7 @@ vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data,
         else
             sVar = sCmd.substr(sCmd.find("--"));
         if (!_functions.call(sVar, _option))
-            throw FUNCTION_ERROR;
+            throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sVar, sVar);
         StripSpaces(sVar);
 
         if (matchParams(sVar, "eps", '='))
@@ -2107,14 +2107,14 @@ vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data,
             dVar = parser_GetVarAdress(sVar, _parser);
             if (!dVar)
             {
-                throw DIFF_VAR_NOT_FOUND;
+                throw SyntaxError(SyntaxError::DIFF_VAR_NOT_FOUND, sCmd, sVar, sVar);
             }
 
         }
 
         if (!dVar)
         {
-            throw NO_DIFF_VAR;
+            throw SyntaxError(SyntaxError::NO_DIFF_VAR, sCmd, SyntaxError::invalid_position);
         }
 
         if (!dEps)
@@ -2161,7 +2161,7 @@ vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data,
         sExpr.erase(sExpr.find('('));
         //cerr << sExpr << endl;
         if (((_idx.nI[0] == -1 || _idx.nI[1] == -1) && !_idx.vI.size()) || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
-            throw INVALID_INDEX;
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 
         if (!_idx.vI.size())
         {
@@ -2276,7 +2276,7 @@ vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data,
     }
     else
     {
-        throw NO_DIFF_OPTIONS;
+        throw SyntaxError(SyntaxError::NO_DIFF_OPTIONS, sCmd, SyntaxError::invalid_position);
     }
     return vResult;
 }
@@ -2773,7 +2773,7 @@ void parser_ListPlugins(Parser& _parser, Datafile& _data, const Settings& _optio
             if (!parser_StringParser(sLine, sDummy, _data, _parser, _option, true))
             {
                 NumeReKernel::toggleTableStatus();
-                throw STRING_ERROR;
+                throw SyntaxError(SyntaxError::STRING_ERROR, "", SyntaxError::invalid_position);
             }
             NumeReKernel::printPreFmt(LineBreak(sLine, _option, true, 0, 25) + "\n");
         }
@@ -2819,7 +2819,7 @@ string parser_GetDataElement(string& sLine, Parser& _parser, Datafile& _data, co
             nParenthesis--;
     }
     if (nParenthesis)
-        throw UNMATCHED_PARENTHESIS;
+        throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, SyntaxError::invalid_position);
 
     // --> Findest du "data("? <--
     if (sLine.find("data(") != string::npos)
@@ -2830,7 +2830,7 @@ string parser_GetDataElement(string& sLine, Parser& _parser, Datafile& _data, co
             /* --> Nein? Mitteilen, BOOLEAN setzen (der die gesamte, weitere Auswertung abbricht)
              *     und zurueck zur aufrufenden Funktion <--
              */
-            throw NO_DATA_AVAILABLE;
+            throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sLine, SyntaxError::invalid_position);
         }
         // --> Ist rechts von "data(" noch ein "=" und gehoert das nicht zu einem Logik-Ausdruck? <--
         eq_pos = sLine.find("=", sLine.find("data(")+5);
@@ -2850,7 +2850,7 @@ string parser_GetDataElement(string& sLine, Parser& _parser, Datafile& _data, co
             else
             {
                 // --> Ja? Dann brechen wir ebenfalls ab, da wir nicht in data() schreiben wollen <--
-                throw READ_ONLY_DATA;
+                throw SyntaxError(SyntaxError::READ_ONLY_DATA, sLine, SyntaxError::invalid_position);
             }
         }
         /* --> Diese Schleife ersetzt nacheinander alle Stellen, in denen "data(" auftritt, durch "Vektoren", die
@@ -3087,7 +3087,7 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
                         else
                         {
                             sLine = "";
-                            throw UNMATCHED_PARENTHESIS;
+                            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, SyntaxError::invalid_position);
                         }
                     }
                 }
@@ -3145,7 +3145,7 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
         }
         if (nCount == 31)
         {
-            throw TOO_MANY_VECTORS;
+            throw SyntaxError(SyntaxError::TOO_MANY_VECTORS, sLine, SyntaxError::invalid_position);
         }
         if (sTemp[nPos] != '{' || (nQuotes % 2))
             continue;
@@ -3159,7 +3159,7 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
         }*/
         nDim_vec = 0;
         if (getMatchingParenthesis(sTemp.substr(nPos)) == string::npos)
-            throw INCOMPLETE_VECTOR_SYNTAX;
+            throw SyntaxError(SyntaxError::INCOMPLETE_VECTOR_SYNTAX, sLine, SyntaxError::invalid_position);
         sVectors[nCount] = sTemp.substr(nPos+1, getMatchingParenthesis(sTemp.substr(nPos))-1);
         //sVectors[nCount] = sTemp.substr(sTemp.find("{", nPos)+1, getMatchingParenthesis(sTemp.substr(sTemp.find('{', nPos)))-1);
         if (sTemp.find('{', nPos) != 0)
@@ -3500,7 +3500,7 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
         nFinalParenthesis = parser_SplitArgs(si_pos[0], sj_pos[0], ',', _option);
         if (!nFinalParenthesis)
         {
-            throw UNMATCHED_PARENTHESIS;
+            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, SyntaxError::invalid_position);
         }
         /* --> Der Rueckgabewert ist natuerlich vom ersten Zeichen von si_pos[0] abhaengig
          *     und das ist im Allgemeinen vom ersten Zeichen von sLine unabhaengig. Also
@@ -3523,7 +3523,7 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
         // --> Sind in i- und j-Grenzen ":" zu finden? Dass koennen wir (noch) nicht verarbeiten. Abbruch! <--
         if (si_pos[0].find(':') != string::npos && sj_pos[0].find(':') != string::npos)
         {
-            throw NO_MATRIX;
+            throw SyntaxError(SyntaxError::NO_MATRIX, sLine, SyntaxError::invalid_position);
         }
         else if (si_pos[0].find(':') == string::npos && sj_pos[0].find(':') == string::npos && si_pos[0].find('#') == string::npos)
         {
@@ -3531,7 +3531,7 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
             StripSpaces(sj_pos[0]);
             if (!si_pos[0].length() || !sj_pos[0].length())
             {
-                throw INVALID_INDEX;
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
             }
             _parser.SetExpr(si_pos[0]);
             //_parser.SetExpr(si_pos[0] + "," + sj_pos[0]);
@@ -3858,7 +3858,7 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
                     j_pos[0] = (int)v[0]-1;
             }
             if (isnan(i_pos[0]) || isinf(i_pos[0]) || isnan(j_pos[0]) || isinf(j_pos[0]))
-                throw INVALID_INDEX;
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
 
             /*i_pos[0] = (int)v[0]-1;
             j_pos[0] = (int)v[1]-1;*/
@@ -3957,7 +3957,7 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
         {
             _parser.SetExpr(si_pos[0]);
             if (isinf(_parser.Eval()) || isnan(_parser.Eval()))
-                throw INVALID_INDEX;
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
             i_pos[0] = (int)_parser.Eval();
             i_pos[0]--;
             // --> Negative Indices abfangen! <--
@@ -3975,7 +3975,7 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
             if (nResults == 1)
             {
                 if (isinf(v[0]) || isnan(v[0]))
-                    throw INVALID_INDEX;
+                    throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
                 j_pos[0] = (int)v[0];
                 j_pos[0]--;
                 if (j_pos[0] < 0)
@@ -4034,7 +4034,7 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
         {
             _parser.SetExpr(si_pos[1]);
             if (isinf(_parser.Eval()) || isnan(_parser.Eval()))
-                throw INVALID_INDEX;
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
             i_pos[1] = (int)_parser.Eval();
             i_pos[1]--;
             // --> Negative Indices und Indices kleiner als der vorherige Index abfangen <--
@@ -4048,7 +4048,7 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
             {
                 //cerr << sEntity << endl;
                 if (sEntity.substr(0, sEntity.find('(')) == "data")
-                    throw INVALID_DATA_ACCESS;
+                    throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sLine, SyntaxError::invalid_position);
                 else
                 {
                     vEntityContents_onebased.push_back(1.0);
@@ -4216,7 +4216,7 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
         {
             _parser.SetExpr(sj_pos[1]);
             if (isinf(_parser.Eval()) || isnan(_parser.Eval()))
-                throw INVALID_INDEX;
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
             j_pos[1] = (int)_parser.Eval();
             j_pos[1]--;
             parser_CheckIndices(j_pos[0], j_pos[1]);
@@ -4233,7 +4233,7 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
             || isnan(j_pos[1]) || isinf(j_pos[1])
             || (i_pos[1] == -1 && !bWriteStrings) || (j_pos[1] == -1 && !bWriteFileName && !bWriteStrings))
         {
-            throw INVALID_INDEX;
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
         }
         if (j_pos[1] == -1 && bWriteStrings)
             j_pos[1] = j_pos[0];
@@ -4544,7 +4544,7 @@ int parser_SplitArgs(string& sToSplit, string& sSecArg, const char& cSep, const 
 
         if (nParenthesis)
         {
-            throw UNMATCHED_PARENTHESIS;
+            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sToSplit, SyntaxError::invalid_position);
         }
     }
     else
@@ -4579,7 +4579,7 @@ int parser_SplitArgs(string& sToSplit, string& sSecArg, const char& cSep, const 
 
     if (nSep == -1)
     {
-        throw SEPARATOR_NOT_FOUND;
+        throw SyntaxError(SyntaxError::SEPARATOR_NOT_FOUND, sToSplit, SyntaxError::invalid_position);
     }
 
     // --> Teilen wir nun den string sToSplit in sSecArg und sToSplit auf <--
@@ -4763,8 +4763,8 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
 
     if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
     {
-        sErrorToken = "extrema";
-        throw STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD;
+        //sErrorToken = "extrema";
+        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, sCmd, SyntaxError::invalid_position, "extrema");
     }
 
     if (sCmd.find("-set") != string::npos)
@@ -4778,7 +4778,7 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
         sParams = sCmd.substr(sCmd.find("--"));
     }
     else if (sCmd.find("data(") == string::npos && !_data.containsCacheElements(sCmd))
-        throw NO_EXTREMA_OPTIONS;
+        throw SyntaxError(SyntaxError::NO_EXTREMA_OPTIONS, sCmd, SyntaxError::invalid_position);
     else
         sExpr = sCmd;
 
@@ -5002,7 +5002,7 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
             dVar = parser_GetVarAdress(sVar, _parser);
             if (!dVar)
             {
-                throw EXTREMA_VAR_NOT_FOUND;
+                throw SyntaxError(SyntaxError::EXTREMA_VAR_NOT_FOUND, sCmd, sVar, sVar);
             }
             if (sInterval.find(':') == string::npos || sInterval.length() < 3)
                 return false;
@@ -5163,10 +5163,10 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
             return true;
         }
         else
-            throw NO_EXTREMA_VAR;
+            throw SyntaxError(SyntaxError::NO_EXTREMA_VAR, sCmd, SyntaxError::invalid_position);
     }
     else
-        throw NO_EXTREMA_VAR;
+        throw SyntaxError(SyntaxError::NO_EXTREMA_VAR, sCmd, SyntaxError::invalid_position);
 
     if ((int)(dRight-dLeft))
     {
@@ -5272,8 +5272,8 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
 
     if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
     {
-        sErrorToken = "zeroes";
-        throw STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD;
+        //sErrorToken = "zeroes";
+        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, sCmd, SyntaxError::invalid_position, "zeroes");
     }
 
     if (sCmd.find("-set") != string::npos)
@@ -5287,7 +5287,7 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
         sParams = sCmd.substr(sCmd.find("--"));
     }
     else if (sCmd.find("data(") == string::npos && !_data.containsCacheElements(sCmd))
-        throw NO_ZEROES_OPTIONS;
+        throw SyntaxError(SyntaxError::NO_ZEROES_OPTIONS, sCmd, SyntaxError::invalid_position);
     else
         sExpr = sCmd;
 
@@ -5460,7 +5460,7 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
             dVar = parser_GetVarAdress(sVar, _parser);
             if (!dVar)
             {
-                throw ZEROES_VAR_NOT_FOUND;
+                throw SyntaxError(SyntaxError::ZEROES_VAR_NOT_FOUND, sCmd, sVar, sVar);
             }
             if (sInterval.find(':') == string::npos || sInterval.length() < 3)
                 return false;
@@ -5561,10 +5561,10 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
             return true;
         }
         else
-            throw NO_ZEROES_VAR;
+            throw SyntaxError(SyntaxError::NO_ZEROES_VAR, sCmd, SyntaxError::invalid_position);
     }
     else
-        throw NO_ZEROES_VAR;
+        throw SyntaxError(SyntaxError::NO_ZEROES_VAR, sCmd, SyntaxError::invalid_position);
 
     if ((int)(dRight-dLeft))
     {
@@ -5816,8 +5816,8 @@ void parser_Taylor(string& sCmd, Parser& _parser, const Settings& _option, Defin
 
     if (containsStrings(sCmd))
     {
-        sErrorToken = "taylor";
-        throw STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD;
+        //sErrorToken = "taylor";
+        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, sCmd, SyntaxError::invalid_position, "taylor");
     }
 
     if (sCmd.find("-set") != string::npos)
@@ -6210,7 +6210,7 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
                 _parser.SetExpr(sI[n]);
                 _idx.nI[n] = (int)_parser.Eval()-1;
                 if (isnan(_parser.Eval()) || isinf(_parser.Eval()) || _parser.Eval() <= 0)
-                    throw INVALID_INDEX;
+                    throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
             }
             if (sJ[n] == "<<EMPTY>>")
             {
@@ -6226,22 +6226,22 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
                 _parser.SetExpr(sJ[n]);
                 _idx.nJ[n] = (int)_parser.Eval()-1;
                 if (isnan(_parser.Eval()) || isinf(_parser.Eval()) || _parser.Eval() <= 0)
-                    throw INVALID_INDEX;
+                    throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
             }
         }
         if (_idx.vI.size() || _idx.vJ.size())
         {
             string sCache = sCmd.substr(0,sCmd.find('('));
             if (!sCache.length())
-                throw INVALID_DATA_ACCESS;
+                throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, SyntaxError::invalid_position);
             if (!sCache.find("data(") && !_data.isCacheElement(sCache))
-                throw INVALID_DATA_ACCESS;
+                throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, SyntaxError::invalid_position);
             if (sCache.find(' ') != string::npos)
                 sCache.erase(0,sCache.rfind(' ')+1);
             if (!_idx.vI.size())
             {
                 if (_idx.nI[0] == -1)
-                    throw INVALID_INDEX;
+                    throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
                 if (_idx.nI[1] == -2)
                 {
                     for (long long int i = _idx.nI[0]; i < _data.getLines(sCache, false); i++)
@@ -6258,7 +6258,7 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
             if (!_idx.vJ.size())
             {
                 if (_idx.nJ[0] == -1)
-                    throw INVALID_INDEX;
+                    throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
                 if (_idx.nJ[1] == -2)
                 {
                     for (long long int j = _idx.nJ[0]; j < _data.getCols(sCache); j++)
@@ -6554,7 +6554,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
         bUseErrors = true;
 
     if (sCmd.find("data(") == string::npos && !_data.containsCacheElements(sCmd))
-        throw NO_DATA_FOR_FIT;
+        throw SyntaxError(SyntaxError::NO_DATA_FOR_FIT, sCmd, SyntaxError::invalid_position);
     //string sBadFunctions = "ascii(),avg(),betheweizsaecker(),binom(),char(),cmp(),date(),dblfacul(),faculty(),findfile(),findparam(),gauss(),gcd(),getopt(),heaviside(),hermite(),is_nan(),is_string(),laguerre(),laguerre_a(),lcm(),legendre(),legendre_a(),max(),min(),norm(),num(),cnt(),pct(),phi(),prd(),rand(),range(),replace(),replaceall(),rint(),round(),sbessel(),sneumann(),split(),std(),strfnd(),string_cast(),strrfnd(),strlen(),student_t(),substr(),sum(),theta(),time(),to_char(),to_cmd(),to_string(),to_value(),Y()";
     string sBadFunctions = "ascii(),char(),findfile(),findparam(),gauss(),getopt(),is_string(),rand(),replace(),replaceall(),split(),strfnd(),string_cast(),strrfnd(),strlen(),time(),to_char(),to_cmd(),to_string(),to_value()";
     string sFitFunction = sCmd;
@@ -6577,12 +6577,12 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
         if (sChiMap.length())
         {
             if (sChiMap.substr(0,sChiMap.find('(')) == "data")
-                throw READ_ONLY_DATA;
+                throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, SyntaxError::invalid_position);
             _idx = parser_getIndices(sChiMap, _parser, _data, _option);
             if ((_idx.nI[0] == -1 || _idx.nJ[0] == -1) && (!_idx.vI.size() && !_idx.vJ.size()))
-                throw INVALID_INDEX;
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
             if (_idx.vJ.size() && _idx.vJ.size() < 2)
-                throw INVALID_INDEX;
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
             parser_evalIndices(sChiMap, _idx, _data);
             sChiMap.erase(sChiMap.find('('));
             if (!_idx.vJ.size())
@@ -6691,7 +6691,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
         sCmd.erase(matchParams(sCmd, "mask")-1, 6);
     }
     if (!matchParams(sFitFunction, "with", '='))
-        throw NO_FUNCTION_FOR_FIT;
+        throw SyntaxError(SyntaxError::NO_FUNCTION_FOR_FIT, sCmd, SyntaxError::invalid_position);
     if (matchParams(sFitFunction, "tol", '='))
     {
         _parser.SetExpr(getArgAtPos(sFitFunction, matchParams(sFitFunction, "tol", '=')+3));
@@ -6769,7 +6769,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
             StripSpaces(sParams);
         }
         if (!_functions.call(sParams, _option))
-            throw FUNCTION_ERROR;
+            throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sParams, sParams);
         if (sParams.find("data(") != string::npos || _data.containsCacheElements(sParams))
         {
             parser_GetDataElement(sParams, _parser, _data, _option);
@@ -6780,7 +6780,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
     StripSpaces(sCmd);
 
     if (!_functions.call(sFitFunction, _option))
-        throw FUNCTION_ERROR;
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sFitFunction, sFitFunction);
 
     if (sFitFunction.find("data(") != string::npos || _data.containsCacheElements(sFitFunction))
     {
@@ -6794,8 +6794,8 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
     {
         if (sFitFunction.find(sBadFunctions.substr(nPos, sBadFunctions.find(',', nPos)-nPos-1)) != string::npos)
         {
-            sErrorToken = sBadFunctions.substr(nPos, sBadFunctions.find(',', nPos)-nPos);
-            throw FUNCTION_CANNOT_BE_FITTED;
+            //sErrorToken = sBadFunctions.substr(nPos, sBadFunctions.find(',', nPos)-nPos);
+            throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, sCmd, SyntaxError::invalid_position, sBadFunctions.substr(nPos, sBadFunctions.find(',', nPos)-nPos));
         }
         else
             nPos = sBadFunctions.find(',', nPos)+1;
@@ -6816,7 +6816,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
         if (paramsMap.find("y") != paramsMap.end())
             paramsMap.erase(paramsMap.find("y"));
         if (!paramsMap.size())
-            throw NO_PARAMS_FOR_FIT;
+            throw SyntaxError(SyntaxError::NO_PARAMS_FOR_FIT, sCmd, SyntaxError::invalid_position);
     }
     else
     {
@@ -6865,18 +6865,18 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
     {
         if (sChiMap_Vars[0] == "x" || sChiMap_Vars[1] == "x")
         {
-            sErrorToken = "x";
-            throw CANNOT_BE_A_FITTING_PARAM;
+            //sErrorToken = "x";
+            throw SyntaxError(SyntaxError::CANNOT_BE_A_FITTING_PARAM, sCmd, SyntaxError::invalid_position, "x");
         }
         if (sChiMap_Vars[0] == "y" || sChiMap_Vars[1] == "y")
         {
-            sErrorToken = "y";
-            throw CANNOT_BE_A_FITTING_PARAM;
+            //sErrorToken = "y";
+            throw SyntaxError(SyntaxError::CANNOT_BE_A_FITTING_PARAM, sCmd, SyntaxError::invalid_position, "y");
         }
         if (varMap.find(sChiMap_Vars[0]) == varMap.end())
         {
-            sErrorToken = sChiMap_Vars[0];
-            throw FITFUNC_NOT_CONTAINS;
+            //sErrorToken = sChiMap_Vars[0];
+            throw SyntaxError(SyntaxError::FITFUNC_NOT_CONTAINS, sCmd, SyntaxError::invalid_position, sChiMap_Vars[0]);
         }
         if (varMap.find(sChiMap_Vars[1]) == varMap.end())
         {
@@ -6886,8 +6886,8 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
 
     if (!nFitVars || !(nFitVars & 1))
     {
-        sErrorToken = "x";
-        throw FITFUNC_NOT_CONTAINS;
+        //sErrorToken = "x";
+        throw SyntaxError(SyntaxError::FITFUNC_NOT_CONTAINS, sCmd, SyntaxError::invalid_position, "x");
     }
 
     pItem = paramsMap.begin();
@@ -6895,8 +6895,8 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
     {
         if (pItem->first == "x" || pItem->first == "y" || pItem->first == "z")
         {
-            sErrorToken = pItem->first;
-            throw CANNOT_BE_A_FITTING_PARAM;
+            //sErrorToken = pItem->first;
+            throw SyntaxError(SyntaxError::CANNOT_BE_A_FITTING_PARAM, sCmd, SyntaxError::invalid_position, pItem->first);
         }
 
         bool bParamFound = false;
@@ -6911,8 +6911,8 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
         }
         if (!bParamFound)
         {
-            sErrorToken = pItem->first;
-            throw FITFUNC_NOT_CONTAINS;
+            //sErrorToken = pItem->first;
+            throw SyntaxError(SyntaxError::FITFUNC_NOT_CONTAINS, sCmd, SyntaxError::invalid_position, pItem->first);
         }
     }
     if (sChiMap.length())
@@ -6922,7 +6922,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
             paramsMap.erase(sChiMap_Vars[1]);
     }
     if (!paramsMap.size())
-        throw NO_PARAMS_FOR_FIT;
+        throw SyntaxError(SyntaxError::NO_PARAMS_FOR_FIT, sCmd, SyntaxError::invalid_position);
 
     sFuncDisplay = sFitFunction;
     StripSpaces(sFuncDisplay);
@@ -6950,7 +6950,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
         if (_data.isValidCache())
             _data.setCacheStatus(true);
         else
-            throw NO_CACHED_DATA;
+            throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);
 
         for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
         {
@@ -6964,7 +6964,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
         }
     }
     else if (!_data.isValid())
-        throw NO_DATA_AVAILABLE;
+        throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
     // --> Klammer und schliessende Klammer finden und in einen anderen String schreiben <--
     nMatch = sCmd.find('(');
     si_pos[0] = sCmd.substr(nMatch, getMatchingParenthesis(sCmd.substr(nMatch))+1);
@@ -7143,7 +7143,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
     {
         /*delete[] _mDataPlots;
         delete[] nDataDim;*/
-        throw INVALID_INDEX;
+        throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
     }
     if (_option.getbDebug())
         cerr << "|-> DEBUG: j_pos[0] = " << j_pos[0] << ", j_pos[1] = " << j_pos[1] << endl;
@@ -7169,7 +7169,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
      */
     nDim = 0;
     if (j == 0 && bUseErrors && vCol.size() < 3)
-        throw TOO_FEW_COLS;
+        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
     if (j == 0 && !vCol.size())
         nDim = 2;
     else if (j == 0)
@@ -7182,13 +7182,13 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
             {
                 nDim = 2;
                 if (abs(j_pos[1] - j_pos[0]) < 1)
-                    throw TOO_FEW_COLS;
+                    throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
             }
             else
             {
                 nDim = 3;
                 if (abs(j_pos[1] - j_pos[0]) < abs(i_pos[1] - i_pos[0])+1)
-                    throw TOO_FEW_COLS;
+                    throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
             }
         }
         else
@@ -7197,13 +7197,13 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
             {
                 nDim = 4;
                 if (abs(j_pos[1]-j_pos[0]) < 2)
-                    throw TOO_FEW_COLS;
+                    throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
             }
             else
             {
                 nDim = 5;
                 if (abs(j_pos[1]-j_pos[0]) < 2*abs(i_pos[1]-i_pos[0])+1)
-                    throw TOO_FEW_COLS;
+                    throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
             }
         }
     }
@@ -7402,7 +7402,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
             }
         }
         if (paramsMap.size() > vx.size())
-            throw OVERFITTING_ERROR;
+            throw SyntaxError(SyntaxError::OVERFITTING_ERROR, sCmd, SyntaxError::invalid_position);
         /*if (!vLine.size())
         {
             if ((int)paramsMap.size() > _data.num(sDataTable, i_pos[0], i_pos[1], j_pos[0])-nSkip)
@@ -7521,7 +7521,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
                 }
             }
             if (paramsMap.size() > vx.size())//_data.num(sDataTable, i_pos[0], i_pos[1], j_pos[0])-nSkip)
-                throw OVERFITTING_ERROR;
+                throw SyntaxError(SyntaxError::OVERFITTING_ERROR, sCmd, SyntaxError::invalid_position);
         }
         else
         {
@@ -7607,7 +7607,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
                 }
             }
             if (paramsMap.size() > vx.size())//_data.num(sDataTable, vLine, vector<long long int>(1,vCol[0]))-nSkip)
-                throw OVERFITTING_ERROR;
+                throw SyntaxError(SyntaxError::OVERFITTING_ERROR, sCmd, SyntaxError::invalid_position);
         }
 
     }
@@ -7737,7 +7737,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
             }
             if (paramsMap.size() > vz.size()//_data.num(sDataTable, i_pos[0], i_pos[1], j_pos[0])-nRowSkip
                 || paramsMap.size() > vz[0].size())//_data.num(sDataTable, i_pos[0], i_pos[1], j_pos[0])-nColSkip)
-                throw OVERFITTING_ERROR;
+                throw SyntaxError(SyntaxError::OVERFITTING_ERROR, sCmd, SyntaxError::invalid_position);
         }
         else
         {
@@ -7836,7 +7836,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
             }
             if (paramsMap.size() > vz.size()//_data.num(sDataTable, i_pos[0], i_pos[1], j_pos[0])-nRowSkip
                 || paramsMap.size() > vz[0].size())//_data.num(sDataTable, i_pos[0], i_pos[1], j_pos[0])-nColSkip)
-                throw OVERFITTING_ERROR;
+                throw SyntaxError(SyntaxError::OVERFITTING_ERROR, sCmd, SyntaxError::invalid_position);
         }
     }
     else
@@ -7864,7 +7864,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
                     nSkip++;*/
             }
             if (paramsMap.size() > vy.size())//_data.num(sDataTable, i_pos[0], i_pos[1], j_pos[0])-nSkip)
-                throw OVERFITTING_ERROR;
+                throw SyntaxError(SyntaxError::OVERFITTING_ERROR, sCmd, SyntaxError::invalid_position);
         }
         else
         {
@@ -7892,13 +7892,13 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
                     nSkip++;*/
             }
             if (paramsMap.size() > vy.size())//_data.num(sDataTable, vLine, vector<long long int>(1,vCol[0]))-nSkip)
-                throw OVERFITTING_ERROR;
+                throw SyntaxError(SyntaxError::OVERFITTING_ERROR, sCmd, SyntaxError::invalid_position);
         }
     }
     //cerr << nSize << endl;
 
     if (paramsMap.size() > vx.size())//nSize)
-        throw OVERFITTING_ERROR;
+        throw SyntaxError(SyntaxError::OVERFITTING_ERROR, sCmd, SyntaxError::invalid_position);
 
     // Überzählige Klammern (durch Fit(x)) entfernen
     while (sFuncDisplay.front() == '(')
@@ -8225,7 +8225,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
         oFitLog.close();
         _data.setCacheStatus(false);
         NumeReKernel::printPreFmt("\n");
-        throw CANNOT_OPEN_FITLOG;
+        throw SyntaxError(SyntaxError::CANNOT_OPEN_FITLOG, sCmd, SyntaxError::invalid_position);
     }
     if (bTeXExport)
     {
@@ -8235,8 +8235,8 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
             oTeXExport.close();
             _data.setCacheStatus(false);
             NumeReKernel::printPreFmt("\n");
-            sErrorToken = sTeXExportFile;
-            throw CANNOT_OPEN_TARGET;
+            //sErrorToken = sTeXExportFile;
+            throw SyntaxError(SyntaxError::CANNOT_OPEN_TARGET, sCmd, SyntaxError::invalid_position, sTeXExportFile);
         }
     }
     ///FITLOG
@@ -8909,7 +8909,7 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
         if (_data.isValidCache())
             _data.setCacheStatus(true);
         else
-            throw NO_CACHED_DATA;
+            throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);
         for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
         {
             if (sCmd.find(iter->first+"(") != string::npos
@@ -8922,7 +8922,7 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
         }
     }
     else if (!_data.isValid())
-        throw NO_DATA_AVAILABLE;
+        throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
     // --> Klammer und schliessende Klammer finden und in einen anderen String schreiben <--
     nMatch = sCmd.find('(');
     si_pos[0] = sCmd.substr(nMatch, getMatchingParenthesis(sCmd.substr(nMatch))+1);
@@ -9102,7 +9102,7 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
     {
         /*delete[] _mDataPlots;
         delete[] nDataDim;*/
-        throw INVALID_INDEX;
+        throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
     }
 
     // --> Jetzt wissen wir die Spalten: Suchen wir im Falle von si_pos[1] == inf nach der laengsten <--
@@ -9126,7 +9126,7 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
      */
     nDim = 0;
     if (j == 0 && vCol.size() < 2)
-        throw TOO_FEW_COLS;
+        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
     else if (j == 0)
         nDim = vCol.size();
     else
@@ -9149,7 +9149,7 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
     //cerr << nSize << endl;
 
     if (abs(i_pos[0]-i_pos[1]) <= 1 && vLine.size() <= 1)
-        throw TOO_FEW_LINES;
+        throw SyntaxError(SyntaxError::TOO_FEW_LINES, sCmd, SyntaxError::invalid_position);
 
     _fftData.Create(nSize);
     if (!vLine.size())
@@ -9459,7 +9459,7 @@ bool parser_evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Set
         dVar = parser_GetVarAdress(sVar, _parser);
         if (!dVar)
         {
-            throw EVAL_VAR_NOT_FOUND;
+            throw SyntaxError(SyntaxError::EVAL_VAR_NOT_FOUND, sCmd, sVar, sVar);
         }
         if (sInterval.find(':') == string::npos || sInterval.length() < 3)
             return false;
@@ -9494,7 +9494,7 @@ bool parser_evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Set
             dLeft = Temp;
         }*/
         if (bLogarithmic && (dLeft <= 0.0 || dRight <= 0.0))
-            throw WRONG_PLOT_INTERVAL_FOR_LOGSCALE;
+            throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
     }
 
     if (parser_ExprNotEmpty(sExpr))
@@ -9572,9 +9572,9 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
 
 
     if (sCmd.find("data(") != string::npos && !_data.isValid())
-        throw NO_DATA_AVAILABLE;
+        throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
     if (_data.containsCacheElements(sCmd) && !_data.isValidCache())
-        throw NO_CACHED_DATA;
+        throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);
 
 
     if (sCmd.find("-set") != string::npos || sCmd.find("--") != string::npos)
@@ -9620,8 +9620,8 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
         || (!matchParams(sCmd, "y", '=') && !sYVals.length())
         || (!matchParams(sCmd, "z", '=') && !sZVals.length()))
     {
-        sErrorToken = "datagrid";
-        throw TOO_FEW_ARGS;
+        //sErrorToken = "datagrid";
+        throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, SyntaxError::invalid_position, "datagrid");
     }
 
     if (matchParams(sCmd, "samples", '='))
@@ -9629,7 +9629,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
         _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "samples", '=')+7));
         nSamples = (unsigned int)_parser.Eval();
         if (nSamples < 2)
-            throw TOO_FEW_DATAPOINTS;
+            throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
         sCmd.erase(sCmd.find(getArgAtPos(sCmd, matchParams(sCmd, "samples", '=')+7), matchParams(sCmd, "samples", '=')-1),getArgAtPos(sCmd, matchParams(sCmd, "samples", '=')+7).length());
         sCmd.erase(matchParams(sCmd, "samples", '=')-1, 8);
     }
@@ -9639,10 +9639,10 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
         _idx = parser_getIndices(sTargetCache, _parser, _data, _option);
         sTargetCache.erase(sTargetCache.find('('));
         if (sTargetCache == "data")
-            throw READ_ONLY_DATA;
+            throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, sTargetCache);
 
         if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
-            throw INVALID_INDEX;
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
         sCmd.erase(sCmd.find(getArgAtPos(sCmd, matchParams(sCmd, "target", '=')+6), matchParams(sCmd, "target", '=')-1),getArgAtPos(sCmd, matchParams(sCmd, "target", '=')+6).length());
         sCmd.erase(matchParams(sCmd, "target", '=')-1, 7);
     }
@@ -9679,7 +9679,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
         sZVals = getArgAtPos(sCmd, matchParams(sCmd, "z", '=')+1);
     }
     if (!_functions.call(sZVals, _option))
-        throw FUNCTION_ERROR;
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sZVals, sZVals);
 
     if (_option.getbDebug())
     {
@@ -9708,7 +9708,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
             }
         }
         if ((_idx.nI[0] == -1 && !_idx.vI.size()) || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
-            throw INVALID_INDEX;
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
         if (!_idx.vI.size())
         {
             if (_idx.nI[1] == -1)
@@ -9718,7 +9718,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
             if (_idx.nJ[1] == -2)
                 _idx.nJ[1] = _data.getCols(sDatatable)-1;
             if (_idx.nI[1] == -2 && _idx.nJ[1] != _idx.nJ[0])
-                throw NO_MATRIX;
+                throw SyntaxError(SyntaxError::NO_MATRIX, sCmd, SyntaxError::invalid_position);
             if (_idx.nI[1] == -2)
                 _idx.nI[1] = _data.getLines(sDatatable, true) - _data.getAppendedZeroes(_idx.nJ[0], sDatatable)-1;
 
@@ -9769,7 +9769,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
             parser_GetDataElement(sXVals, _parser, _data, _option);
         }
         if (sXVals.find("{") != string::npos)
-            throw INVALID_INDEX;
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
         sXVals.replace(sXVals.find(':'),1,",");
         _parser.SetExpr(sXVals);
 
@@ -9777,7 +9777,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
         int nNumResults = 0;
         dResult = _parser.Eval(nNumResults);
         if (nNumResults < 2)
-            throw INVALID_INDEX;
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 
         if (sZVals.find("data(") != string::npos || _data.containsCacheElements(sZVals))
         {
@@ -9798,7 +9798,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
                 }
             }
             if ((_idx.nI[0] == -1 && !_idx.vI.size()) || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
-                throw INVALID_INDEX;
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
             if (!_idx.vI.size())
             {
                 if (_idx.nI[1] == -1)
@@ -9826,7 +9826,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
                 if (nSamples < 2)
                     nSamples = _idx.nJ[1] - _idx.nJ[0] + 1;
                 if (nSamples < 2)
-                    throw TOO_FEW_DATAPOINTS;
+                    throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
             }
             else
             {
@@ -9834,7 +9834,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
                 if (nSamples < 2)
                     nSamples = _idx.vJ.size();
                 if (nSamples < 2)
-                    throw TOO_FEW_DATAPOINTS;
+                    throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
             }
             _data.setCacheStatus(false);
         }
@@ -9845,7 +9845,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
         }
     }
     else
-        throw SEPARATOR_NOT_FOUND;
+        throw SyntaxError(SyntaxError::SEPARATOR_NOT_FOUND, sCmd, SyntaxError::invalid_position);
 
     if (_option.getbDebug())
         cerr << "|-> DEBUG: vXVals.size() = " << vXVals.size() << endl;
@@ -9871,7 +9871,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
         }
 
         if ((_idx.nI[0] == -1 && !_idx.vI.size()) || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
-            throw INVALID_INDEX;
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
         if (!_idx.vI.size())
         {
             if (_idx.nI[1] == -1)
@@ -9881,7 +9881,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
             if (_idx.nJ[1] == -2)
                 _idx.nJ[1] = _data.getCols(sDatatable)-1;
             if (_idx.nI[1] == -2 && _idx.nJ[1] != _idx.nJ[0])
-                throw NO_MATRIX;
+                throw SyntaxError(SyntaxError::NO_MATRIX, sCmd, SyntaxError::invalid_position);
             if (_idx.nI[1] == -2)
                 _idx.nI[1] = _data.getLines(sDatatable, true) - _data.getAppendedZeroes(_idx.nJ[0], sDatatable)-1;
 
@@ -9932,7 +9932,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
             parser_GetDataElement(sYVals, _parser, _data, _option);
         }
         if (sYVals.find("{") != string::npos)
-            throw INVALID_INDEX;
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
         sYVals.replace(sYVals.find(':'),1,",");
         _parser.SetExpr(sYVals);
 
@@ -9940,7 +9940,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
         int nNumResults = 0;
         dResult = _parser.Eval(nNumResults);
         if (nNumResults < 2)
-            throw INVALID_INDEX;
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 
         if (sZVals.find("data(") != string::npos || _data.containsCacheElements(sZVals))
         {
@@ -9962,7 +9962,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
             }
 
             if ((_idx.nI[0] == -1 && !_idx.vI.size()) || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
-                throw INVALID_INDEX;
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
             if (!_idx.vI.size())
             {
                 if (_idx.nI[1] == -1)
@@ -9988,7 +9988,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
                 if (nSamples < 2)
                     nSamples = _idx.nI[1] - _idx.nI[0] + 1;
                 if (nSamples < 2)
-                    throw TOO_FEW_DATAPOINTS;
+                    throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
             }
             else
             {
@@ -9996,7 +9996,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
                 if (nSamples < 2)
                     nSamples = _idx.vI.size();
                 if (nSamples < 2)
-                    throw TOO_FEW_DATAPOINTS;
+                    throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
             }
             _data.setCacheStatus(false);
         }
@@ -10007,7 +10007,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
         }
     }
     else
-        throw SEPARATOR_NOT_FOUND;
+        throw SyntaxError(SyntaxError::SEPARATOR_NOT_FOUND, sCmd, SyntaxError::invalid_position);
     if (_option.getbDebug())
         cerr << "|-> DEBUG: vYVals.size() = " << vYVals.size() << endl;
 
@@ -10032,7 +10032,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
         }
 
         if ((_idx.nI[0] == -1 && !_idx.vI.size()) || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
-            throw INVALID_INDEX;
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
         if (!_idx.vI.size())
         {
             if (_idx.nI[1] == -1)
@@ -10085,7 +10085,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
                 cerr << "|-> DEBUG: vZVals.size() = " << vZVals.size() << endl;
 
             if (!vZVals.size() || (vZVals.size() == 1 && vZVals[0].size() == 1))
-                throw TOO_FEW_DATAPOINTS;
+                throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
 
             if (vZVals.size() == 1 || vZVals[0].size() == 1)
             {
@@ -10165,7 +10165,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
                 cerr << "|-> DEBUG: vZVals.size() = " << vZVals.size() << endl;
 
             if (!vZVals.size() || (vZVals.size() == 1 && vZVals[0].size() == 1))
-                throw TOO_FEW_DATAPOINTS;
+                throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
 
             if (vZVals.size() == 1 || vZVals[0].size() == 1)
             {
@@ -10303,7 +10303,7 @@ vector<double> parser_IntervalReader(string& sExpr, Parser& _parser, Datafile& _
     string sInterval[2] = {"",""};
 
     if (!_functions.call(sExpr, _option))
-        throw FUNCTION_ERROR;
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sExpr, SyntaxError::invalid_position);
 
     if (sExpr.find("data(") != string::npos || _data.containsCacheElements(sExpr))
         parser_GetDataElement(sExpr, _parser, _data, _option);
@@ -10489,11 +10489,11 @@ bool parser_writeAudio(string& sCmd, Parser& _parser, Datafile& _data, Define& _
     {
         string sDummy = "";
         if (!parser_StringParser(sCmd, sDummy, _data, _parser, _option, true))
-            throw STRING_ERROR;
+            throw SyntaxError(SyntaxError::STRING_ERROR, sCmd, SyntaxError::invalid_position);
     }
     // Funktionen aufrufen
     if (!_functions.call(sCmd, _option))
-        throw FUNCTION_ERROR;
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
 
     // Samples lesen
     if (matchParams(sCmd, "samples", '='))
@@ -10638,11 +10638,11 @@ bool parser_regularize(string& sCmd, Parser& _parser, Datafile& _data, Define& _
     {
         string sDummy = "";
         if (!parser_StringParser(sCmd, sDummy, _data, _parser, _option, true))
-            throw STRING_ERROR;
+            throw SyntaxError(SyntaxError::STRING_ERROR, sCmd, SyntaxError::invalid_position);
     }
     // Funktionen aufrufen
     if (!_functions.call(sCmd, _option))
-        throw FUNCTION_ERROR;
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
 
     // Samples lesen
     if (matchParams(sCmd, "samples", '='))
@@ -10748,11 +10748,11 @@ bool parser_pulseAnalysis(string& _sCmd, Parser& _parser, Datafile& _data, Defin
     {
         string sDummy = "";
         if (!parser_StringParser(sCmd, sDummy, _data, _parser, _option, true))
-            throw STRING_ERROR;
+            throw SyntaxError(SyntaxError::STRING_ERROR, _sCmd, SyntaxError::invalid_position);
     }
     // Funktionen aufrufen
     if (!_functions.call(sCmd, _option))
-        throw FUNCTION_ERROR;
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, _sCmd, SyntaxError::invalid_position);
 
 
     // Indices lesen
@@ -10866,11 +10866,11 @@ bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& 
     {
         string sDummy = "";
         if (!parser_StringParser(sCmd, sDummy, _data, _parser, _option, true))
-            throw STRING_ERROR;
+            throw SyntaxError(SyntaxError::STRING_ERROR, sCmd, SyntaxError::invalid_position);
     }
     // Funktionen aufrufen
     if (!_functions.call(sCmd, _option))
-        throw FUNCTION_ERROR;
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
 
     if (matchParams(sCmd, "samples", '='))
     {
@@ -10885,10 +10885,10 @@ bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& 
         _target = parser_getIndices(sTargetCache, _parser, _data, _option);
         sTargetCache.erase(sTargetCache.find('('));
         if (sTargetCache == "data")
-            throw READ_ONLY_DATA;
+            throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, SyntaxError::invalid_position);
 
         if (_target.nI[0] == -1 || _target.nJ[0] == -1)
-            throw INVALID_INDEX;
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
     }
     else
     {

@@ -191,7 +191,7 @@ int Loop::for_loop(Parser& _parser, Define& _functions, Datafile& _data, Setting
     {
         if (!_functions.call(sForHead, _option))
         {
-            throw FUNCTION_ERROR;
+            throw SyntaxError(SyntaxError::FUNCTION_ERROR, sForHead, SyntaxError::invalid_position);
         }
     }
     // --> Datafile- und Cache-Konstrukte abfangen <--
@@ -204,7 +204,7 @@ int Loop::for_loop(Parser& _parser, Define& _functions, Datafile& _data, Setting
             parser_ReplaceEntities(sForHead, "data(", _data, _parser, _option);
         else if (sForHead.find("data(") != string::npos && !_data.isValid() && !isInQuotes(sForHead, sForHead.find("data(")))
         {
-            throw NO_DATA_AVAILABLE;
+            throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sForHead, SyntaxError::invalid_position);
             /*mu::console() << _nrT("|-> FEHLER: Keine Daten verfuegbar!") << endl;
             bFault = true;*/
         }
@@ -223,7 +223,7 @@ int Loop::for_loop(Parser& _parser, Define& _functions, Datafile& _data, Setting
         }
         else if (_data.containsCacheElements(sForHead) && !_data.isValidCache())
         {
-            throw NO_DATA_AVAILABLE;
+            throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sForHead, SyntaxError::invalid_position);
             /*mu::console() << _nrT("|-> FEHLER: Keine Daten verfuegbar!") << endl;
             bFault = true;*/
         }
@@ -273,7 +273,7 @@ int Loop::for_loop(Parser& _parser, Define& _functions, Datafile& _data, Setting
                 {
                     if (_option.getUseDebugger())
                         _option._debug.gatherLoopBasedInformations(sForHead, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                    throw CANNOT_EVAL_FOR;
+                    throw SyntaxError(SyntaxError::CANNOT_EVAL_FOR, sForHead, SyntaxError::invalid_position);
                 }
             }
         }
@@ -281,7 +281,7 @@ int Loop::for_loop(Parser& _parser, Define& _functions, Datafile& _data, Setting
         {
             if (_option.getUseDebugger())
                 _option._debug.gatherLoopBasedInformations(sForHead, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-            throw STRING_ERROR;
+            throw SyntaxError(SyntaxError::STRING_ERROR, sForHead, SyntaxError::invalid_position);
         }
         replaceLocalVars(sForHead);
         if (!bLockedPauseMode && bUseLoopParsingMode)
@@ -496,7 +496,7 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
     {
         if (!_functions.call(sWhile_Condition, _option))
         {
-            throw FUNCTION_ERROR;
+            throw SyntaxError(SyntaxError::FUNCTION_ERROR, sWhile_Condition, SyntaxError::invalid_position);
         }
     }
     if (sWhile_Condition.find("data(") != string::npos || _data.containsCacheElements(sWhile_Condition))
@@ -518,7 +518,7 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
             {
                 if (_option.getUseDebugger())
                     _option._debug.gatherLoopBasedInformations(sWhile_Condition_Back, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                throw NO_DATA_AVAILABLE;
+                throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sWhile_Condition, SyntaxError::invalid_position);
             }
         }
         if (_data.containsCacheElements(sWhile_Condition))
@@ -542,7 +542,7 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
                     {
                         if (_option.getUseDebugger())
                             _option._debug.gatherLoopBasedInformations(sWhile_Condition, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                        throw NO_CACHED_DATA;
+                        throw SyntaxError(SyntaxError::NO_CACHED_DATA, sWhile_Condition, SyntaxError::invalid_position);
                     }
                 }
             }
@@ -604,7 +604,7 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
         {
             if (_option.getUseDebugger())
                 _option._debug.gatherLoopBasedInformations(sWhile_Condition_Back, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-            throw STRING_ERROR;
+            throw SyntaxError(SyntaxError::STRING_ERROR, sWhile_Condition, SyntaxError::invalid_position);
         }
         replaceLocalVars(sWhile_Condition);
         if (!bLockedPauseMode && bUseLoopParsingMode)
@@ -771,7 +771,7 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
             {
                 if (!_functions.call(sWhile_Condition, _option))
                 {
-                    throw FUNCTION_ERROR;
+                    throw SyntaxError(SyntaxError::FUNCTION_ERROR, sWhile_Condition, SyntaxError::invalid_position);
                 }
             }
             if (sWhile_Condition.find("data(") != string::npos || _data.containsCacheElements(sWhile_Condition))
@@ -793,7 +793,7 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
                     {
                         if (_option.getUseDebugger())
                             _option._debug.gatherLoopBasedInformations(sWhile_Condition_Back, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                        throw NO_DATA_AVAILABLE;
+                        throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sWhile_Condition, SyntaxError::invalid_position);
                     }
                 }
                 if (_data.containsCacheElements(sWhile_Condition))
@@ -817,7 +817,7 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
                             {
                                 if (_option.getUseDebugger())
                                     _option._debug.gatherLoopBasedInformations(sWhile_Condition_Back, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                                throw NO_CACHED_DATA;
+                                throw SyntaxError(SyntaxError::NO_CACHED_DATA, sWhile_Condition, SyntaxError::invalid_position);
                             }
                         }
                     }
@@ -874,7 +874,7 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
                 {
                     if (_option.getUseDebugger())
                         _option._debug.gatherLoopBasedInformations(sWhile_Condition_Back, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                    throw STRING_ERROR;
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sWhile_Condition, SyntaxError::invalid_position);
                 }
                 replaceLocalVars(sWhile_Condition);
                 if (!bLockedPauseMode && bUseLoopParsingMode)
@@ -904,7 +904,7 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
     {
         if (!_functions.call(sIf_Condition, _option))
         {
-            throw FUNCTION_ERROR;
+            throw SyntaxError(SyntaxError::FUNCTION_ERROR, sIf_Condition, SyntaxError::invalid_position);
         }
     }
     if (sIf_Condition.find("data(") != string::npos || _data.containsCacheElements(sIf_Condition))
@@ -926,7 +926,7 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
             {
                 if (_option.getUseDebugger())
                     _option._debug.gatherLoopBasedInformations(sIf_Condition, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                throw NO_DATA_AVAILABLE;
+                throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sIf_Condition, SyntaxError::invalid_position);
             }
         }
         if (_data.containsCacheElements(sIf_Condition))
@@ -949,7 +949,7 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                     {
                         if (_option.getUseDebugger())
                             _option._debug.gatherLoopBasedInformations(sIf_Condition, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                        throw NO_CACHED_DATA;
+                        throw SyntaxError(SyntaxError::NO_CACHED_DATA, sIf_Condition, SyntaxError::invalid_position);
                     }
                 }
             }
@@ -1005,7 +1005,7 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
         {
             if (_option.getUseDebugger())
                 _option._debug.gatherLoopBasedInformations(sIf_Condition, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-            throw STRING_ERROR;
+            throw SyntaxError(SyntaxError::STRING_ERROR, sIf_Condition, SyntaxError::invalid_position);
         }
         replaceLocalVars(sIf_Condition);
         if (!bLockedPauseMode)
@@ -1161,7 +1161,7 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
             {
                 if (!_functions.call(sIf_Condition, _option))
                 {
-                    throw FUNCTION_ERROR;
+                    throw SyntaxError(SyntaxError::FUNCTION_ERROR, sIf_Condition, SyntaxError::invalid_position);
                 }
             }
             if (sIf_Condition.find("data(") != string::npos || _data.containsCacheElements(sIf_Condition))
@@ -1183,7 +1183,7 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                     {
                         if (_option.getUseDebugger())
                             _option._debug.gatherLoopBasedInformations(sIf_Condition, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                        throw NO_DATA_AVAILABLE;
+                        throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sIf_Condition, SyntaxError::invalid_position);
                     }
                 }
                 if (_data.containsCacheElements(sIf_Condition))
@@ -1206,7 +1206,7 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                             {
                                 if (_option.getUseDebugger())
                                     _option._debug.gatherLoopBasedInformations(sIf_Condition, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                                throw NO_CACHED_DATA;
+                                throw SyntaxError(SyntaxError::NO_CACHED_DATA, sIf_Condition, SyntaxError::invalid_position);
                             }
                         }
                     }
@@ -1262,7 +1262,7 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                 {
                     if (_option.getUseDebugger())
                         _option._debug.gatherLoopBasedInformations(sIf_Condition, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                    throw STRING_ERROR;
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sIf_Condition, SyntaxError::invalid_position);
                 }
                 replaceLocalVars(sIf_Condition);
                 if (!bLockedPauseMode && bUseLoopParsingMode)
@@ -1635,7 +1635,7 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
         if (!validateParenthesisNumber(__sCmd))
         {
             reset(_parser);
-            throw UNMATCHED_PARENTHESIS;
+            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, __sCmd, __sCmd.find('('));
         }
         if (__sCmd.substr(0,3) == "for")
         {
@@ -1681,7 +1681,7 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
             if (nPos == string::npos)
             {
                 reset(_parser);
-                throw CANNOT_EVAL_FOR;
+                throw SyntaxError(SyntaxError::CANNOT_EVAL_FOR, __sCmd, SyntaxError::invalid_position);
             }
             __sCmd.replace(nPos, 1, ",");
         }
@@ -2404,12 +2404,12 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
                     if (!_functions.call(sCmd[i][0], _option))
                     {
                         reset(_parser);
-                        throw FUNCTION_ERROR;
+                        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd[i][0], SyntaxError::invalid_position);
                     }
                     if (!_functions.call(sCmd[i][1], _option))
                     {
                         reset(_parser);
-                        throw FUNCTION_ERROR;
+                        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd[i][1], SyntaxError::invalid_position);
                     }
                     StripSpaces(sCmd[i][0]);
                 }
@@ -2637,7 +2637,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
             {
                 if (bSilent || bMask)
                     NumeReKernel::printPreFmt("\n");
-                throw CANNOT_EVAL_FOR;
+                throw SyntaxError(SyntaxError::CANNOT_EVAL_FOR, "", SyntaxError::invalid_position);
             }
             else if (!bReturnSignal && !bMask)
             {
@@ -2653,7 +2653,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
             {
                 if (bSilent || bMask)
                     NumeReKernel::printPreFmt("\n");
-                throw CANNOT_EVAL_WHILE;
+                throw SyntaxError(SyntaxError::CANNOT_EVAL_WHILE, "", SyntaxError::invalid_position);
             }
             else if (!bReturnSignal && !bMask)
             {
@@ -2669,7 +2669,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
             {
                 if (bSilent || bMask)
                     NumeReKernel::printPreFmt("\n");
-                throw CANNOT_EVAL_IF;
+                throw SyntaxError(SyntaxError::CANNOT_EVAL_IF, "", SyntaxError::invalid_position);
             }
         }
     }
@@ -2815,7 +2815,7 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
     {
         if (!_functions.call(sLine, _option))
         {
-            throw FUNCTION_ERROR;
+            throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
         }
     }
     bool bMultLinCol[2] = {false, false};
@@ -2842,6 +2842,7 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
     {
         if (_option.getbDebug())
             cerr << "|-> DEBUG: throw found!" << endl;
+        string sErrorToken;
         if (sLine.length() > 6 && (containsStrings(sLine) || _data.containsStringVars(sLine)))
         {
             if (_data.containsStringVars(sLine))
@@ -2850,7 +2851,7 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
             sErrorToken += " -nq";
             parser_StringParser(sErrorToken, sCache, _data, _parser, _option, true);
         }
-        throw LOOP_THROW;
+        throw SyntaxError(SyntaxError::LOOP_THROW, sLine, SyntaxError::invalid_position, sErrorToken);
     }
     if (findCommand(sLine).sString == "return")
     {
@@ -2884,7 +2885,7 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
         if (bPrintedStatus)
             NumeReKernel::printPreFmt(" ABBRUCH!");
             //cerr << " ABBRUCH!";
-        throw PROCESS_ABORTED_BY_USER;
+        throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
         ReturnVal.vNumVal.push_back(NAN);
         bReturnSignal = true;
         return -2;
@@ -2994,7 +2995,7 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
                 continue;
             unsigned int nParPos = getMatchingParenthesis(sLine.substr(nPos));
             if (nParPos == string::npos)
-                throw UNMATCHED_PARENTHESIS;
+                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
             string sCmdString = sLine.substr(nPos+1, nParPos-1);
             StripSpaces(sCmdString);
             if (containsStrings(sCmdString) || _data.containsStringVars(sCmdString))
@@ -3197,7 +3198,7 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
         }
         else
         {
-            throw STRING_ERROR;
+            throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
         }
         replaceLocalVars(sLine);
         if (sCache.length() && _data.containsCacheElements(sCache) && !bWriteToCache)
@@ -3222,7 +3223,7 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
             StripSpaces(sj_pos[0]);
             if (!si_pos[0].length() || !sj_pos[0].length())
             {
-                throw INVALID_INDEX;
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position, sCache);
             }
             _parser.SetExpr(si_pos[0] + "," + sj_pos[0]);
             _parser.Eval();
@@ -3254,7 +3255,7 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
             }
             if (bMultLinCol[0] && bMultLinCol[1])
             {
-                throw NO_MATRIX;
+                throw SyntaxError(SyntaxError::NO_MATRIX, sLine, SyntaxError::invalid_position, sCache);
             }
             if (parser_ExprNotEmpty(si_pos[0]))
             {

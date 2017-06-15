@@ -143,8 +143,8 @@ bool Odesolver::solve(const string& sCmd)
 
     if (containsStrings(sCmd) || _odeData->containsStringVars(sCmd))
     {
-        sErrorToken = "odesolve";
-        throw STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD;
+        //sErrorToken = "odesolve";
+        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, sCmd, SyntaxError::invalid_position, "odesolve");
     }
 
     if (sCmd.find("-set") != string::npos || sCmd.find("--") != string::npos)
@@ -163,13 +163,13 @@ bool Odesolver::solve(const string& sCmd)
         StripSpaces(sFunc);
     }
     else
-        throw NO_OPTIONS_FOR_ODE;
+        throw SyntaxError(SyntaxError::NO_OPTIONS_FOR_ODE, sCmd, SyntaxError::invalid_position);
 
     //cerr << 2 << endl;
     if (!sFunc.length())
-        throw NO_EXPRESSION_FOR_ODE;
+        throw SyntaxError(SyntaxError::NO_EXPRESSION_FOR_ODE, sCmd, SyntaxError::invalid_position);
     if (!_odeFunctions->call(sFunc, *_odeSettings))
-        throw FUNCTION_ERROR;
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sFunc, sFunc);
     if (sFunc.find("data(") != string::npos || _odeData->containsCacheElements(sFunc))
         parser_GetDataElement(sFunc, *_odeParser, *_odeData, *_odeSettings);
 
@@ -201,7 +201,7 @@ bool Odesolver::solve(const string& sCmd)
     sTarget.erase(sTarget.find('('));
 
     if (!_odeFunctions->call(sParams, *_odeSettings))
-        throw FUNCTION_ERROR;
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sParams, sParams);
     if (sParams.find("data(") != string::npos || _odeData->containsCacheElements(sParams))
         parser_GetDataElement(sParams, *_odeParser, *_odeData, *_odeSettings);
 
@@ -299,7 +299,7 @@ bool Odesolver::solve(const string& sCmd)
     vInterval = parser_IntervalReader(sParams, *_odeParser, *_odeData, *_odeFunctions, *_odeSettings, false);
     //cerr << 6 << endl;
     if (!vInterval.size() || isnan(vInterval[0]) || isinf(vInterval[0]) || isnan(vInterval[1]) || isinf(vInterval[1]))
-        throw NO_INTERVAL_FOR_ODE;
+        throw SyntaxError(SyntaxError::NO_INTERVAL_FOR_ODE, sCmd, SyntaxError::invalid_position);
     dt = (vInterval[1]-vInterval[0])/(double)nSamples;
     t0 = vInterval[0];
     t1 = vInterval[0];
@@ -426,7 +426,7 @@ bool Odesolver::solve(const string& sCmd)
             if (y2)
                 delete[] y2;
 
-            throw PROCESS_ABORTED_BY_USER;
+            throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
         }
         if (_idx.nI[1]-_idx.nI[0] <= i+1)
             break;

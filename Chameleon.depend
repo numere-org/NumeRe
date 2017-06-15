@@ -6826,7 +6826,7 @@
 	"settings.hpp"
 	"datafile.hpp"
 
-1490791550 d:\cpp\numere-source\trunk\kernel\core\error.hpp
+1497524325 d:\cpp\numere-source\trunk\kernel\core\error.hpp
 	<string>
 	"language.hpp"
 
@@ -6868,7 +6868,7 @@
 	"BasicExcel.hpp"
 	"tinyxml2.h"
 
-1494700355 d:\cpp\numere-source\trunk\kernel\core\cache.hpp
+1497520803 d:\cpp\numere-source\trunk\kernel\core\cache.hpp
 	<iostream>
 	<fstream>
 	<string>
@@ -7188,7 +7188,7 @@
 	"documentation.hpp"
 	"odesolver.hpp"
 
-1492882632 d:\cpp\numere-source\trunk\kernel\core\parser_functions.hpp
+1497526630 d:\cpp\numere-source\trunk\kernel\core\parser_functions.hpp
 	<cmath>
 	<string>
 	<sstream>
@@ -8335,30 +8335,30 @@
 1490791550 source:d:\cpp\numere-source\trunk\kernel\core\basicexcel.cpp
 	"BasicExcel.hpp"
 
-1494113930 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1497522180 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
-1495628874 source:d:\cpp\numere-source\trunk\kernel\core\cache.cpp
+1497520553 source:d:\cpp\numere-source\trunk\kernel\core\cache.cpp
 	"cache.hpp"
 	"../kernel.hpp"
 
-1494702364 source:d:\cpp\numere-source\trunk\kernel\core\datafile.cpp
+1497520714 source:d:\cpp\numere-source\trunk\kernel\core\datafile.cpp
 	"datafile.hpp"
 	"../kernel.hpp"
 
 1494146710 source:d:\cpp\numere-source\trunk\kernel\core\debugger.cpp
 	"debugger.hpp"
 
-1494699413 source:d:\cpp\numere-source\trunk\kernel\core\define.cpp
+1497520769 source:d:\cpp\numere-source\trunk\kernel\core\define.cpp
 	"define.hpp"
 	"../kernel.hpp"
 
-1494108160 source:d:\cpp\numere-source\trunk\kernel\core\doc_helper.cpp
+1497520817 source:d:\cpp\numere-source\trunk\kernel\core\doc_helper.cpp
 	"doc_helper.hpp"
 	"version.h"
 
-1494151217 source:d:\cpp\numere-source\trunk\kernel\core\documentation.cpp
+1497520776 source:d:\cpp\numere-source\trunk\kernel\core\documentation.cpp
 	"documentation.hpp"
 	"../kernel.hpp"
 
@@ -8366,7 +8366,7 @@
 	"filesystem.hpp"
 	"../kernel.hpp"
 
-1490791551 source:d:\cpp\numere-source\trunk\kernel\core\fitcontroller.cpp
+1497520828 source:d:\cpp\numere-source\trunk\kernel\core\fitcontroller.cpp
 	"fitcontroller.hpp"
 	"../kernel.hpp"
 
@@ -8385,15 +8385,15 @@
 1490791550 source:d:\cpp\numere-source\trunk\kernel\core\language.cpp
 	"language.hpp"
 
-1495610415 source:d:\cpp\numere-source\trunk\kernel\core\loop.cpp
+1497520975 source:d:\cpp\numere-source\trunk\kernel\core\loop.cpp
 	"loop.hpp"
 	"../kernel.hpp"
 
-1496328864 source:d:\cpp\numere-source\trunk\kernel\core\matrixoperations.cpp
+1497521137 source:d:\cpp\numere-source\trunk\kernel\core\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
-1490791551 source:d:\cpp\numere-source\trunk\kernel\core\odesolver.cpp
+1497521135 source:d:\cpp\numere-source\trunk\kernel\core\odesolver.cpp
 	"odesolver.hpp"
 	"../kernel.hpp"
 
@@ -8401,10 +8401,10 @@
 	"output.hpp"
 	"../kernel.hpp"
 
-1494776943 source:d:\cpp\numere-source\trunk\kernel\core\parser.cpp
+1497473246 source:d:\cpp\numere-source\trunk\kernel\core\parser.cpp
 	"parser.hpp"
 
-1496168911 source:d:\cpp\numere-source\trunk\kernel\core\parser_functions.cpp
+1497521844 source:d:\cpp\numere-source\trunk\kernel\core\parser_functions.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -8473,26 +8473,26 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1494673093 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
+1497521994 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
-1490791551 source:d:\cpp\numere-source\trunk\kernel\core\plugin.cpp
+1497521844 source:d:\cpp\numere-source\trunk\kernel\core\plugin.cpp
 	"plugin.hpp"
 
-1492177555 source:d:\cpp\numere-source\trunk\kernel\core\plugin_histogram.cpp
+1497521993 source:d:\cpp\numere-source\trunk\kernel\core\plugin_histogram.cpp
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1490791551 source:d:\cpp\numere-source\trunk\kernel\core\plugin_random.cpp
+1497521992 source:d:\cpp\numere-source\trunk\kernel\core\plugin_random.cpp
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1490791551 source:d:\cpp\numere-source\trunk\kernel\core\plugin_statistics.cpp
+1497521991 source:d:\cpp\numere-source\trunk\kernel\core\plugin_statistics.cpp
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1491416523 source:d:\cpp\numere-source\trunk\kernel\core\procedure.cpp
+1497522172 source:d:\cpp\numere-source\trunk\kernel\core\procedure.cpp
 	"procedure.hpp"
 	"../kernel.hpp"
 
@@ -8505,7 +8505,7 @@
 	<iostream>
 	"resampler.h"
 
-1491038102 source:d:\cpp\numere-source\trunk\kernel\core\script.cpp
+1497522025 source:d:\cpp\numere-source\trunk\kernel\core\script.cpp
 	"script.hpp"
 	"../kernel.hpp"
 
@@ -8513,7 +8513,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1497107348 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1497522172 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -8525,7 +8525,7 @@
 	<cstddef>
 	<cstdarg>
 
-1494109393 source:d:\cpp\numere-source\trunk\kernel\core\tools.cpp
+1497522204 source:d:\cpp\numere-source\trunk\kernel\core\tools.cpp
 	"tools.hpp"
 	"../kernel.hpp"
 	<cstdlib>
@@ -8551,7 +8551,7 @@
 	"debugmessenger.hpp"
 	"core/tools.hpp"
 
-1494697902 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1497523963 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 
@@ -8792,4 +8792,7 @@
 1495825086 d:\cpp\numere-source\trunk\gui\stepnext.xpm
 
 1495825759 d:\cpp\numere-source\trunk\gui\wraparound.xpm
+
+1497524323 source:d:\cpp\numere-source\trunk\kernel\core\error.cpp
+	"error.hpp"
 

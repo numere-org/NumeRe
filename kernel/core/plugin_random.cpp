@@ -186,38 +186,12 @@ void plugin_random(string& sCmd, Datafile& _data, Output& _out, Settings& _optio
 
     if (!nDataRows)
     {
-        throw NO_COLS;
-        /*cerr << "|-> Wie viele Datenreihen sollen generiert werden?" << endl;
-        cerr << "|   (0 zum Abbrechen)" << endl;
-        do
-        {
-            cerr << "|" << endl;
-            cerr << "|<- ";
-            getline(cin, sInput);
-        }
-        while (!sInput.length());
-        nDataRows = abs((int)StrToDb(sInput));
-
-        if (nDataRows == 0)
-        {
-            cerr << "|-> ABBRUCH!" << endl;
-            return;
-        }*/
+        throw SyntaxError(SyntaxError::NO_COLS, sCmd, SyntaxError::invalid_position);
     }
 
     if (!nDataPoints)
     {
-        throw NO_ROWS;
-        /*sInput = "";
-        cerr << "|-> Wie viele Datenpunkte sollen generiert werden?" << endl;
-        do
-        {
-            cerr << "|" << endl;
-            cerr << "|<- ";
-            getline(cin, sInput);
-            nDataPoints = abs((int)StrToDb(sInput));
-        }
-        while (!nDataPoints && !sInput.length());*/
+        throw SyntaxError(SyntaxError::NO_ROWS, sCmd, SyntaxError::invalid_position);
     }
 
 

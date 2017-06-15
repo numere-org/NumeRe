@@ -190,9 +190,10 @@ void Datafile::openLabx(Settings& _option)
     file_in.open(sDataFile.c_str());
     if (file_in.fail())
     {
-        sErrorToken = sDataFile;
+        //sErrorToken = sDataFile;
         file_in.close();
-        throw DATAFILE_NOT_EXIST;
+        //throw DATAFILE_NOT_EXIST;
+        throw SyntaxError(SyntaxError::DATAFILE_NOT_EXIST, "", SyntaxError::invalid_position, sDataFile);
     }
 
     while (!file_in.eof())
@@ -200,18 +201,20 @@ void Datafile::openLabx(Settings& _option)
         getline(file_in, sLabx_substr);
         if (file_in.fail())
         {
-            sErrorToken = sDataFile;
+            //sErrorToken = sDataFile;
             file_in.close();
-            throw CANNOT_READ_FILE;
+            //throw CANNOT_READ_FILE;
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDataFile);
         }
         StripSpaces(sLabx_substr);
         sLabx += sLabx_substr;
     }
     if (!sLabx.length() || sLabx.find("<allchannels count=") == string::npos)
     {
-        sErrorToken = sDataFile;
+        //sErrorToken = sDataFile;
         file_in.close();
-        throw CANNOT_READ_FILE;
+        //throw DATAFILE_NOT_EXIST;
+        throw SyntaxError(SyntaxError::DATAFILE_NOT_EXIST, "", SyntaxError::invalid_position, sDataFile);
     }
     file_in.close();
 
@@ -220,8 +223,9 @@ void Datafile::openLabx(Settings& _option)
     nCols = StrToInt(sLabx_substr);
     if (!nCols)
     {
-        sErrorToken = sDataFile;
-        throw CANNOT_READ_FILE;
+        //sErrorToken = sDataFile;
+        //throw CANNOT_READ_FILE;
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDataFile);
     }
 
     sCols = new string[nCols];
@@ -248,10 +252,11 @@ void Datafile::openLabx(Settings& _option)
     }
     if (!nLine)
     {
-        sErrorToken = sDataFile;
+        //sErrorToken = sDataFile;
         delete[] sCols;
         delete[] sHeadLine;
-        throw CANNOT_READ_FILE;
+        //throw CANNOT_READ_FILE;
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDataFile);
     }
 
     nLines = nLine;
@@ -355,16 +360,18 @@ void Datafile::openCSV(Settings& _option)
 		// --> Hoppla! Offenbar ist da etwas nicht ganz richtig gelaufen! <--
 		if (file_in.fail())
 		{
-            sErrorToken = sDataFile;
-            throw DATAFILE_NOT_EXIST;
+            //sErrorToken = sDataFile;
+            //throw DATAFILE_NOT_EXIST;
+            throw SyntaxError(SyntaxError::DATAFILE_NOT_EXIST, "", SyntaxError::invalid_position, sDataFile);
 		}
 
 		while (!file_in.eof())		// Zaehlen wir mal die Zeilen der Datei
 		{
 			if(file_in.fail())		// Sicherheit vor: Wer weiß, ob da nicht ein Fehler inmitten des Lesevorgangs auftritt
 			{
-                sErrorToken = sDataFile;
-                throw DATAFILE_NOT_EXIST;
+                //sErrorToken = sDataFile;
+                //throw DATAFILE_NOT_EXIST;
+                throw SyntaxError(SyntaxError::DATAFILE_NOT_EXIST, "", SyntaxError::invalid_position, sDataFile);
 			}
 			// --> Schnapp' dir pro forma eine Zeile <--
 			getline(file_in, s);
@@ -377,9 +384,9 @@ void Datafile::openCSV(Settings& _option)
 
 		if (!nLine)
 		{
-            sErrorToken = sDataFile;
-            sDataFile = "";
-            throw CANNOT_READ_FILE;
+            //sErrorToken = sDataFile;
+            //throw CANNOT_READ_FILE;
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDataFile);
 		}
 
 		file_in.clear();			// Den eofbit und den failbit aufheben
@@ -557,8 +564,9 @@ void Datafile::openCSV(Settings& _option)
                     delete[] sLine;
                     sLine = 0;
                     bValidData = false;
-                    sErrorToken = sDataFile;
-                    throw CANNOT_READ_FILE;
+                    //sErrorToken = sDataFile;
+                    //throw CANNOT_READ_FILE;
+                    throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDataFile);
                 }
             }
         }
@@ -773,16 +781,18 @@ void Datafile::openJDX(Settings& _option)
 		// --> Hoppla! Offenbar ist da etwas nicht ganz richtig gelaufen! <--
 		if (file_in.fail())
 		{
-            sErrorToken = sDataFile;
-            throw DATAFILE_NOT_EXIST;
+           //sErrorToken = sDataFile;
+            //throw DATAFILE_NOT_EXIST;
+            throw SyntaxError(SyntaxError::DATAFILE_NOT_EXIST, "", SyntaxError::invalid_position, sDataFile);
 		}
 
 		while (!file_in.eof())		// Zaehlen wir mal die Zeilen der Datei
 		{
 			if (file_in.fail())		// Sicherheit vor: Wer weiß, ob da nicht ein Fehler inmitten des Lesevorgangs auftritt
 			{
-                sErrorToken = sDataFile;
-                throw DATAFILE_NOT_EXIST;
+                //sErrorToken = sDataFile;
+                //throw DATAFILE_NOT_EXIST;
+                throw SyntaxError(SyntaxError::DATAFILE_NOT_EXIST, "", SyntaxError::invalid_position, sDataFile);
 			}
 			// --> Schnapp' dir pro forma eine Zeile <--
 			getline(file_in, s);
@@ -804,9 +814,9 @@ void Datafile::openJDX(Settings& _option)
 
 		if (!nLine)
 		{
-            sErrorToken = sDataFile;
-            sDataFile = "";
-            throw CANNOT_READ_FILE;
+            //sErrorToken = sDataFile;
+            //sDataFile = "";
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDataFile);
 		}
 
 		file_in.clear();			// Den eofbit und den failbit aufheben
@@ -1091,8 +1101,8 @@ void Datafile::openNDAT(Settings& _option)
     }
     else if (!file_in.good())
     {
-        sErrorToken = sDataFile;
-        throw DATAFILE_NOT_EXIST;
+        //sErrorToken = sDataFile;
+        throw SyntaxError(SyntaxError::DATAFILE_NOT_EXIST, "", SyntaxError::invalid_position, sDataFile);
     }
     if (cHeadLine)
     {
@@ -1133,8 +1143,8 @@ void Datafile::openIBW(Settings& _option, bool bXZSlice, bool bYZSlice)
 
     if ((nError = CPOpenFile(sDataFile.c_str(), 0, &_cp_file_ref)))
     {
-        sErrorToken = sDataFile;
-        throw CANNOT_READ_FILE;
+        //sErrorToken = sDataFile;
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDataFile);
     }
     nError = ReadWave(_cp_file_ref, &nType, &nPnts, nDim, dScalingFactorA, dScalingFactorB, &vWaveDataPtr, &cName);
     if (nError)
@@ -1142,8 +1152,8 @@ void Datafile::openIBW(Settings& _option, bool bXZSlice, bool bYZSlice)
         CPCloseFile(_cp_file_ref);
         if (vWaveDataPtr != NULL)
             free(vWaveDataPtr);
-        sErrorToken = sDataFile;
-        throw CANNOT_READ_FILE;
+        //sErrorToken = sDataFile;
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDataFile);
     }
 
     if (nType & NT_CMPLX)
@@ -1164,8 +1174,8 @@ void Datafile::openIBW(Settings& _option, bool bXZSlice, bool bYZSlice)
         CPCloseFile(_cp_file_ref);
         if (vWaveDataPtr != NULL)
             free(vWaveDataPtr);
-        sErrorToken = sDataFile;
-        throw CANNOT_READ_FILE;
+        //sErrorToken = sDataFile;
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDataFile);
     }
 
     nLines = nDim[0];
@@ -1177,8 +1187,8 @@ void Datafile::openIBW(Settings& _option, bool bXZSlice, bool bYZSlice)
         CPCloseFile(_cp_file_ref);
         if (vWaveDataPtr != NULL)
             free(vWaveDataPtr);
-        sErrorToken = sDataFile;
-        throw FILE_IS_EMPTY;
+        //sErrorToken = sDataFile;
+        throw SyntaxError(SyntaxError::FILE_IS_EMPTY, "", SyntaxError::invalid_position, sDataFile);
     }
     if (!nCols || nCols == 1)
     {
@@ -1344,22 +1354,22 @@ void Datafile::openODS(Settings& _option)
     if (!_zip.open(sDataFile))
     {
         _zip.close();
-        sErrorToken = sDataFile;
-        throw DATAFILE_NOT_EXIST;
+        //sErrorToken = sDataFile;
+        throw SyntaxError(SyntaxError::DATAFILE_NOT_EXIST, "", SyntaxError::invalid_position, sDataFile);
     }
     sODS = _zip.getZipItem("content.xml");
     _zip.close();
 
     if (!sODS.length())
     {
-        sErrorToken = sDataFile;
-        throw CANNOT_READ_FILE;
+        //sErrorToken = sDataFile;
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDataFile);
     }
     sODS.erase(0,sODS.find("<office:spreadsheet>"));
     if (!sODS.length())
     {
-        sErrorToken = sDataFile;
-        throw CANNOT_READ_FILE;
+        //sErrorToken = sDataFile;
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDataFile);
     }
 
     //cerr << sODS.substr(0,500) << endl;
@@ -1372,8 +1382,8 @@ void Datafile::openODS(Settings& _option)
     }
     if (!vTables.size())
     {
-        sErrorToken = sDataFile;
-        throw CANNOT_READ_FILE;
+        //sErrorToken = sDataFile;
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDataFile);
     }
 
 
@@ -1454,8 +1464,8 @@ void Datafile::openODS(Settings& _option)
 
     if (!vMatrix.size() || !nMaxCols)
     {
-        sErrorToken = sDataFile;
-        throw CANNOT_READ_FILE;
+        //sErrorToken = sDataFile;
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDataFile);
     }
 
     for (unsigned int i = 0; i < vMatrix.size(); i++)
@@ -1563,8 +1573,8 @@ void Datafile::openXLS(Settings& _option)
 
     if (!_excel.Load(sDataFile.c_str()))
     {
-        sErrorToken = sDataFile;
-        throw CANNOT_READ_FILE;
+        //sErrorToken = sDataFile;
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDataFile);
     }//cerr << "Loaded" << endl;
 
     // get the total number
@@ -1744,16 +1754,16 @@ void Datafile::openXLSX(Settings& _option)
     if (!_zip.open(sDataFile))
     {
         _zip.close();
-        sErrorToken = sDataFile;
-        throw DATAFILE_NOT_EXIST;
+        //sErrorToken = sDataFile;
+        throw SyntaxError(SyntaxError::DATAFILE_NOT_EXIST, "", SyntaxError::invalid_position, sDataFile);
     }
     sEntry = _zip.getZipItem("xl/workbook.xml");
     //cerr << sEntry << endl;
     if (!sEntry.length())
     {
         _zip.close();
-        sErrorToken = sDataFile;
-        throw CANNOT_READ_FILE;
+        //sErrorToken = sDataFile;
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDataFile);
     }
 
     // Get the number of sheets
@@ -1762,8 +1772,8 @@ void Datafile::openXLSX(Settings& _option)
     if (_workbook.ErrorID())
     {
         _zip.close();
-        sErrorToken = sDataFile;
-        throw CANNOT_READ_FILE;
+        //sErrorToken = sDataFile;
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDataFile);
     }
     _node = _workbook.FirstChildElement()->FirstChildElement("sheets")->FirstChild();
     //cerr << "node" << endl;
@@ -1776,8 +1786,8 @@ void Datafile::openXLSX(Settings& _option)
     if (!nSheets)
     {
         _zip.close();
-        sErrorToken = sDataFile;
-        throw CANNOT_READ_FILE;
+        //sErrorToken = sDataFile;
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDataFile);
     }
 
     // Walk through the sheets and extract the dimension info
@@ -1788,15 +1798,15 @@ void Datafile::openXLSX(Settings& _option)
         if (!sSheetContent.length())
         {
             _zip.close();
-            sErrorToken = sDataFile;
-            throw CANNOT_READ_FILE;
+            //sErrorToken = sDataFile;
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDataFile);
         }
         _sheet.Parse(sSheetContent.c_str());
         if (_sheet.ErrorID())
         {
             _zip.close();
-            sErrorToken = sDataFile;
-            throw CANNOT_READ_FILE;
+            //sErrorToken = sDataFile;
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDataFile);
         }
         _element = _sheet.FirstChildElement()->FirstChildElement("dimension");
         //cerr << "element" << endl;
@@ -2028,9 +2038,9 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
             && sExt != ".txt"
             && sExt != ".NOEXT")
         {
-            sErrorToken = sDataFile;
+            string sErrorToken = sDataFile;
             sDataFile = "";
-            throw INVALID_FILETYPE;
+            throw SyntaxError(SyntaxError::INVALID_FILETYPE, "", SyntaxError::invalid_position, sErrorToken);
         }
 
         if (_nHeadline < 0)
@@ -2050,17 +2060,17 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 		// --> Hoppla! Offenbar ist da etwas nicht ganz richtig gelaufen! <--
 		if (file_in.fail())
 		{
-            sErrorToken = sDataFile;
-            throw DATAFILE_NOT_EXIST;
+            //sErrorToken = sDataFile;
+            throw SyntaxError(SyntaxError::DATAFILE_NOT_EXIST, "", SyntaxError::invalid_position, sDataFile);
 		}
 
 		while (!file_in.eof())		// Zaehlen wir mal die Zeilen der Datei
 		{
 			if (file_in.fail())		// Sicherheit vor: Wer weiß, ob da nicht ein Fehler inmitten des Lesevorgangs auftritt
 			{
-                sErrorToken = sDataFile;
+                string sErrorToken = sDataFile;
                 sDataFile = "";
-                throw DATAFILE_NOT_EXIST;
+                throw SyntaxError(SyntaxError::DATAFILE_NOT_EXIST, "", SyntaxError::invalid_position, sDataFile);
 			}
 			// --> Schnapp' dir pro forma eine Zeile <--
 			getline(file_in, s);
@@ -2073,9 +2083,8 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 
 		if (!nLine)
 		{
-            sErrorToken = sDataFile;
-            sDataFile = "";
-            throw CANNOT_READ_FILE;
+            //sErrorToken = sDataFile;
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDataFile);
         }
 		file_in.clear();			// Den eofbit und den failbit aufheben
 		file_in.seekg(0);			// Zurueck zum Dateianfang springen
@@ -2170,11 +2179,11 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
                         }
                         delete[] sDataMatrix;
                         delete[] sLine;
-                        sErrorToken = sDataFile;
+                        string sErrorToken = sDataFile;
                         nCols = 0;
                         nLines = 0;
                         sDataFile = "";
-                        throw COL_COUNTS_DOESNT_MATCH;
+                        throw SyntaxError(SyntaxError::COL_COUNTS_DOESNT_MATCH, "", SyntaxError::invalid_position, sErrorToken);
                     }
 					sDataMatrix[i-nComment][j] = *beg; // Wenn das klappt, dann stehen jetzt in den einzelnen Elementen die zerlegten tokens.
                     // --> Sollte die Daten mit Kommata als Dezimaltrennzeichen vorliegen, werden die hier ersetzt <--
@@ -2197,11 +2206,11 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
             }
             delete[] sDataMatrix;
             delete[] sLine;
-            sErrorToken = sDataFile;
+            string sErrorToken = sDataFile;
             nCols = 0;
             nLines = 0;
             sDataFile = "";
-            throw CANNOT_READ_FILE;
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sErrorToken);
 		}
 
         // --> Wurde die Datei schon von NumeRe erzeugt? Dann sind die Kopfzeilen einfach zu finden <--

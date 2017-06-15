@@ -181,30 +181,30 @@ string parser_CoordFunc(const string& sFunc, double dPhiScale = 1.0, double dThe
 
 // Matrix-Operations
 bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
-Matrix parser_matrixMultiplication(const Matrix& _mLeft, const Matrix& _mRight);
+Matrix parser_matrixMultiplication(const Matrix& _mLeft, const Matrix& _mRight, const string& sCmd, const string& sExpr, size_t position);
 Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
 Matrix parser_transposeMatrix(const Matrix& _mMatrix);
-Matrix parser_InvertMatrix(const Matrix& _mMatrix);
+Matrix parser_InvertMatrix(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 Matrix parser_IdentityMatrix(unsigned int nSize);
 Matrix parser_OnesMatrix(unsigned int nLines, unsigned int nCols);
 Matrix parser_ZeroesMatrix(unsigned int nLines, unsigned int nCols);
-Matrix parser_getDeterminant(const Matrix& _mMatrix);
+Matrix parser_getDeterminant(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 Matrix parser_matFromCols(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
 Matrix parser_matFromColsFilled(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
 Matrix parser_matFromLines(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
 Matrix parser_matFromLinesFilled(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
 vector<double> parser_calcDeltas(const Matrix& _mMatrix, unsigned int nLine);
 Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
-Matrix parser_solveLGS(const Matrix& _mMatrix, Parser& _parser, Define& _functions, const Settings& _option);
-Matrix parser_calcCrossProduct(const Matrix& _mMatrix);
-Matrix parser_calcEigenVects(const Matrix& _mMatrix, int nReturnType);
-Matrix parser_SplitMatrix(Matrix& _mMatrix);
-Matrix parser_calcTrace(const Matrix& _mMatrix);
+Matrix parser_solveLGS(const Matrix& _mMatrix, Parser& _parser, Define& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_calcCrossProduct(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_calcEigenVects(const Matrix& _mMatrix, int nReturnType, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_SplitMatrix(Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_calcTrace(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 Matrix parser_getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
-bool parser_IsSymmMatrix(const Matrix& _mMatrix);
+bool parser_IsSymmMatrix(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 void parser_makeReal(Matrix& _mMatrix);
 double parser_calcDeterminant(const Matrix& _mMatrix, vector<int> vRemovedLines);
 void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _option);
-void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, Define& _functions, const Settings& _option);
+void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, Define& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position);
 
 #endif
