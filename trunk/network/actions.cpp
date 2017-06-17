@@ -189,6 +189,7 @@ void GTerm::normal_output()
 {
     int n, n_taken, i, c, y;
     bool bNextLine = false;
+    bool bErrorMessage = false;
     string sRemainingInput = "";
     if (sInput_Data.find('\n') != string::npos)
     {
@@ -196,6 +197,13 @@ void GTerm::normal_output()
         if (!sRemainingInput.length())
             bNextLine = true;
         sInput_Data.erase(sInput_Data.find('\n'));
+    }
+    if (sInput_Data.find((char)15) != string::npos)
+    {
+        bErrorMessage = true;
+        sInput_Data.erase(sInput_Data.find((char)15), 1);
+        if (sRemainingInput.find((char)15) == string::npos)
+            sRemainingInput.insert(0, 1, (char)15);
     }
     //char test = 0;
 #if 0
@@ -207,7 +215,7 @@ void GTerm::normal_output()
     //if (* input_data<32)
     //n = abs((unsigned char)sInput_Data[0]);
 
-    if (abs((unsigned char)sInput_Data[0])<32 && (unsigned char)sInput_Data[0] != '\r' && (unsigned char)sInput_Data[0] != '\t')
+    if (abs((unsigned char)sInput_Data[0]) < 32 && (unsigned char)sInput_Data[0] != '\r' && (unsigned char)sInput_Data[0] != '\t')
         return;
 
     if (cursor_x >= width)
@@ -289,7 +297,7 @@ void GTerm::normal_output()
     c = calc_color(fg_color, bg_color, mode_flags);
 
 	// MPE: inserts the new received text, overwriting what was there already
-    for (i = 0; i<n; i++)
+    for (i = 0; i < n; i++)
     {
         //test = sInput_Data[i];
         //test;
@@ -315,6 +323,8 @@ void GTerm::normal_output()
             string sLine = tm.GetLineAdjusted(cursor_y);
 
             string colors = _syntax.highlightLine(sLine);
+            if (bErrorMessage)
+                colors.replace(0, string::npos, sLine.length(), '0' + NumeReSyntax::SYNTAX_OPERATOR);
 
             for (unsigned int j = 0; j < colors.length(); j++)
             {

@@ -70,6 +70,7 @@ class NumeReKernel
         //mglGraph _graph;
 
         void printResult(const string& sLine, const string& sCmdCache, bool bScriptRunning);
+        string maskProcedureSigns(string sLine);
     public:
         static wxTerm* m_parent;
         static int nLINE_LENGTH;
@@ -87,6 +88,7 @@ class NumeReKernel
         static Debugmessenger _messenger;
         static bool bSupressAnswer;
         static bool bGettingLine;
+        static bool bErrorNotification;
         ofstream oLogFile;
         static size_t nScriptLine;
         static string sScriptFileName;
@@ -149,6 +151,7 @@ class NumeReKernel
         static void setFileName(const string& sFileName);
         static void print(const string& sLine);
         static void printPreFmt(const string& sLine);
+        void sendErrorNotification();
         static void statusBar(int nStep, int nFirstStep, int nFinalStep, const string& sType);
         static void getline(string& sLine);
         static void gotoLine(const string& sFile, unsigned int nLine = 0);

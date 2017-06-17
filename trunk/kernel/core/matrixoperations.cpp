@@ -19,6 +19,7 @@
 #include "parser_functions.hpp"
 #include "../kernel.hpp"
 
+size_t parser_getPreviousMatrixMultiplicationOperator(const string& sCmd, size_t nLastPos);
 
 //extern bool bSupressAnswer;
 
@@ -862,6 +863,8 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
 
 Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
 {
+    string __sCmd;
+    size_t pos_back = 0;
     vector<Matrix> vReturnedMatrices;
     value_type* v = 0;
     int nResults = 0;
@@ -874,183 +877,262 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
             && (!i || checkDelimiter(sCmd.substr(i-1,11))))
         {
             string sSubExpr = sCmd.substr(i+9, getMatchingParenthesis(sCmd.substr(i+9))+1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_transposeMatrix(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option)));
-            sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+9))+10, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+9))+10;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+9))+10, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
         }
         if (sCmd.substr(i,7) == "invert("
             && getMatchingParenthesis(sCmd.substr(i+6)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,8))))
         {
             string sSubExpr = sCmd.substr(i+6, getMatchingParenthesis(sCmd.substr(i+6))+1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_InvertMatrix(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+6));
-            sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+6))+7, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+6))+7, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
         }
         if (sCmd.substr(i,10) == "eigenvals("
             && getMatchingParenthesis(sCmd.substr(i+9)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,11))))
         {
             string sSubExpr = sCmd.substr(i+9, getMatchingParenthesis(sCmd.substr(i+9))+1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_calcEigenVects(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), 0, sCmd, sSubExpr, i+9));
-            sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+9))+10, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+9))+10;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+9))+10, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
         }
         if (sCmd.substr(i,11) == "eigenvects("
             && getMatchingParenthesis(sCmd.substr(i+10)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,12))))
         {
             string sSubExpr = sCmd.substr(i+10, getMatchingParenthesis(sCmd.substr(i+10))+1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_calcEigenVects(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), 1, sCmd, sSubExpr, i+10));
-            sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+10))+11, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+10))+11;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+10))+11, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
         }
         if (sCmd.substr(i,12) == "diagonalize("
             && getMatchingParenthesis(sCmd.substr(i+11)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,13))))
         {
             string sSubExpr = sCmd.substr(i+11, getMatchingParenthesis(sCmd.substr(i+11))+1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_calcEigenVects(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), 2, sCmd, sSubExpr, i+11));
-            sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+11))+12, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+11))+12;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+11))+12, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
         }
         if (sCmd.substr(i,6) == "solve("
             && getMatchingParenthesis(sCmd.substr(i+5)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,7))))
         {
             string sSubExpr = sCmd.substr(i+5, getMatchingParenthesis(sCmd.substr(i+5))+1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_solveLGS(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), _parser, _functions, _option, sCmd, sSubExpr, i+5));
-            sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+5))+6, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+5))+6;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+5))+6, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
         }
         if (sCmd.substr(i,6) == "cross("
             && getMatchingParenthesis(sCmd.substr(i+5)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,7))))
         {
             string sSubExpr = sCmd.substr(i+5, getMatchingParenthesis(sCmd.substr(i+5))+1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_calcCrossProduct(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+5));
-            sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+5))+6, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+5))+6;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+5))+6, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
         }
         if (sCmd.substr(i,6) == "trace("
             && getMatchingParenthesis(sCmd.substr(i+5)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,7))))
         {
             string sSubExpr = sCmd.substr(i+5, getMatchingParenthesis(sCmd.substr(i+5))+1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_calcTrace(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+5));
-            sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+5))+6, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+5))+6;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+5))+6, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
         }
         if (sCmd.substr(i,4) == "det("
             && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,5))))
         {
             string sSubExpr = sCmd.substr(i+3, getMatchingParenthesis(sCmd.substr(i+3))+1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_getDeterminant(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
-            sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+3))+4, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+3))+4, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
         }
         if (sCmd.substr(i,4) == "one("
             && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,5))))
         {
             string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
             _parser.SetExpr(sSubExpr);
             v = _parser.Eval(nResults);
             if (nResults > 1)
                 vReturnedMatrices.push_back(parser_OnesMatrix((unsigned int)v[0], (unsigned int)v[1]));
             else
                 vReturnedMatrices.push_back(parser_OnesMatrix((unsigned int)v[0], (unsigned int)v[0]));
-            sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+3))+4, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+3))+4, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
         }
         if (sCmd.substr(i,5) == "zero("
             && getMatchingParenthesis(sCmd.substr(i+4)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,6))))
         {
             string sSubExpr = sCmd.substr(i+5, getMatchingParenthesis(sCmd.substr(i+4))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
             _parser.SetExpr(sSubExpr);
             v = _parser.Eval(nResults);
             if (nResults > 1)
                 vReturnedMatrices.push_back(parser_ZeroesMatrix((unsigned int)v[0], (unsigned int)v[1]));
             else
                 vReturnedMatrices.push_back(parser_ZeroesMatrix((unsigned int)v[0], (unsigned int)v[0]));
-            sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+4))+5, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+4))+5;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+4))+5, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
         }
         if (sCmd.substr(i,9) == "identity("
             && getMatchingParenthesis(sCmd.substr(i+8)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,10))))
         {
             string sSubExpr = sCmd.substr(i+9, getMatchingParenthesis(sCmd.substr(i+8))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
             _parser.SetExpr(sSubExpr);
             v = _parser.Eval(nResults);
             vReturnedMatrices.push_back(parser_IdentityMatrix((unsigned int)v[0]));
-            sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+8))+9, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+8))+9;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+8))+9, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
         }
         if (sCmd.substr(i,6) == "matfc("
             && getMatchingParenthesis(sCmd.substr(i+5)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,7))))
         {
             string sSubExpr = sCmd.substr(i+6, getMatchingParenthesis(sCmd.substr(i+5))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_matFromCols(sSubExpr, _parser, _data, _functions, _option));
-            sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+5))+6, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+5))+6;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+5))+6, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
         }
         if (sCmd.substr(i,6) == "matfl("
             && getMatchingParenthesis(sCmd.substr(i+5)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,7))))
         {
             string sSubExpr = sCmd.substr(i+6, getMatchingParenthesis(sCmd.substr(i+5))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_matFromLines(sSubExpr, _parser, _data, _functions, _option));
-            sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+5))+6, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+5))+6;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+5))+6, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
         }
         if (sCmd.substr(i,7) == "matfcf("
             && getMatchingParenthesis(sCmd.substr(i+6)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,8))))
         {
             string sSubExpr = sCmd.substr(i+7, getMatchingParenthesis(sCmd.substr(i+6))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_matFromColsFilled(sSubExpr, _parser, _data, _functions, _option));
-            sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+6))+7, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+6))+7, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
         }
         if (sCmd.substr(i,7) == "matflf("
             && getMatchingParenthesis(sCmd.substr(i+6)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,8))))
         {
             string sSubExpr = sCmd.substr(i+7, getMatchingParenthesis(sCmd.substr(i+6))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_matFromLinesFilled(sSubExpr, _parser, _data, _functions, _option));
-            sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+6))+7, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+6))+7, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
         }
         if (sCmd.substr(i,5) == "diag("
             && getMatchingParenthesis(sCmd.substr(i+4)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,6))))
         {
             string sSubExpr = sCmd.substr(i+5, getMatchingParenthesis(sCmd.substr(i+4))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_diagonalMatrix(sSubExpr, _parser, _data, _functions, _option));
-            sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+4))+5, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+4))+5;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+4))+5, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
         }
         if (sCmd.substr(i,2) == "{{"
             && getMatchingParenthesis(sCmd.substr(i)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,3))))
         {
             string sSubExpr = sCmd.substr(i, getMatchingParenthesis(sCmd.substr(i))+1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
             //cerr << sSubExpr << endl;
             vReturnedMatrices.push_back(parser_matFromCols(sSubExpr, _parser, _data, _functions, _option));
-            sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i))+1, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
-            //cerr << sCmd << endl;
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i))+1;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i))+1, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
         }
         if (sCmd[i] == '{'
             && getMatchingParenthesis(sCmd.substr(i)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,2))))
         {
             string sSubExpr = sCmd.substr(i, getMatchingParenthesis(sCmd.substr(i))+1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
             //cerr << sSubExpr << endl;
             vReturnedMatrices.push_back(parser_matFromCols(sSubExpr, _parser, _data, _functions, _option));
-            sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i))+1, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i))+1;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i))+1, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
             //cerr << sCmd << endl;
         }
         if (i > 14
             && sCmd[i] == '('
+            && i == pos_back
             && sCmd.find_last_not_of(' ',i-1) != string::npos
-            && sCmd[sCmd.find_last_not_of(' ',i-1)] == ']'
-            && sCmd.rfind('[', i-1) != string::npos) //...returnedMatrix[N](:,:)
+            && __sCmd.back() == ']')
+            //&& sCmd[sCmd.find_last_not_of(' ',i-1)] == ']'
+            //&& sCmd.rfind('[', i-1) != string::npos) //...returnedMatrix[N](:,:)
         {
             int nMatrix = 0;
-            nMatrix = StrToInt(sCmd.substr(sCmd.rfind('[',i-1)+1, sCmd.rfind(']',i-1)-sCmd.rfind('[', i-1)-1));
-            if (sCmd.substr(sCmd.rfind('[', i-1)-14,15) == "returnedMatrix[")
+            nMatrix = StrToInt(__sCmd.substr(__sCmd.rfind('[',i-1)+1, __sCmd.rfind(']',i-1)-__sCmd.rfind('[', i-1)-1));
+            if (__sCmd.substr(__sCmd.rfind('[', i-1)-14,15) == "returnedMatrix[")
             {
-                string sSubExpr = sCmd.substr(i, getMatchingParenthesis(sCmd.substr(i))+1);
-                sCmd.erase(i, sSubExpr.length());
-                i--;
+                string sSubExpr = __sCmd.substr(i, getMatchingParenthesis(__sCmd.substr(i))+1);
+                //sCmd.erase(i, sSubExpr.length());
+                pos_back = i+getMatchingParenthesis(sCmd.substr(i))+1;
+                //i--;
                 vReturnedMatrices[nMatrix] = parser_getMatrixElements(sSubExpr, vReturnedMatrices[nMatrix], _parser, _data, _functions, _option);
+                i = pos_back-1;
             }
         }
         if (sCmd[i] == '(')
@@ -1061,11 +1143,19 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
                     && sCmd.substr(sCmd.find_last_of(" +-*/!^%&|#(){}?:,<>=", i-1)+1, i-sCmd.find_last_of(" +-*/!^%&|#(){}?:,<>=", i-1)-1) != "data"))
             {
                 string sSubExpr = sCmd.substr(i+1, getMatchingParenthesis(sCmd.substr(i))-1);
+                __sCmd += sCmd.substr(pos_back, i-pos_back);
                 vReturnedMatrices.push_back(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option));
-                sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i))+1, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+                pos_back = i+getMatchingParenthesis(sCmd.substr(i))+1;
+                //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i))+1, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+                __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+                i = pos_back-1;
             }
         }
     }
+
+    if (pos_back < sCmd.length())
+        __sCmd += sCmd.substr(pos_back);
+
     vector<Indices> vIndices;
     vector<double> vMatrixVector;
     Matrix _mTarget;
@@ -1084,80 +1174,82 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
 
     if (sCmd.find("data(") == string::npos
         && !_data.containsCacheElements(sCmd)
-        && sCmd.find("matrix[") == string::npos
-        && sCmd.find("returnedMatrix[") == string::npos)
+        && __sCmd.find("matrix[") == string::npos
+        && __sCmd.find("returnedMatrix[") == string::npos)
         throw SyntaxError(SyntaxError::NO_MATRIX_FOR_MATOP, sCmd, SyntaxError::invalid_position);
 
     // Data und Caches ersetzen
-    while (sCmd.find("data(", nPos) != string::npos)
+    while (__sCmd.find("data(", nPos) != string::npos)
     {
-        nPos = sCmd.find("data(", nPos);
-        if (nPos && !checkDelimiter(sCmd.substr(nPos-1,6)))
+        nPos = __sCmd.find("data(", nPos);
+        if (nPos && !checkDelimiter(__sCmd.substr(nPos-1,6)))
         {
             nPos++;
             continue;
         }
-        vIndices.push_back(parser_getIndices(sCmd.substr(nPos), _parser, _data, _option));
+        vIndices.push_back(parser_getIndices(__sCmd.substr(nPos), _parser, _data, _option));
         if (!vIndices[vIndices.size()-1].vI.size())
         {
             if (!parser_evalIndices("data", vIndices[vIndices.size()-1], _data))
-                throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, nPos);
         }
         vMatrixNames.push_back("data");
-        if (parser_AddVectorComponent("",sCmd.substr(0,nPos),sCmd.substr(nPos+5+getMatchingParenthesis(sCmd.substr(nPos+4))),false) == "0")
+        if (parser_AddVectorComponent("", __sCmd.substr(0,nPos), __sCmd.substr(nPos+5+getMatchingParenthesis(__sCmd.substr(nPos+4))),false) == "0")
             vMissingValues.push_back(0);
         else
             vMissingValues.push_back(1);
-        sCmd.replace(nPos, getMatchingParenthesis(sCmd.substr(nPos+4))+5, "matrix["+toString((int)vMatrixNames.size()-1)+"]");
+        __sCmd.replace(nPos, getMatchingParenthesis(__sCmd.substr(nPos+4))+5, "matrix["+toString((int)vMatrixNames.size()-1)+"]");
     }
     for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
     {
         nPos = 0;
-        while (sCmd.find(iter->first+"(", nPos) != string::npos)
+        while (__sCmd.find(iter->first+"(", nPos) != string::npos)
         {
-            nPos = sCmd.find(iter->first+"(", nPos);
-            if (nPos && !checkDelimiter(sCmd.substr(nPos-1,(iter->first).length()+2)))
+            nPos = __sCmd.find(iter->first+"(", nPos);
+            if (nPos && !checkDelimiter(__sCmd.substr(nPos-1,(iter->first).length()+2)))
             {
                 nPos++;
                 continue;
             }
-            vIndices.push_back(parser_getIndices(sCmd.substr(nPos), _parser, _data, _option));
+            vIndices.push_back(parser_getIndices(__sCmd.substr(nPos), _parser, _data, _option));
             if (!vIndices[vIndices.size()-1].vI.size())
             {
                 if (!parser_evalIndices(iter->first, vIndices[vIndices.size()-1], _data))
-                    throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, nPos);
             }
             vMatrixNames.push_back(iter->first);
-            if (parser_AddVectorComponent("",sCmd.substr(0,nPos),sCmd.substr(nPos+1+(iter->first).length()+getMatchingParenthesis(sCmd.substr(nPos+(iter->first).length()))),false) == "0")
+            if (parser_AddVectorComponent("", __sCmd.substr(0,nPos), __sCmd.substr(nPos+1+(iter->first).length()+getMatchingParenthesis(__sCmd.substr(nPos+(iter->first).length()))),false) == "0")
                 vMissingValues.push_back(0);
             else
                 vMissingValues.push_back(1);
-            sCmd.replace(nPos, getMatchingParenthesis(sCmd.substr(nPos+(iter->first).length()))+(iter->first).length()+1, "matrix["+toString((int)vMatrixNames.size()-1)+"]");
+            __sCmd.replace(nPos, getMatchingParenthesis(__sCmd.substr(nPos+(iter->first).length()))+(iter->first).length()+1, "matrix["+toString((int)vMatrixNames.size()-1)+"]");
         }
     }
 
     //cerr << sCmd << endl;
     // Alle Datafiles/Caches ersetzt
 
+    pos_back = sCmd.length();
 
     // Matrixmultiplikation
-    if (sCmd.find("**") != string::npos)
+    if (__sCmd.find("**") != string::npos)
     {
         // Rechtsgebundene Auswertung
-        for (int n = sCmd.length()-1; n >= 0; n--)
+        for (int n = __sCmd.length()-1; n >= 0; n--)
         {
-            if (sCmd.substr(n,2) == "**")
+            if (__sCmd.substr(n,2) == "**")
             {
+                pos_back = parser_getPreviousMatrixMultiplicationOperator(sCmd, pos_back)-1;
                 Matrix _mLeft;
                 Matrix _mRight;
                 unsigned int nPositions[2];
-                nPositions[1] = sCmd.find(']',n)+1;
-                string sElement = sCmd.substr(sCmd.find_first_not_of(' ', n+2));
+                nPositions[1] = __sCmd.find(']',n)+1;
+                string sElement = __sCmd.substr(__sCmd.find_first_not_of(' ', n+2));
                 // Rechter Teil
                 //cerr << "rechts" << endl;
                 sElement.erase(sElement.find(']')+1);
                 if (sElement.find_first_of("()+-*/^!%&|<>=?:,") != string::npos || sElement.find_first_of("[]") == string::npos)
-                    throw SyntaxError(SyntaxError::NO_MATRIX_FOR_MATOP, sCmd, n);
+                    throw SyntaxError(SyntaxError::NO_MATRIX_FOR_MATOP, sCmd, pos_back+1);
                 //cerr << sElement.substr(0,7) << endl;
                 if (sElement.substr(0,7) == "matrix[")
                 {
@@ -1199,15 +1291,15 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
 
                 // Linker Teil
                 //cerr << "links" << endl;
-                sElement = sCmd.substr(0,sCmd.find_last_of(']', n-1)+1);
+                sElement = __sCmd.substr(0,__sCmd.find_last_of(']', n-1)+1);
                 sElement.erase(0,sElement.find_last_of('[')-6);
                 //cerr << sElement.substr(0,7) << endl;
                 if (sElement.find_first_of("()+-*/^!%&|<>=?:,") != string::npos || sElement.find_first_of("[]") == string::npos)
-                    throw SyntaxError(SyntaxError::NO_MATRIX_FOR_MATOP, sCmd, n);
+                    throw SyntaxError(SyntaxError::NO_MATRIX_FOR_MATOP, sCmd, pos_back+1);
 
                 if (sElement.substr(0,7) == "matrix[")
                 {
-                    nPositions[0] = sCmd.rfind("matrix[",n);
+                    nPositions[0] = __sCmd.rfind("matrix[",n);
                     vector<double> vLine;
                     unsigned int nthMatrix = StrToInt(sElement.substr(sElement.find('[')+1, sElement.find(']')-1-sElement.find('[')));
                     //cerr << nthMatrix << endl;
@@ -1242,21 +1334,23 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
                 }
                 else
                 {
-                    nPositions[0] = sCmd.rfind("returnedMatrix[", n);
+                    nPositions[0] = __sCmd.rfind("returnedMatrix[", n);
                     _mLeft = vReturnedMatrices[StrToInt(sElement.substr(sElement.find('[')+1, sElement.find(']')-1-sElement.find('[')))];
                 }
                 // Multiplizieren
                 //cerr << "multiply" << endl;
-                vReturnedMatrices.push_back(parser_matrixMultiplication(_mLeft, _mRight, sCmd, "", n));
+                vReturnedMatrices.push_back(parser_matrixMultiplication(_mLeft, _mRight, sCmd, "", pos_back+1));
 
                 // Ersetzen
                 //cerr << "replace" << endl;
-                sCmd.replace(nPositions[0], nPositions[1]-nPositions[0], "returnedMatrix[" + toString((int)vReturnedMatrices.size()-1)+"]");
+                __sCmd.replace(nPositions[0], nPositions[1]-nPositions[0], "returnedMatrix[" + toString((int)vReturnedMatrices.size()-1)+"]");
                 n = nPositions[0];
             }
         }
     }
 
+
+    sCmd = __sCmd;
     //cerr << sCmd << endl;
 
     // MaxCol identifizieren Index-fehler!
@@ -1431,6 +1525,21 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
     }
 
     return _mResult;
+}
+
+size_t parser_getPreviousMatrixMultiplicationOperator(const string& sCmd, size_t nLastPos)
+{
+    int nQuotes = 0;
+    for (int i = nLastPos; i >= 0; i--)
+    {
+        if (sCmd[i] == '(' || sCmd[i] == '{')
+            nQuotes++;
+        if (sCmd[i] == ')' || sCmd[i] == '}')
+            nQuotes--;
+        if (!(nQuotes%2) && sCmd.substr(i,2) == "**")
+            return i;
+    }
+    return 0;
 }
 
 Matrix parser_matFromCols(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
@@ -2523,3 +2632,5 @@ Indices parser_getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _p
     }
     return _idx;
 }
+
+

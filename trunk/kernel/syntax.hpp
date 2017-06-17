@@ -86,6 +86,7 @@ class NumeReSyntax
         string getAutoCompList(string sFirstChars, string sType = "NSCR");
 
         string highlightLine(const string& sCommandLine);
+        string highlightError(const string& sCommandLine);
 
 };
 #endif // SYNTAX_HPP
