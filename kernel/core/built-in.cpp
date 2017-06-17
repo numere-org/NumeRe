@@ -179,25 +179,7 @@ void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string
             //throw NO_DATA_AVAILABLE;
             throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, "", SyntaxError::invalid_position);
         }
-        /*int nHeadlineCount = 1;
-        if (_option.getUseExternalViewer())
-            _out.setCompact(false);
-        if (!_out.isCompact())
-        {
-            for (long long int j = 0; j < _data.getCols(sCache); j++)
-            {
-                if (_data.getHeadLineElement(j, sCache).find("\\n") == string::npos)
-                    continue;
-                int nLinebreak = 0;
-                for (unsigned int n = 0; n < _data.getHeadLineElement(j, sCache).length()-2; n++)
-                {
-                    if (_data.getHeadLineElement(j, sCache).substr(n,2) == "\\n")
-                        nLinebreak++;
-                }
-                if (nLinebreak+1 > nHeadlineCount)
-                    nHeadlineCount = nLinebreak+1;
-            }
-        }*/
+
 		long long int nLine = 0;// = _data.getLines(sCache)+nHeadlineCount;		// Wir muessen Zeilen fuer die Kopfzeile hinzufuegen
 		long long int nCol = 0;// = _data.getCols(sCache);
 		int nHeadlineCount = 0;
@@ -397,7 +379,6 @@ void BI_append_data(const string& __sCmd, Datafile& _data, Settings& _option, Pa
             vector<string> vFilelist = getFileList(sArgument, _option);
             if (!vFilelist.size())
             {
-                //throw FILE_NOT_EXIST;
                 throw SyntaxError(SyntaxError::FILE_NOT_EXIST, __sCmd, SyntaxError::invalid_position, sArgument);
             }
             string sPath = "<loadpath>/";
@@ -1610,7 +1591,6 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         vector<string> vFilelist = getFileList(sArgument, _option);
                         if (!vFilelist.size())
                         {
-                            //throw FILE_NOT_EXIST;
                             throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
                         }
                         string sPath = "<loadpath>/";
@@ -1658,7 +1638,6 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                         vector<string> vFilelist = getFileList(sArgument, _option);
                         if (!vFilelist.size())
                         {
-                            //throw FILE_NOT_EXIST;
                             throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
                         }
                         string sPath = "<loadpath>/";
@@ -8289,7 +8268,7 @@ bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _op
     _fSys.setTokens(_option.getTokenPaths());
 
     if (!sObject.length())
-        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::NO_FILENAME, sCmd, SyntaxError::invalid_position);
     if (_option.getbDebug())
         NumeReKernel::print("DEBUG: sObject = " + sObject );
     if (sObject[0] == '$'  && sObject[1] != '\'')

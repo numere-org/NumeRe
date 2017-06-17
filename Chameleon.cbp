@@ -365,6 +365,7 @@
 		<Unit filename="kernel/core/doc_helper.hpp" />
 		<Unit filename="kernel/core/documentation.cpp" />
 		<Unit filename="kernel/core/documentation.hpp" />
+		<Unit filename="kernel/core/error.cpp" />
 		<Unit filename="kernel/core/error.hpp" />
 		<Unit filename="kernel/core/filesystem.cpp" />
 		<Unit filename="kernel/core/filesystem.hpp" />

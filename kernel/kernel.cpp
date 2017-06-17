@@ -51,6 +51,7 @@ string NumeReKernel::sTableName = "";
 Debugmessenger NumeReKernel::_messenger;
 bool NumeReKernel::bSupressAnswer = false;
 bool NumeReKernel::bGettingLine = false;
+bool NumeReKernel::bErrorNotification = false;
 size_t NumeReKernel::nScriptLine = 0;
 string NumeReKernel::sScriptFileName = "";
 
@@ -1456,6 +1457,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             _option.setSystemPrintStatus(true);
             // --> Vernuenftig formatierte Fehlermeldungen <--
             unsigned int nErrorPos = (int)e.GetPos();
+            sendErrorNotification();
             make_hline();
             print(toUpperCase(_lang.get("ERR_MUP_HEAD")));
             make_hline();
@@ -1463,7 +1465,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 
             // --> Eigentliche Fehlermeldung <--
             print(LineBreak(e.GetMsg(), _option));
-            print(LineBreak(_lang.get("ERR_EXPRESSION", e.GetExpr()), _option, true, 4, 15));
+            print(LineBreak(_lang.get("ERR_EXPRESSION", maskProcedureSigns(e.GetExpr())), _option, true, 4, 15));
             //cerr << "|   Ausdruck:  " << LineBreak("\"" + e.GetExpr() + "\"", _option, true, 15, 15) << endl;
 
             /* --> Ausdruecke, die laenger als 63 Zeichen sind, passen nicht in die Zeile. Wir stellen nur die ersten
@@ -1527,6 +1529,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             _parser.DeactivateLoopMode();
             sCommandLine.clear();
             bCancelSignal = false;
+            sendErrorNotification();
             return NUMERE_ERROR;
         }
         catch (const std::bad_alloc &e)
@@ -1537,6 +1540,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
              *     vorerst nichts anderes uebrig, als NumeRe mit terminate() abzuschiessen <--
              */
             ///cerr << endl;
+            sendErrorNotification();
             make_hline();
             print(toUpperCase(_lang.get("ERR_STD_BA_HEAD")));
             make_hline();
@@ -1553,12 +1557,14 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 sCmdCache.clear();
             sCommandLine.clear();
             bCancelSignal = false;
+            sendErrorNotification();
             return NUMERE_ERROR;
         }
         catch (const std::exception &e)
         {
             _option.setSystemPrintStatus(true);
             // --> Alle anderen Standard-Exceptions <--
+            sendErrorNotification();
             make_hline();
             print(toUpperCase(_lang.get("ERR_STD_INTERNAL_HEAD")));
             make_hline();
@@ -1582,11 +1588,13 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             _parser.DeactivateLoopMode();
             sCommandLine.clear();
             bCancelSignal = false;
+            sendErrorNotification();
             return NUMERE_ERROR;
         }
         catch (SyntaxError& e)
         {
             _option.setSystemPrintStatus(true);
+            sendErrorNotification();
             make_hline();
             if (e.errorcode == SyntaxError::PROCESS_ABORTED_BY_USER)
             {
@@ -1634,7 +1642,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     print(LineBreak(sErrLine_1, _option));
                     if (e.getExpr().length())
                     {
-                        print(LineBreak(_lang.get("ERR_EXPRESSION", e.getExpr()), _option, true, 4, 15));
+                        print(LineBreak(_lang.get("ERR_EXPRESSION", maskProcedureSigns(e.getExpr())), _option, true, 4, 15));
                         if (e.getPosition() != SyntaxError::invalid_position)
                         {
                             /* --> Position des Fehlers im Ausdruck: Wir stellen um den Fehler nur einen Ausschnitt
@@ -1693,6 +1701,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             _parser.DeactivateLoopMode();
             sCommandLine.clear();
             bCancelSignal = false;
+            sendErrorNotification();
             return NUMERE_ERROR;
         }
         catch (...)
@@ -1700,6 +1709,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             /* --> Allgemeine Exception abfangen, die nicht durch mu::exception_type oder std::exception
              *     abgedeckt wird <--
              */
+            sendErrorNotification();
             make_hline();
             print(toUpperCase(_lang.get("ERR_CATCHALL_HEAD")));
             make_hline();
@@ -1714,6 +1724,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             _parser.DeactivateLoopMode();
             sCommandLine.clear();
             bCancelSignal = false;
+            sendErrorNotification();
             return NUMERE_ERROR;
         }
         //print(toString(vAns,7));
@@ -1905,14 +1916,32 @@ void NumeReKernel::printResult(const string& sLine, const string& sCmdCache, boo
         sAnswer = sLine;
 }
 
+string NumeReKernel::maskProcedureSigns(string sLine)
+{
+    for (size_t i = 0; i < sLine.length(); i++)
+    {
+        if (sLine[i] == '$' && (!i || sLine[i-1] != '\\'))
+            sLine.insert(i,1, '\\');
+    }
+    return sLine;
+}
+
 
 // This is the virtual cout function. The port from the kernel of course needs some tweaking
-void NumeReKernel::print(const string& sLine)
+void NumeReKernel::print(const string& __sLine)
 {
     if (!m_parent)
         return;
     else
     {
+        string sLine = __sLine;
+        if (bErrorNotification)
+        {
+            if (sLine.front() == '\r')
+                sLine.insert(1, 1, (char)15);
+            else
+                sLine.insert(0, 1, (char)15);
+        }
         wxCriticalSectionLocker lock(m_parent->m_kernelCS);
         m_parent->m_sAnswer += "|-> " + sLine + "\n";
         if (m_parent->m_KernelStatus != NumeReKernel::NUMERE_PRINTLINE && m_parent->m_KernelStatus != NumeReKernel::NUMERE_CALC_UPDATE)
@@ -1925,12 +1954,21 @@ void NumeReKernel::print(const string& sLine)
 }
 
 // This is the virtual cout function. The port from the kernel of course needs some tweaking
-void NumeReKernel::printPreFmt(const string& sLine)
+void NumeReKernel::printPreFmt(const string& __sLine)
 {
     if (!m_parent)
         return;
     else
     {
+        string sLine = __sLine;
+        if (bErrorNotification)
+        {
+            if (sLine.front() == '\r')
+                sLine.insert(1, 1, (char)15);
+            else
+                sLine.insert(0, 1, (char)15);
+        }
+
         wxCriticalSectionLocker lock(m_parent->m_kernelCS);
         m_parent->m_sAnswer += sLine;
         if (m_parent->m_KernelStatus != NumeReKernel::NUMERE_PRINTLINE_PREFMT)
@@ -1940,6 +1978,12 @@ void NumeReKernel::printPreFmt(const string& sLine)
         return;
     wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
     Sleep(5);
+}
+
+
+void NumeReKernel::sendErrorNotification()
+{
+    bErrorNotification = !bErrorNotification;
 }
 
 // This shall replace the corresponding function from "tools.hpp"

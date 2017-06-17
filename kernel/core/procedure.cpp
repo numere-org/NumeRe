@@ -610,21 +610,15 @@ bool Procedure::setProcName(const string& sProc, bool bInstallFileName)
 Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, unsigned int nth_procedure)
 {
     StripSpaces(sProc);
-    /*for (unsigned int i = 0; i < sProc.length(); i++)
-    {
-        if (sProc[i] == ' ')
-            sProc[i] = '_';
-    }*/
     _option._debug.pushStackItem(sProc + "(" + sVarList + ")");
+
     if (!setProcName(sProc))
-        throw SyntaxError(SyntaxError::INVALID_PROCEDURE_NAME, sProc, SyntaxError::invalid_position);
-    //cerr << "Procedure started: " << sProc << endl;
-    //cerr << "sVarList: " << sVarList << endl;
-    sVarList = " " + sVarList + " ";
+        throw SyntaxError(SyntaxError::INVALID_PROCEDURE_NAME, "$" + sProc + "(" + sVarList + ")", SyntaxError::invalid_position);
+
     ifstream fProc_in;
     ifstream fInclude;
+
     string sProcCommandLine = "";
-    sThisNameSpace = "";
     string sCmdCache = "";
     string** sVarMap = 0;
     string** sLocalVars = 0;
@@ -637,26 +631,29 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
     bool bReadingFromInclude = false;
     int nIncludeType = 0;
     Returnvalue _ReturnVal;
-    //_ReturnVal.dNumVal = 1.0;
-    //_ReturnVal.sStringVal = "";
+
+    sThisNameSpace = "";
     nCurrentLine = 0;
     nFlags = 0;
     nReturnType = 1;
     bReturnSignal = false;
     nthRecursion = nth_procedure;
-    //cerr << "sCurrentProcedureName: " << sCurrentProcedureName << endl;
     bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
 
     fProc_in.clear();
     fProc_in.open(sCurrentProcedureName.c_str());
-    //NumeReKernel::print("sCurr = " +sCurrentProcedureName);
+
     if (fProc_in.fail())
     {
         fProc_in.close();
         if (_option.getUseDebugger())
             _option._debug.popStackItem();
-        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "", SyntaxError::invalid_position, sCurrentProcedureName);
+        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "$" + sProc + "(" + sVarList + ")", SyntaxError::invalid_position, sCurrentProcedureName);
     }
+
+    // add spaces in front of and at the end of sVarList
+    sVarList = " " + sVarList + " ";
+
     if (sProc.length() > 5 && sProc.substr(sProc.length()-5) == ".nprc")
         sProc = sProc.substr(0, sProc.rfind('.'));
 
@@ -2705,7 +2702,7 @@ bool Procedure::isInline(const string& sProc)
                 if (fProc_in.fail())
                 {
                     fProc_in.close();
-                    throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sProc, SyntaxError::invalid_position, __sFileName);
+                    throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "$" + sProc + "(...)", SyntaxError::invalid_position, __sFileName);
                 }
                 if (__sName.find('/') != string::npos)
                 {
