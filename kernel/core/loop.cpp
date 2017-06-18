@@ -201,7 +201,7 @@ int Loop::for_loop(Parser& _parser, Define& _functions, Datafile& _data, Setting
         if (!bLockedPauseMode && bUseLoopParsingMode)
             _parser.PauseLoopMode();
         if (sForHead.find("data(") != string::npos && _data.isValid() && !isInQuotes(sForHead, sForHead.find("data(")))
-            parser_ReplaceEntities(sForHead, "data(", _data, _parser, _option);
+            parser_ReplaceEntities(sForHead, "data(", _data, _parser, _option, true);
         else if (sForHead.find("data(") != string::npos && !_data.isValid() && !isInQuotes(sForHead, sForHead.find("data(")))
         {
             throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sForHead, SyntaxError::invalid_position);
@@ -216,7 +216,7 @@ int Loop::for_loop(Parser& _parser, Define& _functions, Datafile& _data, Setting
             {
                 if (sForHead.find(iter->first+"(") != string::npos && !isInQuotes(sForHead, sForHead.find(iter->first+"(")))
                 {
-                    parser_ReplaceEntities(sForHead, iter->first+"(", _data, _parser, _option);
+                    parser_ReplaceEntities(sForHead, iter->first+"(", _data, _parser, _option, true);
                 }
             }
             _data.setCacheStatus(false);
@@ -513,7 +513,7 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
         if (!containsStrings(sWhile_Condition) && !_data.containsStringVars(sWhile_Condition))
         {
             if (sWhile_Condition.find("data(") != string::npos && _data.isValid() && !isInQuotes(sWhile_Condition, sWhile_Condition.find("data(")))
-                parser_ReplaceEntities(sWhile_Condition, "data(", _data, _parser, _option);
+                parser_ReplaceEntities(sWhile_Condition, "data(", _data, _parser, _option, true);
             else if (sWhile_Condition.find("data(") != string::npos && !_data.isValid() && !isInQuotes(sWhile_Condition, sWhile_Condition.find("data(")))
             {
                 if (_option.getUseDebugger())
@@ -537,7 +537,7 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
                 if (!containsStrings(sWhile_Condition) && !_data.containsStringVars(sWhile_Condition))
                 {
                     if (sWhile_Condition.find(iter->first+"(") != string::npos && _data.getCacheCols(iter->first,false) && !isInQuotes(sWhile_Condition, sWhile_Condition.find(iter->first+"(")))
-                        parser_ReplaceEntities(sWhile_Condition, iter->first+"(", _data, _parser, _option);
+                        parser_ReplaceEntities(sWhile_Condition, iter->first+"(", _data, _parser, _option, true);
                     else if (sWhile_Condition.find(iter->first+"(") != string::npos && !isInQuotes(sWhile_Condition, sWhile_Condition.find(iter->first+"(")))
                     {
                         if (_option.getUseDebugger())
@@ -788,7 +788,7 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
                 if (!containsStrings(sWhile_Condition) && !_data.containsStringVars(sWhile_Condition))
                 {
                     if (sWhile_Condition.find("data(") != string::npos && _data.isValid() && !isInQuotes(sWhile_Condition, sWhile_Condition.find("data(")))
-                        parser_ReplaceEntities(sWhile_Condition, "data(", _data, _parser, _option);
+                        parser_ReplaceEntities(sWhile_Condition, "data(", _data, _parser, _option, true);
                     else if (sWhile_Condition.find("data(") != string::npos && !_data.isValid() && !isInQuotes(sWhile_Condition, sWhile_Condition.find("data(")))
                     {
                         if (_option.getUseDebugger())
@@ -812,7 +812,7 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
                         if (!containsStrings(sWhile_Condition) && !_data.containsStringVars(sWhile_Condition))
                         {
                             if (sWhile_Condition.find(iter->first+"(") != string::npos && _data.getCacheCols(iter->first,false) && !isInQuotes(sWhile_Condition, sWhile_Condition.find(iter->first+"(")))
-                                parser_ReplaceEntities(sWhile_Condition, iter->first+"(", _data, _parser, _option);
+                                parser_ReplaceEntities(sWhile_Condition, iter->first+"(", _data, _parser, _option, true);
                             else if (sWhile_Condition.find(iter->first+"(") != string::npos && !isInQuotes(sWhile_Condition, sWhile_Condition.find(iter->first+"(")))
                             {
                                 if (_option.getUseDebugger())
@@ -921,7 +921,7 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
         if (sIf_Condition.find("data(") != string::npos && !containsStrings(sIf_Condition) && !_data.containsStringVars(sIf_Condition))
         {
             if (_data.isValid() && !isInQuotes(sIf_Condition, sIf_Condition.find("data(")))
-                parser_ReplaceEntities(sIf_Condition, "data(", _data, _parser, _option);
+                parser_ReplaceEntities(sIf_Condition, "data(", _data, _parser, _option, true);
             else if (!_data.isValid() && !isInQuotes(sIf_Condition, sIf_Condition.find("data(")))
             {
                 if (_option.getUseDebugger())
@@ -944,7 +944,7 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                 if (!containsStrings(sIf_Condition) && !_data.containsStringVars(sIf_Condition))
                 {
                     if (sIf_Condition.find(iter->first+"(") != string::npos && _data.getCacheCols(iter->first,false) && !isInQuotes(sIf_Condition, sIf_Condition.find(iter->first+"(")))
-                        parser_ReplaceEntities(sIf_Condition, iter->first+"(", _data, _parser, _option);
+                        parser_ReplaceEntities(sIf_Condition, iter->first+"(", _data, _parser, _option, true);
                     else if (sIf_Condition.find(iter->first+"(") != string::npos && !isInQuotes(sIf_Condition, sIf_Condition.find(iter->first+"(")))
                     {
                         if (_option.getUseDebugger())
@@ -1178,7 +1178,7 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                 if (sIf_Condition.find("data(") != string::npos && !containsStrings(sIf_Condition) && !_data.containsStringVars(sIf_Condition))
                 {
                     if (_data.isValid() && !isInQuotes(sIf_Condition, sIf_Condition.find("data(")))
-                        parser_ReplaceEntities(sIf_Condition, "data(", _data, _parser, _option);
+                        parser_ReplaceEntities(sIf_Condition, "data(", _data, _parser, _option, true);
                     else if (!_data.isValid() && !isInQuotes(sIf_Condition, sIf_Condition.find("data(")))
                     {
                         if (_option.getUseDebugger())
@@ -1201,7 +1201,7 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                         if (!containsStrings(sIf_Condition) && !_data.containsStringVars(sIf_Condition))
                         {
                             if (sIf_Condition.find(iter->first+"(") != string::npos && _data.getCacheCols(iter->first,false) && !isInQuotes(sIf_Condition, sIf_Condition.find(iter->first+"(")))
-                                parser_ReplaceEntities(sIf_Condition, iter->first+"(", _data, _parser, _option);
+                                parser_ReplaceEntities(sIf_Condition, iter->first+"(", _data, _parser, _option, true);
                             else if (sIf_Condition.find(iter->first+"(") != string::npos && !isInQuotes(sIf_Condition, sIf_Condition.find(iter->first+"(")))
                             {
                                 if (_option.getUseDebugger())

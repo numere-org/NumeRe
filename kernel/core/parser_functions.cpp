@@ -2799,7 +2799,7 @@ void parser_splash(Parser& _parser)
  * --> Um die ggf. ersetzten Vektoren weiterverwenden zu koennen, muss die Funktion parser_VectorToExpr() auf den String
  *     sLine angewendet werden. <--
  */
-string parser_GetDataElement(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option)
+string parser_GetDataElement(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option, bool bReplaceNANs)
 {
     string sCache = "";             // Rueckgabe-string: Ggf. der linke Teil der Gleichung, falls es sich um eine Zuweisung handelt
     string sLine_Temp = "";         // temporaerer string, da wir die string-Referenz nicht unnoetig veraendern wollen
@@ -2860,7 +2860,7 @@ string parser_GetDataElement(string& sLine, Parser& _parser, Datafile& _data, co
          *     wird und ggf. die Schleife fuer den Cache gestartet. <--
          */
         if (sLine.find("data(") != string::npos)
-            parser_ReplaceEntities(sLine, "data(", _data, _parser, _option);
+            parser_ReplaceEntities(sLine, "data(", _data, _parser, _option, bReplaceNANs);
     }
 
     /* --> Jetzt folgt der ganze Spass fuer "cache(". Hier ist relativ viel aehnlich, allerdings gibt es
@@ -2902,7 +2902,7 @@ string parser_GetDataElement(string& sLine, Parser& _parser, Datafile& _data, co
                 {
                     //cerr << (iter->first)+"(" << endl;
                     if (sLine.find((iter->first)+"(") != string::npos)
-                        parser_ReplaceEntities(sLine, (iter->first)+"(", _data, _parser, _option);
+                        parser_ReplaceEntities(sLine, (iter->first)+"(", _data, _parser, _option, bReplaceNANs);
                 }
             }
             catch (...)
@@ -2943,7 +2943,7 @@ string parser_GetDataElement(string& sLine, Parser& _parser, Datafile& _data, co
                 for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
                 {
                     if (sLine_Temp.find(iter->first+"(") != string::npos)
-                        parser_ReplaceEntities(sLine_Temp, iter->first+"(", _data, _parser, _option);
+                        parser_ReplaceEntities(sLine_Temp, iter->first+"(", _data, _parser, _option, bReplaceNANs);
                 }
                 sCache = sCache.substr(0,sCache.find('(')+1) + sLine_Temp;
                 if (_option.getbDebug())
@@ -2973,7 +2973,7 @@ string parser_GetDataElement(string& sLine, Parser& _parser, Datafile& _data, co
                     for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
                     {
                         if (sLine_Temp.find(iter->first+"(") != string::npos)
-                            parser_ReplaceEntities(sLine_Temp, iter->first+"(", _data, _parser, _option);
+                            parser_ReplaceEntities(sLine_Temp, iter->first+"(", _data, _parser, _option, bReplaceNANs);
                     }
                 }
                 catch (...)
@@ -3432,7 +3432,7 @@ bool parser_CheckMultArgFunc(const string& sLeft, const string& sRight)
  *     ab, sobald ein Fehler auftritt. Der Fehler wird in der Referenz von bSegmentationFault gespeichert und kann in
  *     in der aufrufenden Funktion weiterverarbeitet werden <--
  */
-void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _data, Parser& _parser, const Settings& _option)
+void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _data, Parser& _parser, const Settings& _option, bool bReplaceNANs)
 {
     string si_pos[2] = {"",""};
     string sj_pos[2] = {"",""};
@@ -3510,9 +3510,9 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
 
         // --> Enthalten die Grenzen nochmals den string sEntity? Dann starte eine Rekursion <--
         if (si_pos[0].find(sEntity) != string::npos)
-            parser_ReplaceEntities(si_pos[0], sEntity, _data, _parser, _option);
+            parser_ReplaceEntities(si_pos[0], sEntity, _data, _parser, _option, bReplaceNANs);
         if (sj_pos[0].find(sEntity) != string::npos)
-            parser_ReplaceEntities(sj_pos[0], sEntity, _data, _parser, _option);
+            parser_ReplaceEntities(sj_pos[0], sEntity, _data, _parser, _option, bReplaceNANs);
         if (_data.containsCacheElements(si_pos[0]))
             parser_GetDataElement(si_pos[0], _parser, _data, _option);
         if (_data.containsCacheElements(sj_pos[0]))
@@ -3860,31 +3860,13 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
             if (isnan(i_pos[0]) || isinf(i_pos[0]) || isnan(j_pos[0]) || isinf(j_pos[0]))
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
 
-            /*i_pos[0] = (int)v[0]-1;
-            j_pos[0] = (int)v[1]-1;*/
             if (i_pos[0] < 0)
                 i_pos[0] = 0;
             if (j_pos[0] < 0)
                 j_pos[0] = 0;
-            /*if (!_data.isValidEntry(i_pos[0], j_pos[0]))
-            {
-                nErrorIndices[0] = i_pos[0]+1;
-                nErrorIndices[1] = j_pos[0]+1;
-                throw INVALID_ELEMENT;
-            }*/
 
-            //vEntityContents_onebased.push_back(_data.getElement(i_pos[0], j_pos[0], sEntity.substr(0,sEntity.find('('))));
             vEntityContents_zerobased.push_back(_data.getElement(i_pos[0], j_pos[0], sEntity.substr(0,sEntity.find('('))));
             sEntityReplacement_zerobased = replaceToVectorname(sEntityOccurence);
-            /*while (sEntityReplacement_zerobased.find("|||") != string::npos)
-                sEntityReplacement_zerobased.replace(sEntityReplacement_zerobased.find("|||"),3,"\\xo\\");
-            while (sEntityReplacement_zerobased.find(' ') != string::npos)
-                sEntityReplacement_zerobased.erase(sEntityReplacement_zerobased.find(' '),1);
-            for (auto iter = mOprtRplc.begin(); iter != mOprtRplc.end(); ++iter)
-            {
-                while (sEntityReplacement_zerobased.find(iter->first) != string::npos)
-                    sEntityReplacement_zerobased.replace(sEntityReplacement_zerobased.find(iter->first), (iter->first).length(), iter->second);
-            }*/
             if (!sEntityReplacement_zerobased.length())
             {
                 sEntityReplacement_zerobased = sEntityOccurence;
@@ -3902,12 +3884,6 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
                 sEntityReplacement_zerobased += "_0";
             }
 
-            /*if (_option.getbDebug())
-            {
-                //cerr << "|-> DEBUG: sEntityReplacement_onebased = " << sEntityReplacement_onebased << endl;
-                cerr << "|-> DEBUG: sEntityReplacement_zerobased = " << sEntityReplacement_zerobased << endl;
-            }*/
-            //_parser.SetVectorVar(sEntityReplacement_onebased, vEntityContents_onebased);
             _parser.SetVectorVar(sEntityReplacement_zerobased, vEntityContents_zerobased);
 
             sLine = sLine.substr(0,sLine.find(sEntity)) + sEntityReplacement_zerobased + sLine.substr(nFinalParenthesis+1);
@@ -4051,8 +4027,16 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
                     throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sLine, SyntaxError::invalid_position);
                 else
                 {
-                    vEntityContents_onebased.push_back(1.0);
-                    vEntityContents_zerobased.push_back(0.0);
+                    if (bReplaceNANs)
+                    {
+                        vEntityContents_onebased.push_back(1.0);
+                        vEntityContents_zerobased.push_back(0.0);
+                    }
+                    else
+                    {
+                        vEntityContents_onebased.push_back(NAN);
+                        vEntityContents_zerobased.push_back(NAN);
+                    }
                     sEntityReplacement_onebased = replaceToVectorname(sEntityOccurence);
                     sEntityReplacement_zerobased = sEntityReplacement_onebased+"_0";
                     sEntityReplacement_onebased += "_1";
@@ -4291,9 +4275,18 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
                      *     nur so lange wie es sich nicht um eine Mult-Argument-Funktion handelt. In diesem Fall sind die angehaengten
                      *     "0-en" eher stoerend. <--
                      */
-                    vEntityContents_onebased.push_back(1.0);
-                    vEntityContents_zerobased.push_back(0.0);
-                    si_pos[0] += "0";
+                    if (bReplaceNANs)
+                    {
+                        vEntityContents_onebased.push_back(1.0);
+                        vEntityContents_zerobased.push_back(0.0);
+                        si_pos[0] += "0";
+                    }
+                    else
+                    {
+                        vEntityContents_onebased.push_back(NAN);
+                        vEntityContents_zerobased.push_back(NAN);
+                        si_pos[0] += "nan";
+                    }
                     if ((i_pos[0] < i_pos[1] || j_pos[0] < j_pos[1]) && (i < i_pos[1] || j < j_pos[1]))
                         si_pos[0] += ",";
                 }
@@ -4747,7 +4740,7 @@ double* parser_GetVarAdress(const string& sVarName, Parser& _parser)
     return VarAdress;
 }
 
-bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions)
+bool parser_findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions)
 {
     unsigned int nSamples = 21;
     int nOrder = 5;
@@ -4794,17 +4787,12 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
 
     if (sExpr.find("data(") != string::npos || _data.containsCacheElements(sExpr))
     {
-        parser_GetDataElement(sExpr, _parser, _data, _option);
-
-        if (sExpr.find("{") != string::npos && (containsStrings(sExpr) || _data.containsStringVars(sExpr)))
-            parser_VectorToExpr(sExpr, _option);
+        parser_GetDataElement(sExpr, _parser, _data, _option, false);
     }
 
     if (sParams.find("data(") != string::npos || _data.containsCacheElements(sParams))
     {
-        parser_GetDataElement(sParams, _parser, _data, _option);
-        if (sParams.find("{") != string::npos && (containsStrings(sParams) || _data.containsStringVars(sParams)))
-            parser_VectorToExpr(sParams, _option);
+        parser_GetDataElement(sParams, _parser, _data, _option, false);
     }
 
     if (matchParams(sParams, "min"))
@@ -4898,22 +4886,36 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
             double dMedian = 0.0, dExtremum = 0.0;
             double* data = new double[nOrder];
             int nDir = 0;
-
-            for (int i = 0; i < _cache.getLines("cache", true); i++)
+            int nanShift = 0;
+            if (nOrder >= nResults/3)
+                nOrder = nResults/3;
+            if (nOrder < 3)
+            {
+                vResults.push_back(NAN);
+                return false;
+            }
+            for (int i = 0; i+nanShift < _cache.getLines("cache", true); i++)
             {
                 if (i == nOrder)
                     break;
-                data[i] = _cache.getElement(i,1,"cache");
+                while (isnan(_cache.getElement(i+nanShift, 1, "cache")) && i+nanShift < _cache.getLines("cache", true)-1)
+                    nanShift++;
+                data[i] = _cache.getElement(i+nanShift, 1, "cache");
             }
             gsl_sort(data, 1, nOrder);
             dExtremum = gsl_stats_median_from_sorted_data(data, 1, nOrder);
             //cerr << dExtremum << endl;
             //for (int i = 1; i < nResults-1; i++)
-            for (int i = nOrder; i < _cache.getLines("cache", false)-nOrder; i++)
+            for (int i = nOrder; i+nanShift < _cache.getLines("cache", false)-nOrder; i++)
             {
+                int currNanShift = 0;
                 dMedian = 0.0;
                 for (int j = i; j < i+nOrder; j++)
-                    data[j-i] = _cache.getElement(j, 1, "cache");
+                {
+                    while (isnan(_cache.getElement(j+nanShift+currNanShift, 1, "cache")) && j+nanShift+currNanShift < _cache.getLines("cache", true)-1)
+                        currNanShift++;
+                    data[j-i] = _cache.getElement(j+nanShift+currNanShift, 1, "cache");
+                }
                 gsl_sort(data, 1, nOrder);
                 dMedian = gsl_stats_median_from_sorted_data(data, 1, nOrder);
                 //cerr << dMedian << endl;
@@ -4938,8 +4940,8 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
                             if (!nMode || nMode == 1)
                             {
                                 int nExtremum = i;
-                                double dExtremum = _cache.getElement(i, 1, "cache");
-                                for (long long int k = i; k >= 0; k--)
+                                double dExtremum = _cache.getElement(i+nanShift, 1, "cache");
+                                for (long long int k = i+nanShift; k >= 0; k--)
                                 {
                                     if (k == i-nOrder)
                                         break;
@@ -4962,9 +4964,9 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
                         {
                             if (!nMode || nMode == -1)
                             {
-                                int nExtremum = i;
+                                int nExtremum = i+nanShift;
                                 double dExtremum = _cache.getElement(i, 1, "cache");
-                                for (long long int k = i; k >= 0; k--)
+                                for (long long int k = i+nanShift; k >= 0; k--)
                                 {
                                     if (k == i-nOrder)
                                         break;
@@ -4982,8 +4984,7 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
                         dExtremum = dMedian;
                     }
                 }
-
-
+                nanShift += currNanShift;
             }
             if (!vResults.size())
                 vResults.push_back(NAN);
@@ -5189,7 +5190,7 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
                 || (nMode == 1 && (dVal[0] > 0 && dVal[1] < 0))
                 || (nMode == -1 && (dVal[0] < 0 && dVal[1] > 0)))
             {
-                vResults.push_back(parser_LocalizeMin(sExpr, dVar, _parser, _option, dLeft+(i-1)*(dRight-dLeft)/(double)(nSamples-1), dLeft+i*(dRight-dLeft)/(double)(nSamples-1)));
+                vResults.push_back(parser_LocalizeExtremum(sExpr, dVar, _parser, _option, dLeft+(i-1)*(dRight-dLeft)/(double)(nSamples-1), dLeft+i*(dRight-dLeft)/(double)(nSamples-1)));
                 /*if (sCmd.length())
                     sCmd += ", ";
                 sCmd += toCmdString(parser_LocalizeMin(sExpr, dVar, _parser, _option, dLeft+(i-1)*(dRight-dLeft)/(double)(nSamples-1), dLeft+i*(dRight-dLeft)/(double)(nSamples-1)));*/
@@ -5218,7 +5219,7 @@ bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Set
                         dVal[1] = _parser.Diff(dVar, dLeft+i*(dRight-dLeft)/(double)(nSamples-1), 1e-7);
                     }
                 }
-                vResults.push_back(parser_LocalizeMin(sExpr, dVar, _parser, _option, dLeft+nTemp*(dRight-dLeft)/(double)(nSamples-1), dLeft+i*(dRight-dLeft)/(double)(nSamples-1)));
+                vResults.push_back(parser_LocalizeExtremum(sExpr, dVar, _parser, _option, dLeft+nTemp*(dRight-dLeft)/(double)(nSamples-1), dLeft+i*(dRight-dLeft)/(double)(nSamples-1)));
                 /*if (sCmd.length())
                     sCmd += ", ";
                 sCmd += toCmdString(parser_LocalizeMin(sExpr, dVar, _parser, _option, dLeft+nTemp*(dRight-dLeft)/(double)(nSamples-1), dLeft+i*(dRight-dLeft)/(double)(nSamples-1)));*/
@@ -5303,17 +5304,12 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
 
     if (sExpr.find("data(") != string::npos || _data.containsCacheElements(sExpr))
     {
-        parser_GetDataElement(sExpr, _parser, _data, _option);
-
-        /*if (sExpr.find("{{") != string::npos && (containsStrings(sExpr) || _data.containsStringVars(sExpr)))
-            parser_VectorToExpr(sExpr, _option);*/
+        parser_GetDataElement(sExpr, _parser, _data, _option, false);
     }
 
     if (sParams.find("data(") != string::npos || _data.containsCacheElements(sParams))
     {
-        parser_GetDataElement(sParams, _parser, _data, _option);
-        /*if (sParams.find("{{") != string::npos && (containsStrings(sParams) || _data.containsStringVars(sParams)))
-            parser_VectorToExpr(sParams, _option);*/
+        parser_GetDataElement(sParams, _parser, _data, _option, false);
     }
 
     if (matchParams(sParams, "min") || matchParams(sParams, "down"))
@@ -5398,6 +5394,8 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
 
             for (long long int i = 1; i < _cache.getLines("cache", false); i++)
             {
+                if (isnan(_cache.getElement(i-1,1,"cache")))
+                    continue;
                 if (!nMode && _cache.getElement(i,1,"cache")*_cache.getElement(i-1,1,"cache") <= 0.0)
                 {
                     if (_cache.getElement(i,1,"cache") == 0.0)
@@ -5507,6 +5505,8 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
             vector<double> vResults;
             for (int i = 1; i < nResults; i++)
             {
+                if (isnan(v[i-1]))
+                    continue;
                 if (!nMode && v[i]*v[i-1] <= 0.0)
                 {
                     if (v[i] == 0.0)
@@ -5587,8 +5587,7 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
         dVal[1] = _parser.Eval();
         if (dVal[0]*dVal[1] < 0 && (nMode*dVal[0] <= 0.0))
         {
-            vResults.push_back(parser_LocalizeMin(sExpr, dVar, _parser, _option, dLeft-1e-10, dLeft));
-            //sCmd = toCmdString(parser_LocalizeMin(sExpr, dVar, _parser, _option, dLeft-1e-10, dLeft));
+            vResults.push_back(parser_LocalizeExtremum(sExpr, dVar, _parser, _option, dLeft-1e-10, dLeft));
         }
     }
     for (unsigned int i = 1; i < nSamples; i++)
@@ -5602,9 +5601,6 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
                 || (nMode == 1 && (dVal[0] < 0 && dVal[1] > 0)))
             {
                 vResults.push_back((parser_LocalizeZero(sExpr, dVar, _parser, _option, dLeft+(i-1)*(dRight-dLeft)/(double)(nSamples-1), dLeft+i*(dRight-dLeft)/(double)(nSamples-1))));
-                /*if (sCmd.length())
-                    sCmd += ", ";
-                sCmd += toCmdString(parser_LocalizeZero(sExpr, dVar, _parser, _option, dLeft+(i-1)*(dRight-dLeft)/(double)(nSamples-1), dLeft+i*(dRight-dLeft)/(double)(nSamples-1)));*/
             }
         }
         else if (dVal[0]*dVal[1] == 0.0)
@@ -5633,9 +5629,6 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
                     }
                 }
                 vResults.push_back(parser_LocalizeZero(sExpr, dVar, _parser, _option, dLeft+nTemp*(dRight-dLeft)/(double)(nSamples-1), dLeft+i*(dRight-dLeft)/(double)(nSamples-1)));
-                /*if (sCmd.length())
-                    sCmd += ", ";
-                sCmd += toCmdString(parser_LocalizeZero(sExpr, dVar, _parser, _option, dLeft+nTemp*(dRight-dLeft)/(double)(nSamples-1), dLeft+i*(dRight-dLeft)/(double)(nSamples-1)));*/
             }
         }
         dVal[0] = dVal[1];
@@ -5647,9 +5640,6 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
         if (dVal[0]*dVal[1] < 0 && nMode*dVal[0] <= 0.0)
         {
             vResults.push_back(parser_LocalizeZero(sExpr, dVar, _parser, _option, dRight, dRight+1e-10));
-            /*if (sCmd.length())
-                sCmd += ", ";
-            sCmd += toCmdString(parser_LocalizeZero(sExpr, dVar, _parser, _option, dRight, dRight+1e-10));*/
         }
     }
 
@@ -5668,7 +5658,7 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
     return true;
 }
 
-double parser_LocalizeMin(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps, int nRecursion)
+double parser_LocalizeExtremum(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps, int nRecursion)
 {
     const unsigned int nSamples = 101;
     double dVal[2];
@@ -5691,7 +5681,7 @@ double parser_LocalizeMin(string& sCmd, double* dVarAdress, Parser& _parser, con
                 //return dLeft + (i+0.5)*(dRight - dLeft)/(double)(nSamples-1);
             }
             else
-                return parser_LocalizeMin(sCmd, dVarAdress, _parser, _option, dLeft+(i-1)*(dRight-dLeft)/(double)(nSamples-1), dLeft+i*(dRight-dLeft)/(double)(nSamples-1), dEps, nRecursion+1);
+                return parser_LocalizeExtremum(sCmd, dVarAdress, _parser, _option, dLeft+(i-1)*(dRight-dLeft)/(double)(nSamples-1), dLeft+i*(dRight-dLeft)/(double)(nSamples-1), dEps, nRecursion+1);
         }
         else if (dVal[0]*dVal[1] == 0.0)
         {
@@ -5718,7 +5708,7 @@ double parser_LocalizeMin(string& sCmd, double* dVarAdress, Parser& _parser, con
                 //return dLeft + (i+nTemp)*(dRight-dLeft)/(double)(nSamples-1)/2.0;
             }
             else
-                return parser_LocalizeMin(sCmd, dVarAdress, _parser, _option, dLeft + nTemp*(dRight-dLeft)/(double)(nSamples-1), dLeft+i*(dRight-dLeft)/(double)(nSamples-1), dEps, nRecursion+1);
+                return parser_LocalizeExtremum(sCmd, dVarAdress, _parser, _option, dLeft + nTemp*(dRight-dLeft)/(double)(nSamples-1), dLeft+i*(dRight-dLeft)/(double)(nSamples-1), dEps, nRecursion+1);
         }
         dVal[0] = dVal[1];
     }
@@ -5752,7 +5742,6 @@ double parser_LocalizeZero(string& sCmd, double* dVarAdress, Parser& _parser, co
             if ((dRight - dLeft)/(double)(nSamples-1) <= dEps || fabs(log(dEps))+1 < nRecursion*2)
             {
                 return dLeft + (i-1)*(dRight-dLeft)/(double)(nSamples-1) + Linearize(0.0, dVal[0], (dRight-dLeft)/(double)(nSamples-1), dVal[1]);
-                //return dLeft + (i+0.5)*(dRight - dLeft)/(double)(nSamples-1);
             }
             else
                 return parser_LocalizeZero(sCmd, dVarAdress, _parser, _option, dLeft+(i-1)*(dRight-dLeft)/(double)(nSamples-1), dLeft+i*(dRight-dLeft)/(double)(nSamples-1), dEps, nRecursion+1);
@@ -5781,7 +5770,6 @@ double parser_LocalizeZero(string& sCmd, double* dVarAdress, Parser& _parser, co
             if ((i-nTemp)*(dRight - dLeft)/(double)(nSamples-1) <= dEps || (!nTemp && i+1 == nSamples) || fabs(log(dEps))+1 < nRecursion*2)
             {
                 return dLeft + nTemp*(dRight-dLeft)/(double)(nSamples-1) + Linearize(0.0, dVal[0], (i-nTemp)*(dRight-dLeft)/(double)(nSamples-1), dVal[1]);
-                //return dLeft + (i+nTemp)*(dRight-dLeft)/(double)(nSamples-1)/2.0;
             }
             else
                 return parser_LocalizeZero(sCmd, dVarAdress, _parser, _option, dLeft + nTemp*(dRight-dLeft)/(double)(nSamples-1), dLeft+i*(dRight-dLeft)/(double)(nSamples-1), dEps, nRecursion+1);
