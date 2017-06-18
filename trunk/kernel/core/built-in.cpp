@@ -748,7 +748,7 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
             sArgument = "<<ans>>";
         if (bParserActive && sCmd.length() > 8)
         {
-            if (parser_findMinima(sCmd, _data, _parser, _option, _functions))
+            if (parser_findExtrema(sCmd, _data, _parser, _option, _functions))
             {
                 if (sCmd[0] != '"')
                 {

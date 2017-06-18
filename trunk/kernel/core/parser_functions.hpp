@@ -120,9 +120,9 @@ void parser_ListPlugins(Parser& _parser, Datafile& _data, const Settings& _optio
 vector<double> parser_Integrate(const string&, Datafile&, Parser&, const Settings&, Define&);
 vector<double> parser_Integrate_2(const string&, Datafile&, Parser&, const Settings&, Define&);
 vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option, Define& _functions);
-bool parser_findMinima(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions);
+bool parser_findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions);
 bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions);
-double parser_LocalizeMin(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
+double parser_LocalizeExtremum(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
 double parser_LocalizeZero(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
 void parser_Taylor(string& sCmd, Parser& _parser, const Settings& _option, Define& _functions);
 bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
@@ -138,12 +138,12 @@ void parser_splash(Parser&);
 
 // Tools & Stuff
 bool parser_CheckVarOccurence(Parser&, const string_type&);
-string parser_GetDataElement(string&, Parser&, Datafile&, const Settings&);
+string parser_GetDataElement(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option, bool bReplaceNANs = true);
 void parser_VectorToExpr(string&, const Settings&);
 string parser_AddVectorComponent(const string&, const string&, const string&, bool);
 bool parser_ExprNotEmpty(const string&);
 bool parser_CheckMultArgFunc(const string&, const string&);
-void parser_ReplaceEntities(string&, const string&, Datafile&, Parser&, const Settings&);
+void parser_ReplaceEntities(string&, const string&, Datafile&, Parser&, const Settings&, bool);
 int parser_SplitArgs(string& sToSplit, string& sSecArg, const char& cSep, const Settings& _option, bool bIgnoreSurroundingParenthesis = false);
 int parser_LineBreak(const Settings&);
 void parser_CheckIndices(int&, int&);
