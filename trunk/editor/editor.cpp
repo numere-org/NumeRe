@@ -168,12 +168,16 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 	this->RegisterImage(NumeReSyntax::SYNTAX_SPECIALVAL, wxBitmap(f.GetPath(true)+"icons\\spv.png", wxBITMAP_TYPE_PNG));
 	this->RegisterImage(NumeReSyntax::SYNTAX_OPERATOR, wxBitmap(f.GetPath(true)+"icons\\opr.png", wxBITMAP_TYPE_PNG));
 	this->RegisterImage(NumeReSyntax::SYNTAX_METHODS, wxBitmap(f.GetPath(true)+"icons\\mthd.png", wxBITMAP_TYPE_PNG));
+	this->RegisterImage(NumeReSyntax::SYNTAX_PROCEDURE, wxBitmap(f.GetPath(true)+"icons\\prc.png", wxBITMAP_TYPE_PNG));
 
     //wxFont font(10, wxMODERN, wxNORMAL, wxNORMAL);
     wxFont font;
     font.SetNativeFontInfoUserDesc("Consolas 10 WINDOWS-1252");
 
     this->StyleSetFont(wxSTC_STYLE_DEFAULT, font);
+
+    // Add the characters for procedures to the word char list
+    // this->SetWordChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_$~");
 
     this->StyleClearAll();
 
@@ -524,6 +528,7 @@ void NumeReEditor::OnChar( wxStyledTextEvent &event )
         && GetStyleAt(wordstartpos) != wxSTC_NSCR_COMMENT_LINE
         && GetStyleAt(wordstartpos) != wxSTC_NSCR_COMMENT_BLOCK
         && GetStyleAt(wordstartpos) != wxSTC_NSCR_STRING
+        && GetStyleAt(wordstartpos) != wxSTC_NSCR_PROCEDURES
         && GetStyleAt(wordstartpos) != wxSTC_NPRC_COMMENT_LINE
         && GetStyleAt(wordstartpos) != wxSTC_NPRC_COMMENT_BLOCK
         && GetStyleAt(wordstartpos) != wxSTC_NPRC_STRING)
@@ -531,6 +536,56 @@ void NumeReEditor::OnChar( wxStyledTextEvent &event )
         this->AutoCompSetIgnoreCase(true);
         this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
         this->AutoCompShow(lenEntered, generateAutoCompList(GetTextRange(wordstartpos, currentPos), _syntax->getAutoCompList(GetTextRange(wordstartpos, currentPos).ToStdString())));
+    }
+    else if (lenEntered > 1
+        && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+        && GetStyleAt(wordstartpos) == wxSTC_NSCR_PROCEDURES)
+    {
+        wxString sNamespace;
+        int nNameSpacePosition = wordstartpos;
+        while (GetStyleAt(nNameSpacePosition-1) == wxSTC_NSCR_PROCEDURES && GetCharAt(nNameSpacePosition-1) != '$')
+            nNameSpacePosition--;
+        if (nNameSpacePosition == wordstartpos)
+        {
+            sNamespace = FindNameSpaceOfProcedure(wordstartpos) + "~";
+        }
+        else
+            sNamespace = GetTextRange(nNameSpacePosition, wordstartpos);
+
+        if (sNamespace == "this~")
+        {
+            string filename = GetFileNameAndPath().ToStdString();
+            filename = replacePathSeparator(filename);
+            vector<string> vPaths = m_terminal->getPathSettings();
+            if (filename.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
+            {
+                filename.erase(0, vPaths[PROCPATH].length());
+                if (filename.find('/') != string::npos)
+                    filename.erase(filename.rfind('/')+1);
+                while (filename.front() == '/')
+                    filename.erase(0,1);
+                while (filename.find('/') != string::npos)
+                    filename[filename.find('/')] = '~';
+                sNamespace = filename;
+            }
+            else
+                sNamespace = "";
+        }
+        else if (sNamespace == "thisfile" || sNamespace == "thisfile~")
+        {
+            this->AutoCompSetIgnoreCase(true);
+            this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
+            this->AutoCompShow(lenEntered, FindProceduresInCurrentFile(GetTextRange(wordstartpos, currentPos)));
+            this->Colourise(0, -1);
+            event.Skip();
+            return;
+        }
+        else if (sNamespace == "main" || sNamespace == "main~" || sNamespace == "~")
+            sNamespace = "";
+
+        this->AutoCompSetIgnoreCase(true);
+        this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
+        this->AutoCompShow(lenEntered, _syntax->getProcAutoCompList(GetTextRange(wordstartpos, currentPos).ToStdString(), sNamespace.ToStdString()));
     }
     else if (lenEntered > 1
         && !(m_fileType == FILE_NSCR || m_fileType == FILE_NPRC))
@@ -1437,11 +1492,11 @@ void NumeReEditor::AnalyseCode()
                         }
                         if (sArgument == "true" || (sArgument.find_first_not_of("1234567890") == string::npos && sArgument != "0"))
                         {
-                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_IF_ALWAYSTRUE")), ANNOTATION_NOTE);
+                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSTRUE")), ANNOTATION_WARN);
                         }
                         else if (sArgument == "false" || sArgument == "0")
                         {
-                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_IF_ALWAYSFALSE")), ANNOTATION_NOTE);
+                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSFALSE")), ANNOTATION_WARN);
                         }
                         else if (containsAssignment(sArgument))
                         {
@@ -1509,7 +1564,7 @@ void NumeReEditor::AnalyseCode()
                         }
                         else if (sArgument == "false" || sArgument == "0")
                         {
-                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_WHILE_ALWAYSFALSE")), ANNOTATION_NOTE);
+                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_WHILE_ALWAYSFALSE")), ANNOTATION_WARN);
                         }
                         else if (containsAssignment(sArgument))
                         {
@@ -2152,7 +2207,7 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
         this->SetFoldFlags(wxSTC_FOLDFLAG_LINEAFTER_CONTRACTED);
 
 		this->SetMarginType(MARGIN_FOLD, wxSTC_MARGIN_SYMBOL);
-		this->SetMarginWidth(MARGIN_FOLD, 15);
+		this->SetMarginWidth(MARGIN_FOLD, 13);
 		this->SetMarginMask(MARGIN_FOLD, wxSTC_MASK_FOLDERS);
 		this->SetMarginSensitive(MARGIN_FOLD, true);
 		this->StyleSetBackground(MARGIN_FOLD, wxColor(200, 200, 200) );
@@ -3177,6 +3232,31 @@ wxString NumeReEditor::FindMarkedProcedure(int charpos)
 
 	if (m_fileType == FILE_NPRC && clickedWord.find('~') == string::npos)
 	{
+        wxString sNameSpace = FindNameSpaceOfProcedure(charpos);
+        if (sNameSpace.length())
+        {
+            if (clickedWord[0] == '$')
+                clickedWord.insert(1, sNameSpace + "~");
+            else
+                clickedWord = "$" + sNameSpace + "~" + clickedWord;
+        }
+	}
+
+	m_clickedProcedure = clickedWord;
+
+	if (clickedWord.find('~') != string::npos)
+        clickedWord.erase(1, clickedWord.rfind('~'));
+    if (clickedWord[0] != '$')
+        clickedWord.insert(0,1,'$');
+
+	return clickedWord + "()";
+}
+
+wxString NumeReEditor::FindNameSpaceOfProcedure(int charpos)
+{
+    wxString sNameSpace = "";
+	if (m_fileType == FILE_NPRC)
+	{
         int minpos = 0;
         int maxpos = charpos;
         while (minpos < charpos && FindText(minpos, maxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) != -1)
@@ -3197,21 +3277,27 @@ wxString NumeReEditor::FindMarkedProcedure(int charpos)
             while (currentNamespace.back() == '~')
                 currentNamespace.pop_back();
 
-            if (clickedWord[0] == '$')
-                clickedWord.insert(1,currentNamespace + "~");
-            else
-                clickedWord = "$"+currentNamespace + "~" + clickedWord;
+            sNameSpace = currentNamespace;
         }
 	}
+    return sNameSpace;
+}
 
-	m_clickedProcedure = clickedWord;
-
-	if (clickedWord.find('~') != string::npos)
-        clickedWord.erase(1, clickedWord.rfind('~'));
-    if (clickedWord[0] != '$')
-        clickedWord.insert(0,1,'$');
-
-	return clickedWord + "()";
+wxString NumeReEditor::FindProceduresInCurrentFile(wxString sFirstChars)
+{
+    wxString sThisFileProcedures;
+    for (int i = 0; i < this->GetLineCount(); i++)
+    {
+        wxString currentline = this->GetLine(i);
+        if (currentline.find("procedure") != string::npos && currentline.find('$', currentline.find("procedure")) != string::npos)
+        {
+            currentline.erase(0, currentline.find('$')+1);
+            currentline.erase(currentline.find('('));
+            if (currentline.substr(0, sFirstChars.length()) == sFirstChars)
+                sThisFileProcedures += currentline + "(?" + toString(NumeReSyntax::SYNTAX_PROCEDURE) + " ";
+        }
+    }
+    return sThisFileProcedures;
 }
 
 wxString NumeReEditor::FindProcedureDefinition()

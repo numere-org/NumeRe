@@ -298,6 +298,7 @@ class GTerm
         string sAutoCompWordStart;
         string sAutoCompList;
         void resetAutoComp();
+        string getProcNameSpace();
 
         // non-printing characters
         void cr(), lf(), ff(), bell(), tab(), visualtab();

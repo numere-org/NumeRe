@@ -172,6 +172,8 @@ private:
 	wxString FindClickedWord();
 	wxString FindClickedProcedure();
 	wxString FindMarkedProcedure(int charpos);
+	wxString FindNameSpaceOfProcedure(int charpos);
+	wxString FindProceduresInCurrentFile(wxString sFirstChars);
 	wxString FindProcedureDefinition();
 	int FindNamingProcedure();
 

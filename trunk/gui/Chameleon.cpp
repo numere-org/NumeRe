@@ -1535,6 +1535,7 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
                 break;
             }
         }
+        CreateProcedureTree(vPaths[PROCPATH]);
     }
     else if (type == wxFSW_EVENT_MODIFY)
     {
@@ -1561,6 +1562,35 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
             }
         }
     }
+}
+
+void NumeReWindow::CreateProcedureTree(const string& sProcedurePath)
+{
+    vector<string> vProcedureTree;
+    vector<string> vCurrentTree;
+    string sPath = sProcedurePath;
+    Settings _option = m_terminal->getKernelSettings();
+
+    do
+    {
+        sPath += "/*";
+        vCurrentTree = getFileList(sPath, _option, 1);
+        if (vCurrentTree.size())
+            vProcedureTree.insert(vProcedureTree.end(), vCurrentTree.begin(), vCurrentTree.end());
+    }
+    while (vCurrentTree.size());
+
+    for (size_t i = 0; i < vProcedureTree.size(); i++)
+    {
+        if (vProcedureTree[i].substr(0, sProcedurePath.length()) == sProcedurePath)
+        {
+            vProcedureTree[i].erase(0, sProcedurePath.length());
+        }
+        while (vProcedureTree[i].front() == '/' || vProcedureTree[i].front() == '\\')
+            vProcedureTree[i].erase(0, 1);
+    }
+
+    m_terminal->getSyntax()->setProcedureTree(vProcedureTree);
 }
 
 void NumeReWindow::openImage(wxFileName filename)
@@ -3457,6 +3487,8 @@ void NumeReWindow::EvaluateOptions()
 			LoadFilesToTree(vPaths[SCRIPTPATH], FILE_NSCR, m_projectFileFolders[2]);
 			LoadFilesToTree(vPaths[PROCPATH], FILE_NPRC, m_projectFileFolders[3]);
 			LoadFilesToTree(vPaths[PLOTPATH], FILE_IMAGEFILES, m_projectFileFolders[4]);
+
+			CreateProcedureTree(vPaths[PROCPATH]);
 
 			if (m_watcher)
 			{

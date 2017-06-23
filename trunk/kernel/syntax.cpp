@@ -83,6 +83,20 @@ void NumeReSyntax::addPlugins(const vector<string>& vPlugins)
     vNSCRCommands.insert(vNSCRCommands.end(), vPlugins.begin(), vPlugins.end());
 }
 
+void NumeReSyntax::setProcedureTree(const vector<string>& vTree)
+{
+    vProcedureTree = vTree;
+    for (size_t i = 0; i < vProcedureTree.size(); i++)
+    {
+        while (vProcedureTree[i].find('/') != string::npos)
+            vProcedureTree[i][vProcedureTree[i].find('/')] = '~';
+        while (vProcedureTree[i].find('\\') != string::npos)
+            vProcedureTree[i][vProcedureTree[i].find('\\')] = '~';
+        if (vProcedureTree[i].find(".nprc") != string::npos)
+            vProcedureTree[i].erase(vProcedureTree[i].rfind(".nprc"));
+    }
+}
+
 string NumeReSyntax::constructString(const vector<string>& vVector) const
 {
     string sReturn = "";
@@ -280,135 +294,8 @@ string NumeReSyntax::highlightError(const string& sCommandLine)
 {
     string colors;
     colors.assign(sCommandLine.length(),'0'+SYNTAX_OPERATOR);
-    char c;
-/*
-    if (sCommandLine.find('"') != string::npos)
-    {
-        char c_string = '0'+SYNTAX_STRING;
-        char c_normal = '0'+SYNTAX_STD;
-        c = c_string;
-        for (size_t k = sCommandLine.find('"'); k < sCommandLine.length(); k++)
-        {
-            if (c == c_normal && sCommandLine[k] == '"' && (!k || sCommandLine[k-1] != '\\'))
-            {
-                c = c_string;
-                colors[k] = c;
-                continue;
-            }
-
-            colors[k] = c;
-
-            if (c == c_string && sCommandLine[k] == '"' && k > sCommandLine.find('"') && sCommandLine[k-1] != '\\')
-            {
-                c = c_normal;
-            }
-        }
-    }
-    if (sCommandLine.find('$') != string::npos)
-    {
-        int c_proc = '0'+SYNTAX_PROCEDURE;
-        int c_normal = '0'+SYNTAX_STD;
-        c = c_proc;
-        for (size_t k = sCommandLine.find('$'); k < sCommandLine.length(); k++)
-        {
-            if (sCommandLine[k] == '(' || sCommandLine[k] == ' ')
-            {
-                c = c_normal;
-            }
-            else if (sCommandLine[k] == '$')
-            {
-                c = c_proc;
-            }
-            if (colors[k] == '0'+SYNTAX_STD)
-                colors[k] = c;
-            else
-                c = c_normal;
-        }
-    }
-
-    for (unsigned int i = 0; i < sCommandLine.length(); i++)
-    {
-        if (!i && sCommandLine.substr(0,3) == "|<-")
-            i += 3;
-        else if (!i && (sCommandLine.substr(0,5) == "|-\?\?>" || sCommandLine.substr(0,4) == "|FOR" || sCommandLine.substr(0,5) == "|ELSE" || sCommandLine.substr(0,5) == "|ELIF" || sCommandLine.substr(0,4) == "|WHL" || sCommandLine.substr(0,3) == "|IF" || sCommandLine.substr(0,5) == "|PROC" || sCommandLine.substr(0,5) == "|COMP"))
-            i += sCommandLine.find('>')+1;
-        else if (!i && sCommandLine.substr(0,4) == "||<-")
-            i += 4;
-        else if (!i && sCommandLine.substr(0,3) == "|| ")
-            i += 3;
-        if (sCommandLine[i] == ' ')
-            continue;
-        if (sCommandLine[i] >= '0' && sCommandLine[i] <= '9')
-        {
-            unsigned int nLen = 0;
-            while (i+nLen < sCommandLine.length()
-                && colors[i+nLen] == '0'+SYNTAX_STD
-                && ((sCommandLine[i+nLen] >= '0' && sCommandLine[i+nLen] <= '9')
-                    || sCommandLine[i+nLen] == '.'
-                    || sCommandLine[i+nLen] == 'e'
-                    || sCommandLine[i+nLen] == 'E'
-                    || ((sCommandLine[i+nLen] == '-' || sCommandLine[i+nLen] == '+')
-                        && (sCommandLine[i+nLen-1] == 'e' || sCommandLine[i+nLen-1] == 'E'))
-                    )
-                )
-                nLen++;
-            colors.replace(i, nLen, nLen, '0'+SYNTAX_NUMBER);
-            i += nLen;
-        }
-        if (colors[i] == '0'+SYNTAX_STD)
-        {
-            unsigned int nLen = 0;
-            while (i+nLen < sCommandLine.length()
-                && colors[i+nLen] == '0'+SYNTAX_STD
-                && sCommandLine[i+nLen] != ' '
-                && sCommandLine[i+nLen] != '\''
-                && sSingleOperators.find(sCommandLine[i+nLen]) == string::npos)
-                nLen++;
-            if (sSingleOperators.find(sCommandLine[i+nLen]) != string::npos)
-            {
-                colors[i+nLen] = '0'+SYNTAX_OPERATOR;
-            }
-            if (matchItem(vNSCRCommands, sCommandLine.substr(i,nLen)))
-            {
-                colors.replace(i, nLen, nLen, '0'+SYNTAX_COMMAND);
-            }
-            if (matchItem(vNPRCCommands, sCommandLine.substr(i,nLen)))
-            {
-                colors.replace(i, nLen, nLen, '0'+SYNTAX_PROCEDURE);
-            }
-            else if (i+nLen < sCommandLine.length()
-                && sCommandLine.find('.', i) < i+nLen
-                && matchItem(vMethods, sCommandLine.substr(sCommandLine.find('.', i)+1, i+nLen-sCommandLine.find('.', i)-1)))
-            {
-                size_t new_len = i+nLen-sCommandLine.find('.', i)-1;
-                colors.replace(sCommandLine.find('.', i)+1, new_len, new_len, '0'+SYNTAX_METHODS);
-            }
-            else if (i+nLen < sCommandLine.length()
-                && sCommandLine[i+nLen] == '('
-                && matchItem(vFunctions, sCommandLine.substr(i,nLen)))
-            {
-                colors.replace(i, nLen, nLen, '0'+SYNTAX_FUNCTION);
-            }
-            else if (matchItem(vOptions, sCommandLine.substr(i,nLen)))
-            {
-                colors.replace(i, nLen, nLen, '0'+SYNTAX_OPTION);
-            }
-            else if (matchItem(vConstants, sCommandLine.substr(i,nLen)))
-            {
-                colors.replace(i, nLen, nLen, '0'+SYNTAX_CONSTANT);
-            }
-            else if (matchItem(vSpecialValues, sCommandLine.substr(i,nLen)))
-            {
-                colors.replace(i, nLen, nLen, '0'+SYNTAX_SPECIALVAL);
-            }
-            i += nLen;
-        }
-    }
-*/
     return colors;
 }
-
-
 
 
 string NumeReSyntax::getAutoCompList(string sFirstChars, string sType)
@@ -454,4 +341,60 @@ string NumeReSyntax::getAutoCompList(string sFirstChars, string sType)
 
     return sAutoCompList;
 }
+
+
+string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpace)
+{
+    if (!vProcedureTree.size())
+        return "";
+
+    string sProcName;
+    static string sStandardNamespaces[] = {"main~", "this~", "thisfile~"};
+    if (sBaseNameSpace.length())
+    {
+        if (sBaseNameSpace.back() != '~')
+            sProcName = sBaseNameSpace + "~" + sFirstChars;
+        else
+            sProcName = sBaseNameSpace + sFirstChars;
+    }
+    else
+        sProcName = sFirstChars;
+    string sAutoCompList = " ";
+    if (!sBaseNameSpace.length())
+    {
+        for (size_t i = 0; i < 3; i++)
+        {
+            if (sStandardNamespaces[i].substr(0, sFirstChars.length()) == sFirstChars)
+                sAutoCompList += sStandardNamespaces[i] + "?" + toString((int)(SYNTAX_PROCEDURE)) + " ";
+        }
+    }
+
+    string sToken;
+    for (size_t i = 0; i < vProcedureTree.size(); i++)
+    {
+        if (vProcedureTree[i].substr(0, sProcName.length()) == sProcName)
+        {
+            if (sBaseNameSpace.length())
+            {
+                sToken = vProcedureTree[i].substr(sBaseNameSpace.length());
+                if (sToken.find('~', sFirstChars.length()) != string::npos)
+                {
+                    sToken.erase(sToken.find('~', sFirstChars.length())+1);
+                    sToken += "?" + toString((int)(SYNTAX_PROCEDURE)) + " ";
+                }
+                else
+                    sToken += "(?" + toString((int)(SYNTAX_PROCEDURE)) + " ";
+            }
+            else if (vProcedureTree[i].find('~', sProcName.length()) != string::npos)
+                sToken = vProcedureTree[i].substr(0, vProcedureTree[i].find('~', sFirstChars.length())+1) + "?" + toString((int)(SYNTAX_PROCEDURE)) + " ";
+            else
+                sToken = vProcedureTree[i] + "(?" + toString((int)(SYNTAX_PROCEDURE)) + " ";
+
+            if (sAutoCompList.find(" " + sToken) == string::npos)
+                sAutoCompList += sToken;
+        }
+    }
+    return sAutoCompList.substr(1);
+}
+
 

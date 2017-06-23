@@ -376,6 +376,18 @@ void GTerm::resetAutoComp()
     sAutoCompWordStart.clear();
 }
 
+string GTerm::getProcNameSpace()
+{
+    string sNameSpace;
+    int nNameSpacePos = nTabStartPos-1;
+    while (nNameSpacePos && ((tm.GetColorAdjusted(cursor_y, nNameSpacePos-1) >> 4) & 0xf) == NumeReSyntax::SYNTAX_PROCEDURE && tm.GetCharAdjusted(cursor_y , nNameSpacePos-1) != '$')
+        nNameSpacePos--;
+    sNameSpace = tm.GetTextRange(cursor_y, nNameSpacePos, nTabStartPos);
+    if (sNameSpace.find(sAutoCompWordStart) != string::npos)
+        sNameSpace.erase(sNameSpace.find(sAutoCompWordStart));
+    return sNameSpace;
+}
+
 void GTerm::cr()
 {
     move_cursor(0, cursor_y);
@@ -410,7 +422,13 @@ void GTerm::tab()
     {
         nTabStartPos = cursor_x;
         sAutoCompWordStart = tm.GetWordStartAt(cursor_y, cursor_x);
-        sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart);
+        if (((tm.GetColorAdjusted(cursor_y, cursor_x-1) >> 4) & 0xf) == NumeReSyntax::SYNTAX_PROCEDURE)
+        {
+            string sNameSpace = getProcNameSpace();
+            sAutoCompList = _syntax.getProcAutoCompList(sAutoCompWordStart, sNameSpace);
+        }
+        else
+            sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart);
 
         if (!sAutoCompList.length() || !sAutoCompWordStart.length())
         {
@@ -421,7 +439,15 @@ void GTerm::tab()
     else
     {
         if (!sAutoCompList.length())
-            sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart);
+        {
+            if (((tm.GetColorAdjusted(cursor_y, nTabStartPos-1) >> 4) & 0xf) == NumeReSyntax::SYNTAX_PROCEDURE)
+            {
+                string sNameSpace = getProcNameSpace();
+                sAutoCompList = _syntax.getProcAutoCompList(sAutoCompWordStart, sNameSpace);
+            }
+            else
+                sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart);
+        }
         clear_area(nTabStartPos, cursor_y, cursor_x, cursor_y);
         move_cursor(nTabStartPos, cursor_y);
     }
@@ -435,9 +461,11 @@ void GTerm::visualtab()
 {
     int i, x = 0;
 
-    for (i = cursor_x + 1; i<width && !x; i++)if (tab_stops[i])
-        x = i;
-
+    for (i = cursor_x + 1; i < width && !x; i++)
+    {
+        if (tab_stops[i])
+            x = i;
+    }
     if (!x)
         x = (cursor_x + 8) & -8;
 

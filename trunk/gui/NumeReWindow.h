@@ -202,6 +202,7 @@ class NumeReWindow : public wxFrame
         void removeFileFromTree(const std::string& sFilePath);*/
 
         void OnFileSystemEvent(wxFileSystemWatcherEvent& event);
+        void CreateProcedureTree(const string& sProcedurePath);
 
         wxArrayString OpenFile(FileFilterType filterType );
         bool SaveFile(bool saveas, bool askLocalRemote, FileFilterType filterType);
