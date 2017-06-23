@@ -459,6 +459,14 @@ void TextManager::SetCharAdjusted(int y, int x, char c, bool isUserInput)
 }
 
 
+string TextManager::GetTextRange(int y, int x0, int x1)
+{
+    int nActualLine = AdjustIndex(y);
+    if (nActualLine > m_maxHeight || y >= m_viewportHeight)
+        return "";
+    return m_text[nActualLine].substr(x0, x1-x0);
+}
+
 
 string TextManager::GetWordAt(int y, int x)
 {

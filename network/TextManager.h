@@ -22,6 +22,7 @@ class TextManager
         string& GetLine(int index);
         string& GetLineAdjusted(int index);
         string GetInputHistory(bool vcursorup = true);
+        string GetTextRange(int y, int x0, int x1);
         string GetWordAt(int y, int x);
         string GetWordStartAt(int y, int x);
         char GetCharAdjusted(int y, int x);

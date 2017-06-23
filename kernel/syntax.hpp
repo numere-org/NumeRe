@@ -40,6 +40,9 @@ class NumeReSyntax
         vector<string> vConstants;
         vector<string> vSpecialValues;
         vector<string> vOperators;
+
+        vector<string> vProcedureTree;
+
         string sSingleOperators;
         map<string, int> mAutoCompList;
 
@@ -67,6 +70,7 @@ class NumeReSyntax
 
         void loadSyntax(const string& sPath);
         void addPlugins(const vector<string>& vPlugins);
+        void setProcedureTree(const vector<string>& vTree);
         string getCommands() const
             {return constructString(vNSCRCommands);}
         string getNPRCCommands() const
@@ -84,6 +88,7 @@ class NumeReSyntax
         string getOperators() const
             {return constructString(vOperators);}
         string getAutoCompList(string sFirstChars, string sType = "NSCR");
+        string getProcAutoCompList(string sFirstChars, string sBaseNameSpace);
 
         string highlightLine(const string& sCommandLine);
         string highlightError(const string& sCommandLine);
