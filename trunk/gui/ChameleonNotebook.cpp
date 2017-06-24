@@ -88,6 +88,8 @@ void NumeReNotebook::OnTabRightClicked (wxMouseEvent &event)
 	m_top_parent->SetIntVar(VN_CLICKEDTAB, pageNum);
 	wxMenu popupMenu;
 	popupMenu.Append(ID_CLOSETAB, _guilang.get("GUI_EDITOR_TAB_CLOSE"));
+	popupMenu.AppendSeparator();
+	popupMenu.Append(ID_DEBUG_START_TAB, _guilang.get("GUI_TB_RUN"));
 	PopupMenu(&popupMenu, pt);
 }
 

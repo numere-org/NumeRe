@@ -128,6 +128,7 @@ BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
 	EVT_MENU_RANGE					(ID_SAVE_SOURCE_LOCAL, ID_SAVE_SOURCE_REMOTE, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_CLOSEPAGE, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_CLOSETAB, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_DEBUG_START_TAB, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_CLOSEALL, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_TOGGLE_CONSOLE, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_TOGGLE_FILETREE, NumeReWindow::OnMenuEvent)
@@ -1231,6 +1232,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 			CloseTab();
 			break;
 		}
+		case ID_DEBUG_START_TAB:
+		{
+			EvaluateTab();
+			break;
+		}
 
 		case ID_CLOSEPAGE:
 		{
@@ -2034,6 +2040,23 @@ void NumeReWindow::CloseTab()
 	int tab = GetIntVar(VN_CLICKEDTAB);
 	CloseFile(tab);
 	m_book->Refresh();
+}
+
+void NumeReWindow::EvaluateTab()
+{
+	int tab = GetIntVar(VN_CLICKEDTAB);
+	NumeReEditor* edit = static_cast<NumeReEditor*>(m_book->GetPage(tab));
+    if(!edit->HasBeenSaved() || edit->Modified())
+    {
+        int result = HandleModifiedFile(tab, MODIFIEDFILE_COMPILE);
+
+        if (result == wxCANCEL)
+        {
+            return;
+        }
+    }
+    string command = replacePathSeparator((edit->GetFileName()).GetFullPath().ToStdString());
+    OnExecuteFile(command);
 }
 
 //////////////////////////////////////////////////////////////////////////////
