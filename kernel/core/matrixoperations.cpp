@@ -20,7 +20,11 @@
 #include "../kernel.hpp"
 
 size_t parser_getPreviousMatrixMultiplicationOperator(const string& sCmd, size_t nLastPos);
-
+Matrix parser_MatrixSize(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_MatrixAnd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_MatrixOr(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_MatrixReshape(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_MatrixResize(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position);
 //extern bool bSupressAnswer;
 
 Matrix parser_matrixMultiplication(const Matrix& _mLeft, const Matrix& _mRight, const string& sCmd, const string& sExpr, size_t position)
@@ -305,6 +309,11 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
         && sCmd.find("eigenvects(") == string::npos
         && sCmd.find("diagonalize(") == string::npos
         && sCmd.find("trace(") == string::npos
+        && sCmd.find("size(") == string::npos
+        && sCmd.find("and(") == string::npos
+        && sCmd.find("or(") == string::npos
+        && sCmd.find("reshape(") == string::npos
+        && sCmd.find("resize(") == string::npos
         && sCmd.find("identity(") == string::npos)
         throw SyntaxError(SyntaxError::NO_MATRIX_FOR_MATOP, sCmd, SyntaxError::invalid_position);
 
@@ -588,6 +597,11 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
         || sCmd.find("eigenvects(") != string::npos
         || sCmd.find("diagonalize(") != string::npos
         || sCmd.find("trace(") != string::npos
+        || sCmd.find("size(") != string::npos
+        || sCmd.find("and(") != string::npos
+        || sCmd.find("or(") != string::npos
+        || sCmd.find("reshape(") != string::npos
+        || sCmd.find("resize(") != string::npos
         || sCmd.find("det(") != string::npos)
     {
         // Submatrixoperationen ausfuehren
@@ -1084,6 +1098,85 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_diagonalMatrix(sSubExpr, _parser, _data, _functions, _option));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+4))+5;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+4))+5, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+        if (sCmd.substr(i,5) == "size("
+            && getMatchingParenthesis(sCmd.substr(i+4)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,6))))
+        {
+            string sSubExpr = sCmd.substr(i+5, getMatchingParenthesis(sCmd.substr(i+4))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            vReturnedMatrices.push_back(parser_MatrixSize(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+4));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+4))+5;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+4))+5, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+        if (sCmd.substr(i,4) == "and("
+            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
+        {
+            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            vReturnedMatrices.push_back(parser_MatrixAnd(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+4))+5, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+        if (sCmd.substr(i,3) == "or("
+            && getMatchingParenthesis(sCmd.substr(i+2)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,4))))
+        {
+            string sSubExpr = sCmd.substr(i+3, getMatchingParenthesis(sCmd.substr(i+2))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            vReturnedMatrices.push_back(parser_MatrixOr(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+2));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+2))+3;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+4))+5, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+        if (sCmd.substr(i,8) == "reshape("
+            && getMatchingParenthesis(sCmd.substr(i+7)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,9))))
+        {
+            int nRes;
+            value_type* v;
+            string sExpr = sCmd.substr(i+8, getMatchingParenthesis(sCmd.substr(i+7))-1);
+            string sSubExpr = getNextArgument(sExpr, true);
+            if (!sExpr.length())
+                throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, i+8, "reshape()");
+            _parser.SetExpr(sExpr);
+            v = _parser.Eval(nRes);
+            if (nRes < 2)
+                throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, i+8, "reshape()");
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+
+            vReturnedMatrices.push_back(parser_MatrixReshape(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), (size_t)v[0], (size_t)v[1], sCmd, sSubExpr, i+7));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+7))+8;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+4))+5, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+        if (sCmd.substr(i,7) == "resize("
+            && getMatchingParenthesis(sCmd.substr(i+6)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,8))))
+        {
+            int nRes;
+            value_type* v;
+            string sExpr = sCmd.substr(i+7, getMatchingParenthesis(sCmd.substr(i+6))-1);
+            string sSubExpr = getNextArgument(sExpr, true);
+            if (!sExpr.length())
+                throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, i+7, "resize()");
+            _parser.SetExpr(sExpr);
+            v = _parser.Eval(nRes);
+            if (nRes < 2)
+                throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, i+7, "resize()");
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            vReturnedMatrices.push_back(parser_MatrixResize(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), (size_t)v[0], (size_t)v[1], sCmd, sSubExpr, i+6));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
             //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+4))+5, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
             __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
@@ -1770,6 +1863,79 @@ double parser_calcDeterminant(const Matrix& _mMatrix, vector<int> vRemovedLines)
     }
     return 1.0;
 }
+
+
+Matrix parser_MatrixSize(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
+{
+    Matrix _mReturn = parser_ZeroesMatrix(2,1);
+    _mReturn[0][0] = _mMatrix.size();
+    _mReturn[1][0] = _mMatrix[0].size();
+    return _mReturn;
+}
+
+Matrix parser_MatrixAnd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
+{
+    Matrix _mReturn = parser_IdentityMatrix(1);
+    for (size_t i = 0; i < _mMatrix.size(); i++)
+    {
+        for (size_t j = 0; j < _mMatrix[i].size(); j++)
+        {
+            if (!_mMatrix[i][j])
+            {
+                _mReturn[0][0] = 0;
+                return _mReturn;
+            }
+        }
+    }
+    return _mReturn;
+}
+
+Matrix parser_MatrixOr(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
+{
+    Matrix _mReturn = parser_ZeroesMatrix(1,1);
+    for (size_t i = 0; i < _mMatrix.size(); i++)
+    {
+        for (size_t j = 0; j < _mMatrix[i].size(); j++)
+        {
+            if (_mMatrix[i][j])
+            {
+                _mReturn[0][0] = 1;
+                return _mReturn;
+            }
+        }
+    }
+    return _mReturn;
+}
+
+Matrix parser_MatrixReshape(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position)
+{
+    if (nLines * nCols != _mMatrix.size() * _mMatrix[0].size())
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(nLines) + "x" + toString(nCols) + "=" + toString(nLines*nCols) +" vs. "+ toString(_mMatrix.size()) + "x" +  toString(_mMatrix[0].size()) + "=" + toString(_mMatrix.size()*_mMatrix[0].size()));
+    Matrix _mReturn = parser_ZeroesMatrix(nLines, nCols);
+    for (size_t i = 0; i < nLines*nCols; i++)
+    {
+        _mReturn[i / nCols][i % nCols] = _mMatrix[i / _mMatrix[0].size()][i % _mMatrix[0].size()];
+    }
+    return _mReturn;
+}
+
+Matrix parser_MatrixResize(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position)
+{
+    if (!nLines || !nCols)
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(nLines) + "x" + toString(nCols));
+    if (nLines == _mMatrix.size() && nCols == _mMatrix[0].size())
+        return _mMatrix;
+    Matrix _mReturn = parser_ZeroesMatrix(nLines, nCols);
+    for (size_t i = 0; i < min(nLines, _mMatrix.size()); i++)
+    {
+        for (size_t j = 0; j < min(nCols, _mMatrix[0].size()); j++)
+        {
+            _mReturn[i][j] = _mMatrix[i][j];
+        }
+    }
+    return _mReturn;
+}
+
 
 // LGS-Loesung auf Basis des Invert-Algorthmuses
 Matrix parser_solveLGS(const Matrix& _mMatrix, Parser& _parser, Define& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position)
