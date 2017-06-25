@@ -3251,7 +3251,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1498044570 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1498289371 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3965,7 +3965,7 @@
 	"loop.hpp"
 	"../kernel.hpp"
 
-1497610992 source:d:\cpp\numere-source\trunk\kernel\core\matrixoperations.cpp
+1498307326 source:d:\cpp\numere-source\trunk\kernel\core\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
