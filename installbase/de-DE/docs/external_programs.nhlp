@@ -17,8 +17,8 @@
 -->
 
 <article id="external_programs">
-	<title string="Viewer und Editor" />
-	NumeRe kann zur Darstellung der erzeugten Plots mit einem Bildbetrachter ("Imageviewer") werden. Dieser wird dann bei einem erzeugten Plot bzw. bei Verwendung des Kommandos <code>edit</code> automatisch gestartet, sofern der Dateityp nicht von NumeRe nativ unterstützt wird.
+	<title string="Imageviewer" />
+	NumeRe kann zur Darstellung der erzeugten Plots mit externen einem Bildbetrachter ("Imageviewer") verknüpft werden. Dieser wird dann bei einem erzeugten Plot bzw. bei Verwendung des Kommandos <code>edit</code> automatisch gestartet, sofern der Dateityp nicht von NumeRe nativ unterstützt wird.
 	Der Bildbetrachter kann dabei mittels des Kommandos <code>set -viewer=PFAD</code> (Standard: keiner) eingestellt werden. Dabei ist der vollständige Pfad zur ausführbaren Datei des Programms nötig, falls das Programm keinen Eintrag in der Systemvariable "PATH" besitzt. Außerdem muss darauf geachtet werden, dass der englische Programmpfad verwendet wird (dieser ist im Windowsexplorer nach Klicken auf die Addressleiste ersichtlich) und dass Programmpfade mit Leerzeichen von Anführungszeichen umschlossen sind.
 	Als Imageviewer kann auch jedes Programm verwendet werden, das mit *.png-, *.eps-, *.gif- und *.svg-Dateien umgehen kann, empfohlen wird jedoch IrfanView (www.irfanview.com).
 	<example desc="Einstellen von IrfanView als Bildbetrachter:">
@@ -26,5 +26,5 @@
 		Imageviewer erfolgreich deklariert.
 	</example>
 	<em>Hinweis:</em> Nutzer von 64bit-Systemen müssen "Program Files" durch "Program Files (x86)" ersetzen.
-	<em>Siehe auch:</em> "help new" und "help edit"
+	<em>Siehe auch:</em> <a href="nhlp://new?frame=self">help new</a> und <a href="nhlp://edit?frame=self">help edit</a>
 </article>

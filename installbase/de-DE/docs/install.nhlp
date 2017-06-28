@@ -32,6 +32,6 @@
 		<item node="-requirepackages=PACKAGELIST">Installiert die angegebenen, durch Kommata getrennten Packages automatisch mit. (Packages sind in <code>&lt;install&gt;</code>-Tags eingebettete Prozeduren) Dieses Feld wird erst ab v1.0.9 interpretiert und muss in Anführungszeichen angegeben werden.</item>
 	</list>
 	Die Schalterwerte für die Installation haben unterschiedliche Bedeutung: <code>ENABLE_FULL_LOGGING</code> aktiviert die Protollierung jeder ausgewerten Zeile statt nur jedes Prozedurnamens, <code>DISABLE_SCREEN_OUTPUT</code> deaktiviert die Protokollierung auf der NumeRe-Konsole und <code>ENABLE_DEFAULTS</code> kehrt die vorangegangenen Schalter um.
-	Bei der Plugininstallation können der NumeRe-Hilfe weitere Einträge hinzugefügt werden. Dazu müssen die nötigen Informationen ebenfalls in den <code>&lt;install&gt; ... &lt;endinstall&gt;</code>-Block gesetzt werden. Weitere Informationen gibt es unter "help documentation".
-	<em>Siehe auch:</em> "help plugin", "help procedure", "help script" und "help documentation"
+	Bei der Plugininstallation können der NumeRe-Hilfe weitere Einträge hinzugefügt werden. Dazu müssen die nötigen Informationen ebenfalls in den <code>&lt;install&gt; ... &lt;endinstall&gt;</code>-Block gesetzt werden. Weitere Informationen gibt es unter <a href="nhlp://documentation?frame=new">help documentation</a>.
+	<em>Siehe auch:</em> <a href="nhlp://plugin?frame=self">help plugin</a>, <a href="nhlp://procedure?frame=self">help procedure</a>, <a href="nhlp://script?frame=self">help script</a> und <a href="nhlp://documentation?frame=self">help documentation</a>
 </article>

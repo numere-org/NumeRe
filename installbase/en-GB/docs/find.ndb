@@ -29,6 +29,7 @@ abs(x)~Absolute value of x~absolutwert betrag abs()
 acos(x)~Inverse cosine of x. arccos(x) is a synonym~acos() arccos() arcuscosinus arkuskosinus trigonometrische funktionen trigonometrie
 acosh(x)~Inverse hyperbolic cosine of x. arcosh(x) is a synonym~acosh() arcosh() areakosinus trigonometrische funktionen hyperbolische trigonometrie
 Ai(x)~Airy function Ai(x)~optik potentialtopf Ai() optics airyfunction
+and(x,y,z,...)~ Connects its arguments with "&&"~logik logic und
 ans~Special variable, which stores the last numerical result~answer last letztes ergebnis result
 Answer~The answer to life, the universe and everything: 42~answer ergebnis result hitchhikers guide per anhalter durch die galaxis
 append~Append data files to data already loaded to memory~laden daten dateien speicher load data *.dat *.ndat *.txt *.labx *.jdx *.jcm *.dx *.csv *.ods *.ibw opendocument spreadsheet cassylab jcamp-dx igor binary waves comma separated values
@@ -168,6 +169,8 @@ NumeRe v $$$~Your NumeRe distribution is located at: $$$~numere programm dateipf
 # O
 odesolve~Solves the as expression passed differential equations numerical~odesolver differenzialgleichungen differential equations ordinary
 one(n,m)~Generates a (n x m) matrix, which is filled with ones~one() matrix
+or(x,y,z,...)~Connects its arguments with "||"~logik logic oder
+
 # P
 pct(x,y,z,...,p)~p-th percentile of x,y,z,...~percentiles pct() quantiles quartiles perzentile terzile tertiless terciles quintiles dezile deciles fraktil fractile
 phi(x,y)~Calculates the angle between the x axis and the vector (x,y)~azimuthwinkel kugelkoordinaten zylinderkoordinaten sphaerische sphärische phi()
@@ -223,11 +226,25 @@ sqrt(x)~Square root of x~wurzel root sqrt()
 stats~Calculates the statistics of the passed data set~standardabweichung mittelwert statistiken fehler
 std(x,y,z,...)~Returns the standard deviation of x,y,z,...~standardabweichung fehler varianz stats statistiken std()
 stfa~Calculates a short-time Fourier analysis of the passed data set~kurzzeitfourieranalyse shorttimefourieranalysis spectrogram spektrogramm
+STR.at(POS)~Return the character at the position POS in the string~methode strings zeichenketten # \" character at()
+STR.fnd(STR,POS)~Returns the position of the first occurrence of STR in the string, with the search starting from the position POS~methode strings zeichenketten # \" find fnd()
+STR.len~Length of the string~methode strings zeichenketten # \" laenge length len()
+STR.mtch(STR,POS)~Searches for the first occurrence of a char of STR in the string going from position POS~methode strings zeichenketten # \" find mtch()
+STR.nmtch(STR,POS)~Searches for the first occurrence of a char in the string going from position POS, which doesn't appear in STR~methode strings zeichenketten # \" find nmtch()
+STR.nrmtch(STR,POS)~Searches for the last occurrence of a char in the string up to position POS, which doesn't appear in STR~methode strings zeichenketten # \" find last nrmtch()
+STR.rfnd(STR,POS)~Returns the position of the last occurrence of STR in the string, with the search starting from the position POS~methode strings zeichenketten # \" find last rfnd()
+STR.rmtch(STR,POS)~Searches for the last occurrence of a char of STR in the string up to position POS~methode strings zeichenketten # \" find last rmtch()
+STR.splt(CHAR)~Splits the string at the characters CHAR in separate strings~methode strings zeichenketten # \" unterteilen tokenizer zerlegen splt()
+STR.sub(POS,LEN)~Returns LEN characters starting with the letter POS from the string as a new string~methode strings zeichenketten # \" ausschnitt ausschneiden sub()
+str_not_match(S1,S2,P)~Searches for the first occurrence of a char in the string S2 going from position P, which doesn't appear in S1~zeichenketten strings  # \" find str_not_match()
+str_not_rmatch(S1,S2,P)~Searches for the last occurrence of a char in the string S2 up to position P, which doesn't appear in S1~zeichenketten strings  # \" find last str_not_rmatch()
 strfnd(STR1,STR2,P)~Returns the position of the first occurrence of STR1 in STR2, with the search starting from the position P~zeichenketten strings  # \" find strfnd()
 string(i)~String object with access to the string "i"~zeichenketten # \" \n \t string()
 string_cast(EXPR)~Transforms EXPR directly to a string and ignores possible string expressions~zeichenketten wert # \" string_cast() strings
 strlen(STRING)~Returns the length of the string STRING~zeichenketten strings # \" laenge länge strlen()
+strmatch(S1,S2,P)~Searches for the first occurrence of a char of S1 in the string S2 going from position P~zeichenketten strings  # \" find strmatch()
 strrfnd(STR1,STR2,P)~Returns the position of the last occurrence of STR1 in STR2, with the search starting from the position P~zeichenketten strings # \" find rfind last strrfnd()
+strrmatch(S1,S2,P)~Searches for the last occurrence of a char of S1 in the string S2 up to position P~zeichenketten strings  # \" find last strrmatch()
 student_t(n,c)~Calculates the twosided Student factor t for n measurements and the confidence interval 0 < c < 1~student_t() studentfaktor
 subplot~Starts a new subplot in combination with the "compose" mode~subplots unterplots multiplots
 substr(STRING,n,l)~Returns l characters starting with the n-th letter from STRING as a new string~zeichenketten # \" strings ausschnitt ausschneiden substr()
@@ -263,5 +280,6 @@ write~Writes the passed strings to a file~dateien files schreiben zeichenketten 
 # Y
 Y(l,m,theta,phi)~Real part of the spherical harmonics with the orders l >= 0 and m = [-l,l] at the angles theta and phi~kugelflaechenfunktionen kugelflächenfunktion kugelfunktionen spherical harmonics ylm y_lm y()
 # Z
+Z(n,m,rho,phi)~Value of the Zernike polynomials of the order n >= 0 with m = [-n,n] at the position rho in the interval [0,1] at the angle phi in the interval [0,2*PI)~astigmatismus astigmatism aberration chromatic chromatische koma
 zero(n,m)~Generates a (n x m) matrix, wich is filled with zeroes~zero() matrix
 zeroes~Calls the function for numerical calculation of the intersection with of functions and data sets~schnittpunkt nullstellen

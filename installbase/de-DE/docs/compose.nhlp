@@ -25,12 +25,13 @@
 	Eine zusätzliche Einschränkung ist des Weiteren, dass die berechneten oder übergebenen Intervalle des ersten Plots für den gesamten Block verwendet werden. Daher kann es vorteilhaft sein, das gewünschte Intervall bereits beim ersten Plot anzugeben, selbst wenn dieser nicht mit allen drei Intervallen umgehen kann. (Wenn mehrere Intervalle durch <code>[...]</code> angegeben werden, wird nur die erste Angabe verwendet.)
 	Mit dem Kommando <code>abort</code> kann eine Deklaration einer Plotstilkomposition vorzeitig abgebrochen werden (ähnlich wie bei Schleifen und Bedingungen).
 	In einem <code>compose ... endcompose</code>-Block können nur Plot-Kommandos benutzt werden. Alle anderen Ausdrücke oder Kommandos (außer <code>quit</code>, <code>abort</code> und <code>help</code>) werden ignoriert.
-	Mit diesem Modus können auch mehrere Plots in einer Datei zusammengefasst un hierin angeordnet werden. Details hierzu finden sich in "help subplot".
+	Mit diesem Modus können auch mehrere Plots in einer Datei zusammengefasst un hierin angeordnet werden. Details hierzu finden sich in <a href="nhlp://subplot?frame=new">help subplot</a>.
 	<example desc="Darstellen eines Monopol-Kraftfeldes mit dem zugehörigen Potential unter Verwendung der NumeRe-Spaltensyntax" type="verbatim">
 		|&lt;- compose
 		|COMP&gt; vect3d {x,y,z}/norm(x,y,z)^3
 		|COMP&gt; dens3d 1/norm(x,y,z) -set alpha
 		|COMP&gt; endcompose
 	</example>
-	<em>Siehe auch:</em> "help plot", "help plotoptions", "help multiresult", "help subplot", "help for", "help while" und "help if"
+	<img src="<>/docs/compose.png" />
+	<em>Siehe auch:</em> <a href="nhlp://plot?frame=self">help plot</a>, <a href="nhlp://plotoptions?frame=self">help plotoptions</a>, <a href="nhlp://multiresult?frame=self">help multiresult</a>, <a href="nhlp://subplot?frame=self">help subplot</a> , <a href="nhlp://for?frame=self">help for</a> , <a href="nhlp://while?frame=self">help while</a> und <a href="nhlp://if?frame=self">help if</a>
 </article>

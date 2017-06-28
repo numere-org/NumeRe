@@ -1,0 +1,51 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2017  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="console">
+	<title string="NumeRe console" />
+	The console is the interface of the evaluating program layer of NumeRe. You may enter commands or mathematical expressions in this console and their results will be displayed here.
+	The console supports the highlighting of the syntax using colors and an auto completion of the text blocks. With <code>[TAB]</code> you may cycle through the list of possible completions based upon the first entered letters (each press on <code>[TAB]</code> shows a new proposal). If you use another key than <code>[TAB]</code>, the displayed proposal will be used.
+	You may select the content of the console if you click and drag your mouse over the desired characters. If you press <code>[ALT]</code> simultaneously, then you'll mark a rectangular selection in the console.
+	The marked selection may be copied with <code>[CTRL-SHIFT-C]</code>. If you like to paste something into the console, you may use <code>[CTRL-SHIFT-V]</code>.
+	To enlarge the editor's window a bit, you may hide and show the console together with the <a href="nhlp://history?frame=new">history</a> again using the <code>[F2]</code> key or with the corresponding item in the View menu. If you start a script or a procedure, the console will be displayed automatically.
+	The commands, which may be entered in the console, may be modified by additional parameters. These are indicated by a prefixed minus sign <code>-</code> and listed in the corresponding documentation article.
+	Basic commands are the following:
+	<list>
+		<item node="find TERMS">Search for TERMS</item>
+		<item node="help">Shows this documentation article</item>
+		<item node="help TOPIC">Shows the documentation article concerning the TOPIC</item>
+		<item node="list -OBJECT">Lists objects and commands</item>
+		<item node="quit">Exits NumeRe</item>
+	</list>
+	You should keep the following commands in mind, which were extracted out of the huge command set (<code>list -cmd</code>), because they are very important:
+	<list>
+		<item node="load FILE">Loads the content of the FILE to memory</item>
+		<item node="stats">Starts the statistics functionality</item>
+		<item node="hist">Starts the histogram functionality</item>
+		<item node="plot">Starts the plotting algorithm</item>
+		<item node="fit">Calls the fitting algorithm</item>
+		<item node="script">Loading and starting of a "NumeRe script"</item>
+		<item node="set -SETTING">Apply or change a setting</item>
+		<item node="get -SETTING">Returns the value of a setting</item>
+		<item node="data">Calls methods on data files</item>
+		<item node="cache">Calls methods on the cache</item>
+	</list>
+	For every listed command you'll find a corresponding article in the NumeRe documentation. Enter <code>help COMMAND</code>, to show this article. The articles contain information about parameters and options, which may be applied to the COMMAND.
+	<em>Important:</em> If you like to pass values to parameters or options via the equal sign <code>=</code>, you should not use additional whitespaces (although it's possible), because they are used to separate parameters and options.
+	<em>Tip:</em> A complete list of all commands can be obtained by invoking <code>list -cmd</code> (although it doesn't list plugin commands). To see a list of all documentation topics, enter </code>help index</code>.
+</article>

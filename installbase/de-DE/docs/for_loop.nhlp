@@ -34,11 +34,11 @@
 		<item node="continue">Bricht die Auswertung des aktuellen Schleifendurchlaufes an dieser Stelle ab und fährt sofort mit dem nächsten Durchlauf fort</item>
 	</list>
 	Die Auswertung kann auch mit der <code>ESC</code>-Taste abgebrochen werden, falls sie zu viel Zeit in Anspruch nimmt.
-	Für einfache Korrekturen steht der Befehl <code>replaceline</code> zur Verfügung. Siehe hierzu: "help replaceline"
+	Für einfache Korrekturen steht der Befehl <code>replaceline</code> zur Verfügung. Siehe hierzu: <a href="nhlp://replaceline?frame=new">help replaceline</a>
 	<example desc="FOR-Schleife, die von 1 bis 10 zählt:" type="verbatim">
 		|&lt;- for (i = 1:10)
 		|FOR&gt; i
 		|FOR&gt; endfor -sv
 	</example>
-	<em>Siehe auch:</em> "help if", "help while", "help data", "help cache" und "help string"
+	<em>Siehe auch:</em> <a href="nhlp://if?frame=self">help if</a>, <a href="nhlp://while?frame=self">help while</a>, <a href="nhlp://data?frame=self">help data</a>, <a href="nhlp://cache?frame=self">help cache</a> und <a href="nhlp://string?frame=self">help string</a>
 </article>

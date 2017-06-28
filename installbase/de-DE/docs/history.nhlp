@@ -1,0 +1,25 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2017  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="history">
+	<title string="Eingabehistorie" />
+	In der Eingabehistorie werden die Eingaben, die in die <a href="nhlp://console?frame=new">Konsole</a> vom Benutzer oder durch eine NumeRe-Funktion eingegeben wurden, protokolliert. Die Historie unterstützt dabei die gleiche Syntaxhervorhebung wie der Editor sie für NumeRe-Scripte bereitstellt.
+	Wird auf eine Zeile geklickt und gehalten, wird die gesamte Zeile markiert und sie kann per Drag'n'drop in den <a href="nhlp://editor?frame=new">Editor</a> eingefügt werden. Ein Doppelklick kopiert die aktuelle Zeile in die Konsole und führt sie zugleich aus.
+	Das Kontextmenü der Eingabehistorie erlaubt das Löschen einzelner Zeilen aus der Historie.
+	Die Historie kann mit Drücken auf <code>[F4]</code> aus- und wieder eingeblendet werden.
+</article>

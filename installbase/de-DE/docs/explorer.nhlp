@@ -20,9 +20,11 @@
 	<title string="Dateiexplorer" />
 	Mit dem Befehl <code>list -files</code> wird der in NumeRe integrierte Dateiexplorer gestartet, der, wenn er ohne weitere Parameter aufgerufen wird, die Dateien und Verzeichnisse in den NumeRe-Standardverzeichnissen auflistet (siehe <code>list -settings</code> für eine Liste selbiger).
 	Diese Liste kann weiter eingegrenzt werden: wird als zusätzliche Option <code>dir</code> übergeben, werden nur die gefundenen Unterverzeichnisse gelistet. Außerdem kann die Liste auf einen spezifischen Ordner eingegrenzt werden. Zu diesem Zweck kann der Parameter <code>-files</code> in der Form <code>-files=PFAD</code> übergeben werden und listet danach nur die Dateien und Verzeichnisse die sich am PFAD befinden.
-	Für PFAD kann eine absolute Pfadangabe oder eine relative Pfadangabe (von einem der NumeRe-Standardordner aus) verwendet werden. Es spielt dabei keine Rolle, ob die Verzeichnisse in PFAD durch <code>/</code> oder durch <code>\</code> getrennt werden. Soll PFAD ein oder mehrere Leerzeichen enthalten, so muss PFAD mit Anführungszeichen umschlossen werden. Die NumeRe-Standardordner sind dabei durch die folgenden Platzhalter repräsentiert:
+	Für PFAD kann eine absolute Pfadangabe oder eine relative Pfadangabe (von einem der NumeRe-Standardordner aus) verwendet werden. Es spielt dabei keine Rolle, ob die Verzeichnisse in PFAD durch <code>/</code> oder durch <code>\</code> getrennt werden. Soll PFAD ein oder mehrere Leerzeichen enthalten, so muss PFAD mit Anführungszeichen umschlossen werden. 
+	Die NumeRe-Standardordner sind dabei durch die folgenden Platzhalter repräsentiert:
 	<list>
 		<item node="&lt;&gt;">NumeRe-Stammordner (hier befindet sich die numere.exe - <code>&lt;this&gt;</code> wird in der NumeRe-Konsole als Synonym dieses Platzhalters interpretiert)</item>
+		<item node="&lt;wp&gt;">Das Arbeitsverzeichnis ist ein Platzhalter, der zum Start ebenfalls auf <code>&lt;&gt;</code> weist, aber für die aktuelle Sitzung einfach mit dem Kommando <code>workpath PATH</code> auf ein anderes Verzeichnis geändert werden kann.</item>
 		<item node="&lt;savepath&gt;">Standard-Speicherordner (hier werden Dateien standardmäßig gespeichert)</item>
 		<item node="&lt;loadpath&gt;">Standard-Importordner (aus diesem Ordner werden Datensätze standardmäßig geladen)</item>
 		<item node="&lt;scriptpath&gt;">Standard-Scriptordner (aus diesem Ordner werden NumeRe-Scripte standardmäßig geladen)</item>

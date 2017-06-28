@@ -1,0 +1,24 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2017  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="symboltree">
+	<title string="Symbolbaum" />
+	Der Symbolbaum listet Kommandos und Funktionen mit ihrer Beschreibung, die von hier direkt in den Editor und die Konsole eingefügt werden können. Die verschiedenen Symbole sind dabei entsprechend ihrer Eigenschaften klassifiziert abgelegt. Da eine Funktion z.B. mehrere Attribute haben kann, kann sie auch mehrmals im Symbolbaum auftreten.
+	Es werden außerdem die installierten <a href="nhlp://plugin?frame=new">Plugins</a> und die <a href="nhlp://define?frame=new">selbst definierten Funktionen</a> gelistet.
+	Die Symbole können entweder per Drag'n'Drop oder per Doppelklick in den <a href="nhlp://editor?frame=new">Editor</a> oder mit dem Kontextmenü in die <a href="nhlp://console?frame=new">Konsole</a> kopiert werden.
+</article>

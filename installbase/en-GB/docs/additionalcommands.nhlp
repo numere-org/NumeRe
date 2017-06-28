@@ -1,0 +1,26 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2017  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="additionalcommands">
+	<title string="Additional commands" />
+	Beside of the more evaluation-oriented commands knows NumeRe some additional commands, which can be assigned to the pure user interface. These are for example the commands <a href="nhlp://help?frame=new"><code>help</code></a> and <a href="nhlp://find?frame=new"><code>find</code></a>, as well as the following ones:
+	<list>
+		<item node="about">This command (and its synonyms <code>credits</code> and <code>info</code>) display legal and versioning information about NumeRe.</item>
+		<item node="hline">This command draws a horizontal double line in the console. If the parameter <code>-single</code> is appended, this command will draw a single line.</item>
+	</list>
+</article>

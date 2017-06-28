@@ -1,0 +1,90 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2017  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="firststeps">
+	<title string="First steps" />
+	At first glance NumeRe may appear overwhelming, because it needs some basic knowledge in advance. Evolving this knowledge shall be the goal of this section.
+	<em>Working principle</em>
+	The user interface of NumeRe is constructed from three essential components: the <a href="nhlp://filetree?frame=new">file tree (or file browser)</a>, the <a href="nhlp://editor?frame=new">editor</a> and the <a href="nhlp://console?frame=new">console</a>. The file tree presents an overlook over the available files and the editor allows editing text files, scripts and procedures. The console finally enables the interaction between the user and the evaluating level of NumeRe--we will return to this topic soon.
+	NumeRe was developed to evaluate commands and mathematical expressions, just similar to an imperative programming language. This may be achieved manually by entering command by command (or expression by expression, respectively), or you may write the routines in a file in advance--a so-called script--and execute them out of this source.
+	The graphical user interface is a supportive measure to simplify the work with the evaluating layer of NumeRe. The evaluating layer runs in the background and executes the passed commands and expressions one after the other.
+	To choose a more figurative language: the script is just the same as the script in a movie or a theater, the user interface is the technical stuff of the studio, which the user (the movie director) may use and the evaluating layer corresponds to the actors, which have to execute the commands of the director or the script--only on a mathematical-numerical level.
+	<em>What shall I do first?</em>
+	Firstly, NumeRe must be somehow customized: this includes mainly the default paths. Open the options in the tools menu, choose the tab "Directories" and fit the predefined paths to your needs. It doesn't play any role, whether you use "\" or "/" to separate your paths.
+	The load path is the directory, where your data is located. If this is not a clear and unique directory, you don't have to change this path, but you may set the working directory corresponding by entering<codeblock>workpath "PATH/TO/YOUR/DATA"</codeblock>in the console. This will be saved for the current session and may be used with the placeholder <code>&lt;wp&gt;</code>.
+	The save path is the directory, where your exported data or data saved otherwise is located.
+	The script path is the default search path for scripts. You may stick to this path and to the procedure path for the moment. (There should already be some scripts in this predefined script path)
+	The plotting path is the folder for the created plots, which are more or less all the graphical outputs of NumeRe.
+	Click on "Apply" and finished.
+	<em>Done with customizing. What shall I do now?</em>
+	Doing some trial and error would be an idea, at least before your going to your productive work. The best thing done first is focusing on the console.
+	<em>Doing some easy plots ...</em>
+	Try the following line in the console, which you will pass to the evaluating layer by pressing <code>[ENTER]</code>:<codeblock>plot sin(x)</codeblock>
+	A graphical output just like the following image should've been created:
+	<img src="<>/docs/plotsinx.png" />
+	We may refine this output by adding some options to the command line further up (for simplification the titles in the following examples may be in German language):<codeblock>plot sin(x) -set title="Sinusplot" box grid</codeblock>
+	<em>Tip:</em> Use the <code>[UP]</code> and <code>[DOWN]</code> keys to cycle through your last inputs.
+	This should result in the following output:
+	<img src="<>/docs/plotsinxtitle.png" />
+	We see the effect of the passed options <code>title="TITLE"</code>, <code>box</code> and <code>grid</code>. Some of these options (just like <code>box</code> and <code>grid</code>) stay active for the following plots as long as they aren't reverted (with the options <code>nobox</code> or <code>nogrid</code>). Just try<codeblock>plot sin(x), cos(x) -set xlabel="Zeit t [s]" ylabel="Amplitude y [m]"</codeblock>
+	This should result in the following output, where you should consider the box and the grid, which were taken over from the last plot:
+	<img src="<>/docs/plotsinxcosx.png" />
+	Congratulations! You've just learned, how you create a plot, how you plot more than one function and how you work with options. You'll find further details, if you enter<codeblock>help plot</codeblock>into the console. In most cases, the <code>help</code> command may support you with the needed information for the current command.
+	<em>Moving over to the work with data sets ...</em>
+	We will now focus on the work with data sets. NumeRe interpretes data sets more or less always as a table. This means also that the data has to be available somehow in the shape of a table--this works best, if the data rows are forming the columns of the table.
+	NumeRe is shipped with some exemplary data sets. Just try:<codeblock>load &lt;&gt;/samples/data</codeblock>
+	NumeRe should display a message, which informs about the success and the size of the data set. Consider that the file extension <code>*.dat</code> was guessed by NumeRe. This works with <code>*.dat</code>, <code>*.txt</code> and <code>*.ndat</code>.
+	If you want, you may view the file also in the <a href="nhlp://editor?frame=new">editor</a>. Just enter<codeblock>edit &lt;&gt;/samples/data</codeblock>into the console.
+	But what do the entered commands actually mean? Well, <code>load</code> and <code>edit</code> are somehow self-describing commands: <code>load</code> tells NumeRe to load the data from a file and <code>edit</code> defines that the user wants to edit a file (e.g. in the editor).
+	In both cases we entered <code>&lt;&gt;/samples/data</code> after the actual command. This defines the path to the desired file, where <code>&lt;&gt;</code> is an abbreviation (a so-called "path placeholder"), which points to the root folder of NumeRe. Put together, this statement identifies the file "data.dat" in the subfolder "samples" of the NumeRe root path.
+	To show the data in NumeRe's memory, enter<codeblock>show data()</codeblock>into the console. You should now see a table in the console, which consists of four columns. Again <code>show</code> is the command and <code>data()</code> the current expression (Show me the content of <code>data()</code>). In principle <code>data()</code> is already an abbreviation for <code>data(:,:)</code> and defines "All lines and all columns". We will return to this point in a minute.
+	<em>Tip:</em> You may activate the external viewer for <code>show</code> and <code>help</code> in the options. Documentation articles and tables will be displayed in separate external windows afterwards.
+	Note that loaded data is <em>always</em> stored in <code>data()</code>. The actual file name cannot influence this behavior.
+	Now we will try to analyze the distribution of the data. Enter the lines<codeblock>hist data() -bins=32</codeblock>into the console. After a short time a table and a graphical representation just like the following should've been created:
+	<img src="<>/docs/hist.png" />
+	Again you should remark that the box and the grid was taken over from the previous plots. The command <code>hist</code> created a <a href="nhlp://hist?frame=new">histogram</a> out of the data and by passing <code>bins=32</code> the number of 32 bins was used for the whole histogram. A bin is located symmetrically around the ticks on the x-Axis. The bars are small so that all four are fitting into the interval of the bin.
+	If one doesn't predefine the number of bins, NumeRe will determine the number of the bins automatically based upon the number of data points. But in our case the result wouldn't look really nice.
+	To obtain the numerical values of the distributions, you may use:<codeblock>stats data()</codeblock>This will return all the relevant <a href="nhlp://stats?frame=new">statistical values</a> of the whole table.
+	Now we would like to learn, how we may generate data points by ourselves. First, enter the following lines in the console:
+	<codeblock>
+		new decay()
+		decay(:,1) = eval -set [0:20];
+		decay(:,2) = eval 5*exp(-x/20)+gauss(0,0.1) -set [0:20];
+		plot decay()	
+	</codeblock>
+	The first command created a new cache. This in principle more or less the same as <code>data()</code> with the single difference that the data in a cache may be modified. Details may be found at <a href="nhlp://cache?frame=new">help cache</a>.
+	The second and third command fills the first or the second column, respectively, with automatically calculated values. In the first case it's 100 equal-spaced values between 0 and 20, in the second case it's function values of an exponential function, which are modified with a gaussian noise with a width of 0.1. The lines are ending with a semicolon <code>;</code> because we don't like to print the 200 newly generated values in the next line.
+	You should've got an output just like the following:
+	<img src="<>/docs/decay.png" />
+	But what's this? Why are there only crosses and no lines anymore? This is a property of NumeRe. NumeRe displays only function values as functions, while data points are displayed as points or crosses, respectively.
+	Now we want to try to reconstruct the parameters of this decay from the data points. This is called <em>fitting</em>. NumeRe includes a Leuvenberg-Marquardt algorithm, which is capable of doing so. Enter the following lines into the console:
+	<codeblock>
+		fit decay() -with=A*exp(-B*x)
+		A, 1/B
+		plot decay(), Fit(x)
+	</codeblock>
+	What do these lines mean? The first one fits the function <expr>A e^(–B x)</expr> to the data in <code>decay()</code> and modifies <expr>A</expr> and <expr>B</expr> to achieve this. A table with a lot of possible values will be displayed, but they are not of interest at the moment. Details may be found at <a href="nhlp://fit?frame=new">help fit</a>.
+	The second line calculates the values of <expr>A</expr> and <expr>1/B</expr> and returns them. This should result in something like<codeblock>ans = {   5.026311,   19.85775}</codeblock>which are the two parameters, which we used during the generation of the data (of course there is some minor deviation, which results from the applied gaussian noise).
+	The third line plots the result. The function <code>Fit(x)</code> is created automatically by NumeRe during a successful fit and contains the function, which was used for the fit. To define a custom function, you may want to look into <a href="nhlp://define?frame=new">help define</a>.
+	You should have obtained the following output:
+	<img src="<>/docs/fit.png" />
+	As you can see, the fitted function follows the data points and returns a smooth description of their behavior.
+	<em>What's now?</em>
+	If you thought that the previous information was quite boring, you may directly go to work with NumeRe. We weren't able to teach you something new, because you seem to know everything already.
+	In the other case we want to recommend you the PDF documentation, which can be found at <code>&lt;&gt;/docs</code>.
+</article>

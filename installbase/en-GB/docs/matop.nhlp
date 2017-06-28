@@ -21,7 +21,7 @@
 	NumeRe may apply operations to <em>whole matrices</em>, if the command <code>matop</code> is used:<codeblock>matop EXPRESSION(data(),CACHES())</codeblock>The command <code>mtrxop</code> is a synonym to this command.
 	All calculations will be applied elementwise, though. You may achieve matrix-matrix and matrix-vector multiplications with the special <code>**</code> operator:<codeblock>matop MATRIX1() ** MATRIX2()</codeblock>The <code>**</code> operator has the highest priority of all operators. Therefore, it is mandatory to use parentheses, if applicable. In addition, the <code>**</code> operator will check if the dimensions of the two matrices are matching in the means of matrix-matrix multiplication.
 	The target cache of the matrix operation can be specified in the expression. If it was <em>not</em> specified, the cache <code>matrix()</code> will be used as automatic target. If the target cache doesn't exist, it will be created during the evaluation of this command.
-	<em>Important:</em> <code>matop</code> knows a large set of additional and special matrix functions. These are listet at "help matfunc".
+	<em>Important:</em> <code>matop</code> knows a large set of additional and special matrix functions. These are listet at <a href="nhlp://matfunc?frame=new">help matfunc</a>.
 	<example desc="Multiplying the elements in <code>data()</code> to the elements in <code>cache()</code>:">
 		matop cache() *= data()
 	</example>

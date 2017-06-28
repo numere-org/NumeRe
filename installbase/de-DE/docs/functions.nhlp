@@ -30,5 +30,5 @@
 		<item node="(a,b)">Die Funktion ist nur im Bereich <expr>a &lt; x &lt; b</expr> definiert. (Man beachte den Unterschied in der Bedeutung der Klammern.)</item>
 	</list>
 	Der Wert "inf" steht für "unendlich" und "PI" für den Wert von <expr>pi = 3.1415926...</expr> Unter den natürlichen Zahlen versteht man des Weiteren die Zahlen 1,2,3,..., wobei gelegentlich auch die 0 dazu gezählt wird.
-	<em>Tipp:</em> Mit dem Kommando <code>define</code> können eigene Funktionen definiert werden. Siehe hierzu "help -define".
+	<em>Tipp:</em> Mit dem Kommando <code>define</code> können eigene Funktionen definiert werden. Siehe hierzu <a href="nhlp://define?frame=new">help define</a>.
 </article>

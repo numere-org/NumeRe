@@ -25,5 +25,5 @@
 		|-??&gt; x = 
 		|-&gt; ans = 0
 	</example>
-	<em>See also:</em> "help for", "help while", "help if" and "help procedure"
+	<em>See also:</em> <a href="nhlp://procedure?frame=self">help procedure</a>, <a href="nhlp://if?frame=self">help if</a>, <a href="nhlp://for?frame=self">help for</a> and <a href="nhlp://while?frame=self">help while</a>
 </article>

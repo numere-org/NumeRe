@@ -1,0 +1,24 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2017  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="symboltree">
+	<title string="Symboltree" />
+	The symboltree lists commands and functions including their description, which may be inserted directly from here into the editor and the console. The different symbols are classified according their attributes. Because e.g. a function may have multiple attributes, it may occur multiple times in the symboltree.
+	The installed <a href="nhlp://plugin?frame=new">plugins</a> and the <a href="nhlp://define?frame=new">custom defined functions</a> are listed as well.
+	The symbols may be copied either via drag'n'drop or via double click into the <a href="nhlp://editor?frame=new">editor</a> or via the context menu into the <a href="nhlp://console?frame=new">console</a>.
+</article>

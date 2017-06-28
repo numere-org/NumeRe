@@ -24,7 +24,7 @@
 		<item node="-cmd">listet alle NumeRe-Kommandos und eine kurze Beschreibung</item>
 		<item node="-const">listet alle fest implementierten Konstanten, ihre Werte und die ggf. vorhandenen SI-Einheiten</item>
 		<item node="-define">listet alle selbst definierten Funktionen</item>
-		<item node="-files">listet Dateien und Ordner am gewählten Ort bzw. in den Standard-Ordnern. Siehe "help explorer" für weitere Details</item>
+		<item node="-files">listet Dateien und Ordner am gewählten Ort bzw. in den Standard-Ordnern. Siehe <a href="nhlp://explorer?frame=new">help explorer</a> für weitere Details</item>
 		<item node="-func[=TYPE]">listet implementierte Funktionen und ihre Argumente. Dieser Parameter kann mit TYPE eingeschränkt werden und listet dann nur zugehörige Funktionen. TYPE kann die folgenden Werte haben: <code>numerical</code>, <code>matrix</code>, <code>string</code>, <code>logical</code>, <code>trigonometric</code>, <code>hyperbolic</code>, <code>random</code>, <code>polynomial</code>, <code>statistical</code>, <code>time</code>, <code>angular</code>, <code>distrib</code>, <code>coords</code>, <code>logarithmic</code> & <code>physical</code></item>
 		<item node="-logic">listet alle Logik-Ausdrücke, mit denen NumeRe umgehen kann</item>
 		<item node="-plugins">listet alle installierten Plugins</item>
@@ -35,5 +35,5 @@
 	<example desc="Auflisten der deklarierten Variablen">
 		list -var
 	</example>
-	<em>Siehe auch:</em> "help find", "help define", "help plugins", "help units" und "help explorer"
+	<em>Siehe auch:</em> <a href="nhlp://find?frame=self">help find</a>, <a href="nhlp://define?frame=self">help define</a>, <a href="nhlp://plugins?frame=self">help plugins</a>, <a href="nhlp://units?frame=self">help units</a> und <a href="nhlp://explorer?frame=self">help explorer</a>
 </article>

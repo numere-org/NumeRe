@@ -29,11 +29,11 @@
 		<item node="axisbind=AXIS">Funktionen und Datensätze mit Achsen verknüpfen. Die Achsen sind durch die Zeichen <code>lbrt</code> repräsentiert. Jedes Plotobjekt ist jeweils einer horizontalen (<code>tb</code>) und einer vertikalen Achse (<code>lr</code>) zugeordnet. Es muss <em>mindestens</em> ein Objekt an die linke und eines an die untere Achse zugewiesen werden. Benötigt <code>box</code> und kann nur bei <code>plot</code> verwendet werden. Die Farbe und Beschriftungen der zusätzlichen Achsen können mit <code>add*axis</code> beeinflusst werden.</item>
 		<item node="background=BG/<br>  nobackground">Die PNG-Datei BG als Hintergrund für einen Plot laden. Die PNG-Datei wird entsprechend des Achsenverhältnisses skaliert</item>
 		<item node="bars/nobars">Vertikale Balken statt Punkte bei Datenplots anzeigen. Erfordert äquidistant verteilte <expr>x</expr>-Werte zur korrekten Darstellung. Mit <code>bars=BREITE</code> kann die prozentuale Breite der Balken bestimmt werden; standardmäßig werden 90% verwendet</item>
-		<item node="bgcolorscheme=SCHEMA">Das Farbschema SCHEMA für den Hintergrund wählen. Einige vordefinierte Schemata sind <code>real</code>, <code>rainbow</code>, <code>viridis</code>, <code>grey</code>, <code>hot</code>, <code>cold</code> und <code>map</code>. Siehe "help colorscheme" für weitere Schemata</item>
+		<item node="bgcolorscheme=SCHEMA">Das Farbschema SCHEMA für den Hintergrund wählen. Einige vordefinierte Schemata sind <code>real</code>, <code>rainbow</code>, <code>viridis</code>, <code>grey</code>, <code>hot</code>, <code>cold</code> und <code>map</code>. Siehe <a href="nhlp://colorscheme?frame=new">help colorscheme</a> für weitere Schemata</item>
 		<item node="box/nobox">Umfassende Box ein-/ausschalten (beeinflusst die Darstellung der Achsen)</item>
 		<item node="boxplot/<br>  noboxplot">Boxplot-Modus (de-)aktivieren (Minimum, Maximum &amp; Quartile). Jede Datenreihe (es werden nur <expr>y</expr>-Werte verwendet) erzeugt einen einzelnen Boxplot-Marker im endgültigen Plot.</item>
 		<item node="connect/<br>  noconnect">Verbindungen zwischen Datenpunkten ein-/ausschalten</item>
-		<item node="coords=KOORDINATEN">Den Koordinatensatz KOORDINATEN auswählen. Zur Verfügung stehen <code>cartesian</code> (kartesisch), <code>polar</code> (polar/zylindrisch) und <code>spherical</code> (sphärisch). Je nach gewähltem Plotstil sind die Koordinatenzuordnungen unterschiedlich. Siehe "help coords" für weitere Details.</item>
+		<item node="coords=KOORDINATEN">Den Koordinatensatz KOORDINATEN auswählen. Zur Verfügung stehen <code>cartesian</code> (kartesisch), <code>polar</code> (polar/zylindrisch) und <code>spherical</code> (sphärisch). Je nach gewähltem Plotstil sind die Koordinatenzuordnungen unterschiedlich. Siehe <a href="nhlp://coords?frame=new">help coords</a> für weitere Details.</item>
 		<item node="crust/nocrust">Rekonstruiert eine 2D-Oberfläche aus beliebig verteilten <expr>x-y-z</expr>-Punkten. Es wird das aktuelle Farbschema verwendet</item>
 		<item node="errorbars/<br>  noerrorbars">Fehlerbalken in <expr>x</expr>- und <expr>y</expr>-Richtung anzeigen/deaktivieren. Benötigt 4 Spalten: <expr>x, y, delta_x, delta_y</expr></item>
 		<item node="font=SCHRIFTART">Verwendet die Schriftart SCHRIFTART für die Beschriftungen der folgenden Plots. Standardmäßig wird <code>pagella</code> geladen; zur Wahl stehen außerdem <code>termes</code>, <code>cursor</code>, <code>adventor</code>, <code>bonum</code>, <code>heros</code>, <code>heroscn</code>, <code>chorus</code> &amp; <code>schola</code></item>
@@ -47,7 +47,7 @@
 		<item node="legend=POS">Position der Legende bei <code>plot</code>, <code>hist</code> und Spezialfällen von <code>plot3d</code> festlegen. POS kann <code>topleft</code>, <code>topright</code>, <code>bottomleft</code>, <code>bottomright</code> sein</item>
 		<item node="legendstyle=STYLE">Legendensymbole bei <code>plot</code> und <code>plot3d</code> beeinflussen: <code>onlycolors</code> zeigt nur die Farben, <code>onlystyles</code> nur die Styles der Kurven/Punkte</item>
 		<item node="linesizes=SIZES">Die Liniendicke in Plots ändern. Jede Ziffer in SIZES steht für einen Plot und kann alle Werte zwischen 0 und 9 umfassen.</item>
-		<item node="linestyles=STYLE">Den Linienstil in Plots ändern. Siehe "help linestyles" für weitere Details.</item>
+		<item node="linestyles=STYLE">Den Linienstil in Plots ändern. Siehe <a href="nhlp://linestyles?frame=new">help linestyles</a> für weitere Details.</item>
 		<item node="logscale/<br>  nologscale">Logarithmische Skalierung aller Achsen ein-/ausschalten</item>
 		<item node="marks=WERT/<br>  nomarks">(Nur bei <code>plot3d</code>) Zeichnet Kreise der Größe WERT an den <expr>x-y-(z-)</expr>Koordinaten, wobei die Kreise gemäß des <expr>z</expr>-Werts und des Farbschemas gefüllt sind</item>
 		<item node="maxline=KOMNTR">Zeichnet eine horizontale Linie durch den maximalen Funktionswert eines Plots und versieht selbige mit dem KOMNTR. In der Form <code>maxline=(TEXT,STYLE)</code> kann die Darstellung der Linie beeinflusst werden</item>
@@ -59,8 +59,8 @@
 		<item node="osvg=NAME">Wie <code>oeps</code>, allerdings wird eine SVG-Datei erzeugt</item>
 		<item node="otex=NAME">Wie <code>oeps</code>, allerdings wird eine TeX-Datei (mithilfe von TikZ) erzeugt</item>
 		<item node="perspective=WERT">Perspektivische Ansicht aktivieren. Der Wert WERT darf im Interall [0,1) liegen und beschreibt die Stärke der Perspektive</item>
-		<item node="plotcolors=FARBEN">Die FARBEN der Linien in gewöhnlichen Plots und 3D-Trajektorien einstellen. Siehe "help plotcolors" für weitere Details</item>
-		<item node="pointstyles=STYLE">Das Erscheinungsbild der Punkte in Plots einstellen. Siehe "help pointstyles" für weitere Details</item>
+		<item node="plotcolors=FARBEN">Die FARBEN der Linien in gewöhnlichen Plots und 3D-Trajektorien einstellen. Siehe <a href="nhlp://plotcolors?frame=new">help plotcolors</a> für weitere Details</item>
+		<item node="pointstyles=STYLE">Das Erscheinungsbild der Punkte in Plots einstellen. Siehe <a href="nhlp://pointstyles?frame=new">help pointstyles</a> für weitere Details</item>
 		<item node="points/nopoints">Berechnete Stützstellen der Funktionen ein-/ausschalten</item>
 		<item node="rborder=(POS,KOMNTR)">Zeichnet eine vertikale Linie durch den <expr>x</expr>-Wert POS und versieht selbige mit dem KOMNTR. Durch einen KOMNTR in der Form TEXT,STYLE kann die Darstellung der Linie beeinflusst werden</item>
 		<item node="region/noregion">Füllt den Raum zwischen zwei Kurven mit den interpolierten Farben der beiden Kurven. Wenn nur eine Kurve (oder eine ungerade Zahl an Kurven) angegeben wird, wird <code>area</code> verwendet. Verfügbar bei <code>plot</code> und <code>plot3d</code></item>
@@ -77,14 +77,14 @@
 		<item node="*log/no*log">*-Achse logarithmisch skalieren</item>
 		<item node="*scale=WERT">*-Achsenskalierungsfaktor WERT festlegen</item>
 		<item node="*ticklabels=LABELS">Selbstdefinierte *-Achsenskalierung festlegen. Die Skaleneinheiten werden äquidistant verteilt. Die LABELS sind als Zeichenkette anzugeben, wobei die Skalenwerte durch "\\n" voneinander getrennt sein müssen.</item>
-		<item node="*ticks=FORMAT">Die Formatierung der *-Skalenbeschriftung auf FORMAT setzen. Siehe auch "help ticks"</item>
+		<item node="*ticks=FORMAT">Die Formatierung der *-Skalenbeschriftung auf FORMAT setzen. Siehe auch <a href="nhlp://ticks?frame=new">help ticks</a></item>
 		<item node="xerrorbars/<br>  noxerrorbars">Fehlerbalken in <expr>x</expr>-Richtung anzeigen/deaktivieren. Benötigt 3 Spalten: <expr>x, y, delta_x</expr></item>
 		<item node="yerrorbars/<br>  noyerrorbars">Fehlerbalken in <expr>y</expr>-Richtung anzeigen/deaktivieren. Benötigt 3 Spalten: <expr>x, y, delta_y</expr></item>
 	</list>
 	("*" steht für <expr>x, y &amp; z</expr>)
-	STYLE ist eine Zeichenkette, die je nach Option nur Farben, nur Liniendicke, nur Linien-/Punkttypen oder alle drei Informationen enthalten kann. Die Styleinformationen sind jeweils einzelne Zeichen, die in "help colors" und "help linestyles" erläutert werden. Die Liniendicke ist eine Ziffer von 0 bis 9.
+	STYLE ist eine Zeichenkette, die je nach Option nur Farben, nur Liniendicke, nur Linien-/Punkttypen oder alle drei Informationen enthalten kann. Die Styleinformationen sind jeweils einzelne Zeichen, die in <a href="nhlp://colors?frame=new">help colors</a> und <a href="nhlp://linestyles?frame=new">help linestyles</a> erläutert werden. Die Liniendicke ist eine Ziffer von 0 bis 9.
 	<em>Wichtig:</em> Auf Leerzeichen sollte weitestgehend verzichtet werden, da sie zum Separieren der Optionen verwendet werden. Sollten sie bei <code>title=</code>, <code>*label=</code> oder dem Dateinamen nötig sein, muss das gesamte Argument in Anführungszeichen gesetzt werden.
 	Optionen, die einmal gesetzt wurden, werden für die weitere Verwendung gespeichert und (so lange sie nicht widerrufen werden) bei allen weiteren Plots automatisch verwendet. Ausnahmen sind hierbei hohe Auflösung, Dateinamen, Titel, Plotintervalle, Linienfarben und Achsenbeschriftungen.
 	<em>Tipp:</em> Optionen, die von Plot zu Plot gespeichert werden, können auch durch die Syntax <code>plot -set OPTIONEN</code> (ohne eine zu plottende Funktion) außerhalb eines Plots gesetzt werden.
-	<em>Siehe auch:</em> "help plot", "help colors" und "help linestyles"
+	<em>Siehe auch:</em> <a href="nhlp://plot?frame=self">help plot</a>, <a href="nhlp://colors?frame=self">help colors</a> und <a href="nhlp://linestyles?frame=self">help linestyles</a>
 </article>

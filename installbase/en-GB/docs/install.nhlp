@@ -32,6 +32,6 @@
 		<item node="-requirepackages=PACKAGELIST">Installs the passed packages, which have to be separated with commata, on-the-fly. (Packages are procedures inside of <code>&lt;install&gt;</code> tags) This field won't be interpreted before v1.0.9 and has to be surrounded with quotations marks.</item>
 	</list>
 	The flags for the installation have different meanings: <code>ENABLE_FULL_LOGGING</code> activates the protocoling of each evaluated line instead of only the procedure name, <code>DISABLE_SCREEN_OUTPUT</code> deactivates the protocol on the NumeRe console and <code>ENABLE_DEFAULTS</code> reverts the previous flags.
-	During the installation of packages you may add entries to the NumeRe documentation. The needed information may added to the <code>&lt;install&gt; ... &lt;endinstall&gt;</code> block as well. Further information may be found at "help documentation".
-	<em>See also:</em> "help plugin", "help procedure", "help script" and "help documentation"
+	During the installation of packages you may add entries to the NumeRe documentation. The needed information may added to the <code>&lt;install&gt; ... &lt;endinstall&gt;</code> block as well. Further information may be found at <a href="nhlp://documentation?frame=new">help documentation</a>.
+	<em>See also:</em> <a href="nhlp://plugin?frame=self">help plugin</a>, <a href="nhlp://procedure?frame=self">help procedure</a>, <a href="nhlp://script?frame=self">help script</a> and <a href="nhlp://documentation?frame=self">help documentation</a>
 </article>

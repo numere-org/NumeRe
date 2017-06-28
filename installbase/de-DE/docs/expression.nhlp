@@ -32,5 +32,5 @@
 		Satz = "Hallo Welt"
 		"Hallo Welt"
 	</example>
-	<em>Siehe auch:</em> "help cache", "help string", "help list", "help var" und "help func"
+	<em>Siehe auch:</em> <a href="nhlp://cache?frame=self">help cache</a>, <a href="nhlp://string?frame=self">help string</a>, <a href="nhlp://list?frame=self">help list</a>, <a href="nhlp://var?frame=self">help var</a> und <a href="nhlp://func?frame=self">help func</a>
 </article>

@@ -29,11 +29,11 @@
 		<item node="axisbind=AXIS">Bind functions and data sets to axes. The axes are represented with the characters <code>lbrt</code>. Each plot object is assigned to a horizontal (<code>tb</code>) and to a vertical (<code>lr</code>) axis. At <em>least</em> one object must be assigned to the left and one to the bottom axis. Needs <code>box</code>and may only be used for the command <code>plot</code>. Colors and labels of the secondary axes may be modified with <code>add*axis</code>.</item>
 		<item node="background=BG/<br>  nobackground">Load a PNG bitmap as background of the plot. The PNG file will be scaled according to the current set axis ratio</item>
 		<item node="bars/nobars">Show vertical bars instead of points for data plots. Requires equidistant distributed <expr>x</expr> values for correct display. Using <code>bars=WIDTH</code> you may modify the percentage of the bar width; the default value is 90%</item>
-		<item node="bgcolorscheme=SCHEME">Choose the colorscheme for the background. Predefined schemes are <code>real</code>, <code>rainbow</code>, <code>viridis</code>, <code>grey</code>, <code>hot</code>, <code>cold</code> and <code>map</code>. See "help colorscheme" for further schemes</item>
+		<item node="bgcolorscheme=SCHEME">Choose the colorscheme for the background. Predefined schemes are <code>real</code>, <code>rainbow</code>, <code>viridis</code>, <code>grey</code>, <code>hot</code>, <code>cold</code> and <code>map</code>. See <a href="nhlp://colorscheme?frame=new">help colorscheme</a> for further schemes</item>
 		<item node="box/nobox">(De-)activates the surrounding box (modifies how the axis are displayed)</item>
 		<item node="boxplot/<br>  noboxplot">(De-)activates the boxplot mode (Minimal, maximal value &amp; quartiles). Each data row (only <expr>y</expr> values will be used) creates a single boxplot marker in the final plot.</item>
 		<item node="connect/<br>  noconnect">(De-)activates the connections between data points</item>
-		<item node="coords=COORDS">Choose the coordinates COORDS. You may choose out of <code>cartesian</code>, <code>polar</code> (cylindrical) and <code>spherical</code>. Depending on the chosen plotting style the coordinate assignements are different. See "help coords" for further details.</item>
+		<item node="coords=COORDS">Choose the coordinates COORDS. You may choose out of <code>cartesian</code>, <code>polar</code> (cylindrical) and <code>spherical</code>. Depending on the chosen plotting style the coordinate assignements are different. See <a href="nhlp://coords?frame=new">help coords</a> for further details.</item>
 		<item node="crust/nocrust">Reconstructs a 2D surface out of arbitrary distributed <expr>x-y-z</expr> points. The current colorscheme will be used</item>
 		<item node="errorbars/<br>  noerrorbars">(De-)activates errorbars in <expr>x</expr> and <expr>y</expr> direction. Needs 4 columns: <expr>x, y, delta_x, delta_y</expr></item>
 		<item node="font=FONT">Uses the chosen font for the following plots. The default font is <code>pagella</code>; you may choose out of <code>termes</code>, <code>cursor</code>, <code>adventor</code>, <code>bonum</code>, <code>heros</code>, <code>heroscn</code>, <code>chorus</code> &amp; <code>schola</code></item>
@@ -47,7 +47,7 @@
 		<item node="legend=POS">Modify the position of the legend for <code>plot</code>, <code>hist</code> and some special cases of <code>plot3d</code>. POS may be one of <code>topleft</code>, <code>topright</code>, <code>bottomleft</code>, <code>bottomright</code></item>
 		<item node="legendstyle=STYLE">Modify the legend symbols for <code>plot</code> and <code>plot3d</code>: <code>onlycolors</code> shows only the corresponding colors, <code>onlystyles</code> shows only the styles of the curves/points</item>
 		<item node="linesizes=SIZES">Modify the line thicknesses in the plots. Each number in SIZES represents one plot object and may lay between 0 and 9.</item>
-		<item node="linestyles=STYLE">Modify the line style of plots. See "help linestyles" for further details.</item>
+		<item node="linestyles=STYLE">Modify the line style of plots. See <a href="nhlp://linestyles?frame=new">help linestyles</a> for further details.</item>
 		<item node="logscale/<br>  nologscale">(De-)activates the logarithmic scale of all axes</item>
 		<item node="marks=VALUE/<br>  nomarks">(Only for <code>plot3d</code>) Draws circles of the size VALUE at the <expr>x-y(-z)</expr> coordinates, where the circles are filled according the <expr>z</expr> values and the current color scheme</item>
 		<item node="maxline=COMMENT">Draws a horizontal line through the maximal function value of a plot and adds the COMMENT. In the form <code>maxline=(TEXT,STYLE)</code> the display of the line may be modified</item>
@@ -59,8 +59,8 @@
 		<item node="osvg=NAME">Similar to <code>oeps</code>, but creates an SVG file</item>
 		<item node="otex=NAME">Similar to <code>oeps</code>, but creates an TeX file (with the use of TikZ)</item>
 		<item node="perspective=VALUE">Actives the perspective view. The value may be in the interval [0,1) and describes the strength of the perspective</item>
-		<item node="pointstyles=STYLE">Modify the appearance of the points in the plot. See "help pointstyles" for further details</item>
-		<item node="plotcolors=COLORS">Modify the COLORS of the lines in plots and 3D trajectories. See "help plotcolors" for further details</item>
+		<item node="plotcolors=COLORS">Modify the COLORS of the lines in plots and 3D trajectories. See <a href="nhlp://plotcolors?frame=new">help plotcolors</a> for further details</item>
+		<item node="pointstyles=STYLE">Modify the appearance of the points in the plot. See <a href="nhlp://pointstyles?frame=new">help pointstyles</a> for further details</item>
 		<item node="points/nopoints">(De-)activates the display of the calculated samples of functions</item>
 		<item node="rborder=(POS,COMMENT)">Draws a vertical line through the <expr>x</expr> value POS and adds the COMMENT. Using COMMENT in the form TEXT,STYLE the display of the line may be modified</item>
 		<item node="region/noregion">Fills the region between two curves with a color gradient of both colors. If only one curve (or an odd number of curves) is available, then the behavior of <code>area</code> will be applied. May be used with <code>plot</code> and <code>plot3d</code></item>
@@ -77,14 +77,14 @@
 		<item node="*log/no*log">Use logarithmic scale for the * axis</item>
 		<item node="*scale=VALUE">Set the axis scale for the * axis to VALUE</item>
 		<item node="*ticklabels=LABELS">Pass custom defined axis ticks for the * axis. The ticks will be distributed equidistantly. The LABELS have to be passed as strings separated with "\\n".</item>
-		<item node="*ticks=FORMAT">Set the ticks format of the * axis to FORMAT. See also "help ticks"</item>
+		<item node="*ticks=FORMAT">Set the ticks format of the * axis to FORMAT. See also <a href="nhlp://ticks?frame=new">help ticks</a></item>
 		<item node="xerrorbars/<br>  noxerrorbars">(De-)activates errorbars in <expr>x</expr> direction. Needs three columns: <expr>x, y, delta_x</expr></item>
 		<item node="yerrorbars/<br>  noyerrorbars">(De-)activates errorbars in <expr>y</expr> direction. Needs three columns: <expr>x, y, delta_y</expr></item>
 	</list>
 	("*" is a placeholder for <expr>x, y &amp; z</expr>)
-	STYLE is a string, which, depending on the current option, contains only colors, line thicknesses, line and point types or all three types of information. The style information consists of single characters, which are described in "help colors" and "help linestyles". The line thickness is a number from 0 to 9.
+	STYLE is a string, which, depending on the current option, contains only colors, line thicknesses, line and point types or all three types of information. The style information consists of single characters, which are described in <a href="nhlp://colors?frame=new">help colors</a> and <a href="nhlp://linestyles?frame=new">help linestyles</a>. The line thickness is a number from 0 to 9.
 	<em>Important:</em> you should omit whitespace wherever possible, because they are used to separate the options. If they are necessary for <code>title=</code>, <code>*label=</code> or the file name, then the whole argument has to be passed surrounded by quotation marks.
 	Options, which were set once, are stored for the further usage and (as long as they aren't revised) will be used for all further plots automatically. Exceptions are high resolution, filename, title, plotting intervals and axis labels.
 	<em>Tip:</em> Options, which are saved from plot to plot, may be set outside of an actual plot using the the syntax <code>plot -set OPTIONS</code> (without an actual function).
-	<em>See also:</em> "help plot", "help colors" and "help linestyles"
+	<em>See also:</em> <a href="nhlp://plot?frame=self">help plot</a>, <a href="nhlp://colors?frame=self">help colors</a> and <a href="nhlp://linestyles?frame=self">help linestyles</a>
 </article>

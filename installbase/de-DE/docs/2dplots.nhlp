@@ -20,17 +20,17 @@
 	<title string="Gitter-, Kontur-, Dichte- oder Flächenplots" />
 	Die Kommandos <code>mesh</code>, <code>cont</code>, <code>dens</code> bzw. <code>surf</code> ermöglichen Darstellungen von Funktionen der Form <expr>z = f(x,y)</expr>, also Funktionen, deren <expr>z</expr>-Koordinate durch eine Funktion von <expr>x</expr> und <expr>y</expr> gegeben ist. <code>mesh</code> erzeugt dabei einen Gitter-, <code>cont</code> ein Konturlinien- (Niveaulinien-), <code>dens</code> einen Dichte- (Farben entsprechen <expr>z</expr>-Werten) und <code>surf</code> einen Oberflächenplot.
 	Plotvariablen sind <expr>x</expr> und <expr>y</expr>. Alle anderen Variablen werden als Parameter betrachtet.
-	Um Datensätze mit diesen Kommandos darzustellen, müssen diese in Form eines Datengitters vorliegen. Ein solches kann mit <code>datagrid</code> aus einem Datensatz erzeugt werden. Siehe "help datagrid" für die entsprechenden Erläuterungen zu dieser Funktion.
+	Um Datensätze mit diesen Kommandos darzustellen, müssen diese in Form eines Datengitters vorliegen. Ein solches kann mit <code>datagrid</code> aus einem Datensatz erzeugt werden. Siehe <a href="nhlp://datagrid?frame=new">help datagrid</a> für die entsprechenden Erläuterungen zu dieser Funktion.
 	Dieser Plot-Modus führt ein drittes Intervall ein, das als Option beeinflusst werden kann, also <code>[x1:x2,y1:y2,z1:z2]</code>.
 	Zusätzliche Parameter für <code>mesh</code>, <code>cont</code>, <code>dens</code> und <code>surf</code> sind die folgenden:
 	<list>
 		<item node="clog/noclog">Farbschema logarithmisch skalieren</item>
 		<item node="colorbar/nocolorbar">Farbskala ein-/ausschalten</item>
 		<item node="colorrange=C1:C2">Das Intervall der Farbskala auf [C1,C2] anpassen</item>
-		<item node="colorscheme=SCHEMA">Das Farbschema SCHEMA wählen. Einige vordefinierte Schemata sind <code>rainbow</code>, <code>grey</code>, <code>hot</code>, <code>cold</code> und <code>map</code>. Siehe "help colorscheme" für weitere Schemata</item>
+		<item node="colorscheme=SCHEMA">Das Farbschema SCHEMA wählen. Einige vordefinierte Schemata sind <code>rainbow</code>, <code>grey</code>, <code>hot</code>, <code>cold</code> und <code>map</code>. Siehe <a href="nhlp://colors?frame=new">help colors</a> für weitere Schemata</item>
 		<item node="cscale=WERT">Skalierungsfaktor WERT der Farbskala angeben</item>
 		<item node="cticklabels=LABELS">Selbstdefinierte Farbskalenskalierung festlegen. Die Skaleneinheiten werden äquidistant verteilt. Die LABELS sind als Zeichenkette anzugeben, wobei die Skalenwerte durch "\\n" voneinander getrennt sein müssen.</item>
-		<item node="cticks=FORMAT">Die Formatierung der Farbskalenbeschriftung auf FORMAT setzen. Siehe auch "help ticks"</item>
+		<item node="cticks=FORMAT">Die Formatierung der Farbskalenbeschriftung auf FORMAT setzen. Siehe auch <a href="nhlp://ticks?frame=new">help ticks</a></item>
 		<item node="fcont/nofcont">Farbliche Konturfüllung aus-/einschalten</item>
 		<item node="lcont/nolcont">Mit Werten versehene Konturen aus-/einschalten</item>
 		<item node="orthoproject/<br>  noorthoproject">Orthogonale Projektion von 2D- und 3D-Plots auf xy-, xz- und yz-Ebene ein-/ausschalten. Erzeugt alle vier Plots als Unterplots in der gewünschten Ausgabedatei. Verfügbar für Oberflächen- und Gitterplots, sowie 3D-Trajektorien und 3D-Vektorfelder.</item>
@@ -53,5 +53,6 @@
 		|-&gt; Speichern ... Erfolg!
 		|   Gespeichert unter "&PLOTPATH&/gauss.png"
 	</example>
-	<em>Siehe auch:</em> "help plot", "help grad" und "help datagrid"
+	<img src="<>/docs/gauss.png" />
+	<em>Siehe auch:</em> <a href="nhlp://plot?frame=self">help plot</a>, <a href="nhlp://grad?frame=self">help grad</a> und <a href="nhlp://datagrid?frame=self">help datagrid</a>
 </article>

@@ -55,6 +55,6 @@
 		set -loadpath=data/import
 		File path was updated successfully.
 	</example>
-	<em>See also:</em> "help get", "help editor" or "help viewer"
+	<em>See also:</em> <a href="nhlp://get?frame=self">help get</a>, <a href="nhlp://editor?frame=self">help editor</a> and <a href="nhlp://viewer?frame=self">help viewer</a>
 	<em>Tip:</em> Use <code>list -settings</code> to display all configuration settings in a clean list.
 </article>

@@ -40,8 +40,9 @@
 		<item node="method=METHOD">Changes the method for determining the bin width. The default setting is the <em>Sturges-Rule</em>, with <code>scott</code> NumeRe uses the <em>Scott-Rule</em> and with <code>freedman</code> it will use the <em>Freedman-Diaconis-Rule</em>.</item>
 		<item node="xlabel=LABEL">Set the axis label for the <expr>x</expr> axis. The corresponding options for the other axes are <code>ylabel</code> and <code>zlabel</code>.</item>
 	</list>
-	<example desc="Histogram of the columns 1-3 of a data file using 128 bins each and exporting the results to 'hist.dat':">
-		hist data(:,1:3) -set bins=128 export=hist
+	<example desc="Histogram of the columns 1-3 of a data file using 64 bins each and exporting the results to 'hist.dat':">
+		hist data(:,1:3) -set bins=64 export=hist
 	</example>
-	<em>See also:</em> "help plotoptions"
+	<img src="<>/docs/dochist.png" />
+	<em>See also:</em> <a href="nhlp://plotoptions?frame=self">help plotoptions</a>
 </article>

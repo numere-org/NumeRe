@@ -24,10 +24,12 @@
 	One may pass the additional option <code>-transpose</code> to the commands <code>copy</code> and <code>move</code>. As result, the lines and columns will be swapped in the target entries.
 	Beside of the possibility of deleting entries with the value <code>nan</code>, one can delete an element/a range of elements of the current cache with the command <code>delete</code>.
 	The command <code>delete CACHE(i1:i2,j1:j2)</code> will unrecoverably delete all entries of the lines <expr>i1</expr> to <expr>i2</expr> and the columns <expr>j1</expr> to <expr>j2</expr> from the CACHE. This command <em>cannot</em> be applied to the entries of <code>data()</code>. To suppress the awaited confirmation, one can append the option <code>-ignore</code> to the command expression.
-	To remove custom created caches from memory, one can either pass the parameter <code>-clear</code> to an arbitrary cache, which will remove all caches and free their memory, or one can use the command <code>remove</code>, which will only remove the named caches:<codeblock>remove CACHE1(), CACHE2(), ...</codeblock>
+	However, <code>delete</code> can be applied to <code>string()</code> to delete single elements or columns of this object.
+	To remove custom created caches from memory, one can either pass an arbitrary cache to the command <code>clear</code>, which will remove <em>all</em> caches and free their memory (<code>clear CACHE()</code>), or one can use the command <code>remove</code>, which will only remove the named caches:<codeblock>remove CACHE1(), CACHE2(), ...</codeblock>
+	<code>clear</code> may also be applied to <code>data()</code> or <code>string()</code> to empty these objects. The objects themselves persist after this command, only their content is removed.
 	The both commands <code>copy</code> ans <code>move</code> can be used to copy or move files as well. In both cases a source and a target file is necessary (surrounded with quotation marks, if applicable):<codeblock>copy SOURCE -target=TARGET</codeblock>or<codeblock>move SOURCE -target=TARGET</codeblock>respectively. NumeRe will only copy/move files, whose file type is used by NumeRe itself. Already existing target files will be <em>overwritten</em>!
 	NumeRe may delete <em>files</em> if one uses the command <code>remove FILE</code>. To suppress the awaited confirmation, one can append the parameter <code>-ignore</code>. NumeRe will only delete files, whose file types are used by NumeRe itself.<br><em>Attention:</em> The file FILE will be deleted unrecoverably!
-	In all cases, SOURCE, TARGET and FILE should be passed relative to the root directory, absolute or using the <code>&lt;PATH&gt;</code> placeholders (see "help explorer"). If you like to copy or move files without renaming them, their target path should end with <code>/</code> or <code>/*</code>. In addition, one can apply string operations to the file paths.
+	In all cases, SOURCE, TARGET and FILE should be passed relative to the root directory, absolute or using the <code>&lt;PATH&gt;</code> placeholders (see <a href="nhlp://explorer?frame=new">help explorer</a>). If you like to copy or move files without renaming them, their target path should end with <code>/</code> or <code>/*</code>. In addition, one can apply string operations to the file paths.
 	The moved/copied files can be renamed using special naming schemes. You have to enter the corresponding scheme placeholders to the target file name:
 	<list>
 		<item node="&lt;#&gt;">Will be replaced by the current number of the moved/copied file. If one or more <code>~</code> are appended to <code>#</code>, the number will be expanded to the corresponding number of characters by inserting additional zeroes in front of the actual number</item>
@@ -42,5 +44,5 @@
 		move &lt;&gt;/samples/data.dat -target=&lt;loadpath&gt;/
 		The file "&EXEPATH&/samples/data.dat" was moved successfully.
 	</example>
-	<em>See also:</em> "help data", "help cache", "help new", "help string" and "help explorer"
+	<em>See also:</em> <a href="nhlp://data?frame=self">help data</a>, <a href="nhlp://cache?frame=self">help cache</a>, <a href="nhlp://new?frame=self">help new</a>, <a href="nhlp://string?frame=self">help string</a> and <a href="nhlp://explorer?frame=self">help explorer</a>
 </article>

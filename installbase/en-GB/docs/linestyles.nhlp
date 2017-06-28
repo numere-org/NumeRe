@@ -18,7 +18,7 @@
 
 <article id="linestyles">
 	<title string="Line and point styles" />
-	The lines and points, which are used in the drawing modes <code>draw</code> and <code>draw3d</code> as well as in the plot modes <code>plot</code> and <code>plot3d</code>, may be modified with the STL argument of the drawing functions or the options <code>linestyles=STYLE</code> and <code>pointstyles=STYLE</code>, respectively. The colors are represented with the symbols out of "help colors"; the line endings and styles are as follows.
+	The lines and points, which are used in the drawing modes <code>draw</code> and <code>draw3d</code> as well as in the plot modes <code>plot</code> and <code>plot3d</code>, may be modified with the STL argument of the drawing functions or the options <code>linestyles=STYLE</code> and <code>pointstyles=STYLE</code>, respectively. The colors are represented with the symbols out of <a href="nhlp://colors?frame=new">help colors</a>; the line endings and styles are as follows.
 	In plots using the <code>pointstyles</code> option you have to remark that up to two letters will be used for each plot. In this case the second letter is only relevant, if the first one is a hash sign <code>#</code> (see below). The point shapes will be interpreted characterwise and only if <code>#</code> was found, the following character will be appended.
 	If you replace the corresponding character in <code>pointstyles</code> or <code>linestyles</code> with a whitespace, the current used style won't be changed. This can be used to change for example the style of the second plot element but leave the first one as it is.
 	The line endings are determined through the following characters:
@@ -62,5 +62,5 @@
 	<example desc="Modifying the point styles of a plot (two times dots and two times filled rhombs):">
 		plot [...] -set pointstyles="..#d#d"
 	</example>
-	<em>See also:</em> "help plotoptions" and "help colors"
+	<em>See also:</em> <a href="nhlp://plotoptions?frame=self">help plotoptions</a> and <a href="nhlp://colors?frame=self">help colors</a>
 </article>

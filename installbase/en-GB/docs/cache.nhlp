@@ -43,5 +43,5 @@
 		[...]
 		cache -sort cols=1[3:6]
 	</example>
-	<em>See also</em> "help new", "help remove", "help datagrid", "help save", "help string" and "help delete"
+	<em>See also</em> <a href="nhlp://new?frame=self">help new</a>, <a href="nhlp://remove?frame=self">help remove</a>, <a href="nhlp://datagrid?frame=self">help datagrid</a>, <a href="nhlp://save?frame=self">help save</a>, <a href="nhlp://string?frame=self">help string</a> and <a href="nhlp://delete?frame=self">help delete</a>
 </article>

@@ -23,11 +23,13 @@
 	To add help files during an install, the <code>&lt;install&gt;...&lt;endinstall&gt;</code> block must contain two additional blocks: a <code>&lt;helpindex&gt;...&lt;/helpindex&gt;</code> and a <code>&lt;helpfile&gt;...-&lt;/helpfile&gt;</code> block. The first one must contain the index information about the documentation article; the latter one shall contain the actual documentation article. To add a comment, which shall not displayed, you may use the XML comment syntax:<codeblock>&lt;!-- YOUR COMMENT GOES HERE --&gt;</codeblock>Also, you may use <code>&lt;example&gt;</code>, <code>&lt;list&gt;</code> or other environments in this article:
 	<list>
 		<item node="&lt;article ...&gt;">The unique key, which will link the documentation index with the corresponding entry of the documentation index (<code>id=</code>)</item>
-		<item node="&lt;title .../&gt;">The title (<code>string=</code>) and the index keys (<code>idxkey=</code>) for the documentation index, meaning the keywords, which will be listed for the article by invoking "help idx"</item>
+		<item node="&lt;title .../&gt;">The title (<code>string=</code>) and the index keys (<code>idxkey=</code>) for the documentation index, meaning the keywords, which will be listed for the article by invoking <a href="nhlp://index?frame=new">help idx</a></item>
 		<item node="&lt;keyword&gt;">A keyword used for displaying the article. Simple rule: the more keywords the better. A keyword doesn't have to be a full word. <em>Important</em>:the passed keywords will overwrite the keywords of the default documentation articles.</item>
 		<item node="&lt;list&gt;">List environment for a list just like this one. Contains further <code>&lt;item&gt;</code> environments, which are the actual items of the list</item>
 		<item node="&lt;table&gt;">Table environment for a table. Contains further <code>&lt;tr&gt;</code> and <code>&lt;td&gt;</code> environments, which are the actual lines or cells, respectively</item>
 		<item node="&lt;br&gt;">Enters a line break at its place. (Paragraphs are represented by line breaks in the help file)</item>
+		<item node="&lt;a href=&quot;...&quot;&gt;">Includes a internal link, which will be implemented in the help windod correspondingly. The protocol is <code>nhlp</code> followed by the keyword and knows two options: <code>?frame=self</code> (open in the current window) and <code>?frame=new</code> (open in a new window). The link to this article would be <code>nhlp://documentation?frame=new</code></item>
+		<item node="&lt;img src=&quot;...&quot;&gt;">An image may be included in the documentation article with this tag. This image will only be displayed in the external help window and has to be available locally; for plugins it's best practice to save them at "&lt;&gt;/docs/plugins" and generate them during installation, if possible. The path to the image (<code>src=...</code>) should be passed including path placeholder and the file extension.</item>
 		<item node="&lt;em&gt;">Contains sections, which shall be emphasised. Will be displayed using <em>capital</em> (or bold and italic in HTML format) letters</item>
 		<item node="&lt;code&gt;">Contains strings, which shall not be interpreted, just like NumeRe-Code (but it doesn't ignore angle brackets: <code>&lt;&gt;</code>)</item>
 		<item node="&lt;expr&gt;">For (simple) mathematical expressions; will only be interpreted in HTML format.</item>
@@ -68,5 +70,5 @@
 	|       &lt;/article&gt;
 	|   &lt;/helpfile&gt;
 	</example>
-	<em>See also:</em> "help install" and "help plugin"
+	<em>See also:</em> <a href="nhlp://install?frame=self">help install</a> and <a href="nhlp://plugin?frame=self">help plugin</a>
 </article>

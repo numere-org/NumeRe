@@ -1,0 +1,34 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2017  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="editor">
+	<title string="NumeRe-Editor" />
+	Der Editor bietet die Möglichkeit, Textdateien, <a href="nhlp://script?frame=new">Scripte</a> und <a href="nhlp://procedure?frame=new">Prozeduren</a> zu bearbeiten. Für Scripte und Prozeduren besitzt der Editor eine farbliche Hervorhebung der entsprechenden <a href="nhlp://syntax?frame=new">Syntaxelemente</a>. Für Datenfiles und TeX-Sources wird ebenfalls eine Syntaxhervorhebung unterstützt. Hinzu kommt eine Markup-Funktion für normale Textfiles, die im "Ansicht-Menü" aktiviert werden kann.
+	Die Farben der Syntaxhervorhebung für Scripte und Prozeduren können im Optionen-Dialog angepasst werden. <em>Hinweis:</em> die Änderung der Farben wird erst nach Klicken auf "Anwenden" übernommen.
+	Des Weiteren unterstützt der Editor eine <em>Autovervollständigung</em> für Scripte und Prozeduren. Sobald ein Textbaustein mindestens zwei Zeichen lang ist, zeigt der Editor eine Auswahl möglicher Syntaxelemente unterstützt mit Icons, die den Typ des Syntaxelements beschreiben. Die Auswahl kann mit <code>[HOCH]</code> oder <code>[RUNTER]</code> verschoben und mit <code>[TAB]</code> bestätigt werden. Die Liste wird mit passenden Objekten der aktuell bearbeiteten Datei ergänzt.
+	Beim <em>Eingeben</em> von Anführungszeichen oder Klammern, werden die schließenden Klammern oder Anführungszeichen automatisch ergänzt, falls diese nicht bereits verfügbar sind. Wird ein Bereich des Textes <em>markiert</em> und ein Klammer- oder Anführungszeichen eingegeben, so wird der markierte Bereich als deren Inhalt interpretiert und davon umfasst.
+	Wird etwas markiert, dann <code>[STRG]</code> gedrückt und gehalten, dann können weitere Stellen im Text markiert werden. Es werden dann auch mehrere Cursors angezeigt. Wird erst <code>[ALT]</code> gedrückt und gehalten und währenddessen ein Bereich im Editor markiert, so wird auf Blockmarkierung umgeschalten. Es wird ein rechteckiger Bereich markiert. In beiden Fällen kann in allen Auswahlen (beim Blockmarkieren sind das die enthaltenen Zeilenabschnitte) simultan gelöscht und getippt werden.
+	Alle Änderungen, die im Editor durchgeführt werden, werden am Rand mit einer orangenen Markierung hervorgehoben. Sobald die aktuelle Datei gespeichert wird, werden diese Markierungen grün. Dadurch kann zwischen zwei Speicherständen unterschieden werden.
+	Der Editor kann lange Zeilen automatisch umbrechen und Steuerzeichen anzeigen. Die entsprechenden Funktionen sind im "Ansicht-Menü" zu finden. Außerdem kann der Editor Scripte und Prozeduren gemäß ihrer Programmlogik entweder auf Wunsch oder automatisch während der Eingabe einrücken. Dies ist im "Werkzeuge-Menü" zu finden.
+	Der Editor kann auch die Definition einer NumeRe-Prozedur suchen und öffnen, wenn mit der rechten Maustaste auf den Prozedurnamen geklickt wird. Namensräume werden hierbei berücksichtigt.
+	Wird die Maus einen kurzen Moment über einem Syntaxbaustein gehalten, dann wird der Editor eine kurze Information zu diesem Syntaxbaustein liefern, sofern diese Verfügbar ist.
+	Der Editor kann eine statische Analyse des eingegeben Codes durchführen. Der <a href="nhlp://analyzer?frame=new">Code-Analyzer</a> wird den Code sowohl nach Fehlern als auch auf den Stil untersuchen. Außerdem werden Codemetriken wie die zyklomatische Komplexität angewandt.
+	Zusätzlich zur statischen Codeanalyse kann der Editor nach dupliziertem Code in der aktuellen Datei suchen. Diese Funktion ist im "Werkzeuge-Menü" zu finden. Dabei wird eine semantische Analyse angewendet, also eine Analyse der "Bedeutung" des aktuellen Ausdrucks. Es besteht die Möglichkeit, die semantische Analyse, die standardmäßig nur auf Variablen angewandt wird, auch auf Literale anzuwenden. <em>Hinweis:</em> die Analyse benötigt einen Moment. Klicken auf die gefundenen Ergebnisse, hebt die entsprechenden Zeilen im Editor hervor, wobei die trotzdem vorhandenen Differenzen gesondert markiert werden.
+	Das Kontextmenü des Editors unterstützt noch das permanente Hervorheben des aktuell angeklickten Textbausteins. Jedes Auftreten dieses Bausteins wird in der aktuellen Datei rot hervorgehoben. Im Gegensatz dazu kann mit einem Doppelklick auf einen Textbaustein dieser temporär hervorgehoben werden. Es wird in diesem Fall grün als Hervorhebung verwendet. Sobald die Selektion sich ändert oder etwas getippt wird, wird die Hervorhebung wieder aufgehoben.
+	Ebenfalls werden passende Klammern an der Position des Cursors (je eine öffnende und schließende) grün und Klammern, denen der Partner fehlt, rot hervorgehoben.
+</article>

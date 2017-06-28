@@ -30,5 +30,6 @@
 	<example desc="2D rotational vector field with the option <code>flength</code>:">
 		vect -y,x -set flength
 	</example>
-	<em>See also:</em> "help plot", "help colorscheme" and "help vect3d"
+	<img src="<>/docs/vect.png" />
+	<em>See also:</em> <a href="nhlp://plot?frame=self">help plot</a>, <a href="nhlp://colorscheme?frame=self">help colorscheme</a> and <a href="nhlp://vect3d?frame=self">help vect3d</a>
 </article>

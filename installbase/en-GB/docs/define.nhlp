@@ -47,5 +47,5 @@
 		|&lt;- func(2.5)
 		|-&gt; ans = 0.2865048
 	</example>
-	<em>See also:</em> help list
+	<em>See also:</em> <a href="nhlp://list?frame=self">help list</a>
 </article>

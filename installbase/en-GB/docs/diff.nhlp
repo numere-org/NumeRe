@@ -33,5 +33,5 @@
 		diff data(:,1:2)
 		ans = {0.99830036,  0.98812332,  0.96787298, ...}
 	</example>
-	<em>See also:</em> "help taylor"
+	<em>See also:</em> <a href="nhlp://taylor?frame=self">help taylor</a>
 </article>

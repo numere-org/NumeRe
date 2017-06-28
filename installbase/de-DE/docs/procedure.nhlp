@@ -39,9 +39,9 @@
 	Falls eine Prozedur mithilfe eines Scripts oder der direkten Konsoleneingabe erzeugt werden soll und falls selbige in einem anderen Namensraum als <code>main</code> liegen soll, muss dieser im Prozedurkopf durch<codeblock>procedure $NAMENSRAUM~PROZEDUR(ARGUMENTE)\n\t...\nendprocedure</codeblock>angegeben werden. (Dies dient jedoch nur zur Identifikation des Namenraumes und wird nicht in die Prozedur-Datei geschrieben.)
 	In Prozeduren können auch Teile von Scripten durch die Syntax <code>@SCRIPT</code> eingeladen werden. Dies entspricht dem identischen Ausdruck, der in einem Script verwendet werden kann. Ebenso sind hier die Parameter <code>@SCRIPT: globals</code> und <code>@SCRIPT: defines</code> verfügbar.
 	In Prozeduren kann neben den Pfadplatzhaltern <code>&lt;loadpath&gt;</code>, <code>&lt;scriptpath&gt;</code>, etc. auch der spezielle Platzhalter <code>&lt;this&gt;</code> verwendet werden, der das Verzeichnis, in welchem sich die Prozedur befindet, beinhält.
-	<em>Wichtig:</em> Neben den üblichen Kommandos und Ausdrücken kann der Rumpf einer Prozedur noch spezielle Kommandos mit prozedurenspezifischer Bedeutung enthalten. Diese sind unter "help proccmd" aufgelistet.
+	<em>Wichtig:</em> Neben den üblichen Kommandos und Ausdrücken kann der Rumpf einer Prozedur noch spezielle Kommandos mit prozedurenspezifischer Bedeutung enthalten. Diese sind unter <a href="nhlp://proccmd?frame=new">help proccmd</a> aufgelistet.
 	Die Auswertung kann auch mit der <code>ESC</code>-Taste abgebrochen werden, falls sie zu viel Zeit in Anspruch nimmt.
-	Prozeduren können auch verwendet werden, um die Funktionalität von NumeRe mithilfe von Plugins (welche durch ein Kommando aufgerufen werden können) zu erweitern. Die Deklaration eines solchen Plugins kann jedoch nur innerhalb eines <code>&lt;install&gt; ... &lt;endinstall&gt;</code>-Blocks in einem NumeRe-Script geschehen. (Siehe hierzu "help plugin")
+	Prozeduren können auch verwendet werden, um die Funktionalität von NumeRe mithilfe von Plugins (welche durch ein Kommando aufgerufen werden können) zu erweitern. Die Deklaration eines solchen Plugins kann jedoch nur innerhalb eines <code>&lt;install&gt; ... &lt;endinstall&gt;</code>-Blocks in einem NumeRe-Script geschehen. (Siehe hierzu <a href="nhlp://plugin?frame=new">help plugin</a>)
 	<example desc="Eine Prozedur, die eine Datenanalyse automatisiert (wird in NumeRe aufgerufen durch <code>$analyse_data(DATAFILENAME)</code>):" type="verbatim">
         |   procedure $analyse_data(datafile)
         |       if (!data())
@@ -54,7 +54,7 @@
         |       return true;
         |   endprocedure	
 	</example>
-	<em>Siehe auch:</em> "help script", "help install", "help plugin", "help if", "help for" und "help while"
+	<em>Siehe auch:</em> <a href="nhlp://plugin?frame=self">help plugin</a>, <a href="nhlp://install?frame=self">help install</a>, <a href="nhlp://if?frame=self">help if</a>, <a href="nhlp://for?frame=self">help for</a>, <a href="nhlp://while?frame=self">help while</a> und <a href="nhlp://script?frame=self">help script</a>
 </article>
 
 <article id="procedure_commands">

@@ -20,5 +20,5 @@
 	<title string="Rechner-Modus" />
 	Der Rechner-Modus von NumeRe ist eine numerische Rechenumgebung, die auf "input-output"-Operationen ausgelegt ist.
 	Der Rechner-Modus ist damit in sehr eingeschränkten Masse mit den Möglichkeiten von Octave zu vergleichen (obgleich NumeRe stetig erweitert wird)
-	<em>Siehe auch:</em> "help expr"
+	<em>Siehe auch:</em> <a href="nhlp://expression?frame=self">help expression</a>
 </article>

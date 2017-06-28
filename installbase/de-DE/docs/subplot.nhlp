@@ -48,5 +48,6 @@
 	|       plot sin(x), cos(x)
 	|   endcompose
 	</example>
-	<em>Siehe auch:</em> "help compose" und "help plot"
+	<img src="<>/docs/subplot.png" />
+	<em>Siehe auch:</em> <a href="nhlp://compose?frame=self">help compose</a> und <a href="nhlp://plot?frame=self">help plot</a>
 </article>

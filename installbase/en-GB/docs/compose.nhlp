@@ -25,12 +25,13 @@
 	An additional restriction is that the plotting intervals passed or calculated for the first plot are used for the whole combination. It may be an advantage, passing the desired plotting interval for the first plot, although it may not use all three intervals. (If multiple intervals are passed through <code>[...]</code>, then only the first will be used for the output.)
 	The declaration of a plot combination can be aborted by invoking the corresponding command <code>abort</code> (similar to loops and clauses)
 	In a <code>compose ... endcompose</code> block only plotting commands may be used. Every other expression (except of <code>quit</code>, <code>abort</code> and <code>help</code>) will be ignored.
-	Multiple plots can be gathered in one single file with this mode, too. See additional details in "help subplot".
+	Multiple plots can be gathered in one single file with this mode, too. See additional details in <a href="nhlp://subplot?frame=new">help subplot</a>.
 	<example desc="Representation of a monopole force field and its potential using the NumeRe column syntax" type="verbatim">
 		|&lt;- compose
 		|COMP&gt; vect3d {x,y,z}/norm(x,y,z)^3
 		|COMP&gt; dens3d 1/norm(x,y,z) -set alpha
 		|COMP&gt; endcompose
 	</example>
-	<em>See also:</em> "help plot", "help plotoptions", "help multiresult", "help subplot", "help for", "help while" and "help if"
+	<img src="<>/docs/compose.png" />
+	<em>See also:</em> <a href="nhlp://plot?frame=self">help plot</a>, <a href="nhlp://plotoptions?frame=self">help plotoptions</a>, <a href="nhlp://multiresult?frame=self">help multiresult</a>, <a href="nhlp://subplot?frame=self">help subplot</a> , <a href="nhlp://for?frame=self">help for</a> , <a href="nhlp://while?frame=self">help while</a> and <a href="nhlp://if?frame=self">help if</a>
 </article>

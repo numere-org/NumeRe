@@ -28,5 +28,5 @@
 	<example desc="Bearbeiten der Datei '&EXEPATH&/samples/data.dat':">
 		edit &lt;&gt;/samples/data.dat
 	</example>
-	<em>Siehe auch:</em> "help explorer", "help editor" oder "help viewer"
+	<em>Siehe auch:</em> <a href="nhlp://explorer?frame=self">help explorer</a>, <a href="nhlp://editor?frame=self">help editor</a> und <a href="nhlp://viewer?frame=self">help viewer</a>
 </article>

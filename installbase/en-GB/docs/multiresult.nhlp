@@ -28,5 +28,5 @@
 		cos({1,2,3,4,5}*_pi) + {1,2,3,4,5}
 		ans = {     0,     3,     2,     5,     4}
 	</example>
-	<em>See also:</em> "help cache" and "help data"
+	<em>See also:</em> <a href="nhlp://data?frame=self">help data</a> and <a href="nhlp://cache?frame=self">help cache</a>
 </article>

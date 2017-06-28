@@ -29,6 +29,7 @@ abs(x)~Betrag von x~absolutwert betrag abs()
 acos(x)~Arkuskosinus von x. arccos(x) ist ein Synonym~acos() arccos() arcuscosinus arkuskosinus trigonometrische funktionen trigonometrie
 acosh(x)~Areakosinus hyperbolicus von x. arcosh(x) ist ein Synonym~acosh() arcosh() areakosinus trigonometrische funktionen hyperbolische trigonometrie
 Ai(x)~Airy-Funktion Ai(x)~optik potentialtopf Ai() optics airyfunction
+and(x,y,z,...)~Verknüpft die Argumente mit "&&"~logik logic und
 ans~spezielle Variable, siehe "help var"~answer last letztes ergebnis result
 Antwort~Die Antwort auf die Frage nach dem Universum, dem Leben und dem ganzen Rest: 42~answer ergebnis result hitchhikers guide per anhalter durch die galaxis
 append~Daten aus Dateien an die Daten im Speicher anhängen, siehe "help load"~laden daten dateien speicher load data *.dat *.ndat *.txt *.labx *.jdx *.jcm *.dx *.csv *.ods *.ibw opendocument spreadsheet cassylab jcamp-dx igor binary waves comma separated values
@@ -168,6 +169,7 @@ NumeRe v $$$~Deine NumeRe-Distribution befindet sich hier: $$$~numere programm d
 # O
 odesolve~Löst die als Ausdruck übergebenen Differentialgleichungen erster Ordnung numerisch, siehe "help odesolve"~odesolver differenzialgleichungen differential equations ordinary
 one(n,m)~Erzeugt eine n x m-Matrix, die mit Einsen gefüllt ist, siehe "help matop"~one() matrix
+or(x,y,z,...)~Verknüpft die Argumente mit "||"~logik logic oder
 # P
 pct(x,y,z,...,p)~p-tes Perzentil der Werte x,y,z,...~percentiles pct() quantiles quartiles perzentile terzile tertiless terciles quintiles dezile deciles fraktil fractile
 phi(x,y)~Berechnet den Azimuthwinkel phi~azimuthwinkel kugelkoordinaten zylinderkoordinaten sphaerische sphärische phi()
@@ -222,11 +224,25 @@ sqrt(x)~Wurzel von x~wurzel root sqrt()
 stats~Berechnet die Statistiken einer gegebenen Tabelle~standardabweichung mittelwert statistiken fehler
 std(x,y,z,...)~Standardabweichung der Werte x,y,z,...~standardabweichung fehler varianz stats statistiken std()
 stfa~Bestimmt eine Kurzzeit-Fourieranalyse des übergebenen Datensatzes~kurzzeitfourieranalyse shorttimefourieranalysis spectrogram spektrogramm
+STR.at(POS)~Gibt das Zeichen aus der Zeichenkette an der Stelle POS zurück~methode strings zeichenketten # \" character at()
+STR.fnd(STR,POS)~Gibt die Position des ersten Auftretens von STR in der Zeichenkette ab dem Zeichen POS zurück~methode strings zeichenketten # \" find fnd()
+STR.len~Länge der Zeichenkette~methode strings zeichenketten # \" laenge len()
+STR.mtch(STR,POS)~Sucht das erste Auftreten eines Zeichens aus STR in der Zeichenkette ab dem Zeichen POS~methode strings zeichenketten # \" find mtch()
+STR.nmtch(STR,POS)~Sucht das erste Auftreten eines Zeichens in der Zeichenkette, das nicht in STR auftritt, ab dem Zeichen POS~methode strings zeichenketten # \" find nmtch()
+STR.nrmtch(STR,POS)~Sucht das letzte Auftreten eines Zeichens in der Zeichenkette, das nicht in STR auftritt, bis zum Zeichen POS~methode strings zeichenketten # \" find last nrmtch()
+STR.rfnd(STR,POS)~Gibt die Position des letzten Auftretens von STR in der Zeichenkette bis zum Zeichen POS zurück~methode strings zeichenketten # \" find last rfnd()
+STR.rmtch(STR,POS)~Sucht das letzte Auftreten eines Zeichens aus STR in der Zeichenkette bis zum Zeichen POS~methode strings zeichenketten # \" find last rmtch()
+STR.splt(CHAR)~Teilt die Zeichenkette an den Zeichen CHAR in einzelne Zeichenketten auf~methode strings zeichenketten # \" unterteilen tokenizer zerlegen splt()
+STR.sub(POS,LEN)~Gibt LEN Zeichen ab dem Zeichen POS aus der Zeichenkette als neue Zeichenkette zurück~methode strings zeichenketten # \" ausschnitt ausschneiden sub()
+str_not_match(S1,S2,P)~Sucht das erste Auftreten eines Zeichens in der Zeichenkette S2, das nicht in S1 auftritt, ab dem Zeichen P~zeichenketten strings  # \" find str_not_match()
+str_not_rmatch(S1,S2,P)~Sucht das letzte Auftreten eines Zeichens in der Zeichenkette S2, das nicht in S1 auftritt, bis zum Zeichen P~zeichenketten strings  # \" find last str_not_rmatch()
 strfnd(STR1,STR2,P)~Gibt die Position des ersten Auftretens der Zeichenkette STR1 in STR2 ab dem Zeichen P zurück~zeichenketten strings  # \" find strfnd()
 string(i)~Zeichenketten-Objekt mit Zugriff auf Zeichenkette "i", siehe "help string"~zeichenketten # \" \n \t string()
 string_cast(EXPR)~Wandelt EXPR ungeachtet eventueller Rechenoperationen in eine Zeichenkette um~zeichenketten wert # \" string_cast() strings
 strlen(STRING)~Gibt die Länge der Zeichenkette STRING zurück~zeichenketten strings # \" laenge länge strlen()
+strmatch(S1,S2,P)~Sucht das erste Auftreten eines Zeichens aus S1 in der Zeichenkette S2 ab dem Zeichen P~zeichenketten strings  # \" find strmatch()
 strrfnd(STR1,STR2,P)~Gibt die Position des letzten Auftretens von STR1 in STR2 bis zum Zeichen P zurück~zeichenketten strings # \" find rfind last strrfnd()
+strrmatch(S1,S2,P)~Sucht das letzte Auftreten eines Zeichens aus S1 in der Zeichenkette S2 bis zum Zeichen P~zeichenketten strings  # \" find last strrmatch()
 student_t(n,c)~Berechnet den Student-Faktor t für n Messungen mit dem Konfidenzintervall 0 < c < 1~student_t() studentfaktor
 subplot~Leitet einen neuen Unterplot in Verbindung mit dem "compose"-Modus ein~subplots unterplots multiplots
 substr(STRING,n,l)~Gibt l Zeichen ab dem Zeichen n aus der Zeichenkette STRING als neue Zeichenkette zurück~zeichenketten # \" strings ausschnitt ausschneiden substr()
@@ -263,5 +279,6 @@ write~Ermöglicht das Schreiben in eine Datei~dateien files schreiben zeichenkett
 # Y
 Y(l,m,theta,phi)~Realteil der Kugelflächenfunktionen der Ordnung l mit m = [-l,l] der Winkel theta und phi~kugelflaechenfunktionen kugelflächenfunktion kugelfunktionen spherical harmonics ylm y_lm y()
 # Z
+Z(n,m,rho,phi)~Wert der Zernikepolynome der Ordnung n >= 0 mit m = [-n,n] an der Stelle rho im Intervall [0,1] unter dem Winkel phi im Intervall [0,2*PI)~astigmatismus astigmatism aberration chromatic chromatische koma
 zero(n,m)~Erzeugt eine n x m-Matrix, die mit Nullen gefüllt ist, siehe "help matop"~zero() matrix
 zeroes~Bestimmt alle Nullstellen eines Ausdrucks in einem gegebenen Intervall. Siehe "help zeroes"~schnittpunkt nullstellen

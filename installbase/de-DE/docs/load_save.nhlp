@@ -20,7 +20,7 @@
 	<title string="Laden und Speichern" />
 	Daten können in NumeRe geladen oder von NumeRe heraus in eine Datei gespeichert werden. Dazu existieren die Kommandos <code>load</code> und <code>save</code>:<codeblock>load DATEI</codeblock>bzw.<codeblock>save DATEN(I1:I2,J1:J2) -file=DATEI</codeblock>Beim Laden geht NumeRe standardmäßig von einer Textdatei mit der Endung "*.dat" aus (Die Endung kann jedoch zwischen "*.dat", "*.txt", "*.ndat", "*.labx", "*.jdx", "*.dx", "*.jcm", "*.ibw", "*.ods", "*.xls", "*.xlsx" und "*.csv" angepasst werden), während Datensätze vorzugsweise in das NumeRe-eigene "NumeRe-Datenfile"-Format (*.ndat) gespeichert werden.
 	DATEI bezeichnet den Dateinamen der geladenen oder gespeicherten Datei. So lange die Datei in den eingestellen Speicherordner gespeichert, bzw. aus dem eingestellten Import-Ordner geladen werden soll, ist dabei die Angabe eines Pfades nicht nötig. Soll der Dateipfad ein oder mehrere Leerstellen enthalten, ist er mit Anführungszeichen zu umschließen.
-	Es können auch die Platzhalter für die Standardpfade sowie Wildcards (<code>*</code> und <code>?</code>) verwendet werden. Siehe "help explorer" für weitere Details zu den Platzhaltern.
+	Es können auch die Platzhalter für die Standardpfade sowie Wildcards (<code>*</code> und <code>?</code>) verwendet werden. Siehe <a href="nhlp://explorer?frame=new">help explorer</a> für weitere Details zu den Platzhaltern.
 	NumeRe unterstützt das gleichzeitige Laden mehrerer Dateien. Dazu kann eine der folgenden Methoden verwendet werden:
 	<list>
 		<item node="-all">Durch Anhängen dieses Parameters und Verwendung eines Dateinamens, der <em>mindestens eine Wildcard</em> enthält, werden alle Dateien in den Speicher geladen, die durch diesen Dateinamen beschrieben werden</item>
@@ -36,5 +36,5 @@
 		export cache(:,1:2) -file=cache.tex
 		Speichern abgeschlossen. Es wurde ein Tabelle mit 2088 Elementen erfolgreich in die Datei "&SAVEPATH&/cache.tex" geschrieben.
 	</example>
-	<em>Siehe auch:</em> "help data", "help cache" und "help explorer"
+	<em>Siehe auch:</em> <a href="nhlp://data?frame=self">help data</a>, <a href="nhlp://cache?frame=self">help cache</a> und <a href="nhlp://explorer?frame=self">help explorer</a>
 </article>

@@ -35,8 +35,8 @@
 	Eine IF-Bedingung kann eine beliebige Zahl an FOR-Schleifen, WHILE-Schleifen oder anderen IF-Verzweigungen enthalten.
 	Die Deklaration kann mit dem Kommando <code>abort</code> abgebrochen werden, ohne dass die bisher eingegebenen Befehle ausgeführt werden. Dies steht im Gegensatz zu dem Kommando <code>break</code>, dass erst während der Laufzeit ausgewertet wird.
 	Mit <code>if (data())</code> bzw. <code>if (CACHE())</code> kann geprüft werden, ob ein Datenfile geladen bzw. Daten im Cache <code>CACHE</code> vorhanden sind. Dies kann z.B. in Scripten verwendet werden, die möglicherweise einen leeren Cache benötigen. <em>Vorsicht:</em> wenn <code>CACHE()</code> nicht existiert, wird dies als globaler Fehler evaluiert und die Auswertung abgebrochen.
-	IF-Bedingungen innerhalb von Schleifen können durch die Kommandos <code>break</code> und <code>continue</code> Einfluss auf ihre aufrufende Schleife nehmen (Siehe "help for" und "help while" für Infos zu diesen Kommandos). Diese Kommandos haben innerhalb einer IF-Bedingung dieselbe Wirkung wie <code>endif</code> (brechen also die Auswertung der aktuellen Bedingung an dieser Stelle ab) und werden so lange nach Außen weitergereicht, bis sie entweder eine FOR-Schleife erreichen, oder die äußerste IF-Bedingung erreicht wird, welche ebenfalls abgebrochen wird.
-	Für einfache Korrekturen steht der Befehl <code>replaceline</code> zur Verfügung. Siehe hierzu: "help replaceline"
+	IF-Bedingungen innerhalb von Schleifen können durch die Kommandos <code>break</code> und <code>continue</code> Einfluss auf ihre aufrufende Schleife nehmen (Siehe <a href="nhlp://for?frame=new">help for</a> und <a href="nhlp://while?frame=new">help while</a> für Infos zu diesen Kommandos). Diese Kommandos haben innerhalb einer IF-Bedingung dieselbe Wirkung wie <code>endif</code> (brechen also die Auswertung der aktuellen Bedingung an dieser Stelle ab) und werden so lange nach Außen weitergereicht, bis sie entweder eine FOR-Schleife erreichen, oder die äußerste IF-Bedingung erreicht wird, welche ebenfalls abgebrochen wird.
+	Für einfache Korrekturen steht der Befehl <code>replaceline</code> zur Verfügung. Siehe hierzu: <a href="nhlp://replaceline?frame=new">help replaceline</a>
 	<example desc="Eine einfache Verzweigung, welche die max()-Funktion simuliert:" type="verbatim">
 		|&lt;- if (a &gt; b)
 		|IF-&gt; ans = a
@@ -44,5 +44,5 @@
 		|ELSE&gt; ans = b
 		|ELSE&gt; endif
 	</example>
-	<em>Siehe auch:</em> "help list", "help for", "help while", "help cache", "help data" und "list -logic"
+	<em>Siehe auch:</em> <a href="nhlp://list?frame=self">help list</a>, <a href="nhlp://for?frame=self">help for</a>, <a href="nhlp://while?frame=self">help while</a>, <a href="nhlp://cache?frame=self">help cache</a>, <a href="nhlp://data?frame=self">help data</a> und <code>list -logic</code>
 </article>

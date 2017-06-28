@@ -26,5 +26,5 @@
 	<example desc="Erzeugen der Audiodatei 'sin.wav' mit 16 kHz Samplerate und nur einem Channel, wobei die Samples in Spalte 2 in 'cache()' vorliegen:">
 		audio cache(:,2) -set samples=16'k file=sin.wav
 	</example>
-	<em>Siehe auch:</em> "help regularize"
+	<em>Siehe auch:</em> <a href="nhlp://regularize?frame=self">help regularize</a>
 </article>

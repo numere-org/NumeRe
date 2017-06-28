@@ -1,0 +1,90 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2017  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="firststeps">
+	<title string="Erste Schritte" />
+	NumeRe mag zu Beginn überwältigend wirken, da es ein klein wenig Vorwissen voraussetzt. Dieses Vorwissen soll in diesem Abschnitt erarbeitet werden.
+	<em>Funktionsweise</em>
+	Die Benutzeroberfläche von NumeRe setzt sich aus drei wesentlichen Komponenten zusammen: dem <a href="nhlp://filetree?frame=new">Dateibaum</a>, dem <a href="nhlp://editor?frame=new">Editor</a> und der <a href="nhlp://console?frame=new">Konsole</a>. Während der Dateibaum eine Übersicht über die vorhandenen Dateien bietet, können im Editor Textdateien, Scripte und Prozeduren geschrieben werden. Die Konsole schließlich erlaubt die Interaktion mit der verarbeitenden Schicht von NumeRe - wir kommen gleich dazu.
+	NumeRe ist dazu ausgelegt, dass es Befehle und mathematische Ausdrücke abarbeitet, die zuvor definiert wurden, ähnlich einer imperativen Programmiersprache. Dies kann von Hand Befehl je Befehl (bzw. Ausdruck je Ausdruck) passieren, oder die entsprechenden Routinen können zuvor in eine Datei - ein sogenanntes Script - geschrieben und von dort ausgeführt werden.
+	Die graphische Benutzeroberfläche ist eine Hilfestellung, um mit der ausführenden Schicht von NumeRe einfacher arbeiten zu können. Die ausführende Schicht läuft im Hintergrund und arbeitet die Befehle und Ausdrücke, die ihr vorgegeben wurden, eine nach dem anderen ab.
+	Um eine bildliche Sprache zu wählen: ein Script ist ein Drehbuch, die Benutzeroberfläche ist die Studiotechnik, die der Benutzer (Regisseur) nutzen kann und die ausführende Schicht ist der Schauspieler, der die Anordnungen des Regisseurs bzw. des Drehbuchs umsetzen muss - lediglich auf einer mathematisch-numerischen Ebene.
+	<em>Was tue ich als erstes?</em>
+	Zunächst muss NumeRe eingerichtet werden: Dazu gehören vor allem die Standardpfade. Öffne die Optionen im Werkzeugemenü, wähle den Tab "Verzeichnisse" und passe die dort vorgegebenen Pfade auf deine Wünsche an. Es spielt keine Rolle, ob hierbei "\" oder "/" zum Trennen der Pfade verwendet wird.
+	Der Importordner beschreibt das Verzeichnis, an dem deine Daten liegen. Falls das kein eindeutiger Ordner ist, brauchst du diesen Pfad nicht ändern, sondern kannst das Arbeitsverzeichnis entsprechend anpassen, indem du<codeblock>workpath "PFAD/ZU/DEINEN/DATEN"</codeblock>in die Konsole eingibst. Dies wird nur für die aktuelle Sitzung gespeichert und kann über den Platzhalter <code>&lt;wp&gt;</code> verwendet werden.
+	Der Speicherordner ist der Pfad, wo die exportierten Daten oder anderweitig gespeicherten Daten abliegen.
+	Der Scriptordner ist der standardmäßige Suchpfad für Scripte. Du kannst diesen Pfad sowie den Prozedurenordner im Moment einfach beibehalten. (Es müssten sich bereits Scripte in deinem Scriptordner befinden)
+	Der Plotspeicherordner beschreibt den Pfad, wo die erzeugten Plots, also die graphischen Ausgaben von NumeRe abgelegt werden.
+	Klicke auf "Anwenden" und fertig.
+	<em>Fertig mit dem Einstellen. Was soll ich nun machen?</em>
+	Rumprobieren wäre erst mal eine gute Idee, bevor du dich an die produktive Arbeit machst. Am besten fokussierst du dich zunächst auf die Konsole.
+	<em>Erst mal etwas plotten ...</em>
+	Probiere in der Konsole mal einfach die folgende Zeile aus, die du mittels <code>[ENTER]</code> an die ausführende Schicht weiterreichst:<codeblock>plot sin(x)</codeblock>
+	Es müsste eine graphische Ausgabe wie die folgende erzeugt werden:
+	<img src="<>/docs/plotsinx.png" />
+	Diese Ausgabe können wir auch noch verfeinern, indem wir ein paar Optionen zu der oberen Befehlszeile hinzufügen:<codeblock>plot sin(x) -set title="Sinusplot" box grid</codeblock>
+	<em>Tipp:</em> Verwende <code>[HOCH]</code> und <code>[RUNTER]</code> um durch deine letzten Eingaben zu scrollen.
+	Das müsste die folgende Ausgabe produzieren:
+	<img src="<>/docs/plotsinxtitle.png" />
+	Hier sehen wir den Effekt der übergebenen Optionen <code>title="TITEL"</code>, <code>box</code> und <code>grid</code>. Manche dieser Optionen (so wie <code>box</code> und <code>grid</code>) bleiben für die folgenden Plots bestehen, so lange sie nicht explizit widerrufen werden (mit den Optionen <code>nobox</code> bzw. <code>nogrid</code>). Probiere doch mal<codeblock>plot sin(x), cos(x) -set xlabel="Zeit t [s]" ylabel="Amplitude y [m]"</codeblock>
+	Das sollte diese Ausgabe erzeugen, wobei die Box und das Gitter zu beachten sind, die aus dem vorherigen Plot übernommen wurden:
+	<img src="<>/docs/plotsinxcosx.png" />
+	Herzlichen Glückwunsch! Du hast nun gelernt, wie ein Plot erzeugt wird, wie mehr als eine Funktion geplottet wird und wie Optionen funktionieren. Weitere Details zum Plotten findest du, indem du<codeblock>help plot</codeblock>in die Konsole eingibst. Im Allgemeinen kann das <code>help</code>-Kommando in vielen Fällen bereits mit den nötigen Informationen weiterhelfen.
+	<em>Nun zur Arbeit mit Datensätzen ...</em>
+	Wir wollen uns nun etwas mit der Arbeit mit Datensätzen beschäftigen. Datensätze werden von NumeRe eigentlich immer als eine Tabelle interpretiert. D.h. wiederum, dass die Daten irgendwie in Form einer Tabelle vorhanden sein müssen - nach Möglichkeit mit den Datenreihen in den Spalten.
+	NumeRe kommt bereits mit ein paar Beispieldatensätzen. Probiere mal:<codeblock>load &lt;&gt;/samples/data</codeblock>
+	Es müsste eine Erfolgsmeldung ausgegeben werden, die des Weiteren die Größe des Datensatzes umfasst. Beachte auch, dass die Dateiendung <code>*.dat</code> erraten wurde. Das funktioniert mit <code>*.dat</code>, <code>*.txt</code> und <code>*.ndat</code>.
+	Wenn du willst, kannst du die Datei auch im <a href="nhlp://editor?frame=new">Editor</a> ansehen. Gebe hierzu einfach<codeblock>edit &lt;&gt;/samples/data</codeblock>in die Konsole ein.
+	Was bedeutet aber eigentlich der eingegebene Befehl? Nun, <code>load</code> und <code>edit</code> sind die Kommandos und eigentlich selbsterklärend: <code>load</code> sagt NumeRe, dass die Daten aus einer Datei geladen werden sollen und <code>edit</code> sagt, dass der Benutzer eine Datei (z.B. im Editor) bearbeiten möchte.
+	Im Anschluss wurde jedes Mal <code>&lt;&gt;/samples/data</code> eingegeben. Dies bezeichnet den Pfad zu der Datei, wobei <code>&lt;&gt;</code> eine Abkürzung (ein sogenannter "Pfadplatzhalter") für das Stammverzeichnis von NumeRe ist, also wird die Datei "data.dat" im Unterordner "samples" des NumeRe- Stammverzeichnisses mit diesem Ausdruck bezeichnet.
+	Um die Daten in NumeRe's Speicher anzusehen, gebe<codeblock>show data()</codeblock>in die Konsole ein. Du solltest nun eine Tabelle in der Konsole sehen, die vier Spalten umfasst. <code>show</code> ist wieder das Kommando und <code>data()</code> der Ausdruck (Zeige mir den Inhalt von <code>data()</code>). Eigentlich ist <code>data()</code> bereits eine Abkürzung für <code>data(:,:)</code> und beschreibt "Alle Zeilen und alle Spalten". Wir kommen dazu später noch.
+	<em>Tipp:</em> Du kannst in den Optionen auch den externen Viewer für <code>show</code> und <code>help</code> aktivieren. Dann werden die Hilfeartikel und die Datensätze in externen Fenstern angezeigt.
+	Beachte, dass geladene Daten <em>immer</em> in <code>data()</code> zu finden sind. Der Dateiname hat hierauf keinen Einfluss.
+	Wir wollen nun versuchen, die Verteilung der Daten zu analysieren. Dazu kannst du<codeblock>hist data() -bins=32</codeblock>in die Konsole eingeben. Nach kurzer Zeit müsste eine Tabelle und eine graphische Darstellung wie die folgende erzeugt worden sein:
+	<img src="<>/docs/hist.png" />
+	Wieder sieht man, dass Box und Gitter aus den vorherigen Plots übernommen wurde. Das Kommando <code>hist</code> hat ein <a href="nhlp://hist?frame=new">Histogramm</a> aus den Daten erzeugt und mittels <code>bins=32</code> wurden 32 Rubriken für das gesamte Histogramm verwendet. Eine Rubrik ist dabei immer um einen Intervallstrich zentriert zu verstehen, die Balken sind so schmal, damit alle vier um diesen Strich passen.
+	Gibt man die Zahl der Rubriken nicht vor, wird NumeRe automatisch die Bins anhand der Zahl der Datenpunkte bestimmen. In diesem Fall wäre das Ergebnis jedoch nicht ansehnlich.
+	Um die numerischen Werte der Verteilungen zu bekommen, kannst du<codeblock>stats data()</codeblock>verwenden. Dies gibt alle wesentlichen <a href="nhlp://stats?frame=new">Statistiken</a> der Spalten zurück.
+	Wir wollen lernen, wie man Datenpunkte selbst generieren kann. Dazu kannst du die folgenden Zeilen in die Konsole eingeben:
+	<codeblock>
+		new zerfall()
+		zerfall(:,1) = eval -set [0:20];
+		zerfall(:,2) = eval 5*exp(-x/20)+gauss(0,0.1) -set [0:20];
+		plot zerfall()
+	</codeblock>
+	Mit dem ersten Kommando hast du einen neuen Cache erzeugt. Das ist sowas ähnliches wie <code>data()</code> mit dem Unterschied, dass die Daten in einem Cache modifiziert werden können. Details finden sich unter <a href="nhlp://cache?frame=new">help cache</a>.
+	Das zweite und dritte Kommando füllt die erste bzw. zweite Spalte mit automatisch berechneten Werten. Im ersten Fall sind es 100 gleichverteilte Werte zwischen 0 und 20, im zweiten Fall sind es die Funktionswerte einer Exponentialfunktion die mit gaußförmigem Rauschen mit der Halbwertsbreite 0,1 modifiziert wurden. Die Zeilen werden mit einem Semikolon <code>;</code> abgeschlossen, damit die Ergebnisse nicht in der nächsten Zeile ausgegeben werden.
+	Du solltest eine Ausgabe wie die folgende erhalten:
+	<img src="<>/docs/decay.png" />
+	Doch was ist hier los? Warum sind hier nur Kreuze und keine Linien mehr? Das ist eine Eigenschaft von NumeRe. NumeRe stellt nur Funktionswerte als Funktionen dar, während Datenpunkte als Punkte dargestellt werden.
+	Nun wollen wir versuchen, ob wir die Parameter dieser Zerfallskurve nicht wieder aus den Daten rekonstruieren können. Dies nennt man <em>Fitten</em>. NumeRe besitzt einen Leuvenberg-Marquardt-Algorithmus, der dies erledigen kann. Gebe die folgenden Zeilen in die Konsole ein:
+	<codeblock>
+		fit zerfall() -with=A*exp(-B*x)
+		A, 1/B
+		plot zerfall(), Fit(x)	
+	</codeblock>
+	Was bedeuten diese Zeilen? Die erste Zeile fittet die Funktion <expr>A e^(–B x)</expr> an die Daten in <code>zerfall()</code> und modifiziert dazu <expr>A</expr> und <expr>B</expr>. Es wird eine Tabelle mit allen möglichen Werten ausgegeben, die uns an dieser Stelle nicht weiter interessieren soll. Details sind unter <a href="nhlp://fit?frame=new">help fit</a> zu finden.
+	Die zweite Zeile berechnet die Werte von <expr>A</expr> und <expr>1/B</expr> und gibt diese zurück. Das sollte so etwas wie<codeblock>ans = {   5.026311,   19.85775}</codeblock>ergeben. Dies sind aber die beiden Parameter, die wir zur Erzeugung der Daten verwendet haben (mit einer kleinen Abweichung durch das Rauschen, natürlich).
+	Die dritte Zeile plottet das Ergebnis. Die Funktion <code>Fit(x)</code> wird von NumeRe beim Fitten automatisch generiert und enthält die Funktion, die zum Fitten verwendet wurde. Um eine Funktion selbst zu definieren, kannst du dir die Informationen aus <a href="nhlp://define?frame=new">help define</a> ziehen.
+	Du solltest die folgende Ausgabe erhalten haben:
+	<img src="<>/docs/fit.png" />
+	Wie zu sehen ist, verläuft die angepasste Funktion mitten durch die Datenpunkte und gleicht sie aus.
+	<em>Was kommt nun?</em>
+	Wenn du die bisherigen Informationen langweilig fandest, dann kannst du direkt loslegen. Wir konnten dir hier nichts mehr beibringen, du weißt offenbar schon alles.
+	Im anderen Fall jedoch seiest du auf die PDF-Dokumentation verwiesen, die diesem Programm beiliegt und unter <code>&lt;&gt;/docs</code> gefunden werden kann.
+</article>

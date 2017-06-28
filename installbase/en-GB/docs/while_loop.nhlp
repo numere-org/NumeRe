@@ -29,11 +29,11 @@
 		<item node="continue">Canceles the evaluation of the current loop repetition at this point and continues with the next repetition</item>
 	</list>
 	The evaluation may be canceled with the <code>ESC</code> key, if it takes too much time.
-	For simple corrections you may use the command <code>replaceline</code>. See "help replaceline" for further information.
+	For simple corrections you may use the command <code>replaceline</code>. See <a href="nhlp://replaceline?frame=new">help replaceline</a> for further information.
 	<example desc="A WHILE loop, which will be executed, until a file name to a loadable data set was entered:" type="verbatim">
 		|&lt;- while (!data())
 		|WHL&gt; data -load=??
 		|WHL&gt; endwhile
 	</example>
-	<em>See also:</em> "help if", "help for", "help data", "help cache" and "list -logic"
+	<em>See also:</em> <a href="nhlp://vect?frame=self">help vect</a>, <a href="nhlp://colorscheme?frame=self">help colorscheme</a>, <a href="nhlp://multiresult?frame=self">help multiresult</a> and <a href="nhlp://plot?frame=self">help plot</a>
 </article>

@@ -27,5 +27,5 @@
 		x = 1
 		ans = 1
 	</example>
-	<em>Siehe auch:</em> "help data" bzw. "help cache"
+	<em>Siehe auch:</em> <a href="nhlp://data?frame=self">help data</a> und <a href="nhlp://cache?frame=self">help cache</a>
 </article>

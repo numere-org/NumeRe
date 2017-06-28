@@ -32,10 +32,11 @@
 	Zu beachten ist außerdem, dass mindestens 3 Spalten mit Daten gegeben werden: <expr>x, y, z</expr> (Werden mehr angegeben, so wählt NumeRe automatisch die ersten drei)
 	Ist der Parameter <code>errorbars</code> aktiv, so benötigt NumeRe 6 Spalten in der Reihenfolge: <expr>x, y, z, delta_x, delta_y, delta_z</expr>
 	<example desc="Plotten der Spalten 3-5 aus <code>data()</code> mit den Optionen <code>grid opng=data</code> und einer tornadoähnlichen Bahnkurve:" type="verbatim">
-		|&lt;- plot3d data(:,3:5), 3*t*cos(24*t), 3*t*sin(24*t)/6, 6*t -set grid opng=data
+		|&lt;- plot3d data(:,3:5), 3*t*cos(24*t), 3*t*sin(24*t), 6*t -set grid opng=data
 		|-&gt; Berechne Daten für 3D-Plot ...
 		|-&gt; Speichern ... Erfolg!
 		|   Gespeichert unter: "&PLOTPATH&/data.png"
 	</example>
-	<em>Siehe auch:</em> "help plot"
+	<img src="<>/docs/plot3ddata.png" />
+	<em>Siehe auch:</em> <a href="nhlp://plot?frame=self">help plot</a>
 </article>

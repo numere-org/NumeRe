@@ -32,7 +32,7 @@
 	<list>
 		<item node="-with=FUNC(x,[y,]PAR)">Defines the function FUNC(), which shall be fitted to the data</item>
 		<item node="-params=[PAR=INI]">Declares the parameter PAR, which shall be fitted, and their initial values INI</item>
-		<item node="-restrict=[RESTRICT]">Declares restrictions RESTRICT for the parameter PAR. These have to be passed as one or more logical expressions for the parameters. Further details can be found at "help restrict"</item>
+		<item node="-restrict=[RESTRICT]">Declares restrictions RESTRICT for the parameter PAR. These have to be passed as one or more logical expressions for the parameters. Further details can be found at <a href="nhlp://restrict?frame=new">help restrict</a></item>
 		<item node="-saverr">Saves the calculated deviations to new variables</item>
 		<item node="-mask">Suppresses the display of the fit results and the truncating of the log file. However, the results of the fit procedures will be saved to the log file</item>
 		<item node="-export=[FILENAME]">This enables the export of the returned table into a TeX file. The filename may be specified via FILENAME, otherwise the export is directed to <code>&lt;savepath&gt;/fit.tex</code>. This export is not influenced by <code>mask</code></item>
@@ -40,7 +40,7 @@
 		<item node="-y=YMIN:YMAX">Restricts the <expr>y</expr> interval for the 2D fit algorithm to [YMIN,YMAX]</item>
 		<item node="-tol=TOLERANCE">Determines the (relative and absolute) tolerance, which defines the border, from where the current parameter set will be interpreted as converging. The default value is 1e-4</item>
 		<item node="-iter=ITERATIONS">Defines the maximal number of iterations, after them the fit algorithm will be canceled. The default value is 500</item>
-		<item node="-chimap=DATAGRID()">Creates a <expr>chi^2</expr> convergence data set. The passed datagrid must have the correct dimensions and the corresponding parameter names as column headings. Further details can be found at "help chimap"</item>
+		<item node="-chimap=DATAGRID()">Creates a <expr>chi^2</expr> convergence data set. The passed datagrid must have the correct dimensions and the corresponding parameter names as column headings. Further details can be found at <a href="nhlp://chimap?frame=new">help chimap</a></item>
 	</list>
 	<example desc="Fitting a sine function to the data in the cache (with <expr>y</expr> deviations:">
 		fitw cache(:,1:3) -with=amp*sin(f*x+phi)+off params=[amp=1,f=1,phi=0,off=0]

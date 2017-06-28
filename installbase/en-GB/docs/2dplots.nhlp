@@ -20,17 +20,17 @@
 	<title string="Meshgrid, contour, density or surface plots" />
 	The commands <code>mesh</code>, <code>cont</code>, <code>dens</code> or <code>surf</code>, respectively, allow the visualization of functions of the type <expr>z = f(x,y)</expr>, which are functions, whose <expr>z</expr> coordinate is obtained from a function of the coordinates <expr>x</expr> and <expr>y</expr>. <code>mesh</code> creates a meshgrid, <code>cont</code> a contour (equipotential), <code>dens</code> a density (colors correspond to <expr>z</expr> values) and <code>surf</code> a surface plot.
 	Plotting variables are <expr>x</expr> and <expr>y</expr>. All other variables will be interpreted as parameters.
-	Data sets, which shall be visualized, have to be passed as a data grid. Such a data grid can be created with the command <code>datagrid</code> out of a data set. See "help datagrid" for corresponding explanations to this function.
+	Data sets, which shall be visualized, have to be passed as a data grid. Such a data grid can be created with the command <code>datagrid</code> out of a data set. See <a href="nhlp://datagrid?frame=new">help datagrid</a> for corresponding explanations to this function.
 	This plotting mode introduces a third plotting interval, which can be modified in with the options: <code>[x1:x2,y1:y2,z1:z2]</code>.
 	Additional parameters for <code>mesh</code>, <code>cont</code>, <code>dens</code> and <code>surf</code> are the following:
 	<list>
 		<item node="clog/noclog">Switch the coloring scheme to logarithmic/linear</item>
 		<item node="colorbar/nocolorbar">Switch the colorbar on/off</item>
 		<item node="colorrange=C1:C2">Set the interval for the colorbar to [C1,C2]</item>
-		<item node="colorscheme=SCHEME">Choose the coloring scheme SCHEME. Some predefined schemes are <code>rainbow</code>, <code>grey</code>, <code>hot</code>, <code>cold</code> and <code>map</code>. See "help colorscheme" for additional schemes</item>
+		<item node="colorscheme=SCHEME">Choose the coloring scheme SCHEME. Some predefined schemes are <code>rainbow</code>, <code>grey</code>, <code>hot</code>, <code>cold</code> and <code>map</code>. See <a href="nhlp://colors?frame=new">help colors</a> for additional schemes</item>
 		<item node="cscale=VALUE">Define the scaling factor VALUE of the colorbar</item>
 		<item node="cticklabels=LABELS">Pass custom ticks for the colorbar. The ticks will be distributed equidistantly. The LABELS have to be entered as a string, in which the single ticks are separated with "\\n"</item>
-		<item node="cticks=FORMAT">Set the formatting of the tick labels to FORMAT. See also "help ticks"</item>
+		<item node="cticks=FORMAT">Set the formatting of the tick labels to FORMAT. See also <a href="nhlp://ticks?frame=new">help ticks</a></item>
 		<item node="fcont/nofcont">Set the contour filling on/off</item>
 		<item node="lcont/nolcont">Set the labels of the contours on/off</item>
 		<item node="orthoproject/<br>  noorthoproject">Set the orthogonal projection of 2D and 3D plots to the <expr>xy</expr>, <expr>xz</expr> and <expr>yz</expr> plane to on/off. Generates all four plots in one file. Available for surface and meshgrid plots, as well as for 3D trajectories and 3D vector fields.</item>
@@ -53,5 +53,6 @@
 		|-&gt; Saving ... Success.
 		|   Saved at "&PLOTPATH&/gauss.png"
 	</example>
-	<em>See also:</em> "help plot", "help grad" and "help datagrid"
+	<img src="<>/docs/gauss.png" />
+	<em>See also:</em> <a href="nhlp://plot?frame=self">help plot</a>, <a href="nhlp://grad?frame=self">help grad</a> and <a href="nhlp://datagrid?frame=self">help datagrid</a>
 </article>

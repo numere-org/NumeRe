@@ -21,7 +21,7 @@
 	Die Kommandos <code>mesh3d</code>, <code>cont3d</code>, <code>dens3d</code> bzw. <code>surf3d</code> ermöglichen Darstellungen von Funktionen der Form <expr>Phi = Phi(x,y,z)</expr>, also skalarer Felder, deren Funktionswert an jedem Punkt <expr>(x,y,z)</expr> im betrachteten Volumen durch eine Funktion von <expr>x, y</expr> und <expr>z</expr> gegeben ist. <code>mesh3d</code> erzeugt dabei einen 3D-Gitter-, <code>cont3d</code> ein 3D-Konturlinien- (Niveaulinien-), <code>dens3d</code> einen 3D-Dichte- (Farben entsprechen Feldamplituden) und <code>surf3d</code> einen 3D-Oberflächenplot. <code>surf3d</code> und <code>mesh3d</code> zeigen dabei eine Auswahl der Äquipotentialflächen, die im Falle von <code>cont3d</code> durch Konturlinien angedeutet werden.
 	Plotvariablen sind <expr>x, y</expr> und <expr>z</expr>. Alle anderen Variablen werden als Parameter betrachtet.
 	Dieser Plot-Modus benötigt die Angabe eines dritten Intervalls, das als Option beeinflusst werden kann, also <code>[x1:x2,y1:y2,z1:z2]</code>.
-	Die zusätzlichen Parameter für diese Plotstile entsprechen den Plotstilen der 2D-Varianten mit Ausnahme von <code>cloudplot/nocloudplot</code> und <code>slices=X,Y,Z</code>. Siehe hierzu z.B. "help surf"
+	Die zusätzlichen Parameter für diese Plotstile entsprechen den Plotstilen der 2D-Varianten mit Ausnahme von <code>cloudplot/nocloudplot</code> und <code>slices=X,Y,Z</code>. Siehe hierzu z.B. <a href="nhlp://surf?frame=new">help surf</a>
 	<code>dens3d</code> erzeugt mit der zusätzlichen Option <code>cloudplot</code> einen raumfüllenden Dichteplot (anstatt der 3 diskreten Scheiben). Wenn zusätzlich auch noch <code>alpha</code> übergeben wird, so geht die Transparenz des erzeugten "Wolkenplots" mit der Feldamplitude einher.
 	Die Option <code>slices=X,Y,Z</code> kann bei <code>cont3d</code> und <code>dens3d</code> angewendet werden und gibt die Anzahl der dargestellten Schnitte orthogonal zur entsprechenden Raumrichtung an. Es müssen stets alle Raumrichtungen angegeben werden und die Anzahlen müssen jeweils im Bereich [0,5] liegen, z.B.:<codeblock>slices=1,4,2</codeblock>
 	<example desc="3D-Meshgrid eines Dipols mit <expr>z1 = -4</expr> und <expr>z2 = +4</expr> mit den Optionen <code>box light opng=dipol cut pcont</code>:" type="verbatim">
@@ -30,5 +30,6 @@
 		|-&gt; Speichern ... Erfolg!
 		|   Gespeichert unter "&PLOTPATH&/dipol.png"
 	</example>
-	<em>Siehe auch:</em> "help plot" und "help mesh"
+	<img src="<>/docs/dipol.png" />
+	<em>Siehe auch:</em> <a href="nhlp://plot?frame=self">help plot</a> und <a href="nhlp://mesh?frame=self">help mesh</a>
 </article>

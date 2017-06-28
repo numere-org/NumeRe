@@ -1,0 +1,25 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2017  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="filetree">
+	<title string="Dateibaum" />
+	Der Dateibaum bietet einen Überblick über die Dateistruktur von NumeRe, die durch die Standardpfade beschrieben wird:<codeblock>&lt;loadpath&gt;, &lt;savepath&gt;, &lt;scriptpath&gt;, &lt;procpath&gt; und &lt;plotpath&gt;</codeblock>Diese sind die entsprechenden Ordner in der Struktur.
+	Dateien können von diesem Baum aus geladen, kopiert, gelöscht, umbenannt, bearbeitet oder ausgeführt werden. Ein <em>Doppelklick</em> löst die jeweilige Standardaktion aus, ein <em>Rechtsklick</em> zeigt ein Kontextmenü an, in welchem die sekundären Aktionen ausgewählt werden können.
+	Bilddateien werden mit dem integrierten ImageViewer angezeigt.
+	Der Dateibaum kann, um dem Editor etwas mehr Platz zur Verfügung zu stellen, mit einem Druck auf <code>[F3]</code> aus- und auch wieder eingeblendet werden.
+</article>

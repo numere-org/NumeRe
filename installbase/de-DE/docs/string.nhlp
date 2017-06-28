@@ -41,10 +41,23 @@
 		<item node="-print">Kombiniert <code>-noquotes</code> und <code>-peek</code> und ist damit speziell für NumeRe-Prozeduren von Bedeutung, um dort eine Ausgabe auf der NumeRe-Konsole zu erzwingen.</item>
 	</list>
 	Um zu prüfen, ob die Variable, die einer NumeRe-Prozedur übergeben wurde, eine Zeichenkette ist, bietet sich die Funktion <code>is_string(EXPR)</code> an, die <code>true</code> zurückgibt, wenn EXPR eine oder mehr Zeichenketten enthält. Um eine Zeichenkette (aus Ziffern oder einen Variablenname) in einen Wert umzuwandeln, bietet NumeRe die Funktion <code>to_value(STRING)</code> an. Die Funktion <code>to_string(EXPR)</code> wandelt EXPR in eine Zeichenkette um, ungeachtet eventueller Rechenoperationen in EXPR, Zeichenketten und -variablen werden jedoch ausgewertet. <code>string_cast(EXPR)</code> ist noch brutaler: hier werden selbst Zeichenkettenvariablennamen direkt in Zeichenketten umgewandelt. Die Funktion <code>to_cmd(STRING)</code> wandelt die Zeichenkette STRING in einen Kommandoausdruck um.
+	Einige Zeichenkettenfunktionen sind auch als Methoden für Zeichenkettenvariablen (nicht literalen Zeichenketten) verfügbar. Es handelt sich hierbei jedoch nur um Aliase um die Lesbarkeit zu verbessern. Es wird keine neue Funktionalität implementiert. Die Methoden lauten wie folgt:
+	<codeblock>
+		STRVAR.len()           =>   strlen(STRVAR)
+		STRVAR.at(P)           =>   char(STRVAR,P)
+		STRVAR.fnd(STR,P)      =>   strfnd(STR,STRVAR,P)
+		STRVAR.rfnd(STR,P)     =>   strrfnd(STR,STRVAR,P)
+		STRVAR.sub(P,L)        =>   substr(STRVAR,P,L)
+		STRVAR.splt(CHR)       =>   split(STRVAR,CHR)
+		STRVAR.mtch(STR,P)     =>   strmatch(STR,STRVAR,P)
+		STRVAR.rmtch(STR,P)    =>   strrmatch(STR,STRVAR,P)
+		STRVAR.nmtch(STR,P)    =>   str_not_match(STR,STRVAR,P)
+		STRVAR.nrmtch(STR,P)   =>   str_not_rmatch(STR,STRVAR,P)
+	</codeblock>
 	<example desc="Automatisches Füllen der Cache-Tabellenköpfe in einer FOR-Schleife, wobei die Nummer der aktuellen Spalte auf mindestens zwei Zeichen ergänzt werden soll:" type="verbatim">
 		|FOR&gt; [...]
 		|FOR&gt; cache(#,i) = "Spalte_" + #~i		(wird ggf. eine 0 ergänzen)
 		|FOR&gt; [...]
 	</example>
-	<em>Siehe auch:</em> "help procedure" und "help explorer"
+	<em>Siehe auch:</em> <a href="nhlp://procedure?frame=self">help procedure</a> und <a href="nhlp://explorer?frame=self">help explorer</a>
 </article>

@@ -27,5 +27,5 @@
 		<item node="target=CACHE">Den Zielcache ändern. Er wird erzeugt, falls er nicht existiert</item>
 	</list>
 	Das Ergebnis einer Kurzzeit-Fourieranalyse ist ein Datengitter, bei dem auf der <expr>x</expr>-Achse die ursprünglichen <expr>x</expr>-Werte, wobei deren Anzahl um den Faktor <expr>1/samples</expr> reduziert ist, und auf der <expr>y</expr>-Achse die entsprechenden Frequenzwerte aufgetragen sind. Dieses Datengitter kann z.B. mit <code>dens</code> dargestellt werden.
-	<em>Siehe auch:</em> "help dens" und "help regularize"
+	<em>Siehe auch:</em> <a href="nhlp://dens?frame=self">help dens</a> und <a href="nhlp://regularize?frame=self">help regularize</a>
 </article>

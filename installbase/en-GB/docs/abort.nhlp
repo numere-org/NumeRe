@@ -1,0 +1,24 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2017  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="abort">
+	<title string="Abort block definitions" />
+	If a control flopw block is currently defined in the console (e.g. a <a href="nhlp://if?frame=new">if fork</a> or a <a href="nhlp://compose?frame=new">compose block</a>), then it is possible that this definition is for some reason not necessary any more. A syntactic error can be a possible source for this case.
+	The command <code>abort</code> allows aborting the definition of such a block without executing the already defined part of the block. <em>Note:</em> this affects of course the whole block up to the outermost loop.
+	<em>See also:</em> <a href="nhlp://if?frame=self">if</a>, <a href="nhlp://for?frame=self">for</a>, <a href="nhlp://while?frame=self">while</a>, <a href="nhlp://compose?frame=self">compose</a> and <a href="nhlp://procedure?frame=self">procedure</a>
+</article>

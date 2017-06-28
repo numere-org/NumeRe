@@ -11,7 +11,7 @@
 !define DIRNAME "NumeRe"
 !define MUI_FILE "numere"
 !define VERSION "1.1.0"# $\"Bloch$\""
-!define VERSIONEXT " $\"rc1$\""
+!define VERSIONEXT " $\"rc2$\""
 !define MUI_BRANDINGTEXT "NumeRe: Framework für Numerische Rechnungen v${VERSION}${VERSIONEXT}"
 BrandingText "${MUI_BRANDINGTEXT}"
 
@@ -50,14 +50,14 @@ SetCompressor "lzma"
 !define MUI_UNWELCOMEFINISHPAGE_BITMAP "wizard.bmp"
 #--------------------------------
 
-VIProductVersion "${VERSION}.35"
+VIProductVersion "${VERSION}.47"
 VIAddVersionKey ProductName "${PRODUCT}"
 VIAddVersionKey CompanyName "Erik Hänel et al."
 VIAddVersionKey OriginalFilename "numereinstaller.exe"
 VIAddVersionKey FileDescription "Installer für NumeRe: Framework für Numerische Rechnungen"
-VIAddVersionKey FileVersion "${VERSION}.35"
+VIAddVersionKey FileVersion "${VERSION}.47"
 VIAddVersionKey InternalName "NumeRe-Installer"
-VIAddVersionKey LegalCopyright "(c) 2016, Erik Hänel et al. Installer und enthaltene Dateien unterstehen der GNU GPL v3"
+VIAddVersionKey LegalCopyright "(c) 2017, Erik Hänel et al. Installer und enthaltene Dateien unterstehen der GNU GPL v3"
 
 
 # Standard-Dateiverzeichnis

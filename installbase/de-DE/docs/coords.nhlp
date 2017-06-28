@@ -18,14 +18,22 @@
 
 <article id="coords">
 	<title string="Koordinatensätze für Plots" />
-	NumeRe ist mit drei wesentlichen Koordinatensätzen ausgestattet: kartesisch <expr>(x,y,z)</expr>, polar/zylindrisch <expr>(rho,phi[,z])</expr> und sphärisch <expr>(r,phi,theta)</expr>. Diese Koordinatensätze können beim Plotten mit der Option <code>coords=KOORDINATEN</code> ausgewählt werden, wobei <code>cartesian</code> kartesische, <code>polar</code> polare/zylindrische und <code>spherical</code> sphärische Koordinaten verwendet.
-	Allerdings unterscheidet sich die Koordinatentransformation zwischen den Plotstilen mit "3d" im Namen (z.B. <code>plot3d</code>, <code>surf3d</code>, ...) und ohne (z.B. <code>mesh</code>, <code>surf</code>, ...). Dies wurde so gewählt, da die Plotstile ohne "3d" im Namen nur eine Oberfläche, während die anderen ein gesamtes Volumen darstellen können. Vektorplots verwenden ebenfalls die Zuordnung der "3d-Plots".
+	NumeRe ist mit drei wesentlichen Koordinatensätzen ausgestattet: kartesisch <expr>(x,y,z)</expr>, polar/zylindrisch <expr>(rho,phi[,z])</expr> und sphärisch <expr>(r,phi,theta)</expr>. Diese Koordinatensätze können beim Plotten mit der Option <code>coords=KOORDINATEN</code> ausgewählt werden.
+	Die Art der Koordinaten wird durch die folgenden Optionen bestimmt. Für Plotstile mit einem "3d" im Namen (z.B. <code>plot3d</code> oder <code>mesh3d</code>) sind <code>polar</code> und <code>spherical</code> die einzigen Optionen.
 	<list>
-		<item node="polar/zylindrisch">3D: <expr>x = rho, y = phi, z = z</expr><br>Andere: <expr>x = phi, y = z, z = rho</expr></item>
-		<item node="sphärisch">3D: <expr>x = r, y = phi, z = theta</expr><br>Andere: <expr>x = phi, y = theta, z = r</expr></item>
+		<item node="cartesian">kartesische <expr>(x,y,z)</expr>-Koordinaten</item>
+		<item node="polar">Polare/zylindrische <expr>(rho,phi,z)</expr>-Koordinaten. Wird als <code>polar_pz</code> interpretiert oder als <code>polar_rp</code>, wenn der Plotstil ein "3d" im Namen enthält oder ein Vektorplot ist</item>
+		<item node="polar_pz">Polare/zylindrische Koordinaten mit <expr>x = phi, y = z, z = rho</expr></item>
+		<item node="polar_rp">Polare/zylindrische Koordinaten mit <expr>x = rho, y = phi, z = z</expr></item>
+		<item node="polar_rz">Polare/zylindrische Koordinaten mit <expr>x = rho, y = z, z = phi</expr></item>
+		<item node="spherical">Sphärische <expr>(rho,phi,theta)</expr>-Koordinaten. Wird als <code>spherical_pt</code> interpretiert oder als <code>spherical_rp</code>, wenn der Plotstil ein "3d" im Namen enthält oder ein Vektorplot ist</item>
+		<item node="spherical_pt">Sphärische Koordinaten mit <expr>x = phi, y = theta, z = r</expr></item>
+		<item node="spherical_rp">Sphärische Koordinaten mit <expr>x = r, y = phi, z = theta</expr></item>
+		<item node="spherical_rt">Sphärische Koordinaten mit <expr>x = r, y = theta, z = phi</expr></item>
 	</list>
 	NumeRe wählt automatisch die Plotintervalle [<expr>0,2PI</expr>] für <expr>phi</expr> und [<expr>0,PI</expr>] für <expr>theta</expr>, sofern nichts anderes vorgegeben wird. Die Darstellung der entsprechenden Achsen erfolgt dann jedoch auf <expr>PI</expr> normiert.
 	<example desc="Darstellen der Kugelflächenfunktion <expr>Y(3,2,theta,phi)</expr> in sphärischen Koordinaten:">
-		surf Y(3, 2, y, x) -set coords=spherical
+		surf Y(3, 2, y, x) -set coords=spherical_pt
 	</example>
+	<img src="<>/docs/sphericalharmonic.png" />
 </article>

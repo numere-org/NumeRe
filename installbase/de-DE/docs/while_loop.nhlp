@@ -29,11 +29,11 @@
 		<item node="continue">Bricht die Auswertung des aktuellen Schleifendurchlaufes an dieser Stelle ab und fährt sofort mit dem nächsten Durchlauf fort</item>
 	</list>
 	Die Auswertung kann auch mit der <code>ESC</code>-Taste abgebrochen werden, falls sie zu viel Zeit in Anspruch nimmt.
-	Für einfache Korrekturen steht der Befehl <code>replaceline</code> zur Verfügung. Siehe hierzu: "help replaceline"
+	Für einfache Korrekturen steht der Befehl <code>replaceline</code> zur Verfügung. Siehe hierzu: <a href="nhlp://replaceline?frame=new">help replaceline</a>
 	<example desc="Eine WHILE-Schleife, die so lange ausgeführt wird, bis der Dateiname zu einem ladbaren Datensatz eingegeben wurde:" type="verbatim">
 		|&lt;- while (!data())
 		|WHL&gt; data -load=??
 		|WHL&gt; endwhile
 	</example>
-	<em>Siehe auch:</em> "help if", "help for", "help data", "help cache" und "list -logic"
+	<em>Siehe auch:</em> <a href="nhlp://if?frame=self">help if</a>, <a href="nhlp://for?frame=self">help for</a>, <a href="nhlp://data?frame=self">help data</a>, <a href="nhlp://cache?frame=self">help cache</a> und <code>list -logic</code>
 </article>

@@ -294,12 +294,14 @@ PARSERFUNCS_LISTFUNC_TYPE_LOGIC=Logik
 PARSERFUNCS_LISTFUNC_TYPE_COORDS=Koordinaten
 PARSERFUNCS_LISTFUNC_TYPE_POLYNOMIAL=Polynome
 PARSERFUNCS_LISTFUNC_TYPE_DRAW=Zeichnungen
+PARSERFUNCS_LISTFUNC_TYPE_DEFINE=Eigene Definitionen
 # Funktionentabelle
 PARSERFUNCS_LISTFUNC_TABLEHEAD=								Funktion:                 Typ:     Ausgabe:
 PARSERFUNCS_LISTFUNC_FUNC_ABS_[NUM]=						abs(x)                    VAL      - Betrag von x
 PARSERFUNCS_LISTFUNC_FUNC_ACOS_[NUM_TRIGONOMETRIC]=			acos(x)                   VAL      - Arkuskosinus von x. Definiert im Bereich [-1,1] (Synonym: "arccos(x)")
 PARSERFUNCS_LISTFUNC_FUNC_ACOSH_[NUM_HYPERBOLIC]=			acosh(x)                  VAL      - Areakosinus Hyperbolicus von x. Definiert im Bereich [1,inf) (Synonym: "arcosh(x)")
 PARSERFUNCS_LISTFUNC_FUNC_AI_[NUM_PHYSICS]=					Ai(x)                     VAL      - Airyfunktion Ai(x). Definiert auf ganz R
+PARSERFUNCS_LISTFUNC_FUNC_AND_[NUM_LOGIC]=					and(x,y,z,...)            LOG      - Verknüpft die Argumente mit dem "&&"-Operator
 PARSERFUNCS_LISTFUNC_FUNC_ASIN_[NUM_TRIGONOMETRIC]=			asin(x)                   VAL      - Arkussinus von x. Definiert im Bereich [-1,1] (Synonym: "arcsin(x)")
 PARSERFUNCS_LISTFUNC_FUNC_ASINH_[NUM_HYPERBOLIC]=			asinh(x)                  VAL      - Areasinus Hyperbolicus von x. Definiert auf ganz R (Synonym: "arsinh(x)")
 PARSERFUNCS_LISTFUNC_FUNC_ASCII_[STRING]=					ascii(STRING)            {VAL}     - Gibt die ASCII-Zeichenwerte der Zeichen in STRING zurück
@@ -371,6 +373,7 @@ PARSERFUNCS_LISTFUNC_FUNC_NEUMANN_[NUM_PHYSICS]=			neumann(n,x)              VAL
 PARSERFUNCS_LISTFUNC_FUNC_NORM_[NUM_STATS_COORDS]=			norm(x,y,z,...)           VAL      - Berechnet die Norm des Vektors: ||(x,y,z,...)|| := sqrt(x^2+y^2+z^2+...). Definiert auf ganz R
 PARSERFUNCS_LISTFUNC_FUNC_NUM_[NUM_STATS_STRING]=			num(x,y,z,...)            VAL      - Zahl der gültigen Argumente x,y,z,... Kann auch auf Zeichenketten angewendet werden und zählt jede nicht-leere Zeichenkette
 PARSERFUNCS_LISTFUNC_FUNC_ONE_[MAT]=						one(n,m)                  MAT      - Erzeugt eine n x m-Matrix, die mit Einsen gefüllt ist. Wenn nur ein Argument angegeben wird, wird eine symmetrische Matrix erzeugt.
+PARSERFUNCS_LISTFUNC_FUNC_OR_[NUM_LOGIC]=					or(x,y,z,...)             LOG      - Verknüpft die Argumente mit einem "||"-Operator
 PARSERFUNCS_LISTFUNC_FUNC_PCT_[NUM_STATS]=					pct(x,y,z,...,p)          VAL      - p-tes Perzentil aus x,y,z,...
 PARSERFUNCS_LISTFUNC_FUNC_PHI_[NUM_ANGULAR_COORDS]=			phi(x,y)                  VAL      - Berechnet den Winkel zwischen der x-Achse und dem Vektor (x,y). Definiert auf ganz R
 PARSERFUNCS_LISTFUNC_FUNC_PRD_[NUM_STATS]=					prd(x,y,z,...)            VAL      - Produkt der Argumente x,y,z,...
@@ -416,7 +419,7 @@ PARSERFUNCS_LISTFUNC_FUNC_TRANSPOSE_[MAT]=					transpose(MAT)            MAT    
 PARSERFUNCS_LISTFUNC_FUNC_VALTOSTR_[STRING]=				valtostr(x,C,n)           STR      - Wertet x aus und wandelt den Wert in eine Zeichenkette um. C ist ein optionales Zeichen, das verwendet wird, um x auf n Zeichen, die vorne angestellt werden, zu füllen
 PARSERFUNCS_LISTFUNC_FUNC_VERSION_[TIME]=					version()                 VAL      - Gibt die Versionsnummer von NumeRe als natürliche Zahl zurück: v1.0.8 wird als 108 zurückgegeben
 PARSERFUNCS_LISTFUNC_FUNC_Y_[NUM_POLYNOMIAL]=				Y(l,m,theta,phi)          VAL      - Realteil der Kugelflächenfunktionen der Ordnung l >= 0 mit m = [-l,l] unter den Winkeln theta im Intervall [0,PI] und phi im Intervall [0,2*PI)
-PARSERFUNCS_LISTFUNC_FUNC_Z_[NUM_POLYNOMIAL]=				Z(n,m,rho,phi)            VAL      - Wert der Zernikepolynome der Ordnung n >= 0 mit m = [-n,n] an der Stelle rho >= 0 unter dem Winkel phi im Intervall [0,2*PI)
+PARSERFUNCS_LISTFUNC_FUNC_Z_[NUM_POLYNOMIAL]=				Z(n,m,rho,phi)            VAL      - Wert der Zernikepolynome der Ordnung n >= 0 mit m = [-n,n] an der Stelle rho im Intervall [0,1] unter dem Winkel phi im Intervall [0,2*PI)
 PARSERFUNCS_LISTFUNC_FUNC_ZERO_[MAT]=						zero(n,m)                 MAT      - Erzeugt eine n x m-Matrix, die mit Nullen gefüllt ist. Wenn nur ein Argument angegeben wird, wird eine symmetrische Matrix erzeugt.
 PARSERFUNCS_LISTFUNC_FUNC_ARCV_[DRAW]=						arcv(P,[D,]D,a,STYLE)     {}       - Zeichnet einen Kreisbogen des Winkels a um den Punkt P vom Punkt P+D an. Die optionale Richtung D gibt den Normalvektor des Kreisbogens an, Standard ist die z-Achse. Der Umlaufsinn ist entgegen des Uhrzeigers. Der Stil der Kreisbogenlinie kann mittels STYLE geändert werden.
 PARSERFUNCS_LISTFUNC_FUNC_ARC_[DRAW]=						arc(P,[D,]P,a,STYLE)      {}       - Zeichnet einen Kreisbogen des Winkels a um den Punkt P vom Punkt P an. Die optionale Richtung D gibt den Normalvektor des Kreisbogens an, Standard ist die z-Achse. Der Umlaufsinn ist entgegen des Uhrzeigers. Der Stil der Kreisbogenlinie kann mittels STYLE geändert werden.
@@ -439,9 +442,25 @@ PARSERFUNCS_LISTFUNC_FUNC_TRACEV_[DRAW]=					tracev(P,D,STYLE)         {}       
 PARSERFUNCS_LISTFUNC_FUNC_TRACE_[DRAW]=						trace(P,P,STYLE)          {}       - Zeichnet eine gerade Linie von P nach P. Falls nur ein Punkt angegeben wird, wird der fehlende Punkt in den Ursprung gelegt. Die Farbe, Form und die Enden der Linie können mittels STYLE beeinflusst werden.
 PARSERFUNCS_LISTFUNC_FUNC_TRIANGLEV_[DRAW]=					trianglev(P,D,D,STYLE)    {}       - Zeichnet ein Dreieck. Dabei können zwei oder drei Ecken angegeben werden. Bei zwei Ecken zeichnet NumeRe ein gleichseitiges Dreieck; bei drei ein allgemeines Dreieck. Die Ecken sind dabei von unten links an entgegen des Uhrzeigersinns numeriert. Die Füllung des Dreiecks kann mit STYLE beeinflusst werden.
 PARSERFUNCS_LISTFUNC_FUNC_TRIANGLE_[DRAW]=					triangle(P,P,P,STYLE)     {}       - Zeichnet ein Dreieck. Dabei können zwei oder drei Ecken angegeben werden. Bei zwei Ecken zeichnet NumeRe ein gleichseitiges Dreieck; bei drei ein allgemeines Dreieck. Die Ecken sind dabei von unten links an entgegen des Uhrzeigersinns numeriert. Die Füllung des Dreiecks kann mit STYLE beeinflusst werden.
+PARSERFUNCS_LISTFUNC_FUNC_STRMATCH_[STRING]=				strmatch(S1,S2,P)         VAL      - Sucht das erste Auftreten eines Zeichens aus S1 in der Zeichenkette S2 ab dem Zeichen P. P ist ein optionaler Startwert für die erste Position und standardmäßig ist P = 1. Falls nichts gefunden wird, wird false zurückgegeben
+PARSERFUNCS_LISTFUNC_FUNC_STRRMATCH_[STRING]=				strrmatch(S1,S2,P)        VAL      - Sucht das letzte Auftreten eines Zeichens aus S1 in der Zeichenkette S2 bis zum Zeichen P. P ist ein optionaler Startwert für letzte Position und standardmäßig ist P = strlen(S2). Falls nichts gefunden wird, wird false zurückgegeben
+PARSERFUNCS_LISTFUNC_FUNC_STR_NOT_MATCH_[STRING]=			str_not_match(S1,S2,P)    VAL      - Sucht das erste Auftreten eines Zeichens in der Zeichenkette S2, das nicht in S1 auftritt, ab dem Zeichen P. P ist ein optionaler Startwert für die erste Position und standardmäßig ist P = 1. Falls nichts gefunden wird, wird false zurückgegeben
+PARSERFUNCS_LISTFUNC_FUNC_STR_NOT_RMATCH_[STRING]=			str_not_rmatch(S1,S2,P)   VAL      - Sucht das letzte Auftreten eines Zeichens in der Zeichenkette S2, das nicht in S1 auftritt, bis zum Zeichen P. P ist ein optionaler Startwert für letzte Position und standardmäßig ist P = strlen(S2). Falls nichts gefunden wird, wird false zurückgegeben
 # Ende Funktionentabelle
 PARSERFUNCS_LISTFUNC_FOOTNOTE1=Der Typ des Rückgabewertes wird schematisch durch VAL = numerischer Wert, STR = Zeichenkette, LOG = Logikwert (true oder false), MAT = Matrix, VEC = Vektor und ARG = Typ der Argumente angegeben. Rückgabewerte in geschweiften Klammern indizieren, dass die Funktion mehrere Werte zurück gibt; leere Klammern indizieren, dass die Funktion keinen Wert zurückgibt.
 PARSERFUNCS_LISTFUNC_FOOTNOTE2=Weiterführende Informationen zu den vordefinierten mathematischen Funktionen können in der NumeRe-Hilfe mittels "help func" erhalten werden.
+# Methoden
+PARSERFUNCS_LISTFUNC_METHOD_LEN_[STRING]=					len                    VAL      - Länge der Zeichenkette
+PARSERFUNCS_LISTFUNC_METHOD_SUB_[STRING]=					sub(POS,LEN)           STR      - Gibt LEN Zeichen ab dem Zeichen POS aus der Zeichenkette als neue Zeichenkette zurück
+PARSERFUNCS_LISTFUNC_METHOD_FND_[STRING]=					fnd(STR,POS)           VAL      - Gibt die Position des ersten Auftretens von STR in der Zeichenkette ab dem Zeichen POS zurück. POS ist ein optionaler Startwert für die erste Position und standardmäßig ist POS = 1. Falls nichts gefunden wird, wird false zurückgegeben
+PARSERFUNCS_LISTFUNC_METHOD_RFND_[STRING]=					rfnd(STR,POS)          VAL      - Gibt die Position des letzten Auftretens von STR in der Zeichenkette bis zum Zeichen POS zurück. POS ist ein optionaler Startwert für letzte Position und standardmäßig ist POS = STRINGVAR.len. Falls nichts gefunden wird, wird false zurückgegeben
+PARSERFUNCS_LISTFUNC_METHOD_AT_[STRING]=					at(POS)                STR      - Gibt das Zeichen aus der Zeichenkette an der Stelle POS zurück
+PARSERFUNCS_LISTFUNC_METHOD_SPLT_[STRING]=					splt(CHAR)            {STR}     - Teilt die Zeichenkette an den Zeichen CHAR in einzelne Zeichenketten auf
+PARSERFUNCS_LISTFUNC_METHOD_MTCH_[STRING]=					mtch(STR,POS)          VAL      - Sucht das erste Auftreten eines Zeichens aus STR in der Zeichenkette ab dem Zeichen POS. POS ist ein optionaler Startwert für die erste Position und standardmäßig ist POS = 1. Falls nichts gefunden wird, wird false zurückgegeben
+PARSERFUNCS_LISTFUNC_METHOD_RMTCH_[STRING]=					rmtch(STR,POS)         VAL      - Sucht das letzte Auftreten eines Zeichens aus STR in der Zeichenkette bis zum Zeichen POS. POS ist ein optionaler Startwert für letzte Position und standardmäßig ist POS = STRINGVAR.len. Falls nichts gefunden wird, wird false zurückgegeben
+PARSERFUNCS_LISTFUNC_METHOD_NMTCH_[STRING]=					nmtch(STR,POS)         VAL      - Sucht das erste Auftreten eines Zeichens in der Zeichenkette, das nicht in STR auftritt, ab dem Zeichen POS. POS ist ein optionaler Startwert für die erste Position und standardmäßig ist POS = 1. Falls nichts gefunden wird, wird false zurückgegeben
+PARSERFUNCS_LISTFUNC_METHOD_NRMTCH_[STRING]=				nrmtch(STR,POS)        VAL      - Sucht das letzte Auftreten eines Zeichens in der Zeichenkette, das nicht in STR auftritt, bis zum Zeichen POS. POS ist ein optionaler Startwert für letzte Position und standardmäßig ist POS = STRINGVAR.len. Falls nichts gefunden wird, wird false zurückgegeben
+# Ende Methoden
 PARSERFUNCS_LISTDEFINE_HEADLINE=Eigene definierte Funktionen
 PARSERFUNCS_LISTDEFINE_EMPTY=Keine Funktionen definiert.
 PARSERFUNCS_LISTDEFINE_DESCRIPTION=Beschreibung:    %%1%%
@@ -554,7 +573,7 @@ PARSERFUNCS_LISTCMD_CMD_ODESOLVE_[EVAL]=				odesolve     EX -set PAR    - Löst d
 PARSERFUNCS_LISTCMD_CMD_PLOT_[PLOTTING]=				plot         EX [-set PAR]  - Ermöglicht das graphische Darstellen von Daten und Funktionen.
 PARSERFUNCS_LISTCMD_CMD_PLOT3D_[PLOTTING]=				plot3d       EX [-set PAR]  - graphische Darstellung dreidimensionaler Datensätze und Trajektorien.
 PARSERFUNCS_LISTCMD_CMD_PRINT_[MISC_MAINCTRL]=			print        STR            - Gibt den übergebenen String STR ohne die umgebenden Anführungszeichen als Bildschirmmeldung aus
-PARSERFUNCS_LISTCMD_CMD_PROCEDURE_[FLOWCTRL_PROC]=		procedure    $NM(ARGS)      - Definiert eine NumeRe-Prozedur
+PARSERFUNCS_LISTCMD_CMD_PROCEDURE_[FLOWCTRL_PROC]=		procedure    \$NM(ARGS)      - Definiert eine NumeRe-Prozedur
 PARSERFUNCS_LISTCMD_CMD_PROGRESS_[MISC_FLOWCTRL]=		progress     EX [-set PAR]  - Gibt einen Fortschrittsstatus aus. Nur für Scripte und Prozeduren geeignet.
 PARSERFUNCS_LISTCMD_CMD_PULSE_[EVAL]=					pulse        OB             - Bestimmt die Pulseigenschaften des übergebenen Datensatzes.
 PARSERFUNCS_LISTCMD_CMD_QUIT_[MAINCTRL]=				quit         [-PAR]         - NumeRe beenden
@@ -734,6 +753,11 @@ DOC_HELP_EXAMPLE=BEISPIEL: %%1%%
 DOC_HELP_EXAMPLE_HEADLINE=Beispiel
 DOC_HELP_DESC_HEADLINE=Beschreibung
 DOC_HELP_OPTIONS_HEADLINE=Optionen
+DOC_HELP_NAVIGATION=Navigation
+DOC_HELP_START=Start
+DOC_HELP_BACK=Zurück
+DOC_HELP_FORWARD=Vorwärts
+DOC_HELP_INDEX=Index
 DOC_SEARCHFCT_DB_ERROR=Die Datenbank der Stichwortsuche ist beschädigt. Installiere NumeRe erneut, um dieses Problem zu beheben. Falls dieses Problem damit nicht behoben werden konnte, wende dich an die Entwicklung.
 DOC_SEARCHFCT_TABLEHEAD=Relevanz:   Suchergebnis:
 DOC_SEARCHFCT_RESULT=Die NumeRe-Suche ergab %%1%% Treffer.
@@ -960,6 +984,8 @@ GUI_OPTIONS_LOGFILE=Protokollierung der Konsole
 GUI_OPTIONS_HINTS=Tipps und Tricks beim Start anzeigen
 GUI_OPTIONS_CUSTOMLANG=Benutzerdefinierte Sprache (Benötigt einen Neustart)%%LINEBREAK%%Siehe auch "help language"
 GUI_OPTIONS_EXTERNALVIEWER=Verwende externe Fenster für "show" und "help"
+GUI_OPTIONS_SYNTAXHIGHLIGHTING=Farben der Syntaxhervorhebung:
+GUI_OPTIONS_RESETHIGHLIGHT=Zurücksetzen
 GUI_OPTIONS_CONFIG=Konfiguration
 GUI_OPTIONS_LOADPATH=Importordner | <loadpath> =
 GUI_OPTIONS_SAVEPATH=Speicherordner | <savepath> =
@@ -987,7 +1013,7 @@ GUI_ABOUT_LICENCE_SHORT=Fitting | Data analysis | Plotting | Matrix operations |
 GUI_ABOUT_TEAM_INTRO=NumeRe wurde geschaffen von:
 GUI_ABOUT_TEAM=Projektleitung:%%LINEBREAK%%   Erik HÄNEL%%LINEBREAK%%Konzept/UI:%%LINEBREAK%%   Erik HÄNEL%%LINEBREAK%%Mathe-Parser:%%LINEBREAK%%   Ingo BERG%%LINEBREAK%%   Erik HÄNEL%%LINEBREAK%%Plotting:%%LINEBREAK%%   Alexey BALAKIN%%LINEBREAK%%numerische Algorithmen:%%LINEBREAK%%   GNU Scientific Library%%LINEBREAK%%   Erik HÄNEL%%LINEBREAK%%   Alexey BALAKIN%%LINEBREAK%%Tokenizer:%%LINEBREAK%%   Boost-Library%%LINEBREAK%%Matrix-Algorithmen:%%LINEBREAK%%   Eigen Library%%LINEBREAK%%BasicExcel:%%LINEBREAK%%   YAP Chun Wei%%LINEBREAK%%TinyXML-2:%%LINEBREAK%%   Lee THOMASON%%LINEBREAK%%Die (geduldigen) Tester:%%LINEBREAK%%   D. BAMMERT, J. HÄNEL, R. HUTT, K. KILGUS, E. KLOSTER,%%LINEBREAK%%   K. KURZ, M. LÖCHNER, L. SAHINOVIC, D. SCHMID,%%LINEBREAK%%   V. SEHRA, G. STADELMANN, R. WANNER, F. WUNDER,%%LINEBREAK%%   J. ZINßER
 GUI_ABOUT_CREDITS=NumeRe wäre ohne die verwendeten Bibliotheken, die geduldige Mithilfe%%LINEBREAK%%der Tester und der vielen Tutorials im Netz nicht möglich gewesen.%%LINEBREAK%%%%LINEBREAK%%Außerdem sei all den Urhebern der öffentlich zugänglichen Sourcecodes%%LINEBREAK%%gedankt, die in manchen Fällen die nötige Inspiration für die eigenen%%LINEBREAK%%Lösungen lieferten.%%LINEBREAK%%%%LINEBREAK%%Warum ist NumeRe kostenlos?%%LINEBREAK%%%%LINEBREAK%%NumeRe: Framework für Numerische Rechnungen is totally free software%%LINEBREAK%%and out of any charges. There shall never be any fees for using this%%LINEBREAK%%software. It's intended for educational and scientific use and we want%%LINEBREAK%%you to keep your money in your pockets. We believe that there's no%%LINEBREAK%%need for paying to get knowledge or education. In our opinion,%%LINEBREAK%%knowledge has no monetary value, it's just invaluable. Education is%%LINEBREAK%%also one reason you're paying taxes to your government—so ask yourself:%%LINEBREAK%%%%LINEBREAK%%why paying twice?
-GUI_ABOUT_STATS=C++-Codezeilen:%%LINEBREAK%%  ~24 000 (GUI)%%LINEBREAK%%  ~70 000 (Kernel)%%LINEBREAK%%SVN commits:%%LINEBREAK%%  ~50%%LINEBREAK%%Zahl der Quelldateien:%%LINEBREAK%%  ~150 (GUI)%%LINEBREAK%%  ~100 (Kernel)%%LINEBREAK%%Sprachen:%%LINEBREAK%%  2 (Deutsch und Englisch)%%LINEBREAK%%Beginn des Projekts:%%LINEBREAK%%  Ende Oktober 2013%%LINEBREAK%%Ende des Projekts:%%LINEBREAK%%  Nicht in Sicht%%LINEBREAK%%Zahl der behobenen Bugs:%%LINEBREAK%%  ~40 (Dokumentiert)%%LINEBREAK%%  ~400 (Undokumentiert)%%LINEBREAK%%Zahl der (neuen) Bugs, die es in einen RC geschafft haben:%%LINEBREAK%%  ~30%%LINEBREAK%%Zahl der (öffentlichen) Releases:%%LINEBREAK%%  ~25%%LINEBREAK%%Zahl der Kommentare zu NumeRe:%%LINEBREAK%%  ~10 (Komplimente)%%LINEBREAK%%  ~20 (Probleme)%%LINEBREAK%%  ~80 (Bugs)%%LINEBREAK%%Zahl der durchgemachten Nächte:%%LINEBREAK%%  keine%%LINEBREAK%%Zahl der "Hopplas" während einer Vorführung:%%LINEBREAK%%  ~50%%LINEBREAK%%Menge des verzehrten Koffeins:%%LINEBREAK%%  unmessbar
+GUI_ABOUT_STATS=C++-Codezeilen:%%LINEBREAK%%  ~24 000 (GUI)%%LINEBREAK%%  ~70 000 (Kernel)%%LINEBREAK%%SVN commits:%%LINEBREAK%%  ~100%%LINEBREAK%%Zahl der Quelldateien:%%LINEBREAK%%  ~150 (GUI)%%LINEBREAK%%  ~100 (Kernel)%%LINEBREAK%%Sprachen:%%LINEBREAK%%  2 (Deutsch und Englisch)%%LINEBREAK%%Beginn des Projekts:%%LINEBREAK%%  Ende Oktober 2013%%LINEBREAK%%Ende des Projekts:%%LINEBREAK%%  Nicht in Sicht%%LINEBREAK%%Zahl der behobenen Bugs:%%LINEBREAK%%  ~40 (Dokumentiert)%%LINEBREAK%%  ~400 (Undokumentiert)%%LINEBREAK%%Zahl der (neuen) Bugs, die es in einen RC geschafft haben:%%LINEBREAK%%  ~30%%LINEBREAK%%Zahl der (öffentlichen) Releases:%%LINEBREAK%%  ~25%%LINEBREAK%%Zahl der Kommentare zu NumeRe:%%LINEBREAK%%  ~10 (Komplimente)%%LINEBREAK%%  ~20 (Probleme)%%LINEBREAK%%  ~80 (Bugs)%%LINEBREAK%%Zahl der durchgemachten Nächte:%%LINEBREAK%%  keine%%LINEBREAK%%Zahl der "Hopplas" während einer Vorführung:%%LINEBREAK%%  ~50%%LINEBREAK%%Menge des verzehrten Koffeins:%%LINEBREAK%%  unmessbar
 # tree ctrl strings
 GUI_FILETREE=Dateien
 GUI_FUNCTIONTREE=Symbole
@@ -999,7 +1025,7 @@ GUI_TREE_PROCEDURES=Prozeduren
 GUI_TREE_PLOTS=Plots
 GUI_TREE_COMMANDS=Kommandos
 GUI_TREE_FUNCTIONS=Funktionen
-GUI_TREE_FUNC_KEYLIST=num mat string trigonometric hyperbolic time stats random physics angular distrib logarithmic logic coords polynomial draw
+GUI_TREE_FUNC_KEYLIST=num mat string trigonometric hyperbolic time stats random physics angular distrib logarithmic logic coords polynomial draw define
 GUI_TREE_CMD_KEYLIST=flowctrl datactrl datacreation loadsave eval plotting proc def mainctrl misc plugins
 # tree pop-up menu
 GUI_TREE_PUP_LOAD=Datei laden
@@ -1052,7 +1078,9 @@ GUI_STATUSBAR_NDB=%%COMMON_FILETYPE_NDB%%
 GUI_STATUSBAR_UNSAVEDFILE=Ungesicherte Datei
 GUI_STATUSBAR_UNKNOWN=%%1%%-Datei
 GUI_STATUSBAR_LINECOL=Zeile: %d, Spalte: %d
+GUI_STATUSBAR_DEBUGGER_ANALYZER=Debugger & Analyzer: aktiv
 GUI_STATUSBAR_DEBUGGER=NumeRe-Debugger: aktiv
+GUI_STATUSBAR_ANALYZER=Code-Analyzer: aktiv
 # Menu strings:
 # please note, that the ampersands mark the hotkeys for keyboard navigation
 # and you may change the shortcuts (e.g Ctrl-N) in this file, but always use the
@@ -1123,6 +1151,8 @@ GUI_MENU_DEBUGGER=NumeRe-&Debugger%%TAB%%Ctrl-Shift-D
 GUI_MENU_DEBUGGER_TTP=Aktiviert oder deaktiviert den Debugger
 GUI_MENU_AUTOINDENT=&Einzüge ausrichten%%TAB%%Ctrl-Shift-I
 GUI_MENU_AUTOINDENT_TTP=Passt den Einzug der Zeilen dem aktuellen Block an
+GUI_MENU_INDENTONTYPE=&Während der Eingabe ausrichten
+GUI_MENU_INDENTONTYPE_TTP=Passt den Einzug der Zeilen bereits während der Eingabe dem aktuellen Block an
 GUI_MENU_EXECUTE=%%GUI_TB_RUN%%%%TAB%%F5
 GUI_MENU_EXECUTE_TTP=%%GUI_TB_RUN_TTP%%
 GUI_MENU_COMMENTLINE=(De-)&Kommentiere aktive Zeilen%%TAB%%Ctrl-Q
@@ -1140,6 +1170,10 @@ GUI_MENU_SORT_ASC=Zeilen aufsteigend sortieren
 GUI_MENU_SORT_ASC_TTP=Sortiert die aktuellen Zeilen aufsteigend
 GUI_MENU_SORT_DESC=Zeilen absteigend sortieren
 GUI_MENU_SORT_DESC_TTP=Sortiert die aktuellen Zeilen absteigend
+GUI_MENU_ANALYZER=Code-Analyzer%%TAB%%Ctrl-Shift-A
+GUI_MENU_ANALYZER_TTP=Analysiert den Code auf mögliche Verbesserungen
+GUI_MENU_FIND_DUPLICATES=&Finde Code-Duplikate
+GUI_MENU_FIND_DUPLICATES_TTP=Sucht mittels einer Semantikanalyse nach kopiertem Code
 GUI_MENU_TOOLS=&Werkzeuge
 # Help menu
 GUI_MENU_SHOWHELP=&Hilfethemen%%TAB%%F1
@@ -1229,6 +1263,7 @@ GUI_EDITOR_CALLTIP_OPT_CONST=const
 GUI_EDITOR_CALLTIP_OPT_COPPER=colorscheme=copper [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
 GUI_EDITOR_CALLTIP_OPT_COORDS=coords=COORDINATESET [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
 GUI_EDITOR_CALLTIP_OPT_COUNTLABEL=countlabel=LABEL [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% hist]
+GUI_EDITOR_CALLTIP_OPT_CRUST=crust [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% plot3d]
 GUI_EDITOR_CALLTIP_OPT_CSCALE=cscale=VAL [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
 GUI_EDITOR_CALLTIP_OPT_CTICKLABELS=cticklabels=LABELS [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
 GUI_EDITOR_CALLTIP_OPT_CTICKS=cticks=TICKSTYLE [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
@@ -1325,6 +1360,7 @@ GUI_EDITOR_CALLTIP_OPT_NOCLOUDPLOT=nocloudplot [%%GUI_EDITOR_CALLTIP_COMMON_PLOT
 GUI_EDITOR_CALLTIP_OPT_NOCOLORBAR=nocolorbar [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
 GUI_EDITOR_CALLTIP_OPT_NOCOLORMASK=nocolormask [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
 GUI_EDITOR_CALLTIP_OPT_NOCONNECT=noconnect [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOCRUST=nocrust [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% plot3d]
 GUI_EDITOR_CALLTIP_OPT_NOCUT=nocut [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
 GUI_EDITOR_CALLTIP_OPT_NOERRORBARS=noerrorbars [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
 GUI_EDITOR_CALLTIP_OPT_NOFCONT=nofcont [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
@@ -1343,7 +1379,7 @@ GUI_EDITOR_CALLTIP_OPT_NOORTHOPROJECT=noorthoproject [%%GUI_EDITOR_CALLTIP_COMMO
 GUI_EDITOR_CALLTIP_OPT_NOPCONT=nopcont [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
 GUI_EDITOR_CALLTIP_OPT_NOPIPE=nopipe [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
 GUI_EDITOR_CALLTIP_OPT_NOPOINTS=nopoints [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
-GUI_EDITOR_CALLTIP_OPT_NOQUOTES=noquotes [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_NOQUOTES=noquotes
 GUI_EDITOR_CALLTIP_OPT_NOREGION=noregion [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
 GUI_EDITOR_CALLTIP_OPT_NORM=norm [%%GUI_EDITOR_CALLTIP_COMMON_MAF%%]
 GUI_EDITOR_CALLTIP_OPT_NORMAL=distrib=normal [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% random]
@@ -1387,6 +1423,9 @@ GUI_EDITOR_CALLTIP_OPT_POINTS=points[=VAL]
 GUI_EDITOR_CALLTIP_OPT_POINTSTYLES=pointstyles=STYLES [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
 GUI_EDITOR_CALLTIP_OPT_POISSON=distrib=poisson [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% random]
 GUI_EDITOR_CALLTIP_OPT_POLAR=coords=polar [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_POLAR_PZ=coords=polar_pz [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_POLAR_RP=coords=polar_rp [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_POLAR_RZ=coords=polar_rz [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
 GUI_EDITOR_CALLTIP_OPT_PRD=prd [%%GUI_EDITOR_CALLTIP_COMMON_MAF%%]
 GUI_EDITOR_CALLTIP_OPT_PRECISION=precision=VAL
 GUI_EDITOR_CALLTIP_OPT_PROB=prob=VAL [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% random]
@@ -1421,6 +1460,9 @@ GUI_EDITOR_CALLTIP_OPT_SINGLE=single
 GUI_EDITOR_CALLTIP_OPT_SLICES=slices=SLICES
 GUI_EDITOR_CALLTIP_OPT_SLIDING=origin=sliding [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
 GUI_EDITOR_CALLTIP_OPT_SPHERICAL=coords=spherical [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_SPHERICAL_PT=coords=spherical_pt [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_SPHERICAL_RP=coords=spherical_rp [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
+GUI_EDITOR_CALLTIP_OPT_SPHERICAL_RT=coords=spherical_rt [%%GUI_EDITOR_CALLTIP_COMMON_PLOTTING%%]
 GUI_EDITOR_CALLTIP_OPT_STD=std
 GUI_EDITOR_CALLTIP_OPT_STEPS=steps[=VAL]
 GUI_EDITOR_CALLTIP_OPT_STUDENT=distrib=student [%%GUI_EDITOR_CALLTIP_COMMON_OPTIONFOR%% random]
@@ -1523,16 +1565,33 @@ GUI_TB_OPEN=Öffnen
 GUI_TB_OPEN_TTP=Eine Datei öffnen
 GUI_TB_SAVE=Speichern
 GUI_TB_SAVE_TTP=Die aktuelle Datei speichern
+GUI_TB_UNDO=Rückgängig
+GUI_TB_REDO=Wiederholen
+GUI_TB_CUT=Ausschneiden
+GUI_TB_COPY=Kopieren
+GUI_TB_PASTE=Einfügen
+GUI_TB_SEARCH=Suchen
+GUI_TB_REPLACE=Ersetzen
 GUI_TB_RUN=Ausführen
 GUI_TB_RUN_TTP=Die aktuelle Datei ausführen
 GUI_TB_STOP=Abbrechen
 GUI_TB_STOP_TTP=Ausführung abbrechen
+GUI_TB_DEBUGGER=Debugger
+GUI_TB_DEBUGGER_TTP=%%GUI_MENU_DEBUGGER_TTP%%
 GUI_TB_ADD=Hinzufügen
 GUI_TB_ADD_TTP=Breakpoint hier hinzufügen
 GUI_TB_REMOVE=Entfernen
 GUI_TB_REMOVE_TTP=Breakpoint hier entfernen
 GUI_TB_CLEAR=Alle entfernen
 GUI_TB_CLEAR_TTP=Alle breakpoints entfernen
+GUI_TB_NEXTIMAGE=Nächstes Bild
+GUI_TB_PREVIOUSIMAGE=Vorheriges Bild
+GUI_TB_ANALYZER=Analyzer
+GUI_TB_ANALYZER_TTP=Aktiviert oder deaktiviert den statischen Code-Analyzer
+GUI_TB_INDENTONTYPE=Ausrichten
+GUI_TB_INDENTONTYPE_TTP=Richtet die Zeilen automatisch während der Eingabe aus.
+GUI_TB_LINEWRAP=Zeilenumbruch
+GUI_TB_LINEWRAP_TTP=%%GUI_MENU_LINEWRAP_TTP%%
 # Printing dialogs
 GUI_PRINT_ERROR=Beim Drucken wurde ein Problem festgestellt.%%LINEBREAK%%Bitte die Druckereinstellungen prüfen und erneut versuchen.
 GUI_PRINT_ERROR_HEAD=NumeRe: Drucken fehlgeschlagen
@@ -1548,3 +1607,51 @@ GUI_REMOVE_TABLE_COL=Spalte entfernen
 GUI_REMOVE_TABLE_CELL=Zelle entfernen
 GUI_COPY_TABLE_CONTENTS=Kopieren
 GUI_PASTE_TABLE_CONTENTS=Einfügen
+# Code Analyzer strings
+GUI_ANALYZER_TEMPLATE=%%1%% >> %%2%%: %%3%%
+GUI_ANALYZER_NOTE=Hinweis
+GUI_ANALYZER_WARN=Warnung
+GUI_ANALYZER_ERROR=Fehler
+GUI_ANALYZER_THROW_ADDMESSAGE=Eine an "throw" übergebene Nachricht kann zusätzliche Informationen bereitstellen
+GUI_ANALYZER_NAMESPACE_ALWAYSMAIN=Diese Anweisung wechselt immer in den Namensraum "main~"
+GUI_ANALYZER_PROGRESS_RUNTIME=Die Fortschrittsanzeige benötigt zusätzlich Laufzeit
+GUI_ANALYZER_MISSINGPARENTHESIS=Fehlende Klammer im Argument
+GUI_ANALYZER_MISSINGARGUMENT=Fehlendes Argument
+GUI_ANALYZER_ASSIGNMENTINARGUMENT=Das Argument enthält einen Zuweisungsoperator "=", der nicht auf Gleichheit prüft ("==")
+GUI_ANALYZER_IF_ALWAYSTRUE=Das Argument ist immer true
+GUI_ANALYZER_IF_ALWAYSFALSE=Das Argument ist immer false
+GUI_ANALYZER_WHILE_ALWAYSTRUE=Stelle sicher, dass diese Schleife verlassen werden kann
+GUI_ANALYZER_WHILE_ALWAYSFALSE=Diese Schleife wird niemals starten
+GUI_ANALYZER_FOR_INTERVALERROR=Die Definition des Schleifenintervalls ist nicht korrekt
+GUI_ANALYZER_MISSINGENDPROCEDURE=Das Ende der Prozedur konnte nicht gefunden werden
+GUI_ANALYZER_UNUSEDVARIABLE=Die lokale Variable "%%1%%" wird womöglich nicht verwendet
+GUI_ANALYZER_NOVARIABLES=Es wurden keine lokalen Variablen definiert
+GUI_ANALYZER_RETURN_ADDSEMICOLON=Füge ein Semikolon ";" an, um die doppelte Anzeige des Ergebnisses zu unterdrücken
+GUI_ANALYZER_RETURN_ALWAYSTRUE=Dies Anweisung wird immer true zurückgeben
+GUI_ANALYZER_NOTALLOWED=Diese Anweisung kann hier nicht verwendet werden
+GUI_ANALYZER_ASSIGNTOVARIABLE=Übergebe das Ergebnis an eine Variable, um damit weiterzurechnen
+GUI_ANALYZER_APPENDIGNORE=Füge den Parameter "-ignore" an, um die Bestätigung zu unterdrücken
+GUI_ANALYZER_CANNOTREMOVEPREDEFS="data()", "cache()" und "string()" können nicht entfernt werden.
+GUI_ANALYZER_EMPTYEXPRESSION=Ein Ausdruck oder Parameter fehlt
+GUI_ANALYZER_USEINLINEIF=Die einzeilige if-Bedingung (WENN ? DANN : SONST) kann signifikante Geschwindigkeitsvorteile bringen
+GUI_ANALYZER_CONSTEXPR=Diese Zeile ist konstant und benötigt unnötig Laufzeit
+GUI_ANALYZER_INLINING=Der Aufruf dieser Prozedur geht im Vergleich zum Nutzen überproportional auf die Performance
+GUI_ANALYZER_PROCEDURENOTFOUND=Diese Prozedur konnte nicht gefunden werden
+GUI_ANALYZER_VARNAMETOOSHORT=Der Variablenname ist sehr kurz
+GUI_ANALYZER_VARNOTTYPEORIENTED=Der Variablenname ist nicht Typ-orientiert (z.B. "nVar" bzw. "sVar")
+GUI_ANALYZER_INDICATEARGUMENT=Beginne Prozedurenargumente mit einem Unterstrich, um sie von den lokalen Variablen unterscheiden zu können
+GUI_ANALYZER_HIGHCOMPLEXITY=Dieses Modul hat eine hohe zyklomatische Komplexität (v(G) = %%1%%).
+GUI_ANALYZER_MANYLINES=Dieses Modul besteht aus sehr vielen Zeilen (%%1%%).
+GUI_ANALYZER_LOWCOMMENTDENSITY=In diesem Modul wurden nur sehr wenig Kommentare gefunden (Kommentardichte %%1%% %).
+GUI_ANALYZER_HIGHCOMMENTDENSITY=In diesem Modul wurden sehr viele Kommentare gefunden (Kommentardichte %%1%% %).
+GUI_ANALYZER_NONAMINGPROCEDURE=Diese Prozedurdatei enthält keine namensgebende Prozedur.
+GUI_ANALYZER_THISFILEPROCEDURE=Diese Prozedur befindet sich im "thisfile" Namensraum.
+# Duplicate Code Analyzer strings
+GUI_DUPCODE_TITLE=Code-Duplikate
+GUI_DUPCODE_MATCH=Zeilen
+GUI_DUPCODE_PERCENTAGE=Übereinstimmung
+GUI_DUPCODE_SETTINGS=Ersetze für semantische Analyse
+GUI_DUPCODE_VARSEMANTICS=Variablen
+GUI_DUPCODE_STRINGSEMANTICS=Zeichenkettenliterale
+GUI_DUPCODE_NUMSEMANTICS=Numerische Literale
+GUI_DUPCODE_START=Start

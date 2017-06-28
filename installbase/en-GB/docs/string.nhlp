@@ -41,10 +41,22 @@
 		<item node="-print">Combines <code>-noquotes</code> and <code>-peek</code> and is especially useful inside of NumeRe procedures to force an output on the NumeRe console.</item>
 	</list>
 	To check, if the variable, which was passed to a NumeRe procedure, is a string, you may use the function <code>is_string(EXPR)</code>, which will return <code>true</code>, if EXPR contains one or more strings. To convert a string (consisting numbers or variable names) to a numerical value, you may use the function <code>to_value(string)</code>. The function <code>to_string(EXPR)</code> converts EXPR into a string and ignores eventual calculation operations in EXPR, however, strings will be evaluated. <code>string_cast(EXPR)</code> is even more brutal: it will convert everything into a literal string, even string variable names. The function <code>to_cmd(STRING)</code> will convert the string STRING into a command expression.
-	<example desc="Automatic filling of the cache table heads in a FOR loop, where the number of the current loop shall be extended to at least two characters:" type="verbatim">
+	Some string functions are also available as methods for string variables (not for string literals). These are only alias functions and don't implement a new functionality. The methods are as follows:
+	<codeblock>
+		STRVAR.len()           =>   strlen(STRVAR)
+		STRVAR.at(P)           =>   char(STRVAR,P)
+		STRVAR.fnd(STR,P)      =>   strfnd(STR,STRVAR,P)
+		STRVAR.rfnd(STR,P)     =>   strrfnd(STR,STRVAR,P)
+		STRVAR.sub(P,L)        =>   substr(STRVAR,P,L)
+		STRVAR.splt(CHR)       =>   split(STRVAR,CHR)
+		STRVAR.mtch(STR,P)     =>   strmatch(STR,STRVAR,P)
+		STRVAR.rmtch(STR,P)    =>   strrmatch(STR,STRVAR,P)
+		STRVAR.nmtch(STR,P)    =>   str_not_match(STR,STRVAR,P)
+		STRVAR.nrmtch(STR,P)   =>   str_not_rmatch(STR,STRVAR,P)
+	</codeblock>	<example desc="Automatic filling of the cache table heads in a FOR loop, where the number of the current loop shall be extended to at least two characters:" type="verbatim">
 		|FOR&gt; [...]
 		|FOR&gt; cache(#,i) = "Column_" + #~i		(will append a 0 if applicable)
 		|FOR&gt; [...]
 	</example>
-	<em>See also:</em> "help procedure" and "help explorer"
+	<em>See also:</em> <a href="nhlp://procedure?frame=self">help procedure</a> and <a href="nhlp://explorer?frame=self">help explorer</a>
 </article>

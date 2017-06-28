@@ -32,7 +32,7 @@
 	<list>
 		<item node="-with=FUNC(x,[y,]PAR)">Gibt die an die Daten anzupassende Funktion FUNC() an</item>
 		<item node="-params=[PAR=INI]">Deklariert die anzupassenden Parameter PAR inklusive ihrer Initialwerte INI</item>
-		<item node="-restrict=[RESTRICT]">Deklariert Einschränkungen RESTRICT für die Parameter PAR. Diese müssen in Form eines oder mehrer logischer Ausdrücke für die Parameter angegeben werden. Details finden sich unter "help restrict"</item>
+		<item node="-restrict=[RESTRICT]">Deklariert Einschränkungen RESTRICT für die Parameter PAR. Diese müssen in Form eines oder mehrer logischer Ausdrücke für die Parameter angegeben werden. Details finden sich unter <a href="nhlp://restrict?frame=new">help restrict</a></item>
 		<item node="-saverr">Speichert die berechneten Fehlerwerte in neuen Variablen ab</item>
 		<item node="-mask">Unterdrückt die Ausgabe der Ergebniswerte und das Kürzen der Protokolldatei. Die Ergebnisse werden dennoch darin hinterlegt</item>
 		<item node="-export=[FILENAME]">Erlaubt den Export der zurückgegebenen Tabelle in eine TeX-Datei. Der Dateiname kann mittels FILENAME angegeben werden, anderenfalls wird der Export in <code>&lt;savepath&gt;/fit.tex</code> angelegt. Diese Ausgabe wird nicht von <code>mask</code> beeinflusst</item>
@@ -40,7 +40,7 @@
 		<item node="-y=YMIN:YMAX">Schränkt das <expr>y</expr>-Intervall für den 2D-Fitalgorithmus auf [YMIN,YMAX] ein</item>
 		<item node="-tol=TOLERANCE">Bestimmt die (relative und absolute) Toleranz, ab der ein Parametersatz als konvergent betrachtet wird. Standardmäßig ist dies 1e-4</item>
 		<item node="-iter=ITERATIONEN">Legt die maximale Zahl der Iterationen fest, nach denen der Fitalgorithmus abgebrochen wird. Hier ist 500 vorgegeben</item>
-		<item node="-chimap=DATAGRID()">Erzeugt einen <expr>chi^2</expr>-Konvergenz-Datensatz. Das Datengitter muss bereits die korrekten Dimensionen und die entsprechenden Parameternamen als Spaltenüberschriften besitzen. Details finden sich unter "help chimap"</item>
+		<item node="-chimap=DATAGRID()">Erzeugt einen <expr>chi^2</expr>-Konvergenz-Datensatz. Das Datengitter muss bereits die korrekten Dimensionen und die entsprechenden Parameternamen als Spaltenüberschriften besitzen. Details finden sich unter <a href="nhlp://chimap?frame=new">help chimap</a></item>
 	</list>
 	<example desc="Anpassen einer Sinusfunktion an den Cache (mit y-Fehlern):">
 		fitw cache(:,1:3) -with=amp*sin(f*x+phi)+off params=[amp=1,f=1,phi=0,off=0]

@@ -40,5 +40,5 @@
 		Script "&SCRIPTPATH&/script.nscr" wurde erfolgreich geladen.
 		script -start
 	</example>
-	<em>Siehe auch:</em> "help install", "help explorer" und "help procedure"
+	<em>Siehe auch:</em> <a href="nhlp://procedure?frame=self">help procedure</a>, <a href="nhlp://install?frame=self">help install</a> und <a href="nhlp://explorer?frame=self">help explorer</a>
 </article>

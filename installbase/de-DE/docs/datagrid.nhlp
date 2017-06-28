@@ -37,5 +37,5 @@
 		datagrid data(:,3) -set x=data(:,1) y=data(:,2)
 		Das Datengitter wurde erfolgreich in "grid()" erzeugt.
 	</example>
-	<em>Siehe auch:</em> "help surf", "help mesh", "help plot", "help data" und "help cache"
+	<em>Siehe auch:</em> <a href="nhlp://surf?frame=self">help surf</a>, <a href="nhlp://mesh?frame=self">help mesh</a>, <a href="nhlp://plot?frame=self">help plot</a>, <a href="nhlp://data?frame=self">help data</a> und <a href="nhlp://cache?frame=self">help cache</a>
 </article>

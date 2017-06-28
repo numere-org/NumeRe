@@ -23,11 +23,13 @@
 	Um Hilfedateien während der Installation hinzuzufügen, müssen innerhalb des <code>&lt;install&gt;...&lt;endinstall&gt;</code>-Blocks zwei weitere Blöcke vorhanden sein: ein <code>&lt;helpindex&gt;...&lt;/helpindex&gt;</code>- und ein <code>&lt;helpfile&gt;...&lt;/helpfile&gt;</code>-Block. Im ersteren müssen die Indexinformationen des Hilfeartikels; im zweiten der eigentliche Hilfeartikel. Um Kommentare in die Dateien einzubinden, kann die XML-Kommentarsyntax verwendet werden:<codeblock>&lt;!-- DIES IST DER KOMMENTAR --&gt;</codeblock>Des Weiteren können <code>&lt;example&gt;</code>-, <code>&lt;list&gt;</code>- oder andere Umgebungen verwendet werden.
 	<list>
 		<item node="&lt;article ...&gt;">Der eindeutige Schlüssel, der Hilfeartikel mit dem entsprechenden Eintrag im Dokumentationsverzeichnis verknüpft (<code>id=</code>)</item>
-		<item node="&lt;title .../&gt;">Der Titel (<code>string=</code>) und die Indexschlüssel (<code>idxkey=</code>) für das Dokumentationsverzeichnis, also die Schlüsselwörter, die für den Artikel während "help idx" angezeigt werden</item>
+		<item node="&lt;title .../&gt;">Der Titel (<code>string=</code>) und die Indexschlüssel (<code>idxkey=</code>) für das Dokumentationsverzeichnis, also die Schlüsselwörter, die für den Artikel während <a href="nhlp://index?frame=new">help idx</a> angezeigt werden</item>
 		<item node="&lt;keyword&gt;">Schlüsselwort unter welchem der Artikel gefunden werden kann. Je mehr, desto besser. Es muss sich hierbei nicht um ein ganzes Wort handeln. <em>Wichtig</em>: Die hier angegebenen Schlüsselwörter können die Schlüsselwörter der standardmäßigen Hilfeartikel überschreiben!</item>
 		<item node="&lt;list&gt;">Listen-Umgebung für eine Auflistung wie diese hier. Fasst weitere <code>&lt;item&gt;</code>-Umgebungen, die die jeweiligen Listenpunkte bezeichnen</item>
 		<item node="&lt;table&gt;">Tabellen-Umgebung für eine Tabelle. Fasst weitere <code>&lt;tr&gt;</code>- und <code>&lt;td&gt;</code>-Umgebungen, die die jeweiligen Zeilen bzw. Zellen bezeichnen</item>
 		<item node="&lt;br&gt;">Fügt einen Zeilenumbruch ein (Absatzumbrüche werden durch Zeilenumbrüche in der Hilfedatei repräsentiert)</item>
+		<item node="&lt;a href=&quot;...&quot;&gt;">Bindet einen internen Link ein, der im Hilfefenster entsprechend umgesetzt wird. Das Protokoll nennt sich <code>nhlp</code> gefolgt vom Schlüsselword und erkennt zwei Optionen: <code>?frame=self</code> (im aktuellen Fenster öffnen) und <code>?frame=new</code> (in einem neuen Fenster öffnen). Der Link zu diesem Artikel wäre <code>nhlp://documentation?frame=new</code></item>
+		<item node="&lt;img src=&quot;...&quot;&gt;">Mit diesem Tag kann ein Bild eingebunden werden. Dieses Bild wird nur im externen Hilfefenster angezeigt und muss dabei lokal abgelegt sein; für Plugins am besten in "&lt;&gt;/docs/plugins" und kann während der Installation eines Plugins ggf. automatisch erstellt werden. Der Pfad zum Bild (<code>src=...</code>) sollte dabei mittels der Pfadplatzhalter inklusive der Dateiendung angegeben werden.</item>
 		<item node="&lt;em&gt;">Fasst zu betonende Abschnitte. Wird durch <em>Großbuchstaben</em> (bzw. kursiv und fett im HTML-Format) umgesetzt</item>
 		<item node="&lt;code&gt;">Fasst nicht zu interpretierende Zeichenketten, wie z.B. NumeRe-Code (außer spitze Klammern)</item>
 		<item node="&lt;expr&gt;">Für (einfache) mathematische Ausdrücke. Wird nur im HTML-Format interpretiert.</item>
@@ -68,5 +70,5 @@
 	|       &lt;/article&gt;
 	|   &lt;/helpfile&gt;
 	</example>
-	<em>Siehe auch:</em> "help install" und "help plugin"
+	<em>Siehe auch:</em> <a href="nhlp://install?frame=self">help install</a> und <a href="nhlp://plugin?frame=self">help plugin</a>
 </article>

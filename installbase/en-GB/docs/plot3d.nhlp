@@ -32,10 +32,11 @@
 	Additional you need at least 3 columns of data: <expr>x, y, z</expr> (If more are passed, NumeRe will automatically choose the first three).
 	If the parameter <code>errorbars</code> is active, NumeRe needs 6 columns in this order: <expr>x, y, z, delta_x, delta_y, delta_z</expr>
 	<example desc="Plotting of the columns 3-5 out of <code>data()</code> with the options <code>grid opng=data</code> and a tornado-like trajectory:" type="verbatim">
-		|&lt;- plot3d data(:,3:5), 3*t*cos(24*t), 3*t*sin(24*t)/6, 6*t -set grid opng=data
+		|&lt;- plot3d data(:,3:5), 3*t*cos(24*t), 3*t*sin(24*t), 6*t -set grid opng=data
 		|-&gt; Calculating data for 3D-Plot ...
 		|-&gt; Saving ... Success.
 		|   Saved at: "&PLOTPATH&/data.png"
 	</example>
-	<em>See also:</em> "help plot"
+	<img src="<>/docs/plot3ddata.png" />
+	<em>See also:</em> <a href="nhlp://plot?frame=self">help plot</a>
 </article>

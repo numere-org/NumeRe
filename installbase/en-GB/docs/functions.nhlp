@@ -30,5 +30,5 @@
 		<item node="(a,b)">the function is only defined in the interval <expr>a &lt; x &lt; b</expr>. (Note the difference in the parentheses.)</item>
 	</list>
 	The value "inf" describres "infinity" and "PI" is the value of <expr>pi = 3.1415926...</expr>.
-	<em>Tip:</em> Using the command <code>define</code> you may define your own functions. See "help -define" for further information.
+	<em>Tip:</em> Using the command <code>define</code> you may define your own functions. See <a href="nhlp://define?frame=new">help define</a> for further information.
 </article>

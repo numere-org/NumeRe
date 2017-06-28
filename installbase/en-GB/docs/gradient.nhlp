@@ -21,5 +21,5 @@
 	Using the command <code>grad</code> you may calculate a gradient plot out of a function of the form <expr>z = f(x,y)</expr>, which is a function that gets its <expr>z</expr> coordinate out of a function of <expr>x</expr> and <expr>y</expr>. NumeRe detects some (of course not all) paths, along the function <expr>f(x,y)</expr> derivates very strong.
 	The standard color scheme will be used. If the function <expr>f(x,y)</expr> derivates positively, this will be interpreted as a large value, if it derivates negatively, it's a small value. Extrema will be highlighted separately.
 	You may use the same options for <code>grad</code> as for <code>mesh</code>.
-	<em>See also:</em> "help plot" and "help mesh"
+	<em>See also:</em> <a href="nhlp://plot?frame=self">help plot</a> and <a href="nhlp://mesh?frame=self">help mesh</a>
 </article>

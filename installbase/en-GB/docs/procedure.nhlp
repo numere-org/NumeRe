@@ -39,9 +39,9 @@
 	If a procedure shall be created within a script or directly through the console, and if it shall be located in another namespace than <code>main</code>, this namespace has to be named in the procedure's head through <codeblock>procedure $NAMESPACE~PROCEDURE(ARGUMENTS)\n\t...\nendprocedure</codeblock>(This is only used for identifying the namespace and won't be written to the procedure file.)
 	You may load part of scripts to procedures by the usage of the syntax <code>@SCRIPT</code>. This is equal to the similar expression inside of a script. The parameters <code>@SCRIPT: globals</code> and <code>@SCRIPT: defines</code> are available as well.
 	In addition to the usual path placeholders <code>&lt;loadpath&gt;</code>, <code>&lt;scriptpath&gt;</code>, etc., the special placeholder <code>&lt;this&gt;</code> may be used, which points to the directory of the current executed procedure.
-	<em>Important:</em> Beside of the usual commands and expressions, the body of a procedure may contain special commands with procedure specific meaning. They are listed at "help proccmd".
+	<em>Important:</em> Beside of the usual commands and expressions, the body of a procedure may contain special commands with procedure specific meaning. They are listed at <a href="nhlp://proccmd?frame=new">help proccmd</a>.
 	The evaluation may be aborted using the <code>ESC</code> key, if it takes too much time.
-	Procedures may be used to extend the functionality of NumeRe with the use of plugins (which may be called using a command). The declaration of such a plugin may only be done inside of an <code>&lt;install&gt; ... &lt;endinstall&gt;</code> block in a NumeRe script. (See "help plugin" for further information)
+	Procedures may be used to extend the functionality of NumeRe with the use of plugins (which may be called using a command). The declaration of such a plugin may only be done inside of an <code>&lt;install&gt; ... &lt;endinstall&gt;</code> block in a NumeRe script. (See <a href="nhlp://plugin?frame=new">help plugin</a> for further information)
 	<example desc="A procedure, which automates a data analysis (will be called in NumeRe with <code>$analyse_data(DATAFILENAME)</code>):" type="verbatim">
         |   procedure $analyse_data(datafile)
         |       if (!data())
@@ -54,7 +54,7 @@
         |       return true;
         |   endprocedure	
 	</example>
-	<em>See also:</em> "help script", "help install", "help plugin", "help if", "help for" and "help while"
+	<em>See also:</em> <a href="nhlp://plugin?frame=self">help plugin</a>, <a href="nhlp://install?frame=self">help install</a>, <a href="nhlp://if?frame=self">help if</a>, <a href="nhlp://for?frame=self">help for</a>, <a href="nhlp://while?frame=self">help while</a> and <a href="nhlp://script?frame=self">help script</a>
 </article>
 
 <article id="procedure_commands">

@@ -27,5 +27,5 @@
 		<item node="target=CACHE">Choose a target cache. It will be created, if it doesn't exist</item>
 	</list>
 	The result of a short-time Fourier analysis is a data grid, with the original <expr>x</expr> values on the <expr>x</expr> axis (note that the number of points are reduced by the factor <expr>1/samples</expr>) and the corresponding frequency values on the <expr>y</expr> axis. This data grid may be displayed using for example the the command <code>dens</code>.
-	<em>See also:</em> "help dens" and "help regularize"
+	<em>See also:</em> <a href="nhlp://dens?frame=self">help dens</a> and <a href="nhlp://regularize?frame=self">help regularize</a>
 </article>

@@ -21,5 +21,5 @@
 	Mit dem Kommando <code>grad3d</code> kann von einer Funktion der Form <expr>phi = f(x,y,z)</expr>, also eine Funktion, die für jedes Koordinatentupel <expr>x,y,z</expr> einen Wert besitzt, ein Gradientenplot erzeugt werden. Dabei detektiert NumeRe einige Pfade (lange nicht alle), entlang denen die Funktion <expr>f(x,y,z)</expr> sich besonders stark ändert.
 	Es wird das Standard-Farbschema verwendet. Wenn <expr>f(x,y,z)</expr> sich positiv ändert, wird das als ein großer Wert interpretiert, bei einer negativen Änderung hingegen als ein kleiner Wert. Extrema werden gesondert hell hervorgehoben.
 	Für <code>grad3d</code> können dieselben Optionen wie für <code>grad</code> verwendet werden.
-	<em>Siehe auch:</em> "help plot" und "help grad"
+	<em>Siehe auch:</em> <a href="nhlp://plot?frame=self">help plot</a> und <a href="nhlp://grad?frame=self">help grad</a>
 </article>

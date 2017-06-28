@@ -18,7 +18,7 @@
 
 <article id="linestyles">
 	<title string="Linien- und Punktstile" />
-	Die Linien und Punkte, die in den Zeichnungsmodi <code>draw</code> und <code>draw3d</code> und den Plotmodi <code>plot</code> und <code>plot3d</code> verwendet werden, können in ihrem Erscheinungsbild mit dem STL-Argument der Zeichnungsfunktionen bzw. der <code>linestyles=STYLE</code>- und der <code>pointstyles=STYLE</code>-Optionen beeinflusst werden. Dabei werden für die Farben die Kürzel aus "help colors" verwendet; für die Linienenden und -stile die hier aufgelisteten.
+	Die Linien und Punkte, die in den Zeichnungsmodi <code>draw</code> und <code>draw3d</code> und den Plotmodi <code>plot</code> und <code>plot3d</code> verwendet werden, können in ihrem Erscheinungsbild mit dem STL-Argument der Zeichnungsfunktionen bzw. der <code>linestyles=STYLE</code>- und der <code>pointstyles=STYLE</code>-Optionen beeinflusst werden. Dabei werden für die Farben die Kürzel aus <a href="nhlp://colors?frame=new">help colors</a> verwendet; für die Linienenden und -stile die hier aufgelisteten.
 	Bei Plots und der <code>pointstyles</code>-Option ist zu beachten, dass für jede Datenreihe bis zu ZWEI Zeichen verwendet werden. Dabei ist das zweite Zeichen nur relevant, wenn das erste eine Raute <code>#</code> ist (s.u.). Die Punktformen werden bei dieser Option zeichenweise interpretiert und nur, wenn <code>#</code> gefunden wird, wird auch das folgende Zeichen zur aktuellen Punktform hinzugenommen.
 	Wenn bei <code>pointstyles</code> oder <code>linestyles</code> ein Leerzeichen statt eines der hier gelisteten Zeichen verwendet wird, wird der voreingestellte Stil des betreffenden Plotelements nicht geändert. Auf diese Art kann z.B. der Stil des zweiten Plotelements geändert und der Stil des ersten zugleich beibehalten werden.
 	Die Linienenden werden durch die folgenden Zeichen bestimmt:
@@ -62,5 +62,5 @@
 	<example desc="Setzen der Punktstile eines Plots (zwei mal Punkte und zwei mal gefüllte Rhomben):">
 		plot [...] -set pointstyles="..#d#d"
 	</example>
-	<em>Siehe auch:</em> "help plotoptions" und "help colors"
+	<em>Siehe auch:</em> <a href="nhlp://plotoptions?frame=self">help plotoptions</a> und <a href="nhlp://colors?frame=self">help colors</a>
 </article>

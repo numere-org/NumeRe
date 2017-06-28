@@ -20,5 +20,5 @@
 	<title string="Calculator mode" />
 	NumeRe's calculator mode is a numerical calculation framework, designed for "input-output" operations.
 	In a very restricted way, the calculator mode can be compared to Octave (although NumeRe will be constantly extended).
-	<em>See also:</em> "help expr"
+	<em>See also:</em> <a href="nhlp://expression?frame=self">help expression</a>
 </article>

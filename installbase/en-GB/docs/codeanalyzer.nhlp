@@ -1,0 +1,49 @@
+<!--
+	NumeRe: Framework fuer Numerische Rechnungen
+	Copyright (C) 2017  Erik Haenel et al.
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<article id="codeanalyzer">
+	<title string="Code analyzer" />
+	The editor may perform a static code analysis. The code analyzer will be activated with the corresponding menu item or by pressing <code>[Ctrl-Shift-A]</code> and displays messages out of three levels:
+	<list>
+		<item node="Note (grey)">These are messages, which are targeting an improvement of the programming style. They have no relevant influence on the execution of the code.</item>
+		<item node="Warning (yellow)">Warnings are locations in the code, which probably are not intended by the user and therefore should be examined further, e.g. an endless loop or unused local variables.</item>
+		<item node="Error (red)">If such a message appears, then its source should be fixed, otherwise it will most probably come to an runtime error. For example, this may be a command, which is used without an expression, or a procedure, which cannot be found.</item>
+	</list>
+	Additionally, code metrics like the cyclomatic complexity will be applied. 
+	<list>
+		<item node="Cyclomatic complexity">This metric measures the number of independent paths, which the control flow in a module may take, what is identical to the number of <code>if</code>, <code>elseif</code>, <code>for</code> and <code>while</code> statements + 1. A Note is displayed for a complexity higher 15 and a warning, if the complexity is higher than 20</item>
+		<item node="Lines of code">This is the number of lines, which are non-empty and which are not only containing comments, what is equal to the lines containing the actual commands and expressions</item>
+		<item node="Comment density">The comment density results out of the divison of the number of lines, which contain comments (multiple comments in a line will be considered), through the lines of code (see above). Good commented code has a comment density between 60 - 150 %</item>
+	</list>
+	The results of the metrics will be compared with predefined borders and a warning or a note will be displayed:
+	<table>
+		<tr>
+			<td><em>Metric</em></td><td><em>Lower border</em></td><td><em>Upper border</em></td><td><em>Proposed solution</em></td>
+		</tr>
+		<tr>
+			<td>Cycl. complexity</td><td>---</td><td>15/20</td><td>Separate the module by introducing procedures, because it may be difficult to understand or to test.</td>
+		</tr>
+		<tr>
+			<td>Lines of code</td><td>---</td><td>100</td><td>Separate the module by introducing procedures, because it may be difficult to understand due to the high number of lines.</td>
+		</tr>
+		<tr>
+			<td>Comment density</td><td>60 %</td><td>150 %</td><td>Comment the module further or examine it for commented out code, which is a common source for a high comment density.</td>
+		</tr>
+	</table>
+
+</article>

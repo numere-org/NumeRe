@@ -55,6 +55,6 @@
 		get -scriptpath
 		SCRIPTPATH: "&SCRIPTPATH&"
 	</example>
-	<em>Siehe auch:</em> "help set", "help editor" oder "help viewer"
+	<em>Siehe auch:</em> <a href="nhlp://set?frame=self">help set</a>, <a href="nhlp://editor?frame=self">help editor</a> und <a href="nhlp://viewer?frame=self">help viewer</a>
 	<em>Tipp:</em> Verwende <code>list -settings</code> um alle Einstellungen in einer übersichtlichen Liste anzeigen zu lassen.
 </article>

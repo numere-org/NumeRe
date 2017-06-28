@@ -40,9 +40,10 @@
 		<item node="method=METHODE">Die METHODE zur Bestimmung der Binbreite ändern. Standardmäßig ist dies die <em>Sturges-Regel</em>, mit <code>scott</code> wird die <em>Scott-Regel</em> und mit <code>freedman</code> wird die <em>Freedman-Diaconis-Regel</em> verwendet</item>
 		<item node="xlabel=LABEL">Beschriftung der <expr>x</expr>-Achse festlegen. Für die anderen Achsen existieren entsprechend <code>ylabel</code> und <code>zlabel</code>.</item>
 	</list>
-	<example desc="Histogramm der Spalten 1-3 eines Datenfiles mit je 128 Bins, wobei die Ausgabe nach 'hist.dat' gespeichert werden soll:">
-		hist data(:,1:3) -set bins=128 export=hist
+	<example desc="Histogramm der Spalten 1-3 eines Datenfiles mit je 64 Bins, wobei die Ausgabe nach 'hist.dat' gespeichert werden soll:">
+		hist data(:,1:3) -set bins=64 export=hist
 	</example>
+	<img src="<>/docs/dochist.png" />
 	<em>Tipp:</em> Viele übergebene Optionen können auch (außer <code>export</code>, <code>tocache</code>, <code>binlabel</code> und <code>countlabel</code>) durch ihre Anfangsbuchstaben, gefolgt von einem Gleichheitszeichen, abgekürzt werden.
-	<em>Siehe auch:</em> "help plotoptions"
+	<em>Siehe auch:</em> <a href="nhlp://plotoptions?frame=self">help plotoptions</a>
 </article>

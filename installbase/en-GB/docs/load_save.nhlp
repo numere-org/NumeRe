@@ -20,7 +20,7 @@
 	<title string="Loading and saving" />
 	Data may be loaded to NumeRe or saved out of NumeRe into a file. The two commands <code>load</code> and <code>save</code> exist to grant this possibility:<codeblock>load FILE</codeblock>or<codeblock>save DATA(I1:I2,J1:J2) -file=FILE</codeblock>respectively. During loading NumeRe expects a textual file with the extension "*.dat" as default. This file extension may be modified to one of "*.dat", "*.txt", "*.ndat", "*.labx", "*.jdx", "*.dx", "*.jcm", "*.ibw", "*.ods", "*.xls", "*.xlsx" and "*.csv", if you explicitely append the extension to the file name. During saving of data, NumeRe will prefer its own "NumeRe data file" format (*.ndat), which is faster in loading and saving and preserves the precision.
 	FILE names the name of the file, which shall be loaded or to which the data shall be written. As long as this file is stored in the default loading or saving path, respectively, the corresponding file path is not needed. In this case, NumeRe will implicit search in the corresponding directory for the named file. If the file path shall contain whitespaces, then it has to be surrounded by quotation marks.
-	You may use placeholders for the default paths or wildcards (<code>*</code> and <code>?</code>), if you like to. See "help explorer" for further details about these placeholders.
+	You may use placeholders for the default paths or wildcards (<code>*</code> and <code>?</code>), if you like to. See <a href="nhlp://explorer?frame=new">help explorer</a> for further details about these placeholders.
 	NumeRe supports loading of multiple files simultaneously. You may use one of the following methods in this case:
 	<list>
 		<item node="-all">Appending of this parameter and using a filename, which contains <em>at least one wildcard</em>, will result in loading all files matching to this filename</item>
@@ -36,5 +36,5 @@
 		export cache(:,1:2) -file=cache.tex
 		A table with 2088 elements was successfully written to the file "&SAVEPATH&/cache.tex".
 	</example>
-	<em>See also:</em> "help data", "help cache" and "help explorer"
+	<em>See also:</em> <a href="nhlp://data?frame=self">help data</a>, <a href="nhlp://cache?frame=self">help cache</a> und <a href="nhlp://explorer?frame=self">help explorer</a>
 </article>
