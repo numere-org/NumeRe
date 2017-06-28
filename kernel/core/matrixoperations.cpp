@@ -20,6 +20,32 @@
 #include "../kernel.hpp"
 
 size_t parser_getPreviousMatrixMultiplicationOperator(const string& sCmd, size_t nLastPos);
+Matrix parser_matrixMultiplication(const Matrix& _mLeft, const Matrix& _mRight, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
+Matrix parser_transposeMatrix(const Matrix& _mMatrix);
+Matrix parser_InvertMatrix(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_IdentityMatrix(unsigned int nSize);
+Matrix parser_OnesMatrix(unsigned int nLines, unsigned int nCols);
+Matrix parser_ZeroesMatrix(unsigned int nLines, unsigned int nCols);
+Matrix parser_getDeterminant(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_matFromCols(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
+Matrix parser_matFromColsFilled(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
+Matrix parser_matFromLines(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
+Matrix parser_matFromLinesFilled(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
+vector<double> parser_calcDeltas(const Matrix& _mMatrix, unsigned int nLine);
+Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
+Matrix parser_solveLGS(const Matrix& _mMatrix, Parser& _parser, Define& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_calcCrossProduct(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_calcEigenVects(const Matrix& _mMatrix, int nReturnType, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_SplitMatrix(Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_calcTrace(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
+bool parser_IsSymmMatrix(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+void parser_makeReal(Matrix& _mMatrix);
+double parser_calcDeterminant(const Matrix& _mMatrix, vector<int> vRemovedLines);
+void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _option);
+void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, Define& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position);
+
 Matrix parser_MatrixSize(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 Matrix parser_MatrixAnd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 Matrix parser_MatrixOr(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
@@ -269,12 +295,6 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
     vector<int> vMissingValues;
     string sTargetName = "";
     Indices _idx;
-
-    value_type* v = 0;
-    int nResults = 0;
-    unsigned int nPos = 0;
-    unsigned int nColCount = 0;
-    unsigned int nLinesCount = 0;
 
     bool bAllowMatrixClearing = false;
 
@@ -533,10 +553,10 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
         && sCmd[sCmd.find('=')+1] != '='
         && sCmd[sCmd.find('=')-1] != '!'
         && sCmd[sCmd.find('=')-1] != '<'
-        && sCmd[sCmd.find('=')-1] != '>')
+        && sCmd[sCmd.find('=')-1] != '>'
+        && sCmd.substr(0,sCmd.find('=')).find('(') != string::npos)
     {
         sTargetName = sCmd.substr(0,sCmd.find('='));
-        sCmd.erase(0,sCmd.find('=')+1);
         StripSpaces(sTargetName);
         if (sTargetName.substr(0,5) == "data(")
             throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, sTargetName, sTargetName);
@@ -549,6 +569,7 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
         _idx = parser_getIndices(sTargetName, _parser, _data, _option);
         if ((_idx.nI[0] == -1 && !_idx.vI.size()) || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
             throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sTargetName, sTargetName);
+        sCmd.erase(0,sCmd.find('=')+1);
         if (!_idx.vI.size())
         {
             if (_idx.nI[1] == -1)
@@ -579,299 +600,30 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
     }
 
     // Matrixmultiplikationen / Transpositionen / Invertierungen?
-    if (sCmd.find("**") != string::npos
-        || sCmd.find("{") != string::npos
-        || sCmd.find("transpose(") != string::npos
-        || sCmd.find("invert(") != string::npos
-        || sCmd.find("identity(") != string::npos
-        || sCmd.find("zero(") != string::npos
-        || sCmd.find("one(") != string::npos
-        || sCmd.find("matfl(") != string::npos
-        || sCmd.find("matflf(") != string::npos
-        || sCmd.find("matfc(") != string::npos
-        || sCmd.find("matfcf(") != string::npos
-        || sCmd.find("diag(") != string::npos
-        || sCmd.find("solve(") != string::npos
-        || sCmd.find("cross(") != string::npos
-        || sCmd.find("eigenvals(") != string::npos
-        || sCmd.find("eigenvects(") != string::npos
-        || sCmd.find("diagonalize(") != string::npos
-        || sCmd.find("trace(") != string::npos
-        || sCmd.find("size(") != string::npos
-        || sCmd.find("and(") != string::npos
-        || sCmd.find("or(") != string::npos
-        || sCmd.find("reshape(") != string::npos
-        || sCmd.find("resize(") != string::npos
-        || sCmd.find("det(") != string::npos)
+    // -> Submatrixoperationen ausfuehren
+    Matrix _mResult = parser_subMatrixOperations(sCmd, _parser, _data, _functions, _option);
+
+    // Target in Zielmatrix speichern
+    if (bAllowMatrixClearing)
+        _data.deleteBulk("matrix", 0, _data.getLines("matrix", true), 0, _data.getCols("matrix"));
+    _data.setCacheSize(_idx.nI[0]+_mResult.size(), _idx.nJ[0]+_mResult[0].size(), -1);
+    for (unsigned int i = 0; i < _mResult.size(); i++)
     {
-        // Submatrixoperationen ausfuehren
-        Matrix _mResult = parser_subMatrixOperations(sCmd, _parser, _data, _functions, _option);
-
-        // Target in Zielmatrix speichern
-        if (bAllowMatrixClearing)
-            _data.deleteBulk("matrix", 0, _data.getLines("matrix", true), 0, _data.getCols("matrix"));
-        _data.setCacheSize(_idx.nI[0]+_mResult.size(), _idx.nJ[0]+_mResult[0].size(), -1);
-        for (unsigned int i = 0; i < _mResult.size(); i++)
+        if (_idx.nI[1] == -2 || _idx.nI[1] - _idx.nI[1] > i)
         {
-            if (_idx.nI[1] == -2 || _idx.nI[1] - _idx.nI[1] > i)
-            {
-                for (unsigned int j = 0; j < _mResult[0].size(); j++)
-                {
-                    if (_idx.nJ[1] == -2 || _idx.nJ[1] - _idx.nJ[0] > j)
-                        _data.writeToCache((long long int)i+_idx.nI[0], (long long int)j+_idx.nJ[0], sTargetName, _mResult[i][j]);
-                    else
-                        break;
-                }
-            }
-            else
-                break;
-        }
-        parser_ShowMatrixResult(_mResult, _option);
-    }
-    else
-    {
-        // Data und Caches ersetzen
-        while (sCmd.find("data(", nPos) != string::npos)
-        {
-            nPos = sCmd.find("data(", nPos);
-            if (nPos && !checkDelimiter(sCmd.substr(nPos-1,6)))
-            {
-                nPos++;
-                continue;
-            }
-            vIndices.push_back(parser_getIndices(sCmd.substr(nPos), _parser, _data, _option));
-            if (!vIndices[vIndices.size()-1].vI.size())
-            {
-                if (!parser_evalIndices("data", vIndices[vIndices.size()-1], _data))
-                    throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, SyntaxError::invalid_position);
-            }
-            vMatrixNames.push_back("data");
-            if (parser_AddVectorComponent("",sCmd.substr(0,nPos),sCmd.substr(nPos+5+getMatchingParenthesis(sCmd.substr(nPos+4))),false) == "0")
-                vMissingValues.push_back(0);
-            else
-                vMissingValues.push_back(1);
-            sCmd.replace(nPos, getMatchingParenthesis(sCmd.substr(nPos+4))+5, "matrix["+toString((int)vMatrixNames.size()-1)+"]");
-        }
-        for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-        {
-            nPos = 0;
-            while (sCmd.find(iter->first+"(", nPos) != string::npos)
-            {
-                nPos = sCmd.find(iter->first+"(", nPos);
-                if (nPos && !checkDelimiter(sCmd.substr(nPos-1,(iter->first).length()+2)))
-                {
-                    nPos++;
-                    continue;
-                }
-                vIndices.push_back(parser_getIndices(sCmd.substr(nPos), _parser, _data, _option));
-                if (!vIndices[vIndices.size()-1].vI.size())
-                {
-                    if (!parser_evalIndices(iter->first, vIndices[vIndices.size()-1], _data))
-                        throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, SyntaxError::invalid_position);
-                }
-                vMatrixNames.push_back(iter->first);
-                if (parser_AddVectorComponent("",sCmd.substr(0,nPos),sCmd.substr(nPos+1+(iter->first).length()+getMatchingParenthesis(sCmd.substr(nPos+(iter->first).length()))),false) == "0")
-                    vMissingValues.push_back(0);
-                else
-                    vMissingValues.push_back(1);
-                sCmd.replace(nPos, getMatchingParenthesis(sCmd.substr(nPos+(iter->first).length()))+(iter->first).length()+1, "matrix["+toString((int)vMatrixNames.size()-1)+"]");
-            }
-        }
-
-        //cerr << sCmd << endl;
-        // Alle Datafiles/Caches ersetzt
-
-        // MaxCol identifizieren
-        for (unsigned int i = 0; i < vIndices.size(); i++)
-        {
-            if (vIndices[i].vI.size())
-            {
-                if (vIndices[i].vJ.size() > nColCount)
-                    nColCount = vIndices[i].vJ.size();
-            }
-            else
-            {
-                if (vIndices[i].nJ[1]-vIndices[i].nJ[0] > nColCount)
-                    nColCount = vIndices[i].nJ[1]-vIndices[i].nJ[0];
-            }
-        }
-
-        // Vectoren lesen und zuweisen
-        for (unsigned int j = 0; j < vIndices.size(); j++)
-        {
-            if (vMatrixVector.size())
-                vMatrixVector.clear();
-            if (vIndices[j].vI.size())
-            {
-                vMatrixVector = _data.getElement(vIndices[j].vI, vector<long long int>(1,vIndices[j].vJ[0]), vMatrixNames[j]);
-            }
-            else
-            {
-                if (vIndices[j].nJ[0] >= vIndices[j].nJ[1])
-                    vMatrixVector.push_back(vMissingValues[j]);
-                else
-                {
-                    for (long long int k = vIndices[j].nI[0]; k < vIndices[j].nI[1]; k++)
-                    {
-                        if (_data.isValidEntry(k, vIndices[j].nJ[0], vMatrixNames[j]))
-                            vMatrixVector.push_back(_data.getElement(k, vIndices[j].nJ[0], vMatrixNames[j]));
-                        else
-                            vMatrixVector.push_back(NAN);
-                    }
-                }
-            }
-            _parser.SetVectorVar("matrix["+toString((int)j)+"]", vMatrixVector);
-        }
-
-        // sCmd als Expr zuweisen
-        _parser.SetExpr(sCmd);
-
-        // Auswerten
-        v = _parser.Eval(nResults);
-
-        // An Ziel zuweisen
-        if (vMatrixVector.size())
-            vMatrixVector.clear();
-        for (int i = 0; i < nResults; i++)
-            vMatrixVector.push_back(v[i]);
-        vTarget.push_back(vMatrixVector);
-        if (vMatrixVector.size() > nLinesCount)
-            nLinesCount = vMatrixVector.size();
-
-        // Fuer die Zahl der Cols
-        for (unsigned int i = 1; i < nColCount; i++)
-        {
-            // Vectoren lesen und zuweisen
-            for (unsigned int j = 0; j < vIndices.size(); j++)
-            {
-                if (vMatrixVector.size())
-                    vMatrixVector.clear();
-                if (vIndices[j].vI.size())
-                {
-                    if (vIndices[j].vJ.size() <= i && (vIndices[j].vJ.size() > 1 || vIndices[j].vI.size() > 1))
-                        vMatrixVector.push_back(vMissingValues[j]);
-                    else if (vIndices[j].vI.size() == 1 && vIndices[j].vJ.size() == 1)
-                        continue;
-                    else
-                    {
-                        vMatrixVector = _data.getElement(vIndices[j].vI, vector<long long int>(1, vIndices[j].vJ[i]), vMatrixNames[j]);
-                    }
-                }
-                else
-                {
-                    if (vIndices[j].nJ[0]+i >= vIndices[j].nJ[1] && (vIndices[j].nJ[1]-vIndices[j].nJ[0] > 1 || vIndices[j].nI[1]-vIndices[j].nI[0] > 1))
-                        vMatrixVector.push_back(vMissingValues[j]);
-                    else if (vIndices[j].nJ[1]-vIndices[j].nJ[0] <= 1 && vIndices[j].nI[1]-vIndices[j].nI[0] <= 1)
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        for (long long int k = vIndices[j].nI[0]; k < vIndices[j].nI[1]; k++)
-                        {
-                            if (_data.isValidEntry(k, vIndices[j].nJ[0]+i, vMatrixNames[j]))
-                                vMatrixVector.push_back(_data.getElement(k, vIndices[j].nJ[0]+i, vMatrixNames[j]));
-                            else
-                                vMatrixVector.push_back(NAN);
-                        }
-                    }
-                }
-                _parser.SetVectorVar("matrix["+toString((int)j)+"]", vMatrixVector);
-            }
-
-            // Auswerten
-            v = _parser.Eval(nResults);
-
-            // An Ziel zuweisen
-            if (vMatrixVector.size())
-                vMatrixVector.clear();
-            for (int j = 0; j < nResults; j++)
-                vMatrixVector.push_back(v[j]);
-            vTarget.push_back(vMatrixVector);
-            if (vMatrixVector.size() > nLinesCount)
-                nLinesCount = vMatrixVector.size();
-        }
-
-        // Target in Zielmatrix speichern
-        if (bAllowMatrixClearing)
-            _data.deleteBulk("matrix", 0, _data.getLines("matrix", true), 0, _data.getCols("matrix"));
-
-        if (!_idx.vI.size())
-        {
-            _data.setCacheSize(_idx.nI[0]+nLinesCount, _idx.nJ[0]+vTarget.size(), -1);
-            for (unsigned int j = 0; j < vTarget.size(); j++)
+            for (unsigned int j = 0; j < _mResult[0].size(); j++)
             {
                 if (_idx.nJ[1] == -2 || _idx.nJ[1] - _idx.nJ[0] > j)
-                {
-                    for (unsigned int i = 0; i < nLinesCount; i++)
-                    {
-                        if (_idx.nI[1] == -2 || _idx.nI[1] - _idx.nI[0] > i)
-                        {
-                            if (vTarget[j].size() <= i)
-                                _data.writeToCache((long long int)i+_idx.nI[0], (long long int)j+_idx.nJ[0], sTargetName, 0.0);
-                            else
-                                _data.writeToCache((long long int)i+_idx.nI[0], (long long int)j+_idx.nJ[0], sTargetName, vTarget[j][i]);
-                        }
-                        else
-                            break;
-                    }
-                }
+                    _data.writeToCache((long long int)i+_idx.nI[0], (long long int)j+_idx.nJ[0], sTargetName, _mResult[i][j]);
                 else
                     break;
             }
         }
         else
-        {
-            if (_idx.nI[1] == -2)
-            {
-                _idx.vI.clear();
-
-                for (long long int i = _idx.nI[0]; i < _idx.nI[0]+vTarget[0].size(); i++)
-                    _idx.vI.push_back(i);
-            }
-            if (_idx.nJ[1] == -2)
-            {
-                _idx.vJ.clear();
-
-                for (long long int j = _idx.nJ[0]; j <= _idx.nJ[0]+vTarget.size(); j++)
-                    _idx.vJ.push_back(j);
-            }
-
-
-            for (unsigned int j = 0; j < vTarget.size(); j++)
-            {
-                if (_idx.vJ.size() > j)
-                {
-                    for (unsigned int i = 0; i < nLinesCount; i++)
-                    {
-                        if (_idx.vI.size() > i)
-                        {
-                            if (vTarget[j].size() <= i)
-                                _data.writeToCache(_idx.vI[i], _idx.vJ[j], sTargetName, 0.0);
-                            else
-                                _data.writeToCache(_idx.vI[i], _idx.vJ[j], sTargetName, vTarget[j][i]);
-                        }
-                        else
-                            break;
-                    }
-                }
-                else
-                    break;
-            }
-        }
-
-        Matrix _mResult;
-        for (unsigned int i = 0; i < vTarget[0].size(); i++)
-        {
-            vMatrixVector.clear();
-            for (unsigned int j = 0; j < vTarget.size(); j++)
-                vMatrixVector.push_back(vTarget[j][i]);
-            _mResult.push_back(vMatrixVector);
-        }
-        parser_ShowMatrixResult(_mResult, _option);
+            break;
     }
-    /*if (_option.getSystemPrintStatus())
-        cerr << LineBreak("|-> Matrix-Operationen abgeschlossen.", _option) << endl;*/
+    parser_ShowMatrixResult(_mResult, _option);
+
     return true;
 }
 
@@ -879,11 +631,25 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
 {
     string __sCmd;
     size_t pos_back = 0;
+    size_t iter_start = 0;
     vector<Matrix> vReturnedMatrices;
     value_type* v = 0;
     int nResults = 0;
+
+    // Check, whether there's a target vector available in this expression part
+    if (sCmd.find('=') != string::npos
+        && sCmd.find('=')
+        && sCmd[sCmd.find('=')+1] != '='
+        && sCmd[sCmd.find('=')-1] != '!'
+        && sCmd[sCmd.find('=')-1] != '<'
+        && sCmd[sCmd.find('=')-1] != '>'
+        && sCmd.substr(0,sCmd.find('=')).find('{') != string::npos)
+    {
+        iter_start = sCmd.find('=')+1;
+    }
+
     //cerr << sCmd << endl;
-    for (unsigned int i = 0; i < sCmd.length(); i++)
+    for (unsigned int i = iter_start; i < sCmd.length(); i++)
     {
         //cerr << i << "  " << sCmd[i] << endl;
         if (sCmd.substr(i,10) == "transpose("
@@ -1210,17 +976,15 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
         }
         if (i > 14
             && sCmd[i] == '('
-            && i == pos_back
+            && i == pos_back // only true, if the last iteration evaluated a subexpression
             && sCmd.find_last_not_of(' ',i-1) != string::npos
-            && __sCmd.back() == ']')
-            //&& sCmd[sCmd.find_last_not_of(' ',i-1)] == ']'
-            //&& sCmd.rfind('[', i-1) != string::npos) //...returnedMatrix[N](:,:)
+            && __sCmd.back() == ']') //...returnedMatrix[N](:,:)
         {
             int nMatrix = 0;
-            nMatrix = StrToInt(__sCmd.substr(__sCmd.rfind('[',i-1)+1, __sCmd.rfind(']',i-1)-__sCmd.rfind('[', i-1)-1));
-            if (__sCmd.substr(__sCmd.rfind('[', i-1)-14,15) == "returnedMatrix[")
+            nMatrix = StrToInt(__sCmd.substr(__sCmd.rfind('[')+1, __sCmd.rfind(']')-__sCmd.rfind('[')-1));
+            if (__sCmd.substr(__sCmd.rfind('[')-14,15) == "returnedMatrix[")
             {
-                string sSubExpr = __sCmd.substr(i, getMatchingParenthesis(__sCmd.substr(i))+1);
+                string sSubExpr = sCmd.substr(i, getMatchingParenthesis(sCmd.substr(i))+1);
                 //sCmd.erase(i, sSubExpr.length());
                 pos_back = i+getMatchingParenthesis(sCmd.substr(i))+1;
                 //i--;

@@ -2682,7 +2682,7 @@
 	"documentation.hpp"
 	"odesolver.hpp"
 
-1497775132 d:\cpp\numere-source\trunk\kernel\core\parser_functions.hpp
+1498634160 d:\cpp\numere-source\trunk\kernel\core\parser_functions.hpp
 	<cmath>
 	<string>
 	<sstream>
@@ -3923,7 +3923,7 @@
 1494146710 source:d:\cpp\numere-source\trunk\kernel\core\debugger.cpp
 	"debugger.hpp"
 
-1497520769 source:d:\cpp\numere-source\trunk\kernel\core\define.cpp
+1498336438 source:d:\cpp\numere-source\trunk\kernel\core\define.cpp
 	"define.hpp"
 	"../kernel.hpp"
 
@@ -3965,7 +3965,7 @@
 	"loop.hpp"
 	"../kernel.hpp"
 
-1498307326 source:d:\cpp\numere-source\trunk\kernel\core\matrixoperations.cpp
+1498635748 source:d:\cpp\numere-source\trunk\kernel\core\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
