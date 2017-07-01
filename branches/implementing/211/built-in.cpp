@@ -8274,7 +8274,7 @@ bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _op
     }
     if (matchParams(sCmd, "refresh"))
     {
-        nFileOpenFlag = 2 & 4;
+        nFileOpenFlag = 2 | 4;
     }
     string sObject = sCmd.substr(findCommand(sCmd).sString.length());
     // remove flags from object
