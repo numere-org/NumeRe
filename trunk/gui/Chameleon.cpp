@@ -779,6 +779,40 @@ vector<string> NumeReWindow::getPathDefs()
     return m_terminal->getPathSettings();
 }
 
+
+void NumeReWindow::addToReloadBlackList(const wxString& sFilename)
+{
+    for (size_t i = 0; i < vReloadBlackList.size(); i++)
+    {
+        if (vReloadBlackList[i] == sFilename)
+            return;
+    }
+    vReloadBlackList.push_back(sFilename);
+}
+
+void NumeReWindow::removeFromReloadBlackList(const wxString& sFilename)
+{
+    for (size_t i = 0; i < vReloadBlackList.size(); i++)
+    {
+        if (vReloadBlackList[i] == sFilename)
+        {
+            vReloadBlackList.erase(vReloadBlackList.begin()+i);
+            return;
+        }
+    }
+}
+
+bool NumeReWindow::isOnReloadBlackList(wxString sFilename)
+{
+    sFilename = replacePathSeparator(sFilename.ToStdString());
+    for (size_t i = 0; i < vReloadBlackList.size(); i++)
+    {
+        if (vReloadBlackList[i] == sFilename)
+            return true;
+    }
+    return false;
+}
+
 void NumeReWindow::InitializeProgramOptions()
 {
 	// Open up the configuration file, assumed to be in the user's home directory
@@ -1546,6 +1580,8 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
     else if (type == wxFSW_EVENT_MODIFY)
     {
         wxString sEventPath = event.GetPath().GetFullPath();
+        if (isOnReloadBlackList(sEventPath))
+            return;
         if (m_currentSavedFile == toString((int)time(0))+"|"+sEventPath || m_currentSavedFile == toString((int)time(0)-1)+"|"+sEventPath || m_currentSavedFile == "BLOCKALL|"+sEventPath)
         {
             return;
@@ -2430,22 +2466,11 @@ wxArrayString NumeReWindow::OpenFile(FileFilterType filterType)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::OpenSourceFile (wxArrayString fnames, unsigned int nLine)
+void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int nOpenFileFlag)
 {
 	int firstPageNr = -1;
 	wxString fileContents = wxEmptyString;
 	wxString fileNameNoPath;
-
-	wxString locationPrefix;
-
-	if(false)//m_remoteMode)
-	{
-		locationPrefix = "(R) ";
-	}
-	else
-	{
-		locationPrefix = "(L) ";
-	}
 
 	for (size_t n = 0; n < fnames.GetCount(); n++)
 	{
@@ -2458,15 +2483,14 @@ void NumeReWindow::OpenSourceFile (wxArrayString fnames, unsigned int nLine)
 			return;
 		}
 
-		// I'd previously canceled the open here if the file was empty,
-		// but we opted to skip that behavior
-		/*
-		if(fileContents == wxEmptyString)
-		{
-			continue;
-		}
-		*/
-
+        if (nOpenFileFlag & OPENFILE_BLACKLIST_ADD)
+        {
+            addToReloadBlackList(fnames[n]);
+        }
+        if (nOpenFileFlag & OPENFILE_BLACKLIST_REMOVE)
+        {
+            removeFromReloadBlackList(fnames[n]);
+        }
 		// filename is already open
 		if (pageNr >= 0)
 		{
@@ -2478,23 +2502,28 @@ void NumeReWindow::OpenSourceFile (wxArrayString fnames, unsigned int nLine)
             }
             else
             {
-                int modifiedFileResult = HandleModifiedFile(pageNr, MODIFIEDFILE_RELOAD);
-
-                // user canceled the open request, skip the reload
-                if(modifiedFileResult == wxCANCEL)
+                if (!(nOpenFileFlag & OPENFILE_BLACKLIST_ADD))
                 {
-                    continue;
-                }
-                m_setSelection = true;
-                m_book->SetSelection (pageNr);
-                m_setSelection = false;
-                m_currentPage = pageNr;
+                    if (!(nOpenFileFlag & OPENFILE_FORCE))
+                    {
+                        int modifiedFileResult = HandleModifiedFile(pageNr, MODIFIEDFILE_RELOAD);
 
-                m_currentEd = static_cast< NumeReEditor* > (m_book->GetPage (m_currentPage));
-                m_currentEd->LoadFileText(fileContents);
+                        // user canceled the open request, skip the reload
+                        if(modifiedFileResult == wxCANCEL)
+                        {
+                            continue;
+                        }
+                    }
+                    m_setSelection = true;
+                    m_book->SetSelection (pageNr);
+                    m_setSelection = false;
+                    m_currentPage = pageNr;
+
+                    m_currentEd = static_cast< NumeReEditor* > (m_book->GetPage (m_currentPage));
+                    m_currentEd->LoadFileText(fileContents);
+                }
 			}
 		}
-
 		else
 		{
 			ProjectInfo* proj;
