@@ -28,6 +28,11 @@
 #include "viewerbook.hpp"
 #include "filetree.hpp"
 
+#define OPENFILE_NOTHING 0
+#define OPENFILE_BLACKLIST_ADD 1
+#define OPENFILE_BLACKLIST_REMOVE 2
+#define OPENFILE_FORCE 4
+
 // forward declarations
 
 class wxFileConfig;
@@ -121,7 +126,7 @@ class NumeReWindow : public wxFrame
         NetworkCallResult CheckNetworkStatus();
 
         void NewFile(FileFilterType _filetype = FILE_NONSOURCE, const wxString& defaultfilename = "");
-        void OpenSourceFile(wxArrayString fnames, unsigned int nLine = 0);
+        void OpenSourceFile(wxArrayString fnames, unsigned int nLine = 0, int nOpenFileFlag = OPENFILE_NOTHING);
         void openImage(wxFileName filename);
         void openHTML(wxString HTMLcontent);
         void openTable(const vector<vector<string> >& sTable, const string& sTableName);
@@ -145,6 +150,11 @@ class NumeReWindow : public wxFrame
 
         wxSSH* getTerminal() {return m_terminal;}
         vector<string> getPathDefs();
+
+        void addToReloadBlackList(const wxString& sFilename);
+        void removeFromReloadBlackList(const wxString& sFilename);
+        bool isOnReloadBlackList(wxString sFilename);
+
 
     private:
         void InitializeProgramOptions();
@@ -281,6 +291,9 @@ class NumeReWindow : public wxFrame
         /*! Displays the files in the current project */
         FileTree* m_projectTree;
         Filewatcher* m_watcher;
+
+        // Blacklist for suppressing the reloading and the corresponding dialog
+        std::vector<wxString> vReloadBlackList;
 
         /*! Displays functions and commands */
         FileTree* m_functionTree;

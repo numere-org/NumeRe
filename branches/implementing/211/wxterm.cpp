@@ -415,6 +415,7 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
     stringmatrix sTable;
     vector<string> vDebugInfo;
     unsigned int nLineNumber = 0;
+    int nFileOpenFlag = 0;
     string sAnswer = "";
     {
         wxCriticalSectionLocker lock(m_kernelCS);
@@ -437,6 +438,7 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
                 sAnswer = m_sAnswer;//+ "|\n|<- ";
                 sFileName = _kernel.ReadFileName();
                 nLineNumber = _kernel.ReadLineNumber();
+                nFileOpenFlag = _kernel.ReadOpenFileFlag();
                 break;
             case NumeReKernel::NUMERE_OPEN_DOC:
                 sAnswer = m_sAnswer;//+ "|\n|<- ";
@@ -512,7 +514,7 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
         }
         else
         {
-            m_wxParent->OpenSourceFile(wxArrayString(1, sFileName), nLineNumber);
+            m_wxParent->OpenSourceFile(wxArrayString(1, sFileName), nLineNumber, nFileOpenFlag);
         }
     }
     if (changedSettings)

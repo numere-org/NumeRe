@@ -79,6 +79,7 @@ class NumeReKernel
         static string sFileToEdit;
         static string sDocumentation;
         static unsigned int nLineToGoTo;
+        static int nOpenFileFlag;
         static int nLastStatusVal;
         static unsigned int nLastLineLength;
         static bool modifiedSettings;
@@ -124,6 +125,7 @@ class NumeReKernel
         vector<string> getPluginCommands();
         string ReadFileName();
         unsigned int ReadLineNumber();
+        int ReadOpenFileFlag();
         string ReadAnswer();
         string ReadDoc();
         string getDocumentation(const string& sCommand);

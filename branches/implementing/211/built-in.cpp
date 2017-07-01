@@ -5444,6 +5444,10 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 {
                     BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option);
                     sArgument = "edit " + sArgument;
+                    if (matchParams(sCmd, "norefresh"))
+                        sArgument += " -norefresh";
+                    if (matchParams(sCmd, "refresh"))
+                        sArgument += " -refresh";
                     BI_editObject(sArgument, _parser, _data, _option);
                 }
                 else
@@ -8261,8 +8265,23 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
 bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option)
 {
     int nType = 0;
+    int nFileOpenFlag = 0;
     //NumeReKernel::print(sCmd );
+
+    if (matchParams(sCmd, "norefresh"))
+    {
+        nFileOpenFlag = 1;
+    }
+    if (matchParams(sCmd, "refresh"))
+    {
+        nFileOpenFlag = 2 & 4;
+    }
     string sObject = sCmd.substr(findCommand(sCmd).sString.length());
+    // remove flags from object
+    if (nFileOpenFlag)
+    {
+        sObject.erase(sObject.rfind(' '));
+    }
     StripSpaces(sObject);
     FileSystem _fSys;
     _fSys.setTokens(_option.getTokenPaths());
@@ -8489,6 +8508,7 @@ bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _op
 
     if (nType == 1)
     {
+        NumeReKernel::nOpenFileFlag = nFileOpenFlag;
         NumeReKernel::gotoLine(sObject);
         //NumeReKernel::setFileName(sObject);
         //openExternally(sObject, _option.getEditorPath(), _option.getExePath());
