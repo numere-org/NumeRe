@@ -2021,7 +2021,7 @@
 	"../kernel/kernel.hpp"
 	"../kernel/debugmessenger.hpp"
 
-1498289061 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1498901140 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -2492,7 +2492,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1497692497 d:\cpp\numere-source\trunk\kernel\kernel.hpp
+1498902109 d:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	"core/error.hpp"
@@ -3251,7 +3251,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1498289371 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1498901461 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3892,7 +3892,7 @@
 	"wxssh.h"
 	"../common/debug.h"
 
-1496858529 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
+1498902267 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -3908,7 +3908,7 @@
 1490791550 source:d:\cpp\numere-source\trunk\kernel\core\basicexcel.cpp
 	"BasicExcel.hpp"
 
-1497775092 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1498919745 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
@@ -3965,7 +3965,7 @@
 	"loop.hpp"
 	"../kernel.hpp"
 
-1498635748 source:d:\cpp\numere-source\trunk\kernel\core\matrixoperations.cpp
+1498674456 source:d:\cpp\numere-source\trunk\kernel\core\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -4127,7 +4127,7 @@
 	"debugmessenger.hpp"
 	"core/tools.hpp"
 
-1497692813 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1498902136 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 

@@ -41,6 +41,7 @@ bool NumeReKernel::bWritingTable = false;
 string NumeReKernel::sFileToEdit = "";
 string NumeReKernel::sDocumentation = "";
 unsigned int NumeReKernel::nLineToGoTo = 0;
+int NumeReKernel::nOpenFileFlag = 0;
 int NumeReKernel::nLastStatusVal = 0;
 unsigned int NumeReKernel::nLastLineLength = 0;
 bool NumeReKernel::modifiedSettings = false;
@@ -1861,6 +1862,13 @@ unsigned int NumeReKernel::ReadLineNumber()
     unsigned int nLine = nLineToGoTo;
     nLineToGoTo = 0;
     return nLine;
+}
+
+int NumeReKernel::ReadOpenFileFlag()
+{
+    int nFlag = nOpenFileFlag;
+    nOpenFileFlag = 0;
+    return nFlag;
 }
 
 string NumeReKernel::ReadDoc()
