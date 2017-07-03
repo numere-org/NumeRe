@@ -377,7 +377,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_splitProjectEditor = new wxSplitterWindow(this, ID_SPLITPROJECTEDITOR, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME);
 	m_splitEditorOutput = new wxProportionalSplitterWindow(m_splitProjectEditor, ID_SPLITEDITOROUTPUT, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
 	m_splitCommandHistory = new wxProportionalSplitterWindow(m_splitEditorOutput, wxID_ANY, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
-	m_book = new NumeReNotebook(m_splitEditorOutput, ID_NOTEBOOK_ED);
+	m_book = new NumeReNotebook(m_splitEditorOutput, ID_NOTEBOOK_ED, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE);
 	m_book->SetTopParent(this);
 
 	///m_noteTerm = new NumeReNotebook(m_splitEditorOutput, ID_NOTEBOOK_TERM);
@@ -438,7 +438,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
 	// project setup
 	m_projMultiFiles = NULL;
-	m_treeBook = new ViewerBook(m_splitProjectEditor, wxID_ANY);
+	m_treeBook = new ViewerBook(m_splitProjectEditor, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE);
 	m_projectTree = new FileTree(m_treeBook, ID_PROJECTTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT);
 	m_treeBook->AddPage(m_projectTree, _guilang.get("GUI_FILETREE"));
 	m_functionTree = new FileTree(m_treeBook, ID_FUNCTIONTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT | wxTR_HIDE_ROOT);
@@ -522,7 +522,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_splitEditorOutput->Show();
 	m_splitCommandHistory->Show();
 	m_book->Show();
-    m_history = new NumeReHistory(this, m_debugManager, m_options, new ProjectInfo(), m_splitCommandHistory, -1, m_terminal->getSyntax(), m_terminal);
+    m_history = new NumeReHistory(this, m_debugManager, m_options, new ProjectInfo(), m_splitCommandHistory, -1, m_terminal->getSyntax(), m_terminal, wxDefaultPosition, wxDefaultSize, wxBORDER_SUNKEN);
 
     wxMilliSleep(500);
 	EvaluateOptions();
