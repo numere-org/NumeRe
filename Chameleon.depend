@@ -2799,7 +2799,7 @@
 	"built-in.hpp"
 	"tools.hpp"
 
-1491044661 d:\cpp\numere-source\trunk\kernel\core\procedure.hpp
+1499154205 d:\cpp\numere-source\trunk\kernel\core\procedure.hpp
 	<iostream>
 	<string>
 	<cmath>
@@ -3251,7 +3251,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1498991566 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1498991899 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3892,7 +3892,7 @@
 	"wxssh.h"
 	"../common/debug.h"
 
-1498991622 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
+1498991836 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -3912,7 +3912,7 @@
 	"built-in.hpp"
 	"../kernel.hpp"
 
-1497520553 source:d:\cpp\numere-source\trunk\kernel\core\cache.cpp
+1499060883 source:d:\cpp\numere-source\trunk\kernel\core\cache.cpp
 	"cache.hpp"
 	"../kernel.hpp"
 
@@ -4053,7 +4053,7 @@
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
-1497521844 source:d:\cpp\numere-source\trunk\kernel\core\plugin.cpp
+1499238431 source:d:\cpp\numere-source\trunk\kernel\core\plugin.cpp
 	"plugin.hpp"
 
 1497521993 source:d:\cpp\numere-source\trunk\kernel\core\plugin_histogram.cpp
@@ -4068,9 +4068,10 @@
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1497693629 source:d:\cpp\numere-source\trunk\kernel\core\procedure.cpp
+1499238387 source:d:\cpp\numere-source\trunk\kernel\core\procedure.cpp
 	"procedure.hpp"
 	"../kernel.hpp"
+	"procedurevarfactory.hpp"
 
 1490791551 source:d:\cpp\numere-source\trunk\kernel\core\resampler.cpp
 	<stdlib.h>
@@ -4233,4 +4234,21 @@
 	"p.h"
 	"../common/Crc16.h"
 	"../common/debug.h"
+
+1499201129 d:\cpp\numere-source\trunk\kernel\core\procedurevarfactory.hpp
+	<string>
+	<map>
+	"tools.hpp"
+	"error.hpp"
+	"datafile.hpp"
+	"parser.hpp"
+	"define.hpp"
+	"settings.hpp"
+	"output.hpp"
+	"plotdata.hpp"
+	"script.hpp"
+
+1499201163 source:d:\cpp\numere-source\trunk\kernel\core\procedurevarfactory.cpp
+	"procedurevarfactory.hpp"
+	"procedure.hpp"
 

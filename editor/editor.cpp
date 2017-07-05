@@ -1601,7 +1601,7 @@ void NumeReEditor::AnalyseCode()
                     }
                 }
             }
-            if (m_fileType == FILE_NPRC && (sSyntaxElement == "var" || sSyntaxElement == "str"))
+            if (m_fileType == FILE_NPRC && (sSyntaxElement == "var" || sSyntaxElement == "str" || sSyntaxElement == "tab"))
             {
                 int nNextLine = this->GetLineEndPosition(currentLine)+1;
                 int nProcedureEnd = this->FindText(nNextLine, this->GetLastPosition(), "endprocedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD);
@@ -1623,6 +1623,8 @@ void NumeReEditor::AnalyseCode()
                         currentArg = getNextArgument(sArgs, true);
                         if (currentArg.find('=') != string::npos)
                             currentArg.erase(currentArg.find('='));
+                        if (currentArg.find('(') != string::npos)
+                            currentArg.erase(currentArg.find('('));
                         StripSpaces(currentArg);
                         if (this->FindText(nNextLine, nProcedureEnd, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) == -1)
                         {

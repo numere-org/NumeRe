@@ -1353,10 +1353,10 @@ bool Cache::containsCacheElements(const string& sExpression)
 bool Cache::addCache(const string& sCache, const Settings& _option)
 {
     string sCacheName = sCache.substr(0,sCache.find('('));
-    string sValidChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_";
+    string sValidChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_~";
 
     //cerr << sCache << endl;
-    if ((sCacheName[0] >= '0' && sCacheName[0] <= '9') || sCacheName == "data" || sCacheName == "string")
+    if ((sCacheName[0] >= '0' && sCacheName[0] <= '9') || sCacheName[0] == '~' || sCacheName == "data" || sCacheName == "string")
         //throw INVALID_CACHE_NAME;
         throw SyntaxError(SyntaxError::INVALID_CACHE_NAME, "", SyntaxError::invalid_position, sCacheName);
     if (sPredefinedFuncs.find(","+sCacheName+"()") != string::npos)
