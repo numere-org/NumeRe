@@ -46,6 +46,9 @@
 using namespace std;
 using namespace mu;
 
+// forward declaration of the var factory
+class ProcedureVarFactory;
+
 //extern bool bSupressAnswer;
 
 class Procedure : /*public FileSystem,*/ public Loop, public Plugin
@@ -77,7 +80,6 @@ class Procedure : /*public FileSystem,*/ public Loop, public Plugin
 
         Returnvalue ProcCalc(string sLine, Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script);
         bool setProcName(const string& sProc, bool bInstallFileName = false);
-        int procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure = 0, int nth_command = 0);
         int procedureCmdInterface(string& sLine);
         void deleteVars(Parser& _parser, Datafile& _data, bool bSupressAnswer, string** sLocalVars, unsigned int nLocalVarMapSize, double* dLocalVars, string** sLocalStrings, unsigned int nLocalStrMapSize, string** sVarMap, unsigned int nVarMapSize);
     public:
@@ -86,6 +88,7 @@ class Procedure : /*public FileSystem,*/ public Loop, public Plugin
         ~Procedure();
 
         Returnvalue execute(string sProc, string sVarList, Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, unsigned int nth_procedure = 0);
+        int procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure = 0, int nth_command = 0);
         bool writeProcedure(string sProcedureLine);
         bool isInline(const string& sProc);
         void evalDebuggerBreakPoint(Parser& _parser, Settings& _option, const map<string,string>& sStringMap);
@@ -97,6 +100,8 @@ class Procedure : /*public FileSystem,*/ public Loop, public Plugin
             {return nReturnType;}
         inline bool is_writing() const
             {return bWritingTofile;}
+        inline int getProcedureFlags() const
+            {return nFlags;}
         void replaceReturnVal(string& sLine, Parser& _parser, const Returnvalue& _return, unsigned int nPos, unsigned int nPos2, const string& sReplaceName);
 };
 
