@@ -322,21 +322,23 @@ wxThread::ExitCode wxTerm::Entry()
 {
     string sCommand = "";
     bool bCommandAvailable = false;
-
-    //NumeReKernel::toggleTableStatus();
+    bool updateLibrary = false;
     _kernel.printVersionInfo();
-    //NumeReKernel::toggleTableStatus();
-    //NumeReKernel::printPreFmt("|\n|<- ");
     while (!GetThread()->TestDestroy())
     {
         Sleep(100);
         // start critical section for reading the command and the boolean
         {
             wxCriticalSectionLocker lock(m_kernelCS);
+
             bCommandAvailable = m_bCommandAvailable;
             sCommand = m_sCommandLine;
             m_bCommandAvailable = false;
+
+            updateLibrary = m_updateProcedureLibrary;
+            m_updateProcedureLibrary = false;
             m_sCommandLine.clear();
+
             if (!sCommand.length() && bCommandAvailable)
             {
                 m_KernelStatus = NumeReKernel::NUMERE_PENDING;
@@ -348,17 +350,15 @@ wxThread::ExitCode wxTerm::Entry()
         }
         if (bCommandAvailable) // A command is available
         {
+            // This is the actual evaluating function. It is called from this second thread regularly (every 100ms) and
+            // enters the function, if a command was passed to the terminal.
             m_KernelStatus = _kernel.MainLoop(sCommand);
-            if (m_KernelStatus > 0) // solve errors and quits
+            if (m_KernelStatus > 0) // these are valid status values (0 = error, -1 = quit)
             {
                 wxCriticalSectionLocker lock(m_kernelCS);
                 switch (m_KernelStatus)
                 {
-                    // fallthrough is intended
                     case NumeReKernel::NUMERE_DONE:
-                    //case NumeReKernel::NUMERE_CALC_UPDATE:
-                    //case NumeReKernel::NUMERE_PRINTLINE:
-                    //case NumeReKernel::NUMERE_STATUSBAR_UPDATE:
                         m_sAnswer = _kernel.ReadAnswer();
                         break;
                     default:
@@ -371,15 +371,18 @@ wxThread::ExitCode wxTerm::Entry()
             {
                 break;
             }
-            /*else if (m_KernelStatus == NumeReKernel::NUMERE_ERROR)
-            {
-                wxCriticalSectionLocker lock(m_kernelCS);
-                //m_sAnswer = "ERROR IN NUMERE::KERNEL";
-            }*/
+
             wxQueueEvent(GetEventHandler(), new wxThreadEvent());
         }
+        // During idle times so that these tasks don't interfere with the main evaluation routine
+        // do the following:
         if (time(0)-_kernel.getLastSavedTime() >= _kernel.getAutosaveInterval())
-            _kernel.Autosave();
+            _kernel.Autosave(); // save the cache
+        if (updateLibrary)
+        {
+            // update the internal procedure library if needed
+            NumeReKernel::ProcLibrary.updateLibrary();
+        }
     }
     _kernel.CloseSession();
     m_KernelStatus = NumeReKernel::NUMERE_QUIT;

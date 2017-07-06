@@ -84,6 +84,7 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
 
         bool m_inUpdateSize;
         bool m_isActive;
+        bool m_updateProcedureLibrary;
 
         wxColour
         m_vt_colors[16],
@@ -201,6 +202,8 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
 
         void UpdateSize();
         void UpdateColors();
+        void UpdateLibrary()
+            {m_updateProcedureLibrary = true;}
         //void UpdateSize(int &termheight, int &linesReceived);
         //void UpdateSize(wxSizeEvent &event);
 

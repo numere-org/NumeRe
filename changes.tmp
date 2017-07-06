@@ -7,3 +7,5 @@ Cleaned	"zeroes" und "extrema" koennen nun auch mit NaNs in Datensaetzen umgehen
 Added	Prozeduren werden nun auch in der Autovervollstaendigung angezeigt. Dabei wird der Namensraum der Prozedur beruecksichtigt.
 Added	Fuenf neue Matrixfuncktionen wurden hinzugefuegt
 Fixed	In Matrixausdruecken koennen nun temporaere Vektoren als Zielvariable verwendet werden.
+Added	Locale Caches sind nun in Prozeduren moeglich. Sie werden mit "tab CACHE()" generiert.
+New	Der Code der ausgefuehrten Prozeduren wird nun intern gespeichert, so dass eine schnellere, zweite Ausfuehrung der Prozeduren moeglich ist.

@@ -410,6 +410,12 @@
 		<Unit filename="kernel/core/plugins.hpp" />
 		<Unit filename="kernel/core/procedure.cpp" />
 		<Unit filename="kernel/core/procedure.hpp" />
+		<Unit filename="kernel/core/procedureelement.cpp" />
+		<Unit filename="kernel/core/procedureelement.hpp" />
+		<Unit filename="kernel/core/procedurelibrary.cpp" />
+		<Unit filename="kernel/core/procedurelibrary.hpp" />
+		<Unit filename="kernel/core/procedurevarfactory.cpp" />
+		<Unit filename="kernel/core/procedurevarfactory.hpp" />
 		<Unit filename="kernel/core/resampler.cpp" />
 		<Unit filename="kernel/core/resampler.h" />
 		<Unit filename="kernel/core/script.cpp" />
@@ -467,6 +473,15 @@
 				<Changes_Log show_changes_editor="0" app_title='NumeRe v %M.%m.%b &quot;%T&quot; rev. %r' changeslog_path="Release\ChangesLog.txt" />
 				<Code header_guard="VERSION_H" namespace="AutoVersion" prefix="" />
 			</AutoVersioning>
+			<DoxyBlocks>
+				<comment_style block="5" line="2" />
+				<doxyfile_project />
+				<doxyfile_build />
+				<doxyfile_warnings />
+				<doxyfile_output />
+				<doxyfile_dot />
+				<general />
+			</DoxyBlocks>
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>
