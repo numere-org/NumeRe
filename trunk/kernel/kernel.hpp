@@ -41,6 +41,7 @@
 #include "core/plugin.hpp"
 #include "core/language.hpp"
 #include "debugmessenger.hpp"
+#include "core/procedurelibrary.hpp"
 // --> PARSER-HEADER <--
 #include "core/ParserLib/muParser.h"
 
@@ -93,6 +94,7 @@ class NumeReKernel
         ofstream oLogFile;
         static size_t nScriptLine;
         static string sScriptFileName;
+        static ProcedureLibrary ProcLibrary;
         // return values indicating status:
         enum KernelStatus
         {

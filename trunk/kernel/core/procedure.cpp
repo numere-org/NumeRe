@@ -624,13 +624,6 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
 
     string sProcCommandLine = "";
     string sCmdCache = "";
-    //string** sVarMap = 0;
-    //string** sLocalVars = 0;
-    //string** sLocalStrings = 0;
-    //double* dLocalVars = 0;
-    //unsigned int nVarMapSize = 0;
-    //unsigned int nLocalVarMapSize = 0;
-    //unsigned int nLocalStrMapSize = 0;
     bool bBlockComment = false;
     bool bReadingFromInclude = false;
     int nIncludeType = 0;
@@ -642,21 +635,14 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
     nReturnType = 1;
     bReturnSignal = false;
     nthRecursion = nth_procedure;
-
-    ProcedureVarFactory _varfactory(this, &_parser, &_data, &_option, &_functions, &_out, &_pData, &_script, sProc, nth_procedure);
-
     bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
 
-    fProc_in.clear();
-    fProc_in.open(sCurrentProcedureName.c_str());
+    ProcedureElement* ProcElement;
+    pair<int,string> currentLine;
+    currentLine.first = -1;
 
-    if (fProc_in.fail())
-    {
-        fProc_in.close();
-        if (_option.getUseDebugger())
-            _option._debug.popStackItem();
-        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "$" + sProc + "(" + sVarList + ")", SyntaxError::invalid_position, sCurrentProcedureName);
-    }
+    ProcedureVarFactory _varfactory(this, &_parser, &_data, &_option, &_functions, &_out, &_pData, &_script, sProc, nth_procedure);
+    ProcElement = NumeReKernel::ProcLibrary.getProcedureContents(sCurrentProcedureName);
 
     // add spaces in front of and at the end of sVarList
     sVarList = " " + sVarList + " ";
@@ -699,189 +685,170 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
     if (sProc.find('\\') != string::npos)
         sProc = sProc.substr(sProc.rfind('\\')+1);
 
-    fProc_in.seekg(0);
-    while (!fProc_in.eof())
+    //fProc_in.seekg(0);
+    while (!ProcElement->isLastLine(nCurrentLine))
     {
-        if (!bReadingFromInclude)
-            getline(fProc_in, sProcCommandLine);
+        if (currentLine.first < 0)
+        {
+            currentLine = ProcElement->getFirstLine();
+            nCurrentLine = currentLine.first;
+            sProcCommandLine = currentLine.second;
+        }
         else
         {
-            bool bSkipNextLine = false;
-            bool bAppendNextLine = false;
-            while (!fInclude.eof())
+            if (!bReadingFromInclude)
             {
-                getline(fInclude, sProcCommandLine);
-                //cerr << sProcCommandLine << endl;
-                //nIncludeLine++;
-                StripSpaces(sProcCommandLine);
-                if (!sProcCommandLine.length())
-                    continue;
-                if (sProcCommandLine.substr(0,2) == "##")
-                    continue;
-                if (sProcCommandLine.substr(0,9) == "<install>"
-                    || (findCommand(sProcCommandLine).sString == "global" && sProcCommandLine.find("<install>") != string::npos))
-                {
-                    while (!fInclude.eof())
-                    {
-                        getline(fInclude, sProcCommandLine);
-                        //nIncludeLine++;
-                        StripSpaces(sProcCommandLine);
-                        if (sProcCommandLine.substr(0,12) == "<endinstall>"
-                            || (findCommand(sProcCommandLine).sString == "global" && sProcCommandLine.find("<endinstall>") != string::npos))
-                            break;
-                    }
-                    sProcCommandLine = "";
-                    continue;
-                }
-
-                if (sProcCommandLine.find("##") != string::npos)
-                    sProcCommandLine = sProcCommandLine.substr(0, sProcCommandLine.find("##"));
-
-                if (sProcCommandLine.substr(0,2) == "#*" && sProcCommandLine.find("*#",2) == string::npos)
-                {
-                    bBlockComment = true;
-                    sProcCommandLine = "";
-                    continue;
-                }
-                if (bBlockComment && sProcCommandLine.find("*#") != string::npos)
-                {
-                    bBlockComment = false;
-                    if (sProcCommandLine.find("*#") == sProcCommandLine.length()-2)
-                    {
-                        sProcCommandLine = "";
-                        continue;
-                    }
-                    else
-                        sProcCommandLine = sProcCommandLine.substr(sProcCommandLine.find("*#")+2);
-                }
-                else if (bBlockComment && sProcCommandLine.find("*#") == string::npos)
-                {
-                    sProcCommandLine = "";
-                    continue;
-                }
-                if (bSkipNextLine && sProcCommandLine.length() > 2 && sProcCommandLine.substr(sProcCommandLine.length()-2) == "\\\\")
-                {
-                    sProcCommandLine = "";
-                    continue;
-                }
-                else if (bSkipNextLine)
-                {
-                    bSkipNextLine = false;
-                    sProcCommandLine = "";
-                    continue;
-                }
-                if (findCommand(sProcCommandLine).sString != "define"
-                    && findCommand(sProcCommandLine).sString != "ifndef"
-                    && findCommand(sProcCommandLine).sString != "ifndefined"
-                    && findCommand(sProcCommandLine).sString != "redefine"
-                    && findCommand(sProcCommandLine).sString != "redef"
-                    && findCommand(sProcCommandLine).sString != "global"
-                    && !bAppendNextLine)
-                {
-                    if (sProcCommandLine.length() > 2 && sProcCommandLine.substr(sProcCommandLine.length()-2) == "\\\\")
-                        bSkipNextLine = true;
-                    sProcCommandLine = "";
-                    continue;
-                }
-                if (nIncludeType == 1
-                    && findCommand(sProcCommandLine).sString != "define"
-                    && findCommand(sProcCommandLine).sString != "ifndef"
-                    && findCommand(sProcCommandLine).sString != "ifndefined"
-                    && findCommand(sProcCommandLine).sString != "redefine"
-                    && findCommand(sProcCommandLine).sString != "redef"
-                    && !bAppendNextLine)
-                {
-                    if (sProcCommandLine.length() > 2 && sProcCommandLine.substr(sProcCommandLine.length()-2) == "\\\\")
-                        bSkipNextLine = true;
-                    sProcCommandLine = "";
-                    continue;
-                }
-                else if (nIncludeType == 2
-                    && findCommand(sProcCommandLine).sString != "global"
-                    && !bAppendNextLine)
-                {
-                    if (sProcCommandLine.length() > 2 && sProcCommandLine.substr(sProcCommandLine.length()-2) == "\\\\")
-                        bSkipNextLine = true;
-                    sProcCommandLine = "";
-                    continue;
-                }
-                if (sProcCommandLine.length() > 2 && sProcCommandLine.substr(sProcCommandLine.length()-2) == "\\\\")
-                    bAppendNextLine = true;
-                else
-                    bAppendNextLine = false;
-
-                if (sProcCommandLine.back() == ';')
-                {
-                    bProcSupressAnswer = true;
-                    //bSupressAnswer = true;
-                    sProcCommandLine.pop_back();
-                }
-
-                if (sProcCommandLine.find('$') != string::npos && sProcCommandLine.find('(', sProcCommandLine.find('$')) != string::npos)
-                {
-                    int nReturn = procedureInterface(sProcCommandLine, _parser, _functions, _data, _out, _pData, _script, _option, nth_procedure);
-                    if (nReturn == -1)
-                    {
-                        if (_option.getUseDebugger())
-                        {
-                            _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                        }
-                        throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sProcCommandLine, SyntaxError::invalid_position);
-                    }
-                    else if (nReturn == -2)
-                    {
-                        sProcCommandLine = "";
-                        bProcSupressAnswer = false;
-                        //bSupressAnswer = false;
-                        continue;
-                    }
-                }
-
-                ProcCalc(sProcCommandLine, _parser, _functions, _data, _option, _out, _pData, _script);
-                sProcCommandLine = "";
-                if (bProcSupressAnswer)
-                    bProcSupressAnswer = false;
-                /*if (bSupressAnswer)
-                    bSupressAnswer = false;*/
-            }
-
-            if (fInclude.eof())
-            {
-                fInclude.close();
-                //nIncludeLine = 0;
-                bReadingFromInclude = false;
-                nIncludeType = 0;
-            }
-        }
-        //cerr << sProcCommandLine << endl;
-
-        nCurrentLine++;
-
-        StripSpaces(sProcCommandLine);
-        if (!sProcCommandLine.length())
-            continue;
-        if (sProcCommandLine.substr(0,2) == "##")
-            continue;
-        if (sProcCommandLine.find("##") != string::npos)
-            sProcCommandLine = sProcCommandLine.substr(0, sProcCommandLine.find("##"));
-        if (sProcCommandLine.substr(0,2) == "#*" && sProcCommandLine.find("*#",2) == string::npos)
-        {
-            bBlockComment = true;
-            continue;
-        }
-        if (bBlockComment && sProcCommandLine.find("*#") != string::npos)
-        {
-            bBlockComment = false;
-            if (sProcCommandLine.find("*#") == sProcCommandLine.length()-2)
-            {
-                continue;
+                currentLine = ProcElement->getNextLine(currentLine.first);
+                nCurrentLine = currentLine.first;
+                sProcCommandLine = currentLine.second;
             }
             else
-                sProcCommandLine = sProcCommandLine.substr(sProcCommandLine.find("*#")+2);
-        }
-        else if (bBlockComment && sProcCommandLine.find("*#") == string::npos)
-        {
-            continue;
+            {
+                bool bSkipNextLine = false;
+                bool bAppendNextLine = false;
+                while (!fInclude.eof())
+                {
+                    getline(fInclude, sProcCommandLine);
+                    //cerr << sProcCommandLine << endl;
+                    //nIncludeLine++;
+                    StripSpaces(sProcCommandLine);
+                    if (!sProcCommandLine.length())
+                        continue;
+                    if (sProcCommandLine.substr(0,2) == "##")
+                        continue;
+                    if (sProcCommandLine.substr(0,9) == "<install>"
+                        || (findCommand(sProcCommandLine).sString == "global" && sProcCommandLine.find("<install>") != string::npos))
+                    {
+                        while (!fInclude.eof())
+                        {
+                            getline(fInclude, sProcCommandLine);
+                            //nIncludeLine++;
+                            StripSpaces(sProcCommandLine);
+                            if (sProcCommandLine.substr(0,12) == "<endinstall>"
+                                || (findCommand(sProcCommandLine).sString == "global" && sProcCommandLine.find("<endinstall>") != string::npos))
+                                break;
+                        }
+                        sProcCommandLine = "";
+                        continue;
+                    }
+
+                    if (sProcCommandLine.find("##") != string::npos)
+                        sProcCommandLine = sProcCommandLine.substr(0, sProcCommandLine.find("##"));
+
+                    if (sProcCommandLine.substr(0,2) == "#*" && sProcCommandLine.find("*#",2) == string::npos)
+                    {
+                        bBlockComment = true;
+                        sProcCommandLine = "";
+                        continue;
+                    }
+                    if (bBlockComment && sProcCommandLine.find("*#") != string::npos)
+                    {
+                        bBlockComment = false;
+                        if (sProcCommandLine.find("*#") == sProcCommandLine.length()-2)
+                        {
+                            sProcCommandLine = "";
+                            continue;
+                        }
+                        else
+                            sProcCommandLine = sProcCommandLine.substr(sProcCommandLine.find("*#")+2);
+                    }
+                    else if (bBlockComment && sProcCommandLine.find("*#") == string::npos)
+                    {
+                        sProcCommandLine = "";
+                        continue;
+                    }
+                    if (bSkipNextLine && sProcCommandLine.length() > 2 && sProcCommandLine.substr(sProcCommandLine.length()-2) == "\\\\")
+                    {
+                        sProcCommandLine = "";
+                        continue;
+                    }
+                    else if (bSkipNextLine)
+                    {
+                        bSkipNextLine = false;
+                        sProcCommandLine = "";
+                        continue;
+                    }
+                    if (findCommand(sProcCommandLine).sString != "define"
+                        && findCommand(sProcCommandLine).sString != "ifndef"
+                        && findCommand(sProcCommandLine).sString != "ifndefined"
+                        && findCommand(sProcCommandLine).sString != "redefine"
+                        && findCommand(sProcCommandLine).sString != "redef"
+                        && findCommand(sProcCommandLine).sString != "global"
+                        && !bAppendNextLine)
+                    {
+                        if (sProcCommandLine.length() > 2 && sProcCommandLine.substr(sProcCommandLine.length()-2) == "\\\\")
+                            bSkipNextLine = true;
+                        sProcCommandLine = "";
+                        continue;
+                    }
+                    if (nIncludeType == 1
+                        && findCommand(sProcCommandLine).sString != "define"
+                        && findCommand(sProcCommandLine).sString != "ifndef"
+                        && findCommand(sProcCommandLine).sString != "ifndefined"
+                        && findCommand(sProcCommandLine).sString != "redefine"
+                        && findCommand(sProcCommandLine).sString != "redef"
+                        && !bAppendNextLine)
+                    {
+                        if (sProcCommandLine.length() > 2 && sProcCommandLine.substr(sProcCommandLine.length()-2) == "\\\\")
+                            bSkipNextLine = true;
+                        sProcCommandLine = "";
+                        continue;
+                    }
+                    else if (nIncludeType == 2
+                        && findCommand(sProcCommandLine).sString != "global"
+                        && !bAppendNextLine)
+                    {
+                        if (sProcCommandLine.length() > 2 && sProcCommandLine.substr(sProcCommandLine.length()-2) == "\\\\")
+                            bSkipNextLine = true;
+                        sProcCommandLine = "";
+                        continue;
+                    }
+                    if (sProcCommandLine.length() > 2 && sProcCommandLine.substr(sProcCommandLine.length()-2) == "\\\\")
+                        bAppendNextLine = true;
+                    else
+                        bAppendNextLine = false;
+
+                    if (sProcCommandLine.back() == ';')
+                    {
+                        bProcSupressAnswer = true;
+                        //bSupressAnswer = true;
+                        sProcCommandLine.pop_back();
+                    }
+
+                    if (sProcCommandLine.find('$') != string::npos && sProcCommandLine.find('(', sProcCommandLine.find('$')) != string::npos)
+                    {
+                        int nReturn = procedureInterface(sProcCommandLine, _parser, _functions, _data, _out, _pData, _script, _option, nth_procedure);
+                        if (nReturn == -1)
+                        {
+                            if (_option.getUseDebugger())
+                            {
+                                _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
+                            }
+                            throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sProcCommandLine, SyntaxError::invalid_position);
+                        }
+                        else if (nReturn == -2)
+                        {
+                            sProcCommandLine = "";
+                            bProcSupressAnswer = false;
+                            //bSupressAnswer = false;
+                            continue;
+                        }
+                    }
+
+                    ProcCalc(sProcCommandLine, _parser, _functions, _data, _option, _out, _pData, _script);
+                    sProcCommandLine = "";
+                    if (bProcSupressAnswer)
+                        bProcSupressAnswer = false;
+                }
+
+                if (fInclude.eof())
+                {
+                    fInclude.close();
+                    //nIncludeLine = 0;
+                    bReadingFromInclude = false;
+                    nIncludeType = 0;
+                }
+            }
         }
         if (sProcCommandLine[0] != '@' && findCommand(sProcCommandLine).sString != "procedure")
             continue;
@@ -1003,7 +970,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             break;
         }
     }
-    if (fProc_in.eof())
+    if (ProcElement->isLastLine(currentLine.first))
     {
         sCallingNameSpace = "main";
         mVarMap.clear();
@@ -1012,7 +979,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
         throw SyntaxError(SyntaxError::PROCEDURE_NOT_FOUND, "", SyntaxError::invalid_position, sProc);
     }
     sProcCommandLine = "";
-    while (!fProc_in.eof())
+    while (!ProcElement->isLastLine(currentLine.first))
     {
         bProcSupressAnswer = false;
         //cerr << nFlags << endl;
@@ -1022,43 +989,11 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
         {
             if (!bReadingFromInclude)
             {
-                while (!sProcCommandLine.length() || sProcCommandLine.substr(0,2) == "##")
-                {
-                    getline(fProc_in, sProcCommandLine);
-                    //NumeReKernel::print(toString(NumeReKernel::_messenger.hasBreakpoints(sCurrentProcedureName)));
-                    //NumeReKernel::print(toString(NumeReKernel::_messenger.isBreakpoint(sCurrentProcedureName, nCurrentLine)));
-                    StripSpaces(sProcCommandLine);
-                    if (_option.getUseDebugger() && NumeReKernel::_messenger.isBreakpoint(sCurrentProcedureName, nCurrentLine) && sProcCommandLine.substr(0,2) != "|>")
-                        sProcCommandLine.insert(0, "|> ");
-                    nCurrentLine++;
-                    //cerr << sProcCommandLine << endl;
-
-                    if (!sProcCommandLine.length())
-                        continue;
-
-                    if (sProcCommandLine.substr(0,2) == "#*" && sProcCommandLine.find("*#",2) == string::npos)
-                    {
-                        bBlockComment = true;
-                        sProcCommandLine = "";
-                        continue;
-                    }
-                    if (bBlockComment && sProcCommandLine.find("*#") != string::npos)
-                    {
-                        bBlockComment = false;
-                        if (sProcCommandLine.find("*#") == sProcCommandLine.length()-2)
-                        {
-                            sProcCommandLine = "";
-                            continue;
-                        }
-                        else
-                            sProcCommandLine = sProcCommandLine.substr(sProcCommandLine.find("*#")+2);
-                    }
-                    else if (bBlockComment && sProcCommandLine.find("*#") == string::npos)
-                    {
-                        sProcCommandLine = "";
-                        continue;
-                    }
-                }
+                currentLine = ProcElement->getNextLine(currentLine.first);
+                nCurrentLine = currentLine.first;
+                sProcCommandLine = currentLine.second;
+                if (_option.getUseDebugger() && NumeReKernel::_messenger.isBreakpoint(sCurrentProcedureName, nCurrentLine) && sProcCommandLine.substr(0,2) != "|>")
+                    sProcCommandLine.insert(0, "|> ");
             }
             else
             {
@@ -1179,7 +1114,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                         {
                             if (_option.getUseDebugger())
                                 _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                            deleteVars(_parser, _data, bSupressAnswer_back, 0, 0, 0, 0, 0, 0, 0);
+                            resetProcedure(_parser, bSupressAnswer_back);
                             throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sProcCommandLine, SyntaxError::invalid_position);
                         }
 
@@ -1202,7 +1137,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                         }
                         catch (...)
                         {
-                            deleteVars(_parser, _data, bSupressAnswer_back, 0, 0, 0, 0, 0, 0, 0);
+                            resetProcedure(_parser, bSupressAnswer_back);
                             throw;
                         }
                     }
@@ -1215,7 +1150,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     {
                         if (_option.getUseDebugger())
                             _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                        deleteVars(_parser, _data, bSupressAnswer_back, 0, 0, 0, 0, 0, 0, 0);
+                        resetProcedure(_parser, bSupressAnswer_back);
                         throw;
                     }
 
@@ -1230,22 +1165,6 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     //nIncludeLine = 0;
                     bReadingFromInclude = false;
                     nIncludeType = 0;
-                }
-            }
-            if (sProcCommandLine.find("##") != string::npos)
-            {
-                sProcCommandLine = sProcCommandLine.substr(0,sProcCommandLine.find("##"));
-            }
-
-            while (sProcCommandLine.find("#*") != string::npos)
-            {
-                if (sProcCommandLine.find("*#", sProcCommandLine.find("#*")+2) != string::npos)
-                    sProcCommandLine = sProcCommandLine.substr(0,sProcCommandLine.find("#*")) + sProcCommandLine.substr(sProcCommandLine.find("*#", sProcCommandLine.find("#*")+2)+2);
-                else
-                {
-                    sProcCommandLine = sProcCommandLine.substr(0,sProcCommandLine.find("#*"));
-                    bBlockComment = true;
-                    break;
                 }
             }
             if (sProcCommandLine == "endprocedure")
@@ -1465,7 +1384,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 fInclude.close();
                 if (_option.getUseDebugger())
                     _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                deleteVars(_parser, _data, bSupressAnswer_back, 0, 0, 0, 0, 0, 0, 0);
+                resetProcedure(_parser, bSupressAnswer_back);
                 throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sProcCommandLine, SyntaxError::invalid_position, sIncludeFileName);
             }
             sProcCommandLine = "";
@@ -1484,7 +1403,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             {
                 if (_option.getUseDebugger())
                     _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                deleteVars(_parser, _data, bSupressAnswer_back, 0, 0, 0, 0, 0, 0, 0);
+                resetProcedure(_parser, bSupressAnswer_back);
                 throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sProcCommandLine, SyntaxError::invalid_position);
             }
         }
@@ -1495,7 +1414,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             {
                 if (_option.getUseDebugger())
                     _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                deleteVars(_parser, _data, bSupressAnswer_back, 0, 0, 0, 0, 0, 0, 0);
+                resetProcedure(_parser, bSupressAnswer_back);
 
                 throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sProcCommandLine, SyntaxError::invalid_position);
             }
@@ -1528,7 +1447,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 {
                     if (_option.getUseDebugger())
                         _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                    deleteVars(_parser, _data, bSupressAnswer_back, 0, 0, 0, 0, 0, 0, 0);
+                    resetProcedure(_parser, bSupressAnswer_back);
                     throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sProcCommandLine, nParPos);
                 }
                 nParPos += getMatchingParenthesis(sProcCommandLine.substr(nParPos));
@@ -1560,7 +1479,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     {
                         if (_option.getUseDebugger())
                             _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                        deleteVars(_parser, _data, bSupressAnswer_back, 0, 0, 0, 0, 0, 0, 0);
+                        resetProcedure(_parser, bSupressAnswer_back);
                         throw;
                     }
                     nReturnType = 1;
@@ -1584,7 +1503,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             {
                 if (_option.getUseDebugger())
                     _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                deleteVars(_parser, _data, bSupressAnswer_back, 0, 0, 0, 0, 0, 0, 0);
+                resetProcedure(_parser, bSupressAnswer_back);
                 throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sProcCommandLine, SyntaxError::invalid_position);
             }
 
@@ -1638,7 +1557,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
         {
             if (_option.getUseDebugger())
                 _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-            deleteVars(_parser, _data, bSupressAnswer_back, 0, 0, 0, 0, 0, 0, 0);
+            resetProcedure(_parser, bSupressAnswer_back);
             throw SyntaxError(SyntaxError::INSTALL_CMD_FOUND, sProcCommandLine, SyntaxError::invalid_position);
         }
         if (findCommand(sProcCommandLine).sString == "throw" && !getLoop())
@@ -1655,7 +1574,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             }
             if (_option.getUseDebugger())
                 _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-            deleteVars(_parser, _data, bSupressAnswer_back, 0, 0, 0, 0, 0, 0, 0);
+            resetProcedure(_parser, bSupressAnswer_back);
 
             throw SyntaxError(SyntaxError::PROCEDURE_THROW, sProcCommandLine, SyntaxError::invalid_position, sErrorToken);
         }
@@ -1685,7 +1604,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             {
                 if (_option.getUseDebugger())
                     _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                deleteVars(_parser, _data, bSupressAnswer_back, 0, 0, 0, 0, 0, 0, 0);
+                resetProcedure(_parser, bSupressAnswer_back);
                 throw;
             }
         }
@@ -1704,7 +1623,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             {
                 if (_option.getUseDebugger())
                     _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                deleteVars(_parser, _data, bSupressAnswer_back, 0, 0, 0, 0, 0, 0, 0);
+                resetProcedure(_parser, bSupressAnswer_back);
                 throw;
             }
         }
@@ -1714,7 +1633,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
     fProc_in.close();
 
     _option._debug.popStackItem();
-    deleteVars(_parser, _data, bSupressAnswer_back, 0, 0, 0, 0, 0, 0, 0);
+    resetProcedure(_parser, bSupressAnswer_back);
 
     if (nReturnType && !_ReturnVal.vNumVal.size() && !_ReturnVal.vStringVal.size())
         _ReturnVal.vNumVal.push_back(1.0);
@@ -2259,43 +2178,8 @@ void Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnval
     return;
 }
 
-void Procedure::deleteVars(Parser& _parser, Datafile& _data, bool bSupressAnswer, string** sLocalVars, unsigned int nLocalVarMapSize, double* dLocalVars, string** sLocalStrings, unsigned int nLocalStrMapSize, string** sVarMap, unsigned int nVarMapSize)
+void Procedure::resetProcedure(Parser& _parser, bool bSupressAnswer)
 {
-    if (sLocalVars && dLocalVars)
-    {
-        for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-        {
-            _parser.RemoveVar(sLocalVars[i][1]);
-        }
-    }
-    if (sLocalStrings)
-    {
-        for (unsigned int i = 0; i < nLocalStrMapSize; i++)
-        {
-            _data.removeStringVar(sLocalStrings[i][1]);
-            delete[] sLocalStrings[i];
-        }
-        delete[] sLocalStrings;
-    }
-    if (sVarMap)
-    {
-        for (unsigned int i = 0; i < nVarMapSize; i++)
-            delete[] sVarMap[i];
-        delete[] sVarMap;
-        sVarMap = 0;
-    }
-    if (sLocalVars)
-    {
-        for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-            delete[] sLocalVars[i];
-        delete[] sLocalVars;
-        sLocalVars = 0;
-    }
-    if (dLocalVars)
-    {
-        delete[] dLocalVars;
-        dLocalVars = 0;
-    }
     sCallingNameSpace = "main";
     sThisNameSpace = "";
     mVarMap.clear();
@@ -2314,3 +2198,4 @@ void Procedure::deleteVars(Parser& _parser, Datafile& _data, bool bSupressAnswer
     nStrSize = 0;
     return;
 }
+

@@ -1576,6 +1576,7 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
             }
         }
         CreateProcedureTree(vPaths[PROCPATH]);
+        m_terminal->UpdateLibrary();
     }
     else if (type == wxFSW_EVENT_MODIFY)
     {
@@ -1603,6 +1604,7 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
                 break;
             }
         }
+        m_terminal->UpdateLibrary();
     }
 }
 

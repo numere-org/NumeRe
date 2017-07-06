@@ -81,7 +81,7 @@ class Procedure : /*public FileSystem,*/ public Loop, public Plugin
         Returnvalue ProcCalc(string sLine, Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script);
         bool setProcName(const string& sProc, bool bInstallFileName = false);
         int procedureCmdInterface(string& sLine);
-        void deleteVars(Parser& _parser, Datafile& _data, bool bSupressAnswer, string** sLocalVars, unsigned int nLocalVarMapSize, double* dLocalVars, string** sLocalStrings, unsigned int nLocalStrMapSize, string** sVarMap, unsigned int nVarMapSize);
+        void resetProcedure(Parser& _parser, bool bSupressAnswer);
     public:
         Procedure();
         Procedure(const Procedure& _procedure);

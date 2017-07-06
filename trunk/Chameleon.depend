@@ -2012,7 +2012,7 @@
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\droptgt.h
 
-1496381735 d:\cpp\numere-source\trunk\gui\wxterm.h
+1499321768 d:\cpp\numere-source\trunk\gui\wxterm.h
 	<map>
 	"NumeReWindow.h"
 	"../common/Options.h"
@@ -2492,7 +2492,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1498932500 d:\cpp\numere-source\trunk\kernel\kernel.hpp
+1499277489 d:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	"core/error.hpp"
@@ -2513,6 +2513,7 @@
 	"core/plugin.hpp"
 	"core/language.hpp"
 	"debugmessenger.hpp"
+	"core/procedurelibrary.hpp"
 	"core/ParserLib/muParser.h"
 
 1490791551 d:\cpp\numere-source\trunk\kernel\core\output.hpp
@@ -2799,7 +2800,7 @@
 	"built-in.hpp"
 	"tools.hpp"
 
-1499154205 d:\cpp\numere-source\trunk\kernel\core\procedure.hpp
+1499323127 d:\cpp\numere-source\trunk\kernel\core\procedure.hpp
 	<iostream>
 	<string>
 	<cmath>
@@ -3191,7 +3192,7 @@
 	<string>
 	<vector>
 
-1498169587 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1499240405 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -3251,7 +3252,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1498991899 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1499322262 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3892,7 +3893,7 @@
 	"wxssh.h"
 	"../common/debug.h"
 
-1498991836 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
+1499322709 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -4068,7 +4069,7 @@
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1499238387 source:d:\cpp\numere-source\trunk\kernel\core\procedure.cpp
+1499322978 source:d:\cpp\numere-source\trunk\kernel\core\procedure.cpp
 	"procedure.hpp"
 	"../kernel.hpp"
 	"procedurevarfactory.hpp"
@@ -4128,7 +4129,7 @@
 	"debugmessenger.hpp"
 	"core/tools.hpp"
 
-1498932458 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1499278731 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 
@@ -4251,4 +4252,25 @@
 1499201163 source:d:\cpp\numere-source\trunk\kernel\core\procedurevarfactory.cpp
 	"procedurevarfactory.hpp"
 	"procedure.hpp"
+
+1499323053 source:d:\cpp\numere-source\trunk\kernel\core\procedurelibrary.cpp
+	"procedurelibrary.hpp"
+	"error.hpp"
+	"tools.hpp"
+
+1499276609 d:\cpp\numere-source\trunk\kernel\core\procedurelibrary.hpp
+	"procedureelement.hpp"
+	<string>
+	<fstream>
+	<map>
+	<vector>
+
+1499278073 d:\cpp\numere-source\trunk\kernel\core\procedureelement.hpp
+	<string>
+	<map>
+	<vector>
+
+1499278058 source:d:\cpp\numere-source\trunk\kernel\core\procedureelement.cpp
+	"procedureelement.hpp"
+	"tools.hpp"
 

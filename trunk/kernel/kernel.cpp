@@ -55,6 +55,7 @@ bool NumeReKernel::bGettingLine = false;
 bool NumeReKernel::bErrorNotification = false;
 size_t NumeReKernel::nScriptLine = 0;
 string NumeReKernel::sScriptFileName = "";
+ProcedureLibrary NumeReKernel::ProcLibrary;
 
 typedef BOOL (WINAPI *LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
 bool IsWow64()
