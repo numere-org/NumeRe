@@ -32,6 +32,7 @@
 #include <ctime>
 #include <vector>
 
+#include "structures.hpp"
 #include "error.hpp"
 #include "settings.hpp"
 #include "datafile.hpp"
@@ -39,33 +40,6 @@
 extern const string sVersion;
 extern int nLINE_LENGTH;
 using namespace std;
-
-struct Match
-{
-    string sString;
-    unsigned int nPos;
-};
-
-struct Line
-{
-    string sDesc;
-    string sStyle;
-    double dPos;
-};
-
-struct Axis
-{
-    string sLabel;
-    string sStyle;
-    double dMin;
-    double dMax;
-};
-
-struct Returnvalue
-{
-    vector<double> vNumVal;
-    vector<string> vStringVal;
-};
 
 // --> Macht aus einem Int ein String (mit Praezision) <--
 inline string toString (int nNumber, const Settings& _option)

@@ -520,6 +520,8 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
         return NUMERE_ERROR;
 
 
+    Indices _idx;
+
     int i_pos[2];               // Index-Variablen fuer die Speichervariable (Zeilen)
     string si_pos[2];           // String-Index-Variablen (Zeilen)
     int j_pos[2];               // siehe Oben (Spalten)
@@ -1274,8 +1276,23 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             // --> Wenn die Ergebnisse in den Cache geschrieben werden sollen, bestimme hier die entsprechenden Koordinaten <--
             if (bWriteToCache)
             {
-                //cerr << sCache << endl;
+                // Get the indices from the corresponding function
+                _idx = parser_getIndices(sCache, _parser, _data, _option);
+
+                if (_idx.nI[0] == -1 && _idx.nJ[0] == -1 && !_idx.vI.size() && !_idx.vJ.size())
+                    throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "");
+                if ((_idx.nI[1] == -2 && _idx.nJ[1] == -2))
+                    throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
+
+                if (_idx.nI[1] == -1)
+                    _idx.nI[1] = _idx.nI[0]+1;
+                if (_idx.nJ[1] == -1)
+                    _idx.nJ[1] = _idx.nJ[0]+1;
+                sCache.erase(sCache.find('('));
                 StripSpaces(sCache);
+
+                //cerr << sCache << endl;
+                /*StripSpaces(sCache);
                 while (sCache[0] == '(')
                     sCache.erase(0,1);
                 si_pos[0] = sCache.substr(sCache.find('('));
@@ -1379,7 +1396,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                         sj_pos[1] = "inf";
                     else
                         j_pos[1] = j_pos[0];
-                }
+                }*/
             }
 
             // --> Ausdruck an den Parser uebergeben und einmal auswerten <--
@@ -1410,7 +1427,58 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 }
                 if (bWriteToCache)
                 {
-                    if (bMultLinCol[0] || bMultLinCol[1])
+                    if (_idx.vI.size())
+                    {
+                        while (_idx.nI[1] == -2 && _idx.vI.size() < nNum)
+                        {
+                            _idx.vI.push_back(_idx.vI.back()+1);
+                        }
+                        while (_idx.nJ[1] == -2 && _idx.vJ.size() < nNum)
+                        {
+                            _idx.vJ.push_back(_idx.vJ.back()+1);
+                        }
+                        for (size_t i = 0; i < _idx.vI.size(); i++)
+                        {
+                            for (size_t j = 0; j < _idx.vJ.size(); j++)
+                            {
+                                if (_idx.vI.size() > _idx.vJ.size())
+                                {
+                                    if (nNum > i)
+                                        _data.writeToCache(_idx.vI[i], _idx.vJ[j], sCache, v[i]);
+                                }
+                                else
+                                {
+                                    if (nNum > j)
+                                        _data.writeToCache(_idx.vI[i], _idx.vJ[j], sCache, v[j]);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (_idx.nI[1] == -2)
+                            _idx.nI[1] = _idx.nI[0] + nNum;
+                        if (_idx.nJ[1] == -2)
+                            _idx.nJ[1] = _idx.nJ[0] + nNum;
+
+                        for (int i = _idx.nI[0]; i < _idx.nI[1]; i++)
+                        {
+                            for (int j = _idx.nJ[0]; j < _idx.nJ[1]; j++)
+                            {
+                                if (_idx.nI[1]-_idx.nI[0] > _idx.nJ[1]-_idx.nJ[0])
+                                {
+                                    if (nNum > i-_idx.nI[0])
+                                        _data.writeToCache(i, j, sCache, v[i-_idx.nI[0]]);
+                                }
+                                else
+                                {
+                                    if (nNum > j-_idx.nJ[0])
+                                        _data.writeToCache(i, j, sCache, v[j-_idx.nJ[0]]);
+                                }
+                            }
+                        }
+                    }
+                    /*if (bMultLinCol[0] || bMultLinCol[1])
                     {
                         if (si_pos[1] == "inf")
                             i_pos[1] = i_pos[0] + nNum;
@@ -1440,7 +1508,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                             if (!_data.writeToCache(i, j_pos[0], sCache.substr(0,sCache.find('(')), (double)v[i-i_pos[0]]))
                                 break;
                         }
-                    }
+                    }*/
                 }
             }
             else
