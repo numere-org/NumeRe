@@ -141,7 +141,7 @@ class Cache : public FileSystem
             }
 		bool writeToCache(long long int _Line, long long int _nCol, long long int _nLayer, double _dData);	// Methode, um ein Element zu schreiben
 		bool writeToCache(long long int _Line, long long int _nCol, const string& _sCache, double _dData);	// Methode, um ein Element zu schreiben
-		bool writeToCache(Indices& _idx, const string& _sCache, double* _dData, int _nNum);	// Methode, um ein Element zu schreiben
+		bool writeToCache(Indices& _idx, const string& _sCache, double* _dData, unsigned int _nNum);	// Methode, um ein Element zu schreiben
 		long long int getCacheLines(long long int _nLayer, bool _bFull = false) const;                 // gibt nLines zurueck
 		long long int getCacheLines(const string& _sCache, bool _bFull = false) const;                 // gibt nLines zurueck
 		long long int getCacheCols(long long int _nLayer, bool _bFull) const;			             // gibt nCols zurueck
