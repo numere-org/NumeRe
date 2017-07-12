@@ -81,22 +81,16 @@ Procedure::~Procedure()
 Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script)
 {
     string sCache = "";
-    string si_pos[2];
-    string sj_pos[2];
 
-    //static string sVarName = "";
-    //static double* dVarAdress = 0;
+    Indices _idx;
+
 
     if (!_parser.ActiveLoopMode() || (!_parser.IsLockedPause() && !(nFlags & FLAG_INLINE)))
         _parser.ClearVectorVars(true);
-    bool bMultLinCol[2] = {false, false};
-    int i_pos[2];
-    int j_pos[2];
-    //bool bFault = false;
+
     bool bWriteToCache = false;
     Returnvalue thisReturnVal;
-    //thisReturnVal.dNumVal = NAN;
-    //thisReturnVal.sStringVal = "";
+
     int nNum = 0;
     value_type* v = 0;
 
@@ -110,13 +104,6 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
     // --> Erneuere den Fenstertitel der Konsole <--
     SetConsTitle(_data, _option, _script.getScriptFileNameShort());
 
-    // --> Wenn gerade ein Script aktiv ist, lese dessen naechste Zeile, sonst nehme eine Zeile von std::cin <--
-    /*if (_script.isValid() && _script.isOpen())
-        sLine = _script.getNextScriptCommand();
-    else
-    {
-        std::getline(std::cin, sLine);
-    }*/
     // --> Leerzeichen und Tabulatoren entfernen <--
     StripSpaces(sLine);
     //cerr << sLine << endl;
@@ -382,103 +369,20 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
     // --> Wenn die Ergebnisse in den Cache geschrieben werden sollen, bestimme hier die entsprechenden Koordinaten <--
     if (bWriteToCache)
     {
+        // Get the indices from the corresponding function
+        _idx = parser_getIndices(sCache, _parser, _data, _option);
+
+        if (_idx.nI[0] == -1 && _idx.nJ[0] == -1 && !_idx.vI.size() && !_idx.vJ.size())
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "");
+        if ((_idx.nI[1] == -2 && _idx.nJ[1] == -2))
+            throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
+
+        if (_idx.nI[1] == -1)
+            _idx.nI[1] = _idx.nI[0];
+        if (_idx.nJ[1] == -1)
+            _idx.nJ[1] = _idx.nJ[0];
+        sCache.erase(sCache.find('('));
         StripSpaces(sCache);
-        while (sCache[0] == '(')
-            sCache.erase(0,1);
-        si_pos[0] = sCache.substr(sCache.find('('));
-        parser_SplitArgs(si_pos[0], sj_pos[0], ',', _option);
-
-        if (si_pos[0].find(':') == string::npos && sj_pos[0].find(':') == string::npos)
-        {
-            StripSpaces(si_pos[0]);
-            StripSpaces(sj_pos[0]);
-            if (!si_pos[0].length() || !sj_pos[0].length())
-            {
-                thisReturnVal.vNumVal.push_back(NAN);
-                return thisReturnVal;
-            }
-            _parser.SetExpr(si_pos[0] + "," + sj_pos[0]);
-            _parser.Eval();
-            value_type* v = 0;
-            int nResults = _parser.GetNumResults();
-            v = _parser.Eval(nResults);
-            i_pos[0] = (int)v[0]-1;
-            if (i_pos[0] < 0)
-                i_pos[0] = 0;
-            i_pos[1] = i_pos[0];
-            j_pos[0] = (int)v[1]-1;
-            if (j_pos[0] < 0)
-                j_pos[0] = 0;
-            j_pos[1] = j_pos[0];
-        }
-        else
-        {
-            if (si_pos[0].find(":") != string::npos)
-            {
-                si_pos[1] = si_pos[0].substr(si_pos[0].find(":")+1);
-                si_pos[0] = si_pos[0].substr(0, si_pos[0].find(":"));
-                bMultLinCol[0] = true;
-            }
-            if (sj_pos[0].find(":") != string::npos)
-            {
-                sj_pos[1] = sj_pos[0].substr(sj_pos[0].find(":")+1);
-                sj_pos[0] = sj_pos[0].substr(0, sj_pos[0].find(":"));
-                bMultLinCol[1] = true;
-            }
-            if (bMultLinCol[0] && bMultLinCol[1])
-            {
-                thisReturnVal.vNumVal.push_back(NAN);
-                throw SyntaxError(SyntaxError::NO_MATRIX, sCache, SyntaxError::invalid_position);
-                //return thisReturnVal;
-            }
-            if (parser_ExprNotEmpty(si_pos[0]))
-            {
-                _parser.SetExpr(si_pos[0]);
-                i_pos[0] = (int)_parser.Eval();
-                i_pos[0]--;
-            }
-            else
-                i_pos[0] = 0;
-
-            if (i_pos[0] < 0)
-                i_pos[0] = 0;
-
-            if (parser_ExprNotEmpty(sj_pos[0]))
-            {
-                _parser.SetExpr(sj_pos[0]);
-                j_pos[0] = (int)_parser.Eval();
-                j_pos[0]--;
-            }
-            else
-                j_pos[0] = 0;
-
-            if (j_pos[0] < 0)
-                j_pos[0] = 0;
-
-            if (parser_ExprNotEmpty(si_pos[1]) && bMultLinCol[0])
-            {
-                _parser.SetExpr(si_pos[1]);
-                i_pos[1] = (int)_parser.Eval();
-                i_pos[1]--;
-                parser_CheckIndices(i_pos[0], i_pos[1]);
-            }
-            else if (bMultLinCol[0])
-                si_pos[1] = "inf";
-            else
-                i_pos[1] = i_pos[0];
-
-            if (parser_ExprNotEmpty(sj_pos[1]) && bMultLinCol[1])
-            {
-                _parser.SetExpr(sj_pos[1]);
-                j_pos[1] = (int)_parser.Eval();
-                j_pos[1]--;
-                parser_CheckIndices(j_pos[0], j_pos[1]);
-            }
-            else if (bMultLinCol[1])
-                sj_pos[1] = "inf";
-            else
-                j_pos[1] = j_pos[0];
-        }
     }
 
     // --> Ausdruck an den Parser uebergeben und einmal auswerten <--
@@ -509,57 +413,16 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
             NumeReKernel::toggleTableStatus();
             NumeReKernel::printPreFmt("}\n");
         }
-        if (bWriteToCache)
-        {
-            if (bMultLinCol[0] || bMultLinCol[1])
-            {
-                if (si_pos[1] == "inf")
-                    i_pos[1] = i_pos[0] + nNum;
-                if (sj_pos[1] == "inf")
-                    j_pos[1] = j_pos[1] + nNum;
-                for (int i = i_pos[0]; i <= i_pos[1]; i++)
-                {
-                    for (int j = j_pos[0]; j <= j_pos[1]; j++)
-                    {
-                        if ((i - i_pos[0] == nNum && i_pos[0] != i_pos[1]) || (j - j_pos[0] == nNum && j_pos[0] != j_pos[1]))
-                            break;
-                        if (i_pos[0] != i_pos[1])
-                        {
-                            if (!_data.writeToCache(i,j,sCache.substr(0,sCache.find('(')), (double)v[i-i_pos[0]]))
-                                break;
-                        }
-                        else if (!_data.writeToCache(i,j,sCache.substr(0,sCache.find('(')),(double)v[j-j_pos[0]]))
-                            break;
-                    }
-                }
-            }
-            else
-            {
-                NumeReKernel::print("Ergebnisse wurden in Spalte "+ toString(j_pos[0]+1) + " ab Element " + toString(i_pos[0]+1) + " geschrieben!");
-                for (int i = i_pos[0]; i < i_pos[0] + nNum; i++)
-                {
-                    if (!_data.writeToCache(i, j_pos[0],sCache.substr(0,sCache.find('(')), (double)v[i-i_pos[0]]))
-                        break;
-                }
-            }
-        }
     }
     else
     {
         thisReturnVal.vNumVal.push_back(v[0]);
-        /*if (isinf(vAns))
-        {
-            cerr << "INF catch!" << endl;
-        }*/
-        if (bWriteToCache)
-        {
-            if (_option.getbDebug())
-                mu::console() << _nrT("|-> DEBUG: i_pos = ") << i_pos[0] <<  _nrT(", j_pos = ") << j_pos[0] << endl;
-            _data.writeToCache(i_pos[0], j_pos[0],sCache.substr(0,sCache.find('(')), thisReturnVal.vNumVal[0]);
-        }
+
         if (!bProcSupressAnswer)
             NumeReKernel::print("ans = " + toString(thisReturnVal.vNumVal[0], _option));
     }
+    if (bWriteToCache)
+        _data.writeToCache(_idx, sCache, v, nNum);
     if (!_parser.ActiveLoopMode() || (!_parser.IsLockedPause() && !(nFlags & FLAG_INLINE)))
         _parser.ClearVectorVars(true);
     return thisReturnVal;

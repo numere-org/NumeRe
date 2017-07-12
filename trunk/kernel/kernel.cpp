@@ -522,13 +522,8 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 
     Indices _idx;
 
-    int i_pos[2];               // Index-Variablen fuer die Speichervariable (Zeilen)
-    string si_pos[2];           // String-Index-Variablen (Zeilen)
-    int j_pos[2];               // siehe Oben (Spalten)
-    string sj_pos[2];           // siehe Oben (Spalten)
     bool bWriteToCache = false; // TRUE, wenn das/die errechneten Ergebnisse in den Cache geschrieben werden sollen
-    bool bMultLinCol[2] = {false, false};        // TRUE, wenn es sich nicht um ein einzelnes Element, sondern einen ganzen
-                                // Zeilen-/Spalten-Bereich handelt
+
     string sLine_Temp = "";     // Temporaerer String fuer die Eingabe
     string sCache = "";         // Zwischenspeicher fuer die Cache-Koordinaten
     string sKeep = "";          // Zwei '\' am Ende einer Zeile ermoeglichen es, dass die Eingabe auf mehrere Zeilen verteilt wird.
@@ -577,15 +572,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
         bSupressAnswer = false;
         bWriteToCache = false;
         sCache = "";
-        // --> Bei jedem Schleifendurchlauf muessen die benoetigten Variablen zurueckgesetzt werden <--
-        for (int i = 0; i < 2; i++)
-        {
-            i_pos[i] = -1;
-            j_pos[i] = -1;
-            si_pos[i] = "";
-            sj_pos[i] = "";
-            bMultLinCol[i] = false;
-        }
+
         if (_parser.mVarMapPntr)
             _parser.mVarMapPntr = 0;
         //print("DEBUG: "+sLine);
@@ -1285,118 +1272,11 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
 
                 if (_idx.nI[1] == -1)
-                    _idx.nI[1] = _idx.nI[0]+1;
+                    _idx.nI[1] = _idx.nI[0];
                 if (_idx.nJ[1] == -1)
-                    _idx.nJ[1] = _idx.nJ[0]+1;
+                    _idx.nJ[1] = _idx.nJ[0];
                 sCache.erase(sCache.find('('));
                 StripSpaces(sCache);
-
-                //cerr << sCache << endl;
-                /*StripSpaces(sCache);
-                while (sCache[0] == '(')
-                    sCache.erase(0,1);
-                si_pos[0] = sCache.substr(sCache.find('('));
-                parser_SplitArgs(si_pos[0], sj_pos[0], ',', _option);
-
-                //cerr << si_pos[0] << " " << sj_pos[0] << endl;
-
-                if (si_pos[0].find("data(") != string::npos || _data.containsCacheElements(si_pos[0]))
-                    parser_GetDataElement(si_pos[0], _parser, _data, _option);
-                if (sj_pos[0].find("data(") != string::npos || _data.containsCacheElements(sj_pos[0]))
-                    parser_GetDataElement(sj_pos[0], _parser, _data, _option);
-
-                bWriteToCache = true;
-
-                //cerr << si_pos[0] << " " << sj_pos[0] << endl;
-
-                if (si_pos[0].find(':') == string::npos && sj_pos[0].find(':') == string::npos)
-                {
-                    StripSpaces(si_pos[0]);
-                    StripSpaces(sj_pos[0]);
-                    if (!si_pos[0].length() || !sj_pos[0].length())
-                    {
-                        continue;
-                    }
-                    _parser.SetExpr(si_pos[0] + "," + sj_pos[0]);
-                    _parser.Eval();
-                    value_type* v = 0;
-                    int nResults = _parser.GetNumResults();
-                    v = _parser.Eval(nResults);
-                    i_pos[0] = (int)v[0]-1;
-                    if (i_pos[0] < 0)
-                        i_pos[0] = 0;
-                    i_pos[1] = i_pos[0];
-                    j_pos[0] = (int)v[1]-1;
-                    if (j_pos[0] < 0)
-                        j_pos[0] = 0;
-                    j_pos[1] = j_pos[0];
-                }
-                else
-                {
-                    if (si_pos[0].find(":") != string::npos)
-                    {
-                        si_pos[1] = si_pos[0].substr(si_pos[0].find(":")+1);
-                        si_pos[0] = si_pos[0].substr(0, si_pos[0].find(":"));
-                        bMultLinCol[0] = true;
-                    }
-                    if (sj_pos[0].find(":") != string::npos)
-                    {
-                        sj_pos[1] = sj_pos[0].substr(sj_pos[0].find(":")+1);
-                        sj_pos[0] = sj_pos[0].substr(0, sj_pos[0].find(":"));
-                        bMultLinCol[1] = true;
-                    }
-                    if (bMultLinCol[0] && bMultLinCol[1])
-                    {
-                        throw SyntaxError(SyntaxError::NO_MATRIX, sCache, SyntaxError::invalid_position);
-                    }
-                    if (parser_ExprNotEmpty(si_pos[0]))
-                    {
-                        _parser.SetExpr(si_pos[0]);
-                        i_pos[0] = (int)_parser.Eval();
-                        i_pos[0]--;
-                    }
-                    else
-                        i_pos[0] = 0;
-
-                    if (i_pos[0] < 0)
-                        i_pos[0] = 0;
-
-                    if (parser_ExprNotEmpty(sj_pos[0]))
-                    {
-                        _parser.SetExpr(sj_pos[0]);
-                        j_pos[0] = (int)_parser.Eval();
-                        j_pos[0]--;
-                    }
-                    else
-                        j_pos[0] = 0;
-
-                    if (j_pos[0] < 0)
-                        j_pos[0] = 0;
-
-                    if (parser_ExprNotEmpty(si_pos[1]) && bMultLinCol[0])
-                    {
-                        _parser.SetExpr(si_pos[1]);
-                        i_pos[1] = (int)_parser.Eval();
-                        i_pos[1]--;
-                        parser_CheckIndices(i_pos[0], i_pos[1]);
-                    }
-                    else if (bMultLinCol[0])
-                        si_pos[1] = "inf";
-                    else
-                        i_pos[1] = i_pos[0];
-
-                    if (parser_ExprNotEmpty(sj_pos[1]) && bMultLinCol[1])
-                    {
-                        _parser.SetExpr(sj_pos[1]);
-                        j_pos[1] = (int)_parser.Eval();
-                        j_pos[1]--;
-                        parser_CheckIndices(j_pos[0], j_pos[1]);
-                    }
-                    else if (bMultLinCol[1])
-                        sj_pos[1] = "inf";
-                    else
-                        j_pos[1] = j_pos[0];
-                }*/
             }
 
             // --> Ausdruck an den Parser uebergeben und einmal auswerten <--
@@ -1425,102 +1305,15 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     sAns += "}";
                     printResult(sAns, sCmdCache, _script.isValid() && _script.isOpen());
                 }
-                if (bWriteToCache)
-                {
-                    if (_idx.vI.size())
-                    {
-                        while (_idx.nI[1] == -2 && _idx.vI.size() < nNum)
-                        {
-                            _idx.vI.push_back(_idx.vI.back()+1);
-                        }
-                        while (_idx.nJ[1] == -2 && _idx.vJ.size() < nNum)
-                        {
-                            _idx.vJ.push_back(_idx.vJ.back()+1);
-                        }
-                        for (size_t i = 0; i < _idx.vI.size(); i++)
-                        {
-                            for (size_t j = 0; j < _idx.vJ.size(); j++)
-                            {
-                                if (_idx.vI.size() > _idx.vJ.size())
-                                {
-                                    if (nNum > i)
-                                        _data.writeToCache(_idx.vI[i], _idx.vJ[j], sCache, v[i]);
-                                }
-                                else
-                                {
-                                    if (nNum > j)
-                                        _data.writeToCache(_idx.vI[i], _idx.vJ[j], sCache, v[j]);
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (_idx.nI[1] == -2)
-                            _idx.nI[1] = _idx.nI[0] + nNum;
-                        if (_idx.nJ[1] == -2)
-                            _idx.nJ[1] = _idx.nJ[0] + nNum;
-
-                        for (int i = _idx.nI[0]; i < _idx.nI[1]; i++)
-                        {
-                            for (int j = _idx.nJ[0]; j < _idx.nJ[1]; j++)
-                            {
-                                if (_idx.nI[1]-_idx.nI[0] > _idx.nJ[1]-_idx.nJ[0])
-                                {
-                                    if (nNum > i-_idx.nI[0])
-                                        _data.writeToCache(i, j, sCache, v[i-_idx.nI[0]]);
-                                }
-                                else
-                                {
-                                    if (nNum > j-_idx.nJ[0])
-                                        _data.writeToCache(i, j, sCache, v[j-_idx.nJ[0]]);
-                                }
-                            }
-                        }
-                    }
-                    /*if (bMultLinCol[0] || bMultLinCol[1])
-                    {
-                        if (si_pos[1] == "inf")
-                            i_pos[1] = i_pos[0] + nNum;
-                        if (sj_pos[1] == "inf")
-                            j_pos[1] = j_pos[1] + nNum;
-                        for (int i = i_pos[0]; i <= i_pos[1]; i++)
-                        {
-                            for (int j = j_pos[0]; j <= j_pos[1]; j++)
-                            {
-                                if ((i - i_pos[0] == nNum && i_pos[0] != i_pos[1]) || (j - j_pos[0] == nNum && j_pos[0] != j_pos[1]))
-                                    break;
-                                if (i_pos[0] != i_pos[1])
-                                {
-                                    if (!_data.writeToCache(i,j,sCache.substr(0,sCache.find('(')), (double)v[i-i_pos[0]]))
-                                        break;
-                                }
-                                else if (!_data.writeToCache(i,j,sCache.substr(0,sCache.find('(')), (double)v[j-j_pos[0]]))
-                                    break;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        print(LineBreak(_lang.get("PARSER_RESULTSLOCATEDAT", toString(j_pos[0]+1), toString(i_pos[0]+1)), _option));
-                        for (int i = i_pos[0]; i < i_pos[0] + nNum; i++)
-                        {
-                            if (!_data.writeToCache(i, j_pos[0], sCache.substr(0,sCache.find('(')), (double)v[i-i_pos[0]]))
-                                break;
-                        }
-                    }*/
-                }
             }
             else
             {
                 vAns = v[0];
-                if (bWriteToCache)
-                {
-                    _data.writeToCache(i_pos[0], j_pos[0], sCache.substr(0,sCache.find('(')), (double)vAns);
-                }
                 if (!bSupressAnswer)
                     printResult("ans = "+ toString(vAns, _option), sCmdCache, _script.isOpen() && _script.isValid());
             }
+            if (bWriteToCache)
+                _data.writeToCache(_idx, sCache, v, nNum);
         }
         catch (mu::Parser::exception_type &e)
         {

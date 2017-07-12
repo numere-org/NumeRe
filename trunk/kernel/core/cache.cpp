@@ -189,22 +189,6 @@ bool Cache::AllocateCache(long long int _nNLines, long long int _nNCols, long lo
                 }
             }
         }
-        /*bool*** bNewValidElement = new bool**[_nNLines];
-        for (long long int i = 0; i < _nNLines; i++)
-        {
-            bNewValidElement[i] = new bool*[_nNCols];
-            for (long long int j = 0; j < _nNCols; j++)
-            {
-                bNewValidElement[i][j] = new bool[_nNLayers];
-                for (long long int k = 0; k < _nNLayers; k++)
-                {
-                    if (i < nLines && j < nCols && k < nCaches)
-                        bNewValidElement[i][j][k] = bValidElement[i][j][k];
-                    else
-                        bNewValidElement[i][j][k] = false;
-                }
-            }
-        }*/
 
         for (long long int i = 0; i < nLines; i++)
         {
@@ -620,7 +604,7 @@ bool Cache::writeToCache(long long int _nLine, long long int _nCol, long long in
 
 
 // --> Schreibt einen Wert an beliebiger Stelle in den Cache <--
-bool Cache::writeToCache(Indices& _idx, const string& _sCache, double* _dData, int _nNum)
+bool Cache::writeToCache(Indices& _idx, const string& _sCache, double* _dData, unsigned int _nNum)
 {
     long long int _nLayer = mCachesMap.at(_sCache);
 
@@ -658,9 +642,9 @@ bool Cache::writeToCache(Indices& _idx, const string& _sCache, double* _dData, i
         if (_idx.nJ[1] == -2)
             _idx.nJ[1] = _idx.nJ[0] + _nNum;
 
-        for (int i = _idx.nI[0]; i < _idx.nI[1]; i++)
+        for (int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
         {
-            for (int j = _idx.nJ[0]; j < _idx.nJ[1]; j++)
+            for (int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
             {
                 if (_idx.nI[1]-_idx.nI[0] > _idx.nJ[1]-_idx.nJ[0])
                 {

@@ -2795,13 +2795,10 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
 {
     string sLine_Temp = sLine;
     string sCache = "";
-    string si_pos[2];
-    string sj_pos[2];
     value_type* v = 0;
     int nNum = 0;
 
-//    static string sVarName = "";
-//    static double* dVarAdress = 0;
+    Indices _idx;
 
     //cerr << sLine << endl;
     if (!bFunctionsReplaced
@@ -2818,9 +2815,6 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
             throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
         }
     }
-    bool bMultLinCol[2] = {false, false};
-    int i_pos[2];
-    int j_pos[2];
     int nProcedureCmd = 0;
     bool bWriteToCache = false;
     if (sLine.substr(sLine.find_first_not_of(' '),2) == "|>")
@@ -3210,109 +3204,21 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
     {
         if (!bLockedPauseMode && bUseLoopParsingMode)
             _parser.PauseLoopMode();
-        //cerr << bWriteToCache << endl;
+
+        _idx = parser_getIndices(sCache, _parser, _data, _option);
+
+        if (_idx.nI[0] == -1 && _idx.nJ[0] == -1 && !_idx.vI.size() && !_idx.vJ.size())
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "");
+        if ((_idx.nI[1] == -2 && _idx.nJ[1] == -2))
+            throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
+
+        if (_idx.nI[1] == -1)
+            _idx.nI[1] = _idx.nI[0];
+        if (_idx.nJ[1] == -1)
+            _idx.nJ[1] = _idx.nJ[0];
+        sCache.erase(sCache.find('('));
         StripSpaces(sCache);
-        while (sCache[0] == '(')
-            sCache.erase(0,1);
-        si_pos[0] = sCache.substr(sCache.find('('));
-        parser_SplitArgs(si_pos[0], sj_pos[0], ',', _option);
 
-        if (si_pos[0].find(':') == string::npos && sj_pos[0].find(':') == string::npos)
-        {
-            StripSpaces(si_pos[0]);
-            StripSpaces(sj_pos[0]);
-            if (!si_pos[0].length() || !sj_pos[0].length())
-            {
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position, sCache);
-            }
-            _parser.SetExpr(si_pos[0] + "," + sj_pos[0]);
-            _parser.Eval();
-            value_type* v = 0;
-            int nResults = _parser.GetNumResults();
-            v = _parser.Eval(nResults);
-            i_pos[0] = (int)v[0]-1;
-            if (i_pos[0] < 0)
-                i_pos[0] = 0;
-            i_pos[1] = i_pos[0];
-            j_pos[0] = (int)v[1]-1;
-            if (j_pos[0] < 0)
-                j_pos[0] = 0;
-            j_pos[1] = j_pos[0];
-        }
-        else
-        {
-            if (si_pos[0].find(":") != string::npos)
-            {
-                si_pos[1] = si_pos[0].substr(si_pos[0].find(":")+1);
-                si_pos[0] = si_pos[0].substr(0, si_pos[0].find(":"));
-                bMultLinCol[0] = true;
-            }
-            if (sj_pos[0].find(":") != string::npos)
-            {
-                sj_pos[1] = sj_pos[0].substr(sj_pos[0].find(":")+1);
-                sj_pos[0] = sj_pos[0].substr(0, sj_pos[0].find(":"));
-                bMultLinCol[1] = true;
-            }
-            if (bMultLinCol[0] && bMultLinCol[1])
-            {
-                throw SyntaxError(SyntaxError::NO_MATRIX, sLine, SyntaxError::invalid_position, sCache);
-            }
-            if (parser_ExprNotEmpty(si_pos[0]))
-            {
-                _parser.SetExpr(si_pos[0]);
-                i_pos[0] = (int)_parser.Eval();
-                i_pos[0]--;
-            }
-            else
-                i_pos[0] = 0;
-
-            if (i_pos[0] < 0)
-                i_pos[0] = 0;
-
-            if (parser_ExprNotEmpty(sj_pos[0]))
-            {
-                _parser.SetExpr(sj_pos[0]);
-                j_pos[0] = (int)_parser.Eval();
-                j_pos[0]--;
-            }
-            else
-                j_pos[0] = 0;
-
-            if (j_pos[0] < 0)
-                j_pos[0] = 0;
-
-            if (parser_ExprNotEmpty(si_pos[1]) && bMultLinCol[0])
-            {
-                _parser.SetExpr(si_pos[1]);
-                i_pos[1] = (int)_parser.Eval();
-                i_pos[1]--;
-                parser_CheckIndices(i_pos[0], i_pos[1]);
-            }
-            else if (bMultLinCol[0])
-                si_pos[1] = "inf";
-            else
-                i_pos[1] = i_pos[0];
-
-            if (parser_ExprNotEmpty(sj_pos[1]) && bMultLinCol[1])
-            {
-                _parser.SetExpr(sj_pos[1]);
-                j_pos[1] = (int)_parser.Eval();
-                j_pos[1]--;
-                parser_CheckIndices(j_pos[0], j_pos[1]);
-            }
-            else if (bMultLinCol[1])
-                sj_pos[1] = "inf";
-            else
-                j_pos[1] = j_pos[0];
-        }
-        /*cerr << i_pos[0] << " "
-             << i_pos[1] << " "
-             << j_pos[0] << " "
-             << j_pos[1] << endl;
-        cerr << si_pos[0] << " "
-             << si_pos[1] << " "
-             << sj_pos[0] << " "
-             << sj_pos[1] << endl;*/
         if (!bLockedPauseMode && bUseLoopParsingMode)
             _parser.PauseLoopMode(false);
     }
@@ -3347,23 +3253,12 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
         _parser.SetByteCode(_bytecode[nthCmd]);*/
     v = _parser.Eval(nNum);
     vAns = v[0];
-    //cerr << vAns << " " << nNum << endl;
+
     if (_option.getbDebug())
     {
         cerr << "|-> DEBUG: ByteCodeState = " << _parser.IsValidByteCode() << " / ParserExpr = " << _parser.GetExpr() << endl;
     }
-    /*if (nValidByteCode[nthCmd] == -1 && _parser.GetExpr() == sLine_Temp + " ")
-    {
-        nValidByteCode[nthCmd] = 2;
-        _bytecode[nthCmd] = _parser.GetByteCode();
-    }
-    else if (nValidByteCode[nthCmd] == -1 && bWriteToCache && sCache + sLine == sLine_Temp)
-    {
-        nValidByteCode[nthCmd] = 1;
-        _bytecode[nthCmd] = _parser.GetByteCode();
-    }
-    else
-        nValidByteCode[nthCmd] = 0;*/
+
     if (!bSilent)
     {
         /* --> Der Benutzer will also die Ergebnisse sehen. Es gibt die Moeglichkeit,
@@ -3409,67 +3304,8 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
     }
     if (bWriteToCache)
     {
-        /*cerr << i_pos[0] << " "
-             << i_pos[1] << " "
-             << j_pos[0] << " "
-             << j_pos[1] << endl;
-        cerr << si_pos[0] << " "
-             << si_pos[1] << " "
-             << sj_pos[0] << " "
-             << sj_pos[1] << endl;
-        cerr << sCache << endl;
-        cerr << nNum << endl;*/
-        if (i_pos[0] == i_pos[1] && j_pos[0] == j_pos[1])
-        {
-            if (nNum == 1)
-            {
-                double dResult = vAns;
-                if (_option.getbDebug())
-                    mu::console() << _nrT("|-> DEBUG: i_pos[0] = ") << i_pos[0] <<  _nrT(", j_pos[0] = ") << j_pos[0] << endl;
-                if (!_data.writeToCache(i_pos[0], j_pos[0], sCache.substr(0,sCache.find('(')), dResult))
-                    return -1;
-            }
-            else
-            {
-                for (int i = i_pos[0]; i < i_pos[0] + nNum; i++)
-                {
-                    if (!_data.writeToCache(i, j_pos[0], sCache.substr(0,sCache.find('(')), (double)v[i-i_pos[0]]))
-                        return -1;
-                }
-            }
-        }
-        else
-        {
-            if (si_pos[1] == "inf")
-                i_pos[1] = i_pos[0] + nNum;
-            if (sj_pos[1] == "inf")
-                j_pos[1] = j_pos[0] + nNum;
-            for (int i = i_pos[0]; i <= i_pos[1]; i++)
-            {
-                for (int j = j_pos[0]; j <= j_pos[1]; j++)
-                {
-                    if ((i-i_pos[0] == nNum && i_pos[0] != i_pos[1])
-                        || (j-j_pos[0] == nNum && j_pos[0] != j_pos[1]))
-                        break;
-                    if (i_pos[0] != i_pos[1])
-                    {
-                        if (!_data.writeToCache(i,j,sCache.substr(0,sCache.find('(')), (double)v[i-i_pos[0]]))
-                            return -1;
-                    }
-                    else if (!_data.writeToCache(i,j,sCache.substr(0,sCache.find('(')), (double)v[j-j_pos[0]]))
-                        return -1;
-                }
-            }
-        }
+        _data.writeToCache(_idx, sCache, v, nNum);
         bWriteToCache = false;
-        for (int i = 0; i < 2; i++)
-        {
-            bMultLinCol[i] = false;
-            si_pos[i] = "";
-            sj_pos[i] = "";
-            i_pos[i] = -1;
-            j_pos[i] = -1;
-        }
     }
     if (bReturnSignal)
     {

@@ -423,6 +423,7 @@
 		<Unit filename="kernel/core/settings.cpp" />
 		<Unit filename="kernel/core/settings.hpp" />
 		<Unit filename="kernel/core/stringparsing.cpp" />
+		<Unit filename="kernel/core/structures.hpp" />
 		<Unit filename="kernel/core/tinyxml2.cpp" />
 		<Unit filename="kernel/core/tinyxml2.h" />
 		<Unit filename="kernel/core/tools.cpp" />
