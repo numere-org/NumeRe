@@ -618,6 +618,67 @@ bool Cache::writeToCache(long long int _nLine, long long int _nCol, long long in
 	return true;
 }
 
+
+// --> Schreibt einen Wert an beliebiger Stelle in den Cache <--
+bool Cache::writeToCache(Indices& _idx, const string& _sCache, double* _dData, int _nNum)
+{
+    long long int _nLayer = mCachesMap.at(_sCache);
+
+    if (_idx.vI.size())
+    {
+        while (_idx.nI[1] == -2 && _idx.vI.size() < _nNum)
+        {
+            _idx.vI.push_back(_idx.vI.back()+1);
+        }
+        while (_idx.nJ[1] == -2 && _idx.vJ.size() < _nNum)
+        {
+            _idx.vJ.push_back(_idx.vJ.back()+1);
+        }
+        for (size_t i = 0; i < _idx.vI.size(); i++)
+        {
+            for (size_t j = 0; j < _idx.vJ.size(); j++)
+            {
+                if (_idx.vI.size() > _idx.vJ.size())
+                {
+                    if (_nNum > i)
+                        writeToCache(_idx.vI[i], _idx.vJ[j], _nLayer, _dData[i]);
+                }
+                else
+                {
+                    if (_nNum > j)
+                        writeToCache(_idx.vI[i], _idx.vJ[j], _nLayer, _dData[j]);
+                }
+            }
+        }
+    }
+    else
+    {
+        if (_idx.nI[1] == -2)
+            _idx.nI[1] = _idx.nI[0] + _nNum;
+        if (_idx.nJ[1] == -2)
+            _idx.nJ[1] = _idx.nJ[0] + _nNum;
+
+        for (int i = _idx.nI[0]; i < _idx.nI[1]; i++)
+        {
+            for (int j = _idx.nJ[0]; j < _idx.nJ[1]; j++)
+            {
+                if (_idx.nI[1]-_idx.nI[0] > _idx.nJ[1]-_idx.nJ[0])
+                {
+                    if (_nNum > i-_idx.nI[0])
+                        writeToCache(i, j, _nLayer, _dData[i-_idx.nI[0]]);
+                }
+                else
+                {
+                    if (_nNum > j-_idx.nJ[0])
+                        writeToCache(i, j, _nLayer, _dData[j-_idx.nJ[0]]);
+                }
+            }
+        }
+    }
+
+	return true;
+}
+
 void Cache::setSaveStatus(bool _bIsSaved)
 {
     bIsSaved = _bIsSaved;

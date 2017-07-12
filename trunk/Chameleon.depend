@@ -2276,7 +2276,7 @@
 	<sstream>
 	<windows.h>
 
-1493798452 d:\cpp\numere-source\trunk\kernel\core\tools.hpp
+1499845824 d:\cpp\numere-source\trunk\kernel\core\tools.hpp
 	<iostream>
 	<iomanip>
 	<sstream>
@@ -2287,6 +2287,7 @@
 	<fstream>
 	<ctime>
 	<vector>
+	"structures.hpp"
 	"error.hpp"
 	"settings.hpp"
 	"datafile.hpp"
@@ -2333,7 +2334,7 @@
 	"BasicExcel.hpp"
 	"tinyxml2.h"
 
-1497520803 d:\cpp\numere-source\trunk\kernel\core\cache.hpp
+1499845879 d:\cpp\numere-source\trunk\kernel\core\cache.hpp
 	<iostream>
 	<fstream>
 	<string>
@@ -2344,6 +2345,7 @@
 	<gsl/gsl_sort.h>
 	"error.hpp"
 	"settings.hpp"
+	"structures.hpp"
 	"tools.hpp"
 	"filesystem.hpp"
 	"version.h"
@@ -2683,7 +2685,7 @@
 	"documentation.hpp"
 	"odesolver.hpp"
 
-1498634160 d:\cpp\numere-source\trunk\kernel\core\parser_functions.hpp
+1499844371 d:\cpp\numere-source\trunk\kernel\core\parser_functions.hpp
 	<cmath>
 	<string>
 	<sstream>
@@ -3913,7 +3915,7 @@
 	"built-in.hpp"
 	"../kernel.hpp"
 
-1499060883 source:d:\cpp\numere-source\trunk\kernel\core\cache.cpp
+1499846020 source:d:\cpp\numere-source\trunk\kernel\core\cache.cpp
 	"cache.hpp"
 	"../kernel.hpp"
 
@@ -4069,7 +4071,7 @@
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1499322978 source:d:\cpp\numere-source\trunk\kernel\core\procedure.cpp
+1499323225 source:d:\cpp\numere-source\trunk\kernel\core\procedure.cpp
 	"procedure.hpp"
 	"../kernel.hpp"
 	"procedurevarfactory.hpp"
@@ -4273,4 +4275,8 @@
 1499278058 source:d:\cpp\numere-source\trunk\kernel\core\procedureelement.cpp
 	"procedureelement.hpp"
 	"tools.hpp"
+
+1499845888 d:\cpp\numere-source\trunk\kernel\core\structures.hpp
+	<string>
+	<vector>
 
