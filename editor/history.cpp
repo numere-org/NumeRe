@@ -350,6 +350,18 @@ void NumeReHistory::AddToHistory(const wxString& commandstring)
         return;
     this->SetReadOnly(false);
     this->GotoPos(this->GetLastPosition());
+
+    // Get last line
+    wxString lastline = this->GetLine(this->LineFromPosition(this->GetLastPosition()-1));
+    lastline.erase(lastline.find_first_of("\n\r"));
+
+    // return, if last line is equal to the current one
+    if (lastline == commandstring.substr(0, lastline.length()) && commandstring.find_first_not_of(' ', lastline.length()) == string::npos)
+    {
+        this->SetReadOnly(true);
+        return;
+    }
+    // add the new line to the history
     this->AddText(commandstring.substr(0, commandstring.find_last_not_of(' ')+1));
     if (commandstring[commandstring.find_last_not_of(' ')] != '\n')
         this->AddText("\n");
