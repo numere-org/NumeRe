@@ -3241,6 +3241,37 @@ string generateCacheName(const string& sFilename, Settings& _option)
     return sCacheName;
 }
 
+string getFileInfo(const string& sFileName)
+{
+    fstream fFileInfo;
+    long int nNumber;
+    time_t tTime;
+    long long int nDim;
+
+    fFileInfo.open(sFileName.c_str());
+    string sFileInfo;
+
+    if (fFileInfo.good())
+    {
+        string sNumeReVersion = " (v";
+        fFileInfo.read((char*)&nNumber, sizeof(long int));
+        sNumeReVersion += toString((long long int)nNumber) + ".";
+        fFileInfo.read((char*)&nNumber, sizeof(long int));
+        sNumeReVersion += toString((long long int)nNumber) + ".";
+        fFileInfo.read((char*)&nNumber, sizeof(long int));
+        sNumeReVersion += toString((long long int)nNumber) + ")";
+        fFileInfo.read((char*)&tTime, sizeof(time_t));
+        sFileInfo += toString(tTime) + sNumeReVersion + "  | ";
+        fFileInfo.read((char*)&nDim, sizeof(long long int));
+        sFileInfo += " " + toString(nDim) + " x ";
+        fFileInfo.read((char*)&nDim, sizeof(long long int));
+        sFileInfo += toString(nDim);
+        fFileInfo.close();
+    }
+    return sFileInfo;
+}
+
+
 bool containsDataObject(const string& sExpr)
 {
     for (unsigned int i = 0; i < sExpr.length()-5; i++)

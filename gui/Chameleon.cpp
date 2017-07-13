@@ -195,9 +195,10 @@ BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
 	EVT_MENU						(ID_PROJECT_INCLUDE_FILE, NumeReWindow::OnMenuEvent)
 	EVT_TREE_ITEM_ACTIVATED			(ID_PROJECTTREE, NumeReWindow::OnTreeItemActivated)
 	EVT_TREE_ITEM_ACTIVATED			(ID_FUNCTIONTREE, NumeReWindow::OnTreeItemActivated)
+	EVT_TREE_ITEM_GETTOOLTIP        (ID_PROJECTTREE, NumeReWindow::OnTreeItemToolTip)
 	EVT_TREE_ITEM_GETTOOLTIP        (ID_FUNCTIONTREE, NumeReWindow::OnTreeItemToolTip)
-	EVT_TREE_BEGIN_DRAG             (ID_FUNCTIONTREE, NumeReWindow::OnTreeDragDrop)
 	EVT_TREE_BEGIN_DRAG             (ID_PROJECTTREE, NumeReWindow::OnTreeDragDrop)
+	EVT_TREE_BEGIN_DRAG             (ID_FUNCTIONTREE, NumeReWindow::OnTreeDragDrop)
 	EVT_MENU						(ID_NEW_PROJECT, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_OPEN_PROJECT_LOCAL, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_OPEN_PROJECT_REMOTE, NumeReWindow::OnMenuEvent)
@@ -4568,13 +4569,31 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
 
 void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
 {
-    wxTreeItemId item = event.GetItem();
+    if (m_treeBook->GetCurrentPage() == m_functionTree)
+    {
+        wxTreeItemId item = event.GetItem();
 
-    FileNameTreeData* data = static_cast<FileNameTreeData*>(m_functionTree->GetItemData(item));
-    if (data->isDir)
-        return;
-    else if (data->isFunction || data->isCommand)
-        event.SetToolTip(this->addLinebreaks(data->tooltip));
+        FileNameTreeData* data = static_cast<FileNameTreeData*>(m_functionTree->GetItemData(item));
+        if (data->isDir)
+            return;
+        else if (data->isFunction || data->isCommand)
+            event.SetToolTip(this->addLinebreaks(data->tooltip));
+    }
+    else
+    {
+        wxTreeItemId item = event.GetItem();
+
+        FileNameTreeData* data = static_cast<FileNameTreeData*>(m_functionTree->GetItemData(item));
+        if (data->isDir)
+            return;
+        wxFileName pathname = data->filename;
+        wxString tooltip = _guilang.get("COMMON_FILETYPE_" + toUpperCase(pathname.GetExt().ToStdString()));
+        if (pathname.GetExt() == "ndat")
+        {
+            tooltip += getFileDetails(pathname);
+        }
+        event.SetToolTip(tooltip);
+    }
 }
 
 void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
@@ -4675,6 +4694,14 @@ wxString NumeReWindow::addLinebreaks(const wxString& sLine)
         }
     }
     return sReturn;
+}
+
+wxString NumeReWindow::getFileDetails(const wxFileName& filename)
+{
+    if (m_terminal->getKernelSettings().getbShowExtendedFileInfo())
+        return "\n" + getFileInfo(filename.GetFullPath().ToStdString());
+    else
+        return "NOTHING";
 }
 
 //////////////////////////////////////////////////////////////////////////////

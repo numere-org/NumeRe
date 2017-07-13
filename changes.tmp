@@ -11,3 +11,4 @@ Added	Locale Caches sind nun in Prozeduren moeglich. Sie werden mit "tab CACHE()
 New	Der Code der ausgefuehrten Prozeduren wird nun intern gespeichert, so dass eine schnellere, zweite Ausfuehrung der Prozeduren moeglich ist.
 Fixed	Caches koennen nun auch als Indexmengen in Zielcaches verwendet werden.
 Cleaned	Die History zeigt nun keine wiederholten Ausdruecke mehr an. Mehrmals hintereinander eingegebene Ausdruecke werden nur einmal protokolliert.
+Added	Der Dateibrowser zeigt nun in den Tooltips den Dateityp und bei NumeRe-Datenfiles auch die zusaetzlichen Dateiinformationen an.
