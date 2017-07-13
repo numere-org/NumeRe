@@ -206,6 +206,7 @@ class NumeReWindow : public wxFrame
         void OnTreeDragDrop(wxTreeEvent& event);
 
         wxString addLinebreaks(const wxString& sLine);
+        wxString getFileDetails(const wxFileName& filename);
 
         void OnPageChange(wxBookCtrlEvent& event);
 

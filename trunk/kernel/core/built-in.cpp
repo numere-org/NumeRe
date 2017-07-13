@@ -6894,36 +6894,8 @@ bool BI_ListDirectory(const string& sDir, const string& sParams, const Settings&
                 sConnect += sFilesize;
                 if (sExt == ".ndat" && _option.getbShowExtendedFileInfo())
                 {
-                    fstream fFileInfo;
-                    long int nNumber;
-                    time_t tTime;
-                    long long int nDim;
-                    //NumeReKernel::print(sFileName );
-
-                    fFileInfo.open(sFileName.c_str());
-                    if (fFileInfo.good())
-                    {
-                        string sNumeReVersion = " (v";
-                        sConnect += "$    ";
-                        fFileInfo.read((char*)&nNumber, sizeof(long int));
-                        sNumeReVersion += toString((long long int)nNumber) + ".";
-                        fFileInfo.read((char*)&nNumber, sizeof(long int));
-                        sNumeReVersion += toString((long long int)nNumber) + ".";
-                        fFileInfo.read((char*)&nNumber, sizeof(long int));
-                        sNumeReVersion += toString((long long int)nNumber) + ")";
-                        sConnect += (char)195;
-                        sConnect += (char)249;
-                        fFileInfo.read((char*)&tTime, sizeof(time_t));
-                        sConnect += " " + toString(tTime) + sNumeReVersion + "$    ";
-                        sConnect += (char)192;
-                        sConnect += (char)249;
-                        fFileInfo.read((char*)&nDim, sizeof(long long int));
-                        sConnect += " " + toString(nDim) + " x ";
-                        fFileInfo.read((char*)&nDim, sizeof(long long int));
-                        sConnect += toString(nDim);
-                        //sConnect.append(2*_option.getWindow()-sConnect.length()-4,(char)249);
-                        fFileInfo.close();
-                    }
+                    sConnect += "$     ";
+                    sConnect += getFileInfo(sFileName);
                 }
             }
             else
