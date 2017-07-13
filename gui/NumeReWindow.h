@@ -162,6 +162,8 @@ class NumeReWindow : public wxFrame
         void CheckSize();
 
         void OnMenuEvent(wxCommandEvent &event);
+        void OpenFileByType(const wxFileName& filename);
+        void OpenFilesFromList(const wxArrayString& filenameslist);
 
         void OnHelp();
         void OnAbout();
@@ -395,6 +397,7 @@ class NumeReWindow : public wxFrame
         wxString m_filterAllFiles;
         wxString m_filterTeXSource;
         wxString m_filterNonsource;
+        wxString m_filterSupportedFiles;
 
         wxString m_currentSavedFile;
 
