@@ -629,11 +629,11 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_filterNPRCFiles = _guilang.get("GUI_FILTER_PROCEDURES") + " (*.nprc)|*.nprc";//"NumeRe procedures (*.nprc)|*.nprc";
 	m_filterExecutableFiles = _guilang.get("GUI_FILTER_EXECUTABLES") + " (*.nscr, *.nprc)|*.nscr;*.nprc";
 	m_filterNumeReFiles = _guilang.get("GUI_FILTER_NUMEREFILES") + " (*.ndat, *.nscr, *.nprc)|*.ndat;*.nscr;*.nprc";//"NumeRe files (*.ndat, *.nscr, *.nprc)|*.ndat;*.nscr;*.nprc";
-    //m_filterDataFiles = _guilang.get("GUI_FILTER_DATAFILES") + " (*.dat, *.txt, *.ndat, *.csv, *.jdx, *.ibw, *.xls, ...)|*.dat;*.txt;*.ndat;*.csv;*.jdx;*.dx;*.jcm;*.ibw;*.xls;*.xlsx;*.labx;*.ods";
     m_filterDataFiles = _guilang.get("GUI_FILTER_DATAFILES");// + " (*.dat, *.txt, *.csv, *.jdx, *.dx, *.jcm)|*.dat;*.txt;*.csv;*.jdx;*.dx;*.jcm";
     m_filterImageFiles = _guilang.get("GUI_FILTER_IMAGEFILES") + " (*.png, *.jpeg, *.eps, *.svg, *.gif)|*.png;*.jpg;*.jpeg;*.eps;*.svg;*.gif";
     m_filterTeXSource = _guilang.get("GUI_FILTER_TEXSOURCE") + " (*.tex)|*.tex";
     m_filterNonsource = _guilang.get("GUI_FILTER_NONSOURCE");
+    m_filterSupportedFiles = _guilang.get("GUI_FILTER_ALLSUPPORTEDFILES");
 
 	// If this ever gets ported to Linux, we'd probably want to add
 	// Linux library extensions here (.a, .so).  The other issue is that
@@ -2458,6 +2458,39 @@ wxArrayString NumeReWindow::OpenFile(FileFilterType filterType)
 	return fnames;
 }
 
+
+void NumeReWindow::OpenFileByType(const wxFileName& filename)
+{
+    if (filename.GetExt() == "nscr" || filename.GetExt() == "nprc" || filename.GetExt() == "txt" || filename.GetExt() == "dat" || filename.GetExt() == "log" || filename.GetExt() == "tex")
+    {
+        wxArrayString filesToOpen;
+        filesToOpen.Add(filename.GetFullPath());
+        OpenSourceFile(filesToOpen);
+        CallAfter(&NumeReWindow::setEditorFocus);
+    }
+    else if (filename.GetExt() == "png" || filename.GetExt() == "jpeg" || filename.GetExt() == "jpg" || filename.GetExt() == "bmp" || filename.GetExt() == "gif")
+    {
+        openImage(filename);
+        CallAfter(&NumeReWindow::setViewerFocus);
+        return;
+    }
+    else
+    {
+        wxString path = "load \"" + replacePathSeparator(filename.GetFullPath().ToStdString()) + "\" -app -ignore";
+        showConsole();
+        m_terminal->pass_command(path.ToStdString());
+    }
+}
+
+void NumeReWindow::OpenFilesFromList(const wxArrayString& filenameslist)
+{
+    for (size_t i = 0; i < filenameslist.size(); i++)
+    {
+        OpenFileByType(wxFileName(filenameslist[i]));
+    }
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public OpenSourceFile
 ///  Opens the given list of source files in the editor
@@ -2945,6 +2978,9 @@ wxString NumeReWindow::ConstructFilterString(FileFilterType filterType)
     case FILE_NONSOURCE:
 		filterString = m_filterNonsource;
 		break;
+    case FILE_SUPPORTEDFILES:
+        filterString = m_filterSupportedFiles + "|" + m_filterExecutableFiles + "|" + m_filterImageFiles;
+        break;
 	case FILE_ALLFILES:
 	default:
 		break;
@@ -4491,11 +4527,10 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
 
         wxTreeItemId rootItem = m_projectTree->GetRootItem();
 
-        if( item != rootItem)
+        if (item != rootItem)
         {
             //wxTreeItemId parentItem = m_projectTree->GetItemParent(item);
             FileNameTreeData* data = static_cast <FileNameTreeData* > (m_projectTree->GetItemData(item));
-            wxArrayString filesToOpen;
             wxFileName pathname = data->filename;
             if (data->isDir && m_projectTree->HasChildren(item))
             {
@@ -4505,25 +4540,7 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
             else if (data->filename.find('.') == string::npos || data->isDir)
                 return;
 
-            if (pathname.GetExt() == "nscr" || pathname.GetExt() == "nprc" || pathname.GetExt() == "txt" || pathname.GetExt() == "dat" || pathname.GetExt() == "log" || pathname.GetExt() == "tex")
-            {
-                filesToOpen.Add(pathname.GetFullPath());
-                OpenSourceFile(filesToOpen);
-                CallAfter(&NumeReWindow::setEditorFocus);
-            }
-            else if (pathname.GetExt() == "png" || pathname.GetExt() == "jpeg" || pathname.GetExt() == "jpg" || pathname.GetExt() == "bmp" || pathname.GetExt() == "gif")
-            {
-                openImage(pathname);
-                CallAfter(&NumeReWindow::setViewerFocus);
-                return;
-            }
-            else
-            {
-                wxString path = "load \"" + replacePathSeparator(pathname.GetFullPath().ToStdString()) + "\" -app -ignore";
-                showConsole();
-                m_terminal->pass_command(path.ToStdString());
-                return;
-            }
+            OpenFileByType(pathname);
         }
         m_currentEd->Refresh();
         m_book->Refresh();
@@ -5417,11 +5434,11 @@ void NumeReWindow::OnOpenSourceFile(int id )
 		m_remoteMode = true;
 	}
 
-	wxArrayString fnames = OpenFile(FILE_ALLSOURCETYPES);
+	wxArrayString fnames = OpenFile(FILE_SUPPORTEDFILES);
 
 	if(fnames.Count() > 0)
 	{
-		OpenSourceFile (fnames);
+		OpenFilesFromList(fnames);
 	}
 }
 
