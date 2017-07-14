@@ -2369,7 +2369,12 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
             StringResult strRes = parser_StringParserCore(sData, "", _data, _parser, _option, mStringVectorVars);
             if (!strRes.vResult.size())
                 throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-            sData = strRes.vResult[0];
+            sData.clear();
+            for (size_t i = 0; i < strRes.vResult.size(); i++)
+                sData += strRes.vResult[i] + ", ";
+            if (sData.length())
+                sData.erase(sData.rfind(','));
+            //sData = strRes.vResult[0];
             StripSpaces(sData);
             sLine = sLine.substr(0,n_pos) + sData + sLine.substr(nPos+1);
         }
@@ -2408,7 +2413,12 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
                     StringResult strRes = parser_StringParserCore(sData, "", _data, _parser, _option, mStringVectorVars);
                     if (!strRes.vResult.size())
                         throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-                    sData = strRes.vResult[0];
+                    sData.clear();
+                    for (size_t i = 0; i < strRes.vResult.size(); i++)
+                        sData += strRes.vResult[i] + ", ";
+                    if (sData.length())
+                        sData.erase(sData.rfind(','));
+                    //sData = strRes.vResult[0];
                     StripSpaces(sData);
                     sLine = sLine.substr(0,n_pos) + sData + sLine.substr(nPos+1);
                 }

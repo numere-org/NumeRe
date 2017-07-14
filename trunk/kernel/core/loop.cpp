@@ -2885,7 +2885,7 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
         return -2;
     }
 
-    if (_parser.IsValidByteCode() && _parser.GetExpr() == sLine + " " && !bLockedPauseMode && bUseLoopParsingMode)
+    if (_parser.IsValidByteCode() == 1 && _parser.GetExpr() == sLine + " " && !bLockedPauseMode && bUseLoopParsingMode)
     {
         //_parser.Eval();
         if (!bSilent)
@@ -2910,7 +2910,7 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
                 //cerr << std::setprecision(_option.getPrecision()) << "[";
                 sAns += "{";
                 vAns = v[0];
-                for (int i=0; i<nNum; ++i)
+                for (int i = 0; i < nNum; ++i)
                 {
                     sAns += toString(v[i], _option);
                     //cerr << v[i];
@@ -3207,7 +3207,7 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
 
         _idx = parser_getIndices(sCache, _parser, _data, _option);
 
-        if (_idx.nI[0] == -1 && _idx.nJ[0] == -1 && !_idx.vI.size() && !_idx.vJ.size())
+        if ((_idx.nI[0] < 0 || _idx.nJ[0] < 0) && !_idx.vI.size() && !_idx.vJ.size())
             throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "");
         if ((_idx.nI[1] == -2 && _idx.nJ[1] == -2))
             throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");

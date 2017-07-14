@@ -27,6 +27,8 @@ extern mglGraph _fontData;
 Plugin _plugin;
 
 const string sParserVersion = "1.0.2";
+void parser_ReplaceEntityStringOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityStringReplacement);
+void parser_ReplaceEntityOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityName, const string& sEntityReplacement, const Indices& _idx, Datafile& _data, Parser& _parser, const Settings& _option);
 
 
 void printUnits(const string& sUnit, const string& sDesc, const string& sDim, const string& sValues, unsigned int nWindowsize)
@@ -3434,30 +3436,16 @@ bool parser_CheckMultArgFunc(const string& sLeft, const string& sRight)
  */
 void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _data, Parser& _parser, const Settings& _option, bool bReplaceNANs)
 {
-    string si_pos[2] = {"",""};
-    string sj_pos[2] = {"",""};
+    Indices _idx;
     string sEntityOccurence = "";
-    string sOprtChrs = "+-*/^&|!=?%";
-    int i_pos[2] = {-1,-1};
-    int j_pos[2] = {-1,-1};
+    string sEntityName = sEntity.substr(0, sEntity.find('('));
+    ///string sOprtChrs = "+-*/^&|!=?%";
     unsigned int nPos = 0;
-    bool bMultLin = false;
-    bool bMultCol = false;
-    //bool bWriteToCache = false;
-    //bool bMultArgFunc = false;
     bool bWriteStrings = false;
     bool bWriteFileName = false;
-    bool bUsedOneBased = false;
-    bool bUsedZeroBased = false;
-    int nFinalParenthesis = 0;
-    vector<double> vEntityContents_zerobased;
-    vector<double> vEntityContents_onebased;
-    vector<long long int> vLine;
-    vector<long long int> vCol;
-    int nResults = 0;
-    value_type* v = 0;
-    string sEntityReplacement_onebased = "";
-    string sEntityReplacement_zerobased = "";
+    vector<double> vEntityContents;
+    string sEntityReplacement = "";
+    string sEntityStringReplacement = "";
 
 
     /* --> Diese Schleife ersetzt nacheinander alle Stellen, in denen sEntity auftritt, durch "Vektoren", die
@@ -3471,7 +3459,6 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
          *     Bereich bestimmen, allerdings (noch) keine Matrix. (Also entweder nur i oder j) <--
          * --> Speichere zunaechst den Teil des Strings nach "data(" in si_pos[0] <--
          */
-        si_pos[0] = sLine.substr(sLine.find(sEntity, nPos)+sEntity.length()-1);
         sEntityOccurence = sLine.substr(sLine.find(sEntity, nPos));
         nPos = sLine.find(sEntity, nPos);
         if (nPos && !checkDelimiter(sLine.substr(nPos-1, sEntity.length()+1)))
@@ -3481,1034 +3468,254 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
         }
         //sEntityOccurence = sEntityOccurence.substr(0,getMatchingParenthesis(sEntityOccurence.substr(sEntityOccurence.find('('))) + sEntityOccurence.find('(')+1);
         sEntityOccurence = sEntityOccurence.substr(0,getMatchingParenthesis(sEntityOccurence)+1);
-        vEntityContents_onebased.clear();
-        vEntityContents_zerobased.clear();
-        sEntityReplacement_onebased.clear();
-        sEntityReplacement_zerobased.clear();
-        vLine.clear();
-        vCol.clear();
-        bUsedOneBased = false;
-        bUsedZeroBased = false;
+        vEntityContents.clear();
+        sEntityReplacement.clear();
+        sEntityStringReplacement.clear();
 
+        // Reading the indices happens in this function
+        _idx = parser_getIndices(sEntityOccurence, _parser, _data, _option);
 
-        if (_option.getbDebug())
-        {
-            cerr << "|-> DEBUG: si_pos[0] = " << si_pos[0] << endl;
-            cerr << "|-> DEBUG: sEntityOccurence = " << sEntityOccurence << endl;
-        }
-        // --> Trennen des strings am char ',' <--
-        nFinalParenthesis = parser_SplitArgs(si_pos[0], sj_pos[0], ',', _option);
-        if (!nFinalParenthesis)
-        {
-            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, SyntaxError::invalid_position);
-        }
-        /* --> Der Rueckgabewert ist natuerlich vom ersten Zeichen von si_pos[0] abhaengig
-         *     und das ist im Allgemeinen vom ersten Zeichen von sLine unabhaengig. Also
-         *     muessen wir die Zahl der fehlenden Zeichen ergaenzen <--
-         */
-        nFinalParenthesis += sLine.find(sEntity) + sEntity.length() - 1;
-
-        // --> Enthalten die Grenzen nochmals den string sEntity? Dann starte eine Rekursion <--
-        if (si_pos[0].find(sEntity) != string::npos)
-            parser_ReplaceEntities(si_pos[0], sEntity, _data, _parser, _option, bReplaceNANs);
-        if (sj_pos[0].find(sEntity) != string::npos)
-            parser_ReplaceEntities(sj_pos[0], sEntity, _data, _parser, _option, bReplaceNANs);
-        if (_data.containsCacheElements(si_pos[0]))
-            parser_GetDataElement(si_pos[0], _parser, _data, _option);
-        if (_data.containsCacheElements(sj_pos[0]))
-            parser_GetDataElement(sj_pos[0], _parser, _data, _option);
-
-        if (_option.getbDebug())
-            cerr << "|-> DEBUG: si_pos[0] = " << si_pos[0] << ", sj_pos[0] = " << sj_pos[0] << endl;
-        // --> Sind in i- und j-Grenzen ":" zu finden? Dass koennen wir (noch) nicht verarbeiten. Abbruch! <--
-        if (si_pos[0].find(':') != string::npos && sj_pos[0].find(':') != string::npos)
-        {
-            throw SyntaxError(SyntaxError::NO_MATRIX, sLine, SyntaxError::invalid_position);
-        }
-        else if (si_pos[0].find(':') == string::npos && sj_pos[0].find(':') == string::npos && si_pos[0].find('#') == string::npos)
-        {
-            StripSpaces(si_pos[0]);
-            StripSpaces(sj_pos[0]);
-            if (!si_pos[0].length() || !sj_pos[0].length())
-            {
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
-            }
-            _parser.SetExpr(si_pos[0]);
-            //_parser.SetExpr(si_pos[0] + "," + sj_pos[0]);
-            //_parser.Eval();
-            //value_type* v = 0;
-            //int nResults = _parser.GetNumResults();
-            v = _parser.Eval(nResults);
-            if (nResults > 1)
-            {
-                for (int i = 0; i < nResults; i++)
-                    vLine.push_back((int)v[i]-1);
-                _parser.SetExpr(sj_pos[0]);
-                v = _parser.Eval(nResults);
-                vCol.push_back(v[0]-1);
-
-                vEntityContents_zerobased = _data.getElement(vLine, vCol, sEntity.substr(0,sEntity.find('(')));
-                sEntityReplacement_zerobased = replaceToVectorname(sEntityOccurence);
-                _parser.SetVectorVar(sEntityReplacement_zerobased, vEntityContents_zerobased);
-                //cerr << "test" << endl;
-
-                sLine = " " + sLine + " ";
-                //sLine = sLine.substr(0,sLine.find(sEntity)) + sEntityReplacement_zerobased + sLine.substr(nFinalParenthesis+1);
-                while (sLine.find(sEntityOccurence) != string::npos)
-                {
-                    string sLeft = sLine.substr(0,sLine.find(sEntityOccurence));
-                    StripSpaces(sLeft);
-                    //cerr << sLeft << endl;
-                    if (sLeft.length() < 3)
-                    {
-                        sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_zerobased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
-                        continue;
-                    }
-                    else if (sLeft.length() == 3)
-                    {
-                        if (sLeft.substr(sLeft.length()-3) == "or(")
-                        {
-                            sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
-                                + toCmdString(_data.or_func(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                                + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                        }
-                        else
-                            sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_zerobased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
-                    }
-                    else if (sLeft.length() >= 4)
-                    {
-                        if (sLeft.substr(sLeft.length()-4) == "std(")
-                        {
-                            sLine = sLine.substr(0, sLine.rfind("std(", sLine.find(sEntityOccurence)))
-                                + toCmdString(_data.std(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                        }
-                        else if (sLeft.substr(sLeft.length()-4) == "avg(")
-                        {
-                            sLine = sLine.substr(0, sLine.rfind("avg(", sLine.find(sEntityOccurence)))
-                                + toCmdString(_data.avg(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                        }
-                        else if (sLeft.substr(sLeft.length()-4) == "max(")
-                        {
-                            sLine = sLine.substr(0, sLine.rfind("max(", sLine.find(sEntityOccurence)))
-                                + toCmdString(_data.max(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                        }
-                        else if (sLeft.substr(sLeft.length()-4) == "min(")
-                        {
-                            sLine = sLine.substr(0, sLine.rfind("min(", sLine.find(sEntityOccurence)))
-                                + toCmdString(_data.min(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                        }
-                        else if (sLeft.substr(sLeft.length()-4) == "prd(")
-                        {
-                            sLine = sLine.substr(0, sLine.rfind("prd(", sLine.find(sEntityOccurence)))
-                                + toCmdString(_data.prd(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                        }
-                        else if (sLeft.substr(sLeft.length()-4) == "sum(")
-                        {
-                            sLine = sLine.substr(0, sLine.rfind("sum(", sLine.find(sEntityOccurence)))
-                                + toCmdString(_data.sum(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                        }
-                        else if (sLeft.substr(sLeft.length()-4) == "num(")
-                        {
-                            sLine = sLine.substr(0, sLine.rfind("num(", sLine.find(sEntityOccurence)))
-                                + toCmdString(_data.num(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                        }
-                        else if (sLeft.substr(sLeft.length()-4) == "and(")
-                        {
-                            sLine = sLine.substr(0, sLine.rfind("and(", sLine.find(sEntityOccurence)))
-                                + toCmdString(_data.and_func(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                        }
-                        else if (sLeft.substr(sLeft.length()-3) == "or(")
-                        {
-                            sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
-                                + toCmdString(_data.or_func(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                        }
-                        else if (sLeft.substr(sLeft.length()-4) == "cnt(")
-                        {
-                            sLine = sLine.substr(0, sLine.rfind("cnt(", sLine.find(sEntityOccurence)))
-                                + toCmdString(_data.cnt(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                        }
-                        else if (sLeft.substr(sLeft.length()-4) == "med(")
-                        {
-                            sLine = sLine.substr(0, sLine.rfind("med(", sLine.find(sEntityOccurence)))
-                                + toCmdString(_data.med(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                        }
-                        else if (sLeft.length() >= 5 && sLeft.substr(sLeft.length()-5) == "norm(")
-                        {
-                            sLine = sLine.substr(0, sLine.rfind("norm(", sLine.find(sEntityOccurence)))
-                                + toCmdString(_data.norm(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                        }
-                        else if (sLeft.substr(sLeft.length()-4) == "cmp(")
-                        {
-                            double dRef = 0.0;
-                            int nType = 0;
-                            string sArg = "";
-                            sLeft = sLine.substr(sLeft.length()+1, getMatchingParenthesis(sLine.substr(sLeft.length()-1))-2);
-                            sArg = getNextArgument(sLeft, true);
-                            sArg = getNextArgument(sLeft, true);
-                            if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
-                                parser_GetDataElement(sArg, _parser, _data, _option);
-                            _parser.SetExpr(sArg);
-                            dRef = (double)_parser.Eval();
-                            sArg = getNextArgument(sLeft, true);
-                            if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
-                                parser_GetDataElement(sArg, _parser, _data, _option);
-                            _parser.SetExpr(sArg);
-                            nType = (int)_parser.Eval();
-                            sLine = sLine.replace(sLine.rfind("cmp(", sLine.find(sEntityOccurence)),
-                                getMatchingParenthesis(sLine.substr(sLine.rfind("cmp(", sLine.find(sEntityOccurence))+3))+4,
-                                toCmdString(_data.cmp(sEntity.substr(0,sEntity.find('(')), vLine, vCol, dRef, nType)));
-                        }
-                        else if (sLeft.substr(sLeft.length()-4) == "pct(")
-                        {
-                            double dPct = 0.5;
-                            string sArg = "";
-                            sLeft = sLine.substr(sLeft.length()+1, getMatchingParenthesis(sLine.substr(sLeft.length()-1))-2);
-                            sArg = getNextArgument(sLeft, true);
-                            sArg = getNextArgument(sLeft, true);
-                            if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
-                                parser_GetDataElement(sArg, _parser, _data, _option);
-                            _parser.SetExpr(sArg);
-                            dPct = _parser.Eval();
-                            sLine = sLine.replace(sLine.rfind("pct(", sLine.find(sEntityOccurence)),
-                                getMatchingParenthesis(sLine.substr(sLine.rfind("pct(", sLine.find(sEntityOccurence))+3))+4,
-                                toCmdString(_data.pct(sEntity.substr(0,sEntity.find('(')), vLine, vCol, dPct)));
-                        }
-                        else
-                            sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_zerobased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
-                    }
-                }
-                si_pos[0] = "";
-                sj_pos[0] = "";
-                i_pos[0] = -1;
-                j_pos[0] = -1;
-                StripSpaces(sLine);
-                continue;
-
-            }
-            else
-            {
-                i_pos[0] = (int)v[0]-1;
-                _parser.SetExpr(sj_pos[0]);
-                v = _parser.Eval(nResults);
-                if (nResults > 1)
-                {
-                    vLine.push_back(i_pos[0]);
-                    for (int i = 0; i < nResults; i++)
-                        vCol.push_back((int)v[i]-1);
-                    vEntityContents_zerobased = _data.getElement(vLine, vCol, sEntity.substr(0,sEntity.find('(')));
-                    sEntityReplacement_zerobased = replaceToVectorname(sEntityOccurence);
-                    _parser.SetVectorVar(sEntityReplacement_zerobased, vEntityContents_zerobased);
-                    sLine = " " + sLine + " ";
-                    //sLine = sLine.substr(0,sLine.find(sEntity)) + sEntityReplacement_zerobased + sLine.substr(nFinalParenthesis+1);
-                    while (sLine.find(sEntityOccurence) != string::npos)
-                    {
-                        string sLeft = sLine.substr(0,sLine.find(sEntityOccurence));
-                        StripSpaces(sLeft);
-                        //cerr << sLeft << endl;
-                        if (sLeft.length() < 3)
-                        {
-                            sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_zerobased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
-                            continue;
-                        }
-                        else if (sLeft.length() == 3)
-                        {
-                            if (sLeft.substr(sLeft.length()-3) == "or(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
-                                    + toCmdString(_data.or_func(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else
-                                sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_zerobased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
-                        }
-                        else if (sLeft.length() >= 4)
-                        {
-                            if (sLeft.substr(sLeft.length()-4) == "std(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("std(", sLine.find(sEntityOccurence)))
-                                    + toCmdString(_data.std(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "avg(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("avg(", sLine.find(sEntityOccurence)))
-                                    + toCmdString(_data.avg(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "max(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("max(", sLine.find(sEntityOccurence)))
-                                    + toCmdString(_data.max(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "min(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("min(", sLine.find(sEntityOccurence)))
-                                    + toCmdString(_data.min(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "prd(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("prd(", sLine.find(sEntityOccurence)))
-                                    + toCmdString(_data.prd(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "sum(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("sum(", sLine.find(sEntityOccurence)))
-                                    + toCmdString(_data.sum(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "num(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("num(", sLine.find(sEntityOccurence)))
-                                    + toCmdString(_data.num(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "and(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("and(", sLine.find(sEntityOccurence)))
-                                    + toCmdString(_data.and_func(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-3) == "or(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
-                                    + toCmdString(_data.or_func(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "cnt(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("cnt(", sLine.find(sEntityOccurence)))
-                                    + toCmdString(_data.cnt(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "med(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("med(", sLine.find(sEntityOccurence)))
-                                    + toCmdString(_data.med(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.length() >= 5 && sLeft.substr(sLeft.length()-5) == "norm(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("norm(", sLine.find(sEntityOccurence)))
-                                    + toCmdString(_data.norm(sEntity.substr(0,sEntity.find('(')), vLine, vCol))
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "cmp(")
-                            {
-                                double dRef = 0.0;
-                                int nType = 0;
-                                string sArg = "";
-                                sLeft = sLine.substr(sLeft.length()+1, getMatchingParenthesis(sLine.substr(sLeft.length()-1))-2);
-                                sArg = getNextArgument(sLeft, true);
-                                sArg = getNextArgument(sLeft, true);
-                                if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
-                                    parser_GetDataElement(sArg, _parser, _data, _option);
-                                _parser.SetExpr(sArg);
-                                dRef = (double)_parser.Eval();
-                                sArg = getNextArgument(sLeft, true);
-                                if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
-                                    parser_GetDataElement(sArg, _parser, _data, _option);
-                                _parser.SetExpr(sArg);
-                                nType = (int)_parser.Eval();
-                                sLine = sLine.replace(sLine.rfind("cmp(", sLine.find(sEntityOccurence)),
-                                    getMatchingParenthesis(sLine.substr(sLine.rfind("cmp(", sLine.find(sEntityOccurence))+3))+4,
-                                    toCmdString(_data.cmp(sEntity.substr(0,sEntity.find('(')), i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1, dRef, nType)));
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "pct(")
-                            {
-                                double dPct = 0.5;
-                                string sArg = "";
-                                sLeft = sLine.substr(sLeft.length()+1, getMatchingParenthesis(sLine.substr(sLeft.length()-1))-2);
-                                sArg = getNextArgument(sLeft, true);
-                                sArg = getNextArgument(sLeft, true);
-                                if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
-                                    parser_GetDataElement(sArg, _parser, _data, _option);
-                                _parser.SetExpr(sArg);
-                                dPct = _parser.Eval();
-                                sLine = sLine.replace(sLine.rfind("pct(", sLine.find(sEntityOccurence)),
-                                    getMatchingParenthesis(sLine.substr(sLine.rfind("pct(", sLine.find(sEntityOccurence))+3))+4,
-                                    toCmdString(_data.pct(sEntity.substr(0,sEntity.find('(')), i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1, dPct)));
-                            }
-                            else
-                                sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_zerobased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
-                        }
-                    }
-                    si_pos[0] = "";
-                    sj_pos[0] = "";
-                    i_pos[0] = -1;
-                    j_pos[0] = -1;
-                    StripSpaces(sLine);
-                    continue;
-                }
-                else
-                    j_pos[0] = (int)v[0]-1;
-            }
-            if (isnan(i_pos[0]) || isinf(i_pos[0]) || isnan(j_pos[0]) || isinf(j_pos[0]))
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
-
-            if (i_pos[0] < 0)
-                i_pos[0] = 0;
-            if (j_pos[0] < 0)
-                j_pos[0] = 0;
-
-            vEntityContents_zerobased.push_back(_data.getElement(i_pos[0], j_pos[0], sEntity.substr(0,sEntity.find('('))));
-            sEntityReplacement_zerobased = replaceToVectorname(sEntityOccurence);
-            if (!sEntityReplacement_zerobased.length())
-            {
-                sEntityReplacement_zerobased = sEntityOccurence;
-                for (unsigned int i = 0; i < sEntityReplacement_zerobased.length(); i++)
-                {
-                    if (sEntityReplacement_zerobased[i] == '(')
-                        sEntityReplacement_zerobased[i] = '[';
-                    if (sEntityReplacement_zerobased[i] == ')')
-                        sEntityReplacement_zerobased[i] = ']';
-                    if (sEntityReplacement_zerobased[i] == ':')
-                        sEntityReplacement_zerobased[i] = '~';
-                    if (sEntityReplacement_zerobased[i] == ',')
-                        sEntityReplacement_zerobased[i] = '_';
-                }
-                sEntityReplacement_zerobased += "_0";
-            }
-
-            _parser.SetVectorVar(sEntityReplacement_zerobased, vEntityContents_zerobased);
-
-            sLine = sLine.substr(0,sLine.find(sEntity)) + sEntityReplacement_zerobased + sLine.substr(nFinalParenthesis+1);
-            while (sLine.find(sEntityOccurence) != string::npos)
-            {
-                sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_zerobased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
-            }
-            si_pos[0] = "";
-            sj_pos[0] = "";
-            i_pos[0] = -1;
-            j_pos[0] = -1;
-            continue;
-        }
-
-        /* --> Nachdem wir das ausgeschlossen haben, koennen wir nun den si_pos[0] am ":" teilen. Ausserdem
-         *     muessen wir auch den passenden BOOLEAN fuer die Zeilen auf TRUE setzen <--
-         */
-        if (si_pos[0].find('#') != string::npos)
-        {
-            bWriteStrings = true;
-        }
-        if (si_pos[0].find(':') != string::npos && !bWriteStrings)
-        {
-            si_pos[1] = si_pos[0].substr(si_pos[0].find(":")+1);
-            si_pos[0] = si_pos[0].substr(0,si_pos[0].find(":"));
-            bMultLin = true;
-        }
-
-        // --> Dasselbe fuer sj_pos[0] <--
-        if (sj_pos[0].find('#') != string::npos && bWriteStrings)
-            bWriteFileName = true;
-        if (sj_pos[0].find(':') != string::npos && !bWriteFileName)
-        {
-            sj_pos[1] = sj_pos[0].substr(sj_pos[0].find(":")+1);
-            sj_pos[0] = sj_pos[0].substr(0,sj_pos[0].find(":"));
-            bMultCol = true;
-        }
-
-        /* --> Der Parser kommt nicht mit leeren Strings zurecht, allerdings moechen wir, dass man im Falle von
-         *     Bereichen auch so etwas wie "i_0:" eingeben koennen und damit alle Zeilen ab i_0 erhalten
-         *     koennen. <--
-         * --> Folglich muessen wir preufen, ob der String auch nicht-leer ist. Das macht die Funktion
-         *     parser_ExprNotEmpty(const string&). <--
-         * --> Ist das der Fall, dann weise den String an den Parser zu und werte den Index fuer i_pos[0] aus <--
-         */
-        if (parser_ExprNotEmpty(si_pos[0]) && !bWriteStrings)
-        {
-            _parser.SetExpr(si_pos[0]);
-            if (isinf(_parser.Eval()) || isnan(_parser.Eval()))
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
-            i_pos[0] = (int)_parser.Eval();
-            i_pos[0]--;
-            // --> Negative Indices abfangen! <--
-            if(i_pos[0] < 0)
-                i_pos[0] = 0;
-        }
-        else // anderenfalls einfach i_pos[0] = 0 setzen
-            i_pos[0] = 0;
-
-        // --> Dasselbe fuer j_pos[0] <--
-        if (parser_ExprNotEmpty(sj_pos[0]) && !bWriteFileName)
-        {
-            _parser.SetExpr(sj_pos[0]);
-            v = _parser.Eval(nResults);
-            if (nResults == 1)
-            {
-                if (isinf(v[0]) || isnan(v[0]))
-                    throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
-                j_pos[0] = (int)v[0];
-                j_pos[0]--;
-                if (j_pos[0] < 0)
-                    j_pos[0] = 0;
-            }
-            else
-            {
-                for (int n = 0; n < nResults; n++)
-                {
-                    vCol.push_back(v[n]-1);
-                }
-                if (bWriteStrings)
-                {
-                    vector<string> vHeadlines = _data.getHeadLineElement(vCol, sEntity.substr(0,sEntity.find('(')));
-                    sj_pos[0].clear();
-                    for (unsigned int j = 0; j < vHeadlines.size(); j++)
-                    {
-                        si_pos[0] += "\"" + addControlSymbols(vHeadlines[j]) + "\"";
-                        if (j+1 < vHeadlines.size())
-                            si_pos[0] += ",";
-                    }
-                    sLine = " " + sLine + " ";
-                    while (sLine.find(sEntityOccurence) != string::npos)
-                    {
-                        sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + si_pos[0] + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
-                        if (_option.getbDebug())
-                            cerr << "|-> DEBUG: sLine = " << sLine.substr(0,80) << endl;
-                    }
-                    StripSpaces(sLine);
-                    for (int i = 0; i < 2; i++)
-                    {
-                        si_pos[i] = "";
-                        sj_pos[i] = "";
-                        i_pos[i] = -1;
-                        j_pos[i] = -1;
-                    }
-                    bMultLin = false;
-                    bMultCol = false;
-                    //bMultArgFunc = false;
-                    nFinalParenthesis = 0;
-                    bWriteFileName = false;
-                    bWriteStrings = false;
-                    continue;
-                }
-            }
-        }
-        else
-            j_pos[0] = 0;
-
-        /* --> "Obere" Grenze: Hier mussen wir auch beruecksichtigen, ob der Zeilenbereich ueberhaupt
-         *     gewuenscht ist. Denn die Funktion parser_ExprNotEmpty(const string&) weiss nicht, wie
-         *     die Eingabe urspruenglich ausgesehen hat <--
-         * --> Rest aehnlich wie oben, dieses Mal halt fuer i_pos[1] <--
-         */
-        if (parser_ExprNotEmpty(si_pos[1]) && bMultLin)
-        {
-            _parser.SetExpr(si_pos[1]);
-            if (isinf(_parser.Eval()) || isnan(_parser.Eval()))
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
-            i_pos[1] = (int)_parser.Eval();
-            i_pos[1]--;
-            // --> Negative Indices und Indices kleiner als der vorherige Index abfangen <--
-            parser_CheckIndices(i_pos[0], i_pos[1]);
-        }
-        else if (bMultLin) // Ist zumindest bMultLin == TRUE? Dann waehle einfach das letzte Element der Spalte als oberen Index
-        {
-            i_pos[1] = _data.getLines(sEntity.substr(0,sEntity.find('(')), true) - 1 - _data.getAppendedZeroes(j_pos[0], sEntity.substr(0,sEntity.find('(')));
-            //cerr << i_pos[1] << endl;
-            if (i_pos[1] == -1)
-            {
-                //cerr << sEntity << endl;
-                if (sEntity.substr(0, sEntity.find('(')) == "data")
-                    throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sLine, SyntaxError::invalid_position);
-                else
-                {
-                    if (bReplaceNANs)
-                    {
-                        vEntityContents_onebased.push_back(1.0);
-                        vEntityContents_zerobased.push_back(0.0);
-                    }
-                    else
-                    {
-                        vEntityContents_onebased.push_back(NAN);
-                        vEntityContents_zerobased.push_back(NAN);
-                    }
-                    sEntityReplacement_onebased = replaceToVectorname(sEntityOccurence);
-                    sEntityReplacement_zerobased = sEntityReplacement_onebased+"_0";
-                    sEntityReplacement_onebased += "_1";
-                    sLine = " " + sLine + " ";
-                    if (!sEntityReplacement_onebased.length())
-                    {
-                        sEntityReplacement_onebased = sEntityOccurence;
-                        for (unsigned int i = 0; i < sEntityReplacement_onebased.length(); i++)
-                        {
-                            if (sEntityReplacement_onebased[i] == '(')
-                                sEntityReplacement_onebased[i] = '[';
-                            if (sEntityReplacement_onebased[i] == ')')
-                                sEntityReplacement_onebased[i] = ']';
-                            if (sEntityReplacement_onebased[i] == ':')
-                                sEntityReplacement_onebased[i] = '~';
-                            if (sEntityReplacement_onebased[i] == ',')
-                                sEntityReplacement_onebased[i] = '_';
-                        }
-                        sEntityReplacement_zerobased = sEntityReplacement_onebased + "_0";
-                        sEntityReplacement_onebased += "_1";
-                    }
-                    while (sLine.find(sEntityOccurence) != string::npos)
-                    {
-                        if ((i_pos[0] < i_pos[1] || j_pos[0] < j_pos[1])
-                            && parser_CheckMultArgFunc(sLine.substr(0,sLine.find(sEntityOccurence)), sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length()))
-                            && !bWriteStrings)
-                        {
-                            string sLeft = sLine.substr(0,sLine.find(sEntityOccurence));
-                            StripSpaces(sLeft);
-                            //cerr << sLeft << endl;
-                            if (sLeft.substr(sLeft.length()-4) == "std(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("std(", sLine.find(sEntityOccurence)))
-                                    + "nan"
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "avg(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("avg(", sLine.find(sEntityOccurence)))
-                                    + "nan"
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "max(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("max(", sLine.find(sEntityOccurence)))
-                                    + "nan"
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "min(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("min(", sLine.find(sEntityOccurence)))
-                                    + "nan"
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "prd(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("prd(", sLine.find(sEntityOccurence)))
-                                    + "nan"
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "sum(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("sum(", sLine.find(sEntityOccurence)))
-                                    + "nan"
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "num(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("num(", sLine.find(sEntityOccurence)))
-                                    + "nan"
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "and(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("and(", sLine.find(sEntityOccurence)))
-                                    + "0.0"
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-3) == "or(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
-                                    + "0.0"
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "cnt(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("cnt(", sLine.find(sEntityOccurence)))
-                                    + "nan"
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "med(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("med(", sLine.find(sEntityOccurence)))
-                                    + "nan"
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.length() >= 5 && sLeft.substr(sLeft.length()-5) == "norm(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("norm(", sLine.find(sEntityOccurence)))
-                                    + "nan"
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            else if (sLeft.substr(sLeft.length()-4) == "cmp(")
-                            {
-                                sLine = sLine.substr(0, sLine.rfind("cmp(", sLine.find(sEntityOccurence)))
-                                    + "nan"
-                                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                            }
-                            /*else
-                                sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + si_pos[1] + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());*/
-                        }
-                        else
-                        {
-                            if (parser_AddVectorComponent("", sLine.substr(0,sLine.find(sEntityOccurence)), sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length()), false) == "0")
-                            {
-                                sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_zerobased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
-                                bUsedZeroBased = true;
-                            }
-                            else
-                            {
-                                sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_onebased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
-                                bUsedOneBased = true;
-                            }//sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + "{{" + si_pos[0] + "}}" + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
-                        }
-                        if (_option.getbDebug())
-                            cerr << "|-> DEBUG: sLine = " << sLine.substr(0,80) << endl;
-
-                    }
-                    if (vEntityContents_onebased.size() && vEntityContents_zerobased.size())
-                    {
-                        if (bUsedOneBased)
-                            _parser.SetVectorVar(sEntityReplacement_onebased, vEntityContents_onebased);
-                        if (bUsedZeroBased)
-                            _parser.SetVectorVar(sEntityReplacement_zerobased, vEntityContents_zerobased);
-                    }
-                    StripSpaces(sLine);
-                    // --> Alle temporaeren Variablen zuruecksetzen, um Artefakte zu vermeiden! <--
-                    for (int i = 0; i < 2; i++)
-                    {
-                        si_pos[i] = "";
-                        sj_pos[i] = "";
-                        i_pos[i] = -1;
-                        j_pos[i] = -1;
-                    }
-                    bMultLin = false;
-                    bMultCol = false;
-                    //bMultArgFunc = false;
-                    nFinalParenthesis = 0;
-                    bWriteFileName = false;
-                    bWriteStrings = false;
-                    continue;
-                }
-            }
-            //cerr << i_pos[1] << " " << _data.getLines(true) << " " << _data.getAppendedZeroes(j_pos[0]) << endl;
-        }
-        else    // Anderenfalls einfach gleich dem unteren Index setzen
-            i_pos[1] = i_pos[0];
-
-        // --> Dasselbe fuer j_pos[1] <--
-        if (parser_ExprNotEmpty(sj_pos[1]) && bMultCol)
-        {
-            _parser.SetExpr(sj_pos[1]);
-            if (isinf(_parser.Eval()) || isnan(_parser.Eval()))
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
-            j_pos[1] = (int)_parser.Eval();
-            j_pos[1]--;
-            parser_CheckIndices(j_pos[0], j_pos[1]);
-        }
-        else if (bMultCol)
-            j_pos[1] = _data.getCols(sEntity.substr(0,sEntity.find('('))) - 1;
-        else
-            j_pos[1] = j_pos[0];
-
-
-        if (isnan(i_pos[0]) || isinf(i_pos[0])
-            || isnan(i_pos[1]) || isinf(i_pos[1])
-            || isnan(j_pos[0]) || isinf(j_pos[0])
-            || isnan(j_pos[1]) || isinf(j_pos[1])
-            || (i_pos[1] == -1 && !bWriteStrings) || (j_pos[1] == -1 && !bWriteFileName && !bWriteStrings))
-        {
+        // evaluate the indices regarding the possible combinations
+        if ((_idx.nI[0] == -1 || _idx.nJ[0] == -1) && !_idx.vI.size() && !_idx.vJ.size())
             throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
-        }
-        if (j_pos[1] == -1 && bWriteStrings)
-            j_pos[1] = j_pos[0];
-        if (_option.getbDebug())
-            mu::console() << _nrT("|-> DEBUG: si_pos[0] = ") << si_pos[0] << _nrT(", sj_pos[0] = ") << sj_pos[0] << _nrT(", i_pos[0] = ") << i_pos[0]
-                          << _nrT(", j_pos[0] = ") << j_pos[0] << endl;
-        /* --> Da wir si_pos[0] nun nicht mehr brauchen, koennen wir den string verwenden, um sLine stueckweise
-         *     hinein zu kopieren und waehrenddessen die entsprechenden Aenderungen vorzunehmen <--
-         */
-        si_pos[0] = "";
-        si_pos[1] = "";
+        if (_idx.nI[1] == -2 && _idx.nJ[1] == -2)
+            throw SyntaxError(SyntaxError::NO_MATRIX, sLine, SyntaxError::invalid_position);
+        if (_idx.nI[1] == -1)
+            _idx.nI[1] = _idx.nI[0];
+        if (_idx.nJ[1] == -1)
+            _idx.nJ[1] = _idx.nJ[0];
+        if (_idx.nI[1] == -2)
+            _idx.nI[1] = _data.getLines(sEntityName, false)-1;
+        if (_idx.nJ[1] == -2)
+            _idx.nJ[1] = _data.getCols(sEntityName, false)-1;
+        if (_idx.nI[0] == -3)
+            bWriteStrings = true;
+        if (_idx.nJ[0] == -3)
+            bWriteFileName = true;
 
-        if (_option.getbDebug())
-            mu::console() << _nrT("|-> DEBUG: substr = ") << sLine.substr(nFinalParenthesis+1) << endl;
-
-        // --> Diese Schleifen haengen nun die gewuenschten Elemente an den string si_pos[0] an <--
-        for (int i = i_pos[0]; i <= i_pos[1]; i++)
+        if (bWriteFileName)
         {
-            for (int j = j_pos[0]; j <= j_pos[1]; j++)
-            {
-                if (_data.isValidEntry(i,j,sEntity.substr(0,sEntity.find('('))) && !bWriteStrings)
-                {
-                    vEntityContents_onebased.push_back(_data.getElement(i,j,sEntity.substr(0,sEntity.find('('))));
-                    vEntityContents_zerobased.push_back(_data.getElement(i,j,sEntity.substr(0,sEntity.find('('))));
-                    if (i_pos[0] == i_pos[1] && j_pos[0] == j_pos[1])
-                        si_pos[0] = toCmdString(_data.getElement(i, j, sEntity.substr(0,sEntity.find('('))));
-                }
-                else if (bWriteFileName)
-                {
-                    if (_data.getCacheStatus())
-                        si_pos[0] += "\"Cached Data\"";
-                    else
-                        si_pos[0] += "\"" + _data.getDataFileName("data") + "\"";
-                }
-                else if (bWriteStrings)
-                {
-                    if (j < _data.getCols(sEntity.substr(0,sEntity.find('(')), true))
-                        si_pos[0] += "\"" + addControlSymbols(_data.getHeadLineElement(j, sEntity.substr(0,sEntity.find('(')))) + "\"";
-                    else
-                        si_pos[0] += "\"\"";
-                    if ((i_pos[0] < i_pos[1] || j_pos[0] < j_pos[1]) && (i < i_pos[1] || j < j_pos[1]))
-                        si_pos[0] += ",";
-                }
-                else if (!bMultCol && !bMultLin)
-                {
-                    si_pos[0] += "nan";
-                    // --> Index-Fehler! Der kann nur eintreten, wenn NICHT bMultCol UND NICHT bMultLin gesetzt sind <--
-                    //nErrorIndices[0] = i+1;
-                    //nErrorIndices[1] = j+1;
-                    //throw INVALID_ELEMENT;
-                }
-                else if (!_data.isValidEntry(i,j,sEntity.substr(0,sEntity.find('('))))
-                {
-                    /* --> Ist in diesem Fall bMultCol ODER bMultLin, dann ergaenze die Fehlenden Elemente einfach durch "0.0". Aber
-                     *     nur so lange wie es sich nicht um eine Mult-Argument-Funktion handelt. In diesem Fall sind die angehaengten
-                     *     "0-en" eher stoerend. <--
-                     */
-                    if (bReplaceNANs)
-                    {
-                        vEntityContents_onebased.push_back(1.0);
-                        vEntityContents_zerobased.push_back(0.0);
-                        si_pos[0] += "0";
-                    }
-                    else
-                    {
-                        vEntityContents_onebased.push_back(NAN);
-                        vEntityContents_zerobased.push_back(NAN);
-                        si_pos[0] += "nan";
-                    }
-                    if ((i_pos[0] < i_pos[1] || j_pos[0] < j_pos[1]) && (i < i_pos[1] || j < j_pos[1]))
-                        si_pos[0] += ",";
-                }
-                else if ((i_pos[0] == i_pos[1] || j_pos[0] == j_pos[1]) && (i == i_pos[1] || j == j_pos[1]))
-                {
-                    if (si_pos[0].substr(si_pos[0].length()-2) == ",")
-                        si_pos[0] = si_pos[0].substr(0,si_pos[0].length()-2);
-                    /*if (si_pos[1].substr(si_pos[1].length()-2) == ",")
-                        si_pos[1] = si_pos[1].substr(0,si_pos[1].length()-2);*/
-                }
-                else
-                    continue;
-            }
+            sEntityStringReplacement = "\"" + _data.getDataFileName(sEntityName) + "\"";
         }
-        sLine = " " + sLine + " ";
-
-        if (vEntityContents_onebased.size() && vEntityContents_zerobased.size()) //+ \p\, - \m\, * \ml\, / \d\, ^ \e\, && \a\, || \o\, ||| \xo\, % \md\, ! \n\, == \eq\, != \ne\, >= \ge\, <= \le\, ? \q\//
+        else if (bWriteStrings)
         {
-            sEntityReplacement_onebased = replaceToVectorname(sEntityOccurence);
-
-            sEntityReplacement_zerobased = sEntityReplacement_onebased+"_0";
-            sEntityReplacement_onebased += "_1";
-            if (!sEntityReplacement_onebased.length())
+            if (_idx.vJ.size())
             {
-                sEntityReplacement_onebased = sEntityOccurence;
-                for (unsigned int i = 0; i < sEntityReplacement_onebased.length(); i++)
+                for (size_t j = 0; j < _idx.vJ.size(); j++)
                 {
-                    if (sEntityReplacement_onebased[i] == '(')
-                        sEntityReplacement_onebased[i] = '[';
-                    if (sEntityReplacement_onebased[i] == ')')
-                        sEntityReplacement_onebased[i] = ']';
-                    if (sEntityReplacement_onebased[i] == ':')
-                        sEntityReplacement_onebased[i] = '~';
-                    if (sEntityReplacement_onebased[i] == ',')
-                        sEntityReplacement_onebased[i] = '_';
+                    sEntityStringReplacement += "\"" + _data.getHeadLineElement(_idx.vJ[j], sEntityName) + "\", ";
                 }
-                sEntityReplacement_zerobased = sEntityReplacement_onebased + "_0";
-                sEntityReplacement_onebased += "_1";
-            }
-        }
-        if (_option.getbDebug())
-            cerr << "|-> DEBUG: " << sLine << ", " << i_pos[0] << ", " << i_pos[1] << ", " << j_pos[0] << ", " << j_pos[1] << endl;
-        while (sLine.find(sEntityOccurence) != string::npos)
-        {
-            if ((i_pos[0] < i_pos[1] || j_pos[0] < j_pos[1]) && parser_CheckMultArgFunc(sLine.substr(0,sLine.find(sEntityOccurence)), sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length())) && !bWriteStrings)
-            {
-                string sLeft = sLine.substr(0,sLine.find(sEntityOccurence));
-                StripSpaces(sLeft);
-                //cerr << sLeft << endl;
-                if (sLeft.length() == 3)
-                {
-                    if (sLeft.substr(sLeft.length()-3) == "or(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.or_func(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                }
-                else if (sLeft.length() >= 4)
-                {
-                    if (sLeft.substr(sLeft.length()-4) == "std(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("std(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.std(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "avg(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("avg(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.avg(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "max(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("max(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.max(sEntity.substr(0,sEntity.find('(')), i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "min(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("min(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.min(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "prd(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("prd(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.prd(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "sum(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("sum(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.sum(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "num(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("num(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.num(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "and(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("and(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.and_func(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.substr(sLeft.length()-3) == "or(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.or_func(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "cnt(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("cnt(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.cnt(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "med(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("med(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.med(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.length() >= 5 && sLeft.substr(sLeft.length()-5) == "norm(")
-                    {
-                        sLine = sLine.substr(0, sLine.rfind("norm(", sLine.find(sEntityOccurence)))
-                            + toCmdString(_data.norm(sEntity.substr(0,sEntity.find('(')),i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1))
-                            + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "cmp(")
-                    {
-                        double dRef = 0.0;
-                        int nType = 0;
-                        string sArg = "";
-                        sLeft = sLine.substr(sLeft.length()+1, getMatchingParenthesis(sLine.substr(sLeft.length()-1))-2);
-                        sArg = getNextArgument(sLeft, true);
-                        sArg = getNextArgument(sLeft, true);
-                        if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
-                            parser_GetDataElement(sArg, _parser, _data, _option);
-                        _parser.SetExpr(sArg);
-                        dRef = (double)_parser.Eval();
-                        sArg = getNextArgument(sLeft, true);
-                        if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
-                            parser_GetDataElement(sArg, _parser, _data, _option);
-                        _parser.SetExpr(sArg);
-                        nType = (int)_parser.Eval();
-                        sLine = sLine.replace(sLine.rfind("cmp(", sLine.find(sEntityOccurence)),
-                            getMatchingParenthesis(sLine.substr(sLine.rfind("cmp(", sLine.find(sEntityOccurence))+3))+4,
-                            toCmdString(_data.cmp(sEntity.substr(0,sEntity.find('(')), i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1, dRef, nType)));
-                    }
-                    else if (sLeft.substr(sLeft.length()-4) == "pct(")
-                    {
-                        double dPct = 0.5;
-                        string sArg = "";
-                        sLeft = sLine.substr(sLeft.length()+1, getMatchingParenthesis(sLine.substr(sLeft.length()-1))-2);
-                        sArg = getNextArgument(sLeft, true);
-                        sArg = getNextArgument(sLeft, true);
-                        if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
-                            parser_GetDataElement(sArg, _parser, _data, _option);
-                        _parser.SetExpr(sArg);
-                        dPct = _parser.Eval();
-                        sLine = sLine.replace(sLine.rfind("pct(", sLine.find(sEntityOccurence)),
-                            getMatchingParenthesis(sLine.substr(sLine.rfind("pct(", sLine.find(sEntityOccurence))+3))+4,
-                            toCmdString(_data.pct(sEntity.substr(0,sEntity.find('(')), i_pos[0], i_pos[1]+1, j_pos[0], j_pos[1]+1, dPct)));
-                    }
-                }
-            }
-            else if ((i_pos[0] < i_pos[1] || j_pos[0] < j_pos[1]) && !bWriteStrings)
-            {
-                if (parser_AddVectorComponent("",sLine.substr(0,sLine.find(sEntityOccurence)),sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length()),false) == "0")
-                {
-                    sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_zerobased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
-                    bUsedZeroBased = true;
-                }
-                else
-                {
-                    sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_onebased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
-                    bUsedOneBased = true;
-                }//sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + "{{" + si_pos[0] + "}}" + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
-            }
-            else if (vEntityContents_onebased.size() && !bWriteStrings)
-            {
-                sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + sEntityReplacement_onebased + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
-                bUsedOneBased = true;
             }
             else
-                sLine = sLine.substr(0,sLine.find(sEntityOccurence)) + si_pos[0] + sLine.substr(sLine.find(sEntityOccurence)+sEntityOccurence.length());
-            if (_option.getbDebug())
-                cerr << "|-> DEBUG: sLine = " << sLine.substr(0,80) << endl;
+            {
+                for (long long int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
+                {
+                    sEntityStringReplacement += "\"" + _data.getHeadLineElement(j, sEntityName) + "\", ";
+                }
+            }
+            if (sEntityStringReplacement.length())
+                sEntityStringReplacement.erase(sEntityStringReplacement.rfind(','));
+        }
 
-        }
-        if (vEntityContents_onebased.size() && vEntityContents_zerobased.size())
+        // create a vector containing the data
+        if (_idx.vI.size() && _idx.vJ.size())
         {
-            if (bUsedOneBased)
-                _parser.SetVectorVar(sEntityReplacement_onebased, vEntityContents_onebased);
-            if (bUsedZeroBased)
-                _parser.SetVectorVar(sEntityReplacement_zerobased, vEntityContents_zerobased);
+            vEntityContents = _data.getElement(_idx.vI, _idx.vJ, sEntityName);
         }
-        StripSpaces(sLine);
-        // --> Alle temporaeren Variablen zuruecksetzen, um Artefakte zu vermeiden! <--
-        for (int i = 0; i < 2; i++)
+        else
         {
-            si_pos[i] = "";
-            sj_pos[i] = "";
-            i_pos[i] = -1;
-            j_pos[i] = -1;
+            parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
+            parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
+            for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
+            {
+                for (long long int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
+                {
+                    vEntityContents.push_back(_data.getElement(i, j, sEntityName));
+                }
+            }
         }
-        bMultLin = false;
-        bMultCol = false;
-        //bMultArgFunc = false;
-        nFinalParenthesis = 0;
-        bWriteFileName = false;
-        bWriteStrings = false;
+
+        // replace the occurences
+        if (bWriteStrings)
+            parser_ReplaceEntityStringOccurence(sLine, sEntityOccurence, sEntityStringReplacement);
+        else
+        {
+            sEntityReplacement = replaceToVectorname(sEntityOccurence);
+            _parser.SetVectorVar(sEntityReplacement, vEntityContents);
+
+            parser_ReplaceEntityOccurence(sLine, sEntityOccurence, sEntityName, sEntityReplacement, _idx, _data, _parser, _option);
+        }
     }
     while (sLine.find(sEntity, nPos) != string::npos);
 
     return;
 }
 
+void parser_ReplaceEntityStringOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityStringReplacement)
+{
+    size_t nPos = 0;
+    while ((nPos = sLine.find(sEntityOccurence)) != string::npos)
+    {
+        sLine.replace(nPos, sEntityOccurence.length(), sEntityStringReplacement);
+    }
+}
+
+void parser_ReplaceEntityOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityName, const string& sEntityReplacement, const Indices& _idx, Datafile& _data, Parser& _parser, const Settings& _option)
+{
+    sLine = " " + sLine + " ";
+
+    vector<long long int> vLine;
+    vector<long long int> vCol;
+    size_t nPos = 0;
+
+    if (_idx.vI.size() && _idx.vJ.size())
+    {
+        vLine = _idx.vI;
+        vCol = _idx.vJ;
+    }
+    else
+    {
+        for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
+            vLine.push_back(i);
+        for (long long int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
+            vCol.push_back(j);
+    }
+
+    while ((nPos = sLine.find(sEntityOccurence)) != string::npos)
+    {
+        string sLeft = sLine.substr(0, nPos);
+        StripSpaces(sLeft);
+        if (sLeft.length() < 3 || sLeft.back() != '(')
+        {
+            sLine.replace(nPos, sEntityOccurence.length(), sEntityReplacement);
+            continue;
+        }
+        else if (sLeft.length() == 3)
+        {
+            if (sLeft.substr(sLeft.length()-3) == "or(")
+            {
+                sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
+                    + toCmdString(_data.or_func(sEntityName, vLine, vCol))
+                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+            }
+            else
+                sLine.replace(nPos, sEntityOccurence.length(), sEntityReplacement);
+        }
+        else if (sLeft.length() >= 4)
+        {
+            if (sLeft.substr(sLeft.length()-4) == "std(")
+            {
+                sLine = sLine.substr(0, sLine.rfind("std(", sLine.find(sEntityOccurence)))
+                    + toCmdString(_data.std(sEntityName, vLine, vCol))
+                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+            }
+            else if (sLeft.substr(sLeft.length()-4) == "avg(")
+            {
+                sLine = sLine.substr(0, sLine.rfind("avg(", sLine.find(sEntityOccurence)))
+                    + toCmdString(_data.avg(sEntityName, vLine, vCol))
+                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+            }
+            else if (sLeft.substr(sLeft.length()-4) == "max(")
+            {
+                sLine = sLine.substr(0, sLine.rfind("max(", sLine.find(sEntityOccurence)))
+                    + toCmdString(_data.max(sEntityName, vLine, vCol))
+                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+            }
+            else if (sLeft.substr(sLeft.length()-4) == "min(")
+            {
+                sLine = sLine.substr(0, sLine.rfind("min(", sLine.find(sEntityOccurence)))
+                    + toCmdString(_data.min(sEntityName, vLine, vCol))
+                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+            }
+            else if (sLeft.substr(sLeft.length()-4) == "prd(")
+            {
+                sLine = sLine.substr(0, sLine.rfind("prd(", sLine.find(sEntityOccurence)))
+                    + toCmdString(_data.prd(sEntityName, vLine, vCol))
+                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+            }
+            else if (sLeft.substr(sLeft.length()-4) == "sum(")
+            {
+                sLine = sLine.substr(0, sLine.rfind("sum(", sLine.find(sEntityOccurence)))
+                    + toCmdString(_data.sum(sEntityName, vLine, vCol))
+                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+            }
+            else if (sLeft.substr(sLeft.length()-4) == "num(")
+            {
+                sLine = sLine.substr(0, sLine.rfind("num(", sLine.find(sEntityOccurence)))
+                    + toCmdString(_data.num(sEntityName, vLine, vCol))
+                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+            }
+            else if (sLeft.substr(sLeft.length()-4) == "and(")
+            {
+                sLine = sLine.substr(0, sLine.rfind("and(", sLine.find(sEntityOccurence)))
+                    + toCmdString(_data.and_func(sEntityName, vLine, vCol))
+                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+            }
+            else if (sLeft.substr(sLeft.length()-3) == "or(")
+            {
+                sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
+                    + toCmdString(_data.or_func(sEntityName, vLine, vCol))
+                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+            }
+            else if (sLeft.substr(sLeft.length()-4) == "cnt(")
+            {
+                sLine = sLine.substr(0, sLine.rfind("cnt(", sLine.find(sEntityOccurence)))
+                    + toCmdString(_data.cnt(sEntityName, vLine, vCol))
+                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+            }
+            else if (sLeft.substr(sLeft.length()-4) == "med(")
+            {
+                sLine = sLine.substr(0, sLine.rfind("med(", sLine.find(sEntityOccurence)))
+                    + toCmdString(_data.med(sEntityName, vLine, vCol))
+                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+            }
+            else if (sLeft.length() >= 5 && sLeft.substr(sLeft.length()-5) == "norm(")
+            {
+                sLine = sLine.substr(0, sLine.rfind("norm(", sLine.find(sEntityOccurence)))
+                    + toCmdString(_data.norm(sEntityName, vLine, vCol))
+                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+            }
+            else if (sLeft.substr(sLeft.length()-4) == "cmp(")
+            {
+                double dRef = 0.0;
+                int nType = 0;
+                string sArg = "";
+                sLeft = sLine.substr(sLeft.length()+1, getMatchingParenthesis(sLine.substr(sLeft.length()-1))-2);
+                sArg = getNextArgument(sLeft, true);
+                sArg = getNextArgument(sLeft, true);
+                if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
+                    parser_GetDataElement(sArg, _parser, _data, _option);
+                _parser.SetExpr(sArg);
+                dRef = (double)_parser.Eval();
+                sArg = getNextArgument(sLeft, true);
+                if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
+                    parser_GetDataElement(sArg, _parser, _data, _option);
+                _parser.SetExpr(sArg);
+                nType = (int)_parser.Eval();
+                sLine = sLine.replace(sLine.rfind("cmp(", sLine.find(sEntityOccurence)),
+                    getMatchingParenthesis(sLine.substr(sLine.rfind("cmp(", sLine.find(sEntityOccurence))+3))+4,
+                    toCmdString(_data.cmp(sEntityName, vLine, vCol, dRef, nType)));
+            }
+            else if (sLeft.substr(sLeft.length()-4) == "pct(")
+            {
+                double dPct = 0.5;
+                string sArg = "";
+                sLeft = sLine.substr(sLeft.length()+1, getMatchingParenthesis(sLine.substr(sLeft.length()-1))-2);
+                sArg = getNextArgument(sLeft, true);
+                sArg = getNextArgument(sLeft, true);
+                if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
+                    parser_GetDataElement(sArg, _parser, _data, _option);
+                _parser.SetExpr(sArg);
+                dPct = _parser.Eval();
+                sLine = sLine.replace(sLine.rfind("pct(", sLine.find(sEntityOccurence)),
+                    getMatchingParenthesis(sLine.substr(sLine.rfind("pct(", sLine.find(sEntityOccurence))+3))+4,
+                    toCmdString(_data.pct(sEntityName, vLine, vCol, dPct)));
+            }
+            else
+                sLine.replace(nPos, sEntityOccurence.length(), sEntityReplacement);
+        }
+    }
+}
 /* --> Diese Funktion teilt den String sToSplit am char cSep auf, wobei oeffnende und schliessende
  *     Klammern beruecksichtigt werden <--
  */
@@ -6048,6 +5255,7 @@ int int_faculty(int nNumber)
  * --> Gibt DATENELEMENT-Indices als Ints in einem Indices-Struct zurueck <--
  * --> Index = -1, falls der Index nicht gefunden wurde/kein DATENELEMENT uebergeben wurde <--
  * --> Index = -2, falls der Index den gesamten Bereich erlaubt <--
+ * --> Index = -3, falls der Index eine Stringreferenz ist <--
  * --> Gibt alle angegeben Indices-1 zurueck <--
  */
 Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
@@ -6060,6 +5268,8 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
     int nParenthesis = 0;
     value_type* v = 0;
     int nResults = 0;
+    string sIndexExpressions;
+    vector<int> vIndexNumbers;
     for (int i = 0; i < 2; i++)
     {
         _idx.nI[i] = -1;
@@ -6157,27 +5367,39 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
         // --> Vektor prüfen <--
         if (sI[0] != "<<NONE>>" && sI[1] == "<<NONE>>")
         {
-            _parser.SetExpr(sI[0]);
-            v = _parser.Eval(nResults);
-            if (nResults > 1)
-            {
-                for (int n = 0; n < nResults; n++)
-                    _idx.vI.push_back((int)v[n]-1);
-            }
+            StripSpaces(sI[0]);
+            if (sI[0] == "#")
+                _idx.nI[0] = -3;
             else
-                _idx.nI[0] = (int)v[0]-1;
+            {
+                _parser.SetExpr(sI[0]);
+                v = _parser.Eval(nResults);
+                if (nResults > 1)
+                {
+                    for (int n = 0; n < nResults; n++)
+                        _idx.vI.push_back((int)v[n]-1);
+                }
+                else
+                    _idx.nI[0] = (int)v[0]-1;
+            }
         }
         if (sJ[0] != "<<NONE>>" && sJ[1] == "<<NONE>>")
         {
-            _parser.SetExpr(sJ[0]);
-            v = _parser.Eval(nResults);
-            if (nResults > 1)
-            {
-                for (int n = 0; n < nResults; n++)
-                    _idx.vJ.push_back((int)v[n]-1);
-            }
+            StripSpaces(sJ[0]);
+            if (sJ[0] == "#")
+                _idx.nJ[0] = -3;
             else
-                _idx.nJ[0] = (int)v[0]-1;
+            {
+                _parser.SetExpr(sJ[0]);
+                v = _parser.Eval(nResults);
+                if (nResults > 1)
+                {
+                    for (int n = 0; n < nResults; n++)
+                        _idx.vJ.push_back((int)v[n]-1);
+                }
+                else
+                    _idx.nJ[0] = (int)v[0]-1;
+            }
         }
 
         for (int n = 0; n < 2; n++)
@@ -6193,12 +5415,13 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
             }
             else if (sI[n] != "<<NONE>>")
             {
-                if (_idx.vI.size())
-                    continue;
-                _parser.SetExpr(sI[n]);
-                _idx.nI[n] = (int)_parser.Eval()-1;
-                if (isnan(_parser.Eval()) || isinf(_parser.Eval()) || _parser.Eval() <= 0)
-                    throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+                if (!_idx.vI.size() && _idx.nI[0] != -3)
+                {
+                    if (sIndexExpressions.length())
+                        sIndexExpressions += ",";
+                    sIndexExpressions += sI[n];
+                    vIndexNumbers.push_back((n+1));
+                }
             }
             if (sJ[n] == "<<EMPTY>>")
             {
@@ -6209,12 +5432,29 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
             }
             else if (sJ[n] != "<<NONE>>")
             {
-                if (_idx.vJ.size())
-                    continue;
-                _parser.SetExpr(sJ[n]);
-                _idx.nJ[n] = (int)_parser.Eval()-1;
-                if (isnan(_parser.Eval()) || isinf(_parser.Eval()) || _parser.Eval() <= 0)
+                if (!_idx.vJ.size() && _idx.nJ[0] != -3)
+                {
+                    if (sIndexExpressions.length())
+                        sIndexExpressions += ",";
+                    sIndexExpressions += sJ[n];
+                    vIndexNumbers.push_back(-(n+1));
+                }
+            }
+        }
+        if (sIndexExpressions.length())
+        {
+            _parser.SetExpr(sIndexExpressions);
+            v = _parser.Eval(nResults);
+            if ((size_t)nResults != vIndexNumbers.size())
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+            for (int i = 0; i < nResults; i++)
+            {
+                if (isnan(v[i]) || isinf(v[i]) || v[i] <= 0)
                     throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+                if (vIndexNumbers[i] > 0)
+                    _idx.nI[vIndexNumbers[i]-1] = (int)v[i]-1;
+                else
+                    _idx.nJ[abs(vIndexNumbers[i])-1] = (int)v[i]-1;
             }
         }
         if (_idx.vI.size() || _idx.vJ.size())
@@ -6230,14 +5470,14 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
             {
                 if (_idx.nI[0] == -1)
                     throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
-                if (_idx.nI[1] == -2)
+                if (_idx.nI[1] == -2 && _idx.nI[0] != -3)
                 {
                     for (long long int i = _idx.nI[0]; i < _data.getLines(sCache, false); i++)
                         _idx.vI.push_back(i);
                 }
                 else if (_idx.nI[1] == -1)
                     _idx.vI.push_back(_idx.nI[0]);
-                else
+                else if (_idx.nI[0] != -3)
                 {
                     for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
                         _idx.vI.push_back(i);
@@ -6247,14 +5487,14 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
             {
                 if (_idx.nJ[0] == -1)
                     throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
-                if (_idx.nJ[1] == -2)
+                if (_idx.nJ[1] == -2 && _idx.nJ[0] != -3)
                 {
                     for (long long int j = _idx.nJ[0]; j < _data.getCols(sCache); j++)
                         _idx.vJ.push_back(j);
                 }
                 else if (_idx.nJ[1] == -1)
                     _idx.vJ.push_back(_idx.nJ[0]);
-                else
+                else if (_idx.nJ[0] != -3)
                 {
                     for (long long int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
                         _idx.vJ.push_back(j);

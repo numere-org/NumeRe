@@ -372,7 +372,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
         // Get the indices from the corresponding function
         _idx = parser_getIndices(sCache, _parser, _data, _option);
 
-        if (_idx.nI[0] == -1 && _idx.nJ[0] == -1 && !_idx.vI.size() && !_idx.vJ.size())
+        if ((_idx.nI[0] < 0 || _idx.nJ[0] < 0) && !_idx.vI.size() && !_idx.vJ.size())
             throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "");
         if ((_idx.nI[1] == -2 && _idx.nJ[1] == -2))
             throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
