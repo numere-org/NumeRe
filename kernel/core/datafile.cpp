@@ -3483,7 +3483,8 @@ double Datafile::getElement(long long int _nLine, long long int _nCol, const str
         return NAN;
 	else if (dDatafile)		// Sonst werden die Daten des Datafiles verwendet
 		return dDatafile[_nLine][_nCol];
-    else return NAN;
+    else
+        return NAN;
 }
 
 vector<double> Datafile::getElement(const vector<long long int>& _vLine, const vector<long long int>& _vCol, const string& sCache) const
@@ -3565,7 +3566,7 @@ bool Datafile::isValid() const
 string Datafile::getDataFileName(const string& sCache) const
 {
 	if (sCache != "data")
-		return sCache + "()";
+		return sCache;
 	else
 		return sDataFile;
 }

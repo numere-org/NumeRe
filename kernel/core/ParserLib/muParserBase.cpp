@@ -2742,6 +2742,8 @@ namespace mu
 
     void ParserBase::SetVectorVar(const std::string& sVarName, const std::vector<double>& vVar, bool bAddVectorType)
     {
+        if (!vVar.size())
+            return;
         if (!dVectorVars)
             dVectorVars = new double[nVectorVarsSize];
         if (!bAddVectorType && mVectorVars.find(sVarName) == mVectorVars.end())

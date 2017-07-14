@@ -121,7 +121,7 @@ private:
                 bMakeLoopByteCode = true;
                 vLoopByteCode.resize(nLoopLength);
                 vLoopString.resize(nLoopLength, "");
-                vValidByteCode.resize(nLoopLength, true);
+                vValidByteCode.resize(nLoopLength, 1);
                 vNumResultsIDX.resize(nLoopLength, 0);
                 vLoopStackBuf.resize(nLoopLength);
                 vUsedVar.resize(nLoopLength);
@@ -149,10 +149,10 @@ private:
             nthLoopElement = _nLoopElement;
             return;
         }
-    inline bool IsValidByteCode(unsigned int _nthLoopElement = -1)
+    inline int IsValidByteCode(unsigned int _nthLoopElement = -1)
         {
             if (!bMakeLoopByteCode)
-                return false;
+                return 0;
             if (_nthLoopElement >= 0 && _nthLoopElement < nLoopLength)
                 return vValidByteCode[_nthLoopElement];
             else
@@ -163,9 +163,20 @@ private:
             if (bMakeLoopByteCode && !bPauseLoopByteCode)
             {
                 if (_nthLoopElement >= 0 && _nthLoopElement < nLoopLength)
-                    vValidByteCode[_nthLoopElement] = false;
+                    vValidByteCode[_nthLoopElement] = 0;
                 else
-                    vValidByteCode[nthLoopElement] = false;
+                    vValidByteCode[nthLoopElement] = 0;
+            }
+            return;
+        }
+    inline void DeclareAsDelayed(unsigned int _nthLoopElement = -1)
+        {
+            if (bMakeLoopByteCode && !bPauseLoopByteCode)
+            {
+                if (_nthLoopElement >= 0 && _nthLoopElement < nLoopLength)
+                    vValidByteCode[_nthLoopElement] = -1;
+                else
+                    vValidByteCode[nthLoopElement] = -1;
             }
             return;
         }
@@ -381,7 +392,7 @@ private:
     mutable ParserByteCode m_vRPN;        ///< The Bytecode class.
     mutable std::vector<ParserByteCode> vLoopByteCode;
     mutable std::vector<std::string> vLoopString;
-    mutable std::vector<bool> vValidByteCode;
+    mutable std::vector<int> vValidByteCode;
     mutable std::vector<int> vNumResultsIDX;
     mutable std::vector<valbuf_type> vLoopStackBuf;
     mutable std::vector<varmap_type> vUsedVar;
