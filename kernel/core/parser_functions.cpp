@@ -2808,11 +2808,55 @@ string parser_GetDataElement(string& sLine, Parser& _parser, Datafile& _data, co
     unsigned int eq_pos = string::npos;                // int zum Zwischenspeichern der Position des "="
 
     int nParenthesis = 0;
-    if (_option.getbDebug())
+
+    // Evaluate possible cached equations
+    if (_parser.HasCachedAccess() && !_parser.IsCompiling())
     {
-        cerr << "|-> DEBUG: Getting data contents ..." << endl;
-        cerr << "|-> DEBUG: sLine = " << sLine << endl;
+        mu::CachedDataAccess _access;
+        Indices _idx;
+        for (size_t i = 0; i < _parser.HasCachedAccess(); i++)
+        {
+            _access = _parser.GetCachedAccess(i);
+            _idx = parser_getIndices(_access.sAccessEquation, _parser, _data, _option);
+            if ((_idx.nI[0] == -1 || _idx.nJ[0] == -1) && !_idx.vI.size() && !_idx.vJ.size())
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
+            if (_idx.nI[1] == -2 && _idx.nJ[1] == -2)
+                throw SyntaxError(SyntaxError::NO_MATRIX, sLine, SyntaxError::invalid_position);
+            if (_idx.nI[1] == -1)
+                _idx.nI[1] = _idx.nI[0];
+            if (_idx.nJ[1] == -1)
+                _idx.nJ[1] = _idx.nJ[0];
+            if (_idx.nI[1] == -2)
+                _idx.nI[1] = _data.getLines(_access.sCacheName, false)-1;
+            if (_idx.nJ[1] == -2)
+                _idx.nJ[1] = _data.getCols(_access.sCacheName, false)-1;
+
+            vector<long long int> vLine;
+            vector<long long int> vCol;
+
+            if (_idx.vI.size() && _idx.vJ.size())
+            {
+                vLine = _idx.vI;
+                vCol = _idx.vJ;
+            }
+            else
+            {
+                for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
+                    vLine.push_back(i);
+                for (long long int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
+                    vCol.push_back(j);
+            }
+
+            //_parser.SetVectorVar(_access.sVectorName, _data.getElement(vLine, vCol, _access.sCacheName));
+            _data.copyElementsInto(_parser.GetVectorVar(_access.sVectorName), vLine, vCol, _access.sCacheName);
+            _parser.UpdateVectorVar(_access.sVectorName);
+        }
+        sLine = _parser.GetCachedEquation();
+        sCache = _parser.GetCachedTarget();
+        return sCache;
     }
+
+
     for (unsigned int i = 0; i < sLine.length(); i++)
     {
         if (sLine[i] == '(' && !isInQuotes(sLine, i, true))
@@ -2884,15 +2928,6 @@ string parser_GetDataElement(string& sLine, Parser& _parser, Datafile& _data, co
                 )
             )
         {
-            if (_option.getbDebug())
-                mu::console() << _nrT("|-> DEBUG: sLine.substr(0,sLine.find(...)).find(...) = ")
-                              << sLine.substr(0,sLine.find("cache(")).find("=") << endl;
-            // --> Ja? Dann funktioniert das hier wie bei Datafile, denn es handelt sich um KEINE Zuweisung <--
-            /*if (!_data.isValidCache())
-            {
-                throw NO_CACHED_DATA;
-            }*/
-
             // --> Cache-Lese-Status aktivieren! <--
             _data.setCacheStatus(true);
 
@@ -2914,8 +2949,6 @@ string parser_GetDataElement(string& sLine, Parser& _parser, Datafile& _data, co
             }
             // --> Cache-Lese-Status deaktivieren <--
             _data.setCacheStatus(false);
-
-            return sCache;
         }
         else
         {
@@ -2987,14 +3020,9 @@ string parser_GetDataElement(string& sLine, Parser& _parser, Datafile& _data, co
             }
             // --> sLine_Temp an sLine zuweisen <--
             sLine = sLine_Temp;
-            if (_option.getbDebug())
-                mu::console() << _nrT("|-> DEBUG: sLine = ") << sLine << endl;
-            // --> Passenden BOOLEAN aktivieren und sCache zurueckgeben <--
-            /*if (sCache.find('#') == string::npos)
-                bWriteToCache = true;*/
-            return sCache;
         }
     }
+
     return sCache;
 }
 
@@ -3537,11 +3565,16 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
 
         // replace the occurences
         if (bWriteStrings)
+        {
+            _parser.DisableAccessCaching();
             parser_ReplaceEntityStringOccurence(sLine, sEntityOccurence, sEntityStringReplacement);
+        }
         else
         {
             sEntityReplacement = replaceToVectorname(sEntityOccurence);
             _parser.SetVectorVar(sEntityReplacement, vEntityContents);
+            mu::CachedDataAccess _access = {sEntityName + "(" + _idx.sCompiledAccessEquation + ")", sEntityReplacement, sEntityName};
+            _parser.CacheCurrentAccess(_access);
 
             parser_ReplaceEntityOccurence(sLine, sEntityOccurence, sEntityName, sEntityReplacement, _idx, _data, _parser, _option);
         }
@@ -3594,6 +3627,7 @@ void parser_ReplaceEntityOccurence(string& sLine, const string& sEntityOccurence
         {
             if (sLeft.substr(sLeft.length()-3) == "or(")
             {
+                _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.or_func(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
@@ -3605,78 +3639,91 @@ void parser_ReplaceEntityOccurence(string& sLine, const string& sEntityOccurence
         {
             if (sLeft.substr(sLeft.length()-4) == "std(")
             {
+                _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("std(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.std(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
             else if (sLeft.substr(sLeft.length()-4) == "avg(")
             {
+                _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("avg(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.avg(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
             else if (sLeft.substr(sLeft.length()-4) == "max(")
             {
+                _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("max(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.max(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
             else if (sLeft.substr(sLeft.length()-4) == "min(")
             {
+                _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("min(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.min(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
             else if (sLeft.substr(sLeft.length()-4) == "prd(")
             {
+                _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("prd(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.prd(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
             else if (sLeft.substr(sLeft.length()-4) == "sum(")
             {
+                _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("sum(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.sum(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
             else if (sLeft.substr(sLeft.length()-4) == "num(")
             {
+                _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("num(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.num(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
             else if (sLeft.substr(sLeft.length()-4) == "and(")
             {
+                _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("and(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.and_func(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
             else if (sLeft.substr(sLeft.length()-3) == "or(")
             {
+                _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.or_func(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
             else if (sLeft.substr(sLeft.length()-4) == "cnt(")
             {
+                _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("cnt(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.cnt(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
             else if (sLeft.substr(sLeft.length()-4) == "med(")
             {
+                _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("med(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.med(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
             else if (sLeft.length() >= 5 && sLeft.substr(sLeft.length()-5) == "norm(")
             {
+                _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("norm(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.norm(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
             else if (sLeft.substr(sLeft.length()-4) == "cmp(")
             {
+                _parser.DisableAccessCaching();
                 double dRef = 0.0;
                 int nType = 0;
                 string sArg = "";
@@ -3698,6 +3745,7 @@ void parser_ReplaceEntityOccurence(string& sLine, const string& sEntityOccurence
             }
             else if (sLeft.substr(sLeft.length()-4) == "pct(")
             {
+                _parser.DisableAccessCaching();
                 double dPct = 0.5;
                 string sArg = "";
                 sLeft = sLine.substr(sLeft.length()+1, getMatchingParenthesis(sLine.substr(sLeft.length()-1))-2);
@@ -5303,6 +5351,7 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
         _idx.nJ[1] = -2;
         return _idx;
     }
+    _idx.sCompiledAccessEquation = sArgument;
     //cerr << sArgument << endl;
     if (sArgument.find(',') != string::npos)
     {

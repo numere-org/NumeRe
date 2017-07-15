@@ -212,6 +212,60 @@
 					<Add directory="$(#wx)/lib/gcc_lib" />
 				</Linker>
 			</Target>
+			<Target title="Profiling">
+				<Option output="../../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
+				<Option object_output="Debug/Profiling" />
+				<Option type="0" />
+				<Option compiler="tdm-gcc" />
+				<Compiler>
+					<Add option="-Wall" />
+					<Add option="-pg" />
+					<Add option="-g" />
+					<Add option="-std=gnu++11" />
+					<Add option="-mthreads" />
+					<Add option="-DDLLVER_MAJOR_MASK" />
+					<Add option="-DwxUSE_REGEX" />
+					<Add option="-DwxDIALOG_MODAL" />
+					<Add option="-DwxUSE_UNICODE" />
+					<Add option="-D__GNUWIN32__" />
+					<Add option="-D__WXMSW__" />
+					<Add directory="$(#wx)/lib/gcc_lib/mswu" />
+					<Add directory="$(#wx)/include" />
+				</Compiler>
+				<ResourceCompiler>
+					<Add directory="$(#wx)/include/" />
+				</ResourceCompiler>
+				<Linker>
+					<Add option="-pg -lgmon" />
+					<Add library="wxmsw30u_stc" />
+					<Add library="wxscintilla" />
+					<Add library="wxmsw30u_media" />
+					<Add library="wxmsw30u_adv" />
+					<Add library="wxmsw30u_gl" />
+					<Add library="wxmsw30u_html" />
+					<Add library="wxexpat" />
+					<Add library="wxbase30u_xml" />
+					<Add library="wxbase30u_net" />
+					<Add library="wxmsw30u_core" />
+					<Add library="wxbase30u" />
+					<Add library="wxregexu" />
+					<Add library="wxjpeg" />
+					<Add library="wxpng" />
+					<Add library="wxtiff" />
+					<Add library="wxzlib" />
+					<Add library="rpcrt4" />
+					<Add library="winmm" />
+					<Add library="advapi32" />
+					<Add library="version" />
+					<Add library="wsock32" />
+					<Add library="comctl32" />
+					<Add library="ole32" />
+					<Add library="uuid" />
+					<Add library="winspool" />
+					<Add library="oleaut32" />
+					<Add directory="$(#wx)/lib/gcc_lib" />
+				</Linker>
+			</Target>
 		</Build>
 		<Linker>
 			<Add option="-lmgl" />
@@ -295,10 +349,12 @@
 		<Unit filename="gui/dialogs/treelistctrl.cpp">
 			<Option target="Debug" />
 			<Option target="Release" />
+			<Option target="Profiling" />
 		</Unit>
 		<Unit filename="gui/dialogs/treelistctrl.h">
 			<Option target="Debug" />
 			<Option target="Release" />
+			<Option target="Profiling" />
 		</Unit>
 		<Unit filename="gui/dialogs/wxTermContainer.cpp" />
 		<Unit filename="gui/dialogs/wxTermContainer.h" />

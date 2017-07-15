@@ -209,6 +209,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
 		bool isValid() const;							// gibt den Wert von bValidData zurueck
 		double getElement(long long int _nLine, long long int _nCol, const string& sCache) const;	// Methode, um auf ein Element von dDatafile zuzugreifen
 		vector<double> getElement(const vector<long long int>& _vLine, const vector<long long int>& _vCol, const string& sCache) const;
+		void copyElementsInto(vector<double>* vTarget, const vector<long long int>& _vLine, const vector<long long int>& _vCol, const string& sCache) const;
 		void openFile(string _sFile,
                     Settings& _option,
                     bool bAutoSave = false,

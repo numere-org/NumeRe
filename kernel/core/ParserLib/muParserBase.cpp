@@ -111,6 +111,7 @@ namespace mu
     {
         InitTokenReader();
         nthLoopElement = 0;
+        nthLoopPartEquation = 0;
         nLoopLength = 0;
         bMakeLoopByteCode = false;
         bPauseLoopByteCode = false;
@@ -479,6 +480,12 @@ namespace mu
         // reading a value at the end of an expression. (mu::Parser::IsVal function)
         // (tellg returns -1 otherwise causing the parser to ignore the value)
         string_type sBuf(a_sExpr + _nrT(" ") );
+
+        if (sBuf == this->GetExpr())
+            return;
+        else if (bMakeLoopByteCode && !bPauseLoopByteCode && this->GetExpr().length() && vValidByteCode[nthLoopElement][nthLoopPartEquation])
+            vValidByteCode[nthLoopElement][nthLoopPartEquation] = 0;
+
         if (sBuf.find('{') != string::npos && sBuf.find('}', sBuf.find('{')) != string::npos)
         {
             PreEvaluateVectors(sBuf);
@@ -955,10 +962,10 @@ namespace mu
     /** \brief Retrieve the formula. */
     const string_type& ParserBase::GetExpr() const
     {
-        if (bMakeLoopByteCode && !bPauseLoopByteCode && vValidByteCode[nthLoopElement])
+        if (bMakeLoopByteCode && !bPauseLoopByteCode && vValidByteCode[nthLoopElement][nthLoopPartEquation])
         {
             //std::cerr << vValidByteCode[nthLoopElement] << " / Expr[" << nthLoopElement << "]: \"" << vLoopString[nthLoopElement] << "\"" << endl;
-            return vLoopString[nthLoopElement];
+            return vLoopString[nthLoopElement][nthLoopPartEquation];
         }
         else
         {
@@ -1241,13 +1248,13 @@ namespace mu
         // Note: The check for nOffset==0 and nThreadID here is not necessary but
         //       brings a minor performance gain when not in bulk mode.
         value_type* Stack = 0;
-        if (!bMakeLoopByteCode || bPauseLoopByteCode || !vValidByteCode[nthLoopElement])
+        if (!bMakeLoopByteCode || bPauseLoopByteCode || !vValidByteCode[nthLoopElement][nthLoopPartEquation])
             Stack = ((nOffset == 0) && (nThreadID == 0)) ? &m_vStackBuffer[0] : &m_vStackBuffer[nThreadID * (m_vStackBuffer.size() / s_MaxNumOpenMPThreads)];
         else
-            Stack = ((nOffset == 0) && (nThreadID == 0)) ? &vLoopStackBuf[nthLoopElement][0] : & vLoopStackBuf[nthLoopElement][nThreadID * (vLoopStackBuf[nthLoopElement].size() / s_MaxNumOpenMPThreads)];
+            Stack = ((nOffset == 0) && (nThreadID == 0)) ? &vLoopStackBuf[nthLoopElement][nthLoopPartEquation][0] : & vLoopStackBuf[nthLoopElement][nthLoopPartEquation][nThreadID * (vLoopStackBuf[nthLoopElement][nthLoopPartEquation].size() / s_MaxNumOpenMPThreads)];
         value_type buf;
         int sidx(0);
-        if (!bMakeLoopByteCode || bPauseLoopByteCode || !vValidByteCode[nthLoopElement])
+        if (!bMakeLoopByteCode || bPauseLoopByteCode || !vValidByteCode[nthLoopElement][nthLoopPartEquation])
         {
             //m_vRPN.AsciiDump();
             for (const SToken* pTok = m_vRPN.GetBase(); pTok->Cmd != cmEND ; ++pTok)
@@ -1528,9 +1535,9 @@ namespace mu
         }
         else
         {
-            m_nFinalResultIdx = vNumResultsIDX[nthLoopElement];
+            m_nFinalResultIdx = vNumResultsIDX[nthLoopElement][nthLoopPartEquation];
             //vLoopByteCode[nthLoopElement].AsciiDump();
-            for (const SToken* pTok = vLoopByteCode[nthLoopElement].GetBase(); pTok->Cmd != cmEND ; ++pTok)
+            for (const SToken* pTok = vLoopByteCode[nthLoopElement][nthLoopPartEquation].GetBase(); pTok->Cmd != cmEND ; ++pTok)
             {
                 switch (pTok->Cmd)
                 {
@@ -1806,6 +1813,7 @@ namespace mu
             } // for all bytecode tokens
 
         }
+
         return Stack[m_nFinalResultIdx];
     }
 
@@ -2065,16 +2073,16 @@ namespace mu
     value_type ParserBase::ParseString()
     {
         CreateRPN();
-        if (bMakeLoopByteCode && !bPauseLoopByteCode && vValidByteCode[nthLoopElement])
+        if (bMakeLoopByteCode && !bPauseLoopByteCode && vValidByteCode[nthLoopElement][nthLoopPartEquation])
         {
-            vLoopByteCode[nthLoopElement] = m_vRPN;
+            vLoopByteCode[nthLoopElement][nthLoopPartEquation] = m_vRPN;
             //vLoopByteCode[nthLoopElement].AsciiDump();
-            vLoopString[nthLoopElement] = m_pTokenReader->GetExpr();
+            vLoopString[nthLoopElement][nthLoopPartEquation] = m_pTokenReader->GetExpr();
             //std::cerr << vLoopString[nthLoopElement] << endl;
-            vNumResultsIDX[nthLoopElement] = m_nFinalResultIdx;
-            vLoopStackBuf[nthLoopElement].resize(m_vStackBuffer.size());
-            vLoopStackBuf[nthLoopElement] = m_vStackBuffer;
-            vUsedVar[nthLoopElement] = m_pTokenReader->GetUsedVar();
+            vNumResultsIDX[nthLoopElement][nthLoopPartEquation] = m_nFinalResultIdx;
+            vLoopStackBuf[nthLoopElement][nthLoopPartEquation].resize(m_vStackBuffer.size());
+            vLoopStackBuf[nthLoopElement][nthLoopPartEquation] = m_vStackBuffer;
+            vUsedVar[nthLoopElement][nthLoopPartEquation] = m_pTokenReader->GetUsedVar();
         }
         m_pParseFormula = &ParserBase::ParseCmdCode;
         return (this->*m_pParseFormula)();
@@ -2404,15 +2412,15 @@ namespace mu
     value_type* ParserBase::Eval(int& nStackSize)
     {
         (this->*m_pParseFormula)();
-        if (bMakeLoopByteCode && !bPauseLoopByteCode && vValidByteCode[nthLoopElement])
+        if (bMakeLoopByteCode && !bPauseLoopByteCode && vValidByteCode[nthLoopElement][nthLoopPartEquation])
         {
-            nStackSize = vNumResultsIDX[nthLoopElement];
-            m_vStackBuffer = vLoopStackBuf[nthLoopElement];
+            nStackSize = vNumResultsIDX[nthLoopElement][nthLoopPartEquation];
+            m_vStackBuffer = vLoopStackBuf[nthLoopElement][nthLoopPartEquation];
             //m_nFinalResultIdx = nStackSize;
-            if (mVectorVars.size() && !(mTargets.size() && mVectorVars.size() == 1 && vUsedVar[nthLoopElement].find("~TRGTVCT[~]") != vUsedVar[nthLoopElement].end()))
+            if (mVectorVars.size() && !(mTargets.size() && mVectorVars.size() == 1 && vUsedVar[nthLoopElement][nthLoopPartEquation].find("~TRGTVCT[~]") != vUsedVar[nthLoopElement][nthLoopPartEquation].end()))
             {
                 unsigned int nVectorlength = 0;
-                varmap_type vars = vUsedVar[nthLoopElement];
+                varmap_type vars = vUsedVar[nthLoopElement][nthLoopPartEquation];
                 std::map<double*, double> mFirstVals;
                 valbuf_type buffer;
                 buffer.push_back(0.0); // erster Wert wird nicht mitgezaehlt
@@ -2427,7 +2435,7 @@ namespace mu
                     //std::cerr << "Evaluating " << nVectorlength << " Expressions ..." << endl;
                     // erste Elemente kopieren
                     for (int j = 1; j < nStackSize + 1; j++)
-                        buffer.push_back(vLoopStackBuf[nthLoopElement][j]);
+                        buffer.push_back(vLoopStackBuf[nthLoopElement][nthLoopPartEquation][j]);
 
                     for (unsigned int i = 0; i < nVectorlength; i++)
                     {
@@ -2456,7 +2464,7 @@ namespace mu
                         {
                             (this->*m_pParseFormula)();
                             for (int j = 1; j < nStackSize + 1; j++)
-                                buffer.push_back(vLoopStackBuf[nthLoopElement][j]);
+                                buffer.push_back(vLoopStackBuf[nthLoopElement][nthLoopPartEquation][j]);
                         }
                     }
 
@@ -2469,7 +2477,7 @@ namespace mu
                     nStackSize *= nVectorlength;
                 }
             }
-            if (mTargets.size() && vUsedVar[nthLoopElement].find("~TRGTVCT[~]") != vUsedVar[nthLoopElement].end())
+            if (mTargets.size() && vUsedVar[nthLoopElement][nthLoopPartEquation].find("~TRGTVCT[~]") != vUsedVar[nthLoopElement][nthLoopPartEquation].end())
             {
                 std::string sTemp = sTargets;
                 for (unsigned int i = 1; i <  m_vStackBuffer.size(); i++)
@@ -2481,6 +2489,19 @@ namespace mu
                         *(mTargets[getNextVarObject(sTemp, false)]) = m_vStackBuffer[i];
                     }
                     getNextVarObject(sTemp, true);
+                }
+            }
+            if (bMakeLoopByteCode && !bPauseLoopByteCode)
+            {
+                nthLoopPartEquation++;
+                if (vLoopByteCode[nthLoopElement].size() <= nthLoopPartEquation)
+                {
+                    vLoopByteCode[nthLoopElement].push_back(ParserByteCode());
+                    vLoopString[nthLoopElement].push_back("");
+                    vValidByteCode[nthLoopElement].push_back(1);
+                    vNumResultsIDX[nthLoopElement].push_back(0);
+                    vLoopStackBuf[nthLoopElement].push_back(valbuf_type());
+                    vUsedVar[nthLoopElement].push_back(varmap_type());
                 }
             }
             return &m_vStackBuffer[1];
@@ -2575,8 +2596,8 @@ namespace mu
     */
     int ParserBase::GetNumResults() const
     {
-        if (bMakeLoopByteCode && !bPauseLoopByteCode && vValidByteCode[nthLoopElement])
-            return vNumResultsIDX[nthLoopElement];
+        if (bMakeLoopByteCode && !bPauseLoopByteCode && vValidByteCode[nthLoopElement][nthLoopPartEquation])
+            return vNumResultsIDX[nthLoopElement][nthLoopPartEquation];
         return m_nFinalResultIdx;
     }
 
@@ -2667,9 +2688,37 @@ namespace mu
                 }
             }
 
+            if (bMakeLoopByteCode && !bPauseLoopByteCode)
+            {
+                nthLoopPartEquation++;
+                if (vLoopByteCode[nthLoopElement].size() <= nthLoopPartEquation)
+                {
+                    vLoopByteCode[nthLoopElement].push_back(ParserByteCode());
+                    vLoopString[nthLoopElement].push_back("");
+                    vValidByteCode[nthLoopElement].push_back(1);
+                    vNumResultsIDX[nthLoopElement].push_back(0);
+                    vLoopStackBuf[nthLoopElement].push_back(valbuf_type());
+                    vUsedVar[nthLoopElement].push_back(varmap_type());
+                }
+            }
+
             return buffer[1];
         }
-        return (this->*m_pParseFormula)();
+        value_type res = (this->*m_pParseFormula)();
+        if (bMakeLoopByteCode && !bPauseLoopByteCode)
+        {
+            nthLoopPartEquation++;
+            if (vLoopByteCode[nthLoopElement].size() <= nthLoopPartEquation)
+            {
+                vLoopByteCode[nthLoopElement].push_back(ParserByteCode());
+                vLoopString[nthLoopElement].push_back("");
+                vValidByteCode[nthLoopElement].push_back(1);
+                vNumResultsIDX[nthLoopElement].push_back(0);
+                vLoopStackBuf[nthLoopElement].push_back(valbuf_type());
+                vUsedVar[nthLoopElement].push_back(varmap_type());
+            }
+        }
+        return res;
     }
 
     ParserByteCode ParserBase::GetByteCode() const
@@ -2764,7 +2813,7 @@ namespace mu
                 dVectorVars = new double[nVectorVarsSize];
                 if (bMakeLoopByteCode)
                 {
-                    vLoopString.assign(nLoopLength, "");
+                    vLoopString.assign(nLoopLength, std::vector<std::string>(1, ""));
                 }
 
                 for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
@@ -2782,13 +2831,27 @@ namespace mu
             *(GetVar().find(sVarName)->second) = vVar[0];
             //std::cerr << "Defining " << sVarName << " with " << vVar[0] << endl;
         }
-        //std::cerr << "'" << sVarName << "'" << endl;
-        //std::cerr << vVar.size() << endl;
-
-        /*for (unsigned int i = 0; i < vVar.size(); i++)
-            std::cerr << vVar[i] << endl;*/
         mVectorVars[sVarName] = vVar;
         //std::cerr << mVectorVars[sVarName].size() << endl;
+        return;
+    }
+
+    std::vector<double>* ParserBase::GetVectorVar(const std::string& sVarName)
+    {
+        if (!dVectorVars)
+            return nullptr;
+        if (mVectorVars.find(sVarName) == mVectorVars.end())
+            return nullptr;
+        return &mVectorVars[sVarName];
+    }
+
+    void ParserBase::UpdateVectorVar(const std::string& sVarName)
+    {
+        if (!dVectorVars)
+            return;
+        if (mVectorVars.find(sVarName) == mVectorVars.end())
+            return;
+        *(GetVar().find(sVarName)->second) = mVectorVars[sVarName][0];
         return;
     }
 
