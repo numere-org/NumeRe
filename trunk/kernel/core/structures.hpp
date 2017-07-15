@@ -31,6 +31,7 @@ struct Indices
     long long int nJ[2];
     vector<long long int> vI;
     vector<long long int> vJ;
+    string sCompiledAccessEquation;
 };
 
 struct Match

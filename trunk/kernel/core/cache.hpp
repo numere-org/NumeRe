@@ -99,6 +99,8 @@ class Cache : public FileSystem
 		double readFromCache(long long int _nLine, long long int _nCol, const string& _sCache) const;	// Methode, um auf ein Element von dCache zuzugreifen
 		vector<double> readFromCache(const vector<long long int>& _vLine, const vector<long long int>& _vCol, const string& _sCache) const;
 		vector<double> readFromCache(const vector<long long int>& _vLine, const vector<long long int>& _vCol, long long int _nLayer) const;
+		void copyCachedElementsInto(vector<double>* vTarget, const vector<long long int>& _vLine, const vector<long long int>& _vCol, const string& sCache) const;
+		void copyCachedElementsInto(vector<double>* vTarget, const vector<long long int>& _vLine, const vector<long long int>& _vCol, long long int _nLayer) const;
 		void removeCachedData();						                        // Loescht den Inhalt von dCache, allen Arrays und setzt das Objekt auf den Urzustand zurueck
 		string getCacheHeadLineElement(long long int _i, long long int _nLayer) const;		            // gibt das _i-te Element der Kopfzeile zurueck
 		string getCacheHeadLineElement(long long int _i, const string& _sCache) const;		            // gibt das _i-te Element der Kopfzeile zurueck

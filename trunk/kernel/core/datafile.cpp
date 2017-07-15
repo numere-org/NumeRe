@@ -3517,6 +3517,39 @@ vector<double> Datafile::getElement(const vector<long long int>& _vLine, const v
     return vReturn;
 }
 
+void Datafile::copyElementsInto(vector<double>* vTarget, const vector<long long int>& _vLine, const vector<long long int>& _vCol, const string& sCache) const
+{
+    if (vTarget == nullptr)
+        return;
+    if (sCache != "data")
+    {
+        copyCachedElementsInto(vTarget, _vLine, _vCol, sCache);
+        return;
+    }
+    vTarget->clear();
+    if ((_vLine.size() > 1 && _vCol.size() > 1) || !dDatafile)
+        vTarget->resize(1, NAN);
+    else
+    {
+        vTarget->resize(_vLine.size()*_vCol.size(), NAN);
+        for (unsigned int i = 0; i < _vLine.size(); i++)
+        {
+            for (unsigned int j = 0; j < _vCol.size(); j++)
+            {
+                //cerr << _vLine[i] << endl;
+                if (_vLine[i] >= nLines
+                    || _vCol[j] >= nCols
+                    || _vCol[j] < 0
+                    || _vLine[i] < 0)
+                    (*vTarget)[j+i*_vCol.size()] = NAN;
+                else
+                    (*vTarget)[j+i*_vCol.size()] = dDatafile[_vLine[i]][_vCol[j]];
+            }
+        }
+    }
+
+}
+
 // --> loescht den Inhalt des Datenfile-Objekts, ohne selbiges zu zerstoeren <--
 void Datafile::removeData(bool bAutoSave)
 {

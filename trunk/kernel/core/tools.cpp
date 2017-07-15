@@ -3062,40 +3062,6 @@ void evalRecursiveExpressions(string& sExpr)
             }
             if (nQuotes % 2) // nQuotes % 2 == 1, wenn eine ungerade Zahl an Anfuehrungszeichen aufgetreten ist => die Position befindet sich als hinter einem geoeffneten Anfuehrungszeichen.
                 continue;
-            /*else if (!bIgnoreVarParser)
-            {
-                if (sExpr.rfind('#', nPos) == string::npos)
-                    return false;
-                else
-                {
-                    if (isInQuotes(sExpr, sExpr.rfind('#', nPos), true))
-                        return false;
-                    for (unsigned int i = sExpr.rfind('#', nPos); i < nPos; i++)
-                    {
-                        //cerr << i << endl;
-                        if (sExpr[i] == '(')
-                        {
-                            if (getMatchingParenthesis(sExpr.substr(i, nPos-i)) == string::npos)
-                                return true;
-                            i += getMatchingParenthesis(sExpr.substr(i, nPos-i));
-                            if (i == nPos)
-                                return true;
-                            continue;
-                        }
-                        if (sExpr[i] == ' ' || sExpr[i] == '+' || sExpr[i] == ',' || sExpr[i] == ')')
-                            return false;
-                    }
-                    if (nPos < sExpr.length()-1 && (sExpr[nPos] == ',' || sExpr[nPos] == '+' || sExpr[nPos] == ' ' || sExpr[nPos] == ')'))
-                        return false;
-                    else if (nPos == sExpr.length()-1 && sExpr[nPos] == ')')
-                        return false;
-                    else
-                        return true;
-                }
-            }*/
-
-            /*if (isInQuotes(sExpr, i, false))
-                continue;*/
             if (sExpr[i] == '(' || sExpr[i] == '{')
                 i += getMatchingParenthesis(sExpr.substr(i));
             if (sExpr[i] == ',')

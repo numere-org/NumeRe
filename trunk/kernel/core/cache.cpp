@@ -358,6 +358,38 @@ vector<double> Cache::readFromCache(const vector<long long int>& _vLine, const v
     return vReturn;
 }
 
+void Cache::copyCachedElementsInto(vector<double>* vTarget, const vector<long long int>& _vLine, const vector<long long int>& _vCol, const string& sCache) const
+{
+    copyCachedElementsInto(vTarget, _vLine, _vCol, mCachesMap.at(sCache));
+}
+
+void Cache::copyCachedElementsInto(vector<double>* vTarget, const vector<long long int>& _vLine, const vector<long long int>& _vCol, long long int _nLayer) const
+{
+    vTarget->clear();
+    if ((_vLine.size() > 1 && _vCol.size() > 1) || !dCache)
+        vTarget->resize(1, NAN);
+    else
+    {
+        vTarget->resize(_vLine.size()*_vCol.size(), NAN);
+        for (unsigned int i = 0; i < _vLine.size(); i++)
+        {
+            for (unsigned int j = 0; j < _vCol.size(); j++)
+            {
+                //cerr << _vLine[i] << endl;
+                if (_vLine[i] >= getCacheLines(_nLayer, false)
+                    || _vCol[j] >= getCacheCols(_nLayer, false)
+                    || _vCol[j] < 0
+                    || _vLine[i] < 0
+                    || _vLine[i] >= nLines-nAppendedZeroes[_nLayer][_vCol[j]])
+                    (*vTarget)[j+i*_vCol.size()] = NAN;
+                else
+                    (*vTarget)[j+i*_vCol.size()] = dCache[_vLine[i]][_vCol[j]][_nLayer];
+            }
+        }
+    }
+}
+
+
 bool Cache::isValidElement(long long int _nLine, long long int _nCol, const string& _sCache) const
 {
     return isValidElement(_nLine, _nCol, mCachesMap.at(_sCache));
