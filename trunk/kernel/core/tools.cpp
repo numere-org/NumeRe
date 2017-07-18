@@ -3037,143 +3037,134 @@ void evalRecursiveExpressions(string& sExpr)
         || sExpr.substr(0,6) == "while(")
         return;
 
-    if (sExpr.find("+=") != string::npos
-        || sExpr.find("-=") != string::npos
-        || sExpr.find("*=") != string::npos
-        || sExpr.find("/=") != string::npos
-        || sExpr.find("^=") != string::npos
-        || sExpr.find("++") != string::npos
-        || sExpr.find("--") != string::npos)
+    unsigned int nArgSepPos = 0;
+    int nQuotes = 0;
+    for (unsigned int i = 0; i < sExpr.length(); i++)
     {
-        unsigned int nArgSepPos = 0;
-        int nQuotes = 0;
-        for (unsigned int i = 0; i < sExpr.length(); i++)
+        // --> Zaehlt schlicht und einfach die Anfuehrungszeichen <--
+        if (sExpr.substr(i,12) == "string_cast(")
         {
-            // --> Zaehlt schlicht und einfach die Anfuehrungszeichen <--
-            if (sExpr.substr(i,12) == "string_cast(")
-            {
-                i += getMatchingParenthesis(sExpr.substr(i+11))+11;
-            }
-            if (sExpr[i] == '"')
-            {
-                if (i && sExpr[i-1] == '\\')
-                    continue;
-                nQuotes++;
-            }
-            if (nQuotes % 2) // nQuotes % 2 == 1, wenn eine ungerade Zahl an Anfuehrungszeichen aufgetreten ist => die Position befindet sich als hinter einem geoeffneten Anfuehrungszeichen.
+            i += getMatchingParenthesis(sExpr.substr(i+11))+11;
+        }
+        if (sExpr[i] == '"')
+        {
+            if (i && sExpr[i-1] == '\\')
                 continue;
-            if (sExpr[i] == '(' || sExpr[i] == '{')
-                i += getMatchingParenthesis(sExpr.substr(i));
-            if (sExpr[i] == ',')
+            nQuotes++;
+        }
+        if (nQuotes % 2) // nQuotes % 2 == 1, wenn eine ungerade Zahl an Anfuehrungszeichen aufgetreten ist => die Position befindet sich als hinter einem geoeffneten Anfuehrungszeichen.
+            continue;
+        if (sExpr[i] == '(' || sExpr[i] == '{')
+            i += getMatchingParenthesis(sExpr.substr(i));
+        if (sExpr[i] == ',')
+        {
+            nArgSepPos = i;
+            continue;
+        }
+        if (sExpr.substr(i,2) == "+="
+            || sExpr.substr(i,2) == "-="
+            || sExpr.substr(i,2) == "*="
+            || sExpr.substr(i,2) == "/="
+            || sExpr.substr(i,2) == "^=")
+        {
+            if (sExpr.find(',', i) != string::npos)
             {
-                nArgSepPos = i;
-                continue;
-            }
-            if (sExpr.substr(i,2) == "+="
-                || sExpr.substr(i,2) == "-="
-                || sExpr.substr(i,2) == "*="
-                || sExpr.substr(i,2) == "/="
-                || sExpr.substr(i,2) == "^=")
-            {
-                if (sExpr.find(',', i) != string::npos)
+                for (unsigned int j = i; j < sExpr.length(); j++)
                 {
-                    for (unsigned int j = i; j < sExpr.length(); j++)
+                    if (sExpr[j] == '(')
+                        j += getMatchingParenthesis(sExpr.substr(j));
+                    if (sExpr[j] == ',' || j+1 == sExpr.length())
                     {
-                        if (sExpr[j] == '(')
-                            j += getMatchingParenthesis(sExpr.substr(j));
-                        if (sExpr[j] == ',' || j+1 == sExpr.length())
-                        {
-                            if (!nArgSepPos && j+1 != sExpr.length())
-                                sExpr = sExpr.substr(0, i)
-                                    + " = "
-                                    + sExpr.substr(0, i)
-                                    + sExpr[i]
-                                    + "("
-                                    + sExpr.substr(i+2, j-i-2)
-                                    + ") "
-                                    + sExpr.substr(j);
-                            else if (nArgSepPos && j+1 != sExpr.length())
-                                sExpr = sExpr.substr(0, i)
-                                    + " = "
-                                    + sExpr.substr(nArgSepPos+1, i-nArgSepPos-1)
-                                    + sExpr[i]
-                                    + "("
-                                    + sExpr.substr(i+2, j-i-2)
-                                    + ") "
-                                    + sExpr.substr(j);
-                            else if (!nArgSepPos && j+1 == sExpr.length())
-                                sExpr = sExpr.substr(0, i)
-                                    + " = "
-                                    + sExpr.substr(0, i)
-                                    + sExpr[i]
-                                    + "("
-                                    + sExpr.substr(i+2)
-                                    + ") ";
-                            else
-                                sExpr = sExpr.substr(0, i)
-                                    + " = "
-                                    + sExpr.substr(nArgSepPos+1, i-nArgSepPos-1)
-                                    + sExpr[i]
-                                    + "("
-                                    + sExpr.substr(i+2)
-                                    + ") ";
+                        if (!nArgSepPos && j+1 != sExpr.length())
+                            sExpr = sExpr.substr(0, i)
+                                + " = "
+                                + sExpr.substr(0, i)
+                                + sExpr[i]
+                                + "("
+                                + sExpr.substr(i+2, j-i-2)
+                                + ") "
+                                + sExpr.substr(j);
+                        else if (nArgSepPos && j+1 != sExpr.length())
+                            sExpr = sExpr.substr(0, i)
+                                + " = "
+                                + sExpr.substr(nArgSepPos+1, i-nArgSepPos-1)
+                                + sExpr[i]
+                                + "("
+                                + sExpr.substr(i+2, j-i-2)
+                                + ") "
+                                + sExpr.substr(j);
+                        else if (!nArgSepPos && j+1 == sExpr.length())
+                            sExpr = sExpr.substr(0, i)
+                                + " = "
+                                + sExpr.substr(0, i)
+                                + sExpr[i]
+                                + "("
+                                + sExpr.substr(i+2)
+                                + ") ";
+                        else
+                            sExpr = sExpr.substr(0, i)
+                                + " = "
+                                + sExpr.substr(nArgSepPos+1, i-nArgSepPos-1)
+                                + sExpr[i]
+                                + "("
+                                + sExpr.substr(i+2)
+                                + ") ";
 
-                            for (unsigned int k = i; k < sExpr.length(); k++)
+                        for (unsigned int k = i; k < sExpr.length(); k++)
+                        {
+                            if (sExpr[k] == '(')
+                                k += getMatchingParenthesis(sExpr.substr(k));
+                            if (sExpr[k] == ',')
                             {
-                                if (sExpr[k] == '(')
-                                    k += getMatchingParenthesis(sExpr.substr(k));
-                                if (sExpr[k] == ',')
-                                {
-                                    nArgSepPos = k;
-                                    i = k;
-                                    break;
-                                }
+                                nArgSepPos = k;
+                                i = k;
+                                break;
                             }
-                            //cerr << sExpr << " | nArgSepPos=" << nArgSepPos << endl;
-                            break;
                         }
+                        //cerr << sExpr << " | nArgSepPos=" << nArgSepPos << endl;
+                        break;
                     }
                 }
-                else
-                {
-                    if (!nArgSepPos)
-                        sExpr = sExpr.substr(0, i)
-                            + " = "
-                            + sExpr.substr(0, i)
-                            + sExpr[i]
-                            + "("
-                            + sExpr.substr(i+2)
-                            + ")";
-                    else
-                        sExpr = sExpr.substr(0, i)
-                            + " = "
-                            + sExpr.substr(nArgSepPos+1, i-nArgSepPos-1)
-                            + sExpr[i]
-                            + "("
-                            + sExpr.substr(i+2)
-                            + ")";
-                    break;
-                }
             }
-            if (sExpr.substr(i,2) == "++" || sExpr.substr(i,2) == "--")
+            else
             {
                 if (!nArgSepPos)
-                {
                     sExpr = sExpr.substr(0, i)
                         + " = "
                         + sExpr.substr(0, i)
                         + sExpr[i]
-                        + "1"
-                        + sExpr.substr(i+2);
-                }
+                        + "("
+                        + sExpr.substr(i+2)
+                        + ")";
                 else
                     sExpr = sExpr.substr(0, i)
                         + " = "
                         + sExpr.substr(nArgSepPos+1, i-nArgSepPos-1)
                         + sExpr[i]
-                        + "1"
-                        + sExpr.substr(i+2);
+                        + "("
+                        + sExpr.substr(i+2)
+                        + ")";
+                break;
             }
+        }
+        if (sExpr.substr(i,2) == "++" || sExpr.substr(i,2) == "--")
+        {
+            if (!nArgSepPos)
+            {
+                sExpr = sExpr.substr(0, i)
+                    + " = "
+                    + sExpr.substr(0, i)
+                    + sExpr[i]
+                    + "1"
+                    + sExpr.substr(i+2);
+            }
+            else
+                sExpr = sExpr.substr(0, i)
+                    + " = "
+                    + sExpr.substr(nArgSepPos+1, i-nArgSepPos-1)
+                    + sExpr[i]
+                    + "1"
+                    + sExpr.substr(i+2);
         }
     }
 

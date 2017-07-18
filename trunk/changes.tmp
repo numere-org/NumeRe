@@ -12,3 +12,4 @@ New	Der Code der ausgefuehrten Prozeduren wird nun intern gespeichert, so dass e
 Fixed	Caches koennen nun auch als Indexmengen in Zielcaches verwendet werden.
 Cleaned	Die History zeigt nun keine wiederholten Ausdruecke mehr an. Mehrmals hintereinander eingegebene Ausdruecke werden nur einmal protokolliert.
 Added	Der Dateibrowser zeigt nun in den Tooltips den Dateityp und bei NumeRe-Datenfiles auch die zusaetzlichen Dateiinformationen an.
+Cleaned	Der Schleifenalgorithmus wurde verbessert. Es ergaben sich Laufzeitverbesserungen bis zu x4.

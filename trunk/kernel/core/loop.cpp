@@ -21,22 +21,41 @@
 #include "loop.hpp"
 #include "../kernel.hpp"
 
+// Definition of special return values
+#define LOOP_ERROR -1
+#define LOOP_RETURN -2
+#define LOOP_BREAK -3
+#define LOOP_CONTINUE -4
+#define LOOP_NO_CMD -5
+#define LOOP_OK 1
+
+// Definition of standard values of the jump table
+#define NO_FLOW_COMMAND -1
+#define BLOCK_END 0
+#define ELSE_START 1
+#define PROCEDURE_INTERFACE 2
 extern value_type vAns;
 //extern bool bSupressAnswer;
 
 Loop::Loop()
 {
-    sCmd = 0;
-    vVarArray = 0;
-    sVarArray = 0;
-    //_bytecode = 0;
-    //nValidByteCode = 0;
-    nJumpTable = 0;
+    sCmd = nullptr;
+    vVarArray = nullptr;
+    sVarArray = nullptr;
+    nJumpTable = nullptr;
+    nCalcType = nullptr;
+    dVarAdress = nullptr;
+
+    _parserRef = nullptr;
+    _dataRef = nullptr;
+    _outRef = nullptr;
+    _optionRef = nullptr;
+    _functionRef = nullptr;
+    _pDataRef = nullptr;
+    _scriptRef = nullptr;
+
     nJumpTableLength = 0;
     nLoopSavety = -1;
-    //dReturnValue = 0.0;
-    //ReturnVal.dNumVal = NAN;
-    //ReturnVal.sStringVal = "";
     nReturnType = 1;
     nCmd = 0;
     nLoop = 0;
@@ -53,7 +72,6 @@ Loop::Loop()
     bContinueSignal = false;
     bReturnSignal = false;
     sVarName = "";
-    dVarAdress = 0;
     bUseLoopParsingMode = false;
     bLockedPauseMode = false;
     bFunctionsReplaced = false;
@@ -101,14 +119,12 @@ void Loop::generateCommandArray()
                 sTemp[i][j] = sCmd[i][j];
             }
         }
-        //cerr << "|-> DEBUG: Eintraege kopiert!" << endl;
         for (int i = 0; i < nDefaultLength; i++)
         {
             delete[] sCmd[i];
         }
         delete[] sCmd;
         sCmd = 0;
-        //cerr << "|-> DEBUG: Speicher freigegeben!" << endl;
 
         sCmd = new string*[2*nDefaultLength];
         for (int i = 0; i < 2*nDefaultLength; i++)
@@ -122,7 +138,6 @@ void Loop::generateCommandArray()
                     sCmd[i][j] = "";
             }
         }
-        //cerr << "|-> DEBUG: Eintraege zurueck kopiert!" << endl;
 
         for (int i = 0; i < nDefaultLength; i++)
         {
@@ -130,10 +145,8 @@ void Loop::generateCommandArray()
         }
         delete[] sTemp;
         sTemp = 0;
-        //cerr << "|-> DEBUG: Temp. Speicher freigegeben!" << endl;
 
         nDefaultLength += nDefaultLength;
-        //cerr << "|-> DEBUG: Max. Laenge verdoppelt!" << endl;
     }
     else
     {
@@ -150,7 +163,7 @@ void Loop::generateCommandArray()
     return;
 }
 
-int Loop::for_loop(Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, int nth_Cmd, int nth_loop)
+int Loop::for_loop(int nth_Cmd, int nth_loop)
 {
     int nVarAdress = 0;
     int nInc = 1;
@@ -158,11 +171,9 @@ int Loop::for_loop(Parser& _parser, Define& _functions, Datafile& _data, Setting
     string sForHead = sCmd[nth_Cmd][0].substr(sCmd[nth_Cmd][0].find('=')+1);
     string sVar = sCmd[nth_Cmd][0].substr(sCmd[nth_Cmd][0].find(' ')+1);
     string sLine = "";
-    string sCache = "";
     bPrintedStatus = false;
     sVar = sVar.substr(0,sVar.find('='));
     StripSpaces(sVar);
-    bool bFault = false;
     int nNum = 0;
     value_type* v = 0;
 
@@ -175,120 +186,7 @@ int Loop::for_loop(Parser& _parser, Define& _functions, Datafile& _data, Setting
         }
     }
 
-
-    if (!bFunctionsReplaced)
-    {
-        if (!_functions.call(sForHead, _option))
-        {
-            throw SyntaxError(SyntaxError::FUNCTION_ERROR, sForHead, SyntaxError::invalid_position);
-        }
-    }
-    // --> Datafile- und Cache-Konstrukte abfangen <--
-    if ((sForHead.find("data(") != string::npos || _data.containsCacheElements(sForHead))
-        && (!containsStrings(sForHead) && !_data.containsStringVars(sForHead)))
-    {
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode();
-        if (sForHead.find("data(") != string::npos && _data.isValid() && !isInQuotes(sForHead, sForHead.find("data(")))
-            parser_ReplaceEntities(sForHead, "data(", _data, _parser, _option, true);
-        else if (sForHead.find("data(") != string::npos && !_data.isValid() && !isInQuotes(sForHead, sForHead.find("data(")))
-        {
-            throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sForHead, SyntaxError::invalid_position);
-        }
-
-        if (_data.containsCacheElements(sForHead) && _data.isValidCache())
-        {
-            _data.setCacheStatus(true);
-            for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-            {
-                if (sForHead.find(iter->first+"(") != string::npos && !isInQuotes(sForHead, sForHead.find(iter->first+"(")))
-                {
-                    parser_ReplaceEntities(sForHead, iter->first+"(", _data, _parser, _option, true);
-                }
-            }
-            _data.setCacheStatus(false);
-        }
-        else if (_data.containsCacheElements(sForHead) && !_data.isValidCache())
-        {
-            throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sForHead, SyntaxError::invalid_position);
-        }
-
-        if (bFault)
-        {
-            return -1;
-        }
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode(false);
-    }
-    // --> Ggf. Vektor-Eingaben abfangen <--
-    if (sForHead.find("{") != string::npos && (containsStrings(sLine) || _data.containsStringVars(sLine)))
-        parser_VectorToExpr(sForHead, _option);
-    if (sForHead.find("$") != string::npos)
-    {
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-        {
-            _parser.PauseLoopMode();
-            _parser.LockPause();
-        }
-        int nReturn = procedureInterface(sForHead, _parser, _functions, _data, _out, _pData, _script, _option, nLoop+nWhile+nIf, nth_Cmd);
-        if (nReturn == -1)
-            return -1;
-        else if (nReturn == -2)
-            sForHead = "false";
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-        {
-            _parser.PauseLoopMode(false);
-            _parser.LockPause(false);
-        }
-    }
-    // --> String-Auswertung einbinden <--
-    if (containsStrings(sForHead) || _data.containsStringVars(sForHead))
-    {
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode();
-        int nReturn = parser_StringParser(sForHead, sCache, _data, _parser, _option, true);
-        if (nReturn)
-        {
-            if (nReturn == 1)
-            {
-                StripSpaces(sForHead);
-                if (containsStrings(sForHead))
-                {
-                    if (_option.getUseDebugger())
-                        _option._debug.gatherLoopBasedInformations(sForHead, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                    throw SyntaxError(SyntaxError::CANNOT_EVAL_FOR, sForHead, SyntaxError::invalid_position);
-                }
-            }
-        }
-        else
-        {
-            if (_option.getUseDebugger())
-                _option._debug.gatherLoopBasedInformations(sForHead, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-            throw SyntaxError(SyntaxError::STRING_ERROR, sForHead, SyntaxError::invalid_position);
-        }
-        replaceLocalVars(sForHead);
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode(false);
-    }
-
-
-    if (bUseLoopParsingMode && !bLockedPauseMode)
-        _parser.SetIndex(nth_Cmd); // i + (nCmd+1)*j
-    if (bUseLoopParsingMode && !bLockedPauseMode && _parser.IsValidByteCode() && sForHead+" " == _parser.GetExpr())
-    {
-        v = _parser.Eval(nNum);
-    }
-    else if (bUseLoopParsingMode && !bLockedPauseMode && _parser.IsValidByteCode() && _parser.GetExpr().length())
-    {
-        _parser.DeclareAsInvalid();
-        _parser.SetExpr(sForHead);
-        v = _parser.Eval(nNum);
-    }
-    else
-    {
-        _parser.SetExpr(sForHead);
-        v = _parser.Eval(nNum);
-    }
+    v = evalHeader(nNum, sForHead, true, nth_Cmd);
 
     for (int i = 0; i < 2; i++)
     {
@@ -309,124 +207,84 @@ int Loop::for_loop(Parser& _parser, Define& _functions, Datafile& _data, Setting
         if (nLoopCount >= nLoopSavety && nLoopSavety > 0)
             return -1;
         nLoopCount++;
-        for (int __j = nth_Cmd; __j < nCmd; __j++)
+        for (int __j = nth_Cmd; __j < nJumpTable[nth_Cmd][BLOCK_END]; __j++)
         {
-            if (__j == nJumpTable[nth_Cmd][0])
-                break;
             if (__j != nth_Cmd)
             {
                 if (sCmd[__j][0].length())
                 {
-                    if (sCmd[__j][0].substr(0,3) == "for")
+                    int nReturn = evalLoopFlowCommands(__j, nth_loop);
+
+                    if (nReturn == LOOP_ERROR || nReturn == LOOP_RETURN)
+                        return nReturn;
+                    else if (nReturn == LOOP_BREAK)
                     {
-                        __j = for_loop(_parser, _functions, _data, _option, _out, _pData, _script, __j, nth_loop+1);
-                        if (__j == -1 || __j == -2 || bReturnSignal)
-                            return __j;
+                        bBreakSignal = false;
+                        return nJumpTable[nth_Cmd][BLOCK_END];
                     }
-                    else if (sCmd[__j][0].substr(0,6) == "endfor")
+                    else if (nReturn == LOOP_CONTINUE)
                     {
-                        if ((nInc)*__i < nInc*(int)vVarArray[nVarAdress][2])
-                            break;
-                        else
-                        {
-                            if (bPrintedStatus && !nth_loop)
-                                NumeReKernel::printPreFmt("\r|FOR> " + toSystemCodePage(_lang.get("COMMON_EVALUATING")) + " ... 100 %: " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
-                            else if (!nth_loop)
-                            {
-                                NumeReKernel::printPreFmt("|FOR> " + toSystemCodePage(_lang.get("COMMON_EVALUATING")) + " ... 100 %: " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
-                                bPrintedStatus = true;
-                            }
-                            return __j;
-                        }
+                        bContinueSignal = false;
+                        break;
                     }
-                    else if (sCmd[__j][0].substr(0,5) == "while")
-                    {
-                        __j = while_loop(_parser, _functions, _data, _option, _out, _pData, _script, __j, nth_loop+1);
-                        if (__j == -1 || __j == -2 || bReturnSignal)
-                            return __j;
-                    }
-                    else if (sCmd[__j][0].find(">>if") != string::npos)
-                    {
-                        __j = if_fork(_parser, _functions, _data, _option, _out, _pData, _script, __j, nth_loop+1);
-                        if (__j == -1 || __j == -2 || bReturnSignal)
-                            return __j;
-                        if (bContinueSignal)
-                        {
-                            bContinueSignal = false;
-                            break;
-                        }
-                        if (bBreakSignal)
-                        {
-                            bBreakSignal = false;
-                            /*int nFor = 0;
-                            int n_While = 0;
-                            for (int n = __j; n < nCmd; n++)
-                            {
-                                if (sCmd[n][0].substr(0,3) == "for")
-                                    nFor++;
-                                if (sCmd[n][0].substr(0,5) == "while")
-                                    n_While++;
-                                if (sCmd[n][0].substr(0,6) == "endfor" && !nFor && !n_While)
-                                    return n;
-                                else if (sCmd[n][0].substr(0,8) == "endwhile" && n_While)
-                                    n_While--;
-                                if (sCmd[n][0].substr(0,6) == "endfor" && nFor)
-                                    nFor--;
-                            }*/
-                            return nJumpTable[nth_Cmd][0];
-                        }
-                    }
+                    else if (nReturn != LOOP_NO_CMD)
+                        __j = nReturn;
                 }
             }
             if (!sCmd[__j][1].length())
                 continue;
 
-            if (findCommand(sCmd[__j][1]).sString == "continue")
+            if (!nCalcType[__j])
             {
+                string sCommand = findCommand(sCmd[__j][1]).sString;
+                if (sCommand == "continue")
+                {
+                    nCalcType[__j] = CALCTYPE_CONTINUECMD;
+                    break;
+                }
+                if (sCommand == "break")
+                {
+                    nCalcType[__j] = CALCTYPE_BREAKCMD;
+                    return nJumpTable[nth_Cmd][BLOCK_END];
+                }
+            }
+            else if (nCalcType[__j] & CALCTYPE_CONTINUECMD)
                 break;
-            }
-            if (findCommand(sCmd[__j][1]).sString == "break")
-            {
-                return nJumpTable[nth_Cmd][0];
-            }
-
+            else if (nCalcType[__j] & CALCTYPE_BREAKCMD)
+                return nJumpTable[nth_Cmd][BLOCK_END];
 
             if (bUseLoopParsingMode)
-                _parser.SetIndex(__j + nCmd+1);
+                _parserRef->SetIndex(__j + nCmd+1);
             try
             {
-                if (calc(sCmd[__j][1], __j, _parser, _functions, _data, _option, _out, _pData, _script, "FOR") == -1)
+                if (calc(sCmd[__j][1], __j, "FOR") == LOOP_ERROR)
                 {
-                    if (_option.getUseDebugger())
-                        _option._debug.gatherLoopBasedInformations(sCmd[__j][1], nCmd-__j, mVarMap, vVarArray, sVarArray, nVarArray);
-                    return -1;
+                    if (_optionRef->getUseDebugger())
+                        _optionRef->_debug.gatherLoopBasedInformations(sCmd[__j][1], nCmd-__j, mVarMap, vVarArray, sVarArray, nVarArray);
+                    return LOOP_ERROR;
                 }
                 if (bReturnSignal)
-                    return -2;
+                    return LOOP_RETURN;
             }
-            catch(...)
+            catch (...)
             {
-                if (_option.getUseDebugger())
-                    _option._debug.gatherLoopBasedInformations(sCmd[__j][1], nCmd-__j, mVarMap, vVarArray, sVarArray, nVarArray);
+                if (_optionRef->getUseDebugger())
+                    _optionRef->_debug.gatherLoopBasedInformations(sCmd[__j][1], nCmd-__j, mVarMap, vVarArray, sVarArray, nVarArray);
                 throw;
             }
         }
         __i = (int)vVarArray[nVarAdress][0];
 
-        if (!nth_loop)
+        if (!nth_loop && !bMask && bSilent)
         {
-            if (bSilent
-                && abs(int(vVarArray[nVarAdress][2]-vVarArray[nVarAdress][1])) < 99999
-                && !bMask
+            if (abs(int(vVarArray[nVarAdress][2]-vVarArray[nVarAdress][1])) < 99999
                 && abs((int)((vVarArray[nVarAdress][0]-vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2]-vVarArray[nVarAdress][1]) * 20))
                     > abs((int)((vVarArray[nVarAdress][0]-1-vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2]-vVarArray[nVarAdress][1]) * 20)))
             {
                 NumeReKernel::printPreFmt("\r|FOR> " + _lang.get("COMMON_EVALUATING") + " ... " + toString(abs((int)((vVarArray[nVarAdress][0]-vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2]-vVarArray[nVarAdress][1]) * 20)) * 5) + " %");
                 bPrintedStatus = true;
             }
-            else if (bSilent
-                && abs(int(vVarArray[nVarAdress][2]-vVarArray[nVarAdress][1]) >= 99999)
-                && !bMask
+            else if (abs(int(vVarArray[nVarAdress][2]-vVarArray[nVarAdress][1]) >= 99999)
                 && abs((int)((vVarArray[nVarAdress][0]-vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2]-vVarArray[nVarAdress][1]) * 100))
                     > abs((int)((vVarArray[nVarAdress][0]-1-vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2]-vVarArray[nVarAdress][1]) * 100)))
             {
@@ -435,156 +293,22 @@ int Loop::for_loop(Parser& _parser, Define& _functions, Datafile& _data, Setting
             }
         }
     }
-    return nJumpTable[nth_Cmd][0];
+    return nJumpTable[nth_Cmd][BLOCK_END];
 }
 
-int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, int nth_Cmd, int nth_loop)
+int Loop::while_loop(int nth_Cmd, int nth_loop)
 {
     string sWhile_Condition = sCmd[nth_Cmd][0].substr(sCmd[nth_Cmd][0].find('(')+1, sCmd[nth_Cmd][0].rfind(')')-sCmd[nth_Cmd][0].find('(')-1);
     string sWhile_Condition_Back = sWhile_Condition;
     string sLine = "";
-    string sCache = "";
     bPrintedStatus = false;
-    bool bFault = false;
     int nResults = 0;
     int nLoopCount = 0;
     value_type* v = 0;
+    int nNum = 0;
 
-    // --> Datafile- und Cache-Konstrukte abfangen <--
-    if (!bFunctionsReplaced)
-    {
-        if (!_functions.call(sWhile_Condition, _option))
-        {
-            throw SyntaxError(SyntaxError::FUNCTION_ERROR, sWhile_Condition, SyntaxError::invalid_position);
-        }
-    }
-    if (sWhile_Condition.find("data(") != string::npos || _data.containsCacheElements(sWhile_Condition))
-    {
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode();
-        if (sWhile_Condition.find("data()") != string::npos)
-        {
-            if (_data.isValid())
-                sWhile_Condition = sWhile_Condition.substr(0,sWhile_Condition.find("data()")) + "true" + sWhile_Condition.substr(sWhile_Condition.find("data()")+6);
-            else
-                sWhile_Condition = sWhile_Condition.substr(0,sWhile_Condition.find("data()")) + "false" + sWhile_Condition.substr(sWhile_Condition.find("data()")+6);
-        }
-        if (!containsStrings(sWhile_Condition) && !_data.containsStringVars(sWhile_Condition))
-        {
-            if (sWhile_Condition.find("data(") != string::npos && _data.isValid() && !isInQuotes(sWhile_Condition, sWhile_Condition.find("data(")))
-                parser_ReplaceEntities(sWhile_Condition, "data(", _data, _parser, _option, true);
-            else if (sWhile_Condition.find("data(") != string::npos && !_data.isValid() && !isInQuotes(sWhile_Condition, sWhile_Condition.find("data(")))
-            {
-                if (_option.getUseDebugger())
-                    _option._debug.gatherLoopBasedInformations(sWhile_Condition_Back, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sWhile_Condition, SyntaxError::invalid_position);
-            }
-        }
-        if (_data.containsCacheElements(sWhile_Condition))
-        {
+    v = evalHeader(nNum, sWhile_Condition, false, nth_Cmd);
 
-            _data.setCacheStatus(true);
-            for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-            {
-                if (sWhile_Condition.find(iter->first+"()") != string::npos)
-                {
-                    if (_data.getCacheCols(iter->first,false))
-                        sWhile_Condition = sWhile_Condition.substr(0,sWhile_Condition.find(iter->first+"()")) + "true" + sWhile_Condition.substr(sWhile_Condition.find(iter->first+"()")+7);
-                    else
-                        sWhile_Condition = sWhile_Condition.substr(0,sWhile_Condition.find(iter->first+"()")) + "false" + sWhile_Condition.substr(sWhile_Condition.find(iter->first+"()")+7);
-                }
-                if (!containsStrings(sWhile_Condition) && !_data.containsStringVars(sWhile_Condition))
-                {
-                    if (sWhile_Condition.find(iter->first+"(") != string::npos && _data.getCacheCols(iter->first,false) && !isInQuotes(sWhile_Condition, sWhile_Condition.find(iter->first+"(")))
-                        parser_ReplaceEntities(sWhile_Condition, iter->first+"(", _data, _parser, _option, true);
-                    else if (sWhile_Condition.find(iter->first+"(") != string::npos && !isInQuotes(sWhile_Condition, sWhile_Condition.find(iter->first+"(")))
-                    {
-                        if (_option.getUseDebugger())
-                            _option._debug.gatherLoopBasedInformations(sWhile_Condition, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                        throw SyntaxError(SyntaxError::NO_CACHED_DATA, sWhile_Condition, SyntaxError::invalid_position);
-                    }
-                }
-            }
-            _data.setCacheStatus(false);
-        }
-
-
-        if (bFault)
-        {
-            return -1;
-        }
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode(false);
-    }
-    // --> Ggf. Vektor-Eingaben abfangen <--
-    if (sWhile_Condition.find("{") != string::npos && (containsStrings(sLine) || _data.containsStringVars(sLine)))
-        parser_VectorToExpr(sWhile_Condition, _option);
-
-    // --> Prozeduren einbinden <--
-    if (sWhile_Condition.find('$') != string::npos)
-    {
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-        {
-            _parser.PauseLoopMode();
-            _parser.LockPause();
-        }
-        int nReturn = procedureInterface(sWhile_Condition, _parser, _functions, _data, _out, _pData, _script, _option, nLoop+nWhile+nIf, nth_Cmd);
-        if (nReturn == -1)
-            return -1;
-        else if (nReturn == -2)
-            sWhile_Condition = "false";
-        if (_option.getbDebug())
-            cerr << "|-> DEBUG: sWhile_ = " << sWhile_Condition << endl;
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-        {
-            _parser.PauseLoopMode(false);
-            _parser.LockPause(false);
-        }
-    }
-
-    // --> String-Auswertung einbinden <--
-    if (containsStrings(sWhile_Condition) || _data.containsStringVars(sWhile_Condition))
-    {
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode();
-        int nReturn = parser_StringParser(sWhile_Condition, sCache, _data, _parser, _option, true);
-        if (nReturn)
-        {
-            if (nReturn == 1)
-            {
-                StripSpaces(sWhile_Condition);
-                if (sWhile_Condition != "\"\"" && sWhile_Condition.length() > 2)
-                    sWhile_Condition = "true";
-                else
-                    sWhile_Condition = "false";
-            }
-        }
-        else
-        {
-            if (_option.getUseDebugger())
-                _option._debug.gatherLoopBasedInformations(sWhile_Condition_Back, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-            throw SyntaxError(SyntaxError::STRING_ERROR, sWhile_Condition, SyntaxError::invalid_position);
-        }
-        replaceLocalVars(sWhile_Condition);
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode(false);
-    }
-
-    if (bUseLoopParsingMode && !bLockedPauseMode)
-        _parser.SetIndex(nth_Cmd);
-    if (bUseLoopParsingMode && !bLockedPauseMode && _parser.IsValidByteCode() && _parser.GetExpr() == sWhile_Condition+" ")
-        _parser.Eval(nResults);
-    else if (bUseLoopParsingMode && !bLockedPauseMode && _parser.IsValidByteCode() && _parser.GetExpr().length())
-    {
-        _parser.DeclareAsInvalid();
-        _parser.SetExpr(sWhile_Condition);
-        _parser.Eval(nResults);
-    }
-    else
-    {
-        _parser.SetExpr(sWhile_Condition);
-        _parser.Eval(nResults);
-    }
     if (bSilent && !bMask && !nth_loop)
     {
         NumeReKernel::printPreFmt("|WHL> " + toSystemCodePage(_lang.get("COMMON_EVALUATING")) + " ... ");
@@ -593,372 +317,124 @@ int Loop::while_loop(Parser& _parser, Define& _functions, Datafile& _data, Setti
     while (true)
     {
         if (bUseLoopParsingMode && !bLockedPauseMode)
-            _parser.SetIndex(nth_Cmd);
-        if (!bUseLoopParsingMode || bLockedPauseMode || !_parser.IsValidByteCode() || _parser.GetExpr() != sWhile_Condition+" ")
+            _parserRef->SetIndex(nth_Cmd);
+        if (!bUseLoopParsingMode || bLockedPauseMode || !_parserRef->IsValidByteCode() || _parserRef->GetExpr() != sWhile_Condition+" ")
         {
-            if (bUseLoopParsingMode && !bLockedPauseMode && _parser.IsValidByteCode() && _parser.GetExpr().length())
-                _parser.DeclareAsInvalid();
-            _parser.SetExpr(sWhile_Condition);
+            if (bUseLoopParsingMode && !bLockedPauseMode && _parserRef->IsValidByteCode() && _parserRef->GetExpr().length())
+                _parserRef->DeclareAsInvalid();
+            _parserRef->SetExpr(sWhile_Condition);
         }
         if (nLoopCount >= nLoopSavety && nLoopSavety > 1)
             return -1;
         nLoopCount++;
-        v = _parser.Eval(nResults);
+        v = _parserRef->Eval(nResults);
         if (!(bool)v[0] || isnan(v[0]) || isinf(v[0]))
         {
-            return nJumpTable[nth_Cmd][0];
+            return nJumpTable[nth_Cmd][BLOCK_END];
         }
-        for (int __j = nth_Cmd; __j < nCmd; __j++)
+        for (int __j = nth_Cmd; __j < nJumpTable[nth_Cmd][BLOCK_END]; __j++)
         {
-            if (__j == nJumpTable[nth_Cmd][0])
-                break;
             if (__j != nth_Cmd)
             {
                 if (sCmd[__j][0].length())
                 {
-                    if (sCmd[__j][0].substr(0,3) == "for")
+                    int nReturn = evalLoopFlowCommands(__j, nth_loop);
+
+                    if (nReturn == LOOP_ERROR || nReturn == LOOP_RETURN)
+                        return nReturn;
+                    else if (nReturn == LOOP_BREAK)
                     {
-                        __j = for_loop(_parser, _functions, _data, _option, _out, _pData, _script, __j, nth_loop+1);
-                        if (__j == -1 || __j == -2 || bReturnSignal)
-                            return __j;
+                        bBreakSignal = false;
+                        return nJumpTable[nth_Cmd][BLOCK_END];
                     }
-                    else if (sCmd[__j][0].substr(0,5) == "while")
+                    else if (nReturn == LOOP_CONTINUE)
                     {
-                        __j = while_loop(_parser, _functions, _data, _option, _out, _pData, _script, __j, nth_loop+1);
-                        if (__j == -1 || __j == -2 || bReturnSignal)
-                            return __j;
-                    }
-                    else if (sCmd[__j][0].substr(0,8) == "endwhile")
-                    {
+                        bContinueSignal = false;
                         break;
                     }
-                    else if (sCmd[__j][0].find(">>if") != string::npos)
-                    {
-                        __j = if_fork(_parser, _functions, _data, _option, _out, _pData, _script, __j, nth_loop+1);
-                        if (__j == -1 || __j == -2 || bReturnSignal)
-                            return __j;
-                        if (bContinueSignal)
-                        {
-                            bContinueSignal = false;
-                            break;
-                        }
-                        if (bBreakSignal)
-                        {
-                            bBreakSignal = false;
-
-                            return nJumpTable[nth_Cmd][0];
-                        }
-                    }
+                    else if (nReturn != LOOP_NO_CMD)
+                        __j = nReturn;
                 }
             }
             if (!sCmd[__j][1].length())
                 continue;
-
-            if (findCommand(sCmd[__j][1]).sString == "continue")
+            if (!nCalcType[__j])
             {
+                string sCommand = findCommand(sCmd[__j][1]).sString;
+                if (sCommand == "continue")
+                {
+                    nCalcType[__j] = CALCTYPE_CONTINUECMD;
+                    break;
+                }
+                if (sCommand == "break")
+                {
+                    nCalcType[__j] = CALCTYPE_BREAKCMD;
+                    return nJumpTable[nth_Cmd][BLOCK_END];
+                }
+            }
+            else if (nCalcType[__j] & CALCTYPE_CONTINUECMD)
                 break;
-            }
-            if (findCommand(sCmd[__j][1]).sString == "break")
-            {
-                return nJumpTable[nth_Cmd][0];
-            }
+            else if (nCalcType[__j] & CALCTYPE_BREAKCMD)
+                return nJumpTable[nth_Cmd][BLOCK_END];
 
             if (bUseLoopParsingMode && !bLockedPauseMode)
-                _parser.SetIndex(__j + nCmd+1);
+                _parserRef->SetIndex(__j + nCmd+1);
 
             try
             {
-                if (calc(sCmd[__j][1], __j, _parser, _functions, _data, _option, _out, _pData, _script, "WHL") == -1)
+                if (calc(sCmd[__j][1], __j, "WHL") == LOOP_ERROR)
                 {
-                    if (_option.getUseDebugger())
-                        _option._debug.gatherLoopBasedInformations(sCmd[__j][1], nCmd-__j, mVarMap, vVarArray, sVarArray, nVarArray);
-                    return -1;
+                    if (_optionRef->getUseDebugger())
+                        _optionRef->_debug.gatherLoopBasedInformations(sCmd[__j][1], nCmd-__j, mVarMap, vVarArray, sVarArray, nVarArray);
+                    return LOOP_ERROR;
                 }
                 if (bReturnSignal)
-                    return -2;
+                    return LOOP_RETURN;
             }
             catch(...)
             {
-                if (_option.getUseDebugger())
-                    _option._debug.gatherLoopBasedInformations(sCmd[__j][1], nCmd-__j, mVarMap, vVarArray, sVarArray, nVarArray);
+                if (_optionRef->getUseDebugger())
+                    _optionRef->_debug.gatherLoopBasedInformations(sCmd[__j][1], nCmd-__j, mVarMap, vVarArray, sVarArray, nVarArray);
                 throw;
             }
         }
 
-        if (!nth_loop)
+        /*if (!nth_loop)
         {
             if (bSilent && !bMask)
             {
                 NumeReKernel::printPreFmt("\r|WHL> " + toSystemCodePage(_lang.get("COMMON_EVALUATING")) + " ... ");
                 bPrintedStatus = true;
             }
-        }
+        }*/
 
-        if (sWhile_Condition != sWhile_Condition_Back || _data.containsCacheElements(sWhile_Condition_Back) || sWhile_Condition_Back.find("data(") != string::npos)
+
+        if (sWhile_Condition != sWhile_Condition_Back || _dataRef->containsCacheElements(sWhile_Condition_Back) || sWhile_Condition_Back.find("data(") != string::npos)
         {
             sWhile_Condition = sWhile_Condition_Back;
-            if (!bFunctionsReplaced)
-            {
-                if (!_functions.call(sWhile_Condition, _option))
-                {
-                    throw SyntaxError(SyntaxError::FUNCTION_ERROR, sWhile_Condition, SyntaxError::invalid_position);
-                }
-            }
-            if (sWhile_Condition.find("data(") != string::npos || _data.containsCacheElements(sWhile_Condition))
-            {
-                if (!bLockedPauseMode && bUseLoopParsingMode)
-                    _parser.PauseLoopMode();
-                if (sWhile_Condition.find("data()") != string::npos)
-                {
-                    if (_data.isValid())
-                        sWhile_Condition = sWhile_Condition.substr(0,sWhile_Condition.find("data()")) + "1" + sWhile_Condition.substr(sWhile_Condition.find("data()")+6);
-                    else
-                        sWhile_Condition = sWhile_Condition.substr(0,sWhile_Condition.find("data()")) + "0" + sWhile_Condition.substr(sWhile_Condition.find("data()")+6);
-                }
-                if (!containsStrings(sWhile_Condition) && !_data.containsStringVars(sWhile_Condition))
-                {
-                    if (sWhile_Condition.find("data(") != string::npos && _data.isValid() && !isInQuotes(sWhile_Condition, sWhile_Condition.find("data(")))
-                        parser_ReplaceEntities(sWhile_Condition, "data(", _data, _parser, _option, true);
-                    else if (sWhile_Condition.find("data(") != string::npos && !_data.isValid() && !isInQuotes(sWhile_Condition, sWhile_Condition.find("data(")))
-                    {
-                        if (_option.getUseDebugger())
-                            _option._debug.gatherLoopBasedInformations(sWhile_Condition_Back, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                        throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sWhile_Condition, SyntaxError::invalid_position);
-                    }
-                }
-                if (_data.containsCacheElements(sWhile_Condition))
-                {
-
-                    _data.setCacheStatus(true);
-                    for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-                    {
-                        if (sWhile_Condition.find(iter->first+"()") != string::npos)
-                        {
-                            if (_data.getCacheCols(iter->first,false))
-                                sWhile_Condition = sWhile_Condition.substr(0,sWhile_Condition.find(iter->first+"()")) + "true" + sWhile_Condition.substr(sWhile_Condition.find(iter->first+"()")+(iter->first).length()+2);
-                            else
-                                sWhile_Condition = sWhile_Condition.substr(0,sWhile_Condition.find(iter->first+"()")) + "false" + sWhile_Condition.substr(sWhile_Condition.find(iter->first+"()")+(iter->first).length()+2);
-                        }
-                        if (!containsStrings(sWhile_Condition) && !_data.containsStringVars(sWhile_Condition))
-                        {
-                            if (sWhile_Condition.find(iter->first+"(") != string::npos && _data.getCacheCols(iter->first,false) && !isInQuotes(sWhile_Condition, sWhile_Condition.find(iter->first+"(")))
-                                parser_ReplaceEntities(sWhile_Condition, iter->first+"(", _data, _parser, _option, true);
-                            else if (sWhile_Condition.find(iter->first+"(") != string::npos && !isInQuotes(sWhile_Condition, sWhile_Condition.find(iter->first+"(")))
-                            {
-                                if (_option.getUseDebugger())
-                                    _option._debug.gatherLoopBasedInformations(sWhile_Condition_Back, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                                throw SyntaxError(SyntaxError::NO_CACHED_DATA, sWhile_Condition, SyntaxError::invalid_position);
-                            }
-                        }
-                    }
-                    _data.setCacheStatus(false);
-                }
-
-                if (!bLockedPauseMode && bUseLoopParsingMode)
-                    _parser.PauseLoopMode(false);
-            }
-            //cerr << sWhile_Condition << endl;
-            // --> Ggf. Vektor-Eingaben abfangen <--
-            if (sWhile_Condition.find("{") != string::npos && (containsStrings(sLine) || _data.containsStringVars(sLine)))
-                parser_VectorToExpr(sWhile_Condition, _option);
-            // --> Prozeduren einbinden <--
-            if (sWhile_Condition.find('$') != string::npos)
-            {
-                if (!bLockedPauseMode && bUseLoopParsingMode)
-                {
-                    _parser.PauseLoopMode();
-                    _parser.LockPause();
-                }
-                int nReturn = procedureInterface(sWhile_Condition, _parser, _functions, _data, _out, _pData, _script, _option, nLoop+nWhile+nIf, nth_Cmd);
-                if (nReturn == -1)
-                    return -1;
-                else if (nReturn == -2)
-                    sWhile_Condition = "false";
-                if (_option.getbDebug())
-                    cerr << "|-> DEBUG: sWhile_Condition = " << sWhile_Condition << endl;
-                if (!bLockedPauseMode && bUseLoopParsingMode)
-                {
-                    _parser.PauseLoopMode(false);
-                    _parser.LockPause(false);
-                }
-            }
-
-            // --> String-Auswertung einbinden <--
-            if (containsStrings(sWhile_Condition) || _data.containsStringVars(sWhile_Condition))
-            {
-                if (!bLockedPauseMode && bUseLoopParsingMode)
-                    _parser.PauseLoopMode();
-                int nReturn = parser_StringParser(sWhile_Condition, sCache, _data, _parser, _option, true);
-                if (nReturn)
-                {
-                    if (nReturn == 1)
-                    {
-                        StripSpaces(sWhile_Condition);
-                        if (sWhile_Condition != "\"\"" && sWhile_Condition.length() > 2)
-                            sWhile_Condition = "true";
-                        else
-                            sWhile_Condition = "false";
-                    }
-                }
-                else
-                {
-                    if (_option.getUseDebugger())
-                        _option._debug.gatherLoopBasedInformations(sWhile_Condition_Back, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sWhile_Condition, SyntaxError::invalid_position);
-                }
-                replaceLocalVars(sWhile_Condition);
-                if (!bLockedPauseMode && bUseLoopParsingMode)
-                    _parser.PauseLoopMode(false);
-            }
+            v = evalHeader(nNum, sWhile_Condition, false, nth_Cmd);
         }
     }
     return nCmd;
 }
 
-int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, int nth_Cmd, int nth_loop)
+int Loop::if_fork(int nth_Cmd, int nth_loop)
 {
     string sIf_Condition = sCmd[nth_Cmd][0].substr(sCmd[nth_Cmd][0].find('(')+1, sCmd[nth_Cmd][0].rfind(')')-sCmd[nth_Cmd][0].find('(')-1);
-    int nElse = nJumpTable[nth_Cmd][1];
-    int nEndif = nJumpTable[nth_Cmd][0];
+    int nElse = nJumpTable[nth_Cmd][ELSE_START];
+    int nEndif = nJumpTable[nth_Cmd][BLOCK_END];
     string sLine = "";
-    string sCache = "";
     bPrintedStatus = false;
-
-    // --> Datafile- und Cache-Konstrukte abfangen <--
-    if (!bFunctionsReplaced)
-    {
-        if (!_functions.call(sIf_Condition, _option))
-        {
-            throw SyntaxError(SyntaxError::FUNCTION_ERROR, sIf_Condition, SyntaxError::invalid_position);
-        }
-    }
-    if (sIf_Condition.find("data(") != string::npos || _data.containsCacheElements(sIf_Condition))
-    {
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode();
-        if (sIf_Condition.find("data()") != string::npos)
-        {
-            if (_data.isValid())
-                sIf_Condition = sIf_Condition.substr(0,sIf_Condition.find("data()")) + "true" + sIf_Condition.substr(sIf_Condition.find("data()")+6);
-            else
-                sIf_Condition = sIf_Condition.substr(0,sIf_Condition.find("data()")) + "false" + sIf_Condition.substr(sIf_Condition.find("data()")+6);
-        }
-        if (sIf_Condition.find("data(") != string::npos && !containsStrings(sIf_Condition) && !_data.containsStringVars(sIf_Condition))
-        {
-            if (_data.isValid() && !isInQuotes(sIf_Condition, sIf_Condition.find("data(")))
-                parser_ReplaceEntities(sIf_Condition, "data(", _data, _parser, _option, true);
-            else if (!_data.isValid() && !isInQuotes(sIf_Condition, sIf_Condition.find("data(")))
-            {
-                if (_option.getUseDebugger())
-                    _option._debug.gatherLoopBasedInformations(sIf_Condition, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sIf_Condition, SyntaxError::invalid_position);
-            }
-        }
-        if (_data.containsCacheElements(sIf_Condition))
-        {
-            _data.setCacheStatus(true);
-            for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-            {
-                if (sIf_Condition.find(iter->first+"()") != string::npos)
-                {
-                    if (_data.getCacheCols(iter->first,false))
-                        sIf_Condition = sIf_Condition.substr(0,sIf_Condition.find(iter->first+"()")) + "true" + sIf_Condition.substr(sIf_Condition.find(iter->first+"()")+(iter->first).length()+2);
-                    else
-                        sIf_Condition = sIf_Condition.substr(0,sIf_Condition.find(iter->first+"()")) + "false" + sIf_Condition.substr(sIf_Condition.find(iter->first+"()")+(iter->first).length()+2);
-                }
-                if (!containsStrings(sIf_Condition) && !_data.containsStringVars(sIf_Condition))
-                {
-                    if (sIf_Condition.find(iter->first+"(") != string::npos && _data.getCacheCols(iter->first,false) && !isInQuotes(sIf_Condition, sIf_Condition.find(iter->first+"(")))
-                        parser_ReplaceEntities(sIf_Condition, iter->first+"(", _data, _parser, _option, true);
-                    else if (sIf_Condition.find(iter->first+"(") != string::npos && !isInQuotes(sIf_Condition, sIf_Condition.find(iter->first+"(")))
-                    {
-                        if (_option.getUseDebugger())
-                            _option._debug.gatherLoopBasedInformations(sIf_Condition, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                        throw SyntaxError(SyntaxError::NO_CACHED_DATA, sIf_Condition, SyntaxError::invalid_position);
-                    }
-                }
-            }
-            _data.setCacheStatus(false);
-        }
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode(false);
-    }
-    // --> Ggf. Vektor-Eingaben abfangen <--
-    if (sIf_Condition.find("{") != string::npos && (containsStrings(sLine) || _data.containsStringVars(sLine)))
-        parser_VectorToExpr(sIf_Condition, _option);
-
-    // --> Prozeduren einbinden <--
-    if (sIf_Condition.find('$') != string::npos)
-    {
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-        {
-            _parser.PauseLoopMode();
-            _parser.LockPause();
-        }
-        int nReturn = procedureInterface(sIf_Condition, _parser, _functions, _data, _out, _pData, _script, _option, nLoop+nWhile+nIf, nth_Cmd);
-        if (nReturn == -1)
-            return -1;
-        else if (nReturn == -2)
-            sIf_Condition = "false";
-        if (_option.getbDebug())
-            cerr << "|-> DEBUG: sIf_Condition = " << sIf_Condition << endl;
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-        {
-            _parser.PauseLoopMode(false);
-            _parser.LockPause(false);
-        }
-    }
-
-    // --> String-Auswertung einbinden <--
-    if (containsStrings(sIf_Condition) || _data.containsStringVars(sIf_Condition))
-    {
-        if (!bLockedPauseMode)
-            _parser.PauseLoopMode();
-        int nReturn = parser_StringParser(sIf_Condition, sCache, _data, _parser, _option, true);
-        if (nReturn)
-        {
-            if (nReturn == 1)
-            {
-                StripSpaces(sIf_Condition);
-                if (sIf_Condition != "\"\"" && sIf_Condition.length() > 2)
-                    sIf_Condition = "true";
-                else
-                    sIf_Condition = "false";
-            }
-        }
-        else
-        {
-            if (_option.getUseDebugger())
-                _option._debug.gatherLoopBasedInformations(sIf_Condition, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-            throw SyntaxError(SyntaxError::STRING_ERROR, sIf_Condition, SyntaxError::invalid_position);
-        }
-        replaceLocalVars(sIf_Condition);
-        if (!bLockedPauseMode)
-            _parser.PauseLoopMode(false);
-    }
-    int nResults = 0;
-    if (bUseLoopParsingMode && !bLockedPauseMode)
-        _parser.SetIndex(nth_Cmd);
     value_type* v;
-    if (bUseLoopParsingMode && !bLockedPauseMode && _parser.IsValidByteCode() && _parser.GetExpr() == sIf_Condition+" ")
-        v = _parser.Eval(nResults);
-    else if (bUseLoopParsingMode && !bLockedPauseMode && _parser.IsValidByteCode() && _parser.GetExpr().length())
-    {
-        _parser.DeclareAsInvalid();
-        _parser.SetExpr(sIf_Condition);
-        v = _parser.Eval(nResults);
-    }
-    else
-    {
-        _parser.SetExpr(sIf_Condition);
-        v = _parser.Eval(nResults);
-    }
+    int nNum = 0;
+
+    v = evalHeader(nNum, sIf_Condition, false, nth_Cmd);
 
     if ((bool)v[0] && !isnan(v[0]) && !isinf(v[0]))
     {
         for (int __i = nth_Cmd; __i < nCmd; __i++)
         {
-            if (nElse != -1 && __i == nElse)
+            if (__i == nElse)
                 return nEndif;
             else if (nEndif == __i)
                 return nEndif;
@@ -966,85 +442,63 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
             {
                 if (sCmd[__i][0].length())
                 {
-                    if (sCmd[__i][0].substr(0,3) == "for")
+                    int nReturn = evalForkFlowCommands(__i, nth_loop);
+
+                    if (nReturn == LOOP_ERROR || nReturn == LOOP_RETURN)
+                        return nReturn;
+                    else if (nReturn == LOOP_BREAK || nReturn == LOOP_CONTINUE)
                     {
-                        if (nth_loop <= -1)
-                        {
-                            bPrintedStatus = false;
-                            __i = for_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i);
-                            if (!bReturnSignal && !bMask && __i != -1)
-                            {
-                                if (bSilent)
-                                    NumeReKernel::printPreFmt("\r|FOR> " + toSystemCodePage(_lang.get("COMMON_EVALUATING")) + " ... 100 %: " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
-                                else
-                                    NumeReKernel::printPreFmt("|FOR> " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
-                            }
-                        }
-                        else
-                            __i = for_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i, nth_loop+1);
-                        if (__i == -1 || __i == -2 || bReturnSignal)
-                            return __i;
+                        return nEndif;
                     }
-                    else if (sCmd[__i][0].substr(0,5) == "while")
-                    {
-                        if (nth_loop <= -1)
-                        {
-                            bPrintedStatus = false;
-                            __i = while_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i);
-                            if (!bReturnSignal && !bMask && __i != -1)
-                            {
-                                if (bSilent)
-                                    NumeReKernel::printPreFmt("\r|WHL> " + toSystemCodePage(_lang.get("COMMON_EVALUATING")) + " ...: " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
-                                else
-                                    NumeReKernel::printPreFmt("|WHL> " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
-                            }
-                        }
-                        else
-                            __i = while_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i, nth_loop+1);
-                        if (__i == -1 || __i == -2 || bReturnSignal)
-                            return __i;
-                    }
-                    else if (sCmd[__i][0].find(">>if") != string::npos)
-                    {
-                        if (nth_loop <= -1)
-                            __i = if_fork(_parser, _functions, _data, _option, _out, _pData, _script, __i, -2);
-                        else
-                            __i = if_fork(_parser, _functions, _data, _option, _out, _pData, _script, __i, nth_loop);
-                        if (__i == -1 || __i == -2 || bReturnSignal)
-                            return __i;
-                        if (bBreakSignal || bContinueSignal)
-                        {
-                            return nEndif;
-                        }
-                    }
+                    else if (nReturn != LOOP_NO_CMD)
+                        __i = nReturn;
                 }
             }
 
             if (!sCmd[__i][1].length())
                 continue;
 
-            if (findCommand(sCmd[__i][1]).sString == "continue" || findCommand(sCmd[__i][1]).sString == "break")
+            if (!nCalcType[__i])
             {
-                if (findCommand(sCmd[__i][1]).sString == "continue")
+                string sCommand = findCommand(sCmd[__i][1]).sString;
+                if (sCommand == "continue")
+                {
+                    nCalcType[__i] = CALCTYPE_CONTINUECMD;
                     bContinueSignal = true;
-                else
+                    return nEndif;
+                }
+                if (sCommand == "break")
+                {
+                    nCalcType[__i] = CALCTYPE_BREAKCMD;
                     bBreakSignal = true;
+                    return nEndif;
+                }
+            }
+            else if (nCalcType[__i] & CALCTYPE_CONTINUECMD)
+            {
+                bContinueSignal = true;
+                return nEndif;
+            }
+            else if (nCalcType[__i] & CALCTYPE_BREAKCMD)
+            {
+                bBreakSignal = true;
                 return nEndif;
             }
 
+
             if (bUseLoopParsingMode && !bLockedPauseMode)
-                _parser.SetIndex(__i+nCmd+1);
+                _parserRef->SetIndex(__i+nCmd+1);
             try
             {
-                if (calc(sCmd[__i][1], __i, _parser, _functions, _data, _option, _out, _pData, _script, "IF") == -1)
-                    return -1;
+                if (calc(sCmd[__i][1], __i, "IF") == LOOP_ERROR)
+                    return LOOP_ERROR;
                 if (bReturnSignal)
-                    return -2;
+                    return LOOP_RETURN;
             }
             catch (...)
             {
-                if (_option.getUseDebugger())
-                    _option._debug.gatherLoopBasedInformations(sCmd[__i][1], nCmd-__i, mVarMap, vVarArray, sVarArray, nVarArray);
+                if (_optionRef->getUseDebugger())
+                    _optionRef->_debug.gatherLoopBasedInformations(sCmd[__i][1], nCmd-__i, mVarMap, vVarArray, sVarArray, nVarArray);
                 throw;
             }
         }
@@ -1058,142 +512,13 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
         while (sCmd[nth_Cmd][0].find(">>elseif") != string::npos) // elseif
         {
             sIf_Condition = sCmd[nth_Cmd][0].substr(sCmd[nth_Cmd][0].find('(')+1, sCmd[nth_Cmd][0].rfind(')')-sCmd[nth_Cmd][0].find('(')-1);
-            nElse = nJumpTable[nth_Cmd][1];
-            nEndif = nJumpTable[nth_Cmd][0];
+            nElse = nJumpTable[nth_Cmd][ELSE_START];
+            nEndif = nJumpTable[nth_Cmd][BLOCK_END];
             sLine = "";
-            sCache = "";
             bPrintedStatus = false;
 
-            // --> Datafile- und Cache-Konstrukte abfangen <--
-            if (!bFunctionsReplaced)
-            {
-                if (!_functions.call(sIf_Condition, _option))
-                {
-                    throw SyntaxError(SyntaxError::FUNCTION_ERROR, sIf_Condition, SyntaxError::invalid_position);
-                }
-            }
-            if (sIf_Condition.find("data(") != string::npos || _data.containsCacheElements(sIf_Condition))
-            {
-                if (!bLockedPauseMode && bUseLoopParsingMode)
-                    _parser.PauseLoopMode();
-                if (sIf_Condition.find("data()") != string::npos)
-                {
-                    if (_data.isValid())
-                        sIf_Condition = sIf_Condition.substr(0,sIf_Condition.find("data()")) + "true" + sIf_Condition.substr(sIf_Condition.find("data()")+6);
-                    else
-                        sIf_Condition = sIf_Condition.substr(0,sIf_Condition.find("data()")) + "false" + sIf_Condition.substr(sIf_Condition.find("data()")+6);
-                }
-                if (sIf_Condition.find("data(") != string::npos && !containsStrings(sIf_Condition) && !_data.containsStringVars(sIf_Condition))
-                {
-                    if (_data.isValid() && !isInQuotes(sIf_Condition, sIf_Condition.find("data(")))
-                        parser_ReplaceEntities(sIf_Condition, "data(", _data, _parser, _option, true);
-                    else if (!_data.isValid() && !isInQuotes(sIf_Condition, sIf_Condition.find("data(")))
-                    {
-                        if (_option.getUseDebugger())
-                            _option._debug.gatherLoopBasedInformations(sIf_Condition, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                        throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sIf_Condition, SyntaxError::invalid_position);
-                    }
-                }
-                if (_data.containsCacheElements(sIf_Condition))
-                {
-                    _data.setCacheStatus(true);
-                    for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-                    {
-                        if (sIf_Condition.find(iter->first+"()") != string::npos)
-                        {
-                            if (_data.getCacheCols(iter->first,false))
-                                sIf_Condition = sIf_Condition.substr(0,sIf_Condition.find(iter->first+"()")) + "true" + sIf_Condition.substr(sIf_Condition.find(iter->first+"()")+(iter->first).length()+2);
-                            else
-                                sIf_Condition = sIf_Condition.substr(0,sIf_Condition.find(iter->first+"()")) + "false" + sIf_Condition.substr(sIf_Condition.find(iter->first+"()")+(iter->first).length()+2);
-                        }
-                        if (!containsStrings(sIf_Condition) && !_data.containsStringVars(sIf_Condition))
-                        {
-                            if (sIf_Condition.find(iter->first+"(") != string::npos && _data.getCacheCols(iter->first,false) && !isInQuotes(sIf_Condition, sIf_Condition.find(iter->first+"(")))
-                                parser_ReplaceEntities(sIf_Condition, iter->first+"(", _data, _parser, _option, true);
-                            else if (sIf_Condition.find(iter->first+"(") != string::npos && !isInQuotes(sIf_Condition, sIf_Condition.find(iter->first+"(")))
-                            {
-                                if (_option.getUseDebugger())
-                                    _option._debug.gatherLoopBasedInformations(sIf_Condition, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                                throw SyntaxError(SyntaxError::NO_CACHED_DATA, sIf_Condition, SyntaxError::invalid_position);
-                            }
-                        }
-                    }
-                    _data.setCacheStatus(false);
-                }
-                if (!bLockedPauseMode && bUseLoopParsingMode)
-                    _parser.PauseLoopMode(false);
-            }
-            // --> Ggf. Vektor-Eingaben abfangen <--
-            if (sIf_Condition.find("{") != string::npos && (containsStrings(sLine) || _data.containsStringVars(sLine)))
-                parser_VectorToExpr(sIf_Condition, _option);
+            v = evalHeader(nNum, sIf_Condition, false, nth_Cmd);
 
-            // --> Prozeduren einbinden <--
-            if (sIf_Condition.find('$') != string::npos)
-            {
-                if (!bLockedPauseMode && bUseLoopParsingMode)
-                {
-                    _parser.PauseLoopMode();
-                    _parser.LockPause();
-                }
-                int nReturn = procedureInterface(sIf_Condition, _parser, _functions, _data, _out, _pData, _script, _option, nLoop+nWhile+nIf, nth_Cmd);
-                if (nReturn == -1)
-                    return -1;
-                else if (nReturn == -2)
-                    sIf_Condition = "false";
-                if (_option.getbDebug())
-                    cerr << "|-> DEBUG: sIf_Condition = " << sIf_Condition << endl;
-                if (!bLockedPauseMode && bUseLoopParsingMode)
-                {
-                    _parser.PauseLoopMode(false);
-                    _parser.LockPause(false);
-                }
-            }
-
-            // --> String-Auswertung einbinden <--
-            if (containsStrings(sIf_Condition) || _data.containsStringVars(sIf_Condition))
-            {
-                if (!bLockedPauseMode && bUseLoopParsingMode)
-                    _parser.PauseLoopMode();
-                int nReturn = parser_StringParser(sIf_Condition, sCache, _data, _parser, _option, true);
-                if (nReturn)
-                {
-                    if (nReturn == 1)
-                    {
-                        StripSpaces(sIf_Condition);
-                        if (sIf_Condition != "\"\"" && sIf_Condition.length() > 2)
-                            sIf_Condition = "true";
-                        else
-                            sIf_Condition = "false";
-                    }
-                }
-                else
-                {
-                    if (_option.getUseDebugger())
-                        _option._debug.gatherLoopBasedInformations(sIf_Condition, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sIf_Condition, SyntaxError::invalid_position);
-                }
-                replaceLocalVars(sIf_Condition);
-                if (!bLockedPauseMode && bUseLoopParsingMode)
-                    _parser.PauseLoopMode(false);
-            }
-
-            if (bUseLoopParsingMode && !bLockedPauseMode)
-                _parser.SetIndex(nth_Cmd);
-            if (bUseLoopParsingMode && !bLockedPauseMode && _parser.IsValidByteCode() && _parser.GetExpr() == sIf_Condition+" ")
-                _parser.Eval(nResults);
-            else if (bUseLoopParsingMode && !bLockedPauseMode && _parser.IsValidByteCode() && _parser.GetExpr().length())
-            {
-                _parser.DeclareAsInvalid();
-                _parser.SetExpr(sIf_Condition);
-                _parser.Eval(nResults);
-            }
-            else
-            {
-                _parser.SetExpr(sIf_Condition);
-                _parser.Eval(nResults);
-            }
-
-            v = _parser.Eval(nResults);
             if ((bool)v[0] && !isnan(v[0]) && !isinf(v[0]))
             {
                 for (int __i = nth_Cmd; __i < nCmd; __i++)
@@ -1206,138 +531,73 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
                     {
                         if (sCmd[__i][0].length())
                         {
-                            if (sCmd[__i][0].substr(0,3) == "for")
+                            int nReturn = evalForkFlowCommands(__i, nth_loop);
+
+                            if (nReturn == LOOP_ERROR || nReturn == LOOP_RETURN)
+                                return nReturn;
+                            else if (nReturn == LOOP_BREAK || nReturn == LOOP_CONTINUE)
                             {
-                                if (nth_loop <= -1)
-                                {
-                                    bPrintedStatus = false;
-                                    __i = for_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i);
-                                    if (!bReturnSignal && !bMask && __i != -1)
-                                    {
-                                        if (bSilent)
-                                            NumeReKernel::printPreFmt("\r|FOR> " + toSystemCodePage(_lang.get("COMMON_EVALUATING")) + " ... 100 %: " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
-                                        else
-                                            NumeReKernel::printPreFmt("|FOR> " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
-                                    }
-                                }
-                                else
-                                    __i = for_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i, nth_loop+1);
-                                if (__i == -1 || __i == -2 || bReturnSignal)
-                                    return __i;
+                                return nEndif;
                             }
-                            else if (sCmd[__i][0].substr(0,5) == "while")
-                            {
-                                if (nth_loop <= -1)
-                                {
-                                    bPrintedStatus = false;
-                                    __i = while_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i);
-                                    if (!bReturnSignal && !bMask && __i != -1)
-                                    {
-                                        if (bSilent)
-                                            NumeReKernel::printPreFmt("\r|WHL> " + toSystemCodePage(_lang.get("COMMON_EVALUATING")) + " ...: " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
-                                        else
-                                            NumeReKernel::printPreFmt("|WHL> " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
-                                    }
-                                }
-                                else
-                                    __i = while_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i, nth_loop+1);
-                                if (__i == -1 || __i == -2 || bReturnSignal)
-                                    return __i;
-                            }
-                            else if (sCmd[__i][0].find(">>if") != string::npos)
-                            {
-                                if (nth_loop <= -1)
-                                    __i = if_fork(_parser, _functions, _data, _option, _out, _pData, _script, __i, -2);
-                                else
-                                    __i = if_fork(_parser, _functions, _data, _option, _out, _pData, _script, __i, nth_loop);
-                                if (__i == -1 || __i == -2 || bReturnSignal)
-                                    return __i;
-                                if (bBreakSignal || bContinueSignal)
-                                {
-                                    /*int nIfCount = 0;
-                                    for (int n = __i; n < nCmd; n++)
-                                    {
-                                        if (sCmd[n][0].find(">>if") != string::npos)
-                                            nIfCount++;
-                                        if (sCmd[n][0].find(">>endif") != string::npos && !nIfCount)
-                                            return n;
-                                        else if (sCmd[n][0].find(">>endif") != string::npos && nIfCount)
-                                            nIfCount--;
-                                    }*/
-                                    return nEndif;
-                                }
-                            }
-                            /*else if ((sCmd[__i][0].substr(0, nElseLength) == sNth_if + ">>else"
-                                || sCmd[__i][0].substr(0, nEndifLength) == sNth_if + ">>endif"))
-                            {
-                                if (sCmd[__i][0].substr(0, nEndifLength) == sNth_if + ">>endif")
-                                    return __i;
-                                else
-                                {
-                                    while (__i < nCmd)
-                                    {
-                                        __i++;
-                                        if (sCmd[__i][0].length())
-                                        {
-                                            if (sCmd[__i][0].substr(0, nEndifLength) == sNth_if + ">>endif")
-                                                return __i;
-                                        }
-                                    }
-                                    return -1;
-                                }
-                            }*/
+                            else if (nReturn != LOOP_NO_CMD)
+                                __i = nReturn;
                         }
                     }
 
                     if (!sCmd[__i][1].length())
                         continue;
 
-                    if (sCmd[__i][1] == "continue" || sCmd[__i][1] == "break")
+                    if (!nCalcType[__i])
                     {
-                        if (sCmd[__i][1] == "continue")
-                            bContinueSignal = true;
-                        else
-                            bBreakSignal = true;
-
-                        /*int nIfCount = 0;
-                        for (int n = __i; n < nCmd; n++)
+                        string sCommand = findCommand(sCmd[__i][1]).sString;
+                        if (sCommand == "continue")
                         {
-                            if (sCmd[n][0].find(">>if") != string::npos)
-                                nIfCount++;
-                            if (sCmd[n][0].find(">>endif") != string::npos && !nIfCount)
-                                return n;
-                            else if (sCmd[n][0].find(">>endif") != string::npos && nIfCount)
-                                nIfCount--;
-                        }*/
+                            nCalcType[__i] = CALCTYPE_CONTINUECMD;
+                            bContinueSignal = true;
+                            return nEndif;
+                        }
+                        if (sCommand == "break")
+                        {
+                            nCalcType[__i] = CALCTYPE_BREAKCMD;
+                            bBreakSignal = true;
+                            return nEndif;
+                        }
+                    }
+                    else if (nCalcType[__i] & CALCTYPE_CONTINUECMD)
+                    {
+                        bContinueSignal = true;
+                        return nEndif;
+                    }
+                    else if (nCalcType[__i] & CALCTYPE_BREAKCMD)
+                    {
+                        bBreakSignal = true;
                         return nEndif;
                     }
 
                     if (bUseLoopParsingMode && !bLockedPauseMode)
-                        _parser.SetIndex(__i+nCmd+1);
+                        _parserRef->SetIndex(__i+nCmd+1);
 
                     try
                     {
-                        if (calc(sCmd[__i][1], __i, _parser, _functions, _data, _option, _out, _pData, _script, "IF") == -1)
+                        if (calc(sCmd[__i][1], __i, "IF") == LOOP_ERROR)
                         {
-                            if (_option.getUseDebugger())
-                                _option._debug.gatherLoopBasedInformations(sCmd[__i][1], nCmd-__i, mVarMap, vVarArray, sVarArray, nVarArray);
-                            return -1;
+                            if (_optionRef->getUseDebugger())
+                                _optionRef->_debug.gatherLoopBasedInformations(sCmd[__i][1], nCmd-__i, mVarMap, vVarArray, sVarArray, nVarArray);
+                            return LOOP_ERROR;
                         }
                         if (bReturnSignal)
-                            return -2;
+                            return LOOP_RETURN;
                     }
                     catch (...)
                     {
-                        if (_option.getUseDebugger())
-                            _option._debug.gatherLoopBasedInformations(sCmd[__i][1], nCmd-__i, mVarMap, vVarArray, sVarArray, nVarArray);
+                        if (_optionRef->getUseDebugger())
+                            _optionRef->_debug.gatherLoopBasedInformations(sCmd[__i][1], nCmd-__i, mVarMap, vVarArray, sVarArray, nVarArray);
                         throw;
                     }
                 }
             }
             else
             {
-                if (_option.getbDebug())
-                    cerr << "|-> DEBUG: ELSE-Zweig!" << endl;
                 if (nElse == -1) // No else && no elseif
                     return nEndif;
                 else
@@ -1353,116 +613,67 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
             {
                 if (sCmd[__i][0].length())
                 {
-                    if (sCmd[__i][0].substr(0,3) == "for")
+                    int nReturn = evalForkFlowCommands(__i, nth_loop);
+
+                    if (nReturn == LOOP_ERROR || nReturn == LOOP_RETURN)
+                        return nReturn;
+                    else if (nReturn == LOOP_BREAK || nReturn == LOOP_CONTINUE)
                     {
-                        if (nth_loop <= -1)
-                        {
-                            //mu::console() << endl;
-                            bPrintedStatus = false;
-                            __i = for_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i);
-                            if (!bReturnSignal && !bMask && __i != -1)
-                            {
-                                if (bSilent)
-                                    NumeReKernel::printPreFmt("\r|FOR> " + toSystemCodePage(_lang.get("COMMON_EVALUATING")) + " ... 100 %: " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
-                                else
-                                    NumeReKernel::printPreFmt("|FOR> " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
-                            }
-                        }
-                        else
-                            __i = for_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i, nth_loop+1);
-                        if (__i == -1 || __i == -2 || bReturnSignal)
-                            return __i;
+                        return nEndif;
                     }
-                    else if (sCmd[__i][0].substr(0,5) == "while")
-                    {
-                        if (nth_loop <= -1)
-                        {
-                            bPrintedStatus = false;
-                            __i = while_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i);
-                            if (!bReturnSignal && !bMask && __i != -1)
-                            {
-                                if (bSilent)
-                                    NumeReKernel::printPreFmt("\r|WHL> " + toSystemCodePage(_lang.get("COMMON_EVALUATING")) + " ...: " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
-                                else
-                                    NumeReKernel::printPreFmt("|WHL> " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
-                            }
-                        }
-                        else
-                            __i = while_loop(_parser, _functions, _data, _option, _out, _pData, _script, __i, nth_loop+1);
-                        if (__i == -1 || __i == -2 || bReturnSignal)
-                            return __i;
-                    }
-                    else if (sCmd[__i][0].find(">>if") != string::npos)
-                    {
-                        if (nth_loop <= -1)
-                            __i = if_fork(_parser, _functions, _data, _option, _out, _pData, _script, __i, -2);
-                        else
-                            __i = if_fork(_parser, _functions, _data, _option, _out, _pData, _script, __i, nth_loop);
-                        if (__i == -1 || __i == -2 || bReturnSignal)
-                            return __i;
-                        if (bBreakSignal || bContinueSignal)
-                        {
-                            /*int nIfCount = 0;
-                            for (int n = __i; n < nCmd; n++)
-                            {
-                                if (sCmd[n][0].find(">>if") != string::npos)
-                                    nIfCount++;
-                                if (sCmd[n][0].find(">>endif") != string::npos && !nIfCount)
-                                    return n;
-                                else if (sCmd[n][0].find(">>endif") != string::npos && nIfCount)
-                                    nIfCount--;
-                            }*/
-                            return nEndif;
-                        }
-                    }
-                    /*else if (sCmd[__i][0].substr(0, nEndifLength) == sNth_if + ">>endif")
-                    {
-                        return __i;
-                    }*/
+                    else if (nReturn != LOOP_NO_CMD)
+                        __i = nReturn;
                 }
             }
 
             if (!sCmd[__i][1].length())
                 continue;
 
-            if (sCmd[__i][1] == "continue" || sCmd[__i][1] == "break")
+            if (!nCalcType[__i])
             {
-                if (sCmd[__i][1] == "continue")
-                    bContinueSignal = true;
-                else
-                    bBreakSignal = true;
-
-                /*int nIfCount = 0;
-                for (int n = __i; n < nCmd; n++)
+                string sCommand = findCommand(sCmd[__i][1]).sString;
+                if (sCommand == "continue")
                 {
-                    if (sCmd[n][0].find(">>if") != string::npos)
-                        nIfCount++;
-                    if (sCmd[n][0].find(">>endif") != string::npos && !nIfCount)
-                        return n;
-                    else if (sCmd[n][0].find(">>endif") != string::npos && nIfCount)
-                        nIfCount--;
-                }*/
+                    nCalcType[__i] = CALCTYPE_CONTINUECMD;
+                    bContinueSignal = true;
+                    return nEndif;
+                }
+                if (sCommand == "break")
+                {
+                    nCalcType[__i] = CALCTYPE_BREAKCMD;
+                    bBreakSignal = true;
+                    return nEndif;
+                }
+            }
+            else if (nCalcType[__i] & CALCTYPE_CONTINUECMD)
+            {
+                bContinueSignal = true;
+                return nEndif;
+            }
+            else if (nCalcType[__i] & CALCTYPE_BREAKCMD)
+            {
+                bBreakSignal = true;
                 return nEndif;
             }
 
             if (bUseLoopParsingMode && !bLockedPauseMode)
-                _parser.SetIndex(__i + nCmd+1);
+                _parserRef->SetIndex(__i + nCmd+1);
 
             try
             {
-                if (calc(sCmd[__i][1], __i, _parser, _functions, _data, _option, _out, _pData, _script, "IF") == -1)
+                if (calc(sCmd[__i][1], __i, "IF") == LOOP_ERROR)
                 {
-                    if (_option.getUseDebugger())
-                        _option._debug.gatherLoopBasedInformations(sCmd[__i][1], nCmd-__i, mVarMap, vVarArray, sVarArray, nVarArray);
-                    return -1;
+                    if (_optionRef->getUseDebugger())
+                        _optionRef->_debug.gatherLoopBasedInformations(sCmd[__i][1], nCmd-__i, mVarMap, vVarArray, sVarArray, nVarArray);
+                    return LOOP_ERROR;
                 }
                 if (bReturnSignal)
-                    return -2;
+                    return LOOP_RETURN;
             }
-            catch(...)
+            catch (...)
             {
-                if (_option.getUseDebugger())
-                    _option._debug.gatherLoopBasedInformations(sCmd[__i][1], nCmd-__i, mVarMap, vVarArray, sVarArray, nVarArray);
+                if (_optionRef->getUseDebugger())
+                    _optionRef->_debug.gatherLoopBasedInformations(sCmd[__i][1], nCmd-__i, mVarMap, vVarArray, sVarArray, nVarArray);
                 throw;
             }
         }
@@ -1471,76 +682,78 @@ int Loop::if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings
 }
 
 
-value_type* Loop::evalHeader(int& nNum, string sHeadExpression, bool bIsForHead, Parser& _parser, Datafile& _data, Define& _functions, Settings& _option, Output& _out, PlotData& _pData, Script& _script)
+value_type* Loop::evalHeader(int& nNum, string sHeadExpression, bool bIsForHead, int nth_Cmd)
 {
-    value_type v* = nullptr;
+    value_type* v = nullptr;
+    string sCache = "";
+
     if (!bFunctionsReplaced)
     {
-        if (!_functions.call(sHeadExpression, _option))
+        if (!_functionRef->call(sHeadExpression, *_optionRef))
         {
             throw SyntaxError(SyntaxError::FUNCTION_ERROR, sHeadExpression, SyntaxError::invalid_position);
         }
     }
     // --> Datafile- und Cache-Konstrukte abfangen <--
-    if ((sHeadExpression.find("data(") != string::npos || _data.containsCacheElements(sHeadExpression))
-        && (!containsStrings(sHeadExpression) && !_data.containsStringVars(sHeadExpression)))
+    if ((sHeadExpression.find("data(") != string::npos || _dataRef->containsCacheElements(sHeadExpression))
+        && (!containsStrings(sHeadExpression) && !_dataRef->containsStringVars(sHeadExpression)))
     {
         if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode();
-        if (sHeadExpression.find("data(") != string::npos && _data.isValid() && !isInQuotes(sHeadExpression, sHeadExpression.find("data(")))
-            parser_ReplaceEntities(sHeadExpression, "data(", _data, _parser, _option, true);
-        else if (sHeadExpression.find("data(") != string::npos && !_data.isValid() && !isInQuotes(sHeadExpression, sHeadExpression.find("data(")))
+            _parserRef->PauseLoopMode();
+        if (sHeadExpression.find("data(") != string::npos && _dataRef->isValid() && !isInQuotes(sHeadExpression, sHeadExpression.find("data(")))
+            parser_ReplaceEntities(sHeadExpression, "data(", *_dataRef, *_parserRef, *_optionRef, true);
+        else if (sHeadExpression.find("data(") != string::npos && !_dataRef->isValid() && !isInQuotes(sHeadExpression, sHeadExpression.find("data(")))
         {
             throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sHeadExpression, SyntaxError::invalid_position);
         }
 
-        if (_data.containsCacheElements(sHeadExpression) && _data.isValidCache())
+        if (_dataRef->containsCacheElements(sHeadExpression) && _dataRef->isValidCache())
         {
-            _data.setCacheStatus(true);
-            for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
+            _dataRef->setCacheStatus(true);
+            for (auto iter = _dataRef->mCachesMap.begin(); iter != _dataRef->mCachesMap.end(); ++iter)
             {
                 if (sHeadExpression.find(iter->first+"(") != string::npos && !isInQuotes(sHeadExpression, sHeadExpression.find(iter->first+"(")))
                 {
-                    parser_ReplaceEntities(sHeadExpression, iter->first+"(", _data, _parser, _option, true);
+                    parser_ReplaceEntities(sHeadExpression, iter->first+"(", *_dataRef, *_parserRef, *_optionRef, true);
                 }
             }
-            _data.setCacheStatus(false);
+            _dataRef->setCacheStatus(false);
         }
-        else if (_data.containsCacheElements(sHeadExpression) && !_data.isValidCache())
+        else if (_dataRef->containsCacheElements(sHeadExpression) && !_dataRef->isValidCache())
         {
             throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sHeadExpression, SyntaxError::invalid_position);
         }
 
         if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode(false);
+            _parserRef->PauseLoopMode(false);
     }
     // --> Ggf. Vektor-Eingaben abfangen <--
-    if (sHeadExpression.find("{") != string::npos && (containsStrings(sHeadExpression) || _data.containsStringVars(sHeadExpression)))
-        parser_VectorToExpr(sHeadExpression, _option);
+    if (sHeadExpression.find("{") != string::npos && (containsStrings(sHeadExpression) || _dataRef->containsStringVars(sHeadExpression)))
+        parser_VectorToExpr(sHeadExpression, *_optionRef);
     if (sHeadExpression.find("$") != string::npos)
     {
         if (!bLockedPauseMode && bUseLoopParsingMode)
         {
-            _parser.PauseLoopMode();
-            _parser.LockPause();
+            _parserRef->PauseLoopMode();
+            _parserRef->LockPause();
         }
-        int nReturn = procedureInterface(sHeadExpression, _parser, _functions, _data, _out, _pData, _script, _option, nLoop+nWhile+nIf, nth_Cmd);
+        int nReturn = procedureInterface(sHeadExpression, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nLoop+nWhile+nIf, nth_Cmd);
         if (nReturn == -1)
-            return -1;
+            throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sHeadExpression, SyntaxError::invalid_position);
         else if (nReturn == -2)
             sHeadExpression = "false";
         if (!bLockedPauseMode && bUseLoopParsingMode)
         {
-            _parser.PauseLoopMode(false);
-            _parser.LockPause(false);
+            _parserRef->PauseLoopMode(false);
+            _parserRef->LockPause(false);
         }
     }
     // --> String-Auswertung einbinden <--
-    if (containsStrings(sHeadExpression) || _data.containsStringVars(sHeadExpression))
+    if (containsStrings(sHeadExpression) || _dataRef->containsStringVars(sHeadExpression))
     {
         if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode();
-        int nReturn = parser_StringParser(sHeadExpression, sCache, _data, _parser, _option, true);
+            _parserRef->PauseLoopMode();
+        int nReturn = parser_StringParser(sHeadExpression, sCache, *_dataRef, *_parserRef, *_optionRef, true);
         if (nReturn)
         {
             if (nReturn == 1)
@@ -1548,8 +761,8 @@ value_type* Loop::evalHeader(int& nNum, string sHeadExpression, bool bIsForHead,
                 StripSpaces(sHeadExpression);
                 if (bIsForHead && containsStrings(sHeadExpression))
                 {
-                    if (_option.getUseDebugger())
-                        _option._debug.gatherLoopBasedInformations(sHeadExpression, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
+                    if (_optionRef->getUseDebugger())
+                        _optionRef->_debug.gatherLoopBasedInformations(sHeadExpression, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
                     throw SyntaxError(SyntaxError::CANNOT_EVAL_FOR, sHeadExpression, SyntaxError::invalid_position);
                 }
                 else if (containsStrings(sHeadExpression))
@@ -1558,40 +771,130 @@ value_type* Loop::evalHeader(int& nNum, string sHeadExpression, bool bIsForHead,
                     if (sHeadExpression != "\"\"" && sHeadExpression.length() > 2)
                         sHeadExpression = "true";
                     else
-                        sHeadExpression = "false"
+                        sHeadExpression = "false";
                 }
             }
         }
         else
         {
-            if (_option.getUseDebugger())
-                _option._debug.gatherLoopBasedInformations(sHeadExpression, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
+            if (_optionRef->getUseDebugger())
+                _optionRef->_debug.gatherLoopBasedInformations(sHeadExpression, nth_Cmd, mVarMap, vVarArray, sVarArray, nVarArray);
             throw SyntaxError(SyntaxError::STRING_ERROR, sHeadExpression, SyntaxError::invalid_position);
         }
         replaceLocalVars(sHeadExpression);
         if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode(false);
+            _parserRef->PauseLoopMode(false);
     }
 
 
     if (bUseLoopParsingMode && !bLockedPauseMode)
-        _parser.SetIndex(nth_Cmd); // i + (nCmd+1)*j
-    if (bUseLoopParsingMode && !bLockedPauseMode && _parser.IsValidByteCode() && sHeadExpression+" " == _parser.GetExpr())
+        _parserRef->SetIndex(nth_Cmd); // i + (nCmd+1)*j
+    if (bUseLoopParsingMode && !bLockedPauseMode && _parserRef->IsValidByteCode() && sHeadExpression+" " == _parserRef->GetExpr())
     {
-        v = _parser.Eval(nNum);
+        v = _parserRef->Eval(nNum);
     }
-    else if (bUseLoopParsingMode && !bLockedPauseMode && _parser.IsValidByteCode() && _parser.GetExpr().length())
+    else if (bUseLoopParsingMode && !bLockedPauseMode && _parserRef->IsValidByteCode() && _parserRef->GetExpr().length())
     {
-        _parser.DeclareAsInvalid();
-        _parser.SetExpr(sHeadExpression);
-        v = _parser.Eval(nNum);
+        _parserRef->DeclareAsInvalid();
+        _parserRef->SetExpr(sHeadExpression);
+        v = _parserRef->Eval(nNum);
     }
     else
     {
-        _parser.SetExpr(sHeadExpression);
-        v = _parser.Eval(nNum);
+        _parserRef->SetExpr(sHeadExpression);
+        v = _parserRef->Eval(nNum);
     }
     return v;
+}
+
+int Loop::evalLoopFlowCommands(int __j, int nth_loop)
+{
+    if (nJumpTable[__j][BLOCK_END] == NO_FLOW_COMMAND)
+        return LOOP_NO_CMD;
+
+    if (sCmd[__j][0].substr(0,3) == "for")
+    {
+        return for_loop(__j, nth_loop+1);
+    }
+    else if (sCmd[__j][0].substr(0,5) == "while")
+    {
+        return while_loop(__j, nth_loop+1);
+    }
+    else if (sCmd[__j][0].find(">>if") != string::npos)
+    {
+        __j = if_fork(__j, nth_loop+1);
+        if (__j == LOOP_ERROR || __j == LOOP_RETURN || bReturnSignal)
+            return __j;
+        if (bContinueSignal)
+        {
+            return LOOP_CONTINUE;
+        }
+        if (bBreakSignal)
+        {
+            return LOOP_BREAK;
+        }
+        return __j;
+    }
+    return LOOP_NO_CMD;
+}
+
+int Loop::evalForkFlowCommands(int __i, int nth_loop)
+{
+    if (nJumpTable[__i][BLOCK_END] == NO_FLOW_COMMAND)
+        return LOOP_NO_CMD;
+
+    if (sCmd[__i][0].substr(0,3) == "for")
+    {
+        if (nth_loop <= -1)
+        {
+            bPrintedStatus = false;
+            __i = for_loop(__i);
+            if (!bReturnSignal && !bMask && __i != -1)
+            {
+                if (bSilent)
+                    NumeReKernel::printPreFmt("\r|FOR> " + toSystemCodePage(_lang.get("COMMON_EVALUATING")) + " ... 100 %: " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
+                else
+                    NumeReKernel::printPreFmt("|FOR> " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
+            }
+            return __i;
+        }
+        else
+            return for_loop(__i, nth_loop+1);
+    }
+    else if (sCmd[__i][0].substr(0,5) == "while")
+    {
+        if (nth_loop <= -1)
+        {
+            bPrintedStatus = false;
+            __i = while_loop(__i);
+            if (!bReturnSignal && !bMask && __i != -1)
+            {
+                if (bSilent)
+                    NumeReKernel::printPreFmt("\r|WHL> " + toSystemCodePage(_lang.get("COMMON_EVALUATING")) + " ...: " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
+                else
+                    NumeReKernel::printPreFmt("|WHL> " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
+            }
+            return __i;
+        }
+        else
+            return while_loop(__i, nth_loop+1);
+    }
+    else if (sCmd[__i][0].find(">>if") != string::npos)
+    {
+        __i = if_fork(__i, nth_loop+1);
+        if (__i == LOOP_ERROR || __i == LOOP_RETURN || bReturnSignal)
+            return __i;
+        if (bContinueSignal)
+        {
+            return LOOP_CONTINUE;
+        }
+        if (bBreakSignal)
+        {
+            return LOOP_BREAK;
+        }
+        return __i;
+    }
+    return LOOP_NO_CMD;
 }
 
 
@@ -1612,7 +915,7 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
     }
     if (__sCmd == "abort")
     {
-        reset(_parser);
+        reset();
         NumeReKernel::print(toSystemCodePage(_lang.get("LOOP_SETCOMMAND_ABORT")));
         return;
     }
@@ -1633,7 +936,7 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
     {
         if (!validateParenthesisNumber(__sCmd))
         {
-            reset(_parser);
+            reset();
             throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, __sCmd, __sCmd.find('('));
         }
         if (__sCmd.substr(0,3) == "for")
@@ -1667,7 +970,7 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
 
             if (nPos == string::npos)
             {
-                reset(_parser);
+                reset();
                 throw SyntaxError(SyntaxError::CANNOT_EVAL_FOR, __sCmd, SyntaxError::invalid_position);
             }
             __sCmd.replace(nPos, 1, ",");
@@ -2188,6 +1491,15 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
     bFunctionsReplaced = false;
     bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
 
+    _parserRef = &_parser;
+    _dataRef = &_data;
+    _outRef = &_out;
+    _optionRef = &_option;
+    _functionRef = &_functions;
+    _pDataRef = &_pData;
+    _scriptRef = &_script;
+
+
 
     for (int i = 0; i <= nCmd; i++)
     {
@@ -2203,11 +1515,6 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
             {
                 sVars += sVar + ";";
                 nVarArray++;
-                if (_option.getbDebug())
-                {
-                    cerr << "|-> DEBUG: sVars = " << sVars << endl;
-                    cerr << "|-> DEBUG: nVarArray = " << nVarArray << endl;
-                }
             }
             sCmd[i][0][sCmd[i][0].find('(')] = ' ';
             sCmd[i][0].pop_back();
@@ -2229,14 +1536,18 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
     if (!_option.getSystemPrintStatus())
         bMask = true;
 
+    nCalcType = new int[nCmd+1];
+    for (int i = 0; i < nCmd+1; i++)
+        nCalcType[i] = CALCTYPE_NONE;
+
     nJumpTableLength = nCmd+1;
     nJumpTable = new int*[nJumpTableLength];
     for (unsigned int i = 0; i < nJumpTableLength; i++)
     {
         nJumpTable[i] = new int[3];
-        nJumpTable[i][0] = -1;
-        nJumpTable[i][1] = -1;
-        nJumpTable[i][2] = -1;
+        nJumpTable[i][BLOCK_END] = NO_FLOW_COMMAND;
+        nJumpTable[i][ELSE_START] = NO_FLOW_COMMAND;
+        nJumpTable[i][PROCEDURE_INTERFACE] = NO_FLOW_COMMAND;
     }
 
     for (int i = 0; i <= nCmd; i++)
@@ -2255,8 +1566,8 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
                             nForCount--;
                         else
                         {
-                            nJumpTable[i][0] = j;
-                            if (!bUseLoopParsingMode && j-i > 1 && !bLockedPauseMode)
+                            nJumpTable[i][BLOCK_END] = j;
+                            if (!bUseLoopParsingMode /*&& j-i > 1*/ && !bLockedPauseMode)
                                 bUseLoopParsingMode = true;
                             break;
                         }
@@ -2276,8 +1587,8 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
                             nWhileCount--;
                         else
                         {
-                            nJumpTable[i][0] = j;
-                            if (!bUseLoopParsingMode && j-i > 1 && !bLockedPauseMode)
+                            nJumpTable[i][BLOCK_END] = j;
+                            if (!bUseLoopParsingMode /*&& j-i > 1*/ && !bLockedPauseMode)
                                 bUseLoopParsingMode = true;
                             break;
                         }
@@ -2291,13 +1602,13 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
                 string sNth_If = sCmd[i][0].substr(0, sCmd[i][0].find(">>"));
                 for (int j = i+1; j <= nCmd; j++)
                 {
-                    if (sCmd[j][0].length() && sCmd[j][0].substr(0, (sNth_If + ">>else").length()) == sNth_If + ">>else" && nJumpTable[i][1] == -1)
-                        nJumpTable[i][1] = j;
-                    else if (sCmd[j][0].length() && sCmd[j][0].substr(0, (sNth_If + ">>elseif").length()) == sNth_If + ">>elseif" && nJumpTable[i][1] == -1)
-                        nJumpTable[i][1] = j;
+                    if (sCmd[j][0].length() && sCmd[j][0].substr(0, (sNth_If + ">>else").length()) == sNth_If + ">>else" && nJumpTable[i][ELSE_START] == NO_FLOW_COMMAND)
+                        nJumpTable[i][ELSE_START] = j;
+                    else if (sCmd[j][0].length() && sCmd[j][0].substr(0, (sNth_If + ">>elseif").length()) == sNth_If + ">>elseif" && nJumpTable[i][ELSE_START] == NO_FLOW_COMMAND)
+                        nJumpTable[i][ELSE_START] = j;
                     else if (sCmd[j][0].length() && sCmd[j][0].substr(0, (sNth_If + ">>endif").length()) == sNth_If + ">>endif")
                     {
-                        nJumpTable[i][0] = j;
+                        nJumpTable[i][BLOCK_END] = j;
                         break;
                     }
                 }
@@ -2307,18 +1618,41 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
                 string sNth_If = sCmd[i][0].substr(0, sCmd[i][0].find(">>"));
                 for (int j = i+1; j <= nCmd; j++)
                 {
-                    if (sCmd[j][0].length() && sCmd[j][0].substr(0, (sNth_If + ">>else").length()) == sNth_If + ">>else" && nJumpTable[i][1] == -1)
-                        nJumpTable[i][1] = j;
-                    else if (sCmd[j][0].length() && sCmd[j][0].substr(0, (sNth_If + ">>elseif").length()) == sNth_If + ">>elseif" && nJumpTable[i][1] == -1)
-                        nJumpTable[i][1] = j;
+                    if (sCmd[j][0].length() && sCmd[j][0].substr(0, (sNth_If + ">>else").length()) == sNth_If + ">>else" && nJumpTable[i][ELSE_START] == NO_FLOW_COMMAND)
+                        nJumpTable[i][ELSE_START] = j;
+                    else if (sCmd[j][0].length() && sCmd[j][0].substr(0, (sNth_If + ">>elseif").length()) == sNth_If + ">>elseif" && nJumpTable[i][ELSE_START] == NO_FLOW_COMMAND)
+                        nJumpTable[i][ELSE_START] = j;
                     else if (sCmd[j][0].length() && sCmd[j][0].substr(0, (sNth_If + ">>endif").length()) == sNth_If + ">>endif")
                     {
-                        nJumpTable[i][0] = j;
+                        nJumpTable[i][BLOCK_END] = j;
                         break;
                     }
                 }
             }
-        //cerr << nJumpTable[i][0] << "  " << nJumpTable[i][1] << endl;
+        }
+        if (sCmd[i][1].length())
+        {
+            sCmd[i][1] += " ";
+            // Könnte Schwierigkeiten machen
+            if (sCmd[i][1].find("+=") != string::npos
+                || sCmd[i][1].find("-=") != string::npos
+                || sCmd[i][1].find("*=") != string::npos
+                || sCmd[i][1].find("/=") != string::npos
+                || sCmd[i][1].find("^=") != string::npos
+                || sCmd[i][1].find("++") != string::npos
+                || sCmd[i][1].find("--") != string::npos)
+            {
+                bool bBreakPoint = (sCmd[i][1].substr(sCmd[i][1].find_first_not_of(" \t"),2) == "|>");
+                if (bBreakPoint)
+                {
+                    sCmd[i][1].erase(sCmd[i][1].find_first_not_of(" \t"),2);
+                    StripSpaces(sCmd[i][1]);
+                }
+                evalRecursiveExpressions(sCmd[i][1]);
+                if (bBreakPoint)
+                    sCmd[i][1].insert(0,"|> ");
+            }
+            StripSpaces(sCmd[i][1]);
         }
     }
     try
@@ -2376,12 +1710,12 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
                 {
                     if (!_functions.call(sCmd[i][0], _option))
                     {
-                        reset(_parser);
+                        reset();
                         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd[i][0], SyntaxError::invalid_position);
                     }
                     if (!_functions.call(sCmd[i][1], _option))
                     {
-                        reset(_parser);
+                        reset();
                         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd[i][1], SyntaxError::invalid_position);
                     }
                     StripSpaces(sCmd[i][0]);
@@ -2392,15 +1726,10 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
     }
     catch (...)
     {
-        reset(_parser);
+        reset();
         NumeReKernel::bSupressAnswer = bSupressAnswer_back;
         throw;
     }
-
-    //cerr << "Loop-Parse-Mode: " << bUseLoopParsingMode << endl;
-
-    if (_option.getbDebug())
-        cerr << "|-> DEBUG: Silent-Mode = " << bSilent << endl;
 
     if (bSilent)
         bLoopSupressAnswer = true;
@@ -2452,7 +1781,6 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
             if (sCmd[i][1].length())
             {
                 sCmd[i][1] += " ";
-                //cerr << sCmd[i][1] << endl;
                 for (unsigned int j = 0; j < sCmd[i][1].length(); j++)
                 {
                     if (sCmd[i][1].substr(j,(iter->first).length()) == iter->first)
@@ -2464,15 +1792,16 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
                             sCmd[i][1].replace(j,(iter->first).length(), iter->second);
                             j += (iter->second).length()-(iter->first).length();
                         }
-                        //cerr << sCmd[i][1] << endl;
                     }
                 }
                 // Könnte Schwierigkeiten machen
-                if (sCmd[i][1].find("+=") != string::npos
+                /*if (sCmd[i][1].find("+=") != string::npos
                     || sCmd[i][1].find("-=") != string::npos
                     || sCmd[i][1].find("*=") != string::npos
                     || sCmd[i][1].find("/=") != string::npos
-                    || sCmd[i][1].find("^=") != string::npos)
+                    || sCmd[i][1].find("^=") != string::npos
+                    || sCmd[i][1].find("++") != string::npos
+                    || sCmd[i][1].find("--") != string::npos)
                 {
                     bool bBreakPoint = (sCmd[i][1].substr(sCmd[i][1].find_first_not_of(" \t"),2) == "|>");
                     if (bBreakPoint)
@@ -2483,10 +1812,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
                     evalRecursiveExpressions(sCmd[i][1]);
                     if (bBreakPoint)
                         sCmd[i][1].insert(0,"|> ");
-
-                    if (_option.getbDebug())
-                        cerr << "|-> DEBUG: sCmd[i][1] = " << sCmd[i][1] << endl;
-                }
+                }*/
                 StripSpaces(sCmd[i][1]);
             }
         }
@@ -2499,7 +1825,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
     {
         if (sCmd[0][0].substr(0,3) == "for")
         {
-            if (for_loop(_parser, _functions, _data, _option, _out, _pData, _script) == -1)
+            if (for_loop() == LOOP_ERROR)
             {
                 if (bSilent || bMask)
                     NumeReKernel::printPreFmt("\n");
@@ -2515,7 +1841,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
         }
         else if (sCmd[0][0].substr(0,5) == "while")
         {
-            if (while_loop(_parser, _functions, _data, _option, _out, _pData, _script) == -1)
+            if (while_loop() == LOOP_ERROR)
             {
                 if (bSilent || bMask)
                     NumeReKernel::printPreFmt("\n");
@@ -2531,7 +1857,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
         }
         else
         {
-            if (if_fork(_parser, _functions, _data, _option, _out, _pData, _script) == -1)
+            if (if_fork() == LOOP_ERROR)
             {
                 if (bSilent || bMask)
                     NumeReKernel::printPreFmt("\n");
@@ -2541,7 +1867,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
     }
     catch (...)
     {
-        reset(_parser);
+        reset();
         NumeReKernel::bSupressAnswer = bSupressAnswer_back;
         if (bLoopSupressAnswer)
             bLoopSupressAnswer = false;
@@ -2549,14 +1875,14 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
             NumeReKernel::printPreFmt("\n");
         throw;
     }
-    reset(_parser);
+    reset();
 
     if (bLoopSupressAnswer)
         bLoopSupressAnswer = false;
     return;
 }
 
-void Loop::reset(Parser& _parser)
+void Loop::reset()
 {
     if (sCmd)
     {
@@ -2565,13 +1891,13 @@ void Loop::reset(Parser& _parser)
             delete[] sCmd[i];
         }
         delete[] sCmd;
-        sCmd = 0;
+        sCmd = nullptr;
     }
 
     if (vVarArray)
     {
         for (int i = 0; i < nVarArray; i++)
-            _parser.RemoveVar(sVarArray[i]);
+            _parserRef->RemoveVar(sVarArray[i]);
     }
     if (mVarMap.size() && nVarArray)
     {
@@ -2581,14 +1907,14 @@ void Loop::reset(Parser& _parser)
                 mVarMap.erase(mVarMap.find(sVarArray[i]));
         }
         if (!mVarMap.size())
-            _parser.mVarMapPntr = 0;
+            _parserRef->mVarMapPntr = nullptr;
     }
     if (!vVars.empty())
     {
         varmap_type::const_iterator item = vVars.begin();
         for (; item != vVars.end(); ++item)
         {
-            _parser.DefineVar(item->first, item->second);
+            _parserRef->DefineVar(item->first, item->second);
             if (vVarArray)
             {
                 for (int i = 0; i < nVarArray; i++)
@@ -2608,8 +1934,8 @@ void Loop::reset(Parser& _parser)
         }
         delete[] vVarArray;
         delete[] sVarArray;
-        vVarArray = 0;
-        sVarArray = 0;
+        vVarArray = nullptr;
+        sVarArray = nullptr;
     }
 
     if (nJumpTable)
@@ -2617,9 +1943,16 @@ void Loop::reset(Parser& _parser)
         for (unsigned int i = 0; i < nJumpTableLength; i++)
             delete[] nJumpTable[i];
         delete[] nJumpTable;
-        nJumpTable = 0;
+        nJumpTable = nullptr;
         nJumpTableLength = 0;
     }
+
+    if (nCalcType)
+    {
+        delete[] nCalcType;
+        nCalcType = nullptr;
+    }
+
     nVarArray = 0;
     nCmd = 0;
     nLoop = 0;
@@ -2637,499 +1970,567 @@ void Loop::reset(Parser& _parser)
     bMask = false;
     if (bUseLoopParsingMode && !bLockedPauseMode)
     {
-        _parser.DeactivateLoopMode();
+        _parserRef->DeactivateLoopMode();
         bUseLoopParsingMode = false;
     }
     bLockedPauseMode = false;
     bFunctionsReplaced = false;
-    _parser.ClearVectorVars();
+    _parserRef->ClearVectorVars();
+
+    _parserRef = nullptr;
+    _dataRef = nullptr;
+    _outRef = nullptr;
+    _optionRef = nullptr;
+    _functionRef = nullptr;
+    _pDataRef = nullptr;
+    _scriptRef = nullptr;
+
     return;
 }
 
-int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, string sBlock)
+int Loop::calc(string sLine, int nthCmd, string sBlock)
 {
     string sLine_Temp = sLine;
     string sCache = "";
+    string sCommand;
+
     value_type* v = 0;
     int nNum = 0;
-
     Indices _idx;
     bool bCompiling = false;
-
-    //cerr << sLine << endl;
-    if (!bFunctionsReplaced
-        && findCommand(sLine).sString != "define"
-        && findCommand(sLine).sString != "redef"
-        && findCommand(sLine).sString != "redefine"
-        && findCommand(sLine).sString != "undefine"
-        && findCommand(sLine).sString != "undef"
-        && findCommand(sLine).sString != "ifndef"
-        && findCommand(sLine).sString != "ifndefined")
-    {
-        if (!_functions.call(sLine, _option))
-        {
-            throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
-        }
-    }
-    int nProcedureCmd = 0;
     bool bWriteToCache = false;
-    if (sLine.substr(sLine.find_first_not_of(' '),2) == "|>")
-    {
-        sLine.erase(sLine.find_first_not_of(' '),2);
-        sLine_Temp.erase(sLine_Temp.find_first_not_of(' '),2);
-        StripSpaces(sLine);
-        StripSpaces(sLine_Temp);
-    }
 
-    if (findCommand(sLine).sString == "throw" || sLine == "throw")
+    int nCurrentCalcType = nCalcType[nthCmd];
+
+    if (!nCurrentCalcType
+        || !bFunctionsReplaced
+        || nCurrentCalcType & CALCTYPE_COMMAND
+        || nCurrentCalcType & CALCTYPE_DEFINITION
+        || nCurrentCalcType & CALCTYPE_PROGRESS
+        || nCurrentCalcType & CALCTYPE_COMPOSE
+        || nCurrentCalcType & CALCTYPE_RETURNCOMMAND
+        || nCurrentCalcType & CALCTYPE_THROWCOMMAND
+        || nCurrentCalcType & CALCTYPE_EXPLICIT)
+        sCommand = findCommand(sLine).sString;
+
+
+    if (!nCurrentCalcType || !(nCurrentCalcType & CALCTYPE_DEFINITION) || !bFunctionsReplaced)
     {
-        string sErrorToken;
-        if (sLine.length() > 6 && (containsStrings(sLine) || _data.containsStringVars(sLine)))
+        //cerr << sLine << endl;
+        if (!bFunctionsReplaced
+            && sCommand != "define"
+            && sCommand != "redef"
+            && sCommand != "redefine"
+            && sCommand != "undefine"
+            && sCommand != "undef"
+            && sCommand != "ifndef"
+            && sCommand != "ifndefined")
         {
-            if (_data.containsStringVars(sLine))
-                _data.getStringValues(sLine);
-            getStringArgument(sLine, sErrorToken);
-            sErrorToken += " -nq";
-            parser_StringParser(sErrorToken, sCache, _data, _parser, _option, true);
-        }
-        throw SyntaxError(SyntaxError::LOOP_THROW, sLine, SyntaxError::invalid_position, sErrorToken);
-    }
-    if (findCommand(sLine).sString == "return")
-    {
-        if (sLine.find("void", sLine.find("return")+6) != string::npos)
-        {
-            string sReturnValue = sLine.substr(sLine.find("return")+6);
-            StripSpaces(sReturnValue);
-            if (sReturnValue == "void")
+            if (!_functionRef->call(sLine, *_optionRef))
             {
-                bReturnSignal = true;
-                nReturnType = 0;
-                return -2;
+                throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
             }
         }
-        sLine = sLine.substr(sLine.find("return") + 6);
-        StripSpaces(sLine);
-        if (_option.getbDebug())
-            cerr << "|-> DEBUG: returning sLine = " << sLine << endl;
-        if (!sLine.length())
+        if (!nCurrentCalcType && (sCommand == "define" || sCommand == "redef" || sCommand == "redefine" || sCommand == "undefine" || sCommand == "undef" || sCommand == "ifndef" || sCommand != "ifndefined"))
         {
-            ReturnVal.vNumVal.push_back(1.0);
-            bReturnSignal = true;
-            return -2;
+            nCalcType[nthCmd] = CALCTYPE_COMMAND | CALCTYPE_DEFINITION;
         }
-        bReturnSignal = true;
+        if (!nCurrentCalcType && bFunctionsReplaced && nCalcType[nthCmd] & CALCTYPE_DEFINITION)
+            nCalcType[nthCmd] |= CALCTYPE_RECURSIVEEXPRESSION;
     }
-    if (NumeReKernel::GetAsyncCancelState())//GetAsyncKeyState(VK_ESCAPE))
+    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT)
+    {
+        if (sLine.substr(sLine.find_first_not_of(' '),2) == "|>")
+        {
+            if (!nCurrentCalcType)
+                nCalcType[nthCmd] |= CALCTYPE_DEBUGBREAKPOINT;
+            sLine.erase(sLine.find_first_not_of(' '),2);
+            sLine_Temp.erase(sLine_Temp.find_first_not_of(' '),2);
+            StripSpaces(sLine);
+            StripSpaces(sLine_Temp);
+        }
+    }
+    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_THROWCOMMAND)
+    {
+        if (sCommand == "throw" || sLine == "throw")
+        {
+            string sErrorToken;
+            if (sLine.length() > 6 && (containsStrings(sLine) || _dataRef->containsStringVars(sLine)))
+            {
+                if (_dataRef->containsStringVars(sLine))
+                    _dataRef->getStringValues(sLine);
+                getStringArgument(sLine, sErrorToken);
+                sErrorToken += " -nq";
+                parser_StringParser(sErrorToken, sCache, *_dataRef, *_parserRef, *_optionRef, true);
+            }
+            if (!nCurrentCalcType)
+                nCalcType[nthCmd] |= CALCTYPE_THROWCOMMAND;
+            throw SyntaxError(SyntaxError::LOOP_THROW, sLine, SyntaxError::invalid_position, sErrorToken);
+        }
+    }
+    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
+    {
+        if (sCommand == "return")
+        {
+            if (!nCurrentCalcType)
+                nCalcType[nthCmd] |= CALCTYPE_RETURNCOMMAND;
+            if (sLine.find("void", sLine.find("return")+6) != string::npos)
+            {
+                string sReturnValue = sLine.substr(sLine.find("return")+6);
+                StripSpaces(sReturnValue);
+                if (sReturnValue == "void")
+                {
+                    bReturnSignal = true;
+                    nReturnType = 0;
+                    return LOOP_RETURN;
+                }
+            }
+            sLine = sLine.substr(sLine.find("return") + 6);
+            StripSpaces(sLine);
+            if (!sLine.length())
+            {
+                ReturnVal.vNumVal.push_back(1.0);
+                bReturnSignal = true;
+                return LOOP_RETURN;
+            }
+            bReturnSignal = true;
+        }
+    }
+    if (NumeReKernel::GetAsyncCancelState())
     {
         if (bPrintedStatus)
             NumeReKernel::printPreFmt(" ABBRUCH!");
-            //cerr << " ABBRUCH!";
+
         throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
-        ReturnVal.vNumVal.push_back(NAN);
-        bReturnSignal = true;
-        return -2;
     }
-
-    if (_parser.IsValidByteCode() == 1 && _parser.GetExpr() == sLine + " " && !bLockedPauseMode && bUseLoopParsingMode)
+    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_NUMERICAL)
     {
-        //_parser.Eval();
-        if (!bSilent)
+        if (_parserRef->IsValidByteCode() == 1 && _parserRef->GetExpr() == sLine + " " && !bLockedPauseMode && bUseLoopParsingMode)
         {
-            /* --> Der Benutzer will also die Ergebnisse sehen. Es gibt die Moeglichkeit,
-             *     dass der Parser mehrere Ausdruecke je Zeile auswertet. Dazu muessen die
-             *     Ausdruecke durch Kommata getrennt sein. Damit der Parser bemerkt, dass er
-             *     mehrere Ausdruecke auszuwerten hat, muss man die Auswerte-Funktion des
-             *     Parsers einmal aufgerufen werden <--
-             */
-            v = _parser.Eval(nNum);
-            string sAns = "|" + sBlock + "> " + sLine_Temp + " => ";
-            // --> Zahl der Ausdruecke erhalten <--
-            //int nNum = _parser.GetNumResults();
-            // --> Ist die Zahl der Ausdruecke groesser als 1? <--
-            if (nNum > 1)
+            if (!nCurrentCalcType)
+                nCalcType[nthCmd] |= CALCTYPE_NUMERICAL;
+            if (!bSilent)
             {
-                // --> Gib die nNum Ergebnisse an das Array, das durch Pointer v bestimmt wird <--
-                //value_type *v = _parser.Eval(nNum);
-
-                // --> Gebe die nNum Ergebnisse durch Kommata getrennt aus <--
-                //cerr << std::setprecision(_option.getPrecision()) << "[";
-                sAns += "{";
-                vAns = v[0];
-                for (int i = 0; i < nNum; ++i)
+                /* --> Der Benutzer will also die Ergebnisse sehen. Es gibt die Moeglichkeit,
+                 *     dass der Parser mehrere Ausdruecke je Zeile auswertet. Dazu muessen die
+                 *     Ausdruecke durch Kommata getrennt sein. Damit der Parser bemerkt, dass er
+                 *     mehrere Ausdruecke auszuwerten hat, muss man die Auswerte-Funktion des
+                 *     Parsers einmal aufgerufen werden <--
+                 */
+                v = _parserRef->Eval(nNum);
+                string sAns = "|" + sBlock + "> " + sLine_Temp + " => ";
+                // --> Ist die Zahl der Ausdruecke groesser als 1? <--
+                if (nNum > 1)
                 {
-                    sAns += toString(v[i], _option);
-                    //cerr << v[i];
-                    if (i < nNum-1)
-                        sAns += ", ";
-                        //cerr << ", ";
+                    // --> Gebe die nNum Ergebnisse durch Kommata getrennt aus <--
+                    sAns += "{";
+                    vAns = v[0];
+                    for (int i = 0; i < nNum; ++i)
+                    {
+                        sAns += toString(v[i], *_optionRef);
+                        if (i < nNum-1)
+                            sAns += ", ";
+                    }
+                    NumeReKernel::printPreFmt(sAns + "}\n");
                 }
-                //cerr << "]" << endl;
-                NumeReKernel::printPreFmt(sAns + "}\n");
+                else
+                {
+                    // --> Zahl der Ausdruecke gleich 1? Dann einfach ausgeben <--
+                    vAns = v[0];
+                    NumeReKernel::printPreFmt(sAns + toString(vAns, *_optionRef) + "\n");
+                }
             }
             else
             {
-                // --> Zahl der Ausdruecke gleich 1? Dann einfach ausgeben <--
-                //vAns = _parser.Eval();
-                vAns = v[0];
-                //cerr << vAns << endl;
-                NumeReKernel::printPreFmt(sAns + toString(vAns, _option) + "\n");
+                /* --> Hier ist bSilent = TRUE: d.h., werte die Ausdruecke im Stillen aus,
+                 *     ohne dass der Benutzer irgendetwas davon mitbekommt <--
+                 */
+                v = _parserRef->Eval(nNum);
+                if (nNum)
+                    vAns = v[0];
             }
-        }
-        else
-        {
-            /* --> Hier ist bSilent = TRUE: d.h., werte die Ausdruecke im Stillen aus,
-             *     ohne dass der Benutzer irgendetwas davon mitbekommt <--
-             */
-            _parser.Eval();
-        }
-        return 1;
-    }
-
-    if ((findCommand(sLine).sString == "compose"
-            || findCommand(sLine).sString == "endcompose"
-            || sLoopPlotCompose.length())
-        && findCommand(sLine).sString != "quit")
-    {
-        if (!sLoopPlotCompose.length() && findCommand(sLine).sString == "compose")
-        {
-            sLoopPlotCompose = "plotcompose ";
-            return 1;
-        }
-        else if (findCommand(sLine).sString == "abort")
-        {
-            sLoopPlotCompose = "";
-            //cerr << "|-> Deklaration abgebrochen." << endl;
-            return 1;
-        }
-        else if (findCommand(sLine).sString != "endcompose")
-        {
-            string sCommand = findCommand(sLine).sString;
-            if (sCommand.substr(0,4) == "plot"
-                || sCommand.substr(0,4) == "grad"
-                || sCommand.substr(0,4) == "dens"
-                || sCommand.substr(0,4) == "vect"
-                || sCommand.substr(0,4) == "cont"
-                || sCommand.substr(0,4) == "surf"
-                || sCommand.substr(0,4) == "mesh")
-                sLoopPlotCompose += sLine + " <<COMPOSE>> ";
-            return 1;
-        }
-        else
-        {
-            sLine = sLoopPlotCompose;
-            sLoopPlotCompose = "";
+            return LOOP_OK;
         }
     }
-
-
-    if (sLine.find("to_cmd(") != string::npos)
+    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_COMPOSE || sLoopPlotCompose.length())
     {
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode();
-        unsigned int nPos = 0;
-        while (sLine.find("to_cmd(", nPos) != string::npos)
+        if ((sCommand == "compose"
+                || sCommand == "endcompose"
+                || sLoopPlotCompose.length())
+            && sCommand != "quit")
         {
-            nPos = sLine.find("to_cmd(", nPos) + 6;
-            if (isInQuotes(sLine, nPos))
-                continue;
-            unsigned int nParPos = getMatchingParenthesis(sLine.substr(nPos));
-            if (nParPos == string::npos)
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
-            string sCmdString = sLine.substr(nPos+1, nParPos-1);
-            StripSpaces(sCmdString);
-            if (containsStrings(sCmdString) || _data.containsStringVars(sCmdString))
+            if (!nCurrentCalcType)
+                nCalcType[nthCmd] |= CALCTYPE_COMPOSE;
+            if (!sLoopPlotCompose.length() && sCommand == "compose")
             {
-                sCmdString += " -nq";
-                parser_StringParser(sCmdString, sCache, _data, _parser, _option, true);
-                sCache = "";
+                sLoopPlotCompose = "plotcompose ";
+                return LOOP_OK;
             }
-            sLine = sLine.substr(0, nPos-6) + sCmdString + sLine.substr(nPos + nParPos+1);
-            nPos -= 5;
+            else if (sCommand == "abort")
+            {
+                sLoopPlotCompose = "";
+                return LOOP_OK;
+            }
+            else if (sCommand != "endcompose")
+            {
+                if (sCommand.substr(0,4) == "plot"
+                    || sCommand.substr(0,4) == "grad"
+                    || sCommand.substr(0,4) == "dens"
+                    || sCommand.substr(0,4) == "vect"
+                    || sCommand.substr(0,4) == "cont"
+                    || sCommand.substr(0,4) == "surf"
+                    || sCommand.substr(0,4) == "mesh")
+                    sLoopPlotCompose += sLine + " <<COMPOSE>> ";
+                return LOOP_OK;
+            }
+            else
+            {
+                sLine = sLoopPlotCompose;
+                sLoopPlotCompose = "";
+            }
         }
-        replaceLocalVars(sLine);
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode(false);
     }
-
-    if (findCommand(sLine).sString == "progress" && sLine.length() > 9)
+    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_TOCOMMAND)
     {
-        value_type* vVals = 0;
-        string sExpr;
-        string sArgument;
-        int nArgument;
-        if (containsStrings(sLine) || _data.containsStringVars(sLine))
+        if (sLine.find("to_cmd(") != string::npos)
         {
-            if (bUseLoopParsingMode && !bLockedPauseMode)
-                _parser.PauseLoopMode();
-            sLine = BI_evalParamString(sLine, _parser, _data, _option, _functions);
-            if (bUseLoopParsingMode && !bLockedPauseMode)
-                _parser.PauseLoopMode(false);
+            if (!nCurrentCalcType)
+                nCalcType[nthCmd] |= CALCTYPE_TOCOMMAND | CALCTYPE_COMMAND | CALCTYPE_DATAACCESS | CALCTYPE_EXPLICIT | CALCTYPE_PROGRESS | CALCTYPE_RECURSIVEEXPRESSION;
+            if (!bLockedPauseMode && bUseLoopParsingMode)
+                _parserRef->PauseLoopMode();
+            unsigned int nPos = 0;
+            while (sLine.find("to_cmd(", nPos) != string::npos)
+            {
+                nPos = sLine.find("to_cmd(", nPos) + 6;
+                if (isInQuotes(sLine, nPos))
+                    continue;
+                unsigned int nParPos = getMatchingParenthesis(sLine.substr(nPos));
+                if (nParPos == string::npos)
+                    throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
+                string sCmdString = sLine.substr(nPos+1, nParPos-1);
+                StripSpaces(sCmdString);
+                if (containsStrings(sCmdString) || _dataRef->containsStringVars(sCmdString))
+                {
+                    sCmdString += " -nq";
+                    parser_StringParser(sCmdString, sCache, *_dataRef, *_parserRef, *_optionRef, true);
+                    sCache = "";
+                }
+                sLine = sLine.substr(0, nPos-6) + sCmdString + sLine.substr(nPos + nParPos+1);
+                nPos -= 5;
+            }
+            replaceLocalVars(sLine);
+            if (!bLockedPauseMode && bUseLoopParsingMode)
+                _parserRef->PauseLoopMode(false);
+            sCommand = findCommand(sLine).sString;
         }
-        if (sLine.find("-set") != string::npos || sLine.find("--") != string::npos)
+    }
+    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_PROGRESS)
+    {
+        if (sCommand == "progress" && sLine.length() > 9)
         {
-            if (sLine.find("-set") != string::npos)
-                sArgument = sLine.substr(sLine.find("-set"));
-            else
-                sArgument = sLine.substr(sLine.find("--"));
-            sLine.erase(sLine.find(sArgument));
-            if (matchParams(sArgument, "first", '='))
+            if (!nCurrentCalcType)
+                nCalcType[nthCmd] |= CALCTYPE_PROGRESS;
+            value_type* vVals = 0;
+            string sExpr;
+            string sArgument;
+            int nArgument;
+            if (containsStrings(sLine) || _dataRef->containsStringVars(sLine))
             {
-                sExpr = getArgAtPos(sArgument, matchParams(sArgument, "first", '=')+5) + ",";
+                if (bUseLoopParsingMode && !bLockedPauseMode)
+                    _parserRef->PauseLoopMode();
+                sLine = BI_evalParamString(sLine, *_parserRef, *_dataRef, *_optionRef, *_functionRef);
+                if (bUseLoopParsingMode && !bLockedPauseMode)
+                    _parserRef->PauseLoopMode(false);
+            }
+            if (sLine.find("-set") != string::npos || sLine.find("--") != string::npos)
+            {
+                if (sLine.find("-set") != string::npos)
+                    sArgument = sLine.substr(sLine.find("-set"));
+                else
+                    sArgument = sLine.substr(sLine.find("--"));
+                sLine.erase(sLine.find(sArgument));
+                if (matchParams(sArgument, "first", '='))
+                {
+                    sExpr = getArgAtPos(sArgument, matchParams(sArgument, "first", '=')+5) + ",";
+                }
+                else
+                    sExpr = "1,";
+                if (matchParams(sArgument, "last", '='))
+                {
+                    sExpr += getArgAtPos(sArgument, matchParams(sArgument, "last", '=')+4);
+                }
+                else
+                    sExpr += "100";
+                if (matchParams(sArgument, "type", '='))
+                {
+                    sArgument = getArgAtPos(sArgument, matchParams(sArgument, "type", '=')+4);
+                }
+                else
+                    sArgument = "std";
             }
             else
-                sExpr = "1,";
-            if (matchParams(sArgument, "last", '='))
             {
-                sExpr += getArgAtPos(sArgument, matchParams(sArgument, "last", '=')+4);
-            }
-            else
-                sExpr += "100";
-            if (matchParams(sArgument, "type", '='))
-            {
-                sArgument = getArgAtPos(sArgument, matchParams(sArgument, "type", '=')+4);
-            }
-            else
                 sArgument = "std";
+                sExpr = "1,100";
+            }
+            while (sLine.length() && (sLine[sLine.length()-1] == ' ' || sLine[sLine.length()-1] == '-'))
+                sLine.pop_back();
+            if (!sLine.length())
+                return LOOP_OK;
+            if (_parserRef->GetExpr() != sLine.substr(findCommand(sLine).nPos+8)+","+sExpr+" ")
+            {
+                if (bUseLoopParsingMode && !bLockedPauseMode && _parserRef->IsValidByteCode() && _parserRef->GetExpr().length())
+                    _parserRef->DeclareAsInvalid();
+                _parserRef->SetExpr(sLine.substr(findCommand(sLine).nPos+8)+","+sExpr);
+            }
+            vVals = _parserRef->Eval(nArgument);
+            make_progressBar((int)vVals[0], (int)vVals[1], (int)vVals[2], sArgument);
+            return LOOP_OK;
         }
-        else
-        {
-            sArgument = "std";
-            sExpr = "1,100";
-        }
-        while (sLine.length() && (sLine[sLine.length()-1] == ' ' || sLine[sLine.length()-1] == '-'))
-            sLine.pop_back();
-        if (!sLine.length())
-            return 1;
-        if (_parser.GetExpr() != sLine.substr(findCommand(sLine).nPos+8)+","+sExpr+" ")
-        {
-            if (bUseLoopParsingMode && !bLockedPauseMode && _parser.IsValidByteCode() && _parser.GetExpr().length())
-                _parser.DeclareAsInvalid();
-            _parser.SetExpr(sLine.substr(findCommand(sLine).nPos+8)+","+sExpr);
-        }
-        vVals = _parser.Eval(nArgument);
-        make_progressBar((int)vVals[0], (int)vVals[1], (int)vVals[2], sArgument);
-        return 1;
     }
-
-    // --> Prompt <--
-    if (sLine.find("??") != string::npos)
+    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_PROMPT)
     {
-        //nValidByteCode[nthCmd] = 0;
-        if (bPrintedStatus)
-            NumeReKernel::printPreFmt("\n");
-        sLine = parser_Prompt(sLine);
-        bPrintedStatus = false;
-        if (_option.getbDebug())
-            mu::console() << _nrT("|-> DEBUG: sLine = ") << sLine << endl;
+        // --> Prompt <--
+        if (sLine.find("??") != string::npos)
+        {
+            if (!nCurrentCalcType)
+                nCalcType[nthCmd] |= CALCTYPE_PROMPT | CALCTYPE_PROCEDURECMDINTERFACE | CALCTYPE_COMMAND | CALCTYPE_DATAACCESS | CALCTYPE_STRING | CALCTYPE_RECURSIVEEXPRESSION;
+            if (bPrintedStatus)
+                NumeReKernel::printPreFmt("\n");
+            sLine = parser_Prompt(sLine);
+            bPrintedStatus = false;
+        }
     }
-
     // --> Prozeduren einbinden <--
-    if (nJumpTable[nthCmd][2])
+    if (nJumpTable[nthCmd][PROCEDURE_INTERFACE])
     {
         if (!bLockedPauseMode && bUseLoopParsingMode)
         {
-            _parser.PauseLoopMode();
-            _parser.LockPause();
+            _parserRef->PauseLoopMode();
+            _parserRef->LockPause();
         }
-        int nReturn = procedureInterface(sLine, _parser, _functions, _data, _out, _pData, _script, _option, nLoop+nWhile+nIf, nthCmd);
+        int nReturn = procedureInterface(sLine, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nLoop+nWhile+nIf, nthCmd);
         if (!bLockedPauseMode && bUseLoopParsingMode)
         {
-            _parser.PauseLoopMode(false);
-            _parser.LockPause(false);
+            _parserRef->PauseLoopMode(false);
+            _parserRef->LockPause(false);
         }
         if (nReturn == -2 || nReturn == 2)
-            nJumpTable[nthCmd][2] = 1;
+            nJumpTable[nthCmd][PROCEDURE_INTERFACE] = 1;
         else
-            nJumpTable[nthCmd][2] = 0;
+            nJumpTable[nthCmd][PROCEDURE_INTERFACE] = 0;
         if (nReturn == -1)
-            return -1;
+            return LOOP_ERROR;
         else if (nReturn == -2)
-            return 1;
-        if (_option.getbDebug())
-            cerr << "|-> DEBUG: sLine = " << sLine << endl;
+            return LOOP_OK;
     }
 
     // --> Procedure-CMDs einbinden <--
-    nProcedureCmd = procedureCmdInterface(sLine);
-    if (nProcedureCmd)
+    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_PROCEDURECMDINTERFACE)
     {
-        if (nProcedureCmd == 1)
-            return 1;
-    }
-    else
-        return -1;
-    if (findCommand(sLine).sString == "explicit")
-    {
-        sLine.erase(findCommand(sLine).nPos,8);
-        StripSpaces(sLine);
-    }
-    if (!bLockedPauseMode && bUseLoopParsingMode)
-        _parser.PauseLoopMode();
-    {
-        bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
-        NumeReKernel::bSupressAnswer = bLoopSupressAnswer;
-        switch (BI_CheckKeyword(sLine, _data, _out, _option, _parser, _functions, _pData, _script, true))
+        int nProcedureCmd = procedureCmdInterface(sLine);
+        if (nProcedureCmd)
         {
-            case  0: break;
-            case  1:
-                SetConsTitle(_data, _option);
-                NumeReKernel::bSupressAnswer = bSupressAnswer_back;
-                return 1;
-            case -1:
-                NumeReKernel::bSupressAnswer = bSupressAnswer_back;
-                return 1;
-            case  2:
-                NumeReKernel::bSupressAnswer = bSupressAnswer_back;
-                return 1;
+            if (nProcedureCmd == 1)
+            {
+                if (!nCurrentCalcType)
+                    nCalcType[nthCmd] |= CALCTYPE_PROCEDURECMDINTERFACE;
+                return LOOP_OK;
+            }
         }
-        NumeReKernel::bSupressAnswer = bSupressAnswer_back;
+        else
+            return LOOP_ERROR;
     }
-    if (!bLockedPauseMode && bUseLoopParsingMode)
-        _parser.PauseLoopMode(false);
-    // --> Prompt <--
-    if (sLine.find("??") != string::npos)
+    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_EXPLICIT)
     {
-        //nValidByteCode[nthCmd] = 0;
+        if (sCommand == "explicit")
+        {
+            if (!nCurrentCalcType)
+                nCalcType[nthCmd] |= CALCTYPE_EXPLICIT;
+            sLine.erase(findCommand(sLine).nPos,8);
+            StripSpaces(sLine);
+        }
+    }
+    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_COMMAND)
+    {
+        if (!bLockedPauseMode && bUseLoopParsingMode)
+            _parserRef->PauseLoopMode();
+        {
+            bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
+            string sPreCommandLine = sLine;
+            NumeReKernel::bSupressAnswer = bLoopSupressAnswer;
+            switch (BI_CheckKeyword(sLine, *_dataRef, *_outRef, *_optionRef, *_parserRef, *_functionRef, *_pDataRef, *_scriptRef, true))
+            {
+                case  0:
+                    if (!nCurrentCalcType)
+                    {
+                        StripSpaces(sPreCommandLine);
+                        string sCurrentLine = sLine;
+                        StripSpaces(sCurrentLine);
+                        if (sPreCommandLine != sCurrentLine)
+                            nCalcType[nthCmd] |= CALCTYPE_COMMAND;
+                    }
+                    break;
+                case  1:
+                    SetConsTitle(*_dataRef, *_optionRef);
+                    NumeReKernel::bSupressAnswer = bSupressAnswer_back;
+                    if (!nCurrentCalcType)
+                        nCalcType[nthCmd] |= CALCTYPE_COMMAND;
+                    return LOOP_OK;
+                case -1:
+                    NumeReKernel::bSupressAnswer = bSupressAnswer_back;
+                    if (!nCurrentCalcType)
+                        nCalcType[nthCmd] |= CALCTYPE_COMMAND;
+                    return LOOP_OK;
+                case  2:
+                    NumeReKernel::bSupressAnswer = bSupressAnswer_back;
+                    if (!nCurrentCalcType)
+                        nCalcType[nthCmd] |= CALCTYPE_COMMAND;
+                    return LOOP_OK;
+            }
+            NumeReKernel::bSupressAnswer = bSupressAnswer_back;
+        }
+        if (!bLockedPauseMode && bUseLoopParsingMode)
+            _parserRef->PauseLoopMode(false);
+    }
+    // --> Prompt <--
+    /*if (sLine.find("??") != string::npos)
+    {
         if (bPrintedStatus)
             NumeReKernel::printPreFmt("\n");
         sLine = parser_Prompt(sLine);
         bPrintedStatus = false;
-        if (_option.getbDebug())
-            mu::console() << _nrT("|-> DEBUG: sLine = ") << sLine << endl;
-    }
+    }*/
 
+    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_RECURSIVEEXPRESSION)
+        evalRecursiveExpressions(sLine);
 
-    evalRecursiveExpressions(sLine);
-
-    // --> Datafile/Cache! <--
-    if (!containsStrings(sLine)
-        && !_data.containsStringVars(sLine)
-        && (sLine.find("data(") != string::npos || _data.containsCacheElements(sLine)))
+    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_DATAACCESS)
     {
-        if (!_parser.HasCachedAccess() && _parser.CanCacheAccess())
+        // --> Datafile/Cache! <--
+        if (!containsStrings(sLine)
+            && !_dataRef->containsStringVars(sLine)
+            && (sLine.find("data(") != string::npos || _dataRef->containsCacheElements(sLine)))
         {
-            bCompiling = true;
-            _parser.SetCompiling(true);
-        }
-        /*if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode();*/
-        sCache = parser_GetDataElement(sLine, _parser, _data, _option);
-        if (sCache.length() && sCache.find('#') == string::npos)
-            bWriteToCache = true;
-
-        if (_parser.IsCompiling())
-        {
-            _parser.CacheCurrentEquation(sLine);
-            _parser.CacheCurrentTarget(sCache);
-        }
-        _parser.SetCompiling(false);
-        /*if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode(false);*/
-    }
-
-    // --> String-Parser <--
-    if (containsStrings(sLine) || _data.containsStringVars(sLine))
-    {
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode();
-        int nReturn = parser_StringParser(sLine, sCache, _data, _parser, _option, bSilent);
-        if (nReturn)
-        {
-            if (nReturn == 1)
+            if (!nCurrentCalcType)
+                nCalcType[nthCmd] |= CALCTYPE_DATAACCESS;
+            if (!_parserRef->HasCachedAccess() && _parserRef->CanCacheAccess())
             {
-                if (!bLockedPauseMode && bUseLoopParsingMode)
-                    _parser.PauseLoopMode(false);
-                if (bReturnSignal)
-                {
-                    ReturnVal.vStringVal.push_back(sLine);
-                    return -2;
-                }
-                return 1;
+                bCompiling = true;
+                _parserRef->SetCompiling(true);
             }
+            /*if (!bLockedPauseMode && bUseLoopParsingMode)
+                _parser.PauseLoopMode();*/
+            sCache = parser_GetDataElement(sLine, *_parserRef, *_dataRef, *_optionRef);
+            if (sCache.length() && sCache.find('#') == string::npos)
+                bWriteToCache = true;
+
+            if (_parserRef->IsCompiling())
+            {
+                _parserRef->CacheCurrentEquation(sLine);
+                _parserRef->CacheCurrentTarget(sCache);
+            }
+            _parserRef->SetCompiling(false);
+            /*if (!bLockedPauseMode && bUseLoopParsingMode)
+                _parser.PauseLoopMode(false);*/
         }
-        else
-        {
-            throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-        }
-        replaceLocalVars(sLine);
-        if (sCache.length() && _data.containsCacheElements(sCache) && !bWriteToCache)
-            bWriteToCache = true;
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode(false);
     }
-    if (bWriteToCache)
+    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_STRING)
     {
-        /*if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode();*/
-
-        if (bCompiling)
+        // --> String-Parser <--
+        if (containsStrings(sLine) || _dataRef->containsStringVars(sLine))
         {
-            _parser.SetCompiling(true);
-            _idx = parser_getIndices(sCache, _parser, _data, _option);
-            if ((_idx.nI[0] < 0 || _idx.nJ[0] < 0) && !_idx.vI.size() && !_idx.vJ.size())
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "");
-            if ((_idx.nI[1] == -2 && _idx.nJ[1] == -2))
-                throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
-            sCache.erase(sCache.find('('));
-            StripSpaces(sCache);
-            _parser.CacheCurrentTarget(sCache + "(" + _idx.sCompiledAccessEquation + ")");
-            _parser.SetCompiling(false);
+            if (!nCurrentCalcType)
+                nCalcType[nthCmd] |= CALCTYPE_STRING | CALCTYPE_DATAACCESS;
+            if (!bLockedPauseMode && bUseLoopParsingMode)
+                _parserRef->PauseLoopMode();
+            int nReturn = parser_StringParser(sLine, sCache, *_dataRef, *_parserRef, *_optionRef, bSilent);
+            if (nReturn)
+            {
+                if (nReturn == 1)
+                {
+                    if (!bLockedPauseMode && bUseLoopParsingMode)
+                        _parserRef->PauseLoopMode(false);
+                    if (bReturnSignal)
+                    {
+                        ReturnVal.vStringVal.push_back(sLine);
+                        return LOOP_RETURN;
+                    }
+                    return LOOP_OK;
+                }
+            }
+            else
+            {
+                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+            }
+            replaceLocalVars(sLine);
+            if (sCache.length() && _dataRef->containsCacheElements(sCache) && !bWriteToCache)
+                bWriteToCache = true;
+            if (!bLockedPauseMode && bUseLoopParsingMode)
+                _parserRef->PauseLoopMode(false);
         }
-        else
+    }
+    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_DATAACCESS)
+    {
+        if (bWriteToCache)
         {
-            _idx = parser_getIndices(sCache, _parser, _data, _option);
-            if ((_idx.nI[0] < 0 || _idx.nJ[0] < 0) && !_idx.vI.size() && !_idx.vJ.size())
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "");
-            if ((_idx.nI[1] == -2 && _idx.nJ[1] == -2))
-                throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
-            sCache.erase(sCache.find('('));
-            StripSpaces(sCache);
+            if (!nCurrentCalcType)
+                nCalcType[nthCmd] |= CALCTYPE_DATAACCESS;
+            /*if (!bLockedPauseMode && bUseLoopParsingMode)
+                _parser.PauseLoopMode();*/
+
+            if (bCompiling)
+            {
+                _parserRef->SetCompiling(true);
+                _idx = parser_getIndices(sCache, *_parserRef, *_dataRef, *_optionRef);
+                if ((_idx.nI[0] < 0 || _idx.nJ[0] < 0) && !_idx.vI.size() && !_idx.vJ.size())
+                    throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "");
+                if ((_idx.nI[1] == -2 && _idx.nJ[1] == -2))
+                    throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
+                sCache.erase(sCache.find('('));
+                StripSpaces(sCache);
+                _parserRef->CacheCurrentTarget(sCache + "(" + _idx.sCompiledAccessEquation + ")");
+                _parserRef->SetCompiling(false);
+            }
+            else
+            {
+                _idx = parser_getIndices(sCache, *_parserRef, *_dataRef, *_optionRef);
+                if ((_idx.nI[0] < 0 || _idx.nJ[0] < 0) && !_idx.vI.size() && !_idx.vJ.size())
+                    throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "");
+                if ((_idx.nI[1] == -2 && _idx.nJ[1] == -2))
+                    throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
+                sCache.erase(sCache.find('('));
+                StripSpaces(sCache);
+            }
+
+            if (_idx.nI[1] == -1)
+                _idx.nI[1] = _idx.nI[0];
+            if (_idx.nJ[1] == -1)
+                _idx.nJ[1] = _idx.nJ[0];
+
+            /*if (!bLockedPauseMode && bUseLoopParsingMode)
+                _parser.PauseLoopMode(false);*/
         }
-
-        if (_idx.nI[1] == -1)
-            _idx.nI[1] = _idx.nI[0];
-        if (_idx.nJ[1] == -1)
-            _idx.nJ[1] = _idx.nJ[0];
-
-        /*if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parser.PauseLoopMode(false);*/
     }
     // --> Vector-Ausdruck <--
-    if (sLine.find("{") != string::npos && (containsStrings(sLine) || _data.containsStringVars(sLine)))
+    /*if (sLine.find("{") != string::npos && (containsStrings(sLine) || _dataRef->containsStringVars(sLine)))
     {
-        parser_VectorToExpr(sLine, _option);
-    }
+        parser_VectorToExpr(sLine, *_optionRef);
+    }*/
 
-    /* --> Hier setzt wieder der x=x+1-Workaround an: eine Erlaeuterung findet sich in der
-     *     Funktion parser_Calc(Parser&, Settings&) <--
-     */
-    while (sLine.find(":=") != string::npos)
-    {
-        sLine.erase(sLine.find(":="), 1);
-    }
     // --> Uebliche Auswertung <--
+    if (_parserRef->GetExpr() != sLine+" ")
+    {
+        if (bUseLoopParsingMode && !bLockedPauseMode && _parserRef->IsValidByteCode() && _parserRef->GetExpr().length())
+            _parserRef->DeclareAsInvalid();
+        _parserRef->SetExpr(sLine);
+    }
 
-    //cerr << "\"" << _parser.GetExpr() << "\"/\"" << sLine+" " << "\"" << endl;
-    if (_option.getbDebug())
-    {
-        cerr << "|-> DEBUG: ByteCodeState = " << _parser.IsValidByteCode() << " / ParserExpr = " << _parser.GetExpr() << endl;
-        //cerr << "|-> DEBUG: LockedPauseMode = " << bLockedPauseMode << endl;
-    }
-    if (_parser.GetExpr() != sLine+" " /*|| nValidByteCode[nthCmd] != 1*/)
-    {
-        if (bUseLoopParsingMode && !bLockedPauseMode && _parser.IsValidByteCode() && _parser.GetExpr().length())
-            _parser.DeclareAsInvalid();
-        _parser.SetExpr(sLine);
-    }
-/*else if (nValidByteCode[nthCmd] == 1)
-        _parser.SetByteCode(_bytecode[nthCmd]);*/
-    v = _parser.Eval(nNum);
+    v = _parserRef->Eval(nNum);
     vAns = v[0];
 
-    if (_option.getbDebug())
-    {
-        cerr << "|-> DEBUG: ByteCodeState = " << _parser.IsValidByteCode() << " / ParserExpr = " << _parser.GetExpr() << endl;
-    }
+    if (!nCurrentCalcType && !(nCalcType[nthCmd] & CALCTYPE_DATAACCESS || nCalcType[nthCmd] & CALCTYPE_STRING))
+        nCalcType[nthCmd] |= CALCTYPE_NUMERICAL;
 
     if (!bSilent)
     {
@@ -3143,14 +2544,11 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
         string sAns = "|" + sBlock + "> " + sLine_Temp + " => ";
         if (nNum > 1)
         {
-            // --> Gib die nNum Ergebnisse an das Array, das durch Pointer v bestimmt wird <--
-            //value_type *v = _parser.Eval(nNum);
-
             // --> Gebe die nNum Ergebnisse durch Kommata getrennt aus <--
             sAns += "{";
             for (int i=0; i<nNum; ++i)
             {
-                sAns += toString(v[i], _option);
+                sAns += toString(v[i], *_optionRef);
                 if (i < nNum-1)
                     sAns += ", ";
             }
@@ -3159,21 +2557,21 @@ int Loop::calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Da
         else
         {
             // --> Zahl der Ausdruecke gleich 1? Dann einfach ausgeben <--
-            NumeReKernel::printPreFmt(sAns + toString(vAns, _option) + "\n");
+            NumeReKernel::printPreFmt(sAns + toString(vAns, *_optionRef) + "\n");
         }
     }
     if (bWriteToCache)
     {
-        _data.writeToCache(_idx, sCache, v, nNum);
+        _dataRef->writeToCache(_idx, sCache, v, nNum);
         bWriteToCache = false;
     }
     if (bReturnSignal)
     {
         for (int i = 0; i < nNum; i++)
             ReturnVal.vNumVal.push_back(v[i]);
-        return -2;
+        return LOOP_RETURN;
     }
-    return 1;
+    return LOOP_OK;
 }
 
 int Loop::procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command)

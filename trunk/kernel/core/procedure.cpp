@@ -1631,11 +1631,12 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, Define& _funct
 
 int Procedure::procedureCmdInterface(string& sLine)
 {
-    if (findCommand(sLine).sString == "var" || findCommand(sLine).sString == "str" || findCommand(sLine).sString == "tab")
+    string sCommand = findCommand(sLine).sString;
+    if (sCommand == "var" || sCommand == "str" || sCommand == "tab")
     {
         return 1;
     }
-    else if (findCommand(sLine).sString == "namespace")
+    else if (sCommand == "namespace")
     {
         sLine = sLine.substr(sLine.find("namespace")+9);
         StripSpaces(sLine);

@@ -1383,7 +1383,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             make_hline();
 
             // --> Alle Variablen zuerst zuruecksetzen! <--
-            _procedure.reset(_parser);
+            _procedure.reset();
             _pData.setFileName("");
             if (oLogFile.is_open())
                 oLogFile << toString(time(0)-tTimeZero, true) << "> " << toUpperCase(_lang.get("ERR_ERROR")) << ": " << e.GetMsg() << endl;
