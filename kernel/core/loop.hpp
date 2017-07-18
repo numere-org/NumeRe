@@ -48,14 +48,42 @@ class Loop
         double* dVarAdress;
         bool bLoopSupressAnswer;
 
+        Parser* _parserRef;
+        Datafile* _dataRef;
+        Output* _outRef;
+        Settings* _optionRef;
+        Define* _functionRef;
+        PlotData* _pDataRef;
+        Script* _scriptRef;
+
     protected:
+        enum CalculationType
+        {
+            CALCTYPE_NONE = 0,
+            CALCTYPE_COMMAND = 1,
+            CALCTYPE_NUMERICAL = 2,
+            CALCTYPE_STRING = 4,
+            CALCTYPE_DATAACCESS = 8,
+            CALCTYPE_PROGRESS = 16,
+            CALCTYPE_COMPOSE = 32,
+            CALCTYPE_DEFINITION = 64,
+            CALCTYPE_RETURNCOMMAND = 128,
+            CALCTYPE_THROWCOMMAND = 256,
+            CALCTYPE_DEBUGBREAKPOINT = 512,
+            CALCTYPE_EXPLICIT = 1024,
+            CALCTYPE_TOCOMMAND = 2048,
+            CALCTYPE_PROCEDURECMDINTERFACE = 4096,
+            CALCTYPE_CONTINUECMD = 8192,
+            CALCTYPE_BREAKCMD = 16384,
+            CALCTYPE_PROMPT = 32768,
+            CALCTYPE_RECURSIVEEXPRESSION = 65536
+        };
         string** sCmd;
         value_type** vVarArray;
         string* sVarArray;
         varmap_type vVars;
-        //ParserByteCode* _bytecode;
-        //int* nValidByteCode;
         int** nJumpTable;
+        int* nCalcType;
         unsigned int nJumpTableLength;
         string sLoopNames;
         int nCmd;
@@ -73,10 +101,13 @@ class Loop
         map<string,string> mVarMap;
 
         void generateCommandArray();
-        int for_loop(Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, int nth_Cmd = 0, int nth_Loop = 0);
-        int while_loop(Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, int nth_Cmd = 0, int nth_Loop = 0);
-        int if_fork(Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, int nth_Cmd = 0, int nth_Loop = -1);
-        int calc(string sLine, int nthCmd, Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, string sBlock);
+        int for_loop(int nth_Cmd = 0, int nth_Loop = 0);
+        int while_loop(int nth_Cmd = 0, int nth_Loop = 0);
+        int if_fork(int nth_Cmd = 0, int nth_Loop = -1);
+        int calc(string sLine, int nthCmd, string sBlock);
+        value_type* evalHeader(int& nNum, string sHeadExpression, bool bIsForHead, int nth_Cmd);
+        int evalLoopFlowCommands(int __j, int nth_loop);
+        int evalForkFlowCommands(int __j, int nth_loop);
         void replaceLocalVars(string& sLine);
         bool bSilent;
         bool bMask;
@@ -116,7 +147,7 @@ class Loop
             }
         void setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& _functions, Settings& _option, Output& _out, PlotData& _pData, Script& _script);
         void eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& _option, Output& _out, PlotData& _pData, Script& _script);
-        void reset(Parser& _parser);
+        void reset();
 
 };
 

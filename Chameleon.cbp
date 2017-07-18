@@ -218,9 +218,8 @@
 				<Option type="0" />
 				<Option compiler="tdm-gcc" />
 				<Compiler>
+					<Add option="-O3" />
 					<Add option="-Wall" />
-					<Add option="-pg" />
-					<Add option="-g" />
 					<Add option="-std=gnu++11" />
 					<Add option="-mthreads" />
 					<Add option="-DDLLVER_MAJOR_MASK" />
@@ -236,7 +235,6 @@
 					<Add directory="$(#wx)/include/" />
 				</ResourceCompiler>
 				<Linker>
-					<Add option="-pg -lgmon" />
 					<Add library="wxmsw30u_stc" />
 					<Add library="wxscintilla" />
 					<Add library="wxmsw30u_media" />
