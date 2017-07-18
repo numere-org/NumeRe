@@ -77,6 +77,7 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
 	EVT_MENU			(ID_DEBUG_WATCH_SELECTION, NumeReEditor::OnAddWatch)
 	EVT_MENU			(ID_DEBUG_DISPLAY_SELECTION, NumeReEditor::OnDisplayVariable)
 	EVT_MENU			(ID_FIND_PROCEDURE, NumeReEditor::OnFindProcedure)
+	EVT_MENU			(ID_FIND_INCLUDE, NumeReEditor::OnFindInclude)
 	EVT_MENU            (ID_UPPERCASE, NumeReEditor::OnChangeCase)
 	EVT_MENU            (ID_LOWERCASE, NumeReEditor::OnChangeCase)
 	EVT_MENU            (ID_FOLD_CURRENT_BLOCK, NumeReEditor::OnFoldCurrentBlock)
@@ -223,6 +224,7 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 
 	//m_menuAddWatch = m_popupMenu.Append(ID_DEBUG_WATCH_SELECTION, "Watch selection");
 	m_menuFindProcedure = m_popupMenu.Append(ID_FIND_PROCEDURE, _guilang.get("GUI_MENU_EDITOR_FINDPROC", "$procedure"));
+	m_menuFindInclude = m_popupMenu.Append(ID_FIND_INCLUDE, _guilang.get("GUI_MENU_EDITOR_FINDINCLUDE", "script"));
 	m_menuShowValue = m_popupMenu.Append(ID_DEBUG_DISPLAY_SELECTION, _guilang.get("GUI_MENU_EDITOR_HIGHLIGHT", "selection"));
 	m_menuHelpOnSelection = m_popupMenu.Append(ID_HELP_ON_ITEM, _guilang.get("GUI_TREE_PUP_HELPONITEM", "..."));
 	m_popupMenu.AppendSeparator();
@@ -2743,6 +2745,11 @@ void NumeReEditor::OnRightClick(wxMouseEvent &event)
 		//m_popupMenu.Remove(ID_DEBUG_WATCH_SELECTION);
 		m_popupMenu.Remove(ID_FIND_PROCEDURE);
 	}
+	if(m_popupMenu.FindItem(ID_FIND_INCLUDE) != nullptr)
+	{
+		//m_popupMenu.Remove(ID_DEBUG_WATCH_SELECTION);
+		m_popupMenu.Remove(ID_FIND_INCLUDE);
+	}
 	if(m_popupMenu.FindItem(ID_HELP_ON_ITEM) != nullptr)
 	{
 		//m_popupMenu.Remove(ID_DEBUG_WATCH_SELECTION);
@@ -2801,6 +2808,16 @@ void NumeReEditor::OnRightClick(wxMouseEvent &event)
             {
                 m_popupMenu.Insert(11, m_menuHelpOnSelection);
                 m_menuHelpOnSelection->SetItemLabel(_guilang.get("GUI_TREE_PUP_HELPONITEM", clickedWord.ToStdString()));
+            }
+            if (this->GetStyleAt(charpos) == wxSTC_NSCR_INCLUDES
+                || this->GetStyleAt(charpos) == wxSTC_NPRC_INCLUDES)
+            {
+                wxString clickedInclude = FindClickedInclude();
+                if (clickedInclude.length())
+                {
+                    m_popupMenu.Insert(11, m_menuFindInclude);
+                    m_menuFindInclude->SetItemLabel(_guilang.get("GUI_MENU_EDITOR_FINDINCLUDE", clickedInclude.ToStdString()));
+                }
             }
 			//wxString watchWord = wxString::Format("Watch \"%s\"", clickedWord);
 			//wxString displayWord = wxString::Format("Display \"%s\"", clickedWord);
@@ -3210,6 +3227,51 @@ wxString NumeReEditor::FindClickedWord()
 	return clickedWord;
 }
 
+
+wxString NumeReEditor::FindClickedInclude()
+{
+	int charpos = PositionFromPoint(m_lastRightClick);
+
+    int startPosition = WordStartPosition(charpos, true);
+	while (startPosition && GetStyleAt(startPosition-1) == wxSTC_NSCR_INCLUDES && GetCharAt(startPosition-1) != '@')
+        startPosition--;
+    if (GetCharAt(startPosition) == '"')
+        startPosition++;
+	int endPosition = WordEndPosition(startPosition+1, true);
+	while (endPosition < GetLastPosition() && GetStyleAt(endPosition) == wxSTC_NSCR_INCLUDES && GetCharAt(endPosition) != ':' && GetCharAt(endPosition) != '"')
+        endPosition++;
+
+    wxString clickedWord = this->GetTextRange(startPosition, endPosition);
+
+    if (clickedWord.find('<') != string::npos)
+    {
+        if (clickedWord.find("<>") != string::npos)
+            clickedWord.replace(clickedWord.find("<>"), 2, m_terminal->getPathSettings()[EXEPATH]);
+        if (clickedWord.find("<this>") != string::npos)
+            clickedWord.replace(clickedWord.find("<this>"), 6, this->GetFileName().GetPath(wxPATH_GET_VOLUME));
+        if (clickedWord.find("<loadpath>") != string::npos)
+            clickedWord.replace(clickedWord.find("<loadpath>"), 10, m_terminal->getPathSettings()[LOADPATH]);
+        if (clickedWord.find("<savepath>") != string::npos)
+            clickedWord.replace(clickedWord.find("<savepath>"), 10, m_terminal->getPathSettings()[SAVEPATH]);
+        if (clickedWord.find("<scriptpath>") != string::npos)
+            clickedWord.replace(clickedWord.find("<scriptpath>"), 12, m_terminal->getPathSettings()[SCRIPTPATH]);
+        if (clickedWord.find("<procpath>") != string::npos)
+            clickedWord.replace(clickedWord.find("<procpath>"), 10, m_terminal->getPathSettings()[PROCPATH]);
+        if (clickedWord.find("<plotpath>") != string::npos)
+            clickedWord.replace(clickedWord.find("<plotpath>"), 10, m_terminal->getPathSettings()[PLOTPATH]);
+    }
+
+	if (clickedWord.find('/') != string::npos || clickedWord.find('\\') != string::npos)
+	{
+        m_clickedInclude = clickedWord + ".nscr";
+	}
+	else
+	{
+        m_clickedInclude = m_terminal->getPathSettings()[SCRIPTPATH] + "/" + clickedWord + ".nscr";
+	}
+
+	return replacePathSeparator(clickedWord.ToStdString());
+}
 
 wxString NumeReEditor::FindClickedProcedure()
 {
@@ -3650,6 +3712,23 @@ void NumeReEditor::OnFindProcedure(wxCommandEvent &event)
         if (ret != wxYES)
             return;
         m_mainFrame->NewFile(FILE_NPRC, m_clickedProcedure);
+    }
+    else
+        m_mainFrame->OpenSourceFile(pathnames);
+}
+
+void NumeReEditor::OnFindInclude(wxCommandEvent &event)
+{
+    if (!m_clickedInclude.length())
+        return;
+    wxArrayString pathnames;
+    pathnames.Add(m_clickedInclude);
+    if (!fileExists((m_clickedInclude).ToStdString()))
+    {
+        int ret = wxMessageBox(_guilang.get("GUI_DLG_SCRIPT_NEXISTS_CREATE", m_clickedInclude.ToStdString()), _guilang.get("GUI_DLG_SCRIPT_NEXISTS_CREATE_HEADLINE"), wxCENTER | wxICON_WARNING | wxYES_NO, this);
+        if (ret != wxYES)
+            return;
+        m_mainFrame->NewFile(FILE_NSCR, m_clickedInclude);
     }
     else
         m_mainFrame->OpenSourceFile(pathnames);

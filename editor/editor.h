@@ -104,6 +104,7 @@ public:
 	void OnDisplayVariable(wxCommandEvent &event);
 	void OnHelpOnSelection(wxCommandEvent& event);
 	void OnFindProcedure(wxCommandEvent &event);
+	void OnFindInclude(wxCommandEvent &event);
 	void OnChangeCase(wxCommandEvent& event);
 	void OnFoldCurrentBlock(wxCommandEvent& event);
 	bool InitDuplicateCode();
@@ -170,6 +171,7 @@ private:
 	int GetLineForBreakpointOperation();
 	void ResetRightClickLocation();
 	wxString FindClickedWord();
+	wxString FindClickedInclude();
 	wxString FindClickedProcedure();
 	wxString FindMarkedProcedure(int charpos);
 	wxString FindNameSpaceOfProcedure(int charpos);
@@ -209,11 +211,13 @@ private:
 	wxPoint m_lastRightClick;
 	wxString m_clickedWord;
 	wxString m_clickedProcedure;
+	wxString m_clickedInclude;
 	size_t m_clickedWordLength;
 	wxMenuItem* m_menuAddWatch;
 	wxMenuItem* m_menuShowValue;
 	wxMenuItem* m_menuFindProcedure;
 	wxMenuItem* m_menuHelpOnSelection;
+	wxMenuItem* m_menuFindInclude;
 
 	NumeReSyntax* _syntax;
 	wxTerm* m_terminal;
