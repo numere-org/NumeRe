@@ -126,6 +126,8 @@ NumeReHistory::~NumeReHistory()
 
 void NumeReHistory::UpdateSyntaxHighlighting(bool forceUpdate)
 {
+	this->StyleSetBackground(wxSTC_STYLE_DEFAULT, m_options->GetSyntaxStyle(Options::STANDARD).background);
+
     this->SetLexer(wxSTC_LEX_NSCR);
 
     this->SetProperty("fold", "0");

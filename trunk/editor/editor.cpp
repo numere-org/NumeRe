@@ -2195,6 +2195,8 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
 {
 	wxString filename = GetFileNameAndPath();
 
+	this->StyleSetBackground(wxSTC_STYLE_DEFAULT, m_options->GetSyntaxStyle(Options::STANDARD).background);
+
 	FileFilterType filetype = m_project->GetFileType(filename);
 	if (m_fileType != filetype)
         m_fileType = filetype;

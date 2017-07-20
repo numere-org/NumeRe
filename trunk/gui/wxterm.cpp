@@ -610,7 +610,7 @@ wxTerm::GetDefColors(wxColour colors[16], wxTerm::BOLDSTYLE boldStyle)
         switch (i)
         {
             case 0:
-                colors[0] = m_options->GetSyntaxStyle(i).background;
+                colors[0] = m_options->GetSyntaxStyle(Options::CONSOLE_STD).background;
                 break;
             case NumeReSyntax::SYNTAX_COMMAND:
                 colors[NumeReSyntax::SYNTAX_COMMAND] = m_options->GetSyntaxStyle(Options::COMMAND).foreground;
