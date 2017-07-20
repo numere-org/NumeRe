@@ -4584,7 +4584,7 @@ void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
         wxTreeItemId item = event.GetItem();
 
         FileNameTreeData* data = static_cast<FileNameTreeData*>(m_functionTree->GetItemData(item));
-        if (data->isDir)
+        if (!data || data->isDir)
             return;
         wxFileName pathname = data->filename;
         wxString tooltip = _guilang.get("COMMON_FILETYPE_" + toUpperCase(pathname.GetExt().ToStdString()));
