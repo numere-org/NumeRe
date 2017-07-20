@@ -1500,7 +1500,6 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
     _scriptRef = &_script;
 
 
-
     for (int i = 0; i <= nCmd; i++)
     {
         //nValidByteCode[i] = -1;
@@ -1882,6 +1881,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
     return;
 }
 
+// function will be executed multiple times -> take care of the pointers!
 void Loop::reset()
 {
     if (sCmd)
@@ -1975,7 +1975,8 @@ void Loop::reset()
     }
     bLockedPauseMode = false;
     bFunctionsReplaced = false;
-    _parserRef->ClearVectorVars();
+    if (_parserRef)
+        _parserRef->ClearVectorVars();
 
     _parserRef = nullptr;
     _dataRef = nullptr;
