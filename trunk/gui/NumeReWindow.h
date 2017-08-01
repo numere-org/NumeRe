@@ -27,6 +27,7 @@
 #include "viewerframe.hpp"
 #include "viewerbook.hpp"
 #include "filetree.hpp"
+#include "../kernel/core/graph_helper.hpp"
 
 #define OPENFILE_NOTHING 0
 #define OPENFILE_BLACKLIST_ADD 1
@@ -131,6 +132,7 @@ class NumeReWindow : public wxFrame
         void openHTML(wxString HTMLcontent);
         void openTable(const vector<vector<string> >& sTable, const string& sTableName);
         void editTable(const vector<vector<string> >& sTable, const string& sTableName);
+        void showGraph(GraphHelper* _helper);
         void evaluateDebugInfo(const vector<string>& vDebugInfo);
 
         Networking* GetNetworking();

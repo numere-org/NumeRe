@@ -1,4 +1,23 @@
+/*****************************************************************************
+    NumeRe: Framework fuer Numerische Rechnungen
+    Copyright (C) 2017  Erik Haenel et al.
 
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
+
+
+#include "plotting.hpp"
 #include "parser_functions.hpp"
 #include "../kernel.hpp"
 
@@ -8,38 +27,6 @@ extern Integration_Vars parser_iVars;
 extern mglGraph _fontData;
 extern Plugin _plugin;
 
-void parser_plot_create2dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, Datafile& _data, Parser& _parser, mglData** _mDataPlots, mglData* _mAxisVals, const Settings& _option, string& sLabels, string& sDataLabels, string* sContStyles, vector<short>& vType, int& nStyle, size_t& nLegends, int* nDataDim, int nDataPlots, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize);
-bool parser_plot_2d(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglData& _mData, mglData& _mMaskData, mglData* _mAxisVals, mglData& _mContVec, const Settings& _option);
-void parser_plot_createStdPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, Datafile& _data, Parser& _parser, mglData** _mDataPlots, mglData* _mAxisVals, const Settings& _option, string& sLabels, string& sDataLabels, string* sLineStyles, string* sPointStyles, string* sContStyles, string* sConPointStyles, vector<short>& vType, int& nStyle, size_t& nLegends, int* nDataDim, int nDataPlots, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize);
-bool parser_plot_std(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], const short nType);
-void parser_plot_create3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglData** _mDataPlots, mglData*_mAxisVals, const Settings& _option, string& sFunc, string& sLabels, int* nDataDim, int nDataPlots);
-void parser_plot_create3dVect(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglData** _mDataPlots, string& sFunc, string& sLabels, int* nDataDim, int nDataPlots);
-void parser_plot_create2dVect(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglData** _mDataPlots, string& sFunc, string& sLabels, int* nDataDim, int nDataPlots);
-void parser_plot_create2dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _data, const Settings& _option, vector<string>& vDrawVector, value_type* vResults, int& nFunctions);
-void parser_plot_create3dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _data, const Settings& _option, vector<string>& vDrawVector, value_type* vResults, int& nFunctions);
-void parser_plot_createStd3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, Datafile& _data, Parser& _parser, mglData** _mDataPlots, mglData* _mAxisVals, const Settings& _option, string& sLabels, string& sDataLabels, string* sLineStyles, string* sPointStyles, string* sContStyles, string* sConPointStyles, vector<short>& vType, int& nStyle, size_t& nLegends, int* nDataDim, int nDataPlots, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize);
-bool parser_plot_std3d(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglData _mData[3], mglData _mData2[3], const short nType);
-bool checkMultiPlotArray(unsigned int nMultiPlot[2], unsigned int& nSubPlotMap, unsigned int nPlotPos, unsigned int nCols, unsigned int nLines);
-long getNN(const mglData& _mData);
-void parser_plot_evaluatePlotParamString(PlotInfo& _pInfo, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
-void parser_plot_filename(PlotData& _pData, PlotInfo& _pInfo, Datafile& _data, Parser& _parser, Settings& _option, size_t nPlotComposeSize, size_t nPlotCompose);
-void parser_plot_setStyles(PlotData& _pData, PlotInfo& _pInfo, string* sLineStyles, string* sPointStyles, string* sContStyles, string* sConPointStyles);
-void parser_plot_evaluateSubplot(mglGraph& _graph, PlotData& _pData, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option, size_t& nLegends, string& sCmd, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap);
-void parser_plot_displayMessage(PlotData& _pData, PlotInfo& _pInfo, mglGraph& _graph, const Settings& _option);
-void parser_plot_evaluateDataPlots(PlotData& _pData, PlotInfo& _pInfo, Parser& _parser, Datafile& _data, Define& _functions, mglData**& _mDataPlots, const Settings& _option, vector<short>& vType, string& sFunc, string& sDataPlots, string& sDataLabels, string& sAxisBinds, string& sDataAxisBinds, int*& nDataDim, int& nDataPlots, double dDataRanges[3][2], double dSecDataRanges[2][2]);
-void parser_plot_separateLegends(PlotInfo& _pInfo, string& sFunc, string& sLabels);
-void parser_plot_prepareMemory(PlotData& _pData, PlotInfo& _pInfo, mglData* _mAxisVals, const string& sFunc, int nFunctions);
-void parser_plot_defaultRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mDataPlots, double dDataRanges[3][2], double dSecDataRanges[2][2], int* nDataDim, int nDataPlots, size_t nPlotCompose, bool bNewSubPlot);
-int parser_plot_fillData(PlotData& _pData, PlotInfo& _pInfo, Parser& _parser, mglData* _mAxisVals, const string& sFunc, value_type* vResults, double dt_max, int t_animate, int nFunctions);
-void parser_plot_fitPlotRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mDataPlots, const string& sFunc, int* nDataDim, int nDataPlots, double dDataRanges[3][2], size_t nPlotCompose, bool bNewSubPlot);
-void parser_plot_clearData(mglData** _mDataPlots, int* nDataDim, int nDataPlots);
-void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglData** _mDataPlots, mglData* _mAxisVals, const string& sFunc, int* nDataDim, int nDataPlots, double dDataRanges[3][2]);
-void parser_plot_applyColorbar(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo);
-void parser_plot_applyLighting(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo);
-void parser_plot_applyGrid(mglGraph& _graph, const PlotData& _pData);
-double parser_plot_getLabelPosition(const PlotData& _pData, int nCoord);
-mglPoint parser_plot_createMglPoint(int nCoords, double r, double phi, double theta, bool b3D = false);
-void parser_plot_weightedRange(int nCol, double& dMin, double& dMax, PlotData& _pData);
 
 // These definitions are for easier understanding of the different ranges
 #define XCOORD 0
@@ -50,42 +37,37 @@ void parser_plot_weightedRange(int nCol, double& dMin, double& dMax, PlotData& _
 #define APPR_TWO 1.9999999
 
 
+void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions, PlotData& _pData)
+{
+    Plot graph(sCmd, _data, _parser, _option, _functions, _pData);
+
+    // Only open graph viewer, if not explicitly deactivated
+    if (_pData.getOpenImage() || !_pData.getSilentMode())
+    {
+        GraphHelper* _graphHelper = graph.createGraphHelper(_pData);
+        NumeReKernel::updateGraphWindow(_graphHelper);
+    }
+}
 
 
 
 
 // --> Fuellt das Plotdata-Objekt mit Werten entsprechend sCmd und startet den Plot-Algorithmus <--
-void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions, PlotData& _pData)
+Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions, PlotData& _pData)
 {
-    /*! --> Wenn in der ersten Zeile und der ersten Spalte x- und y-Werte stehen, koennten auch mesh-/surf-Plots
-     *      aus Daten generiert werden <--
-     */
-
-    /*if (true && !(matchParams(sCmd, "opng", '=') || matchParams(sCmd, "oeps", '=') || matchParams(sCmd, "osvg", '=') || matchParams(sCmd, "otex", '=')))
-    {
-        Graph_helper _grapher(sCmd, &_data, &_parser, &_option, &_functions, &_pData);
-        mglQT _graph(&_grapher, "NumeRe: Graph");
-        _graph.Rotate(_pData.getRotateAngle(), _pData.getRotateAngle(1));
-        _graph.ToggleRotate();
-        _graph.Run();
-        _pData.deleteData();
-        return;
-    }*/
-
-    string sFunc = "";                      // string mit allen Funktionen
-    string sLabels = "";                    // string mit den Namen aller Funktionen (Fuer die Legende)
-    string sDataLabels = "";                // string mit den Datenpunkt-Namen (Fuer die Legende)
+    sFunc = "";                      // string mit allen Funktionen
+    sLabels = "";                    // string mit den Namen aller Funktionen (Fuer die Legende)
+    sDataLabels = "";                // string mit den Datenpunkt-Namen (Fuer die Legende)
     string sDataPlots = "";                 // string mit allen Datenpunkt-Plot-Ausdruecken
     //string sCommand = "";    // string mit dem Plot-Kommando (mesh, grad, plot, surf, cont, etc.)
     vector<string> vPlotCompose;
 
-    mglGraph _graph;                        // Eine Instanz des mglGraph's starten
-    //_pData.prepareGraph();
-    mglData** _mDataPlots = nullptr;              // 2D-Pointer auf ein Array aus mglData-Objekten
+    _mDataPlots = nullptr;              // 2D-Pointer auf ein Array aus mglData-Objekten
     mglData _mBackground;                   // mglData-Objekt fuer ein evtl. Hintergrundbild
-    mglData _mAxisVals[3];
-    PlotInfo _pInfo;
-    int* nDataDim = nullptr;                      // Pointer auf die jeweilige Dimension der einzelnen Datensaetze
+    nDataDim = nullptr;                      // Pointer auf die jeweilige Dimension der einzelnen Datensaetze
+    nDataPlots = 0;                     // Zahl der zu plottenden Datensaetze
+    _graph = new mglGraph();
+    bOutputDesired = false;             // if a output directly into a file is desired
 
     _pInfo.sCommand = "";
     _pInfo.sPlotParams = "";
@@ -98,8 +80,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
     _pInfo.bDraw = false;
     _pInfo.bDraw3D = false;
     _pInfo.nMaxPlotDim = 1;
-    const int STYLEMAX = 14;
-    _pInfo.nStyleMax = STYLEMAX;                  // Gesamtzahl der Styles
+    _pInfo.nStyleMax = 14;                  // Gesamtzahl der Styles
     int nStyle = 0;                         // Nummer des aktuellen Plotstyles (automatische Variation des Styles)
     _pInfo.nStyle = &nStyle;
     double dDataRanges[3][2];               // Fuer die berechneten Daten-Intervalle (hoehere Prioritaet)
@@ -114,7 +95,6 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
     const short TYPE_FUNC = 1;
     int nFunctions = 0;                     // Zahl der zu plottenden Funktionen
     _pInfo.nFunctions = &nFunctions;
-    int nDataPlots = 0;                     // Zahl der zu plottenden Datensaetze
     string sConvLegends = "";               // Variable fuer Legenden, die dem String-Parser zugewiesen werden
     string sDummy = "";
     unsigned int nLegends = 0;
@@ -185,7 +165,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
         }
         if (_pInfo.sPlotParams.length())
         {
-            parser_plot_evaluatePlotParamString(_pInfo, _parser, _data, _functions, _option);
+            evaluatePlotParamString(_parser, _data, _functions, _option);
             _pData.setGlobalComposeParams(_pInfo.sPlotParams, _parser, _option);
         }
         _pInfo.sPlotParams = "";
@@ -219,15 +199,10 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
     }
 
     // String-Arrays fuer die endgueltigen Styles:
-    string sLineStyles[STYLEMAX];
-    string sContStyles[STYLEMAX];
-    string sPointStyles[STYLEMAX];
-    string sConPointStyles[STYLEMAX];
-
-    _pInfo.sLineStyles = sLineStyles;
-    _pInfo.sContStyles = sContStyles;
-    _pInfo.sPointStyles = sPointStyles;
-    _pInfo.sConPointStyles = sConPointStyles;
+    _pInfo.sLineStyles = new string[_pInfo.nStyleMax];
+    _pInfo.sContStyles = new string[_pInfo.nStyleMax];
+    _pInfo.sPointStyles = new string[_pInfo.nStyleMax];
+    _pInfo.sConPointStyles = new string[_pInfo.nStyleMax];
 
 
     string sOutputName = ""; // string fuer den Export-Dateinamen
@@ -293,7 +268,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
             _pInfo.sPlotParams = sCmd.substr(sCmd.find("--"));
         if (_pInfo.sPlotParams.length())
         {
-            parser_plot_evaluatePlotParamString(_pInfo, _parser, _data, _functions, _option);
+            evaluatePlotParamString(_parser, _data, _functions, _option);
             if (vPlotCompose.size() > 1 && !bNewSubPlot)
                 _pData.setLocalComposeParams(_pInfo.sPlotParams, _parser, _option);
             else
@@ -309,37 +284,54 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
 
         if (!nPlotCompose)
         {
-            if (_pData.getHighRes() == 2)           // Aufloesung und Qualitaet einstellen
+            if (_pData.getSilentMode() || !_pData.getOpenImage())
             {
-                double dHeight = sqrt(1920.0 * 1440.0 / _pData.getAspect());
-                _graph.SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));          // FullHD!
-            }
-            else if (_pData.getHighRes() == 1 || !_option.getbUseDraftMode())
-            {
-                double dHeight = sqrt(1280.0 * 960.0 / _pData.getAspect());
-                _graph.SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));           // ehem. die bessere Standard-Aufloesung
-                //_graph.SetQuality(5);
+                if (_pData.getHighRes() == 2)           // Aufloesung und Qualitaet einstellen
+                {
+                    double dHeight = sqrt(1920.0 * 1440.0 / _pData.getAspect());
+                    _graph->SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));          // FullHD!
+                }
+                else if (_pData.getHighRes() == 1 || !_option.getbUseDraftMode())
+                {
+                    double dHeight = sqrt(1280.0 * 960.0 / _pData.getAspect());
+                    _graph->SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));           // ehem. die bessere Standard-Aufloesung
+                    //_graph->SetQuality(5);
+                }
+                else
+                {
+                    double dHeight = sqrt(800.0 * 600.0 / _pData.getAspect());
+                    _graph->SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));
+                    // --> Im Falle, dass wir meinen mesh/surf/anders gearteten 3D-Plot machen, drehen wir die Qualitaet runter <--
+                    if (_pInfo.sCommand.substr(0,4) != "plot")
+                        _graph->SetQuality(MGL_DRAW_FAST);
+                }
             }
             else
             {
-                double dHeight = sqrt(800.0 * 600.0 / _pData.getAspect());
-                _graph.SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));
-                // --> Im Falle, dass wir meinen mesh/surf/anders gearteten 3D-Plot machen, drehen wir die Qualitaet runter <--
-                if (_pInfo.sCommand.substr(0,4) != "plot")
-                    _graph.SetQuality(MGL_DRAW_FAST);
+                if (_pData.getAnimateSamples() && !_pData.getFileName().length())
+                {
+                    double dHeight = sqrt(640.0*480.0 / _pData.getAspect());
+                    _graph->SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));
+                }
+                else
+                {
+                    double dHeight = sqrt(800.0*600.0 / _pData.getAspect());
+                    _graph->SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));
+                }
             }
+
             // --> Noetige Einstellungen und Deklarationen fuer den passenden Plot-Stil <--
-            _graph.CopyFont(&_fontData);
-            _graph.SetFontSizeCM(0.24*((double)(1+_pData.getTextSize())/6.0), 72);
+            _graph->CopyFont(&_fontData);
+            _graph->SetFontSizeCM(0.24*((double)(1+_pData.getTextSize())/6.0), 72);
         }
 
-        parser_plot_setStyles(_pData, _pInfo, sLineStyles, sPointStyles, sContStyles, sConPointStyles);
+        setStyles(_pData);
 
         if (_pData.getBars() || _pData.getHBars())
-            _graph.SetBarWidth(_pData.getBars() ? _pData.getBars() : _pData.getHBars());
+            _graph->SetBarWidth(_pData.getBars() ? _pData.getBars() : _pData.getHBars());
 
         // --> Allg. Einstellungen <--
-        //_graph.SetFontSizeCM(0.28, 72);
+        //_graph->SetFontSizeCM(0.28, 72);
         if (!_pData.getAnimateSamples()
             || (_pData.getAnimateSamples()
                 && _pInfo.sCommand.substr(0,4) != "mesh"
@@ -361,7 +353,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
 
 
         // --> Ggf. waehlen eines Default-Dateinamens <--
-        parser_plot_filename(_pData, _pInfo, _data, _parser, _option, vPlotCompose.size(), nPlotCompose);
+        filename(_pData, _data, _parser, _option, vPlotCompose.size(), nPlotCompose);
 
         if (!nPlotCompose)
         {
@@ -377,7 +369,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
             bNewSubPlot = true;
             nStyle = 0;
 
-            parser_plot_evaluateSubplot(_graph, _pData, _parser, _data, _functions, _option, nLegends, sCmd, nMultiplots, nSubPlots, nSubPlotMap);
+            evaluateSubplot(_pData, _parser, _data, _functions, _option, nLegends, sCmd, nMultiplots, nSubPlots, nSubPlotMap);
 
             nSubPlots++;
             continue;
@@ -385,14 +377,14 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
         else if (findCommand(sCmd).sString == "subplot")
             continue;
 
-        parser_plot_displayMessage(_pData, _pInfo, _graph, _option);
+        displayMessage(_pData, _option);
 
         // --> Logarithmische Skalierung; ein bisschen Fummelei <--
         if (_pData.getCoords() == PlotData::CARTESIAN
             && (!nPlotCompose || bNewSubPlot)
             && (_pData.getxLogscale() || _pData.getyLogscale() || _pData.getzLogscale() || _pData.getcLogscale()))
         {
-            parser_setLogScale(_graph, _pData, (_pInfo.b2D || _pInfo.sCommand == "plot3d"));
+            setLogScale(_pData, (_pInfo.b2D || _pInfo.sCommand == "plot3d"));
         }
 
         if (!_pInfo.bDraw3D && !_pInfo.bDraw)
@@ -414,9 +406,9 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
          *    Dabei erlaubt die Syntax sowohl eine gezielte Wahl von Datenreihen (Spalten),
          *    als auch eine automatische. <--
          */
-        parser_plot_evaluateDataPlots(_pData, _pInfo, _parser, _data, _functions, _mDataPlots, _option,
-                                        vType, sFunc, sDataPlots, sDataLabels, sAxisBinds, sDataAxisBinds,
-                                        nDataDim, nDataPlots, dDataRanges, dSecDataRanges);
+        evaluateDataPlots(_pData, _parser, _data, _functions, _option,
+                            vType, sDataPlots, sAxisBinds, sDataAxisBinds,
+                            dDataRanges, dSecDataRanges);
 
         StripSpaces(sFunc);
         if (!sFunc.length() && !_mDataPlots)
@@ -424,7 +416,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
 
 
         // --> Zuweisen der uebergebliebenen Funktionen an den "Legenden-String". Ebenfalls extrem fummelig <--
-        parser_plot_separateLegends(_pInfo, sFunc, sLabels);
+        separateLegends();
 
         // --> Vektor-Konvertierung <--
         if (sFunc.find("{") != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
@@ -433,7 +425,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
         // --> "String"-Objekt? So was kann man einfach nicht plotten: Aufraeumen und zurueck! <--
         if ((containsStrings(sFunc) || _data.containsStringVars(sFunc)) && !(_pInfo.bDraw3D || _pInfo.bDraw))
         {
-            parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+            clearData();
             throw SyntaxError(SyntaxError::CANNOT_PLOT_STRINGS, sCmd, SyntaxError::invalid_position);
         }
 
@@ -457,7 +449,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
             }
             catch (...)
             {
-                parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+                clearData();
                 throw;
             }
         }
@@ -493,7 +485,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
          * --> Log-Plots duerfen in der gewaehlten Achse nicht <= 0 sein! <--
          */
 
-        parser_plot_defaultRanges(_pData, _pInfo, _mDataPlots, dDataRanges, dSecDataRanges, nDataDim, nDataPlots, nPlotCompose, bNewSubPlot);
+        defaultRanges(_pData, dDataRanges, dSecDataRanges, nPlotCompose, bNewSubPlot);
 
         // --> Plotvariablen auf den Anfangswert setzen <--
         parser_iVars.vValue[XCOORD][0] = _pInfo.dRanges[XCOORD][0];  // Plotvariable: x
@@ -506,10 +498,10 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
         }
 
         // --> Plot-Speicher vorbereiten <--
-        parser_plot_prepareMemory(_pData, _pInfo, _mAxisVals, sFunc, nFunctions);
+        prepareMemory(_pData, sFunc, nFunctions);
 
-        if (_pData.getAnimateSamples())
-            _graph.StartGIF(sOutputName.c_str(), 40); // 40msec = 2sec bei 50 Frames, d.h. 25 Bilder je Sekunde
+        if (_pData.getAnimateSamples() && bOutputDesired)
+            _graph->StartGIF(sOutputName.c_str(), 40); // 40msec = 2sec bei 50 Frames, d.h. 25 Bilder je Sekunde
 
         string sLabelsCache[2];
         sLabelsCache[0] = sLabels;
@@ -517,9 +509,12 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
 
         if (_pData.getBackground().length() && _pData.getBGColorScheme() != "<<REALISTIC>>")
         {
-            NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("PLOT_LOADING_BACKGROUND")) + " ... ");
+            if (_pData.getAnimateSamples())
+                NumeReKernel::printPreFmt("|-> ");
+            NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("PLOT_LOADING_BACKGROUND")) + " ... ");
             _mBackground.Import(_pData.getBackground().c_str(), "kw");
-            NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
+            if (_pData.getAnimateSamples())
+                NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
         }
 
         /*********************************
@@ -535,7 +530,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                 nStyle = 0;
 
                 // --> Neuen GIF-Frame oeffnen <--
-                _graph.NewFrame();
+                _graph->NewFrame();
                 if (t_animate)
                 {
                     parser_iVars.vValue[XCOORD][0] = _pInfo.dRanges[XCOORD][0];
@@ -550,7 +545,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
 
             // --> Ist ein Titel gegeben? Dann weisse ihn zu <--
             if (_pData.getTitle().length())
-                _graph.Title(fromSystemCodePage(_pData.getTitle()).c_str(), "", -1.5);
+                _graph->Title(fromSystemCodePage(_pData.getTitle()).c_str(), "", -1.5);
 
             // --> Orthogonal-Projektionen aktivieren <--
             if (_pData.getOrthoProject()
@@ -560,128 +555,134 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
                     || _pInfo.sCommand == "plot3d")
                 )
             {
-                _graph.Ternary(4);
-                _graph.SetRotatedText(false);
+                _graph->Ternary(4);
+                _graph->SetRotatedText(false);
             }
 
             // --> Rotationen und allg. Grapheneinstellungen <--
             if (_pInfo.nMaxPlotDim > 2 && (!nPlotCompose || bNewSubPlot))
             {
-                _graph.Rotate(_pData.getRotateAngle(), _pData.getRotateAngle(1));
+                _graph->Rotate(_pData.getRotateAngle(), _pData.getRotateAngle(1));
             }
 
-            nFunctions = parser_plot_fillData(_pData, _pInfo, _parser, _mAxisVals, sFunc, vResults, dt_max, t_animate, nFunctions);
+            nFunctions = fillData(_pData, _parser, sFunc, vResults, dt_max, t_animate, nFunctions);
 
             if (_pInfo.b2DVect)
                 _pData.normalize(2, t_animate);
             else if (_pInfo.b3DVect)
                 _pData.normalize(3, t_animate);
 
-            parser_plot_fitPlotRanges(_pData, _pInfo, _mDataPlots, sFunc, nDataDim, nDataPlots, dDataRanges, nPlotCompose, bNewSubPlot);
+            fitPlotRanges(_pData, sFunc, dDataRanges, nPlotCompose, bNewSubPlot);
 
             // --> (Endgueltige) Darstellungsintervalle an das Plot-Objekt uebergeben <--
             if (!nPlotCompose || bNewSubPlot)
             {
-                parser_plot_passRangesToGraph(_graph, _pData, _pInfo, _mDataPlots, _mAxisVals, sFunc, nDataDim, nDataPlots, dDataRanges);
+                passRangesToGraph(_pData, sFunc, dDataRanges);
             }
 
-            parser_plot_applyColorbar(_graph, _pData, _pInfo);
+            applyColorbar(_pData);
 
-            parser_plot_applyLighting(_graph, _pData, _pInfo);
+            applyLighting(_pData);
 
             if ((!nPlotCompose || bNewSubPlot) && _pInfo.nMaxPlotDim > 2)
-                _graph.Perspective(_pData.getPerspective());
+                _graph->Perspective(_pData.getPerspective());
 
             // --> Rendern des Hintergrundes <--
             if (_pData.getBackground().length())
             {
-                NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("PLOT_RENDERING_BACKGROUND")) + " ... ");
+                //NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("PLOT_RENDERING_BACKGROUND")) + " ... ");
                 if (_pData.getBGColorScheme() != "<<REALISTIC>>")
                 {
-                    _graph.SetRanges(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[XCOORD][1], _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[YCOORD][1], _mBackground.Minimal(), _mBackground.Maximal());
-                    _graph.Dens(_mBackground, _pData.getBGColorScheme().c_str());
+                    _graph->SetRanges(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[XCOORD][1], _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[YCOORD][1], _mBackground.Minimal(), _mBackground.Maximal());
+                    _graph->Dens(_mBackground, _pData.getBGColorScheme().c_str());
                 }
                 else
-                    _graph.Logo(_pData.getBackground().c_str());
+                    _graph->Logo(_pData.getBackground().c_str());
 
-                //_graph.Dens(_mBackground, "kRQYEGLCNBUMPw");
-                _graph.Rasterize();
-                _graph.SetRanges(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[XCOORD][1], _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[YCOORD][1], _pInfo.dRanges[ZCOORD][0], _pInfo.dRanges[ZCOORD][1]);
-                NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
+                //_graph->Dens(_mBackground, "kRQYEGLCNBUMPw");
+                _graph->Rasterize();
+                _graph->SetRanges(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[XCOORD][1], _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[YCOORD][1], _pInfo.dRanges[ZCOORD][0], _pInfo.dRanges[ZCOORD][1]);
+                //NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
             }
 
             // --> Nun kopieren wir die aufbereiteten Datenpunkte in ein mglData-Objekt und plotten die Daten aus diesem Objekt <--
             if (_pInfo.b2D)        // 2D-Plot
             {
-                parser_plot_create2dPlot(_graph, _pData, _pInfo, _data, _parser, _mDataPlots, _mAxisVals, _option,
-                                        sLabels, sDataLabels, sContStyles, vType,
-                                        nStyle, nLegends, nDataDim, nDataPlots, nFunctions, nPlotCompose, vPlotCompose.size());
+                create2dPlot(_pData, _data, _parser, _option,
+                                        vType,
+                                        nStyle, nLegends, nFunctions, nPlotCompose, vPlotCompose.size());
             }
             else if (_pInfo.sCommand != "plot3d" && !_pInfo.b3D && !_pInfo.b3DVect && !_pInfo.b2DVect && !_pInfo.bDraw3D && !_pInfo.bDraw)      // Standardplot
             {
-                parser_plot_createStdPlot(_graph, _pData, _pInfo, _data, _parser, _mDataPlots, _mAxisVals, _option,
-                                        sLabels, sDataLabels, sLineStyles, sPointStyles, sContStyles, sConPointStyles, vType,
-                                        nStyle, nLegends, nDataDim, nDataPlots, nFunctions, nPlotCompose, vPlotCompose.size());
+                createStdPlot(_pData, _data, _parser, _option,
+                                        vType,
+                                        nStyle, nLegends, nFunctions, nPlotCompose, vPlotCompose.size());
             }
             else if (_pInfo.b3D)   // 3D-Plot
             {
-                parser_plot_create3dPlot(_graph, _pData, _pInfo, _mDataPlots, _mAxisVals, _option, sFunc, sLabels, nDataDim, nDataPlots);
+                create3dPlot(_pData, _option);
             }
             else if (_pInfo.b3DVect)   // 3D-Vektorplot
             {
-                parser_plot_create3dVect(_graph, _pData, _pInfo, _mDataPlots, sFunc, sLabels, nDataDim, nDataPlots);
+                create3dVect(_pData);
             }
             else if (_pInfo.b2DVect)   // 2D-Vektorplot
             {
-                parser_plot_create2dVect(_graph, _pData, _pInfo, _mDataPlots, sFunc, sLabels, nDataDim, nDataPlots);
+                create2dVect(_pData);
             }
             else if (_pInfo.bDraw)
             {
-                parser_plot_create2dDrawing(_graph, _parser, _data, _option, vDrawVector, vResults, nFunctions);
+                create2dDrawing(_parser, _data, _option, vDrawVector, vResults, nFunctions);
             }
             else if (_pInfo.bDraw3D)
             {
-                parser_plot_create3dDrawing(_graph, _parser, _data, _option, vDrawVector, vResults, nFunctions);
+                create3dDrawing(_parser, _data, _option, vDrawVector, vResults, nFunctions);
             }
             else            // 3D-Trajektorie
             {
-                parser_plot_createStd3dPlot(_graph, _pData, _pInfo, _data, _parser, _mDataPlots, _mAxisVals, _option,
-                                        sLabels, sDataLabels, sLineStyles, sPointStyles, sContStyles, sConPointStyles, vType,
-                                        nStyle, nLegends, nDataDim, nDataPlots, nFunctions, nPlotCompose, vPlotCompose.size());
+                createStd3dPlot(_pData, _data, _parser, _option,
+                                        vType,
+                                        nStyle, nLegends, nFunctions, nPlotCompose, vPlotCompose.size());
             }
 
             // --> GIF-Frame beenden <--
             if (_pData.getAnimateSamples() && bAnimateVar)
-                _graph.EndFrame();
+                _graph->EndFrame();
             if (!bAnimateVar)
                 break;
         }
 
         // --> GIF-Datei schliessen <--
-        if (_pData.getAnimateSamples() && bAnimateVar)
-            _graph.CloseGIF();
+        if (_pData.getAnimateSamples() && bAnimateVar && bOutputDesired)
+            _graph->CloseGIF();
         bNewSubPlot = false;
+        if (!_pData.getSilentMode())
+            NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
     }
-    // --> Speichern und Erfolgsmeldung <--
-    if (!_pData.getAnimateSamples() || !bAnimateVar)
-    {
-        if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
-            NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("PLOT_SAVING")) + " ... ");
-        _graph.WriteFrame(sOutputName.c_str());
 
-        // --> TeX-Ausgabe gewaehlt? Dann werden mehrere Dateien erzeugt, die an den Zielort verschoben werden muessen <--
-        if (sOutputName.substr(sOutputName.length()-4, 4) == ".tex")
+    if (_pData.getSilentMode() || !_pData.getOpenImage() || bOutputDesired)
+    {
+        // --> Speichern und Erfolgsmeldung <--
+        if (!_pData.getAnimateSamples() || !bAnimateVar)
         {
-            writeTeXMain(sOutputName);
+            if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
+                NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("PLOT_SAVING")) + " ... ");
+            _graph->WriteFrame(sOutputName.c_str());
+
+            // --> TeX-Ausgabe gewaehlt? Dann werden mehrere Dateien erzeugt, die an den Zielort verschoben werden muessen <--
+            if (sOutputName.substr(sOutputName.length()-4, 4) == ".tex")
+            {
+                writeTeXMain(sOutputName);
+            }
+        }
+        if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
+        {
+            NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
+            NumeReKernel::printPreFmt(LineBreak("|   " +_lang.get("PLOT_SAVE_LOCATION", sOutputName), _option, 0) + "\n");
         }
     }
-    if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
-    {
-        NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
-        NumeReKernel::printPreFmt(LineBreak("|   " +_lang.get("PLOT_SAVE_LOCATION", sOutputName), _option, 0) + "\n");
-    }
     // --> Ist ein ImageViewer angegeben und der "openImage" TRUE? Dann oeffnen wir das erzeugte Bild mit diesem <--
-    if (_pData.getOpenImage() && !_pData.getSilentMode() && _option.getSystemPrintStatus())
+    /*if (_pData.getOpenImage() && !_pData.getSilentMode() && _option.getSystemPrintStatus())
     {
         if (sOutputName.substr(sOutputName.rfind('.')) == ".tex"
             || sOutputName.substr(sOutputName.rfind('.')) == ".png"
@@ -692,10 +693,9 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
             NumeReKernel::gotoLine(sOutputName);
         else
             openExternally(sOutputName, _option.getViewerPath(), _pData.getPath());
-    }
+    }*/
 
     // --> Speicher wieder freigeben <--
-    parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
     _pData.deleteData();
 
     // --> Zurueck zur aufrufenden Funktion! <--
@@ -703,14 +703,17 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
 }
 
 
+Plot::~Plot()
+{
+    clearData();
+    if (_graph)
+        delete _graph;
+}
 
 
-
-
-
-void parser_plot_create2dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, Datafile& _data, Parser& _parser, mglData** _mDataPlots, mglData* _mAxisVals, const Settings& _option,
-                            string& sLabels, string& sDataLabels, string* sContStyles, vector<short>& vType,
-                            int& nStyle, size_t& nLegends, int* nDataDim, int nDataPlots, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
+void Plot::create2dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option,
+                            vector<short>& vType,
+                            int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
 {
     string sDummy = "";
     string sConvLegends = "";
@@ -750,13 +753,13 @@ void parser_plot_create2dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pIn
             }
             if (_pData.getCoords() == PlotData::POLAR_RZ || _pData.getCoords() == PlotData::SPHERICAL_RT)
             {
-                _mData = parser_fmod(_mData, 2.0*M_PI);
-                _mMaskData = parser_fmod(_mMaskData, 2.0*M_PI);
+                _mData = fmod(_mData, 2.0*M_PI);
+                _mMaskData = fmod(_mMaskData, 2.0*M_PI);
             }
             else if (_pData.getCoords() == PlotData::SPHERICAL_RP)
             {
-                _mData = parser_fmod(_mData, M_PI);
-                _mMaskData = parser_fmod(_mMaskData, M_PI);
+                _mData = fmod(_mData, M_PI);
+                _mMaskData = fmod(_mMaskData, M_PI);
             }
             _mPlotAxes[0] = _mAxisVals[0];
             _mPlotAxes[1] = _mAxisVals[1];
@@ -772,11 +775,11 @@ void parser_plot_create2dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pIn
         {
             StripSpaces(sDataLabels);
             if (_pData.getCoords() == PlotData::POLAR_PZ || _pData.getCoords() == PlotData::SPHERICAL_PT)
-                _mDataPlots[nTypeCounter[1]][0] = parser_fmod(_mDataPlots[nTypeCounter[1]][0], 2.0*M_PI);
+                _mDataPlots[nTypeCounter[1]][0] = fmod(_mDataPlots[nTypeCounter[1]][0], 2.0*M_PI);
             if (_pData.getCoords() == PlotData::POLAR_RP || _pData.getCoords() == PlotData::SPHERICAL_RP)
-                _mDataPlots[nTypeCounter[1]][1] = parser_fmod(_mDataPlots[nTypeCounter[1]][1], 2.0*M_PI);
+                _mDataPlots[nTypeCounter[1]][1] = fmod(_mDataPlots[nTypeCounter[1]][1], 2.0*M_PI);
             if (_pData.getCoords() == PlotData::SPHERICAL_PT || _pData.getCoords() == PlotData::SPHERICAL_RT)
-                _mDataPlots[nTypeCounter[1]][1] = parser_fmod(_mDataPlots[nTypeCounter[1]][1], 1.0*M_PI);
+                _mDataPlots[nTypeCounter[1]][1] = fmod(_mDataPlots[nTypeCounter[1]][1], 1.0*M_PI);
 
             _mData = _mDataPlots[nTypeCounter[1]][2];
             _mPlotAxes[0] = _mDataPlots[nTypeCounter[1]][0];
@@ -801,10 +804,10 @@ void parser_plot_create2dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pIn
                 nTypeCounter[0]++;
             }
         }
-        if (!parser_plot_2d(_graph, _pData, _pInfo, _mData, _mMaskData, _mPlotAxes, _mContVec, _option))
+        if (!plot2d(_pData, _mData, _mMaskData, _mPlotAxes, _mContVec, _option))
         {
             // --> Den gibt's nicht: Speicher freigeben und zurueck! <--
-            parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+            clearData();
             return;
         }
         if (vType[nType] == TYPE_FUNC)
@@ -815,10 +818,10 @@ void parser_plot_create2dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pIn
             {
                 if (_pData.getContLabels() && _pInfo.sCommand.substr(0,4) != "cont")
                 {
-                    _graph.Cont(_mAxisVals[0], _mAxisVals[1], _mData, ("t"+sContStyles[nStyle]).c_str());
+                    _graph->Cont(_mAxisVals[0], _mAxisVals[1], _mData, ("t"+_pInfo.sContStyles[nStyle]).c_str());
                 }
                 else if (!_pData.getContLabels() && _pInfo.sCommand.substr(0,4) != "cont")
-                    _graph.Cont(_mAxisVals[0], _mAxisVals[1], _mData, sContStyles[nStyle].c_str());
+                    _graph->Cont(_mAxisVals[0], _mAxisVals[1], _mData, _pInfo.sContStyles[nStyle].c_str());
                 nPos[0] = sLabels.find(';');
                 sConvLegends = sLabels.substr(0,nPos[0]);
                 // --> Der String-Parser wertet Ausdruecke wie "Var " + #var aus <--
@@ -826,7 +829,7 @@ void parser_plot_create2dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pIn
                 sLabels = sLabels.substr(nPos[0]+1);
                 if (sConvLegends != "\"\"")
                 {
-                    _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), sContStyles[nStyle].c_str());
+                    _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), _pInfo.sContStyles[nStyle].c_str());
                     nLegends++;
                 }
                 if (nStyle == _pInfo.nStyleMax-1)
@@ -844,10 +847,10 @@ void parser_plot_create2dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pIn
             {
                 if (_pData.getContLabels() && _pInfo.sCommand.substr(0,4) != "cont")
                 {
-                    _graph.Cont(_mDataPlots[nTypeCounter[1]][2], ("t"+sContStyles[nStyle]).c_str());
+                    _graph->Cont(_mDataPlots[nTypeCounter[1]][2], ("t"+_pInfo.sContStyles[nStyle]).c_str());
                 }
                 else if (!_pData.getContLabels() && _pInfo.sCommand.substr(0,4) != "cont")
-                    _graph.Cont(_mDataPlots[nTypeCounter[1]][2], sContStyles[nStyle].c_str());
+                    _graph->Cont(_mDataPlots[nTypeCounter[1]][2], _pInfo.sContStyles[nStyle].c_str());
                 nPos[1] = sDataLabels.find(';');
                 sConvLegends = sDataLabels.substr(0,nPos[1]);
                 // --> Der String-Parser wertet Ausdruecke wie "Var " + #var aus <--
@@ -855,7 +858,7 @@ void parser_plot_create2dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pIn
                 sDataLabels = sDataLabels.substr(nPos[1]+1);
                 if (sConvLegends != "\"\"")
                 {
-                    _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), sContStyles[nStyle].c_str());
+                    _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), _pInfo.sContStyles[nStyle].c_str());
                     nLegends++;
                 }
                 if (nStyle == _pInfo.nStyleMax-1)
@@ -871,12 +874,12 @@ void parser_plot_create2dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pIn
     // --> Position der Legende etwas aendern <--
     if (nFunctions > 1 && nLegends && !_pData.getSchematic() && nPlotCompose+1 == nPlotComposeSize)
     {
-        _graph.Legend(1.35,1.2);
+        _graph->Legend(1.35,1.2);
     }
 }
 
 
-bool parser_plot_2d(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglData& _mData, mglData& _mMaskData, mglData* _mAxisVals, mglData& _mContVec, const Settings& _option)
+bool Plot::plot2d(PlotData& _pData, mglData& _mData, mglData& _mMaskData, mglData* _mAxisVals, mglData& _mContVec, const Settings& _option)
 {
     /*if (_option.getbDebug())
         cerr << "|-> DEBUG: generating 2D-Plot..." << endl;*/
@@ -885,26 +888,26 @@ bool parser_plot_2d(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglDat
         && _pInfo.sCommand.substr(0,4) != "cont"
         && _pInfo.sCommand.substr(0,4) != "grad"
         && _pInfo.sCommand.substr(0,4) != "dens")
-        _graph.SetCutBox(parser_CalcCutBox(_pData.getRotateAngle(1), _pInfo.dRanges, 0, _pData.getCoords()), parser_CalcCutBox(_pData.getRotateAngle(1), _pInfo.dRanges, 1, _pData.getCoords()));
+        _graph->SetCutBox(CalcCutBox(_pData.getRotateAngle(1), 0, _pData.getCoords()), CalcCutBox(_pData.getRotateAngle(1), 1, _pData.getCoords()));
 
     // --> Entsprechend dem gewuenschten Plotting-Style plotten <--
     if (_pInfo.sCommand.substr(0,4) == "mesh")
     {
         if (_pData.getBars())
-            _graph.Boxs(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("#").c_str());
+            _graph->Boxs(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("#").c_str());
         else
-            _graph.Mesh(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+            _graph->Mesh(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
     }
     else if (_pInfo.sCommand.substr(0,4) == "surf")
     {
         if (_pData.getBars())
-            _graph.Boxs(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+            _graph->Boxs(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
         else if (_pData.getColorMask())
-            _graph.SurfC(_mAxisVals[0], _mAxisVals[1], _mData, _mMaskData, _pData.getColorScheme().c_str());
+            _graph->SurfC(_mAxisVals[0], _mAxisVals[1], _mData, _mMaskData, _pData.getColorScheme().c_str());
         else if (_pData.getAlphaMask())
-            _graph.SurfA(_mAxisVals[0], _mAxisVals[1], _mData, _mMaskData, _pData.getColorScheme().c_str());
+            _graph->SurfA(_mAxisVals[0], _mAxisVals[1], _mData, _mMaskData, _pData.getColorScheme().c_str());
         else
-            _graph.Surf(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+            _graph->Surf(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
         //cerr << "\"" << _pData.getColorScheme().c_str() << "\" " << strlen(_pData.getColorScheme().c_str()) << endl;
     }
     else if (_pInfo.sCommand.substr(0,4) == "cont")
@@ -912,52 +915,52 @@ bool parser_plot_2d(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglDat
         if (_pData.getContLabels())
         {
             if (_pData.getContFilled())
-                _graph.ContF(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
-            _graph.Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("t").c_str());
+                _graph->ContF(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+            _graph->Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("t").c_str());
         }
         else if (_pData.getContProj())
         {
             if (_pData.getContFilled())
             {
-                _graph.ContF(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("_").c_str());
-                _graph.Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, "_k");
+                _graph->ContF(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("_").c_str());
+                _graph->Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, "_k");
             }
             else
-                _graph.Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("_").c_str());
+                _graph->Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("_").c_str());
         }
         else if (_pData.getContFilled())
         {
-            _graph.ContF(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
-            _graph.Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, "k");
+            _graph->ContF(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+            _graph->Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, "k");
         }
         else
-            _graph.Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+            _graph->Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
     }
     else if (_pInfo.sCommand.substr(0,4) == "grad")
     {
         if (_pData.getHighRes() || !_option.getbUseDraftMode())
         {
             if (_pData.getContFilled() && _pData.getContProj())
-                _graph.Grad(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorSchemeMedium().c_str(), "value 10");
+                _graph->Grad(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorSchemeMedium().c_str(), "value 10");
             else
-                _graph.Grad(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str(), "value 10");
+                _graph->Grad(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str(), "value 10");
         }
         else
         {
             if (_pData.getContFilled() && _pData.getContProj())
-                _graph.Grad(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorSchemeMedium().c_str());
+                _graph->Grad(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorSchemeMedium().c_str());
             else
-                _graph.Grad(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+                _graph->Grad(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
         }
         if (!(_pData.getContFilled() && _pData.getContProj()))
-            _graph.Dens(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorSchemeLight().c_str());
+            _graph->Dens(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorSchemeLight().c_str());
     }
     else if (_pInfo.sCommand.substr(0,4) == "dens")
     {
         if (_pData.getBars())
-            _graph.Tile(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+            _graph->Tile(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
         else
-            _graph.Dens(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+            _graph->Dens(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
     }
     else
         return false;
@@ -966,33 +969,33 @@ bool parser_plot_2d(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglDat
         && _pInfo.sCommand.substr(0,4) != "cont"
         && _pInfo.sCommand.substr(0,4) != "grad"
         && _pInfo.sCommand.substr(0,4) != "dens")
-        _graph.SetCutBox(mglPoint(0), mglPoint(0));
+        _graph->SetCutBox(mglPoint(0), mglPoint(0));
     // --> Ggf. Konturlinien ergaenzen <--
     if (_pData.getContProj() && _pInfo.sCommand.substr(0,4) != "cont")
     {
         if (_pData.getContFilled() && _pInfo.sCommand.substr(0,4) != "dens")
         {
-            _graph.ContF(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("_").c_str());
-            _graph.Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, "_k");
+            _graph->ContF(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("_").c_str());
+            _graph->Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, "_k");
         }
         else if (_pInfo.sCommand.substr(0,4) == "dens" && _pData.getContFilled())
-            _graph.Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, "_k");
+            _graph->Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, "_k");
         else
-            _graph.Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("_").c_str());
+            _graph->Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("_").c_str());
     }
     if (_pData.getContLabels() && _pInfo.sCommand.substr(0,4) != "cont" && *_pInfo.nFunctions == 1)
     {
-        _graph.Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, ("t"+_pInfo.sContStyles[*_pInfo.nStyle]).c_str());
+        _graph->Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, ("t"+_pInfo.sContStyles[*_pInfo.nStyle]).c_str());
         if (_pData.getContFilled())
-            _graph.ContF(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+            _graph->ContF(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
     }
     return true;
 }
 
 
-void parser_plot_createStdPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, Datafile& _data, Parser& _parser, mglData** _mDataPlots, mglData* _mAxisVals, const Settings& _option,
-                            string& sLabels, string& sDataLabels, string* sLineStyles, string* sPointStyles, string* sContStyles, string* sConPointStyles, vector<short>& vType,
-                            int& nStyle, size_t& nLegends, int* nDataDim, int nDataPlots, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
+void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option,
+                            vector<short>& vType,
+                            int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
 {
     string sDummy = "";
     string sConvLegends = "";
@@ -1021,7 +1024,7 @@ void parser_plot_createStdPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pI
                 _mData.a[i] = _pData.getData(i,nTypeCounter[0]);
             }
             if (_pData.getCoords() == PlotData::POLAR_RP || _pData.getCoords() == PlotData::SPHERICAL_RP)
-                _mData = parser_fmod(_mData, 2.0*M_PI);
+                _mData = fmod(_mData, 2.0*M_PI);
             _mPlotAxes = _mAxisVals[0];
 
             if (_pData.getRegion() && vType.size() > nType+1 && vType[nType+1] == TYPE_DATA)
@@ -1041,7 +1044,7 @@ void parser_plot_createStdPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pI
                     _mData2[0].a[i] = 0.0;
             }
             if (_pData.getCoords() == PlotData::POLAR_RP || _pData.getCoords() == PlotData::SPHERICAL_RP)
-                _mData2[0] = parser_fmod(_mData2[0], 2.0*M_PI);
+                _mData2[0] = fmod(_mData2[0], 2.0*M_PI);
             if (_pData.getAxisbind(nType)[0] == 'r')
             {
                 _mData = (_mData-_pInfo.dSecAxisRanges[1][0]) * (_pInfo.dRanges[YCOORD][1]-_pInfo.dRanges[YCOORD][0])/(_pInfo.dSecAxisRanges[1][1]-_pInfo.dSecAxisRanges[1][0]) + _pInfo.dRanges[YCOORD][0];
@@ -1056,9 +1059,9 @@ void parser_plot_createStdPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pI
             StripSpaces(sDataLabels);
             // Fallback for all bended coordinates, which are not covered by the second case
             if (_pData.getCoords() == PlotData::POLAR_PZ || _pData.getCoords() == PlotData::SPHERICAL_PT || _pData.getCoords() == PlotData::SPHERICAL_RT || _pData.getCoords() == PlotData::POLAR_RZ)
-                _mDataPlots[nTypeCounter[1]][0] = parser_fmod(_mDataPlots[nTypeCounter[1]][0], 2.0*M_PI);
+                _mDataPlots[nTypeCounter[1]][0] = fmod(_mDataPlots[nTypeCounter[1]][0], 2.0*M_PI);
             if (_pData.getCoords() == PlotData::POLAR_RP || _pData.getCoords() == PlotData::SPHERICAL_RP)
-                _mDataPlots[nTypeCounter[1]][1] = parser_fmod(_mDataPlots[nTypeCounter[1]][1], 2.0*M_PI);
+                _mDataPlots[nTypeCounter[1]][1] = fmod(_mDataPlots[nTypeCounter[1]][1], 2.0*M_PI);
 
 
             _mData = _mDataPlots[nTypeCounter[1]][1];
@@ -1153,10 +1156,10 @@ void parser_plot_createStdPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pI
             }
 
         }
-        if (!parser_plot_std(_graph, _pData, _pInfo, _mData, _mPlotAxes, _mData2, vType[nType]))
+        if (!plotstd(_pData, _mData, _mPlotAxes, _mData2, vType[nType]))
         {
             // --> Den gibt's nicht: Speicher freigeben und zurueck! <--
-            parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+            clearData();
             return;
         }
         if (vType[nType] == TYPE_FUNC)
@@ -1172,7 +1175,7 @@ void parser_plot_createStdPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pI
                     sLabels = sLabels.substr(nPos[0]+1);
                     if (sConvLegends != "\"\"")
                     {
-                        _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), sLineStyles[nStyle].c_str());
+                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), _pInfo.sLineStyles[nStyle].c_str());
                         nLegends++;
                     }
 
@@ -1191,7 +1194,7 @@ void parser_plot_createStdPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pI
                 sLabels = sLabels.substr(nPos[0]+1);
                 if (sConvLegends != "\"\"")
                 {
-                    _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sLineStyles[nStyle], _pData).c_str());
+                    _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nStyle], _pData).c_str());
                     nLegends++;
                 }
                 if (nStyle == _pInfo.nStyleMax-1)
@@ -1212,19 +1215,19 @@ void parser_plot_createStdPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pI
                 nLegends++;
                 if (_pData.getBoxplot())
                 {
-                    _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sLineStyles[nStyle], _pData).c_str());
+                    _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nStyle], _pData).c_str());
                 }
                 else if (!_pData.getxError() && !_pData.getyError())
                 {
                     if ((_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].nx >= _pInfo.nSamples) || _pData.getBars())
-                        _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sLineStyles[nStyle], _pData).c_str());
+                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nStyle], _pData).c_str());
                     else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].nx >= 0.9 * _pInfo.nSamples))
-                        _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sConPointStyles[nStyle], _pData).c_str());
+                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sConPointStyles[nStyle], _pData).c_str());
                     else
-                        _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sPointStyles[nStyle], _pData).c_str());
+                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sPointStyles[nStyle], _pData).c_str());
                 }
                 else
-                    _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sPointStyles[nStyle], _pData).c_str());
+                    _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sPointStyles[nStyle], _pData).c_str());
             }
             if (nStyle == _pInfo.nStyleMax-1)
                 nStyle = 0;
@@ -1242,99 +1245,99 @@ void parser_plot_createStdPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pI
     {
         if (_pData.getHLines(i).sDesc.length())
         {
-            _graph.Line(mglPoint(_pInfo.dRanges[XCOORD][0], _pData.getHLines(i).dPos), mglPoint(_pInfo.dRanges[XCOORD][1], _pData.getHLines(i).dPos), _pData.getHLines(i).sStyle.c_str(), 100);
+            _graph->Line(mglPoint(_pInfo.dRanges[XCOORD][0], _pData.getHLines(i).dPos), mglPoint(_pInfo.dRanges[XCOORD][1], _pData.getHLines(i).dPos), _pData.getHLines(i).sStyle.c_str(), 100);
             if (!i || i > 1)
             {
-                _graph.Puts(_pInfo.dRanges[XCOORD][0]+0.03*fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1]), _pData.getHLines(i).dPos+0.01*fabs(_pInfo.dRanges[YCOORD][1]-_pInfo.dRanges[YCOORD][0]), fromSystemCodePage(_pData.getHLines(i).sDesc).c_str(), ":kL");
+                _graph->Puts(_pInfo.dRanges[XCOORD][0]+0.03*fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1]), _pData.getHLines(i).dPos+0.01*fabs(_pInfo.dRanges[YCOORD][1]-_pInfo.dRanges[YCOORD][0]), fromSystemCodePage(_pData.getHLines(i).sDesc).c_str(), ":kL");
             }
             else
             {
-                _graph.Puts(_pInfo.dRanges[XCOORD][0]+0.03*fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1]), _pData.getHLines(i).dPos-0.04*fabs(_pInfo.dRanges[YCOORD][1]-_pInfo.dRanges[YCOORD][0]), fromSystemCodePage(_pData.getHLines(i).sDesc).c_str(), ":kL");
+                _graph->Puts(_pInfo.dRanges[XCOORD][0]+0.03*fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1]), _pData.getHLines(i).dPos-0.04*fabs(_pInfo.dRanges[YCOORD][1]-_pInfo.dRanges[YCOORD][0]), fromSystemCodePage(_pData.getHLines(i).sDesc).c_str(), ":kL");
             }
         }
         if (_pData.getVLines(i).sDesc.length())
         {
-            _graph.Line(mglPoint(_pData.getVLines(i).dPos, _pInfo.dRanges[YCOORD][0]), mglPoint(_pData.getVLines(i).dPos, _pInfo.dRanges[YCOORD][1]), _pData.getVLines(i).sStyle.c_str());
-            _graph.Puts(mglPoint(_pData.getVLines(i).dPos-0.01*fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1]), _pInfo.dRanges[YCOORD][0]+0.05*fabs(_pInfo.dRanges[YCOORD][0]-_pInfo.dRanges[YCOORD][1])), mglPoint(_pData.getVLines(i).dPos-0.01*fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1]), _pInfo.dRanges[YCOORD][1]), fromSystemCodePage(_pData.getVLines(i).sDesc).c_str(), ":kL");
+            _graph->Line(mglPoint(_pData.getVLines(i).dPos, _pInfo.dRanges[YCOORD][0]), mglPoint(_pData.getVLines(i).dPos, _pInfo.dRanges[YCOORD][1]), _pData.getVLines(i).sStyle.c_str());
+            _graph->Puts(mglPoint(_pData.getVLines(i).dPos-0.01*fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1]), _pInfo.dRanges[YCOORD][0]+0.05*fabs(_pInfo.dRanges[YCOORD][0]-_pInfo.dRanges[YCOORD][1])), mglPoint(_pData.getVLines(i).dPos-0.01*fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1]), _pInfo.dRanges[YCOORD][1]), fromSystemCodePage(_pData.getVLines(i).sDesc).c_str(), ":kL");
         }
     }
     if (nLegends && !_pData.getSchematic() && nPlotCompose+1 == nPlotComposeSize)
-        _graph.Legend(_pData.getLegendPosition());
+        _graph->Legend(_pData.getLegendPosition());
 }
 
 
-bool parser_plot_std(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], const short nType)
+bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], const short nType)
 {
     if (nType == 1)
     {
         if (!_pData.getArea() && !_pData.getRegion())
-            _graph.Plot(_mAxisVals, _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
+            _graph->Plot(_mAxisVals, _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
         else if (_pData.getRegion() && getNN(_mData2[0]))
         {
             if (*_pInfo.nStyle == _pInfo.nStyleMax-1)
-                _graph.Region(_mAxisVals, _mData, _mData2[0], ("{"+_pData.getColors().substr(*_pInfo.nStyle,1) + "7}{" + _pData.getColors().substr(0,1)+"7}").c_str());
+                _graph->Region(_mAxisVals, _mData, _mData2[0], ("{"+_pData.getColors().substr(*_pInfo.nStyle,1) + "7}{" + _pData.getColors().substr(0,1)+"7}").c_str());
             else
-                _graph.Region(_mAxisVals, _mData, _mData2[0], ("{"+_pData.getColors().substr(*_pInfo.nStyle,1) + "7}{" + _pData.getColors().substr(*_pInfo.nStyle+1,1)+"7}").c_str());
-            _graph.Plot(_mAxisVals, _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
+                _graph->Region(_mAxisVals, _mData, _mData2[0], ("{"+_pData.getColors().substr(*_pInfo.nStyle,1) + "7}{" + _pData.getColors().substr(*_pInfo.nStyle+1,1)+"7}").c_str());
+            _graph->Plot(_mAxisVals, _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
             if (*_pInfo.nStyle == _pInfo.nStyleMax-1)
-                _graph.Plot(_mAxisVals, _mData2[0], _pInfo.sLineStyles[0].c_str());
+                _graph->Plot(_mAxisVals, _mData2[0], _pInfo.sLineStyles[0].c_str());
             else
-                _graph.Plot(_mAxisVals, _mData2[0], _pInfo.sLineStyles[*_pInfo.nStyle+1].c_str());
+                _graph->Plot(_mAxisVals, _mData2[0], _pInfo.sLineStyles[*_pInfo.nStyle+1].c_str());
         }
         else if (_pData.getArea() || _pData.getRegion())
-            _graph.Area(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+            _graph->Area(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
     }
     else
     {
 
         if (_pData.getBoxplot())
         {
-            _graph.BoxPlot(_mData2[0], _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
+            _graph->BoxPlot(_mData2[0], _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
         }
         else if (!_pData.getxError() && !_pData.getyError())
         {
             if (_pData.getInterpolate() && _mAxisVals.nx >= _pInfo.nSamples)
             {
                 if (!_pData.getArea() && !_pData.getBars() && !_pData.getRegion())
-                    _graph.Plot(_mAxisVals, _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
+                    _graph->Plot(_mAxisVals, _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
                 else if (_pData.getBars() && !_pData.getArea() && !_pData.getRegion())
-                    _graph.Bars(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]+"^").c_str());
+                    _graph->Bars(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]+"^").c_str());
                 else if (_pData.getArea() || _pData.getRegion())
-                    _graph.Area(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+                    _graph->Area(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
             }
             else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mAxisVals.nx >= 0.9 * _pInfo.nSamples))
             {
                 if (!_pData.getArea() && !_pData.getBars())
-                    _graph.Plot(_mAxisVals, _mData, _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
+                    _graph->Plot(_mAxisVals, _mData, _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
                 else if (_pData.getBars() && !_pData.getArea())
-                    _graph.Bars(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]+"^").c_str());
+                    _graph->Bars(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]+"^").c_str());
                 else
-                    _graph.Area(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+                    _graph->Area(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
             }
             else
             {
                 if (!_pData.getArea() && !_pData.getBars() && !_pData.getHBars() && !_pData.getStepplot())
-                    _graph.Plot(_mAxisVals, _mData, _pInfo.sPointStyles[*_pInfo.nStyle].c_str());
+                    _graph->Plot(_mAxisVals, _mData, _pInfo.sPointStyles[*_pInfo.nStyle].c_str());
                 else if (_pData.getBars() && !_pData.getArea() && !_pData.getHBars() && !_pData.getStepplot())
-                    _graph.Bars(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]+"^").c_str());
+                    _graph->Bars(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]+"^").c_str());
                 else if (!_pData.getBars() && !_pData.getArea() && _pData.getHBars() && !_pData.getStepplot())
-                    _graph.Barh(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]+"^").c_str());
+                    _graph->Barh(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]+"^").c_str());
                 else if (!_pData.getBars() && !_pData.getArea() && !_pData.getHBars() && _pData.getStepplot())
-                    _graph.Step(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+                    _graph->Step(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
                 else
-                    _graph.Stem(_mAxisVals, _mData, _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
+                    _graph->Stem(_mAxisVals, _mData, _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
             }
         }
         else if (_pData.getxError() || _pData.getyError())
         {
-            _graph.Error(_mAxisVals, _mData, _mData2[0], _mData2[1], _pInfo.sPointStyles[*_pInfo.nStyle].c_str());
+            _graph->Error(_mAxisVals, _mData, _mData2[0], _mData2[1], _pInfo.sPointStyles[*_pInfo.nStyle].c_str());
         }
     }
     return true;
 }
 
 
-void parser_plot_create3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglData** _mDataPlots, mglData* _mAxisVals, const Settings& _option, string& sFunc, string& sLabels, int* nDataDim, int nDataPlots)
+void Plot::create3dPlot(PlotData& _pData, const Settings& _option)
 {
     if (sFunc != "<<empty>>")
     {
@@ -1343,7 +1346,7 @@ void parser_plot_create3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pIn
         double dMin = _pData.getMin();
         double dMax = _pData.getMax();
 
-        parser_plot_weightedRange(PlotData::ALLRANGES, dMin, dMax, _pData);
+        weightedRange(PlotData::ALLRANGES, dMin, dMax, _pData);
 
         if (!isnan(_pData.getColorRange()))
         {
@@ -1378,63 +1381,63 @@ void parser_plot_create3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pIn
             && _pInfo.sCommand.substr(0,4) != "grad"
             && (_pInfo.sCommand.substr(0,4) != "dens" || (_pInfo.sCommand.substr(0,4) == "dens" && _pData.getCloudPlot())))
         {
-            _graph.SetCutBox(parser_CalcCutBox(_pData.getRotateAngle(1), _pInfo.dRanges, 0, _pData.getCoords(), true), parser_CalcCutBox(_pData.getRotateAngle(1), _pInfo.dRanges, 1, _pData.getCoords(), true));
+            _graph->SetCutBox(CalcCutBox(_pData.getRotateAngle(1), 0, _pData.getCoords(), true), CalcCutBox(_pData.getRotateAngle(1), 1, _pData.getCoords(), true));
         }
         // --> Entsprechend dem gewuenschten Plotting-Style plotten <--
         if (_pInfo.sCommand.substr(0,4) == "mesh")
-            _graph.Surf3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("#").c_str(), "value 11");
+            _graph->Surf3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("#").c_str(), "value 11");
         else if (_pInfo.sCommand.substr(0,4) == "surf" && !_pData.getTransparency())
         {
-            _graph.Surf3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str(), "value 11");
+            _graph->Surf3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str(), "value 11");
         }
         else if (_pInfo.sCommand.substr(0,4) == "surf" && _pData.getTransparency())
-            _graph.Surf3A(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _mData, _pData.getColorScheme().c_str(), "value 11");
+            _graph->Surf3A(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _mData, _pData.getColorScheme().c_str(), "value 11");
         else if (_pInfo.sCommand.substr(0,4) == "cont")
         {
             if (_pData.getContProj())
             {
                 if (_pData.getContFilled())
                 {
-                    _graph.ContFX(_mContVec, _mData.Sum("x"), _pData.getColorScheme().c_str(), parser_getProjBackground(_pData.getRotateAngle(1), _pInfo.dRanges));
-                    _graph.ContFY(_mContVec, _mData.Sum("y"), _pData.getColorScheme().c_str(), parser_getProjBackground(_pData.getRotateAngle(1), _pInfo.dRanges, 1));
-                    _graph.ContFZ(_mContVec, _mData.Sum("z"), _pData.getColorScheme().c_str(), _pInfo.dRanges[ZCOORD][0]);
-                    _graph.ContX(_mContVec, _mData.Sum("x"), "k", parser_getProjBackground(_pData.getRotateAngle(1), _pInfo.dRanges));
-                    _graph.ContY(_mContVec, _mData.Sum("y"), "k", parser_getProjBackground(_pData.getRotateAngle(1), _pInfo.dRanges, 1));
-                    _graph.ContZ(_mContVec, _mData.Sum("z"), "k", _pInfo.dRanges[ZCOORD][0]);
+                    _graph->ContFX(_mContVec, _mData.Sum("x"), _pData.getColorScheme().c_str(), getProjBackground(_pData.getRotateAngle(1)));
+                    _graph->ContFY(_mContVec, _mData.Sum("y"), _pData.getColorScheme().c_str(), getProjBackground(_pData.getRotateAngle(1), 1));
+                    _graph->ContFZ(_mContVec, _mData.Sum("z"), _pData.getColorScheme().c_str(), _pInfo.dRanges[ZCOORD][0]);
+                    _graph->ContX(_mContVec, _mData.Sum("x"), "k", getProjBackground(_pData.getRotateAngle(1)));
+                    _graph->ContY(_mContVec, _mData.Sum("y"), "k", getProjBackground(_pData.getRotateAngle(1), 1));
+                    _graph->ContZ(_mContVec, _mData.Sum("z"), "k", _pInfo.dRanges[ZCOORD][0]);
                 }
                 else
                 {
-                    _graph.ContX(_mContVec, _mData.Sum("x"), _pData.getColorScheme().c_str(), parser_getProjBackground(_pData.getRotateAngle(1), _pInfo.dRanges));
-                    _graph.ContY(_mContVec, _mData.Sum("y"), _pData.getColorScheme().c_str(), parser_getProjBackground(_pData.getRotateAngle(1), _pInfo.dRanges, 1));
-                    _graph.ContZ(_mContVec, _mData.Sum("z"), _pData.getColorScheme().c_str(), _pInfo.dRanges[ZCOORD][0]);
+                    _graph->ContX(_mContVec, _mData.Sum("x"), _pData.getColorScheme().c_str(), getProjBackground(_pData.getRotateAngle(1)));
+                    _graph->ContY(_mContVec, _mData.Sum("y"), _pData.getColorScheme().c_str(), getProjBackground(_pData.getRotateAngle(1), 1));
+                    _graph->ContZ(_mContVec, _mData.Sum("z"), _pData.getColorScheme().c_str(), _pInfo.dRanges[ZCOORD][0]);
                 }
             }
             else if (_pData.getContFilled())
             {
                 for (unsigned short n = 0; n < _pData.getSlices(); n++)
                 {
-                    _graph.ContF3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("x").c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices()+1));
-                    _graph.Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, "kx", (n+1)*_pInfo.nSamples/(_pData.getSlices()+1));
+                    _graph->ContF3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("x").c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices()+1));
+                    _graph->Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, "kx", (n+1)*_pInfo.nSamples/(_pData.getSlices()+1));
                 }
                 for (unsigned short n = 0; n < _pData.getSlices(1); n++)
                 {
-                    _graph.ContF3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices(1)+1));
-                    _graph.Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, "k", (n+1)*_pInfo.nSamples/(_pData.getSlices(1)+1));
+                    _graph->ContF3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices(1)+1));
+                    _graph->Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, "k", (n+1)*_pInfo.nSamples/(_pData.getSlices(1)+1));
                 }
                 for (unsigned short n = 0; n < _pData.getSlices(2); n++)
                 {
-                    _graph.ContF3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("z").c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices(2)+1));
-                    _graph.Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, "kz", (n+1)*_pInfo.nSamples/(_pData.getSlices(2)+1));
+                    _graph->ContF3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("z").c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices(2)+1));
+                    _graph->Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, "kz", (n+1)*_pInfo.nSamples/(_pData.getSlices(2)+1));
                 }
             }
             else
             {
                 for (unsigned short n = 0; n < _pData.getSlices(); n++)
-                    _graph.Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("x").c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices()+1));
+                    _graph->Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("x").c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices()+1));
                 for (unsigned short n = 0; n < _pData.getSlices(1); n++)
-                    _graph.Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices(1)+1));
+                    _graph->Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices(1)+1));
                 for (unsigned short n = 0; n < _pData.getSlices(2); n++)
-                    _graph.Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("z").c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices(2)+1));
+                    _graph->Cont3(_mContVec, _mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("z").c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices(2)+1));
             }
         }
         else if (_pInfo.sCommand.substr(0,4) == "grad")
@@ -1442,22 +1445,22 @@ void parser_plot_create3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pIn
             if (_pData.getHighRes() || !_option.getbUseDraftMode())
             {
                 if (_pData.getContFilled() && _pData.getContProj())
-                    _graph.Grad(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorSchemeMedium().c_str(), "value 10");
+                    _graph->Grad(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorSchemeMedium().c_str(), "value 10");
                 else
-                    _graph.Grad(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str(), "value 10");
+                    _graph->Grad(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str(), "value 10");
             }
             else
             {
                 if (_pData.getContFilled() && _pData.getContProj())
-                    _graph.Grad(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorSchemeMedium().c_str());
+                    _graph->Grad(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorSchemeMedium().c_str());
                 else
-                    _graph.Grad(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str());
+                    _graph->Grad(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str());
             }
             if (!(_pData.getContProj()))
             {
-                _graph.Dens3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorSchemeLight("x").c_str(), _pInfo.nSamples/2);
-                _graph.Dens3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorSchemeLight().c_str(), _pInfo.nSamples/2);
-                _graph.Dens3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorSchemeLight("z").c_str(), _pInfo.nSamples/2);
+                _graph->Dens3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorSchemeLight("x").c_str(), _pInfo.nSamples/2);
+                _graph->Dens3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorSchemeLight().c_str(), _pInfo.nSamples/2);
+                _graph->Dens3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorSchemeLight("z").c_str(), _pInfo.nSamples/2);
             }
         }
         else if (_pInfo.sCommand.substr(0,4) == "dens")
@@ -1465,19 +1468,19 @@ void parser_plot_create3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pIn
             if (!(_pData.getContFilled() && _pData.getContProj()) && !_pData.getCloudPlot())
             {
                 for (unsigned short n = 0; n < _pData.getSlices(); n++)
-                    _graph.Dens3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("x").c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices()+1));
+                    _graph->Dens3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("x").c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices()+1));
                 for (unsigned short n = 0; n < _pData.getSlices(1); n++)
-                    _graph.Dens3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices(1)+1));
+                    _graph->Dens3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices(1)+1));
                 for (unsigned short n = 0; n < _pData.getSlices(2); n++)
-                    _graph.Dens3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("z").c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices(2)+1));
+                    _graph->Dens3(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme("z").c_str(), (n+1)*_pInfo.nSamples/(_pData.getSlices(2)+1));
             }
             else if (_pData.getCloudPlot() && !(_pData.getContFilled() && _pData.getContProj()))
-                _graph.Cloud(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str());
+                _graph->Cloud(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorScheme().c_str());
         }
         else
         {
             // --> Den gibt's nicht: Speicher freigeben und zurueck! <--
-            parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+            clearData();
             return;
         }
 
@@ -1486,7 +1489,7 @@ void parser_plot_create3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pIn
             && _pInfo.sCommand.substr(0,4) != "grad"
             && (_pInfo.sCommand.substr(0,4) != "dens" || (_pInfo.sCommand.substr(0,4) == "dens" && _pData.getCloudPlot())))
         {
-            _graph.SetCutBox(mglPoint(0), mglPoint(0));
+            _graph->SetCutBox(mglPoint(0), mglPoint(0));
         }
 
         // --> Ggf. Konturlinien ergaenzen <--
@@ -1494,43 +1497,43 @@ void parser_plot_create3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pIn
         {
             if (_pData.getContFilled() && (_pInfo.sCommand.substr(0,4) != "dens" && _pInfo.sCommand.substr(0,4) != "grad"))
             {
-                _graph.ContFX(_mContVec, _mData.Sum("x"), _pData.getColorScheme().c_str(), parser_getProjBackground(_pData.getRotateAngle(1), _pInfo.dRanges));
-                _graph.ContFY(_mContVec, _mData.Sum("y"), _pData.getColorScheme().c_str(), parser_getProjBackground(_pData.getRotateAngle(1), _pInfo.dRanges, 1));
-                _graph.ContFZ(_mContVec, _mData.Sum("z"), _pData.getColorScheme().c_str(), _pInfo.dRanges[ZCOORD][0]);
-                _graph.ContX(_mContVec, _mData.Sum("x"), "k", parser_getProjBackground(_pData.getRotateAngle(1), _pInfo.dRanges));
-                _graph.ContY(_mContVec, _mData.Sum("y"), "k", parser_getProjBackground(_pData.getRotateAngle(1), _pInfo.dRanges, 1));
-                _graph.ContZ(_mContVec, _mData.Sum("z"), "k", _pInfo.dRanges[ZCOORD][0]);
+                _graph->ContFX(_mContVec, _mData.Sum("x"), _pData.getColorScheme().c_str(), getProjBackground(_pData.getRotateAngle(1)));
+                _graph->ContFY(_mContVec, _mData.Sum("y"), _pData.getColorScheme().c_str(), getProjBackground(_pData.getRotateAngle(1), 1));
+                _graph->ContFZ(_mContVec, _mData.Sum("z"), _pData.getColorScheme().c_str(), _pInfo.dRanges[ZCOORD][0]);
+                _graph->ContX(_mContVec, _mData.Sum("x"), "k", getProjBackground(_pData.getRotateAngle(1)));
+                _graph->ContY(_mContVec, _mData.Sum("y"), "k", getProjBackground(_pData.getRotateAngle(1), 1));
+                _graph->ContZ(_mContVec, _mData.Sum("z"), "k", _pInfo.dRanges[ZCOORD][0]);
             }
             else if ((_pInfo.sCommand.substr(0,4) == "dens" || _pInfo.sCommand.substr(0,4) == "grad") && _pData.getContFilled())
             {
                 if (_pInfo.sCommand == "dens")
                 {
-                    _graph.DensX(_mData.Sum("x"), _pData.getColorScheme().c_str(), parser_getProjBackground(_pData.getRotateAngle(1), _pInfo.dRanges));
-                    _graph.DensY(_mData.Sum("y"), _pData.getColorScheme().c_str(), parser_getProjBackground(_pData.getRotateAngle(1), _pInfo.dRanges, 1));
-                    _graph.DensZ(_mData.Sum("z"), _pData.getColorScheme().c_str(), _pInfo.dRanges[ZCOORD][0]);
+                    _graph->DensX(_mData.Sum("x"), _pData.getColorScheme().c_str(), getProjBackground(_pData.getRotateAngle(1)));
+                    _graph->DensY(_mData.Sum("y"), _pData.getColorScheme().c_str(), getProjBackground(_pData.getRotateAngle(1), 1));
+                    _graph->DensZ(_mData.Sum("z"), _pData.getColorScheme().c_str(), _pInfo.dRanges[ZCOORD][0]);
                 }
                 else
                 {
-                    _graph.DensX(_mData.Sum("x"), _pData.getColorSchemeLight().c_str(), parser_getProjBackground(_pData.getRotateAngle(1), _pInfo.dRanges));
-                    _graph.DensY(_mData.Sum("y"), _pData.getColorSchemeLight().c_str(), parser_getProjBackground(_pData.getRotateAngle(1), _pInfo.dRanges, 1));
-                    _graph.DensZ(_mData.Sum("z"), _pData.getColorSchemeLight().c_str(), _pInfo.dRanges[ZCOORD][0]);
+                    _graph->DensX(_mData.Sum("x"), _pData.getColorSchemeLight().c_str(), getProjBackground(_pData.getRotateAngle(1)));
+                    _graph->DensY(_mData.Sum("y"), _pData.getColorSchemeLight().c_str(), getProjBackground(_pData.getRotateAngle(1), 1));
+                    _graph->DensZ(_mData.Sum("z"), _pData.getColorSchemeLight().c_str(), _pInfo.dRanges[ZCOORD][0]);
                 }
-                _graph.ContX(_mContVec, _mData.Sum("x"), "k", parser_getProjBackground(_pData.getRotateAngle(1), _pInfo.dRanges));
-                _graph.ContY(_mContVec, _mData.Sum("y"), "k", parser_getProjBackground(_pData.getRotateAngle(1), _pInfo.dRanges, 1));
-                _graph.ContZ(_mContVec, _mData.Sum("z"), "k", _pInfo.dRanges[ZCOORD][0]);
+                _graph->ContX(_mContVec, _mData.Sum("x"), "k", getProjBackground(_pData.getRotateAngle(1)));
+                _graph->ContY(_mContVec, _mData.Sum("y"), "k", getProjBackground(_pData.getRotateAngle(1), 1));
+                _graph->ContZ(_mContVec, _mData.Sum("z"), "k", _pInfo.dRanges[ZCOORD][0]);
             }
             else
             {
-                _graph.ContX(_mContVec, _mData.Sum("x"), _pData.getColorScheme().c_str(), parser_getProjBackground(_pData.getRotateAngle(1), _pInfo.dRanges));
-                _graph.ContY(_mContVec, _mData.Sum("y"), _pData.getColorScheme().c_str(), parser_getProjBackground(_pData.getRotateAngle(1), _pInfo.dRanges, 1));
-                _graph.ContZ(_mContVec, _mData.Sum("z"), _pData.getColorScheme().c_str(), _pInfo.dRanges[ZCOORD][0]);
+                _graph->ContX(_mContVec, _mData.Sum("x"), _pData.getColorScheme().c_str(), getProjBackground(_pData.getRotateAngle(1)));
+                _graph->ContY(_mContVec, _mData.Sum("y"), _pData.getColorScheme().c_str(), getProjBackground(_pData.getRotateAngle(1), 1));
+                _graph->ContZ(_mContVec, _mData.Sum("z"), _pData.getColorScheme().c_str(), _pInfo.dRanges[ZCOORD][0]);
             }
         }
     }
 }
 
 
-void parser_plot_create3dVect(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglData** _mDataPlots, string& sFunc, string& sLabels, int* nDataDim, int nDataPlots)
+void Plot::create3dVect(PlotData& _pData)
 {
     if (sFunc != "<<empty>>")
     {
@@ -1556,33 +1559,33 @@ void parser_plot_create3dVect(mglGraph& _graph, PlotData& _pData, PlotInfo& _pIn
 
         if (_pData.getCutBox())
         {
-            _graph.SetCutBox(parser_CalcCutBox(_pData.getRotateAngle(1), _pInfo.dRanges, 0, _pData.getCoords(), true), parser_CalcCutBox(_pData.getRotateAngle(1), _pInfo.dRanges, 1, _pData.getCoords(), true));
+            _graph->SetCutBox(CalcCutBox(_pData.getRotateAngle(1),  0, _pData.getCoords(), true), CalcCutBox(_pData.getRotateAngle(1), 1, _pData.getCoords(), true));
         }
         // --> Entsprechend dem gewuenschten Plotting-Style plotten <--
         if (_pData.getFlow())
-            _graph.Flow(_mData_x, _mData_y, _mData_z, _pData.getColorScheme("v").c_str());
+            _graph->Flow(_mData_x, _mData_y, _mData_z, _pData.getColorScheme("v").c_str());
         else if (_pData.getPipe())
-            _graph.Pipe(_mData_x, _mData_y, _mData_z, _pData.getColorScheme().c_str());
+            _graph->Pipe(_mData_x, _mData_y, _mData_z, _pData.getColorScheme().c_str());
         else if (_pData.getFixedLength())
-            _graph.Vect(_mData_x, _mData_y, _mData_z, _pData.getColorScheme("f").c_str());
+            _graph->Vect(_mData_x, _mData_y, _mData_z, _pData.getColorScheme("f").c_str());
         else if (!_pData.getFixedLength())
-            _graph.Vect(_mData_x, _mData_y, _mData_z, _pData.getColorScheme().c_str());
+            _graph->Vect(_mData_x, _mData_y, _mData_z, _pData.getColorScheme().c_str());
         else
         {
             // --> Den gibt's nicht: Speicher freigeben und zurueck! <--
-            parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+            clearData();
             return;
         }
 
         if (_pData.getCutBox())
         {
-            _graph.SetCutBox(mglPoint(0), mglPoint(0));
+            _graph->SetCutBox(mglPoint(0), mglPoint(0));
         }
     }
 }
 
 
-void parser_plot_create2dVect(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglData** _mDataPlots, string& sFunc, string& sLabels, int* nDataDim, int nDataPlots)
+void Plot::create2dVect(PlotData& _pData)
 {
     if (sFunc != "<<empty>>")
     {
@@ -1603,24 +1606,24 @@ void parser_plot_create2dVect(mglGraph& _graph, PlotData& _pData, PlotInfo& _pIn
 
         // --> Entsprechend dem gewuenschten Plotting-Style plotten <--
         if (_pData.getFlow())
-            _graph.Flow(_mData_x, _mData_y, _pData.getColorScheme("v").c_str());
+            _graph->Flow(_mData_x, _mData_y, _pData.getColorScheme("v").c_str());
         else if (_pData.getPipe())
-            _graph.Pipe(_mData_x, _mData_y, _pData.getColorScheme().c_str());
+            _graph->Pipe(_mData_x, _mData_y, _pData.getColorScheme().c_str());
         else if (_pData.getFixedLength())
-            _graph.Vect(_mData_x, _mData_y, _pData.getColorScheme("f").c_str());
+            _graph->Vect(_mData_x, _mData_y, _pData.getColorScheme("f").c_str());
         else if (!_pData.getFixedLength())
-            _graph.Vect(_mData_x, _mData_y, _pData.getColorScheme().c_str());
+            _graph->Vect(_mData_x, _mData_y, _pData.getColorScheme().c_str());
         else
         {
             // --> Den gibt's nicht: Speicher freigeben und zurueck! <--
-            parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+            clearData();
             return;
         }
     }
 }
 
 
-void parser_plot_create2dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _data, const Settings& _option, vector<string>& vDrawVector, value_type* vResults, int& nFunctions)
+void Plot::create2dDrawing(Parser& _parser, Datafile& _data, const Settings& _option, vector<string>& vDrawVector, value_type* vResults, int& nFunctions)
 {
     string sStyle;
     string sTextString;
@@ -1675,37 +1678,37 @@ void parser_plot_create2dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
             if (nFunctions < 2)
                 continue;
             if (nFunctions < 4)
-                _graph.Line(mglPoint(),mglPoint(vResults[0], vResults[1]), sStyle.c_str());
+                _graph->Line(mglPoint(),mglPoint(vResults[0], vResults[1]), sStyle.c_str());
             else
-                _graph.Line(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2], vResults[3]), sStyle.c_str());
+                _graph->Line(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2], vResults[3]), sStyle.c_str());
         }
         else if (vDrawVector[v].substr(0,7) == "tracev(")
         {
             if (nFunctions < 2)
                 continue;
             if (nFunctions < 4)
-                _graph.Line(mglPoint(), mglPoint(vResults[0], vResults[1]), sStyle.c_str());
+                _graph->Line(mglPoint(), mglPoint(vResults[0], vResults[1]), sStyle.c_str());
             else
-                _graph.Line(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[0]+vResults[2], vResults[1]+vResults[3]), sStyle.c_str());
+                _graph->Line(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[0]+vResults[2], vResults[1]+vResults[3]), sStyle.c_str());
         }
         else if (vDrawVector[v].substr(0,5) == "face(" || vDrawVector[v].substr(0,7) == "cuboid(")
         {
             if (nFunctions < 4)
                 continue;
             if (nFunctions < 6)
-                _graph.Face(mglPoint(vResults[2]-vResults[3]+vResults[1], vResults[3]+vResults[2]-vResults[0]),
+                _graph->Face(mglPoint(vResults[2]-vResults[3]+vResults[1], vResults[3]+vResults[2]-vResults[0]),
                             mglPoint(vResults[2],vResults[3]),
                             mglPoint(vResults[0]-vResults[3]+vResults[1], vResults[1]+vResults[2]-vResults[0]),
                             mglPoint(vResults[0],vResults[1]),
                             sStyle.c_str());
             else if (nFunctions < 8)
-                _graph.Face(mglPoint(vResults[4],vResults[5]),
+                _graph->Face(mglPoint(vResults[4],vResults[5]),
                             mglPoint(vResults[2],vResults[3]),
                             mglPoint(vResults[0]+vResults[4]-vResults[2], vResults[1]+vResults[5]-vResults[3]),
                             mglPoint(vResults[0],vResults[1]),
                             sStyle.c_str());
             else
-                _graph.Face(mglPoint(vResults[4],vResults[5]),
+                _graph->Face(mglPoint(vResults[4],vResults[5]),
                             mglPoint(vResults[2],vResults[3]),
                             mglPoint(vResults[6],vResults[7]),
                             mglPoint(vResults[0],vResults[1]),
@@ -1716,19 +1719,19 @@ void parser_plot_create2dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
             if (nFunctions < 4)
                 continue;
             if (nFunctions < 6)
-                _graph.Face(mglPoint(vResults[0]+vResults[2]-vResults[3],vResults[1]+vResults[3]+vResults[2]),
+                _graph->Face(mglPoint(vResults[0]+vResults[2]-vResults[3],vResults[1]+vResults[3]+vResults[2]),
                             mglPoint(vResults[0]+vResults[2],vResults[1]+vResults[3]),
                             mglPoint(vResults[0]-vResults[3],vResults[1]+vResults[2]),
                             mglPoint(vResults[0],vResults[1]),
                             sStyle.c_str());
             else if (nFunctions < 8)
-                _graph.Face(mglPoint(vResults[0]+vResults[4]+vResults[2],vResults[1]+vResults[3]+vResults[5]),
+                _graph->Face(mglPoint(vResults[0]+vResults[4]+vResults[2],vResults[1]+vResults[3]+vResults[5]),
                             mglPoint(vResults[0]+vResults[2],vResults[1]+vResults[3]),
                             mglPoint(vResults[0]+vResults[4],vResults[1]+vResults[5]),
                             mglPoint(vResults[0],vResults[1]),
                             sStyle.c_str());
             else
-                _graph.Face(mglPoint(vResults[0]+vResults[4],vResults[1]+vResults[5]),
+                _graph->Face(mglPoint(vResults[0]+vResults[4],vResults[1]+vResults[5]),
                             mglPoint(vResults[0]+vResults[2],vResults[1]+vResults[3]),
                             mglPoint(vResults[0]+vResults[6],vResults[1]+vResults[7]),
                             mglPoint(vResults[0],vResults[1]),
@@ -1740,13 +1743,13 @@ void parser_plot_create2dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
                 continue;
             double c = hypot(vResults[2]-vResults[0],vResults[3]-vResults[1])/2.0*sqrt(3)/hypot(vResults[2],vResults[3]);
             if (nFunctions < 6)
-                _graph.Face(mglPoint((-vResults[0]+vResults[2])/2.0-c*vResults[3], (-vResults[1]+vResults[3])/2.0+c*vResults[2]),
+                _graph->Face(mglPoint((-vResults[0]+vResults[2])/2.0-c*vResults[3], (-vResults[1]+vResults[3])/2.0+c*vResults[2]),
                             mglPoint(vResults[2],vResults[3]),
                             mglPoint((-vResults[0]+vResults[2])/2.0-c*vResults[3], (-vResults[1]+vResults[3])/2.0+c*vResults[2]),
                             mglPoint(vResults[0],vResults[1]),
                             sStyle.c_str());
             else
-                _graph.Face(mglPoint(vResults[4],vResults[5]),
+                _graph->Face(mglPoint(vResults[4],vResults[5]),
                             mglPoint(vResults[2],vResults[3]),
                             mglPoint(vResults[4],vResults[5]),
                             mglPoint(vResults[0],vResults[1]),
@@ -1758,13 +1761,13 @@ void parser_plot_create2dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
                 continue;
             double c = sqrt(3.0)/2.0;
             if (nFunctions < 6)
-                _graph.Face(mglPoint((vResults[0]+0.5*vResults[2])-c*vResults[3], (vResults[1]+0.5*vResults[3])+c*vResults[2]),
+                _graph->Face(mglPoint((vResults[0]+0.5*vResults[2])-c*vResults[3], (vResults[1]+0.5*vResults[3])+c*vResults[2]),
                             mglPoint(vResults[0]+vResults[2],vResults[1]+vResults[3]),
                             mglPoint((vResults[0]+0.5*vResults[2])-c*vResults[3], (vResults[1]+0.5*vResults[3])+c*vResults[2]),
                             mglPoint(vResults[0],vResults[1]),
                             sStyle.c_str());
             else
-                _graph.Face(mglPoint(vResults[0]+vResults[4],vResults[1]+vResults[5]),
+                _graph->Face(mglPoint(vResults[0]+vResults[4],vResults[1]+vResults[5]),
                             mglPoint(vResults[0]+vResults[2],vResults[1]+vResults[3]),
                             mglPoint(vResults[0]+vResults[4],vResults[1]+vResults[5]),
                             mglPoint(vResults[0],vResults[1]),
@@ -1774,7 +1777,7 @@ void parser_plot_create2dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
         {
             if (nFunctions < 3)
                 continue;
-            _graph.Sphere(mglPoint(vResults[0], vResults[1]), vResults[2], sStyle.c_str());
+            _graph->Sphere(mglPoint(vResults[0], vResults[1]), vResults[2], sStyle.c_str());
         }
         else if (vDrawVector[v].substr(0,5) == "drop(")
         {
@@ -1786,7 +1789,7 @@ void parser_plot_create2dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
                 dShift = vResults[5];
             if (nFunctions >= 7)
                 dAspherity = vResults[6];
-            _graph.Drop(mglPoint(vResults[0], vResults[1]),
+            _graph->Drop(mglPoint(vResults[0], vResults[1]),
                         mglPoint(vResults[2], vResults[3]),
                         vResults[4],
                         sStyle.c_str(),
@@ -1797,31 +1800,31 @@ void parser_plot_create2dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
         {
             if (nFunctions < 3)
                 continue;
-            _graph.Circle(mglPoint(vResults[0], vResults[1]), vResults[2], sStyle.c_str());
+            _graph->Circle(mglPoint(vResults[0], vResults[1]), vResults[2], sStyle.c_str());
         }
         else if (vDrawVector[v].substr(0,4) == "arc(")
         {
             if (nFunctions < 5)
                 continue;
-            _graph.Arc(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2], vResults[3]), vResults[4], sStyle.c_str());
+            _graph->Arc(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2], vResults[3]), vResults[4], sStyle.c_str());
         }
         else if (vDrawVector[v].substr(0,5) == "arcv(")
         {
             if (nFunctions < 5)
                 continue;
-            _graph.Arc(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2]+vResults[0], vResults[3]+vResults[1]), vResults[4], sStyle.c_str());
+            _graph->Arc(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2]+vResults[0], vResults[3]+vResults[1]), vResults[4], sStyle.c_str());
         }
         else if (vDrawVector[v].substr(0,6) == "point(")
         {
             if (nFunctions < 2)
                 continue;
-            _graph.Mark(mglPoint(vResults[0], vResults[1]), sStyle.c_str());
+            _graph->Mark(mglPoint(vResults[0], vResults[1]), sStyle.c_str());
         }
         else if (vDrawVector[v].substr(0,6) == "curve(")
         {
             if (nFunctions < 8)
                 continue;
-            _graph.Curve(mglPoint(vResults[0], vResults[1]),
+            _graph->Curve(mglPoint(vResults[0], vResults[1]),
                         mglPoint(vResults[2], vResults[3]),
                         mglPoint(vResults[4], vResults[5]),
                         mglPoint(vResults[6], vResults[7]), sStyle.c_str());
@@ -1830,13 +1833,13 @@ void parser_plot_create2dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
         {
             if (nFunctions < 5)
                 continue;
-            _graph.Ellipse(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2], vResults[3]), vResults[4], sStyle.c_str());
+            _graph->Ellipse(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2], vResults[3]), vResults[4], sStyle.c_str());
         }
         else if (vDrawVector[v].substr(0,9) == "ellipsev(")
         {
             if (nFunctions < 5)
                 continue;
-            _graph.Ellipse(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2]+vResults[0], vResults[3]+vResults[1]), vResults[4], sStyle.c_str());
+            _graph->Ellipse(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2]+vResults[0], vResults[3]+vResults[1]), vResults[4], sStyle.c_str());
         }
         else if (vDrawVector[v].substr(0,5) == "text(")
         {
@@ -1846,9 +1849,9 @@ void parser_plot_create2dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
                 sStyle = "k";
             }
             if (nFunctions >= 4)
-                _graph.Puts(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2], vResults[3]), sTextString.c_str(), sStyle.c_str());
+                _graph->Puts(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2], vResults[3]), sTextString.c_str(), sStyle.c_str());
             else if (nFunctions >= 2)
-                _graph.Puts(mglPoint(vResults[0], vResults[1]), sTextString.c_str(), sStyle.c_str());
+                _graph->Puts(mglPoint(vResults[0], vResults[1]), sTextString.c_str(), sStyle.c_str());
             else
                 continue;
         }
@@ -1856,13 +1859,13 @@ void parser_plot_create2dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
         {
             if (nFunctions < 5 || vResults[4] < 3)
                 continue;
-            _graph.Polygon(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2], vResults[3]), (int)vResults[4], sStyle.c_str());
+            _graph->Polygon(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2], vResults[3]), (int)vResults[4], sStyle.c_str());
         }
         else if (vDrawVector[v].substr(0,9) == "polygonv(")
         {
             if (nFunctions < 5 || vResults[4] < 3)
                 continue;
-            _graph.Polygon(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2]+vResults[0], vResults[3]+vResults[1]), (int)vResults[4], sStyle.c_str());
+            _graph->Polygon(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2]+vResults[0], vResults[3]+vResults[1]), (int)vResults[4], sStyle.c_str());
         }
         else
             continue;
@@ -1870,7 +1873,7 @@ void parser_plot_create2dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
 }
 
 
-void parser_plot_create3dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _data, const Settings& _option, vector<string>& vDrawVector, value_type* vResults, int& nFunctions)
+void Plot::create3dDrawing(Parser& _parser, Datafile& _data, const Settings& _option, vector<string>& vDrawVector, value_type* vResults, int& nFunctions)
 {
     string sStyle;
     string sTextString;
@@ -1924,37 +1927,37 @@ void parser_plot_create3dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
             if (nFunctions < 3)
                 continue;
             if (nFunctions < 6)
-                _graph.Line(mglPoint(), mglPoint(vResults[0], vResults[1], vResults[2]), sStyle.c_str());
+                _graph->Line(mglPoint(), mglPoint(vResults[0], vResults[1], vResults[2]), sStyle.c_str());
             else
-                _graph.Line(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]), sStyle.c_str());
+                _graph->Line(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]), sStyle.c_str());
         }
         else if (vDrawVector[v].substr(0,7) == "tracev(")
         {
             if (nFunctions < 3)
                 continue;
             if (nFunctions < 6)
-                _graph.Line(mglPoint(), mglPoint(vResults[0], vResults[1], vResults[2]), sStyle.c_str());
+                _graph->Line(mglPoint(), mglPoint(vResults[0], vResults[1], vResults[2]), sStyle.c_str());
             else
-                _graph.Line(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3]+vResults[0], vResults[4]+vResults[1], vResults[5]+vResults[2]), sStyle.c_str());
+                _graph->Line(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3]+vResults[0], vResults[4]+vResults[1], vResults[5]+vResults[2]), sStyle.c_str());
         }
         else if (vDrawVector[v].substr(0,5) == "face(")
         {
             if (nFunctions < 6)
                 continue;
             if (nFunctions < 9)
-                _graph.Face(mglPoint(vResults[3]-vResults[4]+vResults[1], vResults[4]+vResults[3]-vResults[0], vResults[5]),
+                _graph->Face(mglPoint(vResults[3]-vResults[4]+vResults[1], vResults[4]+vResults[3]-vResults[0], vResults[5]),
                             mglPoint(vResults[0]+vResults[3],vResults[1]+vResults[4],vResults[2]+vResults[5]),
                             mglPoint(vResults[0]-vResults[4]+vResults[1], vResults[1]+vResults[3]-vResults[0], vResults[2]),
                             mglPoint(vResults[0],vResults[1],vResults[2]),
                             sStyle.c_str());
             else if (nFunctions < 12)
-                _graph.Face(mglPoint(vResults[6],vResults[7],vResults[8]),
+                _graph->Face(mglPoint(vResults[6],vResults[7],vResults[8]),
                             mglPoint(vResults[3],vResults[4],vResults[5]),
                             mglPoint(vResults[0]+vResults[6]-vResults[3],vResults[1]+vResults[7]-vResults[4],vResults[2]+vResults[8]-vResults[5]),
                             mglPoint(vResults[0],vResults[1],vResults[2]),
                             sStyle.c_str());
             else
-                _graph.Face(mglPoint(vResults[6],vResults[7],vResults[8]),
+                _graph->Face(mglPoint(vResults[6],vResults[7],vResults[8]),
                             mglPoint(vResults[3],vResults[4],vResults[5]),
                             mglPoint(vResults[9],vResults[10],vResults[11]),
                             mglPoint(vResults[0],vResults[1],vResults[2]),
@@ -1965,19 +1968,19 @@ void parser_plot_create3dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
             if (nFunctions < 6)
                 continue;
             if (nFunctions < 9)
-                _graph.Face(mglPoint(vResults[0]+vResults[3]-vResults[4], vResults[1]+vResults[4]+vResults[3], vResults[5]+vResults[2]),
+                _graph->Face(mglPoint(vResults[0]+vResults[3]-vResults[4], vResults[1]+vResults[4]+vResults[3], vResults[5]+vResults[2]),
                             mglPoint(vResults[0]+vResults[3],vResults[1]+vResults[4], vResults[5]+vResults[2]),
                             mglPoint(vResults[0]-vResults[4],vResults[1]+vResults[3], vResults[2]),
                             mglPoint(vResults[0],vResults[1],vResults[2]),
                             sStyle.c_str());
             else if (nFunctions < 12)
-                _graph.Face(mglPoint(vResults[0]+vResults[6]+vResults[3],vResults[1]+vResults[7]+vResults[4],vResults[2]+vResults[8]+vResults[5]),
+                _graph->Face(mglPoint(vResults[0]+vResults[6]+vResults[3],vResults[1]+vResults[7]+vResults[4],vResults[2]+vResults[8]+vResults[5]),
                             mglPoint(vResults[0]+vResults[6],vResults[1]+vResults[4],vResults[2]+vResults[5]),
                             mglPoint(vResults[0]+vResults[3],vResults[1]+vResults[7],vResults[2]+vResults[8]),
                             mglPoint(vResults[0],vResults[1],vResults[2]),
                             sStyle.c_str());
             else
-                _graph.Face(mglPoint(vResults[0]+vResults[6],vResults[1]+vResults[7],vResults[2]+vResults[8]),
+                _graph->Face(mglPoint(vResults[0]+vResults[6],vResults[1]+vResults[7],vResults[2]+vResults[8]),
                             mglPoint(vResults[0]+vResults[3],vResults[1]+vResults[4],vResults[2]+vResults[5]),
                             mglPoint(vResults[0]+vResults[9],vResults[1]+vResults[10],vResults[2]+vResults[11]),
                             mglPoint(vResults[0],vResults[1],vResults[2]),
@@ -1991,13 +1994,13 @@ void parser_plot_create3dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
                         +(vResults[4]-vResults[1])*(vResults[4]-vResults[1])
                         +(vResults[5]-vResults[2])*(vResults[5]-vResults[2]))/2.0*sqrt(3)/hypot(vResults[3],vResults[4]);
             if (nFunctions < 9)
-                _graph.Face(mglPoint((-vResults[0]+vResults[3])/2.0-c*vResults[4], (-vResults[1]+vResults[4])/2.0+c*vResults[3], (vResults[5]+vResults[2])/2.0),
+                _graph->Face(mglPoint((-vResults[0]+vResults[3])/2.0-c*vResults[4], (-vResults[1]+vResults[4])/2.0+c*vResults[3], (vResults[5]+vResults[2])/2.0),
                             mglPoint(vResults[3],vResults[4],vResults[5]),
                             mglPoint((-vResults[0]+vResults[3])/2.0-c*vResults[4], (-vResults[1]+vResults[4])/2.0+c*vResults[3], (vResults[5]+vResults[2])/2.0),
                             mglPoint(vResults[0],vResults[1],vResults[2]),
                             sStyle.c_str());
             else
-                _graph.Face(mglPoint(vResults[6],vResults[7],vResults[8]),
+                _graph->Face(mglPoint(vResults[6],vResults[7],vResults[8]),
                             mglPoint(vResults[3],vResults[4],vResults[5]),
                             mglPoint(vResults[6],vResults[7],vResults[8]),
                             mglPoint(vResults[0],vResults[1],vResults[2]),
@@ -2011,13 +2014,13 @@ void parser_plot_create3dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
                         +(vResults[4])*(vResults[4])
                         +(vResults[5])*(vResults[5]))/2.0*sqrt(3)/hypot(vResults[3],vResults[4]);
             if (nFunctions < 9)
-                _graph.Face(mglPoint((vResults[0]+0.5*vResults[3])-c*vResults[4], (vResults[1]+0.5*vResults[4])+c*vResults[3], (vResults[5]+0.5*vResults[2])),
+                _graph->Face(mglPoint((vResults[0]+0.5*vResults[3])-c*vResults[4], (vResults[1]+0.5*vResults[4])+c*vResults[3], (vResults[5]+0.5*vResults[2])),
                             mglPoint(vResults[0]+vResults[3],vResults[1]+vResults[4],vResults[2]+vResults[5]),
                             mglPoint((vResults[0]+0.5*vResults[3])-c*vResults[4], (vResults[1]+0.5*vResults[4])+c*vResults[3], (vResults[5]+0.5*vResults[2])),
                             mglPoint(vResults[0],vResults[1],vResults[2]),
                             sStyle.c_str());
             else
-                _graph.Face(mglPoint(vResults[0]+vResults[6],vResults[1]+vResults[7],vResults[2]+vResults[8]),
+                _graph->Face(mglPoint(vResults[0]+vResults[6],vResults[1]+vResults[7],vResults[2]+vResults[8]),
                             mglPoint(vResults[0]+vResults[3],vResults[1]+vResults[4],vResults[2]+vResults[5]),
                             mglPoint(vResults[0]+vResults[6],vResults[1]+vResults[7],vResults[2]+vResults[8]),
                             mglPoint(vResults[0],vResults[1],vResults[2]),
@@ -2057,32 +2060,32 @@ void parser_plot_create3dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
                 _mDz = mglPoint(vResults[9], vResults[10], vResults[11]);
             }
 
-            _graph.Face(mglPoint(vResults[0],vResults[1],vResults[2]),
+            _graph->Face(mglPoint(vResults[0],vResults[1],vResults[2]),
                         mglPoint(vResults[0],vResults[1],vResults[2])+_mDx,
                         mglPoint(vResults[0],vResults[1],vResults[2])+_mDy,
                         mglPoint(vResults[0],vResults[1],vResults[2])+_mDx+_mDy,
                         sStyle.c_str());
-            _graph.Face(mglPoint(vResults[0],vResults[1],vResults[2]),
+            _graph->Face(mglPoint(vResults[0],vResults[1],vResults[2]),
                         mglPoint(vResults[0],vResults[1],vResults[2])+_mDx,
                         mglPoint(vResults[0],vResults[1],vResults[2])+_mDz,
                         mglPoint(vResults[0],vResults[1],vResults[2])+_mDz+_mDx,
                         sStyle.c_str());
-            _graph.Face(mglPoint(vResults[0],vResults[1],vResults[2]),
+            _graph->Face(mglPoint(vResults[0],vResults[1],vResults[2]),
                         mglPoint(vResults[0],vResults[1],vResults[2])+_mDy,
                         mglPoint(vResults[0],vResults[1],vResults[2])+_mDz,
                         mglPoint(vResults[0],vResults[1],vResults[2])+_mDy+_mDz,
                         sStyle.c_str());
-            _graph.Face(mglPoint(vResults[0],vResults[1],vResults[2])+_mDz,
+            _graph->Face(mglPoint(vResults[0],vResults[1],vResults[2])+_mDz,
                         mglPoint(vResults[0],vResults[1],vResults[2])+_mDx+_mDz,
                         mglPoint(vResults[0],vResults[1],vResults[2])+_mDy+_mDz,
                         mglPoint(vResults[0],vResults[1],vResults[2])+_mDx+_mDy+_mDz,
                         sStyle.c_str());
-            _graph.Face(mglPoint(vResults[0],vResults[1],vResults[2])+_mDy,
+            _graph->Face(mglPoint(vResults[0],vResults[1],vResults[2])+_mDy,
                         mglPoint(vResults[0],vResults[1],vResults[2])+_mDx+_mDy,
                         mglPoint(vResults[0],vResults[1],vResults[2])+_mDz+_mDy,
                         mglPoint(vResults[0],vResults[1],vResults[2])+_mDz+_mDx+_mDy,
                         sStyle.c_str());
-            _graph.Face(mglPoint(vResults[0],vResults[1],vResults[2])+_mDx,
+            _graph->Face(mglPoint(vResults[0],vResults[1],vResults[2])+_mDx,
                         mglPoint(vResults[0],vResults[1],vResults[2])+_mDy+_mDx,
                         mglPoint(vResults[0],vResults[1],vResults[2])+_mDz+_mDx,
                         mglPoint(vResults[0],vResults[1],vResults[2])+_mDy+_mDz+_mDx,
@@ -2092,25 +2095,25 @@ void parser_plot_create3dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
         {
             if (nFunctions < 4)
                 continue;
-            _graph.Sphere(mglPoint(vResults[0], vResults[1], vResults[2]), vResults[3], sStyle.c_str());
+            _graph->Sphere(mglPoint(vResults[0], vResults[1], vResults[2]), vResults[3], sStyle.c_str());
         }
         else if (vDrawVector[v].substr(0,5) == "cone(")
         {
             if (nFunctions < 7)
                 continue;
             if (nFunctions >= 8)
-                _graph.Cone(mglPoint(vResults[0],vResults[1],vResults[2]), mglPoint(vResults[3],vResults[4],vResults[5]), vResults[6], vResults[7], sStyle.c_str());
+                _graph->Cone(mglPoint(vResults[0],vResults[1],vResults[2]), mglPoint(vResults[3],vResults[4],vResults[5]), vResults[6], vResults[7], sStyle.c_str());
             else
-                _graph.Cone(mglPoint(vResults[0],vResults[1],vResults[2]), mglPoint(vResults[3],vResults[4],vResults[5]), vResults[6], 0.0, sStyle.c_str());
+                _graph->Cone(mglPoint(vResults[0],vResults[1],vResults[2]), mglPoint(vResults[3],vResults[4],vResults[5]), vResults[6], 0.0, sStyle.c_str());
         }
         else if (vDrawVector[v].substr(0,6) == "conev(")
         {
             if (nFunctions < 7)
                 continue;
             if (nFunctions >= 8)
-                _graph.Cone(mglPoint(vResults[0],vResults[1],vResults[2]), mglPoint(vResults[3],vResults[4],vResults[5])+mglPoint(vResults[0],vResults[1],vResults[2]), vResults[6], vResults[7], sStyle.c_str());
+                _graph->Cone(mglPoint(vResults[0],vResults[1],vResults[2]), mglPoint(vResults[3],vResults[4],vResults[5])+mglPoint(vResults[0],vResults[1],vResults[2]), vResults[6], vResults[7], sStyle.c_str());
             else
-                _graph.Cone(mglPoint(vResults[0],vResults[1],vResults[2]), mglPoint(vResults[3],vResults[4],vResults[5])+mglPoint(vResults[0],vResults[1],vResults[2]), vResults[6], 0.0, sStyle.c_str());
+                _graph->Cone(mglPoint(vResults[0],vResults[1],vResults[2]), mglPoint(vResults[3],vResults[4],vResults[5])+mglPoint(vResults[0],vResults[1],vResults[2]), vResults[6], 0.0, sStyle.c_str());
         }
         else if (vDrawVector[v].substr(0,5) == "drop(")
         {
@@ -2122,7 +2125,7 @@ void parser_plot_create3dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
                 dShift = vResults[7];
             if (nFunctions >= 9)
                 dAspherity = vResults[8];
-            _graph.Drop(mglPoint(vResults[0], vResults[1], vResults[2]),
+            _graph->Drop(mglPoint(vResults[0], vResults[1], vResults[2]),
                         mglPoint(vResults[3], vResults[4], vResults[5]),
                         vResults[6],
                         sStyle.c_str(),
@@ -2133,17 +2136,17 @@ void parser_plot_create3dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
         {
             if (nFunctions < 4)
                 continue;
-            _graph.Circle(mglPoint(vResults[0], vResults[1], vResults[2]), vResults[3], sStyle.c_str());
+            _graph->Circle(mglPoint(vResults[0], vResults[1], vResults[2]), vResults[3], sStyle.c_str());
         }
         else if (vDrawVector[v].substr(0,4) == "arc(")
         {
             if (nFunctions < 7)
                 continue;
             if (nFunctions < 9)
-                _graph.Arc(mglPoint(vResults[0], vResults[1], vResults[2]),
+                _graph->Arc(mglPoint(vResults[0], vResults[1], vResults[2]),
                             mglPoint(vResults[3], vResults[4], vResults[5]), vResults[6], sStyle.c_str());
             else
-                _graph.Arc(mglPoint(vResults[0], vResults[1], vResults[2]),
+                _graph->Arc(mglPoint(vResults[0], vResults[1], vResults[2]),
                             mglPoint(vResults[3], vResults[4], vResults[5]),
                             mglPoint(vResults[6], vResults[7], vResults[8]),
                             vResults[9], sStyle.c_str());
@@ -2154,10 +2157,10 @@ void parser_plot_create3dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
             if (nFunctions < 7)
                 continue;
             if (nFunctions < 9)
-                _graph.Arc(mglPoint(vResults[0], vResults[1], vResults[2]),
+                _graph->Arc(mglPoint(vResults[0], vResults[1], vResults[2]),
                             mglPoint(vResults[3], vResults[4], vResults[5])+mglPoint(vResults[0],vResults[1],vResults[2]), vResults[6], sStyle.c_str());
             else
-                _graph.Arc(mglPoint(vResults[0], vResults[1], vResults[2]),
+                _graph->Arc(mglPoint(vResults[0], vResults[1], vResults[2]),
                             mglPoint(vResults[3], vResults[4], vResults[5])+mglPoint(vResults[0],vResults[1],vResults[2]),
                             mglPoint(vResults[6], vResults[7], vResults[8])+mglPoint(vResults[0],vResults[1],vResults[2]),
                             vResults[9], sStyle.c_str());
@@ -2167,13 +2170,13 @@ void parser_plot_create3dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
         {
             if (nFunctions < 3)
                 continue;
-            _graph.Mark(mglPoint(vResults[0], vResults[1], vResults[2]), sStyle.c_str());
+            _graph->Mark(mglPoint(vResults[0], vResults[1], vResults[2]), sStyle.c_str());
         }
         else if (vDrawVector[v].substr(0,6) == "curve(")
         {
             if (nFunctions < 12)
                 continue;
-            _graph.Curve(mglPoint(vResults[0], vResults[1], vResults[2]),
+            _graph->Curve(mglPoint(vResults[0], vResults[1], vResults[2]),
                         mglPoint(vResults[3], vResults[4], vResults[5]),
                         mglPoint(vResults[6], vResults[7], vResults[8]),
                         mglPoint(vResults[9], vResults[10], vResults[11]), sStyle.c_str());
@@ -2182,13 +2185,13 @@ void parser_plot_create3dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
         {
             if (nFunctions < 7)
                 continue;
-            _graph.Ellipse(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]), vResults[6], sStyle.c_str());
+            _graph->Ellipse(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]), vResults[6], sStyle.c_str());
         }
         else if (vDrawVector[v].substr(0,9) == "ellipsev(")
         {
             if (nFunctions < 7)
                 continue;
-            _graph.Ellipse(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5])+mglPoint(vResults[0],vResults[1],vResults[2]), vResults[6], sStyle.c_str());
+            _graph->Ellipse(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5])+mglPoint(vResults[0],vResults[1],vResults[2]), vResults[6], sStyle.c_str());
         }
         else if (vDrawVector[v].substr(0,5) == "text(")
         {
@@ -2198,9 +2201,9 @@ void parser_plot_create3dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
                 sStyle = "k";
             }
             if (nFunctions >= 6)
-                _graph.Puts(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]), sTextString.c_str(), sStyle.c_str());
+                _graph->Puts(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]), sTextString.c_str(), sStyle.c_str());
             else if (nFunctions >= 3)
-                _graph.Puts(mglPoint(vResults[0], vResults[1], vResults[2]), sTextString.c_str(), sStyle.c_str());
+                _graph->Puts(mglPoint(vResults[0], vResults[1], vResults[2]), sTextString.c_str(), sStyle.c_str());
             else
                 continue;
         }
@@ -2208,13 +2211,13 @@ void parser_plot_create3dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
         {
             if (nFunctions < 7 || vResults[6] < 3)
                 continue;
-            _graph.Polygon(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]), (int)vResults[6], sStyle.c_str());
+            _graph->Polygon(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]), (int)vResults[6], sStyle.c_str());
         }
         else if (vDrawVector[v].substr(0,9) == "polygonv(")
         {
             if (nFunctions < 7 || vResults[6] < 3)
                 continue;
-            _graph.Polygon(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5])+mglPoint(vResults[0],vResults[1],vResults[2]), (int)vResults[6], sStyle.c_str());
+            _graph->Polygon(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5])+mglPoint(vResults[0],vResults[1],vResults[2]), (int)vResults[6], sStyle.c_str());
         }
         else
             continue;
@@ -2222,9 +2225,9 @@ void parser_plot_create3dDrawing(mglGraph& _graph, Parser& _parser, Datafile& _d
 }
 
 
-void parser_plot_createStd3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, Datafile& _data, Parser& _parser, mglData** _mDataPlots, mglData* _mAxisVals, const Settings& _option,
-                            string& sLabels, string& sDataLabels, string* sLineStyles, string* sPointStyles, string* sContStyles, string* sConPointStyles, vector<short>& vType,
-                            int& nStyle, size_t& nLegends, int* nDataDim, int nDataPlots, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
+void Plot::createStd3dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option,
+                            vector<short>& vType,
+                            int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
 {
     string sDummy = "";
     string sConvLegends = "";
@@ -2268,7 +2271,7 @@ void parser_plot_createStd3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _
 
 
     if (_pData.getCutBox())
-        _graph.SetCutBox(parser_CalcCutBox(_pData.getRotateAngle(1), _pInfo.dRanges, 0, _pData.getCoords(), true), parser_CalcCutBox(_pData.getRotateAngle(1), _pInfo.dRanges, 1, _pData.getCoords(), true));
+        _graph->SetCutBox(CalcCutBox(_pData.getRotateAngle(1), 0, _pData.getCoords(), true), CalcCutBox(_pData.getRotateAngle(1), 1, _pData.getCoords(), true));
 
 
     for (unsigned int nType = 0; nType < vType.size(); nType++)
@@ -2292,22 +2295,22 @@ void parser_plot_createStd3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _
             }
 
             if (_pData.getCoords() == PlotData::POLAR_PZ || _pData.getCoords() == PlotData::SPHERICAL_PT)
-                _mData[1] = parser_fmod(_mData[1], 2.0*M_PI);
+                _mData[1] = fmod(_mData[1], 2.0*M_PI);
             if (_pData.getCoords() == PlotData::POLAR_RP || _pData.getCoords() == PlotData::SPHERICAL_RP)
-                _mData[2] = parser_fmod(_mData[2], 2.0*M_PI);
+                _mData[2] = fmod(_mData[2], 2.0*M_PI);
             if (_pData.getCoords() == PlotData::SPHERICAL_PT || _pData.getCoords() == PlotData::SPHERICAL_RT)
-                _mData[2] = parser_fmod(_mData[2], 1.0*M_PI);
+                _mData[2] = fmod(_mData[2], 1.0*M_PI);
             if (_pData.getRegion() && vType.size() > nType+3 && vType[nType+3] == TYPE_DATA)
             {
                 _mData2[0] = _mDataPlots[nTypeCounter[1]][0];
                 _mData2[1] = _mDataPlots[nTypeCounter[1]][1];
                 _mData2[2] = _mDataPlots[nTypeCounter[1]][2];
                 if (_pData.getCoords() == PlotData::POLAR_PZ || _pData.getCoords() == PlotData::SPHERICAL_PT)
-                    _mData2[1] = parser_fmod(_mData2[1], 2.0*M_PI);
+                    _mData2[1] = fmod(_mData2[1], 2.0*M_PI);
                 if (_pData.getCoords() == PlotData::POLAR_RP || _pData.getCoords() == PlotData::SPHERICAL_RP)
-                    _mData2[2] = parser_fmod(_mData2[2], 2.0*M_PI);
+                    _mData2[2] = fmod(_mData2[2], 2.0*M_PI);
                 if (_pData.getCoords() == PlotData::SPHERICAL_PT || _pData.getCoords() == PlotData::SPHERICAL_RT)
-                    _mData2[2] = parser_fmod(_mData2[2], 1.0*M_PI);
+                    _mData2[2] = fmod(_mData2[2], 1.0*M_PI);
                 nTypeCounter[1]++;
                 nType += 3;
             }
@@ -2321,11 +2324,11 @@ void parser_plot_createStd3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _
                     }
                 }
                 if (_pData.getCoords() == PlotData::POLAR_PZ || _pData.getCoords() == PlotData::SPHERICAL_PT)
-                    _mData2[1] = parser_fmod(_mData2[1], 2.0*M_PI);
+                    _mData2[1] = fmod(_mData2[1], 2.0*M_PI);
                 if (_pData.getCoords() == PlotData::POLAR_RP || _pData.getCoords() == PlotData::SPHERICAL_RP)
-                    _mData2[2] = parser_fmod(_mData2[2], 2.0*M_PI);
+                    _mData2[2] = fmod(_mData2[2], 2.0*M_PI);
                 if (_pData.getCoords() == PlotData::SPHERICAL_PT || _pData.getCoords() == PlotData::SPHERICAL_RT)
-                    _mData2[2] = parser_fmod(_mData2[2], 1.0*M_PI);
+                    _mData2[2] = fmod(_mData2[2], 1.0*M_PI);
 
                 nTypeCounter[0]++;
                 nType++;
@@ -2344,11 +2347,11 @@ void parser_plot_createStd3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _
         else
         {
             if (_pData.getCoords() == PlotData::POLAR_PZ || _pData.getCoords() == PlotData::SPHERICAL_PT)
-                _mDataPlots[nTypeCounter[1]][1] = parser_fmod(_mDataPlots[nTypeCounter[1]][1], 2.0*M_PI);
+                _mDataPlots[nTypeCounter[1]][1] = fmod(_mDataPlots[nTypeCounter[1]][1], 2.0*M_PI);
             if (_pData.getCoords() == PlotData::POLAR_RP || _pData.getCoords() == PlotData::SPHERICAL_RP)
-                _mDataPlots[nTypeCounter[1]][2] = parser_fmod(_mDataPlots[nTypeCounter[1]][2], 2.0*M_PI);
+                _mDataPlots[nTypeCounter[1]][2] = fmod(_mDataPlots[nTypeCounter[1]][2], 2.0*M_PI);
             if (_pData.getCoords() == PlotData::SPHERICAL_PT || _pData.getCoords() == PlotData::SPHERICAL_RT)
-                _mDataPlots[nTypeCounter[1]][2] = parser_fmod(_mDataPlots[nTypeCounter[1]][2], 1.0*M_PI);
+                _mDataPlots[nTypeCounter[1]][2] = fmod(_mDataPlots[nTypeCounter[1]][2], 1.0*M_PI);
 
             StripSpaces(sDataLabels);
             if (_pData.getxError() || _pData.getyError())
@@ -2385,11 +2388,11 @@ void parser_plot_createStd3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _
                 _mData2[1] = _mDataPlots[nTypeCounter[1]+1][1];
                 _mData2[2] = _mDataPlots[nTypeCounter[1]+1][2];
                 if (_pData.getCoords() == PlotData::POLAR_PZ || _pData.getCoords() == PlotData::SPHERICAL_PT)
-                    _mData2[1] = parser_fmod(_mData2[1], 2.0*M_PI);
+                    _mData2[1] = fmod(_mData2[1], 2.0*M_PI);
                 if (_pData.getCoords() == PlotData::POLAR_RP || _pData.getCoords() == PlotData::SPHERICAL_RP)
-                    _mData2[2] = parser_fmod(_mData2[2], 2.0*M_PI);
+                    _mData2[2] = fmod(_mData2[2], 2.0*M_PI);
                 if (_pData.getCoords() == PlotData::SPHERICAL_PT || _pData.getCoords() == PlotData::SPHERICAL_RT)
-                    _mData2[2] = parser_fmod(_mData2[2], 1.0*M_PI);
+                    _mData2[2] = fmod(_mData2[2], 1.0*M_PI);
                 nTypeCounter[1]++;
                 nType++;
             }
@@ -2405,11 +2408,11 @@ void parser_plot_createStd3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _
                     }
                 }
                 if (_pData.getCoords() == PlotData::POLAR_PZ || _pData.getCoords() == PlotData::SPHERICAL_PT)
-                    _mData2[1] = parser_fmod(_mData2[1], 2.0*M_PI);
+                    _mData2[1] = fmod(_mData2[1], 2.0*M_PI);
                 if (_pData.getCoords() == PlotData::POLAR_RP || _pData.getCoords() == PlotData::SPHERICAL_RP)
-                    _mData2[2] = parser_fmod(_mData2[2], 2.0*M_PI);
+                    _mData2[2] = fmod(_mData2[2], 2.0*M_PI);
                 if (_pData.getCoords() == PlotData::SPHERICAL_PT || _pData.getCoords() == PlotData::SPHERICAL_RT)
-                    _mData2[2] = parser_fmod(_mData2[2], 1.0*M_PI);
+                    _mData2[2] = fmod(_mData2[2], 1.0*M_PI);
                 nTypeCounter[0]++;
                 nType+=3;
             }
@@ -2433,10 +2436,10 @@ void parser_plot_createStd3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _
                 _mData2[2] = _mDataPlots[nTypeCounter[1]][5];
             }
         }
-        if (!parser_plot_std3d(_graph, _pData, _pInfo, _mData, _mData2, vType[nCurrentType]))
+        if (!plotstd3d(_pData, _mData, _mData2, vType[nCurrentType]))
         {
             // --> Den gibt's nicht: Speicher freigeben und zurueck! <--
-            parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+            clearData();
             return;
         }
         if (vType[nCurrentType] == TYPE_FUNC)
@@ -2462,7 +2465,7 @@ void parser_plot_createStd3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _
                     sLabels = sLabels.substr(nPos[0]+1);
                     if (sConvLegends != "\"\"")
                     {
-                        _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), sLineStyles[nStyle].c_str());
+                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), _pInfo.sLineStyles[nStyle].c_str());
                         nLegends++;
                     }
 
@@ -2481,7 +2484,7 @@ void parser_plot_createStd3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _
                 sLabels = sLabels.substr(nPos[0]+1);
                 if (sConvLegends != "\"\"")
                 {
-                    _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sLineStyles[nStyle], _pData).c_str());
+                    _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nStyle], _pData).c_str());
                     nLegends++;
                 }
                 if (nStyle == _pInfo.nStyleMax-1)
@@ -2504,14 +2507,14 @@ void parser_plot_createStd3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _
                 if (!_pData.getxError() && !_pData.getyError())
                 {
                     if ((_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].nx >= _pInfo.nSamples) || _pData.getBars())
-                        _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sLineStyles[nStyle], _pData).c_str());
+                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nStyle], _pData).c_str());
                     else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].nx >= 0.9 * _pInfo.nSamples))
-                        _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sConPointStyles[nStyle], _pData).c_str());
+                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sConPointStyles[nStyle], _pData).c_str());
                     else
-                        _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sPointStyles[nStyle], _pData).c_str());
+                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sPointStyles[nStyle], _pData).c_str());
                 }
                 else
-                    _graph.AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), parser_getLegendStyle(sPointStyles[nStyle], _pData).c_str());
+                    _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sPointStyles[nStyle], _pData).c_str());
             }
             if (nStyle == _pInfo.nStyleMax-1)
                 nStyle = 0;
@@ -2524,37 +2527,37 @@ void parser_plot_createStd3dPlot(mglGraph& _graph, PlotData& _pData, PlotInfo& _
 
 
     if (_pData.getCutBox())
-        _graph.SetCutBox(mglPoint(0), mglPoint(0));
+        _graph->SetCutBox(mglPoint(0), mglPoint(0));
     if (!((_pData.getMarks() || _pData.getCrust()) && _pInfo.sCommand.substr(0,6) == "plot3d") && nLegends && !_pData.getSchematic() && nPlotCompose+1 == nPlotComposeSize)
     {
         if (_pData.getRotateAngle() || _pData.getRotateAngle(1))
-            _graph.Legend(1.35,1.2);
+            _graph->Legend(1.35,1.2);
         else
-            _graph.Legend(_pData.getLegendPosition());
+            _graph->Legend(_pData.getLegendPosition());
     }
 }
 
 
-bool parser_plot_std3d(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglData _mData[3], mglData _mData2[3], const short nType)
+bool Plot::plotstd3d(PlotData& _pData, mglData _mData[3], mglData _mData2[3], const short nType)
 {
     if (nType == 1)
     {
         if (!_pData.getArea() && !_pData.getRegion())
-            _graph.Plot(_mData[0], _mData[1], _mData[2], _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
+            _graph->Plot(_mData[0], _mData[1], _mData[2], _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
         else if (_pData.getRegion() && getNN(_mData2[0]))
         {
             if (*_pInfo.nStyle == _pInfo.nStyleMax-1)
-                _graph.Region(_mData[0], _mData[1], _mData[2], _mData2[0], _mData2[1], _mData2[2], ("{"+_pData.getColors().substr(*_pInfo.nStyle,1) + "7}{" + _pData.getColors().substr(0,1)+"7}").c_str());
+                _graph->Region(_mData[0], _mData[1], _mData[2], _mData2[0], _mData2[1], _mData2[2], ("{"+_pData.getColors().substr(*_pInfo.nStyle,1) + "7}{" + _pData.getColors().substr(0,1)+"7}").c_str());
             else
-                _graph.Region(_mData[0], _mData[1], _mData[2], _mData2[0], _mData2[1], _mData2[2], ("{"+_pData.getColors().substr(*_pInfo.nStyle,1) + "7}{" + _pData.getColors().substr(*_pInfo.nStyle+1,1)+"7}").c_str());
-            _graph.Plot(_mData[0], _mData[1], _mData[2], _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
+                _graph->Region(_mData[0], _mData[1], _mData[2], _mData2[0], _mData2[1], _mData2[2], ("{"+_pData.getColors().substr(*_pInfo.nStyle,1) + "7}{" + _pData.getColors().substr(*_pInfo.nStyle+1,1)+"7}").c_str());
+            _graph->Plot(_mData[0], _mData[1], _mData[2], _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
             if (*_pInfo.nStyle == _pInfo.nStyleMax-1)
-                _graph.Plot(_mData2[0], _mData2[1], _mData2[2], _pInfo.sLineStyles[0].c_str());
+                _graph->Plot(_mData2[0], _mData2[1], _mData2[2], _pInfo.sLineStyles[0].c_str());
             else
-                _graph.Plot(_mData2[0], _mData2[1], _mData2[2], _pInfo.sLineStyles[*_pInfo.nStyle+1].c_str());
+                _graph->Plot(_mData2[0], _mData2[1], _mData2[2], _pInfo.sLineStyles[*_pInfo.nStyle+1].c_str());
         }
         else
-            _graph.Area(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+            _graph->Area(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
     }
     else
     {
@@ -2564,55 +2567,55 @@ bool parser_plot_std3d(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mgl
             if (_pData.getInterpolate() && _mData[0].nx >= _pInfo.nSamples)
             {
                 if (!_pData.getArea() && !_pData.getBars() && !_pData.getRegion())
-                    _graph.Plot(_mData[0], _mData[1], _mData[2], _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
+                    _graph->Plot(_mData[0], _mData[1], _mData[2], _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
                 else if (_pData.getBars() && !_pData.getArea() && !_pData.getRegion())
-                    _graph.Bars(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle] + "^").c_str());
+                    _graph->Bars(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle] + "^").c_str());
                 /*else if (_pData.getRegion() && j+1 < nDataPlots)
                 {
                     if (nStyle == nStyleMax-1)
-                        _graph.Region(_mData[0], _mData[1], _mData[2], _mData2[0], _mData2[1], _mData2[2], ("{"+_pData.getColors().substr(nStyle,1) +"7}{"+ _pData.getColors().substr(0,1)+"7}").c_str());
+                        _graph->Region(_mData[0], _mData[1], _mData[2], _mData2[0], _mData2[1], _mData2[2], ("{"+_pData.getColors().substr(nStyle,1) +"7}{"+ _pData.getColors().substr(0,1)+"7}").c_str());
                     else
-                        _graph.Region(_mData[0], _mData[1], _mData[2], _mData2[0], _mData2[1], _mData2[2], ("{"+_pData.getColors().substr(nStyle,1) +"7}{"+ _pData.getColors().substr(nStyle+1,1)+"7}").c_str());
-                    _graph.Plot(_mData[0], _mData[1], _mData[2], sLineStyles[nStyle].c_str());
+                        _graph->Region(_mData[0], _mData[1], _mData[2], _mData2[0], _mData2[1], _mData2[2], ("{"+_pData.getColors().substr(nStyle,1) +"7}{"+ _pData.getColors().substr(nStyle+1,1)+"7}").c_str());
+                    _graph->Plot(_mData[0], _mData[1], _mData[2], sLineStyles[nStyle].c_str());
                     j++;
                     if (nStyle == nStyleMax-1)_mData
-                        _graph.Plot(_mData[0], _mData[1], _mData[2], sLineStyles[0].c_str());
+                        _graph->Plot(_mData[0], _mData[1], _mData[2], sLineStyles[0].c_str());
                     else
-                        _graph.Plot(_mData[0], _mData[1], _mData[2], sLineStyles[nStyle+1].c_str());
+                        _graph->Plot(_mData[0], _mData[1], _mData[2], sLineStyles[nStyle+1].c_str());
                 }*/
                 else
-                    _graph.Area(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+                    _graph->Area(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
             }
             else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mData[0].nx >= 0.9*_pInfo.nSamples))
             {
                 if (!_pData.getArea() && !_pData.getBars())
-                    _graph.Plot(_mData[0], _mData[1], _mData[2], _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
+                    _graph->Plot(_mData[0], _mData[1], _mData[2], _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
                 else if (_pData.getBars() && !_pData.getArea())
-                    _graph.Bars(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle]+"^").c_str());
+                    _graph->Bars(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle]+"^").c_str());
                 else
-                    _graph.Area(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+                    _graph->Area(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
             }
             else
             {
                 if (!_pData.getArea() && !_pData.getMarks() && !_pData.getBars() && !_pData.getStepplot() && !_pData.getCrust())
-                    _graph.Plot(_mData[0], _mData[1], _mData[2], _pInfo.sPointStyles[*_pInfo.nStyle].c_str());
+                    _graph->Plot(_mData[0], _mData[1], _mData[2], _pInfo.sPointStyles[*_pInfo.nStyle].c_str());
                 else if (_pData.getMarks() && !_pData.getCrust() && !_pData.getBars() && !_pData.getArea() && !_pData.getStepplot())
-                    _graph.Dots(_mData[0], _mData[1], _mData[2], _pData.getColorScheme(toString(_pData.getMarks())).c_str());
+                    _graph->Dots(_mData[0], _mData[1], _mData[2], _pData.getColorScheme(toString(_pData.getMarks())).c_str());
                 else if (_pData.getCrust() && !_pData.getMarks() && !_pData.getBars() && !_pData.getArea() && !_pData.getStepplot())
-                    _graph.Crust(_mData[0], _mData[1], _mData[2], _pData.getColorScheme().c_str());
+                    _graph->Crust(_mData[0], _mData[1], _mData[2], _pData.getColorScheme().c_str());
                 else if (_pData.getBars() && !_pData.getArea() && !_pData.getMarks() && !_pData.getStepplot() && !_pData.getCrust())
-                    _graph.Bars(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle]+"^").c_str());
+                    _graph->Bars(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle]+"^").c_str());
                 else if (!_pData.getBars() && !_pData.getArea() && !_pData.getMarks() && _pData.getStepplot() && !_pData.getCrust())
-                    _graph.Step(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+                    _graph->Step(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
                 else
-                    _graph.Stem(_mData[0], _mData[1], _mData[2], _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
+                    _graph->Stem(_mData[0], _mData[1], _mData[2], _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
             }
         }
         else if (_pData.getxError() || _pData.getyError())
         {
             for (int m = 0; m < _mData[0].nx; m++)
             {
-                _graph.Error(mglPoint(_mData[0].a[m], _mData[1].a[m], _mData[2].a[m]), mglPoint(_mData2[0].a[m], _mData2[1].a[m], _mData2[2].a[m]), _pInfo.sPointStyles[*_pInfo.nStyle].c_str());
+                _graph->Error(mglPoint(_mData[0].a[m], _mData[1].a[m], _mData[2].a[m]), mglPoint(_mData2[0].a[m], _mData2[1].a[m], _mData2[2].a[m]), _pInfo.sPointStyles[*_pInfo.nStyle].c_str());
             }
         }
     }
@@ -2620,13 +2623,13 @@ bool parser_plot_std3d(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mgl
 }
 
 
-long getNN(const mglData& _mData)
+long Plot::getNN(const mglData& _mData)
 {
     return _mData.nx * _mData.ny * _mData.nz;
 }
 
 
-void parser_plot_evaluatePlotParamString(PlotInfo& _pInfo, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
 {
     string sDummy;
     if (_pInfo.sPlotParams.find("??") != string::npos)
@@ -2721,7 +2724,7 @@ void parser_plot_evaluatePlotParamString(PlotInfo& _pInfo, Parser& _parser, Data
 }
 
 
-void parser_plot_filename(PlotData& _pData, PlotInfo& _pInfo, Datafile& _data, Parser& _parser, Settings& _option, size_t nPlotComposeSize, size_t nPlotCompose)
+void Plot::filename(PlotData& _pData, Datafile& _data, Parser& _parser, Settings& _option, size_t nPlotComposeSize, size_t nPlotCompose)
 {
     // --> Ggf. waehlen eines Default-Dateinamens <--
     if (!_pData.getFileName().length() && !nPlotCompose)
@@ -2766,6 +2769,8 @@ void parser_plot_filename(PlotData& _pData, PlotInfo& _pInfo, Datafile& _data, P
         else
             _pData.setFileName("unknown_style"+sExt);
     }
+    else if (_pData.getFileName().length())
+        bOutputDesired = true;
     if ((containsStrings(_pData.getFileName()) || _data.containsStringVars(_pData.getFileName())) && !nPlotCompose)
     {
         string sTemp = _pData.getFileName();
@@ -2785,58 +2790,58 @@ void parser_plot_filename(PlotData& _pData, PlotInfo& _pInfo, Datafile& _data, P
 }
 
 
-void parser_plot_setStyles(PlotData& _pData, PlotInfo& _pInfo, string* sLineStyles, string* sPointStyles, string* sContStyles, string* sConPointStyles)
+void Plot::setStyles(PlotData& _pData)
 {
     for (int i = 0; i < _pInfo.nStyleMax; i++)
     {
-        sLineStyles[i] = " ";
-        sLineStyles[i][0] = _pData.getColors()[i];
-        sPointStyles[i] = " ";
-        sPointStyles[i][0] = _pData.getColors()[i];
-        sContStyles[i] = " ";
-        sContStyles[i][0] = _pData.getContColors()[i];
-        sConPointStyles[i] = " ";
-        sConPointStyles[i][0] = _pData.getColors()[i];
+        _pInfo.sLineStyles[i] = " ";
+        _pInfo.sLineStyles[i][0] = _pData.getColors()[i];
+        _pInfo.sPointStyles[i] = " ";
+        _pInfo.sPointStyles[i][0] = _pData.getColors()[i];
+        _pInfo.sContStyles[i] = " ";
+        _pInfo.sContStyles[i][0] = _pData.getContColors()[i];
+        _pInfo.sConPointStyles[i] = " ";
+        _pInfo.sConPointStyles[i][0] = _pData.getColors()[i];
     }
     for (int i = 0; i < _pInfo.nStyleMax; i++)
     {
-        sLineStyles[i] += _pData.getLineStyles()[i];
+        _pInfo.sLineStyles[i] += _pData.getLineStyles()[i];
         if (_pData.getDrawPoints())
         {
             if (_pData.getPointStyles()[2*i] != ' ')
-                sLineStyles[i] += _pData.getPointStyles()[2*i];
-            sLineStyles[i] += _pData.getPointStyles()[2*i+1];
+                _pInfo.sLineStyles[i] += _pData.getPointStyles()[2*i];
+            _pInfo.sLineStyles[i] += _pData.getPointStyles()[2*i+1];
         }
         if (_pData.getyError() || _pData.getxError())
         {
             if (_pData.getPointStyles()[2*i] != ' ')
-                sPointStyles[i] += _pData.getPointStyles()[2*i];
-            sPointStyles[i] += _pData.getPointStyles()[2*i+1];
+                _pInfo.sPointStyles[i] += _pData.getPointStyles()[2*i];
+            _pInfo.sPointStyles[i] += _pData.getPointStyles()[2*i+1];
         }
         else
         {
             if (_pData.getPointStyles()[2*i] != ' ')
-                sPointStyles[i] += " " + _pData.getPointStyles().substr(2*i,1) + _pData.getPointStyles().substr(2*i+1,1);
+                _pInfo.sPointStyles[i] += " " + _pData.getPointStyles().substr(2*i,1) + _pData.getPointStyles().substr(2*i+1,1);
             else
-                sPointStyles[i] += " " + _pData.getPointStyles().substr(2*i+1,1);
+                _pInfo.sPointStyles[i] += " " + _pData.getPointStyles().substr(2*i+1,1);
         }
         if (_pData.getPointStyles()[2*i] != ' ')
-            sConPointStyles[i] += _pData.getLineStyles().substr(i,1) + _pData.getPointStyles().substr(2*i,1) + _pData.getPointStyles().substr(2*i+1,1);
+            _pInfo.sConPointStyles[i] += _pData.getLineStyles().substr(i,1) + _pData.getPointStyles().substr(2*i,1) + _pData.getPointStyles().substr(2*i+1,1);
         else
-            sConPointStyles[i] += _pData.getLineStyles().substr(i,1) + _pData.getPointStyles().substr(2*i+1,1);
-        sContStyles[i] += _pData.getLineStyles()[i];
-        sLineStyles[i] += _pData.getLineSizes()[i];
+            _pInfo.sConPointStyles[i] += _pData.getLineStyles().substr(i,1) + _pData.getPointStyles().substr(2*i+1,1);
+        _pInfo.sContStyles[i] += _pData.getLineStyles()[i];
+        _pInfo.sLineStyles[i] += _pData.getLineSizes()[i];
     }
 }
 
 
-void parser_plot_evaluateSubplot(mglGraph& _graph, PlotData& _pData, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option,
+void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option,
                                 size_t& nLegends, string& sCmd, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
 {
     if (nLegends && !_pData.getSchematic())
     {
-        _graph.Legend(_pData.getLegendPosition());
-        _graph.ClearLegend();
+        _graph->Legend(_pData.getLegendPosition());
+        _graph->ClearLegend();
     }
 
     string sSubPlotIDX = sCmd.substr(findCommand(sCmd).nPos+7);
@@ -2881,7 +2886,7 @@ void parser_plot_evaluateSubplot(mglGraph& _graph, PlotData& _pData, Parser& _pa
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (unsigned int)(v[0]-1), nMultiCols, nMultiLines))
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                _graph.MultiPlot(nMultiplots[0], nMultiplots[1], (unsigned int)v[0]-1, nMultiCols, nMultiLines);
+                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], (unsigned int)v[0]-1, nMultiCols, nMultiLines);
             }   // cols, lines
             else
             {
@@ -2889,7 +2894,7 @@ void parser_plot_evaluateSubplot(mglGraph& _graph, PlotData& _pData, Parser& _pa
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (unsigned int)((v[1]-1)+(v[0]-1)*nMultiplots[0]), nMultiCols, nMultiLines))
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                _graph.MultiPlot(nMultiplots[0], nMultiplots[1], (unsigned int)((v[1]-1)+(v[0]-1)*nMultiplots[0]), nMultiCols, nMultiLines);
+                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], (unsigned int)((v[1]-1)+(v[0]-1)*nMultiplots[0]), nMultiCols, nMultiLines);
             }
         }
         else
@@ -2905,7 +2910,7 @@ void parser_plot_evaluateSubplot(mglGraph& _graph, PlotData& _pData, Parser& _pa
                 {
                     if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, nSub, nMultiCols, nMultiLines))
                         throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                    _graph.MultiPlot(nMultiplots[0], nMultiplots[1], nSub, nMultiCols, nMultiLines);
+                    _graph->MultiPlot(nMultiplots[0], nMultiplots[1], nSub, nMultiCols, nMultiLines);
                     break;
                 }
                 if (nSub == nMultiplots[0]*nMultiplots[1]-1)
@@ -2939,7 +2944,7 @@ void parser_plot_evaluateSubplot(mglGraph& _graph, PlotData& _pData, Parser& _pa
                 if (nRes & nSubPlotMap)
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 nSubPlotMap |= nRes;
-                _graph.SubPlot(nMultiplots[0], nMultiplots[1], (unsigned int)v[0]-1);
+                _graph->SubPlot(nMultiplots[0], nMultiplots[1], (unsigned int)v[0]-1);
             }
             else
             {
@@ -2951,7 +2956,7 @@ void parser_plot_evaluateSubplot(mglGraph& _graph, PlotData& _pData, Parser& _pa
                 if (nRes & nSubPlotMap)
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 nSubPlotMap |= nRes;
-                _graph.SubPlot(nMultiplots[0], nMultiplots[1], (unsigned int)((v[1]-1)+(v[0]-1)*nMultiplots[0]));
+                _graph->SubPlot(nMultiplots[0], nMultiplots[1], (unsigned int)((v[1]-1)+(v[0]-1)*nMultiplots[0]));
             }
         }
         else
@@ -2966,7 +2971,7 @@ void parser_plot_evaluateSubplot(mglGraph& _graph, PlotData& _pData, Parser& _pa
                 else
                 {
                     nSubPlotMap |= nPlotPos;
-                    _graph.SubPlot(nMultiplots[0], nMultiplots[1], nSub);
+                    _graph->SubPlot(nMultiplots[0], nMultiplots[1], nSub);
                     break;
                 }
                 if (nSub == nMultiplots[0]*nMultiplots[1]-1)
@@ -2979,7 +2984,7 @@ void parser_plot_evaluateSubplot(mglGraph& _graph, PlotData& _pData, Parser& _pa
 }
 
 
-void parser_plot_displayMessage(PlotData& _pData, PlotInfo& _pInfo, mglGraph& _graph, const Settings& _option)
+void Plot::displayMessage(PlotData& _pData, const Settings& _option)
 {
     if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
         NumeReKernel::printPreFmt(toSystemCodePage("|-> " + _lang.get("PLOT_CALCULATING_DATA_FOR") + " "));
@@ -3027,10 +3032,6 @@ void parser_plot_displayMessage(PlotData& _pData, PlotInfo& _pInfo, mglGraph& _g
         {
             if (_pInfo.nSamples % 2)
                 _pInfo.nSamples -= 1;
-            if (_pData.getHighRes() <= 1 && _option.getbUseDraftMode())
-                _graph.SetQuality(5);
-            else
-                _graph.SetQuality(6);
         }
     }
     else if (_pInfo.sCommand.substr(0,4) == "vect")
@@ -3040,13 +3041,6 @@ void parser_plot_displayMessage(PlotData& _pData, PlotInfo& _pInfo, mglGraph& _g
             _pInfo.nSamples = 21;
         if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
             NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("PLOT_VECTOR")) + "-");
-        if (_pData.getPipe() || _pData.getFlow())
-        {
-            if (_pData.getHighRes() <= 1 && _option.getbUseDraftMode())
-                _graph.SetQuality(5);
-            else
-                _graph.SetQuality(6);
-        }
     }
     else if (_pInfo.sCommand.substr(0,4) == "mesh"
         || _pInfo.sCommand.substr(0,4) == "surf"
@@ -3075,16 +3069,16 @@ void parser_plot_displayMessage(PlotData& _pData, PlotInfo& _pInfo, mglGraph& _g
     {
         _pInfo.bDraw = true;
         if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
-            NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("PLOT_DRAWING")) + " ... \n");
+            NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("PLOT_DRAWING")) + " ... ");
     }
     else if (_pInfo.sCommand == "draw3d")
     {
         _pInfo.bDraw3D = true;
         if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
-            NumeReKernel::printPreFmt(toSystemCodePage("3D-"+_lang.get("PLOT_DRAWING")) + " ... \n");
+            NumeReKernel::printPreFmt(toSystemCodePage("3D-"+_lang.get("PLOT_DRAWING")) + " ... ");
     }
     if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && !_pData.getAnimateSamples() && !(_pInfo.bDraw3D || _pInfo.bDraw))
-        NumeReKernel::printPreFmt("Plot ... \n");
+        NumeReKernel::printPreFmt("Plot ... ");
     else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && !(_pInfo.bDraw3D || _pInfo.bDraw))
     {
         NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("PLOT_ANIMATION")) + " ... \n");
@@ -3093,9 +3087,9 @@ void parser_plot_displayMessage(PlotData& _pData, PlotInfo& _pInfo, mglGraph& _g
 }
 
 
-void parser_plot_evaluateDataPlots(PlotData& _pData, PlotInfo& _pInfo, Parser& _parser, Datafile& _data, Define& _functions, mglData**& _mDataPlots, const Settings& _option,
-                                    vector<short>& vType, string& sFunc, string& sDataPlots, string& sDataLabels, string& sAxisBinds, string& sDataAxisBinds,
-                                    int*& nDataDim, int& nDataPlots, double dDataRanges[3][2], double dSecDataRanges[2][2])
+void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option,
+                                    vector<short>& vType, string& sDataPlots, string& sAxisBinds, string& sDataAxisBinds,
+                                    double dDataRanges[3][2], double dSecDataRanges[2][2])
 {
     const short TYPE_DATA = -1;
     const short TYPE_FUNC = 1;
@@ -4259,7 +4253,7 @@ void parser_plot_evaluateDataPlots(PlotData& _pData, PlotInfo& _pInfo, Parser& _
 }
 
 
-void parser_plot_prepareMemory(PlotData& _pData, PlotInfo& _pInfo, mglData* _mAxisVals, const string& sFunc, int nFunctions)
+void Plot::prepareMemory(PlotData& _pData, const string& sFunc, int nFunctions)
 {
     if (!_pInfo.b2D && sFunc != "<<empty>>" && _pInfo.sCommand != "plot3d" && !_pInfo.b3D && !_pInfo.b3DVect && !_pInfo.b2DVect)
         _pData.setDim(_pInfo.nSamples, nFunctions);    // _pInfo.nSamples * nFunctions (Standardplot)
@@ -4284,7 +4278,7 @@ void parser_plot_prepareMemory(PlotData& _pData, PlotInfo& _pInfo, mglData* _mAx
 }
 
 
-void parser_plot_separateLegends(PlotInfo& _pInfo, string& sFunc, string& sLabels)
+void Plot::separateLegends()
 {
     if (sFunc.length() && !_pInfo.bDraw3D && !_pInfo.bDraw)
     {
@@ -4314,7 +4308,7 @@ void parser_plot_separateLegends(PlotInfo& _pInfo, string& sFunc, string& sLabel
 }
 
 
-void parser_plot_defaultRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mDataPlots, double dDataRanges[3][2], double dSecDataRanges[2][2], int* nDataDim, int nDataPlots, size_t nPlotCompose, bool bNewSubPlot)
+void Plot::defaultRanges(PlotData& _pData, double dDataRanges[3][2], double dSecDataRanges[2][2], size_t nPlotCompose, bool bNewSubPlot)
 {
     if (!nPlotCompose || bNewSubPlot)
     {
@@ -4331,7 +4325,7 @@ void parser_plot_defaultRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
             {
                 if ((isinf(dDataRanges[i][0]) || isnan(dDataRanges[i][0])) && (unsigned)i < _pInfo.nMaxPlotDim)
                 {
-                    parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+                    clearData();
                     throw SyntaxError(SyntaxError::PLOTDATA_IS_NAN, "", SyntaxError::invalid_position);
                 }
                 else if (!(isinf(dDataRanges[i][0]) || isnan(dDataRanges[i][0])))
@@ -4353,7 +4347,7 @@ void parser_plot_defaultRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
             {
                 if ((isinf(dDataRanges[i][1]) || isnan(dDataRanges[i][1])) && (unsigned)i < _pInfo.nMaxPlotDim)
                 {
-                    parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+                    clearData();
                     throw SyntaxError(SyntaxError::PLOTDATA_IS_NAN, "", SyntaxError::invalid_position);
                 }
                 else if (!(isinf(dDataRanges[i][1]) || isnan(dDataRanges[i][1])))
@@ -4403,7 +4397,7 @@ void parser_plot_defaultRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
             }
             else if (_pInfo.dRanges[XCOORD][0] < 0 && _pInfo.dRanges[XCOORD][1] <= 0)
             {
-                parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+                clearData();
                 throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
             }
         }
@@ -4416,7 +4410,7 @@ void parser_plot_defaultRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
             }
             else if (_pInfo.dRanges[YCOORD][0] < 0 && _pInfo.dRanges[YCOORD][1] <= 0)
             {
-                parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+                clearData();
                 throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
             }
         }
@@ -4429,7 +4423,7 @@ void parser_plot_defaultRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
             }
             else if (_pInfo.dRanges[ZCOORD][0] < 0 && _pInfo.dRanges[ZCOORD][1] <= 0)
             {
-                parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+                clearData();
                 throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
             }
         }
@@ -4533,7 +4527,7 @@ void parser_plot_defaultRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
 }
 
 
-int parser_plot_fillData(PlotData& _pData, PlotInfo& _pInfo, Parser& _parser, mglData* _mAxisVals, const string& sFunc, value_type* vResults, double dt_max, int t_animate, int nFunctions)
+int Plot::fillData(PlotData& _pData, Parser& _parser, const string& sFunc, value_type* vResults, double dt_max, int t_animate, int nFunctions)
 {
     // --> Plot-Speicher mit den berechneten Daten fuellen <--
     if (!_pInfo.b2D && sFunc != "<<empty>>" && _pInfo.sCommand != "plot3d" && !_pInfo.b3D && !_pInfo.b3DVect && !_pInfo.b2DVect)
@@ -4768,6 +4762,7 @@ int parser_plot_fillData(PlotData& _pData, PlotInfo& _pInfo, Parser& _parser, mg
     }
     else if (sFunc != "<<empty>>")
     {
+        //mglData* test = _mAxisVals;
         // --> Wie oben, aber 2D-Fall <--
         for (int x = 0; x < _pInfo.nSamples; x++)
         {
@@ -4812,7 +4807,7 @@ int parser_plot_fillData(PlotData& _pData, PlotInfo& _pInfo, Parser& _parser, mg
 }
 
 
-void parser_plot_fitPlotRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mDataPlots, const string& sFunc, int* nDataDim, int nDataPlots, double dDataRanges[3][2], size_t nPlotCompose, bool bNewSubPlot)
+void Plot::fitPlotRanges(PlotData& _pData, const string& sFunc, double dDataRanges[3][2], size_t nPlotCompose, bool bNewSubPlot)
 {
     /* --> Darstellungsintervalle anpassen: Wenn nicht alle vorgegeben sind, sollten die fehlenden
      *     passend berechnet werden. Damit aber kein Punkt auf dem oberen oder dem unteren Rahmen
@@ -4823,7 +4818,7 @@ void parser_plot_fitPlotRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
     {
         if (isnan(_pData.getMin()) || isnan(_pData.getMax()) || isinf(_pData.getMin()) || isinf(_pData.getMax()))
         {
-            parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+            clearData();
             throw SyntaxError(SyntaxError::PLOTDATA_IS_NAN, "", SyntaxError::invalid_position);
         }
     }
@@ -4838,8 +4833,8 @@ void parser_plot_fitPlotRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
                 double dMinr = _pData.getMin(PlotData::ONLYRIGHT);
                 double dMaxr = _pData.getMax(PlotData::ONLYRIGHT);
 
-                parser_plot_weightedRange(PlotData::ONLYLEFT, dMinl, dMaxl, _pData);
-                parser_plot_weightedRange(PlotData::ONLYRIGHT, dMaxl, dMaxr, _pData);
+                weightedRange(PlotData::ONLYLEFT, dMinl, dMaxl, _pData);
+                weightedRange(PlotData::ONLYRIGHT, dMaxl, dMaxr, _pData);
 
                 if (_mDataPlots && dMinl < _pInfo.dRanges[YCOORD][0])
                     _pInfo.dRanges[YCOORD][0] = dMinl;
@@ -4904,7 +4899,7 @@ void parser_plot_fitPlotRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
                     dMin = _pData.getMin(i);
                     dMax = _pData.getMax(i);
 
-                    parser_plot_weightedRange(i, dMin, dMax, _pData);
+                    weightedRange(i, dMin, dMax, _pData);
 
                     if (_pData.getGivenRanges() >= i+1 && _pData.getRangeSetting(i))
                         continue;
@@ -4939,7 +4934,7 @@ void parser_plot_fitPlotRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
                     double dMin = _pData.getMin();
                     double dMax = _pData.getMax();
 
-                parser_plot_weightedRange(PlotData::ALLRANGES, dMin, dMax, _pData);
+                weightedRange(PlotData::ALLRANGES, dMin, dMax, _pData);
 
                 if (_mDataPlots && dMin < _pInfo.dRanges[ZCOORD][0])
                     _pInfo.dRanges[ZCOORD][0] = dMin;
@@ -4971,7 +4966,7 @@ void parser_plot_fitPlotRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
                 double dMin = _pData.getMin();
                 double dMax = _pData.getMax();
 
-                parser_plot_weightedRange(PlotData::ALLRANGES, dMin, dMax, _pData);
+                weightedRange(PlotData::ALLRANGES, dMin, dMax, _pData);
 
                 _pInfo.dRanges[ZCOORD][0] = dMin;
                 _pInfo.dRanges[ZCOORD][1] = dMax;
@@ -4989,7 +4984,7 @@ void parser_plot_fitPlotRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
         {
             if ((_pInfo.dRanges[XCOORD][0] <= 0 && _pInfo.dRanges[XCOORD][1] <= 0) || _pData.getAxisScale() <= 0.0)
             {
-                parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+                clearData();
                 throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
             }
             else if (_pInfo.dRanges[XCOORD][0] <= 0)
@@ -4999,7 +4994,7 @@ void parser_plot_fitPlotRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
         {
             if ((_pInfo.dRanges[YCOORD][0] <= 0 && _pInfo.dRanges[YCOORD][1] <= 0) || _pData.getAxisScale(1) <= 0.0)
             {
-                parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+                clearData();
                 throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
             }
             else if (_pInfo.dRanges[YCOORD][0] <= 0)
@@ -5009,7 +5004,7 @@ void parser_plot_fitPlotRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
         {
             if ((_pInfo.dRanges[ZCOORD][0] <= 0 && _pInfo.dRanges[ZCOORD][1] <= 0) || _pData.getAxisScale(2) <= 0.0)
             {
-                parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+                clearData();
                 throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
             }
             else if (_pInfo.dRanges[ZCOORD][0] <= 0)
@@ -5019,7 +5014,7 @@ void parser_plot_fitPlotRanges(PlotData& _pData, PlotInfo& _pInfo, mglData** _mD
 }
 
 
-void parser_plot_clearData(mglData** _mDataPlots, int* nDataDim, int nDataPlots)
+void Plot::clearData()
 {
     if (_mDataPlots)
     {
@@ -5033,7 +5028,7 @@ void parser_plot_clearData(mglData** _mDataPlots, int* nDataDim, int nDataPlots)
 }
 
 
-void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo, mglData** _mDataPlots, mglData* _mAxisVals, const string& sFunc, int* nDataDim, int nDataPlots, double dDataRanges[3][2])
+void Plot::passRangesToGraph(PlotData& _pData, const string& sFunc, double dDataRanges[3][2])
 {
     if (_pData.getBoxplot() && !_pData.getRangeSetting() && nDataPlots)
     {
@@ -5041,17 +5036,17 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
         _pInfo.dRanges[XCOORD][1] = nDataPlots+1;
     }
     if (_pData.getInvertion())
-        _graph.SetRange('x', _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(), _pInfo.dRanges[XCOORD][0]/_pData.getAxisScale());
+        _graph->SetRange('x', _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(), _pInfo.dRanges[XCOORD][0]/_pData.getAxisScale());
     else
-        _graph.SetRange('x', _pInfo.dRanges[XCOORD][0]/_pData.getAxisScale(), _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale());
+        _graph->SetRange('x', _pInfo.dRanges[XCOORD][0]/_pData.getAxisScale(), _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale());
     if (_pData.getInvertion(1))
-        _graph.SetRange('y', _pInfo.dRanges[YCOORD][1]/_pData.getAxisScale(1), _pInfo.dRanges[YCOORD][0]/_pData.getAxisScale(1));
+        _graph->SetRange('y', _pInfo.dRanges[YCOORD][1]/_pData.getAxisScale(1), _pInfo.dRanges[YCOORD][0]/_pData.getAxisScale(1));
     else
-        _graph.SetRange('y', _pInfo.dRanges[YCOORD][0]/_pData.getAxisScale(1), _pInfo.dRanges[YCOORD][1]/_pData.getAxisScale(1));
+        _graph->SetRange('y', _pInfo.dRanges[YCOORD][0]/_pData.getAxisScale(1), _pInfo.dRanges[YCOORD][1]/_pData.getAxisScale(1));
     if (_pData.getInvertion(2))
-        _graph.SetRange('z', _pInfo.dRanges[ZCOORD][1]/_pData.getAxisScale(2), _pInfo.dRanges[ZCOORD][0]/_pData.getAxisScale(2));
+        _graph->SetRange('z', _pInfo.dRanges[ZCOORD][1]/_pData.getAxisScale(2), _pInfo.dRanges[ZCOORD][0]/_pData.getAxisScale(2));
     else
-        _graph.SetRange('z', _pInfo.dRanges[ZCOORD][0]/_pData.getAxisScale(2), _pInfo.dRanges[ZCOORD][1]/_pData.getAxisScale(2));
+        _graph->SetRange('z', _pInfo.dRanges[ZCOORD][0]/_pData.getAxisScale(2), _pInfo.dRanges[ZCOORD][1]/_pData.getAxisScale(2));
 
     if (_pData.getBars() && _mDataPlots && !_pInfo.b2D)
     {
@@ -5064,15 +5059,15 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
         if (nMinbars < 2)
             nMinbars = 2;
         if (_pData.getInvertion())
-            _graph.SetRange('x',(_pInfo.dRanges[XCOORD][1]-fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1])/(double)(2*(nMinbars-1)))/_pData.getAxisScale(), (_pInfo.dRanges[XCOORD][0]+fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1])/(double)(2*(nMinbars-1)))/_pData.getAxisScale());
+            _graph->SetRange('x',(_pInfo.dRanges[XCOORD][1]-fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1])/(double)(2*(nMinbars-1)))/_pData.getAxisScale(), (_pInfo.dRanges[XCOORD][0]+fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1])/(double)(2*(nMinbars-1)))/_pData.getAxisScale());
         else
-            _graph.SetRange('x',(_pInfo.dRanges[XCOORD][0]-fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1])/(double)(2*(nMinbars-1)))/_pData.getAxisScale(), (_pInfo.dRanges[XCOORD][1]+fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1])/(double)(2*(nMinbars-1)))/_pData.getAxisScale());
+            _graph->SetRange('x',(_pInfo.dRanges[XCOORD][0]-fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1])/(double)(2*(nMinbars-1)))/_pData.getAxisScale(), (_pInfo.dRanges[XCOORD][1]+fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1])/(double)(2*(nMinbars-1)))/_pData.getAxisScale());
         if (_pInfo.sCommand == "plot3d")
         {
             if (_pData.getInvertion(1))
-                _graph.SetRange('y',(_pInfo.dRanges[YCOORD][1]-fabs(_pInfo.dRanges[YCOORD][0]-_pInfo.dRanges[YCOORD][1])/(double)(2*(nMinbars-1)))/_pData.getAxisScale(1), (_pInfo.dRanges[YCOORD][0]+fabs(_pInfo.dRanges[YCOORD][0]-_pInfo.dRanges[YCOORD][1])/(double)(2*(nMinbars-1)))/_pData.getAxisScale(1));
+                _graph->SetRange('y',(_pInfo.dRanges[YCOORD][1]-fabs(_pInfo.dRanges[YCOORD][0]-_pInfo.dRanges[YCOORD][1])/(double)(2*(nMinbars-1)))/_pData.getAxisScale(1), (_pInfo.dRanges[YCOORD][0]+fabs(_pInfo.dRanges[YCOORD][0]-_pInfo.dRanges[YCOORD][1])/(double)(2*(nMinbars-1)))/_pData.getAxisScale(1));
             else
-                _graph.SetRange('y',(_pInfo.dRanges[YCOORD][0]-fabs(_pInfo.dRanges[YCOORD][0]-_pInfo.dRanges[YCOORD][1])/(double)(2*(nMinbars-1)))/_pData.getAxisScale(1), (_pInfo.dRanges[YCOORD][1]+fabs(_pInfo.dRanges[YCOORD][0]-_pInfo.dRanges[YCOORD][1])/(double)(2*(nMinbars-1)))/_pData.getAxisScale(1));
+                _graph->SetRange('y',(_pInfo.dRanges[YCOORD][0]-fabs(_pInfo.dRanges[YCOORD][0]-_pInfo.dRanges[YCOORD][1])/(double)(2*(nMinbars-1)))/_pData.getAxisScale(1), (_pInfo.dRanges[YCOORD][1]+fabs(_pInfo.dRanges[YCOORD][0]-_pInfo.dRanges[YCOORD][1])/(double)(2*(nMinbars-1)))/_pData.getAxisScale(1));
         }
     }
 
@@ -5080,18 +5075,18 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
     {
         if (_pData.getcLogscale() && ((_pData.getColorRange() <= 0.0 && _pData.getColorRange(1) <= 0.0) || _pData.getAxisScale(3) <= 0.0))
         {
-            parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+            clearData();
             throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
         }
         else if (_pData.getcLogscale() && _pData.getColorRange() <= 0.0)
         {
-            _graph.SetRange('c', _pData.getColorRange(1)*1e-3/_pData.getAxisScale(3), _pData.getColorRange(1)/_pData.getAxisScale(3));
+            _graph->SetRange('c', _pData.getColorRange(1)*1e-3/_pData.getAxisScale(3), _pData.getColorRange(1)/_pData.getAxisScale(3));
             _pInfo.dColorRanges[0] = _pData.getColorRange(1)*1e-3/_pData.getAxisScale(3);
             _pInfo.dColorRanges[1] = _pData.getColorRange(1)/_pData.getAxisScale(3);
         }
         else
         {
-            _graph.SetRange('c', _pData.getColorRange()/_pData.getAxisScale(3), _pData.getColorRange(1)/_pData.getAxisScale(3));
+            _graph->SetRange('c', _pData.getColorRange()/_pData.getAxisScale(3), _pData.getColorRange(1)/_pData.getAxisScale(3));
             _pInfo.dColorRanges[0] = _pData.getColorRange()/_pData.getAxisScale(3);
             _pInfo.dColorRanges[1] = _pData.getColorRange(1)/_pData.getAxisScale(3);
         }
@@ -5103,7 +5098,7 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
         double dMin = _pData.getMin(2);
         double dMax = _pData.getMax(2);
 
-        parser_plot_weightedRange(2, dMin, dMax, _pData);
+        weightedRange(2, dMin, dMax, _pData);
 
         if (dMax > dColorMax && sFunc != "<<empty>>" && _pInfo.sCommand == "plot3d")
             dColorMax = dMax/_pData.getAxisScale(3);
@@ -5111,25 +5106,25 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
             dColorMin = dMin/_pData.getAxisScale(3);
         if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dColorMin <= 0.0 && dColorMax <= 0.0)
         {
-            parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+            clearData();
             throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
         }
         else if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dColorMin <= 0.0)
         {
             dColorMin = dColorMax * 1e-3;
-            _graph.SetRange('c', dColorMin, dColorMax+0.05*(dColorMax-dColorMin));
+            _graph->SetRange('c', dColorMin, dColorMax+0.05*(dColorMax-dColorMin));
             _pInfo.dColorRanges[0] = dColorMin;
             _pInfo.dColorRanges[1] = dColorMax+0.05*(dColorMax-dColorMin);
         }
         else if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect))
         {
-            _graph.SetRange('c', dColorMin*0.95, dColorMax*1.05);
+            _graph->SetRange('c', dColorMin*0.95, dColorMax*1.05);
             _pInfo.dColorRanges[0] = dColorMin*0.95;
             _pInfo.dColorRanges[1] = dColorMax*1.05;
         }
         else
         {
-            _graph.SetRange('c', dColorMin-0.05*(dColorMax-dColorMin), dColorMax+0.05*(dColorMax-dColorMin));
+            _graph->SetRange('c', dColorMin-0.05*(dColorMax-dColorMin), dColorMax+0.05*(dColorMax-dColorMin));
             _pInfo.dColorRanges[0] = dColorMin-0.05*(dColorMax-dColorMin);
             _pInfo.dColorRanges[1] = dColorMax+0.05*(dColorMax-dColorMin);
         }
@@ -5140,13 +5135,13 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
         {
             if (_pData.getcLogscale())
             {
-                _graph.SetRange('c', 1e-3, 1.05);
+                _graph->SetRange('c', 1e-3, 1.05);
                 _pInfo.dColorRanges[0] = 1e-3;
                 _pInfo.dColorRanges[1] = 1.05;
             }
             else
             {
-                _graph.SetRange('c', -1.05, 1.05);
+                _graph->SetRange('c', -1.05, 1.05);
                 _pInfo.dColorRanges[0] = -1.05;
                 _pInfo.dColorRanges[1] = 1.05;
             }
@@ -5155,13 +5150,13 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
         {
             if (_pData.getcLogscale())
             {
-                _graph.SetRange('c', 1e-3, 1.05);
+                _graph->SetRange('c', 1e-3, 1.05);
                 _pInfo.dColorRanges[0] = 1e-3;
                 _pInfo.dColorRanges[1] = 1.05;
             }
             else
             {
-                _graph.SetRange('c', -0.05, 1.05);
+                _graph->SetRange('c', -0.05, 1.05);
                 _pInfo.dColorRanges[0] = -0.05;
                 _pInfo.dColorRanges[1] = 1.05;
             }
@@ -5171,28 +5166,28 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
             double dMax = _pData.getMax();
             double dMin = _pData.getMin();
 
-            parser_plot_weightedRange(PlotData::ALLRANGES, dMin, dMax, _pData);
+            weightedRange(PlotData::ALLRANGES, dMin, dMax, _pData);
 
             if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && ((dMin <= 0.0 && dMax) || _pData.getAxisScale(3) <= 0.0))
             {
-                parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+                clearData();
                 throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
             }
             else if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dMin <= 0.0)
             {
-                _graph.SetRange('c', dMax*1e-3/_pData.getAxisScale(3), (dMax+0.05*(dMax-dMin))/_pData.getAxisScale(3));
+                _graph->SetRange('c', dMax*1e-3/_pData.getAxisScale(3), (dMax+0.05*(dMax-dMin))/_pData.getAxisScale(3));
                 _pInfo.dColorRanges[0] = dMax*1e-3/_pData.getAxisScale(3);
                 _pInfo.dColorRanges[1] = (dMax+0.05*(dMax-dMin))/_pData.getAxisScale(3);
             }
             else if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect))
             {
-                _graph.SetRange('c', dMin*0.95/_pData.getAxisScale(3), dMax*1.05/_pData.getAxisScale(3));
+                _graph->SetRange('c', dMin*0.95/_pData.getAxisScale(3), dMax*1.05/_pData.getAxisScale(3));
                 _pInfo.dColorRanges[0] = dMin*0.95/_pData.getAxisScale(3);
                 _pInfo.dColorRanges[1] = dMax*1.05/_pData.getAxisScale(3);
             }
             else
             {
-                _graph.SetRange('c', (dMin-0.05*(dMax-dMin))/_pData.getAxisScale(3), (dMax+0.05*(dMax-dMin))/_pData.getAxisScale(3));
+                _graph->SetRange('c', (dMin-0.05*(dMax-dMin))/_pData.getAxisScale(3), (dMax+0.05*(dMax-dMin))/_pData.getAxisScale(3));
                 _pInfo.dColorRanges[0] = (dMin-0.05*(dMax-dMin))/_pData.getAxisScale(3);
                 _pInfo.dColorRanges[1] = (dMax+0.05*(dMax-dMin))/_pData.getAxisScale(3);
             }
@@ -5200,22 +5195,22 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
     }
     // --> Andere Parameter setzen (die i. A. von den bestimmten Ranges abghaengen) <--
     // --> Gitter-, Koordinaten- und Achsenbeschriftungen <--
-    parser_CoordSettings(_graph, _mAxisVals, _pData, _pInfo);
+    CoordSettings(_pData);
 
     if (_pData.getAxisScale() != 1.0 || _pData.getAxisScale(1) != 1.0 || _pData.getAxisScale(2) != 1.0 || _pData.getAxisScale(3) != 1.0)
     {
         if (_pData.getInvertion())
-            _graph.SetRange('x', _pInfo.dRanges[XCOORD][1], _pInfo.dRanges[XCOORD][0]);
+            _graph->SetRange('x', _pInfo.dRanges[XCOORD][1], _pInfo.dRanges[XCOORD][0]);
         else
-            _graph.SetRange('x', _pInfo.dRanges[XCOORD][0], _pInfo.dRanges[XCOORD][1]);
+            _graph->SetRange('x', _pInfo.dRanges[XCOORD][0], _pInfo.dRanges[XCOORD][1]);
         if (_pData.getInvertion(1))
-            _graph.SetRange('y', _pInfo.dRanges[YCOORD][1], _pInfo.dRanges[YCOORD][0]);
+            _graph->SetRange('y', _pInfo.dRanges[YCOORD][1], _pInfo.dRanges[YCOORD][0]);
         else
-            _graph.SetRange('y', _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[YCOORD][1]);
+            _graph->SetRange('y', _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[YCOORD][1]);
         if (_pData.getInvertion(2))
-            _graph.SetRange('z', _pInfo.dRanges[ZCOORD][1], _pInfo.dRanges[ZCOORD][0]);
+            _graph->SetRange('z', _pInfo.dRanges[ZCOORD][1], _pInfo.dRanges[ZCOORD][0]);
         else
-            _graph.SetRange('z', _pInfo.dRanges[ZCOORD][0], _pInfo.dRanges[ZCOORD][1]);
+            _graph->SetRange('z', _pInfo.dRanges[ZCOORD][0], _pInfo.dRanges[ZCOORD][1]);
         if (_pData.getBars() && _mDataPlots && !_pInfo.b2D)
         {
             int nMinbars = -1;
@@ -5227,15 +5222,15 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
             if (nMinbars < 2)
                 nMinbars = 2;
             if (_pData.getInvertion())
-                _graph.SetRange('x',_pInfo.dRanges[XCOORD][1]-fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1])/(double)(2*(nMinbars-1)), _pInfo.dRanges[XCOORD][0]+fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1])/(double)(2*(nMinbars-1)));
+                _graph->SetRange('x',_pInfo.dRanges[XCOORD][1]-fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1])/(double)(2*(nMinbars-1)), _pInfo.dRanges[XCOORD][0]+fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1])/(double)(2*(nMinbars-1)));
             else
-                _graph.SetRange('x',_pInfo.dRanges[XCOORD][0]-fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1])/(double)(2*(nMinbars-1)), _pInfo.dRanges[XCOORD][1]+fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1])/(double)(2*(nMinbars-1)));
+                _graph->SetRange('x',_pInfo.dRanges[XCOORD][0]-fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1])/(double)(2*(nMinbars-1)), _pInfo.dRanges[XCOORD][1]+fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1])/(double)(2*(nMinbars-1)));
             if (_pInfo.sCommand == "plot3d")
             {
                 if (_pData.getInvertion(1))
-                    _graph.SetRange('y',_pInfo.dRanges[YCOORD][1]-fabs(_pInfo.dRanges[YCOORD][0]-_pInfo.dRanges[YCOORD][1])/(double)(2*(nMinbars-1)), _pInfo.dRanges[YCOORD][0]+fabs(_pInfo.dRanges[YCOORD][0]-_pInfo.dRanges[YCOORD][1])/(double)(2*(nMinbars-1)));
+                    _graph->SetRange('y',_pInfo.dRanges[YCOORD][1]-fabs(_pInfo.dRanges[YCOORD][0]-_pInfo.dRanges[YCOORD][1])/(double)(2*(nMinbars-1)), _pInfo.dRanges[YCOORD][0]+fabs(_pInfo.dRanges[YCOORD][0]-_pInfo.dRanges[YCOORD][1])/(double)(2*(nMinbars-1)));
                 else
-                    _graph.SetRange('y',_pInfo.dRanges[YCOORD][0]-fabs(_pInfo.dRanges[YCOORD][0]-_pInfo.dRanges[YCOORD][1])/(double)(2*(nMinbars-1)), _pInfo.dRanges[YCOORD][1]+fabs(_pInfo.dRanges[YCOORD][0]-_pInfo.dRanges[YCOORD][1])/(double)(2*(nMinbars-1)));
+                    _graph->SetRange('y',_pInfo.dRanges[YCOORD][0]-fabs(_pInfo.dRanges[YCOORD][0]-_pInfo.dRanges[YCOORD][1])/(double)(2*(nMinbars-1)), _pInfo.dRanges[YCOORD][1]+fabs(_pInfo.dRanges[YCOORD][0]-_pInfo.dRanges[YCOORD][1])/(double)(2*(nMinbars-1)));
             }
         }
 
@@ -5243,13 +5238,13 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
         {
             if (_pData.getcLogscale() && _pData.getColorRange() <= 0.0)
             {
-                _graph.SetRange('c', _pData.getColorRange(1)*1e-3, _pData.getColorRange(1));
+                _graph->SetRange('c', _pData.getColorRange(1)*1e-3, _pData.getColorRange(1));
                 _pInfo.dColorRanges[0] = _pData.getColorRange(1)*1e-3;
                 _pInfo.dColorRanges[1] = _pData.getColorRange(1);
             }
             else
             {
-                _graph.SetRange('c', _pData.getColorRange(), _pData.getColorRange(1));
+                _graph->SetRange('c', _pData.getColorRange(), _pData.getColorRange(1));
                 _pInfo.dColorRanges[0] = _pData.getColorRange();
                 _pInfo.dColorRanges[1] = _pData.getColorRange(1);
             }
@@ -5262,7 +5257,7 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
             double dMin = _pData.getMin(2);
             double dMax = _pData.getMax(2);
 
-            parser_plot_weightedRange(2, dMin, dMax, _pData);
+            weightedRange(2, dMin, dMax, _pData);
 
             if (dMax > dColorMax && sFunc != "<<empty>>" && _pInfo.sCommand == "plot3d")
                 dColorMax = dMax;
@@ -5271,25 +5266,25 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
 
             if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dColorMin <= 0.0 && dColorMax <= 0.0)
             {
-                parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+                clearData();
                 throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
             }
             else if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dColorMin <= 0.0)
             {
                 dColorMin = dColorMax * 1e-3;
-                _graph.SetRange('c', dColorMin, dColorMax+0.05*(dColorMax-dColorMin));
+                _graph->SetRange('c', dColorMin, dColorMax+0.05*(dColorMax-dColorMin));
                 _pInfo.dColorRanges[0] = dColorMin;
                 _pInfo.dColorRanges[1] = dColorMax+0.05*(dColorMax-dColorMin);
             }
             else if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect))
             {
-                _graph.SetRange('c', dColorMin*0.95, dColorMax*1.05);
+                _graph->SetRange('c', dColorMin*0.95, dColorMax*1.05);
                 _pInfo.dColorRanges[0] = dColorMin*0.95;
                 _pInfo.dColorRanges[1] = dColorMax*1.05;
             }
             else
             {
-                _graph.SetRange('c', dColorMin-0.05*(dColorMax-dColorMin), dColorMax+0.05*(dColorMax-dColorMin));
+                _graph->SetRange('c', dColorMin-0.05*(dColorMax-dColorMin), dColorMax+0.05*(dColorMax-dColorMin));
                 _pInfo.dColorRanges[0] = dColorMin-0.05*(dColorMax-dColorMin);
                 _pInfo.dColorRanges[1] = dColorMax+0.05*(dColorMax-dColorMin);
             }
@@ -5299,28 +5294,28 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
             double dMin = _pData.getMin();
             double dMax = _pData.getMax();
 
-            parser_plot_weightedRange(PlotData::ALLRANGES, dMin, dMax, _pData);
+            weightedRange(PlotData::ALLRANGES, dMin, dMax, _pData);
 
             if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dMin <= 0.0 && dMax)
             {
-                parser_plot_clearData(_mDataPlots, nDataDim, nDataPlots);
+                clearData();
                 throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
             }
             else if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dMin <= 0.0)
             {
-                _graph.SetRange('c', dMax*1e-3, (dMax+0.05*(dMax-dMin)));
+                _graph->SetRange('c', dMax*1e-3, (dMax+0.05*(dMax-dMin)));
                 _pInfo.dColorRanges[0] = dMax*1e-3;
                 _pInfo.dColorRanges[1] = (dMax+0.05*(dMax-dMin));
             }
             else if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect))
             {
-                _graph.SetRange('c', dMin*0.95, dMax*1.05);
+                _graph->SetRange('c', dMin*0.95, dMax*1.05);
                 _pInfo.dColorRanges[0] = dMin*0.95;
                 _pInfo.dColorRanges[1] = dMax*1.05;
             }
             else
             {
-                _graph.SetRange('c', (dMin-0.05*(dMax-dMin)), (dMax+0.05*(dMax-dMin)));
+                _graph->SetRange('c', (dMin-0.05*(dMax-dMin)), (dMax+0.05*(dMax-dMin)));
                 _pInfo.dColorRanges[0] = (dMin-0.05*(dMax-dMin));
                 _pInfo.dColorRanges[1] = (dMax+0.05*(dMax-dMin));
             }
@@ -5329,37 +5324,37 @@ void parser_plot_passRangesToGraph(mglGraph& _graph, PlotData& _pData, PlotInfo&
 }
 
 
-void parser_plot_applyColorbar(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo)
+void Plot::applyColorbar(PlotData& _pData)
 {
     if (_pData.getColorbar() && (_pInfo.sCommand.substr(0,4) == "grad" || _pInfo.sCommand.substr(0,4) == "dens") && !_pInfo.b3D && !_pData.getSchematic())
     {
         if (_pData.getAxisScale(3) != 1.0)
-            _graph.SetRange('c', _pInfo.dColorRanges[0]/_pData.getAxisScale(3), _pInfo.dColorRanges[1]/_pData.getAxisScale(3));
+            _graph->SetRange('c', _pInfo.dColorRanges[0]/_pData.getAxisScale(3), _pInfo.dColorRanges[1]/_pData.getAxisScale(3));
         // --> In diesem Fall haetten wir gerne eine Colorbar fuer den Farbwert <--
         if (_pData.getBox())
         {
             if (!(_pData.getContProj() && _pData.getContFilled()) && _pInfo.sCommand.substr(0,4) != "dens")
             {
-                _graph.Colorbar(_pData.getColorSchemeLight("I>").c_str());
+                _graph->Colorbar(_pData.getColorSchemeLight("I>").c_str());
             }
             else
             {
-                _graph.Colorbar(_pData.getColorScheme("I>").c_str());
+                _graph->Colorbar(_pData.getColorScheme("I>").c_str());
             }
         }
         else
         {
             if (!(_pData.getContProj() && _pData.getContFilled()) && _pInfo.sCommand.substr(0,4) != "dens")
             {
-                _graph.Colorbar(_pData.getColorSchemeLight(">").c_str());
+                _graph->Colorbar(_pData.getColorSchemeLight(">").c_str());
             }
             else
             {
-                _graph.Colorbar(_pData.getColorScheme().c_str());
+                _graph->Colorbar(_pData.getColorScheme().c_str());
             }
         }
         if (_pData.getAxisScale(3) != 1.0)
-            _graph.SetRange('c', _pInfo.dColorRanges[0], _pInfo.dColorRanges[1]);
+            _graph->SetRange('c', _pInfo.dColorRanges[0], _pInfo.dColorRanges[1]);
     }
     else if (_pData.getColorbar() && !_pData.getSchematic()
         && (_pInfo.sCommand.substr(0,4) == "mesh"
@@ -5372,15 +5367,15 @@ void parser_plot_applyColorbar(mglGraph& _graph, PlotData& _pData, PlotInfo& _pI
         )
     {
         if (_pData.getAxisScale(3) != 1.0)
-            _graph.SetRange('c', _pInfo.dColorRanges[0]/_pData.getAxisScale(3), _pInfo.dColorRanges[1]/_pData.getAxisScale(3));
-        _graph.Colorbar(_pData.getColorScheme().c_str());
+            _graph->SetRange('c', _pInfo.dColorRanges[0]/_pData.getAxisScale(3), _pInfo.dColorRanges[1]/_pData.getAxisScale(3));
+        _graph->Colorbar(_pData.getColorScheme().c_str());
         if (_pData.getAxisScale(3) != 1.0)
-            _graph.SetRange('c', _pInfo.dColorRanges[0], _pInfo.dColorRanges[1]);
+            _graph->SetRange('c', _pInfo.dColorRanges[0], _pInfo.dColorRanges[1]);
     }
 }
 
 
-void parser_plot_applyLighting(mglGraph& _graph, PlotData& _pData, PlotInfo& _pInfo)
+void Plot::applyLighting(PlotData& _pData)
 {
     if (_pInfo.sCommand.substr(0,4) == "mesh"
         || _pInfo.sCommand.substr(0,4) == "surf"
@@ -5398,43 +5393,43 @@ void parser_plot_applyLighting(mglGraph& _graph, PlotData& _pData, PlotInfo& _pI
             || (_pInfo.sCommand.substr(0,4) == "cont" && _pInfo.sCommand.find("3d") && _pData.getContFilled() && !_pData.getContProj())
             || _pInfo.bDraw3D
             || _pInfo.bDraw)
-        _graph.Alpha(_pData.getTransparency());
+        _graph->Alpha(_pData.getTransparency());
         if (_pData.getAlphaMask() && _pInfo.sCommand.substr(0,4) == "surf" && !_pData.getTransparency())
-            _graph.Alpha(true);
+            _graph->Alpha(true);
 
         if (_pData.getLighting())
         {
-            _graph.Light(true);
+            _graph->Light(true);
             if (!_pData.getPipe() && !_pInfo.bDraw)
             {
                 if (_pData.getLighting() == 1)
                 {
-                    _graph.AddLight(0, mglPoint(0,0,1), 'w', 0.35);
-                    _graph.AddLight(1, mglPoint(5,30,5), 'w', 0.15);
-                    _graph.AddLight(2, mglPoint(5,-30,5), 'w', 0.06);
+                    _graph->AddLight(0, mglPoint(0,0,1), 'w', 0.35);
+                    _graph->AddLight(1, mglPoint(5,30,5), 'w', 0.15);
+                    _graph->AddLight(2, mglPoint(5,-30,5), 'w', 0.06);
                 }
                 else
                 {
-                    _graph.AddLight(0, mglPoint(0,0,1), 'w', 0.25);
-                    _graph.AddLight(1, mglPoint(5,30,5), 'w', 0.1);
-                    _graph.AddLight(2, mglPoint(5,-30,5), 'w', 0.04);
+                    _graph->AddLight(0, mglPoint(0,0,1), 'w', 0.25);
+                    _graph->AddLight(1, mglPoint(5,30,5), 'w', 0.1);
+                    _graph->AddLight(2, mglPoint(5,-30,5), 'w', 0.04);
                 }
             }
             else
             {
                 if (_pData.getLighting() == 1)
                 {
-                    _graph.AddLight(1, mglPoint(-5,5,1), 'w', 0.4);
-                    _graph.AddLight(2, mglPoint(-3,3,9), 'w', 0.1);
-                    _graph.AddLight(3, mglPoint(5,-5,1), 'w', 0.1);
+                    _graph->AddLight(1, mglPoint(-5,5,1), 'w', 0.4);
+                    _graph->AddLight(2, mglPoint(-3,3,9), 'w', 0.1);
+                    _graph->AddLight(3, mglPoint(5,-5,1), 'w', 0.1);
                 }
                 else
                 {
-                    _graph.AddLight(1, mglPoint(-5,5,1), 'w', 0.2);
-                    _graph.AddLight(2, mglPoint(-3,3,9), 'w', 0.05);
-                    _graph.AddLight(3, mglPoint(5,-5,1), 'w', 0.05);
+                    _graph->AddLight(1, mglPoint(-5,5,1), 'w', 0.2);
+                    _graph->AddLight(2, mglPoint(-3,3,9), 'w', 0.05);
+                    _graph->AddLight(3, mglPoint(5,-5,1), 'w', 0.05);
                 }
-                _graph.Light(0, false);
+                _graph->Light(0, false);
             }
         }
     }
@@ -5442,91 +5437,91 @@ void parser_plot_applyLighting(mglGraph& _graph, PlotData& _pData, PlotInfo& _pI
 
 
 // --> Erledigt die nervenaufreibende Logscale-Logik <--
-void parser_setLogScale(mglGraph& _graph, PlotData& _pData, bool bzLogscale)
+void Plot::setLogScale(PlotData& _pData, bool bzLogscale)
 {
     // --> Logarithmische Skalierung; ein bisschen Fummelei <--
     if (_pData.getCoords() == PlotData::CARTESIAN)
     {
         if ((_pData.getxLogscale() || _pData.getyLogscale() || _pData.getzLogscale()) || _pData.getcLogscale())
         {
-            _graph.SetRanges(0.1,10.0, 0.1,10.0, 0.1,10.0);
+            _graph->SetRanges(0.1,10.0, 0.1,10.0, 0.1,10.0);
         }
         if (_pData.getxLogscale() && !_pData.getyLogscale() && !_pData.getzLogscale() && !_pData.getcLogscale())
-            _graph.SetFunc("lg(x)", "");
+            _graph->SetFunc("lg(x)", "");
         else if (_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale() && !_pData.getcLogscale())
-            _graph.SetFunc("lg(x)", "lg(y)");
+            _graph->SetFunc("lg(x)", "lg(y)");
         else if (_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale() && bzLogscale && !_pData.getcLogscale())
-            _graph.SetFunc("lg(x)", "lg(y)", "lg(z)");
+            _graph->SetFunc("lg(x)", "lg(y)", "lg(z)");
         else if (_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale() && !bzLogscale && !_pData.getcLogscale())
-            _graph.SetFunc("lg(x)", "lg(y)");
+            _graph->SetFunc("lg(x)", "lg(y)");
         else if (!_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale() && !_pData.getcLogscale())
-            _graph.SetFunc("", "lg(y)");
+            _graph->SetFunc("", "lg(y)");
         else if (!_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale() && bzLogscale && !_pData.getcLogscale())
-            _graph.SetFunc("", "lg(y)", "lg(z)");
+            _graph->SetFunc("", "lg(y)", "lg(z)");
         else if (!_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale() && bzLogscale && !_pData.getcLogscale())
-            _graph.SetFunc("", "", "lg(z)");
+            _graph->SetFunc("", "", "lg(z)");
         else if (_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale() && bzLogscale && !_pData.getcLogscale())
-            _graph.SetFunc("lg(x)", "", "lg(z)");
+            _graph->SetFunc("lg(x)", "", "lg(z)");
         else if (!_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale() && !bzLogscale && !_pData.getcLogscale())
-            _graph.SetFunc("", "lg(y)");
+            _graph->SetFunc("", "lg(y)");
         else if (_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale() && !bzLogscale && !_pData.getcLogscale())
-            _graph.SetFunc("lg(x)", "");///----------------------------------------------------------------------
+            _graph->SetFunc("lg(x)", "");///----------------------------------------------------------------------
         else if (_pData.getxLogscale() && !_pData.getyLogscale() && !_pData.getzLogscale() && _pData.getcLogscale())
-            _graph.SetFunc("lg(x)", "", "", "lg(c)");
+            _graph->SetFunc("lg(x)", "", "", "lg(c)");
         else if (_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale() && _pData.getcLogscale())
-            _graph.SetFunc("lg(x)", "lg(y)", "", "lg(c)");
+            _graph->SetFunc("lg(x)", "lg(y)", "", "lg(c)");
         else if (_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale() && bzLogscale && _pData.getcLogscale())
-            _graph.SetFunc("lg(x)", "lg(y)", "lg(z)", "lg(c)");
+            _graph->SetFunc("lg(x)", "lg(y)", "lg(z)", "lg(c)");
         else if (_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale() && !bzLogscale && _pData.getcLogscale())
-            _graph.SetFunc("lg(x)", "lg(y)", "", "lg(c)");
+            _graph->SetFunc("lg(x)", "lg(y)", "", "lg(c)");
         else if (!_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale() && _pData.getcLogscale())
-            _graph.SetFunc("", "lg(y)", "", "lg(c)");
+            _graph->SetFunc("", "lg(y)", "", "lg(c)");
         else if (!_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale() && bzLogscale && _pData.getcLogscale())
-            _graph.SetFunc("", "lg(y)", "lg(z)", "lg(c)");
+            _graph->SetFunc("", "lg(y)", "lg(z)", "lg(c)");
         else if (!_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale() && bzLogscale && _pData.getcLogscale())
-            _graph.SetFunc("", "", "lg(z)", "lg(c)");
+            _graph->SetFunc("", "", "lg(z)", "lg(c)");
         else if (_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale() && bzLogscale && _pData.getcLogscale())
-            _graph.SetFunc("lg(x)", "", "lg(z)", "lg(c)");
+            _graph->SetFunc("lg(x)", "", "lg(z)", "lg(c)");
         else if (!_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale() && !bzLogscale && _pData.getcLogscale())
-            _graph.SetFunc("", "lg(y)", "", "lg(c)");
+            _graph->SetFunc("", "lg(y)", "", "lg(c)");
         else if (_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale() && !bzLogscale && _pData.getcLogscale())
-            _graph.SetFunc("lg(x)", "", "", "lg(c)");
+            _graph->SetFunc("lg(x)", "", "", "lg(c)");
         else if (!_pData.getxLogscale() && !_pData.getyLogscale() && !_pData.getzLogscale() && _pData.getcLogscale())
-            _graph.SetFunc("", "", "", "lg(c)");
+            _graph->SetFunc("", "", "", "lg(c)");
     }
     return;
 }
 
 
-void parser_directionalLight(mglGraph& _graph, double dRanges[3][2], double dPhi, double dTheta, int nId, char cColor, double dBrightness)
+void Plot::directionalLight(double dPhi, double dTheta, int nId, char cColor, double dBrightness)
 {
     mglPoint _mPoint(0.0,0.0,0.0);
-    mglPoint _mDirection((dRanges[XCOORD][1]+dRanges[XCOORD][0])/2.0,(dRanges[YCOORD][1]+dRanges[YCOORD][0])/2.0,(dRanges[ZCOORD][1]+dRanges[ZCOORD][0])/2.0);
-    double dNorm = hypot((dRanges[XCOORD][1]-dRanges[XCOORD][0])/2.0, (dRanges[YCOORD][1]-dRanges[YCOORD][0])/2.0);
+    mglPoint _mDirection((_pInfo.dRanges[XCOORD][1]+_pInfo.dRanges[XCOORD][0])/2.0,(_pInfo.dRanges[YCOORD][1]+_pInfo.dRanges[YCOORD][0])/2.0,(_pInfo.dRanges[ZCOORD][1]+_pInfo.dRanges[ZCOORD][0])/2.0);
+    double dNorm = hypot((_pInfo.dRanges[XCOORD][1]-_pInfo.dRanges[XCOORD][0])/2.0, (_pInfo.dRanges[YCOORD][1]-_pInfo.dRanges[YCOORD][0])/2.0);
     //cerr << "dNorm=" << dNorm << endl;
     _mPoint.x = dNorm*cos(dPhi/180.0*M_PI+M_PI_4)*sin(dTheta/180.0*M_PI);
     _mPoint.y = dNorm*sin(dPhi/180.0*M_PI+M_PI_4)*sin(dTheta/180.0*M_PI);
-    _mPoint.z = dRanges[ZCOORD][1];//0.5*dNorm*cos(dTheta/180.0*M_PI);
+    _mPoint.z = _pInfo.dRanges[ZCOORD][1];//0.5*dNorm*cos(dTheta/180.0*M_PI);
 
     _mPoint += _mDirection;
 
-    if (_mPoint.x > dRanges[XCOORD][1])
-        _mPoint.x = dRanges[XCOORD][1];
-    if (_mPoint.x < dRanges[XCOORD][0])
-        _mPoint.x = dRanges[XCOORD][0];
-    if (_mPoint.y > dRanges[YCOORD][1])
-        _mPoint.y = dRanges[YCOORD][1];
-    if (_mPoint.y < dRanges[YCOORD][0])
-        _mPoint.y = dRanges[YCOORD][0];
+    if (_mPoint.x > _pInfo.dRanges[XCOORD][1])
+        _mPoint.x = _pInfo.dRanges[XCOORD][1];
+    if (_mPoint.x < _pInfo.dRanges[XCOORD][0])
+        _mPoint.x = _pInfo.dRanges[XCOORD][0];
+    if (_mPoint.y > _pInfo.dRanges[YCOORD][1])
+        _mPoint.y = _pInfo.dRanges[YCOORD][1];
+    if (_mPoint.y < _pInfo.dRanges[YCOORD][0])
+        _mPoint.y = _pInfo.dRanges[YCOORD][0];
 
     _mDirection = _mDirection - _mPoint;
 
-    _graph.AddLight(nId, _mPoint, _mDirection, cColor, dBrightness);
+    _graph->AddLight(nId, _mPoint, _mDirection, cColor, dBrightness);
     return;
 }
 
 
-mglPoint parser_CalcCutBox(double dPhi, double dRanges[3][2], int nEdge, int nCoords, bool b3D)
+mglPoint Plot::CalcCutBox(double dPhi, int nEdge, int nCoords, bool b3D)
 {
     int z = ZCOORD;
     int r = XCOORD;
@@ -5560,27 +5555,27 @@ mglPoint parser_CalcCutBox(double dPhi, double dRanges[3][2], int nEdge, int nCo
         if (!nEdge)
         {
             if (nCoords == PlotData::CARTESIAN)
-                return mglPoint(0.5*(dRanges[XCOORD][1]-dRanges[XCOORD][0])+dRanges[XCOORD][0], dRanges[YCOORD][0]-0.1*fabs(dRanges[YCOORD][0]), dRanges[ZCOORD][0]-0.1*fabs(dRanges[ZCOORD][0]));
+                return mglPoint(0.5*(_pInfo.dRanges[XCOORD][1]-_pInfo.dRanges[XCOORD][0])+_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[YCOORD][0]-0.1*fabs(_pInfo.dRanges[YCOORD][0]), _pInfo.dRanges[ZCOORD][0]-0.1*fabs(_pInfo.dRanges[ZCOORD][0]));
             else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
             {
-                return parser_plot_createMglPoint(nCoords, 0.0, 1.5*M_PI, dRanges[z][0]-0.1*fabs(dRanges[z][0]));
+                return createMglPoint(nCoords, 0.0, 1.5*M_PI, _pInfo.dRanges[z][0]-0.1*fabs(_pInfo.dRanges[z][0]));
             }
             else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
             {
-                return parser_plot_createMglPoint(nCoords, 0.0, 1.5*M_PI, 0.0, b3D);
+                return createMglPoint(nCoords, 0.0, 1.5*M_PI, 0.0, b3D);
             }
         }
         else
         {
             if (nCoords == PlotData::CARTESIAN)
-                return mglPoint(dRanges[XCOORD][1]+0.1*fabs(dRanges[XCOORD][1]), (0.5*(dRanges[YCOORD][1]-dRanges[YCOORD][0])+dRanges[YCOORD][0]), dRanges[ZCOORD][1]+0.1*fabs(dRanges[ZCOORD][1]));
+                return mglPoint(_pInfo.dRanges[XCOORD][1]+0.1*fabs(_pInfo.dRanges[XCOORD][1]), (0.5*(_pInfo.dRanges[YCOORD][1]-_pInfo.dRanges[YCOORD][0])+_pInfo.dRanges[YCOORD][0]), _pInfo.dRanges[ZCOORD][1]+0.1*fabs(_pInfo.dRanges[ZCOORD][1]));
             else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
             {
-                return parser_plot_createMglPoint(nCoords, 1.1*dRanges[r][1], 2.0*M_PI, dRanges[z][1]+0.1*fabs(dRanges[z][1]), b3D);
+                return createMglPoint(nCoords, 1.1*_pInfo.dRanges[r][1], 2.0*M_PI, _pInfo.dRanges[z][1]+0.1*fabs(_pInfo.dRanges[z][1]), b3D);
             }
             else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
             {
-                return parser_plot_createMglPoint(nCoords, 1.1*dRanges[r][1], 2.0*M_PI, M_PI, b3D);
+                return createMglPoint(nCoords, 1.1*_pInfo.dRanges[r][1], 2.0*M_PI, M_PI, b3D);
             }
         }
     }
@@ -5589,27 +5584,27 @@ mglPoint parser_CalcCutBox(double dPhi, double dRanges[3][2], int nEdge, int nCo
         if (!nEdge)
         {
             if (nCoords == PlotData::CARTESIAN)
-                return mglPoint(0.5*(dRanges[XCOORD][1]-dRanges[XCOORD][0])+dRanges[XCOORD][0], 0.5*(dRanges[YCOORD][1]-dRanges[YCOORD][0])+dRanges[YCOORD][0], dRanges[ZCOORD][0]-0.1*fabs(dRanges[ZCOORD][0]));
+                return mglPoint(0.5*(_pInfo.dRanges[XCOORD][1]-_pInfo.dRanges[XCOORD][0])+_pInfo.dRanges[XCOORD][0], 0.5*(_pInfo.dRanges[YCOORD][1]-_pInfo.dRanges[YCOORD][0])+_pInfo.dRanges[YCOORD][0], _pInfo.dRanges[ZCOORD][0]-0.1*fabs(_pInfo.dRanges[ZCOORD][0]));
             else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
             {
-                return parser_plot_createMglPoint(nCoords, 0.0, 0.0, dRanges[z][0]-0.1*fabs(dRanges[z][0]), b3D);
+                return createMglPoint(nCoords, 0.0, 0.0, _pInfo.dRanges[z][0]-0.1*fabs(_pInfo.dRanges[z][0]), b3D);
             }
             else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
             {
-                return parser_plot_createMglPoint(nCoords, 0.0, 0.0, 0.0, b3D);
+                return createMglPoint(nCoords, 0.0, 0.0, 0.0, b3D);
             }
         }
         else
         {
             if (nCoords == PlotData::CARTESIAN)
-                return mglPoint(dRanges[XCOORD][1]+0.1*fabs(dRanges[XCOORD][1]), dRanges[YCOORD][1]+0.1*fabs(dRanges[YCOORD][1]), dRanges[ZCOORD][1]+0.1*fabs(dRanges[ZCOORD][1]));
+                return mglPoint(_pInfo.dRanges[XCOORD][1]+0.1*fabs(_pInfo.dRanges[XCOORD][1]), _pInfo.dRanges[YCOORD][1]+0.1*fabs(_pInfo.dRanges[YCOORD][1]), _pInfo.dRanges[ZCOORD][1]+0.1*fabs(_pInfo.dRanges[ZCOORD][1]));
             else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
             {
-                return parser_plot_createMglPoint(nCoords, dRanges[r][1]*1.1, 0.5*M_PI, dRanges[z][1]+0.1*fabs(dRanges[z][1]), b3D);
+                return createMglPoint(nCoords, _pInfo.dRanges[r][1]*1.1, 0.5*M_PI, _pInfo.dRanges[z][1]+0.1*fabs(_pInfo.dRanges[z][1]), b3D);
             }
             else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
             {
-                return parser_plot_createMglPoint(nCoords, 1.1*dRanges[r][1], 0.5*M_PI, M_PI, b3D);
+                return createMglPoint(nCoords, 1.1*_pInfo.dRanges[r][1], 0.5*M_PI, M_PI, b3D);
             }
         }
     }
@@ -5618,27 +5613,27 @@ mglPoint parser_CalcCutBox(double dPhi, double dRanges[3][2], int nEdge, int nCo
         if (!nEdge)
         {
             if (nCoords == PlotData::CARTESIAN)
-                return mglPoint(dRanges[XCOORD][0]-0.1*fabs(dRanges[XCOORD][0]), 0.5*(dRanges[YCOORD][1]-dRanges[YCOORD][0])+dRanges[YCOORD][0], dRanges[ZCOORD][0]-0.1*fabs(dRanges[ZCOORD][0]));
+                return mglPoint(_pInfo.dRanges[XCOORD][0]-0.1*fabs(_pInfo.dRanges[XCOORD][0]), 0.5*(_pInfo.dRanges[YCOORD][1]-_pInfo.dRanges[YCOORD][0])+_pInfo.dRanges[YCOORD][0], _pInfo.dRanges[ZCOORD][0]-0.1*fabs(_pInfo.dRanges[ZCOORD][0]));
             else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
             {
-                return parser_plot_createMglPoint(nCoords, 0.0, 0.5*M_PI, dRanges[z][0]-0.1*fabs(dRanges[z][0]), b3D);
+                return createMglPoint(nCoords, 0.0, 0.5*M_PI, _pInfo.dRanges[z][0]-0.1*fabs(_pInfo.dRanges[z][0]), b3D);
             }
             else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
             {
-                return parser_plot_createMglPoint(nCoords, 0.0, 0.5*M_PI, 0.0, b3D);
+                return createMglPoint(nCoords, 0.0, 0.5*M_PI, 0.0, b3D);
             }
         }
         else
         {
             if (nCoords == PlotData::CARTESIAN)
-                return mglPoint((0.5*(dRanges[XCOORD][1]-dRanges[XCOORD][0])+dRanges[XCOORD][0]), dRanges[YCOORD][1]+0.1*fabs(dRanges[YCOORD][1]), dRanges[ZCOORD][1]+0.1*fabs(dRanges[ZCOORD][1]));
+                return mglPoint((0.5*(_pInfo.dRanges[XCOORD][1]-_pInfo.dRanges[XCOORD][0])+_pInfo.dRanges[XCOORD][0]), _pInfo.dRanges[YCOORD][1]+0.1*fabs(_pInfo.dRanges[YCOORD][1]), _pInfo.dRanges[ZCOORD][1]+0.1*fabs(_pInfo.dRanges[ZCOORD][1]));
             else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
             {
-                return parser_plot_createMglPoint(nCoords, 1.1*dRanges[r][1], M_PI, dRanges[z][1]+0.1*fabs(dRanges[z][1]), b3D);
+                return createMglPoint(nCoords, 1.1*_pInfo.dRanges[r][1], M_PI, _pInfo.dRanges[z][1]+0.1*fabs(_pInfo.dRanges[z][1]), b3D);
             }
             else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
             {
-                return parser_plot_createMglPoint(nCoords, 1.1*dRanges[r][1], M_PI, M_PI, b3D);
+                return createMglPoint(nCoords, 1.1*_pInfo.dRanges[r][1], M_PI, M_PI, b3D);
             }
         }
     }
@@ -5647,27 +5642,27 @@ mglPoint parser_CalcCutBox(double dPhi, double dRanges[3][2], int nEdge, int nCo
         if (!nEdge)
         {
             if (nCoords == PlotData::CARTESIAN)
-                return mglPoint(dRanges[XCOORD][0]-0.1*fabs(dRanges[XCOORD][0]), dRanges[YCOORD][0]-0.1*fabs(dRanges[YCOORD][0]), dRanges[ZCOORD][0]-0.1*fabs(dRanges[ZCOORD][0]));
+                return mglPoint(_pInfo.dRanges[XCOORD][0]-0.1*fabs(_pInfo.dRanges[XCOORD][0]), _pInfo.dRanges[YCOORD][0]-0.1*fabs(_pInfo.dRanges[YCOORD][0]), _pInfo.dRanges[ZCOORD][0]-0.1*fabs(_pInfo.dRanges[ZCOORD][0]));
             else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
             {
-                return parser_plot_createMglPoint(nCoords, 0.0, M_PI, dRanges[z][0]-0.1*fabs(dRanges[z][0]), b3D);
+                return createMglPoint(nCoords, 0.0, M_PI, _pInfo.dRanges[z][0]-0.1*fabs(_pInfo.dRanges[z][0]), b3D);
             }
             else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
             {
-                return parser_plot_createMglPoint(nCoords, 0.0, M_PI, 0.0, b3D);
+                return createMglPoint(nCoords, 0.0, M_PI, 0.0, b3D);
             }
         }
         else
         {
             if (nCoords == PlotData::CARTESIAN)
-                return mglPoint(0.5*(dRanges[XCOORD][1]-dRanges[XCOORD][0])+dRanges[XCOORD][0], 0.5*(dRanges[YCOORD][1]-dRanges[YCOORD][0])+dRanges[YCOORD][0], dRanges[ZCOORD][1]+0.1*fabs(dRanges[ZCOORD][1]));
+                return mglPoint(0.5*(_pInfo.dRanges[XCOORD][1]-_pInfo.dRanges[XCOORD][0])+_pInfo.dRanges[XCOORD][0], 0.5*(_pInfo.dRanges[YCOORD][1]-_pInfo.dRanges[YCOORD][0])+_pInfo.dRanges[YCOORD][0], _pInfo.dRanges[ZCOORD][1]+0.1*fabs(_pInfo.dRanges[ZCOORD][1]));
             else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
             {
-                return parser_plot_createMglPoint(nCoords, 1.1*dRanges[r][1], 1.5*M_PI, dRanges[z][1]+0.1*fabs(dRanges[z][1]), b3D);
+                return createMglPoint(nCoords, 1.1*_pInfo.dRanges[r][1], 1.5*M_PI, _pInfo.dRanges[z][1]+0.1*fabs(_pInfo.dRanges[z][1]), b3D);
             }
             else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
             {
-                return parser_plot_createMglPoint(nCoords, 1.1*dRanges[r][1], 1.5*M_PI, M_PI, b3D);
+                return createMglPoint(nCoords, 1.1*_pInfo.dRanges[r][1], 1.5*M_PI, M_PI, b3D);
             }
         }
     }
@@ -5675,7 +5670,7 @@ mglPoint parser_CalcCutBox(double dPhi, double dRanges[3][2], int nEdge, int nCo
 }
 
 
-mglPoint parser_plot_createMglPoint(int nCoords, double r, double phi, double theta, bool b3D)
+mglPoint Plot::createMglPoint(int nCoords, double r, double phi, double theta, bool b3D)
 {
     if (b3D)
     {
@@ -5702,57 +5697,57 @@ mglPoint parser_plot_createMglPoint(int nCoords, double r, double phi, double th
 }
 
 
-double parser_getProjBackground(double dPhi, double dRanges[3][2], int nEdge)
+double Plot::getProjBackground(double dPhi, int nEdge)
 {
     if (dPhi >= 0.0 && dPhi < 90.0)
     {
         if (!nEdge)
         {
-            return dRanges[XCOORD][0];
+            return _pInfo.dRanges[XCOORD][0];
         }
         else
         {
-            return dRanges[YCOORD][1];
+            return _pInfo.dRanges[YCOORD][1];
         }
     }
     else if (dPhi >= 90.0 && dPhi < 180.0)
     {
         if (!nEdge)
         {
-            return dRanges[XCOORD][0];
+            return _pInfo.dRanges[XCOORD][0];
         }
         else
         {
-            return dRanges[YCOORD][0];
+            return _pInfo.dRanges[YCOORD][0];
         }
     }
     else if (dPhi >= 180.0 && dPhi < 270.0)
     {
         if (!nEdge)
         {
-            return dRanges[XCOORD][1];
+            return _pInfo.dRanges[XCOORD][1];
         }
         else
         {
-            return dRanges[YCOORD][0];
+            return _pInfo.dRanges[YCOORD][0];
         }
     }
     else
     {
         if (!nEdge)
         {
-            return dRanges[XCOORD][1];
+            return _pInfo.dRanges[XCOORD][1];
         }
         else
         {
-            return dRanges[YCOORD][1];
+            return _pInfo.dRanges[YCOORD][1];
         }
     }
     return 0.0;
 }
 
 
-string parser_getLegendStyle(const string& sLegend, const PlotData& _pData)
+string Plot::getLegendStyle(const string& sLegend, const PlotData& _pData)
 {
     if (_pData.getLegendStyle())
     {
@@ -5772,7 +5767,7 @@ string parser_getLegendStyle(const string& sLegend, const PlotData& _pData)
 }
 
 
-mglData parser_fmod(const mglData& _mData, double dDenominator)
+mglData Plot::fmod(const mglData& _mData, double dDenominator)
 {
     if (!getNN(_mData))
         return _mData;
@@ -5780,7 +5775,7 @@ mglData parser_fmod(const mglData& _mData, double dDenominator)
 
     for (long int i = 0; i < getNN(_mData); i++)
     {
-        _mReturn.a[i] = fmod(_mData.a[i], dDenominator);
+        _mReturn.a[i] = ::fmod(_mData.a[i], dDenominator);
         // Spezialfall fuer krummlinige Koordinaten: wandle negative Winkel in positive um
         if (_mReturn.a[i] < 0)
             _mReturn.a[i] += dDenominator;
@@ -5789,7 +5784,7 @@ mglData parser_fmod(const mglData& _mData, double dDenominator)
 }
 
 
-void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotData& _pData, PlotInfo& _pInfo)
+void Plot::CoordSettings(const PlotData& _pData)
 {
     if (_pData.getAxis())
     {
@@ -5798,17 +5793,17 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
             if (_pData.getTickTemplate(i).length())
             {
                 if (i < 3)
-                    _graph.SetTickTempl('x'+i, _pData.getTickTemplate(i).c_str());
+                    _graph->SetTickTempl('x'+i, _pData.getTickTemplate(i).c_str());
                 else
-                    _graph.SetTickTempl('c', _pData.getTickTemplate(i).c_str());
+                    _graph->SetTickTempl('c', _pData.getTickTemplate(i).c_str());
             }
             else if (max(_pInfo.dRanges[i][0], _pInfo.dRanges[i][1])/_pData.getAxisScale(i) < 1e-2
                 && max(_pInfo.dRanges[i][0], _pInfo.dRanges[i][1])/_pData.getAxisScale(i) >= 1e-3)
             {
                 if (i < 3)
-                    _graph.SetTickTempl('x'+i, "%g");
+                    _graph->SetTickTempl('x'+i, "%g");
                 else
-                    _graph.SetTickTempl('c', "%g");
+                    _graph->SetTickTempl('c', "%g");
             }
             if (_pData.getCustomTick(i).length())
             {
@@ -5875,7 +5870,7 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                             //cerr << _pInfo.dRanges[i][0] + (double)n*(_pInfo.dRanges[i][1]-_pInfo.dRanges[i][0])/(double)(nCount-1) << endl;
                         }
                     }
-                    _graph.SetTicksVal('x'+i, _mAxisRange, fromSystemCodePage(_pData.getCustomTick(i)).c_str());
+                    _graph->SetTicksVal('x'+i, _mAxisRange, fromSystemCodePage(_pData.getCustomTick(i)).c_str());
                 }
                 else
                 {
@@ -5894,7 +5889,7 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                             _mAxisRange.a[n] = _pInfo.dColorRanges[0] + (double)n*(_pInfo.dColorRanges[1]-_pInfo.dColorRanges[0])/(double)(nCount-1);
                         }
                     }
-                    _graph.SetTicksVal('c', _mAxisRange, fromSystemCodePage(_pData.getCustomTick(i)).c_str());
+                    _graph->SetTicksVal('c', _mAxisRange, fromSystemCodePage(_pData.getCustomTick(i)).c_str());
                 }
             }
         }
@@ -5909,57 +5904,57 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                         if (!isnan(_pData.getAddAxis(0).dMin) || !isnan(_pData.getAddAxis(1).dMin))
                         {
                             Axis _axis;
-                            _graph.SetOrigin(_pInfo.dRanges[0][1], _pInfo.dRanges[1][1]);
+                            _graph->SetOrigin(_pInfo.dRanges[0][1], _pInfo.dRanges[1][1]);
                             for (int i = 0; i < 2; i++)
                             {
                                 _axis = _pData.getAddAxis(i);
                                 if (_axis.sLabel.length())
                                 {
-                                    _graph.SetRange('x'+i, _axis.dMin, _axis.dMax);
+                                    _graph->SetRange('x'+i, _axis.dMin, _axis.dMax);
                                     if (!i)
-                                        _graph.Axis("x", _axis.sStyle.c_str());
+                                        _graph->Axis("x", _axis.sStyle.c_str());
                                     else
-                                        _graph.Axis("y", _axis.sStyle.c_str());
-                                    _graph.Label('x'+i, fromSystemCodePage("#"+_axis.sStyle+"{"+_axis.sLabel+"}").c_str(), 0);
+                                        _graph->Axis("y", _axis.sStyle.c_str());
+                                    _graph->Label('x'+i, fromSystemCodePage("#"+_axis.sStyle+"{"+_axis.sLabel+"}").c_str(), 0);
                                 }
                             }
-                            _graph.SetRanges(_pInfo.dRanges[0][0], _pInfo.dRanges[0][1], _pInfo.dRanges[1][0], _pInfo.dRanges[1][1], _pInfo.dRanges[2][0], _pInfo.dRanges[2][1]);
-                            _graph.SetOrigin(_pInfo.dRanges[0][0], _pInfo.dRanges[1][0]);
+                            _graph->SetRanges(_pInfo.dRanges[0][0], _pInfo.dRanges[0][1], _pInfo.dRanges[1][0], _pInfo.dRanges[1][1], _pInfo.dRanges[2][0], _pInfo.dRanges[2][1]);
+                            _graph->SetOrigin(_pInfo.dRanges[0][0], _pInfo.dRanges[1][0]);
                         }
-                        _graph.Axis("xy");
+                        _graph->Axis("xy");
                     }
                 }
                 else
                 {
                     if (_pData.getCoords() == PlotData::POLAR_RP || _pData.getCoords() == PlotData::SPHERICAL_RP)
                     {
-                        _graph.SetOrigin(_pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(XCOORD), 0.0);
-                        _graph.SetFunc(parser_CoordFunc("x*cos(pi*y*$PS$)", _pData.getAxisScale(YCOORD)).c_str(), parser_CoordFunc("x*sin(pi*y*$PS$)", _pData.getAxisScale(YCOORD)).c_str());
-                        _graph.SetRange('y', 0.0, APPR_TWO/_pData.getAxisScale(YCOORD));
-                        _graph.SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(XCOORD));
+                        _graph->SetOrigin(_pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(XCOORD), 0.0);
+                        _graph->SetFunc(CoordFunc("x*cos(pi*y*$PS$)", _pData.getAxisScale(YCOORD)).c_str(), CoordFunc("x*sin(pi*y*$PS$)", _pData.getAxisScale(YCOORD)).c_str());
+                        _graph->SetRange('y', 0.0, APPR_TWO/_pData.getAxisScale(YCOORD));
+                        _graph->SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(XCOORD));
                     }
                     else if (_pData.getCoords() != PlotData::CARTESIAN)
                     {
-                        _graph.SetOrigin(0.0, _pInfo.dRanges[YCOORD][1]/_pData.getAxisScale(YCOORD));
-                        _graph.SetFunc(parser_CoordFunc("y*cos(pi*x*$PS$)", _pData.getAxisScale(XCOORD)).c_str(), parser_CoordFunc("y*sin(pi*x*$PS$)", _pData.getAxisScale(XCOORD)).c_str());
-                        _graph.SetRange('x', 0.0, APPR_TWO/_pData.getAxisScale(XCOORD));
-                        _graph.SetRange('y', 0.0, _pInfo.dRanges[YCOORD][1]/_pData.getAxisScale(YCOORD));
+                        _graph->SetOrigin(0.0, _pInfo.dRanges[YCOORD][1]/_pData.getAxisScale(YCOORD));
+                        _graph->SetFunc(CoordFunc("y*cos(pi*x*$PS$)", _pData.getAxisScale(XCOORD)).c_str(), CoordFunc("y*sin(pi*x*$PS$)", _pData.getAxisScale(XCOORD)).c_str());
+                        _graph->SetRange('x', 0.0, APPR_TWO/_pData.getAxisScale(XCOORD));
+                        _graph->SetRange('y', 0.0, _pInfo.dRanges[YCOORD][1]/_pData.getAxisScale(YCOORD));
                     }
 
-                    parser_plot_applyGrid(_graph, _pData);
+                    applyGrid(_pData);
 
                     if (_pData.getCoords() == PlotData::POLAR_RP || _pData.getCoords() == PlotData::SPHERICAL_RP)
                     {
-                        _graph.SetFunc("x*cos(y)","x*sin(y)");
-                        _graph.SetRange('y', 0.0, 2.0*M_PI);
-                        _graph.SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]);
+                        _graph->SetFunc("x*cos(y)","x*sin(y)");
+                        _graph->SetRange('y', 0.0, 2.0*M_PI);
+                        _graph->SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]);
                     }
                     else if (_pData.getCoords() != PlotData::CARTESIAN)
                     {
-                        _graph.SetFunc("y*cos(x)","y*sin(x)");
-                        _mAxisVals[0] = parser_fmod(_mAxisVals[0], 2.0*M_PI);
-                        _graph.SetRange('x', 0.0, 2.0*M_PI);
-                        _graph.SetRange('y', 0.0, _pInfo.dRanges[YCOORD][1]);
+                        _graph->SetFunc("y*cos(x)","y*sin(x)");
+                        _mAxisVals[0] = fmod(_mAxisVals[0], 2.0*M_PI);
+                        _graph->SetRange('x', 0.0, 2.0*M_PI);
+                        _graph->SetRange('y', 0.0, _pInfo.dRanges[YCOORD][1]);
                     }
 
                     if (!_pData.getSchematic()
@@ -5967,15 +5962,15 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                         || matchParams(_pInfo.sPlotParams, "ylabel", '=')
                         || matchParams(_pInfo.sPlotParams, "zlabel", '='))
                     {
-                        _graph.Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), 0.25);
+                        _graph->Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), 0.25);
                         if (_pData.getCoords() == PlotData::POLAR_RP || _pData.getCoords() == PlotData::SPHERICAL_RP)
-                            _graph.Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), 0.0);
+                            _graph->Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), 0.0);
                         else
-                            _graph.Label('y', fromSystemCodePage(_pData.getzLabel()).c_str(), 0.0);
+                            _graph->Label('y', fromSystemCodePage(_pData.getzLabel()).c_str(), 0.0);
                     }
 
                     if (_pData.getBars() || _pData.getArea())
-                        _graph.SetOrigin(0.0,0.0);
+                        _graph->SetOrigin(0.0,0.0);
                     _pInfo.dRanges[XCOORD][0] = 0.0;
                     _pInfo.dRanges[XCOORD][1] = 2*M_PI;
                     _pInfo.dRanges[YCOORD][0] = 0.0;
@@ -5985,50 +5980,50 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
             {
                 if (_pData.getCoords() == PlotData::POLAR_PZ || _pData.getCoords() == PlotData::POLAR_RP || _pData.getCoords() == PlotData::POLAR_RZ)
                 {
-                    _graph.SetOrigin(_pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(), 0.0, _pInfo.dRanges[ZCOORD][0]/_pData.getAxisScale(2));
-                    _graph.SetFunc(parser_CoordFunc("x*cos(pi*y*$PS$)", _pData.getAxisScale(1)).c_str(), parser_CoordFunc("x*sin(pi*y*$PS$)", _pData.getAxisScale(1)).c_str(), "z");
-                    _graph.SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale());
-                    _graph.SetRange('y', 0.0, 1.9999999/_pData.getAxisScale(1));
-                    _graph.SetRange('z', _pInfo.dRanges[ZCOORD][0]/_pData.getAxisScale(2), _pInfo.dRanges[ZCOORD][1]/_pData.getAxisScale(2));
+                    _graph->SetOrigin(_pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(), 0.0, _pInfo.dRanges[ZCOORD][0]/_pData.getAxisScale(2));
+                    _graph->SetFunc(CoordFunc("x*cos(pi*y*$PS$)", _pData.getAxisScale(1)).c_str(), CoordFunc("x*sin(pi*y*$PS$)", _pData.getAxisScale(1)).c_str(), "z");
+                    _graph->SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale());
+                    _graph->SetRange('y', 0.0, 1.9999999/_pData.getAxisScale(1));
+                    _graph->SetRange('z', _pInfo.dRanges[ZCOORD][0]/_pData.getAxisScale(2), _pInfo.dRanges[ZCOORD][1]/_pData.getAxisScale(2));
                     if (!_pData.getSchematic())
-                        _graph.Axis();
+                        _graph->Axis();
                     else
                     {
-                        _graph.SetTickLen(1e-20);
-                        _graph.Axis("_");
+                        _graph->SetTickLen(1e-20);
+                        _graph->Axis("_");
                     }
-                    _graph.Box();
+                    _graph->Box();
                     if (_pInfo.b3DVect && _pData.getGrid())
-                        _graph.Grid("xyzt", _pData.getFineGridStyle().c_str());
+                        _graph->Grid("xyzt", _pData.getFineGridStyle().c_str());
                     else if (_pData.getGrid() == 1)
-                        _graph.Grid("xyzt", _pData.getGridStyle().c_str());
+                        _graph->Grid("xyzt", _pData.getGridStyle().c_str());
                     else if (_pData.getGrid() == 2)
                     {
-                        _graph.Grid("xyzt!", _pData.getGridStyle().c_str());
-                        _graph.Grid("xyzt", _pData.getFineGridStyle().c_str());
+                        _graph->Grid("xyzt!", _pData.getGridStyle().c_str());
+                        _graph->Grid("xyzt", _pData.getFineGridStyle().c_str());
                     }
                     if (_mAxisVals[1].nx)
                     {
                         for (int y = 0; y < _pInfo.nSamples; y++)
                         {
-                            _mAxisVals[1].a[y] = fmod(_mAxisVals[1].a[y],2.0*M_PI);
+                            _mAxisVals[1].a[y] = ::fmod(_mAxisVals[1].a[y],2.0*M_PI);
                         }
                     }
-                    _graph.SetFunc("x*cos(y)","x*sin(y)","z");
-                    _graph.SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]);
-                    _graph.SetRange('y', 0.0, 2.0*M_PI);
-                    _graph.SetRange('z', _pInfo.dRanges[ZCOORD][0], _pInfo.dRanges[ZCOORD][1]);
+                    _graph->SetFunc("x*cos(y)","x*sin(y)","z");
+                    _graph->SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]);
+                    _graph->SetRange('y', 0.0, 2.0*M_PI);
+                    _graph->SetRange('z', _pInfo.dRanges[ZCOORD][0], _pInfo.dRanges[ZCOORD][1]);
                     if (!_pData.getSchematic()
                         || matchParams(_pInfo.sPlotParams, "xlabel", '=')
                         || matchParams(_pInfo.sPlotParams, "ylabel", '=')
                         || matchParams(_pInfo.sPlotParams, "zlabel", '='))
                     {
-                        _graph.Label('x', fromSystemCodePage(_pData.getzLabel()).c_str(), -0.5);
-                        _graph.Label('y', fromSystemCodePage(_pData.getxLabel()).c_str(), (_pData.getRotateAngle(1)-225.0)/180.0); //-0.65
-                        _graph.Label('z', fromSystemCodePage(_pData.getyLabel()).c_str(), 0.0);
+                        _graph->Label('x', fromSystemCodePage(_pData.getzLabel()).c_str(), -0.5);
+                        _graph->Label('y', fromSystemCodePage(_pData.getxLabel()).c_str(), (_pData.getRotateAngle(1)-225.0)/180.0); //-0.65
+                        _graph->Label('z', fromSystemCodePage(_pData.getyLabel()).c_str(), 0.0);
                     }
                     if (_pData.getBars() || _pData.getArea())
-                        _graph.SetOrigin(0.0,0.0,_pInfo.dRanges[ZCOORD][0]);
+                        _graph->SetOrigin(0.0,0.0,_pInfo.dRanges[ZCOORD][0]);
                     _pInfo.dRanges[XCOORD][0] = 0.0;
                     _pInfo.dRanges[YCOORD][0] = 0.0;
                     _pInfo.dRanges[YCOORD][1] = 2.0*M_PI;
@@ -6036,49 +6031,49 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                 }
                 else if (_pData.getCoords() == PlotData::SPHERICAL_PT || _pData.getCoords() == PlotData::SPHERICAL_RP || _pData.getCoords() == PlotData::SPHERICAL_RT)
                 {
-                    _graph.SetOrigin(_pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(), 0.0, 0.5/_pData.getAxisScale(2));
-                    _graph.SetFunc(parser_CoordFunc("x*cos(pi*y*$PS$)*sin(pi*z*$TS$)", _pData.getAxisScale(1), _pData.getAxisScale(2)).c_str(), parser_CoordFunc("x*sin(pi*y*$PS$)*sin(pi*z*$TS$)", _pData.getAxisScale(1), _pData.getAxisScale(2)).c_str(), parser_CoordFunc("x*cos(pi*z*$PS$)", 1.0, _pData.getAxisScale(2)).c_str());
-                    _graph.SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale());
-                    _graph.SetRange('y', 0.0, 1.9999999/_pData.getAxisScale(1));
-                    _graph.SetRange('z', 0.0, 0.9999999/_pData.getAxisScale(2));
+                    _graph->SetOrigin(_pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(), 0.0, 0.5/_pData.getAxisScale(2));
+                    _graph->SetFunc(CoordFunc("x*cos(pi*y*$PS$)*sin(pi*z*$TS$)", _pData.getAxisScale(1), _pData.getAxisScale(2)).c_str(), CoordFunc("x*sin(pi*y*$PS$)*sin(pi*z*$TS$)", _pData.getAxisScale(1), _pData.getAxisScale(2)).c_str(), CoordFunc("x*cos(pi*z*$PS$)", 1.0, _pData.getAxisScale(2)).c_str());
+                    _graph->SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale());
+                    _graph->SetRange('y', 0.0, 1.9999999/_pData.getAxisScale(1));
+                    _graph->SetRange('z', 0.0, 0.9999999/_pData.getAxisScale(2));
                     if (!_pData.getSchematic())
-                        _graph.Axis();
+                        _graph->Axis();
                     else
                     {
-                        _graph.SetTickLen(1e-20);
-                        _graph.Axis("_");
+                        _graph->SetTickLen(1e-20);
+                        _graph->Axis("_");
                     }
-                    _graph.Box();
+                    _graph->Box();
                     if (_pInfo.b3DVect && _pData.getGrid())
-                        _graph.Grid("xyzt", _pData.getFineGridStyle().c_str());
+                        _graph->Grid("xyzt", _pData.getFineGridStyle().c_str());
                     else if (_pData.getGrid() == 1)
-                        _graph.Grid("xyzt", _pData.getGridStyle().c_str());
+                        _graph->Grid("xyzt", _pData.getGridStyle().c_str());
                     else if (_pData.getGrid() == 2)
                     {
-                        _graph.Grid("xyzt!", _pData.getGridStyle().c_str());
-                        _graph.Grid("xyzt", _pData.getFineGridStyle().c_str());
+                        _graph->Grid("xyzt!", _pData.getGridStyle().c_str());
+                        _graph->Grid("xyzt", _pData.getFineGridStyle().c_str());
                     }
-                    _graph.SetFunc("x*cos(y)*sin(z)","x*sin(y)*sin(z)","x*cos(z)");
-                    _graph.SetOrigin(_pInfo.dRanges[XCOORD][1], 0.0, 0.5*M_PI);
+                    _graph->SetFunc("x*cos(y)*sin(z)","x*sin(y)*sin(z)","x*cos(z)");
+                    _graph->SetOrigin(_pInfo.dRanges[XCOORD][1], 0.0, 0.5*M_PI);
                     if (_mAxisVals[1].nx && _mAxisVals[2].nx)
                     {
-                        _mAxisVals[1] = parser_fmod(_mAxisVals[1], 2.0*M_PI);
-                        _mAxisVals[2] = parser_fmod(_mAxisVals[2], 1.0*M_PI);
+                        _mAxisVals[1] = fmod(_mAxisVals[1], 2.0*M_PI);
+                        _mAxisVals[2] = fmod(_mAxisVals[2], 1.0*M_PI);
                     }
-                    _graph.SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]);
-                    _graph.SetRange('y', 0.0, 2.0*M_PI);
-                    _graph.SetRange('z', 0.0, 1.0*M_PI);
+                    _graph->SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]);
+                    _graph->SetRange('y', 0.0, 2.0*M_PI);
+                    _graph->SetRange('z', 0.0, 1.0*M_PI);
                     if (!_pData.getSchematic()
                         || matchParams(_pInfo.sPlotParams, "xlabel", '=')
                         || matchParams(_pInfo.sPlotParams, "ylabel", '=')
                         || matchParams(_pInfo.sPlotParams, "zlabel", '='))
                     {
-                        _graph.Label('x', fromSystemCodePage(_pData.getzLabel()).c_str(), -0.4);
-                        _graph.Label('y', fromSystemCodePage(_pData.getxLabel()).c_str(), (_pData.getRotateAngle(1)-225.0)/180.0); //-0.7
-                        _graph.Label('z', fromSystemCodePage(_pData.getyLabel()).c_str(), -0.9); // -0.4
+                        _graph->Label('x', fromSystemCodePage(_pData.getzLabel()).c_str(), -0.4);
+                        _graph->Label('y', fromSystemCodePage(_pData.getxLabel()).c_str(), (_pData.getRotateAngle(1)-225.0)/180.0); //-0.7
+                        _graph->Label('z', fromSystemCodePage(_pData.getyLabel()).c_str(), -0.9); // -0.4
                     }
                     if (_pData.getBars() || _pData.getArea())
-                        _graph.SetOrigin(0.0,0.0,0.5*M_PI);
+                        _graph->SetOrigin(0.0,0.0,0.5*M_PI);
                     _pInfo.dRanges[XCOORD][0] = 0.0;
                     //dRanges[XCOORD][1] = 2.0;
                     _pInfo.dRanges[YCOORD][0] = 0.0;
@@ -6089,40 +6084,40 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                 else
                 {
                     if (!_pData.getSchematic())
-                        _graph.Axis("xyz");
+                        _graph->Axis("xyz");
                 }
             }
             else if (_pInfo.b2DVect) /// vect
             {
                 if (_pData.getCoords() != PlotData::CARTESIAN)
                 {
-                    _graph.SetOrigin(_pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(), 0.0);
-                    _graph.SetFunc(parser_CoordFunc("x*cos(pi*y*$PS$)", _pData.getAxisScale(1)).c_str(), parser_CoordFunc("x*sin(pi*y*$PS$)", _pData.getAxisScale(1)).c_str());
-                    _graph.SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale());
-                    _graph.SetRange('y', 0.0, 1.9999999/_pData.getAxisScale(1));
+                    _graph->SetOrigin(_pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(), 0.0);
+                    _graph->SetFunc(CoordFunc("x*cos(pi*y*$PS$)", _pData.getAxisScale(1)).c_str(), CoordFunc("x*sin(pi*y*$PS$)", _pData.getAxisScale(1)).c_str());
+                    _graph->SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale());
+                    _graph->SetRange('y', 0.0, 1.9999999/_pData.getAxisScale(1));
                     if (!_pData.getSchematic())
-                        _graph.Axis("xy");
+                        _graph->Axis("xy");
                     else
                     {
-                        _graph.SetTickLen(1e-20);
-                        _graph.Axis("xy_");
+                        _graph->SetTickLen(1e-20);
+                        _graph->Axis("xy_");
                     }
-                    _graph.Box();
+                    _graph->Box();
                     if (_pData.getGrid() == 1)
                     {
-                        _graph.Grid("xyzt", _pData.getFineGridStyle().c_str());
+                        _graph->Grid("xyzt", _pData.getFineGridStyle().c_str());
                     }
-                    _graph.SetFunc("x*cos(y)","x*sin(y)");
-                    _mAxisVals[1] = parser_fmod(_mAxisVals[1], 2.0*M_PI);
-                    _graph.SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]);
-                    _graph.SetRange('y', 0.0, 2.0*M_PI);
+                    _graph->SetFunc("x*cos(y)","x*sin(y)");
+                    _mAxisVals[1] = fmod(_mAxisVals[1], 2.0*M_PI);
+                    _graph->SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]);
+                    _graph->SetRange('y', 0.0, 2.0*M_PI);
                     if (!_pData.getSchematic()
                         || matchParams(_pInfo.sPlotParams, "xlabel", '=')
                         || matchParams(_pInfo.sPlotParams, "ylabel", '=')
                         || matchParams(_pInfo.sPlotParams, "zlabel", '='))
                     {
-                        _graph.Label('x', fromSystemCodePage(_pData.getzLabel()).c_str(), 0.0);
-                        _graph.Label('y', fromSystemCodePage(_pData.getxLabel()).c_str(), 0.25);
+                        _graph->Label('x', fromSystemCodePage(_pData.getzLabel()).c_str(), 0.0);
+                        _graph->Label('y', fromSystemCodePage(_pData.getxLabel()).c_str(), 0.25);
                     }
                     _pInfo.dRanges[XCOORD][0] = 0.0;
                     //dRanges[XCOORD][1] = 2.0;
@@ -6134,7 +6129,7 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                 else
                 {
                     if (!_pData.getSchematic())
-                        _graph.Axis("xy");
+                        _graph->Axis("xy");
                 }
             }
             else /// 2d plots
@@ -6143,21 +6138,21 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                 {
                     case PlotData::POLAR_PZ:
                     {
-                        _graph.SetOrigin(0.0, _pInfo.dRanges[YCOORD][0]/_pData.getAxisScale(YCOORD), _pInfo.dRanges[ZCOORD][1]/_pData.getAxisScale(ZCOORD));
-                        _graph.SetFunc(parser_CoordFunc("z*cos(pi*x*$PS$)", _pData.getAxisScale(XCOORD)).c_str(), parser_CoordFunc("z*sin(pi*x*$PS$)", _pData.getAxisScale(XCOORD)).c_str(), "y");
+                        _graph->SetOrigin(0.0, _pInfo.dRanges[YCOORD][0]/_pData.getAxisScale(YCOORD), _pInfo.dRanges[ZCOORD][1]/_pData.getAxisScale(ZCOORD));
+                        _graph->SetFunc(CoordFunc("z*cos(pi*x*$PS$)", _pData.getAxisScale(XCOORD)).c_str(), CoordFunc("z*sin(pi*x*$PS$)", _pData.getAxisScale(XCOORD)).c_str(), "y");
 
-                        _graph.SetRange('x', 0.0, APPR_TWO/_pData.getAxisScale(XCOORD));
-                        _graph.SetRange('y', _pInfo.dRanges[YCOORD][0]/_pData.getAxisScale(YCOORD), _pInfo.dRanges[YCOORD][1]/_pData.getAxisScale(YCOORD));
-                        _graph.SetRange('z', 0.0, _pInfo.dRanges[ZCOORD][1]/_pData.getAxisScale(ZCOORD));
+                        _graph->SetRange('x', 0.0, APPR_TWO/_pData.getAxisScale(XCOORD));
+                        _graph->SetRange('y', _pInfo.dRanges[YCOORD][0]/_pData.getAxisScale(YCOORD), _pInfo.dRanges[YCOORD][1]/_pData.getAxisScale(YCOORD));
+                        _graph->SetRange('z', 0.0, _pInfo.dRanges[ZCOORD][1]/_pData.getAxisScale(ZCOORD));
 
-                        parser_plot_applyGrid(_graph, _pData);
+                        applyGrid(_pData);
 
-                        _graph.SetFunc("z*cos(x)","z*sin(x)","y");
-                        _mAxisVals[0] = parser_fmod(_mAxisVals[0], 2.0*M_PI);
+                        _graph->SetFunc("z*cos(x)","z*sin(x)","y");
+                        _mAxisVals[0] = fmod(_mAxisVals[0], 2.0*M_PI);
 
-                        _graph.SetRange('x', 0.0, 2.0*M_PI);
-                        _graph.SetRange('y', _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[YCOORD][1]);
-                        _graph.SetRange('z', 0.0, _pInfo.dRanges[ZCOORD][1]);
+                        _graph->SetRange('x', 0.0, 2.0*M_PI);
+                        _graph->SetRange('y', _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[YCOORD][1]);
+                        _graph->SetRange('z', 0.0, _pInfo.dRanges[ZCOORD][1]);
 
                         _pInfo.dRanges[XCOORD][0] = 0.0;
                         _pInfo.dRanges[XCOORD][1] = 2.0*M_PI;
@@ -6166,21 +6161,21 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                     }
                     case PlotData::POLAR_RP:
                     {
-                        _graph.SetOrigin(_pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(XCOORD), 0.0, _pInfo.dRanges[ZCOORD][0]/_pData.getAxisScale(ZCOORD));
-                        _graph.SetFunc(parser_CoordFunc("x*cos(pi*y*$PS$)", _pData.getAxisScale(YCOORD)).c_str(), parser_CoordFunc("x*sin(pi*y*$PS$)", _pData.getAxisScale(YCOORD)).c_str(), "z");
+                        _graph->SetOrigin(_pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(XCOORD), 0.0, _pInfo.dRanges[ZCOORD][0]/_pData.getAxisScale(ZCOORD));
+                        _graph->SetFunc(CoordFunc("x*cos(pi*y*$PS$)", _pData.getAxisScale(YCOORD)).c_str(), CoordFunc("x*sin(pi*y*$PS$)", _pData.getAxisScale(YCOORD)).c_str(), "z");
 
-                        _graph.SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(XCOORD));
-                        _graph.SetRange('y', 0.0, APPR_TWO/_pData.getAxisScale(YCOORD));
-                        _graph.SetRange('z', _pInfo.dRanges[ZCOORD][0]/_pData.getAxisScale(ZCOORD), _pInfo.dRanges[ZCOORD][1]/_pData.getAxisScale(ZCOORD));
+                        _graph->SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(XCOORD));
+                        _graph->SetRange('y', 0.0, APPR_TWO/_pData.getAxisScale(YCOORD));
+                        _graph->SetRange('z', _pInfo.dRanges[ZCOORD][0]/_pData.getAxisScale(ZCOORD), _pInfo.dRanges[ZCOORD][1]/_pData.getAxisScale(ZCOORD));
 
-                        parser_plot_applyGrid(_graph, _pData);
+                        applyGrid(_pData);
 
-                        _graph.SetFunc("x*cos(y)","x*sin(y)","z");
-                        _mAxisVals[1] = parser_fmod(_mAxisVals[1], 2.0*M_PI);
+                        _graph->SetFunc("x*cos(y)","x*sin(y)","z");
+                        _mAxisVals[1] = fmod(_mAxisVals[1], 2.0*M_PI);
 
-                        _graph.SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]);
-                        _graph.SetRange('y', 0.0, 2.0*M_PI);
-                        _graph.SetRange('z', _pInfo.dRanges[ZCOORD][0], _pInfo.dRanges[ZCOORD][1]);
+                        _graph->SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]);
+                        _graph->SetRange('y', 0.0, 2.0*M_PI);
+                        _graph->SetRange('z', _pInfo.dRanges[ZCOORD][0], _pInfo.dRanges[ZCOORD][1]);
 
                         _pInfo.dRanges[XCOORD][0] = 0.0;
                         _pInfo.dRanges[YCOORD][1] = 2.0*M_PI;
@@ -6189,20 +6184,20 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                     }
                     case PlotData::POLAR_RZ:
                     {
-                        _graph.SetOrigin(_pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(XCOORD), _pInfo.dRanges[YCOORD][0]/_pData.getAxisScale(YCOORD), 0.0);
-                        _graph.SetFunc(parser_CoordFunc("x*cos(pi*z*$PS$)", _pData.getAxisScale(ZCOORD)).c_str(), parser_CoordFunc("x*sin(pi*z*$PS$)", _pData.getAxisScale(ZCOORD)).c_str(), "y");
+                        _graph->SetOrigin(_pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(XCOORD), _pInfo.dRanges[YCOORD][0]/_pData.getAxisScale(YCOORD), 0.0);
+                        _graph->SetFunc(CoordFunc("x*cos(pi*z*$PS$)", _pData.getAxisScale(ZCOORD)).c_str(), CoordFunc("x*sin(pi*z*$PS$)", _pData.getAxisScale(ZCOORD)).c_str(), "y");
 
-                        _graph.SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(XCOORD));
-                        _graph.SetRange('y', _pInfo.dRanges[YCOORD][0]/_pData.getAxisScale(YCOORD), _pInfo.dRanges[YCOORD][1]/_pData.getAxisScale(YCOORD));
-                        _graph.SetRange('z', 0.0, APPR_TWO/_pData.getAxisScale(ZCOORD));
+                        _graph->SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(XCOORD));
+                        _graph->SetRange('y', _pInfo.dRanges[YCOORD][0]/_pData.getAxisScale(YCOORD), _pInfo.dRanges[YCOORD][1]/_pData.getAxisScale(YCOORD));
+                        _graph->SetRange('z', 0.0, APPR_TWO/_pData.getAxisScale(ZCOORD));
 
-                        parser_plot_applyGrid(_graph, _pData);
+                        applyGrid(_pData);
 
-                        _graph.SetFunc("x*cos(z)","x*sin(z)","y");
+                        _graph->SetFunc("x*cos(z)","x*sin(z)","y");
 
-                        _graph.SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]);
-                        _graph.SetRange('y', _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[YCOORD][1]);
-                        _graph.SetRange('z', 0.0, 2.0*M_PI);
+                        _graph->SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]);
+                        _graph->SetRange('y', _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[YCOORD][1]);
+                        _graph->SetRange('z', 0.0, 2.0*M_PI);
 
                         _pInfo.dRanges[XCOORD][0] = 0.0;
                         _pInfo.dRanges[ZCOORD][0] = 0.0;
@@ -6211,24 +6206,24 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                     }
                     case PlotData::SPHERICAL_PT:
                     {
-                        _graph.SetOrigin(0.0, 0.5/_pData.getAxisScale(YCOORD), _pInfo.dRanges[ZCOORD][1]/_pData.getAxisScale(ZCOORD));
-                        _graph.SetFunc(parser_CoordFunc("z*cos(pi*x*$PS$)*sin(pi*y*$TS$)", _pData.getAxisScale(XCOORD), _pData.getAxisScale(YCOORD)).c_str(), parser_CoordFunc("z*sin(pi*x*$PS$)*sin(pi*y*$TS$)", _pData.getAxisScale(XCOORD), _pData.getAxisScale(YCOORD)).c_str(), parser_CoordFunc("z*cos(pi*y*$TS$)", 1.0, _pData.getAxisScale(YCOORD)).c_str());
+                        _graph->SetOrigin(0.0, 0.5/_pData.getAxisScale(YCOORD), _pInfo.dRanges[ZCOORD][1]/_pData.getAxisScale(ZCOORD));
+                        _graph->SetFunc(CoordFunc("z*cos(pi*x*$PS$)*sin(pi*y*$TS$)", _pData.getAxisScale(XCOORD), _pData.getAxisScale(YCOORD)).c_str(), CoordFunc("z*sin(pi*x*$PS$)*sin(pi*y*$TS$)", _pData.getAxisScale(XCOORD), _pData.getAxisScale(YCOORD)).c_str(), CoordFunc("z*cos(pi*y*$TS$)", 1.0, _pData.getAxisScale(YCOORD)).c_str());
 
-                        _graph.SetRange('x', 0.0, APPR_TWO/_pData.getAxisScale(XCOORD));
-                        _graph.SetRange('y', 0.0, APPR_ONE/_pData.getAxisScale(YCOORD));
-                        _graph.SetRange('z', 0.0, _pInfo.dRanges[ZCOORD][1]/_pData.getAxisScale(ZCOORD));
+                        _graph->SetRange('x', 0.0, APPR_TWO/_pData.getAxisScale(XCOORD));
+                        _graph->SetRange('y', 0.0, APPR_ONE/_pData.getAxisScale(YCOORD));
+                        _graph->SetRange('z', 0.0, _pInfo.dRanges[ZCOORD][1]/_pData.getAxisScale(ZCOORD));
 
-                        parser_plot_applyGrid(_graph, _pData);
+                        applyGrid(_pData);
 
-                        _graph.SetFunc("z*cos(x)*sin(y)", "z*sin(x)*sin(y)", "z*cos(y)");
-                        _graph.SetOrigin(0.0, 0.5*M_PI, _pInfo.dRanges[ZCOORD][1]);
+                        _graph->SetFunc("z*cos(x)*sin(y)", "z*sin(x)*sin(y)", "z*cos(y)");
+                        _graph->SetOrigin(0.0, 0.5*M_PI, _pInfo.dRanges[ZCOORD][1]);
 
-                        _mAxisVals[0] = parser_fmod(_mAxisVals[0], 2.0*M_PI);
-                        _mAxisVals[1] = parser_fmod(_mAxisVals[1], 1.0*M_PI);
+                        _mAxisVals[0] = fmod(_mAxisVals[0], 2.0*M_PI);
+                        _mAxisVals[1] = fmod(_mAxisVals[1], 1.0*M_PI);
 
-                        _graph.SetRange('x', 0.0, 2.0*M_PI);
-                        _graph.SetRange('y', 0.0, 1.0*M_PI);
-                        _graph.SetRange('z', 0.0, _pInfo.dRanges[ZCOORD][1]);
+                        _graph->SetRange('x', 0.0, 2.0*M_PI);
+                        _graph->SetRange('y', 0.0, 1.0*M_PI);
+                        _graph->SetRange('z', 0.0, _pInfo.dRanges[ZCOORD][1]);
 
                         _pInfo.dRanges[XCOORD][0] = 0.0;
                         _pInfo.dRanges[XCOORD][1] = 2.0*M_PI;
@@ -6239,23 +6234,23 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                     }
                     case PlotData::SPHERICAL_RP:
                     {
-                        _graph.SetOrigin(_pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(XCOORD), 0.0, 0.5/_pData.getAxisScale(ZCOORD));
-                        _graph.SetFunc(parser_CoordFunc("x*cos(pi*y*$PS$)*sin(pi*z*$TS$)", _pData.getAxisScale(YCOORD), _pData.getAxisScale(ZCOORD)).c_str(), parser_CoordFunc("x*sin(pi*y*$PS$)*sin(pi*z*$TS$)", _pData.getAxisScale(YCOORD), _pData.getAxisScale(ZCOORD)).c_str(), parser_CoordFunc("x*cos(pi*z*$TS$)", 1.0, _pData.getAxisScale(ZCOORD)).c_str());
+                        _graph->SetOrigin(_pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(XCOORD), 0.0, 0.5/_pData.getAxisScale(ZCOORD));
+                        _graph->SetFunc(CoordFunc("x*cos(pi*y*$PS$)*sin(pi*z*$TS$)", _pData.getAxisScale(YCOORD), _pData.getAxisScale(ZCOORD)).c_str(), CoordFunc("x*sin(pi*y*$PS$)*sin(pi*z*$TS$)", _pData.getAxisScale(YCOORD), _pData.getAxisScale(ZCOORD)).c_str(), CoordFunc("x*cos(pi*z*$TS$)", 1.0, _pData.getAxisScale(ZCOORD)).c_str());
 
-                        _graph.SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(XCOORD));
-                        _graph.SetRange('y', 0.0, APPR_TWO/_pData.getAxisScale(YCOORD));
-                        _graph.SetRange('z', 0.0, APPR_ONE/_pData.getAxisScale(ZCOORD));
+                        _graph->SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(XCOORD));
+                        _graph->SetRange('y', 0.0, APPR_TWO/_pData.getAxisScale(YCOORD));
+                        _graph->SetRange('z', 0.0, APPR_ONE/_pData.getAxisScale(ZCOORD));
 
-                        parser_plot_applyGrid(_graph, _pData);
+                        applyGrid(_pData);
 
-                        _graph.SetFunc("x*cos(y)*sin(z)", "x*sin(y)*sin(z)", "x*cos(z)");
-                        _graph.SetOrigin(_pInfo.dRanges[XCOORD][1], 0.0, 0.5*M_PI);
+                        _graph->SetFunc("x*cos(y)*sin(z)", "x*sin(y)*sin(z)", "x*cos(z)");
+                        _graph->SetOrigin(_pInfo.dRanges[XCOORD][1], 0.0, 0.5*M_PI);
 
-                        _mAxisVals[1] = parser_fmod(_mAxisVals[1], 2.0*M_PI);
+                        _mAxisVals[1] = fmod(_mAxisVals[1], 2.0*M_PI);
 
-                        _graph.SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]);
-                        _graph.SetRange('y', 0.0, 2.0*M_PI);
-                        _graph.SetRange('z', 0.0, 1.0*M_PI);
+                        _graph->SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]);
+                        _graph->SetRange('y', 0.0, 2.0*M_PI);
+                        _graph->SetRange('z', 0.0, 1.0*M_PI);
 
                         _pInfo.dRanges[XCOORD][0] = 0.0;
                         _pInfo.dRanges[YCOORD][0] = 0.0;
@@ -6266,23 +6261,23 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                     }
                     case PlotData::SPHERICAL_RT:
                     {
-                        _graph.SetOrigin(_pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(XCOORD), 0.5/_pData.getAxisScale(YCOORD), 0.0);
-                        _graph.SetFunc(parser_CoordFunc("x*cos(pi*z*$PS$)*sin(pi*y*$TS$)", _pData.getAxisScale(ZCOORD), _pData.getAxisScale(YCOORD)).c_str(), parser_CoordFunc("x*sin(pi*z*$PS$)*sin(pi*y*$TS$)", _pData.getAxisScale(ZCOORD), _pData.getAxisScale(YCOORD)).c_str(), parser_CoordFunc("x*cos(pi*y*$TS$)", 1.0, _pData.getAxisScale(YCOORD)).c_str());
+                        _graph->SetOrigin(_pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(XCOORD), 0.5/_pData.getAxisScale(YCOORD), 0.0);
+                        _graph->SetFunc(CoordFunc("x*cos(pi*z*$PS$)*sin(pi*y*$TS$)", _pData.getAxisScale(ZCOORD), _pData.getAxisScale(YCOORD)).c_str(), CoordFunc("x*sin(pi*z*$PS$)*sin(pi*y*$TS$)", _pData.getAxisScale(ZCOORD), _pData.getAxisScale(YCOORD)).c_str(), CoordFunc("x*cos(pi*y*$TS$)", 1.0, _pData.getAxisScale(YCOORD)).c_str());
 
-                        _graph.SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(XCOORD));
-                        _graph.SetRange('y', 0.0, APPR_ONE/_pData.getAxisScale(YCOORD));
-                        _graph.SetRange('z', 0.0, APPR_TWO/_pData.getAxisScale(ZCOORD));
+                        _graph->SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(XCOORD));
+                        _graph->SetRange('y', 0.0, APPR_ONE/_pData.getAxisScale(YCOORD));
+                        _graph->SetRange('z', 0.0, APPR_TWO/_pData.getAxisScale(ZCOORD));
 
-                        parser_plot_applyGrid(_graph, _pData);
+                        applyGrid(_pData);
 
-                        _graph.SetFunc("x*cos(z)*sin(y)", "x*sin(z)*sin(y)", "x*cos(y)");
-                        _graph.SetOrigin(_pInfo.dRanges[XCOORD][1], 0.5*M_PI, 0.0);
+                        _graph->SetFunc("x*cos(z)*sin(y)", "x*sin(z)*sin(y)", "x*cos(y)");
+                        _graph->SetOrigin(_pInfo.dRanges[XCOORD][1], 0.5*M_PI, 0.0);
 
-                        _mAxisVals[1] = parser_fmod(_mAxisVals[1], 1.0*M_PI);
+                        _mAxisVals[1] = fmod(_mAxisVals[1], 1.0*M_PI);
 
-                        _graph.SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]);
-                        _graph.SetRange('y', 0.0, 1.0*M_PI);
-                        _graph.SetRange('z', 0.0, 2.0*M_PI);
+                        _graph->SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]);
+                        _graph->SetRange('y', 0.0, 1.0*M_PI);
+                        _graph->SetRange('z', 0.0, 2.0*M_PI);
 
                         _pInfo.dRanges[XCOORD][0] = 0.0;
                         _pInfo.dRanges[YCOORD][0] = 0.0;
@@ -6294,7 +6289,7 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                     default:
                     {
                         if (!_pData.getSchematic())
-                            _graph.Axis();
+                            _graph->Axis();
                     }
                 }
 
@@ -6303,9 +6298,9 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                     || matchParams(_pInfo.sPlotParams, "ylabel", '=')
                     || matchParams(_pInfo.sPlotParams, "zlabel", '='))
                 {
-                    _graph.Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), parser_plot_getLabelPosition(_pData, XCOORD));
-                    _graph.Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), parser_plot_getLabelPosition(_pData, YCOORD));
-                    _graph.Label('z', fromSystemCodePage(_pData.getzLabel()).c_str(), parser_plot_getLabelPosition(_pData, ZCOORD));
+                    _graph->Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), getLabelPosition(_pData, XCOORD));
+                    _graph->Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), getLabelPosition(_pData, YCOORD));
+                    _graph->Label('z', fromSystemCodePage(_pData.getzLabel()).c_str(), getLabelPosition(_pData, ZCOORD));
                 }
             }
         }
@@ -6320,16 +6315,16 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                 && _pInfo.nMaxPlotDim > 2 //(sCommand.find("3d") != string::npos || (_pInfo.b2D && sCommand != "dens"))
                 )
             {
-                _graph.SetOrigin(0.0, 0.0, 0.0);
+                _graph->SetOrigin(0.0, 0.0, 0.0);
                 if (!_pData.getSchematic())
-                    _graph.Axis("AKDTVISO");
+                    _graph->Axis("AKDTVISO");
                 else
                 {
-                    _graph.SetTickLen(1e-20);
-                    _graph.SetTicks('x', -5, 1);
-                    _graph.SetTicks('y', -5, 1);
-                    _graph.SetTicks('z', -5, 1);
-                    _graph.Axis("AKDTVISO_");
+                    _graph->SetTickLen(1e-20);
+                    _graph->SetTicks('x', -5, 1);
+                    _graph->SetTicks('y', -5, 1);
+                    _graph->SetTicks('z', -5, 1);
+                    _graph->Axis("AKDTVISO_");
                 }
             }
             else if (_pInfo.dRanges[XCOORD][0] <= 0.0
@@ -6339,15 +6334,15 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                 && _pInfo.nMaxPlotDim <= 2 //(sCommand.find("3d") == string::npos && !(_pInfo.b2D && sCommand != "dens"))
                 )
             {
-                _graph.SetOrigin(0.0, 0.0);
+                _graph->SetOrigin(0.0, 0.0);
                 if (!_pData.getSchematic())
-                    _graph.Axis("AKDTVISO");
+                    _graph->Axis("AKDTVISO");
                 else
                 {
-                    _graph.SetTickLen(1e-20);
-                    _graph.SetTicks('x', -5, 1);
-                    _graph.SetTicks('y', -5, 1);
-                    _graph.Axis("AKDTVISO_");
+                    _graph->SetTickLen(1e-20);
+                    _graph->SetTicks('x', -5, 1);
+                    _graph->SetTicks('y', -5, 1);
+                    _graph->Axis("AKDTVISO_");
                 }
             }
             else if (_pInfo.nMaxPlotDim == 3)
@@ -6355,33 +6350,33 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                 if (_pInfo.dRanges[XCOORD][0] <= 0.0 && _pInfo.dRanges[XCOORD][1] >= 0.0)
                 {
                     if (_pInfo.dRanges[YCOORD][0] <= 0.0 && _pInfo.dRanges[YCOORD][1] >= 0.0)
-                        _graph.SetOrigin(0.0, 0.0, _pInfo.dRanges[ZCOORD][0]);
+                        _graph->SetOrigin(0.0, 0.0, _pInfo.dRanges[ZCOORD][0]);
                     else if (_pInfo.dRanges[ZCOORD][0] <= 0.0 && _pInfo.dRanges[ZCOORD][1] >= 0.0)
-                        _graph.SetOrigin(0.0, _pInfo.dRanges[YCOORD][0], 0.0);
+                        _graph->SetOrigin(0.0, _pInfo.dRanges[YCOORD][0], 0.0);
                     else
-                        _graph.SetOrigin(0.0, _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[ZCOORD][0]);
+                        _graph->SetOrigin(0.0, _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[ZCOORD][0]);
                 }
                 else if (_pInfo.dRanges[YCOORD][0] <= 0.0 && _pInfo.dRanges[YCOORD][1] >= 0.0)
                 {
                     if (_pInfo.dRanges[ZCOORD][0] <= 0.0 && _pInfo.dRanges[ZCOORD][1] >= 0.0)
-                        _graph.SetOrigin(_pInfo.dRanges[XCOORD][0], 0.0, 0.0);
+                        _graph->SetOrigin(_pInfo.dRanges[XCOORD][0], 0.0, 0.0);
                     else
-                        _graph.SetOrigin(_pInfo.dRanges[XCOORD][0], 0.0, _pInfo.dRanges[ZCOORD][0]);
+                        _graph->SetOrigin(_pInfo.dRanges[XCOORD][0], 0.0, _pInfo.dRanges[ZCOORD][0]);
                 }
                 else if (_pInfo.dRanges[ZCOORD][0] <= 0.0 && _pInfo.dRanges[ZCOORD][1] >= 0.0)
-                    _graph.SetOrigin(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[YCOORD][0], 0.0);
+                    _graph->SetOrigin(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[YCOORD][0], 0.0);
                 else
-                    _graph.SetOrigin(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[ZCOORD][0]);
+                    _graph->SetOrigin(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[ZCOORD][0]);
 
                 if (!_pData.getSchematic())
-                    _graph.Axis("AKDTVISO");
+                    _graph->Axis("AKDTVISO");
                 else
                 {
-                    _graph.SetTickLen(1e-20);
-                    _graph.SetTicks('x', -5, 1);
-                    _graph.SetTicks('y', -5, 1);
-                    _graph.SetTicks('z', -5, 1);
-                    _graph.Axis("AKDTVISO_");
+                    _graph->SetTickLen(1e-20);
+                    _graph->SetTicks('x', -5, 1);
+                    _graph->SetTicks('y', -5, 1);
+                    _graph->SetTicks('z', -5, 1);
+                    _graph->Axis("AKDTVISO_");
                 }
 
             }
@@ -6389,23 +6384,23 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
             {
                 if (_pInfo.dRanges[XCOORD][0] <= 0.0 && _pInfo.dRanges[XCOORD][1] >= 0.0)
                 {
-                    _graph.SetOrigin(0.0, _pInfo.dRanges[YCOORD][0]);
+                    _graph->SetOrigin(0.0, _pInfo.dRanges[YCOORD][0]);
                 }
                 else if (_pInfo.dRanges[YCOORD][0] <= 0.0 && _pInfo.dRanges[YCOORD][1] >= 0.0)
                 {
-                    _graph.SetOrigin(_pInfo.dRanges[XCOORD][0], 0.0);
+                    _graph->SetOrigin(_pInfo.dRanges[XCOORD][0], 0.0);
                 }
                 else
-                    _graph.SetOrigin(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[YCOORD][0]);
+                    _graph->SetOrigin(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[YCOORD][0]);
 
                 if (!_pData.getSchematic())
-                    _graph.Axis("AKDTVISO");
+                    _graph->Axis("AKDTVISO");
                 else
                 {
-                    _graph.SetTickLen(1e-20);
-                    _graph.SetTicks('x', -5, 1);
-                    _graph.SetTicks('y', -5, 1);
-                    _graph.Axis("AKDTVISO_");
+                    _graph->SetTickLen(1e-20);
+                    _graph->SetTicks('x', -5, 1);
+                    _graph->SetTicks('y', -5, 1);
+                    _graph->Axis("AKDTVISO_");
                 }
             }
         }
@@ -6420,16 +6415,16 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                 && _pInfo.nMaxPlotDim > 2
                 )
             {
-                _graph.SetOrigin(_pData.getOrigin(XCOORD), _pData.getOrigin(YCOORD), _pData.getOrigin(ZCOORD));
+                _graph->SetOrigin(_pData.getOrigin(XCOORD), _pData.getOrigin(YCOORD), _pData.getOrigin(ZCOORD));
                 if (!_pData.getSchematic())
-                    _graph.Axis("AKDTVISO");
+                    _graph->Axis("AKDTVISO");
                 else
                 {
-                    _graph.SetTickLen(1e-20);
-                    _graph.SetTicks('x', -5, 1);
-                    _graph.SetTicks('y', -5, 1);
-                    _graph.SetTicks('z', -5, 1);
-                    _graph.Axis("AKDTVISO_");
+                    _graph->SetTickLen(1e-20);
+                    _graph->SetTicks('x', -5, 1);
+                    _graph->SetTicks('y', -5, 1);
+                    _graph->SetTicks('z', -5, 1);
+                    _graph->Axis("AKDTVISO_");
                 }
             }
             else if (_pInfo.dRanges[XCOORD][0] <= _pData.getOrigin(XCOORD)
@@ -6439,15 +6434,15 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                 && _pInfo.nMaxPlotDim <= 2
                 )
             {
-                _graph.SetOrigin(_pData.getOrigin(XCOORD), _pData.getOrigin(YCOORD));
+                _graph->SetOrigin(_pData.getOrigin(XCOORD), _pData.getOrigin(YCOORD));
                 if (!_pData.getSchematic())
-                    _graph.Axis("AKDTVISO");
+                    _graph->Axis("AKDTVISO");
                 else
                 {
-                    _graph.SetTickLen(1e-20);
-                    _graph.SetTicks('x', -5, 1);
-                    _graph.SetTicks('y', -5, 1);
-                    _graph.Axis("AKDTVISO_");
+                    _graph->SetTickLen(1e-20);
+                    _graph->SetTicks('x', -5, 1);
+                    _graph->SetTicks('y', -5, 1);
+                    _graph->Axis("AKDTVISO_");
                 }
             }
             else if (_pInfo.nMaxPlotDim == 3)
@@ -6455,56 +6450,56 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                 if (_pInfo.dRanges[XCOORD][0] <= _pData.getOrigin() && _pInfo.dRanges[XCOORD][1] >= _pData.getOrigin())
                 {
                     if (_pInfo.dRanges[YCOORD][0] <= _pData.getOrigin(1) && _pInfo.dRanges[YCOORD][1] >= _pData.getOrigin(1))
-                        _graph.SetOrigin(_pData.getOrigin(), _pData.getOrigin(1), _pInfo.dRanges[ZCOORD][0]);
+                        _graph->SetOrigin(_pData.getOrigin(), _pData.getOrigin(1), _pInfo.dRanges[ZCOORD][0]);
                     else if (_pInfo.dRanges[ZCOORD][0] <= _pData.getOrigin(2) && _pInfo.dRanges[ZCOORD][1] >= _pData.getOrigin(2))
-                        _graph.SetOrigin(_pData.getOrigin(), _pInfo.dRanges[YCOORD][0], _pData.getOrigin(2));
+                        _graph->SetOrigin(_pData.getOrigin(), _pInfo.dRanges[YCOORD][0], _pData.getOrigin(2));
                     else
-                        _graph.SetOrigin(_pData.getOrigin(), _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[ZCOORD][0]);
+                        _graph->SetOrigin(_pData.getOrigin(), _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[ZCOORD][0]);
                 }
                 else if (_pInfo.dRanges[YCOORD][0] <= _pData.getOrigin(1) && _pInfo.dRanges[YCOORD][1] >= _pData.getOrigin(1))
                 {
                     if (_pInfo.dRanges[ZCOORD][0] <= _pData.getOrigin(2) && _pInfo.dRanges[ZCOORD][1] >= _pData.getOrigin(2))
-                        _graph.SetOrigin(_pInfo.dRanges[XCOORD][0], _pData.getOrigin(1), _pData.getOrigin(2));
+                        _graph->SetOrigin(_pInfo.dRanges[XCOORD][0], _pData.getOrigin(1), _pData.getOrigin(2));
                     else
-                        _graph.SetOrigin(_pInfo.dRanges[XCOORD][0], _pData.getOrigin(1), _pInfo.dRanges[ZCOORD][0]);
+                        _graph->SetOrigin(_pInfo.dRanges[XCOORD][0], _pData.getOrigin(1), _pInfo.dRanges[ZCOORD][0]);
                 }
                 else if (_pInfo.dRanges[ZCOORD][0] <= _pData.getOrigin(2) && _pInfo.dRanges[ZCOORD][1] >= _pData.getOrigin(2))
-                    _graph.SetOrigin(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[YCOORD][0], _pData.getOrigin(2));
+                    _graph->SetOrigin(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[YCOORD][0], _pData.getOrigin(2));
                 else
-                    _graph.SetOrigin(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[ZCOORD][0]);
+                    _graph->SetOrigin(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[ZCOORD][0]);
 
                 if (!_pData.getSchematic())
-                    _graph.Axis("AKDTVISO");
+                    _graph->Axis("AKDTVISO");
                 else
                 {
-                    _graph.SetTickLen(1e-20);
-                    _graph.SetTicks('x', -5, 1);
-                    _graph.SetTicks('y', -5, 1);
-                    _graph.SetTicks('z', -5, 1);
-                    _graph.Axis("AKDTVISO_");
+                    _graph->SetTickLen(1e-20);
+                    _graph->SetTicks('x', -5, 1);
+                    _graph->SetTicks('y', -5, 1);
+                    _graph->SetTicks('z', -5, 1);
+                    _graph->Axis("AKDTVISO_");
                 }
             }
             else if (_pInfo.nMaxPlotDim <= 2)
             {
                 if (_pInfo.dRanges[XCOORD][0] <= _pData.getOrigin() && _pInfo.dRanges[XCOORD][1] >= _pData.getOrigin())
                 {
-                    _graph.SetOrigin(_pData.getOrigin(), _pInfo.dRanges[YCOORD][0]);
+                    _graph->SetOrigin(_pData.getOrigin(), _pInfo.dRanges[YCOORD][0]);
                 }
                 else if (_pInfo.dRanges[YCOORD][0] <= _pData.getOrigin(1) && _pInfo.dRanges[YCOORD][1] >= _pData.getOrigin(1))
                 {
-                    _graph.SetOrigin(_pInfo.dRanges[XCOORD][0], _pData.getOrigin(1));
+                    _graph->SetOrigin(_pInfo.dRanges[XCOORD][0], _pData.getOrigin(1));
                 }
                 else
-                    _graph.SetOrigin(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[YCOORD][0]);
+                    _graph->SetOrigin(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[YCOORD][0]);
 
                 if (!_pData.getSchematic())
-                    _graph.Axis("AKDTVISO");
+                    _graph->Axis("AKDTVISO");
                 else
                 {
-                    _graph.SetTickLen(1e-20);
-                    _graph.SetTicks('x', -5, 1);
-                    _graph.SetTicks('y', -5, 1);
-                    _graph.Axis("AKDTVISO_");
+                    _graph->SetTickLen(1e-20);
+                    _graph->SetTicks('x', -5, 1);
+                    _graph->SetTicks('y', -5, 1);
+                    _graph->Axis("AKDTVISO_");
                 }
             }
         }
@@ -6517,16 +6512,16 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
             && _pInfo.nMaxPlotDim > 2 //(sCommand.find("3d") != string::npos || (_pInfo.b2D && sCommand != "dens"))
             )
         {
-            _graph.SetOrigin(0.0, 0.0, 0.0);
+            _graph->SetOrigin(0.0, 0.0, 0.0);
             if (!_pData.getSchematic())
-                _graph.Axis("AKDTVISO");
+                _graph->Axis("AKDTVISO");
             else
             {
-                _graph.SetTickLen(1e-20);
-                _graph.SetTicks('x', -5, 1);
-                _graph.SetTicks('y', -5, 1);
-                _graph.SetTicks('z', -5, 1);
-                _graph.Axis("AKDTVISO_");
+                _graph->SetTickLen(1e-20);
+                _graph->SetTicks('x', -5, 1);
+                _graph->SetTicks('y', -5, 1);
+                _graph->SetTicks('z', -5, 1);
+                _graph->Axis("AKDTVISO_");
             }
         }
         else if (_pInfo.dRanges[XCOORD][0] <= 0.0
@@ -6536,42 +6531,42 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
             && _pInfo.nMaxPlotDim <= 2 //(sCommand.find("3d") == string::npos && !(_pInfo.b2D && sCommand != "dens"))
             )
         {
-            _graph.SetOrigin(0.0, 0.0);
+            _graph->SetOrigin(0.0, 0.0);
             if (!_pData.getSchematic())
-                _graph.Axis("AKDTVISO");
+                _graph->Axis("AKDTVISO");
             else
             {
-                _graph.SetTickLen(1e-20);
-                _graph.SetTicks('x', -5, 1);
-                _graph.SetTicks('y', -5, 1);
-                _graph.Axis("AKDTVISO_");
+                _graph->SetTickLen(1e-20);
+                _graph->SetTicks('x', -5, 1);
+                _graph->SetTicks('y', -5, 1);
+                _graph->Axis("AKDTVISO_");
             }
         }
         else if (_pInfo.nMaxPlotDim > 2) //sCommand.find("3d") != string::npos || (_pInfo.b2D && sCommand != "dens"))
         {
-            _graph.SetOrigin(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[ZCOORD][0]);
+            _graph->SetOrigin(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[ZCOORD][0]);
             if (!_pData.getSchematic())
-                _graph.Axis("AKDTVISO");
+                _graph->Axis("AKDTVISO");
             else
             {
-                _graph.SetTickLen(1e-20);
-                _graph.SetTicks('x', -5, 1);
-                _graph.SetTicks('y', -5, 1);
-                _graph.SetTicks('z', -5, 1);
-                _graph.Axis("AKDTVISO_");
+                _graph->SetTickLen(1e-20);
+                _graph->SetTicks('x', -5, 1);
+                _graph->SetTicks('y', -5, 1);
+                _graph->SetTicks('z', -5, 1);
+                _graph->Axis("AKDTVISO_");
             }
         }
         else
         {
             if (!_pData.getSchematic())
-                _graph.Axis("AKDTVISO");
+                _graph->Axis("AKDTVISO");
             else
             {
-                _graph.SetTickLen(1e-20);
-                _graph.SetTicks('x', -5, 1);
-                _graph.SetTicks('y', -5, 1);
-                _graph.SetTicks('z', -5, 1);
-                _graph.Axis("AKDTVISO_");
+                _graph->SetTickLen(1e-20);
+                _graph->SetTicks('x', -5, 1);
+                _graph->SetTicks('y', -5, 1);
+                _graph->SetTicks('z', -5, 1);
+                _graph->Axis("AKDTVISO_");
             }
         }
     }
@@ -6580,21 +6575,21 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
         if (_pData.getGrid() && !_pInfo.b2DVect && !_pInfo.b3DVect) // Standard-Grid
         {
             if (_pData.getGrid() == 1)
-                _graph.Grid("xyzt", _pData.getGridStyle().c_str());
+                _graph->Grid("xyzt", _pData.getGridStyle().c_str());
             else if (_pData.getGrid() == 2)
             {
-                _graph.Grid("xyzt!", _pData.getGridStyle().c_str());
-                _graph.Grid("xyzt", _pData.getFineGridStyle().c_str());
+                _graph->Grid("xyzt!", _pData.getGridStyle().c_str());
+                _graph->Grid("xyzt", _pData.getFineGridStyle().c_str());
             }
         }
         else if (_pData.getGrid()) // Vektor-Grid
-            _graph.Grid("xyzt", _pData.getFineGridStyle().c_str());
+            _graph->Grid("xyzt", _pData.getFineGridStyle().c_str());
         if (_pData.getBox())
         {
             if (!_pData.getSchematic())
-                _graph.Box();
+                _graph->Box();
             else
-                _graph.Box("k", false);
+                _graph->Box("k", false);
         }
 
         // --> Achsen beschriften <--
@@ -6605,10 +6600,10 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                 || matchParams(_pInfo.sPlotParams, "ylabel", '=')
                 || matchParams(_pInfo.sPlotParams, "zlabel", '=')))
         {
-            _graph.Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), parser_plot_getLabelPosition(_pData, XCOORD));
-            _graph.Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), parser_plot_getLabelPosition(_pData, YCOORD));
-            _graph.Label('z', fromSystemCodePage(_pData.getzLabel()).c_str(), parser_plot_getLabelPosition(_pData, ZCOORD));
-            //_graph.Label('t', fromSystemCodePage(_pData.getzLabel()).c_str(), 0.0);
+            _graph->Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), getLabelPosition(_pData, XCOORD));
+            _graph->Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), getLabelPosition(_pData, YCOORD));
+            _graph->Label('z', fromSystemCodePage(_pData.getzLabel()).c_str(), getLabelPosition(_pData, ZCOORD));
+            //_graph->Label('t', fromSystemCodePage(_pData.getzLabel()).c_str(), 0.0);
         }
         else if (_pData.getAxis()
             && !_pData.getBox()
@@ -6617,16 +6612,16 @@ void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotDat
                 || matchParams(_pInfo.sPlotParams, "ylabel", '=')
                 || matchParams(_pInfo.sPlotParams, "zlabel", '=')))
         {
-            _graph.Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), parser_plot_getLabelPosition(_pData, XCOORD));
-            _graph.Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), parser_plot_getLabelPosition(_pData, YCOORD));
-            _graph.Label('z', fromSystemCodePage(_pData.getzLabel()).c_str(), parser_plot_getLabelPosition(_pData, ZCOORD));
+            _graph->Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), getLabelPosition(_pData, XCOORD));
+            _graph->Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), getLabelPosition(_pData, YCOORD));
+            _graph->Label('z', fromSystemCodePage(_pData.getzLabel()).c_str(), getLabelPosition(_pData, ZCOORD));
         }
     }
     return;
 }
 
 
-double parser_plot_getLabelPosition(const PlotData& _pData, int nCoord)
+double Plot::getLabelPosition(const PlotData& _pData, int nCoord)
 {
     if (_pData.getCoords() == PlotData::CARTESIAN)
     {
@@ -6676,28 +6671,28 @@ double parser_plot_getLabelPosition(const PlotData& _pData, int nCoord)
 }
 
 
-void parser_plot_applyGrid(mglGraph& _graph, const PlotData& _pData)
+void Plot::applyGrid(const PlotData& _pData)
 {
     if (!_pData.getSchematic())
-        _graph.Axis(); //U
+        _graph->Axis(); //U
     else
     {
-        _graph.SetTickLen(1e-20);
-        _graph.Axis("_");
+        _graph->SetTickLen(1e-20);
+        _graph->Axis("_");
     }
     if (_pData.getBox() || _pData.getCoords() != PlotData::CARTESIAN)
-        _graph.Box();
+        _graph->Box();
     if (_pData.getGrid() == 1)
-        _graph.Grid("xyzt", _pData.getGridStyle().c_str());
+        _graph->Grid("xyzt", _pData.getGridStyle().c_str());
     else if (_pData.getGrid() == 2)
     {
-        _graph.Grid("xyzt!", _pData.getGridStyle().c_str());
-        _graph.Grid("xyzt", _pData.getFineGridStyle().c_str());
+        _graph->Grid("xyzt!", _pData.getGridStyle().c_str());
+        _graph->Grid("xyzt", _pData.getFineGridStyle().c_str());
     }
 }
 
 
-string parser_CoordFunc(const string& sFunc, double dPhiScale, double dThetaScale)
+string Plot::CoordFunc(const string& sFunc, double dPhiScale, double dThetaScale)
 {
     string sParsedFunction = sFunc;
 
@@ -6726,7 +6721,7 @@ string parser_CoordFunc(const string& sFunc, double dPhiScale, double dThetaScal
 }
 
 
-bool checkMultiPlotArray(unsigned int nMultiPlot[2], unsigned int& nSubPlotMap, unsigned int nPlotPos, unsigned int nCols, unsigned int nLines)
+bool Plot::checkMultiPlotArray(unsigned int nMultiPlot[2], unsigned int& nSubPlotMap, unsigned int nPlotPos, unsigned int nCols, unsigned int nLines)
 {                                     // cols, lines
     if (nPlotPos + nCols-1 >= (nPlotPos / nMultiPlot[0]+1)*nMultiPlot[0])
         return false;
@@ -6763,7 +6758,7 @@ bool checkMultiPlotArray(unsigned int nMultiPlot[2], unsigned int& nSubPlotMap, 
 }
 
 
-void parser_plot_weightedRange(int nCol, double& dMin, double& dMax, PlotData& _pData)
+void Plot::weightedRange(int nCol, double& dMin, double& dMax, PlotData& _pData)
 {
     if (log(dMax-dMin) > 5)
     {

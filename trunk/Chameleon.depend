@@ -2021,7 +2021,7 @@
 	"../kernel/kernel.hpp"
 	"../kernel/debugmessenger.hpp"
 
-1499947011 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1500716632 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -2037,6 +2037,7 @@
 	"viewerframe.hpp"
 	"viewerbook.hpp"
 	"filetree.hpp"
+	"../kernel/core/graph_helper.hpp"
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxprec.h
 	"wx/defs.h"
@@ -2071,7 +2072,7 @@
 	<commdlg.h>
 	"wx/msw/winundef.h"
 
-1500380194 d:\cpp\numere-source\trunk\common\datastructures.h
+1501328463 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -2292,6 +2293,10 @@
 	"settings.hpp"
 	"datafile.hpp"
 
+1500717688 d:\cpp\numere-source\trunk\kernel\core\structures.hpp
+	<string>
+	<vector>
+
 1497524325 d:\cpp\numere-source\trunk\kernel\core\error.hpp
 	<string>
 	"language.hpp"
@@ -2429,12 +2434,17 @@
 	"wx/string.h"
 	"wx/dynarray.h"
 
-1490791550 d:\cpp\numere-source\trunk\gui\viewerframe.hpp
+1500558167 d:\cpp\numere-source\trunk\gui\viewerframe.hpp
 	<wx/wx.h>
 
 1490791550 d:\cpp\numere-source\trunk\gui\filetree.hpp
 	<wx/wx.h>
 	<wx/treectrl.h>
+
+1500841232 d:\cpp\numere-source\trunk\kernel\core\graph_helper.hpp
+	<mgl2/wnd.h>
+	<mgl2/mgl.h>
+	"plotdata.hpp"
 
 1490798667 d:\cpp\numere-source\trunk\common\options.h
 	<wx/wx.h>
@@ -2494,7 +2504,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1499277489 d:\cpp\numere-source\trunk\kernel\kernel.hpp
+1500715918 d:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	"core/error.hpp"
@@ -2509,6 +2519,7 @@
 	"core/parser_functions.hpp"
 	"core/define.hpp"
 	"core/plotdata.hpp"
+	"core/graph_helper.hpp"
 	"core/script.hpp"
 	"core/loop.hpp"
 	"core/procedure.hpp"
@@ -2542,7 +2553,7 @@
 	"tools.hpp"
 	"plotdata.hpp"
 
-1493796155 d:\cpp\numere-source\trunk\kernel\core\plotdata.hpp
+1500632858 d:\cpp\numere-source\trunk\kernel\core\plotdata.hpp
 	<string>
 	<cmath>
 	"error.hpp"
@@ -2685,14 +2696,13 @@
 	"documentation.hpp"
 	"odesolver.hpp"
 
-1499844371 d:\cpp\numere-source\trunk\kernel\core\parser_functions.hpp
+1500717653 d:\cpp\numere-source\trunk\kernel\core\parser_functions.hpp
 	<cmath>
 	<string>
 	<sstream>
 	<iostream>
 	<ios>
 	<iomanip>
-	<mgl2/qt.h>
 	<vector>
 	<boost/tokenizer.hpp>
 	<gsl/gsl_sort.h>
@@ -2726,19 +2736,6 @@
 	<fstream>
 	<string>
 	"filesystem.hpp"
-	"tools.hpp"
-	"error.hpp"
-
-1492882629 d:\cpp\numere-source\trunk\kernel\core\graph_helper.hpp
-	<mgl2/wnd.h>
-	<mgl2/mgl.h>
-	<string>
-	<vector>
-	"plotdata.hpp"
-	"datafile.hpp"
-	"define.hpp"
-	"settings.hpp"
-	"ParserLib/muParser.h"
 	"tools.hpp"
 	"error.hpp"
 
@@ -2837,6 +2834,18 @@
 1490791551 d:\cpp\numere-source\trunk\kernel\debugmessenger.hpp
 	<map>
 	<string>
+	<vector>
+
+1499276609 d:\cpp\numere-source\trunk\kernel\core\procedurelibrary.hpp
+	"procedureelement.hpp"
+	<string>
+	<fstream>
+	<map>
+	<vector>
+
+1499278073 d:\cpp\numere-source\trunk\kernel\core\procedureelement.hpp
+	<string>
+	<map>
 	<vector>
 
 1490791551 d:\cpp\numere-source\trunk\compiler\compilerevent.h
@@ -3089,6 +3098,47 @@
 	<TChar.h>
 	<crtdbg.h>
 
+1501334619 source:d:\cpp\numere-source\trunk\common\wx.cpp
+	<wx/dcclient.h>
+	<wx/msgdlg.h>
+	<wx/clipbrd.h>
+	<wx/dataobj.h>
+	<wx/menu.h>
+	<wx/scrolwin.h>
+	<wx/artprov.h>
+	<cmath>
+	<mgl2/canvas_wnd.h>
+	"wx.h"
+	"datastructures.h"
+	"../kernel/core/language.hpp"
+	"../gui/wxterm.h"
+	"../gui/graphviewer.hpp"
+	"../gui/addtext.xpm"
+	"../gui/addline.xpm"
+	"../gui/addrect.xpm"
+	"../gui/addcirc.xpm"
+	"../gui/rotate_new.xpm"
+	"../gui/zoom_new.xpm"
+	"../gui/newstart1.xpm"
+	"../gui/newstop1.xpm"
+
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\clipbrd.h
+	"wx/defs.h"
+	"wx/event.h"
+	"wx/chartype.h"
+	"wx/dataobj.h"
+	"wx/vector.h"
+	"wx/msw/clipbrd.h"
+	"wx/motif/clipbrd.h"
+	"wx/gtk/clipbrd.h"
+	"wx/gtk1/clipbrd.h"
+	"wx/x11/clipbrd.h"
+	"wx/osx/clipbrd.h"
+	"wx/cocoa/clipbrd.h"
+	"wx/os2/clipbrd.h"
+
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\clipbrd.h
+
 1490791551 source:d:\cpp\numere-source\trunk\compiler\compiler.cpp
 	"compiler.h"
 	<wx/filename.h>
@@ -3194,7 +3244,7 @@
 	<string>
 	<vector>
 
-1500383196 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1500569362 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -3233,7 +3283,7 @@
 1490791550 d:\cpp\numere-source\trunk\gui\numerenotebook.h
 	<wx/notebook.h>
 
-1499929588 source:d:\cpp\numere-source\trunk\editor\history.cpp
+1500569597 source:d:\cpp\numere-source\trunk\editor\history.cpp
 	"../common/CommonHeaders.h"
 	"../kernel/core/language.hpp"
 	"../kernel/core/tools.hpp"
@@ -3254,7 +3304,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1500446723 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1500968488 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3308,6 +3358,7 @@
 	"helpviewer.hpp"
 	"tableviewer.hpp"
 	"tableeditpanel.hpp"
+	"graphviewer.hpp"
 	<wx/msw/helpchm.h>
 	"newstart1.xpm"
 	"newcontinue1.xpm"
@@ -3599,6 +3650,13 @@
 	"wxterm.h"
 	"../kernel/core/language.hpp"
 
+1501334919 d:\cpp\numere-source\trunk\gui\graphviewer.hpp
+	<wx/wx.h>
+	"../common/wx.h"
+	"viewerframe.hpp"
+	"../kernel/core/graph_helper.hpp"
+	"wxterm.h"
+
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\helpchm.h
 	"wx/helpbase.h"
 
@@ -3827,6 +3885,9 @@
 	"filetree.hpp"
 	"../common/globals.hpp"
 
+1500968406 source:d:\cpp\numere-source\trunk\gui\graphviewer.cpp
+	"graphviewer.hpp"
+
 1491251325 source:d:\cpp\numere-source\trunk\gui\helpviewer.cpp
 	"helpviewer.hpp"
 	"NumeReWindow.h"
@@ -3855,23 +3916,6 @@
 	"imagepanel.hpp"
 	"../kernel/core/language.hpp"
 
-1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\clipbrd.h
-	"wx/defs.h"
-	"wx/event.h"
-	"wx/chartype.h"
-	"wx/dataobj.h"
-	"wx/vector.h"
-	"wx/msw/clipbrd.h"
-	"wx/motif/clipbrd.h"
-	"wx/gtk/clipbrd.h"
-	"wx/gtk1/clipbrd.h"
-	"wx/x11/clipbrd.h"
-	"wx/osx/clipbrd.h"
-	"wx/cocoa/clipbrd.h"
-	"wx/os2/clipbrd.h"
-
-1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\clipbrd.h
-
 1490791550 source:d:\cpp\numere-source\trunk\gui\tableeditpanel.cpp
 	"tableeditpanel.hpp"
 
@@ -3895,7 +3939,7 @@
 	"wxssh.h"
 	"../common/debug.h"
 
-1499322709 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
+1500716405 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -3911,7 +3955,7 @@
 1490791550 source:d:\cpp\numere-source\trunk\kernel\core\basicexcel.cpp
 	"BasicExcel.hpp"
 
-1499949733 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1500717001 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
@@ -3941,13 +3985,18 @@
 1497524323 source:d:\cpp\numere-source\trunk\kernel\core\error.cpp
 	"error.hpp"
 
-1492196796 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
+1500825612 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
 	"filesystem.hpp"
 	"../kernel.hpp"
 
 1497520828 source:d:\cpp\numere-source\trunk\kernel\core\fitcontroller.cpp
 	"fitcontroller.hpp"
 	"../kernel.hpp"
+
+1500841271 source:d:\cpp\numere-source\trunk\kernel\core\graph_helper.cpp
+	"graph_helper.hpp"
+	"../kernel.hpp"
+	"tools.hpp"
 
 1490791550 source:d:\cpp\numere-source\trunk\kernel\core\igorlib\crossplatformfileio.cpp
 	<ctype.h>
@@ -3964,7 +4013,7 @@
 1490791550 source:d:\cpp\numere-source\trunk\kernel\core\language.cpp
 	"language.hpp"
 
-1500447638 source:d:\cpp\numere-source\trunk\kernel\core\loop.cpp
+1500447945 source:d:\cpp\numere-source\trunk\kernel\core\loop.cpp
 	"loop.hpp"
 	"../kernel.hpp"
 
@@ -3972,7 +4021,7 @@
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
-1497521135 source:d:\cpp\numere-source\trunk\kernel\core\odesolver.cpp
+1500717141 source:d:\cpp\numere-source\trunk\kernel\core\odesolver.cpp
 	"odesolver.hpp"
 	"../kernel.hpp"
 
@@ -4048,13 +4097,30 @@
 	"muParserTokenReader.h"
 	"muParserBase.h"
 
-1493825419 source:d:\cpp\numere-source\trunk\kernel\core\plotdata.cpp
+1500634580 source:d:\cpp\numere-source\trunk\kernel\core\plotdata.cpp
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1497521994 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
+1501334035 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
+	"plotting.hpp"
 	"parser_functions.hpp"
 	"../kernel.hpp"
+
+1500984159 d:\cpp\numere-source\trunk\kernel\core\plotting.hpp
+	<mgl2/mgl.h>
+	<string>
+	<vector>
+	"datafile.hpp"
+	"ParserLib/muParser.h"
+	"settings.hpp"
+	"define.hpp"
+	"plotdata.hpp"
+	"plotinfo.hpp"
+	"graph_helper.hpp"
+
+1500717912 d:\cpp\numere-source\trunk\kernel\core\plotinfo.hpp
+	<mgl2/mgl.h>
+	<string>
 
 1499238431 source:d:\cpp\numere-source\trunk\kernel\core\plugin.cpp
 	"plugin.hpp"
@@ -4075,6 +4141,32 @@
 	"procedure.hpp"
 	"../kernel.hpp"
 	"procedurevarfactory.hpp"
+
+1499201129 d:\cpp\numere-source\trunk\kernel\core\procedurevarfactory.hpp
+	<string>
+	<map>
+	"tools.hpp"
+	"error.hpp"
+	"datafile.hpp"
+	"parser.hpp"
+	"define.hpp"
+	"settings.hpp"
+	"output.hpp"
+	"plotdata.hpp"
+	"script.hpp"
+
+1499278058 source:d:\cpp\numere-source\trunk\kernel\core\procedureelement.cpp
+	"procedureelement.hpp"
+	"tools.hpp"
+
+1499323053 source:d:\cpp\numere-source\trunk\kernel\core\procedurelibrary.cpp
+	"procedurelibrary.hpp"
+	"error.hpp"
+	"tools.hpp"
+
+1499201163 source:d:\cpp\numere-source\trunk\kernel\core\procedurevarfactory.cpp
+	"procedurevarfactory.hpp"
+	"procedure.hpp"
 
 1490791551 source:d:\cpp\numere-source\trunk\kernel\core\resampler.cpp
 	<stdlib.h>
@@ -4131,7 +4223,7 @@
 	"debugmessenger.hpp"
 	"core/tools.hpp"
 
-1500219124 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1500715979 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 
@@ -4238,45 +4330,28 @@
 	"../common/Crc16.h"
 	"../common/debug.h"
 
-1499201129 d:\cpp\numere-source\trunk\kernel\core\procedurevarfactory.hpp
-	<string>
-	<map>
-	"tools.hpp"
-	"error.hpp"
-	"datafile.hpp"
-	"parser.hpp"
-	"define.hpp"
-	"settings.hpp"
-	"output.hpp"
-	"plotdata.hpp"
-	"script.hpp"
+1501018176 d:\cpp\numere-source\trunk\gui\addtext.xpm
 
-1499201163 source:d:\cpp\numere-source\trunk\kernel\core\procedurevarfactory.cpp
-	"procedurevarfactory.hpp"
-	"procedure.hpp"
+1501054195 d:\cpp\numere-source\trunk\gui\addline.xpm
 
-1499323053 source:d:\cpp\numere-source\trunk\kernel\core\procedurelibrary.cpp
-	"procedurelibrary.hpp"
-	"error.hpp"
-	"tools.hpp"
+1501054234 d:\cpp\numere-source\trunk\gui\addrect.xpm
 
-1499276609 d:\cpp\numere-source\trunk\kernel\core\procedurelibrary.hpp
-	"procedureelement.hpp"
-	<string>
-	<fstream>
-	<map>
-	<vector>
+1501054253 d:\cpp\numere-source\trunk\gui\addcirc.xpm
 
-1499278073 d:\cpp\numere-source\trunk\kernel\core\procedureelement.hpp
-	<string>
-	<map>
-	<vector>
+1501082607 d:\cpp\numere-source\trunk\gui\rotate.xpm
 
-1499278058 source:d:\cpp\numere-source\trunk\kernel\core\procedureelement.cpp
-	"procedureelement.hpp"
-	"tools.hpp"
+1501399806 d:\cpp\numere-source\trunk\common\wx.h
+	<mgl2/wnd.h>
+	<wx/window.h>
+	<wx/image.h>
+	<wx/timer.h>
+	<wx/bitmap.h>
+	<wx/toolbar.h>
+	<wx/statusbr.h>
+	<wx/textctrl.h>
+	<wx/cursor.h>
 
-1500114553 d:\cpp\numere-source\trunk\kernel\core\structures.hpp
-	<string>
-	<vector>
+1501083692 d:\cpp\numere-source\trunk\gui\rotate_new.xpm
+
+1501083705 d:\cpp\numere-source\trunk\gui\zoom_new.xpm
 

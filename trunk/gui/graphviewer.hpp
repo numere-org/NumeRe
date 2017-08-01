@@ -17,22 +17,26 @@
 ******************************************************************************/
 
 #include <wx/wx.h>
+#include "../common/wx.h"
+#include "viewerframe.hpp"
+#include "../kernel/core/graph_helper.hpp"
+#include "wxterm.h"
 
-#ifndef VIEWERFRAME_HPP
-#define VIEWERFRAME_HPP
-
-class ViewerFrame : public wxFrame
+#ifndef GRAPHVIEWER_HPP
+#define GRAPHVIEWER_HPP
+class GraphViewer : public ViewerFrame
 {
-    public:
-        ViewerFrame(wxWindow* parent, const wxString& title) : wxFrame(parent, wxID_ANY, title, wxDefaultPosition, wxDefaultSize, wxFRAME_FLOAT_ON_PARENT | wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX | wxMAXIMIZE_BOX | wxMINIMIZE_BOX) {};
+    private:
 
-        void OnKeyDown(wxKeyEvent& event);
-        void OnFocus(wxFocusEvent& event);
-        void OnEnter(wxMouseEvent& event);
-        void OnClose(wxCloseEvent& event);
+    public:
+        GraphViewer(wxWindow* parent, const wxString& title, GraphHelper* _helper, wxTerm* terminal);
+        //~GraphViewer();
+
+        wxMGL* _grapherWindow;
+        wxTerm* m_terminal;
 
         DECLARE_EVENT_TABLE();
 };
 
-#endif
+#endif // GRAPHVIEWER_HPP
 

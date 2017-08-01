@@ -16,23 +16,36 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <wx/wx.h>
 
-#ifndef VIEWERFRAME_HPP
-#define VIEWERFRAME_HPP
+#include "graphviewer.hpp"
 
-class ViewerFrame : public wxFrame
+
+BEGIN_EVENT_TABLE(GraphViewer, ViewerFrame)
+    EVT_KEY_DOWN        (ViewerFrame::OnKeyDown)
+    EVT_SET_FOCUS       (ViewerFrame::OnFocus)
+    EVT_ENTER_WINDOW    (ViewerFrame::OnEnter)
+    EVT_CLOSE           (ViewerFrame::OnClose)
+END_EVENT_TABLE()
+
+
+GraphViewer::GraphViewer(wxWindow* parent, const wxString& title, GraphHelper* _helper, wxTerm* terminal) : ViewerFrame(parent, title)
 {
-    public:
-        ViewerFrame(wxWindow* parent, const wxString& title) : wxFrame(parent, wxID_ANY, title, wxDefaultPosition, wxDefaultSize, wxFRAME_FLOAT_ON_PARENT | wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX | wxMAXIMIZE_BOX | wxMINIMIZE_BOX) {};
+    wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
+    _grapherWindow = new wxMGL(this);
 
-        void OnKeyDown(wxKeyEvent& event);
-        void OnFocus(wxFocusEvent& event);
-        void OnEnter(wxMouseEvent& event);
-        void OnClose(wxCloseEvent& event);
+    _grapherWindow->SetGraph(_helper->setGrapher());
+    _grapherWindow->SetDraw(_helper);
 
-        DECLARE_EVENT_TABLE();
-};
+    _grapherWindow->SetAlpha(_helper->getAlpha());
+    _grapherWindow->SetLight(_helper->getLighting());
 
-#endif
+    sizer->Add(_grapherWindow, 1, wxEXPAND);
+    _grapherWindow->SetSize(640,480);
+
+    this->SetSizer(sizer);
+    this->SetClientSize(_grapherWindow->GetSize());
+
+    m_terminal = terminal;
+}
+
 

@@ -34,6 +34,7 @@
 #include "core/parser_functions.hpp"
 #include "core/define.hpp"
 #include "core/plotdata.hpp"
+#include "core/graph_helper.hpp"
 //#include "menues.hpp"
 #include "core/script.hpp"
 #include "core/loop.hpp"
@@ -74,6 +75,7 @@ class NumeReKernel
         string maskProcedureSigns(string sLine);
     public:
         static wxTerm* m_parent;
+        static GraphHelper* graphHelper;
         static int nLINE_LENGTH;
         static bool bWritingTable;
         static bool bCancelSignal;
@@ -113,7 +115,8 @@ class NumeReKernel
             NUMERE_SHOW_TABLE,
             NUMERE_EDIT_TABLE,
             NUMERE_DEBUG_EVENT,
-            NUMERE_ANSWER_READ
+            NUMERE_ANSWER_READ,
+            NUMERE_GRAPH_UPDATE
         };
 
         NumeReKernel();
@@ -162,6 +165,7 @@ class NumeReKernel
         static void setDocumentation(const string& _sDocumentation);
         static bool GetAsyncCancelState();
         static void showTable(string** __stable, size_t cols, size_t lines, string __name, bool openeditable = false);
+        static void updateGraphWindow(GraphHelper* _helper);
         static stringmatrix getTable();
         static void showDebugEvent(const string& sTitle, const vector<string>& vModule, const vector<string>& vStacktrace, const vector<string>& vNumVars, const vector<string>& vStringVars);
         static void waitForContinue();

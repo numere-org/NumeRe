@@ -65,6 +65,7 @@
 #include "helpviewer.hpp"
 #include "tableviewer.hpp"
 #include "tableeditpanel.hpp"
+#include "graphviewer.hpp"
 
 
 #include <wx/msw/helpchm.h>
@@ -496,14 +497,15 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
 	int charWidth = GetCharWidth();
 
-	int fileNameChars = 75;
+	//int fileNameChars = 75;
 	int filetypeChars = 20;
 	int readEditChars = 15;
 	//int networkStatusChars = 25;
 	int lineColChars = 20;
 	int debuggerchars = 25;
 
-	const int widths[] = {fileNameChars * charWidth, filetypeChars * charWidth, readEditChars * charWidth, lineColChars * charWidth, debuggerchars * charWidth};
+	//const int widths[] = {fileNameChars * charWidth, filetypeChars * charWidth, readEditChars * charWidth, lineColChars * charWidth, debuggerchars * charWidth};
+	const int widths[] = {-1, filetypeChars * charWidth, readEditChars * charWidth, lineColChars * charWidth, debuggerchars * charWidth};
     const int styles[] = {wxSB_RAISED, wxSB_RAISED, wxSB_RAISED, wxSB_RAISED, wxSB_RAISED};
 	m_statusBar = CreateStatusBar (WXSIZEOF(widths), wxST_SIZEGRIP);
 	//m_statusBar = new wxStatusBar(this);
@@ -1713,6 +1715,15 @@ void NumeReWindow::editTable(const vector<vector<string> >& sTable, const string
     frame->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
     frame->Show();
     frame->SetFocus();
+}
+
+void NumeReWindow::showGraph(GraphHelper* _helper)
+{
+    GraphViewer* viewer = new GraphViewer(this, "NumeRe: Graph", _helper, m_terminal);
+
+    viewer->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    viewer->Show();
+    viewer->SetFocus();
 }
 
 void NumeReWindow::evaluateDebugInfo(const vector<string>& vDebugInfo)

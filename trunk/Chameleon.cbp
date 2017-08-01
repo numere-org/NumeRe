@@ -302,6 +302,8 @@
 		<Unit filename="common/tree_util.h" />
 		<Unit filename="common/verinfo.cpp" />
 		<Unit filename="common/verinfo.h" />
+		<Unit filename="common/wx.cpp" />
+		<Unit filename="common/wx.h" />
 		<Unit filename="compiler/compiler.cpp" />
 		<Unit filename="compiler/compiler.h" />
 		<Unit filename="compiler/compilerevent.cpp" />
@@ -358,6 +360,8 @@
 		<Unit filename="gui/dialogs/wxTermContainer.h" />
 		<Unit filename="gui/filetree.cpp" />
 		<Unit filename="gui/filetree.hpp" />
+		<Unit filename="gui/graphviewer.cpp" />
+		<Unit filename="gui/graphviewer.hpp" />
 		<Unit filename="gui/helpviewer.cpp" />
 		<Unit filename="gui/helpviewer.hpp" />
 		<Unit filename="gui/imagepanel.cpp" />
@@ -425,12 +429,8 @@
 		<Unit filename="kernel/core/filesystem.hpp" />
 		<Unit filename="kernel/core/fitcontroller.cpp" />
 		<Unit filename="kernel/core/fitcontroller.hpp" />
-		<Unit filename="kernel/core/graph_helper.cpp">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
-		<Unit filename="kernel/core/graph_helper.hpp">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
+		<Unit filename="kernel/core/graph_helper.cpp" />
+		<Unit filename="kernel/core/graph_helper.hpp" />
 		<Unit filename="kernel/core/language.cpp" />
 		<Unit filename="kernel/core/language.hpp" />
 		<Unit filename="kernel/core/loop.cpp" />
@@ -455,7 +455,9 @@
 		<Unit filename="kernel/core/parser_functions.hpp" />
 		<Unit filename="kernel/core/plotdata.cpp" />
 		<Unit filename="kernel/core/plotdata.hpp" />
+		<Unit filename="kernel/core/plotinfo.hpp" />
 		<Unit filename="kernel/core/plotting.cpp" />
+		<Unit filename="kernel/core/plotting.hpp" />
 		<Unit filename="kernel/core/plugin.cpp" />
 		<Unit filename="kernel/core/plugin.hpp" />
 		<Unit filename="kernel/core/plugin_histogram.cpp" />

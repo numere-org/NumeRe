@@ -179,6 +179,7 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         // --> Konstruktoren und Destruktoren <--
         PlotData();
         PlotData(int _nLines, int _nRows = 1, int _nLayers = 1);
+        PlotData(const PlotData& _pData);
         ~PlotData();
 
         enum Coordinates {

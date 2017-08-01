@@ -68,6 +68,12 @@ struct RetoqueRegion
     double dMedian;
 };
 
+struct Integration_Vars
+{
+    string sName[4] = {"x", "y", "z", "t"};
+    double vValue[4][4];
+};
+
 
 
 #endif
