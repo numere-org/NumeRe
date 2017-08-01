@@ -14,3 +14,4 @@ Cleaned	Die History zeigt nun keine wiederholten Ausdruecke mehr an. Mehrmals hi
 Added	Der Dateibrowser zeigt nun in den Tooltips den Dateityp und bei NumeRe-Datenfiles auch die zusaetzlichen Dateiinformationen an.
 Cleaned	Der Schleifenalgorithmus wurde verbessert. Es ergaben sich Laufzeitverbesserungen bis zu x4.
 Added	Der Editor kann nun nach den Dateien der eingebundenen Scripte suchen, wenn mit der rechten Maustaste auf die entsprechende Zeile geklickt und der entsprechende Eintrag im Kontextmenue ausgewaehlt wird.
+New	NumeRe besitzt nun einen interaktiven Graph-Viewer. Der Viewer kann zoomen, Graphen rotieren, Animationen abspielen (sofern verfuegbar) und einfache, geometrische Objekte/Text zum Graphen hinzufuegen.

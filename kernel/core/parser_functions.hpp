@@ -25,8 +25,7 @@
 #include <iostream>
 #include <ios>
 #include <iomanip>
-//#include <mgl2/mgl.h>
-#include <mgl2/qt.h>
+
 #include <vector>
 #include <boost/tokenizer.hpp>
 #include <gsl/gsl_sort.h>
@@ -60,41 +59,7 @@ extern int nLINE_LENGTH;
 
 
 
-struct PlotInfo
-{
-    double dRanges[3][2];
-    double dSecAxisRanges[2][2];
-    double dColorRanges[2];
-    bool b2D;
-    bool b3D;
-    bool b2DVect;
-    bool b3DVect;
-    bool bDraw;
-    bool bDraw3D;
-    string sCommand;
-    string sPlotParams;
-    int nSamples;
-    int nStyleMax;
-    unsigned int nMaxPlotDim;
-    // Pointer-Variablen
-    int* nStyle;
-    int* nFunctions;
-    string* sLineStyles;
-    string* sContStyles;
-    string* sPointStyles;
-    string* sConPointStyles;
 
-    inline ~PlotInfo()
-        {
-            nStyle = 0;
-            nFunctions = 0;
-            sLineStyles = 0;
-            sContStyles = 0;
-            sPointStyles = 0;
-            sConPointStyles = 0;
-        }
-
-};
 // Erster Index: No. of Line; zweiter Index: No. of Col (push_back verwendet dazu stets zeilen!)
 typedef vector<vector<double> > Matrix;
 
@@ -162,14 +127,6 @@ string parser_getSumString(const string& sCmd);
 
 // Plotting
 void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions, PlotData& _pData);
-void parser_setLogScale(mglGraph& _graph, PlotData& _pData, bool bzLogscale);
-void parser_directionalLight(mglGraph& _graph, double dRanges[3][2], double dPhi, double dTheta, int nId, char cColor = 'w', double dBrightness = 0.5);
-string parser_getLegendStyle(const string& sLegend, const PlotData& _pData);
-mglPoint parser_CalcCutBox(double dPhi, double dRanges[3][2], int nEdge = 0, int nCoords = 0, bool b3D = false);
-double parser_getProjBackground(double dPhi, double dRanges[3][2], int nEdge = 0);
-mglData parser_fmod(const mglData& _mData, double dDenominator);
-void parser_CoordSettings(mglGraph& _graph, mglData _mAxisVals[3], const PlotData& _pData, PlotInfo& _pInfo);
-string parser_CoordFunc(const string& sFunc, double dPhiScale = 1.0, double dThetaScale = 1.0);
 
 // Matrix-Operations
 bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);

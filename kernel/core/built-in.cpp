@@ -20,6 +20,7 @@
 #include "built-in.hpp"
 #include "../kernel.hpp"
 
+extern mglGraph _fontData;
 /*
  * Built-In-Funktionen
  * -> Bieten die grundlegende Funktionalitaet dieses Frameworks

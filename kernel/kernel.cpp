@@ -36,6 +36,7 @@ time_t tTimeZero = time(0);
 
 
 wxTerm* NumeReKernel::m_parent = nullptr;
+GraphHelper* NumeReKernel::graphHelper = nullptr;
 int NumeReKernel::nLINE_LENGTH = 80;
 bool NumeReKernel::bWritingTable = false;
 string NumeReKernel::sFileToEdit = "";
@@ -2016,6 +2017,21 @@ void NumeReKernel::showTable(string** __stable, size_t cols, size_t lines, strin
             m_parent->m_KernelStatus = NUMERE_EDIT_TABLE;
         else
             m_parent->m_KernelStatus = NUMERE_SHOW_TABLE;
+    }
+    wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
+    Sleep(100);
+}
+
+void NumeReKernel::updateGraphWindow(GraphHelper* _helper)
+{
+    if (!m_parent)
+        return;
+    else
+    {
+        wxCriticalSectionLocker lock(m_parent->m_kernelCS);
+        graphHelper = _helper;
+
+        m_parent->m_KernelStatus = NUMERE_GRAPH_UPDATE;
     }
     wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
     Sleep(100);

@@ -419,6 +419,7 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
     vector<string> vDebugInfo;
     unsigned int nLineNumber = 0;
     int nFileOpenFlag = 0;
+    GraphHelper* _helper = nullptr;
     string sAnswer = "";
     {
         wxCriticalSectionLocker lock(m_kernelCS);
@@ -442,6 +443,9 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
                 sFileName = _kernel.ReadFileName();
                 nLineNumber = _kernel.ReadLineNumber();
                 nFileOpenFlag = _kernel.ReadOpenFileFlag();
+                break;
+            case NumeReKernel::NUMERE_GRAPH_UPDATE:
+                _helper = _kernel.graphHelper;
                 break;
             case NumeReKernel::NUMERE_OPEN_DOC:
                 sAnswer = m_sAnswer;//+ "|\n|<- ";
@@ -496,6 +500,10 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
             m_wxParent->editTable(sTable, sFileName);
         else
             m_wxParent->openTable(sTable, sFileName);
+    }
+    else if (_helper)
+    {
+        m_wxParent->showGraph(_helper);
     }
     else if (vDebugInfo.size())
     {

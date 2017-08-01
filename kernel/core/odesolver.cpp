@@ -19,6 +19,8 @@
 #include "odesolver.hpp"
 #include "../kernel.hpp"
 
+extern Integration_Vars parser_iVars;
+
 Parser* Odesolver::_odeParser = 0;
 int Odesolver::nDimensions = 0;
 mu::varmap_type Odesolver::mVars;

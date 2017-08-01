@@ -41,8 +41,11 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension)
 	string sValid = "";			// Variable fuer den gueltigen Dateinamen
 	sValidExtensions = toLowerCase(sValidExtensions);
 
-    while (_sFileName.find('\\') != string::npos)
-        _sFileName[_sFileName.find('\\')] = '/';
+    for (size_t i = 0; i < _sFileName.length(); i++)
+    {
+        if (_sFileName[i] == '\\')
+            _sFileName[i] = '/';
+    }
 
     while (_sFileName.front() == ' ')
     {
@@ -92,15 +95,11 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension)
             continue;
 	}
 
-	unsigned int nPos = _sFileName.find_last_of("/");	// Suchen wir mal nach eventuellen relativen Pfadangaben.
+	unsigned int nPos = _sFileName.find_last_of(':');	// Suchen wir mal nach eventuellen relativen Pfadangaben.
 	if (nPos == string::npos)						// Nichts gefunden...? Dann nehmen wir den default
 	{
-		nPos = _sFileName.find_last_of("\\");
-		if (nPos == string::npos)
-		{
-			_sFileName = sPath.substr(1,sPath.length()-2) + "/" + _sFileName;
-		}
-	}
+        _sFileName = sPath.substr(1,sPath.length()-2) + "/" + _sFileName;
+    }
 
 
 	if (_sFileName.find('*') != string::npos || _sFileName.find('?') != string::npos)
