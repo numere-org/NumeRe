@@ -182,12 +182,12 @@ bool OptionsDialog::Create( wxWindow* parent, wxWindowID id, const wxString& cap
 void OptionsDialog::CreateControls()
 {
 ////@begin OptionsDialog content construction
-    OptionsDialog* itemDialog1 = this;
+    OptionsDialog* optionDialog = this;
 
-    wxBoxSizer* itemBoxSizer2 = new wxBoxSizer(wxVERTICAL);
-    itemDialog1->SetSizer(itemBoxSizer2);
+    wxBoxSizer* optionVSizer = new wxBoxSizer(wxVERTICAL);
+    optionDialog->SetSizer(optionVSizer);
 
-    m_optionsNotebook = new wxNotebook( itemDialog1, ID_NOTEBOOK, wxDefaultPosition, wxSize(400, 400), wxNB_DEFAULT|wxNB_TOP );
+    m_optionsNotebook = new wxNotebook( optionDialog, ID_NOTEBOOK, wxDefaultPosition, wxSize(400, 400), wxNB_DEFAULT|wxNB_TOP );
 
     /**wxPanel* itemPanel4 = new wxPanel( m_optionsNotebook, ID_PANELFEATURES, wxDefaultPosition, wxSize(100, 80), wxNO_BORDER|wxTAB_TRAVERSAL );
     wxBoxSizer* itemBoxSizer5 = new wxBoxSizer(wxVERTICAL);
@@ -229,173 +229,149 @@ void OptionsDialog::CreateControls()
 */
 
     /// Configuration panel
-    wxPanel* itemPanel28 = new wxPanel( m_optionsNotebook, ID_PANELCOMPILER, wxDefaultPosition, wxDefaultSize, wxSUNKEN_BORDER|wxTAB_TRAVERSAL );
-    wxBoxSizer* itemBoxSizer29 = new wxBoxSizer(wxVERTICAL);
-    itemPanel28->SetSizer(itemBoxSizer29);
+    wxPanel* configurationPanel = new wxPanel( m_optionsNotebook, ID_PANELCOMPILER, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    wxBoxSizer* configVSizer_2 = new wxBoxSizer(wxVERTICAL);
+    configurationPanel->SetSizer(configVSizer_2);
 
-    wxBoxSizer* itemBoxSizer30 = new wxBoxSizer(wxHORIZONTAL);
-    itemBoxSizer29->Add(itemBoxSizer30, 0, wxALIGN_LEFT|wxALL, 0);
-    wxBoxSizer* itemBoxSizer31 = new wxBoxSizer(wxVERTICAL);
-    itemBoxSizer30->Add(itemBoxSizer31, 0, wxALIGN_TOP|wxALL, 0);
-    /*wxStaticText* itemStaticText32 = new wxStaticText( itemPanel28, wxID_STATIC, _("MinGW installation path:"), wxDefaultPosition, wxDefaultSize, 0 );
-    itemBoxSizer31->Add(itemStaticText32, 0, wxALIGN_LEFT|wxALL, 5);*/
+    wxBoxSizer* configHSizer = new wxBoxSizer(wxHORIZONTAL);
+    configVSizer_2->Add(configHSizer, 0, wxALIGN_LEFT|wxALL, 0);
+    wxBoxSizer* configVSizer = new wxBoxSizer(wxVERTICAL);
+    configHSizer->Add(configVSizer, 0, wxALIGN_TOP|wxALL, 0);
 
-    //wxBoxSizer* itemBoxSizer33 = new wxBoxSizer(wxHORIZONTAL);
-    //itemBoxSizer31->Add(itemBoxSizer33, 0, wxALIGN_LEFT|wxALL, 5);
-    m_compactTables = new wxCheckBox( itemPanel28, wxID_ANY, _(_guilang.get("GUI_OPTIONS_COMPACTTABLES")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_compactTables = new wxCheckBox( configurationPanel, wxID_ANY, _(_guilang.get("GUI_OPTIONS_COMPACTTABLES")), wxDefaultPosition, wxDefaultSize, 0 );
     m_compactTables->SetValue(false);
-    itemBoxSizer31->Add(m_compactTables, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    configVSizer->Add(m_compactTables, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
-    m_AutoLoadDefines = new wxCheckBox( itemPanel28, wxID_ANY, _(_guilang.get("GUI_OPTIONS_DEFCTRL")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_AutoLoadDefines = new wxCheckBox( configurationPanel, wxID_ANY, _(_guilang.get("GUI_OPTIONS_DEFCTRL")), wxDefaultPosition, wxDefaultSize, 0 );
     m_AutoLoadDefines->SetValue(false);
-    itemBoxSizer31->Add(m_AutoLoadDefines, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    configVSizer->Add(m_AutoLoadDefines, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
-    m_LoadCompactTables = new wxCheckBox( itemPanel28, wxID_ANY, _(_guilang.get("GUI_OPTIONS_EMPTYCOLS")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_LoadCompactTables = new wxCheckBox( configurationPanel, wxID_ANY, _(_guilang.get("GUI_OPTIONS_EMPTYCOLS")), wxDefaultPosition, wxDefaultSize, 0 );
     m_LoadCompactTables->SetValue(false);
-    itemBoxSizer31->Add(m_LoadCompactTables, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    configVSizer->Add(m_LoadCompactTables, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
-    m_ExtendedInfo = new wxCheckBox( itemPanel28, wxID_ANY, _(_guilang.get("GUI_OPTIONS_EXTENDEDINFO")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_ExtendedInfo = new wxCheckBox( configurationPanel, wxID_ANY, _(_guilang.get("GUI_OPTIONS_EXTENDEDINFO")), wxDefaultPosition, wxDefaultSize, 0 );
     m_ExtendedInfo->SetValue(false);
-    itemBoxSizer31->Add(m_ExtendedInfo, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    configVSizer->Add(m_ExtendedInfo, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
-    m_CustomLanguage = new wxCheckBox( itemPanel28, wxID_ANY, _(_guilang.get("GUI_OPTIONS_CUSTOMLANG")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_CustomLanguage = new wxCheckBox( configurationPanel, wxID_ANY, _(_guilang.get("GUI_OPTIONS_CUSTOMLANG")), wxDefaultPosition, wxDefaultSize, 0 );
     m_CustomLanguage->SetValue(false);
-    itemBoxSizer31->Add(m_CustomLanguage, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    configVSizer->Add(m_CustomLanguage, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
-    m_ESCinScripts = new wxCheckBox( itemPanel28, wxID_ANY, _(_guilang.get("GUI_OPTIONS_ESCINSCRIPTS")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_ESCinScripts = new wxCheckBox( configurationPanel, wxID_ANY, _(_guilang.get("GUI_OPTIONS_ESCINSCRIPTS")), wxDefaultPosition, wxDefaultSize, 0 );
     m_ESCinScripts->SetValue(false);
-    itemBoxSizer31->Add(m_ESCinScripts, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    configVSizer->Add(m_ESCinScripts, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
-    m_UseLogfile = new wxCheckBox( itemPanel28, wxID_ANY, _(_guilang.get("GUI_OPTIONS_LOGFILE")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_UseLogfile = new wxCheckBox( configurationPanel, wxID_ANY, _(_guilang.get("GUI_OPTIONS_LOGFILE")), wxDefaultPosition, wxDefaultSize, 0 );
     m_UseLogfile->SetValue(false);
-    itemBoxSizer31->Add(m_UseLogfile, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    configVSizer->Add(m_UseLogfile, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
-    m_UseExternalViewer = new wxCheckBox( itemPanel28, wxID_ANY, _(_guilang.get("GUI_OPTIONS_EXTERNALVIEWER")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_UseExternalViewer = new wxCheckBox( configurationPanel, wxID_ANY, _(_guilang.get("GUI_OPTIONS_EXTERNALVIEWER")), wxDefaultPosition, wxDefaultSize, 0 );
     m_UseExternalViewer->SetValue(false);
-    itemBoxSizer31->Add(m_UseExternalViewer, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    configVSizer->Add(m_UseExternalViewer, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
     wxBoxSizer* itemBoxSizer51 = new wxBoxSizer(wxHORIZONTAL);
-    itemBoxSizer31->Add(itemBoxSizer51);
-    m_autosaveinterval = new wxSpinCtrl( itemPanel28, ID_SPINCTRL, _T("0"), wxDefaultPosition, wxSize(60, -1), wxSP_ARROW_KEYS, 10, 600, 30);
+    configVSizer->Add(itemBoxSizer51);
+    m_autosaveinterval = new wxSpinCtrl( configurationPanel, ID_SPINCTRL, _T("0"), wxDefaultPosition, wxSize(60, -1), wxSP_ARROW_KEYS, 10, 600, 30);
     itemBoxSizer51->Add(m_autosaveinterval, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
-    wxStaticText* itemStaticText50 = new wxStaticText( itemPanel28, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_AUTOSAVE")), wxDefaultPosition, wxDefaultSize, 0 );
+    wxStaticText* itemStaticText50 = new wxStaticText( configurationPanel, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_AUTOSAVE")), wxDefaultPosition, wxDefaultSize, 0 );
     itemBoxSizer51->Add(itemStaticText50, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxADJUST_MINSIZE, 5);
 
-    wxStaticText* styleStaticText = new wxStaticText(itemPanel28, wxID_STATIC, _guilang.get("GUI_OPTIONS_SYNTAXHIGHLIGHTING"));
-    itemBoxSizer31->Add(styleStaticText, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
-    //wxBoxSizer* itemColorSizer = new wxBoxSizer(wxVERTICAL);
-    //wxBoxSizer* itemColorControlSizer = new wxBoxSizer(wxVERTICAL);
+    m_optionsNotebook->AddPage(configurationPanel, _(_guilang.get("GUI_OPTIONS_CONFIG")));
+
+
+    /// Path settings panel
+    wxPanel* pathPanel = new wxPanel( m_optionsNotebook, ID_PANELNETWORK, wxDefaultPosition, wxSize(200, 200), wxTAB_TRAVERSAL );
+    wxBoxSizer* pathHSizer = new wxBoxSizer(wxHORIZONTAL);
+    pathPanel->SetSizer(pathHSizer);
+    wxBoxSizer* pathVSizer = new wxBoxSizer(wxVERTICAL);
+    pathHSizer->Add(pathVSizer, 0, wxALIGN_TOP, 5);
+
+    wxStaticText* itemStaticText20 = new wxStaticText( pathPanel, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_LOADPATH")), wxDefaultPosition, wxDefaultSize, 0 );
+    pathVSizer->Add(itemStaticText20, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
+
+    wxBoxSizer* pathVSizer_1 = new wxBoxSizer(wxHORIZONTAL);
+    pathVSizer->Add(pathVSizer_1, wxALIGN_LEFT);
+    m_LoadPath = new wxTextCtrl( pathPanel, wxID_ANY, _T(""), wxDefaultPosition, wxSize(280, -1), wxTE_PROCESS_ENTER );
+    m_LoadPath->SetValue("<loadpath>");
+    pathVSizer_1->Add(m_LoadPath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+    wxButton* loadbutton = new wxButton(pathPanel, ID_BTN_LOADPATH, _guilang.get("GUI_OPTIONS_CHOOSE"));
+    pathVSizer_1->Add(loadbutton, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+
+    wxStaticText* itemStaticText22 = new wxStaticText( pathPanel, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_SAVEPATH")), wxDefaultPosition, wxDefaultSize, 0 );
+    pathVSizer->Add(itemStaticText22, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
+
+    wxBoxSizer* pathVSizer_2 = new wxBoxSizer(wxHORIZONTAL);
+    pathVSizer->Add(pathVSizer_2, wxALIGN_LEFT);
+    m_SavePath = new wxTextCtrl( pathPanel, wxID_ANY, _T(""), wxDefaultPosition, wxSize(280, -1), wxTE_PROCESS_ENTER );
+    m_SavePath->SetValue("<savepath>");
+    pathVSizer_2->Add(m_SavePath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+    wxButton* savebutton = new wxButton(pathPanel, ID_BTN_SAVEPATH, _guilang.get("GUI_OPTIONS_CHOOSE"));
+    pathVSizer_2->Add(savebutton, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+
+    wxStaticText* itemStaticText24 = new wxStaticText( pathPanel, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_SCRIPTPATH")), wxDefaultPosition, wxDefaultSize, 0 );
+    pathVSizer->Add(itemStaticText24, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
+
+    wxBoxSizer* pathVSizer_3 = new wxBoxSizer(wxHORIZONTAL);
+    pathVSizer->Add(pathVSizer_3, wxALIGN_LEFT);
+    m_ScriptPath = new wxTextCtrl( pathPanel, wxID_ANY, _T(""), wxDefaultPosition, wxSize(280, -1), wxTE_PROCESS_ENTER );
+    m_ScriptPath->SetValue("<scriptpath>");
+    pathVSizer_3->Add(m_ScriptPath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+    wxButton* scriptbutton = new wxButton(pathPanel, ID_BTN_SCRIPTPATH, _guilang.get("GUI_OPTIONS_CHOOSE"));
+    pathVSizer_3->Add(scriptbutton, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+
+    wxStaticText* itemStaticText26 = new wxStaticText( pathPanel, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_PROCPATH")), wxDefaultPosition, wxDefaultSize, 0 );
+    pathVSizer->Add(itemStaticText26, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
+
+    wxBoxSizer* pathVSizer_4 = new wxBoxSizer(wxHORIZONTAL);
+    pathVSizer->Add(pathVSizer_4, wxALIGN_LEFT);
+    m_ProcPath = new wxTextCtrl( pathPanel, wxID_ANY, _T(""), wxDefaultPosition, wxSize(280, -1), wxTE_PROCESS_ENTER );
+    m_ProcPath->SetValue("<procpath>");
+    pathVSizer_4->Add(m_ProcPath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+    wxButton* procbutton = new wxButton(pathPanel, ID_BTN_PROCPATH, _guilang.get("GUI_OPTIONS_CHOOSE"));
+    pathVSizer_4->Add(procbutton, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+
+    wxStaticText* itemStaticText27 = new wxStaticText( pathPanel, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_PLOTPATH")), wxDefaultPosition, wxDefaultSize, 0 );
+    pathVSizer->Add(itemStaticText27, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
+
+    wxBoxSizer* pathVSizer_5 = new wxBoxSizer(wxHORIZONTAL);
+    pathVSizer->Add(pathVSizer_5, wxALIGN_LEFT);
+    m_PlotPath = new wxTextCtrl( pathPanel, wxID_ANY, _T(""), wxDefaultPosition, wxSize(280, -1), wxTE_PROCESS_ENTER );
+    m_PlotPath->SetValue("<plotpath>");
+    pathVSizer_5->Add(m_PlotPath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+    wxButton* plotbutton = new wxButton(pathPanel, ID_BTN_PLOTPATH, _guilang.get("GUI_OPTIONS_CHOOSE"));
+    pathVSizer_5->Add(plotbutton, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+
+    m_optionsNotebook->AddPage(pathPanel, _(_guilang.get("GUI_OPTIONS_PATHS")));
+
+    /// Style panel
+    wxPanel* stylePanel = new wxPanel(m_optionsNotebook, wxID_ANY, wxDefaultPosition, wxSize(100,80), wxTAB_TRAVERSAL);
+    wxBoxSizer* styleHSizer = new wxBoxSizer(wxHORIZONTAL);
+    stylePanel->SetSizer(styleHSizer);
+    wxBoxSizer* styleVSizer = new wxBoxSizer(wxVERTICAL);
+    styleHSizer->Add(styleVSizer, 1, wxALIGN_TOP, 5);
+
+    wxStaticText* styleStaticText = new wxStaticText(stylePanel, wxID_STATIC, _guilang.get("GUI_OPTIONS_SYNTAXHIGHLIGHTING"));
+    styleVSizer->Add(styleStaticText, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
     wxFlexGridSizer* colorGroupSizer = new wxFlexGridSizer(2, 0, 5);
 
     wxArrayString styles = m_options->GetStyleIdentifier();
-    m_colorType = new wxComboBox( itemPanel28, ID_CLRSPIN, styles[0], wxDefaultPosition, wxDefaultSize, styles, wxCB_READONLY );
+    m_colorType = new wxComboBox( stylePanel, ID_CLRSPIN, styles[0], wxDefaultPosition, wxDefaultSize, styles, wxCB_READONLY );
     m_colorType->SetStringSelection(styles[0]);
 
-    m_foreColor = new wxColourPickerCtrl(itemPanel28, ID_CLRPICKR_FORE, m_options->GetSyntaxStyle(0).foreground);
-    m_backColor = new wxColourPickerCtrl(itemPanel28, ID_CLRPICKR_BACK, m_options->GetSyntaxStyle(0).background);
+    m_foreColor = new wxColourPickerCtrl(stylePanel, ID_CLRPICKR_FORE, m_options->GetSyntaxStyle(0).foreground);
+    m_backColor = new wxColourPickerCtrl(stylePanel, ID_CLRPICKR_BACK, m_options->GetSyntaxStyle(0).background);
 
-    m_resetButton = new wxButton(itemPanel28, ID_RESETCOLOR, _guilang.get("GUI_OPTIONS_RESETHIGHLIGHT"), wxDefaultPosition, wxDefaultSize, 0);
-
-//    itemColorSizer->Add(m_foreColor, 1, wxALL | wxADJUST_MINSIZE, 5);
-//    itemColorSizer->Add(m_backColor, 1, wxALL | wxADJUST_MINSIZE, 5);
-//    itemColorControlSizer->Add(m_colorType, 1, wxALL, 5);
-//    itemColorControlSizer->Add(m_resetButton, 1, wxALL, 5);
+    m_resetButton = new wxButton(stylePanel, ID_RESETCOLOR, _guilang.get("GUI_OPTIONS_RESETHIGHLIGHT"), wxDefaultPosition, wxDefaultSize, 0);
 
     colorGroupSizer->Add(m_foreColor, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
     colorGroupSizer->Add(m_colorType, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
     colorGroupSizer->Add(m_backColor, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
     colorGroupSizer->Add(m_resetButton, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
-    //colorGroupSizer->Add(itemColorSizer);
-    //colorGroupSizer->Add(itemColorControlSizer);
-    itemBoxSizer31->Add(colorGroupSizer, 1, wxALIGN_LEFT, 5);
+    styleVSizer->Add(colorGroupSizer, 1, wxALIGN_LEFT, 5);
 
-    m_optionsNotebook->AddPage(itemPanel28, _(_guilang.get("GUI_OPTIONS_CONFIG")));
-
-
-    /// Path settings panel
-    wxPanel* itemPanel17 = new wxPanel( m_optionsNotebook, ID_PANELNETWORK, wxDefaultPosition, wxSize(200, 200), wxSUNKEN_BORDER|wxTAB_TRAVERSAL );
-    wxBoxSizer* itemBoxSizer18 = new wxBoxSizer(wxHORIZONTAL);
-    itemPanel17->SetSizer(itemBoxSizer18);
-
-    wxBoxSizer* itemBoxSizer19 = new wxBoxSizer(wxVERTICAL);
-    itemBoxSizer18->Add(itemBoxSizer19, 0, wxALIGN_TOP, 5);
-    wxStaticText* itemStaticText20 = new wxStaticText( itemPanel17, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_LOADPATH")), wxDefaultPosition, wxDefaultSize, 0 );
-    itemBoxSizer19->Add(itemStaticText20, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
-
-    wxBoxSizer* itemBoxSizer19_1 = new wxBoxSizer(wxHORIZONTAL);
-    itemBoxSizer19->Add(itemBoxSizer19_1, wxALIGN_LEFT);
-    m_LoadPath = new wxTextCtrl( itemPanel17, wxID_ANY, _T(""), wxDefaultPosition, wxSize(280, -1), wxTE_PROCESS_ENTER );
-    m_LoadPath->SetValue("<loadpath>");
-    itemBoxSizer19_1->Add(m_LoadPath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
-    wxButton* loadbutton = new wxButton(itemPanel17, ID_BTN_LOADPATH, _guilang.get("GUI_OPTIONS_CHOOSE"));
-    itemBoxSizer19_1->Add(loadbutton, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
-
-    wxStaticText* itemStaticText22 = new wxStaticText( itemPanel17, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_SAVEPATH")), wxDefaultPosition, wxDefaultSize, 0 );
-    itemBoxSizer19->Add(itemStaticText22, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
-
-    wxBoxSizer* itemBoxSizer19_2 = new wxBoxSizer(wxHORIZONTAL);
-    itemBoxSizer19->Add(itemBoxSizer19_2, wxALIGN_LEFT);
-    m_SavePath = new wxTextCtrl( itemPanel17, wxID_ANY, _T(""), wxDefaultPosition, wxSize(280, -1), wxTE_PROCESS_ENTER );
-    m_SavePath->SetValue("<savepath>");
-    itemBoxSizer19_2->Add(m_SavePath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
-    wxButton* savebutton = new wxButton(itemPanel17, ID_BTN_SAVEPATH, _guilang.get("GUI_OPTIONS_CHOOSE"));
-    itemBoxSizer19_2->Add(savebutton, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
-
-    wxStaticText* itemStaticText24 = new wxStaticText( itemPanel17, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_SCRIPTPATH")), wxDefaultPosition, wxDefaultSize, 0 );
-    itemBoxSizer19->Add(itemStaticText24, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
-
-    wxBoxSizer* itemBoxSizer19_3 = new wxBoxSizer(wxHORIZONTAL);
-    itemBoxSizer19->Add(itemBoxSizer19_3, wxALIGN_LEFT);
-    m_ScriptPath = new wxTextCtrl( itemPanel17, wxID_ANY, _T(""), wxDefaultPosition, wxSize(280, -1), wxTE_PROCESS_ENTER );
-    m_ScriptPath->SetValue("<scriptpath>");
-    itemBoxSizer19_3->Add(m_ScriptPath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
-    wxButton* scriptbutton = new wxButton(itemPanel17, ID_BTN_SCRIPTPATH, _guilang.get("GUI_OPTIONS_CHOOSE"));
-    itemBoxSizer19_3->Add(scriptbutton, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
-
-    wxStaticText* itemStaticText26 = new wxStaticText( itemPanel17, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_PROCPATH")), wxDefaultPosition, wxDefaultSize, 0 );
-    itemBoxSizer19->Add(itemStaticText26, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
-
-    wxBoxSizer* itemBoxSizer19_4 = new wxBoxSizer(wxHORIZONTAL);
-    itemBoxSizer19->Add(itemBoxSizer19_4, wxALIGN_LEFT);
-    m_ProcPath = new wxTextCtrl( itemPanel17, wxID_ANY, _T(""), wxDefaultPosition, wxSize(280, -1), wxTE_PROCESS_ENTER );
-    m_ProcPath->SetValue("<procpath>");
-    itemBoxSizer19_4->Add(m_ProcPath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
-    wxButton* procbutton = new wxButton(itemPanel17, ID_BTN_PROCPATH, _guilang.get("GUI_OPTIONS_CHOOSE"));
-    itemBoxSizer19_4->Add(procbutton, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
-
-    wxStaticText* itemStaticText27 = new wxStaticText( itemPanel17, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_PLOTPATH")), wxDefaultPosition, wxDefaultSize, 0 );
-    itemBoxSizer19->Add(itemStaticText27, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
-
-    wxBoxSizer* itemBoxSizer19_5 = new wxBoxSizer(wxHORIZONTAL);
-    itemBoxSizer19->Add(itemBoxSizer19_5, wxALIGN_LEFT);
-    m_PlotPath = new wxTextCtrl( itemPanel17, wxID_ANY, _T(""), wxDefaultPosition, wxSize(280, -1), wxTE_PROCESS_ENTER );
-    m_PlotPath->SetValue("<plotpath>");
-    itemBoxSizer19_5->Add(m_PlotPath, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
-    wxButton* plotbutton = new wxButton(itemPanel17, ID_BTN_PLOTPATH, _guilang.get("GUI_OPTIONS_CHOOSE"));
-    itemBoxSizer19_5->Add(plotbutton, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
-
-    m_optionsNotebook->AddPage(itemPanel17, _(_guilang.get("GUI_OPTIONS_PATHS")));
-
-
-    /// Misc panel
-    wxPanel* itemPanel39 = new wxPanel( m_optionsNotebook, ID_PANELMISC, wxDefaultPosition, wxSize(100, 80), wxSUNKEN_BORDER|wxTAB_TRAVERSAL );
-    wxBoxSizer* itemBoxSizer40 = new wxBoxSizer(wxHORIZONTAL);
-    itemPanel39->SetSizer(itemBoxSizer40);
-
-    wxBoxSizer* itemBoxSizer41 = new wxBoxSizer(wxVERTICAL);
-    itemBoxSizer40->Add(itemBoxSizer41, 1, wxALIGN_TOP, 5);
-    wxStaticText* itemStaticText42 = new wxStaticText( itemPanel39, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_PRINT")), wxDefaultPosition, wxDefaultSize, 0 );
-    itemBoxSizer41->Add(itemStaticText42, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
-
-    wxArrayString m_printStyleStrings;
-    m_printStyleStrings.Add(_(_guilang.get("GUI_OPTIONS_PRINT_BW")));
-    m_printStyleStrings.Add(_(_guilang.get("GUI_OPTIONS_PRINT_COLOR")));
-    m_printStyle = new wxComboBox( itemPanel39, ID_PRINTSTYLE, _(_guilang.get("GUI_OPTIONS_PRINT_BW")), wxDefaultPosition, wxDefaultSize, m_printStyleStrings, wxCB_READONLY );
-    m_printStyle->SetStringSelection(_(_guilang.get("GUI_OPTIONS_PRINT_BW")));
-    itemBoxSizer41->Add(m_printStyle, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
-
-    wxStaticText* itemStaticText43 = new wxStaticText( itemPanel39, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_DEFAULTFONT")), wxDefaultPosition, wxDefaultSize, 0 );
-    itemBoxSizer41->Add(itemStaticText43, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
+    wxStaticText* defaultFontStaticText = new wxStaticText(stylePanel, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_DEFAULTFONT")), wxDefaultPosition, wxDefaultSize, 0 );
+    styleVSizer->Add(defaultFontStaticText, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
 
     wxArrayString defaultFont;
     defaultFont.Add("pagella");
@@ -406,64 +382,83 @@ void OptionsDialog::CreateControls()
     defaultFont.Add("heroscn");
     defaultFont.Add("schola");
     defaultFont.Add("termes");
-    m_defaultFont = new wxComboBox( itemPanel39, ID_PRINTSTYLE, "pagella", wxDefaultPosition, wxDefaultSize, defaultFont, wxCB_READONLY );
+    m_defaultFont = new wxComboBox(stylePanel, ID_PRINTSTYLE, "pagella", wxDefaultPosition, wxDefaultSize, defaultFont, wxCB_READONLY );
     m_defaultFont->SetStringSelection("pagella");
-    itemBoxSizer41->Add(m_defaultFont, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+    styleVSizer->Add(m_defaultFont, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
 
-    m_cbPrintLineNumbers = new wxCheckBox( itemPanel39, ID_PRINTLINENUMBERS, _(_guilang.get("GUI_OPTIONS_PRINT_LINENUMBERS")), wxDefaultPosition, wxDefaultSize, wxCHK_2STATE );
+    m_optionsNotebook->AddPage(stylePanel, "Style");
+
+    /// Misc panel
+    wxPanel* miscPanel = new wxPanel( m_optionsNotebook, ID_PANELMISC, wxDefaultPosition, wxSize(100, 80), wxTAB_TRAVERSAL );
+    wxBoxSizer* miscHSizer = new wxBoxSizer(wxHORIZONTAL);
+    miscPanel->SetSizer(miscHSizer);
+    wxBoxSizer* miscVSizer = new wxBoxSizer(wxVERTICAL);
+    miscHSizer->Add(miscVSizer, 1, wxALIGN_TOP, 5);
+
+    wxStaticText* itemStaticText42 = new wxStaticText( miscPanel, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_PRINT")), wxDefaultPosition, wxDefaultSize, 0 );
+    miscVSizer->Add(itemStaticText42, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
+
+    wxArrayString m_printStyleStrings;
+    m_printStyleStrings.Add(_(_guilang.get("GUI_OPTIONS_PRINT_BW")));
+    m_printStyleStrings.Add(_(_guilang.get("GUI_OPTIONS_PRINT_COLOR")));
+    m_printStyle = new wxComboBox( miscPanel, ID_PRINTSTYLE, _(_guilang.get("GUI_OPTIONS_PRINT_BW")), wxDefaultPosition, wxDefaultSize, m_printStyleStrings, wxCB_READONLY );
+    m_printStyle->SetStringSelection(_(_guilang.get("GUI_OPTIONS_PRINT_BW")));
+    miscVSizer->Add(m_printStyle, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+
+    m_cbPrintLineNumbers = new wxCheckBox( miscPanel, ID_PRINTLINENUMBERS, _(_guilang.get("GUI_OPTIONS_PRINT_LINENUMBERS")), wxDefaultPosition, wxDefaultSize, wxCHK_2STATE );
     m_cbPrintLineNumbers->SetValue(false);
-    itemBoxSizer41->Add(m_cbPrintLineNumbers, 0, wxALIGN_LEFT|wxALL, 5);
+    miscVSizer->Add(m_cbPrintLineNumbers, 0, wxALIGN_LEFT|wxALL, 5);
 
-    m_saveSession = new wxCheckBox( itemPanel39, wxID_ANY, _(_guilang.get("GUI_OPTIONS_SAVE_SESSION")), wxDefaultPosition, wxDefaultSize, wxCHK_2STATE );
+    m_saveSession = new wxCheckBox( miscPanel, wxID_ANY, _(_guilang.get("GUI_OPTIONS_SAVE_SESSION")), wxDefaultPosition, wxDefaultSize, wxCHK_2STATE );
     m_saveSession->SetValue(false);
-    itemBoxSizer41->Add(m_saveSession, 0, wxALIGN_LEFT|wxALL, 5);
+    miscVSizer->Add(m_saveSession, 0, wxALIGN_LEFT|wxALL, 5);
 
-    m_showToolbarText = new wxCheckBox( itemPanel39, ID_SHOWTOOLBARTEXT, _(_guilang.get("GUI_OPTIONS_SHOW_TOOLBARTEXT")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_showToolbarText = new wxCheckBox( miscPanel, ID_SHOWTOOLBARTEXT, _(_guilang.get("GUI_OPTIONS_SHOW_TOOLBARTEXT")), wxDefaultPosition, wxDefaultSize, 0 );
     m_showToolbarText->SetValue(false);
-    itemBoxSizer41->Add(m_showToolbarText, 1, wxGROW|wxALL, 5);
+    miscVSizer->Add(m_showToolbarText, 1, wxGROW|wxALL, 5);
 
-    m_showGreeting = new wxCheckBox( itemPanel39, wxID_ANY, _(_guilang.get("GUI_OPTIONS_GREETING")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_showGreeting = new wxCheckBox( miscPanel, wxID_ANY, _(_guilang.get("GUI_OPTIONS_GREETING")), wxDefaultPosition, wxDefaultSize, 0 );
     m_showGreeting->SetValue(false);
-    itemBoxSizer41->Add(m_showGreeting, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    miscVSizer->Add(m_showGreeting, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
-    m_ShowHints = new wxCheckBox( itemPanel39, wxID_ANY, _(_guilang.get("GUI_OPTIONS_HINTS")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_ShowHints = new wxCheckBox( miscPanel, wxID_ANY, _(_guilang.get("GUI_OPTIONS_HINTS")), wxDefaultPosition, wxDefaultSize, 0 );
     m_ShowHints->SetValue(false);
-    itemBoxSizer41->Add(m_ShowHints, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    miscVSizer->Add(m_ShowHints, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
-    /**m_chkCombineWatchWindow = new wxCheckBox( itemPanel39, ID_COMBINEWATCH, _("Combine watch window and debug output into one tab"), wxDefaultPosition, wxDefaultSize, 0 );
+    /**m_chkCombineWatchWindow = new wxCheckBox( miscPanel, ID_COMBINEWATCH, _("Combine watch window and debug output into one tab"), wxDefaultPosition, wxDefaultSize, 0 );
     m_chkCombineWatchWindow->SetValue(false);
-    itemBoxSizer41->Add(m_chkCombineWatchWindow, 0, wxALIGN_LEFT|wxALL, 5);*/
+    miscVSizer->Add(m_chkCombineWatchWindow, 0, wxALIGN_LEFT|wxALL, 5);*/
 
     wxBoxSizer* itemBoxSizer47 = new wxBoxSizer(wxHORIZONTAL);
-    itemBoxSizer41->Add(itemBoxSizer47, 0, wxALIGN_LEFT|wxALL, 0);
+    miscVSizer->Add(itemBoxSizer47, 0, wxALIGN_LEFT|wxALL, 0);
 
-    m_termHistory = new wxSpinCtrl( itemPanel39, ID_SPINCTRL, _T("0"), wxDefaultPosition, wxSize(60, -1), wxSP_ARROW_KEYS, 100, 500, 100 );
+    m_termHistory = new wxSpinCtrl( miscPanel, ID_SPINCTRL, _T("0"), wxDefaultPosition, wxSize(60, -1), wxSP_ARROW_KEYS, 100, 500, 100 );
     itemBoxSizer47->Add(m_termHistory, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
-    wxStaticText* itemStaticText48 = new wxStaticText( itemPanel39, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_HISTORY_LINES")), wxDefaultPosition, wxDefaultSize, 0 );
+    wxStaticText* itemStaticText48 = new wxStaticText( miscPanel, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_HISTORY_LINES")), wxDefaultPosition, wxDefaultSize, 0 );
     itemBoxSizer47->Add(itemStaticText48, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxADJUST_MINSIZE, 5);
 
     wxBoxSizer* itemBoxSizer48 = new wxBoxSizer(wxHORIZONTAL);
-    itemBoxSizer41->Add(itemBoxSizer48, 0, wxALIGN_LEFT | wxALL, 0);
+    miscVSizer->Add(itemBoxSizer48, 0, wxALIGN_LEFT | wxALL, 0);
 
-    m_precision = new wxSpinCtrl( itemPanel39, ID_SPINCTRL, _T("0"), wxDefaultPosition, wxSize(60, -1), wxSP_ARROW_KEYS, 1, 14, 7 );
+    m_precision = new wxSpinCtrl( miscPanel, ID_SPINCTRL, _T("0"), wxDefaultPosition, wxSize(60, -1), wxSP_ARROW_KEYS, 1, 14, 7 );
     itemBoxSizer48->Add(m_precision, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
-    wxStaticText* itemStaticText49 = new wxStaticText( itemPanel39, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_PRECISION")), wxDefaultPosition, wxDefaultSize, 0 );
+    wxStaticText* itemStaticText49 = new wxStaticText( miscPanel, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_PRECISION")), wxDefaultPosition, wxDefaultSize, 0 );
     itemBoxSizer48->Add(itemStaticText49, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxADJUST_MINSIZE, 5);
 
-    m_optionsNotebook->AddPage(itemPanel39, _(_guilang.get("GUI_OPTIONS_MISC")));
+    m_optionsNotebook->AddPage(miscPanel, _(_guilang.get("GUI_OPTIONS_MISC")));
 
 
 
-    itemBoxSizer2->Add(m_optionsNotebook, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5);
+    optionVSizer->Add(m_optionsNotebook, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5);
 
-    wxBoxSizer* itemBoxSizer50 = new wxBoxSizer(wxHORIZONTAL);
-    itemBoxSizer2->Add(itemBoxSizer50, 0, wxALIGN_RIGHT|wxALL, 0);
+    wxBoxSizer* optionButtonSizer = new wxBoxSizer(wxHORIZONTAL);
+    optionVSizer->Add(optionButtonSizer, 0, wxALIGN_RIGHT|wxALL, 0);
 
-    wxButton* itemButton51 = new wxButton( itemDialog1, ID_BUTTON_OK, _(_guilang.get("GUI_OPTIONS_OK")), wxDefaultPosition, wxDefaultSize, 0 );
-    itemBoxSizer50->Add(itemButton51, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    wxButton* okButton = new wxButton( optionDialog, ID_BUTTON_OK, _(_guilang.get("GUI_OPTIONS_OK")), wxDefaultPosition, wxDefaultSize, 0 );
+    optionButtonSizer->Add(okButton, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
-    wxButton* itemButton52 = new wxButton( itemDialog1, ID_BUTTON_CANCEL, _(_guilang.get("GUI_OPTIONS_CANCEL")), wxDefaultPosition, wxDefaultSize, 0 );
-    itemBoxSizer50->Add(itemButton52, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    wxButton* cancelButton = new wxButton( optionDialog, ID_BUTTON_CANCEL, _(_guilang.get("GUI_OPTIONS_CANCEL")), wxDefaultPosition, wxDefaultSize, 0 );
+    optionButtonSizer->Add(cancelButton, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
 ////@end OptionsDialog content construction
 }
