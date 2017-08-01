@@ -3098,7 +3098,7 @@
 	<TChar.h>
 	<crtdbg.h>
 
-1501334619 source:d:\cpp\numere-source\trunk\common\wx.cpp
+1501483263 source:d:\cpp\numere-source\trunk\common\wx.cpp
 	<wx/dcclient.h>
 	<wx/msgdlg.h>
 	<wx/clipbrd.h>
@@ -3695,7 +3695,7 @@
 	"NumeReNotebook.h"
 	"../editor/editor.h"
 
-1490791550 source:d:\cpp\numere-source\trunk\gui\dialogs\aboutchameleondialog.cpp
+1501586061 source:d:\cpp\numere-source\trunk\gui\dialogs\aboutchameleondialog.cpp
 	"wx/wxprec.h"
 	<wx/msw/private.h>
 	<wx/filename.h>
@@ -3736,7 +3736,7 @@
 	"fndrpldialog.hpp"
 	"../../kernel/core/language.hpp"
 
-1494365113 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1501585741 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"

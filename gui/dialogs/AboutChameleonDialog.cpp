@@ -120,18 +120,18 @@ void AboutChameleonDialog::CreateControls()
 ////@begin AboutChameleonDialog content construction
     AboutChameleonDialog* itemDialog1 = this;
 
-    this->SetBackgroundColour(wxColour(255, 255, 255));
+    //this->SetBackgroundColour(wxColour(255, 255, 255));
     wxBoxSizer* itemBoxSizer2 = new wxBoxSizer(wxVERTICAL);
     itemDialog1->SetSizer(itemBoxSizer2);
 
     wxNotebook* itemNotebook3 = new wxNotebook( itemDialog1, ID_NOTEBOOK, wxDefaultPosition, wxDefaultSize, wxNB_TOP );
-    itemNotebook3->SetForegroundColour(wxColour(0, 0, 0));
-    itemNotebook3->SetBackgroundColour(wxColour(255, 255, 255));
+    //itemNotebook3->SetForegroundColour(wxColour(0, 0, 0));
+    //itemNotebook3->SetBackgroundColour(wxColour(255, 255, 255));
 #if !wxCHECK_VERSION(2,5,2)
     wxNotebookSizer* itemNotebook3Sizer = new wxNotebookSizer(itemNotebook3);
 #endif
 
-    wxPanel* itemPanel4 = new wxPanel( itemNotebook3, ID_PROGPANEL, wxDefaultPosition, wxDefaultSize, wxSUNKEN_BORDER|wxTAB_TRAVERSAL );
+    wxPanel* itemPanel4 = new wxPanel( itemNotebook3, ID_PROGPANEL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
     itemPanel4->SetForegroundColour(wxColour(0, 0, 0));
     itemPanel4->SetBackgroundColour(wxColour(255, 255, 255));
     m_sizerProgram = new wxBoxSizer(wxVERTICAL);
@@ -145,13 +145,13 @@ void AboutChameleonDialog::CreateControls()
     wxStaticText* itemStaticText7 = new wxStaticText( itemPanel4, wxID_STATIC, _("NumeRe:\nFramework für Numerische Rechnungen"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
     itemStaticText7->SetForegroundColour(wxColour(0, 0, 0));
     itemStaticText7->SetBackgroundColour(wxColour(255, 255, 255));
-    itemStaticText7->SetFont(wxFont(12, wxSWISS, wxNORMAL, wxBOLD, false, _T("Verdana")));
+    itemStaticText7->SetFont(wxFont(12, wxSWISS, wxNORMAL, wxBOLD, false, _T("Arial")));
     m_sizerProgram->Add(itemStaticText7, 0, wxALIGN_CENTER_HORIZONTAL|wxALL|wxADJUST_MINSIZE, 5);
 
     m_lblVersion = new wxStaticText( itemPanel4, wxID_STATIC, _("Version 9.8.7.6"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE|wxNO_BORDER );
     m_lblVersion->SetForegroundColour(wxColour(0, 0, 0));
     m_lblVersion->SetBackgroundColour(wxColour(255, 255, 255));
-    m_lblVersion->SetFont(wxFont(12, wxSWISS, wxNORMAL, wxBOLD, false, _T("Verdana")));
+    m_lblVersion->SetFont(wxFont(12, wxSWISS, wxNORMAL, wxBOLD, false, _T("Arial")));
     m_sizerProgram->Add(m_lblVersion, 0, wxALIGN_CENTER_HORIZONTAL|wxALL|wxADJUST_MINSIZE, 5);
 
     wxStaticText* itemStaticText9 = new wxStaticText( itemPanel4, wxID_STATIC, _(_guilang.get("GUI_ABOUT_LICENCE_SHORT")), wxDefaultPosition, wxDefaultSize, 0 );
@@ -160,7 +160,7 @@ void AboutChameleonDialog::CreateControls()
 
     itemNotebook3->AddPage(itemPanel4, _("NumeRe"));
 
-    wxPanel* itemPanel10 = new wxPanel( itemNotebook3, ID_TEAMPANEL, wxDefaultPosition, wxDefaultSize, wxSUNKEN_BORDER|wxTAB_TRAVERSAL );
+    wxPanel* itemPanel10 = new wxPanel( itemNotebook3, ID_TEAMPANEL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
     itemPanel10->SetForegroundColour(wxColour(255, 255, 255));
     itemPanel10->SetBackgroundColour(wxColour(255, 255, 255));
     wxBoxSizer* itemBoxSizer11 = new wxBoxSizer(wxVERTICAL);
@@ -169,23 +169,18 @@ void AboutChameleonDialog::CreateControls()
     wxStaticText* itemStaticText12 = new wxStaticText( itemPanel10, wxID_STATIC, _(_guilang.get("GUI_ABOUT_TEAM_INTRO")), wxDefaultPosition, wxDefaultSize, 0 );
     itemStaticText12->SetForegroundColour(wxColour(0, 0, 0));
     itemStaticText12->SetBackgroundColour(wxColour(255, 255, 255));
-    itemStaticText12->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Verdana")));
+    itemStaticText12->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
     itemBoxSizer11->Add(itemStaticText12, 0, wxALIGN_CENTER_HORIZONTAL|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
-
-    /**wxBitmap itemStaticBitmap13Bitmap(itemDialog1->GetBitmapResource(wxT("team_1.xpm")));
-    wxStaticBitmap* itemStaticBitmap13 = new wxStaticBitmap( itemPanel10, wxID_STATIC, itemStaticBitmap13Bitmap, wxDefaultPosition, wxSize(340, 175), 0 );
-    itemStaticBitmap13->SetBackgroundColour(wxColour(255, 255, 255));
-    itemBoxSizer11->Add(itemStaticBitmap13, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5);*/
 
     wxStaticText* itemStaticText14 = new wxStaticText( itemPanel10, wxID_STATIC, _(_guilang.get("GUI_ABOUT_TEAM")), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
     itemStaticText14->SetForegroundColour(wxColour(0, 0, 0));
     itemStaticText14->SetBackgroundColour(wxColour(255, 255, 255));
-    itemStaticText14->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Verdana")));
+    itemStaticText14->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
     itemBoxSizer11->Add(itemStaticText14, 0, wxGROW|wxALL|wxADJUST_MINSIZE, 5);
 
     itemNotebook3->AddPage(itemPanel10, _("Team"));
 
-    wxPanel* itemPanel15 = new wxPanel( itemNotebook3, ID_CREDITSPANEL, wxDefaultPosition, wxDefaultSize, wxSUNKEN_BORDER|wxTAB_TRAVERSAL );
+    wxPanel* itemPanel15 = new wxPanel( itemNotebook3, ID_CREDITSPANEL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
     itemPanel15->SetForegroundColour(wxColour(0, 0, 0));
     itemPanel15->SetBackgroundColour(wxColour(255, 255, 255));
     wxBoxSizer* itemBoxSizer16 = new wxBoxSizer(wxVERTICAL);
@@ -197,7 +192,7 @@ void AboutChameleonDialog::CreateControls()
 
     itemNotebook3->AddPage(itemPanel15, _("Credits"));
 
-    wxPanel* itemPanel18 = new wxPanel( itemNotebook3, ID_STATSPANEL, wxDefaultPosition, wxDefaultSize, wxSUNKEN_BORDER|wxTAB_TRAVERSAL );
+    wxPanel* itemPanel18 = new wxPanel( itemNotebook3, ID_STATSPANEL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
     itemPanel18->SetForegroundColour(wxColour(0, 0, 0));
     itemPanel18->SetBackgroundColour(wxColour(255, 255, 255));
     wxBoxSizer* itemBoxSizer19 = new wxBoxSizer(wxVERTICAL);
