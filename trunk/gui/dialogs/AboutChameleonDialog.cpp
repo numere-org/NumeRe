@@ -31,8 +31,8 @@
 #include "../../kernel/core/language.hpp"
 
 ////@begin XPM images
-#include "chamlogo_1.xpm"
-#include "team_1.xpm"
+//#include "chamlogo_1.xpm"
+//#include "team_1.xpm"
 ////@end XPM images
 
 /*!

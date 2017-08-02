@@ -1,5 +1,5 @@
 /* XPM */
-static char *folder256_xpm[] = {
+static const char *folder256_xpm[] = {
 "16 16 24 1",
 " 	c #FFFFFF",
 ".	c #BD9E31",

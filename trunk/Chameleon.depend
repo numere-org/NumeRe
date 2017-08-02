@@ -3098,7 +3098,7 @@
 	<TChar.h>
 	<crtdbg.h>
 
-1501483263 source:d:\cpp\numere-source\trunk\common\wx.cpp
+1501667310 source:d:\cpp\numere-source\trunk\common\wx.cpp
 	<wx/dcclient.h>
 	<wx/msgdlg.h>
 	<wx/clipbrd.h>
@@ -3695,7 +3695,7 @@
 	"NumeReNotebook.h"
 	"../editor/editor.h"
 
-1501586061 source:d:\cpp\numere-source\trunk\gui\dialogs\aboutchameleondialog.cpp
+1501589467 source:d:\cpp\numere-source\trunk\gui\dialogs\aboutchameleondialog.cpp
 	"wx/wxprec.h"
 	<wx/msw/private.h>
 	<wx/filename.h>
@@ -3706,9 +3706,9 @@
 	"chamlogo_1.xpm"
 	"team_1.xpm"
 
-1490791550 d:\cpp\numere-source\trunk\gui\dialogs\chamlogo_1.xpm
+1501674664 d:\cpp\numere-source\trunk\gui\dialogs\chamlogo_1.xpm
 
-1490791550 d:\cpp\numere-source\trunk\gui\dialogs\team_1.xpm
+1501674795 d:\cpp\numere-source\trunk\gui\dialogs\team_1.xpm
 
 1490791550 source:d:\cpp\numere-source\trunk\gui\dialogs\addvariablewatch.cpp
 	"wx/wxprec.h"
@@ -4032,7 +4032,7 @@
 1497473246 source:d:\cpp\numere-source\trunk\kernel\core\parser.cpp
 	"parser.hpp"
 
-1500142813 source:d:\cpp\numere-source\trunk\kernel\core\parser_functions.cpp
+1501669659 source:d:\cpp\numere-source\trunk\kernel\core\parser_functions.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -4101,7 +4101,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1501334035 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
+1501664673 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
 	"plotting.hpp"
 	"parser_functions.hpp"
 	"../kernel.hpp"
