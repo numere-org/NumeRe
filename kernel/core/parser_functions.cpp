@@ -7913,7 +7913,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
     if (_option.getSystemPrintStatus() && !bMaskDialog)
         NumeReKernel::printPreFmt("|   "+strfill("-", _option.getWindow()-4, '-') + "\n");
         ///cerr << "|   " << std::setw(_option.getWindow()-4) << std::setfill((char)196) << (char)196 << endl;
-    if (paramsMap.size() > 1 && paramsMap.size() != nSize) //(_fitParams.GetNx() > 1 && _fitParams.GetNx() != nSize)
+    if (paramsMap.size() > 1 && paramsMap.size() != nSize) //(_fitParams.nx > 1 && _fitParams.nx != nSize)
     {
         oFitLog << endl;
         oFitLog << _lang.get("PARSERFUNCS_FIT_CORRELMAT_HEAD") << ":" << endl;
@@ -9986,11 +9986,11 @@ bool parser_regularize(string& sCmd, Parser& _parser, Datafile& _data, Define& _
         }
     }
 
-    /*cerr << _v.GetNx() << " " << _v.Minimal() << " " << _v.Maximal() << endl;
-    cerr << _x.GetNx() << " " << _x.Minimal() << " " << _x.Maximal() << endl;
+    /*cerr << _v.nx << " " << _v.Minimal() << " " << _v.Maximal() << endl;
+    cerr << _x.nx << " " << _x.Minimal() << " " << _x.Maximal() << endl;
     cerr << dXmin << " " << dXmax << endl;*/
 
-    if (_x.GetNx() != _v.GetNx())
+    if (_x.nx != _v.GetNx())
         return false;
     if (!matchParams(sCmd, "samples", '='))
         nSamples = _x.GetNx();
@@ -10083,13 +10083,13 @@ bool parser_pulseAnalysis(string& _sCmd, Parser& _parser, Datafile& _data, Defin
         }*/
     }
 
-    /*cerr << _v.GetNx() << " " << _v.Minimal() << " " << _v.Maximal() << endl;
-    cerr << _x.GetNx() << " " << _x.Minimal() << " " << _x.Maximal() << endl;
+    /*cerr << _v.nx << " " << _v.Minimal() << " " << _v.Maximal() << endl;
+    cerr << _x.nx << " " << _x.Minimal() << " " << _x.Maximal() << endl;
     cerr << dXmin << " " << dXmax << endl;*/
 
     dSampleSize = (dXmax-dXmin)/((double)_v.GetNx()-1.0);
     mglData _pulse(_v.Pulse('x'));
-    if (_pulse.GetNx() >= 5)
+    if (_pulse.nx >= 5)
     {
         vPulseProperties.push_back(_pulse[0]); // max Amp
         vPulseProperties.push_back(_pulse[1]*dSampleSize+dXmin); // pos max Amp
@@ -10254,7 +10254,7 @@ bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& 
     if (_target.nJ[1] == -2 || _target.nJ[1] == -1)
         _target.nJ[1] = _target.nJ[0] + _result.GetNy()+2;//?
 
-    //cerr << _result.GetNx() << endl;
+    //cerr << _result.nx << endl;
     //cerr << _result.GetNy() << endl;
 
     if (!_data.isCacheElement(sTargetCache))

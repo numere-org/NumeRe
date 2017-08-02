@@ -1,5 +1,5 @@
 /* XPM */
-static char *chamlogo_1_xpm[] = {
+static const char *chamlogo_1_xpm[] = {
 /* columns rows colors chars-per-pixel */
 "225 142 256 2",
 "   c #010002",
