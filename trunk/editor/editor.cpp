@@ -3534,6 +3534,25 @@ int NumeReEditor::FindNamingProcedure()
     return wxNOT_FOUND;
 }
 
+wxString NumeReEditor::getTemplateContent(const wxString& sFileName)
+{
+    wxString template_file, template_type, timestamp;
+
+    template_type = "tmpl_procedure.nlng";
+    timestamp = getTimeStamp(false);
+
+    if (m_terminal->getKernelSettings().getUseCustomLanguageFiles() && wxFileExists(m_mainFrame->getProgramFolder() + "\\user\\lang\\"+template_type))
+        m_mainFrame->GetFileContents(m_mainFrame->getProgramFolder() + "\\user\\lang\\"+template_type, template_file, template_type);
+    else
+        m_mainFrame->GetFileContents(m_mainFrame->getProgramFolder() + "\\lang\\"+template_type, template_file, template_type);
+
+    while (template_file.find("%%1%%") != string::npos)
+        template_file.replace(template_file.find("%%1%%"), 5, sFileName);
+    while (template_file.find("%%2%%") != string::npos)
+        template_file.replace(template_file.find("%%2%%"), 5, timestamp);
+    return template_file;
+}
+
 wxString NumeReEditor::generateAutoCompList(const wxString& wordstart, string sPreDefList)
 {
     map<wxString,int> mAutoCompMap;
@@ -3690,6 +3709,22 @@ void NumeReEditor::OnFindProcedure(wxCommandEvent &event)
                 return;
             }
         }
+        int ret = wxMessageBox(_guilang.get("GUI_DLG_PROC_NEXISTS_CREATE", m_clickedProcedure.ToStdString()), _guilang.get("GUI_DLG_PROC_NEXISTS_CREATE_HEADLINE"), wxCENTER | wxICON_WARNING | wxYES_NO, this);
+        if (ret != wxYES)
+            return;
+        wxString proctemplate = getTemplateContent(procedurename);
+
+        int nLastLine = this->GetLineCount();
+        this->GotoLine(nLastLine);
+        this->AddText("\n");
+        this->AddText(proctemplate);
+        nLastLine = FindText(this->PositionFromLine(nLastLine), this->GetLastPosition(), "procedure $" + procedurename, wxSTC_FIND_MATCHCASE);
+        this->GotoPos(nLastLine);
+
+        UpdateSyntaxHighlighting(true);
+        AnalyseCode();
+
+        return;
     }
     else
     {

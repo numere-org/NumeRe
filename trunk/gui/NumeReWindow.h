@@ -156,6 +156,7 @@ class NumeReWindow : public wxFrame
         void addToReloadBlackList(const wxString& sFilename);
         void removeFromReloadBlackList(const wxString& sFilename);
         bool isOnReloadBlackList(wxString sFilename);
+        bool GetFileContents(wxString fileToLoad, wxString &fileContents, wxString &fileName);
 
 
     private:
@@ -221,7 +222,6 @@ class NumeReWindow : public wxFrame
 
         wxArrayString OpenFile(FileFilterType filterType );
         bool SaveFile(bool saveas, bool askLocalRemote, FileFilterType filterType);
-        bool GetFileContents(wxString fileToLoad, wxString &fileContents, wxString &fileName);
         void CloseFile(int pageNr = -1, bool askforsave = true);
         void CloseAllFiles();
         void CloseTab();

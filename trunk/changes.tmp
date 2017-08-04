@@ -15,3 +15,4 @@ Added	Der Dateibrowser zeigt nun in den Tooltips den Dateityp und bei NumeRe-Dat
 Cleaned	Der Schleifenalgorithmus wurde verbessert. Es ergaben sich Laufzeitverbesserungen bis zu x4.
 Added	Der Editor kann nun nach den Dateien der eingebundenen Scripte suchen, wenn mit der rechten Maustaste auf die entsprechende Zeile geklickt und der entsprechende Eintrag im Kontextmenue ausgewaehlt wird.
 New	NumeRe besitzt nun einen interaktiven Graph-Viewer. Der Viewer kann zoomen, Graphen rotieren, Animationen abspielen (sofern verfuegbar) und einfache, geometrische Objekte/Text zum Graphen hinzufuegen.
+Fixed	Automatisch erzeugte "thisfile"-Prozeduren werden nun in der aktuellen Datei generiert und nicht mehr in einer neuen Datei. 
