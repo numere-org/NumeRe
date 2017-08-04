@@ -178,6 +178,7 @@ private:
 	wxString FindProceduresInCurrentFile(wxString sFirstChars);
 	wxString FindProcedureDefinition();
 	int FindNamingProcedure();
+    wxString getTemplateContent(const wxString& sFileName);
 
 	wxString generateAutoCompList(const wxString& wordstart, string sPreDefList);
 
