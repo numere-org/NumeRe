@@ -79,6 +79,7 @@ class NumeReWindow;
 #define ID_CLRPICKR_FORE 10041
 #define ID_CLRPICKR_BACK 10042
 #define ID_RESETCOLOR 10043
+#define ID_DEFAULTBACKGROUND 10044
 
 #define SYMBOL_OPTIONSDIALOG_STYLE wxCAPTION|wxRESIZE_BORDER|wxSYSTEM_MENU|wxCLOSE_BOX
 #define SYMBOL_OPTIONSDIALOG_TITLE _("Options")
@@ -210,6 +211,7 @@ public:
     wxComboBox* m_colorType;
     wxColourPickerCtrl* m_foreColor;
     wxColourPickerCtrl* m_backColor;
+    wxCheckBox* m_defaultBackground;
     wxButton* m_resetButton;
 
     wxCheckBox* m_ExtendedInfo;

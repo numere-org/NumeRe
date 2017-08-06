@@ -78,6 +78,7 @@ BEGIN_EVENT_TABLE( OptionsDialog, wxDialog )
     EVT_BUTTON(ID_BTN_PROCPATH, OptionsDialog::OnButtonClick)
     EVT_BUTTON(ID_BTN_PLOTPATH, OptionsDialog::OnButtonClick)
     EVT_BUTTON(ID_RESETCOLOR, OptionsDialog::OnButtonClick)
+    EVT_CHECKBOX(ID_DEFAULTBACKGROUND, OptionsDialog::OnButtonClick)
 
     EVT_COMBOBOX(ID_CLRSPIN, OptionsDialog::OnColorTypeChange)
     EVT_COLOURPICKER_CHANGED(ID_CLRPICKR_FORE, OptionsDialog::OnColorPickerChange)
@@ -362,11 +363,15 @@ void OptionsDialog::CreateControls()
     m_backColor = new wxColourPickerCtrl(stylePanel, ID_CLRPICKR_BACK, m_options->GetSyntaxStyle(0).background);
 
     m_resetButton = new wxButton(stylePanel, ID_RESETCOLOR, _guilang.get("GUI_OPTIONS_RESETHIGHLIGHT"), wxDefaultPosition, wxDefaultSize, 0);
+    wxBoxSizer* colorGroupHSizer = new wxBoxSizer(wxHORIZONTAL);
+    m_defaultBackground = new wxCheckBox(stylePanel, ID_DEFAULTBACKGROUND, _guilang.get("GUI_OPTIONS_DEFAULTBACKGROUND"));
+    colorGroupHSizer->Add(m_colorType, 0, wxALIGN_CENTER | wxRIGHT, 5);
+    colorGroupHSizer->Add(m_resetButton, 0, wxALIGN_LEFT | wxLEFT, 5);
 
     colorGroupSizer->Add(m_foreColor, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-    colorGroupSizer->Add(m_colorType, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+    colorGroupSizer->Add(colorGroupHSizer, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
     colorGroupSizer->Add(m_backColor, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-    colorGroupSizer->Add(m_resetButton, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+    colorGroupSizer->Add(m_defaultBackground, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
     styleVSizer->Add(colorGroupSizer, 1, wxALIGN_LEFT, 5);
 
@@ -538,6 +543,7 @@ void OptionsDialog::synchronizeColors()
     {
         m_options->SetStyleForeground(i, m_colorOptions.GetSyntaxStyle(i).foreground);
         m_options->SetStyleBackground(i, m_colorOptions.GetSyntaxStyle(i).background);
+        m_options->SetStyleDefaultBackground(i, m_colorOptions.GetSyntaxStyle(i).defaultbackground);
     }
 }
 
@@ -569,6 +575,8 @@ void OptionsDialog::OnColorTypeChange(wxCommandEvent& event)
 
     m_foreColor->SetColour(m_colorOptions.GetSyntaxStyle(id).foreground);
     m_backColor->SetColour(m_colorOptions.GetSyntaxStyle(id).background);
+    m_defaultBackground->SetValue(m_colorOptions.GetSyntaxStyle(id).defaultbackground);
+    m_backColor->Enable(!m_defaultBackground->GetValue());
 }
 
 void OptionsDialog::OnButtonClick(wxCommandEvent& event)
@@ -596,8 +604,18 @@ void OptionsDialog::OnButtonClick(wxCommandEvent& event)
             size_t id = m_colorOptions.GetIdByIdentifier(m_colorType->GetValue());
             m_foreColor->SetColour(m_colorOptions.GetDefaultSyntaxStyle(id).foreground);
             m_backColor->SetColour(m_colorOptions.GetDefaultSyntaxStyle(id).background);
+            m_defaultBackground->SetValue(m_colorOptions.GetDefaultSyntaxStyle(id).defaultbackground);
             m_colorOptions.SetStyleForeground(id, m_foreColor->GetColour());
             m_colorOptions.SetStyleBackground(id, m_backColor->GetColour());
+            m_colorOptions.SetStyleDefaultBackground(id, m_defaultBackground->GetValue());
+            m_backColor->Enable(!m_defaultBackground->GetValue());
+            return;
+        }
+        case ID_DEFAULTBACKGROUND:
+        {
+            size_t id = m_colorOptions.GetIdByIdentifier(m_colorType->GetValue());
+            m_colorOptions.SetStyleDefaultBackground(id, m_defaultBackground->GetValue());
+            m_backColor->Enable(!m_defaultBackground->GetValue());
             return;
         }
     }
@@ -1017,12 +1035,16 @@ void OptionsDialog::InitializeDialog()
     {
         m_colorOptions.SetStyleForeground(i, m_options->GetSyntaxStyle(i).foreground);
         m_colorOptions.SetStyleBackground(i, m_options->GetSyntaxStyle(i).background);
+        m_colorOptions.SetStyleDefaultBackground(i, m_options->GetSyntaxStyle(i).defaultbackground);
     }
 
     size_t id = m_colorOptions.GetIdByIdentifier(m_colorType->GetValue());
 
     m_foreColor->SetColour(m_colorOptions.GetSyntaxStyle(id).foreground);
     m_backColor->SetColour(m_colorOptions.GetSyntaxStyle(id).background);
+    m_defaultBackground->SetValue(m_colorOptions.GetSyntaxStyle(id).defaultbackground);
+    m_backColor->Enable(!m_defaultBackground->GetValue());
+
 
 	/**m_chkCombineWatchWindow->SetValue(m_options->GetCombineWatchWindow());
 	m_chkShowCompileCommands->SetValue(m_options->GetShowCompileCommands());
