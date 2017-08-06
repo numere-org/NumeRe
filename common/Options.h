@@ -24,13 +24,14 @@ class Permission;
 
 struct SyntaxStyles
 {
-    SyntaxStyles() : foreground(*wxBLACK), background(*wxWHITE), bold(false), italics(false), underline(false)
+    SyntaxStyles() : foreground(*wxBLACK), background(*wxWHITE), bold(false), italics(false), underline(false), defaultbackground(true)
         {}
     wxColour foreground;
     wxColour background;
     bool bold;
     bool italics;
     bool underline;
+    bool defaultbackground;
 };
 
 class Options
@@ -106,6 +107,7 @@ class Options
             METHODS,
             INSTALL,
             DEFAULT_VARS, // x y z t
+            ACTIVE_LINE,
             STYLE_END
 		};
 
@@ -122,6 +124,7 @@ class Options
 
         void SetStyleForeground(size_t i, const wxColour& color);
         void SetStyleBackground(size_t i, const wxColour& color);
+        void SetStyleDefaultBackground(size_t i, bool defaultbackground = true);
         wxArrayString GetStyleIdentifier();
         size_t GetIdByIdentifier(const wxString& identifier);
 

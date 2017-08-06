@@ -247,7 +247,10 @@ void NumeReHistory::UpdateSyntaxHighlighting(bool forceUpdate)
         }
 
         this->StyleSetForeground(i, _style.foreground);
-        this->StyleSetBackground(i, _style.background);
+        if (!_style.defaultbackground)
+            this->StyleSetBackground(i, _style.background);
+        else
+            this->StyleSetBackground(i, this->StyleGetBackground(wxSTC_STYLE_DEFAULT));
         this->StyleSetBold(i, _style.bold);
         this->StyleSetItalic(i, _style.italics);
         this->StyleSetUnderline(i, _style.underline);

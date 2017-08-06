@@ -66,6 +66,7 @@ wxString Options::convertToString(const SyntaxStyles& _style)
     sReturn += _style.bold ? "1" : "0";
     sReturn += _style.italics ? "1" : "0";
     sReturn += _style.underline ? "1" : "0";
+    sReturn += _style.defaultbackground ? "1" : "0";
     return sReturn;
 }
 
@@ -82,6 +83,11 @@ SyntaxStyles Options::convertFromString(const wxString& styleString)
         _style.italics = true;
     if (styleString[20] == '1')
         _style.underline = true;
+    if (styleString.length() > 21)
+    {
+        if (styleString[21] == '0')
+            _style.defaultbackground = false;
+    }
     return _style;
 }
 
@@ -280,9 +286,11 @@ SyntaxStyles Options::GetDefaultSyntaxStyle(size_t i)
     {
         case Styles::STANDARD:
             _style.italics = true;
+            _style.defaultbackground = false;
             break;
         case Styles::CONSOLE_STD:
             _style.foreground = wxColour(0,0,100);
+            _style.defaultbackground = false;
             break;
         case Styles::COMMAND:
             _style.foreground = wxColour(0,128,255);
@@ -292,6 +300,7 @@ SyntaxStyles Options::GetDefaultSyntaxStyle(size_t i)
         case Styles::COMMENT:
             _style.foreground = wxColour(0,128,0);
             _style.background = wxColour(255,255,183);
+            _style.defaultbackground = false;
             _style.bold = true;
             break;
         case Styles::OPTION:
@@ -342,6 +351,10 @@ SyntaxStyles Options::GetDefaultSyntaxStyle(size_t i)
             _style.bold = true;
             _style.italics = true;
             break;
+        case Styles::ACTIVE_LINE:
+            _style.background = wxColour(221,230,255);
+            _style.defaultbackground = false;
+            break;
         case Styles::STYLE_END:
             break;
         // missing default intended => will result in warning, if a enum case is not handled in switch
@@ -373,6 +386,7 @@ void Options::readColoursFromConfig(wxFileConfig* _config)
         "METHODS",
         "INSTALL",
         "DEFAULT_VARS", // x y z t
+        "ACTIVE_LINE",
         "STYLE_END"
     };
     wxString val;
@@ -407,6 +421,7 @@ void Options::writeColoursToConfig(wxFileConfig* _config)
         "METHODS",
         "INSTALL",
         "DEFAULT_VARS", // x y z t
+        "ACTIVE_LINE",
         "STYLE_END"
     };
     for (size_t i = 0; i < Styles::STYLE_END; i++)
@@ -431,6 +446,17 @@ void Options::SetStyleBackground(size_t i, const wxColour& color)
     }
 }
 
+
+void Options::SetStyleDefaultBackground(size_t i, bool defaultbackground)
+{
+    if (i < Styles::STYLE_END)
+    {
+        vSyntaxStyles[i].defaultbackground = defaultbackground;
+    }
+}
+
+
+
 wxArrayString Options::GetStyleIdentifier()
 {
     wxArrayString sReturn;
@@ -453,6 +479,7 @@ wxArrayString Options::GetStyleIdentifier()
     sReturn.Add("METHODS");
     sReturn.Add("INSTALL");
     sReturn.Add("DEFAULT_VARS");
+    sReturn.Add("ACTIVE_LINE");
 
     return sReturn;
 }

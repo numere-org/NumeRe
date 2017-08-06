@@ -2446,7 +2446,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1490798667 d:\cpp\numere-source\trunk\common\options.h
+1502010607 d:\cpp\numere-source\trunk\common\options.h
 	<wx/wx.h>
 	<wx/validate.h>
 	<wx/valgen.h>
@@ -3061,7 +3061,7 @@
 	"../common/datastructures.h"
 	"../common/debug.h"
 
-1490798687 source:d:\cpp\numere-source\trunk\common\options.cpp
+1502015634 source:d:\cpp\numere-source\trunk\common\options.cpp
 	"Options.h"
 	<wx/filename.h>
 	<wx/arrstr.h>
@@ -3244,7 +3244,7 @@
 	<string>
 	<vector>
 
-1501838318 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1502015982 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -3283,7 +3283,7 @@
 1490791550 d:\cpp\numere-source\trunk\gui\numerenotebook.h
 	<wx/notebook.h>
 
-1500569597 source:d:\cpp\numere-source\trunk\editor\history.cpp
+1502016083 source:d:\cpp\numere-source\trunk\editor\history.cpp
 	"../common/CommonHeaders.h"
 	"../kernel/core/language.hpp"
 	"../kernel/core/tools.hpp"
@@ -3380,7 +3380,7 @@
 	"wx/arrstr.h"
 	<stdarg.h>
 
-1494364120 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
+1502011680 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
 	"wx/notebook.h"
 	"wx/spinctrl.h"
 	<wx/clrpicker.h>
@@ -3734,7 +3734,7 @@
 	"fndrpldialog.hpp"
 	"../../kernel/core/language.hpp"
 
-1501585741 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1502016696 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"

@@ -16,3 +16,5 @@ Cleaned	Der Schleifenalgorithmus wurde verbessert. Es ergaben sich Laufzeitverbe
 Added	Der Editor kann nun nach den Dateien der eingebundenen Scripte suchen, wenn mit der rechten Maustaste auf die entsprechende Zeile geklickt und der entsprechende Eintrag im Kontextmenue ausgewaehlt wird.
 New	NumeRe besitzt nun einen interaktiven Graph-Viewer. Der Viewer kann zoomen, Graphen rotieren, Animationen abspielen (sofern verfuegbar) und einfache, geometrische Objekte/Text zum Graphen hinzufuegen.
 Fixed	Automatisch erzeugte "thisfile"-Prozeduren werden nun in der aktuellen Datei generiert und nicht mehr in einer neuen Datei. 
+Added	Die Hintergrundfarbe der aktiven Zeile kann nun bei den Syntaxfarben ebenfalls angepasst werden.
+Cleaned	Die Hintergrundfarben der Syntaxstile sind nun verknuepft. Wenn der Hintergrund eines Syntaxelements getrennt angepasst werden will, muss das Haekchen bei "Standardhintergrund" entfernt werden.

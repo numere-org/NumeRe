@@ -2333,7 +2333,10 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
             }
 
             this->StyleSetForeground(i, _style.foreground);
-            this->StyleSetBackground(i, _style.background);
+            if (!_style.defaultbackground)
+                this->StyleSetBackground(i, _style.background);
+            else
+                this->StyleSetBackground(i, this->StyleGetBackground(wxSTC_STYLE_DEFAULT));
             this->StyleSetBold(i, _style.bold);
             this->StyleSetItalic(i, _style.italics);
             this->StyleSetUnderline(i, _style.underline);
@@ -2417,7 +2420,10 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
             }
 
             this->StyleSetForeground(i, _style.foreground);
-            this->StyleSetBackground(i, _style.background);
+            if (!_style.defaultbackground)
+                this->StyleSetBackground(i, _style.background);
+            else
+                this->StyleSetBackground(i, this->StyleGetBackground(wxSTC_STYLE_DEFAULT));
             this->StyleSetBold(i, _style.bold);
             this->StyleSetItalic(i, _style.italics);
             this->StyleSetUnderline(i, _style.underline);
@@ -2496,7 +2502,10 @@ void NumeReEditor::updateDefaultHighlightSettings()
     this->SetCaretLineVisible(true);
     this->SetIndentationGuides(true);
 
-    this->SetCaretLineBackground(wxColour(221,230,255));
+    if (!m_options->GetSyntaxStyle(Options::ACTIVE_LINE).defaultbackground)
+        this->SetCaretLineBackground(m_options->GetSyntaxStyle(Options::ACTIVE_LINE).background);
+    else
+        this->SetCaretLineVisible(false);
 
     // standard settings for the brace highlighting
     this->StyleSetForeground(wxSTC_STYLE_BRACELIGHT, wxColour(0,150,0));
