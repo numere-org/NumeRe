@@ -3774,6 +3774,8 @@ int parser_SplitArgs(string& sToSplit, string& sSecArg, const char& cSep, const 
     int nV_Parenthesis = 0;
     int nSep = -1;
 
+    StripSpaces(sToSplit);
+
     if (!bIgnoreSurroundingParenthesis)
     {
         // --> Suchen wir nach der schliessenden Klammer <--
@@ -5426,7 +5428,10 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
                 if (nResults > 1)
                 {
                     for (int n = 0; n < nResults; n++)
-                        _idx.vI.push_back((int)v[n]-1);
+                    {
+                        if (!isnan(v[n]) && !isinf(v[n]))
+                            _idx.vI.push_back((int)v[n]-1);
+                    }
                 }
                 else
                     _idx.nI[0] = (int)v[0]-1;
@@ -5444,7 +5449,10 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
                 if (nResults > 1)
                 {
                     for (int n = 0; n < nResults; n++)
-                        _idx.vJ.push_back((int)v[n]-1);
+                    {
+                        if (!isnan(v[n]) && !isinf(v[n]))
+                            _idx.vJ.push_back((int)v[n]-1);
+                    }
                 }
                 else
                     _idx.nJ[0] = (int)v[0]-1;

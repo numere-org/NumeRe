@@ -42,7 +42,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
     Plot graph(sCmd, _data, _parser, _option, _functions, _pData);
 
     // Only open graph viewer, if not explicitly deactivated
-    if (_pData.getOpenImage() || !_pData.getSilentMode())
+    if (_pData.getOpenImage() && !_pData.getSilentMode())
     {
         GraphHelper* _graphHelper = graph.createGraphHelper(_pData);
         NumeReKernel::updateGraphWindow(_graphHelper);
@@ -1296,7 +1296,7 @@ bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglDa
         }
         else if (!_pData.getxError() && !_pData.getyError())
         {
-            if (_pData.getInterpolate() && _mAxisVals.nx >= _pInfo.nSamples)
+            if (_pData.getInterpolate() && _mData.nx >= _pInfo.nSamples)
             {
                 if (!_pData.getArea() && !_pData.getBars() && !_pData.getRegion())
                     _graph->Plot(_mAxisVals, _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
@@ -1305,7 +1305,7 @@ bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglDa
                 else if (_pData.getArea() || _pData.getRegion())
                     _graph->Area(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
             }
-            else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mAxisVals.nx >= 0.9 * _pInfo.nSamples))
+            else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mData.nx >= 0.9 * _pInfo.nSamples))
             {
                 if (!_pData.getArea() && !_pData.getBars())
                     _graph->Plot(_mAxisVals, _mData, _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
@@ -3456,7 +3456,10 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                     if (nResults > 1)
                     {
                         for (int n = 0; n < nResults; n++)
-                            vLine.push_back((int)v[n]-1);
+                        {
+                            if (!isnan(v[n]) && !isinf(v[n]))
+                                vLine.push_back((int)v[n]-1);
+                        }
                     }
                     else
                         i_pos[0] = (int)v[0] - 1;
@@ -3534,9 +3537,13 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                                 {
                                     if (n >= 6)
                                         break;
-                                    vCol.push_back((int)v[n]-1);
-                                    j_pos[n] = (int)v[n]-1;
-                                    j = n;
+
+                                    if (!isnan(v[n]) && !isinf(v[n]))
+                                    {
+                                        vCol.push_back((int)v[n]-1);
+                                        j_pos[n] = (int)v[n]-1;
+                                        j = n;
+                                    }
                                 }
                                 break;
                             }
