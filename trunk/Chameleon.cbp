@@ -267,7 +267,6 @@
 		</Build>
 		<Linker>
 			<Add option="-lmgl" />
-			<Add option="-lmgl-wnd" />
 			<Add option="-lgsl" />
 			<Add option="-lgslcblas" />
 		</Linker>
