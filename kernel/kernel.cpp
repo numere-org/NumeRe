@@ -520,7 +520,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
     if (!m_parent)
         return NUMERE_ERROR;
 
-
+    // indices as target for cache writing actions
     Indices _idx;
 
     bool bWriteToCache = false; // TRUE, wenn das/die errechneten Ergebnisse in den Cache geschrieben werden sollen
@@ -534,34 +534,36 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
     value_type* v = 0;          // Ergebnisarray
     int nNum = 0;               // Zahl der Ergebnisse in value_type* v
 
-//print("DEBUG: "+sCommand);
+    // add the passed command to the internal command line (append it, if it's non-empty)
     sCommandLine += sCommand;
     if (!sCommandLine.length())
         return NUMERE_PENDING;
-//print("DEBUG: "+sCommandLine);
+
+    // clear whitespaces
     while (sCommandLine.front() == ' ')
         sCommandLine.erase(0,1);
     if (!sCommandLine.length())
         return NUMERE_PENDING;
 
-//print("DEBUG: "+sCommandLine);
-
+    // clear whitespaces
     while (sCommandLine.back() == ' ')
         sCommandLine.pop_back();
 
-//print("DEBUG: "+sCommandLine);
+    // check for the double backslash at the end of the line
     if (sCommandLine.length() > 2 && sCommandLine.substr(sCommandLine.length()-2,2) == "\\\\")
     {
         sCommandLine.erase(sCommandLine.length()-2);
         return NUMERE_PENDING;
     }
 
+    // Pass the combined command line to the intenal variable and clear the contents of the class
+    // member variable (we don't want to repeat the tasks entered last time)
     sLine = sCommandLine;
     sCommandLine.clear();
     _parser.ClearVectorVars();
     bSupressAnswer = false;
 
-
+    // set the procedure main path to the desired one. --> check, whether this is necessary here
     if (_procedure.getPath() != _option.getProcsPath())
     {
         _procedure.setPath(_option.getProcsPath(), true, _procedure.getProgramPath());
@@ -576,7 +578,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 
         if (_parser.mVarMapPntr)
             _parser.mVarMapPntr = 0;
-        //print("DEBUG: "+sLine);
+
         try
         {
             if (!sCmdCache.length())
