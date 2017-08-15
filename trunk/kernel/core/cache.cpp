@@ -656,12 +656,12 @@ bool Cache::writeToCache(Indices& _idx, const string& _sCache, double* _dData, u
             {
                 if (_idx.vI.size() > _idx.vJ.size())
                 {
-                    if (_nNum > i)
+                    if (_nNum > i && !isnan(_idx.vI[i]) && !isnan(_idx.vJ[j]))
                         writeToCache(_idx.vI[i], _idx.vJ[j], _nLayer, _dData[i]);
                 }
                 else
                 {
-                    if (_nNum > j)
+                    if (_nNum > j && !isnan(_idx.vI[i]) && !isnan(_idx.vJ[j]))
                         writeToCache(_idx.vI[i], _idx.vJ[j], _nLayer, _dData[j]);
                 }
             }
