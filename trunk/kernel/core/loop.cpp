@@ -302,12 +302,11 @@ int Loop::while_loop(int nth_Cmd, int nth_loop)
     string sWhile_Condition_Back = sWhile_Condition;
     string sLine = "";
     bPrintedStatus = false;
-    int nResults = 0;
+    //int nResults = 0;
     int nLoopCount = 0;
     value_type* v = 0;
     int nNum = 0;
 
-    v = evalHeader(nNum, sWhile_Condition, false, nth_Cmd);
 
     if (bSilent && !bMask && !nth_loop)
     {
@@ -316,18 +315,19 @@ int Loop::while_loop(int nth_Cmd, int nth_loop)
     }
     while (true)
     {
-        if (bUseLoopParsingMode && !bLockedPauseMode)
+        v = evalHeader(nNum, sWhile_Condition, false, nth_Cmd);
+        /*if (bUseLoopParsingMode && !bLockedPauseMode)
             _parserRef->SetIndex(nth_Cmd);
         if (!bUseLoopParsingMode || bLockedPauseMode || !_parserRef->IsValidByteCode() || _parserRef->GetExpr() != sWhile_Condition+" ")
         {
             if (bUseLoopParsingMode && !bLockedPauseMode && _parserRef->IsValidByteCode() && _parserRef->GetExpr().length())
                 _parserRef->DeclareAsInvalid();
             _parserRef->SetExpr(sWhile_Condition);
-        }
+        }*/
         if (nLoopCount >= nLoopSavety && nLoopSavety > 1)
             return -1;
         nLoopCount++;
-        v = _parserRef->Eval(nResults);
+        //v = _parserRef->Eval(nResults);*/
         if (!(bool)v[0] || isnan(v[0]) || isinf(v[0]))
         {
             return nJumpTable[nth_Cmd][BLOCK_END];
