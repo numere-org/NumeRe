@@ -88,7 +88,8 @@ class NumeReSyntax
         string getOperators() const
             {return constructString(vOperators);}
         string getAutoCompList(string sFirstChars, string sType = "NSCR");
-        string getProcAutoCompList(string sFirstChars, string sBaseNameSpace);
+        string getProcAutoCompList(string sFirstChars, string sBaseNameSpace, string sSelectedNameSpace);
+        string getNameSpaceAutoCompList(string sFirstChars);
 
         string highlightLine(const string& sCommandLine);
         string highlightError(const string& sCommandLine);

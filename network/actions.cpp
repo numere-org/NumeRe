@@ -425,7 +425,7 @@ void GTerm::tab()
         if (((tm.GetColorAdjusted(cursor_y, cursor_x-1) >> 4) & 0xf) == NumeReSyntax::SYNTAX_PROCEDURE)
         {
             string sNameSpace = getProcNameSpace();
-            sAutoCompList = _syntax.getProcAutoCompList(sAutoCompWordStart, sNameSpace);
+            sAutoCompList = _syntax.getProcAutoCompList(sAutoCompWordStart, "", sNameSpace);
         }
         else
             sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart);
@@ -443,7 +443,7 @@ void GTerm::tab()
             if (((tm.GetColorAdjusted(cursor_y, nTabStartPos-1) >> 4) & 0xf) == NumeReSyntax::SYNTAX_PROCEDURE)
             {
                 string sNameSpace = getProcNameSpace();
-                sAutoCompList = _syntax.getProcAutoCompList(sAutoCompWordStart, sNameSpace);
+                sAutoCompList = _syntax.getProcAutoCompList(sAutoCompWordStart, "", sNameSpace);
             }
             else
                 sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart);

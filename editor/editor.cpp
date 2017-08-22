@@ -544,6 +544,7 @@ void NumeReEditor::OnChar( wxStyledTextEvent &event )
         && GetStyleAt(wordstartpos) == wxSTC_NSCR_PROCEDURES)
     {
         wxString sNamespace;
+        wxString sSelectedNamespace;
         int nNameSpacePosition = wordstartpos;
         while (GetStyleAt(nNameSpacePosition-1) == wxSTC_NSCR_PROCEDURES && GetCharAt(nNameSpacePosition-1) != '$')
             nNameSpacePosition--;
@@ -552,8 +553,9 @@ void NumeReEditor::OnChar( wxStyledTextEvent &event )
             sNamespace = FindNameSpaceOfProcedure(wordstartpos) + "~";
         }
         else
-            sNamespace = GetTextRange(nNameSpacePosition, wordstartpos);
+            sSelectedNamespace = GetTextRange(nNameSpacePosition, wordstartpos);
 
+        // If namespace == "this~" then replace it with the current namespace
         if (sNamespace == "this~")
         {
             string filename = GetFileNameAndPath().ToStdString();
@@ -573,21 +575,45 @@ void NumeReEditor::OnChar( wxStyledTextEvent &event )
             else
                 sNamespace = "";
         }
-        else if (sNamespace == "thisfile" || sNamespace == "thisfile~")
+        else if (sSelectedNamespace == "this~")
+        {
+            string filename = GetFileNameAndPath().ToStdString();
+            filename = replacePathSeparator(filename);
+            vector<string> vPaths = m_terminal->getPathSettings();
+            if (filename.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
+            {
+                filename.erase(0, vPaths[PROCPATH].length());
+                if (filename.find('/') != string::npos)
+                    filename.erase(filename.rfind('/')+1);
+                while (filename.front() == '/')
+                    filename.erase(0,1);
+                while (filename.find('/') != string::npos)
+                    filename[filename.find('/')] = '~';
+                sSelectedNamespace = filename;
+            }
+            else
+                sSelectedNamespace = "";
+        }
+        // If namespace == "thisfile~" then search for all procedures in the current file and use them as the
+        // autocompletion list entries
+        else if (sNamespace == "thisfile" || sNamespace == "thisfile~" || sSelectedNamespace == "thisfile" || sSelectedNamespace == "thisfile~")
         {
             this->AutoCompSetIgnoreCase(true);
             this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
-            this->AutoCompShow(lenEntered, FindProceduresInCurrentFile(GetTextRange(wordstartpos, currentPos)));
+            this->AutoCompShow(lenEntered, FindProceduresInCurrentFile(GetTextRange(wordstartpos, currentPos), sSelectedNamespace));
             this->Colourise(0, -1);
             event.Skip();
             return;
         }
+        // If namespace == "main~" (or similiar) then clear it's contents
         else if (sNamespace == "main" || sNamespace == "main~" || sNamespace == "~")
             sNamespace = "";
+        else if (sSelectedNamespace == "main" || sSelectedNamespace == "main~" || sSelectedNamespace == "~")
+            sSelectedNamespace = "";
 
         this->AutoCompSetIgnoreCase(true);
         this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
-        this->AutoCompShow(lenEntered, _syntax->getProcAutoCompList(GetTextRange(wordstartpos, currentPos).ToStdString(), sNamespace.ToStdString()));
+        this->AutoCompShow(lenEntered, _syntax->getProcAutoCompList(GetTextRange(wordstartpos, currentPos).ToStdString(), sNamespace.ToStdString(), sSelectedNamespace.ToStdString()));
     }
     else if (lenEntered > 1
         && !(m_fileType == FILE_NSCR || m_fileType == FILE_NPRC))
@@ -3342,23 +3368,32 @@ wxString NumeReEditor::FindNameSpaceOfProcedure(int charpos)
         {
             while (minpos < charpos && FindText(minpos, maxpos, "namespace", wxSTC_FIND_WHOLEWORD | wxSTC_FIND_MATCHCASE) != -1)
             {
-                minpos = FindText(minpos, maxpos, "namespace", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD)+1;
+                int nCurrentPos = FindText(minpos, maxpos, "namespace", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD)+1;
+                while (this->GetStyleAt(nCurrentPos) != wxSTC_NPRC_COMMAND && FindText(nCurrentPos, maxpos, "namespace", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) != -1)
+                    nCurrentPos = FindText(nCurrentPos, maxpos, "namespace", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD)+1;
+                if (this->GetStyleAt(nCurrentPos) == wxSTC_NPRC_COMMAND)
+                    minpos = nCurrentPos;
+                else
+                    break;
             }
             string currentNamespace = GetLine(LineFromPosition(minpos)).ToStdString();
-            currentNamespace.erase(0,currentNamespace.find("namespace")+9);
-            while (currentNamespace.back() == '\r' || currentNamespace.back() =='\n')
-                currentNamespace.pop_back();
-            StripSpaces(currentNamespace);
-            while (currentNamespace.back() == '~')
-                currentNamespace.pop_back();
+            if (currentNamespace.find("namespace") != string::npos)
+            {
+                currentNamespace.erase(0,currentNamespace.find("namespace")+9);
+                while (currentNamespace.back() == '\r' || currentNamespace.back() =='\n')
+                    currentNamespace.pop_back();
+                StripSpaces(currentNamespace);
+                while (currentNamespace.back() == '~')
+                    currentNamespace.pop_back();
 
-            sNameSpace = currentNamespace;
+                sNameSpace = currentNamespace;
+            }
         }
 	}
     return sNameSpace;
 }
 
-wxString NumeReEditor::FindProceduresInCurrentFile(wxString sFirstChars)
+wxString NumeReEditor::FindProceduresInCurrentFile(wxString sFirstChars, wxString sSelectedNamespace)
 {
     wxString sThisFileProcedures;
     for (int i = 0; i < this->GetLineCount(); i++)
@@ -3372,7 +3407,9 @@ wxString NumeReEditor::FindProceduresInCurrentFile(wxString sFirstChars)
                 sThisFileProcedures += currentline + "(?" + toString(NumeReSyntax::SYNTAX_PROCEDURE) + " ";
         }
     }
-    return sThisFileProcedures;
+    if (sSelectedNamespace.length())
+        return sThisFileProcedures;
+    return sThisFileProcedures + _syntax->getNameSpaceAutoCompList(sFirstChars.ToStdString());
 }
 
 wxString NumeReEditor::FindProcedureDefinition()
