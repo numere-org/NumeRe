@@ -1127,7 +1127,7 @@
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\printps.h
 	"wx/prntbase.h"
 
-1501836875 d:\cpp\numere-source\trunk\editor\editor.h
+1503387257 d:\cpp\numere-source\trunk\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -2492,7 +2492,7 @@
 	<deque>
 	<string>
 
-1498042051 d:\cpp\numere-source\trunk\kernel\syntax.hpp
+1503383925 d:\cpp\numere-source\trunk\kernel\syntax.hpp
 	<string>
 	<vector>
 	<map>
@@ -3244,7 +3244,7 @@
 	<string>
 	<vector>
 
-1502017623 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1503383553 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -4011,7 +4011,7 @@
 1490791550 source:d:\cpp\numere-source\trunk\kernel\core\language.cpp
 	"language.hpp"
 
-1500447945 source:d:\cpp\numere-source\trunk\kernel\core\loop.cpp
+1503247326 source:d:\cpp\numere-source\trunk\kernel\core\loop.cpp
 	"loop.hpp"
 	"../kernel.hpp"
 
@@ -4225,11 +4225,11 @@
 	"wx/wx.h"
 	"../gui/wxterm.h"
 
-1498170236 source:d:\cpp\numere-source\trunk\kernel\syntax.cpp
+1503383220 source:d:\cpp\numere-source\trunk\kernel\syntax.cpp
 	"syntax.hpp"
 	"core/tools.hpp"
 
-1498063659 source:d:\cpp\numere-source\trunk\network\actions.cpp
+1503383696 source:d:\cpp\numere-source\trunk\network\actions.cpp
 	"gterm.hpp"
 	"../common/debug.h"
 

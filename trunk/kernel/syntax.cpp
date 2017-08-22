@@ -343,14 +343,21 @@ string NumeReSyntax::getAutoCompList(string sFirstChars, string sType)
 }
 
 
-string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpace)
+string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpace, string sSelectedNameSpace)
 {
     if (!vProcedureTree.size())
         return "";
 
     string sProcName;
     static string sStandardNamespaces[] = {"main~", "this~", "thisfile~"};
-    if (sBaseNameSpace.length())
+    if (sSelectedNameSpace.length())
+    {
+        if (sSelectedNameSpace.back() != '~')
+            sProcName = sSelectedNameSpace + "~" + sFirstChars;
+        else
+            sProcName = sSelectedNameSpace + sFirstChars;
+    }
+    else if (sBaseNameSpace.length())
     {
         if (sBaseNameSpace.back() != '~')
             sProcName = sBaseNameSpace + "~" + sFirstChars;
@@ -360,7 +367,7 @@ string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpa
     else
         sProcName = sFirstChars;
     string sAutoCompList = " ";
-    if (!sBaseNameSpace.length())
+    if (!sSelectedNameSpace.length())
     {
         for (size_t i = 0; i < 3; i++)
         {
@@ -374,9 +381,9 @@ string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpa
     {
         if (vProcedureTree[i].substr(0, sProcName.length()) == sProcName)
         {
-            if (sBaseNameSpace.length())
+            if (sSelectedNameSpace.length())
             {
-                sToken = vProcedureTree[i].substr(sBaseNameSpace.length());
+                sToken = vProcedureTree[i].substr(sSelectedNameSpace.length());
                 if (sToken.find('~', sFirstChars.length()) != string::npos)
                 {
                     sToken.erase(sToken.find('~', sFirstChars.length())+1);
@@ -390,6 +397,40 @@ string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpa
             else
                 sToken = vProcedureTree[i] + "(?" + toString((int)(SYNTAX_PROCEDURE)) + " ";
 
+            if (sAutoCompList.find(" " + sToken) == string::npos)
+                sAutoCompList += sToken;
+        }
+    }
+    return sAutoCompList.substr(1);
+}
+
+
+string NumeReSyntax::getNameSpaceAutoCompList(string sFirstChars)
+{
+    if (!vProcedureTree.size())
+        return "";
+
+    string sProcName;
+    static string sStandardNamespaces[] = {"main~", "this~", "thisfile~"};
+    sProcName = sFirstChars;
+    string sAutoCompList = " ";
+
+    for (size_t i = 0; i < 3; i++)
+    {
+        if (sStandardNamespaces[i].substr(0, sFirstChars.length()) == sFirstChars)
+            sAutoCompList += sStandardNamespaces[i] + "?" + toString((int)(SYNTAX_PROCEDURE)) + " ";
+    }
+
+
+    string sToken;
+    for (size_t i = 0; i < vProcedureTree.size(); i++)
+    {
+        if (vProcedureTree[i].substr(0, sProcName.length()) == sProcName)
+        {
+            if (vProcedureTree[i].find('~', sProcName.length()) != string::npos)
+            {
+                sToken = vProcedureTree[i].substr(0, vProcedureTree[i].find('~', sProcName.length())+1) + "?" + toString((int)(SYNTAX_PROCEDURE)) + " ";
+            }
             if (sAutoCompList.find(" " + sToken) == string::npos)
                 sAutoCompList += sToken;
         }

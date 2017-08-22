@@ -175,7 +175,7 @@ private:
 	wxString FindClickedProcedure();
 	wxString FindMarkedProcedure(int charpos);
 	wxString FindNameSpaceOfProcedure(int charpos);
-	wxString FindProceduresInCurrentFile(wxString sFirstChars);
+	wxString FindProceduresInCurrentFile(wxString sFirstChars, wxString sSelectedNameSpace);
 	wxString FindProcedureDefinition();
 	int FindNamingProcedure();
     wxString getTemplateContent(const wxString& sFileName);
