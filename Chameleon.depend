@@ -2021,7 +2021,7 @@
 	"../kernel/kernel.hpp"
 	"../kernel/debugmessenger.hpp"
 
-1501837303 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1503430188 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -2072,7 +2072,7 @@
 	<commdlg.h>
 	"wx/msw/winundef.h"
 
-1501328463 d:\cpp\numere-source\trunk\common\datastructures.h
+1503430122 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -3244,7 +3244,7 @@
 	<string>
 	<vector>
 
-1503383553 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1503387224 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -4225,7 +4225,7 @@
 	"wx/wx.h"
 	"../gui/wxterm.h"
 
-1503383220 source:d:\cpp\numere-source\trunk\kernel\syntax.cpp
+1503387146 source:d:\cpp\numere-source\trunk\kernel\syntax.cpp
 	"syntax.hpp"
 	"core/tools.hpp"
 
