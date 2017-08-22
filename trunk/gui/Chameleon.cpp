@@ -131,6 +131,8 @@ BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
 	EVT_MENU						(ID_CLOSETAB, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_DEBUG_START_TAB, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_CLOSEALL, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_CLOSEOTHERS, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_OPEN_FOLDER, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_TOGGLE_CONSOLE, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_TOGGLE_FILETREE, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_TOGGLE_HISTORY, NumeReWindow::OnMenuEvent)
@@ -1292,6 +1294,16 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 			CloseAllFiles();
 			break;
 		}
+		case ID_CLOSEOTHERS:
+        {
+			CloseOtherTabs();
+			break;
+		}
+		case ID_OPEN_FOLDER:
+        {
+			OpenContainingFolder();
+			break;
+		}
 
 		case ID_TOGGLE_CONSOLE:
 		{
@@ -2090,6 +2102,26 @@ void NumeReWindow::CloseTab()
 	int tab = GetIntVar(VN_CLICKEDTAB);
 	CloseFile(tab);
 	m_book->Refresh();
+}
+void NumeReWindow::CloseOtherTabs()
+{
+	int tab = GetIntVar(VN_CLICKEDTAB);
+	while (tab)
+	{
+        CloseFile(0);
+        tab--;
+	}
+	while (m_book->GetPageCount() > 1)
+        CloseFile(1);
+	m_book->Refresh();
+}
+
+void NumeReWindow::OpenContainingFolder()
+{
+    int tab = GetIntVar(VN_CLICKEDTAB);
+    NumeReEditor* edit = static_cast<NumeReEditor*>(m_book->GetPage(tab));
+    wxFileName filename = edit->GetFileName();
+    wxExecute("explorer " + filename.GetPath(), wxEXEC_ASYNC, nullptr, nullptr);
 }
 
 void NumeReWindow::EvaluateTab()

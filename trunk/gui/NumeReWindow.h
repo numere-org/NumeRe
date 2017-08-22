@@ -225,6 +225,8 @@ class NumeReWindow : public wxFrame
         void CloseFile(int pageNr = -1, bool askforsave = true);
         void CloseAllFiles();
         void CloseTab();
+        void CloseOtherTabs();
+        void OpenContainingFolder();
         void EvaluateTab();
         void PageHasChanged (int pageNr = -1);
         int GetPageNum(wxFileName fn, bool compareWholePath = true, int startingTab = 0);
