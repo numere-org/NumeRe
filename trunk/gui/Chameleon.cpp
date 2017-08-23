@@ -1596,6 +1596,7 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
     else if (type == wxFSW_EVENT_MODIFY)
     {
         wxString sEventPath = event.GetPath().GetFullPath();
+        m_terminal->UpdateLibrary();
         if (isOnReloadBlackList(sEventPath))
             return;
         if (m_currentSavedFile == toString((int)time(0))+"|"+sEventPath || m_currentSavedFile == toString((int)time(0)-1)+"|"+sEventPath || m_currentSavedFile == "BLOCKALL|"+sEventPath)
@@ -1619,7 +1620,6 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
                 break;
             }
         }
-        m_terminal->UpdateLibrary();
     }
 }
 
