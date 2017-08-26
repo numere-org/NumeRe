@@ -4,7 +4,7 @@
 	"kernel/core/version.h"
 	<wx/msw/wx.rc>
 
-1494148655 d:\cpp\numere-source\trunk\kernel\core\version.h
+1503695105 d:\cpp\numere-source\trunk\kernel\core\version.h
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wx.rc
 	<windows.h>
@@ -3304,7 +3304,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1500968488 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1503515794 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
