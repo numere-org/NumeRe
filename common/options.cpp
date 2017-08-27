@@ -88,6 +88,8 @@ SyntaxStyles Options::convertFromString(const wxString& styleString)
         if (styleString[21] == '0')
             _style.defaultbackground = false;
     }
+    else
+        _style.defaultbackground = false;
     return _style;
 }
 
