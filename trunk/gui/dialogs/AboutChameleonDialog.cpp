@@ -18,6 +18,7 @@
 #include <wx/msw/private.h>
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
+#include <wx/textctrl.h>
 
 #ifdef __BORLANDC__
 #pragma hdrstop
@@ -172,13 +173,23 @@ void AboutChameleonDialog::CreateControls()
     itemStaticText12->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
     itemBoxSizer11->Add(itemStaticText12, 0, wxALIGN_CENTER_HORIZONTAL|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
 
-    wxStaticText* itemStaticText14 = new wxStaticText( itemPanel10, wxID_STATIC, _(_guilang.get("GUI_ABOUT_TEAM")), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
-    itemStaticText14->SetForegroundColour(wxColour(0, 0, 0));
-    itemStaticText14->SetBackgroundColour(wxColour(255, 255, 255));
-    itemStaticText14->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
-    itemBoxSizer11->Add(itemStaticText14, 0, wxGROW|wxALL|wxADJUST_MINSIZE, 5);
+    wxTextCtrl* aboutTextCtrl = new wxTextCtrl(itemPanel10, wxID_ANY, _guilang.get("GUI_ABOUT_TEAM"), wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_BESTWRAP | wxTE_READONLY);
+    aboutTextCtrl->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
+    itemBoxSizer11->Add(aboutTextCtrl, 1, wxGROW | wxEXPAND | wxALL, 5);
 
     itemNotebook3->AddPage(itemPanel10, _("Team"));
+
+    wxPanel* infoPanel = new wxPanel(itemNotebook3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
+    infoPanel->SetForegroundColour(*wxBLACK);
+    infoPanel->SetBackgroundColour(*wxWHITE);
+    wxBoxSizer* infoBoxSizer = new wxBoxSizer(wxVERTICAL);
+    infoPanel->SetSizer(infoBoxSizer);
+
+    wxTextCtrl* infoTextCtrl = new wxTextCtrl(infoPanel, wxID_ANY, _guilang.get("GUI_ABOUT_INFO"), wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_BESTWRAP | wxTE_READONLY);
+    infoTextCtrl->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
+    infoBoxSizer->Add(infoTextCtrl, 1, wxGROW | wxEXPAND | wxALL, 5);
+
+    itemNotebook3->AddPage(infoPanel, "Info");
 
     wxPanel* itemPanel15 = new wxPanel( itemNotebook3, ID_CREDITSPANEL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
     itemPanel15->SetForegroundColour(wxColour(0, 0, 0));
@@ -186,9 +197,13 @@ void AboutChameleonDialog::CreateControls()
     wxBoxSizer* itemBoxSizer16 = new wxBoxSizer(wxVERTICAL);
     itemPanel15->SetSizer(itemBoxSizer16);
 
-    wxStaticText* itemStaticText17 = new wxStaticText( itemPanel15, wxID_STATIC, _(_guilang.get("GUI_ABOUT_CREDITS")), wxDefaultPosition, wxDefaultSize, 0 );
+    wxTextCtrl* creditsTextCtrl = new wxTextCtrl(itemPanel15, wxID_ANY, _guilang.get("GUI_ABOUT_CREDITS"), wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_BESTWRAP | wxTE_READONLY);
+    creditsTextCtrl->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
+    itemBoxSizer16->Add(creditsTextCtrl, 1, wxGROW | wxEXPAND | wxALL, 5);
+
+    /*wxStaticText* itemStaticText17 = new wxStaticText( itemPanel15, wxID_STATIC, _(_guilang.get("GUI_ABOUT_CREDITS")), wxDefaultPosition, wxDefaultSize, 0 );
     itemStaticText17->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
-    itemBoxSizer16->Add(itemStaticText17, 1, wxGROW|wxALL|wxADJUST_MINSIZE, 5);
+    itemBoxSizer16->Add(itemStaticText17, 1, wxGROW|wxALL|wxADJUST_MINSIZE, 5);*/
 
     itemNotebook3->AddPage(itemPanel15, _("Credits"));
 
@@ -198,9 +213,13 @@ void AboutChameleonDialog::CreateControls()
     wxBoxSizer* itemBoxSizer19 = new wxBoxSizer(wxVERTICAL);
     itemPanel18->SetSizer(itemBoxSizer19);
 
-    wxStaticText* itemStaticText20 = new wxStaticText( itemPanel18, wxID_STATIC, _(_guilang.get("GUI_ABOUT_STATS")), wxDefaultPosition, wxDefaultSize, 0 );
+    wxTextCtrl* statsTextCtrl = new wxTextCtrl(itemPanel18, wxID_ANY, _guilang.get("GUI_ABOUT_STATS"), wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_BESTWRAP | wxTE_READONLY);
+    statsTextCtrl->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
+    itemBoxSizer19->Add(statsTextCtrl, 1, wxGROW | wxEXPAND | wxALL, 5);
+
+    /*4wxStaticText* itemStaticText20 = new wxStaticText( itemPanel18, wxID_STATIC, _(_guilang.get("GUI_ABOUT_STATS")), wxDefaultPosition, wxDefaultSize, 0 );
     itemStaticText20->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
-    itemBoxSizer19->Add(itemStaticText20, 1, wxGROW|wxALL|wxADJUST_MINSIZE, 5);
+    itemBoxSizer19->Add(itemStaticText20, 1, wxGROW|wxALL|wxADJUST_MINSIZE, 5);*/
 
     itemNotebook3->AddPage(itemPanel18, _("Stats"));
 
