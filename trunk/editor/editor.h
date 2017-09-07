@@ -118,6 +118,7 @@ public:
 	void SetUnsaved();
 
 	void ApplyAutoIndentation(int nFirstLine = 0, int nLastLine = -1);
+	void ApplyAutoFormat(int nFirstLine = 0, int nLastLine = -1);
 	void ToggleSettings(int _setting);
 	bool getEditorSetting(EditorSettings _setting);
 	void ToggleCommentLine();
@@ -188,6 +189,7 @@ private:
 	int calculateCyclomaticComplexity(int startline, int endline);
 	int calculateLinesOfCode(int startline, int endline);
 	int countNumberOfComments(int startline, int endline);
+	int insertTextAndMove(int nPosition, const wxString& sText);
 	vector<string> detectCodeDuplicates(int startline, int endline, int nDuplicateFlags);
 	double compareCodeLines(int nLine1, int nLine2, int nDuplicateFlags);
 	string getSemanticLine(int nLine, int nDuplicateFlags);

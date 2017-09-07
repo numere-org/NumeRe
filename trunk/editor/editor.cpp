@@ -4044,6 +4044,12 @@ int NumeReEditor::countNumberOfComments(int startline, int endline)
     return nComments;
 }
 
+int NumeReEditor::insertTextAndMove(int nPosition, const wxString& sText)
+{
+    this->InsertText(nPosition, sText);
+    return sText.length();
+}
+
 vector<string> NumeReEditor::detectCodeDuplicates(int startline, int endline, int nDuplicateFlags)
 {
     vector<string> vCodeDuplicates;
@@ -4573,7 +4579,267 @@ void NumeReEditor::ApplyAutoIndentation(int nFirstLine, int nLastLine) // int nF
     this->EndUndoAction();
 }
 
+void NumeReEditor::ApplyAutoFormat(int nFirstLine, int nLastLine) // int nFirstLine = 0, int nLastLine = -1
+{
+    if (this->getFileType() != FILE_NSCR && this->getFileType() != FILE_NPRC)
+        return;
+    this->BeginUndoAction();
+    if (nFirstLine < 0)
+        nFirstLine = 0;
+    if (nLastLine <= 0 || nLastLine > this->GetLineCount())
+        nLastLine = this->GetLineCount();
 
+    int nFirstPosition = this->PositionFromLine(nFirstLine);
+    int nLastPosition = this->GetLineEndPosition(nLastLine);
+    int nIndentationLevel = (this->getFileType() == FILE_NPRC) ? -1 : 0;
+
+    for (int i = nFirstPosition; i < nLastPosition; i++)
+    {
+        if (this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_BLOCK || this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_LINE)
+            continue;
+        if (this->GetCharAt(i) == '\r' || this->GetCharAt(i) == '\n')
+            continue;
+        if (this->GetStyleAt(i) == wxSTC_NSCR_OPERATOR_KEYWORDS || (this->GetStyleAt(i) == wxSTC_NSCR_OPERATORS && this->GetTextRange(i, i+1) == "<>"))
+        {
+            for (; i < nLastPosition; i++)
+            {
+                if ((!this->GetStyleAt(i) == wxSTC_NSCR_STRING && (this->GetCharAt(i) == ' ' || this->GetCharAt(i) == ';')) || this->GetCharAt(i) == '\r' || this->GetCharAt(i) == '\n')
+                    break;
+            }
+        }
+        if (this->GetStyleAt(i) == wxSTC_NSCR_OPERATORS)
+        {
+            int currentChar = this->GetCharAt(i);
+            int prevChar = this->GetCharAt(i-1);
+            int nextChar = this->GetCharAt(i+1);
+            string sParens = "(){}[]";
+            if (currentChar == '(' && this->GetStyleAt(i-1) == wxSTC_NSCR_COMMAND)
+                nLastPosition += insertTextAndMove(i, " ");
+            else if (currentChar == '('
+                && (this->GetStyleAt(i-1) == wxSTC_NSCR_FUNCTION
+                    || this->GetStyleAt(i-1) == wxSTC_NSCR_CUSTOM_FUNCTION
+                    || this->GetStyleAt(i-1) == wxSTC_NSCR_PROCEDURES
+                    || this->GetStyleAt(i-1) == wxSTC_NSCR_METHOD
+                    || this->GetStyleAt(i-1) == wxSTC_NSCR_PREDEFS))
+            {
+                int nParens = this->BraceMatch(i);
+                if (nParens > 0)
+                {
+                    for (; i < nParens; i++)
+                    {
+                        if (this->GetStyleAt(i) == wxSTC_NSCR_OPERATORS)
+                        {
+                            currentChar = this->GetCharAt(i);
+                            nextChar = this->GetCharAt(i+1);
+                            prevChar = this->GetCharAt(i-1);
+                            if (currentChar == ',' && nextChar != ' ')
+                            {
+                                nLastPosition += insertTextAndMove(i+1, " ");
+                                nParens++;
+                            }
+                            if (currentChar == '=' && nextChar != ' ' && this->GetStyleAt(i+1) != wxSTC_NSCR_OPERATORS)
+                            {
+                                nLastPosition += insertTextAndMove(i+1, " ");
+                                nParens++;
+                            }
+                            if (currentChar == '=' && prevChar != ' ' && this->GetStyleAt(i-1) != wxSTC_NSCR_OPERATORS)
+                            {
+                                nLastPosition += insertTextAndMove(i, " ");
+                                nParens++;
+                            }
+                        }
+                    }
+                }
+            }
+            else if (sParens.find(currentChar) != string::npos)
+                continue;
+            else if (currentChar == ',' && nextChar != ' ')
+                nLastPosition += insertTextAndMove(i+1, " ");
+            else if (currentChar == '?' && nextChar != currentChar && prevChar != currentChar)
+            {
+                if (nextChar != ' ')
+                    nLastPosition += insertTextAndMove(i+1, " ");
+                if (prevChar != ' ')
+                    nLastPosition += insertTextAndMove(i, " ");
+            }
+            else if (currentChar == '<' || currentChar == '>' || currentChar == '!' || currentChar == '=')
+            {
+                string sLeadingChars = " (=+-!*/^<>:";
+                if (currentChar == '='
+                    && (this->GetStyleAt(i-1) == wxSTC_NSCR_OPTION
+                        || this->GetStyleAt(i-1) == wxSTC_NSCR_OPTION
+                        || this->GetStyleAt(i-1) == wxSTC_NSCR_COMMAND))
+                    continue;
+                if (nextChar != ' ' && nextChar != '=' && nextChar != '>' && currentChar != '!' && !(currentChar == '>' && prevChar == '<') && this->GetStyleAt(i-1) != wxSTC_NSCR_OPTION  && this->GetStyleAt(i+1) != wxSTC_NSCR_OPTION)
+                    nLastPosition += insertTextAndMove(i+1, " ");
+                if (sLeadingChars.find(prevChar) == string::npos && !(currentChar == '<' && nextChar == '>'))
+                    nLastPosition += insertTextAndMove(i, " ");
+            }
+            else if (currentChar == '+' || currentChar == '-')
+            {
+                if (nextChar != ' '
+                    && nextChar != currentChar
+                    && nextChar != '='
+                    && nextChar != ';'
+                    && this->GetStyleAt(i+1) != wxSTC_NSCR_COMMAND
+                    && this->GetStyleAt(i+1) != wxSTC_NSCR_OPTION
+                    && this->GetStyleAt(i-1) != wxSTC_NSCR_COMMAND
+                    && this->GetStyleAt(i-1) != wxSTC_NSCR_OPTION
+                    && prevChar != '('
+                    && prevChar != '{'
+                    && prevChar != '[')
+                    nLastPosition += insertTextAndMove(i+1, " ");
+                if (prevChar != ' '
+                    && prevChar != currentChar
+                    && nextChar != currentChar
+                    && prevChar != '('
+                    && prevChar != '['
+                    && prevChar != '{')
+                    nLastPosition += insertTextAndMove(i, " ");
+            }
+            else if (currentChar == '&' || currentChar == '|')
+            {
+                if (nextChar != ' ' && nextChar != currentChar)
+                    nLastPosition += insertTextAndMove(i+1, " ");
+                if (prevChar != ' ' && prevChar != currentChar)
+                    nLastPosition += insertTextAndMove(i, " ");
+            }
+            else if ((currentChar == '*' || currentChar == '/' || currentChar == '^')
+                && nextChar == '='
+                && prevChar != ' '
+                && nextChar != currentChar
+                && prevChar != currentChar)
+                nLastPosition += insertTextAndMove(i, " ");
+        }
+        if (this->GetStyleAt(i) == wxSTC_NSCR_COMMAND)
+        {
+            int nPos1 = i;
+            while (this->GetStyleAt(i+1) == wxSTC_NSCR_COMMAND)
+                i++;
+            wxString command = this->GetTextRange(nPos1, i+1);
+            int nCurrentLineStart = this->PositionFromLine(this->LineFromPosition(nPos1));
+            int nCurrentLineEnd = this->GetLineEndPosition(this->LineFromPosition(nPos1));
+            if (command == "global" || command == "load" || command == "append")
+            {
+                i = nCurrentLineEnd;
+                continue;
+            }
+            else if (command == "set")
+            {
+                for (; i <= nCurrentLineEnd; i++)
+                {
+                    if (this->GetStyleAt(i) == wxSTC_NSCR_OPERATORS && this->GetCharAt(i) == '[')
+                    {
+                        int bracepos = this->BraceMatch(i);
+                        if (bracepos > 0)
+                        {
+                            for (; i < bracepos; i++)
+                            {
+                                if (this->GetCharAt(i) == ',' && this->GetCharAt(i+1) != ' ')
+                                    nLastPosition += insertTextAndMove(i+1, " ");
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (command == "if"
+                || command == "elseif"
+                || command == "for"
+                || command == "while")
+            {
+                int parens = i;
+                parens = FindText(i, nCurrentLineEnd, "(");
+                if (parens > 0)
+                {
+                    parens = this->BraceMatch(parens);
+                    if (parens > 0)
+                    {
+                        if (this->GetTextRange(parens+1, nCurrentLineEnd).find_first_not_of(" \r\n\t") != string::npos)
+                            nLastPosition += insertTextAndMove(parens+1, "\r\n");
+                    }
+                }
+            }
+            else if (command == "else")
+            {
+                if (this->GetTextRange(i+1, nCurrentLineEnd).find_first_not_of(" \r\n\t") != string::npos)
+                    nLastPosition += insertTextAndMove(i+1, "\r\n");
+            }
+            /*if (command == "endif"
+                || command == "endfor"
+                || command == "endwhile")
+            {
+
+            }*/
+            if (command == "if"
+                || command == "for"
+                || command == "else"
+                || command == "elseif"
+                || command == "while"
+                || command == "endif"
+                || command == "endfor"
+                || command == "endwhile")
+            {
+                if (this->GetTextRange(nCurrentLineStart, nPos1).find_first_not_of(" \t") != string::npos)
+                {
+                    nLastPosition += insertTextAndMove(nPos1, "\r\n");
+                    i += 2;
+                }
+            }
+            if (command == "if" || command == "for" || command == "while" || command == "compose" || command == "procedure")
+            {
+                if (nIndentationLevel <= 0)
+                {
+                    int nLine = this->LineFromPosition(i);
+                    if (nLine
+                        && this->GetLine(nLine-1).find_first_not_of(" \t\r\n") != string::npos
+                        && this->GetStyleAt(this->PositionFromLine(nLine-1)) != wxSTC_NSCR_COMMENT_BLOCK
+                        && this->GetStyleAt(this->PositionFromLine(nLine-1)) != wxSTC_NSCR_COMMENT_LINE)
+                    {
+                        nLastPosition += insertTextAndMove(this->PositionFromLine(nLine), "\r\n");
+                        i += 2;
+                    }
+                }
+                nIndentationLevel++;
+            }
+            if (command == "endif" || command == "endfor" || command == "endwhile" || command == "endcompose" || command == "endprocedure")
+            {
+                nIndentationLevel--;
+                if (nIndentationLevel <= 0)
+                {
+                    int nLine = this->LineFromPosition(i);
+                    if (nLine < this->GetLineCount()-1
+                        && this->GetLine(nLine+1).find_first_not_of(" \t\r\n") != string::npos)
+                    {
+                        nLastPosition += insertTextAndMove(this->PositionFromLine(nLine+1), "\r\n");
+                    }
+                }
+            }
+        }
+        if (this->GetStyleAt(i) == wxSTC_NSCR_STRING)
+        {
+            if (this->GetStyleAt(i+1) != wxSTC_NSCR_STRING
+                && this->GetLineEndPosition(this->LineFromPosition(i)) != i+1
+                && this->GetCharAt(i+1) != ' '
+                && this->GetCharAt(i+1) != ','
+                && this->GetCharAt(i+1) != ';'
+                && this->GetCharAt(i+1) != ')'
+                && this->GetCharAt(i+1) != ']'
+                && this->GetCharAt(i+1) != '}')
+                nLastPosition += insertTextAndMove(i+1, " ");
+            if (this->GetStyleAt(i-1) != wxSTC_NSCR_STRING
+                && this->PositionFromLine(this->LineFromPosition(i)) != i
+                && this->GetCharAt(i-1) != ' '
+                && !(this->GetCharAt(i-1) == '=' && this->GetStyleAt(i-2) == wxSTC_NSCR_OPTION)
+                && this->GetCharAt(i-1) != '('
+                && this->GetCharAt(i-1) != '['
+                && this->GetCharAt(i-1) != '{')
+                nLastPosition += insertTextAndMove(i, " ");
+        }
+    }
+    this->EndUndoAction();
+    ApplyAutoIndentation(nFirstLine, this->LineFromPosition(nLastPosition));
+}
 
 
 
