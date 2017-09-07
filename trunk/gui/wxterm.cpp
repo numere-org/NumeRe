@@ -1970,6 +1970,7 @@ void wxTerm::UpdateColors()
     m_colors = m_vt_colors;
 
     SetBackgroundColour(m_colors[0]);
+    m_parent->SetBackgroundColour(m_colors[0]);
 
     for (int i = 0; i < 16; i++)
         m_vt_colorPens[i] = wxPen(m_vt_colors[i], 1, wxSOLID);
