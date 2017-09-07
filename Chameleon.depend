@@ -1127,7 +1127,7 @@
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\printps.h
 	"wx/prntbase.h"
 
-1503387257 d:\cpp\numere-source\trunk\editor\editor.h
+1504346864 d:\cpp\numere-source\trunk\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -2072,7 +2072,7 @@
 	<commdlg.h>
 	"wx/msw/winundef.h"
 
-1503430122 d:\cpp\numere-source\trunk\common\datastructures.h
+1504343815 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -3244,7 +3244,7 @@
 	<string>
 	<vector>
 
-1503387224 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1504717994 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -3304,7 +3304,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1503515794 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1504349113 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3695,11 +3695,12 @@
 	"NumeReNotebook.h"
 	"../editor/editor.h"
 
-1501674853 source:d:\cpp\numere-source\trunk\gui\dialogs\aboutchameleondialog.cpp
+1504250535 source:d:\cpp\numere-source\trunk\gui\dialogs\aboutchameleondialog.cpp
 	"wx/wxprec.h"
 	<wx/msw/private.h>
 	<wx/filename.h>
 	<wx/stdpaths.h>
+	<wx/textctrl.h>
 	"AboutChameleonDialog.h"
 	"../../common/verinfo.h"
 	"../../kernel/core/language.hpp"
@@ -3937,7 +3938,7 @@
 	"wxssh.h"
 	"../common/debug.h"
 
-1500716405 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
+1504768432 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>

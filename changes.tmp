@@ -1,20 +1,2 @@
-Cleaned	Die Console bekommt nun automatisch den Fokus, wenn sie mit "F2" eingeblendet wird.
-Cleaned	Die Windowstaste produziert nun kein seltsames Symbol mehr in der Konsole.
-Added	Der aktuelle Block kann nun per Kontextmenue eingefaltet werden.
-Cleaned	Das Fehlermanagement wurde ueberarbeitet
-Applied	Fehlerausgaben werden nun in der Farbe der Operatoren angezeigt (standardmaessig ist das rot).
-Cleaned	"zeroes" und "extrema" koennen nun auch mit NaNs in Datensaetzen umgehen.
-Added	Prozeduren werden nun auch in der Autovervollstaendigung angezeigt. Dabei wird der Namensraum der Prozedur beruecksichtigt.
-Added	Fuenf neue Matrixfuncktionen wurden hinzugefuegt
-Fixed	In Matrixausdruecken koennen nun temporaere Vektoren als Zielvariable verwendet werden.
-Added	Locale Caches sind nun in Prozeduren moeglich. Sie werden mit "tab CACHE()" generiert.
-New	Der Code der ausgefuehrten Prozeduren wird nun intern gespeichert, so dass eine schnellere, zweite Ausfuehrung der Prozeduren moeglich ist.
-Fixed	Caches koennen nun auch als Indexmengen in Zielcaches verwendet werden.
-Cleaned	Die History zeigt nun keine wiederholten Ausdruecke mehr an. Mehrmals hintereinander eingegebene Ausdruecke werden nur einmal protokolliert.
-Added	Der Dateibrowser zeigt nun in den Tooltips den Dateityp und bei NumeRe-Datenfiles auch die zusaetzlichen Dateiinformationen an.
-Cleaned	Der Schleifenalgorithmus wurde verbessert. Es ergaben sich Laufzeitverbesserungen bis zu x4.
-Added	Der Editor kann nun nach den Dateien der eingebundenen Scripte suchen, wenn mit der rechten Maustaste auf die entsprechende Zeile geklickt und der entsprechende Eintrag im Kontextmenue ausgewaehlt wird.
-New	NumeRe besitzt nun einen interaktiven Graph-Viewer. Der Viewer kann zoomen, Graphen rotieren, Animationen abspielen (sofern verfuegbar) und einfache, geometrische Objekte/Text zum Graphen hinzufuegen.
-Fixed	Automatisch erzeugte "thisfile"-Prozeduren werden nun in der aktuellen Datei generiert und nicht mehr in einer neuen Datei. 
-Added	Die Hintergrundfarbe der aktiven Zeile kann nun bei den Syntaxfarben ebenfalls angepasst werden.
-Cleaned	Die Hintergrundfarben der Syntaxstile sind nun verknuepft. Wenn der Hintergrund eines Syntaxelements getrennt angepasst werden will, muss das Haekchen bei "Standardhintergrund" entfernt werden.
+Cleaned	Improved "About NumeRe" dialog: this dialog is now using wxTextCtrls for automatic text wrapping.
+New	Added a functionality for applying an automatic format of a source file. It will add spaces between operator chars and perform some additional changes for improved readability.

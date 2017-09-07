@@ -161,6 +161,7 @@ BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
 	EVT_MENU						(ID_RENAME_FILE, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_AUTOINDENT, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_INDENTONTYPE, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_AUTOFORMAT, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_LINEWRAP, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_DISPCTRLCHARS, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_USETXTADV, NumeReWindow::OnMenuEvent)
@@ -1129,6 +1130,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             t->ToggleTool(ID_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
             wxMenu* tools = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
             tools->Check(ID_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+            break;
+        }
+        case ID_AUTOFORMAT:
+        {
+            m_currentEd->ApplyAutoFormat();
             break;
         }
         case ID_GOTOLINE:
@@ -3811,13 +3817,17 @@ void NumeReWindow::UpdateMenuBar()
 	menuStripSpaces->Append(ID_STRIP_SPACES_FRONT, _guilang.get("GUI_MENU_STRIP_FRONT"), _guilang.get("GUI_MENU_STRIP_FRONT_TTP"));
 	menuStripSpaces->Append(ID_STRIP_SPACES_BACK, _guilang.get("GUI_MENU_STRIP_BACK"), _guilang.get("GUI_MENU_STRIP_BACK_TTP"));
 
+	wxMenu* menuFormat = new wxMenu();
+	menuFormat->Append(ID_AUTOINDENT, _guilang.get("GUI_MENU_AUTOINDENT"), _guilang.get("GUI_MENU_AUTOINDENT_TTP"));
+	menuFormat->Append(ID_INDENTONTYPE, _guilang.get("GUI_MENU_INDENTONTYPE"), _guilang.get("GUI_MENU_INDENTONTYPE_TTP"), true);
+	menuFormat->Append(ID_AUTOFORMAT, _guilang.get("GUI_MENU_AUTOFORMAT"), _guilang.get("GUI_MENU_AUTOFORMAT_TTP"));
+
 	wxMenu* menuTools = new wxMenu();
 
 	menuTools->Append(ID_OPTIONS, _guilang.get("GUI_MENU_OPTIONS"));
 	menuTools->AppendSeparator();
 	menuTools->Append(ID_DEBUG_START, _guilang.get("GUI_MENU_EXECUTE"), _guilang.get("GUI_MENU_EXECUTE_TTP"));
-	menuTools->Append(ID_AUTOINDENT, _guilang.get("GUI_MENU_AUTOINDENT"), _guilang.get("GUI_MENU_AUTOINDENT_TTP"));
-	menuTools->Append(ID_INDENTONTYPE, _guilang.get("GUI_MENU_INDENTONTYPE"), _guilang.get("GUI_MENU_INDENTONTYPE_TTP"), true);
+	menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_FORMAT"), menuFormat);
 	menuTools->Append(ID_TOGGLE_COMMENT_LINE, _guilang.get("GUI_MENU_COMMENTLINE"), _guilang.get("GUI_MENU_COMMENTLINE_TTP"));
 	menuTools->Append(ID_TOGGLE_COMMENT_SELECTION, _guilang.get("GUI_MENU_COMMENTSELECTION"), _guilang.get("GUI_MENU_COMMENTSELECTION_TTP"));
 	menuTools->AppendSeparator();
