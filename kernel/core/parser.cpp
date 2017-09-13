@@ -1217,6 +1217,12 @@ value_type parser_time()
     return time(0);
 }
 
+// --> Returns the processor clocks <--
+value_type parser_clock()
+{
+    return (double)clock();
+}
+
 // --> NumeRe-Version als natuerliche Zahl <--
 value_type parser_numereversion()
 {
