@@ -155,6 +155,7 @@ value_type parser_BinOR(value_type, value_type);
 value_type parser_BinAND(value_type, value_type);
 value_type parser_is_string(value_type);
 value_type parser_time();
+value_type parser_clock();
 value_type parser_date(value_type, value_type);
 value_type parser_isnan(value_type);
 value_type parser_interval(value_type, value_type, value_type);

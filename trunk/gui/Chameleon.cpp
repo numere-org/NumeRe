@@ -5721,6 +5721,24 @@ void NumeReWindow::OnOptions()
             NumeReEditor* edit = static_cast<NumeReEditor*>(m_book->GetPage(i));
             edit->UpdateSyntaxHighlighting(true);
         }
+        /*wxWindowList children = this->GetChildren();
+        for (size_t i = 0; i < children.size(); i++)
+        {
+            children[i]->SetBackgroundColour(*wxBLACK);
+            children[i]->SetForegroundColour(*wxWHITE);
+            wxWindowList subchildren = children[i]->GetChildren();
+            for (size_t j = 0; j < subchildren.size(); j++)
+            {
+                subchildren[j]->SetBackgroundColour(*wxBLACK);
+                subchildren[j]->SetForegroundColour(*wxWHITE);
+                wxWindowList subsubchildren = subchildren[j]->GetChildren();
+                for (size_t k = 0; k < subsubchildren.size(); k++)
+                {
+                    subsubchildren[k]->SetBackgroundColour(*wxBLACK);
+                    subsubchildren[k]->SetForegroundColour(*wxWHITE);
+                }
+            }
+        }*/
     }
 	m_currentEd->SetFocus();
 }

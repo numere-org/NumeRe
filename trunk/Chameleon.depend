@@ -2642,7 +2642,7 @@
 	<cmath>
 	"muParserError.h"
 
-1494686261 d:\cpp\numere-source\trunk\kernel\core\parser.hpp
+1505291400 d:\cpp\numere-source\trunk\kernel\core\parser.hpp
 	<cstdlib>
 	<cmath>
 	<fstream>
@@ -3304,7 +3304,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1504349113 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1505046922 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
