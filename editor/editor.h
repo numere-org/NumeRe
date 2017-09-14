@@ -41,6 +41,8 @@ public:
         SETTING_USEANALYZER = 8,
         SETTING_INDENTONTYPE = 16
     };
+    bool defaultPage;
+
 	//bool LoadFile ();
 	bool LoadLocalFile (const wxString &filename);
 	bool LoadFileText(wxString fileContents);

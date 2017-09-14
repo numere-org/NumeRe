@@ -1127,7 +1127,7 @@
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\printps.h
 	"wx/prntbase.h"
 
-1504346864 d:\cpp\numere-source\trunk\editor\editor.h
+1505378354 d:\cpp\numere-source\trunk\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -2021,7 +2021,7 @@
 	"../kernel/kernel.hpp"
 	"../kernel/debugmessenger.hpp"
 
-1503430188 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1505378654 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -3244,7 +3244,7 @@
 	<string>
 	<vector>
 
-1504717994 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1505378491 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -3304,7 +3304,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1505046922 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1505389649 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3969,7 +3969,7 @@
 1494146710 source:d:\cpp\numere-source\trunk\kernel\core\debugger.cpp
 	"debugger.hpp"
 
-1498336438 source:d:\cpp\numere-source\trunk\kernel\core\define.cpp
+1505291619 source:d:\cpp\numere-source\trunk\kernel\core\define.cpp
 	"define.hpp"
 	"../kernel.hpp"
 
@@ -4028,7 +4028,7 @@
 	"output.hpp"
 	"../kernel.hpp"
 
-1497473246 source:d:\cpp\numere-source\trunk\kernel\core\parser.cpp
+1505291532 source:d:\cpp\numere-source\trunk\kernel\core\parser.cpp
 	"parser.hpp"
 
 1502386071 source:d:\cpp\numere-source\trunk\kernel\core\parser_functions.cpp
@@ -4222,7 +4222,7 @@
 	"debugmessenger.hpp"
 	"core/tools.hpp"
 
-1502652901 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1505291575 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 

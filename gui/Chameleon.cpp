@@ -1896,6 +1896,11 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfilename)
 {
+    if (!m_fileNum)
+    {
+        DefaultPage();
+        return;
+    }
     if (_filetype == FILE_NONSOURCE)
     {
         m_fileNum += 1;
@@ -2012,6 +2017,32 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         m_book->AddPage (edit, filename, true);
 
     }
+}
+
+void NumeReWindow::DefaultPage()
+{
+    wxString template_file, dummy;
+    dummy = "tmpl_defaultpage.nlng";
+
+    if (m_terminal->getKernelSettings().getUseCustomLanguageFiles() && wxFileExists(getProgramFolder() + "\\user\\lang\\"+dummy))
+        GetFileContents(getProgramFolder() + "\\user\\lang\\"+dummy, template_file, dummy);
+    else
+        GetFileContents(getProgramFolder() + "\\lang\\"+dummy, template_file, dummy);
+
+    vector<string> vPaths = m_terminal->getPathSettings();
+
+    m_fileNum += 1;
+
+    ProjectInfo* singleFileProject = new ProjectInfo();
+    NumeReEditor* edit = new NumeReEditor (this, m_debugManager, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
+
+    m_currentEd = edit;
+    m_currentEd->LoadFileText(template_file);
+    m_currentEd->defaultPage = true;
+    m_currentEd->SetReadOnly(true);
+    m_currentEd->ToggleSettings(NumeReEditor::SETTING_USETXTADV);
+    m_currentPage = m_book->GetPageCount();
+    m_book->AddPage (edit, _guilang.get("GUI_EDITOR_TAB_WELCOMEPAGE"), true);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2228,6 +2259,8 @@ void NumeReWindow::CloseAllFiles()
 	for (int i = 0; i < cnt; i++)
 	{
         edit = static_cast<NumeReEditor*>(m_book->GetPage(i));
+        if (edit->defaultPage)
+            continue;
         // gives the user a chance to save if the file has been modified
         HandleModifiedFile(i, MODIFIEDFILE_CLOSE);
 
@@ -2632,7 +2665,7 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
 			// current buffer is empty and untouched, so load the file into it
 			if ((!m_currentEd->Modified()
                 && !m_currentEd->HasBeenSaved()
-                && (m_currentEd->GetText().IsEmpty() || m_currentEd->GetText() == "\r\n")) )
+                && (m_currentEd->GetText().IsEmpty() || m_currentEd->GetText() == "\r\n")) || m_currentEd->defaultPage )
 			{
 				m_book->SetPageText(m_currentPage, /*locationPrefix + */fileNameNoPath);
 				m_currentEd->SetProject(proj);
@@ -3268,13 +3301,13 @@ void NumeReWindow::OnUpdateCompileUI()//wxUpdateUIEvent &event)
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::UpdateStatusBar()
 {
-	if(m_statusBar == NULL)
+	if (m_statusBar == NULL)
 	{
 		return;
 	}
 
 	int pageCount = m_book->GetPageCount();
-	if(pageCount < 1 || pageCount <= m_currentPage)
+	if (pageCount < 1 || pageCount <= m_currentPage)
 	{
 		return;
 	}
@@ -3284,16 +3317,20 @@ void NumeReWindow::UpdateStatusBar()
 	string sExt = "";
 
 	filename = m_currentEd->GetFileNameAndPath();
+	if (m_currentEd->defaultPage)
+        filename = _guilang.get("GUI_STATUSBAR_WELCOMEPAGE");
 
     if (filename.find('.') != string::npos)
         sExt = filename.substr(filename.rfind('.')+1).ToStdString();
 
 
-	if(tabText.StartsWith("<"))
+	if (tabText.StartsWith("<"))
 	{
 		filename = _guilang.get("GUI_STATUSBAR_UNSAVEDFILE");
 		filetype = "N/A";
 	}
+	else if (m_currentEd->defaultPage)
+        filetype = _guilang.get("GUI_STATUSBAR_WELCOMEPAGE_FILETYPE");
 	else if (sExt.length() && _guilang.get("GUI_STATUSBAR_"+toUpperCase(sExt)) != "GUI_STATUSBAR_"+toUpperCase(sExt))
 	{
         filetype = _guilang.get("GUI_STATUSBAR_"+toUpperCase(sExt));
@@ -3304,28 +3341,28 @@ void NumeReWindow::UpdateStatusBar()
 	}
 
 
-	if(filename != m_statusBar->GetStatusText(0))
+	if (filename != m_statusBar->GetStatusText(0))
 	{
 		m_statusBar->SetStatusText(filename, 0);
 	}
 
-	if(filetype != m_statusBar->GetStatusText(1))
+	if (filetype != m_statusBar->GetStatusText(1))
 	{
 		m_statusBar->SetStatusText(filetype, 1);
 	}
 
-	bool isEdReadOnly = m_currentEd->GetProject()->IsReadOnly();
+	bool isEdReadOnly = m_currentEd->GetReadOnly();
 
 	wxString editable = isEdReadOnly ? "Read only" : "Read/Write";
 
-	if(editable != m_statusBar->GetStatusText(2))
+	if (editable != m_statusBar->GetStatusText(2))
 	{
 		m_statusBar->SetStatusText(editable, 2);
 	}
 
 	bool synchronousOp = m_network->DoingSynchronousOperation();
 
-	if(synchronousOp)
+	if (synchronousOp)
 	{
 		wxLogDebug("UI aware of synchronous op");
 	}
