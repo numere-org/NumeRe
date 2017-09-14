@@ -119,6 +119,7 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
                                       wxString & name /* = wxSTCNameStr */ ) :
     wxStyledTextCtrl(parent, id, pos, size, style, name)
 {
+    defaultPage = false;
     m_mainFrame = mframe;
 	m_debugManager = debugManager;
 	m_options = options;
@@ -338,7 +339,12 @@ bool NumeReEditor::LoadFileText(wxString fileContents)
 	if(fileContents.Length() > 0)
 	{
 		m_bLoadingFile = true;
+		defaultPage = false;
+		SetReadOnly(false);
+		if (getEditorSetting(SETTING_USETXTADV))
+            ToggleSettings(SETTING_USETXTADV);
 		ClearAll();
+		StyleClearAll();
 		InsertText(0, fileContents);
 	}
 
@@ -396,7 +402,7 @@ bool NumeReEditor::LoadFileText(wxString fileContents)
     }
 
 	m_bLoadingFile = false;
-
+    UpdateSyntaxHighlighting(true);
     return true;
 }
 

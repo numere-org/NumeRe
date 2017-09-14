@@ -127,6 +127,7 @@ class NumeReWindow : public wxFrame
         NetworkCallResult CheckNetworkStatus();
 
         void NewFile(FileFilterType _filetype = FILE_NONSOURCE, const wxString& defaultfilename = "");
+        void DefaultPage();
         void OpenSourceFile(wxArrayString fnames, unsigned int nLine = 0, int nOpenFileFlag = OPENFILE_NOTHING);
         void openImage(wxFileName filename);
         void openHTML(wxString HTMLcontent);
