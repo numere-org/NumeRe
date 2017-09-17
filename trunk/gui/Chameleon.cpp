@@ -4279,11 +4279,14 @@ void NumeReWindow::prepareFunctionTree()
     int idxFolderOpen = m_iconManager->GetIconIndex("FOLDEROPEN");
     int idxFunctions = m_iconManager->GetIconIndex("FUNCTIONS");
     int idxCommands = m_iconManager->GetIconIndex("COMMANDS");
+    int idxConstants = m_iconManager->GetIconIndex("CONSTANTS");
 	wxTreeItemId rootNode = m_functionTree->AddRoot(_guilang.get("GUI_TREE_WORKSPACE"), m_iconManager->GetIconIndex("WORKPLACE"));
 	FileNameTreeData* root = new FileNameTreeData();
 	wxTreeItemId commandNode = m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_COMMANDS"), m_iconManager->GetIconIndex("WORKPLACE"), -1, root);
 	root = new FileNameTreeData();
 	wxTreeItemId functionNode = m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_FUNCTIONS"), m_iconManager->GetIconIndex("WORKPLACE"), -1, root);
+	root = new FileNameTreeData();
+	wxTreeItemId constNode = m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_CONSTANTS"), m_iconManager->GetIconIndex("WORKPLACE"), -1, root);
 	wxTreeItemId currentNode;
 
 	/// commands
@@ -4303,6 +4306,7 @@ void NumeReWindow::prepareFunctionTree()
 	}
     m_functionTree->Toggle(commandNode);
 
+	/// functions
     sKeyList = _guilang.get("GUI_TREE_FUNC_KEYLIST");
     vKeyList.clear();
     while (sKeyList.length())
@@ -4313,7 +4317,6 @@ void NumeReWindow::prepareFunctionTree()
             sKeyList.erase(0,1);
     }
 
-	/// functions
 	for (size_t i = 0; i < vKeyList.size(); i++)
 	{
         FileNameTreeData* dir = new FileNameTreeData();
@@ -4329,6 +4332,33 @@ void NumeReWindow::prepareFunctionTree()
         }
 	}
     m_functionTree->Toggle(functionNode);
+
+    /// Constants
+    sKeyList = _guilang.get("GUI_TREE_CONST_KEYLIST");
+    vKeyList.clear();
+    while (sKeyList.length())
+    {
+        vKeyList.push_back(sKeyList.substr(0, sKeyList.find(' ')));
+        sKeyList.erase(0, sKeyList.find(' '));
+        while (sKeyList.front() == ' ')
+            sKeyList.erase(0,1);
+    }
+
+	for (size_t i = 0; i < vKeyList.size(); i++)
+	{
+        FileNameTreeData* dir = new FileNameTreeData();
+        dir->isDir = true;
+        currentNode = m_functionTree->AppendItem(constNode, _guilang.get("PARSERFUNCS_LISTCONST_TYPE_" + toUpperCase(vKeyList[i])), idxFolderOpen, -1, dir);
+        vDirList = _guilang.getList("GUI_EDITOR_CALLTIP_CONST_*_[" + toUpperCase(vKeyList[i]) + "]");
+        for (size_t j = 0; j < vDirList.size(); j++)
+        {
+            FileNameTreeData* data = new FileNameTreeData();
+            data->isConstant = true;
+            data->tooltip = vDirList[j];
+            m_functionTree->AppendItem(currentNode, vDirList[j].substr(0, vDirList[j].find(" = ")), idxConstants, -1, data);
+        }
+	}
+    m_functionTree->Toggle(constNode);
 
 }
 
@@ -4660,6 +4690,8 @@ void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
             return;
         else if (data->isFunction || data->isCommand)
             event.SetToolTip(this->addLinebreaks(data->tooltip));
+        else if (data->isConstant)
+            event.SetToolTip(data->tooltip);
     }
     else
     {
@@ -4684,7 +4716,7 @@ void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
     {
         wxTreeItemId item = event.GetItem();
         FileNameTreeData* data = static_cast<FileNameTreeData*>(m_functionTree->GetItemData(item));
-        if (!data->isCommand && !data->isFunction)
+        if (!data->isCommand && !data->isFunction && !data->isConstant)
             return;
         wxString token = data->tooltip;
         token.erase(token.find(' '));

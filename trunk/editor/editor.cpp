@@ -1083,9 +1083,9 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
     }
     else if (this->GetStyleAt(charpos) == wxSTC_NSCR_CONSTANTS || this->GetStyleAt(charpos) == wxSTC_NPRC_CONSTANTS)
     {
-        string sCalltip = _guilang.get("GUI_EDITOR_CALLTIP_CONST"+toUpperCase(selection.ToStdString()));
+        string sCalltip = _guilang.get("GUI_EDITOR_CALLTIP_CONST"+toUpperCase(selection.ToStdString())+"_*");
         if (selection == "_G")
-            sCalltip = _guilang.get("GUI_EDITOR_CALLTIP_CONST_GRAV");
+            sCalltip = _guilang.get("GUI_EDITOR_CALLTIP_CONST_GRAV_*");
         this->CallTipShow(charpos, sCalltip);
         this->CallTipSetHighlight(0, sCalltip.find('='));
     }
