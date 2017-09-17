@@ -109,7 +109,7 @@ void NumeReKernel::Autosave()
     return;
 }
 
-void NumeReKernel::StartUp(wxTerm* _parent)
+void NumeReKernel::StartUp(wxTerm* _parent, const string& sPredefinedFunctions)
 {
     if (_parent && m_parent == nullptr)
         m_parent = _parent;
@@ -119,6 +119,8 @@ void NumeReKernel::StartUp(wxTerm* _parent)
 	string sScriptName = "";
 	string sTime = getTimeStamp(false);
 	string sLogFile = "numere.log";
+
+	_functions.setPredefinedFuncs(sPredefinedFunctions);
 
     _data.setPredefinedFuncs(_functions.getPredefinedFuncs());
     //Sleep(50);
@@ -346,7 +348,7 @@ void NumeReKernel::StartUp(wxTerm* _parent)
     _parser.DefinePostfixOprt(_nrT("'mu"), parser_Micro);
     //_parser.DefinePostfixOprt(_nrT("µ"), parser_Micro);
     _parser.DefinePostfixOprt(_nrT("'n"), parser_Nano);
-    _parser.DefinePostfixOprt(_nrT("~"), parser_Ignore);
+    //_parser.DefinePostfixOprt(_nrT("~"), parser_Ignore);
 
     // --> Einheitenumrechnungen: Werden aufgerufen durch WERT'EINHEIT <--
     _parser.DefinePostfixOprt(_nrT("'eV"), parser_ElectronVolt);
@@ -2069,7 +2071,7 @@ void NumeReKernel::showDebugError(const string& sTitle)
     if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
     {
         showDebugEvent(sTitle, _option._debug.getModuleInformations(), _option._debug.getStackTrace(), _option._debug.getNumVars(), _option._debug.getStringVars());
-        gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber());
+        gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber()+1);
     }
     _option._debug.reset();
 }
@@ -2164,7 +2166,7 @@ void NumeReKernel::evalDebuggerBreakPoint(Settings& _option, const map<string,st
     }
     _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize-nLocalVarMapSkip, dLocalVars, sLocalStrings, nLocalStringMapSize, sStringMap, sCurrentCommand, sScriptFileName, nScriptLine);
     showDebugEvent(_lang.get("DBG_HEADLINE"), _option._debug.getModuleInformations(), _option._debug.getStackTrace(), _option._debug.getNumVars(), _option._debug.getStringVars());
-    gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber());
+    gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber()+1);
     _option._debug.resetBP();
     if (sLocalVars)
     {

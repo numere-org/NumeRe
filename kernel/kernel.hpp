@@ -139,7 +139,7 @@ class NumeReKernel
         long long int getLastSavedTime() {return _data.getLastSaved();}
         void Autosave();
 
-        void StartUp(wxTerm* _parent);
+        void StartUp(wxTerm* _parent, const string& sPredefinedFuncs);
         KernelStatus MainLoop(const string& sCommand);
         void CloseSession();
         void CancelCalculation()

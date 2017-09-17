@@ -97,6 +97,7 @@ class Define : public FileSystem
                 sCaches = sCacheList;
                 return;
             }
+        void setPredefinedFuncs(const string& sPredefined);
         inline string getPredefinedFuncs() const
             {
                 return sBuilt_In;

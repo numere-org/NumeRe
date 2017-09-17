@@ -232,7 +232,7 @@ vector<string> NumeReDebugger::getModuleInformations()
     vector<string> vModule;
     vModule.push_back(sErraticCommand);
     vModule.push_back(sErraticModule);
-    vModule.push_back(toString(nLineNumber));
+    vModule.push_back(toString(nLineNumber+1));
     return vModule;
 }
 
@@ -246,7 +246,7 @@ vector<string> NumeReDebugger::getStackTrace()
     }
     for (int i = vStackTrace.size()-1; i >= 0; i--)
     {
-        if (i == vStackTrace.size()-1)
+        if (i == (int)vStackTrace.size()-1)
             vStack.push_back("-> $" + vStackTrace[i]);
         else
             vStack.push_back("$" + vStackTrace[i]);

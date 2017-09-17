@@ -2114,14 +2114,6 @@ void NumeReWindow::PageHasChanged (int pageNr)
 		// set the title of the main window according the current opened file
 		UpdateWindowTitle(tabText);
 
-		if(tabText.StartsWith("(R)"))
-		{
-			m_remoteMode = true;
-		}
-		else if(tabText.StartsWith("(L)"))
-		{
-			m_remoteMode = false;
-		}
 		// else assume unsaved file and don't change anything
 	}
 }

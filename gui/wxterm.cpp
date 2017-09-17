@@ -212,7 +212,7 @@ wxTerm::wxTerm(wxWindow* parent, wxWindowID id,
 
     m_bitmap = 0;
 
-    _kernel.StartUp(this);
+    _kernel.StartUp(this, getSyntax()->getFunctions());
     StartKernelTask();
     m_KernelStatus = NumeReKernel::NUMERE_DONE;
     m_bCommandAvailable = false;
