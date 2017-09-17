@@ -2005,7 +2005,7 @@ void Procedure::evalDebuggerBreakPoint(Parser& _parser, Settings& _option, const
     }
     _option._debug.gatherInformations(sVars, nVarSize, dVars, sStrings, nStrSize, sStringMap, "", sCurrentProcedureName, nCurrentLine);
     NumeReKernel::showDebugEvent(_lang.get("DBG_HEADLINE"), _option._debug.getModuleInformations(), _option._debug.getStackTrace(), _option._debug.getNumVars(), _option._debug.getStringVars());
-    NumeReKernel::gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber());
+    NumeReKernel::gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber()+1);
     _option._debug.resetBP();
     NumeReKernel::waitForContinue();
     return;

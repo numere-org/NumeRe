@@ -2504,7 +2504,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1500715918 d:\cpp\numere-source\trunk\kernel\kernel.hpp
+1505643725 d:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	"core/error.hpp"
@@ -2719,7 +2719,7 @@
 	"graph_helper.hpp"
 	"fitcontroller.hpp"
 
-1490791551 d:\cpp\numere-source\trunk\kernel\core\define.hpp
+1505643825 d:\cpp\numere-source\trunk\kernel\core\define.hpp
 	<string>
 	<iostream>
 	<fstream>
@@ -3244,7 +3244,7 @@
 	<string>
 	<vector>
 
-1505378491 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1505390187 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -3304,7 +3304,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1505389649 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1505496606 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3938,7 +3938,7 @@
 	"wxssh.h"
 	"../common/debug.h"
 
-1504768432 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
+1505643553 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -3966,7 +3966,7 @@
 	"datafile.hpp"
 	"../kernel.hpp"
 
-1494146710 source:d:\cpp\numere-source\trunk\kernel\core\debugger.cpp
+1505416352 source:d:\cpp\numere-source\trunk\kernel\core\debugger.cpp
 	"debugger.hpp"
 
 1505291619 source:d:\cpp\numere-source\trunk\kernel\core\define.cpp
@@ -4136,7 +4136,7 @@
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1500316199 source:d:\cpp\numere-source\trunk\kernel\core\procedure.cpp
+1505416594 source:d:\cpp\numere-source\trunk\kernel\core\procedure.cpp
 	"procedure.hpp"
 	"../kernel.hpp"
 	"procedurevarfactory.hpp"
@@ -4222,7 +4222,7 @@
 	"debugmessenger.hpp"
 	"core/tools.hpp"
 
-1505291575 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1505416506 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 

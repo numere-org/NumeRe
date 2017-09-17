@@ -23,7 +23,8 @@
 Define::Define() : FileSystem()
 {
     nDefinedFunctions = 0;
-    sBuilt_In = ",abs(),acos(),acosh(),Ai(),and(),asin(),asinh(),ascii(),atan(),atanh(),avg(),bessel(),betheweizsaecker(),Bi(),binom(),cache(),char(),clock(),cmp(),cnt(),cos(),cosh(),cot(),cross(),data(),date(),dblfacul(),degree(),det(),diag(),diagonalize(),ellipticD(),ellipticE(),ellipticF(),ellipticPi(),eigenvals(),eigenvect(),erf(),erfc(),exp(),faculty(),findfile(),findparam(),floor(),gamma(),gauss(),gcd(),getfilelist(),getfolderlist(),getindices(),getmatchingparens(),getopt(),heaviside(),hermite(),identity(),imY(),invert(),is_data(),is_nan(),is_string(),laguerre(),laguerre_a(),lcm(),legendre(),legendre_a(),ln(),log(),log10(),log2(),matfc(),matfcf(),matfl(),matflf(),max(),med(),min(),neumann(),norm(),num(),one(),or(),pct(),phi(),prd(),radian(),rand(),range(),rect(),repeat(),replace(),replaceall(),reshape(),resize(),rint(),roof(),round(),sbessel(),sign(),sin(),sinc(),sinh(),size(),sneumann(),solve(),split(),sqrt(),std(),strfnd(),strrfnd(),strmatch(),strrmatch(),str_not_match(),str_not_rmatch(),string_cast(),strlen(),student_t(),substr(),sum(),tan(),tanh(),theta(),time(),to_char(),to_cmd(),to_lowercase(),to_string(),to_uppercase(),to_value(),trace(),transpose(),valtostr(),version(),Y(),Z(),zero()";
+    sBuilt_In.clear();
+    //= ",abs(),acos(),acosh(),Ai(),and(),asin(),asinh(),ascii(),atan(),atanh(),avg(),bessel(),betheweizsaecker(),Bi(),binom(),cache(),char(),clock(),cmp(),cnt(),cos(),cosh(),cot(),cross(),data(),date(),dblfacul(),degree(),det(),diag(),diagonalize(),ellipticD(),ellipticE(),ellipticF(),ellipticPi(),eigenvals(),eigenvect(),erf(),erfc(),exp(),faculty(),findfile(),findparam(),floor(),gamma(),gauss(),gcd(),getfilelist(),getfolderlist(),getindices(),getmatchingparens(),getopt(),heaviside(),hermite(),identity(),imY(),invert(),is_data(),is_nan(),is_string(),laguerre(),laguerre_a(),lcm(),legendre(),legendre_a(),ln(),log(),log10(),log2(),matfc(),matfcf(),matfl(),matflf(),max(),med(),min(),neumann(),norm(),num(),one(),or(),pct(),phi(),prd(),radian(),rand(),range(),rect(),repeat(),replace(),replaceall(),reshape(),resize(),rint(),roof(),round(),sbessel(),sign(),sin(),sinc(),sinh(),size(),sneumann(),solve(),split(),sqrt(),std(),strfnd(),strrfnd(),strmatch(),strrmatch(),str_not_match(),str_not_rmatch(),string_cast(),strlen(),student_t(),substr(),sum(),tan(),tanh(),theta(),time(),to_char(),to_cmd(),to_lowercase(),to_string(),to_uppercase(),to_value(),trace(),transpose(),valtostr(),version(),Y(),Z(),zero()";
     sCommands = ",for,if,while,endfor,endwhile,endif,else,elseif,continue,break,explicit,procedure,endprocedure,throw,return,";
     sFileName = "<>/functions.def";
     sCaches = "";
@@ -1291,4 +1292,26 @@ bool Define::load(const Settings& _option, bool bAutoLoad)
     }
     return true;
 }
+
+void Define::setPredefinedFuncs(const string& sPredefined)
+{
+    sBuilt_In = sPredefined;
+    if ((sBuilt_In.find(',') == string::npos || sBuilt_In.find("()") == string::npos) && sBuilt_In.find(' ') != string::npos)
+    {
+        sBuilt_In.insert(0, ",");
+        sBuilt_In += "()";
+        for (size_t i = 0; i < sBuilt_In.length(); i++)
+        {
+            if (sBuilt_In[i] == ' ')
+            {
+                sBuilt_In.replace(i, 1, "(),");
+            }
+        }
+    }
+}
+
+
+
+
+
 

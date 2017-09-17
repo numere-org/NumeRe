@@ -2,3 +2,5 @@ Cleaned	Improved "About NumeRe" dialog: this dialog is now using wxTextCtrls for
 New	Added a functionality for applying an automatic format of a source file. It will add spaces between operator chars and perform some additional changes for improved readability.
 New	Added a "clock()" function for measuring the processor clocks
 New	Added a "start here" page for new users, which will be displayed, if no other file is open.
+Fixed	The debugger always pointed to the line directly above the relevant line. This was fixed.
+Cleaned	The list of predefined functions is now managed by the syntaxelements language file.
