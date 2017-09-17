@@ -3244,7 +3244,7 @@
 	<string>
 	<vector>
 
-1505390187 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1505646950 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -3304,7 +3304,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1505496606 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1505648109 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3465,7 +3465,7 @@
 	<wx/wx.h>
 	"wx/notebook.h"
 
-1490791550 d:\cpp\numere-source\trunk\gui\dirtraverser.hpp
+1505647363 d:\cpp\numere-source\trunk\gui\dirtraverser.hpp
 	"wx/wx.h"
 	"wx/dir.h"
 	<string>
@@ -3891,7 +3891,7 @@
 	"helpviewer.hpp"
 	"NumeReWindow.h"
 
-1491063480 source:d:\cpp\numere-source\trunk\gui\iconmanager.cpp
+1505647707 source:d:\cpp\numere-source\trunk\gui\iconmanager.cpp
 	"IconManager.h"
 	<string>
 	<wx/icon.h>
@@ -3969,7 +3969,7 @@
 1505416352 source:d:\cpp\numere-source\trunk\kernel\core\debugger.cpp
 	"debugger.hpp"
 
-1505291619 source:d:\cpp\numere-source\trunk\kernel\core\define.cpp
+1505643825 source:d:\cpp\numere-source\trunk\kernel\core\define.cpp
 	"define.hpp"
 	"../kernel.hpp"
 
@@ -4222,7 +4222,7 @@
 	"debugmessenger.hpp"
 	"core/tools.hpp"
 
-1505416506 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1505643523 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 
