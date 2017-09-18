@@ -2550,7 +2550,7 @@ void parser_ListVar(mu::ParserBase& _parser, const Settings& _option, const Data
 // --> Listet alle deklarierten Konstanten <--
 void parser_ListConst(const mu::ParserBase& _parser, const Settings& _option)
 {
-    const int nUnits = 15;
+    const int nUnits = 20;
     string sUnits[nUnits] = {
         "_G[m^3/(kg s^2)]",
         "_R[J/(mol K)]",
@@ -2558,14 +2558,19 @@ void parser_ListConst(const mu::ParserBase& _parser, const Settings& _option)
         "_c[m/s]",
         "_elek[A s/(V m)]",
         "_elem[A s]",
+        "_gamma[1/(T s)]",
         "_g[m/s^2]",
+        "_hartree[J]",
         "_h[J s]",
         "_k[J/K]",
         "_m_[kg]",
         "_magn[V s/(A m)]",
         "_mu_[J/T]",
         "_n[1/mol]",
+        "_rydberg[1/m]",
         "_r[m]",
+        "_stefan[J/(m^2 s K^4)]",
+        "_wien[m K]",
         "_[---]"};
     NumeReKernel::toggleTableStatus();
     make_hline();

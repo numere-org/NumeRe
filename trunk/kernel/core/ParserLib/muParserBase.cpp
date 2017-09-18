@@ -402,8 +402,8 @@ namespace mu
         if ( pFunMap != &m_FunDef && m_FunDef.find(a_strName) != m_FunDef.end() )
             Error(ecNAME_CONFLICT, -1, a_strName);
 
-        if ( pFunMap != &m_PostOprtDef && m_PostOprtDef.find(a_strName) != m_PostOprtDef.end() )
-            Error(ecNAME_CONFLICT, -1, a_strName);
+//        if ( pFunMap != &m_PostOprtDef && m_PostOprtDef.find(a_strName) != m_PostOprtDef.end() )
+//            Error(ecNAME_CONFLICT, -1, a_strName);
 
         if ( pFunMap != &m_InfixOprtDef && pFunMap != &m_OprtDef && m_InfixOprtDef.find(a_strName) != m_InfixOprtDef.end() )
             Error(ecNAME_CONFLICT, -1, a_strName);

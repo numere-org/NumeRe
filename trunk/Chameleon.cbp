@@ -369,6 +369,7 @@
 		<Unit filename="gui/tableeditpanel.hpp" />
 		<Unit filename="gui/tableviewer.cpp" />
 		<Unit filename="gui/tableviewer.hpp" />
+		<Unit filename="gui/textsplashscreen.hpp" />
 		<Unit filename="gui/viewerbook.cpp" />
 		<Unit filename="gui/viewerbook.hpp" />
 		<Unit filename="gui/viewerframe.cpp" />
