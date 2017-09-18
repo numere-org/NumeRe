@@ -329,47 +329,47 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 		{
             sColorStyles[i] = _pData.getColors()[i];
 		}
-		mglGraph _histGraph;
+		mglGraph* _histGraph = new mglGraph();
 		double dAspect = 8.0/3.0;
-		if (bMake2DHist)
+		if (bMake2DHist || !bSilent || !_pData.getSilentMode())
             dAspect = 4.0/3.0;
-        if (_pData.getHighRes() == 2)           // Aufloesung und Qualitaet einstellen
+        if (_pData.getHighRes() == 2 && bSilent && _pData.getSilentMode())           // Aufloesung und Qualitaet einstellen
         {
             double dHeight = sqrt(1920.0 * 1440.0 / dAspect);
-            _histGraph.SetSize((int)lrint(dAspect*dHeight), (int)lrint(dHeight));          // FullHD!
+            _histGraph->SetSize((int)lrint(dAspect*dHeight), (int)lrint(dHeight));          // FullHD!
         }
-        else if (_pData.getHighRes() == 1 || !_option.getbUseDraftMode())
+        else if (_pData.getHighRes() == 1 && bSilent && _pData.getSilentMode())
         {
             double dHeight = sqrt(1280.0 * 960.0 / dAspect);
-            _histGraph.SetSize((int)lrint(dAspect*dHeight), (int)lrint(dHeight));           // ehem. die bessere Standard-Aufloesung
+            _histGraph->SetSize((int)lrint(dAspect*dHeight), (int)lrint(dHeight));           // ehem. die bessere Standard-Aufloesung
             //_graph.SetQuality(5);
         }
         else
         {
             double dHeight = sqrt(800.0 * 600.0 / dAspect);
-            _histGraph.SetSize((int)lrint(dAspect*dHeight), (int)lrint(dHeight));
+            _histGraph->SetSize((int)lrint(dAspect*dHeight), (int)lrint(dHeight));
             // --> Im Falle, dass wir meinen mesh/surf/anders gearteten 3D-Plot machen, drehen wir die Qualitaet runter <--
         }
         // --> Noetige Einstellungen und Deklarationen fuer den passenden Plot-Stil <--
-        _histGraph.CopyFont(&_fontData);
-        _histGraph.SetFontSizeCM(0.24*((double)(1+_pData.getTextSize())/6.0), 72);
-        _histGraph.SetBarWidth(_pData.getBars() ? _pData.getBars() : 0.9);
+        _histGraph->CopyFont(&_fontData);
+        _histGraph->SetFontSizeCM(0.24*((double)(1+_pData.getTextSize())/6.0), 72);
+        _histGraph->SetBarWidth(_pData.getBars() ? _pData.getBars() : 0.9);
 
-		_histGraph.SetRanges(1,2,1,2,1,2);
+		_histGraph->SetRanges(1,2,1,2,1,2);
 		if (_pData.getxLogscale() && !_pData.getyLogscale() && !_pData.getzLogscale())
-            _histGraph.SetFunc("lg(x)", "");
+            _histGraph->SetFunc("lg(x)", "");
         else if (_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale())
-            _histGraph.SetFunc("lg(x)", "lg(y)");
+            _histGraph->SetFunc("lg(x)", "lg(y)");
         else if (!_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale())
-            _histGraph.SetFunc("", "lg(y)");
+            _histGraph->SetFunc("", "lg(y)");
         else if (_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale())
-            _histGraph.SetFunc("lg(x)","", "lg(z)");
+            _histGraph->SetFunc("lg(x)","", "lg(z)");
         else if (!_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale())
-            _histGraph.SetFunc("","", "lg(z)");
+            _histGraph->SetFunc("","", "lg(z)");
         else if (!_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale())
-            _histGraph.SetFunc("","lg(y)", "lg(z)");
+            _histGraph->SetFunc("","lg(y)", "lg(z)");
         else if (_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale())
-            _histGraph.SetFunc("lg(x)","lg(y)", "lg(z)");
+            _histGraph->SetFunc("lg(x)","lg(y)", "lg(z)");
 		mglData _histData;
 		mglData _hist2DData[3];
 		mglData _mAxisVals[2];
@@ -377,6 +377,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 		{
             if (_data.getCols(sDatatable) > 1 && !nDataRow)		// Besteht der Datensatz aus mehr als eine Reihe? -> Welche soll denn dann verwendet werden?
             {
+                delete _histGraph;
                 throw SyntaxError(SyntaxError::NO_COLS, sCmd, SyntaxError::invalid_position);
             }
 
@@ -432,9 +433,11 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 {
                     if (dMin > _data.max(sDatatable,0,_data.getLines(sDatatable),nDataRow,nDataRow+1)
                         || dMax < _data.min(sDatatable,0,_data.getLines(sDatatable),nDataRow,nDataRow+1))
+                    {
+                        delete _histGraph;
                         throw SyntaxError(SyntaxError::INVALID_INTERVAL, sCmd, SyntaxError::invalid_position);
+                    }
                 }
-
                 // y-Range
                 if (isnan(dMinY) && isnan(dMaxY))
                 {
@@ -462,9 +465,11 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 {
                     if (dMinY > _data.max(sDatatable,0,_data.getLines(sDatatable),nDataRow+1,nDataRow+2)
                         || dMaxY < _data.min(sDatatable,0,_data.getLines(sDatatable),nDataRow+1,nDataRow+2))
+                    {
+                        delete _histGraph;
                         throw SyntaxError(SyntaxError::INVALID_INTERVAL, sCmd, SyntaxError::invalid_position);
+                    }
                 }
-
                 // z-Range
                 if (isnan(dMinZ) && isnan(dMaxZ))
                 {
@@ -492,11 +497,11 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 {
                     if (dMinZ > _data.max(sDatatable,0,_data.getLines(sDatatable),nDataRow+2,nDataRowFinal)
                         || dMaxZ < _data.min(sDatatable,0,_data.getLines(sDatatable),nDataRow+2,nDataRowFinal))
+                    {
+                        delete _histGraph;
                         throw SyntaxError(SyntaxError::INVALID_INTERVAL, sCmd, SyntaxError::invalid_position);
+                    }
                 }
-                /*cerr << dMin << " " << dMax << endl;
-                cerr << dMinY << " " << dMaxY << endl;
-                cerr << dMinZ << " " << dMaxZ << endl;*/
             }
             else
             {
@@ -528,7 +533,10 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 {
                     if (dMin > _data.max(sDatatable,0,_data.getLines(sDatatable),nDataRow,nDataRowFinal)
                         || dMax < _data.min(sDatatable,0,_data.getLines(sDatatable),nDataRow,nDataRowFinal))
+                    {
+                        delete _histGraph;
                         throw SyntaxError(SyntaxError::INVALID_INTERVAL, sCmd, SyntaxError::invalid_position);
+                    }
                 }
             }
 
@@ -543,26 +551,6 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 
             if (!nBin && dIntervallLength == 0.0)
             {
-                //if (_option.getSystemPrintStatus())
-                //    cerr << "|-> Alle " << nMax << " Werte befinden sich zwischen " << dMin << " und " << dMax << "." << endl;
-                /*cerr << LineBreak("|   Wie viele Bins sollen verwendet werden? (0 eingeben, um stattdessen die Binweite zu bestimmen)", _option) << endl;
-
-                do
-                {
-                    cerr << "|" << endl;
-                    cerr << "|<- ";
-                    cin >> nBin;
-
-                    // --> Es gibt Werte fuer nBin, die nicht sinnvoll sind: Wenn die Zahl der Intervalle doppelt so gross wie
-                    //	   die Zahl der Datenpunkte ist, z.B. Oder wenn nBin < 1 ist. Wenn nBin == 0, dann ist es offenbar gewuenscht,
-                    //     dass die Binweite selbst festgelegt wird. <--
-                    if (nBin > 2 * nMax || nBin < 0)
-                    {
-                        cerr << LineBreak("|-> HINWEIS: Diese Wahl ist nicht sinnvoll! Bitte neu wählen:", _option) << endl;
-                    }
-                }
-                while (nBin > 2 * nMax || nBin < 0);*/
-
                 if (bGrid)
                 {
                     if (!nMethod)
@@ -606,8 +594,10 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 // --> Gut. Dann berechnen wir daraus die Anzahl der Bins -> Es kann nun aber sein, dass der letzte Bin ueber
                 //     das Intervall hinauslaeuft <--
                 if (dIntervallLength > dMax - dMin)
+                {
+                    delete _histGraph;
                     throw SyntaxError(SyntaxError::TOO_LARGE_BINWIDTH, sCmd, SyntaxError::invalid_position);
-
+                }
                 for (int i = 0; (i * dIntervallLength)+dMin < dMax+dIntervallLength; i++)
                 {
                     nBin++;
@@ -700,7 +690,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                         nMax = nCount;
                 }
                 //sLegend = sDatatable;
-                _histGraph.AddLegend("grid", sColorStyles[nStyle].c_str());
+                _histGraph->AddLegend("grid", sColorStyles[nStyle].c_str());
                 if (nStyle == nStyleMax-1)
                     nStyle = 0;
                 else
@@ -763,10 +753,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 }
                 //dTicksVal[nBin-1] = dMax-dIntervallLength/2.0;
                 sTicks += toString(_mAxisVals[0].a[nBin-1]/dCommonExponent, 3);
-                /*cerr << dCommonExponent << endl;
-                cerr << sCommonExponent << endl;
-                if (sCommonExponent.length() && toString(_mAxisVals[0].a[nBin-1], 3).find(sCommonExponent) == string::npos)
-                    sCommonExponent.clear();*/
+
                 if (sCommonExponent.length())
                 {
                     while (sTicks.find(sCommonExponent) != string::npos)
@@ -820,7 +807,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                     {
                         sLegend[sLegend.find('_')] = ' ';
                     }
-                    _histGraph.AddLegend(sLegend.c_str(), sColorStyles[nStyle].c_str());
+                    _histGraph->AddLegend(sLegend.c_str(), sColorStyles[nStyle].c_str());
                     if (nStyle == nStyleMax-1)
                         nStyle = 0;
                     else
@@ -884,10 +871,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 }
                 //dTicksVal[nBin-1] = dMax-dIntervallLength/2.0;
                 sTicks += toString(_mAxisVals[0].a[nBin-1]/dCommonExponent, 3);
-                /*cerr << dCommonExponent << endl;
-                cerr << sCommonExponent << endl;
-                if (sCommonExponent.length() && toString(_mAxisVals[0].a[nBin-1], 3).find(sCommonExponent) == string::npos)
-                    sCommonExponent.clear();*/
+
                 if (sCommonExponent.length())
                 {
                     while (sTicks.find(sCommonExponent) != string::npos)
@@ -997,8 +981,6 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 _target.setCacheStatus(false);
             }
 
-            /*if (_option.getSystemPrintStatus() && !bSilent)
-                cerr << "|-> Der Histogramm-Datensatz wurde erfolgreich erzeugt." << endl;*/
 
             // --> Uebergabe an Output::format(string**,int,int,Settings&), das den Rest erledigt
             if (!bWriteToCache || matchParams(sCmd, "save", '=') || matchParams(sCmd, "export", '='))
@@ -1052,67 +1034,67 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 dMax = 1.0;
             }
             if (_pData.getyLogscale())
-                _histGraph.SetRanges(dMin, dMax, 0.1, 1.4*(double)nMax);
+                _histGraph->SetRanges(dMin, dMax, 0.1, 1.4*(double)nMax);
             else
-                _histGraph.SetRanges(dMin, dMax, 0.0, 1.4*(double)nMax);
+                _histGraph->SetRanges(dMin, dMax, 0.0, 1.4*(double)nMax);
             if (_pData.getAxis())
             {
                 if (!_pData.getxLogscale())
-                    _histGraph.SetTicksVal('x', _mAxisVals[0], sTicks.c_str());
-                    //_histGraph.SetTicksVal('x', mglData(nBin, dTicksVal), sTicks.c_str());
+                    _histGraph->SetTicksVal('x', _mAxisVals[0], sTicks.c_str());
+                    //_histGraph->SetTicksVal('x', mglData(nBin, dTicksVal), sTicks.c_str());
                 if (!_pData.getBox() && dMin <= 0.0 && dMax >= 0.0 && !_pData.getyLogscale())
                 {
-                    //_histGraph.SetOrigin(0.0,0.0);
+                    //_histGraph->SetOrigin(0.0,0.0);
                     if (nBin > 40)
-                        _histGraph.Axis("UAKDTVISO");
+                        _histGraph->Axis("UAKDTVISO");
                     else
-                        _histGraph.Axis("AKDTVISO");
+                        _histGraph->Axis("AKDTVISO");
                 }
                 else if (!_pData.getBox())
                 {
                     if (nBin > 40)
-                        _histGraph.Axis("UAKDTVISO");
+                        _histGraph->Axis("UAKDTVISO");
                     else
-                        _histGraph.Axis("AKDTVISO");
+                        _histGraph->Axis("AKDTVISO");
                 }
                 else
                 {
                     if (nBin > 40)
-                        _histGraph.Axis("U");
+                        _histGraph->Axis("U");
                     else
-                        _histGraph.Axis();
+                        _histGraph->Axis();
                 }
             }
             if (_pData.getBox())
-                _histGraph.Box();
+                _histGraph->Box();
 
             if (_pData.getAxis())
             {
-                _histGraph.Label('x', sBinLabel.c_str(), 0.0);
+                _histGraph->Label('x', sBinLabel.c_str(), 0.0);
                 if (sCommonExponent.length() && !_pData.getxLogscale())
                 {
-                    _histGraph.Puts(mglPoint(dMax+(dMax-dMin)/10.0), mglPoint(dMax+(dMax-dMin)/10.0+1), sCommonExponent.c_str(), ":TL", -1.3);
+                    _histGraph->Puts(mglPoint(dMax+(dMax-dMin)/10.0), mglPoint(dMax+(dMax-dMin)/10.0+1), sCommonExponent.c_str(), ":TL", -1.3);
                 }
                 if (_pData.getBox())
-                    _histGraph.Label('y', sCountLabel.c_str(), 0.0);
+                    _histGraph->Label('y', sCountLabel.c_str(), 0.0);
                 else
-                    _histGraph.Label('y', sCountLabel.c_str(), 1.1);
+                    _histGraph->Label('y', sCountLabel.c_str(), 1.1);
             }
             if (_pData.getGrid())
             {
                 if (_pData.getGrid() == 2)
                 {
-                    _histGraph.Grid("xy!", _pData.getGridStyle().c_str());
-                    _histGraph.Grid("xy", _pData.getFineGridStyle().c_str());
+                    _histGraph->Grid("xy!", _pData.getGridStyle().c_str());
+                    _histGraph->Grid("xy", _pData.getFineGridStyle().c_str());
                 }
                 else
-                    _histGraph.Grid("xy", _pData.getGridStyle().c_str());
+                    _histGraph->Grid("xy", _pData.getGridStyle().c_str());
             }
 
             if (!_pData.getBox())
-                _histGraph.Legend(1.25,1.0);
+                _histGraph->Legend(1.25,1.0);
             else
-                _histGraph.Legend(_pData.getLegendPosition());
+                _histGraph->Legend(_pData.getLegendPosition());
             sHistSavePath = _out.getFileName();
 
             // --> Ausgabe-Info-Parameter loeschen und ggf. bFile = FALSE setzen <--
@@ -1136,14 +1118,25 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                     nStyle++;
             }
 
-            _histGraph.Bars(_mAxisVals[0], _histData, sColor.c_str());
-            _histGraph.WriteFrame(sHistSavePath.c_str());
-            if (_option.getSystemPrintStatus() && !bSilent)
+            _histGraph->Bars(_mAxisVals[0], _histData, sColor.c_str());
+
+            if (_pData.getOpenImage() && !_pData.getSilentMode() && !bSilent)
             {
+                GraphHelper* _graphHelper = new GraphHelper(_histGraph, _pData);
+                NumeReKernel::updateGraphWindow(_graphHelper);
+                _histGraph = nullptr;
                 NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
-                NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("HIST_SAVED_AT", sHistSavePath), _option)+"\n");
             }
-            if (_pData.getOpenImage() && !(_pData.getSilentMode() || bSilent))
+            else
+            {
+                _histGraph->WriteFrame(sHistSavePath.c_str());
+                if (_option.getSystemPrintStatus() && !bSilent)
+                {
+                    NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
+                    NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("HIST_SAVED_AT", sHistSavePath), _option)+"\n");
+                }
+            }
+            /*if (_pData.getOpenImage() && !(_pData.getSilentMode() || bSilent))
             {
                 string sFileName = sHistSavePath;
                 if (sFileName.find('/') != string::npos)
@@ -1156,7 +1149,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 NumeReKernel::gotoLine(sPath+"/"+sFileName);
                 //openExternally(sPath + "/" + sFileName, _option.getViewerPath(), sPath);
                 //cerr << "OK" << endl;
-            }
+            }*/
             _out.reset();
             _data.setCacheStatus(false);
         }
@@ -1164,6 +1157,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
         {
             if (_data.getCols(sDatatable) > 1 && !nDataRow)		// Besteht der Datensatz aus mehr als eine Reihe? -> Welche soll denn dann verwendet werden?
             {
+                delete _histGraph;
                 throw SyntaxError(SyntaxError::NO_COLS, sCmd, SyntaxError::invalid_position);
             }
 
@@ -1187,8 +1181,10 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
             }
 
             if (nDataRowFinal-nDataRow < 3)
+            {
+                delete _histGraph;
                 throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
-
+            }
             if (isnan(dMin) && isnan(dMax))
             {
                 dMin = _data.min(sDatatable,0,_data.getLines(sDatatable),nDataRow,nDataRow+1);
@@ -1217,11 +1213,17 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
             {
                 if (dMin > _data.max(sDatatable,0,_data.getLines(sDatatable),nDataRow,nDataRow+1)
                     || dMax < _data.min(sDatatable,0,_data.getLines(sDatatable),nDataRow,nDataRow+1))
+                {
+                    delete _histGraph;
                     throw SyntaxError(SyntaxError::INVALID_INTERVAL, sCmd, SyntaxError::invalid_position);
+                }
             }
 
             if (_pData.getxLogscale() && dMax < 0.0)
+            {
+                delete _histGraph;
                 throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
+            }
             else if (_pData.getxLogscale())
             {
                 if (dMin < 0.0)
@@ -1256,11 +1258,17 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
             {
                 if (dMinY > _data.max(sDatatable,0,_data.getLines(sDatatable),nDataRow+1,nDataRow+2)
                     || dMaxY < _data.min(sDatatable,0,_data.getLines(sDatatable),nDataRow+1,nDataRow+2))
+                {
+                    delete _histGraph;
                     throw SyntaxError(SyntaxError::INVALID_INTERVAL, sCmd, SyntaxError::invalid_position);
+                }
             }
 
             if (_pData.getyLogscale() && dMaxY < 0.0)
+            {
+                delete _histGraph;
                 throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
+            }
             else if (_pData.getyLogscale())
             {
                 if (dMinY < 0.0)
@@ -1310,8 +1318,10 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 // --> Gut. Dann berechnen wir daraus die Anzahl der Bins -> Es kann nun aber sein, dass der letzte Bin ueber
                 //     das Intervall hinauslaeuft <--
                 if (dIntervallLength > dMax - dMin)
+                {
+                    delete _histGraph;
                     throw SyntaxError(SyntaxError::TOO_LARGE_BINWIDTH, sCmd, SyntaxError::invalid_position);
-
+                }
                 for (int i = 0; (i * dIntervallLength)+dMin < dMax+dIntervallLength; i++)
                 {
                     nBin++;
@@ -1507,230 +1517,95 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                     }
                 }*/
             }
-            /*dTicksVal = new double[nBin];
-            dTicksVal[0] = dMin+dIntervallLength/2.0;
-            string sCommonExponent = "";
-            double dCommonExponent = 1.0;
-            if (toString(dMin+dIntervallLength/2.0, 3).find('e') != string::npos || toString(dMin+dIntervallLength/2.0, 3).find('E') != string::npos)
-            {
-                sCommonExponent = toString(dMin+dIntervallLength/2.0, 3).substr(toString(dMin+dIntervallLength/2.0, 3).find('e'));
-                dCommonExponent = StrToDb("1.0" + sCommonExponent);
-                for (int i = 0; i < nBin; i++)
-                {
-                    if (toString((dMin+i*dIntervallLength + dIntervallLength/2.0)/dCommonExponent, 3).find('e') != string::npos)
-                    {
-                        sCommonExponent = "";
-                        dCommonExponent = 1.0;
-                        break;
-                    }
-                }
-                sTicks = toString((dMin+dIntervallLength/2.0)/dCommonExponent, 3) + "\\n";
-            }
-            for (int i = 1; i < nBin-1; i++)
-            {
-                dTicksVal[i] = dTicksVal[i-1] + dIntervallLength;
-                if (nBin > 16)
-                {
-                    if (!((nBin-1) % 2) && !(i % 2) && nBin-1 < 33)
-                        sTicks += toString(dTicksVal[i]/dCommonExponent, 3) + "\\n";
-                    else if (!((nBin-1) % 2) && (i % 2) && nBin-1 < 33)
-                        sTicks += "\\n";
-                    else if (!((nBin-1) % 4) && !(i % 4))
-                        sTicks += toString(dTicksVal[i]/dCommonExponent, 3) + "\\n";
-                    else if (!((nBin-1) % 4) && (i % 4))
-                        sTicks += "\\n";
-                    else if (!((nBin-1) % 3) && !(i % 3))
-                        sTicks += toString(dTicksVal[i]/dCommonExponent, 3) + "\\n";
-                    else if (!((nBin-1) % 3) && (i % 3))
-                        sTicks += "\\n";
-                    else if (!((nBin-1) % 5) && !(i % 5))
-                        sTicks += toString(dTicksVal[i]/dCommonExponent, 3) + "\\n";
-                    else if (!((nBin-1) % 5) && (i % 5))
-                        sTicks += "\\n";
-                    else if (!((nBin-1) % 7) && !(i % 7))
-                        sTicks += toString(dTicksVal[i]/dCommonExponent, 3) + "\\n";
-                    else if (!((nBin-1) % 7) && (i % 7))
-                        sTicks += "\\n";
-                    else if (!((nBin-1) % 11) && !(i % 11))
-                        sTicks += toString(dTicksVal[i]/dCommonExponent, 3) + "\\n";
-                    else if (!((nBin-1) % 11) && (i % 11))
-                        sTicks += "\\n";
-                    else if (((nBin-1) % 2 && (nBin-1) % 3 && (nBin-1) % 5 && (nBin-1) % 7 && (nBin-1) % 11) && !(i % 3))
-                        sTicks += toString(dTicksVal[i]/dCommonExponent, 3) + "\\n";
-                    else
-                        sTicks += "\\n";
-                }
-                else
-                    sTicks += toString(dTicksVal[i]/dCommonExponent, 3) + "\\n";
-            }
-            dTicksVal[nBin-1] = dMax-dIntervallLength/2.0;
-            sTicks += toString(dMax-dIntervallLength/2.0, 3);
-            if (sCommonExponent.length() && toString(dMax-dIntervallLength/2.0, 3).find(sCommonExponent) == string::npos)
-                sCommonExponent.clear();
-            if (sCommonExponent.length())
-            {
-                while (sTicks.find(sCommonExponent) != string::npos)
-                    sTicks.erase(sTicks.find(sCommonExponent), sCommonExponent.length());
 
-                if (sCommonExponent.find('-') != string::npos)
-                {
-                    sCommonExponent = "\\times 10^{-" + sCommonExponent.substr(sCommonExponent.find_first_not_of('0',2)) + "}";
-                }
-                else
-                {
-                    sCommonExponent = "\\times 10^{" + sCommonExponent.substr(sCommonExponent.find_first_not_of('0',2)) + "}";
-                }
-            }*/
-            // --> Lege nun die Ausgabematrix an (beruecksichtige dabei auch die Tabellenkoepfe) <--
-
-            /*if (bWriteToCache)
-            {
-                _data.setCacheStatus(true);
-                int nFirstCol = _data.getCacheCols(sDatatable, false);
-                _data.setCacheSize(nBin, nFirstCol + nDataRowFinal-nDataRow+1,-1);
-                _data.setHeadLineElement(nFirstCol, "Bins",sDatatable);
-                for (int i = 0; i < nBin; i++)
-                {
-                    _data.writeToCache(i, nFirstCol, sDatatable,dMin + i*dIntervallLength + dIntervallLength/2.0);
-                    for (int j = 0; j < nDataRowFinal-nDataRow;  j++)
-                    {
-                        if (!i)
-                        {
-                            //_data.setHeadLineElement(nFirstCol+j+1, "Counts_"+toString(j+nDataRow+1));
-                            _data.setHeadLineElement(nFirstCol+j+1, sDatatable, sOut[0][j+1]);
-                        }
-                        _data.writeToCache(i, nFirstCol+j+1, sDatatable, dHistMatrix[i][j]);
-                    }
-                }
-                _data.setCacheStatus(false);
-            }*/
-
-            /*if (_option.getSystemPrintStatus() && !bSilent)
-                cerr << "|-> Der Histogramm-Datensatz wurde erfolgreich erzeugt." << endl;*/
-
-            // --> Uebergabe an Output::format(string**,int,int,Settings&), das den Rest erledigt
-            /*if (!bWriteToCache || matchParams(sCmd, "save", '=') || matchParams(sCmd, "export", '='))
-            {
-                if (!_out.isFile())
-                    cerr << "|" << endl;
-                _out.format(sOut, nDataRowFinal-nDataRow+1, nBin+1, _option, true);
-            }*/
-
-            // --> WICHTIG: Speicher wieder freigeben! <--
-            /*for (int i = 0; i < nBin+1; i++)
-            {
-                delete[] sOut[i];
-            }
-            delete[] sOut;
-            sOut = 0;
-            for (int i = 0; i < nBin; i++)
-            {
-                delete[] dHistMatrix[i];
-            }
-            delete[] dHistMatrix;
-            dHistMatrix = 0;*/
-
-
-            /*if (_pData.getxLogscale() && dMin <= 0.0 && dMax > 0.0)
-                dMin = dMax / 1e3;
-            else if (_pData.getxLogscale() && dMin < 0.0 && dMax <= 0.0)
-            {
-                dMin = 1.0;
-                dMax = 1.0;
-            }
-            if (_pData.getyLogscale())
-                _histGraph.SetRanges(dMin, dMax, 0.1, 1.4*(double)nMax);
-            else
-                _histGraph.SetRanges(dMin, dMax, 0.0, 1.4*(double)nMax);*/
-            //;
-            //cerr << 1 << endl;
-            _histGraph.MultiPlot(3,3,0,2,1,"<>");
-            _histGraph.SetBarWidth(0.9);
-            _histGraph.SetTuneTicks(3,1.05);
-            //_histGraph.SubPlot(2,2,0);
+            _histGraph->MultiPlot(3,3,0,2,1,"<>");
+            _histGraph->SetBarWidth(0.9);
+            _histGraph->SetTuneTicks(3,1.05);
+            //_histGraph->SubPlot(2,2,0);
             dIntervallLength = _histData.Maximal()-_histData.Minimal();
 
-            _histGraph.SetRanges(1,2,1,2,1,2);
+            _histGraph->SetRanges(1,2,1,2,1,2);
             if (_pData.getxLogscale() && !_pData.getyLogscale() && !_pData.getzLogscale())
-                _histGraph.SetFunc("lg(x)", "");
+                _histGraph->SetFunc("lg(x)", "");
             else if (_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale())
-                _histGraph.SetFunc("lg(x)", "");
+                _histGraph->SetFunc("lg(x)", "");
             else if (!_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale())
-                _histGraph.SetFunc("", "");
+                _histGraph->SetFunc("", "");
             else if (_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale())
-                _histGraph.SetFunc("lg(x)","lg(y)");
+                _histGraph->SetFunc("lg(x)","lg(y)");
             else if (!_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale())
-                _histGraph.SetFunc("", "lg(y)");
+                _histGraph->SetFunc("", "lg(y)");
             else if (!_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale())
-                _histGraph.SetFunc("","lg(y)");
+                _histGraph->SetFunc("","lg(y)");
             else if (_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale())
-                _histGraph.SetFunc("lg(x)","lg(y)");
+                _histGraph->SetFunc("lg(x)","lg(y)");
 
             if (_histData.Minimal() >= 0)
             {
                 if (_pData.getzLogscale() && _histData.Maximal() > 0.0)
                 {
                     if (_histData.Minimal() - dIntervallLength/10.0 > 0)
-                        _histGraph.SetRanges(dMin, dMax, _histData.Minimal() - dIntervallLength/10.0, _histData.Maximal()+dIntervallLength/10.0);
+                        _histGraph->SetRanges(dMin, dMax, _histData.Minimal() - dIntervallLength/10.0, _histData.Maximal()+dIntervallLength/10.0);
                     else if (_histData.Minimal() > 0)
-                        _histGraph.SetRanges(dMin, dMax, _histData.Minimal()/2.0, _histData.Maximal()+dIntervallLength/10.0);
+                        _histGraph->SetRanges(dMin, dMax, _histData.Minimal()/2.0, _histData.Maximal()+dIntervallLength/10.0);
                     else
-                        _histGraph.SetRanges(dMin, dMax, (1e-2*_histData.Maximal() < 1e-2 ? 1e-2*_histData.Maximal() : 1e-2), _histData.Maximal()+dIntervallLength/10.0);
+                        _histGraph->SetRanges(dMin, dMax, (1e-2*_histData.Maximal() < 1e-2 ? 1e-2*_histData.Maximal() : 1e-2), _histData.Maximal()+dIntervallLength/10.0);
                 }
                 else if (_histData.Maximal() < 0.0 && _pData.getzLogscale())
                 {
                     for (int k = 0; k < nBin+1; k++)
                         delete[] sOut[k];
                     delete[] sOut;
+                    delete _histGraph;
                     throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
                 }
                 else
-                    _histGraph.SetRanges(dMin, dMax, 0.0, _histData.Maximal()+dIntervallLength/10.0);
+                    _histGraph->SetRanges(dMin, dMax, 0.0, _histData.Maximal()+dIntervallLength/10.0);
             }
             else
-                _histGraph.SetRanges(dMin, dMax, _histData.Minimal()-dIntervallLength/10.0, _histData.Maximal()+dIntervallLength/10.0);
+                _histGraph->SetRanges(dMin, dMax, _histData.Minimal()-dIntervallLength/10.0, _histData.Maximal()+dIntervallLength/10.0);
 
 
-            _histGraph.Box();
-            _histGraph.Axis();
+            _histGraph->Box();
+            _histGraph->Axis();
 
             if (_pData.getGrid() == 1)
-                _histGraph.Grid("xy", _pData.getGridStyle().c_str());
+                _histGraph->Grid("xy", _pData.getGridStyle().c_str());
             else if (_pData.getGrid() == 2)
             {
-                _histGraph.Grid("xy!", _pData.getGridStyle().c_str());
-                _histGraph.Grid("xy", _pData.getFineGridStyle().c_str());
+                _histGraph->Grid("xy!", _pData.getGridStyle().c_str());
+                _histGraph->Grid("xy", _pData.getFineGridStyle().c_str());
             }
-            _histGraph.Label('x', sAxisLabels[0].c_str(), 0);
+            _histGraph->Label('x', sAxisLabels[0].c_str(), 0);
             if (bSum)
-                _histGraph.Label('y', sAxisLabels[2].c_str(), 0);
+                _histGraph->Label('y', sAxisLabels[2].c_str(), 0);
             else
-                _histGraph.Label('y', sCountLabel.c_str(), 0);
+                _histGraph->Label('y', sCountLabel.c_str(), 0);
 
-            _histGraph.Bars(_mAxisVals[0], _histData, _pData.getColors().c_str());
+            _histGraph->Bars(_mAxisVals[0], _histData, _pData.getColors().c_str());
             //cerr << 2 << endl;
             nMax = 0;
 
-            _histGraph.MultiPlot(3,3,3,2,2,"<_>");
-            _histGraph.SetTuneTicks(3,1.05);
+            _histGraph->MultiPlot(3,3,3,2,2,"<_>");
+            _histGraph->SetTuneTicks(3,1.05);
 
-            _histGraph.SetRanges(1,2,1,2,1,2);
+            _histGraph->SetRanges(1,2,1,2,1,2);
             if (_pData.getxLogscale() && !_pData.getyLogscale() && !_pData.getzLogscale())
-                _histGraph.SetFunc("lg(x)", "");
+                _histGraph->SetFunc("lg(x)", "");
             else if (_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale())
-                _histGraph.SetFunc("lg(x)", "lg(y)");
+                _histGraph->SetFunc("lg(x)", "lg(y)");
             else if (!_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale())
-                _histGraph.SetFunc("", "lg(y)");
+                _histGraph->SetFunc("", "lg(y)");
             else if (_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale())
-                _histGraph.SetFunc("lg(x)","", "lg(z)");
+                _histGraph->SetFunc("lg(x)","", "lg(z)");
             else if (!_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale())
-                _histGraph.SetFunc("","", "lg(z)");
+                _histGraph->SetFunc("","", "lg(z)");
             else if (!_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale())
-                _histGraph.SetFunc("","lg(y)", "lg(z)");
+                _histGraph->SetFunc("","lg(y)", "lg(z)");
             else if (_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale())
-                _histGraph.SetFunc("lg(x)","lg(y)", "lg(z)");
+                _histGraph->SetFunc("lg(x)","lg(y)", "lg(z)");
 
-            //_histGraph.SubPlot(2,2,2);
+            //_histGraph->SubPlot(2,2,2);
             //cerr << 0 << endl;
             if (nDataRowFinal-nDataRow == 3)
             {
@@ -1739,30 +1614,31 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                     for (int k = 0; k < nBin+1; k++)
                         delete[] sOut[k];
                     delete[] sOut;
+                    delete _histGraph;
                     throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
                 }
                 if (_pData.getzLogscale())
                 {
                     if (_hist2DData[2].Minimal() > 0.0)
-                        _histGraph.SetRanges(dMin, dMax, dMinY, dMaxY, _hist2DData[2].Minimal(), _hist2DData[2].Maximal());
+                        _histGraph->SetRanges(dMin, dMax, dMinY, dMaxY, _hist2DData[2].Minimal(), _hist2DData[2].Maximal());
                     else
-                        _histGraph.SetRanges(dMin, dMax, dMinY, dMaxY, (1e-2*_hist2DData[2].Maximal() < 1e-2 ? 1e-2*_hist2DData[2].Maximal() : 1e-2), _hist2DData[2].Maximal());
+                        _histGraph->SetRanges(dMin, dMax, dMinY, dMaxY, (1e-2*_hist2DData[2].Maximal() < 1e-2 ? 1e-2*_hist2DData[2].Maximal() : 1e-2), _hist2DData[2].Maximal());
                 }
                 else
-                    _histGraph.SetRanges(dMin, dMax, dMinY, dMaxY, _hist2DData[2].Minimal(), _hist2DData[2].Maximal());
-                _histGraph.Box();
-                _histGraph.Axis("xy");
-                _histGraph.Colorbar(_pData.getColorScheme("I>").c_str());
+                    _histGraph->SetRanges(dMin, dMax, dMinY, dMaxY, _hist2DData[2].Minimal(), _hist2DData[2].Maximal());
+                _histGraph->Box();
+                _histGraph->Axis("xy");
+                _histGraph->Colorbar(_pData.getColorScheme("I>").c_str());
                 if (_pData.getGrid() == 1)
-                    _histGraph.Grid("xy", _pData.getGridStyle().c_str());
+                    _histGraph->Grid("xy", _pData.getGridStyle().c_str());
                 else if (_pData.getGrid() == 2)
                 {
-                    _histGraph.Grid("xy!", _pData.getGridStyle().c_str());
-                    _histGraph.Grid("xy", _pData.getFineGridStyle().c_str());
+                    _histGraph->Grid("xy!", _pData.getGridStyle().c_str());
+                    _histGraph->Grid("xy", _pData.getFineGridStyle().c_str());
                 }
-                _histGraph.Label('x', sAxisLabels[0].c_str(), 0);
-                _histGraph.Label('y', sAxisLabels[1].c_str(), 0);
-                _histGraph.Dots(_hist2DData[0], _hist2DData[1], _hist2DData[2], _pData.getColorScheme().c_str());
+                _histGraph->Label('x', sAxisLabels[0].c_str(), 0);
+                _histGraph->Label('y', sAxisLabels[1].c_str(), 0);
+                _histGraph->Dots(_hist2DData[0], _hist2DData[1], _hist2DData[2], _pData.getColorScheme().c_str());
             }
             else
             {
@@ -1771,31 +1647,32 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                     for (int k = 0; k < nBin+1; k++)
                         delete[] sOut[k];
                     delete[] sOut;
+                    delete _histGraph;
                     throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
                 }
                 if (_pData.getzLogscale())
                 {
                     if (_hist2DData[2].Minimal() > 0.0)
-                        _histGraph.SetRanges(dMin, dMax, dMinY, dMaxY, _hist2DData[2].Minimal(), _hist2DData[2].Maximal());
+                        _histGraph->SetRanges(dMin, dMax, dMinY, dMaxY, _hist2DData[2].Minimal(), _hist2DData[2].Maximal());
                     else
-                        _histGraph.SetRanges(dMin, dMax, dMinY, dMaxY, (1e-2*_hist2DData[2].Maximal() < 1e-2 ? 1e-2*_hist2DData[2].Maximal() : 1e-2), _hist2DData[0].Maximal());
+                        _histGraph->SetRanges(dMin, dMax, dMinY, dMaxY, (1e-2*_hist2DData[2].Maximal() < 1e-2 ? 1e-2*_hist2DData[2].Maximal() : 1e-2), _hist2DData[0].Maximal());
                 }
                 else
-                    _histGraph.SetRanges(dMin, dMax, dMinY, dMaxY, _hist2DData[2].Minimal(), _hist2DData[2].Maximal());
-                _histGraph.Box();
-                _histGraph.Axis("xy");
-                _histGraph.Colorbar(_pData.getColorScheme("I>").c_str());
+                    _histGraph->SetRanges(dMin, dMax, dMinY, dMaxY, _hist2DData[2].Minimal(), _hist2DData[2].Maximal());
+                _histGraph->Box();
+                _histGraph->Axis("xy");
+                _histGraph->Colorbar(_pData.getColorScheme("I>").c_str());
                 if (_pData.getGrid() == 1)
-                    _histGraph.Grid("xy", _pData.getGridStyle().c_str());
+                    _histGraph->Grid("xy", _pData.getGridStyle().c_str());
                 else if (_pData.getGrid() == 2)
                 {
-                    _histGraph.Grid("xy!", _pData.getGridStyle().c_str());
-                    _histGraph.Grid("xy", _pData.getFineGridStyle().c_str());
+                    _histGraph->Grid("xy!", _pData.getGridStyle().c_str());
+                    _histGraph->Grid("xy", _pData.getFineGridStyle().c_str());
                 }
-                _histGraph.Label('x', sAxisLabels[0].c_str(), 0);
-                _histGraph.Label('y', sAxisLabels[1].c_str(), 0);
+                _histGraph->Label('x', sAxisLabels[0].c_str(), 0);
+                _histGraph->Label('y', sAxisLabels[1].c_str(), 0);
 
-                _histGraph.Dens(_hist2DData[0], _hist2DData[1], _hist2DData[2], _pData.getColorScheme().c_str());
+                _histGraph->Dens(_hist2DData[0], _hist2DData[1], _hist2DData[2], _pData.getColorScheme().c_str());
             }
 
             if (bWriteToCache)
@@ -1865,144 +1742,126 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 }
             }
 
-            /*for (int i = 0; i < _data.getLines(sDatatable); i++)
-            {
-                for (int k = 0; k < nBin; k++)
-                {
-                    dSum = 0.0;
-                    for (int l = 0; l < nDataRowFinal-nDataRow-2; l++)
-                    {
-                        if (_data.getElement(i,nDataRow+1, sDatatable) >= dMinY + k * dIntervallLengthY
-                                && _data.getElement(i,nDataRow+1, sDatatable) < dMinY + (k+1) * dIntervallLengthY)
-                            dSum += _data.getElement(i,l+2+nDataRow, sDatatable);
-                    }
-                    if (!i)
-                        _histData.a[k] = dSum;
-                    else
-                        _histData.a[k] += dSum;
-                }
-            }*/
-
-            //cerr << 3 << endl;
-            _histGraph.MultiPlot(3,3,5,1,2,"_");
-            _histGraph.SetBarWidth(0.9);
-            _histGraph.SetTuneTicks(3,1.05);
-            //_histGraph.SubPlot(2,2,3);
+            _histGraph->MultiPlot(3,3,5,1,2,"_");
+            _histGraph->SetBarWidth(0.9);
+            _histGraph->SetTuneTicks(3,1.05);
+            //_histGraph->SubPlot(2,2,3);
             dIntervallLength = _histData.Maximal()-_histData.Minimal();
 
-            _histGraph.SetRanges(1,2,1,2,1,2);
+            _histGraph->SetRanges(1,2,1,2,1,2);
             if (_pData.getxLogscale() && !_pData.getyLogscale() && !_pData.getzLogscale())
-                _histGraph.SetFunc("", "");
+                _histGraph->SetFunc("", "");
             else if (_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale())
-                _histGraph.SetFunc("", "lg(y)");
+                _histGraph->SetFunc("", "lg(y)");
             else if (!_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale())
-                _histGraph.SetFunc("", "lg(y)");
+                _histGraph->SetFunc("", "lg(y)");
             else if (_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale())
-                _histGraph.SetFunc("lg(x)","");
+                _histGraph->SetFunc("lg(x)","");
             else if (!_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale())
-                _histGraph.SetFunc("lg(x)","");
+                _histGraph->SetFunc("lg(x)","");
             else if (!_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale())
-                _histGraph.SetFunc("lg(x)","lg(y)");
+                _histGraph->SetFunc("lg(x)","lg(y)");
             else if (_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale())
-                _histGraph.SetFunc("lg(x)","lg(y)");
+                _histGraph->SetFunc("lg(x)","lg(y)");
 
             if (_histData.Minimal() >= 0)
             {
                 if (_pData.getzLogscale() && _histData.Maximal() > 0.0)
                 {
                     if (_histData.Minimal() - dIntervallLength/10.0 > 0)
-                        _histGraph.SetRanges(_histData.Minimal() - dIntervallLength/10.0, _histData.Maximal()+dIntervallLength/10.0, dMinY, dMaxY);
+                        _histGraph->SetRanges(_histData.Minimal() - dIntervallLength/10.0, _histData.Maximal()+dIntervallLength/10.0, dMinY, dMaxY);
                     else if (_histData.Minimal() > 0)
-                        _histGraph.SetRanges(_histData.Minimal()/2.0, _histData.Maximal()+dIntervallLength/10.0, dMinY, dMaxY);
+                        _histGraph->SetRanges(_histData.Minimal()/2.0, _histData.Maximal()+dIntervallLength/10.0, dMinY, dMaxY);
                     else
-                        _histGraph.SetRanges((1e-2*_histData.Maximal() < 1e-2 ? 1e-2*_histData.Maximal() : 1e-2), _histData.Maximal()+dIntervallLength/10.0, dMinY, dMaxY);
+                        _histGraph->SetRanges((1e-2*_histData.Maximal() < 1e-2 ? 1e-2*_histData.Maximal() : 1e-2), _histData.Maximal()+dIntervallLength/10.0, dMinY, dMaxY);
                 }
                 else if (_histData.Maximal() < 0.0 && _pData.getzLogscale())
                 {
                     for (int k = 0; k < nBin+1; k++)
                         delete[] sOut[k];
                     delete[] sOut;
+                    delete _histGraph;
                     throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
                 }
                 else
-                    _histGraph.SetRanges(0.0, _histData.Maximal()+dIntervallLength/10.0, dMinY, dMaxY);
+                    _histGraph->SetRanges(0.0, _histData.Maximal()+dIntervallLength/10.0, dMinY, dMaxY);
             }
             else
-                _histGraph.SetRanges(_histData.Minimal()-dIntervallLength/10.0, _histData.Maximal()+dIntervallLength/10.0, dMinY, dMaxY);
+                _histGraph->SetRanges(_histData.Minimal()-dIntervallLength/10.0, _histData.Maximal()+dIntervallLength/10.0, dMinY, dMaxY);
 
 
-            _histGraph.Box();
-            _histGraph.Axis("xy");
+            _histGraph->Box();
+            _histGraph->Axis("xy");
             if (_pData.getGrid() == 1)
-                _histGraph.Grid("xy", _pData.getGridStyle().c_str());
+                _histGraph->Grid("xy", _pData.getGridStyle().c_str());
             else if (_pData.getGrid() == 2)
             {
-                _histGraph.Grid("xy!", _pData.getGridStyle().c_str());
-                _histGraph.Grid("xy", _pData.getFineGridStyle().c_str());
+                _histGraph->Grid("xy!", _pData.getGridStyle().c_str());
+                _histGraph->Grid("xy", _pData.getFineGridStyle().c_str());
             }
             if (!bSum)
-                _histGraph.Label('x', sCountLabel.c_str(), 0);
+                _histGraph->Label('x', sCountLabel.c_str(), 0);
             else
-                _histGraph.Label('x', sAxisLabels[2].c_str(), 0);
-            _histGraph.Label('y', sAxisLabels[1].c_str(), 0);
+                _histGraph->Label('x', sAxisLabels[2].c_str(), 0);
+            _histGraph->Label('y', sAxisLabels[1].c_str(), 0);
 
-            _histGraph.Barh(_mAxisVals[1], _histData, _pData.getColors().c_str());
+            _histGraph->Barh(_mAxisVals[1], _histData, _pData.getColors().c_str());
             //cerr << 4 << endl;
             /*if (_pData.getAxis())
             {
                 if (!_pData.getBox() && dMin <= 0.0 && dMax >= 0.0 && !_pData.getyLogscale())
                 {
-                    _histGraph.SetOrigin(0.0,0.0);
+                    _histGraph->SetOrigin(0.0,0.0);
                     if (nBin > 40)
-                        _histGraph.Axis("UAKDTVISO");
+                        _histGraph->Axis("UAKDTVISO");
                     else
-                        _histGraph.Axis("AKDTVISO");
+                        _histGraph->Axis("AKDTVISO");
                 }
                 else if (!_pData.getBox())
                 {
                     if (nBin > 40)
-                        _histGraph.Axis("UAKDTVISO");
+                        _histGraph->Axis("UAKDTVISO");
                     else
-                        _histGraph.Axis("AKDTVISO");
+                        _histGraph->Axis("AKDTVISO");
                 }
                 else
                 {
                     if (nBin > 40)
-                        _histGraph.Axis("U");
+                        _histGraph->Axis("U");
                     else
-                        _histGraph.Axis();
+                        _histGraph->Axis();
                 }
             }
             if (_pData.getBox())
-                _histGraph.Box();
+                _histGraph->Box();
 
             if (_pData.getAxis())
             {
-                _histGraph.Label('x', sBinLabel.c_str(), 0.0);
+                _histGraph->Label('x', sBinLabel.c_str(), 0.0);
                 if (sCommonExponent.length() && !_pData.getxLogscale())
                 {
-                    _histGraph.Puts(mglPoint(dMax+(dMax-dMin)/10.0), mglPoint(dMax+(dMax-dMin)/10.0+1), sCommonExponent.c_str(), ":TL", -1.3);
+                    _histGraph->Puts(mglPoint(dMax+(dMax-dMin)/10.0), mglPoint(dMax+(dMax-dMin)/10.0+1), sCommonExponent.c_str(), ":TL", -1.3);
                 }
                 if (_pData.getBox())
-                    _histGraph.Label('y', sCountLabel.c_str(), 0.0);
+                    _histGraph->Label('y', sCountLabel.c_str(), 0.0);
                 else
-                    _histGraph.Label('y', sCountLabel.c_str(), 1.5);
+                    _histGraph->Label('y', sCountLabel.c_str(), 1.5);
             }
             if (_pData.getGrid())
             {
                 if (_pData.getGrid() == 2)
                 {
-                    _histGraph.Grid("xy!", "=h");
-                    _histGraph.Grid("xy", "-h");
+                    _histGraph->Grid("xy!", "=h");
+                    _histGraph->Grid("xy", "-h");
                 }
                 else
-                    _histGraph.Grid("xy", "=h");
+                    _histGraph->Grid("xy", "=h");
             }
 
             if (!_pData.getBox())
-                _histGraph.Legend(1.25,1.0);
+                _histGraph->Legend(1.25,1.0);
             else
-                _histGraph.Legend();*/
+                _histGraph->Legend();*/
 
 
             if (!bWriteToCache || matchParams(sCmd, "save", '=') || matchParams(sCmd, "export", '='))
@@ -2044,13 +1903,22 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 sHistSavePath = _option.ValidFileName("<plotpath>/histogramm2d", ".png");
             string sColor = "";
 
-            //_histGraph.Bars(_histData, sColor.c_str());
-            _histGraph.WriteFrame(sHistSavePath.c_str());
-            if (_option.getSystemPrintStatus() && !bSilent)
+            if (_pData.getOpenImage() && !_pData.getSilentMode() && !bSilent)
+            {
+                GraphHelper* _graphHelper = new GraphHelper(_histGraph, _pData);
+                NumeReKernel::updateGraphWindow(_graphHelper);
+                _histGraph = nullptr;
                 NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
-            if (!_out.isFile() && _option.getSystemPrintStatus() && !bSilent)
-                NumeReKernel::printPreFmt(LineBreak("|   "+_lang.get("HIST_SAVED_AT", sHistSavePath), _option) + "\n");
-            if (_pData.getOpenImage() && !_pData.getSilentMode())
+            }
+            else
+            {
+                _histGraph->WriteFrame(sHistSavePath.c_str());
+                if (_option.getSystemPrintStatus() && !bSilent)
+                    NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
+                if (!_out.isFile() && _option.getSystemPrintStatus() && !bSilent)
+                    NumeReKernel::printPreFmt(LineBreak("|   "+_lang.get("HIST_SAVED_AT", sHistSavePath), _option) + "\n");
+            }
+                /*if (_pData.getOpenImage() && !_pData.getSilentMode())
             {
                 string sFileName = sHistSavePath;
                 if (sFileName.find('/') != string::npos)
@@ -2063,7 +1931,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 NumeReKernel::gotoLine(sPath+"/"+sFileName);
                 //openExternally(sPath + "/" + sFileName, _option.getViewerPath(), sPath);
                 //cerr << "OK" << endl;
-            }
+            }*/
             _out.reset();
             _data.setCacheStatus(false);
         }

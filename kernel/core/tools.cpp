@@ -559,7 +559,7 @@ string replaceToTeX(const string& sString, bool replaceForTeXFile) // bool-flag 
 {
     string sReturn = " " + sString + " ";   // Rueckgabe-String
     string sTemp = "";                      // Temporaerer String, erleichert das Einfuegen von strings
-    static const unsigned int nSymbols = 90;                // Anzahl an bekannten Symbolen
+    static const unsigned int nSymbols = 103;                // Anzahl an bekannten Symbolen
     unsigned int nPos = 0;                           // Positions-Index-Variable
     unsigned int nPos_2 = 0;                         // Positions-Index-Variable
 
@@ -603,6 +603,19 @@ string replaceToTeX(const string& sString, bool replaceForTeXFile) // bool-flag 
         {"_r_bohr", "a_0"},
         {"_G", "G"},
         {"_theta_weinberg", "\\theta_{W}"},
+        {"_mu_e", "\\mu_{e}"},
+        {"_mu_p", "\\mu_{p}"},
+        {"_mu_n", "\\mu_{n}"},
+        {"_gamma_e", "\\gamma_{e}"},
+        {"_gamma_p", "\\gamma_{p}"},
+        {"_gamma_n", "\\gamma_{n}"},
+        {"_stefan_boltzmann", "\\sigma "},
+        {"_rydberg", "R_{\\infty}"},
+        {"_hartree", "E_{h}"},
+        {"_wien", "b_{Energie}"},
+        {"_lande_e", "g_{e}"},
+        {"_feigenbaum_alpha", "\\alpha "},
+        {"_feigenbaum_delta", "\\delta "},
         {"alpha", "\\alpha "},
         {"Alpha", "\\Alpha "},
         {"beta", "\\beta "},

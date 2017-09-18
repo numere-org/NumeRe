@@ -375,6 +375,7 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& sPredefinedFunctions)
     _parser.DefinePostfixOprt(_nrT("'Gs"), parser_Gauss);
     _parser.DefinePostfixOprt(_nrT("'Ps"), parser_Poise);
     _parser.DefinePostfixOprt(_nrT("'mol"), parser_mol);
+    //_parser.DefinePostfixOprt(_nrT("!"), parser_Faculty);
 
     // --> Logisches NICHT <--
     _parser.DefineInfixOprt(_nrT("!"), parser_Not);
@@ -406,10 +407,23 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& sPredefinedFunctions)
     _parser.DefineConst(_nrT("_alpha_fs"), 7.2973525698E-3);
     _parser.DefineConst(_nrT("_mu_bohr"), 9.27400968E-24);
     _parser.DefineConst(_nrT("_mu_kern"), 5.05078353E-27);
+    _parser.DefineConst(_nrT("_mu_e"), -9.284764620e-24);
+    _parser.DefineConst(_nrT("_mu_n"), -9.662365e-27);
+    _parser.DefineConst(_nrT("_mu_p"), 1.4106067873e8);
     _parser.DefineConst(_nrT("_m_amu"), 1.660538921E-27);
     _parser.DefineConst(_nrT("_r_bohr"), 5.2917721092E-11);
     _parser.DefineConst(_nrT("_G"), 6.67384E-11);
     _parser.DefineConst(_nrT("_coul_norm"), 8987551787.99791145324707);
+    _parser.DefineConst(_nrT("_stefan_boltzmann"), 5.670367e-8);
+    _parser.DefineConst(_nrT("_wien"), 2.8977729e-3);
+    _parser.DefineConst(_nrT("_rydberg"), 1.0973731568508e7);
+    _parser.DefineConst(_nrT("_hartree"), 4.35974465e-18);
+    _parser.DefineConst(_nrT("_lande_e"), -2.00231930436182);
+    _parser.DefineConst(_nrT("_gamma_e"), 1.760859644e11);
+    _parser.DefineConst(_nrT("_gamma_n"), 1.83247172e8);
+    _parser.DefineConst(_nrT("_gamma_p"), 2.6752219e8);
+    _parser.DefineConst(_nrT("_feigenbaum_delta"), 4.66920160910299067185);
+    _parser.DefineConst(_nrT("_feigenbaum_alpha"), 2.50290787509589282228);
     _parser.DefineConst(_nrT("nan"), NAN);
     _parser.DefineConst(_nrT("inf"), INFINITY);
     _parser.DefineConst(_nrT("void"), NAN);

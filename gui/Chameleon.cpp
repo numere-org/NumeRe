@@ -67,6 +67,8 @@
 #include "tableeditpanel.hpp"
 #include "graphviewer.hpp"
 
+#include "textsplashscreen.hpp"
+
 
 #include <wx/msw/helpchm.h>
 //#include "mmDropMenu.h"
@@ -238,6 +240,14 @@ bool MyApp::OnInit()
     wxBitmap splashImage;
     if (splashImage.LoadFile(f.GetPath(true)+"icons\\splash.png", wxBITMAP_TYPE_PNG))
     {
+        /*TextSplashScreen* splash = new TextSplashScreen(splashImage, wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_NO_TIMEOUT, 4000, nullptr);
+        splash->SetText("Loading configuration ...");
+        wxMilliSleep(500);
+        splash->SetText("Checking filesystem ...");
+        wxMilliSleep(500);
+        splash->SetText("Loading language files ...");
+        wxMilliSleep(500);
+        splash->Destroy();*/
         wxSplashScreen* splash = new wxSplashScreen(splashImage, wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_NO_TIMEOUT, 4000, nullptr, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
         wxApp::Yield();
         wxSleep(3);
@@ -1041,8 +1051,10 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             wxString command;
             if (data->isCommand)
                 command = (data->tooltip).substr(0, (data->tooltip).find(' ')) + " ";
-            else
+            else if (data->isFunction)
                 command = (data->tooltip).substr(0, (data->tooltip).find('(')+1);
+            else if (data->isConstant)
+                command = (data->tooltip).substr(0, (data->tooltip).find(' '));
             m_currentEd->InsertText(m_currentEd->GetCurrentPos(), command);
             m_currentEd->GotoPos(m_currentEd->GetCurrentPos()+command.length());
             break;
@@ -1053,8 +1065,10 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             string command;
             if (data->isCommand)
                 command = (data->tooltip).substr(0, (data->tooltip).find(' ')).ToStdString() + " ";
-            else
+            else if (data->isFunction)
                 command = (data->tooltip).substr(0, (data->tooltip).find('(')+1).ToStdString();
+            else if (data->isConstant)
+                command = (data->tooltip).substr(0, (data->tooltip).find(' ')).ToStdString();
             showConsole();
             m_terminal->ProcessInput(command.length(), command);
             break;
@@ -4671,10 +4685,15 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
             m_currentEd->InsertText(m_currentEd->GetCurrentPos(), (data->tooltip).substr(0, (data->tooltip).find(' ')+1));
             m_currentEd->GotoPos(m_currentEd->GetCurrentPos()+(data->tooltip).find(' ')+1);
         }
-        else
+        else if (data->isFunction)
         {
             m_currentEd->InsertText(m_currentEd->GetCurrentPos(), (data->tooltip).substr(0, (data->tooltip).find('(')+1));
             m_currentEd->GotoPos(m_currentEd->GetCurrentPos()+(data->tooltip).find('(')+1);
+        }
+        else if (data->isConstant)
+        {
+            m_currentEd->InsertText(m_currentEd->GetCurrentPos(), (data->tooltip).substr(0, (data->tooltip).find(' ')));
+            m_currentEd->GotoPos(m_currentEd->GetCurrentPos()+(data->tooltip).find(' '));
         }
     }
 }
