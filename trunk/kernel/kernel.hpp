@@ -28,14 +28,13 @@
 #include "core/datafile.hpp"
 #include "core/plugins.hpp"
 #include "core/version.h"
-#include "core/parser.hpp"
+#include "core/functionimplementation.hpp"
 #include "core/tools.hpp"
 #include "core/built-in.hpp"
 #include "core/parser_functions.hpp"
 #include "core/define.hpp"
 #include "core/plotdata.hpp"
 #include "core/graph_helper.hpp"
-//#include "menues.hpp"
 #include "core/script.hpp"
 #include "core/loop.hpp"
 #include "core/procedure.hpp"
@@ -73,6 +72,11 @@ class NumeReKernel
 
         void printResult(const string& sLine, const string& sCmdCache, bool bScriptRunning);
         string maskProcedureSigns(string sLine);
+
+        void defineOperators();
+        void defineConst();
+        void defineFunctions();
+
     public:
         static wxTerm* m_parent;
         static GraphHelper* graphHelper;
@@ -139,7 +143,7 @@ class NumeReKernel
         long long int getLastSavedTime() {return _data.getLastSaved();}
         void Autosave();
 
-        void StartUp(wxTerm* _parent, const string& sPredefinedFuncs);
+        void StartUp(wxTerm* _parent, const string& sPath, const string& sPredefinedFuncs);
         KernelStatus MainLoop(const string& sCommand);
         void CloseSession();
         void CancelCalculation()

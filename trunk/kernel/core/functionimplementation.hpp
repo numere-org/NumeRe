@@ -57,8 +57,8 @@
 using namespace std;
 using namespace mu;
 
-#ifndef PARSER_HPP
-#define PARSER_HPP
+#ifndef FUNCTIONIMPLEMENTATION_HPP
+#define FUNCTIONIMPLEMENTATION_HPP
 
 
 // Operator callback functions
@@ -163,14 +163,11 @@ value_type parser_numereversion();
 value_type parser_cot(value_type);
 
 
-value_type parser_SelfTest(Parser&);
-int parser_Calc(Datafile&, Output&, Parser&, Settings&, Define&, PlotData&, Script&, Procedure&, ofstream&);
+//value_type parser_SelfTest(Parser&);
+//int parser_Calc(Datafile&, Output&, Parser&, Settings&, Define&, PlotData&, Script&, Procedure&, ofstream&);
 value_type* parser_AddVariable(const char_type*, void*);
-void parser_Help(const Settings& _option);
-void parser_FirstStart(const Settings& _option);
-
-void terminationHandler(int nSigNum);
-BOOL WINAPI EventHandler(DWORD dwCtrlType);
+//void parser_Help(const Settings& _option);
+//void parser_FirstStart(const Settings& _option);
 
 
 #endif

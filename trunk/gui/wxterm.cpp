@@ -144,6 +144,7 @@ END_EVENT_TABLE()
 
 wxTerm::wxTerm(wxWindow* parent, wxWindowID id,
                Options* _option,
+               const wxString& sPath,
                const wxPoint& pos,
                int width, int height,
                const wxString& name) :
@@ -212,7 +213,7 @@ wxTerm::wxTerm(wxWindow* parent, wxWindowID id,
 
     m_bitmap = 0;
 
-    _kernel.StartUp(this, getSyntax()->getFunctions());
+    _kernel.StartUp(this, sPath.ToStdString(), getSyntax()->getFunctions());
     StartKernelTask();
     m_KernelStatus = NumeReKernel::NUMERE_DONE;
     m_bCommandAvailable = false;

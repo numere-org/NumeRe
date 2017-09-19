@@ -21,7 +21,7 @@
  * Implementierung der Parser-Funktionen
  */
 
-#include "parser.hpp"
+#include "functionimplementation.hpp"
 
 extern value_type vAns;
 bool bSupressAnswer = false;
@@ -1287,6 +1287,7 @@ value_type parser_cot(value_type x)
     return cos(x) / sin(x);
 }
 
+/*
 // --> Diese Funktion wird zu Beginn von NumeRe aufgerufen und testet den muParser <--
 value_type parser_SelfTest(Parser& _parser)
 {
@@ -1294,17 +1295,7 @@ value_type parser_SelfTest(Parser& _parser)
     pt.Run();
     return 0;
 }
-
-void terminationHandler(int nSigNum)
-{
-    exitsignal = 1;
-    return;
-}
-
-BOOL WINAPI EventHandler(DWORD dwCtrlType)
-{
-    return TRUE;
-}
+*/
 
 // --> Var-Factory: Hier werden die physikalischen Adressen der Variablen generiert <--
 value_type* parser_AddVariable(const char_type* a_szName, void* a_pUserData)
@@ -1327,7 +1318,7 @@ value_type* parser_AddVariable(const char_type* a_szName, void* a_pUserData)
 
     return &afValBuf[iVal++];
 }
-
+/*
 // --> Zeigt eine Kurzuebersicht an <--
 void parser_Help(const Settings& _option)
 {
@@ -1348,5 +1339,5 @@ void parser_FirstStart(const Settings& _option)
 {
     doc_FirstStart(_option);
     return;
-}
+}*/
 

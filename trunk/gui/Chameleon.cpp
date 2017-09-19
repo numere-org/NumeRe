@@ -400,7 +400,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_termContainer = new wxTermContainer(m_splitCommandHistory, ID_CONTAINER_TERM);
     //m_debugTermContainer = new wxTermContainer(m_noteTerm, ID_CONTAINER_DEBUGTERM);
 
-	m_terminal = new wxSSH(m_termContainer, ID_TERMINAL, m_network, m_options, wxPoint(0, 0));
+	m_terminal = new wxSSH(m_termContainer, ID_TERMINAL, m_network, m_options, programPath, wxPoint(0, 0));
 	m_terminal->set_mode_flag(GTerm::CURSORINVISIBLE);
 	m_termContainer->SetTerminal(m_terminal);
 	m_terminal->SetParent(this);
