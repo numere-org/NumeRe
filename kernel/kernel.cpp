@@ -109,7 +109,7 @@ void NumeReKernel::Autosave()
     return;
 }
 
-void NumeReKernel::StartUp(wxTerm* _parent, const string& sPredefinedFunctions)
+void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string& sPredefinedFunctions)
 {
     if (_parent && m_parent == nullptr)
         m_parent = _parent;
@@ -119,28 +119,20 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& sPredefinedFunctions)
 	string sScriptName = "";
 	string sTime = getTimeStamp(false);
 	string sLogFile = "numere.log";
+	string sPath = __sPath;
 
 	_functions.setPredefinedFuncs(sPredefinedFunctions);
 
     _data.setPredefinedFuncs(_functions.getPredefinedFuncs());
-    //Sleep(50);
     //cerr << "Done.";
 
-    //nextLoadMessage(50);
     //cerr << " -> Reading system's information ... ";
-    char __cPath[1024];
     OSVERSIONINFOA _osversioninfo;
     _osversioninfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
     GetVersionExA(&_osversioninfo);
-    GetModuleFileNameA(NULL, __cPath, 1024);
-    string sPath = __cPath;
-
-    sPath = sPath.substr(0,sPath.rfind("\\numere.exe"));
-
 
     while (sPath.find('\\') != string::npos)
         sPath[sPath.find('\\')] = '/';
-    //Sleep(50);
     //cerr << "Done.";
 
     //nextLoadMessage(50);
@@ -163,7 +155,6 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& sPredefinedFunctions)
                  << " | OS: Windows v " << _osversioninfo.dwMajorVersion << "." << _osversioninfo.dwMinorVersion << "." << _osversioninfo.dwBuildNumber << " " << _osversioninfo.szCSDVersion << (IsWow64() ? " (64 Bit) ---" : " ---") << endl;
     }
 
- 	//nextLoadMessage(50);
  	//cerr << " -> Setting global parameters ... ";
  	_data.setTokens(_option.getTokenPaths());
  	_out.setTokens(_option.getTokenPaths());
@@ -173,12 +164,9 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& sPredefinedFunctions)
  	_procedure.setTokens(_option.getTokenPaths());
  	_option.setTokens(_option.getTokenPaths());
  	_lang.setTokens(_option.getTokenPaths());
-	//ResizeConsole(_option);
     nLINE_LENGTH = _option.getWindow();
-    //Sleep(50);
     //cerr << "Done.";
 
- 	//nextLoadMessage(50);
  	//cerr << toSystemCodePage(" -> Verifying NumeRe file system ... ");
 	_out.setPath(_option.getSavePath(), true, sPath);
 	_data.setPath(_option.getLoadPath(), true, sPath);
@@ -192,75 +180,46 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& sPredefinedFunctions)
 	_option.setPath(_option.getExePath() + "/user/lang", true, sPath);
 	_option.setPath(_option.getExePath() + "/user/docs", true, sPath);
 	_functions.setPath(_option.getExePath(), false, sPath);
-	//Sleep(50);
     //cerr << "Done.";
     if (oLogFile.is_open())
         oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: File system was verified." << endl;
 
-    //nextLoadMessage(50);
     //cerr << toSystemCodePage(" -> Loading documentation index ... ");
     _option.loadDocIndex(false);
-    //Sleep(50);
     //cerr << "Done.";
     if (oLogFile.is_open())
             oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Documentation index was loaded." << endl;
 
     if (BI_FileExists(_option.getExePath() + "/update.hlpidx"))
     {
-        //nextLoadMessage(50);
         //cerr << toSystemCodePage(" -> Updating documentation index ... ");
         _option.updateDocIndex();
-        //Sleep(50);
         //cerr << "Done.";
         if (oLogFile.is_open())
             oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Documentation index was updated." << endl;
     }
     if (_option.getUseCustomLanguageFiles())
     {
-        //nextLoadMessage(50);
         //cerr << toSystemCodePage(" -> Loading user documentation index ... ");
         _option.loadDocIndex(_option.getUseCustomLanguageFiles());
-        //Sleep(50);
         //cerr << "Done.";
         if (oLogFile.is_open())
             oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: User Documentation index was loaded." << endl;
     }
-    //nextLoadMessage(50);
     //cerr << toSystemCodePage(" -> Loading language files ... ");
     _lang.loadStrings(_option.getUseCustomLanguageFiles());
-    //Sleep(50);
     //cerr << "Done.";
     if (oLogFile.is_open())
         oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Language files were loaded." << endl;
 
 
-    //if (_option.getbDebug())
-    //    cerr << "PATH: " << __cPath << endl;
-
-    // --> Hier wollen wir den Titel der Console aendern. Ist eine Windows-Funktion <--
-    //SetConsTitle(_data, _option);
-
     string sAutosave = _option.getSavePath() + "/cache.tmp";
     string sCacheFile = _option.getExePath() + "/numere.cache";
 
-
-	/**if (!_option.getbFastStart())
-	{
-        nextLoadMessage(50);
-        cerr << toSystemCodePage(" -> " + _lang.get("MAIN_LOADING_PARSER_SELFTEST") + " ... ");
-        Sleep(600);
-        parser_SelfTest(_parser);   // Fuehre den Parser-Selbst-Test aus
-        Sleep(650);				    // Warte 500 msec
-        if (oLogFile.is_open())
-            oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Parser self test was done." << endl;
-    }*/
-    //nextLoadMessage(50);
     //cerr << toSystemCodePage(" -> " + _lang.get("MAIN_LOADING_IOSTREAM") + " ... ");
-    //Sleep(50);
     //cerr << toSystemCodePage(_lang.get("COMMON_DONE")) << ".";
     if (BI_FileExists(_procedure.getPluginInfoPath()))
     {
-        //nextLoadMessage(50);
         //cerr << LineBreak(" -> "+_lang.get("MAIN_LOADING_PLUGINS")+" ... ", _option);
         _procedure.loadPlugins();
         _plugin = _procedure;
@@ -271,55 +230,34 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& sPredefinedFunctions)
     }
     if (_option.getbDefineAutoLoad() && BI_FileExists(_option.getExePath() + "\\functions.def"))
     {
-        //nextLoadMessage(50);
         //cerr << " -> ";
         _functions.load(_option, true);
-        //if (!_option.getbFastStart())
-        //    Sleep(350);
         if (oLogFile.is_open())
             oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Function definitions were loaded." << endl;
     }
 
-    //nextLoadMessage(50);
     //cerr << toSystemCodePage(" -> " + _lang.get("MAIN_LOADING_FONT", toUpperCase(_option.getDefaultPlotFont().substr(0,1))+_option.getDefaultPlotFont().substr(1)) + " ... ");
-    //cerr << toSystemCodePage(" -> Lade Schriftsatz \""+toUpperCase(_option.getDefaultPlotFont().substr(0,1))+_option.getDefaultPlotFont().substr(1)+"\" für Graph ... ");
     _fontData.LoadFont(_option.getDefaultPlotFont().c_str(), (_option.getExePath()+ "\\fonts").c_str());
     //cerr << toSystemCodePage(_lang.get("COMMON_DONE")) << ".";
 
-    //nextLoadMessage(50);
     //cerr << LineBreak(" -> "+_lang.get("MAIN_LOADING_AUTOSAVE_SEARCH")+" ... ", _option);
-    //Sleep(50);
     if (BI_FileExists(sAutosave) || BI_FileExists(sCacheFile))
     {
         //cerr << toSystemCodePage(_lang.get("MAIN_LOADING_AUTOSAVE_FOUND"));
         if (BI_FileExists(sAutosave))
         {
             // --> Lade den letzten Cache, falls dieser existiert <--
-            //nextLoadMessage(50);
             //cerr << LineBreak(" -> "+_lang.get("MAIN_LOADING_AUTOSAVE")+" ... ", _option);
             _data.openAutosave(sAutosave, _option);
             _data.setSaveStatus(true);
             remove(sAutosave.c_str());
             //cerr << toSystemCodePage(_lang.get("MAIN_LOADING_AUTOSAVE_TRANSLATING")+" ... ");
-            if (_data.saveCache());
-                /**cerr << toSystemCodePage(_lang.get("COMMON_DONE")) << ".";
-            else
-            {
-                cerr << endl << " -> " << toSystemCodePage(_lang.get("MAIN_LOADING_AUTOSAVE_ERROR_SAVING")) << endl;
-                Sleep(50);
-            }*/
+            _data.saveCache();
         }
         else
         {
-            //nextLoadMessage(50);
             //cerr << LineBreak(" -> "+_lang.get("MAIN_LOADING_AUTOSAVE")+" ... ", _option);
-            if (_data.loadCache());
-                /**cerr << toSystemCodePage(_lang.get("COMMON_DONE")) << ".";
-            else
-            {
-                cerr << endl << " -> " << toSystemCodePage(_lang.get("MAIN_LOADING_AUTOSAVE_ERROR_LOADING")) << endl;
-                Sleep(50);
-            }*/
+            _data.loadCache();
         }
         if (oLogFile.is_open())
             oLogFile << toString(time(0)-tTimeZero, true) << "> SYSTEM: Automatic backup was loaded." << endl;
@@ -340,6 +278,19 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& sPredefinedFunctions)
     _parser.DefineVar(parser_iVars.sName[2], &parser_iVars.vValue[2][0]);
     _parser.DefineVar(parser_iVars.sName[3], &parser_iVars.vValue[3][0]);
 
+    // --> VAR-FACTORY Deklarieren (Irgendwo muessen die ganzen Variablen-Werte ja auch gespeichert werden) <--
+    _parser.SetVarFactory(parser_AddVariable, &_parser);
+
+    defineOperators();
+
+    defineConst();
+
+    defineFunctions();
+
+}
+
+void NumeReKernel::defineOperators()
+{
     // --> Syntax fuer die Umrechnungsfunktionen definieren und die zugehoerigen Funktionen deklarieren <--
     _parser.DefinePostfixOprt(_nrT("'G"), parser_Giga);
     _parser.DefinePostfixOprt(_nrT("'M"), parser_Mega);
@@ -380,6 +331,15 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& sPredefinedFunctions)
     // --> Logisches NICHT <--
     _parser.DefineInfixOprt(_nrT("!"), parser_Not);
 
+    // --> Operatoren <--
+    _parser.DefineOprt(_nrT("%"), parser_Mod, prMUL_DIV, oaLEFT, true);
+    _parser.DefineOprt(_nrT("|||"), parser_XOR, prLOGIC, oaLEFT, true);
+    _parser.DefineOprt(_nrT("|"), parser_BinOR, prLOGIC, oaLEFT, true);
+    _parser.DefineOprt(_nrT("&"), parser_BinAND, prLOGIC, oaLEFT, true);
+}
+
+void NumeReKernel::defineConst()
+{
     // --> Eigene Konstanten <--
     _parser.DefineConst(_nrT("_g"), 9.80665);
     _parser.DefineConst(_nrT("_c"), 299792458);
@@ -427,8 +387,11 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& sPredefinedFunctions)
     _parser.DefineConst(_nrT("nan"), NAN);
     _parser.DefineConst(_nrT("inf"), INFINITY);
     _parser.DefineConst(_nrT("void"), NAN);
+}
 
-    // --> Die Fakultaet und den Binomialkoeffzienten als mathemat. Funktion deklarieren <--
+void NumeReKernel::defineFunctions()
+{
+    // --> mathemat. Funktion deklarieren <--
     _parser.DefineFun(_nrT("faculty"), parser_Faculty, false);                        // faculty(n)
     _parser.DefineFun(_nrT("dblfacul"), parser_doubleFaculty, false);                 // dblfacul(n)
     _parser.DefineFun(_nrT("binom"), parser_Binom, false);                            // binom(Wert1,Wert2)
@@ -488,17 +451,6 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& sPredefinedFunctions)
     _parser.DefineFun(_nrT("student_t"), parser_studentFactor, true);                 // student_t(number,confidence)
     _parser.DefineFun(_nrT("gcd"), parser_gcd, true);                                 // gcd(x,y)
     _parser.DefineFun(_nrT("lcm"), parser_lcm, true);                                 // lcm(x,y)
-
-    // --> Operatoren <--
-    _parser.DefineOprt(_nrT("%"), parser_Mod, prMUL_DIV, oaLEFT, true);
-    _parser.DefineOprt(_nrT("|||"), parser_XOR, prLOGIC, oaLEFT, true);
-    _parser.DefineOprt(_nrT("|"), parser_BinOR, prLOGIC, oaLEFT, true);
-    _parser.DefineOprt(_nrT("&"), parser_BinAND, prLOGIC, oaLEFT, true);
-
-    // --> VAR-FACTORY Deklarieren (Irgendwo muessen die ganzen Variablen-Werte ja auch gespeichert werden) <--
-    _parser.SetVarFactory(parser_AddVariable, &_parser);
-
-
 }
 
 void NumeReKernel::printVersionInfo()
@@ -509,10 +461,7 @@ void NumeReKernel::printVersionInfo()
     BI_splash();
     printPreFmt("                                  |\n");
 	printPreFmt("| Version: " + sVersion + strfill("Build: ", 79-22-sVersion.length()) + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + " |\n");
-	printPreFmt("| Copyright (c) 2013-" + string(AutoVersion::YEAR) + toSystemCodePage(", Erik A. Hänel et al.") + strfill(toSystemCodePage(_lang.get("MAIN_ABOUT_NBR")), 79-48) + " |\n"); //toSystemCodePage("Über: siehe \"about\" |") << endl; //MAIN_ABOUT
-
-	//printPreFmt("|-> Copyright (c) 2013-" + string(AutoVersion::YEAR) + toSystemCodePage(", Erik A. Hänel et al.") + strfill(toSystemCodePage(_lang.get("MAIN_ABOUT_NBR")), _option.getWindow()-50) + "\n"); //toSystemCodePage("Über: siehe \"about\" |") << endl; //MAIN_ABOUT
-	//printPreFmt("|   Version: " + sVersion + strfill("Build: ", _option.getWindow()-24-sVersion.length()) + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + "\n");
+	printPreFmt("| Copyright (c) 2013-" + string(AutoVersion::YEAR) + toSystemCodePage(", Erik A. Hänel et al.") + strfill(toSystemCodePage(_lang.get("MAIN_ABOUT_NBR")), 79-48) + " |\n");
 	make_hline(80);
 
 	printPreFmt("|\n");

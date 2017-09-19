@@ -26,6 +26,7 @@ class wxSSH : public wxTerm
 		wxSSH(wxWindow* parent, wxWindowID id,
 				Networking* network,
 				Options* _option,
+				const wxString& sPath,
 				const wxPoint& pos = wxDefaultPosition,
 				int width = 80, int height = 25,
 				const wxString& name = "wxSSH");

@@ -429,6 +429,8 @@
 		<Unit filename="kernel/core/filesystem.hpp" />
 		<Unit filename="kernel/core/fitcontroller.cpp" />
 		<Unit filename="kernel/core/fitcontroller.hpp" />
+		<Unit filename="kernel/core/functionimplementation.cpp" />
+		<Unit filename="kernel/core/functionimplementation.hpp" />
 		<Unit filename="kernel/core/graph_helper.cpp" />
 		<Unit filename="kernel/core/graph_helper.hpp" />
 		<Unit filename="kernel/core/language.cpp" />
@@ -436,21 +438,13 @@
 		<Unit filename="kernel/core/loop.cpp" />
 		<Unit filename="kernel/core/loop.hpp" />
 		<Unit filename="kernel/core/main.cpp">
-			<Option target="&lt;{~None~}&gt;" />
+			<Option target="Debug" />
 		</Unit>
 		<Unit filename="kernel/core/matrixoperations.cpp" />
-		<Unit filename="kernel/core/menues.cpp">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
-		<Unit filename="kernel/core/menues.hpp">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
 		<Unit filename="kernel/core/odesolver.cpp" />
 		<Unit filename="kernel/core/odesolver.hpp" />
 		<Unit filename="kernel/core/output.cpp" />
 		<Unit filename="kernel/core/output.hpp" />
-		<Unit filename="kernel/core/parser.cpp" />
-		<Unit filename="kernel/core/parser.hpp" />
 		<Unit filename="kernel/core/parser_functions.cpp" />
 		<Unit filename="kernel/core/parser_functions.hpp" />
 		<Unit filename="kernel/core/plotdata.cpp" />

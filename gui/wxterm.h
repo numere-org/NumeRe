@@ -162,6 +162,7 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
         void setKernelSettings(const Settings&);
         wxTerm(wxWindow* parent, wxWindowID id,
                Options* _option,
+               const wxString& sPath,
                const wxPoint& pos = wxDefaultPosition,
                int width = 80, int height = 24,
                const wxString& name = "wxTerm");

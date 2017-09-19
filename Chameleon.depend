@@ -2012,7 +2012,7 @@
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\droptgt.h
 
-1499321768 d:\cpp\numere-source\trunk\gui\wxterm.h
+1505809136 d:\cpp\numere-source\trunk\gui\wxterm.h
 	<map>
 	"NumeReWindow.h"
 	"../common/Options.h"
@@ -2504,7 +2504,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1505643725 d:\cpp\numere-source\trunk\kernel\kernel.hpp
+1505808916 d:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	"core/error.hpp"
@@ -2513,7 +2513,7 @@
 	"core/datafile.hpp"
 	"core/plugins.hpp"
 	"core/version.h"
-	"core/parser.hpp"
+	"core/functionimplementation.hpp"
 	"core/tools.hpp"
 	"core/built-in.hpp"
 	"core/parser_functions.hpp"
@@ -2921,7 +2921,7 @@
 	<wx/wx.h>
 	<wx/dnd.h>
 
-1490798689 d:\cpp\numere-source\trunk\gui\wxssh.h
+1505809082 d:\cpp\numere-source\trunk\gui\wxssh.h
 	"../common/CommonHeaders.h"
 	<wx/txtstrm.h>
 	"../network/networking.h"
@@ -4142,13 +4142,13 @@
 	"../kernel.hpp"
 	"procedurevarfactory.hpp"
 
-1499201129 d:\cpp\numere-source\trunk\kernel\core\procedurevarfactory.hpp
+1505808343 d:\cpp\numere-source\trunk\kernel\core\procedurevarfactory.hpp
 	<string>
 	<map>
 	"tools.hpp"
 	"error.hpp"
 	"datafile.hpp"
-	"parser.hpp"
+	"functionimplementation.hpp"
 	"define.hpp"
 	"settings.hpp"
 	"output.hpp"
@@ -4197,7 +4197,7 @@
 	<cstddef>
 	<cstdarg>
 
-1500231267 source:d:\cpp\numere-source\trunk\kernel\core\tools.cpp
+1505748403 source:d:\cpp\numere-source\trunk\kernel\core\tools.cpp
 	"tools.hpp"
 	"../kernel.hpp"
 	<cstdlib>
@@ -4223,7 +4223,7 @@
 	"debugmessenger.hpp"
 	"core/tools.hpp"
 
-1505747720 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1505808633 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 
@@ -4358,4 +4358,37 @@
 1505673130 d:\cpp\numere-source\trunk\gui\textsplashscreen.hpp
 	<wx/wx.h>
 	<wx/splash.h>
+
+1505807962 d:\cpp\numere-source\trunk\kernel\core\functionimplementation.hpp
+	<cstdlib>
+	<cmath>
+	<fstream>
+	<string>
+	<iostream>
+	<locale>
+	<limits>
+	<ios>
+	<iomanip>
+	<numeric>
+	<ctime>
+	<random>
+	<csignal>
+	<boost/math/common_factor.hpp>
+	<gsl/gsl_sf.h>
+	<boost/math/distributions/students_t.hpp>
+	"error.hpp"
+	"settings.hpp"
+	"tools.hpp"
+	"built-in.hpp"
+	"define.hpp"
+	"plotdata.hpp"
+	"parser_functions.hpp"
+	"script.hpp"
+	"loop.hpp"
+	"procedure.hpp"
+	"ParserLib/muParserTest.h"
+	"ParserLib/muParser.h"
+
+1505807980 source:d:\cpp\numere-source\trunk\kernel\core\functionimplementation.cpp
+	"functionimplementation.hpp"
 
