@@ -6,3 +6,4 @@ Fixed	The debugger always pointed to the line directly above the relevant line. 
 Cleaned	The list of predefined functions is now managed by the syntaxelements language file.
 Added	Constants are now also listed in the symbol tree.
 Added	Multiple constants were added to the set of constants.
+Fixed	The "region" option was not available for data sets. This was fixed.

@@ -1012,11 +1012,12 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
 
     for (unsigned int nType = 0; nType < vType.size(); nType++)
     {
-        for (int i = 0; i < 2; i++)
-            _mData2[i].Create(_pInfo.nSamples);
-        _mData.Create(_pInfo.nSamples);
         if (vType[nType] == TYPE_FUNC)
         {
+            for (int i = 0; i < 2; i++)
+                _mData2[i].Create(_pInfo.nSamples);
+            _mData.Create(_pInfo.nSamples);
+
             StripSpaces(sLabels);
 
             for (long int i = 0; i < _pInfo.nSamples; i++)
@@ -1076,24 +1077,27 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
             }
             else
             {
-                if (_pData.getRegion() && vType.size() > nType+1 && vType[nType+1] == TYPE_DATA)
+                if (_pData.getInterpolate() && getNN(_mData) >= _pData.getSamples())
                 {
-                    _mData2[0] = _mDataPlots[nTypeCounter[1]+1][1];
-                    nTypeCounter[1]++;
+                    if (_pData.getRegion() && vType.size() > nType+1 && vType[nType+1] == TYPE_DATA)
+                    {
+                        _mData2[0] = _mDataPlots[nTypeCounter[1]+1][1];
+                        nTypeCounter[1]++;
+                    }
+                    else if (_pData.getRegion() && vType.size() > nType+1 && vType[nType+1] == TYPE_FUNC)
+                    {
+                        for (long int i = 0; i < _pInfo.nSamples; i++)
+                            _mData2[0].a[i] = _pData.getData(i,nTypeCounter[0]);
+                        nTypeCounter[0]++;
+                    }
+                    else
+                    {
+                        _mData2[0].Create(getNN(_mData));
+                        for (long int i = 0; i < getNN(_mData); i++)
+                            _mData2[0].a[i] = 0.0;
+                    }
                 }
-                else if (_pData.getRegion() && vType.size() > nType+1 && vType[nType+1] == TYPE_FUNC)
-                {
-                    for (long int i = 0; i < _pInfo.nSamples; i++)
-                        _mData2[0].a[i] = _pData.getData(i,nTypeCounter[0]);
-                    nTypeCounter[0]++;
-                }
-                else
-                {
-                    _mData2[0].Create(getNN(_mData));
-                    for (long int i = 0; i < getNN(_mData); i++)
-                        _mData2[0].a[i] = 0.0;
-                }
-                if (_pData.getxError() && _pData.getyError() && nDataDim[nTypeCounter[1]] >= 4)
+                else if (_pData.getxError() && _pData.getyError() && nDataDim[nTypeCounter[1]] >= 4)
                 {
                     _mData2[0] = _mDataPlots[nTypeCounter[1]][2];
                     _mData2[1] = _mDataPlots[nTypeCounter[1]][3];
@@ -1142,7 +1146,7 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
             {
                 _mData = (_mData-_pInfo.dSecAxisRanges[1][0]) * (_pInfo.dRanges[YCOORD][1]-_pInfo.dRanges[YCOORD][0])/(_pInfo.dSecAxisRanges[1][1]-_pInfo.dSecAxisRanges[1][0]) + _pInfo.dRanges[YCOORD][0];
             }
-            if (_pData.getRegion() && _pData.getAxisbind(nType+1)[0] == 'r')
+            if (_pData.getRegion() && _pData.getAxisbind(nType+1)[0] == 'r' && getNN(_mData2[0]) > 1)
             {
                 _mData2[0] = (_mData2[0]-_pInfo.dSecAxisRanges[1][0]) * (_pInfo.dRanges[YCOORD][1]-_pInfo.dRanges[YCOORD][0])/(_pInfo.dSecAxisRanges[1][1]-_pInfo.dSecAxisRanges[1][0]) + _pInfo.dRanges[YCOORD][0];
             }
@@ -1236,7 +1240,7 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
 
             nTypeCounter[1]++;
         }
-        if (_pData.getRegion() && vType.size() > nType+1)
+        if (_pData.getRegion() && vType.size() > nType+1 && getNN(_mData2[0]) > 1)
             nType++;
     }
 
@@ -1272,7 +1276,7 @@ bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglDa
     {
         if (!_pData.getArea() && !_pData.getRegion())
             _graph->Plot(_mAxisVals, _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
-        else if (_pData.getRegion() && getNN(_mData2[0]))
+        else if (_pData.getRegion() && getNN(_mData2[0]) > 1)
         {
             if (*_pInfo.nStyle == _pInfo.nStyleMax-1)
                 _graph->Region(_mAxisVals, _mData, _mData2[0], ("{"+_pData.getColors().substr(*_pInfo.nStyle,1) + "7}{" + _pData.getColors().substr(0,1)+"7}").c_str());
@@ -1302,6 +1306,18 @@ bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglDa
                     _graph->Plot(_mAxisVals, _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
                 else if (_pData.getBars() && !_pData.getArea() && !_pData.getRegion())
                     _graph->Bars(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]+"^").c_str());
+                else if (_pData.getRegion() && getNN(_mData2[0]) > 1)
+                {
+                    if (*_pInfo.nStyle == _pInfo.nStyleMax-1)
+                        _graph->Region(_mAxisVals, _mData, _mData2[0], ("{"+_pData.getColors().substr(*_pInfo.nStyle,1) + "7}{" + _pData.getColors().substr(0,1)+"7}").c_str());
+                    else
+                        _graph->Region(_mAxisVals, _mData, _mData2[0], ("{"+_pData.getColors().substr(*_pInfo.nStyle,1) + "7}{" + _pData.getColors().substr(*_pInfo.nStyle+1,1)+"7}").c_str());
+                    _graph->Plot(_mAxisVals, _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
+                    if (*_pInfo.nStyle == _pInfo.nStyleMax-1)
+                        _graph->Plot(_mAxisVals, _mData2[0], _pInfo.sLineStyles[0].c_str());
+                    else
+                        _graph->Plot(_mAxisVals, _mData2[0], _pInfo.sLineStyles[*_pInfo.nStyle+1].c_str());
+                }
                 else if (_pData.getArea() || _pData.getRegion())
                     _graph->Area(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
             }
