@@ -3304,7 +3304,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1505730532 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1505809218 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3935,11 +3935,11 @@
 1491133847 source:d:\cpp\numere-source\trunk\gui\viewerpanel.cpp
 	"viewerpanel.hpp"
 
-1490798667 source:d:\cpp\numere-source\trunk\gui\wxssh.cpp
+1505809110 source:d:\cpp\numere-source\trunk\gui\wxssh.cpp
 	"wxssh.h"
 	"../common/debug.h"
 
-1505643553 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
+1505809162 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -4101,7 +4101,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1502386867 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
+1506496728 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
 	"plotting.hpp"
 	"parser_functions.hpp"
 	"../kernel.hpp"
@@ -4223,7 +4223,7 @@
 	"debugmessenger.hpp"
 	"core/tools.hpp"
 
-1505808633 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1505809182 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 
