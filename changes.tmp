@@ -7,3 +7,5 @@ Cleaned	The list of predefined functions is now managed by the syntaxelements la
 Added	Constants are now also listed in the symbol tree.
 Added	Multiple constants were added to the set of constants.
 Fixed	The "region" option was not available for data sets. This was fixed.
+Cleaned	Cleaned a little display error in the console during an animation.
+Cleaned	The duplicate code analysis runs now in a secondary thread and doesn't lock the GUI any more.

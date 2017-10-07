@@ -79,8 +79,8 @@ DuplicateCodeDialog::DuplicateCodeDialog(wxWindow* _parent, const wxString& titl
 
 void DuplicateCodeDialog::SetProgress(double dPercentage)
 {
-    if ((int)(dPercentage*100) != m_progressGauge->GetValue())
-        m_progressGauge->SetValue((int)(dPercentage*100));
+    if ((int)(dPercentage) != m_progressGauge->GetValue())
+        m_progressGauge->SetValue((int)(dPercentage));
 }
 
 void DuplicateCodeDialog::SetResult(const vector<string>& vResult)

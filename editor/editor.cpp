@@ -146,6 +146,11 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 	m_terminal = __terminal;
 	m_dragging = false;
 
+	m_nFirstLine = m_nLastLine = 0;
+	m_nDuplicateCodeFlag = 0;
+
+	Bind(wxEVT_THREAD, &NumeReEditor::OnThreadUpdate, this);
+
     this->SetTabWidth(4);
     this->SetIndent(4);
     this->SetUseTabs(true);
@@ -3861,8 +3866,24 @@ bool NumeReEditor::InitDuplicateCode()
 
 void NumeReEditor::OnFindDuplicateCode(int nDuplicateFlag)
 {
-    vector<string> vResult = detectCodeDuplicates(0, this->LineFromPosition(this->GetLastPosition()), nDuplicateFlag);
-    m_duplicateCode->SetResult(vResult);
+    detectCodeDuplicates(0, this->LineFromPosition(this->GetLastPosition()), nDuplicateFlag);
+}
+
+void NumeReEditor::OnThreadUpdate(wxThreadEvent& event)
+{
+    if (m_nProcessValue < 100)
+    {
+        if (m_duplicateCode && m_duplicateCode->IsShown())
+            m_duplicateCode->SetProgress(m_nProcessValue);
+    }
+    else
+    {
+        if (m_duplicateCode && m_duplicateCode->IsShown())
+            m_duplicateCode->SetProgress(100);
+        wxCriticalSectionLocker lock(m_editorCS);
+        m_duplicateCode->SetResult(vDuplicateCodeResults);
+    }
+
 }
 
 void NumeReEditor::IndicateDuplicatedLine(int nStart1, int nEnd1, int nStart2, int nEnd2)
@@ -4056,33 +4077,38 @@ int NumeReEditor::insertTextAndMove(int nPosition, const wxString& sText)
     return sText.length();
 }
 
-vector<string> NumeReEditor::detectCodeDuplicates(int startline, int endline, int nDuplicateFlags)
+
+wxThread::ExitCode NumeReEditor::Entry()
 {
-    vector<string> vCodeDuplicates;
+    vDuplicateCodeResults.clear();
     double dMatch = 0.0;
     int nLongestMatch = 0;
     int nBlankLines = 0;
     int nLastStatusVal = 0;
 
-    for (int i = startline; i <= endline-DUPLICATE_CODE_LENGTH; i++)
+    for (int i = m_nFirstLine; i <= m_nLastLine-DUPLICATE_CODE_LENGTH; i++)
     {
+        if (GetThread()->TestDestroy())
+            break;
         if (m_duplicateCode && m_duplicateCode->IsShown())
         {
-            if ((int)(double)i / (double)(endline-DUPLICATE_CODE_LENGTH-startline) != nLastStatusVal)
+            if ((int)((double)i / (double)(m_nLastLine-DUPLICATE_CODE_LENGTH-m_nFirstLine)*100) != nLastStatusVal)
             {
-                nLastStatusVal = (int)(double)i / (double)(endline-DUPLICATE_CODE_LENGTH-startline);
-                m_duplicateCode->SetProgress((double)i / (double)(endline-DUPLICATE_CODE_LENGTH-startline));
+                nLastStatusVal = (double)i / (double)(m_nLastLine-DUPLICATE_CODE_LENGTH-m_nFirstLine)*100;
+                wxCriticalSectionLocker lock(m_editorCS);
+                m_nProcessValue = nLastStatusVal;
+                wxQueueEvent(GetEventHandler(), new wxThreadEvent());
             }
         }
-        for (int j = i+DUPLICATE_CODE_LENGTH; j <= endline-DUPLICATE_CODE_LENGTH; j++)
+        for (int j = i+DUPLICATE_CODE_LENGTH; j <= m_nLastLine-DUPLICATE_CODE_LENGTH; j++)
         {
-            dMatch = compareCodeLines(i, j, nDuplicateFlags);
+            dMatch = compareCodeLines(i, j, m_nDuplicateCodeFlag);
             if (dMatch >= 0.75)
             {
                 double dComp;
-                for (int k = 1; k <= endline-j; k++)
+                for (int k = 1; k <= m_nLastLine-j; k++)
                 {
-                    dComp = compareCodeLines(i+k, j+k, nDuplicateFlags);
+                    dComp = compareCodeLines(i+k, j+k, m_nDuplicateCodeFlag);
                     if (dComp == -1.0)
                     {
                         nBlankLines++;
@@ -4092,7 +4118,8 @@ vector<string> NumeReEditor::detectCodeDuplicates(int startline, int endline, in
                     {
                         if (k - nBlankLines > DUPLICATE_CODE_LENGTH)
                         {
-                            vCodeDuplicates.push_back(toString(i+1) + "-" + toString(i+k) + " == " + toString(j+1) + "-" + toString(j+k) + " [" + toString(dMatch * 100.0/(double)(k-nBlankLines), 3) + " %]");
+                            wxCriticalSectionLocker lock(m_editorCS);
+                            vDuplicateCodeResults.push_back(toString(i+1) + "-" + toString(i+k) + " == " + toString(j+1) + "-" + toString(j+k) + " [" + toString(dMatch * 100.0/(double)(k-nBlankLines), 3) + " %]");
                             if (nLongestMatch < k-1-nBlankLines)
                                 nLongestMatch = k-1-nBlankLines;
                         }
@@ -4110,7 +4137,21 @@ vector<string> NumeReEditor::detectCodeDuplicates(int startline, int endline, in
         nLongestMatch = 0;
     }
 
-    return vCodeDuplicates;
+    wxCriticalSectionLocker lock(m_editorCS);
+    m_nProcessValue = 100;
+    wxQueueEvent(GetEventHandler(), new wxThreadEvent());
+    return (wxThread::ExitCode)0;
+}
+
+void NumeReEditor::detectCodeDuplicates(int startline, int endline, int nDuplicateFlags)
+{
+    m_nDuplicateCodeFlag = nDuplicateFlags;
+    m_nFirstLine = startline;
+    m_nLastLine = endline;
+    if (CreateThread(wxTHREAD_DETACHED) != wxTHREAD_NO_ERROR)
+        return;
+    if (GetThread()->Run() != wxTHREAD_NO_ERROR)
+        return;
 }
 
 // semantic comparison between two code lines. Will return a double representing a matching percentage

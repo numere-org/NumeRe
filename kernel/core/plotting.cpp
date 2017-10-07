@@ -674,10 +674,11 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
             {
                 writeTeXMain(sOutputName);
             }
+            if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
+                NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
         }
         if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
         {
-            NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
             NumeReKernel::printPreFmt(LineBreak("|   " +_lang.get("PLOT_SAVE_LOCATION", sOutputName), _option, 0) + "\n");
         }
     }
