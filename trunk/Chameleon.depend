@@ -1127,11 +1127,13 @@
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\printps.h
 	"wx/prntbase.h"
 
-1505378354 d:\cpp\numere-source\trunk\editor\editor.h
+1507372049 d:\cpp\numere-source\trunk\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
 	<wx/dynarray.h>
+	<wx/thread.h>
+	<wx/buffer.h>
 	"../gui/wxterm.h"
 	"../common/datastructures.h"
 	"../compiler/compilerevent.h"
@@ -2277,7 +2279,7 @@
 	<sstream>
 	<windows.h>
 
-1499947533 d:\cpp\numere-source\trunk\kernel\core\tools.hpp
+1507370048 d:\cpp\numere-source\trunk\kernel\core\tools.hpp
 	<iostream>
 	<iomanip>
 	<sstream>
@@ -3244,7 +3246,7 @@
 	<string>
 	<vector>
 
-1505646950 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1507373699 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -4101,7 +4103,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1506496728 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
+1506771283 source:d:\cpp\numere-source\trunk\kernel\core\plotting.cpp
 	"plotting.hpp"
 	"parser_functions.hpp"
 	"../kernel.hpp"

@@ -5,6 +5,8 @@
 #include <wx/stc/stc.h>
 #include <wx/menu.h>
 #include <wx/dynarray.h>
+#include <wx/thread.h>
+#include <wx/buffer.h>
 #include "../gui/wxterm.h"
 #include "../common/datastructures.h"
 #include "../compiler/compilerevent.h"
@@ -24,7 +26,7 @@ class ProjectInfo;
 class DebugManager;
 
 
-class NumeReEditor : public wxStyledTextCtrl
+class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 {
 public:
 	NumeReEditor(NumeReWindow* mframe, DebugManager* debugManager, Options* options, ProjectInfo* project,
@@ -113,6 +115,10 @@ public:
 	void OnFindDuplicateCode(int nDuplicateFlag = 1); // 0 = direct comparison, 1 = use var semanticals, 2 = use string semanticals, 3 = use all semanticals
 	void IndicateDuplicatedLine(int nStart1, int nEnd1, int nStart2, int nEnd2);
 
+	// for the duplicate code analysis
+	virtual wxThread::ExitCode Entry();
+	void OnThreadUpdate(wxThreadEvent& event);
+
 	void AddBreakpoint( int linenum );
 	void RemoveBreakpoint( int linenum );
 	void SetSyntax(NumeReSyntax* __syntax) {if (!_syntax){_syntax = __syntax;}}
@@ -192,7 +198,7 @@ private:
 	int calculateLinesOfCode(int startline, int endline);
 	int countNumberOfComments(int startline, int endline);
 	int insertTextAndMove(int nPosition, const wxString& sText);
-	vector<string> detectCodeDuplicates(int startline, int endline, int nDuplicateFlags);
+	void detectCodeDuplicates(int startline, int endline, int nDuplicateFlags);
 	double compareCodeLines(int nLine1, int nLine2, int nDuplicateFlags);
 	string getSemanticLine(int nLine, int nDuplicateFlags);
 	map<int,int> getDifferences(int nStart1, int nEnd1, int nStart2, int nEnd2);
@@ -228,6 +234,12 @@ private:
 	wxTerm* m_terminal;
 
 	DuplicateCodeDialog* m_duplicateCode;
+	wxCriticalSection m_editorCS;
+	vector<string> vDuplicateCodeResults;
+	int m_nProcessValue;
+	int m_nDuplicateCodeFlag;
+	int m_nFirstLine;
+	int m_nLastLine;
 
 	bool m_bLoadingFile;
 	bool m_bLastSavedRemotely;

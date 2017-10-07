@@ -175,6 +175,8 @@ inline bool validateParenthesisNumber(const string& sCmd)
             nVectCount++;
         if (sCmd[i] == '}' && !isInQuotes(sCmd, i, true))
             nVectCount--;
+        if (nParCount < 0 || nVectCount < 0)
+            return false;
     }
     return !((bool)nParCount || (bool)nVectCount);
 }

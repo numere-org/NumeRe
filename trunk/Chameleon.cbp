@@ -438,7 +438,7 @@
 		<Unit filename="kernel/core/loop.cpp" />
 		<Unit filename="kernel/core/loop.hpp" />
 		<Unit filename="kernel/core/main.cpp">
-			<Option target="Debug" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="kernel/core/matrixoperations.cpp" />
 		<Unit filename="kernel/core/odesolver.cpp" />
