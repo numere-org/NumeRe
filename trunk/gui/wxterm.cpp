@@ -268,7 +268,7 @@ vector<string> wxTerm::getPathSettings()
 void wxTerm::passEditedTable(const vector<vector<string> >& _sTable)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
-    NumeReKernel::sTable = _sTable;
+    _kernel.sTable.push(_sTable);
     m_bTableEditAvailable = true;
 }
 
@@ -416,11 +416,12 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
     bool done = false;
     bool editTable = false;
     string sFileName = "";
-    stringmatrix sTable;
+    queue<string> sTableName;
+    queue<stringmatrix> sTable;
     vector<string> vDebugInfo;
     unsigned int nLineNumber = 0;
     int nFileOpenFlag = 0;
-    GraphHelper* _helper = nullptr;
+    queue<GraphHelper*> _helper;
     string sAnswer = "";
     {
         wxCriticalSectionLocker lock(m_kernelCS);
@@ -446,7 +447,8 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
                 nFileOpenFlag = _kernel.ReadOpenFileFlag();
                 break;
             case NumeReKernel::NUMERE_GRAPH_UPDATE:
-                _helper = _kernel.graphHelper;
+                sAnswer = m_sAnswer;
+                _helper.swap(_kernel.graphHelper);
                 break;
             case NumeReKernel::NUMERE_OPEN_DOC:
                 sAnswer = m_sAnswer;//+ "|\n|<- ";
@@ -455,13 +457,13 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
                 break;
             case NumeReKernel::NUMERE_SHOW_TABLE:
                 sAnswer = m_sAnswer;//+ "|\n|<- ";
-                sTable = NumeReKernel::sTable;
-                sFileName = NumeReKernel::sTableName;
+                sTable.swap(_kernel.sTable);
+                sTableName.swap(_kernel.sTableName);
                 break;
             case NumeReKernel::NUMERE_EDIT_TABLE:
                 sAnswer = m_sAnswer;//+ "|\n|<- ";
-                sTable = NumeReKernel::sTable;
-                sFileName = NumeReKernel::sTableName;
+                sTable.swap(_kernel.sTable);
+                sTableName.swap(_kernel.sTableName);
                 editTable = true;
                 break;
              case NumeReKernel::NUMERE_DEBUG_EVENT:
@@ -498,13 +500,31 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
     if (sTable.size())
     {
         if (editTable)
-            m_wxParent->editTable(sTable, sFileName);
+        {
+            while (sTable.size())
+            {
+                m_wxParent->editTable(sTable.front(), sTableName.front());
+                sTable.pop();
+                sTableName.pop();
+            }
+        }
         else
-            m_wxParent->openTable(sTable, sFileName);
+        {
+            while (sTable.size())
+            {
+                m_wxParent->openTable(sTable.front(), sTableName.front());
+                sTable.pop();
+                sTableName.pop();
+            }
+        }
     }
-    else if (_helper)
+    else if (_helper.size())
     {
-        m_wxParent->showGraph(_helper);
+        while (_helper.size())
+        {
+            m_wxParent->showGraph(_helper.front());
+            _helper.pop();
+        }
     }
     else if (vDebugInfo.size())
     {

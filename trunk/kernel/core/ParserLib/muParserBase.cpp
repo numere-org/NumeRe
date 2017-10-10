@@ -2546,8 +2546,8 @@ namespace mu
                                 }
                                 if ((iter->second).size() > i)
                                     *vars[iter->first] = (iter->second)[i];
-                                else if ((iter->second).size() == 1)
-                                    *vars[iter->first] = (iter->second)[0];
+                                else if ((iter->second).size() == 1);
+                                    //*vars[iter->first] = (iter->second)[0];
                                 else
                                     *vars[iter->first] = 0.0;
                             }
@@ -2864,6 +2864,7 @@ namespace mu
         while (iter != mVectorVars.end())
         {
             //cerr << iter->first << endl;
+            string siter = iter->first;
             if ((iter->first).find('[') != string::npos && (iter->first).find(']') != string::npos)
             {
                 if (bIgnoreProcedureVects && (iter->first).substr(0, 6) == "PROC~[")
