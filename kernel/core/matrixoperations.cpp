@@ -1029,11 +1029,11 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
     // 2. Vektoren deklarieren
     // 3. Evalschleife durchführen
 
-    if (sCmd.find("data(") == string::npos
+    /*if (sCmd.find("data(") == string::npos
         && !_data.containsCacheElements(sCmd)
         && __sCmd.find("matrix[") == string::npos
         && __sCmd.find("returnedMatrix[") == string::npos)
-        throw SyntaxError(SyntaxError::NO_MATRIX_FOR_MATOP, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::NO_MATRIX_FOR_MATOP, sCmd, SyntaxError::invalid_position);*/
 
     // Data und Caches ersetzen
     while (__sCmd.find("data(", nPos) != string::npos)
@@ -1286,10 +1286,15 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
     if (vMatrixVector.size())
         vMatrixVector.clear();
     for (int i = 0; i < nResults; i++)
+    {
+        //double d = v[i];
         vMatrixVector.push_back(v[i]);
+    }
     _mTarget.push_back(vMatrixVector);
     if (vMatrixVector.size() > nLinesCount)
         nLinesCount = vMatrixVector.size();
+    if (!nColCount && vMatrixVector.size())
+        nColCount = 1;
 
     // Fuer die Zahl der Cols
     for (unsigned int i = 1; i < nColCount; i++)

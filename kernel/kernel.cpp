@@ -36,7 +36,7 @@ time_t tTimeZero = time(0);
 
 
 wxTerm* NumeReKernel::m_parent = nullptr;
-GraphHelper* NumeReKernel::graphHelper = nullptr;
+queue<GraphHelper*> NumeReKernel::graphHelper;
 int NumeReKernel::nLINE_LENGTH = 80;
 bool NumeReKernel::bWritingTable = false;
 string NumeReKernel::sFileToEdit = "";
@@ -47,9 +47,9 @@ int NumeReKernel::nLastStatusVal = 0;
 unsigned int NumeReKernel::nLastLineLength = 0;
 bool NumeReKernel::modifiedSettings = false;
 bool NumeReKernel::bCancelSignal = false;
-stringmatrix NumeReKernel::sTable;
+queue<stringmatrix> NumeReKernel::sTable;
 vector<string> NumeReKernel::vDebugInfos;
-string NumeReKernel::sTableName = "";
+queue<string> NumeReKernel::sTableName;
 Debugmessenger NumeReKernel::_messenger;
 bool NumeReKernel::bSupressAnswer = false;
 bool NumeReKernel::bGettingLine = false;
@@ -1971,23 +1971,24 @@ void NumeReKernel::showTable(string** __stable, size_t cols, size_t lines, strin
     else
     {
         wxCriticalSectionLocker lock(m_parent->m_kernelCS);
-        sTable.clear();
+        stringmatrix strmatTable;
         for (size_t i = 0; i < lines; i++)
         {
-            sTable.push_back(vector<string>(cols, ""));
+            strmatTable.push_back(vector<string>(cols, ""));
             for (size_t j = 0; j < cols; j++)
             {
-                sTable[i][j] = __stable[i][j];
+                strmatTable[i][j] = __stable[i][j];
             }
         }
-        sTableName = __name;
+        sTable.push(strmatTable);
+        sTableName.push(__name);
         if (openeditable)
             m_parent->m_KernelStatus = NUMERE_EDIT_TABLE;
         else
             m_parent->m_KernelStatus = NUMERE_SHOW_TABLE;
     }
     wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
-    Sleep(100);
+    Sleep(150);
 }
 
 void NumeReKernel::updateGraphWindow(GraphHelper* _helper)
@@ -1997,12 +1998,12 @@ void NumeReKernel::updateGraphWindow(GraphHelper* _helper)
     else
     {
         wxCriticalSectionLocker lock(m_parent->m_kernelCS);
-        graphHelper = _helper;
+        graphHelper.push(_helper);
 
         m_parent->m_KernelStatus = NUMERE_GRAPH_UPDATE;
     }
     wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
-    Sleep(100);
+    Sleep(150);
 }
 
 stringmatrix NumeReKernel::getTable()
@@ -2026,7 +2027,9 @@ stringmatrix NumeReKernel::getTable()
 
     if (bWasCanceled)
         return stringmatrix();
-    return sTable;
+    stringmatrix strtab = sTable.front();
+    sTable.pop();
+    return strtab;
 }
 
 void NumeReKernel::showDebugError(const string& sTitle)

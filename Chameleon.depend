@@ -2506,9 +2506,10 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1505808916 d:\cpp\numere-source\trunk\kernel\kernel.hpp
+1507622777 d:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
+	<queue>
 	"core/error.hpp"
 	"core/settings.hpp"
 	"core/output.hpp"
@@ -3729,7 +3730,7 @@
 	"../NumeReWindow.h"
 	<wx/regex.h>
 
-1494096411 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
+1507373932 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
 	"duplicatecodedialog.hpp"
 	"../../kernel/core/language.hpp"
 	"../../editor/editor.h"
@@ -3941,7 +3942,7 @@
 	"wxssh.h"
 	"../common/debug.h"
 
-1505809162 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
+1507624191 source:d:\cpp\numere-source\trunk\gui\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -4019,7 +4020,7 @@
 	"loop.hpp"
 	"../kernel.hpp"
 
-1498674456 source:d:\cpp\numere-source\trunk\kernel\core\matrixoperations.cpp
+1507581906 source:d:\cpp\numere-source\trunk\kernel\core\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -4045,7 +4046,7 @@
 	<algorithm>
 	<numeric>
 
-1505655923 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
+1507571554 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
 	"muParserBase.h"
 	"muParserTemplateMagic.h"
 	<cassert>
@@ -4225,7 +4226,7 @@
 	"debugmessenger.hpp"
 	"core/tools.hpp"
 
-1505809182 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1507624290 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 

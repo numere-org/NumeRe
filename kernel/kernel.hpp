@@ -20,6 +20,7 @@
 
 #include <string>
 #include <fstream>
+#include <queue>
 
 // --> LOKALE HEADER <--
 #include "core/error.hpp"
@@ -79,7 +80,7 @@ class NumeReKernel
 
     public:
         static wxTerm* m_parent;
-        static GraphHelper* graphHelper;
+        static queue<GraphHelper*> graphHelper;
         static int nLINE_LENGTH;
         static bool bWritingTable;
         static bool bCancelSignal;
@@ -90,9 +91,9 @@ class NumeReKernel
         static int nLastStatusVal;
         static unsigned int nLastLineLength;
         static bool modifiedSettings;
-        static stringmatrix sTable;
+        static queue<stringmatrix> sTable;
         static vector<string> vDebugInfos;
-        static string sTableName;
+        static queue<string> sTableName;
         static Debugmessenger _messenger;
         static bool bSupressAnswer;
         static bool bGettingLine;
