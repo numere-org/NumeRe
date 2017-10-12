@@ -492,6 +492,9 @@ namespace mu
         }
         //std::cerr << sBuf << endl;
 
+        // reset vector dimension so that it will be evaluated at least once
+        nVectorDimension = 0;
+
         if (sBuf.find('{') != string::npos || sBuf.find('}') != string::npos)
             Error(ecMISSING_PARENS);
         /*if (bMakeLoopByteCode && !bPauseLoopByteCode && vValidByteCode[nthLoopElement])
@@ -2516,12 +2519,12 @@ namespace mu
                 valbuf_type buffer;
                 std::map<double*, double> mFirstVals;
                 buffer.push_back(0.0);
-                for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
+                for (auto iter = mNonSingletonVectorVars.begin(); iter != mNonSingletonVectorVars.end(); ++iter)
                 {
                     //std::cerr << iter->first << endl;
-                    if ((iter->second).size() > nVectorlength && iter->first != "~TRGTVCT[~]" && vars.find(iter->first) != vars.end())
+                    if ((iter->second)->size() > nVectorlength && iter->first != "~TRGTVCT[~]" && vars.find(iter->first) != vars.end())
                     {
-                        nVectorlength = (iter->second).size();
+                        nVectorlength = (iter->second)->size();
                         /*for (unsigned int nsize = 0; nsize < (iter->second).size(); nsize++)
                             std::cerr << (iter->second)[nsize] << endl;*/
                         //std::cerr << "found" << endl;
@@ -2531,11 +2534,11 @@ namespace mu
                 for (int j = 1; j < m_nFinalResultIdx + 1; j++)
                     buffer.push_back(m_vStackBuffer[j]);
 
-                if (nVectorlength)
+                if (nVectorlength > 1)
                 {
                     for (unsigned int i = 0; i < nVectorlength; i++)
                     {
-                        for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
+                        for (auto iter = mNonSingletonVectorVars.begin(); iter != mNonSingletonVectorVars.end(); ++iter)
                         {
                             if (vars.find(iter->first) != vars.end())
                             {
@@ -2544,9 +2547,9 @@ namespace mu
                                     mFirstVals[vars[iter->first]] = *(vars[iter->first]);
                                     continue;
                                 }
-                                if ((iter->second).size() > i)
-                                    *vars[iter->first] = (iter->second)[i];
-                                else if ((iter->second).size() == 1);
+                                if ((iter->second)->size() > i)
+                                    *vars[iter->first] = (*(iter->second))[i];
+                                else if ((iter->second)->size() == 1);
                                     //*vars[iter->first] = (iter->second)[0];
                                 else
                                     *vars[iter->first] = 0.0;
@@ -2619,30 +2622,33 @@ namespace mu
     */
     value_type ParserBase::Eval()
     {
-        if (mVectorVars.size())
+        if (mVectorVars.size() && (nVectorDimension > 1 || !nVectorDimension))
         {
             (this->*m_pParseFormula)();
 
-            unsigned int nVectorlength = 0;
+            unsigned int nVectorlength = 1;
             varmap_type vars = GetUsedVar();
             valbuf_type buffer;
             buffer.push_back(0.0);
-            for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
+            for (auto iter = mNonSingletonVectorVars.begin(); iter != mNonSingletonVectorVars.end(); ++iter)
             {
-                if ((iter->second).size() > nVectorlength && vars.find(iter->first) != vars.end())
-                    nVectorlength = (iter->second).size();
+                // check only vector variables which are larger than one element
+                if (vars.find(iter->first) != vars.end() && (iter->second)->size() > nVectorlength)
+                    nVectorlength = (iter->second)->size();
             }
             //std::cerr << "Evaluating " << nVectorlength << " Expressions ..." << endl;
 
             for (int j = 1; j < m_nFinalResultIdx + 1; j++)
                 buffer.push_back(m_vStackBuffer[j]);
 
-            if (nVectorlength)
+            nVectorDimension = nVectorlength;
+
+            if (nVectorlength > 1)
             {
                 std::map<double*, double> mFirstVals;
                 for (unsigned int i = 0; i < nVectorlength; i++)
                 {
-                    for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
+                    for (auto iter = mNonSingletonVectorVars.begin(); iter != mNonSingletonVectorVars.end(); ++iter)
                     {
                         if (vars.find(iter->first) != vars.end())
                         {
@@ -2651,10 +2657,10 @@ namespace mu
                                 mFirstVals[vars[iter->first]] = *(vars[iter->first]);
                                 continue;
                             }
-                            if ((iter->second).size() > i)
-                                *vars[iter->first] = (iter->second)[i];
-                            else if ((iter->second).size() == 1)
-                                *vars[iter->first] = (iter->second)[0];
+                            if ((iter->second)->size() > i)
+                                *vars[iter->first] = (*(iter->second))[i];
+                            else if ((iter->second)->size() == 1);
+                                //*vars[iter->first] = (iter->second)[0];
                             else
                                 *vars[iter->first] = 0.0;
                         }
@@ -2832,6 +2838,12 @@ namespace mu
             //std::cerr << "Defining " << sVarName << " with " << vVar[0] << endl;
         }
         mVectorVars[sVarName] = vVar;
+        if (vVar.size() > 1)
+            mNonSingletonVectorVars[sVarName] = &mVectorVars[sVarName];
+        else if (mNonSingletonVectorVars.find(sVarName) != mNonSingletonVectorVars.end())
+        {
+            mNonSingletonVectorVars.erase(mNonSingletonVectorVars.find(sVarName));
+        }
         //std::cerr << mVectorVars[sVarName].size() << endl;
         return;
     }
@@ -2877,6 +2889,9 @@ namespace mu
             }
             else
                 iter = mVectorVars.erase(iter); //iter++;
+            auto ns_iter = mNonSingletonVectorVars.find(siter);
+            if (ns_iter != mNonSingletonVectorVars.end())
+                mNonSingletonVectorVars.erase(ns_iter);
         }
         if (!bIgnoreProcedureVects || !mVectorVars.size())
         {

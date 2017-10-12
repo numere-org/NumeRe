@@ -1633,13 +1633,15 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
         {
             sCmd[i][1] += " ";
             // Könnte Schwierigkeiten machen
-            if (sCmd[i][1].find("+=") != string::npos
-                || sCmd[i][1].find("-=") != string::npos
-                || sCmd[i][1].find("*=") != string::npos
-                || sCmd[i][1].find("/=") != string::npos
-                || sCmd[i][1].find("^=") != string::npos
-                || sCmd[i][1].find("++") != string::npos
-                || sCmd[i][1].find("--") != string::npos)
+            if (findCommand(sCmd[i][1]).sString != "matop"
+                && findCommand(sCmd[i][1]).sString != "mtrxop"
+                && (sCmd[i][1].find("+=") != string::npos
+                    || sCmd[i][1].find("-=") != string::npos
+                    || sCmd[i][1].find("*=") != string::npos
+                    || sCmd[i][1].find("/=") != string::npos
+                    || sCmd[i][1].find("^=") != string::npos
+                    || sCmd[i][1].find("++") != string::npos
+                    || sCmd[i][1].find("--") != string::npos))
             {
                 bool bBreakPoint = (sCmd[i][1].substr(sCmd[i][1].find_first_not_of(" \t"),2) == "|>");
                 if (bBreakPoint)

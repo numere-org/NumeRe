@@ -94,12 +94,14 @@ namespace mu
             /** \brief Maximum number of threads spawned by OpenMP when using the bulk mode. */
             static const int s_MaxNumOpenMPThreads = 4;
 
-            mutable std::map<std::string,std::vector<double> > mVectorVars;
+            mutable std::map<std::string, std::vector<double> > mVectorVars;
+            mutable std::map<std::string, std::vector<double>* > mNonSingletonVectorVars;
             mutable double* dVectorVars;
             mutable int nVectorIndex;
             mutable int nVectorVarsSize;
             mutable varmap_type mTargets;
             mutable string_type sTargets;
+            mutable int nVectorDimension;
             void replaceLocalVars(std::string& sLine);
             bool checkDelimiter(const std::string& sLine);
 
