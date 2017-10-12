@@ -1746,7 +1746,8 @@ void NumeReKernel::printResult(const string& sLine, const string& sCmdCache, boo
         {
             wxCriticalSectionLocker lock(m_parent->m_kernelCS);
             m_parent->m_sAnswer += "|-> " + sLine + "\n";
-            m_parent->m_KernelStatus = NumeReKernel::NUMERE_CALC_UPDATE;
+            if (m_parent->m_KernelStatus < NumeReKernel::NUMERE_STATUSBAR_UPDATE || m_parent->m_KernelStatus == NumeReKernel::NUMERE_ANSWER_READ)
+                m_parent->m_KernelStatus = NumeReKernel::NUMERE_CALC_UPDATE;
         }
         wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
         Sleep(5);
@@ -1783,7 +1784,7 @@ void NumeReKernel::print(const string& __sLine)
         }
         wxCriticalSectionLocker lock(m_parent->m_kernelCS);
         m_parent->m_sAnswer += "|-> " + sLine + "\n";
-        if (m_parent->m_KernelStatus != NumeReKernel::NUMERE_PRINTLINE && m_parent->m_KernelStatus != NumeReKernel::NUMERE_CALC_UPDATE)
+        if (m_parent->m_KernelStatus < NumeReKernel::NUMERE_STATUSBAR_UPDATE || m_parent->m_KernelStatus == NumeReKernel::NUMERE_ANSWER_READ)//m_parent->m_KernelStatus != NumeReKernel::NUMERE_PRINTLINE && m_parent->m_KernelStatus != NumeReKernel::NUMERE_CALC_UPDATE)
             m_parent->m_KernelStatus = NumeReKernel::NUMERE_PRINTLINE;
     }
     if (bWritingTable)
@@ -1810,7 +1811,7 @@ void NumeReKernel::printPreFmt(const string& __sLine)
 
         wxCriticalSectionLocker lock(m_parent->m_kernelCS);
         m_parent->m_sAnswer += sLine;
-        if (m_parent->m_KernelStatus != NumeReKernel::NUMERE_PRINTLINE_PREFMT)
+        if (m_parent->m_KernelStatus < NumeReKernel::NUMERE_STATUSBAR_UPDATE || m_parent->m_KernelStatus == NumeReKernel::NUMERE_ANSWER_READ)//m_parent->m_KernelStatus != NumeReKernel::NUMERE_PRINTLINE_PREFMT)
             m_parent->m_KernelStatus = NumeReKernel::NUMERE_PRINTLINE_PREFMT;
     }
     if (bWritingTable)

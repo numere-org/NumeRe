@@ -4342,7 +4342,7 @@ void NumeReWindow::prepareFunctionTree()
             FileNameTreeData* data = new FileNameTreeData();
             data->isFunction = true;
             data->tooltip = prepareTooltip(vDirList[j]);
-            m_functionTree->AppendItem(currentNode, vDirList[j].substr(0, vDirList[j].find(' ')), idxFunctions, -1, data);
+            m_functionTree->AppendItem(currentNode, vDirList[j].substr(0, vDirList[j].find(')')+1), idxFunctions, -1, data);
         }
 	}
     m_functionTree->Toggle(functionNode);
@@ -4381,7 +4381,7 @@ string NumeReWindow::prepareTooltip(const string& sTooltiptext)
     size_t nClosingParens = sTooltiptext.find(')');
     string sTooltip = sTooltiptext;
 
-    if (sTooltiptext.find(' ') < nClosingParens)
+    if (sTooltiptext.find(' ') < nClosingParens && sTooltiptext.find(' ') < sTooltiptext.find('('))
     {
         nClosingParens = sTooltiptext.find(' ')-1;
         sTooltip.replace(nClosingParens+1, sTooltip.find_first_not_of(' ', nClosingParens+1)-nClosingParens-1, "   ");

@@ -165,9 +165,9 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
                     j = 1;
                     if (!_cache.isValidEntry(i,1,"cache"))
                         continue;
-                    while (!_cache.isValidEntry(i+j,1,"cache"))
+                    while (!_cache.isValidEntry(i+j,1,"cache") && i+j < _cache.getLines("cache", false)-1)
                         j++;
-                    if (!_cache.isValidEntry(i+j,0,"cache"))
+                    if (!_cache.isValidEntry(i+j,0,"cache") || !_cache.isValidEntry(i+j,1,"cache"))
                         break;
                     if (sInt_Line[0].length() && parser_iVars.vValue[0][1] > _cache.getElement(i,0,"cache"))
                         continue;
@@ -217,9 +217,9 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
                     j = 1;
                     if (!_cache.isValidEntry(i,1,"cache"))
                         continue;
-                    while (!_cache.isValidEntry(i+j,1,"cache"))
+                    while (!_cache.isValidEntry(i+j,1,"cache") && i+j < _cache.getLines("cache", false)-1)
                         j++;
-                    if (!_cache.isValidEntry(i+j,0,"cache"))
+                    if (!_cache.isValidEntry(i+j,0,"cache") || !_cache.isValidEntry(i+j,1,"cache"))
                         break;
                     if (sInt_Line[0].length() && parser_iVars.vValue[0][1] > _cache.getElement(i,0,"cache"))
                         continue;
