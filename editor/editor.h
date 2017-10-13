@@ -158,7 +158,7 @@ private:
 
     void updateDefaultHighlightSettings();
     void applyStrikeThrough();
-    int determineIndentationLevel(std::string sLine, bool& bIsElseCase);
+    int determineIndentationLevel(int nLine, bool& bIsElseCase);
     int countUmlauts(const string& sStr);
     string realignLangString(string sLine, size_t& lastpos);
     string addLinebreaks(const string& sLine);
