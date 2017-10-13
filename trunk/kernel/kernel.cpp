@@ -2131,7 +2131,7 @@ void NumeReKernel::evalDebuggerBreakPoint(Settings& _option, const map<string,st
             }
         }
     }
-    _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize-nLocalVarMapSkip, dLocalVars, sLocalStrings, nLocalStringMapSize, sStringMap, sCurrentCommand, sScriptFileName, nScriptLine);
+    _option._debug.gatherInformations(sLocalVars, nLocalVarMapSize-nLocalVarMapSkip, dLocalVars, sLocalStrings, nLocalStringMapSize, sStringMap, sCurrentCommand, sScriptFileName, nScriptLine-1);
     showDebugEvent(_lang.get("DBG_HEADLINE"), _option._debug.getModuleInformations(), _option._debug.getStackTrace(), _option._debug.getNumVars(), _option._debug.getStringVars());
     gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber()+1);
     _option._debug.resetBP();

@@ -4340,70 +4340,74 @@ void NumeReEditor::RemoveBreakpoint( int linenum )
 }
 
 
-int NumeReEditor::determineIndentationLevel(std::string sLine, bool& bIsElseCase)
+int NumeReEditor::determineIndentationLevel(int nLine, bool& bIsElseCase)
 {
     int nIndentCount = 0;
-    Match _mMatch;
-    while (sLine.length())
+
+    int nLineStart = this->PositionFromLine(nLine);
+    int nLineEnd = this->GetLineEndPosition(nLine);
+
+    for (int i = nLineStart; i < nLineEnd; i++)
     {
-        if (sLine.find("<install>") != string::npos
-            || sLine.find("<info>") != string::npos
-            || sLine.find("<helpindex>") != string::npos
-            || sLine.find("<helpfile>") != string::npos
-            || sLine.find("<article") != string::npos
-            || sLine.find("<keywords>") != string::npos
-            || sLine.find("<keyword>") != string::npos
-            || sLine.find("<codeblock>") != string::npos
-            || sLine.find("<exprblock>") != string::npos
-            || sLine.find("<example") != string::npos
-            || sLine.find("<item") != string::npos
-            || sLine.find("<list") != string::npos)
+        if (this->GetStyleAt(i) == wxSTC_NSCR_COMMAND)
         {
-            nIndentCount++;
-            sLine.erase(0,sLine.find('>')+1);
+            wxString word = this->GetTextRange(i, this->WordEndPosition(i+1, true));
+            if (word == "endif" || word == "endfor" || word == "endwhile" || word == "endcompose" || word == "endprocedure")
+            {
+                nIndentCount--;
+            }
+            else if (word == "if" || word == "for" || word == "while" || word == "compose" || word == "procedure")
+            {
+                nIndentCount++;
+            }
+            else if (word == "else" || word == "elseif")
+            {
+                bIsElseCase = true;
+            }
+            i += word.length();
         }
-        if (sLine.find("<endinstall>") != string::npos
-            || sLine.find("<endinfo>") != string::npos
-            || sLine.find("</helpindex>") != string::npos
-            || sLine.find("</helpfile>") != string::npos
-            || sLine.find("</article>") != string::npos
-            || sLine.find("</keywords>") != string::npos
-            || sLine.find("</keyword>") != string::npos
-            || sLine.find("</codeblock>") != string::npos
-            || sLine.find("</exprblock>") != string::npos
-            || sLine.find("</example>") != string::npos
-            || sLine.find("</item>") != string::npos
-            || sLine.find("</list>") != string::npos)
+        if (getFileType() == FILE_NSCR && this->GetStyleAt(i) == wxSTC_NSCR_INSTALL)
         {
-            nIndentCount--;
-            sLine.erase(0,sLine.find('>')+1);
+            wxString word;
+            if (this->GetCharAt(i) == '<' && this->FindText(i, nLineEnd, ">") != -1)
+            {
+                word = this->GetTextRange(i, this->FindText(i, nLineEnd, ">")+1);
+                if (word == "<install>"
+                    || word == "<info>"
+                    || word == "<helpindex>"
+                    || word == "<helpfile>"
+                    || word == "<keywords>"
+                    || word == "<keyword>"
+                    || word == "<codeblock>"
+                    || word == "<exprblock>")
+                    nIndentCount++;
+                else if (word == "<endinstall>"
+                    || word == "<endinfo>"
+                    || word == "</helpindex>"
+                    || word == "</helpfile>"
+                    || word == "</article>"
+                    || word == "</keywords>"
+                    || word == "</keyword>"
+                    || word == "</codeblock>"
+                    || word == "</exprblock>"
+                    || word == "</example>"
+                    || word == "</item>"
+                    || word == "</list>")
+                    nIndentCount--;
+            }
+            else if (this->GetCharAt(i) == '<')
+            {
+                word = this->GetTextRange(i, this->WordEndPosition(i+2, true));
+                if (word == "<article"
+                    || word == "<item"
+                    || word == "<list"
+                    || word == "<example")
+                    nIndentCount++;
+            }
+            i += word.length()-1;
         }
-        _mMatch = findCommand(sLine);
-        if (_mMatch.nPos == string::npos)
-            return nIndentCount;
-        if (_mMatch.sString == "endif"
-            || _mMatch.sString == "endwhile"
-            || _mMatch.sString == "endfor"
-            || _mMatch.sString == "endcompose"
-            || _mMatch.sString == "endprocedure")
-        {
-            nIndentCount--;
-        }
-        else if (_mMatch.sString == "if"
-            || _mMatch.sString == "while"
-            || _mMatch.sString == "for"
-            || _mMatch.sString == "compose"
-            || _mMatch.sString == "procedure")
-        {
-            nIndentCount++;
-        }
-        else if (_mMatch.sString == "elseif"
-            || _mMatch.sString == "else")
-        {
-            bIsElseCase = true;
-        }
-        sLine.erase(0,_mMatch.nPos+_mMatch.sString.length());
     }
+
     return nIndentCount;
 }
 
@@ -4566,44 +4570,22 @@ void NumeReEditor::ApplyAutoIndentation(int nFirstLine, int nLastLine) // int nF
     int nCurrentIndent = 0;
 
     string currentLine = "";
-    bool bBlockComment = false;
     bool bIsElseCase = false;
     this->SetTabWidth(4);
     this->BeginUndoAction();
-    //this->SetUseTabs(true);
     for (int i = nFirstLine; i < nLastLine; i++)
     {
         bIsElseCase = false;
-        currentLine = this->GetLine(i).ToStdString();
-        while (currentLine.back() == '\r' || currentLine.back() == '\n')
-            currentLine.pop_back();
-
-        if (currentLine.find("##") != string::npos)
-            currentLine.erase(currentLine.find("##"));
-        if (currentLine.find("*#") != string::npos && bBlockComment)
-        {
-            currentLine.erase(0, currentLine.find("*#")+2);
-            bBlockComment = false;
-        }
-        else if (bBlockComment)
+        int pos = this->PositionFromLine(i);
+        if (this->GetStyleAt(pos) == wxSTC_NSCR_COMMENT_LINE)
             continue;
-        if (currentLine.find("#*") != string::npos && !bBlockComment)
+        while (this->GetStyleAt(pos) == wxSTC_NSCR_COMMENT_BLOCK && pos < this->GetLineEndPosition(nLastLine))
         {
-            while (currentLine.find("#*") != string::npos && currentLine.find("*#", currentLine.find("#*")+2) != string::npos)
-            {
-                currentLine.erase(currentLine.find("#*"), currentLine.find("*#", currentLine.find("#*")+2)-currentLine.find("#*")+2);
-            }
-            if (currentLine.find("#*") != string::npos)
-            {
-                bBlockComment = true;
-                currentLine.erase(currentLine.find("#*"));
-            }
+            pos++;
         }
-        if (currentLine.find_first_not_of(" \t") == string::npos)
+        if (pos >= this->GetLineEndPosition(i)-2)
             continue;
-        currentLine = " " + currentLine + " ";
-
-        nCurrentIndent = determineIndentationLevel(currentLine, bIsElseCase);
+        nCurrentIndent = determineIndentationLevel(i, bIsElseCase);
         if (!nCurrentIndent && bIsElseCase)
         {
             this->SetLineIndentation(i, 4*(nIndentCount-1));

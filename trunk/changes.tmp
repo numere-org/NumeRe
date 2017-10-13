@@ -12,3 +12,4 @@ Cleaned	The duplicate code analysis runs now in a secondary thread and doesn't l
 Fixed	Fixed a rare bug, which occured in scripts in combination with vector vars and a singleton vector var, which was overwritten by a scalar equation
 Fixed	Re-enabled the recursive expressions of matrices and scalar values in "matop" command mode.
 Fixed	Sometimes missing graphs, if they were created in a very short amount of time, are now available.
+Fixed	Removed a glitch in the indentation feature, which occured in combination with tabulator characters.
