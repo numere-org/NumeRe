@@ -4371,15 +4371,20 @@ int NumeReEditor::determineIndentationLevel(int nLine, bool& bIsElseCase)
             wxString word;
             if (this->GetCharAt(i) == '<' && this->FindText(i, nLineEnd, ">") != -1)
             {
-                word = this->GetTextRange(i, this->FindText(i, nLineEnd, ">")+1);
+                word = this->GetTextRange(i, this->WordEndPosition(i+2, true)+1);
                 if (word == "<install>"
                     || word == "<info>"
                     || word == "<helpindex>"
                     || word == "<helpfile>"
                     || word == "<keywords>"
                     || word == "<keyword>"
+                    || word == "<list>"
                     || word == "<codeblock>"
-                    || word == "<exprblock>")
+                    || word == "<exprblock>"
+                    || word == "<article "
+                    || word == "<item "
+                    || word == "<list "
+                    || word == "<example ")
                     nIndentCount++;
                 else if (word == "<endinstall>"
                     || word == "<endinfo>"
@@ -4395,16 +4400,26 @@ int NumeReEditor::determineIndentationLevel(int nLine, bool& bIsElseCase)
                     || word == "</list>")
                     nIndentCount--;
             }
-            else if (this->GetCharAt(i) == '<')
+            else
             {
-                word = this->GetTextRange(i, this->WordEndPosition(i+2, true));
-                if (word == "<article"
-                    || word == "<item"
-                    || word == "<list"
-                    || word == "<example")
+                word = this->GetTextRange(i, this->WordEndPosition(i, true));
+                if (word == "procedure"
+                    || word == "if"
+                    || word == "for"
+                    || word == "while"
+                    || word == "compose")
                     nIndentCount++;
+                else if (word == "endprocedure"
+                    || word == "endif"
+                    || word == "endfor"
+                    || word == "endwhile"
+                    || word == "endcompose")
+                    nIndentCount--;
+                else if (word == "else" || word == "elseif")
+                    bIsElseCase = true;
             }
-            i += word.length()-1;
+            if (word.length())
+                i += word.length()-1;
         }
     }
 
