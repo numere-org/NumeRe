@@ -3247,7 +3247,7 @@
 	<string>
 	<vector>
 
-1507904467 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1507972806 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
