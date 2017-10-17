@@ -87,7 +87,7 @@ class ProcedureVarFactory
 
         string resolveVariables(string sProcedureCommandLine)
             {
-                return resolveLocalTables(resolveLocalStrings(resolveLocalVars(resolveArguments(sProcedureCommandLine))));
+                return resolveLocalTables(resolveArguments(resolveLocalStrings(resolveLocalVars(sProcedureCommandLine))));
             }
 };
 
