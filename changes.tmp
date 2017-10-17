@@ -13,3 +13,4 @@ Fixed	Fixed a rare bug, which occured in scripts in combination with vector vars
 Fixed	Re-enabled the recursive expressions of matrices and scalar values in "matop" command mode.
 Fixed	Sometimes missing graphs, if they were created in a very short amount of time, are now available.
 Fixed	Removed a glitch in the indentation feature, which occured in combination with tabulator characters.
+Fixed	There's no intereference between local and global variables, which have the same name and were passed as arguments, any more.
