@@ -14,3 +14,4 @@ Fixed	Re-enabled the recursive expressions of matrices and scalar values in "mat
 Fixed	Sometimes missing graphs, if they were created in a very short amount of time, are now available.
 Fixed	Removed a glitch in the indentation feature, which occured in combination with tabulator characters.
 Fixed	There's no intereference between local and global variables, which have the same name and were passed as arguments, any more.
+Fixed	The error color of error messages is now interpreted correctly and will appear on every line of the error message.
