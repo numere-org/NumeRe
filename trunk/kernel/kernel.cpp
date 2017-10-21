@@ -1781,6 +1781,11 @@ void NumeReKernel::print(const string& __sLine)
                 sLine.insert(1, 1, (char)15);
             else
                 sLine.insert(0, 1, (char)15);
+            for (size_t i = 0; i < sLine.length(); i++)
+            {
+                if (sLine[i] == '\n' && i < sLine.length()-2)
+                    sLine.insert(i+1, 1, (char)15);
+            }
         }
         wxCriticalSectionLocker lock(m_parent->m_kernelCS);
         m_parent->m_sAnswer += "|-> " + sLine + "\n";
@@ -1807,6 +1812,11 @@ void NumeReKernel::printPreFmt(const string& __sLine)
                 sLine.insert(1, 1, (char)15);
             else
                 sLine.insert(0, 1, (char)15);
+            for (size_t i = 0; i < sLine.length(); i++)
+            {
+                if (sLine[i] == '\n' && i < sLine.length()-2)
+                    sLine.insert(i+1, 1, (char)15);
+            }
         }
 
         wxCriticalSectionLocker lock(m_parent->m_kernelCS);

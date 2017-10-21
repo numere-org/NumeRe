@@ -202,8 +202,6 @@ void GTerm::normal_output()
     {
         bErrorMessage = true;
         sInput_Data.erase(sInput_Data.find((char)15), 1);
-        if (sRemainingInput.find((char)15) == string::npos)
-            sRemainingInput.insert(0, 1, (char)15);
     }
     //char test = 0;
 #if 0
