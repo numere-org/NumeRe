@@ -19,6 +19,7 @@
 
 #include "parser_functions.hpp"
 #include "../kernel.hpp"
+#include "spline.h"
 
 value_type vAns;
 Integration_Vars parser_iVars;
@@ -30,13 +31,61 @@ const string sParserVersion = "1.0.2";
 void parser_ReplaceEntityStringOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityStringReplacement);
 void parser_ReplaceEntityOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityName, const string& sEntityReplacement, const Indices& _idx, Datafile& _data, Parser& _parser, const Settings& _option);
 
+// this function is for extracting the data out of the data object and storing it to a continous block of memory
+bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Datafile& _cache, int nDesiredCols = 2, bool bSort = true)
+{
+    // write the data
+    // the first case uses vector indices
+    if (_idx.vI.size() || _idx.vJ.size())
+    {
+        for (long long int i = 0; i < _idx.vI.size(); i++)
+        {
+            for (long long int j = 0; j < _idx.vJ.size(); j++)
+            {
+                _cache.writeToCache(i, j, "cache", _data.getElement(_idx.vI[i], _idx.vJ[j], sTableName));
+                if (!i)
+                    _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_idx.vJ[j], sTableName));
+            }
+        }
+    }
+    else // this is for the case of a continous block of data
+    {
+        if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sTableName, sTableName);
+        if (_idx.nI[1] == -1)
+            _idx.nI[1] = _idx.nI[0];
+        else if (_idx.nI[1] == -2)
+            _idx.nI[1] = _data.getLines(sTableName, false)-1;
+        if (_idx.nJ[1] == -1)
+            _idx.nJ[1] = _idx.nJ[0];
+        else if (_idx.nJ[1] == -2)
+        {
+            _idx.nJ[1] = _idx.nJ[0]+nDesiredCols-1;
+        }
+        if (_data.getCols(sTableName, false) <= _idx.nJ[1])
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sTableName, sTableName);
+        for (long long int i = 0; i <= _idx.nI[1]-_idx.nI[0]; i++)
+        {
+            for (long long int j = 0; j <= _idx.nJ[1]-_idx.nJ[0]; j++)
+            {
+                _cache.writeToCache(i, j, "cache", _data.getElement(_idx.nI[0]+i, _idx.nJ[0]+j, sTableName));
+                if (!i)
+                    _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_idx.nJ[0]+j, sTableName));
+            }
+        }
+    }
+    // sort, if sorting is activated
+    if (bSort)
+    {
+        _cache.sortElements("cache -sort c=1[2:]");
+    }
+    return true;
+}
+
 
 void printUnits(const string& sUnit, const string& sDesc, const string& sDim, const string& sValues, unsigned int nWindowsize)
 {
     NumeReKernel::printPreFmt("|     " +strlfill(sUnit, 11) /*std::left*/ +strlfill(sDesc, (nWindowsize-17)/3+(nWindowsize+1)%3) + strlfill(sDim, (nWindowsize-35)/3)+"="+strfill(sValues, (nWindowsize-2)/3)+"\n");
-                     ///<< std::setfill(' ') << std::setw((nWindowsize-17)/3+(nWindowsize+1)%3) << std::left << sDesc
-                     ///<< std::setfill(' ') << std::setw((nWindowsize-35)/3) << std::left << sDim << "="
-                     ///<< std::setfill(' ') << std::setw((nWindowsize-2)/3) << std::right << sValues) << endl;
     return;
 }
 
@@ -94,9 +143,6 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
 
     sInt_Line[2] = "1e-3";
     parser_iVars.vValue[0][3] = 1e-3;
-    // --> Deklarieren der Integrations-Variablen "x" <--
-    //_parser.DefineVar(parser_iVars.sName[0], &parser_iVars.vValue[0][0]);
-
     if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
     {
         //sErrorToken = "integrate";
@@ -5845,7 +5891,6 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
 
     if (sCmd.find("data(") == string::npos && !_data.containsCacheElements(sCmd))
         throw SyntaxError(SyntaxError::NO_DATA_FOR_FIT, sCmd, SyntaxError::invalid_position);
-    //string sBadFunctions = "ascii(),avg(),betheweizsaecker(),binom(),char(),cmp(),date(),dblfacul(),faculty(),findfile(),findparam(),gauss(),gcd(),getopt(),heaviside(),hermite(),is_nan(),is_string(),laguerre(),laguerre_a(),lcm(),legendre(),legendre_a(),max(),min(),norm(),num(),cnt(),pct(),phi(),prd(),rand(),range(),replace(),replaceall(),rint(),round(),sbessel(),sneumann(),split(),std(),strfnd(),string_cast(),strrfnd(),strlen(),student_t(),substr(),sum(),theta(),time(),to_char(),to_cmd(),to_string(),to_value(),Y()";
     string sBadFunctions = "ascii(),char(),findfile(),findparam(),gauss(),getopt(),is_string(),rand(),replace(),replaceall(),split(),strfnd(),string_cast(),strrfnd(),strlen(),time(),to_char(),to_cmd(),to_string(),to_value()";
     string sFitFunction = sCmd;
     string sParams = "";
@@ -9951,57 +9996,25 @@ bool parser_regularize(string& sCmd, Parser& _parser, Datafile& _data, Define& _
     _idx = parser_getIndices(sCmd, _parser, _data, _option);
     sDataset = sCmd.substr(0,sCmd.find('('));
     StripSpaces(sDataset);
-    if (_idx.vI.size() || _idx.vJ.size())
-    {
-        if (_idx.vJ.size() != 2)
-            return false;
-        _x.Create(_data.cnt(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0])));
-        _v.Create(_data.cnt(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0])));
-        dXmin = _data.min(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0]));
-        dXmax = _data.max(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0]));
-        sColHeaders[0] = _data.getHeadLineElement(_idx.vJ[0], sDataset) + "\n(regularisiert)";
-        sColHeaders[1] = _data.getHeadLineElement(_idx.vJ[1], sDataset) + "\n(regularisiert)";
-        for (long long int i = 0; i < _idx.vI.size(); i++)
-        {
-            _x.a[i] = _data.getElement(_idx.vI[i], _idx.vJ[0], sDataset);
-            _v.a[i] = _data.getElement(_idx.vI[i], _idx.vJ[1], sDataset);
-        }
-    }
-    else
-    {
-        if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
-            return false;
-        if (_idx.nI[1] == -1)
-            _idx.nI[1] = _idx.nI[0];
-        else if (_idx.nI[1] == -2)
-            _idx.nI[1] = _data.getLines(sDataset,false)-1;
-        if (_idx.nJ[1] == -1)
-            _idx.nJ[1] = _idx.nJ[0];
-        else if (_idx.nJ[1] == -2)
-        {
-            _idx.nJ[1] = _idx.nJ[0]+1;
-        }
-        if (_data.getCols(sDataset, false) <= _idx.nJ[1])
-            return false;
-        _v.Create(_data.cnt(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]));
-        _x.Create(_data.cnt(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]));
-        for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-        {
-            _v.a[i-_idx.nI[0]] = _data.getElement(i, _idx.nJ[1], sDataset);
-        }
-        dXmin = _data.min(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]);
-        dXmax = _data.max(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]);
-        sColHeaders[0] = _data.getHeadLineElement(_idx.nJ[0], sDataset) + "\\n(regularisiert)";
-        sColHeaders[1] = _data.getHeadLineElement(_idx.nJ[1], sDataset) + "\\n(regularisiert)";
-        for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-        {
-            _x.a[i-_idx.nI[0]] = _data.getElement(i, _idx.nJ[0], sDataset);
-        }
-    }
+    Datafile _cache;
+    getData(sDataset, _idx, _data, _cache);
 
-    /*cerr << _v.nx << " " << _v.Minimal() << " " << _v.Maximal() << endl;
-    cerr << _x.nx << " " << _x.Minimal() << " " << _x.Maximal() << endl;
-    cerr << dXmin << " " << dXmax << endl;*/
+    sColHeaders[0] = _cache.getHeadLineElement(0, "cache") + "\n(regularized)";
+    sColHeaders[1] = _cache.getHeadLineElement(1, "cache") + "\n(regularized)";
+
+    long long int nLines = _cache.getLines("cache", false);
+
+    dXmin = _cache.min("cache", 0, nLines-1, 0);
+    dXmax = _cache.max("cache", 0, nLines-1, 0);
+
+    _x.Create(nLines);
+    _v.Create(nLines);
+
+    for (long long int i = 0; i < nLines; i++)
+    {
+        _x.a[i] = _cache.getElement(i, 0, "cache");
+        _v.a[i] = _cache.getElement(i, 1, "cache");
+    }
 
     if (_x.nx != _v.GetNx())
         return false;
@@ -10046,59 +10059,23 @@ bool parser_pulseAnalysis(string& _sCmd, Parser& _parser, Datafile& _data, Defin
 
 
     // Indices lesen
-    //cerr << sCmd << endl;
     _idx = parser_getIndices(sCmd, _parser, _data, _option);
-    sDataset = sCmd;
-    sDataset.erase(sDataset.find('('));
+    sDataset = sCmd.substr(0,sCmd.find('('));
     StripSpaces(sDataset);
-    //cerr << sDataset << endl;
-    if (_idx.vI.size() || _idx.vJ.size())
-    {
-        if (_idx.vJ.size() != 2)
-            return false;
-        //_x.Create(_data.cnt(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0])));
-        _v.Create(_data.cnt(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0])));
-        dXmin = _data.min(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0]));
-        dXmax = _data.max(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0]));
-        for (long long int i = 0; i < _idx.vI.size(); i++)
-        {
-            //_x.a[i] = _data.getElement(_idx.vI[i], _idx.vJ[0], sDataset);
-            _v.a[i] = _data.getElement(_idx.vI[i], _idx.vJ[1], sDataset);
-        }
-    }
-    else
-    {
-        if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
-            return false;
-        if (_idx.nI[1] == -1)
-            _idx.nI[1] = _idx.nI[0];
-        else if (_idx.nI[1] == -2)
-            _idx.nI[1] = _data.getLines(sDataset,false)-1;
-        if (_idx.nJ[1] == -1)
-            _idx.nJ[1] = _idx.nJ[0];
-        else if (_idx.nJ[1] == -2)
-        {
-            _idx.nJ[1] = _idx.nJ[0]+1;
-        }
-        if (_data.getCols(sDataset, false) <= _idx.nJ[1])
-            return false;
-        _v.Create(_data.cnt(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]));
-        //_x.Create(_data.cnt(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]));
-        for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-        {
-            _v.a[i-_idx.nI[0]] = _data.getElement(i, _idx.nJ[1], sDataset);
-        }
-        dXmin = _data.min(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]);
-        dXmax = _data.max(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]);
-        /*for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-        {
-            _x.a[i-_idx.nI[0]] = _data.getElement(i, _idx.nJ[0], sDataset);
-        }*/
-    }
+    Datafile _cache;
+    getData(sDataset, _idx, _data, _cache);
 
-    /*cerr << _v.nx << " " << _v.Minimal() << " " << _v.Maximal() << endl;
-    cerr << _x.nx << " " << _x.Minimal() << " " << _x.Maximal() << endl;
-    cerr << dXmin << " " << dXmax << endl;*/
+    long long int nLines = _cache.getLines("cache", false);
+
+    dXmin = _cache.min("cache", 0, nLines-1, 0);
+    dXmax = _cache.max("cache", 0, nLines-1, 0);
+
+    _v.Create(nLines);
+
+    for (long long int i = 0; i < nLines; i++)
+    {
+        _v.a[i] = _cache.getElement(i, 1, "cache");
+    }
 
     dSampleSize = (dXmax-dXmin)/((double)_v.GetNx()-1.0);
     mglData _pulse(_v.Pulse('x'));
@@ -10193,60 +10170,27 @@ bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& 
 
 
     // Indices lesen
-    //cerr << sCmd << endl;
     _idx = parser_getIndices(sCmd, _parser, _data, _option);
-    sDataset = sCmd;
-    sDataset.erase(sDataset.find('('));
+    sDataset = sCmd.substr(0,sCmd.find('('));
     StripSpaces(sDataset);
-    //cerr << sDataset << endl;
+    Datafile _cache;
+    getData(sDataset, _idx, _data, _cache);
 
-    if (_idx.vI.size() || _idx.vJ.size())
+    sDataset = _cache.getHeadLineElement(1, "cache");
+
+    long long int nLines = _cache.getLines("cache", false);
+
+    dXmin = _cache.min("cache", 0, nLines-1, 0);
+    dXmax = _cache.max("cache", 0, nLines-1, 0);
+
+    _real.Create(nLines);
+    _imag.Create(nLines);
+
+    for (long long int i = 0; i < nLines; i++)
     {
-        if (_idx.vJ.size() != 2)
-            return false;
-        //_x.Create(_data.cnt(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0])));
-        _real.Create(_data.cnt(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0])));
-        _imag.Create(_data.cnt(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0])));
-        dXmin = _data.min(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0]));
-        dXmax = _data.max(sDataset, _idx.vI, vector<long long int>(_idx.vJ[0]));
-        for (long long int i = 0; i < _idx.vI.size(); i++)
-        {
-            //_x.a[i] = _data.getElement(_idx.vI[i], _idx.vJ[0], sDataset);
-            _real.a[i] = _data.getElement(_idx.vI[i], _idx.vJ[1], sDataset);
-        }
-        sDataset = _data.getHeadLineElement(_idx.vJ[0], sDataset);
+        _real.a[i] = _cache.getElement(i, 1, "cache");
     }
-    else
-    {
-        if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
-            return false;
-        if (_idx.nI[1] == -1)
-            _idx.nI[1] = _idx.nI[0];
-        else if (_idx.nI[1] == -2)
-            _idx.nI[1] = _data.getLines(sDataset,false)-1;
-        if (_idx.nJ[1] == -1)
-            _idx.nJ[1] = _idx.nJ[0];
-        else if (_idx.nJ[1] == -2)
-        {
-            _idx.nJ[1] = _idx.nJ[0]+1;
-        }
-        if (_data.getCols(sDataset, false) <= _idx.nJ[1])
-            return false;
-        _real.Create(_data.cnt(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]));
-        _imag.Create(_data.cnt(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]));
-        //_x.Create(_data.cnt(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]));
-        for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-        {
-            _real.a[i-_idx.nI[0]] = _data.getElement(i, _idx.nJ[1], sDataset);
-        }
-        dXmin = _data.min(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]);
-        dXmax = _data.max(sDataset, _idx.nI[0], _idx.nI[1]+1, _idx.nJ[0]);
-        /*for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-        {
-            _x.a[i-_idx.nI[0]] = _data.getElement(i, _idx.nJ[0], sDataset);
-        }*/
-        sDataset = _data.getHeadLineElement(_idx.nJ[0], sDataset);
-    }
+
     if (!nSamples || nSamples > _real.GetNx())
     {
         nSamples = _real.GetNx()/32;
@@ -10304,6 +10248,77 @@ bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& 
     return true;
 }
 
+string parser_createMonome(double dCoefficient, const string& sArgument)
+{
+    if (!dCoefficient)
+        return "";
+    if (dCoefficient < 0)
+        return "-" + toString(fabs(dCoefficient), 4) + "*" + sArgument;
+    else
+        return "+" + toString(dCoefficient, 4) + "*" + sArgument;
+}
 
+bool parser_spline(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+{
+    Indices _idx;
+    Datafile _cache;
+    tk::spline _spline;
+    vector<double> xVect, yVect;
+    string sTableName = sCmd.substr(sCmd.find(' '));
+    StripSpaces(sTableName);
+
+    _idx = parser_getIndices(sTableName, _parser, _data, _option);
+    sTableName.erase(sTableName.find('('));
+    getData(sTableName, _idx, _data, _cache);
+
+    long long int nLines = _cache.getLines("cache", false);
+
+    if (nLines < 2)
+        throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, sTableName);
+
+    for (long long int i = 0; i < nLines; i++)
+    {
+        xVect.push_back(_cache.getElement(i, 0, "cache"));
+        yVect.push_back(_cache.getElement(i, 1, "cache"));
+    }
+
+    _spline.set_points(xVect, yVect);
+
+    string sDefinition = "Spline(x) := ";
+    for (size_t i = 0; i < xVect.size()-1; i++)
+    {
+        string sRange = "(";
+        string sArgument;
+
+        if (xVect[i] == 0)
+            sArgument = "x";
+        else if (xVect[i] < 0)
+            sArgument = "(x+" + toString(fabs(xVect[i]), 4) + ")";
+        else
+            sArgument = "(x-" + toString(xVect[i], 4) + ")";
+
+        vector<double> vCoeffs = _spline[i];
+
+        sRange += toString(vCoeffs[0], 4) + parser_createMonome(vCoeffs[1], sArgument) + parser_createMonome(vCoeffs[2], sArgument+"^2") + parser_createMonome(vCoeffs[3], sArgument+"^3") + ")";
+
+        if (i == xVect.size()-2)
+            sRange += "*ivl(x," + toString(xVect[i], 4) + "," + toString(xVect[i+1], 4) + ",1,1)";
+        else
+            sRange += "*ivl(x," + toString(xVect[i], 4) + "," + toString(xVect[i+1], 4) + ",1,2)";
+        sDefinition += sRange;
+
+        if (i < xVect.size()-2)
+            sDefinition += " + ";
+    }
+
+    if (_option.getSystemPrintStatus())
+        NumeReKernel::print(LineBreak(sDefinition, _option, true, 0, 8));
+
+    if (_functions.isDefined(sDefinition.substr(0,sDefinition.find(":="))))
+        _functions.defineFunc(sDefinition, _parser, _option, true);
+    else
+        _functions.defineFunc(sDefinition, _parser, _option);
+    return true;
+}
 
 

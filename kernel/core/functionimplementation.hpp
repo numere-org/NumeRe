@@ -145,6 +145,7 @@ value_type parser_EllipticD(value_type, value_type, value_type);
 value_type parser_floor(value_type);
 value_type parser_roof(value_type);
 value_type parser_rect(value_type, value_type, value_type);
+value_type parser_ivl(value_type, value_type, value_type, value_type, value_type);
 value_type parser_studentFactor(value_type, value_type);
 value_type parser_gcd(value_type, value_type);
 value_type parser_lcm(value_type, value_type);
