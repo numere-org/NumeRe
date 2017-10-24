@@ -15,3 +15,5 @@ Fixed	Sometimes missing graphs, if they were created in a very short amount of t
 Fixed	Removed a glitch in the indentation feature, which occured in combination with tabulator characters.
 Fixed	There's no intereference between local and global variables, which have the same name and were passed as arguments, any more.
 Fixed	The error color of error messages is now interpreted correctly and will appear on every line of the error message.
+New	Added the new command "spline", which will calculate cubic slines on defined data points.
+New	Added a generalized interval function "ivl()", which was required for the correct implementation of "spline".

@@ -1149,6 +1149,38 @@ value_type parser_rect(value_type x, value_type x0, value_type x1)
     return (x > x1 || x < x0) ? 0 : 1;
 }
 
+// --> Intervallfunction <--
+value_type parser_ivl(value_type x, value_type x0, value_type x1, value_type lborder, value_type rborder)
+{
+    if (lborder < 0)
+        lborder = 0;
+    if (lborder > 2)
+        lborder = 2;
+    if (rborder < 0)
+        rborder = 0;
+    if (rborder > 2)
+        rborder = 2;
+    if (x < x0 && lborder)
+        return 0;
+    else if (x < x0)
+        return 1;
+    if (x == x0 && lborder != 2)
+        return 1;
+    else if (x == x0 && lborder == 2)
+        return 0;
+
+    if (x > x1 && rborder)
+        return 0;
+    else if (x > x1)
+        return 1;
+    if (x == x1 && rborder != 2)
+        return 1;
+    else if (x == x1 && rborder == 2)
+        return 0;
+
+    return 1;
+}
+
 // --> Student-Faktor <--
 value_type parser_studentFactor(value_type vFreedoms, value_type vAlpha)
 {

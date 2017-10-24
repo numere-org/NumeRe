@@ -2866,6 +2866,15 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYOWRD_STFA_SUCCESS", sArgument), _option) );
             return 1;
         }
+        else if (sCommand == "spline")
+        {
+            if (!parser_spline(sCmd, _parser, _data, _functions, _option))
+            {
+                doc_Help("spline", _option);
+            }
+
+            return 1;
+        }
         else if (sCommand == "save")
         {
             if (matchParams(sCmd, "define"))

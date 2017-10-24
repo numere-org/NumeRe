@@ -2699,7 +2699,7 @@
 	"documentation.hpp"
 	"odesolver.hpp"
 
-1500717653 d:\cpp\numere-source\trunk\kernel\core\parser_functions.hpp
+1508768288 d:\cpp\numere-source\trunk\kernel\core\parser_functions.hpp
 	<cmath>
 	<string>
 	<sstream>
@@ -3958,7 +3958,7 @@
 1490791550 source:d:\cpp\numere-source\trunk\kernel\core\basicexcel.cpp
 	"BasicExcel.hpp"
 
-1500717001 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1508768216 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
@@ -4035,9 +4035,10 @@
 1505291532 source:d:\cpp\numere-source\trunk\kernel\core\parser.cpp
 	"parser.hpp"
 
-1507633042 source:d:\cpp\numere-source\trunk\kernel\core\parser_functions.cpp
+1508838247 source:d:\cpp\numere-source\trunk\kernel\core\parser_functions.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
+	"spline.h"
 
 1494777301 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparser.cpp
 	"muParser.h"
@@ -4226,7 +4227,7 @@
 	"debugmessenger.hpp"
 	"core/tools.hpp"
 
-1508578975 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1508838874 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 
@@ -4234,7 +4235,7 @@
 	"syntax.hpp"
 	"core/tools.hpp"
 
-1508578577 source:d:\cpp\numere-source\trunk\network\actions.cpp
+1508579129 source:d:\cpp\numere-source\trunk\network\actions.cpp
 	"gterm.hpp"
 	"../common/debug.h"
 
@@ -4362,7 +4363,7 @@
 	<wx/wx.h>
 	<wx/splash.h>
 
-1505807962 d:\cpp\numere-source\trunk\kernel\core\functionimplementation.hpp
+1508838342 d:\cpp\numere-source\trunk\kernel\core\functionimplementation.hpp
 	<cstdlib>
 	<cmath>
 	<fstream>
@@ -4392,6 +4393,12 @@
 	"ParserLib/muParserTest.h"
 	"ParserLib/muParser.h"
 
-1505807980 source:d:\cpp\numere-source\trunk\kernel\core\functionimplementation.cpp
+1508839333 source:d:\cpp\numere-source\trunk\kernel\core\functionimplementation.cpp
 	"functionimplementation.hpp"
+
+1508762040 d:\cpp\numere-source\trunk\kernel\core\spline.h
+	<cstdio>
+	<cassert>
+	<vector>
+	<algorithm>
 
