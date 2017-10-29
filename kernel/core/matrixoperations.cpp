@@ -49,6 +49,18 @@ void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, Define& _f
 Matrix parser_MatrixSize(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 Matrix parser_MatrixAnd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 Matrix parser_MatrixOr(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_MatrixSum(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_MatrixStd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_MatrixAvg(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_MatrixPrd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_MatrixCnt(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_MatrixNum(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_MatrixNorm(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_MatrixMin(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_MatrixMax(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_MatrixMed(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_MatrixPct(const Matrix& _mMatrix, double dPercentage, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_MatrixCmp(const Matrix& _mMatrix, double dValue, int nType, const string& sCmd, const string& sExpr, size_t position);
 Matrix parser_MatrixReshape(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position);
 Matrix parser_MatrixResize(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position);
 //extern bool bSupressAnswer;
@@ -900,7 +912,156 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixOr(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+2));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+2))+3;
-            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+4))+5, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+        if (sCmd.substr(i,4) == "sum("
+            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
+        {
+            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            vReturnedMatrices.push_back(parser_MatrixSum(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+        if (sCmd.substr(i,4) == "avg("
+            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
+        {
+            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            vReturnedMatrices.push_back(parser_MatrixAvg(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+        if (sCmd.substr(i,4) == "std("
+            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
+        {
+            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            vReturnedMatrices.push_back(parser_MatrixStd(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+        if (sCmd.substr(i,4) == "num("
+            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
+        {
+            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            vReturnedMatrices.push_back(parser_MatrixNum(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+        if (sCmd.substr(i,4) == "cnt("
+            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
+        {
+            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            vReturnedMatrices.push_back(parser_MatrixCnt(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+        if (sCmd.substr(i,4) == "min("
+            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
+        {
+            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            vReturnedMatrices.push_back(parser_MatrixMin(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+        if (sCmd.substr(i,4) == "max("
+            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
+        {
+            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            vReturnedMatrices.push_back(parser_MatrixMax(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+        if (sCmd.substr(i,4) == "prd("
+            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
+        {
+            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            vReturnedMatrices.push_back(parser_MatrixPrd(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+        if (sCmd.substr(i,5) == "norm("
+            && getMatchingParenthesis(sCmd.substr(i+4)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,6))))
+        {
+            string sSubExpr = sCmd.substr(i+5, getMatchingParenthesis(sCmd.substr(i+4))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            vReturnedMatrices.push_back(parser_MatrixNorm(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+4))+5;
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+        if (sCmd.substr(i,4) == "med("
+            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
+        {
+            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            vReturnedMatrices.push_back(parser_MatrixMed(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+        if (sCmd.substr(i,4) == "cmp("
+            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
+        {
+            int nRes;
+            value_type* v;
+            string sExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
+            string sSubExpr = getNextArgument(sExpr, true);
+            if (!sExpr.length())
+                throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, i+4, "cmp()");
+            _parser.SetExpr(sExpr);
+            v = _parser.Eval(nRes);
+            if (nRes < 2)
+                throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, i+4, "cmp()");
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+
+            vReturnedMatrices.push_back(parser_MatrixCmp(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), v[0], (int)v[1], sCmd, sSubExpr, i+3));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+        if (sCmd.substr(i,4) == "pct("
+            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
+        {
+            int nRes;
+            value_type* v;
+            string sExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
+            string sSubExpr = getNextArgument(sExpr, true);
+            if (!sExpr.length())
+                throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, i+4, "pct()");
+            _parser.SetExpr(sExpr);
+            v = _parser.Eval(nRes);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+
+            vReturnedMatrices.push_back(parser_MatrixPct(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), v[0], sCmd, sSubExpr, i+3));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
             __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
@@ -1004,7 +1165,7 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
                 vReturnedMatrices.push_back(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option));
                 pos_back = i+getMatchingParenthesis(sCmd.substr(i))+1;
                 //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i))+1, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
-                __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+                __sCmd += "(returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"])";
                 i = pos_back-1;
             }
         }
@@ -1673,6 +1834,224 @@ Matrix parser_MatrixOr(const Matrix& _mMatrix, const string& sCmd, const string&
             }
         }
     }
+    return _mReturn;
+}
+
+Matrix parser_MatrixSum(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
+{
+    Matrix _mReturn = parser_ZeroesMatrix(1,1);
+    for (size_t i = 0; i < _mMatrix.size(); i++)
+    {
+        for (size_t j = 0; j < _mMatrix[0].size(); j++)
+        {
+            if (!isnan(_mMatrix[i][j]))
+                _mReturn[0][0] += _mMatrix[i][j];
+        }
+    }
+    return _mReturn;
+}
+
+Matrix parser_MatrixStd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
+{
+    Matrix _mReturn = parser_ZeroesMatrix(1,1);
+    Matrix _mAvg = parser_MatrixAvg(_mMatrix, sCmd, sExpr, position);
+    Matrix _mNum = parser_MatrixNum(_mMatrix, sCmd, sExpr, position);
+    for (size_t i = 0; i < _mMatrix.size(); i++)
+    {
+        for (size_t j = 0; j < _mMatrix[0].size(); j++)
+        {
+            if (!isnan(_mMatrix[i][j]))
+                _mReturn[0][0] += (_mMatrix[i][j] - _mAvg[0][0])*(_mMatrix[i][j] - _mAvg[0][0]);
+        }
+    }
+    _mReturn[0][0] = sqrt(_mReturn[0][0])/(_mNum[0][0]-1);
+    return _mReturn;
+}
+
+Matrix parser_MatrixAvg(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
+{
+    Matrix _mReturn = parser_ZeroesMatrix(1,1);
+    Matrix _mSum = parser_MatrixSum(_mMatrix, sCmd, sExpr, position);
+    Matrix _mNum = parser_MatrixNum(_mMatrix, sCmd, sExpr, position);
+    _mReturn[0][0] = _mSum[0][0] / _mNum[0][0];
+    return _mReturn;
+}
+
+Matrix parser_MatrixPrd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
+{
+    Matrix _mReturn = parser_IdentityMatrix(1);
+    for (size_t i = 0; i < _mMatrix.size(); i++)
+    {
+        for (size_t j = 0; j < _mMatrix[0].size(); j++)
+        {
+            if (!isnan(_mMatrix[i][j]))
+                _mReturn[0][0] *= _mMatrix[i][j];
+        }
+    }
+    return _mReturn;
+}
+
+Matrix parser_MatrixCnt(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
+{
+    Matrix _mReturn = parser_ZeroesMatrix(1,1);
+    _mReturn[0][0] = _mMatrix.size() * _mMatrix[0].size();
+    return _mReturn;
+}
+
+Matrix parser_MatrixNum(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
+{
+    Matrix _mReturn = parser_ZeroesMatrix(1,1);
+    for (size_t i = 0; i < _mMatrix.size(); i++)
+    {
+        for (size_t j = 0; j < _mMatrix[0].size(); j++)
+        {
+            if (!isnan(_mMatrix[i][j]))
+                _mReturn[0][0] += 1;
+        }
+    }
+    return _mReturn;
+}
+
+Matrix parser_MatrixNorm(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
+{
+    Matrix _mReturn = parser_ZeroesMatrix(1,1);
+    for (size_t i = 0; i < _mMatrix.size(); i++)
+    {
+        for (size_t j = 0; j < _mMatrix[0].size(); j++)
+        {
+            if (!isnan(_mMatrix[i][j]))
+                _mReturn[0][0] += _mMatrix[i][j]*_mMatrix[i][j];
+        }
+    }
+    _mReturn[0][0] = sqrt(_mReturn[0][0]);
+    return _mReturn;
+}
+
+Matrix parser_MatrixMin(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
+{
+    Matrix _mReturn = parser_ZeroesMatrix(1,1);
+    for (size_t i = 0; i < _mMatrix.size(); i++)
+    {
+        for (size_t j = 0; j < _mMatrix[0].size(); j++)
+        {
+            if (!i && !j)
+                _mReturn[0][0] = _mMatrix[i][j];
+            else if (_mMatrix[i][j] < _mReturn[0][0] || isnan(_mReturn[0][0]))
+                _mReturn[0][0] = _mMatrix[i][j];
+        }
+    }
+    return _mReturn;
+}
+
+Matrix parser_MatrixMax(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
+{
+    Matrix _mReturn = parser_ZeroesMatrix(1,1);
+    for (size_t i = 0; i < _mMatrix.size(); i++)
+    {
+        for (size_t j = 0; j < _mMatrix[0].size(); j++)
+        {
+            if (!i && !j)
+                _mReturn[0][0] = _mMatrix[i][j];
+            else if (_mMatrix[i][j] > _mReturn[0][0] || isnan(_mReturn[0][0]))
+                _mReturn[0][0] = _mMatrix[i][j];
+        }
+    }
+    return _mReturn;
+}
+
+Matrix parser_MatrixMed(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
+{
+    Matrix _mReturn = parser_ZeroesMatrix(1,1);
+    Datafile _cache;
+
+    for (size_t i = 0; i < _mMatrix.size(); i++)
+    {
+        for (size_t j = 0; j < _mMatrix[0].size(); j++)
+        {
+            _cache.writeToCache(j + i*_mMatrix.size(), 0, "cache", _mMatrix[i][j]);
+        }
+    }
+
+    _mReturn[0][0] = _cache.med("cache", 0, _mMatrix.size()*_mMatrix[0].size());
+    return _mReturn;
+}
+
+Matrix parser_MatrixPct(const Matrix& _mMatrix, double dPercentage, const string& sCmd, const string& sExpr, size_t position)
+{
+    Matrix _mReturn = parser_ZeroesMatrix(1,1);
+    Datafile _cache;
+
+    for (size_t i = 0; i < _mMatrix.size(); i++)
+    {
+        for (size_t j = 0; j < _mMatrix[0].size(); j++)
+        {
+            _cache.writeToCache(j + i*_mMatrix.size(), 0, "cache", _mMatrix[i][j]);
+        }
+    }
+
+    _mReturn[0][0] = _cache.pct("cache", 0, (long long int)(_mMatrix.size()*_mMatrix[0].size()), 0, -1, dPercentage);
+    return _mReturn;
+}
+
+Matrix parser_MatrixCmp(const Matrix& _mMatrix, double dValue, int nType, const string& sCmd, const string& sExpr, size_t position)
+{
+    Matrix _mReturn = parser_ZeroesMatrix(1,1);
+    Matrix _mCoords = parser_ZeroesMatrix(2,1);
+    _mCoords[0][0] = -1;
+
+    double dKeep = dValue;
+
+    for (size_t i = 0; i < _mMatrix.size(); i++)
+    {
+        for (size_t j = 0; j < _mMatrix[0].size(); j++)
+        {
+            if (isnan(_mMatrix[i][j]) || isinf(_mMatrix[i][j]))
+                continue;
+            if (_mMatrix[i][j] == dValue)
+            {
+                if (!nType || abs(nType) <= 1)
+                {
+                    _mCoords[0][0] = i+1;
+                    _mCoords[1][0] = j+1;
+                    return _mCoords;
+                }
+                else
+                    _mReturn[0][0] = _mMatrix[i][j];
+                return _mReturn;
+            }
+            else if (nType > 0 && _mMatrix[i][j] > dValue)
+            {
+                if (_mCoords[0][0] == -1 || _mMatrix[i][j] < dKeep)
+                {
+                    dKeep = _mMatrix[i][j];
+                    _mCoords[0][0] = i+1;
+                    _mCoords[1][0] = j+1;
+                }
+                else
+                    continue;
+            }
+            else if (nType < 0 && _mMatrix[i][j] < dValue)
+            {
+                if (_mCoords[0][0] == -1 || _mMatrix[i][j] > dKeep)
+                {
+                    dKeep = _mMatrix[i][j];
+                    _mCoords[0][0] = i+1;
+                    _mCoords[1][0] = j+1;
+                }
+                else
+                    continue;
+            }
+        }
+    }
+    if (_mCoords[0][0] == -1)
+        _mReturn[0][0] = NAN;
+    else if (nType <= -2 || nType >= 2)
+        _mReturn[0][0] = dKeep;
+    else
+    {
+        return _mCoords;
+    }
+
     return _mReturn;
 }
 
