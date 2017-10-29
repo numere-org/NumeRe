@@ -81,6 +81,7 @@ Procedure::~Procedure()
 Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script)
 {
     string sCache = "";
+    string sCurrentCommand = findCommand(sLine).sString;
 
     Indices _idx;
 
@@ -120,7 +121,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
         return thisReturnVal;
     }
     // --> Kommando "global" entfernen <--
-    if (findCommand(sLine).sString == "global")
+    if (sCurrentCommand == "global")
     {
         sLine = sLine.substr(findCommand(sLine).nPos+6);
         StripSpaces(sLine);
@@ -147,12 +148,12 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
         sProcKeep = "";
     }
 
-    if ((findCommand(sLine).sString == "compose"
-            || findCommand(sLine).sString == "endcompose"
+    if ((sCurrentCommand == "compose"
+            || sCurrentCommand == "endcompose"
             || sProcPlotCompose.length())
-        && findCommand(sLine).sString != "quit")
+        && sCurrentCommand != "quit")
     {
-        if (!sProcPlotCompose.length() && findCommand(sLine).sString == "compose")
+        if (!sProcPlotCompose.length() && sCurrentCommand == "compose")
         {
             sProcPlotCompose = "plotcompose ";
             if (matchParams(sLine, "multiplot", '='))
@@ -162,14 +163,14 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
             thisReturnVal.vNumVal.push_back(NAN);
             return thisReturnVal;
         }
-        else if (findCommand(sLine).sString == "abort")
+        else if (sCurrentCommand == "abort")
         {
             sProcPlotCompose = "";
             //cerr << "|-> Deklaration abgebrochen." << endl;
             thisReturnVal.vNumVal.push_back(NAN);
             return thisReturnVal;
         }
-        else if (findCommand(sLine).sString != "endcompose")
+        else if (sCurrentCommand != "endcompose")
         {
             string sCommand = findCommand(sLine).sString;
             if (sCommand.substr(0,4) == "plot"
@@ -216,9 +217,10 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
             nPos -= 5;
         }
         replaceLocalVars(sLine);
+        sCurrentCommand = findCommand(sLine).sString;
     }
 
-    if (findCommand(sLine).sString == "throw" && !getLoop())
+    if (sCurrentCommand == "throw" && !getLoop())
     {
         string sErrorToken;
         if (sLine.length() > 6 && (containsStrings(sLine) || _data.containsStringVars(sLine)))
@@ -239,7 +241,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
         bProcSupressAnswer = true;
     }
     // --> Gibt es "??"? Dann rufe die Prompt-Funktion auf <--
-    if (!getLoop() && sLine.find("??") != string::npos && sLine.substr(0,4) != "help")
+    if (!getLoop() && sLine.find("??") != string::npos && sCurrentCommand != "help")
         sLine = parser_Prompt(sLine);
 
     /* --> Die Keyword-Suche soll nur funktionieren, wenn keine Schleife eingegeben wird, oder wenn eine
@@ -247,14 +249,14 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
      *     eines Keywords noetig sind ("list", "help", "find", etc.) <--
      */
     if (!getLoop()
-        || sLine.substr(0,4) == "help"
-        || sLine.substr(0,3) == "man"
-        || sLine.substr(0,4) == "quit"
-        || sLine.substr(0,4) == "list"
-        || sLine.substr(0,4) == "find"
-        || sLine.substr(0,6) == "search"
-        || sLine.substr(0,4) == "mode"
-        || sLine.substr(0,5) == "menue")
+        || sCurrentCommand == "help"
+        || sCurrentCommand == "man"
+        || sCurrentCommand == "quit"
+        || sCurrentCommand == "list"
+        || sCurrentCommand == "find"
+        || sCurrentCommand == "search"
+        || sCurrentCommand == "mode"
+        || sCurrentCommand == "menue")
     {
         //bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
         NumeReKernel::bSupressAnswer = bProcSupressAnswer;
@@ -276,7 +278,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
 
 
     // --> Wenn die call()-Methode FALSE zurueckgibt, ist etwas schief gelaufen! <--
-    if (!getLoop() && sLine.substr(0,3) != "for" && sLine.substr(0,2) != "if" && sLine.substr(0,5) != "while")
+    if (!getLoop() && sCurrentCommand != "for" && sCurrentCommand != "if" && sCurrentCommand != "while")
     {
         if (!_functions.call(sLine, _option))
             throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
@@ -302,7 +304,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
 
     // --> Befinden wir uns in einem Loop? Dann ist nLoop > -1! <--
     //cerr << getLoop() << endl;
-    if (getLoop() || sLine.substr(0,3) == "for" || sLine.substr(0,2) == "if" || sLine.substr(0,5) == "while")
+    if (getLoop() || sCurrentCommand == "for" || sCurrentCommand == "if" || sCurrentCommand == "while")
     {
         // --> Die Zeile in den Ausdrucksspeicher schreiben, damit sie spaeter wiederholt aufgerufen werden kann <--
         setCommand(sLine, _parser, _data, _functions, _option, _out, _pData, _script);

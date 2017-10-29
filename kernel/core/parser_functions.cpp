@@ -66,11 +66,24 @@ bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Dat
             throw SyntaxError(SyntaxError::INVALID_INDEX, sTableName, sTableName);
         for (long long int i = 0; i <= _idx.nI[1]-_idx.nI[0]; i++)
         {
-            for (long long int j = 0; j <= _idx.nJ[1]-_idx.nJ[0]; j++)
+            if (nDesiredCols == 2)
             {
-                _cache.writeToCache(i, j, "cache", _data.getElement(_idx.nI[0]+i, _idx.nJ[0]+j, sTableName));
+                _cache.writeToCache(i, 0, "cache", _data.getElement(_idx.nI[0]+i, _idx.nJ[0], sTableName));
+                _cache.writeToCache(i, 1, "cache", _data.getElement(_idx.nI[0]+i, _idx.nJ[1], sTableName));
                 if (!i)
-                    _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_idx.nJ[0]+j, sTableName));
+                {
+                    _cache.setHeadLineElement(0, "cache", _data.getHeadLineElement(_idx.nJ[0], sTableName));
+                    _cache.setHeadLineElement(1, "cache", _data.getHeadLineElement(_idx.nJ[1], sTableName));
+                }
+            }
+            else
+            {
+                for (long long int j = 0; j <= _idx.nJ[1]-_idx.nJ[0]; j++)
+                {
+                    _cache.writeToCache(i, j, "cache", _data.getElement(_idx.nI[0]+i, _idx.nJ[0]+j, sTableName));
+                    if (!i)
+                        _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_idx.nJ[0]+j, sTableName));
+                }
             }
         }
     }
@@ -9999,8 +10012,8 @@ bool parser_regularize(string& sCmd, Parser& _parser, Datafile& _data, Define& _
     Datafile _cache;
     getData(sDataset, _idx, _data, _cache);
 
-    sColHeaders[0] = _cache.getHeadLineElement(0, "cache") + "\n(regularized)";
-    sColHeaders[1] = _cache.getHeadLineElement(1, "cache") + "\n(regularized)";
+    sColHeaders[0] = _cache.getHeadLineElement(0, "cache") + "\\n(regularized)";
+    sColHeaders[1] = _cache.getHeadLineElement(1, "cache") + "\\n(regularized)";
 
     long long int nLines = _cache.getLines("cache", false);
 
@@ -10271,7 +10284,7 @@ bool parser_spline(string& sCmd, Parser& _parser, Datafile& _data, Define& _func
     sTableName.erase(sTableName.find('('));
     getData(sTableName, _idx, _data, _cache);
 
-    long long int nLines = _cache.getLines("cache", false);
+    long long int nLines = _cache.getLines("cache", true)-_cache.getAppendedZeroes(0, "cache");
 
     if (nLines < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, sTableName);
