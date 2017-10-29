@@ -1694,6 +1694,8 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
             {
                 //cerr << findCommand(sCmd[i][1]).sString << "|" << endl;
                 if (findCommand(sCmd[i][1]).sString == "define"
+                    || findCommand(sCmd[i][1]).sString == "taylor"
+                    || findCommand(sCmd[i][1]).sString == "spline"
                     || findCommand(sCmd[i][1]).sString == "redefine"
                     || findCommand(sCmd[i][1]).sString == "redef"
                     || findCommand(sCmd[i][1]).sString == "undefine"
