@@ -2568,7 +2568,7 @@
 	"muParserBase.h"
 	"muParserTemplateMagic.h"
 
-1507647982 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.h
+1509136585 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.h
 	<cmath>
 	<string>
 	<iostream>
@@ -3247,7 +3247,7 @@
 	<string>
 	<vector>
 
-1507972806 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1509197109 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -3307,7 +3307,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1507840840 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1509181899 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3493,7 +3493,7 @@
 	<wx/sizer.h>
 	"../common/datastructures.h"
 
-1491251317 d:\cpp\numere-source\trunk\gui\helpviewer.hpp
+1509118457 d:\cpp\numere-source\trunk\gui\helpviewer.hpp
 	<wx/wxhtml.h>
 	<wx/wx.h>
 	<vector>
@@ -4016,11 +4016,11 @@
 1490791550 source:d:\cpp\numere-source\trunk\kernel\core\language.cpp
 	"language.hpp"
 
-1507638085 source:d:\cpp\numere-source\trunk\kernel\core\loop.cpp
+1509019953 source:d:\cpp\numere-source\trunk\kernel\core\loop.cpp
 	"loop.hpp"
 	"../kernel.hpp"
 
-1507581906 source:d:\cpp\numere-source\trunk\kernel\core\matrixoperations.cpp
+1509216573 source:d:\cpp\numere-source\trunk\kernel\core\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -4035,7 +4035,7 @@
 1505291532 source:d:\cpp\numere-source\trunk\kernel\core\parser.cpp
 	"parser.hpp"
 
-1508838247 source:d:\cpp\numere-source\trunk\kernel\core\parser_functions.cpp
+1509052388 source:d:\cpp\numere-source\trunk\kernel\core\parser_functions.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 	"spline.h"
@@ -4047,7 +4047,7 @@
 	<algorithm>
 	<numeric>
 
-1507667970 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
+1509136573 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
 	"muParserBase.h"
 	"muParserTemplateMagic.h"
 	<cassert>
@@ -4141,7 +4141,7 @@
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1505416594 source:d:\cpp\numere-source\trunk\kernel\core\procedure.cpp
+1509051418 source:d:\cpp\numere-source\trunk\kernel\core\procedure.cpp
 	"procedure.hpp"
 	"../kernel.hpp"
 	"procedurevarfactory.hpp"
@@ -4227,7 +4227,7 @@
 	"debugmessenger.hpp"
 	"core/tools.hpp"
 
-1508838874 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1509051471 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/wxterm.h"
 

@@ -2559,14 +2559,17 @@ void NumeReEditor::updateDefaultHighlightSettings()
     this->StyleSetForeground(ANNOTATION_NOTE, wxColour(120,120,120));
     this->StyleSetSize(ANNOTATION_NOTE, this->StyleGetSize(0)-2);
     this->StyleSetItalic(ANNOTATION_NOTE, true);
+    this->StyleSetFaceName(ANNOTATION_NOTE, "Segoe UI");
     this->StyleSetBackground(ANNOTATION_WARN, wxColour(255,255,220));
     this->StyleSetForeground(ANNOTATION_WARN, wxColour(160,160,0));
     this->StyleSetSize(ANNOTATION_WARN, this->StyleGetSize(0)-2);
     this->StyleSetItalic(ANNOTATION_WARN, true);
+    this->StyleSetFaceName(ANNOTATION_WARN, "Segoe UI");
     this->StyleSetBackground(ANNOTATION_ERROR, wxColour(255,200,200));
     this->StyleSetForeground(ANNOTATION_ERROR, wxColour(170,0,0));
     this->StyleSetSize(ANNOTATION_ERROR, this->StyleGetSize(0)-2);
     this->StyleSetItalic(ANNOTATION_ERROR, true);
+    this->StyleSetFaceName(ANNOTATION_ERROR, "Segoe UI");
 }
 
 void NumeReEditor::applyStrikeThrough()
@@ -3882,6 +3885,7 @@ void NumeReEditor::OnThreadUpdate(wxThreadEvent& event)
             m_duplicateCode->SetProgress(100);
         wxCriticalSectionLocker lock(m_editorCS);
         m_duplicateCode->SetResult(vDuplicateCodeResults);
+        vDuplicateCodeResults.clear();
     }
 
 }
@@ -4545,6 +4549,10 @@ string NumeReEditor::addLinebreaks(const string& sLine)
 void NumeReEditor::addToAnnotation(string& sCurrentLine, string& sStyles, const string& sMessage, int nStyle)
 {
     int chartoadd = 0;
+    // Do not show the same message multiple times
+    if (sCurrentLine.find(sMessage) != string::npos
+        && (!sCurrentLine.find(sMessage) || sCurrentLine[sCurrentLine.find(sMessage)-1] == '\n'))
+        return;
     if (sCurrentLine.length())
     {
         sCurrentLine += "\n";
