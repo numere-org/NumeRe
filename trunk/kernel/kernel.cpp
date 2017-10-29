@@ -498,6 +498,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                                 // Die vorherige Zeile wird hierin zwischengespeichert
     string sCmdCache = "";
     string sLine = "";
+    string sCurrentCommand = "";
     value_type* v = 0;          // Ergebnisarray
     int nNum = 0;               // Zahl der Ergebnisse in value_type* v
 
@@ -639,7 +640,8 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 }
 
             }
-            if ((sCmdCache.length() || sLine.find(';') != string::npos) && !_procedure.is_writing() && findCommand(sLine).sString != "procedure")
+            sCurrentCommand = findCommand(sLine).sString;
+            if ((sCmdCache.length() || sLine.find(';') != string::npos) && !_procedure.is_writing() && sCurrentCommand != "procedure")
             {
                 if (sCmdCache.length())
                 {
@@ -715,12 +717,13 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
             }
             GetAsyncKeyState(VK_ESCAPE);
-            if ((findCommand(sLine).sString == "compose"
-                    || findCommand(sLine).sString == "endcompose"
+            sCurrentCommand = findCommand(sLine).sString;
+            if ((sCurrentCommand == "compose"
+                    || sCurrentCommand== "endcompose"
                     || sPlotCompose.length())
                 && !_procedure.is_writing()
-                && findCommand(sLine).sString != "quit"
-                && findCommand(sLine).sString != "help")
+                && sCurrentCommand != "quit"
+                && sCurrentCommand != "help")
             {
                 if (!sPlotCompose.length() && findCommand(sLine).sString == "compose")
                 {
@@ -836,7 +839,8 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     }
                 }
             }
-            if (findCommand(sLine).sString == "uninstall")
+            sCurrentCommand = findCommand(sLine).sString;
+            if (sCurrentCommand == "uninstall")
             {
                 string sPlugin = fromSystemCodePage(getArgAtPos(sLine, findCommand(sLine).nPos+9));
                 sPlugin = _procedure.deletePlugin(sPlugin);
@@ -859,7 +863,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 return NUMERE_DONE_KEYWORD;
             }
 
-            if (_procedure.is_writing() || findCommand(sLine).sString == "procedure")
+            if (_procedure.is_writing() || sCurrentCommand == "procedure")
             {
                 if (!_procedure.writeProcedure(sLine))
                     print(LineBreak(_lang.get("PARSER_CANNOTCREATEPROC"), _option));
@@ -920,6 +924,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     sLine = sLine.substr(0, nPos-6) + sCmdString + sLine.substr(nPos + nParPos+1);
                     nPos -= 5;
                 }
+                sCurrentCommand = findCommand(sLine).sString;
             }
             // --> Prozeduren abarbeiten <--
             if (sLine.find('$') != string::npos && sLine.find('(', sLine.find('$')) != string::npos && !_procedure.getLoop())
@@ -962,7 +967,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             }
 
             // --> Gibt es "??"? Dann rufe die Prompt-Funktion auf <--
-            if (!_procedure.getLoop() && sLine.find("??") != string::npos && sLine.substr(0,4) != "help")
+            if (!_procedure.getLoop() && sLine.find("??") != string::npos && sCurrentCommand != "help")
                 sLine = parser_Prompt(sLine);
 
             if (_procedure.isPluginCmd(sLine) && !_procedure.getLoop())
@@ -1004,12 +1009,12 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
              *     eines Keywords noetig sind ("list", "help", "find", etc.) <--
              */
             if (!_procedure.getLoop()
-                || sLine.substr(0,4) == "help"
-                || sLine.substr(0,3) == "man"
-                || sLine.substr(0,4) == "quit"
-                || sLine.substr(0,4) == "list"
-                || sLine.substr(0,4) == "find"
-                || sLine.substr(0,6) == "search")
+                || sCurrentCommand == "help"
+                || sCurrentCommand == "man"
+                || sCurrentCommand == "quit"
+                || sCurrentCommand == "list"
+                || sCurrentCommand == "find"
+                || sCurrentCommand == "search")
             {
                 //print("Debug: Keywords");
                 switch (BI_CheckKeyword(sLine, _data, _out, _option, _parser, _functions, _pData, _script, true))
@@ -1053,8 +1058,11 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 }
             }
             // --> Wenn die call()-Methode FALSE zurueckgibt, ist etwas schief gelaufen! <--
-            if (!_functions.call(sLine, _option))
-                throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
+            if (!_procedure.getLoop() && sCurrentCommand != "for" && sCurrentCommand != "if" && sCurrentCommand != "while")
+            {
+                if (!_functions.call(sLine, _option))
+                    throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
+            }
             // --> Prozeduren abarbeiten <--
             if (sLine.find('$') != string::npos && sLine.find('(', sLine.find('$')) != string::npos && !_procedure.getLoop())
             {
@@ -1121,7 +1129,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 cerr << "|-> DEBUG: sLine = " << sLine << endl;*/
 
             // --> Befinden wir uns in einem Loop? Dann ist nLoop > -1! <--
-            if (_procedure.getLoop() || sLine.substr(0,3) == "for" || sLine.substr(0,2) == "if" || sLine.substr(0,5) == "while")
+            if (_procedure.getLoop() || sCurrentCommand == "for" || sCurrentCommand == "if" || sCurrentCommand == "while")
             {
                 // --> Die Zeile in den Ausdrucksspeicher schreiben, damit sie spaeter wiederholt aufgerufen werden kann <--
                 _procedure.setCommand(sLine, _parser, _data, _functions, _option, _out, _pData, _script);
