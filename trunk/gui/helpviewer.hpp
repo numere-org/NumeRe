@@ -30,7 +30,7 @@ class NumeReWindow;
 class HelpViewer : public wxHtmlWindow
 {
     public:
-        HelpViewer(wxWindow* parent, NumeReWindow* m_main) : wxHtmlWindow(parent), m_mainFrame(m_main), m_nHistoryPointer(0) {};
+        HelpViewer(wxWindow* parent, NumeReWindow* m_main) : wxHtmlWindow(parent), m_mainFrame(m_main), m_nHistoryPointer(0) {SetFonts(wxEmptyString, "Consolas");};
         virtual bool SetPage(const wxString& source);
 
     private:
