@@ -2602,7 +2602,7 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
 		wxFileName newFileName(fnames[n]);
 		int pageNr = GetPageNum(newFileName);
 
-		if(!GetFileContents(fnames[n], fileContents, fileNameNoPath))
+		if (!GetFileContents(fnames[n], fileContents, fileNameNoPath))
 		{
 			return;
 		}
@@ -2729,33 +2729,30 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
 bool NumeReWindow::GetFileContents(wxString fileToLoad, wxString &fileContents, wxString &fileName)
 {
 	wxFileName fn(fileToLoad);
-	if(false)
+	if (false)
 	{
 		wxString remotePath = fn.GetPath(false, wxPATH_UNIX);
 		wxString remoteFile = fn.GetFullName();
 
-		if(!m_network->GetFileContents(fn, fileContents))
+		if (!m_network->GetFileContents(fn, fileContents))
 		{
 			CheckNetworkStatus();
 		}
 	}
 	else
 	{
-		wxFile file (fileToLoad);
+		wxFile file(fileToLoad);
 
-		if( !file.IsOpened() )
+		if (!file.IsOpened())
 		{
 			return false;
 		}
 
 		long lng = file.Length();
 
-		if( lng > 0 )
+		if (lng > 0)
 		{
             file.ReadAll(&fileContents);
-			/*char *pFileContents = wxStringBuffer(fileContents, lng);//fileContents.DoGetWriteBuf(lng);
-			file.Read(pFileContents, lng);
-			fileContents.DoUngetWriteBuf();*/
 		}
 	}
 

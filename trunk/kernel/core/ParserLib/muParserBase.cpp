@@ -2456,8 +2456,8 @@ namespace mu
                                 }
                                 if ((iter->second).size() > i)
                                     *vars[iter->first] = (iter->second)[i];
-                                else if ((iter->second).size() == 1)
-                                    *vars[iter->first] = (iter->second)[0];
+                                else if ((iter->second).size() == 1);
+                                    //*vars[iter->first] = (iter->second)[0];
                                 else
                                     *vars[iter->first] = 0.0;
                             }
