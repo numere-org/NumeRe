@@ -925,14 +925,15 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
 
     StripSpaces(__sCmd);
 
-    if (__sCmd.substr(0,3) == "for"
-        || __sCmd.substr(0,6) == "endfor"
-        || __sCmd.substr(0,3) == "if "
-        || __sCmd.substr(0,3) == "if("
-        || __sCmd.substr(0,5) == "endif"
-        || __sCmd.substr(0,4) == "else"
-        || __sCmd.substr(0,5) == "while"
-        || __sCmd.substr(0,8) == "endwhile")
+    string command =  findCommand(__sCmd).sString;
+
+    if (command == "for"
+        || command == "endfor"
+        || command == "if"
+        || command == "endif"
+        || command == "else"
+        || command == "while"
+        || command == "endwhile")
     {
         if (!validateParenthesisNumber(__sCmd))
         {
