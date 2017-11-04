@@ -481,7 +481,7 @@ namespace mu
         // (tellg returns -1 otherwise causing the parser to ignore the value)
         string_type sBuf(a_sExpr + _nrT(" ") );
 
-        if (sBuf == this->GetExpr())
+        if (bMakeLoopByteCode && !bPauseLoopByteCode && sBuf == this->GetExpr())
             return;
         else if (bMakeLoopByteCode && !bPauseLoopByteCode && this->GetExpr().length() && vValidByteCode[nthLoopElement][nthLoopPartEquation])
             vValidByteCode[nthLoopElement][nthLoopPartEquation] = 0;
@@ -974,6 +974,7 @@ namespace mu
         {
             return m_pTokenReader->GetExpr();
         }
+        return "";
     }
 
     //---------------------------------------------------------------------------
