@@ -1335,9 +1335,13 @@ void NumeReEditor::AnalyseCode()
     bool isAlreadyMeasured = false;
     string sCurrentLine = "";
     string sStyles = "";
+    string sFirstLine = "";
+    string sFirstStyles = "";
+    int nFirstLine = 0;
     string sNote = _guilang.get("GUI_ANALYZER_NOTE");
     string sWarn = _guilang.get("GUI_ANALYZER_WARN");
     string sError = _guilang.get("GUI_ANALYZER_ERROR");
+    AnnotationCount AnnotCount;
 
     const double MINCOMMENTDENSITY = 0.6;
     const double MAXCOMMENTDENSITY = 1.5;
@@ -1355,7 +1359,7 @@ void NumeReEditor::AnalyseCode()
             string sLine = this->GetLine(currentLine).ToStdString();
             StripSpaces(sLine);
             if (sLine.length() && sLine.find_first_not_of("\n\r\t") != string::npos && sLine.find_first_not_of("0123456789+-*/.,^(){} \t\r\n") == string::npos)
-                addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sLine.substr(0,sLine.find_last_not_of("0123456789+-*/.,^()")), sWarn, _guilang.get("GUI_ANALYZER_CONSTEXPR")), ANNOTATION_WARN);
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sLine.substr(0,sLine.find_last_not_of("0123456789+-*/.,^()")), sWarn, _guilang.get("GUI_ANALYZER_CONSTEXPR")), ANNOTATION_WARN);
             if (sLine.find("\\\\") != string::npos)
                 isContinuedLine = true;
             else
@@ -1365,8 +1369,17 @@ void NumeReEditor::AnalyseCode()
             }
             if (sCurrentLine.length())
             {
-                this->AnnotationSetText(currentLine, sCurrentLine);
-                this->AnnotationSetStyles(currentLine, sStyles);
+                if (!sFirstLine.length())
+                {
+                    sFirstLine = sCurrentLine;
+                    sFirstStyles = sStyles;
+                    nFirstLine = currentLine;
+                }
+                else
+                {
+                    this->AnnotationSetText(currentLine, sCurrentLine);
+                    this->AnnotationSetStyles(currentLine, sStyles);
+                }
             }
             currentLine = this->LineFromPosition(i);
             sCurrentLine = "";
@@ -1386,15 +1399,15 @@ void NumeReEditor::AnalyseCode()
                 int nNumberOfComments = countNumberOfComments(currentLine, this->LineFromPosition(this->GetLastPosition()));
                 double dCommentDensity = (double)nNumberOfComments / (double)nLinesOfCode;
                 if (nCyclomaticComplexity > MAXCOMPLEXITYWARN)
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_WARN);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_WARN);
                 else if (nCyclomaticComplexity > MAXCOMPLEXITYNOTIFY)
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_NOTE);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_NOTE);
                 if (nLinesOfCode > MAXLINESOFCODE)
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_MANYLINES", toString(nLinesOfCode))), ANNOTATION_NOTE);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_MANYLINES", toString(nLinesOfCode))), ANNOTATION_NOTE);
                 if (dCommentDensity < MINCOMMENTDENSITY)
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_LOWCOMMENTDENSITY", toString(dCommentDensity*100.0, 3))), ANNOTATION_NOTE);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_LOWCOMMENTDENSITY", toString(dCommentDensity*100.0, 3))), ANNOTATION_NOTE);
                 if (dCommentDensity > MAXCOMMENTDENSITY)
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMMENTDENSITY", toString(dCommentDensity*100.0, 3))), ANNOTATION_NOTE);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMMENTDENSITY", toString(dCommentDensity*100.0, 3))), ANNOTATION_NOTE);
             }
         }
         if (this->GetStyleAt(i) == wxSTC_NSCR_COMMAND
@@ -1418,7 +1431,7 @@ void NumeReEditor::AnalyseCode()
                 }
                 if (!canContinue)
                 {
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_THROW_ADDMESSAGE")) , ANNOTATION_NOTE);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sNote, _guilang.get("GUI_ANALYZER_THROW_ADDMESSAGE")) , ANNOTATION_NOTE);
                 }
             }
             if (sSyntaxElement == "namespace")
@@ -1429,28 +1442,28 @@ void NumeReEditor::AnalyseCode()
                 StripSpaces(sArgs);
                 if (!sArgs.length())
                 {
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_NAMESPACE_ALWAYSMAIN")) , ANNOTATION_WARN);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sWarn, _guilang.get("GUI_ANALYZER_NAMESPACE_ALWAYSMAIN")) , ANNOTATION_WARN);
                 }
             }
             if (sSyntaxElement == "progress")
             {
-                addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_PROGRESS_RUNTIME")), ANNOTATION_NOTE);
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_PROGRESS_RUNTIME")), ANNOTATION_NOTE);
             }
             if (sSyntaxElement == "install" || sSyntaxElement == "uninstall" || sSyntaxElement == "start")
             {
-                addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_NOTALLOWED")), ANNOTATION_ERROR);
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sError, _guilang.get("GUI_ANALYZER_NOTALLOWED")), ANNOTATION_ERROR);
             }
             if (sSyntaxElement == "clear" || sSyntaxElement == "delete" || sSyntaxElement == "remove")
             {
                 if (sSyntaxElement == "remove" && this->GetStyleAt(this->WordStartPosition(wordend+1, true)) == wxSTC_NSCR_PREDEFS)
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_CANNOTREMOVEPREDEFS")), ANNOTATION_ERROR);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend+1), sError, _guilang.get("GUI_ANALYZER_CANNOTREMOVEPREDEFS")), ANNOTATION_ERROR);
                 string sArgs = this->GetTextRange(wordend, this->GetLineEndPosition(currentLine)).ToStdString();
                 while (sArgs.back() == '\r' || sArgs.back() == '\n')
                     sArgs.pop_back();
                 if (!matchParams(sArgs, "ignore")
                     && !matchParams(sArgs, "i")
                     && (sSyntaxElement != "remove" || this->GetStyleAt(this->WordStartPosition(wordend+1, true)) != wxSTC_NSCR_CUSTOM_FUNCTION))
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_APPENDIGNORE")), ANNOTATION_NOTE);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sNote, _guilang.get("GUI_ANALYZER_APPENDIGNORE")), ANNOTATION_NOTE);
             }
             if (sSyntaxElement != "hline"
                 && sSyntaxElement != "continue"
@@ -1486,7 +1499,7 @@ void NumeReEditor::AnalyseCode()
                             canContinue = true;
                     }
                     if (!canContinue)
-                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_EMPTYEXPRESSION")), ANNOTATION_ERROR);
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sError, _guilang.get("GUI_ANALYZER_EMPTYEXPRESSION")), ANNOTATION_ERROR);
                 }
             }
             if (sSyntaxElement == "zeroes"
@@ -1508,7 +1521,7 @@ void NumeReEditor::AnalyseCode()
                     }
                 }
                 if (!canContinue)
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
             }
             if (sSyntaxElement == "if" || sSyntaxElement == "elseif")
             {
@@ -1519,27 +1532,27 @@ void NumeReEditor::AnalyseCode()
                         int nPos = this->BraceMatch(j);
                         if (nPos < 0)
                         {
-                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+                            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
                             break;
                         }
                         string sArgument = this->GetTextRange(j+1,nPos).ToStdString();
                         StripSpaces(sArgument);
                         if (!sArgument.length())
                         {
-                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
+                            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
                             break;
                         }
                         if (sArgument == "true" || (sArgument.find_first_not_of("1234567890") == string::npos && sArgument != "0"))
                         {
-                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSTRUE")), ANNOTATION_WARN);
+                            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSTRUE")), ANNOTATION_WARN);
                         }
                         else if (sArgument == "false" || sArgument == "0")
                         {
-                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSFALSE")), ANNOTATION_WARN);
+                            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSFALSE")), ANNOTATION_WARN);
                         }
                         else if (containsAssignment(sArgument))
                         {
-                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_ASSIGNMENTINARGUMENT")), ANNOTATION_WARN);
+                            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNMENTINARGUMENT")), ANNOTATION_WARN);
                         }
                         break;
                     }
@@ -1570,7 +1583,7 @@ void NumeReEditor::AnalyseCode()
                                 }
                                 if (!canContinue)
                                 {
-                                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_USEINLINEIF")), ANNOTATION_NOTE);
+                                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_USEINLINEIF")), ANNOTATION_NOTE);
                                 }
                             }
                             break;
@@ -1587,27 +1600,27 @@ void NumeReEditor::AnalyseCode()
                         int nPos = this->BraceMatch(j);
                         if (nPos < 0)
                         {
-                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+                            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
                             break;
                         }
                         string sArgument = this->GetTextRange(j+1,nPos).ToStdString();
                         StripSpaces(sArgument);
                         if (!sArgument.length())
                         {
-                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
+                            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
                             break;
                         }
                         if (sArgument == "true" || (sArgument.find_first_not_of("1234567890") == string::npos && sArgument != "0"))
                         {
-                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_WHILE_ALWAYSTRUE")), ANNOTATION_WARN);
+                            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_WHILE_ALWAYSTRUE")), ANNOTATION_WARN);
                         }
                         else if (sArgument == "false" || sArgument == "0")
                         {
-                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_WHILE_ALWAYSFALSE")), ANNOTATION_WARN);
+                            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_WHILE_ALWAYSFALSE")), ANNOTATION_WARN);
                         }
                         else if (containsAssignment(sArgument))
                         {
-                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_ASSIGNMENTINARGUMENT")), ANNOTATION_WARN);
+                            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNMENTINARGUMENT")), ANNOTATION_WARN);
                         }
                         break;
                     }
@@ -1622,19 +1635,19 @@ void NumeReEditor::AnalyseCode()
                         int nPos = this->BraceMatch(j);
                         if (nPos < 0)
                         {
-                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+                            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
                             break;
                         }
                         string sArgument = this->GetTextRange(j+1,nPos).ToStdString();
                         StripSpaces(sArgument);
                         if (!sArgument.length())
                         {
-                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
+                            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
                             break;
                         }
                         if (sArgument.find(':') == string::npos || sArgument.find('=') == string::npos)
                         {
-                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_FOR_INTERVALERROR")), ANNOTATION_ERROR);
+                            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_FOR_INTERVALERROR")), ANNOTATION_ERROR);
                         }
                         break;
                     }
@@ -1651,7 +1664,7 @@ void NumeReEditor::AnalyseCode()
                 if (nProcedureEnd == -1)
                 {
                     nProcedureEnd = this->GetLastPosition();
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
                 }
 
                 if (sArgs.length())
@@ -1667,12 +1680,12 @@ void NumeReEditor::AnalyseCode()
                         StripSpaces(currentArg);
                         if (this->FindText(nNextLine, nProcedureEnd, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) == -1)
                         {
-                            addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_UNUSEDVARIABLE", currentArg)), ANNOTATION_WARN);
+                            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, this->FindText(wordstart, nProcedureEnd, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD)), sWarn, _guilang.get("GUI_ANALYZER_UNUSEDVARIABLE", currentArg)), ANNOTATION_WARN);
                         }
                     }
                 }
                 else
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_NOVARIABLES")), ANNOTATION_ERROR);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sError, _guilang.get("GUI_ANALYZER_NOVARIABLES")), ANNOTATION_ERROR);
             }
             if (m_fileType == FILE_NPRC && sSyntaxElement == "procedure")
             {
@@ -1681,7 +1694,7 @@ void NumeReEditor::AnalyseCode()
                 if (nProcedureEnd == -1)
                 {
                     nProcedureEnd = this->GetLastPosition();
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
                 }
                 else
                 {
@@ -1689,11 +1702,11 @@ void NumeReEditor::AnalyseCode()
                     int nNamingProcedure = FindNamingProcedure();
                     if (nNamingProcedure == wxNOT_FOUND)
                     {
-                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_NONAMINGPROCEDURE")), ANNOTATION_ERROR);
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_NONAMINGPROCEDURE")), ANNOTATION_ERROR);
                     }
                     else if (nNamingProcedure != currentLine)
                     {
-                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_THISFILEPROCEDURE")), ANNOTATION_WARN);
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_THISFILEPROCEDURE")), ANNOTATION_WARN);
                     }
 
                     // Apply metrics
@@ -1703,17 +1716,17 @@ void NumeReEditor::AnalyseCode()
                     double dCommentDensity = (double)nNumberOfComments / (double)nLinesOfCode;
 
                     if (nLinesOfCode < 5)
-                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_INLINING")), ANNOTATION_WARN);
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_INLINING")), ANNOTATION_WARN);
                     if (nCyclomaticComplexity > MAXCOMPLEXITYWARN)
-                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_WARN);
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_WARN);
                     else if (nCyclomaticComplexity > MAXCOMPLEXITYNOTIFY)
-                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_NOTE);
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_NOTE);
                     if (nLinesOfCode > MAXLINESOFCODE)
-                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_MANYLINES", toString(nLinesOfCode))), ANNOTATION_NOTE);
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_MANYLINES", toString(nLinesOfCode))), ANNOTATION_NOTE);
                     if (dCommentDensity < MINCOMMENTDENSITY)
-                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_LOWCOMMENTDENSITY", toString(dCommentDensity*100.0, 3))), ANNOTATION_NOTE);
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_LOWCOMMENTDENSITY", toString(dCommentDensity*100.0, 3))), ANNOTATION_NOTE);
                     if (dCommentDensity > MAXCOMMENTDENSITY)
-                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMMENTDENSITY", toString(dCommentDensity*100.0, 3))), ANNOTATION_NOTE);
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMMENTDENSITY", toString(dCommentDensity*100.0, 3))), ANNOTATION_NOTE);
 
                 }
             }
@@ -1727,16 +1740,16 @@ void NumeReEditor::AnalyseCode()
                 if (nProcedureEnd == -1)
                 {
                     nProcedureEnd = this->GetLastPosition();
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
                 }
                 if (sArgs.length())
                 {
                     if (sArgs.back() != ';' && sArgs != "void")
-                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_RETURN_ADDSEMICOLON")), ANNOTATION_NOTE);
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sNote, _guilang.get("GUI_ANALYZER_RETURN_ADDSEMICOLON")), ANNOTATION_NOTE);
                 }
                 else
                 {
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_RETURN_ALWAYSTRUE")), ANNOTATION_NOTE);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_RETURN_ALWAYSTRUE")), ANNOTATION_NOTE);
                 }
             }
             i = wordend;
@@ -1753,7 +1766,7 @@ void NumeReEditor::AnalyseCode()
                 sSyntaxElement.insert(0, "VAR.");
             if (this->PositionFromLine(currentLine) == wordstart && !isContinuedLine)
             {
-                addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
             }
             else
             {
@@ -1766,11 +1779,11 @@ void NumeReEditor::AnalyseCode()
                     }
                 }
                 if (!canContinue && !isContinuedLine)
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
             }
             if (this->BraceMatch(wordend) < 0 && sSyntaxElement != "VAR.len")
             {
-                addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
             }
             else if (sSyntaxElement != "time()" && sSyntaxElement != "version()" && sSyntaxElement != "VAR.len")
             {
@@ -1779,7 +1792,7 @@ void NumeReEditor::AnalyseCode()
                 StripSpaces(sArgument);
                 if (!sArgument.length())
                 {
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
                 }
             }
             i = wordend;
@@ -1790,12 +1803,12 @@ void NumeReEditor::AnalyseCode()
             string sSyntaxElement = FindMarkedProcedure(i).ToStdString();
             if (!sSyntaxElement.length())
                 continue;
-            wordend += sSyntaxElement.find('(');
             if (!FindProcedureDefinition().length())
             {
-                addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_PROCEDURENOTFOUND")), ANNOTATION_ERROR);
+               AnnotCount +=  addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, i), sError, _guilang.get("GUI_ANALYZER_PROCEDURENOTFOUND")), ANNOTATION_ERROR);
             }
-            i = wordend;
+            while (this->GetStyleAt(i+1) == wxSTC_NSCR_PROCEDURES)
+                i++;
         }
         else if ((this->GetStyleAt(i) == wxSTC_NSCR_DEFAULT || this->GetStyleAt(i) == wxSTC_NSCR_IDENTIFIER)
             && this->GetCharAt(i) != ' '
@@ -1814,7 +1827,7 @@ void NumeReEditor::AnalyseCode()
             {
                 // Too short
                 if (!(sSyntaxElement.length() == 2 && ((sSyntaxElement[1] >= '0' && sSyntaxElement[1] <= '9') || sSyntaxElement[0] == 'd')))
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_VARNAMETOOSHORT")), ANNOTATION_NOTE);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_VARNAMETOOSHORT")), ANNOTATION_NOTE);
             }
             if (sSyntaxElement.length() > 2 && sSyntaxElement.find_first_not_of("\r\n") != string::npos && sSyntaxElement.find('.') == string::npos)
             {
@@ -1829,14 +1842,52 @@ void NumeReEditor::AnalyseCode()
                 {
                     // var not type-oriented
                     if (hasProcedureDefinition && !shift)
-                        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_VARNOTTYPEORIENTED")), ANNOTATION_NOTE);
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_VARNOTTYPEORIENTED")), ANNOTATION_NOTE);
                 }
                 else if (hasProcedureDefinition && !shift)
-                    addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
             }
             i = wordend;
         }
+        else if (this->GetStyleAt(i) == wxSTC_NSCR_OPERATORS)
+        {
+            if (this->GetCharAt(i) == '(' || this->GetCharAt(i) == '[' || this->GetCharAt(i) == '{'
+                || this->GetCharAt(i) == ')' || this->GetCharAt(i) == ']' || this->GetCharAt(i) == '}')
+            {
+                int nPos = this->BraceMatch(i);
+                if (nPos < 0)
+                {
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(string(1, this->GetCharAt(i)), i), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+                }
+            }
+        }
+    }
+
+    sCurrentLine.clear();
+    sStyles.clear();
+
+    if (AnnotCount.nNotes)
+        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_NOTE_TOTAL", toString(AnnotCount.nNotes)), ANNOTATION_NOTE);
+    if (AnnotCount.nWarnings)
+        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_WARN_TOTAL", toString(AnnotCount.nWarnings)), ANNOTATION_WARN);
+    if (AnnotCount.nErrors)
+        addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_ERROR_TOTAL", toString(AnnotCount.nErrors)), ANNOTATION_ERROR);
+
+    if (sCurrentLine.length())
+    {
+        sCurrentLine += "\n" + sFirstLine;
+        sStyles += sStyles.back() + sFirstStyles;
+    }
+    else
+    {
+        sCurrentLine = sFirstLine;
+        sStyles = sFirstStyles;
+    }
+    if (sCurrentLine.length())
+    {
+        this->AnnotationSetText(nFirstLine, sCurrentLine);
+        this->AnnotationSetStyles(nFirstLine, sStyles);
     }
 }
 
@@ -4546,13 +4597,14 @@ string NumeReEditor::addLinebreaks(const string& sLine)
     return sReturn;
 }
 
-void NumeReEditor::addToAnnotation(string& sCurrentLine, string& sStyles, const string& sMessage, int nStyle)
+AnnotationCount NumeReEditor::addToAnnotation(string& sCurrentLine, string& sStyles, const string& sMessage, int nStyle)
 {
+    AnnotationCount annoCount;
     int chartoadd = 0;
     // Do not show the same message multiple times
     if (sCurrentLine.find(sMessage) != string::npos
         && (!sCurrentLine.find(sMessage) || sCurrentLine[sCurrentLine.find(sMessage)-1] == '\n'))
-        return;
+        return annoCount;
     if (sCurrentLine.length())
     {
         sCurrentLine += "\n";
@@ -4562,6 +4614,26 @@ void NumeReEditor::addToAnnotation(string& sCurrentLine, string& sStyles, const 
     chartoadd += countUmlauts(sMessage);
 
     sStyles.append(sMessage.length()+chartoadd, nStyle);
+    if (nStyle == ANNOTATION_NOTE)
+        annoCount.nNotes++;
+    else if (nStyle == ANNOTATION_WARN)
+        annoCount.nWarnings++;
+    else if (nStyle == ANNOTATION_ERROR)
+        annoCount.nErrors++;
+    return annoCount;
+}
+
+string NumeReEditor::getTextCoordsAsString(int nPos)
+{
+    string sCoords = "Pos. ";
+    int nLine = this->LineFromPosition(nPos);
+    sCoords += toString(nPos - this->PositionFromLine(nLine) + 1);
+    return sCoords;
+}
+
+string NumeReEditor::constructSyntaxElementForAnalyzer(const string& sElement, int nPos)
+{
+    return sElement + " >> " + getTextCoordsAsString(nPos);
 }
 
 bool NumeReEditor::containsAssignment(const string& sCurrentLine)
