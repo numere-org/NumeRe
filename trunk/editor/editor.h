@@ -25,6 +25,21 @@ class Options;
 class ProjectInfo;
 class DebugManager;
 
+struct AnnotationCount
+{
+        size_t nNotes;
+        size_t nWarnings;
+        size_t nErrors;
+
+        AnnotationCount() : nNotes(0), nWarnings(0), nErrors(0) {}
+        AnnotationCount& operator+= (const AnnotationCount& annotcount)
+            {
+                nNotes += annotcount.nNotes;
+                nWarnings += annotcount.nWarnings;
+                nErrors += annotcount.nErrors;
+                return *this;
+            }
+};
 
 class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 {
@@ -162,7 +177,9 @@ private:
     int countUmlauts(const string& sStr);
     string realignLangString(string sLine, size_t& lastpos);
     string addLinebreaks(const string& sLine);
-    void addToAnnotation(string& sCurrentLine, string& sStyles, const string& sMessage, int nStyle);
+    AnnotationCount addToAnnotation(string& sCurrentLine, string& sStyles, const string& sMessage, int nStyle);
+    string getTextCoordsAsString(int nPos);
+    string constructSyntaxElementForAnalyzer(const string& sElement, int nPos);
     bool containsAssignment(const string& sCurrentLine);
 
     void markModified(int nLine);

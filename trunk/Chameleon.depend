@@ -4,7 +4,7 @@
 	"kernel/core/version.h"
 	<wx/msw/wx.rc>
 
-1503691505 d:\cpp\numere-source\trunk\kernel\core\version.h
+1509720381 d:\cpp\numere-source\trunk\kernel\core\version.h
 
 1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wx.rc
 	<windows.h>
@@ -1127,7 +1127,7 @@
 1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\printps.h
 	"wx/prntbase.h"
 
-1507898843 d:\cpp\numere-source\trunk\editor\editor.h
+1509888878 d:\cpp\numere-source\trunk\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -2568,7 +2568,7 @@
 	"muParserBase.h"
 	"muParserTemplateMagic.h"
 
-1509132985 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.h
+1509727551 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.h
 	<cmath>
 	<string>
 	<iostream>
@@ -4016,7 +4016,7 @@
 1490787950 source:d:\cpp\numere-source\trunk\kernel\core\language.cpp
 	"language.hpp"
 
-1509016353 source:d:\cpp\numere-source\trunk\kernel\core\loop.cpp
+1509733069 source:d:\cpp\numere-source\trunk\kernel\core\loop.cpp
 	"loop.hpp"
 	"../kernel.hpp"
 
@@ -4035,7 +4035,7 @@
 1505291532 source:d:\cpp\numere-source\trunk\kernel\core\parser.cpp
 	"parser.hpp"
 
-1509048788 source:d:\cpp\numere-source\trunk\kernel\core\parser_functions.cpp
+1509722211 source:d:\cpp\numere-source\trunk\kernel\core\parser_functions.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 	"spline.h"
@@ -4047,7 +4047,7 @@
 	<algorithm>
 	<numeric>
 
-1509132973 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
+1509727891 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
 	"muParserBase.h"
 	"muParserTemplateMagic.h"
 	<cassert>
