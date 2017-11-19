@@ -4811,7 +4811,9 @@ void NumeReEditor::ApplyAutoFormat(int nFirstLine, int nLastLine) // int nFirstL
                     && this->GetStyleAt(i-1) != wxSTC_NSCR_OPTION
                     && prevChar != '('
                     && prevChar != '{'
-                    && prevChar != '[')
+                    && prevChar != '['
+                    && this->GetCharAt(i-2) != ','
+                    && this->GetCharAt(i-2) != '=')
                     nLastPosition += insertTextAndMove(i+1, " ");
                 if (prevChar != ' '
                     && prevChar != currentChar
