@@ -119,7 +119,6 @@ void printUnits(const string& sUnit, const string& sDesc, const string& sDim, co
 // String-Parser
 int parser_StringParser(string&, string&, Datafile&, Parser&, const Settings&, bool bSilent = false);
 unsigned int parser_getDelimiterPos(const string&);
-string parser_evalStringLogic(string sLine, bool& bReturningLogicals);
 int parser_countStrings(const string& sCmd);
 int parser_numStrings(const string& sCmd);
 string parser_getMaxString(const string& sCmd);

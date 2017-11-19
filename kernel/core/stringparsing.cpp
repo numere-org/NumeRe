@@ -111,6 +111,9 @@ string parser_CreateStringVectorVar(const vector<string>& vStringVector, map<str
 bool parser_containsStringVectorVars(const string& sLine, const map<string, vector<string> >& mStringVectorVars);
 vector<string> parser_EvaluateStringVectors(string sLine, const map<string, vector<string> >& mStringVectorVars);
 void parser_ExpandStringVectorComponents(vector<string>& vStringVector);
+string parser_evalStringLogic(string sLine, Parser& _parser, bool& bReturningLogicals);
+string parser_evalStringTernary(string sLine, Parser& _parser);
+vector<string> parser_getStringTernaryExpression(string& sLine, size_t& nPos);
 
 // String functions:
 // ======================
@@ -2647,7 +2650,7 @@ vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFinal, Pars
         }
         if (parser_detectStringLogicals(vFinal[n]))
         {
-            vFinal[n] = addMaskedStrings(parser_evalStringLogic(removeMaskedStrings(vFinal[n]), bReturningLogicals));
+            vFinal[n] = addMaskedStrings(parser_evalStringLogic(removeMaskedStrings(vFinal[n]), _parser, bReturningLogicals));
             StripSpaces(vFinal[n]);
         }
         if (vFinal[n].front() != '"' && vFinal[n].back() != '"')
@@ -3057,7 +3060,6 @@ string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIs
     return sConsoleOut;
 }
 
-
 bool parser_detectStringLogicals(const string& sString)
 {
     if (!sString.length())
@@ -3088,6 +3090,7 @@ bool parser_detectStringLogicals(const string& sString)
                 || sString.substr(i,2) == ">="
                 || sString.substr(i,2) == "!="
                 || sString.substr(i,2) == "=="
+                || sString[i] == '?'
                 || sString[i] == '<'
                 || sString[i] == '>')
                 return true;
@@ -3117,10 +3120,326 @@ size_t parser_detectPathTokens(const string& sString, size_t nPos)
     return 0u;
 }
 
+string parser_evalStringLogic(string sLine, Parser& _parser, bool& bReturningLogicals)
+{
+    if (!sLine.length())
+        return "false";
+    if (sLine.find('"') == string::npos)
+    {
+        bReturningLogicals = true;
+        return sLine;
+    }
+
+    sLine += " ";
+
+    sLine = parser_evalStringTernary(sLine, _parser);
+
+    //cerr << sLine << endl;
+    unsigned int nPos = 0;
+    if (sLine.find('(') != string::npos)
+    {
+        nPos = 0;
+        while (sLine.find('(', nPos) != string::npos)
+        {
+            nPos = sLine.find('(', nPos) + 1;
+            if (!isInQuotes(sLine, nPos-1))
+            {
+                sLine = sLine.substr(0,nPos-1) + parser_evalStringLogic(sLine.substr(nPos, getMatchingParenthesis(sLine.substr(nPos-1))-1), _parser, bReturningLogicals) + sLine.substr(getMatchingParenthesis(sLine.substr(nPos-1))+nPos);
+                //cerr << sLine << endl;
+                nPos = 0;
+            }
+        }
+    }
+    if (sLine.find("&&") != string::npos)
+    {
+        nPos = 0;
+        while (sLine.find("&&", nPos) != string::npos)
+        {
+            nPos = sLine.find("&&", nPos)+2;
+            if (!isInQuotes(sLine, nPos-2))
+            {
+                string sLeft = parser_evalStringLogic(sLine.substr(0,nPos-2), _parser, bReturningLogicals);
+                string sRight = parser_evalStringLogic(sLine.substr(nPos), _parser, bReturningLogicals);
+                StripSpaces(sLeft);
+                StripSpaces(sRight);
+                if (sLeft[0] == '"' && sLeft[sLeft.length()-1] == '"')
+                    sLeft = sLeft.substr(1,sLeft.length()-2);
+                if (sRight[0] == '"' && sRight[sRight.length()-1] == '"')
+                    sRight = sRight.substr(1,sRight.length()-2);
+                bReturningLogicals = true;
+                if (sLeft == "true" && sRight == "true")
+                    return "true";
+                else
+                    return "false";
+            }
+        }
+    }
+    if (sLine.find("|||") != string::npos)
+    {
+        nPos = 0;
+        while (sLine.find("|||", nPos) != string::npos)
+        {
+            nPos = sLine.find("|||", nPos)+3;
+            if (!isInQuotes(sLine, nPos-3))
+            {
+                string sLeft = parser_evalStringLogic(sLine.substr(0,nPos-3), _parser, bReturningLogicals);
+                string sRight = parser_evalStringLogic(sLine.substr(nPos), _parser, bReturningLogicals);
+                StripSpaces(sLeft);
+                StripSpaces(sRight);
+                if (sLeft[0] == '"' && sLeft[sLeft.length()-1] == '"')
+                    sLeft = sLeft.substr(1,sLeft.length()-2);
+                if (sRight[0] == '"' && sRight[sRight.length()-1] == '"')
+                    sRight = sRight.substr(1,sRight.length()-2);
+                bReturningLogicals = true;
+                if ((sLeft == "true" || sRight == "true") && sLeft != sRight)
+                    return "true";
+                else
+                    return "false";
+            }
+        }
+    }
+    if (sLine.find("||") != string::npos)
+    {
+        nPos = 0;
+        while (sLine.find("||", nPos) != string::npos)
+        {
+            nPos = sLine.find("||", nPos)+2;
+            if (!isInQuotes(sLine, nPos-2))
+            {
+                string sLeft = parser_evalStringLogic(sLine.substr(0,nPos-2), _parser, bReturningLogicals);
+                string sRight = parser_evalStringLogic(sLine.substr(nPos), _parser, bReturningLogicals);
+                StripSpaces(sLeft);
+                StripSpaces(sRight);
+                if (sLeft[0] == '"' && sLeft[sLeft.length()-1] == '"')
+                    sLeft = sLeft.substr(1,sLeft.length()-2);
+                if (sRight[0] == '"' && sRight[sRight.length()-1] == '"')
+                    sRight = sRight.substr(1,sRight.length()-2);
+                bReturningLogicals = true;
+                if (sLeft == "true" || sRight == "true")
+                    return "true";
+                else
+                    return "false";
+            }
+        }
+    }
+    if (sLine.find("==") != string::npos && !isInQuotes(sLine, sLine.find("==")))
+    {
+        string sLeft = sLine.substr(0,sLine.find("=="));
+        string sRight = sLine.substr(sLine.find("==")+2);
+        StripSpaces(sLeft);
+        StripSpaces(sRight);
+        if (sLeft[0] == '"' && sLeft[sLeft.length()-1] == '"')
+            sLeft = sLeft.substr(1,sLeft.length()-2);
+        if (sRight[0] == '"' && sRight[sRight.length()-1] == '"')
+            sRight = sRight.substr(1,sRight.length()-2);
+        bReturningLogicals = true;
+        if (sLeft == sRight)
+            return "true";
+        else
+            return "false";
+    }
+    else if (sLine.find("!=") != string::npos && !isInQuotes(sLine, sLine.find("!=")))
+    {
+        string sLeft = sLine.substr(0,sLine.find("!="));
+        string sRight = sLine.substr(sLine.find("!=")+2);
+        StripSpaces(sLeft);
+        StripSpaces(sRight);
+        if (sLeft[0] == '"' && sLeft[sLeft.length()-1] == '"')
+            sLeft = sLeft.substr(1,sLeft.length()-2);
+        if (sRight[0] == '"' && sRight[sRight.length()-1] == '"')
+            sRight = sRight.substr(1,sRight.length()-2);
+        bReturningLogicals = true;
+        if (sLeft != sRight)
+            return "true";
+        else
+            return "false";
+    }
+    else if (sLine.find("<=") != string::npos && !isInQuotes(sLine, sLine.find("<=")))
+    {
+        string sLeft = sLine.substr(0,sLine.find("<="));
+        string sRight = sLine.substr(sLine.find("<=")+2);
+        StripSpaces(sLeft);
+        StripSpaces(sRight);
+        if (sLeft[0] == '"' && sLeft[sLeft.length()-1] == '"')
+            sLeft = sLeft.substr(1,sLeft.length()-2);
+        if (sRight[0] == '"' && sRight[sRight.length()-1] == '"')
+            sRight = sRight.substr(1,sRight.length()-2);
+        bReturningLogicals = true;
+        if (sLeft <= sRight)
+            return "true";
+        else
+            return "false";
+    }
+    else if (sLine.find(">=") != string::npos && !isInQuotes(sLine, sLine.find(">=")))
+    {
+        string sLeft = sLine.substr(0,sLine.find(">="));
+        string sRight = sLine.substr(sLine.find(">=")+2);
+        StripSpaces(sLeft);
+        StripSpaces(sRight);
+        if (sLeft[0] == '"' && sLeft[sLeft.length()-1] == '"')
+            sLeft = sLeft.substr(1,sLeft.length()-2);
+        if (sRight[0] == '"' && sRight[sRight.length()-1] == '"')
+            sRight = sRight.substr(1,sRight.length()-2);
+        bReturningLogicals = true;
+        if (sLeft >= sRight)
+            return "true";
+        else
+            return "false";
+    }
+    else if (sLine.find('<') != string::npos && !isInQuotes(sLine, sLine.find('<')))
+    {
+        string sLeft = sLine.substr(0,sLine.find('<'));
+        string sRight = sLine.substr(sLine.find('<')+1);
+        StripSpaces(sLeft);
+        StripSpaces(sRight);
+        if (sLeft[0] == '"' && sLeft[sLeft.length()-1] == '"')
+            sLeft = sLeft.substr(1,sLeft.length()-2);
+        if (sRight[0] == '"' && sRight[sRight.length()-1] == '"')
+            sRight = sRight.substr(1,sRight.length()-2);
+        bReturningLogicals = true;
+        if (sLeft < sRight)
+            return "true";
+        else
+            return "false";
+    }
+    else if (sLine.find('>') != string::npos && !isInQuotes(sLine, sLine.find('>')))
+    {
+        string sLeft = sLine.substr(0,sLine.find('>'));
+        string sRight = sLine.substr(sLine.find('>')+1);
+        StripSpaces(sLeft);
+        StripSpaces(sRight);
+        if (sLeft[0] == '"' && sLeft[sLeft.length()-1] == '"')
+            sLeft = sLeft.substr(1,sLeft.length()-2);
+        if (sRight[0] == '"' && sRight[sRight.length()-1] == '"')
+            sRight = sRight.substr(1,sRight.length()-2);
+        bReturningLogicals = true;
+        if (sLeft > sRight)
+            return "true";
+        else
+            return "false";
+    }
+    StripSpaces(sLine);
+    return sLine;
+}
+
+string parser_evalStringTernary(string sLine, Parser& _parser)
+{
+    bool bReturningLogicals = false;
+    size_t nPos = 0;
+    if (sLine.find('?') != string::npos)
+    {
+        while (sLine.find('?', nPos) != string::npos)
+        {
+            nPos = sLine.find('?', nPos);
+            if (!isInQuotes(sLine, nPos))
+            {
+                vector<string> vTernary = parser_getStringTernaryExpression(sLine, nPos);
+                nPos = 0;
+                vTernary[0] = parser_evalStringLogic(vTernary[0], _parser, bReturningLogicals);
+                bool result = false;
+                if (vTernary[0].find('"') != string::npos)
+                {
+                    StripSpaces(vTernary[0]);
+                    result = (bool)(vTernary[0].length()-2);
+                }
+                else
+                {
+                    _parser.SetExpr(vTernary[0]);
+                    result = (bool)_parser.Eval();
+                }
+                if (result)
+                    return sLine + parser_evalStringLogic(vTernary[1], _parser, bReturningLogicals);
+                else
+                    return sLine + parser_evalStringLogic(vTernary[2], _parser, bReturningLogicals);
+            }
+        }
+    }
+    return sLine;
+}
+
+vector<string> parser_getStringTernaryExpression(string& sLine, size_t& nPos) // nPos ist the position of the question mark
+{
+    vector<string> vTernary;
+    size_t nTernaryStart = 0;
+    //size_t nTernaryEnd = sLine.length();
+    size_t nColonPosition = 0;
+
+    /*for (int i = nPos; i >= 0; i--)
+    {
+        if (sLine[i] == ' ')
+            continue;
+        if (sLine[i] == ')') // parentheses
+        {
+            int parentheses = 0;
+            size_t quotes = 0;
+            for (int j = i; j >= 0; j--)
+            {
+                if (sLine[j] == '"' && sLine[j-1] != '\\')
+                    quotes++;
+                if (sLine[j] == ')' && !(quotes%2))
+                    parentheses--;
+                if (sLine[j] == '(' && !(quotes%2))
+                    parentheses++;
+                if (!parentheses && sLine[j] == '(')
+                {
+                    nTernaryStart = j;
+                    break;
+                }
+            }
+            break;
+        }
+        else if (sLine[i] == '"') // quotes (single string)
+        {
+            for (int j = i; j >= 0; j--)
+            {
+                if (sLine[j] == '"' && j != i && sLine[j-1] != '\\')
+                {
+                    nTernaryStart = j;
+                    break;
+                }
+            }
+            break;
+        }
+        else if (sLine[i] != ' ' && i != nPos) // true or false
+        {
+            for (int j = i; j >= 0; j--)
+            {
+                if (sLine[j] == ' ')
+                {
+                    nTernaryStart = j+1;
+                    break;
+                }
+            }
+            break;
+        }
+    }*/
+
+    //nPos -= nTernaryStart;
+    string sTernary = sLine.substr(nTernaryStart);
+    sLine.erase(nTernaryStart);
+
+    size_t quotes = 0;
+    for (size_t i = nPos; i < sTernary.length(); i++)
+    {
+        if (!(quotes%2) && (sTernary[i] == '(' || sTernary[i] == '[' || sTernary[i] == '{'))
+            i += getMatchingParenthesis(sTernary.substr(i));
+        if (sTernary[i] == '"' && sTernary[i-1] != '\\')
+            quotes++;
+        if (!(quotes%2) && sTernary[i] == ':')
+        {
+            nColonPosition = i;
+            break;
+        }
+    }
 
 
+    vTernary.push_back(sTernary.substr(0, nPos));
+    vTernary.push_back(sTernary.substr(nPos+1, nColonPosition-1-nPos));
+    vTernary.push_back(sTernary.substr(nColonPosition+1));
 
-
+    nPos = nTernaryStart;
+    return vTernary;
+}
 
 
 
