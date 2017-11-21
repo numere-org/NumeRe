@@ -32,6 +32,7 @@ class GraphHelper : public mglDraw
         mglGraph* _graph;
         bool bAlphaActive;
         bool bLightActive;
+        double dAspect;
 
     public:
         GraphHelper(mglGraph* __graph, const PlotData& _pData);
@@ -45,6 +46,10 @@ class GraphHelper : public mglDraw
             {return bLightActive;}
         bool getAlpha()
             {return bAlphaActive;}
+        double getAspect()
+            {return dAspect;}
+        void setAspect(double aspect)
+            {dAspect = aspect;}
 };
 
 
