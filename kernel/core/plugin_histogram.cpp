@@ -331,7 +331,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 		}
 		mglGraph* _histGraph = new mglGraph();
 		double dAspect = 8.0/3.0;
-		if (bMake2DHist || !bSilent || !_pData.getSilentMode())
+		if (bMake2DHist /*|| !bSilent || !_pData.getSilentMode()*/)
             dAspect = 4.0/3.0;
         if (_pData.getHighRes() == 2 && bSilent && _pData.getSilentMode())           // Aufloesung und Qualitaet einstellen
         {
@@ -1123,6 +1123,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
             if (_pData.getOpenImage() && !_pData.getSilentMode() && !bSilent)
             {
                 GraphHelper* _graphHelper = new GraphHelper(_histGraph, _pData);
+                _graphHelper->setAspect(dAspect);
                 NumeReKernel::updateGraphWindow(_graphHelper);
                 _histGraph = nullptr;
                 NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
@@ -1906,6 +1907,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
             if (_pData.getOpenImage() && !_pData.getSilentMode() && !bSilent)
             {
                 GraphHelper* _graphHelper = new GraphHelper(_histGraph, _pData);
+                _graphHelper->setAspect(dAspect);
                 NumeReKernel::updateGraphWindow(_graphHelper);
                 _histGraph = nullptr;
                 NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");

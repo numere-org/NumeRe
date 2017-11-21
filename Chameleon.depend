@@ -2443,7 +2443,7 @@
 	<wx/wx.h>
 	<wx/treectrl.h>
 
-1500837632 d:\cpp\numere-source\trunk\kernel\core\graph_helper.hpp
+1511250593 d:\cpp\numere-source\trunk\kernel\core\graph_helper.hpp
 	<mgl2/wnd.h>
 	<mgl2/mgl.h>
 	"plotdata.hpp"
@@ -3247,7 +3247,7 @@
 	<string>
 	<vector>
 
-1509889843 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1511084207 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
