@@ -40,18 +40,10 @@
 #include <gsl/gsl_sf.h>
 #include <boost/math/distributions/students_t.hpp>
 
-#include "error.hpp"
-#include "settings.hpp"
+#include "datafile.hpp"
 #include "tools.hpp"
-#include "built-in.hpp"
-#include "define.hpp"
-#include "plotdata.hpp"
-#include "parser_functions.hpp"
-#include "script.hpp"
-#include "loop.hpp"
-#include "procedure.hpp"
+#include "version.h"
 
-#include "ParserLib/muParserTest.h"
 #include "ParserLib/muParser.h"
 
 using namespace std;

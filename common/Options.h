@@ -13,7 +13,6 @@
 
 using namespace std;
 
-class Permission;
 
 // copied from stc.h
 // PrintColourMode - force black text on white background for printing.
@@ -72,7 +71,6 @@ class Options
 		wxString GetPassphrase() { return m_password; }
 		wxString GetRemoteCompileOut() { return m_remoteCompileOut; }
 		wxString GetLocalCompileOut() { return m_localCompileOut; }
-		Permission* GetPerms() { return m_perms; }
 		int GetPrintStyle() { return m_printStyle; }
 		bool GetShowToolbarText() { return m_showToolbarText; }
 		bool GetLineNumberPrinting() {return m_printLineNumbers; }
@@ -152,8 +150,6 @@ class Options
 		StringFilenameHash m_mingwExecutableNames;
 		wxArrayString m_mingwBinPaths;
 		wxArrayString m_mingwProgramNames;
-
-		Permission* m_perms;
 
 		vector<SyntaxStyles> vSyntaxStyles;
 

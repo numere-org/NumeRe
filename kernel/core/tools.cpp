@@ -22,6 +22,24 @@
 #include <cstdlib>
 
 
+string toString(int nNumber, const Settings& _option)
+{
+    return toString((double)nNumber, _option);  // Unnoetig das nochmal zu schreiben. Rufen wir die andere Funktion mit einer expliziten Konvertierung auf
+}
+
+string toString(double dNumber, const Settings& _option)
+{
+    return toString(dNumber, _option.getPrecision());   // Auf den eigentlichen string wird dann mit der Methode ostringstream::str() zugegriffen
+}
+
+string toString(double dNumber, int nPrecision)
+{
+    ostringstream Temp;
+    Temp.precision(nPrecision);
+    Temp << dNumber;
+    return Temp.str();
+}
+
 string toString(int nNumber)
 {
     return toString((long long int)nNumber);
@@ -58,6 +76,51 @@ string toString(time_t tTime, bool bOnlyTime)
 	Temp_str << ltm->tm_sec;	// ss
 
     return Temp_str.str();
+}
+
+string toString(long long int nNumber)
+{
+    ostringstream Temp;
+    Temp << nNumber;
+    return Temp.str();
+}
+
+string toCmdString(double dNumber)
+{
+    ostringstream Temp;
+    Temp.precision(12);
+    Temp << dNumber;
+    return Temp.str();
+}
+
+string toString(bool bBoolean)
+{
+    if (bBoolean)
+        return "true";
+    else
+        return "false";
+}
+
+string condenseText(const string& sText)
+{
+    string sReturn = sText;
+    string sToErase = " AaEeIiOoUuÄäÖöÜüßYy";
+    for (unsigned int i = 0; i < sReturn.length(); i++)
+    {
+        if (sToErase.find(sReturn[i]) != string::npos
+            || sReturn[i] == 142
+            || sReturn[i] == 132
+            || sReturn[i] == 153
+            || sReturn[i] == 148
+            || sReturn[i] == 154
+            || sReturn[i] == 129
+            || sReturn[i] == 225)
+        {
+            sReturn.erase(i,1);
+            i--;
+        }
+    }
+    return sReturn;
 }
 
 /* Diese Funktion vergleicht ganz einfach einen gegebenen Parameter mit der Eingabe. Wird der Parameter gefunden, gibt diese
@@ -357,50 +420,6 @@ double StrToDb(const string& sString)
     istringstream Temp(sString);
     Temp >> dReturn;
     return dReturn;
-}
-
-// Diese Funktion steuert die Kopfzeile der Console
-void SetConsTitle(const Datafile& _data, const Settings& _option, string sScript)
-{
-    string sConsoleTitle = "";  // Variable fuer den Consolentitel
-    if (_data.isValid())
-    {
-        sConsoleTitle = "[" + _data.getDataFileNameShort() + "] ";   // Datenfile-Namen anzeigen, falls geladen
-    }
-    if (_data.isValidCache())
-    {
-        sConsoleTitle += "[";
-            if (!_data.getSaveStatus())
-                sConsoleTitle += "*";       // Anzeigen, dass die Daten nicht gespeichert sind
-        sConsoleTitle += "Cached Data] ";   // Anzeigen, dass Daten im Cache sind
-    }
-    if (sScript.length())
-    {
-        sConsoleTitle += "[" + sScript + "] ";
-    }
-    if (_data.isValid() || _data.isValidCache() || sScript.length())
-    {
-        sConsoleTitle += "- ";  // Bindestrich zur optischen Trennung
-    }
-    if ((sConsoleTitle.length() + sVersion.length() > _option.getWindow()-40
-            && (!_option.getbDebug() && !_option.getUseDebugger()))
-        || (sConsoleTitle.length() + sVersion.length() > _option.getWindow()-55
-            && (_option.getbDebug() || _option.getUseDebugger())))
-    {
-        if (sVersion.length() > _option.getWindow()-65 && sConsoleTitle.length() > _option.getWindow()-60)
-            sConsoleTitle += "NumeRe (v " + (sVersion.substr(0,5) + AutoVersion::STATUS_SHORT) + ")";
-        else
-            sConsoleTitle += "NumeRe (v " + sVersion + ")";
-    }
-    else
-        sConsoleTitle += "NumeRe: Framework für Numerische Rechnungen (v " + sVersion + ")";
-    if (_option.getUseDebugger())
-        sConsoleTitle += " [Debugger "+_lang.get("COMMON_ACTIVE")+"]";
-    if (_option.getbDebug())
-        sConsoleTitle += " [DEV-MODE]";
-    sConsoleTitle = toSystemCodePage(sConsoleTitle);
-    SetConsoleTitle(sConsoleTitle.c_str()); // WINDOWS-Funktion aus <windows.h>
-    return;
 }
 
 // Liefert die aeusserste, schliessende Klammer.
@@ -2174,148 +2193,6 @@ string getLastArgument(string& sArgList, bool bCut)
 void make_progressBar(int nStep, int nFirstStep, int nFinalStep, const string& sType)
 {
     NumeReKernel::statusBar(nStep, nFirstStep, nFinalStep, sType);
-    /**static int nLastStatusVal = -1;
-    static unsigned int nLastLineLength = -1;
-    //cerr << nStep << endl << nFirstStep << endl << nFinalStep << endl << sType << endl;
-    int nStatusVal = 0;
-    if (abs(nFinalStep-nFirstStep) < 9999
-        && abs((nStep-nFirstStep) / (double)(nFinalStep-nFirstStep) * 20)
-            > abs((nStep-1-nFirstStep) / (double)(nFinalStep-nFirstStep) * 20))
-    {
-        nStatusVal = abs((int)((nStep-nFirstStep) / (double)(nFinalStep-nFirstStep) * 20)) * 5;
-    }
-    else if (abs(nFinalStep-nFirstStep) >= 9999
-        && abs((nStep-nFirstStep) / (double)(nFinalStep-nFirstStep) * 100)
-            > abs((nStep-1-nFirstStep) / (double)(nFinalStep-nFirstStep) * 100))
-    {
-        nStatusVal = abs((int)((nStep-nFirstStep) / (double)(nFinalStep-nFirstStep) * 100));
-    }
-    if (nLastStatusVal >= 0 && nLastStatusVal == nStatusVal && (sType != "cancel" && sType != "bcancel"))
-        return;
-
-    if (nLastLineLength > 0)
-        cerr << "\r" << std::setw(nLastLineLength) << std::setfill(' ') << " ";
-    if (sType == "std")
-    {
-        cerr << "\r|-> " << _lang.get("COMMON_EVALUATING") << " ... " << nStatusVal << " %";
-        nLastLineLength = 14+_lang.get("COMMON_EVALUATING").length();
-    }
-    else if (sType == "cancel")
-    {
-        cerr << "\r|-> " << _lang.get("COMMON_EVALUATING") << " ... " << _lang.get("COMMON_CANCEL");
-        nStep = nFinalStep;
-    }
-    else if (sType == "bar")
-    {
-        cerr << "\r|-> " << (char)186;
-        for (int i = 0; i < 20; i++)
-        {
-            if (i < nStatusVal/5.0)
-                cerr << (char)178;
-            else
-                cerr << (char)176;
-        }
-        cerr << (char)186 << " (" << nStatusVal << " %)";
-        nLastLineLength = 34;
-    }
-    else if (sType == "bcancel")
-    {
-        cerr << "\r|-> " << (char)186;
-        for (int i = 0; i < 20; i++)
-        {
-            if (i < nLastStatusVal/5.0)
-                cerr << (char)178;
-            else
-                cerr << (char)176;
-        }
-        cerr << (char)186 << " (--- %)";
-        nFinalStep = nStep;
-    }
-    else
-    {
-        nLastLineLength = 1;
-        cerr << "\r|";
-        for (unsigned int i = 0; i < sType.length(); i++)
-        {
-            if (sType.substr(i,5) == "<bar>")
-            {
-                cerr << (char)186;
-                for (int j = 0; j < 20; j++)
-                {
-                    if (j < nStatusVal/5.0)
-                        cerr << (char)178;
-                    else
-                        cerr << (char)176;
-                }
-                cerr << (char)186;
-                i += 4;
-                nLastLineLength += 22;
-                continue;
-            }
-            if (sType.substr(i,5) == "<Bar>")
-            {
-                cerr << (char)186;
-                for (int j = 0; j < 20; j++)
-                {
-                    if (j < nStatusVal/5.0)
-                        cerr << (char)178;
-                    else
-                        cerr << " ";
-                }
-                cerr << (char)186;
-                i += 4;
-                nLastLineLength += 22;
-                continue;
-            }
-            if (sType.substr(i,5) == "<BAR>")
-            {
-                cerr << (char)186;
-                for (int j = 0; j < 20; j++)
-                {
-                    if (j < nStatusVal/5.0)
-                        cerr << (char)219;
-                    else
-                        cerr << (char)176;
-                }
-                cerr << (char)186;
-                i += 4;
-                nLastLineLength += 22;
-                continue;
-            }
-            if (sType.substr(i,5) == "<val>")
-            {
-                cerr << nStatusVal;
-                i += 4;
-                nLastLineLength += 3;
-                continue;
-            }
-            if (sType.substr(i,5) == "<Val>")
-            {
-                cerr << std::setw(3) << std::setfill(' ') << nStatusVal;
-                i += 4;
-                nLastLineLength += 3;
-                continue;
-            }
-            if (sType.substr(i,5) == "<VAL>")
-            {
-                cerr << std::setw(3) << std::setfill('0') << nStatusVal;
-                i += 4;
-                nLastLineLength += 3;
-                continue;
-            }
-            cerr << sType[i];
-            nLastLineLength++;
-        }
-    }
-
-    if (nLastStatusVal < 0 || nLastStatusVal != nStatusVal)
-        nLastStatusVal = nStatusVal;
-    if (nFinalStep == nStep)
-    {
-        cerr << endl;
-        nLastStatusVal = -1;
-        nLastLineLength = -1;
-    }*/
     return;
 }
 
@@ -3241,6 +3118,107 @@ string getFileInfo(const string& sFileName)
     return sFileInfo;
 }
 
+bool validateParenthesisNumber(const string& sCmd)
+{
+    int nParCount = 0;
+    int nVectCount = 0;
+    for (unsigned int i = 0; i < sCmd.length(); i++)
+    {
+        if (sCmd[i] == '(' && !isInQuotes(sCmd, i, true))
+            nParCount++;
+        if (sCmd[i] == ')' && !isInQuotes(sCmd, i, true))
+            nParCount--;
+        if (sCmd[i] == '{' && !isInQuotes(sCmd, i, true))
+            nVectCount++;
+        if (sCmd[i] == '}' && !isInQuotes(sCmd, i, true))
+            nVectCount--;
+        if (nParCount < 0 || nVectCount < 0)
+            return false;
+    }
+    return !((bool)nParCount || (bool)nVectCount);
+}
+
+void addArgumentQuotes(string& sToAdd, const string& sParam)
+{
+    if (matchParams(sToAdd, sParam, '='))
+    {
+        int nPos = matchParams(sToAdd, sParam, '=') + sParam.length();
+        while (sToAdd[nPos] == ' ')
+            nPos++;
+        if (!containsStrings(sToAdd.substr(nPos, sToAdd.find(' ', nPos)-nPos)))
+        {
+            sToAdd = sToAdd.substr(0,nPos)
+                + "\"" + getArgAtPos(sToAdd, nPos) + "\""
+                + sToAdd.substr(sToAdd.find(' ', sToAdd.find(getArgAtPos(sToAdd, nPos))+getArgAtPos(sToAdd, nPos).length()));
+        }
+        else
+            return;
+    }
+    else
+        return;
+    return;
+}
+
+double intPower(double dNumber, int nExponent)
+{
+    long double dResult = 1.0L;
+    if (!nExponent)
+        return 1.0;
+
+    for (int i = abs(nExponent); i > 0; i--)
+    {
+        dResult *= (long double)dNumber;
+    }
+
+    if (nExponent > 0)
+        return dResult;
+    else
+        return 1.0/dResult;
+}
+
+string replacePathSeparator(const string& __sPath)
+{
+    if (__sPath.find('\\') == string::npos)
+        return __sPath;
+
+    string sPath = __sPath;
+    for (unsigned int i = 0; i < sPath.length(); i++)
+    {
+        if (sPath[i] == '\\')
+            sPath[i] = '/';
+    }
+    return sPath;
+}
+
+bool isToCmd(const string& sCmd, unsigned int nPos)
+{
+    if (nPos < 6 || nPos >= sCmd.length())
+        return false;
+    if (sCmd.find("to_cmd(") == string::npos || sCmd.find("to_cmd(") > nPos)
+        return false;
+    for (unsigned int i = nPos-6; i >= 0; i--)
+    {
+        if (sCmd.substr(i,7) == "to_cmd(" && !isInQuotes(sCmd, i))
+        {
+            if (getMatchingParenthesis(sCmd.substr(i+6)) > nPos-i-6 && getMatchingParenthesis(sCmd.substr(i+6)) != string::npos)
+                return true;
+        }
+        if (!i)
+            break;
+    }
+    return false;
+}
+
+unsigned int countEscapeSymbols(const string& sLine)
+{
+    unsigned int nCount = 0;
+    for (unsigned int i = 0; i < sLine.length(); i++)
+    {
+        if (sLine.substr(i,2) == "\\$")
+            nCount++;
+    }
+    return nCount;
+}
 
 bool containsDataObject(const string& sExpr)
 {

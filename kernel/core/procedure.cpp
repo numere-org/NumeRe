@@ -102,9 +102,6 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
     {
         throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
     }
-    // --> Erneuere den Fenstertitel der Konsole <--
-    SetConsTitle(_data, _option, _script.getScriptFileNameShort());
-
     // --> Leerzeichen und Tabulatoren entfernen <--
     StripSpaces(sLine);
     //cerr << sLine << endl;
@@ -264,7 +261,6 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
         {
             case  0: break; // Kein Keywort: Mit dem Parser auswerten
             case  1:        // Keywort: Naechster Schleifendurchlauf!
-                SetConsTitle(_data, _option);
                 thisReturnVal.vNumVal.push_back(NAN);
                 //NumeReKernel::bSupressAnswer = bSupressAnswer_back;
                 return thisReturnVal;

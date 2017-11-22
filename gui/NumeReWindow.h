@@ -34,6 +34,56 @@
 #define OPENFILE_BLACKLIST_REMOVE 2
 #define OPENFILE_FORCE 4
 
+/** \mainpage NumeRe: Framework fuer Numerische Rechnungen
+ *
+ * \section intro Introduction
+ * NumeRe: Framework fuer Numerische Rechnungen is a framework written for
+ * Microsoft Windows(R) and released under the GNU GPL v3 for solving and
+ * visualizing mathematical and physical problems numerically.
+ *
+ * NumeRe is based upon muParser, MathGL, BasicExcel, TinyXML-2, the Boost
+ * C++-Library & the GNU Scientific Library
+ *
+ * \section license License
+ *
+ * NumeRe: Framework fuer Numerische Rechnungen
+ * Copyright (C) 2017  Erik Haenel et al.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+ *
+ * \section depend Dependencies
+ *
+ * This section lists the dependencies of this application
+ *
+ * \subsection compiler Compiler
+ *
+ * This application was developed with TDM-GCC 4.9.2, which was derived
+ * from the MinGW GCC with the identical version number. In principle,
+ * this source code should compile with each gcc port.
+ *
+ * \subsection gui GUI-Framework
+ *
+ * This application uses wxWidgets v3.0.3 as GUI framework.
+ *
+ * \subsection external External Libraries
+ *
+ * You'll need the boost libaries and MathGL to compile this application.
+ *
+ */
+
+
+
 // forward declarations
 
 class wxFileConfig;
@@ -50,7 +100,6 @@ class wxPanel;
 class wxSplitterWindow;
 class RemoteFileDialog;
 class OptionsDialog;
-class Permission;
 class Networking;
 class Compiler;
 class wxFileConfig;

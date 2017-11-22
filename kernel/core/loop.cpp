@@ -2378,7 +2378,6 @@ int Loop::calc(string sLine, int nthCmd, string sBlock)
                     }
                     break;
                 case  1:
-                    SetConsTitle(*_dataRef, *_optionRef);
                     NumeReKernel::bSupressAnswer = bSupressAnswer_back;
                     if (!nCurrentCalcType)
                         nCalcType[nthCmd] |= CALCTYPE_COMMAND;

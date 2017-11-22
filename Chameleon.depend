@@ -2023,7 +2023,7 @@
 	"../kernel/kernel.hpp"
 	"../kernel/debugmessenger.hpp"
 
-1505668495 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1511340968 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -2279,7 +2279,7 @@
 	<sstream>
 	<windows.h>
 
-1507366448 d:\cpp\numere-source\trunk\kernel\core\tools.hpp
+1511339566 d:\cpp\numere-source\trunk\kernel\core\tools.hpp
 	<iostream>
 	<iomanip>
 	<sstream>
@@ -2293,7 +2293,6 @@
 	"structures.hpp"
 	"error.hpp"
 	"settings.hpp"
-	"datafile.hpp"
 
 1500714088 d:\cpp\numere-source\trunk\kernel\core\structures.hpp
 	<string>
@@ -2448,7 +2447,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1502007007 d:\cpp\numere-source\trunk\common\options.h
+1511337743 d:\cpp\numere-source\trunk\common\options.h
 	<wx/wx.h>
 	<wx/validate.h>
 	<wx/valgen.h>
@@ -3064,12 +3063,11 @@
 	"../common/datastructures.h"
 	"../common/debug.h"
 
-1503740013 source:d:\cpp\numere-source\trunk\common\options.cpp
+1511337764 source:d:\cpp\numere-source\trunk\common\options.cpp
 	"Options.h"
 	<wx/filename.h>
 	<wx/arrstr.h>
 	<wx/dir.h>
-	"../perms/p.h"
 	"debug.h"
 
 1490787951 d:\cpp\numere-source\trunk\perms\p.h
@@ -3225,7 +3223,7 @@
 	<windows.h>
 	"commctrl.h"
 
-1490787950 d:\cpp\numere-source\trunk\common\tree.h
+1511285391 d:\cpp\numere-source\trunk\common\tree.h
 	<cassert>
 	<memory>
 	<stdexcept>
@@ -3247,7 +3245,7 @@
 	<string>
 	<vector>
 
-1511084207 source:d:\cpp\numere-source\trunk\editor\editor.cpp
+1511337474 source:d:\cpp\numere-source\trunk\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../common/CommonHeaders.h"
@@ -3258,7 +3256,6 @@
 	<vector>
 	<string>
 	"editor.h"
-	"../perms/p.h"
 	"../gui/NumeReWindow.h"
 	"../gui/NumeReNotebook.h"
 	"../common/datastructures.h"
@@ -3307,7 +3304,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1509178299 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1511337445 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3339,7 +3336,6 @@
 	"dialogs/CompilerOutputPanel.h"
 	"dialogs/AboutChameleonDialog.h"
 	"../common/NumeRePrintout.h"
-	"../perms/p.h"
 	"../common/ProjectInfo.h"
 	"../common/recycler.hpp"
 	"../network/networking.h"
@@ -3384,7 +3380,7 @@
 	"wx/arrstr.h"
 	<stdarg.h>
 
-1502008080 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
+1511337620 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
 	"wx/notebook.h"
 	"wx/spinctrl.h"
 	<wx/clrpicker.h>
@@ -3739,7 +3735,7 @@
 	"fndrpldialog.hpp"
 	"../../kernel/core/language.hpp"
 
-1502013096 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1511337706 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
@@ -3750,7 +3746,6 @@
 	<wx/dir.h>
 	"OptionsDialog.h"
 	"../NumeReWindow.h"
-	"../../perms/p.h"
 	"../../common/debug.h"
 
 1490787950 source:d:\cpp\numere-source\trunk\gui\dialogs\remotefiledialog.cpp
@@ -3888,7 +3883,7 @@
 	"filetree.hpp"
 	"../common/globals.hpp"
 
-1500964806 source:d:\cpp\numere-source\trunk\gui\graphviewer.cpp
+1511250771 source:d:\cpp\numere-source\trunk\gui\graphviewer.cpp
 	"graphviewer.hpp"
 
 1491247725 source:d:\cpp\numere-source\trunk\gui\helpviewer.cpp
@@ -3996,7 +3991,7 @@
 	"fitcontroller.hpp"
 	"../kernel.hpp"
 
-1500837671 source:d:\cpp\numere-source\trunk\kernel\core\graph_helper.cpp
+1511250550 source:d:\cpp\numere-source\trunk\kernel\core\graph_helper.cpp
 	"graph_helper.hpp"
 	"../kernel.hpp"
 	"tools.hpp"
@@ -4016,7 +4011,7 @@
 1490787950 source:d:\cpp\numere-source\trunk\kernel\core\language.cpp
 	"language.hpp"
 
-1509733069 source:d:\cpp\numere-source\trunk\kernel\core\loop.cpp
+1511338871 source:d:\cpp\numere-source\trunk\kernel\core\loop.cpp
 	"loop.hpp"
 	"../kernel.hpp"
 
@@ -4129,7 +4124,7 @@
 1499234831 source:d:\cpp\numere-source\trunk\kernel\core\plugin.cpp
 	"plugin.hpp"
 
-1505655606 source:d:\cpp\numere-source\trunk\kernel\core\plugin_histogram.cpp
+1511251063 source:d:\cpp\numere-source\trunk\kernel\core\plugin_histogram.cpp
 	"plugins.hpp"
 	"../kernel.hpp"
 
@@ -4141,7 +4136,7 @@
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1509047818 source:d:\cpp\numere-source\trunk\kernel\core\procedure.cpp
+1511338921 source:d:\cpp\numere-source\trunk\kernel\core\procedure.cpp
 	"procedure.hpp"
 	"../kernel.hpp"
 	"procedurevarfactory.hpp"
@@ -4201,7 +4196,7 @@
 	<cstddef>
 	<cstdarg>
 
-1505744803 source:d:\cpp\numere-source\trunk\kernel\core\tools.cpp
+1511341400 source:d:\cpp\numere-source\trunk\kernel\core\tools.cpp
 	"tools.hpp"
 	"../kernel.hpp"
 	<cstdlib>
@@ -4363,7 +4358,7 @@
 	<wx/wx.h>
 	<wx/splash.h>
 
-1508834742 d:\cpp\numere-source\trunk\kernel\core\functionimplementation.hpp
+1511346717 d:\cpp\numere-source\trunk\kernel\core\functionimplementation.hpp
 	<cstdlib>
 	<cmath>
 	<fstream>
@@ -4380,20 +4375,12 @@
 	<boost/math/common_factor.hpp>
 	<gsl/gsl_sf.h>
 	<boost/math/distributions/students_t.hpp>
-	"error.hpp"
-	"settings.hpp"
+	"datafile.hpp"
 	"tools.hpp"
-	"built-in.hpp"
-	"define.hpp"
-	"plotdata.hpp"
-	"parser_functions.hpp"
-	"script.hpp"
-	"loop.hpp"
-	"procedure.hpp"
-	"ParserLib/muParserTest.h"
+	"version.h"
 	"ParserLib/muParser.h"
 
-1508835733 source:d:\cpp\numere-source\trunk\kernel\core\functionimplementation.cpp
+1511342205 source:d:\cpp\numere-source\trunk\kernel\core\functionimplementation.cpp
 	"functionimplementation.hpp"
 
 1508758440 d:\cpp\numere-source\trunk\kernel\core\spline.h

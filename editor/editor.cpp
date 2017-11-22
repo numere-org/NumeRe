@@ -18,7 +18,6 @@
 #include <string>
 
 #include "editor.h"
-#include "../perms/p.h"
 #include "../gui/NumeReWindow.h"
 #include "../gui/NumeReNotebook.h"
 
