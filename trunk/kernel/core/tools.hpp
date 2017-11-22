@@ -20,7 +20,6 @@
 #ifndef TOOLS_HPP
 #define TOOLS_HPP
 
-//#include <cstring>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -35,89 +34,88 @@
 #include "structures.hpp"
 #include "error.hpp"
 #include "settings.hpp"
-#include "datafile.hpp"
 
 extern const string sVersion;
 extern int nLINE_LENGTH;
 using namespace std;
 
-// --> Macht aus einem Int ein String (mit Praezision) <--
-inline string toString (int nNumber, const Settings& _option)
-{
-    return toString((double)nNumber, _option);  // Unnoetig das nochmal zu schreiben. Rufen wir die andere Funktion mit einer expliziten Konvertierung auf
-}
+/** \brief Macht aus einem Int ein String (mit Praezision)
+ *
+ * \param nNumber int
+ * \param _option const Settings&
+ * \return string
+ *
+ */
+string toString(int nNumber, const Settings& _option);
 
-// --> Macht aus einem Double ein String (Wobei die Praezision beachtet wird) <--
-inline string toString (double dNumber, const Settings& _option)
-{
-    ostringstream Temp;                        // Wir brauchen einen ostringstream, umd double in string zu konvertieren
-    Temp.precision(_option.getPrecision());
-    Temp << dNumber;
-    return Temp.str();                         // Auf den eigentlichen string wird dann mit der Methode ostringstream::str() zugegriffen
-}
+/** \brief Macht aus einem Double ein String (Wobei die Praezision beachtet wird)
+ *
+ * \param dNumber double
+ * \param _option const Settings&
+ * \return string
+ *
+ */
+string toString(double dNumber, const Settings& _option);
 
-// --> Macht aus einem Double einen String mit beliebiger Preazision <--
-inline string toString (double dNumber, int nPrecision)
-{
-    ostringstream Temp;
-    Temp.precision(nPrecision);
-    Temp << dNumber;
-    return Temp.str();
-}
+/** \brief Macht aus einem Double einen String mit beliebiger Preazision
+ *
+ * \param dNumber double
+ * \param nPrecision int
+ * \return string
+ *
+ */
+string toString(double dNumber, int nPrecision);
 
+/** \brief Transforms an integer into a string
+ *
+ * \param int
+ * \return string
+ *
+ */
 string toString(int);
+
+/** \brief Transforms a time_t into a string (formatted as time)
+ *
+ * \param tTime time_t
+ * \param onlyTime bool
+ * \return string
+ *
+ */
 string toString(time_t tTime, bool bOnlyTime = false);
 
-// --> Macht aus einem Int ein String (ohne Praezision) <--
-inline string toString (long long int nNumber)
-{
-    ostringstream Temp;
-    Temp << nNumber;
-    return Temp.str();
-}
+/** \brief Macht aus einem Int ein String (ohne Praezision)
+ *
+ * \param nNumber long longint
+ * \return string
+ *
+ */
+string toString(long long int nNumber);
 
-// --> Macht aus einem Double einen String mit 20 Ziffern <--
-inline string toCmdString (double dNumber)
-{
-    ostringstream Temp;
-    Temp.precision(12);
-    Temp << dNumber;
-    return Temp.str();
-}
+/** \brief Macht aus einem Double einen String mit 20 Ziffern
+ *
+ * \param dNumber double
+ * \return string
+ *
+ */
+string toCmdString(double dNumber);
 
-// --> Macht aus einem bool einen String mit "true" oder "false" <--
-inline string toString(bool bBoolean)
-{
-    if (bBoolean)
-        return "true";
-    else
-        return "false";
-}
+/** \brief Macht aus einem bool einen String mit "true" oder "false"
+ *
+ * \param bBoolean bool
+ * \return string
+ *
+ */
+string toString(bool bBoolean);
 
-inline string condenseText(const string& sText)
-{
-    string sReturn = sText;
-    string sToErase = " AaEeIiOoUuÄäÖöÜüßYy";
-    for (unsigned int i = 0; i < sReturn.length(); i++)
-    {
-        if (sToErase.find(sReturn[i]) != string::npos
-            || sReturn[i] == 142
-            || sReturn[i] == 132
-            || sReturn[i] == 153
-            || sReturn[i] == 148
-            || sReturn[i] == 154
-            || sReturn[i] == 129
-            || sReturn[i] == 225)
-        {
-            sReturn.erase(i,1);
-            i--;
-        }
-    }
-    return sReturn;
-}
+/** \brief Removes vowels and umlauts from strings
+ *
+ * \param sText const string&
+ * \return string
+ *
+ */
+string condenseText(const string& sText);
 string wcstombs(const wstring& wStr);
 void StripSpaces(string&);
-void SetConsTitle(const Datafile&, const Settings&, string sScript = "");
 int matchParams(const string& sCmd, const string& sParam, const char cFollowing = ' ');
 bool getStringArgument(const string& sCmd, string& sArgument);
 bool getIntArgument(const string& sCmd, int& nArgument);
@@ -161,121 +159,50 @@ vector<vector<string> > getDataBase(const string& sDatabaseFileName, Settings& _
 string generateCacheName(const string& sFilename, Settings& _option);
 string getFileInfo(const string& sFilename);
 
-inline bool validateParenthesisNumber(const string& sCmd)
-{
-    int nParCount = 0;
-    int nVectCount = 0;
-    for (unsigned int i = 0; i < sCmd.length(); i++)
-    {
-        if (sCmd[i] == '(' && !isInQuotes(sCmd, i, true))
-            nParCount++;
-        if (sCmd[i] == ')' && !isInQuotes(sCmd, i, true))
-            nParCount--;
-        if (sCmd[i] == '{' && !isInQuotes(sCmd, i, true))
-            nVectCount++;
-        if (sCmd[i] == '}' && !isInQuotes(sCmd, i, true))
-            nVectCount--;
-        if (nParCount < 0 || nVectCount < 0)
-            return false;
-    }
-    return !((bool)nParCount || (bool)nVectCount);
-}
+/** \brief Checks, whether the number of parentheses is an even number
+ *
+ * \param sCmd const string&
+ * \return bool
+ *
+ * Doesn't check, whether the parentheses are ordered reasonable
+ *
+ */
+bool validateParenthesisNumber(const string& sCmd);
 
-inline void addArgumentQuotes(string& sToAdd, const string& sParam)
-{
-    if (matchParams(sToAdd, sParam, '='))
-    {
-        //cerr << sToAdd << endl;
-        int nPos = matchParams(sToAdd, sParam, '=') + sParam.length();
-        //cerr << nPos << endl;
-        while (sToAdd[nPos] == ' ')
-            nPos++;
-        //cerr << nPos << endl;
-        if (!containsStrings(sToAdd.substr(nPos, sToAdd.find(' ', nPos)-nPos)))  //sToAdd[nPos] != '"' && sToAdd[nPos] != '#' && sToAdd.substr(nPos, 10) != "to_string(" && sToAdd.substr(nPos, 7) != "string(")
-        {
-            sToAdd = sToAdd.substr(0,nPos)
-                + "\"" + getArgAtPos(sToAdd, nPos) + "\""
-                + sToAdd.substr(sToAdd.find(' ', sToAdd.find(getArgAtPos(sToAdd, nPos))+getArgAtPos(sToAdd, nPos).length()));
-            //cerr << sToAdd << endl;
-        }
-        else
-            return;
-    }
-    else
-        return;
-    return;
-}
+void addArgumentQuotes(string& sToAdd, const string& sParam);
 
-inline double intPower(double dNumber, int nExponent)
-{
-    long double dResult = 1.0L;
-    if (!nExponent)
-        return 1.0;
+/** \brief Calculates the power of a number using an integer as exponent
+ *
+ * \param dNumber double
+ * \param nExponent int
+ * \return double
+ *
+ */
+double intPower(double dNumber, int nExponent);
 
-    for (int i = abs(nExponent); i > 0; i--)
-    {
-        dResult *= (long double)dNumber;
-    }
-
-    if (nExponent > 0)
-        return dResult;
-    else
-        return 1.0/dResult;
-}
 string getNextArgument(string& sArgList, bool bCut = true);
 string getLastArgument(string& sArgList, bool bCut = true);
 
-inline string replacePathSeparator(const string& __sPath)
-{
-    if (__sPath.find('\\') == string::npos)
-        return __sPath;
+/** \brief Transforms Windows-style filepaths to Unix-Style
+ *
+ * \param __sPath const string&
+ * \return string
+ *
+ */
+string replacePathSeparator(const string& __sPath);
 
-    string sPath = __sPath;
-    for (unsigned int i = 0; i < sPath.length(); i++)
-    {
-        if (sPath[i] == '\\')
-            sPath[i] = '/';
-    }
-    return sPath;
-}
+/** \brief Checks, whether the "to_cmd()" function was used
+ *
+ * \param sCmd const string&
+ * \param nPos unsigned int
+ * \return bool
+ *
+ */
+bool isToCmd(const string& sCmd, unsigned int nPos);
 
-inline bool isToCmd(const string& sCmd, unsigned int nPos)
-{
-    if (nPos < 6 || nPos >= sCmd.length())
-        return false;
-    if (sCmd.find("to_cmd(") == string::npos || sCmd.find("to_cmd(") > nPos)
-        return false;
-    for (unsigned int i = nPos-6; i >= 0; i--)
-    {
-        if (sCmd.substr(i,7) == "to_cmd(" && !isInQuotes(sCmd, i))
-        {
-            if (getMatchingParenthesis(sCmd.substr(i+6)) > nPos-i-6 && getMatchingParenthesis(sCmd.substr(i+6)) != string::npos)
-                return true;
-        }
-        if (!i)
-            break;
-    }
-    return false;
-}
-
-inline void nextLoadMessage(unsigned int nSleep)
-{
-    Sleep(nSleep);
-    cerr << "\r                                                                              \r";
-    return;
-}
 void printLogo();
 string getTimeStamp(bool bGetStamp = true);
-inline unsigned int countEscapeSymbols(const string& sLine)
-{
-    unsigned int nCount = 0;
-    for (unsigned int i = 0; i < sLine.length(); i++)
-    {
-        if (sLine.substr(i,2) == "\\$")
-            nCount++;
-    }
-    return nCount;
-}
+unsigned int countEscapeSymbols(const string& sLine);
 vector<string> getFileList(const string& sDirectory, const Settings& _option, int nFlags = 0);
 vector<string> getFolderList(const string& sDirectory, const Settings& _option, int nFlags = 0);
 string getClipboardText();

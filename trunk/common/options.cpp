@@ -4,7 +4,6 @@
 #include <wx/filename.h>
 #include <wx/arrstr.h>
 #include <wx/dir.h>
-#include "../perms/p.h"
 #include "debug.h"
 
 #ifdef _DEBUG
@@ -29,7 +28,6 @@ Options::Options()
 	// Default to printing with black text, white background
 	m_printStyle = wxSTC_PRINT_BLACKONWHITE;
 
-	m_perms = new Permission();
 
 	m_showToolbarText = true;
 	m_printLineNumbers = false;
@@ -45,7 +43,6 @@ Options::Options()
 
 Options::~Options()
 {
-	delete m_perms;
 }
 
 void Options::setDefaultSyntaxStyles()

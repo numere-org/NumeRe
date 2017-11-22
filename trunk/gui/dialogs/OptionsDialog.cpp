@@ -35,7 +35,6 @@
 #include "OptionsDialog.h"
 #include "../NumeReWindow.h"
 
-#include "../../perms/p.h"
 #include "../../common/debug.h"
 
 
@@ -705,7 +704,6 @@ void OptionsDialog::ExitDialog()
 	}*/
     if(EvaluateOptions())
     {
-        UpdateChecklist();
         EndModal(wxID_OK);
         m_optionsNotebook->SetSelection(0);
     }
@@ -754,23 +752,11 @@ void OptionsDialog::OnUpdateAuthCode( wxCommandEvent& event )
 	wxString newAuthCode = m_txtProfCode->GetValue();
 	newAuthCode.MakeUpper();
 
-	Permission* perms = m_options->GetPerms();
+    m_txtProfCode->Clear();
+    m_authCodeLabel->SetLabel(newAuthCode);
 
-	if(!perms->setGlobalAuthorized(newAuthCode))
-	{
+    wxMessageBox("Authorized features updated.");
 
-		wxMessageBox("Invalid authorization code.  Please check that it was entered correctly and try again.");
-	}
-	else
-	{
-		UpdateChecklist();
-
-		m_txtProfCode->Clear();
-		m_authCodeLabel->SetLabel(newAuthCode);
-
-		wxMessageBox("Authorized features updated.");
-
-	}
 
 }
 
@@ -979,20 +965,6 @@ bool OptionsDialog::EvaluateOptions()
 //////////////////////////////////////////////////////////////////////////////
 void OptionsDialog::InitializeDialog()
 {
-	/**Permission* perms = m_options->GetPerms();
-
-	UpdateChecklist();
-
-	m_hostname->SetValue(m_options->GetHostname());
-	m_username->SetValue(m_options->GetUsername());
-	wxString password = m_options->GetPassphrase();
-	m_password1->SetValue(password);
-	m_password2->SetValue(password);*/
-
-	//m_txtMingwPath->SetValue(m_options->GetMingwPath());
-
-	///m_authCodeLabel->SetLabel(perms->GetAuthCode());
-
 	wxString printStyleString;
 	if(m_options->GetPrintStyle() == wxSTC_PRINT_COLOURONWHITE)
 	{
@@ -1053,40 +1025,6 @@ void OptionsDialog::InitializeDialog()
 
 	VerifyMingwPath(false);*/
 
-}
-
-//////////////////////////////////////////////////////////////////////////////
-///  public UpdateChecklist
-///  Updates the items in the permissions checklist, based on the current permissions
-///
-///  @return void
-///
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
-void OptionsDialog::UpdateChecklist()
-{
-    return;
-	Permission* perms = m_options->GetPerms();
-	m_checkList->Clear();
-	m_permMappings.Clear();
-
-	wxString optionname;
-
-	for(int i = PERM_FIRST; i < PERM_LAST; i++)
-	{
-		if(perms->isAuthorized(i))
-		{
-			optionname = perms->getPermName(i);
-			m_checkList->Append(optionname);
-			int checkIndex = m_permMappings.GetCount();
-			m_permMappings.Add(i);
-
-			if(perms->isEnabled(i))
-			{
-				m_checkList->Check(checkIndex, true);
-			}
-		}
-	}
 }
 
 /*!

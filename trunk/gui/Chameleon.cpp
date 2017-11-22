@@ -43,7 +43,6 @@
 #include "dialogs/CompilerOutputPanel.h"
 #include "dialogs/AboutChameleonDialog.h"
 #include "../common/NumeRePrintout.h"
-#include "../perms/p.h"
 #include "../common/ProjectInfo.h"
 #include "../common/recycler.hpp"
 #include "../network/networking.h"
@@ -3224,10 +3223,6 @@ void NumeReWindow::ToolbarStatusUpdate()
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::OnUpdateConnectionUI()//wxUpdateUIEvent &event)
 {
-	if(!m_options->GetPerms()->isEnabled(PERM_TERMINAL))
-	{
-		return;
-	}
 	bool termConnected = m_terminal->IsConnected();
 
 	wxToolBar* tb = GetToolBar();
@@ -3256,11 +3251,6 @@ void NumeReWindow::OnUpdateConnectionUI()//wxUpdateUIEvent &event)
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::OnUpdateCompileUI()//wxUpdateUIEvent &event)
 {
-	if(!m_options->GetPerms()->isEnabled(PERM_COMPILE))
-	{
-		return;
-	}
-
 	ProjectInfo* edProj = m_currentEd->GetProject();
 	wxToolBar* tb = GetToolBar();
 	//wxToolBarToolBase* compileButton = tb->FindById(ID_COMPILE);

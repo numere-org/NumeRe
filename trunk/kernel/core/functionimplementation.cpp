@@ -25,10 +25,10 @@
 
 extern value_type vAns;
 bool bSupressAnswer = false;
-extern Integration_Vars parser_iVars;
+//extern Integration_Vars parser_iVars;
 int nErrorIndices[2] = {-1,-1};
 string sErrorToken = "";
-extern Plugin _plugin;
+//extern Plugin _plugin;
 extern time_t tTimeZero;
 volatile sig_atomic_t exitsignal = 0;
 
