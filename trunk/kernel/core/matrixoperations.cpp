@@ -1404,8 +1404,10 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
         }
         else
         {
-            if (vIndices[j].nJ[0] >= vIndices[j].nJ[1])
+            if (vIndices[j].nJ[0] >= vIndices[j].nJ[1] && vIndices[j].nJ[0] > 0 && vIndices[j].nJ[1] > 0)
                 vMatrixVector.push_back(vMissingValues[j]);
+            else if (vIndices[j].nJ[0] == 0 && vIndices[j].nJ[1] == 0)
+                vMatrixVector.push_back(NAN);
             else
             {
                 for (long long int k = vIndices[j].nI[0]; k < vIndices[j].nI[1]; k++)
@@ -1798,6 +1800,8 @@ double parser_calcDeterminant(const Matrix& _mMatrix, vector<int> vRemovedLines)
 Matrix parser_MatrixSize(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mReturn = parser_ZeroesMatrix(2,1);
+    if (_mMatrix.size() == 1 && _mMatrix[0].size() == 1 && isnan(_mMatrix[0][0]))
+        return _mReturn;
     _mReturn[0][0] = _mMatrix.size();
     _mReturn[1][0] = _mMatrix[0].size();
     return _mReturn;

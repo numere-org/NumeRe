@@ -14,9 +14,9 @@
 #include <wx/progdlg.h>
 #include "networking.h"
 #include "plinkconnect.h"
-#include "../common/datastructures.h"
-#include "../common/Options.h"
-#include "../common/debug.h"
+#include "../../common/datastructures.h"
+#include "../../common/Options.h"
+#include "../../common/debug.h"
 #include "LocalProcessManager.h"
 
 #ifdef _DEBUG

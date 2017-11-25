@@ -20,7 +20,7 @@
 //#include "../common/FixedSizeQueue.h"
 #include "TextManager.h"
 
-#include "../kernel/syntax.hpp"
+#include "../../kernel/syntax.hpp"
 
 using namespace std;
 

@@ -30,7 +30,7 @@
 #include <wx/app.h>         // wxWakeUpIdle
 #include "pipedprocess.h" // class' header file
 //#include "sdk_events.h"
-#include "../common/chameleonprocessevent.h"
+#include "../../common/chameleonprocessevent.h"
 #endif
 
 
@@ -216,7 +216,7 @@ bool PipedProcess::HasInput()
 	if (IsInputAvailable())
 	{
 		cbTextInputStream sout(*GetInputStream());
-		
+
 		wxString msg;
 
 		while(IsInputAvailable())
@@ -224,8 +224,8 @@ bool PipedProcess::HasInput()
 			wxString line = sout.ReadLine();
 			msg << line;
 		}
-		
-		
+
+
 
 		//CodeBlocksEvent event(cbEVT_PIPEDPROCESS_STDOUT, m_Id);
 		ChameleonProcessEvent event(chEVT_PROCESS_STDOUT);
@@ -254,7 +254,7 @@ bool PipedProcess::HasInput()
 		hasInput = true;
 	}
 
-	
+
 
 	return hasInput;
 }

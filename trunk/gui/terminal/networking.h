@@ -12,8 +12,8 @@
 #include <wx/regex.h>
 //#include <wx/string.h>
 #include <wx/filename.h>
-#include "../common/datastructures.h"
-#include "../common/debug.h"
+#include "../../common/datastructures.h"
+#include "../../common/debug.h"
 class wxProcess;
 class wxProcessEvent;
 class PlinkConnect;

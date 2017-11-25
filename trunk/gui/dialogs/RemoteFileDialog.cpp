@@ -35,7 +35,7 @@
 #include "RemoteFileDialog.h"
 #include "../NumeReWindow.h"
 #include "../IconManager.h"
-#include "../../network/networking.h"
+#include "../terminal/networking.h"
 #include "../../common/datastructures.h"
 
 

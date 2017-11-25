@@ -7,11 +7,11 @@
 #include <wx/dynarray.h>
 #include <wx/thread.h>
 #include <wx/buffer.h>
-#include "../gui/wxterm.h"
-#include "../common/datastructures.h"
-#include "../compiler/compilerevent.h"
-#include "../kernel/syntax.hpp"
-#include "../gui/dialogs/duplicatecodedialog.hpp"
+#include "../terminal/wxterm.h"
+#include "../../common/datastructures.h"
+#include "../../compiler/compilerevent.h"
+#include "../../kernel/syntax.hpp"
+#include "../dialogs/duplicatecodedialog.hpp"
 //#include <wx/wx.h>
 
 #define RM_WS_BOTH 0

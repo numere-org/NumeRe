@@ -26,7 +26,7 @@
 ////@end includes
 
 #include "wxTermContainer.h"
-#include "../wxTerm.h"
+#include "../terminal/wxTerm.h"
 
 #include "../../common/debug.h"
 

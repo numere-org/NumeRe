@@ -51,14 +51,14 @@
 
 #include <ctype.h>
 
-#include "../network/gterm.hpp"
-#include "../network/gtelnet.hpp"
+#include "gterm.hpp"
+#include "gtelnet.hpp"
 #include "wxterm.h"
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
-#include "../common/globals.hpp"
+#include "../globals.hpp"
 
-#include "../common/debug.h"
+#include "../../common/debug.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW

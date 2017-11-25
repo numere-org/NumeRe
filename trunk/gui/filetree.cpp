@@ -17,7 +17,7 @@
 ******************************************************************************/
 
 #include "filetree.hpp"
-#include "../common/globals.hpp"
+#include "globals.hpp"
 
 BEGIN_EVENT_TABLE(FileTree, wxTreeCtrl)
     EVT_ENTER_WINDOW    (FileTree::OnEnter)

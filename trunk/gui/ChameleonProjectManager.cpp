@@ -1,6 +1,6 @@
 #include "ChameleonProjectManager.h"
 #include "NumeReNotebook.h"
-#include "../editor/editor.h"
+#include "editor/editor.h"
 
 ChameleonProjectManager::ChameleonProjectManager( NumeReNotebook* notebook )
 {

@@ -4,8 +4,8 @@
 
 #include <wx/wx.h>
 #include <wx/dynarray.h>
-#include "../common/datastructures.h"
-#include "../common/chameleonprocessevent.h"
+#include "../../common/datastructures.h"
+#include "../../common/chameleonprocessevent.h"
 
 
 class wxProcessEvent;

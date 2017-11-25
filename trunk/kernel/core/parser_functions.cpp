@@ -5402,10 +5402,12 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
         if (!nParenthesis)
         {
             sArgument = sCmd.substr(nPos+1, n-nPos-1);
+            size_t nPos = 0;
+            while ((nPos = sArgument.find(' ')) != string::npos)
+                sArgument.erase(nPos, 1);
             break;
         }
     }
-    StripSpaces(sArgument);
     if (sArgument.find("data(") != string::npos || _data.containsCacheElements(sArgument))
         parser_GetDataElement(sArgument, _parser, _data, _option);
     // --> Kurzschreibweise!
@@ -5482,7 +5484,6 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
         // --> Vektor prüfen <--
         if (sI[0] != "<<NONE>>" && sI[1] == "<<NONE>>")
         {
-            StripSpaces(sI[0]);
             if (sI[0] == "#")
                 _idx.nI[0] = -3;
             else
@@ -5503,7 +5504,6 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
         }
         if (sJ[0] != "<<NONE>>" && sJ[1] == "<<NONE>>")
         {
-            StripSpaces(sJ[0]);
             if (sJ[0] == "#")
                 _idx.nJ[0] = -3;
             else

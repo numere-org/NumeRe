@@ -9,7 +9,7 @@
 #endif
 
 #include "ProjectInfo.h"
-#include "../editor/editor.h"
+#include "../gui/editor/editor.h"
 #include "debug.h"
 
 #ifdef _DEBUG

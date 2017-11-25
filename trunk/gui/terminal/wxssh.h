@@ -6,15 +6,15 @@
 #ifndef __WXSSH__H__
 #define __WXSSH__H__
 
-#include "../common/CommonHeaders.h"
+#include "../../common/CommonHeaders.h"
 
 #include <wx/txtstrm.h>
-#include "../network/networking.h"
-#include "../network/gterm.hpp"
-#include "../network/gtelnet.hpp"  // <------------
-#include "../common/debug.h"
-#include "../common/chameleonprocessevent.h"
-#include "../common/Options.h"
+#include "networking.h"
+#include "gterm.hpp"
+#include "gtelnet.hpp"  // <------------
+#include "../../common/debug.h"
+#include "../../common/chameleonprocessevent.h"
+#include "../../common/Options.h"
 #include "wxterm.h"
 
 #define MAX_INPUT_BUF_LEN 50

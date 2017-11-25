@@ -19,9 +19,9 @@
 #ifndef DEBUGVIEWER_HPP
 #define DEBUGVIEWER_HPP
 
-#include "../gui/viewerframe.hpp"
-#include "../gui/wxterm.h"
-#include "../gui/dialogs/treelistctrl.h"
+#include "../viewerframe.hpp"
+#include "../terminal/wxterm.h"
+#include "treelistctrl.h"
 //#include <wx/treelist.h>
 #include <wx/listctrl.h>
 #include <wx/panel.h>
