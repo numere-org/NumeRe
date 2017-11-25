@@ -31,8 +31,8 @@
 #include <string>
 
 #include "filesystem.hpp"
-#include "tools.hpp"
-#include "error.hpp"
+#include "utils/tools.hpp"
+#include "ui/error.hpp"
 
 using namespace std;
 

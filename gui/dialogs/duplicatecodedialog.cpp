@@ -18,7 +18,7 @@
 
 
 #include "duplicatecodedialog.hpp"
-#include "../../kernel/core/language.hpp"
+#include "../../kernel/core/ui/language.hpp"
 #include "../editor/editor.h"
 
 #define ID_START 12000

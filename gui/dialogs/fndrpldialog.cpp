@@ -17,7 +17,7 @@
 ******************************************************************************/
 
 #include "fndrpldialog.hpp"
-#include "../../kernel/core/language.hpp"
+#include "../../kernel/core/ui/language.hpp"
 extern Language _guilang;
 
 

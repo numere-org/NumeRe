@@ -19,7 +19,7 @@
 #include <wx/wx.h>
 #include "wx.h"
 #include "viewerframe.hpp"
-#include "../kernel/core/graph_helper.hpp"
+#include "../kernel/core/plotting/graph_helper.hpp"
 #include "terminal/wxterm.h"
 
 #ifndef GRAPHVIEWER_HPP

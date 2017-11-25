@@ -20,11 +20,11 @@
 #include <string>
 #include <ctime>
 
-#include "error.hpp"
+#include "ui/error.hpp"
 #include "filesystem.hpp"
 #include "settings.hpp"
 #include "version.h"
-#include "tools.hpp"
+#include "utils/tools.hpp"
 
 #ifndef OUTPUT_HPP
 #define OUTPUT_HPP

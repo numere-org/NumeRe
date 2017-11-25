@@ -26,12 +26,12 @@
 
 #include <boost/math/distributions/students_t.hpp>
 
-#include "error.hpp"
-#include "datafile.hpp"
+#include "ui/error.hpp"
+#include "datamanagement/datafile.hpp"
 #include "output.hpp"
 #include "settings.hpp"
-#include "tools.hpp"
-#include "plotdata.hpp"
+#include "utils/tools.hpp"
+#include "plotting/plotdata.hpp"
 
 #ifndef PLUGINS_HPP
 #define PLUGINS_HPP

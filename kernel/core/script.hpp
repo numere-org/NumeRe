@@ -25,9 +25,8 @@
 #include <string>
 #include <fstream>
 
-#include "error.hpp"
 #include "filesystem.hpp"
-#include "tools.hpp"
+#include "utils/tools.hpp"
 #include "version.h"
 
 using namespace std;

@@ -21,13 +21,13 @@
 #include <wx/notebook.h>
 #include "../common/filewatcher.hpp"
 #include "wx/dnd.h"
-#include "../kernel/core/language.hpp"
-#include "../kernel/core/tools.hpp"
+#include "../kernel/core/ui/language.hpp"
+#include "../kernel/core/utils/tools.hpp"
 #include "dialogs/tipdialog.hpp"
 #include "viewerframe.hpp"
 #include "viewerbook.hpp"
 #include "filetree.hpp"
-#include "../kernel/core/graph_helper.hpp"
+#include "../kernel/core/plotting/graph_helper.hpp"
 
 #define OPENFILE_NOTHING 0
 #define OPENFILE_BLACKLIST_ADD 1

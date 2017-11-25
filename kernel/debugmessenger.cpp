@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 #include "debugmessenger.hpp"
-#include "core/tools.hpp"
+#include "core/utils/tools.hpp"
 
 Debugmessenger::Debugmessenger()
 {

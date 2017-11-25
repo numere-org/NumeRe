@@ -25,9 +25,9 @@
 #include <iostream>
 #include <windows.h>
 
-#include "error.hpp"
-#include "doc_helper.hpp"
-#include "debugger.hpp"
+#include "ui/error.hpp"
+#include "documentation/doc_helper.hpp"
+#include "procedure/debugger.hpp"
 
 using namespace std;
 /*

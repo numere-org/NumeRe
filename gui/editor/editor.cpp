@@ -9,8 +9,8 @@
 #endif
 
 #include "../../common/CommonHeaders.h"
-#include "../../kernel/core/language.hpp"
-#include "../../kernel/core/tools.hpp"
+#include "../../kernel/core/ui/language.hpp"
+#include "../../kernel/core/utils/tools.hpp"
 
 #include <wx/datetime.h>
 #include <wx/stdpaths.h>

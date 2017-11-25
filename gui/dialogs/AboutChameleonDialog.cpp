@@ -29,7 +29,7 @@
 
 #include "AboutChameleonDialog.h"
 #include "../../common/verinfo.h"
-#include "../../kernel/core/language.hpp"
+#include "../../kernel/core/ui/language.hpp"
 
 ////@begin XPM images
 //#include "chamlogo_1.xpm"

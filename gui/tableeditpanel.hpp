@@ -23,7 +23,7 @@
 #include <wx/panel.h>
 #include "tableviewer.hpp"
 #include "terminal/wxterm.h"
-#include "../kernel/core/language.hpp"
+#include "../kernel/core/ui/language.hpp"
 
 extern Language _guilang;
 
