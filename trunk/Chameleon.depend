@@ -2023,7 +2023,7 @@
 	"../kernel/kernel.hpp"
 	"../kernel/debugmessenger.hpp"
 
-1511627888 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1511629685 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -2033,13 +2033,13 @@
 	<wx/notebook.h>
 	"../common/filewatcher.hpp"
 	"wx/dnd.h"
-	"../kernel/core/language.hpp"
-	"../kernel/core/tools.hpp"
+	"../kernel/core/ui/language.hpp"
+	"../kernel/core/utils/tools.hpp"
 	"dialogs/tipdialog.hpp"
 	"viewerframe.hpp"
 	"viewerbook.hpp"
 	"filetree.hpp"
-	"../kernel/core/graph_helper.hpp"
+	"../kernel/core/plotting/graph_helper.hpp"
 
 1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxprec.h
 	"wx/defs.h"
@@ -2302,15 +2302,15 @@
 	<string>
 	"language.hpp"
 
-1490787951 d:\cpp\numere-source\trunk\kernel\core\settings.hpp
+1511629659 d:\cpp\numere-source\trunk\kernel\core\settings.hpp
 	<string>
 	<sstream>
 	<fstream>
 	<iostream>
 	<windows.h>
-	"error.hpp"
-	"doc_helper.hpp"
-	"debugger.hpp"
+	"ui/error.hpp"
+	"documentation/doc_helper.hpp"
+	"procedure/debugger.hpp"
 
 1490787951 d:\cpp\numere-source\trunk\kernel\core\doc_helper.hpp
 	<fstream>
@@ -2505,42 +2505,42 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1507619177 d:\cpp\numere-source\trunk\kernel\kernel.hpp
+1511629843 d:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	<queue>
-	"core/error.hpp"
+	"core/ui/error.hpp"
 	"core/settings.hpp"
 	"core/output.hpp"
-	"core/datafile.hpp"
+	"core/datamanagement/datafile.hpp"
 	"core/plugins.hpp"
 	"core/version.h"
-	"core/functionimplementation.hpp"
-	"core/tools.hpp"
+	"core/maths/functionimplementation.hpp"
+	"core/utils/tools.hpp"
 	"core/built-in.hpp"
-	"core/parser_functions.hpp"
-	"core/define.hpp"
-	"core/plotdata.hpp"
-	"core/graph_helper.hpp"
+	"core/maths/parser_functions.hpp"
+	"core/maths/define.hpp"
+	"core/plotting/plotdata.hpp"
+	"core/plotting/graph_helper.hpp"
 	"core/script.hpp"
-	"core/loop.hpp"
-	"core/procedure.hpp"
+	"core/procedure/loop.hpp"
+	"core/procedure/procedure.hpp"
 	"core/plugin.hpp"
-	"core/language.hpp"
+	"core/ui/language.hpp"
 	"debugmessenger.hpp"
-	"core/procedurelibrary.hpp"
+	"core/procedure/procedurelibrary.hpp"
 	"core/ParserLib/muParser.h"
 
-1490787951 d:\cpp\numere-source\trunk\kernel\core\output.hpp
+1511629865 d:\cpp\numere-source\trunk\kernel\core\output.hpp
 	<string>
 	<ctime>
-	"error.hpp"
+	"ui/error.hpp"
 	"filesystem.hpp"
 	"settings.hpp"
 	"version.h"
-	"tools.hpp"
+	"utils/tools.hpp"
 
-1490787951 d:\cpp\numere-source\trunk\kernel\core\plugins.hpp
+1511629943 d:\cpp\numere-source\trunk\kernel\core\plugins.hpp
 	<string>
 	<cmath>
 	<ctime>
@@ -2548,12 +2548,12 @@
 	<iomanip>
 	<mgl2/mgl.h>
 	<boost/math/distributions/students_t.hpp>
-	"error.hpp"
-	"datafile.hpp"
+	"ui/error.hpp"
+	"datamanagement/datafile.hpp"
 	"output.hpp"
 	"settings.hpp"
-	"tools.hpp"
-	"plotdata.hpp"
+	"utils/tools.hpp"
+	"plotting/plotdata.hpp"
 
 1500629258 d:\cpp\numere-source\trunk\kernel\core\plotdata.hpp
 	<string>
@@ -2597,14 +2597,14 @@
 	"muParserError.h"
 	"muParserToken.h"
 
-1490787951 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsererror.h
+1511629759 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsererror.h
 	<cassert>
 	<stdexcept>
 	<string>
 	<sstream>
 	<vector>
 	<memory>
-	"../language.hpp"
+	"../ui/language.hpp"
 	"muParserDef.h"
 
 1490787951 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsertoken.h
@@ -2674,7 +2674,7 @@
 	"ParserLib/muParserTest.h"
 	"ParserLib/muParser.h"
 
-1490787950 d:\cpp\numere-source\trunk\kernel\core\built-in.hpp
+1511630020 d:\cpp\numere-source\trunk\kernel\core\built-in.hpp
 	<iostream>
 	<fstream>
 	<sstream>
@@ -2683,20 +2683,20 @@
 	<windows.h>
 	<cmath>
 	<vector>
-	"error.hpp"
-	"datafile.hpp"
+	"ui/error.hpp"
+	"datamanagement/datafile.hpp"
 	"settings.hpp"
 	"output.hpp"
 	"plugins.hpp"
 	"ParserLib/muParser.h"
-	"tools.hpp"
-	"parser_functions.hpp"
-	"define.hpp"
-	"plotdata.hpp"
+	"utils/tools.hpp"
+	"maths/parser_functions.hpp"
+	"maths/define.hpp"
+	"plotting/plotdata.hpp"
 	"script.hpp"
 	"version.h"
-	"documentation.hpp"
-	"odesolver.hpp"
+	"documentation/documentation.hpp"
+	"maths/odesolver.hpp"
 
 1510995531 d:\cpp\numere-source\trunk\kernel\core\parser_functions.hpp
 	<cmath>
@@ -2733,13 +2733,13 @@
 	"tools.hpp"
 	"ParserLib/muParser.h"
 
-1490787951 d:\cpp\numere-source\trunk\kernel\core\plugin.hpp
+1511630132 d:\cpp\numere-source\trunk\kernel\core\plugin.hpp
 	<iostream>
 	<fstream>
 	<string>
 	"filesystem.hpp"
-	"tools.hpp"
-	"error.hpp"
+	"utils/tools.hpp"
+	"ui/error.hpp"
 
 1490787950 d:\cpp\numere-source\trunk\kernel\core\fitcontroller.hpp
 	<iostream>
@@ -2752,13 +2752,12 @@
 	"tools.hpp"
 	"error.hpp"
 
-1490787950 d:\cpp\numere-source\trunk\kernel\core\script.hpp
+1511630185 d:\cpp\numere-source\trunk\kernel\core\script.hpp
 	<iostream>
 	<string>
 	<fstream>
-	"error.hpp"
 	"filesystem.hpp"
-	"tools.hpp"
+	"utils/tools.hpp"
 	"version.h"
 
 1490787950 d:\cpp\numere-source\trunk\kernel\core\documentation.hpp
@@ -3304,7 +3303,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1511628017 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1511630422 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3366,7 +3365,7 @@
 	"breakpoint_octagon_disable.xpm"
 	"../common/debug.h"
 	"../kernel/core/version.h"
-	"../kernel/core/tools.hpp"
+	"../kernel/core/utils/tools.hpp"
 
 1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\mimetype.h
 	"wx/defs.h"
@@ -3638,18 +3637,18 @@
 	<vector>
 	<string>
 
-1511420274 d:\cpp\numere-source\trunk\gui\tableeditpanel.hpp
+1511630385 d:\cpp\numere-source\trunk\gui\tableeditpanel.hpp
 	<wx/wx.h>
 	<wx/panel.h>
 	"tableviewer.hpp"
 	"terminal/wxterm.h"
-	"../kernel/core/language.hpp"
+	"../kernel/core/ui/language.hpp"
 
-1511420286 d:\cpp\numere-source\trunk\gui\graphviewer.hpp
+1511630412 d:\cpp\numere-source\trunk\gui\graphviewer.hpp
 	<wx/wx.h>
 	"wx.h"
 	"viewerframe.hpp"
-	"../kernel/core/graph_helper.hpp"
+	"../kernel/core/plotting/graph_helper.hpp"
 	"terminal/wxterm.h"
 
 1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\helpchm.h
@@ -3690,7 +3689,7 @@
 	"NumeReNotebook.h"
 	"editor/editor.h"
 
-1504246935 source:d:\cpp\numere-source\trunk\gui\dialogs\aboutchameleondialog.cpp
+1511631170 source:d:\cpp\numere-source\trunk\gui\dialogs\aboutchameleondialog.cpp
 	"wx/wxprec.h"
 	<wx/msw/private.h>
 	<wx/filename.h>
@@ -3698,7 +3697,7 @@
 	<wx/textctrl.h>
 	"AboutChameleonDialog.h"
 	"../../common/verinfo.h"
-	"../../kernel/core/language.hpp"
+	"../../kernel/core/ui/language.hpp"
 
 1501674664 d:\cpp\numere-source\trunk\gui\dialogs\chamlogo_1.xpm
 
@@ -3721,20 +3720,20 @@
 	"../NumeReWindow.h"
 	<wx/regex.h>
 
-1511420439 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
+1511630394 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
 	"duplicatecodedialog.hpp"
-	"../../kernel/core/language.hpp"
+	"../../kernel/core/ui/language.hpp"
 	"../editor/editor.h"
 
-1491132165 source:d:\cpp\numere-source\trunk\gui\dialogs\fndrpldialog.cpp
+1511631180 source:d:\cpp\numere-source\trunk\gui\dialogs\fndrpldialog.cpp
 	"fndrpldialog.hpp"
-	"../../kernel/core/language.hpp"
+	"../../kernel/core/ui/language.hpp"
 
-1511337706 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1511630412 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
-	"../../kernel/core/language.hpp"
+	"../../kernel/core/ui/language.hpp"
 	<wx/checklst.h>
 	<wx/valtext.h>
 	<wx/dirdlg.h>
@@ -3902,19 +3901,19 @@
 
 1490787950 d:\cpp\numere-source\trunk\gui\dialogs\exe.xpm
 
-1492617891 source:d:\cpp\numere-source\trunk\gui\imagepanel.cpp
+1511631205 source:d:\cpp\numere-source\trunk\gui\imagepanel.cpp
 	<wx/artprov.h>
 	<wx/dir.h>
 	<wx/clipbrd.h>
 	"imagepanel.hpp"
-	"../kernel/core/language.hpp"
+	"../kernel/core/ui/language.hpp"
 
 1490787950 source:d:\cpp\numere-source\trunk\gui\tableeditpanel.cpp
 	"tableeditpanel.hpp"
 
-1490787950 source:d:\cpp\numere-source\trunk\gui\tableviewer.cpp
+1511631215 source:d:\cpp\numere-source\trunk\gui\tableviewer.cpp
 	"tableviewer.hpp"
-	"../kernel/core/language.hpp"
+	"../kernel/core/ui/language.hpp"
 	<wx/clipbrd.h>
 	<wx/dataobj.h>
 	<wx/tokenzr.h>
@@ -4179,8 +4178,8 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1511612976 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
-	"parser_functions.hpp"
+1511630901 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 
 1490787951 source:d:\cpp\numere-source\trunk\kernel\core\tinyxml2.cpp
@@ -4213,17 +4212,17 @@
 	<tchar.h>
 	"zip.h"
 
-1490787951 source:d:\cpp\numere-source\trunk\kernel\debugmessenger.cpp
+1511631300 source:d:\cpp\numere-source\trunk\kernel\debugmessenger.cpp
 	"debugmessenger.hpp"
-	"core/tools.hpp"
+	"core/utils/tools.hpp"
 
 1511420588 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 
-1503383546 source:d:\cpp\numere-source\trunk\kernel\syntax.cpp
+1511631314 source:d:\cpp\numere-source\trunk\kernel\syntax.cpp
 	"syntax.hpp"
-	"core/tools.hpp"
+	"core/utils/tools.hpp"
 
 1508575529 source:d:\cpp\numere-source\trunk\network\actions.cpp
 	"gterm.hpp"
@@ -4396,12 +4395,12 @@
 	"../../kernel/syntax.hpp"
 	"../dialogs/duplicatecodedialog.hpp"
 
-1511360590 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1511630431 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
-	"../../kernel/core/language.hpp"
-	"../../kernel/core/tools.hpp"
+	"../../kernel/core/ui/language.hpp"
+	"../../kernel/core/utils/tools.hpp"
 	<wx/datetime.h>
 	<wx/stdpaths.h>
 	<vector>
@@ -4413,15 +4412,14 @@
 	"../../common/Options.h"
 	"../../common/DebugEvent.h"
 	"../../common/ProjectInfo.h"
-	"../../debugger/DebugManager.h"
 	"../../common/debug.h"
 	"../../common/fixvsbug.h"
 	"../globals.hpp"
 
-1511627284 source:d:\cpp\numere-source\trunk\gui\editor\history.cpp
+1511630447 source:d:\cpp\numere-source\trunk\gui\editor\history.cpp
 	"../../common/CommonHeaders.h"
-	"../../kernel/core/language.hpp"
-	"../../kernel/core/tools.hpp"
+	"../../kernel/core/ui/language.hpp"
+	"../../kernel/core/utils/tools.hpp"
 	<wx/datetime.h>
 	<wx/stdpaths.h>
 	<vector>
@@ -4438,10 +4436,10 @@
 	"../../common/datastructures.h"
 	"../../kernel/syntax.hpp"
 
-1511358087 source:d:\cpp\numere-source\trunk\gui\dialogs\debugviewer.cpp
+1511630412 source:d:\cpp\numere-source\trunk\gui\dialogs\debugviewer.cpp
 	"debugviewer.hpp"
 	<wx/statbox.h>
-	"../../kernel/core/language.hpp"
+	"../../kernel/core/ui/language.hpp"
 
 1511420262 d:\cpp\numere-source\trunk\gui\dialogs\debugviewer.hpp
 	"../viewerframe.hpp"
@@ -4477,7 +4475,7 @@
 1511360507 d:\cpp\numere-source\trunk\gui\globals.hpp
 	"dialogs/fndrpldialog.hpp"
 
-1511420294 source:d:\cpp\numere-source\trunk\gui\wx.cpp
+1511630464 source:d:\cpp\numere-source\trunk\gui\wx.cpp
 	<wx/dcclient.h>
 	<wx/msgdlg.h>
 	<wx/clipbrd.h>
@@ -4489,7 +4487,7 @@
 	<mgl2/canvas_wnd.h>
 	"wx.h"
 	"../common/datastructures.h"
-	"../kernel/core/language.hpp"
+	"../kernel/core/ui/language.hpp"
 	"terminal/wxterm.h"
 	"graphviewer.hpp"
 	"addtext.xpm"
@@ -4659,4 +4657,431 @@
 	<wx/dataobj.h>
 	"../globals.hpp"
 	"../../common/debug.h"
+
+1497520725 d:\cpp\numere-source\trunk\kernel\core\ui\error.hpp
+	<string>
+	"language.hpp"
+
+1511629578 d:\cpp\numere-source\trunk\kernel\core\ui\language.hpp
+	<string>
+	<map>
+	<vector>
+	<iostream>
+	<fstream>
+	"../filesystem.hpp"
+
+1511629592 d:\cpp\numere-source\trunk\kernel\core\documentation\doc_helper.hpp
+	<fstream>
+	<string>
+	<vector>
+	<map>
+	"../filesystem.hpp"
+	"../ui/error.hpp"
+
+1511629726 d:\cpp\numere-source\trunk\kernel\core\procedure\debugger.hpp
+	<vector>
+	<string>
+	<map>
+	"../ui/error.hpp"
+
+1511629707 d:\cpp\numere-source\trunk\kernel\core\utils\tools.hpp
+	<iostream>
+	<iomanip>
+	<sstream>
+	<string>
+	<windows.h>
+	<conio.h>
+	<cstdlib>
+	<fstream>
+	<ctime>
+	<vector>
+	"../structures.hpp"
+	"../ui/error.hpp"
+	"../settings.hpp"
+
+1511250593 d:\cpp\numere-source\trunk\kernel\core\plotting\graph_helper.hpp
+	<mgl2/wnd.h>
+	<mgl2/mgl.h>
+	"plotdata.hpp"
+
+1511629744 d:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.hpp
+	<string>
+	<cmath>
+	"../ui/error.hpp"
+	"../utils/tools.hpp"
+	"../ParserLib/muParser.h"
+
+1511629908 d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.hpp
+	<string>
+	<boost/tokenizer.hpp>
+	<vector>
+	<gsl/gsl_statistics.h>
+	<gsl/gsl_sort.h>
+	"../ui/error.hpp"
+	"../settings.hpp"
+	"cache.hpp"
+	"../IgorLib/ReadWave.h"
+	"../utils/zip++.hpp"
+	"../utils/BasicExcel.hpp"
+	"../utils/tinyxml2.h"
+
+1511629917 d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.hpp
+	<iostream>
+	<fstream>
+	<string>
+	<ctime>
+	<cmath>
+	<vector>
+	<gsl/gsl_statistics.h>
+	<gsl/gsl_sort.h>
+	"../ui/error.hpp"
+	"../settings.hpp"
+	"../structures.hpp"
+	"../utils/tools.hpp"
+	"../filesystem.hpp"
+	"../version.h"
+	"../maths/resampler.h"
+
+1490787951 d:\cpp\numere-source\trunk\kernel\core\maths\resampler.h
+
+1511629978 d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.hpp
+	<cstdlib>
+	<cmath>
+	<fstream>
+	<string>
+	<iostream>
+	<locale>
+	<limits>
+	<ios>
+	<iomanip>
+	<numeric>
+	<ctime>
+	<random>
+	<csignal>
+	<boost/math/common_factor.hpp>
+	<gsl/gsl_sf.h>
+	<boost/math/distributions/students_t.hpp>
+	"../datamanagement/datafile.hpp"
+	"../utils/tools.hpp"
+	"../version.h"
+	"../ParserLib/muParser.h"
+
+1511630091 d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.hpp
+	<cmath>
+	<string>
+	<sstream>
+	<iostream>
+	<ios>
+	<iomanip>
+	<vector>
+	<boost/tokenizer.hpp>
+	<gsl/gsl_sort.h>
+	<gsl/gsl_statistics.h>
+	<Eigen/Dense>
+	"../ui/error.hpp"
+	"../settings.hpp"
+	"../datamanagement/datafile.hpp"
+	"../utils/tools.hpp"
+	"../ParserLib/muParser.h"
+	"define.hpp"
+	"../plotting/plotdata.hpp"
+	"../plugin.hpp"
+	"../plotting/graph_helper.hpp"
+	"fitcontroller.hpp"
+
+1511630117 d:\cpp\numere-source\trunk\kernel\core\maths\define.hpp
+	<string>
+	<iostream>
+	<fstream>
+	<map>
+	<vector>
+	"../ui/error.hpp"
+	"../filesystem.hpp"
+	"../settings.hpp"
+	"../utils/tools.hpp"
+	"../ParserLib/muParser.h"
+
+1511630154 d:\cpp\numere-source\trunk\kernel\core\maths\fitcontroller.hpp
+	<iostream>
+	<vector>
+	<string>
+	<gsl/gsl_multifit_nlin.h>
+	<gsl/gsl_blas.h>
+	<gsl/gsl_vector.h>
+	"../ParserLib/muParser.h"
+	"../utils/tools.hpp"
+	"../ui/error.hpp"
+
+1511630317 d:\cpp\numere-source\trunk\kernel\core\procedure\loop.hpp
+	<string>
+	<iostream>
+	"../ui/error.hpp"
+	"../ParserLib/muParser.h"
+	"../datamanagement/datafile.hpp"
+	"../maths/define.hpp"
+	"../settings.hpp"
+	"../output.hpp"
+	"../plotting/plotdata.hpp"
+	"../script.hpp"
+	"../maths/parser_functions.hpp"
+	"../built-in.hpp"
+	"../utils/tools.hpp"
+
+1511630372 d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.hpp
+	<iostream>
+	<string>
+	<cmath>
+	<iomanip>
+	<fstream>
+	"../ui/error.hpp"
+	"../ParserLib/muParser.h"
+	"../datamanagement/datafile.hpp"
+	"../settings.hpp"
+	"../utils/tools.hpp"
+	"../built-in.hpp"
+	"../maths/parser_functions.hpp"
+	"../plotting/plotdata.hpp"
+	"loop.hpp"
+	"../plugin.hpp"
+	"../maths/define.hpp"
+	"../filesystem.hpp"
+	"../output.hpp"
+	"../script.hpp"
+
+1499273009 d:\cpp\numere-source\trunk\kernel\core\procedure\procedurelibrary.hpp
+	"procedureelement.hpp"
+	<string>
+	<fstream>
+	<map>
+	<vector>
+
+1499274473 d:\cpp\numere-source\trunk\kernel\core\procedure\procedureelement.hpp
+	<string>
+	<map>
+	<vector>
+
+1490787951 d:\cpp\numere-source\trunk\kernel\core\utils\zip++.hpp
+	<string>
+	<iostream>
+	<windows.h>
+	<tchar.h>
+	"zip.h"
+	"unzip.h"
+
+1490787951 d:\cpp\numere-source\trunk\kernel\core\utils\zip.h
+
+1490787951 d:\cpp\numere-source\trunk\kernel\core\utils\unzip.h
+
+1490787950 d:\cpp\numere-source\trunk\kernel\core\utils\basicexcel.hpp
+	<algorithm>
+	<cmath>
+	<functional>
+	<iostream>
+	<iomanip>
+	<fstream>
+	<map>
+	<vector>
+	<cstring>
+
+1490787951 d:\cpp\numere-source\trunk\kernel\core\utils\tinyxml2.h
+	<ctype.h>
+	<limits.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<stddef.h>
+	<cctype>
+	<climits>
+	<cstdio>
+	<cstdlib>
+	<cstring>
+	<android/log.h>
+	<assert.h>
+
+1511630218 d:\cpp\numere-source\trunk\kernel\core\documentation\documentation.hpp
+	<iostream>
+	<iomanip>
+	<string>
+	<vector>
+	<fstream>
+	"../ui/error.hpp"
+	"../utils/tools.hpp"
+	"../settings.hpp"
+
+1511630253 d:\cpp\numere-source\trunk\kernel\core\maths\odesolver.hpp
+	<iostream>
+	<string>
+	<vector>
+	<gsl/gsl_matrix.h>
+	<gsl/gsl_errno.h>
+	<gsl/gsl_odeiv.h>
+	"../ParserLib/muParser.h"
+	"../utils/tools.hpp"
+	"../datamanagement/datafile.hpp"
+	"define.hpp"
+	"parser_functions.hpp"
+	"../settings.hpp"
+	"../ui/error.hpp"
+
+1511630481 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
+	"cache.hpp"
+	"../../kernel.hpp"
+
+1511630497 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
+	"datafile.hpp"
+	"../../kernel.hpp"
+
+1511630497 source:d:\cpp\numere-source\trunk\kernel\core\documentation\doc_helper.cpp
+	"doc_helper.hpp"
+	"../version.h"
+
+1511630514 source:d:\cpp\numere-source\trunk\kernel\core\documentation\documentation.cpp
+	"documentation.hpp"
+	"../../kernel.hpp"
+
+1511630597 source:d:\cpp\numere-source\trunk\kernel\core\maths\define.cpp
+	"define.hpp"
+	"../../kernel.hpp"
+
+1511342205 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
+	"functionimplementation.hpp"
+
+1511630624 source:d:\cpp\numere-source\trunk\kernel\core\maths\fitcontroller.cpp
+	"fitcontroller.hpp"
+	"../../kernel.hpp"
+
+1511630634 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
+	"parser_functions.hpp"
+	"../../kernel.hpp"
+
+1511630650 source:d:\cpp\numere-source\trunk\kernel\core\maths\odesolver.cpp
+	"odesolver.hpp"
+	"../../kernel.hpp"
+
+1511630650 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
+	"parser_functions.hpp"
+	"../../kernel.hpp"
+	"spline.h"
+
+1508758440 d:\cpp\numere-source\trunk\kernel\core\maths\spline.h
+	<cstdio>
+	<cassert>
+	<vector>
+	<algorithm>
+
+1490787951 source:d:\cpp\numere-source\trunk\kernel\core\maths\resampler.cpp
+	<stdlib.h>
+	<math.h>
+	<float.h>
+	<assert.h>
+	<string.h>
+	<iostream>
+	"resampler.h"
+
+1511630703 source:d:\cpp\numere-source\trunk\kernel\core\plotting\graph_helper.cpp
+	"graph_helper.hpp"
+	"../../kernel.hpp"
+	"../utils/tools.hpp"
+
+1500630980 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.cpp
+	<mgl2/mgl.h>
+	"plotdata.hpp"
+
+1505412752 source:d:\cpp\numere-source\trunk\kernel\core\procedure\debugger.cpp
+	"debugger.hpp"
+
+1511630773 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+	"plotting.hpp"
+	"../maths/parser_functions.hpp"
+	"../../kernel.hpp"
+
+1511630761 d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.hpp
+	<mgl2/mgl.h>
+	<string>
+	<vector>
+	"../datamanagement/datafile.hpp"
+	"../ParserLib/muParser.h"
+	"../settings.hpp"
+	"../maths/define.hpp"
+	"plotdata.hpp"
+	"plotinfo.hpp"
+	"graph_helper.hpp"
+
+1500714312 d:\cpp\numere-source\trunk\kernel\core\plotting\plotinfo.hpp
+	<mgl2/mgl.h>
+	<string>
+
+1511630788 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedureelement.cpp
+	"procedureelement.hpp"
+	"../utils/tools.hpp"
+
+1511630811 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedurelibrary.cpp
+	"procedurelibrary.hpp"
+	"../ui/error.hpp"
+	"../utils/tools.hpp"
+
+1499197563 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedurevarfactory.cpp
+	"procedurevarfactory.hpp"
+	"procedure.hpp"
+
+1511630878 d:\cpp\numere-source\trunk\kernel\core\procedure\procedurevarfactory.hpp
+	<string>
+	<map>
+	"../utils/tools.hpp"
+	"../ui/error.hpp"
+	"../datamanagement/datafile.hpp"
+	"../maths/functionimplementation.hpp"
+	"../maths/define.hpp"
+	"../settings.hpp"
+	"../output.hpp"
+	"../plotting/plotdata.hpp"
+	"../script.hpp"
+
+1511630891 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.cpp
+	"procedure.hpp"
+	"../../kernel.hpp"
+	"procedurevarfactory.hpp"
+
+1497520723 source:d:\cpp\numere-source\trunk\kernel\core\ui\error.cpp
+	"error.hpp"
+
+1490787950 source:d:\cpp\numere-source\trunk\kernel\core\ui\language.cpp
+	"language.hpp"
+
+1490787950 source:d:\cpp\numere-source\trunk\kernel\core\utils\basicexcel.cpp
+	"BasicExcel.hpp"
+
+1490787951 source:d:\cpp\numere-source\trunk\kernel\core\utils\tinyxml2.cpp
+	"tinyxml2.h"
+	<new>
+	<stddef.h>
+	<stdarg.h>
+	<cstddef>
+	<cstdarg>
+
+1511630910 source:d:\cpp\numere-source\trunk\kernel\core\procedure\loop.cpp
+	"loop.hpp"
+	"../../kernel.hpp"
+
+1490787951 source:d:\cpp\numere-source\trunk\kernel\core\utils\unzip.cpp
+	<windows.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<tchar.h>
+	"unzip.h"
+
+1490787951 source:d:\cpp\numere-source\trunk\kernel\core\utils\zip++.cpp
+	"zip++.hpp"
+
+1511630919 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
+	"tools.hpp"
+	"../../kernel.hpp"
+	<cstdlib>
+
+1490787951 source:d:\cpp\numere-source\trunk\kernel\core\utils\zip.cpp
+	<windows.h>
+	<stdio.h>
+	<tchar.h>
+	"zip.h"
 

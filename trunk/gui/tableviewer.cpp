@@ -17,7 +17,7 @@
 ******************************************************************************/
 
 #include "tableviewer.hpp"
-#include "../kernel/core/language.hpp"
+#include "../kernel/core/ui/language.hpp"
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 #include <wx/tokenzr.h>

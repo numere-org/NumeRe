@@ -32,7 +32,7 @@
 #include "wx.h"
 
 #include "../common/datastructures.h"
-#include "../kernel/core/language.hpp"
+#include "../kernel/core/ui/language.hpp"
 
 #include "terminal/wxterm.h"
 #include "graphviewer.hpp"

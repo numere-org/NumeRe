@@ -33,7 +33,7 @@
 #include <vector>
 #include <memory>
 
-#include "../language.hpp"
+#include "../ui/language.hpp"
 #include "muParserDef.h"
 
 extern Language _lang;

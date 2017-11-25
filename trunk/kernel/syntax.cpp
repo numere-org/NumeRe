@@ -18,7 +18,7 @@
 
 
 #include "syntax.hpp"
-#include "core/tools.hpp"
+#include "core/utils/tools.hpp"
 
 
 NumeReSyntax::NumeReSyntax()

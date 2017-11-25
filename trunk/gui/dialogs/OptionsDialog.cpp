@@ -22,7 +22,7 @@
 
 #include "../../common/CommonHeaders.h"
 #include "../../common/Options.h"
-#include "../../kernel/core/language.hpp"
+#include "../../kernel/core/ui/language.hpp"
 
 ////@begin includes
 ////@end includes

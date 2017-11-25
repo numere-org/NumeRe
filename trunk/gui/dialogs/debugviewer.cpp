@@ -18,7 +18,7 @@
 
 #include "debugviewer.hpp"
 #include <wx/statbox.h>
-#include "../../kernel/core/language.hpp"
+#include "../../kernel/core/ui/language.hpp"
 
 #define ID_DEBUG_CONTINUE 10201
 #define ID_DEBUG_CANCEL 10202

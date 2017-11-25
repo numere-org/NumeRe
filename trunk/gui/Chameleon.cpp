@@ -106,7 +106,7 @@
 #endif
 
 #include "../kernel/core/version.h"
-#include "../kernel/core/tools.hpp"
+#include "../kernel/core/utils/tools.hpp"
 const string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\"";
 std::string replacePathSeparator(const std::string&);
 

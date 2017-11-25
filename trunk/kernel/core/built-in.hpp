@@ -27,21 +27,21 @@
 #include <cmath>
 #include <vector>
 
-#include "error.hpp"
-#include "datafile.hpp"
+#include "ui/error.hpp"
+#include "datamanagement/datafile.hpp"
 #include "settings.hpp"
 #include "output.hpp"
 #include "plugins.hpp"
 #include "ParserLib/muParser.h"
-#include "tools.hpp"
+#include "utils/tools.hpp"
 //#include "menues.hpp"
-#include "parser_functions.hpp"
-#include "define.hpp"
-#include "plotdata.hpp"
+#include "maths/parser_functions.hpp"
+#include "maths/define.hpp"
+#include "plotting/plotdata.hpp"
 #include "script.hpp"
 #include "version.h"
-#include "documentation.hpp"
-#include "odesolver.hpp"
+#include "documentation/documentation.hpp"
+#include "maths/odesolver.hpp"
 
 #ifndef BUILT_IN_HPP
 #define BUILT_IN_HPP
