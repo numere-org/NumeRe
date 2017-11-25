@@ -2479,24 +2479,6 @@ string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser,
                         strRes.vResult[i] = addQuotationMarks(strRes.vResult[i]);
                     }
                     sExpr = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
-                    /*string sElement = "";
-                    string sBlock = "";
-                    while (getNextArgument(sExpr, false).length())
-                    {
-                        sElement = getNextArgument(sExpr, true);
-                        while (sElement.length() < sPrefix.length()+1)
-                            sElement.insert(0,1,'0');
-                        sBlock += "\"" + sElement + "\"";
-                        if (getNextArgument(sExpr, false).length())
-                        {
-                            sBlock += ",";
-                            if (sBlock.front() != '{')
-                                sBlock.insert(0,1,'{');
-                        }
-                    }
-                    if (sBlock.front() == '{')
-                        sBlock += "}";
-                    sLineToParsedTemp += sBlock;*/
                     sLineToParsedTemp += sExpr;
                     if (parser_getDelimiterPos(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
                         sLineToParsed = sLineToParsed.substr(parser_getDelimiterPos(sLineToParsed.substr(n_pos)));
@@ -2518,6 +2500,7 @@ string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser,
                     sLineToParsed = sLineToParsed.substr(sLineToParsed.find('"', 1)+1);
                 else
                     sLineToParsed.clear();
+                nPos = 0;
                 continue;
             }
             else if (sLineToParsed[0] == '<')
@@ -2556,6 +2539,7 @@ string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser,
                 {
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                 }
+                nPos = 0;
                 continue;
             }
             else if (parser_containsStringVectorVars(sLineToParsed.substr(0, parser_getDelimiterPos(sLineToParsed.substr(n_pos))), mStringVectorVars))

@@ -17,10 +17,10 @@
 ******************************************************************************/
 
 #include <wx/wx.h>
-#include "../common/wx.h"
+#include "wx.h"
 #include "viewerframe.hpp"
 #include "../kernel/core/graph_helper.hpp"
-#include "wxterm.h"
+#include "terminal/wxterm.h"
 
 #ifndef GRAPHVIEWER_HPP
 #define GRAPHVIEWER_HPP

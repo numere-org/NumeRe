@@ -16,7 +16,7 @@
 
 #include "../common/datastructures.h"
 #include "../common/DebugEvent.h"
-#include "../common/globals.hpp"
+#include "globals.hpp"
 #include <wx/treectrl.h>
 #include <wx/notebook.h>
 #include "../common/filewatcher.hpp"

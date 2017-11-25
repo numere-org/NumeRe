@@ -23,9 +23,9 @@
 
 1483739173 d:\tdm-gcc-32\wxwidgets-3.0.2\lib\gcc_lib\mswu\wx\msw\rcdefs.h
 
-1490787950 source:d:\cpp\numere-source\trunk\common\chameleonprintout.cpp
+1511420389 source:d:\cpp\numere-source\trunk\common\chameleonprintout.cpp
 	"NumeRePrintout.h"
-	"../editor/editor.h"
+	"../gui/editor/editor.h"
 	"wx/printdlg.h"
 	"wx/progdlg.h"
 	"../common/Options.h"
@@ -2023,12 +2023,12 @@
 	"../kernel/kernel.hpp"
 	"../kernel/debugmessenger.hpp"
 
-1511340968 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1511360559 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
 	"../common/DebugEvent.h"
-	"../common/globals.hpp"
+	"globals.hpp"
 	<wx/treectrl.h>
 	<wx/notebook.h>
 	"../common/filewatcher.hpp"
@@ -2912,10 +2912,10 @@
 1490787950 source:d:\cpp\numere-source\trunk\common\filewatcher.cpp
 	"filewatcher.hpp"
 
-1494398841 source:d:\cpp\numere-source\trunk\common\numeredroptarget.cpp
+1511357408 source:d:\cpp\numere-source\trunk\common\numeredroptarget.cpp
 	"numeredroptarget.hpp"
 	"../gui/NumeReWindow.h"
-	"../editor/editor.h"
+	"../gui/editor/editor.h"
 	"../gui/wxssh.h"
 	"../gui/filetree.hpp"
 
@@ -3075,11 +3075,11 @@
 	<wx/wx.h>
 	"../common/datastructures.h"
 
-1490787950 source:d:\cpp\numere-source\trunk\common\projectinfo.cpp
+1511420399 source:d:\cpp\numere-source\trunk\common\projectinfo.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"ProjectInfo.h"
-	"../editor/editor.h"
+	"../gui/editor/editor.h"
 	"debug.h"
 
 1490787950 source:d:\cpp\numere-source\trunk\common\recycler.cpp
@@ -3140,14 +3140,14 @@
 
 1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\clipbrd.h
 
-1490787951 source:d:\cpp\numere-source\trunk\compiler\compiler.cpp
+1511420412 source:d:\cpp\numere-source\trunk\compiler\compiler.cpp
 	"compiler.h"
 	<wx/filename.h>
 	<wx/txtstrm.h>
 	"compilerevent.h"
 	"../common/chameleonprocessevent.h"
 	"../common/options.h"
-	"../network/networking.h"
+	"../gui/terminal/networking.h"
 	"../common/projectinfo.h"
 	"../common/fixvsbug.h"
 	"../common/debug.h"
@@ -3169,7 +3169,7 @@
 	<wx/arrimpl.cpp>
 	"../common/debug.h"
 
-1490787950 d:\cpp\numere-source\trunk\debugger\cham_db.h
+1511420152 d:\cpp\numere-source\trunk\debugger\cham_db.h
 	<wx/string.h>
 	<wx/dynarray.h>
 	<wx/event.h>
@@ -3177,7 +3177,7 @@
 	<wx/regex.h>
 	"../common/chameleonprocessevent.h"
 	"../common/debugevent.h"
-	"../network/networking.h"
+	"../gui/terminal/networking.h"
 	"../common/datastructures.h"
 
 1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tokenzr.h
@@ -3187,15 +3187,15 @@
 
 1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\arrimpl.cpp
 
-1490787950 source:d:\cpp\numere-source\trunk\debugger\debugmanager.cpp
+1511420264 source:d:\cpp\numere-source\trunk\debugger\debugmanager.cpp
 	"DebugManager.h"
-	"../editor/editor.h"
-	"../gui/wxssh.h"
+	"../gui/editor/editor.h"
+	"../gui/terminal/wxssh.h"
 	"../gui/ChameleonProjectManager.h"
 	"../gui/NumeReWindow.h"
 	"../gui/dialogs/VariableWatchPanel.h"
 
-1490787950 d:\cpp\numere-source\trunk\debugger\debugmanager.h
+1511420165 d:\cpp\numere-source\trunk\debugger\debugmanager.h
 	<wx/string.h>
 	<wx/dynarray.h>
 	<wx/event.h>
@@ -3203,7 +3203,7 @@
 	"cham_db.h"
 	"../common/chameleonprocessevent.h"
 	"../common/debugevent.h"
-	"../network/networking.h"
+	"../gui/terminal/networking.h"
 	"../common/datastructures.h"
 
 1490787950 d:\cpp\numere-source\trunk\gui\chameleonprojectmanager.h
@@ -3304,7 +3304,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1511337445 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1511419854 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3326,28 +3326,28 @@
 	<fstream>
 	<math.h>
 	"../common/fixvsbug.h"
-	"../editor/editor.h"
-	"../editor/history.hpp"
+	"editor/editor.h"
+	"editor/history.hpp"
 	"NumeReNotebook.h"
+	"numeredroptarget.hpp"
 	"dialogs/OptionsDialog.h"
 	"dialogs/RemoteFileDialog.h"
 	"dialogs/wxTermContainer.h"
 	"dialogs/VariableWatchPanel.h"
 	"dialogs/CompilerOutputPanel.h"
 	"dialogs/AboutChameleonDialog.h"
+	"dialogs/debugviewer.hpp"
 	"../common/NumeRePrintout.h"
 	"../common/ProjectInfo.h"
 	"../common/recycler.hpp"
-	"../network/networking.h"
+	"terminal/networking.h"
+	"terminal/wxssh.h"
 	"../compiler/compiler.h"
 	"../common/Options.h"
-	"../common/numeredroptarget.hpp"
 	"../debugger/cham_db.h"
 	"../debugger/DebugManager.h"
-	"../debugger/debugviewer.hpp"
 	"../common/DebugEvent.h"
 	"DirTraverser.hpp"
-	"wxssh.h"
 	"../compiler/compilerevent.h"
 	"IconManager.h"
 	"wxProportionalSplitterWindow.h"
@@ -3643,19 +3643,19 @@
 	<vector>
 	<string>
 
-1490787950 d:\cpp\numere-source\trunk\gui\tableeditpanel.hpp
+1511420274 d:\cpp\numere-source\trunk\gui\tableeditpanel.hpp
 	<wx/wx.h>
 	<wx/panel.h>
 	"tableviewer.hpp"
-	"wxterm.h"
+	"terminal/wxterm.h"
 	"../kernel/core/language.hpp"
 
-1501331319 d:\cpp\numere-source\trunk\gui\graphviewer.hpp
+1511420286 d:\cpp\numere-source\trunk\gui\graphviewer.hpp
 	<wx/wx.h>
-	"../common/wx.h"
+	"wx.h"
 	"viewerframe.hpp"
 	"../kernel/core/graph_helper.hpp"
-	"wxterm.h"
+	"terminal/wxterm.h"
 
 1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\helpchm.h
 	"wx/helpbase.h"
@@ -3690,10 +3690,10 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1490787950 source:d:\cpp\numere-source\trunk\gui\chameleonprojectmanager.cpp
+1511420427 source:d:\cpp\numere-source\trunk\gui\chameleonprojectmanager.cpp
 	"ChameleonProjectManager.h"
 	"NumeReNotebook.h"
-	"../editor/editor.h"
+	"editor/editor.h"
 
 1504246935 source:d:\cpp\numere-source\trunk\gui\dialogs\aboutchameleondialog.cpp
 	"wx/wxprec.h"
@@ -3726,10 +3726,10 @@
 	"../NumeReWindow.h"
 	<wx/regex.h>
 
-1507370332 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
+1511420439 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
 	"duplicatecodedialog.hpp"
 	"../../kernel/core/language.hpp"
-	"../../editor/editor.h"
+	"../editor/editor.h"
 
 1491132165 source:d:\cpp\numere-source\trunk\gui\dialogs\fndrpldialog.cpp
 	"fndrpldialog.hpp"
@@ -3748,7 +3748,7 @@
 	"../NumeReWindow.h"
 	"../../common/debug.h"
 
-1490787950 source:d:\cpp\numere-source\trunk\gui\dialogs\remotefiledialog.cpp
+1511420453 source:d:\cpp\numere-source\trunk\gui\dialogs\remotefiledialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	<wx/filename.h>
@@ -3760,7 +3760,7 @@
 	"RemoteFileDialog.h"
 	"../NumeReWindow.h"
 	"../IconManager.h"
-	"../../network/networking.h"
+	"../terminal/networking.h"
 	"../../common/datastructures.h"
 	<wx/arrimpl.cpp>
 	"upfolder.xpm"
@@ -3868,20 +3868,20 @@
 	"../../common/tree.h"
 	"../../common/fixvsbug.h"
 
-1490787950 source:d:\cpp\numere-source\trunk\gui\dialogs\wxtermcontainer.cpp
+1511420469 source:d:\cpp\numere-source\trunk\gui\dialogs\wxtermcontainer.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	"wx/scrolbar.h"
 	"wxTermContainer.h"
-	"../wxTerm.h"
+	"../terminal/wxTerm.h"
 	"../../common/debug.h"
 
 1490787950 source:d:\cpp\numere-source\trunk\gui\dirtraverser.cpp
 	"DirTraverser.hpp"
 
-1491129598 source:d:\cpp\numere-source\trunk\gui\filetree.cpp
+1511360564 source:d:\cpp\numere-source\trunk\gui\filetree.cpp
 	"filetree.hpp"
-	"../common/globals.hpp"
+	"globals.hpp"
 
 1511250771 source:d:\cpp\numere-source\trunk\gui\graphviewer.cpp
 	"graphviewer.hpp"
@@ -4015,7 +4015,7 @@
 	"loop.hpp"
 	"../kernel.hpp"
 
-1509269735 source:d:\cpp\numere-source\trunk\kernel\core\matrixoperations.cpp
+1511606749 source:d:\cpp\numere-source\trunk\kernel\core\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -4184,7 +4184,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1511016644 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1511612976 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -4222,9 +4222,9 @@
 	"debugmessenger.hpp"
 	"core/tools.hpp"
 
-1509047871 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1511420588 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
-	"../gui/wxterm.h"
+	"../gui/terminal/wxterm.h"
 
 1503383546 source:d:\cpp\numere-source\trunk\kernel\syntax.cpp
 	"syntax.hpp"
@@ -4388,4 +4388,282 @@
 	<cassert>
 	<vector>
 	<algorithm>
+
+1511420137 d:\cpp\numere-source\trunk\gui\editor\editor.h
+	<wx/wx.h>
+	<wx/stc/stc.h>
+	<wx/menu.h>
+	<wx/dynarray.h>
+	<wx/thread.h>
+	<wx/buffer.h>
+	"../terminal/wxterm.h"
+	"../../common/datastructures.h"
+	"../../compiler/compilerevent.h"
+	"../../kernel/syntax.hpp"
+	"../dialogs/duplicatecodedialog.hpp"
+
+1511360590 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+	<stdlib.h>
+	<crtdbg.h>
+	"../../common/CommonHeaders.h"
+	"../../kernel/core/language.hpp"
+	"../../kernel/core/tools.hpp"
+	<wx/datetime.h>
+	<wx/stdpaths.h>
+	<vector>
+	<string>
+	"editor.h"
+	"../NumeReWindow.h"
+	"../NumeReNotebook.h"
+	"../../common/datastructures.h"
+	"../../common/Options.h"
+	"../../common/DebugEvent.h"
+	"../../common/ProjectInfo.h"
+	"../../debugger/DebugManager.h"
+	"../../common/debug.h"
+	"../../common/fixvsbug.h"
+	"../globals.hpp"
+
+1511357457 source:d:\cpp\numere-source\trunk\gui\editor\history.cpp
+	"../../common/CommonHeaders.h"
+	"../../kernel/core/language.hpp"
+	"../../kernel/core/tools.hpp"
+	<wx/datetime.h>
+	<wx/stdpaths.h>
+	<vector>
+	<string>
+	"history.hpp"
+
+1511420177 d:\cpp\numere-source\trunk\gui\editor\history.hpp
+	<wx/wx.h>
+	<wx/stc/stc.h>
+	<wx/menu.h>
+	<wx/dynarray.h>
+	"editor.h"
+	"../terminal/wxterm.h"
+	"../../common/datastructures.h"
+	"../../compiler/compilerevent.h"
+	"../../kernel/syntax.hpp"
+
+1511358087 source:d:\cpp\numere-source\trunk\gui\dialogs\debugviewer.cpp
+	"debugviewer.hpp"
+	<wx/statbox.h>
+	"../../kernel/core/language.hpp"
+
+1511420262 d:\cpp\numere-source\trunk\gui\dialogs\debugviewer.hpp
+	"../viewerframe.hpp"
+	"../terminal/wxterm.h"
+	"treelistctrl.h"
+	<wx/listctrl.h>
+	<wx/panel.h>
+	<string>
+	<vector>
+
+1494058334 d:\cpp\numere-source\trunk\gui\numeredroptarget.hpp
+	<wx/wx.h>
+	<wx/dnd.h>
+
+1511420190 source:d:\cpp\numere-source\trunk\gui\numeredroptarget.cpp
+	"numeredroptarget.hpp"
+	"NumeReWindow.h"
+	"editor/editor.h"
+	"terminal/wxssh.h"
+	"filetree.hpp"
+
+1501396206 d:\cpp\numere-source\trunk\gui\wx.h
+	<mgl2/wnd.h>
+	<wx/window.h>
+	<wx/image.h>
+	<wx/timer.h>
+	<wx/bitmap.h>
+	<wx/toolbar.h>
+	<wx/statusbr.h>
+	<wx/textctrl.h>
+	<wx/cursor.h>
+
+1511360507 d:\cpp\numere-source\trunk\gui\globals.hpp
+	"dialogs/fndrpldialog.hpp"
+
+1511420294 source:d:\cpp\numere-source\trunk\gui\wx.cpp
+	<wx/dcclient.h>
+	<wx/msgdlg.h>
+	<wx/clipbrd.h>
+	<wx/dataobj.h>
+	<wx/menu.h>
+	<wx/scrolwin.h>
+	<wx/artprov.h>
+	<cmath>
+	<mgl2/canvas_wnd.h>
+	"wx.h"
+	"../common/datastructures.h"
+	"../kernel/core/language.hpp"
+	"terminal/wxterm.h"
+	"graphviewer.hpp"
+	"addtext.xpm"
+	"addline.xpm"
+	"addrect.xpm"
+	"addcirc.xpm"
+	"rotate_new.xpm"
+	"zoom_new.xpm"
+	"newstart1.xpm"
+	"newstop1.xpm"
+
+1490787951 source:d:\cpp\numere-source\trunk\gui\terminal\gtelnet.cpp
+	"gterm.hpp"
+	"gtelnet.hpp"
+
+1511419884 d:\cpp\numere-source\trunk\gui\terminal\gterm.hpp
+	<string.h>
+	<cstring>
+	<stdlib.h>
+	<stdio.h>
+	<vector>
+	<queue>
+	<deque>
+	<string>
+	"TextManager.h"
+	"../../kernel/syntax.hpp"
+
+1498059763 d:\cpp\numere-source\trunk\gui\terminal\textmanager.h
+	<vector>
+	<deque>
+	<string>
+
+1490787951 d:\cpp\numere-source\trunk\gui\terminal\gtelnet.hpp
+	<string.h>
+	<stdio.h>
+	<stdlib.h>
+	"gterm.hpp"
+
+1511419892 source:d:\cpp\numere-source\trunk\gui\terminal\actions.cpp
+	"gterm.hpp"
+	"../../common/debug.h"
+
+1490787951 source:d:\cpp\numere-source\trunk\gui\terminal\keytrans.cpp
+	"gterm.hpp"
+	<ctype.h>
+
+1511419902 source:d:\cpp\numere-source\trunk\gui\terminal\gterm.cpp
+	"gterm.hpp"
+	"../../common/debug.h"
+	<wx/stdpaths.h>
+	<wx/wx.h>
+	<wx/filename.h>
+
+1511419927 source:d:\cpp\numere-source\trunk\gui\terminal\pipedprocess.cpp
+	<wx/app.h>
+	"pipedprocess.h"
+	"../../common/chameleonprocessevent.h"
+
+1490787951 d:\cpp\numere-source\trunk\gui\terminal\pipedprocess.h
+	<wx/process.h>
+	<wx/txtstrm.h>
+	<wx/timer.h>
+
+1511419934 source:d:\cpp\numere-source\trunk\gui\terminal\localprocessmanager.cpp
+	"LocalProcessManager.h"
+	"PipedProcess.h"
+	"../../common/chameleonprocessevent.h"
+	<wx/filefn.h>
+
+1511419919 d:\cpp\numere-source\trunk\gui\terminal\localprocessmanager.h
+	<wx/wx.h>
+	<wx/dynarray.h>
+	"../../common/datastructures.h"
+	"../../common/chameleonprocessevent.h"
+
+1490795067 source:d:\cpp\numere-source\trunk\gui\terminal\states.cpp
+	"gterm.hpp"
+
+1511419950 source:d:\cpp\numere-source\trunk\gui\terminal\plinkconnect.cpp
+	<wx/txtstrm.h>
+	<wx/process.h>
+	<wx/progdlg.h>
+	<wx/listimpl.cpp>
+	"plinkconnect.h"
+	"../../common/chameleonprocessevent.h"
+	"../../common/datastructures.h"
+	"../../common/debug.h"
+
+1511419940 d:\cpp\numere-source\trunk\gui\terminal\plinkconnect.h
+	<wx/wx.h>
+	"../../common/datastructures.h"
+
+1511419963 source:d:\cpp\numere-source\trunk\gui\terminal\utils.cpp
+	"gterm.hpp"
+	"../../common/debug.h"
+
+1511419974 source:d:\cpp\numere-source\trunk\gui\terminal\networking.cpp
+	<wx/regex.h>
+	<wx/file.h>
+	<wx/process.h>
+	<wx/txtstrm.h>
+	<wx/progdlg.h>
+	"networking.h"
+	"plinkconnect.h"
+	"../../common/datastructures.h"
+	"../../common/Options.h"
+	"../../common/debug.h"
+	"LocalProcessManager.h"
+
+1511419957 d:\cpp\numere-source\trunk\gui\terminal\networking.h
+	<wx/wx.h>
+	<wx/regex.h>
+	<wx/filename.h>
+	"../../common/datastructures.h"
+	"../../common/debug.h"
+
+1490795067 source:d:\cpp\numere-source\trunk\gui\terminal\vt52_states.cpp
+	"gterm.hpp"
+
+1490787951 source:d:\cpp\numere-source\trunk\gui\terminal\winmesgbeep.cpp
+	<windows.h>
+
+1511419981 source:d:\cpp\numere-source\trunk\gui\terminal\textmanager.cpp
+	"TextManager.h"
+	<iostream>
+	<stdlib.h>
+	<wx/wx.h>
+	<wx/file.h>
+	<wx/dcmemory.h>
+	<wx/image.h>
+	"gterm.hpp"
+	"../../common/debug.h"
+
+1511420122 d:\cpp\numere-source\trunk\gui\terminal\wxterm.h
+	<map>
+	"../NumeReWindow.h"
+	"../../common/Options.h"
+	"gterm.hpp"
+	"gtelnet.hpp"
+	"../../kernel/kernel.hpp"
+	"../../kernel/debugmessenger.hpp"
+
+1511420001 d:\cpp\numere-source\trunk\gui\terminal\wxssh.h
+	"../../common/CommonHeaders.h"
+	<wx/txtstrm.h>
+	"networking.h"
+	"gterm.hpp"
+	"gtelnet.hpp"
+	"../../common/debug.h"
+	"../../common/chameleonprocessevent.h"
+	"../../common/Options.h"
+	"wxterm.h"
+
+1511420208 source:d:\cpp\numere-source\trunk\gui\terminal\wxssh.cpp
+	"wxssh.h"
+	"../../common/debug.h"
+
+1511420264 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+	"wx/wxprec.h"
+	"wx/wx.h"
+	<wx/timer.h>
+	<ctype.h>
+	"gterm.hpp"
+	"gtelnet.hpp"
+	"wxterm.h"
+	<wx/clipbrd.h>
+	<wx/dataobj.h>
+	"../globals.hpp"
+	"../../common/debug.h"
 

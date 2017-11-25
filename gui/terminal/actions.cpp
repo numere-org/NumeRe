@@ -1,7 +1,7 @@
 // Copyright Timothy Miller, 1999
 
 #include "gterm.hpp"
-#include "../common/debug.h"
+#include "../../common/debug.h"
 
 #ifdef _DEBUG
 

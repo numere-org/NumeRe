@@ -25,10 +25,10 @@
 #include <wx/menu.h>
 #include <wx/dynarray.h>
 #include "editor.h"
-#include "../gui/wxterm.h"
-#include "../common/datastructures.h"
-#include "../compiler/compilerevent.h"
-#include "../kernel/syntax.hpp"
+#include "../terminal/wxterm.h"
+#include "../../common/datastructures.h"
+#include "../../compiler/compilerevent.h"
+#include "../../kernel/syntax.hpp"
 //#include <wx/wx.h>
 
 #define RM_WS_BOTH 0

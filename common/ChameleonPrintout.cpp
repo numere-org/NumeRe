@@ -1,5 +1,5 @@
 #include "NumeRePrintout.h"
-#include "../editor/editor.h"
+#include "../gui/editor/editor.h"
 #include "wx/printdlg.h"  // wxPageSetupDialog
 #include "wx/progdlg.h"   // wxProgressDialog
 #include "../common/Options.h"

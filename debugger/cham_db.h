@@ -21,7 +21,7 @@
 
 #include "../common/chameleonprocessevent.h"
 #include "../common/debugevent.h"
-#include "../network/networking.h"
+#include "../gui/terminal/networking.h"
 #include "../common/datastructures.h"
 
 class ProjectInfo;

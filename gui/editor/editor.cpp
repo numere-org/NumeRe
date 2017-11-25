@@ -8,9 +8,9 @@
     #define _ASSERTE(expr) ((void)0)
 #endif
 
-#include "../common/CommonHeaders.h"
-#include "../kernel/core/language.hpp"
-#include "../kernel/core/tools.hpp"
+#include "../../common/CommonHeaders.h"
+#include "../../kernel/core/language.hpp"
+#include "../../kernel/core/tools.hpp"
 
 #include <wx/datetime.h>
 #include <wx/stdpaths.h>
@@ -18,17 +18,17 @@
 #include <string>
 
 #include "editor.h"
-#include "../gui/NumeReWindow.h"
-#include "../gui/NumeReNotebook.h"
+#include "../NumeReWindow.h"
+#include "../NumeReNotebook.h"
 
-#include "../common/datastructures.h"
-#include "../common/Options.h"
-#include "../common/DebugEvent.h"
-#include "../common/ProjectInfo.h"
-#include "../debugger/DebugManager.h"
-#include "../common/debug.h"
-#include "../common/fixvsbug.h"
-#include "../common/globals.hpp"
+#include "../../common/datastructures.h"
+#include "../../common/Options.h"
+#include "../../common/DebugEvent.h"
+#include "../../common/ProjectInfo.h"
+#include "../../debugger/DebugManager.h"
+#include "../../common/debug.h"
+#include "../../common/fixvsbug.h"
+#include "../globals.hpp"
 
 #define MARGIN_FOLD 3
 #define HIGHLIGHT 25

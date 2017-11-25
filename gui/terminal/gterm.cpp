@@ -6,7 +6,7 @@
 #endif
 
 #include "gterm.hpp"
-#include "../common/debug.h"
+#include "../../common/debug.h"
 #include <wx/stdpaths.h>
 #include <wx/wx.h>
 #include <wx/filename.h>

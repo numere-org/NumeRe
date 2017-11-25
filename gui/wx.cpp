@@ -31,19 +31,19 @@
 #include <mgl2/canvas_wnd.h>
 #include "wx.h"
 
-#include "datastructures.h"
+#include "../common/datastructures.h"
 #include "../kernel/core/language.hpp"
 
-#include "../gui/wxterm.h"
-#include "../gui/graphviewer.hpp"
-#include "../gui/addtext.xpm"
-#include "../gui/addline.xpm"
-#include "../gui/addrect.xpm"
-#include "../gui/addcirc.xpm"
-#include "../gui/rotate_new.xpm"
-#include "../gui/zoom_new.xpm"
-#include "../gui/newstart1.xpm"
-#include "../gui/newstop1.xpm"
+#include "terminal/wxterm.h"
+#include "graphviewer.hpp"
+#include "addtext.xpm"
+#include "addline.xpm"
+#include "addrect.xpm"
+#include "addcirc.xpm"
+#include "rotate_new.xpm"
+#include "zoom_new.xpm"
+#include "newstart1.xpm"
+#include "newstop1.xpm"
 
 extern Language _guilang;
 

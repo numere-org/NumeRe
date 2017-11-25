@@ -9,7 +9,7 @@
 #include "compilerevent.h"
 #include "../common/chameleonprocessevent.h"
 #include "../common/options.h"
-#include "../network/networking.h"
+#include "../gui/terminal/networking.h"
 #include "../common/projectinfo.h"
 #include "../common/fixvsbug.h"
 

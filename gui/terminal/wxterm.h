@@ -35,12 +35,12 @@
 #endif
 
 #include <map>
-#include "NumeReWindow.h"
-#include "../common/Options.h"
-#include "../network/gterm.hpp"
-#include "../network/gtelnet.hpp"
-#include "../kernel/kernel.hpp"
-#include "../kernel/debugmessenger.hpp"
+#include "../NumeReWindow.h"
+#include "../../common/Options.h"
+#include "gterm.hpp"
+#include "gtelnet.hpp"
+#include "../../kernel/kernel.hpp"
+#include "../../kernel/debugmessenger.hpp"
 
 #define wxEVT_COMMAND_TERM_RESIZE        wxEVT_USER_FIRST + 1000
 #define wxEVT_COMMAND_TERM_NEXT          wxEVT_USER_FIRST + 1001

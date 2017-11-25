@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "../gui/dialogs/fndrpldialog.hpp"
+#include "dialogs/fndrpldialog.hpp"
 
 // reference to the global pointer to the find&replace dialog for suppressing the focus moving
 extern FindReplaceDialog* g_findReplace;

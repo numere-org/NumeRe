@@ -15,7 +15,7 @@
 #endif
 
 #include <wx/wx.h>
-#include "../common/datastructures.h"
+#include "../../common/datastructures.h"
 class wxProcessEvent;
 class wxTextOutputStream;
 
@@ -64,7 +64,7 @@ class PlinkConnect : public wxEvtHandler {
 		ProcessInfoArray m_procs;
 
 		bool m_waitingForFingerprint;
-		
+
 		ProcessInfo* m_tempProcess;
 
 
@@ -73,7 +73,7 @@ class PlinkConnect : public wxEvtHandler {
 		void OnTimerEvent(wxTimerEvent& event);
 #endif
 
-	
+
 		DECLARE_EVENT_TABLE()
 };
 

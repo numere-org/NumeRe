@@ -17,9 +17,9 @@
 
 #include <wx/listimpl.cpp> // CAREFUL!
 #include "plinkconnect.h"
-#include "../common/chameleonprocessevent.h"
-#include "../common/datastructures.h"
-#include "../common/debug.h"
+#include "../../common/chameleonprocessevent.h"
+#include "../../common/datastructures.h"
+#include "../../common/debug.h"
 
 #ifdef _DEBUG
 	#define new DEBUG_NEW
@@ -81,7 +81,7 @@ PlinkConnect::PlinkConnect(wxString plinkApp, wxString host, wxString user, wxSt
 							//   this will also establish my status
 
 	}
-	
+
 }
 
 
@@ -99,9 +99,9 @@ PlinkConnect::~PlinkConnect()
 {
 	// Send NO more events:
 
-	
-	
-	
+
+
+
 
 #ifdef PROCESSLIST
 	for(ProcessInfoList::Node* node = m_processes.GetFirst(); node; node = node->GetNext() ) {
@@ -136,9 +136,9 @@ PlinkConnect::~PlinkConnect()
 		wxSafeYield();
 	}
 #endif
-	
-	
-	
+
+
+
 }
 
 
@@ -239,7 +239,7 @@ void PlinkConnect::spawnConnection()
 		p->stdinStream = new wxTextOutputStream(*proc->GetOutputStream(), wxEOL_UNIX);
 		p->outputBuf = "";
 		p->owner = NULL; // set when process gets used
-		
+
 #ifdef PROCESSLIST
 		m_processes.Append(p);
 #else
@@ -276,7 +276,7 @@ bool PlinkConnect::getIsConnected()
 #ifdef PROCESSLIST
 	while( (first = m_processes.GetFirst()) != NULL && first->GetData()->state == PC_STARTING) {
 #else
-	while( m_procs.GetCount() > 0 && m_procs[0]->state == PC_STARTING) 
+	while( m_procs.GetCount() > 0 && m_procs[0]->state == PC_STARTING)
 	{
 #endif
 		// If the first connection is in the starting
@@ -328,10 +328,10 @@ bool PlinkConnect::getIsSettled()
 
 #ifdef PROCESSLIST
 	settled = m_processes.GetFirst() != NULL && m_processes.GetFirst()->GetData()->state != PC_STARTING;
-#else	
+#else
 	settled = (m_procs.GetCount() > 0 && m_procs[0]->state != PC_STARTING);
-#endif	
-	
+#endif
+
 	return settled;
 }
 
@@ -390,9 +390,9 @@ wxTextOutputStream* PlinkConnect::executeCmd(wxString command, wxEvtHandler* lis
 #ifdef PROCESSLIST
 	ProcessInfo* p = (ProcessInfo*)m_processes.Last()->GetData();
 #else
-	ProcessInfo* p = m_procs[m_procs.GetCount() - 1]; 
+	ProcessInfo* p = m_procs[m_procs.GetCount() - 1];
 #endif
-	
+
 	wxLogDebug("Executing command.  Process: %x, command: %s", p, command);
 	p->owner = listener;
 	p->isRunSynch = isSynch;
@@ -400,7 +400,7 @@ wxTextOutputStream* PlinkConnect::executeCmd(wxString command, wxEvtHandler* lis
 	// Wrap the command:
 	wxString cmd = "echo St_Ar_Tt_oK_eN ; " + command + " ; echo En_Dt_oK_eN\r";
 	//wxString cmd = "echo St_Ar_Tt_oK_eN ; " + command + " && echo s_Uc_Es_S ; echo En_Dt_oK_eN\r";
-	
+
 	// Send it:
 	//wxLogDebug("PC(%d) cmd is: %s", p->pid, cmd);
 	*(p->stdinStream) << cmd;
@@ -450,7 +450,7 @@ wxString PlinkConnect::executeSyncCommand(wxString command)
 		{
 			progress->Pulse();
 		}
-		
+
 		if(i % 4 == 0)
 		{
 			wxLogDebug("Synchronous network operation (executeSyncCommand): %d (command: %s)", i / 4, command);
@@ -539,7 +539,7 @@ void PlinkConnect::parseOutput(ProcessInfo* p, wxString output, wxString errLog)
 			// (in the meantime:)
 			m_message += errLog;
 		}
-		
+
 	}
 
 	if(p->state == PC_READY) {
@@ -598,7 +598,7 @@ void PlinkConnect::parseOutput(ProcessInfo* p, wxString output, wxString errLog)
 			if(start != -1) {
 				temp.Remove(start);
 			}
-			
+
 			if(temp != "") {
 				//wxLogDebug("PlinkConnect(%d): extranious output: \"%s\"", p->pid, temp);
 			}
@@ -634,11 +634,11 @@ void PlinkConnect::terminateConnection(ProcessInfo* p)
 		p->state = PC_ENDING;
 		*(p->stdinStream) <<  "exit" << endl;
 	}
-	
+
 	// All the termination clean-up is done in onTerminate()
 }
 
-	
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private terminateAllConnections
 ///  Loops through the Processes, and call termianteConnection on each.
@@ -661,7 +661,7 @@ void PlinkConnect::terminateAllConnections()
 	for(int i = 0; i < m_procs.GetCount(); i++)
 	{
 		ProcessInfo* p = m_procs[i];
-#endif	
+#endif
 		terminateConnection(p);
 	}
 }
@@ -683,10 +683,10 @@ void PlinkConnect::PollTick() {
 #ifdef PROCESSLIST
 	for(ProcessInfoList::Node *node = m_processes.GetFirst(); node; node = node->GetNext() ) {
 		ProcessInfo *p = node->GetData();
-#else	
+#else
 	for(int i = 0; i < m_procs.GetCount(); i++)
 	{
-		ProcessInfo* p = m_procs[i];	
+		ProcessInfo* p = m_procs[i];
 #endif
 		wxProcess* proc = p->proc;
 		wxString errout = "";
@@ -734,7 +734,7 @@ void PlinkConnect::onTerminate(wxProcessEvent& event) {
 	long pid = event.GetPid();
 	ProcessInfo* p;
 	bool found = false;
-	
+
 #ifdef PROCESSLIST
 	for(ProcessInfoList::Node* node = m_processes.GetFirst(); node; node = node->GetNext() ) {
 		p = node->GetData();
@@ -806,7 +806,7 @@ ProcessInfo* PlinkConnect::FindProcess(wxTextOutputStream* w)
 	// Determine which process:
 	ProcessInfo* p;
 	bool found = false;
-	
+
 #ifdef PROCESSLIST
 	for(ProcessInfoList::Node* node = m_processes.GetFirst(); node; node = node->GetNext() ) {
 		p = node->GetData();

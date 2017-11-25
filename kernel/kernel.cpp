@@ -19,7 +19,7 @@
 
 
 #include "wx/wx.h"
-#include "../gui/wxterm.h"
+#include "../gui/terminal/wxterm.h"
 
 extern const string sVersion;
 /* --> STATUS: Versionsname des Programms; Aktuell "Ampere", danach "Angstroem". Ab 1.0 Namen mit "B",

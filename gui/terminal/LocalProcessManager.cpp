@@ -1,6 +1,6 @@
 #include "LocalProcessManager.h"
 #include "PipedProcess.h"
-#include "../common/chameleonprocessevent.h"
+#include "../../common/chameleonprocessevent.h"
 #include <wx/filefn.h>
 
 
