@@ -41,7 +41,7 @@
 #include "dialogs/RemoteFileDialog.h"
 #include "dialogs/wxTermContainer.h"
 #include "dialogs/VariableWatchPanel.h"
-#include "dialogs/CompilerOutputPanel.h"
+//#include "dialogs/CompilerOutputPanel.h"
 #include "dialogs/AboutChameleonDialog.h"
 #include "dialogs/debugviewer.hpp"
 #include "../common/NumeRePrintout.h"
@@ -49,13 +49,13 @@
 #include "../common/recycler.hpp"
 #include "terminal/networking.h"
 #include "terminal/wxssh.h"
-#include "../compiler/compiler.h"
+//#include "../compiler/compiler.h"
 #include "../common/Options.h"
-#include "../debugger/cham_db.h"
-#include "../debugger/DebugManager.h"
+//#include "../debugger/cham_db.h"
+//#include "../debugger/DebugManager.h"
 #include "../common/DebugEvent.h"
 #include "DirTraverser.hpp"
-#include "../compiler/compilerevent.h"
+//#include "../compiler/compilerevent.h"
 #include "IconManager.h"
 #include "wxProportionalSplitterWindow.h"
 #include "ChameleonProjectManager.h"
@@ -317,13 +317,13 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	// should be approximately 80x15 for the terminal
 	this->SetSize(1024, 768);
     m_optionsDialog = nullptr;
-    m_compiler = nullptr;
+    //m_compiler = nullptr;
     m_config = nullptr;
     m_options = nullptr;
-    m_debugger = nullptr;
+    //m_debugger = nullptr;
     m_network = nullptr;
     m_iconManager = nullptr;
-    m_debugManager = nullptr;
+    //m_debugManager = nullptr;
     m_debugViewer = nullptr;
     m_projectManager = nullptr;
     m_watcher = nullptr;
@@ -380,8 +380,8 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
 
 	m_network = new Networking(m_options);
-	m_compiler = new Compiler(m_options, m_network);
-	m_debugger = new Debugger(m_network, m_options, this);
+//	m_compiler = new Compiler(m_options, m_network);
+//	m_debugger = new Debugger(m_network, m_options, this);
 
 
 	/**m_splitEditorOutput = new wxProportionalSplitterWindow(this, ID_SPLITEDITOROUTPUT, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
@@ -537,7 +537,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_splitEditorOutput->Show();
 	m_splitCommandHistory->Show();
 	m_book->Show();
-    m_history = new NumeReHistory(this, m_debugManager, m_options, new ProjectInfo(), m_splitCommandHistory, -1, m_terminal->getSyntax(), m_terminal, wxDefaultPosition, wxDefaultSize, wxBORDER_SUNKEN);
+    m_history = new NumeReHistory(this, m_options, new ProjectInfo(), m_splitCommandHistory, -1, m_terminal->getSyntax(), m_terminal, wxDefaultPosition, wxDefaultSize, wxBORDER_SUNKEN);
 
     wxMilliSleep(500);
 	EvaluateOptions();
@@ -742,20 +742,20 @@ NumeReWindow::~NumeReWindow()
 
     if (m_optionsDialog)
         delete m_optionsDialog;
-    if (m_compiler)
-        delete m_compiler;
+//    if (m_compiler)
+//        delete m_compiler;
     if (m_config)
         delete m_config;
     if (m_options)
         delete m_options;
-    if (m_debugger)
-        delete m_debugger;
+//    if (m_debugger)
+//        delete m_debugger;
     if (m_network)
         delete m_network;
     if (m_iconManager)
         delete m_iconManager;
-    if (m_debugManager)
-        delete m_debugManager;
+//    if (m_debugManager)
+//        delete m_debugManager;
     if (m_projectManager)
         delete m_projectManager;
     if (m_watcher)
@@ -1922,7 +1922,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
 
         wxString noname = _guilang.get("GUI_NEWFILE_UNTITLED") + " " + wxString::Format ("%d", m_fileNum);
         ProjectInfo* singleFileProject = new ProjectInfo();
-        NumeReEditor* edit = new NumeReEditor (this, m_debugManager, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
+        NumeReEditor* edit = new NumeReEditor (this, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
         //edit->SetSyntax(m_terminal->getSyntax());
 
     #if wxUSE_DRAG_AND_DROP
@@ -2009,7 +2009,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         m_fileNum += 1;
 
         ProjectInfo* singleFileProject = new ProjectInfo();
-        NumeReEditor* edit = new NumeReEditor (this, m_debugManager, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
+        NumeReEditor* edit = new NumeReEditor (this, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
 
         m_currentEd = edit;
         m_currentEd->SetText(template_file);
@@ -2047,7 +2047,7 @@ void NumeReWindow::DefaultPage()
     m_fileNum += 1;
 
     ProjectInfo* singleFileProject = new ProjectInfo();
-    NumeReEditor* edit = new NumeReEditor (this, m_debugManager, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
+    NumeReEditor* edit = new NumeReEditor (this, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
 
     m_currentEd = edit;
     m_currentEd->LoadFileText(template_file);
@@ -2678,7 +2678,7 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
 			// need to create a new buffer for the file
 			else
 			{
-				NumeReEditor *edit = new NumeReEditor (this, m_debugManager, m_options, proj, m_book, -1, m_terminal->getSyntax(), m_terminal);
+				NumeReEditor *edit = new NumeReEditor (this, m_options, proj, m_book, -1, m_terminal->getSyntax(), m_terminal);
 #if wxUSE_DRAG_AND_DROP
 				edit->SetDropTarget(new NumeReDropTarget(this, edit, NumeReDropTarget::EDITOR));
 #endif
@@ -3135,7 +3135,6 @@ void NumeReWindow::OnStatusTimer(wxTimerEvent &WXUNUSED(event))
 		OnUpdateSaveUI();
 		ToolbarStatusUpdate();
 		OnUpdateConnectionUI();
-		OnUpdateCompileUI();
 		OnUpdateProjectUI();
 	}
 }
@@ -3150,13 +3149,6 @@ void NumeReWindow::OnStatusTimer(wxTimerEvent &WXUNUSED(event))
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::ToolbarStatusUpdate()
 {
-	/*if(!m_options->GetPerms()->isEnabled(PERM_DEBUG))
-	{
-		return;
-	}*/
-	//bool isDebugging = m_debugger->isDebugging();
-	//bool isPaused = m_debugger->isPaused();
-
 	wxToolBar* tb = GetToolBar();
 
     if (!tb->GetToolEnabled(ID_DEBUG_STOP))
@@ -3239,49 +3231,6 @@ void NumeReWindow::OnUpdateConnectionUI()//wxUpdateUIEvent &event)
 	}
 
 
-}
-
-//////////////////////////////////////////////////////////////////////////////
-///  private OnUpdateCompileUI
-///  Updates the compile button
-///
-///  @return void
-///
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::OnUpdateCompileUI()//wxUpdateUIEvent &event)
-{
-	ProjectInfo* edProj = m_currentEd->GetProject();
-	wxToolBar* tb = GetToolBar();
-	//wxToolBarToolBase* compileButton = tb->FindById(ID_COMPILE);
-
-	bool canCompile = !edProj->IsCompiled();
-	bool currProjIsCompiling = m_compiler->IsCompiling() && edProj->IsBeingCompiled();
-
-	// The other half of the compile cancellation code.  If this is ever activated,
-	// then a check needs to be made so that tb->Realize() is only called when it's
-	// actually needed.  If it's called every time, there's some nasty flickering
-	// in the toolbar.
-
-	/*
-	// Choose the image & caption:
-	if(currProjIsCompiling)
-	{
-	wxBitmap bmStopCompile(stop1_xpm);
-	compileButton->SetNormalBitmap(bmStopCompile);
-	compileButton->SetLabel("Stop");
-	}
-	else
-	{
-	wxBitmap bmBuild(build_xpm);
-	compileButton->SetNormalBitmap(bmBuild);
-	compileButton->SetLabel("Compile");
-	}
-	//tb->Realize();
-	*/
-
-	bool enableButton = canCompile && !currProjIsCompiling; //|| currProjIsCompiling;
-	tb->EnableTool(ID_COMPILE, enableButton);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -3575,7 +3524,8 @@ int* NumeReWindow::SelectIntVar(int variableName)
 //////////////////////////////////////////////////////////////////////////////
 bool NumeReWindow::IsDebugging()
 {
-	return m_debugger->isDebugging();
+//	return m_debugger->isDebugging();
+    return false;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -3588,7 +3538,8 @@ bool NumeReWindow::IsDebugging()
 //////////////////////////////////////////////////////////////////////////////
 bool NumeReWindow::IsDebuggerPaused()
 {
-	return m_debugger->isPaused();
+//	return m_debugger->isPaused();
+    return false;
 }
 
 //////////////////////////////////////////////////////////////////////////////

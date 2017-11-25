@@ -101,7 +101,7 @@ class wxSplitterWindow;
 class RemoteFileDialog;
 class OptionsDialog;
 class Networking;
-class Compiler;
+//class Compiler;
 class wxFileConfig;
 class wxTelnet;
 class wxMenu;
@@ -115,7 +115,7 @@ class ProjectInfo;
 class wxSSH;
 class Options;
 class wxTermContainer;
-class Debugger;
+//class Debugger;
 class VariableWatchPanel;
 class wxTimer;
 class wxListCtrl;
@@ -123,7 +123,7 @@ class CompilerOutputPanel;
 class IconManager;
 class wxProportionalSplitterWindow;
 class wxCHMHelpController;
-class DebugManager;
+//class DebugManager;
 class DebugViewer;
 class ChameleonProjectManager;
 
@@ -242,7 +242,6 @@ class NumeReWindow : public wxFrame
         void OnUpdateSaveUI();//wxUpdateUIEvent &event);
         void ToolbarStatusUpdate();//wxUpdateUIEvent &event);
         void OnUpdateConnectionUI();//wxUpdateUIEvent &event);
-        void OnUpdateCompileUI();//wxUpdateUIEvent &event);
         void OnUpdateProjectUI();//wxUpdateUIEvent &event);
         void OnIdle(wxIdleEvent &event);
         void UpdateStatusBar();
@@ -411,12 +410,9 @@ class NumeReWindow : public wxFrame
         FileFilterType m_projectSelectedFolderType;
 
         Networking* m_network;
-        Compiler* m_compiler;
         Options* m_options;
         /*! The currently open multi-file project */
         ProjectInfo* m_projMultiFiles;
-        Debugger* m_debugger;
-        DebugManager* m_debugManager;
         DebugViewer* m_debugViewer;
         IconManager* m_iconManager;
         ChameleonProjectManager* m_projectManager;

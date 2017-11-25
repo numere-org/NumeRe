@@ -76,7 +76,6 @@ using namespace std;
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 NumeReHistory::NumeReHistory( NumeReWindow *mframe,
-								 DebugManager* debugManager,
 								 Options* options,
 								 ProjectInfo* project,
                                   wxWindow *parent,     wxWindowID id, NumeReSyntax* __syntax, wxTerm* __terminal,
@@ -84,7 +83,7 @@ NumeReHistory::NumeReHistory( NumeReWindow *mframe,
                                   const wxSize & size /* = wxDefaultSize */,
                                   long style /* = 0 */, const
                                       wxString & name /* = wxSTCNameStr */ ) :
-    NumeReEditor(mframe, debugManager, options, project, parent, id, __syntax, __terminal, pos, size, style, name)
+    NumeReEditor(mframe, options, project, parent, id, __syntax, __terminal, pos, size, style, name)
 {
 	_syntax = __syntax;
 	m_mainframe = mframe;

@@ -9,7 +9,7 @@
 #include <wx/buffer.h>
 #include "../terminal/wxterm.h"
 #include "../../common/datastructures.h"
-#include "../../compiler/compilerevent.h"
+//#include "../../compiler/compilerevent.h"
 #include "../../kernel/syntax.hpp"
 #include "../dialogs/duplicatecodedialog.hpp"
 //#include <wx/wx.h>
@@ -44,7 +44,7 @@ struct AnnotationCount
 class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 {
 public:
-	NumeReEditor(NumeReWindow* mframe, DebugManager* debugManager, Options* options, ProjectInfo* project,
+	NumeReEditor(NumeReWindow* mframe, Options* options, ProjectInfo* project,
 					wxWindow *parent, wxWindowID id, NumeReSyntax* __syntax, wxTerm* __terminal, const wxPoint& pos = wxDefaultPosition,
 					const wxSize& size = wxDefaultSize, long style = 0,
 					const wxString& name = wxSTCNameStr);
@@ -119,7 +119,7 @@ public:
 	void OnAddBreakpoint(wxCommandEvent &event);
 	void OnRemoveBreakpoint(wxCommandEvent &event);
 	void OnClearBreakpoints(wxCommandEvent &event);
-	void OnAddWatch(wxCommandEvent &event);
+	//void OnAddWatch(wxCommandEvent &event);
 	void OnDisplayVariable(wxCommandEvent &event);
 	void OnHelpOnSelection(wxCommandEvent& event);
 	void OnFindProcedure(wxCommandEvent &event);
@@ -223,7 +223,6 @@ private:
 
 	NumeReWindow* m_mainFrame;
 	//ChameleonNotebook* m_parentNotebook;
-	DebugManager* m_debugManager;
 	ProjectInfo* m_project;
 
 	wxFileName m_fileNameAndPath;
