@@ -2023,7 +2023,7 @@
 	"../kernel/kernel.hpp"
 	"../kernel/debugmessenger.hpp"
 
-1511360559 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1511627888 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -3304,7 +3304,7 @@
 	"../compiler/compilerevent.h"
 	"../kernel/syntax.hpp"
 
-1511419854 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
+1511628017 source:d:\cpp\numere-source\trunk\gui\chameleon.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3334,7 +3334,6 @@
 	"dialogs/RemoteFileDialog.h"
 	"dialogs/wxTermContainer.h"
 	"dialogs/VariableWatchPanel.h"
-	"dialogs/CompilerOutputPanel.h"
 	"dialogs/AboutChameleonDialog.h"
 	"dialogs/debugviewer.hpp"
 	"../common/NumeRePrintout.h"
@@ -3342,13 +3341,9 @@
 	"../common/recycler.hpp"
 	"terminal/networking.h"
 	"terminal/wxssh.h"
-	"../compiler/compiler.h"
 	"../common/Options.h"
-	"../debugger/cham_db.h"
-	"../debugger/DebugManager.h"
 	"../common/DebugEvent.h"
 	"DirTraverser.hpp"
-	"../compiler/compilerevent.h"
 	"IconManager.h"
 	"wxProportionalSplitterWindow.h"
 	"ChameleonProjectManager.h"
@@ -3457,7 +3452,7 @@
 
 1490787950 d:\cpp\numere-source\trunk\gui\dialogs\wxtermcontainer.h
 
-1490787950 d:\cpp\numere-source\trunk\gui\dialogs\compileroutputpanel.h
+1511627113 d:\cpp\numere-source\trunk\gui\dialogs\compileroutputpanel.h
 	"wx/grid.h"
 	<wx/wx.h>
 
@@ -4030,7 +4025,7 @@
 1505291532 source:d:\cpp\numere-source\trunk\kernel\core\parser.cpp
 	"parser.hpp"
 
-1510995571 source:d:\cpp\numere-source\trunk\kernel\core\parser_functions.cpp
+1511620069 source:d:\cpp\numere-source\trunk\kernel\core\parser_functions.cpp
 	"parser_functions.hpp"
 	"../kernel.hpp"
 	"spline.h"
@@ -4389,7 +4384,7 @@
 	<vector>
 	<algorithm>
 
-1511420137 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1511627898 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -4398,7 +4393,6 @@
 	<wx/buffer.h>
 	"../terminal/wxterm.h"
 	"../../common/datastructures.h"
-	"../../compiler/compilerevent.h"
 	"../../kernel/syntax.hpp"
 	"../dialogs/duplicatecodedialog.hpp"
 
@@ -4424,7 +4418,7 @@
 	"../../common/fixvsbug.h"
 	"../globals.hpp"
 
-1511357457 source:d:\cpp\numere-source\trunk\gui\editor\history.cpp
+1511627284 source:d:\cpp\numere-source\trunk\gui\editor\history.cpp
 	"../../common/CommonHeaders.h"
 	"../../kernel/core/language.hpp"
 	"../../kernel/core/tools.hpp"
@@ -4434,7 +4428,7 @@
 	<string>
 	"history.hpp"
 
-1511420177 d:\cpp\numere-source\trunk\gui\editor\history.hpp
+1511626987 d:\cpp\numere-source\trunk\gui\editor\history.hpp
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -4442,7 +4436,6 @@
 	"editor.h"
 	"../terminal/wxterm.h"
 	"../../common/datastructures.h"
-	"../../compiler/compilerevent.h"
 	"../../kernel/syntax.hpp"
 
 1511358087 source:d:\cpp\numere-source\trunk\gui\dialogs\debugviewer.cpp

@@ -25,7 +25,6 @@
 #include "../../common/Options.h"
 #include "../../common/DebugEvent.h"
 #include "../../common/ProjectInfo.h"
-#include "../../debugger/DebugManager.h"
 #include "../../common/debug.h"
 #include "../../common/fixvsbug.h"
 #include "../globals.hpp"
@@ -73,7 +72,7 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
 	EVT_MENU			(ID_DEBUG_ADD_BREAKPOINT, NumeReEditor::OnAddBreakpoint)
 	EVT_MENU			(ID_DEBUG_REMOVE_BREAKPOINT, NumeReEditor::OnRemoveBreakpoint)
 	EVT_MENU			(ID_DEBUG_CLEAR_ALL_BREAKPOINTS, NumeReEditor::OnClearBreakpoints)
-	EVT_MENU			(ID_DEBUG_WATCH_SELECTION, NumeReEditor::OnAddWatch)
+	//EVT_MENU			(ID_DEBUG_WATCH_SELECTION, NumeReEditor::OnAddWatch)
 	EVT_MENU			(ID_DEBUG_DISPLAY_SELECTION, NumeReEditor::OnDisplayVariable)
 	EVT_MENU			(ID_FIND_PROCEDURE, NumeReEditor::OnFindProcedure)
 	EVT_MENU			(ID_FIND_INCLUDE, NumeReEditor::OnFindInclude)
@@ -81,7 +80,6 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
 	EVT_MENU            (ID_LOWERCASE, NumeReEditor::OnChangeCase)
 	EVT_MENU            (ID_FOLD_CURRENT_BLOCK, NumeReEditor::OnFoldCurrentBlock)
 	EVT_MENU            (ID_HELP_ON_ITEM, NumeReEditor::OnHelpOnSelection)
-	//EVT_COMPILER_END	(ChameleonEditor::OnCompilerEnded)
 	EVT_MENU			(ID_DEBUG_RUNTOCURSOR, NumeReEditor::OnRunToCursor)
 END_EVENT_TABLE()
 
@@ -108,7 +106,6 @@ using namespace std;
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 NumeReEditor::NumeReEditor( NumeReWindow *mframe,
-								 DebugManager* debugManager,
 								 Options* options,
 								 ProjectInfo* project,
                                   wxWindow *parent,     wxWindowID id, NumeReSyntax* __syntax, wxTerm* __terminal,
@@ -120,7 +117,6 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 {
     defaultPage = false;
     m_mainFrame = mframe;
-	m_debugManager = debugManager;
 	m_options = options;
 	m_project = project;
 	m_project->AddEditor(this);
@@ -3281,12 +3277,12 @@ void NumeReEditor::OnRunToCursor(wxCommandEvent &event)
 	linenum++;
 	*/
 
-	int linenum = GetLineForBreakpointOperation();
+	/*int linenum = GetLineForBreakpointOperation();
 	wxDebugEvent debugEvent;
 	debugEvent.SetId(ID_DEBUG_RUNTOCURSOR);
 	debugEvent.SetSourceFilename(GetFilenameString());
 	debugEvent.SetLineNumber(linenum);
-	m_debugManager->AddPendingEvent(debugEvent);//m_mainFrame->AddPendingEvent(debugEvent);
+	m_debugManager->AddPendingEvent(debugEvent);//m_mainFrame->AddPendingEvent(debugEvent);*/
 
 	ResetRightClickLocation();
 }
@@ -3719,7 +3715,7 @@ wxString NumeReEditor::generateAutoCompList(const wxString& wordstart, string sP
     return wReturn;
 }
 
-void NumeReEditor::OnAddWatch(wxCommandEvent &event)
+/*void NumeReEditor::OnAddWatch(wxCommandEvent &event)
 {
 	wxDebugEvent dbg;
 
@@ -3734,14 +3730,13 @@ void NumeReEditor::OnAddWatch(wxCommandEvent &event)
 	{
 	className = avwd.GetClassName();
 	}
-	*/
 
 	wxArrayString vars;
 	vars.Add(m_clickedWord);
 	dbg.SetVariableNames(vars);
 
-	m_debugManager->AddPendingEvent(dbg);//m_mainFrame->AddPendingEvent(dbg);
-}
+//	m_debugManager->AddPendingEvent(dbg);//m_mainFrame->AddPendingEvent(dbg);
+}*/
 
 void NumeReEditor::OnDisplayVariable(wxCommandEvent &event)
 {

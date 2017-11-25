@@ -27,7 +27,7 @@
 #include "editor.h"
 #include "../terminal/wxterm.h"
 #include "../../common/datastructures.h"
-#include "../../compiler/compilerevent.h"
+//#include "../../compiler/compilerevent.h"
 #include "../../kernel/syntax.hpp"
 //#include <wx/wx.h>
 
@@ -38,7 +38,7 @@
 class NumeReHistory : public NumeReEditor
 {
 public:
-	NumeReHistory(NumeReWindow* mframe, DebugManager* debugManager, Options* options, ProjectInfo* project,
+	NumeReHistory(NumeReWindow* mframe, Options* options, ProjectInfo* project,
 					wxWindow *parent, wxWindowID id, NumeReSyntax* __syntax, wxTerm* __terminal, const wxPoint& pos = wxDefaultPosition,
 					const wxSize& size = wxDefaultSize, long style = 0,
 					const wxString& name = wxSTCNameStr);
