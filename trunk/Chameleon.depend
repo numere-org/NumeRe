@@ -5063,7 +5063,7 @@
 	"loop.hpp"
 	"../../kernel.hpp"
 
-1490787951 source:d:\cpp\numere-source\trunk\kernel\core\utils\unzip.cpp
+1511646726 source:d:\cpp\numere-source\trunk\kernel\core\utils\unzip.cpp
 	<windows.h>
 	<stdio.h>
 	<stdlib.h>
@@ -5079,9 +5079,20 @@
 	"../../kernel.hpp"
 	<cstdlib>
 
-1490787951 source:d:\cpp\numere-source\trunk\kernel\core\utils\zip.cpp
+1511646729 source:d:\cpp\numere-source\trunk\kernel\core\utils\zip.cpp
 	<windows.h>
 	<stdio.h>
 	<tchar.h>
 	"zip.h"
+
+1511683348 source:d:\cpp\numere-source\trunk\gui\editor\numereprintout.cpp
+	"NumeRePrintout.h"
+	"editor.h"
+	"wx/printdlg.h"
+	"wx/progdlg.h"
+	"../../common/Options.h"
+	"../../common/debug.h"
+
+1511683218 d:\cpp\numere-source\trunk\gui\editor\numereprintout.h
+	"wx/print.h"
 

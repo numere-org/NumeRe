@@ -27,35 +27,15 @@
 #include <wx/filename.h>
 #include <wx/artprov.h>
 #include <fstream>
+#include <wx/msw/helpchm.h>
 
 
 //need to include <wx/filename.h> and <wx/stdpaths.h>
 #include <math.h>
 
-#include "../common/fixvsbug.h"
-#include "editor/editor.h"
-#include "editor/history.hpp"
 #include "NumeReNotebook.h"
 #include "numeredroptarget.hpp"
-#include "dialogs/OptionsDialog.h"
-#include "dialogs/RemoteFileDialog.h"
-#include "dialogs/wxTermContainer.h"
-#include "dialogs/VariableWatchPanel.h"
-//#include "dialogs/CompilerOutputPanel.h"
-#include "dialogs/AboutChameleonDialog.h"
-#include "dialogs/debugviewer.hpp"
-#include "../common/NumeRePrintout.h"
-#include "../common/ProjectInfo.h"
-#include "../common/recycler.hpp"
-#include "terminal/networking.h"
-#include "terminal/wxssh.h"
-//#include "../compiler/compiler.h"
-#include "../common/Options.h"
-//#include "../debugger/cham_db.h"
-//#include "../debugger/DebugManager.h"
-#include "../common/DebugEvent.h"
 #include "DirTraverser.hpp"
-//#include "../compiler/compilerevent.h"
 #include "IconManager.h"
 #include "wxProportionalSplitterWindow.h"
 #include "ChameleonProjectManager.h"
@@ -65,27 +45,31 @@
 #include "tableviewer.hpp"
 #include "tableeditpanel.hpp"
 #include "graphviewer.hpp"
-
 #include "textsplashscreen.hpp"
 
+#include "editor/editor.h"
+#include "editor/history.hpp"
+#include "editor/NumeRePrintout.h"
 
-#include <wx/msw/helpchm.h>
-//#include "mmDropMenu.h"
+#include "dialogs/OptionsDialog.h"
+#include "dialogs/RemoteFileDialog.h"
+#include "dialogs/wxTermContainer.h"
+#include "dialogs/VariableWatchPanel.h"
+#include "dialogs/AboutChameleonDialog.h"
+#include "dialogs/debugviewer.hpp"
 
-//#include "newfile.xpm"
-//#include "openremote.xpm"
-//#include "openlocal.xpm"
-//#include "savefile.xpm"
+#include "terminal/wxssh.h"
+#include "terminal/networking.h"
 
-//#include "stock_redo.xpm"
-//#include "stock_undo.xpm"
+#include "../kernel/core/version.h"
+#include "../kernel/core/utils/tools.hpp"
 
-//#include "build.xpm"
-//#include "compilestop.xpm"
-//#include "button.xpm"
-
-//#include "connect16.xpm"
-//#include "disconnect16.xpm"
+#include "../common/debug.h"
+#include "../common/fixvsbug.h"
+#include "../common/ProjectInfo.h"
+#include "../common/recycler.hpp"
+#include "../common/Options.h"
+#include "../common/DebugEvent.h"
 
 #include "newstart1.xpm"
 #include "newcontinue1.xpm"
@@ -93,20 +77,15 @@
 #include "gtk-apply.xpm"
 #include "stepnext.xpm"
 #include "wraparound.xpm"
-//#include "stepout.xpm"
-//#include "stepover.xpm"
 #include "breakpoint_octagon.xpm"
 #include "breakpoint_octagon_crossed.xpm"
 #include "breakpoint_octagon_disable.xpm"
 
-#include "../common/debug.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
-#include "../kernel/core/version.h"
-#include "../kernel/core/utils/tools.hpp"
 const string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\"";
 std::string replacePathSeparator(const std::string&);
 
