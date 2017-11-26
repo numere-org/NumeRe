@@ -1,10 +1,10 @@
 #include "NumeRePrintout.h"
-#include "../gui/editor/editor.h"
+#include "editor.h"
 #include "wx/printdlg.h"  // wxPageSetupDialog
 #include "wx/progdlg.h"   // wxProgressDialog
-#include "../common/Options.h"
+#include "../../common/Options.h"
 
-#include "debug.h"
+#include "../../common/debug.h"
 
 
 #ifdef _DEBUG

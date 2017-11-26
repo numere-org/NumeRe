@@ -1,5 +1,5 @@
-#ifndef CHAMELEON_PRINTOUT__H
-#define CHAMELEON_PRINTOUT__H
+#ifndef NUMEREPRINTOUT_H
+#define NUMEREPRINTOUT_H
 
 
 #include "wx/print.h"
@@ -41,4 +41,4 @@ private:
 
 
 
-#endif
+#endif //NUMEREPRINTOUT_H
