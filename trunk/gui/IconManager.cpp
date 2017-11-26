@@ -7,10 +7,9 @@
 #include <wx/mimetype.h>
 #include <wx/bitmap.h>
 
-#include "dialogs/defaultfile.xpm"
-#include "dialogs/closedfolder16x1632bpp.xpm"
-//#include "dialogs/openfolder16x1632bpp.xpm"
-#include "dialogs/exe.xpm"
+#include "icons/defaultfile.xpm"
+#include "icons/closedfolder16x1632bpp.xpm"
+#include "icons/exe.xpm"
 
 
 IconManager::IconManager(const wxString& programPath)

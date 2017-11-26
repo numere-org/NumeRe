@@ -71,15 +71,15 @@
 #include "../common/Options.h"
 #include "../common/DebugEvent.h"
 
-#include "newstart1.xpm"
-#include "newcontinue1.xpm"
-#include "newstop1.xpm"
-#include "gtk-apply.xpm"
-#include "stepnext.xpm"
-#include "wraparound.xpm"
-#include "breakpoint_octagon.xpm"
-#include "breakpoint_octagon_crossed.xpm"
-#include "breakpoint_octagon_disable.xpm"
+#include "icons/newstart1.xpm"
+#include "icons/newcontinue1.xpm"
+#include "icons/newstop1.xpm"
+#include "icons/gtk-apply.xpm"
+#include "icons/stepnext.xpm"
+#include "icons/wraparound.xpm"
+#include "icons/breakpoint_octagon.xpm"
+#include "icons/breakpoint_octagon_crossed.xpm"
+#include "icons/breakpoint_octagon_disable.xpm"
 
 
 #ifdef _DEBUG

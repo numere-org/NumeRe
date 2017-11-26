@@ -22,3 +22,4 @@ Applied	The static code analyzer now finds missing parentheses. It also points n
 Fixed	Removed an issue with the "size()" function in the matop mode: it returned a size larger than zero, although the matrix had a zero size
 Fixed	Removed an issue in the string parser with many "#" opertors
 Fixed	Fixed a little bug with whitespaces in argument's parentheses
+Added	Procedure flags are now shown in the call tips.
