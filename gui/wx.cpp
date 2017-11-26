@@ -36,14 +36,15 @@
 
 #include "terminal/wxterm.h"
 #include "graphviewer.hpp"
-#include "addtext.xpm"
-#include "addline.xpm"
-#include "addrect.xpm"
-#include "addcirc.xpm"
-#include "rotate_new.xpm"
-#include "zoom_new.xpm"
-#include "newstart1.xpm"
-#include "newstop1.xpm"
+
+#include "icons/addtext.xpm"
+#include "icons/addline.xpm"
+#include "icons/addrect.xpm"
+#include "icons/addcirc.xpm"
+#include "icons/rotate_new.xpm"
+#include "icons/zoom_new.xpm"
+#include "icons/newstart1.xpm"
+#include "icons/newstop1.xpm"
 
 extern Language _guilang;
 

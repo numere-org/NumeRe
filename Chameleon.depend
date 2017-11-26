@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1494151843 source:d:\cpp\numere-source\trunk\chameleon.rc
+1511685434 source:d:\cpp\numere-source\trunk\chameleon.rc
 	<windows.h>
 	"kernel/core/version.h"
 	<wx/msw/wx.rc>
@@ -3742,7 +3742,7 @@
 	"../NumeReWindow.h"
 	"../../common/debug.h"
 
-1511420453 source:d:\cpp\numere-source\trunk\gui\dialogs\remotefiledialog.cpp
+1511685472 source:d:\cpp\numere-source\trunk\gui\dialogs\remotefiledialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	<wx/filename.h>
@@ -3757,9 +3757,9 @@
 	"../terminal/networking.h"
 	"../../common/datastructures.h"
 	<wx/arrimpl.cpp>
-	"upfolder.xpm"
-	"refresh.xpm"
-	"HomeHS.xpm"
+	"../icons/upfolder.xpm"
+	"../icons/refresh.xpm"
+	"../icons/HomeHS.xpm"
 	"../../common/debug.h"
 
 1490787950 d:\cpp\numere-source\trunk\gui\dialogs\upfolder.xpm
@@ -3884,16 +3884,16 @@
 	"helpviewer.hpp"
 	"NumeReWindow.h"
 
-1505644107 source:d:\cpp\numere-source\trunk\gui\iconmanager.cpp
+1511685506 source:d:\cpp\numere-source\trunk\gui\iconmanager.cpp
 	"IconManager.h"
 	<string>
 	<wx/icon.h>
 	<wx/iconloc.h>
 	<wx/mimetype.h>
 	<wx/bitmap.h>
-	"dialogs/defaultfile.xpm"
-	"dialogs/closedfolder16x1632bpp.xpm"
-	"dialogs/exe.xpm"
+	"icons/defaultfile.xpm"
+	"icons/closedfolder16x1632bpp.xpm"
+	"icons/exe.xpm"
 
 1490787950 d:\cpp\numere-source\trunk\gui\dialogs\defaultfile.xpm
 
@@ -4475,7 +4475,7 @@
 1511360507 d:\cpp\numere-source\trunk\gui\globals.hpp
 	"dialogs/fndrpldialog.hpp"
 
-1511630464 source:d:\cpp\numere-source\trunk\gui\wx.cpp
+1511685627 source:d:\cpp\numere-source\trunk\gui\wx.cpp
 	<wx/dcclient.h>
 	<wx/msgdlg.h>
 	<wx/clipbrd.h>
@@ -4490,14 +4490,14 @@
 	"../kernel/core/ui/language.hpp"
 	"terminal/wxterm.h"
 	"graphviewer.hpp"
-	"addtext.xpm"
-	"addline.xpm"
-	"addrect.xpm"
-	"addcirc.xpm"
-	"rotate_new.xpm"
-	"zoom_new.xpm"
-	"newstart1.xpm"
-	"newstop1.xpm"
+	"icons/addtext.xpm"
+	"icons/addline.xpm"
+	"icons/addrect.xpm"
+	"icons/addcirc.xpm"
+	"icons/rotate_new.xpm"
+	"icons/zoom_new.xpm"
+	"icons/newstart1.xpm"
+	"icons/newstop1.xpm"
 
 1490787951 source:d:\cpp\numere-source\trunk\gui\terminal\gtelnet.cpp
 	"gterm.hpp"
@@ -5095,4 +5095,122 @@
 
 1511683218 d:\cpp\numere-source\trunk\gui\editor\numereprintout.h
 	"wx/print.h"
+
+1490787950 d:\cpp\numere-source\trunk\gui\icons\upfolder.xpm
+
+1490787950 d:\cpp\numere-source\trunk\gui\icons\refresh.xpm
+
+1490787950 d:\cpp\numere-source\trunk\gui\icons\homehs.xpm
+
+1490787950 d:\cpp\numere-source\trunk\gui\icons\defaultfile.xpm
+
+1490787950 d:\cpp\numere-source\trunk\gui\icons\closedfolder16x1632bpp.xpm
+
+1490787950 d:\cpp\numere-source\trunk\gui\icons\exe.xpm
+
+1503426556 source:d:\cpp\numere-source\trunk\gui\numerenotebook.cpp
+	"../common/CommonHeaders.h"
+	"NumeReNotebook.h"
+	"NumeReWindow.h"
+	"../common/debug.h"
+	<wx/wx.h>
+	<wx/msgdlg.h>
+	<wx/notebook.h>
+	<windows.h>
+	<commctrl.h>
+	"../common/datastructures.h"
+
+1511685527 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+	<stdlib.h>
+	<crtdbg.h>
+	"NumeReWindow.h"
+	<wx/wx.h>
+	<wx/dir.h>
+	<wx/string.h>
+	<wx/filedlg.h>
+	<wx/statusbr.h>
+	<wx/choicdlg.h>
+	<wx/msgdlg.h>
+	<wx/msw/wince/tbarwce.h>
+	<wx/msw/private.h>
+	<wx/print.h>
+	<wx/printdlg.h>
+	<wx/mimetype.h>
+	<wx/stdpaths.h>
+	<wx/filename.h>
+	<wx/artprov.h>
+	<fstream>
+	<wx/msw/helpchm.h>
+	<math.h>
+	"NumeReNotebook.h"
+	"numeredroptarget.hpp"
+	"DirTraverser.hpp"
+	"IconManager.h"
+	"wxProportionalSplitterWindow.h"
+	"ChameleonProjectManager.h"
+	"viewerframe.hpp"
+	"imagepanel.hpp"
+	"helpviewer.hpp"
+	"tableviewer.hpp"
+	"tableeditpanel.hpp"
+	"graphviewer.hpp"
+	"textsplashscreen.hpp"
+	"editor/editor.h"
+	"editor/history.hpp"
+	"editor/NumeRePrintout.h"
+	"dialogs/OptionsDialog.h"
+	"dialogs/RemoteFileDialog.h"
+	"dialogs/wxTermContainer.h"
+	"dialogs/VariableWatchPanel.h"
+	"dialogs/AboutChameleonDialog.h"
+	"dialogs/debugviewer.hpp"
+	"terminal/wxssh.h"
+	"terminal/networking.h"
+	"../kernel/core/version.h"
+	"../kernel/core/utils/tools.hpp"
+	"../common/debug.h"
+	"../common/fixvsbug.h"
+	"../common/ProjectInfo.h"
+	"../common/recycler.hpp"
+	"../common/Options.h"
+	"../common/DebugEvent.h"
+	"icons/newstart1.xpm"
+	"icons/newcontinue1.xpm"
+	"icons/newstop1.xpm"
+	"icons/gtk-apply.xpm"
+	"icons/stepnext.xpm"
+	"icons/wraparound.xpm"
+	"icons/breakpoint_octagon.xpm"
+	"icons/breakpoint_octagon_crossed.xpm"
+	"icons/breakpoint_octagon_disable.xpm"
+
+1490787950 d:\cpp\numere-source\trunk\gui\icons\newstart1.xpm
+
+1490787950 d:\cpp\numere-source\trunk\gui\icons\newcontinue1.xpm
+
+1490787950 d:\cpp\numere-source\trunk\gui\icons\newstop1.xpm
+
+1495988617 d:\cpp\numere-source\trunk\gui\icons\gtk-apply.xpm
+
+1495821486 d:\cpp\numere-source\trunk\gui\icons\stepnext.xpm
+
+1495822159 d:\cpp\numere-source\trunk\gui\icons\wraparound.xpm
+
+1490787950 d:\cpp\numere-source\trunk\gui\icons\breakpoint_octagon.xpm
+
+1490787950 d:\cpp\numere-source\trunk\gui\icons\breakpoint_octagon_crossed.xpm
+
+1490787950 d:\cpp\numere-source\trunk\gui\icons\breakpoint_octagon_disable.xpm
+
+1501014576 d:\cpp\numere-source\trunk\gui\icons\addtext.xpm
+
+1501050595 d:\cpp\numere-source\trunk\gui\icons\addline.xpm
+
+1501050634 d:\cpp\numere-source\trunk\gui\icons\addrect.xpm
+
+1501050653 d:\cpp\numere-source\trunk\gui\icons\addcirc.xpm
+
+1501080092 d:\cpp\numere-source\trunk\gui\icons\rotate_new.xpm
+
+1501080105 d:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 

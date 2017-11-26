@@ -46,24 +46,10 @@ WX_DEFINE_OBJARRAY(ThreeDStringVector)
 
 
 
-//#include "../../editor/editor.h"
 
-////@begin XPM images
-////@end XPM images
-
-//#include "cpp.xpm"
-//#include "c.xpm"
-//#include "h.xpm"
-//#include "lib.xpm"
-//#include "folder256.xpm"
-//#include "closedfolder16x1632bpp.xpm"
-//#include "openfolder16x1632bpp.xpm"
-//#include "defaultfile.xpm"
-//#include "doc.xpm"
-
-#include "upfolder.xpm"
-#include "refresh.xpm"
-#include "HomeHS.xpm"
+#include "../icons/upfolder.xpm"
+#include "../icons/refresh.xpm"
+#include "../icons/HomeHS.xpm"
 
 
 #include "../../common/debug.h"
