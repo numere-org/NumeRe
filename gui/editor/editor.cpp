@@ -59,20 +59,16 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
 	EVT_RIGHT_DOWN		(NumeReEditor::OnRightClick)
 	EVT_LEFT_DCLICK		(NumeReEditor::OnMouseDblClk)
 	EVT_MOUSE_CAPTURE_LOST(NumeReEditor::OnMouseCaptureLost)
-	//EVT_MOTION          (NumeReEditor::OnMouseMotion)
 	EVT_ENTER_WINDOW    (NumeReEditor::OnEnter)
 	EVT_LEAVE_WINDOW    (NumeReEditor::OnLeave)
 	EVT_KILL_FOCUS      (NumeReEditor::OnLoseFocus)
 	EVT_STC_DWELLSTART  (-1, NumeReEditor::OnMouseDwell)
 	EVT_STC_MARGINCLICK (-1, NumeReEditor::OnMarginClick)
-	//EVT_STC_START_DRAG  (-1, NumeReEditor::OnStartDrag)
 	EVT_STC_DRAG_OVER   (-1, NumeReEditor::OnDragOver)
-	//EVT_STC_DO_DROP     (-1, NumeReEditor::OnDrop)
 	EVT_STC_SAVEPOINTREACHED (-1, NumeReEditor::OnSavePointReached)
 	EVT_MENU			(ID_DEBUG_ADD_BREAKPOINT, NumeReEditor::OnAddBreakpoint)
 	EVT_MENU			(ID_DEBUG_REMOVE_BREAKPOINT, NumeReEditor::OnRemoveBreakpoint)
 	EVT_MENU			(ID_DEBUG_CLEAR_ALL_BREAKPOINTS, NumeReEditor::OnClearBreakpoints)
-	//EVT_MENU			(ID_DEBUG_WATCH_SELECTION, NumeReEditor::OnAddWatch)
 	EVT_MENU			(ID_DEBUG_DISPLAY_SELECTION, NumeReEditor::OnDisplayVariable)
 	EVT_MENU			(ID_FIND_PROCEDURE, NumeReEditor::OnFindProcedure)
 	EVT_MENU			(ID_FIND_INCLUDE, NumeReEditor::OnFindInclude)
@@ -1052,10 +1048,16 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
         if (!proc.length())
             return;
         wxString procdef = FindProcedureDefinition();
+        wxString flags = "";
         if (!procdef.length())
             procdef = m_clickedProcedure+"(...)";
+        if (procdef.find("::") != string::npos)
+        {
+            flags = procdef.substr(procdef.find("::"));
+            procdef.erase(procdef.find("::"));
+        }
 
-        this->CallTipShow(charpos, _guilang.get("GUI_EDITOR_CALLTIP_PROC1") + " " + procdef + "\n" + _guilang.get("GUI_EDITOR_CALLTIP_PROC2"));
+        this->CallTipShow(charpos, _guilang.get("GUI_EDITOR_CALLTIP_PROC1") + " " + procdef + flags + "\n" + _guilang.get("GUI_EDITOR_CALLTIP_PROC2"));
         this->CallTipSetHighlight(_guilang.get("GUI_EDITOR_CALLTIP_PROC1").length()+1,1+procdef.length()+_guilang.get("GUI_EDITOR_CALLTIP_PROC1").length());
     }
     else if (this->GetStyleAt(charpos) == wxSTC_NSCR_OPTION || this->GetStyleAt(charpos) == wxSTC_NPRC_OPTION)
@@ -3508,7 +3510,19 @@ wxString NumeReEditor::FindProcedureDefinition()
                     if (sArgList.length())
                         sProcDef += ", ";
                 }
-                sProcDef += ")";
+                sProcDef += ") :: local";
+
+                if (procedureline.find("::") != string::npos)
+                {
+                    string sFlags = procedureline.substr(procedureline.find("::")+2).ToStdString();
+                    if (sFlags.find("##") != string::npos)
+                        sFlags.erase(sFlags.find("##"));
+                    if (sFlags.find_first_of("\r\n") != string::npos)
+                        sFlags.erase(sFlags.find_first_of("\r\n"));
+                    StripSpaces(sFlags);
+                    sProcDef += " " + sFlags;
+                }
+
                 return sProcDef;
             }
         }
@@ -3603,6 +3617,15 @@ wxString NumeReEditor::FindProcedureDefinition()
                         sProcDef += ", ";
                 }
                 sProcDef += ")";
+
+                if (sProcCommandLine.find("::") != string::npos)
+                {
+                    string sFlags = sProcCommandLine.substr(sProcCommandLine.find("::")+2).c_str();
+                    if (sFlags.find("##") != string::npos)
+                        sFlags.erase(sFlags.find("##"));
+                    StripSpaces(sFlags);
+                    sProcDef += " :: " + sFlags;
+                }
                 return sProcDef;
             }
         }
@@ -3715,28 +3738,6 @@ wxString NumeReEditor::generateAutoCompList(const wxString& wordstart, string sP
     return wReturn;
 }
 
-/*void NumeReEditor::OnAddWatch(wxCommandEvent &event)
-{
-	wxDebugEvent dbg;
-
-	dbg.SetId(ID_DEBUG_ADD_WATCH);
-
-	/*
-	//wxString varName = avwd.GetVariableName();
-	//wxString funcName = avwd.GetFunctionName();
-	//wxString className = wxEmptyString;
-
-	if(avwd.FunctionInClass())
-	{
-	className = avwd.GetClassName();
-	}
-
-	wxArrayString vars;
-	vars.Add(m_clickedWord);
-	dbg.SetVariableNames(vars);
-
-//	m_debugManager->AddPendingEvent(dbg);//m_mainFrame->AddPendingEvent(dbg);
-}*/
 
 void NumeReEditor::OnDisplayVariable(wxCommandEvent &event)
 {
