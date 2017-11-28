@@ -345,7 +345,7 @@ class NumeReWindow : public wxFrame
 
         ViewerFrame* m_currentView;
         /*! Displays the files in the current project */
-        FileTree* m_projectTree;
+        FileTree* m_fileTree;
         Filewatcher* m_watcher;
 
         // Blacklist for suppressing the reloading and the corresponding dialog

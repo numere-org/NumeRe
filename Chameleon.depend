@@ -2023,7 +2023,7 @@
 	"../kernel/kernel.hpp"
 	"../kernel/debugmessenger.hpp"
 
-1511629685 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1511713769 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -2860,7 +2860,7 @@
 	<wx/log.h>
 	<crtdbg.h>
 
-1494092749 d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.hpp
+1511887444 d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.hpp
 	"../viewerframe.hpp"
 	<wx/panel.h>
 	<wx/gauge.h>
@@ -4395,7 +4395,7 @@
 	"../../kernel/syntax.hpp"
 	"../dialogs/duplicatecodedialog.hpp"
 
-1511630431 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1511887741 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -5120,7 +5120,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1511685527 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1511714068 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"

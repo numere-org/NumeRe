@@ -37,6 +37,7 @@ class DuplicateCodeDialog : public ViewerFrame
         wxCheckBox* m_varSemantics;
         wxCheckBox* m_StringSemantics;
         wxCheckBox* m_NumSemantics;
+        wxCheckBox* m_FunctionSemantics;
 
 
     public:

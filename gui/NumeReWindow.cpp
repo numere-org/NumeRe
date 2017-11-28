@@ -296,13 +296,10 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	// should be approximately 80x15 for the terminal
 	this->SetSize(1024, 768);
     m_optionsDialog = nullptr;
-    //m_compiler = nullptr;
     m_config = nullptr;
     m_options = nullptr;
-    //m_debugger = nullptr;
     m_network = nullptr;
     m_iconManager = nullptr;
-    //m_debugManager = nullptr;
     m_debugViewer = nullptr;
     m_projectManager = nullptr;
     m_watcher = nullptr;
@@ -327,8 +324,6 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
 	m_updateTimer = NULL;
 
-	//wxIcon icon(wxICON(IDI_APPICON));
-	//SetIcon(icon);
 	SetIcon(wxIcon(programPath + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
 
 	m_remoteMode = true;
@@ -338,34 +333,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	InitializeProgramOptions();
 
 
-	/*wxFileName plinkPath(wxGetCwd(), "plink.exe");
-
-	if (!plinkPath.FileExists())
-	{
-		wxLogDebug("Plink.exe not found! Path used: %s", plinkPath.GetFullPath());
-	}
-
-	m_options->SetPlinkApp(plinkPath.GetFullPath());
-
-
-	wxFileName pscpPath(wxGetCwd(), "pscp.exe");
-
-	if (!pscpPath.FileExists())
-	{
-		wxLogDebug("PSCP.exe not found! Path used: %s", pscpPath.GetFullPath());
-	}
-
-	m_options->SetPscpApp(pscpPath.GetFullPath());*/
-
-
 	m_network = new Networking(m_options);
-//	m_compiler = new Compiler(m_options, m_network);
-//	m_debugger = new Debugger(m_network, m_options, this);
-
-
-	/**m_splitEditorOutput = new wxProportionalSplitterWindow(this, ID_SPLITEDITOROUTPUT, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
-	m_splitProjectEditor = new wxSplitterWindow(m_splitEditorOutput, ID_SPLITPROJECTEDITOR, wxDefaultPosition, wxDefaultSize, wxSP_NOBORDER);
-	m_book = new NumeReNotebook(m_splitProjectEditor, ID_NOTEBOOK_ED);*/
 
 	m_splitProjectEditor = new wxSplitterWindow(this, ID_SPLITPROJECTEDITOR, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME);
 	m_splitEditorOutput = new wxProportionalSplitterWindow(m_splitProjectEditor, ID_SPLITEDITOROUTPUT, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
@@ -373,10 +341,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_book = new NumeReNotebook(m_splitEditorOutput, ID_NOTEBOOK_ED, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE);
 	m_book->SetTopParent(this);
 
-	///m_noteTerm = new NumeReNotebook(m_splitEditorOutput, ID_NOTEBOOK_TERM);
-	///m_termContainer = new wxTermContainer(m_noteTerm, ID_CONTAINER_TERM);
 	m_termContainer = new wxTermContainer(m_splitCommandHistory, ID_CONTAINER_TERM);
-    //m_debugTermContainer = new wxTermContainer(m_noteTerm, ID_CONTAINER_DEBUGTERM);
 
 	m_terminal = new wxSSH(m_termContainer, ID_TERMINAL, m_network, m_options, programPath, wxPoint(0, 0));
 	m_terminal->set_mode_flag(GTerm::CURSORINVISIBLE);
@@ -392,48 +357,14 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	else
         _guilang.loadStrings(false);
 
-
-
 	m_optionsDialog = new OptionsDialog(this, m_options, ID_OPTIONSDIALOG, _guilang.get("GUI_DLG_OPTIONS"));
-	//m_debugTerminal = new wxSSH(m_debugTermContainer, ID_DEBUGTERMINAL, m_network, wxPoint(0, 0));
-	//m_debugTerminal->set_mode_flag(GTerm::CURSORINVISIBLE);
-	//m_debugTermContainer->SetTerminal(m_debugTerminal);
-
-
-	//Permission* perms = m_options->GetPerms();
-	//m_outputPanel = new CompilerOutputPanel(m_noteTerm, this, m_options, ID_COMPILEROUTPUT);
-	//m_outputPanel->SetAdvanced(perms->isEnabled(PERM_ADVANCEDCOMPILE));
-
-    //m_watchPanel = new VariableWatchPanel(m_noteTerm, this, ID_VARWATCHPANEL);
-
-	/*m_watchPanelContainer = new wxPanel(m_noteTerm, 0, 0, 40, 40);
-	wxBoxSizer* watchSizer = new wxBoxSizer(wxHORIZONTAL);
-	m_watchPanelContainer->SetSizer(watchSizer);
-	m_watchPanelSplitter = new wxProportionalSplitterWindow(m_watchPanelContainer);
-	watchSizer->Add(m_watchPanelSplitter, wxSizerFlags().Expand().Proportion(1));
-	m_watchPanelContainer->Hide();*/
-
-	/*m_container1 = new wxPanel(m_noteTerm, 0, 0, 20, 80);
-	wxBoxSizer* c1Sizer = new wxBoxSizer(wxHORIZONTAL);
-	m_container1->SetSizer(c1Sizer);
-
-	m_container2 = new wxPanel(m_noteTerm, 0, 0, 80, 20);
-	wxBoxSizer* c2Sizer = new wxBoxSizer(wxHORIZONTAL);
-	m_container2->SetSizer(c2Sizer);*/
-
 	m_projectManager = new ChameleonProjectManager(m_book);
-
-	//m_debugManager = new DebugManager(m_debugger, m_debugTerminal, m_projectManager, this, m_watchPanel);
-	// TODO Go ahead and activate the DebugManager here
-	//m_debugger->SetEventHandler(m_debugManager);
-	//m_watchPanel->SetEventHandler(m_debugManager);
-
 
 	// project setup
 	m_projMultiFiles = NULL;
 	m_treeBook = new ViewerBook(m_splitProjectEditor, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE);
-	m_projectTree = new FileTree(m_treeBook, ID_PROJECTTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT);
-	m_treeBook->AddPage(m_projectTree, _guilang.get("GUI_FILETREE"));
+	m_fileTree = new FileTree(m_treeBook, ID_PROJECTTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT);
+	m_treeBook->AddPage(m_fileTree, _guilang.get("GUI_FILETREE"));
 	m_functionTree = new FileTree(m_treeBook, ID_FUNCTIONTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT | wxTR_HIDE_ROOT);
 	m_treeBook->AddPage(m_functionTree, _guilang.get("GUI_FUNCTIONTREE"));
 	m_treeBook->Hide();
@@ -445,10 +376,9 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
 	wxImageList* fileIcons = m_iconManager->GetImageList();
 	// Sets the list, but doesn't take control of it away
-	m_projectTree->SetImageList(fileIcons);
+	m_fileTree->SetImageList(fileIcons);
 	m_functionTree->SetImageList(fileIcons);
 
-	//int idxFolderClosed = m_iconManager->GetIconIndex("FOLDERCLOSED");
 	int idxFolderOpen = m_iconManager->GetIconIndex("FOLDEROPEN");
 
 	m_remoteFileDialog = new RemoteFileDialog(this, ID_REMOTEFILEDIALOG);
@@ -458,24 +388,19 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_remoteFileDialog->SetIconManager(m_iconManager);
 
 
-	wxTreeItemId rootNode = m_projectTree->AddRoot(_guilang.get("GUI_TREE_WORKSPACE"), m_iconManager->GetIconIndex("WORKPLACE"));
-	m_projectFileFolders[0] = m_projectTree->AppendItem(rootNode, _guilang.get("GUI_TREE_DATAFILES"), idxFolderOpen);
-	m_projectFileFolders[1] = m_projectTree->AppendItem(rootNode, _guilang.get("GUI_TREE_SAVEDFILES"), idxFolderOpen);
-	m_projectFileFolders[2] = m_projectTree->AppendItem(rootNode, _guilang.get("GUI_TREE_SCRIPTS"), idxFolderOpen);
-	m_projectFileFolders[3] = m_projectTree->AppendItem(rootNode, _guilang.get("GUI_TREE_PROCEDURES"), idxFolderOpen);
-	m_projectFileFolders[4] = m_projectTree->AppendItem(rootNode, _guilang.get("GUI_TREE_PLOTS"), idxFolderOpen);
+	wxTreeItemId rootNode = m_fileTree->AddRoot(_guilang.get("GUI_TREE_WORKSPACE"), m_iconManager->GetIconIndex("WORKPLACE"));
+	m_projectFileFolders[0] = m_fileTree->AppendItem(rootNode, _guilang.get("GUI_TREE_DATAFILES"), idxFolderOpen);
+	m_projectFileFolders[1] = m_fileTree->AppendItem(rootNode, _guilang.get("GUI_TREE_SAVEDFILES"), idxFolderOpen);
+	m_projectFileFolders[2] = m_fileTree->AppendItem(rootNode, _guilang.get("GUI_TREE_SCRIPTS"), idxFolderOpen);
+	m_projectFileFolders[3] = m_fileTree->AppendItem(rootNode, _guilang.get("GUI_TREE_PROCEDURES"), idxFolderOpen);
+	m_projectFileFolders[4] = m_fileTree->AppendItem(rootNode, _guilang.get("GUI_TREE_PLOTS"), idxFolderOpen);
 
 	_guilang.addToLanguage(m_terminal->getPluginLanguageStrings());
 	_guilang.addToLanguage(m_terminal->getFunctionLanguageStrings());
     prepareFunctionTree();
-	/*m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_SCRIPTS"), idxFolderOpen);
-	m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_PROCEDURES"), idxFolderOpen);
-	m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_PLOTS"), idxFolderOpen);*/
-
 
 #if wxUSE_DRAG_AND_DROP
-	//SetDropTarget(new NumeReDropTarget(this, this, NumeReDropTarget::NUMEREWINDOW));
-	m_projectTree->SetDropTarget(new NumeReDropTarget(this, m_projectTree, NumeReDropTarget::FILETREE));
+	m_fileTree->SetDropTarget(new NumeReDropTarget(this, m_fileTree, NumeReDropTarget::FILETREE));
 	m_terminal->SetDropTarget(new NumeReDropTarget(this, m_terminal, NumeReDropTarget::CONSOLE));
 #endif //wxUSE_DRAG_AND_DROP
 
@@ -488,27 +413,20 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
 	int charWidth = GetCharWidth();
 
-	//int fileNameChars = 75;
 	int filetypeChars = 20;
 	int readEditChars = 15;
-	//int networkStatusChars = 25;
 	int lineColChars = 20;
 	int debuggerchars = 25;
 
-	//const int widths[] = {fileNameChars * charWidth, filetypeChars * charWidth, readEditChars * charWidth, lineColChars * charWidth, debuggerchars * charWidth};
 	const int widths[] = {-1, filetypeChars * charWidth, readEditChars * charWidth, lineColChars * charWidth, debuggerchars * charWidth};
     const int styles[] = {wxSB_RAISED, wxSB_RAISED, wxSB_RAISED, wxSB_RAISED, wxSB_RAISED};
 	m_statusBar = CreateStatusBar (WXSIZEOF(widths), wxST_SIZEGRIP);
-	//m_statusBar = new wxStatusBar(this);
-	//m_statusBar->SetFieldsCount(WXSIZEOF(widths), widths);
 	m_statusBar->SetStatusWidths(WXSIZEOF(widths), widths);
 	m_statusBar->SetStatusStyles(WXSIZEOF(styles), styles);
 	SendSizeEvent();
 
 	m_updateTimer = new wxTimer (this, ID_STATUSTIMER);
 
-	///m_splitProjectEditor->Initialize(m_book);
-	///m_splitEditorOutput->Initialize(m_splitProjectEditor);
 	m_splitEditorOutput->Initialize(m_book);
 	m_splitProjectEditor->Initialize(m_splitEditorOutput);
 	m_splitEditorOutput->Initialize(m_splitCommandHistory);
@@ -1010,13 +928,13 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 	{
         case ID_OPEN_FILE:
         {
-            FileNameTreeData* data = static_cast <FileNameTreeData* > (m_projectTree->GetItemData(m_clickedTreeItem));
+            FileNameTreeData* data = static_cast <FileNameTreeData* > (m_fileTree->GetItemData(m_clickedTreeItem));
             OnExecuteFile(data->filename.ToStdString());
             break;
         }
         case ID_EDIT_FILE:
         {
-			FileNameTreeData* data = static_cast <FileNameTreeData* > (m_projectTree->GetItemData(m_clickedTreeItem));
+			FileNameTreeData* data = static_cast <FileNameTreeData* > (m_fileTree->GetItemData(m_clickedTreeItem));
 
             wxArrayString fnames;
             fnames.Add(data->filename);
@@ -1066,7 +984,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         }
         case ID_OPEN_IMAGE:
         {
-            FileNameTreeData* data = static_cast <FileNameTreeData*> (m_projectTree->GetItemData(m_clickedTreeItem));
+            FileNameTreeData* data = static_cast <FileNameTreeData*> (m_fileTree->GetItemData(m_clickedTreeItem));
             openImage(wxFileName(data->filename));
             break;
         }
@@ -1570,7 +1488,7 @@ void NumeReWindow::OnDebugEvent(wxDebugEvent &event)
 
 void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
 {
-    if (!m_projectTree || !m_projectTree->IsShown())
+    if (!m_fileTree)
         return;
     int type = event.GetChangeType();
     if (type == wxFSW_EVENT_DELETE || type == wxFSW_EVENT_CREATE || type == wxFSW_EVENT_RENAME)
@@ -1578,12 +1496,12 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
         //m_currentSavedFile.clear();
         string sEventpath = replacePathSeparator(event.GetPath().GetFullPath().ToStdString());
         vector<string> vPaths = m_terminal->getPathSettings();
-        const FileFilterType fileType[] = {FILE_DATAFILES,FILE_DATAFILES,FILE_NSCR,FILE_NPRC,FILE_IMAGEFILES};
+        const FileFilterType fileType[] = {FILE_DATAFILES, FILE_DATAFILES, FILE_NSCR, FILE_NPRC, FILE_IMAGEFILES};
         for (size_t i = LOADPATH; i < vPaths.size(); i++)
         {
             if (sEventpath.find(replacePathSeparator(vPaths[i])) != string::npos)
             {
-                m_projectTree->DeleteChildren(m_projectFileFolders[i-LOADPATH]);
+                m_fileTree->DeleteChildren(m_projectFileFolders[i-LOADPATH]);
                 LoadFilesToTree(vPaths[i], fileType[i-LOADPATH], m_projectFileFolders[i-LOADPATH]);
                 break;
             }
@@ -1783,7 +1701,7 @@ void NumeReWindow::evaluateDebugInfo(const vector<string>& vDebugInfo)
 
 void NumeReWindow::deleteFile()
 {
-    FileNameTreeData* data = static_cast<FileNameTreeData*>(m_projectTree->GetItemData(m_clickedTreeItem));
+    FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
     if (wxYES != wxMessageBox(_guilang.get("GUI_DLG_DELETE_QUESTION", data->filename.ToStdString()), _guilang.get("GUI_DLG_DELETE"), wxCENTRE | wxICON_QUESTION | wxYES_NO, this))
         return;
     if (m_clickedTreeItem == m_copiedTreeItem)
@@ -1796,8 +1714,8 @@ void NumeReWindow::deleteFile()
 
 void NumeReWindow::insertCopiedFile()
 {
-    FileNameTreeData* target_data = static_cast<FileNameTreeData*>(m_projectTree->GetItemData(m_clickedTreeItem));
-    FileNameTreeData* source_data = static_cast<FileNameTreeData*>(m_projectTree->GetItemData(m_copiedTreeItem));
+    FileNameTreeData* target_data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
+    FileNameTreeData* source_data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_copiedTreeItem));
     wxFileName target_filename = target_data->filename;
     wxFileName source_filename = source_data->filename;
 
@@ -1815,7 +1733,7 @@ void NumeReWindow::insertCopiedFile()
 
 void NumeReWindow::renameFile()
 {
-    FileNameTreeData* data = static_cast<FileNameTreeData*>(m_projectTree->GetItemData(m_clickedTreeItem));
+    FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
     wxFileName target_filename = data->filename;
     wxFileName source_filename = target_filename;
     wxTextEntryDialog* textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_RENAME_QUESTION"), _guilang.get("GUI_DLG_RENAME"), target_filename.GetName());
@@ -2992,8 +2910,8 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 		m_projMultiFiles->SetProjectFile(projectFile);
 		m_projMultiFiles->SetProjectName(projectFile.GetName());
 
-		wxTreeItemId rootItem = m_projectTree->GetRootItem();
-		m_projectTree->SetItemText(rootItem, m_projMultiFiles->GetProjectName());
+		wxTreeItemId rootItem = m_fileTree->GetRootItem();
+		m_fileTree->SetItemText(rootItem, m_projMultiFiles->GetProjectName());
 
 	}
 	return true;
@@ -3533,7 +3451,7 @@ bool NumeReWindow::IsDebuggerPaused()
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::PassImageList(wxImageList* imagelist)
 {
-	m_projectTree->AssignImageList(imagelist);
+	m_fileTree->AssignImageList(imagelist);
 }
 
 // Options evaluation and GUI reconfiguration code begins here
@@ -3560,7 +3478,7 @@ void NumeReWindow::EvaluateOptions()
 
 	if (true) //(perms->isEnabled(PERM_PROJECTS))
 	{
-		if (m_projectTree)
+		if (m_fileTree)
 		{
             if (!m_treeBook->IsShown())
             {
@@ -3575,11 +3493,11 @@ void NumeReWindow::EvaluateOptions()
             {
                 for (size_t i = 0; i < 5; i++)
                 {
-                    m_projectTree->DeleteChildren(m_projectFileFolders[i]);
+                    m_fileTree->DeleteChildren(m_projectFileFolders[i]);
                 }
             }
-			if (!m_projectTree->IsExpanded(m_projectTree->GetRootItem()))
-                m_projectTree->Toggle(m_projectTree->GetRootItem());
+			if (!m_fileTree->IsExpanded(m_fileTree->GetRootItem()))
+                m_fileTree->Toggle(m_fileTree->GetRootItem());
 
 			vector<string> vPaths = m_terminal->getPathSettings();
 			LoadFilesToTree(vPaths[LOADPATH], FILE_DATAFILES, m_projectFileFolders[0]);
@@ -4334,7 +4252,7 @@ wxPrintData* NumeReWindow::setDefaultPrinterSettings()
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
 {
-    if (m_treeBook->GetCurrentPage() == m_projectTree)
+    if (m_treeBook->GetCurrentPage() == m_fileTree)
     {
         wxTreeItemId clickedItem = event.GetItem();
         m_clickedTreeItem = clickedItem;
@@ -4345,10 +4263,10 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
 
         //wxTreeItemId rootItem = m_projectTree->GetRootItem();
         //wxTreeItemId parentItem = m_projectTree->GetItemParent(clickedItem);
-        wxString fname_ext = m_projectTree->GetItemText(m_clickedTreeItem);
+        wxString fname_ext = m_fileTree->GetItemText(m_clickedTreeItem);
         if (fname_ext.find('.') == string::npos)
             return;
-        if (static_cast<FileNameTreeData*>(m_projectTree->GetItemData(m_clickedTreeItem))->isDir)
+        if (static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem))->isDir)
             return;
         fname_ext = fname_ext.substr(fname_ext.rfind('.')) + ";";
 
@@ -4371,7 +4289,7 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
         popupMenu.Append(ID_RENAME_FILE, _guilang.get("GUI_TREE_PUP_RENAMEFILE"));
 
         wxPoint p = event.GetPoint();
-        m_projectTree->PopupMenu(&popupMenu, p);
+        m_fileTree->PopupMenu(&popupMenu, p);
     }
     else
     {
@@ -4433,7 +4351,7 @@ void NumeReWindow::OpenProjectFile(bool isRemote)
 		return;
 	}
 
-	m_projectTree->Freeze();
+	m_fileTree->Freeze();
 	if(m_projMultiFiles != NULL)
 	{
 		CloseProjectFile();
@@ -4441,11 +4359,11 @@ void NumeReWindow::OpenProjectFile(bool isRemote)
 
 	m_projMultiFiles = new ProjectInfo(false);
 
-	m_projectTree->DeleteChildren(m_projectFileFolders[0]);
-	m_projectTree->DeleteChildren(m_projectFileFolders[1]);
-	m_projectTree->DeleteChildren(m_projectFileFolders[2]);
-	m_projectTree->DeleteChildren(m_projectFileFolders[3]);
-	m_projectTree->DeleteChildren(m_projectFileFolders[4]);
+	m_fileTree->DeleteChildren(m_projectFileFolders[0]);
+	m_fileTree->DeleteChildren(m_projectFileFolders[1]);
+	m_fileTree->DeleteChildren(m_projectFileFolders[2]);
+	m_fileTree->DeleteChildren(m_projectFileFolders[3]);
+	m_fileTree->DeleteChildren(m_projectFileFolders[4]);
 
 	wxString fileContents;
 	wxString fileName;
@@ -4461,9 +4379,9 @@ void NumeReWindow::OpenProjectFile(bool isRemote)
 	m_projMultiFiles->SetProjectFile(projectFileName);
 	m_projMultiFiles->SetRemote(m_remoteMode);
 
-	wxTreeItemId rootItem = m_projectTree->GetRootItem();
-	m_projectTree->SetItemText(rootItem, fileName);
-	m_projectTree->SetItemBold(rootItem);
+	wxTreeItemId rootItem = m_fileTree->GetRootItem();
+	m_fileTree->SetItemText(rootItem, fileName);
+	m_fileTree->SetItemBold(rootItem);
 
 	wxMemoryInputStream projectFileStream(fileContents, fileContents.Len());
 
@@ -4474,9 +4392,9 @@ void NumeReWindow::OpenProjectFile(bool isRemote)
 	LoadFilesIntoProjectTree("/Libraries", FILE_DATAFILES, m_projectFileFolders[2], config, currentPathFormat);
 	LoadFilesIntoProjectTree("/Other", FILE_NONSOURCE, m_projectFileFolders[3], config, currentPathFormat);
 
-	m_projectTree->ExpandAll();
+	m_fileTree->ExpandAll();
 
-	m_projectTree->Thaw();
+	m_fileTree->Thaw();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -4527,9 +4445,9 @@ void NumeReWindow::AddFileToProject()
 
 	wxString simpleName = wxFileName(fileToOpen).GetFullName();
 
-	m_projectTree->AppendItem(m_clickedTreeItem, simpleName, iconIndex, -1, data);
-	m_projectTree->SortChildren(m_clickedTreeItem);
-	m_projectTree->Refresh();
+	m_fileTree->AppendItem(m_clickedTreeItem, simpleName, iconIndex, -1, data);
+	m_fileTree->SortChildren(m_clickedTreeItem);
+	m_fileTree->Refresh();
 
 	wxFileName fn(fileToOpen);
 	int pageNum = GetPageNum(fn);
@@ -4555,7 +4473,7 @@ void NumeReWindow::AddFileToProject()
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
 {
-    if (m_treeBook->GetCurrentPage() == m_projectTree)
+    if (m_treeBook->GetCurrentPage() == m_fileTree)
     {
         wxTreeItemId item = event.GetItem();
 
@@ -4565,20 +4483,20 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
             || item == m_projectFileFolders[3]
             || item == m_projectFileFolders[4])
         {
-            m_projectTree->Toggle(item);
+            m_fileTree->Toggle(item);
             return;
         }
 
-        wxTreeItemId rootItem = m_projectTree->GetRootItem();
+        wxTreeItemId rootItem = m_fileTree->GetRootItem();
 
         if (item != rootItem)
         {
             //wxTreeItemId parentItem = m_projectTree->GetItemParent(item);
-            FileNameTreeData* data = static_cast <FileNameTreeData* > (m_projectTree->GetItemData(item));
+            FileNameTreeData* data = static_cast <FileNameTreeData* > (m_fileTree->GetItemData(item));
             wxFileName pathname = data->filename;
-            if (data->isDir && m_projectTree->HasChildren(item))
+            if (data->isDir && m_fileTree->HasChildren(item))
             {
-                m_projectTree->Toggle(item);
+                m_fileTree->Toggle(item);
                 return;
             }
             else if (data->filename.find('.') == string::npos || data->isDir)
@@ -4668,7 +4586,7 @@ void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
     else
     {
         wxTreeItemId item = event.GetItem();
-        FileNameTreeData* data = static_cast<FileNameTreeData*>(m_projectTree->GetItemData(item));
+        FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(item));
         if (data->isDir)
             return;
         wxFileName pathname = data->filename;
@@ -4813,10 +4731,10 @@ void NumeReWindow::CloseProjectFile(bool canUserCancel)
 	// Clear out all items in the project tree
 	for(int i = 0; i < 4; i++)
 	{
-		m_projectTree->DeleteChildren(m_projectFileFolders[i]);
+		m_fileTree->DeleteChildren(m_projectFileFolders[i]);
 	}
 
-	m_projectTree->SetItemText(m_projectTree->GetRootItem(), "No project");
+	m_fileTree->SetItemText(m_fileTree->GetRootItem(), "No project");
 
 	delete m_projMultiFiles;
 	m_projMultiFiles = NULL;
@@ -4946,7 +4864,7 @@ void NumeReWindow::LoadFilesIntoProjectTree(wxString configPath,  FileFilterType
 			FileNameTreeData* data = new FileNameTreeData();
 			data->filename = newFileName.GetFullPath(currentPathFormat);
 
-			m_projectTree->AppendItem(treeid, newFileName.GetFullName(), iconNum, -1, data);
+			m_fileTree->AppendItem(treeid, newFileName.GetFullName(), iconNum, -1, data);
 
 			m_projMultiFiles->AddFileToProject(data->filename, fileType);
 
@@ -4960,7 +4878,7 @@ void NumeReWindow::LoadFilesIntoProjectTree(wxString configPath,  FileFilterType
 		}
 	}
 
-	m_projectTree->SortChildren(treeid);
+	m_fileTree->SortChildren(treeid);
 }
 
 /*enum FileFilterType
@@ -4979,7 +4897,7 @@ void NumeReWindow::LoadFilesIntoProjectTree(wxString configPath,  FileFilterType
 void NumeReWindow::LoadFilesToTree(wxString fromPath, FileFilterType fileType, wxTreeItemId treeid)
 {
     wxDir currentDir(fromPath);
-    DirTraverser _traverser(m_projectTree, m_iconManager, treeid, fromPath, fileType);
+    DirTraverser _traverser(m_fileTree, m_iconManager, treeid, fromPath, fileType);
     currentDir.Traverse(_traverser);
 }
 //////////////////////////////////////////////////////////////////////////////
@@ -4992,7 +4910,7 @@ void NumeReWindow::LoadFilesToTree(wxString fromPath, FileFilterType fileType, w
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::RemoveFileFromProject()
 {
-	FileNameTreeData* treeData = static_cast<FileNameTreeData*> (m_projectTree->GetItemData(m_clickedTreeItem));
+	FileNameTreeData* treeData = static_cast<FileNameTreeData*> (m_fileTree->GetItemData(m_clickedTreeItem));
 
 	if(m_projMultiFiles->FileExistsInProject(treeData->filename))
 	{
@@ -5008,7 +4926,7 @@ void NumeReWindow::RemoveFileFromProject()
 			pEdit->SetProject(proj);
 		}
 
-		m_projectTree->Delete(m_clickedTreeItem);
+		m_fileTree->Delete(m_clickedTreeItem);
 
 		SaveProjectFile();
 	}
@@ -5743,7 +5661,7 @@ void NumeReWindow::OnOptions()
 void NumeReWindow::OnProjectIncludeExcludeFile( int id )
 {
 	bool include = (id == ID_PROJECT_INCLUDE_FILE);
-	FileNameTreeData* data = static_cast <FileNameTreeData* > (m_projectTree->GetItemData(m_clickedTreeItem));
+	FileNameTreeData* data = static_cast <FileNameTreeData* > (m_fileTree->GetItemData(m_clickedTreeItem));
 	m_projMultiFiles->SetFileBuildInclusion(data->filename, m_projectSelectedFolderType, include);
 
 	wxString extension = wxFileName(data->filename).GetExt();
@@ -5757,7 +5675,7 @@ void NumeReWindow::OnProjectIncludeExcludeFile( int id )
 		extension += "_disabled";
 		iconIndex = m_extensionMappings[extension];
 	}
-	m_projectTree->SetItemImage(m_clickedTreeItem, iconIndex);
+	m_fileTree->SetItemImage(m_clickedTreeItem, iconIndex);
 }
 
 void NumeReWindow::OnPrintPage()
