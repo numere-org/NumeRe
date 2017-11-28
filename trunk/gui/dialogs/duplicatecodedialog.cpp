@@ -22,6 +22,10 @@
 #include "../editor/editor.h"
 
 #define ID_START 12000
+#define SEMANTICS_VAR 1
+#define SEMANTICS_STRING 2
+#define SEMANTICS_NUM 4
+#define SEMANTICS_FUNCTION 8
 
 extern Language _guilang;
 
@@ -41,15 +45,17 @@ DuplicateCodeDialog::DuplicateCodeDialog(wxWindow* _parent, const wxString& titl
     wxBoxSizer* vSizer = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer* hSizer = new wxBoxSizer(wxHORIZONTAL);
 
-    wxStaticBoxSizer* checkBox = new wxStaticBoxSizer(wxHORIZONTAL, m_mainPanel, _guilang.get("GUI_DUPCODE_SETTINGS"));
+    wxStaticBoxSizer* checkBox = new wxStaticBoxSizer(wxVERTICAL, m_mainPanel, _guilang.get("GUI_DUPCODE_SETTINGS"));
 
     m_varSemantics = new wxCheckBox(checkBox->GetStaticBox(), wxID_ANY, _guilang.get("GUI_DUPCODE_VARSEMANTICS"));
     m_StringSemantics = new wxCheckBox(checkBox->GetStaticBox(), wxID_ANY, _guilang.get("GUI_DUPCODE_STRINGSEMANTICS"));
     m_NumSemantics = new wxCheckBox(checkBox->GetStaticBox(), wxID_ANY, _guilang.get("GUI_DUPCODE_NUMSEMANTICS"));
+    m_FunctionSemantics = new wxCheckBox(checkBox->GetStaticBox(), wxID_ANY, _guilang.get("GUI_DUPCODE_FUNCTIONSEMANTICS"));
 
     checkBox->Add(m_varSemantics, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
     checkBox->Add(m_StringSemantics, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
     checkBox->Add(m_NumSemantics, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+    checkBox->Add(m_FunctionSemantics, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
     wxButton* buttonStart = new wxButton(m_mainPanel, ID_START, _guilang.get("GUI_DUPCODE_START"));
     wxButton* buttonOK = new wxButton(m_mainPanel, wxID_OK);
@@ -73,7 +79,7 @@ DuplicateCodeDialog::DuplicateCodeDialog(wxWindow* _parent, const wxString& titl
     m_progressGauge->SetValue(0);
     m_varSemantics->SetValue(true);
 
-    this->SetSize(420,400);
+    this->SetSize(420, 500);
 }
 
 
@@ -125,11 +131,13 @@ void DuplicateCodeDialog::OnStart()
 {
     int nFlags = 0;
     if (m_varSemantics->IsChecked())
-        nFlags |= 1;
+        nFlags |= SEMANTICS_VAR;
     if (m_StringSemantics->IsChecked())
-        nFlags |= 2;
+        nFlags |= SEMANTICS_STRING;
     if (m_NumSemantics->IsChecked())
-        nFlags |= 4;
+        nFlags |= SEMANTICS_NUM;
+    if (m_FunctionSemantics->IsChecked())
+        nFlags |= SEMANTICS_FUNCTION;
     m_resultList->DeleteAllItems();
     NumeReEditor* edit = static_cast<NumeReEditor*>(m_parent);
     edit->OnFindDuplicateCode(nFlags);

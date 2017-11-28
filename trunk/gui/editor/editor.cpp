@@ -42,6 +42,11 @@
 #define ANNOTATION_WARN 23
 #define ANNOTATION_ERROR 24
 
+#define SEMANTICS_VAR 1
+#define SEMANTICS_STRING 2
+#define SEMANTICS_NUM 4
+#define SEMANTICS_FUNCTION 8
+
 #define DUPLICATE_CODE_LENGTH 6
 
 #ifdef _DEBUG
@@ -1708,11 +1713,11 @@ void NumeReEditor::AnalyseCode()
 
                     // Apply metrics
                     int nCyclomaticComplexity = calculateCyclomaticComplexity(currentLine, LineFromPosition(nProcedureEnd));
-                    int nLinesOfCode = calculateLinesOfCode(currentLine, LineFromPosition(nProcedureEnd));
+                    int nLinesOfCode = calculateLinesOfCode(currentLine, LineFromPosition(nProcedureEnd))-2;
                     int nNumberOfComments = countNumberOfComments(currentLine, LineFromPosition(nProcedureEnd));
                     double dCommentDensity = (double)nNumberOfComments / (double)nLinesOfCode;
 
-                    if (nLinesOfCode < 5)
+                    if (nLinesOfCode < 3)
                         AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_INLINING")), ANNOTATION_WARN);
                     if (nCyclomaticComplexity > MAXCOMPLEXITYWARN)
                         AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_WARN);
@@ -4078,6 +4083,8 @@ int NumeReEditor::calculateLinesOfCode(int startline, int endline)
     for (int i = startline; i <= endline; i++)
     {
         currentline = this->GetLine(i).ToStdString();
+        if (currentline.find("##") != string::npos)
+            currentline.erase(currentline.find("##"));
         if (currentline.find_first_not_of(" \t\r\n") != string::npos)
         {
             for (size_t j = this->PositionFromLine(i); j < currentline.length()+this->PositionFromLine(i); j++)
@@ -4248,7 +4255,7 @@ string NumeReEditor::getSemanticLine(int nLine, int nDuplicateFlag)
             || this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_BLOCK
             || this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_LINE)
             continue;
-        else if ((nDuplicateFlag & 1)
+        else if ((nDuplicateFlag & SEMANTICS_VAR)
             && (this->GetStyleAt(i) == wxSTC_NSCR_DEFAULT
                 || this->GetStyleAt(i) == wxSTC_NSCR_DEFAULT_VARS
                 || this->GetStyleAt(i) == wxSTC_NSCR_IDENTIFIER))
@@ -4261,7 +4268,7 @@ string NumeReEditor::getSemanticLine(int nLine, int nDuplicateFlag)
                 i++;
             sSemLine += "VAR";
         }
-        else if ((nDuplicateFlag & 2) && this->GetStyleAt(i) == wxSTC_NSCR_STRING)
+        else if ((nDuplicateFlag & SEMANTICS_STRING) && this->GetStyleAt(i) == wxSTC_NSCR_STRING)
         {
             // replace string literals with a placeholder
             i++;
@@ -4269,9 +4276,9 @@ string NumeReEditor::getSemanticLine(int nLine, int nDuplicateFlag)
                 i++;
             sSemLine += "STR";
         }
-        else if ((nDuplicateFlag & 4) && this->GetStyleAt(i) == wxSTC_NSCR_NUMBERS)
+        else if ((nDuplicateFlag & SEMANTICS_NUM) && this->GetStyleAt(i) == wxSTC_NSCR_NUMBERS)
         {
-            // replace string literals with a placeholder
+            // replace numeric literals with a placeholder
             while (this->GetStyleAt(i+1) == wxSTC_NSCR_NUMBERS)
                 i++;
             if (sSemLine.back() == '-' || sSemLine.back() == '+')
@@ -4286,6 +4293,13 @@ string NumeReEditor::getSemanticLine(int nLine, int nDuplicateFlag)
                 }
             }
             sSemLine += "NUM";
+        }
+        else if ((nDuplicateFlag & SEMANTICS_FUNCTION) && this->GetStyleAt(i) == wxSTC_NSCR_CUSTOM_FUNCTION)
+        {
+            // replace functions and caches with a placeholder
+            while (this->GetStyleAt(i+1) == wxSTC_NSCR_CUSTOM_FUNCTION)
+                i++;
+            sSemLine += "FUNC";
         }
         else
             sSemLine += this->GetCharAt(i);
