@@ -312,6 +312,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_multiRowState = false;
     m_sessionSaved = false;
     m_UnrecoverableFiles = "";
+    m_loadingFilesDuringStartup = false;
 
 
 	// Show a log window for all debug messages
@@ -442,6 +443,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	// create the initial blank open file or recreate the last session
 	if (wxFileExists(getProgramFolder()+"\\numere.session") && m_options->GetSaveSession())
 	{
+	    m_loadingFilesDuringStartup = true;
         NewFile();
 	    ifstream if_session;
 	    vector<string> vSessionFile;
@@ -528,6 +530,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
             /*if (sUnloadableFiles.length())
                 wxMessageBox(_guilang.get("GUI_DLG_SESSION_RECREATIONERROR", sUnloadableFiles), _guilang.get("GUI_DLG_SESSION_ERROR"), wxCENTRE | wxICON_ERROR, nullptr, 10,10);*/
         }
+        m_loadingFilesDuringStartup = false;
 	}
 	else
 	{
@@ -1826,6 +1829,8 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         edit->SetDropTarget(new NumeReDropTarget(this, edit, NumeReDropTarget::EDITOR));
     #endif
 
+        CopyEditorSettings(edit, _filetype);
+
         m_currentEd = edit;
         m_currentEd->SetText("\r\n");
 
@@ -1908,6 +1913,8 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         ProjectInfo* singleFileProject = new ProjectInfo();
         NumeReEditor* edit = new NumeReEditor (this, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
 
+        CopyEditorSettings(edit, _filetype);
+
         m_currentEd = edit;
         m_currentEd->SetText(template_file);
         if (_filetype == FILE_NSCR || _filetype == FILE_PLUGIN)
@@ -1926,6 +1933,27 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         m_currentEd->SetUnsaved();
         m_book->AddPage (edit, filename, true);
 
+    }
+}
+
+void NumeReWindow::CopyEditorSettings(NumeReEditor* edit, FileFilterType _fileType)
+{
+    if (m_currentEd && edit && !m_loadingFilesDuringStartup)
+    {
+        int settings = m_currentEd->getSettings();
+        if (_fileType != FILE_NSCR && _fileType != FILE_NPRC && _fileType != FILE_PLUGIN)
+        {
+            if (settings & NumeReEditor::SETTING_INDENTONTYPE)
+                settings &= ~NumeReEditor::SETTING_INDENTONTYPE;
+            if (settings & NumeReEditor::SETTING_USEANALYZER)
+                settings &= ~NumeReEditor::SETTING_USEANALYZER;
+        }
+        else
+        {
+            if (settings & NumeReEditor::SETTING_USETXTADV)
+                settings &= ~NumeReEditor::SETTING_USETXTADV;
+        }
+        edit->ToggleSettings(settings);
     }
 }
 
@@ -2548,6 +2576,14 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
 		{
 			ProjectInfo* proj;
 
+			FileFilterType _fileType;
+			if (fnames[n].rfind(".nscr") != string::npos)
+                _fileType = FILE_NSCR;
+            else if (fnames[n].rfind(".nprc") != string::npos)
+                _fileType = FILE_NPRC;
+            else
+                _fileType = FILE_NOTYPE;
+
 			if( (m_projMultiFiles != NULL) && (m_projMultiFiles->FileExistsInProject(fnames[n])))
 			{
 				proj = m_projMultiFiles;
@@ -2579,6 +2615,7 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
 #if wxUSE_DRAG_AND_DROP
 				edit->SetDropTarget(new NumeReDropTarget(this, edit, NumeReDropTarget::EDITOR));
 #endif
+                CopyEditorSettings(edit, _fileType);
 				m_currentEd = edit;
 				m_currentPage = m_book->GetPageCount();
 				m_book->AddPage (m_currentEd, /*locationPrefix + */fileNameNoPath, true);

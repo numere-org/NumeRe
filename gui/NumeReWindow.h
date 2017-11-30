@@ -214,6 +214,8 @@ class NumeReWindow : public wxFrame
 
         void CheckSize();
 
+        void CopyEditorSettings(NumeReEditor* edit, FileFilterType _fileType);
+
         void OnMenuEvent(wxCommandEvent &event);
         void OpenFileByType(const wxFileName& filename);
         void OpenFilesFromList(const wxArrayString& filenameslist);
@@ -437,6 +439,7 @@ class NumeReWindow : public wxFrame
         bool m_currentlyDebugging;
         bool m_compileProject;
         bool m_multiRowState;
+        bool m_loadingFilesDuringStartup;
 
 
         wxString m_filterNSCRFiles;
