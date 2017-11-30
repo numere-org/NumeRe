@@ -5919,7 +5919,7 @@ void Plot::CoordSettings(const PlotData& _pData)
         }
         if (_pData.getBox() || _pData.getCoords() != PlotData::CARTESIAN)
         {
-            if (!(_pInfo.b2D || _pInfo.b3D || _pInfo.sCommand == "plot3d" || _pInfo.b3DVect || _pInfo.b2DVect)) /// standard plot
+            if (!(_pInfo.b2D || _pInfo.b3D || _pInfo.sCommand == "plot3d" || _pInfo.b3DVect || _pInfo.b2DVect)) // standard plot
             {
                 if (_pData.getCoords() == PlotData::CARTESIAN)
                 {
@@ -6000,7 +6000,7 @@ void Plot::CoordSettings(const PlotData& _pData)
                     _pInfo.dRanges[YCOORD][0] = 0.0;
                 }
             }
-            else if (_pInfo.sCommand.find("3d") != string::npos) /// 3d-plots and plot3d and vect3d
+            else if (_pInfo.sCommand.find("3d") != string::npos) // 3d-plots and plot3d and vect3d
             {
                 if (_pData.getCoords() == PlotData::POLAR_PZ || _pData.getCoords() == PlotData::POLAR_RP || _pData.getCoords() == PlotData::POLAR_RZ)
                 {
@@ -6111,7 +6111,7 @@ void Plot::CoordSettings(const PlotData& _pData)
                         _graph->Axis("xyz");
                 }
             }
-            else if (_pInfo.b2DVect) /// vect
+            else if (_pInfo.b2DVect) // vect
             {
                 if (_pData.getCoords() != PlotData::CARTESIAN)
                 {
@@ -6156,7 +6156,7 @@ void Plot::CoordSettings(const PlotData& _pData)
                         _graph->Axis("xy");
                 }
             }
-            else /// 2d plots
+            else // 2d plots
             {
                 switch (_pData.getCoords())
                 {
@@ -6328,7 +6328,7 @@ void Plot::CoordSettings(const PlotData& _pData)
                 }
             }
         }
-        else if (isnan(_pData.getOrigin()) && isnan(_pData.getOrigin(1)) && isnan(_pData.getOrigin(2)))
+        else if (isnan(_pData.getOrigin(XCOORD)) && isnan(_pData.getOrigin(YCOORD)) && isnan(_pData.getOrigin(ZCOORD)))
         {
             if (_pInfo.dRanges[XCOORD][0] <= 0.0
                 && _pInfo.dRanges[XCOORD][1] >= 0.0
@@ -6428,7 +6428,7 @@ void Plot::CoordSettings(const PlotData& _pData)
                 }
             }
         }
-        else if (_pData.getOrigin() != 0.0 || _pData.getOrigin(1) != 0.0 || _pData.getOrigin(2) != 0.0)
+        else if (_pData.getOrigin(XCOORD) != 0.0 || _pData.getOrigin(YCOORD) != 0.0 || _pData.getOrigin(ZCOORD) != 0.0)
         {
             if (_pInfo.dRanges[XCOORD][0] <= _pData.getOrigin(XCOORD)
                 && _pInfo.dRanges[XCOORD][1] >= _pData.getOrigin(XCOORD)

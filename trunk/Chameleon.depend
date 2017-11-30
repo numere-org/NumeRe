@@ -2023,7 +2023,7 @@
 	"../kernel/kernel.hpp"
 	"../kernel/debugmessenger.hpp"
 
-1511713769 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1512070079 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -3720,7 +3720,7 @@
 	"../NumeReWindow.h"
 	<wx/regex.h>
 
-1511630394 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
+1511888394 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
 	"duplicatecodedialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 	"../editor/editor.h"
@@ -4990,7 +4990,7 @@
 1505412752 source:d:\cpp\numere-source\trunk\kernel\core\procedure\debugger.cpp
 	"debugger.hpp"
 
-1511630773 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1511979359 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
