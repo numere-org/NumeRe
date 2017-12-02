@@ -18,16 +18,16 @@
 
 
 // Implementation der LOOP-Klasse
-#include "loop.hpp"
+#include "flowctrl.hpp"
 #include "../../kernel.hpp"
 
 // Definition of special return values
-#define LOOP_ERROR -1
-#define LOOP_RETURN -2
-#define LOOP_BREAK -3
-#define LOOP_CONTINUE -4
-#define LOOP_NO_CMD -5
-#define LOOP_OK 1
+#define FLOWCTRL_ERROR -1
+#define FLOWCTRL_RETURN -2
+#define FLOWCTRL_BREAK -3
+#define FLOWCTRL_CONTINUE -4
+#define FLOWCTRL_NO_CMD -5
+#define FLOWCTRL_OK 1
 
 // Definition of standard values of the jump table
 #define NO_FLOW_COMMAND -1
@@ -37,7 +37,7 @@
 extern value_type vAns;
 //extern bool bSupressAnswer;
 
-Loop::Loop()
+FlowCtrl::FlowCtrl()
 {
     sCmd = nullptr;
     vVarArray = nullptr;
@@ -79,13 +79,13 @@ Loop::Loop()
     bLoopSupressAnswer = false;
 }
 
-Loop::Loop(int _nDefaultLength)
+FlowCtrl::FlowCtrl(int _nDefaultLength)
 {
-    Loop();
+    FlowCtrl();
     nDefaultLength = _nDefaultLength;
 }
 
-Loop::~Loop()
+FlowCtrl::~FlowCtrl()
 {
     if (sCmd)
     {
@@ -106,7 +106,7 @@ Loop::~Loop()
     }
 }
 
-void Loop::generateCommandArray()
+void FlowCtrl::generateCommandArray()
 {
     if (sCmd)
     {
@@ -163,7 +163,7 @@ void Loop::generateCommandArray()
     return;
 }
 
-int Loop::for_loop(int nth_Cmd, int nth_loop)
+int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 {
     int nVarAdress = 0;
     int nInc = 1;
@@ -215,19 +215,19 @@ int Loop::for_loop(int nth_Cmd, int nth_loop)
                 {
                     int nReturn = evalLoopFlowCommands(__j, nth_loop);
 
-                    if (nReturn == LOOP_ERROR || nReturn == LOOP_RETURN)
+                    if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
                         return nReturn;
-                    else if (nReturn == LOOP_BREAK)
+                    else if (nReturn == FLOWCTRL_BREAK)
                     {
                         bBreakSignal = false;
                         return nJumpTable[nth_Cmd][BLOCK_END];
                     }
-                    else if (nReturn == LOOP_CONTINUE)
+                    else if (nReturn == FLOWCTRL_CONTINUE)
                     {
                         bContinueSignal = false;
                         break;
                     }
-                    else if (nReturn != LOOP_NO_CMD)
+                    else if (nReturn != FLOWCTRL_NO_CMD)
                         __j = nReturn;
                 }
             }
@@ -257,14 +257,14 @@ int Loop::for_loop(int nth_Cmd, int nth_loop)
                 _parserRef->SetIndex(__j + nCmd+1);
             try
             {
-                if (calc(sCmd[__j][1], __j, "FOR") == LOOP_ERROR)
+                if (calc(sCmd[__j][1], __j, "FOR") == FLOWCTRL_ERROR)
                 {
                     if (_optionRef->getUseDebugger())
                         _optionRef->_debug.gatherLoopBasedInformations(sCmd[__j][1], nCmd-__j, mVarMap, vVarArray, sVarArray, nVarArray);
-                    return LOOP_ERROR;
+                    return FLOWCTRL_ERROR;
                 }
                 if (bReturnSignal)
-                    return LOOP_RETURN;
+                    return FLOWCTRL_RETURN;
             }
             catch (...)
             {
@@ -296,7 +296,7 @@ int Loop::for_loop(int nth_Cmd, int nth_loop)
     return nJumpTable[nth_Cmd][BLOCK_END];
 }
 
-int Loop::while_loop(int nth_Cmd, int nth_loop)
+int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
 {
     string sWhile_Condition = sCmd[nth_Cmd][0].substr(sCmd[nth_Cmd][0].find('(')+1, sCmd[nth_Cmd][0].rfind(')')-sCmd[nth_Cmd][0].find('(')-1);
     string sWhile_Condition_Back = sWhile_Condition;
@@ -340,19 +340,19 @@ int Loop::while_loop(int nth_Cmd, int nth_loop)
                 {
                     int nReturn = evalLoopFlowCommands(__j, nth_loop);
 
-                    if (nReturn == LOOP_ERROR || nReturn == LOOP_RETURN)
+                    if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
                         return nReturn;
-                    else if (nReturn == LOOP_BREAK)
+                    else if (nReturn == FLOWCTRL_BREAK)
                     {
                         bBreakSignal = false;
                         return nJumpTable[nth_Cmd][BLOCK_END];
                     }
-                    else if (nReturn == LOOP_CONTINUE)
+                    else if (nReturn == FLOWCTRL_CONTINUE)
                     {
                         bContinueSignal = false;
                         break;
                     }
-                    else if (nReturn != LOOP_NO_CMD)
+                    else if (nReturn != FLOWCTRL_NO_CMD)
                         __j = nReturn;
                 }
             }
@@ -382,14 +382,14 @@ int Loop::while_loop(int nth_Cmd, int nth_loop)
 
             try
             {
-                if (calc(sCmd[__j][1], __j, "WHL") == LOOP_ERROR)
+                if (calc(sCmd[__j][1], __j, "WHL") == FLOWCTRL_ERROR)
                 {
                     if (_optionRef->getUseDebugger())
                         _optionRef->_debug.gatherLoopBasedInformations(sCmd[__j][1], nCmd-__j, mVarMap, vVarArray, sVarArray, nVarArray);
-                    return LOOP_ERROR;
+                    return FLOWCTRL_ERROR;
                 }
                 if (bReturnSignal)
-                    return LOOP_RETURN;
+                    return FLOWCTRL_RETURN;
             }
             catch(...)
             {
@@ -418,7 +418,7 @@ int Loop::while_loop(int nth_Cmd, int nth_loop)
     return nCmd;
 }
 
-int Loop::if_fork(int nth_Cmd, int nth_loop)
+int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
 {
     string sIf_Condition = sCmd[nth_Cmd][0].substr(sCmd[nth_Cmd][0].find('(')+1, sCmd[nth_Cmd][0].rfind(')')-sCmd[nth_Cmd][0].find('(')-1);
     int nElse = nJumpTable[nth_Cmd][ELSE_START];
@@ -442,13 +442,13 @@ int Loop::if_fork(int nth_Cmd, int nth_loop)
                 {
                     int nReturn = evalForkFlowCommands(__i, nth_loop);
 
-                    if (nReturn == LOOP_ERROR || nReturn == LOOP_RETURN)
+                    if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
                         return nReturn;
-                    else if (nReturn == LOOP_BREAK || nReturn == LOOP_CONTINUE)
+                    else if (nReturn == FLOWCTRL_BREAK || nReturn == FLOWCTRL_CONTINUE)
                     {
                         return nEndif;
                     }
-                    else if (nReturn != LOOP_NO_CMD)
+                    else if (nReturn != FLOWCTRL_NO_CMD)
                         __i = nReturn;
                 }
             }
@@ -488,10 +488,10 @@ int Loop::if_fork(int nth_Cmd, int nth_loop)
                 _parserRef->SetIndex(__i+nCmd+1);
             try
             {
-                if (calc(sCmd[__i][1], __i, "IF") == LOOP_ERROR)
-                    return LOOP_ERROR;
+                if (calc(sCmd[__i][1], __i, "IF") == FLOWCTRL_ERROR)
+                    return FLOWCTRL_ERROR;
                 if (bReturnSignal)
-                    return LOOP_RETURN;
+                    return FLOWCTRL_RETURN;
             }
             catch (...)
             {
@@ -529,13 +529,13 @@ int Loop::if_fork(int nth_Cmd, int nth_loop)
                         {
                             int nReturn = evalForkFlowCommands(__i, nth_loop);
 
-                            if (nReturn == LOOP_ERROR || nReturn == LOOP_RETURN)
+                            if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
                                 return nReturn;
-                            else if (nReturn == LOOP_BREAK || nReturn == LOOP_CONTINUE)
+                            else if (nReturn == FLOWCTRL_BREAK || nReturn == FLOWCTRL_CONTINUE)
                             {
                                 return nEndif;
                             }
-                            else if (nReturn != LOOP_NO_CMD)
+                            else if (nReturn != FLOWCTRL_NO_CMD)
                                 __i = nReturn;
                         }
                     }
@@ -575,14 +575,14 @@ int Loop::if_fork(int nth_Cmd, int nth_loop)
 
                     try
                     {
-                        if (calc(sCmd[__i][1], __i, "IF") == LOOP_ERROR)
+                        if (calc(sCmd[__i][1], __i, "IF") == FLOWCTRL_ERROR)
                         {
                             if (_optionRef->getUseDebugger())
                                 _optionRef->_debug.gatherLoopBasedInformations(sCmd[__i][1], nCmd-__i, mVarMap, vVarArray, sVarArray, nVarArray);
-                            return LOOP_ERROR;
+                            return FLOWCTRL_ERROR;
                         }
                         if (bReturnSignal)
-                            return LOOP_RETURN;
+                            return FLOWCTRL_RETURN;
                     }
                     catch (...)
                     {
@@ -612,13 +612,13 @@ int Loop::if_fork(int nth_Cmd, int nth_loop)
                 {
                     int nReturn = evalForkFlowCommands(__i, nth_loop);
 
-                    if (nReturn == LOOP_ERROR || nReturn == LOOP_RETURN)
+                    if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
                         return nReturn;
-                    else if (nReturn == LOOP_BREAK || nReturn == LOOP_CONTINUE)
+                    else if (nReturn == FLOWCTRL_BREAK || nReturn == FLOWCTRL_CONTINUE)
                     {
                         return nEndif;
                     }
-                    else if (nReturn != LOOP_NO_CMD)
+                    else if (nReturn != FLOWCTRL_NO_CMD)
                         __i = nReturn;
                 }
             }
@@ -658,14 +658,14 @@ int Loop::if_fork(int nth_Cmd, int nth_loop)
 
             try
             {
-                if (calc(sCmd[__i][1], __i, "IF") == LOOP_ERROR)
+                if (calc(sCmd[__i][1], __i, "IF") == FLOWCTRL_ERROR)
                 {
                     if (_optionRef->getUseDebugger())
                         _optionRef->_debug.gatherLoopBasedInformations(sCmd[__i][1], nCmd-__i, mVarMap, vVarArray, sVarArray, nVarArray);
-                    return LOOP_ERROR;
+                    return FLOWCTRL_ERROR;
                 }
                 if (bReturnSignal)
-                    return LOOP_RETURN;
+                    return FLOWCTRL_RETURN;
             }
             catch (...)
             {
@@ -679,7 +679,7 @@ int Loop::if_fork(int nth_Cmd, int nth_loop)
 }
 
 
-value_type* Loop::evalHeader(int& nNum, string sHeadExpression, bool bIsForHead, int nth_Cmd)
+value_type* FlowCtrl::evalHeader(int& nNum, string sHeadExpression, bool bIsForHead, int nth_Cmd)
 {
     value_type* v = nullptr;
     string sCache = "";
@@ -804,10 +804,10 @@ value_type* Loop::evalHeader(int& nNum, string sHeadExpression, bool bIsForHead,
     return v;
 }
 
-int Loop::evalLoopFlowCommands(int __j, int nth_loop)
+int FlowCtrl::evalLoopFlowCommands(int __j, int nth_loop)
 {
     if (nJumpTable[__j][BLOCK_END] == NO_FLOW_COMMAND)
-        return LOOP_NO_CMD;
+        return FLOWCTRL_NO_CMD;
 
     if (sCmd[__j][0].substr(0,3) == "for")
     {
@@ -820,25 +820,25 @@ int Loop::evalLoopFlowCommands(int __j, int nth_loop)
     else if (sCmd[__j][0].find(">>if") != string::npos)
     {
         __j = if_fork(__j, nth_loop+1);
-        if (__j == LOOP_ERROR || __j == LOOP_RETURN || bReturnSignal)
+        if (__j == FLOWCTRL_ERROR || __j == FLOWCTRL_RETURN || bReturnSignal)
             return __j;
         if (bContinueSignal)
         {
-            return LOOP_CONTINUE;
+            return FLOWCTRL_CONTINUE;
         }
         if (bBreakSignal)
         {
-            return LOOP_BREAK;
+            return FLOWCTRL_BREAK;
         }
         return __j;
     }
-    return LOOP_NO_CMD;
+    return FLOWCTRL_NO_CMD;
 }
 
-int Loop::evalForkFlowCommands(int __i, int nth_loop)
+int FlowCtrl::evalForkFlowCommands(int __i, int nth_loop)
 {
     if (nJumpTable[__i][BLOCK_END] == NO_FLOW_COMMAND)
-        return LOOP_NO_CMD;
+        return FLOWCTRL_NO_CMD;
 
     if (sCmd[__i][0].substr(0,3) == "for")
     {
@@ -879,23 +879,23 @@ int Loop::evalForkFlowCommands(int __i, int nth_loop)
     else if (sCmd[__i][0].find(">>if") != string::npos)
     {
         __i = if_fork(__i, nth_loop+1);
-        if (__i == LOOP_ERROR || __i == LOOP_RETURN || bReturnSignal)
+        if (__i == FLOWCTRL_ERROR || __i == FLOWCTRL_RETURN || bReturnSignal)
             return __i;
         if (bContinueSignal)
         {
-            return LOOP_CONTINUE;
+            return FLOWCTRL_CONTINUE;
         }
         if (bBreakSignal)
         {
-            return LOOP_BREAK;
+            return FLOWCTRL_BREAK;
         }
         return __i;
     }
-    return LOOP_NO_CMD;
+    return FLOWCTRL_NO_CMD;
 }
 
 
-void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& _functions, Settings& _option, Output& _out, PlotData& _pData, Script& _script)
+void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& _functions, Settings& _option, Output& _out, PlotData& _pData, Script& _script)
 {
     bool bDebuggingBreakPoint = (__sCmd.substr(__sCmd.find_first_not_of(' '),2) == "|>");
     string sAppendedExpression = "";
@@ -1473,7 +1473,7 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
 }
 
 // --> Alle Variablendefinitionen und Deklarationen und den Error-Handler! <--
-void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& _option, Output& _out, PlotData& _pData, Script& _script)
+void FlowCtrl::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& _option, Output& _out, PlotData& _pData, Script& _script)
 {
     if (_parser.IsLockedPause())
         bLockedPauseMode = true;
@@ -1827,7 +1827,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
     {
         if (sCmd[0][0].substr(0,3) == "for")
         {
-            if (for_loop() == LOOP_ERROR)
+            if (for_loop() == FLOWCTRL_ERROR)
             {
                 if (bSilent || bMask)
                     NumeReKernel::printPreFmt("\n");
@@ -1843,7 +1843,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
         }
         else if (sCmd[0][0].substr(0,5) == "while")
         {
-            if (while_loop() == LOOP_ERROR)
+            if (while_loop() == FLOWCTRL_ERROR)
             {
                 if (bSilent || bMask)
                     NumeReKernel::printPreFmt("\n");
@@ -1859,7 +1859,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
         }
         else
         {
-            if (if_fork() == LOOP_ERROR)
+            if (if_fork() == FLOWCTRL_ERROR)
             {
                 if (bSilent || bMask)
                     NumeReKernel::printPreFmt("\n");
@@ -1885,7 +1885,7 @@ void Loop::eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& 
 }
 
 // function will be executed multiple times -> take care of the pointers!
-void Loop::reset()
+void FlowCtrl::reset()
 {
     if (sCmd)
     {
@@ -1992,7 +1992,7 @@ void Loop::reset()
     return;
 }
 
-int Loop::calc(string sLine, int nthCmd, string sBlock)
+int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 {
     string sLine_Temp = sLine;
     string sCache = "";
@@ -2086,7 +2086,7 @@ int Loop::calc(string sLine, int nthCmd, string sBlock)
                 {
                     bReturnSignal = true;
                     nReturnType = 0;
-                    return LOOP_RETURN;
+                    return FLOWCTRL_RETURN;
                 }
             }
             sLine = sLine.substr(sLine.find("return") + 6);
@@ -2095,7 +2095,7 @@ int Loop::calc(string sLine, int nthCmd, string sBlock)
             {
                 ReturnVal.vNumVal.push_back(1.0);
                 bReturnSignal = true;
-                return LOOP_RETURN;
+                return FLOWCTRL_RETURN;
             }
             bReturnSignal = true;
         }
@@ -2153,7 +2153,7 @@ int Loop::calc(string sLine, int nthCmd, string sBlock)
                 if (nNum)
                     vAns = v[0];
             }
-            return LOOP_OK;
+            return FLOWCTRL_OK;
         }
     }
     if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_COMPOSE || sLoopPlotCompose.length())
@@ -2168,12 +2168,12 @@ int Loop::calc(string sLine, int nthCmd, string sBlock)
             if (!sLoopPlotCompose.length() && sCommand == "compose")
             {
                 sLoopPlotCompose = "plotcompose ";
-                return LOOP_OK;
+                return FLOWCTRL_OK;
             }
             else if (sCommand == "abort")
             {
                 sLoopPlotCompose = "";
-                return LOOP_OK;
+                return FLOWCTRL_OK;
             }
             else if (sCommand != "endcompose")
             {
@@ -2185,7 +2185,7 @@ int Loop::calc(string sLine, int nthCmd, string sBlock)
                     || sCommand.substr(0,4) == "surf"
                     || sCommand.substr(0,4) == "mesh")
                     sLoopPlotCompose += sLine + " <<COMPOSE>> ";
-                return LOOP_OK;
+                return FLOWCTRL_OK;
             }
             else
             {
@@ -2280,7 +2280,7 @@ int Loop::calc(string sLine, int nthCmd, string sBlock)
             while (sLine.length() && (sLine[sLine.length()-1] == ' ' || sLine[sLine.length()-1] == '-'))
                 sLine.pop_back();
             if (!sLine.length())
-                return LOOP_OK;
+                return FLOWCTRL_OK;
             if (_parserRef->GetExpr() != sLine.substr(findCommand(sLine).nPos+8)+","+sExpr+" ")
             {
                 if (bUseLoopParsingMode && !bLockedPauseMode && _parserRef->IsValidByteCode() && _parserRef->GetExpr().length())
@@ -2289,7 +2289,7 @@ int Loop::calc(string sLine, int nthCmd, string sBlock)
             }
             vVals = _parserRef->Eval(nArgument);
             make_progressBar((int)vVals[0], (int)vVals[1], (int)vVals[2], sArgument);
-            return LOOP_OK;
+            return FLOWCTRL_OK;
         }
     }
     if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_PROMPT)
@@ -2324,9 +2324,9 @@ int Loop::calc(string sLine, int nthCmd, string sBlock)
         else
             nJumpTable[nthCmd][PROCEDURE_INTERFACE] = 0;
         if (nReturn == -1)
-            return LOOP_ERROR;
+            return FLOWCTRL_ERROR;
         else if (nReturn == -2)
-            return LOOP_OK;
+            return FLOWCTRL_OK;
     }
 
     // --> Procedure-CMDs einbinden <--
@@ -2339,11 +2339,11 @@ int Loop::calc(string sLine, int nthCmd, string sBlock)
             {
                 if (!nCurrentCalcType)
                     nCalcType[nthCmd] |= CALCTYPE_PROCEDURECMDINTERFACE;
-                return LOOP_OK;
+                return FLOWCTRL_OK;
             }
         }
         else
-            return LOOP_ERROR;
+            return FLOWCTRL_ERROR;
     }
     if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_EXPLICIT)
     {
@@ -2379,17 +2379,17 @@ int Loop::calc(string sLine, int nthCmd, string sBlock)
                     NumeReKernel::bSupressAnswer = bSupressAnswer_back;
                     if (!nCurrentCalcType)
                         nCalcType[nthCmd] |= CALCTYPE_COMMAND;
-                    return LOOP_OK;
+                    return FLOWCTRL_OK;
                 case -1:
                     NumeReKernel::bSupressAnswer = bSupressAnswer_back;
                     if (!nCurrentCalcType)
                         nCalcType[nthCmd] |= CALCTYPE_COMMAND;
-                    return LOOP_OK;
+                    return FLOWCTRL_OK;
                 case  2:
                     NumeReKernel::bSupressAnswer = bSupressAnswer_back;
                     if (!nCurrentCalcType)
                         nCalcType[nthCmd] |= CALCTYPE_COMMAND;
-                    return LOOP_OK;
+                    return FLOWCTRL_OK;
             }
             NumeReKernel::bSupressAnswer = bSupressAnswer_back;
         }
@@ -2457,9 +2457,9 @@ int Loop::calc(string sLine, int nthCmd, string sBlock)
                     if (bReturnSignal)
                     {
                         ReturnVal.vStringVal.push_back(sLine);
-                        return LOOP_RETURN;
+                        return FLOWCTRL_RETURN;
                     }
-                    return LOOP_OK;
+                    return FLOWCTRL_OK;
                 }
             }
             else
@@ -2572,30 +2572,30 @@ int Loop::calc(string sLine, int nthCmd, string sBlock)
     {
         for (int i = 0; i < nNum; i++)
             ReturnVal.vNumVal.push_back(v[i]);
-        return LOOP_RETURN;
+        return FLOWCTRL_RETURN;
     }
-    return LOOP_OK;
+    return FLOWCTRL_OK;
 }
 
-int Loop::procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command)
+int FlowCtrl::procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command)
 {
     cerr << "LOOP_procedureInterface" << endl;
     return 1;
 }
 
-int Loop::procedureCmdInterface(string& sLine)
+int FlowCtrl::procedureCmdInterface(string& sLine)
 {
     cerr << "LOOP_procedureCmdInterface" << endl;
     return 1;
 }
 
-bool Loop::isInline(const string& sProc)
+bool FlowCtrl::isInline(const string& sProc)
 {
     cerr << "LOOP_isInline" << endl;
     return true;
 }
 
-void Loop::replaceLocalVars(string& sLine)
+void FlowCtrl::replaceLocalVars(string& sLine)
 {
     if (!mVarMap.size())
         return;
@@ -2616,7 +2616,7 @@ void Loop::replaceLocalVars(string& sLine)
     return;
 }
 
-void Loop::evalDebuggerBreakPoint(Parser& _parser, Settings& _option, const map<string,string>& sStringMap)
+void FlowCtrl::evalDebuggerBreakPoint(Parser& _parser, Settings& _option, const map<string,string>& sStringMap)
 {
     return;
 }
