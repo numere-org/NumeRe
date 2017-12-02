@@ -2505,7 +2505,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1511629843 d:\cpp\numere-source\trunk\kernel\kernel.hpp
+1512215242 d:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	<queue>
@@ -2523,7 +2523,7 @@
 	"core/plotting/plotdata.hpp"
 	"core/plotting/graph_helper.hpp"
 	"core/script.hpp"
-	"core/procedure/loop.hpp"
+	"core/procedure/flowctrl.hpp"
 	"core/procedure/procedure.hpp"
 	"core/plugin.hpp"
 	"core/ui/language.hpp"
@@ -4827,7 +4827,7 @@
 	"../built-in.hpp"
 	"../utils/tools.hpp"
 
-1511630372 d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.hpp
+1512215039 d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.hpp
 	<iostream>
 	<string>
 	<cmath>
@@ -4841,7 +4841,7 @@
 	"../built-in.hpp"
 	"../maths/parser_functions.hpp"
 	"../plotting/plotdata.hpp"
-	"loop.hpp"
+	"flowctrl.hpp"
 	"../plugin.hpp"
 	"../maths/define.hpp"
 	"../filesystem.hpp"
@@ -5213,4 +5213,19 @@
 1501080092 d:\cpp\numere-source\trunk\gui\icons\rotate_new.xpm
 
 1501080105 d:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
+
+1512215066 d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.hpp
+	<string>
+	<iostream>
+	"../ui/error.hpp"
+	"../ParserLib/muParser.h"
+	"../datamanagement/datafile.hpp"
+	"../maths/define.hpp"
+	"../settings.hpp"
+	"../output.hpp"
+	"../plotting/plotdata.hpp"
+	"../script.hpp"
+	"../maths/parser_functions.hpp"
+	"../built-in.hpp"
+	"../utils/tools.hpp"
 

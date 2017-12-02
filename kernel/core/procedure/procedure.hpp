@@ -36,7 +36,7 @@
 #include "../built-in.hpp"
 #include "../maths/parser_functions.hpp"
 #include "../plotting/plotdata.hpp"
-#include "loop.hpp"
+#include "flowctrl.hpp"
 #include "../plugin.hpp"
 #include "../maths/define.hpp"
 #include "../filesystem.hpp"
@@ -51,7 +51,7 @@ class ProcedureVarFactory;
 
 //extern bool bSupressAnswer;
 
-class Procedure : /*public FileSystem,*/ public Loop, public Plugin
+class Procedure : /*public FileSystem,*/ public FlowCtrl, public Plugin
 {
     private:
         fstream fProcedure;

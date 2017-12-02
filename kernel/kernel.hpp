@@ -37,7 +37,7 @@
 #include "core/plotting/plotdata.hpp"
 #include "core/plotting/graph_helper.hpp"
 #include "core/script.hpp"
-#include "core/procedure/loop.hpp"
+#include "core/procedure/flowctrl.hpp"
 #include "core/procedure/procedure.hpp"
 #include "core/plugin.hpp"
 #include "core/ui/language.hpp"

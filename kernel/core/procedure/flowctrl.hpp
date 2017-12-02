@@ -19,8 +19,8 @@
 
 // Header zu Klasse "Loop"
 
-#ifndef LOOP_HPP
-#define LOOP_HPP
+#ifndef FLOWCTRL_HPP
+#define FLOWCTRL_HPP
 
 #include <string>
 #include <iostream>
@@ -41,7 +41,7 @@
 using namespace std;
 using namespace mu;
 
-class Loop
+class FlowCtrl
 {
     private:
         string sVarName;
@@ -123,9 +123,9 @@ class Loop
         virtual void evalDebuggerBreakPoint(Parser& _parser, Settings& _option, const map<string,string>& sStringMap);
 
     public:
-        Loop();
-        Loop(int _nDefaultLength);
-        ~Loop();
+        FlowCtrl();
+        FlowCtrl(int _nDefaultLength);
+        ~FlowCtrl();
 
         int nthRecursion;
         inline int getLoop() const

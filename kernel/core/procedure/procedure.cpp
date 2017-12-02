@@ -25,7 +25,7 @@
 #define FLAG_INLINE 2
 
 
-Procedure::Procedure() : Loop(), Plugin()
+Procedure::Procedure() : FlowCtrl(), Plugin()
 {
     sProcNames = "";
     sCurrentProcedureName = "";
@@ -50,7 +50,7 @@ Procedure::Procedure() : Loop(), Plugin()
     nStrSize = 0;
 }
 
-Procedure::Procedure(const Procedure& _procedure) : Loop(), Plugin(_procedure)
+Procedure::Procedure(const Procedure& _procedure) : FlowCtrl(), Plugin(_procedure)
 {
     Procedure();
     sVars = 0;
