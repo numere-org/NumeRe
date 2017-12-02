@@ -434,9 +434,7 @@ int Loop::if_fork(int nth_Cmd, int nth_loop)
     {
         for (int __i = nth_Cmd; __i < nCmd; __i++)
         {
-            if (__i == nElse)
-                return nEndif;
-            else if (nEndif == __i)
+            if (__i == nElse || __i == nEndif)
                 return nEndif;
             if (__i != nth_Cmd)
             {
@@ -523,9 +521,7 @@ int Loop::if_fork(int nth_Cmd, int nth_loop)
             {
                 for (int __i = nth_Cmd; __i < nCmd; __i++)
                 {
-                    if (nElse != -1 && __i == nElse)
-                        return nEndif;
-                    else if (nEndif == __i)
+                    if (__i == nElse || __i == nEndif)
                         return nEndif;
                     if (__i != nth_Cmd)
                     {
@@ -595,6 +591,7 @@ int Loop::if_fork(int nth_Cmd, int nth_loop)
                         throw;
                     }
                 }
+                return nEndif;
             }
             else
             {
@@ -932,6 +929,7 @@ void Loop::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& 
         || command == "if"
         || command == "endif"
         || command == "else"
+        || command == "elseif"
         || command == "while"
         || command == "endwhile")
     {

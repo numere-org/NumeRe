@@ -4926,10 +4926,14 @@ void NumeReEditor::ApplyAutoFormat(int nFirstLine, int nLastLine) // int nFirstL
                 if (nIndentationLevel <= 0)
                 {
                     int nLine = this->LineFromPosition(i);
+                    int position = this->PositionFromLine(nLine-1);
+                    while (this->GetCharAt(position) == ' ' || this->GetCharAt(position) == '\t')
+                        position++;
                     if (nLine
                         && this->GetLine(nLine-1).find_first_not_of(" \t\r\n") != string::npos
                         && this->GetStyleAt(this->PositionFromLine(nLine-1)) != wxSTC_NSCR_COMMENT_BLOCK
-                        && this->GetStyleAt(this->PositionFromLine(nLine-1)) != wxSTC_NSCR_COMMENT_LINE)
+                        && this->GetStyleAt(this->PositionFromLine(nLine-1)) != wxSTC_NSCR_COMMENT_LINE
+                        && this->GetStyleAt(position) != wxSTC_NSCR_COMMENT_LINE)
                     {
                         nLastPosition += insertTextAndMove(this->PositionFromLine(nLine), "\r\n");
                         i += 2;

@@ -4395,7 +4395,7 @@
 	"../../kernel/syntax.hpp"
 	"../dialogs/duplicatecodedialog.hpp"
 
-1511887741 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1512079801 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -5059,7 +5059,7 @@
 	<cstddef>
 	<cstdarg>
 
-1511630910 source:d:\cpp\numere-source\trunk\kernel\core\procedure\loop.cpp
+1512126178 source:d:\cpp\numere-source\trunk\kernel\core\procedure\loop.cpp
 	"loop.hpp"
 	"../../kernel.hpp"
 
@@ -5120,7 +5120,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1511714068 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1512070158 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
