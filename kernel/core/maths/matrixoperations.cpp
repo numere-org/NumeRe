@@ -1165,7 +1165,7 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
                 vReturnedMatrices.push_back(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option));
                 pos_back = i+getMatchingParenthesis(sCmd.substr(i))+1;
                 //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i))+1, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
-                __sCmd += "(returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"])";
+                __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
                 i = pos_back-1;
             }
         }
