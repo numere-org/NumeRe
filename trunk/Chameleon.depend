@@ -2074,7 +2074,7 @@
 	<commdlg.h>
 	"wx/msw/winundef.h"
 
-1504340215 d:\cpp\numere-source\trunk\common\datastructures.h
+1512385968 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -2674,7 +2674,7 @@
 	"ParserLib/muParserTest.h"
 	"ParserLib/muParser.h"
 
-1511630020 d:\cpp\numere-source\trunk\kernel\core\built-in.hpp
+1512317784 d:\cpp\numere-source\trunk\kernel\core\built-in.hpp
 	<iostream>
 	<fstream>
 	<sstream>
@@ -3947,7 +3947,7 @@
 1490787950 source:d:\cpp\numere-source\trunk\kernel\core\basicexcel.cpp
 	"BasicExcel.hpp"
 
-1508764616 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1512317847 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
@@ -4216,7 +4216,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1511420588 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1512317795 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 
@@ -4383,7 +4383,7 @@
 	<vector>
 	<algorithm>
 
-1511627898 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1512386158 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -4395,7 +4395,7 @@
 	"../../kernel/syntax.hpp"
 	"../dialogs/duplicatecodedialog.hpp"
 
-1512079801 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1512386321 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -4950,7 +4950,7 @@
 	"fitcontroller.hpp"
 	"../../kernel.hpp"
 
-1511630634 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
+1512308976 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 
@@ -5037,7 +5037,7 @@
 	"../plotting/plotdata.hpp"
 	"../script.hpp"
 
-1511630891 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.cpp
+1512317858 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.cpp
 	"procedure.hpp"
 	"../../kernel.hpp"
 	"procedurevarfactory.hpp"
@@ -5120,7 +5120,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1512070158 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1512386484 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -5228,4 +5228,8 @@
 	"../maths/parser_functions.hpp"
 	"../built-in.hpp"
 	"../utils/tools.hpp"
+
+1512317799 source:d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.cpp
+	"flowctrl.hpp"
+	"../../kernel.hpp"
 

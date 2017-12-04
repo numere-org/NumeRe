@@ -25,3 +25,4 @@ Fixed	Fixed a little bug with whitespaces in argument's parentheses
 Added	Procedure flags are now shown in the call tips.
 Added	The duplicate code analysis may now semantically replace caches and custom function definitions.
 Applied	NumeRe now copies the active settings of the current editor window to a newly created one (loading or new files), if the settings are applicable.
+New	The editor now features a bookmark functionality. You may use an arbitrary number of bookmarks to jump through your code.

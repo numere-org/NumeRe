@@ -74,6 +74,9 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
 	EVT_MENU			(ID_DEBUG_ADD_BREAKPOINT, NumeReEditor::OnAddBreakpoint)
 	EVT_MENU			(ID_DEBUG_REMOVE_BREAKPOINT, NumeReEditor::OnRemoveBreakpoint)
 	EVT_MENU			(ID_DEBUG_CLEAR_ALL_BREAKPOINTS, NumeReEditor::OnClearBreakpoints)
+	EVT_MENU			(ID_BOOKMARK_ADD, NumeReEditor::OnAddBookmark)
+	EVT_MENU			(ID_BOOKMARK_REMOVE, NumeReEditor::OnRemoveBookmark)
+	EVT_MENU			(ID_BOOKMARK_CLEAR, NumeReEditor::OnClearBookmarks)
 	EVT_MENU			(ID_DEBUG_DISPLAY_SELECTION, NumeReEditor::OnDisplayVariable)
 	EVT_MENU			(ID_FIND_PROCEDURE, NumeReEditor::OnFindProcedure)
 	EVT_MENU			(ID_FIND_INCLUDE, NumeReEditor::OnFindInclude)
@@ -159,8 +162,10 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
     this->SetMarginWidth(0, 40);
     this->SetMarginType(0, wxSTC_MARGIN_NUMBER);
 
-	this->SetMarginWidth(1, 16);
+	this->SetMarginWidth(1, 20);
 	this->SetMarginType(1, wxSTC_MARGIN_SYMBOL);
+
+	this->SetYCaretPolicy(wxSTC_CARET_SLOP | wxSTC_CARET_STRICT | wxSTC_CARET_EVEN, 1);
 
     wxFileName f(wxStandardPaths::Get().GetExecutablePath());
     wxInitAllImageHandlers();
@@ -195,6 +200,9 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 	this->MarkerDefine(MARKER_BREAKPOINT, wxSTC_MARK_CIRCLE);
 	this->MarkerSetBackground(MARKER_BREAKPOINT, wxColour("red"));
 
+	this->MarkerDefine(MARKER_BOOKMARK, wxSTC_MARK_SMALLRECT);
+	this->MarkerSetBackground(MARKER_BOOKMARK, wxColour(192, 0, 64));
+
 	this->MarkerDefine(MARKER_FOCUSEDLINE, wxSTC_MARK_SHORTARROW);
 	this->MarkerSetBackground(MARKER_FOCUSEDLINE, wxColour("yellow"));
 
@@ -221,6 +229,12 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 	m_popupMenu.Append(ID_DEBUG_CLEAR_ALL_BREAKPOINTS, _guilang.get("GUI_MENU_EDITOR_CLEARBP"));
 
 	//m_popupMenu.Append(ID_DEBUG_RUNTOCURSOR, "Run to cursor");
+
+	m_popupMenu.AppendSeparator();
+
+	m_popupMenu.Append(ID_BOOKMARK_ADD, _guilang.get("GUI_MENU_EDITOR_ADDBM"));
+	m_popupMenu.Append(ID_BOOKMARK_REMOVE, _guilang.get("GUI_MENU_EDITOR_REMOVEBM"));
+	m_popupMenu.Append(ID_BOOKMARK_CLEAR, _guilang.get("GUI_MENU_EDITOR_CLEARBM"));
 
 	m_popupMenu.AppendSeparator();
 
@@ -1446,6 +1460,10 @@ void NumeReEditor::AnalyseCode()
                 {
                     AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sWarn, _guilang.get("GUI_ANALYZER_NAMESPACE_ALWAYSMAIN")) , ANNOTATION_WARN);
                 }
+                i = wordend;
+                while (this->GetCharAt(i) != ';' && this->GetCharAt(i) != '\r' && this->GetCharAt(i) != '\n')
+                    i++;
+                continue;
             }
             if (sSyntaxElement == "progress")
             {
@@ -1893,6 +1911,33 @@ void NumeReEditor::AnalyseCode()
     }
 }
 
+void NumeReEditor::JumpToBookmark(bool down)
+{
+    int nCurrentLine = this->GetCurrentLine();
+    if (this->MarkerOnLine(nCurrentLine, MARKER_BOOKMARK))
+    {
+        if (down)
+            nCurrentLine++;
+        else
+            nCurrentLine--;
+    }
+    int nMarker = nCurrentLine;
+    int nMarkerMask = (1 << MARKER_BOOKMARK);
+    if (down)
+        nMarker = this->MarkerNext(nCurrentLine, nMarkerMask);
+    else
+        nMarker = this->MarkerPrevious(nCurrentLine, nMarkerMask);
+    if (nMarker == -1)
+    {
+        if (down)
+            nMarker = this->MarkerNext(0, nMarkerMask);
+        else
+            nMarker = this->MarkerPrevious(this->LineFromPosition(this->GetLastPosition()), nMarkerMask);
+    }
+    if (nMarker != -1)
+        this->GotoLine(nMarker);
+}
+
 void NumeReEditor::removeWhiteSpaces(int nType)
 {
     int nFirstline = 0;
@@ -1927,6 +1972,20 @@ void NumeReEditor::removeWhiteSpaces(int nType)
         }
     }
     this->EndUndoAction();
+}
+
+void NumeReEditor::toggleBookmark()
+{
+    int nLine = GetLineForMarkerOperation();
+    if (MarkerOnLine(nLine, MARKER_BOOKMARK))
+        this->MarkerDelete(nLine, MARKER_BOOKMARK);
+    else
+        this->MarkerAdd(nLine, MARKER_BOOKMARK);
+}
+
+void NumeReEditor::clearBookmarks()
+{
+    this->MarkerDeleteAll(MARKER_BOOKMARK);
 }
 
 void NumeReEditor::sortSelection(bool ascending)
@@ -2832,29 +2891,30 @@ void NumeReEditor::OnRightClick(wxMouseEvent &event)
 	int charpos = PositionFromPoint(m_lastRightClick);
 	int linenum = LineFromPosition(charpos);
 
-	bool breakpointOnLine = BreakpointOnLine(linenum);
+	bool breakpointOnLine = MarkerOnLine(linenum, MARKER_BREAKPOINT);
+	bool bookmarkOnLine = MarkerOnLine(linenum, MARKER_BOOKMARK);
 
 	bool breakpointsAllowed = (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC);
 	//bool isDebugging = true; //m_debugManager->IsDebugging();//m_mainFrame->IsDebugging();
 
-	if(m_popupMenu.FindItem(ID_DEBUG_DISPLAY_SELECTION) != nullptr)
+	if (m_popupMenu.FindItem(ID_DEBUG_DISPLAY_SELECTION) != nullptr)
 	{
 		//m_popupMenu.Remove(ID_DEBUG_WATCH_SELECTION);
 		//m_popupMenu.Remove(ID_DEBUG_DISPLAY_SELECTION);
 		m_popupMenu.Enable(ID_DEBUG_DISPLAY_SELECTION, false);
 		m_menuShowValue->SetItemLabel(_guilang.get("GUI_MENU_EDITOR_HIGHLIGHT", "..."));
 	}
-	if(m_popupMenu.FindItem(ID_FIND_PROCEDURE) != nullptr)
+	if (m_popupMenu.FindItem(ID_FIND_PROCEDURE) != nullptr)
 	{
 		//m_popupMenu.Remove(ID_DEBUG_WATCH_SELECTION);
 		m_popupMenu.Remove(ID_FIND_PROCEDURE);
 	}
-	if(m_popupMenu.FindItem(ID_FIND_INCLUDE) != nullptr)
+	if (m_popupMenu.FindItem(ID_FIND_INCLUDE) != nullptr)
 	{
 		//m_popupMenu.Remove(ID_DEBUG_WATCH_SELECTION);
 		m_popupMenu.Remove(ID_FIND_INCLUDE);
 	}
-	if(m_popupMenu.FindItem(ID_HELP_ON_ITEM) != nullptr)
+	if (m_popupMenu.FindItem(ID_HELP_ON_ITEM) != nullptr)
 	{
 		//m_popupMenu.Remove(ID_DEBUG_WATCH_SELECTION);
 		m_popupMenu.Remove(ID_HELP_ON_ITEM);
@@ -2869,6 +2929,9 @@ void NumeReEditor::OnRightClick(wxMouseEvent &event)
 
 	m_popupMenu.Enable(ID_DEBUG_ADD_BREAKPOINT, breakpointsAllowed && !breakpointOnLine);
 	m_popupMenu.Enable(ID_DEBUG_REMOVE_BREAKPOINT, breakpointsAllowed && breakpointOnLine);
+
+	m_popupMenu.Enable(ID_BOOKMARK_ADD, !bookmarkOnLine);
+	m_popupMenu.Enable(ID_BOOKMARK_REMOVE, bookmarkOnLine);
 	//m_popupMenu.Enable(ID_DEBUG_RUNTOCURSOR, breakpointsAllowed && isDebugging);
 
 	// returns a copy of a member variable, which would seem sort of pointless, but
@@ -2901,7 +2964,7 @@ void NumeReEditor::OnRightClick(wxMouseEvent &event)
                 wxString clickedProc = FindClickedProcedure();
                 if (clickedProc.length())
                 {
-                    m_popupMenu.Insert(11, m_menuFindProcedure);
+                    m_popupMenu.Insert(15, m_menuFindProcedure);
                     //m_popupMenu.Append(m_menuFindProcedure);
                     m_menuFindProcedure->SetItemLabel(_guilang.get("GUI_MENU_EDITOR_FINDPROC", clickedProc.ToStdString()));
                 }
@@ -2910,7 +2973,7 @@ void NumeReEditor::OnRightClick(wxMouseEvent &event)
                 || this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURE_COMMANDS
                 || this->GetStyleAt(charpos) == wxSTC_NSCR_OPTION)
             {
-                m_popupMenu.Insert(11, m_menuHelpOnSelection);
+                m_popupMenu.Insert(15, m_menuHelpOnSelection);
                 m_menuHelpOnSelection->SetItemLabel(_guilang.get("GUI_TREE_PUP_HELPONITEM", clickedWord.ToStdString()));
             }
             if (this->GetStyleAt(charpos) == wxSTC_NSCR_INCLUDES
@@ -2919,7 +2982,7 @@ void NumeReEditor::OnRightClick(wxMouseEvent &event)
                 wxString clickedInclude = FindClickedInclude();
                 if (clickedInclude.length())
                 {
-                    m_popupMenu.Insert(11, m_menuFindInclude);
+                    m_popupMenu.Insert(15, m_menuFindInclude);
                     m_menuFindInclude->SetItemLabel(_guilang.get("GUI_MENU_EDITOR_FINDINCLUDE", clickedInclude.ToStdString()));
                 }
             }
@@ -3070,7 +3133,7 @@ void NumeReEditor::OnMouseMotion(wxMouseEvent& event)
 void NumeReEditor::OnAddBreakpoint(wxCommandEvent &event)
 {
 	//int charpos = PositionFromPoint(m_lastRightClick);
-	int linenum = GetLineForBreakpointOperation(); //LineFromPosition(charpos);
+	int linenum = GetLineForMarkerOperation(); //LineFromPosition(charpos);
 
     AddBreakpoint(linenum);
 
@@ -3093,7 +3156,7 @@ void NumeReEditor::OnAddBreakpoint(wxCommandEvent &event)
 //////////////////////////////////////////////////////////////////////////////
 void NumeReEditor::OnRemoveBreakpoint(wxCommandEvent &event)
 {
-	int linenum = GetLineForBreakpointOperation();
+	int linenum = GetLineForMarkerOperation();
 
 	RemoveBreakpoint(linenum);
 
@@ -3130,6 +3193,23 @@ void NumeReEditor::OnClearBreakpoints(wxCommandEvent &event)
 	ResetRightClickLocation();
 }
 
+void NumeReEditor::OnAddBookmark(wxCommandEvent &event)
+{
+    int nLineNumber = GetLineForMarkerOperation();
+    this->MarkerAdd(nLineNumber, MARKER_BOOKMARK);
+    ResetRightClickLocation();
+}
+void NumeReEditor::OnRemoveBookmark(wxCommandEvent &event)
+{
+    int nLineNumber = GetLineForMarkerOperation();
+    this->MarkerDelete(nLineNumber, MARKER_BOOKMARK);
+}
+void NumeReEditor::OnClearBookmarks(wxCommandEvent &event)
+{
+    this->MarkerDeleteAll(MARKER_BOOKMARK);
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public GetBreakpoints
 ///  Gets a list of all breakpoint line numbers.  Also clears out any invalid (removed) breakpoint IDs.
@@ -3150,7 +3230,7 @@ wxArrayInt NumeReEditor::GetBreakpoints()
 
 		int linenum = this->MarkerLineFromHandle(markerHandle);
 
-		if(linenum != -1)
+		if (linenum != -1)
 		{
 			linenumbers.Add(linenum + 1);
 		}
@@ -3294,11 +3374,11 @@ void NumeReEditor::OnRunToCursor(wxCommandEvent &event)
 	ResetRightClickLocation();
 }
 
-int NumeReEditor::GetLineForBreakpointOperation()
+int NumeReEditor::GetLineForMarkerOperation()
 {
 	int lineNum = 0;
 
-	if(m_lastRightClick.x < 0 || m_lastRightClick.y < 0)
+	if (m_lastRightClick.x < 0 || m_lastRightClick.y < 0)
 	{
 		lineNum =  GetCurrentLine();
 	}
@@ -4015,7 +4095,7 @@ void NumeReEditor::OnMarginClick( wxStyledTextEvent &event )
     }
     else
     {
-        if(BreakpointOnLine(linenum))
+        if (MarkerOnLine(linenum, MARKER_BREAKPOINT))
         {
             RemoveBreakpoint(linenum);
         }
@@ -4047,13 +4127,13 @@ void NumeReEditor::AddBreakpoint( int linenum )
     }
 }
 
-bool NumeReEditor::BreakpointOnLine( int linenum )
+bool NumeReEditor::MarkerOnLine(int linenum , int nMarker)
 {
 	int markerLineBitmask = this->MarkerGet(linenum);
 
-	bool breakpointOnLine = (markerLineBitmask & (1 << MARKER_BREAKPOINT));
+	bool markerOnLine = (markerLineBitmask & (1 << nMarker));
 
-	return breakpointOnLine;
+	return markerOnLine;
 }
 
 int NumeReEditor::calculateCyclomaticComplexity(int startline, int endline)
