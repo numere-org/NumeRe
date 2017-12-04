@@ -616,7 +616,7 @@ void BI_splash()
  * "if...else if...else if...else", da switch nicht besonders gut mit strings zurecht
  * kommt. >> STATUSCOUNTER!
  */
-int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _option, Parser& _parser, Define& _functions, PlotData& _pData, Script& _script, bool bParserActive)
+int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _option, Parser& _parser, Define& _functions, PlotData& _pData, Script& _script, bool bParserActive)
 {
     string sArgument = "";  // String fuer das evtl. uebergebene Argument
     StripSpaces(sCmd);
@@ -3713,8 +3713,6 @@ int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _opti
                 if (ColorTheme(_option) && _option.getSystemPrintStatus())
                 {
                     BI_splash();
-                    ///NumeReKernel::printPreFmt("|-> Copyright " + (char)184 + " " + AutoVersion::YEAR + toSystemCodePage(", E. Hänel et al.") + std::setfill(' ') + std::setw(_option.getWindow()-37) + toSystemCodePage("Über: siehe \"about\" |") );
-                    ///NumeReKernel::printPreFmt("|   Version: " + sVersion + std::setfill(' ') + std::setw(_option.getWindow()-25-sVersion.length()) + "Build: " + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + " |" );
                     make_hline();
 
                     NumeReKernel::print(LineBreak("Theme wurde erfolgreich aktiviert!", _option) );

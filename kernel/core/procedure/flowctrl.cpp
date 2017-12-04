@@ -2363,7 +2363,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
             bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
             string sPreCommandLine = sLine;
             NumeReKernel::bSupressAnswer = bLoopSupressAnswer;
-            switch (BI_CheckKeyword(sLine, *_dataRef, *_outRef, *_optionRef, *_parserRef, *_functionRef, *_pDataRef, *_scriptRef, true))
+            switch (BI_CommandHandler(sLine, *_dataRef, *_outRef, *_optionRef, *_parserRef, *_functionRef, *_pDataRef, *_scriptRef, true))
             {
                 case  0:
                     if (!nCurrentCalcType)

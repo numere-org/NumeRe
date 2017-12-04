@@ -1017,7 +1017,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 || sCurrentCommand == "search")
             {
                 //print("Debug: Keywords");
-                switch (BI_CheckKeyword(sLine, _data, _out, _option, _parser, _functions, _pData, _script, true))
+                switch (BI_CommandHandler(sLine, _data, _out, _option, _parser, _functions, _pData, _script, true))
                 {
                     case  0: break; // Kein Keyword: Mit dem Parser auswerten
                     case  1:        // Keyword: Naechster Schleifendurchlauf!

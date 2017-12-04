@@ -257,7 +257,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
     {
         //bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
         NumeReKernel::bSupressAnswer = bProcSupressAnswer;
-        switch (BI_CheckKeyword(sLine, _data, _out, _option, _parser, _functions, _pData, _script, true))
+        switch (BI_CommandHandler(sLine, _data, _out, _option, _parser, _functions, _pData, _script, true))
         {
             case  0: break; // Kein Keywort: Mit dem Parser auswerten
             case  1:        // Keywort: Naechster Schleifendurchlauf!

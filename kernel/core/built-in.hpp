@@ -20,7 +20,6 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-//#include <cstring>
 #include <string>
 #include <conio.h>
 #include <windows.h>
@@ -34,7 +33,6 @@
 #include "plugins.hpp"
 #include "ParserLib/muParser.h"
 #include "utils/tools.hpp"
-//#include "menues.hpp"
 #include "maths/parser_functions.hpp"
 #include "maths/define.hpp"
 #include "plotting/plotdata.hpp"
@@ -66,15 +64,26 @@ void BI_load_data(Datafile& _data, Settings& _option, Parser& _parser, string sF
 void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string& sCache, bool bData = false, bool bCache = false, bool bSave = false, bool bDefaultName = true);
 string** BI_make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, const string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, bool bSave = true);
 void BI_remove_data(Datafile& _data, Settings& _option, bool bIgnore = false);
-//void BI_edit_header(Datafile&, Settings&);
 void BI_append_data(const string& sCmd, Datafile& _data, Settings& _option, Parser& _parser);
 void BI_clear_cache(Datafile& _data, Settings& _option, bool bIgnore = false);
 void BI_show_credits(Parser& _parser, Settings& _option);
 void BI_splash();
-//void BI_hline(int nLength = -1);
-int BI_CheckKeyword(string& sCmd, Datafile& _data, Output& _out, Settings& _option, Parser& _parser, Define& _functions, PlotData& _pData, Script& _script, bool bParserActive = false);
+/** \brief Central command handler
+ *
+ * \param sCmd string&
+ * \param _data Datafile&
+ * \param _out Output&
+ * \param _option Settings&
+ * \param _parser Parser&
+ * \param _functions Define&
+ * \param _pData PlotData&
+ * \param _script Script&
+ * \param bParserActive bool
+ * \return int
+ *
+ */
+int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _option, Parser& _parser, Define& _functions, PlotData& _pData, Script& _script, bool bParserActive = false);
 void BI_Basis();
-//int BI_menue_based(Datafile&, Output&, Settings&, Parser&, Define&, PlotData&, Script&);
 void BI_Autosave(Datafile&, Output&, Settings&);
 bool BI_FileExists(const string& sFilename);
 void BI_ListOptions(Settings& _option);

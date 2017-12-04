@@ -156,6 +156,10 @@ BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
 	EVT_MENU						(ID_SELECTION_DOWN, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_SORT_SELECTION_ASC, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_SORT_SELECTION_DESC, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_BOOKMARK_TOGGLE, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_BOOKMARK_CLEARMENU, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_BOOKMARK_NEXT, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_BOOKMARK_PREVIOUS, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_FIND_DUPLICATES, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_STRIP_SPACES_BOTH, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_STRIP_SPACES_FRONT, NumeReWindow::OnMenuEvent)
@@ -1102,6 +1106,26 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_SORT_SELECTION_DESC:
         {
             m_currentEd->sortSelection(false);
+            break;
+        }
+        case ID_BOOKMARK_TOGGLE:
+        {
+            m_currentEd->toggleBookmark();
+            break;
+        }
+        case ID_BOOKMARK_CLEARMENU:
+        {
+            m_currentEd->clearBookmarks();
+            break;
+        }
+        case ID_BOOKMARK_PREVIOUS:
+        {
+            m_currentEd->JumpToBookmark(false);
+            break;
+        }
+        case ID_BOOKMARK_NEXT:
+        {
+            m_currentEd->JumpToBookmark(true);
             break;
         }
         case ID_FIND_DUPLICATES:
@@ -3519,9 +3543,6 @@ void NumeReWindow::EvaluateOptions()
 		{
             if (!m_treeBook->IsShown())
             {
-                ///m_splitProjectEditor->SplitVertically(m_book, m_projectTree, this->GetSize().GetWidth()-200);
-                ///m_splitProjectEditor->SplitVertically(m_projectTree, m_book, 200);
-                ///m_splitProjectEditor->SplitVertically(m_projectTree, m_splitEditorOutput, 200);
                 m_splitProjectEditor->SplitVertically(m_treeBook, m_splitEditorOutput, 200);
                 m_splitProjectEditor->SetMinimumPaneSize(30);
                 m_treeBook->Show();
@@ -3705,6 +3726,11 @@ void NumeReWindow::UpdateMenuBar()
 	menuView->Append(ID_GOTOLINE, _guilang.get("GUI_MENU_GOTOLINE"), _guilang.get("GUI_MENU_GOTOLINE_TTP"));
 	menuView->Append(ID_FOLD_ALL, _guilang.get("GUI_MENU_FOLDALL"), _guilang.get("GUI_MENU_FOLDALL_TTP"));
 	menuView->Append(ID_UNFOLD_ALL, _guilang.get("GUI_MENU_UNFOLDALL"), _guilang.get("GUI_MENU_UNFOLDALL_TTP"));
+	menuView->AppendSeparator();
+	menuView->Append(ID_BOOKMARK_TOGGLE, _guilang.get("GUI_MENU_BOOKMARK_TOGGLE"));
+	menuView->Append(ID_BOOKMARK_CLEARMENU, _guilang.get("GUI_MENU_BOOKMARK_CLEAR"));
+	menuView->Append(ID_BOOKMARK_PREVIOUS, _guilang.get("GUI_MENU_BOOKMARK_PREVIOUS"));
+	menuView->Append(ID_BOOKMARK_NEXT, _guilang.get("GUI_MENU_BOOKMARK_NEXT"));
 	menuView->AppendSeparator();
 	menuView->Append(ID_LINEWRAP, _guilang.get("GUI_MENU_LINEWRAP"), _guilang.get("GUI_MENU_LINEWRAP_TTP"), true);
 	menuView->Append(ID_DISPCTRLCHARS, _guilang.get("GUI_MENU_DISPCTRLCHARS"), _guilang.get("GUI_MENU_DISPCTRLCHARS_TTP"), true);
