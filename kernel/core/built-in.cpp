@@ -553,35 +553,15 @@ void BI_show_credits(Parser& _parser, Settings& _option)
     make_hline();
 	NumeReKernel::printPreFmt("|-> Version: " + sVersion);
 	NumeReKernel::printPreFmt(" | " + _lang.get("BUILTIN_CREDITS_BUILD") + ": " + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE +"\n");
-	//NumeReKernel::print("|-> Build-Datum: " + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE );
 	NumeReKernel::print("Copyright (c) 2013-" + (AutoVersion::YEAR + toSystemCodePage(", Erik HÄNEL et al.")) );
 	NumeReKernel::printPreFmt("|   <numere.developer@gmail.com>\n" );
 	NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CREDITS_VERSIONINFO"), _option) );
-	//NumeReKernel::print(LineBreak("|-> RELEASE CANDIDATE: ein Release Candidate trägt keinen Eigennamen. Außerdem wird NICHT garantiert, dass die gesamte derzeitig Funktionalität erhalten bleibt, wie sie in diesem Release Candidate vorliegt. Auf den Fortgang der Entwicklung kann durch eine Mail an obige Mailadresse Einfluss genommen werden. Sollten Bugs gefunden werden, oder eine Funktionalität noch nicht den erwünschten Umfang haben, sollte dies per Mail übermittelt werden.", _option) );
-    make_hline(-80);
+	make_hline(-80);
     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CREDITS_LICENCE_1"), _option) );
     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CREDITS_LICENCE_2"), _option) );
     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CREDITS_LICENCE_3"), _option) );
     NumeReKernel::toggleTableStatus();
     make_hline();
-    //NumeReKernel::print(LineBreak("|-> Dieses Programm ist freie Software. Sie können es unter den Bedingungen der GNU General Public Licence, wie von der Free Software Foundation veröffentlicht, weitergeben und/oder modifizieren, entweder gemäß Version 3 der Lizenz, oder (nach Ihrer Option) jeder späteren Version.", _option) );
-    //NumeReKernel::print(LineBreak("|-> Die Veröffentlichung dieses Programms erfolgt in der Hoffnung, dass es Ihnen von Nutzen sein wird, aber OHNE IRGENDEINE GARANTIE, sogar ohne die implizite Garantie der MARKTREIFE oder der VERWENDBARKEIT FÜR EINEN BESTIMMTEN ZWECK. Details stehen in der GNU General Public Licence." , _option) );
-    //NumeReKernel::print(LineBreak("|-> Sie sollten ein Exemplar der GNU GPL zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.org/licenses/>.", _option) );
-    /*make_hline(-80);
-    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CREDITS_MEMBERS"), _option) );
-    //NumeReKernel::print(LineBreak("|-> Konzept/UI: Erik HÄNEL; Mathe-Parser: Ingo BERG; Plotting: Alexey BALAKIN; numerische Algorithmen: GNU Scientific Library; Tokenizer: Boost-Library; Matrix-Algorithmen: Eigen Library; Testing: D. BAMMERT, J. HÄNEL, R. HUTT, K. KILGUS, E. KLOSTER, K. KURZ, M. LÖCHNER, L. SAHINOVIC, D. SCHMID, V. SEHRA, G. STADELMANN, R. WANNER, F. WUNDER, J. ZINßER", _option) );
-	NumeReKernel::print("|-> muParser   v  " + _parser.GetVersion(pviBRIEF) + ",   " + (char)184 + " 2011, Ingo Berg            [MIT-Licence]" );
-	NumeReKernel::print("|-> MathGL     v  2.3.5,   " + (char)184 + " 2012, Alexey A. Balakin    [GNU GPL v2]" );
-	NumeReKernel::print("|-> GSL        v    1.8,   " + (char)184 + " 2006, M. Galassi et al.    [GNU GPL v2]" );
-	NumeReKernel::print("|-> Boost      v 1.56.0,   " + (char)184 + " 2006, Joe Coder            [Boost-Software-Licence]" );
-	NumeReKernel::print("|-> Eigen      v  3.2.7,   " + (char)184 + " 2008, Gael Guennebaud      [MPL v2]" );
-	NumeReKernel::print("|                          " + (char)184 + " 2007-2011, Benoit Jacob" );
-	NumeReKernel::print("|-> TinyXML-2  v  2.0.2,   " + (char)184 + " 2014, Lee Thomason         [zLib-Licence]" );
-	NumeReKernel::print("|-> BasicExcel v   1.14,   " + (char)184 + " 2006, Yap Chun Wei" );
-	NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CREDITS_BUGS_REQUESTS")+":", _option) );
-	//NumeReKernel::print("|-> Bugs und Feature-Requests gerne an:" );
-	NumeReKernel::print("|   <numere.developer" + (char)64 + "gmail.com>" );*/
-	/*make_hline();*/
     return;
 }
 
@@ -2630,12 +2610,9 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                 {
                     if (_option.getSystemPrintStatus())
                         NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_COPYDATA_SUCCESS"), _option) );
-                        //NumeReKernel::print(LineBreak("|-> Der Datensatz wurde erfolgreich kopiert.", _option) );
                 }
                 else
-                    //throw CANNOT_COPY_DATA;
                     throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, sCmd, SyntaxError::invalid_position);
-                    //NumeReKernel::print(LineBreak("|-> FEHLER: Der Datensatz konnte nicht kopiert werden!$Siehe \"help -copy\" für weitere Details.", _option) );
             }
             else if ((matchParams(sCmd, "target", '=') || matchParams(sCmd, "t", '=')) && sCmd.length() > 5)
             {
@@ -2649,10 +2626,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                     {
                         if (nArgument)
                             NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_COPYFILE_ALL_SUCCESS", sCmd), _option) );
-                            //NumeReKernel::print(LineBreak("|-> Die Dateien \"" + sCmd + "\" wurden erfolgreich kopiert.", _option) );
                         else
                             NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_COPYFILE_SUCCESS", sCmd), _option) );
-                            //NumeReKernel::print(LineBreak("|-> Die Datei \"" + sCmd + "\" wurde erfolgreich kopiert.", _option) );
                     }
                 }
                 else
@@ -2661,7 +2636,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                     //throw CANNOT_COPY_FILE;
                     throw SyntaxError(SyntaxError::CANNOT_COPY_FILE, sCmd, SyntaxError::invalid_position, sCmd);
                 }
-                    //NumeReKernel::print(LineBreak("|-> Die Datei \"" + sCmd + "\" konnte nicht kopiert werden oder existiert nicht!", _option) );
             }
 
             return 1;
@@ -3282,10 +3256,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                         NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_PARSERTEST", _lang.get("COMMON_WITHOUT")), _option) );
                     else
                         NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_PARSERTEST", _lang.get("COMMON_WITH")), _option) );
-                    /*if (nArgument)
-                        NumeReKernel::print(LineBreak("|-> Numere wird in Zukunft ohne den Parser-Selbsttest starten.", _option) );
-                    else
-                        NumeReKernel::print(LineBreak("|-> Numere wird in Zukunft mit Parser-Selbsttest starten.", _option) );*/
                 }
                 return 1;
             }
@@ -3425,20 +3395,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                     }
                     return 1;
                 }
-                /*else if (!sArgument.length() || (sArgument != "calc" && sArgument != "menue"))
-                {
-                    NumeReKernel::print("|-> Default-Modus?" );
-                    NumeReKernel::print(toSystemCodePage("|   (calc = Rechner-, menue = Menü-Modus)") );
-                    do
-                    {
-                        NumeReKernel::print("|" );
-                        NumeReKernel::print("|<- ";
-                        getline(cin, sArgument);
-                    }
-                    while (!sArgument.length() || (sArgument != "calc" && sArgument != "menue"));
-                }
-                _option.setFramework(sArgument);
-                NumeReKernel::print("|-> Default-Modus eingestellt!" );*/
                 return 1;
             }
             else if (matchParams(sCmd, "compact") || matchParams(sCmd, "compact", '='))
@@ -3463,10 +3419,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                         NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_COMPACT"), _lang.get("COMMON_ACTIVE")), _option) );
                     else
                         NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_COMPACT"), _lang.get("COMMON_INACTIVE")), _option) );
-                    /*if (!nArgument)
-                        NumeReKernel::print(LineBreak("|-> Tabellen werden in Zukunft vollständig dargestellt.", _option) );
-                    else
-                        NumeReKernel::print(LineBreak("|-> Tabellen werden in Zukunft kompakt dargestellt.", _option) );*/
                 }
                 return 1;
             }
@@ -4248,11 +4200,10 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                     if (BI_moveData(sCmd, _parser, _data, _option))
                     {
                         if (_option.getSystemPrintStatus())
-                            NumeReKernel::print(LineBreak("|-> Der Datensatz wurde erfolgreich verschoben.", _option) );
+                            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_MOVEDATA_SUCCESS"), _option) );
                     }
                     else
                         throw SyntaxError(SyntaxError::CANNOT_MOVE_DATA, sCmd, SyntaxError::invalid_position);
-                        //NumeReKernel::print(LineBreak("|-> FEHLER: Der Datensatz konnte nicht verschoben werden!", _option) );
                 }
                 else
                 {
@@ -4265,16 +4216,15 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                         if (_option.getSystemPrintStatus())
                         {
                             if (nArgument)
-                                NumeReKernel::print(LineBreak("|-> Die Dateien \"" + sCmd + "\" wurden erfolgreich verschoben.", _option) );
+                                NumeReKernel::print(LineBreak(_lang.get("BUILTIN_CHECKKEYWORD_MOVEFILE_ALL_SUCCESS", sCmd), _option) );
                             else
-                                NumeReKernel::print(LineBreak("|-> Die Datei \"" + sCmd + "\" wurde erfolgreich verschoben.", _option) );
+                                NumeReKernel::print(LineBreak(_lang.get("BUILTIN_CHECKKEYWORD_MOVEFILE_SUCCESS", sCmd), _option) );
                         }
                     }
                     else
                     {
                         //sErrorToken = sCmd;
                         throw SyntaxError(SyntaxError::CANNOT_MOVE_FILE, sCmd, SyntaxError::invalid_position, sCmd);
-                        //NumeReKernel::print(LineBreak("|-> Die Datei \"" + sCmd + "\" konnte nicht verschoben werden oder existiert nicht!", _option) );
                     }
                 }
                 return 1;
@@ -4462,10 +4412,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                         NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_REMOVE_ALL_FILE"), _option) );
                     else
                         NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_REMOVE_FILE"), _option) );
-                    /*if (nArgument)
-                        NumeReKernel::print(LineBreak("|-> Die Dateien wurden erfolgreich entfernt.", _option) );
-                    else
-                        NumeReKernel::print(LineBreak("|-> Die Datei wurde erfolgreich entfernt.", _option) );*/
                 }
             }
             else

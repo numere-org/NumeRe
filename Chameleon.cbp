@@ -452,8 +452,8 @@
 		<Unit filename="kernel/core/plugins.hpp" />
 		<Unit filename="kernel/core/procedure/debugger.cpp" />
 		<Unit filename="kernel/core/procedure/debugger.hpp" />
-		<Unit filename="kernel/core/procedure/loop.cpp" />
-		<Unit filename="kernel/core/procedure/loop.hpp" />
+		<Unit filename="kernel/core/procedure/flowctrl.cpp" />
+		<Unit filename="kernel/core/procedure/flowctrl.hpp" />
 		<Unit filename="kernel/core/procedure/procedure.cpp" />
 		<Unit filename="kernel/core/procedure/procedure.hpp" />
 		<Unit filename="kernel/core/procedure/procedureelement.cpp" />

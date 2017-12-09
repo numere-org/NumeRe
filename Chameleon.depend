@@ -4395,7 +4395,7 @@
 	"../../kernel/syntax.hpp"
 	"../dialogs/duplicatecodedialog.hpp"
 
-1512386321 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1512677204 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -4416,7 +4416,7 @@
 	"../../common/fixvsbug.h"
 	"../globals.hpp"
 
-1511630447 source:d:\cpp\numere-source\trunk\gui\editor\history.cpp
+1512810015 source:d:\cpp\numere-source\trunk\gui\editor\history.cpp
 	"../../common/CommonHeaders.h"
 	"../../kernel/core/ui/language.hpp"
 	"../../kernel/core/utils/tools.hpp"
