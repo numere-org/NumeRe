@@ -467,20 +467,15 @@ void NumeReEditor::OnChar( wxStyledTextEvent &event )
         event.Skip(true);
 
         int startLine = LineFromPosition(GetSelectionStart());
-
         int endline = LineFromPosition(GetSelectionEnd());
-
         int newStartPos = PositionFromLine(startLine);
-
         int newEndPos = PositionFromLine(endline) + LineLength(endline);
+        bool doIndent = event.GetShift();
+        int indentWidth = this->GetIndent();
 
         this->SetSelection(newStartPos, newEndPos);
 
-        bool doIndent = event.GetShift();
-
-        int indentWidth = this->GetIndent();
-
-        for( int i = startLine; i <= endline; i++ )
+        for (int i = startLine; i <= endline; i++)
         {
             int lineIndent = this->GetLineIndentation(i);
 
@@ -1976,7 +1971,7 @@ void NumeReEditor::removeWhiteSpaces(int nType)
 
 void NumeReEditor::toggleBookmark()
 {
-    int nLine = GetLineForMarkerOperation();
+    int nLine = this->GetCurrentLine();
     if (MarkerOnLine(nLine, MARKER_BOOKMARK))
         this->MarkerDelete(nLine, MARKER_BOOKMARK);
     else

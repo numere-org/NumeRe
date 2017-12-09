@@ -110,11 +110,18 @@ NumeReHistory::NumeReHistory( NumeReWindow *mframe,
 
     this->SetMouseDwellTime(250);
     loadHistory();
-    this->GotoPos(this->GetLastPosition());
 
 	UpdateSyntaxHighlighting();
 
 	this->SetCaretLineVisible(false);
+
+	this->SetWrapMode(wxSTC_WRAP_WORD);
+    this->SetWrapIndentMode(wxSTC_WRAPINDENT_INDENT);
+    this->SetWrapStartIndent(1);
+    this->SetWrapVisualFlags(wxSTC_WRAPVISUALFLAG_END);
+    this->SetWrapVisualFlagsLocation(wxSTC_WRAPVISUALFLAGLOC_END_BY_TEXT);
+
+    this->GotoPos(this->GetLastPosition());
 }
 
 NumeReHistory::~NumeReHistory()

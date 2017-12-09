@@ -162,7 +162,7 @@ void GTerm::normal_input()
         }
         if (cursor_x >= width)
         {
-            if (m_numCommandLines == -1 && n == 1)
+            if (m_numCommandLines == -1) //&& n == 1)
                 m_numCommandLines = 1;
             else if (m_numCommandLines != -1)
                 m_numCommandLines++;
@@ -494,7 +494,7 @@ bool GTerm::bs()
     }
     else
         return false;
-    if (cursor_x>0 && tm.IsEditable(cursor_y, cursor_x-1))
+    if (cursor_x > 0 && tm.IsEditable(cursor_y, cursor_x-1))
         move_cursor(cursor_x - 1, cursor_y);
     string sLine = tm.GetLineAdjusted(cursor_y);
 
