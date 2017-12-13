@@ -608,6 +608,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
     map<string,long long int> mCaches = _data.getCacheList();
     mCaches["data"] = -1;
     static string sPreferredCmds = ";clear;copy;smooth;retoque;resample;stats;save;showf;swap;hist;help;man;move;matop;mtrxop;random;remove;rename;append;reload;delete;datagrid;list;load;export;edit";
+    static string sPlotCommands = " plotcompose plot plot3d graph graph3d mesh meshgrid mesh3d meshgrid3d surf surface surf3d surface3d cont contour cont3d contour3d vect vector vect3d vector3d dens density dens3d density3d draw draw3d grad gradient grad3d gradient3d ";
     string sCacheCmd = "";
     for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
     {
@@ -810,15 +811,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
             doc_Help("zeroes", _option);
         return 1;
     }
-    else if (sCommand.substr(0,4) == "plot"
-        || sCommand.substr(0,5) == "graph"
-        || sCommand.substr(0,4) == "mesh"
-        || sCommand.substr(0,4) == "surf"
-        || sCommand.substr(0,4) == "cont"
-        || sCommand.substr(0,4) == "grad"
-        || sCommand.substr(0,4) == "dens"
-        || sCommand.substr(0,4) == "draw"
-        || sCommand.substr(0,4) == "vect")
+    else if (sPlotCommands.find(" " + sCommand + " ") != string::npos)
     {
         if (sCmd.length() > sCommand.length()+1)
         {

@@ -1853,10 +1853,10 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         edit->SetDropTarget(new NumeReDropTarget(this, edit, NumeReDropTarget::EDITOR));
     #endif
 
+        edit->SetText("\r\n");
         CopyEditorSettings(edit, _filetype);
 
         m_currentEd = edit;
-        m_currentEd->SetText("\r\n");
 
         m_currentEd->EmptyUndoBuffer();
         m_currentPage = m_book->GetPageCount();
@@ -1936,11 +1936,11 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
 
         ProjectInfo* singleFileProject = new ProjectInfo();
         NumeReEditor* edit = new NumeReEditor (this, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
+        edit->SetText(template_file);
 
         CopyEditorSettings(edit, _filetype);
 
         m_currentEd = edit;
-        m_currentEd->SetText(template_file);
         if (_filetype == FILE_NSCR || _filetype == FILE_PLUGIN)
             m_currentEd->SetFilename(wxFileName(vPaths[SCRIPTPATH], filename), false);
         else
@@ -2631,6 +2631,7 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
 			{
 				m_book->SetPageText(m_currentPage, /*locationPrefix + */fileNameNoPath);
 				m_currentEd->SetProject(proj);
+				m_currentEd->LoadFileText(fileContents);
 			}
 			// need to create a new buffer for the file
 			else
@@ -2639,13 +2640,14 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
 #if wxUSE_DRAG_AND_DROP
 				edit->SetDropTarget(new NumeReDropTarget(this, edit, NumeReDropTarget::EDITOR));
 #endif
+                edit->LoadFileText(fileContents);
                 CopyEditorSettings(edit, _fileType);
 				m_currentEd = edit;
 				m_currentPage = m_book->GetPageCount();
 				m_book->AddPage (m_currentEd, /*locationPrefix + */fileNameNoPath, true);
 			}
 
-			m_currentEd->LoadFileText(fileContents);
+
 			m_currentEd->SetFilename(newFileName, m_remoteMode);
 
             m_watcher->Add(newFileName);

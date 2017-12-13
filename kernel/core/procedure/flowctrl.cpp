@@ -2006,6 +2006,25 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 
     int nCurrentCalcType = nCalcType[nthCmd];
 
+    // Eval the debugger breakpoint first
+    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT)
+    {
+        if (sLine.substr(sLine.find_first_not_of(' '),2) == "|>")
+        {
+            if (!nCurrentCalcType)
+                nCalcType[nthCmd] |= CALCTYPE_DEBUGBREAKPOINT;
+            sLine.erase(sLine.find_first_not_of(' '),2);
+            sLine_Temp.erase(sLine_Temp.find_first_not_of(' '),2);
+            StripSpaces(sLine);
+            StripSpaces(sLine_Temp);
+            if (_optionRef->getUseDebugger())
+            {
+                _optionRef->_debug.gatherLoopBasedInformations(sLine, nCmd - nthCmd, mVarMap, vVarArray, sVarArray, nVarArray);
+                evalDebuggerBreakPoint(*_parserRef, *_optionRef, mVarMap);
+            }
+        }
+    }
+
     if (!nCurrentCalcType
         || !bFunctionsReplaced
         || nCurrentCalcType & CALCTYPE_COMMAND
@@ -2041,18 +2060,6 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
         }
         if (!nCurrentCalcType && bFunctionsReplaced && nCalcType[nthCmd] & CALCTYPE_DEFINITION)
             nCalcType[nthCmd] |= CALCTYPE_RECURSIVEEXPRESSION;
-    }
-    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT)
-    {
-        if (sLine.substr(sLine.find_first_not_of(' '),2) == "|>")
-        {
-            if (!nCurrentCalcType)
-                nCalcType[nthCmd] |= CALCTYPE_DEBUGBREAKPOINT;
-            sLine.erase(sLine.find_first_not_of(' '),2);
-            sLine_Temp.erase(sLine_Temp.find_first_not_of(' '),2);
-            StripSpaces(sLine);
-            StripSpaces(sLine_Temp);
-        }
     }
     if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_THROWCOMMAND)
     {

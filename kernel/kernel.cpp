@@ -25,6 +25,8 @@ extern const string sVersion;
 /* --> STATUS: Versionsname des Programms; Aktuell "Ampere", danach "Angstroem". Ab 1.0 Namen mit "B",
  *     z.B.: Biot(1774), Boltzmann(1844), Becquerel(1852), Bragg(1862), Bohr(1885), Brillouin(1889),
  *     de Broglie(1892, Bose(1894), Bloch(1905), Bethe(1906)) <--
+ * --> de Coulomb(1736), Carnot(1796), P.Curie(1859), M.Curie(1867), A.Compton(1892), Cherenkov(1904),
+ *     Casimir(1909), Chandrasekhar(1910), Chamberlain(1920), Cabibbo(1935) <--
  */
 
 Language _lang;

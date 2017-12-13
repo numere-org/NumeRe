@@ -3348,74 +3348,32 @@ vector<string> parser_getStringTernaryExpression(string& sLine, size_t& nPos) //
     //size_t nTernaryEnd = sLine.length();
     size_t nColonPosition = 0;
 
-    /*for (int i = nPos; i >= 0; i--)
-    {
-        if (sLine[i] == ' ')
-            continue;
-        if (sLine[i] == ')') // parentheses
-        {
-            int parentheses = 0;
-            size_t quotes = 0;
-            for (int j = i; j >= 0; j--)
-            {
-                if (sLine[j] == '"' && sLine[j-1] != '\\')
-                    quotes++;
-                if (sLine[j] == ')' && !(quotes%2))
-                    parentheses--;
-                if (sLine[j] == '(' && !(quotes%2))
-                    parentheses++;
-                if (!parentheses && sLine[j] == '(')
-                {
-                    nTernaryStart = j;
-                    break;
-                }
-            }
-            break;
-        }
-        else if (sLine[i] == '"') // quotes (single string)
-        {
-            for (int j = i; j >= 0; j--)
-            {
-                if (sLine[j] == '"' && j != i && sLine[j-1] != '\\')
-                {
-                    nTernaryStart = j;
-                    break;
-                }
-            }
-            break;
-        }
-        else if (sLine[i] != ' ' && i != nPos) // true or false
-        {
-            for (int j = i; j >= 0; j--)
-            {
-                if (sLine[j] == ' ')
-                {
-                    nTernaryStart = j+1;
-                    break;
-                }
-            }
-            break;
-        }
-    }*/
-
-    //nPos -= nTernaryStart;
     string sTernary = sLine.substr(nTernaryStart);
     sLine.erase(nTernaryStart);
 
     size_t quotes = 0;
+    int nQuestionMarks = 0;
     for (size_t i = nPos; i < sTernary.length(); i++)
     {
-        if (!(quotes%2) && (sTernary[i] == '(' || sTernary[i] == '[' || sTernary[i] == '{'))
+        if (!(quotes % 2) && (sTernary[i] == '(' || sTernary[i] == '[' || sTernary[i] == '{'))
             i += getMatchingParenthesis(sTernary.substr(i));
+        if (!(quotes % 2) && sTernary[i] == '?')
+            nQuestionMarks++;
         if (sTernary[i] == '"' && sTernary[i-1] != '\\')
             quotes++;
-        if (!(quotes%2) && sTernary[i] == ':')
+        if (!(quotes % 2) && sTernary[i] == ':')
         {
-            nColonPosition = i;
-            break;
+            nQuestionMarks--;
+            if (!nQuestionMarks)
+            {
+                nColonPosition = i;
+                break;
+            }
         }
     }
 
+    if (!nColonPosition)
+        throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, nPos);
 
     vTernary.push_back(sTernary.substr(0, nPos));
     vTernary.push_back(sTernary.substr(nPos+1, nColonPosition-1-nPos));
