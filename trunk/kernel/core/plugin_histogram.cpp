@@ -654,9 +654,9 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                 nMax = 0;
                 for (int k = 0; k < nBin; k++)
                 {
+                    nCount = 0;
                     for (int i = nDataRow+2; i < nDataRowFinal; i++)
                     {
-                        nCount = 0;
                         for (int l = 0; l < _data.getLines(sDatatable, true) - _data.getAppendedZeroes(i,sDatatable); l++)
                         {
                             if (_data.getElement(l, nDataRow, sDatatable) > dMax
@@ -668,8 +668,8 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
                                 continue;
                             if (_pData.getxLogscale())
                             {
-                                if (_data.getElement(l,i+nDataRow, sDatatable) >= pow(10.0,log10(dMinZ) + k * dIntervallLength)
-                                        && _data.getElement(l,i+nDataRow, sDatatable) < pow(10.0,log10(dMinZ) + (k+1) * dIntervallLength))
+                                if (_data.getElement(l,i, sDatatable) >= pow(10.0,log10(dMinZ) + k * dIntervallLength)
+                                        && _data.getElement(l,i, sDatatable) < pow(10.0,log10(dMinZ) + (k+1) * dIntervallLength))
                                     nCount++;
                             }
                             else

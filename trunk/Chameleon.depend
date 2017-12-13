@@ -3947,7 +3947,7 @@
 1490787950 source:d:\cpp\numere-source\trunk\kernel\core\basicexcel.cpp
 	"BasicExcel.hpp"
 
-1512317847 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1512992556 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
@@ -4118,7 +4118,7 @@
 1499234831 source:d:\cpp\numere-source\trunk\kernel\core\plugin.cpp
 	"plugin.hpp"
 
-1511251063 source:d:\cpp\numere-source\trunk\kernel\core\plugin_histogram.cpp
+1513077078 source:d:\cpp\numere-source\trunk\kernel\core\plugin_histogram.cpp
 	"plugins.hpp"
 	"../kernel.hpp"
 
@@ -4178,7 +4178,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1511630901 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1513113858 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -4526,7 +4526,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1511419892 source:d:\cpp\numere-source\trunk\gui\terminal\actions.cpp
+1512811598 source:d:\cpp\numere-source\trunk\gui\terminal\actions.cpp
 	"gterm.hpp"
 	"../../common/debug.h"
 
@@ -5120,7 +5120,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1512386484 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1513078593 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -5229,7 +5229,7 @@
 	"../built-in.hpp"
 	"../utils/tools.hpp"
 
-1512317799 source:d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.cpp
+1513033771 source:d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.cpp
 	"flowctrl.hpp"
 	"../../kernel.hpp"
 

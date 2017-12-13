@@ -396,7 +396,13 @@ string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpa
                 sToken = vProcedureTree[i].substr(0, vProcedureTree[i].find('~', sFirstChars.length())+1) + "?" + toString((int)(SYNTAX_PROCEDURE)) + " ";
             else
                 sToken = vProcedureTree[i] + "(?" + toString((int)(SYNTAX_PROCEDURE)) + " ";
-
+            if (!sSelectedNameSpace.length())
+            {
+                if (sToken.substr(0, sBaseNameSpace.length()) == sBaseNameSpace)
+                    sToken.erase(0, sBaseNameSpace.length());
+                if (sToken.front() == '~')
+                    sToken.erase(0,1);
+            }
             if (sAutoCompList.find(" " + sToken) == string::npos)
                 sAutoCompList += sToken;
         }
