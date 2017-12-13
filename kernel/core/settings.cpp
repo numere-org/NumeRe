@@ -43,7 +43,7 @@ Settings::Settings() : Documentation()
 	bShowHints = true;
 	bUseESCinScripts = true;
 	bUseCustomLanguageFile = true;
-	bUseExternalDocViewer = false;
+	bUseExternalDocViewer = true;
 	nPrecision = 7;			// Standardmaessig setzen wir die Praezision auf 7
 	nAutoSaveInterval = 30; // 30 sec
 	sPath = "./";
