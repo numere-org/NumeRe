@@ -538,7 +538,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
             else
             {
                 // Header fertigstellen
-                sHTML += "<title>" + vDocArticle[i] + "</title>\n</head>\n\n<body>\n<h2>"+vDocArticle[i]+"</h2>\n<h4>" + _lang.get("DOC_HELP_DESC_HEADLINE") + "</h4>\n";
+                sHTML += "<title>" + vDocArticle[i] + "</title>\n</head>\n\n<body>\n<h2>"+vDocArticle[i]+"</h2>\n";//<h4>" + _lang.get("DOC_HELP_DESC_HEADLINE") + "</h4>\n";
             }
             continue;
         }
@@ -726,7 +726,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
             }
             else
             {
-                sHTML += "<h4>"+ _lang.get("DOC_HELP_OPTIONS_HEADLINE") +"</h4>\n<table border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">\n  <tbody>\n";
+                sHTML += /*"<h4>"+ _lang.get("DOC_HELP_OPTIONS_HEADLINE") +"</h4>\n*/"<table border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">\n  <tbody>\n";
             }
             for (unsigned int j = i+1; j < vDocArticle.size(); j++)
             {
