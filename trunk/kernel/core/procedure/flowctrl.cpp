@@ -2020,7 +2020,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
             if (_optionRef->getUseDebugger())
             {
                 _optionRef->_debug.gatherLoopBasedInformations(sLine, nCmd - nthCmd, mVarMap, vVarArray, sVarArray, nVarArray);
-                evalDebuggerBreakPoint(*_parserRef, *_optionRef, mVarMap);
+                evalDebuggerBreakPoint(*_parserRef, *_optionRef, _dataRef->getStringVars());
             }
         }
     }
@@ -2054,9 +2054,9 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
                 throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
             }
         }
-        if (!nCurrentCalcType && (sCommand == "define" || sCommand == "redef" || sCommand == "redefine" || sCommand == "undefine" || sCommand == "undef" || sCommand == "ifndef" || sCommand != "ifndefined"))
+        if (!nCurrentCalcType && (sCommand == "define" || sCommand == "redef" || sCommand == "redefine" || sCommand == "undefine" || sCommand == "undef" || sCommand == "ifndef" || sCommand == "ifndefined"))
         {
-            nCalcType[nthCmd] = CALCTYPE_COMMAND | CALCTYPE_DEFINITION;
+            nCalcType[nthCmd] |= CALCTYPE_COMMAND | CALCTYPE_DEFINITION;
         }
         if (!nCurrentCalcType && bFunctionsReplaced && nCalcType[nthCmd] & CALCTYPE_DEFINITION)
             nCalcType[nthCmd] |= CALCTYPE_RECURSIVEEXPRESSION;

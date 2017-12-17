@@ -56,6 +56,8 @@ class ProcedureVarFactory
 
         void init();
 
+        string replaceProcedureName(string sProcedureName);
+
         string resolveArguments(string sProcedureCommandLine);
         string resolveLocalVars(string sProcedureCommandLine);
         string resolveLocalStrings(string sProcedureCommandLine);

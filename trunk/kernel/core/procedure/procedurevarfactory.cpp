@@ -40,7 +40,7 @@ ProcedureVarFactory::ProcedureVarFactory(Procedure* _procedure, Parser* _parser,
     _pDataRef = _pData;
     _scriptRef = _script;
 
-    sProcName = sProc;
+    sProcName = replaceProcedureName(sProc);
     nth_procedure = currentProc;
 }
 
@@ -119,6 +119,17 @@ void ProcedureVarFactory::init()
     nLocalVarMapSize = 0;
     nLocalStrMapSize = 0;
     nLocalTableSize = 0;
+}
+
+// replaces path characters etc.
+string ProcedureVarFactory::replaceProcedureName(string sProcedureName)
+{
+    for (size_t i = 0; i < sProcedureName.length(); i++)
+    {
+        if (sProcedureName[i] == ':' || sProcedureName[i] == '\\' || sProcedureName[i] == '/' || sProcedureName[i] == ' ')
+            sProcedureName[i] = '_';
+    }
+    return sProcedureName;
 }
 
 unsigned int ProcedureVarFactory::countVarListElements(const string& sVarList)

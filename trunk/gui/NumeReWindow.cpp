@@ -1797,9 +1797,25 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
             continue;
         ext = toLowerCase(wxArgV[i].substr(wxArgV[i].rfind('.')).ToStdString());
         if (ext == ".nscr")
-            filestoopen.Add(wxArgV[i]);
+        {
+            if (i+1 < wxArgV.size() && wxArgV[i+1] == "-e")
+            {
+                m_terminal->pass_command("start \"" + replacePathSeparator(wxArgV[i].ToStdString()) + "\"");
+                i++;
+            }
+            else
+                filestoopen.Add(wxArgV[i]);
+        }
         if (ext == ".nprc")
-            filestoopen.Add(wxArgV[i]);
+        {
+            if (i+1 < wxArgV.size() && wxArgV[i+1] == "-e")
+            {
+                m_terminal->pass_command("$'" + replacePathSeparator(wxArgV[i].substr(0, wxArgV[i].rfind('.')).ToStdString()) + "'()");
+                i++;
+            }
+            else
+                filestoopen.Add(wxArgV[i]);
+        }
         if (ext == ".dat"
             || ext == ".txt"
             || ext == ".tex")
