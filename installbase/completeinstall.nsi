@@ -11,7 +11,7 @@
 !define DIRNAME "NumeRe"
 !define MUI_FILE "numere"
 !define VERSION "1.1.0"# $\"Bloch$\""
-!define VERSIONEXT " $\"rc2$\""
+!define VERSIONEXT " $\"rc3$\""
 !define MUI_BRANDINGTEXT "NumeRe: Framework für Numerische Rechnungen v${VERSION}${VERSIONEXT}"
 BrandingText "${MUI_BRANDINGTEXT}"
 
@@ -138,18 +138,7 @@ Section "!Core" Core
 	SetOutPath "$INSTDIR"
 	File "${MUI_FILE}.exe"
 	File "ChangesLog.txt"
-	File "win7\hdf5dll.dll"
-	File "win7\libgcc_s_dw2-1.dll"
-	File "win7\libgomp-1.dll"
-	File "win7\libmgl.dll"
-	File "win7\libgsl.dll"
-	File "win7\libgslcblas.dll"
-	File "win7\libmgl-qt5.dll"
-	File "win7\libmgl-wnd.dll"
-	File "win7\libstdc++-6.dll"
-	File "win7\libwinpthread-1.dll"
-	File "win7\libzlib.dll"
-	File "win7\pthreadGC2.dll"
+	File "win7\*.dll"
 	#File "pthreadGC2.dll"
 	File "readme.txt"
 
@@ -173,8 +162,6 @@ SectionEnd
 Section /o "!Win 8.1/10" Compatibility
 	SetOutPath "$INSTDIR"
 	File "win10\libmgl.dll"
-	File "win10\libmgl-qt5.dll"
-	File "win10\libmgl-wnd.dll"
 SectionEnd
 
 Section "Sample files" Samples
@@ -223,8 +210,10 @@ Section "File associations" Fileallocs
 	WriteRegStr HKLM "Software\Classes\NumeRe.NSCR" "" "$(LS_FT_NSCR)"
 	WriteRegStr HKLM "Software\Classes\NumeRe.NSCR\DefaultIcon" "" "$INSTDIR\icons\nscr.ico"
 	WriteRegStr HKLM "Software\Classes\NumeRe.NSCR\Shell" "" "Open"
-	WriteRegStr HKLM "Software\Classes\NumeRe.NSCR\Shell\Open" "" "$(LS_STRTSCR)"
+	WriteRegStr HKLM "Software\Classes\NumeRe.NSCR\Shell\Open" "" "$(LS_OPENWITH)"
 	WriteRegStr HKLM "Software\Classes\NumeRe.NSCR\Shell\Open\command" "" "$INSTDIR\${MUI_FILE}.exe $\"%1$\""
+	WriteRegStr HKLM "Software\Classes\NumeRe.NSCR\Shell\Execute" "" "$(LS_STRTSCR)"
+	WriteRegStr HKLM "Software\Classes\NumeRe.NSCR\Shell\Execute\command" "" "$INSTDIR\${MUI_FILE}.exe $\"%1$\" -e"
 
 	# *.nprc
 	WriteRegStr HKLM "Software\Classes\.nprc" "" "NumeRe.NPRC"
@@ -235,8 +224,10 @@ Section "File associations" Fileallocs
 	WriteRegStr HKLM "Software\Classes\NumeRe.NPRC" "" "$(LS_FT_NPRC)"
 	WriteRegStr HKLM "Software\Classes\NumeRe.NPRC\DefaultIcon" "" "$INSTDIR\icons\nprc.ico"
 	WriteRegStr HKLM "Software\Classes\NumeRe.NPRC\Shell" "" "Open"
-	WriteRegStr HKLM "Software\Classes\NumeRe.NPRC\Shell\Open" "" "$(LS_EXEC)"
+	WriteRegStr HKLM "Software\Classes\NumeRe.NPRC\Shell\Open" "" "$(LS_OPENWITH)"
 	WriteRegStr HKLM "Software\Classes\NumeRe.NPRC\Shell\Open\command" "" "$INSTDIR\${MUI_FILE}.exe $\"%1$\""
+	WriteRegStr HKLM "Software\Classes\NumeRe.NPRC\Shell\Execute" "" "$(LS_EXEC)"
+	WriteRegStr HKLM "Software\Classes\NumeRe.NPRC\Shell\Execute\command" "" "$INSTDIR\${MUI_FILE}.exe $\"%1$\" -e"
 
 	# *.ndat
 	WriteRegStr HKLM "Software\Classes\.ndat" "" "NumeRe.NDAT"
