@@ -2666,6 +2666,7 @@ int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& 
         if (__sObject.find('{') != string::npos)
             parser_VectorToExpr(__sObject, _option);
         string sObject;
+        //string sBackup = __sObject;
         size_t nStrings = vFinal.size();
         size_t nCurrentComponent = 0;
 
@@ -2894,7 +2895,10 @@ int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& 
                     return 0;
                 try
                 {
-                    _data.setStringValue(sObject, removeQuotationMarks(vFinal[nCurrentComponent]));
+                    if (nCurrentComponent >= nStrings)
+                        _data.setStringValue(sObject, "");
+                    else
+                        _data.setStringValue(sObject, removeQuotationMarks(vFinal[nCurrentComponent]));
                     nCurrentComponent++;
                 }
                 catch (...)

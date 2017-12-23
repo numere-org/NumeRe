@@ -102,6 +102,7 @@ namespace mu
             mutable varmap_type mTargets;
             mutable string_type sTargets;
             mutable int nVectorDimension;
+            mutable varmap_type vCurrentUsedVars;
             void replaceLocalVars(std::string& sLine);
             bool checkDelimiter(const std::string& sLine);
 

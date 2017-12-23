@@ -37,6 +37,8 @@
 extern value_type vAns;
 //extern bool bSupressAnswer;
 
+string toString(double, int);
+
 FlowCtrl::FlowCtrl()
 {
     sCmd = nullptr;
@@ -485,7 +487,10 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
 
 
             if (bUseLoopParsingMode && !bLockedPauseMode)
-                _parserRef->SetIndex(__i+nCmd+1);
+            {
+                //NumeReKernel::print("Activate IDX " + toString(__i+nCmd+1));
+                    _parserRef->SetIndex(__i+nCmd+1);
+            }
             try
             {
                 if (calc(sCmd[__i][1], __i, "IF") == FLOWCTRL_ERROR)
@@ -683,6 +688,7 @@ value_type* FlowCtrl::evalHeader(int& nNum, string sHeadExpression, bool bIsForH
 {
     value_type* v = nullptr;
     string sCache = "";
+    //string sMessage = "IptExpr: " + sHeadExpression + " IDX " + toString(nth_Cmd);
 
     if (!bFunctionsReplaced)
     {
@@ -788,19 +794,26 @@ value_type* FlowCtrl::evalHeader(int& nNum, string sHeadExpression, bool bIsForH
         _parserRef->SetIndex(nth_Cmd); // i + (nCmd+1)*j
     if (bUseLoopParsingMode && !bLockedPauseMode && _parserRef->IsValidByteCode() && sHeadExpression+" " == _parserRef->GetExpr())
     {
+        //sMessage += "; Used available Expression (" + sHeadExpression + "/" + _parserRef->GetExpr() + ")";
         v = _parserRef->Eval(nNum);
+        //sMessage += "; Result: " + toString(v[0],5);
+        //NumeReKernel::print(sMessage);
     }
     else if (bUseLoopParsingMode && !bLockedPauseMode && _parserRef->IsValidByteCode() && _parserRef->GetExpr().length())
     {
+        //sMessage += "; Created new Expression (" + sHeadExpression + "/" + _parserRef->GetExpr() + ")";
         _parserRef->DeclareAsInvalid();
         _parserRef->SetExpr(sHeadExpression);
         v = _parserRef->Eval(nNum);
+        //sMessage += "; Result: " + toString(v[0],5);
+        //NumeReKernel::print(sMessage);
     }
     else
     {
         _parserRef->SetExpr(sHeadExpression);
         v = _parserRef->Eval(nNum);
     }
+
     return v;
 }
 

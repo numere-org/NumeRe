@@ -25,6 +25,7 @@
 
 #include "muParserBase.h"
 #include "muParserTemplateMagic.h"
+#include "../../kernel.hpp"
 
 //--- Standard includes ------------------------------------------------------------------------
 #include <cassert>
@@ -41,6 +42,7 @@
 
 using namespace std;
 string toString(int);
+string toString(double,int);
 unsigned int getMatchingParenthesis(const string&);
 mu::value_type parser_Num(const mu::value_type*, int);
 mu::value_type parser_Cnt(const mu::value_type*, int);
@@ -60,6 +62,7 @@ mu::value_type parser_Max(const mu::value_type*, int);
 /** \file
     \brief This file contains the basic implementation of the muparser engine.
 */
+
 
 namespace mu
 {
@@ -1824,6 +1827,7 @@ namespace mu
     //---------------------------------------------------------------------------
     void ParserBase::CreateRPN()
     {
+        //NumeReKernel::print("Parsing: " + m_pTokenReader->GetExpr());
         if (!m_pTokenReader->GetExpr().length())
             Error(ecUNEXPECTED_EOF, 0);
 
@@ -2088,6 +2092,8 @@ namespace mu
             vLoopStackBuf[nthLoopElement][nthLoopPartEquation] = m_vStackBuffer;
             vUsedVar[nthLoopElement][nthLoopPartEquation] = m_pTokenReader->GetUsedVar();
         }
+        else
+            vCurrentUsedVars = m_pTokenReader->GetUsedVar();
         m_pParseFormula = &ParserBase::ParseCmdCode;
         return (this->*m_pParseFormula)();
     }
@@ -2420,6 +2426,7 @@ namespace mu
         {
             nStackSize = vNumResultsIDX[nthLoopElement][nthLoopPartEquation];
             m_vStackBuffer = vLoopStackBuf[nthLoopElement][nthLoopPartEquation];
+            //NumeReKernel::printPreFmt("(" + toString(nthLoopElement) +","+ toString(nthLoopPartEquation) +")" + "m_vStackBuffer[1] = " + toString(m_vStackBuffer[1], 5));
             //m_nFinalResultIdx = nStackSize;
             if (mVectorVars.size() && !(mTargets.size() && mVectorVars.size() == 1 && vUsedVar[nthLoopElement][nthLoopPartEquation].find("~TRGTVCT[~]") != vUsedVar[nthLoopElement][nthLoopPartEquation].end()))
             {
@@ -2497,6 +2504,7 @@ namespace mu
             }
             if (bMakeLoopByteCode && !bPauseLoopByteCode)
             {
+                //NumeReKernel::printPreFmt(" Creating new byte code");
                 nthLoopPartEquation++;
                 if (vLoopByteCode[nthLoopElement].size() <= nthLoopPartEquation)
                 {
@@ -2508,22 +2516,22 @@ namespace mu
                     vUsedVar[nthLoopElement].push_back(varmap_type());
                 }
             }
+            //NumeReKernel::printPreFmt(" Returning " + toString(m_vStackBuffer[1], 5) + "\n");
             return &m_vStackBuffer[1];
         }
         else
         {
             nStackSize = m_nFinalResultIdx;
-            if (mVectorVars.size() && !(mVectorVars.size() == 1 && mTargets.size() && GetUsedVar().find("~TRGTVCT[~]") != GetUsedVar().end()))
+            if (mVectorVars.size() && !(mVectorVars.size() == 1 && mTargets.size() && vCurrentUsedVars.find("~TRGTVCT[~]") != vCurrentUsedVars.end()))
             {
                 unsigned int nVectorlength = 0;
-                varmap_type vars = GetUsedVar();
                 valbuf_type buffer;
                 std::map<double*, double> mFirstVals;
                 buffer.push_back(0.0);
                 for (auto iter = mNonSingletonVectorVars.begin(); iter != mNonSingletonVectorVars.end(); ++iter)
                 {
                     //std::cerr << iter->first << endl;
-                    if ((iter->second)->size() > nVectorlength && iter->first != "~TRGTVCT[~]" && vars.find(iter->first) != vars.end())
+                    if ((iter->second)->size() > nVectorlength && iter->first != "~TRGTVCT[~]" && vCurrentUsedVars.find(iter->first) != vCurrentUsedVars.end())
                     {
                         nVectorlength = (iter->second)->size();
                         /*for (unsigned int nsize = 0; nsize < (iter->second).size(); nsize++)
@@ -2541,19 +2549,19 @@ namespace mu
                     {
                         for (auto iter = mNonSingletonVectorVars.begin(); iter != mNonSingletonVectorVars.end(); ++iter)
                         {
-                            if (vars.find(iter->first) != vars.end())
+                            if (vCurrentUsedVars.find(iter->first) != vCurrentUsedVars.end())
                             {
                                 if (i == 0)
                                 {
-                                    mFirstVals[vars[iter->first]] = *(vars[iter->first]);
+                                    mFirstVals[vCurrentUsedVars[iter->first]] = *(vCurrentUsedVars[iter->first]);
                                     continue;
                                 }
                                 if ((iter->second)->size() > i)
-                                    *vars[iter->first] = (*(iter->second))[i];
+                                    *vCurrentUsedVars[iter->first] = (*(iter->second))[i];
                                 else if ((iter->second)->size() == 1);
                                     //*vars[iter->first] = (iter->second)[0];
                                 else
-                                    *vars[iter->first] = 0.0;
+                                    *vCurrentUsedVars[iter->first] = 0.0;
                             }
                         }
                         if (i)
@@ -2572,7 +2580,7 @@ namespace mu
                     nStackSize *= nVectorlength;
                 }
             }
-            if (mTargets.size() && GetUsedVar().find("~TRGTVCT[~]") != GetUsedVar().end())
+            if (mTargets.size() && vCurrentUsedVars.find("~TRGTVCT[~]") != vCurrentUsedVars.end())
             {
                 std::string sTemp = sTargets;
                 for (unsigned int i = 1; i <  m_vStackBuffer.size(); i++)
@@ -2587,6 +2595,7 @@ namespace mu
                 }
             }
             // (for historic reasons the stack starts at position 1)
+            //NumeReKernel::printPreFmt("(" + toString(nthLoopElement) +","+ toString(nthLoopPartEquation) +")" + "m_vStackBuffer[1] = " + toString(m_vStackBuffer[1], 5) + "\n");
             return &m_vStackBuffer[1];
         }
     }
