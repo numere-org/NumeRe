@@ -2567,7 +2567,7 @@
 	"muParserBase.h"
 	"muParserTemplateMagic.h"
 
-1509727551 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.h
+1514021423 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.h
 	<cmath>
 	<string>
 	<iostream>
@@ -4036,9 +4036,10 @@
 	<algorithm>
 	<numeric>
 
-1509727891 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
+1514022688 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
 	"muParserBase.h"
 	"muParserTemplateMagic.h"
+	"../../kernel.hpp"
 	<cassert>
 	<cmath>
 	<memory>
@@ -4178,7 +4179,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1513113858 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1513892207 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -4395,7 +4396,7 @@
 	"../../kernel/syntax.hpp"
 	"../dialogs/duplicatecodedialog.hpp"
 
-1512677204 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1513714328 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -5020,7 +5021,7 @@
 	"../ui/error.hpp"
 	"../utils/tools.hpp"
 
-1499197563 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedurevarfactory.cpp
+1513529189 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedurevarfactory.cpp
 	"procedurevarfactory.hpp"
 	"procedure.hpp"
 
@@ -5037,7 +5038,7 @@
 	"../plotting/plotdata.hpp"
 	"../script.hpp"
 
-1512317858 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.cpp
+1513973441 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.cpp
 	"procedure.hpp"
 	"../../kernel.hpp"
 	"procedurevarfactory.hpp"
@@ -5229,7 +5230,7 @@
 	"../built-in.hpp"
 	"../utils/tools.hpp"
 
-1513528029 source:d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.cpp
+1514022615 source:d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.cpp
 	"flowctrl.hpp"
 	"../../kernel.hpp"
 

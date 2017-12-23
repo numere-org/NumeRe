@@ -1670,6 +1670,11 @@ void NumeReEditor::AnalyseCode()
             }
             if (m_fileType == FILE_NPRC && (sSyntaxElement == "var" || sSyntaxElement == "str" || sSyntaxElement == "tab"))
             {
+                if (sSyntaxElement == "var" && this->GetTextRange(this->PositionFromLine(currentLine), this->GetLineEndPosition(currentLine)).find("list") < (size_t)(wordstart - this->PositionFromLine(currentLine)))
+                {
+                    i = wordend;
+                    continue;
+                }
                 int nNextLine = this->GetLineEndPosition(currentLine)+1;
                 int nProcedureEnd = this->FindText(nNextLine, this->GetLastPosition(), "endprocedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD);
                 string sArgs = this->GetTextRange(wordend, this->GetLineEndPosition(currentLine)).ToStdString();
@@ -3502,9 +3507,16 @@ wxString NumeReEditor::FindNameSpaceOfProcedure(int charpos)
 	{
         int minpos = 0;
         int maxpos = charpos;
-        while (minpos < charpos && FindText(minpos, maxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) != -1)
+        int nextpos = 0;
+        while (minpos < charpos
+            && nextpos < charpos
+            && (nextpos = FindText(nextpos, maxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD)) != -1)
         {
-            minpos = FindText(minpos, maxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD)+1;
+            if (nextpos == -1)
+                break;
+            nextpos++;
+            if (this->GetStyleAt(nextpos) == wxSTC_NSCR_COMMAND)
+                minpos = nextpos;
         }
         if (FindText(minpos, maxpos, "namespace", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) != -1)
         {
