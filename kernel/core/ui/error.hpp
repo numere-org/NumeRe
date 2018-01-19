@@ -116,6 +116,8 @@ class SyntaxError
             INVALID_INTERVAL,
             INVALID_PROCEDURE_NAME,
             INVALID_SUBPLOT_INDEX,
+            INVALID_WAVELET_TYPE,
+            INVALID_WAVELET_COEFFICIENT,
             /// INSERT HERE
             LGS_HAS_NO_SOLUTION=2100,
             LGS_HAS_NO_UNIQUE_SOLUTION,
@@ -191,6 +193,7 @@ class SyntaxError
             WRONG_ARG_NAME=4100,
             WRONG_MATRIX_DIMENSIONS_FOR_MATOP,
             WRONG_PLOT_INTERVAL_FOR_LOGSCALE,
+            WRONG_DATA_SIZE,
             /// INSERT HERE
             ZEROES_VAR_NOT_FOUND=4200,
         };

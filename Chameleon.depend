@@ -4,7 +4,7 @@
 	"kernel/core/version.h"
 	<wx/msw/wx.rc>
 
-1509720381 d:\cpp\numere-source\trunk\kernel\core\version.h
+1514204618 d:\cpp\numere-source\trunk\kernel\core\version.h
 
 1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wx.rc
 	<windows.h>
@@ -3947,7 +3947,7 @@
 1490787950 source:d:\cpp\numere-source\trunk\kernel\core\basicexcel.cpp
 	"BasicExcel.hpp"
 
-1512992556 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1515639239 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
@@ -4217,7 +4217,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1513153603 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1515654040 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 
@@ -4659,7 +4659,7 @@
 	"../globals.hpp"
 	"../../common/debug.h"
 
-1497520725 d:\cpp\numere-source\trunk\kernel\core\ui\error.hpp
+1515911050 d:\cpp\numere-source\trunk\kernel\core\ui\error.hpp
 	<string>
 	"language.hpp"
 
@@ -4726,7 +4726,7 @@
 	"../utils/BasicExcel.hpp"
 	"../utils/tinyxml2.h"
 
-1511629917 d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.hpp
+1515293252 d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.hpp
 	<iostream>
 	<fstream>
 	<string>
@@ -4742,8 +4742,9 @@
 	"../filesystem.hpp"
 	"../version.h"
 	"../maths/resampler.h"
+	"table.hpp"
 
-1490787951 d:\cpp\numere-source\trunk\kernel\core\maths\resampler.h
+1516132933 d:\cpp\numere-source\trunk\kernel\core\maths\resampler.h
 
 1511629978 d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.hpp
 	<cstdlib>
@@ -4767,7 +4768,7 @@
 	"../version.h"
 	"../ParserLib/muParser.h"
 
-1511630091 d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.hpp
+1515639090 d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.hpp
 	<cmath>
 	<string>
 	<sstream>
@@ -4924,7 +4925,7 @@
 	"../settings.hpp"
 	"../ui/error.hpp"
 
-1511630481 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
+1515293237 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
 	"cache.hpp"
 	"../../kernel.hpp"
 
@@ -4959,10 +4960,11 @@
 	"odesolver.hpp"
 	"../../kernel.hpp"
 
-1511630650 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
+1516212674 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	"spline.h"
+	"wavelet.hpp"
 
 1508758440 d:\cpp\numere-source\trunk\kernel\core\maths\spline.h
 	<cstdio>
@@ -4970,7 +4972,7 @@
 	<vector>
 	<algorithm>
 
-1490787951 source:d:\cpp\numere-source\trunk\kernel\core\maths\resampler.cpp
+1516132979 source:d:\cpp\numere-source\trunk\kernel\core\maths\resampler.cpp
 	<stdlib.h>
 	<math.h>
 	<float.h>
@@ -5233,4 +5235,23 @@
 1514022615 source:d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.cpp
 	"flowctrl.hpp"
 	"../../kernel.hpp"
+
+1515293536 d:\cpp\numere-source\trunk\kernel\core\datamanagement\table.hpp
+	<vector>
+	<string>
+
+1515647074 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\table.cpp
+	"table.hpp"
+	<cmath>
+
+1516212693 d:\cpp\numere-source\trunk\kernel\core\maths\wavelet.hpp
+	<vector>
+	"../datamanagement/table.hpp"
+
+1516258406 source:d:\cpp\numere-source\trunk\kernel\core\maths\wavelet.cpp
+	"wavelet.hpp"
+	"../ui/error.hpp"
+	"resampler.h"
+	<gsl/gsl_wavelet.h>
+	<cmath>
 

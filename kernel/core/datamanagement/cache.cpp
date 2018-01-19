@@ -1403,6 +1403,31 @@ bool Cache::loadCache()
     return true;
 }
 
+Table Cache::extractTable(const string& _sTable)
+{
+    return extractTable(mCachesMap.at(_sTable), _sTable);
+}
+
+Table Cache::extractTable(long long int _nLayer, const string& _sTable)
+{
+    Table _table;
+
+    _table.setName(_sTable);
+    _table.setSize(this->getCacheLines(_nLayer, false), this->getCacheCols(_nLayer, false));
+
+    for (long long int i = 0; i < this->getCacheLines(_nLayer, false); i++)
+    {
+        for (long long int j = 0; j < this->getCacheCols(_nLayer, false); j++)
+        {
+            if (!i)
+                _table.setHead(j, sHeadLine[j][_nLayer]);
+            _table.setValue(i, j, dCache[i][j][_nLayer]);
+        }
+    }
+
+    return _table;
+}
+
 bool Cache::isCacheElement(const string& sCache)
 {
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)

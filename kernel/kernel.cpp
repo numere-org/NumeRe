@@ -1477,7 +1477,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 
                     if (sErrLine_0.substr(0,7) == "ERR_NR_")
                     {
-                        sErrLine_0 = _lang.get("ERR_GENERIC_0");
+                        sErrLine_0 = _lang.get("ERR_GENERIC_0", toString((int)e.errorcode));
                         sErrLine_1 = _lang.get("ERR_GENERIC_1");
                         sErrIDString = "ERR_GENERIC";
                     }

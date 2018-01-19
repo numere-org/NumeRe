@@ -858,10 +858,12 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
     }
     else if (sCommand == "fft")
     {
-        if ((_data.isValid() || _data.isValidCache()) && sCmd.length() > 4)
-            parser_fft(sCmd, _parser, _data, _option);
-        else
-            doc_Help("fft", _option);
+        parser_fft(sCmd, _parser, _data, _option);
+        return 1;
+    }
+    else if (sCommand == "fwt")
+    {
+        parser_wavelet(sCmd, _parser, _data, _option);
         return 1;
     }
     else if (findCommand(sCmd, "get").sString == "get" && sCommand != "help")
@@ -6026,7 +6028,7 @@ bool BI_CopyData(string& sCmd, Parser& _parser, Datafile& _data, const Settings&
             sTarget = getArgAtPos(sCmd, matchParams(sCmd, "t", '=')+1);
             sCmd.erase(matchParams(sCmd, "t", '=')-2);
         }
-        if (sTarget.find("data(") != string::npos)
+        if (sTarget.substr(0,5) == "data(")
             return false;
 
         for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
@@ -6045,13 +6047,13 @@ bool BI_CopyData(string& sCmd, Parser& _parser, Datafile& _data, const Settings&
         if (_iTargetIndex.nJ[1] == -1)
             _iTargetIndex.nJ[1] = _iTargetIndex.nJ[0];
     }
-    sToCopy = sCmd.substr(sCmd.find(' ')+1);
+    sToCopy = sCmd.substr(sCmd.find(' '));
     for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
     {
-        if (sToCopy.find(iter->first+"(") != string::npos || sToCopy.find("data(") != string::npos)
+        if (sToCopy.find(" " + iter->first+"(") != string::npos || sToCopy.find(" data(") != string::npos)
         {
             _iCopyIndex = parser_getIndices(sToCopy, _parser, _data, _option);
-            if (sToCopy.find(iter->first+"(") != string::npos)
+            if (sToCopy.find(" " + iter->first+"(") != string::npos)
             {
                 _data.setCacheStatus(true);
                 sToCopy = iter->first;
@@ -6203,20 +6205,10 @@ bool BI_CopyData(string& sCmd, Parser& _parser, Datafile& _data, const Settings&
                 }
             }
 
-
-        /*if (_data.getCacheStatus())
-        {*/
-
             parser_CheckIndices(_iCopyIndex.nI[0], _iCopyIndex.nI[1]);
             parser_CheckIndices(_iCopyIndex.nJ[0], _iCopyIndex.nJ[1]);
             parser_CheckIndices(_iTargetIndex.nI[0], _iTargetIndex.nI[1]);
             parser_CheckIndices(_iTargetIndex.nJ[0], _iTargetIndex.nJ[1]);
-
-            /*NumeReKernel::print(_data.getCacheCols(false) );
-            NumeReKernel::print(_iCopyIndex.nI[0] + " " + _iCopyIndex.nI[1] );
-            NumeReKernel::print(_iCopyIndex.nJ[0] + " " + _iCopyIndex.nJ[1] );
-            NumeReKernel::print(_iTargetIndex.nI[0] + " " + _iTargetIndex.nI[1] );
-            NumeReKernel::print(_iTargetIndex.nJ[0] + " " + _iTargetIndex.nJ[1] );*/
 
             Datafile _cache;
             _cache.setCacheStatus(true);
@@ -7006,7 +6998,7 @@ bool BI_moveData(string& sCmd, Parser& _parser, Datafile& _data, const Settings&
             sTarget = getArgAtPos(sCmd, matchParams(sCmd, "t", '=')+1);
             sCmd.erase(matchParams(sCmd, "t", '=')-2);
         }
-        if (sTarget.find("data(") != string::npos)
+        if (sTarget.substr(0,5) == "data(")
             return false;
 
         for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
@@ -7028,10 +7020,10 @@ bool BI_moveData(string& sCmd, Parser& _parser, Datafile& _data, const Settings&
     else
         return false;
 
-    sToMove = sCmd.substr(sCmd.find(' ')+1);
+    sToMove = sCmd.substr(sCmd.find(' '));
     for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
     {
-        if (sToMove.find(iter->first+"(") != string::npos)
+        if (sToMove.find(" " + iter->first+"(") != string::npos)
         {
             _iMoveIndex = parser_getIndices(sToMove, _parser, _data, _option);
 
@@ -7183,12 +7175,6 @@ bool BI_moveData(string& sCmd, Parser& _parser, Datafile& _data, const Settings&
             parser_CheckIndices(_iTargetIndex.nI[0], _iTargetIndex.nI[1]);
             parser_CheckIndices(_iTargetIndex.nJ[0], _iTargetIndex.nJ[1]);
 
-            /*NumeReKernel::print(_data.getCacheCols(false) );
-            NumeReKernel::print(_iCopyIndex.nI[0] + " " + _iCopyIndex.nI[1] );
-            NumeReKernel::print(_iCopyIndex.nJ[0] + " " + _iCopyIndex.nJ[1] );
-            NumeReKernel::print(_iTargetIndex.nI[0] + " " + _iTargetIndex.nI[1] );
-            NumeReKernel::print(_iTargetIndex.nJ[0] + " " + _iTargetIndex.nJ[1] );*/
-
             Datafile _cache;
             _cache.setCacheStatus(true);
             if (!_iMoveIndex.vI.size() && !_iMoveIndex.vJ.size())
@@ -7309,106 +7295,6 @@ bool BI_moveData(string& sCmd, Parser& _parser, Datafile& _data, const Settings&
                 }
             }
 
-            /*if (_iMoveIndex.nI[0] == -1 || _iMoveIndex.nJ[0] == -1)
-                return false;
-
-            if (_iMoveIndex.nI[1] == -1)
-                _iMoveIndex.nI[1] = _iMoveIndex.nI[0];
-            if (_iMoveIndex.nJ[1] == -1)
-                _iMoveIndex.nJ[1] = _iMoveIndex.nJ[0];
-            if (_iMoveIndex.nI[1] == -2)
-                _iMoveIndex.nI[1] = _data.getLines(iter->first, false)-1;
-            if (_iMoveIndex.nJ[1] == -2)
-                _iMoveIndex.nJ[1] = _data.getCols(iter->first)-1;
-            if (_iTargetIndex.nI[0] == -1)
-            {
-                if (!bTranspose)
-                {
-                    _iTargetIndex.nJ[0] = _data.getCacheCols(sTarget, false);
-                    _iTargetIndex.nJ[1] = _data.getCacheCols(sTarget, false) + (_iMoveIndex.nJ[1]-_iMoveIndex.nJ[0]);
-                    _iTargetIndex.nI[0] = 0;
-                    _iTargetIndex.nI[1] = _iMoveIndex.nI[1] - _iMoveIndex.nI[0];
-                }
-                else
-                {
-                    _iTargetIndex.nI[0] = 0;
-                    _iTargetIndex.nI[1] = (_iMoveIndex.nJ[1]-_iMoveIndex.nJ[0]);
-                    _iTargetIndex.nJ[0] = _data.getCacheCols(sTarget, false);
-                    _iTargetIndex.nJ[1] = _data.getCacheCols(sTarget, false) + (_iMoveIndex.nI[1] - _iMoveIndex.nI[0]);
-                }
-            }
-            if (!bTranspose)
-            {
-                if (_iTargetIndex.nI[1] == -2)
-                    _iTargetIndex.nI[1] = _iTargetIndex.nI[0] + _iMoveIndex.nI[1] - _iMoveIndex.nI[0];
-                if (_iTargetIndex.nJ[1] == -2)
-                    _iTargetIndex.nJ[1] = _iTargetIndex.nJ[0] + _iMoveIndex.nJ[1] - _iMoveIndex.nJ[0];
-            }
-            else
-            {
-                if (_iTargetIndex.nJ[1] == -2)
-                    _iTargetIndex.nJ[1] = _iTargetIndex.nJ[0] + _iMoveIndex.nI[1] - _iMoveIndex.nI[0];
-                if (_iTargetIndex.nI[1] == -2)
-                    _iTargetIndex.nI[1] = _iTargetIndex.nI[0] + _iMoveIndex.nJ[1] - _iMoveIndex.nJ[0];
-            }
-
-            parser_CheckIndices(_iMoveIndex.nI[0], _iMoveIndex.nI[1]);
-            parser_CheckIndices(_iMoveIndex.nJ[0], _iMoveIndex.nJ[1]);
-            parser_CheckIndices(_iTargetIndex.nI[0], _iTargetIndex.nI[1]);
-            parser_CheckIndices(_iTargetIndex.nJ[0], _iTargetIndex.nJ[1]);*/
-
-            /*NumeReKernel::print(_iMoveIndex.nI[0] + " " + _iMoveIndex.nI[1] );
-            NumeReKernel::print(_iMoveIndex.nJ[0] + " " + _iMoveIndex.nJ[1] );
-            NumeReKernel::print(_iTargetIndex.nI[0] + " " + _iTargetIndex.nI[1] );
-            NumeReKernel::print(_iTargetIndex.nJ[0] + " " + _iTargetIndex.nJ[1] );*/
-
-            /*Datafile _cache;
-            _cache.setCacheStatus(true);
-            for (long long int i = _iMoveIndex.nI[0]; i <= _iMoveIndex.nI[1]; i++)
-            {
-                for (long long int j = _iMoveIndex.nJ[0]; j <= _iMoveIndex.nJ[1]; j++)
-                {
-                    if (_data.isValidEntry(i,j,iter->first))
-                    {
-                        _cache.writeToCache(i-_iMoveIndex.nI[0], j-_iMoveIndex.nJ[0], "cache", _data.getElement(i,j, iter->first));
-                        _data.deleteEntry(i,j,iter->first);
-                    }
-                }
-            }
-            for (long long int i = 0; i < _cache.getCacheLines("cache", false); i++)
-            {
-                if (!bTranspose)
-                {
-                    if (i > _iTargetIndex.nI[1]-_iTargetIndex.nI[0])
-                        break;
-                }
-                else
-                {
-                    if (i > _iTargetIndex.nJ[1]-_iTargetIndex.nJ[0])
-                        break;
-                }
-                for (long long int j = 0; j < _cache.getCacheCols("cache", false); j++)
-                {
-                    if (!bTranspose)
-                    {
-                        if (j > _iTargetIndex.nJ[1]-_iTargetIndex.nJ[0])
-                            break;
-                        if (_cache.isValidEntry(i,j,"cache"))
-                            _data.writeToCache(i+_iTargetIndex.nI[0], j+_iTargetIndex.nJ[0], sTarget, _cache.getElement(i,j,"cache"));
-                        else if (_data.isValidEntry(i+_iTargetIndex.nI[0], j+_iTargetIndex.nJ[0], sTarget))
-                            _data.deleteEntry(i+_iTargetIndex.nI[0], j+_iTargetIndex.nJ[0], sTarget);
-                    }
-                    else
-                    {
-                        if (j > _iTargetIndex.nI[1]-_iTargetIndex.nI[0])
-                            break;
-                        if (_cache.isValidEntry(i,j,"cache"))
-                            _data.writeToCache(j+_iTargetIndex.nI[0], i+_iTargetIndex.nJ[0], sTarget, _cache.getElement(i,j,"cache"));
-                        else if (_data.isValidEntry(j+_iTargetIndex.nI[0], i+_iTargetIndex.nJ[0], sTarget))
-                            _data.deleteEntry(j+_iTargetIndex.nI[0], i+_iTargetIndex.nJ[0], sTarget);
-                    }
-                }
-            }*/
             _data.setCacheStatus(false);
             return true;
         }

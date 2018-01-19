@@ -20,6 +20,7 @@
 #include "parser_functions.hpp"
 #include "../../kernel.hpp"
 #include "spline.h"
+#include "wavelet.hpp"
 
 value_type vAns;
 Integration_Vars parser_iVars;
@@ -30,6 +31,8 @@ Plugin _plugin;
 const string sParserVersion = "1.0.2";
 void parser_ReplaceEntityStringOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityStringReplacement);
 void parser_ReplaceEntityOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityName, const string& sEntityReplacement, const Indices& _idx, Datafile& _data, Parser& _parser, const Settings& _option);
+Table parser_extractData(const string& sDataExpression, Parser& _parser, Datafile& _data, const Settings& _option);
+string parser_evalTargetExpression(string& sCmd, const string& sDefaultTarget, Indices& _idx, Parser& _parser, Datafile& _data, const Settings& _option);
 
 // this function is for extracting the data out of the data object and storing it to a continous block of memory
 bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Datafile& _cache, int nDesiredCols = 2, bool bSort = true)
@@ -2931,47 +2934,6 @@ string parser_GetDataElement(string& sLine, Parser& _parser, Datafile& _data, co
     if (nParenthesis)
         throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, SyntaxError::invalid_position);
 
-    // --> Findest du "data("? <--
-    if (sLine.find("data(") != string::npos)
-    {
-        // --> Sind ueberhaupt Daten vorhanden? <--
-        if (!_data.isValid() && (!sLine.find("data(") || checkDelimiter(sLine.substr(sLine.find("data(")-1,6))))
-        {
-            /* --> Nein? Mitteilen, BOOLEAN setzen (der die gesamte, weitere Auswertung abbricht)
-             *     und zurueck zur aufrufenden Funktion <--
-             */
-            throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sLine, SyntaxError::invalid_position);
-        }
-        // --> Ist rechts von "data(" noch ein "=" und gehoert das nicht zu einem Logik-Ausdruck? <--
-        eq_pos = sLine.find("=", sLine.find("data(")+5);
-        if (eq_pos != string::npos
-            && sLine[eq_pos+1] != '='
-            && sLine[eq_pos-1] != '<'
-            && sLine[eq_pos-1] != '>'
-            && sLine[eq_pos-1] != '!'
-            && !parser_CheckMultArgFunc(sLine.substr(0,sLine.find("data(")), sLine.substr(sLine.find(")",sLine.find("data(")+1)))
-            )
-        {
-            if (sLine.substr(sLine.find("data(")+5,sLine.find(",", sLine.find("data(")+5)-sLine.find("data(")-5).find("#") != string::npos)
-            {
-                sCache = sLine.substr(0,eq_pos);
-                sLine = sLine.substr(eq_pos+1);
-            }
-            else
-            {
-                // --> Ja? Dann brechen wir ebenfalls ab, da wir nicht in data() schreiben wollen <--
-                throw SyntaxError(SyntaxError::READ_ONLY_DATA, sLine, SyntaxError::invalid_position);
-            }
-        }
-        /* --> Diese Schleife ersetzt nacheinander alle Stellen, in denen "data(" auftritt, durch "Vektoren", die
-         *     in einer anderen Funktion weiterverarbeitet werden koennen. Eine aehnliche Schleife findet sich
-         *     auch fuer "cache(" etwas weiter unten. <--
-         * --> Wenn diese Schleife abgearbeitet ist, wird natuerlich auch noch geprueft, ob auch "cache(" gefunden
-         *     wird und ggf. die Schleife fuer den Cache gestartet. <--
-         */
-        if (sLine.find("data(") != string::npos)
-            parser_ReplaceEntities(sLine, "data(", _data, _parser, _option, bReplaceNANs);
-    }
 
     /* --> Jetzt folgt der ganze Spass fuer "cache(". Hier ist relativ viel aehnlich, allerdings gibt es
      *     noch den Fall, dass "cache(" links des "=" auftauchen darf, da es sich dabei um eine Zuweisung
@@ -3085,6 +3047,49 @@ string parser_GetDataElement(string& sLine, Parser& _parser, Datafile& _data, co
             // --> sLine_Temp an sLine zuweisen <--
             sLine = sLine_Temp;
         }
+    }
+
+
+    // --> Findest du "data("? <--
+    if (sLine.find("data(") != string::npos)
+    {
+        // --> Sind ueberhaupt Daten vorhanden? <--
+        if (!_data.isValid() && (!sLine.find("data(") || checkDelimiter(sLine.substr(sLine.find("data(")-1,6))))
+        {
+            /* --> Nein? Mitteilen, BOOLEAN setzen (der die gesamte, weitere Auswertung abbricht)
+             *     und zurueck zur aufrufenden Funktion <--
+             */
+            throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sLine, SyntaxError::invalid_position);
+        }
+        // --> Ist rechts von "data(" noch ein "=" und gehoert das nicht zu einem Logik-Ausdruck? <--
+        eq_pos = sLine.find("=", sLine.find("data(")+5);
+        if (eq_pos != string::npos
+            && sLine[eq_pos+1] != '='
+            && sLine[eq_pos-1] != '<'
+            && sLine[eq_pos-1] != '>'
+            && sLine[eq_pos-1] != '!'
+            && !parser_CheckMultArgFunc(sLine.substr(0,sLine.find("data(")), sLine.substr(sLine.find(")",sLine.find("data(")+1)))
+            )
+        {
+            if (sLine.substr(sLine.find("data(")+5,sLine.find(",", sLine.find("data(")+5)-sLine.find("data(")-5).find("#") != string::npos)
+            {
+                sCache = sLine.substr(0,eq_pos);
+                sLine = sLine.substr(eq_pos+1);
+            }
+            else
+            {
+                // --> Ja? Dann brechen wir ebenfalls ab, da wir nicht in data() schreiben wollen <--
+                throw SyntaxError(SyntaxError::READ_ONLY_DATA, sLine, SyntaxError::invalid_position);
+            }
+        }
+        /* --> Diese Schleife ersetzt nacheinander alle Stellen, in denen "data(" auftritt, durch "Vektoren", die
+         *     in einer anderen Funktion weiterverarbeitet werden koennen. Eine aehnliche Schleife findet sich
+         *     auch fuer "cache(" etwas weiter unten. <--
+         * --> Wenn diese Schleife abgearbeitet ist, wird natuerlich auch noch geprueft, ob auch "cache(" gefunden
+         *     wird und ggf. die Schleife fuer den Cache gestartet. <--
+         */
+        if (sLine.find("data(") != string::npos)
+            parser_ReplaceEntities(sLine, "data(", _data, _parser, _option, bReplaceNANs);
     }
 
     return sCache;
@@ -3531,7 +3536,6 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
     Indices _idx;
     string sEntityOccurence = "";
     string sEntityName = sEntity.substr(0, sEntity.find('('));
-    ///string sOprtChrs = "+-*/^&|!=?%";
     unsigned int nPos = 0;
     bool bWriteStrings = false;
     bool bWriteFileName = false;
@@ -3576,10 +3580,10 @@ void parser_ReplaceEntities(string& sLine, const string& sEntity, Datafile& _dat
             _idx.nI[1] = _idx.nI[0];
         if (_idx.nJ[1] == -1)
             _idx.nJ[1] = _idx.nJ[0];
-        if (_idx.nI[1] == -2)
-            _idx.nI[1] = _data.getLines(sEntityName, false)-1;
         if (_idx.nJ[1] == -2)
             _idx.nJ[1] = _data.getCols(sEntityName, false)-1;
+        if (_idx.nI[1] == -2)
+            _idx.nI[1] = _data.getLines(sEntityName, true)-_data.getAppendedZeroes(_idx.nJ[0], sEntityName)-1;
         if (_idx.nI[0] == -3)
             bWriteStrings = true;
         if (_idx.nJ[0] == -3)
@@ -8005,67 +8009,33 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
     return true;
 }
 
-// fft data(:,:) -set inverse complex
-bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
+Table parser_extractData(const string& sDataExpression, Parser& _parser, Datafile& _data, const Settings& _option)
 {
-    mglDataC _fftData;
-    //Indices _idx;
-    long long int nCols = 0;
-    int nDim = 0;
-    int nSize = 0;
-    int nSkip = 0;
-    double dNyquistFrequency = 1.0;
-    double dTimeInterval = 0.0;
-    double dPhaseOffset = 0.0;
-    bool bInverseTrafo = false;
-    bool bComplex = false;
-
-    if (matchParams(sCmd, "inverse"))
-        bInverseTrafo = true;
-    if (matchParams(sCmd, "complex"))
-        bComplex = true;
-
-    if (matchParams(sCmd, "inverse") || matchParams(sCmd, "complex"))
-    {
-        for (unsigned int i = 0; i < sCmd.length(); i++)
-        {
-            if (sCmd[i] == '(')
-                i += getMatchingParenthesis(sCmd.substr(i));
-            if (sCmd[i] == '-')
-            {
-                sCmd.erase(i);
-                break;
-            }
-        }
-    }
-
-    sCmd = sCmd.substr(sCmd.find(' ', sCmd.find("fft")));
-    StripSpaces(sCmd);
-
+    Cache _cache;
     string si_pos[2] = {"", ""};                    // String-Array fuer die Zeilen-Position: muss fuer alle Spalten identisch sein!
     string sj_pos[3] = {"", "", ""};                // String-Array fuer die Spalten: kann bis zu drei beliebige Werte haben
     string sDatatable = "data";
-    string sTargetTable = "cache";
     int i_pos[2] = {0, 0};                          // Int-Array fuer den Wert der Zeilen-Positionen
     int j_pos[3] = {0, 0, 0};                       // Int-Array fuer den Wert der Spalten-Positionen
     int nMatch = 0;                                 // Int fuer die Position des aktuellen find-Treffers eines Daten-Objekts
+    int nDim = 0;
     vector<long long int> vLine;
     vector<long long int> vCol;
     value_type* v = 0;
     int nResults = 0;
 
     // --> Ist da "cache" drin? Aktivieren wir den Cache-Status <--
-    if (_data.containsCacheElements(sCmd) && sCmd.substr(0,5) != "data(")
+    if (_data.containsCacheElements(sDataExpression) && sDataExpression.substr(0,5) != "data(")
     {
         if (_data.isValidCache())
             _data.setCacheStatus(true);
         else
-            throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::NO_CACHED_DATA, sDataExpression, SyntaxError::invalid_position);
         for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
         {
-            if (sCmd.find(iter->first+"(") != string::npos
-                && (!sCmd.find(iter->first+"(")
-                    || (sCmd.find(iter->first+"(") && checkDelimiter(sCmd.substr(sCmd.find(iter->first+"(")-1, (iter->first).length()+2)))))
+            if (sDataExpression.find(iter->first+"(") != string::npos
+                && (!sDataExpression.find(iter->first+"(")
+                    || (sDataExpression.find(iter->first+"(") && checkDelimiter(sDataExpression.substr(sDataExpression.find(iter->first+"(")-1, (iter->first).length()+2)))))
             {
                 sDatatable = iter->first;
                 break;
@@ -8073,10 +8043,10 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
         }
     }
     else if (!_data.isValid())
-        throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sDataExpression, SyntaxError::invalid_position);
     // --> Klammer und schliessende Klammer finden und in einen anderen String schreiben <--
-    nMatch = sCmd.find('(');
-    si_pos[0] = sCmd.substr(nMatch, getMatchingParenthesis(sCmd.substr(nMatch))+1);
+    nMatch = sDataExpression.find('(');
+    si_pos[0] = sDataExpression.substr(nMatch, getMatchingParenthesis(sDataExpression.substr(nMatch))+1);
     if (si_pos[0] == "()" || si_pos[0][si_pos[0].find_first_not_of(' ',1)] == ')')
         si_pos[0] = "(:,:)";
     if (si_pos[0].find("data(") != string::npos || _data.containsCacheElements(si_pos[0]))
@@ -8094,8 +8064,6 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
     }
     catch (...)
     {
-        //delete[] _mDataPlots;
-        //delete[] nDataDim;
         throw;
     }
     if (_option.getbDebug())
@@ -8111,8 +8079,6 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
         }
         catch (...)
         {
-            //delete[] _mDataPlots;
-            //delete[] nDataDim;
             throw;
         }
         if (!parser_ExprNotEmpty(si_pos[1]))
@@ -8121,10 +8087,6 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
     else
         si_pos[1] = "";
 
-    if (_option.getbDebug())
-    {
-        cerr << "|-> DEBUG: si_pos[0] = " << si_pos[0] << ", si_pos[1] = " << si_pos[1] << endl;
-    }
 
     // --> Auswerten mit dem Parser <--
     if (parser_ExprNotEmpty(si_pos[0]))
@@ -8143,7 +8105,7 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
         i_pos[0] = 0;
     if (si_pos[1] == "inf")
     {
-        i_pos[1] = _data.getLines(sDatatable, false);
+        i_pos[1] = _data.getLines(sDatatable, false)-1;
     }
     else if (parser_ExprNotEmpty(si_pos[1]))
     {
@@ -8154,9 +8116,6 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
         i_pos[1] = i_pos[0]+1;
     // --> Pruefen, ob die Reihenfolge der Indices sinnvoll ist <--
     parser_CheckIndices(i_pos[0], i_pos[1]);
-
-    if (_option.getbDebug())
-        cerr << "|-> DEBUG: i_pos[0] = " << i_pos[0] << ", i_pos[1] = " << i_pos[1] << ", vLine.size() = " << vLine.size() << endl;
 
     if (!parser_ExprNotEmpty(sj_pos[0]))
         sj_pos[0] = "0";
@@ -8182,8 +8141,6 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
     }
     catch (...)
     {
-        //delete[] _mDataPlots;
-        //delete[] nDataDim;
         throw;
     }
     // --> Alle nicht-beschriebenen Grenzen-Strings auf "" setzen <--
@@ -8239,7 +8196,6 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
         }
     }
     if (_option.getbDebug())
-        cerr << "|-> DEBUG: j_pos[0] = " << j_pos[0] << ", j_pos[1] = " << j_pos[1] << ", vCol.size() = " << vCol.size() << endl;
     if (i_pos[1] > _data.getLines(sDatatable, false))
         i_pos[1] = _data.getLines(sDatatable, false);
     if (j_pos[1] > _data.getCols(sDatatable)-1)
@@ -8251,9 +8207,7 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
         || j_pos[0] > _data.getCols(sDatatable)-1
         || j_pos[1] > _data.getCols(sDatatable)-1))
     {
-        /*delete[] _mDataPlots;
-        delete[] nDataDim;*/
-        throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::INVALID_INDEX, sDataExpression, SyntaxError::invalid_position);
     }
 
     // --> Jetzt wissen wir die Spalten: Suchen wir im Falle von si_pos[1] == inf nach der laengsten <--
@@ -8266,9 +8220,7 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
                 nAppendedZeroes = _data.getAppendedZeroes(j_pos[k], sDatatable);
         }
         if (nAppendedZeroes < i_pos[1])
-            i_pos[1] = _data.getLines(sDatatable, true) - nAppendedZeroes;
-        if (_option.getbDebug())
-            cerr << "|-> DEBUG: i_pos[1] = " << i_pos[1] << endl;
+            i_pos[1] = _data.getLines(sDatatable, true) - nAppendedZeroes-1;
     }
 
 
@@ -8277,7 +8229,7 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
      */
     nDim = 0;
     if (j == 0 && vCol.size() < 2)
-        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sDataExpression, SyntaxError::invalid_position);
     else if (j == 0)
         nDim = vCol.size();
     else
@@ -8292,144 +8244,162 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
     }
 
     parser_CheckIndices(i_pos[0], i_pos[1]);
-    // Groesse der Datensaetze bestimmen:
-    if (!vLine.size())
-        nSize = _data.num(sDatatable, i_pos[0], i_pos[1], j_pos[0]);
-    else
-        nSize = _data.num(sDatatable, vLine, vector<long long int>(1,vCol[0]));
-    //cerr << nSize << endl;
 
     if (abs(i_pos[0]-i_pos[1]) <= 1 && vLine.size() <= 1)
-        throw SyntaxError(SyntaxError::TOO_FEW_LINES, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::TOO_FEW_LINES, sDataExpression, SyntaxError::invalid_position);
 
-    _fftData.Create(nSize);
     if (!vLine.size())
     {
-        dNyquistFrequency = nSize / (_data.max(sDatatable, i_pos[0], i_pos[1], j_pos[0]) - _data.min(sDatatable, i_pos[0], i_pos[1], j_pos[0])) / 2.0;
-        dTimeInterval = (nSize-1) / _data.max(sDatatable, i_pos[0], i_pos[1], j_pos[0]);
+        if (nDim == 2)
+        {
+            for (int i = 0; i <= abs(i_pos[0]-i_pos[1]); i++)
+            {
+                _cache.writeToCache(i, 0, "cache", _data.getElement(i+i_pos[0], j_pos[0], sDatatable));
+                _cache.writeToCache(i, 1, "cache", _data.getElement(i+i_pos[0], j_pos[1], sDatatable));
+            }
+        }
+        else if (nDim == 3)
+        {
+            for (int i = 0; i <= abs(i_pos[0]-i_pos[1]); i++)
+            {
+                _cache.writeToCache(i, 0, "cache", _data.getElement(i+i_pos[0], j_pos[0], sDatatable));
+                _cache.writeToCache(i, 1, "cache", _data.getElement(i+i_pos[0], j_pos[1], sDatatable));
+                _cache.writeToCache(i, 2, "cache", _data.getElement(i+i_pos[0], j_pos[2], sDatatable));
+            }
+        }
     }
     else
     {
-        dNyquistFrequency = nSize / (_data.max(sDatatable, vLine, vector<long long int>(1,vCol[0])) - _data.min(sDatatable, vLine, vector<long long int>(1,vCol[0]))) / 2.0;
-        dTimeInterval = (nSize-1) / _data.max(sDatatable, vLine, vector<long long int>(1,vCol[0]));
+        if (nDim == 2)
+        {
+            for (size_t i = 0; i < vLine.size(); i++)
+            {
+                _cache.writeToCache(i, 0, "cache", _data.getElement(vLine[i], vCol[0], sDatatable));
+                _cache.writeToCache(i, 1, "cache", _data.getElement(vLine[i], vCol[1], sDatatable));
+            }
+        }
+        else if (nDim == 3)
+        {
+            for (size_t i = 0; i < vLine.size(); i++)
+            {
+                _cache.writeToCache(i, 0, "cache", _data.getElement(vLine[i], vCol[0], sDatatable));
+                _cache.writeToCache(i, 1, "cache", _data.getElement(vLine[i], vCol[1], sDatatable));
+                _cache.writeToCache(i, 2, "cache", _data.getElement(vLine[i], vCol[2], sDatatable));
+            }
+        }
     }
+
+    _cache.sortElements("cache -sort c=1[2:]");
+
+    _cache.renameCache("cache", sDatatable, true);
+
+    return _cache.extractTable(sDatatable);
+}
+
+// fft data(:,:) -set inverse complex
+bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
+{
+    mglDataC _fftData;
+    Indices _idx;
+
+    double dNyquistFrequency = 1.0;
+    double dTimeInterval = 0.0;
+    double dPhaseOffset = 0.0;
+    bool bInverseTrafo = false;
+    bool bComplex = false;
+    string sTargetTable = "fftdata";
+
+    if (matchParams(sCmd, "inverse"))
+        bInverseTrafo = true;
+    if (matchParams(sCmd, "complex"))
+        bComplex = true;
+
+    // search for explicit "target" options and select the target cache
+    sTargetTable = parser_evalTargetExpression(sCmd, sTargetTable, _idx, _parser, _data, _option);
+
+    if (matchParams(sCmd, "inverse") || matchParams(sCmd, "complex"))
+    {
+        for (unsigned int i = 0; i < sCmd.length(); i++)
+        {
+            if (sCmd[i] == '(')
+                i += getMatchingParenthesis(sCmd.substr(i));
+            if (sCmd[i] == '-')
+            {
+                sCmd.erase(i);
+                break;
+            }
+        }
+    }
+
+    sCmd = sCmd.substr(sCmd.find(' ', sCmd.find("fft")));
+    StripSpaces(sCmd);
+
+    // get the data from the data object
+    Table _table = parser_extractData(sCmd, _parser, _data, _option);
+
+    dNyquistFrequency = _table.getLines() / (_table.getValue(_table.getLines()-1, 0) - _table.getValue(0, 0)) / 2.0;
+    dTimeInterval = (_table.getLines()-1) / (_table.getValue(_table.getLines()-1, 0));
 
     if (_option.getSystemPrintStatus())
     {
-        if (!bInverseTrafo && nDim == 2)
-            NumeReKernel::printPreFmt(LineBreak("|-> "+_lang.get("PARSERFUNCS_FFT_FOURIERTRANSFORMING", toString(j_pos[0]+1), toString(j_pos[1]+1), toString(dNyquistFrequency,6)) + " ", _option, 0));
-            //cerr << LineBreak("|-> Fourier-transformiere Spalten " + toString(j_pos[0]+1) + " und " + toString(j_pos[1]+1) + ":$Nyquist-Grenzfrequenz ist " + toString(dNyquistFrequency,6) + " Hz ... ", _option);
-        else if (!bInverseTrafo)
-            NumeReKernel::printPreFmt(LineBreak("|-> "+_lang.get("PARSERFUNCS_FFT_FOURIERTRANSFORMING", toString(j_pos[0]+1)+", "+toString(j_pos[1]+1), toString(j_pos[2]+1), toString(dNyquistFrequency,6)) + " ", _option,0));
-            //cerr << LineBreak("|-> Fourier-transformiere Spalten " + toString(j_pos[0]+1) + ", " + toString(j_pos[1]+1) + " und " + toString(j_pos[2]+1) + ":$Nyquist-Grenzfrequenz ist " + toString(dNyquistFrequency,6) + " Hz ... ", _option);
-        else if (bInverseTrafo && nDim == 2)
-            NumeReKernel::printPreFmt(LineBreak("|-> "+_lang.get("PARSERFUNCS_FFT_INVERSE_FOURIERTRANSFORMING", toString(j_pos[0]+1), toString(j_pos[1]+1), toString(dNyquistFrequency,6)) + " ", _option,0));
-            //cerr << LineBreak("|-> Invers-Fourier-transformiere Spalten " + toString(j_pos[0]+1) + " und " + toString(j_pos[1]+1) + ":$Ergebnis-Zeitintervall ist " + toString(dTimeInterval,6) + " s ... ", _option);
+        if (!bInverseTrafo)
+            NumeReKernel::printPreFmt(LineBreak("|-> "+_lang.get("PARSERFUNCS_FFT_FOURIERTRANSFORMING", toString(_table.getCols()), toString(dNyquistFrequency, 6)) + " ", _option, 0));
         else
-            NumeReKernel::printPreFmt(LineBreak("|-> "+_lang.get("PARSERFUNCS_FFT_INVERSE_FOURIERTRANSFORMING", toString(j_pos[0]+1)+", "+toString(j_pos[1]+1), toString(j_pos[2]+1), toString(dNyquistFrequency,6)) + " ", _option,0));
-            //cerr << LineBreak("|-> Invers-Fourier-transformiere Spalten " + toString(j_pos[0]+1) + ", " + toString(j_pos[1]+1) + " und " + toString(j_pos[2]+1) + ":$Ergebnis-Zeitintervall ist " + toString(dTimeInterval,6) + " s ... ", _option);
+            NumeReKernel::printPreFmt(LineBreak("|-> "+_lang.get("PARSERFUNCS_FFT_INVERSE_FOURIERTRANSFORMING", toString(_table.getCols()), toString(dNyquistFrequency, 6)) + " ", _option, 0));
     }
 
-    if (!vLine.size())
+    _fftData.Create(_table.getLines());
+
+    for (size_t i = 0; i < _table.getLines(); i++)
     {
-        for (int i = 0; i < abs(i_pos[0]-i_pos[1]); i++)
+        if (_table.getCols() == 2)
         {
-            if (i-nSkip == nSize)
-                break;
-            if (nDim == 2)
-            {
-                if (_data.isValidEntry(i+i_pos[0], j_pos[1], sDatatable))
-                    _fftData.a[i-nSkip] = dual(_data.getElement(i+i_pos[0], j_pos[1], sDatatable),0.0);
-                else
-                    nSkip++;
-            }
-            else if (bComplex && nDim == 3)
-            {
-                if (_data.isValidEntry(i+i_pos[0], j_pos[1], sDatatable) && _data.isValidEntry(i+i_pos[0], j_pos[2], sDatatable))
-                    _fftData.a[i-nSkip] = dual(_data.getElement(i+i_pos[0], j_pos[1], sDatatable),_data.getElement(i+i_pos[0], j_pos[2], sDatatable));
-                else
-                    nSkip++;
-            }
-            else if (!bComplex && nDim == 3)
-            {
-                if (_data.isValidEntry(i+i_pos[0], j_pos[1], sDatatable) && _data.isValidEntry(i+i_pos[0], j_pos[2], sDatatable))
-                {
-                    _fftData.a[i-nSkip] = dual(_data.getElement(i+i_pos[0], j_pos[1], sDatatable)*cos(_data.getElement(i+i_pos[0], j_pos[2], sDatatable)),
-                                        _data.getElement(i+i_pos[0], j_pos[1], sDatatable)*sin(_data.getElement(i+i_pos[0], j_pos[2], sDatatable)));
-                }
-                else
-                    nSkip++;
-            }
+            _fftData.a[i] = dual(_table.getValue(i, 1), 0.0);
+        }
+        else if (_table.getCols() == 3 && bComplex)
+        {
+            _fftData.a[i] = dual(_table.getValue(i, 1), _table.getValue(i, 2));
+        }
+        else if (_table.getCols() == 3 && !bComplex)
+        {
+            _fftData.a[i] = dual(_table.getValue(i, 1)*cos(_table.getValue(i, 2)), _table.getValue(i, 1)*sin(_table.getValue(i, 3)));
         }
     }
-    else
-    {
-        for (unsigned int i = 0; i < vLine.size(); i++)
-        {
-            if (i-nSkip == (unsigned)nSize)
-                break;
-            if (nDim == 2)
-            {
-                if (_data.isValidEntry(vLine[i], vCol[1], sDatatable))
-                    _fftData.a[i-nSkip] = dual(_data.getElement(vLine[i], vCol[1], sDatatable), 0.0);
-                else
-                    nSkip++;
-            }
-            else if (bComplex && nDim == 3)
-            {
-                if (_data.isValidEntry(vLine[i], vCol[1], sDatatable) && _data.isValidEntry(vLine[i], vCol[2], sDatatable))
-                    _fftData.a[i-nSkip] = dual(_data.getElement(vLine[i], vCol[1], sDatatable),_data.getElement(vLine[i], vCol[2], sDatatable));
-                else
-                    nSkip++;
-            }
-            else if (!bComplex && nDim == 3)
-            {
-                if (_data.isValidEntry(vLine[i], vCol[1], sDatatable) && _data.isValidEntry(vLine[i], vCol[2], sDatatable))
-                {
-                    _fftData.a[i-nSkip] = dual(_data.getElement(vLine[i], vCol[1], sDatatable)*cos(_data.getElement(vLine[i], vCol[2], sDatatable)),
-                                        _data.getElement(vLine[i], vCol[1], sDatatable)*sin(_data.getElement(vLine[i], vCol[2], sDatatable)));
-                }
-                else
-                    nSkip++;
-            }
-        }
-    }
-    try
-    {
-        if (!bInverseTrafo)
-        {
-            _fftData.FFT("x");
-            _fftData.a[0] /= dual((double)nSize, 0.0);
-            _fftData.a[(int)round(_fftData.GetNx()/2.0)] /= dual(2.0, 0.0);
-            for (long long int i = 1; i < _fftData.GetNx(); i++)
-                _fftData.a[i] /= dual((double)nSize/2.0, 0.0);
-        }
-        else
-        {
-            _fftData.a[0] *= dual(2.0,0.0);
-            _fftData.a[_fftData.GetNx()-1] *= dual(2.0,0.0);
-            for (long long int i = 0; i < _fftData.GetNx(); i++)
-                _fftData.a[i] *= dual((double)(_fftData.GetNx()-1),0.0);
-            _fftData.FFT("ix");
-        }
-    }
-    catch (...)
-    {
-        throw;
-    }
-    if (sDatatable != "data")
-        sTargetTable = sDatatable;
-    nCols = _data.getCacheCols(sTargetTable, false)+1;
+
 
     if (!bInverseTrafo)
     {
+        _fftData.FFT("x");
+        _fftData.a[0] /= dual((double)_table.getLines(), 0.0);
+        _fftData.a[(int)round(_fftData.GetNx()/2.0)] /= dual(2.0, 0.0);
+        for (long long int i = 1; i < _fftData.GetNx(); i++)
+            _fftData.a[i] /= dual((double)_table.getLines()/2.0, 0.0);
+    }
+    else
+    {
+        _fftData.a[0] *= dual(2.0,0.0);
+        _fftData.a[_fftData.GetNx()-1] *= dual(2.0,0.0);
+        for (long long int i = 0; i < _fftData.GetNx(); i++)
+            _fftData.a[i] *= dual((double)(_fftData.GetNx()-1),0.0);
+        _fftData.FFT("ix");
+    }
+
+
+    if (_idx.nJ[1] == -2)
+        _idx.nJ[1] = _idx.nJ[0] + 3;
+
+    if (!bInverseTrafo)
+    {
+        if (_idx.nI[1] == -2)
+            _idx.nI[1] = _idx.nI[0] + (int)round(_fftData.GetNx()/2.0)+1;
         for (long long int i = 0; i < (int)round(_fftData.GetNx()/2.0)+1; i++)
         {
-            _data.writeToCache(i, nCols-1, sTargetTable, 2.0*(double)(i)*dNyquistFrequency/(double)(_fftData.GetNx()));
+            if (i > _idx.nI[1] - _idx.nI[0])
+                break;
+            _data.writeToCache(i+_idx.nI[0], _idx.nJ[0], sTargetTable, 2.0*(double)(i)*dNyquistFrequency/(double)(_fftData.GetNx()));
             if (!bComplex)
             {
-                _data.writeToCache(i, nCols, sTargetTable, hypot(_fftData.a[i].real(),_fftData.a[i].imag()));
-                //if (i > 2 && (2.0*atan2(_fftData.a[i].imag(), _fftData.a[i].real()) > M_PI && 2.0*atan2(_fftData.a[i-1].imag(), _fftData.a[i-1].real()) < -M_PI)
+                _data.writeToCache(i+_idx.nI[0], _idx.nJ[0]+1, sTargetTable, hypot(_fftData.a[i].real(),_fftData.a[i].imag()));
                 if (i > 2 && (fabs(atan2(_fftData.a[i].imag(), _fftData.a[i].real())-atan2(_fftData.a[i-1].imag(),_fftData.a[i-1].real())) >= M_PI)
                     && ((atan2(_fftData.a[i].imag(), _fftData.a[i].real())-atan2(_fftData.a[i-1].imag(),_fftData.a[i-1].real()))*(atan2(_fftData.a[i-1].imag(), _fftData.a[i-1].real())-atan2(_fftData.a[i-2].imag(),_fftData.a[i-2].real())) < 0))
                 {
@@ -8438,41 +8408,206 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
                     else if (atan2(_fftData.a[i-1].imag(), _fftData.a[i-1].real())-atan2(_fftData.a[i-2].imag(),_fftData.a[i-2].real()) > 0.0)
                         dPhaseOffset += 2*M_PI;
                 }
-                _data.writeToCache(i, nCols+1, sTargetTable, atan2(_fftData.a[i].imag(), _fftData.a[i].real())+dPhaseOffset);
+                _data.writeToCache(i+_idx.nI[0], _idx.nJ[0]+2, sTargetTable, atan2(_fftData.a[i].imag(), _fftData.a[i].real())+dPhaseOffset);
             }
             else
             {
-                _data.writeToCache(i, nCols, sTargetTable, _fftData.a[i].real());
-                _data.writeToCache(i, nCols+1, sTargetTable, _fftData.a[i].imag());
+                _data.writeToCache(i, _idx.nJ[0]+1, sTargetTable, _fftData.a[i].real());
+                _data.writeToCache(i, _idx.nJ[0]+2, sTargetTable, _fftData.a[i].imag());
             }
         }
 
         _data.setCacheStatus(true);
-        _data.setHeadLineElement(nCols-1, sTargetTable, _lang.get("COMMON_FREQUENCY")+"_[Hz]");
+        _data.setHeadLineElement(_idx.nJ[0], sTargetTable, _lang.get("COMMON_FREQUENCY")+"_[Hz]");
         if (!bComplex)
         {
-            _data.setHeadLineElement(nCols, sTargetTable, _lang.get("COMMON_AMPLITUDE"));
-            _data.setHeadLineElement(nCols+1, sTargetTable, _lang.get("COMMON_PHASE")+"_[rad]");
+            _data.setHeadLineElement(_idx.nJ[0]+1, sTargetTable, _lang.get("COMMON_AMPLITUDE"));
+            _data.setHeadLineElement(_idx.nJ[0]+2, sTargetTable, _lang.get("COMMON_PHASE")+"_[rad]");
         }
         else
         {
-            _data.setHeadLineElement(nCols, sTargetTable, "Re("+_lang.get("COMMON_AMPLITUDE")+")");
-            _data.setHeadLineElement(nCols+1, sTargetTable, "Im("+_lang.get("COMMON_AMPLITUDE")+")");
+            _data.setHeadLineElement(_idx.nJ[0]+1, sTargetTable, "Re("+_lang.get("COMMON_AMPLITUDE")+")");
+            _data.setHeadLineElement(_idx.nJ[0]+2, sTargetTable, "Im("+_lang.get("COMMON_AMPLITUDE")+")");
         }
     }
     else
     {
+        if (_idx.nI[1] == -2)
+            _idx.nI[1] = _idx.nI[0] + _fftData.GetNx();
         for (long long int i = 0; i < _fftData.GetNx(); i++)
         {
-            _data.writeToCache(i, nCols-1, sTargetTable, (double)(i)*dTimeInterval/(double)(_fftData.GetNx()-1));
-            _data.writeToCache(i, nCols, sTargetTable, _fftData.a[i].real());
-            _data.writeToCache(i, nCols+1, sTargetTable, _fftData.a[i].imag());
+            if (i > _idx.nI[1] - _idx.nI[0])
+                break;
+            _data.writeToCache(i+_idx.nI[0], _idx.nJ[0], sTargetTable, (double)(i)*dTimeInterval/(double)(_fftData.GetNx()-1));
+            _data.writeToCache(i+_idx.nI[0], _idx.nJ[0]+1, sTargetTable, _fftData.a[i].real());
+            _data.writeToCache(i+_idx.nI[0], _idx.nJ[0]+2, sTargetTable, _fftData.a[i].imag());
         }
 
         _data.setCacheStatus(true);
-        _data.setHeadLineElement(nCols-1, sTargetTable, _lang.get("COMMON_TIME")+"_[s]");
-        _data.setHeadLineElement(nCols, sTargetTable, "Re("+_lang.get("COMMON_SIGNAL")+")");
-        _data.setHeadLineElement(nCols+1, sTargetTable, "Im("+_lang.get("COMMON_SIGNAL")+")");
+        _data.setHeadLineElement(_idx.nJ[0], sTargetTable, _lang.get("COMMON_TIME")+"_[s]");
+        _data.setHeadLineElement(_idx.nJ[0]+1, sTargetTable, "Re("+_lang.get("COMMON_SIGNAL")+")");
+        _data.setHeadLineElement(_idx.nJ[0]+2, sTargetTable, "Im("+_lang.get("COMMON_SIGNAL")+")");
+    }
+    if (_option.getSystemPrintStatus())
+        NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
+
+    _data.setCacheStatus(false);
+    return true;
+}
+
+// fwt data(:,:) -set inverse type=cd k=1
+bool parser_wavelet(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
+{
+    vector<double> vWaveletData;
+    vector<double> vAxisData;
+    Indices _idx;
+
+    bool bInverseTrafo = false;
+    bool bTargetGrid = false;
+    string sTargetTable = "fwtdata";
+    string sType = "d"; // d = daubechies, cd = centered daubechies, h = haar, ch = centered haar, b = bspline, cb = centered bspline
+    int k = 4;
+
+    if (matchParams(sCmd, "inverse"))
+        bInverseTrafo = true;
+    if (matchParams(sCmd, "grid"))
+        bTargetGrid = true;
+    if (matchParams(sCmd, "type", '='))
+        sType = getArgAtPos(sCmd, matchParams(sCmd, "type", '=')+4);
+    if (matchParams(sCmd, "k", '='))
+    {
+        _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "k", '=')+1));
+        k = (int)_parser.Eval();
+    }
+
+
+    // search for explicit "target" options and select the target cache
+    sTargetTable = parser_evalTargetExpression(sCmd, sTargetTable, _idx, _parser, _data, _option);
+
+    if (matchParams(sCmd, "inverse") || matchParams(sCmd, "type", '=') || matchParams(sCmd, "k", '='))
+    {
+        for (unsigned int i = 0; i < sCmd.length(); i++)
+        {
+            if (sCmd[i] == '(')
+                i += getMatchingParenthesis(sCmd.substr(i));
+            if (sCmd[i] == '-')
+            {
+                sCmd.erase(i);
+                break;
+            }
+        }
+    }
+    sCmd = sCmd.substr(sCmd.find(' ', sCmd.find("fwt")));
+    StripSpaces(sCmd);
+
+    // get the data from the data object
+    Table _table = parser_extractData(sCmd, _parser, _data, _option);
+
+    if (_option.getSystemPrintStatus())
+    {
+        string sExplType = "";
+
+        if (sType.front() == 'c')
+            sExplType = "Centered ";
+
+        if (sType.back() == 'd' || sType.find("daubechies") != string::npos)
+            sExplType += "Daubechies";
+        else if (sType.back() == 'h' || sType.find("haar") != string::npos)
+            sExplType += "Haar";
+        else if (sType.back() == 'b' || sType.find("bspline") != string::npos)
+            sExplType += "BSpline";
+
+        if (!bInverseTrafo)
+            NumeReKernel::printPreFmt(LineBreak("|-> "+_lang.get("PARSERFUNCS_WAVELET_TRANSFORMING", sExplType) + " ", _option, 0));
+        else
+            NumeReKernel::printPreFmt(LineBreak("|-> "+_lang.get("PARSERFUNCS_WAVELET_INVERSE_TRANSFORMING", sExplType) + " ", _option, 0));
+    }
+
+    for (size_t i = 0; i < _table.getLines(); i++)
+    {
+        vWaveletData.push_back(_table.getValue(i, 1));
+        if (bTargetGrid)
+            vAxisData.push_back(_table.getValue(i, 0));
+    }
+
+    // calculate the wavelet:
+    if (sType == "d" || sType == "daubechies")
+        calculateWavelet(vWaveletData, Daubechies, k, !bInverseTrafo);
+    else if (sType == "cd" || sType == "cdaubechies")
+        calculateWavelet(vWaveletData, CenteredDaubechies, k, !bInverseTrafo);
+    else if (sType == "h" || sType == "haar")
+        calculateWavelet(vWaveletData, Haar, k, !bInverseTrafo);
+    else if (sType == "ch" || sType == "chaar")
+        calculateWavelet(vWaveletData, CenteredHaar, k, !bInverseTrafo);
+    else if (sType == "b" || sType == "bspline")
+        calculateWavelet(vWaveletData, BSpline, k, !bInverseTrafo);
+    else if (sType == "cb" || sType == "cbspline")
+        calculateWavelet(vWaveletData, CenteredBSpline, k, !bInverseTrafo);
+
+    // write the output as datagrid for plotting (only if not an inverse trafo)
+    if (bTargetGrid && !bInverseTrafo)
+    {
+        Table tWaveletData = decodeWaveletData(vWaveletData, vAxisData);
+
+        if (_idx.nJ[1] == -2)
+            _idx.nJ[1] = _idx.nJ[0] + tWaveletData.getCols();
+
+        if (_idx.nI[1] == -2)
+            _idx.nI[1] = _idx.nI[0] + tWaveletData.getLines();
+
+        for (size_t i = 0; i < tWaveletData.getLines(); i++)
+        {
+            if (i + _idx.nI[0] > _idx.nI[1])
+                break;
+            for (size_t j = 0; j < tWaveletData.getCols(); j++)
+            {
+                // write the headlines
+                if (!i)
+                {
+                    string sHeadline = "";
+                    if (!j)
+                        sHeadline = _lang.get("COMMON_TIME");
+                    else if (j == 1)
+                        sHeadline = _lang.get("COMMON_LEVEL");
+                    else
+                        sHeadline = _lang.get("COMMON_COEFFICIENT");
+                    _data.setHeadLineElement(j + _idx.nJ[0], sTargetTable, sHeadline);
+                }
+                if (j + _idx.nJ[0] > _idx.nJ[1])
+                    break;
+                _data.writeToCache(i + _idx.nI[0], j + _idx.nJ[0], sTargetTable, tWaveletData.getValue(i, j));
+            }
+        }
+        if (_option.getSystemPrintStatus())
+            NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
+
+        return true;
+    }
+
+    // write the output as usual data rows
+    if (_idx.nJ[1] == -2)
+        _idx.nJ[1] = _idx.nJ[0] + 2;
+
+    if (_idx.nI[1] == -2)
+        _idx.nI[1] = _idx.nI[0] + vWaveletData.size();
+    for (long long int i = 0; i < vWaveletData.size(); i++)
+    {
+        if (i > _idx.nI[1] - _idx.nI[0])
+            break;
+        _data.writeToCache(i+_idx.nI[0], _idx.nJ[0], sTargetTable, (double)(i));
+        _data.writeToCache(i, _idx.nJ[0]+1, sTargetTable, vWaveletData[i]);
+    }
+
+    _data.setCacheStatus(true);
+    if (!bInverseTrafo)
+    {
+        _data.setHeadLineElement(_idx.nJ[0], sTargetTable, _lang.get("COMMON_COEFFICIENT"));
+        _data.setHeadLineElement(_idx.nJ[0]+1, sTargetTable, _lang.get("COMMON_AMPLITUDE"));
+    }
+    else
+    {
+        _data.setHeadLineElement(_idx.nJ[0], sTargetTable, _lang.get("COMMON_TIME"));
+        _data.setHeadLineElement(_idx.nJ[0]+1, sTargetTable, _lang.get("COMMON_SIGNAL"));
     }
     if (_option.getSystemPrintStatus())
         NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
@@ -8784,28 +8919,10 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
         sCmd.erase(sCmd.find(getArgAtPos(sCmd, matchParams(sCmd, "samples", '=')+7), matchParams(sCmd, "samples", '=')-1),getArgAtPos(sCmd, matchParams(sCmd, "samples", '=')+7).length());
         sCmd.erase(matchParams(sCmd, "samples", '=')-1, 8);
     }
-    if (matchParams(sCmd, "target", '='))
-    {
-        sTargetCache = getArgAtPos(sCmd, matchParams(sCmd, "target", '=')+6);
-        _idx = parser_getIndices(sTargetCache, _parser, _data, _option);
-        sTargetCache.erase(sTargetCache.find('('));
-        if (sTargetCache == "data")
-            throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, sTargetCache);
 
-        if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
-        sCmd.erase(sCmd.find(getArgAtPos(sCmd, matchParams(sCmd, "target", '=')+6), matchParams(sCmd, "target", '=')-1),getArgAtPos(sCmd, matchParams(sCmd, "target", '=')+6).length());
-        sCmd.erase(matchParams(sCmd, "target", '=')-1, 7);
-    }
-    else
-    {
-        _idx.nI[0] = 0;
-        _idx.nI[1] = -2;
-        _idx.nJ[0] = 0;
-        if (_data.isCacheElement("grid()"))
-            _idx.nJ[0] += _data.getCols("grid", false);
-        _idx.nJ[1] = -2;
-    }
+    // search for explicit "target" options and select the target cache
+    sTargetCache = parser_evalTargetExpression(sCmd, sTargetCache, _idx, _parser, _data, _option);
+
     if (matchParams(sCmd, "transpose"))
     {
         bTranspose = true;
@@ -9396,8 +9513,8 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
     if (_idx.nJ[1] == -2 || _idx.nJ[1] == -1)
         _idx.nJ[1] = _idx.nJ[0] + vYVals.size()+2;
 
-    if (!_data.isCacheElement(sTargetCache))
-        _data.addCache(sTargetCache, _option);
+    /*if (!_data.isCacheElement(sTargetCache))
+        _data.addCache(sTargetCache, _option);*/
     _data.setCacheStatus(true);
     //long long int nFirstCol = _data.getCacheCols(sTargetCache, false);
     for (unsigned int i = 0; i < vXVals.size(); i++)
@@ -9427,6 +9544,43 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
     return true;
 }
 
+
+string parser_evalTargetExpression(string& sCmd, const string& sDefaultTarget, Indices& _idx, Parser& _parser, Datafile& _data, const Settings& _option)
+{
+    string sTargetTable;
+
+    if (matchParams(sCmd, "target", '='))
+    {
+        sTargetTable = getArgAtPos(sCmd, matchParams(sCmd, "target", '=')+6);
+        if (sTargetTable.substr(0,sTargetTable.find('(')) == "data")
+            throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, sTargetTable);
+
+        if (!_data.isCacheElement(sTargetTable.substr(0,sTargetTable.find('('))+"()"))
+            _data.addCache(sTargetTable.substr(0,sTargetTable.find('(')), _option);
+        _idx = parser_getIndices(sTargetTable, _parser, _data, _option);
+        sTargetTable.erase(sTargetTable.find('('));
+
+        if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+
+        sCmd.erase(sCmd.find(getArgAtPos(sCmd, matchParams(sCmd, "target", '=')+6), matchParams(sCmd, "target", '=')-1), getArgAtPos(sCmd, matchParams(sCmd, "target", '=')+6).length());
+        sCmd.erase(matchParams(sCmd, "target", '=')-1, 7);
+    }
+    else
+    {
+        _idx.nI[0] = 0;
+        _idx.nI[1] = -2;
+        _idx.nJ[0] = 0;
+        if (_data.isCacheElement(sDefaultTarget + "()"))
+            _idx.nJ[0] += _data.getCols(sDefaultTarget, false);
+        else
+            _data.addCache(sDefaultTarget, _option);
+        _idx.nJ[1] = -2;
+        sTargetTable = sDefaultTarget;
+    }
+
+    return sTargetTable;
+}
 
 bool parser_evalIndices(const string& sCache, Indices& _idx, Datafile& _data)
 {

@@ -33,6 +33,7 @@
 #include "../filesystem.hpp"
 #include "../version.h"
 #include "../maths/resampler.h"
+#include "table.hpp"
 
 
 #ifndef CACHE_HPP
@@ -241,6 +242,9 @@ class Cache : public FileSystem
         void setCacheFileName(string _sFileName);
         bool saveCache();
         bool loadCache();
+
+        Table extractTable(const string& _sTable);
+        Table extractTable(long long int _nLayer, const string& _sTable = "");
 
         // STRINGFUNCS
         bool writeString(const string& _sString, unsigned int _nthString = string::npos, unsigned int nCol = 0);
