@@ -61,7 +61,8 @@ void BI_export_excel(Datafile& _data, Settings& _option, const string& sCache, c
         }
     }
     _excel.SaveAs(sFileName.c_str());
-    NumeReKernel::print(LineBreak(_lang.get("OUTPUT_FORMAT_SUMMARY_FILE", toString((_data.getLines(sCache)+1)*_data.getCols(sCache)), sFileName), _option));
+    if (_option.getSystemPrintStatus())
+        NumeReKernel::print(LineBreak(_lang.get("OUTPUT_FORMAT_SUMMARY_FILE", toString((_data.getLines(sCache)+1)*_data.getCols(sCache)), sFileName), _option));
     return;
 }
 
@@ -2547,8 +2548,11 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                         //NumeReKernel::print(LineBreak("|-> Zeichenketten wurden erfolgreich entfernt.", _option) );
                 }
                 else
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_EMPTY"), _option) );
-                    //NumeReKernel::print(LineBreak("|-> Es wurden keine Zeichenketten gefunden.", _option) );
+                {
+                    if (_option.getSystemPrintStatus())
+                        NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_EMPTY"), _option) );
+                        //NumeReKernel::print(LineBreak("|-> Es wurden keine Zeichenketten gefunden.", _option) );
+                }
                 return 1;
             }
             else
@@ -4049,8 +4053,11 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                         //NumeReKernel::print(LineBreak("|-> Zeichenketten wurden erfolgreich entfernt.", _option) );
                 }
                 else
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_EMPTY"), _option) );
-                    //NumeReKernel::print(LineBreak("|-> Es wurden keine Zeichenketten gefunden.", _option) );
+                {
+                    if (_option.getSystemPrintStatus())
+                        NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_EMPTY"), _option) );
+                        //NumeReKernel::print(LineBreak("|-> Es wurden keine Zeichenketten gefunden.", _option) );
+                }
                 return 1;
             }
         }
@@ -4661,8 +4668,11 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                         //NumeReKernel::print(LineBreak("|-> Zeichenketten wurden erfolgreich entfernt.", _option) );
                 }
                 else
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_EMPTY", "1"), _option) );
-                    //NumeReKernel::print(LineBreak("|-> Es wurden keine Zeichenketten gefunden.", _option) );
+                {
+                    if (_option.getSystemPrintStatus())
+                        NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_EMPTY", "1"), _option) );
+                        //NumeReKernel::print(LineBreak("|-> Es wurden keine Zeichenketten gefunden.", _option) );
+                }
                 return 1;
             }
             else if (sCmd.find(" string(", findCommand(sCmd).nPos) != string::npos)
@@ -4676,8 +4686,11 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                         //NumeReKernel::print(LineBreak("|-> Zeichenketten wurden erfolgreich entfernt.", _option) );
                 }
                 else
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_EMPTY", toString(nArgument+1)), _option) );
-                    //NumeReKernel::print(LineBreak("|-> Es wurden keine Zeichenketten gefunden.", _option) );
+                {
+                    if (_option.getSystemPrintStatus())
+                        NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_EMPTY", toString(nArgument+1)), _option) );
+                        //NumeReKernel::print(LineBreak("|-> Es wurden keine Zeichenketten gefunden.", _option) );
+                }
                 return 1;
 
             }

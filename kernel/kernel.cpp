@@ -1552,6 +1552,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             /* --> Allgemeine Exception abfangen, die nicht durch mu::exception_type oder std::exception
              *     abgedeckt wird <--
              */
+            _option.setSystemPrintStatus(true);
             sendErrorNotification();
             make_hline();
             print(toUpperCase(_lang.get("ERR_CATCHALL_HEAD")));

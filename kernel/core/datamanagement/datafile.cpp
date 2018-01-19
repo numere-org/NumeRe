@@ -4006,10 +4006,10 @@ bool Datafile::sortElements(const string& sLine) // data -sort[[=desc]] cols=1[2
     else if (sLine.find("cache") != string::npos || sLine.find("data") == string::npos)
         return Cache::sortElements(sLine);
 
-    int nIndex[nLines];
+    int* nIndex = new int[nLines];
     bool bError = false;
     //bool bSortVector[nLines];
-    double dSortVector[nLines];
+    double* dSortVector = new double[nLines];
     for (int i = 0; i < nLines; i++)
         nIndex[i] = i;
 
@@ -4244,6 +4244,9 @@ bool Datafile::sortElements(const string& sLine) // data -sort[[=desc]] cols=1[2
             }
         }
     }
+
+    delete[] nIndex;
+    delete[] dSortVector;
 
     return !bError;
 }

@@ -745,10 +745,10 @@ void Cache::deleteEntry(long long int _nLine, long long int _nCol, long long int
     return;
 }
 
-bool Cache::qSort(int* nIndex, int nElements, int nKey, int nLayer, int nLeft, int nRight, int nSign)
+bool Cache::qSort(int* nIndex, int nElements, int nKey, int nLayer, int nLeft, int _nRight, int nSign)
 {
     //cerr << nLeft << "/" << nRight << endl;
-
+    int nRight = _nRight;
     if (!nIndex || !nElements || nLeft < 0 || nRight > nElements || nRight < nLeft)
     {
         return false;
@@ -792,11 +792,12 @@ bool Cache::qSort(int* nIndex, int nElements, int nKey, int nLayer, int nLeft, i
         nIndex[i] = nIndex[nRight];
         nIndex[nRight] = nTemp;
     }
-    if (isnan(dCache[nIndex[nRight-1]][nKey][nLayer]))
+    while (isnan(dCache[nIndex[nRight-1]][nKey][nLayer]) && !isnan(dCache[nIndex[nRight]][nKey][nLayer]))
     {
         int nTemp = nIndex[nRight-1];
         nIndex[nRight-1] = nIndex[nRight];
         nIndex[nRight] = nTemp;
+        nRight--;
     }
     //cerr << nLeft << "/" << i << endl;
     if (i > nLeft)
@@ -804,9 +805,9 @@ bool Cache::qSort(int* nIndex, int nElements, int nKey, int nLayer, int nLeft, i
         if (!qSort(nIndex, nElements, nKey, nLayer, nLeft, i-1, nSign))
             return false;
     }
-    if (i < nRight)
+    if (i < _nRight)
     {
-        if (!qSort(nIndex, nElements, nKey, nLayer, i+1, nRight, nSign))
+        if (!qSort(nIndex, nElements, nKey, nLayer, i+1, _nRight, nSign))
             return false;
     }
     return true;
@@ -816,11 +817,11 @@ bool Cache::sortElements(const string& sLine) // cache -sort[[=desc]] cols=1[2:3
 {
     if (!dCache)
         return false;
-    int nIndex[nLines];
+    int* nIndex = new int[nLines];
     int nLayer = 0;
     bool bError = false;
     //bool bSortVector[nLines];
-    double dSortVector[nLines];
+    double* dSortVector = new double[nLines];
     for (int i = 0; i < nLines; i++)
         nIndex[i] = i;
 
@@ -1080,6 +1081,9 @@ bool Cache::sortElements(const string& sLine) // cache -sort[[=desc]] cols=1[2:3
         bIsSaved = false;
         nLastSaved = time(0);
     }
+
+    delete[] nIndex;
+    delete[] dSortVector;
 
     return !bError;
 }

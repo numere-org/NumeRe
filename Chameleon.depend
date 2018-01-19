@@ -3947,7 +3947,7 @@
 1490787950 source:d:\cpp\numere-source\trunk\kernel\core\basicexcel.cpp
 	"BasicExcel.hpp"
 
-1515639239 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1516356289 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
@@ -4217,7 +4217,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1515654040 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1516349703 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 
@@ -4929,7 +4929,7 @@
 	"cache.hpp"
 	"../../kernel.hpp"
 
-1511630497 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
+1516351056 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
 	"datafile.hpp"
 	"../../kernel.hpp"
 
@@ -5040,7 +5040,7 @@
 	"../plotting/plotdata.hpp"
 	"../script.hpp"
 
-1513973441 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.cpp
+1516350165 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.cpp
 	"procedure.hpp"
 	"../../kernel.hpp"
 	"procedurevarfactory.hpp"
@@ -5248,7 +5248,7 @@
 	<vector>
 	"../datamanagement/table.hpp"
 
-1516258406 source:d:\cpp\numere-source\trunk\kernel\core\maths\wavelet.cpp
+1516305222 source:d:\cpp\numere-source\trunk\kernel\core\maths\wavelet.cpp
 	"wavelet.hpp"
 	"../ui/error.hpp"
 	"resampler.h"

@@ -23,6 +23,7 @@
 
 #define FLAG_EXPLICIT 1
 #define FLAG_INLINE 2
+#define FLAG_MASK 4
 
 
 Procedure::Procedure() : FlowCtrl(), Plugin()
@@ -799,6 +800,15 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 }
                 if (sVarDeclarationList.find("inline", nMatch) != string::npos)
                     nFlags |= FLAG_INLINE;
+                if (sVarDeclarationList.find("mask", nMatch) != string::npos || sVarDeclarationList.find("silent", nMatch) != string::npos)
+                {
+                    if (_option.getSystemPrintStatus())
+                    {
+                        // if the print status is true, set it to false
+                        _option.setSystemPrintStatus(false);
+                        nFlags |= FLAG_MASK;
+                    }
+                }
             }
             sCallingNameSpace = sThisNameSpace;
             sVarDeclarationList = sVarDeclarationList.substr(1, getMatchingParenthesis(sVarDeclarationList)-1);
@@ -1494,6 +1504,13 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
     fProc_in.close();
 
     _option._debug.popStackItem();
+
+    if (nFlags & FLAG_MASK)
+    {
+        // reset the print status
+        _option.setSystemPrintStatus();
+    }
+
     resetProcedure(_parser, bSupressAnswer_back);
 
     if (nReturnType && !_ReturnVal.vNumVal.size() && !_ReturnVal.vStringVal.size())
