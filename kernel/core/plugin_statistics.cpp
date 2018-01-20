@@ -118,6 +118,26 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 		// --> Berechnung fuer jede Spalte der Matrix! <--
 		for (int j = 0; j < nCol; j++)
 		{
+		    if (!_data.num(sDatatable, 0, nLine, j))
+            {
+                sOut[nLine+1][j] = "<<SUMBAR>>"; // Schreiben der berechneten Werte in die letzten drei Zeilen der Ausgabe
+                sOut[nLine+2][j] = _lang.get("STATS_TYPE_AVG") + ": ---";
+                sOut[nLine+3][j] = _lang.get("STATS_TYPE_STD") + ": ---";
+                sOut[nLine+4][j] = _lang.get("STATS_TYPE_CONFINT") + ": ---";
+                sOut[nLine+5][j] = _lang.get("STATS_TYPE_STDERR") + ": ---";
+                sOut[nLine+6][j] = _lang.get("STATS_TYPE_MED") + ": ---";
+                sOut[nLine+7][j] = "Q1: ---";
+                sOut[nLine+8][j] = "Q3: ---";
+                sOut[nLine+9][j] = _lang.get("STATS_TYPE_RMS") + ": ---";
+                sOut[nLine+10][j] = _lang.get("STATS_TYPE_SKEW") + ": ---";
+                sOut[nLine+11][j] = _lang.get("STATS_TYPE_EXCESS") + ": ---";
+                sOut[nLine+12][j] = "min: ---";
+                sOut[nLine+13][j] = "max: ---";
+                sOut[nLine+14][j] = "num: ---";
+                sOut[nLine+15][j] = "cnt: ---";
+                sOut[nLine+16][j] = "s_t: ---";
+                continue;
+            }
 			dAverage = _data.avg(sDatatable,0,nLine,j); // Wichtig: Nullsetzen aller wesentlichen Variablen!
 			dError = _data.std(sDatatable,0,nLine,j);
 			dPercentage = 0.0;
