@@ -3934,6 +3934,32 @@ void Datafile::openAutosave(string _sFile, Settings& _option)
     return;
 }
 
+bool Datafile::qSortWrapper(int* nIndex, int nElements, int nKey, int nLeft, int nRight, int nSign)
+{
+    if (!nIndex || !nElements || nLeft < 0 || nRight > nElements || nRight < nLeft)
+    {
+        return false;
+    }
+    while (isnan(dDatafile[nIndex[nLeft]][nKey]) && nRight >= nLeft)
+    {
+        nRight--;
+    }
+    // swap all NaNs to the right
+    int nPos = nRight;
+    while (nPos >= nLeft)
+    {
+        if (isnan(dDatafile[nIndex[nLeft]][nKey]))
+        {
+            int nTemp = nIndex[nPos];
+            nIndex[nPos] = nIndex[nRight];
+            nIndex[nRight] = nTemp;
+            nRight--;
+        }
+        nPos--;
+    }
+    return qSort(nIndex, nElements, nKey, nLeft, nRight, nSign);
+}
+
 bool Datafile::qSort(int* nIndex, int nElements, int nKey, int nLeft, int nRight, int nSign)
 {
     if (!nIndex || !nElements || nLeft < 0 || nRight > nElements || nRight < nLeft)
@@ -3979,11 +4005,12 @@ bool Datafile::qSort(int* nIndex, int nElements, int nKey, int nLeft, int nRight
         nIndex[i] = nIndex[nRight];
         nIndex[nRight] = nTemp;
     }
-    if (isnan(dDatafile[nIndex[nRight-1]][nKey]))
+    while (isnan(dDatafile[nIndex[nRight-1]][nKey]) && !isnan(dDatafile[nIndex[nLeft]][nKey]))
     {
         int nTemp = nIndex[nRight-1];
         nIndex[nRight-1] = nIndex[nRight];
         nIndex[nRight] = nTemp;
+        nRight--;
     }
 
     if (i > nLeft)

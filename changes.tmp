@@ -2,3 +2,6 @@ Fixed	Fixed a bug in "copy" and "move", where caches like "fftdata()" were recog
 Fixed	Disabled obsolete "nan's" at the end of shorter columns, if they are accessed in an expression.
 New	A wavelet transformation is now available with the command "fwt" (fast wavelet transform). It's output defaults to "fwtdata()", which may be changed with the "target" option.
 Applied	The fft now always defaults to "fftdata()" as target cache. This might be changed using the "target" option.
+Added	The Flag "mask" was added to the procedures, which will suppress system messages during this procedure and each called procedure
+Fixed	An issue while sorting with many NaNs was fixed: now the NaNs are moved to the end correctly.
+Fixed	"stats" may now work on tables with empty columns.

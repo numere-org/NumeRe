@@ -130,6 +130,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                 return;
             }
         bool isNumeric(const string& _sString);
+        bool qSortWrapper(int* nIndex, int nElements, int nKey, int nLeft, int nRight, int nSign = 1);
         bool qSort(int* nIndex, int nElements, int nKey, int nLeft, int nRight, int nSign = 1);
         void openLabx(Settings& _option);
         void openCSV(Settings& _option);

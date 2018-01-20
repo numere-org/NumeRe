@@ -745,10 +745,36 @@ void Cache::deleteEntry(long long int _nLine, long long int _nCol, long long int
     return;
 }
 
-bool Cache::qSort(int* nIndex, int nElements, int nKey, int nLayer, int nLeft, int _nRight, int nSign)
+bool Cache::qSortWrapper(int* nIndex, int nElements, int nKey, int nLayer, int nLeft, int nRight, int nSign)
+{
+    if (!nIndex || !nElements || nLeft < 0 || nRight > nElements || nRight < nLeft)
+    {
+        return false;
+    }
+    while (isnan(dCache[nIndex[nRight]][nKey][nLayer]) && nRight >= nLeft)
+    {
+        nRight--;
+    }
+    // swap all NaNs to the right
+    int nPos = nRight;
+    while (nPos >= nLeft)
+    {
+        if (isnan(dCache[nIndex[nPos]][nKey][nLayer]))
+        {
+            int nTemp = nIndex[nPos];
+            nIndex[nPos] = nIndex[nRight];
+            nIndex[nRight] = nTemp;
+            nRight--;
+        }
+        nPos--;
+    }
+    return qSort(nIndex, nElements, nKey, nLayer, nLeft, nRight, nSign);
+}
+
+
+bool Cache::qSort(int* nIndex, int nElements, int nKey, int nLayer, int nLeft, int nRight, int nSign)
 {
     //cerr << nLeft << "/" << nRight << endl;
-    int nRight = _nRight;
     if (!nIndex || !nElements || nLeft < 0 || nRight > nElements || nRight < nLeft)
     {
         return false;
@@ -764,10 +790,7 @@ bool Cache::qSort(int* nIndex, int nElements, int nKey, int nLayer, int nLeft, i
         nIndex[nRight] = nTemp;
         return true;
     }
-    while (isnan(dCache[nIndex[nRight]][nKey][nLayer]) && nRight >= nLeft)
-    {
-        nRight--;
-    }
+
     double nPivot = nSign*dCache[nIndex[nRight]][nKey][nLayer];
     int i = nLeft;
     int j = nRight-1;
@@ -805,9 +828,9 @@ bool Cache::qSort(int* nIndex, int nElements, int nKey, int nLayer, int nLeft, i
         if (!qSort(nIndex, nElements, nKey, nLayer, nLeft, i-1, nSign))
             return false;
     }
-    if (i < _nRight)
+    if (i < nRight)
     {
-        if (!qSort(nIndex, nElements, nKey, nLayer, i+1, _nRight, nSign))
+        if (!qSort(nIndex, nElements, nKey, nLayer, i+1, nRight, nSign))
             return false;
     }
     return true;
@@ -860,7 +883,7 @@ bool Cache::sortElements(const string& sLine) // cache -sort[[=desc]] cols=1[2:3
         for (int i = 0; i < getCacheCols(nLayer, false); i++)
         {
             //cerr << "Sortiere Spalte " << i+1 << " ... " << nLines-nAppendedZeroes[i] << endl;
-            if (!qSort(nIndex, nLines-nAppendedZeroes[nLayer][i], i, nLayer, 0, nLines-1-nAppendedZeroes[nLayer][i], nSign))
+            if (!qSortWrapper(nIndex, nLines-nAppendedZeroes[nLayer][i], i, nLayer, 0, nLines-1-nAppendedZeroes[nLayer][i], nSign))
             {
                 bError = true;
                 break;
@@ -901,7 +924,7 @@ bool Cache::sortElements(const string& sLine) // cache -sort[[=desc]] cols=1[2:3
             int nKey = StrToInt(sCols)-1;
             if (nKey >= 0 && nKey < getCacheCols(nLayer, false))
             {
-                if (!qSort(nIndex, nLines-nAppendedZeroes[nLayer][nKey], nKey, nLayer, 0, nLines-nAppendedZeroes[nLayer][nKey]-1, nSign))
+                if (!qSortWrapper(nIndex, nLines-nAppendedZeroes[nLayer][nKey], nKey, nLayer, 0, nLines-nAppendedZeroes[nLayer][nKey]-1, nSign))
                 {
                     bError = true;
                 }
@@ -949,7 +972,7 @@ bool Cache::sortElements(const string& sLine) // cache -sort[[=desc]] cols=1[2:3
                         nKey_2 = getCacheCols(nLayer, false);
                     for (int i = nKey_1; i < nKey_2; i++)
                     {
-                        if (!qSort(nIndex, nLines-nAppendedZeroes[nLayer][i], i, nLayer, 0, nLines-nAppendedZeroes[nLayer][i]-1, nSign))
+                        if (!qSortWrapper(nIndex, nLines-nAppendedZeroes[nLayer][i], i, nLayer, 0, nLines-nAppendedZeroes[nLayer][i]-1, nSign))
                         {
                             bError = true;
                             break;
@@ -1013,7 +1036,7 @@ bool Cache::sortElements(const string& sLine) // cache -sort[[=desc]] cols=1[2:3
                         break;
                     }
                     //cerr << nKey_1 << "; " << nKey_2 << endl;
-                    if (!qSort(nIndex, nLines-nAppendedZeroes[nLayer][nKey], nKey, nLayer, 0, nLines-nAppendedZeroes[nLayer][nKey]-1, nSign))
+                    if (!qSortWrapper(nIndex, nLines-nAppendedZeroes[nLayer][nKey], nKey, nLayer, 0, nLines-nAppendedZeroes[nLayer][nKey]-1, nSign))
                     {
                         bError = true;
                         break;
