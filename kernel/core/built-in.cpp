@@ -8740,26 +8740,55 @@ bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _
     string sParams = "";
     string sObject = "";
     int nRetVal = 0;
+    bool bWaitForTermination = false;
 
     if (matchParams(sCmd, "params", '='))
     {
         sParams = getArgAtPos(sCmd, matchParams(sCmd, "params", '=')+6);
     }
+    if (matchParams(sCmd, "wait"))
+        bWaitForTermination = true;
 
     sObject = sCmd.substr(findCommand(sCmd).sString.length());
-    if (sParams.length())
+    if (sParams.length() || bWaitForTermination)
         sObject.erase(sObject.find("-set"));
     StripSpaces(sObject);
-    if (sParams.length())
-    {
-        nRetVal = (int)ShellExecute(NULL, "open", sObject.c_str(), sParams.c_str(), NULL, SW_SHOWNORMAL);
-    }
-    else
-    {
-        nRetVal = (int)ShellExecute(NULL, "open", sObject.c_str(), NULL, NULL, SW_SHOWNORMAL);
-    }
-    if (nRetVal <= 32)
+
+    SHELLEXECUTEINFO ShExecInfo = {0};
+    ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
+    ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
+    ShExecInfo.hwnd = NULL;
+    ShExecInfo.lpVerb = NULL;
+    ShExecInfo.lpFile = sObject.c_str();
+    ShExecInfo.lpParameters = sParams.c_str();
+    ShExecInfo.lpDirectory = NULL;
+    ShExecInfo.nShow = SW_SHOW;
+    ShExecInfo.hInstApp = NULL;
+
+    nRetVal = ShellExecuteEx(&ShExecInfo);
+
+    if (!nRetVal)
         throw SyntaxError(SyntaxError::EXECUTE_COMMAND_UNSUCCESSFUL, sCmd, "execute");
+
+    if (bWaitForTermination)
+    {
+        if (_option.getSystemPrintStatus())
+            NumeReKernel::printPreFmt("|-> " + _lang.get("COMMON_EVALUATING") + " ... ");
+        while (bWaitForTermination)
+        {
+            // wait 1sec and check, whether the user pressed the ESC key
+            if (WaitForSingleObject(ShExecInfo.hProcess, 1000) == WAIT_OBJECT_0)
+                break;
+            if (NumeReKernel::GetAsyncCancelState())
+            {
+                if (_option.getSystemPrintStatus())
+                    NumeReKernel::printPreFmt(_lang.get("COMMON_CANCEL") + "\n");
+                throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
+            }
+        }
+        if (_option.getSystemPrintStatus())
+            NumeReKernel::printPreFmt(_lang.get("COMMON_DONE") + ".\n");
+    }
     return true;
 }
 
