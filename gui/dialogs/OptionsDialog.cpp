@@ -158,6 +158,7 @@ bool OptionsDialog::Create( wxWindow* parent, wxWindowID id, const wxString& cap
     m_defaultFont = nullptr;
     m_precision = nullptr;
     m_autosaveinterval = nullptr;
+    m_useExecuteCommand = nullptr;
 
 ////@end OptionsDialog member initialisation
 
@@ -269,6 +270,11 @@ void OptionsDialog::CreateControls()
     m_UseExternalViewer = new wxCheckBox( configurationPanel, wxID_ANY, _(_guilang.get("GUI_OPTIONS_EXTERNALVIEWER")), wxDefaultPosition, wxDefaultSize, 0 );
     m_UseExternalViewer->SetValue(false);
     configVSizer->Add(m_UseExternalViewer, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+
+    m_useExecuteCommand = new wxCheckBox( configurationPanel, wxID_ANY, _(_guilang.get("GUI_OPTIONS_EXECUTECOMMAND")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_useExecuteCommand->SetValue(false);
+    configVSizer->Add(m_useExecuteCommand, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+
     wxBoxSizer* itemBoxSizer51 = new wxBoxSizer(wxHORIZONTAL);
     configVSizer->Add(itemBoxSizer51);
     m_autosaveinterval = new wxSpinCtrl( configurationPanel, ID_SPINCTRL, _T("0"), wxDefaultPosition, wxSize(60, -1), wxSP_ARROW_KEYS, 10, 600, 30);
@@ -917,6 +923,7 @@ bool OptionsDialog::EvaluateOptions()
         _option->setbUseESCinScripts(m_ESCinScripts->GetValue());
         _option->setbUseLogFile(m_UseLogfile->GetValue());
         _option->setExternalDocViewer(m_UseExternalViewer->GetValue());
+        _option->setUseExecuteCommand(m_useExecuteCommand->GetValue());
         _option->setLoadPath(m_LoadPath->GetValue().ToStdString());
         _option->setSavePath(m_SavePath->GetValue().ToStdString());
         _option->setScriptPath(m_ScriptPath->GetValue().ToStdString());
@@ -992,6 +999,7 @@ void OptionsDialog::InitializeDialog()
     m_ESCinScripts->SetValue(_option->getbUseESCinScripts());
     m_UseLogfile->SetValue(_option->getbUseLogFile());
     m_UseExternalViewer->SetValue(_option->getUseExternalViewer());
+    m_useExecuteCommand->SetValue(_option->getUseExecuteCommand());
     m_LoadPath->SetValue(_option->getLoadPath());
     m_SavePath->SetValue(_option->getSavePath());
     m_ScriptPath->SetValue(_option->getScriptPath());

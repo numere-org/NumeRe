@@ -60,13 +60,7 @@ extern const string sParserVersion;
  * Built-In-Funktionen
  * -> Diese Funktionen setzen die Basisfunktionen dieses Frameworks um
  */
-void BI_load_data(Datafile& _data, Settings& _option, Parser& _parser, string sFileName = "");
-void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string& sCache, bool bData = false, bool bCache = false, bool bSave = false, bool bDefaultName = true);
 string** BI_make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, const string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, bool bSave = true);
-void BI_remove_data(Datafile& _data, Settings& _option, bool bIgnore = false);
-void BI_append_data(const string& sCmd, Datafile& _data, Settings& _option, Parser& _parser);
-void BI_clear_cache(Datafile& _data, Settings& _option, bool bIgnore = false);
-void BI_show_credits(Parser& _parser, Settings& _option);
 void BI_splash();
 /** \brief Central command handler
  *
@@ -86,23 +80,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 void BI_Basis();
 void BI_Autosave(Datafile&, Output&, Settings&);
 bool BI_FileExists(const string& sFilename);
-void BI_ListOptions(Settings& _option);
-bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, Datafile& _data, Settings& _option);
 string BI_Greeting(Settings& _option);
-string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option, Define& _functions);
-bool BI_deleteCacheEntry(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
-bool BI_ListFiles(const string& sCmd, const Settings& _option);
-bool BI_ListDirectory(const string& sDir, const string& sParams, const Settings& _option);
-bool BI_CopyData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
-bool BI_moveData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
-bool BI_removeFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
-bool BI_moveFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
-bool BI_copyFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
-bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
-bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
-bool BI_writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
-bool BI_readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
 string BI_getVarList(const string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
-bool BI_generateTemplate(const string& sFile, const string& sTempl, const vector<string>& vTokens, Settings& _option);
+string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option, Define& _functions);
 
 #endif

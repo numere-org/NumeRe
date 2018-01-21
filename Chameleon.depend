@@ -2302,7 +2302,7 @@
 	<string>
 	"language.hpp"
 
-1511629659 d:\cpp\numere-source\trunk\kernel\core\settings.hpp
+1516524566 d:\cpp\numere-source\trunk\kernel\core\settings.hpp
 	<string>
 	<sstream>
 	<fstream>
@@ -2674,7 +2674,7 @@
 	"ParserLib/muParserTest.h"
 	"ParserLib/muParser.h"
 
-1512317784 d:\cpp\numere-source\trunk\kernel\core\built-in.hpp
+1516526952 d:\cpp\numere-source\trunk\kernel\core\built-in.hpp
 	<iostream>
 	<fstream>
 	<sstream>
@@ -3374,7 +3374,7 @@
 	"wx/arrstr.h"
 	<stdarg.h>
 
-1511337620 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
+1516524794 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
 	"wx/notebook.h"
 	"wx/spinctrl.h"
 	<wx/clrpicker.h>
@@ -3729,7 +3729,7 @@
 	"fndrpldialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1511630412 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1516525037 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
@@ -3947,7 +3947,7 @@
 1490787950 source:d:\cpp\numere-source\trunk\kernel\core\basicexcel.cpp
 	"BasicExcel.hpp"
 
-1516356289 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1516528911 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
@@ -4127,7 +4127,7 @@
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1497518391 source:d:\cpp\numere-source\trunk\kernel\core\plugin_statistics.cpp
+1516445798 source:d:\cpp\numere-source\trunk\kernel\core\plugin_statistics.cpp
 	"plugins.hpp"
 	"../kernel.hpp"
 
@@ -4175,7 +4175,7 @@
 	"script.hpp"
 	"../kernel.hpp"
 
-1513192413 source:d:\cpp\numere-source\trunk\kernel\core\settings.cpp
+1516524697 source:d:\cpp\numere-source\trunk\kernel\core\settings.cpp
 	"settings.hpp"
 	"../kernel.hpp"
 
@@ -4659,7 +4659,7 @@
 	"../globals.hpp"
 	"../../common/debug.h"
 
-1515911050 d:\cpp\numere-source\trunk\kernel\core\ui\error.hpp
+1516526327 d:\cpp\numere-source\trunk\kernel\core\ui\error.hpp
 	<string>
 	"language.hpp"
 

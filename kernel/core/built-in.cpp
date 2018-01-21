@@ -21,6 +21,33 @@
 #include "../kernel.hpp"
 
 extern mglGraph _fontData;
+
+void BI_load_data(Datafile& _data, Settings& _option, Parser& _parser, string sFileName = "");
+void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string& sCache, bool bData = false, bool bCache = false, bool bSave = false, bool bDefaultName = true);
+void BI_remove_data(Datafile& _data, Settings& _option, bool bIgnore = false);
+void BI_append_data(const string& sCmd, Datafile& _data, Settings& _option, Parser& _parser);
+void BI_clear_cache(Datafile& _data, Settings& _option, bool bIgnore = false);
+void BI_show_credits(Parser& _parser, Settings& _option);
+void BI_ListOptions(Settings& _option);
+bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, Datafile& _data, Settings& _option);
+bool BI_deleteCacheEntry(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
+bool BI_ListFiles(const string& sCmd, const Settings& _option);
+bool BI_ListDirectory(const string& sDir, const string& sParams, const Settings& _option);
+bool BI_CopyData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
+bool BI_moveData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
+bool BI_removeFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
+bool BI_moveFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
+bool BI_copyFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
+bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
+bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
+bool BI_writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
+bool BI_readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
+bool BI_generateTemplate(const string& sFile, const string& sTempl, const vector<string>& vTokens, Settings& _option);
+bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
+
+
+
+
 /*
  * Built-In-Funktionen
  * -> Bieten die grundlegende Funktionalitaet dieses Frameworks
@@ -5407,6 +5434,11 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                 doc_Help("edit", _option);
             return 1;
         }
+        else if (sCommand == "execute")
+        {
+            BI_executeCommand(sCmd, _parser, _data, _functions, _option);
+            return 1;
+        }
         return 0;
     }
     else if (sCommand[0] == 'p')
@@ -8695,6 +8727,39 @@ bool BI_generateTemplate(const string& sFile, const string& sTempl, const vector
     }
     iTempl_in.close();
     oFile_out.close();
+    return true;
+}
+
+// execute "C:\Program Files (x86)\Notepad++\notepad++.exe" -set params="Path/to/file.txt"
+bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+{
+    if (!_option.getUseExecuteCommand())
+        throw SyntaxError(SyntaxError::EXECUTE_COMMAND_DISABLED, sCmd, "execute");
+
+    sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
+    string sParams = "";
+    string sObject = "";
+    int nRetVal = 0;
+
+    if (matchParams(sCmd, "params", '='))
+    {
+        sParams = getArgAtPos(sCmd, matchParams(sCmd, "params", '=')+6);
+    }
+
+    sObject = sCmd.substr(findCommand(sCmd).sString.length());
+    if (sParams.length())
+        sObject.erase(sObject.find("-set"));
+    StripSpaces(sObject);
+    if (sParams.length())
+    {
+        nRetVal = (int)ShellExecute(NULL, "open", sObject.c_str(), sParams.c_str(), NULL, SW_SHOWNORMAL);
+    }
+    else
+    {
+        nRetVal = (int)ShellExecute(NULL, "open", sObject.c_str(), NULL, NULL, SW_SHOWNORMAL);
+    }
+    if (nRetVal <= 32)
+        throw SyntaxError(SyntaxError::EXECUTE_COMMAND_UNSUCCESSFUL, sCmd, "execute");
     return true;
 }
 

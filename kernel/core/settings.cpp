@@ -44,6 +44,7 @@ Settings::Settings() : Documentation()
 	bUseESCinScripts = true;
 	bUseCustomLanguageFile = true;
 	bUseExternalDocViewer = true;
+	bUseExecuteCommand = false; // execute command is disabled by the default
 	nPrecision = 7;			// Standardmaessig setzen wir die Praezision auf 7
 	nAutoSaveInterval = 30; // 30 sec
 	sPath = "./";
@@ -213,6 +214,7 @@ void Settings::save(string _sWhere, bool bMkBackUp)
 	Settings_ini << "-USECOMPACTTABLES=" << bCompact << endl;
 	Settings_ini << "-USECUSTOMLANGFILE=" << bUseCustomLanguageFile << endl;
 	Settings_ini << "-USEEXTERNALVIEWER=" << bUseExternalDocViewer << endl;
+	Settings_ini << "-USEEXECUTECOMMAND=" << bUseExecuteCommand << endl;
 	Settings_ini << "-DEFCONTROL=" << bDefineAutoLoad << endl;
 	Settings_ini << "-USEDRAFTMODE=" << bUseDraftMode << endl;
 	Settings_ini << "-EXTENDEDFILEINFO=" << bShowExtendedFileInfo << endl;
@@ -415,6 +417,11 @@ bool Settings::set(const string& _sOption)
     else if (matchParams(_sOption, "useexternaldocviewer", '=') || matchParams(_sOption, "useexternalviewer", '='))
     {
         bUseExternalDocViewer = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
+        return true;
+    }
+    else if (matchParams(_sOption, "useexecutecommand", '='))
+    {
+        bUseExecuteCommand = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
     else if (matchParams(_sOption, "extendedfileinfo", '='))
@@ -687,6 +694,7 @@ void Settings::copySettings(const Settings& _settings)
     nBuffer_y = _settings.nBuffer_y;
     bUseDebugger = _settings.bUseDebugger;
     bUseExternalDocViewer = _settings.bUseExternalDocViewer;
+    bUseExecuteCommand = _settings.bUseExecuteCommand;
     setTokens(_settings.getTokenPaths());
 }
 

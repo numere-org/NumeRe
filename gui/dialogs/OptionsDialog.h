@@ -235,6 +235,7 @@ public:
     wxCheckBox* m_showToolbarText;
     wxCheckBox* m_saveSession;
     wxSpinCtrl* m_termHistory;
+    wxCheckBox* m_useExecuteCommand;
 ////@end OptionsDialog member variables
 
 	NumeReWindow* m_parentFrame;
