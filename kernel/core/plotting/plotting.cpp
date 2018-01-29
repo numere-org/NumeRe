@@ -247,6 +247,7 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
         }
         _pInfo.sCommand = findCommand(sCmd).sString;
         size_t nOffset = findCommand(sCmd).nPos;
+
         if (sCmd.find("-set") != string::npos && !isInQuotes(sCmd, sCmd.find("-set")))
             sFunc = sCmd.substr(nOffset+_pInfo.sCommand.length(), sCmd.find("-set")-_pInfo.sCommand.length()-nOffset);
         else if (sCmd.find("--") != string::npos && !isInQuotes(sCmd, sCmd.find("--")))
@@ -386,6 +387,9 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
         {
             setLogScale(_pData, (_pInfo.b2D || _pInfo.sCommand == "plot3d"));
         }
+        else if (bNewSubPlot)
+            _graph->SetFunc("", "", "");
+
 
         if (!_pInfo.bDraw3D && !_pInfo.bDraw)
         {
