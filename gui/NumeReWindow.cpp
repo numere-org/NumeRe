@@ -164,6 +164,9 @@ BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
 	EVT_MENU						(ID_STRIP_SPACES_BOTH, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_STRIP_SPACES_FRONT, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_STRIP_SPACES_BACK, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_CREATE_LATEX_FILE, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_RUN_LATEX, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_COMPILE_LATEX, NumeReWindow::OnMenuEvent)
 	EVT_FIND						(-1, NumeReWindow::OnFindEvent)
 	EVT_FIND_NEXT					(-1, NumeReWindow::OnFindEvent)
 	EVT_FIND_REPLACE				(-1, NumeReWindow::OnFindEvent)
@@ -788,6 +791,10 @@ void NumeReWindow::InitializeProgramOptions()
 
         m_options->readColoursFromConfig(m_config);
 
+        wxString latexroot;
+        m_config->Read("Miscellaneous/LaTeXRoot", &latexroot, "C:/Program Files");
+        m_options->SetLaTeXRoot(latexroot);
+
 		//authorizedCode = m_config->Read("Permissions/authorized", defaultAuthorizedCode);
 		//enabledCode = m_config->Read("Permissions/enabled", defaultEnableCode);
 
@@ -830,6 +837,7 @@ void NumeReWindow::InitializeProgramOptions()
 		enabledCode = defaultEnableCode;
 
 		m_config->Write("Miscellaneous/TerminalHistory", m_options->GetTerminalHistorySize());
+		m_config->Write("Miscellaneous/LaTeXRoot", m_options->GetLaTeXRoot());
 		m_config->Write("Miscellaneous/PrintInColor", "false");
 		m_config->Write("Miscellaneous/PrintLineNumbers", "false");
 		m_config->Write("Miscellaneous/SaveSession", "false");
@@ -1147,6 +1155,21 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_STRIP_SPACES_BACK:
         {
             m_currentEd->removeWhiteSpaces(RM_WS_BACK);
+            break;
+        }
+        case ID_CREATE_LATEX_FILE:
+        {
+            createLaTeXFile();
+            break;
+        }
+        case ID_RUN_LATEX:
+        {
+            runLaTeX();
+            break;
+        }
+        case ID_COMPILE_LATEX:
+        {
+            compileLaTeX();
             break;
         }
 		case ID_NEW_EMPTY:
@@ -1627,6 +1650,11 @@ void NumeReWindow::openImage(wxFileName filename)
     frame->SetFocus();
 }
 
+void NumeReWindow::openPDF(wxFileName filename)
+{
+    ShellExecuteA(NULL, "open", filename.GetFullPath().ToStdString().c_str(), "", "", SW_SHOW);
+}
+
 void NumeReWindow::openHTML(wxString HTMLcontent)
 {
 	wxString programPath = getProgramFolder();
@@ -1724,6 +1752,191 @@ void NumeReWindow::evaluateDebugInfo(const vector<string>& vDebugInfo)
     }
 
     m_debugViewer->setDebugInfo(sTitle, vModule, vStack, vVars, nNumVarSize);
+}
+
+void NumeReWindow::createLaTeXFile()
+{
+    wxFileName filename = m_currentEd->GetFileName();
+    filename.SetName(filename.GetName() + "_" + filename.GetExt());
+    filename.SetExt("tex");
+    filename.SetPath(m_terminal->getPathSettings()[SAVEPATH] + "/docs");
+    if (m_currentEd->writeLaTeXFile(filename.GetFullPath().ToStdString()))
+        wxMessageBox(_guilang.get("GUI_DLG_LATEX_SUCCESS_MESSAGE", filename.GetFullPath().ToStdString()), _guilang.get("GUI_DLG_LATEX_SUCCESS"), wxCENTER | wxOK, this);
+    else
+        wxMessageBox(_guilang.get("GUI_DLG_LATEX_ERROR_MESSAGE", filename.GetFullPath().ToStdString()), _guilang.get("GUI_DLG_LATEX_ERROR"), wxCENTER | wxOK, this);
+}
+
+string NumeReWindow::createLaTeXMain(const string& sRootPath, const string& sIncludes)
+{
+    ofstream fMain;
+
+    createLaTeXHeader(sRootPath);
+
+    fMain.open((sRootPath + "/" + sIncludes + "_main.tex").c_str());
+    if (!fMain.good())
+        return "";
+    string sHeadLine = sIncludes;
+    for (size_t i = 0; i < sHeadLine.length(); i++)
+    {
+        if (sHeadLine[i] == '_' && (!i || sHeadLine[i-1] != '\\'))
+        {
+            sHeadLine.insert(i, 1, '\\');
+            i++;
+        }
+    }
+    fMain << "\\documentclass[DIV=17]{scrartcl}" << endl;
+    fMain << "% Main file for the documentation file " << sIncludes << endl << endl;
+    fMain << "\\input{numereheader}" << endl << endl;
+    fMain << "\\title{Documentation: " << sHeadLine << "}" << endl;
+    fMain << "\\begin{document}" << endl;
+    fMain << "    \\maketitle" << endl;
+    if (sIncludes.length())
+        fMain << "    \\input{" << sIncludes << "}" << endl;
+    fMain << "\\end{document}" << endl;
+
+    return sRootPath + "/" + sIncludes + "_main.tex";
+}
+
+string NumeReWindow::constructLaTeXHeaderKeywords(const string& sKeywordList)
+{
+    string _sKeywordList = sKeywordList;
+    for (size_t i = 0; i < _sKeywordList.length(); i++)
+    {
+        if (_sKeywordList[i] == ' ')
+            _sKeywordList[i] = ',';
+    }
+    if (_sKeywordList.back() == ',')
+        _sKeywordList.erase(_sKeywordList.length()-1);
+    return _sKeywordList;
+}
+
+void NumeReWindow::createLaTeXHeader(const string& sRootPath)
+{
+    ofstream fHeader;
+    fHeader.open((sRootPath + "/numereheader.tex").c_str());
+    if (!fHeader.good())
+        return;
+
+    NumeReSyntax* syntax = m_terminal->getSyntax();
+
+    fHeader << "% Header file for NumeRe documentations" << endl;
+
+    fHeader << "\\usepackage{xcolor}" << endl;
+    fHeader << "\\usepackage{listings}" << endl;
+    fHeader << "\\usepackage{etoolbox}" << endl;
+    fHeader << "\\usepackage{fontspec,unicode-math}" << endl;
+    fHeader << "\\setmainfont{Palatino Linotype}" << endl;
+    fHeader << "\\setmathfont{Cambria Math}" << endl;
+    fHeader << "\\setsansfont{Arial}" << endl;
+    fHeader << "\\setmonofont{Consolas}" << endl << endl;
+
+    fHeader << "% Define the language contents" << endl;
+    fHeader << "\\lstdefinelanguage{nscr}" << endl;
+    fHeader << "{" << endl;
+    fHeader << "    keywordsprefix=$," << endl;
+    fHeader << "    alsoletter={~\\#}," << endl;
+    fHeader << "    keywords=[1]{}," << endl;
+    fHeader << "    keywords=[2]{" << constructLaTeXHeaderKeywords(syntax->getCommands() + syntax->getNPRCCommands()) << "}," << endl;
+    fHeader << "    keywords=[3]{" << constructLaTeXHeaderKeywords(syntax->getFunctions()) << "}," << endl;
+    fHeader << "    keywords=[4]{" << constructLaTeXHeaderKeywords(syntax->getConstants()) << "}," << endl;
+    fHeader << "    keywords=[5]{" << constructLaTeXHeaderKeywords(syntax->getOptions()) << "}," << endl;
+    fHeader << "    keywords=[6]{" << constructLaTeXHeaderKeywords(syntax->getSpecial()) << "}," << endl;
+    fHeader << "    sensitive=true," << endl;
+    fHeader << "    morecomment=[s]{\\#*}{*\\#}," << endl;
+    fHeader << "    morecomment=[l][commentstyle]{\\#\\#}," << endl;
+    fHeader << "    string=[b]\"" << endl;
+    fHeader << "}" << endl << endl;
+    fHeader << "\\newcommand\\realnumberstyle[1]{\\tiny}" << endl;
+    fHeader << "\\newcommand\\oprts[1]{\\textcolor{red}{\\upshape{#1}}}" << endl << endl;
+
+    fHeader << "% Apply a patch for the closing parenthesis" <<  endl;
+    fHeader << "\\makeatletter" << endl;
+    fHeader << "\\patchcmd{\\lsthk@SelectCharTable}{`)}{``}{}{}" << endl;
+    fHeader << "\\makeatother" << endl << endl;
+
+    fHeader << "% Define the colors needed for the language" << endl;
+    fHeader << "\\definecolor{ProcedureStyle}{RGB}{128,0,0}" << endl;
+    fHeader << "\\definecolor{CommandStyle}{RGB}{0,128,255}" << endl;
+    fHeader << "\\definecolor{StringStyle}{RGB}{128,128,255}" << endl;
+    fHeader << "\\definecolor{BGColorTwo}{RGB}{245,245,245}" << endl;
+    fHeader << "\\definecolor{BGColorOne}{RGB}{230,230,230}" << endl;
+    fHeader << "\\definecolor{CommentStyle}{RGB}{0,128,0}" << endl;
+    fHeader << "\\definecolor{ConstantStyle}{RGB}{255,0,128}" << endl;
+    fHeader << "\\definecolor{OptionStyle}{RGB}{0,128,100}" << endl << endl;
+
+    fHeader << "% Activate the language" << endl;
+    fHeader << "\\lstset{" << endl;
+    fHeader << "    language=nscr," << endl;
+    fHeader << "    basicstyle={\\small\\ttfamily\\itshape}," << endl;
+    fHeader << "    extendedchars=true," << endl;
+    fHeader << "    tabsize=4," << endl;
+    fHeader << "    columns=fixed," << endl;
+    fHeader << "    keepspaces=false," << endl;
+    fHeader << "    breaklines=true," << endl;
+    fHeader << "    showstringspaces=false," << endl;
+    fHeader << "    numbers=left, numberstyle=\\tiny, stepnumber=2, numbersep=5pt," << endl;
+    fHeader << "    commentstyle={\\color{CommentStyle}\\bfseries\\upshape}," << endl;
+    fHeader << "    keywordstyle=[1]{\\color{ProcedureStyle}\\bfseries\\upshape}," << endl;
+    fHeader << "    keywordstyle=[2]{\\color{CommandStyle}\\bfseries\\upshape\\underbar}," << endl;
+    fHeader << "    keywordstyle=[3]{\\color{blue}\\bfseries\\upshape}," << endl;
+    fHeader << "    keywordstyle=[4]{\\color{ConstantStyle}\\bfseries\\upshape}," << endl;
+    fHeader << "    keywordstyle=[5]{\\color{OptionStyle}\\upshape}," << endl;
+    fHeader << "    keywordstyle=[6]{\\bfseries\\upshape}," << endl;
+    fHeader << "    stringstyle={\\color{StringStyle}\\upshape}," << endl;
+    fHeader << "    backgroundcolor=\\color{BGColorTwo}," << endl;
+    fHeader << "    literate=*{(}{{\\oprts{(}}}1" << endl;
+	fHeader << "        {)}{{\\oprts{)}}}1" << endl;
+	fHeader << "        {[}{{\\oprts{[}}}1" << endl;
+	fHeader << "        {]}{{\\oprts{]}}}1" << endl;
+	fHeader << "        {\\{}{{\\oprts{\\{}}}1" << endl;
+	fHeader << "        {\\}}{{\\oprts{\\}}}}1" << endl;
+	fHeader << "        {+}{{\\oprts{+}}}1" << endl;
+	fHeader << "        {-}{{\\oprts{-}}}1" << endl;
+	fHeader << "        {*}{{\\oprts{*}}}1" << endl;
+	fHeader << "        {/}{{\\oprts{/}}}1" << endl;
+	fHeader << "        {\\^}{{\\oprts{\\^{}}}}1" << endl;
+	fHeader << "        {\\%}{{\\oprts{\\%}}}1" << endl;
+	fHeader << "        {=}{{\\oprts{=}}}1" << endl;
+	fHeader << "        {!}{{\\oprts{!}}}1" << endl;
+	fHeader << "        {>}{{\\oprts{>}}}1" << endl;
+	fHeader << "        {<}{{\\oprts{<}}}1" << endl;
+	fHeader << "        {\\&}{{\\oprts{\\&}}}1" << endl;
+	fHeader << "        {|}{{\\oprts{|}}}1" << endl;
+	fHeader << "        {;}{{\\oprts{;}}}1" << endl;
+	fHeader << "        {,}{{\\oprts{,}}}1" << endl;
+	fHeader << "        {:}{{\\oprts{:}}}1" << endl;
+    fHeader << "}" << endl;
+
+}
+
+void NumeReWindow::runLaTeX()
+{
+    wxFileName filename = m_currentEd->GetFileName();
+    filename.SetName(filename.GetName() + "_" + filename.GetExt());
+    filename.SetExt("tex");
+    filename.SetPath(m_terminal->getPathSettings()[SAVEPATH] + "/docs");
+    if (!m_currentEd->writeLaTeXFile(filename.GetFullPath().ToStdString()))
+    {
+        wxMessageBox(_guilang.get("GUI_DLG_LATEX_ERROR_MESSAGE", filename.GetFullPath().ToStdString()), _guilang.get("GUI_DLG_LATEX_ERROR"), wxCENTER | wxOK, this);
+        return;
+    }
+    string sMain = createLaTeXMain(filename.GetPath().ToStdString(), filename.GetName().ToStdString());
+    if (fileExists((m_options->GetLaTeXRoot() + "/xelatex.exe").ToStdString()))
+    {
+        ShellExecuteA(NULL, "open", (m_options->GetLaTeXRoot()+"/xelatex.exe").ToStdString().c_str(), (sMain).c_str(), filename.GetPath().ToStdString().c_str(), SW_SHOW);
+    }
+    else
+        wxMessageBox(_guilang.get("GUI_DLG_NOTEXBIN_ERROR", m_options->GetLaTeXRoot().ToStdString()), _guilang.get("GUI_DLG_NOTEXBIN"), wxCENTER | wxOK | wxICON_ERROR, this);
+}
+
+void NumeReWindow::compileLaTeX()
+{
+    FileFilterType fileType = m_currentEd->getFileType();
+    if (fileType == FILE_TEXSOURCE)
+    {
+        wxFileName filename = m_currentEd->GetFileName();
+        ShellExecuteA(NULL, "open", (m_options->GetLaTeXRoot()+"/xelatex.exe").ToStdString().c_str(), filename.GetName().ToStdString().c_str(), filename.GetPath().ToStdString().c_str(), SW_SHOW);
+    }
 }
 
 void NumeReWindow::deleteFile()
@@ -2525,6 +2738,11 @@ void NumeReWindow::OpenFileByType(const wxFileName& filename)
     {
         openImage(filename);
         CallAfter(&NumeReWindow::setViewerFocus);
+        return;
+    }
+    else if (filename.GetExt() == "pdf")
+    {
+        openPDF(filename);
         return;
     }
     else
@@ -3628,6 +3846,8 @@ void NumeReWindow::EvaluateOptions()
 
 	m_options->writeColoursToConfig(m_config);
 
+	m_config->Write("Miscellaneous/LateXRoot", m_options->GetLaTeXRoot());
+
 	/*bool combineWatchWindow = m_options->GetCombineWatchWindow();
 	m_config->Write("Miscellaneous/CombineWatchWindow", combineWatchWindow ? "true" : "false");*/
 
@@ -3781,6 +4001,11 @@ void NumeReWindow::UpdateMenuBar()
 	menuFormat->Append(ID_INDENTONTYPE, _guilang.get("GUI_MENU_INDENTONTYPE"), _guilang.get("GUI_MENU_INDENTONTYPE_TTP"), true);
 	menuFormat->Append(ID_AUTOFORMAT, _guilang.get("GUI_MENU_AUTOFORMAT"), _guilang.get("GUI_MENU_AUTOFORMAT_TTP"));
 
+	wxMenu* menuLaTeX = new wxMenu();
+	menuLaTeX->Append(ID_CREATE_LATEX_FILE, _guilang.get("GUI_MENU_CREATELATEX"), _guilang.get("GUI_MENU_CREATELATEX_TTP"));
+	menuLaTeX->Append(ID_RUN_LATEX, _guilang.get("GUI_MENU_RUNLATEX"), _guilang.get("GUI_MENU_RUNLATEX_TTP"));
+	menuLaTeX->Append(ID_COMPILE_LATEX, _guilang.get("GUI_MENU_COMPILE_TEX"), _guilang.get("GUI_MENU_COMPILE_TEX_TTP"));
+
 	wxMenu* menuTools = new wxMenu();
 
 	menuTools->Append(ID_OPTIONS, _guilang.get("GUI_MENU_OPTIONS"));
@@ -3794,6 +4019,7 @@ void NumeReWindow::UpdateMenuBar()
 	menuTools->Append(ID_SORT_SELECTION_ASC, _guilang.get("GUI_MENU_SORT_ASC"), _guilang.get("GUI_MENU_SORT_ASC_TTP"));
 	menuTools->Append(ID_SORT_SELECTION_DESC, _guilang.get("GUI_MENU_SORT_DESC"), _guilang.get("GUI_MENU_SORT_DESC_TTP"));
 	menuTools->AppendSeparator();
+	menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_LATEX"), menuLaTeX);
 	menuTools->Append(ID_USEANALYZER, _guilang.get("GUI_MENU_ANALYZER"), _guilang.get("GUI_MENU_ANALYZER_TTP"), true);
     if (m_currentEd)
 	{

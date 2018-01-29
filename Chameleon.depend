@@ -2023,7 +2023,7 @@
 	"../kernel/kernel.hpp"
 	"../kernel/debugmessenger.hpp"
 
-1512070079 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1517077491 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -2074,7 +2074,7 @@
 	<commdlg.h>
 	"wx/msw/winundef.h"
 
-1512385968 d:\cpp\numere-source\trunk\common\datastructures.h
+1517077678 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -2447,7 +2447,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1511337743 d:\cpp\numere-source\trunk\common\options.h
+1516604603 d:\cpp\numere-source\trunk\common\options.h
 	<wx/wx.h>
 	<wx/validate.h>
 	<wx/valgen.h>
@@ -3062,7 +3062,7 @@
 	"../common/datastructures.h"
 	"../common/debug.h"
 
-1511337764 source:d:\cpp\numere-source\trunk\common\options.cpp
+1516604639 source:d:\cpp\numere-source\trunk\common\options.cpp
 	"Options.h"
 	<wx/filename.h>
 	<wx/arrstr.h>
@@ -3374,7 +3374,7 @@
 	"wx/arrstr.h"
 	<stdarg.h>
 
-1516524794 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
+1516604291 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
 	"wx/notebook.h"
 	"wx/spinctrl.h"
 	<wx/clrpicker.h>
@@ -3729,7 +3729,7 @@
 	"fndrpldialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1516525037 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1516626935 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
@@ -3870,7 +3870,7 @@
 	"../terminal/wxTerm.h"
 	"../../common/debug.h"
 
-1490787950 source:d:\cpp\numere-source\trunk\gui\dirtraverser.cpp
+1517075043 source:d:\cpp\numere-source\trunk\gui\dirtraverser.cpp
 	"DirTraverser.hpp"
 
 1511360564 source:d:\cpp\numere-source\trunk\gui\filetree.cpp
@@ -3947,7 +3947,7 @@
 1490787950 source:d:\cpp\numere-source\trunk\kernel\core\basicexcel.cpp
 	"BasicExcel.hpp"
 
-1516528911 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1516548783 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
@@ -4217,7 +4217,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1516349703 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1516688855 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 
@@ -4384,7 +4384,7 @@
 	<vector>
 	<algorithm>
 
-1512386158 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1516978331 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -4396,7 +4396,7 @@
 	"../../kernel/syntax.hpp"
 	"../dialogs/duplicatecodedialog.hpp"
 
-1513714328 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1517049475 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -4925,11 +4925,11 @@
 	"../settings.hpp"
 	"../ui/error.hpp"
 
-1516442169 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
+1516645317 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
 	"cache.hpp"
 	"../../kernel.hpp"
 
-1516442158 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
+1516645501 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
 	"datafile.hpp"
 	"../../kernel.hpp"
 
@@ -4960,7 +4960,7 @@
 	"odesolver.hpp"
 	"../../kernel.hpp"
 
-1516212674 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
+1516627666 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	"spline.h"
@@ -4993,7 +4993,7 @@
 1505412752 source:d:\cpp\numere-source\trunk\kernel\core\procedure\debugger.cpp
 	"debugger.hpp"
 
-1511979359 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1516729493 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
@@ -5123,7 +5123,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1513520676 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1517077712 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"

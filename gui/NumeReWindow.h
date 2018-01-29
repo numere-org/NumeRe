@@ -179,11 +179,18 @@ class NumeReWindow : public wxFrame
         void DefaultPage();
         void OpenSourceFile(wxArrayString fnames, unsigned int nLine = 0, int nOpenFileFlag = OPENFILE_NOTHING);
         void openImage(wxFileName filename);
+        void openPDF(wxFileName filename);
         void openHTML(wxString HTMLcontent);
         void openTable(const vector<vector<string> >& sTable, const string& sTableName);
         void editTable(const vector<vector<string> >& sTable, const string& sTableName);
         void showGraph(GraphHelper* _helper);
         void evaluateDebugInfo(const vector<string>& vDebugInfo);
+        void createLaTeXFile();
+        string createLaTeXMain(const string& sRootPath, const string& sIncludes);
+        void createLaTeXHeader(const string& sRootPath);
+        string constructLaTeXHeaderKeywords(const string& sKeywordList);
+        void runLaTeX();
+        void compileLaTeX();
 
         Networking* GetNetworking();
 

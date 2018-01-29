@@ -86,6 +86,11 @@ IconManager::IconManager(const wxString& programPath)
 	m_iconExtensionMapping[".ibw"] = m_images->GetImageCount();
 	m_images->Add(IBW);
 
+	wxIcon PDF(programPath + "\\icons\\pdf.ico", wxBITMAP_TYPE_ICO);
+	m_iconExtensionMapping["pdf"] = m_images->GetImageCount();
+	m_iconExtensionMapping[".pdf"] = m_images->GetImageCount();
+	m_images->Add(PDF);
+
 
 
 	AddIconToList("c");

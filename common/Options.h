@@ -61,6 +61,7 @@ class Options
 		void SetTerminalHistorySize(int size);
 		void SetMingwBinPaths(wxArrayString paths);
 		void SetMingwExecutables(StringFilenameHash files);
+		void SetLaTeXRoot(const wxString& root) {m_LaTeXRoot = root;}
 
 		// Accessors:  (inlined)
 		wxString GetPscpApp() { return m_pscpProg; }
@@ -71,6 +72,7 @@ class Options
 		wxString GetPassphrase() { return m_password; }
 		wxString GetRemoteCompileOut() { return m_remoteCompileOut; }
 		wxString GetLocalCompileOut() { return m_localCompileOut; }
+		wxString GetLaTeXRoot() { return m_LaTeXRoot;}
 		int GetPrintStyle() { return m_printStyle; }
 		bool GetShowToolbarText() { return m_showToolbarText; }
 		bool GetLineNumberPrinting() {return m_printLineNumbers; }
@@ -137,6 +139,7 @@ class Options
 
 		wxString m_remoteCompileOut;
 		wxString m_localCompileOut;
+		wxString m_LaTeXRoot;
 
 		int m_printStyle;
 		int m_terminalSize;

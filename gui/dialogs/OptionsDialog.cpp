@@ -76,6 +76,7 @@ BEGIN_EVENT_TABLE( OptionsDialog, wxDialog )
     EVT_BUTTON(ID_BTN_SCRIPTPATH, OptionsDialog::OnButtonClick)
     EVT_BUTTON(ID_BTN_PROCPATH, OptionsDialog::OnButtonClick)
     EVT_BUTTON(ID_BTN_PLOTPATH, OptionsDialog::OnButtonClick)
+    EVT_BUTTON(ID_BTN_LATEXPATH, OptionsDialog::OnButtonClick)
     EVT_BUTTON(ID_RESETCOLOR, OptionsDialog::OnButtonClick)
     EVT_CHECKBOX(ID_DEFAULTBACKGROUND, OptionsDialog::OnButtonClick)
 
@@ -455,6 +456,17 @@ void OptionsDialog::CreateControls()
     wxStaticText* itemStaticText49 = new wxStaticText( miscPanel, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_PRECISION")), wxDefaultPosition, wxDefaultSize, 0 );
     itemBoxSizer48->Add(itemStaticText49, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxADJUST_MINSIZE, 5);
 
+    wxStaticText* itemStaticText51 = new wxStaticText( miscPanel, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_LATEXPATH")), wxDefaultPosition, wxDefaultSize, 0 );
+    miscVSizer->Add(itemStaticText51, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
+
+    wxBoxSizer* miscVSizer_1 = new wxBoxSizer(wxHORIZONTAL);
+    miscVSizer->Add(miscVSizer_1, wxALIGN_LEFT);
+    m_LaTeXRoot = new wxTextCtrl( miscPanel, wxID_ANY, _T(""), wxDefaultPosition, wxSize(280, -1), wxTE_PROCESS_ENTER );
+    m_LaTeXRoot->SetValue("C:/Program Files");
+    miscVSizer_1->Add(m_LaTeXRoot, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+    wxButton* latexbutton = new wxButton(miscPanel, ID_BTN_LATEXPATH, _guilang.get("GUI_OPTIONS_CHOOSE"));
+    miscVSizer_1->Add(latexbutton, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+
     m_optionsNotebook->AddPage(miscPanel, _(_guilang.get("GUI_OPTIONS_MISC")));
 
 
@@ -604,6 +616,9 @@ void OptionsDialog::OnButtonClick(wxCommandEvent& event)
         case ID_BTN_PLOTPATH:
             defaultpath = m_PlotPath->GetValue();
             break;
+        case ID_BTN_LATEXPATH:
+            defaultpath = m_LaTeXRoot->GetValue();
+            break;
         case ID_RESETCOLOR:
         {
             size_t id = m_colorOptions.GetIdByIdentifier(m_colorType->GetValue());
@@ -644,6 +659,9 @@ void OptionsDialog::OnButtonClick(wxCommandEvent& event)
             break;
         case ID_BTN_PLOTPATH:
             m_PlotPath->SetValue(replacePathSeparator(dialog.GetPath().ToStdString()));
+            break;
+        case ID_BTN_LATEXPATH:
+            m_LaTeXRoot->SetValue(replacePathSeparator(dialog.GetPath().ToStdString()));
             break;
     }
 }
@@ -946,6 +964,8 @@ bool OptionsDialog::EvaluateOptions()
 			m_options->SetPrintStyle(wxSTC_PRINT_BLACKONWHITE);
 		}
 
+		m_options->SetLaTeXRoot(m_LaTeXRoot->GetValue());
+
 		m_options->SetShowToolbarText(m_showToolbarText->IsChecked());
 		m_options->SetLineNumberPrinting(m_cbPrintLineNumbers->IsChecked());
 		m_options->SetSaveSession(m_saveSession->IsChecked());
@@ -1024,6 +1044,7 @@ void OptionsDialog::InitializeDialog()
     m_backColor->SetColour(m_colorOptions.GetSyntaxStyle(id).background);
     m_defaultBackground->SetValue(m_colorOptions.GetSyntaxStyle(id).defaultbackground);
     m_backColor->Enable(!m_defaultBackground->GetValue());
+    m_LaTeXRoot->SetValue(m_options->GetLaTeXRoot());
 
 
 	/**m_chkCombineWatchWindow->SetValue(m_options->GetCombineWatchWindow());

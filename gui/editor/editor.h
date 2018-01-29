@@ -247,6 +247,9 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
         FileFilterType getFileType() {return m_fileType;}
         int getSettings() {return m_nEditorSetting;}
         string GetStrippedLine(int nLine);
+        string GetStrippedRange(int nPos1, int nPos2, bool encode = true);
+        bool writeLaTeXFile(const string& sLaTeXFileName);
+        string parseDocumentation(int nPos1, int nPos2);
 
     protected:
         Options* m_options;

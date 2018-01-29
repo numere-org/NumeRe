@@ -63,6 +63,7 @@ class NumeReWindow;
 #define ID_BTN_SCRIPTPATH 10032
 #define ID_BTN_PROCPATH 10033
 #define ID_BTN_PLOTPATH 10034
+#define ID_BTN_LATEXPATH 10035
 #define ID_BTNFINDMINGW 10020
 #define ID_BUTTON1 10021
 #define ID_CHECKBOX1 10023
@@ -224,6 +225,7 @@ public:
     wxTextCtrl* m_ScriptPath;
     wxTextCtrl* m_ProcPath;
     wxTextCtrl* m_PlotPath;
+    wxTextCtrl* m_LaTeXRoot;
 
     wxComboBox* m_defaultFont;
     wxSpinCtrl* m_precision;

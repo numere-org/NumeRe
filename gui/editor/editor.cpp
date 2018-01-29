@@ -2045,6 +2045,228 @@ string NumeReEditor::GetStrippedLine(int nLine)
     return sCurrentLine;
 }
 
+string NumeReEditor::GetStrippedRange(int nPos1, int nPos2, bool encode)
+{
+    string sTextRange = this->GetTextRange(nPos1, nPos2).ToStdString();
+    while (sTextRange.front() == ' ' || sTextRange.front() == '\r' || sTextRange.front() == '\n' )//|| sTextRange.front() == '\t')
+        sTextRange.erase(0,1);
+    while (sTextRange.back() == ' ' || sTextRange.back() == '\t' || sTextRange.back() == '\r' || sTextRange.back() == '\n')
+        sTextRange.erase(sTextRange.length()-1);
+    while (sTextRange.find("\r\n") != string::npos)
+        sTextRange.replace(sTextRange.find("\r\n"), 2, "\n");
+    if (encode)
+    {
+        for (size_t i = 0; i < sTextRange.length(); i++)
+        {
+            switch (sTextRange[i])
+            {
+                case 'Ä':
+                    sTextRange.replace(i, 1, "Ae");
+                    break;
+                case 'ä':
+                    sTextRange.replace(i, 1, "ae");
+                    break;
+                case 'Ö':
+                    sTextRange.replace(i, 1, "Oe");
+                    break;
+                case 'ö':
+                    sTextRange.replace(i, 1, "oe");
+                    break;
+                case 'Ü':
+                    sTextRange.replace(i, 1, "Ue");
+                    break;
+                case 'ü':
+                    sTextRange.replace(i, 1, "ue");
+                    break;
+                case 'ß':
+                    sTextRange.replace(i, 1, "ss");
+                    break;
+            }
+        }
+    }
+    if (sTextRange.find_first_not_of('\t') == string::npos)
+        return "";
+    return sTextRange;
+}
+
+bool NumeReEditor::writeLaTeXFile(const string& sLaTeXFileName)
+{
+    if (this->getFileType() != FILE_NSCR && this->getFileType() != FILE_NPRC)
+        return false;
+
+    ofstream file_out;
+    file_out.open(sLaTeXFileName.c_str());
+    if (!file_out.good())
+        return false;
+
+    bool bTextMode = true;
+    int startpos = 0;
+
+    file_out << "% Created by NumeRe from the source of " << this->GetFileNameAndPath().ToStdString() << endl;
+    file_out << endl;
+
+
+    for (int i = 0; i < this->GetLastPosition(); i++)
+    {
+        if (this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_LINE && this->GetTextRange(i, i+3) == "##!") // That's a documentation
+        {
+            if (!bTextMode)
+            {
+                if (i - startpos > 1)
+                {
+                    file_out << this->GetStrippedRange(startpos, i) << endl;
+                }
+                bTextMode = true;
+                file_out << "\\end{lstlisting}" << endl;
+            }
+            file_out << this->parseDocumentation(i+3, this->GetLineEndPosition(this->LineFromPosition(i))) << endl;
+            i = this->GetLineEndPosition(this->LineFromPosition(i))+1;
+            startpos = i;
+        }
+        else if (this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_LINE && this->GetTextRange(i, i+3) == "##~") // ignore that (escaped comment)
+        {
+            if (i - startpos > 1)
+            {
+                file_out << this->GetStrippedRange(startpos, i) << endl;
+            }
+            i = this->GetLineEndPosition(this->LineFromPosition(i))+1;
+            startpos = i;
+        }
+        else if (this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_BLOCK && this->GetTextRange(i, i+3) == "#*!") // that's also a documentation
+        {
+            if (!bTextMode)
+            {
+                if (i - startpos > 1)
+                {
+                    file_out << this->GetStrippedRange(startpos, i) << endl;
+                }
+                bTextMode = true;
+                file_out << "\\end{lstlisting}" << endl;
+            }
+
+            for (int j = i+3; j < this->GetLastPosition(); j++)
+            {
+                if (this->GetStyleAt(j+3) != wxSTC_NSCR_COMMENT_BLOCK || j+1 == this->GetLastPosition())
+                {
+                    file_out << this->parseDocumentation(i+3, j) << endl;
+                    i = j+2;
+                    break;
+                }
+            }
+            startpos = i;
+        }
+        else if (this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_BLOCK && this->GetTextRange(i, i+3) == "#**") // ignore that, that's also an escaped comment
+        {
+            if (i - startpos > 1)
+            {
+                file_out << this->GetStrippedRange(startpos, i) << endl;
+            }
+
+            for (int j = i+3; j < this->GetLastPosition(); j++)
+            {
+                if (this->GetStyleAt(j+3) != wxSTC_NSCR_COMMENT_BLOCK || j+1 == this->GetLastPosition())
+                {
+                    i = j+2;
+                    break;
+                }
+            }
+            startpos = i+1;
+        }
+        else // a normal code fragment
+        {
+            if (bTextMode)
+            {
+                startpos = i;
+                bTextMode = false;
+                file_out << "\\begin{lstlisting}" << endl;
+            }
+            if (i+1 == this->GetLastPosition())
+            {
+                if (i - startpos > 1)
+                {
+                    file_out << this->GetStrippedRange(startpos, i) << endl;
+                }
+            }
+        }
+    }
+    if (!bTextMode)
+        file_out << "\\end{lstlisting}" << endl;
+    file_out.close();
+    return true;
+}
+
+string NumeReEditor::parseDocumentation(int nPos1, int nPos2)
+{
+    string sTextRange = this->GetStrippedRange(nPos1, nPos2, false);
+    if (sTextRange.find("\n- ") != string::npos) // thats a unordered list
+    {
+        while (sTextRange.find("\n- ") != string::npos)
+        {
+            size_t nItemizeStart = sTextRange.find("\n- ");
+            for (size_t i = nItemizeStart; i < sTextRange.length(); i++)
+            {
+                if (sTextRange.substr(i, 3) == "\n- ")
+                {
+                    sTextRange.replace(i+1, 1, "\\item");
+                    continue;
+                }
+                if ((sTextRange[i] == '\n' && sTextRange.substr(i, 3) != "\n  ") || i+1 == sTextRange.length())
+                {
+                    if (sTextRange[i] == '\n')
+                        sTextRange.insert(i, "\\end{itemize}");
+                    else
+                        sTextRange += "\\end{itemize}";
+                    sTextRange.insert(nItemizeStart+1, "\\begin{itemize}");
+                    break;
+                }
+            }
+        }
+    }
+    for (size_t i = 0; i < sTextRange.length(); i++)
+    {
+        switch (sTextRange[i])
+        {
+            case 'Ä':
+                sTextRange.replace(i, 1, "\\\"A");
+                break;
+            case 'ä':
+                sTextRange.replace(i, 1, "\\\"a");
+                break;
+            case 'Ö':
+                sTextRange.replace(i, 1, "\\\"O");
+                break;
+            case 'ö':
+                sTextRange.replace(i, 1, "\\\"o");
+                break;
+            case 'Ü':
+                sTextRange.replace(i, 1, "\\\"U");
+                break;
+            case 'ü':
+                sTextRange.replace(i, 1, "\\\"u");
+                break;
+            case 'ß':
+                sTextRange.replace(i, 1, "\\ss ");
+                break;
+        }
+    }
+    for (size_t i = 0; i < sTextRange.length(); i++)
+    {
+        if (sTextRange.substr(i,2) == "!!")
+        {
+            for (size_t j = i+2; j < sTextRange.length(); j++)
+            {
+                if (sTextRange.substr(j,2) == "!!")
+                {
+                    sTextRange.replace(j, 2, "`");
+                    sTextRange.replace(i, 2, "\\lstinline`");
+                    break;
+                }
+            }
+        }
+    }
+    return sTextRange;
+}
+
 bool NumeReEditor::getEditorSetting(EditorSettings _setting)
 {
     return m_nEditorSetting & _setting;
