@@ -26,6 +26,9 @@ using namespace std;
 using namespace boost;
 using namespace YExcel;
 
+size_t qSortDouble(double* dArray, size_t nlength);
+
+
 /*
  * Realisierung der Datafile-Klasse
  */
@@ -5501,9 +5504,17 @@ double Datafile::med(const string& sCache, const vector<long long int>& _vLine, 
             if (nCount == (_vLine.size()*_vCol.size())-nInvalid)
                 break;
         }
+        if (nCount == (_vLine.size()*_vCol.size())-nInvalid)
+            break;
     }
 
-    gsl_sort(dData, 1, nCount);
+    nCount = qSortDouble(dData, nCount);
+    //gsl_sort(dData, 1, nCount);
+    if (!nCount)
+    {
+        delete[] dData;
+        return NAN;
+    }
     dMed = gsl_stats_median_from_sorted_data(dData, 1, nCount);
 
     delete[] dData;
@@ -5612,9 +5623,17 @@ double Datafile::pct(const string& sCache, const vector<long long int>& _vLine, 
             if (nCount == (_vLine.size()*_vCol.size())-nInvalid)
                 break;
         }
+        if (nCount == (_vLine.size()*_vCol.size())-nInvalid)
+            break;
     }
 
-    gsl_sort(dData, 1, nCount);
+    nCount = qSortDouble(dData, nCount);
+    //gsl_sort(dData, 1, nCount);
+    if (!nCount)
+    {
+        delete[] dData;
+        return NAN;
+    }
     dPct = gsl_stats_quantile_from_sorted_data(dData, 1, nCount, dPct);
 
     delete[] dData;

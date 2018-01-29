@@ -181,6 +181,7 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 	_option.setPath(_option.getExePath() + "/docs", true, sPath);
 	_option.setPath(_option.getExePath() + "/user/lang", true, sPath);
 	_option.setPath(_option.getExePath() + "/user/docs", true, sPath);
+	_option.setPath(_option.getSavePath() + "/docs", true, sPath);
 	_functions.setPath(_option.getExePath(), false, sPath);
     //cerr << "Done.";
     if (oLogFile.is_open())

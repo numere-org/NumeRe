@@ -25,6 +25,8 @@ using namespace std;
  * Realisierung der Cache-Klasse
  */
 
+size_t qSortDouble(double* dArray, size_t nlength);
+
 // --> Standard-Konstruktor <--
 Cache::Cache() : FileSystem()
 {
@@ -2911,16 +2913,23 @@ double Cache::med(long long int _nLayer, const vector<long long int>& _vLine, co
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= getCacheLines(_nLayer, false) || _vCol[j] < 0 || _vCol[j] >= getCacheCols(_nLayer, false))
+            if (_vLine[i] < 0 || _vLine[i] >= getCacheLines(_nLayer, false) || _vCol[j] < 0 || _vCol[j] >= getCacheCols(_nLayer, false) || isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]))
                 continue;
             dData[nCount] = dCache[_vLine[i]][_vCol[j]][_nLayer];
             nCount++;
             if (nCount == (_vLine.size()*_vCol.size())-nInvalid)
                 break;
         }
+        if (nCount == (_vLine.size()*_vCol.size())-nInvalid)
+            break;
     }
-
-    gsl_sort(dData, 1, nCount);
+    nCount = qSortDouble(dData, nCount);
+    if (!nCount)
+    {
+        delete[] dData;
+        return NAN;
+    }
+    //gsl_sort(dData, 1, nCount);
     dMed = gsl_stats_median_from_sorted_data(dData, 1, nCount);
 
     delete[] dData;
@@ -3029,16 +3038,24 @@ double Cache::pct(long long int _nLayer, const vector<long long int>& _vLine, co
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= getCacheLines(_nLayer, false) || _vCol[j] < 0 || _vCol[j] >= getCacheCols(_nLayer, false))
+            if (_vLine[i] < 0 || _vLine[i] >= getCacheLines(_nLayer, false) || _vCol[j] < 0 || _vCol[j] >= getCacheCols(_nLayer, false) || isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]))
                 continue;
             dData[nCount] = dCache[_vLine[i]][_vCol[j]][_nLayer];
             nCount++;
             if (nCount == (_vLine.size()*_vCol.size())-nInvalid)
                 break;
         }
+        if (nCount == (_vLine.size()*_vCol.size())-nInvalid)
+            break;
     }
 
-    gsl_sort(dData, 1, nCount);
+    nCount = qSortDouble(dData, nCount);
+    if (!nCount)
+    {
+        delete[] dData;
+        return NAN;
+    }
+    //gsl_sort(dData, 1, nCount);
     dPct = gsl_stats_quantile_from_sorted_data(dData, 1, nCount, dPct);
 
     delete[] dData;

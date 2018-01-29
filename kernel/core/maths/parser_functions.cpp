@@ -3795,7 +3795,7 @@ void parser_ReplaceEntityOccurence(string& sLine, const string& sEntityOccurence
                 double dRef = 0.0;
                 int nType = 0;
                 string sArg = "";
-                sLeft = sLine.substr(sLeft.length()+1, getMatchingParenthesis(sLine.substr(sLeft.length()-1))-2);
+                sLeft = sLine.substr(sLine.find(sLeft)+sLeft.length(), getMatchingParenthesis(sLine.substr(sLine.find(sLeft)+sLeft.length()-1))-2);
                 sArg = getNextArgument(sLeft, true);
                 sArg = getNextArgument(sLeft, true);
                 if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
@@ -3816,7 +3816,7 @@ void parser_ReplaceEntityOccurence(string& sLine, const string& sEntityOccurence
                 _parser.DisableAccessCaching();
                 double dPct = 0.5;
                 string sArg = "";
-                sLeft = sLine.substr(sLeft.length()+1, getMatchingParenthesis(sLine.substr(sLeft.length()-1))-2);
+                sLeft = sLine.substr(sLine.find(sLeft)+sLeft.length(), getMatchingParenthesis(sLine.substr(sLine.find(sLeft)+sLeft.length()-1))-2);
                 sArg = getNextArgument(sLeft, true);
                 sArg = getNextArgument(sLeft, true);
                 if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
