@@ -3884,7 +3884,7 @@
 	"helpviewer.hpp"
 	"NumeReWindow.h"
 
-1511685506 source:d:\cpp\numere-source\trunk\gui\iconmanager.cpp
+1517092306 source:d:\cpp\numere-source\trunk\gui\iconmanager.cpp
 	"IconManager.h"
 	<string>
 	<wx/icon.h>
@@ -4993,7 +4993,7 @@
 1505412752 source:d:\cpp\numere-source\trunk\kernel\core\procedure\debugger.cpp
 	"debugger.hpp"
 
-1516729493 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1517305718 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"

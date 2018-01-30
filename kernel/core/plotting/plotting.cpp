@@ -2725,7 +2725,7 @@ void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _fu
                         sParsedString = _pInfo.sPlotParams.substr(nPos);
                     else
                         sParsedString = _pInfo.sPlotParams.substr(nPos, i-nPos);
-                    if (!parser_StringParser(sParsedString, sDummy, _data, _parser, _option, true))
+                    if (containsStrings(sParsedString) && !parser_StringParser(sParsedString, sDummy, _data, _parser, _option, true))
                     {
                         throw SyntaxError(SyntaxError::STRING_ERROR, sParsedString, SyntaxError::invalid_position);
                     }
@@ -4368,8 +4368,10 @@ void Plot::defaultRanges(PlotData& _pData, double dDataRanges[3][2], double dSec
             else
             {
                 _pInfo.dRanges[i][0] = _pData.getRanges(i);
-                if (i < 2)
+                if (!i)//i < 2)
                     _pInfo.dSecAxisRanges[i][0] = NAN;
+                else
+                    _pInfo.dSecAxisRanges[i][0] = dSecDataRanges[i][0];
             }
             if (_mDataPlots && (_pData.getGivenRanges() < i+1 || !_pData.getRangeSetting(i)))
             {
@@ -4390,8 +4392,10 @@ void Plot::defaultRanges(PlotData& _pData, double dDataRanges[3][2], double dSec
             else
             {
                 _pInfo.dRanges[i][1] = _pData.getRanges(i,1);
-                if (i < 2)
+                if (!i) //i < 2)
                     _pInfo.dSecAxisRanges[i][1] = NAN;
+                else
+                    _pInfo.dSecAxisRanges[i][1] = dSecDataRanges[i][1];
             }
             if (!isnan(_pData.getAddAxis(i).dMin))
             {
@@ -4902,7 +4906,7 @@ void Plot::fitPlotRanges(PlotData& _pData, const string& sFunc, double dDataRang
             if (_pInfo.dRanges[YCOORD][0] < 0.0 && (_pData.getCoords() != PlotData::CARTESIAN))
                 _pInfo.dRanges[YCOORD][0] = 0.0;
             _pInfo.dRanges[YCOORD][1] += dInt / 20.0;
-            dInt = fabs(_pInfo.dSecAxisRanges[1][1] - _pInfo.dSecAxisRanges[1][0]);
+            /*dInt = fabs(_pInfo.dSecAxisRanges[1][1] - _pInfo.dSecAxisRanges[1][0]);
             if (!isnan(dInt) && isnan(_pData.getAddAxis(1).dMin))
             {
                 if (dInt == 0.0 || (dInt < 1e-4 * _pInfo.dSecAxisRanges[1][0]))
@@ -4915,7 +4919,7 @@ void Plot::fitPlotRanges(PlotData& _pData, const string& sFunc, double dDataRang
                 _pInfo.dSecAxisRanges[1][1] += dInt / 20.0;
             }
             for (int i = 0; i < 2; i++)
-                _pData.setAddAxis(i, _pInfo.dSecAxisRanges[i][0], _pInfo.dSecAxisRanges[i][1]);
+                _pData.setAddAxis(i, _pInfo.dSecAxisRanges[i][0], _pInfo.dSecAxisRanges[i][1]);*/
         }
         else if (_pInfo.sCommand == "plot3d" && _pData.getGivenRanges() < 3)
         {
@@ -4983,6 +4987,23 @@ void Plot::fitPlotRanges(PlotData& _pData, const string& sFunc, double dDataRang
             if (_pInfo.dRanges[ZCOORD][0] < 0.0 && (_pData.getCoords() != PlotData::CARTESIAN && _pData.getCoords() != PlotData::POLAR_RP))
                 _pInfo.dRanges[ZCOORD][0] = 0.0;
             _pInfo.dRanges[ZCOORD][1] += dInt / 20.0;
+        }
+        if (!_pInfo.b2D && _pInfo.sCommand != "plot3d")
+        {
+            double dInt = fabs(_pInfo.dSecAxisRanges[1][1] - _pInfo.dSecAxisRanges[1][0]);
+            if (!isnan(dInt) && isnan(_pData.getAddAxis(1).dMin))
+            {
+                if (dInt == 0.0 || (dInt < 1e-4 * _pInfo.dSecAxisRanges[1][0]))
+                    dInt = fabs(_pInfo.dSecAxisRanges[1][1]);
+                _pInfo.dSecAxisRanges[1][0] -= dInt / 20.0;
+                if (_pInfo.dSecAxisRanges[1][0] <= 0 && _pData.getyLogscale())
+                    _pInfo.dSecAxisRanges[1][0] += dInt / 20.0;
+                if (_pInfo.dSecAxisRanges[1][0] < 0.0 && (_pData.getCoords() != PlotData::CARTESIAN))
+                    _pInfo.dSecAxisRanges[1][0] = 0.0;
+                _pInfo.dSecAxisRanges[1][1] += dInt / 20.0;
+            }
+            for (int i = 0; i < 2; i++)
+                _pData.setAddAxis(i, _pInfo.dSecAxisRanges[i][0], _pInfo.dSecAxisRanges[i][1]);
         }
     }
     else if (_pInfo.b2DVect && (!nPlotCompose || bNewSubPlot) && !(_pInfo.bDraw3D || _pInfo.bDraw))
