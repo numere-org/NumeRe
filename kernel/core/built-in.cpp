@@ -260,7 +260,7 @@ void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string
 				_out.generateFileName();
 		}
 		_out.setPluginName("Datenanzeige der Daten aus " + _data.getDataFileName(sCache)); // Anzeige-Plugin-Parameter: Nur Kosmetik
-		if (_option.getUseExternalViewer())
+		if (_option.getUseExternalViewer() && !bSave)
             NumeReKernel::showTable(sOut, nCol, nLine, sCache);
         else
         {
