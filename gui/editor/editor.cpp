@@ -26,7 +26,7 @@
 #include "../../common/DebugEvent.h"
 #include "../../common/ProjectInfo.h"
 #include "../../common/debug.h"
-#include "../../common/fixvsbug.h"
+//#include "../../common/fixvsbug.h"
 #include "../globals.hpp"
 
 #define MARGIN_FOLD 3
@@ -125,6 +125,7 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 	m_project = project;
 	m_project->AddEditor(this);
 	m_duplicateCode = nullptr;
+	m_nCallTipStart = 0;
 
 	m_watchedString = "";
 	m_dblclkString = "";
@@ -553,7 +554,9 @@ void NumeReEditor::OnChar( wxStyledTextEvent &event )
     {
         this->AutoCompSetIgnoreCase(true);
         this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
-        this->AutoCompShow(lenEntered, generateAutoCompList(GetTextRange(wordstartpos, currentPos), _syntax->getAutoCompList(GetTextRange(wordstartpos, currentPos).ToStdString())));
+        wxString sAutoCompList = generateAutoCompList(GetTextRange(wordstartpos, currentPos), _syntax->getAutoCompList(GetTextRange(wordstartpos, currentPos).ToStdString()));
+        if (sAutoCompList.length())
+            this->AutoCompShow(lenEntered, sAutoCompList);
     }
     else if (lenEntered > 1
         && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
@@ -639,6 +642,7 @@ void NumeReEditor::OnChar( wxStyledTextEvent &event )
         this->AutoCompShow(lenEntered, generateAutoCompList(GetTextRange(wordstartpos, currentPos), ""));
     }
     this->Colourise(0, -1);
+    //CallAfter(NumeReEditor::HandleFunctionCallTip);
 	event.Skip();
 }
 
@@ -699,6 +703,146 @@ void NumeReEditor::MakeBlockCheck()
     {
         getMatchingBlock(GetCurrentPos());
     }
+}
+
+
+
+// asynch update calls
+void NumeReEditor::HandleFunctionCallTip()
+{
+    // do nothing if an autocompletion list is active
+    if (this->AutoCompActive())
+        return;
+    int nStartingBrace = 0;
+    int nArgStartPos = 0;
+    string sFunctionContext = this->GetCurrentFunctionContext(nStartingBrace);
+    string sDefinition;
+    if (!sFunctionContext.length())
+        return;
+    if (sFunctionContext.front() == '$')
+        sDefinition = this->FindProcedureDefinition().ToStdString();
+    else if (sFunctionContext.front() == '.')
+        sDefinition = this->GetMethodCallTip(sFunctionContext.substr(1));
+    else
+        sDefinition = this->GetFunctionCallTip(sFunctionContext);
+
+    if (sDefinition.find(')') != string::npos)
+        sDefinition.erase(sDefinition.find(')')+1);
+
+    string sArgument = this->GetCurrentArgument(sDefinition, nStartingBrace, nArgStartPos);
+    if (this->CallTipActive() && this->CallTipStartPos() != nStartingBrace)
+    {
+        this->AdvCallTipCancel();
+        this->AdvCallTipShow(nStartingBrace, sDefinition);
+    }
+    else if (!this->CallTipActive())
+        this->AdvCallTipShow(nStartingBrace, sDefinition);
+    if (sArgument.length())
+        this->CallTipSetHighlight(nArgStartPos, nArgStartPos+sArgument.length());
+}
+
+string NumeReEditor::GetCurrentFunctionContext(int& nStartingBrace)
+{
+    int nCurrentLineStart = this->PositionFromLine(this->GetCurrentLine());
+    int nCurrentPos = this->GetCurrentPos();
+
+    for (int i = nCurrentPos; i > nCurrentLineStart; i--)
+    {
+        if (this->GetCharAt(i) == '('
+            && (this->BraceMatch(i) >= nCurrentPos || this->BraceMatch(i) == -1) // either no brace (yet) or the brace further right
+            && (this->GetStyleAt(i-1) == wxSTC_NSCR_FUNCTION || this->GetStyleAt(i-1) == wxSTC_NSCR_PROCEDURES || this->GetStyleAt(i-1) == wxSTC_NSCR_METHOD))
+        {
+            nStartingBrace = i;
+            if (this->GetStyleAt(i-1) == wxSTC_NSCR_PROCEDURES)
+                return this->FindMarkedProcedure(i-1).ToStdString();
+            else
+            {
+                if (this->GetStyleAt(i-1) == wxSTC_NSCR_METHOD)
+                    return "." + this->GetTextRange(this->WordStartPosition(i-1, true), this->WordEndPosition(i-1, true)).ToStdString();
+                return this->GetTextRange(this->WordStartPosition(i-1, true), this->WordEndPosition(i-1, true)).ToStdString();
+            }
+        }
+    }
+    return "";
+}
+
+string NumeReEditor::GetFunctionCallTip(const string& sFunctionName)
+{
+    string selection = sFunctionName;
+    if (selection == "arcsin")
+        selection = "asin";
+    else if (selection == "arccos")
+        selection = "acos";
+    else if (selection == "arctan")
+        selection = "atan";
+    else if (selection == "arsinh")
+        selection = "asinh";
+    else if (selection == "arcosh")
+        selection = "acosh";
+    else if (selection == "artanh")
+        selection = "atanh";
+    return _guilang.get("PARSERFUNCS_LISTFUNC_FUNC_"+toUpperCase(selection)+"_[*");
+}
+
+string NumeReEditor::GetMethodCallTip(const string& sMethodName)
+{
+    return "STRINGVAR." + _guilang.get("PARSERFUNCS_LISTFUNC_METHOD_"+toUpperCase(sMethodName)+"_[*");
+}
+
+string NumeReEditor::GetCurrentArgument(const string& sCallTip, int nStartingBrace, int& nArgStartPos)
+{
+    int nCurrentPos = this->GetCurrentPos();
+    int nCurrentArg = 0;
+    char currentChar;
+
+    for (int i = nStartingBrace+1; i < nCurrentPos && i < this->GetLineEndPosition(this->GetCurrentLine()); i++)
+    {
+        if (this->GetStyleAt(i) == wxSTC_NSCR_STRING
+            || this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_LINE
+            || this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_BLOCK)
+            continue;
+        currentChar = this->GetCharAt(i);
+        if (currentChar == ',')
+            nCurrentArg++;
+        if ((currentChar == '(' || currentChar == '[' || currentChar == '{')
+            && this->BraceMatch(i) != -1)
+            i = this->BraceMatch(i);
+    }
+
+    for (size_t i = 1; i < sCallTip.length(); i++)
+    {
+        if (!nCurrentArg && (sCallTip[i-1] == '(' || sCallTip[i-1] == ','))
+        {
+            nArgStartPos = i;
+            string sArgument = sCallTip.substr(i);
+            if (sArgument.find(')') < sArgument.find(','))
+                sArgument.erase(sArgument.find(')'));
+            else
+                sArgument.erase(sArgument.find(','));
+
+            return sArgument;
+        }
+        if (sCallTip[i] == ',')
+            nCurrentArg--;
+    }
+    return "";
+}
+
+int NumeReEditor::CallTipStartPos()
+{
+    return m_nCallTipStart;
+}
+
+void NumeReEditor::AdvCallTipShow(int pos, const wxString& definition)
+{
+    m_nCallTipStart = pos;
+    CallTipShow(pos, definition);
+}
+
+void NumeReEditor::AdvCallTipCancel()
+{
+    m_nCallTipStart = 0;
+    CallTipCancel();
 }
 
 void NumeReEditor::OnKeyDn(wxKeyEvent &event)
@@ -878,7 +1022,7 @@ void NumeReEditor::OnEnter(wxMouseEvent& event)
 void NumeReEditor::OnLeave(wxMouseEvent& event)
 {
     if (this->CallTipActive())
-        this->CallTipCancel();
+        this->AdvCallTipCancel();
     event.Skip();
 }
 
@@ -886,7 +1030,7 @@ void NumeReEditor::OnLeave(wxMouseEvent& event)
 void NumeReEditor::OnLoseFocus(wxFocusEvent& event)
 {
     if (this->CallTipActive())
-        this->CallTipCancel();
+        this->AdvCallTipCancel();
     event.Skip();
 }
 
@@ -900,28 +1044,19 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 	int endPosition = WordEndPosition(charpos, true);
 
 	wxString selection = this->GetTextRange(startPosition, endPosition);
-	if (this->CallTipActive())
-        this->CallTipCancel();
+
     if (this->GetStyleAt(charpos) == wxSTC_NSCR_FUNCTION || this->GetStyleAt(charpos) == wxSTC_NPRC_FUNCTION)
     {
-        if (selection == "arcsin")
-            selection = "asin";
-        else if (selection == "arccos")
-            selection = "acos";
-        else if (selection == "arctan")
-            selection = "atan";
-        else if (selection == "arsinh")
-            selection = "asinh";
-        else if (selection == "arcosh")
-            selection = "acosh";
-        else if (selection == "artanh")
-            selection = "atanh";
+        if (this->CallTipActive())
+            this->AdvCallTipCancel();
         size_t lastpos = 22;
-        this->CallTipShow(charpos, addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTFUNC_FUNC_"+toUpperCase(selection.ToStdString())+"_*"), lastpos)));
+        this->AdvCallTipShow(charpos, addLinebreaks(realignLangString(GetFunctionCallTip(selection.ToStdString()), lastpos)));
         this->CallTipSetHighlight(0,lastpos);
     }
     else if (this->GetStyleAt(charpos) == wxSTC_NSCR_COMMAND || this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURE_COMMANDS || this->GetStyleAt(charpos) == wxSTC_NPRC_COMMAND)
     {
+        if (this->CallTipActive())
+            this->AdvCallTipCancel();
         if (selection == "showf")
             selection = "show";
         else if (selection == "view")
@@ -991,7 +1126,7 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
                 nLength = sBlock.length()+countUmlauts(sBlock);
 
             sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDIF_*"));
-            this->CallTipShow(charpos, sBlock);
+            this->AdvCallTipShow(charpos, sBlock);
             if (selection == "if")
                 this->CallTipSetHighlight(nLength,lastpos+nLength);
             else if (selection == "elseif")
@@ -1007,7 +1142,7 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
             if (selection != "for")
                 nLength = sBlock.length()+countUmlauts(sBlock);
             sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDFOR_*"), lastpos2));
-            this->CallTipShow(charpos, sBlock);
+            this->AdvCallTipShow(charpos, sBlock);
             if (nLength)
                 this->CallTipSetHighlight(nLength,lastpos2+nLength);
             else
@@ -1021,7 +1156,7 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
             if (selection != "while")
                 nLength = sBlock.length() + countUmlauts(sBlock);
             sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDWHILE_*"), lastpos2));
-            this->CallTipShow(charpos, sBlock);
+            this->AdvCallTipShow(charpos, sBlock);
             if (nLength)
                 this->CallTipSetHighlight(nLength,lastpos2+nLength);
             else
@@ -1034,7 +1169,7 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
             if (selection != "procedure")
                 nLength = sBlock.length() + countUmlauts(sBlock);
             sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDPROCEDURE_*"));
-            this->CallTipShow(charpos, sBlock);
+            this->AdvCallTipShow(charpos, sBlock);
             if (nLength)
                 this->CallTipSetHighlight(nLength,13+nLength);
             else
@@ -1047,17 +1182,19 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
             if (selection != "compose")
                 nLength = sBlock.length()+countUmlauts(sBlock);
             sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDCOMPOSE_*"));
-            this->CallTipShow(charpos, sBlock);
+            this->AdvCallTipShow(charpos, sBlock);
             this->CallTipSetHighlight(nLength,13+nLength);
         }
         else
         {
-            this->CallTipShow(charpos, addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"+toUpperCase(selection.ToStdString())+"_*"), lastpos)));
+            this->AdvCallTipShow(charpos, addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"+toUpperCase(selection.ToStdString())+"_*"), lastpos)));
             this->CallTipSetHighlight(0,lastpos);
         }
     }
     else if (this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURES || this->GetStyleAt(charpos) == wxSTC_NPRC_PROCEDURES)
     {
+        if (this->CallTipActive())
+            this->AdvCallTipCancel();
         wxString proc = FindMarkedProcedure(charpos);
         if (!proc.length())
             return;
@@ -1071,38 +1208,46 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
             procdef.erase(procdef.find("::"));
         }
 
-        this->CallTipShow(charpos, _guilang.get("GUI_EDITOR_CALLTIP_PROC1") + " " + procdef + flags + "\n" + _guilang.get("GUI_EDITOR_CALLTIP_PROC2"));
+        this->AdvCallTipShow(charpos, _guilang.get("GUI_EDITOR_CALLTIP_PROC1") + " " + procdef + flags + "\n" + _guilang.get("GUI_EDITOR_CALLTIP_PROC2"));
         this->CallTipSetHighlight(_guilang.get("GUI_EDITOR_CALLTIP_PROC1").length()+1,1+procdef.length()+_guilang.get("GUI_EDITOR_CALLTIP_PROC1").length());
     }
     else if (this->GetStyleAt(charpos) == wxSTC_NSCR_OPTION || this->GetStyleAt(charpos) == wxSTC_NPRC_OPTION)
     {
+        if (this->CallTipActive())
+            this->AdvCallTipCancel();
         selection = _guilang.get("GUI_EDITOR_CALLTIP_OPT_"+toUpperCase(selection.ToStdString()));
         size_t highlightlength = selection.length();
         if (selection.find(' ') != string::npos)
             highlightlength = selection.find(' ');
-        this->CallTipShow(charpos, "Option: " + selection);
+        this->AdvCallTipShow(charpos, "Option: " + selection);
         this->CallTipSetHighlight(8,8+highlightlength);
     }
     else if (this->GetStyleAt(charpos) == wxSTC_NSCR_METHOD || this->GetStyleAt(charpos) == wxSTC_NPRC_METHOD)
     {
-        selection = "STRINGVAR." + _guilang.get("PARSERFUNCS_LISTFUNC_METHOD_"+toUpperCase(selection.ToStdString())+"_*");
+        if (this->CallTipActive())
+            this->AdvCallTipCancel();
+        selection = GetMethodCallTip(selection.ToStdString());
         size_t highlightlength;
         if (selection.find(' ') != string::npos)
             highlightlength = selection.find(' ');
-        this->CallTipShow(charpos, addLinebreaks(realignLangString(selection.ToStdString(), highlightlength)));
+        this->AdvCallTipShow(charpos, addLinebreaks(realignLangString(selection.ToStdString(), highlightlength)));
         this->CallTipSetHighlight(10,highlightlength);
     }
     else if (this->GetStyleAt(charpos) == wxSTC_NSCR_PREDEFS || this->GetStyleAt(charpos) == wxSTC_NPRC_PREDEFS)
     {
-        this->CallTipShow(charpos, _guilang.get("GUI_EDITOR_CALLTIP_"+toUpperCase(selection.ToStdString())));
+        if (this->CallTipActive())
+            this->AdvCallTipCancel();
+        this->AdvCallTipShow(charpos, _guilang.get("GUI_EDITOR_CALLTIP_"+toUpperCase(selection.ToStdString())));
         this->CallTipSetHighlight(0, 10);
     }
     else if (this->GetStyleAt(charpos) == wxSTC_NSCR_CONSTANTS || this->GetStyleAt(charpos) == wxSTC_NPRC_CONSTANTS)
     {
+        if (this->CallTipActive())
+            this->AdvCallTipCancel();
         string sCalltip = _guilang.get("GUI_EDITOR_CALLTIP_CONST"+toUpperCase(selection.ToStdString())+"_*");
         if (selection == "_G")
             sCalltip = _guilang.get("GUI_EDITOR_CALLTIP_CONST_GRAV_*");
-        this->CallTipShow(charpos, sCalltip);
+        this->AdvCallTipShow(charpos, sCalltip);
         this->CallTipSetHighlight(0, sCalltip.find('='));
     }
 }
@@ -2870,6 +3015,7 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
 
 void NumeReEditor::updateDefaultHighlightSettings()
 {
+    this->CallTipSetForegroundHighlight(*wxBLUE);
     this->SetCaretLineVisible(true);
     this->SetIndentationGuides(true);
 
@@ -3222,7 +3368,7 @@ void NumeReEditor::OnRightClick(wxMouseEvent &event)
 	}
 
     if (this->CallTipActive())
-        this->CallTipCancel();
+        this->AdvCallTipCancel();
 	PopupMenu(&m_popupMenu, m_lastRightClick);
 	m_PopUpActive = false;
 }
@@ -3317,6 +3463,7 @@ void NumeReEditor::AsynchActions()
         ApplyAutoIndentation(0, this->GetCurrentLine()+1);
     if (getEditorSetting(SETTING_USEANALYZER))
         AnalyseCode();
+    HandleFunctionCallTip();
 }
 
 void NumeReEditor::OnStartDrag(wxStyledTextEvent& event)

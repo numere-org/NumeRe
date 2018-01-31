@@ -99,6 +99,17 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
         void MakeBraceCheck();
         void MakeBlockCheck();
 
+        // asynch update calls
+        void HandleFunctionCallTip();
+        string GetCurrentFunctionContext(int& nStartingBrace);
+        string GetFunctionCallTip(const string& sFunctionName);
+        string GetMethodCallTip(const string& sMethodName);
+        string GetCurrentArgument(const string& sCallTip, int nStartingBrace, int& nArgStartPos);
+
+        int CallTipStartPos();
+        void AdvCallTipShow(int pos, const wxString& definition);
+        void AdvCallTipCancel();
+
         /** \brief Finds the matching brace to the brace at the position nPos
          *
          * \param nPos int
@@ -342,6 +353,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
         int m_nDuplicateCodeFlag;
         int m_nFirstLine;
         int m_nLastLine;
+        int m_nCallTipStart;
 
         bool m_bLoadingFile;
         bool m_bLastSavedRemotely;

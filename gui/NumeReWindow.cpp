@@ -2276,7 +2276,7 @@ void NumeReWindow::PageHasChanged (int pageNr)
         if (m_currentEd->AutoCompActive())
             m_currentEd->AutoCompCancel();
         if (m_currentEd->CallTipActive())
-            m_currentEd->CallTipCancel();
+            m_currentEd->AdvCallTipCancel();
 		m_currentPage = pageNr;
 		m_currentEd = static_cast< NumeReEditor * > (m_book->GetPage (m_currentPage));
 		m_book->SetSelection(pageNr);

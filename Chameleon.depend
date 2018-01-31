@@ -4017,7 +4017,7 @@
 	"odesolver.hpp"
 	"../kernel.hpp"
 
-1490787950 source:d:\cpp\numere-source\trunk\kernel\core\output.cpp
+1517407970 source:d:\cpp\numere-source\trunk\kernel\core\output.cpp
 	"output.hpp"
 	"../kernel.hpp"
 
@@ -4179,7 +4179,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1517399040 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1517399634 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -4384,7 +4384,7 @@
 	<vector>
 	<algorithm>
 
-1516978331 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1517431681 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -4396,7 +4396,7 @@
 	"../../kernel/syntax.hpp"
 	"../dialogs/duplicatecodedialog.hpp"
 
-1517049475 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1517429054 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -4414,7 +4414,6 @@
 	"../../common/DebugEvent.h"
 	"../../common/ProjectInfo.h"
 	"../../common/debug.h"
-	"../../common/fixvsbug.h"
 	"../globals.hpp"
 
 1512810015 source:d:\cpp\numere-source\trunk\gui\editor\history.cpp
@@ -5123,7 +5122,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1517077712 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1517415033 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"

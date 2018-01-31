@@ -762,8 +762,8 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
         print("\\end{longtable}");
     }
 
-    if (nLen > 2)
-        sPrint.assign(nLen+2, '-');
+    //if (nLen > 2)
+    //    sPrint.assign(nLen+2, '-');
         //sPrint.assign(nLen-2, (char)205);
 
     string sConsoleOut = "";
