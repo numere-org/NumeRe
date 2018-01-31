@@ -2384,51 +2384,48 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
         n_pos++;
     }
 
-    n_pos = 0;
-    while (n_pos < sLine.length() && _data.containsCacheElements(sLine.substr(n_pos)))
+    for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
     {
-        for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
+        n_pos = 0;
+        while (sLine.find(iter->first+"(", n_pos) != string::npos)
         {
-            if (sLine.find(iter->first+"(", n_pos) != string::npos)
+            n_pos = sLine.find(iter->first+"(");
+            if (isInQuotes(sLine, n_pos, true))
             {
-                n_pos = sLine.find(iter->first+"(", n_pos);
-                if (isInQuotes(sLine, n_pos, true))
+                n_pos++;
+                continue;
+            }
+            unsigned int nPos = n_pos + (iter->first).length();
+            if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && !isInQuotes(sLine, nPos))
+                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
+            nPos += getMatchingParenthesis(sLine.substr(nPos));
+            if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, (iter->first).length()+2))))
+            {
+                if (parser_CheckMultArgFunc(sLine.substr(0,n_pos),sLine.substr(nPos+1)))
                 {
-                    n_pos++;
-                    continue;
+                    if (n_pos > 4 && sLine.substr(sLine.rfind('(',n_pos)-4,5) == "norm(")
+                        n_pos -= 5;
+                    else
+                        n_pos -= 4;
+                    nPos++;
                 }
-                unsigned int nPos = n_pos + (iter->first).length();
-                if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && !isInQuotes(sLine, nPos))
-                    throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
-                nPos += getMatchingParenthesis(sLine.substr(nPos));
-                if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, (iter->first).length()+2))))
-                {
-                    if (parser_CheckMultArgFunc(sLine.substr(0,n_pos),sLine.substr(nPos+1)))
-                    {
-                        if (n_pos > 4 && sLine.substr(sLine.rfind('(',n_pos)-4,5) == "norm(")
-                            n_pos -= 5;
-                        else
-                            n_pos -= 4;
-                        nPos++;
-                    }
-                    string sData = sLine.substr(n_pos, nPos-n_pos+1);
-                    parser_GetDataElement(sData, _parser, _data, _option);
-                    StringResult strRes = parser_StringParserCore(sData, "", _data, _parser, _option, mStringVectorVars);
-                    if (!strRes.vResult.size())
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-                    sData.clear();
-                    for (size_t i = 0; i < strRes.vResult.size(); i++)
-                        sData += strRes.vResult[i] + ", ";
-                    if (sData.length())
-                        sData.erase(sData.rfind(','));
-                    //sData = strRes.vResult[0];
-                    StripSpaces(sData);
-                    sLine = sLine.substr(0,n_pos) + sData + sLine.substr(nPos+1);
-                }
+                string sData = sLine.substr(n_pos, nPos-n_pos+1);
+                parser_GetDataElement(sData, _parser, _data, _option);
+                StringResult strRes = parser_StringParserCore(sData, "", _data, _parser, _option, mStringVectorVars);
+                if (!strRes.vResult.size())
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                sData.clear();
+                for (size_t i = 0; i < strRes.vResult.size(); i++)
+                    sData += strRes.vResult[i] + ", ";
+                if (sData.length())
+                    sData.erase(sData.rfind(','));
+                //sData = strRes.vResult[0];
+                StripSpaces(sData);
+                sLine = sLine.substr(0,n_pos) + sData + sLine.substr(nPos+1);
             }
         }
-        n_pos++;
     }
+
     return sLine;
 }
 
