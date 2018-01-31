@@ -25,6 +25,7 @@ GraphHelper::GraphHelper(mglGraph* __graph, const PlotData& _pData)
     _graph = __graph;
     bAlphaActive = _pData.getTransparency();
     bLightActive = _pData.getLighting();
+    bHires = _pData.getHighRes() == 2;
     dAspect = _pData.getAspect();
 }
 

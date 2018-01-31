@@ -2214,6 +2214,7 @@ bool containsStrings(const string& sLine)
         || sLine.find("strlen(") != string::npos
         || sLine.find("findparam(") != string::npos
         || sLine.find("findfile(") != string::npos
+        || sLine.find("findcolumn(") != string::npos
         || sLine.find("getopt(") != string::npos
         || sLine.find("getindices(") != string::npos
         || sLine.find("getmatchingparens(") != string::npos

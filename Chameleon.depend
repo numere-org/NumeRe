@@ -3877,7 +3877,7 @@
 	"filetree.hpp"
 	"globals.hpp"
 
-1511250771 source:d:\cpp\numere-source\trunk\gui\graphviewer.cpp
+1517397028 source:d:\cpp\numere-source\trunk\gui\graphviewer.cpp
 	"graphviewer.hpp"
 
 1491247725 source:d:\cpp\numere-source\trunk\gui\helpviewer.cpp
@@ -4179,7 +4179,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1513892207 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1517399040 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -4700,7 +4700,7 @@
 	"../ui/error.hpp"
 	"../settings.hpp"
 
-1511250593 d:\cpp\numere-source\trunk\kernel\core\plotting\graph_helper.hpp
+1517392809 d:\cpp\numere-source\trunk\kernel\core\plotting\graph_helper.hpp
 	<mgl2/wnd.h>
 	<mgl2/mgl.h>
 	"plotdata.hpp"
@@ -4981,7 +4981,7 @@
 	<iostream>
 	"resampler.h"
 
-1511630703 source:d:\cpp\numere-source\trunk\kernel\core\plotting\graph_helper.cpp
+1517392843 source:d:\cpp\numere-source\trunk\kernel\core\plotting\graph_helper.cpp
 	"graph_helper.hpp"
 	"../../kernel.hpp"
 	"../utils/tools.hpp"
@@ -4993,7 +4993,7 @@
 1505412752 source:d:\cpp\numere-source\trunk\kernel\core\procedure\debugger.cpp
 	"debugger.hpp"
 
-1517306500 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1517393535 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
@@ -5077,7 +5077,7 @@
 1490787951 source:d:\cpp\numere-source\trunk\kernel\core\utils\zip++.cpp
 	"zip++.hpp"
 
-1511630919 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
+1517399092 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
 	"tools.hpp"
 	"../../kernel.hpp"
 	<cstdlib>

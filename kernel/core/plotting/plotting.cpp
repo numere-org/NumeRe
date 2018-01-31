@@ -47,6 +47,8 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
         GraphHelper* _graphHelper = graph.createGraphHelper(_pData);
         NumeReKernel::updateGraphWindow(_graphHelper);
     }
+    // --> Speicher wieder freigeben <--
+    _pData.deleteData();
 }
 
 
@@ -312,6 +314,11 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
                 if (_pData.getAnimateSamples() && !_pData.getFileName().length())
                 {
                     double dHeight = sqrt(640.0*480.0 / _pData.getAspect());
+                    _graph->SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));
+                }
+                else if (_pData.getHighRes() == 2)
+                {
+                    double dHeight = sqrt(1280.0*960.0 / _pData.getAspect());
                     _graph->SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));
                 }
                 else
@@ -699,9 +706,6 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
         else
             openExternally(sOutputName, _option.getViewerPath(), _pData.getPath());
     }*/
-
-    // --> Speicher wieder freigeben <--
-    _pData.deleteData();
 
     // --> Zurueck zur aufrufenden Funktion! <--
     return;

@@ -1476,6 +1476,70 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
     }
 
     n_pos = 0;
+    // {var} = findcolumn("data","header")
+    while (sLine.find("findcolumn(", n_pos) != string::npos)
+    {
+        n_pos = sLine.find("findcolumn(", n_pos);
+        if (isInQuotes(sLine, n_pos, true))
+        {
+            n_pos++;
+            continue;
+        }
+        unsigned int nPos = n_pos + 10;
+        if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && !isInQuotes(sLine, nPos))
+            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
+        nPos += getMatchingParenthesis(sLine.substr(nPos));
+        if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, 12))))
+        {
+            string sData = sLine.substr(n_pos+11,nPos-n_pos-11);
+            string sHeadline;
+            if (containsStrings(sData) || parser_containsStringVectorVars(sData, mStringVectorVars))
+            {
+                StringResult strRes = parser_StringParserCore(sData, "", _data, _parser, _option, mStringVectorVars);
+                if (!strRes.vResult.size())
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                // use only first one
+                sData = strRes.vResult[0];
+                sHeadline = strRes.vResult[1];
+            }
+            if (!sHeadline.length())
+                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+            if (sData[0] == '"')
+                sData.erase(0,1);
+            if (sData[sData.length()-1] == '"')
+                sData.erase(sData.length()-1);
+            StripSpaces(sData);
+            if (sHeadline.front() == '"')
+                sHeadline.erase(0,1);
+            if (sHeadline.back() == '"')
+                sHeadline.erase(sHeadline.length()-1);
+            StripSpaces(sHeadline);
+            if (sData.substr(0,5) == "data(" || _data.isCacheElement(sData))
+            {
+                sData.erase(sData.find("("));
+                string sResult;
+                for (long long int i = 0; i < _data.getCols(sData, false); i++)
+                {
+                    if (_data.getHeadLineElement(i, sData) == sHeadline)
+                    {
+                        if (sResult.length())
+                            sResult += ", ";
+                        sResult += toString(i+1);
+                    }
+                }
+                if (!sResult.length())
+                    sResult = "nan";
+                if (sResult.find(',') != string::npos)
+                    sResult = "{" + sResult + "}";
+                sLine = sLine.substr(0,n_pos) + sResult + sLine.substr(nPos+1);
+            }
+            else
+                sLine = sLine.substr(0,n_pos) + "nan" + sLine.substr(nPos+1);
+        }
+        n_pos++;
+    }
+
+    n_pos = 0;
     // str = valtostr(EXPR, [str])
     while (sLine.find("valtostr(", n_pos) != string::npos)
     {
