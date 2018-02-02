@@ -1254,7 +1254,7 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
     }
 
 
-    for (unsigned int i = 0; i < 3; i++)
+    for (unsigned int i = 0; i < _pData.getHLinesSize(); i++)
     {
         if (_pData.getHLines(i).sDesc.length())
         {
@@ -1268,6 +1268,9 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
                 _graph->Puts(_pInfo.dRanges[XCOORD][0]+0.03*fabs(_pInfo.dRanges[XCOORD][0]-_pInfo.dRanges[XCOORD][1]), _pData.getHLines(i).dPos-0.04*fabs(_pInfo.dRanges[YCOORD][1]-_pInfo.dRanges[YCOORD][0]), fromSystemCodePage(_pData.getHLines(i).sDesc).c_str(), ":kL");
             }
         }
+    }
+    for (unsigned int i = 0; i < _pData.getVLinesSize(); i++)
+    {
         if (_pData.getVLines(i).sDesc.length())
         {
             _graph->Line(mglPoint(_pData.getVLines(i).dPos, _pInfo.dRanges[YCOORD][0]), mglPoint(_pData.getVLines(i).dPos, _pInfo.dRanges[YCOORD][1]), _pData.getVLines(i).sStyle.c_str());
@@ -2725,14 +2728,36 @@ void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _fu
                 if (((_pInfo.sPlotParams[i] == ' ' || _pInfo.sPlotParams[i] == ')') && !isInQuotes(_pInfo.sPlotParams, i)) || i+1 == _pInfo.sPlotParams.length())
                 {
                     string sParsedString;
+                    string sToParse;
+                    string sCurrentString;
                     if (i+1 == _pInfo.sPlotParams.length())
-                        sParsedString = _pInfo.sPlotParams.substr(nPos);
+                        sToParse = _pInfo.sPlotParams.substr(nPos);
                     else
-                        sParsedString = _pInfo.sPlotParams.substr(nPos, i-nPos);
-                    if (containsStrings(sParsedString) && !parser_StringParser(sParsedString, sDummy, _data, _parser, _option, true))
+                        sToParse = _pInfo.sPlotParams.substr(nPos, i-nPos);
+                    StripSpaces(sToParse);
+                    if (sToParse.front() == '(')
+                        sToParse.erase(0,1);
+                    if (sToParse.back())
+                        sToParse.erase(sToParse.length()-1);
+                    while (sToParse.length())
+                    {
+                        sCurrentString = getNextArgument(sToParse, true);
+                        bool bVector = sCurrentString.find('{') != string::npos;
+                        if (containsStrings(sCurrentString) && !parser_StringParser(sCurrentString, sDummy, _data, _parser, _option, true))
+                        {
+                            throw SyntaxError(SyntaxError::STRING_ERROR, sParsedString, SyntaxError::invalid_position);
+                        }
+                        if (bVector && sCurrentString.find('{') == string::npos)
+                            sCurrentString = "{" + sCurrentString + "}";
+                        if (sParsedString.length())
+                            sParsedString += "," + sCurrentString;
+                        else
+                            sParsedString = sCurrentString;
+                    }
+                    /*if (containsStrings(sParsedString) && !parser_StringParser(sParsedString, sDummy, _data, _parser, _option, true))
                     {
                         throw SyntaxError(SyntaxError::STRING_ERROR, sParsedString, SyntaxError::invalid_position);
-                    }
+                    }*/
                     if (_pInfo.sPlotParams[nPos] == '(' && sParsedString.front() != '(')
                     {
                         sParsedString = "(" + sParsedString + ")";

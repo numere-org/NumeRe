@@ -734,35 +734,111 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             _lHlines[1].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
         replaceControlChars(_lHlines[1].sDesc);
     }
-    if (matchParams(sCmd, "hline", '=') && (!nType || nType == 2))
+    if ((matchParams(sCmd, "hline", '=') || matchParams(sCmd, "hlines", '=')) && (!nType || nType == 2))
     {
-        string sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "hline", '=')+5);
+        string sTemp;
+        if (matchParams(sCmd, "hline", '='))
+            sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "hline", '=')+5);
+        else
+            sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "hlines", '=')+6);
         if (sTemp.find(',') != string::npos)
         {
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
             _parser.SetExpr(getNextArgument(sTemp, true));
-            _lHlines[2].dPos = _parser.Eval();
-            _lHlines[2].sDesc = getArgAtPos(getNextArgument(sTemp, true),0);
+            value_type* v = nullptr;
+            int nResults = 0;
+            v = _parser.Eval(nResults);
+
+            for (int i = 0; i < nResults; i++)
+            {
+                if (i)
+                    _lHlines.push_back(Line());
+
+                _lHlines[i+2].dPos = v[i];
+            }
+
+            string sDescList = getArgAtPos(getNextArgument(sTemp, true),0);
+            if (sDescList.front() == '{')
+                sDescList.erase(0,1);
+            if (sDescList.back() == '}')
+                sDescList.erase(sDescList.length()-1);
+            for (size_t i = 2; i < _lHlines.size(); i++)
+            {
+                if (!sDescList.length())
+                    break;
+                _lHlines[i].sDesc = removeSurroundingQuotationMarks(getNextArgument(sDescList, true));
+                replaceControlChars(_lHlines[i].sDesc);
+            }
+
             if (sTemp.length())
-                _lHlines[2].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
+            {
+                string sStyles = getArgAtPos(getNextArgument(sTemp, true),0);
+                if (sStyles.front() == '{')
+                    sStyles.erase(0,1);
+                if (sStyles.back() == '}')
+                    sStyles.erase(sStyles.length()-1);
+                for (size_t i = 2; i < _lHlines.size(); i++)
+                {
+                    if (!sStyles.length())
+                        break;
+                    _lHlines[i].sStyle = removeSurroundingQuotationMarks(getNextArgument(sStyles, true));
+                }
+            }
         }
-        replaceControlChars(_lHlines[2].sDesc);
     }
-    if (matchParams(sCmd, "vline", '=') && (!nType || nType == 2))
+    if ((matchParams(sCmd, "vline", '=') || matchParams(sCmd, "vlines", '=')) && (!nType || nType == 2))
     {
-        string sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "vline", '=')+5);
+        string sTemp;
+        if (matchParams(sCmd, "vline", '='))
+            sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "vline", '=')+5);
+        else
+            sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "vlines", '=')+6);
         if (sTemp.find(',') != string::npos)
         {
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
             _parser.SetExpr(getNextArgument(sTemp, true));
-            _lVLines[2].dPos = _parser.Eval();
-            _lVLines[2].sDesc = getArgAtPos(getNextArgument(sTemp, true),0);
+            value_type* v = nullptr;
+            int nResults = 0;
+            v = _parser.Eval(nResults);
+
+            for (int i = 0; i < nResults; i++)
+            {
+                if (i)
+                    _lVLines.push_back(Line());
+
+                _lVLines[i+2].dPos = v[i];
+            }
+
+            string sDescList = getArgAtPos(getNextArgument(sTemp, true),0);
+            if (sDescList.front() == '{')
+                sDescList.erase(0,1);
+            if (sDescList.back() == '}')
+                sDescList.erase(sDescList.length()-1);
+            for (size_t i = 2; i < _lVLines.size(); i++)
+            {
+                if (!sDescList.length())
+                    break;
+                _lVLines[i].sDesc = removeSurroundingQuotationMarks(getNextArgument(sDescList, true));
+                replaceControlChars(_lVLines[i].sDesc);
+            }
+
             if (sTemp.length())
-                _lVLines[2].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
+            {
+                string sStyles = getArgAtPos(getNextArgument(sTemp, true),0);
+                if (sStyles.front() == '{')
+                    sStyles.erase(0,1);
+                if (sStyles.back() == '}')
+                    sStyles.erase(sStyles.length()-1);
+                for (size_t i = 2; i < _lVLines.size(); i++)
+                {
+                    if (!sStyles.length())
+                        break;
+                    _lVLines[i].sStyle = removeSurroundingQuotationMarks(getNextArgument(sStyles, true));
+                }
+            }
         }
-        replaceControlChars(_lVLines[2].sDesc);
     }
     if (matchParams(sCmd, "lborder", '=') && (!nType || nType == 2))
     {
@@ -1745,6 +1821,9 @@ void PlotData::reset()
     }
     dPlotData = 0;
 
+    _lVLines.clear();
+    _lHlines.clear();
+
     for (int i = 0; i < 3; i++)
     {
         bRanges[i] = false;
@@ -1754,12 +1833,14 @@ void PlotData::reset()
         dOrigin[i] = 0.0;
         sAxisLabels[i] = "";
         sAxisBind.clear();
-        _lHlines[i].sDesc = "";
+        _lHlines.push_back(Line());
+        _lVLines.push_back(Line());
+        /*_lHlines[i].sDesc = "";
         _lHlines[i].sStyle = "k;2";
         _lHlines[i].dPos = 0.0;
         _lVLines[i].sDesc = "";
         _lVLines[i].sStyle = "k;2";
-        _lVLines[i].dPos = 0.0;
+        _lVLines[i].dPos = 0.0;*/
         nSlices[i] = 1;
     }
 
@@ -1875,12 +1956,24 @@ void PlotData::deleteData()
             }
         }
     }
+
+    _lHlines.clear();
+    _lVLines.clear();
     for (int i = 0; i < 3; i++)
     {
         dRanges[i][0] = -10.0;
         dRanges[i][1] = 10.0;
         bRanges[i] = false;
         bMirror[i] = false;
+        sAxisLabels[i] = "";
+        _lHlines.push_back(Line());
+        _lVLines.push_back(Line());
+        /*_lHlines[i].sDesc = "";
+        _lHlines[i].sStyle = "k;2";
+        _lVLines[i].sDesc = "";
+        _lVLines[i].sStyle = "k;2";
+        _lHlines[i].dPos = 0.0;
+        _lVLines[i].dPos = 0.0;*/
     }
     for (int i = 0; i < 4; i++)
     {
@@ -1910,16 +2003,6 @@ void PlotData::deleteData()
     sBackground = "";
     dColorRange[0] = NAN;
     dColorRange[1] = NAN;
-    for (int i = 0; i < 3; i++)
-    {
-        sAxisLabels[i] = "";
-        _lHlines[i].sDesc = "";
-        _lHlines[i].sStyle = "k;2";
-        _lVLines[i].sDesc = "";
-        _lVLines[i].sStyle = "k;2";
-        _lHlines[i].dPos = 0.0;
-        _lVLines[i].dPos = 0.0;
-    }
     for (int i = 0; i < 2; i++)
     {
         _AddAxes[i].dMin = NAN;
@@ -2747,6 +2830,13 @@ void PlotData::replaceControlChars(string& sString)
             sString.replace(i,1,"\\n");
     }
     return;
+}
+
+string PlotData::removeSurroundingQuotationMarks(const string& sString)
+{
+    if (sString.front() == '"' && sString.back() == '"')
+        return sString.substr(1,sString.length()-2);
+    return sString;
 }
 
 void PlotData::rangeByPercentage(double* dData, size_t nLength, double dLowerPercentage, double dUpperPercentage, vector<double>& vRanges)

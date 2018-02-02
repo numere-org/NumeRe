@@ -24,6 +24,7 @@
 
 #include <string>
 #include <cmath>
+#include <vector>
 //#include <mgl2/fltk.h>
 
 #include "../ui/error.hpp"
@@ -128,8 +129,8 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         string sCustomTicks[4];
         string sGridStyle;
         int nLegendstyle;
-        Line _lHlines[3];
-        Line _lVLines[3];
+        vector<Line> _lHlines;
+        vector<Line> _lVLines;
         Axis _AddAxes[2];
         int nRequestedLayers;
         int nLegendPosition;
@@ -173,6 +174,7 @@ class PlotData : public FileSystem  // CHILD von Filesystem
                 return true;
             }
         void replaceControlChars(string& sString);
+        string removeSurroundingQuotationMarks(const string& sString);
         void rangeByPercentage(double* dData, size_t nLength, double dLowerPercentage, double dUpperPercentage, vector<double>& vRanges);
 
     public:
@@ -430,20 +432,28 @@ class PlotData : public FileSystem  // CHILD von Filesystem
                     _lHlines[i].dPos = getMax();
                 if (i == 1)
                     _lHlines[i].dPos = getMin();
-                if (i < 3)
+                if (i < _lHlines.size())
                     return _lHlines[i];
                 else
                     return _lLine;
+            }
+        inline size_t getHLinesSize()
+            {
+                return _lHlines.size();
             }
         inline Line getVLines(unsigned int i = 0)
             {
                 Line _lLine;
                 _lLine.dPos = 0.0;
                 _lLine.sDesc = "";
-                if (i < 3)
+                if (i < _lVLines.size())
                     return _lVLines[i];
                 else
                     return _lLine;
+            }
+        inline size_t getVLinesSize()
+            {
+                return _lVLines.size();
             }
         inline Axis getAddAxis(unsigned int i = 0) const
             {

@@ -45,6 +45,8 @@ struct Line
     string sDesc;
     string sStyle;
     double dPos;
+
+    Line() : sDesc(""), sStyle("k;2"), dPos(0.0) {}
 };
 
 struct Axis

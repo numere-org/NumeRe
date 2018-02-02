@@ -2976,12 +2976,12 @@ int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& 
                 }
                 if (parser_GetVarAdress(sObject, _parser))
                 {
-                    if (!vIsNoStringValue[nCurrentComponent])
+                    if (vIsNoStringValue.size() > nCurrentComponent && !vIsNoStringValue[nCurrentComponent])
                     {
                         return 0;
                     }
                 }
-                if (vIsNoStringValue[nCurrentComponent])
+                if (vIsNoStringValue.size() > nCurrentComponent && vIsNoStringValue[nCurrentComponent])
                 {
                     try
                     {
@@ -2995,6 +2995,21 @@ int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& 
                     catch (...)
                     {
                         throw;
+                    }
+                }
+                else if (vIsNoStringValue.size() <= nCurrentComponent)
+                {
+                    if (!parser_GetVarAdress(sObject, _parser))
+                    {
+                        try
+                        {
+                            _data.setStringValue(sObject, "");
+                            nCurrentComponent++;
+                        }
+                        catch (...)
+                        {
+                            throw;
+                        }
                     }
                 }
                 else

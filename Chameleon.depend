@@ -2294,7 +2294,7 @@
 	"error.hpp"
 	"settings.hpp"
 
-1500714088 d:\cpp\numere-source\trunk\kernel\core\structures.hpp
+1517511772 d:\cpp\numere-source\trunk\kernel\core\structures.hpp
 	<string>
 	<vector>
 
@@ -4179,7 +4179,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1517399634 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1517468091 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 
@@ -4396,7 +4396,7 @@
 	"../../kernel/syntax.hpp"
 	"../dialogs/duplicatecodedialog.hpp"
 
-1517429054 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1517432007 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -4704,9 +4704,10 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1511629744 d:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.hpp
+1517518857 d:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.hpp
 	<string>
 	<cmath>
+	<vector>
 	"../ui/error.hpp"
 	"../utils/tools.hpp"
 	"../ParserLib/muParser.h"
@@ -4985,14 +4986,14 @@
 	"../../kernel.hpp"
 	"../utils/tools.hpp"
 
-1500630980 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.cpp
+1517518976 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.cpp
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
 1505412752 source:d:\cpp\numere-source\trunk\kernel\core\procedure\debugger.cpp
 	"debugger.hpp"
 
-1517393535 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1517518459 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
