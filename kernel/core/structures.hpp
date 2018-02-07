@@ -76,6 +76,17 @@ struct Integration_Vars
     double vValue[4][4];
 };
 
+struct ColumnKeys
+{
+    int nKey[2];
+    ColumnKeys* subkeys;
 
+    ColumnKeys() : nKey{-1,-1}, subkeys(nullptr) {}
+    ~ColumnKeys()
+        {
+            if (subkeys)
+                delete subkeys;
+        }
+};
 
 #endif

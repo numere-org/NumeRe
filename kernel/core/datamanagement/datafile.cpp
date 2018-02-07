@@ -2892,6 +2892,21 @@ vector<string> Datafile::getPastedDataFromCmdLine(const Settings& _option, bool&
     return vPaste;
 }
 
+void Datafile::reorderColumn(const vector<int>& vIndex, long long int i1, long long int i2, long long int j1)
+{
+    double* dSortVector = new double[i2-i1+1];
+    for (int i = 0; i <= i2-i1; i++)
+    {
+        dSortVector[i] = dDatafile[vIndex[i]][j1];
+    }
+
+    for (int i = 0; i <= i2-i1; i++)
+    {
+        dDatafile[i+i1][j1] = dSortVector[i];
+    }
+    delete[] dSortVector;
+}
+
 // --> Lese den Inhalt eines Tabellenpastes <--
 void Datafile::pasteLoad(const Settings& _option)
 {
@@ -4029,257 +4044,197 @@ bool Datafile::qSort(int* nIndex, int nElements, int nKey, int nLeft, int nRight
     return true;
 }
 
-bool Datafile::sortElements(const string& sLine) // data -sort[[=desc]] cols=1[2:3]4[5:9]10:
+vector<int> Datafile::sortElements(const string& sLine) // data -sort[[=desc]] cols=1[2:3]4[5:9]10:
 {
     if (!dDatafile && sLine.find("data") != string::npos)
-        return false;
+        return vector<int>();
     else if (sLine.find("cache") != string::npos || sLine.find("data") == string::npos)
         return Cache::sortElements(sLine);
 
-    int* nIndex = new int[nLines];
-    bool bError = false;
-    //bool bSortVector[nLines];
-    double* dSortVector = new double[nLines];
-    for (int i = 0; i < nLines; i++)
-        nIndex[i] = i;
 
-    int nSign = 1;
+    string sCache;
+    string sSortingExpression = "-set";
+
+    if (findCommand(sLine).sString != "sort")
+    {
+        sCache = findCommand(sLine).sString;
+    }
     if (matchParams(sLine, "sort", '='))
     {
         if (getArgAtPos(sLine, matchParams(sLine, "sort", '=')+4) == "desc")
-            nSign = -1;
+            sSortingExpression += " desc";
     }
     else if (matchParams(sLine, "data", '='))
     {
         if (getArgAtPos(sLine, matchParams(sLine, "data", '=')+4) == "desc")
-            nSign = -1;
+            sSortingExpression += " desc";
     }
 
-    if (!matchParams(sLine, "cols", '=') && !matchParams(sLine, "c", '='))
+    if (matchParams(sLine, "cols", '='))
+        sSortingExpression += " cols=" + getArgAtPos(sLine, matchParams(sLine, "cols", '=')+4);
+    else if (matchParams(sLine, "c", '='))
+        sSortingExpression += " cols=" + getArgAtPos(sLine, matchParams(sLine, "c", '=')+1);
+    if (matchParams(sLine, "index"))
+        sSortingExpression += " index";
+
+    return sortElements(sCache, 0, nLines, 0, nCols, sSortingExpression);
+}
+
+vector<int> Datafile::sortElements(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2, const string& sSortingExpression)
+{
+    if (!dDatafile && sCache == "data")
+        return vector<int>();
+    else if (sCache != "data")
+        return Cache::sortElements(sCache, i1, i2, j1, j2, sSortingExpression);
+
+    bool bError = false;
+    bool bReturnIndex = false;
+    int nSign = 1;
+    vector<int> vIndex;
+
+    if (matchParams(sSortingExpression, "desc"))
+        nSign = -1;
+
+    if (!getCols("data", false))
+        return vIndex;
+    if (i2 == -1)
+        i2 = i1;
+    else
+        i2--;
+    if (j2 == -1)
+        j2 = j1;
+    else
+        j2--;
+
+
+    for (int i = i1; i <= i2; i++)
+        vIndex.push_back(i);
+
+    if (matchParams(sSortingExpression, "index"))
+        bReturnIndex = true;
+
+    if (!matchParams(sSortingExpression, "cols", '=') && !matchParams(sSortingExpression, "c", '='))
     {
-        for (int i = 0; i < getCols("data"); i++)
+        for (int i = j1; i <= j2; i++)
         {
-            //cerr << "Sortiere Spalte " << i+1 << " ... " << nLines-nAppendedZeroes[i] << endl;
-            if (!qSort(nIndex, nLines-nAppendedZeroes[i], i, 0, nLines-1-nAppendedZeroes[i], nSign))
+            if (!qSortWrapper(&vIndex[0], i2-i1+1, i, 0, i2-i1, nSign))
             {
-                bError = true;
+                throw SyntaxError(SyntaxError::CANNOT_SORT_DATA, sCache + " " + sSortingExpression, SyntaxError::invalid_position);
+            }
+            if (bReturnIndex)
+            {
                 break;
             }
-            //cerr << "Werte Indexmap aus ..." << endl;
-            for (int j = 0; j < nLines-nAppendedZeroes[i]; j++)
-            {
-                //cerr << nIndex[j] << "; ";
-                dSortVector[j] = dDatafile[nIndex[j]][i];
-                //bSortVector[j] = bValidEntry[nIndex[j]][i];
-            }
-
-            for (int j = 0; j < nLines-nAppendedZeroes[i]; j++)
-            {
-                dDatafile[j][i] = dSortVector[j];
-                //bValidEntry[j][i] = bSortVector[j];
-                //cerr << bSortVector[j] << "/" << bValidEntry[j][i] << "; ";
-            }
-            for (int j = 0; j < nLines; j++)
-                nIndex[j] = j;
-            //cerr << endl;
+            reorderColumn(vIndex, i1, i2, i);
+            for (int j = i1; j <= i2; j++)
+                vIndex[j] = j;
         }
     }
     else
     {
         string sCols = "";
-        if (matchParams(sLine, "cols", '='))
+        if (matchParams(sSortingExpression, "cols", '='))
         {
-            sCols = getArgAtPos(sLine, matchParams(sLine, "cols", '=')+4);
+            sCols = getArgAtPos(sSortingExpression, matchParams(sSortingExpression, "cols", '=')+4);
         }
         else
         {
-            sCols = getArgAtPos(sLine, matchParams(sLine, "c", '=')+1);
+            sCols = getArgAtPos(sSortingExpression, matchParams(sSortingExpression, "c", '=')+1);
         }
 
-        if (sCols.find(':') == string::npos && sCols.find('[') == string::npos)
+        while (sCols.length())
         {
-            int nKey = StrToInt(sCols)-1;
-            if (nKey >= 0 && nKey < getCols("data"))
-            {
-                if (!qSort(nIndex, nLines-nAppendedZeroes[nKey], nKey, 0, nLines-nAppendedZeroes[nKey]-1, nSign))
-                {
-                    bError = true;
-                }
-                if (!bError)
-                {
-                    for (int j = 0; j < nLines-nAppendedZeroes[nKey]; j++)
-                    {
-                        dSortVector[j] = dDatafile[nIndex[j]][nKey];
-                        //bSortVector[j] = bValidEntry[nIndex[j]][nKey];
-                    }
-                    for (int j = 0; j < nLines-nAppendedZeroes[nKey]; j++)
-                    {
-                        dDatafile[j][nKey] = dSortVector[j];
-                        //bValidEntry[j][nKey] = bSortVector[j];
-                    }
-                }
-            }
-        }
-        else
-        {
-            unsigned int nLastIndex = 0;
-            for (unsigned int n = 0; n < sCols.length(); n++)
-            {
-                if (sCols[n] == ':')
-                {
-                    int nKey_1 = 0;
-                    if (n != nLastIndex)
-                        nKey_1 = StrToInt(sCols.substr(nLastIndex, n-nLastIndex))-1;
-                    n++;
-                    int nKey_2 = n;
-                    for (unsigned int i = n; n < sCols.length(); i++)
-                    {
-                        if (sCols[i] == '[')
-                        {
-                            nKey_2 = i;
-                            break;
-                        }
-                    }
-                    if (nKey_2 == (int)n)
-                        nKey_2 = sCols.length()-1;
-                    nLastIndex = nKey_2;
-                    nKey_2 = StrToInt(sCols.substr(n, nKey_2-n));
-                    if (!nKey_2)
-                        nKey_2 = getCols("data");
-                    for (int i = nKey_1; i < nKey_2; i++)
-                    {
-                        if (!qSort(nIndex, nLines-nAppendedZeroes[i], i, 0, nLines-nAppendedZeroes[i]-1, nSign))
-                        {
-                            bError = true;
-                            break;
-                        }
-                        for (int j = 0; j < nLines-nAppendedZeroes[i]; j++)
-                        {
-                            dSortVector[j] = dDatafile[nIndex[j]][i];
-                            //bSortVector[j] = bValidEntry[nIndex[j]][i];
-                        }
-                        for (int j = 0; j < nLines-nAppendedZeroes[i]; j++)
-                        {
-                            dDatafile[j][i] = dSortVector[j];
-                            //bValidEntry[j][i] = bSortVector[j];
-                        }
-                        for (int j = 0; j < nLines; j++)
-                            nIndex[j] = j;
-                    }
-                    if (bError)
-                        break;
-                    n = nLastIndex;
-                }
-                else if (sCols[n] == '[' && sCols.find(']', n) != string::npos)
-                {
-                    int nKey = StrToInt(sCols.substr(nLastIndex, n-nLastIndex))-1;
-                    int nKey_1 = n+1;
-                    int nKey_2 = n+1;
-                    for (unsigned int i = nKey_1; i < sCols.length(); i++)
-                    {
-                        if (sCols[i] == ']')
-                        {
-                            nKey_2 = i;
-                            break;
-                        }
-                    }
-                    nLastIndex = nKey_2+1;
-                    if (sCols.substr(nKey_1, nKey_2-nKey_1).find(':') != string::npos)
-                    {
-                        string sColArray = sCols.substr(nKey_1, nKey_2-nKey_1);
-                        //cerr << sColArray << endl;
-                        nKey_1 = StrToInt(sColArray.substr(0, sColArray.find(':')))-1;
-                        nKey_2 = StrToInt(sColArray.substr(sColArray.find(':')+1));
-                        if (nKey_1 == -1)
-                            nKey_1 = 0;
-                        if (!nKey_2)
-                            nKey_2 = getCols("data");
-                    }
-                    else
-                    {
-                        nKey_1 = StrToInt(sCols.substr(nKey_1, nKey_2-nKey_1))-1;
-                        nKey_2 = nKey_1+1;
-                    }
-                    if (nKey < 0
-                        || nKey > getCols("data")
-                        || nKey_1 < 0
-                        || nKey_1 > getCols("data")
-                        || nKey_2 <= 0
-                        || nKey_2 > getCols("data")
-                        || nKey_1 > nKey_2)
-                    {
-                        bError = true;
-                        break;
-                    }
-                    //cerr << nKey_1 << "; " << nKey_2 << endl;
-                    if (!qSort(nIndex, nLines-nAppendedZeroes[nKey], nKey, 0, nLines-nAppendedZeroes[nKey]-1, nSign))
-                    {
-                        bError = true;
-                        break;
-                    }
-                    for (int j = 0; j < nLines-nAppendedZeroes[nKey]; j++)
-                    {
-                        dSortVector[j] = dDatafile[nIndex[j]][nKey];
-                        //bSortVector[j] = bValidEntry[nIndex[j]][nKey];
+            ColumnKeys* keys = evaluateKeyList(sCols, j2-j1+1);
+            if (!keys)
+                throw SyntaxError(SyntaxError::CANNOT_SORT_DATA, sCache + " " + sSortingExpression, SyntaxError::invalid_position);
 
-                    }
-                    for (int j = 0; j < nLines-nAppendedZeroes[nKey]; j++)
-                    {
-                        dDatafile[j][nKey] = dSortVector[j];
-                        //bValidEntry[j][nKey] = bSortVector[j];
-                    }
-                    //cerr << nKey_1 << "; " << nKey_2 << endl;
-                    for (int c = nKey_1; c < nKey_2; c++)
-                    {
-                        if (c == nKey)
-                            continue;
-                        for (int j = 0; j < nLines-nAppendedZeroes[nKey]; j++)
-                        {
-                            dSortVector[j] = dDatafile[nIndex[j]][c];
-                            //bSortVector[j] = bValidEntry[nIndex[j]][c];
-                        }
-                        for (int j = 0; j < nLines-nAppendedZeroes[nKey]; j++)
-                        {
-                            dDatafile[j][c] = dSortVector[j];
-                            //bValidEntry[j][c] = bSortVector[j];
-                        }
-                    }
-                    for (int j = 0; j < nLines; j++)
-                        nIndex[j] = j;
-                    n = nLastIndex;
-                }
-                else if (sCols[n] == '[')
+            if (keys->nKey[1] == -1)
+                keys->nKey[1] = keys->nKey[0]+1;
+
+            for (int j = keys->nKey[0]; j < keys->nKey[1]; j++)
+            {
+                if (!qSortWrapper(&vIndex[0], i2-i1+1, j+j1, 0, i2-i1, nSign))
                 {
-                    bError = true;
+                    throw SyntaxError(SyntaxError::CANNOT_SORT_DATA, sCache + " " + sSortingExpression, SyntaxError::invalid_position);
+                }
+                // Subkey list
+                if (keys->subkeys && keys->subkeys->subkeys)
+                {
+                    if (!sortSubList(vIndex, keys, i1, i2, j1, nSign))
+                    {
+                        delete keys;
+                        throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sCache + " " + sSortingExpression, SyntaxError::invalid_position);
+                    }
+                }
+                if (bReturnIndex)
                     break;
-                }
-                // --> Alle Leerzeichen und ':' ueberspringen <--
-                while ((sCols[n+1] == ':' || sCols[n+1] == ' ') && n+1 < sCols.length())
+                reorderColumn(vIndex, i1, i2, j+j1);
+
+                ColumnKeys* subKeyList = keys->subkeys;
+                while (subKeyList)
                 {
-                    n++;
-                    nLastIndex++;
+                    if (subKeyList->nKey[1] == -1)
+                        subKeyList->nKey[1] = subKeyList->nKey[0]+1;
+                    for (int j = subKeyList->nKey[0]; j < subKeyList->nKey[1]; j++)
+                    {
+                        reorderColumn(vIndex, i1, i2, j+j1);
+                    }
+                    subKeyList = subKeyList->subkeys;
                 }
-            }
-        }
-    }
 
-    for (int i = 0; i < getCols("data"); i++)
-    {
-        for (int j = nLines-1; j >= 0; j--)
-        {
-            if (!isnan(dDatafile[j][i]))
-            {
-                nAppendedZeroes[i] = nLines-j-1;
+                for (int j = i1; j <= i2; j++)
+                    vIndex[j] = j;
+            }
+
+            delete keys;
+            if (bReturnIndex)
                 break;
-            }
         }
     }
 
-    delete[] nIndex;
-    delete[] dSortVector;
+    if (bReturnIndex)
+    {
+        for (int i = 0; i <= i2-i1; i++)
+            vIndex[i]++;
+    }
 
-    return !bError;
+    countAppendedZeroes();
+
+
+    if (bError || !bReturnIndex)
+        return vector<int>();
+    return vIndex;
 }
+
+bool Datafile::sortSubList(vector<int>& vIndex, ColumnKeys* KeyList, long long int i1, long long int i2, long long int j1, int nSign)
+{
+    ColumnKeys* subKeyList = KeyList->subkeys;
+    int nTopColumn = KeyList->nKey[0];
+    size_t nStart = i1;
+
+    if (subKeyList && subKeyList->subkeys && j1+nTopColumn < nCols)
+    {
+        for (size_t k = i1+1; k <= i2 && k < vIndex.size(); k++)
+        {
+            if (dDatafile[vIndex[k]][j1+nTopColumn] != dDatafile[vIndex[nStart]][j1+nTopColumn])
+            {
+                if (k > nStart+1)
+                {
+                    if (!qSortWrapper(&vIndex[0], vIndex.size(), j1+subKeyList->nKey[0], nStart, k-1, nSign))
+                    {
+                        return false;
+                    }
+                    if (!sortSubList(vIndex, subKeyList, nStart, k-1, j1, nSign))
+                        return false;
+                }
+                nStart = k;
+            }
+        }
+    }
+    return true;
+}
+
+
 
 bool Datafile::saveFile(const string& sCache, string _sFileName)
 {

@@ -146,6 +146,8 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
         void evalExcelIndices(const string& sIndices, int& nLine, int& nCol);
         vector<double> parseJDXLine(const string& sLine);
         vector<string> getPastedDataFromCmdLine(const Settings& _option, bool& bKeepEmptyTokens);
+        void reorderColumn(const vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
+        bool sortSubList(vector<int>& vIndex, ColumnKeys* KeyList, long long int i1, long long int i2, long long int j1, int nSign);
 
         inline void parseJDXDataLabel(string& sLine)
             {
@@ -238,7 +240,8 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
 		bool isValidCache() const;						// gibt bValidData von Cache zurueck
 		void clearCache();								// loest die Methode Cache::removeCachedData() auf
 		bool setCacheSize(long long int _nLines, long long int _nCols, long long int _nLayers);		// Setzt die Anfangsgroesse des Caches
-		bool sortElements(const string& sLine);
+		vector<int> sortElements(const string& sLine);
+		vector<int> sortElements(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = 0, const string& sSortingExpression = "");
         inline int getDataSize() const
             {
                 if (bValidData)

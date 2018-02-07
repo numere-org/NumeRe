@@ -2737,7 +2737,7 @@ void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _fu
                     StripSpaces(sToParse);
                     if (sToParse.front() == '(')
                         sToParse.erase(0,1);
-                    if (sToParse.back())
+                    if (sToParse.back() == ')')
                         sToParse.erase(sToParse.length()-1);
                     while (sToParse.length())
                     {

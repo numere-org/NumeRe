@@ -91,6 +91,7 @@ class Cache : public FileSystem
 		bool retoqueRegion(RetoqueRegion& _region);
 		bool checkStringvarDelimiter(const string& sToken) const;
 		void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const string& sVarValue);
+		void reorderColumn(long long int _nLayer, const vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
 
 
 	protected:
@@ -116,10 +117,10 @@ class Cache : public FileSystem
 		bool qSortWrapper(int* nIndex, int nElements, int nKey, int nLayer, int nLeft, int nRight, int nSign = 1); // wendet den Quicksort-Algorithmus an
 		bool qSort(int* nIndex, int nElements, int nKey, int nLayer, int nLeft, int nRight, int nSign = 1); // wendet den Quicksort-Algorithmus an
 		bool saveLayer(string _sFileName, const string& sLayer);
-//		void melt(Cache& _cache);						// Methode, um die Daten einer anderen Instanz dieser Klasse den Daten dieser Klasse
-														//		(als weitere Spalten) hinzu zu fuegen
+		ColumnKeys* evaluateKeyList(string& sKeyList, long long int nMax);
+		bool sortSubList(long long int nLayer, vector<int>& vIndex, ColumnKeys* KeyList, long long int i1, long long int i2, long long int j1, int nSign);
 
-	public:
+    public:
 		Cache();										// Standard-Konstruktor
 		Cache(long long int _nLines, long long int _nCols, long long int _nLayers);	    				// Allgemeiner Konstruktor (generiert zugleich die Matrix dCache und die Arrays
 														// 		auf Basis der uebergeben Werte)
@@ -239,7 +240,8 @@ class Cache : public FileSystem
                 return;
             }
 
-        bool sortElements(const string& sLine);               // wandelt das Kommando in einen Ausdruck um, startet qSort und fuehrt die Sortierung aus
+        vector<int> sortElements(const string& sLine);               // wandelt das Kommando in einen Ausdruck um, startet qSort und fuehrt die Sortierung aus
+        vector<int> sortElements(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = 0, const string& sSortingExpression = "");
         void setCacheFileName(string _sFileName);
         bool saveCache();
         bool loadCache();

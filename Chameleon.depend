@@ -2294,7 +2294,7 @@
 	"error.hpp"
 	"settings.hpp"
 
-1517511772 d:\cpp\numere-source\trunk\kernel\core\structures.hpp
+1518000286 d:\cpp\numere-source\trunk\kernel\core\structures.hpp
 	<string>
 	<vector>
 
@@ -3947,7 +3947,7 @@
 1490787950 source:d:\cpp\numere-source\trunk\kernel\core\basicexcel.cpp
 	"BasicExcel.hpp"
 
-1517316736 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1517669694 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
@@ -4384,7 +4384,7 @@
 	<vector>
 	<algorithm>
 
-1517431681 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1517562733 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -4396,7 +4396,7 @@
 	"../../kernel/syntax.hpp"
 	"../dialogs/duplicatecodedialog.hpp"
 
-1517432007 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1517563890 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -4712,7 +4712,7 @@
 	"../utils/tools.hpp"
 	"../ParserLib/muParser.h"
 
-1516441352 d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.hpp
+1518003053 d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.hpp
 	<string>
 	<boost/tokenizer.hpp>
 	<vector>
@@ -4726,7 +4726,7 @@
 	"../utils/BasicExcel.hpp"
 	"../utils/tinyxml2.h"
 
-1516441252 d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.hpp
+1517925002 d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.hpp
 	<iostream>
 	<fstream>
 	<string>
@@ -4925,11 +4925,11 @@
 	"../settings.hpp"
 	"../ui/error.hpp"
 
-1516645317 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
+1518008153 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
 	"cache.hpp"
 	"../../kernel.hpp"
 
-1516645501 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
+1518007773 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
 	"datafile.hpp"
 	"../../kernel.hpp"
 
@@ -4986,14 +4986,14 @@
 	"../../kernel.hpp"
 	"../utils/tools.hpp"
 
-1517518976 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.cpp
+1517519409 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.cpp
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
 1505412752 source:d:\cpp\numere-source\trunk\kernel\core\procedure\debugger.cpp
 	"debugger.hpp"
 
-1517518459 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1517585383 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"

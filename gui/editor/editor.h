@@ -354,6 +354,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
         int m_nFirstLine;
         int m_nLastLine;
         int m_nCallTipStart;
+        string m_sCallTipContent;
 
         bool m_bLoadingFile;
         bool m_bLastSavedRemotely;

@@ -5,3 +5,14 @@ Applied	The fft now always defaults to "fftdata()" as target cache. This might b
 Added	The Flag "mask" was added to the procedures, which will suppress system messages during this procedure and each called procedure
 Fixed	An issue while sorting with many NaNs was fixed: now the NaNs are moved to the end correctly.
 Fixed	"stats" may now work on tables with empty columns.
+New	NumeRe may now call an external program using "execute". However, this command is disabled by default. If you need it, enable it in the settings dialogue.
+Applied	If using "execute" one can now append the option "wait", which will force NumeRe to wait for the termination of the external application.
+New	You can now link to an TeX distribution on your computer and use it to run LaTeX files or to create LaTeX documentations of your procedures or scripts.
+Fixed	The random crashes if using the "med()" function on data with many NaNs are now fixed.
+Fixed	The option "nologscale" can now be used in a set of subplots.
+Fixed	The secondary axis is now created although a y range is set for the primary axis.
+Fixed	"export" now works correctly again.
+Fixed	Column headlines may now be compared directly (in comparison to using a additional string variable).
+New	The function "findcolumn()" can be used to find all columns in a table, whose headlines are matching to the second argument in "findcolumn()".
+New	If you type into the parentheses of functions, procedures or methods a tooltip will be displayed showing the corresponding function template and indicating the current argument.
+Applied	You can now use an arbitrary number of "hlines" and "vlines" on your plot. PLEASE NOTE: the options "hline" and "vline" are now considered as deprecated. Use "hlines" and "vlines" instead.

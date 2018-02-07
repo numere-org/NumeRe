@@ -44,6 +44,7 @@ bool BI_writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _o
 bool BI_readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
 bool BI_generateTemplate(const string& sFile, const string& sTempl, const vector<string>& vTokens, Settings& _option);
 bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
+bool BI_sortData(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
 
 
 
@@ -837,6 +838,28 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
         }
         else
             doc_Help("zeroes", _option);
+        return 1;
+    }
+    else if (findCommand(sCmd, "sort").sString == "sort" && sCommand != "help")
+    {
+        nPos = findCommand(sCmd, "sort").nPos;
+        if (nPos)
+        {
+            sArgument = sCmd;
+            sCmd = extractCommandString(sCmd, findCommand(sCmd, "sort"));
+            sArgument.replace(nPos, sCmd.length(), "<<ans>>");
+        }
+        else
+            sArgument = "<<ans>>";
+
+        BI_sortData(sCmd, _parser, _data, _functions, _option);
+
+        if (sCmd.length())
+        {
+            sArgument.replace(sArgument.find("<<ans>>"), 7, sCmd);
+            sCmd = sArgument;
+            return 0;
+        }
         return 1;
     }
     else if (sPlotCommands.find(" " + sCommand + " ") != string::npos)
@@ -1830,13 +1853,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
         }
         else if (matchParams(sCmd, "sort", '=') || matchParams(sCmd, "sort"))
         {
-            if (!_data.sortElements(sCmd))
-                //throw CANNOT_SORT_DATA;
-                throw SyntaxError(SyntaxError::CANNOT_SORT_DATA, sCmd, SyntaxError::invalid_position);
-                //NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht sortiert werden! Siehe \"help -data\" für weitere Details.", _option) );
-            else if (_option.getSystemPrintStatus())
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SORT_SUCCESS"), _option) );
-                //NumeReKernel::print(LineBreak("|-> Spalte(n) wurde(n) erfolgreich sortiert.", _option) );
+            _data.sortElements(sCmd);
+            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SORT_SUCCESS"), _option) );
             return 1;
         }
         else if (matchParams(sCmd, "export") || matchParams(sCmd, "export", '='))
@@ -2277,13 +2295,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
         }
         else if (matchParams(sCmd, "sort") || matchParams(sCmd, "sort", '='))
         {
-            if (!_data.sortElements(sCmd))
-                //throw CANNOT_SORT_CACHE;
-                throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sCmd, SyntaxError::invalid_position);
-                //NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht sortiert werden! Siehe \"help -cache\" für weitere Details.", _option) );
-            else if (_option.getSystemPrintStatus())
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SORT_SUCCESS"), _option) );
-                //NumeReKernel::print(LineBreak("|-> Spalte(n) wurde(n) erfolgreich sortiert.", _option) );
+            _data.sortElements(sCmd);
+            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SORT_SUCCESS"), _option) );
             return 1;
         }
         else if (matchParams(sCmd, "export") || matchParams(sCmd, "export", '='))
@@ -3942,30 +3955,24 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
             }
             return 1;
         }
-        else if (sCommand == "sort")
+        /*else if (sCommand == "sort")
         {
             if (_data.matchCache(sCmd).length() || _data.matchCache(sCmd, '=').length())
             {
                 if (!_data.sortElements(sCmd))
-                    //throw CANNOT_SORT_CACHE;
                     throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sCmd, SyntaxError::invalid_position);
-                    //NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht sortiert werden! Siehe \"help -cache\" für weitere Details.", _option) );
                 else if (_option.getSystemPrintStatus())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SORT_SUCCESS"), _option) );
-                    //NumeReKernel::print(LineBreak("|-> Spalte(n) wurde(n) erfolgreich sortiert.", _option) );
             }
             else if (matchParams(sCmd, "data", '=') || matchParams(sCmd, "data"))
             {
                 if (!_data.sortElements(sCmd))
-                    //throw CANNOT_SORT_DATA;
                     throw SyntaxError(SyntaxError::CANNOT_SORT_DATA, sCmd, SyntaxError::invalid_position);
-                    //NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht sortiert werden! Siehe \"help -data\" für weitere Details.", _option) );
                 else if (_option.getSystemPrintStatus())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SORT_SUCCESS"), _option) );
-                    //NumeReKernel::print(LineBreak("|-> Spalte(n) wurde(n) erfolgreich sortiert.", _option) );
             }
             return 1;
-        }
+        }*/
         else if (sCommand == "smooth")
         {
             // smooth cache(i1:i2,j1:j2) -order=1
@@ -8791,6 +8798,39 @@ bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _
     }
     return true;
 }
+
+bool BI_sortData(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+{
+    vector<int> vSortIndex;
+    string sCache = sCmd.substr(sCmd.find(' ')+1);
+    sCache.erase(getMatchingParenthesis(sCache)+1);
+    Indices _idx = parser_getIndices(sCache, _parser, _data, _option);
+
+    if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
+        throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, "", _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1]);
+
+    sCache.erase(sCache.find('('));
+
+    if (_idx.nI[1] == -2)
+        _idx.nI[1] = _data.getLines(sCache, false);
+    if (_idx.nJ[1] == -2)
+        _idx.nJ[1] = _data.getCols(sCache, false);
+
+    vSortIndex = _data.sortElements(sCache, _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], sCmd.substr(5+sCache.length()));
+
+    if (vSortIndex.size())
+    {
+        vector<double> vDoubleSortIndex;
+        for (size_t i = 0; i < vSortIndex.size(); i++)
+            vDoubleSortIndex.push_back(vSortIndex[i]);
+        sCmd = "_~sortIndex[]";
+        _parser.SetVectorVar(sCmd, vDoubleSortIndex);
+    }
+    else
+        sCmd.clear();
+    return true;
+}
+
 
 /*
  * Das waren alle Built-In-Funktionen

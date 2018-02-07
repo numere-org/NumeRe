@@ -838,28 +838,22 @@ bool Cache::qSort(int* nIndex, int nElements, int nKey, int nLayer, int nLeft, i
     return true;
 }
 
-bool Cache::sortElements(const string& sLine) // cache -sort[[=desc]] cols=1[2:3]4[5:9]10:
+vector<int> Cache::sortElements(const string& sLine) // cache -sort[[=desc]] cols=1[2:3]4[5:9]10:
 {
     if (!dCache)
-        return false;
-    int* nIndex = new int[nLines];
-    int nLayer = 0;
-    bool bError = false;
-    //bool bSortVector[nLines];
-    double* dSortVector = new double[nLines];
-    for (int i = 0; i < nLines; i++)
-        nIndex[i] = i;
+        return vector<int>();
 
-    int nSign = 1;
+    string sCache;
+    string sSortingExpression = "-set";
 
     if (findCommand(sLine).sString != "sort")
     {
-        nLayer = mCachesMap.at(findCommand(sLine).sString);
+        sCache = findCommand(sLine).sString;
     }
     if (matchParams(sLine, "sort", '='))
     {
         if (getArgAtPos(sLine, matchParams(sLine, "sort", '=')+4) == "desc")
-            nSign = -1;
+            sSortingExpression += " desc";
     }
     else
     {
@@ -868,224 +862,136 @@ bool Cache::sortElements(const string& sLine) // cache -sort[[=desc]] cols=1[2:3
             if (matchParams(sLine, iter->first, '='))
             {
                 if (getArgAtPos(sLine, matchParams(sLine, iter->first, '=')+5) == "desc")
-                    nSign = -1;
-                nLayer = iter->second;
+                    sSortingExpression += " desc";
+                sCache = iter->first;
                 break;
             }
             else if (matchParams(sLine, iter->first))
             {
-                nLayer = iter->second;
+                sCache = iter->first;
                 break;
             }
         }
     }
 
-    if (!matchParams(sLine, "cols", '=') && !matchParams(sLine, "c", '='))
-    {
-        for (int i = 0; i < getCacheCols(nLayer, false); i++)
-        {
-            //cerr << "Sortiere Spalte " << i+1 << " ... " << nLines-nAppendedZeroes[i] << endl;
-            if (!qSortWrapper(nIndex, nLines-nAppendedZeroes[nLayer][i], i, nLayer, 0, nLines-1-nAppendedZeroes[nLayer][i], nSign))
-            {
-                bError = true;
-                break;
-            }
-            //cerr << "Werte Indexmap aus ..." << endl;
-            for (int j = 0; j < nLines-nAppendedZeroes[nLayer][i]; j++)
-            {
-                //cerr << nIndex[j] << "; ";
-                dSortVector[j] = dCache[nIndex[j]][i][nLayer];
-                //bSortVector[j] = !isnan(dCache[nIndex[j]][i][nLayer]);
-            }
+    if (matchParams(sLine, "cols", '='))
+        sSortingExpression += " cols=" + getArgAtPos(sLine, matchParams(sLine, "cols", '=')+4);
+    else if (matchParams(sLine, "c", '='))
+        sSortingExpression += " cols=" + getArgAtPos(sLine, matchParams(sLine, "c", '=')+1);
+    if (matchParams(sLine, "index"))
+        sSortingExpression += " index";
 
-            for (int j = 0; j < nLines-nAppendedZeroes[nLayer][i]; j++)
+    return sortElements(sCache, 0, nLines, 0, nCols, sSortingExpression);
+}
+
+vector<int> Cache::sortElements(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2, const string& sSortingExpression)
+{
+    if (!dCache)
+        return vector<int>();
+    bool bError = false;
+    bool bReturnIndex = false;
+    int nSign = 1;
+    long long int nLayer = mCachesMap.at(sCache);
+
+    vector<int> vIndex;
+
+    if (matchParams(sSortingExpression, "desc"))
+        nSign = -1;
+
+    if (!Cache::getCacheCols(nLayer, false))
+        return vIndex;
+    if (i2 == -1)
+        i2 = i1;
+    else
+        i2--;
+    if (j2 == -1)
+        j2 = j1;
+    else
+        j2--;
+
+
+    for (int i = i1; i <= i2; i++)
+        vIndex.push_back(i);
+
+    if (matchParams(sSortingExpression, "index"))
+        bReturnIndex = true;
+
+    if (!matchParams(sSortingExpression, "cols", '=') && !matchParams(sSortingExpression, "c", '='))
+    {
+        for (int i = j1; i <= j2; i++)
+        {
+            if (!qSortWrapper(&vIndex[0], i2-i1+1, i, nLayer, 0, i2-i1, nSign))
             {
-                dCache[j][i][nLayer] = dSortVector[j];
-                //bValidElement[j][i][nLayer] = bSortVector[j];
-                //cerr << bSortVector[j] << "/" << bValidElement[j][i] << "; ";
+                throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sCache + " " + sSortingExpression, SyntaxError::invalid_position);
             }
-            for (int j = 0; j < nLines; j++)
-                nIndex[j] = j;
-            //cerr << endl;
+            if (bReturnIndex)
+                break;
+            reorderColumn(nLayer, vIndex, i1, i2, i);
+
+            for (int j = i1; j <= i2; j++)
+                vIndex[j] = j;
         }
     }
     else
     {
         string sCols = "";
-        if (matchParams(sLine, "cols", '='))
+        if (matchParams(sSortingExpression, "cols", '='))
         {
-            sCols = getArgAtPos(sLine, matchParams(sLine, "cols", '=')+4);
+            sCols = getArgAtPos(sSortingExpression, matchParams(sSortingExpression, "cols", '=')+4);
         }
         else
         {
-            sCols = getArgAtPos(sLine, matchParams(sLine, "c", '=')+1);
+            sCols = getArgAtPos(sSortingExpression, matchParams(sSortingExpression, "c", '=')+1);
         }
 
-        if (sCols.find(':') == string::npos && sCols.find('[') == string::npos)
+        while (sCols.length())
         {
-            int nKey = StrToInt(sCols)-1;
-            if (nKey >= 0 && nKey < getCacheCols(nLayer, false))
-            {
-                if (!qSortWrapper(nIndex, nLines-nAppendedZeroes[nLayer][nKey], nKey, nLayer, 0, nLines-nAppendedZeroes[nLayer][nKey]-1, nSign))
-                {
-                    bError = true;
-                }
+            ColumnKeys* keys = evaluateKeyList(sCols, j2-j1+1);
+            if (!keys)
+                throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sCache + " " + sSortingExpression, SyntaxError::invalid_position);
 
-                if (!bError)
-                {
-                    for (int j = 0; j < nLines-nAppendedZeroes[nLayer][nKey]; j++)
-                    {
-                        dSortVector[j] = dCache[nIndex[j]][nKey][nLayer];
-                        //bSortVector[j] = bValidElement[nIndex[j]][nKey][nLayer];
-                    }
-                    for (int j = 0; j < nLines-nAppendedZeroes[nLayer][nKey]; j++)
-                    {
-                        dCache[j][nKey][nLayer] = dSortVector[j];
-                        //bValidElement[j][nKey][nLayer] = bSortVector[j];
-                    }
-                }
-            }
-        }
-        else
-        {
-            unsigned int nLastIndex = 0;
-            for (unsigned int n = 0; n < sCols.length(); n++)
-            {
-                if (sCols[n] == ':')
-                {
-                    int nKey_1 = 0;
-                    if (n != nLastIndex)
-                        nKey_1 = StrToInt(sCols.substr(nLastIndex, n-nLastIndex))-1;
-                    n++;
-                    int nKey_2 = n;
-                    for (unsigned int i = n; n < sCols.length(); i++)
-                    {
-                        if (sCols[i] == '[')
-                        {
-                            nKey_2 = i;
-                            break;
-                        }
-                    }
-                    if (nKey_2 == (int)n)
-                        nKey_2 = sCols.length()-1;
-                    nLastIndex = nKey_2;
-                    nKey_2 = StrToInt(sCols.substr(n, nKey_2-n));
-                    if (!nKey_2)
-                        nKey_2 = getCacheCols(nLayer, false);
-                    for (int i = nKey_1; i < nKey_2; i++)
-                    {
-                        if (!qSortWrapper(nIndex, nLines-nAppendedZeroes[nLayer][i], i, nLayer, 0, nLines-nAppendedZeroes[nLayer][i]-1, nSign))
-                        {
-                            bError = true;
-                            break;
-                        }
-                        for (int j = 0; j < nLines-nAppendedZeroes[nLayer][i]; j++)
-                        {
-                            dSortVector[j] = dCache[nIndex[j]][i][nLayer];
-                            //bSortVector[j] = bValidElement[nIndex[j]][i][nLayer];
-                        }
-                        for (int j = 0; j < nLines-nAppendedZeroes[nLayer][i]; j++)
-                        {
-                            dCache[j][i][nLayer] = dSortVector[j];
-                            //bValidElement[j][i][nLayer] = bSortVector[j];
-                        }
-                        for (int j = 0; j < nLines; j++)
-                            nIndex[j] = j;
-                    }
-                    if (bError)
-                        break;
-                    n = nLastIndex;
-                }
-                else if (sCols[n] == '[' && sCols.find(']', n) != string::npos)
-                {
-                    int nKey = StrToInt(sCols.substr(nLastIndex, n-nLastIndex))-1;
-                    int nKey_1 = n+1;
-                    int nKey_2 = n+1;
-                    for (unsigned int i = nKey_1; i < sCols.length(); i++)
-                    {
-                        if (sCols[i] == ']')
-                        {
-                            nKey_2 = i;
-                            break;
-                        }
-                    }
-                    nLastIndex = nKey_2+1;
-                    if (sCols.substr(nKey_1, nKey_2-nKey_1).find(':') != string::npos)
-                    {
-                        string sColArray = sCols.substr(nKey_1, nKey_2-nKey_1);
-                        //cerr << sColArray << endl;
-                        nKey_1 = StrToInt(sColArray.substr(0, sColArray.find(':')))-1;
-                        nKey_2 = StrToInt(sColArray.substr(sColArray.find(':')+1));
-                        if (nKey_1 == -1)
-                            nKey_1 = 0;
-                        if (!nKey_2)
-                            nKey_2 = getCacheCols(nLayer, false);
-                    }
-                    else
-                    {
-                        nKey_1 = StrToInt(sCols.substr(nKey_1, nKey_2-nKey_1))-1;
-                        nKey_2 = nKey_1+1;
-                    }
-                    if (nKey < 0
-                        || nKey > getCacheCols(nLayer, false)
-                        || nKey_1 < 0
-                        || nKey_1 > getCacheCols(nLayer, false)
-                        || nKey_2 <= 0
-                        || nKey_2 > getCacheCols(nLayer, false)
-                        || nKey_1 > nKey_2)
-                    {
-                        bError = true;
-                        break;
-                    }
-                    //cerr << nKey_1 << "; " << nKey_2 << endl;
-                    if (!qSortWrapper(nIndex, nLines-nAppendedZeroes[nLayer][nKey], nKey, nLayer, 0, nLines-nAppendedZeroes[nLayer][nKey]-1, nSign))
-                    {
-                        bError = true;
-                        break;
-                    }
-                    for (int j = 0; j < nLines-nAppendedZeroes[nLayer][nKey]; j++)
-                    {
-                        dSortVector[j] = dCache[nIndex[j]][nKey][nLayer];
-                        //bSortVector[j] = bValidElement[nIndex[j]][nKey][nLayer];
+            if (keys->nKey[1] == -1)
+                keys->nKey[1] = keys->nKey[0]+1;
 
-                    }
-                    for (int j = 0; j < nLines-nAppendedZeroes[nLayer][nKey]; j++)
-                    {
-                        dCache[j][nKey][nLayer] = dSortVector[j];
-                        //bValidElement[j][nKey][nLayer] = bSortVector[j];
-                    }
-                    //cerr << nKey_1 << "; " << nKey_2 << endl;
-                    for (int c = nKey_1; c < nKey_2; c++)
-                    {
-                        if (c == nKey)
-                            continue;
-                        for (int j = 0; j < nLines-nAppendedZeroes[nLayer][nKey]; j++)
-                        {
-                            dSortVector[j] = dCache[nIndex[j]][c][nLayer];
-                            //bSortVector[j] = bValidElement[nIndex[j]][c][nLayer];
-                        }
-                        for (int j = 0; j < nLines-nAppendedZeroes[nLayer][nKey]; j++)
-                        {
-                            dCache[j][c][nLayer] = dSortVector[j];
-                            //bValidElement[j][c][nLayer] = bSortVector[j];
-                        }
-                    }
-                    for (int j = 0; j < nLines; j++)
-                        nIndex[j] = j;
-                    n = nLastIndex;
-                }
-                else if (sCols[n] == '[')
+            for (int j = keys->nKey[0]; j < keys->nKey[1]; j++)
+            {
+                if (!qSortWrapper(&vIndex[0], i2-i1+1, j+j1, nLayer, 0, i2-i1, nSign))
                 {
-                    bError = true;
+                    delete keys;
+                    throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sCache + " " + sSortingExpression, SyntaxError::invalid_position);
+                }
+                // Subkey list
+                if (keys->subkeys && keys->subkeys->subkeys)
+                {
+                    if (!sortSubList(nLayer, vIndex, keys, i1, i2, j1, nSign))
+                    {
+                        delete keys;
+                        throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sCache + " " + sSortingExpression, SyntaxError::invalid_position);
+                    }
+                }
+                if (bReturnIndex)
                     break;
-                }
-                // --> Alle Leerzeichen und ':' ueberspringen <--
-                while ((sCols[n+1] == ':' || sCols[n+1] == ' ') && n+1 < sCols.length())
+                reorderColumn(nLayer, vIndex, i1, i2, j+j1);
+                ColumnKeys* subKeyList = keys->subkeys;
+
+                while (subKeyList)
                 {
-                    n++;
-                    nLastIndex++;
+                    if (subKeyList->nKey[1] == -1)
+                        subKeyList->nKey[1] = subKeyList->nKey[0]+1;
+                    for (int j = subKeyList->nKey[0]; j < subKeyList->nKey[1]; j++)
+                    {
+                        reorderColumn(nLayer, vIndex, i1, i2, j+j1);
+                    }
+                    subKeyList = subKeyList->subkeys;
                 }
+
+                for (int j = i1; j <= i2; j++)
+                    vIndex[j] = j;
             }
+
+            delete keys;
+            if (bReturnIndex)
+                break;
         }
     }
 
@@ -1101,16 +1007,49 @@ bool Cache::sortElements(const string& sLine) // cache -sort[[=desc]] cols=1[2:3
         }
     }
 
+    if (bReturnIndex)
+    {
+        for (int i = 0; i <= i2-i1; i++)
+            vIndex[i]++;
+    }
+
     if (bIsSaved)
     {
         bIsSaved = false;
         nLastSaved = time(0);
     }
 
-    delete[] nIndex;
-    delete[] dSortVector;
+    if (bError || !bReturnIndex)
+        return vector<int>();
+    return vIndex;
+}
 
-    return !bError;
+bool Cache::sortSubList(long long int nLayer, vector<int>& vIndex, ColumnKeys* KeyList, long long int i1, long long int i2, long long int j1, int nSign)
+{
+    ColumnKeys* subKeyList = KeyList->subkeys;
+    int nTopColumn = KeyList->nKey[0];
+    size_t nStart = i1;
+
+    if (subKeyList && subKeyList->subkeys && j1+nTopColumn < getCacheCols(nLayer, false))
+    {
+        for (size_t k = i1+1; k <= i2 && k < vIndex.size(); k++)
+        {
+            if (dCache[vIndex[k]][j1+nTopColumn][nLayer] != dCache[vIndex[nStart]][j1+nTopColumn][nLayer])
+            {
+                if (k > nStart+1)
+                {
+                    if (!qSortWrapper(&vIndex[0], vIndex.size(), j1+subKeyList->nKey[0], nLayer, nStart, k-1, nSign))
+                    {
+                        return false;
+                    }
+                    if (!sortSubList(nLayer, vIndex, subKeyList, nStart, k-1, j1, nSign))
+                        return false;
+                }
+                nStart = k;
+            }
+        }
+    }
+    return true;
 }
 
 void Cache::setCacheFileName(string _sFileName)
@@ -1696,6 +1635,81 @@ bool Cache::saveLayer(string _sFileName, const string& sLayer)
     }
 
     return true;
+}
+
+// cols=1[2:3]4[5:9]10:
+ColumnKeys* Cache::evaluateKeyList(string& sKeyList, long long int nMax)
+{
+    ColumnKeys* keys = new ColumnKeys();
+    if (sKeyList.find(':') == string::npos && sKeyList.find('[') == string::npos)
+    {
+        keys->nKey[0] = StrToInt(sKeyList)-1;
+        sKeyList.clear();
+    }
+    else
+    {
+        unsigned int nLastIndex = 0;
+        for (unsigned int n = 0; n < sKeyList.length(); n++)
+        {
+            if (sKeyList[n] == ':')
+            {
+                if (n != nLastIndex)
+                    keys->nKey[0] = StrToInt(sKeyList.substr(nLastIndex, n-nLastIndex))-1;
+
+                if (n+1 == sKeyList.length())
+                    keys->nKey[1] = nMax;
+
+                for (size_t i = n+1; i < sKeyList.length(); i++)
+                {
+                    if (sKeyList[i] == '[' || sKeyList[i] == ':' || sKeyList[i] == ',')
+                    {
+                        keys->nKey[1] = StrToInt(sKeyList.substr(n+1, i-n-1));
+                        sKeyList.erase(0,i+1);
+                        break;
+                    }
+                    else if (i+1 == sKeyList.length())
+                    {
+                        if (i == n+1)
+                            keys->nKey[1] = nMax;
+                        else
+                            keys->nKey[1] = StrToInt(sKeyList.substr(n+1));
+                        sKeyList.clear();
+                        break;
+                    }
+                }
+
+                break;
+            }
+            else if (sKeyList[n] == '[' && sKeyList.find(']', n) != string::npos)
+            {
+                keys->nKey[0] = StrToInt(sKeyList.substr(nLastIndex, n-nLastIndex))-1;
+                string sColArray;
+
+                size_t i = getMatchingParenthesis(sKeyList.substr(n));
+                if (i != string::npos)
+                {
+                    sColArray = sKeyList.substr(n+1, i-1);
+                    sKeyList.erase(0, i+n+1);
+                }
+
+                keys->subkeys = evaluateKeyList(sColArray, nMax);
+
+                break;
+            }
+            else if (sKeyList[n] == '[')
+            {
+                delete keys;
+                return nullptr;
+            }
+            // --> Alle Leerzeichen und ':' ueberspringen <--
+            /*while ((sKeyList[n+1] == ':' || sKeyList[n+1] == ' ') && n+1 < sKeyList.length())
+            {
+                n++;
+                nLastIndex++;
+            }*/
+        }
+    }
+    return keys;
 }
 
 void Cache::deleteBulk(const string& _sCache, long long int i1, long long int i2, long long int j1, long long int j2)
@@ -5079,6 +5093,21 @@ void Cache::replaceStringMethod(string& sLine, size_t nPos, size_t nLength, cons
         sLine.replace(nPos, nFinalPos-nPos, "split" + sArgument);
     }
 }
+
+void Cache::reorderColumn(long long int _nLayer, const vector<int>& vIndex, long long int i1, long long int i2, long long int j1)
+{
+    double* dSortVector = new double[i2-i1+1];
+    for (int i = 0; i <= i2-i1; i++)
+    {
+        dSortVector[i] = dCache[vIndex[i]][j1][_nLayer];
+    }
+    for (int i = 0; i <= i2-i1; i++)
+    {
+        dCache[i+i1][j1][_nLayer] = dSortVector[i];
+    }
+    delete[] dSortVector;
+}
+
 
 bool Cache::containsStringVars(const string& _sLine) const
 {
