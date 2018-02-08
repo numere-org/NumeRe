@@ -88,7 +88,7 @@ string toString(long long int nNumber)
 string toCmdString(double dNumber)
 {
     ostringstream Temp;
-    Temp.precision(12);
+    Temp.precision(20);
     Temp << dNumber;
     return Temp.str();
 }
@@ -2204,7 +2204,7 @@ bool containsStrings(const string& sLine)
         || sLine.find('#') != string::npos
         || sLine.find("string(") != string::npos
         || sLine.find("string_cast(") != string::npos
-        || sLine.find("is_data(") != string::npos
+        /*|| sLine.find("is_data(") != string::npos
         || sLine.find("replace(") != string::npos
         || sLine.find("replaceall(") != string::npos
         || sLine.find("to_cmd(") != string::npos
@@ -2219,10 +2219,10 @@ bool containsStrings(const string& sLine)
         || sLine.find("getindices(") != string::npos
         || sLine.find("getmatchingparens(") != string::npos
         || sLine.find("getfilelist(") != string::npos
-        || sLine.find("ascii(") != string::npos
+        || sLine.find("ascii(") != string::npos*/
         || sLine.find("char(") != string::npos
         || sLine.find("valtostr(") != string::npos
-        || sLine.find("split(") != string::npos)
+        /*|| sLine.find("split(") != string::npos*/)
         return true;
     return false;
 }

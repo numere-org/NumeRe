@@ -1,6 +1,8 @@
 
 #include "maths/parser_functions.hpp"
 #include "../kernel.hpp"
+#include <ctime>
+#include <windows.h>
 
 extern value_type vAns;
 extern Integration_Vars parser_iVars;
@@ -324,6 +326,65 @@ string strfnc_split(StringFuncArgs& funcArgs)
     return sSplittedString;
 }
 
+// val = to_time(str, str)
+string strfnc_to_time(StringFuncArgs& funcArgs)
+{
+    string sTime = funcArgs.sArg2 + " ";
+    string sPattern = funcArgs.sArg1 + " ";
+    if (sTime.length() != sPattern.length())
+        return "nan";
+    time_t timeVal = time(nullptr);
+    tm* timeStruct = localtime(&timeVal);
+    TIME_ZONE_INFORMATION timezone;
+    GetTimeZoneInformation(&timezone);
+    char cCurrentChar = sPattern.front();
+    string sCurrentElement;
+    for (size_t i = 0; i < sPattern.length(); i++)
+    {
+        if (sPattern[i] != cCurrentChar)
+        {
+            switch (cCurrentChar)
+            {
+                case 'y':
+                case 'Y': // year is either four or two chars long. The structure expects the time to start at the year 1900
+                    if (sCurrentElement.length() > 2)
+                        timeStruct->tm_year = StrToInt(sCurrentElement) - 1900;
+                    else
+                        timeStruct->tm_year = StrToInt(sCurrentElement) + (100 * (timeStruct->tm_year / 100));
+                    break;
+                case 'M':
+                    timeStruct->tm_mon = StrToInt(sCurrentElement)-1;
+                    break;
+                case 'D':
+                    timeStruct->tm_mday = StrToInt(sCurrentElement);
+                    break;
+                case 'H':
+                    timeStruct->tm_hour = StrToInt(sCurrentElement);
+                    break;
+                case 'h':
+                    timeStruct->tm_hour = StrToInt(sCurrentElement) - timezone.Bias/60;
+                    if (timeStruct->tm_hour < 0)
+                        timeStruct->tm_hour += 24;
+                    else if (timeStruct->tm_hour >= 24)
+                        timeStruct->tm_hour -= 24;
+                    break;
+                case 'm':
+                    timeStruct->tm_min = StrToInt(sCurrentElement);
+                    break;
+                case 's':
+                    timeStruct->tm_sec = StrToInt(sCurrentElement);
+                    break;
+            }
+            cCurrentChar = sPattern[i];
+            sCurrentElement.clear();
+        }
+        sCurrentElement += sTime[i];
+    }
+
+    timeVal = mktime(timeStruct);
+    return toString((size_t)timeVal);
+}
+
 // STR__STR_STROPT
 // str = valtostr(EXPR, [str], [val])
 // string strfnc_valtostr(StringFuncArgs& funcArgs)
@@ -487,6 +548,73 @@ string strfnc_repeat(StringFuncArgs& funcArgs)
             sReturn += funcArgs.sArg1;
         return "\"" + sReturn + "\"";
     }
+}
+
+string padWithZeros(int nTime, size_t nLength)
+{
+    string sPadded = toString(nTime);
+    sPadded.insert(0,nLength - sPadded.length(), '0');
+    return sPadded;
+}
+
+// str = timeformat(str, val)
+string strfnc_timeformat(StringFuncArgs& funcArgs)
+{
+    string sFormattedTime = funcArgs.sArg1 + " "; // contains pattern
+    time_t nTime = abs(funcArgs.nArg1);
+    tm* timeStruct = localtime(&nTime);
+    TIME_ZONE_INFORMATION timezone;
+    GetTimeZoneInformation(&timezone);
+    char cCurrentChar = sFormattedTime.front();
+    size_t currentElementStart = 0;
+
+    for (size_t i = 0; i < sFormattedTime.length(); i++)
+    {
+        if (cCurrentChar != sFormattedTime[i])
+        {
+            switch (cCurrentChar)
+            {
+                case 'Y':
+                case 'y': // year is either four or two chars long. The structure expects the time to start at the year 1900
+                    if (i-currentElementStart > 2)
+                        sFormattedTime.replace(currentElementStart, i-currentElementStart, padWithZeros(timeStruct->tm_year+1900, i-currentElementStart));
+                    else
+                        sFormattedTime.replace(currentElementStart, i-currentElementStart, padWithZeros(timeStruct->tm_year - (100 * (timeStruct->tm_year / 100)), i-currentElementStart));
+                    break;
+                case 'M':
+                    sFormattedTime.replace(currentElementStart, i-currentElementStart, padWithZeros(timeStruct->tm_mon+1, i-currentElementStart));
+                    break;
+                case 'D':
+                    sFormattedTime.replace(currentElementStart, i-currentElementStart, padWithZeros(timeStruct->tm_mday, i-currentElementStart));
+                    break;
+                case 'd':
+                    sFormattedTime.replace(currentElementStart, i-currentElementStart, padWithZeros(timeStruct->tm_yday, i-currentElementStart));
+                    break;
+                case 'H':
+                    sFormattedTime.replace(currentElementStart, i-currentElementStart, padWithZeros(timeStruct->tm_hour, i-currentElementStart));
+                    break;
+                case 'h':
+                    if (timeStruct->tm_hour + timezone.Bias/60 < 0)
+                        sFormattedTime.replace(currentElementStart, i-currentElementStart, padWithZeros(timeStruct->tm_hour + 24 + timezone.Bias/60, i-currentElementStart));
+                    else if (timeStruct->tm_hour + timezone.Bias/60 >= 24)
+                        sFormattedTime.replace(currentElementStart, i-currentElementStart, padWithZeros(timeStruct->tm_hour - 24 + timezone.Bias/60, i-currentElementStart));
+                    else
+                        sFormattedTime.replace(currentElementStart, i-currentElementStart, padWithZeros(timeStruct->tm_hour + timezone.Bias/60, i-currentElementStart));
+                    break;
+                case 'm':
+                    sFormattedTime.replace(currentElementStart, i-currentElementStart, padWithZeros(timeStruct->tm_min, i-currentElementStart));
+                    break;
+                case 's':
+                    sFormattedTime.replace(currentElementStart, i-currentElementStart, padWithZeros(timeStruct->tm_sec, i-currentElementStart));
+                    break;
+            }
+
+            currentElementStart = i;
+            cCurrentChar = sFormattedTime[i];
+        }
+    }
+    sFormattedTime.pop_back();
+    return "\"" + sFormattedTime + "\"";
 }
 
 // str = char(str, val)
@@ -1654,6 +1782,7 @@ map<string, StringFuncHandle> parser_getStringFuncHandles()
     mHandleTable["getmatchingparens"]   = StringFuncHandle(STR, strfnc_getmatchingparens, false);
     mHandleTable["findfile"]            = StringFuncHandle(STR_STROPT, strfnc_findfile, false);
     mHandleTable["split"]               = StringFuncHandle(STR_STR, strfnc_split, false);
+    mHandleTable["to_time"]             = StringFuncHandle(STR_STR, strfnc_to_time, false);
     mHandleTable["strfnd"]              = StringFuncHandle(STR_STR_VALOPT, strfnc_strfnd, false);
     mHandleTable["strmatch"]            = StringFuncHandle(STR_STR_VALOPT, strfnc_strmatch, false);
     mHandleTable["str_not_match"]       = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_match, false);
@@ -1663,6 +1792,7 @@ map<string, StringFuncHandle> parser_getStringFuncHandles()
     mHandleTable["findparam"]           = StringFuncHandle(STR_STR_STROPT, strfnc_findparam, false);
     mHandleTable["substr"]              = StringFuncHandle(STR_VAL_VALOPT, strfnc_substr, false);
     mHandleTable["repeat"]              = StringFuncHandle(STR_VAL, strfnc_repeat, false);
+    mHandleTable["timeformat"]          = StringFuncHandle(STR_VAL, strfnc_timeformat, false);
     mHandleTable["char"]                = StringFuncHandle(STR_VAL, strfnc_char, false);
     mHandleTable["getopt"]              = StringFuncHandle(STR_VAL, strfnc_getopt, false);
     mHandleTable["replace"]             = StringFuncHandle(STR_VAL_VALOPT_STROPT, strfnc_replace, false); // fehler
@@ -2701,7 +2831,7 @@ vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFinal, Pars
         if (vFinal[n].front() != '"' && vFinal[n].back() != '"')
         {
             _parser.SetExpr(vFinal[n]);
-            vFinal[n] = toString(_parser.Eval(), _option);
+            vFinal[n] = toCmdString(_parser.Eval());
             vIsNoStringValue.push_back(true);
         }
         else

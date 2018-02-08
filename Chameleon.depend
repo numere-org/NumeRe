@@ -3977,7 +3977,7 @@
 1497520723 source:d:\cpp\numere-source\trunk\kernel\core\error.cpp
 	"error.hpp"
 
-1500822012 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
+1518014949 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
 	"filesystem.hpp"
 	"../kernel.hpp"
 
@@ -4179,9 +4179,11 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1517468091 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1518089713 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
+	<ctime>
+	<windows.h>
 
 1490787951 source:d:\cpp\numere-source\trunk\kernel\core\tinyxml2.cpp
 	"tinyxml2.h"
@@ -5077,7 +5079,7 @@
 1490787951 source:d:\cpp\numere-source\trunk\kernel\core\utils\zip++.cpp
 	"zip++.hpp"
 
-1517399092 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
+1518085655 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
 	"tools.hpp"
 	"../../kernel.hpp"
 	<cstdlib>

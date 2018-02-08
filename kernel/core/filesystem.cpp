@@ -98,7 +98,8 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension)
 	unsigned int nPos = _sFileName.find_last_of(':');	// Suchen wir mal nach eventuellen relativen Pfadangaben.
 	if (nPos == string::npos)						// Nichts gefunden...? Dann nehmen wir den default
 	{
-        _sFileName = sPath.substr(1,sPath.length()-2) + "/" + _sFileName;
+	    if (_sFileName.substr(0,2) != "//")
+            _sFileName = sPath.substr(1,sPath.length()-2) + "/" + _sFileName;
     }
 
 
