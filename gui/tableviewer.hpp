@@ -39,11 +39,15 @@ class TableViewer : public wxGrid
         bool readOnly;
         wxColor HeadlineColor;
         wxColor FrameColor;
+        wxColor HighlightColor;
+        wxColor HighlightHeadlineColor;
+        wxGridCellCoords lastCursorPosition;
 
         void OnKeyDown(wxKeyEvent& event);
         void OnChar(wxKeyEvent& event);
         void OnEnter(wxMouseEvent& event);
         void OnCellChange(wxGridEvent& event);
+        void OnCellSelect(wxGridEvent& event);
         void updateFrame();
         void deleteSelection();
         int findEmptyHeadline(int nCol);
@@ -54,11 +58,12 @@ class TableViewer : public wxGrid
         bool isEmptyCol(int col);
         wxString replaceCtrlChars(const wxString& sStr);
         void copyContents();
-        void pasteContents();
+        void pasteContents(bool useCursor = false);
+        void highlightCursorPosition(int nRow, int nCol);
         vector<wxString> getLinesFromPaste(const wxString& data);
         void replaceDecimalSign(wxString& text);
         void replaceTabSign(wxString& text);
-        wxGridCellCoords CreateEmptyGridSpace(int rows, int headrows, int cols);
+        wxGridCellCoords CreateEmptyGridSpace(int rows, int headrows, int cols, bool useCursor = false);
 
         wxString copyCell(int row, int col);
 
@@ -93,7 +98,8 @@ class TableViewer : public wxGrid
             ID_MENU_REMOVE_COL,
             ID_MENU_REMOVE_CELL,
             ID_MENU_COPY,
-            ID_MENU_PASTE
+            ID_MENU_PASTE,
+            ID_MENU_PASTE_HERE
         };
 
         DECLARE_EVENT_TABLE();

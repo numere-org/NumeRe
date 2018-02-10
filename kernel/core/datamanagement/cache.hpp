@@ -114,8 +114,8 @@ class Cache : public FileSystem
 		long long int getAppendedZeroes(long long int _i, const string& _sCache) const;			    // gibt die Zahl der angehaengten Nullen der _i-ten Spalte zurueck
 		bool isValidElement(long long int _nLine, long long int _nCol, long long int _nLayer) const;	// gibt zurueck, ob an diesem Speicherpunkt ueberhaupt etwas existiert
 		bool isValidElement(long long int _nLine, long long int _nCol, const string& _sCache) const;	// gibt zurueck, ob an diesem Speicherpunkt ueberhaupt etwas existiert
-		bool qSortWrapper(int* nIndex, int nElements, int nKey, int nLayer, int nLeft, int nRight, int nSign = 1); // wendet den Quicksort-Algorithmus an
-		bool qSort(int* nIndex, int nElements, int nKey, int nLayer, int nLeft, int nRight, int nSign = 1); // wendet den Quicksort-Algorithmus an
+		bool qSortWrapper(int* nIndex, int nElements, int nKey, int nLayer, long long int nLeft, long long int nRight, int nSign = 1); // wendet den Quicksort-Algorithmus an
+		bool qSort(int* nIndex, int nElements, int nKey, int nLayer, long long int nLeft, long long int nRight, int nSign = 1); // wendet den Quicksort-Algorithmus an
 		bool saveLayer(string _sFileName, const string& sLayer);
 		ColumnKeys* evaluateKeyList(string& sKeyList, long long int nMax);
 		bool sortSubList(long long int nLayer, vector<int>& vIndex, ColumnKeys* KeyList, long long int i1, long long int i2, long long int j1, int nSign);

@@ -3962,6 +3962,8 @@ bool Datafile::qSortWrapper(int* nIndex, int nElements, int nKey, int nLeft, int
     {
         nRight--;
     }
+    if (nRight < 0)
+        return false;
     // swap all NaNs to the right
     int nPos = nRight;
     while (nPos >= nLeft)

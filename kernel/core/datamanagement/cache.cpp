@@ -747,16 +747,18 @@ void Cache::deleteEntry(long long int _nLine, long long int _nCol, long long int
     return;
 }
 
-bool Cache::qSortWrapper(int* nIndex, int nElements, int nKey, int nLayer, int nLeft, int nRight, int nSign)
+bool Cache::qSortWrapper(int* nIndex, int nElements, int nKey, int nLayer, long long int nLeft, long long int nRight, int nSign)
 {
     if (!nIndex || !nElements || nLeft < 0 || nRight > nElements || nRight < nLeft)
     {
         return false;
     }
-    while (isnan(dCache[nIndex[nRight]][nKey][nLayer]) && nRight >= nLeft)
+    while (nRight >= nLeft && isnan(dCache[nIndex[nRight]][nKey][nLayer]))
     {
         nRight--;
     }
+    if (nRight < 0)
+        return false;
     // swap all NaNs to the right
     int nPos = nRight;
     while (nPos >= nLeft)
@@ -774,7 +776,7 @@ bool Cache::qSortWrapper(int* nIndex, int nElements, int nKey, int nLayer, int n
 }
 
 
-bool Cache::qSort(int* nIndex, int nElements, int nKey, int nLayer, int nLeft, int nRight, int nSign)
+bool Cache::qSort(int* nIndex, int nElements, int nKey, int nLayer, long long int nLeft, long long int nRight, int nSign)
 {
     //cerr << nLeft << "/" << nRight << endl;
     if (!nIndex || !nElements || nLeft < 0 || nRight > nElements || nRight < nLeft)
@@ -881,7 +883,7 @@ vector<int> Cache::sortElements(const string& sLine) // cache -sort[[=desc]] col
     if (matchParams(sLine, "index"))
         sSortingExpression += " index";
 
-    return sortElements(sCache, 0, nLines, 0, nCols, sSortingExpression);
+    return sortElements(sCache, 0, getCacheLines(sCache, false), 0, getCacheCols(sCache, false), sSortingExpression);
 }
 
 vector<int> Cache::sortElements(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2, const string& sSortingExpression)

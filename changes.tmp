@@ -16,3 +16,6 @@ Fixed	Column headlines may now be compared directly (in comparison to using a ad
 New	The function "findcolumn()" can be used to find all columns in a table, whose headlines are matching to the second argument in "findcolumn()".
 New	If you type into the parentheses of functions, procedures or methods a tooltip will be displayed showing the corresponding function template and indicating the current argument.
 Applied	You can now use an arbitrary number of "hlines" and "vlines" on your plot. PLEASE NOTE: the options "hline" and "vline" are now considered as deprecated. Use "hlines" and "vlines" instead.
+Cleaned	The user interface of "sort" was cleaned so that it corresponds to the way the other commands are used.
+Added	The command "sort" may now make use of mulitple, hierarchical used index columns and additionally it may return an index vector with the sorted order instead of sorting the data object explicitly.
+New	Time formatting functions were added: "to_time()" transforms an time string into a time value and "timeformat()" transforms a time value into a time string using a defined pattern.

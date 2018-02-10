@@ -30,7 +30,8 @@ BEGIN_EVENT_TABLE(TableViewer, wxGrid)
     EVT_GRID_CELL_CHANGING      (TableViewer::OnCellChange)
     EVT_GRID_CELL_RIGHT_CLICK   (TableViewer::OnCellRightClick)
     EVT_GRID_LABEL_RIGHT_CLICK  (TableViewer::OnLabelRightClick)
-    EVT_MENU_RANGE              (ID_MENU_INSERT_ROW, ID_MENU_PASTE, TableViewer::OnMenu)
+    EVT_MENU_RANGE              (ID_MENU_INSERT_ROW, ID_MENU_PASTE_HERE, TableViewer::OnMenu)
+    EVT_GRID_SELECT_CELL        (TableViewer::OnCellSelect)
     //EVT_ENTER_WINDOW    (TableViewer::OnEnter)
 END_EVENT_TABLE()
 
@@ -44,6 +45,8 @@ TableViewer::TableViewer(wxWindow* parent, wxWindowID id, const wxPoint& pos, co
 
     FrameColor = wxColor(230,230,230);
     HeadlineColor = *wxLIGHT_GREY;
+    HighlightColor = wxColor(192,227,248);
+    HighlightHeadlineColor = wxColor(131,200,241);
 
     m_popUpMenu.Append(ID_MENU_COPY, _guilang.get("GUI_COPY_TABLE_CONTENTS"));
 }
@@ -58,6 +61,7 @@ void TableViewer::OnKeyDown(wxKeyEvent& event)
     else if (event.GetKeyCode() == WXK_UP)
     {
         this->MoveCursorUp(false);
+        //highlightCursorPosition();
     }
     else if (event.GetKeyCode() == WXK_DOWN)
     {
@@ -67,6 +71,7 @@ void TableViewer::OnKeyDown(wxKeyEvent& event)
             updateFrame();
         }*/
         this->MoveCursorDown(false);
+        //highlightCursorPosition();
     }
     else if (event.GetKeyCode() == WXK_RETURN)
     {
@@ -76,10 +81,12 @@ void TableViewer::OnKeyDown(wxKeyEvent& event)
             updateFrame();
         }*/
         this->MoveCursorDown(false);
+        //highlightCursorPosition();
     }
     else if (event.GetKeyCode() == WXK_LEFT)
     {
         this->MoveCursorLeft(false);
+        //highlightCursorPosition();
     }
     else if (event.GetKeyCode() == WXK_RIGHT)
     {
@@ -89,6 +96,7 @@ void TableViewer::OnKeyDown(wxKeyEvent& event)
             updateFrame();
         }*/
         this->MoveCursorRight(false);
+        //highlightCursorPosition();
     }
     else if (event.GetKeyCode() == WXK_TAB)
     {
@@ -98,6 +106,7 @@ void TableViewer::OnKeyDown(wxKeyEvent& event)
             updateFrame();
         }*/
         this->MoveCursorRight(false);
+        //highlightCursorPosition();
     }
     else if (event.GetKeyCode() == WXK_DELETE)
     {
@@ -175,13 +184,18 @@ void TableViewer::OnCellChange(wxGridEvent& event)
             }
             else
             {
-                this->SetCellBackgroundColour(event.GetRow(), event.GetCol(), *wxRED);
+                this->SetCellTextColour(event.GetRow(), event.GetCol(), *wxRED);
             }
         }
     }
     else if ((size_t)event.GetRow() >= nFirstNumRow)
-        this->SetCellBackgroundColour(event.GetRow(), event.GetCol(), *wxWHITE);
+        this->SetCellTextColour(event.GetRow(), event.GetCol(), *wxBLACK);
     event.Skip();
+}
+
+void TableViewer::OnCellSelect(wxGridEvent& event)
+{
+    highlightCursorPosition(event.GetRow(), event.GetCol());
 }
 
 int TableViewer::findEmptyHeadline(int nCol)
@@ -236,6 +250,8 @@ void TableViewer::updateFrame()
             }
         }
     }
+    lastCursorPosition = wxGridCellCoords();
+    highlightCursorPosition(this->GetCursorRow(), this->GetCursorColumn());
 }
 
 void TableViewer::deleteSelection()
@@ -403,7 +419,7 @@ void TableViewer::copyContents() // maybe this should consider the language and 
     return;
 }
 
-void TableViewer::pasteContents()
+void TableViewer::pasteContents(bool useCursor)
 {
     vector<wxString> vTableData;
     if (wxTheClipboard->Open())
@@ -460,7 +476,7 @@ void TableViewer::pasteContents()
             nCols = (int)tok.CountTokens();
     }
 
-    wxGridCellCoords topleft = CreateEmptyGridSpace(nLines, nSkip, nCols);
+    wxGridCellCoords topleft = CreateEmptyGridSpace(nLines, nSkip, nCols, useCursor);
 
     for (unsigned int i = 0; i < vTableData.size(); i++)
     {
@@ -479,18 +495,12 @@ void TableViewer::pasteContents()
                 {
                     if (sLine.length())
                     {
-                        /*if (!i)
-                            sHeadLine[j] = sLine;
-                        else
-                            sHeadLine[j] += "\\n" + sLine;*/
                         this->SetCellValue(i, topleft.GetCol()+j, sLine);
                     }
                 }
                 else
                 {
                     this->SetCellValue(topleft.GetRow()+i-nSkip, topleft.GetCol()+j, sLine);
-                    //dDatafile[i-nSkip][j] = StrToDb(sLine);
-                    //bValidEntry[i-nSkip][j] = true;
                 }
             }
             else if (i < (size_t)nSkip && nSkip)
@@ -498,70 +508,158 @@ void TableViewer::pasteContents()
                 if (sLine.length())
                 {
                     this->SetCellValue(i, topleft.GetCol()+j, sLine);
-
-                    /*if (!i || sHeadLine[j] == "Spalte_" + toString(j+1))
-                        sHeadLine[j] = sLine;
-                    else
-                        sHeadLine[j] += "\\n" + sLine;*/
                 }
             }
             else
             {
                 this->SetCellValue(topleft.GetRow()+i-nSkip, topleft.GetCol()+j, sLine);
-                //dDatafile[i-nSkip][j] = NAN;
-                //bValidEntry[i-nSkip][j] = false;
             }
             j++;
             if (j == nCols)
                 break;
         }
     }
+    this->GoToCell(topleft);
+    this->SelectBlock(topleft, wxGridCellCoords(topleft.GetRow()+nLines-1, topleft.GetCol()+nCols-1));
 }
 
-wxGridCellCoords TableViewer::CreateEmptyGridSpace(int rows, int headrows, int cols)
+void TableViewer::highlightCursorPosition(int nRow, int nCol)
+{
+    if (!lastCursorPosition)
+    {
+
+    }
+    else
+    {
+        if (nCol != lastCursorPosition.GetCol())
+        {
+            for (int i = 0; i < this->GetRows()-1; i++)
+            {
+                if (i == nRow && lastCursorPosition.GetCol()+1 != this->GetCols())
+                    continue;
+                if (this->GetRowLabelValue(i) == "#" && lastCursorPosition.GetCol()+1 != this->GetCols())
+                    this->SetCellBackgroundColour(i, lastCursorPosition.GetCol(), HeadlineColor);
+                else if (lastCursorPosition.GetCol()+1 == this->GetCols())
+                    this->SetCellBackgroundColour(i, lastCursorPosition.GetCol(), FrameColor);
+                else
+                    this->SetCellBackgroundColour(i, lastCursorPosition.GetCol(), *wxWHITE);
+            }
+        }
+        if (nRow != lastCursorPosition.GetRow())
+        {
+            for (int j = 0; j < this->GetCols()-1; j++)
+            {
+                if (j == nCol && lastCursorPosition.GetRow()+1 != this->GetRows())
+                    continue;
+                if (this->GetRowLabelValue(lastCursorPosition.GetRow()) == "#")
+                    this->SetCellBackgroundColour(lastCursorPosition.GetRow(), j, HeadlineColor);
+                else if (lastCursorPosition.GetRow()+1 == this->GetRows())
+                    this->SetCellBackgroundColour(lastCursorPosition.GetRow(), j, FrameColor);
+                else
+                    this->SetCellBackgroundColour(lastCursorPosition.GetRow(), j, *wxWHITE);
+            }
+        }
+    }
+    if (!lastCursorPosition)
+    {
+        for (int i = 0; i < this->GetRows()-1; i++)
+        {
+            if (this->GetRowLabelValue(i) == "#")
+                this->SetCellBackgroundColour(i, nCol, HighlightHeadlineColor);
+            else
+                this->SetCellBackgroundColour(i, nCol, HighlightColor);
+        }
+        for (int j = 0; j < this->GetCols()-1; j++)
+        {
+            if (this->GetRowLabelValue(nRow) == "#")
+                this->SetCellBackgroundColour(nRow, j, HighlightHeadlineColor);
+            else
+                this->SetCellBackgroundColour(nRow, j, HighlightColor);
+        }
+    }
+    else
+    {
+        if (lastCursorPosition.GetCol() != nCol)
+        {
+            for (int i = 0; i < this->GetRows()-1; i++)
+            {
+                if (this->GetRowLabelValue(i) == "#")
+                    this->SetCellBackgroundColour(i, nCol, HighlightHeadlineColor);
+                else
+                    this->SetCellBackgroundColour(i, nCol, HighlightColor);
+            }
+        }
+        if (lastCursorPosition.GetRow() != nRow)
+        {
+            for (int j = 0; j < this->GetCols()-1; j++)
+            {
+                if (this->GetRowLabelValue(nRow) == "#")
+                    this->SetCellBackgroundColour(nRow, j, HighlightHeadlineColor);
+                else
+                    this->SetCellBackgroundColour(nRow, j, HighlightColor);
+            }
+        }
+    }
+
+    lastCursorPosition = wxGridCellCoords(nRow, nCol);
+    this->Refresh();
+}
+
+wxGridCellCoords TableViewer::CreateEmptyGridSpace(int rows, int headrows, int cols, bool useCursor)
 {
     wxGridCellCoords topLeft(headrows,0);
 
-    for (int i = this->GetCols()-1; i >= 0; i--)
+    if (useCursor)
     {
-        if (!isEmptyCol(i)) //(this->GetCellValue(0,i).length())
-        {
-            if (this->GetCols()-i-1 < cols+1)
-                this->AppendCols(cols-(this->GetCols()-(i+1))+1);
-            topLeft.SetCol(i+1);
-            break;
-        }
-        if (!i)
-        {
-            if (this->GetCols()-1 < cols)
-                this->AppendCols(cols-(this->GetCols()-1));
-            topLeft.SetCol(0);
-        }
+        topLeft = m_lastRightClick;
+        if (this->GetCols()-1 < topLeft.GetCol() + cols)
+            this->AppendCols(topLeft.GetCol()+cols-this->GetCols()+1, true);
+        if (this->GetRows()-1 < topLeft.GetRow() + rows + headrows)
+            this->AppendRows(topLeft.GetRow()+rows + headrows-this->GetRows()+1, true);
     }
-    for (int i = 0; i < this->GetRows(); i++)
+    else
     {
-        if (this->GetRowLabelValue(i) != "#")
+        for (int i = this->GetCols()-1; i >= 0; i--)
         {
-            if (i >= headrows)
+            if (!isEmptyCol(i)) //(this->GetCellValue(0,i).length())
             {
-                topLeft.SetRow(i);
-                if (this->GetRows()-i < rows+1)
-                {
-                    this->AppendRows(rows-(this->GetRows()-i)+1);
-                }
+                if (this->GetCols()-i-1 < cols+1)
+                    this->AppendCols(cols-(this->GetCols()-(i+1))+1);
+                topLeft.SetCol(i+1);
+                break;
             }
-            else
+            if (!i)
             {
-                nFirstNumRow = headrows;
-                this->InsertRows(i, headrows-(i-1));
-                for (int j = i-1; j < GetRows(); j++)
-                    this->SetRowLabelValue(j, this->GetRowLabelValue(j));
-                if (this->GetRows()-headrows < rows+1)
-                {
-                    this->AppendRows(rows-(this->GetRows()-headrows)+1);
-                }
+                if (this->GetCols()-1 < cols)
+                    this->AppendCols(cols-(this->GetCols()-1));
+                topLeft.SetCol(0);
             }
-            break;
+        }
+        for (int i = 0; i < this->GetRows(); i++)
+        {
+            if (this->GetRowLabelValue(i) != "#")
+            {
+                if (i >= headrows)
+                {
+                    topLeft.SetRow(i);
+                    if (this->GetRows()-i < rows+1)
+                    {
+                        this->AppendRows(rows-(this->GetRows()-i)+1);
+                    }
+                }
+                else
+                {
+                    nFirstNumRow = headrows;
+                    this->InsertRows(i, headrows-(i-1));
+                    for (int j = i-1; j < GetRows(); j++)
+                        this->SetRowLabelValue(j, this->GetRowLabelValue(j));
+                    if (this->GetRows()-headrows < rows+1)
+                    {
+                        this->AppendRows(rows-(this->GetRows()-headrows)+1);
+                    }
+                }
+                break;
+            }
         }
     }
 
@@ -734,6 +832,7 @@ void TableViewer::SetTableReadOnly(bool isReadOnly)
         //this->EnableDragCell();
         //this->EnableDragColMove();
         m_popUpMenu.Append(ID_MENU_PASTE, _guilang.get("GUI_PASTE_TABLE_CONTENTS"));
+        m_popUpMenu.Append(ID_MENU_PASTE_HERE, _guilang.get("GUI_PASTE_TABLE_CONTENTS_HERE"));
         m_popUpMenu.AppendSeparator();
         m_popUpMenu.Append(ID_MENU_INSERT_ROW, _guilang.get("GUI_INSERT_TABLE_ROW"));
         m_popUpMenu.Append(ID_MENU_INSERT_COL, _guilang.get("GUI_INSERT_TABLE_COL"));
@@ -783,6 +882,7 @@ void TableViewer::OnCellRightClick(wxGridEvent& event)
     {
         for (int i = ID_MENU_INSERT_ROW; i <= ID_MENU_REMOVE_CELL; i++)
             m_popUpMenu.Enable(i,true);
+        m_popUpMenu.Enable(ID_MENU_PASTE_HERE, true);
     }
     PopupMenu(&m_popUpMenu, event.GetPosition());
 }
@@ -810,6 +910,7 @@ void TableViewer::OnLabelRightClick(wxGridEvent& event)
 
         m_popUpMenu.Enable(ID_MENU_INSERT_CELL, false);
         m_popUpMenu.Enable(ID_MENU_REMOVE_CELL, false);
+        m_popUpMenu.Enable(ID_MENU_PASTE_HERE, false);
     }
     PopupMenu(&m_popUpMenu, event.GetPosition());
 }
@@ -834,6 +935,9 @@ void TableViewer::OnMenu(wxCommandEvent& event)
             break;
         case ID_MENU_PASTE:
             pasteContents();
+            break;
+        case ID_MENU_PASTE_HERE:
+            pasteContents(true);
             break;
     }
 }
