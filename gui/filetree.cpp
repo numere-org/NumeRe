@@ -34,3 +34,19 @@ void FileTree::OnEnter(wxMouseEvent& event)
     event.Skip();
 }
 
+void FileTree::SetDnDHighlight(const wxTreeItemId& itemToHighLight)
+{
+    if (itemToHighLight == m_currentHighLight)
+        return;
+
+    if (m_currentHighLight.IsOk())
+    {
+        this->SetItemDropHighlight(m_currentHighLight, false);
+        m_currentHighLight = wxTreeItemId();
+    }
+    if (itemToHighLight.IsOk())
+    {
+        this->SetItemDropHighlight(itemToHighLight);
+        m_currentHighLight = itemToHighLight;
+    }
+}

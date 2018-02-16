@@ -2023,7 +2023,7 @@
 	"../kernel/kernel.hpp"
 	"../kernel/debugmessenger.hpp"
 
-1517077491 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1518625110 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -2074,7 +2074,7 @@
 	<commdlg.h>
 	"wx/msw/winundef.h"
 
-1517077678 d:\cpp\numere-source\trunk\common\datastructures.h
+1518608222 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -2438,7 +2438,7 @@
 1500554567 d:\cpp\numere-source\trunk\gui\viewerframe.hpp
 	<wx/wx.h>
 
-1490787950 d:\cpp\numere-source\trunk\gui\filetree.hpp
+1518626212 d:\cpp\numere-source\trunk\gui\filetree.hpp
 	<wx/wx.h>
 	<wx/treectrl.h>
 
@@ -3873,7 +3873,7 @@
 1517075043 source:d:\cpp\numere-source\trunk\gui\dirtraverser.cpp
 	"DirTraverser.hpp"
 
-1511360564 source:d:\cpp\numere-source\trunk\gui\filetree.cpp
+1518626714 source:d:\cpp\numere-source\trunk\gui\filetree.cpp
 	"filetree.hpp"
 	"globals.hpp"
 
@@ -3911,7 +3911,7 @@
 1490787950 source:d:\cpp\numere-source\trunk\gui\tableeditpanel.cpp
 	"tableeditpanel.hpp"
 
-1518248447 source:d:\cpp\numere-source\trunk\gui\tableviewer.cpp
+1518253782 source:d:\cpp\numere-source\trunk\gui\tableviewer.cpp
 	"tableviewer.hpp"
 	"../kernel/core/ui/language.hpp"
 	<wx/clipbrd.h>
@@ -4456,12 +4456,13 @@
 	<wx/wx.h>
 	<wx/dnd.h>
 
-1511420190 source:d:\cpp\numere-source\trunk\gui\numeredroptarget.cpp
+1518639006 source:d:\cpp\numere-source\trunk\gui\numeredroptarget.cpp
 	"numeredroptarget.hpp"
 	"NumeReWindow.h"
 	"editor/editor.h"
 	"terminal/wxssh.h"
 	"filetree.hpp"
+	"DirTraverser.hpp"
 
 1501396206 d:\cpp\numere-source\trunk\gui\wx.h
 	<mgl2/wnd.h>
@@ -5125,7 +5126,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1517415033 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1518625169 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"

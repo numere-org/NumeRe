@@ -29,7 +29,7 @@ class NumeReDropTarget : public wxDropTarget
 {
     public:
         enum parentType {NUMEREWINDOW, EDITOR, FILETREE, CONSOLE};
-        enum fileType {NOEXTENSION, TEXTFILE, BINARYFILE, EXECUTABLE, NOTSUPPORTED};
+        enum fileType {NOEXTENSION, TEXTFILE, BINARYFILE, IMAGEFILE, EXECUTABLE, NOTSUPPORTED};
 
         NumeReDropTarget(wxWindow* topwindow, wxWindow* owner, parentType type);
 

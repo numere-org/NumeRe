@@ -22,6 +22,7 @@
 #include "editor/editor.h"
 #include "terminal/wxssh.h"
 #include "filetree.hpp"
+#include "DirTraverser.hpp"
 
 #define wxUSE_DRAG_AND_DROP 1
 
@@ -56,6 +57,10 @@ wxDragResult NumeReDropTarget::OnDragOver(wxCoord x, wxCoord y, wxDragResult def
         wxDataFormat format = dataobj->GetReceivedFormat();
         if (format.GetType() == wxDF_TEXT || format.GetType() == wxDF_UNICODETEXT)
             return wxDragNone;
+        FileTree* tree = static_cast<FileTree*>(m_owner);
+        wxTreeItemId currentId = tree->HitTest(wxPoint(x,y));
+        if (currentId.IsOk())
+            tree->SetDnDHighlight(currentId);
     }
     return defaultDragResult;
 }
@@ -82,7 +87,9 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                 {
                     while (filenames.size()
                         && (getFileType(filenames[i]) == NOTSUPPORTED
-                            || getFileType(filenames[i]) == BINARYFILE))
+                            || getFileType(filenames[i]) == IMAGEFILE
+                            || getFileType(filenames[i]) == BINARYFILE)
+                           )
                     {
                         filenames.erase(filenames.begin()+i);
                     }
@@ -101,7 +108,8 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                 for (size_t i = 0; i < filenames.size(); i++)
                 {
                     while (filenames.size()
-                        && getFileType(filenames[i]) == NOTSUPPORTED)
+                        && (getFileType(filenames[i]) == IMAGEFILE
+                            || getFileType(filenames[i]) == NOTSUPPORTED))
                     {
                         filenames.erase(filenames.begin()+i);
                     }
@@ -158,7 +166,25 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
             }
             else if (m_type == FILETREE)
             {
-                // FileTree* tree = static_cast<FileTree*>(m_owner);
+                FileTree* tree = static_cast<FileTree*>(m_owner);
+
+                wxTreeItemId dragdropsource = top->getDragDropSourceItem();
+                if (dragdropsource.IsOk() && (static_cast<FileNameTreeData*>(tree->GetItemData(dragdropsource)))->filename == filenames[0])
+                {
+                    wxTreeItemId dragdroptarget = tree->HitTest(wxPoint(x,y));
+                    wxString pathname = top->getTreeFolderPath(dragdroptarget);
+
+                    if (pathname.length())
+                    {
+                        wxString filename = pathname + "\\" + filenames[0].substr(filenames[0].rfind('\\')+1);
+                        wxCopyFile(filenames[0], filename, true);
+                        wxRemoveFile(filenames[0]);
+                        tree->SetDnDHighlight(wxTreeItemId());
+                        return defaultDragResult;
+                    }
+                    tree->SetDnDHighlight(wxTreeItemId());
+                    return wxDragNone;
+                }
 
                 // check, if file already exists in the location
                 for (size_t i = 0; i < filenames.size(); i++)
@@ -202,8 +228,21 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                             continue;
                         wxCopyFile(sFileName, vPaths[pathID] + sFileName.substr(sFileName.rfind('/')));
                     }
-                }
+                    else if (type == IMAGEFILE)
+                    {
+                        // script or procpath
+                        // already exists
+                        if (sFileName.substr(vPaths[PLOTPATH].length()) == vPaths[PLOTPATH])
+                            continue;
 
+                        PathID pathID = PLOTPATH;
+
+                        if (wxFileExists(vPaths[pathID] + sFileName.substr(sFileName.rfind('/'))))
+                            continue;
+                        wxCopyFile(sFileName, vPaths[pathID] + sFileName.substr(sFileName.rfind('/')));
+                    }
+                }
+                tree->SetDnDHighlight(wxTreeItemId());
                 // if no: copy the file to the fitting location
             }
             break;
@@ -239,15 +278,18 @@ NumeReDropTarget::fileType NumeReDropTarget::getFileType(const wxString& filenam
 {
     if (filename.find('.') == string::npos)
         return NOEXTENSION;
-    wxString textExtensions = ";txt;dat;log;tex;csv;jdx;jcm;dx;nhlp;ndb;nlng;def;ini;hlpidx;m;";
-    wxString binaryExtensions = ";ndat;xls;xlsx;ods;labx;ibw;";
-    wxString execExtensions = ";nscr;nprc;";
+    static wxString textExtensions = ";txt;dat;log;tex;csv;jdx;jcm;dx;nhlp;ndb;nlng;def;ini;hlpidx;m;";
+    static wxString binaryExtensions = ";ndat;xls;xlsx;ods;labx;ibw;";
+    static wxString imageExtensions = ";png;gif;jpg;jpeg;bmp;eps;svg;";
+    static wxString execExtensions = ";nscr;nprc;";
 
     wxString extension = ";"+filename.substr(filename.rfind('.')+1)+";";
     if (textExtensions.find(extension) != string::npos)
         return TEXTFILE;
     if (binaryExtensions.find(extension) != string::npos)
         return BINARYFILE;
+    if (imageExtensions.find(extension) != string::npos)
+        return IMAGEFILE;
     if (execExtensions.find(extension) != string::npos)
         return EXECUTABLE;
 

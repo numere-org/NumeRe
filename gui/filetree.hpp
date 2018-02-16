@@ -27,8 +27,11 @@ class FileTree : public wxTreeCtrl
     public:
         FileTree(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTR_DEFAULT_STYLE, const wxValidator& validator = wxDefaultValidator, const wxString& name = wxTreeCtrlNameStr) : wxTreeCtrl(parent, id, pos, size, style, validator, name) {};
 
+        void SetDnDHighlight(const wxTreeItemId& itemToHighLight);
     private:
         void OnEnter(wxMouseEvent& event);
+
+        wxTreeItemId m_currentHighLight;
 
     DECLARE_EVENT_TABLE();
 };

@@ -19,3 +19,4 @@ Applied	You can now use an arbitrary number of "hlines" and "vlines" on your plo
 Cleaned	The user interface of "sort" was cleaned so that it corresponds to the way the other commands are used.
 Added	The command "sort" may now make use of mulitple, hierarchical used index columns and additionally it may return an index vector with the sorted order instead of sorting the data object explicitly.
 New	Time formatting functions were added: "to_time()" transforms an time string into a time value and "timeformat()" transforms a time value into a time string using a defined pattern.
+Updated	The file tree functionalities were enhanced: the file tree now supports drag'n'drop between folders as well as the creation and deletion of folders

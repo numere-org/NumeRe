@@ -215,6 +215,9 @@ class NumeReWindow : public wxFrame
         bool isOnReloadBlackList(wxString sFilename);
         bool GetFileContents(wxString fileToLoad, wxString &fileContents, wxString &fileName);
 
+        wxTreeItemId getDragDropSourceItem();
+        wxString getTreeFolderPath(const wxTreeItemId& itemId);
+
 
     private:
         void InitializeProgramOptions();
@@ -236,6 +239,9 @@ class NumeReWindow : public wxFrame
         void OnOptions();
         void OnFindReplace(int id );
         void OnCopy();
+        void OnOpenInExplorer();
+        void OnCreateNewFolder();
+        void OnRemoveFolder();
         void OnStartConnect();
         void OnSaveSourceFile( int id );
         void OnOpenSourceFile( int id );
@@ -417,6 +423,7 @@ class NumeReWindow : public wxFrame
         wxTreeItemId m_copiedTreeItem;
         /*! The file type that corresponds to the last clicked project folder */
         FileFilterType m_projectSelectedFolderType;
+        wxTreeItemId m_dragDropSourceItem;
 
         Networking* m_network;
         Options* m_options;

@@ -139,6 +139,9 @@ BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
 	EVT_MENU						(ID_COPY_FILE, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_INSERT_FILE, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_RENAME_FILE, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_NEW_FOLDER, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_REMOVE_FOLDER, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_OPEN_IN_EXPLORER, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_AUTOINDENT, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_INDENTONTYPE, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_AUTOFORMAT, NumeReWindow::OnMenuEvent)
@@ -1015,6 +1018,15 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_RENAME_FILE:
             renameFile();
             break;
+        case ID_NEW_FOLDER:
+            OnCreateNewFolder();
+            break;
+        case ID_REMOVE_FOLDER:
+            OnRemoveFolder();
+            break;
+        case ID_OPEN_IN_EXPLORER:
+            OnOpenInExplorer();
+            break;
         case ID_AUTOINDENT:
         {
             m_currentEd->ApplyAutoIndentation();
@@ -1556,6 +1568,7 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
                 break;
             }
         }
+        m_dragDropSourceItem = wxTreeItemId();
         CreateProcedureTree(vPaths[PROCPATH]);
         m_terminal->UpdateLibrary();
     }
@@ -2951,6 +2964,41 @@ bool NumeReWindow::GetFileContents(wxString fileToLoad, wxString &fileContents, 
 
 	fileName = fn.GetFullName();
 	return true;
+}
+
+wxTreeItemId NumeReWindow::getDragDropSourceItem()
+{
+    wxTreeItemId retVal = m_dragDropSourceItem;
+    m_dragDropSourceItem = wxTreeItemId();
+    return retVal;
+}
+
+wxString NumeReWindow::getTreeFolderPath(const wxTreeItemId& itemId)
+{
+    if (!itemId.IsOk())
+        return wxString();
+
+    FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(itemId));
+    wxString pathName;
+
+    if (!data)
+    {
+        vector<string> vPaths = m_terminal->getPathSettings();
+        for (size_t i = 0; i <= PLOTPATH-2; i++)
+        {
+            if (itemId == m_projectFileFolders[i])
+            {
+                pathName = vPaths[i+2];
+                break;
+            }
+        }
+    }
+    else if (data->isDir)
+    {
+        pathName = data->filename;
+    }
+
+    return pathName;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -4571,10 +4619,38 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
         //wxTreeItemId rootItem = m_projectTree->GetRootItem();
         //wxTreeItemId parentItem = m_projectTree->GetItemParent(clickedItem);
         wxString fname_ext = m_fileTree->GetItemText(m_clickedTreeItem);
-        if (fname_ext.find('.') == string::npos)
+        FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
+        if (m_clickedTreeItem == m_fileTree->GetRootItem())
             return;
-        if (static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem))->isDir)
+        if (!data || data->isDir)
+        {
+            popupMenu.Append(ID_NEW_FOLDER, _guilang.get("GUI_TREE_POP_NEWFOLDER"));
+            if (data)
+                popupMenu.Append(ID_REMOVE_FOLDER, _guilang.get("GUI_TREE_POP_REMOVEFOLDER"));
+            popupMenu.AppendSeparator();
+            popupMenu.Append(ID_OPEN_IN_EXPLORER, _guilang.get("GUI_TREE_POP_OPENINEXPLORER"));
+            /*if (loadableExt.find(fname_ext) != string::npos)
+                popupMenu.Append(ID_OPEN_FILE, _guilang.get("GUI_TREE_PUP_LOAD"));
+            else if (fname_ext == ".nscr;")
+                popupMenu.Append(ID_OPEN_FILE, _guilang.get("GUI_TREE_PUP_START"));
+            else if (fname_ext == ".nprc;")
+                popupMenu.Append(ID_OPEN_FILE, _guilang.get("GUI_TREE_PUP_RUN"));
+
+            if (editableExt.find(fname_ext) != string::npos)
+                popupMenu.Append(ID_EDIT_FILE, _guilang.get("GUI_TREE_PUP_EDIT"));
+            if (showableImgExt.find(fname_ext) != string::npos)
+                popupMenu.Append(ID_OPEN_IMAGE, _guilang.get("GUI_TREE_PUP_OPENIMAGE"));
+            popupMenu.AppendSeparator();
+            popupMenu.Append(ID_DELETE_FILE, _guilang.get("GUI_TREE_PUP_DELETEFILE"));
+            popupMenu.Append(ID_COPY_FILE, _guilang.get("GUI_TREE_PUP_COPYFILE"));
+            if (m_copiedTreeItem)
+                popupMenu.Append(ID_INSERT_FILE, _guilang.get("GUI_TREE_PUP_INSERTFILE"));
+            popupMenu.Append(ID_RENAME_FILE, _guilang.get("GUI_TREE_PUP_RENAMEFILE"));*/
+
+            wxPoint p = event.GetPoint();
+            m_fileTree->PopupMenu(&popupMenu, p);
             return;
+        }
         fname_ext = fname_ext.substr(fname_ext.rfind('.')) + ";";
 
         if (loadableExt.find(fname_ext) != string::npos)
@@ -4892,12 +4968,14 @@ void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
     }
     else
     {
+        //event.Allow();
         wxTreeItemId item = event.GetItem();
+        m_dragDropSourceItem = item;
         FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(item));
         if (data->isDir)
             return;
         wxFileName pathname = data->filename;
-        wxString dragableExtensions = ";nscr;nprc;ndat;txt;dat;log;tex;csv;xls;xlsx;ods;jdx;jcm;dx;labx;ibw;";
+        wxString dragableExtensions = ";nscr;nprc;ndat;txt;dat;log;tex;csv;xls;xlsx;ods;jdx;jcm;dx;labx;ibw;png;jpg;jpeg;gif;bmp;eps;svg;";
         if (dragableExtensions.find(";" + pathname.GetExt() + ";") != string::npos)
         {
             wxFileDataObject _dataObject;
@@ -5874,6 +5952,49 @@ void NumeReWindow::OnCopy()
 	{
 		m_currentEd->Copy();
 	}
+}
+
+void NumeReWindow::OnOpenInExplorer()
+{
+    wxString fileName = getTreeFolderPath(m_clickedTreeItem);
+
+    if (fileName.length())
+        ShellExecute(nullptr, nullptr, fileName.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+}
+
+void NumeReWindow::OnCreateNewFolder()
+{
+    wxString fileName = getTreeFolderPath(m_clickedTreeItem);
+
+    if (!fileName.length())
+        return;
+
+    wxTextEntryDialog* textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWFOLDER_QUESTION"), _guilang.get("GUI_DLG_NEWFOLDER"), _guilang.get("GUI_DLG_NEWFOLDER_DFLT"));
+    int retval = textentry->ShowModal();
+
+    if (retval == wxID_CANCEL)
+    {
+        delete textentry;
+        return;
+    }
+
+    if (textentry->GetValue().length())
+    {
+        wxString foldername = fileName + "\\" + textentry->GetValue();
+        wxMkdir(foldername);
+    }
+    delete textentry;
+}
+
+void NumeReWindow::OnRemoveFolder()
+{
+    FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
+    if (wxYES != wxMessageBox(_guilang.get("GUI_DLG_DELETE_QUESTION", data->filename.ToStdString()), _guilang.get("GUI_DLG_DELETE"), wxCENTRE | wxICON_QUESTION | wxYES_NO, this))
+        return;
+    if (m_clickedTreeItem == m_copiedTreeItem)
+        m_copiedTreeItem = 0;
+    Recycler _recycler;
+    _recycler.recycle(data->filename.c_str());
 }
 
 void NumeReWindow::OnFindReplace(int id)
