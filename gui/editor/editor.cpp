@@ -727,7 +727,7 @@ void NumeReEditor::HandleFunctionCallTip()
         sDefinition = this->GetFunctionCallTip(sFunctionContext);
 
     if (sDefinition.find(')') != string::npos)
-        sDefinition.erase(sDefinition.find(')')+1);
+        sDefinition.erase(sDefinition.rfind(')')+1);
 
     string sArgument = this->GetCurrentArgument(sDefinition, nStartingBrace, nArgStartPos);
     /*if (sArgument.length())
@@ -814,6 +814,8 @@ string NumeReEditor::GetCurrentArgument(const string& sCallTip, int nStartingBra
     int nCurrentPos = this->GetCurrentPos();
     int nCurrentArg = 0;
     char currentChar;
+    string sArgList = sCallTip.substr(sCallTip.find('('));
+    sArgList.erase(getMatchingParenthesis(sArgList));
 
     for (int i = nStartingBrace+1; i < nCurrentPos && i < this->GetLineEndPosition(this->GetCurrentLine()); i++)
     {
@@ -829,20 +831,21 @@ string NumeReEditor::GetCurrentArgument(const string& sCallTip, int nStartingBra
             i = this->BraceMatch(i);
     }
 
-    for (size_t i = 1; i < sCallTip.length(); i++)
+    for (size_t i = 1; i < sArgList.length(); i++)
     {
-        if (!nCurrentArg && (sCallTip[i-1] == '(' || sCallTip[i-1] == ','))
+        if (!nCurrentArg && (sArgList[i-1] == '(' || sArgList[i-1] == ','))
         {
-            nArgStartPos = i;
-            string sArgument = sCallTip.substr(i);
-            if (sArgument.find(')') < sArgument.find(','))
+            nArgStartPos = i + sCallTip.find('(');
+            string sArgument = sArgList.substr(i);
+            /*if (sArgument.find(')') < sArgument.find(','))
                 sArgument.erase(sArgument.find(')'));
-            else
+            else*/
+            if (sArgument.find(',') != string::npos)
                 sArgument.erase(sArgument.find(','));
 
             return sArgument;
         }
-        if (sCallTip[i] == ',')
+        if (sArgList[i] == ',')
             nCurrentArg--;
     }
     return "";
@@ -3985,7 +3988,7 @@ wxString NumeReEditor::FindProcedureDefinition()
             procedureline = GetLine(LineFromPosition(nminpos));
             if (procedureline.find("$"+procedurename) != string::npos && procedureline[procedureline.find_first_not_of(' ', procedureline.find("$"+procedurename)+procedurename.length()+1)] == '(')
             {
-                string sProcDef = procedureline.substr(procedureline.find("$"+procedurename), procedureline.find(')', procedureline.find("$"+procedurename))+1-procedureline.find("$"+procedurename)).ToStdString();
+                string sProcDef = procedureline.substr(procedureline.find("$"+procedurename), getMatchingParenthesis(procedureline.substr(procedureline.find("$"+procedurename)).ToStdString())+1).ToStdString();
                 size_t nFirstParens = sProcDef.find('(');
                 string sArgList = sProcDef.substr(nFirstParens+1, getMatchingParenthesis(sProcDef.substr(nFirstParens))-1);
                 sProcDef.erase(nFirstParens+1);
@@ -4091,7 +4094,7 @@ wxString NumeReEditor::FindProcedureDefinition()
                 continue;
             else
             {
-                string sProcDef = sProcCommandLine.substr(sProcCommandLine.find(procedurename.ToStdString()), sProcCommandLine.find(')', sProcCommandLine.find(procedurename.ToStdString()))+1-sProcCommandLine.find(procedurename.ToStdString()));
+                string sProcDef = sProcCommandLine.substr(sProcCommandLine.find(procedurename.ToStdString()), getMatchingParenthesis(sProcCommandLine.substr(sProcCommandLine.find(procedurename.ToStdString())))+1);
                 size_t nFirstParens = sProcDef.find('(');
                 string sArgList = sProcDef.substr(nFirstParens+1, getMatchingParenthesis(sProcDef.substr(nFirstParens))-1);
                 sProcDef.erase(nFirstParens+1);

@@ -196,6 +196,17 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
                 //sErrorToken = "str";
                 throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "str");
             }
+            if (findCommand(sArgumentMap[i][0]).sString == "tab")
+            {
+                for (unsigned int j = 0; j <= i; j++)
+                    delete[] sArgumentMap[j];
+                delete[] sArgumentMap;
+                nArgumentMapSize = 0;
+                if (_optionRef->getUseDebugger())
+                    _optionRef->_debug.gatherInformations(0, 0, 0, 0, 0, _dataRef->getStringVars(), sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                //sErrorToken = "str";
+                throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "tab");
+            }
 
             if (i < nArgumentMapSize-1 && sArgumentValues.length() && sArgumentValues.find(',') != string::npos)
             {
@@ -222,6 +233,17 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
                         _optionRef->_debug.gatherInformations(0, 0, 0, 0, 0, _dataRef->getStringVars(), sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                     //sErrorToken = "str";
                     throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "str");
+                }
+                if (findCommand(sArgumentMap[i][1]).sString == "tab")
+                {
+                    for (unsigned int j = 0; j <= i; j++)
+                        delete[] sArgumentMap[j];
+                    delete[] sArgumentMap;
+                    nArgumentMapSize = 0;
+                    if (_optionRef->getUseDebugger())
+                        _optionRef->_debug.gatherInformations(0, 0, 0, 0, 0, _dataRef->getStringVars(), sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    //sErrorToken = "str";
+                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "tab");
                 }
                 if (sArgumentMap[i][1].length() && sArgumentMap[i][0].find('=') != string::npos)
                 {
@@ -274,6 +296,17 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
                     //sErrorToken = "str";
                     throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "str");
                 }
+                if (findCommand(sArgumentMap[i][1]).sString == "tab")
+                {
+                    for (unsigned int j = 0; j <= i; j++)
+                        delete[] sArgumentMap[j];
+                    delete[] sArgumentMap;
+                    nArgumentMapSize = 0;
+                    if (_optionRef->getUseDebugger())
+                        _optionRef->_debug.gatherInformations(0, 0, 0, 0, 0, _dataRef->getStringVars(), sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    //sErrorToken = "str";
+                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "tab");
+                }
                 if (sArgumentMap[i][0].find('=') != string::npos)
                 {
                     sArgumentMap[i][0] = sArgumentMap[i][0].substr(0,sArgumentMap[i][0].find('='));
@@ -324,6 +357,12 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
                 else if (nReturn == -2)
                     sArgumentMap[i][1] = "false";
 
+            }
+            else if (sArgumentMap[i][0].length() > 2 && sArgumentMap[i][0].substr(sArgumentMap[i][0].length()-2) == "()")
+            {
+                sArgumentMap[i][0].pop_back();
+                if (sArgumentMap[i][1].find('(') != string::npos)
+                    sArgumentMap[i][1].erase(sArgumentMap[i][1].find('('));
             }
         }
         for (unsigned int i = 0; i < nArgumentMapSize; i++)
@@ -653,24 +692,25 @@ string ProcedureVarFactory::resolveArguments(string sProcedureCommandLine)
     for (unsigned int i = 0; i < nArgumentMapSize; i++)
     {
         unsigned int nPos = 0;
-        while (sProcedureCommandLine.find(sArgumentMap[i][0], nPos) != string::npos)
+        while (sProcedureCommandLine.find(sArgumentMap[i][0].substr(0, sArgumentMap[i][0].length() - (sArgumentMap[i][0].back() == '(')), nPos) != string::npos)
         {
-            nPos = sProcedureCommandLine.find(sArgumentMap[i][0], nPos);
+            nPos = sProcedureCommandLine.find(sArgumentMap[i][0].substr(0, sArgumentMap[i][0].length() - (sArgumentMap[i][0].back() == '(')), nPos);
 
-            if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~',nPos-1)] != '#') || sProcedureCommandLine[nPos+sArgumentMap[i][0].length()] == '(')
+            if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~',nPos-1)] != '#')
+                || (sArgumentMap[i][0].back() != '(' && sProcedureCommandLine[nPos+sArgumentMap[i][0].length()] == '('))
             {
                 nPos += sArgumentMap[i][0].length();
                 continue;
             }
-            if (checkDelimiter(sProcedureCommandLine.substr(nPos-1, sArgumentMap[i][0].length()+2))
+            if (checkDelimiter(sProcedureCommandLine.substr(nPos-1, sArgumentMap[i][0].length()+1+(sArgumentMap[i][0].back() != '(')))
                 && (!isInQuotes(sProcedureCommandLine, nPos, true)
                     || isToCmd(sProcedureCommandLine, nPos)))
             {
-                sProcedureCommandLine.replace(nPos, sArgumentMap[i][0].length(), sArgumentMap[i][1]);
+                sProcedureCommandLine.replace(nPos, sArgumentMap[i][0].length()-(sArgumentMap[i][0].back() == '('), sArgumentMap[i][1]);
                 nPos += sArgumentMap[i][1].length();
             }
             else
-                nPos += sArgumentMap[i][0].length();
+                nPos += sArgumentMap[i][0].length() - (sArgumentMap[i][0].back() == '(');
         }
     }
     return sProcedureCommandLine;
@@ -687,7 +727,8 @@ string ProcedureVarFactory::resolveLocalVars(string sProcedureCommandLine)
         {
             nPos = sProcedureCommandLine.find(sLocalVars[i][0], nPos);
 
-            if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~',nPos-1)] != '#') || sProcedureCommandLine[nPos+sLocalVars[i][0].length()] == '(')
+            if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~',nPos-1)] != '#')
+                || sProcedureCommandLine[nPos+sLocalVars[i][0].length()] == '(')
             {
                 nPos += sLocalVars[i][0].length();
                 continue;
@@ -717,7 +758,8 @@ string ProcedureVarFactory::resolveLocalStrings(string sProcedureCommandLine)
         {
             nPos = sProcedureCommandLine.find(sLocalStrings[i][0], nPos);
 
-            if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#') || sProcedureCommandLine[nPos+sLocalStrings[i][0].length()] == '(')
+            if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#')
+                || sProcedureCommandLine[nPos+sLocalStrings[i][0].length()] == '(')
             {
                 nPos += sLocalStrings[i][0].length();
                 continue;
@@ -746,7 +788,8 @@ string ProcedureVarFactory::resolveLocalTables(string sProcedureCommandLine)
         {
             nPos = sProcedureCommandLine.find(sLocalTables[i][0], nPos);
 
-            if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#') || sProcedureCommandLine[nPos-1] == '$' || sProcedureCommandLine[nPos+sLocalTables[i][0].length()] != '(')
+            if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#')
+                || sProcedureCommandLine[nPos-1] == '$')
             {
                 nPos += sLocalTables[i][0].length();
                 continue;

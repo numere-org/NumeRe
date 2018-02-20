@@ -4398,7 +4398,7 @@
 	"../../kernel/syntax.hpp"
 	"../dialogs/duplicatecodedialog.hpp"
 
-1517563890 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1519048105 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -4452,11 +4452,11 @@
 	<string>
 	<vector>
 
-1494058334 d:\cpp\numere-source\trunk\gui\numeredroptarget.hpp
+1518770810 d:\cpp\numere-source\trunk\gui\numeredroptarget.hpp
 	<wx/wx.h>
 	<wx/dnd.h>
 
-1518639006 source:d:\cpp\numere-source\trunk\gui\numeredroptarget.cpp
+1518771113 source:d:\cpp\numere-source\trunk\gui\numeredroptarget.cpp
 	"numeredroptarget.hpp"
 	"NumeReWindow.h"
 	"editor/editor.h"
@@ -5026,7 +5026,7 @@
 	"../ui/error.hpp"
 	"../utils/tools.hpp"
 
-1513529189 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedurevarfactory.cpp
+1518783894 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedurevarfactory.cpp
 	"procedurevarfactory.hpp"
 	"procedure.hpp"
 
@@ -5126,7 +5126,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1518625169 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1518771091 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
