@@ -2747,7 +2747,7 @@ void parser_ListCmd(const Settings& _option)
 
     for (unsigned int i = 0; i < vCMDList.size(); i++)
     {
-        NumeReKernel::printPreFmt(LineBreak("|   "+vCMDList[i], _option, false, 0, 34)+"\n");
+        NumeReKernel::printPreFmt(LineBreak("|   "+vCMDList[i], _option, false, 0, 42)+"\n");
     }
     NumeReKernel::printPreFmt("|\n");
     NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTCMD_FOOTNOTE1"), _option));

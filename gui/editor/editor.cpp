@@ -720,14 +720,23 @@ void NumeReEditor::HandleFunctionCallTip()
     if (!sFunctionContext.length())
         return;
     if (sFunctionContext.front() == '$')
+    {
         sDefinition = this->FindProcedureDefinition().ToStdString();
+        if (sDefinition.find(')') != string::npos)
+            sDefinition.erase(sDefinition.rfind(')')+1);
+    }
     else if (sFunctionContext.front() == '.')
+    {
         sDefinition = this->GetMethodCallTip(sFunctionContext.substr(1));
+        if (sDefinition.find(')') != string::npos)
+            sDefinition.erase(sDefinition.find(')')+1);
+    }
     else
+    {
         sDefinition = this->GetFunctionCallTip(sFunctionContext);
-
-    if (sDefinition.find(')') != string::npos)
-        sDefinition.erase(sDefinition.rfind(')')+1);
+        if (sDefinition.find(')') != string::npos)
+            sDefinition.erase(sDefinition.find(')')+1);
+    }
 
     string sArgument = this->GetCurrentArgument(sDefinition, nStartingBrace, nArgStartPos);
     /*if (sArgument.length())
@@ -3985,6 +3994,8 @@ wxString NumeReEditor::FindProcedureDefinition()
         while (nminpos < nmaxpos && FindText(nminpos, nmaxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) != -1)
         {
             nminpos = FindText(nminpos, nmaxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) + 1;
+            if (this->GetStyleAt(nminpos) == wxSTC_NSCR_COMMENT_BLOCK || this->GetStyleAt(nminpos) == wxSTC_NSCR_COMMENT_LINE)
+                continue;
             procedureline = GetLine(LineFromPosition(nminpos));
             if (procedureline.find("$"+procedurename) != string::npos && procedureline[procedureline.find_first_not_of(' ', procedureline.find("$"+procedurename)+procedurename.length()+1)] == '(')
             {
@@ -4297,6 +4308,8 @@ void NumeReEditor::OnFindProcedure(wxCommandEvent &event)
         while (nminpos < nmaxpos && FindText(nminpos, nmaxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) != -1)
         {
             nminpos = FindText(nminpos, nmaxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) + 1;
+            if (this->GetStyleAt(nminpos) == wxSTC_NSCR_COMMENT_BLOCK || this->GetStyleAt(nminpos) == wxSTC_NSCR_COMMENT_LINE)
+                continue;
             procedureline = GetLine(LineFromPosition(nminpos));
             if (procedureline.find("$"+procedurename) != string::npos && procedureline[procedureline.find_first_not_of(' ', procedureline.find("$"+procedurename)+procedurename.length()+1)] == '(')
             {

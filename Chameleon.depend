@@ -4398,7 +4398,7 @@
 	"../../kernel/syntax.hpp"
 	"../dialogs/duplicatecodedialog.hpp"
 
-1519048105 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1519342512 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -4963,7 +4963,7 @@
 	"odesolver.hpp"
 	"../../kernel.hpp"
 
-1516627666 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
+1519293443 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	"spline.h"
@@ -5026,7 +5026,7 @@
 	"../ui/error.hpp"
 	"../utils/tools.hpp"
 
-1518783894 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedurevarfactory.cpp
+1519137886 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedurevarfactory.cpp
 	"procedurevarfactory.hpp"
 	"procedure.hpp"
 
@@ -5126,7 +5126,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1518771091 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1519373361 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"

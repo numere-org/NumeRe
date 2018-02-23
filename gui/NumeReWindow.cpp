@@ -1853,7 +1853,8 @@ void NumeReWindow::createLaTeXHeader(const string& sRootPath)
     fHeader << "    keywords=[3]{" << constructLaTeXHeaderKeywords(syntax->getFunctions()) << "}," << endl;
     fHeader << "    keywords=[4]{" << constructLaTeXHeaderKeywords(syntax->getConstants()) << "}," << endl;
     fHeader << "    keywords=[5]{" << constructLaTeXHeaderKeywords(syntax->getOptions()) << "}," << endl;
-    fHeader << "    keywords=[6]{" << constructLaTeXHeaderKeywords(syntax->getSpecial()) << "}," << endl;
+    fHeader << "    keywords=[6]{" << constructLaTeXHeaderKeywords(syntax->getMethods()) << "}," << endl;
+    fHeader << "    keywords=[7]{" << constructLaTeXHeaderKeywords(syntax->getSpecial()) << "}," << endl;
     fHeader << "    sensitive=true," << endl;
     fHeader << "    morecomment=[s]{\\#*}{*\\#}," << endl;
     fHeader << "    morecomment=[l][commentstyle]{\\#\\#}," << endl;
@@ -1875,6 +1876,7 @@ void NumeReWindow::createLaTeXHeader(const string& sRootPath)
     fHeader << "\\definecolor{BGColorOne}{RGB}{230,230,230}" << endl;
     fHeader << "\\definecolor{CommentStyle}{RGB}{0,128,0}" << endl;
     fHeader << "\\definecolor{ConstantStyle}{RGB}{255,0,128}" << endl;
+    fHeader << "\\definecolor{MethodStyle}{RGB}{0,180,50}" << endl;
     fHeader << "\\definecolor{OptionStyle}{RGB}{0,128,100}" << endl << endl;
 
     fHeader << "% Activate the language" << endl;
@@ -1894,7 +1896,8 @@ void NumeReWindow::createLaTeXHeader(const string& sRootPath)
     fHeader << "    keywordstyle=[3]{\\color{blue}\\bfseries\\upshape}," << endl;
     fHeader << "    keywordstyle=[4]{\\color{ConstantStyle}\\bfseries\\upshape}," << endl;
     fHeader << "    keywordstyle=[5]{\\color{OptionStyle}\\upshape}," << endl;
-    fHeader << "    keywordstyle=[6]{\\bfseries\\upshape}," << endl;
+    fHeader << "    keywordstyle=[6]{\\color{MethodStyle}\\bfseries\\upshape}," << endl;
+    fHeader << "    keywordstyle=[7]{\\bfseries\\upshape}," << endl;
     fHeader << "    stringstyle={\\color{StringStyle}\\upshape}," << endl;
     fHeader << "    backgroundcolor=\\color{BGColorTwo}," << endl;
     fHeader << "    literate=*{(}{{\\oprts{(}}}1" << endl;
