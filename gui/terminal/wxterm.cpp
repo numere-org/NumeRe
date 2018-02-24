@@ -184,10 +184,16 @@ wxTerm::wxTerm(wxWindow* parent, wxWindowID id,
     wxClientDC
     dc(this);
 
-    if(m_boldStyle != FONT)
-        dc.SetFont(m_normalFont);
-    else
-        dc.SetFont(m_boldFont);
+    m_normalFont = GetFont();
+    m_underlinedFont = GetFont();
+    m_underlinedFont.SetUnderlined(true);
+    m_boldFont = GetFont();
+    m_boldFont.SetWeight(wxBOLD);
+    m_boldUnderlinedFont = m_boldFont;
+    m_boldUnderlinedFont.SetUnderlined(true);
+
+
+    dc.SetFont(m_boldFont);
     dc.GetTextExtent("M", &m_charWidth, &h); // EKHL: Changed because Height made no sense
     dc.GetTextExtent("My", &w, &m_charHeight);
 
@@ -203,13 +209,6 @@ wxTerm::wxTerm(wxWindow* parent, wxWindowID id,
 
 
 
-    m_normalFont = GetFont();
-    m_underlinedFont = GetFont();
-    m_underlinedFont.SetUnderlined(true);
-    m_boldFont = GetFont();
-    m_boldFont.SetWeight(wxBOLD);
-    m_boldUnderlinedFont = m_boldFont;
-    m_boldUnderlinedFont.SetUnderlined(true);
 
     m_bitmap = 0;
 
@@ -2025,12 +2024,10 @@ wxTerm::ResizeTerminal(int width, int height)
     wxClientDC
     dc(this);
 
-    if(m_boldStyle != FONT)
-        dc.SetFont(m_normalFont);
-    else
-        dc.SetFont(m_boldFont);
+    dc.SetFont(m_boldFont);
     dc.GetTextExtent("M", &m_charWidth, &h); // EKHL: Changed because Heigth made no sense
     dc.GetTextExtent("My", &w, &m_charHeight);
+
     w = width * m_charWidth;
     h = height * m_charHeight;
 

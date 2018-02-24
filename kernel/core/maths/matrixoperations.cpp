@@ -2270,7 +2270,8 @@ Matrix parser_calcCrossProduct(const Matrix& _mMatrix, const string& sCmd, const
     return _mResult;
 }
 
-Matrix parser_calcEigenVects(const Matrix& _mMatrix, int nReturnType, const string& sCmd, const string& sExpr, size_t position)
+// __attribute__((force_align_arg_pointer)) fixes TDM-GCC Bug for wrong stack alignment
+__attribute__((force_align_arg_pointer)) Matrix parser_calcEigenVects(const Matrix& _mMatrix, int nReturnType, const string& sCmd, const string& sExpr, size_t position)
 {
     if (_mMatrix.size() != _mMatrix[0].size())
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix.size()) +"x"+ toString(_mMatrix[0].size()));

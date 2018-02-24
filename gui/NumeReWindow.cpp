@@ -4975,7 +4975,7 @@ void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
         wxTreeItemId item = event.GetItem();
         m_dragDropSourceItem = item;
         FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(item));
-        if (data->isDir)
+        if (!data || data->isDir)
             return;
         wxFileName pathname = data->filename;
         wxString dragableExtensions = ";nscr;nprc;ndat;txt;dat;log;tex;csv;xls;xlsx;ods;jdx;jcm;dx;labx;ibw;png;jpg;jpeg;gif;bmp;eps;svg;";

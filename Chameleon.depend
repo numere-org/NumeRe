@@ -4398,7 +4398,7 @@
 	"../../kernel/syntax.hpp"
 	"../dialogs/duplicatecodedialog.hpp"
 
-1519342512 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1519376037 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -4648,7 +4648,7 @@
 	"wxssh.h"
 	"../../common/debug.h"
 
-1511420264 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1519384673 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -4928,7 +4928,7 @@
 	"../settings.hpp"
 	"../ui/error.hpp"
 
-1518171755 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
+1519379969 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
 	"cache.hpp"
 	"../../kernel.hpp"
 
@@ -4955,7 +4955,7 @@
 	"fitcontroller.hpp"
 	"../../kernel.hpp"
 
-1512308976 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
+1519381742 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 
