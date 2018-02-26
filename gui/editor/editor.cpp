@@ -321,6 +321,9 @@ bool NumeReEditor::SaveFile( const wxString & filename )
 
     if(!file.IsOpened()) { return false; }
 
+    if (m_options->GetFormatBeforeSaving())
+        this->ApplyAutoFormat();
+
     wxString buf = GetText();
 
     bool okay = file.Write(buf.ToStdString().c_str(), buf.ToStdString().length());

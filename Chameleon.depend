@@ -2447,7 +2447,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1516604603 d:\cpp\numere-source\trunk\common\options.h
+1519663553 d:\cpp\numere-source\trunk\common\options.h
 	<wx/wx.h>
 	<wx/validate.h>
 	<wx/valgen.h>
@@ -3062,7 +3062,7 @@
 	"../common/datastructures.h"
 	"../common/debug.h"
 
-1516604639 source:d:\cpp\numere-source\trunk\common\options.cpp
+1519663501 source:d:\cpp\numere-source\trunk\common\options.cpp
 	"Options.h"
 	<wx/filename.h>
 	<wx/arrstr.h>
@@ -4398,7 +4398,7 @@
 	"../../kernel/syntax.hpp"
 	"../dialogs/duplicatecodedialog.hpp"
 
-1519376037 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1519663607 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -4940,7 +4940,7 @@
 	"doc_helper.hpp"
 	"../version.h"
 
-1513155142 source:d:\cpp\numere-source\trunk\kernel\core\documentation\documentation.cpp
+1519634947 source:d:\cpp\numere-source\trunk\kernel\core\documentation\documentation.cpp
 	"documentation.hpp"
 	"../../kernel.hpp"
 

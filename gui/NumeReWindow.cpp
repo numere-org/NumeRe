@@ -759,7 +759,7 @@ void NumeReWindow::InitializeProgramOptions()
 
 	m_config = new wxFileConfig("numeregui", wxEmptyString, configName.GetFullPath());
 
-	if(configName.FileExists())
+	if (configName.FileExists())
 	{
 		//m_options->SetHostname(m_config->Read("Network/hostname"));
 		//m_options->SetUsername(m_config->Read("Network/username"));
@@ -777,6 +777,9 @@ void NumeReWindow::InitializeProgramOptions()
 
 		bool saveSession = (m_config->Read("Miscellaneous/SaveSession", "false") == "true");
 		m_options->SetSaveSession(saveSession);
+
+		bool formatBeforeSaving = (m_config->Read("Miscellaneous/FormatBeforeSaving", "false") == "true");
+		m_options->SetFormatBeforeSaving(formatBeforeSaving);
 
 		//bool combineWatchWindow = (m_config->Read("Miscellaneous/CombineWatchWindow", "true") == "true");
 		//m_options->SetCombineWatchWindow(combineWatchWindow);
@@ -844,6 +847,7 @@ void NumeReWindow::InitializeProgramOptions()
 		m_config->Write("Miscellaneous/PrintInColor", "false");
 		m_config->Write("Miscellaneous/PrintLineNumbers", "false");
 		m_config->Write("Miscellaneous/SaveSession", "false");
+		m_config->Write("Miscellaneous/FormatBeforeSaving", "false");
 		m_options->writeColoursToConfig(m_config);
 	}
 
@@ -3043,7 +3047,7 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 		fileContents = "[Headers]\n\n[Sources]\n\n[Libraries]\n\n[Other]";
 	}
 
-	if(true)
+	//if(true)
 	{
 		if(doSaveAs)
 		{
@@ -3158,7 +3162,7 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 
 	}
 	// remote mode
-	else
+	/*else
 	{
 		wxString remotePath, remoteFile;
 
@@ -3235,7 +3239,7 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 			// store the name so we can set the name in the project tree
 			filename = wxFileName(remotePath, remoteFile, wxPATH_UNIX).GetFullPath();
 		}
-	}
+	}*/
 
 	if(isSourceFile)
 	{
@@ -3894,6 +3898,9 @@ void NumeReWindow::EvaluateOptions()
 
 	bool saveSession = m_options->GetSaveSession();
 	m_config->Write("Miscellaneous/SaveSession", saveSession ? "true" : "false");
+
+	bool formatBeforeSaving = m_options->GetFormatBeforeSaving();
+	m_config->Write("Miscellaneous/FormatBeforeSaving", formatBeforeSaving ? "true" : "false");
 
 	m_options->writeColoursToConfig(m_config);
 

@@ -140,6 +140,7 @@ bool OptionsDialog::Create( wxWindow* parent, wxWindowID id, const wxString& cap
     m_showToolbarText = NULL;
     m_saveSession = NULL;
     m_termHistory = NULL;
+    m_formatBeforeSaving = nullptr;
 
     m_compactTables = nullptr;
     m_AutoLoadDefines = nullptr;
@@ -423,6 +424,10 @@ void OptionsDialog::CreateControls()
     m_saveSession = new wxCheckBox( miscPanel, wxID_ANY, _(_guilang.get("GUI_OPTIONS_SAVE_SESSION")), wxDefaultPosition, wxDefaultSize, wxCHK_2STATE );
     m_saveSession->SetValue(false);
     miscVSizer->Add(m_saveSession, 0, wxALIGN_LEFT|wxALL, 5);
+
+    m_formatBeforeSaving = new wxCheckBox(miscPanel, wxID_ANY, _guilang.get("GUI_OPTIONS_FORMAT_BEFORE_SAVING"), wxDefaultPosition, wxDefaultSize, 0);
+    m_formatBeforeSaving->SetValue(false);
+    miscVSizer->Add(m_formatBeforeSaving, 0, wxALIGN_LEFT | wxALL, 5);
 
     m_showToolbarText = new wxCheckBox( miscPanel, ID_SHOWTOOLBARTEXT, _(_guilang.get("GUI_OPTIONS_SHOW_TOOLBARTEXT")), wxDefaultPosition, wxDefaultSize, 0 );
     m_showToolbarText->SetValue(false);
@@ -969,6 +974,7 @@ bool OptionsDialog::EvaluateOptions()
 		m_options->SetShowToolbarText(m_showToolbarText->IsChecked());
 		m_options->SetLineNumberPrinting(m_cbPrintLineNumbers->IsChecked());
 		m_options->SetSaveSession(m_saveSession->IsChecked());
+		m_options->SetFormatBeforeSaving(m_formatBeforeSaving->IsChecked());
 		///m_options->SetCombineWatchWindow(m_chkCombineWatchWindow->IsChecked());
 		///m_options->SetShowCompileCommands(m_chkShowCompileCommands->IsChecked());
 
@@ -1008,6 +1014,7 @@ void OptionsDialog::InitializeDialog()
 	m_showToolbarText->SetValue(m_options->GetShowToolbarText());
 	m_cbPrintLineNumbers->SetValue(m_options->GetLineNumberPrinting());
     m_saveSession->SetValue(m_options->GetSaveSession());
+    m_formatBeforeSaving->SetValue(m_options->GetFormatBeforeSaving());
 
     m_compactTables->SetValue(_option->getbCompact());
     m_AutoLoadDefines->SetValue(_option->getbDefineAutoLoad());

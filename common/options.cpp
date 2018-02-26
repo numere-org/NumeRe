@@ -34,6 +34,7 @@ Options::Options()
 	m_printLineNumbers = false;
 	m_combineWatchWindow = false;
 	m_saveSession = false;
+	m_formatBeforeSaving = false;
 
 	m_mingwProgramNames.Add("g++.exe");
 	m_mingwProgramNames.Add("cc1plus.exe");
