@@ -879,6 +879,13 @@ void doc_ReplaceTokens(string& sDocParagraph, const Settings& _option)
             sDocParagraph.replace(k, sDocParagraph.find("</em>",k+4)+5-k, toUpperCase(sEmph));
             k += sEmph.length();
         }
+        if (sDocParagraph.substr(k,3) == "<h>" && sDocParagraph.find("</h>", k+3) != string::npos)
+        {
+            string sEmph = sDocParagraph.substr(k+3, sDocParagraph.find("</h>", k+3)-k-3);
+            doc_ReplaceTokens(sEmph, _option);
+            sDocParagraph.replace(k, sDocParagraph.find("</h>",k+3)+4-k, toUpperCase(sEmph));
+            k += sEmph.length();
+        }
         if (sDocParagraph.substr(k,4) == "<br>")
             sDocParagraph.replace(k,4,"$");
         if (sDocParagraph.substr(k,4) == "&gt;")
@@ -923,6 +930,11 @@ void doc_ReplaceTokensForHTML(string& sDocParagraph, const Settings& _option)
         {
             sDocParagraph.insert(k+4,"<strong>");
             sDocParagraph.insert(sDocParagraph.find("</em>",k+12),"</strong>");
+        }
+        if (sDocParagraph.substr(k,3) == "<h>" && sDocParagraph.find("</h>", k+3) != string::npos)
+        {
+            sDocParagraph.replace(k, 3, "<h4>");
+            sDocParagraph.replace(sDocParagraph.find("</h>",k+11), 4, "</h4>");
         }
         if (sDocParagraph.substr(k,6) == "<expr>" && sDocParagraph.find("</expr>", k+6) != string::npos)
         {

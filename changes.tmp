@@ -22,3 +22,4 @@ New	Time formatting functions were added: "to_time()" transforms an time string 
 Updated	The file tree functionalities were enhanced: the file tree now supports drag'n'drop between folders as well as the creation and deletion of folders
 New	Caches may now be used as arguments of procedures, if the argument list of the procedure requires a cache.
 Fixed	Local caches can now be used as commands just like usual caches.
+Added	The "<h>...</h>" tags can now be used in the documentation and will be rendered as headlines.
