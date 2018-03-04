@@ -24,3 +24,4 @@ New	Caches may now be used as arguments of procedures, if the argument list of t
 Fixed	Local caches can now be used as commands just like usual caches.
 Added	The "<h>...</h>" tags can now be used in the documentation and will be rendered as headlines.
 Added	Files may now be formatted automatically before saving.
+Fixed	Global and superglobal parameters are now evaluated correctly in multiplot layout.

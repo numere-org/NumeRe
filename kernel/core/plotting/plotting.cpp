@@ -168,7 +168,10 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
         if (_pInfo.sPlotParams.length())
         {
             evaluatePlotParamString(_parser, _data, _functions, _option);
-            _pData.setGlobalComposeParams(_pInfo.sPlotParams, _parser, _option);
+            if (nMultiplots[0]) // if this is a multiplot layout, then we will only evaluate the SUPERGLOBAL parameters
+                _pData.setParams(_pInfo.sPlotParams, _parser, _option, PlotData::SUPERGLOBAL);
+            else
+                _pData.setGlobalComposeParams(_pInfo.sPlotParams, _parser, _option);
         }
         _pInfo.sPlotParams = "";
     }
@@ -257,6 +260,33 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
         else
             sFunc = sCmd.substr(nOffset+_pInfo.sCommand.length());
 
+        // If this is an multiplot layout then we need to evaluate the global options for every subplot,
+        // because we omitted this set further up
+        if (vPlotCompose.size() > 1
+            && nMultiplots[0]
+            && (!nPlotCompose || _pInfo.sCommand == "subplot"))
+        {
+            for (unsigned int i = nPlotCompose+(_pInfo.sCommand == "subplot"); i < vPlotCompose.size(); i++)
+            {
+                if (vPlotCompose[i].find("-set") != string::npos
+                    && !isInQuotes(vPlotCompose[i], vPlotCompose[i].find("-set"))
+                    && findCommand(vPlotCompose[i]).sString != "subplot")
+                    _pInfo.sPlotParams += vPlotCompose[i].substr(vPlotCompose[i].find("-set"));
+                else if (vPlotCompose[i].find("--") != string::npos
+                    && !isInQuotes(vPlotCompose[i], vPlotCompose[i].find("--"))
+                    && findCommand(vPlotCompose[i]).sString != "subplot")
+                    _pInfo.sPlotParams += vPlotCompose[i].substr(vPlotCompose[i].find("--"));
+                if (findCommand(vPlotCompose[i]).sString == "subplot")
+                    break;
+                _pInfo.sPlotParams += " ";
+            }
+            if (_pInfo.sPlotParams.length())
+            {
+                evaluatePlotParamString(_parser, _data, _functions, _option);
+                _pData.setParams(_pInfo.sPlotParams, _parser, _option, PlotData::GLOBAL);
+                _pInfo.sPlotParams.clear();
+            }
+        }
         // --> Unnoetige Leerstellen entfernen <--
         StripSpaces(sFunc);
 

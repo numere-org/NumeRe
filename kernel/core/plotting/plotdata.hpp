@@ -184,7 +184,8 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         PlotData(const PlotData& _pData);
         ~PlotData();
 
-        enum Coordinates {
+        enum Coordinates
+        {
             CARTESIAN = 0,
             POLAR_PZ = 10,
             POLAR_RP,
@@ -194,11 +195,20 @@ class PlotData : public FileSystem  // CHILD von Filesystem
             SPHERICAL_RT
         };
 
-        enum RangeType {
+        enum RangeType
+        {
             ALLRANGES = -1,
             ONLYLEFT = -2,
             ONLYRIGHT = -3,
             COLSTART = 0
+        };
+
+        enum ParamType
+        {
+            ALL = 0,
+            LOCAL = 1,
+            GLOBAL = 2,
+            SUPERGLOBAL = 4
         };
 
 //        mglFLTK* _graph;
@@ -208,11 +218,11 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         double getData(int _i, int _j = 0, int _k = 0) const;
 
         // --> Ebenfalls bedeutend: Plot-Parameter setzen (obige Booleans) und selbige als String lesen <--
-        void setParams(const string& __sCmd, Parser& _parser, const Settings& _option, int nType = 0);
+        void setParams(const string& __sCmd, Parser& _parser, const Settings& _option, int nType = ALL);
         inline void setGlobalComposeParams(const string& __sCmd, Parser& _parser, const Settings& _option)
-            {return setParams(__sCmd, _parser, _option, 1);}
+            {return setParams(__sCmd, _parser, _option, GLOBAL | SUPERGLOBAL);}
         inline void setLocalComposeParams(const string& __sCmd, Parser& _parser, const Settings& _option)
-            {return setParams(__sCmd, _parser, _option, 2);}
+            {return setParams(__sCmd, _parser, _option, LOCAL);}
         string getParams(const Settings& _option, bool asstr = false) const;
         string getFileName() const;
 

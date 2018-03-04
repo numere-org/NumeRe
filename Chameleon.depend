@@ -4707,7 +4707,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1517518857 d:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.hpp
+1520185418 d:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.hpp
 	<string>
 	<cmath>
 	<vector>
@@ -4989,7 +4989,7 @@
 	"../../kernel.hpp"
 	"../utils/tools.hpp"
 
-1517519409 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.cpp
+1520185429 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.cpp
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
