@@ -3374,7 +3374,7 @@
 	"wx/arrstr.h"
 	<stdarg.h>
 
-1516604291 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
+1519663999 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
 	"wx/notebook.h"
 	"wx/spinctrl.h"
 	<wx/clrpicker.h>
@@ -3729,7 +3729,7 @@
 	"fndrpldialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1516626935 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1519664499 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
@@ -3947,7 +3947,7 @@
 1490787950 source:d:\cpp\numere-source\trunk\kernel\core\basicexcel.cpp
 	"BasicExcel.hpp"
 
-1517669694 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1520079594 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
@@ -4940,7 +4940,7 @@
 	"doc_helper.hpp"
 	"../version.h"
 
-1519634947 source:d:\cpp\numere-source\trunk\kernel\core\documentation\documentation.cpp
+1519812791 source:d:\cpp\numere-source\trunk\kernel\core\documentation\documentation.cpp
 	"documentation.hpp"
 	"../../kernel.hpp"
 
@@ -5126,7 +5126,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1519459822 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1519663950 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"

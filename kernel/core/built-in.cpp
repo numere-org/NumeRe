@@ -8744,6 +8744,10 @@ bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _
         throw SyntaxError(SyntaxError::EXECUTE_COMMAND_DISABLED, sCmd, "execute");
 
     sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
+    FileSystem _fSys;
+    _fSys.setTokens(_option.getTokenPaths());
+    _fSys.setPath(_option.getExePath(), false, _option.getExePath());
+    _fSys.declareFileType(".exe");
     string sParams = "";
     string sObject = "";
     int nRetVal = 0;
@@ -8759,6 +8763,12 @@ bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _
     sObject = sCmd.substr(findCommand(sCmd).sString.length());
     if (sParams.length() || bWaitForTermination)
         sObject.erase(sObject.find("-set"));
+
+    if (sObject.find('<') != string::npos && sObject.find('>', sObject.find('<')+1) != string::npos)
+        sObject = _fSys.ValidFileName(sObject, ".exe");
+    if (sParams.find('<') != string::npos && sParams.find('>', sParams.find('<')+1) != string::npos)
+        sParams = _fSys.ValidFileName(sParams);
+
     StripSpaces(sObject);
 
     SHELLEXECUTEINFO ShExecInfo = {0};

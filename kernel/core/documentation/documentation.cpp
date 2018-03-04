@@ -934,7 +934,7 @@ void doc_ReplaceTokensForHTML(string& sDocParagraph, const Settings& _option)
         if (sDocParagraph.substr(k,3) == "<h>" && sDocParagraph.find("</h>", k+3) != string::npos)
         {
             sDocParagraph.replace(k, 3, "<h4>");
-            sDocParagraph.replace(sDocParagraph.find("</h>",k+11), 4, "</h4>");
+            sDocParagraph.replace(sDocParagraph.find("</h>",k+4), 4, "</h4>");
         }
         if (sDocParagraph.substr(k,6) == "<expr>" && sDocParagraph.find("</expr>", k+6) != string::npos)
         {
