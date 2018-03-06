@@ -315,15 +315,17 @@ string strfnc_split(StringFuncArgs& funcArgs)
     string sSplittedString = "";
     if (!funcArgs.sArg2.length())
         return "\"\"";
-    boost::char_separator<char> cSep(funcArgs.sArg2.substr(0,1).c_str());
-    tokenizer<char_separator<char> > tok(funcArgs.sArg1, cSep);
+    string sSep = removeMaskedStrings(funcArgs.sArg2);
+    sSep.erase(1);
+    boost::char_separator<char> cSep(sSep.c_str());
+    tokenizer<char_separator<char> > tok(removeMaskedStrings(funcArgs.sArg1), cSep);
     for (tokenizer<char_separator<char> >::iterator iter = tok.begin(); iter != tok.end(); ++iter)
     {
         if (sSplittedString.length())
             sSplittedString += NEWSTRING;
         sSplittedString += "\"" + string(*iter) + "\"";
     }
-    return sSplittedString;
+    return addMaskedStrings(sSplittedString);
 }
 
 // val = to_time(str, str)

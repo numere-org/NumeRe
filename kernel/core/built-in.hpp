@@ -60,7 +60,7 @@ extern const string sParserVersion;
  * Built-In-Funktionen
  * -> Diese Funktionen setzen die Basisfunktionen dieses Frameworks um
  */
-string** BI_make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, const string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, bool bSave = true);
+string** BI_make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, const string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, size_t nPrecision, bool bSave = true);
 void BI_splash();
 /** \brief Central command handler
  *

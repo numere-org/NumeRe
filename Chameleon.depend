@@ -2674,7 +2674,7 @@
 	"ParserLib/muParserTest.h"
 	"ParserLib/muParser.h"
 
-1516526952 d:\cpp\numere-source\trunk\kernel\core\built-in.hpp
+1520361876 d:\cpp\numere-source\trunk\kernel\core\built-in.hpp
 	<iostream>
 	<fstream>
 	<sstream>
@@ -4179,7 +4179,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1518089713 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1520319849 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>
@@ -4398,7 +4398,7 @@
 	"../../kernel/syntax.hpp"
 	"../dialogs/duplicatecodedialog.hpp"
 
-1519663607 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1520281935 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -4996,7 +4996,7 @@
 1505412752 source:d:\cpp\numere-source\trunk\kernel\core\procedure\debugger.cpp
 	"debugger.hpp"
 
-1517585383 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1520186274 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
@@ -5126,7 +5126,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1519663950 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1520318841 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"

@@ -1943,7 +1943,7 @@ void NumeReWindow::runLaTeX()
     string sMain = createLaTeXMain(filename.GetPath().ToStdString(), filename.GetName().ToStdString());
     if (fileExists((m_options->GetLaTeXRoot() + "/xelatex.exe").ToStdString()))
     {
-        ShellExecuteA(NULL, "open", (m_options->GetLaTeXRoot()+"/xelatex.exe").ToStdString().c_str(), (sMain).c_str(), filename.GetPath().ToStdString().c_str(), SW_SHOW);
+        ShellExecuteA(NULL, "open", (m_options->GetLaTeXRoot()+"/xelatex.exe").ToStdString().c_str(), sMain.c_str(), filename.GetPath().ToStdString().c_str(), SW_SHOW);
     }
     else
         wxMessageBox(_guilang.get("GUI_DLG_NOTEXBIN_ERROR", m_options->GetLaTeXRoot().ToStdString()), _guilang.get("GUI_DLG_NOTEXBIN"), wxCENTER | wxOK | wxICON_ERROR, this);

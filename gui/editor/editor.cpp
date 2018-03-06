@@ -1279,8 +1279,9 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
     {
         if (this->CallTipActive())
             this->AdvCallTipCancel();
-        this->AdvCallTipShow(startPosition, _guilang.get("GUI_EDITOR_CALLTIP_"+toUpperCase(selection.ToStdString())));
-        this->CallTipSetHighlight(0, 10);
+        size_t highlightLength = 10;
+        this->AdvCallTipShow(startPosition, addLinebreaks(realignLangString(_guilang.get("GUI_EDITOR_CALLTIP_"+toUpperCase(selection.ToStdString())), highlightLength)));
+        this->CallTipSetHighlight(0, highlightLength);
     }
     else if (this->GetStyleAt(charpos) == wxSTC_NSCR_CONSTANTS || this->GetStyleAt(charpos) == wxSTC_NPRC_CONSTANTS)
     {
@@ -2281,16 +2282,13 @@ bool NumeReEditor::writeLaTeXFile(const string& sLaTeXFileName)
     if (this->getFileType() != FILE_NSCR && this->getFileType() != FILE_NPRC)
         return false;
 
+    string sFileContents;
     ofstream file_out;
-    file_out.open(sLaTeXFileName.c_str());
-    if (!file_out.good())
-        return false;
 
     bool bTextMode = true;
     int startpos = 0;
 
-    file_out << "% Created by NumeRe from the source of " << this->GetFileNameAndPath().ToStdString() << endl;
-    file_out << endl;
+    sFileContents += "% Created by NumeRe from the source of " + this->GetFileNameAndPath().ToStdString() + "\n\n";
 
 
     for (int i = 0; i < this->GetLastPosition(); i++)
@@ -2301,12 +2299,12 @@ bool NumeReEditor::writeLaTeXFile(const string& sLaTeXFileName)
             {
                 if (i - startpos > 1)
                 {
-                    file_out << this->GetStrippedRange(startpos, i) << endl;
+                    sFileContents += this->GetStrippedRange(startpos, i) + "\n";
                 }
                 bTextMode = true;
-                file_out << "\\end{lstlisting}" << endl;
+                sFileContents += "\\end{lstlisting}\n";
             }
-            file_out << this->parseDocumentation(i+3, this->GetLineEndPosition(this->LineFromPosition(i))) << endl;
+            sFileContents += this->parseDocumentation(i+3, this->GetLineEndPosition(this->LineFromPosition(i))) + "\n";
             i = this->GetLineEndPosition(this->LineFromPosition(i))+1;
             startpos = i;
         }
@@ -2314,7 +2312,7 @@ bool NumeReEditor::writeLaTeXFile(const string& sLaTeXFileName)
         {
             if (i - startpos > 1)
             {
-                file_out << this->GetStrippedRange(startpos, i) << endl;
+                sFileContents += this->GetStrippedRange(startpos, i) + "\n";
             }
             i = this->GetLineEndPosition(this->LineFromPosition(i))+1;
             startpos = i;
@@ -2325,17 +2323,17 @@ bool NumeReEditor::writeLaTeXFile(const string& sLaTeXFileName)
             {
                 if (i - startpos > 1)
                 {
-                    file_out << this->GetStrippedRange(startpos, i) << endl;
+                    sFileContents += this->GetStrippedRange(startpos, i) + "\n";
                 }
                 bTextMode = true;
-                file_out << "\\end{lstlisting}" << endl;
+                sFileContents += "\\end{lstlisting}\n";
             }
 
             for (int j = i+3; j < this->GetLastPosition(); j++)
             {
                 if (this->GetStyleAt(j+3) != wxSTC_NSCR_COMMENT_BLOCK || j+1 == this->GetLastPosition())
                 {
-                    file_out << this->parseDocumentation(i+3, j) << endl;
+                    sFileContents += this->parseDocumentation(i+3, j) + "\n";
                     i = j+2;
                     break;
                 }
@@ -2346,7 +2344,7 @@ bool NumeReEditor::writeLaTeXFile(const string& sLaTeXFileName)
         {
             if (i - startpos > 1)
             {
-                file_out << this->GetStrippedRange(startpos, i) << endl;
+                sFileContents += this->GetStrippedRange(startpos, i) + "\n";
             }
 
             for (int j = i+3; j < this->GetLastPosition(); j++)
@@ -2365,19 +2363,26 @@ bool NumeReEditor::writeLaTeXFile(const string& sLaTeXFileName)
             {
                 startpos = i;
                 bTextMode = false;
-                file_out << "\\begin{lstlisting}" << endl;
+                sFileContents += "\\begin{lstlisting}\n";
             }
             if (i+1 == this->GetLastPosition())
             {
                 if (i - startpos > 1)
                 {
-                    file_out << this->GetStrippedRange(startpos, i) << endl;
+                    sFileContents += this->GetStrippedRange(startpos, i) + "\n";
                 }
             }
         }
     }
     if (!bTextMode)
-        file_out << "\\end{lstlisting}" << endl;
+        sFileContents += "\\end{lstlisting}\n";
+
+    if (!sFileContents.length())
+        return false;
+    file_out.open(sLaTeXFileName.c_str());
+    if (!file_out.good())
+        return false;
+    file_out << sFileContents;
     file_out.close();
     return true;
 }

@@ -23,7 +23,7 @@
 extern mglGraph _fontData;
 
 void BI_load_data(Datafile& _data, Settings& _option, Parser& _parser, string sFileName = "");
-void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string& sCache, bool bData = false, bool bCache = false, bool bSave = false, bool bDefaultName = true);
+void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string& sCache, size_t nPrecision, bool bData = false, bool bCache = false, bool bSave = false, bool bDefaultName = true);
 void BI_remove_data(Datafile& _data, Settings& _option, bool bIgnore = false);
 void BI_append_data(const string& sCmd, Datafile& _data, Settings& _option, Parser& _parser);
 void BI_clear_cache(Datafile& _data, Settings& _option, bool bIgnore = false);
@@ -170,7 +170,7 @@ void BI_load_data(Datafile& _data, Settings& _option, Parser& _parser, string sF
 }
 
 // 3. Zur Kontrolle (oder aus anderen Gruenden) moechte man die eingelesenen Daten vielleicht auch betrachten. Wird hier erledigt
-void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string& _sCache, bool bData, bool bCache, bool bSave, bool bDefaultName)
+void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string& _sCache, size_t nPrecision, bool bData, bool bCache, bool bSave, bool bDefaultName)
 {
     string sCache = _sCache;
     string sFileName = "";
@@ -251,7 +251,7 @@ void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string
             _out.reset();
             return;
 		}
-		string** sOut = BI_make_stringmatrix(_data, _out, _option, sCache, nLine, nCol, nHeadlineCount, bSave);// = new string*[nLine];		// die eigentliche Ausgabematrix. Wird spaeter gefuellt an Output::format(string**,int,int,Output&) uebergeben
+		string** sOut = BI_make_stringmatrix(_data, _out, _option, sCache, nLine, nCol, nHeadlineCount, nPrecision, bSave);// = new string*[nLine];		// die eigentliche Ausgabematrix. Wird spaeter gefuellt an Output::format(string**,int,int,Output&) uebergeben
         if (sCache.front() == '*')
             sCache.erase(0,1); // Vorangestellten Unterstrich wieder entfernen
 		if (_data.getCacheStatus() && !bSave)
@@ -303,7 +303,7 @@ void BI_show_data(Datafile& _data, Output& _out, Settings& _option, const string
 	return;
 }
 
-string** BI_make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, const string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, bool bSave)
+string** BI_make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, const string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, size_t nPrecision, bool bSave)
 {
     nHeadlineCount = 1;
     if (_option.getUseExternalViewer())
@@ -382,7 +382,7 @@ string** BI_make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, 
             if (_out.isCompact() && !bSave)
                 sOut[i][j] = toString(_data.getElement(i-nHeadlineCount,j, sCache), 4);		// Daten aus _data in die Ausgabematrix uebertragen
             else
-                sOut[i][j] = toString(_data.getElement(i-nHeadlineCount,j, sCache),_option);		// Daten aus _data in die Ausgabematrix uebertragen
+                sOut[i][j] = toString(_data.getElement(i-nHeadlineCount,j, sCache), nPrecision);		// Daten aus _data in die Ausgabematrix uebertragen
         }
     }
     return sOut;
@@ -1771,13 +1771,13 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
         }
         else if (matchParams(sCmd, "showf"))
         {
-            BI_show_data(_data, _out, _option, "data", true, false);
+            BI_show_data(_data, _out, _option, "data", _option.getPrecision(), true, false);
             return 1;
         }
         else if (matchParams(sCmd, "show"))
         {
             _out.setCompact(_option.getbCompact());
-            BI_show_data(_data, _out, _option, "data", true, false);
+            BI_show_data(_data, _out, _option, "data", _option.getPrecision(), true, false);
             return 1;
         }
         /*else if (matchParams(sCmd, "headedit"))
@@ -1866,10 +1866,10 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
             if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
             {
                 _out.setFileName(sArgument);
-                BI_show_data(_data, _out, _option, "data", true, false, true, false);
+                BI_show_data(_data, _out, _option, "data", _option.getPrecision(), true, false, true, false);
             }
             else
-                BI_show_data(_data, _out, _option, "data", true, false, true);
+                BI_show_data(_data, _out, _option, "data", _option.getPrecision(), true, false, true);
             return 1;
         }
         else if ((matchParams(sCmd, "avg")
@@ -2195,13 +2195,13 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
         //NumeReKernel::print("found" );
         if (matchParams(sCmd, "showf"))
         {
-            BI_show_data(_data, _out, _option, sCommand, false, true);
+            BI_show_data(_data, _out, _option, sCommand, _option.getPrecision(), false, true);
             return 1;
         }
         else if (matchParams(sCmd, "show"))
         {
             _out.setCompact(_option.getbCompact());
-            BI_show_data(_data, _out, _option, sCommand, false, true);
+            BI_show_data(_data, _out, _option, sCommand, _option.getPrecision(), false, true);
             return 1;
         }
         /*else if (matchParams(sCmd, "headedit"))
@@ -2308,10 +2308,10 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
             if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
             {
                 _out.setFileName(sArgument);
-                BI_show_data(_data, _out, _option, sCommand, false, true, true, false);
+                BI_show_data(_data, _out, _option, sCommand, _option.getPrecision(), false, true, true, false);
             }
             else
-                BI_show_data(_data, _out, _option, sCommand, false, true, true);
+                BI_show_data(_data, _out, _option, sCommand, _option.getPrecision(), false, true, true);
             return 1;
         }
         else if (matchParams(sCmd, "rename", '=')) //CACHE -rename=NEWNAME
@@ -3840,22 +3840,14 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
             }
             if (matchParams(sCmd, "data") || sCmd.find(" data()") != string::npos)
             {
-                BI_show_data(_data, _out, _option, "data", true, false);
+                BI_show_data(_data, _out, _option, "data", _option.getPrecision(), true, false);
             }
             else if (_data.matchCache(sCmd).length())
             {
-                BI_show_data(_data, _out, _option, _data.matchCache(sCmd), false, true);
+                BI_show_data(_data, _out, _option, _data.matchCache(sCmd), _option.getPrecision(), false, true);
             }
             else if (_data.containsCacheElements(sCmd) || sCmd.find(" data(") != string::npos)
             {
-                /*for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
-                {
-                    if (sCmd.find(iter->first+"()") != string::npos)
-                    {
-                        BI_show_data(_data, _out, _option, iter->first, false, true);
-                        return 1;
-                    }
-                }*/
                 for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
                 {
                     if (sCmd.find(iter->first+"(") != string::npos
@@ -3926,7 +3918,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 
                         //NumeReKernel::print(sCmd );
                         _data.setCacheStatus(false);
-                        BI_show_data(_cache, _out, _option, "*"+(iter->first), false, true);
+                        BI_show_data(_cache, _out, _option, "*"+(iter->first), _option.getPrecision(), false, true);
                         return 1;
                     }
                 }
@@ -5306,6 +5298,14 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
         //NumeReKernel::print("export" );
         if (sCommand == "export")
         {
+            size_t nPrecision = _option.getPrecision();
+            if (matchParams(sCmd, "precision", '='))
+            {
+                _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "precision", '=')));
+                nPrecision = _parser.Eval();
+                if (nPrecision < 0 || nPrecision > 14)
+                    nPrecision = _option.getPrecision();
+            }
             if (matchParams(sCmd, "data") || matchParams(sCmd, "data", '='))
             {
                 if (_data.containsStringVars(sCmd))
@@ -5315,10 +5315,10 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                 if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
                 {
                     _out.setFileName(sArgument);
-                    BI_show_data(_data, _out, _option, "data", true, false, true, false);
+                    BI_show_data(_data, _out, _option, "data", nPrecision, true, false, true, false);
                 }
                 else
-                    BI_show_data(_data, _out, _option, "data", true, false, true);
+                    BI_show_data(_data, _out, _option, "data", nPrecision, true, false, true);
             }
             else if (_data.matchCache(sCmd).length() || _data.matchCache(sCmd,'=').length())
             {
@@ -5329,10 +5329,10 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                 if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
                 {
                     _out.setFileName(sArgument);
-                    BI_show_data(_data, _out, _option, _data.matchCache(sCmd), false, true, true, false);
+                    BI_show_data(_data, _out, _option, _data.matchCache(sCmd), nPrecision, false, true, true, false);
                 }
                 else
-                    BI_show_data(_data, _out, _option, _data.matchCache(sCmd), false, true, true);
+                    BI_show_data(_data, _out, _option, _data.matchCache(sCmd), nPrecision, false, true, true);
             }
             else //if (sCmd.find("cache(") != string::npos || sCmd.find("data(") != string::npos)
             {
@@ -5419,11 +5419,11 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                         {
                             //NumeReKernel::print(sArgument );
                             _out.setFileName(sArgument);
-                            BI_show_data(_cache, _out, _option, (iter->first == "data" ? "copy_of_data" : iter->first), false, true, true, false);
+                            BI_show_data(_cache, _out, _option, (iter->first == "data" ? "copy_of_data" : iter->first), nPrecision, false, true, true, false);
                         }
                         else
                         {
-                            BI_show_data(_cache, _out, _option, (iter->first == "data" ? "copy_of_data" : iter->first), false, true, true);
+                            BI_show_data(_cache, _out, _option, (iter->first == "data" ? "copy_of_data" : iter->first), nPrecision, false, true, true);
                         }
                         return 1;
                     }
@@ -8272,7 +8272,7 @@ bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _op
         }
         else
         {
-            sTable = BI_make_stringmatrix(_data, _out, _option, sTableName, nLine, nCol, nHeadlineCount);
+            sTable = BI_make_stringmatrix(_data, _out, _option, sTableName, nLine, nCol, nHeadlineCount, _option.getPrecision());
         }
         stringmatrix _sTable;
         NumeReKernel::showTable(sTable, nCol, nLine, sTableName, true);
