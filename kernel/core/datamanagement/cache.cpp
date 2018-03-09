@@ -148,6 +148,9 @@ bool Cache::AllocateCache(long long int _nNLines, long long int _nNCols, long lo
 	}
 	else if (nLines && nCols && nLayers && dCache && nAppendedZeroes)// && bValidElement)
 	{
+	    // Do nothing if the cache is already equal or larger in size
+	    if (nLines >= _nNLines && nCols >= _nNCols && nLayers >= _nNLayers)
+            return true;
         long long int nCaches = mCachesMap.size();
         if (nLayers < nCaches)
             nCaches = nLayers;

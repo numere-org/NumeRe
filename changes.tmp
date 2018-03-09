@@ -26,3 +26,4 @@ Added	The "<h>...</h>" tags can now be used in the documentation and will be ren
 Added	Files may now be formatted automatically before saving.
 Fixed	Global and superglobal parameters are now evaluated correctly in multiplot layout.
 Added	Using the "precision" option, one can change the number of significant digits in a exported table.
+Fixed	Significantly speed up the matrix operations in some cases, when large or many caches are in use
