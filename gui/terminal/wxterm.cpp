@@ -963,8 +963,8 @@ wxTerm::OnChar(wxKeyEvent& event)
         keyCode = 0,
         len = 0;
 
-        unsigned char
-        buf[10];
+        // char buffer has to be initialized. Otherwise it might contain unnecessary characters
+        char buf[] = {"\0\0\0\0\0\0\0\0\0\0"};
 
         if(!keyCode )//&& !(keyCode = MapKeyCode((int)event.GetKeyCode())))
         {
