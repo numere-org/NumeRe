@@ -8764,6 +8764,12 @@ bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _
     if (sParams.length() || bWaitForTermination)
         sObject.erase(sObject.find("-set"));
 
+    if (containsStrings(sObject) || _data.containsStringVars(sObject))
+    {
+        string sDummy = "";
+        parser_StringParser(sObject, sDummy, _data, _parser, _option, true);
+    }
+
     if (sObject.find('<') != string::npos && sObject.find('>', sObject.find('<')+1) != string::npos)
         sObject = _fSys.ValidFileName(sObject, ".exe");
     if (sParams.find('<') != string::npos && sParams.find('>', sParams.find('<')+1) != string::npos)
