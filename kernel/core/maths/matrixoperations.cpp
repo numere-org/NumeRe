@@ -49,6 +49,7 @@ void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, Define& _f
 Matrix parser_MatrixSize(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 Matrix parser_MatrixAnd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 Matrix parser_MatrixOr(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+Matrix parser_MatrixXor(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 Matrix parser_MatrixSum(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 Matrix parser_MatrixStd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 Matrix parser_MatrixAvg(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
@@ -344,6 +345,7 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
         && sCmd.find("size(") == string::npos
         && sCmd.find("and(") == string::npos
         && sCmd.find("or(") == string::npos
+        && sCmd.find("xor(") == string::npos
         && sCmd.find("reshape(") == string::npos
         && sCmd.find("resize(") == string::npos
         && sCmd.find("identity(") == string::npos)
@@ -899,6 +901,18 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
             string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixAnd(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
+            //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+4))+5, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+        if (sCmd.substr(i,4) == "xor("
+            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
+        {
+            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            vReturnedMatrices.push_back(parser_MatrixXor(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
             //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i+4))+5, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
             __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
@@ -1838,6 +1852,28 @@ Matrix parser_MatrixOr(const Matrix& _mMatrix, const string& sCmd, const string&
             }
         }
     }
+    return _mReturn;
+}
+
+Matrix parser_MatrixXor(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
+{
+    Matrix _mReturn = parser_ZeroesMatrix(1,1);
+    bool isTrue = false;
+    for (size_t i = 0; i < _mMatrix.size(); i++)
+    {
+        for (size_t j = 0; j < _mMatrix[i].size(); j++)
+        {
+            if (_mMatrix[i][j])
+            {
+                if (!isTrue)
+                    isTrue = true;
+                else
+                    return _mReturn;
+            }
+        }
+    }
+    if (isTrue)
+        _mReturn[0][0] = 1;
     return _mReturn;
 }
 

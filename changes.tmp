@@ -1,2 +1,6 @@
 Fixed	Solved an issue with strange symbols in the console, which appeared in some cases while typing.
 Fixed	"execute" may now handle string variables.
+Fixed	"execute" tolerates now also "--" as parameter separator and throws an error with a better description, if tried with only one "-".
+Fixed	Fixed a crash in seldom cases, if a file was read using "read", which contained function-like string elements.
+Added	A "xor()" function was added.
+Fixed	The missing "and" and "or" multiargument function options were added.

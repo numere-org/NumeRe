@@ -3761,6 +3761,13 @@ void parser_ReplaceEntityOccurence(string& sLine, const string& sEntityOccurence
                     + toCmdString(_data.and_func(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
+            else if (sLeft.substr(sLeft.length()-4) == "xor(")
+            {
+                _parser.DisableAccessCaching();
+                sLine = sLine.substr(0, sLine.rfind("xor(", sLine.find(sEntityOccurence)))
+                    + toCmdString(_data.xor_func(sEntityName, vLine, vCol))
+                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
+            }
             else if (sLeft.substr(sLeft.length()-3) == "or(")
             {
                 _parser.DisableAccessCaching();

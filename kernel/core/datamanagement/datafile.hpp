@@ -752,6 +752,57 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                 }
                 return vResults;
             }
+        inline vector<double> xor_func(const string& sCache, string sDir)
+            {
+                vector<double> vResults;
+
+                long long int nEvery = 1;
+                long long int nFirst = 0;
+
+                parseEvery(nFirst, nEvery, sDir);
+
+                if (sDir == "cols")
+                {
+                    if (nFirst >= getCols(sCache))
+                    {
+                        vResults.push_back(NAN);
+                        return vResults;
+                    }
+                    for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
+                        vResults.push_back(xor_func(sCache, 0, getLines(sCache), i));
+                }
+                else if (sDir == "lines")
+                {
+                    if (nFirst >= getLines(sCache))
+                    {
+                        vResults.push_back(NAN);
+                        return vResults;
+                    }
+                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                        vResults.push_back(xor_func(sCache, i,-1,0,getCols(sCache)));
+                }
+                else if (sDir == "gridcols")
+                {
+                    if (nFirst >= getCols(sCache)-2)
+                    {
+                        vResults.push_back(NAN);
+                        return vResults;
+                    }
+                    for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
+                        vResults.push_back(xor_func(sCache, 0, getLines(sCache), i));
+                }
+                else
+                {
+                    if (nFirst >= getLines(sCache))
+                    {
+                        vResults.push_back(NAN);
+                        return vResults;
+                    }
+                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                        vResults.push_back(xor_func(sCache, i,-1,2,getCols(sCache)));
+                }
+                return vResults;
+            }
         inline vector<double> cnt(const string& sCache, string sDir)
             {
                 vector<double> vResults;
@@ -1026,6 +1077,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
         double num(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
         double and_func(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
         double or_func(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
+        double xor_func(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
         double cnt(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
         double norm(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
         double cmp(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, double dRef = 0.0, int nType = 0);
@@ -1041,6 +1093,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
         double num(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
         double and_func(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
         double or_func(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
+        double xor_func(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
         double cnt(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
         double norm(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
         double cmp(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol, double dRef = 0.0, int nType = 0);

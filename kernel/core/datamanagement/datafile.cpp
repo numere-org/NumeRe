@@ -5068,6 +5068,87 @@ double Datafile::or_func(const string& sCache, const vector<long long int>& _vLi
     return 0.0;
 }
 
+double Datafile::xor_func(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2)
+{
+    if (sCache != "data")
+        return Cache::xor_func(sCache, i1,i2,j1,j2);
+    if (!bValidData)
+        return 0.0;
+    if (i2 == -1)
+        i2 = i1;
+    else
+        i2--;
+    if (j2 == -1)
+        j2 = j1;
+    else
+        j2--;
+
+    if (i1 > i2)
+    {
+        long long int nTemp = i1;
+        i1 = i2;
+        i2 = nTemp;
+    }
+    if (j1 > j2)
+    {
+        long long int nTemp = j1;
+        j1 = j2;
+        j2 = nTemp;
+    }
+    if (i1 >= getLines("data", false) || j1 >= getCols("data"))
+        return NAN;
+    if (i2 >= getLines("data", false))
+        i2 = getLines("data", false)-1;
+    if (j2 >= getCols("data"))
+        j2 = getCols("data")-1;
+
+    bool isTrue = false;
+    for (long long int i = i1; i <= i2; i++)
+    {
+        for (long long int j = j1; j <= j2; j++)
+        {
+            if (!isnan(dDatafile[i][j]) && dDatafile[i][j] != 0.0)
+            {
+                if (!isTrue)
+                    isTrue = true;
+                else
+                    return 0.0;
+            }
+        }
+    }
+    if (isTrue)
+        return 1.0;
+    return 0.0;
+}
+
+double Datafile::xor_func(const string& sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+{
+    if (sCache != "data")
+        return Cache::xor_func(sCache, _vLine, _vCol);
+    if (!bValidData)
+        return 0.0;
+
+    bool isTrue = false;
+    for (unsigned int i = 0; i < _vLine.size(); i++)
+    {
+        for (unsigned int j = 0; j < _vCol.size(); j++)
+        {
+            if (_vLine[i] < 0 || _vLine[i] >= getLines(sCache, false) || _vCol[j] < 0 || _vCol[j] >= getCols(sCache))
+                continue;
+            if (isnan(dDatafile[_vLine[i]][_vCol[j]]) || dDatafile[_vLine[i]][_vCol[j]] != 0)
+            {
+                if (!isTrue)
+                    isTrue = true;
+                else
+                    return 0.0;
+            }
+        }
+    }
+    if (isTrue)
+        return 1.0;
+    return 0.0;
+}
+
 
 double Datafile::cnt(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2)
 {

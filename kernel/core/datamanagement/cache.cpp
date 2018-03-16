@@ -2523,6 +2523,93 @@ double Cache::or_func(long long int _nLayer, const vector<long long int>& _vLine
     return 0.0;
 }
 
+double Cache::xor_func(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2)
+{
+    return xor_func(mCachesMap.at(sCache), i1, i2, j1, j2);
+}
+
+double Cache::xor_func(long long int _nLayer, long long int i1, long long int i2, long long int j1, long long int j2)
+{
+    if (!bValidData)
+        return 0.0;
+    if (i2 == -1)
+        i2 = i1;
+    else
+        i2--;
+    if (j2 == -1)
+        j2 = j1;
+    else
+        j2--;
+
+    if (i1 > i2)
+    {
+        long long int nTemp = i1;
+        i1 = i2;
+        i2 = nTemp;
+    }
+    if (j1 > j2)
+    {
+        long long int nTemp = j1;
+        j1 = j2;
+        j2 = nTemp;
+    }
+    if (i1 >= getCacheLines(_nLayer, false) || j1 >= getCacheCols(_nLayer, false))
+        return NAN;
+    if (i2 >= getCacheLines(_nLayer, false))
+        i2 = getCacheLines(_nLayer, false)-1;
+    if (j2 >= getCacheCols(_nLayer, false))
+        j2 = getCacheCols(_nLayer, false)-1;
+
+    bool isTrue = false;
+    for (long long int i = i1; i <= i2; i++)
+    {
+        for (long long int j = j1; j <= j2; j++)
+        {
+            if (!isnan(dCache[i][j][_nLayer]) && dCache[i][j][_nLayer] != 0.0)
+            {
+                if (!isTrue)
+                    isTrue = true;
+                else
+                    return 0.0;
+            }
+        }
+    }
+    if (isTrue)
+        return 1.0;
+    return 0.0;
+}
+
+double Cache::xor_func(const string& sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+{
+    return xor_func(mCachesMap.at(sCache), _vLine, _vCol);
+}
+
+double Cache::xor_func(long long int _nLayer, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+{
+    if (!bValidData)
+        return 0.0;
+
+    bool isTrue = false;
+    for (unsigned int i = 0; i < _vLine.size(); i++)
+    {
+        for (unsigned int j = 0; j < _vCol.size(); j++)
+        {
+            if (_vLine[i] < 0 || _vLine[i] >= getCacheLines(_nLayer, false) || _vCol[j] < 0 || _vCol[j] >= getCacheCols(_nLayer, false))
+                continue;
+            if (isnan(dCache[_vLine[i]][_vCol[j]][_nLayer]) || dCache[_vLine[i]][_vCol[j]][_nLayer] != 0)
+            {
+                if (!isTrue)
+                    isTrue = true;
+                else
+                    return 0.0;
+            }
+        }
+    }
+    if (isTrue)
+        return 1.0;
+    return 0.0;
+}
+
 
 double Cache::cnt(const string& _sCache, long long int i1, long long int i2, long long int j1, long long int j2)
 {

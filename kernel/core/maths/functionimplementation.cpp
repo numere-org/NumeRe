@@ -508,6 +508,25 @@ value_type parser_or(const value_type* vElements, int nElements)
     return 0.0;
 }
 
+// --> Ver-xodert seine Inputargumente <--
+value_type parser_xor(const value_type* vElements, int nElements)
+{
+    bool isTrue = false;
+    for (int i = 0; i < nElements; i++)
+    {
+        if (vElements[i] != 0 && !isnan(vElements[i]))
+        {
+            if (!isTrue)
+                isTrue = true;
+            else
+                return 0.0;
+        }
+    }
+    if (isTrue)
+        return 1.0;
+    return 0.0;
+}
+
 
 value_type parser_Sum(const value_type* vElements, int nElements)
 {

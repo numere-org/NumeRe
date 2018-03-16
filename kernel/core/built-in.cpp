@@ -1881,6 +1881,9 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                 || matchParams(sCmd, "prd")
                 || matchParams(sCmd, "num")
                 || matchParams(sCmd, "cnt")
+                || matchParams(sCmd, "and")
+                || matchParams(sCmd, "or")
+                || matchParams(sCmd, "xor")
                 || matchParams(sCmd, "med"))
             && (matchParams(sCmd, "lines") || matchParams(sCmd, "cols")))
         {
@@ -2037,6 +2040,45 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                     _parser.SetVectorVar("data[med_cols]", _data.med("data", sArgument+"cols"+sEvery));
                 }
             }
+            else if (matchParams(sCmd, "and"))
+            {
+                if (matchParams(sCmd, "lines"))
+                {
+                    sCmd.replace(nPos, sCommand.length(), "data[and_lines]");
+                    _parser.SetVectorVar("data[and_lines]", _data.and_func("data", sArgument+"lines"+sEvery));
+                }
+                else
+                {
+                    sCmd.replace(nPos, sCommand.length(), "data[and_cols]");
+                    _parser.SetVectorVar("data[and_cols]", _data.and_func("data", sArgument+"cols"+sEvery));
+                }
+            }
+            else if (matchParams(sCmd, "or"))
+            {
+                if (matchParams(sCmd, "lines"))
+                {
+                    sCmd.replace(nPos, sCommand.length(), "data[or_lines]");
+                    _parser.SetVectorVar("data[or_lines]", _data.or_func("data", sArgument+"lines"+sEvery));
+                }
+                else
+                {
+                    sCmd.replace(nPos, sCommand.length(), "data[or_cols]");
+                    _parser.SetVectorVar("data[or_cols]", _data.or_func("data", sArgument+"cols"+sEvery));
+                }
+            }
+            else if (matchParams(sCmd, "xor"))
+            {
+                if (matchParams(sCmd, "lines"))
+                {
+                    sCmd.replace(nPos, sCommand.length(), "data[xor_lines]");
+                    _parser.SetVectorVar("data[xor_lines]", _data.xor_func("data", sArgument+"lines"+sEvery));
+                }
+                else
+                {
+                    sCmd.replace(nPos, sCommand.length(), "data[xor_cols]");
+                    _parser.SetVectorVar("data[xor_cols]", _data.xor_func("data", sArgument+"cols"+sEvery));
+                }
+            }
 
             return 0;
         }
@@ -2049,6 +2091,9 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                 || matchParams(sCmd, "prd")
                 || matchParams(sCmd, "num")
                 || matchParams(sCmd, "cnt")
+                || matchParams(sCmd, "and")
+                || matchParams(sCmd, "or")
+                || matchParams(sCmd, "xor")
                 || matchParams(sCmd, "med"))
             )
         {
@@ -2085,6 +2130,12 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                 sCmd.replace(nPos, sCommand.length(), toCmdString(_data.cnt("data", 0, _data.getLines("data", false), nArgument, _data.getCols("data"))));
             else if (matchParams(sCmd, "med"))
                 sCmd.replace(nPos, sCommand.length(), toCmdString(_data.med("data", 0, _data.getLines("data", false), nArgument, _data.getCols("data"))));
+            else if (matchParams(sCmd, "and"))
+                sCmd.replace(nPos, sCommand.length(), toCmdString(_data.and_func("data", 0, _data.getLines("data", false), nArgument, _data.getCols("data"))));
+            else if (matchParams(sCmd, "or"))
+                sCmd.replace(nPos, sCommand.length(), toCmdString(_data.or_func("data", 0, _data.getLines("data", false), nArgument, _data.getCols("data"))));
+            else if (matchParams(sCmd, "xor"))
+                sCmd.replace(nPos, sCommand.length(), toCmdString(_data.xor_func("data", 0, _data.getLines("data", false), nArgument, _data.getCols("data"))));
 
             return 0;
         }
@@ -2346,6 +2397,9 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                 || matchParams(sCmd, "prd")
                 || matchParams(sCmd, "num")
                 || matchParams(sCmd, "cnt")
+                || matchParams(sCmd, "and")
+                || matchParams(sCmd, "or")
+                || matchParams(sCmd, "xor")
                 || matchParams(sCmd, "med"))
             && (matchParams(sCmd, "lines") || matchParams(sCmd, "cols")))
         {
@@ -2502,6 +2556,45 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                     _parser.SetVectorVar(sCacheCmd+"[med_cols]", _data.med(sCacheCmd, sArgument+"cols"+sEvery));
                 }
             }
+            else if (matchParams(sCmd, "and"))
+            {
+                if (matchParams(sCmd, "lines"))
+                {
+                    sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[and_lines]");
+                    _parser.SetVectorVar(sCacheCmd+"[and_lines]", _data.and_func(sCacheCmd, sArgument+"lines"+sEvery));
+                }
+                else
+                {
+                    sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[and_cols]");
+                    _parser.SetVectorVar(sCacheCmd+"[and_cols]", _data.and_func(sCacheCmd, sArgument+"cols"+sEvery));
+                }
+            }
+            else if (matchParams(sCmd, "or"))
+            {
+                if (matchParams(sCmd, "lines"))
+                {
+                    sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[or_lines]");
+                    _parser.SetVectorVar(sCacheCmd+"[or_lines]", _data.or_func(sCacheCmd, sArgument+"lines"+sEvery));
+                }
+                else
+                {
+                    sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[or_cols]");
+                    _parser.SetVectorVar(sCacheCmd+"[or_cols]", _data.or_func(sCacheCmd, sArgument+"cols"+sEvery));
+                }
+            }
+            else if (matchParams(sCmd, "xor"))
+            {
+                if (matchParams(sCmd, "lines"))
+                {
+                    sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[xor_lines]");
+                    _parser.SetVectorVar(sCacheCmd+"[xor_lines]", _data.med(sCacheCmd, sArgument+"lines"+sEvery));
+                }
+                else
+                {
+                    sCmd.replace(nPos, sCommand.length(), sCacheCmd+"[xor_cols]");
+                    _parser.SetVectorVar(sCacheCmd+"[xor_cols]", _data.med(sCacheCmd, sArgument+"cols"+sEvery));
+                }
+            }
 
             return 0;
         }
@@ -2514,6 +2607,9 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                 || matchParams(sCmd, "prd")
                 || matchParams(sCmd, "num")
                 || matchParams(sCmd, "cnt")
+                || matchParams(sCmd, "and")
+                || matchParams(sCmd, "or")
+                || matchParams(sCmd, "xor")
                 || matchParams(sCmd, "med"))
             )
         {
@@ -2550,6 +2646,12 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                 sCmd.replace(nPos, sCommand.length(), toCmdString(_data.cnt(sCacheCmd, 0, _data.getLines(sCacheCmd, false), nArgument, _data.getCols(sCacheCmd))));
             else if (matchParams(sCmd, "med"))
                 sCmd.replace(nPos, sCommand.length(), toCmdString(_data.med(sCacheCmd, 0, _data.getLines(sCacheCmd, false), nArgument, _data.getCols(sCacheCmd))));
+            else if (matchParams(sCmd, "and"))
+                sCmd.replace(nPos, sCommand.length(), toCmdString(_data.and_func(sCacheCmd, 0, _data.getLines(sCacheCmd, false), nArgument, _data.getCols(sCacheCmd))));
+            else if (matchParams(sCmd, "or"))
+                sCmd.replace(nPos, sCommand.length(), toCmdString(_data.or_func(sCacheCmd, 0, _data.getLines(sCacheCmd, false), nArgument, _data.getCols(sCacheCmd))));
+            else if (matchParams(sCmd, "xor"))
+                sCmd.replace(nPos, sCommand.length(), toCmdString(_data.xor_func(sCacheCmd, 0, _data.getLines(sCacheCmd, false), nArgument, _data.getCols(sCacheCmd))));
 
             return 0;
         }
@@ -8762,7 +8864,14 @@ bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _
 
     sObject = sCmd.substr(findCommand(sCmd).sString.length());
     if (sParams.length() || bWaitForTermination)
-        sObject.erase(sObject.find("-set"));
+    {
+        if (sCmd.find("-set") != string::npos && sObject.find("-set") != string::npos && !isInQuotes(sCmd, sCmd.find("-set")))
+            sObject.erase(sObject.find("-set"));
+        else if (sCmd.find("--") != string::npos && sObject.find("--") != string::npos && !isInQuotes(sCmd, sCmd.find("--")))
+            sObject.erase(sObject.find("--"));
+        else
+            throw SyntaxError(SyntaxError::EXECUTE_COMMAND_UNSUCCESSFUL, sCmd, "execute"); // throw an unsuccessful, if the parameters are not clearly identified
+    }
 
     if (containsStrings(sObject) || _data.containsStringVars(sObject))
     {

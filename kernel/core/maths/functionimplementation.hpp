@@ -103,6 +103,7 @@ value_type parser_round(value_type, value_type);
 value_type parser_compare(const value_type*, int);
 value_type parser_and(const value_type*, int);
 value_type parser_or(const value_type*, int);
+value_type parser_xor(const value_type*, int);
 value_type parser_toRadian(value_type);
 value_type parser_toDegree(value_type);
 value_type parser_SphericalHarmonics(value_type, value_type, value_type, value_type);
