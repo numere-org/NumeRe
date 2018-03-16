@@ -1501,6 +1501,14 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
 
         sProcCommandLine = "";
     }
+
+    if (getLoop())
+    {
+        if (_option.getUseDebugger())
+            _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
+        resetProcedure(_parser, bSupressAnswer_back);
+        throw SyntaxError(SyntaxError::IF_OR_LOOP_SEEMS_NOT_TO_BE_CLOSED,  "endprocedure", SyntaxError::invalid_position, "\\$" + sProc + "()");
+    }
     fProc_in.close();
 
     _option._debug.popStackItem();
@@ -2060,6 +2068,7 @@ void Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnval
 void Procedure::resetProcedure(Parser& _parser, bool bSupressAnswer)
 {
     sCallingNameSpace = "main";
+    sNameSpace = "";
     sThisNameSpace = "";
     mVarMap.clear();
     NumeReKernel::bSupressAnswer = bSupressAnswer;

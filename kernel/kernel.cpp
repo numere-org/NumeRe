@@ -1300,6 +1300,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
         catch (mu::Parser::exception_type &e)
         {
             _option.setSystemPrintStatus(true);
+            _procedure.reset();
             // --> Vernuenftig formatierte Fehlermeldungen <--
             unsigned int nErrorPos = (int)e.GetPos();
             sendErrorNotification();
@@ -1380,6 +1381,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
         catch (const std::bad_alloc &e)
         {
             _option.setSystemPrintStatus(true);
+            _procedure.reset();
             /* --> Das ist die schlimmste aller Exceptions: Fehler bei der Speicherallozierung.
              *     Leider gibt es bis dato keine Moeglichkeit, diesen wieder zu beheben, also bleibt
              *     vorerst nichts anderes uebrig, als NumeRe mit terminate() abzuschiessen <--
@@ -1408,6 +1410,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
         catch (const std::exception &e)
         {
             _option.setSystemPrintStatus(true);
+            _procedure.reset();
             // --> Alle anderen Standard-Exceptions <--
             sendErrorNotification();
             make_hline();
@@ -1439,6 +1442,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
         catch (SyntaxError& e)
         {
             _option.setSystemPrintStatus(true);
+            _procedure.reset();
             sendErrorNotification();
             make_hline();
             if (e.errorcode == SyntaxError::PROCESS_ABORTED_BY_USER)
@@ -1555,6 +1559,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
              *     abgedeckt wird <--
              */
             _option.setSystemPrintStatus(true);
+            _procedure.reset();
             sendErrorNotification();
             make_hline();
             print(toUpperCase(_lang.get("ERR_CATCHALL_HEAD")));
