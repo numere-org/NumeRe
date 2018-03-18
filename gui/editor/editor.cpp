@@ -1902,7 +1902,7 @@ void NumeReEditor::AnalyseCode()
                 if (nProcedureEnd == -1)
                 {
                     nProcedureEnd = this->GetLastPosition();
-                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
+                    //AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
                 }
                 else
                 {
@@ -1958,6 +1958,26 @@ void NumeReEditor::AnalyseCode()
                 else
                 {
                     AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_RETURN_ALWAYSTRUE")), ANNOTATION_NOTE);
+                }
+            }
+            if (sSyntaxElement == "if"
+                || sSyntaxElement == "elseif"
+                || sSyntaxElement == "else"
+                || sSyntaxElement == "endif"
+                || sSyntaxElement == "for"
+                || sSyntaxElement == "endfor"
+                || sSyntaxElement == "while"
+                || sSyntaxElement == "endwhile"
+                || sSyntaxElement == "compose"
+                || sSyntaxElement == "endcompose"
+                || sSyntaxElement == "procedure"
+                || sSyntaxElement == "endprocedure")
+            {
+                vector<int> vMatch = this->BlockMatch(i);
+                if (vMatch.size() > 1)
+                {
+                    if (vMatch.front() == wxSTC_INVALID_POSITION || vMatch.back() == wxSTC_INVALID_POSITION)
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sError, _guilang.get("GUI_ANALYZER_UNFINISHEDBLOCK")), ANNOTATION_ERROR);
                 }
             }
             i = wordend;
