@@ -3323,7 +3323,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1520281935 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1521493541 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3961,7 +3961,7 @@
 
 1501080105 d:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1521096812 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1521495094 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
@@ -4220,7 +4220,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1521062709 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1521441860 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>

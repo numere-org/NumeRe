@@ -5998,6 +5998,7 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
             }
 
             nLength = sTemp.length();
+            sTemp += " -kmq";
             if (!parser_StringParser(sTemp, sDummy, _data, _parser, _option, true))
                 return "";
             //NumeReKernel::print(sTemp + "  ";
@@ -8702,6 +8703,8 @@ bool BI_readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _
         }
         if (sInput.front() != '"')
             sInput = '"' + sInput;
+        if (sInput.back() == '\\')
+            sInput += ' ';
         if (sInput.back() != '"')
             sInput += '"';
         for (unsigned int i = 1; i < sInput.length()-1; i++)
@@ -8857,7 +8860,7 @@ bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _
 
     if (matchParams(sCmd, "params", '='))
     {
-        sParams = getArgAtPos(sCmd, matchParams(sCmd, "params", '=')+6);
+        sParams = "\"" + getArgAtPos(sCmd, matchParams(sCmd, "params", '=')+6)+"\"";
     }
     if (matchParams(sCmd, "wait"))
         bWaitForTermination = true;
@@ -8878,12 +8881,21 @@ bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _
         string sDummy = "";
         parser_StringParser(sObject, sDummy, _data, _parser, _option, true);
     }
+    if (containsStrings(sParams) || _data.containsStringVars(sParams))
+    {
+        string sDummy = "";
+        sParams += " -nq";
+        parser_StringParser(sParams, sDummy, _data, _parser, _option, true);
+    }
 
     if (sObject.find('<') != string::npos && sObject.find('>', sObject.find('<')+1) != string::npos)
         sObject = _fSys.ValidFileName(sObject, ".exe");
     if (sParams.find('<') != string::npos && sParams.find('>', sParams.find('<')+1) != string::npos)
-        sParams = _fSys.ValidFileName(sParams);
+    {
+        if (sParams.front() == '"')
+            sParams = "\"" + _fSys.ValidFileName(sParams.substr(1));
 
+    }
     StripSpaces(sObject);
 
     SHELLEXECUTEINFO ShExecInfo = {0};

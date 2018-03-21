@@ -6,3 +6,4 @@ Added	A "xor()" function was added.
 Fixed	The missing "and" and "or" multiargument function options were added.
 Fixed	Unfinished control flow blocks in procedures will bow raise an error during execution (instead of being ignored somehow).
 Added	The static code analyzer may now find unfinished control flow blocks.
+Fixed	The backslash may now be escaped in strings using a following whitespace.

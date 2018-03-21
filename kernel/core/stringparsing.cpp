@@ -963,10 +963,6 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
             }
         }
     }
-    /*else if (sLine.find('{') != string::npos)
-    {
-        parser_VectorToExpr(sLine, _option);
-    }*/
 
     // Recurse for multiple store targets
     // Nur Rekursionen durchfuehren, wenn auch '=' in dem String gefunden wurde. Nur dann ist sie naemlich noetig.
@@ -1337,15 +1333,7 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
                 StringResult strRes = parser_StringParserCore(sToString, "", _data, _parser, _option, mStringVectorVars);
                 if (!strRes.vResult.size())
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-//                for (size_t n = 0; n < strRes.vResult.size(); n++)
-//                {
-//                    for (unsigned int i = 0; i < strRes.vResult[n].length(); i++)
-//                    {
-//                        if (i && strRes.vResult[n][i] == '"' && strRes.vResult[n][i-1] != '\\')
-//                            strRes.vResult[n].insert(i,1,'\\');
-//                    }
-//                    //strRes.vResult[n] = "\"" + strRes.vResult[n] + "\"";
-//                }
+
                 sToString = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
             }
             else
@@ -1837,7 +1825,7 @@ map<string, StringFuncHandle> parser_getStringFuncHandles()
 
 string removeMaskedStrings(const string& sString)
 {
-    if (sString.find("\\\"") == string::npos && sString.find("\\t") == string::npos && sString.find("\\n") == string::npos)
+    if (sString.find("\\\"") == string::npos && sString.find("\\t") == string::npos && sString.find("\\n") == string::npos && sString.find("\\ ") == string::npos)
         return sString;
     string sRet = sString;
 
@@ -1849,18 +1837,29 @@ string removeMaskedStrings(const string& sString)
             sRet.replace(i,2,"\t");
         if (sRet.substr(i,2) == "\\n" && sRet.substr(i,3) != "\\nu")
             sRet.replace(i,2,"\n");
+        if (sRet.substr(i,2) == "\\ ")
+            sRet.erase(i+1,1);
     }
+    /*if (sRet.length() > 1 && sRet.substr(sRet.length()-2) == "\\ ")
+        sRet.pop_back();*/
 
     return sRet;
 }
 
 string addMaskedStrings(const string& sString)
 {
-    if (sString.find('"') == string::npos && sString.find(NEWSTRING) == string::npos)
+    if (sString.find('"') == string::npos && sString.find(NEWSTRING) == string::npos && sString.back() != '\\')
         return sString;
     string sRet = sString;
+    /*if (sRet.back() == '\\')
+        sRet += " ";*/
     for (size_t i = 1; i < sRet.length()-1; i++)
     {
+        if (sRet[i] == '\\')
+        {
+            sRet.insert(i+1, " ");
+            i++;
+        }
         if (sRet[i] == '"' && sRet[i-1] != '\\' && sRet[i+1] != NEWSTRING && sRet.find('"', i+1) != string::npos)
         {
             sRet.insert(i, "\\");
@@ -3193,7 +3192,7 @@ string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIs
         vFinal[i] = removeQuotationMarks(vFinal[i]);
 
     string sConsoleOut = "|-> ";
-    for (unsigned int j = 0; j < vFinal.size(); j++)
+    for (size_t j = 0; j < vFinal.size(); j++)
     {
         if (bKeepMaskedQuotes)
         {
@@ -3210,11 +3209,11 @@ string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIs
             sConsoleOut += "\"";
             sLine += "\"";
         }
-        for (unsigned int k = 0; k < vFinal[j].length(); k++)
+        for (size_t k = 0; k < vFinal[j].length(); k++)
         {
             if (k+1 < vFinal[j].length()
                 && vFinal[j][k] == '\\'
-                && (vFinal[j][k+1] == 'n' || vFinal[j][k+1] == 't' || vFinal[j][k+1] == '"')
+                && (vFinal[j][k+1] == 'n' || vFinal[j][k+1] == 't' || vFinal[j][k+1] == '"' || vFinal[j][k+1] == ' ')
                 && !(vFinal[j].substr(k+1,3) == "tau"
                     && ((checkDelimiter(vFinal[j].substr(k,5)) && vFinal[j].length() >= k+5) || (vFinal[j].length() == k+4)))
                 && !(vFinal[j].substr(k+1,5) == "theta"
@@ -3243,6 +3242,15 @@ string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIs
                     else
                         sLine += "\\\"";
                 }
+                else if (vFinal[j][k+1] == ' '/*k+2 == vFinal[j].length() && vFinal[j].substr(k) == "\\ "*/)
+                {
+                    sConsoleOut += "\\";
+                    if (!bKeepMaskedQuotes)
+                        sLine += "\\";
+                    else
+                        sLine += "\\ ";
+                    /*k++;*/
+                }
                 k += 1;
             }
             else
@@ -3256,7 +3264,7 @@ string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIs
             sConsoleOut += "\"";
             sLine += "\"";
         }
-        if (j == vFinal.size() - 1)
+        if (j+1 == vFinal.size())
             break;
 
         if (vFinal[j] != "\\n" && vFinal[j+1] != "\\n" && vFinal[j] != "\\t" && vFinal[j] != "\\t")

@@ -741,6 +741,9 @@ void NumeReEditor::HandleFunctionCallTip()
             sDefinition.erase(sDefinition.find(')')+1);
     }
 
+    if (!sDefinition.length())
+        return;
+
     string sArgument = this->GetCurrentArgument(sDefinition, nStartingBrace, nArgStartPos);
     /*if (sArgument.length())
     {
