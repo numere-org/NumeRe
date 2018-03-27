@@ -1048,6 +1048,7 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
 
     int nPos[2] = {0,0};
     int nTypeCounter[2] = {0,0};
+    int nLastDataCounter = 0;
 
     for (unsigned int nType = 0; nType < vType.size(); nType++)
     {
@@ -1108,10 +1109,27 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
             _mPlotAxes = _mDataPlots[nTypeCounter[1]][0];
             if (_pData.getBoxplot()) ///
             {
-                _mData2[0].Create(2);
-                _mData2[0].a[0] = nTypeCounter[1]+0.5;
-                _mData2[0].a[1] = nTypeCounter[1]+1.5;
-                _mData = _mDataPlots[nTypeCounter[1]][1];
+                _mData2[0].Create(nDataDim[nTypeCounter[1]]);
+                for (int col = 0; col < nDataDim[nTypeCounter[1]]; col++)
+                {
+                    _mData2[0].a[col] = nTypeCounter[1]+nLastDataCounter+0.5+col;
+                }
+                nLastDataCounter += nDataDim[nTypeCounter[1]]-2; // it's always incremented by 1
+
+                long int maxdim = _mDataPlots[nTypeCounter[1]][1].nx;
+                for (int data = 2; data < nDataDim[nTypeCounter[1]]; data++)
+                {
+                    if (maxdim < _mDataPlots[nTypeCounter[1]][data].nx)
+                        maxdim = _mDataPlots[nTypeCounter[1]][data].nx;
+                }
+                _mData.Create(maxdim, nDataDim[nTypeCounter[1]]-1);
+                for (int data = 0; data < nDataDim[nTypeCounter[1]]-1; data++)
+                {
+                    for (int col = 0; col < _mDataPlots[nTypeCounter[1]][data+1].nx; col++)
+                    {
+                        _mData.a[col + data*maxdim] = _mDataPlots[nTypeCounter[1]][data+1].a[col];
+                    }
+                }
                 _mData.Transpose();
             }
             else
@@ -1335,7 +1353,6 @@ bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglDa
     }
     else
     {
-
         if (_pData.getBoxplot())
         {
             _graph->BoxPlot(_mData2[0], _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
@@ -3265,176 +3282,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
             }
             while (sDataPlots.find('"') != string::npos || sDataPlots.find('#') != string::npos);
 
-            // --> Ersetzen von "data()" bzw. "cache()" durch die Spaltentitel <--
-            n_dpos = 0;
-            while (sDataLabels.find(';', n_dpos) != string::npos)
-            {
-                if ((sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos).find("data(") != string::npos
-                    || _data.containsCacheElements(sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos)))
-                        && (sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos).find(',') != string::npos
-                            || sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos).substr(sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos).find('('),2) == "()")
-                        && sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos).find(')') != string::npos)
-                {
-                    if ((sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos).find("data(") != string::npos && checkDelimiter(sDataLabels.substr(sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos).find("data(")-1, 6)) && !_data.isValid())
-                        || (_data.containsCacheElements(sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos)) && !_data.isValidCache()))
-                    {
-                        throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sDataLabels, SyntaxError::invalid_position);
-                    }
-                    string sTemp = sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos);
-                    StripSpaces(sTemp);
-                    string sTableName = sTemp.substr(0,sTemp.find('('));
-                    if (sTableName[0] == ';' || sTableName[0] == '"')
-                        sTableName.erase(0,1);
-                    if (getMatchingParenthesis(sTemp.substr(sTemp.find('('))) == string::npos)
-                        throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sTemp, sTemp.find('('));
-                    string sArgs = sTemp.substr(sTemp.find('('), getMatchingParenthesis(sTemp.substr(sTemp.find('(')))+1);
-                    if (sArgs == "()")
-                        sArgs = "(:,:)";
-                    string sArg_1 = "<<empty>>";
-                    string sArg_2 = "<<empty>>";
-                    string sArg_3 = "<<empty>>";
-                    parser_SplitArgs(sArgs, sArg_1, ',', _option);
-                    if (sArg_1.find(':') != string::npos)
-                    {
-                        sArg_1 = "(" + sArg_1 + ")";
-                        try
-                        {
-                            parser_SplitArgs(sArg_1, sArg_2, ':', _option);
-                        }
-                        catch (SyntaxError& e)
-                        {
-                            if (e.errorcode == SyntaxError::SEPARATOR_NOT_FOUND)
-                            {
-                                n_dpos = sDataLabels.find(';', n_dpos)+1;
-                                continue;
-                            }
-                            else
-                                throw;
-                        }
-                        StripSpaces(sArg_2);
-                        if (sArg_2.find(':') != string::npos)
-                        {
-                            sArg_2 = "(" + sArg_2 + ")";
-                            parser_SplitArgs(sArg_2, sArg_3, ':', _option);
-                            StripSpaces(sArg_2);
-                            if (sArg_3.find(':') != string::npos)
-                            {
-                                sArg_3 = "(" + sArg_3 + ")";
-                                parser_SplitArgs(sArg_3, sArgs, ':', _option);
-                                StripSpaces(sArg_3);
-                            }
-                        }
-                    }
-                    StripSpaces(sArg_1);
-                    if (!sArg_1.length() && !sArg_2.length() && sArg_3 == "<<empty>>")
-                    {
-                        sArg_1 = "1";
-                    }
-                    else if (!sArg_1.length())
-                    {
-                        n_dpos = sDataLabels.find(';', n_dpos)+1;
-                        continue;
-                    }
-                    if (_data.containsCacheElements(sTemp))
-                    {
-                        _data.setCacheStatus(true);
-                    }
-                    if (sArg_2 == "<<empty>>" && sArg_3 == "<<empty>>" && _pInfo.sCommand != "plot3d")
-                    {
-                        _parser.SetExpr(sArg_1);
-                        sTemp = "\"" + _data.getTopHeadLineElement((int)_parser.Eval()-1, sTableName) + "\"";
-                    }
-                    else if (sArg_2.length())
-                    {
-                        if (_pInfo.sCommand != "plot3d")
-                        {
-                            if (!(_pData.getyError() || _pData.getxError()) && sArg_3 == "<<empty>>")
-                            {
-                                _parser.SetExpr(sArg_2);
-                                sTemp = "\"" + _data.getTopHeadLineElement((int)_parser.Eval()-1,sTableName) + " vs. ";
-                                _parser.SetExpr(sArg_1);
-                                sTemp += _data.getTopHeadLineElement((int)_parser.Eval()-1,sTableName) + "\"";
-                            }
-                            else if (sArg_3 != "<<empty>>")
-                            {
-                                _parser.SetExpr(sArg_2);
-                                sTemp = "\"" + _data.getTopHeadLineElement((int)_parser.Eval()-1,sTableName) + " vs. ";
-                                _parser.SetExpr(sArg_1);
-                                sTemp += _data.getTopHeadLineElement((int)_parser.Eval()-1,sTableName) + "\"";
-                            }
-                            else
-                            {
-                                double dArg_1, dArg_2;
-                                _parser.SetExpr(sArg_1);
-                                dArg_1 = _parser.Eval();
-                                _parser.SetExpr(sArg_2);
-                                dArg_2 = _parser.Eval();
-                                if (dArg_1 < dArg_2)
-                                    sTemp = "\"" + _data.getTopHeadLineElement((int)dArg_1,sTableName) + " vs. " + _data.getTopHeadLineElement((int)dArg_1-1,sTableName) + "\"";
-                                else
-                                    sTemp = "\"" + _data.getTopHeadLineElement((int)dArg_2-1,sTableName) + " vs. " + _data.getTopHeadLineElement((int)dArg_2,sTableName) + "\"";
-                            }
-                        }
-                        else if (sArg_3 == "<<empty>>" || !sArg_3.length())
-                        {
-                            double dArg_1, dArg_2;
-                            _parser.SetExpr(sArg_1);
-                            dArg_1 = _parser.Eval();
-                            _parser.SetExpr(sArg_2);
-                            dArg_2 = _parser.Eval();
-                            if (dArg_1 < dArg_2)
-                                sTemp = "\"" + _data.getTopHeadLineElement((int)dArg_1-1,sTableName) + ", " + _data.getTopHeadLineElement((int)dArg_2-2,sTableName) + ", " + _data.getTopHeadLineElement((int)dArg_2-1,sTableName) + "\"";
-                            else
-                                sTemp = "\"" + _data.getTopHeadLineElement((int)dArg_2-1,sTableName) + ", " + _data.getTopHeadLineElement((int)dArg_1-2,sTableName) + ", " + _data.getTopHeadLineElement((int)dArg_1-1,sTableName) + "\"";
-                        }
-                        else if (sArg_3.length())
-                        {
-                            _parser.SetExpr(sArg_1);
-                            sTemp = "\"" + _data.getTopHeadLineElement((int)_parser.Eval()-1,sTableName) + ", ";
-                            _parser.SetExpr(sArg_2);
-                            sTemp += _data.getTopHeadLineElement((int)_parser.Eval()-1,sTableName) + ", ";
-                            _parser.SetExpr(sArg_3);
-                            sTemp += _data.getTopHeadLineElement((int)_parser.Eval()-1,sTableName) + "\"";
-                        }
-                    }
-                    else if (!sArg_2.length())
-                    {
-                        if (_pInfo.sCommand != "plot3d")
-                        {
-                            _parser.SetExpr(sArg_1);
-                            sTemp = "\"" + _data.getTopHeadLineElement((int)_parser.Eval(),sTableName) + " vs. " + _data.getTopHeadLineElement((int)_parser.Eval()-1,sTableName) + "\"";
-                        }
-                        else if (sArg_3 == "<<empty>>" || !sArg_3.length())
-                        {
-                            _parser.SetExpr(sArg_1);
-                            sTemp = "\"" + _data.getTopHeadLineElement((int)_parser.Eval()-1,sTableName) + ", "
-                                + _data.getTopHeadLineElement((int)_parser.Eval(),sTableName) + ", "
-                                + _data.getTopHeadLineElement((int)_parser.Eval()+1,sTableName) + "\"";
-                        }
-                        else if (sArg_3.length())
-                        {
-                            _parser.SetExpr(sArg_1);
-                            sTemp = "\"" + _data.getTopHeadLineElement((int)_parser.Eval()-1,sTableName) + ", " + _data.getTopHeadLineElement((int)_parser.Eval(),sTableName) + ", ";
-                            _parser.SetExpr(sArg_3);
-                            sTemp += _data.getTopHeadLineElement((int)_parser.Eval()-1,sTableName) + "\"";
-                        }
-                    }
-                    else
-                    {
-                        n_dpos = sDataLabels.find(';', n_dpos)+1;
-                        continue;
-                    }
-                    _data.setCacheStatus(false);
-                    for (unsigned int n = 0; n < sTemp.length(); n++)
-                    {
-                        if (sTemp[n] == '_')
-                            sTemp[n] = ' ';
-                    }
-                    sDataLabels = sDataLabels.substr(0,n_dpos) + sTemp + sDataLabels.substr(sDataLabels.find(';', n_dpos));
-
-                }
-                n_dpos = sDataLabels.find(';', n_dpos)+1;
-            }
+            createDataLegends(_pData, _parser, _data, _option);
 
             if (_option.getbDebug())
             {
@@ -3615,13 +3463,14 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                             {
                                 for (int n = 0; n < nResults; n++)
                                 {
-                                    if (n >= 6)
-                                        break;
+                                    /*if (n >= 6)
+                                        break;*/
 
                                     if (!isnan(v[n]) && !isinf(v[n]))
                                     {
                                         vCol.push_back((int)v[n]-1);
-                                        j_pos[n] = (int)v[n]-1;
+                                        if (n < 6)
+                                            j_pos[n] = (int)v[n]-1;
                                         j = n;
                                     }
                                 }
@@ -3697,10 +3546,24 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                         nDataDim[i] = 6;
                     else if (_pInfo.b2D)
                         nDataDim[i] = 3;
+                    if (_pData.getBoxplot())
+                        nDataDim[i] = _data.getCols(sDataTable, false) + 1 - j_pos[0];
                 }
                 else
                 {
-                    nDataDim[i] = j+1;
+                    if (!_pData.getBoxplot() || _pInfo.b2D)
+                    {
+                        if (j+1 > 6)
+                            nDataDim[i] = 6;
+                        else
+                            nDataDim[i] = j+1;
+                        if (vCol.size() > 6)
+                            vCol.erase(vCol.begin()+6, vCol.end());
+                    }
+                    else
+                    {
+                        nDataDim[i] = j+2;
+                    }
                 }
 
                 if (!nDataDim[i])
@@ -3735,11 +3598,23 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                     }
                     else
                     {
-                        for (int k = 1; k <= j; k++)
+                        if (vCol.size())
                         {
-                            //cerr << nAppendedZeroes << endl;
-                            if (nAppendedZeroes > _data.getAppendedZeroes(j_pos[k], sDataTable))
-                                nAppendedZeroes = _data.getAppendedZeroes(j_pos[k], sDataTable);
+                            for (size_t k = 1; k < vCol.size(); k++)
+                            {
+                                //cerr << nAppendedZeroes << endl;
+                                if (nAppendedZeroes > _data.getAppendedZeroes(vCol[k], sDataTable))
+                                    nAppendedZeroes = _data.getAppendedZeroes(vCol[k], sDataTable);
+                            }
+                        }
+                        else
+                        {
+                            for (int k = 1; k <= j; k++)
+                            {
+                                //cerr << nAppendedZeroes << endl;
+                                if (nAppendedZeroes > _data.getAppendedZeroes(j_pos[k], sDataTable))
+                                    nAppendedZeroes = _data.getAppendedZeroes(j_pos[k], sDataTable);
+                            }
                         }
                     }
                     //if (nAppendedZeroes < i_pos[1])
@@ -3773,6 +3648,8 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                         }
                         else if (j == 1 && nDataDim[i] >= 3)
                         {
+                            if (_pData.getBoxplot())
+                                vCol.push_back(-1);
                             if (j_pos[0] < j_pos[1] || sj_pos[1] == "inf")
                             {
                                 for (int q = 1; q < nDataDim[i]; q++)
@@ -3786,12 +3663,17 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                         }
                         else
                         {
+                            if (_pData.getBoxplot())
+                                vCol.push_back(-1);
                             for (int n = 1; n <= j; n++)
                                 vCol.push_back(j_pos[n]);
                         }
                     }
-                    vector<long long int> _vTempCol;
-                    _vTempCol.push_back(0);
+                    else if (_pData.getBoxplot())
+                    {
+                        vCol.insert(vCol.begin(), -1);
+                    }
+
                     for (int q = 0; q < nDataDim[i]; q++)
                     {
                         _mDataPlots[i][q].Create(vLine.size());
@@ -3806,125 +3688,12 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                             {
                                 _mDataPlots[i][q].a[n] = _data.getElement(vLine[n], vCol[q], sDataTable);
                             }
-                            /*_vTempCol[0] = vCol[q];
-                            //cerr << vCol[q] << endl;
-                            _mDataPlots[i][q].Set(_data.getElement(vLine, _vTempCol, sDataTable));*/
                         }
                     }
                     // --> Berechnen der DataRanges <--
                     for (int l = 0; l < (int)vLine.size(); l++)
                     {
-                        for (int q = 0; q < 3; q++)
-                        {
-                            if (q == 2 && nDataDim[i] < 3)
-                            {
-                                dDataRanges[2][0] = 0;
-                                dDataRanges[2][1] = 0;
-                                break;
-                            }
-                            if (l == 0 && i == 0)
-                            {
-                                if (q && _pData.getRangeSetting(q-1))
-                                {
-                                    if (_pData.getRanges(q-1,0) > _mDataPlots[i][q-1].a[l] || _pData.getRanges(q-1,1) < _mDataPlots[i][q-1].a[l])
-                                    {
-                                        if (_pInfo.sCommand != "plot")
-                                        {
-                                            dDataRanges[q][0] = NAN;
-                                            dDataRanges[q][1] = NAN;
-                                        }
-                                        else
-                                        {
-                                            if (q < 2)
-                                            {
-                                                dSecDataRanges[q][0] = NAN;
-                                                dSecDataRanges[q][1] = NAN;
-                                            }
-                                            dDataRanges[q][0] = NAN;
-                                            dDataRanges[q][1] = NAN;
-                                        }
-                                        continue;
-                                    }
-                                }
-                                if (_pInfo.sCommand != "plot" || q >= 2)
-                                {
-                                    dDataRanges[q][0] = _mDataPlots[i][q].a[l];
-                                    dDataRanges[q][1] = _mDataPlots[i][q].a[l];
-                                }
-                                else
-                                {
-                                    if (sDataAxisBinds[2*i+!q] == 'l' || sDataAxisBinds[2*i+!q] == 'b')
-                                    {
-                                        dDataRanges[q][0] = _mDataPlots[i][q].a[l];
-                                        dDataRanges[q][1] = _mDataPlots[i][q].a[l];
-                                        dSecDataRanges[q][0] = NAN;
-                                        dSecDataRanges[q][1] = NAN;
-                                    }
-                                    else
-                                    {
-                                        dSecDataRanges[q][0] = _mDataPlots[i][q].a[l];
-                                        dSecDataRanges[q][1] = _mDataPlots[i][q].a[l];
-                                        dDataRanges[q][0] = NAN;
-                                        dDataRanges[q][1] = NAN;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (_pInfo.b2D && q == 2)
-                                {
-                                    if (_pData.getRangeSetting())
-                                    {
-                                        if (_pData.getRanges(0,0) > _mDataPlots[i][0].a[l] || _pData.getRanges(0,1) < _mDataPlots[i][0].a[l])
-                                            continue;
-                                    }
-                                    if (_pData.getRangeSetting(1))
-                                    {
-                                        if (_pData.getRanges(1,0) > _mDataPlots[i][1].a[l] || _pData.getRanges(1,1) < _mDataPlots[i][1].a[l])
-                                            continue;
-                                    }
-                                    for (int k = 0; k < i_pos[1]-i_pos[0]; k++)
-                                    {
-                                        if (dDataRanges[q][0] > _mDataPlots[i][q].a[l+(i_pos[1]-i_pos[0])*k] || isnan(dDataRanges[q][0]))
-                                            dDataRanges[q][0] = _mDataPlots[i][q].a[l+(i_pos[1]-i_pos[0])*k];
-                                        if (dDataRanges[q][1] < _mDataPlots[i][q].a[l+(i_pos[1]-i_pos[0])*k] || isnan(dDataRanges[q][1]))
-                                            dDataRanges[q][1] = _mDataPlots[i][q].a[l+(i_pos[1]-i_pos[0])*k];
-                                    }
-                                }
-                                else
-                                {
-                                    if (q && _pData.getRangeSetting())
-                                    {
-                                        if (_pData.getRanges(0,0) > _mDataPlots[i][0].a[l] || _pData.getRanges(0,1) < _mDataPlots[i][0].a[l])
-                                            continue;
-                                    }
-                                    if (_pInfo.sCommand != "plot" || q >= 2)
-                                    {
-                                        if (dDataRanges[q][0] > _mDataPlots[i][q].a[l] || isnan(dDataRanges[q][0]))
-                                            dDataRanges[q][0] = _mDataPlots[i][q].a[l];
-                                        if (dDataRanges[q][1] < _mDataPlots[i][q].a[l] || isnan(dDataRanges[q][1]))
-                                            dDataRanges[q][1] = _mDataPlots[i][q].a[l];
-                                    }
-                                    else
-                                    {
-                                        if (sDataAxisBinds[2*i+!q] == 'l' || sDataAxisBinds[2*i+!q] == 'b')
-                                        {
-                                            if (dDataRanges[q][0] > _mDataPlots[i][q].a[l] || isnan(dDataRanges[q][0]))
-                                                dDataRanges[q][0] = _mDataPlots[i][q].a[l];
-                                            if (dDataRanges[q][1] < _mDataPlots[i][q].a[l] || isnan(dDataRanges[q][1]))
-                                                dDataRanges[q][1] = _mDataPlots[i][q].a[l];
-                                        }
-                                        else
-                                        {
-                                            if (dSecDataRanges[q][0] > _mDataPlots[i][q].a[l] || isnan(dSecDataRanges[q][0]))
-                                                dSecDataRanges[q][0] = _mDataPlots[i][q].a[l];
-                                            if (dSecDataRanges[q][1] < _mDataPlots[i][q].a[l] || isnan(dSecDataRanges[q][1]))
-                                                dSecDataRanges[q][1] = _mDataPlots[i][q].a[l];
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        calculateDataRanges(_pData, sDataAxisBinds, dDataRanges, dSecDataRanges, i, l, i_pos);
                     }
                 }
                 else
@@ -4065,7 +3834,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                             // --> xyz-Datenwerte! <--
                             if (j_pos[0] < j_pos[1] || sj_pos[1] == "inf")
                             {
-                                for (int q = 0; q < nDataDim[i]; q++)
+                                for (int q = 0; q < nDataDim[i]-_pData.getBoxplot(); q++)
                                 {
                                     if (_pInfo.b2D && q == 2)
                                     {
@@ -4092,22 +3861,26 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                                     else
                                     {
                                         // --> Vorwaerts zaehlen <--
+                                        if (!q && _pData.getBoxplot())
+                                        {
+                                            _mDataPlots[i][q] = l+1+i_pos[0];
+                                        }
                                         if (_data.getCols(sDataTable) > q + j_pos[0] && _data.isValidEntry(l+i_pos[0], q+j_pos[0], sDataTable) && (j_pos[0] <= j_pos[1] || sj_pos[1] == "inf"))
                                         {
                                             if (!l && (isnan(_data.getElement(l+i_pos[0], q + j_pos[0], sDataTable)) || isinf(_data.getElement(l+i_pos[0], q + j_pos[0], sDataTable))))
-                                                _mDataPlots[i][q].a[l] = NAN;
+                                                _mDataPlots[i][q+_pData.getBoxplot()].a[l] = NAN;
                                             else if (isinf(_data.getElement(l+i_pos[0], q + j_pos[0], sDataTable)))
-                                                _mDataPlots[i][q].a[l] = NAN;
+                                                _mDataPlots[i][q+_pData.getBoxplot()].a[l] = NAN;
                                             else
-                                                _mDataPlots[i][q].a[l] = _data.getElement(l+i_pos[0], q + j_pos[0], sDataTable);
+                                                _mDataPlots[i][q+_pData.getBoxplot()].a[l] = _data.getElement(l+i_pos[0], q + j_pos[0], sDataTable);
                                         }
                                         else if (q == 2 && _pInfo.sCommand == "plot3d"
                                             && !(_data.getLines(sDataTable, true)-_data.getAppendedZeroes(q+j_pos[0],sDataTable)-i_pos[0]))
                                             _mDataPlots[i][q].a[l] = 0.0;
                                         else if (l)
-                                            _mDataPlots[i][q].a[l] = NAN;
+                                            _mDataPlots[i][q+_pData.getBoxplot()].a[l] = NAN;
                                         else
-                                            _mDataPlots[i][q].a[0] = NAN;
+                                            _mDataPlots[i][q+_pData.getBoxplot()].a[0] = NAN;
                                     }
                                 }
                             }
@@ -4140,22 +3913,26 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                                     else
                                     {
                                         // --> Rueckwaerts zaehlen <--
+                                        if (!q && _pData.getBoxplot())
+                                        {
+                                            _mDataPlots[i][q] = l+1+i_pos[0];
+                                        }
                                         if (_data.getCols(sDataTable) > j_pos[0] && _data.isValidEntry(l+i_pos[0], j_pos[0]-q,sDataTable) && j_pos[0]-q >= 0 && j_pos[0]-q >= j_pos[1])
                                         {
                                             if (!l && (isnan(_data.getElement(l+i_pos[0], j_pos[0]-q, sDataTable)) || isinf(_data.getElement(l+i_pos[0], j_pos[0]-q, sDataTable))))
-                                                _mDataPlots[i][q].a[l] = NAN;
+                                                _mDataPlots[i][q+_pData.getBoxplot()].a[l] = NAN;
                                             else if (isinf(_data.getElement(l+i_pos[0], j_pos[0]-q, sDataTable)))
-                                                _mDataPlots[i][q].a[l] = NAN;
+                                                _mDataPlots[i][q+_pData.getBoxplot()].a[l] = NAN;
                                             else
-                                                _mDataPlots[i][q].a[l] = _data.getElement(l+i_pos[0], j_pos[0]-q, sDataTable);
+                                                _mDataPlots[i][q+_pData.getBoxplot()].a[l] = _data.getElement(l+i_pos[0], j_pos[0]-q, sDataTable);
                                         }
                                         else if (q == 2 && _pInfo.sCommand == "plot3d"
                                             && !(_data.getLines(sDataTable, true)-_data.getAppendedZeroes(j_pos[0]-q, sDataTable)-i_pos[0]))
                                             _mDataPlots[i][q].a[l] = 0.0;
                                         else if (l)
-                                            _mDataPlots[i][q].a[l] = NAN;
+                                            _mDataPlots[i][q+_pData.getBoxplot()].a[l] = NAN;
                                         else
-                                            _mDataPlots[i][q].a[0] = NAN;
+                                            _mDataPlots[i][q+_pData.getBoxplot()].a[0] = NAN;
                                     }
                                 }
                             }
@@ -4164,166 +3941,88 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                         {
                             // --> Beliebige Spalten <--
                             //cerr << "arbitrary" << endl;
-                            for (int k = 0; k < nDataDim[i]; k++)
+                            if (_pData.getBoxplot() && !_pInfo.b2D && vCol.size())
                             {
-                                //cerr << j_pos[k] << " " << k << endl;
-                                if (_pInfo.b2D && k == 2)
+                                for (int k = 0; k < min(nDataDim[i], (int)vCol.size()); k++)
                                 {
-                                    for (int m = 0; m < i_pos[1]-i_pos[0]; m++)
+                                    if (_pData.getBoxplot() && !k)
                                     {
-                                        if (_data.num(sDataTable, i_pos[0], i_pos[1], j_pos[k-1]) <= m)
-                                        {
-                                            _mDataPlots[i][k].a[l+(i_pos[1]-i_pos[0])*m] = NAN;
-                                            continue;
-                                        }
-                                        if (_data.getCols(sDataTable) > j_pos[k]+m && _data.isValidEntry(l+i_pos[0], j_pos[k]+m, sDataTable))
-                                        {
-                                            if (!l && (isnan(_data.getElement(l+i_pos[0], j_pos[k]+m, sDataTable)) || isinf(_data.getElement(l+i_pos[0], j_pos[k]+m, sDataTable))))
-                                                _mDataPlots[i][k].a[l+(i_pos[1]-i_pos[0])*m] = NAN;
-                                            else if (isinf(_data.getElement(l+i_pos[0], j_pos[k]+m, sDataTable)))
-                                                _mDataPlots[i][k].a[l+(i_pos[1]-i_pos[0])*m] = NAN;
-                                            else
-                                                _mDataPlots[i][k].a[l+(i_pos[1]-i_pos[0])*m] = _data.getElement(l+i_pos[0], j_pos[k]+m, sDataTable);
-                                        }
+                                        _mDataPlots[i][0] = l+1+i_pos[0];
                                     }
-                                }
-                                else
-                                {
-                                    if (_data.getCols(sDataTable) > j_pos[k] && _data.isValidEntry(l+i_pos[0], j_pos[k], sDataTable))
+                                    if (_data.getCols(sDataTable) > vCol[k] && _data.isValidEntry(l+i_pos[0], vCol[k], sDataTable))
                                     {
-                                        if (!l && (isnan(_data.getElement(l+i_pos[0], j_pos[k], sDataTable)) || isinf(_data.getElement(l+i_pos[0], j_pos[k], sDataTable))))
-                                            _mDataPlots[i][k].a[l] = NAN;
-                                        else if (isinf(_data.getElement(l+i_pos[0], j_pos[k], sDataTable)))
-                                            _mDataPlots[i][k].a[l] = NAN;
+                                        if (!l && (isnan(_data.getElement(l+i_pos[0], vCol[k], sDataTable)) || isinf(_data.getElement(l+i_pos[0], vCol[k], sDataTable))))
+                                            _mDataPlots[i][k+1].a[l] = NAN;
+                                        else if (isinf(_data.getElement(l+i_pos[0], vCol[k], sDataTable)))
+                                            _mDataPlots[i][k+1].a[l] = NAN;
                                         else
-                                            _mDataPlots[i][k].a[l] = _data.getElement(l+i_pos[0], j_pos[k], sDataTable);
+                                            _mDataPlots[i][k+1].a[l] = _data.getElement(l+i_pos[0], vCol[k], sDataTable);
                                     }
                                     else if (_pInfo.sCommand == "plot3d" && k < 3
-                                        && !(_data.getLines(sDataTable, true)-_data.getAppendedZeroes(j_pos[k], sDataTable)-i_pos[0]))
+                                        && !(_data.getLines(sDataTable, true)-_data.getAppendedZeroes(vCol[k], sDataTable)-i_pos[0]))
                                     {
                                         _mDataPlots[i][k].a[l] = 0.0;
                                         //cerr << 0.0 << endl;
                                     }
                                     else if (l)
-                                        _mDataPlots[i][k].a[l] = NAN;
+                                        _mDataPlots[i][k+1].a[l] = NAN;
                                     else
-                                        _mDataPlots[i][k].a[0] = NAN;
+                                        _mDataPlots[i][k+1].a[0] = NAN;
+                                }
+                            }
+                            else
+                            {
+                                for (int k = 0; k < nDataDim[i]-_pData.getBoxplot(); k++)
+                                {
+                                    //cerr << j_pos[k] << " " << k << endl;
+                                    if (_pInfo.b2D && k == 2)
+                                    {
+                                        for (int m = 0; m < i_pos[1]-i_pos[0]; m++)
+                                        {
+                                            if (_data.num(sDataTable, i_pos[0], i_pos[1], j_pos[k-1]) <= m)
+                                            {
+                                                _mDataPlots[i][k].a[l+(i_pos[1]-i_pos[0])*m] = NAN;
+                                                continue;
+                                            }
+                                            if (_data.getCols(sDataTable) > j_pos[k]+m && _data.isValidEntry(l+i_pos[0], j_pos[k]+m, sDataTable))
+                                            {
+                                                if (!l && (isnan(_data.getElement(l+i_pos[0], j_pos[k]+m, sDataTable)) || isinf(_data.getElement(l+i_pos[0], j_pos[k]+m, sDataTable))))
+                                                    _mDataPlots[i][k].a[l+(i_pos[1]-i_pos[0])*m] = NAN;
+                                                else if (isinf(_data.getElement(l+i_pos[0], j_pos[k]+m, sDataTable)))
+                                                    _mDataPlots[i][k].a[l+(i_pos[1]-i_pos[0])*m] = NAN;
+                                                else
+                                                    _mDataPlots[i][k].a[l+(i_pos[1]-i_pos[0])*m] = _data.getElement(l+i_pos[0], j_pos[k]+m, sDataTable);
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (_data.getCols(sDataTable) > j_pos[k] && _data.isValidEntry(l+i_pos[0], j_pos[k], sDataTable))
+                                        {
+                                            if (!l && (isnan(_data.getElement(l+i_pos[0], j_pos[k], sDataTable)) || isinf(_data.getElement(l+i_pos[0], j_pos[k], sDataTable))))
+                                                _mDataPlots[i][k].a[l] = NAN;
+                                            else if (isinf(_data.getElement(l+i_pos[0], j_pos[k], sDataTable)))
+                                                _mDataPlots[i][k].a[l] = NAN;
+                                            else
+                                                _mDataPlots[i][k].a[l] = _data.getElement(l+i_pos[0], j_pos[k], sDataTable);
+                                        }
+                                        else if (_pInfo.sCommand == "plot3d" && k < 3
+                                            && !(_data.getLines(sDataTable, true)-_data.getAppendedZeroes(j_pos[k], sDataTable)-i_pos[0]))
+                                        {
+                                            _mDataPlots[i][k].a[l] = 0.0;
+                                            //cerr << 0.0 << endl;
+                                        }
+                                        else if (l)
+                                            _mDataPlots[i][k].a[l] = NAN;
+                                        else
+                                            _mDataPlots[i][k].a[0] = NAN;
+                                    }
                                 }
                             }
                         }
 
                         // --> Berechnen der DataRanges <--
-                        for (int q = 0; q < 3; q++)
-                        {
-                            if (q == 2 && nDataDim[i] < 3)
-                            {
-                                dDataRanges[2][0] = 0;
-                                dDataRanges[2][1] = 0;
-                                break;
-                            }
-                            if (l == 0 && i == 0)
-                            {
-                                if (q && _pData.getRangeSetting(q-1))
-                                {
-                                    if (_pData.getRanges(q-1,0) > _mDataPlots[i][q-1].a[l] || _pData.getRanges(q-1,1) < _mDataPlots[i][q-1].a[l])
-                                    {
-                                        if (_pInfo.sCommand != "plot")
-                                        {
-                                            dDataRanges[q][0] = NAN;
-                                            dDataRanges[q][1] = NAN;
-                                        }
-                                        else
-                                        {
-                                            if (q < 2)
-                                            {
-                                                dSecDataRanges[q][0] = NAN;
-                                                dSecDataRanges[q][1] = NAN;
-                                            }
-                                            dDataRanges[q][0] = NAN;
-                                            dDataRanges[q][1] = NAN;
-                                        }
-                                        continue;
-                                    }
-                                }
-                                if (_pInfo.sCommand != "plot" || q >= 2)
-                                {
-                                    dDataRanges[q][0] = _mDataPlots[i][q].a[l];
-                                    dDataRanges[q][1] = _mDataPlots[i][q].a[l];
-                                }
-                                else
-                                {
-                                    if (sDataAxisBinds[2*i+!q] == 'l' || sDataAxisBinds[2*i+!q] == 'b')
-                                    {
-                                        dDataRanges[q][0] = _mDataPlots[i][q].a[l];
-                                        dDataRanges[q][1] = _mDataPlots[i][q].a[l];
-                                        dSecDataRanges[q][0] = NAN;
-                                        dSecDataRanges[q][1] = NAN;
-                                    }
-                                    else
-                                    {
-                                        dSecDataRanges[q][0] = _mDataPlots[i][q].a[l];
-                                        dSecDataRanges[q][1] = _mDataPlots[i][q].a[l];
-                                        dDataRanges[q][0] = NAN;
-                                        dDataRanges[q][1] = NAN;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (_pInfo.b2D && q == 2)
-                                {
-                                    if (_pData.getRangeSetting())
-                                    {
-                                        if (_pData.getRanges(0,0) > _mDataPlots[i][0].a[l] || _pData.getRanges(0,1) < _mDataPlots[i][0].a[l])
-                                            continue;
-                                    }
-                                    if (_pData.getRangeSetting(1))
-                                    {
-                                        if (_pData.getRanges(1,0) > _mDataPlots[i][1].a[l] || _pData.getRanges(1,1) < _mDataPlots[i][1].a[l])
-                                            continue;
-                                    }
-                                    for (int k = 0; k < i_pos[1]-i_pos[0]; k++)
-                                    {
-                                        if (dDataRanges[q][0] > _mDataPlots[i][q].a[l+(i_pos[1]-i_pos[0])*k] || isnan(dDataRanges[q][0]))
-                                            dDataRanges[q][0] = _mDataPlots[i][q].a[l+(i_pos[1]-i_pos[0])*k];
-                                        if (dDataRanges[q][1] < _mDataPlots[i][q].a[l+(i_pos[1]-i_pos[0])*k] || isnan(dDataRanges[q][1]))
-                                            dDataRanges[q][1] = _mDataPlots[i][q].a[l+(i_pos[1]-i_pos[0])*k];
-                                    }
-                                }
-                                else
-                                {
-                                    if (q && _pData.getRangeSetting())
-                                    {
-                                        if (_pData.getRanges(0,0) > _mDataPlots[i][0].a[l] || _pData.getRanges(0,1) < _mDataPlots[i][0].a[l])
-                                            continue;
-                                    }
-                                    if (_pInfo.sCommand != "plot" || q >= 2)
-                                    {
-                                        if (dDataRanges[q][0] > _mDataPlots[i][q].a[l] || isnan(dDataRanges[q][0]))
-                                            dDataRanges[q][0] = _mDataPlots[i][q].a[l];
-                                        if (dDataRanges[q][1] < _mDataPlots[i][q].a[l] || isnan(dDataRanges[q][1]))
-                                            dDataRanges[q][1] = _mDataPlots[i][q].a[l];
-                                    }
-                                    else
-                                    {
-                                        if (sDataAxisBinds[2*i+!q] == 'l' || sDataAxisBinds[2*i+!q] == 'b')
-                                        {
-                                            if (dDataRanges[q][0] > _mDataPlots[i][q].a[l] || isnan(dDataRanges[q][0]))
-                                                dDataRanges[q][0] = _mDataPlots[i][q].a[l];
-                                            if (dDataRanges[q][1] < _mDataPlots[i][q].a[l] || isnan(dDataRanges[q][1]))
-                                                dDataRanges[q][1] = _mDataPlots[i][q].a[l];
-                                        }
-                                        else
-                                        {
-                                            if (dSecDataRanges[q][0] > _mDataPlots[i][q].a[l] || isnan(dSecDataRanges[q][0]))
-                                                dSecDataRanges[q][0] = _mDataPlots[i][q].a[l];
-                                            if (dSecDataRanges[q][1] < _mDataPlots[i][q].a[l] || isnan(dSecDataRanges[q][1]))
-                                                dSecDataRanges[q][1] = _mDataPlots[i][q].a[l];
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        calculateDataRanges(_pData, sDataAxisBinds, dDataRanges, dSecDataRanges, i, l, i_pos);
                     }
                 }
 
@@ -4339,6 +4038,329 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
     }
 }
 
+void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data, const Settings& _option)
+{
+    // --> Ersetzen von "data()" bzw. "cache()" durch die Spaltentitel <--
+    size_t n_dpos = 0;
+    while (sDataLabels.find(';', n_dpos) != string::npos)
+    {
+        string sTemp = sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos);
+
+        if ((sTemp.find("data(") != string::npos || _data.containsCacheElements(sTemp))
+            && (sTemp.find(',') != string::npos || sTemp.substr(sTemp.find('('),2) == "()")
+            && sTemp.find(')') != string::npos)
+        {
+            if ((sTemp.find("data(") != string::npos && checkDelimiter(sDataLabels.substr(sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos).find("data(")-1, 6)) && !_data.isValid())
+                || (_data.containsCacheElements(sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos)-n_dpos)) && !_data.isValidCache()))
+            {
+                throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sDataLabels, SyntaxError::invalid_position);
+            }
+
+            StripSpaces(sTemp);
+            string sTableName = sTemp.substr(0,sTemp.find('('));
+            if (sTableName[0] == ';' || sTableName[0] == '"')
+                sTableName.erase(0,1);
+            if (getMatchingParenthesis(sTemp.substr(sTemp.find('('))) == string::npos)
+                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sTemp, sTemp.find('('));
+
+            string sArgs = sTemp.substr(sTemp.find('('), getMatchingParenthesis(sTemp.substr(sTemp.find('(')))+1);
+
+            if (sArgs == "()")
+                sArgs = "(:,:)";
+
+            string sArg_1 = "<<empty>>";
+            string sArg_2 = "<<empty>>";
+            string sArg_3 = "<<empty>>";
+
+            parser_SplitArgs(sArgs, sArg_1, ',', _option);
+
+            if (sArg_1.find(':') != string::npos)
+            {
+                sArg_1 = "(" + sArg_1 + ")";
+                try
+                {
+                    parser_SplitArgs(sArg_1, sArg_2, ':', _option);
+                }
+                catch (SyntaxError& e)
+                {
+                    if (e.errorcode == SyntaxError::SEPARATOR_NOT_FOUND)
+                    {
+                        n_dpos = sDataLabels.find(';', n_dpos)+1;
+                        continue;
+                    }
+                    else
+                        throw;
+                }
+                StripSpaces(sArg_2);
+                if (sArg_2.find(':') != string::npos)
+                {
+                    sArg_2 = "(" + sArg_2 + ")";
+                    parser_SplitArgs(sArg_2, sArg_3, ':', _option);
+                    StripSpaces(sArg_2);
+                    if (sArg_3.find(':') != string::npos)
+                    {
+                        sArg_3 = "(" + sArg_3 + ")";
+                        parser_SplitArgs(sArg_3, sArgs, ':', _option);
+                        StripSpaces(sArg_3);
+                    }
+                }
+            }
+            StripSpaces(sArg_1);
+            if (!sArg_1.length() && !sArg_2.length() && sArg_3 == "<<empty>>")
+            {
+                sArg_1 = "1";
+            }
+            else if (!sArg_1.length())
+            {
+                n_dpos = sDataLabels.find(';', n_dpos)+1;
+                continue;
+            }
+            if (_data.containsCacheElements(sTemp))
+            {
+                _data.setCacheStatus(true);
+            }
+            if (sArg_2 == "<<empty>>" && sArg_3 == "<<empty>>" && _pInfo.sCommand != "plot3d")
+            {
+                sTemp = "\"" + constructDataLegendElement(_parser, _data, sArg_1, sTableName) + "\"";
+            }
+            else if (sArg_2.length())
+            {
+                if (_pInfo.sCommand != "plot3d")
+                {
+                    if (!(_pData.getyError() || _pData.getxError()) && sArg_3 == "<<empty>>")
+                    {
+                        sTemp = "\"" + constructDataLegendElement(_parser, _data, sArg_2, sTableName) + " vs. " + constructDataLegendElement(_parser, _data, sArg_1, sTableName)+ "\"";
+                    }
+                    else if (sArg_3 != "<<empty>>")
+                    {
+                        sTemp = "\"" + constructDataLegendElement(_parser, _data, sArg_2, sTableName) + " vs. " + constructDataLegendElement(_parser, _data, sArg_1, sTableName)+ "\"";
+                    }
+                    else
+                    {
+                        double dArg_1, dArg_2;
+                        _parser.SetExpr(sArg_1);
+                        dArg_1 = _parser.Eval();
+                        _parser.SetExpr(sArg_2);
+                        dArg_2 = _parser.Eval();
+                        if (dArg_1 < dArg_2)
+                            sTemp = "\"" + _data.getTopHeadLineElement((int)dArg_1,sTableName) + " vs. " + _data.getTopHeadLineElement((int)dArg_1-1,sTableName) + "\"";
+                        else
+                            sTemp = "\"" + _data.getTopHeadLineElement((int)dArg_2-1,sTableName) + " vs. " + _data.getTopHeadLineElement((int)dArg_2,sTableName) + "\"";
+                    }
+                }
+                else if (sArg_3 == "<<empty>>" || !sArg_3.length())
+                {
+                    double dArg_1, dArg_2;
+                    _parser.SetExpr(sArg_1);
+                    dArg_1 = _parser.Eval();
+                    _parser.SetExpr(sArg_2);
+                    dArg_2 = _parser.Eval();
+                    if (dArg_1 < dArg_2)
+                        sTemp = "\"" + _data.getTopHeadLineElement((int)dArg_1-1,sTableName) + ", " + _data.getTopHeadLineElement((int)dArg_2-2,sTableName) + ", " + _data.getTopHeadLineElement((int)dArg_2-1,sTableName) + "\"";
+                    else
+                        sTemp = "\"" + _data.getTopHeadLineElement((int)dArg_2-1,sTableName) + ", " + _data.getTopHeadLineElement((int)dArg_1-2,sTableName) + ", " + _data.getTopHeadLineElement((int)dArg_1-1,sTableName) + "\"";
+                }
+                else if (sArg_3.length())
+                {
+                    sTemp = "\"" + constructDataLegendElement(_parser, _data, sArg_1, sTableName) + ", "
+                        + constructDataLegendElement(_parser, _data, sArg_2, sTableName) + ", "
+                        + constructDataLegendElement(_parser, _data, sArg_3, sTableName) + "\"";
+                }
+            }
+            else if (!sArg_2.length())
+            {
+                if (_pInfo.sCommand != "plot3d")
+                {
+                    _parser.SetExpr(sArg_1);
+                    sTemp = "\"" + _data.getTopHeadLineElement((int)_parser.Eval(),sTableName) + " vs. " + _data.getTopHeadLineElement((int)_parser.Eval()-1,sTableName) + "\"";
+                }
+                else if (sArg_3 == "<<empty>>" || !sArg_3.length())
+                {
+                    _parser.SetExpr(sArg_1);
+                    sTemp = "\"" + _data.getTopHeadLineElement((int)_parser.Eval()-1,sTableName) + ", "
+                        + _data.getTopHeadLineElement((int)_parser.Eval(),sTableName) + ", "
+                        + _data.getTopHeadLineElement((int)_parser.Eval()+1,sTableName) + "\"";
+                }
+                else if (sArg_3.length())
+                {
+                    _parser.SetExpr(sArg_1);
+                    sTemp = "\"" + _data.getTopHeadLineElement((int)_parser.Eval()-1,sTableName) + ", " + _data.getTopHeadLineElement((int)_parser.Eval(),sTableName) + ", ";
+                    sTemp += constructDataLegendElement(_parser, _data, sArg_3, sTableName) + "\"";
+                }
+            }
+            else
+            {
+                n_dpos = sDataLabels.find(';', n_dpos)+1;
+                continue;
+            }
+            _data.setCacheStatus(false);
+            for (unsigned int n = 0; n < sTemp.length(); n++)
+            {
+                if (sTemp[n] == '_')
+                    sTemp[n] = ' ';
+            }
+            sDataLabels = sDataLabels.substr(0,n_dpos) + sTemp + sDataLabels.substr(sDataLabels.find(';', n_dpos));
+
+        }
+        n_dpos = sDataLabels.find(';', n_dpos)+1;
+    }
+}
+
+string Plot::constructDataLegendElement(Parser& _parser, Datafile& _data, const string& sColumnIndices, const string& sTableName)
+{
+    value_type* v = nullptr;
+    int nResults = 0;
+
+    _parser.SetExpr(sColumnIndices);
+    v = _parser.Eval(nResults);
+
+    if (nResults == 1)
+        return _data.getTopHeadLineElement((int)v[0]-1, sTableName);
+
+    string sLegend = "[";
+    for (int i = 0; i < nResults; i++)
+    {
+        sLegend += _data.getTopHeadLineElement((int)v[i]-1, sTableName);
+        if (i+1 < nResults)
+            sLegend += ",";
+    }
+    return sLegend + "]";
+}
+
+void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2], int i, int l, int i_pos[2])
+{
+    for (int q = 0; q < 3; q++)
+    {
+        if (q == 2 && nDataDim[i] < 3)
+        {
+            dDataRanges[2][0] = 0;
+            dDataRanges[2][1] = 0;
+            break;
+        }
+        if (l == 0 && i == 0)
+        {
+            if (q && _pData.getRangeSetting(q-1))
+            {
+                if (_pData.getRanges(q-1,0) > _mDataPlots[i][q-1].a[l] || _pData.getRanges(q-1,1) < _mDataPlots[i][q-1].a[l])
+                {
+                    if (_pInfo.sCommand != "plot")
+                    {
+                        dDataRanges[q][0] = NAN;
+                        dDataRanges[q][1] = NAN;
+                    }
+                    else
+                    {
+                        if (q < 2)
+                        {
+                            dSecDataRanges[q][0] = NAN;
+                            dSecDataRanges[q][1] = NAN;
+                        }
+                        dDataRanges[q][0] = NAN;
+                        dDataRanges[q][1] = NAN;
+                    }
+                    continue;
+                }
+            }
+            if (_pInfo.sCommand != "plot" || q >= 2)
+            {
+                dDataRanges[q][0] = _mDataPlots[i][q].a[l];
+                dDataRanges[q][1] = _mDataPlots[i][q].a[l];
+            }
+            else
+            {
+                if (sDataAxisBinds[2*i+!q] == 'l' || sDataAxisBinds[2*i+!q] == 'b')
+                {
+                    dDataRanges[q][0] = _mDataPlots[i][q].a[l];
+                    dDataRanges[q][1] = _mDataPlots[i][q].a[l];
+                    dSecDataRanges[q][0] = NAN;
+                    dSecDataRanges[q][1] = NAN;
+                }
+                else
+                {
+                    dSecDataRanges[q][0] = _mDataPlots[i][q].a[l];
+                    dSecDataRanges[q][1] = _mDataPlots[i][q].a[l];
+                    dDataRanges[q][0] = NAN;
+                    dDataRanges[q][1] = NAN;
+                }
+            }
+        }
+        else
+        {
+            if (_pInfo.b2D && q == 2)
+            {
+                if (_pData.getRangeSetting())
+                {
+                    if (_pData.getRanges(0,0) > _mDataPlots[i][0].a[l] || _pData.getRanges(0,1) < _mDataPlots[i][0].a[l])
+                        continue;
+                }
+                if (_pData.getRangeSetting(1))
+                {
+                    if (_pData.getRanges(1,0) > _mDataPlots[i][1].a[l] || _pData.getRanges(1,1) < _mDataPlots[i][1].a[l])
+                        continue;
+                }
+                for (int k = 0; k < i_pos[1]-i_pos[0]; k++)
+                {
+                    if (dDataRanges[q][0] > _mDataPlots[i][q].a[l+(i_pos[1]-i_pos[0])*k] || isnan(dDataRanges[q][0]))
+                        dDataRanges[q][0] = _mDataPlots[i][q].a[l+(i_pos[1]-i_pos[0])*k];
+                    if (dDataRanges[q][1] < _mDataPlots[i][q].a[l+(i_pos[1]-i_pos[0])*k] || isnan(dDataRanges[q][1]))
+                        dDataRanges[q][1] = _mDataPlots[i][q].a[l+(i_pos[1]-i_pos[0])*k];
+                }
+            }
+            else
+            {
+                if (q && _pData.getRangeSetting())
+                {
+                    if (_pData.getRanges(0,0) > _mDataPlots[i][0].a[l] || _pData.getRanges(0,1) < _mDataPlots[i][0].a[l])
+                        continue;
+                }
+                if (_pInfo.sCommand != "plot" || q >= 2)
+                {
+                    if (dDataRanges[q][0] > _mDataPlots[i][q].a[l] || isnan(dDataRanges[q][0]))
+                        dDataRanges[q][0] = _mDataPlots[i][q].a[l];
+                    if (dDataRanges[q][1] < _mDataPlots[i][q].a[l] || isnan(dDataRanges[q][1]))
+                        dDataRanges[q][1] = _mDataPlots[i][q].a[l];
+                }
+                else if (_pData.getBoxplot() && q == 1)
+                {
+                    for (int dim = 1; dim < nDataDim[i]; dim++)
+                    {
+                        if (sDataAxisBinds[2*i] == 'l' || sDataAxisBinds[2*i] == 'b')
+                        {
+                            if (dDataRanges[1][0] > _mDataPlots[i][dim].a[l] || isnan(dDataRanges[1][0]))
+                                dDataRanges[1][0] = _mDataPlots[i][dim].a[l];
+                            if (dDataRanges[1][1] < _mDataPlots[i][dim].a[l] || isnan(dDataRanges[1][1]))
+                                dDataRanges[1][1] = _mDataPlots[i][dim].a[l];
+                        }
+                        else
+                        {
+                            if (dSecDataRanges[1][0] > _mDataPlots[i][dim].a[l] || isnan(dSecDataRanges[1][0]))
+                                dSecDataRanges[1][0] = _mDataPlots[i][dim].a[l];
+                            if (dSecDataRanges[1][1] < _mDataPlots[i][dim].a[l] || isnan(dSecDataRanges[1][1]))
+                                dSecDataRanges[1][1] = _mDataPlots[i][dim].a[l];
+                        }
+                    }
+                }
+                else
+                {
+                    if (sDataAxisBinds[2*i+!q] == 'l' || sDataAxisBinds[2*i+!q] == 'b')
+                    {
+                        if (dDataRanges[q][0] > _mDataPlots[i][q].a[l] || isnan(dDataRanges[q][0]))
+                            dDataRanges[q][0] = _mDataPlots[i][q].a[l];
+                        if (dDataRanges[q][1] < _mDataPlots[i][q].a[l] || isnan(dDataRanges[q][1]))
+                            dDataRanges[q][1] = _mDataPlots[i][q].a[l];
+                    }
+                    else
+                    {
+                        if (dSecDataRanges[q][0] > _mDataPlots[i][q].a[l] || isnan(dSecDataRanges[q][0]))
+                            dSecDataRanges[q][0] = _mDataPlots[i][q].a[l];
+                        if (dSecDataRanges[q][1] < _mDataPlots[i][q].a[l] || isnan(dSecDataRanges[q][1]))
+                            dSecDataRanges[q][1] = _mDataPlots[i][q].a[l];
+                    }
+                }
+            }
+        }
+    }
+}
 
 void Plot::prepareMemory(PlotData& _pData, const string& sFunc, int nFunctions)
 {
@@ -5141,7 +5163,9 @@ void Plot::passRangesToGraph(PlotData& _pData, const string& sFunc, double dData
     if (_pData.getBoxplot() && !_pData.getRangeSetting() && nDataPlots)
     {
         _pInfo.dRanges[XCOORD][0] = 0;
-        _pInfo.dRanges[XCOORD][1] = nDataPlots+1;
+        _pInfo.dRanges[XCOORD][1] = 1;
+        for (int i = 0; i < nDataPlots; i++)
+            _pInfo.dRanges[XCOORD][1] += nDataDim[i]-1;
     }
     if (_pData.getInvertion())
         _graph->SetRange('x', _pInfo.dRanges[XCOORD][1]/_pData.getAxisScale(), _pInfo.dRanges[XCOORD][0]/_pData.getAxisScale());

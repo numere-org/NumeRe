@@ -1,42 +1,42 @@
 # depslib dependency file v1.0
-1511685434 source:d:\cpp\numere-source\trunk\chameleon.rc
+1511689034 source:d:\cpp\numere-source\trunk\chameleon.rc
 	<windows.h>
 	"kernel/core/version.h"
 	<wx/msw/wx.rc>
 
-1520665925 d:\cpp\numere-source\trunk\kernel\core\version.h
+1520669525 d:\cpp\numere-source\trunk\kernel\core\version.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wx.rc
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wx.rc
 	<windows.h>
 	"wx/msw/wince/wince.rc"
 	"wx/msw/rcdefs.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\wince.rc
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\wince.rc
 	<commctrl.h>
 	"wx/msw/wince/resources.h"
 	"wx/msw/wince/smartphone.rc"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\resources.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\resources.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\smartphone.rc
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\smartphone.rc
 	<aygshell.h>
 
-1483739173 d:\tdm-gcc-32\wxwidgets-3.0.2\lib\gcc_lib\mswu\wx\msw\rcdefs.h
+1483742773 d:\tdm-gcc-32\wxwidgets-3.0.2\lib\gcc_lib\mswu\wx\msw\rcdefs.h
 
-1490787950 source:d:\cpp\numere-source\trunk\common\chameleonprocessevent.cpp
+1490791550 source:d:\cpp\numere-source\trunk\common\chameleonprocessevent.cpp
 	"chameleonprocessevent.h"
 	"../common/debug.h"
 
-1490787950 d:\cpp\numere-source\trunk\common\chameleonprocessevent.h
+1490791550 d:\cpp\numere-source\trunk\common\chameleonprocessevent.h
 	<wx/process.h>
 	<wx/event.h>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\process.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\process.h
 	"wx/event.h"
 	"wx/stream.h"
 	"wx/utils.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\event.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\event.h
 	"wx/defs.h"
 	"wx/cpp.h"
 	"wx/object.h"
@@ -52,7 +52,7 @@
 	"wx/meta/convertible.h"
 	"wx/meta/removeref.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\defs.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\defs.h
 	"wx/platform.h"
 	"wx/version.h"
 	"wx/dlimpexp.h"
@@ -65,7 +65,7 @@
 	"wx/msw/winundef.h"
 	"wx/features.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\platform.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\platform.h
 	<unistd.h>
 	<TargetConditionals.h>
 	<AvailabilityMacros.h>
@@ -80,21 +80,21 @@
 	<AvailabilityMacros.h>
 	"wx/chkconf.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\android\config_android.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\android\config_android.h
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\compiler.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\compiler.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\lib\gcc_lib\mswu\wx\setup.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\lib\gcc_lib\mswu\wx\setup.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\libraries.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\libraries.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\libraries.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\libraries.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\gccpriv.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\gccpriv.h
 	<_mingw.h>
 	<w32api.h>
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\chkconf.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\chkconf.h
 	"wx/msw/wince/chkconf.h"
 	"wx/msw/chkconf.h"
 	"wx/gtk/chkconf.h"
@@ -109,32 +109,32 @@
 	"wx/unix/chkconf.h"
 	"wx/univ/chkconf.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\chkconf.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\chkconf.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\chkconf.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\chkconf.h
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\android\chkconf.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\android\chkconf.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\chkconf.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\chkconf.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\chkconf.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\chkconf.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\version.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\version.h
 	"wx/cpp.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\cpp.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\cpp.h
 	"wx/compiler.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dlimpexp.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dlimpexp.h
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\debug.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\debug.h
 	<assert.h>
 	<limits.h>
 	"wx/chartype.h"
 	"wx/cpp.h"
 	"wx/dlimpexp.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\chartype.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\chartype.h
 	"wx/platform.h"
 	<sys/types.h>
 	<wchar.h>
@@ -148,26 +148,26 @@
 	<tchar.h>
 	<ctype.h>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\windowid.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\windowid.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\winundef.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\winundef.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\features.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\features.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\object.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\object.h
 	"wx/memory.h"
 	"wx/xti.h"
 	"wx/rtti.h"
 	"wx/xti2.h"
 	"wx/msw/msvcrt.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\memory.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\memory.h
 	"wx/defs.h"
 	"wx/string.h"
 	"wx/msgout.h"
 	<stddef.h>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\string.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\string.h
 	"wx/defs.h"
 	<ctype.h>
 	<stdio.h>
@@ -190,7 +190,7 @@
 	"wx/iosfwrap.h"
 	"wx/crt.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxcrtbase.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxcrtbase.h
 	"wx/chartype.h"
 	<stdio.h>
 	<string.h>
@@ -199,7 +199,7 @@
 	<time.h>
 	<io.h>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\strvararg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\strvararg.h
 	"wx/platform.h"
 	"wx/cpp.h"
 	"wx/chartype.h"
@@ -211,7 +211,7 @@
 	<tr1/type_traits>
 	"wx/stringimpl.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\strconv.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\strconv.h
 	"wx/defs.h"
 	"wx/chartype.h"
 	"wx/buffer.h"
@@ -219,24 +219,24 @@
 	<stdlib.h>
 	"wx/fontenc.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\buffer.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\buffer.h
 	"wx/chartype.h"
 	"wx/wxcrtbase.h"
 	<stdlib.h>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\typeinfo.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\typeinfo.h
 	"wx/defs.h"
 	<typeinfo>
 	<string.h>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\fontenc.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\fontenc.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unichar.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unichar.h
 	"wx/defs.h"
 	"wx/chartype.h"
 	"wx/stringimpl.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stringimpl.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stringimpl.h
 	"wx/defs.h"
 	"wx/chartype.h"
 	"wx/wxcrtbase.h"
@@ -245,39 +245,39 @@
 	<string>
 	"wx/afterstd.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\beforestd.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\beforestd.h
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\afterstd.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\afterstd.h
 	"wx/msw/winundef.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stringops.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stringops.h
 	"wx/chartype.h"
 	"wx/stringimpl.h"
 	"wx/unichar.h"
 	"wx/buffer.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tls.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tls.h
 	"wx/defs.h"
 	"wx/msw/tls.h"
 	"wx/os2/tls.h"
 	"wx/unix/tls.h"
 	<stdlib.h>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\tls.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\tls.h
 	"wx/msw/wrapwin.h"
 	"wx/thread.h"
 	"wx/vector.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wrapwin.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wrapwin.h
 	"wx/platform.h"
 	<winsock2.h>
 	<windows.h>
 	"wx/msw/winundef.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\thread.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\thread.h
 	"wx/defs.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\vector.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\vector.h
 	"wx/defs.h"
 	<vector>
 	<algorithm>
@@ -288,59 +288,59 @@
 	<new>
 	"wx/afterstd.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\scopeguard.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\scopeguard.h
 	"wx/defs.h"
 	"wx/except.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\except.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\except.h
 	"wx/defs.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\movable.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\movable.h
 	"wx/meta/pod.h"
 	"wx/string.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\pod.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\pod.h
 	"wx/defs.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\if.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\if.h
 	"wx/defs.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\tls.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\tls.h
 	<pthread.h>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\iosfwrap.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\iosfwrap.h
 	<iostream.h>
 	<iosfwd>
 	"wx/msw/winundef.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\crt.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\crt.h
 	"wx/defs.h"
 	"wx/chartype.h"
 	"wx/wxcrt.h"
 	"wx/wxcrtvararg.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxcrt.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxcrt.h
 	"wx/wxcrtbase.h"
 	"wx/string.h"
 	<string.h>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxcrtvararg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxcrtvararg.h
 	"wx/wxcrt.h"
 	"wx/strvararg.h"
 	"wx/string.h"
 	<stdarg.h>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msgout.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msgout.h
 	"wx/defs.h"
 	"wx/chartype.h"
 	"wx/strvararg.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\xti.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\xti.h
 	"wx/defs.h"
 	"wx/xtitypes.h"
 	"wx/xtihandler.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\xtitypes.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\xtitypes.h
 	"wx/defs.h"
 	"wx/string.h"
 	"wx/hashmap.h"
@@ -350,7 +350,7 @@
 	"wx/log.h"
 	<typeinfo>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\hashmap.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\hashmap.h
 	"wx/string.h"
 	"wx/wxcrt.h"
 	<unordered_map>
@@ -359,7 +359,7 @@
 	<hash_map>
 	<stddef.h>
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\arrstr.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\arrstr.h
 	"wx/defs.h"
 	"wx/string.h"
 	"wx/dynarray.h"
@@ -367,23 +367,23 @@
 	<iterator>
 	"wx/afterstd.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dynarray.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dynarray.h
 	"wx/defs.h"
 	"wx/beforestd.h"
 	<vector>
 	<algorithm>
 	"wx/afterstd.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\flags.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\flags.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\intl.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\intl.h
 	"wx/defs.h"
 	"wx/string.h"
 	"wx/translation.h"
 	"wx/fontenc.h"
 	"wx/language.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\translation.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\translation.h
 	"wx/defs.h"
 	"wx/string.h"
 	"wx/buffer.h"
@@ -392,17 +392,17 @@
 	"wx/strconv.h"
 	"wx/scopedptr.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\language.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\language.h
 	"wx/defs.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\scopedptr.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\scopedptr.h
 	"wx/defs.h"
 	"wx/checkeddelete.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\checkeddelete.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\checkeddelete.h
 	"wx/cpp.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\log.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\log.h
 	"wx/defs.h"
 	"wx/cpp.h"
 	"wx/string.h"
@@ -416,26 +416,26 @@
 	"wx/generic/logg.h"
 	"wx/cocoa/log.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\logg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\logg.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\xtihandler.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\xtihandler.h
 	"wx/defs.h"
 	"wx/xti.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\rtti.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\rtti.h
 	"wx/memory.h"
 	"wx/flags.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\xti2.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\xti2.h
 	"wx/xtiprop.h"
 	"wx/xtictor.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\xtiprop.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\xtiprop.h
 	"wx/defs.h"
 	"wx/xti.h"
 	"wx/any.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\any.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\any.h
 	"wx/defs.h"
 	<new>
 	"wx/string.h"
@@ -445,7 +445,7 @@
 	"wx/datetime.h"
 	"wx/variant.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\list.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\list.h
 	"wx/defs.h"
 	"wx/object.h"
 	"wx/string.h"
@@ -456,7 +456,7 @@
 	<list>
 	"wx/afterstd.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\datetime.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\datetime.h
 	"wx/defs.h"
 	"wx/msw/wince/time.h"
 	<time.h>
@@ -465,9 +465,9 @@
 	"wx/anystr.h"
 	"wx/dynarray.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\time.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\time.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\longlong.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\longlong.h
 	"wx/defs.h"
 	"wx/string.h"
 	<limits.h>
@@ -475,10 +475,10 @@
 	<limits>
 	"wx/strvararg.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\anystr.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\anystr.h
 	"wx/string.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\variant.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\variant.h
 	"wx/defs.h"
 	"wx/object.h"
 	"wx/string.h"
@@ -490,20 +490,20 @@
 	"wx/iosfwrap.h"
 	"wx/any.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\xtictor.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\xtictor.h
 	"wx/defs.h"
 	"wx/xti.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\msvcrt.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\msvcrt.h
 	<stdlib.h>
 	<crtdbg.h>
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\clntdata.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\clntdata.h
 	"wx/defs.h"
 	"wx/string.h"
 	"wx/hashmap.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\gdicmn.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\gdicmn.h
 	"wx/defs.h"
 	"wx/list.h"
 	"wx/string.h"
@@ -511,14 +511,14 @@
 	"wx/hashmap.h"
 	"wx/math.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\math.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\math.h
 	"wx/defs.h"
 	<math.h>
 	<cmath>
 	<float.h>
 	<ieeefp.h>
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\cursor.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\cursor.h
 	"wx/defs.h"
 	"wx/msw/cursor.h"
 	"wx/motif/cursor.h"
@@ -531,18 +531,18 @@
 	"wx/os2/cursor.h"
 	"wx/utils.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\cursor.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\cursor.h
 	"wx/msw/gdiimage.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\gdiimage.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\gdiimage.h
 	"wx/gdiobj.h"
 	"wx/gdicmn.h"
 	"wx/list.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\gdiobj.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\gdiobj.h
 	"wx/object.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\utils.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\utils.h
 	"wx/object.h"
 	"wx/list.h"
 	"wx/filefn.h"
@@ -558,7 +558,7 @@
 	<unistd.h>
 	<stdio.h>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\filefn.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\filefn.h
 	"wx/list.h"
 	"wx/arrstr.h"
 	"wx/msw/wince/time.h"
@@ -585,7 +585,7 @@
 	<fcntl.h>
 	<sys/types.h>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\private.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\private.h
 	"wx/msw/wrapwin.h"
 	"wx/msw/microwin.h"
 	"wx/log.h"
@@ -593,9 +593,9 @@
 	"wx/gdicmn.h"
 	"wx/colour.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\microwin.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\microwin.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\window.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\window.h
 	"wx/event.h"
 	"wx/list.h"
 	"wx/cursor.h"
@@ -619,7 +619,7 @@
 	"wx/os2/window.h"
 	"wx/univ/window.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\font.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\font.h
 	"wx/defs.h"
 	"wx/fontenc.h"
 	"wx/gdiobj.h"
@@ -634,10 +634,10 @@
 	"wx/cocoa/font.h"
 	"wx/os2/font.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\font.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\font.h
 	"wx/gdicmn.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\colour.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\colour.h
 	"wx/defs.h"
 	"wx/gdiobj.h"
 	"wx/variant.h"
@@ -651,13 +651,13 @@
 	"wx/cocoa/colour.h"
 	"wx/os2/colour.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\colour.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\colour.h
 	"wx/object.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\colour.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\colour.h
 	"wx/object.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\region.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\region.h
 	"wx/gdiobj.h"
 	"wx/gdicmn.h"
 	"wx/msw/region.h"
@@ -669,13 +669,13 @@
 	"wx/cocoa/region.h"
 	"wx/os2/region.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\region.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\region.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\validate.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\validate.h
 	"wx/defs.h"
 	"wx/event.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\palette.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\palette.h
 	"wx/defs.h"
 	"wx/object.h"
 	"wx/gdiobj.h"
@@ -685,16 +685,16 @@
 	"wx/osx/palette.h"
 	"wx/os2/palette.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\palette.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\palette.h
 	"wx/gdiobj.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\paletteg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\paletteg.h
 	"wx/defs.h"
 	"wx/object.h"
 	"wx/gdiobj.h"
 	"wx/gdicmn.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\accel.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\accel.h
 	"wx/defs.h"
 	"wx/object.h"
 	"wx/generic/accel.h"
@@ -706,28 +706,28 @@
 	"wx/generic/accel.h"
 	"wx/os2/accel.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\accel.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\accel.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\accel.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\accel.h
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\access.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\access.h
 	"wx/defs.h"
 	"wx/variant.h"
 	"wx/msw/ole/access.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\access.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\access.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\window.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\window.h
 	"wx/settings.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\settings.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\settings.h
 	"wx/colour.h"
 	"wx/font.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\window.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\window.h
 	"wx/bitmap.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\bitmap.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\bitmap.h
 	"wx/string.h"
 	"wx/gdicmn.h"
 	"wx/colour.h"
@@ -744,7 +744,7 @@
 	"wx/os2/bitmap.h"
 	"wx/generic/mask.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\image.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\image.h
 	"wx/defs.h"
 	"wx/object.h"
 	"wx/string.h"
@@ -764,86 +764,86 @@
 	"wx/imagxpm.h"
 	"wx/imagiff.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stream.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stream.h
 	"wx/defs.h"
 	<stdio.h>
 	"wx/object.h"
 	"wx/string.h"
 	"wx/filefn.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagbmp.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagbmp.h
 	"wx/image.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagpng.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagpng.h
 	"wx/defs.h"
 	"wx/image.h"
 	"wx/versioninfo.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\versioninfo.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\versioninfo.h
 	"wx/string.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imaggif.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imaggif.h
 	"wx/image.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagpcx.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagpcx.h
 	"wx/image.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagjpeg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagjpeg.h
 	"wx/defs.h"
 	"wx/image.h"
 	"wx/versioninfo.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagtga.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagtga.h
 	"wx/image.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagtiff.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagtiff.h
 	"wx/defs.h"
 	"wx/image.h"
 	"wx/versioninfo.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagpnm.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagpnm.h
 	"wx/image.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagxpm.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagxpm.h
 	"wx/image.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagiff.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagiff.h
 	"wx/image.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\bitmap.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\bitmap.h
 	"wx/msw/gdiimage.h"
 	"wx/math.h"
 	"wx/palette.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\mask.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\mask.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\implicitconversion.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\implicitconversion.h
 	"wx/defs.h"
 	"wx/meta/if.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\mousestate.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\mousestate.h
 	"wx/gdicmn.h"
 	"wx/kbdstate.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\kbdstate.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\kbdstate.h
 	"wx/defs.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\platinfo.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\platinfo.h
 	"wx/string.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tracker.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tracker.h
 	"wx/defs.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\convertible.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\convertible.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\removeref.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\removeref.h
 
-1490787950 d:\cpp\numere-source\trunk\common\debug.h
+1490791550 d:\cpp\numere-source\trunk\common\debug.h
 	<wx/wx.h>
 	<wx/log.h>
 	<crtdbg.h>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wx.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wx.h
 	"wx/defs.h"
 	"wx/object.h"
 	"wx/dynarray.h"
@@ -924,12 +924,12 @@
 	"wx/validate.h"
 	"wx/valtext.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\hash.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\hash.h
 	"wx/defs.h"
 	"wx/string.h"
 	"wx/object.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\app.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\app.h
 	"wx/event.h"
 	"wx/eventfilter.h"
 	"wx/build.h"
@@ -949,31 +949,31 @@
 	"wx/os2/app.h"
 	"wx/univ/theme.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\eventfilter.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\eventfilter.h
 	"wx/defs.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\build.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\build.h
 	"wx/version.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\cmdargs.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\cmdargs.h
 	"wx/arrstr.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\init.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\init.h
 	"wx/defs.h"
 	"wx/chartype.h"
 	"wx/msw/init.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\init.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\init.h
 	"wx/msw/wrapwin.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\app.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\app.h
 	<signal.h>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\app.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\app.h
 	"wx/event.h"
 	"wx/icon.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\icon.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\icon.h
 	"wx/iconloc.h"
 	"wx/msw/icon.h"
 	"wx/motif/icon.h"
@@ -987,27 +987,27 @@
 	"wx/os2/icon.h"
 	"wx/variant.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\iconloc.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\iconloc.h
 	"wx/string.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\icon.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\icon.h
 	"wx/msw/gdiimage.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\icon.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\icon.h
 	"wx/bitmap.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\theme.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\theme.h
 	"wx/string.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stopwatch.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stopwatch.h
 	"wx/defs.h"
 	"wx/longlong.h"
 	"wx/time.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\time.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\time.h
 	"wx/longlong.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\timer.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\timer.h
 	"wx/defs.h"
 	"wx/object.h"
 	"wx/longlong.h"
@@ -1015,31 +1015,31 @@
 	"wx/stopwatch.h"
 	"wx/utils.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\module.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\module.h
 	"wx/object.h"
 	"wx/list.h"
 	"wx/arrstr.h"
 	"wx/dynarray.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\containr.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\containr.h
 	"wx/defs.h"
 	"wx/event.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\panel.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\panel.h
 	"wx/window.h"
 	"wx/containr.h"
 	"wx/univ/panel.h"
 	"wx/msw/panel.h"
 	"wx/generic/panelg.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\panel.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\panel.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\panel.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\panel.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\panelg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\panelg.h
 	"wx/bitmap.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\toplevel.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\toplevel.h
 	"wx/nonownedwnd.h"
 	"wx/iconbndl.h"
 	"wx/weakref.h"
@@ -1054,43 +1054,43 @@
 	"wx/motif/toplevel.h"
 	"wx/univ/toplevel.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\nonownedwnd.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\nonownedwnd.h
 	"wx/window.h"
 	"wx/dfb/nonownedwnd.h"
 	"wx/gtk/nonownedwnd.h"
 	"wx/osx/nonownedwnd.h"
 	"wx/msw/nonownedwnd.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\nonownedwnd.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\nonownedwnd.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\iconbndl.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\iconbndl.h
 	"wx/gdiobj.h"
 	"wx/gdicmn.h"
 	"wx/icon.h"
 	"wx/dynarray.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\weakref.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\weakref.h
 	"wx/tracker.h"
 	"wx/meta/convertible.h"
 	"wx/meta/int2type.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\int2type.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\int2type.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\toplevel.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\toplevel.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\toplevel.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\toplevel.h
 	"wx/univ/inpcons.h"
 	"wx/univ/inphand.h"
 	"wx/icon.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\inpcons.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\inpcons.h
 	"wx/object.h"
 	"wx/event.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\inphand.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\inphand.h
 	"wx/univ/inpcons.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\frame.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\frame.h
 	"wx/toplevel.h"
 	"wx/statusbr.h"
 	"wx/univ/frame.h"
@@ -1102,7 +1102,7 @@
 	"wx/cocoa/frame.h"
 	"wx/os2/frame.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\statusbr.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\statusbr.h
 	"wx/defs.h"
 	"wx/control.h"
 	"wx/list.h"
@@ -1113,7 +1113,7 @@
 	"wx/osx/statusbr.h"
 	"wx/generic/statusbr.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\control.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\control.h
 	"wx/defs.h"
 	"wx/window.h"
 	"wx/univ/control.h"
@@ -1125,22 +1125,22 @@
 	"wx/cocoa/control.h"
 	"wx/os2/control.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\control.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\control.h
 	"wx/univ/inphand.h"
 	"wx/univ/inpcons.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\control.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\control.h
 	"wx/dynarray.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\statusbr.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\statusbr.h
 	"wx/univ/inpcons.h"
 	"wx/arrstr.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\statusbar.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\statusbar.h
 	"wx/vector.h"
 	"wx/tooltip.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tooltip.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tooltip.h
 	"wx/defs.h"
 	"wx/msw/tooltip.h"
 	"wx/gtk/tooltip.h"
@@ -1149,16 +1149,16 @@
 	"wx/cocoa/tooltip.h"
 	"wx/os2/tooltip.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\tooltip.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\tooltip.h
 	"wx/object.h"
 	"wx/gdicmn.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\statusbr.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\statusbr.h
 	"wx/defs.h"
 	"wx/pen.h"
 	"wx/arrstr.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\pen.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\pen.h
 	"wx/gdiobj.h"
 	"wx/gdicmn.h"
 	"wx/msw/pen.h"
@@ -1170,15 +1170,15 @@
 	"wx/cocoa/pen.h"
 	"wx/os2/pen.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\pen.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\pen.h
 	"wx/gdiobj.h"
 	"wx/gdicmn.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\frame.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\frame.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\frame.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\frame.h
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dc.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dc.h
 	"wx/object.h"
 	"wx/intl.h"
 	"wx/cursor.h"
@@ -1194,7 +1194,7 @@
 	"wx/region.h"
 	"wx/affinematrix2d.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\brush.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\brush.h
 	"wx/defs.h"
 	"wx/object.h"
 	"wx/gdiobj.h"
@@ -1208,38 +1208,38 @@
 	"wx/cocoa/brush.h"
 	"wx/os2/brush.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\brush.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\brush.h
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\affinematrix2d.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\affinematrix2d.h
 	"wx/defs.h"
 	"wx/affinematrix2dbase.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\affinematrix2dbase.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\affinematrix2dbase.h
 	"wx/defs.h"
 	"wx/geometry.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\geometry.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\geometry.h
 	"wx/defs.h"
 	"wx/utils.h"
 	"wx/gdicmn.h"
 	"wx/math.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dcclient.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dcclient.h
 	"wx/dc.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dcmemory.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dcmemory.h
 	"wx/dc.h"
 	"wx/bitmap.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dcprint.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dcprint.h
 	"wx/defs.h"
 	"wx/dc.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dcscreen.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dcscreen.h
 	"wx/defs.h"
 	"wx/dc.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\button.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\button.h
 	"wx/defs.h"
 	"wx/anybutton.h"
 	"wx/univ/button.h"
@@ -1251,7 +1251,7 @@
 	"wx/cocoa/button.h"
 	"wx/os2/button.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\anybutton.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\anybutton.h
 	"wx/defs.h"
 	"wx/bitmap.h"
 	"wx/control.h"
@@ -1260,16 +1260,16 @@
 	"wx/gtk/anybutton.h"
 	"wx/osx/anybutton.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\anybutton.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\anybutton.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\anybutton.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\anybutton.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\button.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\button.h
 	"wx/bitmap.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\button.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\button.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\menuitem.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\menuitem.h
 	"wx/defs.h"
 	"wx/object.h"
 	"wx/univ/menuitem.h"
@@ -1281,22 +1281,22 @@
 	"wx/cocoa/menuitem.h"
 	"wx/os2/menuitem.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\menuitem.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\menuitem.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\menuitem.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\menuitem.h
 	"wx/ownerdrw.h"
 	"wx/bitmap.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\ownerdrw.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\ownerdrw.h
 	"wx/defs.h"
 	"wx/font.h"
 	"wx/colour.h"
 	"wx/msw/ownerdrw.h"
 	"wx/os2/ownerdrw.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ownerdrw.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ownerdrw.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\menu.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\menu.h
 	"wx/defs.h"
 	"wx/list.h"
 	"wx/window.h"
@@ -1310,16 +1310,16 @@
 	"wx/cocoa/menu.h"
 	"wx/os2/menu.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\menu.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\menu.h
 	"wx/accel.h"
 	"wx/dynarray.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\menu.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\menu.h
 	"wx/accel.h"
 	"wx/dynarray.h"
 	"wx/arrstr.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dialog.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dialog.h
 	"wx/toplevel.h"
 	"wx/containr.h"
 	"wx/sharedptr.h"
@@ -1332,23 +1332,23 @@
 	"wx/cocoa/dialog.h"
 	"wx/os2/dialog.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\sharedptr.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\sharedptr.h
 	"wx/defs.h"
 	"wx/atomic.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\atomic.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\atomic.h
 	"wx/defs.h"
 	"wx/msw/wrapwin.h"
 	"libkern/OSAtomic.h"
 	<atomic.h>
 	"wx/thread.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\dialog.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\dialog.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\dialog.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\dialog.h
 	"wx/panel.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msgdlg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msgdlg.h
 	"wx/defs.h"
 	"wx/dialog.h"
 	"wx/stockitem.h"
@@ -1360,17 +1360,17 @@
 	"wx/osx/msgdlg.h"
 	"wx/os2/msgdlg.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stockitem.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stockitem.h
 	"wx/defs.h"
 	"wx/chartype.h"
 	"wx/string.h"
 	"wx/accel.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\msgdlgg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\msgdlgg.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\msgdlg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\msgdlg.h
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dataobj.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dataobj.h
 	"wx/defs.h"
 	"wx/string.h"
 	"wx/bitmap.h"
@@ -1401,22 +1401,22 @@
 	"wx/cocoa/dataobj2.h"
 	"wx/os2/dataobj2.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\dataform.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\dataform.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\dataobj.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\dataobj.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\dataobj2.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\dataobj2.h
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\ctrlsub.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\ctrlsub.h
 	"wx/defs.h"
 	"wx/arrstr.h"
 	"wx/control.h"
 	"wx/msw/ctrlsub.h"
 	"wx/motif/ctrlsub.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ctrlsub.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ctrlsub.h
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\bmpbuttn.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\bmpbuttn.h
 	"wx/defs.h"
 	"wx/button.h"
 	"wx/univ/bmpbuttn.h"
@@ -1428,14 +1428,14 @@
 	"wx/cocoa/bmpbuttn.h"
 	"wx/os2/bmpbuttn.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\bmpbuttn.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\bmpbuttn.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\bmpbuttn.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\bmpbuttn.h
 	"wx/button.h"
 	"wx/bitmap.h"
 	"wx/brush.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\checkbox.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\checkbox.h
 	"wx/defs.h"
 	"wx/control.h"
 	"wx/univ/checkbox.h"
@@ -1447,12 +1447,12 @@
 	"wx/cocoa/checkbox.h"
 	"wx/os2/checkbox.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\checkbox.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\checkbox.h
 	"wx/button.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\checkbox.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\checkbox.h
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\checklst.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\checklst.h
 	"wx/defs.h"
 	"wx/listbox.h"
 	"wx/univ/checklst.h"
@@ -1465,7 +1465,7 @@
 	"wx/cocoa/checklst.h"
 	"wx/os2/checklst.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\listbox.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\listbox.h
 	"wx/defs.h"
 	"wx/ctrlsub.h"
 	"wx/univ/listbox.h"
@@ -1477,29 +1477,29 @@
 	"wx/os2/listbox.h"
 	"wx/cocoa/listbox.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\listbox.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\listbox.h
 	"wx/scrolwin.h"
 	"wx/dynarray.h"
 	"wx/arrstr.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\scrolwin.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\scrolwin.h
 	"wx/panel.h"
 	"wx/gtk/scrolwin.h"
 	"wx/gtk1/scrolwin.h"
 	"wx/generic/scrolwin.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\scrolwin.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\scrolwin.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\listbox.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\listbox.h
 	"wx/dynarray.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\checklst.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\checklst.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\checklst.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\checklst.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\checklst.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\checklst.h
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\choice.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\choice.h
 	"wx/defs.h"
 	"wx/ctrlsub.h"
 	"wx/univ/choice.h"
@@ -1512,10 +1512,10 @@
 	"wx/cocoa/choice.h"
 	"wx/os2/choice.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\choice.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\choice.h
 	"wx/combobox.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\combobox.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\combobox.h
 	"wx/defs.h"
 	"wx/textctrl.h"
 	"wx/ctrlsub.h"
@@ -1529,7 +1529,7 @@
 	"wx/cocoa/combobox.h"
 	"wx/os2/combobox.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\textctrl.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\textctrl.h
 	"wx/defs.h"
 	"wx/control.h"
 	"wx/textentry.h"
@@ -1547,7 +1547,7 @@
 	"wx/cocoa/textctrl.h"
 	"wx/os2/textctrl.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\textentry.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\textentry.h
 	"wx/filefn.h"
 	"wx/gdicmn.h"
 	"wx/gtk/textentry.h"
@@ -1556,28 +1556,28 @@
 	"wx/motif/textentry.h"
 	"wx/os2/textentry.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\textentry.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\textentry.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\ioswrap.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\ioswrap.h
 	"wx/beforestd.h"
 	<iostream.h>
 	<iostream>
 	"wx/afterstd.h"
 	"wx/msw/winundef.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\textctrl.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\textctrl.h
 	"wx/scrolwin.h"
 	"wx/univ/inphand.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\textctrlce.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\textctrlce.h
 	"wx/dynarray.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\textctrl.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\textctrl.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\combobox.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\combobox.h
 	"wx/combo.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\combo.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\combo.h
 	"wx/defs.h"
 	"wx/control.h"
 	"wx/renderer.h"
@@ -1586,35 +1586,35 @@
 	"wx/msw/combo.h"
 	"wx/generic/combo.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\renderer.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\renderer.h
 	"wx/gdicmn.h"
 	"wx/colour.h"
 	"wx/font.h"
 	"wx/bitmap.h"
 	"wx/string.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\combo.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\combo.h
 	"wx/timer.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\combo.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\combo.h
 	"wx/dcbuffer.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dcbuffer.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dcbuffer.h
 	"wx/dcmemory.h"
 	"wx/dcclient.h"
 	"wx/window.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\combobox.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\combobox.h
 	"wx/choice.h"
 	"wx/textentry.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\choicece.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\choicece.h
 	"wx/defs.h"
 	"wx/dynarray.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\choice.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\choice.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\scrolbar.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\scrolbar.h
 	"wx/defs.h"
 	"wx/control.h"
 	"wx/univ/scrolbar.h"
@@ -1626,15 +1626,15 @@
 	"wx/cocoa/scrolbar.h"
 	"wx/os2/scrolbar.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\scrolbar.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\scrolbar.h
 	"wx/univ/scrarrow.h"
 	"wx/renderer.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\scrarrow.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\scrarrow.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\scrolbar.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\scrolbar.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stattext.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stattext.h
 	"wx/defs.h"
 	"wx/control.h"
 	"wx/univ/stattext.h"
@@ -1646,15 +1646,15 @@
 	"wx/cocoa/stattext.h"
 	"wx/os2/stattext.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\stattext.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\stattext.h
 	"wx/generic/stattextg.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\stattextg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\stattextg.h
 	"wx/stattext.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\stattext.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\stattext.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\statbmp.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\statbmp.h
 	"wx/defs.h"
 	"wx/control.h"
 	"wx/bitmap.h"
@@ -1668,15 +1668,15 @@
 	"wx/cocoa/statbmp.h"
 	"wx/os2/statbmp.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\statbmp.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\statbmp.h
 	"wx/bitmap.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\statbmp.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\statbmp.h
 	"wx/control.h"
 	"wx/icon.h"
 	"wx/bitmap.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\statbox.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\statbox.h
 	"wx/defs.h"
 	"wx/control.h"
 	"wx/containr.h"
@@ -1689,11 +1689,11 @@
 	"wx/cocoa/statbox.h"
 	"wx/os2/statbox.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\statbox.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\statbox.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\statbox.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\statbox.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\radiobox.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\radiobox.h
 	"wx/defs.h"
 	"wx/ctrlsub.h"
 	"wx/dynarray.h"
@@ -1706,14 +1706,14 @@
 	"wx/cocoa/radiobox.h"
 	"wx/os2/radiobox.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\radiobox.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\radiobox.h
 	"wx/statbox.h"
 	"wx/dynarray.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\radiobox.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\radiobox.h
 	"wx/statbox.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\radiobut.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\radiobut.h
 	"wx/defs.h"
 	"wx/control.h"
 	"wx/univ/radiobut.h"
@@ -1725,12 +1725,12 @@
 	"wx/cocoa/radiobut.h"
 	"wx/os2/radiobut.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\radiobut.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\radiobut.h
 	"wx/checkbox.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\radiobut.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\radiobut.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\slider.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\slider.h
 	"wx/defs.h"
 	"wx/control.h"
 	"wx/univ/slider.h"
@@ -1742,15 +1742,15 @@
 	"wx/cocoa/slider.h"
 	"wx/os2/slider.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\slider.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\slider.h
 	"wx/univ/scrthumb.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\scrthumb.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\scrthumb.h
 	"wx/timer.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\slider.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\slider.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\gauge.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\gauge.h
 	"wx/defs.h"
 	"wx/control.h"
 	"wx/univ/gauge.h"
@@ -1762,11 +1762,11 @@
 	"wx/cocoa/gauge.h"
 	"wx/os2/gauge.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\gauge.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\gauge.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\gauge.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\gauge.h
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dirdlg.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dirdlg.h
 	"wx/dialog.h"
 	"wx/generic/dirdlgg.h"
 	"wx/generic/dirdlgg.h"
@@ -1778,12 +1778,12 @@
 	"wx/cocoa/dirdlg.h"
 	"wx/generic/dirdlgg.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\dirdlgg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\dirdlgg.h
 	"wx/dialog.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\dirdlg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\dirdlg.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\toolbar.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\toolbar.h
 	"wx/defs.h"
 	"wx/tbarbase.h"
 	"wx/univ/toolbar.h"
@@ -1796,64 +1796,64 @@
 	"wx/cocoa/toolbar.h"
 	"wx/os2/toolbar.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tbarbase.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tbarbase.h
 	"wx/defs.h"
 	"wx/bitmap.h"
 	"wx/list.h"
 	"wx/control.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\toolbar.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\toolbar.h
 	"wx/button.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\toolbar.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\toolbar.h
 	"wx/dynarray.h"
 	"wx/imaglist.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imaglist.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imaglist.h
 	"wx/defs.h"
 	"wx/generic/imaglist.h"
 	"wx/msw/imaglist.h"
 	"wx/osx/imaglist.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\imaglist.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\imaglist.h
 	"wx/list.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\imaglist.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\imaglist.h
 	"wx/bitmap.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\tbarwce.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\tbarwce.h
 	"wx/dynarray.h"
 	"wx/msw/toolbar.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\layout.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\layout.h
 	"wx/object.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\sizer.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\sizer.h
 	"wx/defs.h"
 	"wx/window.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\choicdlg.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\choicdlg.h
 	"wx/defs.h"
 	"wx/generic/choicdgg.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\choicdgg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\choicdgg.h
 	"wx/dynarray.h"
 	"wx/dialog.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\textdlg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\textdlg.h
 	"wx/generic/textdlgg.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\textdlgg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\textdlgg.h
 	"wx/defs.h"
 	"wx/dialog.h"
 	"wx/valtext.h"
 	"wx/textctrl.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\valtext.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\valtext.h
 	"wx/defs.h"
 	"wx/validate.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\filedlg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\filedlg.h
 	"wx/defs.h"
 	"wx/dialog.h"
 	"wx/arrstr.h"
@@ -1866,7 +1866,7 @@
 	"wx/cocoa/filedlg.h"
 	"wx/os2/filedlg.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\filedlgg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\filedlgg.h
 	"wx/listctrl.h"
 	"wx/datetime.h"
 	"wx/filefn.h"
@@ -1874,50 +1874,50 @@
 	"wx/filedlg.h"
 	"wx/generic/filectrlg.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\listctrl.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\listctrl.h
 	"wx/defs.h"
 	"wx/listbase.h"
 	"wx/msw/listctrl.h"
 	"wx/osx/listctrl.h"
 	"wx/generic/listctrl.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\listbase.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\listbase.h
 	"wx/colour.h"
 	"wx/font.h"
 	"wx/gdicmn.h"
 	"wx/event.h"
 	"wx/control.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\listctrl.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\listctrl.h
 	"wx/textctrl.h"
 	"wx/dynarray.h"
 	"wx/vector.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\listctrl.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\listctrl.h
 	"wx/containr.h"
 	"wx/scrolwin.h"
 	"wx/textctrl.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\artprov.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\artprov.h
 	"wx/string.h"
 	"wx/bitmap.h"
 	"wx/icon.h"
 	"wx/iconbndl.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\filectrlg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\filectrlg.h
 	"wx/containr.h"
 	"wx/listctrl.h"
 	"wx/filectrl.h"
 	"wx/filename.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\filectrl.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\filectrl.h
 	"wx/defs.h"
 	"wx/string.h"
 	"wx/event.h"
 	"wx/gtk/filectrl.h"
 	"wx/generic/filectrlg.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\filename.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\filename.h
 	"wx/arrstr.h"
 	"wx/filefn.h"
 	"wx/datetime.h"
@@ -1925,19 +1925,19 @@
 	"wx/longlong.h"
 	"wx/file.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\file.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\file.h
 	"wx/defs.h"
 	"wx/string.h"
 	"wx/filefn.h"
 	"wx/convauto.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\convauto.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\convauto.h
 	"wx/strconv.h"
 	"wx/fontenc.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\filedlg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\filedlg.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\mdi.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\mdi.h
 	"wx/defs.h"
 	"wx/frame.h"
 	"wx/menu.h"
@@ -1948,43 +1948,43 @@
 	"wx/osx/mdi.h"
 	"wx/cocoa/mdi.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\mdig.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\mdig.h
 	"wx/panel.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\mdi.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\mdi.h
 	"wx/frame.h"
 
-1490787950 source:d:\cpp\numere-source\trunk\common\crc16.cpp
+1490791550 source:d:\cpp\numere-source\trunk\common\crc16.cpp
 	"crc16.h"
 	"debug.h"
 
-1490787950 d:\cpp\numere-source\trunk\common\crc16.h
+1490791550 d:\cpp\numere-source\trunk\common\crc16.h
 
-1490787950 source:d:\cpp\numere-source\trunk\common\debugevent.cpp
+1490791550 source:d:\cpp\numere-source\trunk\common\debugevent.cpp
 	"DebugEvent.h"
 	"debug.h"
 
-1490787950 d:\cpp\numere-source\trunk\common\debugevent.h
+1490791550 d:\cpp\numere-source\trunk\common\debugevent.h
 	<wx/event.h>
 	<wx/dynarray.h>
 	"datastructures.h"
 	"ProjectInfo.h"
 
-1518608222 d:\cpp\numere-source\trunk\common\datastructures.h
+1518611822 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
 	<wx/dynarray.h>
 	<wx/filename.h>
 
-1490787950 d:\cpp\numere-source\trunk\common\projectinfo.h
+1490791550 d:\cpp\numere-source\trunk\common\projectinfo.h
 	<wx/string.h>
 	<wx/filename.h>
 	<wx/dynarray.h>
 	<wx/treectrl.h>
 	"datastructures.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\treectrl.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\treectrl.h
 	"wx/defs.h"
 	"wx/control.h"
 	"wx/treebase.h"
@@ -1997,29 +1997,29 @@
 	"wx/generic/treectlg.h"
 	"wx/generic/treectlg.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\treebase.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\treebase.h
 	"wx/defs.h"
 	"wx/window.h"
 	"wx/event.h"
 	"wx/dynarray.h"
 	"wx/itemid.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\itemid.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\itemid.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\treectlg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\treectlg.h
 	"wx/scrolwin.h"
 	"wx/pen.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\treectrl.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\treectrl.h
 	"wx/textctrl.h"
 	"wx/dynarray.h"
 	"wx/treebase.h"
 	"wx/hashmap.h"
 
-1490787950 source:d:\cpp\numere-source\trunk\common\filewatcher.cpp
+1490791550 source:d:\cpp\numere-source\trunk\common\filewatcher.cpp
 	"filewatcher.hpp"
 
-1490787950 d:\cpp\numere-source\trunk\common\filewatcher.hpp
+1490791550 d:\cpp\numere-source\trunk\common\filewatcher.hpp
 	<wx/fswatcher.h>
 	<wx/filename.h>
 	<wx/wx.h>
@@ -2027,7 +2027,7 @@
 	<string>
 	<map>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\fswatcher.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\fswatcher.h
 	"wx/defs.h"
 	"wx/log.h"
 	"wx/event.h"
@@ -2040,7 +2040,7 @@
 	"wx/msw/fswatcher.h"
 	"wx/generic/fswatcher.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\evtloop.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\evtloop.h
 	"wx/event.h"
 	"wx/utils.h"
 	"wx/osx/core/evtloop.h"
@@ -2053,41 +2053,41 @@
 	"wx/gtk/evtloop.h"
 	"wx/stopwatch.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\evtloop.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\evtloop.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\evtloopconsole.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\evtloopconsole.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\evtloop.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\evtloop.h
 	"wx/dynarray.h"
 	"wx/msw/wrapwin.h"
 	"wx/window.h"
 	"wx/msw/evtloopconsole.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dir.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dir.h
 	"wx/longlong.h"
 	"wx/string.h"
 	"wx/filefn.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\fswatcher_inotify.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\fswatcher_inotify.h
 	"wx/defs.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\fswatcher_kqueue.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\fswatcher_kqueue.h
 	"wx/defs.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\fswatcher.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\fswatcher.h
 	"wx/defs.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\fswatcher.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\fswatcher.h
 	"wx/defs.h"
 
-1519663501 source:d:\cpp\numere-source\trunk\common\options.cpp
+1519667101 source:d:\cpp\numere-source\trunk\common\options.cpp
 	"Options.h"
 	<wx/filename.h>
 	<wx/arrstr.h>
 	<wx/dir.h>
 	"debug.h"
 
-1519663553 d:\cpp\numere-source\trunk\common\options.h
+1519667153 d:\cpp\numere-source\trunk\common\options.h
 	<wx/wx.h>
 	<wx/validate.h>
 	<wx/valgen.h>
@@ -2096,46 +2096,46 @@
 	<vector>
 	"datastructures.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\valgen.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\valgen.h
 	"wx/validate.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\fileconf.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\fileconf.h
 	"wx/defs.h"
 	"wx/textfile.h"
 	"wx/string.h"
 	"wx/confbase.h"
 	"wx/filename.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\textfile.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\textfile.h
 	"wx/defs.h"
 	"wx/textbuf.h"
 	"wx/file.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\textbuf.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\textbuf.h
 	"wx/defs.h"
 	"wx/arrstr.h"
 	"wx/convauto.h"
 	"wx/string.h"
 	"wx/dynarray.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\confbase.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\confbase.h
 	"wx/defs.h"
 	"wx/string.h"
 	"wx/object.h"
 	"wx/base64.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\base64.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\base64.h
 	"wx/string.h"
 	"wx/buffer.h"
 
-1511420399 source:d:\cpp\numere-source\trunk\common\projectinfo.cpp
+1511423999 source:d:\cpp\numere-source\trunk\common\projectinfo.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"ProjectInfo.h"
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1517562733 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1517566333 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -2147,7 +2147,7 @@
 	"../../kernel/syntax.hpp"
 	"../dialogs/duplicatecodedialog.hpp"
 
-1490385590 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stc\stc.h
+1490389190 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stc\stc.h
 	"wx/defs.h"
 	"wx/control.h"
 	"wx/dnd.h"
@@ -2156,7 +2156,7 @@
 	"wx/textentry.h"
 	"wx/textctrl.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dnd.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dnd.h
 	"wx/defs.h"
 	"wx/dataobj.h"
 	"wx/cursor.h"
@@ -2169,11 +2169,11 @@
 	"wx/osx/dnd.h"
 	"wx/os2/dnd.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\dropsrc.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\dropsrc.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\droptgt.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\droptgt.h
 
-1511420122 d:\cpp\numere-source\trunk\gui\terminal\wxterm.h
+1511423722 d:\cpp\numere-source\trunk\gui\terminal\wxterm.h
 	<map>
 	"../NumeReWindow.h"
 	"../../common/Options.h"
@@ -2182,7 +2182,7 @@
 	"../../kernel/kernel.hpp"
 	"../../kernel/debugmessenger.hpp"
 
-1518625110 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1518628710 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -2200,7 +2200,7 @@
 	"filetree.hpp"
 	"../kernel/core/plotting/graph_helper.hpp"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxprec.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxprec.h
 	"wx/defs.h"
 	"wx/chartype.h"
 	"wx/msw/wrapwin.h"
@@ -2211,21 +2211,21 @@
 	"wx/os2/private.h"
 	"wx/wx.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wrapcctl.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wrapcctl.h
 	"wx/msw/wrapwin.h"
 	<commctrl.h>
 	"wx/msw/missing.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\missing.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\missing.h
 	<windows.h>
 	"wx/msw/winundef.h"
 	"wx/msw/wince/missing.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\missing.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\missing.h
 	"wx/msw/private.h"
 	"shellapi.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wrapcdlg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wrapcdlg.h
 	"wx/defs.h"
 	"wx/msw/wrapwin.h"
 	"wx/msw/private.h"
@@ -2233,10 +2233,10 @@
 	<commdlg.h>
 	"wx/msw/winundef.h"
 
-1511360507 d:\cpp\numere-source\trunk\gui\globals.hpp
+1511364107 d:\cpp\numere-source\trunk\gui\globals.hpp
 	"dialogs/fndrpldialog.hpp"
 
-1491132072 d:\cpp\numere-source\trunk\gui\dialogs\fndrpldialog.hpp
+1491135672 d:\cpp\numere-source\trunk\gui\dialogs\fndrpldialog.hpp
 	<wx/fdrepdlg.h>
 	<wx/wx.h>
 	<wx/intl.h>
@@ -2251,21 +2251,21 @@
 	"../viewerbook.hpp"
 	"../viewerpanel.hpp"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\fdrepdlg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\fdrepdlg.h
 	"wx/defs.h"
 	"wx/dialog.h"
 	"wx/msw/fdrepdlg.h"
 	"wx/generic/fdrepdlg.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\fdrepdlg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\fdrepdlg.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\fdrepdlg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\fdrepdlg.h
 
-1491130359 d:\cpp\numere-source\trunk\gui\viewerbook.hpp
+1491133959 d:\cpp\numere-source\trunk\gui\viewerbook.hpp
 	<wx/wx.h>
 	<wx/notebook.h>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\notebook.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\notebook.h
 	"wx/defs.h"
 	"wx/bookctrl.h"
 	"wx/univ/notebook.h"
@@ -2277,7 +2277,7 @@
 	"wx/cocoa/notebook.h"
 	"wx/os2/notebook.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\bookctrl.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\bookctrl.h
 	"wx/defs.h"
 	"wx/control.h"
 	"wx/dynarray.h"
@@ -2285,32 +2285,32 @@
 	"wx/notebook.h"
 	"wx/choicebk.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\withimages.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\withimages.h
 	"wx/defs.h"
 	"wx/icon.h"
 	"wx/imaglist.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\choicebk.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\choicebk.h
 	"wx/defs.h"
 	"wx/bookctrl.h"
 	"wx/choice.h"
 	"wx/containr.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\notebook.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\notebook.h
 	"wx/arrstr.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\notebook.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\notebook.h
 	"wx/control.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\notebook.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\notebook.h
 	"wx/event.h"
 	"wx/control.h"
 
-1491130292 d:\cpp\numere-source\trunk\gui\viewerpanel.hpp
+1491133892 d:\cpp\numere-source\trunk\gui\viewerpanel.hpp
 	<wx/wx.h>
 	<wx/panel.h>
 
-1511629578 d:\cpp\numere-source\trunk\kernel\core\ui\language.hpp
+1511633178 d:\cpp\numere-source\trunk\kernel\core\ui\language.hpp
 	<string>
 	<map>
 	<vector>
@@ -2318,14 +2318,14 @@
 	<fstream>
 	"../filesystem.hpp"
 
-1490787951 d:\cpp\numere-source\trunk\kernel\core\filesystem.hpp
+1490791551 d:\cpp\numere-source\trunk\kernel\core\filesystem.hpp
 	<string>
 	<iostream>
 	<fstream>
 	<sstream>
 	<windows.h>
 
-1511629707 d:\cpp\numere-source\trunk\kernel\core\utils\tools.hpp
+1511633307 d:\cpp\numere-source\trunk\kernel\core\utils\tools.hpp
 	<iostream>
 	<iomanip>
 	<sstream>
@@ -2340,15 +2340,15 @@
 	"../ui/error.hpp"
 	"../settings.hpp"
 
-1518000286 d:\cpp\numere-source\trunk\kernel\core\structures.hpp
+1518003886 d:\cpp\numere-source\trunk\kernel\core\structures.hpp
 	<string>
 	<vector>
 
-1516526327 d:\cpp\numere-source\trunk\kernel\core\ui\error.hpp
+1516529927 d:\cpp\numere-source\trunk\kernel\core\ui\error.hpp
 	<string>
 	"language.hpp"
 
-1516524566 d:\cpp\numere-source\trunk\kernel\core\settings.hpp
+1516528166 d:\cpp\numere-source\trunk\kernel\core\settings.hpp
 	<string>
 	<sstream>
 	<fstream>
@@ -2358,7 +2358,7 @@
 	"documentation/doc_helper.hpp"
 	"procedure/debugger.hpp"
 
-1511629592 d:\cpp\numere-source\trunk\kernel\core\documentation\doc_helper.hpp
+1511633192 d:\cpp\numere-source\trunk\kernel\core\documentation\doc_helper.hpp
 	<fstream>
 	<string>
 	<vector>
@@ -2366,13 +2366,13 @@
 	"../filesystem.hpp"
 	"../ui/error.hpp"
 
-1511629726 d:\cpp\numere-source\trunk\kernel\core\procedure\debugger.hpp
+1511633326 d:\cpp\numere-source\trunk\kernel\core\procedure\debugger.hpp
 	<vector>
 	<string>
 	<map>
 	"../ui/error.hpp"
 
-1490787950 d:\cpp\numere-source\trunk\gui\dialogs\tipdialog.hpp
+1490791550 d:\cpp\numere-source\trunk\gui\dialogs\tipdialog.hpp
 	<wx/wx.h>
 	<wx/tipdlg.h>
 	<vector>
@@ -2380,23 +2380,23 @@
 	<cmath>
 	<ctime>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tipdlg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tipdlg.h
 	"wx/defs.h"
 	"wx/textfile.h"
 
-1500554567 d:\cpp\numere-source\trunk\gui\viewerframe.hpp
+1500558167 d:\cpp\numere-source\trunk\gui\viewerframe.hpp
 	<wx/wx.h>
 
-1518626212 d:\cpp\numere-source\trunk\gui\filetree.hpp
+1518629812 d:\cpp\numere-source\trunk\gui\filetree.hpp
 	<wx/wx.h>
 	<wx/treectrl.h>
 
-1517392809 d:\cpp\numere-source\trunk\kernel\core\plotting\graph_helper.hpp
+1517396409 d:\cpp\numere-source\trunk\kernel\core\plotting\graph_helper.hpp
 	<mgl2/wnd.h>
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1520185418 d:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.hpp
+1520189018 d:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.hpp
 	<string>
 	<cmath>
 	<vector>
@@ -2404,12 +2404,12 @@
 	"../utils/tools.hpp"
 	"../ParserLib/muParser.h"
 
-1490787950 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparser.h
+1490791550 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparser.h
 	<vector>
 	"muParserBase.h"
 	"muParserTemplateMagic.h"
 
-1514021423 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.h
+1514025023 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.h
 	<cmath>
 	<string>
 	<iostream>
@@ -2422,16 +2422,16 @@
 	"muParserBytecode.h"
 	"muParserError.h"
 
-1490787950 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserdef.h
+1490791550 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserdef.h
 	<iostream>
 	<string>
 	<sstream>
 	<map>
 	"muParserFixes.h"
 
-1490787950 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserfixes.h
+1490791550 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserfixes.h
 
-1490787951 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserstack.h
+1490791551 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserstack.h
 	<cassert>
 	<string>
 	<stack>
@@ -2439,7 +2439,7 @@
 	"muParserError.h"
 	"muParserToken.h"
 
-1511629759 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsererror.h
+1511633359 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsererror.h
 	<cassert>
 	<stdexcept>
 	<string>
@@ -2449,7 +2449,7 @@
 	"../ui/language.hpp"
 	"muParserDef.h"
 
-1490787951 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsertoken.h
+1490791551 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsertoken.h
 	<cassert>
 	<string>
 	<stack>
@@ -2458,10 +2458,10 @@
 	"muParserError.h"
 	"muParserCallback.h"
 
-1490787950 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsercallback.h
+1490791550 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsercallback.h
 	"muParserDef.h"
 
-1490787951 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsertokenreader.h
+1490791551 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsertokenreader.h
 	<cassert>
 	<cstdio>
 	<cstring>
@@ -2473,7 +2473,7 @@
 	"muParserDef.h"
 	"muParserToken.h"
 
-1490787950 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbytecode.h
+1490791550 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbytecode.h
 	<cassert>
 	<string>
 	<stack>
@@ -2482,11 +2482,11 @@
 	"muParserError.h"
 	"muParserToken.h"
 
-1490787950 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsertemplatemagic.h
+1490791550 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsertemplatemagic.h
 	<cmath>
 	"muParserError.h"
 
-1511419884 d:\cpp\numere-source\trunk\gui\terminal\gterm.hpp
+1511423484 d:\cpp\numere-source\trunk\gui\terminal\gterm.hpp
 	<string.h>
 	<cstring>
 	<stdlib.h>
@@ -2498,24 +2498,24 @@
 	"TextManager.h"
 	"../../kernel/syntax.hpp"
 
-1498059763 d:\cpp\numere-source\trunk\gui\terminal\textmanager.h
+1498063363 d:\cpp\numere-source\trunk\gui\terminal\textmanager.h
 	<vector>
 	<deque>
 	<string>
 
-1503380325 d:\cpp\numere-source\trunk\kernel\syntax.hpp
+1503383925 d:\cpp\numere-source\trunk\kernel\syntax.hpp
 	<string>
 	<vector>
 	<map>
 	<fstream>
 
-1490787951 d:\cpp\numere-source\trunk\gui\terminal\gtelnet.hpp
+1490791551 d:\cpp\numere-source\trunk\gui\terminal\gtelnet.hpp
 	<string.h>
 	<stdio.h>
 	<stdlib.h>
 	"gterm.hpp"
 
-1512215242 d:\cpp\numere-source\trunk\kernel\kernel.hpp
+1512218842 d:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	<queue>
@@ -2541,7 +2541,7 @@
 	"core/procedure/procedurelibrary.hpp"
 	"core/ParserLib/muParser.h"
 
-1511629865 d:\cpp\numere-source\trunk\kernel\core\output.hpp
+1511633465 d:\cpp\numere-source\trunk\kernel\core\output.hpp
 	<string>
 	<ctime>
 	"ui/error.hpp"
@@ -2550,7 +2550,7 @@
 	"version.h"
 	"utils/tools.hpp"
 
-1521053950 d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.hpp
+1521057550 d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.hpp
 	<string>
 	<boost/tokenizer.hpp>
 	<vector>
@@ -2564,7 +2564,7 @@
 	"../utils/BasicExcel.hpp"
 	"../utils/tinyxml2.h"
 
-1521053836 d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.hpp
+1521057436 d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.hpp
 	<iostream>
 	<fstream>
 	<string>
@@ -2582,13 +2582,13 @@
 	"../maths/resampler.h"
 	"table.hpp"
 
-1516132933 d:\cpp\numere-source\trunk\kernel\core\maths\resampler.h
+1516136533 d:\cpp\numere-source\trunk\kernel\core\maths\resampler.h
 
-1515293536 d:\cpp\numere-source\trunk\kernel\core\datamanagement\table.hpp
+1515297136 d:\cpp\numere-source\trunk\kernel\core\datamanagement\table.hpp
 	<vector>
 	<string>
 
-1490787950 d:\cpp\numere-source\trunk\kernel\core\igorlib\readwave.h
+1490791550 d:\cpp\numere-source\trunk\kernel\core\igorlib\readwave.h
 	<stdio.h>
 	<tchar.h>
 	<ctype.h>
@@ -2598,11 +2598,11 @@
 	"./CrossPlatformFileIO.h"
 	"./IgorBin.h"
 
-1490787950 d:\cpp\numere-source\trunk\kernel\core\igorlib\crossplatformfileio.h
+1490791550 d:\cpp\numere-source\trunk\kernel\core\igorlib\crossplatformfileio.h
 
-1490787950 d:\cpp\numere-source\trunk\kernel\core\igorlib\igorbin.h
+1490791550 d:\cpp\numere-source\trunk\kernel\core\igorlib\igorbin.h
 
-1490787951 d:\cpp\numere-source\trunk\kernel\core\utils\zip++.hpp
+1490791551 d:\cpp\numere-source\trunk\kernel\core\utils\zip++.hpp
 	<string>
 	<iostream>
 	<windows.h>
@@ -2610,11 +2610,11 @@
 	"zip.h"
 	"unzip.h"
 
-1490787951 d:\cpp\numere-source\trunk\kernel\core\utils\zip.h
+1490791551 d:\cpp\numere-source\trunk\kernel\core\utils\zip.h
 
-1490787951 d:\cpp\numere-source\trunk\kernel\core\utils\unzip.h
+1490791551 d:\cpp\numere-source\trunk\kernel\core\utils\unzip.h
 
-1490787950 d:\cpp\numere-source\trunk\kernel\core\utils\basicexcel.hpp
+1490791550 d:\cpp\numere-source\trunk\kernel\core\utils\basicexcel.hpp
 	<algorithm>
 	<cmath>
 	<functional>
@@ -2625,7 +2625,7 @@
 	<vector>
 	<cstring>
 
-1490787951 d:\cpp\numere-source\trunk\kernel\core\utils\tinyxml2.h
+1490791551 d:\cpp\numere-source\trunk\kernel\core\utils\tinyxml2.h
 	<ctype.h>
 	<limits.h>
 	<stdio.h>
@@ -2640,7 +2640,7 @@
 	<android/log.h>
 	<assert.h>
 
-1511629943 d:\cpp\numere-source\trunk\kernel\core\plugins.hpp
+1511633543 d:\cpp\numere-source\trunk\kernel\core\plugins.hpp
 	<string>
 	<cmath>
 	<ctime>
@@ -2655,7 +2655,7 @@
 	"utils/tools.hpp"
 	"plotting/plotdata.hpp"
 
-1521053097 d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.hpp
+1521056697 d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.hpp
 	<cstdlib>
 	<cmath>
 	<fstream>
@@ -2677,7 +2677,7 @@
 	"../version.h"
 	"../ParserLib/muParser.h"
 
-1520361876 d:\cpp\numere-source\trunk\kernel\core\built-in.hpp
+1520365476 d:\cpp\numere-source\trunk\kernel\core\built-in.hpp
 	<iostream>
 	<fstream>
 	<sstream>
@@ -2701,7 +2701,7 @@
 	"documentation/documentation.hpp"
 	"maths/odesolver.hpp"
 
-1515639090 d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.hpp
+1515642690 d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.hpp
 	<cmath>
 	<string>
 	<sstream>
@@ -2724,7 +2724,7 @@
 	"../plotting/graph_helper.hpp"
 	"fitcontroller.hpp"
 
-1511630117 d:\cpp\numere-source\trunk\kernel\core\maths\define.hpp
+1511633717 d:\cpp\numere-source\trunk\kernel\core\maths\define.hpp
 	<string>
 	<iostream>
 	<fstream>
@@ -2736,7 +2736,7 @@
 	"../utils/tools.hpp"
 	"../ParserLib/muParser.h"
 
-1511630132 d:\cpp\numere-source\trunk\kernel\core\plugin.hpp
+1511633732 d:\cpp\numere-source\trunk\kernel\core\plugin.hpp
 	<iostream>
 	<fstream>
 	<string>
@@ -2744,7 +2744,7 @@
 	"utils/tools.hpp"
 	"ui/error.hpp"
 
-1511630154 d:\cpp\numere-source\trunk\kernel\core\maths\fitcontroller.hpp
+1511633754 d:\cpp\numere-source\trunk\kernel\core\maths\fitcontroller.hpp
 	<iostream>
 	<vector>
 	<string>
@@ -2755,7 +2755,7 @@
 	"../utils/tools.hpp"
 	"../ui/error.hpp"
 
-1511630185 d:\cpp\numere-source\trunk\kernel\core\script.hpp
+1511633785 d:\cpp\numere-source\trunk\kernel\core\script.hpp
 	<iostream>
 	<string>
 	<fstream>
@@ -2763,7 +2763,7 @@
 	"utils/tools.hpp"
 	"version.h"
 
-1511630218 d:\cpp\numere-source\trunk\kernel\core\documentation\documentation.hpp
+1511633818 d:\cpp\numere-source\trunk\kernel\core\documentation\documentation.hpp
 	<iostream>
 	<iomanip>
 	<string>
@@ -2773,7 +2773,7 @@
 	"../utils/tools.hpp"
 	"../settings.hpp"
 
-1511630253 d:\cpp\numere-source\trunk\kernel\core\maths\odesolver.hpp
+1511633853 d:\cpp\numere-source\trunk\kernel\core\maths\odesolver.hpp
 	<iostream>
 	<string>
 	<vector>
@@ -2788,7 +2788,7 @@
 	"../settings.hpp"
 	"../ui/error.hpp"
 
-1512215066 d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.hpp
+1512218666 d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.hpp
 	<string>
 	<iostream>
 	"../ui/error.hpp"
@@ -2803,7 +2803,7 @@
 	"../built-in.hpp"
 	"../utils/tools.hpp"
 
-1512215039 d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.hpp
+1512218639 d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.hpp
 	<iostream>
 	<string>
 	<cmath>
@@ -2824,24 +2824,24 @@
 	"../output.hpp"
 	"../script.hpp"
 
-1490787951 d:\cpp\numere-source\trunk\kernel\debugmessenger.hpp
+1490791551 d:\cpp\numere-source\trunk\kernel\debugmessenger.hpp
 	<map>
 	<string>
 	<vector>
 
-1499273009 d:\cpp\numere-source\trunk\kernel\core\procedure\procedurelibrary.hpp
+1499276609 d:\cpp\numere-source\trunk\kernel\core\procedure\procedurelibrary.hpp
 	"procedureelement.hpp"
 	<string>
 	<fstream>
 	<map>
 	<vector>
 
-1499274473 d:\cpp\numere-source\trunk\kernel\core\procedure\procedureelement.hpp
+1499278073 d:\cpp\numere-source\trunk\kernel\core\procedure\procedureelement.hpp
 	<string>
 	<map>
 	<vector>
 
-1511887444 d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.hpp
+1511891044 d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.hpp
 	"../viewerframe.hpp"
 	<wx/panel.h>
 	<wx/gauge.h>
@@ -2849,34 +2849,34 @@
 	<string>
 	<vector>
 
-1490787950 source:d:\cpp\numere-source\trunk\common\recycler.cpp
+1490791550 source:d:\cpp\numere-source\trunk\common\recycler.cpp
 	"recycler.hpp"
 	<tchar.h>
 
-1490787950 d:\cpp\numere-source\trunk\common\recycler.hpp
+1490791550 d:\cpp\numere-source\trunk\common\recycler.hpp
 	<windows.h>
 	<shellapi.h>
 
-1490787950 source:d:\cpp\numere-source\trunk\common\verinfo.cpp
+1490791550 source:d:\cpp\numere-source\trunk\common\verinfo.cpp
 	"verinfo.h"
 
-1490787950 d:\cpp\numere-source\trunk\common\verinfo.h
+1490791550 d:\cpp\numere-source\trunk\common\verinfo.h
 	<shlwapi.h>
 	<WinVer.h>
 	<TChar.h>
 	<crtdbg.h>
 
-1511420427 source:d:\cpp\numere-source\trunk\gui\chameleonprojectmanager.cpp
+1511424027 source:d:\cpp\numere-source\trunk\gui\chameleonprojectmanager.cpp
 	"ChameleonProjectManager.h"
 	"NumeReNotebook.h"
 	"editor/editor.h"
 
-1490787950 d:\cpp\numere-source\trunk\gui\chameleonprojectmanager.h
+1490791550 d:\cpp\numere-source\trunk\gui\chameleonprojectmanager.h
 
-1490787950 d:\cpp\numere-source\trunk\gui\numerenotebook.h
+1490791550 d:\cpp\numere-source\trunk\gui\numerenotebook.h
 	<wx/notebook.h>
 
-1511631170 source:d:\cpp\numere-source\trunk\gui\dialogs\aboutchameleondialog.cpp
+1511634770 source:d:\cpp\numere-source\trunk\gui\dialogs\aboutchameleondialog.cpp
 	"wx/wxprec.h"
 	<wx/msw/private.h>
 	<wx/filename.h>
@@ -2886,7 +2886,7 @@
 	"../../common/verinfo.h"
 	"../../kernel/core/ui/language.hpp"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stdpaths.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stdpaths.h
 	"wx/defs.h"
 	"wx/string.h"
 	"wx/filefn.h"
@@ -2895,27 +2895,27 @@
 	"wx/os2/stdpaths.h"
 	"wx/unix/stdpaths.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\stdpaths.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\stdpaths.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\stdpaths.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\stdpaths.h
 
-1490787950 d:\cpp\numere-source\trunk\gui\dialogs\aboutchameleondialog.h
+1490791550 d:\cpp\numere-source\trunk\gui\dialogs\aboutchameleondialog.h
 	<wx/wx.h>
 	"wx/notebook.h"
 
-1490787950 source:d:\cpp\numere-source\trunk\gui\dialogs\addvariablewatch.cpp
+1490791550 source:d:\cpp\numere-source\trunk\gui\dialogs\addvariablewatch.cpp
 	"wx/wxprec.h"
 	"AddVariableWatch.h"
 
-1490787950 d:\cpp\numere-source\trunk\gui\dialogs\addvariablewatch.h
+1490791550 d:\cpp\numere-source\trunk\gui\dialogs\addvariablewatch.h
 	"wx/wx.h"
 
-1511630412 source:d:\cpp\numere-source\trunk\gui\dialogs\debugviewer.cpp
+1511634012 source:d:\cpp\numere-source\trunk\gui\dialogs\debugviewer.cpp
 	"debugviewer.hpp"
 	<wx/statbox.h>
 	"../../kernel/core/ui/language.hpp"
 
-1511420262 d:\cpp\numere-source\trunk\gui\dialogs\debugviewer.hpp
+1511423862 d:\cpp\numere-source\trunk\gui\dialogs\debugviewer.hpp
 	"../viewerframe.hpp"
 	"../terminal/wxterm.h"
 	"treelistctrl.h"
@@ -2924,7 +2924,7 @@
 	<string>
 	<vector>
 
-1490787950 d:\cpp\numere-source\trunk\gui\dialogs\treelistctrl.h
+1490791550 d:\cpp\numere-source\trunk\gui\dialogs\treelistctrl.h
 	<wx/treectrl.h>
 	<wx/control.h>
 	<wx/pen.h>
@@ -2932,16 +2932,16 @@
 	<windows.h>
 	"commctrl.h"
 
-1511888394 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
+1511891994 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
 	"duplicatecodedialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 	"../editor/editor.h"
 
-1511631180 source:d:\cpp\numere-source\trunk\gui\dialogs\fndrpldialog.cpp
+1511634780 source:d:\cpp\numere-source\trunk\gui\dialogs\fndrpldialog.cpp
 	"fndrpldialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1519664499 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1519668099 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
@@ -2954,7 +2954,7 @@
 	"../NumeReWindow.h"
 	"../../common/debug.h"
 
-1490787950 d:\cpp\numere-source\trunk\common\commonheaders.h
+1490791550 d:\cpp\numere-source\trunk\common\commonheaders.h
 	<wx/wx.h>
 	<wx/string.h>
 	<wx/wxprec.h>
@@ -2986,36 +2986,36 @@
 	<wx/mstream.h>
 	"../common/fixvsbug.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\config.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\config.h
 	"wx/confbase.h"
 	"wx/msw/regconf.h"
 	"wx/os2/iniconf.h"
 	"wx/fileconf.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\regconf.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\regconf.h
 	"wx/defs.h"
 	"wx/msw/registry.h"
 	"wx/object.h"
 	"wx/confbase.h"
 	"wx/buffer.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\registry.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\registry.h
 	"wx/defs.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\regex.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\regex.h
 	"wx/defs.h"
 	"wx/string.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\splash.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\splash.h
 	"wx/generic/splash.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\splash.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\splash.h
 	"wx/bitmap.h"
 	"wx/eventfilter.h"
 	"wx/frame.h"
 	"wx/timer.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wfstream.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wfstream.h
 	"wx/defs.h"
 	"wx/object.h"
 	"wx/string.h"
@@ -3023,62 +3023,62 @@
 	"wx/file.h"
 	"wx/ffile.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\ffile.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\ffile.h
 	"wx/defs.h"
 	"wx/string.h"
 	"wx/filefn.h"
 	"wx/convauto.h"
 	<stdio.h>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\splitter.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\splitter.h
 	"wx/event.h"
 	"wx/generic/splitter.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\splitter.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\splitter.h
 	"wx/window.h"
 	"wx/containr.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\grid.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\grid.h
 	"wx/generic/grid.h"
 	"wx/generic/grideditors.h"
 	"wx/generic/gridctrl.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\grid.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\grid.h
 	"wx/defs.h"
 	"wx/hashmap.h"
 	"wx/scrolwin.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\grideditors.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\grideditors.h
 	"wx/defs.h"
 	"wx/scopedptr.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\gridctrl.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\gridctrl.h
 	"wx/grid.h"
 	"wx/datetime.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\socket.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\socket.h
 	"wx/defs.h"
 	"wx/event.h"
 	"wx/sckaddr.h"
 	"wx/list.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\sckaddr.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\sckaddr.h
 	"wx/defs.h"
 	"wx/string.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\mstream.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\mstream.h
 	"wx/defs.h"
 	"wx/stream.h"
 
-1490787950 d:\cpp\numere-source\trunk\common\fixvsbug.h
+1490791550 d:\cpp\numere-source\trunk\common\fixvsbug.h
 
-1519663999 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
+1519667599 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
 	"wx/notebook.h"
 	"wx/spinctrl.h"
 	<wx/clrpicker.h>
 	"../../kernel/core/settings.hpp"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\spinctrl.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\spinctrl.h
 	"wx/defs.h"
 	"wx/spinbutt.h"
 	"wx/msw/spinctrl.h"
@@ -3087,7 +3087,7 @@
 	"wx/gtk1/spinctrl.h"
 	"wx/generic/spinctlg.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\spinbutt.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\spinbutt.h
 	"wx/defs.h"
 	"wx/control.h"
 	"wx/event.h"
@@ -3101,48 +3101,48 @@
 	"wx/cocoa/spinbutt.h"
 	"wx/os2/spinbutt.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\range.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\range.h
 	"wx/defs.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\spinbutt.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\spinbutt.h
 	"wx/univ/scrarrow.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\spinbutt.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\spinbutt.h
 	"wx/control.h"
 	"wx/event.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\spinctrl.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\spinctrl.h
 	"wx/spinbutt.h"
 	"wx/dynarray.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\spinctlg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\spinctlg.h
 	"wx/compositewin.h"
 	"wx/textctrl.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\compositewin.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\compositewin.h
 	"wx/window.h"
 	"wx/containr.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\clrpicker.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\clrpicker.h
 	"wx/defs.h"
 	"wx/pickerbase.h"
 	"wx/gtk/clrpicker.h"
 	"wx/generic/clrpickerg.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\pickerbase.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\pickerbase.h
 	"wx/control.h"
 	"wx/sizer.h"
 	"wx/containr.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\clrpickerg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\clrpickerg.h
 	"wx/button.h"
 	"wx/bmpbuttn.h"
 	"wx/colourdata.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\colourdata.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\colourdata.h
 	"wx/colour.h"
 
-1511685472 source:d:\cpp\numere-source\trunk\gui\dialogs\remotefiledialog.cpp
+1511689072 source:d:\cpp\numere-source\trunk\gui\dialogs\remotefiledialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	<wx/filename.h>
@@ -3162,43 +3162,43 @@
 	"../icons/HomeHS.xpm"
 	"../../common/debug.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tokenzr.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tokenzr.h
 	"wx/object.h"
 	"wx/string.h"
 	"wx/arrstr.h"
 
-1490787950 d:\cpp\numere-source\trunk\gui\dialogs\remotefiledialog.h
+1490791550 d:\cpp\numere-source\trunk\gui\dialogs\remotefiledialog.h
 	"wx/listctrl.h"
 	<wx/dynarray.h>
 	"../../common/datastructures.h"
 
-1490787950 d:\cpp\numere-source\trunk\gui\iconmanager.h
+1490791550 d:\cpp\numere-source\trunk\gui\iconmanager.h
 	<wx/string.h>
 	<wx/imaglist.h>
 	"../common/CommonHeaders.h"
 	"../common/datastructures.h"
 
-1511419957 d:\cpp\numere-source\trunk\gui\terminal\networking.h
+1511423557 d:\cpp\numere-source\trunk\gui\terminal\networking.h
 	<wx/wx.h>
 	<wx/regex.h>
 	<wx/filename.h>
 	"../../common/datastructures.h"
 	"../../common/debug.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\arrimpl.cpp
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\arrimpl.cpp
 
-1490787950 d:\cpp\numere-source\trunk\gui\icons\upfolder.xpm
+1490791550 d:\cpp\numere-source\trunk\gui\icons\upfolder.xpm
 
-1490787950 d:\cpp\numere-source\trunk\gui\icons\refresh.xpm
+1490791550 d:\cpp\numere-source\trunk\gui\icons\refresh.xpm
 
-1490787950 d:\cpp\numere-source\trunk\gui\icons\homehs.xpm
+1490791550 d:\cpp\numere-source\trunk\gui\icons\homehs.xpm
 
-1490787950 source:d:\cpp\numere-source\trunk\gui\dialogs\tipdialog.cpp
+1490791550 source:d:\cpp\numere-source\trunk\gui\dialogs\tipdialog.cpp
 	"tipdialog.hpp"
 	<wx/statline.h>
 	<wx/artprov.h>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\statline.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\statline.h
 	"wx/defs.h"
 	"wx/control.h"
 	"wx/univ/statline.h"
@@ -3210,13 +3210,13 @@
 	"wx/cocoa/statline.h"
 	"wx/generic/statline.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\statline.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\statline.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\statline.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\statline.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\statline.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\statline.h
 
-1490787950 source:d:\cpp\numere-source\trunk\gui\dialogs\treelistctrl.cpp
+1490791550 source:d:\cpp\numere-source\trunk\gui\dialogs\treelistctrl.cpp
 	"wx/wxprec.h"
 	<wx/wx.h>
 	<wx/msw/private.h>
@@ -3238,48 +3238,48 @@
 	<wx/dynarray.h>
 	<wx/arrimpl.cpp>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\odcombo.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\odcombo.h
 	"wx/defs.h"
 	"wx/combo.h"
 	"wx/ctrlsub.h"
 	"wx/vlbox.h"
 	"wx/timer.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\vlbox.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\vlbox.h
 	"wx/vscroll.h"
 	"wx/bitmap.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\vscroll.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\vscroll.h
 	"wx/panel.h"
 	"wx/position.h"
 	"wx/scrolwin.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\position.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\position.h
 	"wx/gdicmn.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\datectrl.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\datectrl.h
 	"wx/defs.h"
 	"wx/datetimectrl.h"
 	"wx/msw/datectrl.h"
 	"wx/osx/datectrl.h"
 	"wx/generic/datectrl.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\datetimectrl.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\datetimectrl.h
 	"wx/defs.h"
 	"wx/control.h"
 	"wx/datetime.h"
 	"wx/msw/datetimectrl.h"
 	"wx/osx/datetimectrl.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\datetimectrl.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\datetimectrl.h
 	"wx/intl.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\datectrl.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\datectrl.h
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\datectrl.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\datectrl.h
 	"wx/compositewin.h"
 
-1490787950 source:d:\cpp\numere-source\trunk\gui\dialogs\variablewatchpanel.cpp
+1490791550 source:d:\cpp\numere-source\trunk\gui\dialogs\variablewatchpanel.cpp
 	"wx/wxprec.h"
 	<wx/textdlg.h>
 	"VariableWatchPanel.h"
@@ -3287,14 +3287,14 @@
 	"../../common/tree.h"
 	"../../common/fixvsbug.h"
 
-1490787950 d:\cpp\numere-source\trunk\gui\dialogs\variablewatchpanel.h
+1490791550 d:\cpp\numere-source\trunk\gui\dialogs\variablewatchpanel.h
 	"wx/listctrl.h"
 	"treelistctrl.h"
 	"../../common/tree.h"
 	"../../common/datastructures.h"
 	"../../common/DebugEvent.h"
 
-1511285391 d:\cpp\numere-source\trunk\common\tree.h
+1511288991 d:\cpp\numere-source\trunk\common\tree.h
 	<cassert>
 	<memory>
 	<stdexcept>
@@ -3302,7 +3302,7 @@
 	<set>
 	<queue>
 
-1511420469 source:d:\cpp\numere-source\trunk\gui\dialogs\wxtermcontainer.cpp
+1511424069 source:d:\cpp\numere-source\trunk\gui\dialogs\wxtermcontainer.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	"wx/scrolbar.h"
@@ -3310,12 +3310,12 @@
 	"../terminal/wxTerm.h"
 	"../../common/debug.h"
 
-1490787950 d:\cpp\numere-source\trunk\gui\dialogs\wxtermcontainer.h
+1490791550 d:\cpp\numere-source\trunk\gui\dialogs\wxtermcontainer.h
 
-1517075043 source:d:\cpp\numere-source\trunk\gui\dirtraverser.cpp
+1517078643 source:d:\cpp\numere-source\trunk\gui\dirtraverser.cpp
 	"DirTraverser.hpp"
 
-1505643763 d:\cpp\numere-source\trunk\gui\dirtraverser.hpp
+1505647363 d:\cpp\numere-source\trunk\gui\dirtraverser.hpp
 	"wx/wx.h"
 	"wx/dir.h"
 	<string>
@@ -3323,7 +3323,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1521493541 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1521497141 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3343,7 +3343,7 @@
 	"../../common/debug.h"
 	"../globals.hpp"
 
-1512810015 source:d:\cpp\numere-source\trunk\gui\editor\history.cpp
+1512813615 source:d:\cpp\numere-source\trunk\gui\editor\history.cpp
 	"../../common/CommonHeaders.h"
 	"../../kernel/core/ui/language.hpp"
 	"../../kernel/core/utils/tools.hpp"
@@ -3353,7 +3353,7 @@
 	<string>
 	"history.hpp"
 
-1511626987 d:\cpp\numere-source\trunk\gui\editor\history.hpp
+1511630587 d:\cpp\numere-source\trunk\gui\editor\history.hpp
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -3363,7 +3363,7 @@
 	"../../common/datastructures.h"
 	"../../kernel/syntax.hpp"
 
-1511683348 source:d:\cpp\numere-source\trunk\gui\editor\numereprintout.cpp
+1511686948 source:d:\cpp\numere-source\trunk\gui\editor\numereprintout.cpp
 	"NumeRePrintout.h"
 	"editor.h"
 	"wx/printdlg.h"
@@ -3371,20 +3371,20 @@
 	"../../common/Options.h"
 	"../../common/debug.h"
 
-1511683218 d:\cpp\numere-source\trunk\gui\editor\numereprintout.h
+1511686818 d:\cpp\numere-source\trunk\gui\editor\numereprintout.h
 	"wx/print.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\print.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\print.h
 	"wx/defs.h"
 	"wx/msw/printwin.h"
 	"wx/osx/printmac.h"
 	"wx/os2/printos2.h"
 	"wx/generic/printps.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\printwin.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\printwin.h
 	"wx/prntbase.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\prntbase.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\prntbase.h
 	"wx/defs.h"
 	"wx/event.h"
 	"wx/cmndata.h"
@@ -3394,46 +3394,46 @@
 	"wx/frame.h"
 	"wx/dc.h"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\cmndata.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\cmndata.h
 	"wx/defs.h"
 	"wx/gdicmn.h"
 	"wx/stream.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\printps.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\printps.h
 	"wx/prntbase.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\printdlg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\printdlg.h
 	"wx/defs.h"
 	"wx/event.h"
 	"wx/dialog.h"
 	"wx/intl.h"
 	"wx/cmndata.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\progdlg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\progdlg.h
 	"wx/defs.h"
 	"wx/generic/progdlgg.h"
 	"wx/msw/progdlg.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\progdlgg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\progdlgg.h
 	"wx/dialog.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\progdlg.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\progdlg.h
 
-1518626714 source:d:\cpp\numere-source\trunk\gui\filetree.cpp
+1518630314 source:d:\cpp\numere-source\trunk\gui\filetree.cpp
 	"filetree.hpp"
 	"globals.hpp"
 
-1517397028 source:d:\cpp\numere-source\trunk\gui\graphviewer.cpp
+1517400628 source:d:\cpp\numere-source\trunk\gui\graphviewer.cpp
 	"graphviewer.hpp"
 
-1511630412 d:\cpp\numere-source\trunk\gui\graphviewer.hpp
+1511634012 d:\cpp\numere-source\trunk\gui\graphviewer.hpp
 	<wx/wx.h>
 	"wx.h"
 	"viewerframe.hpp"
 	"../kernel/core/plotting/graph_helper.hpp"
 	"terminal/wxterm.h"
 
-1501396206 d:\cpp\numere-source\trunk\gui\wx.h
+1501399806 d:\cpp\numere-source\trunk\gui\wx.h
 	<mgl2/wnd.h>
 	<wx/window.h>
 	<wx/image.h>
@@ -3444,16 +3444,16 @@
 	<wx/textctrl.h>
 	<wx/cursor.h>
 
-1491247725 source:d:\cpp\numere-source\trunk\gui\helpviewer.cpp
+1491251325 source:d:\cpp\numere-source\trunk\gui\helpviewer.cpp
 	"helpviewer.hpp"
 	"NumeReWindow.h"
 
-1509114857 d:\cpp\numere-source\trunk\gui\helpviewer.hpp
+1509118457 d:\cpp\numere-source\trunk\gui\helpviewer.hpp
 	<wx/wxhtml.h>
 	<wx/wx.h>
 	<vector>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxhtml.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxhtml.h
 	"wx/html/htmldefs.h"
 	"wx/html/htmltag.h"
 	"wx/html/htmlcell.h"
@@ -3463,21 +3463,21 @@
 	"wx/filesys.h"
 	"wx/html/helpctrl.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmldefs.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmldefs.h
 	"wx/defs.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmltag.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmltag.h
 	"wx/defs.h"
 	"wx/object.h"
 	"wx/arrstr.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmlcell.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmlcell.h
 	"wx/defs.h"
 	"wx/html/htmltag.h"
 	"wx/html/htmldefs.h"
 	"wx/window.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmlpars.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmlpars.h
 	"wx/defs.h"
 	"wx/html/htmltag.h"
 	"wx/filesys.h"
@@ -3486,21 +3486,21 @@
 	"wx/vector.h"
 	"wx/fontenc.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\filesys.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\filesys.h
 	"wx/defs.h"
 	"wx/stream.h"
 	"wx/datetime.h"
 	"wx/filename.h"
 	"wx/hashmap.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\hashset.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\hashset.h
 	"wx/hashmap.h"
 	<unordered_set>
 	<tr1/unordered_set>
 	<ext/hash_set>
 	<hash_set>
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmlwin.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmlwin.h
 	"wx/defs.h"
 	"wx/window.h"
 	"wx/scrolwin.h"
@@ -3513,7 +3513,7 @@
 	"wx/filename.h"
 	"wx/bitmap.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\winpars.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\winpars.h
 	"wx/defs.h"
 	"wx/module.h"
 	"wx/font.h"
@@ -3521,29 +3521,29 @@
 	"wx/html/htmlcell.h"
 	"wx/encconv.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\encconv.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\encconv.h
 	"wx/defs.h"
 	"wx/object.h"
 	"wx/fontenc.h"
 	"wx/dynarray.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmlfilt.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmlfilt.h
 	"wx/defs.h"
 	"wx/filesys.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\helpctrl.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\helpctrl.h
 	"wx/defs.h"
 	"wx/helpbase.h"
 	"wx/html/helpfrm.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\helpbase.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\helpbase.h
 	"wx/defs.h"
 	"wx/object.h"
 	"wx/string.h"
 	"wx/gdicmn.h"
 	"wx/frame.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\helpfrm.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\helpfrm.h
 	"wx/defs.h"
 	"wx/helpbase.h"
 	"wx/html/helpdata.h"
@@ -3561,7 +3561,7 @@
 	"wx/html/helpwnd.h"
 	"wx/html/htmprint.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\helpdata.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\helpdata.h
 	"wx/defs.h"
 	"wx/object.h"
 	"wx/string.h"
@@ -3569,7 +3569,7 @@
 	"wx/dynarray.h"
 	"wx/font.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\helpwnd.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\helpwnd.h
 	"wx/defs.h"
 	"wx/helpbase.h"
 	"wx/html/helpdata.h"
@@ -3587,7 +3587,7 @@
 	"wx/html/htmlwin.h"
 	"wx/html/htmprint.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmprint.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmprint.h
 	"wx/defs.h"
 	"wx/html/htmlcell.h"
 	"wx/html/winpars.h"
@@ -3596,7 +3596,7 @@
 	"wx/printdlg.h"
 	<limits.h>
 
-1517092306 source:d:\cpp\numere-source\trunk\gui\iconmanager.cpp
+1517095906 source:d:\cpp\numere-source\trunk\gui\iconmanager.cpp
 	"IconManager.h"
 	<string>
 	<wx/icon.h>
@@ -3607,27 +3607,27 @@
 	"icons/closedfolder16x1632bpp.xpm"
 	"icons/exe.xpm"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\mimetype.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\mimetype.h
 	"wx/defs.h"
 	"wx/string.h"
 	"wx/dynarray.h"
 	"wx/arrstr.h"
 	<stdarg.h>
 
-1490787950 d:\cpp\numere-source\trunk\gui\icons\defaultfile.xpm
+1490791550 d:\cpp\numere-source\trunk\gui\icons\defaultfile.xpm
 
-1490787950 d:\cpp\numere-source\trunk\gui\icons\closedfolder16x1632bpp.xpm
+1490791550 d:\cpp\numere-source\trunk\gui\icons\closedfolder16x1632bpp.xpm
 
-1490787950 d:\cpp\numere-source\trunk\gui\icons\exe.xpm
+1490791550 d:\cpp\numere-source\trunk\gui\icons\exe.xpm
 
-1511631205 source:d:\cpp\numere-source\trunk\gui\imagepanel.cpp
+1511634805 source:d:\cpp\numere-source\trunk\gui\imagepanel.cpp
 	<wx/artprov.h>
 	<wx/dir.h>
 	<wx/clipbrd.h>
 	"imagepanel.hpp"
 	"../kernel/core/ui/language.hpp"
 
-1412504348 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\clipbrd.h
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\clipbrd.h
 	"wx/defs.h"
 	"wx/event.h"
 	"wx/chartype.h"
@@ -3642,14 +3642,14 @@
 	"wx/cocoa/clipbrd.h"
 	"wx/os2/clipbrd.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\clipbrd.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\clipbrd.h
 
-1492617644 d:\cpp\numere-source\trunk\gui\imagepanel.hpp
+1492621244 d:\cpp\numere-source\trunk\gui\imagepanel.hpp
 	<wx/wx.h>
 	<wx/sizer.h>
 	"../common/datastructures.h"
 
-1518771113 source:d:\cpp\numere-source\trunk\gui\numeredroptarget.cpp
+1518774713 source:d:\cpp\numere-source\trunk\gui\numeredroptarget.cpp
 	"numeredroptarget.hpp"
 	"NumeReWindow.h"
 	"editor/editor.h"
@@ -3657,11 +3657,11 @@
 	"filetree.hpp"
 	"DirTraverser.hpp"
 
-1518770810 d:\cpp\numere-source\trunk\gui\numeredroptarget.hpp
+1518774410 d:\cpp\numere-source\trunk\gui\numeredroptarget.hpp
 	<wx/wx.h>
 	<wx/dnd.h>
 
-1511420001 d:\cpp\numere-source\trunk\gui\terminal\wxssh.h
+1511423601 d:\cpp\numere-source\trunk\gui\terminal\wxssh.h
 	"../../common/CommonHeaders.h"
 	<wx/txtstrm.h>
 	"networking.h"
@@ -3672,11 +3672,11 @@
 	"../../common/Options.h"
 	"wxterm.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\txtstrm.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\txtstrm.h
 	"wx/stream.h"
 	"wx/convauto.h"
 
-1503426556 source:d:\cpp\numere-source\trunk\gui\numerenotebook.cpp
+1503430156 source:d:\cpp\numere-source\trunk\gui\numerenotebook.cpp
 	"../common/CommonHeaders.h"
 	"NumeReNotebook.h"
 	"NumeReWindow.h"
@@ -3688,7 +3688,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1520318841 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1520322441 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3752,96 +3752,96 @@
 	"icons/breakpoint_octagon_crossed.xpm"
 	"icons/breakpoint_octagon_disable.xpm"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\helpchm.h
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\helpchm.h
 	"wx/helpbase.h"
 
-1490787950 d:\cpp\numere-source\trunk\gui\wxproportionalsplitterwindow.h
+1490791550 d:\cpp\numere-source\trunk\gui\wxproportionalsplitterwindow.h
 	<wx/wxprec.h>
 	<wx/splitter.h>
 	<cmath>
 
-1518250136 d:\cpp\numere-source\trunk\gui\tableviewer.hpp
+1518253736 d:\cpp\numere-source\trunk\gui\tableviewer.hpp
 	<wx/wx.h>
 	<wx/grid.h>
 	<vector>
 	<string>
 
-1511630385 d:\cpp\numere-source\trunk\gui\tableeditpanel.hpp
+1511633985 d:\cpp\numere-source\trunk\gui\tableeditpanel.hpp
 	<wx/wx.h>
 	<wx/panel.h>
 	"tableviewer.hpp"
 	"terminal/wxterm.h"
 	"../kernel/core/ui/language.hpp"
 
-1505669530 d:\cpp\numere-source\trunk\gui\textsplashscreen.hpp
+1505673130 d:\cpp\numere-source\trunk\gui\textsplashscreen.hpp
 	<wx/wx.h>
 	<wx/splash.h>
 
-1490787950 d:\cpp\numere-source\trunk\gui\icons\newstart1.xpm
+1490791550 d:\cpp\numere-source\trunk\gui\icons\newstart1.xpm
 
-1490787950 d:\cpp\numere-source\trunk\gui\icons\newcontinue1.xpm
+1490791550 d:\cpp\numere-source\trunk\gui\icons\newcontinue1.xpm
 
-1490787950 d:\cpp\numere-source\trunk\gui\icons\newstop1.xpm
+1490791550 d:\cpp\numere-source\trunk\gui\icons\newstop1.xpm
 
-1495988617 d:\cpp\numere-source\trunk\gui\icons\gtk-apply.xpm
+1495992217 d:\cpp\numere-source\trunk\gui\icons\gtk-apply.xpm
 
-1495821486 d:\cpp\numere-source\trunk\gui\icons\stepnext.xpm
+1495825086 d:\cpp\numere-source\trunk\gui\icons\stepnext.xpm
 
-1495822159 d:\cpp\numere-source\trunk\gui\icons\wraparound.xpm
+1495825759 d:\cpp\numere-source\trunk\gui\icons\wraparound.xpm
 
-1490787950 d:\cpp\numere-source\trunk\gui\icons\breakpoint_octagon.xpm
+1490791550 d:\cpp\numere-source\trunk\gui\icons\breakpoint_octagon.xpm
 
-1490787950 d:\cpp\numere-source\trunk\gui\icons\breakpoint_octagon_crossed.xpm
+1490791550 d:\cpp\numere-source\trunk\gui\icons\breakpoint_octagon_crossed.xpm
 
-1490787950 d:\cpp\numere-source\trunk\gui\icons\breakpoint_octagon_disable.xpm
+1490791550 d:\cpp\numere-source\trunk\gui\icons\breakpoint_octagon_disable.xpm
 
-1490787950 source:d:\cpp\numere-source\trunk\gui\tableeditpanel.cpp
+1490791550 source:d:\cpp\numere-source\trunk\gui\tableeditpanel.cpp
 	"tableeditpanel.hpp"
 
-1518253782 source:d:\cpp\numere-source\trunk\gui\tableviewer.cpp
+1518257382 source:d:\cpp\numere-source\trunk\gui\tableviewer.cpp
 	"tableviewer.hpp"
 	"../kernel/core/ui/language.hpp"
 	<wx/clipbrd.h>
 	<wx/dataobj.h>
 	<wx/tokenzr.h>
 
-1512811598 source:d:\cpp\numere-source\trunk\gui\terminal\actions.cpp
+1512815198 source:d:\cpp\numere-source\trunk\gui\terminal\actions.cpp
 	"gterm.hpp"
 	"../../common/debug.h"
 
-1490787951 source:d:\cpp\numere-source\trunk\gui\terminal\gtelnet.cpp
+1490791551 source:d:\cpp\numere-source\trunk\gui\terminal\gtelnet.cpp
 	"gterm.hpp"
 	"gtelnet.hpp"
 
-1511419902 source:d:\cpp\numere-source\trunk\gui\terminal\gterm.cpp
+1511423502 source:d:\cpp\numere-source\trunk\gui\terminal\gterm.cpp
 	"gterm.hpp"
 	"../../common/debug.h"
 	<wx/stdpaths.h>
 	<wx/wx.h>
 	<wx/filename.h>
 
-1490787951 source:d:\cpp\numere-source\trunk\gui\terminal\keytrans.cpp
+1490791551 source:d:\cpp\numere-source\trunk\gui\terminal\keytrans.cpp
 	"gterm.hpp"
 	<ctype.h>
 
-1511419934 source:d:\cpp\numere-source\trunk\gui\terminal\localprocessmanager.cpp
+1511423534 source:d:\cpp\numere-source\trunk\gui\terminal\localprocessmanager.cpp
 	"LocalProcessManager.h"
 	"PipedProcess.h"
 	"../../common/chameleonprocessevent.h"
 	<wx/filefn.h>
 
-1511419919 d:\cpp\numere-source\trunk\gui\terminal\localprocessmanager.h
+1511423519 d:\cpp\numere-source\trunk\gui\terminal\localprocessmanager.h
 	<wx/wx.h>
 	<wx/dynarray.h>
 	"../../common/datastructures.h"
 	"../../common/chameleonprocessevent.h"
 
-1490787951 d:\cpp\numere-source\trunk\gui\terminal\pipedprocess.h
+1490791551 d:\cpp\numere-source\trunk\gui\terminal\pipedprocess.h
 	<wx/process.h>
 	<wx/txtstrm.h>
 	<wx/timer.h>
 
-1511419974 source:d:\cpp\numere-source\trunk\gui\terminal\networking.cpp
+1511423574 source:d:\cpp\numere-source\trunk\gui\terminal\networking.cpp
 	<wx/regex.h>
 	<wx/file.h>
 	<wx/process.h>
@@ -3854,16 +3854,16 @@
 	"../../common/debug.h"
 	"LocalProcessManager.h"
 
-1511419940 d:\cpp\numere-source\trunk\gui\terminal\plinkconnect.h
+1511423540 d:\cpp\numere-source\trunk\gui\terminal\plinkconnect.h
 	<wx/wx.h>
 	"../../common/datastructures.h"
 
-1511419927 source:d:\cpp\numere-source\trunk\gui\terminal\pipedprocess.cpp
+1511423527 source:d:\cpp\numere-source\trunk\gui\terminal\pipedprocess.cpp
 	<wx/app.h>
 	"pipedprocess.h"
 	"../../common/chameleonprocessevent.h"
 
-1511419950 source:d:\cpp\numere-source\trunk\gui\terminal\plinkconnect.cpp
+1511423550 source:d:\cpp\numere-source\trunk\gui\terminal\plinkconnect.cpp
 	<wx/txtstrm.h>
 	<wx/process.h>
 	<wx/progdlg.h>
@@ -3873,12 +3873,12 @@
 	"../../common/datastructures.h"
 	"../../common/debug.h"
 
-1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\listimpl.cpp
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\listimpl.cpp
 
-1490795067 source:d:\cpp\numere-source\trunk\gui\terminal\states.cpp
+1490798667 source:d:\cpp\numere-source\trunk\gui\terminal\states.cpp
 	"gterm.hpp"
 
-1511419981 source:d:\cpp\numere-source\trunk\gui\terminal\textmanager.cpp
+1511423581 source:d:\cpp\numere-source\trunk\gui\terminal\textmanager.cpp
 	"TextManager.h"
 	<iostream>
 	<stdlib.h>
@@ -3889,21 +3889,21 @@
 	"gterm.hpp"
 	"../../common/debug.h"
 
-1511419963 source:d:\cpp\numere-source\trunk\gui\terminal\utils.cpp
+1511423563 source:d:\cpp\numere-source\trunk\gui\terminal\utils.cpp
 	"gterm.hpp"
 	"../../common/debug.h"
 
-1490795067 source:d:\cpp\numere-source\trunk\gui\terminal\vt52_states.cpp
+1490798667 source:d:\cpp\numere-source\trunk\gui\terminal\vt52_states.cpp
 	"gterm.hpp"
 
-1490787951 source:d:\cpp\numere-source\trunk\gui\terminal\winmesgbeep.cpp
+1490791551 source:d:\cpp\numere-source\trunk\gui\terminal\winmesgbeep.cpp
 	<windows.h>
 
-1511420208 source:d:\cpp\numere-source\trunk\gui\terminal\wxssh.cpp
+1511423808 source:d:\cpp\numere-source\trunk\gui\terminal\wxssh.cpp
 	"wxssh.h"
 	"../../common/debug.h"
 
-1520923969 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1520927569 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -3916,16 +3916,16 @@
 	"../globals.hpp"
 	"../../common/debug.h"
 
-1491130379 source:d:\cpp\numere-source\trunk\gui\viewerbook.cpp
+1491133979 source:d:\cpp\numere-source\trunk\gui\viewerbook.cpp
 	"viewerbook.hpp"
 
-1492617163 source:d:\cpp\numere-source\trunk\gui\viewerframe.cpp
+1492620763 source:d:\cpp\numere-source\trunk\gui\viewerframe.cpp
 	"viewerframe.hpp"
 
-1491130247 source:d:\cpp\numere-source\trunk\gui\viewerpanel.cpp
+1491133847 source:d:\cpp\numere-source\trunk\gui\viewerpanel.cpp
 	"viewerpanel.hpp"
 
-1511685627 source:d:\cpp\numere-source\trunk\gui\wx.cpp
+1511689227 source:d:\cpp\numere-source\trunk\gui\wx.cpp
 	<wx/dcclient.h>
 	<wx/msgdlg.h>
 	<wx/clipbrd.h>
@@ -3949,47 +3949,47 @@
 	"icons/newstart1.xpm"
 	"icons/newstop1.xpm"
 
-1501014576 d:\cpp\numere-source\trunk\gui\icons\addtext.xpm
+1501018176 d:\cpp\numere-source\trunk\gui\icons\addtext.xpm
 
-1501050595 d:\cpp\numere-source\trunk\gui\icons\addline.xpm
+1501054195 d:\cpp\numere-source\trunk\gui\icons\addline.xpm
 
-1501050634 d:\cpp\numere-source\trunk\gui\icons\addrect.xpm
+1501054234 d:\cpp\numere-source\trunk\gui\icons\addrect.xpm
 
-1501050653 d:\cpp\numere-source\trunk\gui\icons\addcirc.xpm
+1501054253 d:\cpp\numere-source\trunk\gui\icons\addcirc.xpm
 
-1501080092 d:\cpp\numere-source\trunk\gui\icons\rotate_new.xpm
+1501083692 d:\cpp\numere-source\trunk\gui\icons\rotate_new.xpm
 
-1501080105 d:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
+1501083705 d:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1521495094 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1521498694 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
-1521054140 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
+1521057740 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
 	"cache.hpp"
 	"../../kernel.hpp"
 
-1521054280 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
+1521057880 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
 	"datafile.hpp"
 	"../../kernel.hpp"
 
-1515647074 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\table.cpp
+1515650674 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\table.cpp
 	"table.hpp"
 	<cmath>
 
-1511630497 source:d:\cpp\numere-source\trunk\kernel\core\documentation\doc_helper.cpp
+1511634097 source:d:\cpp\numere-source\trunk\kernel\core\documentation\doc_helper.cpp
 	"doc_helper.hpp"
 	"../version.h"
 
-1519812791 source:d:\cpp\numere-source\trunk\kernel\core\documentation\documentation.cpp
+1519816391 source:d:\cpp\numere-source\trunk\kernel\core\documentation\documentation.cpp
 	"documentation.hpp"
 	"../../kernel.hpp"
 
-1518014949 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
+1518018549 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
 	"filesystem.hpp"
 	"../kernel.hpp"
 
-1490787950 source:d:\cpp\numere-source\trunk\kernel\core\igorlib\crossplatformfileio.cpp
+1490791550 source:d:\cpp\numere-source\trunk\kernel\core\igorlib\crossplatformfileio.cpp
 	<ctype.h>
 	<string.h>
 	<stdlib.h>
@@ -3998,45 +3998,45 @@
 	<Windows.h>
 	"CrossPlatformFileIO.h"
 
-1490787950 source:d:\cpp\numere-source\trunk\kernel\core\igorlib\readwave.cpp
+1490791550 source:d:\cpp\numere-source\trunk\kernel\core\igorlib\readwave.cpp
 	"./ReadWave.h"
 
-1511630597 source:d:\cpp\numere-source\trunk\kernel\core\maths\define.cpp
+1511634197 source:d:\cpp\numere-source\trunk\kernel\core\maths\define.cpp
 	"define.hpp"
 	"../../kernel.hpp"
 
-1511630624 source:d:\cpp\numere-source\trunk\kernel\core\maths\fitcontroller.cpp
+1511634224 source:d:\cpp\numere-source\trunk\kernel\core\maths\fitcontroller.cpp
 	"fitcontroller.hpp"
 	"../../kernel.hpp"
 
-1521053429 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
+1521057029 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
 	"functionimplementation.hpp"
 
-1521056197 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
+1521059797 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 
-1511630650 source:d:\cpp\numere-source\trunk\kernel\core\maths\odesolver.cpp
+1511634250 source:d:\cpp\numere-source\trunk\kernel\core\maths\odesolver.cpp
 	"odesolver.hpp"
 	"../../kernel.hpp"
 
-1521359804 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
+1521363404 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	"spline.h"
 	"wavelet.hpp"
 
-1508758440 d:\cpp\numere-source\trunk\kernel\core\maths\spline.h
+1508762040 d:\cpp\numere-source\trunk\kernel\core\maths\spline.h
 	<cstdio>
 	<cassert>
 	<vector>
 	<algorithm>
 
-1516212693 d:\cpp\numere-source\trunk\kernel\core\maths\wavelet.hpp
+1516216293 d:\cpp\numere-source\trunk\kernel\core\maths\wavelet.hpp
 	<vector>
 	"../datamanagement/table.hpp"
 
-1516132979 source:d:\cpp\numere-source\trunk\kernel\core\maths\resampler.cpp
+1516136579 source:d:\cpp\numere-source\trunk\kernel\core\maths\resampler.cpp
 	<stdlib.h>
 	<math.h>
 	<float.h>
@@ -4045,25 +4045,25 @@
 	<iostream>
 	"resampler.h"
 
-1516305222 source:d:\cpp\numere-source\trunk\kernel\core\maths\wavelet.cpp
+1516308822 source:d:\cpp\numere-source\trunk\kernel\core\maths\wavelet.cpp
 	"wavelet.hpp"
 	"../ui/error.hpp"
 	"resampler.h"
 	<gsl/gsl_wavelet.h>
 	<cmath>
 
-1517407970 source:d:\cpp\numere-source\trunk\kernel\core\output.cpp
+1517411570 source:d:\cpp\numere-source\trunk\kernel\core\output.cpp
 	"output.hpp"
 	"../kernel.hpp"
 
-1494773701 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparser.cpp
+1494777301 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparser.cpp
 	"muParser.h"
 	"muParserTemplateMagic.h"
 	<cmath>
 	<algorithm>
 	<numeric>
 
-1514022688 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
+1514026288 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
 	"muParserBase.h"
 	"muParserTemplateMagic.h"
 	"../../kernel.hpp"
@@ -4076,7 +4076,7 @@
 	<locale>
 	<omp.h>
 
-1490787950 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbytecode.cpp
+1490791550 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbytecode.cpp
 	"muParserBytecode.h"
 	<cassert>
 	<string>
@@ -4089,37 +4089,37 @@
 	"muParserStack.h"
 	"muParserTemplateMagic.h"
 
-1490787951 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsercallback.cpp
+1490791551 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsercallback.cpp
 	"muParserCallback.h"
 
-1490787950 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsererror.cpp
+1490791550 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsererror.cpp
 	"muParserError.h"
 
-1490787950 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserint.cpp
+1490791550 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserint.cpp
 	"muParserInt.h"
 	<cmath>
 	<algorithm>
 	<numeric>
 
-1490787950 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserint.h
+1490791550 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserint.h
 	"muParserBase.h"
 	<vector>
 
-1490787951 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsertest.cpp
+1490791551 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsertest.cpp
 	"muParserTest.h"
 	<cstdio>
 	<cmath>
 	<iostream>
 	<limits>
 
-1490787950 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsertest.h
+1490791550 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsertest.h
 	<string>
 	<cstdlib>
 	<numeric>
 	"muParser.h"
 	"muParserInt.h"
 
-1505652595 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsertokenreader.cpp
+1505656195 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsertokenreader.cpp
 	<cassert>
 	<cstdio>
 	<cstring>
@@ -4129,21 +4129,21 @@
 	"muParserTokenReader.h"
 	"muParserBase.h"
 
-1517392843 source:d:\cpp\numere-source\trunk\kernel\core\plotting\graph_helper.cpp
+1517396443 source:d:\cpp\numere-source\trunk\kernel\core\plotting\graph_helper.cpp
 	"graph_helper.hpp"
 	"../../kernel.hpp"
 	"../utils/tools.hpp"
 
-1520185429 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.cpp
+1520189029 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.cpp
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1520186274 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1522055067 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
 
-1511630761 d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.hpp
+1522052099 d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.hpp
 	<mgl2/mgl.h>
 	<string>
 	<vector>
@@ -4155,38 +4155,38 @@
 	"plotinfo.hpp"
 	"graph_helper.hpp"
 
-1500714312 d:\cpp\numere-source\trunk\kernel\core\plotting\plotinfo.hpp
+1500717912 d:\cpp\numere-source\trunk\kernel\core\plotting\plotinfo.hpp
 	<mgl2/mgl.h>
 	<string>
 
-1499234831 source:d:\cpp\numere-source\trunk\kernel\core\plugin.cpp
+1499238431 source:d:\cpp\numere-source\trunk\kernel\core\plugin.cpp
 	"plugin.hpp"
 
-1513077078 source:d:\cpp\numere-source\trunk\kernel\core\plugin_histogram.cpp
+1513080678 source:d:\cpp\numere-source\trunk\kernel\core\plugin_histogram.cpp
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1497518392 source:d:\cpp\numere-source\trunk\kernel\core\plugin_random.cpp
+1497521992 source:d:\cpp\numere-source\trunk\kernel\core\plugin_random.cpp
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1516445798 source:d:\cpp\numere-source\trunk\kernel\core\plugin_statistics.cpp
+1516449398 source:d:\cpp\numere-source\trunk\kernel\core\plugin_statistics.cpp
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1505412752 source:d:\cpp\numere-source\trunk\kernel\core\procedure\debugger.cpp
+1505416352 source:d:\cpp\numere-source\trunk\kernel\core\procedure\debugger.cpp
 	"debugger.hpp"
 
-1514022615 source:d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.cpp
+1514026215 source:d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.cpp
 	"flowctrl.hpp"
 	"../../kernel.hpp"
 
-1521214270 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.cpp
+1521217870 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.cpp
 	"procedure.hpp"
 	"../../kernel.hpp"
 	"procedurevarfactory.hpp"
 
-1513528646 d:\cpp\numere-source\trunk\kernel\core\procedure\procedurevarfactory.hpp
+1513532246 d:\cpp\numere-source\trunk\kernel\core\procedure\procedurevarfactory.hpp
 	<string>
 	<map>
 	"../utils/tools.hpp"
@@ -4199,43 +4199,43 @@
 	"../plotting/plotdata.hpp"
 	"../script.hpp"
 
-1511630788 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedureelement.cpp
+1511634388 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedureelement.cpp
 	"procedureelement.hpp"
 	"../utils/tools.hpp"
 
-1511630811 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedurelibrary.cpp
+1511634411 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedurelibrary.cpp
 	"procedurelibrary.hpp"
 	"../ui/error.hpp"
 	"../utils/tools.hpp"
 
-1519137886 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedurevarfactory.cpp
+1519141486 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedurevarfactory.cpp
 	"procedurevarfactory.hpp"
 	"procedure.hpp"
 
-1497518425 source:d:\cpp\numere-source\trunk\kernel\core\script.cpp
+1497522025 source:d:\cpp\numere-source\trunk\kernel\core\script.cpp
 	"script.hpp"
 	"../kernel.hpp"
 
-1516524697 source:d:\cpp\numere-source\trunk\kernel\core\settings.cpp
+1516528297 source:d:\cpp\numere-source\trunk\kernel\core\settings.cpp
 	"settings.hpp"
 	"../kernel.hpp"
 
-1521441860 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1521672403 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>
 	<windows.h>
 
-1497520723 source:d:\cpp\numere-source\trunk\kernel\core\ui\error.cpp
+1497524323 source:d:\cpp\numere-source\trunk\kernel\core\ui\error.cpp
 	"error.hpp"
 
-1490787950 source:d:\cpp\numere-source\trunk\kernel\core\ui\language.cpp
+1490791550 source:d:\cpp\numere-source\trunk\kernel\core\ui\language.cpp
 	"language.hpp"
 
-1490787950 source:d:\cpp\numere-source\trunk\kernel\core\utils\basicexcel.cpp
+1490791550 source:d:\cpp\numere-source\trunk\kernel\core\utils\basicexcel.cpp
 	"BasicExcel.hpp"
 
-1490787951 source:d:\cpp\numere-source\trunk\kernel\core\utils\tinyxml2.cpp
+1490791551 source:d:\cpp\numere-source\trunk\kernel\core\utils\tinyxml2.cpp
 	"tinyxml2.h"
 	<new>
 	<stddef.h>
@@ -4243,12 +4243,12 @@
 	<cstddef>
 	<cstdarg>
 
-1518085655 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
+1518089255 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
 	"tools.hpp"
 	"../../kernel.hpp"
 	<cstdlib>
 
-1511646726 source:d:\cpp\numere-source\trunk\kernel\core\utils\unzip.cpp
+1511650326 source:d:\cpp\numere-source\trunk\kernel\core\utils\unzip.cpp
 	<windows.h>
 	<stdio.h>
 	<stdlib.h>
@@ -4256,24 +4256,24 @@
 	<tchar.h>
 	"unzip.h"
 
-1490787951 source:d:\cpp\numere-source\trunk\kernel\core\utils\zip++.cpp
+1490791551 source:d:\cpp\numere-source\trunk\kernel\core\utils\zip++.cpp
 	"zip++.hpp"
 
-1511646729 source:d:\cpp\numere-source\trunk\kernel\core\utils\zip.cpp
+1511650329 source:d:\cpp\numere-source\trunk\kernel\core\utils\zip.cpp
 	<windows.h>
 	<stdio.h>
 	<tchar.h>
 	"zip.h"
 
-1511631300 source:d:\cpp\numere-source\trunk\kernel\debugmessenger.cpp
+1511634900 source:d:\cpp\numere-source\trunk\kernel\debugmessenger.cpp
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1521212580 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1521216180 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 
-1513120994 source:d:\cpp\numere-source\trunk\kernel\syntax.cpp
+1513124594 source:d:\cpp\numere-source\trunk\kernel\syntax.cpp
 	"syntax.hpp"
 	"core/utils/tools.hpp"
 
