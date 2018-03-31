@@ -3992,9 +3992,14 @@ wxString NumeReEditor::FindProceduresInCurrentFile(wxString sFirstChars, wxStrin
     for (int i = 0; i < this->GetLineCount(); i++)
     {
         wxString currentline = this->GetLine(i);
-        if (currentline.find("procedure") != string::npos && currentline.find('$', currentline.find("procedure")) != string::npos)
+        if (currentline.find("procedure") != string::npos
+            && currentline.find('$', currentline.find("procedure")) != string::npos
+            && this->GetStyleAt(this->PositionFromLine(i)+currentline.find("procedure")) != wxSTC_NSCR_COMMENT_BLOCK
+            && this->GetStyleAt(this->PositionFromLine(i)+currentline.find("procedure")) != wxSTC_NSCR_COMMENT_LINE)
         {
             currentline.erase(0, currentline.find('$')+1);
+            if (currentline.find('(') == string::npos)
+                continue;
             currentline.erase(currentline.find('('));
             if (currentline.substr(0, sFirstChars.length()) == sFirstChars)
                 sThisFileProcedures += currentline + "(?" + toString(NumeReSyntax::SYNTAX_PROCEDURE) + " ";
@@ -4030,6 +4035,8 @@ wxString NumeReEditor::FindProcedureDefinition()
             procedureline = GetLine(LineFromPosition(nminpos));
             if (procedureline.find("$"+procedurename) != string::npos && procedureline[procedureline.find_first_not_of(' ', procedureline.find("$"+procedurename)+procedurename.length()+1)] == '(')
             {
+                if (getMatchingParenthesis(procedureline.substr(procedureline.find("$"+procedurename)).ToStdString()) == string::npos)
+                    return "";
                 string sProcDef = procedureline.substr(procedureline.find("$"+procedurename), getMatchingParenthesis(procedureline.substr(procedureline.find("$"+procedurename)).ToStdString())+1).ToStdString();
                 size_t nFirstParens = sProcDef.find('(');
                 string sArgList = sProcDef.substr(nFirstParens+1, getMatchingParenthesis(sProcDef.substr(nFirstParens))-1);
@@ -4136,6 +4143,8 @@ wxString NumeReEditor::FindProcedureDefinition()
                 continue;
             else
             {
+                if (getMatchingParenthesis(sProcCommandLine.substr(sProcCommandLine.find(procedurename.ToStdString()))) == string::npos)
+                    return "";
                 string sProcDef = sProcCommandLine.substr(sProcCommandLine.find(procedurename.ToStdString()), getMatchingParenthesis(sProcCommandLine.substr(sProcCommandLine.find(procedurename.ToStdString())))+1);
                 size_t nFirstParens = sProcDef.find('(');
                 string sArgList = sProcDef.substr(nFirstParens+1, getMatchingParenthesis(sProcDef.substr(nFirstParens))-1);
