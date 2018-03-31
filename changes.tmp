@@ -8,3 +8,4 @@ Fixed	Unfinished control flow blocks in procedures will bow raise an error durin
 Added	The static code analyzer may now find unfinished control flow blocks.
 Fixed	The backslash may now be escaped in strings using a following whitespace.
 Added	Now index vectors may be used to select the data in boxplots.
+Fixed	NumeRe doesn't crash anymore, if one enters 'getfolderlist("*")' or 'getfilelist("*")'.

@@ -1123,7 +1123,7 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
 
                     if (i > 0 && !checkDelimiter(sLine.substr(i-1, nPos-i+2))) // this is probably a numerical function. Keep the parentheses
                     {
-                        if (containsStrings(sString) || _data.containsStringVars(sString))
+                        if (containsStrings(sString) || _data.containsStringVars(sString) || parser_containsStringVectorVars(sString, mStringVectorVars))
                         {
                             StringResult _res = parser_StringParserCore(sString, "", _data, _parser, _option, mStringVectorVars);
                             string strvar = parser_CreateStringVectorVar(_res.vResult, mStringVectorVars);
@@ -1135,7 +1135,7 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
                     }
                     else // replace the whole parenthesis
                     {
-                        if (containsStrings(sString) || _data.containsStringVars(sString))
+                        if (containsStrings(sString) || _data.containsStringVars(sString) || parser_containsStringVectorVars(sString, mStringVectorVars))
                         {
                             StringResult _res = parser_StringParserCore(sString, "", _data, _parser, _option, mStringVectorVars);
                             string strvar = parser_CreateStringVectorVar(_res.vResult, mStringVectorVars);
@@ -2994,15 +2994,15 @@ int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& 
                     {
                         if (_idx.nI[0] == _idx.nI[1] && _idx.nJ[0] != _idx.nJ[1])
                         {
-                            if (_idx.nJ[0] + i > _idx.nJ[1] && _idx.nJ[1] != -2)
+                            if (_idx.nJ[0] + i-nCurrentComponent > _idx.nJ[1] && _idx.nJ[1] != -2)
                                 break;
-                            _data.writeToCache(_idx.nI[0], _idx.nJ[0]+1, sTable, StrToDb(vFinal[i]));
+                            _data.writeToCache(_idx.nI[0], _idx.nJ[0]+i-nCurrentComponent, sTable, StrToDb(vFinal[i]));
                         }
                         else if (_idx.nI[0] != _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
                         {
-                            if (_idx.nI[0] + i > _idx.nI[1] && _idx.nI[1] != -2)
+                            if (_idx.nI[0] + i-nCurrentComponent > _idx.nI[1] && _idx.nI[1] != -2)
                                 break;
-                            _data.writeToCache(_idx.nI[0]+i, _idx.nJ[0], sTable, StrToDb(vFinal[i]));
+                            _data.writeToCache(_idx.nI[0]+i-nCurrentComponent, _idx.nJ[0], sTable, StrToDb(vFinal[i]));
                         }
                         else if (_idx.nI[0] == _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
                         {
@@ -3396,8 +3396,13 @@ string parser_evalStringLogic(string sLine, Parser& _parser, bool& bReturningLog
                 bReturningLogicals = true;
                 if (sLeft == "true" && sRight == "true")
                     return "true";
-                else
+                else if (sLeft == "false" || sRight == "false")
                     return "false";
+                else
+                {
+                    _parser.SetExpr(sLeft + " && " + sRight);
+                    return toString((bool)_parser.Eval());
+                }
             }
         }
     }
@@ -3418,10 +3423,15 @@ string parser_evalStringLogic(string sLine, Parser& _parser, bool& bReturningLog
                 if (sRight[0] == '"' && sRight[sRight.length()-1] == '"')
                     sRight = sRight.substr(1,sRight.length()-2);
                 bReturningLogicals = true;
-                if ((sLeft == "true" || sRight == "true") && sLeft != sRight)
+                if ((sLeft == "true" && sRight == "false") || (sLeft == "false" && sRight == "true"))
                     return "true";
-                else
+                else if (sLeft == sRight)
                     return "false";
+                else
+                {
+                    _parser.SetExpr(sLeft + " ||| " + sRight);
+                    return toString((bool)_parser.Eval());
+                }
             }
         }
     }
@@ -3442,10 +3452,16 @@ string parser_evalStringLogic(string sLine, Parser& _parser, bool& bReturningLog
                 if (sRight[0] == '"' && sRight[sRight.length()-1] == '"')
                     sRight = sRight.substr(1,sRight.length()-2);
                 bReturningLogicals = true;
+
                 if (sLeft == "true" || sRight == "true")
                     return "true";
-                else
+                else if (sLeft == "false" && sRight == "false")
                     return "false";
+                else
+                {
+                    _parser.SetExpr(sLeft + " || " + sRight);
+                    return toString((bool)_parser.Eval());
+                }
             }
         }
     }

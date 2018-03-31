@@ -1918,6 +1918,7 @@ void NumeReWindow::createLaTeXHeader(const string& sRootPath)
 	fHeader << "        {\\%}{{\\oprts{\\%}}}1" << endl;
 	fHeader << "        {=}{{\\oprts{=}}}1" << endl;
 	fHeader << "        {!}{{\\oprts{!}}}1" << endl;
+	fHeader << "        {?}{{\\oprts{?}}}1" << endl;
 	fHeader << "        {>}{{\\oprts{>}}}1" << endl;
 	fHeader << "        {<}{{\\oprts{<}}}1" << endl;
 	fHeader << "        {\\&}{{\\oprts{\\&}}}1" << endl;
