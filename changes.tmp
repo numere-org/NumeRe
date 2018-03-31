@@ -10,3 +10,4 @@ Fixed	The backslash may now be escaped in strings using a following whitespace.
 Added	Now index vectors may be used to select the data in boxplots.
 Fixed	NumeRe doesn't crash anymore, if one enters 'getfolderlist("*")' or 'getfilelist("*")'.
 Fixed	The unhandled exceptions together with the static analyzer have been solved.
+Fixed	The string parser now works as expected.

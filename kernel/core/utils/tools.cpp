@@ -2512,8 +2512,9 @@ vector<string> resolveChooseTokens(const string& sDirectory, const Settings& _op
             }
         }
     }
-    if ((vResolved[0].find('*') != string::npos && vResolved[0].find('*') < vResolved[0].rfind('/'))
-        || (vResolved[0].find('?') != string::npos && vResolved[0].find('?') < vResolved[0].rfind('/')))
+    if (vResolved[0].find('/') != string::npos
+        && ((vResolved[0].find('*') != string::npos && vResolved[0].find('*') < vResolved[0].rfind('/'))
+            || (vResolved[0].find('?') != string::npos && vResolved[0].find('?') < vResolved[0].rfind('/'))))
     {
         // Platzhalter in Pfaden werden mit einer Rekursion geloest.
         vector<string> vFolderList = getFolderList(vResolved[0].substr(0,vResolved[0].rfind('/')), _option, 1);
