@@ -11,3 +11,4 @@ Added	Now index vectors may be used to select the data in boxplots.
 Fixed	NumeRe doesn't crash anymore, if one enters 'getfolderlist("*")' or 'getfilelist("*")'.
 Fixed	The unhandled exceptions together with the static analyzer have been solved.
 Fixed	The string parser now works as expected.
+New	The table viewer and the table editor are calculating simple statistics on-the-fly.

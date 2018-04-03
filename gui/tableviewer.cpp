@@ -22,6 +22,9 @@
 #include <wx/dataobj.h>
 #include <wx/tokenzr.h>
 
+double StrToDb(const string&);
+string toString(double, int);
+
 extern Language _guilang;
 
 BEGIN_EVENT_TABLE(TableViewer, wxGrid)
@@ -32,10 +35,11 @@ BEGIN_EVENT_TABLE(TableViewer, wxGrid)
     EVT_GRID_LABEL_RIGHT_CLICK  (TableViewer::OnLabelRightClick)
     EVT_MENU_RANGE              (ID_MENU_INSERT_ROW, ID_MENU_PASTE_HERE, TableViewer::OnMenu)
     EVT_GRID_SELECT_CELL        (TableViewer::OnCellSelect)
+    EVT_GRID_RANGE_SELECT       (TableViewer::OnCellRangeSelect)
     //EVT_ENTER_WINDOW    (TableViewer::OnEnter)
 END_EVENT_TABLE()
 
-TableViewer::TableViewer(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
+TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
             : wxGrid(parent, id, pos, size, style, name), nHeight(600), nWidth(800), nFirstNumRow(1), readOnly(true)
 {
     GetGridWindow()->Bind(wxEVT_ENTER_WINDOW, &TableViewer::OnEnter, this);
@@ -49,6 +53,10 @@ TableViewer::TableViewer(wxWindow* parent, wxWindowID id, const wxPoint& pos, co
     HighlightHeadlineColor = wxColor(131,200,241);
 
     m_popUpMenu.Append(ID_MENU_COPY, _guilang.get("GUI_COPY_TABLE_CONTENTS"));
+
+    m_statusBar = statusbar;
+    int widths[3] = {-1, -1, -3};
+    m_statusBar->SetStatusWidths(3, widths);
 }
 
 
@@ -196,6 +204,13 @@ void TableViewer::OnCellChange(wxGridEvent& event)
 void TableViewer::OnCellSelect(wxGridEvent& event)
 {
     highlightCursorPosition(event.GetRow(), event.GetCol());
+    wxGridCellCoords coords(event.GetRow(), event.GetCol());
+    updateStatusBar(coords, coords, &coords);
+}
+
+void TableViewer::OnCellRangeSelect(wxGridRangeSelectEvent& event)
+{
+    updateStatusBar(event.GetTopLeftCoords(), event.GetBottomRightCoords());
 }
 
 int TableViewer::findEmptyHeadline(int nCol)
@@ -668,6 +683,107 @@ wxGridCellCoords TableViewer::CreateEmptyGridSpace(int rows, int headrows, int c
     return topLeft;
 }
 
+double TableViewer::CellToDouble(int row, int col)
+{
+    string cellContent = this->GetCellValue(row, col).ToStdString();
+
+    if (!cellContent.length())
+        return NAN;
+
+    if (cellContent == "NAN" || cellContent == "NaN" || cellContent == "nan" || cellContent == "---")
+        return NAN;
+    if (cellContent == "inf")
+        return INFINITE;
+    if (this->GetCellTextColour(row, col) == *wxRED || this->GetRowLabelValue(row) == "#")
+        return NAN;
+    while (cellContent.find(',') != string::npos)
+        cellContent[cellContent.find(',')] = '.';
+    return StrToDb(cellContent);
+}
+
+double TableViewer::calculateMin(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
+{
+    double dMin = NAN;
+    for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
+    {
+        for (int j = topLeft.GetCol(); j<= bottomRight.GetCol(); j++)
+        {
+            if (isnan(dMin) || CellToDouble(i, j) < dMin)
+                dMin = CellToDouble(i,j);
+        }
+    }
+    return dMin;
+}
+
+double TableViewer::calculateMax(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
+{
+    double dMax = NAN;
+    for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
+    {
+        for (int j = topLeft.GetCol(); j<= bottomRight.GetCol(); j++)
+        {
+            if (isnan(dMax) || CellToDouble(i, j) > dMax)
+                dMax = CellToDouble(i,j);
+        }
+    }
+    return dMax;
+}
+
+double TableViewer::calculateSum(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
+{
+    double dSum = 0;
+    for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
+    {
+        for (int j = topLeft.GetCol(); j<= bottomRight.GetCol(); j++)
+        {
+            if (!isnan(CellToDouble(i, j)))
+                dSum += CellToDouble(i,j);
+        }
+    }
+    return dSum;
+}
+
+double TableViewer::calculateAvg(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
+{
+    double dSum = 0;
+    int nCount = 0;
+    for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
+    {
+        for (int j = topLeft.GetCol(); j <= bottomRight.GetCol(); j++)
+        {
+            if (!isnan(CellToDouble(i, j)))
+            {
+                nCount++;
+                dSum += CellToDouble(i, j);
+            }
+        }
+    }
+    if (nCount)
+        return dSum / nCount;
+    return 0.0;
+}
+
+void TableViewer::updateStatusBar(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight, wxGridCellCoords* cursor /*= nullptr*/)
+{
+    wxString dim = "Dim: ";
+    dim << this->GetRowLabelValue(this->GetRows()-2) << "x" << this->GetCols()-1;
+
+    wxString sel = "Cur: ";
+    if (cursor)
+        sel << this->GetRowLabelValue(cursor->GetRow()) << "," << cursor->GetCol()+1;
+    else
+        sel << this->GetRowLabelValue(this->GetGridCursorRow()) << "," << this->GetGridCursorCol()+1;
+
+    wxString statustext = "Min: " + toString(calculateMin(topLeft, bottomRight), 5);
+    statustext << " | Max: " << toString(calculateMax(topLeft, bottomRight), 5);
+    statustext << " | Sum: " << toString(calculateSum(topLeft, bottomRight), 5);
+    statustext << " | Avg: " << toString(calculateAvg(topLeft, bottomRight), 5);
+
+    m_statusBar->SetStatusText(dim);
+    m_statusBar->SetStatusText(sel, 1);
+    m_statusBar->SetStatusText(statustext, 2);
+}
+
 wxString TableViewer::copyCell(int row, int col)
 {
     if (row >= (int)nFirstNumRow)
@@ -821,6 +937,7 @@ void TableViewer::SetData(const vector<vector<string> >& vData)
         if (nWidth < 600)
             nWidth = 600;
     }
+    updateStatusBar(wxGridCellCoords(0,0), wxGridCellCoords(this->GetRows()-1, this->GetCols()-1));
 }
 
 void TableViewer::SetTableReadOnly(bool isReadOnly)
@@ -946,7 +1063,7 @@ void TableViewer::insertElement(int id)
 {
     if (id == ID_MENU_INSERT_ROW)
     {
-        if (m_lastRightClick.GetRow() < nFirstNumRow)
+        if (m_lastRightClick.GetRow() < (int)nFirstNumRow)
             nFirstNumRow++;
         this->InsertRows(m_lastRightClick.GetRow());
     }
@@ -970,7 +1087,7 @@ void TableViewer::removeElement(int id)
 {
     if (id == ID_MENU_REMOVE_ROW)
     {
-        if (m_lastRightClick.GetRow() < nFirstNumRow)
+        if (m_lastRightClick.GetRow() < (int)nFirstNumRow)
             nFirstNumRow--;
         this->DeleteRows(m_lastRightClick.GetRow());
     }

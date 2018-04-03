@@ -38,7 +38,7 @@ class TableEditPanel : public wxPanel
     public:
         TableViewer* grid;
 
-        TableEditPanel(wxFrame* parent, wxWindowID id);
+        TableEditPanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar);
 
         void SetTerminal(wxTerm* term) {m_terminal = term;}
 

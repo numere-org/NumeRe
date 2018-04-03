@@ -1695,7 +1695,7 @@ void NumeReWindow::openTable(const vector<vector<string> >& sTable, const string
 {
     ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + sTableName + "()");
     frame->SetSize(800,600);
-    TableViewer* grid = new TableViewer(frame, wxID_ANY);
+    TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3));
     grid->SetData(sTable);
     frame->SetSize(min(800u, grid->GetWidth()), min(600u, grid->GetHeight()+30));
     frame->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
@@ -1707,7 +1707,7 @@ void NumeReWindow::editTable(const vector<vector<string> >& sTable, const string
 {
     ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + sTableName + "()");
     frame->SetSize(800,600);
-    TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY);
+    TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3));
     panel->SetTerminal(m_terminal);
     panel->grid->SetTableReadOnly(false);
     panel->grid->SetData(sTable);
@@ -1841,6 +1841,8 @@ void NumeReWindow::createLaTeXHeader(const string& sRootPath)
     fHeader << "\\usepackage{xcolor}" << endl;
     fHeader << "\\usepackage{listings}" << endl;
     fHeader << "\\usepackage{etoolbox}" << endl;
+    fHeader << "\\usepackage{amsmath}" << endl;
+    fHeader << "\\usepackage{amssymb}" << endl;
     fHeader << "\\usepackage{fontspec,unicode-math}" << endl;
     fHeader << "\\setmainfont{Palatino Linotype}" << endl;
     fHeader << "\\setmathfont{Cambria Math}" << endl;

@@ -28,13 +28,13 @@ BEGIN_EVENT_TABLE(TableEditPanel, wxPanel)
 END_EVENT_TABLE()
 
 // creates the controls
-TableEditPanel::TableEditPanel(wxFrame* parent, wxWindowID id) : wxPanel(parent, id)
+TableEditPanel::TableEditPanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar) : wxPanel(parent, id)
 {
     finished = false;
     vsizer = new wxBoxSizer(wxVERTICAL);
     hsizer = new wxBoxSizer(wxHORIZONTAL);
 
-    grid = new TableViewer(this, wxID_ANY);
+    grid = new TableViewer(this, wxID_ANY, statusbar);
 
     wxButton* button_ok = new wxButton(this, ID_TABLEEDIT_OK, _guilang.get("GUI_OPTIONS_OK"));
     wxButton* button_cancel = new wxButton(this, ID_TABLEEDIT_CANCEL, _guilang.get("GUI_OPTIONS_CANCEL"));

@@ -43,11 +43,14 @@ class TableViewer : public wxGrid
         wxColor HighlightHeadlineColor;
         wxGridCellCoords lastCursorPosition;
 
+        wxStatusBar* m_statusBar;
+
         void OnKeyDown(wxKeyEvent& event);
         void OnChar(wxKeyEvent& event);
         void OnEnter(wxMouseEvent& event);
         void OnCellChange(wxGridEvent& event);
         void OnCellSelect(wxGridEvent& event);
+        void OnCellRangeSelect(wxGridRangeSelectEvent& event);
         void updateFrame();
         void deleteSelection();
         int findEmptyHeadline(int nCol);
@@ -65,6 +68,15 @@ class TableViewer : public wxGrid
         void replaceTabSign(wxString& text);
         wxGridCellCoords CreateEmptyGridSpace(int rows, int headrows, int cols, bool useCursor = false);
 
+        double CellToDouble(int row, int col);
+
+        double calculateMin(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight);
+        double calculateMax(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight);
+        double calculateSum(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight);
+        double calculateAvg(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight);
+
+        void updateStatusBar(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight, wxGridCellCoords* cursor = nullptr);
+
         wxString copyCell(int row, int col);
 
         wxMenu m_popUpMenu;
@@ -72,7 +84,7 @@ class TableViewer : public wxGrid
 
 
     public:
-        TableViewer(wxWindow* parent, wxWindowID id, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxWANTS_CHARS, const wxString& name = wxGridNameStr);
+        TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxWANTS_CHARS, const wxString& name = wxGridNameStr);
 
         void SetData(const vector<vector<string> >& vData);
         vector<vector<string> > GetData();
