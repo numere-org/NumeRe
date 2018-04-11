@@ -39,6 +39,7 @@ class DuplicateCodeDialog : public ViewerFrame
         wxCheckBox* m_NumSemantics;
         wxCheckBox* m_FunctionSemantics;
 
+        wxString createTextFromList();
 
     public:
         DuplicateCodeDialog(wxWindow* _parent, const wxString& title);
@@ -47,6 +48,8 @@ class DuplicateCodeDialog : public ViewerFrame
         void SetResult(const vector<string>& vResult);
         void OnButtonOK(wxCommandEvent& event);
         void OnButtonStart(wxCommandEvent& event);
+        void OnButtonCopy(wxCommandEvent& event);
+        void OnButtonReport(wxCommandEvent& event);
         void OnItemClick(wxListEvent& event);
 
         void OnStart();

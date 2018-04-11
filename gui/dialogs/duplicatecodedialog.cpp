@@ -20,8 +20,11 @@
 #include "duplicatecodedialog.hpp"
 #include "../../kernel/core/ui/language.hpp"
 #include "../editor/editor.h"
+#include <wx/clipbrd.h>
 
-#define ID_START 12000
+#define ID_DUPLICATECODE_START 12000
+#define ID_DUPLICATECODE_COPY 12001
+#define ID_DUPLICATECODE_REPORT 12002
 #define SEMANTICS_VAR 1
 #define SEMANTICS_STRING 2
 #define SEMANTICS_NUM 4
@@ -33,7 +36,9 @@ int StrToInt(const string&);
 
 BEGIN_EVENT_TABLE(DuplicateCodeDialog, ViewerFrame)
     EVT_BUTTON  (wxID_OK, DuplicateCodeDialog::OnButtonOK)
-    EVT_BUTTON  (ID_START, DuplicateCodeDialog::OnButtonStart)
+    EVT_BUTTON  (ID_DUPLICATECODE_START, DuplicateCodeDialog::OnButtonStart)
+    EVT_BUTTON  (ID_DUPLICATECODE_COPY, DuplicateCodeDialog::OnButtonCopy)
+    EVT_BUTTON  (ID_DUPLICATECODE_REPORT, DuplicateCodeDialog::OnButtonReport)
     EVT_LIST_ITEM_SELECTED (-1, DuplicateCodeDialog::OnItemClick)
 END_EVENT_TABLE()
 
@@ -57,15 +62,20 @@ DuplicateCodeDialog::DuplicateCodeDialog(wxWindow* _parent, const wxString& titl
     checkBox->Add(m_NumSemantics, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
     checkBox->Add(m_FunctionSemantics, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
-    wxButton* buttonStart = new wxButton(m_mainPanel, ID_START, _guilang.get("GUI_DUPCODE_START"));
+    wxButton* buttonStart = new wxButton(m_mainPanel, ID_DUPLICATECODE_START, _guilang.get("GUI_DUPCODE_START"));
+    wxButton* buttonCopy = new wxButton(m_mainPanel, ID_DUPLICATECODE_COPY, _guilang.get("GUI_DUPCODE_COPY"));
+    wxButton* buttonReport = new wxButton(m_mainPanel, ID_DUPLICATECODE_REPORT, _guilang.get("GUI_DUPCODE_REPORT"));
     wxButton* buttonOK = new wxButton(m_mainPanel, wxID_OK);
 
     hSizer->Add(buttonStart, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+    hSizer->Add(buttonCopy, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+    hSizer->Add(buttonReport, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
     hSizer->Add(buttonOK, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
     m_resultList = new wxListCtrl(m_mainPanel,  wxID_ANY, wxDefaultPosition, wxSize(400, 400), wxLC_REPORT);
     m_resultList->AppendColumn(_guilang.get("GUI_DUPCODE_MATCH"));
     m_resultList->AppendColumn(_guilang.get("GUI_DUPCODE_PERCENTAGE"));
+    m_resultList->AppendColumn(_guilang.get("GUI_DUPCODE_LINES"));
 
     m_progressGauge = new wxGauge(m_mainPanel, wxID_ANY, 100, wxDefaultPosition, wxSize(-1,24), wxHORIZONTAL);
 
@@ -79,9 +89,21 @@ DuplicateCodeDialog::DuplicateCodeDialog(wxWindow* _parent, const wxString& titl
     m_progressGauge->SetValue(0);
     m_varSemantics->SetValue(true);
 
-    this->SetSize(420, 500);
+    this->SetSize(480, 500);
 }
 
+
+wxString DuplicateCodeDialog::createTextFromList()
+{
+    wxString sText;
+    for (int i = 0; i < m_resultList->GetItemCount(); i++)
+    {
+        sText += m_resultList->GetItemText(i) + "\t" + m_resultList->GetItemText(i, 1) + "\t" +m_resultList->GetItemText(i, 2) + "\n";
+    }
+    if (sText.length())
+        return this->GetTitle() + "\n" + _guilang.get("GUI_DUPCODE_MATCH") + "\t" + _guilang.get("GUI_DUPCODE_PERCENTAGE")+ "\t" + _guilang.get("GUI_DUPCODE_LINES") + "\n" + sText;
+    return sText;
+}
 
 void DuplicateCodeDialog::SetProgress(double dPercentage)
 {
@@ -94,10 +116,15 @@ void DuplicateCodeDialog::SetResult(const vector<string>& vResult)
     for (size_t i = 0; i < vResult.size(); i++)
     {
         m_resultList->InsertItem(i, vResult[i].substr(0,vResult[i].find('[')));
+        string itemtext = m_resultList->GetItemText(i).ToStdString();
+        int line1 = atoi(itemtext.substr(0, itemtext.find('-')).c_str());
+        int line2 = atoi(itemtext.substr(itemtext.find('-')+1, itemtext.find('=')-itemtext.find('-')-1).c_str());
         m_resultList->SetItem(i, 1, vResult[i].substr(vResult[i].find('[')));
+        m_resultList->SetItem(i, 2, toString(line2-line1+1));
     }
     m_resultList->SetColumnWidth(0, 200);
-    m_resultList->SetColumnWidth(1, 160);
+    m_resultList->SetColumnWidth(1, 120);
+    m_resultList->SetColumnWidth(2, 120);
 }
 
 void DuplicateCodeDialog::OnButtonOK(wxCommandEvent& event)
@@ -110,6 +137,34 @@ void DuplicateCodeDialog::OnButtonOK(wxCommandEvent& event)
 void DuplicateCodeDialog::OnButtonStart(wxCommandEvent& event)
 {
     CallAfter(DuplicateCodeDialog::OnStart);
+}
+
+void DuplicateCodeDialog::OnButtonCopy(wxCommandEvent& event)
+{
+    wxString sSelection = createTextFromList();
+    if (!sSelection.length())
+        return;
+    if (wxTheClipboard->Open())
+    {
+        wxTheClipboard->SetData(new wxTextDataObject(sSelection));
+        wxTheClipboard->Close();
+    }
+}
+
+void DuplicateCodeDialog::OnButtonReport(wxCommandEvent& event)
+{
+    wxString sSelection = createTextFromList();
+    if (!sSelection.length())
+        return;
+
+    wxFileDialog filedialog(this, _guilang.get("GUI_DUPCODE_SAVEREPORT"), wxEmptyString, "duplicatecodereport.txt", _guilang.get("COMMON_FILETYPE_TXT") + " (*.txt)|*.txt", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+    if (filedialog.ShowModal() == wxID_CANCEL)
+        return;
+    wxString filename = filedialog.GetPath();
+    wxFile file(filename, wxFile::write);
+    if (file.IsOpened())
+        file.Write(sSelection);
+    file.Close();
 }
 
 void DuplicateCodeDialog::OnItemClick(wxListEvent& event)
