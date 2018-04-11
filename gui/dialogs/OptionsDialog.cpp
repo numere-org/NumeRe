@@ -79,6 +79,9 @@ BEGIN_EVENT_TABLE( OptionsDialog, wxDialog )
     EVT_BUTTON(ID_BTN_LATEXPATH, OptionsDialog::OnButtonClick)
     EVT_BUTTON(ID_RESETCOLOR, OptionsDialog::OnButtonClick)
     EVT_CHECKBOX(ID_DEFAULTBACKGROUND, OptionsDialog::OnButtonClick)
+    EVT_CHECKBOX(ID_BOLD, OptionsDialog::OnStyleButtonClick)
+    EVT_CHECKBOX(ID_ITALICS, OptionsDialog::OnStyleButtonClick)
+    EVT_CHECKBOX(ID_UNDERLINE, OptionsDialog::OnStyleButtonClick)
 
     EVT_COMBOBOX(ID_CLRSPIN, OptionsDialog::OnColorTypeChange)
     EVT_COLOURPICKER_CHANGED(ID_CLRPICKR_FORE, OptionsDialog::OnColorPickerChange)
@@ -161,6 +164,10 @@ bool OptionsDialog::Create( wxWindow* parent, wxWindowID id, const wxString& cap
     m_precision = nullptr;
     m_autosaveinterval = nullptr;
     m_useExecuteCommand = nullptr;
+
+    m_boldCheck = nullptr;
+    m_italicsCheck = nullptr;
+    m_underlineCheck = nullptr;
 
 ////@end OptionsDialog member initialisation
 
@@ -372,6 +379,11 @@ void OptionsDialog::CreateControls()
     m_resetButton = new wxButton(stylePanel, ID_RESETCOLOR, _guilang.get("GUI_OPTIONS_RESETHIGHLIGHT"), wxDefaultPosition, wxDefaultSize, 0);
     wxBoxSizer* colorGroupHSizer = new wxBoxSizer(wxHORIZONTAL);
     m_defaultBackground = new wxCheckBox(stylePanel, ID_DEFAULTBACKGROUND, _guilang.get("GUI_OPTIONS_DEFAULTBACKGROUND"));
+
+    m_boldCheck = new wxCheckBox(stylePanel, ID_BOLD, _guilang.get("GUI_OPTIONS_BOLD"));
+    m_italicsCheck = new wxCheckBox(stylePanel, ID_ITALICS, _guilang.get("GUI_OPTIONS_ITALICS"));
+    m_underlineCheck = new wxCheckBox(stylePanel, ID_UNDERLINE, _guilang.get("GUI_OPTIONS_UNDERLINE"));
+
     colorGroupHSizer->Add(m_colorType, 0, wxALIGN_CENTER | wxRIGHT, 5);
     colorGroupHSizer->Add(m_resetButton, 0, wxALIGN_LEFT | wxLEFT, 5);
 
@@ -379,8 +391,15 @@ void OptionsDialog::CreateControls()
     colorGroupSizer->Add(colorGroupHSizer, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
     colorGroupSizer->Add(m_backColor, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
     colorGroupSizer->Add(m_defaultBackground, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-
     styleVSizer->Add(colorGroupSizer, 1, wxALIGN_LEFT, 5);
+
+    wxBoxSizer* fontStyleSize = new wxBoxSizer(wxHORIZONTAL);
+
+    fontStyleSize->Add(m_boldCheck, 1, wxALIGN_LEFT | wxALL, 5);
+    fontStyleSize->Add(m_italicsCheck, 1, wxALIGN_LEFT | wxALL, 5);
+    fontStyleSize->Add(m_underlineCheck, 1, wxALIGN_LEFT | wxALL, 5);
+
+    styleVSizer->Add(fontStyleSize, 1, wxALIGN_LEFT, 5);
 
     wxStaticText* defaultFontStaticText = new wxStaticText(stylePanel, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_DEFAULTFONT")), wxDefaultPosition, wxDefaultSize, 0 );
     styleVSizer->Add(defaultFontStaticText, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
@@ -566,6 +585,9 @@ void OptionsDialog::synchronizeColors()
         m_options->SetStyleForeground(i, m_colorOptions.GetSyntaxStyle(i).foreground);
         m_options->SetStyleBackground(i, m_colorOptions.GetSyntaxStyle(i).background);
         m_options->SetStyleDefaultBackground(i, m_colorOptions.GetSyntaxStyle(i).defaultbackground);
+        m_options->SetStyleBold(i, m_colorOptions.GetSyntaxStyle(i).bold);
+        m_options->SetStyleItalics(i, m_colorOptions.GetSyntaxStyle(i).italics);
+        m_options->SetStyleUnderline(i, m_colorOptions.GetSyntaxStyle(i).underline);
     }
 }
 
@@ -599,6 +621,9 @@ void OptionsDialog::OnColorTypeChange(wxCommandEvent& event)
     m_backColor->SetColour(m_colorOptions.GetSyntaxStyle(id).background);
     m_defaultBackground->SetValue(m_colorOptions.GetSyntaxStyle(id).defaultbackground);
     m_backColor->Enable(!m_defaultBackground->GetValue());
+    m_boldCheck->SetValue(m_colorOptions.GetSyntaxStyle(id).bold);
+    m_italicsCheck->SetValue(m_colorOptions.GetSyntaxStyle(id).italics);
+    m_underlineCheck->SetValue(m_colorOptions.GetSyntaxStyle(id).underline);
 }
 
 void OptionsDialog::OnButtonClick(wxCommandEvent& event)
@@ -630,9 +655,15 @@ void OptionsDialog::OnButtonClick(wxCommandEvent& event)
             m_foreColor->SetColour(m_colorOptions.GetDefaultSyntaxStyle(id).foreground);
             m_backColor->SetColour(m_colorOptions.GetDefaultSyntaxStyle(id).background);
             m_defaultBackground->SetValue(m_colorOptions.GetDefaultSyntaxStyle(id).defaultbackground);
+            m_boldCheck->SetValue(m_colorOptions.GetDefaultSyntaxStyle(id).bold);
+            m_italicsCheck->SetValue(m_colorOptions.GetDefaultSyntaxStyle(id).italics);
+            m_underlineCheck->SetValue(m_colorOptions.GetDefaultSyntaxStyle(id).underline);
             m_colorOptions.SetStyleForeground(id, m_foreColor->GetColour());
             m_colorOptions.SetStyleBackground(id, m_backColor->GetColour());
             m_colorOptions.SetStyleDefaultBackground(id, m_defaultBackground->GetValue());
+            m_colorOptions.SetStyleBold(id, m_boldCheck->GetValue());
+            m_colorOptions.SetStyleItalics(id, m_italicsCheck->GetValue());
+            m_colorOptions.SetStyleUnderline(id, m_underlineCheck->GetValue());
             m_backColor->Enable(!m_defaultBackground->GetValue());
             return;
         }
@@ -667,6 +698,23 @@ void OptionsDialog::OnButtonClick(wxCommandEvent& event)
             break;
         case ID_BTN_LATEXPATH:
             m_LaTeXRoot->SetValue(replacePathSeparator(dialog.GetPath().ToStdString()));
+            break;
+    }
+}
+
+void OptionsDialog::OnStyleButtonClick(wxCommandEvent& event)
+{
+    size_t id = m_colorOptions.GetIdByIdentifier(m_colorType->GetValue());
+    switch (event.GetId())
+    {
+        case ID_BOLD:
+            m_colorOptions.SetStyleBold(id, m_boldCheck->GetValue());
+            break;
+        case ID_ITALICS:
+            m_colorOptions.SetStyleItalics(id, m_italicsCheck->GetValue());
+            break;
+        case ID_UNDERLINE:
+            m_colorOptions.SetStyleUnderline(id, m_underlineCheck->GetValue());
             break;
     }
 }
@@ -1043,12 +1091,18 @@ void OptionsDialog::InitializeDialog()
         m_colorOptions.SetStyleForeground(i, m_options->GetSyntaxStyle(i).foreground);
         m_colorOptions.SetStyleBackground(i, m_options->GetSyntaxStyle(i).background);
         m_colorOptions.SetStyleDefaultBackground(i, m_options->GetSyntaxStyle(i).defaultbackground);
+        m_colorOptions.SetStyleBold(i, m_options->GetSyntaxStyle(i).bold);
+        m_colorOptions.SetStyleItalics(i, m_options->GetSyntaxStyle(i).italics);
+        m_colorOptions.SetStyleUnderline(i, m_options->GetSyntaxStyle(i).underline);
     }
 
     size_t id = m_colorOptions.GetIdByIdentifier(m_colorType->GetValue());
 
     m_foreColor->SetColour(m_colorOptions.GetSyntaxStyle(id).foreground);
     m_backColor->SetColour(m_colorOptions.GetSyntaxStyle(id).background);
+    m_boldCheck->SetValue(m_colorOptions.GetSyntaxStyle(id).bold);
+    m_italicsCheck->SetValue(m_colorOptions.GetSyntaxStyle(id).italics);
+    m_underlineCheck->SetValue(m_colorOptions.GetSyntaxStyle(id).underline);
     m_defaultBackground->SetValue(m_colorOptions.GetSyntaxStyle(id).defaultbackground);
     m_backColor->Enable(!m_defaultBackground->GetValue());
     m_LaTeXRoot->SetValue(m_options->GetLaTeXRoot());

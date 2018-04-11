@@ -456,6 +456,30 @@ void Options::SetStyleDefaultBackground(size_t i, bool defaultbackground)
     }
 }
 
+void Options::SetStyleBold(size_t i, bool _bold)
+{
+    if (i < Styles::STYLE_END)
+    {
+        vSyntaxStyles[i].bold = _bold;
+    }
+}
+
+void Options::SetStyleItalics(size_t i, bool _italics)
+{
+    if (i < Styles::STYLE_END)
+    {
+        vSyntaxStyles[i].italics = _italics;
+    }
+}
+
+void Options::SetStyleUnderline(size_t i, bool _underline)
+{
+    if (i < Styles::STYLE_END)
+    {
+        vSyntaxStyles[i].underline = _underline;
+    }
+}
+
 
 
 wxArrayString Options::GetStyleIdentifier()

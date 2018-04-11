@@ -126,7 +126,10 @@ class Options
 
         void SetStyleForeground(size_t i, const wxColour& color);
         void SetStyleBackground(size_t i, const wxColour& color);
-        void SetStyleDefaultBackground(size_t i, bool defaultbackground = true);
+        void SetStyleDefaultBackground(size_t i, bool _defaultbackground = true);
+        void SetStyleBold(size_t i, bool _bold = false);
+        void SetStyleItalics(size_t i, bool _italics = false);
+        void SetStyleUnderline(size_t i, bool _underline = false);
         wxArrayString GetStyleIdentifier();
         size_t GetIdByIdentifier(const wxString& identifier);
 

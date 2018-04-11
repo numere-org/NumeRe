@@ -81,6 +81,9 @@ class NumeReWindow;
 #define ID_CLRPICKR_BACK 10042
 #define ID_RESETCOLOR 10043
 #define ID_DEFAULTBACKGROUND 10044
+#define ID_BOLD 10045
+#define ID_ITALICS 10046
+#define ID_UNDERLINE 10047
 
 #define SYMBOL_OPTIONSDIALOG_STYLE wxCAPTION|wxRESIZE_BORDER|wxSYSTEM_MENU|wxCLOSE_BOX
 #define SYMBOL_OPTIONSDIALOG_TITLE _("Options")
@@ -142,6 +145,8 @@ public:
     void OnColorTypeChange(wxCommandEvent& event);
 
     void OnButtonClick(wxCommandEvent& event);
+
+    void OnStyleButtonClick(wxCommandEvent& event);
 
 ////@end OptionsDialog event handler declarations
 
@@ -213,6 +218,9 @@ public:
     wxColourPickerCtrl* m_backColor;
     wxCheckBox* m_defaultBackground;
     wxButton* m_resetButton;
+    wxCheckBox* m_boldCheck;
+    wxCheckBox* m_italicsCheck;
+    wxCheckBox* m_underlineCheck;
 
     wxCheckBox* m_ExtendedInfo;
     wxCheckBox* m_ShowHints;
