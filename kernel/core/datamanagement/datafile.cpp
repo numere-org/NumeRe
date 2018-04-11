@@ -5155,7 +5155,7 @@ double Datafile::cnt(const string& sCache, long long int i1, long long int i2, l
     if (sCache != "data")
         return Cache::cnt(sCache, i1,i2,j1,j2);
     if (!bValidData)
-        return 0;
+        return NAN;
     if (i2 == -1)
         i2 = i1;
     else

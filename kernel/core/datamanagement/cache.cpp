@@ -2665,7 +2665,7 @@ double Cache::cnt(long long int _nLayer, const vector<long long int>& _vLine, co
 {
     if (!bValidData)
         return NAN;
-    int nInvalid;
+    int nInvalid = 0;
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
