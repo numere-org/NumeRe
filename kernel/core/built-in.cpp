@@ -8242,6 +8242,8 @@ bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _op
     StripSpaces(sObject);
     FileSystem _fSys;
     _fSys.setTokens(_option.getTokenPaths());
+    if (sObject.find('.') != string::npos)
+        _fSys.declareFileType(sObject.substr(sObject.rfind('.')));
 
     if (!sObject.length())
         throw SyntaxError(SyntaxError::NO_FILENAME, sCmd, SyntaxError::invalid_position);
@@ -8452,6 +8454,13 @@ bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _op
         || sObject.substr(sObject.rfind('.')) == ".nhlp"
         || sObject.substr(sObject.rfind('.')) == ".png"
         || sObject.substr(sObject.rfind('.')) == ".gif"
+        || sObject.substr(sObject.rfind('.')) == ".m"
+        || sObject.substr(sObject.rfind('.')) == ".cpp"
+        || sObject.substr(sObject.rfind('.')) == ".cxx"
+        || sObject.substr(sObject.rfind('.')) == ".c"
+        || sObject.substr(sObject.rfind('.')) == ".hpp"
+        || sObject.substr(sObject.rfind('.')) == ".hxx"
+        || sObject.substr(sObject.rfind('.')) == ".h"
         || sObject.substr(sObject.rfind('.')) == ".log")
         nType = 1;
     else if (sObject.substr(sObject.rfind('.')) == ".svg"
@@ -8548,6 +8557,7 @@ bool BI_writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _o
     sExpression = sCmd.substr(findCommand(sCmd).nPos + findCommand(sCmd).sString.length());
     if (containsStrings(sExpression) || _data.containsStringVars(sExpression))
     {
+        sExpression += " -komq";
         string sDummy = "";
         parser_StringParser(sExpression, sDummy, _data, _parser, _option, true);
     }
@@ -8580,6 +8590,13 @@ bool BI_writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _o
             sArgument = sArgument.substr(1,sArgument.length()-2);
         if (!sArgument.length() || sArgument == "\"\"")
             continue;
+        while (sArgument.find("\\\"") != string::npos)
+        {
+            sArgument.erase(sArgument.find("\\\""), 1);
+        }
+        if (sArgument.length() >= 2 && sArgument.substr(sArgument.length()-2) == "\\ ")
+            sArgument.pop_back();
+
         fFile << sArgument << endl;
         if (sExpression == ",")
             break;
@@ -8709,6 +8726,8 @@ bool BI_readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _
             sInput += '"';
         for (unsigned int i = 1; i < sInput.length()-1; i++)
         {
+            if (sInput[i] == '\\')
+                sInput.insert(i+1, 1, ' ');
             if (sInput[i] == '"' && sInput[i-1] != '\\')
                 sInput.insert(i, 1, '\\');
         }

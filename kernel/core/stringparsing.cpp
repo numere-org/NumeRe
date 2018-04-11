@@ -87,6 +87,16 @@ struct StringResult
     bool bOnlyLogicals;
 };
 
+// Defines the possible flags for the string parser
+enum StringParserFlags
+{
+    NO_FLAG = 0,
+    NO_QUOTES = 1,
+    PEEK = 2,
+    KEEP_MASKED_QUOTES = 4,
+    KEEP_MASKED_CONTROL_CHARS = 8
+};
+
 
 // Function handler:
 // ======================
@@ -107,7 +117,7 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
 string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars, size_t n_pos);
 string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars);
 int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string sObject, Datafile& _data, Parser& _parser, const Settings& _option);
-string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string& sLine, bool bNoQuotes, bool bReturningLogicals, bool bKeepMaskedQuotes);
+string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string& sLine, bool bReturningLogicals, int parserFlags);
 vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFinal, Parser& _parser, const Settings& _option, bool& bReturningLogicals);
 string parser_CreateStringVectorVar(const vector<string>& vStringVector, map<string, vector<string> >& mStringVectorVars);
 bool parser_containsStringVectorVars(const string& sLine, const map<string, vector<string> >& mStringVectorVars);
@@ -816,9 +826,7 @@ string strfnc_sum(StringFuncArgs& funcArgs)
 // --> Verarbeitet String-Ausdruecke <--
 int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& _parser, const Settings& _option, bool bSilent)
 {
-    bool bNoQuotes = false;
-    bool bPeek = false;
-    bool bKeepMaskedQuotes = false;
+    int parserFlags = NO_FLAG;
 
     sLine = " " + sLine + " ";
 
@@ -827,34 +835,39 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
         || matchParams(sLine, "nq")
         || matchParams(sLine, "peek")
         || matchParams(sLine, "print")
+        || matchParams(sLine, "komq")
         || matchParams(sLine, "kmq"))
     {
         int nPos = (int)sLine.length();
         if (matchParams(sLine, "noquotes") < nPos && matchParams(sLine, "noquotes"))
         {
             nPos = matchParams(sLine, "noquotes");
-            bNoQuotes = true;
+            parserFlags |= NO_QUOTES;
         }
         if (matchParams(sLine, "nq") < nPos && matchParams(sLine, "nq"))
         {
             nPos = matchParams(sLine, "nq");
-            bNoQuotes = true;
+            parserFlags |= NO_QUOTES;
         }
         if (matchParams(sLine, "peek") < nPos && matchParams(sLine, "peek"))
         {
             nPos = matchParams(sLine, "peek");
-            bPeek = true;
+            parserFlags |= PEEK;
+        }
+        if (matchParams(sLine, "komq") < nPos && matchParams(sLine, "komq"))
+        {
+            nPos = matchParams(sLine, "komq");
+            parserFlags |= KEEP_MASKED_QUOTES;
         }
         if (matchParams(sLine, "kmq") < nPos && matchParams(sLine, "kmq"))
         {
             nPos = matchParams(sLine, "kmq");
-            bKeepMaskedQuotes = true;
+            parserFlags |= KEEP_MASKED_CONTROL_CHARS | KEEP_MASKED_QUOTES;
         }
         if (matchParams(sLine, "print")  < nPos && matchParams(sLine, "print"))
         {
             nPos = matchParams(sLine, "print");
-            bNoQuotes = true;
-            bPeek = true;
+            parserFlags |= NO_QUOTES | PEEK;
         }
         nPos = sLine.rfind('-', nPos);
         sLine = sLine.substr(0, nPos);
@@ -866,15 +879,15 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
     StringResult StrRes = parser_StringParserCore(sLine, sCache, _data, _parser, _option, mStringVectorVars);
 //-------------------------
 
-    string sConsoleOut = parser_CreateStringOutput(StrRes.vResult, StrRes.vNoStringVal, sLine, bNoQuotes, StrRes.bOnlyLogicals, bKeepMaskedQuotes);
+    string sConsoleOut = parser_CreateStringOutput(StrRes.vResult, StrRes.vNoStringVal, sLine, StrRes.bOnlyLogicals, parserFlags);
 
 
     if (NumeReKernel::bSupressAnswer)
         bSilent = true;
 
-    if (bPeek)
+    if (parserFlags & PEEK)
         NumeReKernel::printPreFmt("\r                                                       \r");
-    if ((!bSilent || bPeek) && !StrRes.bOnlyLogicals)
+    if ((!bSilent || parserFlags & PEEK) && !StrRes.bOnlyLogicals)
         NumeReKernel::printPreFmt(LineBreak(sConsoleOut, _option, false, 0) + "\n");
 
     if (StrRes.bOnlyLogicals)
@@ -3184,7 +3197,7 @@ int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& 
     return 1;
 }
 
-string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string& sLine, bool bNoQuotes, bool bReturningLogicals, bool bKeepMaskedQuotes)
+string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string& sLine, bool bReturningLogicals, int parserFlags)
 {
     sLine.clear();
 
@@ -3195,9 +3208,9 @@ string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIs
     string sConsoleOut = "|-> ";
     for (size_t j = 0; j < vFinal.size(); j++)
     {
-        if (bKeepMaskedQuotes)
+        if (parserFlags & KEEP_MASKED_CONTROL_CHARS && parserFlags & KEEP_MASKED_QUOTES)
         {
-            if (!bNoQuotes && !vIsNoStringValue[j])
+            if (!(parserFlags & NO_QUOTES) && !vIsNoStringValue[j])
                 sLine += "\"" + vFinal[j] + "\"";
             else
                 sLine += vFinal[j];
@@ -3205,7 +3218,7 @@ string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIs
                 sLine += ",";
             continue;
         }
-        if (vFinal[j] != "\\n" && vFinal[j] != "\\t" && !bNoQuotes && !bReturningLogicals && !vIsNoStringValue[j])
+        if (vFinal[j] != "\\n" && vFinal[j] != "\\t" && !(parserFlags & NO_QUOTES) && !bReturningLogicals && !vIsNoStringValue[j])
         {
             sConsoleOut += "\"";
             sLine += "\"";
@@ -3238,7 +3251,7 @@ string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIs
                 else if (vFinal[j][k+1] == '"')
                 {
                     sConsoleOut += "\"";
-                    if (!bKeepMaskedQuotes)
+                    if (!(parserFlags & KEEP_MASKED_QUOTES))
                         sLine += "\"";
                     else
                         sLine += "\\\"";
@@ -3246,7 +3259,7 @@ string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIs
                 else if (vFinal[j][k+1] == ' '/*k+2 == vFinal[j].length() && vFinal[j].substr(k) == "\\ "*/)
                 {
                     sConsoleOut += "\\";
-                    if (!bKeepMaskedQuotes)
+                    if (!(parserFlags & KEEP_MASKED_CONTROL_CHARS))
                         sLine += "\\";
                     else
                         sLine += "\\ ";
@@ -3260,7 +3273,7 @@ string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIs
                 sLine += vFinal[j][k];
             }
         }
-        if (vFinal[j] != "\\n" && vFinal[j] != "\\t" && !bNoQuotes && !bReturningLogicals && !vIsNoStringValue[j])
+        if (vFinal[j] != "\\n" && vFinal[j] != "\\t" && !(parserFlags & NO_QUOTES) && !bReturningLogicals && !vIsNoStringValue[j])
         {
             sConsoleOut += "\"";
             sLine += "\"";
