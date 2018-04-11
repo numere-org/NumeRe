@@ -21,7 +21,7 @@
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\smartphone.rc
 	<aygshell.h>
 
-1483742773 d:\tdm-gcc-32\wxwidgets-3.0.2\lib\gcc_lib\mswu\wx\msw\rcdefs.h
+1522838207 d:\tdm-gcc-32\wxwidgets-3.0.2\lib\gcc_lib\mswu\wx\msw\rcdefs.h
 
 1490791550 source:d:\cpp\numere-source\trunk\common\chameleonprocessevent.cpp
 	"chameleonprocessevent.h"
@@ -1970,7 +1970,7 @@
 	"datastructures.h"
 	"ProjectInfo.h"
 
-1518611822 d:\cpp\numere-source\trunk\common\datastructures.h
+1522828376 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -2080,14 +2080,14 @@
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\fswatcher.h
 	"wx/defs.h"
 
-1519667101 source:d:\cpp\numere-source\trunk\common\options.cpp
+1523254976 source:d:\cpp\numere-source\trunk\common\options.cpp
 	"Options.h"
 	<wx/filename.h>
 	<wx/arrstr.h>
 	<wx/dir.h>
 	"debug.h"
 
-1519667153 d:\cpp\numere-source\trunk\common\options.h
+1523254891 d:\cpp\numere-source\trunk\common\options.h
 	<wx/wx.h>
 	<wx/validate.h>
 	<wx/valgen.h>
@@ -2128,14 +2128,14 @@
 	"wx/string.h"
 	"wx/buffer.h"
 
-1511423999 source:d:\cpp\numere-source\trunk\common\projectinfo.cpp
+1522828893 source:d:\cpp\numere-source\trunk\common\projectinfo.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"ProjectInfo.h"
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1517566333 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1523095213 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -2147,7 +2147,7 @@
 	"../../kernel/syntax.hpp"
 	"../dialogs/duplicatecodedialog.hpp"
 
-1490389190 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stc\stc.h
+1522875329 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stc\stc.h
 	"wx/defs.h"
 	"wx/control.h"
 	"wx/dnd.h"
@@ -2503,7 +2503,7 @@
 	<deque>
 	<string>
 
-1503383925 d:\cpp\numere-source\trunk\kernel\syntax.hpp
+1523019351 d:\cpp\numere-source\trunk\kernel\syntax.hpp
 	<string>
 	<vector>
 	<map>
@@ -2841,7 +2841,7 @@
 	<map>
 	<vector>
 
-1511891044 d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.hpp
+1523365350 d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.hpp
 	"../viewerframe.hpp"
 	<wx/panel.h>
 	<wx/gauge.h>
@@ -2932,16 +2932,17 @@
 	<windows.h>
 	"commctrl.h"
 
-1511891994 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
+1523367873 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
 	"duplicatecodedialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 	"../editor/editor.h"
+	<wx/clipbrd.h>
 
 1511634780 source:d:\cpp\numere-source\trunk\gui\dialogs\fndrpldialog.cpp
 	"fndrpldialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1519668099 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1523257360 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
@@ -3072,7 +3073,7 @@
 
 1490791550 d:\cpp\numere-source\trunk\common\fixvsbug.h
 
-1519667599 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
+1523255933 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
 	"wx/notebook.h"
 	"wx/spinctrl.h"
 	<wx/clrpicker.h>
@@ -3312,7 +3313,7 @@
 
 1490791550 d:\cpp\numere-source\trunk\gui\dialogs\wxtermcontainer.h
 
-1517078643 source:d:\cpp\numere-source\trunk\gui\dirtraverser.cpp
+1523004442 source:d:\cpp\numere-source\trunk\gui\dirtraverser.cpp
 	"DirTraverser.hpp"
 
 1505647363 d:\cpp\numere-source\trunk\gui\dirtraverser.hpp
@@ -3323,7 +3324,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1522174924 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1523101661 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3596,7 +3597,7 @@
 	"wx/printdlg.h"
 	<limits.h>
 
-1517095906 source:d:\cpp\numere-source\trunk\gui\iconmanager.cpp
+1523004725 source:d:\cpp\numere-source\trunk\gui\iconmanager.cpp
 	"IconManager.h"
 	<string>
 	<wx/icon.h>
@@ -3649,7 +3650,7 @@
 	<wx/sizer.h>
 	"../common/datastructures.h"
 
-1518774713 source:d:\cpp\numere-source\trunk\gui\numeredroptarget.cpp
+1522831778 source:d:\cpp\numere-source\trunk\gui\numeredroptarget.cpp
 	"numeredroptarget.hpp"
 	"NumeReWindow.h"
 	"editor/editor.h"
@@ -3688,7 +3689,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1522738915 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1523005693 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3961,15 +3962,15 @@
 
 1501083705 d:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1521498694 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1523430157 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
-1521057740 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
+1523285686 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
 	"cache.hpp"
 	"../../kernel.hpp"
 
-1521057880 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
+1523285728 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
 	"datafile.hpp"
 	"../../kernel.hpp"
 
@@ -4273,7 +4274,7 @@
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 
-1513124594 source:d:\cpp\numere-source\trunk\kernel\syntax.cpp
+1523019547 source:d:\cpp\numere-source\trunk\kernel\syntax.cpp
 	"syntax.hpp"
 	"core/utils/tools.hpp"
 

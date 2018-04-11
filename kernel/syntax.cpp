@@ -31,6 +31,10 @@ NumeReSyntax::NumeReSyntax()
     vConstants.push_back("NO_SYNTAX_ELEMENTS");
     vSpecialValues.push_back("NO_SYNTAX_ELEMENTS");
     vOperators.push_back("NO_SYNTAX_ELEMENTS");
+    vMatlabKeyWords.push_back("NO_SYNTAX_ELEMENTS");
+    vMatlabFunctions.push_back("NO_SYNTAX_ELEMENTS");
+    vCppKeyWords.push_back("NO_SYNTAX_ELEMENTS");
+    vCppFunctions.push_back("NO_SYNTAX_ELEMENTS");
     sSingleOperators = "+-*/?=()[]{},;#^!&|<>%:";
 }
 
@@ -57,22 +61,30 @@ void NumeReSyntax::loadSyntax(const string& sPath)
             continue;
         if (sLine.front() == '#')
             continue;
-        if (sLine.find("NSCR_COMMANDS") != string::npos)
+        if (sLine.substr(0, 13) == "NSCR_COMMANDS")
             vNSCRCommands = splitString(sLine.substr(sLine.find('=')+1));
-        if (sLine.find("NPRC_COMMANDS") != string::npos)
+        else if (sLine.substr(0, 13) == "NPRC_COMMANDS")
             vNPRCCommands = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.find("FUNCTIONS") != string::npos)
+        else if (sLine.substr(0, 9) == "FUNCTIONS")
             vFunctions = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.find("METHODS") != string::npos)
+        else if (sLine.substr(0, 7) == "METHODS")
             vMethods = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.find("OPTIONS") != string::npos)
+        else if (sLine.substr(0, 7) == "OPTIONS")
             vOptions = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.find("CONSTANTS") != string::npos)
+        else if (sLine.substr(0, 9) == "CONSTANTS")
             vConstants = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.find("SPECIALVALS") != string::npos)
+        else if (sLine.substr(0, 11) == "SPECIALVALS")
             vSpecialValues = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.find("OPERATORS") != string::npos)
+        else if (sLine.substr(0, 9) == "OPERATORS")
             vOperators = splitString(sLine.substr(sLine.find('=')+1));
+        else if (sLine.substr(0, 14) == "MATLABKEYWORDS")
+            vMatlabKeyWords = splitString(sLine.substr(sLine.find('=')+1));
+        else if (sLine.substr(0, 15) == "MATLABFUNCTIONS")
+            vMatlabFunctions = splitString(sLine.substr(sLine.find('=')+1));
+        else if (sLine.substr(0, 11) == "CPPKEYWORDS")
+            vCppKeyWords = splitString(sLine.substr(sLine.find('=')+1));
+        else if (sLine.substr(0, 12) == "CPPFUNCTIONS")
+            vCppFunctions = splitString(sLine.substr(sLine.find('=')+1));
     }
 }
 
@@ -333,6 +345,60 @@ string NumeReSyntax::getAutoCompList(string sFirstChars, string sType)
                     sAutoCompList += (iter->first).substr((iter->first).find('|')+1) + "?" + toString((int)(SYNTAX_COMMAND)) + " ";
                 else
                     sAutoCompList += (iter->first).substr((iter->first).find('|')+1) + "?" + toString((int)(iter->second)) + " ";
+            }
+        }
+        else if ((iter->first).front() > sFirstChars.front())
+            break;
+    }
+
+    return sAutoCompList;
+}
+
+string NumeReSyntax::getAutoCompListMATLAB(string sFirstChars)
+{
+    string sAutoCompList;
+    if (!mAutoCompListMATLAB.size())
+    {
+        for (size_t i = 0; i < vMatlabKeyWords.size(); i++)
+            mAutoCompListMATLAB[toLowerCase(vMatlabKeyWords[i])+" |"+vMatlabKeyWords[i]] = SYNTAX_COMMAND;
+        for (size_t i = 0; i < vMatlabFunctions.size(); i++)
+            mAutoCompListMATLAB[toLowerCase(vMatlabFunctions[i])+" |"+vMatlabFunctions[i]+"("] = SYNTAX_FUNCTION;
+    }
+    sFirstChars = toLowerCase(sFirstChars);
+    for (auto iter = mAutoCompListMATLAB.begin(); iter != mAutoCompListMATLAB.end(); ++iter)
+    {
+        if ((iter->first).front() == sFirstChars.front())
+        {
+            if (sFirstChars == (iter->first).substr(0,sFirstChars.length()))
+            {
+                sAutoCompList += (iter->first).substr((iter->first).find('|')+1) + "?" + toString((int)(iter->second)) + " ";
+            }
+        }
+        else if ((iter->first).front() > sFirstChars.front())
+            break;
+    }
+
+    return sAutoCompList;
+}
+
+string NumeReSyntax::getAutoCompListCPP(string sFirstChars)
+{
+    string sAutoCompList;
+    if (!mAutoCompListCPP.size())
+    {
+        for (size_t i = 0; i < vCppKeyWords.size(); i++)
+            mAutoCompListCPP[toLowerCase(vCppKeyWords[i])+" |"+vCppKeyWords[i]] = SYNTAX_COMMAND;
+        for (size_t i = 0; i < vCppFunctions.size(); i++)
+            mAutoCompListCPP[toLowerCase(vCppFunctions[i])+" |"+vCppFunctions[i]+"("] = SYNTAX_FUNCTION;
+    }
+    sFirstChars = toLowerCase(sFirstChars);
+    for (auto iter = mAutoCompListCPP.begin(); iter != mAutoCompListCPP.end(); ++iter)
+    {
+        if ((iter->first).front() == sFirstChars.front())
+        {
+            if (sFirstChars == (iter->first).substr(0,sFirstChars.length()))
+            {
+                sAutoCompList += (iter->first).substr((iter->first).find('|')+1) + "?" + toString((int)(iter->second)) + " ";
             }
         }
         else if ((iter->first).front() > sFirstChars.front())

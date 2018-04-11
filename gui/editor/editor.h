@@ -136,6 +136,8 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
          *
          */
         vector<int> BlockMatch(int nPos);
+        vector<int> BlockMatchNSCR(int nPos);
+        vector<int> BlockMatchMATLAB(int nPos);
         /** \brief Applies the syntax hinghlighting depending on the loaded file type
          *
          * \param forceUpdate bool
@@ -266,6 +268,15 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
         Options* m_options;
 
     private:
+        enum StyleType
+        {
+            STYLE_DEFAULT,
+            STYLE_COMMENT_LINE,
+            STYLE_COMMENT_BLOCK,
+            STYLE_COMMAND,
+            STYLE_FUNCTION
+        };
+
 
         void FoldCurrentBlock(int nLine);
 
@@ -273,7 +284,16 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
         void updateDefaultHighlightSettings();
         void applyStrikeThrough();
-        int determineIndentationLevel(int nLine, bool& bIsElseCase);
+        int determineIndentationLevel(int nLine, int& singleLineIndent);
+        int determineIndentationLevelNSCR(int nLine, int& singleLineIndent);
+        int determineIndentationLevelMATLAB(int nLine, int& singleLineIndent);
+        int determineIndentationLevelCPP(int nLine, int& singleLineIndent);
+
+        bool isStyleType(StyleType _type, int nPos);
+
+        void ApplyAutoFormatNSCR(int nFirstLine = 0, int nLastLine = -1);
+        void ApplyAutoFormatMATLAB(int nFirstLine = 0, int nLastLine = -1);
+        void ApplyAutoFormatCPP(int nFirstLine = 0, int nLastLine = -1);
         int countUmlauts(const string& sStr);
         string realignLangString(string sLine, size_t& lastpos);
         string addLinebreaks(const string& sLine);
@@ -317,6 +337,9 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
         void detectCodeDuplicates(int startline, int endline, int nDuplicateFlags);
         double compareCodeLines(int nLine1, int nLine2, int nDuplicateFlags);
         string getSemanticLine(int nLine, int nDuplicateFlags);
+        string getSemanticLineNSCR(int nLine, int nDuplicateFlags);
+        string getSemanticLineMATLAB(int nLine, int nDuplicateFlags);
+        string getSemanticLineCPP(int nLine, int nDuplicateFlags);
         map<int,int> getDifferences(int nStart1, int nEnd1, int nStart2, int nEnd2);
         wxString getNextToken(int& nPos);
 
@@ -349,6 +372,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
         DuplicateCodeDialog* m_duplicateCode;
         wxCriticalSection m_editorCS;
         vector<string> vDuplicateCodeResults;
+        vector<string> vParsedSemanticCode;
         int m_nProcessValue;
         int m_nDuplicateCodeFlag;
         int m_nFirstLine;

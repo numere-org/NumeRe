@@ -562,6 +562,29 @@ void NumeReEditor::OnChar( wxStyledTextEvent &event )
             this->AutoCompShow(lenEntered, sAutoCompList);
     }
     else if (lenEntered > 1
+        && m_fileType == FILE_MATLAB
+        && GetStyleAt(wordstartpos) != wxSTC_MATLAB_COMMENT
+        && GetStyleAt(wordstartpos) != wxSTC_MATLAB_STRING)
+    {
+        this->AutoCompSetIgnoreCase(true);
+        this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
+        wxString sAutoCompList = generateAutoCompList(GetTextRange(wordstartpos, currentPos), _syntax->getAutoCompListMATLAB(GetTextRange(wordstartpos, currentPos).ToStdString()));
+        if (sAutoCompList.length())
+            this->AutoCompShow(lenEntered, sAutoCompList);
+    }
+    else if (lenEntered > 1
+        && m_fileType == FILE_CPP
+        && GetStyleAt(wordstartpos) != wxSTC_C_COMMENT
+        && GetStyleAt(wordstartpos) != wxSTC_C_COMMENTLINE
+        && GetStyleAt(wordstartpos) != wxSTC_C_STRING)
+    {
+        this->AutoCompSetIgnoreCase(true);
+        this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
+        wxString sAutoCompList = generateAutoCompList(GetTextRange(wordstartpos, currentPos), _syntax->getAutoCompListCPP(GetTextRange(wordstartpos, currentPos).ToStdString()));
+        if (sAutoCompList.length())
+            this->AutoCompShow(lenEntered, sAutoCompList);
+    }
+    else if (lenEntered > 1
         && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
         && GetStyleAt(wordstartpos) == wxSTC_NSCR_PROCEDURES)
     {
@@ -678,14 +701,14 @@ void NumeReEditor::MakeBraceCheck()
 
 void NumeReEditor::MakeBlockCheck()
 {
-    if (this->m_fileType != FILE_NSCR && this->m_fileType != FILE_NPRC)
+    if (this->m_fileType != FILE_NSCR && this->m_fileType != FILE_NPRC && !FILE_MATLAB)
         return;
     this->SetIndicatorCurrent(HIGHLIGHT_MATCHING_BLOCK);
     this->IndicatorClearRange(0, GetLastPosition());
     this->SetIndicatorCurrent(HIGHLIGHT_NOT_MATCHING_BLOCK);
     this->IndicatorClearRange(0, GetLastPosition());
-    if (GetStyleAt(GetCurrentPos()) != wxSTC_NSCR_COMMAND && GetStyleAt(GetCurrentPos()) != wxSTC_NPRC_COMMAND
-        && !(GetCurrentPos() && (GetStyleAt(GetCurrentPos()-1) == wxSTC_NSCR_COMMAND || GetStyleAt(GetCurrentPos()-1) == wxSTC_NPRC_COMMAND)))
+    if (GetStyleAt(GetCurrentPos()) != wxSTC_NSCR_COMMAND && GetStyleAt(GetCurrentPos()) != wxSTC_NPRC_COMMAND && GetStyleAt(GetCurrentPos()) != wxSTC_MATLAB_KEYWORD
+        && !(GetCurrentPos() && (GetStyleAt(GetCurrentPos()-1) == wxSTC_NSCR_COMMAND || GetStyleAt(GetCurrentPos()-1) == wxSTC_NPRC_COMMAND || GetStyleAt(GetCurrentPos()-1) == wxSTC_MATLAB_KEYWORD)))
     {
         return;
     }
@@ -702,6 +725,16 @@ void NumeReEditor::MakeBlockCheck()
         || currentWord == "endcompose"
         || currentWord == "procedure"
         || currentWord == "endprocedure"
+        || currentWord == "end"
+        || currentWord == "function"
+        || currentWord == "classdef"
+        || currentWord == "properties"
+        || currentWord == "methods"
+        || currentWord == "switch"
+        || currentWord == "case"
+        || currentWord == "otherwise"
+        || currentWord == "try"
+        || currentWord == "catch"
         )
     {
         getMatchingBlock(GetCurrentPos());
@@ -715,6 +748,9 @@ void NumeReEditor::HandleFunctionCallTip()
 {
     // do nothing if an autocompletion list is active
     if (this->AutoCompActive())
+        return;
+    // do nothing, if language is not supported
+    if (this->getFileType() != FILE_NSCR && this->getFileType() != FILE_NPRC)
         return;
     int nStartingBrace = 0;
     int nArgStartPos = 0;
@@ -2587,6 +2623,20 @@ void NumeReEditor::getMatchingBlock(int nPos)
 // If there's no first "if", if one currently focussing on an "else...", the first element may be invalid, but more can be returned.
 vector<int> NumeReEditor::BlockMatch(int nPos)
 {
+    if (this->getFileType() == FILE_NSCR || this->getFileType() == FILE_NPRC)
+        return BlockMatchNSCR(nPos);
+    else if (this->getFileType() == FILE_MATLAB)
+        return BlockMatchMATLAB(nPos);
+    else
+    {
+        vector<int> vPos;
+        vPos.push_back(wxSTC_INVALID_POSITION);
+        return vPos;
+    }
+}
+
+vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
+{
     int nFor = 0;
     int nIf = 0;
     int nWhile = 0;
@@ -2746,6 +2796,318 @@ vector<int> NumeReEditor::BlockMatch(int nPos)
     return vPos;
 }
 
+vector<int> NumeReEditor::BlockMatchMATLAB(int nPos)
+{
+    int nBlock = 0;
+
+    int nStartPos = WordStartPosition(nPos, true);
+    vector<int> vPos;
+    wxString startblock;
+    wxString endblock;
+    bool bSearchForIf = false; //if we search for an if block element. If yes => also mark the "else..." parts.
+    bool bSearchForSwitch = false;
+    bool bSearchForCatch = false;
+    int nSearchDir = 1; //direction in which to search for the matching block partner
+    if (this->GetStyleAt(nPos) != wxSTC_MATLAB_KEYWORD)
+    {
+        if (nPos && this->GetStyleAt(nPos-1) == wxSTC_MATLAB_KEYWORD)
+            nPos--;
+        else
+        {
+            vPos.push_back(wxSTC_INVALID_POSITION);
+            return vPos;
+        }
+    }
+
+
+    startblock = this->GetTextRange(WordStartPosition(nPos, true), WordEndPosition(nPos, true));
+    if (startblock == "end")
+    {
+        // search for starting block
+        // adding 1 to nBlock, because we're already inside of an "block"
+        //nBlock++;
+        for (int i = WordStartPosition(nPos, true); i >= 0; i--)
+        {
+            if (this->GetStyleAt(i) == wxSTC_MATLAB_KEYWORD)
+            {
+                wxString currentWord = this->GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
+                if (currentWord == "for"
+                    || currentWord == "while"
+                    || currentWord == "function"
+                    || currentWord == "if"
+                    || currentWord == "switch"
+                    || currentWord == "try"
+                    || currentWord == "classdef"
+                    || currentWord == "properties"
+                    || currentWord == "methods")
+                    nBlock--;
+                else if (currentWord == "end")
+                    nBlock++;
+
+                if (!nBlock)
+                {
+                    nStartPos = WordStartPosition(i, true);
+                    startblock = currentWord;
+                    if (currentWord == "if")
+                        bSearchForIf = true;
+                    if (currentWord == "switch")
+                        bSearchForSwitch = true;
+                    if (currentWord == "try")
+                        bSearchForCatch = true;
+                    break;
+                }
+                i -= currentWord.length();
+            }
+            if (nBlock < 0)
+            {
+                // There's no matching partner
+                // set the first to invalid but do not return
+                vPos.push_back(wxSTC_INVALID_POSITION);
+                break;
+            }
+        }
+        endblock = "end";
+    }
+    else if (startblock == "else" || startblock == "elseif")
+    {
+        // search for starting "if"
+        // adding 1 to nBlock, because we're already inside of an "if"
+        nBlock++;
+        for (int i = WordEndPosition(nPos, true); i >= 0; i--)
+        {
+            if (this->GetStyleAt(i) == wxSTC_MATLAB_KEYWORD)
+            {
+                wxString currentWord = this->GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
+                if (currentWord == "for"
+                    || currentWord == "while"
+                    || currentWord == "function"
+                    || currentWord == "if"
+                    || currentWord == "switch"
+                    || currentWord == "try"
+                    || currentWord == "classdef"
+                    || currentWord == "properties"
+                    || currentWord == "methods")
+                    nBlock--;
+                else if (currentWord == "end")
+                    nBlock++;
+
+                if (currentWord == "if" && !nBlock)
+                {
+                    nStartPos = WordStartPosition(i, true);
+                    startblock = "if";
+                    break;
+                }
+                i -= currentWord.length();
+            }
+            if (nBlock < 0)
+            {
+                // There's no matching partner
+                // set the first to invalid but do not return
+                vPos.push_back(wxSTC_INVALID_POSITION);
+                break;
+            }
+        }
+
+        if (nBlock > 0)
+        {
+            // There's no matching partner
+            // set the first to invalid but do not return
+            vPos.push_back(wxSTC_INVALID_POSITION);
+            nBlock = 1;
+        }
+        else
+            nBlock = 0;
+
+        bSearchForIf = true;
+        endblock = "end";
+    }
+    else if (startblock == "case" || startblock == "otherwise")
+    {
+        // search for starting "if"
+        // adding 1 to nBlock, because we're already inside of an "if"
+        nBlock++;
+        for (int i = WordEndPosition(nPos, true); i >= 0; i--)
+        {
+            if (this->GetStyleAt(i) == wxSTC_MATLAB_KEYWORD)
+            {
+                wxString currentWord = this->GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
+                if (currentWord == "for"
+                    || currentWord == "while"
+                    || currentWord == "function"
+                    || currentWord == "if"
+                    || currentWord == "switch"
+                    || currentWord == "try"
+                    || currentWord == "classdef"
+                    || currentWord == "properties"
+                    || currentWord == "methods")
+                    nBlock--;
+                else if (currentWord == "end")
+                    nBlock++;
+
+                if (currentWord == "switch" && !nBlock)
+                {
+                    nStartPos = WordStartPosition(i, true);
+                    startblock = "switch";
+                    break;
+                }
+                i -= currentWord.length();
+            }
+            if (nBlock < 0)
+            {
+                // There's no matching partner
+                // set the first to invalid but do not return
+                vPos.push_back(wxSTC_INVALID_POSITION);
+                break;
+            }
+        }
+
+        if (nBlock > 0)
+        {
+            // There's no matching partner
+            // set the first to invalid but do not return
+            vPos.push_back(wxSTC_INVALID_POSITION);
+            nBlock = 1;
+        }
+        else
+            nBlock = 0;
+
+        bSearchForSwitch = true;
+        endblock = "end";
+    }
+    else if (startblock == "catch")
+    {
+        // search for starting "catch"
+        // adding 1 to nBlock, because we're already inside of an "if"
+        nBlock++;
+        for (int i = WordEndPosition(nPos, true); i >= 0; i--)
+        {
+            if (this->GetStyleAt(i) == wxSTC_MATLAB_KEYWORD)
+            {
+                wxString currentWord = this->GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
+                if (currentWord == "for"
+                    || currentWord == "while"
+                    || currentWord == "function"
+                    || currentWord == "if"
+                    || currentWord == "switch"
+                    || currentWord == "try"
+                    || currentWord == "classdef"
+                    || currentWord == "properties"
+                    || currentWord == "methods")
+                    nBlock--;
+                else if (currentWord == "end")
+                    nBlock++;
+
+                if (currentWord == "try" && !nBlock)
+                {
+                    nStartPos = WordStartPosition(i, true);
+                    startblock = "try";
+                    break;
+                }
+                i -= currentWord.length();
+            }
+            if (nBlock < 0)
+            {
+                // There's no matching partner
+                // set the first to invalid but do not return
+                vPos.push_back(wxSTC_INVALID_POSITION);
+                break;
+            }
+        }
+
+        if (nBlock > 0)
+        {
+            // There's no matching partner
+            // set the first to invalid but do not return
+            vPos.push_back(wxSTC_INVALID_POSITION);
+            nBlock = 1;
+        }
+        else
+            nBlock = 0;
+
+        bSearchForCatch = true;
+        endblock = "end";
+    }
+    if (startblock == "for"
+        || startblock == "while"
+        || startblock == "function"
+        || startblock == "if"
+        || startblock == "switch"
+        || startblock == "try"
+        || startblock == "classdef"
+        || startblock == "properties"
+        || startblock == "methods")
+    {
+        endblock = "end";
+    }
+    else
+    {
+        vPos.push_back(wxSTC_INVALID_POSITION);
+        return vPos;
+    }
+
+    if (startblock == "if" || endblock == "if")
+        bSearchForIf = true;
+    if (startblock == "switch" || endblock == "switch")
+        bSearchForSwitch = true;
+    if (startblock == "try" || endblock == "try")
+        bSearchForCatch = true;
+
+    vPos.push_back(nStartPos);
+
+    if (nSearchDir == -1)
+        nStartPos = WordEndPosition(nPos, true);
+    for (int i = nStartPos; (i < this->GetLastPosition() && i >= 0); i += nSearchDir) // iterates down, if nSearchDir == 1, and up of nSearchDir == -1
+    {
+        if (this->GetStyleAt(i) == wxSTC_MATLAB_KEYWORD)
+        {
+            wxString currentWord = this->GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
+            if (currentWord == "for"
+                || currentWord == "while"
+                || currentWord == "function"
+                || currentWord == "if"
+                || currentWord == "switch"
+                || currentWord == "try"
+                || currentWord == "classdef"
+                || currentWord == "properties"
+                || currentWord == "methods")
+                nBlock += nSearchDir; //if we iterate upwards, the closing blocks shall increment and the opening blocks decrement the counter
+            else if (currentWord == "end")
+                nBlock -= nSearchDir;
+            if (bSearchForIf && nBlock == 1 // only in the current if block
+                && (currentWord == "else" || currentWord == "elseif"))
+            {
+                vPos.push_back(WordStartPosition(i, true));
+            }
+            if (bSearchForSwitch && nBlock == 1 // only in the current if block
+                && (currentWord == "case" || currentWord == "otherwise"))
+            {
+                vPos.push_back(WordStartPosition(i, true));
+            }
+            if (bSearchForCatch && nBlock == 1 // only in the current if block
+                && currentWord == "catch")
+            {
+                vPos.push_back(WordStartPosition(i, true));
+            }
+            if (currentWord == endblock && !nBlock)
+            {
+                vPos.push_back(WordStartPosition(i,true));
+                break;
+            }
+            i += nSearchDir*currentWord.length();
+        }
+        if (nBlock < 0)
+        {
+            // There's no matching partner
+            vPos.push_back(wxSTC_INVALID_POSITION);
+            break;
+        }
+    }
+    if (!vPos.size()
+        || (nBlock > 0))
+        vPos.push_back(wxSTC_INVALID_POSITION);
+    return vPos;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public HasBeenSaved
 ///  Checks if the editor has been saved
@@ -2789,12 +3151,14 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
     else if (!forceUpdate && (m_fileType == FILE_NSCR
         || m_fileType == FILE_NPRC
         || m_fileType == FILE_TEXSOURCE
-        || m_fileType == FILE_DATAFILES))
+        || m_fileType == FILE_DATAFILES
+        || m_fileType == FILE_MATLAB
+        || m_fileType == FILE_CPP))
         return;
 
 
     // make it for both: NSCR and NPRC
-    if (filetype == FILE_NSCR || filetype == FILE_NPRC)
+    if (filetype == FILE_NSCR || filetype == FILE_NPRC || filetype == FILE_MATLAB || filetype == FILE_CPP)
     {
         this->SetFoldFlags(wxSTC_FOLDFLAG_LINEAFTER_CONTRACTED);
 
@@ -3044,6 +3408,159 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
         this->StyleSetBackground(wxSTC_MATLAB_NUMBER, wxColor(255,255,255));
         this->StyleSetForeground(wxSTC_MATLAB_IDENTIFIER, wxColor(0,0,0));
         this->StyleSetBold(wxSTC_MATLAB_IDENTIFIER, false);
+	}
+	else if (filetype == FILE_MATLAB)
+	{
+        this->SetLexer(wxSTC_LEX_MATLAB);
+        this->SetProperty("fold", "1");
+        if (_syntax)
+        {
+            this->SetKeyWords(0, _syntax->getMatlab());
+            this->SetKeyWords(1, _syntax->getMatlabFunctions());
+        }
+
+        for (int i = 0; i <= wxSTC_MATLAB_FUNCTIONS; i++)
+        {
+            SyntaxStyles _style;
+            switch (i)
+            {
+                case wxSTC_MATLAB_DEFAULT:
+                case wxSTC_MATLAB_IDENTIFIER:
+                    _style = m_options->GetSyntaxStyle(Options::STANDARD);
+                    break;
+                case wxSTC_MATLAB_NUMBER:
+                    _style = m_options->GetSyntaxStyle(Options::NUMBER);
+                    break;
+                case wxSTC_MATLAB_COMMENT:
+                    _style = m_options->GetSyntaxStyle(Options::COMMENT);
+                    break;
+                case wxSTC_MATLAB_COMMAND:
+                case wxSTC_MATLAB_KEYWORD:
+                    _style = m_options->GetSyntaxStyle(Options::COMMAND);
+                    break;
+                case wxSTC_MATLAB_FUNCTIONS:
+                    _style = m_options->GetSyntaxStyle(Options::FUNCTION);
+                    break;
+                case wxSTC_MATLAB_STRING:
+                case wxSTC_MATLAB_DOUBLEQUOTESTRING:
+                    _style = m_options->GetSyntaxStyle(Options::STRING);
+                    break;
+                case wxSTC_MATLAB_OPERATOR:
+                    _style = m_options->GetSyntaxStyle(Options::OPERATOR);
+                    break;
+            }
+
+            this->StyleSetForeground(i, _style.foreground);
+            if (!_style.defaultbackground)
+                this->StyleSetBackground(i, _style.background);
+            else
+                this->StyleSetBackground(i, this->StyleGetBackground(wxSTC_STYLE_DEFAULT));
+            this->StyleSetBold(i, _style.bold);
+            this->StyleSetItalic(i, _style.italics);
+            this->StyleSetUnderline(i, _style.underline);
+        }
+
+        /*this->StyleSetForeground(wxSTC_MATLAB_COMMENT, wxColor(0,128,0));
+        this->StyleSetItalic(wxSTC_MATLAB_COMMENT, true);
+
+        this->StyleSetForeground(wxSTC_MATLAB_OPERATOR, wxColor(255,0,0));
+        this->StyleSetBold(wxSTC_MATLAB_OPERATOR, false);
+
+        this->StyleSetForeground(wxSTC_MATLAB_NUMBER, wxColor(255,128,128));
+        this->StyleSetBackground(wxSTC_MATLAB_NUMBER, wxColor(255,255,255));
+
+        this->StyleSetForeground(wxSTC_MATLAB_IDENTIFIER, wxColor(0,0,0));
+        this->StyleSetBold(wxSTC_MATLAB_IDENTIFIER, false);
+
+        this->StyleSetForeground(wxSTC_MATLAB_KEYWORD, wxColor(0, 0, 255));
+        this->StyleSetBold(wxSTC_MATLAB_KEYWORD, true);
+
+        this->StyleSetForeground(wxSTC_MATLAB_FUNCTIONS, wxColor(0, 0, 128));
+        this->StyleSetBold(wxSTC_MATLAB_FUNCTIONS, true);
+
+        this->StyleSetForeground(wxSTC_MATLAB_COMMAND, wxColor(0,0,128));
+        this->StyleSetBold(wxSTC_MATLAB_COMMAND, true);
+
+        this->StyleSetForeground(wxSTC_MATLAB_STRING, wxColor(128, 128, 128));
+        this->StyleSetItalic(wxSTC_MATLAB_STRING, true);*/
+	}
+	else if (filetype == FILE_CPP)
+	{
+        this->SetLexer(wxSTC_LEX_CPP);
+        this->SetProperty("fold", "1");
+        if (_syntax)
+        {
+            this->SetKeyWords(0, _syntax->getCpp());
+            this->SetKeyWords(1, _syntax->getCppFunctions());
+        }
+
+for (int i = 0; i <= wxSTC_C_PREPROCESSORCOMMENT; i++)
+        {
+            SyntaxStyles _style;
+            switch (i)
+            {
+                case wxSTC_C_DEFAULT :
+                case wxSTC_C_IDENTIFIER:
+                    _style = m_options->GetSyntaxStyle(Options::STANDARD);
+                    break;
+                case wxSTC_C_NUMBER:
+                    _style = m_options->GetSyntaxStyle(Options::NUMBER);
+                    break;
+                case wxSTC_C_COMMENT:
+                case wxSTC_C_COMMENTLINE:
+                    _style = m_options->GetSyntaxStyle(Options::COMMENT);
+                    break;
+                case wxSTC_C_WORD:
+                    _style = m_options->GetSyntaxStyle(Options::COMMAND);
+                    break;
+                case wxSTC_C_WORD2:
+                    _style = m_options->GetSyntaxStyle(Options::FUNCTION);
+                    break;
+                case wxSTC_C_STRING:
+                    _style = m_options->GetSyntaxStyle(Options::STRING);
+                    break;
+                case wxSTC_C_CHARACTER:
+                    _style = m_options->GetSyntaxStyle(Options::STRINGPARSER);
+                    break;
+                case wxSTC_C_PREPROCESSOR:
+                    _style = m_options->GetSyntaxStyle(Options::INCLUDES);
+                    break;
+                case wxSTC_C_OPERATOR:
+                    _style = m_options->GetSyntaxStyle(Options::OPERATOR);
+                    break;
+            }
+
+            this->StyleSetForeground(i, _style.foreground);
+            if (!_style.defaultbackground)
+                this->StyleSetBackground(i, _style.background);
+            else
+                this->StyleSetBackground(i, this->StyleGetBackground(wxSTC_STYLE_DEFAULT));
+            this->StyleSetBold(i, _style.bold);
+            this->StyleSetItalic(i, _style.italics);
+            this->StyleSetUnderline(i, _style.underline);
+        }
+
+        /*this->StyleSetForeground(wxSTC_C_IDENTIFIER, wxColor(0,0,0));
+        this->StyleSetForeground(wxSTC_C_COMMENT, wxColor(0,128,0));
+        this->StyleSetItalic(wxSTC_C_COMMENT, true);
+        this->StyleSetForeground(wxSTC_C_COMMENTLINE, wxColor(0,128,0));
+        this->StyleSetItalic(wxSTC_C_COMMENTLINE, true);
+
+        this->StyleSetForeground(wxSTC_C_OPERATOR, wxColor(255,0,0));
+
+        this->StyleSetForeground(wxSTC_C_WORD, wxColor(0,0,255));
+        this->StyleSetBold(wxSTC_C_WORD, true);
+
+        this->StyleSetForeground(wxSTC_C_WORD2, wxColor(0,0,128));
+        this->StyleSetBold(wxSTC_C_WORD2, true);
+
+        this->StyleSetForeground(wxSTC_C_STRING, wxColor(64,64,255));
+
+        this->StyleSetForeground(wxSTC_C_CHARACTER, wxColor(128,128,128));
+
+        this->StyleSetForeground(wxSTC_C_PREPROCESSOR, wxColor(128,0,0));
+
+        this->StyleSetForeground(wxSTC_C_NUMBER, wxColor(255,128,128));*/
 	}
 	else
 	{
@@ -3529,7 +4046,7 @@ void NumeReEditor::FoldCurrentBlock(int nLine)
 
 void NumeReEditor::AsynchActions()
 {
-    if (!this->AutoCompActive() && this->getEditorSetting(SETTING_INDENTONTYPE) && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC))
+    if (!this->AutoCompActive() && this->getEditorSetting(SETTING_INDENTONTYPE) && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_MATLAB || m_fileType == FILE_CPP))
         ApplyAutoIndentation(0, this->GetCurrentLine()+1);
     if (getEditorSetting(SETTING_USEANALYZER))
         AnalyseCode();
@@ -4445,7 +4962,7 @@ void NumeReEditor::OnFoldCurrentBlock(wxCommandEvent& event)
 
 bool NumeReEditor::InitDuplicateCode()
 {
-    if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+    if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_MATLAB || m_fileType == FILE_CPP)
     {
         m_duplicateCode = new DuplicateCodeDialog(this, "NumeRe: " + _guilang.get("GUI_DUPCODE_TITLE") + " [" + this->GetFilenameString() + "]");
         m_duplicateCode->SetIcon(wxIcon(m_mainFrame->getProgramFolder() + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
@@ -4473,6 +4990,12 @@ void NumeReEditor::OnThreadUpdate(wxThreadEvent& event)
     {
         if (m_duplicateCode && m_duplicateCode->IsShown())
             m_duplicateCode->SetProgress(100);
+        else
+        {
+            vDuplicateCodeResults.clear();
+            return;
+        }
+
         wxCriticalSectionLocker lock(m_editorCS);
         m_duplicateCode->SetResult(vDuplicateCodeResults);
         vDuplicateCodeResults.clear();
@@ -4540,7 +5063,7 @@ void NumeReEditor::OnMarginClick( wxStyledTextEvent &event )
 {
 	// we know it's margin 2, because that's the only sensitive margin
 
-    if (m_fileType != FILE_NSCR && m_fileType != FILE_NPRC)
+    if (m_fileType != FILE_NSCR && m_fileType != FILE_NPRC && m_fileType != FILE_MATLAB && m_fileType != FILE_CPP)
         return;
 	int position = event.GetPosition();
 
@@ -4677,26 +5200,40 @@ int NumeReEditor::insertTextAndMove(int nPosition, const wxString& sText)
 wxThread::ExitCode NumeReEditor::Entry()
 {
     vDuplicateCodeResults.clear();
+
+    // Create the memory for the parsed line
+    // This is done before the processing to avoid reallocs during the process
+    vParsedSemanticCode.resize(m_nLastLine+1);
+
     double dMatch = 0.0;
     int nLongestMatch = 0;
     int nBlankLines = 0;
     int nLastStatusVal = 0;
+    int currentDuplicateCodeLength = DUPLICATE_CODE_LENGTH;
+    if (getFileType() == FILE_CPP)
+        currentDuplicateCodeLength *= 2;
 
-    for (int i = m_nFirstLine; i <= m_nLastLine-DUPLICATE_CODE_LENGTH; i++)
+    for (int i = m_nFirstLine; i <= m_nLastLine-currentDuplicateCodeLength; i++)
     {
         if (GetThread()->TestDestroy())
             break;
         if (m_duplicateCode && m_duplicateCode->IsShown())
         {
-            if ((int)((double)i / (double)(m_nLastLine-DUPLICATE_CODE_LENGTH-m_nFirstLine)*100) != nLastStatusVal)
+            // display some status value
+            if ((int)((double)i / (double)(m_nLastLine-currentDuplicateCodeLength-m_nFirstLine)*100) != nLastStatusVal)
             {
-                nLastStatusVal = (double)i / (double)(m_nLastLine-DUPLICATE_CODE_LENGTH-m_nFirstLine)*100;
+                nLastStatusVal = (double)i / (double)(m_nLastLine-currentDuplicateCodeLength-m_nFirstLine)*100;
                 wxCriticalSectionLocker lock(m_editorCS);
                 m_nProcessValue = nLastStatusVal;
                 wxQueueEvent(GetEventHandler(), new wxThreadEvent());
             }
         }
-        for (int j = i+DUPLICATE_CODE_LENGTH; j <= m_nLastLine-DUPLICATE_CODE_LENGTH; j++)
+        else
+        {
+            // Stop this processing, if the duplicate code window was closed
+            break;
+        }
+        for (int j = i+currentDuplicateCodeLength; j <= m_nLastLine-currentDuplicateCodeLength; j++)
         {
             dMatch = compareCodeLines(i, j, m_nDuplicateCodeFlag);
             if (dMatch >= 0.75)
@@ -4712,7 +5249,7 @@ wxThread::ExitCode NumeReEditor::Entry()
                     }
                     else if (dComp < 0.75 || i+k == j)
                     {
-                        if (k - nBlankLines > DUPLICATE_CODE_LENGTH)
+                        if (k - nBlankLines > currentDuplicateCodeLength)
                         {
                             wxCriticalSectionLocker lock(m_editorCS);
                             vDuplicateCodeResults.push_back(toString(i+1) + "-" + toString(i+k) + " == " + toString(j+1) + "-" + toString(j+k) + " [" + toString(dMatch * 100.0/(double)(k-nBlankLines), 3) + " %]");
@@ -4732,6 +5269,9 @@ wxThread::ExitCode NumeReEditor::Entry()
         i += nLongestMatch;
         nLongestMatch = 0;
     }
+
+    // clear the parsed code
+    vParsedSemanticCode.clear();
 
     wxCriticalSectionLocker lock(m_editorCS);
     m_nProcessValue = 100;
@@ -4765,8 +5305,8 @@ double NumeReEditor::compareCodeLines(int nLine1, int nLine2, int nDuplicateFlag
         return -2.0;
     else if (!sSemLine1.length() && !sSemLine2.length())
         return -1.0;
-    else if (sSemLine1 == sSemLine2)
-        return 1.0;
+    /*else if (sSemLine1 == sSemLine2)
+        return 1.0;*/
     else if (sSemLine1.length() * 1.5 < sSemLine2.length() || sSemLine1.length() > sSemLine2.length() * 1.5)
         return 0.0;
 
@@ -4781,8 +5321,22 @@ double NumeReEditor::compareCodeLines(int nLine1, int nLine2, int nDuplicateFlag
     return (double)nMatchedCount / (double)max(sSemLine1.length(), sSemLine2.length());
 }
 
-// 0 = direct comparison, 1 = use var semanticals, 2 = use string semanticals, 4 = use numeric semanticals
 string NumeReEditor::getSemanticLine(int nLine, int nDuplicateFlag)
+{
+    if (vParsedSemanticCode[nLine].length())
+        return vParsedSemanticCode[nLine];
+    if (getFileType() == FILE_NSCR || getFileType() == FILE_NPRC)
+        return getSemanticLineNSCR(nLine, nDuplicateFlag);
+    else if (getFileType() == FILE_MATLAB)
+        return getSemanticLineMATLAB(nLine, nDuplicateFlag);
+    else if (getFileType() == FILE_CPP)
+        return getSemanticLineCPP(nLine, nDuplicateFlag);
+    else
+        return "";
+}
+
+// 0 = direct comparison, 1 = use var semanticals, 2 = use string semanticals, 4 = use numeric semanticals
+string NumeReEditor::getSemanticLineNSCR(int nLine, int nDuplicateFlag)
 {
     string sSemLine = "";
     for (int i = this->PositionFromLine(nLine); i < this->GetLineEndPosition(nLine); i++)
@@ -4802,8 +5356,8 @@ string NumeReEditor::getSemanticLine(int nLine, int nDuplicateFlag)
             // replace vars with a placeholder
             i = this->WordEndPosition(i, true)-1;
             while (this->GetStyleAt(i+1) == wxSTC_NSCR_DEFAULT
-            || this->GetStyleAt(i+1) == wxSTC_NSCR_DEFAULT_VARS
-            || this->GetStyleAt(i+1) == wxSTC_NSCR_IDENTIFIER)
+                || this->GetStyleAt(i+1) == wxSTC_NSCR_DEFAULT_VARS
+                || this->GetStyleAt(i+1) == wxSTC_NSCR_IDENTIFIER)
                 i++;
             sSemLine += "VAR";
         }
@@ -4844,8 +5398,139 @@ string NumeReEditor::getSemanticLine(int nLine, int nDuplicateFlag)
             sSemLine += this->GetCharAt(i);
 
     }
+    // Store the result to avoid repeated processing of this line
+    vParsedSemanticCode[nLine] = sSemLine;
     return sSemLine;
 }
+
+string NumeReEditor::getSemanticLineMATLAB(int nLine, int nDuplicateFlag)
+{
+    string sSemLine = "";
+    for (int i = this->PositionFromLine(nLine); i < this->GetLineEndPosition(nLine); i++)
+    {
+        if (this->GetCharAt(i) == ' '
+            || this->GetCharAt(i) == '\t'
+            || this->GetCharAt(i) == '\r'
+            || this->GetCharAt(i) == '\n'
+            || this->GetStyleAt(i) == wxSTC_MATLAB_COMMENT)
+            continue;
+        else if ((nDuplicateFlag & SEMANTICS_VAR)
+            && (this->GetStyleAt(i) == wxSTC_MATLAB_DEFAULT
+                || this->GetStyleAt(i) == wxSTC_MATLAB_IDENTIFIER))
+        {
+            // replace vars with a placeholder
+            i = this->WordEndPosition(i, true)-1;
+            while (this->GetStyleAt(i+1) == wxSTC_MATLAB_DEFAULT
+            || this->GetStyleAt(i+1) == wxSTC_MATLAB_IDENTIFIER)
+                i++;
+            sSemLine += "VAR";
+        }
+        else if ((nDuplicateFlag & SEMANTICS_STRING) && this->GetStyleAt(i) == wxSTC_MATLAB_STRING)
+        {
+            // replace string literals with a placeholder
+            i++;
+            while (this->GetStyleAt(i+1) == wxSTC_MATLAB_STRING)
+                i++;
+            sSemLine += "STR";
+        }
+        else if ((nDuplicateFlag & SEMANTICS_NUM) && this->GetStyleAt(i) == wxSTC_MATLAB_NUMBER)
+        {
+            // replace numeric literals with a placeholder
+            while (this->GetStyleAt(i+1) == wxSTC_MATLAB_NUMBER)
+                i++;
+            if (sSemLine.back() == '-' || sSemLine.back() == '+')
+            {
+                if (sSemLine.length() == 1)
+                    sSemLine.clear();
+                else
+                {
+                    char cDelim = sSemLine[sSemLine.length()-2];
+                    if (cDelim == ':' || cDelim == '=' || cDelim == '?' || cDelim == ',' || cDelim == ';' || cDelim == '(' || cDelim == '[' || cDelim == '{')
+                        sSemLine.pop_back();
+                }
+            }
+            sSemLine += "NUM";
+        }
+        /*else if ((nDuplicateFlag & SEMANTICS_FUNCTION) && this->GetStyleAt(i) == wxSTC_NSCR_CUSTOM_FUNCTION)
+        {
+            // replace functions and caches with a placeholder
+            while (this->GetStyleAt(i+1) == wxSTC_NSCR_CUSTOM_FUNCTION)
+                i++;
+            sSemLine += "FUNC";
+        }*/
+        else
+            sSemLine += this->GetCharAt(i);
+
+    }
+    // Store the result to avoid repeated processing of this line
+    vParsedSemanticCode[nLine] = sSemLine;
+    return sSemLine;
+}
+
+string NumeReEditor::getSemanticLineCPP(int nLine, int nDuplicateFlag)
+{
+    string sSemLine = "";
+    for (int i = this->PositionFromLine(nLine); i < this->GetLineEndPosition(nLine); i++)
+    {
+        if (this->GetCharAt(i) == ' '
+            || this->GetCharAt(i) == '\t'
+            || this->GetCharAt(i) == '\r'
+            || this->GetCharAt(i) == '\n'
+            || isStyleType(STYLE_COMMENT_LINE, i) || isStyleType(STYLE_COMMENT_BLOCK, i))
+            continue;
+        else if ((nDuplicateFlag & SEMANTICS_VAR)
+            && (this->GetStyleAt(i) == wxSTC_C_DEFAULT
+                || this->GetStyleAt(i) == wxSTC_C_IDENTIFIER))
+        {
+            // replace vars with a placeholder
+            i = this->WordEndPosition(i, true)-1;
+            while (this->GetStyleAt(i+1) == wxSTC_C_DEFAULT
+            || this->GetStyleAt(i+1) == wxSTC_C_IDENTIFIER)
+                i++;
+            sSemLine += "VAR";
+        }
+        else if ((nDuplicateFlag & SEMANTICS_STRING) && (this->GetStyleAt(i) == wxSTC_C_STRING || this->GetStyleAt(i) == wxSTC_C_CHARACTER))
+        {
+            // replace string literals with a placeholder
+            i++;
+            while (this->GetStyleAt(i+1) == wxSTC_C_STRING || this->GetStyleAt(i+1) == wxSTC_C_CHARACTER)
+                i++;
+            sSemLine += "STR";
+        }
+        else if ((nDuplicateFlag & SEMANTICS_NUM) && this->GetStyleAt(i) == wxSTC_C_NUMBER)
+        {
+            // replace numeric literals with a placeholder
+            while (this->GetStyleAt(i+1) == wxSTC_C_NUMBER)
+                i++;
+            if (sSemLine.back() == '-' || sSemLine.back() == '+')
+            {
+                if (sSemLine.length() == 1)
+                    sSemLine.clear();
+                else
+                {
+                    char cDelim = sSemLine[sSemLine.length()-2];
+                    if (cDelim == ':' || cDelim == '=' || cDelim == '?' || cDelim == ',' || cDelim == ';' || cDelim == '(' || cDelim == '[' || cDelim == '{')
+                        sSemLine.pop_back();
+                }
+            }
+            sSemLine += "NUM";
+        }
+        /*else if ((nDuplicateFlag & SEMANTICS_FUNCTION) && this->GetStyleAt(i) == wxSTC_NSCR_CUSTOM_FUNCTION)
+        {
+            // replace functions and caches with a placeholder
+            while (this->GetStyleAt(i+1) == wxSTC_NSCR_CUSTOM_FUNCTION)
+                i++;
+            sSemLine += "FUNC";
+        }*/
+        else
+            sSemLine += this->GetCharAt(i);
+
+    }
+    // Store the result to avoid repeated processing of this line
+    vParsedSemanticCode[nLine] = sSemLine;
+    return sSemLine;
+}
+
 
 map<int,int> NumeReEditor::getDifferences(int nStart1, int nEnd1, int nStart2, int nEnd2)
 {
@@ -4942,8 +5627,18 @@ void NumeReEditor::RemoveBreakpoint( int linenum )
 	m_terminal->_guimessenger.removeBreakpoint(GetFileNameAndPath().ToStdString(), linenum);
 }
 
+int NumeReEditor::determineIndentationLevel(int nLine, int& singleLineIndent)
+{
+    if (getFileType() == FILE_NSCR || getFileType() == FILE_NPRC)
+        return determineIndentationLevelNSCR(nLine, singleLineIndent);
+    else if (getFileType() == FILE_MATLAB)
+        return determineIndentationLevelMATLAB(nLine, singleLineIndent);
+    else if (getFileType() == FILE_CPP)
+        return determineIndentationLevelCPP(nLine, singleLineIndent);
+    return 0;
+}
 
-int NumeReEditor::determineIndentationLevel(int nLine, bool& bIsElseCase)
+int NumeReEditor::determineIndentationLevelNSCR(int nLine, int& singleLineIndent)
 {
     int nIndentCount = 0;
 
@@ -4965,7 +5660,7 @@ int NumeReEditor::determineIndentationLevel(int nLine, bool& bIsElseCase)
             }
             else if (word == "else" || word == "elseif")
             {
-                bIsElseCase = true;
+                singleLineIndent = -1;
             }
             i += word.length();
         }
@@ -5019,7 +5714,7 @@ int NumeReEditor::determineIndentationLevel(int nLine, bool& bIsElseCase)
                     || word == "endcompose")
                     nIndentCount--;
                 else if (word == "else" || word == "elseif")
-                    bIsElseCase = true;
+                    singleLineIndent = -1;
             }
             if (word.length())
                 i += word.length()-1;
@@ -5027,6 +5722,144 @@ int NumeReEditor::determineIndentationLevel(int nLine, bool& bIsElseCase)
     }
 
     return nIndentCount;
+}
+
+int NumeReEditor::determineIndentationLevelMATLAB(int nLine, int& singleLineIndent)
+{
+    int nIndentCount = 0;
+
+    int nLineStart = this->PositionFromLine(nLine);
+    int nLineEnd = this->GetLineEndPosition(nLine);
+
+    for (int i = nLineStart; i < nLineEnd; i++)
+    {
+        if (this->GetStyleAt(i) == wxSTC_MATLAB_KEYWORD)
+        {
+            wxString word = this->GetTextRange(i, this->WordEndPosition(i+1, true));
+            if (word == "end")
+            {
+                nIndentCount--;
+            }
+            else if (word == "if" || word == "for" || word == "while" || word == "classdef" || word == "function" || word == "do" || word == "try" || word == "switch" || word == "properties" || word == "methods")
+            {
+                nIndentCount++;
+            }
+            else if (word == "else" || word == "elseif" || word == "catch" || word == "case" || word == "otherwise")
+            {
+                singleLineIndent = -1;
+            }
+            i += word.length();
+        }
+        if (this->GetTextRange(i, i+3) == "...")
+            singleLineIndent = 1;
+    }
+
+    return nIndentCount;
+}
+
+int NumeReEditor::determineIndentationLevelCPP(int nLine, int& singleLineIndent)
+{
+    int nIndentCount = 0;
+
+    int nLineStart = this->PositionFromLine(nLine);
+    int nLineEnd = this->GetLineEndPosition(nLine);
+
+    for (int i = nLineStart; i < nLineEnd; i++)
+    {
+        if (this->GetStyleAt(i) == wxSTC_C_OPERATOR)
+        {
+            if (this->GetCharAt(i) == '{')
+                nIndentCount++;
+            if (this->GetCharAt(i) == '}')
+                nIndentCount--;
+        }
+        if (this->GetStyleAt(i) == wxSTC_C_WORD)
+        {
+            wxString word = this->GetTextRange(i, this->WordEndPosition(i+1, true));
+            if (word == "private"
+                || word == "protected"
+                || word == "public"
+                || word == "case"
+                || word == "default")
+            {
+                singleLineIndent = -1;
+            }
+            if (word == "if" || word == "else" || word == "for" || word == "while")
+            {
+                singleLineIndent = 1;
+            }
+            i += word.length();
+        }
+    }
+
+    return nIndentCount;
+}
+
+bool NumeReEditor::isStyleType(StyleType _type, int nPos)
+{
+    switch (this->getFileType())
+    {
+        case FILE_NSCR:
+        case FILE_NPRC:
+        {
+            switch (_type)
+            {
+                case STYLE_DEFAULT:
+                    return this->GetStyleAt(nPos) == wxSTC_NSCR_DEFAULT;
+                case STYLE_COMMENT_LINE:
+                    return this->GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_LINE;
+                case STYLE_COMMENT_BLOCK:
+                    return this->GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_BLOCK;
+                case STYLE_COMMAND:
+                    return this->GetStyleAt(nPos) == wxSTC_NSCR_COMMAND
+                        || this->GetStyleAt(nPos) == wxSTC_NPRC_COMMAND;
+                case STYLE_FUNCTION:
+                    return this->GetStyleAt(nPos) == wxSTC_NSCR_FUNCTION;
+            }
+            break;
+        }
+        case FILE_MATLAB:
+        {
+            switch (_type)
+            {
+                case STYLE_DEFAULT:
+                    return this->GetStyleAt(nPos) == wxSTC_MATLAB_DEFAULT;
+                case STYLE_COMMENT_LINE:
+                    return this->GetStyleAt(nPos) == wxSTC_MATLAB_COMMENT;
+                case STYLE_COMMENT_BLOCK:
+                    return this->GetStyleAt(nPos) == wxSTC_MATLAB_COMMENT;
+                case STYLE_COMMAND:
+                    return this->GetStyleAt(nPos) == wxSTC_MATLAB_KEYWORD;
+                case STYLE_FUNCTION:
+                    return this->GetStyleAt(nPos) == wxSTC_MATLAB_FUNCTIONS;
+            }
+            break;
+        }
+        case FILE_CPP:
+        {
+            switch (_type)
+            {
+                case STYLE_DEFAULT:
+                    return this->GetStyleAt(nPos) == wxSTC_C_DEFAULT;
+                case STYLE_COMMENT_LINE:
+                    return this->GetStyleAt(nPos) == wxSTC_C_COMMENTLINE
+                        || this->GetStyleAt(nPos) == wxSTC_C_COMMENTLINEDOC
+                        || this->GetStyleAt(nPos) == wxSTC_C_COMMENTDOCKEYWORD;
+                case STYLE_COMMENT_BLOCK:
+                    return this->GetStyleAt(nPos) == wxSTC_C_COMMENT
+                        || this->GetStyleAt(nPos) == wxSTC_C_COMMENTDOC
+                        || this->GetStyleAt(nPos) == wxSTC_C_COMMENTDOCKEYWORD;
+                case STYLE_COMMAND:
+                    return this->GetStyleAt(nPos) == wxSTC_C_WORD;
+                case STYLE_FUNCTION:
+                    return this->GetStyleAt(nPos) == wxSTC_C_WORD2;
+            }
+            break;
+        }
+        default:
+            return false;
+    }
+    return false;
 }
 
 int NumeReEditor::countUmlauts(const string& sStr)
@@ -5213,29 +6046,34 @@ void NumeReEditor::ApplyAutoIndentation(int nFirstLine, int nLastLine) // int nF
     int nCurrentIndent = 0;
 
     string currentLine = "";
-    bool bIsElseCase = false;
+    int singleLineIndent = 0;
+    int nLastSingleIndent = 0;
     this->SetTabWidth(4);
     this->BeginUndoAction();
     for (int i = nFirstLine; i < nLastLine; i++)
     {
-        bIsElseCase = false;
+        nLastSingleIndent = singleLineIndent;
+        singleLineIndent = 0;
         int pos = this->PositionFromLine(i);
-        if (this->GetStyleAt(pos) == wxSTC_NSCR_COMMENT_LINE)
+        if (isStyleType(STYLE_COMMENT_LINE, i))
             continue;
-        while (this->GetStyleAt(pos) == wxSTC_NSCR_COMMENT_BLOCK && pos < this->GetLineEndPosition(nLastLine))
+        while (isStyleType(STYLE_COMMENT_BLOCK, pos) && pos < this->GetLineEndPosition(nLastLine))
         {
             pos++;
         }
-        if (pos >= this->GetLineEndPosition(i)-2)
+        if (pos > this->GetLineEndPosition(i)-1)
             continue;
-        nCurrentIndent = determineIndentationLevel(i, bIsElseCase);
-        if (!nCurrentIndent && bIsElseCase)
+        nCurrentIndent = determineIndentationLevel(i, singleLineIndent);
+        if (this->getFileType() == FILE_CPP && nLastSingleIndent && nCurrentIndent)
+            nLastSingleIndent = 0;
+        if (!nCurrentIndent && singleLineIndent < 0)
         {
+            singleLineIndent = 0;
             this->SetLineIndentation(i, 4*(nIndentCount-1));
         }
         else if (!nCurrentIndent)
         {
-            this->SetLineIndentation(i, 4*nIndentCount);
+            this->SetLineIndentation(i, 4*(nIndentCount + nLastSingleIndent));
         }
         else if (nCurrentIndent < 0)
         {
@@ -5252,6 +6090,17 @@ void NumeReEditor::ApplyAutoIndentation(int nFirstLine, int nLastLine) // int nF
 }
 
 void NumeReEditor::ApplyAutoFormat(int nFirstLine, int nLastLine) // int nFirstLine = 0, int nLastLine = -1
+{
+    if (this->getFileType() == FILE_NSCR || this->getFileType() == FILE_NPRC)
+        ApplyAutoFormatNSCR(nFirstLine, nLastLine);
+    else if (this->getFileType() == FILE_MATLAB)
+        ApplyAutoFormatMATLAB(nFirstLine, nLastLine);
+    else if (this->getFileType() == FILE_CPP)
+        ApplyAutoFormatCPP(nFirstLine, nLastLine);
+    ApplyAutoIndentation(nFirstLine, this->LineFromPosition(this->GetLineEndPosition(nLastLine)));
+}
+
+void NumeReEditor::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine) // int nFirstLine = 0, int nLastLine = -1
 {
     if (this->getFileType() != FILE_NSCR && this->getFileType() != FILE_NPRC)
         return;
@@ -5429,22 +6278,20 @@ void NumeReEditor::ApplyAutoFormat(int nFirstLine, int nLastLine) // int nFirstL
                     parens = this->BraceMatch(parens);
                     if (parens > 0)
                     {
-                        if (this->GetTextRange(parens+1, nCurrentLineEnd).find_first_not_of(" \r\n\t") != string::npos)
+                        if (this->GetTextRange(parens+1, nCurrentLineEnd).find_first_not_of(" \r\n\t") != string::npos
+                            && !isStyleType(STYLE_COMMENT_LINE, parens+1 + this->GetTextRange(parens+1, nCurrentLineEnd).find_first_not_of(" \r\n\t"))
+                            && !isStyleType(STYLE_COMMENT_BLOCK, parens+1 + this->GetTextRange(parens+1, nCurrentLineEnd).find_first_not_of(" \r\n\t")))
                             nLastPosition += insertTextAndMove(parens+1, "\r\n");
                     }
                 }
             }
             else if (command == "else")
             {
-                if (this->GetTextRange(i+1, nCurrentLineEnd).find_first_not_of(" \r\n\t") != string::npos)
+                if (this->GetTextRange(i+1, nCurrentLineEnd).find_first_not_of(" \r\n\t") != string::npos
+                    && !isStyleType(STYLE_COMMENT_LINE, i+1 + this->GetTextRange(i+1, nCurrentLineEnd).find_first_not_of(" \r\n\t"))
+                    && !isStyleType(STYLE_COMMENT_BLOCK, i+1 + this->GetTextRange(i+1, nCurrentLineEnd).find_first_not_of(" \r\n\t")))
                     nLastPosition += insertTextAndMove(i+1, "\r\n");
             }
-            /*if (command == "endif"
-                || command == "endfor"
-                || command == "endwhile")
-            {
-
-            }*/
             if (command == "if"
                 || command == "for"
                 || command == "else"
@@ -5516,7 +6363,515 @@ void NumeReEditor::ApplyAutoFormat(int nFirstLine, int nLastLine) // int nFirstL
         }
     }
     this->EndUndoAction();
-    ApplyAutoIndentation(nFirstLine, this->LineFromPosition(nLastPosition));
+}
+
+void NumeReEditor::ApplyAutoFormatMATLAB(int nFirstLine, int nLastLine) // int nFirstLine = 0, int nLastLine = -1
+{
+    if (this->getFileType() != FILE_MATLAB)
+        return;
+    this->BeginUndoAction();
+    if (nFirstLine < 0)
+        nFirstLine = 0;
+    if (nLastLine <= 0 || nLastLine > this->GetLineCount())
+        nLastLine = this->GetLineCount();
+
+    int nFirstPosition = this->PositionFromLine(nFirstLine);
+    int nLastPosition = this->GetLineEndPosition(nLastLine);
+    int nIndentationLevel = -1;
+
+    for (int i = nFirstPosition; i < nLastPosition; i++)
+    {
+        if (this->GetStyleAt(i) == wxSTC_MATLAB_COMMENT)
+            continue;
+        if (this->GetCharAt(i) == '\r' || this->GetCharAt(i) == '\n')
+            continue;
+        if (this->GetStyleAt(i) == wxSTC_MATLAB_OPERATOR)
+        {
+            int currentChar = this->GetCharAt(i);
+            int prevChar = this->GetCharAt(i-1);
+            int nextChar = this->GetCharAt(i+1);
+            string sParens = "(){}[]";
+            if (currentChar == '('
+                && (this->GetStyleAt(i-1) == wxSTC_MATLAB_IDENTIFIER
+                    || this->GetStyleAt(i-1) == wxSTC_MATLAB_KEYWORD))
+            {
+                int nParens = this->BraceMatch(i);
+                if (nParens > 0)
+                {
+                    for (; i < nParens; i++)
+                    {
+                        if (this->GetStyleAt(i) == wxSTC_MATLAB_OPERATOR)
+                        {
+                            currentChar = this->GetCharAt(i);
+                            nextChar = this->GetCharAt(i+1);
+                            prevChar = this->GetCharAt(i-1);
+                            if (currentChar == ',' && nextChar != ' ')
+                            {
+                                nLastPosition += insertTextAndMove(i+1, " ");
+                                nParens++;
+                            }
+                            if (currentChar == '=' && nextChar != ' ' && this->GetStyleAt(i+1) != wxSTC_MATLAB_OPERATOR)
+                            {
+                                nLastPosition += insertTextAndMove(i+1, " ");
+                                nParens++;
+                            }
+                            if (currentChar == '=' && prevChar != ' ' && this->GetStyleAt(i-1) != wxSTC_MATLAB_OPERATOR)
+                            {
+                                nLastPosition += insertTextAndMove(i, " ");
+                                nParens++;
+                            }
+                        }
+                    }
+                }
+            }
+            else if (sParens.find(currentChar) != string::npos)
+                continue;
+            else if (currentChar == ',' && nextChar != ' ')
+                nLastPosition += insertTextAndMove(i+1, " ");
+            else if (currentChar == '?' && nextChar != currentChar && prevChar != currentChar)
+            {
+                if (nextChar != ' ')
+                    nLastPosition += insertTextAndMove(i+1, " ");
+                if (prevChar != ' ')
+                    nLastPosition += insertTextAndMove(i, " ");
+            }
+            else if (currentChar == '<' || currentChar == '>' || currentChar == '~' || currentChar == '=')
+            {
+                string sLeadingChars = " (=+-*/^<>:~";
+                if (nextChar != ' ' && nextChar != '=' && nextChar != '>' && currentChar != '~' && !(currentChar == '>' && prevChar == '<'))
+                    nLastPosition += insertTextAndMove(i+1, " ");
+                if (sLeadingChars.find(prevChar) == string::npos && !(currentChar == '<' && nextChar == '>'))
+                    nLastPosition += insertTextAndMove(i, " ");
+            }
+            else if (currentChar == '+' || currentChar == '-')
+            {
+                if (nextChar != ' '
+                    && nextChar != currentChar
+                    && nextChar != '='
+                    && nextChar != ';'
+                    /*&& this->GetStyleAt(i+1) != wxSTC_NSCR_COMMAND
+                    && this->GetStyleAt(i+1) != wxSTC_NSCR_OPTION
+                    && this->GetStyleAt(i-1) != wxSTC_NSCR_COMMAND
+                    && this->GetStyleAt(i-1) != wxSTC_NSCR_OPTION*/
+                    && prevChar != '('
+                    && prevChar != '{'
+                    && prevChar != '['
+                    && this->GetCharAt(i-2) != ','
+                    && this->GetCharAt(i-2) != '=')
+                    nLastPosition += insertTextAndMove(i+1, " ");
+                if (prevChar != ' '
+                    && prevChar != currentChar
+                    && nextChar != currentChar
+                    && prevChar != '('
+                    && prevChar != '['
+                    && prevChar != '{')
+                    nLastPosition += insertTextAndMove(i, " ");
+            }
+            else if (currentChar == '&' || currentChar == '|')
+            {
+                if (nextChar != ' ' && nextChar != currentChar)
+                    nLastPosition += insertTextAndMove(i+1, " ");
+                if (prevChar != ' ' && prevChar != currentChar)
+                    nLastPosition += insertTextAndMove(i, " ");
+            }
+            else if ((currentChar == '*' || currentChar == '/' || currentChar == '^')
+                && nextChar == '='
+                && prevChar != ' '
+                && nextChar != currentChar
+                && prevChar != currentChar)
+                nLastPosition += insertTextAndMove(i, " ");
+        }
+        if (this->GetStyleAt(i) == wxSTC_MATLAB_KEYWORD)
+        {
+            int nPos1 = i;
+            while (this->GetStyleAt(i+1) == wxSTC_MATLAB_KEYWORD)
+                i++;
+
+            wxString command = this->GetTextRange(nPos1, i+1);
+            int nCurrentLineStart = this->PositionFromLine(this->LineFromPosition(nPos1));
+            int nCurrentLineEnd = this->GetLineEndPosition(this->LineFromPosition(nPos1));
+
+            if (command == "if"
+                || command == "elseif"
+                || command == "switch"
+                || command == "case"
+                || command == "for"
+                || command == "while")
+            {
+                if (this->GetCharAt(i+1) != ' ')
+                    nCurrentLineEnd += insertTextAndMove(i+1, " ");
+                int parens = i+1;
+                while (this->GetCharAt(parens) == ' ')
+                    parens++;
+                if (parens != '(' && parens != '[' && parens != '{')
+                    parens = -1;
+                if (parens > 0)
+                {
+                    parens = this->BraceMatch(parens);
+                    if (parens > 0)
+                    {
+                        if (this->GetTextRange(parens+1, nCurrentLineEnd).find_first_not_of(" \r\n\t") != string::npos)
+                            nLastPosition += insertTextAndMove(parens+1, "\r\n");
+                    }
+                }
+                else
+                {
+                    parens = this->FindText(i, nCurrentLineEnd, ";");
+                    if (parens > 0)
+                    {
+                        if (this->GetTextRange(parens+1, nCurrentLineEnd).find_first_not_of(" \r\n\t") != string::npos)
+                            nLastPosition += insertTextAndMove(parens+1, "\r\n");
+                    }
+                }
+            }
+            else if (command == "else")
+            {
+                if (this->GetTextRange(i+1, nCurrentLineEnd).find_first_not_of(" \r\n\t") != string::npos)
+                    nLastPosition += insertTextAndMove(i+1, "\r\n");
+            }
+            if (command == "if"
+                || command == "for"
+                || command == "else"
+                || command == "elseif"
+                || command == "switch"
+                || command == "case"
+                || command == "do"
+                || command == "otherwise"
+                || command == "try"
+                || command == "catch"
+                || command == "until"
+                || command == "while"
+                || command == "end")
+            {
+                if (this->GetTextRange(nCurrentLineStart, nPos1).find_first_not_of(" \t") != string::npos)
+                {
+                    nLastPosition += insertTextAndMove(nPos1, "\r\n");
+                    i += 2;
+                }
+            }
+            if (command == "if"
+                || command == "for"
+                || command == "while"
+                || command == "try"
+                || command == "do"
+                || command == "function"
+                || command == "switch"
+                || command == "case")
+            {
+                if (nIndentationLevel <= 0)
+                {
+                    int nLine = this->LineFromPosition(i);
+                    int position = this->PositionFromLine(nLine-1);
+                    while (this->GetCharAt(position) == ' ' || this->GetCharAt(position) == '\t')
+                        position++;
+                    if (nLine
+                        && this->GetLine(nLine-1).find_first_not_of(" \t\r\n") != string::npos
+                        && this->GetStyleAt(this->PositionFromLine(nLine-1)) != wxSTC_MATLAB_COMMENT
+                        && this->GetStyleAt(position) != wxSTC_MATLAB_COMMENT)
+                    {
+                        nLastPosition += insertTextAndMove(this->PositionFromLine(nLine), "\r\n");
+                        i += 2;
+                    }
+                }
+                nIndentationLevel++;
+            }
+            if (command == "end")
+            {
+                nIndentationLevel--;
+                if (nIndentationLevel <= 0)
+                {
+                    int nLine = this->LineFromPosition(i);
+                    if (nLine < this->GetLineCount()-1
+                        && this->GetLine(nLine+1).find_first_not_of(" \t\r\n") != string::npos)
+                    {
+                        nLastPosition += insertTextAndMove(this->PositionFromLine(nLine+1), "\r\n");
+                    }
+                }
+            }
+        }
+        if (this->GetStyleAt(i) == wxSTC_MATLAB_STRING)
+        {
+            if (this->GetStyleAt(i+1) != wxSTC_MATLAB_STRING
+                && this->GetLineEndPosition(this->LineFromPosition(i)) != i+1
+                && this->GetCharAt(i+1) != ' '
+                && this->GetCharAt(i+1) != ','
+                && this->GetCharAt(i+1) != ';'
+                && this->GetCharAt(i+1) != ')'
+                && this->GetCharAt(i+1) != ']'
+                && this->GetCharAt(i+1) != '}')
+                nLastPosition += insertTextAndMove(i+1, " ");
+            if (this->GetStyleAt(i-1) != wxSTC_MATLAB_STRING
+                && this->PositionFromLine(this->LineFromPosition(i)) != i
+                && this->GetCharAt(i-1) != ' '
+                && this->GetCharAt(i-1) != '('
+                && this->GetCharAt(i-1) != '['
+                && this->GetCharAt(i-1) != '{')
+                nLastPosition += insertTextAndMove(i, " ");
+        }
+    }
+    this->EndUndoAction();
+}
+
+void NumeReEditor::ApplyAutoFormatCPP(int nFirstLine, int nLastLine) // int nFirstLine = 0, int nLastLine = -1
+{
+    if (this->getFileType() != FILE_CPP)
+        return;
+    this->BeginUndoAction();
+    if (nFirstLine < 0)
+        nFirstLine = 0;
+    if (nLastLine <= 0 || nLastLine > this->GetLineCount())
+        nLastLine = this->GetLineCount();
+
+    int nFirstPosition = this->PositionFromLine(nFirstLine);
+    int nLastPosition = this->GetLineEndPosition(nLastLine);
+    int nIndentationLevel = -1;
+
+    for (int i = nFirstPosition; i < nLastPosition; i++)
+    {
+        if (isStyleType(STYLE_COMMENT_BLOCK, i) || isStyleType(STYLE_COMMENT_LINE, i))
+            continue;
+        if (this->GetCharAt(i) == '\r' || this->GetCharAt(i) == '\n')
+            continue;
+
+        if (this->GetStyleAt(i) == wxSTC_C_OPERATOR)
+        {
+            int currentChar = this->GetCharAt(i);
+            int prevChar = this->GetCharAt(i-1);
+            int nextChar = this->GetCharAt(i+1);
+            int nCurrentLineStart = this->PositionFromLine(this->LineFromPosition(i));
+            int nCurrentLineEnd = this->GetLineEndPosition(this->LineFromPosition(i));
+            string sParens = "()[]";
+            if (currentChar == '-' && nextChar == '>')
+            {
+                i++;
+                continue;
+            }
+
+            if (currentChar == '(' && this->GetStyleAt(i-1) == wxSTC_C_WORD)
+                nLastPosition += insertTextAndMove(i, " ");
+            else if (currentChar == '('
+                && (this->GetStyleAt(i-1) == wxSTC_C_WORD2))
+            {
+                int nParens = this->BraceMatch(i);
+                if (nParens > 0)
+                {
+                    for (; i < nParens; i++)
+                    {
+                        if (this->GetStyleAt(i) == wxSTC_C_OPERATOR)
+                        {
+                            currentChar = this->GetCharAt(i);
+                            nextChar = this->GetCharAt(i+1);
+                            prevChar = this->GetCharAt(i-1);
+                            if (currentChar == ',' && nextChar != ' ')
+                            {
+                                nLastPosition += insertTextAndMove(i+1, " ");
+                                nParens++;
+                            }
+                            if (currentChar == '=' && nextChar != ' ' && this->GetStyleAt(i+1) != wxSTC_C_OPERATOR)
+                            {
+                                nLastPosition += insertTextAndMove(i+1, " ");
+                                nParens++;
+                            }
+                            if (currentChar == '=' && prevChar != ' ' && this->GetStyleAt(i-1) != wxSTC_C_OPERATOR)
+                            {
+                                nLastPosition += insertTextAndMove(i, " ");
+                                nParens++;
+                            }
+                        }
+                    }
+                }
+            }
+            else if (sParens.find(currentChar) != string::npos)
+                continue;
+            else if (currentChar == '{' || currentChar == '}')
+            {
+                if (currentChar == '{')
+                    nIndentationLevel++;
+                if (currentChar == '}')
+                    nIndentationLevel--;
+                if (this->GetTextRange(i+1, nCurrentLineEnd).find_first_not_of(" \t\r\n") != string::npos)
+                {
+                    nLastPosition += 2;
+                    insertTextAndMove(i+1, "\r\n");
+                }
+                if (this->GetTextRange(nCurrentLineStart, i).find_first_not_of(" \t") != string::npos)
+                {
+                    nLastPosition += 2;
+                    i += insertTextAndMove(i, "\r\n");
+                }
+            }
+            else if (currentChar == ',' && nextChar != ' ')
+                nLastPosition += insertTextAndMove(i+1, " ");
+            else if (currentChar == '?' && nextChar != currentChar && prevChar != currentChar)
+            {
+                if (nextChar != ' ')
+                    nLastPosition += insertTextAndMove(i+1, " ");
+                if (prevChar != ' ')
+                    nLastPosition += insertTextAndMove(i, " ");
+            }
+            else if (currentChar == '<' || currentChar == '>' || currentChar == '!' || currentChar == '=')
+            {
+                string sLeadingChars = " (=+-!*/^<>:";
+                if (currentChar == '<' && (this->GetStyleAt(i-1) == wxSTC_C_WORD || this->GetStyleAt(i-1) == wxSTC_C_WORD))
+                    continue;
+                if (currentChar == '>' && (this->GetStyleAt(i-1) == wxSTC_C_WORD || this->GetStyleAt(i+1) == wxSTC_C_WORD))
+                    continue;
+                if (nextChar != ' ' && nextChar != '=' && nextChar != '>' && currentChar != '!' && !(currentChar == '>' && prevChar == '<') && this->GetStyleAt(i-1) != wxSTC_NSCR_OPTION  && this->GetStyleAt(i+1) != wxSTC_NSCR_OPTION)
+                    nLastPosition += insertTextAndMove(i+1, " ");
+                if (sLeadingChars.find(prevChar) == string::npos && !(currentChar == '<' && nextChar == '>'))
+                    nLastPosition += insertTextAndMove(i, " ");
+            }
+            else if (currentChar == '+' || currentChar == '-')
+            {
+                if (nextChar != ' '
+                    && nextChar != currentChar
+                    && nextChar != '='
+                    && nextChar != ';'
+                    /*&& this->GetStyleAt(i+1) != wxSTC_NSCR_COMMAND
+                    && this->GetStyleAt(i+1) != wxSTC_NSCR_OPTION
+                    && this->GetStyleAt(i-1) != wxSTC_NSCR_COMMAND
+                    && this->GetStyleAt(i-1) != wxSTC_NSCR_OPTION*/
+                    && prevChar != '('
+                    && prevChar != '{'
+                    && prevChar != '['
+                    && this->GetCharAt(i-2) != ','
+                    && this->GetCharAt(i-2) != '=')
+                    nLastPosition += insertTextAndMove(i+1, " ");
+                if (prevChar != ' '
+                    && prevChar != currentChar
+                    && nextChar != currentChar
+                    && prevChar != '('
+                    && prevChar != '['
+                    && prevChar != '{')
+                    nLastPosition += insertTextAndMove(i, " ");
+            }
+            else if (currentChar == '&' || currentChar == '|')
+            {
+                if (nextChar != ' ' && nextChar != currentChar)
+                    nLastPosition += insertTextAndMove(i+1, " ");
+                if (prevChar != ' ' && prevChar != currentChar)
+                    nLastPosition += insertTextAndMove(i, " ");
+            }
+            else if ((currentChar == '*' || currentChar == '/' || currentChar == '^')
+                && nextChar == '='
+                && prevChar != ' '
+                && nextChar != currentChar
+                && prevChar != currentChar)
+                nLastPosition += insertTextAndMove(i, " ");
+        }
+        if (this->GetStyleAt(i) == wxSTC_C_WORD)
+        {
+            int nPos1 = i;
+            while (this->GetStyleAt(i+1) == wxSTC_C_WORD)
+                i++;
+            wxString command = this->GetTextRange(nPos1, i+1);
+            int nCurrentLineStart = this->PositionFromLine(this->LineFromPosition(nPos1));
+            int nCurrentLineEnd = this->GetLineEndPosition(this->LineFromPosition(nPos1));
+
+            if (command == "if"
+                || command == "switch"
+                || command == "for"
+                || command == "while")
+            {
+                int parens = i;
+                parens = FindText(i, nCurrentLineEnd, "(");
+                if (parens > 0)
+                {
+                    parens = this->BraceMatch(parens);
+                    if (parens > 0)
+                    {
+                        if (this->GetTextRange(parens+1, nCurrentLineEnd).find_first_not_of(" \r\n\t;") != string::npos
+                            && !isStyleType(STYLE_COMMENT_LINE, parens+1 + this->GetTextRange(parens+1, nCurrentLineEnd).find_first_not_of(" \r\n\t"))
+                            && !isStyleType(STYLE_COMMENT_BLOCK, parens+1 + this->GetTextRange(parens+1, nCurrentLineEnd).find_first_not_of(" \r\n\t")))
+                            nLastPosition += insertTextAndMove(parens+1, "\r\n");
+                    }
+                }
+            }
+            else if (command == "else")
+            {
+                if (this->GetTextRange(i+1, nCurrentLineEnd).find_first_not_of(" \r\n\t") != string::npos
+                    && !isStyleType(STYLE_COMMAND, i+1 + this->GetTextRange(i+1, nCurrentLineEnd).find_first_not_of(" \r\n\t"))
+                    && !isStyleType(STYLE_COMMENT_LINE, i+1 + this->GetTextRange(i+1, nCurrentLineEnd).find_first_not_of(" \r\n\t"))
+                    && !isStyleType(STYLE_COMMENT_BLOCK, i+1 + this->GetTextRange(i+1, nCurrentLineEnd).find_first_not_of(" \r\n\t")))
+                    nLastPosition += insertTextAndMove(i+1, "\r\n");
+            }
+            /*if (command == "if"
+                || command == "for"
+                || command == "else"
+                || command == "elseif"
+                || command == "while"
+                || command == "endif"
+                || command == "endfor"
+                || command == "endwhile")
+            {
+                if (this->GetTextRange(nCurrentLineStart, nPos1).find_first_not_of(" \t") != string::npos)
+                {
+                    nLastPosition += insertTextAndMove(nPos1, "\r\n");
+                    i += 2;
+                }
+            }*/
+            if (command == "if"
+                || command == "for"
+                || command == "while"
+                || command == "do"
+                || command == "try")
+            {
+                if (command == "while" && this->GetTextRange(i+1, nCurrentLineEnd).find(';') != string::npos)
+                    continue;
+                if (command == "if" && this->GetTextRange(nCurrentLineStart, i).find("else") != string::npos)
+                    continue;
+                if (nIndentationLevel <= 0)
+                {
+                    int nLine = this->LineFromPosition(i);
+                    int position = this->PositionFromLine(nLine-1);
+                    while (this->GetCharAt(position) == ' ' || this->GetCharAt(position) == '\t')
+                        position++;
+                    if (nLine
+                        && this->GetLine(nLine-1).find_first_not_of(" \t\r\n") != string::npos
+                        && !isStyleType(STYLE_COMMENT_BLOCK, this->PositionFromLine(nLine-1))
+                        && !isStyleType(STYLE_COMMENT_LINE, this->PositionFromLine(nLine-1))
+                        && !isStyleType(STYLE_COMMENT_LINE, position))
+                    {
+                        nLastPosition += insertTextAndMove(this->PositionFromLine(nLine), "\r\n");
+                        i += 2;
+                    }
+                }
+            }
+            /*if (command == "endif" || command == "endfor" || command == "endwhile" || command == "endcompose" || command == "endprocedure")
+            {
+                nIndentationLevel--;
+                if (nIndentationLevel <= 0)
+                {
+                    int nLine = this->LineFromPosition(i);
+                    if (nLine < this->GetLineCount()-1
+                        && this->GetLine(nLine+1).find_first_not_of(" \t\r\n") != string::npos)
+                    {
+                        nLastPosition += insertTextAndMove(this->PositionFromLine(nLine+1), "\r\n");
+                    }
+                }
+            }*/
+        }
+        if (this->GetStyleAt(i) == wxSTC_C_STRING)
+        {
+            if (this->GetStyleAt(i+1) != wxSTC_C_STRING
+                && this->GetLineEndPosition(this->LineFromPosition(i)) != i+1
+                && this->GetCharAt(i+1) != ' '
+                && this->GetCharAt(i+1) != ','
+                && this->GetCharAt(i+1) != ';'
+                && this->GetCharAt(i+1) != ')'
+                && this->GetCharAt(i+1) != ']'
+                && this->GetCharAt(i+1) != '}')
+                nLastPosition += insertTextAndMove(i+1, " ");
+            if (this->GetStyleAt(i-1) != wxSTC_C_STRING
+                && this->PositionFromLine(this->LineFromPosition(i)) != i
+                && this->GetCharAt(i-1) != ' '
+                && this->GetCharAt(i-1) != '('
+                && this->GetCharAt(i-1) != '['
+                && this->GetCharAt(i-1) != '{')
+                nLastPosition += insertTextAndMove(i, " ");
+        }
+    }
+    this->EndUndoAction();
 }
 
 

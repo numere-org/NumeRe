@@ -40,11 +40,17 @@ class NumeReSyntax
         vector<string> vConstants;
         vector<string> vSpecialValues;
         vector<string> vOperators;
+        vector<string> vMatlabKeyWords;
+        vector<string> vMatlabFunctions;
+        vector<string> vCppKeyWords;
+        vector<string> vCppFunctions;
 
         vector<string> vProcedureTree;
 
         string sSingleOperators;
         map<string, int> mAutoCompList;
+        map<string, int> mAutoCompListMATLAB;
+        map<string, int> mAutoCompListCPP;
 
         string constructString(const vector<string>& vVector) const;
         vector<string> splitString(string sString);
@@ -87,7 +93,17 @@ class NumeReSyntax
             {return constructString(vSpecialValues);}
         string getOperators() const
             {return constructString(vOperators);}
+        string getMatlab() const
+            {return constructString(vMatlabKeyWords);}
+        string getMatlabFunctions() const
+            {return constructString(vMatlabFunctions);}
+        string getCpp() const
+            {return constructString(vCppKeyWords);}
+        string getCppFunctions() const
+            {return constructString(vCppFunctions);}
         string getAutoCompList(string sFirstChars, string sType = "NSCR");
+        string getAutoCompListMATLAB(string sFirstChars);
+        string getAutoCompListCPP(string sFirstChars);
         string getProcAutoCompList(string sFirstChars, string sBaseNameSpace, string sSelectedNameSpace);
         string getNameSpaceAutoCompList(string sFirstChars);
 

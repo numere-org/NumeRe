@@ -12,3 +12,11 @@ Fixed	NumeRe doesn't crash anymore, if one enters 'getfolderlist("*")' or 'getfi
 Fixed	The unhandled exceptions together with the static analyzer have been solved.
 Fixed	The string parser now works as expected.
 New	The table viewer and the table editor are calculating simple statistics on-the-fly.
+Fixed	NumeRe may now read and write source code files by escaping control sequences specific for NumeRe.
+New	NumeRe has now lexers for MATLAB and C/C++ source code files.
+Added	NumeRe has now a duplicate code analysis for MATLAB and C/C++ source codes.
+Added	NumeRe has now an autoformatter for MATLAB and C/C++ source codes.
+Added	The results of the duplicate code analysis may now be copied from the result table and saved to a file.
+Added	The font style (bold, italics, underlined) of the syntax elements in the editor may now be changed in the settings dialogue.
+Applied	The duplicate code analysis is significantly faster now.
+Fixed	Solved a critical issue when using the "cnt()" function together with data sets-

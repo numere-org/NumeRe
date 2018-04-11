@@ -278,7 +278,7 @@ NumeReDropTarget::fileType NumeReDropTarget::getFileType(const wxString& filenam
 {
     if (filename.find('.') == string::npos)
         return NOEXTENSION;
-    static wxString textExtensions = ";txt;dat;log;tex;csv;jdx;jcm;dx;nhlp;ndb;nlng;def;ini;hlpidx;m;";
+    static wxString textExtensions = ";txt;dat;log;tex;csv;jdx;jcm;dx;nhlp;ndb;nlng;def;ini;hlpidx;m;cpp;hpp;c;h;cxx;hxx";
     static wxString binaryExtensions = ";ndat;xls;xlsx;ods;labx;ibw;";
     static wxString imageExtensions = ";png;gif;jpg;jpeg;bmp;eps;svg;";
     static wxString execExtensions = ";nscr;nprc;";

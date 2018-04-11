@@ -409,6 +409,14 @@ FileFilterType ProjectInfo::GetFileType(wxString filename)
 	{
         fileType = FILE_TEXSOURCE;
 	}
+	else if (extension == "m")
+	{
+        fileType = FILE_MATLAB;
+	}
+	else if (extension == "cxx" || extension == "hxx" || extension == "c" || extension == "h" || extension == "cpp" || extension == "hpp")
+    {
+        fileType = FILE_CPP;
+    }
 
 
 	/*

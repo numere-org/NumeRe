@@ -2750,14 +2750,30 @@ wxArrayString NumeReWindow::OpenFile(FileFilterType filterType)
 
 void NumeReWindow::OpenFileByType(const wxFileName& filename)
 {
-    if (filename.GetExt() == "nscr" || filename.GetExt() == "nprc" || filename.GetExt() == "txt" || filename.GetExt() == "dat" || filename.GetExt() == "log" || filename.GetExt() == "tex")
+    if (filename.GetExt() == "nscr"
+        || filename.GetExt() == "nprc"
+        || filename.GetExt() == "txt"
+        || filename.GetExt() == "dat"
+        || filename.GetExt() == "log"
+        || filename.GetExt() == "m"
+        || filename.GetExt() == "cpp"
+        || filename.GetExt() == "cxx"
+        || filename.GetExt() == "c"
+        || filename.GetExt() == "hpp"
+        || filename.GetExt() == "hxx"
+        || filename.GetExt() == "h"
+        || filename.GetExt() == "tex")
     {
         wxArrayString filesToOpen;
         filesToOpen.Add(filename.GetFullPath());
         OpenSourceFile(filesToOpen);
         CallAfter(&NumeReWindow::setEditorFocus);
     }
-    else if (filename.GetExt() == "png" || filename.GetExt() == "jpeg" || filename.GetExt() == "jpg" || filename.GetExt() == "bmp" || filename.GetExt() == "gif")
+    else if (filename.GetExt() == "png"
+        || filename.GetExt() == "jpeg"
+        || filename.GetExt() == "jpg"
+        || filename.GetExt() == "bmp"
+        || filename.GetExt() == "gif")
     {
         openImage(filename);
         CallAfter(&NumeReWindow::setViewerFocus);
@@ -3430,7 +3446,12 @@ void NumeReWindow::ToolbarStatusUpdate()
         tb->EnableTool(ID_INDENTONTYPE, false);
         tb->ToggleTool(ID_INDENTONTYPE, false);
 	}
-	tb->ToggleTool(ID_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
+	if (m_currentEd->GetFileName().GetExt() == "m")
+    {
+        tb->EnableTool(ID_INDENTONTYPE, true);
+        tb->ToggleTool(ID_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+    }
+    tb->ToggleTool(ID_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
 
 	/*if(isDebugging)
 	{
@@ -4988,7 +5009,7 @@ void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
         if (!data || data->isDir)
             return;
         wxFileName pathname = data->filename;
-        wxString dragableExtensions = ";nscr;nprc;ndat;txt;dat;log;tex;csv;xls;xlsx;ods;jdx;jcm;dx;labx;ibw;png;jpg;jpeg;gif;bmp;eps;svg;";
+        wxString dragableExtensions = ";nscr;nprc;ndat;txt;dat;log;tex;csv;xls;xlsx;ods;jdx;jcm;dx;labx;ibw;png;jpg;jpeg;gif;bmp;eps;svg;m;cpp;cxx;c;hpp;hxx;h;";
         if (dragableExtensions.find(";" + pathname.GetExt() + ";") != string::npos)
         {
             wxFileDataObject _dataObject;

@@ -91,6 +91,11 @@ IconManager::IconManager(const wxString& programPath)
 	m_iconExtensionMapping[".pdf"] = m_images->GetImageCount();
 	m_images->Add(PDF);
 
+	wxIcon MATLAB(programPath + "\\icons\\m.ico", wxBITMAP_TYPE_ICO);
+	m_iconExtensionMapping["m"] = m_images->GetImageCount();
+	m_iconExtensionMapping[".m"] = m_images->GetImageCount();
+	m_images->Add(MATLAB);
+
 
 
 	AddIconToList("c");
