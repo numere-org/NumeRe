@@ -2135,7 +2135,7 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1523095213 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1523463940 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -2841,7 +2841,7 @@
 	<map>
 	<vector>
 
-1523365350 d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.hpp
+1523463955 d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.hpp
 	"../viewerframe.hpp"
 	<wx/panel.h>
 	<wx/gauge.h>
@@ -2932,7 +2932,7 @@
 	<windows.h>
 	"commctrl.h"
 
-1523367873 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
+1523464262 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
 	"duplicatecodedialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 	"../editor/editor.h"
@@ -3324,7 +3324,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1523101661 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1523601232 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3962,7 +3962,7 @@
 
 1501083705 d:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1523430157 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1523431382 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 
@@ -4221,7 +4221,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1522489358 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1523431070 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>

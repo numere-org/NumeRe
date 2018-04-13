@@ -317,7 +317,19 @@ bool NumeReEditor::SaveFile( const wxString & filename )
 		m_simpleFileName = fn.GetFullName();
 	}
 
-    wxFile file (filename, wxFile::write);
+	std::string buf = GetText().ToStdString();
+
+	std::ofstream file;
+	file.open(filename.ToStdString().c_str(), std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
+
+	if (!file.is_open())
+        return false;
+
+    file << buf;
+
+    file.close();
+
+    /*wxFile file (filename, wxFile::write);
 
     if(!file.IsOpened()) { return false; }
 
@@ -326,11 +338,12 @@ bool NumeReEditor::SaveFile( const wxString & filename )
 
     wxString buf = GetText();
 
+    //bool okay = file.Write(buf);
     bool okay = file.Write(buf.ToStdString().c_str(), buf.ToStdString().length());
 
     file.Close();
 
-    if(!okay) { return false; }
+    if(!okay) { return false; }*/
 
     markSaved();
     EmptyUndoBuffer();
@@ -2516,6 +2529,11 @@ string NumeReEditor::parseDocumentation(int nPos1, int nPos2)
         }
     }
     return sTextRange;
+}
+
+void NumeReEditor::notifyDialogClose()
+{
+    m_duplicateCode = nullptr;
 }
 
 bool NumeReEditor::getEditorSetting(EditorSettings _setting)
@@ -5740,17 +5758,30 @@ int NumeReEditor::determineIndentationLevelMATLAB(int nLine, int& singleLineInde
             {
                 nIndentCount--;
             }
-            else if (word == "if" || word == "for" || word == "while" || word == "classdef" || word == "function" || word == "do" || word == "try" || word == "switch" || word == "properties" || word == "methods")
+            else if (word == "if"
+                || word == "for"
+                || word == "while"
+                || word == "classdef"
+                || word == "function"
+                || word == "do"
+                || word == "try"
+                || word == "switch"
+                || word == "properties"
+                || word == "methods")
             {
                 nIndentCount++;
             }
-            else if (word == "else" || word == "elseif" || word == "catch" || word == "case" || word == "otherwise")
+            else if (word == "else"
+                || word == "elseif"
+                || word == "catch"
+                || word == "case"
+                || word == "otherwise")
             {
                 singleLineIndent = -1;
             }
             i += word.length();
         }
-        if (this->GetTextRange(i, i+3) == "...")
+        if (this->GetStyleAt(i) == wxSTC_MATLAB_OPERATOR && this->GetTextRange(i, i+3) == "...")
             singleLineIndent = 1;
     }
 
@@ -6045,7 +6076,6 @@ void NumeReEditor::ApplyAutoIndentation(int nFirstLine, int nLastLine) // int nF
     int nIndentCount = 0;
     int nCurrentIndent = 0;
 
-    string currentLine = "";
     int singleLineIndent = 0;
     int nLastSingleIndent = 0;
     this->SetTabWidth(4);
@@ -6055,7 +6085,7 @@ void NumeReEditor::ApplyAutoIndentation(int nFirstLine, int nLastLine) // int nF
         nLastSingleIndent = singleLineIndent;
         singleLineIndent = 0;
         int pos = this->PositionFromLine(i);
-        if (isStyleType(STYLE_COMMENT_LINE, i))
+        if (isStyleType(STYLE_COMMENT_LINE, pos))
             continue;
         while (isStyleType(STYLE_COMMENT_BLOCK, pos) && pos < this->GetLineEndPosition(nLastLine))
         {
