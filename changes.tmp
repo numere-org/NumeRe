@@ -20,3 +20,6 @@ Added	The results of the duplicate code analysis may now be copied from the resu
 Added	The font style (bold, italics, underlined) of the syntax elements in the editor may now be changed in the settings dialogue.
 Applied	The duplicate code analysis is significantly faster now.
 Fixed	Solved a critical issue when using the "cnt()" function together with data sets-
+Fixed	The NumeRe editor may now write large files (lines > 20000).
+Added	The matop functions "logtoidx()" and "idxtolog()" were added.
+Cleaned	In matop mode, if the target cache is passed with empty argument parentheses, it is cleared now before the result is stored (the content is overwritten completely).
