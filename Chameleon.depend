@@ -2173,7 +2173,7 @@
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\droptgt.h
 
-1511423722 d:\cpp\numere-source\trunk\gui\terminal\wxterm.h
+1523790166 d:\cpp\numere-source\trunk\gui\terminal\wxterm.h
 	<map>
 	"../NumeReWindow.h"
 	"../../common/Options.h"
@@ -2932,7 +2932,7 @@
 	<windows.h>
 	"commctrl.h"
 
-1523782003 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
+1523784052 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
 	"duplicatecodedialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 	"../editor/editor.h"

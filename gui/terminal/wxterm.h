@@ -155,6 +155,8 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
 
         static TermKeyMap keyMapTable[];
 
+        void scrollToInput();
+
     public:
         Debugmessenger _guimessenger;
         void pass_command(const string& command);

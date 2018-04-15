@@ -552,9 +552,9 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
     {
         m_wxParent->EvaluateOptions();
     }
+
+    scrollToInput();
     ProcessOutput(sAnswer.length(), sAnswer);
-    //GetTM()->SetEditable(m_curY, m_curX);
-    //ProcessInput(sAnswer.length(), sAnswer);
     Refresh();
     //do something
 }
@@ -907,16 +907,21 @@ void wxTerm::pipe_command()
     m_bCommandAvailable = true;
 }
 
-void wxTerm::pass_command(const string& command)
+void wxTerm::scrollToInput()
 {
-    if (!command.length())
-        return;
-    if(GTerm::IsScrolledUp())
+    if (GTerm::IsScrolledUp())
     {
         GTerm::Scroll(MAXHEIGHT, false);
         GTerm::Update();
         Refresh();
     }
+}
+
+void wxTerm::pass_command(const string& command)
+{
+    if (!command.length())
+        return;
+    scrollToInput();
     erase_line();
     wxCriticalSectionLocker lock(m_kernelCS);
     //next_line();
@@ -951,12 +956,7 @@ wxTerm::OnChar(wxKeyEvent& event)
     {
         // if the user is scrolled up and they typed something, scroll
         // all the way to the bottom
-        if(GTerm::IsScrolledUp())
-        {
-            GTerm::Scroll(MAXHEIGHT, false);
-            GTerm::Update();
-            Refresh();
-        }
+        scrollToInput();
 
         int
         rc,
@@ -2101,6 +2101,8 @@ wxTerm::RequestSizeChange(int w, int h)
 void
 wxTerm::ProcessInput(int len, const string& sData)
 {
+    scrollToInput();
+
     wxClientDC
     dc(this);
 
