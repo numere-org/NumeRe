@@ -21,6 +21,7 @@
 #include "../../kernel/core/ui/language.hpp"
 #include "../editor/editor.h"
 #include <wx/clipbrd.h>
+#include <algorithm>
 
 #define ID_DUPLICATECODE_START 12000
 #define ID_DUPLICATECODE_COPY 12001
@@ -33,13 +34,29 @@
 extern Language _guilang;
 
 int StrToInt(const string&);
+double StrToDb(const string&);
+
+struct compare_index
+{
+    const vector<double> base_arr;
+    compare_index (const vector<double> &arr) : base_arr (arr)
+    {}
+
+    bool operator () (int a, int b) const
+    {
+        return (base_arr[a] < base_arr[b]);
+    }
+};
+
 
 BEGIN_EVENT_TABLE(DuplicateCodeDialog, ViewerFrame)
     EVT_BUTTON  (wxID_OK, DuplicateCodeDialog::OnButtonOK)
     EVT_BUTTON  (ID_DUPLICATECODE_START, DuplicateCodeDialog::OnButtonStart)
     EVT_BUTTON  (ID_DUPLICATECODE_COPY, DuplicateCodeDialog::OnButtonCopy)
     EVT_BUTTON  (ID_DUPLICATECODE_REPORT, DuplicateCodeDialog::OnButtonReport)
+    EVT_CLOSE   (DuplicateCodeDialog::OnClose)
     EVT_LIST_ITEM_SELECTED (-1, DuplicateCodeDialog::OnItemClick)
+    EVT_LIST_COL_CLICK (wxID_ANY, DuplicateCodeDialog::OnColumnHeaderClick)
 END_EVENT_TABLE()
 
 DuplicateCodeDialog::DuplicateCodeDialog(wxWindow* _parent, const wxString& title) : ViewerFrame(_parent, title)
@@ -134,6 +151,13 @@ void DuplicateCodeDialog::OnButtonOK(wxCommandEvent& event)
     edit->IndicateDuplicatedLine(-1,-1,-1,-1);
 }
 
+void DuplicateCodeDialog::OnClose(wxCloseEvent& event)
+{
+    NumeReEditor* edit = static_cast<NumeReEditor*>(m_parent);
+    edit->notifyDialogClose();
+    this->Destroy();
+}
+
 void DuplicateCodeDialog::OnButtonStart(wxCommandEvent& event)
 {
     CallAfter(DuplicateCodeDialog::OnStart);
@@ -197,3 +221,54 @@ void DuplicateCodeDialog::OnStart()
     NumeReEditor* edit = static_cast<NumeReEditor*>(m_parent);
     edit->OnFindDuplicateCode(nFlags);
 }
+
+void DuplicateCodeDialog::OnColumnHeaderClick(wxListEvent& event)
+{
+    int nCol = event.GetColumn();
+
+    if (!m_resultList->GetItemCount())
+        return;
+
+    vector<double> vData;
+    vector<int> vIndex;
+    vector<wxString> vStringData;
+
+    string sCurrentItem;
+
+    for (int i = 0; i < m_resultList->GetItemCount(); i++)
+    {
+        sCurrentItem = m_resultList->GetItemText(i, nCol).ToStdString();
+        vIndex.push_back(vData.size());
+        switch (nCol)
+        {
+            case 0:
+                while (sCurrentItem.find_first_of("-= ") != string::npos)
+                    sCurrentItem.erase(sCurrentItem.find_first_of("-= "), 1);
+                vData.push_back(StrToDb(sCurrentItem));
+                break;
+            case 1:
+                vData.push_back(StrToDb(sCurrentItem.substr(sCurrentItem.find('[')+1, sCurrentItem.find(']')-sCurrentItem.find('[')-1)));
+                break;
+            case 2:
+                vData.push_back(StrToDb(sCurrentItem));
+                break;
+        }
+    }
+
+    std::stable_sort(vIndex.begin(), vIndex.end(), compare_index(vData));
+
+    for (int j = 0; j < m_resultList->GetColumnCount(); j++)
+    {
+        for (int i = 0; i < m_resultList->GetItemCount(); i++)
+        {
+            vStringData.push_back(m_resultList->GetItemText(i, j));
+        }
+        for (int i = 0; i < m_resultList->GetItemCount(); i++)
+        {
+            m_resultList->SetItem(i, j, vStringData[vIndex[i]]);
+        }
+        vStringData.clear();
+    }
+}
+
+

@@ -263,6 +263,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
         string GetStrippedRange(int nPos1, int nPos2, bool encode = true);
         bool writeLaTeXFile(const string& sLaTeXFileName);
         string parseDocumentation(int nPos1, int nPos2);
+        void notifyDialogClose();
 
     protected:
         Options* m_options;

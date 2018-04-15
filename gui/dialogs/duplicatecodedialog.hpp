@@ -51,6 +51,8 @@ class DuplicateCodeDialog : public ViewerFrame
         void OnButtonCopy(wxCommandEvent& event);
         void OnButtonReport(wxCommandEvent& event);
         void OnItemClick(wxListEvent& event);
+        void OnClose(wxCloseEvent& event);
+        void OnColumnHeaderClick(wxListEvent& event);
 
         void OnStart();
 
