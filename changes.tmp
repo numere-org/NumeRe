@@ -26,3 +26,4 @@ Cleaned	In matop mode, if the target cache is passed with empty argument parenth
 Added	The results of the duplicate code analysis may now be sorted according to a desired column by clicking on the corresponding headline.
 Fixed	The console now always scrolls down before something is printed in the console.
 Added	NumeRe may now use the "##!" and "#*!" comment sequences as section beginnings, if one activates this option from the "view" menu.
+Added	Right-clicking on an item in the duplicate code dialogue will now jump the active line to the red code range.

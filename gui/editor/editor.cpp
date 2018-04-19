@@ -5176,7 +5176,7 @@ void NumeReEditor::OnThreadUpdate(wxThreadEvent& event)
 
 }
 
-void NumeReEditor::IndicateDuplicatedLine(int nStart1, int nEnd1, int nStart2, int nEnd2)
+void NumeReEditor::IndicateDuplicatedLine(int nStart1, int nEnd1, int nStart2, int nEnd2, int nSelectionLine)
 {
     this->MarkerDefine(MARKER_DUPLICATEINDICATOR_ONE, wxSTC_MARK_BACKGROUND);
 	this->MarkerSetBackground(MARKER_DUPLICATEINDICATOR_ONE, wxColour(220,255,220));
@@ -5218,7 +5218,7 @@ void NumeReEditor::IndicateDuplicatedLine(int nStart1, int nEnd1, int nStart2, i
 
         this->IndicatorFillRange(abs(iter->first), iter->second);
     }
-    this->ScrollToLine(nStart1);
+    this->ScrollToLine(nSelectionLine);
 }
 
 void NumeReEditor::ClearDblClkIndicator()

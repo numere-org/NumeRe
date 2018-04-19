@@ -50,13 +50,14 @@ struct compare_index
 
 
 BEGIN_EVENT_TABLE(DuplicateCodeDialog, ViewerFrame)
-    EVT_BUTTON  (wxID_OK, DuplicateCodeDialog::OnButtonOK)
-    EVT_BUTTON  (ID_DUPLICATECODE_START, DuplicateCodeDialog::OnButtonStart)
-    EVT_BUTTON  (ID_DUPLICATECODE_COPY, DuplicateCodeDialog::OnButtonCopy)
-    EVT_BUTTON  (ID_DUPLICATECODE_REPORT, DuplicateCodeDialog::OnButtonReport)
-    EVT_CLOSE   (DuplicateCodeDialog::OnClose)
-    EVT_LIST_ITEM_SELECTED (-1, DuplicateCodeDialog::OnItemClick)
-    EVT_LIST_COL_CLICK (wxID_ANY, DuplicateCodeDialog::OnColumnHeaderClick)
+    EVT_BUTTON                  (wxID_OK, DuplicateCodeDialog::OnButtonOK)
+    EVT_BUTTON                  (ID_DUPLICATECODE_START, DuplicateCodeDialog::OnButtonStart)
+    EVT_BUTTON                  (ID_DUPLICATECODE_COPY, DuplicateCodeDialog::OnButtonCopy)
+    EVT_BUTTON                  (ID_DUPLICATECODE_REPORT, DuplicateCodeDialog::OnButtonReport)
+    EVT_CLOSE                   (DuplicateCodeDialog::OnClose)
+    EVT_LIST_ITEM_SELECTED      (-1, DuplicateCodeDialog::OnItemClick)
+    EVT_LIST_ITEM_RIGHT_CLICK   (-1, DuplicateCodeDialog::OnItemRightClick)
+    EVT_LIST_COL_CLICK          (wxID_ANY, DuplicateCodeDialog::OnColumnHeaderClick)
 END_EVENT_TABLE()
 
 DuplicateCodeDialog::DuplicateCodeDialog(wxWindow* _parent, const wxString& title) : ViewerFrame(_parent, title)
@@ -148,7 +149,7 @@ void DuplicateCodeDialog::OnButtonOK(wxCommandEvent& event)
 {
     Close();
     NumeReEditor* edit = static_cast<NumeReEditor*>(m_parent);
-    edit->IndicateDuplicatedLine(-1,-1,-1,-1);
+    edit->IndicateDuplicatedLine(-1,-1,-1,-1,-1);
 }
 
 void DuplicateCodeDialog::OnClose(wxCloseEvent& event)
@@ -193,8 +194,18 @@ void DuplicateCodeDialog::OnButtonReport(wxCommandEvent& event)
 
 void DuplicateCodeDialog::OnItemClick(wxListEvent& event)
 {
-    string sItemText = event.GetText().ToStdString();
-    int nStart1, nEnd1, nStart2, nEnd2;
+    this->highlightSelection(event.GetText(), true);
+}
+
+void DuplicateCodeDialog::OnItemRightClick(wxListEvent& event)
+{
+    this->highlightSelection(event.GetText(), false);
+}
+
+void DuplicateCodeDialog::highlightSelection(const wxString& sSelection, bool firstMatch)
+{
+    string sItemText = sSelection.ToStdString();
+    int nStart1, nEnd1, nStart2, nEnd2, nSelection;
 
     nStart1 = StrToInt(sItemText.substr(0,sItemText.find('-')));
     nEnd1 = StrToInt(sItemText.substr(sItemText.find('-')+1, sItemText.find(' ')-sItemText.find('-')-1));
@@ -202,8 +213,13 @@ void DuplicateCodeDialog::OnItemClick(wxListEvent& event)
     nStart2 = StrToInt(sItemText.substr(0,sItemText.find('-')));
     nEnd2 = StrToInt(sItemText.substr(sItemText.find('-')+1));
 
+    if (firstMatch)
+        nSelection = nStart1-1;
+    else
+        nSelection = nStart2-1;
+
     NumeReEditor* edit = static_cast<NumeReEditor*>(m_parent);
-    edit->IndicateDuplicatedLine(nStart1-1, nEnd1-1, nStart2-1, nEnd2-1);
+    edit->IndicateDuplicatedLine(nStart1-1, nEnd1-1, nStart2-1, nEnd2-1, nSelection);
 }
 
 void DuplicateCodeDialog::OnStart()

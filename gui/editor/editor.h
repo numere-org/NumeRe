@@ -188,7 +188,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
         void OnFoldCurrentBlock(wxCommandEvent& event);
         bool InitDuplicateCode();
         void OnFindDuplicateCode(int nDuplicateFlag = 1); // 0 = direct comparison, 1 = use var semanticals, 2 = use string semanticals,
-        void IndicateDuplicatedLine(int nStart1, int nEnd1, int nStart2, int nEnd2);
+        void IndicateDuplicatedLine(int nStart1, int nEnd1, int nStart2, int nEnd2, int nSelectionLine);
 
         // for the duplicate code analysis
         virtual wxThread::ExitCode Entry();
