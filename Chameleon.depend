@@ -1970,7 +1970,7 @@
 	"datastructures.h"
 	"ProjectInfo.h"
 
-1522828376 d:\cpp\numere-source\trunk\common\datastructures.h
+1523861213 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -2135,7 +2135,7 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1523463940 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1524034792 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -3325,7 +3325,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1523602692 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1523821001 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3690,7 +3690,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1523005693 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1523862033 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3905,7 +3905,7 @@
 	"wxssh.h"
 	"../../common/debug.h"
 
-1520927569 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1523790314 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>

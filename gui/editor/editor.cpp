@@ -85,6 +85,7 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
 	EVT_MENU            (ID_FOLD_CURRENT_BLOCK, NumeReEditor::OnFoldCurrentBlock)
 	EVT_MENU            (ID_HELP_ON_ITEM, NumeReEditor::OnHelpOnSelection)
 	EVT_MENU			(ID_DEBUG_RUNTOCURSOR, NumeReEditor::OnRunToCursor)
+	EVT_IDLE            (NumeReEditor::OnIdle)
 END_EVENT_TABLE()
 
 int CompareInts(int n1, int n2)
@@ -126,6 +127,7 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 	m_project->AddEditor(this);
 	m_duplicateCode = nullptr;
 	m_nCallTipStart = 0;
+	m_modificationHappened = false;
 
 	m_watchedString = "";
 	m_dblclkString = "";
@@ -212,6 +214,11 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 
 	this->MarkerDefine(MARKER_SAVED, wxSTC_MARK_LEFTRECT);
 	this->MarkerSetBackground(MARKER_SAVED, wxColour("green"));
+
+	this->MarkerDefine(MARKER_SECTION, wxSTC_MARK_ARROWDOWN);
+	//this->MarkerSetBackground(MARKER_SECTION, wxColor(192,192,192));
+	//this->MarkerSetBackground(MARKER_SECTION, wxColor(255,192,192));
+	this->MarkerSetBackground(MARKER_SECTION, m_options->GetSyntaxStyle(Options::COMMENT).foreground);
 
 	this->SetMarginSensitive(1, true);
 
@@ -1130,6 +1137,7 @@ void NumeReEditor::OnLoseFocus(wxFocusEvent& event)
 
 void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 {
+    //CallAfter(NumeReEditor::AsynchEvaluations);
     if ((m_fileType != FILE_NSCR && m_fileType != FILE_NPRC) || m_PopUpActive || !this->HasFocus())
         return;
     //wxPoint pos = event.GetPosition();
@@ -1345,6 +1353,14 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
         this->AdvCallTipShow(startPosition, sCalltip);
         this->CallTipSetHighlight(0, sCalltip.find('='));
     }
+}
+
+void NumeReEditor::OnIdle(wxIdleEvent& event)
+{
+    if (!m_modificationHappened)
+        return;
+    m_modificationHappened = false;
+    CallAfter(NumeReEditor::AsynchEvaluations);
 }
 
 void NumeReEditor::OnSavePointReached(wxStyledTextEvent& event)
@@ -2174,7 +2190,7 @@ void NumeReEditor::AnalyseCode()
 void NumeReEditor::JumpToBookmark(bool down)
 {
     int nCurrentLine = this->GetCurrentLine();
-    if (this->MarkerOnLine(nCurrentLine, MARKER_BOOKMARK))
+    if (this->MarkerOnLine(nCurrentLine, MARKER_BOOKMARK) || this->MarkerOnLine(nCurrentLine, MARKER_SECTION))
     {
         if (down)
             nCurrentLine++;
@@ -2182,7 +2198,7 @@ void NumeReEditor::JumpToBookmark(bool down)
             nCurrentLine--;
     }
     int nMarker = nCurrentLine;
-    int nMarkerMask = (1 << MARKER_BOOKMARK);
+    int nMarkerMask = (1 << MARKER_BOOKMARK) | (1 << MARKER_SECTION);
     if (down)
         nMarker = this->MarkerNext(nCurrentLine, nMarkerMask);
     else
@@ -2562,6 +2578,8 @@ void NumeReEditor::ToggleSettings(int _setting)
             this->SetViewWhiteSpace(wxSTC_WS_VISIBLEALWAYS);
             this->SetViewEOL(true);
         }
+        if (_setting & SETTING_USESECTIONS)
+            markSections(true);
     }
     else
     {
@@ -2577,6 +2595,10 @@ void NumeReEditor::ToggleSettings(int _setting)
         {
             this->SetIndicatorCurrent(HIGHLIGHT_STRIKETHROUGH);
             this->IndicatorClearRange(0, this->GetLastPosition());
+        }
+        else if (_setting == SETTING_USESECTIONS)
+        {
+            this->MarkerDeleteAll(MARKER_SECTION);
         }
     }
     UpdateSyntaxHighlighting();
@@ -4023,6 +4045,7 @@ void NumeReEditor::OnEditorModified(wxStyledTextEvent &event)
 	m_project->SetCompiled(false);
 	if (!m_bLoadingFile && (event.GetModificationType() & wxSTC_MOD_INSERTTEXT || event.GetModificationType() & wxSTC_MOD_DELETETEXT))
 	{
+	    m_modificationHappened = true;
         int nLine = this->LineFromPosition(event.GetPosition());
         int nLinesAdded = event.GetLinesAdded();
         if (nLinesAdded > 0)
@@ -4041,6 +4064,7 @@ void NumeReEditor::OnEditorModified(wxStyledTextEvent &event)
 	}
 	/*if (getEditorSetting(SETTING_USEANALYZER))
         CallAfter(AnalyseCode);*/
+    //CallAfter(markSections);
 	event.Skip();
 }
 
@@ -4061,14 +4085,145 @@ void NumeReEditor::FoldCurrentBlock(int nLine)
     this->ToggleFold(nParentline);
 }
 
+void NumeReEditor::markSections(bool bForceRefresh)
+{
+    if (!getEditorSetting(SETTING_USESECTIONS))
+        return;
+    if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_MATLAB)
+    {
+        if (bForceRefresh)
+            this->MarkerDeleteAll(MARKER_SECTION);
+        int startline = 0;
+        int endline = this->GetLineCount();
+
+        if (!bForceRefresh)
+        {
+            int markermask = (1 << MARKER_SECTION);
+            if ((startline = this->MarkerPrevious(this->GetCurrentLine()-1, markermask)) == -1)
+                startline = 0;
+            if ((endline = this->MarkerNext(this->GetCurrentLine()+1, markermask)) == -1)
+                endline = this->GetLineCount();
+        }
+
+        for (int i = startline; i < endline; i++)
+        {
+            if (i && this->MarkerOnLine(i-1, MARKER_SECTION))
+                continue;
+
+            for (int j = this->PositionFromLine(i); j < this->GetLineEndPosition(i)+1; j++)
+            {
+                if (this->GetCharAt(j) == ' ' || this->GetCharAt(j) == '\t')
+                    continue;
+                if (isStyleType(STYLE_COMMENT_SECTION_LINE, j)
+                    || isStyleType(STYLE_COMMENT_SECTION_BLOCK, j))
+                {
+                    if (!this->MarkerOnLine(i, MARKER_SECTION))
+                        this->MarkerAdd(i, MARKER_SECTION);
+                    break;
+                }
+                // only section markers which are the first characters in line are interpreted
+                if (this->GetCharAt(j) != ' ' && this->GetCharAt(j) != '\t')
+                {
+                    if (this->MarkerOnLine(i, MARKER_SECTION))
+                        this->MarkerDelete(i, MARKER_SECTION);
+                    break;
+                }
+            }
+        }
+    }
+    if (m_fileType == FILE_TEXSOURCE)
+    {
+        if (bForceRefresh)
+            this->MarkerDeleteAll(MARKER_SECTION);
+        int startline = 0;
+        int endline = this->GetLineCount();
+
+        if (!bForceRefresh)
+        {
+            int markermask = (1 << MARKER_SECTION);
+            if ((startline = this->MarkerPrevious(this->GetCurrentLine()-1, markermask)) == -1)
+                startline = 0;
+            if ((endline = this->MarkerNext(this->GetCurrentLine()+1, markermask)) == -1)
+                endline = this->GetLineCount();
+        }
+
+        for (int i = startline; i < endline; i++)
+        {
+            for (int j = this->PositionFromLine(i); j < this->GetLineEndPosition(i)+1; j++)
+            {
+                if (this->GetCharAt(j) == ' ' || this->GetCharAt(j) == '\t')
+                    continue;
+                if (this->GetStyleAt(j) == wxSTC_TEX_COMMAND)
+                {
+                    int wordstart = this->WordStartPosition(j, false);
+                    int wordend = this->WordEndPosition(j, false);
+
+                    wxString word = this->GetTextRange(wordstart, wordend);
+                    if (word == "maketitle"
+                        || word == "part"
+                        || word == "chapter"
+                        || word == "section"
+                        || word == "subsection"
+                        || word == "subsubsection"
+                        || word == "subsubsubsection"
+                        || word == "paragraph"
+                        || word == "subparagraph"
+                        || word == "addchap"
+                        || word == "addsec")
+                    {
+                        if (!this->MarkerOnLine(i, MARKER_SECTION))
+                            this->MarkerAdd(i, MARKER_SECTION);
+                    }
+                    j = wordend;
+                }
+            }
+        }
+    }
+    if (m_fileType == FILE_NONSOURCE && this->getEditorSetting(SETTING_USETXTADV))
+    {
+        if (bForceRefresh)
+            this->MarkerDeleteAll(MARKER_SECTION);
+        int startline = 0;
+        int endline = this->GetLineCount();
+
+        if (!bForceRefresh)
+        {
+            int markermask = (1 << MARKER_SECTION);
+            if ((startline = this->MarkerPrevious(this->GetCurrentLine()-1, markermask)) == -1)
+                startline = 0;
+            if ((endline = this->MarkerNext(this->GetCurrentLine()+1, markermask)) == -1)
+                endline = this->GetLineCount();
+        }
+
+        for (int i = startline; i < endline; i++)
+        {
+            for (int j = this->PositionFromLine(i); j < this->GetLineEndPosition(i)+1; j++)
+            {
+                if (this->GetCharAt(j) == ' ' || this->GetCharAt(j) == '\t')
+                    continue;
+                if (this->GetStyleAt(j) == wxSTC_TXTADV_BIGHEAD || this->GetStyleAt(j) == wxSTC_TXTADV_HEAD)
+                {
+                    if (!this->MarkerOnLine(i, MARKER_SECTION))
+                        this->MarkerAdd(i, MARKER_SECTION);
+                    break;
+                }
+            }
+        }
+    }
+}
 
 void NumeReEditor::AsynchActions()
 {
     if (!this->AutoCompActive() && this->getEditorSetting(SETTING_INDENTONTYPE) && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_MATLAB || m_fileType == FILE_CPP))
         ApplyAutoIndentation(0, this->GetCurrentLine()+1);
+    HandleFunctionCallTip();
+}
+
+void NumeReEditor::AsynchEvaluations()
+{
     if (getEditorSetting(SETTING_USEANALYZER))
         AnalyseCode();
-    HandleFunctionCallTip();
+    markSections();
 }
 
 void NumeReEditor::OnStartDrag(wxStyledTextEvent& event)
@@ -5841,6 +5996,10 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
                     return this->GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_LINE;
                 case STYLE_COMMENT_BLOCK:
                     return this->GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_BLOCK;
+                case STYLE_COMMENT_SECTION_LINE:
+                    return this->GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_LINE && this->GetTextRange(nPos, nPos+3) == "##!";
+                case STYLE_COMMENT_SECTION_BLOCK:
+                    return this->GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_BLOCK && this->GetTextRange(nPos, nPos+3) == "#*!";
                 case STYLE_COMMAND:
                     return this->GetStyleAt(nPos) == wxSTC_NSCR_COMMAND
                         || this->GetStyleAt(nPos) == wxSTC_NPRC_COMMAND;
@@ -5859,6 +6018,10 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
                     return this->GetStyleAt(nPos) == wxSTC_MATLAB_COMMENT;
                 case STYLE_COMMENT_BLOCK:
                     return this->GetStyleAt(nPos) == wxSTC_MATLAB_COMMENT;
+                case STYLE_COMMENT_SECTION_LINE:
+                    return this->GetStyleAt(nPos) == wxSTC_MATLAB_COMMENT && this->GetTextRange(nPos, nPos+2) == "%%";
+                case STYLE_COMMENT_SECTION_BLOCK:
+                    return this->GetStyleAt(nPos) == wxSTC_MATLAB_COMMENT && this->GetTextRange(nPos, nPos+2) == "%%";
                 case STYLE_COMMAND:
                     return this->GetStyleAt(nPos) == wxSTC_MATLAB_KEYWORD;
                 case STYLE_FUNCTION:
@@ -5880,6 +6043,9 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
                     return this->GetStyleAt(nPos) == wxSTC_C_COMMENT
                         || this->GetStyleAt(nPos) == wxSTC_C_COMMENTDOC
                         || this->GetStyleAt(nPos) == wxSTC_C_COMMENTDOCKEYWORD;
+                case STYLE_COMMENT_SECTION_LINE:
+                case STYLE_COMMENT_SECTION_BLOCK:
+                    return false;
                 case STYLE_COMMAND:
                     return this->GetStyleAt(nPos) == wxSTC_C_WORD;
                 case STYLE_FUNCTION:

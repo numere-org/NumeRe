@@ -60,7 +60,8 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
             SETTING_DISPCTRLCHARS = 2,
             SETTING_USETXTADV = 4,
             SETTING_USEANALYZER = 8,
-            SETTING_INDENTONTYPE = 16
+            SETTING_INDENTONTYPE = 16,
+            SETTING_USESECTIONS = 32
         };
         bool defaultPage;
 
@@ -98,6 +99,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
         void ClearDblClkIndicator();
         void MakeBraceCheck();
         void MakeBlockCheck();
+        void OnIdle(wxIdleEvent& event);
 
         // asynch update calls
         void HandleFunctionCallTip();
@@ -274,6 +276,8 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
             STYLE_DEFAULT,
             STYLE_COMMENT_LINE,
             STYLE_COMMENT_BLOCK,
+            STYLE_COMMENT_SECTION_LINE,
+            STYLE_COMMENT_SECTION_BLOCK,
             STYLE_COMMAND,
             STYLE_FUNCTION
         };
@@ -281,7 +285,9 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
         void FoldCurrentBlock(int nLine);
 
+        void markSections(bool bForceRefresh = false);
         void AsynchActions();
+        void AsynchEvaluations();
 
         void updateDefaultHighlightSettings();
         void applyStrikeThrough();
@@ -388,6 +394,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
         bool m_bSetUnsaved;
         bool m_PopUpActive;
         bool m_dragging;
+        bool m_modificationHappened;
 
         int m_nEditorSetting;
         FileFilterType m_fileType;

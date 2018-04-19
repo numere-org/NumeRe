@@ -144,6 +144,7 @@ BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
 	EVT_MENU						(ID_OPEN_IN_EXPLORER, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_AUTOINDENT, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_INDENTONTYPE, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_USESECTIONS, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_AUTOFORMAT, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_LINEWRAP, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_DISPCTRLCHARS, NumeReWindow::OnMenuEvent)
@@ -1071,6 +1072,15 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             t->ToggleTool(ID_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
             wxMenu* tools = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
             tools->Check(ID_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+            break;
+        }
+        case ID_USESECTIONS:
+        {
+            //wxToolBar* t = GetToolBar();
+            m_currentEd->ToggleSettings(NumeReEditor::SETTING_USESECTIONS);
+            //t->ToggleTool(ID_USESECTIONS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
+            wxMenu* tools = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_VIEW")));
+            tools->Check(ID_USESECTIONS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
             break;
         }
         case ID_AUTOFORMAT:
@@ -2318,6 +2328,7 @@ void NumeReWindow::PageHasChanged (int pageNr)
         view->Check(ID_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
         view->Check(ID_DISPCTRLCHARS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_DISPCTRLCHARS));
         view->Check(ID_USETXTADV, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USETXTADV));
+        view->Check(ID_USESECTIONS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
         view = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
         view->Check(ID_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
         view->Check(ID_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
@@ -4057,17 +4068,20 @@ void NumeReWindow::UpdateMenuBar()
 	menuView->Append(ID_USETXTADV, _guilang.get("GUI_MENU_USETXTADV"), _guilang.get("GUI_MENU_USETXTADV_TTP"), true);
 	menuView->Append(ID_TOGGLE_NOTEBOOK_MULTIROW, _guilang.get("GUI_MENU_MULTIROW"), _guilang.get("GUI_MENU_MULTIROW_TTP"), true);
 	menuView->Check(ID_TOGGLE_NOTEBOOK_MULTIROW, m_multiRowState);
+	menuView->Append(ID_USESECTIONS, _guilang.get("GUI_MENU_USESECTIONS"), _guilang.get("GUI_MENU_USESECTIONS_TTP"), true);
 	if (m_currentEd)
 	{
         menuView->Check(ID_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
         menuView->Check(ID_DISPCTRLCHARS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_DISPCTRLCHARS));
         menuView->Check(ID_USETXTADV, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USETXTADV));
+        menuView->Check(ID_USESECTIONS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
     }
     else
     {
         menuView->Check(ID_LINEWRAP, false);
         menuView->Check(ID_DISPCTRLCHARS, false);
         menuView->Check(ID_USETXTADV, false);
+        menuView->Check(ID_USESECTIONS, false);
     }
 
 	menuBar->Append(menuView, _guilang.get("GUI_MENU_VIEW"));
