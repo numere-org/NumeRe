@@ -643,6 +643,8 @@ bool Cache::writeToCache(long long int _nLine, long long int _nCol, long long in
 // --> Schreibt einen Wert an beliebiger Stelle in den Cache <--
 bool Cache::writeToCache(Indices& _idx, const string& _sCache, double* _dData, unsigned int _nNum)
 {
+    if (_nNum == 1)
+        return writeSingletonToCache(_idx, _sCache, _dData);
     long long int _nLayer = mCachesMap.at(_sCache);
 
     if (_idx.vI.size())
@@ -693,6 +695,48 @@ bool Cache::writeToCache(Indices& _idx, const string& _sCache, double* _dData, u
                     if (_nNum > j-_idx.nJ[0])
                         writeToCache(i, j, _nLayer, _dData[j-_idx.nJ[0]]);
                 }
+            }
+        }
+    }
+
+	return true;
+}
+
+bool Cache::writeSingletonToCache(Indices& _idx, const string& _sCache, double* _dData)
+{
+    long long int _nLayer = mCachesMap.at(_sCache);
+
+    if (_idx.vI.size())
+    {
+        while (_idx.nI[1] == -2 && _idx.vI.back() < getCacheLines(_nLayer, false)-1)
+        {
+            _idx.vI.push_back(_idx.vI.back()+1);
+        }
+        while (_idx.nJ[1] == -2 && _idx.vJ.back() < getCacheCols(_nLayer, false)-1)
+        {
+            _idx.vJ.push_back(_idx.vJ.back()+1);
+        }
+        for (size_t i = 0; i < _idx.vI.size(); i++)
+        {
+            for (size_t j = 0; j < _idx.vJ.size(); j++)
+            {
+                if (!isnan(_idx.vI[i]) && !isnan(_idx.vJ[j]))
+                    writeToCache(_idx.vI[i], _idx.vJ[j], _nLayer, _dData[0]);
+            }
+        }
+    }
+    else
+    {
+        if (_idx.nI[1] == -2)
+            _idx.nI[1] = getCacheLines(_nLayer, false)-1;
+        if (_idx.nJ[1] == -2)
+            _idx.nJ[1] = getCacheCols(_nLayer, false)-1;
+
+        for (int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
+        {
+            for (int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
+            {
+                writeToCache(i, j, _nLayer, _dData[0]);
             }
         }
     }

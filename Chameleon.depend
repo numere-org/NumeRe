@@ -2564,7 +2564,7 @@
 	"../utils/BasicExcel.hpp"
 	"../utils/tinyxml2.h"
 
-1521057436 d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.hpp
+1524205341 d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.hpp
 	<iostream>
 	<fstream>
 	<string>
@@ -2932,7 +2932,7 @@
 	<windows.h>
 	"commctrl.h"
 
-1523784052 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
+1524175088 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
 	"duplicatecodedialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 	"../editor/editor.h"
