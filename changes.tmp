@@ -28,3 +28,4 @@ Fixed	The console now always scrolls down before something is printed in the con
 Added	NumeRe may now use the "##!" and "#*!" comment sequences as section beginnings, if one activates this option from the "view" menu.
 Added	Right-clicking on an item in the duplicate code dialogue will now jump the active line to the red code range.
 Fixed	Scalar results may now be stored at multiple locations in the target cache.
+New	NumeRe may now load images as datagrids into memory using the "imread" command.
