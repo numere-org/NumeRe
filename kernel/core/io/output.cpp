@@ -18,7 +18,7 @@
 
 
 #include "output.hpp"
-#include "../kernel.hpp"
+#include "../../kernel.hpp"
 
 /*
  * Realisierung der Klasse 'Output'

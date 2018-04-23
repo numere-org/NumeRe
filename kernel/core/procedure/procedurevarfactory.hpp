@@ -25,7 +25,7 @@
 #include "../maths/functionimplementation.hpp"
 #include "../maths/define.hpp"
 #include "../settings.hpp"
-#include "../output.hpp"
+#include "../io/output.hpp"
 #include "../plotting/plotdata.hpp"
 #include "../script.hpp"
 

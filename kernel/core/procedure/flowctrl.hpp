@@ -30,7 +30,7 @@
 #include "../datamanagement/datafile.hpp"
 #include "../maths/define.hpp"
 #include "../settings.hpp"
-#include "../output.hpp"
+#include "../io/output.hpp"
 #include "../plotting/plotdata.hpp"
 #include "../script.hpp"
 #include "../maths/parser_functions.hpp"

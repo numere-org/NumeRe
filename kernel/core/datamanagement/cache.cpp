@@ -708,11 +708,11 @@ bool Cache::writeSingletonToCache(Indices& _idx, const string& _sCache, double* 
 
     if (_idx.vI.size())
     {
-        while (_idx.nI[1] == -2 && _idx.vI.back() < getCacheLines(_nLayer, false)-1)
+        while (_idx.nI[1] == -2 && _idx.vI.back() < ::max(0LL, getCacheLines(_nLayer, false)-1))
         {
             _idx.vI.push_back(_idx.vI.back()+1);
         }
-        while (_idx.nJ[1] == -2 && _idx.vJ.back() < getCacheCols(_nLayer, false)-1)
+        while (_idx.nJ[1] == -2 && _idx.vJ.back() < ::max(0LL, getCacheCols(_nLayer, false)-1))
         {
             _idx.vJ.push_back(_idx.vJ.back()+1);
         }
@@ -728,9 +728,9 @@ bool Cache::writeSingletonToCache(Indices& _idx, const string& _sCache, double* 
     else
     {
         if (_idx.nI[1] == -2)
-            _idx.nI[1] = getCacheLines(_nLayer, false)-1;
+            _idx.nI[1] = ::max(0LL, getCacheLines(_nLayer, false)-1);
         if (_idx.nJ[1] == -2)
-            _idx.nJ[1] = getCacheCols(_nLayer, false)-1;
+            _idx.nJ[1] = ::max(0LL, getCacheCols(_nLayer, false)-1);
 
         for (int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
         {

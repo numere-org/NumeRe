@@ -2515,13 +2515,13 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1512218842 d:\cpp\numere-source\trunk\kernel\kernel.hpp
+1524299965 d:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	<queue>
 	"core/ui/error.hpp"
 	"core/settings.hpp"
-	"core/output.hpp"
+	"core/io/output.hpp"
 	"core/datamanagement/datafile.hpp"
 	"core/plugins.hpp"
 	"core/version.h"
@@ -2640,7 +2640,7 @@
 	<android/log.h>
 	<assert.h>
 
-1511633543 d:\cpp\numere-source\trunk\kernel\core\plugins.hpp
+1524299974 d:\cpp\numere-source\trunk\kernel\core\plugins.hpp
 	<string>
 	<cmath>
 	<ctime>
@@ -2650,7 +2650,7 @@
 	<boost/math/distributions/students_t.hpp>
 	"ui/error.hpp"
 	"datamanagement/datafile.hpp"
-	"output.hpp"
+	"io/output.hpp"
 	"settings.hpp"
 	"utils/tools.hpp"
 	"plotting/plotdata.hpp"
@@ -2677,7 +2677,7 @@
 	"../version.h"
 	"../ParserLib/muParser.h"
 
-1520365476 d:\cpp\numere-source\trunk\kernel\core\built-in.hpp
+1524302687 d:\cpp\numere-source\trunk\kernel\core\built-in.hpp
 	<iostream>
 	<fstream>
 	<sstream>
@@ -2689,7 +2689,7 @@
 	"ui/error.hpp"
 	"datamanagement/datafile.hpp"
 	"settings.hpp"
-	"output.hpp"
+	"io/output.hpp"
 	"plugins.hpp"
 	"ParserLib/muParser.h"
 	"utils/tools.hpp"
@@ -2788,7 +2788,7 @@
 	"../settings.hpp"
 	"../ui/error.hpp"
 
-1512218666 d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.hpp
+1524299972 d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.hpp
 	<string>
 	<iostream>
 	"../ui/error.hpp"
@@ -2796,14 +2796,14 @@
 	"../datamanagement/datafile.hpp"
 	"../maths/define.hpp"
 	"../settings.hpp"
-	"../output.hpp"
+	"../io/output.hpp"
 	"../plotting/plotdata.hpp"
 	"../script.hpp"
 	"../maths/parser_functions.hpp"
 	"../built-in.hpp"
 	"../utils/tools.hpp"
 
-1512218639 d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.hpp
+1524299969 d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.hpp
 	<iostream>
 	<string>
 	<cmath>
@@ -2821,7 +2821,7 @@
 	"../plugin.hpp"
 	"../maths/define.hpp"
 	"../filesystem.hpp"
-	"../output.hpp"
+	"../io/output.hpp"
 	"../script.hpp"
 
 1490791551 d:\cpp\numere-source\trunk\kernel\debugmessenger.hpp
@@ -3963,11 +3963,13 @@
 
 1501083705 d:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1523431382 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1524400099 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
+	"io/fileops.hpp"
+	"datamanagement/dataops.hpp"
 
-1523285686 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
+1524227898 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
 	"cache.hpp"
 	"../../kernel.hpp"
 
@@ -4022,7 +4024,7 @@
 	"odesolver.hpp"
 	"../../kernel.hpp"
 
-1521363404 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
+1524228512 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	"spline.h"
@@ -4188,7 +4190,7 @@
 	"../../kernel.hpp"
 	"procedurevarfactory.hpp"
 
-1513532246 d:\cpp\numere-source\trunk\kernel\core\procedure\procedurevarfactory.hpp
+1524299967 d:\cpp\numere-source\trunk\kernel\core\procedure\procedurevarfactory.hpp
 	<string>
 	<map>
 	"../utils/tools.hpp"
@@ -4197,7 +4199,7 @@
 	"../maths/functionimplementation.hpp"
 	"../maths/define.hpp"
 	"../settings.hpp"
-	"../output.hpp"
+	"../io/output.hpp"
 	"../plotting/plotdata.hpp"
 	"../script.hpp"
 
@@ -4278,4 +4280,49 @@
 1523019547 source:d:\cpp\numere-source\trunk\kernel\syntax.cpp
 	"syntax.hpp"
 	"core/utils/tools.hpp"
+
+1524300693 d:\cpp\numere-source\trunk\kernel\core\io\output.hpp
+	<string>
+	<ctime>
+	"../ui/error.hpp"
+	"../filesystem.hpp"
+	"../settings.hpp"
+	"../version.h"
+	"../utils/tools.hpp"
+
+1524301794 d:\cpp\numere-source\trunk\kernel\core\io\fileops.hpp
+	<string>
+	<vector>
+	"../datamanagement/datafile.hpp"
+	"../settings.hpp"
+	"../ParserLib/muParser.h"
+
+1524301001 source:d:\cpp\numere-source\trunk\kernel\core\io\fileops.cpp
+	"fileops.hpp"
+	"../utils/tools.hpp"
+	"../maths/parser_functions.hpp"
+	"../../kernel.hpp"
+	"../ui/language.hpp"
+
+1524303937 d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataops.hpp
+	<string>
+	"datafile.hpp"
+	"../settings.hpp"
+	"../ParserLib/muParser.h"
+	"../io/output.hpp"
+	"../maths/define.hpp"
+
+1524300770 source:d:\cpp\numere-source\trunk\kernel\core\io\output.cpp
+	"output.hpp"
+	"../../kernel.hpp"
+
+1524386698 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataops.cpp
+	<wx/image.h>
+	"dataops.hpp"
+	"../../kernel.hpp"
+	"../ui/language.hpp"
+	"../utils/tools.hpp"
+	"../utils/BasicExcel.hpp"
+	"../ui/error.hpp"
+	"../structures.hpp"
 

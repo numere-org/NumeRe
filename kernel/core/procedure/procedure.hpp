@@ -40,7 +40,7 @@
 #include "../plugin.hpp"
 #include "../maths/define.hpp"
 #include "../filesystem.hpp"
-#include "../output.hpp"
+#include "../io/output.hpp"
 #include "../script.hpp"
 
 using namespace std;

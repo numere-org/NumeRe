@@ -29,7 +29,7 @@
 #include "ui/error.hpp"
 #include "datamanagement/datafile.hpp"
 #include "settings.hpp"
-#include "output.hpp"
+#include "io/output.hpp"
 #include "plugins.hpp"
 #include "ParserLib/muParser.h"
 #include "utils/tools.hpp"
@@ -60,7 +60,6 @@ extern const string sParserVersion;
  * Built-In-Funktionen
  * -> Diese Funktionen setzen die Basisfunktionen dieses Frameworks um
  */
-string** BI_make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, const string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, size_t nPrecision, bool bSave = true);
 void BI_splash();
 /** \brief Central command handler
  *

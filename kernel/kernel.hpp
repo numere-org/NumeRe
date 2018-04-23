@@ -25,7 +25,7 @@
 // --> LOKALE HEADER <--
 #include "core/ui/error.hpp"
 #include "core/settings.hpp"
-#include "core/output.hpp"
+#include "core/io/output.hpp"
 #include "core/datamanagement/datafile.hpp"
 #include "core/plugins.hpp"
 #include "core/version.h"

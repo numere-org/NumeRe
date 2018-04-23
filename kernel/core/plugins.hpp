@@ -28,7 +28,7 @@
 
 #include "ui/error.hpp"
 #include "datamanagement/datafile.hpp"
-#include "output.hpp"
+#include "io/output.hpp"
 #include "settings.hpp"
 #include "utils/tools.hpp"
 #include "plotting/plotdata.hpp"
