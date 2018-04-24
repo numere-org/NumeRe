@@ -5307,6 +5307,27 @@ int NumeReEditor::calculateCyclomaticComplexity(int startline, int endline)
                 nCycComplx++;
             i = wordend;
         }
+        if (this->GetStyleAt(i) == wxSTC_NSCR_FUNCTION)
+        {
+            int wordstart = this->WordStartPosition(i, true);
+            int wordend = this->WordEndPosition(i, true);
+            if (this->GetTextRange(wordstart, wordend) == "and"
+                || this->GetTextRange(wordstart, wordend) == "or"
+                || this->GetTextRange(wordstart, wordend) == "xor")
+                nCycComplx++;
+            i = wordend;
+        }
+        if (this->GetStyleAt(i) == wxSTC_NSCR_OPERATORS)
+        {
+            int j = i;
+            while (this->GetStyleAt(j) == wxSTC_NSCR_OPERATORS)
+                j++;
+            if (this->GetTextRange(i,j) == "&&"
+                || this->GetTextRange(i,j) == "||"
+                || this->GetTextRange(i,j) == "|||")
+                nCycComplx++;
+            i = j;
+        }
     }
     return nCycComplx;
 }
