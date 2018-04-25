@@ -5434,6 +5434,9 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
         vInterval = parser_IntervalReader(sTemp, _parser, _data, _functions, _option, true);
         sReturn += sTemp;
     }
+
+    if (_data.containsStringVars(sReturn))
+        _data.getStringValues(sReturn);
     while (sReturn.find('=', nPos) != string::npos)
     {
         nPos = sReturn.find('=', nPos)+1;
@@ -5444,8 +5447,8 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
         {
             //NumeReKernel::print("contains" );
             //sTemp = getArgAtPos(sReturn, nPos);
-            if (_data.containsStringVars(sReturn.substr(nPos, sReturn.find(' ', nPos)-nPos)))
-                _data.getStringValues(sReturn);
+            /*if (_data.containsStringVars(sReturn.substr(nPos, sReturn.find(' ', nPos)-nPos)))
+                _data.getStringValues(sReturn);*/
             if (!getStringArgument(sReturn.substr(nPos-1), sTemp)) // mit "=" uebergeben => fixes getStringArgument issues
                 return "";
             //NumeReKernel::print(sTemp );
@@ -6903,7 +6906,7 @@ bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _
         bWaitForTermination = true;
 
     sObject = sCmd.substr(findCommand(sCmd).sString.length());
-    if (sParams.length() || bWaitForTermination)
+    if (sParams.length() || bWaitForTermination || sWorkpath.length())
     {
         if (sCmd.find("-set") != string::npos && sObject.find("-set") != string::npos && !isInQuotes(sCmd, sCmd.find("-set")))
             sObject.erase(sObject.find("-set"));
