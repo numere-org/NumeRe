@@ -538,6 +538,8 @@ namespace mu
                         vResults.push_back(parser_and(v, nResults));
                     if (sMultiArgFunc == "or")
                         vResults.push_back(parser_or(v, nResults));
+                    if (sMultiArgFunc == "xor")
+                        vResults.push_back(parser_xor(v, nResults));
                     if (sMultiArgFunc == "norm")
                         vResults.push_back(parser_Norm(v, nResults));
                     if (sMultiArgFunc == "prd")
@@ -619,6 +621,7 @@ namespace mu
                     || sFunc == "sum"
                     || sFunc == "and"
                     || sFunc == "or"
+                    || sFunc == "xor"
                     || sFunc == "avg"
                     || sFunc == "med"
                     || sFunc == "pct"

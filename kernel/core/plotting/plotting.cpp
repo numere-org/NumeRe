@@ -1284,11 +1284,15 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
                         _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nStyle], _pData).c_str());
                     else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].nx >= 0.9 * _pInfo.nSamples))
                         _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sConPointStyles[nStyle], _pData).c_str());
+                    else if (_pData.getStepplot())
+                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nStyle], _pData).c_str());
                     else
                         _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sPointStyles[nStyle], _pData).c_str());
                 }
                 else
+                {
                     _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sPointStyles[nStyle], _pData).c_str());
+                }
             }
             if (nStyle == _pInfo.nStyleMax-1)
                 nStyle = 0;
@@ -2585,6 +2589,8 @@ void Plot::createStd3dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, c
                         _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nStyle], _pData).c_str());
                     else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].nx >= 0.9 * _pInfo.nSamples))
                         _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sConPointStyles[nStyle], _pData).c_str());
+                    else if (_pData.getStepplot())
+                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nStyle], _pData).c_str());
                     else
                         _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sPointStyles[nStyle], _pData).c_str());
                 }
