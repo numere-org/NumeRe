@@ -789,6 +789,8 @@ void NumeReEditor::HandleFunctionCallTip()
         sDefinition = this->GetMethodCallTip(sFunctionContext.substr(1));
         if (sDefinition.find(')') != string::npos)
             sDefinition.erase(sDefinition.find(')')+1);
+        else
+            sDefinition.erase(sDefinition.find(' '));
     }
     else
     {
@@ -885,6 +887,8 @@ string NumeReEditor::GetCurrentArgument(const string& sCallTip, int nStartingBra
     int nCurrentPos = this->GetCurrentPos();
     int nCurrentArg = 0;
     char currentChar;
+    if (sCallTip.find('(') == string::npos)
+        return "";
     string sArgList = sCallTip.substr(sCallTip.find('('));
     sArgList.erase(getMatchingParenthesis(sArgList));
 

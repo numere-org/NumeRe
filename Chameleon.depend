@@ -3325,7 +3325,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1524552276 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1524774330 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -4067,7 +4067,7 @@
 	<algorithm>
 	<numeric>
 
-1514026288 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
+1524724401 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
 	"muParserBase.h"
 	"muParserTemplateMagic.h"
 	"../../kernel.hpp"
@@ -4142,7 +4142,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1522133488 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1524723373 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
