@@ -334,7 +334,8 @@ bool NumeReEditor::SaveFile( const wxString & filename )
 
     file << buf;
 
-    file.close();
+    // do not close the file before the buffer is completely written
+    //file.close();
 
     /*wxFile file (filename, wxFile::write);
 
