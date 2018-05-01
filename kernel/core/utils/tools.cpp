@@ -133,27 +133,23 @@ int matchParams(const string& sCmd, const string& sParam, const char cFollowing)
         return 0;
     else
     {
-        int nLength = 0;
-        // --> Wandle den uebergebenen String erst mal in Kleinbuchstaben um <--
         string __sCmd = toLowerCase(sCmd + " ");
+        int nQuotes = 0;
+        size_t nParamStart = string::npos;
 
-        // --> Suche nach dem geforderten Parameter <--
-        if (__sCmd.substr(__sCmd.find('-')).find(sParam) != string::npos)
+        for (size_t i = 0; i < __sCmd.length(); i++)
         {
-            // --> Wenn du ihn gefunden hast, trenne den String am '-' <--
-            int nPos = 0;
-            nLength = __sCmd.find('-');
-            __sCmd = __sCmd.substr(__sCmd.find('-')) + " ";
-
-            /* --> Es kann nun immer noch sein, dass der gefundene Parameter Teil von
-             *     einem anderen Ausdruck ist. Daher untersuche ihn hier und suche ggf.
-             *     nach einem anderen Treffer <--
-             */
-            do
+            if (__sCmd[i] == '"'
+                && (!i || (i && __sCmd[i-1] != '\\')))
+                nQuotes++;
+            if (!(nQuotes % 2) && __sCmd[i] == '-' && nParamStart == string::npos)
             {
-                // --> Speichere die Position des Parameter-Kandidaten <--
-                nPos = __sCmd.find(sParam, nPos);
-
+                nParamStart = i;
+            }
+            if (nParamStart != string::npos
+                && !(nQuotes % 2)
+                && __sCmd.substr(i, sParam.length()) == sParam)
+            {
                 /* --> Pruefe die Zeichen davor und danach (unter Beachtung eines moeglicherweise
                  *     speziell gewaehlten Zeichens) <--
                  * --> Ein Parameter darf auf jeden Fall kein Teil eines anderen, laengeren Wortes
@@ -161,57 +157,56 @@ int matchParams(const string& sCmd, const string& sParam, const char cFollowing)
                  */
                 if (cFollowing == ' ')
                 {
-                    if ((__sCmd[nPos-1] == ' '
-                            || __sCmd[nPos-1] == '-')
-                        && (__sCmd[nPos+sParam.length()] == ' '
-                            || __sCmd[nPos+sParam.length()] == '-'
-                            || __sCmd[nPos+sParam.length()] == '='
-                            || __sCmd[nPos+sParam.length()] == '"')
+                    if ((__sCmd[i-1] == ' '
+                            || __sCmd[i-1] == '-')
+                        && (__sCmd[i+sParam.length()] == ' '
+                            || __sCmd[i+sParam.length()] == '-'
+                            || __sCmd[i+sParam.length()] == '='
+                            || __sCmd[i+sParam.length()] == '"')
                     )
                     {
-                        if (__sCmd[nPos-1] == ' ' && __sCmd[__sCmd.find_last_not_of(' ', nPos-1)] == '=')
-                            nPos += sParam.length();
+                        if (__sCmd[i-1] == ' ' && __sCmd[__sCmd.find_last_not_of(' ', i-1)] == '=')
+                            i += sParam.length()-1;
                         else
-                            return nPos+1+nLength;    // nPos+1+nLength zurueckgeben, wenn Treffer
+                            return i+1;    // i+1 zurueckgeben, wenn Treffer
                     }
                     else
-                        nPos += sParam.length();    // Positionsindex um die Laenge des Parameters weitersetzen
+                        i += sParam.length()-1;    // Positionsindex um die Laenge des Parameters weitersetzen
                 }
                 else
                 {
                     // --> Wenn ein spezielles Zeichen gewaehlt wurde, wird dies hier gesucht <--
-                    if ((__sCmd[nPos-1] == ' ' || __sCmd[nPos-1] == '-')
-                        && (__sCmd[nPos+sParam.length()] == cFollowing))
+                    if ((__sCmd[i-1] == ' ' || __sCmd[i-1] == '-')
+                        && (__sCmd[i+sParam.length()] == cFollowing))
                     {
-                        if (__sCmd[nPos-1] == ' ' && __sCmd[__sCmd.find_last_not_of(' ', nPos-1)] == '=')
-                            nPos += sParam.length();
+                        if (__sCmd[i-1] == ' ' && __sCmd[__sCmd.find_last_not_of(' ', i-1)] == '=')
+                            i += sParam.length()-1;
                         else
-                            return nPos+1+nLength;
+                            return i+1;
                     }
-                    else if ((__sCmd[nPos-1] == ' ' || __sCmd[nPos-1] == '-')
-                        && (__sCmd[nPos+sParam.length()] == ' '))
+                    else if ((__sCmd[i-1] == ' ' || __sCmd[i-1] == '-')
+                        && (__sCmd[i+sParam.length()] == ' '))
                     {
-                        if (__sCmd[nPos-1] == ' ' && __sCmd[__sCmd.find_last_not_of(' ', nPos-1)] == '=')
-                            nPos += sParam.length();
+                        if (__sCmd[i-1] == ' ' && __sCmd[__sCmd.find_last_not_of(' ', i-1)] == '=')
+                            i += sParam.length()-1;
                         else
                         {
                             /* --> Fehlertoleranz: Leerzeichen zwischen dem Parameter und cFollowing werden ignoriert
                              *     (wenn cFollowing sowieso ein Leerzeichen sein sollte, wurde das ohnehin vorhin schon abgefangen) <--
                              */
                             int nSkip = 0;
-                            while (nPos+sParam.length()+nSkip < __sCmd.length() && __sCmd[nPos+sParam.length()+nSkip] == ' ')
+                            while (i+sParam.length()+nSkip < __sCmd.length() && __sCmd[i+sParam.length()+nSkip] == ' ')
                                 nSkip++;
-                            if (__sCmd[nPos+sParam.length()+nSkip] == cFollowing)
-                                return nPos+1+nLength+nSkip; // Wir addieren nSkip, da der Rueckgabewert vorzugsweise zum Navigieren zum Ende des Parameters verwendet wird
+                            if (__sCmd[i+sParam.length()+nSkip] == cFollowing)
+                                return i+1+nSkip; // Wir addieren nSkip, da der Rueckgabewert vorzugsweise zum Navigieren zum Ende des Parameters verwendet wird
                             else
-                                nPos += sParam.length();
+                                i += sParam.length()-1;
                         }
                     }
                     else
-                        nPos += sParam.length();
+                        i += sParam.length()-1;
                 }
             }
-            while (__sCmd.find(sParam, nPos) != string::npos);
         }
     }
 

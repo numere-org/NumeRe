@@ -4657,7 +4657,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                     _data.getStringValues(sCmd);
                 if (sCmd[sCmd.find_first_not_of(' ',findCommand(sCmd).nPos+5)] != '"' && sCmd.find("string(") == string::npos)
                 {
-                    sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos+5), 1, '"');
                     if (matchParams(sCmd, "slice")
                         || matchParams(sCmd, "keepdim")
                         || matchParams(sCmd, "complete")
@@ -4669,6 +4668,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                         || matchParams(sCmd, "app")
                         || matchParams(sCmd, "all"))
                     {
+                        sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos+5), 1, '"');
                         nArgument = string::npos;
                         while (sCmd.find_last_of('-', nArgument) != string::npos
                             && sCmd.find_last_of('-', nArgument) > sCmd.find_first_of(' ', sCmd.find_first_not_of(' ', findCommand(sCmd).nPos+5)))
@@ -4678,6 +4678,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                     }
                     else
                     {
+                        sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos+5), 1, '"');
                         sCmd.insert(sCmd.find_last_not_of(' ')+1, 1, '"');
                     }
                 }
