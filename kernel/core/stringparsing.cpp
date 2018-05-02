@@ -2846,6 +2846,12 @@ vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFinal, Pars
         StripSpaces(vFinal[n]);
         if (!vFinal[n].length())
             continue;
+        if (parser_detectStringLogicals(vFinal[n]))
+        {
+            //vFinal[n] = addMaskedStrings(parser_evalStringLogic(removeMaskedStrings(vFinal[n]), _parser, bReturningLogicals));
+            vFinal[n] = parser_evalStringLogic(vFinal[n], _parser, bReturningLogicals);
+            StripSpaces(vFinal[n]);
+        }
         // Strings verknüpfen
         if (vFinal[n].front() == '"' && vFinal[n].back() == '"')
         {
@@ -2858,12 +2864,6 @@ vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFinal, Pars
                     vFinal[n] = vFinal[n].substr(0,vFinal[n].rfind('"', k)) + vFinal[n].substr(vFinal[n].find('"', k)+1);
                 }
             }
-        }
-        if (parser_detectStringLogicals(vFinal[n]))
-        {
-            //vFinal[n] = addMaskedStrings(parser_evalStringLogic(removeMaskedStrings(vFinal[n]), _parser, bReturningLogicals));
-            vFinal[n] = parser_evalStringLogic(vFinal[n], _parser, bReturningLogicals);
-            StripSpaces(vFinal[n]);
         }
         if (vFinal[n].front() != '"' && vFinal[n].back() != '"')
         {
