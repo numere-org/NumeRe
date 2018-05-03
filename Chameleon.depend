@@ -4224,7 +4224,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1523431070 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1525247308 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>

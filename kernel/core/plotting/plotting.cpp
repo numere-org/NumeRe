@@ -550,11 +550,12 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
 
         if (_pData.getBackground().length() && _pData.getBGColorScheme() != "<<REALISTIC>>")
         {
-            if (_pData.getAnimateSamples())
+            if (_pData.getAnimateSamples() && _option.getSystemPrintStatus())
                 NumeReKernel::printPreFmt("|-> ");
-            NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("PLOT_LOADING_BACKGROUND")) + " ... ");
+            if (_option.getSystemPrintStatus())
+                NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("PLOT_LOADING_BACKGROUND")) + " ... ");
             _mBackground.Import(_pData.getBackground().c_str(), "kw");
-            if (_pData.getAnimateSamples())
+            if (_pData.getAnimateSamples() && _option.getSystemPrintStatus())
                 NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
         }
 
@@ -697,7 +698,7 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
         if (_pData.getAnimateSamples() && bAnimateVar && bOutputDesired)
             _graph->CloseGIF();
         bNewSubPlot = false;
-        if (!_pData.getSilentMode())
+        if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
             NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
     }
 
