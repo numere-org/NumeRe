@@ -30,3 +30,4 @@ Added	Right-clicking on an item in the duplicate code dialogue will now jump the
 Fixed	Scalar results may now be stored at multiple locations in the target cache.
 New	NumeRe may now load images as datagrids into memory using the "imread" command.
 Fixed	Added the binary logical operators to the complexity algorithm.
+Fixed	"progress" now evaluates the strings passed through "type=TYPE" correctly.

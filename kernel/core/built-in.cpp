@@ -5075,7 +5075,13 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                 if (matchParams(sArgument, "type", '='))
                 {
                     sArgument = getArgAtPos(sArgument, matchParams(sArgument, "type", '=')+4);
-                    //sCmd.erase(matchParams(sCmd, "type", '=')-1, sArgument.length()+5);
+                    if (containsStrings(sArgument))
+                    {
+                        if (sArgument.front() != '"')
+                            sArgument = "\"" + sArgument + "\" -nq";
+                        string sDummy;
+                        parser_StringParser(sArgument, sDummy, _data, _parser, _option, true);
+                    }
                 }
                 else
                     sArgument = "std";

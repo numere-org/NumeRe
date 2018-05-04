@@ -2288,6 +2288,17 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
                 if (matchParams(sArgument, "type", '='))
                 {
                     sArgument = getArgAtPos(sArgument, matchParams(sArgument, "type", '=')+4);
+                    if (containsStrings(sArgument))
+                    {
+                        if (sArgument.front() != '"')
+                            sArgument = "\"" + sArgument + "\" -nq";
+                        if (bUseLoopParsingMode && !bLockedPauseMode)
+                            _parserRef->PauseLoopMode();
+                        string sDummy;
+                        parser_StringParser(sArgument, sDummy, *_dataRef, *_parserRef, *_optionRef, true);
+                        if (bUseLoopParsingMode && !bLockedPauseMode)
+                            _parserRef->PauseLoopMode(false);
+                    }
                 }
                 else
                     sArgument = "std";
