@@ -32,3 +32,4 @@ New	NumeRe may now load images as datagrids into memory using the "imread" comma
 Fixed	Added the binary logical operators to the complexity algorithm.
 Fixed	"progress" now evaluates the strings passed through "type=TYPE" correctly.
 Fixed	Loops do not abort automatically any more, if one uses a $ in a string inside a loop.
+Fixed	String variables may now be used as sources for legends in plots.

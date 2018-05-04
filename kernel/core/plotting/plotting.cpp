@@ -431,6 +431,8 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
         if (!_pInfo.bDraw3D && !_pInfo.bDraw)
         {
             // --> Bevor die Call-Methode auf Define angewendet wird, sollten wir die Legenden-"strings" in sFunc kopieren <--
+            if (_data.containsStringVars(sFunc))
+                _data.getStringValues(sFunc);
             if (!addLegends(sFunc))
                 return; // --> Bei Fehlern: Zurueck zur aufrufenden Funktion <--
         }
