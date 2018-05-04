@@ -1601,8 +1601,19 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, Define& _funct
     }
     else if (sLine.find('$') != string::npos)
     {
-        sLine = "";
-        return -1;
+        int nQuotes = 0;
+        for (size_t i = 0; i < sLine.length(); i++)
+        {
+            if (sLine[i] == '"'
+                && (!i || (i && sLine[i-1] != '\\')))
+                nQuotes++;
+            if (sLine[i] == '$' && !(nQuotes % 2))
+            {
+                sLine.clear();
+                return -1;
+            }
+        }
+        return 1;
     }
 
     //cerr << _procedure.getPluginCount()  << endl;
