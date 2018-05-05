@@ -1150,6 +1150,60 @@ value_type parser_EllipticD(value_type phi, value_type n, value_type k)
     return gsl_sf_ellint_D(phi, k, n, 0);
 }
 
+value_type parser_beta(value_type a, value_type b)
+{
+    if (isnan(a) || isnan(b) || isinf(a) || isinf(b))
+        return NAN;
+    if ((a == (int)a && a < 0) || (b == (int)b && b < 0))
+        return NAN;
+    return gsl_sf_beta(a, b);
+}
+
+value_type parser_zeta(value_type n)
+{
+    if (isnan(n) || isinf(n))
+        return NAN;
+    if (n == 1)
+        return NAN;
+    if (n == (int)n)
+        return gsl_sf_zeta_int((int)n);
+    else
+        return gsl_sf_zeta(n);
+}
+
+value_type parser_clausen(value_type x)
+{
+    if (isnan(x) || isinf(x))
+        return NAN;
+    return gsl_sf_clausen(x);
+}
+
+value_type parser_digamma(value_type x)
+{
+    if (isnan(x) || isinf(x))
+        return NAN;
+    if (x == 0)
+        return NAN;
+    if (x == (int)x && x > 0)
+        return gsl_sf_psi_int((int)x);
+    else
+        return gsl_sf_psi(x);
+}
+
+value_type parser_polygamma(value_type n, value_type x)
+{
+    if (isnan(n) || isnan(x) || isinf(n) || isinf(x) || x <= 0 || n < 0)
+        return NAN;
+    return gsl_sf_psi_n((int)n, x);
+}
+
+value_type parser_dilogarithm(value_type x)
+{
+    if (isnan(x) || isinf(x))
+        return NAN;
+    return gsl_sf_dilog(x);
+}
+
 // --> floor-Funktion <--
 value_type parser_floor(value_type x)
 {

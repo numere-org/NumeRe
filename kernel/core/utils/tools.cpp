@@ -573,7 +573,7 @@ string replaceToTeX(const string& sString, bool replaceForTeXFile) // bool-flag 
 {
     string sReturn = " " + sString + " ";   // Rueckgabe-String
     string sTemp = "";                      // Temporaerer String, erleichert das Einfuegen von strings
-    static const unsigned int nSymbols = 103;                // Anzahl an bekannten Symbolen
+    static const unsigned int nSymbols = 105;                // Anzahl an bekannten Symbolen
     unsigned int nPos = 0;                           // Positions-Index-Variable
     unsigned int nPos_2 = 0;                         // Positions-Index-Variable
 
@@ -681,7 +681,9 @@ string replaceToTeX(const string& sString, bool replaceForTeXFile) // bool-flag 
         {"Psi", "\\Psi "},
         {"omega", "\\omega "},
         {"Omega", "\\Omega "},
-        {"heaviside", "\\Theta"}
+        {"heaviside", "\\Theta"},
+        {"Li2", "Li_2"},
+        {"Cl2", "Cl_2"}
     };
 
 

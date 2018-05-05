@@ -4,7 +4,7 @@
 	"kernel/core/version.h"
 	<wx/msw/wx.rc>
 
-1520669525 d:\cpp\numere-source\trunk\kernel\core\version.h
+1525430830 d:\cpp\numere-source\trunk\kernel\core\version.h
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wx.rc
 	<windows.h>
@@ -2655,7 +2655,7 @@
 	"utils/tools.hpp"
 	"plotting/plotdata.hpp"
 
-1521056697 d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.hpp
+1525454180 d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.hpp
 	<cstdlib>
 	<cmath>
 	<fstream>
@@ -4013,7 +4013,7 @@
 	"fitcontroller.hpp"
 	"../../kernel.hpp"
 
-1521057029 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
+1525454594 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
 	"functionimplementation.hpp"
 
 1523705420 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
@@ -4142,7 +4142,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1525294557 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1525429895 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
@@ -4273,7 +4273,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1521216180 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1525454167 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 
