@@ -283,14 +283,19 @@ void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, 
     string sEntityStringReplacement = "";
 
     // handle MAF methods. sEntity already has "(" at its back
-    while (sLine.find(sEntity + ").") != string::npos)
+    while ((nPos = sLine.find(sEntity + ").", nPos)) != string::npos)
     {
+        if (isInQuotes(sLine, nPos, true))
+        {
+            nPos++;
+            continue;
+        }
         handleMafDataAccess(sLine, getMafAccessString(sLine, sEntity), _parser, _data);
     }
     if (sLine.find(sEntity) == string::npos)
         return;
 
-
+    nPos = 0;
     /* --> Diese Schleife ersetzt nacheinander alle Stellen, in denen sEntity auftritt, durch "Vektoren", die
      *     in einer anderen Funktion weiterverarbeitet werden koennen. <--
      */
@@ -598,8 +603,13 @@ void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser& _parse
     mu::CachedDataAccess _access = {sMafAccess, sMafVectorName, sMafAccess.substr(0, sMafAccess.find('('))};
     _parser.CacheCurrentAccess(_access);
 
-    while ((nPos = sLine.find(sMafAccess)) != string::npos)
+    while ((nPos = sLine.find(sMafAccess, nPos)) != string::npos)
     {
+        if (isInQuotes(sLine, nPos, true))
+        {
+            nPos++;
+            continue;
+        }
         sLine.replace(nPos, sMafAccess.length(), sMafVectorName);
     }
 }
