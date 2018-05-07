@@ -1679,12 +1679,12 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                     }
                     sRanges[0] = "(" + sRanges[0] + ")";
                     parser_SplitArgs(sRanges[0], sRanges[1], ':', _option, false);
-                    if (parser_ExprNotEmpty(sRanges[0]))
+                    if (isNotEmptyExpression(sRanges[0]))
                     {
                         _parser.SetExpr(sRanges[0]);
                         dColorRange[0] = (double)_parser.Eval();
                     }
-                    if (parser_ExprNotEmpty(sRanges[1]))
+                    if (isNotEmptyExpression(sRanges[1]))
                     {
                         _parser.SetExpr(sRanges[1]);
                         dColorRange[1] = (double)_parser.Eval();
@@ -1709,17 +1709,17 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                     }
                     sRanges[0] = "(" + sRanges[0] + ")";
                     parser_SplitArgs(sRanges[0], sRanges[1], ':', _option, false);
-                    if (parser_ExprNotEmpty(sRanges[0]))
+                    if (isNotEmptyExpression(sRanges[0]))
                     {
                         _parser.SetExpr(sRanges[0]);
                         dRanges[i][0] = (double)_parser.Eval();
                     }
-                    if (parser_ExprNotEmpty(sRanges[1]))
+                    if (isNotEmptyExpression(sRanges[1]))
                     {
                         _parser.SetExpr(sRanges[1]);
                         dRanges[i][1] = (double)_parser.Eval();
                     }
-                    if (parser_ExprNotEmpty(sRanges[0]) || parser_ExprNotEmpty(sRanges[1]))
+                    if (isNotEmptyExpression(sRanges[0]) || isNotEmptyExpression(sRanges[1]))
                         bRanges[i] = true;
                     if (dRanges[i][0] > dRanges[i][1])
                     {
@@ -1739,12 +1739,12 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 {
                     sRanges[0] = "(" + sRanges[0] + ")";
                     parser_SplitArgs(sRanges[0], sRanges[1], ':', _option, false);
-                    if (parser_ExprNotEmpty(sRanges[0]))
+                    if (isNotEmptyExpression(sRanges[0]))
                     {
                         _parser.SetExpr(sRanges[0]);
                         dColorRange[0] = (double)_parser.Eval();
                     }
-                    if (parser_ExprNotEmpty(sRanges[1]))
+                    if (isNotEmptyExpression(sRanges[1]))
                     {
                         _parser.SetExpr(sRanges[1]);
                         dColorRange[1] = (double)_parser.Eval();
@@ -1761,17 +1761,17 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 {
                     sRanges[0] = "(" + sRanges[0] + ")";
                     parser_SplitArgs(sRanges[0], sRanges[1], ':', _option, false);
-                    if (parser_ExprNotEmpty(sRanges[0]))
+                    if (isNotEmptyExpression(sRanges[0]))
                     {
                         _parser.SetExpr(sRanges[0]);
                         dRanges[i][0] = (double)_parser.Eval();
                     }
-                    if (parser_ExprNotEmpty(sRanges[1]))
+                    if (isNotEmptyExpression(sRanges[1]))
                     {
                         _parser.SetExpr(sRanges[1]);
                         dRanges[i][1] = (double)_parser.Eval();
                     }
-                    if (parser_ExprNotEmpty(sRanges[0]) || parser_ExprNotEmpty(sRanges[1]))
+                    if (isNotEmptyExpression(sRanges[0]) || isNotEmptyExpression(sRanges[1]))
                         bRanges[i] = true;
                     if (dRanges[i][0] > dRanges[i][1])
                     {

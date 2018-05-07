@@ -163,6 +163,7 @@ class NumeReKernel
         static void setFileName(const string& sFileName);
         static void print(const string& sLine);
         static void printPreFmt(const string& sLine);
+        static int numberOfNumbersPerLine(const Settings& _option);
         void sendErrorNotification();
         static void statusBar(int nStep, int nFirstStep, int nFinalStep, const string& sType);
         static void getline(string& sLine);

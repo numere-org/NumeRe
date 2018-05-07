@@ -1505,14 +1505,14 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
                         parser_SplitArgs(s1, sCol, ',', _option, true);
 
                     vIndices.push_back(1.0);
-                    if (parser_ExprNotEmpty(sCol))
+                    if (isNotEmptyExpression(sCol))
                     {
                         _parser.SetExpr(sCol);
                         vIndices.push_back(_parser.Eval());
                     }
                     else
                         vIndices.push_back(1.0);
-                    if (parser_ExprNotEmpty(s1))
+                    if (isNotEmptyExpression(s1))
                     {
                         _parser.SetExpr(s1);
                         vIndices[0] = _parser.Eval();
@@ -2462,17 +2462,17 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
                     parser_SplitArgs(s1, s2, ':', _option);
                     if (s2.find(',') != string::npos)
                         parser_SplitArgs(s2, sCol, ',', _option, true);
-                    if (parser_ExprNotEmpty(s1))
+                    if (isNotEmptyExpression(s1))
                     {
                         _parser.SetExpr(s1);
                         i1 = (unsigned int)_parser.Eval()-1;
                     }
-                    if (parser_ExprNotEmpty(sCol))
+                    if (isNotEmptyExpression(sCol))
                     {
                         _parser.SetExpr(sCol);
                         nCol = (unsigned int)_parser.Eval()-1;
                     }
-                    if (parser_ExprNotEmpty(s2))
+                    if (isNotEmptyExpression(s2))
                     {
                         _parser.SetExpr(s2);
                         i2 = (unsigned int)_parser.Eval();
@@ -2516,12 +2516,12 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
                     string s1 = "(" + sString + ")", sCol = "";
                     if (s1.find(',') != string::npos)
                         parser_SplitArgs(s1, sCol, ',', _option);
-                    if (parser_ExprNotEmpty(sCol))
+                    if (isNotEmptyExpression(sCol))
                     {
                         _parser.SetExpr(sCol);
                         nCol = (unsigned int)_parser.Eval()-1;
                     }
-                    if (parser_ExprNotEmpty(s1))
+                    if (isNotEmptyExpression(s1))
                     {
                         _parser.SetExpr(s1);
                         nIndex = (unsigned int)_parser.Eval()-1;
@@ -2598,7 +2598,7 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
             }
             string sData = sLine.substr(n_pos, nPos-n_pos+1);
             //cerr << sData << endl;
-            parser_GetDataElement(sData, _parser, _data, _option);
+            getDataElements(sData, _parser, _data, _option);
             StringResult strRes = parser_StringParserCore(sData, "", _data, _parser, _option, mStringVectorVars);
             if (!strRes.vResult.size())
                 throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
@@ -2640,7 +2640,7 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
                     nPos++;
                 }
                 string sData = sLine.substr(n_pos, nPos-n_pos+1);
-                parser_GetDataElement(sData, _parser, _data, _option);
+                getDataElements(sData, _parser, _data, _option);
                 StringResult strRes = parser_StringParserCore(sData, "", _data, _parser, _option, mStringVectorVars);
                 if (!strRes.vResult.size())
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
@@ -2933,13 +2933,13 @@ int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& 
                     }
                     else
                         si = sj;
-                    if (parser_ExprNotEmpty(si))
+                    if (isNotEmptyExpression(si))
                     {
                         _parser.SetExpr(si);
                         nIndex[0] = (int)_parser.Eval();
                         nIndex[0]--;
                     }
-                    if (parser_ExprNotEmpty(sj))
+                    if (isNotEmptyExpression(sj))
                     {
                         _parser.SetExpr(sj);
                         nIndex[1] = (int)_parser.Eval();
@@ -3051,7 +3051,7 @@ int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& 
                             {
                                 parser_SplitArgs(sj, sCol, ',', _option, true);
                             }
-                            if (!parser_ExprNotEmpty(si))
+                            if (!isNotEmptyExpression(si))
                             {
                                 si = "1";
                             }
@@ -3076,17 +3076,17 @@ int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& 
                     else
                         sj = si;
 
-                    if (parser_ExprNotEmpty(sCol))
+                    if (isNotEmptyExpression(sCol))
                     {
                         _parser.SetExpr(sCol);
                         nIndex[2] = (unsigned int)_parser.Eval()-1;
                     }
-                    if (parser_ExprNotEmpty(si))
+                    if (isNotEmptyExpression(si))
                     {
                         _parser.SetExpr(si);
                         nIndex[0] = (unsigned int)_parser.Eval()-1;
                     }
-                    if (parser_ExprNotEmpty(sj))
+                    if (isNotEmptyExpression(sj))
                     {
                         _parser.SetExpr(sj);
                         nIndex[1] = (unsigned int)_parser.Eval()-1;

@@ -704,7 +704,7 @@ value_type* FlowCtrl::evalHeader(int& nNum, string sHeadExpression, bool bIsForH
         if (!bLockedPauseMode && bUseLoopParsingMode)
             _parserRef->PauseLoopMode();
         if (sHeadExpression.find("data(") != string::npos && _dataRef->isValid() && !isInQuotes(sHeadExpression, sHeadExpression.find("data(")))
-            parser_ReplaceEntities(sHeadExpression, "data(", *_dataRef, *_parserRef, *_optionRef, true);
+            replaceDataEntities(sHeadExpression, "data(", *_dataRef, *_parserRef, *_optionRef, true);
         else if (sHeadExpression.find("data(") != string::npos && !_dataRef->isValid() && !isInQuotes(sHeadExpression, sHeadExpression.find("data(")))
         {
             throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sHeadExpression, SyntaxError::invalid_position);
@@ -717,7 +717,7 @@ value_type* FlowCtrl::evalHeader(int& nNum, string sHeadExpression, bool bIsForH
             {
                 if (sHeadExpression.find(iter->first+"(") != string::npos && !isInQuotes(sHeadExpression, sHeadExpression.find(iter->first+"(")))
                 {
-                    parser_ReplaceEntities(sHeadExpression, iter->first+"(", *_dataRef, *_parserRef, *_optionRef, true);
+                    replaceDataEntities(sHeadExpression, iter->first+"(", *_dataRef, *_parserRef, *_optionRef, true);
                 }
             }
             _dataRef->setCacheStatus(false);
@@ -999,7 +999,7 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
                 if (__sCmd.find(')', nPos_1) != string::npos)
                 {
                     nPos_2 = __sCmd.find(')', nPos_1);
-                    if (!parser_ExprNotEmpty(__sCmd.substr(nPos_1, nPos_2-nPos_1)) || nPos_1 == nPos_2)
+                    if (!isNotEmptyExpression(__sCmd.substr(nPos_1, nPos_2-nPos_1)) || nPos_1 == nPos_2)
                         __sCmd = "while";
                 }
                 else
@@ -1023,7 +1023,7 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
                         if (sTemp.find(')', nPos_1) != string::npos)
                         {
                             nPos_2 = sTemp.find(')', nPos_1);
-                            if (!parser_ExprNotEmpty(sTemp.substr(nPos_1, nPos_2-nPos_1)) || nPos_1 == nPos_2)
+                            if (!isNotEmptyExpression(sTemp.substr(nPos_1, nPos_2-nPos_1)) || nPos_1 == nPos_2)
                                 sTemp = "";
                         }
                         else
@@ -1045,7 +1045,7 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
                 if (__sCmd.find(')', nPos_1) != string::npos)
                 {
                     nPos_2 = __sCmd.find(')', nPos_1);
-                    if (!parser_ExprNotEmpty(__sCmd.substr(nPos_1, nPos_2-nPos_1)) || nPos_1 == nPos_2)
+                    if (!isNotEmptyExpression(__sCmd.substr(nPos_1, nPos_2-nPos_1)) || nPos_1 == nPos_2)
                         __sCmd = "if";
                 }
                 else
@@ -1071,7 +1071,7 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
                         if (sTemp.find(')', nPos_1) != string::npos)
                         {
                             nPos_2 = sTemp.find(')', nPos_1);
-                            if (!parser_ExprNotEmpty(sTemp.substr(nPos_1, nPos_2-nPos_1)) || nPos_1 == nPos_2)
+                            if (!isNotEmptyExpression(sTemp.substr(nPos_1, nPos_2-nPos_1)) || nPos_1 == nPos_2)
                                 sTemp = "";
                         }
                         else
@@ -1096,7 +1096,7 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
                         if (__sCmd.find(')', nPos_1) != string::npos)
                         {
                             nPos_2 = __sCmd.find(')', nPos_1);
-                            if (!parser_ExprNotEmpty(__sCmd.substr(nPos_1, nPos_2-nPos_1)) || nPos_1 == nPos_2)
+                            if (!isNotEmptyExpression(__sCmd.substr(nPos_1, nPos_2-nPos_1)) || nPos_1 == nPos_2)
                                 __sCmd = "elseif";
                         }
                         else
@@ -1120,7 +1120,7 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
                                 if (sTemp.find(')', nPos_1) != string::npos)
                                 {
                                     nPos_2 = sTemp.find(')', nPos_1);
-                                    if (!parser_ExprNotEmpty(sTemp.substr(nPos_1, nPos_2-nPos_1)) || nPos_1 == nPos_2)
+                                    if (!isNotEmptyExpression(sTemp.substr(nPos_1, nPos_2-nPos_1)) || nPos_1 == nPos_2)
                                         sTemp = "";
                                 }
                                 else
@@ -1339,7 +1339,7 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
                         if (sNewCommand.find(')', nPos_1) != string::npos)
                         {
                             nPos_2 = sNewCommand.find(')', nPos_1);
-                            if (!parser_ExprNotEmpty(sNewCommand.substr(nPos_1, nPos_2-nPos_1)) || nPos_1 == nPos_2)
+                            if (!isNotEmptyExpression(sNewCommand.substr(nPos_1, nPos_2-nPos_1)) || nPos_1 == nPos_2)
                                 sNewCommand = "if";
                         }
                         else
@@ -1363,7 +1363,7 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
                                 if (sTemp.find(')', nPos_1) != string::npos)
                                 {
                                     nPos_2 = sTemp.find(')', nPos_1);
-                                    if (!parser_ExprNotEmpty(sTemp.substr(nPos_1, nPos_2-nPos_1)) || nPos_1 == nPos_2)
+                                    if (!isNotEmptyExpression(sTemp.substr(nPos_1, nPos_2-nPos_1)) || nPos_1 == nPos_2)
                                         sTemp = "";
                                 }
                                 else
@@ -1384,7 +1384,7 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
                         if (sNewCommand.find(')', nPos_1) != string::npos)
                         {
                             nPos_2 = sNewCommand.find(')', nPos_1);
-                            if (!parser_ExprNotEmpty(sNewCommand.substr(nPos_1, nPos_2-nPos_1)) || nPos_1 == nPos_2)
+                            if (!isNotEmptyExpression(sNewCommand.substr(nPos_1, nPos_2-nPos_1)) || nPos_1 == nPos_2)
                                 sNewCommand = "while";
                         }
                         else
@@ -1408,7 +1408,7 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
                                 if (sTemp.find(')', nPos_1) != string::npos)
                                 {
                                     nPos_2 = sTemp.find(')', nPos_1);
-                                    if (!parser_ExprNotEmpty(sTemp.substr(nPos_1, nPos_2-nPos_1)) || nPos_1 == nPos_2)
+                                    if (!isNotEmptyExpression(sTemp.substr(nPos_1, nPos_2-nPos_1)) || nPos_1 == nPos_2)
                                         sTemp = "";
                                 }
                                 else
@@ -2455,7 +2455,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
             }
             /*if (!bLockedPauseMode && bUseLoopParsingMode)
                 _parser.PauseLoopMode();*/
-            sCache = parser_GetDataElement(sLine, *_parserRef, *_dataRef, *_optionRef);
+            sCache = getDataElements(sLine, *_parserRef, *_dataRef, *_optionRef);
             if (sCache.length() && sCache.find('#') == string::npos)
                 bWriteToCache = true;
 

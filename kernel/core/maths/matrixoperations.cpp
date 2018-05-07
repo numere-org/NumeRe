@@ -1633,7 +1633,7 @@ Matrix parser_matFromLines(string& sCmd, Parser& _parser, Datafile& _data, Defin
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
     if (sCmd.find("data(") != string::npos || _data.containsCacheElements(sCmd))
     {
-        parser_GetDataElement(sCmd, _parser, _data, _option);
+        getDataElements(sCmd, _parser, _data, _option);
     }
     while (sCmd.length())
     {
@@ -1678,7 +1678,7 @@ Matrix parser_matFromLinesFilled(string& sCmd, Parser& _parser, Datafile& _data,
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
     if (sCmd.find("data(") != string::npos || _data.containsCacheElements(sCmd))
     {
-        parser_GetDataElement(sCmd, _parser, _data, _option);
+        getDataElements(sCmd, _parser, _data, _option);
     }
     while (sCmd.length())
     {
@@ -1744,7 +1744,7 @@ Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, Datafile& _data, Def
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
     if (sCmd.find("data(") != string::npos || _data.containsCacheElements(sCmd))
     {
-        parser_GetDataElement(sCmd, _parser, _data, _option);
+        getDataElements(sCmd, _parser, _data, _option);
     }
     while (sCmd.length())
     {
@@ -2959,7 +2959,7 @@ Indices parser_getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _p
     }
     StripSpaces(sArgument);
     if (sArgument.find("data(") != string::npos || _data.containsCacheElements(sArgument))
-        parser_GetDataElement(sArgument, _parser, _data, _option);
+        getDataElements(sArgument, _parser, _data, _option);
     // --> Kurzschreibweise!
     if (!sArgument.length())
     {

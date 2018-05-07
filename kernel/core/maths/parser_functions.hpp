@@ -42,6 +42,7 @@
 #include "../plugin.hpp"
 #include "../plotting/graph_helper.hpp"
 #include "fitcontroller.hpp"
+#include "../datamanagement/dataaccess.hpp"
 
 using namespace std;
 using namespace mu;
@@ -55,9 +56,6 @@ extern int nLINE_LENGTH;
 /*
  * Globale Variablen fuer die erweitererten Parser-Funktionen
  */
-
-
-
 
 
 // Erster Index: No. of Line; zweiter Index: No. of Col (push_back verwendet dazu stets zeilen!)
@@ -79,8 +77,6 @@ vector<double> parser_Integrate_2(const string&, Datafile&, Parser&, const Setti
 vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option, Define& _functions);
 bool parser_findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions);
 bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions);
-double parser_LocalizeExtremum(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
-double parser_LocalizeZero(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
 void parser_Taylor(string& sCmd, Parser& _parser, const Settings& _option, Define& _functions);
 bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
 bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
@@ -93,29 +89,19 @@ bool parser_pulseAnalysis(string& sCmd, Parser& _parser, Datafile& _data, Define
 bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
 bool parser_spline(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
 
-void parser_splash(Parser&);
-
 // Tools & Stuff
 bool parser_CheckVarOccurence(Parser&, const string_type&);
-string parser_GetDataElement(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option, bool bReplaceNANs = true);
 void parser_VectorToExpr(string&, const Settings&);
 string parser_AddVectorComponent(const string&, const string&, const string&, bool);
-bool parser_ExprNotEmpty(const string&);
-bool parser_CheckMultArgFunc(const string&, const string&);
-void parser_ReplaceEntities(string&, const string&, Datafile&, Parser&, const Settings&, bool);
-int parser_SplitArgs(string& sToSplit, string& sSecArg, const char& cSep, const Settings& _option, bool bIgnoreSurroundingParenthesis = false);
-int parser_LineBreak(const Settings&);
-void parser_CheckIndices(int&, int&);
-void parser_CheckIndices(long long int&, long long int&);
 double* parser_GetVarAdress(const string& sVarName, Parser& _parser);
 string parser_Prompt(const string& __sCommand);
 int int_faculty(int nNumber);
-Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
 Indices parser_getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, Datafile& _data, const Settings& _option);
 bool parser_parseCmdArg(const string& sCmd, const string& sParam, Parser& _parser, int& nArgument);
 bool parser_evalIndices(const string& sCache, Indices& _idx, Datafile& _data);
 vector<double> parser_IntervalReader(string& sExpr, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option, bool bEraseInterval = false);
 void printUnits(const string& sUnit, const string& sDesc, const string& sDim, const string& sValues, unsigned int nWindowsize);
+
 
 // String-Parser
 int parser_StringParser(string&, string&, Datafile&, Parser&, const Settings&, bool bSilent = false);

@@ -457,7 +457,7 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
                 }
                 if (sVarValue.find("data(") != string::npos || _dataRef->containsCacheElements(sVarValue))
                 {
-                    parser_GetDataElement(sVarValue, *_parserRef, *_dataRef, *_optionRef);
+                    getDataElements(sVarValue, *_parserRef, *_dataRef, *_optionRef);
                 }
                 for (unsigned int j = 0; j < i; j++)
                 {

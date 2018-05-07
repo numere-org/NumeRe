@@ -1201,7 +1201,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 && (sLine.find("data(") != string::npos || _data.containsCacheElements(sLine)))
             {
                 //cerr << "get data element (parser)" << endl;
-                sCache = parser_GetDataElement(sLine, _parser, _data, _option);
+                sCache = getDataElements(sLine, _parser, _data, _option);
                 if (sCache.length() && sCache.find('#') == string::npos)
                     bWriteToCache = true;
             }
@@ -1280,7 +1280,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 vAns = v[0];
                 if (!bSupressAnswer)
                 {
-                    int nLineBreak = parser_LineBreak(_option);
+                    int nLineBreak = numberOfNumbersPerLine(_option);
                     string sAns = "ans = {";
                     for (int i = 0; i < nNum; ++i)
                     {
@@ -1855,6 +1855,14 @@ void NumeReKernel::printPreFmt(const string& __sLine)
     Sleep(5);
 }
 
+int NumeReKernel::numberOfNumbersPerLine(const Settings& _option)
+{
+    /* --> Wir berechnen die Anzahl an Zahlen, die in eine Zeile passen, automatisch <--
+     * Links: 11 Zeichen bis [; rechts: vier Zeichen mit EOL;
+     * Fuer jede Zahl: 1 Vorzeichen, 1 Dezimalpunkt, 5 Exponentenstellen, Praezision Ziffern, 1 Komma und 1 Leerstelle
+     */
+    return (_option.getWindow()-1-15) / (_option.getPrecision()+9);
+}
 
 void NumeReKernel::sendErrorNotification()
 {

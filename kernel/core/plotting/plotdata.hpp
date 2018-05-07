@@ -40,7 +40,7 @@ using namespace mu;
  *     wird) <--
  */
 int parser_SplitArgs(string& sToSplit, string& sSecArg, const char& cSep, const Settings& _option, bool bIgnoreSurroundingParenthesis);
-bool parser_ExprNotEmpty(const string& sExpr);
+bool isNotEmptyExpression(const string& sExpr);
 
 class PlotData : public FileSystem  // CHILD von Filesystem
 {

@@ -414,6 +414,8 @@
 		<Unit filename="kernel/core/built-in.hpp" />
 		<Unit filename="kernel/core/datamanagement/cache.cpp" />
 		<Unit filename="kernel/core/datamanagement/cache.hpp" />
+		<Unit filename="kernel/core/datamanagement/dataaccess.cpp" />
+		<Unit filename="kernel/core/datamanagement/dataaccess.hpp" />
 		<Unit filename="kernel/core/datamanagement/datafile.cpp" />
 		<Unit filename="kernel/core/datamanagement/datafile.hpp" />
 		<Unit filename="kernel/core/datamanagement/dataops.cpp" />

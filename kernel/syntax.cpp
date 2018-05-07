@@ -270,11 +270,24 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
                 colors.replace(i, nLen, nLen, '0'+SYNTAX_PROCEDURE);
             }
             else if (i+nLen < sCommandLine.length()
-                && sCommandLine.find('.', i) < i+nLen
-                && matchItem(vMethods, sCommandLine.substr(sCommandLine.find('.', i)+1, i+nLen-sCommandLine.find('.', i)-1)))
+                && sCommandLine.find('.', i) < i+nLen)
             {
-                size_t new_len = i+nLen-sCommandLine.find('.', i)-1;
-                colors.replace(sCommandLine.find('.', i)+1, new_len, new_len, '0'+SYNTAX_METHODS);
+                size_t nPos = sCommandLine.find('.', i)+1;
+                for (size_t n = nPos; n < i+nLen; n++)
+                {
+                    if (sCommandLine[n] == '.')
+                    {
+                        if (matchItem(vMethods, sCommandLine.substr(nPos, n-nPos)))
+                            colors.replace(nPos, n-nPos, n-nPos, '0'+SYNTAX_METHODS);
+                        nPos = n+1;
+                    }
+                    if (n+1 == i+nLen)
+                    {
+                        if (matchItem(vMethods, sCommandLine.substr(nPos, n-nPos+1)))
+                            colors.replace(nPos, n-nPos+1, n-nPos+1, '0'+SYNTAX_METHODS);
+                        nPos = n+1;
+                    }
+                }
             }
             else if (i+nLen < sCommandLine.length()
                 && sCommandLine[i+nLen] == '('

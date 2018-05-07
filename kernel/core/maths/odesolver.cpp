@@ -173,7 +173,7 @@ bool Odesolver::solve(const string& sCmd)
     if (!_odeFunctions->call(sFunc, *_odeSettings))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sFunc, sFunc);
     if (sFunc.find("data(") != string::npos || _odeData->containsCacheElements(sFunc))
-        parser_GetDataElement(sFunc, *_odeParser, *_odeData, *_odeSettings);
+        getDataElements(sFunc, *_odeParser, *_odeData, *_odeSettings);
 
     if (matchParams(sParams, "target", '='))
     {
@@ -205,7 +205,7 @@ bool Odesolver::solve(const string& sCmd)
     if (!_odeFunctions->call(sParams, *_odeSettings))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sParams, sParams);
     if (sParams.find("data(") != string::npos || _odeData->containsCacheElements(sParams))
-        parser_GetDataElement(sParams, *_odeParser, *_odeData, *_odeSettings);
+        getDataElements(sParams, *_odeParser, *_odeData, *_odeSettings);
 
     //cerr << 4 << endl;
     if (matchParams(sParams, "method", '='))

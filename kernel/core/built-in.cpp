@@ -349,7 +349,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                     sCmdSubstr = sCmd.substr(4, sCmd.find("--") - 4);
                 else
                     sCmdSubstr = sCmd.substr(4, sCmd.find("-set") - 4);
-                if (!parser_ExprNotEmpty(sCmdSubstr))
+                if (!isNotEmptyExpression(sCmdSubstr))
                 {
                     if (sCmd.find("--") != string::npos)
                         _pData.setParams(sCmd.substr(sCmd.find("--")), _parser, _option);
@@ -3552,7 +3552,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                 if (_data.containsCacheElements(sCmd.substr(nArgument)) || sCmd.substr(nArgument).find("data(") != string::npos)
                 {
                     sArgument = sCmd.substr(nArgument);
-                    parser_GetDataElement(sArgument, _parser, _data, _option);
+                    getDataElements(sArgument, _parser, _data, _option);
                     if (sArgument.find("{") != string::npos)
                         parser_VectorToExpr(sArgument, _option);
                     sCmd = sCmd.substr(0,nArgument) + sArgument;
@@ -3891,7 +3891,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                 {
                     sArgument = getArgAtPos(sCmd, nArgument);
                     //NumeReKernel::print("get data element (BI)" );
-                    parser_GetDataElement(sArgument, _parser, _data, _option);
+                    getDataElements(sArgument, _parser, _data, _option);
                     if (sArgument.find("{") != string::npos)
                         parser_VectorToExpr(sArgument, _option);
                     sCmd.replace(nArgument, getArgAtPos(sCmd, nArgument).length(), sArgument);
@@ -5298,7 +5298,7 @@ bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, 
     //NumeReKernel::print(sTemp );
     if (sTemp.find("data(") != string::npos || _data.containsCacheElements(sTemp))
     {
-        parser_GetDataElement(sTemp, _parser, _data, _option);
+        getDataElements(sTemp, _parser, _data, _option);
     }
     for (unsigned int i = 0; i < sTemp.length(); i++)
     {
@@ -5532,7 +5532,7 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
             if (!_functions.call(sTemp, _option))
                 return "";
             if (sTemp.find("data(") != string::npos || _data.containsCacheElements(sTemp))
-                parser_GetDataElement(sTemp, _parser, _data, _option);
+                getDataElements(sTemp, _parser, _data, _option);
             if (sTemp.find("{") != string::npos)
                 parser_VectorToExpr(sTemp, _option);
 
@@ -5546,14 +5546,14 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
                 string sTemp_2 = "";
                 sTemp = "(" + sTemp + ")";
                 parser_SplitArgs(sTemp, sTemp_2, ':', _option, false);
-                if (parser_ExprNotEmpty(sTemp))
+                if (isNotEmptyExpression(sTemp))
                 {
                     _parser.SetExpr(sTemp);
                     sTemp = toString((double)_parser.Eval(), _option) + ":";
                 }
                 else
                     sTemp = ":";
-                if (parser_ExprNotEmpty(sTemp_2))
+                if (isNotEmptyExpression(sTemp_2))
                 {
                     _parser.SetExpr(sTemp_2);
                     sTemp += toString((double)_parser.Eval(), _option);

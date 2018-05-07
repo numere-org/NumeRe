@@ -320,7 +320,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
                         vResults.push_back(std(sCache, 0, getLines(sCache), i));
                 }
-                else
+                else if (sDir == "gridlines")
                 {
                     if (nFirst >= getLines(sCache))
                     {
@@ -329,6 +329,14 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     }
                     for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
                         vResults.push_back(std(sCache, i,-1,2,getCols(sCache)));
+                }
+                else if (sDir == "grid")
+                {
+                    vResults.push_back(std(sCache, 0,getLines(sCache),2,getCols(sCache)));
+                }
+                else
+                {
+                    vResults.push_back(std(sCache, 0,getLines(sCache),0,getCols(sCache)));
                 }
                 if (!vResults.size())
                     vResults.push_back(NAN);
@@ -373,7 +381,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
                         vResults.push_back(avg(sCache, 0, getLines(sCache), i));
                 }
-                else
+                else if (sDir == "gridlines")
                 {
                     if (nFirst >= getLines(sCache))
                     {
@@ -382,6 +390,14 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     }
                     for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
                         vResults.push_back(avg(sCache, i,-1,2,getCols(sCache)));
+                }
+                else if (sDir == "grid")
+                {
+                    vResults.push_back(avg(sCache, 0,getLines(sCache),2,getCols(sCache)));
+                }
+                else
+                {
+                    vResults.push_back(avg(sCache, 0,getLines(sCache),0,getCols(sCache)));
                 }
                 if (!vResults.size())
                     vResults.push_back(NAN);
@@ -426,7 +442,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
                         vResults.push_back(max(sCache, 0, getLines(sCache), i));
                 }
-                else
+                else if (sDir == "gridlines")
                 {
                     if (nFirst >= getLines(sCache))
                     {
@@ -435,6 +451,14 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     }
                     for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
                         vResults.push_back(max(sCache, i,-1,2,getCols(sCache)));
+                }
+                else if (sDir == "grid")
+                {
+                    vResults.push_back(max(sCache, 0,getLines(sCache),2,getCols(sCache)));
+                }
+                else
+                {
+                    vResults.push_back(max(sCache, 0,getLines(sCache),0,getCols(sCache)));
                 }
                 if (!vResults.size())
                     vResults.push_back(NAN);
@@ -479,7 +503,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
                         vResults.push_back(min(sCache, 0, getLines(sCache), i));
                 }
-                else
+                else if (sDir == "gridlines")
                 {
                     if (nFirst >= getLines(sCache))
                     {
@@ -488,6 +512,14 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     }
                     for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
                         vResults.push_back(min(sCache, i,-1,2,getCols(sCache)));
+                }
+                else if (sDir == "grid")
+                {
+                    vResults.push_back(min(sCache, 0,getLines(sCache),2,getCols(sCache)));
+                }
+                else
+                {
+                    vResults.push_back(min(sCache, 0,getLines(sCache),0,getCols(sCache)));
                 }
                 if (!vResults.size())
                     vResults.push_back(NAN);
@@ -532,7 +564,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
                         vResults.push_back(prd(sCache, 0, getLines(sCache), i));
                 }
-                else
+                else if (sDir == "gridlines")
                 {
                     if (nFirst >= getLines(sCache))
                     {
@@ -541,6 +573,14 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     }
                     for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
                         vResults.push_back(prd(sCache, i,-1,2,getCols(sCache)));
+                }
+                else if (sDir == "grid")
+                {
+                    vResults.push_back(prd(sCache, 0,getLines(sCache),2,getCols(sCache)));
+                }
+                else
+                {
+                    vResults.push_back(prd(sCache, 0,getLines(sCache),0,getCols(sCache)));
                 }
                 if (!vResults.size())
                     vResults.push_back(NAN);
@@ -585,7 +625,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
                         vResults.push_back(sum(sCache, 0, getLines(sCache), i));
                 }
-                else
+                else if (sDir == "gridlines")
                 {
                     if (nFirst >= getLines(sCache))
                     {
@@ -594,6 +634,14 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     }
                     for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
                         vResults.push_back(sum(sCache, i,-1,2,getCols(sCache)));
+                }
+                else if (sDir == "grid")
+                {
+                    vResults.push_back(sum(sCache, 0,getLines(sCache),2,getCols(sCache)));
+                }
+                else
+                {
+                    vResults.push_back(sum(sCache, 0,getLines(sCache),0,getCols(sCache)));
                 }
                 if (!vResults.size())
                     vResults.push_back(NAN);
@@ -638,7 +686,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
                         vResults.push_back(num(sCache, 0, getLines(sCache), i));
                 }
-                else
+                else if (sDir == "gridlines")
                 {
                     if (nFirst >= getLines(sCache))
                     {
@@ -647,6 +695,14 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     }
                     for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
                         vResults.push_back(num(sCache, i,-1,2,getCols(sCache)));
+                }
+                else if (sDir == "grid")
+                {
+                    vResults.push_back(num(sCache, 0,getLines(sCache),2,getCols(sCache)));
+                }
+                else
+                {
+                    vResults.push_back(num(sCache, 0,getLines(sCache),0,getCols(sCache)));
                 }
                 return vResults;
             }
@@ -689,7 +745,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
                         vResults.push_back(and_func(sCache, 0, getLines(sCache), i));
                 }
-                else
+                else if (sDir == "gridlines")
                 {
                     if (nFirst >= getLines(sCache))
                     {
@@ -698,6 +754,14 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     }
                     for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
                         vResults.push_back(and_func(sCache, i,-1,2,getCols(sCache)));
+                }
+                else if (sDir == "grid")
+                {
+                    vResults.push_back(and_func(sCache, 0,getLines(sCache),2,getCols(sCache)));
+                }
+                else
+                {
+                    vResults.push_back(and_func(sCache, 0,getLines(sCache),0,getCols(sCache)));
                 }
                 return vResults;
             }
@@ -740,7 +804,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
                         vResults.push_back(or_func(sCache, 0, getLines(sCache), i));
                 }
-                else
+                else if (sDir == "gridlines")
                 {
                     if (nFirst >= getLines(sCache))
                     {
@@ -749,6 +813,14 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     }
                     for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
                         vResults.push_back(or_func(sCache, i,-1,2,getCols(sCache)));
+                }
+                else if (sDir == "grid")
+                {
+                    vResults.push_back(or_func(sCache, 0,getLines(sCache),2,getCols(sCache)));
+                }
+                else
+                {
+                    vResults.push_back(or_func(sCache, 0,getLines(sCache),0,getCols(sCache)));
                 }
                 return vResults;
             }
@@ -791,7 +863,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
                         vResults.push_back(xor_func(sCache, 0, getLines(sCache), i));
                 }
-                else
+                else if (sDir == "gridlines")
                 {
                     if (nFirst >= getLines(sCache))
                     {
@@ -800,6 +872,14 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     }
                     for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
                         vResults.push_back(xor_func(sCache, i,-1,2,getCols(sCache)));
+                }
+                else if (sDir == "grid")
+                {
+                    vResults.push_back(xor_func(sCache, 0,getLines(sCache),2,getCols(sCache)));
+                }
+                else
+                {
+                    vResults.push_back(xor_func(sCache, 0,getLines(sCache),0,getCols(sCache)));
                 }
                 return vResults;
             }
@@ -842,7 +922,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
                         vResults.push_back(cnt(sCache, 0, getLines(sCache), i));
                 }
-                else
+                else if (sDir == "gridlines")
                 {
                     if (nFirst >= getLines(sCache))
                     {
@@ -851,6 +931,14 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     }
                     for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
                         vResults.push_back(cnt(sCache, i,-1,2,getCols(sCache)));
+                }
+                else if (sDir == "grid")
+                {
+                    vResults.push_back(cnt(sCache, 0,getLines(sCache),2,getCols(sCache)));
+                }
+                else
+                {
+                    vResults.push_back(cnt(sCache, 0,getLines(sCache),0,getCols(sCache)));
                 }
                 if (!vResults.size())
                     vResults.push_back(NAN);
@@ -895,7 +983,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
                         vResults.push_back(norm(sCache, 0, getLines(sCache), i));
                 }
-                else
+                else if (sDir == "gridlines")
                 {
                     if (nFirst >= getLines(sCache))
                     {
@@ -904,6 +992,14 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     }
                     for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
                         vResults.push_back(norm(sCache, i,-1,2,getCols(sCache)));
+                }
+                else if (sDir == "grid")
+                {
+                    vResults.push_back(norm(sCache, 0,getLines(sCache),2,getCols(sCache)));
+                }
+                else
+                {
+                    vResults.push_back(norm(sCache, 0,getLines(sCache),0,getCols(sCache)));
                 }
                 if (!vResults.size())
                     vResults.push_back(NAN);
@@ -948,7 +1044,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
                         vResults.push_back(cmp(sCache, 0, getLines(sCache), i, -1, dRef, nType));
                 }
-                else
+                else if (sDir == "gridlines")
                 {
                     if (nFirst >= getLines(sCache))
                     {
@@ -1001,7 +1097,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
                         vResults.push_back(med(sCache, 0, getLines(sCache), i));
                 }
-                else
+                else if (sDir == "gridlines")
                 {
                     if (nFirst >= getLines(sCache))
                     {
@@ -1010,6 +1106,14 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     }
                     for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
                         vResults.push_back(med(sCache, i,-1,2,getCols(sCache)));
+                }
+                else if (sDir == "grid")
+                {
+                    vResults.push_back(med(sCache, 0,getLines(sCache),2,getCols(sCache)));
+                }
+                else
+                {
+                    vResults.push_back(med(sCache, 0,getLines(sCache),0,getCols(sCache)));
                 }
                 if (!vResults.size())
                     vResults.push_back(NAN);
@@ -1054,7 +1158,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                     for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
                         vResults.push_back(pct(sCache, 0, getLines(sCache), i, dPct));
                 }
-                else
+                else if (sDir == "gridlines")
                 {
                     if (nFirst >= getLines(sCache))
                     {

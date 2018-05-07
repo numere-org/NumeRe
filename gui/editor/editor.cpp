@@ -788,10 +788,11 @@ void NumeReEditor::HandleFunctionCallTip()
     else if (sFunctionContext.front() == '.')
     {
         sDefinition = this->GetMethodCallTip(sFunctionContext.substr(1));
-        if (sDefinition.find(')') != string::npos)
-            sDefinition.erase(sDefinition.find(')')+1);
+        size_t nDotPos = sDefinition.find('.');
+        if (sDefinition.find(')', nDotPos) != string::npos)
+            sDefinition.erase(sDefinition.find(')', nDotPos)+1);
         else
-            sDefinition.erase(sDefinition.find(' '));
+            sDefinition.erase(sDefinition.find(' ', nDotPos));
     }
     else
     {
@@ -880,17 +881,28 @@ string NumeReEditor::GetFunctionCallTip(const string& sFunctionName)
 
 string NumeReEditor::GetMethodCallTip(const string& sMethodName)
 {
-    return "STRINGVAR." + _guilang.get("PARSERFUNCS_LISTFUNC_METHOD_"+toUpperCase(sMethodName)+"_[*");
+    if (_guilang.get("PARSERFUNCS_LISTFUNC_METHOD_"+toUpperCase(sMethodName)+"_[STRING]") != "PARSERFUNCS_LISTFUNC_METHOD_"+toUpperCase(sMethodName)+"_[STRING]")
+        return "STRINGVAR." + _guilang.get("PARSERFUNCS_LISTFUNC_METHOD_"+toUpperCase(sMethodName)+"_[STRING]");
+    else
+        return "TABLE()." + _guilang.get("PARSERFUNCS_LISTFUNC_METHOD_"+toUpperCase(sMethodName)+"_[DATA]");
 }
 
 string NumeReEditor::GetCurrentArgument(const string& sCallTip, int nStartingBrace, int& nArgStartPos)
 {
     int nCurrentPos = this->GetCurrentPos();
     int nCurrentArg = 0;
+    size_t nParensPos = 0;
     char currentChar;
     if (sCallTip.find('(') == string::npos)
         return "";
-    string sArgList = sCallTip.substr(sCallTip.find('('));
+    nParensPos = sCallTip.find('(');
+    if (sCallTip.find("().") != string::npos)
+    {
+        if (sCallTip.find('(', sCallTip.find("().")+3) == string::npos)
+            return "";
+        nParensPos = sCallTip.find('(', sCallTip.find("().")+3);
+    }
+    string sArgList = sCallTip.substr(nParensPos);
     sArgList.erase(getMatchingParenthesis(sArgList));
 
     for (int i = nStartingBrace+1; i < nCurrentPos && i < this->GetLineEndPosition(this->GetCurrentLine()); i++)
@@ -911,7 +923,7 @@ string NumeReEditor::GetCurrentArgument(const string& sCallTip, int nStartingBra
     {
         if (!nCurrentArg && (sArgList[i-1] == '(' || sArgList[i-1] == ','))
         {
-            nArgStartPos = i + sCallTip.find('(');
+            nArgStartPos = i + nParensPos;
             string sArgument = sArgList.substr(i);
             /*if (sArgument.find(')') < sArgument.find(','))
                 sArgument.erase(sArgument.find(')'));
@@ -1335,10 +1347,11 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
             this->AdvCallTipCancel();
         selection = GetMethodCallTip(selection.ToStdString());
         size_t highlightlength;
+        size_t highlightStart = selection.find('.')+1;
         if (selection.find(' ') != string::npos)
             highlightlength = selection.find(' ');
         this->AdvCallTipShow(startPosition, addLinebreaks(realignLangString(selection.ToStdString(), highlightlength)));
-        this->CallTipSetHighlight(10,highlightlength);
+        this->CallTipSetHighlight(highlightStart,highlightlength);
     }
     else if (this->GetStyleAt(charpos) == wxSTC_NSCR_PREDEFS || this->GetStyleAt(charpos) == wxSTC_NPRC_PREDEFS)
     {
@@ -2060,11 +2073,17 @@ void NumeReEditor::AnalyseCode()
             canContinue = false;
             wordstart = this->WordStartPosition(i, true);
             wordend = this->WordEndPosition(i, true);
-            string sSyntaxElement = this->GetTextRange(wordstart, wordend).ToStdString() + "()";
-            if (sSyntaxElement == "len()")
-                sSyntaxElement = "len";
+            string sSyntaxElement = this->GetTextRange(wordstart, wordend).ToStdString();
             if (this->GetStyleAt(i) == wxSTC_NSCR_METHOD)
+            {
+                // ignore modifiers, i.e. method without parentheses
+                string sModifier = ",len,cols,lines,grid,avg,std,min,max,med,sum,prd,cnt,num,norm,and,or,xor,";
+                if (sModifier.find(","+sSyntaxElement+",") == string::npos)
+                    sSyntaxElement += "()";
                 sSyntaxElement.insert(0, "VAR.");
+            }
+            else
+                sSyntaxElement += "()";
             if (this->PositionFromLine(currentLine) == wordstart && !isContinuedLine)
             {
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
@@ -2082,11 +2101,11 @@ void NumeReEditor::AnalyseCode()
                 if (!canContinue && !isContinuedLine)
                     AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
             }
-            if (this->BraceMatch(wordend) < 0 && sSyntaxElement != "VAR.len")
+            if (this->BraceMatch(wordend) < 0 && sSyntaxElement.find('(') != string::npos)
             {
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
             }
-            else if (sSyntaxElement != "time()" && sSyntaxElement != "version()" && sSyntaxElement != "VAR.len")
+            else if (sSyntaxElement != "time()" && sSyntaxElement != "version()" && sSyntaxElement.find('(') != string::npos)
             {
                 int nPos = this->BraceMatch(wordend);
                 string sArgument = this->GetTextRange(wordend+1,nPos).ToStdString();

@@ -475,7 +475,7 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
         /* --> Wenn der Funktionen-String nicht leer ist, weise ihn dem Parser zu; anderenfalls verwende das
          *     eindeutige Token "<<empty>>", dass viel einfacher zu identfizieren ist <--
          */
-        if (parser_ExprNotEmpty(sFunc) && !(_pInfo.bDraw3D || _pInfo.bDraw))
+        if (isNotEmptyExpression(sFunc) && !(_pInfo.bDraw3D || _pInfo.bDraw))
         {
             try
             {
@@ -496,7 +496,7 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
                 throw;
             }
         }
-        else if (parser_ExprNotEmpty(sFunc) && (_pInfo.bDraw3D || _pInfo.bDraw))
+        else if (isNotEmptyExpression(sFunc) && (_pInfo.bDraw3D || _pInfo.bDraw))
         {
             string sArgument;
             sFunc += " ";
@@ -2979,7 +2979,7 @@ void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, D
                 throw SyntaxError(SyntaxError::FUNCTION_ERROR, sSubPlotIDX, SyntaxError::invalid_position);
             if (_data.containsCacheElements(sSubPlotIDX) || sSubPlotIDX.find("data(") != string::npos)
             {
-                parser_GetDataElement(sSubPlotIDX, _parser, _data, _option);
+                getDataElements(sSubPlotIDX, _parser, _data, _option);
             }
             _parser.SetExpr(sSubPlotIDX);
             int nRes = 0;
@@ -3034,7 +3034,7 @@ void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, D
                 throw SyntaxError(SyntaxError::FUNCTION_ERROR, sSubPlotIDX, SyntaxError::invalid_position);
             if (_data.containsCacheElements(sSubPlotIDX) || sSubPlotIDX.find("data(") != string::npos)
             {
-                parser_GetDataElement(sSubPlotIDX, _parser, _data, _option);
+                getDataElements(sSubPlotIDX, _parser, _data, _option);
             }
             _parser.SetExpr(sSubPlotIDX);
             int nRes = 0;
@@ -3340,7 +3340,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                     si_pos[0] = "(:,:)";
                 if (containsDataObject(si_pos[0]) || _data.containsCacheElements(si_pos[0]))
                 {
-                    parser_GetDataElement(si_pos[0], _parser, _data, _option);
+                    getDataElements(si_pos[0], _parser, _data, _option);
                 }
 
                 if (_option.getbDebug())
@@ -3374,7 +3374,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                         delete[] nDataDim;
                         throw;
                     }
-                    if (!parser_ExprNotEmpty(si_pos[1]))
+                    if (!isNotEmptyExpression(si_pos[1]))
                         si_pos[1] = "inf";
                 }
                 else
@@ -3386,7 +3386,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                 }
 
                 // --> Auswerten mit dem Parser <--
-                if (parser_ExprNotEmpty(si_pos[0]))
+                if (isNotEmptyExpression(si_pos[0]))
                 {
                     _parser.SetExpr(si_pos[0]);
                     v = _parser.Eval(nResults);
@@ -3407,7 +3407,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                 {
                     i_pos[1] = _data.getLines(sDataTable, false);
                 }
-                else if (parser_ExprNotEmpty(si_pos[1]))
+                else if (isNotEmptyExpression(si_pos[1]))
                 {
                     _parser.SetExpr(si_pos[1]);
                     i_pos[1] = (int)_parser.Eval();
@@ -3420,7 +3420,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                 if (_option.getbDebug())
                     cerr << "|-> DEBUG: i_pos[0] = " << i_pos[0] << ", i_pos[1] = " << i_pos[1] << ", vLine.size() = " << vLine.size() << endl;
 
-                if (!parser_ExprNotEmpty(sj_pos[0]))
+                if (!isNotEmptyExpression(sj_pos[0]))
                     sj_pos[0] = "0";
 
                 /* --> Jetzt fuer die Spalten: Fummelig. Man soll bis zu 6 Spalten angeben koennen und
@@ -3435,10 +3435,10 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                         // --> String am naechsten ':' teilen <--
                         parser_SplitArgs(sj_pos[j], sj_pos[j+1], ':', _option);
                         // --> Spezialfaelle beachten: ':' ohne linke bzw. rechte Grenze <--
-                        if (!parser_ExprNotEmpty(sj_pos[j]))
+                        if (!isNotEmptyExpression(sj_pos[j]))
                             sj_pos[j] = "1";
                         j++;
-                        if (!parser_ExprNotEmpty(sj_pos[j]))
+                        if (!isNotEmptyExpression(sj_pos[j]))
                             sj_pos[j] = "inf";
                     }
                 }
@@ -3462,7 +3462,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                         j_pos[k] = _data.getCols(sDataTable)-1;
                         break;
                     }
-                    else if (parser_ExprNotEmpty(sj_pos[k]))
+                    else if (isNotEmptyExpression(sj_pos[k]))
                     {
                         if (j == 0)
                         {

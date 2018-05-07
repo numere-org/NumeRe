@@ -34,3 +34,4 @@ Fixed	"progress" now evaluates the strings passed through "type=TYPE" correctly.
 Fixed	Loops do not abort automatically any more, if one uses a $ in a string inside a loop.
 Fixed	String variables may now be used as sources for legends in plots.
 Added	New functions are available: "psi(x)", "psi_n(n,x)", "beta(x,y)", "zeta(x)", "Li2(x)", "Cl2(x)"
+New	Multi-argument functions on data sets may now be invoked using methods, e.g. "data().avg.lines.grid.every(3,5)"

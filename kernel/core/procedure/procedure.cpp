@@ -323,7 +323,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
         && !_data.containsStringVars(sLine)
         && (sLine.find("data(") != string::npos || _data.containsCacheElements(sLine)))
     {
-        sCache = parser_GetDataElement(sLine, _parser, _data, _option);
+        sCache = getDataElements(sLine, _parser, _data, _option);
         if (sCache.length() && sCache.find('#') == string::npos)
             bWriteToCache = true;
     }
@@ -397,8 +397,7 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
             thisReturnVal.vNumVal.push_back(v[i]);
         if (!bProcSupressAnswer)
         {
-            //cerr << std::setprecision(_option.getPrecision());
-            int nLineBreak = parser_LineBreak(_option);
+            int nLineBreak = NumeReKernel::numberOfNumbersPerLine(_option);
             NumeReKernel::toggleTableStatus();
             NumeReKernel::printPreFmt("|-> ans = {");
             for (int i = 0; i < nNum; ++i)
