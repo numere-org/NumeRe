@@ -646,13 +646,15 @@ string getMafFromAccessString(const string& sAccessString)
 string getMafAccessString(const string& sLine, const string& sEntity)
 {
     size_t nPos = 0;
-    static string sDelim = "+-*/^%&| ,=<>!";
+    static string sDelim = "+-*/^%&| ,=<>!()[]{}";
     if ((nPos = sLine.find(sEntity + ").")) != string::npos)
     {
         for (size_t i = nPos; i < sLine.length(); i++)
         {
-            if (sLine[i] == '(')
-                i += getMatchingParenthesis(sLine.substr(i));
+            if (sLine[i] == '(' || sLine[i] == '[' || sLine[i] == '{')
+                i += getMatchingParenthesis(sLine.substr(i))+1;
+            if (i >= sLine.length())
+                return sLine.substr(nPos);
             if (sDelim.find(sLine[i]) != string::npos)
                 return sLine.substr(nPos, i-nPos);
             if (i+1 == sLine.length())
