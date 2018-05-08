@@ -25,33 +25,62 @@ ProcedureElement::ProcedureElement(const vector<string>& vProcedureContents)
     bool bBlockComment = false;
     for (size_t i = 0; i < vProcedureContents.size(); i++)
     {
+        // get the current line
         sProcCommandLine = vProcedureContents[i];
         StripSpaces(sProcCommandLine);
+
+        // skip easy cases
         if (!sProcCommandLine.length())
             continue;
         if (sProcCommandLine.substr(0,2) == "##")
             continue;
-        if (sProcCommandLine.find("##") != string::npos)
-            sProcCommandLine = sProcCommandLine.substr(0, sProcCommandLine.find("##"));
-        if (sProcCommandLine.substr(0,2) == "#*" && sProcCommandLine.find("*#",2) == string::npos)
+
+        // Already inside of a block comment?
+        if (bBlockComment)
         {
-            bBlockComment = true;
-            continue;
-        }
-        if (bBlockComment && sProcCommandLine.find("*#") != string::npos)
-        {
-            bBlockComment = false;
-            if (sProcCommandLine.find("*#") == sProcCommandLine.length()-2)
+            if (sProcCommandLine.find("*#") != string::npos)
             {
-                continue;
+                sProcCommandLine.erase(0, sProcCommandLine.find("*#")+2);
+                bBlockComment = false;
             }
             else
-                sProcCommandLine = sProcCommandLine.substr(sProcCommandLine.find("*#")+2);
+                continue;
         }
-        else if (bBlockComment && sProcCommandLine.find("*#") == string::npos)
+
+        // examine the string: consider also quotation marks
+        int nQuotes = 0;
+        for (size_t j = 0; j < sProcCommandLine.length(); j++)
         {
-            continue;
+            if (sProcCommandLine[j] == '"'
+                && (!j || (j && sProcCommandLine[j-1] != '\\')))
+                nQuotes++;
+            if (!(nQuotes % 2) && sProcCommandLine.substr(j,2) == "##")
+            {
+                // that's a standard line comment
+                sProcCommandLine.erase(j);
+                break;
+            }
+            if (!(nQuotes % 2) && sProcCommandLine.substr(j,2) == "#*")
+            {
+                // this is a block comment
+                if (sProcCommandLine.find("*#", j+2) != string::npos)
+                {
+                    sProcCommandLine.erase(j, sProcCommandLine.find("*#", j+2)-j+2);
+                }
+                else
+                {
+                    sProcCommandLine.erase(j);
+                    bBlockComment = true;
+                    break;
+                }
+            }
         }
+
+        // remove whitespaces
+        StripSpaces(sProcCommandLine);
+        // skip empty lines
+        if (!sProcCommandLine.length())
+            continue;
         mProcedureContents[i] = sProcCommandLine;
     }
 }

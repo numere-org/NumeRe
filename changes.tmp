@@ -35,3 +35,4 @@ Fixed	Loops do not abort automatically any more, if one uses a $ in a string ins
 Fixed	String variables may now be used as sources for legends in plots.
 Added	New functions are available: "psi(x)", "psi_n(n,x)", "beta(x,y)", "zeta(x)", "Li2(x)", "Cl2(x)"
 New	Multi-argument functions on data sets may now be invoked using methods, e.g. "data().avg.lines.grid.every(3,5)"
+Fixed	In procedures, one may now use comment sequences in strings. These are not interpreted as comments any more.
