@@ -1368,9 +1368,9 @@ bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglDa
         {
             if (_pData.getInterpolate() && _mData.nx >= _pInfo.nSamples)
             {
-                if (!_pData.getArea() && !_pData.getBars() && !_pData.getRegion())
+                if (!_pData.getArea() && !_pData.getBars() && !_pData.getRegion() && !_pData.getStepplot())
                     _graph->Plot(_mAxisVals, _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
-                else if (_pData.getBars() && !_pData.getArea() && !_pData.getRegion())
+                else if (_pData.getBars() && !_pData.getArea() && !_pData.getRegion() && !_pData.getStepplot())
                     _graph->Bars(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]+"^").c_str());
                 else if (_pData.getRegion() && getNN(_mData2[0]) > 1)
                 {
@@ -1386,13 +1386,17 @@ bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglDa
                 }
                 else if (_pData.getArea() || _pData.getRegion())
                     _graph->Area(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+                else if (!_pData.getBars() && !_pData.getArea() && !_pData.getHBars() && _pData.getStepplot())
+                    _graph->Step(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
             }
             else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mData.nx >= 0.9 * _pInfo.nSamples))
             {
-                if (!_pData.getArea() && !_pData.getBars())
+                if (!_pData.getArea() && !_pData.getBars() && !_pData.getStepplot())
                     _graph->Plot(_mAxisVals, _mData, _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
                 else if (_pData.getBars() && !_pData.getArea())
                     _graph->Bars(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]+"^").c_str());
+                else if (!_pData.getBars() && !_pData.getArea() && !_pData.getHBars() && _pData.getStepplot())
+                    _graph->Step(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
                 else
                     _graph->Area(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
             }

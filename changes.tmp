@@ -37,3 +37,4 @@ Added	New functions are available: "psi(x)", "psi_n(n,x)", "beta(x,y)", "zeta(x)
 New	Multi-argument functions on data sets may now be invoked using methods, e.g. "data().avg.lines.grid.every(3,5)"
 Fixed	In procedures, one may now use comment sequences in strings. These are not interpreted as comments any more.
 Fixed	Column headlines do not disappear any more after deletion.
+Fixed	"interpolate" does not mask "steps" any more.
