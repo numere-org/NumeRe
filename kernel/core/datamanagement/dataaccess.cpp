@@ -438,7 +438,7 @@ void replaceEntityOccurence(string& sLine, const string& sEntityOccurence, const
     {
         string sLeft = sLine.substr(0, nPos);
         StripSpaces(sLeft);
-        if (sLeft.length() < 3 || sLeft.back() != '(')
+        if (sLeft.length() < 3 || sLeft.back() != '(' || sLine[sLine.find_first_not_of(" " , nPos+sEntityOccurence.length())] != ')')
         {
             sLine.replace(nPos, sEntityOccurence.length(), sEntityReplacement);
             continue;
@@ -725,7 +725,7 @@ string createMafVectorName(string sAccessString)
     sAccessString.replace(sAccessString.find("()"), 2, "[");
     for (size_t i = 0; i < sAccessString.length(); i++)
     {
-        if (sAccessString[i] == '.' || sAccessString[i] == '(' || sAccessString[i] == ')' || sAccessString[i] == ',')
+        if (sAccessString[i] == '.' || sAccessString[i] == '(' || sAccessString[i] == ')' || sAccessString[i] == ',' || sAccessString[i] == ' ')
             sAccessString[i] = '_';
     }
     return sAccessString + "]";
