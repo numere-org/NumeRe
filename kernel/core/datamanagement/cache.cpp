@@ -786,7 +786,8 @@ void Cache::deleteEntry(long long int _nLine, long long int _nCol, long long int
                 if (!i && isnan(dCache[i][_nCol][_nLayer]))
                 {
                     nAppendedZeroes[_nLayer][_nCol] = nLines;
-                    sHeadLine[_nLayer][_nCol] = "Spalte_"+toString((int)_nCol+1);
+                    if (!_nLine)
+                        sHeadLine[_nLayer][_nCol] = "Spalte_"+toString((int)_nCol+1);
                 }
             }
         }
@@ -1805,7 +1806,8 @@ void Cache::deleteBulk(long long int _nLayer, long long int i1, long long int i2
             if (!i && isnan(dCache[i][j][_nLayer]))
             {
                 nAppendedZeroes[_nLayer][j] = nLines;
-                sHeadLine[_nLayer][j] = "Spalte_"+toString((int)j+1);
+                if (!i1 && j1 <= j && j <= j2)
+                    sHeadLine[_nLayer][j] = "Spalte_"+toString((int)j+1);
             }
         }
     }
@@ -1820,8 +1822,11 @@ void Cache::deleteBulk(const string& _sCache, const vector<long long int>& _vLin
 
 void Cache::deleteBulk(long long int _nLayer, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
 {
+    bool bHasFirstLine = false;
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
+        if (!_vLine[i])
+            bHasFirstLine = true;
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
             if (_vCol[j] >= nCols || _vCol[j] < 0 || _vLine[i] >= nLines || _vLine[i] < 0)
@@ -1835,8 +1840,17 @@ void Cache::deleteBulk(long long int _nLayer, const vector<long long int>& _vLin
         bIsSaved = false;
         nLastSaved = time(0);
     }
+
     for (long long int j = nCols-1; j >= 0; j--)
     {
+        int currentcol = -1;
+        for (size_t i = 0; i < _vCol.size(); i++)
+        {
+            if (_vCol[i] == j)
+            {
+                currentcol = (int)i;
+            }
+        }
         for (long long int i = nLines-1; i >= 0; i--)
         {
             if (!isnan(dCache[i][j][_nLayer]))
@@ -1847,7 +1861,8 @@ void Cache::deleteBulk(long long int _nLayer, const vector<long long int>& _vLin
             if (!i && isnan(dCache[i][j][_nLayer]))
             {
                 nAppendedZeroes[_nLayer][j] = nLines;
-                sHeadLine[_nLayer][j] = "Spalte_"+toString((int)j+1);
+                if (currentcol >= 0 && bHasFirstLine)
+                    sHeadLine[_nLayer][j] = "Spalte_"+toString((int)j+1);
             }
         }
     }
