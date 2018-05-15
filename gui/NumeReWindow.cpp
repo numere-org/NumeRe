@@ -2995,7 +2995,7 @@ bool NumeReWindow::GetFileContents(wxString fileToLoad, wxString &fileContents, 
 
 		if (lng > 0)
 		{
-            file.ReadAll(&fileContents);
+            file.ReadAll(&fileContents, wxConvAuto(wxFONTENCODING_CP1252));
 		}
 	}
 
@@ -3171,8 +3171,11 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 			wxFileName fn(filename);
 			m_currentEd->SetFilename(fn, false);
 			m_currentSavedFile = toString((int)time(0)) + "|" +filename;
-			m_currentEd->SaveFile(filename);
-
+			if (!m_currentEd->SaveFile(filename))
+            {
+                wxMessageBox(_guilang.get("GUI_DLG_SAVE_ERROR"), _guilang.get("GUI_DLG_SAVE"), wxCENTRE | wxOK | wxICON_ERROR, this);
+                return false;
+            }
 			wxString simpleFileName = m_currentEd->GetFilenameString();
 
 			int currentTab = m_book->GetSelection();

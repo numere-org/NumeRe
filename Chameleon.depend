@@ -3326,7 +3326,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1526248439 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1526290234 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3691,7 +3691,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1526227593 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1526291152 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"

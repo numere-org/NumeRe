@@ -312,47 +312,58 @@ bool NumeReEditor::SaveFileLocal()
 //////////////////////////////////////////////////////////////////////////////
 bool NumeReEditor::SaveFile( const wxString & filename )
 {
-
     // return if no change
-    if(!Modified() && filename.IsEmpty()) { return true; }
+    if (!Modified() && filename.IsEmpty())
+    {
+        return true;
+    }
 
 	wxFileName fn(filename);
 
     // save edit in file and clear undo
-    if(!filename.IsEmpty())
+    if (!filename.IsEmpty())
 	{
 		m_simpleFileName = fn.GetFullName();
 	}
 
-	std::string buf = GetText().ToStdString();
+	// create a backup of the original file, if it exists
+	if (wxFileExists(filename))
+    {
+        wxCopyFile(filename, filename + ".backup", true);
+    }
 
+    // create a std::ofstream to avoid encoding issues
 	std::ofstream file;
 	file.open(filename.ToStdString().c_str(), std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 
 	if (!file.is_open())
         return false;
 
-    file << buf;
+    // write the contents of the file linewise
+    for (int i = 0; i < this->GetLineCount(); i++)
+    {
+        file << this->GetLine(i).ToStdString();
+    }
 
-    // do not close the file before the buffer is completely written
-    //file.close();
+    // flush the files content explicitly
+    file.flush();
+    file.close();
 
-    /*wxFile file (filename, wxFile::write);
+    // Check the contents of the newly created file
+    wxFile filecheck;
+    filecheck.Open(filename);
+    if (filecheck.Length() != this->GetLength()-countUmlauts(this->GetText().ToStdString()))
+    {
+        /*int pos1 = filecheck.Length();
+        int pos2 = this->GetLastPosition()-countUmlauts(this->GetText().ToStdString());
+        int pos3 = this->GetLength();*/
+        // if the contents are not matching, restore the backup and signalize that an error occured
+        if (wxFileExists(filename + ".backup"))
+            wxCopyFile(filename + ".backup", filename, true);
+        return false;
+    }
 
-    if(!file.IsOpened()) { return false; }
-
-    if (m_options->GetFormatBeforeSaving())
-        this->ApplyAutoFormat();
-
-    wxString buf = GetText();
-
-    //bool okay = file.Write(buf);
-    bool okay = file.Write(buf.ToStdString().c_str(), buf.ToStdString().length());
-
-    file.Close();
-
-    if(!okay) { return false; }*/
-
+    // Only mark the editor as saved, if the saving process was successful
     markSaved();
     EmptyUndoBuffer();
     SetSavePoint();
