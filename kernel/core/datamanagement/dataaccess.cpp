@@ -723,11 +723,7 @@ string createEveryDefinition(const string& sLine, Parser& _parser)
 string createMafVectorName(string sAccessString)
 {
     sAccessString.replace(sAccessString.find("()"), 2, "[");
-    for (size_t i = 0; i < sAccessString.length(); i++)
-    {
-        if (sAccessString[i] == '.' || sAccessString[i] == '(' || sAccessString[i] == ')' || sAccessString[i] == ',' || sAccessString[i] == ' ')
-            sAccessString[i] = '_';
-    }
+    sAccessString = replaceToVectorname(sAccessString);
     return sAccessString + "]";
 }
 

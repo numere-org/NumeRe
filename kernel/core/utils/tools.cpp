@@ -2819,6 +2819,7 @@ void OprtRplc_setup(map<string,string>& mOprtRplc)
     mOprtRplc[")"] = "]";
     mOprtRplc[":"] = "~";
     mOprtRplc[","] = "_";
+    mOprtRplc["."] = "_";
     mOprtRplc["+"] = "\\p\\";
     mOprtRplc["-"] = "\\m\\";
     mOprtRplc["*"] = "\\ml\\";
@@ -2826,14 +2827,13 @@ void OprtRplc_setup(map<string,string>& mOprtRplc)
     mOprtRplc["^"] = "\\e\\";
     mOprtRplc["{"] = "\\ob\\";
     mOprtRplc["}"] = "\\cb\\";
-    mOprtRplc["&&"] = "\\a\\";
-    mOprtRplc["||"] = "\\o\\";
+    mOprtRplc["&"] = "\\a\\";
+    mOprtRplc["|"] = "\\o\\";
     mOprtRplc["%"] = "\\md\\";
     mOprtRplc["!"] = "\\n\\";
-    mOprtRplc["=="] = "\\eq\\";
-    mOprtRplc["!="] = "\\ne\\";
-    mOprtRplc[">="] = "\\ge\\";
-    mOprtRplc["<="] = "\\le\\";
+    mOprtRplc["="] = "\\eq\\";
+    mOprtRplc[">"] = "\\g\\";
+    mOprtRplc["<"] = "\\l\\";
     mOprtRplc["?"] = "\\q\\";
     return;
 }
@@ -2842,32 +2842,11 @@ string replaceToVectorname(const string& sExpression)
 {
     string sVectorName = sExpression;
     static map<string,string> mOprtRplc;
-    // + \p\, - \m\, * \ml\, / \d\, ^ \e\, && \a\, || \o\, ||| \xo\, % \md\, ! \n\, == \eq\, != \ne\, >= \ge\, <= \le\, ? \q\//
-    /*mOprtRplc["("] = "[";
-    mOprtRplc[")"] = "]";
-    mOprtRplc[":"] = "~";
-    mOprtRplc[","] = "_";
-    mOprtRplc["+"] = "\\p\\";
-    mOprtRplc["-"] = "\\m\\";
-    mOprtRplc["*"] = "\\ml\\";
-    mOprtRplc["/"] = "\\d\\";
-    mOprtRplc["^"] = "\\e\\";
-    mOprtRplc["{"] = "\\ob\\";
-    mOprtRplc["}"] = "\\cb\\";
-    mOprtRplc["&&"] = "\\a\\";
-    mOprtRplc["||"] = "\\o\\";
-    mOprtRplc["%"] = "\\md\\";
-    mOprtRplc["!"] = "\\n\\";
-    mOprtRplc["=="] = "\\eq\\";
-    mOprtRplc["!="] = "\\ne\\";
-    mOprtRplc[">="] = "\\ge\\";
-    mOprtRplc["<="] = "\\le\\";
-    mOprtRplc["?"] = "\\q\\";*/
     if (!mOprtRplc.size())
         OprtRplc_setup(mOprtRplc);
 
-    while (sVectorName.find("|||") != string::npos)
-        sVectorName.replace(sVectorName.find("|||"),3,"\\xo\\");
+   /* while (sVectorName.find("|||") != string::npos)
+        sVectorName.replace(sVectorName.find("|||"),3,"\\xo\\");*/
     while (sVectorName.find(' ') != string::npos)
         sVectorName.erase(sVectorName.find(' '),1);
     for (auto iter = mOprtRplc.begin(); iter != mOprtRplc.end(); ++iter)
