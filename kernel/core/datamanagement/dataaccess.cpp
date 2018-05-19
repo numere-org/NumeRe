@@ -30,6 +30,7 @@ vector<double> MafDataAccess(Datafile& _data, const string& sMafname, const stri
 string getMafFromAccessString(const string& sAccessString);
 string getMafAccessString(const string& sLine, const string& sEntity);
 void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser& _parser, Datafile& _data);
+string getLastToken(const string& sLine);
 
 /* --> Diese Funktion durchsucht einen gegebenen String sLine nach den Elementen "data(" oder "cache(" und erstetzt diese
  *     entsprechend der Syntax durch Elemente (oder Vektoren) aus dem Datenfile oder dem Cache. Falls des Weiteren auch
@@ -436,119 +437,106 @@ void replaceEntityOccurence(string& sLine, const string& sEntityOccurence, const
 
     while ((nPos = sLine.find(sEntityOccurence)) != string::npos)
     {
-        string sLeft = sLine.substr(0, nPos);
-        StripSpaces(sLeft);
+        string sLeft = getLastToken(sLine.substr(0, nPos));
         if (sLeft.length() < 3 || sLeft.back() != '(' || sLine[sLine.find_first_not_of(" " , nPos+sEntityOccurence.length())] != ')')
         {
             sLine.replace(nPos, sEntityOccurence.length(), sEntityReplacement);
             continue;
         }
-        else if (sLeft.length() == 3)
+        else
         {
-            if (sLeft.substr(sLeft.length()-3) == "or(")
-            {
-                _parser.DisableAccessCaching();
-                sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
-                    + toCmdString(_data.or_func(sEntityName, vLine, vCol))
-                    + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
-            }
-            else
-                sLine.replace(nPos, sEntityOccurence.length(), sEntityReplacement);
-        }
-        else if (sLeft.length() >= 4)
-        {
-            if (sLeft.substr(sLeft.length()-4) == "std(")
+            if (sLeft == "std(")
             {
                 _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("std(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.std(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
-            else if (sLeft.substr(sLeft.length()-4) == "avg(")
+            else if (sLeft == "avg(")
             {
                 _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("avg(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.avg(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
-            else if (sLeft.substr(sLeft.length()-4) == "max(")
+            else if (sLeft == "max(")
             {
                 _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("max(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.max(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
-            else if (sLeft.substr(sLeft.length()-4) == "min(")
+            else if (sLeft == "min(")
             {
                 _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("min(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.min(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
-            else if (sLeft.substr(sLeft.length()-4) == "prd(")
+            else if (sLeft == "prd(")
             {
                 _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("prd(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.prd(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
-            else if (sLeft.substr(sLeft.length()-4) == "sum(")
+            else if (sLeft == "sum(")
             {
                 _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("sum(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.sum(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
-            else if (sLeft.substr(sLeft.length()-4) == "num(")
+            else if (sLeft == "num(")
             {
                 _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("num(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.num(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
-            else if (sLeft.substr(sLeft.length()-4) == "and(")
+            else if (sLeft == "and(")
             {
                 _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("and(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.and_func(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
-            else if (sLeft.substr(sLeft.length()-4) == "xor(")
+            else if (sLeft == "xor(")
             {
                 _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("xor(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.xor_func(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
-            else if (sLeft.substr(sLeft.length()-3) == "or(")
+            else if (sLeft == "or(")
             {
                 _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.or_func(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
-            else if (sLeft.substr(sLeft.length()-4) == "cnt(")
+            else if (sLeft == "cnt(")
             {
                 _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("cnt(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.cnt(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
-            else if (sLeft.substr(sLeft.length()-4) == "med(")
+            else if (sLeft == "med(")
             {
                 _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("med(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.med(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
-            else if (sLeft.length() >= 5 && sLeft.substr(sLeft.length()-5) == "norm(")
+            else if (sLeft == "norm(")
             {
                 _parser.DisableAccessCaching();
                 sLine = sLine.substr(0, sLine.rfind("norm(", sLine.find(sEntityOccurence)))
                     + toCmdString(_data.norm(sEntityName, vLine, vCol))
                     + sLine.substr(sLine.find(')', sLine.find(sEntityOccurence)+sEntityOccurence.length())+1);
             }
-            else if (sLeft.substr(sLeft.length()-4) == "cmp(")
+            else if (sLeft == "cmp(")
             {
                 _parser.DisableAccessCaching();
                 double dRef = 0.0;
@@ -570,7 +558,7 @@ void replaceEntityOccurence(string& sLine, const string& sEntityOccurence, const
                     getMatchingParenthesis(sLine.substr(sLine.rfind("cmp(", sLine.find(sEntityOccurence))+3))+4,
                     toCmdString(_data.cmp(sEntityName, vLine, vCol, dRef, nType)));
             }
-            else if (sLeft.substr(sLeft.length()-4) == "pct(")
+            else if (sLeft == "pct(")
             {
                 _parser.DisableAccessCaching();
                 double dPct = 0.5;
@@ -725,6 +713,26 @@ string createMafVectorName(string sAccessString)
     sAccessString.replace(sAccessString.find("()"), 2, "[");
     sAccessString = replaceToVectorname(sAccessString);
     return sAccessString + "]";
+}
+
+string getLastToken(const string& sLine)
+{
+    string sToken = sLine;
+    size_t pos = string::npos;
+    StripSpaces(sToken);
+    if (sToken.back() == '(')
+    {
+        pos = sToken.find_last_of(" !%&|<>=?:.,/*-+^(){}#", sToken.length()-2);
+        if (pos == string::npos)
+            return sToken;
+        sToken.erase(0, pos+1);
+        return sToken;
+    }
+    pos = sToken.find_last_of(" !%&|<>=?:.,/*-+^(){}#");
+    if (pos == string::npos)
+        return sToken;
+    sToken.erase(0, pos+1);
+    return sToken;
 }
 
 // this function is for extracting the data out of the data object and storing it to a continous block of memory
@@ -1168,8 +1176,9 @@ int parser_SplitArgs(string& sToSplit, string& sSecArg, const char& cSep, const 
  */
 bool parser_CheckMultArgFunc(const string& sLeft, const string& sRight)
 {
-    int nPos = 0;
-    string sFunc = "";
+    string sFunc = getLastToken(sLeft);
+    if (sFunc.back() != '(')
+        return false;
     bool bCMP = false;
 
     for (unsigned int i = 0; i < sRight.length(); i++)
@@ -1189,65 +1198,37 @@ bool parser_CheckMultArgFunc(const string& sLeft, const string& sRight)
             }
         }
     }
-    for (int i = sLeft.length()-1; i >= 0; i--)
-    {
-        if (sLeft[i] != ' ')
-        {
-            if (sLeft[i] != '(')
-                return false;
-            nPos = i;
-            break;
-        }
-    }
-    if (nPos == 2)
-    {
-        sFunc = sLeft.substr(nPos - 2,2);
-        if (sFunc == "or" && !bCMP)
-            return true;
-        return false;
-    }
-    else if (nPos >= 3)
-    {
-        sFunc = sLeft.substr(nPos - 3,3);
-        if (sFunc == "max" && !bCMP)
-            return true;
-        else if (sFunc == "min" && !bCMP)
-            return true;
-        else if (sFunc == "sum" && !bCMP)
-            return true;
-        else if (sFunc == "avg" && !bCMP)
-            return true;
-        else if (sFunc == "num" && !bCMP)
-            return true;
-        else if (sFunc == "cnt" && !bCMP)
-            return true;
-        else if (sFunc == "med" && !bCMP)
-            return true;
-        else if (sFunc == "pct" && bCMP)
-            return true;
-        else if (sFunc == "std" && !bCMP)
-            return true;
-        else if (sFunc == "prd" && !bCMP)
-            return true;
-        else if (sFunc == "and" && !bCMP)
-            return true;
-        else if (sFunc.substr(1) == "or" && !bCMP)
-            return true;
-        else if (sFunc == "cmp" && bCMP)
-        {
-            //cerr << "cmp()" << endl;
-            return true;
-        }
-        else if (sFunc == "orm" && !bCMP)
-        {
-            if (nPos > 3 && sLeft.substr(nPos - 4, 4) == "norm")
-                return true;
-            else
-                return false;
-        }
-        else
-            return false;
-    }
+
+    if (sFunc == "max(" && !bCMP)
+        return true;
+    else if (sFunc == "min(" && !bCMP)
+        return true;
+    else if (sFunc == "sum(" && !bCMP)
+        return true;
+    else if (sFunc == "avg(" && !bCMP)
+        return true;
+    else if (sFunc == "num(" && !bCMP)
+        return true;
+    else if (sFunc == "cnt(" && !bCMP)
+        return true;
+    else if (sFunc == "med(" && !bCMP)
+        return true;
+    else if (sFunc == "pct(" && bCMP)
+        return true;
+    else if (sFunc == "std(" && !bCMP)
+        return true;
+    else if (sFunc == "prd(" && !bCMP)
+        return true;
+    else if (sFunc == "and(" && !bCMP)
+        return true;
+    else if (sFunc == "or(" && !bCMP)
+        return true;
+    else if (sFunc == "xor(" && !bCMP)
+        return true;
+    else if (sFunc == "cmp(" && bCMP)
+        return true;
+    else if (sFunc == "norm(" && !bCMP)
+        return true;
     else
         return false;
 }
@@ -1383,11 +1364,11 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
                     for (int n = 0; n < nResults; n++)
                     {
                         if (!isnan(v[n]) && !isinf(v[n]))
-                            _idx.vI.push_back((int)v[n]-1);
+                            _idx.vI.push_back(intCast(v[n])-1);
                     }
                 }
                 else
-                    _idx.nI[0] = (int)v[0]-1;
+                    _idx.nI[0] = intCast(v[0])-1;
             }
         }
         if (sJ[0] != "<<NONE>>" && sJ[1] == "<<NONE>>")
@@ -1403,11 +1384,11 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
                     for (int n = 0; n < nResults; n++)
                     {
                         if (!isnan(v[n]) && !isinf(v[n]))
-                            _idx.vJ.push_back((int)v[n]-1);
+                            _idx.vJ.push_back(intCast(v[n])-1);
                     }
                 }
                 else
-                    _idx.nJ[0] = (int)v[0]-1;
+                    _idx.nJ[0] = intCast(v[0])-1;
             }
         }
 
@@ -1463,9 +1444,9 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
                 if (isinf(v[i]))
                     v[i] = -1;
                 if (vIndexNumbers[i] > 0)
-                    _idx.nI[vIndexNumbers[i]-1] = (int)v[i]-1;
+                    _idx.nI[vIndexNumbers[i]-1] = intCast(v[i])-1;
                 else
-                    _idx.nJ[abs(vIndexNumbers[i])-1] = (int)v[i]-1;
+                    _idx.nJ[abs(vIndexNumbers[i])-1] = intCast(v[i])-1;
             }
         }
         if (_idx.vI.size() || _idx.vJ.size())

@@ -2325,7 +2325,7 @@
 	<sstream>
 	<windows.h>
 
-1511633307 d:\cpp\numere-source\trunk\kernel\core\utils\tools.hpp
+1526662871 d:\cpp\numere-source\trunk\kernel\core\utils\tools.hpp
 	<iostream>
 	<iomanip>
 	<sstream>
@@ -4014,7 +4014,7 @@
 	"fitcontroller.hpp"
 	"../../kernel.hpp"
 
-1525454594 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
+1526663755 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
 	"functionimplementation.hpp"
 
 1525596493 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
@@ -4225,7 +4225,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1525596493 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1526650049 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>
@@ -4248,7 +4248,7 @@
 	<cstddef>
 	<cstdarg>
 
-1525464254 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
+1526671741 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
 	"tools.hpp"
 	"../../kernel.hpp"
 	<cstdlib>
@@ -4298,7 +4298,7 @@
 	"../settings.hpp"
 	"../ParserLib/muParser.h"
 
-1524301001 source:d:\cpp\numere-source\trunk\kernel\core\io\fileops.cpp
+1526661574 source:d:\cpp\numere-source\trunk\kernel\core\io\fileops.cpp
 	"fileops.hpp"
 	"../utils/tools.hpp"
 	"../maths/parser_functions.hpp"
@@ -4317,7 +4317,7 @@
 	"output.hpp"
 	"../../kernel.hpp"
 
-1524386698 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataops.cpp
+1526661087 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataops.cpp
 	<wx/image.h>
 	"dataops.hpp"
 	"../../kernel.hpp"
@@ -4335,7 +4335,7 @@
 	"../settings.hpp"
 	"../structures.hpp"
 
-1526039920 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataaccess.cpp
+1526666491 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataaccess.cpp
 	"dataaccess.hpp"
 	"../utils/tools.hpp"
 	<vector>
