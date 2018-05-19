@@ -1315,6 +1315,9 @@ bool writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opti
     bool bAppend = false;
     bool bTrunc = true;
     bool bNoQuotes = false;
+    FileSystem _fSys;
+    _fSys.setTokens(_option.getTokenPaths());
+    _fSys.setPath(_option.getExePath(), false, _option.getExePath());
 
     if (sCmd.find("-set") != string::npos || sCmd.find("--") != string::npos)
     {
@@ -1338,7 +1341,16 @@ bool writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opti
             StripSpaces(sFileName);
             if (!sFileName.length())
                 return false;
-            sFileName = _data.ValidFileName(sFileName, ".txt");
+            string sExt = "";
+            if (sFileName.find('.') != string::npos)
+                sExt = sFileName.substr(sFileName.rfind('.'));
+            if (sExt == ".exe" || sExt == ".dll" || sExt == ".sys")
+            {
+                //sErrorToken = sExt;
+                throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, sCmd, SyntaxError::invalid_position, sExt);
+            }
+            _fSys.declareFileType(sExt);
+            sFileName = _fSys.ValidFileName(sFileName, sExt);
             if (sFileName.substr(sFileName.rfind('.')) == ".nprc" || sFileName.substr(sFileName.rfind('.')) == ".nscr" || sFileName.substr(sFileName.rfind('.')) == ".ndat")
             {
                 string sErrorToken;
