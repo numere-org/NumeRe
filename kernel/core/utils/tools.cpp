@@ -1549,6 +1549,14 @@ bool isToStringArg(const string& sExpr, unsigned int nPos)
     return false;
 }
 
+int intCast(double number)
+{
+    // if quite close, use rint
+    if (fabs(number - rint(number)) < 1e-7)
+        return rint(number);
+    // otherwise truncate
+    return (int)number;
+}
 
 string wcstombs(const wstring& wStr)
 {
@@ -2937,8 +2945,17 @@ void evalRecursiveExpressions(string& sExpr)
         {
             if (sExpr.find(',', i) != string::npos)
             {
+                int nQuotesJ = nQuotes;
                 for (unsigned int j = i; j < sExpr.length(); j++)
                 {
+                    if (sExpr[j] == '"')
+                    {
+                        if (j && sExpr[j-1] == '\\')
+                            continue;
+                        nQuotesJ++;
+                    }
+                    if (nQuotesJ % 2)
+                        continue;
                     if (sExpr[j] == '(')
                         j += getMatchingParenthesis(sExpr.substr(j));
                     if (sExpr[j] == ',' || j+1 == sExpr.length())
@@ -2980,6 +2997,14 @@ void evalRecursiveExpressions(string& sExpr)
 
                         for (unsigned int k = i; k < sExpr.length(); k++)
                         {
+                            if (sExpr[k] == '"')
+                            {
+                                if (k && sExpr[k-1] == '\\')
+                                    continue;
+                                nQuotes++;
+                            }
+                            if (nQuotes % 2)
+                                continue;
                             if (sExpr[k] == '(')
                                 k += getMatchingParenthesis(sExpr.substr(k));
                             if (sExpr[k] == ',')

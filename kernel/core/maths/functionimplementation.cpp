@@ -272,15 +272,15 @@ value_type parser_Faculty(value_type v)
         return NAN;
     value_type vResult = 1.0; // Ausgabe-Variable
     // --> Falls v == 0 ist, dann ist die Fakultaet 1 und nicht 0. Fangen wir hier ab <--
-    if ((int)v == 0)
+    if (intCast(v) == 0)
         return 1;
-    if ((int)v < 0)
+    if (intCast(v) < 0)
         return NAN;
 
     /* --> Zaehlschleife, die die Fakultaet bildet: allerdings in der Form 1*2*3*...*(n-1)*n und nicht
      *     in der Form, wie sie normal definiert wird: n*(n-1)*(n-2)*...*3*2*1 <--
      */
-    for (int i = 1; i <= abs((int)v); i++)
+    for (int i = 1; i <= abs(intCast(v)); i++)
     {
         vResult *= i;
     }
@@ -293,9 +293,9 @@ value_type parser_doubleFaculty(value_type v)
     if (isnan(v) || isinf(v))
         return NAN;
     value_type vResult = 1.0;
-    if ((int)v < 0)
+    if (intCast(v) < 0)
         return NAN;
-    for (int n = (int)fabs(v); n > 0; n -= 2)
+    for (int n = intCast(fabs(v)); n > 0; n -= 2)
     {
         vResult *= n;
     }
@@ -315,23 +315,23 @@ value_type parser_Binom(value_type v1, value_type v2)
      *     Algorithmus deutlich beschleunigen. Hier sei der Artikel auf Wikipedia zum Binomial-
      *     koeffzienten empfohlen <--
      */
-    if ((int)v2 < 0 || (int)v1 < 0)
+    if (intCast(v2) < 0 || intCast(v1) < 0)
         return NAN;
-    else if ((int)v2 > (int)v1) // v2 > v1 ==> binom = 0!
+    else if (intCast(v2) > intCast(v1)) // v2 > v1 ==> binom = 0!
         return 0;
-    else if((int)v1 == (int)v2 || ((int)v1 != 0 && (int)v2 == 0)) // v1 == v2 oder v2 == 0 und v1 != 0 ==> binom = 1!
+    else if(intCast(v1) == intCast(v2) || (intCast(v1) != 0 && intCast(v2) == 0)) // v1 == v2 oder v2 == 0 und v1 != 0 ==> binom = 1!
         return 1;
-    else if((int)v2 == 1 || (int)v2 == (int)v1-1) // v2 == 1 oder v2 == v1-1 ==> binom = v1!
-        return (int)v1;
-    else if((int)v2 == 2 && (int)v2 < (int)v1) // v2 == 2 und v2 < v1 ==> binom = v1*(v1-1) / v2!
-        return (int)v1*((int)v1-1)/(int)v2;
+    else if(intCast(v2) == 1 || intCast(v2) == intCast(v1)-1) // v2 == 1 oder v2 == v1-1 ==> binom = v1!
+        return intCast(v1);
+    else if(intCast(v2) == 2 && intCast(v2) < intCast(v1)) // v2 == 2 und v2 < v1 ==> binom = v1*(v1-1) / v2!
+        return intCast(v1)*(intCast(v1)-1)/intCast(v2);
     else
     {
         /* --> In allen anderen Faellen muessen wir den Binomialkoeffzienten muehsam mithilfe der Formel
          *     binom(v1,v2) = v1!/(v2!*(v1-v2)!) ausrechnen. Das machen wir, indem wir die Funktion
          *     parser_Faculty(value_type) aufrufen <--
          */
-        return parser_Faculty(v1) / (parser_Faculty(v2)*parser_Faculty( (value_type)( (int)v1-(int)v2 ) ));
+        return parser_Faculty(v1) / (parser_Faculty(v2)*parser_Faculty( (value_type)( intCast(v1) - intCast(v2) ) ));
     }
 }
 
@@ -598,7 +598,7 @@ value_type parser_round(value_type vToRound, value_type vDecimals)
 {
     if (isinf(vToRound) || isinf(vDecimals) || isnan(vToRound) || isnan(vDecimals))
         return NAN;
-    double dDecimals = std::pow(10, -abs((int)vDecimals));
+    double dDecimals = std::pow(10, -abs(intCast(vDecimals)));
     vToRound = vToRound / dDecimals;
     vToRound = std::round(vToRound);
     vToRound = vToRound * dDecimals;
@@ -629,8 +629,8 @@ value_type parser_SphericalHarmonics(value_type vl, value_type vm, value_type th
         || isinf(theta) || isnan(theta)
         || isinf(phi) || isnan(phi))
         return NAN;
-    int l = (int)fabs(vl);
-    int m = (int)vm;
+    int l = intCast(fabs(vl));
+    int m = intCast(vm);
     if (abs(m) > l)
     {
         return NAN;
@@ -650,8 +650,8 @@ value_type parser_imSphericalHarmonics(value_type vl, value_type vm, value_type 
         || isinf(theta) || isnan(theta)
         || isinf(phi) || isnan(phi))
         return NAN;
-    int l = (int)fabs(vl);
-    int m = (int)vm;
+    int l = intCast(fabs(vl));
+    int m = intCast(vm);
     if (abs(m) > l)
     {
         return NAN;
@@ -671,8 +671,8 @@ value_type parser_Zernike(value_type vn, value_type vm, value_type rho, value_ty
         || isinf(rho) || isnan(rho)
         || isinf(phi) || isnan(phi))
         return NAN;
-    int n = (int)vn;
-    int m = (int)vm;
+    int n = intCast(vn);
+    int m = intCast(vm);
     if (n < abs(m))
         return NAN;
     if (m < 0)
@@ -726,7 +726,7 @@ value_type parser_SphericalBessel(value_type vn, value_type v)
 {
     if (isinf(vn) || isinf(v) || isnan(vn) || isnan(v))
         return NAN;
-    int n = (int)fabs(vn);
+    int n = intCast(fabs(vn));
     if (!n && !v)
         return 1.0;
     else if (!n)
@@ -755,14 +755,7 @@ value_type parser_SphericalBessel(value_type vn, value_type v)
         return (-intPower(v,10)+1485.0*intPower(v,8)-315315.0*intPower(v,6)+18918900.0*v*v*v*v-310134825.0*v*v+654729075.0)*sin(v)/intPower(v,11)-55.0*(intPower(v,8)-468.0*intPower(v,6)+51597.0*v*v*v*v-1670760*v*v+11904165.0)*cos(v)/intPower(v,10);
     else
     {
-        return gsl_sf_bessel_jl((int)vn,fabs(v));
-        /*long double dResult = 0.0;
-        for (int k = 0; k <= 30+2*n; k++)
-        {
-            dResult += (long double)(intPower(-v*v, k)*parser_Faculty(k+n)/(parser_Faculty(k)*parser_Faculty(2*(k+n)+1)));
-        }
-        dResult *= (long double)(intPower(2*v,n));
-        return dResult;*/
+        return gsl_sf_bessel_jl(intCast(vn), fabs(v));
     }
     return 0.0;
 }
@@ -772,7 +765,7 @@ value_type parser_SphericalNeumann(value_type vn, value_type v)
 {
     if (isinf(vn) || isnan(vn) || isinf(v) || isnan(v))
         return NAN;
-    int n = (int)fabs(vn);
+    int n = intCast(fabs(vn));
     if (!v)
         return INFINITY;
     else if (!n)
@@ -799,14 +792,7 @@ value_type parser_SphericalNeumann(value_type vn, value_type v)
         return (intPower(v,10)-1485.0*intPower(v,8)+315315.0*intPower(v,6)-18918900.0*v*v*v*v+310134825.0*v*v-654729075.0)*cos(v)/intPower(v,11)-55.0*(intPower(v,8)-468.0*intPower(v,6)+51597.0*v*v*v*v-1670760.0*v*v+11904165.0)*sin(v)/intPower(v,10);
     else
     {
-        return gsl_sf_bessel_yl((int)vn, fabs(v));
-        /*long double dResult = 0.0;
-        for (int k = 0; k <= 30+2*n; k++)
-        {
-            dResult += (long double)(intPower(-v*v, k)*parser_Faculty(k-n)/(parser_Faculty(k)*parser_Faculty(2*(k-n))));
-        }
-        dResult *= (long double)(intPower(-v,-(n+1))*intPower(2,-n));
-        return dResult;*/
+        return gsl_sf_bessel_yl(intCast(vn), fabs(v));
     }
     return 0.0;
 }
@@ -816,7 +802,7 @@ value_type parser_LegendrePolynomial(value_type vn, value_type v)
 {
     if (isinf(vn) || isnan(vn) || isinf(v) || isnan(v))
         return NAN;
-    int n = (int)fabs(vn);
+    int n = intCast(fabs(vn));
 
     long double dResult = 0.0;
     for (int k = 0; k <= n/2; k++)
@@ -832,8 +818,8 @@ value_type parser_AssociatedLegendrePolynomial(value_type vl, value_type vm, val
 {
     if (isinf(vl) || isnan(vl) || isinf(vm) || isnan(vm) || isinf(v) || isnan(v))
         return NAN;
-    int l = (int)fabs(vl);
-    int m = (int)fabs(vm);
+    int l = intCast(fabs(vl));
+    int m = intCast(fabs(vm));
     if (m > l)
         return NAN;
     if (!m)
@@ -855,7 +841,7 @@ value_type parser_LaguerrePolynomial(value_type vn, value_type v)
 {
     if (isinf(vn) || isnan(vn) || isinf(v) || isnan(v))
         return NAN;
-    int n = (int)fabs(vn);
+    int n = intCast(fabs(vn));
 
     long double dResult = 0.0;
     for (int k = 0; k <= n; k++)
@@ -870,8 +856,8 @@ value_type parser_AssociatedLaguerrePolynomial(value_type vn, value_type vk, val
 {
     if (isinf(vn) || isnan(vn) || isinf(vk) || isnan(vk) || isinf(v) || isnan(v))
         return NAN;
-    int n = (int)fabs(vn);
-    int k = (int)fabs(vk);
+    int n = intCast(fabs(vn));
+    int k = intCast(fabs(vk));
     if (k > n)
         return NAN;
     long double dResult = 0.0;
@@ -888,7 +874,7 @@ value_type parser_HermitePolynomial(value_type vn, value_type v)
 {
     if (isinf(vn) || isnan(vn) || isinf(v) || isnan(v))
         return NAN;
-    int n = (int)fabs(vn);
+    int n = intCast(fabs(vn));
 
     switch (n)
     {
@@ -916,8 +902,8 @@ value_type parser_BetheWeizsaecker(value_type vN, value_type vZ)
     double A = vN + vZ;
     double dEnergy = 0.0;
     int delta = 0;
-    unsigned int N = (unsigned int)parser_round(vN,0);
-    unsigned int Z = (unsigned int)parser_round(vZ,0);
+    unsigned int N = (unsigned int)intCast(parser_round(vN,0));
+    unsigned int Z = (unsigned int)intCast(parser_round(vZ,0));
 
 
     if (A < 0 || vZ < 0 || vN < 0)
@@ -1052,7 +1038,7 @@ value_type parser_AiryB(value_type x)
 value_type parser_RegularCylBessel(value_type n, value_type x)
 {
     if (n >= 0.0)
-        return gsl_sf_bessel_Jn((int)n, x);
+        return gsl_sf_bessel_Jn(intCast(n), x);
     else
         return NAN;
 }
@@ -1061,7 +1047,7 @@ value_type parser_RegularCylBessel(value_type n, value_type x)
 value_type parser_IrregularCylBessel(value_type n, value_type x)
 {
     if (x != 0.0 && n >= 0.0)
-        return x/fabs(x)*gsl_sf_bessel_Yn((int)n, fabs(x));
+        return x/fabs(x)*gsl_sf_bessel_Yn(intCast(n), fabs(x));
     else
         return -INFINITY;
 }
@@ -1154,7 +1140,7 @@ value_type parser_beta(value_type a, value_type b)
 {
     if (isnan(a) || isnan(b) || isinf(a) || isinf(b))
         return NAN;
-    if ((a == (int)a && a < 0) || (b == (int)b && b < 0))
+    if ((intCast(a) == (int)a && a < 0) || (intCast(b) == (int)b && b < 0))
         return NAN;
     return gsl_sf_beta(a, b);
 }
@@ -1165,8 +1151,8 @@ value_type parser_zeta(value_type n)
         return NAN;
     if (n == 1)
         return NAN;
-    if (n == (int)n)
-        return gsl_sf_zeta_int((int)n);
+    if (intCast(n) == (int)n)
+        return gsl_sf_zeta_int(intCast(n));
     else
         return gsl_sf_zeta(n);
 }
@@ -1184,8 +1170,8 @@ value_type parser_digamma(value_type x)
         return NAN;
     if (x == 0)
         return NAN;
-    if (x == (int)x && x > 0)
-        return gsl_sf_psi_int((int)x);
+    if ((int)x == intCast(x) && x > 0)
+        return gsl_sf_psi_int(intCast(x));
     else
         return gsl_sf_psi(x);
 }
@@ -1194,7 +1180,7 @@ value_type parser_polygamma(value_type n, value_type x)
 {
     if (isnan(n) || isnan(x) || isinf(n) || isinf(x) || x <= 0 || n < 0)
         return NAN;
-    return gsl_sf_psi_n((int)n, x);
+    return gsl_sf_psi_n(intCast(n), x);
 }
 
 value_type parser_dilogarithm(value_type x)
@@ -1259,20 +1245,20 @@ value_type parser_studentFactor(value_type vFreedoms, value_type vAlpha)
 {
     if (vAlpha >= 1.0 || vAlpha <= 0.0 || vFreedoms < 2.0)
         return NAN;
-    boost::math::students_t dist((int)vFreedoms-1);
+    boost::math::students_t dist(intCast(vFreedoms)-1);
     return boost::math::quantile(boost::math::complement(dist, (1.0-vAlpha)/2.0));
 }
 
 // --> Greatest commom divisor <--
 value_type parser_gcd(value_type n, value_type k)
 {
-    return boost::math::gcd((int)n, (int)k);
+    return boost::math::gcd(intCast(n), intCast(k));
 }
 
 // --> Least common multiple <--
 value_type parser_lcm(value_type n, value_type k)
 {
-    return boost::math::lcm((int)n, (int)k);
+    return boost::math::lcm(intCast(n), intCast(k));
 }
 
 
@@ -1281,7 +1267,7 @@ value_type parser_Mod(value_type v1, value_type v2)
 {
     if (isinf(v1) || isnan(v1) || isinf(v2) || isnan(v2))
         return NAN;
-    return (int)v1 % (int)v2;
+    return intCast(v1) % intCast(v2);
 }
 
 // --> XOR-Operator <--
@@ -1297,7 +1283,7 @@ value_type parser_BinOR(value_type v1, value_type v2)
 {
     if (isinf(v1) || isnan(v1) || isinf(v2) || isnan(v2))
         return NAN;
-    return ((int)v1 | (int)v2);
+    return intCast(v1) | intCast(v2);
 }
 
 // --> binary AND-Operator <--
@@ -1305,7 +1291,7 @@ value_type parser_BinAND(value_type v1, value_type v2)
 {
     if (isinf(v1) || isnan(v1) || isinf(v2) || isnan(v2))
         return NAN;
-    return ((int)v1 & (int)v2);
+    return intCast(v1) & intCast(v2);
 }
 
 // --> value_type-Repraesentation der is_string()-Funktion <--

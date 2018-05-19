@@ -42,3 +42,5 @@ Fixed	The editor does not override, if it cannot write the current file, files w
 Fixed	The "floor()"  function may now be used correctly on data sets. The token reader for multi-argument functions was improved significantly.
 Fixed	Writing to files with non-standard file extensions is now possible.
 Fixed	Moving, copying and removing files with non-standard file extensions is now possible.
+Fixed	Floating point errors in functions, which need integer rather than double, are now fixed.
+Fixed	Recursive expressions with strings, which do contain unmatched parentheses, are now possible without falling into an endless loop.

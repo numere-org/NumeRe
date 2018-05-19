@@ -2631,7 +2631,7 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
             nPos += getMatchingParenthesis(sLine.substr(nPos));
             if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos-1, (iter->first).length()+2))))
             {
-                if (parser_CheckMultArgFunc(sLine.substr(0,n_pos),sLine.substr(nPos+1)))
+                if (parser_CheckMultArgFunc(sLine.substr(0,n_pos), sLine.substr(nPos+1)))
                 {
                     if (n_pos > 4 && sLine.substr(sLine.rfind('(',n_pos)-4,5) == "norm(")
                         n_pos -= 5;
