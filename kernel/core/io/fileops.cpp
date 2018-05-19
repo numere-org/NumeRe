@@ -31,9 +31,9 @@ bool removeFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
     bool bIgnore = false;
     bool bAll = false;
     string _sCmd = "";
-    Datafile _cache;
-    _cache.setTokens(_option.getTokenPaths());
-    _cache.setPath("", false, _option.getExePath());
+    FileSystem _fSys;
+    _fSys.setTokens(_option.getTokenPaths());
+    _fSys.setPath(_option.getExePath(), false, _option.getExePath());
 
     sCmd = fromSystemCodePage(sCmd);
 
@@ -72,7 +72,7 @@ bool removeFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
     if (sCmd[sCmd.length()-1] == '"')
         sCmd = sCmd.substr(0,sCmd.length()-1);
     if (sCmd.length())
-        _sCmd = _cache.ValidFileName(sCmd);
+        _sCmd = _fSys.ValidFileName(sCmd);
     else
         return false;
 
@@ -103,7 +103,7 @@ bool removeFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
         if (!bAll || (sCmd.find('*') == string::npos && sCmd.find('?') == string::npos))
             break;
         else
-            _sCmd = _cache.ValidFileName(sCmd);
+            _sCmd = _fSys.ValidFileName(sCmd);
     }
 
     return true;
@@ -124,9 +124,10 @@ bool moveFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
     unsigned int nthFile = 1;
     bool bAll = false;
     bool bSuccess = false;
-    Datafile _cache;
-    _cache.setTokens(_option.getTokenPaths());
-    _cache.setPath("", false, _option.getExePath());
+
+    FileSystem _fSys;
+    _fSys.setTokens(_option.getTokenPaths());
+    _fSys.setPath(_option.getExePath(), false, _option.getExePath());
 
     sCmd = fromSystemCodePage(sCmd);
 
@@ -189,7 +190,13 @@ bool moveFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
     {
         _sTarget = sTarget;
         sFile = _sCmd + vFileList[nFile];
-        sFile = _cache.ValidFileName(sFile);
+        if (sFile.find('.') != string::npos)
+        {
+            string sExt = sFile.substr(sFile.rfind('.'));
+            if (sExt != ".exe" && sExt != ".sys" && sExt != ".dll")
+                _fSys.declareFileType(sExt);
+        }
+        sFile = _fSys.ValidFileName(sFile);
 
         if (_sTarget[_sTarget.length()-1] == '*' && _sTarget[_sTarget.length()-2] == '/')
             _sTarget = _sTarget.substr(0, _sTarget.length()-2) + sFile.substr(sFile.rfind('/'));
@@ -245,7 +252,7 @@ bool moveFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
 
         if (_sTarget.substr(_sTarget.length()-2) == "/*")
             _sTarget.erase(_sTarget.length()-1);
-        _sTarget = _cache.ValidFileName(_sTarget);
+        _sTarget = _fSys.ValidFileName(_sTarget);
         //NumeReKernel::print(_sTarget );
 
         if (_sTarget.substr(_sTarget.rfind('.')-1) == "*.dat")
@@ -297,9 +304,9 @@ bool copyFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
     bool bSuccess = false;
     ifstream File;
     ofstream Target;
-    Datafile _cache;
-    _cache.setTokens(_option.getTokenPaths());
-    _cache.setPath("", false, _option.getExePath());
+    FileSystem _fSys;
+    _fSys.setTokens(_option.getTokenPaths());
+    _fSys.setPath(_option.getExePath(), false, _option.getExePath());
 
     sCmd = fromSystemCodePage(sCmd);
 
@@ -367,7 +374,13 @@ bool copyFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
     {
         _sTarget = sTarget;
         sFile = _sCmd + vFileList[nFile];
-        sFile = _cache.ValidFileName(sFile);
+        if (sFile.find('.') != string::npos)
+        {
+            string sExt = sFile.substr(sFile.rfind('.'));
+            if (sExt != ".exe" && sExt != ".sys" && sExt != ".dll")
+                _fSys.declareFileType(sExt);
+        }
+        sFile = _fSys.ValidFileName(sFile);
 
         if (_sTarget[_sTarget.length()-1] == '*' && _sTarget[_sTarget.length()-2] == '/')
             _sTarget = _sTarget.substr(0, _sTarget.length()-2) + sFile.substr(sFile.rfind('/'));
@@ -423,7 +436,7 @@ bool copyFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
 
         if (_sTarget.substr(_sTarget.length()-2) == "/*")
             _sTarget.erase(_sTarget.length()-1);
-        _sTarget = _cache.ValidFileName(_sTarget);
+        _sTarget = _fSys.ValidFileName(_sTarget);
         //NumeReKernel::print(_sTarget );
 
         if (_sTarget.substr(_sTarget.rfind('.')-1) == "*.dat")

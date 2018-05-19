@@ -41,3 +41,4 @@ Fixed	"interpolate" does not mask "steps" any more.
 Fixed	The editor does not override, if it cannot write the current file, files with empty files any more. Instead a backup is created, which will be restored automatically. The user is now notified, if a file cannot be written.
 Fixed	The "floor()"  function may now be used correctly on data sets. The token reader for multi-argument functions was improved significantly.
 Fixed	Writing to files with non-standard file extensions is now possible.
+Fixed	Moving, copying and removing files with non-standard file extensions is now possible.
