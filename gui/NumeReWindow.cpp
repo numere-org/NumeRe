@@ -1898,7 +1898,7 @@ void NumeReWindow::createLaTeXHeader(const string& sRootPath)
     fHeader << "% Activate the language" << endl;
     fHeader << "\\lstset{" << endl;
     fHeader << "    language=nscr," << endl;
-    fHeader << "    basicstyle={\\small\\ttfamily\\itshape}," << endl;
+    fHeader << "    basicstyle={\\footnotesize\\ttfamily\\itshape}," << endl;
     fHeader << "    extendedchars=true," << endl;
     fHeader << "    tabsize=4," << endl;
     fHeader << "    columns=fixed," << endl;

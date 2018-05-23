@@ -2409,7 +2409,7 @@
 	"muParserBase.h"
 	"muParserTemplateMagic.h"
 
-1514025023 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.h
+1527067212 d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.h
 	<cmath>
 	<string>
 	<iostream>
@@ -3691,7 +3691,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1526291152 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1526907947 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3970,7 +3970,7 @@
 	"io/fileops.hpp"
 	"datamanagement/dataops.hpp"
 
-1526279880 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
+1527010287 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
 	"cache.hpp"
 	"../../kernel.hpp"
 
@@ -4025,7 +4025,7 @@
 	"odesolver.hpp"
 	"../../kernel.hpp"
 
-1525598481 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
+1527077439 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	"spline.h"
@@ -4068,7 +4068,7 @@
 	<algorithm>
 	<numeric>
 
-1524724401 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
+1527069990 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
 	"muParserBase.h"
 	"muParserTemplateMagic.h"
 	"../../kernel.hpp"
@@ -4143,7 +4143,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1526116196 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1527077337 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
