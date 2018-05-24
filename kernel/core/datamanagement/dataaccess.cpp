@@ -860,7 +860,7 @@ Table parser_extractData(const string& sDataExpression, Parser& _parser, Datafil
         cerr << "|-> DEBUG: si_pos[0] = " << si_pos[0] << ", sj_pos[0] = " << sj_pos[0] << endl;
 
     // --> Gibt's einen Doppelpunkt? Dann teilen wir daran auch noch mal <--
-    if (si_pos[0].find(':') != string::npos)
+    if (si_pos[0].find(':') != string::npos && si_pos[0].find('{') == string::npos)
     {
         si_pos[0] = "( " + si_pos[0] + " )";
         try
@@ -916,7 +916,7 @@ Table parser_extractData(const string& sDataExpression, Parser& _parser, Datafil
     int j = 0;
     try
     {
-        while (sj_pos[j].find(':') != string::npos && j < 2)
+        while (sj_pos[j].find(':') != string::npos && sj_pos[j].find('{') && j < 2)
         {
             sj_pos[j] = "( " + sj_pos[j] + " )";
             // --> String am naechsten ':' teilen <--

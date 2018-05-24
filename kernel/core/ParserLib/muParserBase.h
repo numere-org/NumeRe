@@ -105,6 +105,8 @@ namespace mu
             mutable varmap_type vCurrentUsedVars;
             void replaceLocalVars(std::string& sLine);
             bool checkDelimiter(const std::string& sLine);
+            void evaluateVectorExpansion(string& sSubExpr, vector<double>& vResults);
+            void expandVector(double dFirst, double dLast, double dIncrement, vector<double>& vResults);
 
         public:
 

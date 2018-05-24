@@ -3365,7 +3365,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                     cerr << "|-> DEBUG: si_pos[0] = " << si_pos[0] << ", sj_pos[0] = " << sj_pos[0] << endl;
 
                 // --> Gibt's einen Doppelpunkt? Dann teilen wir daran auch noch mal <--
-                if (si_pos[0].find(':') != string::npos)
+                if (si_pos[0].find(':') != string::npos && si_pos[0].find('{') == string::npos)
                 {
                     si_pos[0] = "( " + si_pos[0] + " )";
                     try
@@ -3433,7 +3433,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                 int j = 0;
                 try
                 {
-                    while (sj_pos[j].find(':') != string::npos && j < 5)
+                    while (sj_pos[j].find(':') != string::npos && sj_pos[j].find('{') == string::npos && j < 5)
                     {
                         sj_pos[j] = "( " + sj_pos[j] + " )";
                         // --> String am naechsten ':' teilen <--

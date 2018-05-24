@@ -101,45 +101,6 @@ namespace mu
     m_vErrMsg[ecMISSING_ELSE_CLAUSE]    = 	"ERR_MUP_MISSING_ELSE_CLAUSE";
     m_vErrMsg[ecMISPLACED_COLON]        = 	"ERR_MUP_MISPLACED_COLON";
 
-    /*
-    m_vErrMsg[ecUNASSIGNABLE_TOKEN]     = _nrT("Unerwartetes Objekt \"$TOK$\" an der Stelle $POS$ gefunden.$(Umlaute und Sonderzeichen können in mathematischen Ausdrücken nicht verwendet werden.)");
-    m_vErrMsg[ecINTERNAL_ERROR]         = _nrT("Interner Fehler.");
-    m_vErrMsg[ecINVALID_NAME]           = _nrT("Ungültige Funktions-, Variablen- oder Konstantenbezeichnung: \"$TOK$\".");
-    m_vErrMsg[ecINVALID_BINOP_IDENT]    = _nrT("Ungültiger Verknüpfungsoperator: \"$TOK$\".");
-    m_vErrMsg[ecINVALID_INFIX_IDENT]    = _nrT("Ungültiger Präfix-Operator: \"$TOK$\".");
-    m_vErrMsg[ecINVALID_POSTFIX_IDENT]  = _nrT("Ungültiger Postfix-Operator: \"$TOK$\".");
-    m_vErrMsg[ecINVALID_FUN_PTR]        = _nrT("Ungültiger Pointer auf eine Callback-Funktion.");
-    m_vErrMsg[ecEMPTY_EXPRESSION]       = _nrT("Leerer Ausdruck.");
-    m_vErrMsg[ecINVALID_VAR_PTR]        = _nrT("Ungültiger Pointer auf eine Variable.");
-    m_vErrMsg[ecUNEXPECTED_OPERATOR]    = _nrT("Unerwarteter Operator \"$TOK$\" an der Stelle $POS$ gefunden.");
-    m_vErrMsg[ecUNEXPECTED_EOF]         = _nrT("Unerwartetes Ende des Ausdrucks an der Stelle $POS$.");
-    m_vErrMsg[ecUNEXPECTED_ARG_SEP]     = _nrT("Unerwartetes Argument-Trennzeichen an der Stelle $POS$ gefunden.");
-    m_vErrMsg[ecUNEXPECTED_PARENS]      = _nrT("Unerwartete Klammer \"$TOK$\" an der Stelle $POS$ gefunden. Verknüpfungsoperator oder Ausdruck vergessen oder falscher/unbekannter Funktionsname?$(Siehe \"list -func\" und \"list -define\" für eine Liste der vorhandenen Funktionen. Ggf. befinden sich auch ein oder mehrere Leerzeichen zwischen Funktionsname und -argumentliste.)");
-    m_vErrMsg[ecUNEXPECTED_FUN]         = _nrT("Unerwartete Funktion \"$TOK$\" an der Stelle $POS$ gefunden.");
-    m_vErrMsg[ecUNEXPECTED_VAL]         = _nrT("Unerwarteter Wert \"$TOK$\" an der Stelle $POS$ gefunden. Verknüpfungsoperator vergessen?");
-    m_vErrMsg[ecUNEXPECTED_VAR]         = _nrT("Unerwartete Variable \"$TOK$\" an der Stelle $POS$ gefunden. Verknüpfungsoperator vergessen?");
-    m_vErrMsg[ecUNEXPECTED_ARG]         = _nrT("Funktionsargument(e) ohne Funktion verwendet (Position: $POS$).");
-    m_vErrMsg[ecMISSING_PARENS]         = _nrT("Fehlende Klammer.");
-    m_vErrMsg[ecTOO_MANY_PARAMS]        = _nrT("Zu viele Argumente für die Funktion \"$TOK$()\" im Ausdruck an der Stelle $POS$.$(Möglicherweise wurden Kommas statt Punkten als Dezimaltrennzeichen verwendet. Siehe auch \"list -func\" oder \"list -define\" für eine Liste der vorhandenen Funktionen.)");
-    m_vErrMsg[ecTOO_FEW_PARAMS]         = _nrT("Zu wenige Argumente für die Funktion \"$TOK$()\" im Ausdruck an der Stelle $POS$.$(Siehe \"list -func\" oder \"list -define\" für eine Liste der vorhandenen Funktionen.)");
-    m_vErrMsg[ecDIV_BY_ZERO]            = _nrT("Kann nicht durch Null teilen.");
-    m_vErrMsg[ecDOMAIN_ERROR]           = _nrT("Domainfehler.");
-    m_vErrMsg[ecNAME_CONFLICT]          = _nrT("Namenskonflikt.");
-    m_vErrMsg[ecOPT_PRI]                = _nrT("Ungültiger Wert für Operatorpriorität (muss größer oder gleich 0 sein).");
-    m_vErrMsg[ecBUILTIN_OVERLOAD]       = _nrT("Benutzerdefinierter Verknüpfungsoperator \"$TOK$\" steht mit einem Built-In-Operator in Konflikt.");
-    m_vErrMsg[ecUNEXPECTED_STR]         = _nrT("Unerwartes Stringobjekt an der Stelle $POS$ gefunden.");
-    m_vErrMsg[ecUNTERMINATED_STRING]    = _nrT("Unabgeschlossener String, der an der Stelle $POS$ startet.");
-    m_vErrMsg[ecSTRING_EXPECTED]        = _nrT("Stringfunktion wurde mit einem Nicht-String-Parameter aufgerufen.");
-    m_vErrMsg[ecVAL_EXPECTED]           = _nrT("String an einer Stelle verwendet, an der ein numerischer Wert erwartet war.");
-    m_vErrMsg[ecOPRT_TYPE_CONFLICT]     = _nrT("Keine passende Überladung für den Operator \"$TOK$\" an der Stelle $POS$ gefunden.");
-    m_vErrMsg[ecSTR_RESULT]             = _nrT("Funktionsergebnis ist ein String.");
-    m_vErrMsg[ecGENERIC]                = _nrT("Parserfehler.");
-    m_vErrMsg[ecLOCALE]                 = _nrT("Dezimaltrennzeichen ist identisch zum Argument-Trennzeichen.");
-    m_vErrMsg[ecUNEXPECTED_CONDITIONAL] = _nrT("Der \"$TOK$\"-Operator muss auf eine schließende Klammer folgen.");
-    m_vErrMsg[ecMISSING_ELSE_CLAUSE]    = _nrT("Der \"Wenn-Dann-Sonst\"-(A?x:y)-Operator besitzt keinen \"Sonst\"-Fall.");
-    m_vErrMsg[ecMISPLACED_COLON]        = _nrT("Falsch gesetzter Doppelpunkt an der Stelle $POS$. Datenobjekt vergessen oder falsch verwendeter \"Wenn-Dann-Sonst\"-(A?x:y)-Operator?");
-    */
-
     #if defined(_DEBUG)
       for (int i=0; i<ecCOUNT; ++i)
         if (!m_vErrMsg[i].length())

@@ -53,8 +53,13 @@ void ViewerFrame::OnEnter(wxMouseEvent& event)
 
 void ViewerFrame::OnClose(wxCloseEvent& event)
 {
-    if (this->GetChildren().size())
-        this->GetChildren().front()->Close();
+    auto children = this->GetChildren();
+    if (children.size())
+    {
+        for (auto iter = children.begin(); iter != children.end(); iter++)
+            static_cast<wxWindow*>(*iter)->Close();
+    }
+
     event.Skip();
 }
 

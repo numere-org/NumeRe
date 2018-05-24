@@ -516,7 +516,7 @@ namespace mu
         PauseLoopMode();
         std::string sMultiArgFunc;
         vector<double> vResults;
-        value_type* v = 0;
+        value_type* v = nullptr;
         int nResults;
         //int nVectors = 0;
         for (unsigned int i = 0; i < sExpr.length(); i++)
@@ -525,6 +525,9 @@ namespace mu
             {
                 size_t nMultiArgParens = FindMultiArgFunc(sExpr, i, sMultiArgFunc);
                 vResults.clear();
+                size_t j = getMatchingParenthesis(sExpr.substr(i));
+                if (j != std::string::npos)
+                    j += i;
                 if (nMultiArgParens != std::string::npos)
                 {
                     size_t nClosingParens = getMatchingParenthesis(sExpr.substr(nMultiArgParens))+nMultiArgParens;
@@ -563,12 +566,19 @@ namespace mu
                     sExpr.replace(nMultiArgParens-sMultiArgFunc.length(), nClosingParens-nMultiArgParens+1+sMultiArgFunc.length(), "~TMAFV[" + toString(nVectorIndex) + "]");
                     SetVectorVar("~TMAFV[" + toString(nVectorIndex) + "]", vResults);
                 }
+                else if (j != std::string::npos && sExpr.substr(i, j-i).find(':') != std::string::npos)
+                {
+                    std::string sSubExpr = sExpr.substr(i+1, j-i-1);
+
+                    evaluateVectorExpansion(sSubExpr, vResults);
+
+                    sExpr.replace(i, j + 1 - i, "~TV[" + toString(nVectorIndex) + "]");
+                    SetVectorVar("~TV[" + toString(nVectorIndex) + "]", vResults);
+                }
                 else
                 {
-                    size_t j = getMatchingParenthesis(sExpr.substr(i));
                     if (j != std::string::npos)
                     {
-                        j += i;
                         SetExpr(sExpr.substr(i + 1, j - i - 1));
                         v = Eval(nResults);
                         for (int n = 0; n < nResults; n++)
@@ -598,6 +608,86 @@ namespace mu
             }
         }
         PauseLoopMode(false);
+    }
+
+    void ParserBase::evaluateVectorExpansion(string& sSubExpr, vector<double>& vResults)
+    {
+        int nResults = 0;
+        value_type* v = nullptr;
+        int isExpansion = -1;
+
+        for (size_t i = 0; i < sSubExpr.length(); i++)
+        {
+            if (sSubExpr[i] == '(' || sSubExpr[i] == '[' || sSubExpr[i] == '{')
+                i += getMatchingParenthesis(sSubExpr.substr(i));
+            if (sSubExpr[i] == ':')
+            {
+                if (isExpansion == -1)
+                    isExpansion = 1;
+                if (isExpansion == 0)
+                    continue;
+                sSubExpr[i] = ',';
+            }
+            if (sSubExpr[i] == '?')
+            {
+                if (isExpansion == -1)
+                    isExpansion = 0;
+                if (isExpansion == 1)
+                    throw ParserError(ecUNEXPECTED_CONDITIONAL, "?", sSubExpr, i);
+            }
+        }
+
+        SetExpr(sSubExpr);
+        v = Eval(nResults);
+
+        if (isExpansion == 1)
+        {
+            if (nResults == 2)
+            {
+                expandVector(v[0], v[1], (v[0] < v[1] ? 1.0 : -1.0), vResults);
+            }
+            else if (nResults == 3)
+            {
+                expandVector(v[0], v[2], v[1], vResults);
+            }
+        }
+        else
+        {
+            for (int n = 0; n < nResults; n++)
+            {
+                vResults.push_back(v[n]);
+            }
+        }
+    }
+
+    void ParserBase::expandVector(double dFirst, double dLast, double dIncrement, vector<double>& vResults)
+    {
+        // ignore impossible combinations
+        if ((dFirst < dLast && dIncrement < 0)
+            || (dFirst > dLast && dIncrement > 0)
+            || dIncrement == 0)
+        {
+            vResults.push_back(dFirst);
+            vResults.push_back(dLast);
+            return;
+        }
+        vResults.push_back(dFirst);
+        if (dFirst < dLast)
+        {
+            while (dFirst + dIncrement <= dLast+1e-10*dIncrement)
+            {
+                dFirst += dIncrement;
+                vResults.push_back(dFirst);
+            }
+        }
+        else
+        {
+            while (dFirst + dIncrement >= dLast+1e-10*dIncrement)
+            {
+                dFirst += dIncrement;
+                vResults.push_back(dFirst);
+            }
+        }
     }
 
     size_t ParserBase::FindMultiArgFunc(const std::string& sExpr, size_t nPos, std::string& sMultArgFunc)
