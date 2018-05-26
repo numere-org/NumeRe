@@ -3326,7 +3326,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1526364935 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1527248085 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3922,7 +3922,7 @@
 1491133979 source:d:\cpp\numere-source\trunk\gui\viewerbook.cpp
 	"viewerbook.hpp"
 
-1527176951 source:d:\cpp\numere-source\trunk\gui\viewerframe.cpp
+1527177059 source:d:\cpp\numere-source\trunk\gui\viewerframe.cpp
 	"viewerframe.hpp"
 
 1491133847 source:d:\cpp\numere-source\trunk\gui\viewerpanel.cpp

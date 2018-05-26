@@ -1597,22 +1597,36 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
             return;
         }
         NumeReEditor* edit;
+        // store current selection
+        int selection = m_book->GetSelection();
         for (size_t i = 0; i < m_book->GetPageCount(); i++)
         {
             edit = static_cast<NumeReEditor*>(m_book->GetPage(i));
             if (edit->GetFileNameAndPath() == sEventPath)
             {
                 m_currentSavedFile = "BLOCKALL|"+sEventPath;
-                int answer = wxMessageBox(_guilang.get("GUI_DLG_FILEMODIFIED_QUESTION", sEventPath.ToStdString()), _guilang.get("GUI_DLG_FILEMODIFIED"), wxYES_NO | wxICON_QUESTION, this);
                 m_book->SetSelection(i);
-                if (answer == wxYES)
+                if (m_currentEd->IsModified())
+                {
+                    int answer = wxMessageBox(_guilang.get("GUI_DLG_FILEMODIFIED_QUESTION", sEventPath.ToStdString()), _guilang.get("GUI_DLG_FILEMODIFIED"), wxYES_NO | wxICON_QUESTION, this);
+                    if (answer == wxYES)
+                    {
+                        m_currentEd->LoadFile(sEventPath);
+                        m_currentEd->MarkerDeleteAll(MARKER_SAVED);
+                        m_currentSavedFile = toString((int)time(0))+"|"+sEventPath;
+                    }
+                }
+                else
                 {
                     m_currentEd->LoadFile(sEventPath);
+                    m_currentEd->MarkerDeleteAll(MARKER_SAVED);
+                    m_currentSavedFile = toString((int)time(0))+"|"+sEventPath;
                 }
-                m_currentSavedFile = toString((int)time(0))+"|"+sEventPath;
                 break;
             }
         }
+        // go back to previous selection
+        m_book->SetSelection(selection);
     }
 }
 

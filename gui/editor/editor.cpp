@@ -6337,6 +6337,11 @@ void NumeReEditor::ApplyAutoIndentation(int nFirstLine, int nLastLine) // int nF
             this->SetLineIndentation(i, 4*nIndentCount);
             nIndentCount += nCurrentIndent;
         }
+        if (this->GetCurrentLine() == i
+            && this->GetCurrentPos()-pos < nIndentCount
+            && !this->HasSelection()
+            && this->GetTextRange(pos, this->GetLineEndPosition(i)).find_first_not_of(" \t\n\r") == string::npos)
+            this->GotoPos(pos+nIndentCount);
     }
     this->EndUndoAction();
 }
