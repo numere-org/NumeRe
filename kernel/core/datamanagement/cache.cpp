@@ -643,6 +643,7 @@ bool Cache::writeToCache(long long int _nLine, long long int _nCol, long long in
 // --> Schreibt einen Wert an beliebiger Stelle in den Cache <--
 bool Cache::writeToCache(Indices& _idx, const string& _sCache, double* _dData, unsigned int _nNum)
 {
+    int nDirection = LINES;
     if (_nNum == 1)
         return writeSingletonToCache(_idx, _sCache, _dData);
     long long int _nLayer = mCachesMap.at(_sCache);
@@ -657,11 +658,25 @@ bool Cache::writeToCache(Indices& _idx, const string& _sCache, double* _dData, u
         {
             _idx.vJ.push_back(_idx.vJ.back()+1);
         }
+
+        if (_idx.nI[1] != -1)
+            nDirection = COLS;
+        else if (_idx.nJ[1] != -1)
+            nDirection = LINES;
+        else if (_idx.vI.size() == _nNum && _idx.vJ.size() != _nNum)
+            nDirection = COLS;
+        else if (_idx.vJ.size() == _nNum && _idx.vI.size() != _nNum)
+            nDirection = LINES;
+        else if (_idx.vI.size() > _idx.vJ.size())
+            nDirection = COLS;
+        else
+            nDirection = LINES;
+
         for (size_t i = 0; i < _idx.vI.size(); i++)
         {
             for (size_t j = 0; j < _idx.vJ.size(); j++)
             {
-                if (_idx.vI.size() > _idx.vJ.size())
+                if (nDirection == COLS)
                 {
                     if (_nNum > i && !isnan(_idx.vI[i]) && !isnan(_idx.vJ[j]))
                         writeToCache(_idx.vI[i], _idx.vJ[j], _nLayer, _dData[i]);
@@ -677,15 +692,24 @@ bool Cache::writeToCache(Indices& _idx, const string& _sCache, double* _dData, u
     else
     {
         if (_idx.nI[1] == -2)
-            _idx.nI[1] = _idx.nI[0] + _nNum;
+            _idx.nI[1] = _idx.nI[0] + _nNum-1;
         if (_idx.nJ[1] == -2)
-            _idx.nJ[1] = _idx.nJ[0] + _nNum;
+            _idx.nJ[1] = _idx.nJ[0] + _nNum-1;
+
+        if (_idx.nI[1] - _idx.nI[0] == _nNum-1 && _idx.nJ[1] - _idx.nJ[0] != _nNum-1)
+            nDirection = COLS;
+        else if (_idx.nI[1] - _idx.nI[0] != _nNum-1 && _idx.nJ[1] - _idx.nJ[0] == _nNum-1)
+            nDirection = LINES;
+        else if (_idx.nI[1] - _idx.nI[0] > _idx.nJ[1] - _idx.nJ[0])
+            nDirection = COLS;
+        else
+            nDirection = LINES;
 
         for (int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
         {
             for (int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
             {
-                if (_idx.nI[1]-_idx.nI[0] > _idx.nJ[1]-_idx.nJ[0])
+                if (nDirection == COLS)
                 {
                     if (_nNum > i-_idx.nI[0])
                         writeToCache(i, j, _nLayer, _dData[i-_idx.nI[0]]);
