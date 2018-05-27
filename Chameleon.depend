@@ -3691,7 +3691,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1527321715 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1527327788 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3970,7 +3970,7 @@
 	"io/fileops.hpp"
 	"datamanagement/dataops.hpp"
 
-1527010287 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
+1527327623 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
 	"cache.hpp"
 	"../../kernel.hpp"
 
@@ -4143,12 +4143,12 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1527077337 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1527334982 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
 
-1522052099 d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.hpp
+1527330756 d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.hpp
 	<mgl2/mgl.h>
 	<string>
 	<vector>

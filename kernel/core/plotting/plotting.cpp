@@ -1135,6 +1135,23 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
                 }
                 _mData.Transpose();
             }
+            else if (_pData.getBars() || _pData.getHBars()) ///
+            {
+                long int maxdim = _mDataPlots[nTypeCounter[1]][1].nx;
+                for (int data = 2; data < nDataDim[nTypeCounter[1]]; data++)
+                {
+                    if (maxdim < _mDataPlots[nTypeCounter[1]][data].nx)
+                        maxdim = _mDataPlots[nTypeCounter[1]][data].nx;
+                }
+                _mData.Create(maxdim, nDataDim[nTypeCounter[1]]-1);
+                for (int data = 0; data < nDataDim[nTypeCounter[1]]-1; data++)
+                {
+                    for (int col = 0; col < _mDataPlots[nTypeCounter[1]][data+1].nx; col++)
+                    {
+                        _mData.a[col + data*maxdim] = _mDataPlots[nTypeCounter[1]][data+1].a[col];
+                    }
+                }
+            }
             else
             {
                 if (_pData.getInterpolate() && getNN(_mData) >= _pData.getSamples())
@@ -1283,7 +1300,7 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
                 }
                 else if (!_pData.getxError() && !_pData.getyError())
                 {
-                    if ((_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].nx >= _pInfo.nSamples) || _pData.getBars())
+                    if ((_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].nx >= _pInfo.nSamples) || _pData.getBars() || _pData.getHBars())
                         _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nStyle], _pData).c_str());
                     else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].nx >= 0.9 * _pInfo.nSamples))
                         _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1,sConvLegends.length()-2))).c_str(), getLegendStyle(_pInfo.sConPointStyles[nStyle], _pData).c_str());
@@ -1371,7 +1388,7 @@ bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglDa
                 if (!_pData.getArea() && !_pData.getBars() && !_pData.getRegion() && !_pData.getStepplot())
                     _graph->Plot(_mAxisVals, _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
                 else if (_pData.getBars() && !_pData.getArea() && !_pData.getRegion() && !_pData.getStepplot())
-                    _graph->Bars(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]+"^").c_str());
+                    _graph->Bars(_mAxisVals, _mData, (composeColoursForBarChart(_mData.ny)+"^").c_str());
                 else if (_pData.getRegion() && getNN(_mData2[0]) > 1)
                 {
                     if (*_pInfo.nStyle == _pInfo.nStyleMax-1)
@@ -1394,7 +1411,7 @@ bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglDa
                 if (!_pData.getArea() && !_pData.getBars() && !_pData.getStepplot())
                     _graph->Plot(_mAxisVals, _mData, _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
                 else if (_pData.getBars() && !_pData.getArea())
-                    _graph->Bars(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]+"^").c_str());
+                    _graph->Bars(_mAxisVals, _mData, (composeColoursForBarChart(_mData.ny)+"^").c_str());
                 else if (!_pData.getBars() && !_pData.getArea() && !_pData.getHBars() && _pData.getStepplot())
                     _graph->Step(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
                 else
@@ -1405,9 +1422,9 @@ bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglDa
                 if (!_pData.getArea() && !_pData.getBars() && !_pData.getHBars() && !_pData.getStepplot())
                     _graph->Plot(_mAxisVals, _mData, _pInfo.sPointStyles[*_pInfo.nStyle].c_str());
                 else if (_pData.getBars() && !_pData.getArea() && !_pData.getHBars() && !_pData.getStepplot())
-                    _graph->Bars(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]+"^").c_str());
+                    _graph->Bars(_mAxisVals, _mData, (composeColoursForBarChart(_mData.ny)+"^").c_str());
                 else if (!_pData.getBars() && !_pData.getArea() && _pData.getHBars() && !_pData.getStepplot())
-                    _graph->Barh(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]+"^").c_str());
+                    _graph->Barh(_mAxisVals, _mData, (composeColoursForBarChart(_mData.ny)+"^").c_str());
                 else if (!_pData.getBars() && !_pData.getArea() && !_pData.getHBars() && _pData.getStepplot())
                     _graph->Step(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
                 else
@@ -3559,12 +3576,12 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                         nDataDim[i] = 6;
                     else if (_pInfo.b2D)
                         nDataDim[i] = 3;
-                    if (_pData.getBoxplot())
-                        nDataDim[i] = _data.getCols(sDataTable, false) + 1 - j_pos[0];
+                    if ((_pData.getBoxplot() || _pData.getBars() || _pData.getHBars()) && sj_pos[1] == "inf")
+                        nDataDim[i] = _data.getCols(sDataTable, false) + _pData.getBoxplot() - j_pos[0];
                 }
                 else
                 {
-                    if (!_pData.getBoxplot() || _pInfo.b2D)
+                    if (!(_pData.getBoxplot() || _pData.getBars() || _pData.getHBars()) || _pInfo.b2D)
                     {
                         if (j+1 > 6)
                             nDataDim[i] = 6;
@@ -3575,7 +3592,10 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                     }
                     else
                     {
-                        nDataDim[i] = j+2;
+                        if (_pData.getBars() || _pData.getHBars())
+                            nDataDim[i] = j + 1;
+                        else
+                            nDataDim[i] = j+2;
                     }
                 }
 
@@ -3847,7 +3867,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                             // --> xyz-Datenwerte! <--
                             if (j_pos[0] < j_pos[1] || sj_pos[1] == "inf")
                             {
-                                for (int q = 0; q < nDataDim[i]-_pData.getBoxplot(); q++)
+                                for (int q = 0; q < nDataDim[i]-(_pData.getBoxplot()); q++)
                                 {
                                     if (_pInfo.b2D && q == 2)
                                     {
@@ -3874,26 +3894,26 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                                     else
                                     {
                                         // --> Vorwaerts zaehlen <--
-                                        if (!q && _pData.getBoxplot())
+                                        if (!q && (_pData.getBoxplot()))
                                         {
                                             _mDataPlots[i][q] = l+1+i_pos[0];
                                         }
                                         if (_data.getCols(sDataTable) > q + j_pos[0] && _data.isValidEntry(l+i_pos[0], q+j_pos[0], sDataTable) && (j_pos[0] <= j_pos[1] || sj_pos[1] == "inf"))
                                         {
                                             if (!l && (isnan(_data.getElement(l+i_pos[0], q + j_pos[0], sDataTable)) || isinf(_data.getElement(l+i_pos[0], q + j_pos[0], sDataTable))))
-                                                _mDataPlots[i][q+_pData.getBoxplot()].a[l] = NAN;
+                                                _mDataPlots[i][q+(_pData.getBoxplot())].a[l] = NAN;
                                             else if (isinf(_data.getElement(l+i_pos[0], q + j_pos[0], sDataTable)))
-                                                _mDataPlots[i][q+_pData.getBoxplot()].a[l] = NAN;
+                                                _mDataPlots[i][q+(_pData.getBoxplot())].a[l] = NAN;
                                             else
-                                                _mDataPlots[i][q+_pData.getBoxplot()].a[l] = _data.getElement(l+i_pos[0], q + j_pos[0], sDataTable);
+                                                _mDataPlots[i][q+(_pData.getBoxplot())].a[l] = _data.getElement(l+i_pos[0], q + j_pos[0], sDataTable);
                                         }
                                         else if (q == 2 && _pInfo.sCommand == "plot3d"
                                             && !(_data.getLines(sDataTable, true)-_data.getAppendedZeroes(q+j_pos[0],sDataTable)-i_pos[0]))
                                             _mDataPlots[i][q].a[l] = 0.0;
                                         else if (l)
-                                            _mDataPlots[i][q+_pData.getBoxplot()].a[l] = NAN;
+                                            _mDataPlots[i][q+(_pData.getBoxplot())].a[l] = NAN;
                                         else
-                                            _mDataPlots[i][q+_pData.getBoxplot()].a[0] = NAN;
+                                            _mDataPlots[i][q+(_pData.getBoxplot())].a[0] = NAN;
                                     }
                                 }
                             }
@@ -3926,26 +3946,26 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                                     else
                                     {
                                         // --> Rueckwaerts zaehlen <--
-                                        if (!q && _pData.getBoxplot())
+                                        if (!q && (_pData.getBoxplot()))
                                         {
                                             _mDataPlots[i][q] = l+1+i_pos[0];
                                         }
                                         if (_data.getCols(sDataTable) > j_pos[0] && _data.isValidEntry(l+i_pos[0], j_pos[0]-q,sDataTable) && j_pos[0]-q >= 0 && j_pos[0]-q >= j_pos[1])
                                         {
                                             if (!l && (isnan(_data.getElement(l+i_pos[0], j_pos[0]-q, sDataTable)) || isinf(_data.getElement(l+i_pos[0], j_pos[0]-q, sDataTable))))
-                                                _mDataPlots[i][q+_pData.getBoxplot()].a[l] = NAN;
+                                                _mDataPlots[i][q+(_pData.getBoxplot())].a[l] = NAN;
                                             else if (isinf(_data.getElement(l+i_pos[0], j_pos[0]-q, sDataTable)))
-                                                _mDataPlots[i][q+_pData.getBoxplot()].a[l] = NAN;
+                                                _mDataPlots[i][q+(_pData.getBoxplot())].a[l] = NAN;
                                             else
-                                                _mDataPlots[i][q+_pData.getBoxplot()].a[l] = _data.getElement(l+i_pos[0], j_pos[0]-q, sDataTable);
+                                                _mDataPlots[i][q+(_pData.getBoxplot())].a[l] = _data.getElement(l+i_pos[0], j_pos[0]-q, sDataTable);
                                         }
                                         else if (q == 2 && _pInfo.sCommand == "plot3d"
                                             && !(_data.getLines(sDataTable, true)-_data.getAppendedZeroes(j_pos[0]-q, sDataTable)-i_pos[0]))
                                             _mDataPlots[i][q].a[l] = 0.0;
                                         else if (l)
-                                            _mDataPlots[i][q+_pData.getBoxplot()].a[l] = NAN;
+                                            _mDataPlots[i][q+(_pData.getBoxplot())].a[l] = NAN;
                                         else
-                                            _mDataPlots[i][q+_pData.getBoxplot()].a[0] = NAN;
+                                            _mDataPlots[i][q+(_pData.getBoxplot())].a[0] = NAN;
                                     }
                                 }
                             }
@@ -3954,22 +3974,22 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                         {
                             // --> Beliebige Spalten <--
                             //cerr << "arbitrary" << endl;
-                            if (_pData.getBoxplot() && !_pInfo.b2D && vCol.size())
+                            if ((_pData.getBoxplot() || _pData.getBars() || _pData.getHBars()) && !_pInfo.b2D && vCol.size())
                             {
                                 for (int k = 0; k < min(nDataDim[i], (int)vCol.size()); k++)
                                 {
-                                    if (_pData.getBoxplot() && !k)
+                                    if ((_pData.getBoxplot()) && !k)
                                     {
                                         _mDataPlots[i][0] = l+1+i_pos[0];
                                     }
                                     if (_data.getCols(sDataTable) > vCol[k] && _data.isValidEntry(l+i_pos[0], vCol[k], sDataTable))
                                     {
                                         if (!l && (isnan(_data.getElement(l+i_pos[0], vCol[k], sDataTable)) || isinf(_data.getElement(l+i_pos[0], vCol[k], sDataTable))))
-                                            _mDataPlots[i][k+1].a[l] = NAN;
+                                            _mDataPlots[i][k+_pData.getBoxplot()].a[l] = NAN;
                                         else if (isinf(_data.getElement(l+i_pos[0], vCol[k], sDataTable)))
-                                            _mDataPlots[i][k+1].a[l] = NAN;
+                                            _mDataPlots[i][k+_pData.getBoxplot()].a[l] = NAN;
                                         else
-                                            _mDataPlots[i][k+1].a[l] = _data.getElement(l+i_pos[0], vCol[k], sDataTable);
+                                            _mDataPlots[i][k+_pData.getBoxplot()].a[l] = _data.getElement(l+i_pos[0], vCol[k], sDataTable);
                                     }
                                     else if (_pInfo.sCommand == "plot3d" && k < 3
                                         && !(_data.getLines(sDataTable, true)-_data.getAppendedZeroes(vCol[k], sDataTable)-i_pos[0]))
@@ -3985,7 +4005,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                             }
                             else
                             {
-                                for (int k = 0; k < nDataDim[i]-_pData.getBoxplot(); k++)
+                                for (int k = 0; k < nDataDim[i]-(_pData.getBoxplot()); k++)
                                 {
                                     //cerr << j_pos[k] << " " << k << endl;
                                     if (_pInfo.b2D && k == 2)
@@ -4321,6 +4341,7 @@ void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, d
             }
             else
             {
+
                 if (q && _pData.getRangeSetting())
                 {
                     if (_pData.getRanges(0,0) > _mDataPlots[i][0].a[l] || _pData.getRanges(0,1) < _mDataPlots[i][0].a[l])
@@ -4333,7 +4354,7 @@ void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, d
                     if (dDataRanges[q][1] < _mDataPlots[i][q].a[l] || isnan(dDataRanges[q][1]))
                         dDataRanges[q][1] = _mDataPlots[i][q].a[l];
                 }
-                else if (_pData.getBoxplot() && q == 1)
+                else if ((_pData.getBoxplot() || _pData.getBars()) && q == 1)
                 {
                     for (int dim = 1; dim < nDataDim[i]; dim++)
                     {
@@ -4350,6 +4371,26 @@ void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, d
                                 dSecDataRanges[1][0] = _mDataPlots[i][dim].a[l];
                             if (dSecDataRanges[1][1] < _mDataPlots[i][dim].a[l] || isnan(dSecDataRanges[1][1]))
                                 dSecDataRanges[1][1] = _mDataPlots[i][dim].a[l];
+                        }
+                    }
+                }
+                else if (_pData.getHBars())
+                {
+                    for (int dim = 0; dim < nDataDim[i]; dim++)
+                    {
+                        if (sDataAxisBinds[2*i+!q] == 'l' || sDataAxisBinds[2*i+!q] == 'b')
+                        {
+                            if (dDataRanges[0+!dim][0] > _mDataPlots[i][dim].a[l] || isnan(dDataRanges[0+!dim][0]))
+                                dDataRanges[0+!dim][0] = _mDataPlots[i][dim].a[l];
+                            if (dDataRanges[0+!dim][1] < _mDataPlots[i][dim].a[l] || isnan(dDataRanges[0+!dim][1]))
+                                dDataRanges[0+!dim][1] = _mDataPlots[i][dim].a[l];
+                        }
+                        else
+                        {
+                            if (dSecDataRanges[0+!dim][0] > _mDataPlots[i][dim].a[l] || isnan(dSecDataRanges[0+!dim][0]))
+                                dSecDataRanges[0+!dim][0] = _mDataPlots[i][dim].a[l];
+                            if (dSecDataRanges[0+!dim][1] < _mDataPlots[i][dim].a[l] || isnan(dSecDataRanges[0+!dim][1]))
+                                dSecDataRanges[0+!dim][1] = _mDataPlots[i][dim].a[l];
                         }
                     }
                 }
@@ -6863,6 +6904,21 @@ string Plot::CoordFunc(const string& sFunc, double dPhiScale, double dThetaScale
     }
 
     return sParsedFunction;
+}
+
+
+string Plot::composeColoursForBarChart(long int nNum)
+{
+    string sColours;
+    for (int i = 0; i < nNum; i++)
+    {
+        sColours += _pInfo.sLineStyles[*_pInfo.nStyle];
+        if (i+1 < nNum)
+            (*_pInfo.nStyle)++;
+        if (*_pInfo.nStyle >= _pInfo.nStyleMax)
+            *_pInfo.nStyle = 0;
+    }
+    return sColours;
 }
 
 

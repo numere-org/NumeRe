@@ -45,3 +45,4 @@ Fixed	Moving, copying and removing files with non-standard file extensions is no
 Fixed	Floating point errors in functions, which need integer rather than double, are now fixed.
 Fixed	Recursive expressions with strings, which do contain unmatched parentheses, are now possible without falling into an endless loop.
 New	Index vectors may now be expanded automatically by writing "{1:10}" or "{1:0.5:10}"
+Added	Bar charts may now created by selecting more than two columns using multiple plotting styles.

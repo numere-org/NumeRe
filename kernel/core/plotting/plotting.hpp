@@ -94,6 +94,7 @@ class Plot
         mglData fmod(const mglData& _mData, double dDenominator);
         void CoordSettings(const PlotData& _pData);
         string CoordFunc(const string& sFunc, double dPhiScale = 1.0, double dThetaScale = 1.0);
+        string composeColoursForBarChart(long int nNum);
 
     public:
         Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions, PlotData& _pData);

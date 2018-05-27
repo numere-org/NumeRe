@@ -382,7 +382,6 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_treeBook->Hide();
 	m_watcher = new Filewatcher();
 	m_watcher->SetOwner(this);
-	Connect(wxEVT_FSWATCHER, wxFileSystemWatcherEventHandler(NumeReWindow::OnFileSystemEvent));
 
 	m_iconManager = new IconManager(getProgramFolder());
 
@@ -549,6 +548,8 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	}
 	PageHasChanged(m_currentPage);
 
+	// bind the event after the loading of the files - FIX for Win10 1803
+	Connect(wxEVT_FSWATCHER, wxFileSystemWatcherEventHandler(NumeReWindow::OnFileSystemEvent));
 
 
 	m_filterNSCRFiles = _guilang.get("GUI_FILTER_SCRIPTS") + " (*.nscr)|*.nscr";//"NumeRe scripts (*.nscr)|*.nscr";
