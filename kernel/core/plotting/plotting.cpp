@@ -3998,9 +3998,9 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                                         //cerr << 0.0 << endl;
                                     }
                                     else if (l)
-                                        _mDataPlots[i][k+1].a[l] = NAN;
+                                        _mDataPlots[i][k+_pData.getBoxplot()].a[l] = NAN;
                                     else
-                                        _mDataPlots[i][k+1].a[0] = NAN;
+                                        _mDataPlots[i][k+_pData.getBoxplot()].a[0] = NAN;
                                 }
                             }
                             else

@@ -3925,9 +3925,9 @@ void Datafile::clearCache()
 	return;
 }
 
-bool Datafile::setCacheSize(long long int _nLines, long long int _nCols, long long int _nLayers)
+bool Datafile::setCacheSize(long long int _nLines, long long int _nCols, const string& _sCache)
 {
-	if (!resizeCache(_nLines, _nCols, _nLayers))
+	if (!resizeCache(_nLines, _nCols, _sCache))
         return false;
 	return true;
 }
@@ -3935,13 +3935,13 @@ bool Datafile::setCacheSize(long long int _nLines, long long int _nCols, long lo
 void Datafile::openAutosave(string _sFile, Settings& _option)
 {
     openFile(_sFile, _option, true);
-    resizeCache(nLines, nCols,1);
+    resizeCache(nLines, nCols, "cache");
     for (long long int i = 0; i < nLines; i++)
     {
         for (long long int j = 0; j < nCols; j++)
         {
-            if (isValidEntry(i,j,"data"))
-                writeToCache(i,j,"cache",dDatafile[i][j]);
+            if (isValidEntry(i, j, "data"))
+                writeToCache(i, j, "cache", dDatafile[i][j]);
         }
     }
     for (long long int i = 0; i < nCols; i++)
@@ -5204,7 +5204,11 @@ double Datafile::cnt(const string& sCache, const vector<long long int>& _vLine, 
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= getLines(sCache, false) || _vCol[j] < 0 || _vCol[j] >= getCols(sCache))
+            if (_vLine[i] < 0
+                || _vLine[i] >= getLines(sCache, false)
+                || _vLine[i] >= getLines(sCache, false) - getAppendedZeroes(_vCol[j], sCache)
+                || _vCol[j] < 0
+                || _vCol[j] >= getCols(sCache))
                 nInvalid++;
         }
     }
@@ -5497,13 +5501,13 @@ double Datafile::med(const string& sCache, long long int i1, long long int i2, l
     }
     string sSortCommand = "cache -sort";
     _cache.sortElements(sSortCommand);
-    if (_cache.getCacheLines(false) % 2)
+    if (_cache.getCacheLines("cache", false) % 2)
     {
-        return _cache.getElement(_cache.getCacheLines(false) / 2, 0, "cache");
+        return _cache.getElement(_cache.getCacheLines("cache", false) / 2, 0, "cache");
     }
     else
     {
-        return (_cache.getElement(_cache.getCacheLines(false) / 2, 0, "cache") + _cache.getElement(_cache.getCacheLines(false) / 2 - 1, 0, "cache")) / 2.0;
+        return (_cache.getElement(_cache.getCacheLines("cache", false) / 2, 0, "cache") + _cache.getElement(_cache.getCacheLines("cache", false) / 2 - 1, 0, "cache")) / 2.0;
     }
 }
 

@@ -1439,7 +1439,7 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
             for (int i = 0; i < nResults; i++)
             {
-                if (isnan(v[i]) || v[i] <= 0)
+                if (isnan(v[i]) || intCast(v[i]) <= 0)
                     throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
                 if (isinf(v[i]))
                     v[i] = -1;

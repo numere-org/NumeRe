@@ -2400,7 +2400,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                             //NumeReKernel::print(_idx.nI[0] + " " + _idx.nI[1] );
                             //NumeReKernel::print(_idx.nJ[0] + " " + _idx.nJ[1] );
 
-                            _cache.setCacheSize(_idx.nI[1]-_idx.nI[0]+1, _idx.nJ[1]-_idx.nJ[0]+1, 1);
+                            _cache.setCacheSize(_idx.nI[1]-_idx.nI[0]+1, _idx.nJ[1]-_idx.nJ[0]+1, "cache");
                             for (unsigned int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
                             {
                                 for (unsigned int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
@@ -2416,7 +2416,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                         }
                         else
                         {
-                            _cache.setCacheSize(_idx.vI.size(), _idx.vJ.size(), 1);
+                            _cache.setCacheSize(_idx.vI.size(), _idx.vJ.size(), "cache");
                             for (unsigned int i = 0; i < _idx.vI.size(); i++)
                             {
                                 for (unsigned int j = 0; j < _idx.vJ.size(); j++)
@@ -2515,7 +2515,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                             //NumeReKernel::print(_idx.nI[0] + " " + _idx.nI[1] );
                             //NumeReKernel::print(_idx.nJ[0] + " " + _idx.nJ[1] );
 
-                            _cache.setCacheSize(_idx.nI[1]-_idx.nI[0]+1, _idx.nJ[1]-_idx.nJ[0]+1, 1);
+                            _cache.setCacheSize(_idx.nI[1]-_idx.nI[0]+1, _idx.nJ[1]-_idx.nJ[0]+1, "cache");
                             if (iter->first != "cache")
                                 _cache.renameCache("cache", (iter->second == -1 ? "copy_of_"+(iter->first) : (iter->first)), true);
                             for (unsigned int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
@@ -2533,7 +2533,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                         }
                         else
                         {
-                            _cache.setCacheSize(_idx.vI.size(), _idx.vJ.size(), 1);
+                            _cache.setCacheSize(_idx.vI.size(), _idx.vJ.size(), "cache");
                             if (iter->first != "cache")
                                 _cache.renameCache("cache", (iter->second == -1 ? "copy_of_"+(iter->first) : (iter->first)), true);
                             for (unsigned int i = 0; i < _idx.vI.size(); i++)
@@ -3455,7 +3455,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                             parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
                             parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
 
-                            _cache.setCacheSize(_idx.nI[1]-_idx.nI[0]+1, _idx.nJ[1]-_idx.nJ[0]+1, 1);
+                            _cache.setCacheSize(_idx.nI[1]-_idx.nI[0]+1, _idx.nJ[1]-_idx.nJ[0]+1, "cache");
                             //if (iter->first != "cache")
                                 _cache.renameCache("cache", "*"+(iter->first), true);
                             for (unsigned int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
@@ -3473,7 +3473,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                         }
                         else
                         {
-                            _cache.setCacheSize(_idx.vI.size(), _idx.vJ.size(), 1);
+                            _cache.setCacheSize(_idx.vI.size(), _idx.vJ.size(), "cache");
                             //if (iter->first != "cache")
                                 _cache.renameCache("cache", "*"+(iter->first), true);
                             for (unsigned int i = 0; i < _idx.vI.size(); i++)
@@ -3729,7 +3729,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                             //NumeReKernel::print(_idx.nI[0] + " " + _idx.nI[1] );
                             //NumeReKernel::print(_idx.nJ[0] + " " + _idx.nJ[1] );
 
-                            _cache.setCacheSize(_idx.nI[1]-_idx.nI[0]+1, _idx.nJ[1]-_idx.nJ[0]+1, 1);
+                            _cache.setCacheSize(_idx.nI[1]-_idx.nI[0]+1, _idx.nJ[1]-_idx.nJ[0]+1, "cache");
                             for (unsigned int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
                             {
                                 for (unsigned int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
@@ -3745,7 +3745,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                         }
                         else
                         {
-                            _cache.setCacheSize(_idx.vI.size(), _idx.vJ.size(), 1);
+                            _cache.setCacheSize(_idx.vI.size(), _idx.vJ.size(), "cache");
                             for (unsigned int i = 0; i < _idx.vI.size(); i++)
                             {
                                 for (unsigned int j = 0; j < _idx.vJ.size(); j++)
@@ -3884,6 +3884,18 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
         else if (sCommand == "resample")
         {
             //NumeReKernel::print(sCommand );
+            if (!_data.containsCacheElements(sCmd) || sCmd.find(',') == string::npos)
+                return 1;
+            for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
+            {
+                if (sCmd.find(iter->first+"(") != string::npos
+                    && (!sCmd.find(iter->first+"(")
+                        || (sCmd.find(iter->first+"(") && checkDelimiter(sCmd.substr(sCmd.find(iter->first+"(")-1, (iter->first).length()+2)))))
+                {
+                    sArgument = sCmd.substr(sCmd.find(iter->first+"("),(iter->first).length()+getMatchingParenthesis(sCmd.substr(sCmd.find(iter->first+"(")+(iter->first).length()))+1);
+                    break;
+                }
+            }
             if (matchParams(sCmd, "samples", '='))
             {
                 nArgument = matchParams(sCmd, "samples", '=') + 7;
@@ -3901,19 +3913,9 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                 nArgument = (int)_parser.Eval();
             }
             else
-                nArgument = _data.getCacheLines(false);
-            if (!_data.containsCacheElements(sCmd) || sCmd.find(',') == string::npos)
-                return 1;
-            for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
-            {
-                if (sCmd.find(iter->first+"(") != string::npos
-                    && (!sCmd.find(iter->first+"(")
-                        || (sCmd.find(iter->first+"(") && checkDelimiter(sCmd.substr(sCmd.find(iter->first+"(")-1, (iter->first).length()+2)))))
-                {
-                    sArgument = sCmd.substr(sCmd.find(iter->first+"("),(iter->first).length()+getMatchingParenthesis(sCmd.substr(sCmd.find(iter->first+"(")+(iter->first).length()))+1);
-                    break;
-                }
-            }
+                nArgument = _data.getCacheLines(sArgument.substr(0, sArgument.find('(')), false);
+
+
             _idx = parser_getIndices(sArgument, _parser, _data, _option);
             if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sArgument, sArgument);
@@ -4947,7 +4949,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                             //NumeReKernel::print(_idx.nI[0] + " " + _idx.nI[1] );
                             //NumeReKernel::print(_idx.nJ[0] + " " + _idx.nJ[1] );
 
-                            _cache.setCacheSize(_idx.nI[1]-_idx.nI[0]+1, _idx.nJ[1]-_idx.nJ[0]+1, 1);
+                            _cache.setCacheSize(_idx.nI[1]-_idx.nI[0]+1, _idx.nJ[1]-_idx.nJ[0]+1, "cache");
                             if (iter->first != "cache" && iter->first != "data")
                                 _cache.renameCache("cache", iter->first, true);
                             if (iter->first == "data")
@@ -4967,7 +4969,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                         }
                         else
                         {
-                            _cache.setCacheSize(_idx.vI.size(), _idx.vJ.size(), 1);
+                            _cache.setCacheSize(_idx.vI.size(), _idx.vJ.size(), "cache");
                             if (iter->first != "cache" && iter->first != "data")
                                 _cache.renameCache("cache", iter->first, true);
                             if (iter->first == "data")

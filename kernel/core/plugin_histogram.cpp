@@ -957,9 +957,6 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
             {
                 _target.setCacheStatus(true);
                 int nFirstCol = _target.getCacheCols(sTargettable, false);
-                //cerr << "error" << endl;
-                //_data.setCacheSize(nBin, nFirstCol + nDataRowFinal-nDataRow+1,-1);
-                //cerr << "error" << endl;
 
                 _target.setHeadLineElement(nFirstCol, sTargettable, "Bins");
                 //cerr << "error" << endl;

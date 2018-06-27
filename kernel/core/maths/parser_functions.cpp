@@ -2367,22 +2367,15 @@ void parser_ListVar(mu::ParserBase& _parser, const Settings& _option, const Data
     {
         string sCacheSize = toString(_data.getCacheLines(iter->first, false)) + " x " + toString(_data.getCacheCols(iter->first, false));
         NumeReKernel::printPreFmt("|   " + iter->first+"()" + strfill("Dim:", (_option.getWindow(0)-32)/2-(iter->first).length() + _option.getWindow(0)%2) + strfill(sCacheSize, (_option.getWindow(0)-50)/2)+strfill("[double x double]", 19));
-        ///cerr << "|   " << iter->first << "()" << std::setfill(' ') << std::setw((_option.getWindow(0)-32)/2-(iter->first).length() + _option.getWindow(0)%2) << "Dim:" //24
-        ///     <<  std::setfill(' ') << std::setw((_option.getWindow(0)-50)/2) << sCacheSize << std::setw(19) << "[double x double]"; //15
         if (_data.getSize(iter->second) >= 1024*1024)
             NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second)/(1024.0*1024.0), 4), 9)+ " MBytes\n");
-            ///cerr << std::setprecision(4) << std::setw(9) << _data.getSize(iter->second)/(1024.0*1024.0) << " MBytes";
         else if (_data.getSize(iter->second) >= 1024)
             NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second)/(1024.0), 4), 9)+ " KBytes\n");
-            ///cerr << std::setprecision(4) << std::setw(9) << _data.getSize(iter->second)/1024.0 << " KBytes";
         else
             NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second)), 9)+ "  Bytes\n");
-            ///cerr << std::setw(9) << _data.getSize(iter->second) << "  Bytes";
-        //cerr << endl;
         nBytesSum += _data.getSize(iter->second);
     }
     NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0)-4, '-')+"\n");
-    ///cerr << "|   " << std::setfill((char)196) << std::setw(_option.getWindow(0)-4) << (char)196 << endl;
 
     if (_data.isValid())
     {

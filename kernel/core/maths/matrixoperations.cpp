@@ -626,7 +626,7 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
     // Target in Zielmatrix speichern
     if (bAllowMatrixClearing)
         _data.deleteBulk(sTargetName, 0, _data.getLines(sTargetName, false), 0, _data.getCols(sTargetName, false));
-    _data.setCacheSize(_idx.nI[0]+_mResult.size(), _idx.nJ[0]+_mResult[0].size(), -1);
+    _data.setCacheSize(_idx.nI[0]+_mResult.size(), _idx.nJ[0]+_mResult[0].size(), sTargetName);
     for (unsigned int i = 0; i < _mResult.size(); i++)
     {
         if (_idx.nI[1] == -2 || _idx.nI[1] - _idx.nI[1] > i)

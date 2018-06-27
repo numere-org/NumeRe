@@ -204,7 +204,7 @@ void plugin_random(string& sCmd, Datafile& _data, Output& _out, Settings& _optio
 	student_t_distribution<double> studentTDistribution(nFreedoms);                         // 5
     if (nDataPoints * nDataRows > 1e6)
         NumeReKernel::printPreFmt(toSystemCodePage("|-> "+_lang.get("RANDOM_RESERVING_MEM")+" ... "));
-    if (!_data.setCacheSize(nDataPoints,nDataRows+nFilledCols,-1))
+    if (!_data.setCacheSize(nDataPoints, nDataRows+nFilledCols, "cache"))
         return;
     if (nDataPoints * nDataRows > 1e6)
         NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
@@ -228,7 +228,7 @@ void plugin_random(string& sCmd, Datafile& _data, Output& _out, Settings& _optio
                 dRandomNumber = binomialDistribution(randomGenerator);
             else if (nDistribution == 5)
                 dRandomNumber = studentTDistribution(randomGenerator);
-			_data.writeToCache(i, j+nFilledCols, 0, dRandomNumber);
+			_data.writeToCache(i, j+nFilledCols, "cache", dRandomNumber);
 
 			if ((!i && !j) || dSeedBase == 0.0)
 			{

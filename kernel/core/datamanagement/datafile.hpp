@@ -239,7 +239,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
 		bool getCacheStatus() const;					// gibt bUseCache zurueck
 		bool isValidCache() const;						// gibt bValidData von Cache zurueck
 		void clearCache();								// loest die Methode Cache::removeCachedData() auf
-		bool setCacheSize(long long int _nLines, long long int _nCols, long long int _nLayers);		// Setzt die Anfangsgroesse des Caches
+		bool setCacheSize(long long int _nLines, long long int _nCols, const string& sCache);		// Setzt die Anfangsgroesse des Caches
 		vector<int> sortElements(const string& sLine);
 		vector<int> sortElements(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = 0, const string& sSortingExpression = "");
         inline int getDataSize() const
