@@ -45,6 +45,7 @@ void parser_makeReal(Matrix& _mMatrix);
 double parser_calcDeterminant(const Matrix& _mMatrix, vector<int> vRemovedLines);
 void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _option);
 void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, Define& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position);
+Indices parser_getIndicesForMatrix(const string& sCmd, const vector<Matrix>& vReturnedMatrices, Parser& _parser, Datafile& _data, const Settings& _option);
 
 Matrix parser_MatrixLogToIndex(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 Matrix parser_MatrixIndexToLog(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
@@ -1246,7 +1247,7 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
             nPos++;
             continue;
         }
-        vIndices.push_back(parser_getIndices(__sCmd.substr(nPos), _parser, _data, _option));
+        vIndices.push_back(parser_getIndicesForMatrix(__sCmd.substr(nPos), vReturnedMatrices, _parser, _data, _option));
         if (!vIndices[vIndices.size()-1].vI.size())
         {
             if (!parser_evalIndices("data", vIndices[vIndices.size()-1], _data))
@@ -1270,7 +1271,7 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
                 nPos++;
                 continue;
             }
-            vIndices.push_back(parser_getIndices(__sCmd.substr(nPos), _parser, _data, _option));
+            vIndices.push_back(parser_getIndicesForMatrix(__sCmd.substr(nPos), vReturnedMatrices, _parser, _data, _option));
             if (!vIndices[vIndices.size()-1].vI.size())
             {
                 if (!parser_evalIndices(iter->first, vIndices[vIndices.size()-1], _data))
@@ -3134,4 +3135,31 @@ Indices parser_getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _p
     return _idx;
 }
 
+Indices parser_getIndicesForMatrix(const string& sCmd, const vector<Matrix>& vReturnedMatrices, Parser& _parser, Datafile& _data, const Settings& _option)
+{
+    string _sCmd = sCmd;
+    for (unsigned int j = 0; j < vReturnedMatrices.size(); j++)
+    {
+        vector<double> v;
+        if (vReturnedMatrices[j].size() == 1 && vReturnedMatrices[j][0].size() == 1)
+        {
+            v.push_back(vReturnedMatrices[j][0][0]);
+        }
+        else if (vReturnedMatrices[j].size() == 1 && vReturnedMatrices[j][0].size() > 1)
+        {
+            v = vReturnedMatrices[j][0];
+        }
+        else
+        {
+            for (size_t i = 0; i < vReturnedMatrices[j].size(); i++)
+                v.push_back(vReturnedMatrices[j][i][0]);
+        }
+
+
+        if (_sCmd.find("returnedMatrix["+toString((int)j)+"]") != string::npos)
+            _parser.SetVectorVar("returnedMatrix["+toString((int)j)+"]", v);
+    }
+
+    return parser_getIndices(_sCmd, _parser, _data, _option);
+}
 

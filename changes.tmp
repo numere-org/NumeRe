@@ -1,3 +1,4 @@
 Applied	Changed the memory management of the caches. NumeRe may now handle more memory tables, if they are different in size (which is usual the case)
 Fixed	The "cnt()" now returns reasonable values if applies on empty cache regions.
 Applied	The resampler now supports stream-like resampling and is therefore now able to handle larger data sets.
+Fixed	Vectors may now be used as indices in "matop" mode.
