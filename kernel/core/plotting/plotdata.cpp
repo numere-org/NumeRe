@@ -80,6 +80,7 @@ PlotData::PlotData(const PlotData& _pData)
         bRanges[i] = _pData.bRanges[i];
         bMirror[i] = _pData.bMirror[i];
         sAxisLabels[i] = _pData.sAxisLabels[i];
+        bDefaultAxisLabels[i] = _pData.bDefaultAxisLabels[i];
         _lHlines[i] = _pData._lHlines[i];
         _lVLines[i] = _pData._lVLines[i];
     }
@@ -1522,16 +1523,19 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         {
             nPos = matchParams(sCmd, "xlabel", '=') + 6;
             sAxisLabels[0] = getArgAtPos(__sCmd, nPos);
+            bDefaultAxisLabels[0] = false;
         }
         if (matchParams(sCmd, "ylabel", '='))
         {
             nPos = matchParams(sCmd, "ylabel", '=') + 6;
             sAxisLabels[1] = getArgAtPos(__sCmd, nPos);
+            bDefaultAxisLabels[1] = false;
         }
         if (matchParams(sCmd, "zlabel", '='))
         {
             nPos = matchParams(sCmd, "zlabel", '=') + 6;
             sAxisLabels[2] = getArgAtPos(__sCmd, nPos);
+            bDefaultAxisLabels[2] = false;
         }
         if (matchParams(sCmd, "title", '='))
         {
@@ -1832,6 +1836,7 @@ void PlotData::reset()
         dRanges[i][1] = 10.0;
         dOrigin[i] = 0.0;
         sAxisLabels[i] = "";
+        bDefaultAxisLabels[i] = true;
         sAxisBind.clear();
         _lHlines.push_back(Line());
         _lVLines.push_back(Line());
@@ -1966,6 +1971,7 @@ void PlotData::deleteData()
         bRanges[i] = false;
         bMirror[i] = false;
         sAxisLabels[i] = "";
+        bDefaultAxisLabels[i] = true;
         _lHlines.push_back(Line());
         _lVLines.push_back(Line());
         /*_lHlines[i].sDesc = "";
@@ -2865,7 +2871,7 @@ void PlotData::rangeByPercentage(double* dData, size_t nLength, double dLowerPer
 // --> Lesen der einzelnen Achsenbeschriftungen <--
 string PlotData::getxLabel() const
 {
-    if (sAxisLabels[0].length())
+    if (!bDefaultAxisLabels[0])
         return replaceToTeX(sAxisLabels[0]);
     else
     {
@@ -2889,7 +2895,7 @@ string PlotData::getxLabel() const
 
 string PlotData::getyLabel() const
 {
-    if (sAxisLabels[1].length())
+    if (!bDefaultAxisLabels[1])
         return replaceToTeX(sAxisLabels[1]);
     else
     {
@@ -2913,7 +2919,7 @@ string PlotData::getyLabel() const
 
 string PlotData::getzLabel() const
 {
-    if (sAxisLabels[2].length())
+    if (!bDefaultAxisLabels[2])
         return replaceToTeX(sAxisLabels[2]);
     else
     {

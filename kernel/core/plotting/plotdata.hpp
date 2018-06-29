@@ -58,6 +58,7 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         bool bMirror[3];
         string sFileName;           // Ausgabe-Dateiname
         string sAxisLabels[3];      // Achsenbeschriftungen fuer alle drei Achsen
+        bool bDefaultAxisLabels[3];      // Achsenbeschriftungen fuer alle drei Achsen
         string sPlotTitle;          // Titelzeile fuer den Plot
         string sFontStyle;
         string sAxisBind;
