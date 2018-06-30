@@ -1203,11 +1203,35 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
                     && sCmd.substr(sCmd.find_last_of(" +-*/!^%&|#(){}?:,<>=", i-1)+1, i-sCmd.find_last_of(" +-*/!^%&|#(){}?:,<>=", i-1)-1) != "data"))
             {
                 string sSubExpr = sCmd.substr(i+1, getMatchingParenthesis(sCmd.substr(i))-1);
-                __sCmd += sCmd.substr(pos_back, i-pos_back);
-                vReturnedMatrices.push_back(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option));
-                pos_back = i+getMatchingParenthesis(sCmd.substr(i))+1;
-                //sCmd.replace(i, getMatchingParenthesis(sCmd.substr(i))+1, "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
-                __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+                size_t closing_par_pos = i+getMatchingParenthesis(sCmd.substr(i));
+                if (sCmd.length() > closing_par_pos+1 && sCmd[closing_par_pos+1] == '(')
+                {
+                    if (i && (isalnum(sCmd[i-1]) || sCmd[i-1] == '_'))
+                    {
+                        for (int j = i-1; j >= 0; j--)
+                        {
+                            if ((j && !isalnum(sCmd[j-1]) && sCmd[j-1] != '_') || !j)
+                            {
+                                __sCmd += sCmd.substr(pos_back, j-pos_back);
+                                sSubExpr = sCmd.substr(j, closing_par_pos+1 - j);
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        __sCmd += sCmd.substr(pos_back, i-pos_back);
+                    }
+                    vReturnedMatrices.push_back(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option));
+                    __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+                }
+                else
+                {
+                    __sCmd += sCmd.substr(pos_back, i-pos_back);
+                    vReturnedMatrices.push_back(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option));
+                    __sCmd += "(returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"])";
+                }
+                pos_back = closing_par_pos+1;
                 i = pos_back-1;
             }
         }

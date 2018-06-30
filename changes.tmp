@@ -3,3 +3,4 @@ Fixed	The "cnt()" now returns reasonable values if applies on empty cache region
 Applied	The resampler now supports stream-like resampling and is therefore now able to handle larger data sets.
 Fixed	Vectors may now be used as indices in "matop" mode.
 Added	Plot labels may now also be suppressed by using an empty label.
+Fixed	In "matop" mode, mathematical functions and "is_nan()" are now working correctly again.
