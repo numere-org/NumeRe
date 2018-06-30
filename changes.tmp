@@ -5,3 +5,4 @@ Fixed	Vectors may now be used as indices in "matop" mode.
 Added	Plot labels may now also be suppressed by using an empty label.
 Fixed	In "matop" mode, mathematical functions and "is_nan()" are now working correctly again.
 Fixed	The crash while plotting with "bars" and "boxplot" together is now fixed.
+Fixed	The command "load" may now be used again together with "string()" and a parameter.

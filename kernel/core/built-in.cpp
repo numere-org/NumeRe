@@ -5325,6 +5325,13 @@ bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, 
         {
             for (int j = (int)i; j >= 0; j--)
             {
+                if (sTemp[j] == '(' && j && (isalnum(sTemp[j-1]) || sTemp[j-1] == '_'))
+                {
+                    while (j && (isalnum(sTemp[j-1]) || sTemp[j-1] == '_'))
+                    {
+                        j--;
+                    }
+                }
                 if ((!containsStrings(sTemp.substr(0,j)) && containsStrings(sTemp.substr(j,i-j)))
                     || (!_data.containsStringVars(sTemp.substr(0,j)) && _data.containsStringVars(sTemp.substr(j,i-j))))
                 {
