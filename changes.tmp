@@ -4,3 +4,4 @@ Applied	The resampler now supports stream-like resampling and is therefore now a
 Fixed	Vectors may now be used as indices in "matop" mode.
 Added	Plot labels may now also be suppressed by using an empty label.
 Fixed	In "matop" mode, mathematical functions and "is_nan()" are now working correctly again.
+Fixed	The crash while plotting with "bars" and "boxplot" together is now fixed.

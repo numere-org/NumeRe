@@ -3976,20 +3976,21 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                             //cerr << "arbitrary" << endl;
                             if ((_pData.getBoxplot() || _pData.getBars() || _pData.getHBars()) && !_pInfo.b2D && vCol.size())
                             {
+                                bool bBoxplot = _pData.getBoxplot() && !_pData.getBars() && !_pData.getHBars();
                                 for (int k = 0; k < min(nDataDim[i], (int)vCol.size()); k++)
                                 {
-                                    if ((_pData.getBoxplot()) && !k)
+                                    if (bBoxplot && !k)
                                     {
                                         _mDataPlots[i][0] = l+1+i_pos[0];
                                     }
                                     if (_data.getCols(sDataTable) > vCol[k] && _data.isValidEntry(l+i_pos[0], vCol[k], sDataTable))
                                     {
                                         if (!l && (isnan(_data.getElement(l+i_pos[0], vCol[k], sDataTable)) || isinf(_data.getElement(l+i_pos[0], vCol[k], sDataTable))))
-                                            _mDataPlots[i][k+_pData.getBoxplot()].a[l] = NAN;
+                                            _mDataPlots[i][k+bBoxplot].a[l] = NAN;
                                         else if (isinf(_data.getElement(l+i_pos[0], vCol[k], sDataTable)))
-                                            _mDataPlots[i][k+_pData.getBoxplot()].a[l] = NAN;
+                                            _mDataPlots[i][k+bBoxplot].a[l] = NAN;
                                         else
-                                            _mDataPlots[i][k+_pData.getBoxplot()].a[l] = _data.getElement(l+i_pos[0], vCol[k], sDataTable);
+                                            _mDataPlots[i][k+bBoxplot].a[l] = _data.getElement(l+i_pos[0], vCol[k], sDataTable);
                                     }
                                     else if (_pInfo.sCommand == "plot3d" && k < 3
                                         && !(_data.getLines(sDataTable, true)-_data.getAppendedZeroes(vCol[k], sDataTable)-i_pos[0]))
@@ -3998,9 +3999,9 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                                         //cerr << 0.0 << endl;
                                     }
                                     else if (l)
-                                        _mDataPlots[i][k+_pData.getBoxplot()].a[l] = NAN;
+                                        _mDataPlots[i][k+bBoxplot].a[l] = NAN;
                                     else
-                                        _mDataPlots[i][k+_pData.getBoxplot()].a[0] = NAN;
+                                        _mDataPlots[i][k+bBoxplot].a[0] = NAN;
                                 }
                             }
                             else

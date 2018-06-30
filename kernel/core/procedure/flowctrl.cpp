@@ -794,19 +794,13 @@ value_type* FlowCtrl::evalHeader(int& nNum, string sHeadExpression, bool bIsForH
         _parserRef->SetIndex(nth_Cmd); // i + (nCmd+1)*j
     if (bUseLoopParsingMode && !bLockedPauseMode && _parserRef->IsValidByteCode() && sHeadExpression+" " == _parserRef->GetExpr())
     {
-        //sMessage += "; Used available Expression (" + sHeadExpression + "/" + _parserRef->GetExpr() + ")";
         v = _parserRef->Eval(nNum);
-        //sMessage += "; Result: " + toString(v[0],5);
-        //NumeReKernel::print(sMessage);
     }
     else if (bUseLoopParsingMode && !bLockedPauseMode && _parserRef->IsValidByteCode() && _parserRef->GetExpr().length())
     {
-        //sMessage += "; Created new Expression (" + sHeadExpression + "/" + _parserRef->GetExpr() + ")";
         _parserRef->DeclareAsInvalid();
         _parserRef->SetExpr(sHeadExpression);
         v = _parserRef->Eval(nNum);
-        //sMessage += "; Result: " + toString(v[0],5);
-        //NumeReKernel::print(sMessage);
     }
     else
     {
