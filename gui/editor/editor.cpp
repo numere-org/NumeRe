@@ -4243,6 +4243,11 @@ void NumeReEditor::markSections(bool bForceRefresh)
                     break;
                 }
             }
+            if (this->GetLine(i).find('#') == string::npos)
+            {
+                if (this->MarkerOnLine(i, MARKER_SECTION))
+                    this->MarkerDelete(i, MARKER_SECTION);
+            }
         }
     }
 }
