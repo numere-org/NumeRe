@@ -573,7 +573,7 @@ bool deleteCacheEntry(string& sCmd, Parser& _parser, Datafile& _data, const Sett
         {
             if (sCache.substr(0,sCache.find('(')) == iter->first) //(sCache.find(iter->first+"(") != string::npos)
             {
-                _iDeleteIndex = parser_getIndices(sCache.substr(sCache.find('(')), _parser, _data, _option);
+                _iDeleteIndex = parser_getIndices(sCache, _parser, _data, _option);
                 if ((_iDeleteIndex.nI[0] == -1 && !_iDeleteIndex.vI.size()) || (_iDeleteIndex.nJ[0] == -1 && !_iDeleteIndex.vJ.size()))
                     return false;
 

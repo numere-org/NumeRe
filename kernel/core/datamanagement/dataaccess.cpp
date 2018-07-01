@@ -1280,6 +1280,7 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
     if (sArgument.find("data(") != string::npos || _data.containsCacheElements(sArgument))
         getDataElements(sArgument, _parser, _data, _option);
     // --> Kurzschreibweise!
+    StripSpaces(sArgument);
     if (!sArgument.length())
     {
         _idx.nI[0] = 0;

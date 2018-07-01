@@ -6,3 +6,4 @@ Added	Plot labels may now also be suppressed by using an empty label.
 Fixed	In "matop" mode, mathematical functions and "is_nan()" are now working correctly again.
 Fixed	The crash while plotting with "bars" and "boxplot" together is now fixed.
 Fixed	The command "load" may now be used again together with "string()" and a parameter.
+Fixed	Index vectors may now be used to extract table headlines again.
