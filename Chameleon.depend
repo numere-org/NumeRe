@@ -3692,7 +3692,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1527327788 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1530449140 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"

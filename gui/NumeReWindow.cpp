@@ -1606,9 +1606,9 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
             if (edit->GetFileNameAndPath() == sEventPath)
             {
                 m_currentSavedFile = "BLOCKALL|"+sEventPath;
-                m_book->SetSelection(i);
-                if (m_currentEd->IsModified())
+                if (edit->IsModified())
                 {
+                    m_book->SetSelection(i);
                     int answer = wxMessageBox(_guilang.get("GUI_DLG_FILEMODIFIED_QUESTION", sEventPath.ToStdString()), _guilang.get("GUI_DLG_FILEMODIFIED"), wxYES_NO | wxICON_QUESTION, this);
                     if (answer == wxYES)
                     {
@@ -1619,8 +1619,8 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
                 }
                 else
                 {
-                    m_currentEd->LoadFile(sEventPath);
-                    m_currentEd->MarkerDeleteAll(MARKER_SAVED);
+                    edit->LoadFile(sEventPath);
+                    edit->MarkerDeleteAll(MARKER_SAVED);
                     m_currentSavedFile = toString((int)time(0))+"|"+sEventPath;
                 }
                 break;
@@ -6060,7 +6060,9 @@ void NumeReWindow::OnRemoveFolder()
     if (m_clickedTreeItem == m_copiedTreeItem)
         m_copiedTreeItem = 0;
     Recycler _recycler;
-    _recycler.recycle(data->filename.c_str());
+    int error = _recycler.recycle(data->filename.ToStdString().c_str());
+    error;
+    return;
 }
 
 void NumeReWindow::OnFindReplace(int id)

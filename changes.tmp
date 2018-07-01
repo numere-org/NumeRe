@@ -7,3 +7,4 @@ Fixed	In "matop" mode, mathematical functions and "is_nan()" are now working cor
 Fixed	The crash while plotting with "bars" and "boxplot" together is now fixed.
 Fixed	The command "load" may now be used again together with "string()" and a parameter.
 Fixed	Index vectors may now be used to extract table headlines again.
+Fixed	NumeRe doesn't flicker any more in Win10 1803.
