@@ -2135,7 +2135,7 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1524174626 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1530686878 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -2843,11 +2843,12 @@
 	<map>
 	<vector>
 
-1524175028 d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.hpp
+1530686281 d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.hpp
 	"../viewerframe.hpp"
 	<wx/panel.h>
 	<wx/gauge.h>
 	<wx/listctrl.h>
+	<wx/spinctrl.h>
 	<string>
 	<vector>
 
@@ -3327,7 +3328,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1527248085 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1530454231 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"

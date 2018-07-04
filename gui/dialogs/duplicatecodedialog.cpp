@@ -67,6 +67,7 @@ DuplicateCodeDialog::DuplicateCodeDialog(wxWindow* _parent, const wxString& titl
 
     wxBoxSizer* vSizer = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer* hSizer = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer* paramSizer = new wxBoxSizer(wxHORIZONTAL);
 
     wxStaticBoxSizer* checkBox = new wxStaticBoxSizer(wxVERTICAL, m_mainPanel, _guilang.get("GUI_DUPCODE_SETTINGS"));
 
@@ -74,11 +75,17 @@ DuplicateCodeDialog::DuplicateCodeDialog(wxWindow* _parent, const wxString& titl
     m_StringSemantics = new wxCheckBox(checkBox->GetStaticBox(), wxID_ANY, _guilang.get("GUI_DUPCODE_STRINGSEMANTICS"));
     m_NumSemantics = new wxCheckBox(checkBox->GetStaticBox(), wxID_ANY, _guilang.get("GUI_DUPCODE_NUMSEMANTICS"));
     m_FunctionSemantics = new wxCheckBox(checkBox->GetStaticBox(), wxID_ANY, _guilang.get("GUI_DUPCODE_FUNCTIONSEMANTICS"));
+    wxStaticText* spinctrlLabel = new wxStaticText(m_mainPanel, wxID_ANY, _guilang.get("GUI_DUPCODE_NUMLINES"));
+    m_NumLines = new wxSpinCtrl(m_mainPanel, wxID_ANY, "6", wxDefaultPosition, wxDefaultSize, 0x4000 | wxALIGN_RIGHT, 3, 100, 6);
 
     checkBox->Add(m_varSemantics, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
     checkBox->Add(m_StringSemantics, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
     checkBox->Add(m_NumSemantics, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
     checkBox->Add(m_FunctionSemantics, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+
+    paramSizer->Add(checkBox, 0, wxEXPAND | wxALL, 5);
+    paramSizer->Add(m_NumLines, 1, wxALIGN_LEFT | wxALL, 5);
+    paramSizer->Add(spinctrlLabel, 0, wxEXPAND | wxALL, 5);
 
     wxButton* buttonStart = new wxButton(m_mainPanel, ID_DUPLICATECODE_START, _guilang.get("GUI_DUPCODE_START"));
     wxButton* buttonCopy = new wxButton(m_mainPanel, ID_DUPLICATECODE_COPY, _guilang.get("GUI_DUPCODE_COPY"));
@@ -99,7 +106,7 @@ DuplicateCodeDialog::DuplicateCodeDialog(wxWindow* _parent, const wxString& titl
 
     vSizer->Add(m_resultList, 2, wxEXPAND | wxALL, 5);
     vSizer->Add(m_progressGauge, 0, wxEXPAND | wxALL, 5);
-    vSizer->Add(checkBox, 0, wxEXPAND | wxALL, 5);
+    vSizer->Add(paramSizer, 0, wxEXPAND | wxALL, 5);
     vSizer->Add(hSizer, 0, wxALIGN_CENTER_HORIZONTAL, 5);
 
     m_mainPanel->SetSizer(vSizer);
@@ -235,7 +242,7 @@ void DuplicateCodeDialog::OnStart()
         nFlags |= SEMANTICS_FUNCTION;
     m_resultList->DeleteAllItems();
     NumeReEditor* edit = static_cast<NumeReEditor*>(m_parent);
-    edit->OnFindDuplicateCode(nFlags);
+    edit->OnFindDuplicateCode(nFlags, m_NumLines->GetValue());
 }
 
 void DuplicateCodeDialog::OnColumnHeaderClick(wxListEvent& event)

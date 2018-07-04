@@ -187,7 +187,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
         void OnChangeCase(wxCommandEvent& event);
         void OnFoldCurrentBlock(wxCommandEvent& event);
         bool InitDuplicateCode();
-        void OnFindDuplicateCode(int nDuplicateFlag = 1); // 0 = direct comparison, 1 = use var semanticals, 2 = use string semanticals,
+        void OnFindDuplicateCode(int nDuplicateFlag = 1, int nNumDuplicatedLines = 6); // 0 = direct comparison, 1 = use var semanticals, 2 = use string semanticals,
         void IndicateDuplicatedLine(int nStart1, int nEnd1, int nStart2, int nEnd2, int nSelectionLine);
 
         // for the duplicate code analysis
@@ -341,7 +341,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
         int calculateLinesOfCode(int startline, int endline);
         int countNumberOfComments(int startline, int endline);
         int insertTextAndMove(int nPosition, const wxString& sText);
-        void detectCodeDuplicates(int startline, int endline, int nDuplicateFlags);
+        void detectCodeDuplicates(int startline, int endline, int nDuplicateFlags, int nNumDuplicatedLines);
         double compareCodeLines(int nLine1, int nLine2, int nDuplicateFlags);
         string getSemanticLine(int nLine, int nDuplicateFlags);
         string getSemanticLineNSCR(int nLine, int nDuplicateFlags);
@@ -382,6 +382,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
         vector<string> vParsedSemanticCode;
         int m_nProcessValue;
         int m_nDuplicateCodeFlag;
+        int m_nDuplicateCodeLines;
         int m_nFirstLine;
         int m_nLastLine;
         int m_nCallTipStart;

@@ -9,3 +9,4 @@ Fixed	The command "load" may now be used again together with "string()" and a pa
 Fixed	Index vectors may now be used to extract table headlines again.
 Fixed	NumeRe doesn't flicker any more in Win10 1803.
 Fixed	The sectioning functionality is now working correctly for textfiles.
+Added	One may now select the minimal code block length for the duplicate code analysis.

@@ -47,8 +47,6 @@
 #define SEMANTICS_NUM 4
 #define SEMANTICS_FUNCTION 8
 
-#define DUPLICATE_CODE_LENGTH 6
-
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -128,6 +126,7 @@ NumeReEditor::NumeReEditor( NumeReWindow *mframe,
 	m_duplicateCode = nullptr;
 	m_nCallTipStart = 0;
 	m_modificationHappened = false;
+	m_nDuplicateCodeLines = 6;
 
 	m_watchedString = "";
 	m_dblclkString = "";
@@ -5187,9 +5186,9 @@ bool NumeReEditor::InitDuplicateCode()
     return false;
 }
 
-void NumeReEditor::OnFindDuplicateCode(int nDuplicateFlag)
+void NumeReEditor::OnFindDuplicateCode(int nDuplicateFlag, int nNumDuplicatedLines)
 {
-    detectCodeDuplicates(0, this->LineFromPosition(this->GetLastPosition()), nDuplicateFlag);
+    detectCodeDuplicates(0, this->LineFromPosition(this->GetLastPosition()), nDuplicateFlag, nNumDuplicatedLines);
 }
 
 void NumeReEditor::OnThreadUpdate(wxThreadEvent& event)
@@ -5443,7 +5442,7 @@ wxThread::ExitCode NumeReEditor::Entry()
     int nLongestMatch = 0;
     int nBlankLines = 0;
     int nLastStatusVal = 0;
-    int currentDuplicateCodeLength = DUPLICATE_CODE_LENGTH;
+    int currentDuplicateCodeLength = m_nDuplicateCodeLines;
     if (getFileType() == FILE_CPP)
         currentDuplicateCodeLength *= 2;
 
@@ -5513,11 +5512,12 @@ wxThread::ExitCode NumeReEditor::Entry()
     return (wxThread::ExitCode)0;
 }
 
-void NumeReEditor::detectCodeDuplicates(int startline, int endline, int nDuplicateFlags)
+void NumeReEditor::detectCodeDuplicates(int startline, int endline, int nDuplicateFlags, int nNumDuplicatedLines)
 {
     m_nDuplicateCodeFlag = nDuplicateFlags;
     m_nFirstLine = startline;
     m_nLastLine = endline;
+    m_nDuplicateCodeLines = nNumDuplicatedLines;
     if (CreateThread(wxTHREAD_DETACHED) != wxTHREAD_NO_ERROR)
         return;
     if (GetThread()->Run() != wxTHREAD_NO_ERROR)

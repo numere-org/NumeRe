@@ -23,6 +23,7 @@
 #include <wx/panel.h>
 #include <wx/gauge.h>
 #include <wx/listctrl.h>
+#include <wx/spinctrl.h>
 #include <string>
 #include <vector>
 using namespace std;
@@ -38,6 +39,8 @@ class DuplicateCodeDialog : public ViewerFrame
         wxCheckBox* m_StringSemantics;
         wxCheckBox* m_NumSemantics;
         wxCheckBox* m_FunctionSemantics;
+
+        wxSpinCtrl* m_NumLines;
 
         wxString createTextFromList();
 
