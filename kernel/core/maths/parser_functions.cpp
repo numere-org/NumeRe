@@ -32,6 +32,9 @@ const string sParserVersion = "1.0.2";
 string parser_evalTargetExpression(string& sCmd, const string& sDefaultTarget, Indices& _idx, Parser& _parser, Datafile& _data, const Settings& _option);
 double parser_LocalizeExtremum(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
 double parser_LocalizeZero(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
+vector<size_t> parser_getSamplesForDatagrid(const string& sCmd, const string& sZVals, size_t nSamples, Parser& _parser, Datafile& _data, const Settings& _option);
+vector<double> parser_extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t nSamples, Parser& _parser, Datafile& _data, const Settings& _option);
+void parser_expandVectorToDatagrid(vector<double>& vXVals, vector<double>& vYVals, vector<vector<double>>& vZVals, size_t nSamples_x, size_t nSamples_y);
 
 void printUnits(const string& sUnit, const string& sDesc, const string& sDim, const string& sValues, unsigned int nWindowsize)
 {
@@ -7524,340 +7527,22 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
     if (!_functions.call(sZVals, _option))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sZVals, sZVals);
 
-    if (_option.getbDebug())
-    {
-        cerr << "|-> DEBUG: sXVals = " << sXVals << endl;
-        cerr << "|-> DEBUG: sYVals = " << sYVals << endl;
-        cerr << "|-> DEBUG: sZVals = " << sZVals << endl;
-    }
+    // Get the samples
+    vector<size_t> vSamples = parser_getSamplesForDatagrid(sCmd, sZVals, nSamples, _parser, _data, _option);
 
-    ///>> X-Vector
-    if ((sXVals.find("data(") != string::npos || _data.containsCacheElements(sXVals)) && sXVals.find(':', getMatchingParenthesis(sXVals.substr(sXVals.find('(')))+sXVals.find('(')) == string::npos)
-    {
-        Indices _idx = parser_getIndices(sXVals, _parser, _data, _option);
-        string sDatatable = "data";
-        if (_data.containsCacheElements(sXVals))
-        {
-            _data.setCacheStatus(true);
-            for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-            {
-                if (sXVals.find(iter->first+"(") != string::npos
-                    && (!sXVals.find(iter->first+"(")
-                        || (sXVals.find(iter->first+"(") && checkDelimiter(sXVals.substr(sXVals.find(iter->first+"(")-1, (iter->first).length()+2)))))
-                {
-                    sDatatable = iter->first;
-                    break;
-                }
-            }
-        }
-        if ((_idx.nI[0] == -1 && !_idx.vI.size()) || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
-        if (!_idx.vI.size())
-        {
-            if (_idx.nI[1] == -1)
-                _idx.nI[1] = _idx.nI[0];
-            if (_idx.nJ[1] == -1)
-                _idx.nJ[1] = _idx.nJ[0];
-            if (_idx.nJ[1] == -2)
-                _idx.nJ[1] = _data.getCols(sDatatable)-1;
-            if (_idx.nI[1] == -2 && _idx.nJ[1] != _idx.nJ[0])
-                throw SyntaxError(SyntaxError::NO_MATRIX, sCmd, SyntaxError::invalid_position);
-            if (_idx.nI[1] == -2)
-                _idx.nI[1] = _data.getLines(sDatatable, true) - _data.getAppendedZeroes(_idx.nJ[0], sDatatable)-1;
+    //>> X-Vector (Swich the samples depending on the "transpose" command line option)
+    vXVals = parser_extractVectorForDatagrid(sCmd, sXVals, sZVals, vSamples[bTranspose], _parser, _data, _option);
 
-            parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
-            parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
+    //>> Y-Vector (Swich the samples depending on the "transpose" command line option)
+    vYVals = parser_extractVectorForDatagrid(sCmd, sYVals, sZVals, vSamples[1-bTranspose], _parser, _data, _option);
 
-            if (sZVals.find("data(") != string::npos || _data.containsCacheElements(sZVals))
-            {
-                for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-                {
-                    for (long long int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
-                    {
-                        //if (_data.isValidEntry(i,j))
-                            vXVals.push_back(_data.getElement(i,j, sDatatable));
-                    }
-                }
-            }
-            else
-            {
-                double dMin = _data.min(sDatatable, _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1]);
-                double dMax = _data.max(sDatatable, _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1]);
-
-                for (unsigned int i = 0; i < nSamples; i++)
-                    vXVals.push_back((dMax-dMin)/double(nSamples-1)*i+dMin);
-            }
-        }
-        else
-        {
-            if (sZVals.find("data(") != string::npos || _data.containsCacheElements(sZVals))
-            {
-                vXVals = _data.getElement(_idx.vI,_idx.vJ,sDatatable);
-            }
-            else
-            {
-                double dMin = _data.min(sDatatable, _idx.vI, _idx.vJ);
-                double dMax = _data.max(sDatatable, _idx.vI, _idx.vJ);
-
-                for (unsigned int i = 0; i < nSamples; i++)
-                    vXVals.push_back((dMax-dMin)/double(nSamples-1)*i+dMin);
-            }
-        }
-        _data.setCacheStatus(false);
-    }
-    else if (sXVals.find(':') != string::npos)
-    {
-        if (sXVals.find("data(") != string::npos || _data.containsCacheElements(sXVals))
-        {
-            getDataElements(sXVals, _parser, _data, _option);
-        }
-        if (sXVals.find("{") != string::npos)
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
-        sXVals.replace(sXVals.find(':'),1,",");
-        _parser.SetExpr(sXVals);
-
-        double* dResult = 0;
-        int nNumResults = 0;
-        dResult = _parser.Eval(nNumResults);
-        if (nNumResults < 2)
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
-
-        if (sZVals.find("data(") != string::npos || _data.containsCacheElements(sZVals))
-        {
-            Indices _idx = parser_getIndices(sZVals, _parser, _data, _option);
-            string sZDatatable = "data";
-            if (_data.containsCacheElements(sZVals))
-            {
-                _data.setCacheStatus(true);
-                for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-                {
-                    if (sZVals.find(iter->first+"(") != string::npos
-                        && (!sZVals.find(iter->first+"(")
-                            || (sZVals.find(iter->first+"(") && checkDelimiter(sZVals.substr(sZVals.find(iter->first+"(")-1, (iter->first).length()+2)))))
-                    {
-                        sZDatatable = iter->first;
-                        break;
-                    }
-                }
-            }
-            if ((_idx.nI[0] == -1 && !_idx.vI.size()) || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
-            if (!_idx.vI.size())
-            {
-                if (_idx.nI[1] == -1)
-                    _idx.nI[1] = _idx.nI[0];
-                if (_idx.nJ[1] == -1)
-                    _idx.nJ[1] = _idx.nJ[0];
-                if (_idx.nJ[1] == -2)
-                    _idx.nJ[1] = _data.getCols(sZDatatable)-1;
-
-                parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
-
-                if (_idx.nI[1] == -2)
-                {
-                    _idx.nI[1] = _data.getLines(sZDatatable, true)-_data.getAppendedZeroes(_idx.nJ[0], sZDatatable)-1;
-                    for (long long int j = _idx.nJ[0]+1; j <= _idx.nJ[1]; j++)
-                    {
-                        if (_data.getLines(sZDatatable, true)-_data.getAppendedZeroes(j, sZDatatable)-1 > _idx.nI[1])
-                            _idx.nI[1] = _data.getLines(sZDatatable, true)-_data.getAppendedZeroes(j, sZDatatable)-1;
-                    }
-                }
-
-                parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
-
-                nSamples = _idx.nI[1] - _idx.nI[0] + 1;
-                if (nSamples < 2)
-                    nSamples = _idx.nJ[1] - _idx.nJ[0] + 1;
-                if (nSamples < 2)
-                    throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
-            }
-            else
-            {
-                nSamples = _idx.vI.size();
-                if (nSamples < 2)
-                    nSamples = _idx.vJ.size();
-                if (nSamples < 2)
-                    throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
-            }
-            _data.setCacheStatus(false);
-        }
-
-        for (unsigned int i = 0; i < nSamples; i++)
-        {
-            vXVals.push_back(dResult[0] + (dResult[1] - dResult[0])/double(nSamples-1)*i);
-        }
-    }
-    else
-        throw SyntaxError(SyntaxError::SEPARATOR_NOT_FOUND, sCmd, SyntaxError::invalid_position);
-
-    if (_option.getbDebug())
-        cerr << "|-> DEBUG: vXVals.size() = " << vXVals.size() << endl;
-
-    ///>> Y-Vector
-    if ((sYVals.find("data(") != string::npos || _data.containsCacheElements(sYVals)) && sYVals.find(':', getMatchingParenthesis(sYVals.substr(sXVals.find('(')))+sYVals.find('(')) == string::npos)
-    {
-        Indices _idx = parser_getIndices(sYVals, _parser, _data, _option);
-        string sDatatable = "data";
-        if (_data.containsCacheElements(sYVals))
-        {
-            _data.setCacheStatus(true);
-            for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-            {
-                if (sYVals.find(iter->first+"(") != string::npos
-                    && (!sYVals.find(iter->first+"(")
-                        || (sYVals.find(iter->first+"(") && checkDelimiter(sYVals.substr(sYVals.find(iter->first+"(")-1, (iter->first).length()+2)))))
-                {
-                    sDatatable = iter->first;
-                    break;
-                }
-            }
-        }
-
-        if ((_idx.nI[0] == -1 && !_idx.vI.size()) || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
-        if (!_idx.vI.size())
-        {
-            if (_idx.nI[1] == -1)
-                _idx.nI[1] = _idx.nI[0];
-            if (_idx.nJ[1] == -1)
-                _idx.nJ[1] = _idx.nJ[0];
-            if (_idx.nJ[1] == -2)
-                _idx.nJ[1] = _data.getCols(sDatatable)-1;
-            if (_idx.nI[1] == -2 && _idx.nJ[1] != _idx.nJ[0])
-                throw SyntaxError(SyntaxError::NO_MATRIX, sCmd, SyntaxError::invalid_position);
-            if (_idx.nI[1] == -2)
-                _idx.nI[1] = _data.getLines(sDatatable, true) - _data.getAppendedZeroes(_idx.nJ[0], sDatatable)-1;
-
-            parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
-            parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
-
-            if (sZVals.find("data(") != string::npos || _data.containsCacheElements(sZVals))
-            {
-                for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-                {
-                    for (long long int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
-                    {
-                        //if (_data.isValidEntry(i,j))
-                            vYVals.push_back(_data.getElement(i,j, sDatatable));
-                    }
-                }
-            }
-            else
-            {
-                double dMin = _data.min(sDatatable, _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1]);
-                double dMax = _data.max(sDatatable, _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1]);
-
-                for (unsigned int i = 0; i < nSamples; i++)
-                    vYVals.push_back((dMax-dMin)/double(nSamples-1)*i+dMin);
-            }
-        }
-        else
-        {
-            if (sZVals.find("data(") != string::npos || _data.containsCacheElements(sZVals))
-            {
-                vYVals = _data.getElement(_idx.vI, _idx.vJ, sDatatable);
-            }
-            else
-            {
-                double dMin = _data.min(sDatatable, _idx.vI, _idx.vJ);
-                double dMax = _data.max(sDatatable, _idx.vI, _idx.vJ);
-
-                for (unsigned int i = 0; i < nSamples; i++)
-                    vYVals.push_back((dMax-dMin)/double(nSamples-1)*i+dMin);
-            }
-        }
-        _data.setCacheStatus(false);
-    }
-    else if (sYVals.find(':') != string::npos)
-    {
-        if (sYVals.find("data(") != string::npos || _data.containsCacheElements(sYVals))
-        {
-            getDataElements(sYVals, _parser, _data, _option);
-        }
-        if (sYVals.find("{") != string::npos)
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
-        sYVals.replace(sYVals.find(':'),1,",");
-        _parser.SetExpr(sYVals);
-
-        double* dResult = 0;
-        int nNumResults = 0;
-        dResult = _parser.Eval(nNumResults);
-        if (nNumResults < 2)
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
-
-        if (sZVals.find("data(") != string::npos || _data.containsCacheElements(sZVals))
-        {
-            Indices _idx = parser_getIndices(sZVals, _parser, _data, _option);
-            string szDatatable = "data";
-            if (_data.containsCacheElements(sZVals))
-            {
-                _data.setCacheStatus(true);
-                for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-                {
-                    if (sZVals.find(iter->first+"(") != string::npos
-                        && (!sZVals.find(iter->first+"(")
-                            || (sZVals.find(iter->first+"(") && checkDelimiter(sZVals.substr(sZVals.find(iter->first+"(")-1, (iter->first).length()+2)))))
-                    {
-                        szDatatable = iter->first;
-                        break;
-                    }
-                }
-            }
-
-            if ((_idx.nI[0] == -1 && !_idx.vI.size()) || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
-            if (!_idx.vI.size())
-            {
-                if (_idx.nI[1] == -1)
-                    _idx.nI[1] = _idx.nI[0];
-                if (_idx.nJ[1] == -1)
-                    _idx.nJ[1] = _idx.nJ[0];
-                if (_idx.nJ[1] == -2)
-                    _idx.nJ[1] = _data.getCols(szDatatable)-1;
-                if (_idx.nI[1] == -2)
-                {
-                    _idx.nI[1] = _data.getLines(szDatatable, true)-_data.getAppendedZeroes(_idx.nJ[0], szDatatable)-1;
-                    for (long long int j = _idx.nJ[0]+1; j <= _idx.nJ[1]; j++)
-                    {
-                        if (_data.getLines(szDatatable, true)-_data.getAppendedZeroes(j, szDatatable)-1 > _idx.nI[1])
-                            _idx.nI[1] = _data.getLines(szDatatable, true)-_data.getAppendedZeroes(j, szDatatable)-1;
-                    }
-                }
-
-                parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
-                parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
-
-                nSamples = _idx.nJ[1] - _idx.nJ[0] + 1;
-                if (nSamples < 2)
-                    nSamples = _idx.nI[1] - _idx.nI[0] + 1;
-                if (nSamples < 2)
-                    throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
-            }
-            else
-            {
-                nSamples = _idx.vJ.size();
-                if (nSamples < 2)
-                    nSamples = _idx.vI.size();
-                if (nSamples < 2)
-                    throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
-            }
-            _data.setCacheStatus(false);
-        }
-
-        for (unsigned int i = 0; i < nSamples; i++)
-        {
-            vYVals.push_back(dResult[0] + (dResult[1] - dResult[0])/double(nSamples-1)*i);
-        }
-    }
-    else
-        throw SyntaxError(SyntaxError::SEPARATOR_NOT_FOUND, sCmd, SyntaxError::invalid_position);
-    if (_option.getbDebug())
-        cerr << "|-> DEBUG: vYVals.size() = " << vYVals.size() << endl;
-
-    ///>> Z-Matrix
+    //>> Z-Matrix
     if (sZVals.find("data(") != string::npos || _data.containsCacheElements(sZVals))
     {
+        // Get the datagrid from another table
         Indices _idx = parser_getIndices(sZVals, _parser, _data, _option);
+
+        // identify the table
         string szDatatable = "data";
         if (_data.containsCacheElements(sZVals))
         {
@@ -7874,8 +7559,11 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
             }
         }
 
+        // Check the indices
         if ((_idx.nI[0] == -1 && !_idx.vI.size()) || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
             throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+
+        // The indices are numbers
         if (!_idx.vI.size())
         {
             if (_idx.nI[1] == -1)
@@ -7899,6 +7587,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
 
             parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
 
+            // Get the data from the table. Choose the order of reading depending on the "transpose" command line option
             vector<double> vVector;
             if (!bTranspose)
             {
@@ -7924,71 +7613,21 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
                     vVector.clear();
                 }
             }
-            if (_option.getbDebug())
-                cerr << "|-> DEBUG: vZVals.size() = " << vZVals.size() << endl;
 
             if (!vZVals.size() || (vZVals.size() == 1 && vZVals[0].size() == 1))
                 throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
 
-            if (vZVals.size() == 1 || vZVals[0].size() == 1)
-            {
-                mglData _mData[4];
-                mglGraph _graph;
-                _mData[0].Create(nSamples, nSamples);
-                _mData[1].Create(vXVals.size());
-                _mData[2].Create(vYVals.size());
-                if (vZVals.size() != 1)
-                    _mData[3].Create(vZVals.size());
-                else
-                    _mData[3].Create(vZVals[0].size());
-                for (unsigned int i = 0; i < vXVals.size(); i++)
-                    _mData[1].a[i] = vXVals[i];
-                for (unsigned int i = 0; i < vYVals.size(); i++)
-                    _mData[2].a[i] = vYVals[i];
-                if (vZVals.size() != 1)
-                {
-                    for (unsigned int i = 0; i < vZVals.size(); i++)
-                        _mData[3].a[i] = vZVals[i][0];
-                }
-                else
-                {
-                    for (unsigned int i = 0; i < vZVals[0].size(); i++)
-                        _mData[3].a[i] = vZVals[0][i];
-                }
-
-                //cerr << _mData[3].Minimal() << endl;
-                //cerr << _mData[3].Maximal() << endl;
-
-                _graph.SetRanges(_mData[1], _mData[2], _mData[3]);
-                _graph.DataGrid(_mData[0], _mData[1], _mData[2], _mData[3]);
-
-                vXVals.clear();
-                vYVals.clear();
-                vZVals.clear();
-
-                for (unsigned int i = 0; i < nSamples; i++)
-                {
-                    vXVals.push_back(_mData[1].Minimal()+(_mData[1].Maximal()-_mData[1].Minimal())/(double)(nSamples-1)*i);
-                    vYVals.push_back(_mData[2].Minimal()+(_mData[2].Maximal()-_mData[2].Minimal())/(double)(nSamples-1)*i);
-                }
-
-                for (unsigned int i = 0; i < nSamples; i++)
-                {
-                    for (unsigned int j = 0; j < nSamples; j++)
-                    {
-                        vVector.push_back(_mData[0].a[i+nSamples*j]);
-                    }
-                    vZVals.push_back(vVector);
-                    vVector.clear();
-                }
-            }
+            parser_expandVectorToDatagrid(vXVals, vYVals, vZVals, vSamples[bTranspose], vSamples[1-bTranspose]);
         }
         else
         {
+            // the indices are vectors
             vector<double> vVector;
+
+            // Get the data. Choose the order of reading depending on the "transpose" command line option
             if (!bTranspose)
             {
-                for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
+                for (size_t i = 0; i < _idx.vI.size(); i++)
                 {
                     vVector = _data.getElement(vector<long long int>(1,_idx.vI[i]), _idx.vJ, szDatatable);
                     vZVals.push_back(vVector);
@@ -7997,76 +7636,24 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
             }
             else
             {
-                for (long long int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
+                for (size_t j = 0; j < _idx.vJ.size(); j++)
                 {
                     vVector = _data.getElement(_idx.vI, vector<long long int>(1,_idx.vJ[j]), szDatatable);
                     vZVals.push_back(vVector);
                     vVector.clear();
                 }
             }
-            if (_option.getbDebug())
-                cerr << "|-> DEBUG: vZVals.size() = " << vZVals.size() << endl;
 
             if (!vZVals.size() || (vZVals.size() == 1 && vZVals[0].size() == 1))
                 throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
 
-            if (vZVals.size() == 1 || vZVals[0].size() == 1)
-            {
-                mglData _mData[4];
-                mglGraph _graph;
-                _mData[0].Create(nSamples, nSamples);
-                _mData[1].Create(vXVals.size());
-                _mData[2].Create(vYVals.size());
-                if (vZVals.size() != 1)
-                    _mData[3].Create(vZVals.size());
-                else
-                    _mData[3].Create(vZVals[0].size());
-                for (unsigned int i = 0; i < vXVals.size(); i++)
-                    _mData[1].a[i] = vXVals[i];
-                for (unsigned int i = 0; i < vYVals.size(); i++)
-                    _mData[2].a[i] = vYVals[i];
-                if (vZVals.size() != 1)
-                {
-                    for (unsigned int i = 0; i < vZVals.size(); i++)
-                        _mData[3].a[i] = vZVals[i][0];
-                }
-                else
-                {
-                    for (unsigned int i = 0; i < vZVals[0].size(); i++)
-                        _mData[3].a[i] = vZVals[0][i];
-                }
-
-                //cerr << _mData[3].Minimal() << endl;
-                //cerr << _mData[3].Maximal() << endl;
-
-                _graph.SetRanges(_mData[1], _mData[2], _mData[3]);
-                _graph.DataGrid(_mData[0], _mData[1], _mData[2], _mData[3]);
-
-                vXVals.clear();
-                vYVals.clear();
-                vZVals.clear();
-
-                for (unsigned int i = 0; i < nSamples; i++)
-                {
-                    vXVals.push_back(_mData[1].Minimal()+(_mData[1].Maximal()-_mData[1].Minimal())/(double)(nSamples-1)*i);
-                    vYVals.push_back(_mData[2].Minimal()+(_mData[2].Maximal()-_mData[2].Minimal())/(double)(nSamples-1)*i);
-                }
-
-                for (unsigned int i = 0; i < nSamples; i++)
-                {
-                    for (unsigned int j = 0; j < nSamples; j++)
-                    {
-                        vVector.push_back(_mData[0].a[i+nSamples*j]);
-                    }
-                    vZVals.push_back(vVector);
-                    vVector.clear();
-                }
-            }
+            parser_expandVectorToDatagrid(vXVals, vYVals, vZVals, vSamples[bTranspose], vSamples[1-bTranspose]);
         }
         _data.setCacheStatus(false);
     }
     else
     {
+        // Calculate the grid from formula
         _parser.SetExpr(sZVals);
 
         vector<double> vVector;
@@ -8083,15 +7670,14 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
         }
     }
 
+    // Store the results in the target cache
     if (_idx.nI[1] == -2 || _idx.nI[1] == -1)
         _idx.nI[1] = _idx.nI[0] + vXVals.size();
     if (_idx.nJ[1] == -2 || _idx.nJ[1] == -1)
         _idx.nJ[1] = _idx.nJ[0] + vYVals.size()+2;
 
-    /*if (!_data.isCacheElement(sTargetCache))
-        _data.addCache(sTargetCache, _option);*/
     _data.setCacheStatus(true);
-    //long long int nFirstCol = _data.getCacheCols(sTargetCache, false);
+
     for (unsigned int i = 0; i < vXVals.size(); i++)
         _data.writeToCache(i, _idx.nJ[0], sTargetCache, vXVals[i]);
     _data.setHeadLineElement(_idx.nJ[0], sTargetCache, "x");
@@ -8119,6 +7705,272 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
     return true;
 }
 
+vector<size_t> parser_getSamplesForDatagrid(const string& sCmd, const string& sZVals, size_t nSamples, Parser& _parser, Datafile& _data, const Settings& _option)
+{
+    vector<size_t> vSamples;
+    // If the z vals are inside of a table then obtain the correct number of samples here
+    if (sZVals.find("data(") != string::npos || _data.containsCacheElements(sZVals))
+    {
+        // Get the indices and identify the table name
+        Indices _idx = parser_getIndices(sZVals, _parser, _data, _option);
+        string sZDatatable = "data";
+        if (_data.containsCacheElements(sZVals))
+        {
+            for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
+            {
+                if (sZVals.find(iter->first+"(") != string::npos
+                    && (!sZVals.find(iter->first+"(")
+                        || (sZVals.find(iter->first+"(") && checkDelimiter(sZVals.substr(sZVals.find(iter->first+"(")-1, (iter->first).length()+2)))))
+                {
+                    sZDatatable = iter->first;
+                    break;
+                }
+            }
+        }
+        // Check the indices
+        if ((_idx.nI[0] == -1 && !_idx.vI.size()) || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+        if (!_idx.vI.size())
+        {
+            // The indices are numbers
+            if (_idx.nI[1] == -1)
+                _idx.nI[1] = _idx.nI[0];
+            if (_idx.nJ[1] == -1)
+                _idx.nJ[1] = _idx.nJ[0];
+            if (_idx.nJ[1] == -2)
+                _idx.nJ[1] = _data.getCols(sZDatatable)-1;
+
+            parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
+
+            if (_idx.nI[1] == -2)
+            {
+                _idx.nI[1] = _data.getLines(sZDatatable, true)-_data.getAppendedZeroes(_idx.nJ[0], sZDatatable)-1;
+                for (long long int j = _idx.nJ[0]+1; j <= _idx.nJ[1]; j++)
+                {
+                    if (_data.getLines(sZDatatable, true)-_data.getAppendedZeroes(j, sZDatatable)-1 > _idx.nI[1])
+                        _idx.nI[1] = _data.getLines(sZDatatable, true)-_data.getAppendedZeroes(j, sZDatatable)-1;
+                }
+            }
+
+            parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
+
+            vSamples.push_back(_idx.nI[1] - _idx.nI[0] + 1);
+            vSamples.push_back(_idx.nJ[1] - _idx.nJ[0] + 1);
+        }
+        else
+        {
+            // The indices are vectors
+            vSamples.push_back(_idx.vI.size());
+            vSamples.push_back(_idx.vJ.size());
+        }
+
+        // Check for singletons
+        if (vSamples[0] < 2 && vSamples[1] >= 2)
+            vSamples[0] = vSamples[1];
+        else if (vSamples[1] < 2 && vSamples[0] >= 2)
+            vSamples[1] = vSamples[0];
+
+    }
+    else
+    {
+        vSamples.push_back(nSamples);
+        vSamples.push_back(nSamples);
+    }
+    if (vSamples.size() < 2 || vSamples[0] < 2 || vSamples[1] < 2)
+        throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
+    return vSamples;
+}
+
+vector<double> parser_extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t nSamples, Parser& _parser, Datafile& _data, const Settings& _option)
+{
+    vector<double> vVectorVals;
+
+    // Data direct from the table, not an index pair
+    if ((sVectorVals.find("data(") != string::npos || _data.containsCacheElements(sVectorVals)) && sVectorVals.find(':', getMatchingParenthesis(sVectorVals.substr(sVectorVals.find('(')))+sVectorVals.find('(')) == string::npos)
+    {
+        // Get the indices
+        Indices _idx = parser_getIndices(sVectorVals, _parser, _data, _option);
+
+        // Identify the table
+        string sDatatable = "data";
+        if (_data.containsCacheElements(sVectorVals))
+        {
+            _data.setCacheStatus(true);
+            for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
+            {
+                if (sVectorVals.find(iter->first+"(") != string::npos
+                    && (!sVectorVals.find(iter->first+"(")
+                        || (sVectorVals.find(iter->first+"(") && checkDelimiter(sVectorVals.substr(sVectorVals.find(iter->first+"(")-1, (iter->first).length()+2)))))
+                {
+                    sDatatable = iter->first;
+                    break;
+                }
+            }
+        }
+
+        // Check the indices
+        if ((_idx.nI[0] == -1 && !_idx.vI.size()) || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+        if (!_idx.vI.size())
+        {
+            // The indices are numbers
+            if (_idx.nI[1] == -1)
+                _idx.nI[1] = _idx.nI[0];
+            if (_idx.nJ[1] == -1)
+                _idx.nJ[1] = _idx.nJ[0];
+            if (_idx.nJ[1] == -2)
+                _idx.nJ[1] = _data.getCols(sDatatable)-1;
+            if (_idx.nI[1] == -2 && _idx.nJ[1] != _idx.nJ[0])
+                throw SyntaxError(SyntaxError::NO_MATRIX, sCmd, SyntaxError::invalid_position);
+            if (_idx.nI[1] == -2)
+                _idx.nI[1] = _data.getLines(sDatatable, true) - _data.getAppendedZeroes(_idx.nJ[0], sDatatable)-1;
+
+            parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
+            parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
+
+            // Only if the z values are also a table read the vector from the table
+            if (sZVals.find("data(") != string::npos || _data.containsCacheElements(sZVals))
+            {
+                for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
+                {
+                    for (long long int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
+                    {
+                        vVectorVals.push_back(_data.getElement(i,j, sDatatable));
+                    }
+                }
+            }
+            else
+            {
+                // Otherwise use minimal and maximal values
+                double dMin = _data.min(sDatatable, _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1]);
+                double dMax = _data.max(sDatatable, _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1]);
+
+                for (unsigned int i = 0; i < nSamples; i++)
+                    vVectorVals.push_back((dMax-dMin)/double(nSamples-1)*i+dMin);
+            }
+        }
+        else
+        {
+            // The indices are vectors
+            if (sZVals.find("data(") != string::npos || _data.containsCacheElements(sZVals))
+            {
+                // Only if the z values are also a table read the vector from the table
+                vVectorVals = _data.getElement(_idx.vI,_idx.vJ,sDatatable);
+            }
+            else
+            {
+                // Otherwise use minimal and maximal values
+                double dMin = _data.min(sDatatable, _idx.vI, _idx.vJ);
+                double dMax = _data.max(sDatatable, _idx.vI, _idx.vJ);
+
+                for (unsigned int i = 0; i < nSamples; i++)
+                    vVectorVals.push_back((dMax-dMin)/double(nSamples-1)*i+dMin);
+            }
+        }
+        _data.setCacheStatus(false);
+    }
+    else if (sVectorVals.find(':') != string::npos)
+    {
+        // Index pair - If the index pair contains data elements, get their values now
+        if (sVectorVals.find("data(") != string::npos || _data.containsCacheElements(sVectorVals))
+        {
+            getDataElements(sVectorVals, _parser, _data, _option);
+        }
+        if (sVectorVals.find("{") != string::npos)
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+
+        // Replace the colon with a comma and parse the vector vals
+        sVectorVals.replace(sVectorVals.find(':'),1,",");
+        _parser.SetExpr(sVectorVals);
+
+        // Get the results
+        double* dResult = 0;
+        int nNumResults = 0;
+        dResult = _parser.Eval(nNumResults);
+        if (nNumResults < 2)
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+
+        // Fill the vector vals with the needed number of samples
+        for (unsigned int i = 0; i < nSamples; i++)
+        {
+            vVectorVals.push_back(dResult[0] + (dResult[1] - dResult[0])/double(nSamples-1)*i);
+        }
+    }
+    else
+        throw SyntaxError(SyntaxError::SEPARATOR_NOT_FOUND, sCmd, SyntaxError::invalid_position);
+
+    return vVectorVals;
+}
+
+void parser_expandVectorToDatagrid(vector<double>& vXVals, vector<double>& vYVals, vector<vector<double>>& vZVals, size_t nSamples_x, size_t nSamples_y)
+{
+    vector<double> vVector;
+
+    // Only if a dimension is a singleton
+    if (vZVals.size() == 1 || vZVals[0].size() == 1)
+    {
+        // construct the needed MGL objects
+        mglData _mData[4];
+        mglGraph _graph;
+
+        // Prepare the memory
+        _mData[0].Create(nSamples_x, nSamples_y);
+        _mData[1].Create(vXVals.size());
+        _mData[2].Create(vYVals.size());
+        if (vZVals.size() != 1)
+            _mData[3].Create(vZVals.size());
+        else
+            _mData[3].Create(vZVals[0].size());
+
+        // copy the x and y vectors
+        for (unsigned int i = 0; i < vXVals.size(); i++)
+            _mData[1].a[i] = vXVals[i];
+        for (unsigned int i = 0; i < vYVals.size(); i++)
+            _mData[2].a[i] = vYVals[i];
+
+        // copy the z vector
+        if (vZVals.size() != 1)
+        {
+            for (unsigned int i = 0; i < vZVals.size(); i++)
+                _mData[3].a[i] = vZVals[i][0];
+        }
+        else
+        {
+            for (unsigned int i = 0; i < vZVals[0].size(); i++)
+                _mData[3].a[i] = vZVals[0][i];
+        }
+
+        // Set the ranges needed for the DataGrid function
+        _graph.SetRanges(_mData[1], _mData[2], _mData[3]);
+        // Calculate the data grid using a triangulation
+        _graph.DataGrid(_mData[0], _mData[1], _mData[2], _mData[3]);
+
+        vXVals.clear();
+        vYVals.clear();
+        vZVals.clear();
+
+        // Refill the x and y vectors
+        for (unsigned int i = 0; i < nSamples_x; i++)
+        {
+            vXVals.push_back(_mData[1].Minimal()+(_mData[1].Maximal()-_mData[1].Minimal())/(double)(nSamples_x-1)*i);
+        }
+        for (unsigned int i = 0; i < nSamples_y; i++)
+        {
+            vYVals.push_back(_mData[2].Minimal()+(_mData[2].Maximal()-_mData[2].Minimal())/(double)(nSamples_y-1)*i);
+        }
+
+        // Copy the z matrix
+        for (unsigned int i = 0; i < nSamples_x; i++)
+        {
+            for (unsigned int j = 0; j < nSamples_y; j++)
+            {
+                vVector.push_back(_mData[0].a[i+nSamples_x*j]);
+            }
+            vZVals.push_back(vVector);
+            vVector.clear();
+        }
+    }
+}
 
 string parser_evalTargetExpression(string& sCmd, const string& sDefaultTarget, Indices& _idx, Parser& _parser, Datafile& _data, const Settings& _option)
 {

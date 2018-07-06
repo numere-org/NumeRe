@@ -6499,7 +6499,7 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1530082136 c:\cpp\numere-source\trunk\gui\editor\editor.h
+1530695966 c:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -6760,7 +6760,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1530082133 c:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.hpp
+1530541614 c:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.hpp
 	<string>
 	<cmath>
 	<vector>
@@ -7232,11 +7232,12 @@
 	<map>
 	<vector>
 
-1530082139 c:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.hpp
+1530695966 c:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.hpp
 	"../viewerframe.hpp"
 	<wx/panel.h>
 	<wx/gauge.h>
 	<wx/listctrl.h>
+	<wx/spinctrl.h>
 	<string>
 	<vector>
 
@@ -7323,7 +7324,7 @@
 	<windows.h>
 	"commctrl.h"
 
-1530082136 source:c:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
+1530695966 source:c:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
 	"duplicatecodedialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 	"../editor/editor.h"
@@ -7733,7 +7734,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1530082137 source:c:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1530695966 source:c:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -8081,7 +8082,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1530082138 source:c:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1530541614 source:c:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -8354,7 +8355,7 @@
 
 1530082144 c:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1530082132 source:c:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1530541614 source:c:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 	"io/fileops.hpp"
@@ -8379,7 +8380,7 @@
 	"cache.hpp"
 	"../../kernel.hpp"
 
-1530082132 source:c:\cpp\numere-source\trunk\kernel\core\datamanagement\dataaccess.cpp
+1530541614 source:c:\cpp\numere-source\trunk\kernel\core\datamanagement\dataaccess.cpp
 	"dataaccess.hpp"
 	"../utils/tools.hpp"
 	<vector>
@@ -8388,7 +8389,7 @@
 	"datafile.hpp"
 	"../../kernel.hpp"
 
-1530082132 source:c:\cpp\numere-source\trunk\kernel\core\datamanagement\dataops.cpp
+1530541614 source:c:\cpp\numere-source\trunk\kernel\core\datamanagement\dataops.cpp
 	<wx/image.h>
 	"dataops.hpp"
 	"../../kernel.hpp"
@@ -8448,7 +8449,7 @@
 1530082133 source:c:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
 	"functionimplementation.hpp"
 
-1530082133 source:c:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
+1530541614 source:c:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 
@@ -8456,7 +8457,7 @@
 	"odesolver.hpp"
 	"../../kernel.hpp"
 
-1530082133 source:c:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
+1530876866 source:c:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	"spline.h"
@@ -8566,11 +8567,11 @@
 	"../../kernel.hpp"
 	"../utils/tools.hpp"
 
-1530082132 source:c:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.cpp
+1530541614 source:c:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.cpp
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1530082133 source:c:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1530541614 source:c:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
@@ -8609,7 +8610,7 @@
 1530082136 source:c:\cpp\numere-source\trunk\kernel\core\procedure\debugger.cpp
 	"debugger.hpp"
 
-1530082136 source:c:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.cpp
+1530541614 source:c:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.cpp
 	"flowctrl.hpp"
 	"../../kernel.hpp"
 
