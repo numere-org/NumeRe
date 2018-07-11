@@ -41,98 +41,98 @@
 
 namespace mu
 {
-  struct SToken
-  {
-    ECmdCode Cmd;
-    int StackPos;
+	struct SToken
+	{
+		ECmdCode Cmd;
+		int StackPos;
 
-    union
-    {
-      struct //SValData
-      {
-        value_type *ptr;
-        value_type  data;
-        value_type  data2;
-      } Val;
+		union
+		{
+			struct //SValData
+			{
+				value_type* ptr;
+				value_type  data;
+				value_type  data2;
+			} Val;
 
-      struct //SFunData
-      {
-        // Note: generic_fun_type is merely a placeholder. The real type could be
-        //       anything between gun_type1 and fun_type9. I can't use a void
-        //       pointer due to constraints in the ANSI standard which allows
-        //       data pointers and function pointers to differ in size.
-        generic_fun_type ptr;
-        int   argc;
-        int   idx;
-      } Fun;
+			struct //SFunData
+			{
+				// Note: generic_fun_type is merely a placeholder. The real type could be
+				//       anything between gun_type1 and fun_type9. I can't use a void
+				//       pointer due to constraints in the ANSI standard which allows
+				//       data pointers and function pointers to differ in size.
+				generic_fun_type ptr;
+				int   argc;
+				int   idx;
+			} Fun;
 
-      struct //SOprtData
-      {
-        value_type *ptr;
-        int offset;
-      } Oprt;
-    };
-  };
+			struct //SOprtData
+			{
+				value_type* ptr;
+				int offset;
+			} Oprt;
+		};
+	};
 
 
-  /** \brief Bytecode implementation of the Math Parser.
+	/** \brief Bytecode implementation of the Math Parser.
 
-  The bytecode contains the formula converted to revers polish notation stored in a continious
-  memory area. Associated with this data are operator codes, variable pointers, constant
-  values and function pointers. Those are necessary in order to calculate the result.
-  All those data items will be casted to the underlying datatype of the bytecode.
+	The bytecode contains the formula converted to revers polish notation stored in a continious
+	memory area. Associated with this data are operator codes, variable pointers, constant
+	values and function pointers. Those are necessary in order to calculate the result.
+	All those data items will be casted to the underlying datatype of the bytecode.
 
-  \author (C) 2004-2012 Ingo Berg
-*/
-class ParserByteCode
-{
-private:
+	\author (C) 2004-2012 Ingo Berg
+	*/
+	class ParserByteCode
+	{
+		private:
 
-    /** \brief Token type for internal use only. */
-    typedef ParserToken<value_type, string_type> token_type;
+			/** \brief Token type for internal use only. */
+			typedef ParserToken<value_type, string_type> token_type;
 
-    /** \brief Token vector for storing the RPN. */
-    typedef std::vector<SToken> rpn_type;
+			/** \brief Token vector for storing the RPN. */
+			typedef std::vector<SToken> rpn_type;
 
-    /** \brief Position in the Calculation array. */
-    unsigned m_iStackPos;
+			/** \brief Position in the Calculation array. */
+			unsigned m_iStackPos;
 
-    /** \brief Maximum size needed for the stack. */
-    std::size_t m_iMaxStackSize;
+			/** \brief Maximum size needed for the stack. */
+			std::size_t m_iMaxStackSize;
 
-    /** \brief The actual rpn storage. */
-    rpn_type  m_vRPN;
+			/** \brief The actual rpn storage. */
+			rpn_type  m_vRPN;
 
-    bool m_bEnableOptimizer;
+			bool m_bEnableOptimizer;
 
-    void ConstantFolding(ECmdCode a_Oprt);
+			void ConstantFolding(ECmdCode a_Oprt);
 
-public:
+		public:
 
-    ParserByteCode();
-    ParserByteCode(const ParserByteCode &a_ByteCode);
-    ParserByteCode& operator=(const ParserByteCode &a_ByteCode);
-    void Assign(const ParserByteCode &a_ByteCode);
+			ParserByteCode();
+			ParserByteCode(const ParserByteCode& a_ByteCode);
+			ParserByteCode& operator=(const ParserByteCode& a_ByteCode);
+			void Assign(const ParserByteCode& a_ByteCode);
 
-    void AddVar(value_type *a_pVar);
-    void AddVal(value_type a_fVal);
-    void AddOp(ECmdCode a_Oprt);
-    void AddIfElse(ECmdCode a_Oprt);
-    void AddAssignOp(value_type *a_pVar);
-    void AddFun(generic_fun_type a_pFun, int a_iArgc);
-    void AddBulkFun(generic_fun_type a_pFun, int a_iArgc);
-    void AddStrFun(generic_fun_type a_pFun, int a_iArgc, int a_iIdx);
+			void AddVar(value_type* a_pVar);
+			void AddVal(value_type a_fVal);
+			void AddOp(ECmdCode a_Oprt);
+			void AddIfElse(ECmdCode a_Oprt);
+			void AddAssignOp(value_type* a_pVar);
+			void AddFun(generic_fun_type a_pFun, int a_iArgc);
+			void AddBulkFun(generic_fun_type a_pFun, int a_iArgc);
+			void AddStrFun(generic_fun_type a_pFun, int a_iArgc, int a_iIdx);
 
-    void EnableOptimizer(bool bStat);
+			void EnableOptimizer(bool bStat);
 
-    void Finalize();
-    void clear();
-    std::size_t GetMaxStackSize() const;
-    std::size_t GetSize() const;
+			void Finalize();
+			void clear();
+			std::size_t GetMaxStackSize() const;
+			std::size_t GetSize() const;
 
-    const SToken* GetBase() const;
-    void AsciiDump();
-};
+			const SToken* GetBase() const;
+			void AsciiDump();
+	};
 
 } // namespace mu
 

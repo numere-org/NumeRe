@@ -6,10 +6,10 @@
 
 class Recycler : public SHFILEOPSTRUCT
 {
-    public:
-        Recycler();
+	public:
+		Recycler();
 
-        int recycle(const char* psPath, bool bDelete = false);
+		int recycle(const char* psPath, bool bDelete = false);
 };
 
 #endif // RECYCLER_HPP

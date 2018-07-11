@@ -25,6 +25,7 @@
 
 using namespace std;
 
+// Structure for the indices
 struct Indices
 {
     long long int nI[2];
@@ -32,14 +33,26 @@ struct Indices
     vector<long long int> vI;
     vector<long long int> vJ;
     string sCompiledAccessEquation;
+
+    // Default constructor sets the casual indices to -1
+    Indices()
+        {
+            for (size_t i = 0; i < 2; i++)
+            {
+                this->nI[i] = -1;
+                this->nJ[i] = -1;
+            }
+        }
 };
 
+// Structure for the findCommand function
 struct Match
 {
     string sString;
     unsigned int nPos;
 };
 
+// Structure for the horizontal and vertical lines in plots
 struct Line
 {
     string sDesc;
@@ -49,6 +62,7 @@ struct Line
     Line() : sDesc(""), sStyle("k;2"), dPos(0.0) {}
 };
 
+// Structure for the axes in plots
 struct Axis
 {
     string sLabel;
@@ -57,12 +71,14 @@ struct Axis
     double dMax;
 };
 
+// Structure as wrapper for the return value of procedures (which may be numerical or string values or a mixture of both)
 struct Returnvalue
 {
     vector<double> vNumVal;
     vector<string> vStringVal;
 };
 
+// Structure for the retouch functionality
 struct RetoqueRegion
 {
     vector<vector<double> > vDataArray;
@@ -70,18 +86,24 @@ struct RetoqueRegion
     double dMedian;
 };
 
+// Structure for the four standard variables
 struct Integration_Vars
 {
     string sName[4] = {"x", "y", "z", "t"};
     double vValue[4][4];
 };
 
+// Structure for the sorting functionality: used for the recursive definition of
+// the index columns for sorting
 struct ColumnKeys
 {
     int nKey[2];
+    // Contains a recursive pointer
     ColumnKeys* subkeys;
 
+    // Default constructor
     ColumnKeys() : nKey{-1,-1}, subkeys(nullptr) {}
+    // Destructor recursively deletes the stored pointers
     ~ColumnKeys()
         {
             if (subkeys)

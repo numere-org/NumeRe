@@ -11,3 +11,4 @@ Fixed	NumeRe doesn't flicker any more in Win10 1803.
 Fixed	The sectioning functionality is now working correctly for textfiles.
 Added	One may now select the minimal code block length for the duplicate code analysis.
 Fixed	'datagrid' may now handle asymmetric data sets.
+Fixed	Multiple fixes in the bytecode handling in the parser. Obscure errors, which may occur inside of loops are now hopefully avoided. In addition, the loop mode was sped up if the loop does only contain numerical calculations.

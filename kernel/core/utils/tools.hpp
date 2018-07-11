@@ -107,6 +107,14 @@ string toCmdString(double dNumber);
  */
 string toString(bool bBoolean);
 
+/** \brief Transforms the passed int into a string using the hexidecimal representation
+ *
+ * \param nNumber int
+ * \return string
+ *
+ */
+string toHexString(int nNumber);
+
 /** \brief Removes vowels and umlauts from strings
  *
  * \param sText const string&
@@ -211,40 +219,40 @@ string getClipboardText();
 
 namespace little_endian_io
 {
-    template <typename Word>
-    inline std::ostream& write_word( std::ostream& outs, Word value, unsigned size = sizeof( Word ) )
-    {
-        for (; size; --size, value >>= 8)
-            outs.put( static_cast <char> (value & 0xFF) );
-        return outs;
-    }
+	template <typename Word>
+	inline std::ostream& write_word( std::ostream& outs, Word value, unsigned size = sizeof( Word ) )
+	{
+		for (; size; --size, value >>= 8)
+			outs.put( static_cast <char> (value & 0xFF) );
+		return outs;
+	}
 
-    template <typename Word>
-    inline std::istream& read_word( std::istream& ins, Word& value, unsigned size = sizeof( Word ) )
-    {
-        for (unsigned n = 0, value = 0; n < size; ++n)
-            value |= ins.get() << (8 * n);
-        return ins;
-    }
+	template <typename Word>
+	inline std::istream& read_word( std::istream& ins, Word& value, unsigned size = sizeof( Word ) )
+	{
+		for (unsigned n = 0, value = 0; n < size; ++n)
+			value |= ins.get() << (8 * n);
+		return ins;
+	}
 }
 
 namespace big_endian_io
 {
-    template <typename Word>
-    inline std::ostream& write_word( std::ostream& outs, Word value, unsigned size = sizeof( Word ) )
-    {
-        while (size)
-            outs.put( static_cast <char> ( (value >> (8 * --size)) & 0xFF ));
-        return outs;
-    }
+	template <typename Word>
+	inline std::ostream& write_word( std::ostream& outs, Word value, unsigned size = sizeof( Word ) )
+	{
+		while (size)
+			outs.put( static_cast <char> ( (value >> (8 * --size)) & 0xFF ));
+		return outs;
+	}
 
-    template <typename Word>
-    inline std::istream& read_word( std::istream& ins, Word& value, unsigned size = sizeof( Word ) )
-    {
-        for (value = 0; size; --size)
-            value = (value << 8) | ins.get();
-        return ins;
-    }
+	template <typename Word>
+	inline std::istream& read_word( std::istream& ins, Word& value, unsigned size = sizeof( Word ) )
+	{
+		for (value = 0; size; --size)
+			value = (value << 8) | ins.get();
+		return ins;
+	}
 }
 
 bool containsDataObject(const string& sExpr);
