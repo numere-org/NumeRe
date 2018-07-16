@@ -7993,7 +7993,7 @@ string parser_evalTargetExpression(string& sCmd, const string& sDefaultTarget, I
         sCmd.erase(sCmd.find(getArgAtPos(sCmd, matchParams(sCmd, "target", '=')+6), matchParams(sCmd, "target", '=')-1), getArgAtPos(sCmd, matchParams(sCmd, "target", '=')+6).length());
         sCmd.erase(matchParams(sCmd, "target", '=')-1, 7);
     }
-    else
+    else if (sDefaultTarget.length())
     {
         _idx.nI[0] = 0;
         _idx.nI[1] = -2;

@@ -800,7 +800,6 @@ static string getLastToken(const string& sLine)
 }
 
 
-
 // this function is for extracting the data out of the data object and storing it to a continous block of memory
 // used for example for the FFT, the FWT and the fitting algorithm
 bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Datafile& _cache, int nDesiredCols, bool bSort)
@@ -870,6 +869,7 @@ bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Dat
 	}
 	return true;
 }
+
 
 // This function will extract the needed data into a table object
 Table parser_extractData(const string& sDataExpression, Parser& _parser, Datafile& _data, const Settings& _option)
@@ -997,6 +997,7 @@ Table parser_extractData(const string& sDataExpression, Parser& _parser, Datafil
     return copyAndExtract(_data, sDatatable, vLine, vCol, i_pos, j_pos, nDim);
 }
 
+
 // This function evaluates the column indices and returns the final dimension of the columns
 static int evalColumnIndicesAndGetDimension(Datafile& _data, Parser& _parser, const string& sDatatable, const string& sDataExpression, string si_pos[2], string sj_pos[3], vector<long long int>& vLine, vector<long long int>& vCol, int i_pos[2], int j_pos[3], const Settings& _option)
 {
@@ -1121,6 +1122,7 @@ static int evalColumnIndicesAndGetDimension(Datafile& _data, Parser& _parser, co
 	return nDim;
 }
 
+
 // This function will copy the contents to the target table and extract the table
 static Table copyAndExtract(Datafile& _data, const string& sDatatable, const vector<long long int>& vLine, const vector<long long int>& vCol, int i_pos[2], int j_pos[3], int nDim)
 {
@@ -1178,6 +1180,7 @@ static Table copyAndExtract(Datafile& _data, const string& sDatatable, const vec
 	// Return the extracted table object
 	return _cache.extractTable(sDatatable);
 }
+
 
 // --> Prueft, ob ein Ausdruck Nicht-Leer ist (also auch, dass er nicht nur aus Leerzeichen besteht) <--
 bool isNotEmptyExpression(const string& sExpr)
@@ -1333,6 +1336,7 @@ void parser_CheckIndices(int& nIndex_1, int& nIndex_2)
 	}
 	return;
 }
+
 
 // --> Prueft, ob der zweite Index groesser als der erste ist und vertauscht sie ggf. <--
 void parser_CheckIndices(long long int& nIndex_1, long long int& nIndex_2)

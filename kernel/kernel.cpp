@@ -49,7 +49,7 @@ int NumeReKernel::nLastStatusVal = 0;
 unsigned int NumeReKernel::nLastLineLength = 0;
 bool NumeReKernel::modifiedSettings = false;
 bool NumeReKernel::bCancelSignal = false;
-queue<stringmatrix*> NumeReKernel::sTable;
+queue<stringmatrix> NumeReKernel::sTable;
 vector<string> NumeReKernel::vDebugInfos;
 queue<string> NumeReKernel::sTableName;
 Debugmessenger NumeReKernel::_messenger;
