@@ -23,9 +23,8 @@ Debugmessenger::Debugmessenger()
     mBreakpoints.clear();
 }
 
-Debugmessenger::Debugmessenger(const Debugmessenger& _messenger)
+Debugmessenger::Debugmessenger(const Debugmessenger& _messenger) : Debugmessenger()
 {
-    Debugmessenger();
     passBreakpoints(_messenger.mBreakpoints);
 }
 

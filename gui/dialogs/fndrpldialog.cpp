@@ -234,8 +234,8 @@ bool FindReplaceDialog::Create(wxWindow *parent,
     topsizer_replace->SetSizeHints( replacepage );
     topsizer_replace->Fit( replacepage );
 
-    m_tabs->AddPage(findpage, _guilang.get("GUI_DLG_FIND"), style & wxFR_REPLACEDIALOG ? false : true);
-    m_tabs->AddPage(replacepage, _guilang.get("GUI_DLG_REPLACE"), style & wxFR_REPLACEDIALOG ? true : false);
+    m_tabs->AddPage(findpage, _guilang.get("GUI_DLG_FIND"), (style & wxFR_REPLACEDIALOG) ? false : true);
+    m_tabs->AddPage(replacepage, _guilang.get("GUI_DLG_REPLACE"), (style & wxFR_REPLACEDIALOG) ? true : false);
     //SetSizer( topsizer_find );
 
 

@@ -98,7 +98,7 @@ public:
 	void OnSashPosChanged(wxSplitterEvent& event)
 	{
 		float percent =  (float)event.GetSashPosition() / parentSize();
-		if ( percent > 0.0 || percent < 1.0 )
+		if ( percent > 0.0 && percent < 1.0 )
 			splitPercent_ = percent;
         m_defaultHeight = false;
 

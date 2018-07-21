@@ -106,44 +106,44 @@ enum StringParserFlags
 
 // Function handler:
 // ======================
-string parser_ApplySpecialStringFuncs(string sLine, Datafile&, Parser&, const Settings&, map<string, vector<string> >&);
-string parser_ApplyStringFuncs(string sLine, Datafile&, Parser&, const Settings&, map<string, vector<string> >&);
-void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile&, Parser&, const Settings&, map<string, vector<string> >&, StringFuncHandle);
-map<string, StringFuncHandle> parser_getStringFuncHandles();
-string removeMaskedStrings(const string& sString);
-string addMaskedStrings(const string& sString);
-string listToVector(const string& sString);
-string removeQuotationMarks(const string& sString);
-string addQuotationMarks(const string& sString);
-bool parser_detectStringLogicals(const string& sString);
-size_t parser_detectPathTokens(const string& sString, size_t nPos);
+static string parser_ApplySpecialStringFuncs(string sLine, Datafile&, Parser&, const Settings&, map<string, vector<string> >&);
+static string parser_ApplyStringFuncs(string sLine, Datafile&, Parser&, const Settings&, map<string, vector<string> >&);
+static void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile&, Parser&, const Settings&, map<string, vector<string> >&, StringFuncHandle);
+static map<string, StringFuncHandle> parser_getStringFuncHandles();
+static string removeMaskedStrings(const string& sString);
+static string addMaskedStrings(const string& sString);
+static string listToVector(const string& sString);
+static string removeQuotationMarks(const string& sString);
+static string addQuotationMarks(const string& sString);
+static bool parser_detectStringLogicals(const string& sString);
+static size_t parser_detectPathTokens(const string& sString, size_t nPos);
 
-StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> > mStringVectorVars, bool bParseNumericals = true);
+static StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> > mStringVectorVars, bool bParseNumericals = true);
 
-string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars, size_t n_pos);
-string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars);
-int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string sObject, Datafile& _data, Parser& _parser, const Settings& _option);
-string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string& sLine, bool bReturningLogicals, int parserFlags);
-vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFinal, Parser& _parser, const Settings& _option, bool& bReturningLogicals);
-string parser_CreateStringVectorVar(const vector<string>& vStringVector, map<string, vector<string> >& mStringVectorVars);
-bool parser_containsStringVectorVars(const string& sLine, const map<string, vector<string> >& mStringVectorVars);
-vector<string> parser_EvaluateStringVectors(string sLine, const map<string, vector<string> >& mStringVectorVars);
-void parser_ExpandStringVectorComponents(vector<string>& vStringVector);
-string parser_evalStringLogic(string sLine, Parser& _parser, bool& bReturningLogicals);
-string parser_evalStringTernary(string sLine, Parser& _parser);
-vector<string> parser_getStringTernaryExpression(string& sLine, size_t& nPos);
+static string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars, size_t n_pos);
+static string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars);
+static int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string sObject, Datafile& _data, Parser& _parser, const Settings& _option);
+static string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string& sLine, bool bReturningLogicals, int parserFlags);
+static vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFinal, Parser& _parser, const Settings& _option, bool& bReturningLogicals);
+static string parser_CreateStringVectorVar(const vector<string>& vStringVector, map<string, vector<string> >& mStringVectorVars);
+static bool parser_containsStringVectorVars(const string& sLine, const map<string, vector<string> >& mStringVectorVars);
+static vector<string> parser_EvaluateStringVectors(string sLine, const map<string, vector<string> >& mStringVectorVars);
+static void parser_ExpandStringVectorComponents(vector<string>& vStringVector);
+static string parser_evalStringLogic(string sLine, Parser& _parser, bool& bReturningLogicals);
+static string parser_evalStringTernary(string sLine, Parser& _parser);
+static vector<string> parser_getStringTernaryExpression(string& sLine, size_t& nPos);
 
 // String functions:
 // ======================
 // string STRINGFUNC(ARGS)
 //
 // Parser functions:
-size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, n_vect&);
-size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&);
-size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&, n_vect&, n_vect&);
-size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&, n_vect&, n_vect&, s_vect&);
-size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&, s_vect&, n_vect&, n_vect&);
-size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&);
+static size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, n_vect&);
+static size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&);
+static size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&, n_vect&, n_vect&);
+static size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&, n_vect&, n_vect&, s_vect&);
+static size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&, s_vect&, n_vect&, n_vect&);
+static size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&);
 //
 
 
@@ -152,7 +152,7 @@ size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const str
 // bool PARSER(const string&, string&)
 // STR__STR
 // str = to_string(EXPR)
-string strfnc_to_string(StringFuncArgs& funcArgs)
+static string strfnc_to_string(StringFuncArgs& funcArgs)
 {
 	if (funcArgs.sArg1.find('"') == string::npos)
 		return "\"" + funcArgs.sArg1 + "\"";
@@ -164,13 +164,13 @@ string strfnc_to_string(StringFuncArgs& funcArgs)
 
 // STR__STR
 // str = to_uppercase(str)
-string strfnc_to_uppercase(StringFuncArgs& funcArgs)
+static string strfnc_to_uppercase(StringFuncArgs& funcArgs)
 {
 	return "\"" + toUpperCase(funcArgs.sArg1) + "\"";
 }
 
 // str = to_lowercase(str)
-string strfnc_to_lowercase(StringFuncArgs& funcArgs)
+static string strfnc_to_lowercase(StringFuncArgs& funcArgs)
 {
 	return "\"" + toLowerCase(funcArgs.sArg1) + "\"";
 }
@@ -179,7 +179,7 @@ string strfnc_to_lowercase(StringFuncArgs& funcArgs)
 // string strfnc_to_cmd(StringFuncArgs& funcArgs);
 
 // {str} = getfilelist(str, [val])
-string strfnc_getfilelist(StringFuncArgs& funcArgs)
+static string strfnc_getfilelist(StringFuncArgs& funcArgs)
 {
 	if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
 		funcArgs.nArg1 = 0;
@@ -198,7 +198,7 @@ string strfnc_getfilelist(StringFuncArgs& funcArgs)
 		return sFileList;
 }
 // {str} = getfolderlist(str, [val])
-string strfnc_getfolderlist(StringFuncArgs& funcArgs)
+static string strfnc_getfolderlist(StringFuncArgs& funcArgs)
 {
 	if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
 		funcArgs.nArg1 = 0;
@@ -219,25 +219,25 @@ string strfnc_getfolderlist(StringFuncArgs& funcArgs)
 
 // VAL__STR
 // val = to_value(str)
-string strfnc_to_value(StringFuncArgs& funcArgs)
+static string strfnc_to_value(StringFuncArgs& funcArgs)
 {
 	return funcArgs.sArg1;
 }
 
 // val = strlen(str)
-string strfnc_strlen(StringFuncArgs& funcArgs)
+static string strfnc_strlen(StringFuncArgs& funcArgs)
 {
 	return toString((int)removeMaskedStrings(funcArgs.sArg1).length());
 }
 
 // val = getmatchingparens(str)
-string strfnc_getmatchingparens(StringFuncArgs& funcArgs)
+static string strfnc_getmatchingparens(StringFuncArgs& funcArgs)
 {
 	return toString((int)getMatchingParenthesis(removeMaskedStrings(funcArgs.sArg1)) + 1);
 }
 
 // {val} = ascii(str)
-string strfnc_ascii(StringFuncArgs& funcArgs)
+static string strfnc_ascii(StringFuncArgs& funcArgs)
 {
 	string sCodes = "";
 	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
@@ -261,7 +261,7 @@ string strfnc_ascii(StringFuncArgs& funcArgs)
 // bool PARSER(const string&, int&)
 // STR__VAL
 // str = to_char(num)
-string strfnc_to_char(StringFuncArgs& funcArgs)
+static string strfnc_to_char(StringFuncArgs& funcArgs)
 {
 	string sToChar = "";
 	for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
@@ -272,7 +272,7 @@ string strfnc_to_char(StringFuncArgs& funcArgs)
 }
 
 // val = and(num)
-string strfnc_and(StringFuncArgs& funcArgs)
+static string strfnc_and(StringFuncArgs& funcArgs)
 {
 	if (!funcArgs.nMultiArg.size())
 		return "false";
@@ -285,7 +285,7 @@ string strfnc_and(StringFuncArgs& funcArgs)
 }
 
 // val = or(num)
-string strfnc_or(StringFuncArgs& funcArgs)
+static string strfnc_or(StringFuncArgs& funcArgs)
 {
 	string sToChar = "";
 	for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
@@ -297,7 +297,7 @@ string strfnc_or(StringFuncArgs& funcArgs)
 }
 
 // val = xor(num)
-string strfnc_xor(StringFuncArgs& funcArgs)
+static string strfnc_xor(StringFuncArgs& funcArgs)
 {
 	string sToChar = "";
 	bool isTrue = false;
@@ -320,7 +320,7 @@ string strfnc_xor(StringFuncArgs& funcArgs)
 // bool PARSER(const string&, string&, string&)
 // LOG__STR_STROPT
 // log = findfile(str, [str])
-string strfnc_findfile(StringFuncArgs& funcArgs)
+static string strfnc_findfile(StringFuncArgs& funcArgs)
 {
 	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
 	FileSystem _fSys;
@@ -346,7 +346,7 @@ string strfnc_findfile(StringFuncArgs& funcArgs)
 
 // STR__STR_STR
 // {str} = split(str, str)
-string strfnc_split(StringFuncArgs& funcArgs)
+static string strfnc_split(StringFuncArgs& funcArgs)
 {
 	string sSplittedString = "";
 	if (!funcArgs.sArg2.length())
@@ -366,7 +366,7 @@ string strfnc_split(StringFuncArgs& funcArgs)
 }
 
 // val = to_time(str, str)
-string strfnc_to_time(StringFuncArgs& funcArgs)
+static string strfnc_to_time(StringFuncArgs& funcArgs)
 {
 	string sTime = funcArgs.sArg2 + " ";
 	string sPattern = funcArgs.sArg1 + " ";
@@ -432,7 +432,7 @@ string strfnc_to_time(StringFuncArgs& funcArgs)
 // bool PARSER(const string&, string&, string&, int&)
 // VAL__STR_STR_VALOPT
 // val = strfnd(str, str, [val])
-string strfnc_strfnd(StringFuncArgs& funcArgs)
+static string strfnc_strfnd(StringFuncArgs& funcArgs)
 {
 	if (!funcArgs.sArg2.length())
 		return "0";
@@ -447,7 +447,7 @@ string strfnc_strfnd(StringFuncArgs& funcArgs)
 	return toString((int)funcArgs.sArg2.find(funcArgs.sArg1, funcArgs.nArg1 - 1) + 1);
 }
 // val = strmatch(str, str, [val])
-string strfnc_strmatch(StringFuncArgs& funcArgs)
+static string strfnc_strmatch(StringFuncArgs& funcArgs)
 {
 	if (!funcArgs.sArg2.length())
 		return "0";
@@ -463,7 +463,7 @@ string strfnc_strmatch(StringFuncArgs& funcArgs)
 }
 
 // val = str_not_match(str, str, [val])
-string strfnc_str_not_match(StringFuncArgs& funcArgs)
+static string strfnc_str_not_match(StringFuncArgs& funcArgs)
 {
 	if (!funcArgs.sArg2.length())
 		return "0";
@@ -479,7 +479,7 @@ string strfnc_str_not_match(StringFuncArgs& funcArgs)
 }
 
 // val = strrfnd(str, str, [val])
-string strfnc_strrfnd(StringFuncArgs& funcArgs)
+static string strfnc_strrfnd(StringFuncArgs& funcArgs)
 {
 	if (!funcArgs.sArg2.length())
 		return "0";
@@ -495,7 +495,7 @@ string strfnc_strrfnd(StringFuncArgs& funcArgs)
 }
 
 // val = strrmatch(str, str, [val])
-string strfnc_strrmatch(StringFuncArgs& funcArgs)
+static string strfnc_strrmatch(StringFuncArgs& funcArgs)
 {
 	if (!funcArgs.sArg2.length())
 		return "0";
@@ -511,7 +511,7 @@ string strfnc_strrmatch(StringFuncArgs& funcArgs)
 }
 
 // val = str_not_rmatch(str, str, [val])
-string strfnc_str_not_rmatch(StringFuncArgs& funcArgs)
+static string strfnc_str_not_rmatch(StringFuncArgs& funcArgs)
 {
 	if (!funcArgs.sArg2.length())
 		return "0";
@@ -530,7 +530,7 @@ string strfnc_str_not_rmatch(StringFuncArgs& funcArgs)
 // bool PARSER(const string&, string&, string&, string&)
 // VAL__STR_STR_STROPT
 // val = findparam(str, str, [str])
-string strfnc_findparam(StringFuncArgs& funcArgs)
+static string strfnc_findparam(StringFuncArgs& funcArgs)
 {
 	if (!funcArgs.sArg2.length())
 		return "0";
@@ -558,7 +558,7 @@ string strfnc_findparam(StringFuncArgs& funcArgs)
 // bool PARSER(const string&, string&, int&, int&)
 // STR__STR_VAL_VALOPT
 // str = substr(str, val, [val])
-string strfnc_substr(StringFuncArgs& funcArgs)
+static string strfnc_substr(StringFuncArgs& funcArgs)
 {
 	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
 	if (!funcArgs.sArg1.length())
@@ -576,7 +576,7 @@ string strfnc_substr(StringFuncArgs& funcArgs)
 // bool PARSER(const string&, string&, int&)
 // STR__STR_VAL
 // str = repeat(str, val)
-string strfnc_repeat(StringFuncArgs& funcArgs)
+static string strfnc_repeat(StringFuncArgs& funcArgs)
 {
 	if (funcArgs.nArg1 <= 1)
 		return "\"" + funcArgs.sArg1 + "\"";
@@ -589,7 +589,7 @@ string strfnc_repeat(StringFuncArgs& funcArgs)
 	}
 }
 
-string padWithZeros(int nTime, size_t nLength)
+static string padWithZeros(int nTime, size_t nLength)
 {
 	string sPadded = toString(nTime);
 	sPadded.insert(0, nLength - sPadded.length(), '0');
@@ -597,7 +597,7 @@ string padWithZeros(int nTime, size_t nLength)
 }
 
 // str = timeformat(str, val)
-string strfnc_timeformat(StringFuncArgs& funcArgs)
+static string strfnc_timeformat(StringFuncArgs& funcArgs)
 {
 	string sFormattedTime = funcArgs.sArg1 + " "; // contains pattern
 	time_t nTime = abs(funcArgs.nArg1);
@@ -657,7 +657,7 @@ string strfnc_timeformat(StringFuncArgs& funcArgs)
 }
 
 // str = char(str, val)
-string strfnc_char(StringFuncArgs& funcArgs)
+static string strfnc_char(StringFuncArgs& funcArgs)
 {
 	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
 	if (funcArgs.nArg1 <= 1)
@@ -668,7 +668,7 @@ string strfnc_char(StringFuncArgs& funcArgs)
 }
 
 // str = getopt(str, val)
-string strfnc_getopt(StringFuncArgs& funcArgs)
+static string strfnc_getopt(StringFuncArgs& funcArgs)
 {
 	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
 	if (funcArgs.nArg1 <= 1)
@@ -687,7 +687,7 @@ string strfnc_getopt(StringFuncArgs& funcArgs)
 // bool PARSER(const string&, string&, string&, int&, int&)
 // STR__STR_STR_VALOPT_VALOPT
 // str = replace(str, str, [val], [val])
-string strfnc_replace(StringFuncArgs& funcArgs)
+static string strfnc_replace(StringFuncArgs& funcArgs)
 {
 	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
 	funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
@@ -708,7 +708,7 @@ string strfnc_replace(StringFuncArgs& funcArgs)
 // bool PARSER(const string&, string&, string&, string&, int&, int&)
 // STR__STR_STR_STR_VALOPT_VALOPT
 // str = replaceall(str, str, str, [val], [val])
-string strfnc_replaceall(StringFuncArgs& funcArgs)
+static string strfnc_replaceall(StringFuncArgs& funcArgs)
 {
 	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
 	funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
@@ -745,7 +745,7 @@ string strfnc_replaceall(StringFuncArgs& funcArgs)
 // bool PARSER(const string&, string&)
 // VAL__STR
 // val = cnt({str})
-string strfnc_cnt(StringFuncArgs& funcArgs)
+static string strfnc_cnt(StringFuncArgs& funcArgs)
 {
 	if (funcArgs.sMultiArg.size())
 	{
@@ -757,7 +757,7 @@ string strfnc_cnt(StringFuncArgs& funcArgs)
 }
 
 // val = num({str})
-string strfnc_num(StringFuncArgs& funcArgs)
+static string strfnc_num(StringFuncArgs& funcArgs)
 {
 	if (funcArgs.sMultiArg.size())
 	{
@@ -778,7 +778,7 @@ string strfnc_num(StringFuncArgs& funcArgs)
 
 // STR__STR
 // str = min({str})
-string strfnc_min(StringFuncArgs& funcArgs)
+static string strfnc_min(StringFuncArgs& funcArgs)
 {
 	if (!funcArgs.sMultiArg.size())
 		return "\"\"";
@@ -792,7 +792,7 @@ string strfnc_min(StringFuncArgs& funcArgs)
 }
 
 // str = max({str})
-string strfnc_max(StringFuncArgs& funcArgs)
+static string strfnc_max(StringFuncArgs& funcArgs)
 {
 	if (!funcArgs.sMultiArg.size())
 		return "\"\"";
@@ -806,7 +806,7 @@ string strfnc_max(StringFuncArgs& funcArgs)
 }
 
 // str = sum({str})
-string strfnc_sum(StringFuncArgs& funcArgs)
+static string strfnc_sum(StringFuncArgs& funcArgs)
 {
 	if (funcArgs.sMultiArg.size())
 	{
@@ -903,7 +903,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
 }
 
 
-StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> > mStringVectorVars, bool bParseNumericals)
+static StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> > mStringVectorVars, bool bParseNumericals)
 {
 	StringResult strRes;
 
@@ -1233,7 +1233,7 @@ StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _da
 }
 
 
-string parser_CreateStringVectorVar(const vector<string>& vStringVector, map<string, vector<string> >& mStringVectorVars)
+static string parser_CreateStringVectorVar(const vector<string>& vStringVector, map<string, vector<string> >& mStringVectorVars)
 {
 	// Return, if empty (something else went wrong)
 	if (!vStringVector.size())
@@ -1251,7 +1251,7 @@ string parser_CreateStringVectorVar(const vector<string>& vStringVector, map<str
 	return strVectName;
 }
 
-bool parser_containsStringVectorVars(const string& sLine, const map<string, vector<string> >& mStringVectorVars)
+static bool parser_containsStringVectorVars(const string& sLine, const map<string, vector<string> >& mStringVectorVars)
 {
 	if (!sLine.length() || !mStringVectorVars.size())
 		return false;
@@ -1263,7 +1263,7 @@ bool parser_containsStringVectorVars(const string& sLine, const map<string, vect
 	return false;
 }
 
-vector<string> parser_EvaluateStringVectors(string sLine, const map<string, vector<string> >& mStringVectorVars)
+static vector<string> parser_EvaluateStringVectors(string sLine, const map<string, vector<string> >& mStringVectorVars)
 {
 	vector<string> vRes;
 
@@ -1309,7 +1309,7 @@ vector<string> parser_EvaluateStringVectors(string sLine, const map<string, vect
 	return vRes;
 }
 
-void parser_ExpandStringVectorComponents(vector<string>& vStringVector)
+static void parser_ExpandStringVectorComponents(vector<string>& vStringVector)
 {
 	for (size_t i = 0; i < vStringVector.size(); i++)
 	{
@@ -1328,7 +1328,7 @@ void parser_ExpandStringVectorComponents(vector<string>& vStringVector)
 	}
 }
 
-string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars)
+static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars)
 {
 	unsigned int n_pos = 0;
 
@@ -1786,7 +1786,7 @@ string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _pa
 	return sLine;
 }
 
-string parser_ApplyStringFuncs(string sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars)
+static string parser_ApplyStringFuncs(string sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars)
 {
 	static map<string, StringFuncHandle> mFuncHandleTable = parser_getStringFuncHandles();
 
@@ -1798,7 +1798,7 @@ string parser_ApplyStringFuncs(string sLine, Datafile& _data, Parser& _parser, c
 	return sLine;
 }
 
-map<string, StringFuncHandle> parser_getStringFuncHandles()
+static map<string, StringFuncHandle> parser_getStringFuncHandles()
 {
 	map<string, StringFuncHandle> mHandleTable;
 
@@ -1843,7 +1843,7 @@ map<string, StringFuncHandle> parser_getStringFuncHandles()
 	return mHandleTable;
 }
 
-string removeMaskedStrings(const string& sString)
+static string removeMaskedStrings(const string& sString)
 {
 	if (sString.find("\\\"") == string::npos && sString.find("\\t") == string::npos && sString.find("\\n") == string::npos && sString.find("\\ ") == string::npos)
 		return sString;
@@ -1866,7 +1866,7 @@ string removeMaskedStrings(const string& sString)
 	return sRet;
 }
 
-string addMaskedStrings(const string& sString)
+static string addMaskedStrings(const string& sString)
 {
 	if (sString.find('"') == string::npos && sString.find(NEWSTRING) == string::npos && sString.back() != '\\')
 		return sString;
@@ -1899,36 +1899,14 @@ string addMaskedStrings(const string& sString)
 	return sRet;
 }
 
-string listToVector(const string& sString)
-{
-	if (sString.find('"') == string::npos && (sString.find(',') == string::npos || sString.find('{') != string::npos))
-		return sString;
-	else if (sString.find('"') == string::npos)
-		return "{" + sString + "}";
-	else if (sString.find('"') != string::npos && sString.find(',') != string::npos && sString.find('{') == string::npos)
-	{
-		int nQuotes = 0;
-		for (size_t i = 0; i < sString.length(); i++)
-		{
-			if (sString[i] == '"' && (!i || sString[i - 1] != '\\'))
-				nQuotes++;
-			if (sString[i] == ',' && !(nQuotes % 2))
-			{
-				return "{" + sString + "}";
-			}
-		}
-	}
-	return sString;
-}
-
-string removeQuotationMarks(const string& sString)
+static string removeQuotationMarks(const string& sString)
 {
 	if (sString.find('"') == string::npos)
 		return sString;
 	return sString.substr(1, sString.length() - 2);
 }
 
-string addQuotationMarks(const string& sString)
+static string addQuotationMarks(const string& sString)
 {
 	if (sString.front() == '"' && sString.back() == '"')
 		return sString;
@@ -1936,7 +1914,7 @@ string addQuotationMarks(const string& sString)
 		return "\"" + sString + "\"";
 }
 
-void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars, StringFuncHandle funcHandle)
+static void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars, StringFuncHandle funcHandle)
 {
 	size_t n_pos = 0;
 
@@ -2186,7 +2164,7 @@ void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& 
 	}
 }
 
-size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, n_vect& nArg)
+static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, n_vect& nArg)
 {
 	string sFuncArgument = __sFuncArgument;
 	value_type* v = 0;
@@ -2219,7 +2197,7 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
 	return (size_t)nReturn;
 }
 
-size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg)
+static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg)
 {
 	string sFuncArgument = __sFuncArgument;
 	if (containsStrings(sFuncArgument) || _data.containsStringVars(sFuncArgument) || parser_containsStringVectorVars(sFuncArgument, mStringVectorVars))
@@ -2240,7 +2218,7 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
 	return sArg.size();
 }
 
-size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg1, n_vect& nArg1, n_vect& nArg2)
+static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg1, n_vect& nArg1, n_vect& nArg2)
 {
 	string sFuncArgument = __sFuncArgument;
 	size_t nMaxLength = 0;
@@ -2277,7 +2255,7 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
 	return nMaxLength;
 }
 
-size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg1, n_vect& nArg1, n_vect& nArg2, s_vect& sArg2)
+static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg1, n_vect& nArg1, n_vect& nArg2, s_vect& sArg2)
 {
 	string sFuncArgument = __sFuncArgument;
 	size_t nMaxLength = 0;
@@ -2324,7 +2302,7 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
 	return nMaxLength;
 }
 
-size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg1, s_vect& sArg2, n_vect& nArg1, n_vect& nArg2)
+static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg1, s_vect& sArg2, n_vect& nArg1, n_vect& nArg2)
 {
 	string sFuncArgument = __sFuncArgument;
 	size_t nMaxLength = 0;
@@ -2371,7 +2349,7 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
 	return nMaxLength;
 }
 
-size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg1, s_vect& sArg2, s_vect& sArg3, n_vect& nArg1, n_vect& nArg2)
+static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg1, s_vect& sArg2, s_vect& sArg3, n_vect& nArg1, n_vect& nArg2)
 {
 	string sFuncArgument = __sFuncArgument;
 	size_t nMaxLength = 0;
@@ -2429,7 +2407,7 @@ size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settin
 	return nMaxLength;
 }
 
-string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars, size_t n_pos)
+static string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars, size_t n_pos)
 {
 	// Get the contents of "string()", "data()" and the other caches
 	string sDummy;
@@ -2665,7 +2643,7 @@ string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, c
 	return sLine;
 }
 
-string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars)
+static string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars)
 {
 	if (sLine.find('#') == string::npos)
 		return sLine + " ";
@@ -2843,7 +2821,7 @@ string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser,
 	return sLineToParsed;
 }
 
-vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFinal, Parser& _parser, const Settings& _option, bool& bReturningLogicals)
+static vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFinal, Parser& _parser, const Settings& _option, bool& bReturningLogicals)
 {
 	vector<bool> vIsNoStringValue;
 	for (unsigned int n = 0; n < vFinal.size(); n++)
@@ -2893,7 +2871,7 @@ vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFinal, Pars
 	return vIsNoStringValue;
 }
 
-int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string __sObject, Datafile& _data, Parser& _parser, const Settings& _option)
+static int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string __sObject, Datafile& _data, Parser& _parser, const Settings& _option)
 {
 	if (__sObject.length())
 	{
@@ -3203,7 +3181,7 @@ int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& 
 	return 1;
 }
 
-string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string& sLine, bool bReturningLogicals, int parserFlags)
+static string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string& sLine, bool bReturningLogicals, int parserFlags)
 {
 	sLine.clear();
 
@@ -3307,7 +3285,7 @@ string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIs
 	return sConsoleOut;
 }
 
-bool parser_detectStringLogicals(const string& sString)
+static bool parser_detectStringLogicals(const string& sString)
 {
 	if (!sString.length())
 		return false;
@@ -3346,7 +3324,7 @@ bool parser_detectStringLogicals(const string& sString)
 	return false;
 }
 
-size_t parser_detectPathTokens(const string& sString, size_t nPos)
+static size_t parser_detectPathTokens(const string& sString, size_t nPos)
 {
 	if (sString.substr(nPos, 2) == "<>")
 		return 1u;
@@ -3367,7 +3345,7 @@ size_t parser_detectPathTokens(const string& sString, size_t nPos)
 	return 0u;
 }
 
-string parser_evalStringLogic(string sLine, Parser& _parser, bool& bReturningLogicals)
+static string parser_evalStringLogic(string sLine, Parser& _parser, bool& bReturningLogicals)
 {
 	if (!sLine.length())
 		return "false";
@@ -3595,7 +3573,7 @@ string parser_evalStringLogic(string sLine, Parser& _parser, bool& bReturningLog
 	return sLine;
 }
 
-string parser_evalStringTernary(string sLine, Parser& _parser)
+static string parser_evalStringTernary(string sLine, Parser& _parser)
 {
 	bool bReturningLogicals = false;
 	size_t nPos = 0;
@@ -3632,7 +3610,7 @@ string parser_evalStringTernary(string sLine, Parser& _parser)
 	return sLine;
 }
 
-vector<string> parser_getStringTernaryExpression(string& sLine, size_t& nPos) // nPos ist the position of the question mark
+static vector<string> parser_getStringTernaryExpression(string& sLine, size_t& nPos) // nPos ist the position of the question mark
 {
 	vector<string> vTernary;
 	size_t nTernaryStart = 0;
@@ -3675,198 +3653,5 @@ vector<string> parser_getStringTernaryExpression(string& sLine, size_t& nPos) //
 }
 
 
-
-int parser_countStrings(const string& sCmd)
-{
-	if (!sCmd.length())
-		return 0;
-	if (sCmd.find(',') == string::npos)
-		return 1;
-	int nCount = 1;
-
-	for (unsigned int i = 0; i < sCmd.length(); i++)
-	{
-		if (sCmd[i] == ',' && !isInQuotes(sCmd, i))
-			nCount++;
-	}
-	return nCount;
-}
-
-int parser_numStrings(const string& sCmd)
-{
-	if (!sCmd.length() || sCmd == "\"\"")
-		return 0;
-	if (sCmd != "\"\"" && sCmd.find(',') == string::npos)
-		return 1;
-	int nCount = 0;
-	for (unsigned int i = 0; i < sCmd.length(); i++)
-	{
-		if ((sCmd[i] == ',' && !isInQuotes(sCmd, i)) || i + 1 == sCmd.length())
-		{
-			for (int j = i; j >= 0; j--)
-			{
-				if (j > 0 && sCmd[j] == '"' && sCmd[j - 1] == '"')
-					break;
-				else if (j > 0 && sCmd[j] == '"' && sCmd[j - 1] != '"')
-				{
-					nCount++;
-					break;
-				}
-			}
-		}
-	}
-	return nCount;
-}
-
-string parser_getMinString(const string& sCmd)
-{
-	if (!sCmd.length())
-		return "";
-	if (sCmd.find(',') == string::npos)
-		return sCmd;
-	string* sStrings;
-	unsigned int nCount = 1;
-
-	for (unsigned int i = 0; i < sCmd.length(); i++)
-	{
-		if (sCmd[i] == ',' && !isInQuotes(sCmd, i))
-			nCount++;
-	}
-	sStrings = new string[nCount];
-
-	string sLine = sCmd;
-	string sMin = "";
-	for (unsigned int i = 0; i < nCount; i++)
-	{
-		if (i + 1 == nCount)
-		{
-			sStrings[i] = sLine;
-			StripSpaces(sStrings[i]);
-			sStrings[i] = sStrings[i].substr(1, sStrings[i].length() - 2);
-			break;
-		}
-		for (unsigned int j = 0; j < sLine.length(); j++)
-		{
-			if (sLine[j] == ',' && !isInQuotes(sLine, j))
-			{
-				sStrings[i] = sLine.substr(0, j);
-				StripSpaces(sStrings[i]);
-				sStrings[i] = sStrings[i].substr(1, sStrings[i].length() - 2);
-				sLine = sLine.substr(j + 1);
-				break;
-			}
-		}
-	}
-
-	sMin = sStrings[0];
-	for (unsigned int i = 1; i < nCount; i++)
-	{
-		if (sMin > sStrings[i])
-			sMin = sStrings[i];
-	}
-	sMin = "\"" + sMin + "\"";
-	delete[] sStrings;
-	return sMin;
-}
-
-string parser_getMaxString(const string& sCmd)
-{
-	if (!sCmd.length())
-		return "";
-	if (sCmd.find(',') == string::npos)
-		return sCmd;
-	string* sStrings;
-	unsigned int nCount = 1;
-
-	for (unsigned int i = 0; i < sCmd.length(); i++)
-	{
-		if (sCmd[i] == ',' && !isInQuotes(sCmd, i))
-			nCount++;
-	}
-	sStrings = new string[nCount];
-
-	string sLine = sCmd;
-	string sMax = "";
-	for (unsigned int i = 0; i < nCount; i++)
-	{
-		if (i + 1 == nCount)
-		{
-			sStrings[i] = sLine;
-			StripSpaces(sStrings[i]);
-			sStrings[i] = sStrings[i].substr(1, sStrings[i].length() - 2);
-			break;
-		}
-		for (unsigned int j = 0; j < sLine.length(); j++)
-		{
-			if (sLine[j] == ',' && !isInQuotes(sLine, j))
-			{
-				sStrings[i] = sLine.substr(0, j);
-				StripSpaces(sStrings[i]);
-				sStrings[i] = sStrings[i].substr(1, sStrings[i].length() - 2);
-				sLine = sLine.substr(j + 1);
-				break;
-			}
-		}
-	}
-
-	sMax = sStrings[0];
-	for (unsigned int i = 1; i < nCount; i++)
-	{
-		if (sMax < sStrings[i])
-			sMax = sStrings[i];
-	}
-	sMax = "\"" + sMax + "\"";
-	delete[] sStrings;
-	return sMax;
-}
-
-string parser_getSumString(const string& sCmd)
-{
-	if (!sCmd.length())
-		return "";
-	if (sCmd.find(',') == string::npos)
-		return sCmd;
-	string* sStrings;
-	unsigned int nCount = 1;
-
-	for (unsigned int i = 0; i < sCmd.length(); i++)
-	{
-		if (sCmd[i] == ',' && !isInQuotes(sCmd, i))
-			nCount++;
-	}
-	sStrings = new string[nCount];
-
-	string sLine = sCmd;
-	string sSum = "";
-	for (unsigned int i = 0; i < nCount; i++)
-	{
-		if (i + 1 == nCount)
-		{
-			sStrings[i] = sLine;
-			StripSpaces(sStrings[i]);
-			sStrings[i] = sStrings[i].substr(1, sStrings[i].length() - 2);
-			break;
-		}
-		for (unsigned int j = 0; j < sLine.length(); j++)
-		{
-			if (sLine[j] == ',' && !isInQuotes(sLine, j))
-			{
-				sStrings[i] = sLine.substr(0, j);
-				StripSpaces(sStrings[i]);
-				sStrings[i] = sStrings[i].substr(1, sStrings[i].length() - 2);
-				sLine = sLine.substr(j + 1);
-				break;
-			}
-		}
-	}
-
-	for (unsigned int i = 0; i < nCount; i++)
-	{
-		sSum += sStrings[i];
-	}
-	sSum = "\"" + sSum + "\"";
-	delete[] sStrings;
-	return sSum;
-}
 
 

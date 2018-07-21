@@ -425,7 +425,11 @@ void Documentation::removeFromDocIndex(const string& _sID, bool bUseUserLangFile
             for (; iter != mDocumentationIndex.end(); ++iter)
             {
                 if (iter->second == (int)i)
-                    mDocumentationIndex.erase(iter);
+                {
+                    auto curiter = iter;
+                    --iter;
+                    mDocumentationIndex.erase(curiter);
+                }
                 else if (iter->second > (int)i)
                 {
                     (iter->second)--;

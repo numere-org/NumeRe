@@ -30,11 +30,11 @@ Plugin _plugin;
 
 const string sParserVersion = "1.0.2";
 string parser_evalTargetExpression(string& sCmd, const string& sDefaultTarget, Indices& _idx, Parser& _parser, Datafile& _data, const Settings& _option);
-double parser_LocalizeExtremum(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
-double parser_LocalizeZero(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
-vector<size_t> parser_getSamplesForDatagrid(const string& sCmd, const string& sZVals, size_t nSamples, Parser& _parser, Datafile& _data, const Settings& _option);
-vector<double> parser_extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t nSamples, Parser& _parser, Datafile& _data, const Settings& _option);
-void parser_expandVectorToDatagrid(vector<double>& vXVals, vector<double>& vYVals, vector<vector<double>>& vZVals, size_t nSamples_x, size_t nSamples_y);
+static double parser_LocalizeExtremum(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
+static double parser_LocalizeZero(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
+static vector<size_t> parser_getSamplesForDatagrid(const string& sCmd, const string& sZVals, size_t nSamples, Parser& _parser, Datafile& _data, const Settings& _option);
+static vector<double> parser_extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t nSamples, Parser& _parser, Datafile& _data, const Settings& _option);
+static void parser_expandVectorToDatagrid(vector<double>& vXVals, vector<double>& vYVals, vector<vector<double>>& vZVals, size_t nSamples_x, size_t nSamples_y);
 
 void printUnits(const string& sUnit, const string& sDesc, const string& sDim, const string& sValues, unsigned int nWindowsize)
 {
@@ -4110,7 +4110,7 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
     return true;
 }
 
-double parser_LocalizeExtremum(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps, int nRecursion)
+static double parser_LocalizeExtremum(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps, int nRecursion)
 {
     const unsigned int nSamples = 101;
     double dVal[2];
@@ -4172,7 +4172,7 @@ double parser_LocalizeExtremum(string& sCmd, double* dVarAdress, Parser& _parser
     return Linearize(dLeft, dVal[0], dRight, dVal[1]);
 }
 
-double parser_LocalizeZero(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps, int nRecursion)
+static double parser_LocalizeZero(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps, int nRecursion)
 {
     const unsigned int nSamples = 101;
     double dVal[2];
@@ -7440,7 +7440,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
     if (_data.containsCacheElements(sCmd) && !_data.isValidCache())
         throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);
 
-
+    // Extract the z expression from the command line
     if (sCmd.find("-set") != string::npos || sCmd.find("--") != string::npos)
     {
         sZVals = sCmd.substr(findCommand(sCmd).sString.length()+findCommand(sCmd).nPos);
@@ -7456,6 +7456,8 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
         }
         StripSpaces(sZVals);
     }
+
+    // Get the intervals
     if (sCmd.find('[') != string::npos && sCmd.find(']', sCmd.find('[')) != string::npos)
     {
         sXVals = sCmd.substr(sCmd.find('[')+1, sCmd.find(']', sCmd.find('[')) - sCmd.find('[')-1);
@@ -7480,6 +7482,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
         if (sYVals == ":")
             sYVals = "-10:10";
     }
+    // Validate the intervals
     if ((!matchParams(sCmd, "x", '=') && !sXVals.length())
         || (!matchParams(sCmd, "y", '=') && !sYVals.length())
         || (!matchParams(sCmd, "z", '=') && !sZVals.length()))
@@ -7488,6 +7491,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
         throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, SyntaxError::invalid_position, "datagrid");
     }
 
+    // Get the number of samples from the option list
     if (matchParams(sCmd, "samples", '='))
     {
         _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "samples", '=')+7));
@@ -7501,11 +7505,15 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
     // search for explicit "target" options and select the target cache
     sTargetCache = parser_evalTargetExpression(sCmd, sTargetCache, _idx, _parser, _data, _option);
 
+    // read the transpose option
     if (matchParams(sCmd, "transpose"))
     {
         bTranspose = true;
         sCmd.erase(matchParams(sCmd, "transpose")-1, 9);
     }
+
+    // Read the interval definitions from the option list, if they are included
+    // Remove them from the command expression
     if (!sXVals.length())
     {
         sXVals = getArgAtPos(sCmd, matchParams(sCmd, "x", '=')+1);
@@ -7524,6 +7532,8 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
             sCmd.erase(sCmd.length()-1);
         sZVals = getArgAtPos(sCmd, matchParams(sCmd, "z", '=')+1);
     }
+
+    // Try to call the functions
     if (!_functions.call(sZVals, _option))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sZVals, sZVals);
 
@@ -7614,9 +7624,11 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
                 }
             }
 
+            // Check the content of the z matrix
             if (!vZVals.size() || (vZVals.size() == 1 && vZVals[0].size() == 1))
                 throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
 
+            // Expand the z vector into a matrix for the datagrid if necessary
             parser_expandVectorToDatagrid(vXVals, vYVals, vZVals, vSamples[bTranspose], vSamples[1-bTranspose]);
         }
         else
@@ -7644,9 +7656,11 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
                 }
             }
 
+            // Check the content of the z matrix
             if (!vZVals.size() || (vZVals.size() == 1 && vZVals[0].size() == 1))
                 throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
 
+            // Expand the z vector into a matrix for the datagrid if necessary
             parser_expandVectorToDatagrid(vXVals, vYVals, vZVals, vSamples[bTranspose], vSamples[1-bTranspose]);
         }
         _data.setCacheStatus(false);
@@ -7678,15 +7692,17 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
 
     _data.setCacheStatus(true);
 
+    // Write the x axis
     for (unsigned int i = 0; i < vXVals.size(); i++)
         _data.writeToCache(i, _idx.nJ[0], sTargetCache, vXVals[i]);
     _data.setHeadLineElement(_idx.nJ[0], sTargetCache, "x");
-    //nFirstCol++;
+
+    // Write the y axis
     for (unsigned int i = 0; i < vYVals.size(); i++)
         _data.writeToCache(i, _idx.nJ[0]+1, sTargetCache, vYVals[i]);
     _data.setHeadLineElement(_idx.nJ[0]+1, sTargetCache, "y");
-    //nFirstCol++;
 
+    // Write the z matrix
     for (unsigned int i = 0; i < vZVals.size(); i++)
     {
         if (i+_idx.nI[0] >= _idx.nI[1])
@@ -7705,7 +7721,8 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
     return true;
 }
 
-vector<size_t> parser_getSamplesForDatagrid(const string& sCmd, const string& sZVals, size_t nSamples, Parser& _parser, Datafile& _data, const Settings& _option)
+// This function will obtain the samples of the datagrid for each spatial direction.
+static vector<size_t> parser_getSamplesForDatagrid(const string& sCmd, const string& sZVals, size_t nSamples, Parser& _parser, Datafile& _data, const Settings& _option)
 {
     vector<size_t> vSamples;
     // If the z vals are inside of a table then obtain the correct number of samples here
@@ -7781,7 +7798,8 @@ vector<size_t> parser_getSamplesForDatagrid(const string& sCmd, const string& sZ
     return vSamples;
 }
 
-vector<double> parser_extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t nSamples, Parser& _parser, Datafile& _data, const Settings& _option)
+// This function will extract the x or y vectors which are needed as axes for the datagrid
+static vector<double> parser_extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t nSamples, Parser& _parser, Datafile& _data, const Settings& _option)
 {
     vector<double> vVectorVals;
 
@@ -7902,7 +7920,8 @@ vector<double> parser_extractVectorForDatagrid(const string& sCmd, string& sVect
     return vVectorVals;
 }
 
-void parser_expandVectorToDatagrid(vector<double>& vXVals, vector<double>& vYVals, vector<vector<double>>& vZVals, size_t nSamples_x, size_t nSamples_y)
+// This function will expand the z vector into a z matrix by triangulation
+static void parser_expandVectorToDatagrid(vector<double>& vXVals, vector<double>& vYVals, vector<vector<double>>& vZVals, size_t nSamples_x, size_t nSamples_y)
 {
     vector<double> vVector;
 
@@ -7972,51 +7991,73 @@ void parser_expandVectorToDatagrid(vector<double>& vXVals, vector<double>& vYVal
     }
 }
 
+// This function evaluates the "target=TABLE()" expression and creates the target table, if needed. If this option is not found, the function
+// will create a default target cache.
 string parser_evalTargetExpression(string& sCmd, const string& sDefaultTarget, Indices& _idx, Parser& _parser, Datafile& _data, const Settings& _option)
 {
     string sTargetTable;
 
+    // search for the target option in the command string
     if (matchParams(sCmd, "target", '='))
     {
+        // Extract the table name
         sTargetTable = getArgAtPos(sCmd, matchParams(sCmd, "target", '=')+6);
+
+        // data is read-only. Therefore it cannot be used as target
         if (sTargetTable.substr(0,sTargetTable.find('(')) == "data")
             throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, sTargetTable);
 
+        // Create the target table, if it doesn't exist
         if (!_data.isCacheElement(sTargetTable.substr(0,sTargetTable.find('('))+"()"))
             _data.addCache(sTargetTable.substr(0,sTargetTable.find('(')), _option);
+
+        // Read the target indices
         _idx = parser_getIndices(sTargetTable, _parser, _data, _option);
         sTargetTable.erase(sTargetTable.find('('));
 
+        // check the indices
         if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
             throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 
+        // remove the target option and its value from the command line
         sCmd.erase(sCmd.find(getArgAtPos(sCmd, matchParams(sCmd, "target", '=')+6), matchParams(sCmd, "target", '=')-1), getArgAtPos(sCmd, matchParams(sCmd, "target", '=')+6).length());
         sCmd.erase(matchParams(sCmd, "target", '=')-1, 7);
     }
     else if (sDefaultTarget.length())
     {
+        // If not found, create a default index set
         _idx.nI[0] = 0;
         _idx.nI[1] = -2;
         _idx.nJ[0] = 0;
+
+        // Create cache, if needed. Otherwise get first empty column
         if (_data.isCacheElement(sDefaultTarget + "()"))
             _idx.nJ[0] += _data.getCols(sDefaultTarget, false);
         else
             _data.addCache(sDefaultTarget, _option);
+
         _idx.nJ[1] = -2;
         sTargetTable = sDefaultTarget;
     }
 
+    // return the target table name
     return sTargetTable;
 }
 
+// This function will evaluate the passed indices, so that they match the dimensions of the passed cache.
 bool parser_evalIndices(const string& sCache, Indices& _idx, Datafile& _data)
 {
+    // Check the initial indices
     if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
         return false;
+
+    // Evaluate the case for a missing index
     if (_idx.nI[1] == -1)
         _idx.nI[1] = _idx.nI[0];
     if (_idx.nJ[1] == -1)
         _idx.nJ[1] = _idx.nJ[0];
+
+    // Evaluate the case for an open end index
     if (_idx.nI[1] == -2)
         _idx.nI[1] = _data.getLines(sCache.substr(0,sCache.find('(')), false);
     else
@@ -8025,33 +8066,40 @@ bool parser_evalIndices(const string& sCache, Indices& _idx, Datafile& _data)
         _idx.nJ[1] = _data.getCols(sCache.substr(0,sCache.find('(')));
     else
         _idx.nJ[1]++;
+
+    // Signal success
     return true;
 }
 
-
+// This function will read the interval syntax and return it as a vector
 vector<double> parser_IntervalReader(string& sExpr, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option, bool bEraseInterval)
 {
     vector<double> vInterval;
     string sInterval[2] = {"",""};
 
+    // Get user defined functions
     if (!_functions.call(sExpr, _option))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sExpr, SyntaxError::invalid_position);
 
+    // If the expression contains data elements, get their contents here
     if (sExpr.find("data(") != string::npos || _data.containsCacheElements(sExpr))
         getDataElements(sExpr, _parser, _data, _option);
 
-    //cerr << sExpr << endl;
+    // Get the interval for x
     if (matchParams(sExpr, "x", '='))
     {
         sInterval[0] = getArgAtPos(sExpr, matchParams(sExpr, "x", '=')+1);
+
+        // Erase the interval definition, if needed
         if (bEraseInterval)
         {
             sExpr.erase(sExpr.find(sInterval[0]), sInterval[0].length());
             sExpr.erase(sExpr.rfind('x',matchParams(sExpr,"x", '=')), matchParams(sExpr, "x", '=')+1-sExpr.rfind('x',matchParams(sExpr,"x", '=')));
         }
+
+        // If the intervall contains a colon, split it there
         if (sInterval[0].find(':') != string::npos)
             parser_SplitArgs(sInterval[0], sInterval[1], ':', _option, true);
-        //cerr << sInterval[0] << "   " << sInterval[1] << endl;
         if (isNotEmptyExpression(sInterval[0]))
         {
             _parser.SetExpr(sInterval[0]);
@@ -8067,14 +8115,20 @@ vector<double> parser_IntervalReader(string& sExpr, Parser& _parser, Datafile& _
         else
             vInterval.push_back(NAN);
     }
+
+    // Get the interval for y
     if (matchParams(sExpr, "y", '='))
     {
         sInterval[0] = getArgAtPos(sExpr, matchParams(sExpr, "y", '=')+1);
+
+        // Erase the interval definition, if needed
         if (bEraseInterval)
         {
             sExpr.erase(sExpr.find(sInterval[0]), sInterval[0].length());
             sExpr.erase(sExpr.rfind('y',matchParams(sExpr,"y", '=')), matchParams(sExpr, "y", '=')+1-sExpr.rfind('y',matchParams(sExpr,"y", '=')));
         }
+
+        // If the intervall contains a colon, split it there
         if (sInterval[0].find(':') != string::npos)
             parser_SplitArgs(sInterval[0], sInterval[1], ':', _option, true);
         while (vInterval.size() < 2)
@@ -8096,14 +8150,20 @@ vector<double> parser_IntervalReader(string& sExpr, Parser& _parser, Datafile& _
         else
             vInterval.push_back(NAN);
     }
+
+    // Get the interval for z
     if (matchParams(sExpr, "z", '='))
     {
         sInterval[0] = getArgAtPos(sExpr, matchParams(sExpr, "z", '=')+1);
+
+        // Erase the interval definition, if needed
         if (bEraseInterval)
         {
             sExpr.erase(sExpr.find(sInterval[0]), sInterval[0].length());
             sExpr.erase(sExpr.rfind('z',matchParams(sExpr,"z", '=')), matchParams(sExpr, "z", '=')+1-sExpr.rfind('z',matchParams(sExpr,"z", '=')));
         }
+
+        // If the intervall contains a colon, split it there
         if (sInterval[0].find(':') != string::npos)
             parser_SplitArgs(sInterval[0], sInterval[1], ':', _option, true);
         while (vInterval.size() < 4)
@@ -8123,12 +8183,15 @@ vector<double> parser_IntervalReader(string& sExpr, Parser& _parser, Datafile& _
         else
             vInterval.push_back(NAN);
     }
+
+    // Read the interval syntax
     if (sExpr.find('[') != string::npos
         && sExpr.find(']', sExpr.find('[')) != string::npos
         && sExpr.find(':', sExpr.find('[')) != string::npos)
     {
         unsigned int nPos = 0;
 
+        // Find the correct interval bracket
         do
         {
             nPos = sExpr.find('[', nPos);
@@ -8138,16 +8201,22 @@ vector<double> parser_IntervalReader(string& sExpr, Parser& _parser, Datafile& _
         }
         while (isInQuotes(sExpr, nPos) || sExpr.substr(nPos, sExpr.find(']')-nPos).find(':') == string::npos);
 
+        // If an interval bracket was found
         if (nPos != string::npos && sExpr.find(']', nPos) != string::npos)
         {
             string sRanges[3];
             sRanges[0] = sExpr.substr(nPos, sExpr.find(']', nPos) - nPos);
-            //cerr << sRanges[0] << endl;
+
+            // Erase the interval part from the expression, if needed
             if (bEraseInterval)
                 sExpr.erase(nPos-1, sExpr.find(']', nPos)-nPos+2);
+
+            // As long as a comma is found in the interval
             while (sRanges[0].find(',') != string::npos)
             {
                 sRanges[0] = "(" + sRanges[0] + ")";
+
+                // Split at the comma
                 parser_SplitArgs(sRanges[0], sRanges[2], ',', _option, false);
                 if (sRanges[0].find(':') == string::npos)
                 {
@@ -8155,7 +8224,11 @@ vector<double> parser_IntervalReader(string& sExpr, Parser& _parser, Datafile& _
                     continue;
                 }
                 sRanges[0] = "(" + sRanges[0] + ")";
+
+                // Split at the colon
                 parser_SplitArgs(sRanges[0], sRanges[1], ':', _option, false);
+
+                // Set the intervals and parse them
                 if (isNotEmptyExpression(sRanges[0]))
                 {
                     _parser.SetExpr(sRanges[0]);
@@ -8172,10 +8245,16 @@ vector<double> parser_IntervalReader(string& sExpr, Parser& _parser, Datafile& _
                     vInterval.push_back(NAN);
                 sRanges[0] = sRanges[2];
             }
+
+            // If a colon is found in the first element
             if (sRanges[0].find(':') != string::npos)
             {
                 sRanges[0] = "(" + sRanges[0] + ")";
+
+                // Split at the colon
                 parser_SplitArgs(sRanges[0], sRanges[1], ':', _option, false);
+
+                // Set the intervals and parse them
                 if (isNotEmptyExpression(sRanges[0]))
                 {
                     _parser.SetExpr(sRanges[0]);
@@ -8193,6 +8272,8 @@ vector<double> parser_IntervalReader(string& sExpr, Parser& _parser, Datafile& _
             }
         }
     }
+
+    // Return the calculated interval part
     return vInterval;
 }
 

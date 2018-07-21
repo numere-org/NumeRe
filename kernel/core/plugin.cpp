@@ -29,9 +29,8 @@ Plugin::Plugin() : FileSystem()
     sPluginVarList = "";
 }
 
-Plugin::Plugin(const Plugin& _plugin)
+Plugin::Plugin(const Plugin& _plugin) : Plugin()
 {
-    Plugin();
     assign(_plugin);
 }
 
@@ -414,7 +413,7 @@ string Plugin::deletePlugin(const string& sPlugin)
 {
     std::vector<vector<string> >::iterator vIter = vPluginInfo.begin();
     string sHLPIDs = "<<NO_HLP_ENTRY>>";
-    for (; vIter != vPluginInfo.end(); vIter++)
+    for (; vIter != vPluginInfo.end(); ++vIter)
     {
         if ((*vIter)[4] == sPlugin || (*vIter)[4] == "("+sPlugin+")")
         {

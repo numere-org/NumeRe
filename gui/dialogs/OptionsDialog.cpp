@@ -109,7 +109,7 @@ OptionsDialog::OptionsDialog( )
 
 OptionsDialog::OptionsDialog( wxWindow* parent, Options* options, wxWindowID id,  const wxString& caption, const wxPoint& pos, const wxSize& size, long style )
 {
-	m_parentFrame = (NumeReWindow*)parent;
+	m_parentFrame = static_cast<NumeReWindow*>(parent);
 	m_options = options;
     Create(parent, id, caption, pos, size, style);
 
@@ -959,81 +959,52 @@ void OptionsDialog::OnMinGWBrowseClick( wxCommandEvent& event )
 //////////////////////////////////////////////////////////////////////////////
 bool OptionsDialog::EvaluateOptions()
 {
-	bool validOptions = true;
-
 	wxString outputMessage = wxEmptyString;
 
-	if(validOptions)
-	{
-		/**Permission* perms = m_options->GetPerms();
-		for(int i = 0; i < m_checkList->GetCount(); i++)
-		{
-			int mappedPerm = m_permMappings[i];
+    _option->setbCompact(m_compactTables->GetValue());
+    _option->setbDefineAutoLoad(m_AutoLoadDefines->GetValue());
+    _option->setbGreeting(m_showGreeting->GetValue());
+    _option->setbLoadEmptyCols(m_LoadCompactTables->GetValue());
+    _option->setbExtendedFileInfo(m_ExtendedInfo->GetValue());
+    _option->setbShowHints(m_ShowHints->GetValue());
+    _option->setUserLangFiles(m_CustomLanguage->GetValue());
+    _option->setbUseESCinScripts(m_ESCinScripts->GetValue());
+    _option->setbUseLogFile(m_UseLogfile->GetValue());
+    _option->setExternalDocViewer(m_UseExternalViewer->GetValue());
+    _option->setUseExecuteCommand(m_useExecuteCommand->GetValue());
+    _option->setLoadPath(m_LoadPath->GetValue().ToStdString());
+    _option->setSavePath(m_SavePath->GetValue().ToStdString());
+    _option->setScriptPath(m_ScriptPath->GetValue().ToStdString());
+    _option->setProcPath(m_ProcPath->GetValue().ToStdString());
+    _option->setPlotOutputPath(m_PlotPath->GetValue().ToStdString());
+    _option->setprecision(m_precision->GetValue());
+    _option->setDefaultPlotFont(m_defaultFont->GetValue().ToStdString());
+    _option->setWindowBufferSize(0, m_termHistory->GetValue());
+    _option->setAutoSaveInterval(m_autosaveinterval->GetValue());
+    m_options->SetTerminalHistorySize(m_termHistory->GetValue());
 
-			if(m_checkList->IsChecked(i))
-			{
-				perms->enable(mappedPerm);
-			}
-			else
-			{
-				perms->disable(mappedPerm);
-			}
-		}
+    wxString selectedPrintStyleString = m_printStyle->GetValue();
 
-		m_options->SetHostname(m_hostname->GetValue());
-		m_options->SetUsername(m_username->GetValue());
-		m_options->SetPassphrase(m_password1->GetValue());*/
+    if(selectedPrintStyleString == _guilang.get("GUI_OPTIONS_PRINT_COLOR"))
+    {
+        m_options->SetPrintStyle(wxSTC_PRINT_COLOURONWHITE);
+    }
+    else
+    {
+        m_options->SetPrintStyle(wxSTC_PRINT_BLACKONWHITE);
+    }
 
-		_option->setbCompact(m_compactTables->GetValue());
-		_option->setbDefineAutoLoad(m_AutoLoadDefines->GetValue());
-		_option->setbGreeting(m_showGreeting->GetValue());
-		_option->setbLoadEmptyCols(m_LoadCompactTables->GetValue());
-        _option->setbExtendedFileInfo(m_ExtendedInfo->GetValue());
-        _option->setbShowHints(m_ShowHints->GetValue());
-        _option->setUserLangFiles(m_CustomLanguage->GetValue());
-        _option->setbUseESCinScripts(m_ESCinScripts->GetValue());
-        _option->setbUseLogFile(m_UseLogfile->GetValue());
-        _option->setExternalDocViewer(m_UseExternalViewer->GetValue());
-        _option->setUseExecuteCommand(m_useExecuteCommand->GetValue());
-        _option->setLoadPath(m_LoadPath->GetValue().ToStdString());
-        _option->setSavePath(m_SavePath->GetValue().ToStdString());
-        _option->setScriptPath(m_ScriptPath->GetValue().ToStdString());
-        _option->setProcPath(m_ProcPath->GetValue().ToStdString());
-        _option->setPlotOutputPath(m_PlotPath->GetValue().ToStdString());
-        _option->setprecision(m_precision->GetValue());
-        _option->setDefaultPlotFont(m_defaultFont->GetValue().ToStdString());
-        _option->setWindowBufferSize(0, m_termHistory->GetValue());
-        _option->setAutoSaveInterval(m_autosaveinterval->GetValue());
-		m_options->SetTerminalHistorySize(m_termHistory->GetValue());
+    m_options->SetLaTeXRoot(m_LaTeXRoot->GetValue());
 
-		wxString selectedPrintStyleString = m_printStyle->GetValue();
+    m_options->SetShowToolbarText(m_showToolbarText->IsChecked());
+    m_options->SetLineNumberPrinting(m_cbPrintLineNumbers->IsChecked());
+    m_options->SetSaveSession(m_saveSession->IsChecked());
+    m_options->SetFormatBeforeSaving(m_formatBeforeSaving->IsChecked());
 
-		if(selectedPrintStyleString == _guilang.get("GUI_OPTIONS_PRINT_COLOR"))
-		{
-			m_options->SetPrintStyle(wxSTC_PRINT_COLOURONWHITE);
-		}
-		else
-		{
-			m_options->SetPrintStyle(wxSTC_PRINT_BLACKONWHITE);
-		}
 
-		m_options->SetLaTeXRoot(m_LaTeXRoot->GetValue());
+    synchronizeColors();
 
-		m_options->SetShowToolbarText(m_showToolbarText->IsChecked());
-		m_options->SetLineNumberPrinting(m_cbPrintLineNumbers->IsChecked());
-		m_options->SetSaveSession(m_saveSession->IsChecked());
-		m_options->SetFormatBeforeSaving(m_formatBeforeSaving->IsChecked());
-		///m_options->SetCombineWatchWindow(m_chkCombineWatchWindow->IsChecked());
-		///m_options->SetShowCompileCommands(m_chkShowCompileCommands->IsChecked());
-
-        synchronizeColors();
-	}
-	else
-	{
-		wxMessageBox(outputMessage, "Invalid Option", wxOK | wxICON_WARNING);
-	}
-
-	return validOptions;
+	return true;
 }
 
 //////////////////////////////////////////////////////////////////////////////

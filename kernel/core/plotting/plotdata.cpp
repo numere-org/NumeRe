@@ -31,7 +31,7 @@ PlotData::PlotData() : FileSystem()
 }
 
 // --> Allgemeiner Konstruktor <--
-PlotData::PlotData(int _nLines, int _nRows, int _nLayers) : FileSystem()
+PlotData::PlotData(int _nLines, int _nRows, int _nLayers) : PlotData()
 {
     PlotData();
     nRows = _nRows;
@@ -58,7 +58,7 @@ PlotData::PlotData(int _nLines, int _nRows, int _nLayers) : FileSystem()
 
 }
 
-PlotData::PlotData(const PlotData& _pData)
+PlotData::PlotData(const PlotData& _pData) : PlotData()
 {
     PlotData(_pData.nLines, _pData.nRows, _pData.nRequestedLayers);
 
@@ -482,7 +482,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             {
                 for (int i = 0; i < 3; i++)
                 {
-                    if (i < nResults && !isnan(dTemp[i]) && !isinf(dTemp[i]) && dTemp[i] <= 5 && dTemp >= 0)
+                    if (i < nResults && !isnan(dTemp[i]) && !isinf(dTemp[i]) && dTemp[i] <= 5 && dTemp[i] >= 0)
                         nSlices[i] = (unsigned short)dTemp[i];
                     else
                         nSlices[i] = 1;

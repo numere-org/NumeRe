@@ -106,11 +106,11 @@ void printUnits(const string& sUnit, const string& sDesc, const string& sDim, co
 // String-Parser
 int parser_StringParser(string&, string&, Datafile&, Parser&, const Settings&, bool bSilent = false);
 unsigned int parser_getDelimiterPos(const string&);
-int parser_countStrings(const string& sCmd);
-int parser_numStrings(const string& sCmd);
-string parser_getMaxString(const string& sCmd);
-string parser_getMinString(const string& sCmd);
-string parser_getSumString(const string& sCmd);
+// int parser_countStrings(const string& sCmd);
+// int parser_numStrings(const string& sCmd);
+// string parser_getMaxString(const string& sCmd);
+// string parser_getMinString(const string& sCmd);
+// string parser_getSumString(const string& sCmd);
 
 // Plotting
 void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions, PlotData& _pData);
