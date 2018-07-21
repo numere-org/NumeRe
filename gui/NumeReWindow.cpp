@@ -3455,7 +3455,7 @@ void NumeReWindow::ToolbarStatusUpdate()
     }
     if (!m_currentEd)
         return;
-	if (m_currentEd->GetFileName().GetExt() == "nscr" || m_currentEd->GetFileName().GetExt() == "nprc")
+	if (m_currentEd->getFileType() == FILE_NSCR || m_currentEd->getFileType() == FILE_NPRC || m_currentEd->getFileType() == FILE_MATLAB || m_currentEd->getFileType() == FILE_CPP)
 	{
         tb->EnableTool(ID_DEBUG_ADDEDITORBREAKPOINT, true);
         tb->EnableTool(ID_DEBUG_REMOVEEDITORBREAKPOINT, true);

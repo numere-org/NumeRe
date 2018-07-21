@@ -306,7 +306,10 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 			STYLE_COMMENT_SECTION_LINE,
 			STYLE_COMMENT_SECTION_BLOCK,
 			STYLE_COMMAND,
-			STYLE_FUNCTION
+			STYLE_FUNCTION,
+			STYLE_OPERATOR,
+			STYLE_PROCEDURE,
+			STYLE_IDENTIFIER
 		};
 
 
@@ -367,6 +370,13 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		int calculateCyclomaticComplexity(int startline, int endline);
 		int calculateLinesOfCode(int startline, int endline);
 		int countNumberOfComments(int startline, int endline);
+
+		AnnotationCount analyseCommands(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError);
+        AnnotationCount analyseFunctions(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError, bool isContinuedLine);
+        AnnotationCount analyseProcedures(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError);
+        AnnotationCount analyseIdentifiers(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError);
+        AnnotationCount analyseOperators(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError);
+
 		int insertTextAndMove(int nPosition, const wxString& sText);
 		void detectCodeDuplicates(int startline, int endline, int nDuplicateFlags, int nNumDuplicatedLines);
 		double compareCodeLines(int nLine1, int nLine2, int nDuplicateFlags);

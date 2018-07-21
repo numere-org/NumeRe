@@ -1622,15 +1622,21 @@ void NumeReEditor::UnfoldAll()
 	}
 }
 
+// This member function is the wrapper for the static code analyzer
+// It may handle NumeRe and MATLAB files
 void NumeReEditor::AnalyseCode()
 {
+    // Clear all annotations
 	this->AnnotationClearAll();
-	if (!getEditorSetting(SETTING_USEANALYZER) || (m_fileType != FILE_NSCR && m_fileType != FILE_NPRC))
+
+	// Ensure that the correct file type is used and that the setting is active
+	if (!getEditorSetting(SETTING_USEANALYZER) || (m_fileType != FILE_NSCR && m_fileType != FILE_NPRC && m_fileType != FILE_MATLAB && m_fileType != FILE_CPP))
 		return;
+
+    // Determine the annotation style
 	this->AnnotationSetVisible(wxSTC_ANNOTATION_BOXED);
 
-	int wordstart, wordend, currentLine = 0;
-	bool canContinue = false;
+	int currentLine = 0;
 	bool isContinuedLine = false;
 	bool hasProcedureDefinition = false;
 	bool isAlreadyMeasured = false;
@@ -1644,23 +1650,32 @@ void NumeReEditor::AnalyseCode()
 	string sError = _guilang.get("GUI_ANALYZER_ERROR");
 	AnnotationCount AnnotCount;
 
-	const double MINCOMMENTDENSITY = 0.6;
+	// Some code metric constants
+	const double MINCOMMENTDENSITY = 0.5;
 	const double MAXCOMMENTDENSITY = 1.5;
 	const int MAXCOMPLEXITYNOTIFY = 15;
 	const int MAXCOMPLEXITYWARN = 20;
 	const int MAXLINESOFCODE = 100;
 
+	// Go through the whole file
 	for (int i = 0; i < this->GetLastPosition(); i++)
 	{
+	    // Ignore comments
 		if (this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_LINE || this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_BLOCK)
 			continue;
-		// catch constant expressions
+
+		// It's a new line?
 		if (currentLine < this->LineFromPosition(i))
 		{
+		    // Get the line's contents
 			string sLine = this->GetLine(currentLine).ToStdString();
 			StripSpaces(sLine);
+
+            // catch constant expressions
 			if (sLine.length() && sLine.find_first_not_of("\n\r\t") != string::npos && sLine.find_first_not_of("0123456789+-*/.,^(){} \t\r\n") == string::npos)
 				AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sLine.substr(0, sLine.find_last_not_of("0123456789+-*/.,^()")), sWarn, _guilang.get("GUI_ANALYZER_CONSTEXPR")), ANNOTATION_WARN);
+
+			// Handle line continuations
 			if (sLine.find("\\\\") != string::npos)
 				isContinuedLine = true;
 			else
@@ -1668,8 +1683,11 @@ void NumeReEditor::AnalyseCode()
 				isContinuedLine = false;
 				hasProcedureDefinition = false;
 			}
+
+			// If there are gathered annotations for the current line
 			if (sCurrentLine.length())
 			{
+			    // Find the summary line for the current file
 				if (!sFirstLine.length())
 				{
 					sFirstLine = sCurrentLine;
@@ -1678,6 +1696,7 @@ void NumeReEditor::AnalyseCode()
 				}
 				else
 				{
+				    // Write the annotion to the current line
 					this->AnnotationSetText(currentLine, sCurrentLine);
 					this->AnnotationSetStyles(currentLine, sStyles);
 				}
@@ -1686,7 +1705,8 @@ void NumeReEditor::AnalyseCode()
 			sCurrentLine = "";
 			sStyles = "";
 		}
-		// Get code metrics form scripts if not already done
+
+		// Get code metrics for scripts if not already done
 		if (m_fileType == FILE_NSCR && !isAlreadyMeasured)
 		{
 			string sLine = this->GetLine(currentLine).ToStdString();
@@ -1695,10 +1715,21 @@ void NumeReEditor::AnalyseCode()
 			{
 				string sSyntaxElement =  GetFilenameString().ToStdString();
 				isAlreadyMeasured = true;
+
+				// Calculate the code metrics:
+				// Complexity
 				int nCyclomaticComplexity = calculateCyclomaticComplexity(currentLine, this->LineFromPosition(this->GetLastPosition()));
+
+				// LinesOfcode
 				int nLinesOfCode = calculateLinesOfCode(currentLine, this->LineFromPosition(this->GetLastPosition()));
+
+				// Number of comments
 				int nNumberOfComments = countNumberOfComments(currentLine, this->LineFromPosition(this->GetLastPosition()));
+
+				// comment density
 				double dCommentDensity = (double)nNumberOfComments / (double)nLinesOfCode;
+
+				// Compare the metrics with the contants and issue a note or a warning
 				if (nCyclomaticComplexity > MAXCOMPLEXITYWARN)
 					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_WARN);
 				else if (nCyclomaticComplexity > MAXCOMPLEXITYNOTIFY)
@@ -1711,498 +1742,45 @@ void NumeReEditor::AnalyseCode()
 					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMMENTDENSITY", toString(dCommentDensity * 100.0, 3))), ANNOTATION_NOTE);
 			}
 		}
-		if (this->GetStyleAt(i) == wxSTC_NSCR_COMMAND
-				|| this->GetStyleAt(i) == wxSTC_NSCR_PROCEDURE_COMMANDS)
+
+		// Handle the different style types
+		if (isStyleType(STYLE_COMMAND, i))
 		{
-			canContinue = false;
-			wordstart = this->WordStartPosition(i, true);
-			wordend = this->WordEndPosition(i, true);
-			string sSyntaxElement = this->GetTextRange(wordstart, wordend).ToStdString();
-
-			// add a message to "throw"
-			if (sSyntaxElement == "throw")
-			{
-				for (int j = wordend; j < this->GetLineEndPosition(currentLine); j++)
-				{
-					if (this->GetStyleAt(j) == wxSTC_NSCR_STRING || this->GetStyleAt(j) == wxSTC_NSCR_STRING_PARSER)
-					{
-						canContinue = true;
-						break;
-					}
-				}
-				if (!canContinue)
-				{
-					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sNote, _guilang.get("GUI_ANALYZER_THROW_ADDMESSAGE")), ANNOTATION_NOTE);
-				}
-			}
-			if (sSyntaxElement == "namespace")
-			{
-				string sArgs = this->GetTextRange(wordend, this->GetLineEndPosition(currentLine)).ToStdString();
-				while (sArgs.back() == '\r' || sArgs.back() == '\n')
-					sArgs.pop_back();
-				StripSpaces(sArgs);
-				if (!sArgs.length())
-				{
-					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sWarn, _guilang.get("GUI_ANALYZER_NAMESPACE_ALWAYSMAIN")), ANNOTATION_WARN);
-				}
-				i = wordend;
-				while (this->GetCharAt(i) != ';' && this->GetCharAt(i) != '\r' && this->GetCharAt(i) != '\n')
-					i++;
-				continue;
-			}
-			if (sSyntaxElement == "progress")
-			{
-				AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_PROGRESS_RUNTIME")), ANNOTATION_NOTE);
-			}
-			if (sSyntaxElement == "install" || sSyntaxElement == "uninstall" || sSyntaxElement == "start")
-			{
-				AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sError, _guilang.get("GUI_ANALYZER_NOTALLOWED")), ANNOTATION_ERROR);
-			}
-			if (sSyntaxElement == "clear" || sSyntaxElement == "delete" || sSyntaxElement == "remove")
-			{
-				if (sSyntaxElement == "remove" && this->GetStyleAt(this->WordStartPosition(wordend + 1, true)) == wxSTC_NSCR_PREDEFS)
-					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend + 1), sError, _guilang.get("GUI_ANALYZER_CANNOTREMOVEPREDEFS")), ANNOTATION_ERROR);
-				string sArgs = this->GetTextRange(wordend, this->GetLineEndPosition(currentLine)).ToStdString();
-				while (sArgs.back() == '\r' || sArgs.back() == '\n')
-					sArgs.pop_back();
-				if (!matchParams(sArgs, "ignore")
-						&& !matchParams(sArgs, "i")
-						&& (sSyntaxElement != "remove" || this->GetStyleAt(this->WordStartPosition(wordend + 1, true)) != wxSTC_NSCR_CUSTOM_FUNCTION))
-					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sNote, _guilang.get("GUI_ANALYZER_APPENDIGNORE")), ANNOTATION_NOTE);
-			}
-			if (sSyntaxElement != "hline"
-					&& sSyntaxElement != "continue"
-					&& sSyntaxElement != "break"
-					&& sSyntaxElement != "else"
-					&& sSyntaxElement != "endif"
-					&& sSyntaxElement != "endfor"
-					&& sSyntaxElement != "endwhile"
-					&& sSyntaxElement != "endprocedure"
-					&& sSyntaxElement != "endcompose"
-					&& sSyntaxElement != "about"
-					&& sSyntaxElement != "abort"
-					&& sSyntaxElement != "compose"
-					&& sSyntaxElement != "help"
-					&& sSyntaxElement != "quit"
-					&& sSyntaxElement != "return"
-					&& sSyntaxElement != "subplot"
-					&& sSyntaxElement != "throw"
-					&& sSyntaxElement != "namespace" //warning
-			   )
-			{
-				canContinue = false;
-				string sArgs = this->GetTextRange(wordend, this->GetLineEndPosition(currentLine)).ToStdString();
-				while (sArgs.back() == '\r' || sArgs.back() == '\n')
-					sArgs.pop_back();
-				StripSpaces(sArgs);
-				if (!sArgs.length())
-				{
-					// is used as a parameter (legacy)
-					for (int j = wordstart; j >= PositionFromLine(currentLine); j--)
-					{
-						if (GetCharAt(j) == '-')
-							canContinue = true;
-					}
-					if (!canContinue)
-						AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sError, _guilang.get("GUI_ANALYZER_EMPTYEXPRESSION")), ANNOTATION_ERROR);
-				}
-			}
-			if (sSyntaxElement == "zeroes"
-					|| sSyntaxElement == "extrema"
-					|| sSyntaxElement == "integrate"
-					|| sSyntaxElement == "eval"
-					|| sSyntaxElement == "get"
-					|| sSyntaxElement == "read"
-					|| sSyntaxElement == "pulse"
-					|| sSyntaxElement == "diff")
-			{
-				canContinue = false;
-				for (int j = PositionFromLine(currentLine); j < wordstart; j++)
-				{
-					if (GetCharAt(j) == '=')
-					{
-						canContinue = true;
-						break;
-					}
-				}
-				if (!canContinue)
-					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
-			}
-			if (sSyntaxElement == "if" || sSyntaxElement == "elseif")
-			{
-				for (int j = wordend; j < this->GetLineEndPosition(currentLine); j++)
-				{
-					if (this->GetCharAt(j) == '(')
-					{
-						int nPos = this->BraceMatch(j);
-						if (nPos < 0)
-						{
-							AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
-							break;
-						}
-						string sArgument = this->GetTextRange(j + 1, nPos).ToStdString();
-						StripSpaces(sArgument);
-						if (!sArgument.length())
-						{
-							AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
-							break;
-						}
-						if (sArgument == "true" || (sArgument.find_first_not_of("1234567890") == string::npos && sArgument != "0"))
-						{
-							AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSTRUE")), ANNOTATION_WARN);
-						}
-						else if (sArgument == "false" || sArgument == "0")
-						{
-							AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSFALSE")), ANNOTATION_WARN);
-						}
-						else if (containsAssignment(sArgument))
-						{
-							AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNMENTINARGUMENT")), ANNOTATION_WARN);
-						}
-						break;
-					}
-				}
-				if (sSyntaxElement == "if")
-				{
-					for (int line = currentLine; line <= LineFromPosition(GetLastPosition()); line++)
-					{
-						if (this->GetLine(line).find("endif") != string::npos)
-						{
-							if (line - currentLine < 5)
-							{
-								canContinue = false;
-								for (int pos = wordend; pos <= GetLineEndPosition(line); pos++)
-								{
-									if (this->GetStyleAt(pos) == wxSTC_NSCR_COMMAND
-											&& this->GetTextRange(WordStartPosition(pos, true), WordEndPosition(pos, true)) != "if"
-											&& this->GetTextRange(WordStartPosition(pos, true), WordEndPosition(pos, true)) != "else"
-											&& this->GetTextRange(WordStartPosition(pos, true), WordEndPosition(pos, true)) != "endif")
-									{
-										canContinue = true;
-										break;
-									}
-									else
-									{
-										pos = WordEndPosition(pos, true);
-									}
-								}
-								if (!canContinue)
-								{
-									AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_USEINLINEIF")), ANNOTATION_NOTE);
-								}
-							}
-							break;
-						}
-					}
-				}
-			}
-			if (sSyntaxElement == "while")
-			{
-				for (int j = wordend; j < this->GetLineEndPosition(currentLine); j++)
-				{
-					if (this->GetCharAt(j) == '(')
-					{
-						int nPos = this->BraceMatch(j);
-						if (nPos < 0)
-						{
-							AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
-							break;
-						}
-						string sArgument = this->GetTextRange(j + 1, nPos).ToStdString();
-						StripSpaces(sArgument);
-						if (!sArgument.length())
-						{
-							AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
-							break;
-						}
-						if (sArgument == "true" || (sArgument.find_first_not_of("1234567890") == string::npos && sArgument != "0"))
-						{
-							AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_WHILE_ALWAYSTRUE")), ANNOTATION_WARN);
-						}
-						else if (sArgument == "false" || sArgument == "0")
-						{
-							AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_WHILE_ALWAYSFALSE")), ANNOTATION_WARN);
-						}
-						else if (containsAssignment(sArgument))
-						{
-							AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNMENTINARGUMENT")), ANNOTATION_WARN);
-						}
-						break;
-					}
-				}
-			}
-			if (sSyntaxElement == "for")
-			{
-				for (int j = wordend; j < this->GetLineEndPosition(currentLine); j++)
-				{
-					if (this->GetCharAt(j) == '(')
-					{
-						int nPos = this->BraceMatch(j);
-						if (nPos < 0)
-						{
-							AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
-							break;
-						}
-						string sArgument = this->GetTextRange(j + 1, nPos).ToStdString();
-						StripSpaces(sArgument);
-						if (!sArgument.length())
-						{
-							AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
-							break;
-						}
-						if (sArgument.find(':') == string::npos || sArgument.find('=') == string::npos)
-						{
-							AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_FOR_INTERVALERROR")), ANNOTATION_ERROR);
-						}
-						break;
-					}
-				}
-			}
-			if (m_fileType == FILE_NPRC && (sSyntaxElement == "var" || sSyntaxElement == "str" || sSyntaxElement == "tab"))
-			{
-				if (sSyntaxElement == "var" && this->GetTextRange(this->PositionFromLine(currentLine), this->GetLineEndPosition(currentLine)).find("list") < (size_t)(wordstart - this->PositionFromLine(currentLine)))
-				{
-					i = wordend;
-					continue;
-				}
-				int nNextLine = this->GetLineEndPosition(currentLine) + 1;
-				int nProcedureEnd = this->FindText(nNextLine, this->GetLastPosition(), "endprocedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD);
-				string sArgs = this->GetTextRange(wordend, this->GetLineEndPosition(currentLine)).ToStdString();
-				while (sArgs.back() == '\r' || sArgs.back() == '\n')
-					sArgs.pop_back();
-				StripSpaces(sArgs);
-				if (nProcedureEnd == -1)
-				{
-					nProcedureEnd = this->GetLastPosition();
-					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
-				}
-
-				if (sArgs.length())
-				{
-					string currentArg = "";
-					while (getNextArgument(sArgs, false).length())
-					{
-						currentArg = getNextArgument(sArgs, true);
-						if (currentArg.find('=') != string::npos)
-							currentArg.erase(currentArg.find('='));
-						if (currentArg.find('(') != string::npos)
-							currentArg.erase(currentArg.find('('));
-						StripSpaces(currentArg);
-						if (this->FindText(nNextLine, nProcedureEnd, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) == -1)
-						{
-							AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, this->FindText(wordstart, nProcedureEnd, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD)), sWarn, _guilang.get("GUI_ANALYZER_UNUSEDVARIABLE", currentArg)), ANNOTATION_WARN);
-						}
-					}
-				}
-				else
-					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sError, _guilang.get("GUI_ANALYZER_NOVARIABLES")), ANNOTATION_ERROR);
-			}
-			if (m_fileType == FILE_NPRC && sSyntaxElement == "procedure")
-			{
-				int nProcedureEnd = this->FindText(i, this->GetLastPosition(), "endprocedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD);
-				hasProcedureDefinition = true;
-				if (nProcedureEnd == -1)
-				{
-					nProcedureEnd = this->GetLastPosition();
-					//AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
-				}
-				else
-				{
-					// check the name of the procedure - is there a naming procedure?
-					int nNamingProcedure = FindNamingProcedure();
-					if (nNamingProcedure == wxNOT_FOUND)
-					{
-						AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_NONAMINGPROCEDURE")), ANNOTATION_ERROR);
-					}
-					else if (nNamingProcedure != currentLine)
-					{
-						AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_THISFILEPROCEDURE")), ANNOTATION_WARN);
-					}
-
-					// Apply metrics
-					int nCyclomaticComplexity = calculateCyclomaticComplexity(currentLine, LineFromPosition(nProcedureEnd));
-					int nLinesOfCode = calculateLinesOfCode(currentLine, LineFromPosition(nProcedureEnd)) - 2;
-					int nNumberOfComments = countNumberOfComments(currentLine, LineFromPosition(nProcedureEnd));
-					double dCommentDensity = (double)nNumberOfComments / (double)nLinesOfCode;
-
-					if (nLinesOfCode < 3)
-						AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_INLINING")), ANNOTATION_WARN);
-					if (nCyclomaticComplexity > MAXCOMPLEXITYWARN)
-						AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_WARN);
-					else if (nCyclomaticComplexity > MAXCOMPLEXITYNOTIFY)
-						AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_NOTE);
-					if (nLinesOfCode > MAXLINESOFCODE)
-						AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_MANYLINES", toString(nLinesOfCode))), ANNOTATION_NOTE);
-					if (dCommentDensity < MINCOMMENTDENSITY)
-						AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_LOWCOMMENTDENSITY", toString(dCommentDensity * 100.0, 3))), ANNOTATION_NOTE);
-					if (dCommentDensity > MAXCOMMENTDENSITY)
-						AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMMENTDENSITY", toString(dCommentDensity * 100.0, 3))), ANNOTATION_NOTE);
-
-				}
-			}
-			if (m_fileType == FILE_NPRC && sSyntaxElement == "return")
-			{
-				int nProcedureEnd = this->FindText(i, this->GetLastPosition(), "endprocedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD);
-				string sArgs = this->GetTextRange(wordend, this->GetLineEndPosition(currentLine)).ToStdString();
-				while (sArgs.back() == '\r' || sArgs.back() == '\n')
-					sArgs.pop_back();
-				StripSpaces(sArgs);
-				if (nProcedureEnd == -1)
-				{
-					nProcedureEnd = this->GetLastPosition();
-					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
-				}
-				if (sArgs.length())
-				{
-					if (sArgs.back() != ';' && sArgs != "void")
-						AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sNote, _guilang.get("GUI_ANALYZER_RETURN_ADDSEMICOLON")), ANNOTATION_NOTE);
-				}
-				else
-				{
-					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_RETURN_ALWAYSTRUE")), ANNOTATION_NOTE);
-				}
-			}
-			if (sSyntaxElement == "if"
-					|| sSyntaxElement == "elseif"
-					|| sSyntaxElement == "else"
-					|| sSyntaxElement == "endif"
-					|| sSyntaxElement == "for"
-					|| sSyntaxElement == "endfor"
-					|| sSyntaxElement == "while"
-					|| sSyntaxElement == "endwhile"
-					|| sSyntaxElement == "compose"
-					|| sSyntaxElement == "endcompose"
-					|| sSyntaxElement == "procedure"
-					|| sSyntaxElement == "endprocedure")
-			{
-				vector<int> vMatch = this->BlockMatch(i);
-				if (vMatch.size() > 1)
-				{
-					if (vMatch.front() == wxSTC_INVALID_POSITION || vMatch.back() == wxSTC_INVALID_POSITION)
-						AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sError, _guilang.get("GUI_ANALYZER_UNFINISHEDBLOCK")), ANNOTATION_ERROR);
-				}
-			}
-			i = wordend;
+		    // Handle commands
+		    AnnotCount += analyseCommands(i, currentLine, hasProcedureDefinition, sCurrentLine, sStyles, sNote, sWarn, sError);
 		}
-		else if (this->GetStyleAt(i) == wxSTC_NSCR_FUNCTION || this->GetStyleAt(i) == wxSTC_NSCR_METHOD)
+		else if (isStyleType(STYLE_FUNCTION, i)
+           || ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC) && this->GetStyleAt(i) == wxSTC_NSCR_METHOD))
 		{
-			canContinue = false;
-			wordstart = this->WordStartPosition(i, true);
-			wordend = this->WordEndPosition(i, true);
-			string sSyntaxElement = this->GetTextRange(wordstart, wordend).ToStdString();
-			if (this->GetStyleAt(i) == wxSTC_NSCR_METHOD)
-			{
-				// ignore modifiers, i.e. method without parentheses
-				string sModifier = ",len,cols,lines,grid,avg,std,min,max,med,sum,prd,cnt,num,norm,and,or,xor,";
-				if (sModifier.find("," + sSyntaxElement + ",") == string::npos)
-					sSyntaxElement += "()";
-				sSyntaxElement.insert(0, "VAR.");
-			}
-			else
-				sSyntaxElement += "()";
-			if (this->PositionFromLine(currentLine) == wordstart && !isContinuedLine)
-			{
-				AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
-			}
-			else
-			{
-				for (int j = PositionFromLine(currentLine); j < wordstart; j++)
-				{
-					if (GetCharAt(j) == '=' || this->GetStyleAt(j) == wxSTC_NSCR_COMMAND || this->GetStyleAt(j) == wxSTC_NSCR_PROCEDURE_COMMANDS || this->GetStyleAt(j) == wxSTC_NSCR_PROCEDURES)
-					{
-						canContinue = true;
-						break;
-					}
-				}
-				if (!canContinue && !isContinuedLine)
-					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
-			}
-			if (this->BraceMatch(wordend) < 0 && sSyntaxElement.find('(') != string::npos)
-			{
-				AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
-			}
-			else if (sSyntaxElement != "time()" && sSyntaxElement != "version()" && sSyntaxElement.find('(') != string::npos)
-			{
-				int nPos = this->BraceMatch(wordend);
-				string sArgument = this->GetTextRange(wordend + 1, nPos).ToStdString();
-				StripSpaces(sArgument);
-				if (!sArgument.length())
-				{
-					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
-				}
-			}
-			i = wordend;
+		    // Handle standard functions
+		    AnnotCount += analyseFunctions(i, currentLine, hasProcedureDefinition, sCurrentLine, sStyles, sNote, sWarn, sError, isContinuedLine);
 		}
-		else if (this->GetStyleAt(i) == wxSTC_NSCR_PROCEDURES)
+		else if (isStyleType(STYLE_PROCEDURE, i))
 		{
-			wordend = this->WordEndPosition(i, true);
-			string sSyntaxElement = FindMarkedProcedure(i).ToStdString();
-			if (!sSyntaxElement.length())
-				continue;
-			if (!FindProcedureDefinition().length())
-			{
-				AnnotCount +=  addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, i), sError, _guilang.get("GUI_ANALYZER_PROCEDURENOTFOUND")), ANNOTATION_ERROR);
-			}
-			while (this->GetStyleAt(i + 1) == wxSTC_NSCR_PROCEDURES)
-				i++;
+		    // Handle NumeRe procedure calls (NumeRe only)
+		    AnnotCount += analyseProcedures(i, currentLine, hasProcedureDefinition, sCurrentLine, sStyles, sNote, sWarn, sError);
 		}
-		else if ((this->GetStyleAt(i) == wxSTC_NSCR_DEFAULT || this->GetStyleAt(i) == wxSTC_NSCR_IDENTIFIER)
+		else if (isStyleType(STYLE_IDENTIFIER, i)
 				 && this->GetCharAt(i) != ' '
 				 && this->GetCharAt(i) != '\t'
 				 && this->GetCharAt(i) != '\r'
 				 && this->GetCharAt(i) != '\n')
 		{
-			canContinue = false;
-			wordstart = this->WordStartPosition(i, true);
-			wordend = this->WordEndPosition(i, true);
-			if (this->GetCharAt(wordend) == '.' && this->GetStyleAt(wordend + 1) != wxSTC_NSCR_METHOD)
-				wordend = this->WordEndPosition(wordend + 1, true);
-			string sSyntaxElement = this->GetTextRange(wordstart, wordend).ToStdString();
-
-			if (sSyntaxElement.length() < 4 && sSyntaxElement.length() > 1 && sSyntaxElement.find_first_not_of("\r\n") != string::npos && sSyntaxElement.find('.') == string::npos)
-			{
-				// Too short
-				if (!(sSyntaxElement.length() == 2 && ((sSyntaxElement[1] >= '0' && sSyntaxElement[1] <= '9') || sSyntaxElement[0] == 'd')))
-					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_VARNAMETOOSHORT")), ANNOTATION_NOTE);
-			}
-			if (sSyntaxElement.length() > 2 && sSyntaxElement.find_first_not_of("\r\n") != string::npos && sSyntaxElement.find('.') == string::npos)
-			{
-				size_t shift = 0;
-				if (sSyntaxElement[0] == '_' && m_fileType == FILE_NPRC)
-					shift++;
-				// numerical/int string float standard vars (x,y,z,t)
-				string sFirstChars = "nsfbxyzt";
-
-				if (sFirstChars.find(sSyntaxElement[shift]) == string::npos
-						|| ((sSyntaxElement[shift + 1] < 'A' || sSyntaxElement[shift + 1] > 'Z') && sSyntaxElement[shift + 1] != '_'))
-				{
-					// var not type-oriented
-					if (hasProcedureDefinition && !shift)
-						AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
-					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_VARNOTTYPEORIENTED")), ANNOTATION_NOTE);
-				}
-				else if (hasProcedureDefinition && !shift)
-					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
-			}
-			i = wordend;
+		    // Handle identifiers (like variable names)
+		    AnnotCount += analyseIdentifiers(i, currentLine, hasProcedureDefinition, sCurrentLine, sStyles, sNote, sWarn, sError);
 		}
-		else if (this->GetStyleAt(i) == wxSTC_NSCR_OPERATORS)
+		else if (isStyleType(STYLE_OPERATOR, i))
 		{
-			if (this->GetCharAt(i) == '(' || this->GetCharAt(i) == '[' || this->GetCharAt(i) == '{'
-					|| this->GetCharAt(i) == ')' || this->GetCharAt(i) == ']' || this->GetCharAt(i) == '}')
-			{
-				int nPos = this->BraceMatch(i);
-				if (nPos < 0)
-				{
-					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(string(1, this->GetCharAt(i)), i), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
-				}
-			}
+		    // Handle special operators
+		    AnnotCount += analyseOperators(i, currentLine, hasProcedureDefinition, sCurrentLine, sStyles, sNote, sWarn, sError);
 		}
 	}
 
+	// Clear the annotation and style cache
 	sCurrentLine.clear();
 	sStyles.clear();
 
+	// Write the summary lines
 	if (AnnotCount.nNotes)
 		addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_NOTE_TOTAL", toString(AnnotCount.nNotes)), ANNOTATION_NOTE);
 	if (AnnotCount.nWarnings)
@@ -2210,6 +1788,7 @@ void NumeReEditor::AnalyseCode()
 	if (AnnotCount.nErrors)
 		addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_ERROR_TOTAL", toString(AnnotCount.nErrors)), ANNOTATION_ERROR);
 
+    // Append the summary line to the first line (if it is not empty)
 	if (sCurrentLine.length())
 	{
 		sCurrentLine += "\n" + sFirstLine;
@@ -2220,12 +1799,690 @@ void NumeReEditor::AnalyseCode()
 		sCurrentLine = sFirstLine;
 		sStyles = sFirstStyles;
 	}
+
+	// Write the first line if it is not empty
 	if (sCurrentLine.length())
 	{
 		this->AnnotationSetText(nFirstLine, sCurrentLine);
 		this->AnnotationSetStyles(nFirstLine, sStyles);
 	}
 }
+
+
+// This member function analyses syntax elements, which are highlighted as commands
+AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError)
+{
+    AnnotationCount AnnotCount;
+
+    bool canContinue = false;
+    int wordstart = this->WordStartPosition(nCurPos, true);
+    int wordend = this->WordEndPosition(nCurPos, true);
+
+    // Some code metric constants
+	const double MINCOMMENTDENSITY = 0.5;
+	const double MAXCOMMENTDENSITY = 1.5;
+	const int MAXCOMPLEXITYNOTIFY = 15;
+	const int MAXCOMPLEXITYWARN = 20;
+	const int MAXLINESOFCODE = 100;
+
+	// Get the current syntax element
+    string sSyntaxElement = this->GetTextRange(wordstart, wordend).ToStdString();
+
+    // add a message to "throw"
+    if (sSyntaxElement == "throw")
+    {
+        for (int j = wordend; j < this->GetLineEndPosition(currentLine); j++)
+        {
+            if (this->GetStyleAt(j) == wxSTC_NSCR_STRING || this->GetStyleAt(j) == wxSTC_NSCR_STRING_PARSER)
+            {
+                canContinue = true;
+                break;
+            }
+        }
+
+        // Was a message found?
+        if (!canContinue)
+        {
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sNote, _guilang.get("GUI_ANALYZER_THROW_ADDMESSAGE")), ANNOTATION_NOTE);
+        }
+    }
+
+    // check the namespace command
+    if (sSyntaxElement == "namespace")
+    {
+        string sArgs = this->GetTextRange(wordend, this->GetLineEndPosition(currentLine)).ToStdString();
+        while (sArgs.back() == '\r' || sArgs.back() == '\n')
+            sArgs.pop_back();
+        StripSpaces(sArgs);
+
+        // Is there an explicit namespace name? If no, warn the user
+        if (!sArgs.length())
+        {
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sWarn, _guilang.get("GUI_ANALYZER_NAMESPACE_ALWAYSMAIN")), ANNOTATION_WARN);
+        }
+        nCurPos = wordend;
+
+        // Advance the character pointer and return the number of gathered annotations
+        while (this->GetCharAt(nCurPos) != ';' && this->GetCharAt(nCurPos) != '\r' && this->GetCharAt(nCurPos) != '\n')
+            nCurPos++;
+        return AnnotCount;
+    }
+
+    // The progress command needs extra runtime (2-4 times). Inform the user about this issue
+    if (sSyntaxElement == "progress")
+    {
+        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_PROGRESS_RUNTIME")), ANNOTATION_NOTE);
+    }
+
+    // The install or the start commands are not allowed in scripts and procedures
+    if (sSyntaxElement == "install" || sSyntaxElement == "uninstall" || sSyntaxElement == "start")
+    {
+        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sError, _guilang.get("GUI_ANALYZER_NOTALLOWED")), ANNOTATION_ERROR);
+    }
+
+    // Handle the memory clearance commands
+    if (sSyntaxElement == "clear" || sSyntaxElement == "delete" || sSyntaxElement == "remove")
+    {
+        // some caches may not be removec
+        if (sSyntaxElement == "remove" && this->GetStyleAt(this->WordStartPosition(wordend + 1, true)) == wxSTC_NSCR_PREDEFS)
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend + 1), sError, _guilang.get("GUI_ANALYZER_CANNOTREMOVEPREDEFS")), ANNOTATION_ERROR);
+
+        // Get everything after the clearance command
+        string sArgs = this->GetTextRange(wordend, this->GetLineEndPosition(currentLine)).ToStdString();
+        while (sArgs.back() == '\r' || sArgs.back() == '\n')
+            sArgs.pop_back();
+
+        // Inform the user that he should append "ignore" as parameter
+        if (!matchParams(sArgs, "ignore")
+                && !matchParams(sArgs, "i")
+                && (sSyntaxElement != "remove" || this->GetStyleAt(this->WordStartPosition(wordend + 1, true)) != wxSTC_NSCR_CUSTOM_FUNCTION))
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sNote, _guilang.get("GUI_ANALYZER_APPENDIGNORE")), ANNOTATION_NOTE);
+    }
+
+    // check, whether the current command do have an expression
+    // Ignore some special commands, which do not need an expression
+    if (sSyntaxElement != "hline"
+            && sSyntaxElement != "continue"
+            && sSyntaxElement != "break"
+            && sSyntaxElement != "else"
+            && sSyntaxElement != "end"
+            && sSyntaxElement != "endif"
+            && sSyntaxElement != "endfor"
+            && sSyntaxElement != "endwhile"
+            && sSyntaxElement != "endprocedure"
+            && sSyntaxElement != "endcompose"
+            && sSyntaxElement != "about"
+            && sSyntaxElement != "abort"
+            && sSyntaxElement != "compose"
+            && sSyntaxElement != "help"
+            && sSyntaxElement != "quit"
+            && sSyntaxElement != "return"
+            && sSyntaxElement != "subplot"
+            && sSyntaxElement != "throw"
+            && sSyntaxElement != "namespace" //warning
+       )
+    {
+        canContinue = false;
+
+        // Get everything in the current line after the command
+        string sArgs = this->GetTextRange(wordend, this->GetLineEndPosition(currentLine)).ToStdString();
+        while (sArgs.back() == '\r' || sArgs.back() == '\n')
+            sArgs.pop_back();
+        StripSpaces(sArgs);
+
+        // If the line after the command is empty
+        if (!sArgs.length())
+        {
+            // is used as a parameter (legacy)
+            for (int j = wordstart; j >= PositionFromLine(currentLine); j--)
+            {
+                if (GetCharAt(j) == '-')
+                    canContinue = true;
+            }
+
+            // No expression found and not used as a parameter?
+            if (!canContinue)
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sError, _guilang.get("GUI_ANALYZER_EMPTYEXPRESSION")), ANNOTATION_ERROR);
+        }
+    }
+
+    // There are some command, which will return values.
+    // Check, whether there results are stored into a variable
+    if (sSyntaxElement == "zeroes"
+            || sSyntaxElement == "extrema"
+            || sSyntaxElement == "integrate"
+            || sSyntaxElement == "eval"
+            || sSyntaxElement == "get"
+            || sSyntaxElement == "read"
+            || sSyntaxElement == "pulse"
+            || sSyntaxElement == "diff")
+    {
+        canContinue = false;
+
+        // Try to find an assignment operator
+        for (int j = PositionFromLine(currentLine); j < wordstart; j++)
+        {
+            if (GetCharAt(j) == '=')
+            {
+                canContinue = true;
+                break;
+            }
+        }
+
+        // Was an assignment operator found?
+        if (!canContinue)
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
+    }
+
+    // Examine the if, elseif and while commands
+    if (sSyntaxElement == "if" || sSyntaxElement == "elseif" || sSyntaxElement == "while")
+    {
+        for (int j = wordend; j < this->GetLineEndPosition(currentLine); j++)
+        {
+            // Only examine elements in the first parenthesis for NumeRe syntax.
+            // Ignore the parenthesis in the MATLAB case
+            if (this->GetCharAt(j) == '(' || m_fileType == FILE_MATLAB)
+            {
+                int nPos = this->BraceMatch(j);
+
+                // If the first character is a parenthesis
+                if (this->GetCharAt(j) == '(')
+                {
+                    nPos = this->BraceMatch(j);
+                    if (nPos < 0)
+                    {
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+                        break;
+                    }
+                }
+                else
+                    nPos = this->GetLineEndPosition(currentLine);
+
+                // Get the argument
+                string sArgument = this->GetTextRange(j + 1, nPos).ToStdString();
+                StripSpaces(sArgument);
+
+                // Is the argument available?
+                if (!sArgument.length())
+                {
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
+                    break;
+                }
+
+                // Is it a constant?
+                if (sArgument == "true" || (sArgument.find_first_not_of("1234567890.") == string::npos && sArgument != "0"))
+                {
+                    if (sSyntaxElement == "while")
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_WHILE_ALWAYSTRUE")), ANNOTATION_WARN);
+                    else
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSTRUE")), ANNOTATION_WARN);
+                }
+                else if (sArgument == "false" || sArgument == "0")
+                {
+                    if (sSyntaxElement == "while")
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_WHILE_ALWAYSFALSE")), ANNOTATION_WARN);
+                    else
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSFALSE")), ANNOTATION_WARN);
+                }
+                else if (containsAssignment(sArgument))
+                {
+                    // Does it contain an assignment? Warn the user as this is probably not intendet
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNMENTINARGUMENT")), ANNOTATION_WARN);
+                }
+                break;
+            }
+        }
+
+        // There's an faster, inline if-else operator in NumeRe
+        // Propose that, if the current if-else block is quite short
+        if (sSyntaxElement == "if" && m_fileType != FILE_MATLAB)
+        {
+            vector<int> vBlock = BlockMatch(nCurPos);
+
+            // Was the end of the current block found?
+            if (vBlock.back() != wxSTC_INVALID_POSITION)
+            {
+                // Check the length of the current block
+                if (this->LineFromPosition(vBlock.back()) - currentLine < 5)
+                {
+                    canContinue = false;
+
+                    // Ensure that no commands except of further ifs and elses are used inside of the found block
+                    for (int pos = wordend; pos <= vBlock.back(); pos++)
+                    {
+                        if (this->GetStyleAt(pos) == wxSTC_NSCR_COMMAND
+                                && this->GetTextRange(WordStartPosition(pos, true), WordEndPosition(pos, true)) != "if"
+                                && this->GetTextRange(WordStartPosition(pos, true), WordEndPosition(pos, true)) != "else"
+                                && this->GetTextRange(WordStartPosition(pos, true), WordEndPosition(pos, true)) != "endif")
+                        {
+                            // Other command found
+                            canContinue = true;
+                            break;
+                        }
+                        else
+                        {
+                            // jump over other elements
+                            pos = WordEndPosition(pos, true);
+                        }
+                    }
+
+                    // Was an other command found?
+                    if (!canContinue)
+                    {
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_USEINLINEIF")), ANNOTATION_NOTE);
+                    }
+                }
+            }
+        }
+    }
+
+    // Examine the for command
+    // Only used for NumeRe syntax
+    if (sSyntaxElement == "for")
+    {
+        // Go through the current line
+        for (int j = wordend; j < this->GetLineEndPosition(currentLine); j++)
+        {
+            // If the current character is an opening parenthesis
+            if (this->GetCharAt(j) == '(')
+            {
+                // Examine the argument
+                int nPos = this->BraceMatch(j);
+                if (nPos < 0)
+                {
+                    // Missing parenthesis
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+                    break;
+                }
+
+                // Get the argument from the parenthesis
+                string sArgument = this->GetTextRange(j + 1, nPos).ToStdString();
+                StripSpaces(sArgument);
+
+                // Argument is empty?
+                if (!sArgument.length())
+                {
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
+                    break;
+                }
+
+                // Important parts of the argument are missing?
+                if (sArgument.find(':') == string::npos || sArgument.find('=') == string::npos)
+                {
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_FOR_INTERVALERROR")), ANNOTATION_ERROR);
+                }
+                break;
+            }
+        }
+    }
+
+    // Examine the current usage of the local variable declarators
+    // Esp. ensure that the declared variables are used
+    if (m_fileType == FILE_NPRC && (sSyntaxElement == "var" || sSyntaxElement == "str" || sSyntaxElement == "tab"))
+    {
+        // Handle the special case "list -var"
+        if (sSyntaxElement == "var" && this->GetTextRange(this->PositionFromLine(currentLine), this->GetLineEndPosition(currentLine)).find("list") < (size_t)(wordstart - this->PositionFromLine(currentLine)))
+        {
+            nCurPos = wordend;
+            return AnnotCount;
+        }
+
+        // Get the next line
+        int nNextLine = this->GetLineEndPosition(currentLine) + 1;
+
+        // Find the end of the current procedure
+        int nProcedureEnd = this->FindText(nNextLine, this->GetLastPosition(), "endprocedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD);
+
+        // extract the arguments and strip the spaces
+        string sArgs = this->GetTextRange(wordend, this->GetLineEndPosition(currentLine)).ToStdString();
+        while (sArgs.back() == '\r' || sArgs.back() == '\n')
+            sArgs.pop_back();
+        StripSpaces(sArgs);
+
+        // Ensure that the end of the procedure is available
+        if (nProcedureEnd == -1)
+        {
+            nProcedureEnd = this->GetLastPosition();
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
+        }
+
+        // If there are variables available
+        if (sArgs.length())
+        {
+            string currentArg = "";
+
+            // Extract variable by variable
+            while (getNextArgument(sArgs, false).length())
+            {
+                currentArg = getNextArgument(sArgs, true);
+
+                // remove assignments and parentheses and strip the spaces
+                if (currentArg.find('=') != string::npos)
+                    currentArg.erase(currentArg.find('='));
+                if (currentArg.find('(') != string::npos)
+                    currentArg.erase(currentArg.find('('));
+                StripSpaces(currentArg);
+
+                // Try to find the variable in the remaining code
+                if (this->FindText(nNextLine, nProcedureEnd, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) == -1)
+                {
+                    // No variable found
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, this->FindText(wordstart, nProcedureEnd, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD)), sWarn, _guilang.get("GUI_ANALYZER_UNUSEDVARIABLE", currentArg)), ANNOTATION_WARN);
+                }
+            }
+        }
+        else // No varibles are available
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sError, _guilang.get("GUI_ANALYZER_NOVARIABLES")), ANNOTATION_ERROR);
+    }
+
+    // Examine the procedure / MATLAB function starting at this position
+    // This includes esp. the calculation of the standard coding metrics
+    if ((m_fileType == FILE_NPRC && sSyntaxElement == "procedure") || (m_fileType == FILE_MATLAB && sSyntaxElement == "function"))
+    {
+        // Use the block match function, which is capable of doing both: NumeRe and MATLAB syntax
+        vector<int> vBlock = BlockMatch(nCurPos);
+        int nProcedureEnd = 0;
+        hasProcedureDefinition = true;
+        if (vBlock.back() == wxSTC_INVALID_POSITION)
+        {
+            nProcedureEnd = this->GetLastPosition();
+        }
+        else
+        {
+            nProcedureEnd = vBlock.back();
+
+            // This is only needed for NumeRe procedures
+            if (m_fileType == FILE_NPRC)
+            {
+                // check the name of the procedure - is there a naming procedure?
+                int nNamingProcedure = FindNamingProcedure();
+                if (nNamingProcedure == wxNOT_FOUND)
+                {
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_NONAMINGPROCEDURE")), ANNOTATION_ERROR);
+                }
+                else if (nNamingProcedure != currentLine)
+                {
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_THISFILEPROCEDURE")), ANNOTATION_WARN);
+                }
+            }
+            // Calculate the code metrics:
+            // Complexity
+            int nCyclomaticComplexity = calculateCyclomaticComplexity(currentLine, LineFromPosition(nProcedureEnd));
+
+            // LinesOfCode
+            int nLinesOfCode = calculateLinesOfCode(currentLine, LineFromPosition(nProcedureEnd)) - 2;
+
+            // Number of comments
+            int nNumberOfComments = countNumberOfComments(currentLine, LineFromPosition(nProcedureEnd));
+
+            // Comment density
+            double dCommentDensity = (double)nNumberOfComments / (double)nLinesOfCode;
+
+            // Compare the metrics with the contants and issue a note or a warning
+            if (nLinesOfCode < 3)
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_INLINING")), ANNOTATION_WARN);
+            if (nCyclomaticComplexity > MAXCOMPLEXITYWARN)
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_WARN);
+            else if (nCyclomaticComplexity > MAXCOMPLEXITYNOTIFY)
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_NOTE);
+            if (nLinesOfCode > MAXLINESOFCODE)
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_MANYLINES", toString(nLinesOfCode))), ANNOTATION_NOTE);
+            if (dCommentDensity < MINCOMMENTDENSITY)
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_LOWCOMMENTDENSITY", toString(dCommentDensity * 100.0, 3))), ANNOTATION_NOTE);
+            if (dCommentDensity > MAXCOMMENTDENSITY)
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMMENTDENSITY", toString(dCommentDensity * 100.0, 3))), ANNOTATION_NOTE);
+
+        }
+    }
+
+    // Handle the "return" command in procedures (not needed in MATLAB)
+    if (m_fileType == FILE_NPRC && sSyntaxElement == "return")
+    {
+        // Try to find the end of the current procedure
+        int nProcedureEnd = this->FindText(nCurPos, this->GetLastPosition(), "endprocedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD);
+
+        // Get the argument of the return command and strip the spaces
+        string sArgs = this->GetTextRange(wordend, this->GetLineEndPosition(currentLine)).ToStdString();
+        while (sArgs.back() == '\r' || sArgs.back() == '\n')
+            sArgs.pop_back();
+        StripSpaces(sArgs);
+
+        // Ensure that the end of the procedure was found
+        if (nProcedureEnd == -1)
+        {
+            nProcedureEnd = this->GetLastPosition();
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
+        }
+
+        // Examine the argument
+        if (sArgs.length())
+        {
+            // Inform the user to add an semicolon to the arguments, if he uses something else than "void"
+            if (sArgs.back() != ';' && sArgs != "void")
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sNote, _guilang.get("GUI_ANALYZER_RETURN_ADDSEMICOLON")), ANNOTATION_NOTE);
+        }
+        else
+        {
+            // Inform the user that the return value will always be "true", if he doesn't append a value
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_RETURN_ALWAYSTRUE")), ANNOTATION_NOTE);
+        }
+    }
+
+    // Handle blocks with their corresponding end
+    if (sSyntaxElement == "if"
+            || sSyntaxElement == "end"
+            || sSyntaxElement == "elseif"
+            || sSyntaxElement == "else"
+            || sSyntaxElement == "endif"
+            || sSyntaxElement == "for"
+            || sSyntaxElement == "endfor"
+            || sSyntaxElement == "while"
+            || sSyntaxElement == "endwhile"
+            || sSyntaxElement == "compose"
+            || sSyntaxElement == "endcompose"
+            || sSyntaxElement == "function"
+            || sSyntaxElement == "procedure"
+            || sSyntaxElement == "endprocedure")
+    {
+        // Try to find the matching block parts
+        vector<int> vMatch = this->BlockMatch(nCurPos);
+        if (vMatch.size() > 1)
+        {
+            // If there's an invalid position, this means that the current block is unfinished
+            if (vMatch.front() == wxSTC_INVALID_POSITION || vMatch.back() == wxSTC_INVALID_POSITION)
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sError, _guilang.get("GUI_ANALYZER_UNFINISHEDBLOCK")), ANNOTATION_ERROR);
+        }
+    }
+    nCurPos = wordend;
+
+    // Return the counted annotations
+    return AnnotCount;
+}
+
+// This member function analyses syntax elements, which are highlighted as functions
+AnnotationCount NumeReEditor::analyseFunctions(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError, bool isContinuedLine)
+{
+    AnnotationCount AnnotCount;
+
+    bool canContinue = false;
+    int wordstart = this->WordStartPosition(nCurPos, true);
+    int wordend = this->WordEndPosition(nCurPos, true);
+
+    // Get the corresponding syntax element
+    string sSyntaxElement = this->GetTextRange(wordstart, wordend).ToStdString();
+
+    // Handle method (modifier) calls, also appends a pair of parentheses if needed
+    if ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC) && this->GetStyleAt(nCurPos) == wxSTC_NSCR_METHOD)
+    {
+        // ignore modifiers, i.e. method without parentheses
+        string sModifier = ",len,cols,lines,grid,avg,std,min,max,med,sum,prd,cnt,num,norm,and,or,xor,";
+        if (sModifier.find("," + sSyntaxElement + ",") == string::npos)
+            sSyntaxElement += "()";
+        sSyntaxElement.insert(0, "VAR.");
+    }
+    else
+        sSyntaxElement += "()";
+
+    // Is the current function called without a target variable?
+    if (this->PositionFromLine(currentLine) == wordstart && !isContinuedLine)
+    {
+        // The function is called at the first position without a target variable
+        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
+    }
+    else
+    {
+        // Try to find a assignment operator before the function
+        // Other possibilities are commands and procedure calls
+        for (int j = PositionFromLine(currentLine); j < wordstart; j++)
+        {
+            if (GetCharAt(j) == '=' || isStyleType(STYLE_COMMAND, j) || isStyleType(STYLE_PROCEDURE, j))
+            {
+                canContinue = true;
+                break;
+            }
+        }
+
+        // Was an operator or a command found?
+        if (!canContinue && !isContinuedLine)
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
+    }
+
+    // There's a missing parenthesis?
+    if (this->BraceMatch(wordend) < 0 && sSyntaxElement.find('(') != string::npos)
+    {
+        // MATLAB doesn't require a parenthesis pair for empty arguments.
+        // However, issue a warning as it is good practice to visually distinguish between variables and functions
+        if (m_fileType == FILE_MATLAB)
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sWarn, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_WARN);
+        else
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+    }
+    else if (sSyntaxElement != "time()" && sSyntaxElement != "version()" && sSyntaxElement.find('(') != string::npos)
+    {
+        // Check for missing arguments
+        int nPos = this->BraceMatch(wordend);
+        string sArgument = this->GetTextRange(wordend + 1, nPos).ToStdString();
+        StripSpaces(sArgument);
+        if (!sArgument.length())
+        {
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
+        }
+    }
+    nCurPos = wordend;
+
+    // return the counted number of gathered annotations
+    return AnnotCount;
+}
+
+// This member function analyses syntax elements, which are highlighted as procedure calls
+AnnotationCount NumeReEditor::analyseProcedures(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError)
+{
+    AnnotationCount AnnotCount;
+
+    // Try to find the current procedure call
+    string sSyntaxElement = FindMarkedProcedure(nCurPos).ToStdString();
+    if (!sSyntaxElement.length())
+        return AnnotCount;
+
+    // Try to find the correspondung procedure definition
+    if (!FindProcedureDefinition().length())
+    {
+        // Procedure definition was not found
+        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, nCurPos), sError, _guilang.get("GUI_ANALYZER_PROCEDURENOTFOUND")), ANNOTATION_ERROR);
+    }
+
+    // Advance the character pointer until the style type changes
+    while (isStyleType(STYLE_PROCEDURE, nCurPos + 1))
+        nCurPos++;
+
+    // return the number of gathered annotations
+    return AnnotCount;
+}
+
+// This member function analyses syntax elements, which are highlighted as identifiers (aka variable names)
+AnnotationCount NumeReEditor::analyseIdentifiers(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError)
+{
+    AnnotationCount AnnotCount;
+
+    int wordstart = this->WordStartPosition(nCurPos, true);
+    int wordend = this->WordEndPosition(nCurPos, true);
+
+    // Shift the word end position, if the following character is a dot
+    if (this->GetCharAt(wordend) == '.' && this->GetStyleAt(wordend + 1) != wxSTC_NSCR_METHOD)
+        wordend = this->WordEndPosition(wordend + 1, true);
+
+    // Get the corresponding syntax element
+    string sSyntaxElement = this->GetTextRange(wordstart, wordend).ToStdString();
+
+    // Handle very short variable names
+    if (sSyntaxElement.length() < 4 && sSyntaxElement.length() > 1 && sSyntaxElement.find_first_not_of("\r\n") != string::npos && sSyntaxElement.find('.') == string::npos)
+    {
+        // Too short
+        if (!(sSyntaxElement.length() == 2 && ((sSyntaxElement[1] >= '0' && sSyntaxElement[1] <= '9') || sSyntaxElement[0] == 'd')))
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_VARNAMETOOSHORT")), ANNOTATION_NOTE);
+    }
+
+    // Handle the variable's names: are they following guidelines?
+    if (sSyntaxElement.length() > 2 && sSyntaxElement.find_first_not_of("\r\n") != string::npos && sSyntaxElement.find('.') == string::npos)
+    {
+        size_t shift = 0;
+
+        // We want to start the procedures arguments with an underscore (not possible in MATLAB)
+        if (sSyntaxElement[0] == '_' && m_fileType == FILE_NPRC)
+            shift++;
+
+        // Because function names definitions are not highlighted different in MATLAB code, we leave the function
+        // at this position
+        if (m_fileType == FILE_MATLAB && hasProcedureDefinition && this->GetCharAt(wordend) == '(')
+        {
+            nCurPos = wordend;
+            return AnnotCount;
+        }
+        // numerical/int string float standard vars (x,y,z,t)
+        string sFirstChars = "nsfbxyzt";
+
+        if (sFirstChars.find(sSyntaxElement[shift]) == string::npos
+                || ((sSyntaxElement[shift + 1] < 'A' || sSyntaxElement[shift + 1] > 'Z') && sSyntaxElement[shift + 1] != '_'))
+        {
+            // var not type-oriented
+            // Add and underscore to indicate the procedures arguments
+            if (hasProcedureDefinition && !shift && m_fileType != FILE_MATLAB)
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
+
+            // variable should begin with lowercase letter indicate its type
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_VARNOTTYPEORIENTED")), ANNOTATION_NOTE);
+        }
+        else if (hasProcedureDefinition && !shift && m_fileType != FILE_MATLAB)
+        {
+            // Add and underscore to indicate the procedures arguments
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
+        }
+    }
+    nCurPos = wordend;
+
+    // Return the gathered number of annotations
+    return AnnotCount;
+}
+
+// This member function analyses syntax elements, which are highlighted as operators
+AnnotationCount NumeReEditor::analyseOperators(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError)
+{
+    AnnotationCount AnnotCount;
+
+    // If the current operator is a parenthesis, try to find the matching one
+    if (this->GetCharAt(nCurPos) == '(' || this->GetCharAt(nCurPos) == '[' || this->GetCharAt(nCurPos) == '{'
+            || this->GetCharAt(nCurPos) == ')' || this->GetCharAt(nCurPos) == ']' || this->GetCharAt(nCurPos) == '}')
+    {
+        int nPos = this->BraceMatch(nCurPos);
+        if (nPos < 0)
+        {
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(string(1, this->GetCharAt(nCurPos)), nCurPos), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+        }
+    }
+
+    return AnnotCount;
+}
+
 
 void NumeReEditor::JumpToBookmark(bool down)
 {
@@ -5341,18 +5598,19 @@ int NumeReEditor::calculateCyclomaticComplexity(int startline, int endline)
 	int nCycComplx = 1;
 	for (int i = this->PositionFromLine(startline); i < this->GetLineEndPosition(endline); i++)
 	{
-		if (this->GetStyleAt(i) == wxSTC_NSCR_COMMAND)
+		if (isStyleType(STYLE_COMMAND, i))
 		{
 			int wordstart = this->WordStartPosition(i, true);
 			int wordend = this->WordEndPosition(i, true);
 			if (this->GetTextRange(wordstart, wordend) == "if"
 					|| this->GetTextRange(wordstart, wordend) == "elseif"
 					|| this->GetTextRange(wordstart, wordend) == "while"
+					|| this->GetTextRange(wordstart, wordend) == "case"
 					|| this->GetTextRange(wordstart, wordend) == "for")
 				nCycComplx++;
 			i = wordend;
 		}
-		if (this->GetStyleAt(i) == wxSTC_NSCR_FUNCTION)
+		if (isStyleType(STYLE_FUNCTION, i))
 		{
 			int wordstart = this->WordStartPosition(i, true);
 			int wordend = this->WordEndPosition(i, true);
@@ -5362,12 +5620,14 @@ int NumeReEditor::calculateCyclomaticComplexity(int startline, int endline)
 				nCycComplx++;
 			i = wordend;
 		}
-		if (this->GetStyleAt(i) == wxSTC_NSCR_OPERATORS)
+		if (isStyleType(STYLE_OPERATOR, i))
 		{
 			int j = i;
-			while (this->GetStyleAt(j) == wxSTC_NSCR_OPERATORS)
+			while (isStyleType(STYLE_OPERATOR, j))
 				j++;
-			if (this->GetTextRange(i, j) == "&&"
+			if (this->GetTextRange(i, j) == "&"
+                    || this->GetTextRange(i, j) == "&&"
+					|| this->GetTextRange(i, j) == "|"
 					|| this->GetTextRange(i, j) == "||"
 					|| this->GetTextRange(i, j) == "|||")
 				nCycComplx++;
@@ -5390,8 +5650,8 @@ int NumeReEditor::calculateLinesOfCode(int startline, int endline)
 		{
 			for (size_t j = this->PositionFromLine(i); j < currentline.length() + this->PositionFromLine(i); j++)
 			{
-				if (this->GetStyleAt(j) != wxSTC_NSCR_COMMENT_BLOCK
-						&& this->GetStyleAt(j) != wxSTC_NSCR_COMMENT_LINE
+				if (!isStyleType(STYLE_COMMENT_BLOCK, j)
+                        && !isStyleType(STYLE_COMMENT_LINE, j)
 						&& this->GetCharAt(j) != ' '
 						&& this->GetCharAt(j) != '\t'
 						&& this->GetCharAt(j) != '\r'
@@ -5411,12 +5671,12 @@ int NumeReEditor::countNumberOfComments(int startline, int endline)
 	int nComments = 0;
 	for (int i = this->PositionFromLine(startline); i < this->GetLineEndPosition(endline); i++)
 	{
-		if (this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_BLOCK || this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_LINE)
+		if (isStyleType(STYLE_COMMENT_BLOCK, i) || isStyleType(STYLE_COMMENT_LINE, i))
 		{
 			nComments++;
 			for (int j = i; j < this->GetLineEndPosition(endline); j++)
 			{
-				if (this->GetStyleAt(j) != wxSTC_NSCR_COMMENT_BLOCK && this->GetStyleAt(j) != wxSTC_NSCR_COMMENT_LINE)
+				if (!isStyleType(STYLE_COMMENT_LINE, j) && !isStyleType(STYLE_COMMENT_BLOCK, j))
 				{
 					i = j;
 					break;
@@ -6072,6 +6332,12 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
 							   || this->GetStyleAt(nPos) == wxSTC_NPRC_COMMAND;
 					case STYLE_FUNCTION:
 						return this->GetStyleAt(nPos) == wxSTC_NSCR_FUNCTION;
+                    case STYLE_OPERATOR:
+                        return this->GetStyleAt(nPos) == wxSTC_NSCR_OPERATORS;
+                    case STYLE_PROCEDURE:
+                        return this->GetStyleAt(nPos) == wxSTC_NSCR_PROCEDURES;
+                    case STYLE_IDENTIFIER:
+                        return this->GetStyleAt(nPos) == wxSTC_NSCR_IDENTIFIER;
 				}
 				break;
 			}
@@ -6093,6 +6359,12 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
 						return this->GetStyleAt(nPos) == wxSTC_MATLAB_KEYWORD;
 					case STYLE_FUNCTION:
 						return this->GetStyleAt(nPos) == wxSTC_MATLAB_FUNCTIONS;
+                    case STYLE_OPERATOR:
+                        return this->GetStyleAt(nPos) == wxSTC_MATLAB_OPERATOR;
+                    case STYLE_PROCEDURE:
+                        return false;
+                    case STYLE_IDENTIFIER:
+                        return this->GetStyleAt(nPos) == wxSTC_MATLAB_IDENTIFIER;
 				}
 				break;
 			}
@@ -6117,6 +6389,12 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
 						return this->GetStyleAt(nPos) == wxSTC_C_WORD;
 					case STYLE_FUNCTION:
 						return this->GetStyleAt(nPos) == wxSTC_C_WORD2;
+                    case STYLE_OPERATOR:
+                        return this->GetStyleAt(nPos) == wxSTC_C_OPERATOR;
+                    case STYLE_PROCEDURE:
+                        return false;
+                    case STYLE_IDENTIFIER:
+                        return this->GetStyleAt(nPos) == wxSTC_C_IDENTIFIER;
 				}
 				break;
 			}
