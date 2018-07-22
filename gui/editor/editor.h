@@ -309,7 +309,8 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 			STYLE_FUNCTION,
 			STYLE_OPERATOR,
 			STYLE_PROCEDURE,
-			STYLE_IDENTIFIER
+			STYLE_IDENTIFIER,
+			STYLE_NUMBER
 		};
 
 
@@ -376,6 +377,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
         AnnotationCount analyseProcedures(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError);
         AnnotationCount analyseIdentifiers(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError);
         AnnotationCount analyseOperators(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError);
+        AnnotationCount analyseNumbers(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError);
 
 		int insertTextAndMove(int nPosition, const wxString& sText);
 		void detectCodeDuplicates(int startline, int endline, int nDuplicateFlags, int nNumDuplicatedLines);

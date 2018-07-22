@@ -38,6 +38,7 @@
 #define HIGHLIGHT_NOT_MATCHING_BLOCK 9
 #define HIGHLIGHT_DIFFERENCES 10
 #define HIGHLIGHT_DIFFERENCE_SOURCE 11
+#define HIGHLIGHT_ANNOTATION 12
 #define ANNOTATION_NOTE 22
 #define ANNOTATION_WARN 23
 #define ANNOTATION_ERROR 24
@@ -1629,6 +1630,12 @@ void NumeReEditor::AnalyseCode()
     // Clear all annotations
 	this->AnnotationClearAll();
 
+	// Clear the corresponding indicators
+    // this->SetIndicatorCurrent(HIGHLIGHT_ANNOTATION);
+	// this->IndicatorClearRange(0, GetLastPosition());
+	// this->IndicatorSetStyle(HIGHLIGHT_ANNOTATION, wxSTC_INDIC_ROUNDBOX);
+	// this->IndicatorSetForeground(HIGHLIGHT_ANNOTATION, wxColor(255, 0, 0));
+
 	// Ensure that the correct file type is used and that the setting is active
 	if (!getEditorSetting(SETTING_USEANALYZER) || (m_fileType != FILE_NSCR && m_fileType != FILE_NPRC && m_fileType != FILE_MATLAB && m_fileType != FILE_CPP))
 		return;
@@ -1661,7 +1668,7 @@ void NumeReEditor::AnalyseCode()
 	for (int i = 0; i < this->GetLastPosition(); i++)
 	{
 	    // Ignore comments
-		if (this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_LINE || this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_BLOCK)
+		if (isStyleType(STYLE_COMMENT_BLOCK, i) || isStyleType(STYLE_COMMENT_LINE, i))
 			continue;
 
 		// It's a new line?
@@ -1773,6 +1780,11 @@ void NumeReEditor::AnalyseCode()
 		{
 		    // Handle special operators
 		    AnnotCount += analyseOperators(i, currentLine, hasProcedureDefinition, sCurrentLine, sStyles, sNote, sWarn, sError);
+		}
+		else if (isStyleType(STYLE_NUMBER, i))
+		{
+		    // Handle numbers
+		    AnnotCount += analyseNumbers(i, currentLine, hasProcedureDefinition, sCurrentLine, sStyles, sNote, sWarn, sError);
 		}
 	}
 
@@ -2078,7 +2090,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
 
     // Examine the for command
     // Only used for NumeRe syntax
-    if (sSyntaxElement == "for")
+    if (sSyntaxElement == "for" && m_fileType != FILE_MATLAB)
     {
         // Go through the current line
         for (int j = wordend; j < this->GetLineEndPosition(currentLine); j++)
@@ -2357,7 +2369,7 @@ AnnotationCount NumeReEditor::analyseFunctions(int& nCurPos, int currentLine, bo
         else
             AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
     }
-    else if (sSyntaxElement != "time()" && sSyntaxElement != "version()" && sSyntaxElement.find('(') != string::npos)
+    else if (sSyntaxElement != "time()" && sSyntaxElement != "clock()" && sSyntaxElement != "version()" && sSyntaxElement.find('(') != string::npos)
     {
         // Check for missing arguments
         int nPos = this->BraceMatch(wordend);
@@ -2480,6 +2492,45 @@ AnnotationCount NumeReEditor::analyseOperators(int& nCurPos, int currentLine, bo
         }
     }
 
+    return AnnotCount;
+}
+
+// This member function analyses syntax elements, which are highlighted as numbers
+AnnotationCount NumeReEditor::analyseNumbers(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError)
+{
+    AnnotationCount AnnotCount;
+    int nNumberStart = nCurPos;
+    int nLineStartPos = this->PositionFromLine(currentLine);
+
+    // Advance until the style of the next character is not a number any more
+    while (isStyleType(STYLE_NUMBER, nCurPos + 1))
+        nCurPos++;
+
+    // Get the number
+    string sCurrentNumber = this->GetTextRange(nNumberStart, nCurPos + 1).ToStdString();
+
+    // Go inversely through the line and try to find an assignment operator
+    for (int i = nNumberStart; i >= nLineStartPos; i--)
+    {
+        // If the current character is a operator and the previous one is not
+        if (isStyleType(STYLE_OPERATOR, i))
+        {
+            // Is an assignment -> no magic number
+            if (this->GetCharAt(i) == '='
+                && this->GetCharAt(i - 1) != '<'
+                && this->GetCharAt(i - 1) != '>'
+                && this->GetCharAt(i - 1) != '!'
+                && this->GetCharAt(i - 1) != '~'
+                && this->GetCharAt(i - 1) != '=')
+                break;
+
+            // All other operators are indicating the current number as magic number
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sCurrentNumber, nNumberStart), sWarn, _guilang.get("GUI_ANALYZER_MAGICNUMBER")), ANNOTATION_WARN);
+            break;
+        }
+    }
+
+    // Return the number of gathered annotations
     return AnnotCount;
 }
 
@@ -3797,29 +3848,6 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
 			this->StyleSetUnderline(i, _style.underline);
 		}
 
-		/*this->StyleSetForeground(wxSTC_MATLAB_COMMENT, wxColor(0,128,0));
-		this->StyleSetItalic(wxSTC_MATLAB_COMMENT, true);
-
-		this->StyleSetForeground(wxSTC_MATLAB_OPERATOR, wxColor(255,0,0));
-		this->StyleSetBold(wxSTC_MATLAB_OPERATOR, false);
-
-		this->StyleSetForeground(wxSTC_MATLAB_NUMBER, wxColor(255,128,128));
-		this->StyleSetBackground(wxSTC_MATLAB_NUMBER, wxColor(255,255,255));
-
-		this->StyleSetForeground(wxSTC_MATLAB_IDENTIFIER, wxColor(0,0,0));
-		this->StyleSetBold(wxSTC_MATLAB_IDENTIFIER, false);
-
-		this->StyleSetForeground(wxSTC_MATLAB_KEYWORD, wxColor(0, 0, 255));
-		this->StyleSetBold(wxSTC_MATLAB_KEYWORD, true);
-
-		this->StyleSetForeground(wxSTC_MATLAB_FUNCTIONS, wxColor(0, 0, 128));
-		this->StyleSetBold(wxSTC_MATLAB_FUNCTIONS, true);
-
-		this->StyleSetForeground(wxSTC_MATLAB_COMMAND, wxColor(0,0,128));
-		this->StyleSetBold(wxSTC_MATLAB_COMMAND, true);
-
-		this->StyleSetForeground(wxSTC_MATLAB_STRING, wxColor(128, 128, 128));
-		this->StyleSetItalic(wxSTC_MATLAB_STRING, true);*/
 	}
 	else if (filetype == FILE_CPP)
 	{
@@ -6338,6 +6366,8 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
                         return this->GetStyleAt(nPos) == wxSTC_NSCR_PROCEDURES;
                     case STYLE_IDENTIFIER:
                         return this->GetStyleAt(nPos) == wxSTC_NSCR_IDENTIFIER;
+                    case STYLE_NUMBER:
+                        return this->GetStyleAt(nPos) == wxSTC_NSCR_NUMBERS;
 				}
 				break;
 			}
@@ -6365,6 +6395,8 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
                         return false;
                     case STYLE_IDENTIFIER:
                         return this->GetStyleAt(nPos) == wxSTC_MATLAB_IDENTIFIER;
+                    case STYLE_NUMBER:
+                        return this->GetStyleAt(nPos) == wxSTC_MATLAB_NUMBER;
 				}
 				break;
 			}
@@ -6395,6 +6427,8 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
                         return false;
                     case STYLE_IDENTIFIER:
                         return this->GetStyleAt(nPos) == wxSTC_C_IDENTIFIER;
+                    case STYLE_NUMBER:
+                        return this->GetStyleAt(nPos) == wxSTC_C_NUMBER;
 				}
 				break;
 			}
@@ -6556,6 +6590,8 @@ string NumeReEditor::getTextCoordsAsString(int nPos)
 
 string NumeReEditor::constructSyntaxElementForAnalyzer(const string& sElement, int nPos)
 {
+    // this->SetIndicatorCurrent(HIGHLIGHT_ANNOTATION);
+    // this->IndicatorFillRange(nPos, sElement.length());
 	return sElement + " >> " + getTextCoordsAsString(nPos);
 }
 

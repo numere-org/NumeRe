@@ -2242,7 +2242,7 @@ void NumeReWindow::CopyEditorSettings(NumeReEditor* edit, FileFilterType _fileTy
     if (m_currentEd && edit && !m_loadingFilesDuringStartup)
     {
         int settings = m_currentEd->getSettings();
-        if (_fileType != FILE_NSCR && _fileType != FILE_NPRC && _fileType != FILE_PLUGIN)
+        if (_fileType != FILE_NSCR && _fileType != FILE_NPRC && _fileType != FILE_MATLAB && _fileType != FILE_PLUGIN)
         {
             if (settings & NumeReEditor::SETTING_INDENTONTYPE)
                 settings &= ~NumeReEditor::SETTING_INDENTONTYPE;
