@@ -337,7 +337,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		string addLinebreaks(const string& sLine);
 		AnnotationCount addToAnnotation(string& sCurrentLine, string& sStyles, const string& sMessage, int nStyle);
 		string getTextCoordsAsString(int nPos);
-		string constructSyntaxElementForAnalyzer(const string& sElement, int nPos);
+		string constructSyntaxElementForAnalyzer(const string& sElement, int nPos, int nLength);
 		bool containsAssignment(const string& sCurrentLine);
 
 		void markModified(int nLine);

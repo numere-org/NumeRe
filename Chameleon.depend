@@ -6500,7 +6500,7 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1532169480 c:\cpp\numere-source\trunk\gui\editor\editor.h
+1532338080 c:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -7735,7 +7735,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1532097148 source:c:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1532349039 source:c:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -8083,7 +8083,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1532097269 source:c:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1532334847 source:c:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"

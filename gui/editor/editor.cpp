@@ -1631,10 +1631,10 @@ void NumeReEditor::AnalyseCode()
 	this->AnnotationClearAll();
 
 	// Clear the corresponding indicators
-    // this->SetIndicatorCurrent(HIGHLIGHT_ANNOTATION);
-	// this->IndicatorClearRange(0, GetLastPosition());
-	// this->IndicatorSetStyle(HIGHLIGHT_ANNOTATION, wxSTC_INDIC_ROUNDBOX);
-	// this->IndicatorSetForeground(HIGHLIGHT_ANNOTATION, wxColor(255, 0, 0));
+    this->SetIndicatorCurrent(HIGHLIGHT_ANNOTATION);
+	this->IndicatorClearRange(0, GetLastPosition());
+	this->IndicatorSetStyle(HIGHLIGHT_ANNOTATION, wxSTC_INDIC_ROUNDBOX);
+	this->IndicatorSetForeground(HIGHLIGHT_ANNOTATION, wxColor(0, 0, 255));
 
 	// Ensure that the correct file type is used and that the setting is active
 	if (!getEditorSetting(SETTING_USEANALYZER) || (m_fileType != FILE_NSCR && m_fileType != FILE_NPRC && m_fileType != FILE_MATLAB && m_fileType != FILE_CPP))
@@ -1855,7 +1855,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
         // Was a message found?
         if (!canContinue)
         {
-            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sNote, _guilang.get("GUI_ANALYZER_THROW_ADDMESSAGE")), ANNOTATION_NOTE);
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, 5), sNote, _guilang.get("GUI_ANALYZER_THROW_ADDMESSAGE")), ANNOTATION_NOTE);
         }
     }
 
@@ -1870,7 +1870,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
         // Is there an explicit namespace name? If no, warn the user
         if (!sArgs.length())
         {
-            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sWarn, _guilang.get("GUI_ANALYZER_NAMESPACE_ALWAYSMAIN")), ANNOTATION_WARN);
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sWarn, _guilang.get("GUI_ANALYZER_NAMESPACE_ALWAYSMAIN")), ANNOTATION_WARN);
         }
         nCurPos = wordend;
 
@@ -1883,13 +1883,13 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
     // The progress command needs extra runtime (2-4 times). Inform the user about this issue
     if (sSyntaxElement == "progress")
     {
-        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_PROGRESS_RUNTIME")), ANNOTATION_NOTE);
+        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sNote, _guilang.get("GUI_ANALYZER_PROGRESS_RUNTIME")), ANNOTATION_NOTE);
     }
 
     // The install or the start commands are not allowed in scripts and procedures
     if (sSyntaxElement == "install" || sSyntaxElement == "uninstall" || sSyntaxElement == "start")
     {
-        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sError, _guilang.get("GUI_ANALYZER_NOTALLOWED")), ANNOTATION_ERROR);
+        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sError, _guilang.get("GUI_ANALYZER_NOTALLOWED")), ANNOTATION_ERROR);
     }
 
     // Handle the memory clearance commands
@@ -1897,7 +1897,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
     {
         // some caches may not be removec
         if (sSyntaxElement == "remove" && this->GetStyleAt(this->WordStartPosition(wordend + 1, true)) == wxSTC_NSCR_PREDEFS)
-            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend + 1), sError, _guilang.get("GUI_ANALYZER_CANNOTREMOVEPREDEFS")), ANNOTATION_ERROR);
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sError, _guilang.get("GUI_ANALYZER_CANNOTREMOVEPREDEFS")), ANNOTATION_ERROR);
 
         // Get everything after the clearance command
         string sArgs = this->GetTextRange(wordend, this->GetLineEndPosition(currentLine)).ToStdString();
@@ -1908,7 +1908,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
         if (!matchParams(sArgs, "ignore")
                 && !matchParams(sArgs, "i")
                 && (sSyntaxElement != "remove" || this->GetStyleAt(this->WordStartPosition(wordend + 1, true)) != wxSTC_NSCR_CUSTOM_FUNCTION))
-            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sNote, _guilang.get("GUI_ANALYZER_APPENDIGNORE")), ANNOTATION_NOTE);
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sNote, _guilang.get("GUI_ANALYZER_APPENDIGNORE")), ANNOTATION_NOTE);
     }
 
     // check, whether the current command do have an expression
@@ -1954,7 +1954,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
 
             // No expression found and not used as a parameter?
             if (!canContinue)
-                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sError, _guilang.get("GUI_ANALYZER_EMPTYEXPRESSION")), ANNOTATION_ERROR);
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sError, _guilang.get("GUI_ANALYZER_EMPTYEXPRESSION")), ANNOTATION_ERROR);
         }
     }
 
@@ -1983,7 +1983,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
 
         // Was an assignment operator found?
         if (!canContinue)
-            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
     }
 
     // Examine the if, elseif and while commands
@@ -2003,7 +2003,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
                     nPos = this->BraceMatch(j);
                     if (nPos < 0)
                     {
-                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j, 1), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
                         break;
                     }
                 }
@@ -2017,7 +2017,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
                 // Is the argument available?
                 if (!sArgument.length())
                 {
-                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j, 2), sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
                     break;
                 }
 
@@ -2025,21 +2025,21 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
                 if (sArgument == "true" || (sArgument.find_first_not_of("1234567890.") == string::npos && sArgument != "0"))
                 {
                     if (sSyntaxElement == "while")
-                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_WHILE_ALWAYSTRUE")), ANNOTATION_WARN);
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j+1, sArgument.length()), sWarn, _guilang.get("GUI_ANALYZER_WHILE_ALWAYSTRUE")), ANNOTATION_WARN);
                     else
-                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSTRUE")), ANNOTATION_WARN);
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j+1, sArgument.length()), sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSTRUE")), ANNOTATION_WARN);
                 }
                 else if (sArgument == "false" || sArgument == "0")
                 {
                     if (sSyntaxElement == "while")
-                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_WHILE_ALWAYSFALSE")), ANNOTATION_WARN);
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j+1, sArgument.length()), sWarn, _guilang.get("GUI_ANALYZER_WHILE_ALWAYSFALSE")), ANNOTATION_WARN);
                     else
-                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSFALSE")), ANNOTATION_WARN);
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j+1, sArgument.length()), sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSFALSE")), ANNOTATION_WARN);
                 }
                 else if (containsAssignment(sArgument))
                 {
                     // Does it contain an assignment? Warn the user as this is probably not intendet
-                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNMENTINARGUMENT")), ANNOTATION_WARN);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j+1, sArgument.length()), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNMENTINARGUMENT")), ANNOTATION_WARN);
                 }
                 break;
             }
@@ -2081,7 +2081,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
                     // Was an other command found?
                     if (!canContinue)
                     {
-                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_USEINLINEIF")), ANNOTATION_NOTE);
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sNote, _guilang.get("GUI_ANALYZER_USEINLINEIF")), ANNOTATION_NOTE);
                     }
                 }
             }
@@ -2103,7 +2103,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
                 if (nPos < 0)
                 {
                     // Missing parenthesis
-                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j, 1), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
                     break;
                 }
 
@@ -2114,14 +2114,14 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
                 // Argument is empty?
                 if (!sArgument.length())
                 {
-                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j, 2), sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
                     break;
                 }
 
                 // Important parts of the argument are missing?
                 if (sArgument.find(':') == string::npos || sArgument.find('=') == string::npos)
                 {
-                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j), sError, _guilang.get("GUI_ANALYZER_FOR_INTERVALERROR")), ANNOTATION_ERROR);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j+1, sArgument.length()), sError, _guilang.get("GUI_ANALYZER_FOR_INTERVALERROR")), ANNOTATION_ERROR);
                 }
                 break;
             }
@@ -2155,7 +2155,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
         if (nProcedureEnd == -1)
         {
             nProcedureEnd = this->GetLastPosition();
-            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
         }
 
         // If there are variables available
@@ -2179,12 +2179,12 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
                 if (this->FindText(nNextLine, nProcedureEnd, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) == -1)
                 {
                     // No variable found
-                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, this->FindText(wordstart, nProcedureEnd, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD)), sWarn, _guilang.get("GUI_ANALYZER_UNUSEDVARIABLE", currentArg)), ANNOTATION_WARN);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, this->FindText(wordstart, nProcedureEnd, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD), currentArg.length()), sWarn, _guilang.get("GUI_ANALYZER_UNUSEDVARIABLE", currentArg)), ANNOTATION_WARN);
                 }
             }
         }
         else // No varibles are available
-            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sError, _guilang.get("GUI_ANALYZER_NOVARIABLES")), ANNOTATION_ERROR);
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sError, _guilang.get("GUI_ANALYZER_NOVARIABLES")), ANNOTATION_ERROR);
     }
 
     // Examine the procedure / MATLAB function starting at this position
@@ -2263,7 +2263,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
         if (nProcedureEnd == -1)
         {
             nProcedureEnd = this->GetLastPosition();
-            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
         }
 
         // Examine the argument
@@ -2271,12 +2271,12 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
         {
             // Inform the user to add an semicolon to the arguments, if he uses something else than "void"
             if (sArgs.back() != ';' && sArgs != "void")
-                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sNote, _guilang.get("GUI_ANALYZER_RETURN_ADDSEMICOLON")), ANNOTATION_NOTE);
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend + 1, sArgs.length()), sNote, _guilang.get("GUI_ANALYZER_RETURN_ADDSEMICOLON")), ANNOTATION_NOTE);
         }
         else
         {
             // Inform the user that the return value will always be "true", if he doesn't append a value
-            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_RETURN_ALWAYSTRUE")), ANNOTATION_NOTE);
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sNote, _guilang.get("GUI_ANALYZER_RETURN_ALWAYSTRUE")), ANNOTATION_NOTE);
         }
     }
 
@@ -2302,7 +2302,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
         {
             // If there's an invalid position, this means that the current block is unfinished
             if (vMatch.front() == wxSTC_INVALID_POSITION || vMatch.back() == wxSTC_INVALID_POSITION)
-                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sError, _guilang.get("GUI_ANALYZER_UNFINISHEDBLOCK")), ANNOTATION_ERROR);
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sError, _guilang.get("GUI_ANALYZER_UNFINISHEDBLOCK")), ANNOTATION_ERROR);
         }
     }
     nCurPos = wordend;
@@ -2339,7 +2339,7 @@ AnnotationCount NumeReEditor::analyseFunctions(int& nCurPos, int currentLine, bo
     if (this->PositionFromLine(currentLine) == wordstart && !isContinuedLine)
     {
         // The function is called at the first position without a target variable
-        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
+        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, wordend-wordstart), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
     }
     else
     {
@@ -2356,7 +2356,7 @@ AnnotationCount NumeReEditor::analyseFunctions(int& nCurPos, int currentLine, bo
 
         // Was an operator or a command found?
         if (!canContinue && !isContinuedLine)
-            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, wordend-wordstart), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
     }
 
     // There's a missing parenthesis?
@@ -2365,9 +2365,9 @@ AnnotationCount NumeReEditor::analyseFunctions(int& nCurPos, int currentLine, bo
         // MATLAB doesn't require a parenthesis pair for empty arguments.
         // However, issue a warning as it is good practice to visually distinguish between variables and functions
         if (m_fileType == FILE_MATLAB)
-            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sWarn, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_WARN);
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, wordend-wordstart), sWarn, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_WARN);
         else
-            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, wordend-wordstart), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
     }
     else if (sSyntaxElement != "time()" && sSyntaxElement != "clock()" && sSyntaxElement != "version()" && sSyntaxElement.find('(') != string::npos)
     {
@@ -2377,7 +2377,7 @@ AnnotationCount NumeReEditor::analyseFunctions(int& nCurPos, int currentLine, bo
         StripSpaces(sArgument);
         if (!sArgument.length())
         {
-            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend), sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend, 2), sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
         }
     }
     nCurPos = wordend;
@@ -2391,21 +2391,23 @@ AnnotationCount NumeReEditor::analyseProcedures(int& nCurPos, int currentLine, b
 {
     AnnotationCount AnnotCount;
 
+    int nProcStart = nCurPos;
+
     // Try to find the current procedure call
     string sSyntaxElement = FindMarkedProcedure(nCurPos).ToStdString();
     if (!sSyntaxElement.length())
         return AnnotCount;
 
+    // Advance the character pointer until the style type changes
+    while (isStyleType(STYLE_PROCEDURE, nCurPos + 1))
+        nCurPos++;
+
     // Try to find the correspondung procedure definition
     if (!FindProcedureDefinition().length())
     {
         // Procedure definition was not found
-        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, nCurPos), sError, _guilang.get("GUI_ANALYZER_PROCEDURENOTFOUND")), ANNOTATION_ERROR);
+        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, nProcStart, nCurPos-nProcStart+1), sError, _guilang.get("GUI_ANALYZER_PROCEDURENOTFOUND")), ANNOTATION_ERROR);
     }
-
-    // Advance the character pointer until the style type changes
-    while (isStyleType(STYLE_PROCEDURE, nCurPos + 1))
-        nCurPos++;
 
     // return the number of gathered annotations
     return AnnotCount;
@@ -2459,15 +2461,15 @@ AnnotationCount NumeReEditor::analyseIdentifiers(int& nCurPos, int currentLine, 
             // var not type-oriented
             // Add and underscore to indicate the procedures arguments
             if (hasProcedureDefinition && !shift && m_fileType != FILE_MATLAB)
-                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sNote, _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
 
             // variable should begin with lowercase letter indicate its type
-            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_VARNOTTYPEORIENTED")), ANNOTATION_NOTE);
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sNote, _guilang.get("GUI_ANALYZER_VARNOTTYPEORIENTED")), ANNOTATION_NOTE);
         }
         else if (hasProcedureDefinition && !shift && m_fileType != FILE_MATLAB)
         {
             // Add and underscore to indicate the procedures arguments
-            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart), sNote, _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sNote, _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
         }
     }
     nCurPos = wordend;
@@ -2488,7 +2490,7 @@ AnnotationCount NumeReEditor::analyseOperators(int& nCurPos, int currentLine, bo
         int nPos = this->BraceMatch(nCurPos);
         if (nPos < 0)
         {
-            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(string(1, this->GetCharAt(nCurPos)), nCurPos), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(string(1, this->GetCharAt(nCurPos)), nCurPos, 1), sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
         }
     }
 
@@ -2525,7 +2527,7 @@ AnnotationCount NumeReEditor::analyseNumbers(int& nCurPos, int currentLine, bool
                 break;
 
             // All other operators are indicating the current number as magic number
-            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sCurrentNumber, nNumberStart), sWarn, _guilang.get("GUI_ANALYZER_MAGICNUMBER")), ANNOTATION_WARN);
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sCurrentNumber, nNumberStart, sCurrentNumber.length()), sWarn, _guilang.get("GUI_ANALYZER_MAGICNUMBER")), ANNOTATION_WARN);
             break;
         }
     }
@@ -6588,11 +6590,11 @@ string NumeReEditor::getTextCoordsAsString(int nPos)
 	return sCoords;
 }
 
-string NumeReEditor::constructSyntaxElementForAnalyzer(const string& sElement, int nPos)
+string NumeReEditor::constructSyntaxElementForAnalyzer(const string& sElement, int nPos, int nLength)
 {
-    // this->SetIndicatorCurrent(HIGHLIGHT_ANNOTATION);
-    // this->IndicatorFillRange(nPos, sElement.length());
-	return sElement + " >> " + getTextCoordsAsString(nPos);
+    this->SetIndicatorCurrent(HIGHLIGHT_ANNOTATION);
+    this->IndicatorFillRange(nPos, nLength);
+	return sElement + " ";
 }
 
 bool NumeReEditor::containsAssignment(const string& sCurrentLine)
