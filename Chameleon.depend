@@ -2325,7 +2325,7 @@
 	<sstream>
 	<windows.h>
 
-1532262924 d:\cpp\numere-source\trunk\kernel\core\utils\tools.hpp
+1532459299 d:\cpp\numere-source\trunk\kernel\core\utils\tools.hpp
 	<iostream>
 	<iomanip>
 	<sstream>
@@ -3328,7 +3328,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1532269764 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1532273513 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"

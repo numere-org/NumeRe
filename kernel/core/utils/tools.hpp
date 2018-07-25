@@ -128,7 +128,6 @@ string wcstombs(const wstring& wStr);
 void StripSpaces(string&);
 int matchParams(const string& sCmd, const string& sParam, const char cFollowing = ' ');
 bool getStringArgument(const string& sCmd, string& sArgument);
-bool getIntArgument(const string& sCmd, int& nArgument);
 int StrToInt(const string&);
 double StrToDb(const string&);
 unsigned int getMatchingParenthesis(const string&);
@@ -142,7 +141,6 @@ void removeArgSep(string&);
 void openExternally(const string&, const string&, const string&);
 void moveFile(const string&, const string&);
 void writeTeXMain(const string&);
-string removeControlSymbols(const string&);
 string addControlSymbols(const string&);
 string getArgAtPos(const string& sCmd, unsigned int nPos);
 bool isInQuotes(const string& sExpr, unsigned int nPos, bool bIgnoreVarParser = false);
@@ -151,8 +149,6 @@ bool isDelimiter(char cChar);
 bool addLegends(string&);
 bool checkDelimiter(const string& sToken, bool stringdelim = false);
 string LineBreak(string sOutput, const Settings& _option, bool bAllowDashBreaks = true, int nFirstIndent = 4, int nIndent = 4);
-bool ResizeConsole(const Settings& _option);
-bool ColorTheme(const Settings& _option);
 double Linearize(double x_0, double y_0, double x_1, double y_1);
 string toSystemCodePage(string sOutput);
 string fromSystemCodePage(string sOutput);
@@ -191,7 +187,6 @@ void addArgumentQuotes(string& sToAdd, const string& sParam);
 double intPower(double dNumber, int nExponent);
 
 string getNextArgument(string& sArgList, bool bCut = true);
-string getLastArgument(string& sArgList, bool bCut = true);
 
 /** \brief Transforms Windows-style filepaths to Unix-Style
  *
@@ -210,7 +205,6 @@ string replacePathSeparator(const string& __sPath);
  */
 bool isToCmd(const string& sCmd, unsigned int nPos);
 
-void printLogo();
 string getTimeStamp(bool bGetStamp = true);
 unsigned int countEscapeSymbols(const string& sLine);
 vector<string> getFileList(const string& sDirectory, const Settings& _option, int nFlags = 0);
@@ -258,7 +252,6 @@ namespace big_endian_io
 bool containsDataObject(const string& sExpr);
 void evalRecursiveExpressions(string& sExpr);
 
-int compareDouble(const void* p1, const void* p2);
 size_t qSortDouble(double* dArray, size_t nlength);
 
 

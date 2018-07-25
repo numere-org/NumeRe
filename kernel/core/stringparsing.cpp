@@ -112,7 +112,6 @@ static void parser_StringFuncHandler(string& sLine, const string& sFuncName, Dat
 static map<string, StringFuncHandle> parser_getStringFuncHandles();
 static string removeMaskedStrings(const string& sString);
 static string addMaskedStrings(const string& sString);
-static string listToVector(const string& sString);
 static string removeQuotationMarks(const string& sString);
 static string addQuotationMarks(const string& sString);
 static bool parser_detectStringLogicals(const string& sString);
@@ -2937,7 +2936,7 @@ static int parser_StoreStringResults(const vector<string>& vFinal, const vector<
 						{
 							if (!vFinal[n].length() || n + nIndex[0] == nIndex[1] + 1 || n + nIndex[0] >= _data.getCols("data"))
 								break;
-							_data.setHeadLineElement(n + nIndex[0], "data", removeControlSymbols(removeQuotationMarks(vFinal[n])));
+							_data.setHeadLineElement(n + nIndex[0], "data", removeQuotationMarks(vFinal[n]));
 						}
 						nCurrentComponent = nStrings;
 					}
@@ -2956,7 +2955,7 @@ static int parser_StoreStringResults(const vector<string>& vFinal, const vector<
 								{
 									if (!vFinal[n].length() || (nIndex[1] && n + nIndex[0] == nIndex[1] + 1))
 										break;
-									_data.setHeadLineElement(n + nIndex[0], iter->first, removeControlSymbols(removeQuotationMarks(vFinal[n])));
+									_data.setHeadLineElement(n + nIndex[0], iter->first, removeQuotationMarks(vFinal[n]));
 								}
 								nCurrentComponent = nStrings;
 								break;

@@ -3018,15 +3018,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				if (!parser_parseCmdArg(sCmd, "compact", _parser, nArgument) || !(nArgument != 0 && nArgument != 1))
 				{
 					nArgument = !_option.getbCompact();
-					/*NumeReKernel::print("|-> Kompakte Tabellendarstellung? (1 = ja, 0 = nein)" );
-					do
-					{
-					    NumeReKernel::print("|" );
-					    NumeReKernel::print("|<- ";
-					    getline(cin, sArgument);
-					    nArgument = StrToInt(sArgument);
-					}
-					while (nArgument != 0 && nArgument != 1);*/
 				}
 				_option.setbCompact((bool)nArgument);
 				if (_option.getSystemPrintStatus())
@@ -3043,15 +3034,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				if (!parser_parseCmdArg(sCmd, "greeting", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
 				{
 					nArgument = !_option.getbGreeting();
-					/*NumeReKernel::print("|-> Begruessung? (1 = ja, 0 = nein)" );
-					do
-					{
-					    NumeReKernel::print("|" );
-					    NumeReKernel::print("|<- ";
-					    getline(cin, sArgument);
-					    nArgument = StrToInt(sArgument);
-					}
-					while (nArgument != 0 && nArgument != 1);*/
 				}
 				_option.setbGreeting((bool)nArgument);
 				if (_option.getSystemPrintStatus())
@@ -3060,10 +3042,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_GREETING"), _lang.get("COMMON_ACTIVE")), _option) );
 					else
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_GREETING"), _lang.get("COMMON_INACTIVE")), _option) );
-					/*NumeReKernel::print(toSystemCodePage("|-> NumeRe wird bei zukünftigen Starts ");
-					if (!nArgument)
-					    NumeReKernel::print("nicht mehr ";
-					NumeReKernel::print(toSystemCodePage("grüßen.") );*/
 				}
 				return 1;
 			}
@@ -3072,15 +3050,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				if (!parser_parseCmdArg(sCmd, "hints", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
 				{
 					nArgument = !_option.getbShowHints();
-					/*NumeReKernel::print("|-> Begruessung? (1 = ja, 0 = nein)" );
-					do
-					{
-					    NumeReKernel::print("|" );
-					    NumeReKernel::print("|<- ";
-					    getline(cin, sArgument);
-					    nArgument = StrToInt(sArgument);
-					}
-					while (nArgument != 0 && nArgument != 1);*/
 				}
 				_option.setbShowHints((bool)nArgument);
 				if (_option.getSystemPrintStatus())
@@ -3089,10 +3058,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_HINTS"), _lang.get("COMMON_ACTIVE")), _option) );
 					else
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_HINTS"), _lang.get("COMMON_INACTIVE")), _option) );
-					/*NumeReKernel::print(toSystemCodePage("|-> NumeRe wird in Zukunft ");
-					if (!nArgument)
-					    NumeReKernel::print("keine ";
-					NumeReKernel::print(toSystemCodePage("Tipps zeigen.") );*/
 				}
 				return 1;
 			}
@@ -3109,10 +3074,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_ESC_IN_SCRIPTS"), _lang.get("COMMON_ACTIVE")), _option) );
 					else
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_ESC_IN_SCRIPTS"), _lang.get("COMMON_INACTIVE")), _option) );
-					/*NumeReKernel::print(toSystemCodePage("|-> NumeRe wird die ESC-Taste ");
-					if (!nArgument)
-					    NumeReKernel::print("nicht ";
-					NumeReKernel::print(toSystemCodePage("in Scripts verwenden.") );*/
 				}
 				return 1;
 			}
@@ -3129,10 +3090,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_CUSTOM_LANG"), _lang.get("COMMON_ACTIVE")), _option) );
 					else
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_CUSTOM_LANG"), _lang.get("COMMON_INACTIVE")), _option) );
-					/*NumeReKernel::print(toSystemCodePage("|-> NumeRe wird die ESC-Taste ");
-					if (!nArgument)
-					    NumeReKernel::print("nicht ";
-					NumeReKernel::print(toSystemCodePage("in Scripts verwenden.") );*/
 				}
 				return 1;
 			}
@@ -3149,10 +3106,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DOC_VIEWER"), _lang.get("COMMON_ACTIVE")), _option) );
 					else
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DOC_VIEWER"), _lang.get("COMMON_INACTIVE")), _option) );
-					/*NumeReKernel::print(toSystemCodePage("|-> NumeRe wird die ESC-Taste ");
-					if (!nArgument)
-					    NumeReKernel::print("nicht ";
-					NumeReKernel::print(toSystemCodePage("in Scripts verwenden.") );*/
 				}
 				return 1;
 			}
@@ -3161,14 +3114,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				if (!parser_parseCmdArg(sCmd, "defcontrol", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
 				{
 					nArgument = !_option.getbDefineAutoLoad();
-					/*NumeReKernel::print(LineBreak("|-> Automatisches Laden/Speichern der selbst definierten Funktionen?$(1 = ja, 0 = nein)", _option) );
-					do
-					{
-					    NumeReKernel::print("|" + endl
-					         + "|<- ";
-					    getline(cin, sArgument);
-					    nArgument = StrToInt(sArgument);
-					}
 					while (nArgument != 0 && nArgument != 1);*/
 				}
 				_option.setbDefineAutoLoad((bool)nArgument);
@@ -3178,10 +3123,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DEFCONTROL"), _lang.get("COMMON_ACTIVE")), _option) );
 					else
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DEFCONTROL"), _lang.get("COMMON_INACTIVE")), _option) );
-					/*if (_option.getbDefineAutoLoad())
-					    NumeReKernel::print(LineBreak("|-> Laden und Speichern der selbst definierten Funktionen wird in Zukunft automatisch durchgeführt.", _option) );
-					else
-					    NumeReKernel::print(LineBreak("|-> Laden und Speichern der selbst definierten Funktionen muss in Zukunft manuell durchgeführt werden.", _option) );*/
 				}
 				if (_option.getbDefineAutoLoad() && !_functions.getDefinedFunctions() && BI_FileExists(_option.getExePath() + "\\functions.def"))
 					_functions.load(_option);
@@ -3262,29 +3203,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				}
 				//else
 				//    throw; //NumeReKernel::print(LineBreak("|-> Ein Fehler ist aufgetreten!", _option) );
-				return 1;
-			}
-			else if (matchParams(sCmd, "colortheme") || matchParams(sCmd, "colortheme", '='))
-			{
-				if (!parser_parseCmdArg(sCmd, "colortheme", _parser, nArgument))
-				{
-					NumeReKernel::print(LineBreak("|-> Theme?$0 = NumeRe$1 = BIOS$2 = Freaky$3 = Classic Black$4 = Classic Green", _option) );
-					do
-					{
-						NumeReKernel::printPreFmt("|\n|<- ");
-						NumeReKernel::getline(sArgument);
-						nArgument = StrToInt(sArgument);
-					}
-					while (nArgument > 4 || nArgument < 0);
-				}
-				_option.setColorTheme((unsigned)nArgument);
-				if (ColorTheme(_option) && _option.getSystemPrintStatus())
-				{
-					BI_splash();
-					make_hline();
-
-					NumeReKernel::print(LineBreak("Theme wurde erfolgreich aktiviert!", _option) );
-				}
 				return 1;
 			}
 			else if (matchParams(sCmd, "save"))
