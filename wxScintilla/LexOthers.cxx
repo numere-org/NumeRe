@@ -1500,37 +1500,48 @@ static void ColouriseNullDoc(unsigned int startPos, int length, int, WordList *[
 
 /*
 #define SCE_NSCR_DEFAULT 0
-#define SCE_NSCR_COMMENT_LINE 1
-#define SCE_NSCR_COMMENT_BLOCK 2
-#define SCE_NSCR_COMMAND 3
-#define SCE_NSCR_OPTION 4
-#define SCE_NSCR_FUNCTION 5
-#define SCE_NSCR_CONSTANTS 6
-#define SCE_NSCR_PREDEFS 7
-#define SCE_NSCR_STRING 8
-#define SCE_NSCR_STRING_PARSER 9
-#define SCE_NSCR_DEFAULT_VARS 10
-#define SCE_NSCR_OPERATORS 11
-#define SCE_NSCR_PROCEDURES 12
-#define SCE_NSCR_INCLUDES 13
-#define SCE_NSCR_NUMBERS 14
+#define SCE_NSCR_IDENTIFIER 1
+#define SCE_NSCR_COMMENT_LINE 2
+#define SCE_NSCR_COMMENT_BLOCK 3
+#define SCE_NSCR_COMMAND 4
+#define SCE_NSCR_OPTION 5
+#define SCE_NSCR_FUNCTION 6
+#define SCE_NSCR_METHOD 7
+#define SCE_NSCR_CONSTANTS 8
+#define SCE_NSCR_PREDEFS 9
+#define SCE_NSCR_STRING 10
+#define SCE_NSCR_STRING_PARSER 11
+#define SCE_NSCR_DEFAULT_VARS 12
+#define SCE_NSCR_OPERATORS 13
+#define SCE_NSCR_OPERATOR_KEYWORDS 14
+#define SCE_NSCR_PROCEDURES 15
+#define SCE_NSCR_INCLUDES 16
+#define SCE_NSCR_NUMBERS 17
+#define SCE_NSCR_CUSTOM_FUNCTION 18
+#define SCE_NSCR_INSTALL 19
+#define SCE_NSCR_PROCEDURE_COMMANDS 20
 
 #define SCE_NPRC_DEFAULT 0
-#define SCE_NPRC_COMMENT_LINE 1
-#define SCE_NPRC_COMMENT_BLOCK 2
-#define SCE_NPRC_COMMAND 3
-#define SCE_NPRC_OPTION 4
-#define SCE_NPRC_FUNCTION 5
-#define SCE_NPRC_CONSTANTS 6
-#define SCE_NPRC_PREDEFS 7
-#define SCE_NPRC_STRING 8
-#define SCE_NPRC_STRING_PARSER 9
-#define SCE_NPRC_DEFAULT_VARS 10
-#define SCE_NPRC_OPERATORS 11
-#define SCE_NPRC_PROCEDURES 12
-#define SCE_NPRC_INCLUDES 13
-#define SCE_NPRC_NUMBERS 14
-#define SCE_NPRC_FLAGS 15
+#define SCE_NPRC_IDENTIFIER 1
+#define SCE_NPRC_COMMENT_LINE 2
+#define SCE_NPRC_COMMENT_BLOCK 3
+#define SCE_NPRC_COMMAND 4
+#define SCE_NPRC_OPTION 5
+#define SCE_NPRC_FUNCTION 6
+#define SCE_NPRC_METHOD 7
+#define SCE_NPRC_CONSTANTS 8
+#define SCE_NPRC_PREDEFS 9
+#define SCE_NPRC_STRING 10
+#define SCE_NPRC_STRING_PARSER 11
+#define SCE_NPRC_DEFAULT_VARS 12
+#define SCE_NPRC_OPERATORS 13
+#define SCE_NPRC_OPERATOR_KEYWORDS 14
+#define SCE_NPRC_PROCEDURES 15
+#define SCE_NPRC_INCLUDES 16
+#define SCE_NPRC_NUMBERS 16
+#define SCE_NPRC_CUSTOM_FUNCTION 17
+#define SCE_NPRC_FLAGS 19
+
 
 #define SCE_TXTADV_DEFAULT 0
 #define SCE_TXTADV_MODIFIER 1
@@ -1629,12 +1640,13 @@ static const char * const NSCRWordLists[] = {
 			"Commands",
 			"Options",
 			"Functions",
+			"Methods",
 			"Predefined variables",
 			"Constants",
 			"Special predefs",
 			"Operator keywords",
 			"Procedure commands",
-			0,
+			0
 		};
 
 struct OptionSetNSCR : public OptionSet<OptionsNSCR> {
@@ -1679,6 +1691,7 @@ class LexerNSCR : public ILexer {
 	WordList keywords6;
 	WordList keywords7;
 	WordList keywords8;
+	WordList keywords9;
 	/*
 	"Commands",
 	"Options",
@@ -1765,6 +1778,9 @@ int SCI_METHOD LexerNSCR::WordListSet(int n, const char *wl) {
 		break;
 	case 7:
 		wordListN = &keywords8;
+		break;	
+	case 8:
+		wordListN = &keywords9;
 		break;
 	}
 	int firstModification = -1;
@@ -1791,6 +1807,7 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 	int curNcLevel = curLine > 0? styler.GetLineState(curLine-1): 0;
 	bool numFloat = false; // Float literals have '+' and '-' signs
 	bool numHex = false;
+	bool possibleMethod = false;
 
 	for (; sc.More(); sc.Forward()) {
 
@@ -1862,6 +1879,7 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					"Commands",
 					"Options",
 					"Functions",
+					"Methods",
 					"Predefined variables",
 					"Constants",
 					"Special predefs",
@@ -1876,23 +1894,27 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					{
 						sc.ChangeState(SCE_NSCR_FUNCTION);
 					} 
-					else if (keywords4.InList(s)) 
+					else if (keywords4.InList(s) && possibleMethod) 
 					{
-						sc.ChangeState(SCE_NSCR_DEFAULT_VARS);
+						sc.ChangeState(SCE_NSCR_METHOD);
 					} 
 					else if (keywords5.InList(s)) 
 					{
-						sc.ChangeState(SCE_NSCR_CONSTANTS);
+						sc.ChangeState(SCE_NSCR_DEFAULT_VARS);
 					} 
 					else if (keywords6.InList(s)) 
 					{
+						sc.ChangeState(SCE_NSCR_CONSTANTS);
+					} 
+					else if (keywords7.InList(s)) 
+					{
 						sc.ChangeState(SCE_NSCR_PREDEFS);
 					}
-					else if (keywords7.InList(s)) 
+					else if (keywords8.InList(s)) 
 					{
 						sc.ChangeState(SCE_NSCR_OPERATOR_KEYWORDS);
 					}					
-					else if (keywords8.InList(s)) 
+					else if (keywords9.InList(s)) 
 					{
 						sc.ChangeState(SCE_NSCR_PROCEDURE_COMMANDS);
 					}
@@ -1903,7 +1925,8 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					else if (keywords2.InList(s)) 
 					{
 						sc.ChangeState(SCE_NSCR_OPTION);
-					} 					
+					} 	
+					possibleMethod = false;
 					sc.SetState(SCE_NSCR_DEFAULT);
 				}
 				break;
@@ -1941,7 +1964,7 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 				break;
 			case SCE_NSCR_FUNCTION:
 			case SCE_NSCR_PROCEDURES:
-				if (sc.ch == ' ' || sc.ch == '(') 
+				if (sc.ch == ' ' || sc.ch == '(' || sc.atLineStart) 
 				{
 					sc.SetState(SCE_NSCR_DEFAULT);
 				}
@@ -1955,7 +1978,9 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 			{
 				sc.SetState(SCE_NSCR_NUMBERS);
 				numFloat = sc.ch == '.';
-			} 
+			}
+			else if (sc.ch == '.' && IsWordStart(static_cast<char>(sc.chNext)))
+				possibleMethod = true;
 			else if (IsWordStart(static_cast<char>(sc.ch)))
 			{
 				sc.SetState(SCE_NSCR_IDENTIFIER);
@@ -2213,11 +2238,12 @@ static const char * const NPRCWordLists[] = {
 			"Commands",
 			"Options",
 			"Functions",
+			"Methods",
 			"Predefined variables",
 			"Constants",
 			"Special predefs",
 			"Operator keywords",
-			0,
+			0
 		};
 
 struct OptionSetNPRC : public OptionSet<OptionsNPRC> {
@@ -2261,6 +2287,7 @@ class LexerNPRC : public ILexer {
 	WordList keywords5;
 	WordList keywords6;
 	WordList keywords7;
+	WordList keywords8;
 	/*
 	"Commands",
 	"Options",
@@ -2345,6 +2372,9 @@ int SCI_METHOD LexerNPRC::WordListSet(int n, const char *wl) {
 	case 6:
 		wordListN = &keywords7;
 		break;
+	case 7:
+		wordListN = &keywords8;
+		break;
 	}
 	int firstModification = -1;
 	if (wordListN) {
@@ -2370,6 +2400,7 @@ void SCI_METHOD LexerNPRC::Lex(unsigned int startPos, int length, int initStyle,
 	int curNcLevel = curLine > 0? styler.GetLineState(curLine-1): 0;
 	bool numFloat = false; // Float literals have '+' and '-' signs
 	bool numHex = false;
+	bool possibleMethod = false;
 
 	for (; sc.More(); sc.Forward()) {
 
@@ -2455,19 +2486,23 @@ void SCI_METHOD LexerNPRC::Lex(unsigned int startPos, int length, int initStyle,
 					{
 						sc.ChangeState(SCE_NPRC_FUNCTION);
 					} 
-					else if (keywords4.InList(s)) 
+					else if (keywords4.InList(s) && possibleMethod) 
 					{
-						sc.ChangeState(SCE_NPRC_DEFAULT_VARS);
+						sc.ChangeState(SCE_NPRC_METHOD);
 					} 
 					else if (keywords5.InList(s)) 
 					{
-						sc.ChangeState(SCE_NPRC_CONSTANTS);
+						sc.ChangeState(SCE_NPRC_DEFAULT_VARS);
 					} 
 					else if (keywords6.InList(s)) 
 					{
+						sc.ChangeState(SCE_NPRC_CONSTANTS);
+					} 
+					else if (keywords7.InList(s)) 
+					{
 						sc.ChangeState(SCE_NPRC_PREDEFS);
 					}
-					else if (keywords7.InList(s)) 
+					else if (keywords8.InList(s)) 
 					{
 						sc.ChangeState(SCE_NPRC_OPERATOR_KEYWORDS);
 					}
@@ -2480,6 +2515,7 @@ void SCI_METHOD LexerNPRC::Lex(unsigned int startPos, int length, int initStyle,
 						sc.ChangeState(SCE_NPRC_OPTION);
 					} 					
 					sc.SetState(SCE_NPRC_DEFAULT);
+					possibleMethod = false;
 				}
 				break;
 			case SCE_NPRC_COMMENT_BLOCK:
@@ -2510,7 +2546,7 @@ void SCI_METHOD LexerNPRC::Lex(unsigned int startPos, int length, int initStyle,
 				break;
 			case SCE_NPRC_FUNCTION:
 			case SCE_NPRC_PROCEDURES:
-				if (sc.ch == ' ' || sc.ch == '(') 
+				if (sc.ch == ' ' || sc.ch == '(' || sc.atLineStart) 
 				{
 					sc.SetState(SCE_NPRC_DEFAULT);
 				}
@@ -2525,6 +2561,8 @@ void SCI_METHOD LexerNPRC::Lex(unsigned int startPos, int length, int initStyle,
 				sc.SetState(SCE_NSCR_NUMBERS);
 				numFloat = sc.ch == '.';
 			} 
+			else if (sc.ch == '.' && IsWordStart(static_cast<char>(sc.chNext)))
+				possibleMethod = true;
 			else if (IsWordStart(static_cast<char>(sc.ch)))
 			{
 				sc.SetState(SCE_NPRC_IDENTIFIER);

@@ -6690,7 +6690,7 @@
 	<sstream>
 	<windows.h>
 
-1531302096 c:\cpp\numere-source\trunk\kernel\core\utils\tools.hpp
+1532596532 c:\cpp\numere-source\trunk\kernel\core\utils\tools.hpp
 	<iostream>
 	<iomanip>
 	<sstream>
@@ -6709,7 +6709,7 @@
 	<string>
 	<vector>
 
-1530082137 c:\cpp\numere-source\trunk\kernel\core\ui\error.hpp
+1532596532 c:\cpp\numere-source\trunk\kernel\core\ui\error.hpp
 	<string>
 	"language.hpp"
 
