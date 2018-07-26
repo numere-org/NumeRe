@@ -2135,7 +2135,7 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1532266275 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1532500213 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -2344,7 +2344,7 @@
 	<string>
 	<vector>
 
-1516529927 d:\cpp\numere-source\trunk\kernel\core\ui\error.hpp
+1532588047 d:\cpp\numere-source\trunk\kernel\core\ui\error.hpp
 	<string>
 	"language.hpp"
 
@@ -3328,7 +3328,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1532273513 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1532500213 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3966,7 +3966,7 @@
 
 1501083705 d:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1532262918 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1532500270 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 	"io/fileops.hpp"
@@ -4251,7 +4251,7 @@
 	<cstddef>
 	<cstdarg>
 
-1532263442 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
+1532499967 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
 	"tools.hpp"
 	"../../kernel.hpp"
 	<cstdlib>

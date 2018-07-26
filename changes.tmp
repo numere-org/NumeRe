@@ -14,3 +14,4 @@ Fixed	'datagrid' may now handle asymmetric data sets.
 Fixed	Multiple fixes in the bytecode handling in the parser. Obscure errors, which may occur inside of loops are now hopefully avoided. In addition, the loop mode was sped up if the loop does only contain numerical calculations.
 Added	Code metrics vor MATLAB files are now available.
 Added	NumeRe's static code analyzer may now detect magic numbers.
+Cleaned	"resample" and "smooth" have now much more helpful error messages

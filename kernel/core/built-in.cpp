@@ -3114,7 +3114,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				if (!parser_parseCmdArg(sCmd, "defcontrol", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
 				{
 					nArgument = !_option.getbDefineAutoLoad();
-					while (nArgument != 0 && nArgument != 1);*/
 				}
 				_option.setbDefineAutoLoad((bool)nArgument);
 				if (_option.getSystemPrintStatus())
