@@ -15,3 +15,4 @@ Fixed	Multiple fixes in the bytecode handling in the parser. Obscure errors, whi
 Added	Code metrics vor MATLAB files are now available.
 Added	NumeRe's static code analyzer may now detect magic numbers.
 Cleaned	"resample" and "smooth" have now much more helpful error messages
+Fixed	The highlighting of MATLAB files now works as expected.

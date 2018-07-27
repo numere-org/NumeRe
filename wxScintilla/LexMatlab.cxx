@@ -64,11 +64,13 @@ static void ColouriseMatlabOctaveDoc(
 	WordList &keywords = *keywordlists[0];
 	WordList &keywords2 = *keywordlists[1];
 
-	styler.StartAt(startPos);
+	// always set to 0 and not to startPos
+	styler.StartAt(0);
 
 	bool transpose = false;
 
-	StyleContext sc(startPos, length, initStyle, styler);
+	// always set to 0 and not to startPos
+	StyleContext sc(0, length, initStyle, styler);
 	int nParens = 0;
 
 	for (; sc.More(); sc.Forward()) {
