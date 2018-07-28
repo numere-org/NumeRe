@@ -2173,7 +2173,7 @@
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\droptgt.h
 
-1523790166 d:\cpp\numere-source\trunk\gui\terminal\wxterm.h
+1532771376 d:\cpp\numere-source\trunk\gui\terminal\wxterm.h
 	<map>
 	"../NumeReWindow.h"
 	"../../common/Options.h"
@@ -2182,7 +2182,7 @@
 	"../../kernel/kernel.hpp"
 	"../../kernel/debugmessenger.hpp"
 
-1518628710 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1532772824 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -2199,6 +2199,7 @@
 	"viewerbook.hpp"
 	"filetree.hpp"
 	"../kernel/core/plotting/graph_helper.hpp"
+	"../kernel/core/datamanagement/container.hpp"
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxprec.h
 	"wx/defs.h"
@@ -2515,7 +2516,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1531292088 d:\cpp\numere-source\trunk\kernel\kernel.hpp
+1532774002 d:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	<queue>
@@ -2523,6 +2524,7 @@
 	"core/settings.hpp"
 	"core/io/output.hpp"
 	"core/datamanagement/datafile.hpp"
+	"core/datamanagement/container.hpp"
 	"core/plugins.hpp"
 	"core/version.h"
 	"core/maths/functionimplementation.hpp"
@@ -3328,7 +3330,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1532500213 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1532767306 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3693,7 +3695,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1532268848 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1532773729 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3765,11 +3767,12 @@
 	<wx/splitter.h>
 	<cmath>
 
-1522739612 d:\cpp\numere-source\trunk\gui\tableviewer.hpp
+1532773373 d:\cpp\numere-source\trunk\gui\tableviewer.hpp
 	<wx/wx.h>
 	<wx/grid.h>
 	<vector>
 	<string>
+	"../kernel/core/datamanagement/container.hpp"
 
 1522700935 d:\cpp\numere-source\trunk\gui\tableeditpanel.hpp
 	<wx/wx.h>
@@ -3800,10 +3803,11 @@
 
 1490791550 d:\cpp\numere-source\trunk\gui\icons\breakpoint_octagon_disable.xpm
 
-1522700957 source:d:\cpp\numere-source\trunk\gui\tableeditpanel.cpp
+1532772703 source:d:\cpp\numere-source\trunk\gui\tableeditpanel.cpp
 	"tableeditpanel.hpp"
+	"../kernel/core/datamanagement/container.hpp"
 
-1522739755 source:d:\cpp\numere-source\trunk\gui\tableviewer.cpp
+1532773387 source:d:\cpp\numere-source\trunk\gui\tableviewer.cpp
 	"tableviewer.hpp"
 	"../kernel/core/ui/language.hpp"
 	<wx/clipbrd.h>
@@ -3908,7 +3912,7 @@
 	"wxssh.h"
 	"../../common/debug.h"
 
-1523790314 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1532772742 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -3966,7 +3970,7 @@
 
 1501083705 d:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1532500270 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1532775789 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 	"io/fileops.hpp"
@@ -4277,7 +4281,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1531378592 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1532774128 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 
@@ -4320,9 +4324,10 @@
 	"output.hpp"
 	"../../kernel.hpp"
 
-1531764728 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataops.cpp
+1532775253 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataops.cpp
 	<wx/image.h>
 	"dataops.hpp"
+	"container.hpp"
 	"../../kernel.hpp"
 	"../ui/language.hpp"
 	"../utils/tools.hpp"
@@ -8725,4 +8730,9 @@
 	"dataaccess.hpp"
 	"../utils/tools.hpp"
 	<vector>
+
+1532775363 d:\cpp\numere-source\trunk\kernel\core\datamanagement\container.hpp
+	<cstddef>
+	<vector>
+	"../ui/error.hpp"
 

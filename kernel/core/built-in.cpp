@@ -6619,52 +6619,49 @@ bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _op
 		{
 			sTable = make_stringmatrix(_data, _out, _option, sTableName, nLine, nCol, nHeadlineCount, _option.getPrecision());
 		}
-		stringmatrix _sTable;
-		NumeReKernel::showTable(sTable, nCol, nLine, sTableName, true);
+
+		NumeRe::Container<string> _copyContainer(sTable, (size_t)nLine, (size_t)nCol);
+		NumeReKernel::showTable(_copyContainer, sTableName, true);
 		NumeReKernel::printPreFmt("|-> " + _lang.get("BUILTIN_WAITINGFOREDIT") + " ... ");
-		for (size_t i = 0; i < nLine; i++)
-		{
-			delete[] sTable[i];
-		}
-		delete[] sTable;
-		sTable = 0;
-		_sTable = NumeReKernel::getTable();
+
+		NumeRe::Container<string> _sTable(NumeReKernel::getTable());
 		NumeReKernel::printPreFmt(_lang.get("COMMON_DONE") + ".\n");
-		if (!_sTable.size())
+
+		if (!_sTable.getRows())
 			return true;
 
 		if (_data.getCols(sTableName))
 			_data.deleteBulk(sTableName, 0, _data.getLines(sTableName, true) - 1, 0, _data.getCols(sTableName, true) - 1);
 
 		size_t nFirstRow = 0;
-		while (_sTable[nFirstRow][0].front() == '#' && nFirstRow < _sTable.size())
+		while (_sTable.get(nFirstRow, 0).front() == '#' && nFirstRow < _sTable.getRows())
 			nFirstRow++;
 
-		for (size_t i = nFirstRow; i < _sTable.size(); i++)
+		for (size_t i = nFirstRow; i < _sTable.getRows(); i++)
 		{
-			for (size_t j = 0; j < _sTable[i].size(); j++)
+			for (size_t j = 0; j < _sTable.getCols(); j++)
 			{
-				if (_sTable[i][j] == "---"
-						|| !_sTable[i][j].length()
-						|| toLowerCase(_sTable[i][j]) == "nan"
-						|| toLowerCase(_sTable[i][j]) == "inf"
-						|| toLowerCase(_sTable[i][j]) == "-inf")
+				if (_sTable.get(i, j) == "---"
+						|| !_sTable.get(i, j).length()
+						|| toLowerCase(_sTable.get(i, j)) == "nan"
+						|| toLowerCase(_sTable.get(i, j)) == "inf"
+						|| toLowerCase(_sTable.get(i, j)) == "-inf")
 					continue;
-				_data.writeToCache(i - nFirstRow, j, sTableName, StrToDb(_sTable[i][j]));
+				_data.writeToCache(i - nFirstRow, j, sTableName, StrToDb(_sTable.get(i, j)));
 			}
 		}
 		for (size_t i = 0; i < nFirstRow; i++)
 		{
-			for (size_t j = 0; j < _sTable[i].size(); j++)
+			for (size_t j = 0; j < _sTable.getCols(); j++)
 			{
 				if (!j)
-					_sTable[i][j].erase(0, 1);
-				if (!i && _sTable[i][j].length())
-					_data.setHeadLineElement(j, sTableName, _sTable[i][j]);
+					_sTable.get(i, j).erase(0, 1);
+				if (!i && _sTable.get(i, j).length())
+					_data.setHeadLineElement(j, sTableName, _sTable.get(i, j));
 				else
 				{
-					if (_sTable[i][j].length())
-						_data.setHeadLineElement(j, sTableName, _data.getHeadLineElement(j, sTableName) + "\\n" + _sTable[i][j]);
+					if (_sTable.get(i, j).length())
+						_data.setHeadLineElement(j, sTableName, _data.getHeadLineElement(j, sTableName) + "\\n" + _sTable.get(i, j));
 				}
 			}
 		}

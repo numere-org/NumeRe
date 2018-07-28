@@ -27,6 +27,7 @@
 #include "core/settings.hpp"
 #include "core/io/output.hpp"
 #include "core/datamanagement/datafile.hpp"
+#include "core/datamanagement/container.hpp"
 #include "core/plugins.hpp"
 #include "core/version.h"
 #include "core/maths/functionimplementation.hpp"
@@ -91,7 +92,7 @@ class NumeReKernel
         static int nLastStatusVal;
         static unsigned int nLastLineLength;
         static bool modifiedSettings;
-        static queue<stringmatrix> sTable;
+        static queue<NumeRe::Container<string> > sTable;
         static vector<string> vDebugInfos;
         static queue<string> sTableName;
         static Debugmessenger _messenger;
@@ -170,9 +171,9 @@ class NumeReKernel
         static void gotoLine(const string& sFile, unsigned int nLine = 0);
         static void setDocumentation(const string& _sDocumentation);
         static bool GetAsyncCancelState();
-        static void showTable(string** __stable, size_t cols, size_t lines, string __name, bool openeditable = false);
+        static void showTable(NumeRe::Container<string>& _container, string __name, bool openeditable = false);
         static void updateGraphWindow(GraphHelper* _helper);
-        static stringmatrix getTable();
+        static NumeRe::Container<string> getTable();
         static void showDebugEvent(const string& sTitle, const vector<string>& vModule, const vector<string>& vStacktrace, const vector<string>& vNumVars, const vector<string>& vStringVars);
         static void waitForContinue();
         static void evalDebuggerBreakPoint(Settings& _option, const map<string,string>& sStringMap, const string& sCurrentCommand = "", Parser* _parser = nullptr);

@@ -18,6 +18,7 @@
 
 #include <wx/image.h>
 #include "dataops.hpp"
+#include "container.hpp"
 #include "../../kernel.hpp"
 #include "../ui/language.hpp"
 #include "../utils/tools.hpp"
@@ -260,8 +261,12 @@ void show_data(Datafile& _data, Output& _out, Settings& _option, const string& _
 
 		// Set the "plugin origin"
 		_out.setPluginName("Datenanzeige der Daten aus " + _data.getDataFileName(sCache)); // Anzeige-Plugin-Parameter: Nur Kosmetik
+
 		if (_option.getUseExternalViewer() && !bSave)
-			NumeReKernel::showTable(sOut, nCol, nLine, sCache); // User has chosen the external table viewer (the current default)
+        {
+            NumeRe::Container<string> _copyContainer(sOut, nLine, nCol);
+			NumeReKernel::showTable(_copyContainer, sCache); // User has chosen the external table viewer (the current default)
+        }
 		else
 		{
 			if (!_out.isFile())
@@ -282,20 +287,21 @@ void show_data(Datafile& _data, Output& _out, Settings& _option, const string& _
 				NumeReKernel::toggleTableStatus();
 				make_hline();
 			}
+            _out.reset();						// Ggf. bFile in der Klasse = FALSE setzen
+            if ((bCache || _data.getCacheStatus()) && bSave)
+                _data.setSaveStatus(true);
+            _data.setCacheStatus(false);
+
+            // Clear the created memory
+            for (long long int i = 0; i < nLine; i++)
+            {
+                delete[] sOut[i];		// WICHTIG: Speicher immer freigeben!
+            }
+            delete[] sOut;
+
 		}
 
 		// Reset the Outfile and the Datafile class
-		_out.reset();						// Ggf. bFile in der Klasse = FALSE setzen
-		if ((bCache || _data.getCacheStatus()) && bSave)
-			_data.setSaveStatus(true);
-		_data.setCacheStatus(false);
-
-		// Clear the created memory
-		for (long long int i = 0; i < nLine; i++)
-		{
-			delete[] sOut[i];		// WICHTIG: Speicher immer freigeben!
-		}
-		delete[] sOut;
 	}
 	else		// Offenbar sind gar keine Daten geladen. Was soll ich also anzeigen?
 	{

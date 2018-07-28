@@ -249,7 +249,7 @@ class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
         void OnClose(wxCloseEvent& event);
 
         vector<string> getPathSettings();
-        void passEditedTable(const vector<vector<string> >& sTable);
+        void passEditedTable(NumeRe::Container<string>& _container);
         void cancelTableEdit() {wxCriticalSectionLocker lock(m_kernelCS); m_bTableEditCanceled = true;}
         void continueDebug() {wxCriticalSectionLocker lock(m_kernelCS); m_bContinueDebug = true;}
         string getDocumentation(const string& sCommand);

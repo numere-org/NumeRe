@@ -26,6 +26,8 @@
 #include <vector>
 #include <string>
 
+#include "../kernel/core/datamanagement/container.hpp"
+
 using namespace std;
 
 string toString(int);
@@ -87,6 +89,7 @@ class TableViewer : public wxGrid
         TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxWANTS_CHARS, const wxString& name = wxGridNameStr);
 
         void SetData(const vector<vector<string> >& vData);
+        void SetData(NumeRe::Container<string>& _stringTable);
         vector<vector<string> > GetData();
 
         void SetTableReadOnly(bool isReadOnly = true);

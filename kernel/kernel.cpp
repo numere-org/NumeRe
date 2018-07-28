@@ -49,7 +49,7 @@ int NumeReKernel::nLastStatusVal = 0;
 unsigned int NumeReKernel::nLastLineLength = 0;
 bool NumeReKernel::modifiedSettings = false;
 bool NumeReKernel::bCancelSignal = false;
-queue<stringmatrix> NumeReKernel::sTable;
+queue<NumeRe::Container<string> > NumeReKernel::sTable;
 vector<string> NumeReKernel::vDebugInfos;
 queue<string> NumeReKernel::sTableName;
 Debugmessenger NumeReKernel::_messenger;
@@ -2009,23 +2009,18 @@ void NumeReKernel::setDocumentation(const string& _sDocumentation)
 	Sleep(100);
 }
 
-void NumeReKernel::showTable(string** __stable, size_t cols, size_t lines, string __name, bool openeditable)
+void NumeReKernel::showTable(NumeRe::Container<string>& _container, string __name, bool openeditable)
 {
 	if (!m_parent)
 		return;
 	else
 	{
 		wxCriticalSectionLocker lock(m_parent->m_kernelCS);
-		stringmatrix strmatTable;
-		for (size_t i = 0; i < lines; i++)
-		{
-			strmatTable.push_back(vector<string>(cols, ""));
-			for (size_t j = 0; j < cols; j++)
-			{
-				strmatTable[i][j] = __stable[i][j];
-			}
-		}
-		sTable.push(strmatTable);
+
+		NumeRe::Container<string> _copyContainer(_container);
+
+		sTable.push(_copyContainer);
+
 		sTableName.push(__name);
 		if (openeditable)
 			m_parent->m_KernelStatus = NUMERE_EDIT_TABLE;
@@ -2051,10 +2046,10 @@ void NumeReKernel::updateGraphWindow(GraphHelper* _helper)
 	Sleep(150);
 }
 
-stringmatrix NumeReKernel::getTable()
+NumeRe::Container<string> NumeReKernel::getTable()
 {
 	if (!m_parent)
-		return stringmatrix();
+		return NumeRe::Container<string>();
 	bool bHasTable = false;
 	bool bWasCanceled = false;
 	do
@@ -2071,10 +2066,10 @@ stringmatrix NumeReKernel::getTable()
 	while (!bHasTable && !bWasCanceled);
 
 	if (bWasCanceled)
-		return stringmatrix();
-	stringmatrix strtab = sTable.front();
+		return NumeRe::Container<string>();
+	NumeRe::Container<string> _container(sTable.front());
 	sTable.pop();
-	return strtab;
+	return _container;
 }
 
 void NumeReKernel::showDebugError(const string& sTitle)

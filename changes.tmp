@@ -16,3 +16,4 @@ Added	Code metrics vor MATLAB files are now available.
 Added	NumeRe's static code analyzer may now detect magic numbers.
 Cleaned	"resample" and "smooth" have now much more helpful error messages
 Fixed	The highlighting of MATLAB files now works as expected.
+Applied	The handling of the tables for the table viewer is now done via pointers. This should speed-up the process a bit.

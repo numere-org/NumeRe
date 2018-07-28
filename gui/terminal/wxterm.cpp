@@ -264,10 +264,11 @@ vector<string> wxTerm::getPathSettings()
     return vPaths;
 }
 
-void wxTerm::passEditedTable(const vector<vector<string> >& _sTable)
+void wxTerm::passEditedTable(NumeRe::Container<string>& _container)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
-    _kernel.sTable.push(_sTable);
+    NumeRe::Container<string> _copyContainer(_container);
+    _kernel.sTable.push(_copyContainer);
     m_bTableEditAvailable = true;
 }
 
@@ -416,7 +417,7 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
     bool editTable = false;
     string sFileName = "";
     queue<string> sTableName;
-    queue<stringmatrix> sTable;
+    queue<NumeRe::Container<string> > sTable;
     vector<string> vDebugInfo;
     unsigned int nLineNumber = 0;
     int nFileOpenFlag = 0;

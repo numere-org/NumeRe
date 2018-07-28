@@ -1716,26 +1716,26 @@ void NumeReWindow::openHTML(wxString HTMLcontent)
 }
 
 
-void NumeReWindow::openTable(const vector<vector<string> >& sTable, const string& sTableName)
+void NumeReWindow::openTable(NumeRe::Container<string> _stringTable, const string& sTableName)
 {
     ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + sTableName + "()");
     frame->SetSize(800,600);
     TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3));
-    grid->SetData(sTable);
+    grid->SetData(_stringTable);
     frame->SetSize(min(800u, grid->GetWidth()), min(600u, grid->GetHeight()+30));
     frame->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
     frame->Show();
     frame->SetFocus();
 }
 
-void NumeReWindow::editTable(const vector<vector<string> >& sTable, const string& sTableName)
+void NumeReWindow::editTable(NumeRe::Container<string> _stringTable, const string& sTableName)
 {
     ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + sTableName + "()");
     frame->SetSize(800,600);
     TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3));
     panel->SetTerminal(m_terminal);
     panel->grid->SetTableReadOnly(false);
-    panel->grid->SetData(sTable);
+    panel->grid->SetData(_stringTable);
     frame->SetSize(min(800u, panel->grid->GetWidth()), min(600u, panel->grid->GetHeight()+30));
     frame->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
     frame->Show();

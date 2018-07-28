@@ -940,6 +940,69 @@ void TableViewer::SetData(const vector<vector<string> >& vData)
     updateStatusBar(wxGridCellCoords(0,0), wxGridCellCoords(this->GetRows()-1, this->GetCols()-1));
 }
 
+void TableViewer::SetData(NumeRe::Container<string>& _stringTable)
+{
+    this->CreateGrid(_stringTable.getRows()+1, _stringTable.getCols()+1);
+    nFirstNumRow = -1;
+
+    for (size_t i = 0; i < _stringTable.getRows(); i++)
+    {
+        for (size_t j = 0; j < _stringTable.getCols(); j++)
+        {
+            if ((_stringTable.get(i, j).length() && (isNumerical(_stringTable.get(i, j)) || _stringTable.get(i, j) == "---")) || (!_stringTable.get(i, j).length() && i+1 == _stringTable.getRows()))
+            {
+                nFirstNumRow = i;
+                break;
+            }
+        }
+        if (nFirstNumRow != string::npos)
+            break;
+    }
+
+    for (size_t i = 0; i < _stringTable.getRows()+1; i++)
+    {
+        this->SetRowLabelValue(i, GetRowLabelValue(i));
+        for (size_t j = 0; j < _stringTable.getCols()+1; j++)
+        {
+            if (i < nFirstNumRow && j < _stringTable.getCols())
+            {
+                this->SetCellAlignment(i, j, wxALIGN_RIGHT, wxALIGN_CENTRE);
+                this->SetCellFont(i, j, this->GetCellFont(i, j).MakeBold());
+                this->SetCellBackgroundColour(i, j, *wxLIGHT_GREY);
+            }
+            else if (i == _stringTable.getRows() || j == _stringTable.getCols())
+            {
+                this->SetColLabelValue(j, GetColLabelValue(j));
+                this->SetCellBackgroundColour(i, j, wxColor(230,230,230));
+                this->SetReadOnly(i, j, readOnly);
+                continue;
+            }
+            else
+            {
+                this->SetCellAlignment(i, j, wxALIGN_RIGHT, wxALIGN_CENTER);
+            }
+            if (_stringTable.get(i, j).length())
+                this->SetCellValue(i, j, replaceCtrlChars(_stringTable.get(i, j)));
+            this->SetReadOnly(i, j, readOnly);
+        }
+    }
+
+    int nColSize = GetColSize(0);
+    if (readOnly)
+        this->AutoSize();
+    this->SetColSize(_stringTable.getCols(), nColSize);
+    nHeight = GetRowHeight(0) * (_stringTable.getRows()+4.5);
+    nWidth = nColSize*(_stringTable.getCols()+2.5);
+    if (!readOnly)
+    {
+        if (nHeight < 400)
+            nHeight = 400;
+        if (nWidth < 600)
+            nWidth = 600;
+    }
+    updateStatusBar(wxGridCellCoords(0,0), wxGridCellCoords(this->GetRows()-1, this->GetCols()-1));
+}
+
 void TableViewer::SetTableReadOnly(bool isReadOnly)
 {
     readOnly = isReadOnly;

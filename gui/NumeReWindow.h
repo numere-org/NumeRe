@@ -28,6 +28,7 @@
 #include "viewerbook.hpp"
 #include "filetree.hpp"
 #include "../kernel/core/plotting/graph_helper.hpp"
+#include "../kernel/core/datamanagement/container.hpp"
 
 #define OPENFILE_NOTHING 0
 #define OPENFILE_BLACKLIST_ADD 1
@@ -181,8 +182,8 @@ class NumeReWindow : public wxFrame
         void openImage(wxFileName filename);
         void openPDF(wxFileName filename);
         void openHTML(wxString HTMLcontent);
-        void openTable(const vector<vector<string> >& sTable, const string& sTableName);
-        void editTable(const vector<vector<string> >& sTable, const string& sTableName);
+        void openTable(NumeRe::Container<string> _stringTable, const string& sTableName);
+        void editTable(NumeRe::Container<string> _stringTable, const string& sTableName);
         void showGraph(GraphHelper* _helper);
         void evaluateDebugInfo(const vector<string>& vDebugInfo);
         void createLaTeXFile();

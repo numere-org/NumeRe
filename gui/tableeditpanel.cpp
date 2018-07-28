@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include "tableeditpanel.hpp"
+#include "../kernel/core/datamanagement/container.hpp"
 
 #define ID_TABLEEDIT_OK 10101
 #define ID_TABLEEDIT_CANCEL 10102
@@ -49,7 +50,8 @@ TableEditPanel::TableEditPanel(wxFrame* parent, wxWindowID id, wxStatusBar* stat
 
 void TableEditPanel::OnButtonOk(wxCommandEvent& event)
 {
-    m_terminal->passEditedTable(grid->GetData());
+    NumeRe::Container<string> _copyContainer(grid->GetData());
+    m_terminal->passEditedTable(_copyContainer);
     finished = true;
     m_parent->Close();
 }
