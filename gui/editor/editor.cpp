@@ -1525,6 +1525,66 @@ void NumeReEditor::ToggleCommentLine()
 				nSelectionEnd += 2;
 			}
 		}
+		else if (m_fileType == FILE_MATLAB && style == wxSTC_MATLAB_COMMENT)
+		{
+			if (this->GetCharAt(position + 1) == ' ')
+			{
+				if (i == nFirstLine && nSelectionStart >= 0 && nSelectionStart >= position + 2)
+					nSelectionStart -= 2;
+				else if (i == nFirstLine && nSelectionStart >= 0)
+					nSelectionStart = position;
+				this->DeleteRange(position, 2);
+				nSelectionEnd -= 2;
+			}
+			else
+			{
+				if (i == nFirstLine && nSelectionStart >= 0 && nSelectionStart >= position + 1)
+					nSelectionStart -= 1;
+				else if (i == nFirstLine && nSelectionStart >= 0)
+					nSelectionStart = position;
+				this->DeleteRange(position, 1);
+				nSelectionEnd -= 1;
+			}
+		}
+		else if (m_fileType == FILE_MATLAB && style != wxSTC_MATLAB_COMMENT)
+		{
+			this->InsertText(this->PositionFromLine(i), "% " );
+			if (nSelectionStart >= 0)
+			{
+				nSelectionStart += 2;
+				nSelectionEnd += 2;
+			}
+		}
+		else if (m_fileType == FILE_CPP && style == wxSTC_C_COMMENTLINE)
+		{
+			if (this->GetCharAt(position + 1) == ' ')
+			{
+				if (i == nFirstLine && nSelectionStart >= 0 && nSelectionStart >= position + 2)
+					nSelectionStart -= 2;
+				else if (i == nFirstLine && nSelectionStart >= 0)
+					nSelectionStart = position;
+				this->DeleteRange(position, 3);
+				nSelectionEnd -= 2;
+			}
+			else
+			{
+				if (i == nFirstLine && nSelectionStart >= 0 && nSelectionStart >= position + 1)
+					nSelectionStart -= 1;
+				else if (i == nFirstLine && nSelectionStart >= 0)
+					nSelectionStart = position;
+				this->DeleteRange(position, 2);
+				nSelectionEnd -= 1;
+			}
+		}
+		else if (m_fileType == FILE_CPP && style != wxSTC_C_COMMENTLINE)
+		{
+			this->InsertText(this->PositionFromLine(i), "// " );
+			if (nSelectionStart >= 0)
+			{
+				nSelectionStart += 3;
+				nSelectionEnd += 3;
+			}
+		}
 	}
 	if (nSelectionStart >= 0)
 	{
@@ -1930,6 +1990,9 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
             && sSyntaxElement != "quit"
             && sSyntaxElement != "return"
             && sSyntaxElement != "subplot"
+            && sSyntaxElement != "try"
+            && sSyntaxElement != "catch"
+            && sSyntaxElement != "otherwise"
             && sSyntaxElement != "throw"
             && sSyntaxElement != "namespace" //warning
        )
