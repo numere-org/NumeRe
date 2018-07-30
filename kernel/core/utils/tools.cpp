@@ -547,7 +547,7 @@ bool isMultiValue(const string& sExpr, bool bIgnoreClosingParenthesis)
 		// If the string contains a comma and the "ignore the closing parenthesis" flag is set, enter a recursion
 		// This will cut out the argument of the first opening parenthesis
 		// If no opening parenthesis is available, then leave this block
-		if (sExpr.find_first_of("([{") != string::npos)
+		if (sExpr.find_first_of("([{") != string::npos && bIgnoreClosingParenthesis)
             return isMultiValue(sExpr.substr(sExpr.find_first_of("([{")+1), true);
 	}
 
@@ -1039,7 +1039,9 @@ static bool findShortestMatchForCommand(Match& _mMatch, size_t position, char ch
         _mMatch.sString.erase(_mMatch.sString.find(' '));
 
     // Ensure that the found command is a single word
-    if (checkDelimiter(sCmd.substr(position - 1, _mMatch.sString.length() + 2)) && !isInQuotes(sCmd, position))
+    if (!isInQuotes(sCmd, position)
+        && ((position && checkDelimiter(sCmd.substr(position - 1, _mMatch.sString.length() + 2)))
+            || (!position && checkDelimiter(" " + sCmd.substr(position, _mMatch.sString.length() + 1)))))
     {
         // If the command line is longer than the match position and the length of both strings
         if (sCmd.length() >= sCommand.length() + _mMatch.nPos + _mMatch.sString.length())
@@ -1143,6 +1145,7 @@ static Match findCommandWithReturnValue(const string& sCmd, const string& sComma
                 // If the match is not a single word, continue
                 if (!findShortestMatchForCommand(_mMatch, i, '-', sCmd, sCommand))
                     continue;
+                return _mMatch;
             }
 
             // There's a whitespace after the command
@@ -1151,6 +1154,7 @@ static Match findCommandWithReturnValue(const string& sCmd, const string& sComma
                 // If the match is not a single word, continue
                 if (!findShortestMatchForCommand(_mMatch, i, ' ', sCmd, sCommand))
                     continue;
+                return _mMatch;
             }
         }
 
@@ -1202,6 +1206,7 @@ static Match findCommandWithReturnValue(const string& sCmd, const string& sComma
                 // If the match is not a single word, continue
                 if (!findShortestMatchForCommand(_mMatch, i, '-', sCmd, sCommand))
                     continue;
+                return _mMatch;
             }
 
             // There's a whitespace after the command
@@ -1210,6 +1215,7 @@ static Match findCommandWithReturnValue(const string& sCmd, const string& sComma
                 // If the match is not a single word, continue
                 if (!findShortestMatchForCommand(_mMatch, i, ' ', sCmd, sCommand))
                     continue;
+                return _mMatch;
             }
         }
     }
@@ -1569,7 +1575,7 @@ string getArgAtPos(const string& sCmd, unsigned int nPos)
 }
 
 // --> Pruefen wir, ob die Position in dem String von Anfuehrungszeichen umgeben ist <--
-bool isInQuotes(const string& sExpr, unsigned int nPos, bool bIgnoreVarParser)
+bool isInQuotes(const string& sExpr, unsigned int nPos, bool bIgnoreVarParser /* = false*/)
 {
 	int nQuotes = 0;
 
@@ -2941,7 +2947,8 @@ static bool handleRecursiveOperators(string& sExpr, size_t& nPos, size_t& nArgSe
         for (unsigned int j = nPos; j < sExpr.length(); j++)
         {
             // Jump over parentheses
-            if (sExpr[j] == '(' || sExpr[j] == '[' || sExpr[j] == '{')
+            if (!(nQuotes % 2)
+                && (sExpr[j] == '(' || sExpr[j] == '[' || sExpr[j] == '{'))
                 j += getMatchingParenthesis(sExpr.substr(j));
 
             // Count the not escaped parentheses
@@ -3018,7 +3025,8 @@ static bool handleRecursiveOperators(string& sExpr, size_t& nPos, size_t& nArgSe
                 for (unsigned int k = nPos; k < sExpr.length(); k++)
                 {
                     // Jump over parentheses
-                    if (sExpr[k] == '(' || sExpr[k] == '[' || sExpr[k] == '{')
+                    if (!(nQuotes % 2)
+                        && (sExpr[k] == '(' || sExpr[k] == '[' || sExpr[k] == '{'))
                         k += getMatchingParenthesis(sExpr.substr(k));
 
                     // Count the quotation marks, which are not escaped
@@ -3126,7 +3134,8 @@ void evalRecursiveExpressions(string& sExpr)
 	for (unsigned int i = 0; i < sExpr.length(); i++)
 	{
         // Jump over parentheses
-		if (sExpr[i] == '(' || sExpr[i] == '{' || sExpr[i] == '[')
+		if (!(nQuotes % 2)
+            && (sExpr[i] == '(' || sExpr[i] == '{' || sExpr[i] == '['))
 			i += getMatchingParenthesis(sExpr.substr(i));
 
 		// Count the quatation marks, which are not escaped

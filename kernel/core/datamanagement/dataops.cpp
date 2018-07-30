@@ -936,6 +936,42 @@ static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _i
             }
         }
     }
+    else if (_iSourceIndex.vI.size())
+    {
+        // Use the dimensions of the source data block, if the target data block
+        // is marked as the overall data block
+        if (!bTranspose)
+        {
+            if (_iTargetIndex.nI[1] == -2)
+                _iTargetIndex.nI[1] = _iTargetIndex.nI[0] + _iSourceIndex.vI.size();
+            if (_iTargetIndex.nJ[1] == -2)
+                _iTargetIndex.nJ[1] = _iTargetIndex.nJ[0] + _iSourceIndex.vJ.size();
+        }
+        else
+        {
+            if (_iTargetIndex.nI[1] == -2)
+                _iTargetIndex.nI[1] = _iTargetIndex.nI[0] + _iSourceIndex.vJ.size();
+            if (_iTargetIndex.nJ[1] == -2)
+                _iTargetIndex.nJ[1] = _iTargetIndex.nJ[0] + _iSourceIndex.vI.size();
+        }
+    }
+    else
+    {
+        if (!bTranspose)
+        {
+            if (_iTargetIndex.nI[1] == -2)
+                _iTargetIndex.nI[1] = _iTargetIndex.nI[0] + (_iSourceIndex.nI[1] - _iSourceIndex.nI[0]);
+            if (_iTargetIndex.nJ[1] == -2)
+                _iTargetIndex.nJ[1] = _iTargetIndex.nJ[0] + (_iSourceIndex.nJ[1] - _iSourceIndex.nJ[0]);
+        }
+        else
+        {
+            if (_iTargetIndex.nI[1] == -2)
+                _iTargetIndex.nI[1] = _iTargetIndex.nI[0] + (_iSourceIndex.nJ[1] - _iSourceIndex.nJ[0]);
+            if (_iTargetIndex.nJ[1] == -2)
+                _iTargetIndex.nJ[1] = _iTargetIndex.nJ[0] + (_iSourceIndex.nI[1] - _iSourceIndex.nI[0]);
+        }
+    }
 
     // check the casual indices
     parser_CheckIndices(_iSourceIndex.nI[0], _iSourceIndex.nI[1]);

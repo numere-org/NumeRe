@@ -188,6 +188,15 @@ static void extractIndexList(string& sArgument, string sI[2], string sJ[2])
 		sJ[1] = sArgument.substr(nPos);
 	else
 		sJ[1] = "<<EMPTY>>";
+
+    // Ensure that the indices are not only whitespaces
+    for (size_t i = 0; i < 2; i++)
+    {
+        if (sI[i].find_first_not_of(' ') == string::npos)
+            sI[i] = "<<EMPTY>>";
+        if (sJ[i].find_first_not_of(' ') == string::npos)
+            sJ[i] = "<<EMPTY>>";
+    }
 }
 
 // This function will evaluate the indices and it tries to match it to a vector
