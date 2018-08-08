@@ -118,7 +118,7 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 		// --> Berechnung fuer jede Spalte der Matrix! <--
 		for (int j = 0; j < nCol; j++)
 		{
-		    if (!_data.num(sDatatable, 0, nLine, j))
+		    if (!_data.num(sDatatable, 0, nLine-1, j))
             {
                 sOut[nLine+1][j] = "<<SUMBAR>>"; // Schreiben der berechneten Werte in die letzten drei Zeilen der Ausgabe
                 sOut[nLine+2][j] = _lang.get("STATS_TYPE_AVG") + ": ---";
@@ -138,8 +138,8 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
                 sOut[nLine+16][j] = "s_t: ---";
                 continue;
             }
-			dAverage = _data.avg(sDatatable,0,nLine,j); // Wichtig: Nullsetzen aller wesentlichen Variablen!
-			dError = _data.std(sDatatable,0,nLine,j);
+			dAverage = _data.avg(sDatatable,0,nLine-1,j); // Wichtig: Nullsetzen aller wesentlichen Variablen!
+			dError = _data.std(sDatatable,0,nLine-1,j);
 			dPercentage = 0.0;
 			dUnsure = 0.0;
 			dSkew = 0.0;
@@ -174,7 +174,7 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 			// --> Fehler: Jetzt durch die Anzahl aller Werte teilen und danach die Wurzel ziehen <--
 			dError = sqrt(dError / (double) (_data.getLines(true) - 1 - _data.getAppendedZeroes(j)));*/ // WICHTIG: Angehaengte Nullzeilen wieder ignorieren
 			// --> Unsicherheit: den Fehler nochmals durch die Wurzel aus der Anzahl aller Werte-1 teilen
-			dUnsure = dError / sqrt(_data.num(sDatatable,0,nLine,j));
+			dUnsure = dError / sqrt(_data.num(sDatatable,0,nLine-1,j));
 
 			// --> Wie viele Werte sind nun innerhalb der Abweichung? <--
 			for(int i = 0; i < nLine; i++)
@@ -189,7 +189,7 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 				cerr << "|-> DEBUG: dError = " << dError << endl;
 
 			// --> Prozentzahl ausrechen... Explizit in einen double umwandeln, damit nicht die integer-Division verwendet wird
-			dPercentage = (double)nCount/(double) (_data.num(sDatatable,0,nLine,j))*100.0;
+			dPercentage = (double)nCount/(double) (_data.num(sDatatable,0,nLine-1,j))*100.0;
 			dPercentage *= 100.0;
 			dPercentage = round(dPercentage);
 			dPercentage /= 100.0;
@@ -202,8 +202,8 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
                 dKurt += (_data.getElement(i,j,sDatatable)-dAverage)*(_data.getElement(i,j,sDatatable)-dAverage)*(_data.getElement(i,j,sDatatable)-dAverage)*(_data.getElement(i,j,sDatatable)-dAverage);
 			}
 
-			dSkew /= _data.num(sDatatable,0,nLine,j) * (dError*dError*dError);
-			dKurt /= _data.num(sDatatable,0,nLine,j) * (dError*dError*dError*dError);
+			dSkew /= _data.num(sDatatable,0,nLine-1,j) * (dError*dError*dError);
+			dKurt /= _data.num(sDatatable,0,nLine-1,j) * (dError*dError*dError*dError);
 			dKurt -= 3;
 
 			sOut[nLine+1][j] = "<<SUMBAR>>"; // Schreiben der berechneten Werte in die letzten drei Zeilen der Ausgabe
@@ -211,17 +211,17 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 			sOut[nLine+3][j] = _lang.get("STATS_TYPE_STD") + ": " + toString(dError, nPrecision);
 			sOut[nLine+4][j] = _lang.get("STATS_TYPE_CONFINT") + ": " + toString(dPercentage, nPrecision) + " %";
 			sOut[nLine+5][j] = _lang.get("STATS_TYPE_STDERR") + ": " + toString(dUnsure, nPrecision);
-			sOut[nLine+6][j] = _lang.get("STATS_TYPE_MED") + ": " + toString(_data.med(sDatatable,0,nLine,j), nPrecision);
-			sOut[nLine+7][j] = "Q1: " + toString(_data.pct(sDatatable,0,nLine,j,-1,0.25), nPrecision);
-			sOut[nLine+8][j] = "Q3: " + toString(_data.pct(sDatatable,0,nLine,j,-1,0.75), nPrecision);
-			sOut[nLine+9][j] = _lang.get("STATS_TYPE_RMS") + ": " + toString(_data.norm(sDatatable,0,nLine,j)/sqrt(_data.num(sDatatable,0,nLine,j)), nPrecision);
+			sOut[nLine+6][j] = _lang.get("STATS_TYPE_MED") + ": " + toString(_data.med(sDatatable,0,nLine-1,j), nPrecision);
+			sOut[nLine+7][j] = "Q1: " + toString(_data.pct(sDatatable,0,nLine-1,j,-1,0.25), nPrecision);
+			sOut[nLine+8][j] = "Q3: " + toString(_data.pct(sDatatable,0,nLine-1,j,-1,0.75), nPrecision);
+			sOut[nLine+9][j] = _lang.get("STATS_TYPE_RMS") + ": " + toString(_data.norm(sDatatable,0,nLine-1,j)/sqrt(_data.num(sDatatable,0,nLine-1,j)), nPrecision);
 			sOut[nLine+10][j] = _lang.get("STATS_TYPE_SKEW") + ": " + toString(dSkew, nPrecision);
 			sOut[nLine+11][j] = _lang.get("STATS_TYPE_EXCESS") + ": " + toString(dKurt, nPrecision);
-			sOut[nLine+12][j] = "min: " + toString(_data.min(sDatatable,0,nLine,j), nPrecision);
-			sOut[nLine+13][j] = "max: " + toString(_data.max(sDatatable,0,nLine,j), nPrecision);
-			sOut[nLine+14][j] = "num: " + toString(_data.num(sDatatable,0,nLine,j), nPrecision);
-			sOut[nLine+15][j] = "cnt: " + toString(_data.cnt(sDatatable,0,nLine,j), nPrecision);
-			boost::math::students_t dist(_data.num(sDatatable,0,nLine,j));
+			sOut[nLine+12][j] = "min: " + toString(_data.min(sDatatable,0,nLine-1,j), nPrecision);
+			sOut[nLine+13][j] = "max: " + toString(_data.max(sDatatable,0,nLine-1,j), nPrecision);
+			sOut[nLine+14][j] = "num: " + toString(_data.num(sDatatable,0,nLine-1,j), nPrecision);
+			sOut[nLine+15][j] = "cnt: " + toString(_data.cnt(sDatatable,0,nLine-1,j), nPrecision);
+			boost::math::students_t dist(_data.num(sDatatable,0,nLine-1,j));
 			sOut[nLine+16][j] = "s_t: " + toString(boost::math::quantile(boost::math::complement(dist, 0.025)), nPrecision);
 		}
 		//cerr << "|-> Die Statistiken von " << nCol << " Spalte(n) wurden erfolgreich berechnet." << endl;

@@ -1734,7 +1734,7 @@ string wcstombs(const wstring& wStr)
 bool isDelimiter(char cChar)
 {
     // Only construct the string once
-	static string sDelimiter = "+-*/ ^&|!%<>,=\\#?:;()[]{}";
+	static string sDelimiter = "+-*/ ^&|!%<>,=\\#?:;()[]{}\"";
 
 	// Try to find the current character
 	if (sDelimiter.find(cChar) != string::npos)

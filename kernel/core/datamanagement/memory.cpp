@@ -746,12 +746,8 @@ vector<int> Memory::sortElements(long long int i1, long long int i2, long long i
 		return vIndex;
 	if (i2 == -1)
 		i2 = i1;
-	else
-		i2--;
 	if (j2 == -1)
 		j2 = j1;
-	else
-		j2--;
 
 
 	for (int i = i1; i <= i2; i++)
@@ -1119,12 +1115,8 @@ void Memory::deleteBulk(long long int i1, long long int i2, long long int j1, lo
 		return;
 	if (i2 == -1)
 		i2 = i1;
-	else
-		i2--;
 	if (j2 == -1)
 		j2 = j1;
-	else
-		j2--;
 	for (long long int i = i1; i <= i2; i++)
 	{
 		for (long long int j = j1; j <= j2; j++)
@@ -1213,14 +1205,10 @@ bool Memory::evaluateIndices(long long int& i1, long long int& i2, long long int
 		i2 = i1;
     else if (i2 == -2)
         i2 = getLines(false) - 1;
-	else
-		i2--;
 	if (j2 == -1)
 		j2 = j1;
     else if (j2 == -2)
         j2 = getCols(false) - 1;
-	else
-		j2--;
 
 	if (i1 > i2)
 	{
@@ -1971,7 +1959,7 @@ double Memory::med(long long int i1, long long int i2, long long int j1, long lo
 		}
 	}
 
-	_cache.sortElements(0, _cache.getLines(false), 0, _cache.getCols(false), "");
+	_cache.sortElements(0, _cache.getLines(false) - 1, 0, _cache.getCols(false) - 1, "");
 
 	if (_cache.getLines(false) % 2)
 	{
@@ -2067,7 +2055,7 @@ double Memory::pct(long long int i1, long long int i2, long long int j1, long lo
 		}
 	}
 
-	_cache.sortElements(0, _cache.getLines(false), 0, _cache.getCols(false), "");
+	_cache.sortElements(0, _cache.getLines(false) - 1, 0, _cache.getCols(false) - 1, "");
 
 	return (1 - ((_cache.getLines(false) - 1) * dPct - floor((_cache.getLines(false) - 1) * dPct))) * _cache.readMem(floor((_cache.getLines(false) - 1) * dPct), 0)
 		   + ((_cache.getLines(false) - 1) * dPct - floor((_cache.getLines(false) - 1) * dPct)) * _cache.readMem(floor((_cache.getLines(false) - 1) * dPct) + 1, 0);

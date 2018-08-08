@@ -324,7 +324,7 @@ bool Odesolver::solve(const string& sCmd)
 
     if (bAllowCacheClearance)
     {
-        _odeData->deleteBulk(sTarget, 0, _odeData->getLines(sTarget, false), 0, nDimensions+1+(long long int)bCalcLyapunov*2);
+        _odeData->deleteBulk(sTarget, 0, _odeData->getLines(sTarget, false) - 1, 0, nDimensions+(long long int)bCalcLyapunov*2);
     }
 
     /*cerr << _idx.nI[0] << endl

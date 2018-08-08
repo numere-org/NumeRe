@@ -670,11 +670,11 @@ bool deleteCacheEntry(string& sCmd, Parser& _parser, Datafile& _data, const Sett
                 // Evaluate the indices
 				_data.setCacheStatus(true);
 				if (_iDeleteIndex.nI[1] == -2)
-					_iDeleteIndex.nI[1] = _data.getLines(iter->first, false);
+					_iDeleteIndex.nI[1] = _data.getLines(iter->first, false) - 1;
 				else if (_iDeleteIndex.nI[1] != -1)
 					_iDeleteIndex.nI[1] += 1;
 				if (_iDeleteIndex.nJ[1] == -2)
-					_iDeleteIndex.nJ[1] = _data.getCols(iter->first);
+					_iDeleteIndex.nJ[1] = _data.getCols(iter->first) - 1;
 				else if (_iDeleteIndex.nJ[1] != -1)
 					_iDeleteIndex.nJ[1] += 1;
 
@@ -1153,9 +1153,9 @@ bool sortData(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions
 
 	// Evalulate special index values
 	if (_idx.nI[1] == -2)
-		_idx.nI[1] = _data.getLines(sCache, false);
+		_idx.nI[1] = _data.getLines(sCache, false) - 1;
 	if (_idx.nJ[1] == -2)
-		_idx.nJ[1] = _data.getCols(sCache, false);
+		_idx.nJ[1] = _data.getCols(sCache, false) - 1;
 
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself

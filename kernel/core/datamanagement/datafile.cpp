@@ -4079,7 +4079,7 @@ vector<int> Datafile::sortElements(const string& sLine) // data -sort[[=desc]] c
     if (matchParams(sLine, "index"))
         sSortingExpression += " index";
 
-    return sortElements(sCache, 0, nLines, 0, nCols, sSortingExpression);
+    return sortElements(sCache, 0, nLines - 1, 0, nCols - 1, sSortingExpression);
 }
 
 vector<int> Datafile::sortElements(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2, const string& sSortingExpression)
@@ -4101,12 +4101,10 @@ vector<int> Datafile::sortElements(const string& sCache, long long int i1, long 
         return vIndex;
     if (i2 == -1)
         i2 = i1;
-    else
-        i2--;
+
     if (j2 == -1)
         j2 = j1;
-    else
-        j2--;
+
 
 
     for (int i = i1; i <= i2; i++)
@@ -4404,12 +4402,10 @@ double Datafile::std(const string& sCache, long long int i1, long long int i2, l
     long long int nInvalid = 0;
     if (i2 == -1)
         i2 = i1;
-    else
-        i2--;
+
     if (j2 == -1)
         j2 = j1;
-    else
-        j2--;
+
     //cerr << i1 << " " << i2 << " " << j1 << " " << j2 << endl;
 
     if (i1 > i2)
@@ -4497,12 +4493,10 @@ double Datafile::avg(const string& sCache, long long int i1, long long int i2, l
     long long int nInvalid = 0;
     if (i2 == -1)
         i2 = i1;
-    else
-        i2--;
+
     if (j2 == -1)
         j2 = j1;
-    else
-        j2--;
+
 
     if (i1 > i2)
     {
@@ -4574,12 +4568,10 @@ double Datafile::max(const string& sCache, long long int i1, long long int i2, l
     double dMax = 0.0;
     if (i2 == -1)
         i2 = i1;
-    else
-        i2--;
+
     if (j2 == -1)
         j2 = j1;
-    else
-        j2--;
+
 
     if (i1 > i2)
     {
@@ -4651,12 +4643,10 @@ double Datafile::min(const string& sCache, long long int i1, long long int i2, l
     double dMin = 0.0;
     if (i2 == -1)
         i2 = i1;
-    else
-        i2--;
+
     if (j2 == -1)
         j2 = j1;
-    else
-        j2--;
+
 
     if (i1 > i2)
     {
@@ -4728,12 +4718,10 @@ double Datafile::prd(const string& sCache, long long int i1, long long int i2, l
     double dPrd = 1.0;
     if (i2 == -1)
         i2 = i1;
-    else
-        i2--;
+
     if (j2 == -1)
         j2 = j1;
-    else
-        j2--;
+
 
     if (i1 > i2)
     {
@@ -4798,12 +4786,10 @@ double Datafile::sum(const string& sCache, long long int i1, long long int i2, l
     double dSum = 0.0;
     if (i2 == -1)
         i2 = i1;
-    else
-        i2--;
+
     if (j2 == -1)
         j2 = j1;
-    else
-        j2--;
+
 
     if (i1 > i2)
     {
@@ -4889,12 +4875,10 @@ double Datafile::num(const string& sCache, long long int i1, long long int i2, l
     int nInvalid = 0;
     if (i2 == -1)
         i2 = i1;
-    else
-        i2--;
+
     if (j2 == -1)
         j2 = j1;
-    else
-        j2--;
+
 
     if (i1 > i2)
     {
@@ -4934,12 +4918,10 @@ double Datafile::and_func(const string& sCache, long long int i1, long long int 
         return 0.0;
     if (i2 == -1)
         i2 = i1;
-    else
-        i2--;
+
     if (j2 == -1)
         j2 = j1;
-    else
-        j2--;
+
 
     if (i1 > i2)
     {
@@ -5011,12 +4993,10 @@ double Datafile::or_func(const string& sCache, long long int i1, long long int i
         return 0.0;
     if (i2 == -1)
         i2 = i1;
-    else
-        i2--;
+
     if (j2 == -1)
         j2 = j1;
-    else
-        j2--;
+
 
     if (i1 > i2)
     {
@@ -5076,12 +5056,10 @@ double Datafile::xor_func(const string& sCache, long long int i1, long long int 
         return 0.0;
     if (i2 == -1)
         i2 = i1;
-    else
-        i2--;
+
     if (j2 == -1)
         j2 = j1;
-    else
-        j2--;
+
 
     if (i1 > i2)
     {
@@ -5158,12 +5136,10 @@ double Datafile::cnt(const string& sCache, long long int i1, long long int i2, l
         return NAN;
     if (i2 == -1)
         i2 = i1;
-    else
-        i2--;
+
     if (j2 == -1)
         j2 = j1;
-    else
-        j2--;
+
 
     if (i1 > i2)
     {
@@ -5225,12 +5201,10 @@ double Datafile::norm(const string& sCache, long long int i1, long long int i2, 
     double dNorm = 0.0;
     if (i2 == -1)
         i2 = i1;
-    else
-        i2--;
+
     if (j2 == -1)
         j2 = j1;
-    else
-        j2--;
+
 
     if (i1 > i2)
     {
@@ -5297,12 +5271,10 @@ double Datafile::cmp(const string& sCache, long long int i1, long long int i2, l
 
     if (i2 == -1)
         i2 = i1;
-    else
-        i2--;
+
     if (j2 == -1)
         j2 = j1;
-    else
-        j2--;
+
 
     if (i1 > i2)
     {
@@ -5452,12 +5424,10 @@ double Datafile::med(const string& sCache, long long int i1, long long int i2, l
     _cache.setCacheStatus(true);
     if (i2 == -1)
         i2 = i1;
-    else
-        i2--;
+
     if (j2 == -1)
         j2 = j1;
-    else
-        j2--;
+
 
     if (i1 > i2)
     {
@@ -5576,12 +5546,10 @@ double Datafile::pct(const string& sCache, long long int i1, long long int i2, l
     _cache.setCacheStatus(true);
     if (i2 == -1)
         i2 = i1;
-    else
-        i2--;
+
     if (j2 == -1)
         j2 = j1;
-    else
-        j2--;
+
 
     if (i1 > i2)
     {

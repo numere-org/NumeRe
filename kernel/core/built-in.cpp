@@ -1582,31 +1582,31 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			else
 				nArgument = 0;
 			if (matchParams(sCmd, "avg"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.avg("data", 0, _data.getLines("data", false), nArgument, _data.getCols("data"))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.avg("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
 			else if (matchParams(sCmd, "sum"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.sum("data", 0, _data.getLines("data", false), nArgument, _data.getCols("data"))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.sum("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
 			else if (matchParams(sCmd, "min"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.min("data", 0, _data.getLines("data", false), nArgument, _data.getCols("data"))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.min("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
 			else if (matchParams(sCmd, "max"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.max("data", 0, _data.getLines("data", false), nArgument, _data.getCols("data"))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.max("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
 			else if (matchParams(sCmd, "norm"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.norm("data", 0, _data.getLines("data", false), nArgument, _data.getCols("data"))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.norm("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
 			else if (matchParams(sCmd, "std"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.std("data", 0, _data.getLines("data", false), nArgument, _data.getCols("data"))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.std("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
 			else if (matchParams(sCmd, "prd"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.prd("data", 0, _data.getLines("data", false), nArgument, _data.getCols("data"))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.prd("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
 			else if (matchParams(sCmd, "num"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.num("data", 0, _data.getLines("data", false), nArgument, _data.getCols("data"))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.num("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
 			else if (matchParams(sCmd, "cnt"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.cnt("data", 0, _data.getLines("data", false), nArgument, _data.getCols("data"))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.cnt("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
 			else if (matchParams(sCmd, "med"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.med("data", 0, _data.getLines("data", false), nArgument, _data.getCols("data"))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.med("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
 			else if (matchParams(sCmd, "and"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.and_func("data", 0, _data.getLines("data", false), nArgument, _data.getCols("data"))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.and_func("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
 			else if (matchParams(sCmd, "or"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.or_func("data", 0, _data.getLines("data", false), nArgument, _data.getCols("data"))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.or_func("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
 			else if (matchParams(sCmd, "xor"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.xor_func("data", 0, _data.getLines("data", false), nArgument, _data.getCols("data"))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.xor_func("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
 
 			return 0;
 		}
@@ -2098,31 +2098,31 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			else
 				nArgument = 0;
 			if (matchParams(sCmd, "avg"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.avg(sCacheCmd, 0, _data.getLines(sCacheCmd, false), nArgument, _data.getCols(sCacheCmd))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.avg(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
 			else if (matchParams(sCmd, "sum"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.sum(sCacheCmd, 0, _data.getLines(sCacheCmd, false), nArgument, _data.getCols(sCacheCmd))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.sum(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
 			else if (matchParams(sCmd, "min"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.min(sCacheCmd, 0, _data.getLines(sCacheCmd, false), nArgument, _data.getCols(sCacheCmd))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.min(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
 			else if (matchParams(sCmd, "max"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.max(sCacheCmd, 0, _data.getLines(sCacheCmd, false), nArgument, _data.getCols(sCacheCmd))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.max(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
 			else if (matchParams(sCmd, "norm"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.norm(sCacheCmd, 0, _data.getLines(sCacheCmd, false), nArgument, _data.getCols(sCacheCmd))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.norm(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
 			else if (matchParams(sCmd, "std"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.std(sCacheCmd, 0, _data.getLines(sCacheCmd, false), nArgument, _data.getCols(sCacheCmd))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.std(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
 			else if (matchParams(sCmd, "prd"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.prd(sCacheCmd, 0, _data.getLines(sCacheCmd, false), nArgument, _data.getCols(sCacheCmd))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.prd(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
 			else if (matchParams(sCmd, "num"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.num(sCacheCmd, 0, _data.getLines(sCacheCmd, false), nArgument, _data.getCols(sCacheCmd))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.num(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
 			else if (matchParams(sCmd, "cnt"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.cnt(sCacheCmd, 0, _data.getLines(sCacheCmd, false), nArgument, _data.getCols(sCacheCmd))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.cnt(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
 			else if (matchParams(sCmd, "med"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.med(sCacheCmd, 0, _data.getLines(sCacheCmd, false), nArgument, _data.getCols(sCacheCmd))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.med(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
 			else if (matchParams(sCmd, "and"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.and_func(sCacheCmd, 0, _data.getLines(sCacheCmd, false), nArgument, _data.getCols(sCacheCmd))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.and_func(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
 			else if (matchParams(sCmd, "or"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.or_func(sCacheCmd, 0, _data.getLines(sCacheCmd, false), nArgument, _data.getCols(sCacheCmd))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.or_func(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
 			else if (matchParams(sCmd, "xor"))
-				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.xor_func(sCacheCmd, 0, _data.getLines(sCacheCmd, false), nArgument, _data.getCols(sCacheCmd))));
+				sCmd.replace(nPos, sCommand.length(), toCmdString(_data.xor_func(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
 
 			return 0;
 		}
@@ -3497,9 +3497,9 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				//throw INVALID_INDEX;
 				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sArgument);
 			if (_idx.nI[1] == -2)
-				_idx.nI[1] = _data.getLines(sArgument.substr(0, sArgument.find('(')), false);
+				_idx.nI[1] = _data.getLines(sArgument.substr(0, sArgument.find('(')), false) - 1;
 			if (_idx.nJ[1] == -2)
-				_idx.nJ[1] = _data.getCols(sArgument.substr(0, sArgument.find('(')));
+				_idx.nJ[1] = _data.getCols(sArgument.substr(0, sArgument.find('('))) - 1;
 			if (matchParams(sCmd, "grid"))
 			{
 				if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::GRID))
@@ -3836,9 +3836,9 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
 				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sArgument, sArgument);
 			if (_idx.nI[1] == -2)
-				_idx.nI[1] = _data.getLines(sArgument.substr(0, sArgument.find('(')), false);
+				_idx.nI[1] = _data.getLines(sArgument.substr(0, sArgument.find('(')), false) - 1;
 			if (_idx.nJ[1] == -2)
-				_idx.nJ[1] = _data.getCols(sArgument.substr(0, sArgument.find('(')));
+				_idx.nJ[1] = _data.getCols(sArgument.substr(0, sArgument.find('('))) - 1;
 			if (matchParams(sCmd, "grid"))
 			{
 				if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::GRID))
@@ -6121,7 +6121,7 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
 				{
 					string sTemp = getNextArgument(sObject, false);
 					sTemp.erase(sTemp.find('('));
-					_data.deleteBulk(sTemp, 0, _data.getLines(sTemp), 0, _data.getCols(sTemp));
+					_data.deleteBulk(sTemp, 0, _data.getLines(sTemp) - 1, 0, _data.getCols(sTemp) - 1);
 					if (sReturnVal.length())
 						sReturnVal += ", ";
 					sReturnVal += "\"" + getNextArgument(sObject, false) + "\"";
@@ -6182,7 +6182,7 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
 					{
 						string sTemp = getNextArgument(sObject, false);
 						sTemp.erase(sTemp.find('('));
-						_data.deleteBulk(sTemp, 0, _data.getLines(sTemp), 0, _data.getCols(sTemp));
+						_data.deleteBulk(sTemp, 0, _data.getLines(sTemp) - 1, 0, _data.getCols(sTemp) - 1);
 						if (sReturnVal.length())
 							sReturnVal += ", ";
 						sReturnVal += "\"" + getNextArgument(sObject, false) + "\"";

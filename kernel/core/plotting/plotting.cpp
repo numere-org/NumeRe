@@ -215,7 +215,7 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
 
 	// --> Diese Zeile klaert eine gefuellte Zeile, die nicht mit "endl" abgeschlossen wurde <--
 	if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
-		NumeReKernel::printPreFmt("                                              \r");
+		NumeReKernel::printPreFmt("\r");
 
 	for (unsigned int nPlotCompose = 0; nPlotCompose < vPlotCompose.size(); nPlotCompose++)
 	{
@@ -401,7 +401,7 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
 				sOutputName = sOutputName.substr(1, sOutputName.length() - 2);
 		}
 
-		//!!!! SUBPLOT-Logik
+		// !!!! SUBPLOT-Logik
 		if (findCommand(sCmd).sString == "subplot" && nMultiplots[0] && nMultiplots[1])
 		{
 			bNewSubPlot = true;
@@ -3873,7 +3873,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 									{
 										for (int k = 0; k < i_pos[1] - i_pos[0]; k++)
 										{
-											if (_data.num(sDataTable, i_pos[0], i_pos[1], j_pos[0] + 1) <= k)
+											if (_data.num(sDataTable, i_pos[0], i_pos[1]-1, j_pos[0] + 1) <= k)
 											{
 												_mDataPlots[i][q].a[l + (i_pos[1] - i_pos[0])*k] = NAN;
 												continue;
@@ -3925,7 +3925,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 									{
 										for (int k = 0; k < i_pos[1] - i_pos[0]; k++)
 										{
-											if (_data.num(sDataTable, i_pos[0], i_pos[1], j_pos[0] - 1) <= k)
+											if (_data.num(sDataTable, i_pos[0], i_pos[1]-1, j_pos[0] - 1) <= k)
 											{
 												_mDataPlots[i][q].a[l + (i_pos[1] - i_pos[0])*k] = NAN;
 												continue;
@@ -4013,7 +4013,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 									{
 										for (int m = 0; m < i_pos[1] - i_pos[0]; m++)
 										{
-											if (_data.num(sDataTable, i_pos[0], i_pos[1], j_pos[k - 1]) <= m)
+											if (_data.num(sDataTable, i_pos[0], i_pos[1]-1, j_pos[k - 1]) <= m)
 											{
 												_mDataPlots[i][k].a[l + (i_pos[1] - i_pos[0])*m] = NAN;
 												continue;

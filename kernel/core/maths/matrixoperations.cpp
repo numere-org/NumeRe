@@ -626,7 +626,7 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
 
     // Target in Zielmatrix speichern
     if (bAllowMatrixClearing)
-        _data.deleteBulk(sTargetName, 0, _data.getLines(sTargetName, false), 0, _data.getCols(sTargetName, false));
+        _data.deleteBulk(sTargetName, 0, _data.getLines(sTargetName, false) - 1, 0, _data.getCols(sTargetName, false) - 1);
     _data.setCacheSize(_idx.nI[0]+_mResult.size(), _idx.nJ[0]+_mResult[0].size(), sTargetName);
     for (unsigned int i = 0; i < _mResult.size(); i++)
     {
@@ -1342,13 +1342,13 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
                     //cerr << nthMatrix << endl;
                     if (!vIndices[nthMatrix].vI.size())
                     {
-                        for (unsigned int i = vIndices[nthMatrix].nI[0]; i < vIndices[nthMatrix].nI[1]; i++)
+                        for (unsigned int i = vIndices[nthMatrix].nI[0]; i <= vIndices[nthMatrix].nI[1]; i++)
                         {
-                            if (vIndices[nthMatrix].nJ[0] >= vIndices[nthMatrix].nJ[1])
+                            if (vIndices[nthMatrix].nJ[0] > vIndices[nthMatrix].nJ[1])
                                 vLine.push_back(vMissingValues[nthMatrix]);
                             else
                             {
-                                for (long long int k = vIndices[nthMatrix].nJ[0]; k < vIndices[nthMatrix].nJ[1]; k++)
+                                for (long long int k = vIndices[nthMatrix].nJ[0]; k <= vIndices[nthMatrix].nJ[1]; k++)
                                 {
                                     if (_data.isValidEntry(vIndices[nthMatrix].nI[0]+i, k, vMatrixNames[nthMatrix]))
                                         vLine.push_back(_data.getElement(vIndices[nthMatrix].nI[0]+i, k, vMatrixNames[nthMatrix]));
@@ -1389,13 +1389,13 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
                     //cerr << nthMatrix << endl;
                     if (!vIndices[nthMatrix].vI.size())
                     {
-                        for (unsigned int i = vIndices[nthMatrix].nI[0]; i < vIndices[nthMatrix].nI[1]; i++)
+                        for (unsigned int i = vIndices[nthMatrix].nI[0]; i <= vIndices[nthMatrix].nI[1]; i++)
                         {
-                            if (vIndices[nthMatrix].nJ[0] >= vIndices[nthMatrix].nJ[1])
+                            if (vIndices[nthMatrix].nJ[0] > vIndices[nthMatrix].nJ[1])
                                 vLine.push_back(vMissingValues[nthMatrix]);
                             else
                             {
-                                for (long long int k = vIndices[nthMatrix].nJ[0]; k < vIndices[nthMatrix].nJ[1]; k++)
+                                for (long long int k = vIndices[nthMatrix].nJ[0]; k <= vIndices[nthMatrix].nJ[1]; k++)
                                 {
                                     if (_data.isValidEntry(vIndices[nthMatrix].nI[0]+i, k, vMatrixNames[nthMatrix]))
                                         vLine.push_back(_data.getElement(vIndices[nthMatrix].nI[0]+i, k, vMatrixNames[nthMatrix]));
@@ -1449,8 +1449,8 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
         }
         else
         {
-            if (vIndices[i].nJ[1]-vIndices[i].nJ[0] > nColCount)
-                nColCount = vIndices[i].nJ[1]-vIndices[i].nJ[0];
+            if (vIndices[i].nJ[1]-vIndices[i].nJ[0]+1 > nColCount)
+                nColCount = vIndices[i].nJ[1]-vIndices[i].nJ[0]+1;
         }
     }
     for (unsigned int i = 0; i < vReturnedMatrices.size(); i++)
@@ -1472,11 +1472,11 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
         {
             if (vIndices[j].nJ[0] >= vIndices[j].nJ[1] && vIndices[j].nJ[0] > 0 && vIndices[j].nJ[1] > 0)
                 vMatrixVector.push_back(vMissingValues[j]);
-            else if (vIndices[j].nJ[0] == 0 && vIndices[j].nJ[1] == 0)
-                vMatrixVector.push_back(NAN);
+            /*else if (vIndices[j].nJ[0] == 0 && vIndices[j].nJ[1] == 0)
+                vMatrixVector.push_back(NAN);*/
             else
             {
-                for (long long int k = vIndices[j].nI[0]; k < vIndices[j].nI[1]; k++)
+                for (long long int k = vIndices[j].nI[0]; k <= vIndices[j].nI[1]; k++)
                 {
                     if (_data.isValidEntry(k, vIndices[j].nJ[0], vMatrixNames[j]))
                         vMatrixVector.push_back(_data.getElement(k, vIndices[j].nJ[0], vMatrixNames[j]));
@@ -1546,7 +1546,7 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
             }
             else
             {
-                if (vIndices[j].nJ[0]+i >= vIndices[j].nJ[1] && (vIndices[j].nJ[1]-vIndices[j].nJ[0] > 1 || vIndices[j].nI[1]-vIndices[j].nI[0] > 1))
+                if (vIndices[j].nJ[0]+i > vIndices[j].nJ[1] && (vIndices[j].nJ[1]-vIndices[j].nJ[0] > 1 || vIndices[j].nI[1]-vIndices[j].nI[0] > 1))
                     vMatrixVector.push_back(vMissingValues[j]);
                 else if (vIndices[j].nJ[1]-vIndices[j].nJ[0] <= 1 && vIndices[j].nI[1]-vIndices[j].nI[0] <= 1)
                 {
@@ -1554,7 +1554,7 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
                 }
                 else
                 {
-                    for (long long int k = vIndices[j].nI[0]; k < vIndices[j].nI[1]; k++)
+                    for (long long int k = vIndices[j].nI[0]; k <= vIndices[j].nI[1]; k++)
                     {
                         if (_data.isValidEntry(k, vIndices[j].nJ[0]+i, vMatrixNames[j]))
                             vMatrixVector.push_back(_data.getElement(k, vIndices[j].nJ[0]+i, vMatrixNames[j]));
@@ -2183,7 +2183,7 @@ Matrix parser_MatrixMed(const Matrix& _mMatrix, const string& sCmd, const string
         }
     }
 
-    _mReturn[0][0] = _cache.med("cache", 0, _mMatrix.size()*_mMatrix[0].size());
+    _mReturn[0][0] = _cache.med("cache", 0, _mMatrix.size()*_mMatrix[0].size()-1);
     return _mReturn;
 }
 
@@ -2200,7 +2200,7 @@ Matrix parser_MatrixPct(const Matrix& _mMatrix, double dPercentage, const string
         }
     }
 
-    _mReturn[0][0] = _cache.pct("cache", 0, (long long int)(_mMatrix.size()*_mMatrix[0].size()), 0, -1, dPercentage);
+    _mReturn[0][0] = _cache.pct("cache", 0, (long long int)(_mMatrix.size()*_mMatrix[0].size())-1, 0, -1, dPercentage);
     return _mReturn;
 }
 

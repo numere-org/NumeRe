@@ -409,7 +409,7 @@ value_type parser_Med(const value_type* vElements, int nElements)
 
     for (int i = 0; i < nElements; i++)
         _cache.writeToCache(i,0,"cache",vElements[i]);
-    return _cache.med("cache", 0,nElements);
+    return _cache.med("cache", 0,nElements-1);
 }
 
 // --> Diese Funktion berechnet das x-te Perzentil mehrerer Werte <--
@@ -420,7 +420,7 @@ value_type parser_Pct(const value_type* vElements, int nElements)
 
     for (int i = 0; i < nElements-1; i++)
         _cache.writeToCache(i,0,"cache",vElements[i]);
-    return _cache.pct("cache", 0, nElements, 0, -1, vElements[nElements-1]);
+    return _cache.pct("cache", 0, nElements-1, 0, -1, vElements[nElements-1]);
 }
 
 // --> Analogie zur Excel-Funktion VERGLEICH() <--

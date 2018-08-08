@@ -161,7 +161,7 @@ vector<int> Cache::sortElements(const string& sLine) // cache -sort[[=desc]] col
     if (matchParams(sLine, "index"))
         sSortingExpression += " index";
 
-    return vCacheMemory[mCachesMap.at(sCache)]->sortElements(0, getCacheLines(sCache, false), 0, getCacheCols(sCache, false), sSortingExpression);
+    return vCacheMemory[mCachesMap.at(sCache)]->sortElements(0, getCacheLines(sCache, false)-1, 0, getCacheCols(sCache, false)-1, sSortingExpression);
 }
 
 vector<int> Cache::sortElements(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2, const string& sSortingExpression)

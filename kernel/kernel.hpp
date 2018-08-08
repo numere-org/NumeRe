@@ -52,58 +52,15 @@ using namespace mu;
 
 class wxTerm;
 
-typedef std::vector<std::vector<std::string> > stringmatrix;
 
+// This class provides the interface to the kernel of NumeRe
+// It provides all functionalities, which was done by the main
+// function before.
 class NumeReKernel
 {
-    private:
-        string sCommandLine;
-        string sAnswer;
-        string sPlotCompose;
-
-        //datasets
-        Settings _option;
-        Output _out;
-        Datafile _data;
-        Parser _parser;
-        Define _functions;
-        PlotData _pData;
-        Script _script;
-        Procedure _procedure;
-        //mglGraph _graph;
-
-        void printResult(const string& sLine, const string& sCmdCache, bool bScriptRunning);
-        string maskProcedureSigns(string sLine);
-
-        void defineOperators();
-        void defineConst();
-        void defineFunctions();
-
     public:
-        static wxTerm* m_parent;
-        static queue<GraphHelper*> graphHelper;
-        static int nLINE_LENGTH;
-        static bool bWritingTable;
-        static bool bCancelSignal;
-        static string sFileToEdit;
-        static string sDocumentation;
-        static unsigned int nLineToGoTo;
-        static int nOpenFileFlag;
-        static int nLastStatusVal;
-        static unsigned int nLastLineLength;
-        static bool modifiedSettings;
-        static queue<NumeRe::Container<string> > sTable;
-        static vector<string> vDebugInfos;
-        static queue<string> sTableName;
-        static Debugmessenger _messenger;
-        static bool bSupressAnswer;
-        static bool bGettingLine;
-        static bool bErrorNotification;
-        ofstream oLogFile;
-        static size_t nScriptLine;
-        static string sScriptFileName;
-        static ProcedureLibrary ProcLibrary;
-        // return values indicating status:
+        // return values indicating status
+        // pre-declared for the private member functions
         enum KernelStatus
         {
             NUMERE_QUIT = -1,
@@ -125,11 +82,99 @@ class NumeReKernel
             NUMERE_GRAPH_UPDATE
         };
 
+    private:
+        string sCommandLine;
+        string sAnswer;
+        string sPlotCompose;
+
+        //datasets
+        Settings _option;
+        Output _out;
+        Datafile _data;
+        Parser _parser;
+        Define _functions;
+        PlotData _pData;
+        Script _script;
+        Procedure _procedure;
+
+        // private member functions for special tasks
+        void printResult(const string& sLine, const string& sCmdCache, bool bScriptRunning);
+        string maskProcedureSigns(string sLine);
+        bool handleCommandLineSource(string& sLine, const string& sCmdCache, string& sKeep);
+        bool getLineFromCommandCache(string& sLine, string& sCmdCache, const string& sCurrentCommand);
+        bool handleComposeBlock(string& sLine, const string& sCmdCache, const string& sCurrentCommand, KernelStatus& nReturnVal);
+        bool handleProcedureWrite(const string& sLine, const string& sCmdCache, const string& sCurrentCommand, KernelStatus& nReturnVal);
+        bool uninstallPlugin(const string& sLine, const string& sCurrentCommand);
+        void handleToCmd(string& sLine, string& sCache, string& sCurrentCommand);
+        bool evaluateProcedureCalls(string& sLine);
+        bool executePlugins(string& sLine);
+        bool handleFlowControls(string& sLine, const string& sCmdCache, const string& sCurrentCommand, KernelStatus& nReturnVal);
+        bool evaluateStrings(string& sLine, string& sCache, const string& sCmdCache, bool& bWriteToCache, KernelStatus& nReturnVal);
+        void createCalculationAnswer(int nNum, value_type* v, const string& sCmdCache);
+        void resetAfterError(string& sCmdCache);
+
+        // Functions for initializing the numerical parser
+        void defineOperators();
+        void defineConst();
+        void defineFunctions();
+
+    public:
+        // Static public class members
+        // Used for controlling the programm flow, to update the internal
+        // state and to communicate with the graphical layer
+        static wxTerm* m_parent;
+        static queue<GraphHelper*> graphHelper;
+        static int nLINE_LENGTH;
+        static bool bWritingTable;
+        static bool bCancelSignal;
+        static string sFileToEdit;
+        static string sDocumentation;
+        static unsigned int nLineToGoTo;
+        static int nOpenFileFlag;
+        static int nLastStatusVal;
+        static unsigned int nLastLineLength;
+        static bool modifiedSettings;
+        static queue<NumeRe::Container<string> > sTable;
+        static vector<string> vDebugInfos;
+        static queue<string> sTableName;
+        static Debugmessenger _messenger;
+        static bool bSupressAnswer;
+        static bool bGettingLine;
+        static bool bErrorNotification;
+        static ofstream oLogFile;
+        static size_t nScriptLine;
+        static string sScriptFileName;
+        static ProcedureLibrary ProcLibrary;
+
+        // Constructor and Destructor
         NumeReKernel();
         ~NumeReKernel();
 
+        // Static member functions
+        // can be called from everywhere without an explicit instance of the kernel
+        // These functions are the interface for communication with the GUI
         static void toggleTableStatus();
         static void flush();
+        static void print(const string& sLine);
+        static void printPreFmt(const string& sLine);
+        static void setFileName(const string& sFileName);
+        static int numberOfNumbersPerLine(const Settings& _option);
+        static void statusBar(int nStep, int nFirstStep, int nFinalStep, const string& sType);
+        static void getline(string& sLine);
+        static void gotoLine(const string& sFile, unsigned int nLine = 0);
+        static void setDocumentation(const string& _sDocumentation);
+        static bool GetAsyncCancelState();
+        static void showTable(NumeRe::Container<string>& _container, string __name, bool openeditable = false);
+        static void updateGraphWindow(GraphHelper* _helper);
+        static NumeRe::Container<string> getTable();
+        static void showDebugEvent(const string& sTitle, const vector<string>& vModule, const vector<string>& vStacktrace, const vector<string>& vNumVars, const vector<string>& vStringVars);
+        static void waitForContinue();
+        static void evalDebuggerBreakPoint(Settings& _option, const map<string,string>& sStringMap, const string& sCurrentCommand = "", Parser* _parser = nullptr);
+        static void addToLog(const string& sLogMessage);
+
+        // Public member functions
+        // Main loop function
+        KernelStatus MainLoop(const string& sCommand);
 
         map<string,string> getPluginLanguageStrings();
         map<string,string> getFunctionLanguageStrings();
@@ -144,9 +189,7 @@ class NumeReKernel
         int getAutosaveInterval() {return _option.getAutoSaveInterval();}
         long long int getLastSavedTime() {return _data.getLastSaved();}
         void Autosave();
-
         void StartUp(wxTerm* _parent, const string& sPath, const string& sPredefinedFuncs);
-        KernelStatus MainLoop(const string& sCommand);
         void CloseSession();
         void CancelCalculation()
         {
@@ -158,29 +201,13 @@ class NumeReKernel
         vector<string> getPathSettings() const;
         void printVersionInfo();
         void showDebugError(const string& sTitle);
-
         void updateLineLenght(int nLength);
-
-        static void setFileName(const string& sFileName);
-        static void print(const string& sLine);
-        static void printPreFmt(const string& sLine);
-        static int numberOfNumbersPerLine(const Settings& _option);
         void sendErrorNotification();
-        static void statusBar(int nStep, int nFirstStep, int nFinalStep, const string& sType);
-        static void getline(string& sLine);
-        static void gotoLine(const string& sFile, unsigned int nLine = 0);
-        static void setDocumentation(const string& _sDocumentation);
-        static bool GetAsyncCancelState();
-        static void showTable(NumeRe::Container<string>& _container, string __name, bool openeditable = false);
-        static void updateGraphWindow(GraphHelper* _helper);
-        static NumeRe::Container<string> getTable();
-        static void showDebugEvent(const string& sTitle, const vector<string>& vModule, const vector<string>& vStacktrace, const vector<string>& vNumVars, const vector<string>& vStringVars);
-        static void waitForContinue();
-        static void evalDebuggerBreakPoint(Settings& _option, const map<string,string>& sStringMap, const string& sCurrentCommand = "", Parser* _parser = nullptr);
 };
 
 
-
+// This function fills the passed string up to the width nWidth with the characters cFill
+// The characters are inserted on the right
 inline string strfill(const string& sString, unsigned int nWidth, char cFill = ' ')
 {
     if (!nWidth)
@@ -191,6 +218,8 @@ inline string strfill(const string& sString, unsigned int nWidth, char cFill = '
     return sReturn;
 }
 
+// This function fills the passed string up to the width nWidth with the characters cFill
+// The characters are inserted on the left
 inline string strlfill(const string& sString, unsigned int nWidth, char cFill = ' ')
 {
     if (!nWidth)
@@ -201,6 +230,7 @@ inline string strlfill(const string& sString, unsigned int nWidth, char cFill = 
     return sReturn;
 }
 
+// This function provides a headline for the "windows" in the console
 inline string sectionHeadline(const string& sString, char cHeadLineSep = '-')
 {
     string sSectionHeadline = "|\n|   " + toUpperCase(sString);
@@ -213,9 +243,11 @@ inline string sectionHeadline(const string& sString, char cHeadLineSep = '-')
     return sSectionHeadline;
 }
 
+// This function points to the error indicated by nPos
 inline string pointToError(unsigned int nPos)
 {
     string sErrorPointer = "|   ";
     sErrorPointer += strfill("^^^", nPos+13) + "\n";
     return sErrorPointer;
 }
+

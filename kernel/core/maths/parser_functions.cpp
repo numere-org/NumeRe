@@ -203,10 +203,10 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
             {
                 parser_evalIndices(sDatatable, _idx, _data);
                 Datafile _cache;
-                for (long long int i = _idx.nI[0]; i < _idx.nI[1]; i++)
+                for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
                 {
                     _cache.writeToCache(i-_idx.nI[0],0,"cache",_data.getElement(i, _idx.nJ[0], sDatatable));
-                    _cache.writeToCache(i-_idx.nI[0],1,"cache",_data.getElement(i, _idx.nJ[1]-1, sDatatable));
+                    _cache.writeToCache(i-_idx.nI[0],1,"cache",_data.getElement(i, _idx.nJ[1], sDatatable));
                 }
                 _cache.sortElements("cache -sort c=1[2]");
                 double dResult = 0.0;
@@ -2135,13 +2135,13 @@ vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data,
         if (!_idx.vI.size())
         {
             if (_idx.nI[1] == -2)
-                _idx.nI[1] = _data.getLines(sExpr, false);
+                _idx.nI[1] = _data.getLines(sExpr, false) - 1;
             if (_idx.nJ[1] == -2)
                 _idx.nJ[1] = _idx.nJ[0]+1;
 
             if (_idx.nJ[1] == -1)
             {
-                for (long long int i = _idx.nI[0]; i < _idx.nI[1]-1; i++)
+                for (long long int i = _idx.nI[0]; i <= _idx.nI[1]-1; i++)
                 {
                     if (_data.isValidEntry(i,_idx.nJ[0], sExpr)
                         && _data.isValidEntry(i+1,_idx.nJ[0], sExpr))
@@ -2153,7 +2153,7 @@ vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data,
             else
             {
                 Datafile _cache;
-                for (long long int i = _idx.nI[0]; i < _idx.nI[1]; i++)
+                for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
                 {
                     _cache.writeToCache(i-_idx.nI[0], 0, "cache", _data.getElement(i,_idx.nJ[0], sExpr));
                     _cache.writeToCache(i-_idx.nI[0], 1, "cache", _data.getElement(i,_idx.nJ[1], sExpr));
@@ -5271,14 +5271,14 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
     if (isnan(dMin))
     {
         if (!vLine.size())
-            dMin = _data.min(sDataTable, i_pos[0], i_pos[1], j_pos[0]);
+            dMin = _data.min(sDataTable, i_pos[0], i_pos[1]-1, j_pos[0]);
         else
             dMin = _data.min(sDataTable, vLine, vector<long long int>(1,vCol[0]));
     }
     if (isnan(dMax))
     {
         if (!vLine.size())
-            dMax = _data.max(sDataTable, i_pos[0], i_pos[1], j_pos[0]);
+            dMax = _data.max(sDataTable, i_pos[0], i_pos[1]-1, j_pos[0]);
         else
             dMax = _data.max(sDataTable, vLine, vector<long long int>(1,vCol[0]));
     }
@@ -5296,11 +5296,11 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
             if (!vLine.size())
             {
                 if (j == 1 && j_pos[1] > j_pos[0])
-                    dMinY = _data.min(sDataTable, i_pos[0], i_pos[1], j_pos[0]+1);
+                    dMinY = _data.min(sDataTable, i_pos[0], i_pos[1]-1, j_pos[0]+1);
                 else if (j == 1)
-                    dMinY = _data.min(sDataTable, i_pos[0], i_pos[1], j_pos[0]-1);
+                    dMinY = _data.min(sDataTable, i_pos[0], i_pos[1]-1, j_pos[0]-1);
                 else
-                    dMinY = _data.min(sDataTable, i_pos[0], i_pos[1], j_pos[1]);
+                    dMinY = _data.min(sDataTable, i_pos[0], i_pos[1]-1, j_pos[1]);
             }
             else
             {
@@ -5312,11 +5312,11 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
             if (!vLine.size())
             {
                 if (j == 1 && j_pos[1] > j_pos[0])
-                    dMaxY = _data.max(sDataTable, i_pos[0], i_pos[1], j_pos[0]+1);
+                    dMaxY = _data.max(sDataTable, i_pos[0], i_pos[1]-1, j_pos[0]+1);
                 else if (j == 1)
-                    dMaxY = _data.max(sDataTable, i_pos[0], i_pos[1], j_pos[1]-1);
+                    dMaxY = _data.max(sDataTable, i_pos[0], i_pos[1]-1, j_pos[1]-1);
                 else
-                    dMaxY = _data.max(sDataTable, i_pos[0], i_pos[1], j_pos[1]);
+                    dMaxY = _data.max(sDataTable, i_pos[0], i_pos[1]-1, j_pos[1]);
             }
             else
                 dMaxY = _data.max(sDataTable, vLine, vector<long long int>(1,vCol[1]));
@@ -7128,10 +7128,10 @@ bool parser_wavelet(string& sCmd, Parser& _parser, Datafile& _data, const Settin
         Table tWaveletData = decodeWaveletData(vWaveletData, vAxisData);
 
         if (_idx.nJ[1] == -2)
-            _idx.nJ[1] = _idx.nJ[0] + tWaveletData.getCols();
+            _idx.nJ[1] = _idx.nJ[0] + tWaveletData.getCols() - 1;
 
         if (_idx.nI[1] == -2)
-            _idx.nI[1] = _idx.nI[0] + tWaveletData.getLines();
+            _idx.nI[1] = _idx.nI[0] + tWaveletData.getLines() - 1;
 
         for (size_t i = 0; i < tWaveletData.getLines(); i++)
         {
@@ -8051,21 +8051,18 @@ bool parser_evalIndices(const string& sCache, Indices& _idx, Datafile& _data)
     if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
         return false;
 
+    // Evaluate the case for an open end index
+    if (_idx.nI[1] == -2)
+        _idx.nI[1] = _data.getLines(sCache.substr(0,sCache.find('(')), false) - 1;
+
+    if (_idx.nJ[1] == -2)
+        _idx.nJ[1] = _data.getCols(sCache.substr(0,sCache.find('('))) - 1;
+
     // Evaluate the case for a missing index
     if (_idx.nI[1] == -1)
         _idx.nI[1] = _idx.nI[0];
     if (_idx.nJ[1] == -1)
         _idx.nJ[1] = _idx.nJ[0];
-
-    // Evaluate the case for an open end index
-    if (_idx.nI[1] == -2)
-        _idx.nI[1] = _data.getLines(sCache.substr(0,sCache.find('(')), false);
-    else
-        _idx.nI[1]++;
-    if (_idx.nJ[1] == -2)
-        _idx.nJ[1] = _data.getCols(sCache.substr(0,sCache.find('(')));
-    else
-        _idx.nJ[1]++;
 
     // Signal success
     return true;

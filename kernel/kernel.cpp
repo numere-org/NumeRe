@@ -36,7 +36,7 @@ extern value_type vAns;
 extern Integration_Vars parser_iVars;
 time_t tTimeZero = time(0);
 
-
+// Initialization of the static member variables
 wxTerm* NumeReKernel::m_parent = nullptr;
 queue<GraphHelper*> NumeReKernel::graphHelper;
 int NumeReKernel::nLINE_LENGTH = 80;
@@ -56,6 +56,7 @@ Debugmessenger NumeReKernel::_messenger;
 bool NumeReKernel::bSupressAnswer = false;
 bool NumeReKernel::bGettingLine = false;
 bool NumeReKernel::bErrorNotification = false;
+ofstream NumeReKernel::oLogFile;
 size_t NumeReKernel::nScriptLine = 0;
 string NumeReKernel::sScriptFileName = "";
 ProcedureLibrary NumeReKernel::ProcLibrary;
@@ -82,6 +83,7 @@ bool IsWow64()
 	return (bool)bIsWow64;
 }
 
+// Constructor
 NumeReKernel::NumeReKernel()
 {
 	sCommandLine.clear();
@@ -89,21 +91,25 @@ NumeReKernel::NumeReKernel()
 	sPlotCompose.clear();
 }
 
+// Destructor
 NumeReKernel::~NumeReKernel()
 {
 	CloseSession();
 }
 
+// Get the settings available in the options
 Settings NumeReKernel::getKernelSettings()
 {
 	return _option.sendSettings();
 }
 
+// Change the internal settings
 void NumeReKernel::setKernelSettings(const Settings& _settings)
 {
 	_option.copySettings(_settings);
 }
 
+// Save the cache in its current state automatically
 void NumeReKernel::Autosave()
 {
 	if (!_data.getSaveStatus())
@@ -111,6 +117,7 @@ void NumeReKernel::Autosave()
 	return;
 }
 
+// "Boot" the kernel
 void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string& sPredefinedFunctions)
 {
 	if (_parent && m_parent == nullptr)
@@ -118,30 +125,29 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 	//Do some start-up stuff here
 
 	string sFile = ""; 			// String fuer den Dateinamen.
-	string sScriptName = "";
 	string sTime = getTimeStamp(false);
 	string sLogFile = "numere.log";
 	string sPath = __sPath;
 
+	// Set the functions provided by the syntax object in the parent class
 	_functions.setPredefinedFuncs(sPredefinedFunctions);
-
 	_data.setPredefinedFuncs(_functions.getPredefinedFuncs());
-	//cerr << "Done.";
 
-	//cerr << " -> Reading system's information ... ";
+	// Get the version of the operating system
 	OSVERSIONINFOA _osversioninfo;
 	_osversioninfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
 	GetVersionExA(&_osversioninfo);
 
+	// Make the path UNIX style
 	while (sPath.find('\\') != string::npos)
 		sPath[sPath.find('\\')] = '/';
-	//cerr << "Done.";
 
-	//nextLoadMessage(50);
-
+    // Set the path in the settings object and load the settings
+    // from the config file
 	_option.setExePath(sPath);
 	_option.load(sPath);				// Lade Informationen aus einem ini-File
 
+	// Initialize the log file
 	if (_option.getbUseLogFile())
 	{
 		reduceLogFilesize((sPath + "/" + sLogFile).c_str());
@@ -149,6 +155,8 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 		if (oLogFile.fail())
 			oLogFile.close();
 	}
+
+	// Add headline information to the log file
 	if (oLogFile.is_open())
 	{
 		oLogFile << "--- NUMERE-SESSION-PROTOCOL: " << sTime << " ---" << endl;
@@ -157,7 +165,7 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 				 << " | OS: Windows v " << _osversioninfo.dwMajorVersion << "." << _osversioninfo.dwMinorVersion << "." << _osversioninfo.dwBuildNumber << " " << _osversioninfo.szCSDVersion << (IsWow64() ? " (64 Bit) ---" : " ---") << endl;
 	}
 
-	//cerr << " -> Setting global parameters ... ";
+	// Set the path tokens for all relevant objects
 	_data.setTokens(_option.getTokenPaths());
 	_out.setTokens(_option.getTokenPaths());
 	_pData.setTokens(_option.getTokenPaths());
@@ -166,10 +174,11 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 	_procedure.setTokens(_option.getTokenPaths());
 	_option.setTokens(_option.getTokenPaths());
 	_lang.setTokens(_option.getTokenPaths());
-	nLINE_LENGTH = _option.getWindow();
-	//cerr << "Done.";
 
-	//cerr << toSystemCodePage(" -> Verifying NumeRe file system ... ");
+	// Set the current line length
+	nLINE_LENGTH = _option.getWindow();
+
+	// Set the default paths for all objects
 	_out.setPath(_option.getSavePath(), true, sPath);
 	_data.setPath(_option.getLoadPath(), true, sPath);
 	_data.setSavePath(_option.getSavePath());
@@ -177,105 +186,81 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 	_pData.setPath(_option.getPlotOutputPath(), true, sPath);
 	_script.setPath(_option.getScriptPath(), true, sPath);
 	_procedure.setPath(_option.getProcsPath(), true, sPath);
+
+	// Create the default paths, if they are not present
 	_option.setPath(_option.getExePath() + "/docs/plugins", true, sPath);
 	_option.setPath(_option.getExePath() + "/docs", true, sPath);
 	_option.setPath(_option.getExePath() + "/user/lang", true, sPath);
 	_option.setPath(_option.getExePath() + "/user/docs", true, sPath);
 	_option.setPath(_option.getSavePath() + "/docs", true, sPath);
 	_functions.setPath(_option.getExePath(), false, sPath);
-	//cerr << "Done.";
-	if (oLogFile.is_open())
-		oLogFile << toString(time(0) - tTimeZero, true) << "> SYSTEM: File system was verified." << endl;
+	addToLog("> SYSTEM: File system was verified.");
 
-	//cerr << toSystemCodePage(" -> Loading documentation index ... ");
+	// Load the documentation index file
 	_option.loadDocIndex(false);
-	//cerr << "Done.";
-	if (oLogFile.is_open())
-		oLogFile << toString(time(0) - tTimeZero, true) << "> SYSTEM: Documentation index was loaded." << endl;
+	addToLog("> SYSTEM: Documentation index was loaded.");
 
+	// Update the documentation index file
 	if (BI_FileExists(_option.getExePath() + "/update.hlpidx"))
 	{
-		//cerr << toSystemCodePage(" -> Updating documentation index ... ");
 		_option.updateDocIndex();
-		//cerr << "Done.";
-		if (oLogFile.is_open())
-			oLogFile << toString(time(0) - tTimeZero, true) << "> SYSTEM: Documentation index was updated." << endl;
+		addToLog("> SYSTEM: Documentation index was updated.");
 	}
+
+	// Load custom language files
 	if (_option.getUseCustomLanguageFiles())
 	{
-		//cerr << toSystemCodePage(" -> Loading user documentation index ... ");
+	    // Load the custom documentation index
 		_option.loadDocIndex(_option.getUseCustomLanguageFiles());
-		//cerr << "Done.";
-		if (oLogFile.is_open())
-			oLogFile << toString(time(0) - tTimeZero, true) << "> SYSTEM: User Documentation index was loaded." << endl;
+		addToLog("> SYSTEM: User Documentation index was loaded.");
 	}
-	//cerr << toSystemCodePage(" -> Loading language files ... ");
-	_lang.loadStrings(_option.getUseCustomLanguageFiles());
-	//cerr << "Done.";
-	if (oLogFile.is_open())
-		oLogFile << toString(time(0) - tTimeZero, true) << "> SYSTEM: Language files were loaded." << endl;
 
+	// Load the language strings
+	_lang.loadStrings(_option.getUseCustomLanguageFiles());
+	addToLog("> SYSTEM: Language files were loaded.");
 
 	string sAutosave = _option.getSavePath() + "/cache.tmp";
 	string sCacheFile = _option.getExePath() + "/numere.cache";
 
-	//cerr << toSystemCodePage(" -> " + _lang.get("MAIN_LOADING_IOSTREAM") + " ... ");
-	//cerr << toSystemCodePage(_lang.get("COMMON_DONE")) << ".";
+	// Load the plugin informations
 	if (BI_FileExists(_procedure.getPluginInfoPath()))
 	{
-		//cerr << LineBreak(" -> "+_lang.get("MAIN_LOADING_PLUGINS")+" ... ", _option);
 		_procedure.loadPlugins();
 		_plugin = _procedure;
 		_data.setPluginCommands(_procedure.getPluginNames());
-		//cerr << toSystemCodePage(_lang.get("COMMON_DONE")) << ".";
-		if (oLogFile.is_open())
-			oLogFile << toString(time(0) - tTimeZero, true) << "> SYSTEM: Plugin information was loaded." << endl;
+		addToLog("> SYSTEM: Plugin information was loaded.");
 	}
+
+	// Load the function definitions
 	if (_option.getbDefineAutoLoad() && BI_FileExists(_option.getExePath() + "\\functions.def"))
 	{
-		//cerr << " -> ";
 		_functions.load(_option, true);
-		if (oLogFile.is_open())
-			oLogFile << toString(time(0) - tTimeZero, true) << "> SYSTEM: Function definitions were loaded." << endl;
+		addToLog("> SYSTEM: Function definitions were loaded.");
 	}
 
-	//cerr << toSystemCodePage(" -> " + _lang.get("MAIN_LOADING_FONT", toUpperCase(_option.getDefaultPlotFont().substr(0,1))+_option.getDefaultPlotFont().substr(1)) + " ... ");
+	// Load the binary plot font
 	_fontData.LoadFont(_option.getDefaultPlotFont().c_str(), (_option.getExePath() + "\\fonts").c_str());
-	//cerr << toSystemCodePage(_lang.get("COMMON_DONE")) << ".";
 
-	//cerr << LineBreak(" -> "+_lang.get("MAIN_LOADING_AUTOSAVE_SEARCH")+" ... ", _option);
+	// Load the autosave file
 	if (BI_FileExists(sAutosave) || BI_FileExists(sCacheFile))
 	{
-		//cerr << toSystemCodePage(_lang.get("MAIN_LOADING_AUTOSAVE_FOUND"));
 		if (BI_FileExists(sAutosave))
 		{
-			// --> Lade den letzten Cache, falls dieser existiert <--
-			//cerr << LineBreak(" -> "+_lang.get("MAIN_LOADING_AUTOSAVE")+" ... ", _option);
 			_data.openAutosave(sAutosave, _option);
 			_data.setSaveStatus(true);
 			remove(sAutosave.c_str());
-			//cerr << toSystemCodePage(_lang.get("MAIN_LOADING_AUTOSAVE_TRANSLATING")+" ... ");
 			_data.saveCache();
 		}
 		else
 		{
-			//cerr << LineBreak(" -> "+_lang.get("MAIN_LOADING_AUTOSAVE")+" ... ", _option);
 			_data.loadCache();
 		}
-		if (oLogFile.is_open())
-			oLogFile << toString(time(0) - tTimeZero, true) << "> SYSTEM: Automatic backup was loaded." << endl;
-	}
-	/**else
-	    cerr << toSystemCodePage(_lang.get("MAIN_LOADING_AUTOSAVE_NOT_FOUND"));*/
 
-
-	if (sScriptName.length())
-	{
-		_script.setScriptFileName(sScriptName);
-		_script.setAutoStart(true);
+		addToLog("> SYSTEM: Automatic backup was loaded.");
 	}
 
-	_parser.DefineVar(_nrT("ans"), &vAns);        // Deklariere die spezielle Variable "ans", die stets, das letzte Ergebnis speichert und die vier Standardvariablen
+    // Declare the default variables
+	_parser.DefineVar("ans", &vAns);        // Deklariere die spezielle Variable "ans", die stets, das letzte Ergebnis speichert und die vier Standardvariablen
 	_parser.DefineVar(parser_iVars.sName[0], &parser_iVars.vValue[0][0]);
 	_parser.DefineVar(parser_iVars.sName[1], &parser_iVars.vValue[1][0]);
 	_parser.DefineVar(parser_iVars.sName[2], &parser_iVars.vValue[2][0]);
@@ -284,14 +269,17 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 	// --> VAR-FACTORY Deklarieren (Irgendwo muessen die ganzen Variablen-Werte ja auch gespeichert werden) <--
 	_parser.SetVarFactory(parser_AddVariable, &_parser);
 
+	// Define the operators
 	defineOperators();
 
+	// Define the constants
 	defineConst();
 
+	// Define the functions
 	defineFunctions();
-
 }
 
+// This member function declares all operators
 void NumeReKernel::defineOperators()
 {
 	// --> Syntax fuer die Umrechnungsfunktionen definieren und die zugehoerigen Funktionen deklarieren <--
@@ -341,6 +329,7 @@ void NumeReKernel::defineOperators()
 	_parser.DefineOprt(_nrT("&"), parser_BinAND, prLOGIC, oaLEFT, true);
 }
 
+// This member function declares all constants
 void NumeReKernel::defineConst()
 {
 	// --> Eigene Konstanten <--
@@ -392,6 +381,7 @@ void NumeReKernel::defineConst()
 	_parser.DefineConst(_nrT("void"), NAN);
 }
 
+// This member function declares all mathematical functions
 void NumeReKernel::defineFunctions()
 {
 	// --> mathemat. Funktion deklarieren <--
@@ -464,6 +454,7 @@ void NumeReKernel::defineFunctions()
 	_parser.DefineFun("Li2", parser_dilogarithm, true);                         // Li2(x)
 }
 
+// This member function prints the version headline and the version information to the console
 void NumeReKernel::printVersionInfo()
 {
 	bWritingTable = true;
@@ -476,13 +467,10 @@ void NumeReKernel::printVersionInfo()
 	make_hline(80);
 
 	printPreFmt("|\n");
-	//cerr << "|" << endl;
 
 	if (_option.getbGreeting() && BI_FileExists(_option.getExePath() + "\\numere.ini"))
 	{
-		printPreFmt(toSystemCodePage(BI_Greeting(_option)) + "|\n"); /// Das hat einen Bug markiert: zwei mal "\n" bricht die Auswertung ab.
-		//cerr << toSystemCodePage(BI_Greeting(_option));
-		//cerr << "|" << endl;
+		printPreFmt(toSystemCodePage(BI_Greeting(_option)) + "|\n");
 	}
 	print(LineBreak(_lang.get("PARSER_INTRO"), _option));;
 	printPreFmt("|\n|<- ");
@@ -491,7 +479,8 @@ void NumeReKernel::printVersionInfo()
 
 }
 
-/// --> Main Loop <--
+// --> Main Loop <--
+// This function is called from the terminal to process the operations done in the kernel
 NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 {
 	if (!m_parent)
@@ -505,12 +494,14 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 	string sLine_Temp = "";     // Temporaerer String fuer die Eingabe
 	string sCache = "";         // Zwischenspeicher fuer die Cache-Koordinaten
 	string sKeep = "";          // Zwei '\' am Ende einer Zeile ermoeglichen es, dass die Eingabe auf mehrere Zeilen verteilt wird.
-	// Die vorherige Zeile wird hierin zwischengespeichert
-	string sCmdCache = "";
-	string sLine = "";
-	string sCurrentCommand = "";
+	string sCmdCache = "";      // Die vorherige Zeile wird hierin zwischengespeichert
+	string sLine = "";          // The actual line
+	string sCurrentCommand = "";// The current command
 	value_type* v = 0;          // Ergebnisarray
 	int nNum = 0;               // Zahl der Ergebnisse in value_type* v
+
+	// Needed for some handler functions
+	KernelStatus nReturnVal = NUMERE_ERROR;
 
 	// add the passed command to the internal command line (append it, if it's non-empty)
 	sCommandLine += sCommand;
@@ -534,7 +525,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 		return NUMERE_PENDING;
 	}
 
-	// Pass the combined command line to the intenal variable and clear the contents of the class
+	// Pass the combined command line to the internal variable and clear the contents of the class
 	// member variable (we don't want to repeat the tasks entered last time)
 	sLine = sCommandLine;
 	sCommandLine.clear();
@@ -547,166 +538,33 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 		_procedure.setPath(_option.getProcsPath(), true, _procedure.getProgramPath());
 		_option.setProcPath(_procedure.getPath());
 	}
-	// --> "try {...} catch() {...}" verwenden wir, um Parser-Exceptions abzufangen und korrekt auszuwerten <--
+
+	// Evaluate the passed commands or the contents of the script
+	// This is the actual loop. It will evaluate at least once.
 	do
 	{
 		bSupressAnswer = false;
 		bWriteToCache = false;
 		sCache = "";
 
+		// Reset the parser variable map pointer
 		if (_parser.mVarMapPntr)
 			_parser.mVarMapPntr = 0;
 
+        // Try-catch block to handle all the internal exceptions
 		try
 		{
-			if (!sCmdCache.length())
-			{
-				if (_data.pausedOpening())
-				{
-					_data.openFromCmdLine(_option, "", true);
-					if (_data.isValid())
-					{
-						print(LineBreak(_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option, true, 4));
-						if (oLogFile.is_open())
-							oLogFile << toString(time(0) - tTimeZero, true) << "> SYSTEM: Data out of " << _data.getDataFileName("data") << " was successfully loaded." << endl;
-					}
-				}
-				if (_script.getAutoStart())
-				{
-					print(LineBreak(_lang.get("PARSER_STARTINGSCRIPT", _script.getScriptFileName()), _option, true, 4));
-					if (oLogFile.is_open())
-						oLogFile << toString(time(0) - tTimeZero, true) << "> SYSTEM: Starting Script " << _script.getScriptFileName() << endl;
-					_script.openScript();
-				}
+		    // Handle command line sources and validate the input
+			if (!handleCommandLineSource(sLine, sCmdCache, sKeep))
+                continue;
 
-				_data.setCacheStatus(false);
-
-				// --> Wenn gerade ein Script aktiv ist, lese dessen naechste Zeile, sonst nehme eine Zeile von std::cin <--
-				if (_script.isValid() && _script.isOpen())
-				{
-					sLine = _script.getNextScriptCommand();
-					sScriptFileName = _script.getScriptFileName();
-					nScriptLine = _script.getCurrentLine();
-				}
-				else if (_option.readCmdCache().length())
-				{
-					if (oLogFile.is_open())
-						oLogFile << toString(time(0) - tTimeZero, true) << "> SYSTEM: Processing command line parameters:" << endl;
-					sLine = _option.readCmdCache(true);
-				}
-				// --> Leerzeichen und Tabulatoren entfernen <--
-				StripSpaces(sLine);
-				for (unsigned int i = 0; i < sLine.length(); i++)
-				{
-					if (sLine[i] == '\t')
-						sLine[i] = ' ';
-				}
-				if (findCommand(sLine).sString != "help"
-						&& findCommand(sLine).sString != "find"
-						&& findCommand(sLine).sString != "search"
-						&& (sLine.find('(') != string::npos || sLine.find('{') != string::npos))
-				{
-					if (!validateParenthesisNumber(sLine))
-						throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, sLine.find('('));
-				}
-
-				// --> Keine Laenge? Ignorieren! <--
-				if (!sLine.length() || sLine[0] == '@')
-					continue;
-				if (sLine.find("<helpindex>") != string::npos && sLine.find("</helpindex>") != string::npos)
-				{
-					_procedure.addHelpIndex(sLine.substr(0, sLine.find("<<>>")), getArgAtPos(sLine, sLine.find("id=") + 3));
-					sLine.erase(0, sLine.find("<<>>") + 4);
-					_option.addToDocIndex(sLine, _option.getUseCustomLanguageFiles());
-					_plugin = _procedure;
-					continue;
-				}
-
-				// --> Kommando "global" entfernen <--
-				if (findCommand(sLine).sString == "global")
-				{
-					sLine = sLine.substr(findCommand(sLine).nPos + 6);
-					StripSpaces(sLine);
-				}
-				// --> Wenn die Laenge groesser als 2 ist, koennen '\' am Ende sein <--
-				if (sLine.length() > 2)
-				{
-					if (sLine.substr(sLine.length() - 2, 2) == "\\\\")
-					{
-						// --> Ergaenze die Eingabe zu sKeep und beginne einen neuen Schleifendurchlauf <--
-						sKeep += sLine.substr(0, sLine.length() - 2);
-						continue;
-					}
-				}
-
-				/* --> Steht etwas in sKeep? Ergaenze die aktuelle Eingabe, weise dies
-				 *     wiederum an sLine zu und loesche den Inhalt von sKeep <--
-				 */
-				if (sKeep.length())
-				{
-					sKeep += sLine;
-					sLine = sKeep;
-					sKeep = "";
-				}
-
-			}
+			// Get the current command
 			sCurrentCommand = findCommand(sLine).sString;
-			if ((sCmdCache.length() || sLine.find(';') != string::npos) && !_procedure.is_writing() && sCurrentCommand != "procedure")
-			{
-				if (sCmdCache.length())
-				{
-					while (sCmdCache.front() == ';' || sCmdCache.front() == ' ')
-						sCmdCache.erase(0, 1);
-					if (!sCmdCache.length())
-						continue;
-					if (sCmdCache.find(';') != string::npos)
-					{
-						for (unsigned int i = 0; i < sCmdCache.length(); i++)
-						{
-							if (sCmdCache[i] == ';' && !isInQuotes(sCmdCache, i))
-							{
-								bSupressAnswer = true;
-								sLine = sCmdCache.substr(0, i);
-								sCmdCache.erase(0, i + 1);
-								break;
-							}
-							if (i == sCmdCache.length() - 1)
-							{
-								sLine = sCmdCache;
-								sCmdCache.clear();
-								break;
-							}
-						}
-					}
-					else
-					{
-						sLine = sCmdCache;
-						sCmdCache.clear();
-					}
-				}
-				else if (sLine.find(';') == sLine.length() - 1)
-				{
-					bSupressAnswer = true;
-					sLine.pop_back();
-				}
-				else
-				{
-					for (unsigned int i = 0; i < sLine.length(); i++)
-					{
-						if (sLine[i] == ';' && !isInQuotes(sLine, i))
-						{
-							if (i != sLine.length() - 1)
-								sCmdCache = sLine.substr(i + 1);
-							sLine.erase(i);
-							bSupressAnswer = true;
-						}
-						if (i == sLine.length() - 1)
-						{
-							break;
-						}
-					}
-				}
-			}
+
+			// Get the tasks from the command cache or add
+			// the current line to the command cache
+			if (!getLineFromCommandCache(sLine, sCmdCache, sCurrentCommand))
+                continue;
 
 			// Eval debugger breakpoints from scripts
 			if (sLine.substr(0, 2) == "|>"
@@ -719,125 +577,33 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 					evalDebuggerBreakPoint(_option, _data.getStringVars(), sLine, &_parser);
 			}
 
-			if (oLogFile.is_open())
-				oLogFile << toString(time(0) - tTimeZero, true) << "> " << sLine << endl;
+			// Log the current line
+			addToLog(sLine);
+
+			// Handle, whether the pressed the ESC key
 			if (GetAsyncCancelState() && _script.isValid() && _script.isOpen())
 			{
 				if (_option.getbUseESCinScripts())
 					throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
 			}
+			// Done explicitly twice to clear the key cache
 			GetAsyncKeyState(VK_ESCAPE);
-			sCurrentCommand = findCommand(sLine).sString;
-			if ((sCurrentCommand == "compose"
-					|| sCurrentCommand == "endcompose"
-					|| sPlotCompose.length())
-					&& !_procedure.is_writing()
-					&& sCurrentCommand != "quit"
-					&& sCurrentCommand != "help")
-			{
-				if (!sPlotCompose.length() && findCommand(sLine).sString == "compose")
-				{
-					sPlotCompose = "plotcompose ";
-					if (matchParams(sLine, "multiplot", '='))
-					{
-						sPlotCompose += "-multiplot=" + getArgAtPos(sLine, matchParams(sLine, "multiplot", '=') + 9) + " <<COMPOSE>> ";
-					}
-					if (!(_script.isValid() && _script.isOpen()) && !sCmdCache.length())
-					{
-						if (_procedure.getLoop())
-						{
-							// --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
-							printPreFmt("|" + _procedure.getCurrentBlock());
-							if (_procedure.getCurrentBlock() == "IF")
-							{
-								if (_procedure.getLoop() > 1)
-									printPreFmt("---");
-								else
-									printPreFmt("-");
-							}
-							else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getLoop() > 1)
-								printPreFmt("-");
-							else
-							{
-								if (_procedure.getLoop() > 1)
-									printPreFmt("--");
-							}
-							printPreFmt(strfill("> ", 2 * _procedure.getLoop(), '-'));
-						}
-						else if (_procedure.is_writing())
-						{
-							printPreFmt("|PROC> ");
-						}
-						else if (!_procedure.is_writing() && sPlotCompose.length())
-						{
-							printPreFmt("|COMP> ");
-						}
-						return NUMERE_PENDING_SPECIAL;
-					}
-					continue;
-				}
-				else if (findCommand(sLine).sString == "abort")
-				{
-					sPlotCompose = "";
-					print(LineBreak(_lang.get("PARSER_ABORTED"), _option));
-					continue;
-				}
-				else if (findCommand(sLine).sString != "endcompose")
-				{
-					string sCommand = findCommand(sLine).sString;
-					if (sCommand.substr(0, 4) == "plot"
-							|| sCommand.substr(0, 7) == "subplot"
-							|| sCommand.substr(0, 4) == "grad"
-							|| sCommand.substr(0, 4) == "dens"
-							|| sCommand.substr(0, 4) == "draw"
-							|| sCommand.substr(0, 4) == "vect"
-							|| sCommand.substr(0, 4) == "cont"
-							|| sCommand.substr(0, 4) == "surf"
-							|| sCommand.substr(0, 4) == "mesh")
-					{
-						sPlotCompose += sLine + " <<COMPOSE>> ";
-						if (!(_script.isValid() && _script.isOpen()) && !sCmdCache.length())
-						{
-							if (_procedure.getLoop())
-							{
-								// --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
-								printPreFmt("|" + _procedure.getCurrentBlock());
-								if (_procedure.getCurrentBlock() == "IF")
-								{
-									if (_procedure.getLoop() > 1)
-										printPreFmt("---");
-									else
-										printPreFmt("-");
-								}
-								else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getLoop() > 1)
-									printPreFmt("-");
-								else
-								{
-									if (_procedure.getLoop() > 1)
-										printPreFmt("--");
-								}
-								printPreFmt(strfill("> ", 2 * _procedure.getLoop(), '-'));
-							}
-							else if (_procedure.is_writing())
-							{
-								printPreFmt("|PROC> ");
-							}
-							else if (!_procedure.is_writing() && sPlotCompose.length())
-							{
-								printPreFmt("|COMP> ");
-							}
-							return NUMERE_PENDING_SPECIAL;
-						}
-					}
-					continue;
-				}
-				else
-				{
-					sLine = sPlotCompose;
-					sPlotCompose = "";
-				}
-			}
 
+			// Get the current command
+			sCurrentCommand = findCommand(sLine).sString;
+
+			// Handle the compose block
+			nReturnVal = NUMERE_ERROR;
+			if (!handleComposeBlock(sLine, sCmdCache, sCurrentCommand, nReturnVal))
+            {
+                // returns false either when the loop shall return
+                // or it shall continue
+                if (nReturnVal)
+                    return nReturnVal;
+                continue;
+            }
+
+            // Evaluate the install info string
 			if (_script.isValid() && _script.isOpen() && _script.installProcedures() && _script.getInstallInfoString().length())
 			{
 				if (matchParams(_script.getInstallInfoString(), "type", '='))
@@ -849,171 +615,49 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 					}
 				}
 			}
+
+			// Get the current command
 			sCurrentCommand = findCommand(sLine).sString;
-			if (sCurrentCommand == "uninstall")
-			{
-				string sPlugin = fromSystemCodePage(getArgAtPos(sLine, findCommand(sLine).nPos + 9));
-				sPlugin = _procedure.deletePlugin(sPlugin);
-				if (sPlugin.length())
-				{
-					_plugin = _procedure;
-					if (sPlugin != "<<NO_HLP_ENTRY>>")
-					{
-						while (sPlugin.find(';') != string::npos)
-							sPlugin[sPlugin.find(';')] = ',';
-						while (sPlugin.length())
-						{
-							_option.removeFromDocIndex(getNextArgument(sPlugin, true), _option.getUseCustomLanguageFiles());
-						}
-					}
-					print(LineBreak(_lang.get("PARSER_PLUGINDELETED"), _option));
-				}
-				else
-					print(LineBreak(_lang.get("PARSER_PLUGINNOTFOUND"), _option));
-				return NUMERE_DONE_KEYWORD;
-			}
 
-			if (_procedure.is_writing() || sCurrentCommand == "procedure")
-			{
-				if (!_procedure.writeProcedure(sLine))
-					print(LineBreak(_lang.get("PARSER_CANNOTCREATEPROC"), _option));
-				if (!(_script.isValid() && _script.isOpen()) && !sCmdCache.length())
-				{
-					if (_procedure.getLoop())
-					{
-						// --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
-						printPreFmt("|" + _procedure.getCurrentBlock());
-						if (_procedure.getCurrentBlock() == "IF")
-						{
-							if (_procedure.getLoop() > 1)
-								printPreFmt("---");
-							else
-								printPreFmt("-");
-						}
-						else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getLoop() > 1)
-							printPreFmt("-");
-						else
-						{
-							if (_procedure.getLoop() > 1)
-								printPreFmt("--");
-						}
-						printPreFmt(strfill("> ", 2 * _procedure.getLoop(), '-'));
-					}
-					else if (_procedure.is_writing())
-					{
-						printPreFmt("|PROC> ");
-					}
-					else if (!_procedure.is_writing() && sPlotCompose.length())
-					{
-						printPreFmt("|COMP> ");
-					}
-					return NUMERE_PENDING_SPECIAL;
-				}
-				continue;
-			}
+			// uninstall the plugin, if desired
+			if (uninstallPlugin(sLine, sCurrentCommand))
+                return NUMERE_DONE_KEYWORD;
 
-			if (sLine.find("to_cmd(") != string::npos && !_procedure.getLoop())
-			{
-				unsigned int nPos = 0;
-				while (sLine.find("to_cmd(", nPos) != string::npos)
-				{
-					nPos = sLine.find("to_cmd(", nPos) + 6;
-					if (isInQuotes(sLine, nPos))
-						continue;
-					unsigned int nParPos = getMatchingParenthesis(sLine.substr(nPos));
-					if (nParPos == string::npos)
-						throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
-					string sCmdString = sLine.substr(nPos + 1, nParPos - 1);
-					StripSpaces(sCmdString);
-					if (containsStrings(sCmdString) || _data.containsStringVars(sCmdString))
-					{
-						sCmdString += " -nq";
-						parser_StringParser(sCmdString, sCache, _data, _parser, _option, true);
-						sCache = "";
-					}
-					sLine = sLine.substr(0, nPos - 6) + sCmdString + sLine.substr(nPos + nParPos + 1);
-					nPos -= 5;
-				}
-				sCurrentCommand = findCommand(sLine).sString;
-			}
-			// --> Prozeduren abarbeiten <--
-			if (sLine.find('$') != string::npos && sLine.find('(', sLine.find('$')) != string::npos && !_procedure.getLoop())
-			{
-				unsigned int nPos = 0;
-				int nProc = 0;
-				while (sLine.find('$', nPos) != string::npos && sLine.find('(', sLine.find('$', nPos)) != string::npos)
-				{
-					unsigned int nParPos = 0;
-					nPos = sLine.find('$', nPos) + 1;
-					string __sName = sLine.substr(nPos, sLine.find('(', nPos) - nPos);
-					string __sVarList = "";
-					if (sLine[nPos] == '\'')
-					{
-						__sName = sLine.substr(nPos + 1, sLine.find('\'', nPos + 1) - nPos - 1);
-						nParPos = sLine.find('(', nPos + 1 + __sName.length());
-					}
-					else
-						nParPos = sLine.find('(', nPos);
-					__sVarList = sLine.substr(nParPos);
-					nParPos += getMatchingParenthesis(sLine.substr(nParPos));
-					__sVarList = __sVarList.substr(1, getMatchingParenthesis(__sVarList) - 1);
+			// Handle the writing of procedures
+			nReturnVal = NUMERE_ERROR;
+			if (!handleProcedureWrite(sLine, sCmdCache, sCurrentCommand, nReturnVal))
+            {
+                // returns false either when the loop shall return
+                // or it shall continue
+                if (nReturnVal)
+                    return nReturnVal;
+                continue;
+            }
 
-					if (!isInQuotes(sLine, nPos, true))
-					{
-						Returnvalue _rTemp = _procedure.execute(__sName, __sVarList, _parser, _functions, _data, _option, _out, _pData, _script);
-						if (!_procedure.getReturnType())
-							sLine = sLine.substr(0, nPos - 1) + sLine.substr(nParPos + 1);
-						else
-						{
-							_procedure.replaceReturnVal(sLine, _parser, _rTemp, nPos - 1, nParPos + 1, "PROC~[" + __sName + "~ROOT_" + toString(nProc) + "]");
-							nProc++;
-						}
-					}
-					nPos += __sName.length() + __sVarList.length() + 1;
-				}
-				StripSpaces(sLine);
-				if (!sLine.length())
-					continue;
-			}
+			// Handle the "to_cmd()" function
+			handleToCmd(sLine, sCache, sCurrentCommand);
+
+			// Handle procedure calls at this location
+			// Will return false, if the command line was cleared completely
+			if (!evaluateProcedureCalls(sLine))
+                continue;
 
 			// --> Gibt es "??"? Dann rufe die Prompt-Funktion auf <--
 			if (!_procedure.getLoop() && sLine.find("??") != string::npos && sCurrentCommand != "help")
 				sLine = parser_Prompt(sLine);
 
-			if (_procedure.isPluginCmd(sLine) && !_procedure.getLoop())
-			{
-				if (_procedure.evalPluginCmd(sLine))
-				{
-					_option.setSystemPrintStatus(false);
-					Returnvalue _rTemp = _procedure.execute(_procedure.getPluginProcName(), _procedure.getPluginVarList(), _parser, _functions, _data, _option, _out, _pData, _script);
-					if (_rTemp.vStringVal.size() && sLine.find("<<RETURNVAL>>") != string::npos)
-					{
-						string sReturn = "{";
-						for (unsigned int v = 0; v < _rTemp.vStringVal.size(); v++)
-							sReturn += _rTemp.vStringVal[v] + ",";
-						sReturn.back() = '}';
-						sLine.replace(sLine.find("<<RETURNVAL>>"), 13, sReturn);
-					}
-					else if (!_rTemp.vStringVal.size() && sLine.find("<<RETURNVAL>>") != string::npos)
-					{
-						sLine.replace(sLine.find("<<RETURNVAL>>"), 13, "_~PLUGIN[" + _procedure.getPluginProcName() + "~ROOT]");
-						vAns = _rTemp.vNumVal[0];
-						_parser.SetVectorVar("_~PLUGIN[" + _procedure.getPluginProcName() + "~ROOT]", _rTemp.vNumVal);
-					}
-					_option.setSystemPrintStatus(true);
-					if (!sLine.length())
-						continue;
-				}
-				else
-				{
-					continue;
-				}
-			}
+            // Handle plugin commands
+            // Will return false, if the command line was cleared completely
+			if (!executePlugins(sLine))
+                continue;
+
+            // remove the "explicit" command, which may be used to suppress plugins
 			if (findCommand(sLine, "explicit").sString == "explicit")
 			{
 				sLine.erase(findCommand(sLine, "explicit").nPos, 8);
 				StripSpaces(sLine);
 			}
+
 			/* --> Die Keyword-Suche soll nur funktionieren, wenn keine Schleife eingegeben wird, oder wenn eine
 			 *     eine Schleife eingegeben wird, dann nur in den wenigen Spezialfaellen, die zum Nachschlagen
 			 *     eines Keywords noetig sind ("list", "help", "find", etc.) <--
@@ -1068,67 +712,19 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 						//case  2: return 1;  // Keyword "mode"
 				}
 			}
-			// --> Wenn die call()-Methode FALSE zurueckgibt, ist etwas schief gelaufen! <--
+
+			// Evaluate function calls (only outside the flow control blocks)
 			if (!_procedure.getLoop() && sCurrentCommand != "for" && sCurrentCommand != "if" && sCurrentCommand != "while")
 			{
 				if (!_functions.call(sLine, _option))
 					throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
 			}
-			// --> Prozeduren abarbeiten <--
-			if (sLine.find('$') != string::npos && sLine.find('(', sLine.find('$')) != string::npos && !_procedure.getLoop())
-			{
-				unsigned int nPos = 0;
-				int nProc = 0;
-				while (sLine.find('$', nPos) != string::npos && sLine.find('(', sLine.find('$', nPos)) != string::npos)
-				{
-					unsigned int nParPos = 0;
-					nPos = sLine.find('$', nPos) + 1;
-					string __sName = sLine.substr(nPos, sLine.find('(', nPos) - nPos);
-					nParPos = sLine.find('(', nPos);
-					nParPos += getMatchingParenthesis(sLine.substr(nParPos));
-					string __sVarList = sLine.substr(sLine.find('(', nPos));
-					__sVarList = __sVarList.substr(+1, getMatchingParenthesis(__sVarList) - 1);
 
-					if (!isInQuotes(sLine, nPos))
-					{
-						Returnvalue _rTemp = _procedure.execute(__sName, __sVarList, _parser, _functions, _data, _option, _out, _pData, _script);
-						if (!_procedure.getReturnType())
-							sLine = sLine.substr(0, nPos - 1) + sLine.substr(nParPos + 1);
-						else
-						{
-							_procedure.replaceReturnVal(sLine, _parser, _rTemp, nPos - 1, nParPos + 1, "PROC~[" + __sName + "~ROOT_" + toString(nProc) + "]");
-							nProc++;
-						}
-					}
-					nPos += __sName.length() + __sVarList.length() + 1;
+			// Handle procedure calls at this location
+			// Will return false, if the command line was cleared completely
+			if (!evaluateProcedureCalls(sLine))
+                continue;
 
-				}
-				StripSpaces(sLine);
-				if (!sLine.length())
-					continue;
-			}
-			else if (sLine.find('$') != string::npos && sLine.find('(', sLine.find('$')) == string::npos)
-			{
-				size_t i = sLine.find('$');
-				bool isnotinquotes = true;
-				while (isInQuotes(sLine, i))
-				{
-					if (sLine.find('$', i + 1) != string::npos)
-					{
-						i = sLine.find('$', i + 1);
-					}
-					else
-					{
-						isnotinquotes = false;
-						break;
-					}
-				}
-				if (isnotinquotes)
-				{
-					sLine = "";
-					continue;
-				}
-			}
 			// --> Nochmals ueberzaehlige Leerzeichen entfernen <--
 			StripSpaces(sLine);
 			if (!_procedure.getLoop())
@@ -1136,118 +732,48 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 				// this is obviously a time consuming task => to be investigated
 				evalRecursiveExpressions(sLine);
 			}
-			/*if (_option.getbDebug())
-			    cerr << "|-> DEBUG: sLine = " << sLine << endl;*/
 
-			// --> Befinden wir uns in einem Loop? Dann ist nLoop > -1! <--
-			if (_procedure.getLoop() || sCurrentCommand == "for" || sCurrentCommand == "if" || sCurrentCommand == "while")
-			{
-				// --> Die Zeile in den Ausdrucksspeicher schreiben, damit sie spaeter wiederholt aufgerufen werden kann <--
-				_procedure.setCommand(sLine, _parser, _data, _functions, _option, _out, _pData, _script);
-				/* --> So lange wir im Loop sind und nicht endfor aufgerufen wurde, braucht die Zeile nicht an den Parser
-				 *     weitergegeben werden. Wir ignorieren daher den Rest dieser for(;;)-Schleife <--
-				 */
-				if (!(_script.isValid() && _script.isOpen()) && !sCmdCache.length())
-				{
-					if (_procedure.getLoop())
-					{
-						toggleTableStatus();
-						// --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
-						printPreFmt("|" + _procedure.getCurrentBlock());
-						if (_procedure.getCurrentBlock() == "IF")
-						{
-							if (_procedure.getLoop() > 1)
-								printPreFmt("---");
-							else
-								printPreFmt("-");
-						}
-						else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getLoop() > 1)
-							printPreFmt("-");
-						else
-						{
-							if (_procedure.getLoop() > 1)
-								printPreFmt("--");
-						}
-						toggleTableStatus();
-						printPreFmt(strfill("> ", 2 * _procedure.getLoop(), '-'));
-					}
-					else if (_procedure.is_writing())
-					{
-						printPreFmt("|PROC> ");
-					}
-					else if (!_procedure.is_writing() && sPlotCompose.length() )
-					{
-						printPreFmt("|COMP> ");
-					}
-					else
-					{
-						if (_script.wasLastCommand())
-						{
-							print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
-							_data.setPluginCommands(_procedure.getPluginNames());
-						}
-						bCancelSignal = false;
-						return NUMERE_DONE_KEYWORD;
-					}
-					return NUMERE_PENDING_SPECIAL;
-				}
-				continue;
-			}
+			// Handle the flow controls like "if", "while", "for"
+			nReturnVal = NUMERE_ERROR;
+			if (!handleFlowControls(sLine, sCmdCache, sCurrentCommand, nReturnVal))
+            {
+                // returns false either when the loop shall return
+                // or it shall continue
+                if (nReturnVal)
+                    return nReturnVal;
+                continue;
+            }
+
 			// --> Gibt es "??" ggf. nochmal? Dann rufe die Prompt-Funktion auf <--
 			if (sLine.find("??") != string::npos)
 				sLine = parser_Prompt(sLine);
-			// --> Gibt es "data(" oder "cache("? Dann rufe die GetDataElement-Methode auf <--
+
+			// Get data elements for the current command line
 			if (!containsStrings(sLine)
 					&& !_data.containsStringVars(sLine)
 					&& (sLine.find("data(") != string::npos || _data.containsCacheElements(sLine)))
 			{
-				//cerr << "get data element (parser)" << endl;
 				sCache = getDataElements(sLine, _parser, _data, _option);
 				if (sCache.length() && sCache.find('#') == string::npos)
 					bWriteToCache = true;
 			}
-			// --> Workaround fuer den x = x+1-Bug: In diesem Fall sollte die Eingabe x := x+1 lauten und wird hier weiterverarbeitet <--
+
+			// Remove the definition operator
 			while (sLine.find(":=") != string::npos)
 			{
 				sLine.erase(sLine.find(":="), 1);
 			}
-			// --> String-Syntax ("String" oder #VAR)? String-Parser aufrufen und mit dem naechsten Schleifendurchlauf fortfahren <--
-			if (containsStrings(sLine) || _data.containsStringVars(sLine))
-			{
-				int nReturn = parser_StringParser(sLine, sCache, _data, _parser, _option);
-				if (nReturn)
-				{
-					if (nReturn == 1)
-					{
-						if (!sCmdCache.length() && !(_script.isValid() && _script.isOpen()))
-						{
-							if (_script.wasLastCommand())
-							{
-								print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
-								_data.setPluginCommands(_procedure.getPluginNames());
-							}
-							sCommandLine.clear();
-							bCancelSignal = false;
-							return NUMERE_DONE_KEYWORD;
-						}
-						else
-							continue;
-					}
-					if (sCache.length() && _data.containsCacheElements(sCache) && !bWriteToCache)
-						bWriteToCache = true;
-				}
-				else
-				{
-					throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-				}
-			}
 
-			// --> Moeglicherweise erscheint nun "{{". Dies muss ersetzt werden <--
-			if (sLine.find("{") != string::npos && (containsStrings(sLine) || _data.containsStringVars(sLine)))
-			{
-				parser_VectorToExpr(sLine, _option);
-			}
-
+			// evaluate strings
+			nReturnVal = NUMERE_ERROR;
+			if (!evaluateStrings(sLine, sCache, sCmdCache, bWriteToCache, nReturnVal))
+            {
+                // returns false either when the loop shall return
+                // or it shall continue
+                if (nReturnVal)
+                    return nReturnVal;
+                continue;
+            }
 
 			// --> Wenn die Ergebnisse in den Cache geschrieben werden sollen, bestimme hier die entsprechenden Koordinaten <--
 			if (bWriteToCache)
@@ -1272,42 +798,20 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 			if (!_parser.IsAlreadyParsed(sLine))
 				_parser.SetExpr(sLine);
 
-
 			// --> Jetzt weiss der Parser, wie viele Ergebnisse er berechnen muss <--
 			v = _parser.Eval(nNum);
-			if (nNum > 1)
-			{
-				//value_type *v = _parser.Eval(nNum);
-				vAns = v[0];
-				if (!bSupressAnswer)
-				{
-					int nLineBreak = numberOfNumbersPerLine(_option);
-					string sAns = "ans = {";
-					for (int i = 0; i < nNum; ++i)
-					{
-						sAns += strfill(toString(v[i], _option), _option.getPrecision() + 7);
-						if (i < nNum - 1)
-							sAns += ", ";
-						if (nNum + 1 > nLineBreak && !((i + 1) % nLineBreak) && i < nNum - 1)
-							sAns += "...\n|          ";
-					}
-					sAns += "}";
-					printResult(sAns, sCmdCache, _script.isValid() && _script.isOpen());
-				}
-			}
-			else
-			{
-				vAns = v[0];
-				if (!bSupressAnswer)
-					printResult("ans = " + toString(vAns, _option), sCmdCache, _script.isOpen() && _script.isValid());
-			}
+
+			// Create the answer of the calculation and print it
+			// to the command line, if not suppressed
+			createCalculationAnswer(nNum, v, sCmdCache);
+
 			if (bWriteToCache)
 				_data.writeToCache(_idx, sCache, v, nNum);
 		}
+		// This section starts the error handling
 		catch (mu::Parser::exception_type& e)
 		{
 			_option.setSystemPrintStatus(true);
-			_procedure.reset();
 			// --> Vernuenftig formatierte Fehlermeldungen <--
 			unsigned int nErrorPos = (int)e.GetPos();
 			sendErrorNotification();
@@ -1319,7 +823,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 			// --> Eigentliche Fehlermeldung <--
 			print(LineBreak(e.GetMsg(), _option));
 			print(LineBreak(_lang.get("ERR_EXPRESSION", maskProcedureSigns(e.GetExpr())), _option, true, 4, 15));
-			//cerr << "|   Ausdruck:  " << LineBreak("\"" + e.GetExpr() + "\"", _option, true, 15, 15) << endl;
 
 			/* --> Ausdruecke, die laenger als 63 Zeichen sind, passen nicht in die Zeile. Wir stellen nur die ersten
 			 *     60 Zeichen gefolgt von "..." dar <--
@@ -1362,62 +865,38 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 				}
 			}
 
-			// --> Wenn ein Script ausgefuehrt wird, lesen wir den Index der letzten eingelesenen Zeile und geben diesen hier aus <--
-			if (_script.isValid() && _script.isOpen())
-			{
-				print(LineBreak(_lang.get("ERR_SCRIPTCATCH", toString((int)_script.getCurrentLine())), _option));
-				// --> Script beenden! Mit einem Fehler ist es unsinnig weiterzurechnen <--
-				_script.close();
-			}
+            resetAfterError(sCmdCache);
 
 			make_hline();
+			addToLog("> " + toUpperCase(_lang.get("ERR_ERROR")) + ": " + e.GetMsg());
 
-			// --> Alle Variablen zuerst zuruecksetzen! <--
-			_procedure.reset();
-			_pData.setFileName("");
-			if (oLogFile.is_open())
-				oLogFile << toString(time(0) - tTimeZero, true) << "> " << toUpperCase(_lang.get("ERR_ERROR")) << ": " << e.GetMsg() << endl;
-			if (sCmdCache.length())
-				sCmdCache.clear();
-			_parser.DeactivateLoopMode();
-			sCommandLine.clear();
-			bCancelSignal = false;
+
 			sendErrorNotification();
 			return NUMERE_ERROR;
 		}
 		catch (const std::bad_alloc& e)
 		{
 			_option.setSystemPrintStatus(true);
-			_procedure.reset();
 			/* --> Das ist die schlimmste aller Exceptions: Fehler bei der Speicherallozierung.
 			 *     Leider gibt es bis dato keine Moeglichkeit, diesen wieder zu beheben, also bleibt
 			 *     vorerst nichts anderes uebrig, als NumeRe mit terminate() abzuschiessen <--
 			 */
-			///cerr << endl;
 			sendErrorNotification();
 			make_hline();
 			print(toUpperCase(_lang.get("ERR_STD_BA_HEAD")));
 			make_hline();
 			print(LineBreak(_lang.get("ERR_STD_BADALLOC", sVersion), _option));
+			resetAfterError(sCmdCache);
+
 			make_hline();
-			if (oLogFile.is_open())
-				oLogFile << toString(time(0) - tTimeZero, true) << "> ERROR: CRITICAL ACCESS VIOLATION" << endl;
-			/**for (int i = 4; i > 0; i--)
-			{
-			    cerr << "\r|-> TERMINATING IN " << i << " sec ...";
-			    Sleep(1000);
-			}*/
-			if (sCmdCache.length())
-				sCmdCache.clear();
-			sCommandLine.clear();
-			bCancelSignal = false;
+			addToLog("> ERROR: CRITICAL ACCESS VIOLATION");
 			sendErrorNotification();
+
 			return NUMERE_ERROR;
 		}
 		catch (const std::exception& e)
 		{
 			_option.setSystemPrintStatus(true);
-			_procedure.reset();
 			// --> Alle anderen Standard-Exceptions <--
 			sendErrorNotification();
 			make_hline();
@@ -1427,29 +906,17 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 			print(LineBreak(string(e.what()), _option));
 			print(LineBreak(_lang.get("ERR_STD_INTERNAL"), _option));
 
-			// --> Wenn ein Script ausgefuehrt wird, lesen wir den Index der letzten eingelesenen Zeile und geben diesen hier aus <--
-			if (_script.isValid() && _script.isOpen())
-			{
-				print(LineBreak(_lang.get("ERR_SCRIPTCATCH", toString((int)_script.getCurrentLine())), _option));
-				// --> Script beenden! Mit einem Fehler ist es unsinnig weiterzurechnen <--
-				_script.close();
-			}
-			_pData.setFileName("");
+            resetAfterError(sCmdCache);
+
+			addToLog("> " + toUpperCase(_lang.get("ERR_ERROR")) + ": " + e.what());
 			make_hline();
-			if (oLogFile.is_open())
-				oLogFile << toString(time(0) - tTimeZero, true) << "> " << toUpperCase(_lang.get("ERR_ERROR")) << ": " << e.what() << endl;
-			if (sCmdCache.length())
-				sCmdCache.clear();
-			_parser.DeactivateLoopMode();
-			sCommandLine.clear();
-			bCancelSignal = false;
 			sendErrorNotification();
+
 			return NUMERE_ERROR;
 		}
 		catch (SyntaxError& e)
 		{
 			_option.setSystemPrintStatus(true);
-			_procedure.reset();
 			sendErrorNotification();
 			make_hline();
 			if (e.errorcode == SyntaxError::PROCESS_ABORTED_BY_USER)
@@ -1458,8 +925,8 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 				make_hline();
 				print(LineBreak(_lang.get("ERR_NR_3200_0_PROCESS_ABORTED_BY_USER"), _option, false));
 				//cerr << LineBreak("|-> Siehe auch \"help procedure\"", _option) << endl;
-				if (oLogFile.is_open())
-					oLogFile << toString(time(0) - tTimeZero, true) << "> NOTE: Process was cancelled by user" << endl;
+
+				addToLog("> NOTE: Process was cancelled by user");
 				// --> Wenn ein Script ausgefuehrt wird, lesen wir den Index der letzten eingelesenen Zeile und geben diesen hier aus <--
 				if (_script.isValid() && _script.isOpen())
 				{
@@ -1479,8 +946,8 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 				if (e.getToken().length() && (e.errorcode == SyntaxError::PROCEDURE_THROW || e.errorcode == SyntaxError::LOOP_THROW))
 				{
 					print(LineBreak(e.getToken(), _option));
-					if (oLogFile.is_open())
-						oLogFile << toString(time(0) - tTimeZero, true) << "> " << toUpperCase(_lang.get("ERR_ERROR")) << ": " << e.getToken() << endl;
+
+					addToLog("> " + toUpperCase(_lang.get("ERR_ERROR")) + ": " + e.getToken());
 				}
 				else
 				{
@@ -1536,28 +1003,15 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 							}
 						}
 					}
-					if (oLogFile.is_open())
-						oLogFile << toString(time(0) - tTimeZero, true) << "> " << toUpperCase(_lang.get("ERR_ERROR")) << ": " << sErrIDString << endl;
-				}
-				// --> Wenn ein Script ausgefuehrt wird, lesen wir den Index der letzten eingelesenen Zeile und geben diesen hier aus <--
-				if (_script.isValid() && _script.isOpen())
-				{
-					print(LineBreak(_lang.get("ERR_SCRIPTCATCH", toString((int)_script.getCurrentLine())), _option));
-					// --> Script beenden! Mit einem Fehler ist es unsinnig weiterzurechnen <--
-					_script.close();
+
+					addToLog("> " + toUpperCase(_lang.get("ERR_ERROR")) + ": " + sErrIDString);
 				}
 			}
-			_pData.setFileName("");
+			resetAfterError(sCmdCache);
+
 			make_hline();
-			//sErrorToken = "";
-			//nErrorIndices[0] = -1;
-			//nErrorIndices[1] = -1;
-			if (sCmdCache.length())
-				sCmdCache.clear();
-			_parser.DeactivateLoopMode();
-			sCommandLine.clear();
-			bCancelSignal = false;
 			sendErrorNotification();
+
 			return NUMERE_ERROR;
 		}
 		catch (...)
@@ -1566,26 +1020,21 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 			 *     abgedeckt wird <--
 			 */
 			_option.setSystemPrintStatus(true);
-			_procedure.reset();
 			sendErrorNotification();
 			make_hline();
 			print(toUpperCase(_lang.get("ERR_CATCHALL_HEAD")));
 			make_hline();
 			print(LineBreak(_lang.get("ERR_CATCHALL"), _option));
+
+			resetAfterError(sCmdCache);
 			make_hline();
-			if (oLogFile.is_open())
-				oLogFile << toString(time(0) - tTimeZero, true) << "> ERROR: UNKNOWN EXCEPTION" << endl;
-			_pData.setFileName("");
-			//cin.ignore(numeric_limits<streamsize>::max(), '\n');
-			if (sCmdCache.length())
-				sCmdCache.clear();
-			_parser.DeactivateLoopMode();
-			sCommandLine.clear();
-			bCancelSignal = false;
+
+			addToLog("> ERROR: UNKNOWN EXCEPTION");
 			sendErrorNotification();
+
 			return NUMERE_ERROR;
 		}
-		//print(toString(vAns,7));
+
 		if (_script.wasLastCommand())
 		{
 			print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
@@ -1600,16 +1049,713 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 	while ((_script.isValid() && _script.isOpen()) || sCmdCache.length());
 
 	bCancelSignal = false;
+
 	if (_script.wasLastCommand())
 	{
 		print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
 		_data.setPluginCommands(_procedure.getPluginNames());
 		return NUMERE_DONE_KEYWORD;
 	}
+
 	if (bSupressAnswer || !sLine.length())
 		return NUMERE_DONE_KEYWORD;
 	return NUMERE_DONE;
 
+}
+
+// This private member function will handle the command line input source and validate it
+bool NumeReKernel::handleCommandLineSource(string& sLine, const string& sCmdCache, string& sKeep)
+{
+    if (!sCmdCache.length())
+    {
+        if (_data.pausedOpening())
+        {
+            _data.openFromCmdLine(_option, "", true);
+            if (_data.isValid())
+            {
+                print(LineBreak(_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option, true, 4));
+                addToLog("> SYSTEM: Data out of " + _data.getDataFileName("data") + " was successfully loaded.");
+            }
+        }
+
+        if (_script.getAutoStart())
+        {
+            print(LineBreak(_lang.get("PARSER_STARTINGSCRIPT", _script.getScriptFileName()), _option, true, 4));
+            addToLog("> SYSTEM: Starting Script " + _script.getScriptFileName());
+            _script.openScript();
+        }
+
+        _data.setCacheStatus(false);
+
+        // --> Wenn gerade ein Script aktiv ist, lese dessen naechste Zeile, sonst nehme eine Zeile von std::cin <--
+        if (_script.isValid() && _script.isOpen())
+        {
+            sLine = _script.getNextScriptCommand();
+            sScriptFileName = _script.getScriptFileName();
+            nScriptLine = _script.getCurrentLine();
+        }
+        else if (_option.readCmdCache().length())
+        {
+            addToLog("> SYSTEM: Processing command line parameters:");
+            sLine = _option.readCmdCache(true);
+        }
+
+        // --> Leerzeichen und Tabulatoren entfernen <--
+        StripSpaces(sLine);
+        for (unsigned int i = 0; i < sLine.length(); i++)
+        {
+            if (sLine[i] == '\t')
+                sLine[i] = ' ';
+        }
+
+        if (findCommand(sLine).sString != "help"
+                && findCommand(sLine).sString != "find"
+                && findCommand(sLine).sString != "search"
+                && (sLine.find('(') != string::npos || sLine.find('{') != string::npos))
+        {
+            if (!validateParenthesisNumber(sLine))
+                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, sLine.find('('));
+        }
+
+        // --> Keine Laenge? Ignorieren! <--
+        if (!sLine.length() || sLine[0] == '@')
+            return false;
+
+        if (sLine.find("<helpindex>") != string::npos && sLine.find("</helpindex>") != string::npos)
+        {
+            _procedure.addHelpIndex(sLine.substr(0, sLine.find("<<>>")), getArgAtPos(sLine, sLine.find("id=") + 3));
+            sLine.erase(0, sLine.find("<<>>") + 4);
+            _option.addToDocIndex(sLine, _option.getUseCustomLanguageFiles());
+            _plugin = _procedure;
+            return false;
+        }
+
+        // --> Kommando "global" entfernen <--
+        if (findCommand(sLine).sString == "global")
+        {
+            sLine = sLine.substr(findCommand(sLine).nPos + 6);
+            StripSpaces(sLine);
+        }
+
+        // --> Wenn die Laenge groesser als 2 ist, koennen '\' am Ende sein <--
+        if (sLine.length() > 2)
+        {
+            if (sLine.substr(sLine.length() - 2, 2) == "\\\\")
+            {
+                // --> Ergaenze die Eingabe zu sKeep und beginne einen neuen Schleifendurchlauf <--
+                sKeep += sLine.substr(0, sLine.length() - 2);
+                return false;
+            }
+        }
+
+        /* --> Steht etwas in sKeep? Ergaenze die aktuelle Eingabe, weise dies
+         *     wiederum an sLine zu und loesche den Inhalt von sKeep <--
+         */
+        if (sKeep.length())
+        {
+            sKeep += sLine;
+            sLine = sKeep;
+            sKeep = "";
+        }
+
+    }
+    return true;
+}
+
+// This private member function returns the current command line from the command cache
+bool NumeReKernel::getLineFromCommandCache(string& sLine, string& sCmdCache, const string& sCurrentCommand)
+{
+    // Only do something if the command cache is not empty or the current line contains a semicolon
+    if ((sCmdCache.length() || sLine.find(';') != string::npos) && !_procedure.is_writing() && sCurrentCommand != "procedure")
+    {
+        if (sCmdCache.length())
+        {
+            // The command cache is not empty
+            // Get the next task from the command cache
+            while (sCmdCache.front() == ';' || sCmdCache.front() == ' ')
+                sCmdCache.erase(0, 1);
+            if (!sCmdCache.length())
+                return false;
+            if (sCmdCache.find(';') != string::npos)
+            {
+                // More than one task available
+                for (unsigned int i = 0; i < sCmdCache.length(); i++)
+                {
+                    if (sCmdCache[i] == ';' && !isInQuotes(sCmdCache, i))
+                    {
+                        bSupressAnswer = true;
+                        sLine = sCmdCache.substr(0, i);
+                        sCmdCache.erase(0, i + 1);
+                        break;
+                    }
+                    if (i == sCmdCache.length() - 1)
+                    {
+                        sLine = sCmdCache;
+                        sCmdCache.clear();
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                // Only one task available
+                sLine = sCmdCache;
+                sCmdCache.clear();
+            }
+        }
+        else if (sLine.find(';') == sLine.length() - 1)
+        {
+            // Only remove the trailing semicolon -> used to suppress the output of the current line
+            bSupressAnswer = true;
+            sLine.pop_back();
+        }
+        else
+        {
+            // Use only the first task from the command line and cache the remaining
+            // part in the command cache
+            for (unsigned int i = 0; i < sLine.length(); i++)
+            {
+                if (sLine[i] == ';' && !isInQuotes(sLine, i))
+                {
+                    if (i != sLine.length() - 1)
+                        sCmdCache = sLine.substr(i + 1);
+                    sLine.erase(i);
+                    bSupressAnswer = true;
+                }
+                if (i == sLine.length() - 1)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+// This private member function will handle the compose block
+bool NumeReKernel::handleComposeBlock(string& sLine, const string& sCmdCache, const string& sCurrentCommand, KernelStatus& nReturnVal)
+{
+    // Only do something, if the current command contains
+    // a compose block syntax element
+    if ((sCurrentCommand == "compose"
+            || sCurrentCommand == "endcompose"
+            || sPlotCompose.length())
+            && !_procedure.is_writing()
+            && sCurrentCommand != "quit"
+            && sCurrentCommand != "help")
+    {
+        if (!sPlotCompose.length() && findCommand(sLine).sString == "compose")
+        {
+            // Create a new compose block
+            sPlotCompose = "plotcompose ";
+
+            // Add the multiplot layout, if needed
+            if (matchParams(sLine, "multiplot", '='))
+            {
+                sPlotCompose += "-multiplot=" + getArgAtPos(sLine, matchParams(sLine, "multiplot", '=') + 9) + " <<COMPOSE>> ";
+            }
+
+            // If the block wasn't started from a script, then ask the user
+            // to complete it
+            if (!(_script.isValid() && _script.isOpen()) && !sCmdCache.length())
+            {
+                if (_procedure.getLoop())
+                {
+                    // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
+                    printPreFmt("|" + _procedure.getCurrentBlock());
+                    if (_procedure.getCurrentBlock() == "IF")
+                    {
+                        if (_procedure.getLoop() > 1)
+                            printPreFmt("---");
+                        else
+                            printPreFmt("-");
+                    }
+                    else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getLoop() > 1)
+                        printPreFmt("-");
+                    else
+                    {
+                        if (_procedure.getLoop() > 1)
+                            printPreFmt("--");
+                    }
+                    printPreFmt(strfill("> ", 2 * _procedure.getLoop(), '-'));
+                }
+                else if (_procedure.is_writing())
+                {
+                    printPreFmt("|PROC> ");
+                }
+                else if (!_procedure.is_writing() && sPlotCompose.length())
+                {
+                    printPreFmt("|COMP> ");
+                }
+
+                // Waiting for input
+                nReturnVal = NUMERE_PENDING_SPECIAL;
+                return false;
+            }
+            return false;
+        }
+        else if (findCommand(sLine).sString == "abort")
+        {
+            // Abort the compose block
+            sPlotCompose = "";
+            print(LineBreak(_lang.get("PARSER_ABORTED"), _option));
+            return false;
+        }
+        else if (findCommand(sLine).sString != "endcompose")
+        {
+            // add a new plotting command
+            string sCommand = findCommand(sLine).sString;
+            if (sCommand.substr(0, 4) == "plot"
+                    || sCommand.substr(0, 7) == "subplot"
+                    || sCommand.substr(0, 4) == "grad"
+                    || sCommand.substr(0, 4) == "dens"
+                    || sCommand.substr(0, 4) == "draw"
+                    || sCommand.substr(0, 4) == "vect"
+                    || sCommand.substr(0, 4) == "cont"
+                    || sCommand.substr(0, 4) == "surf"
+                    || sCommand.substr(0, 4) == "mesh")
+            {
+                sPlotCompose += sLine + " <<COMPOSE>> ";
+                // If the block wasn't started from a script, then ask the user
+                // to complete it
+                if (!(_script.isValid() && _script.isOpen()) && !sCmdCache.length())
+                {
+                    if (_procedure.getLoop())
+                    {
+                        // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
+                        printPreFmt("|" + _procedure.getCurrentBlock());
+                        if (_procedure.getCurrentBlock() == "IF")
+                        {
+                            if (_procedure.getLoop() > 1)
+                                printPreFmt("---");
+                            else
+                                printPreFmt("-");
+                        }
+                        else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getLoop() > 1)
+                            printPreFmt("-");
+                        else
+                        {
+                            if (_procedure.getLoop() > 1)
+                                printPreFmt("--");
+                        }
+                        printPreFmt(strfill("> ", 2 * _procedure.getLoop(), '-'));
+                    }
+                    else if (_procedure.is_writing())
+                    {
+                        printPreFmt("|PROC> ");
+                    }
+                    else if (!_procedure.is_writing() && sPlotCompose.length())
+                    {
+                        printPreFmt("|COMP> ");
+                    }
+
+                    // Waiting for input
+                    nReturnVal = NUMERE_PENDING_SPECIAL;
+                    return false;
+                }
+            }
+            return false;
+        }
+        else
+        {
+            // End the current compose block and clear the cache
+            // "endcompose" is not needed here
+            sLine = sPlotCompose;
+            sPlotCompose = "";
+        }
+    }
+    return true;
+}
+
+// This private member function will handle the writing of procedure lines to the corresponding file
+bool NumeReKernel::handleProcedureWrite(const string& sLine, const string& sCmdCache, const string& sCurrentCommand, KernelStatus& nReturnVal)
+{
+    if (_procedure.is_writing() || sCurrentCommand == "procedure")
+    {
+        if (!_procedure.writeProcedure(sLine))
+            print(LineBreak(_lang.get("PARSER_CANNOTCREATEPROC"), _option));
+        if (!(_script.isValid() && _script.isOpen()) && !sCmdCache.length())
+        {
+            if (_procedure.getLoop())
+            {
+                // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
+                printPreFmt("|" + _procedure.getCurrentBlock());
+                if (_procedure.getCurrentBlock() == "IF")
+                {
+                    if (_procedure.getLoop() > 1)
+                        printPreFmt("---");
+                    else
+                        printPreFmt("-");
+                }
+                else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getLoop() > 1)
+                    printPreFmt("-");
+                else
+                {
+                    if (_procedure.getLoop() > 1)
+                        printPreFmt("--");
+                }
+                printPreFmt(strfill("> ", 2 * _procedure.getLoop(), '-'));
+            }
+            else if (_procedure.is_writing())
+            {
+                printPreFmt("|PROC> ");
+            }
+            else if (!_procedure.is_writing() && sPlotCompose.length())
+            {
+                printPreFmt("|COMP> ");
+            }
+            nReturnVal = NUMERE_PENDING_SPECIAL;
+            return false;
+        }
+        return false;
+    }
+    return true;
+}
+
+// This private member function uninstalls a installed plugin
+bool NumeReKernel::uninstallPlugin(const string& sLine, const string& sCurrentCommand)
+{
+    if (sCurrentCommand == "uninstall")
+    {
+        // Ge the plugin name
+        string sPlugin = fromSystemCodePage(getArgAtPos(sLine, findCommand(sLine).nPos + 9));
+
+        // Remove the plugin and get the help index ID
+        sPlugin = _procedure.deletePlugin(sPlugin);
+        if (sPlugin.length())
+        {
+            _plugin = _procedure;
+            if (sPlugin != "<<NO_HLP_ENTRY>>")
+            {
+                while (sPlugin.find(';') != string::npos)
+                    sPlugin[sPlugin.find(';')] = ',';
+                while (sPlugin.length())
+                {
+                    // Remove the reference from the help index
+                    _option.removeFromDocIndex(getNextArgument(sPlugin, true), _option.getUseCustomLanguageFiles());
+                }
+            }
+            print(LineBreak(_lang.get("PARSER_PLUGINDELETED"), _option));
+        }
+        else
+            print(LineBreak(_lang.get("PARSER_PLUGINNOTFOUND"), _option));
+        return true;
+    }
+    return false;
+}
+
+// This private member function handles the "to_cmd()" function, if it is part of the command line
+void NumeReKernel::handleToCmd(string& sLine, string& sCache, string& sCurrentCommand)
+{
+    // Do only something, if "to_cmd()" is located
+    if (sLine.find("to_cmd(") != string::npos && !_procedure.getLoop())
+    {
+        unsigned int nPos = 0;
+
+        // Find all "to_cmd()"'s
+        while (sLine.find("to_cmd(", nPos) != string::npos)
+        {
+            nPos = sLine.find("to_cmd(", nPos) + 6;
+            if (isInQuotes(sLine, nPos))
+                continue;
+            unsigned int nParPos = getMatchingParenthesis(sLine.substr(nPos));
+            if (nParPos == string::npos)
+                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
+            string sCmdString = sLine.substr(nPos + 1, nParPos - 1);
+            StripSpaces(sCmdString);
+
+            // Evaluate the string part
+            if (containsStrings(sCmdString) || _data.containsStringVars(sCmdString))
+            {
+                sCmdString += " -nq";
+                parser_StringParser(sCmdString, sCache, _data, _parser, _option, true);
+                sCache = "";
+            }
+            sLine = sLine.substr(0, nPos - 6) + sCmdString + sLine.substr(nPos + nParPos + 1);
+            nPos -= 5;
+        }
+
+        // Get the current command
+        sCurrentCommand = findCommand(sLine).sString;
+    }
+}
+
+// This private member function will evaluate the procedure calls and replace their results
+bool NumeReKernel::evaluateProcedureCalls(string& sLine)
+{
+    // Only if there's a candidate for a procedure
+    if (sLine.find('$') != string::npos && sLine.find('(', sLine.find('$')) != string::npos && !_procedure.getLoop())
+    {
+        unsigned int nPos = 0;
+        int nProc = 0;
+
+        // Find all procedures
+        while (sLine.find('$', nPos) != string::npos && sLine.find('(', sLine.find('$', nPos)) != string::npos)
+        {
+            unsigned int nParPos = 0;
+            nPos = sLine.find('$', nPos) + 1;
+
+            // Get procedure name and argument list
+            string __sName = sLine.substr(nPos, sLine.find('(', nPos) - nPos);
+            string __sVarList = "";
+            if (sLine[nPos] == '\'')
+            {
+                // This is an explicit file name
+                __sName = sLine.substr(nPos + 1, sLine.find('\'', nPos + 1) - nPos - 1);
+                nParPos = sLine.find('(', nPos + 1 + __sName.length());
+            }
+            else
+                nParPos = sLine.find('(', nPos);
+            __sVarList = sLine.substr(nParPos);
+            nParPos += getMatchingParenthesis(sLine.substr(nParPos));
+            __sVarList = __sVarList.substr(1, getMatchingParenthesis(__sVarList) - 1);
+
+            // Ensure that the procedure is not part of quotation marks
+            if (!isInQuotes(sLine, nPos, true))
+            {
+                // Execute the current procedure
+                Returnvalue _rTemp = _procedure.execute(__sName, __sVarList, _parser, _functions, _data, _option, _out, _pData, _script);
+                if (!_procedure.getReturnType())
+                    sLine = sLine.substr(0, nPos - 1) + sLine.substr(nParPos + 1);
+                else
+                {
+                    _procedure.replaceReturnVal(sLine, _parser, _rTemp, nPos - 1, nParPos + 1, "PROC~[" + __sName + "~ROOT_" + toString(nProc) + "]");
+                    nProc++;
+                }
+            }
+            nPos += __sName.length() + __sVarList.length() + 1;
+        }
+        StripSpaces(sLine);
+        if (!sLine.length())
+            return false;
+    }
+    else if (sLine.find('$') != string::npos && sLine.find('(', sLine.find('$')) == string::npos)
+    {
+        // If there's a dollar sign without an opening parenthesis
+        // ensure that it is enclosed with quotation marks
+        size_t i = sLine.find('$');
+        bool isnotinquotes = true;
+
+        // Examine each occurence of a dollar sign
+        while (isInQuotes(sLine, i))
+        {
+            if (sLine.find('$', i + 1) != string::npos)
+            {
+                i = sLine.find('$', i + 1);
+            }
+            else
+            {
+                isnotinquotes = false;
+                break;
+            }
+        }
+
+        // If there's one, which is not in quotation marks
+        // clear the line and return false
+        if (isnotinquotes)
+        {
+            sLine = "";
+            return false;
+        }
+    }
+    return true;
+}
+
+// This private member function will execute the plugins
+bool NumeReKernel::executePlugins(string& sLine)
+{
+    // If there's a plugin command
+    if (_procedure.isPluginCmd(sLine) && !_procedure.getLoop())
+    {
+        // Evaluate the command and store procedure name and argument list internally
+        if (_procedure.evalPluginCmd(sLine))
+        {
+            _option.setSystemPrintStatus(false);
+
+            // Call the relevant procedure
+            Returnvalue _rTemp = _procedure.execute(_procedure.getPluginProcName(), _procedure.getPluginVarList(), _parser, _functions, _data, _option, _out, _pData, _script);
+
+            // Handle the return values
+            if (_rTemp.vStringVal.size() && sLine.find("<<RETURNVAL>>") != string::npos)
+            {
+                string sReturn = "{";
+                for (unsigned int v = 0; v < _rTemp.vStringVal.size(); v++)
+                    sReturn += _rTemp.vStringVal[v] + ",";
+                sReturn.back() = '}';
+                sLine.replace(sLine.find("<<RETURNVAL>>"), 13, sReturn);
+            }
+            else if (!_rTemp.vStringVal.size() && sLine.find("<<RETURNVAL>>") != string::npos)
+            {
+                sLine.replace(sLine.find("<<RETURNVAL>>"), 13, "_~PLUGIN[" + _procedure.getPluginProcName() + "~ROOT]");
+                vAns = _rTemp.vNumVal[0];
+                _parser.SetVectorVar("_~PLUGIN[" + _procedure.getPluginProcName() + "~ROOT]", _rTemp.vNumVal);
+            }
+            _option.setSystemPrintStatus(true);
+            if (!sLine.length())
+                return false;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+// This private member function will handle the flow controls
+bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, const string& sCurrentCommand, KernelStatus& nReturnVal)
+{
+    if (_procedure.getLoop() || sCurrentCommand == "for" || sCurrentCommand == "if" || sCurrentCommand == "while")
+    {
+        // --> Die Zeile in den Ausdrucksspeicher schreiben, damit sie spaeter wiederholt aufgerufen werden kann <--
+        _procedure.setCommand(sLine, _parser, _data, _functions, _option, _out, _pData, _script);
+        /* --> So lange wir im Loop sind und nicht endfor aufgerufen wurde, braucht die Zeile nicht an den Parser
+         *     weitergegeben werden. Wir ignorieren daher den Rest dieser for(;;)-Schleife <--
+         */
+        if (!(_script.isValid() && _script.isOpen()) && !sCmdCache.length())
+        {
+            if (_procedure.getLoop())
+            {
+                toggleTableStatus();
+                // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
+                printPreFmt("|" + _procedure.getCurrentBlock());
+                if (_procedure.getCurrentBlock() == "IF")
+                {
+                    if (_procedure.getLoop() > 1)
+                        printPreFmt("---");
+                    else
+                        printPreFmt("-");
+                }
+                else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getLoop() > 1)
+                    printPreFmt("-");
+                else
+                {
+                    if (_procedure.getLoop() > 1)
+                        printPreFmt("--");
+                }
+                toggleTableStatus();
+                printPreFmt(strfill("> ", 2 * _procedure.getLoop(), '-'));
+            }
+            else if (_procedure.is_writing())
+            {
+                printPreFmt("|PROC> ");
+            }
+            else if (!_procedure.is_writing() && sPlotCompose.length() )
+            {
+                printPreFmt("|COMP> ");
+            }
+            else
+            {
+                if (_script.wasLastCommand())
+                {
+                    print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
+                    _data.setPluginCommands(_procedure.getPluginNames());
+                }
+                bCancelSignal = false;
+                nReturnVal = NUMERE_DONE_KEYWORD;
+                return false;
+            }
+            nReturnVal = NUMERE_PENDING_SPECIAL;
+            return false;
+        }
+        return false;
+    }
+    return true;
+}
+
+// This private member function handles the evaluation of strings
+bool NumeReKernel::evaluateStrings(string& sLine, string& sCache, const string& sCmdCache, bool& bWriteToCache, KernelStatus& nReturnVal)
+{
+    if (containsStrings(sLine) || _data.containsStringVars(sLine))
+    {
+        int nReturn = parser_StringParser(sLine, sCache, _data, _parser, _option);
+        if (nReturn)
+        {
+            if (nReturn == 1)
+            {
+                if (!sCmdCache.length() && !(_script.isValid() && _script.isOpen()))
+                {
+                    if (_script.wasLastCommand())
+                    {
+                        print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
+                        _data.setPluginCommands(_procedure.getPluginNames());
+                    }
+                    sCommandLine.clear();
+                    bCancelSignal = false;
+                    nReturnVal = NUMERE_DONE_KEYWORD;
+                    return false;
+                }
+                else
+                    return false;
+            }
+            if (sCache.length() && _data.containsCacheElements(sCache) && !bWriteToCache)
+                bWriteToCache = true;
+        }
+        else
+        {
+            throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+        }
+    }
+    return true;
+}
+
+// This private member function will create the answer line for the parser
+// which is then passed to printResult
+void NumeReKernel::createCalculationAnswer(int nNum, value_type* v, const string& sCmdCache)
+{
+    if (nNum > 1)
+    {
+        // More than one result
+        // store the first one in vAns
+        vAns = v[0];
+
+        // Create the output string, if needed
+        if (!bSupressAnswer)
+        {
+            int nLineBreak = numberOfNumbersPerLine(_option);
+            string sAns = "ans = {";
+            for (int i = 0; i < nNum; ++i)
+            {
+                sAns += strfill(toString(v[i], _option), _option.getPrecision() + 7);
+                if (i < nNum - 1)
+                    sAns += ", ";
+                if (nNum + 1 > nLineBreak && !((i + 1) % nLineBreak) && i < nNum - 1)
+                    sAns += "...\n|          ";
+            }
+            sAns += "}";
+            printResult(sAns, sCmdCache, _script.isValid() && _script.isOpen());
+        }
+    }
+    else
+    {
+        // Only one result
+        // store it in vAns
+        vAns = v[0];
+        if (!bSupressAnswer)
+            printResult("ans = " + toString(vAns, _option), sCmdCache, _script.isOpen() && _script.isValid());
+    }
+}
+
+// This private member function will reset the kernel variables after an error
+void NumeReKernel::resetAfterError(string& sCmdCache)
+{
+    _pData.setFileName("");
+    if (sCmdCache.length())
+        sCmdCache.clear();
+    _parser.DeactivateLoopMode();
+    sCommandLine.clear();
+    bCancelSignal = false;
+
+    // If script is still open, close it
+    if (_script.isOpen() && _script.isValid())
+    {
+        print(LineBreak(_lang.get("ERR_SCRIPTCATCH", toString((int)_script.getCurrentLine())), _option));
+        _script.close();
+    }
+
+    // Reset the debugger, if not already done
+    if (_option.getUseDebugger())
+        _option._debug.reset();
 }
 
 void NumeReKernel::updateLineLenght(int nLength)
@@ -1643,6 +1789,8 @@ void NumeReKernel::CloseSession()
 	_option.setLoadPath(_data.getPath());
 	_option.setPlotOutputPath(_pData.getPath());
 	_option.setScriptPath(_script.getPath());
+
+	// Save the function definitions
 	if (_option.getbDefineAutoLoad() && _functions.getDefinedFunctions())
 	{
 		_option.setSystemPrintStatus(false);
@@ -1650,14 +1798,15 @@ void NumeReKernel::CloseSession()
 		Sleep(100);
 	}
 	_option.save(_option.getExePath()); // MAIN_QUIT
+
+	// Write an information to the log file
 	if (oLogFile.is_open())
 	{
 		oLogFile << "--- NUMERE WAS TERMINATED SUCCESSFULLY ---" << endl << endl << endl;
 		oLogFile.close();
 	}
 
-
-	//Do some clean-up stuff here
+	// Do some clean-up stuff here
 	sCommandLine.clear();
 	sAnswer.clear();
 	m_parent = nullptr;
@@ -1892,7 +2041,7 @@ void NumeReKernel::statusBar(int nStep, int nFirstStep, int nFinalStep, const st
 		return;
 	toggleTableStatus();
 	if (nLastLineLength > 0)
-		printPreFmt("\r" + strfill(" ", nLastLineLength));
+		printPreFmt("\r");
 	if (sType == "std")
 	{
 		printPreFmt("\r|-> " + _lang.get("COMMON_EVALUATING") + " ... " + toString(nStatusVal) + " %");
@@ -2188,6 +2337,12 @@ void NumeReKernel::evalDebuggerBreakPoint(Settings& _option, const map<string, s
 		delete[] sLocalStrings;
 	}
 	waitForContinue();
+}
+
+void NumeReKernel::addToLog(const string& sLogMessage)
+{
+    if (oLogFile.is_open())
+        oLogFile << toString(time(0) - tTimeZero, true) << "> " << sLogMessage << endl;
 }
 
 void NumeReKernel::getline(string& sLine)
