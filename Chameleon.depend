@@ -6540,16 +6540,15 @@
 
 1412507950 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\droptgt.h
 
-1530082137 c:\cpp\numere-source\trunk\gui\terminal\wxterm.h
+1533712459 c:\cpp\numere-source\trunk\gui\terminal\wxterm.h
 	<map>
 	"../NumeReWindow.h"
 	"../../common/Options.h"
 	"gterm.hpp"
-	"gtelnet.hpp"
 	"../../kernel/kernel.hpp"
 	"../../kernel/debugmessenger.hpp"
 
-1530082139 c:\cpp\numere-source\trunk\gui\numerewindow.h
+1533048891 c:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -6566,6 +6565,7 @@
 	"viewerbook.hpp"
 	"filetree.hpp"
 	"../kernel/core/plotting/graph_helper.hpp"
+	"../kernel/core/datamanagement/container.hpp"
 
 1412507950 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxprec.h
 	"wx/defs.h"
@@ -6715,7 +6715,7 @@
 	<string>
 	"language.hpp"
 
-1530082133 c:\cpp\numere-source\trunk\kernel\core\settings.hpp
+1533712459 c:\cpp\numere-source\trunk\kernel\core\settings.hpp
 	<string>
 	<sstream>
 	<fstream>
@@ -6853,7 +6853,7 @@
 	<cmath>
 	"muParserError.h"
 
-1530082137 c:\cpp\numere-source\trunk\gui\terminal\gterm.hpp
+1533712460 c:\cpp\numere-source\trunk\gui\terminal\gterm.hpp
 	<string.h>
 	<cstring>
 	<stdlib.h>
@@ -6865,7 +6865,7 @@
 	"TextManager.h"
 	"../../kernel/syntax.hpp"
 
-1530082138 c:\cpp\numere-source\trunk\gui\terminal\textmanager.h
+1533712459 c:\cpp\numere-source\trunk\gui\terminal\textmanager.h
 	<vector>
 	<deque>
 	<string>
@@ -6882,7 +6882,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1530082135 c:\cpp\numere-source\trunk\kernel\kernel.hpp
+1533712459 c:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	<queue>
@@ -6890,6 +6890,7 @@
 	"core/settings.hpp"
 	"core/io/output.hpp"
 	"core/datamanagement/datafile.hpp"
+	"core/datamanagement/container.hpp"
 	"core/plugins.hpp"
 	"core/version.h"
 	"core/maths/functionimplementation.hpp"
@@ -7062,7 +7063,7 @@
 	"../version.h"
 	"../ParserLib/muParser.h"
 
-1530082133 c:\cpp\numere-source\trunk\kernel\core\built-in.hpp
+1532621693 c:\cpp\numere-source\trunk\kernel\core\built-in.hpp
 	<iostream>
 	<fstream>
 	<sstream>
@@ -7355,7 +7356,7 @@
 	"fndrpldialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1531233246 source:c:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1533712460 source:c:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
@@ -7716,7 +7717,7 @@
 	<set>
 	<queue>
 
-1530082136 source:c:\cpp\numere-source\trunk\gui\dialogs\wxtermcontainer.cpp
+1533712460 source:c:\cpp\numere-source\trunk\gui\dialogs\wxtermcontainer.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	"wx/scrolbar.h"
@@ -7737,7 +7738,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1532349039 source:c:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1533048890 source:c:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -8058,12 +8059,11 @@
 	<wx/wx.h>
 	<wx/dnd.h>
 
-1530082140 c:\cpp\numere-source\trunk\gui\terminal\wxssh.h
+1533712459 c:\cpp\numere-source\trunk\gui\terminal\wxssh.h
 	"../../common/CommonHeaders.h"
 	<wx/txtstrm.h>
 	"networking.h"
 	"gterm.hpp"
-	"gtelnet.hpp"
 	"../../common/debug.h"
 	"../../common/chameleonprocessevent.h"
 	"../../common/Options.h"
@@ -8085,7 +8085,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1532334847 source:c:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1533712460 source:c:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -8157,11 +8157,12 @@
 	<wx/splitter.h>
 	<cmath>
 
-1530082144 c:\cpp\numere-source\trunk\gui\tableviewer.hpp
+1533048891 c:\cpp\numere-source\trunk\gui\tableviewer.hpp
 	<wx/wx.h>
 	<wx/grid.h>
 	<vector>
 	<string>
+	"../kernel/core/datamanagement/container.hpp"
 
 1530082139 c:\cpp\numere-source\trunk\gui\tableeditpanel.hpp
 	<wx/wx.h>
@@ -8192,17 +8193,18 @@
 
 1530082139 c:\cpp\numere-source\trunk\gui\icons\breakpoint_octagon_disable.xpm
 
-1530082144 source:c:\cpp\numere-source\trunk\gui\tableeditpanel.cpp
+1533048891 source:c:\cpp\numere-source\trunk\gui\tableeditpanel.cpp
 	"tableeditpanel.hpp"
+	"../kernel/core/datamanagement/container.hpp"
 
-1530082139 source:c:\cpp\numere-source\trunk\gui\tableviewer.cpp
+1533048891 source:c:\cpp\numere-source\trunk\gui\tableviewer.cpp
 	"tableviewer.hpp"
 	"../kernel/core/ui/language.hpp"
 	<wx/clipbrd.h>
 	<wx/dataobj.h>
 	<wx/tokenzr.h>
 
-1530082137 source:c:\cpp\numere-source\trunk\gui\terminal\actions.cpp
+1533712460 source:c:\cpp\numere-source\trunk\gui\terminal\actions.cpp
 	"gterm.hpp"
 	"../../common/debug.h"
 
@@ -8210,7 +8212,7 @@
 	"gterm.hpp"
 	"gtelnet.hpp"
 
-1530082137 source:c:\cpp\numere-source\trunk\gui\terminal\gterm.cpp
+1533712459 source:c:\cpp\numere-source\trunk\gui\terminal\gterm.cpp
 	"gterm.hpp"
 	"../../common/debug.h"
 	<wx/stdpaths.h>
@@ -8275,7 +8277,7 @@
 1530082138 source:c:\cpp\numere-source\trunk\gui\terminal\states.cpp
 	"gterm.hpp"
 
-1530082140 source:c:\cpp\numere-source\trunk\gui\terminal\textmanager.cpp
+1533731609 source:c:\cpp\numere-source\trunk\gui\terminal\textmanager.cpp
 	"TextManager.h"
 	<iostream>
 	<stdlib.h>
@@ -8286,7 +8288,7 @@
 	"gterm.hpp"
 	"../../common/debug.h"
 
-1530082138 source:c:\cpp\numere-source\trunk\gui\terminal\utils.cpp
+1533712459 source:c:\cpp\numere-source\trunk\gui\terminal\utils.cpp
 	"gterm.hpp"
 	"../../common/debug.h"
 
@@ -8296,17 +8298,16 @@
 1530082138 source:c:\cpp\numere-source\trunk\gui\terminal\winmesgbeep.cpp
 	<windows.h>
 
-1530082137 source:c:\cpp\numere-source\trunk\gui\terminal\wxssh.cpp
+1533712460 source:c:\cpp\numere-source\trunk\gui\terminal\wxssh.cpp
 	"wxssh.h"
 	"../../common/debug.h"
 
-1530082140 source:c:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1533712460 source:c:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
 	<ctype.h>
 	"gterm.hpp"
-	"gtelnet.hpp"
 	"wxterm.h"
 	<wx/clipbrd.h>
 	<wx/dataobj.h>
@@ -8358,7 +8359,7 @@
 
 1530082144 c:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1531302095 source:c:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1533729800 source:c:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 	"io/fileops.hpp"
@@ -8379,7 +8380,7 @@
 	"../io/output.hpp"
 	"../maths/define.hpp"
 
-1530082132 source:c:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
+1533731632 source:c:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
 	"cache.hpp"
 	"../../kernel.hpp"
 
@@ -8388,13 +8389,14 @@
 	"../utils/tools.hpp"
 	<vector>
 
-1530082132 source:c:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
+1533712459 source:c:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
 	"datafile.hpp"
 	"../../kernel.hpp"
 
-1531818811 source:c:\cpp\numere-source\trunk\kernel\core\datamanagement\dataops.cpp
+1533712459 source:c:\cpp\numere-source\trunk\kernel\core\datamanagement\dataops.cpp
 	<wx/image.h>
 	"dataops.hpp"
+	"container.hpp"
 	"../../kernel.hpp"
 	"../ui/language.hpp"
 	"../utils/tools.hpp"
@@ -8449,18 +8451,18 @@
 	"fitcontroller.hpp"
 	"../../kernel.hpp"
 
-1530082133 source:c:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
+1533712459 source:c:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
 	"functionimplementation.hpp"
 
-1530541614 source:c:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
+1533712459 source:c:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 
-1530082133 source:c:\cpp\numere-source\trunk\kernel\core\maths\odesolver.cpp
+1533712459 source:c:\cpp\numere-source\trunk\kernel\core\maths\odesolver.cpp
 	"odesolver.hpp"
 	"../../kernel.hpp"
 
-1531818812 source:c:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
+1533712459 source:c:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	"spline.h"
@@ -8575,7 +8577,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1531302096 source:c:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1533712459 source:c:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
@@ -8599,7 +8601,7 @@
 1531231205 source:c:\cpp\numere-source\trunk\kernel\core\plugin.cpp
 	"plugin.hpp"
 
-1530082132 source:c:\cpp\numere-source\trunk\kernel\core\plugin_histogram.cpp
+1533712459 source:c:\cpp\numere-source\trunk\kernel\core\plugin_histogram.cpp
 	"plugins.hpp"
 	"../kernel.hpp"
 
@@ -8607,7 +8609,7 @@
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1530082135 source:c:\cpp\numere-source\trunk\kernel\core\plugin_statistics.cpp
+1533712459 source:c:\cpp\numere-source\trunk\kernel\core\plugin_statistics.cpp
 	"plugins.hpp"
 	"../kernel.hpp"
 
@@ -8657,7 +8659,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1532093748 source:c:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1533712459 source:c:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>
@@ -8680,7 +8682,7 @@
 	<cstddef>
 	<cstdarg>
 
-1531302096 source:c:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
+1533712459 source:c:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
 	"tools.hpp"
 	"../../kernel.hpp"
 	<cstdlib>
@@ -8706,15 +8708,15 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1531818812 source:c:\cpp\numere-source\trunk\kernel\kernel.cpp
+1533712459 source:c:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 
-1532091009 source:c:\cpp\numere-source\trunk\kernel\syntax.cpp
+1533712459 source:c:\cpp\numere-source\trunk\kernel\syntax.cpp
 	"syntax.hpp"
 	"core/utils/tools.hpp"
 
-1530082132 source:c:\cpp\numere-source\trunk\kernel\core\datamanagement\memory.cpp
+1533712459 source:c:\cpp\numere-source\trunk\kernel\core\datamanagement\memory.cpp
 	"memory.hpp"
 	"../../kernel.hpp"
 
@@ -8723,12 +8725,17 @@
 	"../utils/tools.hpp"
 	<vector>
 
-1531302095 source:c:\cpp\numere-source\trunk\kernel\core\datamanagement\indices.cpp
+1533048889 source:c:\cpp\numere-source\trunk\kernel\core\datamanagement\indices.cpp
 	"dataaccess.hpp"
 	"../utils/tools.hpp"
 	<vector>
 
 1532776174 d:\cpp\numere-source\trunk\kernel\core\datamanagement\container.hpp
+	<cstddef>
+	<vector>
+	"../ui/error.hpp"
+
+1533048889 c:\cpp\numere-source\trunk\kernel\core\datamanagement\container.hpp
 	<cstddef>
 	<vector>
 	"../ui/error.hpp"

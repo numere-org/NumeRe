@@ -630,14 +630,16 @@ bool Cache::deleteCache(const string& sCache)
     return false;
 }
 
-
+// This member function is used for writing strings into the "string()" object
 bool Cache::writeString(const string& _sString, unsigned int _nthString, unsigned int nCol)
 {
-    //NumeReKernel::print(_sString + toString(_nthString) + toString(nCol));
+    // If this is the first string to be written
     if (sStrings.empty())
     {
+        // Only do something, if the source string is not empty
         if (_sString.length())
         {
+            // Prepare the storage if needed
             for (unsigned int i = 0; i <= nCol; i++)
             {
                 sStrings.push_back(vector<string>());
@@ -654,26 +656,38 @@ bool Cache::writeString(const string& _sString, unsigned int _nthString, unsigne
         }
         return true;
     }
+
+    // Add a new column, if needed
     if (nCol >= sStrings.size())
     {
         for (unsigned int i = sStrings.size(); i <= nCol; i++)
             sStrings.push_back(vector<string>());
     }
+
+    // If the string shall be appended at the end or the current
+    // column is empty, add a new string element
     if (_nthString == string::npos || !sStrings[nCol].size())
     {
         if (_sString.length())
             sStrings[nCol].push_back(_sString);
         return true;
     }
+
+    // If the string is not empty but shall be written to a larger location
+    // than the storage size, resize the storage correspondingly
     while (_nthString >= sStrings[nCol].size() && _sString.length())
         sStrings[nCol].resize(_nthString+1, "");
+
+    // All other cases
     if (!_sString.length() && _nthString+1 == sStrings[nCol].size())
     {
+        // this is an empty string, and it allows to reduce the size of
+        // the storage
         sStrings[nCol].pop_back();
         while (sStrings[nCol].size() && !sStrings[nCol].back().length())
             sStrings[nCol].pop_back();
     }
-    else// if (_sString.length())
+    else if (_nthString < sStrings[nCol].size())
         sStrings[nCol][_nthString] = _sString;
     return true;
 }
