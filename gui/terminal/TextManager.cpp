@@ -254,8 +254,8 @@ void TextManager::updateColors(bool isErrorLine /*= false*/)
         sColors = syntax->highlightLine(m_text.back());
 
     // Ensure that the current color line is long enough
-	if (m_color.back().size() < m_text.back().length())
-		m_color.back().assign(m_text.back().length(), 7);
+	while (m_color.back().size() < m_text.back().length())
+		m_color.back().push_back(7);
 
     // Convert the string characters to the correct color codes
 	for (size_t i = 0; i < sColors.length(); i++)
@@ -1161,17 +1161,22 @@ void TextManager::SetMaxSize(int newSize)
 		return;
 	}
 
-	if (newSize < m_maxHeight)
-	{
-		int linesToPitch = m_maxHeight - newSize;
+	if (m_text.size())
+    {
+        if (newSize < m_maxHeight)
+        {
+            int linesToPitch = m_maxHeight - newSize;
 
-		for (int i = 0; i < linesToPitch; i++)
-		{
-			m_color.pop_front();
-			m_userText.pop_front();
-			m_text.pop_front();
-		}
-	}
+            for (int i = 0; i < linesToPitch; i++)
+            {
+                if (!m_text.size())
+                    break;
+                m_color.pop_front();
+                m_userText.pop_front();
+                m_text.pop_front();
+            }
+        }
+    }
 
 	m_maxHeight = newSize;
 	m_bottomLine = m_maxHeight - 1;
