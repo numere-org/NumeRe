@@ -153,9 +153,14 @@ static size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, co
 // str = to_string(EXPR)
 static string strfnc_to_string(StringFuncArgs& funcArgs)
 {
-	if (funcArgs.sArg1.find('"') == string::npos)
-		return "\"" + funcArgs.sArg1 + "\"";
-	return funcArgs.sArg1;
+    if (!funcArgs.sArg1.length())
+        return "\"\"";
+
+	if (funcArgs.sArg1.find_first_not_of(" ") != string::npos && funcArgs.sArg1[funcArgs.sArg1.find_first_not_of(" ")] == '"')
+		return funcArgs.sArg1; // Already is a string
+
+    // Is not a string
+	return "\"" + funcArgs.sArg1 + "\"";
 }
 
 // str = string_cast(EXPR)
@@ -1874,7 +1879,7 @@ static string addMaskedStrings(const string& sString)
 	    sRet += " ";*/
 	for (size_t i = 1; i < sRet.length() - 1; i++)
 	{
-		if (sRet[i] == '\\')
+		if (sRet[i] == '\\' && sRet[i + 1] != '"')
 		{
 			sRet.insert(i + 1, " ");
 			i++;
