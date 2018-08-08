@@ -2,7 +2,7 @@
 // Copyright Timothy Miller, 1999
 
 #ifdef __GNUG__
-    #pragma implementation "gterm.hpp"
+#pragma implementation "gterm.hpp"
 #endif
 
 #include "gterm.hpp"
@@ -17,14 +17,14 @@
 
 #endif
 
-void GTerm::Update()
+void GenericTerminal::Update()
 {
 	update_changes();
 }
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public virtual ProcessInput
-///  The guts of the GTerm state machine.  All the state functions are called from here.
+///  Processes the input of the GenericTerminal and hands it over to the internal buffer
 ///
 ///  @param  len  int             The number of characters to process.
 ///  @param  data unsigned char * The text to process.
@@ -33,54 +33,44 @@ void GTerm::Update()
 ///
 ///  @author Timothy Miller @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-//void GTerm::ProcessInput(int len, unsigned const char *data)
-void GTerm::ProcessInput(int len, const string& sData)
+void GenericTerminal::ProcessInput(int len, const string& sData)
 {
+    // Copy the input
 	data_len = sData.length();
 	sInput_Data = sData;
 
 	mode_flags |= DESTRUCTBS;
 	mode_flags |= INSERT;
+
+	// Evaluate the input and update the GUI
 	normal_input();
 	update_changes();
 	return;
 
 }
 
-void GTerm::ProcessOutput(int len, const string& sData)
+/** \brief Processes output returned from the kernel and hands it over to the internal buffer
+ *
+ * \param len int
+ * \param sData const string&
+ * \return void
+ *
+ */
+void GenericTerminal::ProcessOutput(int len, const string& sData)
 {
-	data_len = sData.length();
-	sInput_Data = sData;
+    // Copy the input
+	data_len += sData.length();
+	sInput_Data += sData;
+
+	// Evaluate the input and update the GUI
 	normal_output();
 	update_changes();
 	return;
 }
 
-void GTerm::Reset()
+void GenericTerminal::Reset()
 {
 	reset();
-}
-
-//////////////////////////////////////////////////////////////////////////////
-///  public virtual ExposeArea
-///  Tells GTerm to redraw a given area.
-///
-///  @param  x    int  The starting x position, in characters
-///  @param  y    int  The starting y position, in characters
-///  @param  w    int  The width of the area, in characters
-///  @param  h    int  The height of the area, in characters
-///
-///  @return void
-///
-///  @author Timothy Miller @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
-void GTerm::ExposeArea(int x, int y, int w, int h)
-{
-	int i;
-	for (i=0; i<h; i++)
-        changed_line(i+y, x, x+w-1);
-	if (!(mode_flags & DEFERUPDATE))
-        update_changes();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -95,105 +85,78 @@ void GTerm::ExposeArea(int x, int y, int w, int h)
 ///
 ///  @author Timothy Miller @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void GTerm::ResizeTerminal(int w, int h)
+void GenericTerminal::ResizeTerminal(int w, int h)
 {
-	int cx = 0, cy = 0;
-	//clear_area(min(width,w), 0, MAXWIDTH-1, MAXHEIGHT-1);
-	//clear_area(0, min(height,h), min(width,w)-1, MAXHEIGHT-1);
+    // Create an invalid cursor
+    LogicalCursor cursor;
 
+    // If the current  terminal is not scrolled up
+    // use the current view cursor
+    if (!IsScrolledUp())
+    {
+        cursor = tm.toLogicalCursor(termCursor);
+    }
 
-	//clear_area(0, )
+    wxLogDebug("Resizing terminal: w = %d, h = %d", w, h);
+
+    // Perform the resize in the internal buffer
 	tm.Resize(w, h);
-	if (h == height)
-	{
-        w = width;
-        ExposeArea(0,0,width-1,height-1);
-        return;
-	}
-	cy = -height + h + cursor_y; /// TODO: Fixme
-	if (cy < 0)
-        cy = 0;
-	width = w;
-	height = h;
-	scroll_bot = height-1;
-	if (scroll_top >= height) scroll_top = 0;
-	cx = min(width-1, cursor_x);
-	//cy = min(height-1, cursor_y);
-	move_cursor(cx, cy);
 
-	ExposeArea(0, 0, width - 1, height - 1);
-	//Update();
+	// If the cursor is valid and has a non-zero position
+    if (cursor && (cursor.pos || cursor.line))
+    {
+        // Use it as the new terminal view cursor
+        termCursor = tm.toViewCursor(cursor);
+        if (!termCursor)
+            termCursor = tm.getCurrentViewPos();
+    }
+
+	width = w;
+
+    // Does the height change?
+	if (h != height)
+    {
+        height = h;
+
+        // Update the scroll indicators
+        scroll_bot = height - 1;
+        if (scroll_top >= height)
+            scroll_top = 0;
+    }
+
+    // Update the GUI
+	update_changes();
 }
 
-GTerm::GTerm(int w, int h) : width(w), height(h)
+
+/** \brief Constructor
+ *
+ * \param w int
+ * \param h int
+ *
+ */
+GenericTerminal::GenericTerminal(int w, int h) : width(w), height(h)
 {
-	int i;
-	m_nextLineCounter = 0;
-
 	doing_update = 0;
-/*
-	string blankline;
-	blankline.resize(MAXWIDTH, ' ');
-	textq = deque<string>(MAXHEIGHT, blankline);
 
-	alttext = new unsigned char[MAXWIDTH * MAXHEIGHT];
+	// Create the text manager
+	tm = TextManager(this, w, h, MAXWIDTH, MAXHEIGHT);
 
-	stringtext.clear();
-
-	stringtext.resize(MAXWIDTH * MAXHEIGHT, ' ');
-*/
-	TextManager temptm(this, w, h, MAXWIDTH, MAXHEIGHT);
-
-	tm = temptm;
+	// Load the syntax
 	wxFileName f(wxStandardPaths::Get().GetExecutablePath());
 	_syntax.loadSyntax(f.GetPath(true).ToStdString());
 
-
-	// could make this dynamic
-	text = new unsigned char[MAXWIDTH*MAXHEIGHT];
-	color = new unsigned short[MAXWIDTH*MAXHEIGHT];
-
-	for (i=0; i<MAXHEIGHT; i++) {
-		// make it draw whole terminal to start
-		dirty_startx[i] = 0;
-		dirty_endx[i] = MAXWIDTH-1;
-	}
-
-#ifdef GTERM_PC
-        pc_machinename = new char[7];
-        strcpy(pc_machinename, "pcterm");
-#endif
-	cursor_x = 0;
-	cursor_y = 0;
-	save_x = 0;
-	save_y = 0;
-        mode_flags = 0;
+	// Set the terminal view cursor to top left
+	// To make the cursor valid, we have to instantiate it with zeros
+	termCursor = ViewCursor(0, 0);
+	mode_flags = 0;
 	reset();
 	resetAutoComp();
 }
 
-GTerm::~GTerm()
+GenericTerminal::~GenericTerminal()
 {
-	//delete[] alttext;
-	delete[] text;
-	delete[] color;
-#ifdef GTERM_PC
-        if(pc_machinename)
-          delete[] pc_machinename;
-#endif // GTERM_PC
 }
-
-#ifdef GTERM_PC
-void
-GTerm::SetMachineName(char *machinename)
-{
-  if(pc_machinename)
-    delete pc_machinename;
-
-  pc_machinename = new char[strlen(machinename) + 1];
-  strcpy(pc_machinename, machinename);
-}
-#endif // GTERM_PC
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public virtual IsSelected
@@ -207,12 +170,11 @@ GTerm::SetMachineName(char *machinename)
 ///  @author Timothy Miller @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 int
-GTerm::IsSelected(int x, int y)
+GenericTerminal::IsSelected(int x, int y)
 {
-  if(color && x >= 0 && x < Width() && y >= 0 && y < Height())
-    //return color[(linenumbers[y] * MAXWIDTH) + x] & SELECTED;
-    return (tm.GetColorAdjusted(y, x) & SELECTED);
-  return 0;
+	if (x >= 0 && x < Width() && y >= 0 && y < Height())
+		return tm.isSelected(ViewCursor(x, y));
+	return 0;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -228,78 +190,33 @@ GTerm::IsSelected(int x, int y)
 ///  @author Timothy Miller @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-GTerm::Select(int x, int y, int select)
+GenericTerminal::Select(int x, int y, int select)
 {
-	unsigned short firstColor = tm.GetColorAdjusted(0, 0);
-    if(color && x >= 0 && x < Width() && y >= 0 && y < Height())
-    //if( (firstColor != 0) && x >= 0 && x < Width() && y >= 0 && y < Height())
-    {
-        int idx1 = linenumbers[y];
-        int idx2 = idx1 * MAXWIDTH;
-        int idx3 = idx2 + x;
-        if(select)
-        {
-            //color[(linenumbers[y] * MAXWIDTH) + x] |= SELECTED;
-            color[idx3] |= SELECTED;
-            int tempcolor = tm.GetColorAdjusted(y, x);
-            tempcolor |= SELECTED;
-            tm.SetColorAdjusted(y, x, tempcolor);
-        }
-        else
-        {
-            // color[(linenumbers[y] * MAXWIDTH) + x] &= ~SELECTED;
-            color[idx3] &= ~SELECTED;
-            int tempcolor = tm.GetColorAdjusted(y, x);
-            tempcolor &= ~SELECTED;
-            tm.SetColorAdjusted(y, x, tempcolor);
-        }
-        changed_line(y, x, x);
-        //    update_changes();
-    }
+	if (x >= 0 && x < Width() && y >= 0 && y < Height())
+	{
+	    tm.selectText(ViewCursor(x, y), select);
+	}
 }
 
-unsigned char
-GTerm::GetChar(int x, int y)
+// Gets the character at the selected location
+unsigned char GenericTerminal::GetChar(int x, int y)
 {
-  if(text && x >= 0 && x < Width() && y >= 0 && y < Height())
-    //return text[(linenumbers[y] * MAXWIDTH) + x];
-	return tm.GetCharAdjusted(y, x);
+	if (x >= 0 && x < Width() && y >= 0 && y < Height())
+		return tm.GetCharAdjusted(y, x);
 
-  return 0;
+	return 0;
 }
 
-string GTerm::get_selected_text()
+// Gets the selected text (if any)
+string GenericTerminal::get_selected_text()
 {
-    string sSelection;
-    for (int i = 0; i < Height(); i++)
-    {
-        for (int j = 0; j < Width(); j++)
-        {
-            if (tm.GetColorAdjusted(i,j) & SELECTED)
-                sSelection.append(1, tm.GetCharAdjusted(i,j));
-        }
-        if (sSelection.length() && sSelection.back() != '\n' && sSelection.back() != '\r')
-            sSelection += "\n";
-    }
-    while (sSelection.back() == '\n' || sSelection.back() == '\r')
-        sSelection.pop_back();
-    return sSelection;
+	return tm.getSelectedText();
 }
 
-TextManager* GTerm::GetTM()
+// Get a pointer to the internal text buffer
+TextManager* GenericTerminal::GetTM()
 {
 	return &tm;
-}
-
-int GTerm::GetColor()
-{
-	return calc_color(fg_color, bg_color, mode_flags);
-}
-
-void GTerm::DecodeColor(int color, int &fg_color, int &bg_color)
-{
-	fg_color = (color >> 4) & 0xf;
-	bg_color = (color >> 8) & 0xf;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -313,18 +230,19 @@ void GTerm::DecodeColor(int color, int &fg_color, int &bg_color)
 ///
 ///  @author Mark Erikson @date 04-25-2004
 //////// comment generated by Comment Maker from www.FeinSoftware.com /////////
-bool GTerm::Scroll(int numLines, bool scrollUp)
+bool GenericTerminal::Scroll(int numLines, bool scrollUp)
 {
+    // Scroll and update the GUI
 	if (tm.Scroll(numLines, scrollUp))
 	{
-        ExposeArea(0, 0, width, height);
-        update_changes();
-        return true;
-    }
-    return false;
+		update_changes();
+		return true;
+	}
+	return false;
 }
 
-bool GTerm::IsScrolledUp()
+// Determine, whether the terminal is scrolled up
+bool GenericTerminal::IsScrolledUp()
 {
 	return (tm.GetNumLinesScrolled() != 0);
 }
@@ -337,12 +255,12 @@ bool GTerm::IsScrolledUp()
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-int GTerm::GetScrollHeight()
+int GenericTerminal::GetScrollHeight()
 {
 	int scrollHeight = tm.GetLinesReceived();
 
 	int maxSize = tm.GetMaxSize();
-	if(scrollHeight > maxSize)
+	if (scrollHeight > maxSize)
 	{
 		scrollHeight = maxSize;
 	}
@@ -354,12 +272,14 @@ int GTerm::GetScrollHeight()
 	return scrollHeight;
 }
 
-int GTerm::GetScrollPosition()
+// Return the current scroll position
+int GenericTerminal::GetScrollPosition()
 {
 	return tm.GetNumLinesScrolled();
 }
 
-void GTerm::SetTerminalHistory(int size)
+// Set the terminal buffer size (not the length of the input history)
+void GenericTerminal::SetTerminalHistory(int size)
 {
 	tm.SetMaxSize(size);
 }

@@ -173,9 +173,9 @@ void wxSSH::Disconnect(bool clearDisplay)
 		m_connected = false;
 
 		if(clearDisplay) {
-			GTerm::Reset();
+			GenericTerminal::Reset();
 			set_mode_flag(CURSORINVISIBLE);
-			GTerm::Update();
+			GenericTerminal::Update();
 			Refresh();
 		}
 		else {

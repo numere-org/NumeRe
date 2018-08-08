@@ -356,7 +356,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_termContainer = new wxTermContainer(m_splitCommandHistory, ID_CONTAINER_TERM);
 
 	m_terminal = new wxSSH(m_termContainer, ID_TERMINAL, m_network, m_options, programPath, wxPoint(0, 0));
-	m_terminal->set_mode_flag(GTerm::CURSORINVISIBLE);
+	m_terminal->set_mode_flag(GenericTerminal::CURSORINVISIBLE);
 	m_termContainer->SetTerminal(m_terminal);
 	m_terminal->SetParent(this);
 	m_splitEditorOutput->SetCharHeigth(m_terminal->getTextHeight());
@@ -4487,6 +4487,7 @@ void NumeReWindow::toggleHistory()
         m_history->Show();
     }
     m_terminal->UpdateSize();
+    m_termContainer->Refresh();
     m_history->Refresh();
 }
 

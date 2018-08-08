@@ -11,7 +11,6 @@
 #include <wx/txtstrm.h>
 #include "networking.h"
 #include "gterm.hpp"
-#include "gtelnet.hpp"  // <------------
 #include "../../common/debug.h"
 #include "../../common/chameleonprocessevent.h"
 #include "../../common/Options.h"

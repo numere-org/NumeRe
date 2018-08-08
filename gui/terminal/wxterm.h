@@ -1,10 +1,10 @@
-/*
-    taTelnet - A cross-platform telnet program.
-    Copyright (c) 2000 Derry Bryson.
+/*****************************************************************************
+    NumeRe: Framework fuer Numerische Rechnungen
+    Copyright (C) 2018  Erik Haenel et al.
 
-    This program is free software; you can redistribute it and/or modify
+    This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
+    the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
     This program is distributed in the hope that it will be useful,
@@ -13,19 +13,9 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
 
-    Contact Information:
-
-       Technology Associates, Inc.
-       Attn:  Derry Bryson
-       959 W. 5th Street
-       Reno, NV  89503
-       USA
-
-       derry@techass.com
-*/
 
 #ifndef INCLUDE_WXTERM
 #define INCLUDE_WXTERM
@@ -38,7 +28,6 @@
 #include "../NumeReWindow.h"
 #include "../../common/Options.h"
 #include "gterm.hpp"
-#include "gtelnet.hpp"
 #include "../../kernel/kernel.hpp"
 #include "../../kernel/debugmessenger.hpp"
 
@@ -49,249 +38,217 @@
 
 using namespace std;
 
-class wxTerm : public wxWindow, public GTerm, public wxThreadHelper
+// The terminal class for the GUI
+// It's a specialisation of the GenericTerminal
+class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
 {
+    // Easier to use the NumeReKernel as a friend
+    // to create the communication
     friend class NumeReKernel;
-    private:
-        int
-        m_charWidth,
-        m_charHeight,
-        m_init,
-        m_width,
-        m_height,
-        m_selx1,
-        m_sely1,
-        m_selx2,
-        m_sely2,
-        m_curX,
-        m_curY,
-        m_curFG,
-        m_curBG,
-        m_curFlags,
-        m_curState,
-        m_curBlinkRate;
 
-        int m_scrollBarWidth;
-        int m_charsInLine;
-        int m_linesDisplayed;
+	private:
+		int
+		m_charWidth,
+		m_charHeight,
+		m_init,
+		m_width,
+		m_height,
+		m_selx1,
+		m_sely1,
+		m_selx2,
+		m_sely2,
+		m_curX,
+		m_curY,
+		m_curFG,
+		m_curBG,
+		m_curFlags,
+		m_curState,
+		m_curBlinkRate;
 
-        unsigned char
-        m_curChar;
+		int m_scrollBarWidth;
+		int m_charsInLine;
+		int m_linesDisplayed;
 
-        bool
-        m_selecting,
-        m_marking;
+		unsigned char
+		m_curChar;
 
-        bool m_inUpdateSize;
-        bool m_isActive;
-        bool m_updateProcedureLibrary;
+		bool
+		m_selecting,
+		m_marking;
 
-        wxColour
-        m_vt_colors[16],
-                    m_pc_colors[16],
-                    *m_colors;
+		bool m_inUpdateSize;
+		bool m_isActive;
+		bool m_updateProcedureLibrary;
 
-        wxPen
-        m_vt_colorPens[16],
-                       m_pc_colorPens[16],
-                       *m_colorPens;
+		wxColour
+		m_color_defs[16], *m_colors;
 
-        wxFont
-        m_normalFont,
-        m_underlinedFont,
-        m_boldFont,
-        m_boldUnderlinedFont;
+		wxPen
+		m_colorPen_defs[16], *m_colorPens;
 
-        wxDC
-        *m_curDC;
+		wxFont
+		m_normalFont,
+		m_underlinedFont,
+		m_boldFont,
+		m_boldUnderlinedFont;
 
-        wxMemoryDC
-        m_memDC;
+		wxDC
+		* m_curDC;
 
-        wxBitmap
-        *m_bitmap;
+		wxMemoryDC
+		m_memDC;
 
-        FILE
-        *m_printerFN;
+		wxBitmap
+		* m_bitmap;
 
-        char
-        *m_printerName;
+		wxTimer
+		m_timer;
 
-        wxTimer
-        m_timer;
+		NumeReWindow* m_wxParent;
 
-        NumeReWindow* m_wxParent;
+		Options* m_options;
 
-        Options* m_options;
+	public:
+		enum BOLDSTYLE
+		{
+			DEFAULT = -1,
+			COLOR = 0,
+			OVERSTRIKE = 1,
+			FONT = 2
+		};
 
-    public:
-        enum BOLDSTYLE
-        {
-            DEFAULT = -1,
-            COLOR = 0,
-            OVERSTRIKE = 1,
-            FONT = 2
-        };
+		void SetParent(NumeReWindow* frame)
+		{
+			if (frame && !m_wxParent)
+				m_wxParent = frame;
+		}
+		int getTextHeight()
+		{
+			return m_charHeight;
+		}
+		Debugmessenger _guimessenger;
 
-        void SetParent(NumeReWindow* frame)
-        {
-            if (frame && !m_wxParent)
-                m_wxParent = frame;
-        }
-        int getTextHeight() {return m_charHeight;}
-    private:
-        void pipe_command();
-        BOLDSTYLE
-        m_boldStyle;
+	private:
+		void pipe_command(const string& sCommand);
+		BOLDSTYLE
+		m_boldStyle;
 
-        typedef struct
-        {
-            wxKeyCode
-            keyCode;
+        bool filterKeyCodes(int keyCode);
+		void scrollToInput();
+		void MarkSelection(bool bRectangular = false);
+		void DoDrawCursor(int fg_color, int bg_color, int flags,
+						  int x, int y, unsigned char c);
 
-            int
-            VTKeyCode;
-        } TermKeyMap;
+        // Private event handler functions
+		void OnChar(wxKeyEvent& event);
+		void OnKeyDown(wxKeyEvent& event);
+		void OnPaint(wxPaintEvent& event);
+		void OnLeftDown(wxMouseEvent& event);
+		void OnLoseMouseCapture(wxMouseCaptureLostEvent& event);
+		void OnLeftUp(wxMouseEvent& event);
+		void OnMouseMove(wxMouseEvent& event);
+		void OnEnter(wxMouseEvent& event);
+		void OnTimer(wxTimerEvent& event);
+		void OnActivate(wxActivateEvent& event);
+		void OnSize(wxSizeEvent& event);
+		void OnGainFocus(wxFocusEvent& event);
+		void OnLoseFocus(wxFocusEvent& event);
 
-        static TermKeyMap keyMapTable[];
+	protected:
+		virtual wxThread::ExitCode Entry();
+		NumeReKernel _kernel;
+		wxCriticalSection m_kernelCS;
+		NumeReKernel::KernelStatus m_KernelStatus;
+		bool m_bCommandAvailable;
+		bool m_bTableEditAvailable;
+		bool m_bTableEditCanceled;
+		bool m_bContinueDebug;
+		string m_sCommandLine;
+		string m_sAnswer;
 
-        void scrollToInput();
+	public:
+	    // Constructor and destructor
+		wxTerm(wxWindow* parent, wxWindowID id,
+			   Options* _option,
+			   const wxString& sPath,
+			   const wxPoint& pos = wxDefaultPosition,
+			   int width = 80, int height = 24,
+			   const wxString& name = "wxTerm");
+		virtual ~wxTerm();
 
-    public:
-        Debugmessenger _guimessenger;
-        void pass_command(const string& command);
-        Settings getKernelSettings();
-        void setKernelSettings(const Settings&);
-        wxTerm(wxWindow* parent, wxWindowID id,
-               Options* _option,
-               const wxString& sPath,
-               const wxPoint& pos = wxDefaultPosition,
-               int width = 80, int height = 24,
-               const wxString& name = "wxTerm");
+		// Kernel communication functions
+		void pass_command(const string& command);
+		Settings getKernelSettings();
+		void setKernelSettings(const Settings&);
+		void EndKernelTask();
+		void CancelCalculation();
+		void StartKernelTask();
+		void OnThreadUpdate(wxThreadEvent& event);
+		void OnClose(wxCloseEvent& event);
+		vector<string> getPathSettings();
+		void passEditedTable(NumeRe::Container<string>& _container);
+		void cancelTableEdit()
+		{
+			wxCriticalSectionLocker lock(m_kernelCS);
+			m_bTableEditCanceled = true;
+		}
+		void continueDebug()
+		{
+			wxCriticalSectionLocker lock(m_kernelCS);
+			m_bContinueDebug = true;
+		}
+		string getDocumentation(const string& sCommand);
+		map<string, string> getPluginLanguageStrings();
+		map<string, string> getFunctionLanguageStrings();
+		void UpdateLibrary()
+		{
+			m_updateProcedureLibrary = true;
+		}
 
-        virtual ~wxTerm();
-
+		// Styling functions
         bool SetFont(const wxFont& font);
+		void GetDefColors(wxColor colors[16], wxTerm::BOLDSTYLE boldStyle = wxTerm::DEFAULT);
+		int GetCursorBlinkRate()
+		{
+			return m_curBlinkRate;
+		}
+		void SetCursorBlinkRate(int rate);
 
-        void GetDefColors(wxColor colors[16], wxTerm::BOLDSTYLE boldStyle = wxTerm::DEFAULT);
-        void GetVTColors(wxColour colors[16]);
-        void SetVTColors(wxColour colors[16]);
-        void GetDefPCColors(wxColour colors[16]);
-        void GetPCColors(wxColour colors[16]);
-        void SetPCColors(wxColour colors[16]);
-        int GetCursorBlinkRate()
-        {
-            return m_curBlinkRate;
-        }
-        void SetCursorBlinkRate(int rate);
+		// Text printing functions
+		virtual void DrawText(int fg_color, int bg_color, int flags,
+							  int x, int y, const string& sText);
+		virtual void DrawCursor(int fg_color, int bg_color, int flags,
+								int x, int y, unsigned char c);
 
-        void SetBoldStyle(wxTerm::BOLDSTYLE boldStyle);
-        wxTerm::BOLDSTYLE GetBoldStyle(void)
-        {
-            return m_boldStyle;
-        }
+		virtual void ClearChars(int bg_color, int x, int y, int w, int h);
+		virtual void ProcessInput(int len, const string& sData);
+		virtual void ProcessOutput(int len, const string& sData);
 
-        void ScrollTerminal(int numLines, bool scrollUp = true);
+		// Terminal control functions
+		void ScrollTerminal(int numLines, bool scrollUp = true);
+		void ClearSelection();
+		bool HasSelection();
+		wxString GetSelection();
+		bool IsWorking()
+		{
+			return GetThread() && GetThread()->IsRunning();
+		}
+		void UpdateSize();
+		void UpdateColors();
+		virtual void ModeChange(int state);
+		virtual void Bell();
+		virtual void ResizeTerminal(int w, int h);
+		virtual void UpdateRemoteSize(int width, int height);
+		int GetTermWidth()
+		{
+			return m_charsInLine;
+		}
+		int GetTermHeight()
+		{
+			return m_linesDisplayed;
+		}
 
-        void ClearSelection();
-        bool HasSelection();
-        wxString GetSelection();
-        void SelectAll();
-
-        bool IsWorking()
-            {return GetThread() && GetThread()->IsRunning();}
-        void EndKernelTask();
-        void CancelCalculation();
-
-        void UpdateSize();
-        void UpdateColors();
-        void UpdateLibrary()
-            {m_updateProcedureLibrary = true;}
-        //void UpdateSize(int &termheight, int &linesReceived);
-        //void UpdateSize(wxSizeEvent &event);
-
-        /*
-        **  GTerm stuff
-        */
-        virtual void DrawText(int fg_color, int bg_color, int flags,
-                              int x, int y, int len, unsigned char *string);
-        virtual void DrawCursor(int fg_color, int bg_color, int flags,
-                                int x, int y, unsigned char c);
-
-        virtual void MoveChars(int sx, int sy, int dx, int dy, int w, int h);
-        virtual void ClearChars(int bg_color, int x, int y, int w, int h);
-//  virtual void SendBack(int len, char *data);
-        virtual void ModeChange(int state);
-        virtual void Bell();
-        virtual void ResizeTerminal(int w, int h);
-        virtual void RequestSizeChange(int w, int h);
-
-        virtual void ProcessInput(int len, const string& sData);
-        virtual void ProcessOutput(int len, const string& sData);
-        //virtual void ProcessInput(int len, unsigned const char *data);
-//  virtual void ProcessOutput(int len, unsigned char *data);
-
-        virtual void SelectPrinter(char *PrinterName);
-        virtual void PrintChars(int len, unsigned char *data);
-
-        virtual void UpdateRemoteSize(int width, int height);
-        int GetTermWidth()
-        {
-            return m_charsInLine;
-        }
-        int GetTermHeight()
-        {
-            return m_linesDisplayed;
-        }
-
-        void StartKernelTask();
-        void OnThreadUpdate(wxThreadEvent& event);
-        void OnClose(wxCloseEvent& event);
-
-        vector<string> getPathSettings();
-        void passEditedTable(NumeRe::Container<string>& _container);
-        void cancelTableEdit() {wxCriticalSectionLocker lock(m_kernelCS); m_bTableEditCanceled = true;}
-        void continueDebug() {wxCriticalSectionLocker lock(m_kernelCS); m_bContinueDebug = true;}
-        string getDocumentation(const string& sCommand);
-        map<string,string> getPluginLanguageStrings();
-        map<string,string> getFunctionLanguageStrings();
-    protected:
-        virtual wxThread::ExitCode Entry();
-        NumeReKernel _kernel;
-        wxCriticalSection m_kernelCS;
-        NumeReKernel::KernelStatus m_KernelStatus;
-        bool m_bCommandAvailable;
-        bool m_bTableEditAvailable;
-        bool m_bTableEditCanceled;
-        bool m_bContinueDebug;
-        string m_sCommandLine;
-        string m_sAnswer;
-
-    private:
-        int MapKeyCode(int keyCode);
-        void MarkSelection(bool bRectangular = false);
-        void DoDrawCursor(int fg_color, int bg_color, int flags,
-                          int x, int y, unsigned char c);
-
-        void OnChar(wxKeyEvent& event);
-        void OnKeyDown(wxKeyEvent& event);
-        void OnPaint(wxPaintEvent& event);
-        void OnLeftDown(wxMouseEvent& event);
-        void OnLoseMouseCapture(wxMouseCaptureLostEvent& event);
-        void OnLeftUp(wxMouseEvent& event);
-        void OnMouseMove(wxMouseEvent& event);
-        void OnEnter(wxMouseEvent& event);
-        void OnTimer(wxTimerEvent& event);
-        void OnActivate(wxActivateEvent &event);
-        void OnSize(wxSizeEvent &event);
-
-        void OnGainFocus(wxFocusEvent &event);
-        void OnLoseFocus(wxFocusEvent &event);
-
-
-        //private wxScrollBar* m_scrollbar;
-
-        DECLARE_EVENT_TABLE()
+		DECLARE_EVENT_TABLE()
 };
 
 #endif /* INCLUDE_WXTERM */

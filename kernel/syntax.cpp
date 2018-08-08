@@ -196,6 +196,12 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
 {
     // Create a color string, which will only contain default colors
     string colors;
+
+    // Ensure that a command line with a length is available
+    if (!sCommandLine.length())
+        return "";
+
+    // Fill the color string with the default colors
     colors.assign(sCommandLine.length(),'0'+SYNTAX_STD);
     char c;
 

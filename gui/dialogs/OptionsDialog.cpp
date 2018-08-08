@@ -467,7 +467,7 @@ void OptionsDialog::CreateControls()
     wxBoxSizer* itemBoxSizer47 = new wxBoxSizer(wxHORIZONTAL);
     miscVSizer->Add(itemBoxSizer47, 0, wxALIGN_LEFT|wxALL, 0);
 
-    m_termHistory = new wxSpinCtrl( miscPanel, ID_SPINCTRL, _T("0"), wxDefaultPosition, wxSize(60, -1), wxSP_ARROW_KEYS, 100, 500, 100 );
+    m_termHistory = new wxSpinCtrl( miscPanel, ID_SPINCTRL, _T("0"), wxDefaultPosition, wxSize(60, -1), wxSP_ARROW_KEYS, 100, 1000, 100 );
     itemBoxSizer47->Add(m_termHistory, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
     wxStaticText* itemStaticText48 = new wxStaticText( miscPanel, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_HISTORY_LINES")), wxDefaultPosition, wxDefaultSize, 0 );
     itemBoxSizer47->Add(itemStaticText48, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxADJUST_MINSIZE, 5);

@@ -229,7 +229,7 @@ class Settings : public Documentation
             {
                 if (_nBuffer_x >= 81)
                     nBuffer_x = _nBuffer_x;
-                if (_nBuffer_y >= 100 && _nBuffer_y <= 500)
+                if (_nBuffer_y >= 100 && _nBuffer_y <= 1000)
                     nBuffer_y = _nBuffer_y;
                 return;
             }

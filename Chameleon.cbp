@@ -31,6 +31,8 @@
 					<Add option="-DwxUSE_UNICODE" />
 					<Add option="-D__GNUWIN32__" />
 					<Add option="-D__WXMSW__" />
+					<Add option="-DWXDEBUG" />
+					<Add option="-DDO_LOG" />
 					<Add directory="$(#wx)/lib/gcc_lib/mswu" />
 					<Add directory="$(#wx)/include" />
 				</Compiler>

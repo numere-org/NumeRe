@@ -891,7 +891,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
 		bSilent = true;
 
 	if (parserFlags & PEEK)
-		NumeReKernel::printPreFmt("\r                                                       \r");
+		NumeReKernel::printPreFmt("\r");
 	if ((!bSilent || parserFlags & PEEK) && !StrRes.bOnlyLogicals)
 		NumeReKernel::printPreFmt(LineBreak(sConsoleOut, _option, false, 0) + "\n");
 

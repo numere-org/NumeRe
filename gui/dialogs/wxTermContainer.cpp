@@ -60,7 +60,7 @@ BEGIN_EVENT_TABLE( wxTermContainer, wxPanel )
 
 ////@end wxTermContainer event table entries
 
-  EVT_SIZE						(wxTermContainer::OnSize)
+  //EVT_SIZE						(wxTermContainer::OnSize)
   EVT_UPDATE_UI					(ID_SCROLLBAR, wxTermContainer::OnUpdateUI)
 
 END_EVENT_TABLE()
