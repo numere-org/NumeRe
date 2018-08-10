@@ -492,7 +492,7 @@ namespace mu
 			PreEvaluateVectors(sBuf);
 		}
 		if (sBuf.find('{') != string::npos || sBuf.find('}') != string::npos)
-			Error(ecMISSING_PARENS);
+			Error(ecMISSING_PARENS, sBuf, std::min(sBuf.find('{') != string::npos, sBuf.find('}') != string::npos), "{}");
 		// Now check, whether the pre-evaluated formula was already parsed into the bytecode
 		// -> Return, if that is true
 		// -> Invalidate the bytecode for this formula, if necessary
@@ -2304,6 +2304,23 @@ namespace mu
 	void  ParserBase::Error(EErrorCodes a_iErrc, int a_iPos, const string_type& a_sTok) const
 	{
 		throw exception_type(a_iErrc, a_sTok, m_pTokenReader->GetExpr(), a_iPos);
+	}
+
+	//---------------------------------------------------------------------------
+	/** \brief Create an error containing the parse error position.
+
+	  This function will create an Parser Exception object containing the error text and
+	  its position.
+
+	  \param a_iErrc [in] The error code of type #EErrorCodes.
+	  \param a_Expr [in] The erroneous expression
+	  \param a_iPos [in] The position where the error was detected.
+	  \param a_strTok [in] The token string representation associated with the error.
+	  \throw ParserException always throws thats the only purpose of this function.
+	*/
+	void  ParserBase::Error(EErrorCodes a_iErrc, const string_type& a_Expr, int a_iPos, const string_type& a_sTok) const
+	{
+		throw exception_type(a_iErrc, a_sTok, a_Expr, a_iPos);
 	}
 
 	//------------------------------------------------------------------------------

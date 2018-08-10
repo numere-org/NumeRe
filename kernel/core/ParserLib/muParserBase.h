@@ -228,6 +228,10 @@ namespace mu
 			void  Error(EErrorCodes a_iErrc,
 						int a_iPos = (int)mu::string_type::npos,
 						const string_type& a_strTok = string_type() ) const;
+            void  Error(EErrorCodes a_iErrc,
+                        const string_type& a_Expr,
+						int a_iPos = (int)mu::string_type::npos,
+						const string_type& a_strTok = string_type() ) const;
 
 			void SetVectorVar(const std::string& sVarName, const std::vector<double>& vVar, bool bAddVectorType = false);
 			std::vector<double>* GetVectorVar(const std::string& sVarName);
