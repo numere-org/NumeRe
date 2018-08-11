@@ -21,3 +21,4 @@ Cleaned	The terminal of NumeRe was significantly improved and allows now to wrap
 Fixed	The issue in the resampler code was fixed. This also required to change the behaviour of all other memory functions.
 Fixed	Removed a segmentation fault, which occured during the storage of strings into the 'string()' object.
 Fixed	Solved an issue, where the usage of braces in strings as returns values of procedures yielded strange errors.
+Fixed	The 'to_string()' function may now handle strings containing masked strings correctly.

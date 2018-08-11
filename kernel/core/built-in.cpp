@@ -24,14 +24,14 @@
 
 extern mglGraph _fontData;
 
-void BI_show_credits(Parser& _parser, Settings& _option);
-void BI_ListOptions(Settings& _option);
-bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, Datafile& _data, Settings& _option);
-bool BI_ListFiles(const string& sCmd, const Settings& _option);
-bool BI_ListDirectory(const string& sDir, const string& sParams, const Settings& _option);
-bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
-bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
-bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
+static void BI_show_credits(Parser& _parser, Settings& _option);
+static void BI_ListOptions(Settings& _option);
+static bool BI_ListFiles(const string& sCmd, const Settings& _option);
+static bool BI_ListDirectory(const string& sDir, const string& sParams, const Settings& _option);
+static bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
+static bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
+static string BI_getVarList(const string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
+static bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
 
 
 
@@ -42,8 +42,8 @@ bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _
  */
 
 
-// 9. Dies zeigt einfach nur ein paar rechtliche Infos zu diesem Programm an
-void BI_show_credits(Parser& _parser, Settings& _option)
+// This function will simply display some credits for this application
+static void BI_show_credits(Parser& _parser, Settings& _option)
 {
 	NumeReKernel::toggleTableStatus();
 	make_hline();
@@ -65,37 +65,18 @@ void BI_show_credits(Parser& _parser, Settings& _option)
 	return;
 }
 
-// 10. Diese Funktion zeigt das Logo an
+// This function displays the intro text
 void BI_splash()
 {
 	NumeReKernel::printPreFmt("NUMERE: FRAMEWORK FÜR NUMERISCHE RECHNUNGEN");
-	/**int nLINE_LENGTH = NumeReKernel::nLINE_LENGTH;
-	NumeReKernel::print((char)201;
-	for (int i = 0; i < nLINE_LENGTH-2; i++)
-	    NumeReKernel::print((char)205;
-	NumeReKernel::print((char)187 );
-	//NumeReKernel::print(std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+(nLINE_LENGTH%2)+1) + std::left + (char)186 + "             _____    __                            ______                    " + std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+1) + std::right + (char)186 );
-	//NumeReKernel::print(std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+(nLINE_LENGTH%2)+1) + std::left + (char)186 + "          ~ |     \\  |  |  __ __   _______   ____  |  __  \\  ____  ~          " + std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+1) + std::right + (char)186 );
-	//NumeReKernel::print(std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+(nLINE_LENGTH%2)+1) + std::left + (char)186 + "        ~ ~ |  |\\  \\ |  | |  |  | |       \\ / __ \\ |   ___/ / __ \\ ~ ~        " + std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+1) + std::right + (char)186 );
-	//NumeReKernel::print(std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+(nLINE_LENGTH%2)+1) + std::left + (char)186 + "      ~ ~ ~ |  | \\  \\|  | |  |  | |  Y Y  | | ___/ |     \\  | ___/ ~ ~ ~      " + std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+1) + std::right + (char)186 );
-	//NumeReKernel::print(std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+(nLINE_LENGTH%2)+1) + std::left + (char)186 + "    ~ ~ ~ ~ |__|  \\_____| |____/  |__|_|__| \\____) |__|\\__\\ \\____) ~ ~ ~ ~    " + std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+1) + std::right + (char)186 );	NumeReKernel::print(std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+(nLINE_LENGTH%2)+1) + std::left + (char)186 + "             _____    __                            ______                    " + std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+1) + std::right + (char)186 );
-	NumeReKernel::print(std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+(nLINE_LENGTH%2)+1) + std::left + (char)186 + "               _____    __                          _______                   " + std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+1) + std::right + (char)186 );
-	NumeReKernel::print(std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+(nLINE_LENGTH%2)+1) + std::left + (char)186 + "          ~    \\    |  / / __ ___  _______   ____  (   __  | ____  ~          " + std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+1) + std::right + (char)186 );
-	NumeReKernel::print(std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+(nLINE_LENGTH%2)+1) + std::left + (char)186 + "        ~ ~   / /|  | / / / //  / /       | / __ | /   ___/ / __ | ~ ~        " + std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+1) + std::right + (char)186 );
-	NumeReKernel::print(std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+(nLINE_LENGTH%2)+1) + std::left + (char)186 + "      ~ ~ ~  / / |  |/ / / //  / /  Y Y  / / ___/ /  |  |  / ___/  ~ ~ ~      " + std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+1) + std::right + (char)186 );
-	NumeReKernel::print(std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+(nLINE_LENGTH%2)+1) + std::left + (char)186 + "    ~ ~ ~ ~ /_/  |____/ |_____/ /__/_/__/  \\___\\ /__/ \\__\\ \\___\\   ~ ~ ~ ~    " + std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+1) + std::right + (char)186 );
-	NumeReKernel::print(std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+(nLINE_LENGTH%2)+1) + std::left + (char)186 + toSystemCodePage("  ~ ~ ~ ~ ~ ~ ~ ~   Framework  für  Numerische  Rechnungen   ~ ~ ~ ~ ~ ~ ~ ~  ") + std::setfill(' ') + std::setw((nLINE_LENGTH-80)/2+1) + std::right + (char)186 );
-	NumeReKernel::print((char)200;
-	for (int i = 0; i < nLINE_LENGTH-2; i++) //78
-	    NumeReKernel::print((char)205;
-	NumeReKernel::print((char)188 );*/
 	return;
 }
 
-/* 11. Diese Funktion sucht nach Schluesselwoertern in der Eingabe. Wir verwenden hier
- * "if...else if...else if...else", da switch nicht besonders gut mit strings zurecht
- * kommt. >> STATUSCOUNTER!
- */
+// This function is the main command handling function
+// It will identify the comands in the string and handle them
+// correspondingly
+// In the current implementation, it will also perform some pre-
+// evaluation steps. This has to be changed
 int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _option, Parser& _parser, Define& _functions, PlotData& _pData, Script& _script, bool bParserActive)
 {
 	string sArgument = "";  // String fuer das evtl. uebergebene Argument
@@ -107,9 +88,10 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 	Indices _idx;
 	map<string, long long int> mCaches = _data.getCacheList();
 	mCaches["data"] = -1;
-	static string sPreferredCmds = ";clear;copy;smooth;retoque;resample;stats;save;showf;swap;hist;help;man;move;matop;mtrxop;random;remove;rename;append;reload;delete;datagrid;list;load;export;edit";
-	static string sPlotCommands = " plotcompose plot plot3d graph graph3d mesh meshgrid mesh3d meshgrid3d surf surface surf3d surface3d cont contour cont3d contour3d vect vector vect3d vector3d dens density dens3d density3d draw draw3d grad gradient grad3d gradient3d ";
+	const static string sPreferredCmds = ";clear;copy;smooth;retoque;resample;stats;save;showf;swap;hist;help;man;move;matop;mtrxop;random;remove;rename;append;reload;delete;datagrid;list;load;export;edit";
+	const static string sPlotCommands = " plotcompose plot plot3d graph graph3d mesh meshgrid mesh3d meshgrid3d surf surface surf3d surface3d cont contour cont3d contour3d vect vector vect3d vector3d dens density dens3d density3d draw draw3d grad gradient grad3d gradient3d ";
 	string sCacheCmd = "";
+
 	for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
 	{
 		if (findCommand(sCmd, iter->first).sString == iter->first)
@@ -128,6 +110,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		NumeReKernel::print("DEBUG: sCommand = " + sCommand );
 		NumeReKernel::print("DEBUG: findCommand(sCmd, \"data\").sString = " + findCommand(sCmd, "data").sString );
 	}
+
 	if (sCommand == "find")
 	{
 		if (sCmd.length() > 6 && sCmd.find("-") != string::npos)
@@ -5029,30 +5012,17 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 	return 0;
 }
 
-// 12. Eine Funktion, die die Hilfe zum Menue-Modus zeigt.
-void BI_Basis()
-{
-	/*make_hline();
-	NumeReKernel::print(toSystemCodePage("|-> NUMERE: ÜBERSICHT (MENÜ-MODUS)") );
-	make_hline();
-	NumeReKernel::print(toSystemCodePage("|-> NumeRe im Menü-Modus ist per Kommando oder Zahlenkombinationen zu bedienen.\n|   Zentrale Kommandos sind die folgenden:") );
-	NumeReKernel::print(toSystemCodePage("|   menue    - Ruft das Hauptmenue auf") );
-	NumeReKernel::print("|   help     - Ruft die Hilfe auf" );
-	NumeReKernel::print("|   mode     - Wechselt zum Rechner-Modus" );
-	NumeReKernel::print("|   quit     - Beendet NumeRe" );
-	NumeReKernel::print(toSystemCodePage("|-> Im Menü-Modus sind die Rechenoperationen deaktiviert!") );
-	make_hline();*/
-	return;
-}
-
-// 14. Eine einfache Autosave-Funktion
+// This function performs the autosave at the application termination
 void BI_Autosave(Datafile& _data, Output& _out, Settings& _option)
 {
+    // Only do something, if there's unsaved and valid data
 	if (_data.isValidCache() && !_data.getSaveStatus())
 	{
+	    // Inform the user
 		if (_option.getSystemPrintStatus())
 			NumeReKernel::printPreFmt(toSystemCodePage(  _lang.get("BUILTIN_AUTOSAVE") + " ... "));
-		//NumeReKernel::print("|-> Automatische Speicherung ... ";
+
+		// Try to save the cache
 		if (_data.saveCache())
 		{
 			if (_option.getSystemPrintStatus())
@@ -5068,133 +5038,110 @@ void BI_Autosave(Datafile& _data, Output& _out, Settings& _option)
 	return;
 }
 
-// 15. Diese Funktion testet, ob das angegebene File existiert
+// This is a wrapper for the corresponding function from tools.cpp
 bool BI_FileExists(const string& sFilename)
 {
 	return fileExists(sFilename);
 }
 
-// 16. Listet alle Einstellungen auf
-void BI_ListOptions(Settings& _option)
+// This function lists all internal (kernel) settings
+static void BI_ListOptions(Settings& _option)
 {
 	make_hline();
 	NumeReKernel::print("NUMERE: " + toUpperCase(_lang.get("BUILTIN_LISTOPT_SETTINGS")) );
 	make_hline();
 	NumeReKernel::print(  toSystemCodePage(_lang.get("BUILTIN_LISTOPT_1")) + "\n|" );
-	//NumeReKernel::print("|-> NumeRe wurde mit den folgenden Parametern konfiguriert:" + endl + "|" );
+
+	// List the path settings
 	NumeReKernel::printPreFmt(sectionHeadline(_lang.get("BUILTIN_LISTOPT_2")));
-	//NumeReKernel::print("|   " + toUpperCase(_lang.get("BUILTIN_LISTOPT_2") + " ") + std::setfill((char)196) + std::setw(_option.getWindow()-5-_lang.get("BUILTIN_LISTOPT_2").length()) + (char)196 );
-	//NumeReKernel::print("|   " + toUpperCase("Dateipfade: ") + std::setfill((char)196) + std::setw(_option.getWindow()-16) + (char)196 );
 	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_3", _option.getSavePath()), _option, true, 0, 25) + "\n" );
 	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_4", _option.getLoadPath()), _option, true, 0, 25) + "\n" );
 	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_5", _option.getScriptPath()), _option, true, 0, 25) + "\n" );
 	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_6", _option.getProcsPath()), _option, true, 0, 25) + "\n" );
 	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_7", _option.getPlotOutputPath()), _option, true, 0, 25) + "\n" );
-	/*NumeReKernel::print(LineBreak("|   Speicherpfad:        \"" + _option.getSavePath() + "\"", _option, true, 0, 25) );
-	NumeReKernel::print(LineBreak("|   Importpfad:          \"" + _option.getLoadPath() + "\"", _option, true, 0, 25) );
-	NumeReKernel::print(LineBreak("|   Scriptpfad:          \"" + _option.getScriptPath() + "\"", _option, true, 0, 25) );
-	NumeReKernel::print(LineBreak("|   Prozedurpfad:        \"" + _option.getProcsPath() + "\"", _option, true, 0, 25) );
-	NumeReKernel::print(LineBreak("|   Plotspeicherpfad:    \"" + _option.getPlotOutputPath() + "\"", _option, true, 0, 25) );*/
 	if (_option.getViewerPath().length())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_8", _option.getViewerPath()), _option, true, 0, 25) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_8", _lang.get("BUILTIN_LISTOPT_NOVIEWER")), _option, true, 0, 25) + "\n");
-	/*NumeReKernel::print("|   Imageviewer:         ";
-	if (_option.getViewerPath().length())
-	    NumeReKernel::print(LineBreak(_option.getViewerPath(), _option, true, 25, 25);
-	else
-	    NumeReKernel::print("Kein Viewer festgelegt";
-	NumeReKernel::print(endl;*/
 	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_9", _option.getEditorPath()), _option, true, 0, 25) + "\n");
-	//NumeReKernel::print(LineBreak("|   Texteditor:          " + _option.getEditorPath(), _option, true, 0, 25) );
 	NumeReKernel::printPreFmt("|\n" );
+
+	// List all other settings
 	NumeReKernel::printPreFmt(sectionHeadline(_lang.get("BUILTIN_LISTOPT_10")));
-	//NumeReKernel::print("|   " + toUpperCase(_lang.get("BUILTIN_LISTOPT_10") + " ") + std::setfill((char)196) + std::setw(_option.getWindow()-5-_lang.get("BUILTIN_LISTOPT_10").length()) + (char)196 );//NumeReKernel::print("|   " + toUpperCase("Programmkonfiguration: ") + std::setfill((char)196) + std::setw(_option.getWindow()-27) + (char)196 );
-	///Autosaveintervall
+
+	// Autosaveintervall
 	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_11", toString(_option.getAutoSaveInterval())), _option) + "\n");
-	///Begruessung
+
+	// Greeting
 	if (_option.getbGreeting())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_12", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_12", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-	///Puffer
+
+	// Buffer
 	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_13", toString(_option.getBuffer(1))), _option) + "\n");
-	///Colortheme
-	switch (_option.getColorTheme())
-	{
-		case 1:
-			NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_14", "\"Bios\""), _option) + "\n");
-			break;
-		case 2:
-			NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_14", "\"Freaky\""), _option) + "\n");
-			break;
-		case 3:
-			NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_14", "\"Classic Black\""), _option) + "\n");
-			break;
-		case 4:
-			NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_14", "\"Classic Green\""), _option) + "\n");
-			break;
-		default:
-			NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_14", "\"NumeRe\""), _option) + "\n");
-			break;
-	}
-	///Draftmode
+
+	// Draftmode
 	if (_option.getbUseDraftMode())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_15", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_15", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-	///Extendedfileinfo
+
+	// Extendedfileinfo
 	if (_option.getbShowExtendedFileInfo())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_16", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_16", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-	///ESC in Scripts
+
+	// ESC in Scripts
 	if (_option.getbUseESCinScripts())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_17", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_17", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-	///Fenstergroesse
-	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_18", toString(_option.getWindow() + 1), toString(_option.getWindow(1) + 1)), _option) + "\n");
-	///Defcontrol
+
+	// Defcontrol
 	if (_option.getbDefineAutoLoad())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_19", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_19", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-	///Kompakte Tabellen
+
+	// Compact table view in the terminal
 	if (_option.getbCompact())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_20", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_20", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-	///Leere Spalten laden
+
+	// Loading empty columns
 	if (_option.getbLoadEmptyCols())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_21", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_21", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-	/// Praezision
+
+	// Precision
 	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_22", toString(_option.getPrecision())), _option) + "\n");
-	/// Logfile
+
+	// Create a logfile of the terminal inputs
 	if (_option.getbUseLogFile())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_23", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_23", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-	///Schneller Start
-	if (_option.getbFastStart())
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_24", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
-	else
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_24", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-	/// Plotfont
+
+	// Default Plotfont
 	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_25", _option.getDefaultPlotFont()), _option) + "\n");
-	/// Hints
+
+	// Display Hints
 	if (_option.getbShowHints())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_26", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_26", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-	/// UserLangFiles
+
+	// Use UserLangFiles
 	if (_option.getUseCustomLanguageFiles())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_27", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_27", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-	///  ExternalDocViewer
+
+	//  Use the ExternalDocViewer
 	if (_option.getUseExternalViewer())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_28", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
@@ -5202,24 +5149,30 @@ void BI_ListOptions(Settings& _option)
 
 	NumeReKernel::printPreFmt("|\n" );
 	NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LISTOPT_FOOTNOTE"), _option) );
-	//NumeReKernel::print(LineBreak("|-> Alle Einstellungen können mit \"set -OPTION\" geändert werden. Weitere Informationen hierzu findest du unter \"help set\"", _option) );
 	make_hline();
 	return;
 }
 
-// 17. Liest string-Argumente ein und wertet sie mit dem String-Parser aus
+// This function returns the string argument for a single parameter in the command line.
+// It will also parse it directly, which means that it won't contain further string operations.
 bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, Datafile& _data, Settings& _option)
 {
+    // Don't do anything, if no string is found in this expression
 	if (!containsStrings(sCmd) && !_data.containsStringVars(sCmd))
 		return false;
 	string sTemp = sCmd;
-	//NumeReKernel::print(sTemp );
+
+    // Get the contents of the contained data tables
 	if (sTemp.find("data(") != string::npos || _data.containsCacheElements(sTemp))
 	{
 		getDataElements(sTemp, _parser, _data, _option);
 	}
+
+	//
 	for (unsigned int i = 0; i < sTemp.length(); i++)
 	{
+	    // Jump over this parenthesis, if its contents don't contain
+	    // strings or string variables
 		if (sTemp[i] == '('
 				&& !containsStrings(sTemp.substr(i, getMatchingParenthesis(sTemp.substr(i))))
 				&& !containsStrings(sTemp.substr(0, i))
@@ -5228,10 +5181,14 @@ bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, 
 		{
 			i += getMatchingParenthesis(sTemp.substr(i));
 		}
+
+		// Evaluate parameter starts, i.e. the minus sign of the command line
 		if (sTemp[i] == '-'
 				&& !containsStrings(sTemp.substr(0, i))
 				&& !_data.containsStringVars(sTemp.substr(0, i)))
 		{
+		    // No string left of the minus sign, erase this part
+		    // and break the loop
 			sTemp.erase(0, i);
 			break;
 		}
@@ -5239,8 +5196,12 @@ bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, 
 				 && (containsStrings(sTemp.substr(0, i))
 					 || _data.containsStringVars(sTemp.substr(0, i))))
 		{
+		    // There are strings left of the minus sign
+		    // Find now the last string element in this part of the expression
 			for (int j = (int)i; j >= 0; j--)
 			{
+			    // Find the start of this function or data element, which
+			    // ends at this character
 				if (sTemp[j] == '(' && j && (isalnum(sTemp[j - 1]) || sTemp[j - 1] == '_'))
 				{
 					while (j && (isalnum(sTemp[j - 1]) || sTemp[j - 1] == '_'))
@@ -5248,9 +5209,13 @@ bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, 
 						j--;
 					}
 				}
+
+				// This is now the location, where all string-related stuff is
+				// to the right and everything else is to the left
 				if ((!containsStrings(sTemp.substr(0, j)) && containsStrings(sTemp.substr(j, i - j)))
 						|| (!_data.containsStringVars(sTemp.substr(0, j)) && _data.containsStringVars(sTemp.substr(j, i - j))))
 				{
+				    // Erase the left part and break the loop
 					sTemp.erase(0, j);
 					break;
 				}
@@ -5259,14 +5224,21 @@ bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, 
 		}
 	}
 
+	// If there are no strings, sTemp will be empty
 	if (!sTemp.length())
 		return false;
 
+    // Get the string variable values
 	if (_data.containsStringVars(sTemp))
 		_data.getStringValues(sTemp);
+
+    // Get now the string argument, which may contain pure
+    // strings, string functions and concatenations
 	if (!getStringArgument(sTemp, sArgument))
 		return false;
-	//NumeReKernel::print(sTemp + " " + sArgument );
+
+    // If there are path tokens in the string part, ensure that
+    // they are valid. Additionally, replace the "<this>" path token
 	if (sArgument.find('<') != string::npos && sArgument.find('>', sArgument.find('<')) != string::npos)
 	{
 		for (unsigned int i = 0; i < sArgument.length(); i++)
@@ -5280,9 +5252,9 @@ bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, 
 					sToken = _option.getExePath();
 				if (sToken.find('/') == string::npos)
 				{
+				    // Is the token valid?
 					if (_option.getTokenPaths().find(sToken) == string::npos)
 					{
-						//sErrorToken = sToken;
 						throw SyntaxError(SyntaxError::UNKNOWN_PATH_TOKEN, sCmd, sToken, sToken);
 					}
 				}
@@ -5290,22 +5262,27 @@ bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, 
 			}
 		}
 	}
+
+	// Clear the temporary variable
 	sTemp.clear();
+
+	// Parse the string expression
 	if (!parser_StringParser(sArgument, sTemp, _data, _parser, _option, true))
 		return false;
 	else
 	{
-		//NumeReKernel::print(sArgument );
 		sArgument = sArgument.substr(1, sArgument.length() - 2);
 		return true;
 	}
 }
 
-// 18. Waehlt eine Begruessung aus und schreibt sie auf das UI
+// Returns a random greeting string, which may be printed to the terminal later
 string BI_Greeting(Settings& _option)
 {
 	unsigned int nth_Greeting = 0;
 	vector<string> vGreetings;
+
+	// Get the greetings from the database file
 	if (_option.getUseCustomLanguageFiles() && fileExists(_option.ValidFileName("<>/user/docs/greetings.ndb", ".ndb")))
 		vGreetings = getDBFileContent("<>/user/docs/greetings.ndb", _option);
 	else
@@ -5326,7 +5303,8 @@ string BI_Greeting(Settings& _option)
 	return "|-> \"" + vGreetings[nth_Greeting] + "\"\n";
 }
 
-// 19. Wertet einen uebergebenen Parameter-String mit dem Parser und dem String-Parser aus
+// This function evaluates a passed parameter string, so that the values of the parameters
+// are only values and no expressions any more
 string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option, Define& _functions)
 {
 	string sReturn = sCmd;
@@ -5335,19 +5313,20 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
 	unsigned int nPos = 0;
 	unsigned int nLength = 0;
 	vector<double> vInterval;
-	/*if (sCmd.find('=') == string::npos)
-	    return sCmd;*/
+
+	// Add a whitespace character at the end
 	if (sReturn.back() != ' ')
 		sReturn += " ";
 
-	//NumeReKernel::print(sReturn );
-
+    // Try to detect the interval syntax
 	if (sReturn.find('-') != string::npos
 			&& (sReturn.find('[') != string::npos
 				|| matchParams(sReturn, "x", '=')
 				|| matchParams(sReturn, "y", '=')
 				|| matchParams(sReturn, "z", '=')))
 	{
+	    // Get the parameter part of the string and remove
+	    // the parameter string part from the original expression
 		if (sReturn.find("-set") != string::npos)
 		{
 			sTemp = sReturn.substr(sReturn.find("-set"));
@@ -5363,155 +5342,146 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
 			sTemp = sReturn.substr(sReturn.find('-'));
 			sReturn.erase(sReturn.find("-"));
 		}
+
+		// Parse the interval syntax
 		vInterval = parser_IntervalReader(sTemp, _parser, _data, _functions, _option, true);
+
+		// Append the remaining part of the parameter string to the expression
 		sReturn += sTemp;
 	}
 
+	// Get the string var values, if any
 	if (_data.containsStringVars(sReturn))
 		_data.getStringValues(sReturn);
+
+	// Repeat as long as an equal sign is found after
+	// the current position in the command line
 	while (sReturn.find('=', nPos) != string::npos)
 	{
+	    // Get the position after the equal sign
 		nPos = sReturn.find('=', nPos) + 1;
+
+		// jump over whitespaces
 		while (nPos < sReturn.length() - 1 && sReturn[nPos] == ' ')
 			nPos++;
 
+        // Parse the parameter values into evaluated values for the commands
 		if (containsStrings(sReturn.substr(nPos, sReturn.find(' ', nPos) - nPos)) || _data.containsStringVars(sReturn.substr(nPos, sReturn.find(' ', nPos) - nPos)))
 		{
-			//NumeReKernel::print("contains" );
-			//sTemp = getArgAtPos(sReturn, nPos);
-			/*if (_data.containsStringVars(sReturn.substr(nPos, sReturn.find(' ', nPos)-nPos)))
-			    _data.getStringValues(sReturn);*/
+		    // This is a string value
 			if (!getStringArgument(sReturn.substr(nPos - 1), sTemp)) // mit "=" uebergeben => fixes getStringArgument issues
 				return "";
-			//NumeReKernel::print(sTemp );
-			if (sTemp.find('<') != string::npos && sTemp.find('>', sTemp.find('<')) != string::npos)
-			{
-				for (unsigned int i = 0; i < sTemp.length(); i++)
-				{
-					if (sTemp.find('<', i) == string::npos)
-						break;
-					if (sTemp[i] == '<' && sTemp.find('>', i) != string::npos)
-					{
-						string sToken = sTemp.substr(i, sTemp.find('>', i) + 1 - i);
-						if (sToken == "<this>")
-							sToken = _option.getExePath();
-						/*if (sToken.find('/') == string::npos)
-						{
-						    if (_option.getTokenPaths().find(sToken) == string::npos)
-						    {
-						        sErrorToken = sToken;
-						        throw UNKNOWN_PATH_TOKEN;
-						    }
-						}*/
-						i = sTemp.find('>', i);
-					}
-				}
-			}
 
+			// Get the current length of the string
 			nLength = sTemp.length();
 			sTemp += " -kmq";
+
+			// Parse the string
 			if (!parser_StringParser(sTemp, sDummy, _data, _parser, _option, true))
 				return "";
-			//NumeReKernel::print(sTemp + "  ";
+
+            // Replace the parsed string
 			sReturn.replace(nPos, nLength, sTemp);
-			//NumeReKernel::print(sReturn );
 		}
 		else if ((nPos > 5 && sReturn.substr(nPos - 5, 5) == "save=")
 				 || (nPos > 7 && sReturn.substr(nPos - 7, 7) == "export="))
 		{
+		    // This is a path value without quotation marks
+		    // (otherwise it would be catched by the previous block)
 			sTemp = sReturn.substr(nPos, sReturn.find(' ', nPos) - nPos);
-			if (sTemp.find('<') != string::npos && sTemp.find('>', sTemp.find('<')) != string::npos)
-			{
-				for (unsigned int i = 0; i < sTemp.length(); i++)
-				{
-					if (sTemp.find('<', i) == string::npos)
-						break;
-					if (sTemp[i] == '<' && sTemp.find('>', i) != string::npos)
-					{
-						string sToken = sTemp.substr(i, sTemp.find('>', i) + 1 - i);
-						/*if (sToken.find('/') == string::npos)
-						{
-						    if (_option.getTokenPaths().find(sToken) == string::npos)
-						    {
-						        sErrorToken = sToken;
-						        throw UNKNOWN_PATH_TOKEN;
-						    }
-						}*/
-						i = sTemp.find('>', i);
-					}
-				}
-			}
 			nLength = sTemp.length();
+
+			// Add quotation marks and replace the prvious path definition
 			sTemp = "\"" + sTemp + "\"";
 			sReturn.replace(nPos, nLength, sTemp);
 		}
 		else if ((nPos > 8 && sReturn.substr(nPos - 8, 8) == "tocache=")
 				 || (nPos > 5 && sReturn.substr(nPos - 5, 5) == "type="))
 		{
+		    // do nothing here
 			nPos++;
 		}
 		else
 		{
+		    // All other cases, i.e. numerical values
+		    // evaluate the value correspondingly
+
+		    // Get the value and its length
 			sTemp = sReturn.substr(nPos, sReturn.find(' ', nPos) - nPos);
 			nLength = sTemp.length();
+
+			// Call functions
 			if (!_functions.call(sTemp, _option))
 				return "";
+
+            // Get data elements
 			if (sTemp.find("data(") != string::npos || _data.containsCacheElements(sTemp))
 				getDataElements(sTemp, _parser, _data, _option);
-			if (sTemp.find("{") != string::npos)
-				parser_VectorToExpr(sTemp, _option);
 
-			if (sTemp.find(':') == string::npos)
-			{
-				_parser.SetExpr(sTemp);
-				sTemp = toString((double)_parser.Eval(), _option);
-			}
-			else
-			{
+            int nResult = 0;
+            value_type* v = nullptr;
+
+            // If the string contains a colon operator,
+            // replace it with a comma
+            if (sTemp.find(':') != string::npos)
+            {
 				string sTemp_2 = "";
 				sTemp = "(" + sTemp + ")";
 				parser_SplitArgs(sTemp, sTemp_2, ':', _option, false);
-				if (isNotEmptyExpression(sTemp))
-				{
-					_parser.SetExpr(sTemp);
-					sTemp = toString((double)_parser.Eval(), _option) + ":";
-				}
-				else
-					sTemp = ":";
-				if (isNotEmptyExpression(sTemp_2))
-				{
-					_parser.SetExpr(sTemp_2);
-					sTemp += toString((double)_parser.Eval(), _option);
-				}
-			}
+
+                sTemp += ", " + sTemp_2;
+            }
+
+            // Set the expression and evaluate it numerically
+            _parser.SetExpr(sTemp);
+            v = _parser.Eval(nResult);
+
+            // Clear the temporary variable
+            sTemp.clear();
+
+            // convert the doubles into strings and remove the trailing comma
+            for (int i = 0; i < nResult; i++)
+            {
+                sTemp += toString(v[i], _option) + ",";
+            }
+            sTemp.pop_back();
+
+            // Replace the string
 			sReturn.replace(nPos, nLength, sTemp);
 		}
-		//sReturn = sReturn.substr(0, nPos) + sTemp + sReturn.substr(nPos+nLength);
+
 	}
+
+	// Convert the calculated intervals into their string definitions
 	if (vInterval.size())
 	{
+	    // x interval
 		if (vInterval.size() >= 2)
 		{
 			if (!isnan(vInterval[0]) && !isnan(vInterval[1]))
 				sReturn += " -x=" + toString(vInterval[0], 7) + ":" + toString(vInterval[1], 7);
 		}
+
+		// y interval
 		if (vInterval.size() >= 4)
 		{
 			if (!isnan(vInterval[2]) && !isnan(vInterval[3]))
 				sReturn += " -y=" + toString(vInterval[2], 7) + ":" + toString(vInterval[3], 7);
 		}
+
+		// z interval
 		if (vInterval.size() >= 6)
 		{
 			if (!isnan(vInterval[4]) && !isnan(vInterval[5]))
 				sReturn += " -z=" + toString(vInterval[4], 7) + ":" + toString(vInterval[5], 7);
 		}
 	}
-	//NumeReKernel::print(sReturn );
+
 	return sReturn;
 }
 
-// 22. Listet die Dateien, die in den gewaehlten Verzeichnissen vorhanden sind
-bool BI_ListFiles(const string& sCmd, const Settings& _option)
+// This function handles the displaying of the contents of the selected folders
+static bool BI_ListFiles(const string& sCmd, const Settings& _option)
 {
 	string sConnect = "";
 	string sSpecified = "";
@@ -5530,7 +5500,6 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
 		StripSpaces(sPattern);
 		if (sPattern.length())
 			sPattern = _lang.get("BUILTIN_LISTFILES_FILTEREDFOR", sPattern);
-		//sPattern = "[gefiltert nach: " + sPattern + "]";
 	}
 
 	make_hline();
@@ -5542,8 +5511,6 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
 	else
 		sConnect.append(nFirstColLength + 6 - sConnect.length(), ' ');
 	NumeReKernel::print(LineBreak(sConnect + sPattern, _option, true, 0, sConnect.length()) );
-	//NumeReKernel::print(LineBreak("|-> NUMERE: " + toUpperCase(_lang.get("BUILTIN_LISTFILES_EXPLORER")) + "               " + sPattern, _option, true, 0, 28+_lang.get("BUILTIN_LISTFILES_EXPLORER").length()) );
-	//NumeReKernel::print(LineBreak("|-> NUMERE: DATEIEXPLORER               " + sPattern, _option, true, 0, 41) );
 	make_hline();
 
 	if (matchParams(__sCmd, "files", '='))
@@ -5579,20 +5546,16 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
 			{
 				sConnect += "$";
 				sConnect.append(nFirstColLength, '-');
-				//sConnect.append(nFirstColLength, (char)249);
 			}
 			else
 				sConnect.append(nFirstColLength - sConnect.length(), '-');
-			//sConnect.append(nFirstColLength-sConnect.length(), (char)249);
 			sConnect += "  <" + toUpperCase(_lang.get("BUILTIN_LISTFILES_LOADPATH")) + ">  ";
 			if (sConnect.find('$') != string::npos)
 			{
 				sConnect.append(_option.getWindow() - 4 - sConnect.length() + sConnect.rfind('$'), '-');
-				//sConnect.append(_option.getWindow()-4-sConnect.length()+sConnect.rfind('$'), (char)249);
 			}
 			else
 				sConnect.append(_option.getWindow() - 4 - sConnect.length(), '-');
-			//sConnect.append(_option.getWindow()-4-sConnect.length(), (char)249);
 			NumeReKernel::print(LineBreak( sConnect, _option) );
 			if (!BI_ListDirectory("LOADPATH", __sCmd, _option))
 				NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
@@ -5604,20 +5567,16 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
 			{
 				sConnect += "$";
 				sConnect.append(nFirstColLength, '-');
-				//sConnect.append(nFirstColLength, (char)249);
 			}
 			else
 				sConnect.append(nFirstColLength - sConnect.length(), '-');
-			//sConnect.append(nFirstColLength-sConnect.length(), (char)249);
 			sConnect += "  <" + toUpperCase(_lang.get("BUILTIN_LISTFILES_SAVEPATH")) + ">  ";
 			if (sConnect.find('$') != string::npos)
 			{
 				sConnect.append(_option.getWindow() - 4 - sConnect.length() + sConnect.rfind('$'), '-');
-				//sConnect.append(_option.getWindow()-4-sConnect.length()+sConnect.rfind('$'), (char)249);
 			}
 			else
 				sConnect.append(_option.getWindow() - 4 - sConnect.length(), '-');
-			//sConnect.append(_option.getWindow()-4-sConnect.length(), (char)249);
 			if (!sSpecified.length())
 				NumeReKernel::printPreFmt("|\n" );
 			NumeReKernel::print(LineBreak( sConnect, _option) );
@@ -5631,20 +5590,16 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
 			{
 				sConnect += "$";
 				sConnect.append(nFirstColLength, '-');
-				//sConnect.append(nFirstColLength, (char)249);
 			}
 			else
 				sConnect.append(nFirstColLength - sConnect.length(), '-');
-			//sConnect.append(nFirstColLength-sConnect.length(), (char)249);
 			sConnect += "  <" + toUpperCase(_lang.get("BUILTIN_LISTFILES_SCRIPTPATH")) + ">  ";
 			if (sConnect.find('$') != string::npos)
 			{
 				sConnect.append(_option.getWindow() - 4 - sConnect.length() + sConnect.rfind('$'), '-');
-				//sConnect.append(_option.getWindow()-4-sConnect.length()+sConnect.rfind('$'), (char)249);
 			}
 			else
 				sConnect.append(_option.getWindow() - 4 - sConnect.length(), '-');
-			//sConnect.append(_option.getWindow()-4-sConnect.length(), (char)249);
 			if (!sSpecified.length())
 				NumeReKernel::printPreFmt("|\n" );
 			NumeReKernel::print(LineBreak( sConnect, _option) );
@@ -5658,20 +5613,16 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
 			{
 				sConnect += "$";
 				sConnect.append(nFirstColLength, '-');
-				//sConnect.append(nFirstColLength, (char)249);
 			}
 			else
 				sConnect.append(nFirstColLength - sConnect.length(), '-');
-			//sConnect.append(nFirstColLength-sConnect.length(), (char)249);
 			sConnect += "  <" + toUpperCase(_lang.get("BUILTIN_LISTFILES_PROCPATH")) + ">  ";
 			if (sConnect.find('$') != string::npos)
 			{
 				sConnect.append(_option.getWindow() - 4 - sConnect.length() + sConnect.rfind('$'), '-');
-				//sConnect.append(_option.getWindow()-4-sConnect.length()+sConnect.rfind('$'), (char)249);
 			}
 			else
 				sConnect.append(_option.getWindow() - 4 - sConnect.length(), '-');
-			//sConnect.append(_option.getWindow()-4-sConnect.length(), (char)249);
 			if (!sSpecified.length())
 				NumeReKernel::printPreFmt("|\n" );
 			NumeReKernel::print(LineBreak( sConnect, _option) );
@@ -5685,20 +5636,16 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
 			{
 				sConnect += "$";
 				sConnect.append(nFirstColLength, '-');
-				//sConnect.append(nFirstColLength, (char)249);
 			}
 			else
 				sConnect.append(nFirstColLength - sConnect.length(), '-');
-			//sConnect.append(nFirstColLength-sConnect.length(), (char)249);
 			sConnect += "  <" + toUpperCase(_lang.get("BUILTIN_LISTFILES_PLOTPATH")) + ">  ";
 			if (sConnect.find('$') != string::npos)
 			{
 				sConnect.append(_option.getWindow() - 4 - sConnect.length() + sConnect.rfind('$'), '-');
-				//sConnect.append(_option.getWindow()-4-sConnect.length()+sConnect.rfind('$'), (char)249);
 			}
 			else
 				sConnect.append(_option.getWindow() - 4 - sConnect.length(), '-');
-			//sConnect.append(_option.getWindow()-4-sConnect.length(), (char)249);
 			if (!sSpecified.length())
 				NumeReKernel::printPreFmt("|\n" );
 			NumeReKernel::print(LineBreak( sConnect, _option) );
@@ -5712,20 +5659,16 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
 			{
 				sConnect += "$";
 				sConnect.append(nFirstColLength, '-');
-				//sConnect.append(nFirstColLength, (char)249);
 			}
 			else
 				sConnect.append(nFirstColLength - sConnect.length(), '-');
-			//sConnect.append(nFirstColLength-sConnect.length(), (char)249);
 			sConnect += "  <" + toUpperCase(_lang.get("BUILTIN_LISTFILES_WORKPATH")) + ">  ";
 			if (sConnect.find('$') != string::npos)
 			{
 				sConnect.append(_option.getWindow() - 4 - sConnect.length() + sConnect.rfind('$'), '-');
-				//sConnect.append(_option.getWindow()-4-sConnect.length()+sConnect.rfind('$'), (char)249);
 			}
 			else
 				sConnect.append(_option.getWindow() - 4 - sConnect.length(), '-');
-			//sConnect.append(_option.getWindow()-4-sConnect.length(), (char)249);
 			if (!sSpecified.length())
 				NumeReKernel::printPreFmt("|\n" );
 			NumeReKernel::print(LineBreak( sConnect, _option) );
@@ -5744,11 +5687,9 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
 		{
 			sConnect += "$";
 			sConnect.append(nFirstColLength, '-');
-			//sConnect.append(nFirstColLength, (char)249);
 		}
 		else
 			sConnect.append(nFirstColLength - sConnect.length(), '-');
-		//sConnect.append(nFirstColLength-sConnect.length(), (char)249);
 		if (sSpecified == "<>" || sSpecified == "<this>")
 			sConnect += "  <" + toUpperCase(_lang.get("BUILTIN_LISTFILES_ROOTPATH")) + ">  ";
 		else
@@ -5756,11 +5697,9 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
 		if (sConnect.find('$') != string::npos)
 		{
 			sConnect.append(_option.getWindow() - 4 - sConnect.length() + sConnect.rfind('$'), '-');
-			//sConnect.append(_option.getWindow()-4-sConnect.length()+sConnect.rfind('$'), (char)249);
 		}
 		else
 			sConnect.append(_option.getWindow() - 4 - sConnect.length(), '-');
-		//sConnect.append(_option.getWindow()-4-sConnect.length(), (char)249);
 		NumeReKernel::print(LineBreak( sConnect, _option) );
 		if (!BI_ListDirectory(sSpecified, __sCmd, _option))
 			NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
@@ -5769,8 +5708,8 @@ bool BI_ListFiles(const string& sCmd, const Settings& _option)
 	return true;
 }
 
-// 23. Listet die Dateien eines Verzeichnisses
-bool BI_ListDirectory(const string& sDir, const string& sParams, const Settings& _option)
+// This function displays the contents of a single directory
+static bool BI_ListDirectory(const string& sDir, const string& sParams, const Settings& _option)
 {
 	WIN32_FIND_DATA FindFileData;
 	HANDLE hFind = INVALID_HANDLE_VALUE;
@@ -6061,7 +6000,8 @@ bool BI_ListDirectory(const string& sDir, const string& sParams, const Settings&
 	return true;
 }
 
-bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option)
+// This function creates new objects: files, directories, procedures and caches
+static bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option)
 {
 	int nType = 0;
 	string sObject = "";
@@ -6450,7 +6390,8 @@ bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
 	return true;
 }
 
-bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option)
+// This function opens the object to edit its contents
+static bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option)
 {
 	int nType = 0;
 	int nFileOpenFlag = 0;
@@ -6724,7 +6665,8 @@ bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _op
 	return true;
 }
 
-string BI_getVarList(const string& sCmd, Parser& _parser, Datafile& _data, Settings& _option)
+// This function returns a list of the current defined variables
+static string BI_getVarList(const string& sCmd, Parser& _parser, Datafile& _data, Settings& _option)
 {
 	mu::varmap_type mNumVars = _parser.GetVar();
 	map<string, string> mStringVars = _data.getStringVars();
@@ -6807,7 +6749,7 @@ string BI_getVarList(const string& sCmd, Parser& _parser, Datafile& _data, Setti
 }
 
 // execute "C:\Program Files (x86)\Notepad++\notepad++.exe" -set params="Path/to/file.txt"
-bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+static bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
 {
 	if (!_option.getUseExecuteCommand())
 		throw SyntaxError(SyntaxError::EXECUTE_COMMAND_DISABLED, sCmd, "execute");

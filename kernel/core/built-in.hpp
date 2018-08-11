@@ -76,11 +76,11 @@ void BI_splash();
  *
  */
 int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _option, Parser& _parser, Define& _functions, PlotData& _pData, Script& _script, bool bParserActive = false);
-void BI_Basis();
 void BI_Autosave(Datafile&, Output&, Settings&);
 bool BI_FileExists(const string& sFilename);
 string BI_Greeting(Settings& _option);
-string BI_getVarList(const string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
 string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option, Define& _functions);
+bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, Datafile& _data, Settings& _option);
+
 
 #endif

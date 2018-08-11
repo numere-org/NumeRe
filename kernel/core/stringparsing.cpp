@@ -833,14 +833,16 @@ static string strfnc_sum(StringFuncArgs& funcArgs)
 
 
 
-// --> Verarbeitet String-Ausdruecke <--
+// This function is the interface to the current file.
+// It wraps the string parser core, which will do the main tasks
 int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& _parser, const Settings& _option, bool bSilent)
 {
 	int parserFlags = NO_FLAG;
 
 	sLine = " " + sLine + " ";
 
-	// Process the parameters
+	// Process the parameters and store their
+	// results in the parser flags
 	if (matchParams(sLine, "noquotes")
 			|| matchParams(sLine, "nq")
 			|| matchParams(sLine, "peek")
@@ -879,34 +881,48 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
 			nPos = matchParams(sLine, "print");
 			parserFlags |= NO_QUOTES | PEEK;
 		}
+
+		// Fint the start of the parameter list and
+		// erase them from the expression
 		nPos = sLine.rfind('-', nPos);
-		sLine = sLine.substr(0, nPos);
+		sLine.erase(nPos);
 	}
 
-//-------------------------
-// new: string core functionality
+    // Create a map for the string vector vars, which may
+    // occur in the current expression. This map will be used
+    // in all recursions
 	map<string, vector<string> > mStringVectorVars;
-	StringResult StrRes = parser_StringParserCore(sLine, sCache, _data, _parser, _option, mStringVectorVars);
-//-------------------------
 
+	// Perform the actual work in the string parser core function
+	// This function will parse the string, call the corresponding
+	// static functions and perform all required logical operations
+	StringResult StrRes = parser_StringParserCore(sLine, sCache, _data, _parser, _option, mStringVectorVars);
+
+	// The result of the string parser core has to be parsed, so that
+	// it is readable in the terminal. This is done here in this
+	// function
 	string sConsoleOut = parser_CreateStringOutput(StrRes.vResult, StrRes.vNoStringVal, sLine, StrRes.bOnlyLogicals, parserFlags);
 
-
+	// The output is probably not desired
 	if (NumeReKernel::bSupressAnswer)
 		bSilent = true;
 
+    // Print the output
 	if (parserFlags & PEEK)
 		NumeReKernel::printPreFmt("\r");
 	if ((!bSilent || parserFlags & PEEK) && !StrRes.bOnlyLogicals)
 		NumeReKernel::printPreFmt(LineBreak(sConsoleOut, _option, false, 0) + "\n");
 
+    // return the corresponding value. The string parser may
+    // evaluate the command line to only contain logical or
+    // numerical expressions
 	if (StrRes.bOnlyLogicals)
 		return -1;
 	else
 		return 1;
 }
 
-
+// This static function contains the core string functionality
 static StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> > mStringVectorVars, bool bParseNumericals)
 {
 	StringResult strRes;
@@ -923,23 +939,28 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 			&& sLine.find('!') != eq_pos - 1
 			&& sLine[eq_pos + 1] != '=')
 	{
+	    // find the actual equal sign in the current string expression
 		while (isInQuotes(sLine, eq_pos) && sLine.find('=', eq_pos + 1) != string::npos)
 			eq_pos = sLine.find('=', eq_pos + 1);
+
+        // Did we find an actual equal sign?
 		if (!isInQuotes(sLine, eq_pos))
 		{
+		    // Store the left side and erase it from the original string
 			string sLeftSide = sLine.substr(0, eq_pos + 1);
 			sLine.erase(0, eq_pos + 1);
 
+			// Apply the string parser core to the right side of the assignment
+			// Create a string vector variable from the result of the string parser
 			StringResult _res = parser_StringParserCore(sLine, "", _data, _parser, _option, mStringVectorVars);
 			string strvar = parser_CreateStringVectorVar(_res.vResult, mStringVectorVars);
 
 			if (!strvar.length())
 				throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+            // Combine the left side and the string vector variable to
+            // a new assignment
 			sLine = sLeftSide + strvar;
-
-//            if (!containsStrings(sLine) && !_data.containsStringVars(sLine))
-//                return StringResult(sLine);
-
 		}
 	}
 	else if (sLine.find('{') != string::npos
@@ -954,33 +975,42 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 			 && sLine[eq_pos + 1] != '='
 			)
 	{
+	    // Examine the left side of the assignment
 		for (unsigned int i = 0; i < sLine.find('='); i++)
 		{
+		    // Search for a character, which isn't a whitespace
 			if (sLine[i] != ' ')
 			{
+			    // If the current character is the beginning of "string()"
 				if (sLine.substr(i, 7) == "string(")
 				{
+				    // Jump over the argument parenthesis
 					i += getMatchingParenthesis(sLine.substr(i + 6)) + 6;
+
+					// Find the next non-whitespace character and check, whether it is an equal sign
 					if (sLine.find_first_not_of(' ', i) == sLine.find('='))
 					{
+					    // Store the left side and erase it from the original string
 						string sLeftSide = sLine.substr(0, sLine.find('=') + 1);
 						sLine.erase(0, sLine.find('=') + 1);
 
+						// Apply the string parser core to the right side of the assignment
+                        // Create a string vector variable from the result of the string parser
 						StringResult _res = parser_StringParserCore(sLine, "", _data, _parser, _option, mStringVectorVars);
-
 						string strvar = parser_CreateStringVectorVar(_res.vResult, mStringVectorVars);
 
 						if (!strvar.length())
 							throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-						sLine = sLeftSide + strvar;
 
-						//            if (!containsStrings(sLine) && !_data.containsStringVars(sLine))
-						//                return StringResult(sLine);
+                        // Combine the left side and the string vector variable to
+                        // a new assignment
+						sLine = sLeftSide + strvar;
 					}
 					break;
 				}
 				else
 				{
+				    // Otherwise parse as a vector expression
 					parser_VectorToExpr(sLine, _option);
 					break;
 				}
@@ -990,18 +1020,27 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 
 	// Recurse for multiple store targets
 	// Nur Rekursionen durchfuehren, wenn auch '=' in dem String gefunden wurde. Nur dann ist sie naemlich noetig.
-
 	if (sLine.find(',') != string::npos && sLine.find('=') != string::npos && !isInQuotes(sLine, sLine.find('=')))
 	{
+	    // Get the left part of the assignment
 		string sStringObject = sLine.substr(0, sLine.find('='));
+
+		// Ensure that the left part contains a data or a string object,
+		// otherwise it is cleared
 		if (sStringObject.substr(sStringObject.find_first_not_of(' '), 7) == "string("
 				|| sStringObject.substr(sStringObject.find_first_not_of(' '), 5) == "data("
 				|| _data.containsCacheElements(sStringObject))
 		{
+		    // Find the equal sign after the closing parenthesis
 			unsigned int nPos = getMatchingParenthesis(sLine);
 			nPos = sLine.find('=', nPos);
+
+			// Ensure that it exists
 			if (nPos == string::npos)
 				throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+            // Get the data object including the assignment operator and
+            // cut this part from the original line
 			if (sLine[nPos + 1] == '=')
 				nPos++;
 			sStringObject = sLine.substr(0, nPos + 1);
@@ -1009,15 +1048,24 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 		}
 		else
 			sStringObject.clear();
+
+        // Remove whitespaces
 		StripSpaces(sLine);
 
+		// If the current line contains more than one string expressions
 		if (sLine != getNextArgument(sLine, false))
 		{
 			string sRecursion = "";
 			vector<string> vResult;
+
+			// While the current line is not empty
 			while (sLine.length())
 			{
+			    // Cut of the first argument
 				sRecursion = getNextArgument(sLine, true);
+
+				// Apply the string parser on the current argument and store its
+				// results in a common vector
 				if (sLine.length() || sRecursion.find('=') != string::npos)
 				{
 					StringResult _res = parser_StringParserCore(sRecursion, "", _data, _parser, _option, mStringVectorVars);
@@ -1027,13 +1075,17 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 				else if (sRecursion.find('=') == string::npos)
 					vResult.push_back(sRecursion);
 			}
+
+			// Create a new string vector variable from the results
 			sLine = parser_CreateStringVectorVar(vResult, mStringVectorVars);
 		}
+
+		// Prepend the stored string object to the current input line
 		if (sStringObject.length())
 			sLine = sStringObject + sLine;
 	}
 
-	// Get the string variables
+	// Find the start of the asignee
 	unsigned int n_pos = 0;
 	eq_pos = sLine.find('=');
 	if (!sObject.length()
@@ -1045,15 +1097,20 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 			&& eq_pos != sLine.find(">=") + 1)
 		n_pos = eq_pos + 1;
 
+	// Get the string variables
 	if (_data.containsStringVars(sLine.substr(n_pos)))
 		_data.getStringValues(sLine, n_pos);
 
-	// NEW: String func handler
+	// Apply the standard string functions
 	sLine = parser_ApplyStringFuncs(sLine, _data, _parser, _option, mStringVectorVars);
 
+	// Apply the special string functions
 	sLine = parser_ApplySpecialStringFuncs(sLine, _data, _parser, _option, mStringVectorVars);
 
+	// Get the position of the equal sign after the
+	// application of all string functions
 	eq_pos = sLine.find('=');
+
 	// Extract target object
 	if (!sObject.length()
 			&& eq_pos != string::npos
@@ -1073,22 +1130,30 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 	// Get the contents of "string()", "data()" and the other caches
 	sLine = parser_GetDataForString(sLine, _data, _parser, _option, mStringVectorVars, n_pos);
 
+	// If the line now doesn't contain any strings, return with the onlyLogicals flag set
 	if (!containsStrings(sLine) && !_data.containsStringVars(sLine) && !parser_containsStringVectorVars(sLine, mStringVectorVars))
 	{
+	    // Get the correct target object
 		if (sObject.length() && !sCache.length())
 			sCache = sObject;
+
+        // Ensure that there's no false positive
 		if (sLine.find("string(") != string::npos || _data.containsStringVars(sLine))
 			throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
-		// make sure that there are parseable characters
+		// make sure that there are parseable characters between the operators
 		if (sLine.find_first_not_of("+-*/:?!.,;%&<>=^ ") != string::npos && bParseNumericals)
 		{
 			int nResults = 0;
 			value_type* v = 0;
+
+			// Parse the epression
 			_parser.SetExpr(sLine);
 			v = _parser.Eval(nResults);
 			vAns = v[0];
 			eq_pos = sLine.find('=');
+
+			// Remove the left part of the assignment, because it's already assigned
 			if (eq_pos != string::npos
 					&& eq_pos
 					&& eq_pos < sLine.length() + 1
@@ -1099,24 +1164,35 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 				sLine.erase(0, eq_pos + 1);
 			StripSpaces(sLine);
 		}
+
+		// return with the onlyLogicals flag
 		return StringResult(sLine, true);
 	}
 
 	n_pos = 0;
+
+	// If there are any opening parentheses, it is possible that we need
+	// to pre-evaluate its contents
 	if (sLine.find('(') != string::npos)
 	{
 		size_t nQuotes = 0;
+
+		// Examine the whole command line
 		for (size_t i = 0; i < sLine.length(); i++)
 		{
+		    // Jump over string literals
 			if (sLine[i] == '"')
 			{
 				if (i && sLine[i - 1] == '\\')
 					continue;
 				nQuotes++;
 			}
+
 			// Consider the var parsing feature
 			if (sLine[i] == '#' && !(nQuotes % 2))
 			{
+			    // Examine, whether the var parsing feature was used
+			    // correctly and search for the end of its current application
 				for (size_t j = i; j < sLine.length(); j++)
 				{
 					if (sLine[j] == '"')
@@ -1134,18 +1210,27 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 					}
 				}
 			}
+
+			// Examine the current parenthesis: is it able to pre-evaluate the
+			// current parenthesis?
 			if (sLine[i] == '(' && !(nQuotes % 2))
 			{
+			    // Ensure that its counterpart exists
 				if (getMatchingParenthesis(sLine.substr(i)) == string::npos)
 					throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, i);
 
 				size_t nPos = getMatchingParenthesis(sLine.substr(i)) + i;
+
+				// Ignore any calls to "string()"
 				if (i < 6 || (i >= 6 && sLine.substr(i - 6, 6) != "string"))
 				{
+				    // The contents of the parenthesis
 					string sString = sLine.substr(i + 1, nPos - i - 1);
 
+					// Pre-evaluate the contents of the parenthesis
 					if (i > 0 && !checkDelimiter(sLine.substr(i - 1, nPos - i + 2))) // this is probably a numerical function. Keep the parentheses
 					{
+					    // Do only something, if the contents are containings strings
 						if (containsStrings(sString) || _data.containsStringVars(sString) || parser_containsStringVectorVars(sString, mStringVectorVars))
 						{
 							StringResult _res = parser_StringParserCore(sString, "", _data, _parser, _option, mStringVectorVars);
@@ -1158,6 +1243,7 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 					}
 					else // replace the whole parenthesis
 					{
+					    // Do only something, if the contents are containing strings
 						if (containsStrings(sString) || _data.containsStringVars(sString) || parser_containsStringVectorVars(sString, mStringVectorVars))
 						{
 							StringResult _res = parser_StringParserCore(sString, "", _data, _parser, _option, mStringVectorVars);
@@ -1173,6 +1259,7 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 		}
 	}
 
+	// Are there any vector braces left?
 	if (sLine.find('{') != string::npos)
 	{
 		n_pos = 0;
@@ -1184,22 +1271,36 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 				&& !sObject.length()
 				&& !isInQuotes(sLine, sLine.find('=')))
 			n_pos = sLine.find('=') + 1;
+
+        // Get the assignment target
 		string sVectortemp = sLine.substr(0, n_pos);
 		sLine.erase(0, n_pos);
+
+		// Parse the expression into a mulit-expression expression
 		parser_VectorToExpr(sLine, _option);
+
+		// Append the parsed expression to the assignment target
 		sLine = sVectortemp + sLine;
 	}
 
+	// Strip all whitespaces and ensure, that there's something left
 	StripSpaces(sLine);
 	if (!sLine.length())
 		return StringResult("");
 
+    // If the current line doesn't contain any further string literals or return values
+    // return it
 	if (sLine.find('"') == string::npos && sLine.find('#') == string::npos && !parser_containsStringVectorVars(sLine, mStringVectorVars))
 	{
+	    // Use the correct target
 		if (sObject.length() && !sCache.length())
 			sCache = sObject;
+
+        // Ensure that this is no false positive
 		if (sLine.find("string(") != string::npos || _data.containsStringVars(sLine))
 			throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+        // return the current line
 		return StringResult(sLine);
 	}
 
@@ -1223,6 +1324,7 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 	// Split the list to a vector
 	strRes.vResult = parser_EvaluateStringVectors(sLine, mStringVectorVars);
 
+	// Ensure that there is at least one result
 	if (!strRes.vResult.size())
 		throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
@@ -1233,10 +1335,11 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 	if (!parser_StoreStringResults(strRes.vResult, strRes.vNoStringVal, sObject, _data, _parser, _option))
 		throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
+    // Return the evaluated string command line
 	return strRes;
 }
 
-
+// This static function is used to create a string vector var
 static string parser_CreateStringVectorVar(const vector<string>& vStringVector, map<string, vector<string> >& mStringVectorVars)
 {
 	// Return, if empty (something else went wrong)
@@ -1255,40 +1358,64 @@ static string parser_CreateStringVectorVar(const vector<string>& vStringVector, 
 	return strVectName;
 }
 
+// This static function determines, whether there are string vector
+// vars in the passed command line
 static bool parser_containsStringVectorVars(const string& sLine, const map<string, vector<string> >& mStringVectorVars)
 {
+    // If the command line or the string vector vars are empty return false
 	if (!sLine.length() || !mStringVectorVars.size())
 		return false;
+
+    // Try to find at least one of the known string vector vars
 	for (auto iter = mStringVectorVars.begin(); iter != mStringVectorVars.end(); ++iter)
 	{
+	    // There's one: return true
 		if (sLine.find(iter->first) != string::npos)
 			return true;
 	}
+
+	// Nothing found
 	return false;
 }
 
+// This static function evaluates the passed string vector
+// and returns it's evaluated components in separate vector
+// components
 static vector<string> parser_EvaluateStringVectors(string sLine, const map<string, vector<string> >& mStringVectorVars)
 {
 	vector<string> vRes;
 
+	// As long as the current vector is not empty
 	while (sLine.length())
 	{
+	    // Get-cut the next argument
 		string sCurrentComponent = getNextArgument(sLine, true);
 
+		// If the current component does not contain any further
+		// vectors, push it back.
+		// Otherwise expand the contained vectors
 		if (!parser_containsStringVectorVars(sCurrentComponent, mStringVectorVars))
 			vRes.push_back(sCurrentComponent);
 		else
 		{
+		    // Expand the contained vectors
 			size_t nCurrentComponent = 0;
+
+			// This while loop is terminated with a break command
 			while (true)
 			{
 				string currentline = sCurrentComponent;
 				bool bHasComponents = false;
+
+				// Replace all found vectors with their nCurrentComponent-th component
 				for (auto iter = mStringVectorVars.begin(); iter != mStringVectorVars.end(); ++iter)
 				{
 					size_t nMatch = 0;
+
+					// Vector found: replace its occurence with its nCurrentComponent-th value
 					while ((nMatch = currentline.find(iter->first)) != string::npos)
 					{
+					    // Handle the size of the current vector correspondingly
 						if ((iter->second).size() > nCurrentComponent)
 						{
 							bHasComponents = true;
@@ -1302,8 +1429,12 @@ static vector<string> parser_EvaluateStringVectors(string sLine, const map<strin
 							currentline.replace(nMatch, (iter->first).length(), "\"\"");
 					}
 				}
+
+				// Break the loop, if there are no further vector components
 				if (!bHasComponents)
 					break;
+
+                // Push back the current line and increment the component
 				vRes.push_back(currentline);
 				nCurrentComponent++;
 			}
@@ -1313,25 +1444,38 @@ static vector<string> parser_EvaluateStringVectors(string sLine, const map<strin
 	return vRes;
 }
 
+// This static function expands the internal multi-expressions
+// into vector components by enlarging the dimension of the vector
 static void parser_ExpandStringVectorComponents(vector<string>& vStringVector)
 {
+    // Examine each vector component
 	for (size_t i = 0; i < vStringVector.size(); i++)
 	{
+	    // If the next argument is not equal to the current component itself
 		if (getNextArgument(vStringVector[i], false) != vStringVector[i])
 		{
+		    // Store the first part of the multi-expression in the current component
 			string sComponent = vStringVector[i];
 			vStringVector[i] = getNextArgument(sComponent, true);
 			size_t nComponent = 1;
+
+			// As long as the component is not empty
 			while (sComponent.length())
 			{
+			    // Get the next argument and insert it after the
+			    // previous argument into the string vector
 				vStringVector.insert(vStringVector.begin() + i + nComponent, getNextArgument(sComponent, true));
 				nComponent++;
 			}
+
+			// Jump over the already expanded components
 			i += nComponent;
 		}
 	}
 }
 
+// This static function is used to apply some special string functions
+// to the command line, which cannot be abstrahized like the others
 static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars)
 {
 	unsigned int n_pos = 0;
@@ -1790,18 +1934,25 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 	return sLine;
 }
 
+// This static function searches for an occurence of a known string
+// function in the passed command line and passes the control to the
+// string function handler
 static string parser_ApplyStringFuncs(string sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars)
 {
+    // Store the string function map statically
 	static map<string, StringFuncHandle> mFuncHandleTable = parser_getStringFuncHandles();
 
 	for (auto iter = mFuncHandleTable.begin(); iter != mFuncHandleTable.end(); ++iter)
 	{
+	    // Found an occurence -> call the string function handler
 		if (sLine.find(iter->first + "(") != string::npos)
 			parser_StringFuncHandler(sLine, iter->first, _data, _parser, _option, mStringVectorVars, iter->second);
 	}
 	return sLine;
 }
 
+// This static function is used to construct the string function map
+// it is only called once
 static map<string, StringFuncHandle> parser_getStringFuncHandles()
 {
 	map<string, StringFuncHandle> mHandleTable;
@@ -1812,7 +1963,6 @@ static map<string, StringFuncHandle> parser_getStringFuncHandles()
 	mHandleTable["to_value"]            = StringFuncHandle(STR, strfnc_to_value, false);
 	mHandleTable["to_uppercase"]        = StringFuncHandle(STR, strfnc_to_uppercase, false);
 	mHandleTable["to_lowercase"]        = StringFuncHandle(STR, strfnc_to_lowercase, false);
-	//mHandleTable["is_string"]           = StringFuncHandle(STR, strfnc_is_string, false); //fehler
 	mHandleTable["getmatchingparens"]   = StringFuncHandle(STR, strfnc_getmatchingparens, false);
 	mHandleTable["findfile"]            = StringFuncHandle(STR_STROPT, strfnc_findfile, false);
 	mHandleTable["split"]               = StringFuncHandle(STR_STR, strfnc_split, false);
@@ -1842,17 +1992,20 @@ static map<string, StringFuncHandle> parser_getStringFuncHandles()
 	mHandleTable["min"]                 = StringFuncHandle(STR, strfnc_min, true);
 	mHandleTable["max"]                 = StringFuncHandle(STR, strfnc_max, true);
 	mHandleTable["sum"]                 = StringFuncHandle(STR, strfnc_sum, true);
-	//mHandleTable["valtostr"]            = StringFuncHandle(STR_STROPT_VALOPT, strfnc_valtostr, true);
 
 	return mHandleTable;
 }
 
+// This static function removes the escape characters from the passed string
 static string removeMaskedStrings(const string& sString)
 {
 	if (sString.find("\\\"") == string::npos && sString.find("\\t") == string::npos && sString.find("\\n") == string::npos && sString.find("\\ ") == string::npos)
 		return sString;
+
 	string sRet = sString;
 
+	// Go through the string and remove all relevant escape characters
+	// Omit the characters, which are identifying LaTeX command sequences
 	for (size_t i = 0; i < sRet.length(); i++)
 	{
 		if (sRet.substr(i, 2) == "\\\"")
@@ -1864,37 +2017,44 @@ static string removeMaskedStrings(const string& sString)
 		if (sRet.substr(i, 2) == "\\ ")
 			sRet.erase(i + 1, 1);
 	}
-	/*if (sRet.length() > 1 && sRet.substr(sRet.length()-2) == "\\ ")
-	    sRet.pop_back();*/
 
 	return sRet;
 }
 
+// This static function adds escape characters into the passed string
 static string addMaskedStrings(const string& sString)
 {
 	if (sString.find('"') == string::npos && sString.find(NEWSTRING) == string::npos && sString.back() != '\\')
 		return sString;
 	string sRet = sString;
-	/*if (sRet.back() == '\\')
-	    sRet += " ";*/
+
+	// Go through the complete string without the first
+	// and the last character
 	for (size_t i = 1; i < sRet.length() - 1; i++)
 	{
+	    // Escape backslashes
 		if (sRet[i] == '\\' && sRet[i + 1] != '"')
 		{
 			sRet.insert(i + 1, " ");
 			i++;
 		}
+
+		// Escape quotation marks
 		if (sRet[i] == '"' && sRet[i - 1] != '\\' && sRet[i + 1] != NEWSTRING && sRet.find('"', i + 1) != string::npos)
 		{
 			sRet.insert(i, "\\");
 			i++;
 		}
+
+		// Replace the new string character with a comma
 		if (sRet[i] == NEWSTRING)
 		{
 			sRet[i] = ',';
 			if (sRet[i + 1] == '"')
 				i++;
 		}
+
+		// Escape tab and newlines
 		if (sRet[i] == '\t')
 			sRet.replace(i, 1, "\\t");
 		if (sRet[i] == '\n')
@@ -1903,6 +2063,7 @@ static string addMaskedStrings(const string& sString)
 	return sRet;
 }
 
+// This static function simply removes the surrounding quotation marks
 static string removeQuotationMarks(const string& sString)
 {
 	if (sString.find('"') == string::npos)
@@ -1910,6 +2071,7 @@ static string removeQuotationMarks(const string& sString)
 	return sString.substr(1, sString.length() - 2);
 }
 
+// This static function simply adds the surrounding quotation marks
 static string addQuotationMarks(const string& sString)
 {
 	if (sString.front() == '"' && sString.back() == '"')
@@ -1918,6 +2080,7 @@ static string addQuotationMarks(const string& sString)
 		return "\"" + sString + "\"";
 }
 
+// This static function handles all regular string functions
 static void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars, StringFuncHandle funcHandle)
 {
 	size_t n_pos = 0;
@@ -2157,8 +2320,10 @@ static void parser_StringFuncHandler(string& sLine, const string& sFuncName, Dat
 			// copy the return values to the final variable
 			string sFuncReturnValue = "";
 
+            // Expand the string vector component, if needed
 			parser_ExpandStringVectorComponents(vReturnValues);
 
+			// Create a string vector variable for the function output
 			sFuncReturnValue = parser_CreateStringVectorVar(vReturnValues, mStringVectorVars);
 
 			// replace the function with the return value
@@ -2168,52 +2333,71 @@ static void parser_StringFuncHandler(string& sLine, const string& sFuncName, Dat
 	}
 }
 
+// This static function is one of the string function argument
+// parser. It is one of the two basic ones, which will be called
+// by all others
 static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, n_vect& nArg)
 {
 	string sFuncArgument = __sFuncArgument;
 	value_type* v = 0;
 	int nReturn = 0;
+
+	// If the current function argument contains strings,
+	// parse it correspondingly
 	if (containsStrings(sFuncArgument) || _data.containsStringVars(sFuncArgument) || parser_containsStringVectorVars(sFuncArgument, mStringVectorVars))
 	{
+	    // Call the string parser core
 		StringResult strRes = parser_StringParserCore(sFuncArgument, "", _data, _parser, _option, mStringVectorVars);
 
+		// Evaluate the returned strings numerically
 		for (size_t i = 0; i < strRes.vResult.size(); i++)
 		{
 			_parser.SetExpr(strRes.vResult[i]);
 			v = _parser.Eval(nReturn);
 			for (int n = 0; n < nReturn; n++)
-				nArg.push_back((int)v[n]);
-			//nArg.push_back(StrToInt(strRes.vResult[i]));
+				nArg.push_back(intCast(v[n]));
 		}
 		return strRes.vResult.size();
 	}
-	// --> Moeglicherweise erscheint nun "{{". Dies muss ersetzt werden <--
-	if (sFuncArgument.find('{') != string::npos)
-	{
-		parser_VectorToExpr(sFuncArgument, _option);
-	}
+
+	// Set the expression and evaluate it
 	_parser.SetExpr(sFuncArgument);
 	v = _parser.Eval(nReturn);
 	for (int i = 0; i < nReturn; i++)
 	{
-		nArg.push_back((int)v[i]);
+		nArg.push_back(intCast(v[i]));
 	}
 	return (size_t)nReturn;
 }
 
+// This static function is one of the string function argument
+// parser. It is one of the two basic ones, which will be called
+// by all others
 static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg)
 {
 	string sFuncArgument = __sFuncArgument;
+
+	// If the current function argument contains strings,
+	// parse it correspondingly
 	if (containsStrings(sFuncArgument) || _data.containsStringVars(sFuncArgument) || parser_containsStringVectorVars(sFuncArgument, mStringVectorVars))
 	{
+	    // Call the string parser core
 		StringResult strRes = parser_StringParserCore(sFuncArgument, "", _data, _parser, _option, mStringVectorVars);
+
+		// Use the returned values as function arguments
 		for (size_t i = 0; i < strRes.vResult.size(); i++)
 			sArg.push_back(removeQuotationMarks(strRes.vResult[i]));
 		return strRes.vResult.size();
 	}
+
+	// Expand the passed argument, if needed and
+	// distribute it to the components of the argument vector
 	if (sFuncArgument.find('{') != string::npos || sFuncArgument.find(',') != string::npos)
 	{
 		parser_VectorToExpr(sFuncArgument, _option);
+
+		// As long as the function argument has a length,
+		// get the next argument and store it in the vector
 		while (sFuncArgument.length())
 			sArg.push_back(removeQuotationMarks(getNextArgument(sFuncArgument, true)));
 	}
@@ -2222,20 +2406,20 @@ static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const
 	return sArg.size();
 }
 
+// This static function is one of the string function argument
+// parser. It handles one string and two numerical arguments
 static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg1, n_vect& nArg1, n_vect& nArg2)
 {
 	string sFuncArgument = __sFuncArgument;
 	size_t nMaxLength = 0;
 
+	// Get the single arguments
 	string sString = getNextArgument(sFuncArgument, true);
-	string sNumVal1 = "";
-	string sNumVal2 = "";
+	string sNumVal1 = getNextArgument(sFuncArgument, true);
+	string sNumVal2 = getNextArgument(sFuncArgument, true);
 
-	if (sFuncArgument.length())
-		sNumVal1 = getNextArgument(sFuncArgument, true);
-	if (sFuncArgument.length())
-		sNumVal2 = getNextArgument(sFuncArgument, true);
-
+	// Handle the arguments using the basic functions
+	// and store the highets number of return values
 	nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString, mStringVectorVars, sArg1);
 	if (!nMaxLength)
 		return 0;
@@ -2259,23 +2443,22 @@ static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const
 	return nMaxLength;
 }
 
+// This static function is one of the string function argument
+// parser. It handles two string and two numerical arguments, where
+// the second string is the last argument
 static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg1, n_vect& nArg1, n_vect& nArg2, s_vect& sArg2)
 {
 	string sFuncArgument = __sFuncArgument;
 	size_t nMaxLength = 0;
 
+	// Get the single arguments
 	string sString1 = getNextArgument(sFuncArgument, true);
-	string sString2 = "";
-	string sNumVal1 = "";
-	string sNumVal2 = "";
+	string sNumVal1 = getNextArgument(sFuncArgument, true);
+	string sNumVal2 = getNextArgument(sFuncArgument, true);
+	string sString2 = getNextArgument(sFuncArgument, true);
 
-	if (sFuncArgument.length())
-		sNumVal1 = getNextArgument(sFuncArgument, true);
-	if (sFuncArgument.length())
-		sNumVal2 = getNextArgument(sFuncArgument, true);
-	if (sFuncArgument.length())
-		sString2 = getNextArgument(sFuncArgument, true);
-
+	// Handle the arguments using the basic functions
+	// and store the highets number of return values
 	nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString1, mStringVectorVars, sArg1);
 	if (!nMaxLength)
 		return 0;
@@ -2306,23 +2489,21 @@ static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const
 	return nMaxLength;
 }
 
+// This static function is one of the string function argument
+// parser. It handles two string and two numerical arguments
 static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg1, s_vect& sArg2, n_vect& nArg1, n_vect& nArg2)
 {
 	string sFuncArgument = __sFuncArgument;
 	size_t nMaxLength = 0;
 
+	// Get the single arguments
 	string sString1 = getNextArgument(sFuncArgument, true);
-	string sString2 = "";
-	string sNumVal1 = "";
-	string sNumVal2 = "";
+	string sString2 = getNextArgument(sFuncArgument, true);
+	string sNumVal1 = getNextArgument(sFuncArgument, true);
+	string sNumVal2 = getNextArgument(sFuncArgument, true);
 
-	if (sFuncArgument.length())
-		sString2 = getNextArgument(sFuncArgument, true);
-	if (sFuncArgument.length())
-		sNumVal1 = getNextArgument(sFuncArgument, true);
-	if (sFuncArgument.length())
-		sNumVal2 = getNextArgument(sFuncArgument, true);
-
+	// Handle the arguments using the basic functions
+	// and store the highets number of return values
 	nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString1, mStringVectorVars, sArg1);
 	if (!nMaxLength)
 		return 0;
@@ -2353,26 +2534,22 @@ static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const
 	return nMaxLength;
 }
 
+// This static function is one of the string function argument
+// parser. It handles three string and two numerical arguments
 static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg1, s_vect& sArg2, s_vect& sArg3, n_vect& nArg1, n_vect& nArg2)
 {
 	string sFuncArgument = __sFuncArgument;
 	size_t nMaxLength = 0;
 
+	// Get the single arguments
 	string sString1 = getNextArgument(sFuncArgument, true);
-	string sString2 = "";
-	string sString3 = "";
-	string sNumVal1 = "";
-	string sNumVal2 = "";
+	string sString2 = getNextArgument(sFuncArgument, true);
+	string sString3 = getNextArgument(sFuncArgument, true);
+	string sNumVal1 = getNextArgument(sFuncArgument, true);
+	string sNumVal2 = getNextArgument(sFuncArgument, true);
 
-	if (sFuncArgument.length())
-		sString2 = getNextArgument(sFuncArgument, true);
-	if (sFuncArgument.length())
-		sString3 = getNextArgument(sFuncArgument, true);
-	if (sFuncArgument.length())
-		sNumVal1 = getNextArgument(sFuncArgument, true);
-	if (sFuncArgument.length())
-		sNumVal2 = getNextArgument(sFuncArgument, true);
-
+	// Handle the arguments using the basic functions
+	// and store the highets number of return values
 	nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString1, mStringVectorVars, sArg1);
 	if (!nMaxLength)
 		return 0;
@@ -2411,6 +2588,8 @@ static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const
 	return nMaxLength;
 }
 
+// This static function returns the content of the data objects and
+// expands them as a list
 static string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars, size_t n_pos)
 {
 	// Get the contents of "string()", "data()" and the other caches
@@ -2647,23 +2826,35 @@ static string parser_GetDataForString(string sLine, Datafile& _data, Parser& _pa
 	return sLine;
 }
 
+// This static function handles the value to string parser ("#")
 static string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars)
 {
+    // Do nothing, if there's no #
 	if (sLine.find('#') == string::npos)
 		return sLine + " ";
+
+    // Create a copy of the current line
 	string sLineToParsed = sLine + " ";
 	string sLineToParsedTemp;
 
 	unsigned int nPos = 0;
 	unsigned int n_pos = 0;
+
+	// As long as there are further "#"
 	while (sLineToParsed.find('#', nPos) != string::npos)
 	{
+	    // Store its position
 		nPos = sLineToParsed.find('#', nPos);
+
+		// Ensure that it is not in a string
 		if (!isInQuotes(sLineToParsed, nPos, true))
 		{
 			string sPrefix = "";
 			sLineToParsedTemp += sLineToParsed.substr(0, nPos);
 			sLineToParsed = sLineToParsed.substr(nPos + 1);
+
+			// If the variable starts with a tilde, it's possible that we
+			// need to prepend zeros. Get the prefix here
 			if (sLineToParsed[0] == '~')
 			{
 				for (unsigned int i = 0; i < sLineToParsed.length(); i++)
@@ -2676,13 +2867,21 @@ static string parser_NumToString(const string& sLine, Datafile& _data, Parser& _
 					}
 				}
 			}
+
+			// Jump over simple signs
 			if (sLineToParsed[0] == '-' || sLineToParsed[0] == '+')
 				n_pos = 1;
 			else
 				n_pos = 0;
+
+            // Handle enclosing characters: parentheses, quotation marks
+            // angle brackets, ...
 			if (sLineToParsed[0] == '(' || sLineToParsed[0] == '{')
 			{
+			    // Get the contents of the current parenthesis
 				string sExpr = sLineToParsed.substr(1, getMatchingParenthesis(sLineToParsed) - 1);
+
+				// Does it contain strings?
 				if (containsStrings(sExpr) || parser_containsStringVectorVars(sExpr, mStringVectorVars))
 				{
 					StringResult strRes = parser_StringParserCore(sExpr, "", _data, _parser, _option, mStringVectorVars);
@@ -2703,13 +2902,20 @@ static string parser_NumToString(const string& sLine, Datafile& _data, Parser& _
 					nPos = 0;
 					continue;
 				}
+
+				// Set the expression
 				_parser.SetExpr(sExpr);
 			}
 			else if (sLineToParsed[0] == '"')
 			{
+			    // Get the contents of the current string
 				string sExpr = sLineToParsed.substr(1, sLineToParsed.find('"', 1) - 1);
+
+				// Add the zeros, if needed
 				while (sExpr.length() < sPrefix.length() + 2)
 					sExpr.insert(0, 1, '0');
+
+                // Store the result and continue
 				sLineToParsedTemp += "\"" + sExpr + "\"";
 				if (sLineToParsed.find('"', 1) < sLineToParsed.length() - 1)
 					sLineToParsed = sLineToParsed.substr(sLineToParsed.find('"', 1) + 1);
@@ -2720,6 +2926,7 @@ static string parser_NumToString(const string& sLine, Datafile& _data, Parser& _
 			}
 			else if (sLineToParsed[0] == '<')
 			{
+			    // Does the current object contain a path token?
 				if (sLineToParsed.find("<>") == 0
 						|| sLineToParsed.find("<this>") == 0
 						|| sLineToParsed.find("<wp>") == 0
@@ -2729,6 +2936,7 @@ static string parser_NumToString(const string& sLine, Datafile& _data, Parser& _
 						|| sLineToParsed.find("<procpath>") == 0
 						|| sLineToParsed.find("<scriptpath>") == 0)
 				{
+				    // Replace the path tokens
 					if (sLineToParsed.find("<>") == 0 || sLineToParsed.find("<this>") == 0)
 						sLineToParsedTemp += "\"" + replacePathSeparator(_option.getExePath()) + "\"";
 					else if (sLineToParsed.find("<wp>") == 0)
@@ -2747,11 +2955,13 @@ static string parser_NumToString(const string& sLine, Datafile& _data, Parser& _
 				}
 				else if (sLineToParsed.find('>') != string::npos)
 				{
+				    // If no path token, only use the part in between of the angle brackets
 					sLineToParsedTemp += "\"" + sLineToParsed.substr(1, sLineToParsed.find('>') - 1) + "\"";
 					sLineToParsed = sLineToParsed.substr(sLineToParsed.find('>') + 1);
 				}
 				else
 				{
+				    // Throw an error
 					throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 				}
 				nPos = 0;
@@ -2759,14 +2969,23 @@ static string parser_NumToString(const string& sLine, Datafile& _data, Parser& _
 			}
 			else if (parser_containsStringVectorVars(sLineToParsed.substr(0, parser_getDelimiterPos(sLineToParsed.substr(n_pos))), mStringVectorVars))
 			{
+			    // Here are string vector variables
 				string sExpr = sLineToParsed.substr(0, parser_getDelimiterPos(sLineToParsed.substr(n_pos)));
+
+				// Parse the current line
 				StringResult strRes = parser_StringParserCore(sExpr, "", _data, _parser, _option, mStringVectorVars);
+
+				// Ensure that the result exists
 				if (!strRes.vResult.size())
 					throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+                // Add the needed quotation marks
 				for (size_t i = 0; i < strRes.vResult.size(); i++)
 				{
 					strRes.vResult[i] = addQuotationMarks(strRes.vResult[i]);
 				}
+
+				// Create a new string vector var, append it to the string and continue
 				sExpr = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
 				sLineToParsedTemp += sExpr;
 				if (parser_getDelimiterPos(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
@@ -2776,15 +2995,18 @@ static string parser_NumToString(const string& sLine, Datafile& _data, Parser& _
 
 				continue;
 			}
-			else
+			else // Set the expression
 				_parser.SetExpr(sLineToParsed.substr(0, parser_getDelimiterPos(sLineToParsed.substr(n_pos))));
 
 			int nResults = 0;
 			value_type* v = 0;
 			vector<string> vResults;
 			string sElement = "";
+
+			// Evaluate the parsed expression
 			v = _parser.Eval(nResults);
 
+			// Convert all results into strings
 			for (int n = 0; n < nResults; n++)
 			{
 				if (fabs(rint(v[n]) - v[n]) < 1e-14 && fabs(v[n]) >= 1.0)
@@ -2796,10 +3018,12 @@ static string parser_NumToString(const string& sLine, Datafile& _data, Parser& _
 				vResults.push_back(addQuotationMarks(sElement));
 			}
 
+			// Create a string vector var from the results and append it to
+			// the current line
 			sElement = parser_CreateStringVectorVar(vResults, mStringVectorVars);
-
 			sLineToParsedTemp += sElement;
 
+			// Search for the next delimiter
 			if (parser_getDelimiterPos(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
 				sLineToParsed = sLineToParsed.substr(parser_getDelimiterPos(sLineToParsed.substr(n_pos)));
 			else
@@ -2811,13 +3035,17 @@ static string parser_NumToString(const string& sLine, Datafile& _data, Parser& _
 			nPos++;
 	}
 
+	// Append the remaining parts of the current expression
 	if (sLineToParsed.length() && sLineToParsedTemp.length())
 		sLineToParsedTemp += sLineToParsed;
 
+    // Handle remaining vector braces
 	if (sLineToParsedTemp.find('{') != string::npos)
 	{
 		parser_VectorToExpr(sLineToParsedTemp, _option);
 	}
+
+	// Determine the return value
 	if (sLineToParsedTemp.length())
 		sLineToParsed = sLineToParsedTemp;
 	else
@@ -2825,36 +3053,52 @@ static string parser_NumToString(const string& sLine, Datafile& _data, Parser& _
 	return sLineToParsed;
 }
 
+// This static function applies some elementary string operations
+// like concatenation
 static vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFinal, Parser& _parser, const Settings& _option, bool& bReturningLogicals)
 {
 	vector<bool> vIsNoStringValue;
+
+	// Examine the whole passed vector
 	for (unsigned int n = 0; n < vFinal.size(); n++)
 	{
-		//cerr << vFinal[n] << endl;
+	    // Strip whitespaces and ensure that the
+	    // current component is not empy
 		StripSpaces(vFinal[n]);
 		if (!vFinal[n].length())
 			continue;
+
+        // If there are logical expressions in the current
+        // component, handle them here
 		if (parser_detectStringLogicals(vFinal[n]))
 		{
-			//vFinal[n] = addMaskedStrings(parser_evalStringLogic(removeMaskedStrings(vFinal[n]), _parser, bReturningLogicals));
 			vFinal[n] = parser_evalStringLogic(vFinal[n], _parser, bReturningLogicals);
 			StripSpaces(vFinal[n]);
 		}
-		// Strings verknüpfen
+
+		// Concatenate the strings
 		if (vFinal[n].front() == '"' && vFinal[n].back() == '"')
 		{
 			for (unsigned int j = 0; j < vFinal[n].length(); j++)
 			{
+			    // Search for the concatenation operator (aka "+")
 				if (vFinal[n][j] == '+' && !isInQuotes(vFinal[n], j))
 				{
 					unsigned int k = j;
 					j = vFinal[n].rfind('"', j);
+
+					// Concatenate here
 					vFinal[n] = vFinal[n].substr(0, vFinal[n].rfind('"', k)) + vFinal[n].substr(vFinal[n].find('"', k) + 1);
 				}
 			}
 		}
+
+		// Determine, whether the current component is a string
+		// or a numerical expression
 		if (vFinal[n].front() != '"' && vFinal[n].back() != '"')
 		{
+		    // Evaluate the numerical expression, parse it as
+		    // string and store it correspondingly
 			_parser.SetExpr(vFinal[n]);
 			vFinal[n] = toCmdString(_parser.Eval());
 			vIsNoStringValue.push_back(true);
@@ -2862,6 +3106,7 @@ static vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFina
 		else
 			vIsNoStringValue.push_back(false);
 	}
+
 	// check, whether there's a string left
 	bReturningLogicals = true;
 	for (size_t i = 0; i < vIsNoStringValue.size(); i++)
@@ -2875,316 +3120,383 @@ static vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFina
 	return vIsNoStringValue;
 }
 
+// This static function is a helper for parser_StoreStringResults()
+// It will store the strings into the data tables
+static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string& sObject, size_t& nCurrentComponent, size_t nStrings, Parser& _parser, Datafile& _data, const Settings& _option)
+{
+    string si = "";
+    string sj = "";
+    int nIndex[2] = {0, 0};
+
+    // Identify the correct data table
+    if (sObject.find("data(") != string::npos)
+        si = sObject.substr(sObject.find("data(") + 4);
+    else
+    {
+        for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
+        {
+            if (sObject.find(iter->first + "(") != string::npos
+                    && (!sObject.find(iter->first + "(")
+                        || (sObject.find(iter->first + "(") && checkDelimiter(sObject.substr(sObject.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
+            {
+                si = sObject.substr(sObject.find(iter->first + "(") + (iter->first).length());
+                break;
+            }
+        }
+        _data.setCacheStatus(true);
+    }
+    parser_SplitArgs(si, sj, ',', _option);
+
+    // Is the target a headline or is it a regular index?
+    if (si.find('#') != string::npos)
+    {
+        // Headline
+        // Parse the indices
+        if (sj.find(':') != string::npos)
+        {
+            si = sj.substr(0, sj.find(':'));
+            sj = sj.substr(sj.find(':') + 1);
+        }
+        else
+            si = sj;
+        if (isNotEmptyExpression(si))
+        {
+            _parser.SetExpr(si);
+            nIndex[0] = (int)_parser.Eval();
+            nIndex[0]--;
+        }
+        if (isNotEmptyExpression(sj))
+        {
+            _parser.SetExpr(sj);
+            nIndex[1] = (int)_parser.Eval();
+        }
+
+        // Write the string to the correct data table
+        if (sObject.find("data(") != string::npos)
+        {
+            if (!nIndex[1])
+                nIndex[1] = _data.getCols("data");
+            parser_CheckIndices(nIndex[0], nIndex[1]);
+            for (int n = nCurrentComponent; n < (int)nStrings; n++)
+            {
+                if (!vFinal[n].length() || n + nIndex[0] == nIndex[1] + 1 || n + nIndex[0] >= _data.getCols("data"))
+                    break;
+                _data.setHeadLineElement(n + nIndex[0], "data", removeQuotationMarks(vFinal[n]));
+            }
+            nCurrentComponent = nStrings;
+        }
+        else
+        {
+            for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
+            {
+                if (sObject.find(iter->first + "(") != string::npos
+                        && (!sObject.find(iter->first + "(")
+                            || (sObject.find(iter->first + "(") && checkDelimiter(sObject.substr(sObject.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
+                {
+                    if (nIndex[1])
+                        parser_CheckIndices(nIndex[0], nIndex[1]);
+
+                    for (int n = nCurrentComponent; n < (int)nStrings; n++)
+                    {
+                        if (!vFinal[n].length() || (nIndex[1] && n + nIndex[0] == nIndex[1] + 1))
+                            break;
+                        _data.setHeadLineElement(n + nIndex[0], iter->first, removeQuotationMarks(vFinal[n]));
+                    }
+                    nCurrentComponent = nStrings;
+                    break;
+                }
+            }
+        }
+    }
+    else
+    {
+        // Regular index
+        // Get the corresponding indices
+        Indices _idx = parser_getIndices(sObject, _parser, _data, _option);
+
+        string sTable;
+
+        // Find the correct table
+        if (sObject.find("data(") != string::npos)
+            throw SyntaxError(SyntaxError::READ_ONLY_DATA, sObject, SyntaxError::invalid_position);
+        else
+        {
+            for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
+            {
+                if (sObject.find(iter->first + "(") != string::npos
+                        && (!sObject.find(iter->first + "(")
+                            || (sObject.find(iter->first + "(") && checkDelimiter(sObject.substr(sObject.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
+                    sTable = iter->first;
+            }
+        }
+
+        if (_idx.nI[1] == -1)
+            _idx.nI[1] = _idx.nI[0];
+        if (_idx.nJ[1] == -1)
+            _idx.nJ[1] = _idx.nJ[0];
+
+        // Write the return values to the data table without
+        // parsing them but directly converting the string into
+        // double
+        for (size_t i = nCurrentComponent; i < vFinal.size(); i++)
+        {
+            if (_idx.nI[0] == _idx.nI[1] && _idx.nJ[0] != _idx.nJ[1])
+            {
+                if (_idx.nJ[0] + i - nCurrentComponent > _idx.nJ[1] && _idx.nJ[1] != -2)
+                    break;
+                _data.writeToCache(_idx.nI[0], _idx.nJ[0] + i - nCurrentComponent, sTable, StrToDb(vFinal[i]));
+            }
+            else if (_idx.nI[0] != _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
+            {
+                if (_idx.nI[0] + i - nCurrentComponent > _idx.nI[1] && _idx.nI[1] != -2)
+                    break;
+                _data.writeToCache(_idx.nI[0] + i - nCurrentComponent, _idx.nJ[0], sTable, StrToDb(vFinal[i]));
+            }
+            else if (_idx.nI[0] == _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
+            {
+                _data.writeToCache(_idx.nI[0], _idx.nJ[0], sTable, StrToDb(vFinal[i]));
+                break;
+            }
+
+        }
+        nCurrentComponent = nStrings;
+    }
+    _data.setCacheStatus(false);
+}
+
+// This static function is a helper for parser_StoreStringResults()
+// It will store the strings into the string object
+static void parser_StoreStringToStringObject(const vector<string>& vFinal, string& sObject, size_t& nCurrentComponent, size_t nStrings, Parser& _parser, Datafile& _data, const Settings& _option)
+{
+    string si = "";
+    string sj = "";
+    string sCol = "";
+    int nIndex[3] = {-2, -2, 0};
+    si = sObject.substr(sObject.find("string(") + 6);
+    si = si.substr(1, getMatchingParenthesis(si) - 1);
+    StripSpaces(si);
+
+    // Does an index exist?
+    if (si.length())
+    {
+        // Yes, it does
+        // Parse the indices
+        if (si.find(':') != string::npos)
+        {
+            try
+            {
+                si = "(" + si + ")";
+                parser_SplitArgs(si, sj, ':', _option);
+                if (sj.find(',') != string::npos)
+                {
+                    parser_SplitArgs(sj, sCol, ',', _option, true);
+                }
+                if (!isNotEmptyExpression(si))
+                {
+                    si = "1";
+                }
+            }
+            catch (...)
+            {
+                throw;
+            }
+        }
+        else if (si.find(',') != string::npos)
+        {
+            try
+            {
+                parser_SplitArgs(si, sCol, ',', _option, true);
+                sj = si;
+            }
+            catch (...)
+            {
+                throw;
+            }
+        }
+        else
+            sj = si;
+
+        // Get the numerical values
+        // First the column, if does exist
+        if (isNotEmptyExpression(sCol))
+        {
+            _parser.SetExpr(sCol);
+            nIndex[2] = (unsigned int)_parser.Eval() - 1;
+        }
+
+        // Now the rows
+        if (isNotEmptyExpression(si))
+        {
+            _parser.SetExpr(si);
+            nIndex[0] = (unsigned int)_parser.Eval() - 1;
+        }
+        if (isNotEmptyExpression(sj))
+        {
+            _parser.SetExpr(sj);
+            nIndex[1] = (unsigned int)_parser.Eval() - 1;
+        }
+
+        // Ensure that the indices are valid
+        if (nIndex[0] < 0 && nIndex[1] < 0)
+            nIndex[0] = _data.getStringElements(nIndex[2]);
+        else if (nIndex[0] < 0)
+            nIndex[0] = 0;
+
+        if (nIndex[1] >= 0)
+            parser_CheckIndices(nIndex[0], nIndex[1]);
+
+        // Write the current string values to the corresponding indices
+        for (int n = nCurrentComponent; n < (int)nStrings; n++)
+        {
+            if (n + nIndex[0] == nIndex[1] + 1)
+                break;
+            _data.writeString(removeQuotationMarks(vFinal[n]), n + nIndex[0], nIndex[2]);
+        }
+        nCurrentComponent = nStrings;
+    }
+    else
+    {
+        // No, it doesn't
+        // Simply append the string results to the already available ones
+        for (int n = nCurrentComponent; n < (int)nStrings; n++)
+        {
+            _data.writeString(removeQuotationMarks(vFinal[n]));
+        }
+        nCurrentComponent = nStrings;
+    }
+
+}
+
+
+// This static function stores the calculated string results
+// in their desired targets.
 static int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string __sObject, Datafile& _data, Parser& _parser, const Settings& _option)
 {
-	if (__sObject.length())
-	{
-		if (__sObject.find('{') != string::npos)
-			parser_VectorToExpr(__sObject, _option);
-		string sObject;
-		//string sBackup = __sObject;
-		size_t nStrings = vFinal.size();
-		size_t nCurrentComponent = 0;
+    // Only do something, if the target object is not empty
+	if (!__sObject.length())
+        return 1;
 
-		while (__sObject.length())
-		{
-			sObject = getNextArgument(__sObject, true);
-			if (sObject.find("data(") != string::npos || _data.containsCacheElements(sObject))
-			{
-				string si = "";
-				string sj = "";
-				int nIndex[2] = {0, 0};
-				if (sObject.find("data(") != string::npos)
-					si = sObject.substr(sObject.find("data(") + 4);
-				else
-				{
-					for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-					{
-						if (sObject.find(iter->first + "(") != string::npos
-								&& (!sObject.find(iter->first + "(")
-									|| (sObject.find(iter->first + "(") && checkDelimiter(sObject.substr(sObject.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
-						{
-							si = sObject.substr(sObject.find(iter->first + "(") + (iter->first).length());
-							break;
-						}
-					}
-					_data.setCacheStatus(true);
-				}
-				parser_SplitArgs(si, sj, ',', _option);
+    // Handle remaining vector braces
+    if (__sObject.find('{') != string::npos)
+        parser_VectorToExpr(__sObject, _option);
 
-				if (si.find('#') != string::npos)
-				{
-					if (sj.find(':') != string::npos)
-					{
-						si = sj.substr(0, sj.find(':'));
-						sj = sj.substr(sj.find(':') + 1);
-					}
-					else
-						si = sj;
-					if (isNotEmptyExpression(si))
-					{
-						_parser.SetExpr(si);
-						nIndex[0] = (int)_parser.Eval();
-						nIndex[0]--;
-					}
-					if (isNotEmptyExpression(sj))
-					{
-						_parser.SetExpr(sj);
-						nIndex[1] = (int)_parser.Eval();
-					}
-					if (sObject.find("data(") != string::npos)
-					{
-						if (!nIndex[1])
-							nIndex[1] = _data.getCols("data");
-						parser_CheckIndices(nIndex[0], nIndex[1]);
-						for (int n = nCurrentComponent; n < (int)nStrings; n++)
-						{
-							if (!vFinal[n].length() || n + nIndex[0] == nIndex[1] + 1 || n + nIndex[0] >= _data.getCols("data"))
-								break;
-							_data.setHeadLineElement(n + nIndex[0], "data", removeQuotationMarks(vFinal[n]));
-						}
-						nCurrentComponent = nStrings;
-					}
-					else
-					{
-						for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-						{
-							if (sObject.find(iter->first + "(") != string::npos
-									&& (!sObject.find(iter->first + "(")
-										|| (sObject.find(iter->first + "(") && checkDelimiter(sObject.substr(sObject.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
-							{
-								if (nIndex[1])
-									parser_CheckIndices(nIndex[0], nIndex[1]);
+    string sObject;
+    size_t nStrings = vFinal.size();
+    size_t nCurrentComponent = 0;
 
-								for (int n = nCurrentComponent; n < (int)nStrings; n++)
-								{
-									if (!vFinal[n].length() || (nIndex[1] && n + nIndex[0] == nIndex[1] + 1))
-										break;
-									_data.setHeadLineElement(n + nIndex[0], iter->first, removeQuotationMarks(vFinal[n]));
-								}
-								nCurrentComponent = nStrings;
-								break;
-							}
-						}
-					}
-				}
-				else
-				{
-					Indices _idx = parser_getIndices(sObject, _parser, _data, _option);
+    // As long as the target object is not empty
+    while (__sObject.length())
+    {
+        // Get-cut the next target
+        sObject = getNextArgument(__sObject, true);
 
-					string sTable;
-					if (sObject.find("data(") != string::npos)
-						throw SyntaxError(SyntaxError::READ_ONLY_DATA, sObject, SyntaxError::invalid_position);
-					else
-					{
-						for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-						{
-							if (sObject.find(iter->first + "(") != string::npos
-									&& (!sObject.find(iter->first + "(")
-										|| (sObject.find(iter->first + "(") && checkDelimiter(sObject.substr(sObject.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
-								sTable = iter->first;
-						}
-					}
+        // Examine the current target
+        if (sObject.find("data(") != string::npos || _data.containsCacheElements(sObject))
+        {
+            // Store the strings into the data object
+            parser_StoreStringToDataObjects(vFinal, sObject, nCurrentComponent, nStrings, _parser, _data, _option);
+        }
+        else if (sObject.find("string(") != string::npos)
+        {
+            // Store the strings into the string object
+            parser_StoreStringToStringObject(vFinal, sObject, nCurrentComponent, nStrings, _parser, _data, _option);
+        }
+        else if (_data.containsStringVars(sObject))
+        {
+            // Store the strings in string variables
+            StripSpaces(sObject);
+            if (sObject.find(' ') != string::npos)
+                return 0;
+            try
+            {
+                if (nCurrentComponent >= nStrings)
+                    _data.setStringValue(sObject, "");
+                else
+                    _data.setStringValue(sObject, removeQuotationMarks(vFinal[nCurrentComponent]));
+                nCurrentComponent++;
+            }
+            catch (...)
+            {
+                throw;
+            }
+        }
+        else
+        {
+            // Store the results as numerical values
+            StripSpaces(sObject);
+            if (sObject.find(' ') != string::npos)
+            {
+                return 0;
+            }
 
-					if (_idx.nI[1] == -1)
-						_idx.nI[1] = _idx.nI[0];
-					if (_idx.nJ[1] == -1)
-						_idx.nJ[1] = _idx.nJ[0];
+            // Search for the adress of the current variable
+            if (parser_GetVarAdress(sObject, _parser))
+            {
+                if (vIsNoStringValue.size() > nCurrentComponent && !vIsNoStringValue[nCurrentComponent])
+                {
+                    return 0;
+                }
+            }
 
-					for (size_t i = nCurrentComponent; i < vFinal.size(); i++)
-					{
-						if (_idx.nI[0] == _idx.nI[1] && _idx.nJ[0] != _idx.nJ[1])
-						{
-							if (_idx.nJ[0] + i - nCurrentComponent > _idx.nJ[1] && _idx.nJ[1] != -2)
-								break;
-							_data.writeToCache(_idx.nI[0], _idx.nJ[0] + i - nCurrentComponent, sTable, StrToDb(vFinal[i]));
-						}
-						else if (_idx.nI[0] != _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
-						{
-							if (_idx.nI[0] + i - nCurrentComponent > _idx.nI[1] && _idx.nI[1] != -2)
-								break;
-							_data.writeToCache(_idx.nI[0] + i - nCurrentComponent, _idx.nJ[0], sTable, StrToDb(vFinal[i]));
-						}
-						else if (_idx.nI[0] == _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
-						{
-							_data.writeToCache(_idx.nI[0], _idx.nJ[0], sTable, StrToDb(vFinal[i]));
-							break;
-						}
+            // If this is a numerical value
+            if (vIsNoStringValue.size() > nCurrentComponent && vIsNoStringValue[nCurrentComponent])
+            {
+                try
+                {
+                    // Parse and store it
+                    int nResults = 0;
+                    value_type* v = 0;
+                    _parser.SetExpr(sObject + " = " + vFinal[nCurrentComponent]);
+                    v = _parser.Eval(nResults);
+                    vAns = v[0];
+                    nCurrentComponent++;
+                }
+                catch (...)
+                {
+                    throw;
+                }
+            }
+            else if (vIsNoStringValue.size() <= nCurrentComponent)
+            {
+                // Fallback: try to find the variable address
+                // although it doesn't seem to be a numerical value
+                if (!parser_GetVarAdress(sObject, _parser))
+                {
+                    try
+                    {
+                        // If there's no numerical value, create
+                        // a new string variable
+                        _data.setStringValue(sObject, "");
+                        nCurrentComponent++;
+                    }
+                    catch (...)
+                    {
+                        throw;
+                    }
+                }
+            }
+            else
+            {
+                try
+                {
+                    // Create a new string variable
+                    _data.setStringValue(sObject, removeQuotationMarks(vFinal[nCurrentComponent]));
+                    nCurrentComponent++;
+                }
+                catch (...)
+                {
+                    throw;
+                }
+            }
+        }
+    }
 
-					}
-					nCurrentComponent = nStrings;
-					// throw CANNOT_CONTAIN_STRINGS;
-				}
-				_data.setCacheStatus(false);
-			}
-			else if (sObject.find("string(") != string::npos)
-			{
-				string si = "";
-				string sj = "";
-				string sCol = "";
-				int nIndex[3] = {-2, -2, 0};
-				si = sObject.substr(sObject.find("string(") + 6);
-				si = si.substr(1, getMatchingParenthesis(si) - 1);
-				StripSpaces(si);
-
-				if (si.length())
-				{
-					if (si.find(':') != string::npos)
-					{
-						try
-						{
-							si = "(" + si + ")";
-							parser_SplitArgs(si, sj, ':', _option);
-							if (sj.find(',') != string::npos)
-							{
-								parser_SplitArgs(sj, sCol, ',', _option, true);
-							}
-							if (!isNotEmptyExpression(si))
-							{
-								si = "1";
-							}
-						}
-						catch (...)
-						{
-							throw;
-						}
-					}
-					else if (si.find(',') != string::npos)
-					{
-						try
-						{
-							parser_SplitArgs(si, sCol, ',', _option, true);
-							sj = si;
-						}
-						catch (...)
-						{
-							throw;
-						}
-					}
-					else
-						sj = si;
-
-					if (isNotEmptyExpression(sCol))
-					{
-						_parser.SetExpr(sCol);
-						nIndex[2] = (unsigned int)_parser.Eval() - 1;
-					}
-					if (isNotEmptyExpression(si))
-					{
-						_parser.SetExpr(si);
-						nIndex[0] = (unsigned int)_parser.Eval() - 1;
-					}
-					if (isNotEmptyExpression(sj))
-					{
-						_parser.SetExpr(sj);
-						nIndex[1] = (unsigned int)_parser.Eval() - 1;
-					}
-					if (nIndex[0] < 0 && nIndex[1] < 0)
-						nIndex[0] = _data.getStringElements(nIndex[2]);
-					else if (nIndex[0] < 0)
-						nIndex[0] = 0;
-
-					if (nIndex[1] >= 0)
-						parser_CheckIndices(nIndex[0], nIndex[1]);
-
-					for (int n = nCurrentComponent; n < (int)nStrings; n++)
-					{
-						if (n + nIndex[0] == nIndex[1] + 1)
-							break;
-						_data.writeString(removeQuotationMarks(vFinal[n]), n + nIndex[0], nIndex[2]);
-					}
-					nCurrentComponent = nStrings;
-				}
-				else
-				{
-					for (int n = nCurrentComponent; n < (int)nStrings; n++)
-					{
-						_data.writeString(removeQuotationMarks(vFinal[n]));
-					}
-					nCurrentComponent = nStrings;
-				}
-			}
-			else if (_data.containsStringVars(sObject))
-			{
-				StripSpaces(sObject);
-				if (sObject.find(' ') != string::npos)
-					return 0;
-				try
-				{
-					if (nCurrentComponent >= nStrings)
-						_data.setStringValue(sObject, "");
-					else
-						_data.setStringValue(sObject, removeQuotationMarks(vFinal[nCurrentComponent]));
-					nCurrentComponent++;
-				}
-				catch (...)
-				{
-					throw;
-				}
-			}
-			else
-			{
-				StripSpaces(sObject);
-				if (sObject.find(' ') != string::npos)
-				{
-					return 0;
-				}
-				if (parser_GetVarAdress(sObject, _parser))
-				{
-					if (vIsNoStringValue.size() > nCurrentComponent && !vIsNoStringValue[nCurrentComponent])
-					{
-						return 0;
-					}
-				}
-				if (vIsNoStringValue.size() > nCurrentComponent && vIsNoStringValue[nCurrentComponent])
-				{
-					try
-					{
-						int nResults = 0;
-						value_type* v = 0;
-						_parser.SetExpr(sObject + " = " + vFinal[nCurrentComponent]);
-						v = _parser.Eval(nResults);
-						vAns = v[0];
-						nCurrentComponent++;
-					}
-					catch (...)
-					{
-						throw;
-					}
-				}
-				else if (vIsNoStringValue.size() <= nCurrentComponent)
-				{
-					if (!parser_GetVarAdress(sObject, _parser))
-					{
-						try
-						{
-							_data.setStringValue(sObject, "");
-							nCurrentComponent++;
-						}
-						catch (...)
-						{
-							throw;
-						}
-					}
-				}
-				else
-				{
-					try
-					{
-						_data.setStringValue(sObject, removeQuotationMarks(vFinal[nCurrentComponent]));
-						nCurrentComponent++;
-					}
-					catch (...)
-					{
-						throw;
-					}
-				}
-			}
-		}
-	}
 	return 1;
 }
 
+
+// This static function converts the string parser results
+// into an output string for the console
 static string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string& sLine, bool bReturningLogicals, int parserFlags)
 {
 	sLine.clear();
@@ -3194,8 +3506,13 @@ static string parser_CreateStringOutput(vector<string>& vFinal, const vector<boo
 		vFinal[i] = removeQuotationMarks(vFinal[i]);
 
 	string sConsoleOut = "|-> ";
+
+	// Every result in the current return values
+	// is a single string result
 	for (size_t j = 0; j < vFinal.size(); j++)
 	{
+	    // In this case, no conversions are done
+	    // the results are simply put together and returned
 		if (parserFlags & KEEP_MASKED_CONTROL_CHARS && parserFlags & KEEP_MASKED_QUOTES)
 		{
 			if (!(parserFlags & NO_QUOTES) && !vIsNoStringValue[j])
@@ -3206,13 +3523,20 @@ static string parser_CreateStringOutput(vector<string>& vFinal, const vector<boo
 				sLine += ",";
 			continue;
 		}
+
+		// Start the current string value with a quotation mark
+		// if it is not a special case
 		if (vFinal[j] != "\\n" && vFinal[j] != "\\t" && !(parserFlags & NO_QUOTES) && !bReturningLogicals && !vIsNoStringValue[j])
 		{
 			sConsoleOut += "\"";
 			sLine += "\"";
 		}
+
+		// Go through the current string value
 		for (size_t k = 0; k < vFinal[j].length(); k++)
 		{
+		    // If there are escaped control characters,
+		    // Replace them with their actual value here
 			if (k + 1 < vFinal[j].length()
 					&& vFinal[j][k] == '\\'
 					&& (vFinal[j][k + 1] == 'n' || vFinal[j][k + 1] == 't' || vFinal[j][k + 1] == '"' || vFinal[j][k + 1] == ' ')
@@ -3227,17 +3551,17 @@ static string parser_CreateStringOutput(vector<string>& vFinal, const vector<boo
 			   )
 			{
 				//\not\neq\ni
-				if (vFinal[j][k + 1] == 'n')
+				if (vFinal[j][k + 1] == 'n') // Line break
 				{
 					sConsoleOut += "$";
 					sLine += "\n";
 				}
-				else if (vFinal[j][k + 1] == 't')
+				else if (vFinal[j][k + 1] == 't') // tabulator
 				{
 					sConsoleOut += "\t";
 					sLine += "\t";
 				}
-				else if (vFinal[j][k + 1] == '"')
+				else if (vFinal[j][k + 1] == '"') // quotation mark
 				{
 					sConsoleOut += "\"";
 					if (!(parserFlags & KEEP_MASKED_QUOTES))
@@ -3245,33 +3569,41 @@ static string parser_CreateStringOutput(vector<string>& vFinal, const vector<boo
 					else
 						sLine += "\\\"";
 				}
-				else if (vFinal[j][k + 1] == ' '/*k+2 == vFinal[j].length() && vFinal[j].substr(k) == "\\ "*/)
+				else if (vFinal[j][k + 1] == ' ') // backslash itself
 				{
 					sConsoleOut += "\\";
 					if (!(parserFlags & KEEP_MASKED_CONTROL_CHARS))
 						sLine += "\\";
 					else
 						sLine += "\\ ";
-					/*k++;*/
 				}
 				k += 1;
 			}
 			else
 			{
+			    // Otherwise simply append the current character
 				sConsoleOut += vFinal[j][k];
 				sLine += vFinal[j][k];
 			}
 		}
+
+		// End the current string value with a quotation mark
+		// if it is not a special case
 		if (vFinal[j] != "\\n" && vFinal[j] != "\\t" && !(parserFlags & NO_QUOTES) && !bReturningLogicals && !vIsNoStringValue[j])
 		{
 			sConsoleOut += "\"";
 			sLine += "\"";
 		}
+
+		// Break the loop, if this was the last string value
 		if (j + 1 == vFinal.size())
 			break;
 
-		if (vFinal[j] != "\\n" && vFinal[j + 1] != "\\n" && vFinal[j] != "\\t" && vFinal[j] != "\\t")
+        // Add a comma, if neither the next nor the current string
+        // is a special case
+		if (vFinal[j] != "\\n" && vFinal[j + 1] != "\\n" && vFinal[j] != "\\t" && vFinal[j + 1] != "\\t")
 		{
+		    // If the last character was a line break
 			if (sLine.find_last_not_of("\" ") != string::npos && sLine[sLine.find_last_not_of("\" ")] == '\n')
 			{
 				sLine += ", ";
@@ -3282,6 +3614,8 @@ static string parser_CreateStringOutput(vector<string>& vFinal, const vector<boo
 				}
 				continue;
 			}
+
+			// Append the commas
 			sConsoleOut += ", ";
 			sLine += ", ";
 		}
@@ -3289,6 +3623,7 @@ static string parser_CreateStringOutput(vector<string>& vFinal, const vector<boo
 	return sConsoleOut;
 }
 
+// This static function is used to detect logical expressions
 static bool parser_detectStringLogicals(const string& sString)
 {
 	if (!sString.length())
@@ -3297,13 +3632,17 @@ static bool parser_detectStringLogicals(const string& sString)
 	int nQuotes = 0;
 	for (size_t i = 0; i < sString.length(); i++)
 	{
+	    // Count quotation marks
 		if (sString[i] == '"' && (!i || sString[i - 1] != '\\'))
 		{
 			nQuotes++;
 			continue;
 		}
+
+		// Detect path tokens
 		if (sString[i] == '<')
 		{
+		    // Search for path tokens
 			size_t nAdv = parser_detectPathTokens(sString, i);
 			if (nAdv)
 			{
@@ -3311,6 +3650,8 @@ static bool parser_detectStringLogicals(const string& sString)
 				continue;
 			}
 		}
+
+		// Logicals are only possible outside of string literals
 		if (!(nQuotes % 2))
 		{
 			if (sString.substr(i, 2) == "&&"
@@ -3328,6 +3669,9 @@ static bool parser_detectStringLogicals(const string& sString)
 	return false;
 }
 
+// This static function is a helper for parser_detectStringLogicals,
+// it will identify path tokens, which will start at the passed
+// position
 static size_t parser_detectPathTokens(const string& sString, size_t nPos)
 {
 	if (sString.substr(nPos, 2) == "<>")
@@ -3349,8 +3693,11 @@ static size_t parser_detectPathTokens(const string& sString, size_t nPos)
 	return 0u;
 }
 
+// This static function will evaluate logical string expressions in
+// the passed command line
 static string parser_evalStringLogic(string sLine, Parser& _parser, bool& bReturningLogicals)
 {
+    // Exclude border cases
 	if (!sLine.length())
 		return "false";
 	if (sLine.find('"') == string::npos)
@@ -3361,10 +3708,13 @@ static string parser_evalStringLogic(string sLine, Parser& _parser, bool& bRetur
 
 	sLine += " ";
 
+	// Evaluate ternaries first (will start a recursion)
 	sLine = parser_evalStringTernary(sLine, _parser);
 
-	//cerr << sLine << endl;
 	unsigned int nPos = 0;
+
+	// Handle parenthesed expression parts
+	// (will start a recursion)
 	if (sLine.find('(') != string::npos)
 	{
 		nPos = 0;
@@ -3374,11 +3724,12 @@ static string parser_evalStringLogic(string sLine, Parser& _parser, bool& bRetur
 			if (!isInQuotes(sLine, nPos - 1))
 			{
 				sLine = sLine.substr(0, nPos - 1) + parser_evalStringLogic(sLine.substr(nPos, getMatchingParenthesis(sLine.substr(nPos - 1)) - 1), _parser, bReturningLogicals) + sLine.substr(getMatchingParenthesis(sLine.substr(nPos - 1)) + nPos);
-				//cerr << sLine << endl;
 				nPos = 0;
 			}
 		}
 	}
+
+	// Handle the logical and
 	if (sLine.find("&&") != string::npos)
 	{
 		nPos = 0;
@@ -3408,6 +3759,8 @@ static string parser_evalStringLogic(string sLine, Parser& _parser, bool& bRetur
 			}
 		}
 	}
+
+	// Handle the exclusive or
 	if (sLine.find("|||") != string::npos)
 	{
 		nPos = 0;
@@ -3437,6 +3790,8 @@ static string parser_evalStringLogic(string sLine, Parser& _parser, bool& bRetur
 			}
 		}
 	}
+
+	// Handle the logical or
 	if (sLine.find("||") != string::npos)
 	{
 		nPos = 0;
@@ -3467,7 +3822,10 @@ static string parser_evalStringLogic(string sLine, Parser& _parser, bool& bRetur
 			}
 		}
 	}
+
 	int nQuotes = 0;
+
+	// Handle logical comparisons
 	for (size_t i = 0; i < sLine.length(); i++)
 	{
 		if (sLine[i] == '"' && (!i || sLine[i - 1] != '\\'))
@@ -3577,48 +3935,61 @@ static string parser_evalStringLogic(string sLine, Parser& _parser, bool& bRetur
 	return sLine;
 }
 
+// This static function will evaluate the ternary
+// for strings
 static string parser_evalStringTernary(string sLine, Parser& _parser)
 {
 	bool bReturningLogicals = false;
 	size_t nPos = 0;
-	if (sLine.find('?') != string::npos)
-	{
-		while (sLine.find('?', nPos) != string::npos)
-		{
-			nPos = sLine.find('?', nPos);
-			if (!isInQuotes(sLine, nPos))
-			{
-				vector<string> vTernary = parser_getStringTernaryExpression(sLine, nPos);
-				nPos = 0;
-				vTernary[0] = parser_evalStringLogic(vTernary[0], _parser, bReturningLogicals);
-				bool result = false;
-				if (vTernary[0].find('"') != string::npos)
-				{
-					StripSpaces(vTernary[0]);
-					result = (bool)(vTernary[0].length() - 2);
-				}
-				else
-				{
-					_parser.SetExpr(vTernary[0]);
-					result = (bool)_parser.Eval();
-				}
-				if (result)
-					return sLine + parser_evalStringLogic(vTernary[1], _parser, bReturningLogicals);
-				else
-					return sLine + parser_evalStringLogic(vTernary[2], _parser, bReturningLogicals);
-			}
-			else
-				nPos++;
-		}
-	}
+
+    // As long as there's a question mark in the current string
+    while (sLine.find('?', nPos) != string::npos)
+    {
+        nPos = sLine.find('?', nPos);
+
+        // Ensure, that we're not in a string literal
+        if (!isInQuotes(sLine, nPos))
+        {
+            // Get the current ternary as a vector
+            vector<string> vTernary = parser_getStringTernaryExpression(sLine, nPos);
+            nPos = 0;
+
+            // Evaluate logical string expressions
+            vTernary[0] = parser_evalStringLogic(vTernary[0], _parser, bReturningLogicals);
+            bool result = false;
+
+            // Evaluate the condition of the ternary logically
+            if (vTernary[0].find('"') != string::npos)
+            {
+                StripSpaces(vTernary[0]);
+                result = (bool)(vTernary[0].length() - 2);
+            }
+            else
+            {
+                _parser.SetExpr(vTernary[0]);
+                result = (bool)_parser.Eval();
+            }
+
+            // return the evaluated part of the string
+            if (result)
+                return sLine + parser_evalStringLogic(vTernary[1], _parser, bReturningLogicals);
+            else
+                return sLine + parser_evalStringLogic(vTernary[2], _parser, bReturningLogicals);
+        }
+        else
+            nPos++;
+    }
+
 	return sLine;
 }
 
+// This static function is a helper for parser_evalStringTernary
+// it will return the expressions of the current ternary in the
+// different vector components
 static vector<string> parser_getStringTernaryExpression(string& sLine, size_t& nPos) // nPos ist the position of the question mark
 {
 	vector<string> vTernary;
 	size_t nTernaryStart = 0;
-	//size_t nTernaryEnd = sLine.length();
 	size_t nColonPosition = 0;
 
 	string sTernary = sLine.substr(nTernaryStart);
@@ -3626,28 +3997,43 @@ static vector<string> parser_getStringTernaryExpression(string& sLine, size_t& n
 
 	size_t quotes = 0;
 	int nQuestionMarks = 0;
+
+	// Search for the operators of the ternary
+	// Jump over additional quotation marks
 	for (size_t i = nPos; i < sTernary.length(); i++)
 	{
+	    // Jump ver parentheses
 		if (!(quotes % 2) && (sTernary[i] == '(' || sTernary[i] == '[' || sTernary[i] == '{'))
 			i += getMatchingParenthesis(sTernary.substr(i));
+
+		// Increment the question mark counter
 		if (!(quotes % 2) && sTernary[i] == '?')
 			nQuestionMarks++;
+
+        // Increment the quotation mark counter
 		if (sTernary[i] == '"' && sTernary[i - 1] != '\\')
 			quotes++;
+
+        // If there's a colon, decrement the quotation mark
+        // counter
 		if (!(quotes % 2) && sTernary[i] == ':')
 		{
 			nQuestionMarks--;
 			if (!nQuestionMarks)
 			{
+			    // this is the correct colon
 				nColonPosition = i;
 				break;
 			}
 		}
 	}
 
+	// This is obviously not a real ternary
 	if (!nColonPosition)
 		throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, nPos);
 
+    // Distribute the expression parts of the ternary
+    // across the vector components
 	vTernary.push_back(sTernary.substr(0, nPos));
 	vTernary.push_back(sTernary.substr(nPos + 1, nColonPosition - 1 - nPos));
 	vTernary.push_back(sTernary.substr(nColonPosition + 1));
