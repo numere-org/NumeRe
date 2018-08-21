@@ -367,6 +367,9 @@ string** make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, con
 		sOut[i] = new string[nCols];			// Vollstaendig Allozieren!
 	}
 
+	// create a character buffer for sprintf
+	char cBuffer[50];
+
 	// Format the table
 	for (long long int i = 0; i < nLines; i++)
 	{
@@ -418,10 +421,13 @@ string** make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, con
 			}
 
 			// Transform the data to strings and write it to the string table
-			if (_out.isCompact() && !bSave)
-				sOut[i][j] = toString(_data.getElement(i - nHeadlineCount, j, sCache), 4);		// Daten aus _data in die Ausgabematrix uebertragen
-			else
-				sOut[i][j] = toString(_data.getElement(i - nHeadlineCount, j, sCache), nPrecision);		// Daten aus _data in die Ausgabematrix uebertragen
+			// We use the C-style conversion function sprintf(), because it is 4 times faster than
+			// using the stringstream conversion way.
+            if (_out.isCompact() && !bSave)
+                sprintf(cBuffer, "%.*g", 4, _data.getElement(i - nHeadlineCount, j, sCache));
+            else
+                sprintf(cBuffer, "%.*g", nPrecision, _data.getElement(i - nHeadlineCount, j, sCache));
+            sOut[i][j] = cBuffer;
 		}
 	}
 	// return the string table

@@ -4,7 +4,7 @@
 	"kernel/core/version.h"
 	<wx/msw/wx.rc>
 
-1530262343 d:\cpp\numere-source\trunk\kernel\core\version.h
+1534110097 d:\cpp\numere-source\trunk\kernel\core\version.h
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wx.rc
 	<windows.h>
@@ -2679,7 +2679,7 @@
 	"../version.h"
 	"../ParserLib/muParser.h"
 
-1524302687 d:\cpp\numere-source\trunk\kernel\core\built-in.hpp
+1533982184 d:\cpp\numere-source\trunk\kernel\core\built-in.hpp
 	<iostream>
 	<fstream>
 	<sstream>
@@ -3967,7 +3967,7 @@
 
 1501083705 d:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1533226082 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1533982184 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 	"io/fileops.hpp"
@@ -4028,7 +4028,7 @@
 	"odesolver.hpp"
 	"../../kernel.hpp"
 
-1533885256 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
+1533885699 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	"spline.h"
@@ -4147,12 +4147,12 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1533239762 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1534747130 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
 
-1527330756 d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.hpp
+1534746895 d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.hpp
 	<mgl2/mgl.h>
 	<string>
 	<vector>
@@ -4229,7 +4229,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1533748099 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1533982184 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>
@@ -4252,7 +4252,7 @@
 	<cstddef>
 	<cstdarg>
 
-1533245470 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
+1534110073 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
 	"tools.hpp"
 	"../../kernel.hpp"
 	<cstdlib>
@@ -4321,7 +4321,7 @@
 	"output.hpp"
 	"../../kernel.hpp"
 
-1533225915 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataops.cpp
+1534583017 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataops.cpp
 	<wx/image.h>
 	"dataops.hpp"
 	"container.hpp"
@@ -4345,7 +4345,7 @@
 	"../utils/tools.hpp"
 	<vector>
 
-1533225119 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\memory.cpp
+1534259016 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\memory.cpp
 	"memory.hpp"
 	"../../kernel.hpp"
 
