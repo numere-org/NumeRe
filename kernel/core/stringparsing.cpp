@@ -2764,18 +2764,13 @@ static string parser_GetDataForString(string sLine, Datafile& _data, Parser& _pa
 				nPos++;
 			}
 			string sData = sLine.substr(n_pos, nPos - n_pos + 1);
-			//cerr << sData << endl;
+			// Get the data and parse string expressions
 			getDataElements(sData, _parser, _data, _option);
 			StringResult strRes = parser_StringParserCore(sData, "", _data, _parser, _option, mStringVectorVars);
 			if (!strRes.vResult.size())
 				throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-			sData.clear();
-			for (size_t i = 0; i < strRes.vResult.size(); i++)
-				sData += strRes.vResult[i] + ", ";
-			if (sData.length())
-				sData.erase(sData.rfind(','));
-			//sData = strRes.vResult[0];
-			StripSpaces(sData);
+            // Create a string vector variable from the returned vector
+			sData = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
 			sLine = sLine.substr(0, n_pos) + sData + sLine.substr(nPos + 1);
 		}
 		n_pos++;
@@ -2807,17 +2802,13 @@ static string parser_GetDataForString(string sLine, Datafile& _data, Parser& _pa
 					nPos++;
 				}
 				string sData = sLine.substr(n_pos, nPos - n_pos + 1);
+				// Get the data and parse string expressions
 				getDataElements(sData, _parser, _data, _option);
 				StringResult strRes = parser_StringParserCore(sData, "", _data, _parser, _option, mStringVectorVars);
 				if (!strRes.vResult.size())
 					throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-				sData.clear();
-				for (size_t i = 0; i < strRes.vResult.size(); i++)
-					sData += strRes.vResult[i] + ", ";
-				if (sData.length())
-					sData.erase(sData.rfind(','));
-				//sData = strRes.vResult[0];
-				StripSpaces(sData);
+                // Create a string vector variable from the returned vector
+                sData = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
 				sLine = sLine.substr(0, n_pos) + sData + sLine.substr(nPos + 1);
 			}
 		}

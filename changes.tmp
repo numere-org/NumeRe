@@ -23,3 +23,4 @@ Fixed	Removed a segmentation fault, which occured during the storage of strings 
 Fixed	Solved an issue, where the usage of braces in strings as returns values of procedures yielded strange errors.
 Fixed	The 'to_string()' function may now handle strings containing masked strings correctly.
 Added	Bar charts may now show reasonable legends by separating the legends of multiple bar charts using the linebreak character.
+Fixed	Table headlines may now be used as regular string vectors and are now composable using "sum()".
