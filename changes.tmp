@@ -22,3 +22,4 @@ Fixed	The issue in the resampler code was fixed. This also required to change th
 Fixed	Removed a segmentation fault, which occured during the storage of strings into the 'string()' object.
 Fixed	Solved an issue, where the usage of braces in strings as returns values of procedures yielded strange errors.
 Fixed	The 'to_string()' function may now handle strings containing masked strings correctly.
+Added	Bar charts may now show reasonable legends by separating the legends of multiple bar charts using the linebreak character.

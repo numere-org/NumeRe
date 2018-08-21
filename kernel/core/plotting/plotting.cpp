@@ -1052,9 +1052,11 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
 	int nPos[2] = {0, 0};
 	int nTypeCounter[2] = {0, 0};
 	int nLastDataCounter = 0;
+	int nCurrentStyle = 0;
 
 	for (unsigned int nType = 0; nType < vType.size(); nType++)
 	{
+	    // Copy the data to the relevant memory
 		if (vType[nType] == TYPE_FUNC)
 		{
 			for (int i = 0; i < 2; i++)
@@ -1237,12 +1239,25 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
 			}
 
 		}
+
+		// Store the current style
+		nCurrentStyle = nStyle;
+
+		// Create the plot
 		if (!plotstd(_pData, _mData, _mPlotAxes, _mData2, vType[nType]))
 		{
 			// --> Den gibt's nicht: Speicher freigeben und zurueck! <--
 			clearData();
 			return;
 		}
+
+		// Increment the style counter
+		if (nStyle == _pInfo.nStyleMax - 1)
+            nStyle = 0;
+        else
+            nStyle++;
+
+        // Create the legend
 		if (vType[nType] == TYPE_FUNC)
 		{
 			if (_pData.getRegion() && vType.size() > nType + 1)
@@ -1251,73 +1266,115 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
 				{
 					nPos[0] = sLabels.find(';');
 					sConvLegends = sLabels.substr(0, nPos[0]) + " -nq";
-					parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
-					sConvLegends = "\"" + sConvLegends + "\"";
 					sLabels = sLabels.substr(nPos[0] + 1);
+
+					// Apply the string parser
+					parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
+
+					// Add new surrounding quotation marks
+					sConvLegends = "\"" + sConvLegends + "\"";
+
+					// Add the legend
 					if (sConvLegends != "\"\"")
 					{
-						_graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(), _pInfo.sLineStyles[nStyle].c_str());
+						_graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(), _pInfo.sLineStyles[nCurrentStyle].c_str());
 						nLegends++;
 					}
 
-					if (nStyle == _pInfo.nStyleMax - 1)
-						nStyle = 0;
+					if (nCurrentStyle == _pInfo.nStyleMax - 1)
+						nCurrentStyle = 0;
 					else
-						nStyle++;
+						nCurrentStyle++;
 				}
 			}
 			else
 			{
 				nPos[0] = sLabels.find(';');
 				sConvLegends = sLabels.substr(0, nPos[0]) + " -nq";
+                sLabels = sLabels.substr(nPos[0] + 1);
+
+                // Apply the string parser
 				parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
-				sConvLegends = "\"" + sConvLegends + "\"";
-				sLabels = sLabels.substr(nPos[0] + 1);
-				if (sConvLegends != "\"\"")
-				{
-					_graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nStyle], _pData).c_str());
-					nLegends++;
-				}
-				if (nStyle == _pInfo.nStyleMax - 1)
-					nStyle = 0;
-				else
-					nStyle++;
+
+
+				// While the legend string is not empty
+				while (sConvLegends.length())
+                {
+                    // Get the next legend string
+                    string sLegend = sConvLegends.substr(0, sConvLegends.find('\n'));
+                    if (sConvLegends.find('\n') != string::npos)
+                        sConvLegends.erase(0, sConvLegends.find('\n')+1);
+                    else
+                        sConvLegends.clear();
+
+                    // Add new surrounding quotation marks
+                    sLegend = "\"" + sLegend + "\"";
+
+                    // Add the legend
+                    if (sLegend != "\"\"")
+                    {
+                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nCurrentStyle], _pData).c_str());
+                        nLegends++;
+                    }
+                    if (nCurrentStyle == _pInfo.nStyleMax - 1)
+                        nCurrentStyle = 0;
+                    else
+                        nCurrentStyle++;
+                }
 			}
 			nTypeCounter[0]++;
 		}
 		else
 		{
 			nPos[1] = sDataLabels.find(';');
-			sConvLegends = sDataLabels.substr(0, nPos[1]);
-			parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
+			sConvLegends = sDataLabels.substr(0, nPos[1]) + " -nq";
 			sDataLabels = sDataLabels.substr(nPos[1] + 1);
-			if (sConvLegends != "\"\"")
-			{
-				nLegends++;
-				if (_pData.getBoxplot())
-				{
-					_graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nStyle], _pData).c_str());
-				}
-				else if (!_pData.getxError() && !_pData.getyError())
-				{
-					if ((_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].nx >= _pInfo.nSamples) || _pData.getBars() || _pData.getHBars())
-						_graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nStyle], _pData).c_str());
-					else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].nx >= 0.9 * _pInfo.nSamples))
-						_graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(), getLegendStyle(_pInfo.sConPointStyles[nStyle], _pData).c_str());
-					else if (_pData.getStepplot())
-						_graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nStyle], _pData).c_str());
-					else
-						_graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(), getLegendStyle(_pInfo.sPointStyles[nStyle], _pData).c_str());
-				}
-				else
-				{
-					_graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(), getLegendStyle(_pInfo.sPointStyles[nStyle], _pData).c_str());
-				}
-			}
-			if (nStyle == _pInfo.nStyleMax - 1)
-				nStyle = 0;
-			else
-				nStyle++;
+
+			// Apply the string parser
+			parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
+
+			// While the legend string is not empty
+			while (sConvLegends.length())
+            {
+                // Get the next legend string
+                string sLegend = sConvLegends.substr(0, sConvLegends.find('\n'));
+                if (sConvLegends.find('\n') != string::npos)
+                    sConvLegends.erase(0, sConvLegends.find('\n')+1);
+                else
+                    sConvLegends.clear();
+
+                // Add new surrounding quotation marks
+                sLegend = "\"" + sLegend + "\"";
+
+                // Add the legend
+                if (sLegend != "\"\"")
+                {
+                    nLegends++;
+                    if (_pData.getBoxplot())
+                    {
+                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nCurrentStyle], _pData).c_str());
+                    }
+                    else if (!_pData.getxError() && !_pData.getyError())
+                    {
+                        if ((_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].nx >= _pInfo.nSamples) || _pData.getBars() || _pData.getHBars())
+                            _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nCurrentStyle], _pData).c_str());
+                        else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mDataPlots[nTypeCounter[1]][0].nx >= 0.9 * _pInfo.nSamples))
+                            _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(), getLegendStyle(_pInfo.sConPointStyles[nCurrentStyle], _pData).c_str());
+                        else if (_pData.getStepplot())
+                            _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nCurrentStyle], _pData).c_str());
+                        else
+                            _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(), getLegendStyle(_pInfo.sPointStyles[nCurrentStyle], _pData).c_str());
+                    }
+                    else
+                    {
+                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(), getLegendStyle(_pInfo.sPointStyles[nCurrentStyle], _pData).c_str());
+                    }
+                }
+                if (nCurrentStyle == _pInfo.nStyleMax - 1)
+                    nCurrentStyle = 0;
+                else
+                    nCurrentStyle++;
+            }
 
 			nTypeCounter[1]++;
 		}
@@ -3338,16 +3395,22 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 				// --> Suchen wir den aktuellen und den darauf folgenden ';' <--
 				nPos = sDataPlots.find(';', nPos) + 1;
 				nPos_1 = sDataPlots.find(';', nPos);
+				size_t nParPos = sDataPlots.substr(nPos, nPos_1-nPos).find('(');
+				if (nParPos == string::npos)
+                {
+                    throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sDataPlots , sDataPlots.substr(nPos, nPos_1-nPos));
+                }
+                nParPos += nPos+1;
 
 				// --> Ist da "cache" drin? Aktivieren wir den Cache-Status <--
-				if (_data.containsCacheElements(sDataPlots.substr(nPos, nPos_1 - nPos)) && sDataPlots.substr(nPos, 5) != "data(")
+				if (_data.containsCacheElements(sDataPlots.substr(nPos, nParPos - nPos)) && sDataPlots.substr(nPos, 5) != "data(")
 				{
 					_data.setCacheStatus(true);
 					for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
 					{
-						if (sDataPlots.substr(nPos, nPos_1 - nPos).find(iter->first + "(") != string::npos
-								&& (!sDataPlots.substr(nPos, nPos_1 - nPos).find(iter->first + "(")
-									|| checkDelimiter(sDataPlots.substr(nPos, nPos_1 - nPos).substr(sDataPlots.substr(nPos, nPos_1 - nPos).find(iter->first + "(") - 1, (iter->first).length() + 2))))
+						if (sDataPlots.substr(nPos, nParPos - nPos).find(iter->first + "(") != string::npos
+								&& (!sDataPlots.substr(nPos, nParPos - nPos).find(iter->first + "(")
+									|| checkDelimiter(sDataPlots.substr(nPos, nParPos - nPos).substr(sDataPlots.substr(nPos, nParPos - nPos).find(iter->first + "(") - 1, (iter->first).length() + 2))))
 						{
 							sDataTable = iter->first;
 							break;
@@ -4072,33 +4135,46 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 	}
 }
 
+// This member function creates the legends for the data plots
 void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data, const Settings& _option)
 {
 	// --> Ersetzen von "data()" bzw. "cache()" durch die Spaltentitel <--
 	size_t n_dpos = 0;
+
+	// Examine all data labels
 	while (sDataLabels.find(';', n_dpos) != string::npos)
 	{
+	    // Extraxt the current label
 		string sTemp = sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos) - n_dpos);
 
+		// Try to find a data object in the current label
 		if ((sTemp.find("data(") != string::npos || _data.containsCacheElements(sTemp))
 				&& (sTemp.find(',') != string::npos || sTemp.substr(sTemp.find('('), 2) == "()")
 				&& sTemp.find(')') != string::npos)
 		{
+		    // Ensure that the referenced data object contains valid data
 			if ((sTemp.find("data(") != string::npos && checkDelimiter(sDataLabels.substr(sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos) - n_dpos).find("data(") - 1, 6)) && !_data.isValid())
 					|| (_data.containsCacheElements(sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos) - n_dpos)) && !_data.isValidCache()))
 			{
 				throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sDataLabels, SyntaxError::invalid_position);
 			}
 
+			// Strip all spaces and extract the table name
 			StripSpaces(sTemp);
 			string sTableName = sTemp.substr(0, sTemp.find('('));
-			if (sTableName[0] == ';' || sTableName[0] == '"')
+
+			// Clear quotation marks and semicolons at the beginning of the table name
+			while (sTableName[0] == ';' || sTableName[0] == '"')
 				sTableName.erase(0, 1);
+
+            // Ensure that the parentheses are matching each other
 			if (getMatchingParenthesis(sTemp.substr(sTemp.find('('))) == string::npos)
 				throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sTemp, sTemp.find('('));
 
+            // Extract the argument of the data object
 			string sArgs = sTemp.substr(sTemp.find('('), getMatchingParenthesis(sTemp.substr(sTemp.find('('))) + 1);
 
+			// Expand empty parentheses
 			if (sArgs == "()")
 				sArgs = "(:,:)";
 
@@ -4106,40 +4182,50 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
 			string sArg_2 = "<<empty>>";
 			string sArg_3 = "<<empty>>";
 
+			// Get the second dimension of the argument parentheses
 			parser_SplitArgs(sArgs, sArg_1, ',', _option);
 
+			// If the second dimension contains one or more colons,
+			// extract the individual columns here
 			if (sArg_1.find(':') != string::npos)
 			{
-				sArg_1 = "(" + sArg_1 + ")";
+				// Ensure that splitting is possible
 				try
 				{
-					parser_SplitArgs(sArg_1, sArg_2, ':', _option);
+					parser_SplitArgs(sArg_1, sArg_2, ':', _option, true);
+                    StripSpaces(sArg_2);
+
+                    if (sArg_2.find(':') != string::npos)
+                    {
+                        parser_SplitArgs(sArg_2, sArg_3, ':', _option, true);
+                        StripSpaces(sArg_2);
+
+                        if (sArg_3.find(':') != string::npos)
+                        {
+                            parser_SplitArgs(sArg_3, sArgs, ':', _option, true);
+                            StripSpaces(sArg_3);
+                        }
+                    }
 				}
 				catch (SyntaxError& e)
 				{
 					if (e.errorcode == SyntaxError::SEPARATOR_NOT_FOUND)
 					{
-						n_dpos = sDataLabels.find(';', n_dpos) + 1;
-						continue;
-					}
+					    if (sArg_1.find("data(") != string::npos || _data.containsCacheElements(sArg_1))
+                        {
+                            getDataElements(sArg_1, _parser, _data, _option);
+                        }
+                    }
 					else
 						throw;
 				}
-				StripSpaces(sArg_2);
-				if (sArg_2.find(':') != string::npos)
-				{
-					sArg_2 = "(" + sArg_2 + ")";
-					parser_SplitArgs(sArg_2, sArg_3, ':', _option);
-					StripSpaces(sArg_2);
-					if (sArg_3.find(':') != string::npos)
-					{
-						sArg_3 = "(" + sArg_3 + ")";
-						parser_SplitArgs(sArg_3, sArgs, ':', _option);
-						StripSpaces(sArg_3);
-					}
-				}
+
 			}
+
+			// Strip surrounding whitespaces
 			StripSpaces(sArg_1);
+
+			// Handle special cases
 			if (!sArg_1.length() && !sArg_2.length() && sArg_3 == "<<empty>>")
 			{
 				sArg_1 = "1";
@@ -4149,25 +4235,49 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
 				n_dpos = sDataLabels.find(';', n_dpos) + 1;
 				continue;
 			}
-			if (_data.containsCacheElements(sTemp))
-			{
-				_data.setCacheStatus(true);
-			}
+
+			// Parse the single arguments to extract the corresponding
+			// headline elements
 			if (sArg_2 == "<<empty>>" && sArg_3 == "<<empty>>" && _pInfo.sCommand != "plot3d")
 			{
-				sTemp = "\"" + constructDataLegendElement(_parser, _data, sArg_1, sTableName) + "\"";
+
+			    // Only one index or an index vector
+				sTemp = "\"" + constructDataLegendElement(_parser, _data, _pData, sArg_1, sTableName) + "\"";
 			}
 			else if (sArg_2.length())
 			{
+			    // First and second index value available
 				if (_pInfo.sCommand != "plot3d")
 				{
+				    // Standard plot
 					if (!(_pData.getyError() || _pData.getxError()) && sArg_3 == "<<empty>>")
 					{
-						sTemp = "\"" + constructDataLegendElement(_parser, _data, sArg_2, sTableName) + " vs. " + constructDataLegendElement(_parser, _data, sArg_1, sTableName) + "\"";
+					    // Handle here barcharts
+					    if (_pData.getBars() || _pData.getHBars())
+                        {
+                            double dArg_1, dArg_2;
+                            _parser.SetExpr(sArg_1);
+                            dArg_1 = _parser.Eval();
+                            _parser.SetExpr(sArg_2);
+                            dArg_2 = _parser.Eval();
+                            sTemp = "\"";
+
+                            // Don't use the first one
+                            for (int i = intCast(dArg_1); i < intCast(dArg_2); i++)
+                            {
+                                sTemp += _data.getTopHeadLineElement(i, sTableName) + "\n";
+                            }
+                            sTemp.pop_back();
+                            sTemp += "\"";
+                        }
+                        else
+                        {
+                            sTemp = "\"" + constructDataLegendElement(_parser, _data, _pData, sArg_2, sTableName) + " vs. " + constructDataLegendElement(_parser, _data, _pData, sArg_1, sTableName) + "\"";
+                        }
 					}
 					else if (sArg_3 != "<<empty>>")
 					{
-						sTemp = "\"" + constructDataLegendElement(_parser, _data, sArg_2, sTableName) + " vs. " + constructDataLegendElement(_parser, _data, sArg_1, sTableName) + "\"";
+						sTemp = "\"" + constructDataLegendElement(_parser, _data, _pData, sArg_2, sTableName) + " vs. " + constructDataLegendElement(_parser, _data, _pData, sArg_1, sTableName) + "\"";
 					}
 					else
 					{
@@ -4176,6 +4286,7 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
 						dArg_1 = _parser.Eval();
 						_parser.SetExpr(sArg_2);
 						dArg_2 = _parser.Eval();
+
 						if (dArg_1 < dArg_2)
 							sTemp = "\"" + _data.getTopHeadLineElement((int)dArg_1, sTableName) + " vs. " + _data.getTopHeadLineElement((int)dArg_1 - 1, sTableName) + "\"";
 						else
@@ -4184,29 +4295,57 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
 				}
 				else if (sArg_3 == "<<empty>>" || !sArg_3.length())
 				{
+				    // three-dimensional plot
 					double dArg_1, dArg_2;
 					_parser.SetExpr(sArg_1);
 					dArg_1 = _parser.Eval();
 					_parser.SetExpr(sArg_2);
 					dArg_2 = _parser.Eval();
+
 					if (dArg_1 < dArg_2)
-						sTemp = "\"" + _data.getTopHeadLineElement((int)dArg_1 - 1, sTableName) + ", " + _data.getTopHeadLineElement((int)dArg_2 - 2, sTableName) + ", " + _data.getTopHeadLineElement((int)dArg_2 - 1, sTableName) + "\"";
+						sTemp = "\"" + _data.getTopHeadLineElement((int)dArg_1 - 1, sTableName) + ", "
+                            + _data.getTopHeadLineElement((int)dArg_2 - 2, sTableName) + ", "
+                            + _data.getTopHeadLineElement((int)dArg_2 - 1, sTableName) + "\"";
 					else
-						sTemp = "\"" + _data.getTopHeadLineElement((int)dArg_2 - 1, sTableName) + ", " + _data.getTopHeadLineElement((int)dArg_1 - 2, sTableName) + ", " + _data.getTopHeadLineElement((int)dArg_1 - 1, sTableName) + "\"";
+						sTemp = "\"" + _data.getTopHeadLineElement((int)dArg_2 - 1, sTableName) + ", "
+                            + _data.getTopHeadLineElement((int)dArg_1 - 2, sTableName) + ", "
+                            + _data.getTopHeadLineElement((int)dArg_1 - 1, sTableName) + "\"";
 				}
 				else if (sArg_3.length())
 				{
-					sTemp = "\"" + constructDataLegendElement(_parser, _data, sArg_1, sTableName) + ", "
-							+ constructDataLegendElement(_parser, _data, sArg_2, sTableName) + ", "
-							+ constructDataLegendElement(_parser, _data, sArg_3, sTableName) + "\"";
+				    // Three dimensional plot
+					sTemp = "\"" + constructDataLegendElement(_parser, _data, _pData, sArg_1, sTableName) + ", "
+							+ constructDataLegendElement(_parser, _data, _pData, sArg_2, sTableName) + ", "
+							+ constructDataLegendElement(_parser, _data, _pData, sArg_3, sTableName) + "\"";
 				}
 			}
 			else if (!sArg_2.length())
 			{
+			    // second index open end
 				if (_pInfo.sCommand != "plot3d")
 				{
-					_parser.SetExpr(sArg_1);
-					sTemp = "\"" + _data.getTopHeadLineElement((int)_parser.Eval(), sTableName) + " vs. " + _data.getTopHeadLineElement((int)_parser.Eval() - 1, sTableName) + "\"";
+                    // Handle here barcharts
+                    if (_pData.getBars() || _pData.getHBars())
+                    {
+                        double dArg_1;
+                        _parser.SetExpr(sArg_1);
+                        dArg_1 = _parser.Eval();
+
+                        sTemp = "\"";
+
+                        // Don't use the first one
+                        for (int i = intCast(dArg_1); i < _data.getCols(sTableName, false); i++)
+                        {
+                            sTemp += _data.getTopHeadLineElement(i, sTableName) + "\n";
+                        }
+                        sTemp.pop_back();
+                        sTemp += "\"";
+                    }
+                    else
+                    {
+                        _parser.SetExpr(sArg_1);
+                        sTemp = "\"" + _data.getTopHeadLineElement((int)_parser.Eval(), sTableName) + " vs. " + _data.getTopHeadLineElement((int)_parser.Eval() - 1, sTableName) + "\"";
+                    }
 				}
 				else if (sArg_3 == "<<empty>>" || !sArg_3.length())
 				{
@@ -4219,7 +4358,7 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
 				{
 					_parser.SetExpr(sArg_1);
 					sTemp = "\"" + _data.getTopHeadLineElement((int)_parser.Eval() - 1, sTableName) + ", " + _data.getTopHeadLineElement((int)_parser.Eval(), sTableName) + ", ";
-					sTemp += constructDataLegendElement(_parser, _data, sArg_3, sTableName) + "\"";
+					sTemp += constructDataLegendElement(_parser, _data, _pData, sArg_3, sTableName) + "\"";
 				}
 			}
 			else
@@ -4227,12 +4366,15 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
 				n_dpos = sDataLabels.find(';', n_dpos) + 1;
 				continue;
 			}
-			_data.setCacheStatus(false);
+
+			// Replace underscores with whitespaces
 			for (unsigned int n = 0; n < sTemp.length(); n++)
 			{
 				if (sTemp[n] == '_')
 					sTemp[n] = ' ';
 			}
+
+			// Replace the data expression with the parsed headlines
 			sDataLabels = sDataLabels.substr(0, n_dpos) + sTemp + sDataLabels.substr(sDataLabels.find(';', n_dpos));
 
 		}
@@ -4240,25 +4382,44 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
 	}
 }
 
-string Plot::constructDataLegendElement(Parser& _parser, Datafile& _data, const string& sColumnIndices, const string& sTableName)
+// This member function is used to construct special legend elements
+string Plot::constructDataLegendElement(Parser& _parser, Datafile& _data, const PlotData& _pData, const string& sColumnIndices, const string& sTableName)
 {
 	value_type* v = nullptr;
 	int nResults = 0;
 
+	// Set the expression and evaluate it
 	_parser.SetExpr(sColumnIndices);
 	v = _parser.Eval(nResults);
 
+	// If only one value, simply return the corresponding head line
 	if (nResults == 1)
 		return _data.getTopHeadLineElement((int)v[0] - 1, sTableName);
 
-	string sLegend = "[";
-	for (int i = 0; i < nResults; i++)
+    string sFirst = "[";
+    string sLast = "]";
+    char cSep = ',';
+    int nStart = 0;
+
+    // Barcharts and boxplots will need other legend strings
+    if (_pInfo.sCommand == "plot" && (_pData.getBars() || _pData.getBoxplot() || _pData.getHBars()))
+    {
+        sFirst.clear();
+        sLast.clear();
+        cSep = '\n';
+        nStart  = 1;
+    }
+
+	string sLegend = sFirst;
+
+	// combine the legend strings
+	for (int i = nStart; i < nResults; i++)
 	{
 		sLegend += _data.getTopHeadLineElement((int)v[i] - 1, sTableName);
 		if (i + 1 < nResults)
-			sLegend += ",";
+			sLegend += cSep;
 	}
-	return sLegend + "]";
+	return sLegend + sLast;
 }
 
 void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2], int i, int l, int i_pos[2])
