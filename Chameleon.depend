@@ -4020,7 +4020,7 @@
 1533222925 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
 	"functionimplementation.hpp"
 
-1533236492 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
+1534918545 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 
@@ -4229,7 +4229,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1533982184 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1534872680 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>
