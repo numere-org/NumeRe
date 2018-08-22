@@ -1103,6 +1103,8 @@ void Memory::deleteEntry(long long int _nLine, long long int _nCol)
 						sHeadLine[_nCol] = "Spalte_" + toString((int)_nCol + 1);
 				}
 			}
+			if (!getLines(false) && !getCols(false))
+                bValidData = false;
 		}
 	}
 	return;
@@ -1146,6 +1148,8 @@ void Memory::deleteBulk(long long int i1, long long int i2, long long int j1, lo
 			}
 		}
 	}
+	if (!getLines(false) && !getCols(false))
+        bValidData = false;
 	return;
 }
 
@@ -1195,6 +1199,9 @@ void Memory::deleteBulk(const vector<long long int>& _vLine, const vector<long l
 			}
 		}
 	}
+
+	if (!getLines(false) && !getCols(false))
+        bValidData = false;
 	return;
 }
 
@@ -1558,10 +1565,7 @@ double Memory::num(const vector<long long int>& _vLine, const vector<long long i
 {
 	if (!bValidData)
 		return 0;
-	//double dNum = 0.0;
 	int nInvalid = 0;
-
-	//cerr << _vLine.size() << " " << _vCol.size() << endl;
 
 	for (unsigned int i = 0; i < _vLine.size(); i++)
 	{
@@ -1747,10 +1751,9 @@ double Memory::cnt(const vector<long long int>& _vLine, const vector<long long i
 		for (unsigned int j = 0; j < _vCol.size(); j++)
 		{
 			if (_vLine[i] < 0
-					|| _vLine[i] >= getLines(false)
-					|| _vLine[i] >= getLines(true) - getAppendedZeroes(_vCol[j])
+					|| _vLine[i] >= getLines(true)
 					|| _vCol[j] < 0
-					|| _vCol[j] >= getCols(false))
+					|| _vCol[j] >= getCols(true))
 				nInvalid++;
 		}
 	}
