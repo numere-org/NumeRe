@@ -3031,13 +3031,12 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
 
 			// Append the last scalar and a comma, if it is needed
 			if (vScalars.size() > vVectors.size())
-				sLine += vScalars.back();
+				sLine += vScalars[vScalars.size()-2];
 			if (i < nDim - 1)
 				sLine += ",";
 		}
 	}
-	if (_option.getbDebug())
-		cerr << "|-> DEBUG: Returning sLine = " << sLine.substr(0, 80) << endl;
+
 	return;
 }
 

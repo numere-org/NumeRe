@@ -25,3 +25,5 @@ Fixed	The 'to_string()' function may now handle strings containing masked string
 Added	Bar charts may now show reasonable legends by separating the legends of multiple bar charts using the linebreak character.
 Fixed	Table headlines may now be used as regular string vectors and are now composable using "sum()".
 Fixed	Matrices may now be multiplied with vectors componentwise.
+Fixed	Strings as return values for procedures may now be used in expressions again.
+Fixed	Dollar signs may now be used in string literals, which are part of the argument list of procedures.

@@ -4020,7 +4020,7 @@
 1533222925 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
 	"functionimplementation.hpp"
 
-1534918545 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
+1534921787 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 
@@ -4028,7 +4028,7 @@
 	"odesolver.hpp"
 	"../../kernel.hpp"
 
-1533885699 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
+1535097304 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	"spline.h"

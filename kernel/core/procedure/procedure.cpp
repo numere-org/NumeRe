@@ -1323,18 +1323,25 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
 				}
 				nParPos += getMatchingParenthesis(sProcCommandLine.substr(nParPos));
 				__sVarList = __sVarList.substr(1, getMatchingParenthesis(__sVarList) - 1);
-				unsigned int nVarPos = 0;
-				while (__sVarList.find('$', nVarPos) != string::npos)
-				{
-					nVarPos = __sVarList.find('$', nVarPos) + 1;
-					if (__sVarList.substr(nVarPos, __sVarList.find('(', nVarPos) - nVarPos).find('~') == string::npos)
-					{
-						__sVarList = __sVarList.substr(0, nVarPos) + sNameSpace + __sVarList.substr(nVarPos);
-					}
-				}
 
 				if (!isInQuotes(sProcCommandLine, nPos, true))
 				{
+                    unsigned int nVarPos = 0;
+                    // Try to find other procedure calls in the argument
+                    // list and prepend the current namespace
+                    while (__sVarList.find('$', nVarPos) != string::npos)
+                    {
+                        // Find the position of the next procedure candidate
+                        // and increment 1
+                        nVarPos = __sVarList.find('$', nVarPos) + 1;
+
+                        c
+                        if (!isInQuotes(__sVarList, nVarPos-1) &&  __sVarList.substr(nVarPos, __sVarList.find('(', nVarPos) - nVarPos).find('~') == string::npos)
+                        {
+                            __sVarList = __sVarList.substr(0, nVarPos) + sNameSpace + __sVarList.substr(nVarPos);
+                        }
+                    }
+
 					try
 					{
 						Returnvalue _return = _procedure.execute(__sName, __sVarList, _parser, _functions, _data, _option, _out, _pData, _script, nth_procedure + 1);
@@ -1565,22 +1572,27 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, Define& _funct
 			nParPos += getMatchingParenthesis(sLine.substr(nParPos));
 			__sVarList = __sVarList.substr(1, getMatchingParenthesis(__sVarList) - 1);
 
-			unsigned int nVarPos = 0;
-			while (__sVarList.find('$', nVarPos) != string::npos)
-			{
-				nVarPos = __sVarList.find('$', nVarPos) + 1;
-				if (__sVarList.substr(nVarPos, __sVarList.find('(', nVarPos) - nVarPos).find('~') == string::npos)
-				{
-					__sVarList = __sVarList.substr(0, nVarPos) + sNameSpace + __sVarList.substr(nVarPos);
-				}
-			}
-
 			//cerr << __sName << " " << __sVarList << endl;
 			if (!isInQuotes(sLine, nPos, true))
 			{
-				//cerr << "entering procedure" << endl;
+                unsigned int nVarPos = 0;
+                // Try to find other procedure calls in the argument
+                // list and prepend the current namespace
+                while (__sVarList.find('$', nVarPos) != string::npos)
+                {
+                    // Find the position of the next procedure candidate
+                    // and increment 1
+                    nVarPos = __sVarList.find('$', nVarPos) + 1;
+
+                    // If this candidate is not part of a string literal,
+                    // prepend the current namespace
+                    if (!isInQuotes(__sVarList, nVarPos-1) && __sVarList.substr(nVarPos, __sVarList.find('(', nVarPos) - nVarPos).find('~') == string::npos)
+                    {
+                        __sVarList = __sVarList.substr(0, nVarPos) + sNameSpace + __sVarList.substr(nVarPos);
+                    }
+                }
+
 				Returnvalue tempreturnval = _procedure.execute(__sName, __sVarList, _parser, _functions, _data, _option, _out, _pData, _script, nthRecursion + 1);
-				//cerr << "returned" << endl;
 				if (!_procedure.nReturnType)
 					sLine = sLine.substr(0, nPos - 1) + sLine.substr(nParPos + 1);
 				else
@@ -1591,7 +1603,6 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, Define& _funct
 				nReturnType = 1;
 			}
 			nPos += __sName.length() + __sVarList.length() + 1;
-			//cerr << nPos << endl;
 		}
 		nReturn = 2;
 		StripSpaces(sLine);
