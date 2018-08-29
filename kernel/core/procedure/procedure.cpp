@@ -1335,7 +1335,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                         // and increment 1
                         nVarPos = __sVarList.find('$', nVarPos) + 1;
 
-                        c
+                        // If this candidate is not part of a string literal,
+                        // prepend the current namespace
                         if (!isInQuotes(__sVarList, nVarPos-1) &&  __sVarList.substr(nVarPos, __sVarList.find('(', nVarPos) - nVarPos).find('~') == string::npos)
                         {
                             __sVarList = __sVarList.substr(0, nVarPos) + sNameSpace + __sVarList.substr(nVarPos);
