@@ -205,6 +205,7 @@ class NumeReWindow : public wxFrame
         wxString getProgramFolder();
         void AddToHistory(const wxString& sCommand);
         wxString GetDocContent(wxString docid);
+        void forceHistoryPageDown();
 
         string m_UnrecoverableFiles;
 

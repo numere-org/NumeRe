@@ -257,6 +257,10 @@ bool MyApp::OnInit()
     {
         wxArgV.Add(argv[i]);
     }
+    // force the history window to perform a
+    // page down to scroll to its actually
+    // last position
+    frame->forceHistoryPageDown();
     frame->EvaluateCommandLine(wxArgV);
     // Tip of the day
     if (frame->showTipAtStartup)
@@ -699,6 +703,11 @@ void NumeReWindow::AddToHistory(const wxString& sCommand)
 wxString NumeReWindow::GetDocContent(wxString docid)
 {
     return m_terminal->getDocumentation(docid.ToStdString());
+}
+
+void NumeReWindow::forceHistoryPageDown()
+{
+    m_history->PageDown();
 }
 
 vector<string> NumeReWindow::getPathDefs()
