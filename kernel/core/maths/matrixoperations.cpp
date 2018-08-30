@@ -1658,7 +1658,7 @@ Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data
             {
                 if (vIndices[j].nJ[0]+i > vIndices[j].nJ[1] && (vIndices[j].nJ[1]-vIndices[j].nJ[0] > 1 || vIndices[j].nI[1]-vIndices[j].nI[0] > 1))
                     vMatrixVector.push_back(vMissingValues[j]);
-                else if (vIndices[j].nJ[1]-vIndices[j].nJ[0] >= 0 && vIndices[j].nI[1]-vIndices[j].nI[0] <= 1)
+                else if (vIndices[j].nJ[1]-vIndices[j].nJ[0] <= 1 && vIndices[j].nI[1]-vIndices[j].nI[0] >= 0)
                 {
                     continue;
                 }
