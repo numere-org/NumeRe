@@ -3349,7 +3349,7 @@
 	"../../common/debug.h"
 	"../globals.hpp"
 
-1535525916 source:d:\cpp\numere-source\trunk\gui\editor\history.cpp
+1535526658 source:d:\cpp\numere-source\trunk\gui\editor\history.cpp
 	"../../common/CommonHeaders.h"
 	"../../kernel/core/ui/language.hpp"
 	"../../kernel/core/utils/tools.hpp"
@@ -3693,7 +3693,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1533479778 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1535527061 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -4020,7 +4020,7 @@
 1533222925 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
 	"functionimplementation.hpp"
 
-1534921787 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
+1535559189 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 
@@ -4229,7 +4229,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1534872680 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1535611492 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>

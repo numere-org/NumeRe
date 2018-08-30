@@ -138,7 +138,7 @@ static vector<string> parser_getStringTernaryExpression(string& sLine, size_t& n
 //
 // Parser functions:
 static size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, n_vect&);
-static size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&);
+static size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&, bool& bLogicalOnly);
 static size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&, n_vect&, n_vect&);
 static size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&, n_vect&, n_vect&, s_vect&);
 static size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&, s_vect&, n_vect&, n_vect&);
@@ -2112,6 +2112,7 @@ static void parser_StringFuncHandler(string& sLine, const string& sFuncName, Dat
 			vector<string> vReturnValues;
 			StringFuncArgs stringArgs;
 			stringArgs.opt = &_option;
+			bool bLogicalOnly = false;
 
 			// Apply the parser as specified by the function signature. After that call the corresponding
 			// string function with the returned arguments as many times as it's needed
@@ -2140,11 +2141,22 @@ static void parser_StringFuncHandler(string& sLine, const string& sFuncName, Dat
 			else if (funcHandle.fType >= PARSER_STRING && funcHandle.fType < PARSER_STRING_INT_INT)
 			{
 				s_vect sStringArg;
-				size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, mStringVectorVars, sStringArg);
+				size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, mStringVectorVars, sStringArg, bLogicalOnly);
 				if (!nMaxArgs)
 				{
 					throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 				}
+
+				// These five multiargument functions are also defined for numerical values.
+				// If the return value for the current functions arguments is an only logical
+				// value, ignore the current function call
+				if (bLogicalOnly
+                    && (sFuncName == "min" || sFuncName == "max" || sFuncName == "cnt" || sFuncName == "num" || sFuncName == "sum"))
+                {
+                    n_pos++;
+                    continue;
+                }
+
 				if (funcHandle.bTakesMultiArguments)
 				{
 					stringArgs.sMultiArg = sStringArg;
@@ -2373,7 +2385,7 @@ static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const
 // This static function is one of the string function argument
 // parser. It is one of the two basic ones, which will be called
 // by all others
-static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg)
+static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const Settings& _option, const string& __sFuncArgument, map<string, vector<string> >& mStringVectorVars, s_vect& sArg, bool& bLogicalOnly)
 {
 	string sFuncArgument = __sFuncArgument;
 
@@ -2387,6 +2399,7 @@ static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const
 		// Use the returned values as function arguments
 		for (size_t i = 0; i < strRes.vResult.size(); i++)
 			sArg.push_back(removeQuotationMarks(strRes.vResult[i]));
+        bLogicalOnly = strRes.bOnlyLogicals;
 		return strRes.vResult.size();
 	}
 
@@ -2412,6 +2425,7 @@ static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const
 {
 	string sFuncArgument = __sFuncArgument;
 	size_t nMaxLength = 0;
+	bool bLogicalOnly = false;
 
 	// Get the single arguments
 	string sString = getNextArgument(sFuncArgument, true);
@@ -2420,7 +2434,7 @@ static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const
 
 	// Handle the arguments using the basic functions
 	// and store the highets number of return values
-	nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString, mStringVectorVars, sArg1);
+	nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString, mStringVectorVars, sArg1, bLogicalOnly);
 	if (!nMaxLength)
 		return 0;
 
@@ -2450,6 +2464,7 @@ static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const
 {
 	string sFuncArgument = __sFuncArgument;
 	size_t nMaxLength = 0;
+	bool bLogicalOnly = false;
 
 	// Get the single arguments
 	string sString1 = getNextArgument(sFuncArgument, true);
@@ -2459,12 +2474,12 @@ static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const
 
 	// Handle the arguments using the basic functions
 	// and store the highets number of return values
-	nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString1, mStringVectorVars, sArg1);
+	nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString1, mStringVectorVars, sArg1, bLogicalOnly);
 	if (!nMaxLength)
 		return 0;
 	if (sString2.length())
 	{
-		size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sString2, mStringVectorVars, sArg2);
+		size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sString2, mStringVectorVars, sArg2, bLogicalOnly);
 		if (!nReturn)
 			return 0;
 		if (nMaxLength < nReturn)
@@ -2495,6 +2510,7 @@ static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const
 {
 	string sFuncArgument = __sFuncArgument;
 	size_t nMaxLength = 0;
+	bool bLogicalOnly = false;
 
 	// Get the single arguments
 	string sString1 = getNextArgument(sFuncArgument, true);
@@ -2504,12 +2520,12 @@ static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const
 
 	// Handle the arguments using the basic functions
 	// and store the highets number of return values
-	nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString1, mStringVectorVars, sArg1);
+	nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString1, mStringVectorVars, sArg1, bLogicalOnly);
 	if (!nMaxLength)
 		return 0;
 	if (sString2.length())
 	{
-		size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sString2, mStringVectorVars, sArg2);
+		size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sString2, mStringVectorVars, sArg2, bLogicalOnly);
 		if (!nReturn)
 			return 0;
 		if (nMaxLength < nReturn)
@@ -2540,6 +2556,7 @@ static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const
 {
 	string sFuncArgument = __sFuncArgument;
 	size_t nMaxLength = 0;
+	bool bLogicalOnly = false;
 
 	// Get the single arguments
 	string sString1 = getNextArgument(sFuncArgument, true);
@@ -2550,12 +2567,12 @@ static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const
 
 	// Handle the arguments using the basic functions
 	// and store the highets number of return values
-	nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString1, mStringVectorVars, sArg1);
+	nMaxLength = parser_StringFuncArgParser(_data, _parser, _option, sString1, mStringVectorVars, sArg1, bLogicalOnly);
 	if (!nMaxLength)
 		return 0;
 	if (sString2.length())
 	{
-		size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sString2, mStringVectorVars, sArg2);
+		size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sString2, mStringVectorVars, sArg2, bLogicalOnly);
 		if (!nReturn)
 			return 0;
 		if (nMaxLength < nReturn)
@@ -2563,7 +2580,7 @@ static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const
 	}
 	if (sString3.length())
 	{
-		size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sString3, mStringVectorVars, sArg3);
+		size_t nReturn = parser_StringFuncArgParser(_data, _parser, _option, sString3, mStringVectorVars, sArg3, bLogicalOnly);
 		if (!nReturn)
 			return 0;
 		if (nMaxLength < nReturn)
@@ -2767,10 +2784,18 @@ static string parser_GetDataForString(string sLine, Datafile& _data, Parser& _pa
 			// Get the data and parse string expressions
 			getDataElements(sData, _parser, _data, _option);
 			StringResult strRes = parser_StringParserCore(sData, "", _data, _parser, _option, mStringVectorVars);
+
 			if (!strRes.vResult.size())
 				throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
             // Create a string vector variable from the returned vector
-			sData = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
+            // if it is a string. Otherwise simple use the first return
+            // value, which already contains a numerical vector
+            if (!strRes.bOnlyLogicals)
+                sData = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
+            else
+                sData = strRes.vResult.front();
+
 			sLine = sLine.substr(0, n_pos) + sData + sLine.substr(nPos + 1);
 		}
 		n_pos++;
@@ -2805,10 +2830,18 @@ static string parser_GetDataForString(string sLine, Datafile& _data, Parser& _pa
 				// Get the data and parse string expressions
 				getDataElements(sData, _parser, _data, _option);
 				StringResult strRes = parser_StringParserCore(sData, "", _data, _parser, _option, mStringVectorVars);
+
 				if (!strRes.vResult.size())
 					throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
                 // Create a string vector variable from the returned vector
-                sData = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
+                // if it is a string. Otherwise simple use the first return
+                // value, which already contains a numerical vector
+                if (!strRes.bOnlyLogicals)
+                    sData = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
+                else
+                    sData = strRes.vResult.front();
+
 				sLine = sLine.substr(0, n_pos) + sData + sLine.substr(nPos + 1);
 			}
 		}
