@@ -4422,18 +4422,28 @@ string Plot::constructDataLegendElement(Parser& _parser, Datafile& _data, const 
 	return sLegend + sLast;
 }
 
+// This member function is used to calculate the data ranges.
+// It is called during filling the data objects.
 void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2], int i, int l, int i_pos[2])
 {
+    // Calculate the ranges for all three spatial directions
 	for (int q = 0; q < 3; q++)
 	{
+	    // Ignore the third direction, if it is not used
+	    // for the current plot
 		if (q == 2 && nDataDim[i] < 3)
 		{
 			dDataRanges[2][0] = 0;
 			dDataRanges[2][1] = 0;
 			break;
 		}
+
+		// Use the first row of the first data set to
+		// initialize the data ranges
 		if (l == 0 && i == 0)
 		{
+		    // Ignore data ranges, which are resulting from
+		    // values, which are already excluded by the user
 			if (q && _pData.getRangeSetting(q - 1))
 			{
 				if (_pData.getRanges(q - 1, 0) > _mDataPlots[i][q - 1].a[l] || _pData.getRanges(q - 1, 1) < _mDataPlots[i][q - 1].a[l])
@@ -4456,13 +4466,50 @@ void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, d
 					continue;
 				}
 			}
+			// Use the first value as a base value
 			if (_pInfo.sCommand != "plot" || q >= 2)
 			{
+			    // Straightforward solution for three-dimensional plots
 				dDataRanges[q][0] = _mDataPlots[i][q].a[l];
 				dDataRanges[q][1] = _mDataPlots[i][q].a[l];
 			}
+            else if ((_pData.getBoxplot() || _pData.getBars()) && q == 1)
+            {
+                // Handle boxplots (not only the first value but the whole table)
+                for (int dim = 1; dim < nDataDim[i]; dim++)
+                {
+                    if (sDataAxisBinds[2 * i] == 'l' || sDataAxisBinds[2 * i] == 'b')
+                    {
+                        dDataRanges[1][0] = _mDataPlots[i][dim].a[l];
+                        dDataRanges[1][1] = _mDataPlots[i][dim].a[l];
+                    }
+                    else
+                    {
+                        dSecDataRanges[1][0] = _mDataPlots[i][dim].a[l];
+                        dSecDataRanges[1][1] = _mDataPlots[i][dim].a[l];
+                    }
+                }
+            }
+            else if (_pData.getHBars())
+            {
+                // Handle bars (not only the first value but the whole table)
+                for (int dim = 0; dim < nDataDim[i]; dim++)
+                {
+                    if (sDataAxisBinds[2 * i + !q] == 'l' || sDataAxisBinds[2 * i + !q] == 'b')
+                    {
+                        dDataRanges[0 + !dim][0] = _mDataPlots[i][dim].a[l];
+                        dDataRanges[0 + !dim][1] = _mDataPlots[i][dim].a[l];
+                    }
+                    else
+                    {
+                        dSecDataRanges[0 + !dim][0] = _mDataPlots[i][dim].a[l];
+                        dSecDataRanges[0 + !dim][1] = _mDataPlots[i][dim].a[l];
+                    }
+                }
+            }
 			else
 			{
+			    // Handle usual plots with the additional axes
 				if (sDataAxisBinds[2 * i + !q] == 'l' || sDataAxisBinds[2 * i + !q] == 'b')
 				{
 					dDataRanges[q][0] = _mDataPlots[i][q].a[l];
@@ -4481,8 +4528,13 @@ void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, d
 		}
 		else
 		{
+		    // All other rows are used to compare them with the already setted value
+		    //
+		    // Three dimensional plot:
 			if (_pInfo.b2D && q == 2)
 			{
+			    // Ignore data ranges, which are resulting from
+                // values, which are already excluded by the user
 				if (_pData.getRangeSetting())
 				{
 					if (_pData.getRanges(0, 0) > _mDataPlots[i][0].a[l] || _pData.getRanges(0, 1) < _mDataPlots[i][0].a[l])
@@ -4493,6 +4545,8 @@ void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, d
 					if (_pData.getRanges(1, 0) > _mDataPlots[i][1].a[l] || _pData.getRanges(1, 1) < _mDataPlots[i][1].a[l])
 						continue;
 				}
+
+				// Calculate the data ranges for three dimensional plots
 				for (int k = 0; k < i_pos[1] - i_pos[0]; k++)
 				{
 					if (dDataRanges[q][0] > _mDataPlots[i][q].a[l + (i_pos[1] - i_pos[0])*k] || isnan(dDataRanges[q][0]))
@@ -4503,12 +4557,15 @@ void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, d
 			}
 			else
 			{
-
+                // Ignore data ranges, which are resulting from
+                // values, which are already excluded by the user
 				if (q && _pData.getRangeSetting())
 				{
 					if (_pData.getRanges(0, 0) > _mDataPlots[i][0].a[l] || _pData.getRanges(0, 1) < _mDataPlots[i][0].a[l])
 						continue;
 				}
+
+				// Calculate the data ranges for all other plot types
 				if (_pInfo.sCommand != "plot" || q >= 2)
 				{
 					if (dDataRanges[q][0] > _mDataPlots[i][q].a[l] || isnan(dDataRanges[q][0]))
@@ -4518,6 +4575,7 @@ void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, d
 				}
 				else if ((_pData.getBoxplot() || _pData.getBars()) && q == 1)
 				{
+				    // Handle boxplots (evalute the row of the whole table)
 					for (int dim = 1; dim < nDataDim[i]; dim++)
 					{
 						if (sDataAxisBinds[2 * i] == 'l' || sDataAxisBinds[2 * i] == 'b')
@@ -4538,6 +4596,7 @@ void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, d
 				}
 				else if (_pData.getHBars())
 				{
+				    // Handle barplots (evalute the row of the whole table)
 					for (int dim = 0; dim < nDataDim[i]; dim++)
 					{
 						if (sDataAxisBinds[2 * i + !q] == 'l' || sDataAxisBinds[2 * i + !q] == 'b')
@@ -4558,6 +4617,7 @@ void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, d
 				}
 				else
 				{
+				    // Handle usual plots
 					if (sDataAxisBinds[2 * i + !q] == 'l' || sDataAxisBinds[2 * i + !q] == 'b')
 					{
 						if (dDataRanges[q][0] > _mDataPlots[i][q].a[l] || isnan(dDataRanges[q][0]))

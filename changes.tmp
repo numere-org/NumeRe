@@ -29,3 +29,4 @@ Fixed	Strings as return values for procedures may now be used in expressions aga
 Fixed	Dollar signs may now be used in string literals, which are part of the argument list of procedures.
 Fixed	The last line of the history is now always visible at start-up.
 Fixed	Data element expressions may now be used directly within string expressions.
+Fixed	The data ranges of boxplots are now calculated correctly.
