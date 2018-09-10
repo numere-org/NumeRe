@@ -195,6 +195,8 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void OnFindInclude(wxCommandEvent& event);
 		void OnChangeCase(wxCommandEvent& event);
 		void OnFoldCurrentBlock(wxCommandEvent& event);
+		void OnRenameSymbols(wxCommandEvent& event);
+		void OnAbstrahizeSection(wxCommandEvent& event);
 		bool InitDuplicateCode();
 		void OnFindDuplicateCode(int nDuplicateFlag = 1, int nNumDuplicatedLines = 6); // 0 = direct comparison, 1 = use var semanticals, 2 = use string semanticals,
 		void IndicateDuplicatedLine(int nStart1, int nEnd1, int nStart2, int nEnd2, int nSelectionLine);
@@ -307,10 +309,13 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 			STYLE_COMMENT_SECTION_BLOCK,
 			STYLE_COMMAND,
 			STYLE_FUNCTION,
+			STYLE_CUSTOMFUNCTION,
 			STYLE_OPERATOR,
 			STYLE_PROCEDURE,
 			STYLE_IDENTIFIER,
-			STYLE_NUMBER
+			STYLE_NUMBER,
+			STYLE_STRINGPARSER,
+			STYLE_STRING
 		};
 
 
@@ -360,7 +365,14 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		wxString FindNameSpaceOfProcedure(int charpos);
 		wxString FindProceduresInCurrentFile(wxString sFirstChars, wxString sSelectedNameSpace);
 		wxString FindProcedureDefinition();
+		int FindCurrentProcedureHead(int pos);
 		int FindNamingProcedure();
+		vector<int> FindAll(const wxString& sSymbol, int nStyle, int nStartPos = 0, int nEndPos = -1);
+		void ReplaceMatches(const vector<int>& vMatches, const wxString& sSymbol, const wxString& sNewSymbol);
+		void RenameSymbols(int nPos);
+		void AbstrahizeSection();
+		void CreateProcedureFromSection(int nStartPos, int nEndPos, const wxString& sInputList, const wxString sOutputList);
+		bool IsModifiedInSection(int nSectionStart, int nSectionEnd, const wxString& sToken, const vector<int>& vMatch);
 		wxString getTemplateContent(const wxString& sFileName);
 
 		wxString generateAutoCompList(const wxString& wordstart, string sPreDefList);
@@ -411,6 +423,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		wxMenuItem* m_menuFindProcedure;
 		wxMenuItem* m_menuHelpOnSelection;
 		wxMenuItem* m_menuFindInclude;
+		wxMenuItem* m_menuRefactoring;
 
 		NumeReSyntax* _syntax;
 		wxTerm* m_terminal;
@@ -441,7 +454,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 
 		wxMenu m_popupMenu;
-
+        wxMenu* m_refactoringMenu;
 
 
 		DECLARE_EVENT_TABLE()

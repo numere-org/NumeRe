@@ -84,6 +84,8 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
 	EVT_MENU            (ID_FOLD_CURRENT_BLOCK, NumeReEditor::OnFoldCurrentBlock)
 	EVT_MENU            (ID_HELP_ON_ITEM, NumeReEditor::OnHelpOnSelection)
 	EVT_MENU			(ID_DEBUG_RUNTOCURSOR, NumeReEditor::OnRunToCursor)
+	EVT_MENU            (ID_RENAME_SYMBOLS, NumeReEditor::OnRenameSymbols)
+	EVT_MENU            (ID_ABSTRAHIZE_SECTION, NumeReEditor::OnAbstrahizeSection)
 	EVT_IDLE            (NumeReEditor::OnIdle)
 END_EVENT_TABLE()
 
@@ -224,6 +226,10 @@ NumeReEditor::NumeReEditor( NumeReWindow* mframe,
 
 	this->UsePopUp(false);
 
+	m_refactoringMenu = new wxMenu();
+	m_refactoringMenu->Append(ID_RENAME_SYMBOLS, _guilang.get("GUI_MENU_EDITOR_RENAME_SYMBOLS"));
+	m_refactoringMenu->Append(ID_ABSTRAHIZE_SECTION, _guilang.get("GUI_MENU_EDITOR_ABSTRAHIZE_SECTION"));
+
 	m_popupMenu.Append(ID_CUT, _guilang.get("GUI_MENU_EDITOR_CUT"));
 	m_popupMenu.Append(ID_COPY, _guilang.get("GUI_MENU_EDITOR_COPY"));
 	m_popupMenu.Append(ID_PASTE, _guilang.get("GUI_MENU_EDITOR_PASTE"));
@@ -251,6 +257,7 @@ NumeReEditor::NumeReEditor( NumeReWindow* mframe,
 	m_menuFindInclude = m_popupMenu.Append(ID_FIND_INCLUDE, _guilang.get("GUI_MENU_EDITOR_FINDINCLUDE", "script"));
 	m_menuShowValue = m_popupMenu.Append(ID_DEBUG_DISPLAY_SELECTION, _guilang.get("GUI_MENU_EDITOR_HIGHLIGHT", "selection"));
 	m_menuHelpOnSelection = m_popupMenu.Append(ID_HELP_ON_ITEM, _guilang.get("GUI_TREE_PUP_HELPONITEM", "..."));
+	m_menuRefactoring = m_popupMenu.Append(ID_REFACTORING_MENU, _guilang.get("GUI_MENU_EDITOR_REFACTORING"), m_refactoringMenu);
 	m_popupMenu.AppendSeparator();
 	m_popupMenu.Append(ID_UPPERCASE, _guilang.get("GUI_MENU_EDITOR_UPPERCASE"));
 	m_popupMenu.Append(ID_LOWERCASE, _guilang.get("GUI_MENU_EDITOR_LOWERCASE"));
@@ -275,11 +282,12 @@ NumeReEditor::NumeReEditor( NumeReWindow* mframe,
 //////////////////////////////////////////////////////////////////////////////
 NumeReEditor::~NumeReEditor()
 {
-	if (m_project->IsSingleFile())
+	if (m_project && m_project->IsSingleFile())
 	{
 		delete m_project;
+		m_project = nullptr;
 	}
-	else
+	else if (m_project)
 	{
 		m_project->RemoveEditor(this);
 	}
@@ -4301,8 +4309,13 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
 	}
 	if (m_popupMenu.FindItem(ID_HELP_ON_ITEM) != nullptr)
 	{
-		//m_popupMenu.Remove(ID_DEBUG_WATCH_SELECTION);
 		m_popupMenu.Remove(ID_HELP_ON_ITEM);
+	}
+	if (m_popupMenu.FindItem(ID_REFACTORING_MENU) != nullptr)
+	{
+	    m_refactoringMenu->Enable(ID_RENAME_SYMBOLS, false);
+	    m_refactoringMenu->Enable(ID_ABSTRAHIZE_SECTION, false);
+		m_popupMenu.Remove(ID_REFACTORING_MENU);
 	}
 
 	/*if(isDebugging)
@@ -4338,51 +4351,52 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
 		m_popupMenu.Enable(ID_LOWERCASE, false);
 	}
 
-	//if(!isDebugging || (isDebugging && breakpointsAllowed))
-	{
-		wxString clickedWord = FindClickedWord();
+    wxString clickedWord = FindClickedWord();
 
-		if (clickedWord.Length() > 0)
-		{
-			if (this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURES)
-			{
-				wxString clickedProc = FindClickedProcedure();
-				if (clickedProc.length())
-				{
-					m_popupMenu.Insert(15, m_menuFindProcedure);
-					//m_popupMenu.Append(m_menuFindProcedure);
-					m_menuFindProcedure->SetItemLabel(_guilang.get("GUI_MENU_EDITOR_FINDPROC", clickedProc.ToStdString()));
-				}
-			}
-			if (this->GetStyleAt(charpos) == wxSTC_NSCR_COMMAND
-					|| this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURE_COMMANDS
-					|| this->GetStyleAt(charpos) == wxSTC_NSCR_OPTION)
-			{
-				m_popupMenu.Insert(15, m_menuHelpOnSelection);
-				m_menuHelpOnSelection->SetItemLabel(_guilang.get("GUI_TREE_PUP_HELPONITEM", clickedWord.ToStdString()));
-			}
-			if (this->GetStyleAt(charpos) == wxSTC_NSCR_INCLUDES
-					|| this->GetStyleAt(charpos) == wxSTC_NPRC_INCLUDES)
-			{
-				wxString clickedInclude = FindClickedInclude();
-				if (clickedInclude.length())
-				{
-					m_popupMenu.Insert(15, m_menuFindInclude);
-					m_menuFindInclude->SetItemLabel(_guilang.get("GUI_MENU_EDITOR_FINDINCLUDE", clickedInclude.ToStdString()));
-				}
-			}
-			//wxString watchWord = wxString::Format("Watch \"%s\"", clickedWord);
-			//wxString displayWord = wxString::Format("Display \"%s\"", clickedWord);
+    if (clickedWord.Length() > 0 || HasSelection())
+    {
+        if (this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURES)
+        {
+            // Show "find procedure"
+            wxString clickedProc = FindClickedProcedure();
+            if (clickedProc.length())
+            {
+                m_popupMenu.Insert(15, m_menuFindProcedure);
+                m_menuFindProcedure->SetItemLabel(_guilang.get("GUI_MENU_EDITOR_FINDPROC", clickedProc.ToStdString()));
+            }
+        }
+        else if (this->GetStyleAt(charpos) == wxSTC_NSCR_COMMAND
+                || this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURE_COMMANDS
+                || this->GetStyleAt(charpos) == wxSTC_NSCR_OPTION)
+        {
+            // Show "help on item"
+            m_popupMenu.Insert(15, m_menuHelpOnSelection);
+            m_menuHelpOnSelection->SetItemLabel(_guilang.get("GUI_TREE_PUP_HELPONITEM", clickedWord.ToStdString()));
+        }
+        else if (this->GetStyleAt(charpos) == wxSTC_NSCR_INCLUDES
+                || this->GetStyleAt(charpos) == wxSTC_NPRC_INCLUDES)
+        {
+            // Show "find included file"
+            wxString clickedInclude = FindClickedInclude();
+            if (clickedInclude.length())
+            {
+                m_popupMenu.Insert(15, m_menuFindInclude);
+                m_menuFindInclude->SetItemLabel(_guilang.get("GUI_MENU_EDITOR_FINDINCLUDE", clickedInclude.ToStdString()));
+            }
+        }
+        else
+        {
+            // Show the refactoring menu
+            m_popupMenu.Insert(15, m_menuRefactoring);
+            if (this->isStyleType(STYLE_DEFAULT, charpos) || this->isStyleType(STYLE_IDENTIFIER, charpos) || this->isStyleType(STYLE_CUSTOMFUNCTION, charpos))
+                m_refactoringMenu->Enable(ID_RENAME_SYMBOLS, true);
+            if (HasSelection())
+                m_refactoringMenu->Enable(ID_ABSTRAHIZE_SECTION, true);
+        }
 
-			//m_popupMenu.Append(m_menuAddWatch);
-			//m_popupMenu.Append(m_menuShowValue);
-			m_popupMenu.Enable(ID_DEBUG_DISPLAY_SELECTION, true);
-
-			/// TODO: find definition of clicked procedure name
-			//m_menuAddWatch->SetText(watchWord);
-			m_menuShowValue->SetItemLabel(_guilang.get("GUI_MENU_EDITOR_HIGHLIGHT", clickedWord.ToStdString()));
-		}
-	}
+        m_popupMenu.Enable(ID_DEBUG_DISPLAY_SELECTION, true);
+        m_menuShowValue->SetItemLabel(_guilang.get("GUI_MENU_EDITOR_HIGHLIGHT", clickedWord.ToStdString()));
+    }
 
 	if (this->CallTipActive())
 		this->AdvCallTipCancel();
@@ -5260,6 +5274,37 @@ wxString NumeReEditor::FindProcedureDefinition()
 	return "";
 }
 
+// This member function identifies the position of the procedure
+// head, to which the selected position belongs.
+int NumeReEditor::FindCurrentProcedureHead(int pos)
+{
+    int minpos = 0;
+    int maxpos = pos;
+    int nextpos = 0;
+
+    // Select the correct headline command
+    wxString sProcCommand = "procedure";
+    if (m_fileType == FILE_MATLAB)
+        sProcCommand = "function";
+
+    // Start from the top while searching for the next
+    // procedure head
+    while (minpos < pos
+            && nextpos < pos
+            && (nextpos = FindText(nextpos, maxpos, sProcCommand, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD)) != -1)
+    {
+        if (nextpos == -1)
+            break;
+        nextpos++;
+
+        // Ensure that the current position is styled as
+        // a command
+        if (this->isStyleType(STYLE_COMMAND, nextpos))
+            minpos = nextpos;
+    }
+    return minpos;
+}
+
 int NumeReEditor::FindNamingProcedure()
 {
 	wxString sNamingProcedure = "$" + this->GetFilenameString();
@@ -5288,6 +5333,392 @@ int NumeReEditor::FindNamingProcedure()
 		}
 	}
 	return wxNOT_FOUND;
+}
+
+// This member function detects all occurences of a code symbol
+// between the passed positions. It does take the current style
+// into account and returns the matches as a vector
+vector<int> NumeReEditor::FindAll(const wxString& sSymbol, int nStyle, int nStartPos, int nEndPos)
+{
+    vector<int> vMatches;
+    int nCurrentPos = 0;
+
+    // Change the style of the string parser to the identifier
+    // style
+    if ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC) && nStyle == wxSTC_NSCR_STRING_PARSER)
+        nStyle = wxSTC_NSCR_IDENTIFIER;
+
+    // Search the next occurence
+    while ((nCurrentPos = this->FindText(nStartPos, nEndPos, sSymbol, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD)) != wxSTC_INVALID_POSITION)
+    {
+        nStartPos = nCurrentPos+1;
+
+        // Is it the correct style and no field of a structure?
+        if ((this->GetCharAt(nCurrentPos-1) != '.' && this->GetStyleAt(nCurrentPos) == nStyle)
+            || (this->GetStyleAt(nCurrentPos) == wxSTC_NSCR_STRING_PARSER && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)))
+            vMatches.push_back(nCurrentPos);
+    }
+
+    // return the found matches
+    return vMatches;
+}
+
+// This member function replaces the found matches with a new
+// symbol
+void NumeReEditor::ReplaceMatches(const vector<int>& vMatches, const wxString& sSymbol, const wxString& sNewSymbol)
+{
+    // During the replacement, the positions are moving
+    // this variable tracks the differences
+    int nInc = sNewSymbol.length() - sSymbol.length();
+
+    // Do nothing, if no match was found
+    if (!vMatches.size())
+        return;
+
+    // replace every match with the new symbol name
+    for (size_t i = 0; i < vMatches.size(); i++)
+    {
+        this->Replace(vMatches[i] + i*nInc, vMatches[i]+sSymbol.length() + i*nInc, sNewSymbol);
+    }
+}
+
+// This member function replaces the selected symbol with a
+// new name supplied by the user. This method also supplies the
+// needed user interaction
+void NumeReEditor::RenameSymbols(int nPos)
+{
+    wxString sNewName;
+    wxString sCurrentName;
+
+    int nStartPos = 0;
+    int nEndPos = this->GetLastPosition();
+
+    // Find the current symbol's name and ensure that it
+    // exists
+    sCurrentName = this->GetTextRange(this->WordStartPosition(nPos, true), this->WordEndPosition(nPos, true));
+    if (!sCurrentName.length())
+        return;
+
+    // Prepare and show the text entry dialog, so that the
+    // user may supply a new symbol name
+    wxTextEntryDialog textdialog(this, _guilang.get("GUI_DLG_RENAMESYMBOLS_QUESTION"), _guilang.get("GUI_DLG_RENAMESYMBOLS"), sCurrentName);
+    int retval = textdialog.ShowModal();
+    if (retval == wxID_CANCEL)
+        return;
+
+    // Get the new symbol name and ensure that it
+    // exists
+    sNewName = textdialog.GetValue();
+    if (!sNewName.length())
+        return;
+
+    // The selected symbol is probably part of a procedure. If this is
+    // the case, get the start and end position here
+    if (m_fileType == FILE_NPRC || m_fileType == FILE_MATLAB)
+    {
+        // Find the head of the current procedure
+        nStartPos = this->FindCurrentProcedureHead(nPos);
+
+        // Find the end of the current procedure depending on
+        // the located head
+        vector<int> vBlock = this->BlockMatch(nStartPos);
+        if (vBlock.back() != wxSTC_INVALID_POSITION)
+            nEndPos = vBlock.back();
+    }
+
+    // Gather all operations into one undo step
+    this->BeginUndoAction();
+
+    // Perform the renaming of symbols
+    this->ReplaceMatches(this->FindAll(sCurrentName, this->GetStyleAt(nPos), nStartPos, nEndPos), sCurrentName, sNewName);
+    this->EndUndoAction();
+}
+
+// This member function extracts a selected code section into
+// a new procedure. The interface is created depending upon the
+// used variables inside of the selected block
+void NumeReEditor::AbstrahizeSection()
+{
+    // Do nothing, if the user didn't select anything
+    if (!HasSelection())
+        return;
+
+    // Get start and end position (i.e. the corresponding lines)
+    int nStartPos = PositionFromLine(LineFromPosition(GetSelectionStart()));
+    int nEndPos = GetLineEndPosition(LineFromPosition(GetSelectionEnd()));
+    if (GetSelectionEnd() == PositionFromLine(LineFromPosition(GetSelectionEnd())))
+        nEndPos = GetLineEndPosition(LineFromPosition(GetSelectionEnd()-1));
+
+    int nCurrentBlockStart = 0;
+    int nCurrentBlockEnd = GetLastPosition();
+
+    list<wxString> lInputTokens;
+    list<wxString> lOutputTokens;
+
+
+    // If we have a procedure file, consider scoping
+    if (m_fileType == FILE_NPRC || m_fileType == FILE_MATLAB)
+    {
+        nCurrentBlockStart = FindCurrentProcedureHead(nStartPos);
+        vector<int> vBlock = BlockMatch(nCurrentBlockStart);
+        if (vBlock.back() != wxSTC_INVALID_POSITION && vBlock.back() > nEndPos)
+            nCurrentBlockEnd = vBlock.back();
+    }
+
+    // Determine the interface by searching for variables
+    // and tables, which are used before or after the code
+    // section and occure inside of the section
+    for (int i = nStartPos; i <= nEndPos; i++)
+    {
+        if (isStyleType(STYLE_IDENTIFIER, i) || isStyleType(STYLE_STRINGPARSER, i))
+        {
+            // Regular indices
+            //
+            // Jump over string parser characters
+            while (isStyleType(STYLE_STRINGPARSER, i) && (GetCharAt(i) == '#' || GetCharAt(i) == '~'))
+                i++;
+            if (isStyleType(STYLE_OPERATOR, i))
+                continue;
+
+            // Get the token name
+            wxString sCurrentToken = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
+
+            // Ignore MATLAB structure fields
+            if (GetCharAt(WordStartPosition(i, true)-1) == '.')
+                continue;
+
+            // Find all occurences
+            vector<int> vMatch = FindAll(sCurrentToken, this->GetStyleAt(i), nCurrentBlockStart, nCurrentBlockEnd);
+
+            // Determine, whether the token is used before
+            // or afer the current section
+            if (vMatch.front() < nStartPos)
+                lInputTokens.push_back(sCurrentToken);
+            if (vMatch.back() > nEndPos && vMatch.front() < nStartPos && IsModifiedInSection(nStartPos, nEndPos, sCurrentToken, vMatch))
+                lOutputTokens.push_back(sCurrentToken);
+            else if (vMatch.back() > nEndPos && vMatch.front() >= nStartPos)
+                lOutputTokens.push_back(sCurrentToken);
+
+            i += sCurrentToken.length();
+        }
+        else if (isStyleType(STYLE_CUSTOMFUNCTION, i))
+        {
+            // Tables
+            //
+            // Get the token name
+            wxString sCurrentToken = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
+
+            // Find all occurences
+            vector<int> vMatch = FindAll(sCurrentToken, this->GetStyleAt(i), nCurrentBlockStart, nCurrentBlockEnd);
+
+            // Determine, whether the token is used before
+            // or afer the current section
+            if (vMatch.front() < nStartPos || vMatch.back() > nEndPos)
+                lInputTokens.push_back(sCurrentToken + "()");
+
+            i += sCurrentToken.length();
+        }
+    }
+
+    // Only use each token once. We use the list
+    // functionalities of C++
+    if (lInputTokens.size())
+    {
+        lInputTokens.sort();
+        lInputTokens.unique();
+    }
+    if (lOutputTokens.size())
+    {
+        lOutputTokens.sort();
+        lOutputTokens.unique();
+    }
+
+    wxString sInputList;
+    wxString sOutputList;
+
+    // Create the interface definition lists
+    for (auto iter = lInputTokens.begin(); iter != lInputTokens.end(); ++iter)
+    {
+        sInputList += *iter + ",";
+    }
+    if (sInputList.length())
+        sInputList.erase(sInputList.length()-1);
+    for (auto iter = lOutputTokens.begin(); iter != lOutputTokens.end(); ++iter)
+    {
+        sOutputList += *iter + ",";
+    }
+    if (sOutputList.length())
+        sOutputList.erase(sOutputList.length()-1);
+
+    // Use these interfaces and the positions to
+    // create the new procedure in a new window
+    CreateProcedureFromSection(nStartPos, nEndPos, sInputList, sOutputList);
+}
+
+// This member function is used to create a new procedure
+// from the analysed code section. The new procedure will be
+// displayed in a new window.
+void NumeReEditor::CreateProcedureFromSection(int nStartPos, int nEndPos, const wxString& sInputList, const wxString sOutputList)
+{
+    // Creata a new window and a new editor
+    ViewerFrame* copyFrame = new ViewerFrame(m_mainFrame, _guilang.get("GUI_REFACTORING_COPYWINDOW_HEAD"));
+    NumeReEditor* edit = new NumeReEditor(m_mainFrame, m_options, new ProjectInfo(true), copyFrame, wxID_ANY, _syntax, m_terminal, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME);
+    wxStatusBar* statusbar = copyFrame->CreateStatusBar();
+    int sizes[] = {-2, -1};
+    statusbar->SetFieldsCount(2, sizes);
+    statusbar->SetStatusText(_guilang.get("GUI_STATUSBAR_UNSAVEDFILE"), 0);
+
+    // Fill the editor with the new procedure and its
+    // determined interface
+    if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+    {
+        // Set a default file name with the corresponding
+        // extension
+        edit->SetFilename(wxFileName("numere.nprc"), false);
+        edit->SetText("\r\n");
+
+        // Write some preface comment
+        edit->AddText("## " + _guilang.get("GUI_REFACTORING_NOTE") + "\r\n");
+        edit->AddText("##\r\n");
+        edit->AddText("## " + _guilang.get("GUI_REFACTORING_ARGUMENTLIST") + "\r\n");
+
+        // Write the input argument list
+        edit->AddText("procedure $NEWPROCEDURE(" + sInputList + ")\r\n");
+
+        // Write the actual section of code
+        edit->AddText(this->GetTextRange(nStartPos, nEndPos) + "\r\n");
+
+        // Write the output list
+        if (sOutputList.length())
+        {
+            edit->AddText("\t## " + _guilang.get("GUI_REFACTORING_RETURNVALUES") + "\r\n");
+            if (sOutputList.find(',') != string::npos)
+                edit->AddText("return {" + sOutputList + "};\r\n");
+            else
+                edit->AddText("return " + sOutputList + ";\r\n");
+        }
+        else
+            edit->AddText("return void\r\n");
+        edit->AddText("endprocedure\r\n");
+        statusbar->SetStatusText(_guilang.get("GUI_STATUSBAR_NPRC"), 1);
+    }
+    else if (m_fileType == FILE_MATLAB)
+    {
+        // Set a default file name with the corresponding
+        // extension
+        edit->SetFilename(wxFileName("numere.m"), false);
+        edit->SetText("\r\n");
+
+        // Write some preface comment
+        edit->AddText("% " + _guilang.get("GUI_REFACTORING_NOTE") + "\r\n");
+        edit->AddText("%\r\n");
+        edit->AddText("% " + _guilang.get("GUI_REFACTORING_ARGUMENTLIST") + "\r\n");
+        if (sOutputList.length())
+            edit->AddText("% " + _guilang.get("GUI_REFACTORING_RETURNVALUES") + "\r\n");
+
+        edit->AddText("function ");
+
+        // Write the output list
+        if (sOutputList.length())
+        {
+            edit->AddText("[" + sOutputList + "] = ");
+        }
+
+        // Write the input argument list
+        edit->AddText("NEWFUNCTION(" + sInputList + ")\r\n");
+
+        // Write the actual section of code
+        edit->AddText(this->GetTextRange(nStartPos, nEndPos) + "\r\n");
+        edit->AddText("end\r\n");
+        statusbar->SetStatusText(_guilang.get("GUI_STATUSBAR_M"), 1);
+    }
+
+    // Update the syntax highlighting
+    // and use the autoformatting feature
+    edit->UpdateSyntaxHighlighting(true);
+    edit->ApplyAutoFormat(0, -1);
+    edit->ToggleSettings(SETTING_WRAPEOL);
+
+    // Set a reasonable window size and
+    // display it to the user
+    copyFrame->SetSize(800, 600);
+    copyFrame->SetIcon(wxIcon(m_mainFrame->getProgramFolder() + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    copyFrame->Show();
+    copyFrame->SetFocus();
+}
+
+// This member function determines, whether a string token,
+// which corresponds to a variable, is semantically modified
+// in the code section (i.e. overwritten). This is used for
+// variables, which are both input and possible output.
+bool NumeReEditor::IsModifiedInSection(int nSectionStart, int nSectionEnd, const wxString& sToken, const vector<int>& vMatch)
+{
+    // define the set of modifying operators
+    static wxString sModificationOperators = "+= -= /= ^= *= ++ --";
+
+    // Go through all occurences of the current token
+    for (size_t i = 0; i < vMatch.size(); i++)
+    {
+        // Ignore occurences before or after the current
+        // code section
+        if (vMatch[i] < nSectionStart)
+            continue;
+        if (vMatch[i] > nSectionEnd)
+            break;
+
+        // Examine the code part left of the token, whether
+        // there's a modifying operator
+        for (int j = vMatch[i]+sToken.length(); j < nSectionEnd; j++)
+        {
+            // Ignore whitespaces
+            if (GetCharAt(j) == ' ' || GetCharAt(j) == '\t')
+                continue;
+
+            // We only examine operator characters
+            if (isStyleType(STYLE_OPERATOR, j) && isStyleType(STYLE_OPERATOR, j+1) && sModificationOperators.find(GetTextRange(j, j+2)) != string::npos)
+                return true;
+            else if (isStyleType(STYLE_OPERATOR, j) && GetCharAt(j) == '=' && GetCharAt(j+1) != '=')
+                return true;
+            else if (isStyleType(STYLE_OPERATOR, j) && (GetCharAt(j) == '(' || GetCharAt(j) == '[' || GetCharAt(j) == '{'))
+            {
+                // Jump over parentheses
+                j = BraceMatch(j);
+                if (j == wxSTC_INVALID_POSITION)
+                    return false;
+            }
+            else if (isStyleType(STYLE_OPERATOR, j) && (GetCharAt(j) == ')' || GetCharAt(j) == ']' || GetCharAt(j) == '}' || GetCharAt(j) == ':'))
+            {
+                // ignore closing parentheses
+                continue;
+            }
+            else if (isStyleType(STYLE_OPERATOR, j) && GetCharAt(j) == '.' && isStyleType(STYLE_IDENTIFIER, j+1))
+            {
+                while (isStyleType(STYLE_IDENTIFIER, j+1))
+                    j++;
+            }
+            else if (isStyleType(STYLE_OPERATOR, j) && GetCharAt(j) == ',')
+            {
+                // Try to find the end of the current bracket
+                // or the current brace - we don't use parentheses
+                // as terminators, because they are not used to
+                // gather return values
+                for (int k = j; k < nSectionEnd; k++)
+                {
+                    if (isStyleType(STYLE_OPERATOR, k) && (GetCharAt(k) == ']' || GetCharAt(k) == '}'))
+                    {
+                        j = k;
+                        break;
+                    }
+                    else if (isStyleType(STYLE_OPERATOR, k) && GetCharAt(k) == ';')
+                        break;
+                }
+            }
+            else
+                break;
+        }
+    }
+
+    return false;
 }
 
 wxString NumeReEditor::getTemplateContent(const wxString& sFileName)
@@ -5526,6 +5957,16 @@ void NumeReEditor::OnChangeCase(wxCommandEvent& event)
 void NumeReEditor::OnFoldCurrentBlock(wxCommandEvent& event)
 {
 	FoldCurrentBlock(this->LineFromPosition(this->PositionFromPoint(m_lastRightClick)));
+}
+
+void NumeReEditor::OnRenameSymbols(wxCommandEvent& event)
+{
+    this->RenameSymbols(this->PositionFromPoint(m_lastRightClick));
+}
+
+void NumeReEditor::OnAbstrahizeSection(wxCommandEvent& event)
+{
+    this->AbstrahizeSection();
 }
 
 bool NumeReEditor::InitDuplicateCode()
@@ -6401,6 +6842,8 @@ int NumeReEditor::determineIndentationLevelCPP(int nLine, int& singleLineIndent)
 	return nIndentCount;
 }
 
+// This member function summarizes determining, which style type
+// the selected character is using
 bool NumeReEditor::isStyleType(StyleType _type, int nPos)
 {
 	switch (this->getFileType())
@@ -6425,6 +6868,8 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
 							   || this->GetStyleAt(nPos) == wxSTC_NPRC_COMMAND;
 					case STYLE_FUNCTION:
 						return this->GetStyleAt(nPos) == wxSTC_NSCR_FUNCTION;
+                    case STYLE_CUSTOMFUNCTION:
+                        return this->GetStyleAt(nPos) == wxSTC_NSCR_CUSTOM_FUNCTION;
                     case STYLE_OPERATOR:
                         return this->GetStyleAt(nPos) == wxSTC_NSCR_OPERATORS;
                     case STYLE_PROCEDURE:
@@ -6433,6 +6878,10 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
                         return this->GetStyleAt(nPos) == wxSTC_NSCR_IDENTIFIER;
                     case STYLE_NUMBER:
                         return this->GetStyleAt(nPos) == wxSTC_NSCR_NUMBERS;
+                    case STYLE_STRINGPARSER:
+                        return this->GetStyleAt(nPos) == wxSTC_NSCR_STRING_PARSER;
+                    case STYLE_STRING:
+                        return this->GetStyleAt(nPos) == wxSTC_NSCR_STRING;
 				}
 				break;
 			}
@@ -6454,6 +6903,8 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
 						return this->GetStyleAt(nPos) == wxSTC_MATLAB_KEYWORD;
 					case STYLE_FUNCTION:
 						return this->GetStyleAt(nPos) == wxSTC_MATLAB_FUNCTIONS;
+                    case STYLE_CUSTOMFUNCTION:
+                        return false;
                     case STYLE_OPERATOR:
                         return this->GetStyleAt(nPos) == wxSTC_MATLAB_OPERATOR;
                     case STYLE_PROCEDURE:
@@ -6462,6 +6913,10 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
                         return this->GetStyleAt(nPos) == wxSTC_MATLAB_IDENTIFIER;
                     case STYLE_NUMBER:
                         return this->GetStyleAt(nPos) == wxSTC_MATLAB_NUMBER;
+                    case STYLE_STRINGPARSER:
+                        return false;
+                    case STYLE_STRING:
+                        return this->GetStyleAt(nPos) == wxSTC_MATLAB_STRING;
 				}
 				break;
 			}
@@ -6486,6 +6941,8 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
 						return this->GetStyleAt(nPos) == wxSTC_C_WORD;
 					case STYLE_FUNCTION:
 						return this->GetStyleAt(nPos) == wxSTC_C_WORD2;
+                    case STYLE_CUSTOMFUNCTION:
+                        return false;
                     case STYLE_OPERATOR:
                         return this->GetStyleAt(nPos) == wxSTC_C_OPERATOR;
                     case STYLE_PROCEDURE:
@@ -6494,6 +6951,10 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
                         return this->GetStyleAt(nPos) == wxSTC_C_IDENTIFIER;
                     case STYLE_NUMBER:
                         return this->GetStyleAt(nPos) == wxSTC_C_NUMBER;
+                    case STYLE_STRINGPARSER:
+                        return false;
+                    case STYLE_STRING:
+                        return this->GetStyleAt(nPos) == wxSTC_C_STRING;
 				}
 				break;
 			}

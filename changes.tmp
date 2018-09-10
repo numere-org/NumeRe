@@ -30,3 +30,5 @@ Fixed	Dollar signs may now be used in string literals, which are part of the arg
 Fixed	The last line of the history is now always visible at start-up.
 Fixed	Data element expressions may now be used directly within string expressions.
 Fixed	The data ranges of boxplots are now calculated correctly.
+New	NumeRe may now rename a selected symbol and all its occurences in the current file while considering the scope of the symbol.
+New	NumeRe may now extract a selected region of code into a new procedure.

@@ -56,6 +56,26 @@ static inline bool IsAWordStart(const int ch) {
 	return (ch < 0x80) && (isalnum(ch) || ch == '_');
 }
 
+// This function determines the opening and closing parentheses until
+// the passed position. It is assumed that the block until the passed
+// position is already styled
+static int GetParenthesesCount(unsigned int startPos, Accessor& styler)
+{
+	int nParentheses = 0;
+	for (size_t i = 0; i < startPos; i++)
+	{
+		char currentChar = styler.SafeGetCharAt(i);
+		if (styler.StyleAt(i) == SCE_MATLAB_OPERATOR || styler.StyleAt(i) == SCE_MATLAB_DEFAULT)
+		{
+			if (currentChar == '(' || currentChar == '[' || currentChar == '{')
+				nParentheses++;
+			else if (currentChar == ')' || currentChar == ']' || currentChar == '}')
+				nParentheses--;
+		}
+	}
+	return nParentheses;
+}
+
 static void ColouriseMatlabOctaveDoc(
             unsigned int startPos, int length, int initStyle,
             WordList *keywordlists[], Accessor &styler,
@@ -64,14 +84,14 @@ static void ColouriseMatlabOctaveDoc(
 	WordList &keywords = *keywordlists[0];
 	WordList &keywords2 = *keywordlists[1];
 
-	// always set to 0 and not to startPos
-	styler.StartAt(0);
+	styler.StartAt(startPos);
 
 	bool transpose = false;
 
-	// always set to 0 and not to startPos
-	StyleContext sc(0, length, initStyle, styler);
-	int nParens = 0;
+	StyleContext sc(startPos, length, initStyle, styler);
+	
+	// Get the parentheses before the current block
+	int nParens = GetParenthesesCount(startPos, styler);
 
 	for (; sc.More(); sc.Forward()) {
 
@@ -353,6 +373,7 @@ static void FoldOctaveDoc(unsigned int startPos, int length, int initStyle,
                           WordList *keywordlists[], Accessor &styler) {
 	FoldMatlabOctaveDoc(startPos, length, initStyle, keywordlists, styler, IsOctaveComment);
 }
+
 
 static const char * const matlabWordListDesc[] = {
 	"Keywords",

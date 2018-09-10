@@ -1970,7 +1970,7 @@
 	"datastructures.h"
 	"ProjectInfo.h"
 
-1523861213 d:\cpp\numere-source\trunk\common\datastructures.h
+1535915250 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -2135,7 +2135,7 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1532500213 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1536217180 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -3329,7 +3329,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1532767306 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1536218006 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -4147,7 +4147,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1534865632 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1535656860 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
