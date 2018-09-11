@@ -49,7 +49,9 @@ Networking::Networking(Options* options)
 	m_timer.SetOwner(this);
 	bool timerSuccess =	m_timer.Start(POLL_RATE);
 	if(!timerSuccess) {
+#ifdef DO_LOG
 		wxLogDebug("PlinkConnect could not get a timer.\n");
+#endif
 	}
 
 	//Plink:
@@ -671,7 +673,9 @@ bool Networking::SSHCacheFingerprint()
 
 		if(i % 4 == 0)
 		{
+#ifdef DO_LOG
 			wxLogDebug("Synchronous network operation (getting fingerprint): %d", i / 4);
+#endif
 
 			if(i > 12  && progress == NULL)
 			{
@@ -699,7 +703,9 @@ bool Networking::SSHCacheFingerprint()
 	}
 	else
 	{
+#ifdef DO_LOG
 		wxLogDebug("Login presumed successful.  Output: %s", output);
+#endif
 	}
 
 	m_plinks->setLogin("","",""); // terminate all connections, and do a spawn
@@ -858,7 +864,9 @@ wxString Networking::ExecuteRemoteCommand(wxString cmd)
 //////////////////////////////////////////////////////////////////////////////
 wxString Networking::ExecuteLocalCommand(wxString cmd)
 {
+#ifdef DO_LOG
 	wxLogDebug("Local Synchronous Process Execution still missing.");
+#endif
 	return wxEmptyString;
 }
 

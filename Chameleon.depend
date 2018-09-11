@@ -2080,14 +2080,14 @@
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\fswatcher.h
 	"wx/defs.h"
 
-1523254976 source:d:\cpp\numere-source\trunk\common\options.cpp
+1536685561 source:d:\cpp\numere-source\trunk\common\options.cpp
 	"Options.h"
 	<wx/filename.h>
 	<wx/arrstr.h>
 	<wx/dir.h>
 	"debug.h"
 
-1523254891 d:\cpp\numere-source\trunk\common\options.h
+1536649419 d:\cpp\numere-source\trunk\common\options.h
 	<wx/wx.h>
 	<wx/validate.h>
 	<wx/valgen.h>
@@ -2128,14 +2128,14 @@
 	"wx/string.h"
 	"wx/buffer.h"
 
-1522828893 source:d:\cpp\numere-source\trunk\common\projectinfo.cpp
+1536686218 source:d:\cpp\numere-source\trunk\common\projectinfo.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"ProjectInfo.h"
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1536217180 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1536649227 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -2947,7 +2947,7 @@
 	"fndrpldialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1533284210 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1536695769 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
@@ -3078,10 +3078,11 @@
 
 1490791550 d:\cpp\numere-source\trunk\common\fixvsbug.h
 
-1523255933 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
+1536647520 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
 	"wx/notebook.h"
 	"wx/spinctrl.h"
 	<wx/clrpicker.h>
+	<wx/fontpicker.h>
 	"../../kernel/core/settings.hpp"
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\spinctrl.h
@@ -3329,7 +3330,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1536218006 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1536649964 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3693,7 +3694,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1535527061 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1536696700 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3812,7 +3813,7 @@
 	<wx/dataobj.h>
 	<wx/tokenzr.h>
 
-1533538337 source:d:\cpp\numere-source\trunk\gui\terminal\actions.cpp
+1536685789 source:d:\cpp\numere-source\trunk\gui\terminal\actions.cpp
 	"gterm.hpp"
 	"../../common/debug.h"
 
@@ -3820,7 +3821,7 @@
 	"gterm.hpp"
 	"gtelnet.hpp"
 
-1533538971 source:d:\cpp\numere-source\trunk\gui\terminal\gterm.cpp
+1536685804 source:d:\cpp\numere-source\trunk\gui\terminal\gterm.cpp
 	"gterm.hpp"
 	"../../common/debug.h"
 	<wx/stdpaths.h>
@@ -3848,7 +3849,7 @@
 	<wx/txtstrm.h>
 	<wx/timer.h>
 
-1511423574 source:d:\cpp\numere-source\trunk\gui\terminal\networking.cpp
+1536685875 source:d:\cpp\numere-source\trunk\gui\terminal\networking.cpp
 	<wx/regex.h>
 	<wx/file.h>
 	<wx/process.h>
@@ -3870,7 +3871,7 @@
 	"pipedprocess.h"
 	"../../common/chameleonprocessevent.h"
 
-1511423550 source:d:\cpp\numere-source\trunk\gui\terminal\plinkconnect.cpp
+1536686098 source:d:\cpp\numere-source\trunk\gui\terminal\plinkconnect.cpp
 	<wx/txtstrm.h>
 	<wx/process.h>
 	<wx/progdlg.h>
@@ -3885,7 +3886,7 @@
 1533461617 source:d:\cpp\numere-source\trunk\gui\terminal\states.cpp
 	"gterm.hpp"
 
-1533748099 source:d:\cpp\numere-source\trunk\gui\terminal\textmanager.cpp
+1536696861 source:d:\cpp\numere-source\trunk\gui\terminal\textmanager.cpp
 	"TextManager.h"
 	<iostream>
 	<stdlib.h>
@@ -3896,7 +3897,7 @@
 	"gterm.hpp"
 	"../../common/debug.h"
 
-1533539743 source:d:\cpp\numere-source\trunk\gui\terminal\utils.cpp
+1536686114 source:d:\cpp\numere-source\trunk\gui\terminal\utils.cpp
 	"gterm.hpp"
 	"../../common/debug.h"
 
@@ -3906,11 +3907,11 @@
 1490791551 source:d:\cpp\numere-source\trunk\gui\terminal\winmesgbeep.cpp
 	<windows.h>
 
-1533479778 source:d:\cpp\numere-source\trunk\gui\terminal\wxssh.cpp
+1536686167 source:d:\cpp\numere-source\trunk\gui\terminal\wxssh.cpp
 	"wxssh.h"
 	"../../common/debug.h"
 
-1533626413 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1536697274 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -8739,4 +8740,22 @@
 	<cstddef>
 	<vector>
 	"../ui/error.hpp"
+
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\fontpicker.h
+	"wx/defs.h"
+	"wx/pickerbase.h"
+	"wx/gtk/fontpicker.h"
+	"wx/generic/fontpickerg.h"
+
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\fontpickerg.h
+	"wx/button.h"
+	"wx/fontdata.h"
+
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\fontdata.h
+	"wx/font.h"
+	"wx/colour.h"
+	"wx/encinfo.h"
+
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\encinfo.h
+	"wx/string.h"
 

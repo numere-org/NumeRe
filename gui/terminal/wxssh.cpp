@@ -45,7 +45,9 @@ wxSSH::~wxSSH()
 		// "No time for pleasantries"
 		m_networking->ForceKillProcess(m_plinkStdIn);
 		wxMilliSleep(250);
+#ifdef DO_LOG
 		wxLogDebug("wxSSH force killed m_plink.");
+#endif
 	}
 }
 
@@ -118,7 +120,9 @@ wxString wxSSH::ConnectForDebug()
 	m_startingDebugConnection = true;
 
 	if(m_connected) {
+#ifdef DO_LOG
 		wxLogDebug("Bad, Bad.  Tried starting as a debug terminal while already connected.");
+#endif
 		Disconnect();
 	}
 
@@ -262,7 +266,9 @@ void wxSSH::OnPlinkOut(ChameleonProcessEvent &e)
 //////////////////////////////////////////////////////////////////////////////
 void wxSSH::OnPlinkErr(ChameleonProcessEvent &e)
 {
+#ifdef DO_LOG
 	wxLogDebug("Terminal-StdError: "+e.GetString());
+#endif
 }
 
 
@@ -281,7 +287,9 @@ void wxSSH::OnPlinkErr(ChameleonProcessEvent &e)
 //////////////////////////////////////////////////////////////////////////////
 void wxSSH::OnPlinkTerm(ChameleonProcessEvent &e)
 {
+#ifdef DO_LOG
 	wxLogDebug("Terminal's External Process Terminated!");
+#endif
 
 	m_connected = false;
 }

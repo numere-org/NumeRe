@@ -202,7 +202,9 @@ BoolArray* ProjectInfo::SelectBoolArray(FileFilterType filterType)
 void ProjectInfo::AddFileToProject(wxString filename, FileFilterType filterType)
 {
 	if(FileExistsInProject(filename)) {
+#ifdef DO_LOG
 		wxLogDebug("Tried adding a file that's already in the file.");
+#endif
 		return;
 	}
 

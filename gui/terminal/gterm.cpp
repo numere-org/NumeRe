@@ -97,7 +97,9 @@ void GenericTerminal::ResizeTerminal(int w, int h)
         cursor = tm.toLogicalCursor(termCursor);
     }
 
+#ifdef DO_LOG
     wxLogDebug("Resizing terminal: w = %d, h = %d", w, h);
+#endif
 
     // Perform the resize in the internal buffer
 	tm.Resize(w, h);

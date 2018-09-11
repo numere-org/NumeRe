@@ -974,7 +974,9 @@ wxTerm::OnPaint(wxPaintEvent& WXUNUSED(event))
 	wxPaintDC
 	dc(this);
 
+#ifdef DO_LOG
 	wxLogDebug("Painting");
+#endif
 
 	m_curDC = &dc;
 	update_changes();
@@ -995,7 +997,6 @@ void
 wxTerm::OnLeftDown(wxMouseEvent& event)
 {
 	SetFocus();
-	wxLogDebug("Left down");
 	ClearSelection();
 	m_selx1 = m_selx2 = event.GetX() / m_charWidth;
 	m_sely1 = m_sely2 = event.GetY() / m_charHeight;
@@ -1008,7 +1009,6 @@ void wxTerm::OnLoseMouseCapture(wxMouseCaptureLostEvent& event)
 {
 	if (GetCapture() == this)
 	{
-		wxLogDebug("Lost");
 		m_selecting = false;
 		ReleaseMouse();
 		Refresh();
@@ -1030,7 +1030,6 @@ wxTerm::OnLeftUp(wxMouseEvent& event)
 	m_selecting = false;
 	if (GetCapture() == this)
 	{
-		wxLogDebug("Left up");
 		ReleaseMouse();
 		Refresh();
 	}
@@ -1097,7 +1096,6 @@ wxTerm::ClearSelection()
 {
 	if (!HasSelection() || m_selecting)
 		return;
-	wxLogDebug("Clearing selection");
 	int
 	x,
 	y;
@@ -1137,7 +1135,6 @@ wxTerm::ClearSelection()
 void
 wxTerm::MarkSelection(bool bRectangular)
 {
-	wxLogDebug("Marking selection");
 	int
 	x,
 	y;
@@ -1687,6 +1684,9 @@ void wxTerm::UpdateColors()
 		m_colorPen_defs[i] = wxPen(m_color_defs[i], 1, wxSOLID);
 
 	m_colorPens = m_colorPen_defs;
+	update_changes();
+	wxWindow::Update();
+	m_parent->Update();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1825,7 +1825,6 @@ void wxTerm::OnActivate(wxActivateEvent& event)
 void wxTerm::OnGainFocus(wxFocusEvent& event)
 {
 	this->clear_mode_flag(CURSORINVISIBLE);
-	wxLogDebug("Gained focus");
 	GenericTerminal::Update();
 }
 
@@ -1842,7 +1841,6 @@ void wxTerm::OnGainFocus(wxFocusEvent& event)
 void wxTerm::OnLoseFocus(wxFocusEvent& event)
 {
 	this->set_mode_flag(CURSORINVISIBLE);
-	wxLogDebug("Lost focus");
 	GenericTerminal::Update();
 }
 

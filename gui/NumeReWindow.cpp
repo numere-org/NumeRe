@@ -328,6 +328,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_sessionSaved = false;
     m_UnrecoverableFiles = "";
     m_loadingFilesDuringStartup = false;
+    m_appStarting = true;
 
 
 	// Show a log window for all debug messages
@@ -808,6 +809,12 @@ void NumeReWindow::InitializeProgramOptions()
 
         m_options->readColoursFromConfig(m_config);
 
+        wxFont font;
+        wxString nativeInfo;
+        m_config->Read("Styles/EditorFont", &nativeInfo, "Consolas 10");
+        font.SetNativeFontInfoUserDesc(nativeInfo);
+        m_options->SetEditorFont(font);
+
         wxString latexroot;
         m_config->Read("Miscellaneous/LaTeXRoot", &latexroot, "C:/Program Files");
         m_options->SetLaTeXRoot(latexroot);
@@ -849,7 +856,9 @@ void NumeReWindow::InitializeProgramOptions()
 	}
 	else
 	{
+#ifdef DO_LOG
 		wxLogDebug("Failed to locate config file, loading default permissions");
+#endif
 		authorizedCode = defaultAuthorizedCode;
 		enabledCode = defaultEnableCode;
 
@@ -860,6 +869,7 @@ void NumeReWindow::InitializeProgramOptions()
 		m_config->Write("Miscellaneous/SaveSession", "false");
 		m_config->Write("Miscellaneous/FormatBeforeSaving", "false");
 		m_options->writeColoursToConfig(m_config);
+		m_config->Write("Styles/EditorFont", m_options->GetEditorFont().GetNativeFontInfoUserDesc());
 	}
 
 	/*if(authorizedCode == wxEmptyString)
@@ -1569,7 +1579,9 @@ void NumeReWindow::OnDebugEvent(wxDebugEvent &event)
 {
 	int eventID = event.GetId();
 
+#ifdef DO_LOG
 	wxLogDebug("ChameleonWindow:OnDebugEvent - shouldn't be here any more!  Event ID: %d", eventID);
+#endif
 }
 
 void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
@@ -3617,7 +3629,9 @@ void NumeReWindow::UpdateStatusBar()
 
 	if (synchronousOp)
 	{
+#ifdef DO_LOG
 		wxLogDebug("UI aware of synchronous op");
+#endif
 	}
 
 	/*
@@ -3818,8 +3832,10 @@ int* NumeReWindow::SelectIntVar(int variableName)
 		return &m_clickedTabNum;
 		break;
 	default:
+#ifdef DO_LOG
 		wxLogDebug("Failed to properly set variable.  variableName = %d", variableName);
-			return NULL;
+#endif
+        return NULL;
 	}
 }
 
@@ -3965,6 +3981,7 @@ void NumeReWindow::EvaluateOptions()
 	m_config->Write("Miscellaneous/FormatBeforeSaving", formatBeforeSaving ? "true" : "false");
 
 	m_options->writeColoursToConfig(m_config);
+	m_config->Write("Styles/EditorFont", m_options->GetEditorFont().GetNativeFontInfoUserDesc());
 
 	m_config->Write("Miscellaneous/LateXRoot", m_options->GetLaTeXRoot());
 
@@ -4014,6 +4031,9 @@ void NumeReWindow::EvaluateOptions()
 void NumeReWindow::UpdateMenuBar()
 {
 	wxMenuBar* menuBar = GetMenuBar();
+
+	if (!m_appStarting)
+        return;
 
 	if(menuBar != NULL)
 	{
@@ -4177,10 +4197,6 @@ void NumeReWindow::UpdateMenuBar()
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::UpdateToolbar()
 {
-	//Permission* perms = m_options->GetPerms();
-
-	//CleanupDropMenu();
-
 	wxToolBar* t = GetToolBar();
 	delete t;
 	SetToolBar(NULL);
@@ -4193,9 +4209,7 @@ void NumeReWindow::UpdateToolbar()
 	}
 	m_config->Write("Interface/ShowToolbarText", showText ? "true" : "false");
 	t = CreateToolBar(style);//new wxToolBar(this, -1, wxDefaultPosition, wxDefaultSize, style);
-	//SetToolBar(t);
 
-	//wxBitmap bmNew(newfile_xpm);
 	t->AddTool(ID_NEW_EMPTY, _guilang.get("GUI_TB_NEW"), wxArtProvider::GetBitmap(wxART_NEW, wxART_TOOLBAR), _guilang.get("GUI_TB_NEW_TTP"), wxITEM_DROPDOWN);
 	wxMenu* menuNewFile = new wxMenu();
 	menuNewFile->Append(ID_NEW_EMPTY, _guilang.get("GUI_MENU_NEW_EMPTYFILE"), _guilang.get("GUI_MENU_NEW_EMPTYFILE_TTP"));
@@ -4205,19 +4219,14 @@ void NumeReWindow::UpdateToolbar()
 	menuNewFile->Append(ID_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
 	t->SetDropdownMenu(ID_NEW_EMPTY, menuNewFile);
 
-    //wxBitmap bmOpenLocal(openlocal_xpm);
     t->AddTool(ID_OPEN_SOURCE_LOCAL, _guilang.get("GUI_TB_OPEN"), wxArtProvider::GetBitmap(wxART_FILE_OPEN, wxART_TOOLBAR), _guilang.get("GUI_TB_OPEN_TTP"));
 
-
-	//wxBitmap bmSave(savefile_xpm);
 	t->AddTool(ID_SAVE, _guilang.get("GUI_TB_SAVE"), wxArtProvider::GetBitmap(wxART_FILE_SAVE, wxART_TOOLBAR), _guilang.get("GUI_TB_SAVE_TTP"));
 
     t->AddSeparator();
 
-    //wxBitmap bmUndo(undo_xpm);
     t->AddTool(ID_UNDO, _guilang.get("GUI_TB_UNDO"), wxArtProvider::GetBitmap(wxART_UNDO, wxART_TOOLBAR), _guilang.get("GUI_TB_UNDO"));
 
-    //wxBitmap bmRedo(stock_redo_xpm);
     t->AddTool(ID_REDO, _guilang.get("GUI_TB_REDO"), wxArtProvider::GetBitmap(wxART_REDO, wxART_TOOLBAR), _guilang.get("GUI_TB_REDO"));
 
     t->AddSeparator();
@@ -4243,21 +4252,6 @@ void NumeReWindow::UpdateToolbar()
 
     wxBitmap bmStop(newstop1_xpm);
     t->AddTool(ID_DEBUG_STOP, _guilang.get("GUI_TB_STOP"), bmStop, _guilang.get("GUI_TB_STOP_TTP"));
-
-    /*wxBitmap bmContinue(newcontinue1_xpm);
-    t->AddTool(ID_DEBUG_CONTINUE, "Continue", bmContinue, "Resume when paused at a breakpoint");*/
-
-    /*wxBitmap bmStepNext(stepnext_xpm);
-    t->AddTool(ID_DEBUG_STEPNEXT, "Step next", bmStepNext,
-        "Run the next line of code, stepping into it if it's a function call");
-
-    wxBitmap bmStepOver(stepover_xpm);
-    t->AddTool(ID_DEBUG_STEPOVER, "Step over", bmStepOver,
-        "Run the next line of code, but don't go inside if it's a function call");
-
-    wxBitmap bmStepOut(stepout_xpm);
-    t->AddTool(ID_DEBUG_STEPOUT, "Step out", bmStepOut,
-        "Run all the code in the current function");*/
 
     t->AddSeparator();
 
@@ -4306,135 +4300,27 @@ void NumeReWindow::UpdateToolbar()
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::UpdateTerminalNotebook()
 {
-	/**Permission* perms = m_options->GetPerms();
+    if (!m_appStarting)
+        return;
 
-	int numPages = m_noteTerm->GetPageCount();
-	for(int i = 0; i < numPages; i++)
-	{
-		wxNotebookPage* page = m_noteTerm->GetPage(0);
-		page->Hide();
-		m_noteTerm->RemovePage(0);
-	}*/
+    m_termContainer->Show();
 
-//	m_container1->GetSizer()->Detach(m_watchPanel);
-//	m_container2->GetSizer()->Detach(m_debugTermContainer);
+    if (!m_splitEditorOutput->IsSplit())
+    {
+        m_splitEditorOutput->SplitHorizontally(m_book, m_splitCommandHistory, fSplitPercentage);//-260);//-200);
+        m_splitEditorOutput->SetMinimumPaneSize(20);
+        if (!m_splitCommandHistory->IsSplit())
+        {
+            m_splitCommandHistory->SplitVertically(m_termContainer, m_history, fVerticalSplitPercentage);
+        }
+        m_terminal->UpdateSize();
+        m_termContainer->Show();
+        m_history->Show();
+    }
 
-	/*if(m_watchPanel->GetParent() == m_watchPanelSplitter)
-	{
-		m_watchPanelSplitter->Unsplit(m_debugTermContainer);
-		m_watchPanelSplitter->RemoveChild(m_watchPanel);
-	}*/
-
-	//if(perms->isEnabled(PERM_TERMINAL))
-	//{
-		m_termContainer->Show();
-		///m_noteTerm->AddPage(m_termContainer, "NumeRe-Konsole");
-
-		//m_terminal->ProcessInput(4,"TEST");
-	/*}
-	else
-	{
-		m_termContainer->Hide();
-	}*/
-
-	/*if(perms->isEnabled(PERM_COMPILE))
-	{
-		m_outputPanel->Show();
-		m_outputPanel->SetAdvanced(true);
-		m_noteTerm->AddPage(m_outputPanel, "Compiler Output");
-	}
-	else
-	{*/
-		//m_outputPanel->Hide();
-	//}
-
-	/*if(false)//perms->isEnabled(PERM_DEBUG))
-	{
-		if(m_options->GetCombineWatchWindow())
-		{
-			m_watchPanelContainer->Show();
-
-			m_watchPanel->Reparent(m_watchPanelSplitter);
-			m_debugTermContainer->Reparent(m_watchPanelSplitter);
-
-			m_watchPanelSplitter->SplitVertically(m_watchPanel, m_debugTermContainer);
-
-			m_noteTerm->AddPage(m_watchPanelContainer, "Debug Information");
-
-			m_container1->Hide();
-			m_container2->Hide();
-		}
-		else
-		{
-			wxWindow* parent = m_watchPanel->GetParent();
-
-			m_watchPanel->Show();
-			m_debugTermContainer->Show();
-
-			if(m_watchPanel->GetParent() != m_container1)
-			{
-				m_watchPanel->Reparent(m_container1);
-				m_container1->GetSizer()->Add(m_watchPanel, wxSizerFlags().Expand().Proportion(1));
-				m_debugTermContainer->Reparent(m_container2);
-				m_container2->GetSizer()->Add(m_debugTermContainer, wxSizerFlags().Expand().Proportion(1));
-			}
-
-			m_noteTerm->AddPage(m_container1, "Variable Watches");
-			m_noteTerm->AddPage(m_container2, "Debug Console");
-
-			m_watchPanel->Refresh();
-			m_debugTermContainer->Refresh();
-
-			wxSize size = m_termContainer->GetSize();
-			wxPoint origin(0, 0);
-			m_debugTermContainer->SetPosition(origin);
-			m_debugTermContainer->SetSize(size);
-
-			m_watchPanelContainer->Hide();
-
-			m_splitProjectEditor->UpdateSize();
-		}
-	}
-	else
-	{
-		m_watchPanelContainer->Hide();
-		m_watchPanel->Hide();
-		m_debugTermContainer->Hide();
-		m_container1->Hide();
-		m_container2->Hide();
-	}*/
-
-	/**if(m_noteTerm->GetPageCount() == 0)
-	{
-		m_splitEditorOutput->Unsplit();
-		m_noteTerm->Hide();
-	}
-	else*/
-	{
-		if(!m_splitEditorOutput->IsSplit())
-		{
-			///m_splitEditorOutput->SplitHorizontally(m_splitProjectEditor, m_termContainer, 0.6f);//-260);//-200);
-			m_splitEditorOutput->SplitHorizontally(m_book, m_splitCommandHistory, fSplitPercentage);//-260);//-200);
-			///m_splitEditorOutput->SplitHorizontally(m_splitProjectEditor, m_noteTerm, 0.6f);//-260);//-200);
-			m_splitEditorOutput->SetMinimumPaneSize(20);
-			if (!m_splitCommandHistory->IsSplit())
-			{
-                m_splitCommandHistory->SplitVertically(m_termContainer, m_history, fVerticalSplitPercentage);
-			}
-			m_terminal->UpdateSize();
-			m_termContainer->Show();
-			m_history->Show();
-			///m_noteTerm->Show();
-		}
-		///m_noteTerm->SetSelection(0);
-		///m_noteTerm->GetPage(0)->SetFocus();
-	}
 	m_termContainer->Refresh();
-	///m_noteTerm->Refresh();
 	m_book->Refresh();
 	m_history->Refresh();
-
-	//m_watchPanel->Refresh();
 }
 
 void NumeReWindow::UpdateWindowTitle(const wxString& filename)
@@ -4806,7 +4692,9 @@ void NumeReWindow::OpenProjectFile(bool isRemote)
 
 	if(fileNames.Count() < 1)
 	{
+#ifdef DO_LOG
 		wxLogDebug("No files selected when adding to project");
+#endif
 		return;
 	}
 
@@ -4877,7 +4765,9 @@ void NumeReWindow::AddFileToProject()
 
 	if(fileNames.Count() < 1)
 	{
+#ifdef DO_LOG
 		wxLogDebug("No files selected when adding to project");
+#endif
 		return;
 	}
 
@@ -5435,7 +5325,9 @@ NetworkCallResult NumeReWindow::CheckNetworkStatus()
 			wxString message = "An unknown network error has occurred.";
 			wxString statusDetails = m_network->GetStatusDetails();;
 			message += "\nError details: " + statusDetails;
+#ifdef DO_LOG
 			wxLogDebug("NET_ERROR_MESSAGE: %s", statusDetails);
+#endif
 			wxMessageBox(message, "Unknown network error", wxOK | wxICON_EXCLAMATION);
 			return NETCALL_FAILED;
 			break;
@@ -5969,7 +5861,9 @@ restartConnection:
 	{
 
 		m_terminal->Connect();
+#ifdef DO_LOG
 		wxLogDebug("Connected: %d", m_terminal->IsConnected());
+#endif
 
 		// Focus on the terminal
 		///int terminalIndex = m_noteTerm->FindPagePosition(m_termContainer);
@@ -5978,7 +5872,9 @@ restartConnection:
 	}
 	else if(isok == NET_AUTH_FAILED)
 	{
+#ifdef DO_LOG
 		wxLogDebug("User gave us an invalid password");
+#endif
 		wxMessageBox("Your password was not accepted.  Perhaps you typed it wrong?", "Invalid Password",
 		wxOK | wxICON_HAND);
 
@@ -5988,7 +5884,9 @@ restartConnection:
 	}
 	else
 	{
+#ifdef DO_LOG
 		wxLogDebug("Tried to start Terminal with invalid networking status: %d", isok);
+#endif
 		if(CheckNetworkStatus() == NETCALL_REDO)
 		{
 			goto restartConnection;
@@ -6137,10 +6035,13 @@ void NumeReWindow::OnOptions()
         EvaluateOptions();
         m_history->UpdateSyntaxHighlighting();
         m_terminal->UpdateColors();
+        m_termContainer->SetBackgroundColour(m_options->GetSyntaxStyle(Options::CONSOLE_STD).background);
+        m_termContainer->Refresh();
         for (size_t i = 0; i < m_book->GetPageCount(); i++)
         {
             NumeReEditor* edit = static_cast<NumeReEditor*>(m_book->GetPage(i));
             edit->UpdateSyntaxHighlighting(true);
+            edit->SetEditorFont(m_options->GetEditorFont());
         }
         /*wxWindowList children = this->GetChildren();
         for (size_t i = 0; i < children.size(); i++)

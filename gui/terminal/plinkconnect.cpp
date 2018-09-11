@@ -67,7 +67,9 @@ PlinkConnect::PlinkConnect(wxString plinkApp, wxString host, wxString user, wxSt
 	m_timer.SetOwner(this);
 	bool timerSuccess =	m_timer.Start(POLL_RATE);
 	if(!timerSuccess) {
+#ifdef DO_LOG
 		wxLogDebug("PlinkConnect could not get a timer.\n");
+#endif
 	}
 #endif
 
@@ -107,7 +109,9 @@ PlinkConnect::~PlinkConnect()
 	for(ProcessInfoList::Node* node = m_processes.GetFirst(); node; node = node->GetNext() ) {
 		ProcessInfo* p = node->GetData();
 		if(p->owner != NULL) {
+#ifdef DO_LOG
 			wxLogDebug("BAD BAD - PlinkConnect Deleted with a process still live!");
+#endif
 			p->owner = NULL;
 		}
 	}
@@ -117,7 +121,9 @@ PlinkConnect::~PlinkConnect()
 		ProcessInfo* p = m_procs[i];
 
 		if(p->owner != NULL) {
+#ifdef DO_LOG
 			wxLogDebug("BAD BAD - PlinkConnect Deleted with a process still live!");
+#endif
 			p->owner = NULL;
 		}
 	}
@@ -171,7 +177,9 @@ void PlinkConnect::setLogin(wxString host, wxString user, wxString pass)
 		#ifdef _DEBUG
 			if(pass.Contains("\"")) {
 				// this user's passphrase just isn't going to work
+#ifdef DO_LOG
 				wxLogDebug("Passwords with \" will not work! -- Unstable state entered.");
+#endif
 			}
 		#endif
 		m_pass = "\"" + pass + "\"";
@@ -217,7 +225,9 @@ void PlinkConnect::spawnConnection()
 
 	if(pid == 0) {
 		//Command could not be executed
+#ifdef DO_LOG
 		wxLogDebug("Could not start a Plink process -- Command could not be executed.");
+#endif
 		m_message = "Could not start a Plink process -- Command could not be executed.";
 		m_isConnected = false;
 		//delete proc not needed because ASYNC
@@ -225,7 +235,9 @@ void PlinkConnect::spawnConnection()
 	else if (pid == -1) {
 		// BAD ERROR!  User ought to upgrade their operating system
 		// User has DDE running under windows (OLE deprecated this)
+#ifdef DO_LOG
 		wxLogDebug("Could not start a Plink process -- DDE in use.");
+#endif
 		m_message = "Could not start a Plink process -- DDE in use.";
 		m_isConnected = false;
 		//delete proc not needed because ASYNC
@@ -290,7 +302,9 @@ bool PlinkConnect::getIsConnected()
 
 		if(i % 4 == 0)
 		{
+#ifdef DO_LOG
 			wxLogDebug("Synchronous network operation (getIsConnected): %d", i / 4);
+#endif
 
 			if(i > 12  && progress == NULL)
 			{
@@ -392,8 +406,9 @@ wxTextOutputStream* PlinkConnect::executeCmd(wxString command, wxEvtHandler* lis
 #else
 	ProcessInfo* p = m_procs[m_procs.GetCount() - 1];
 #endif
-
+#ifdef DO_LOG
 	wxLogDebug("Executing command.  Process: %x, command: %s", p, command);
+#endif
 	p->owner = listener;
 	p->isRunSynch = isSynch;
 
@@ -453,7 +468,9 @@ wxString PlinkConnect::executeSyncCommand(wxString command)
 
 		if(i % 4 == 0)
 		{
+#ifdef DO_LOG
 			wxLogDebug("Synchronous network operation (executeSyncCommand): %d (command: %s)", i / 4, command);
+#endif
 
 			if(i > 12 && progress == NULL)
 			{

@@ -828,6 +828,8 @@ string TextManager::GetInputHistory(bool vcursorup)
 	    // scroll up
 	    // decrement the virtual cursor
 		m_virtualCursor--;
+		if (m_virtualCursor >= m_userText.size())
+            m_virtualCursor = m_userText.size() - 1;
 
 		// While the virtual cursor is non-zero
 		while (m_virtualCursor)
@@ -858,7 +860,7 @@ string TextManager::GetInputHistory(bool vcursorup)
 	else
 	{
 	    // Return an empty string, if the virtual cursor is the lowest possible line
-		if (m_virtualCursor + 1 == m_text.size())
+		if (m_virtualCursor + 1 >= m_text.size())
 			return "";
 
         // increment the virtual cursor
@@ -888,7 +890,7 @@ string TextManager::GetInputHistory(bool vcursorup)
 		}
 
 		// Return an empty string, if the virtual cursor is the lowest possible line
-		if (m_virtualCursor + 1 == m_text.size())
+		if (m_virtualCursor + 1 >= m_text.size())
 			return "";
 	}
 
@@ -1156,7 +1158,7 @@ int TextManager::GetNumLinesScrolled()
 //////////////////////////////////////////////////////////////////////////////
 void TextManager::SetMaxSize(int newSize)
 {
-	if (newSize < m_viewportHeight)
+	if (newSize < m_viewportHeight || newSize == m_maxHeight)
 	{
 		return;
 	}
