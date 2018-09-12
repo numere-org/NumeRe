@@ -183,10 +183,7 @@ NumeReEditor::NumeReEditor( NumeReWindow* mframe,
 	this->RegisterImage(NumeReSyntax::SYNTAX_METHODS, wxBitmap(f.GetPath(true) + "icons\\mthd.png", wxBITMAP_TYPE_PNG));
 	this->RegisterImage(NumeReSyntax::SYNTAX_PROCEDURE, wxBitmap(f.GetPath(true) + "icons\\prc.png", wxBITMAP_TYPE_PNG));
 
-	//wxFont font(10, wxMODERN, wxNORMAL, wxNORMAL);
-	wxFont font;
-	font.SetNativeFontInfoUserDesc("Consolas 10 WINDOWS-1252");
-
+	wxFont font = m_options->GetEditorFont();
 	this->StyleSetFont(wxSTC_STYLE_DEFAULT, font);
 
 	// Add the characters for procedures to the word char list
@@ -2973,6 +2970,14 @@ void NumeReEditor::notifyDialogClose()
 	m_duplicateCode = nullptr;
 }
 
+void NumeReEditor::SetEditorFont(const wxFont& font)
+{
+    wxFont newFont = font;
+    StyleSetFont(wxSTC_STYLE_DEFAULT, newFont);
+    StyleClearAll();
+    UpdateSyntaxHighlighting(true);
+}
+
 bool NumeReEditor::getEditorSetting(EditorSettings _setting)
 {
 	return m_nEditorSetting & _setting;
@@ -4060,19 +4065,26 @@ void NumeReEditor::updateDefaultHighlightSettings()
 	this->StyleSetSize(wxSTC_STYLE_BRACEBAD, this->StyleGetSize(0) + 1);
 
 	// Style settings for the displayed annotations
+	int nAnnotationFontSize = this->StyleGetSize(wxSTC_STYLE_DEFAULT);
+
+	if (nAnnotationFontSize >= 10)
+        nAnnotationFontSize -= 2;
+    else if (nAnnotationFontSize >= 8)
+        nAnnotationFontSize -= 1;
+
 	this->StyleSetBackground(ANNOTATION_NOTE, wxColour(240, 240, 240));
 	this->StyleSetForeground(ANNOTATION_NOTE, wxColour(120, 120, 120));
-	this->StyleSetSize(ANNOTATION_NOTE, this->StyleGetSize(0) - 2);
+	this->StyleSetSize(ANNOTATION_NOTE, nAnnotationFontSize);
 	this->StyleSetItalic(ANNOTATION_NOTE, true);
 	this->StyleSetFaceName(ANNOTATION_NOTE, "Segoe UI");
 	this->StyleSetBackground(ANNOTATION_WARN, wxColour(255, 255, 220));
 	this->StyleSetForeground(ANNOTATION_WARN, wxColour(160, 160, 0));
-	this->StyleSetSize(ANNOTATION_WARN, this->StyleGetSize(0) - 2);
+	this->StyleSetSize(ANNOTATION_WARN, nAnnotationFontSize);
 	this->StyleSetItalic(ANNOTATION_WARN, true);
 	this->StyleSetFaceName(ANNOTATION_WARN, "Segoe UI");
 	this->StyleSetBackground(ANNOTATION_ERROR, wxColour(255, 200, 200));
 	this->StyleSetForeground(ANNOTATION_ERROR, wxColour(170, 0, 0));
-	this->StyleSetSize(ANNOTATION_ERROR, this->StyleGetSize(0) - 2);
+	this->StyleSetSize(ANNOTATION_ERROR, nAnnotationFontSize);
 	this->StyleSetItalic(ANNOTATION_ERROR, true);
 	this->StyleSetFaceName(ANNOTATION_ERROR, "Segoe UI");
 }

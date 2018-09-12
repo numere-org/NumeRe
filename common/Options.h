@@ -63,6 +63,7 @@ class Options
 		void SetMingwBinPaths(wxArrayString paths);
 		void SetMingwExecutables(StringFilenameHash files);
 		void SetLaTeXRoot(const wxString& root) {m_LaTeXRoot = root;}
+		void SetEditorFont(const wxFont& font) {m_editorFont = font; m_editorFont.SetEncoding(wxFONTENCODING_CP1252); }
 
 		// Accessors:  (inlined)
 		wxString GetPscpApp() { return m_pscpProg; }
@@ -85,6 +86,7 @@ class Options
 		wxArrayString GetMingwProgramNames() { return m_mingwProgramNames; }
 		StringFilenameHash GetMingwExecutables() { return m_mingwExecutableNames; }
 		wxArrayString GetMingwBinPaths() { return m_mingwBinPaths; }
+		wxFont GetEditorFont() { return m_editorFont; }
 
 		wxString VerifyMingwPath(wxString mingwPath);
 
@@ -161,6 +163,7 @@ class Options
 		wxArrayString m_mingwProgramNames;
 
 		vector<SyntaxStyles> vSyntaxStyles;
+		wxFont m_editorFont;
 
 		void setDefaultSyntaxStyles();
 		wxString convertToString(const SyntaxStyles& _style);

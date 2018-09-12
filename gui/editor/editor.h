@@ -295,6 +295,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		bool writeLaTeXFile(const string& sLaTeXFileName);
 		string parseDocumentation(int nPos1, int nPos2);
 		void notifyDialogClose();
+		void SetEditorFont(const wxFont& font);
 
 	protected:
 		Options* m_options;

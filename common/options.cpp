@@ -40,6 +40,9 @@ Options::Options()
 	m_mingwProgramNames.Add("cc1plus.exe");
 	m_mingwProgramNames.Add("gdb.exe");
 
+	m_editorFont.SetNativeFontInfoUserDesc("Consolas 10");
+	m_editorFont.SetEncoding(wxFONTENCODING_CP1252);
+
 	setDefaultSyntaxStyles();
 }
 
@@ -123,7 +126,9 @@ bool Options::SetPscpApp(wxString path_and_prog) {
 		return true;
 	}
 	//else
+#ifdef DO_LOG
 		wxLogDebug("\"" + path_and_prog + "\" is an invalid PSCP.");
+#endif
 		return false;
 }
 
@@ -134,7 +139,9 @@ bool Options::SetPlinkApp(wxString path_and_prog) {
 		return true;
 	}
 	//else
+#ifdef DO_LOG
 		wxLogDebug("\"" + path_and_prog + "\" is an invalid Plink.");
+#endif
 		return false;
 }
 
@@ -149,7 +156,9 @@ bool Options::SetMingwBasePath(wxString path)
 	}
 	else
 	{
+#ifdef DO_LOG
 		wxLogDebug("\"" + path + "\" is an invalid path.");
+#endif
 		return false;
 	}
 }

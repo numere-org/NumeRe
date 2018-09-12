@@ -24,6 +24,7 @@
 #include "wx/notebook.h"
 #include "wx/spinctrl.h"
 #include <wx/clrpicker.h>
+#include <wx/fontpicker.h>
 
 #include "../../kernel/core/settings.hpp"
 ////@end includes
@@ -221,6 +222,7 @@ public:
     wxCheckBox* m_boldCheck;
     wxCheckBox* m_italicsCheck;
     wxCheckBox* m_underlineCheck;
+    wxFontPickerCtrl* m_fontPicker;
 
     wxCheckBox* m_ExtendedInfo;
     wxCheckBox* m_ShowHints;

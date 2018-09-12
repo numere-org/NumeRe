@@ -391,7 +391,7 @@ void OptionsDialog::CreateControls()
     colorGroupSizer->Add(colorGroupHSizer, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
     colorGroupSizer->Add(m_backColor, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
     colorGroupSizer->Add(m_defaultBackground, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-    styleVSizer->Add(colorGroupSizer, 1, wxALIGN_LEFT, 5);
+    styleVSizer->Add(colorGroupSizer, 0, wxALIGN_LEFT, 5);
 
     wxBoxSizer* fontStyleSize = new wxBoxSizer(wxHORIZONTAL);
 
@@ -399,7 +399,14 @@ void OptionsDialog::CreateControls()
     fontStyleSize->Add(m_italicsCheck, 1, wxALIGN_LEFT | wxALL, 5);
     fontStyleSize->Add(m_underlineCheck, 1, wxALIGN_LEFT | wxALL, 5);
 
-    styleVSizer->Add(fontStyleSize, 1, wxALIGN_LEFT, 5);
+    styleVSizer->Add(fontStyleSize, 0, wxALIGN_LEFT | wxALL, 5);
+
+    wxStaticText* editorFontStaticText = new wxStaticText(stylePanel, wxID_STATIC, _guilang.get("GUI_OPTIONS_EDITORFONT"), wxDefaultPosition, wxDefaultSize, 0);
+    styleVSizer->Add(editorFontStaticText, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT | wxTOP | wxADJUST_MINSIZE, 5);
+    wxFont font;
+	font.SetNativeFontInfoUserDesc("Consolas 10");
+    m_fontPicker = new wxFontPickerCtrl(stylePanel, wxID_ANY, font, wxDefaultPosition, wxDefaultSize, wxFNTP_DEFAULT_STYLE);
+    styleVSizer->Add(m_fontPicker, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT| wxBOTTOM, 5);
 
     wxStaticText* defaultFontStaticText = new wxStaticText(stylePanel, wxID_STATIC, _(_guilang.get("GUI_OPTIONS_DEFAULTFONT")), wxDefaultPosition, wxDefaultSize, 0 );
     styleVSizer->Add(defaultFontStaticText, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
@@ -779,7 +786,7 @@ void OptionsDialog::ExitDialog()
 	{
 		wxMessageBox("Please enter the same password in both fields");
 	}*/
-    if(EvaluateOptions())
+    if (EvaluateOptions())
     {
         EndModal(wxID_OK);
         m_optionsNotebook->SetSelection(0);
@@ -1000,6 +1007,7 @@ bool OptionsDialog::EvaluateOptions()
     m_options->SetLineNumberPrinting(m_cbPrintLineNumbers->IsChecked());
     m_options->SetSaveSession(m_saveSession->IsChecked());
     m_options->SetFormatBeforeSaving(m_formatBeforeSaving->IsChecked());
+    m_options->SetEditorFont(m_fontPicker->GetSelectedFont());
 
 
     synchronizeColors();
@@ -1075,6 +1083,7 @@ void OptionsDialog::InitializeDialog()
     m_italicsCheck->SetValue(m_colorOptions.GetSyntaxStyle(id).italics);
     m_underlineCheck->SetValue(m_colorOptions.GetSyntaxStyle(id).underline);
     m_defaultBackground->SetValue(m_colorOptions.GetSyntaxStyle(id).defaultbackground);
+    m_fontPicker->SetSelectedFont(m_options->GetEditorFont());
     m_backColor->Enable(!m_defaultBackground->GetValue());
     m_LaTeXRoot->SetValue(m_options->GetLaTeXRoot());
 
