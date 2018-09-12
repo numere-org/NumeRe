@@ -2181,7 +2181,7 @@
 	"../../kernel/kernel.hpp"
 	"../../kernel/debugmessenger.hpp"
 
-1535526801 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1536734093 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -3330,7 +3330,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1536649964 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1536733208 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"

@@ -289,7 +289,7 @@ class NumeReWindow : public wxFrame
         wxArrayString OpenFile(FileFilterType filterType );
         bool SaveFile(bool saveas, bool askLocalRemote, FileFilterType filterType);
         void CloseFile(int pageNr = -1, bool askforsave = true);
-        void CloseAllFiles();
+        bool CloseAllFiles();
         void CloseTab();
         void CloseOtherTabs();
         void OpenContainingFolder();

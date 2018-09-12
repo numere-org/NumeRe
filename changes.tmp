@@ -33,3 +33,4 @@ Fixed	The data ranges of boxplots are now calculated correctly.
 New	NumeRe may now rename a selected symbol and all its occurences in the current file while considering the scope of the symbol.
 New	NumeRe may now extract a selected region of code into a new procedure.
 Added	The editor font and size may now be changed by the user.
+Fixed	Closing NumeRe may now aborted, if a file was not saved yet.

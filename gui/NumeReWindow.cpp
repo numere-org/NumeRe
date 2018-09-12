@@ -907,7 +907,12 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
 {
 	m_appClosing = true;
 
-	CloseAllFiles();
+	if (!CloseAllFiles())
+    {
+        if (event.CanVeto())
+            event.Veto(true);
+        return;
+    }
 
 	// double check in case something went wrong
 	if (m_currentEd && m_currentEd->Modified())
@@ -2502,7 +2507,7 @@ void NumeReWindow::CloseFile (int pageNr, bool askforsave)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::CloseAllFiles()
+bool NumeReWindow::CloseAllFiles()
 {
 	int cnt = m_book->GetPageCount();
 	ofstream of_session;
@@ -2515,7 +2520,9 @@ void NumeReWindow::CloseAllFiles()
         if (edit->defaultPage)
             continue;
         // gives the user a chance to save if the file has been modified
-        HandleModifiedFile(i, MODIFIEDFILE_CLOSE);
+        int nReturn = HandleModifiedFile(i, MODIFIEDFILE_CLOSE);
+        if (nReturn == wxCANCEL)
+            return false;
 
         if (edit->Modified())
             sSession += "*";
@@ -2541,6 +2548,8 @@ void NumeReWindow::CloseAllFiles()
         m_sessionSaved = true;
 	}
 	PageHasChanged();
+
+	return true;
 }
 
 //////////////////////////////////////////////////////////////////////////////
