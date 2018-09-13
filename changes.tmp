@@ -34,3 +34,4 @@ New	NumeRe may now rename a selected symbol and all its occurences in the curren
 New	NumeRe may now extract a selected region of code into a new procedure.
 Added	The editor font and size may now be changed by the user.
 Fixed	Closing NumeRe may now aborted, if a file was not saved yet.
+New	NumeRe now features a "Busy-Indicator" in the status bar, which pulses, if NumeRe is currently working.

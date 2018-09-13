@@ -27,6 +27,7 @@
 #include "viewerframe.hpp"
 #include "viewerbook.hpp"
 #include "filetree.hpp"
+#include "NumeReStatusbar.hpp"
 #include "../kernel/core/plotting/graph_helper.hpp"
 #include "../kernel/core/datamanagement/container.hpp"
 
@@ -220,6 +221,9 @@ class NumeReWindow : public wxFrame
         wxTreeItemId getDragDropSourceItem();
         wxString getTreeFolderPath(const wxTreeItemId& itemId);
 
+        void Ready();
+        void Busy();
+
 
     private:
         void InitializeProgramOptions();
@@ -371,7 +375,7 @@ class NumeReWindow : public wxFrame
         /*! Displays functions and commands */
         FileTree* m_functionTree;
         /*! The status bar */
-        wxStatusBar* m_statusBar;
+        NumeReStatusbar* m_statusBar;
         //wxPanel* panelEd;
         /*! Holds the editor/project group and the output notebook */
         wxProportionalSplitterWindow* m_splitEditorOutput;

@@ -307,6 +307,8 @@
 		<Unit filename="gui/IconManager.h" />
 		<Unit filename="gui/NumeReNotebook.cpp" />
 		<Unit filename="gui/NumeReNotebook.h" />
+		<Unit filename="gui/NumeReStatusbar.cpp" />
+		<Unit filename="gui/NumeReStatusbar.hpp" />
 		<Unit filename="gui/NumeReWindow.cpp" />
 		<Unit filename="gui/NumeReWindow.h" />
 		<Unit filename="gui/dialogs/AboutChameleonDialog.cpp" />

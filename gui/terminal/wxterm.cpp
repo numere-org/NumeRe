@@ -442,9 +442,7 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
 	// Toggle the toolbar tools used for stopping and starting tasks
 	if (done)
 	{
-		wxToolBar* tb = m_wxParent->GetToolBar();
-		tb->EnableTool(ID_DEBUG_START, true);
-		tb->EnableTool(ID_DEBUG_STOP, false);
+		m_wxParent->Ready();
 	}
 
 	// If the kernel asks the application to terminate

@@ -281,6 +281,8 @@ bool MyApp::OnInit()
         frame->Update();
         wxMessageBox(_guilang.get("GUI_DLG_SESSION_RECREATIONERROR", frame->m_UnrecoverableFiles), _guilang.get("GUI_DLG_SESSION_ERROR"), wxICON_ERROR);
     }
+
+    frame->Ready();
     return true;
 }
 
@@ -320,6 +322,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_watcher = nullptr;
     m_currentEd = nullptr;
     m_currentView = nullptr;
+    m_statusBar = nullptr;
     fSplitPercentage = -0.65f;
     fVerticalSplitPercentage = 0.75f; // positive number to deactivate internal default algorithm
 
@@ -427,18 +430,9 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_appClosing = false;
 	m_setSelection = false;
 
-	int charWidth = GetCharWidth();
 
-	int filetypeChars = 20;
-	int readEditChars = 15;
-	int lineColChars = 20;
-	int debuggerchars = 25;
-
-	const int widths[] = {-1, filetypeChars * charWidth, readEditChars * charWidth, lineColChars * charWidth, debuggerchars * charWidth};
-    const int styles[] = {wxSB_RAISED, wxSB_RAISED, wxSB_RAISED, wxSB_RAISED, wxSB_RAISED};
-	m_statusBar = CreateStatusBar (WXSIZEOF(widths), wxST_SIZEGRIP);
-	m_statusBar->SetStatusWidths(WXSIZEOF(widths), widths);
-	m_statusBar->SetStatusStyles(WXSIZEOF(styles), styles);
+	m_statusBar = new NumeReStatusbar(this);
+	SetStatusBar(m_statusBar);
 	SendSizeEvent();
 
 	m_updateTimer = new wxTimer (this, ID_STATUSTIMER);
@@ -600,10 +594,6 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	pStr = strrchr(szPath, '\\');
 	if (pStr != NULL)
 		*(++pStr)='\0';
-	wxToolBar* tb = GetToolBar();
-
-    tb->EnableTool(ID_DEBUG_START, true);
-    tb->EnableTool(ID_DEBUG_STOP, false);
 
 
 	///Msgbox
@@ -3083,6 +3073,28 @@ wxString NumeReWindow::getTreeFolderPath(const wxTreeItemId& itemId)
     return pathName;
 }
 
+// This member function tells NumeRe that
+// it should display the "ready" state to the user
+void NumeReWindow::Ready()
+{
+    if (m_statusBar)
+        m_statusBar->Ready();
+    wxToolBar* tb = GetToolBar();
+    tb->EnableTool(ID_DEBUG_START, true);
+    tb->EnableTool(ID_DEBUG_STOP, false);
+}
+
+// This member function tells NumeRe that
+// it should display the "busy" state to the user
+void NumeReWindow::Busy()
+{
+    if (m_statusBar)
+        m_statusBar->Busy();
+    wxToolBar* tb = GetToolBar();
+    tb->EnableTool(ID_DEBUG_START, false);
+    tb->EnableTool(ID_DEBUG_STOP, true);
+}
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private SaveFile
 ///  Saves a text file, abstracting out local / remote issues.
@@ -3614,84 +3626,28 @@ void NumeReWindow::UpdateStatusBar()
         filetype = _guilang.get("GUI_STATUSBAR_UNKNOWN", sExt);
 	}
 
-
-	if (filename != m_statusBar->GetStatusText(0))
-	{
-		m_statusBar->SetStatusText(filename, 0);
-	}
-
-	if (filetype != m_statusBar->GetStatusText(1))
-	{
-		m_statusBar->SetStatusText(filetype, 1);
-	}
-
 	bool isEdReadOnly = m_currentEd->GetReadOnly();
 
 	wxString editable = isEdReadOnly ? "Read only" : "Read/Write";
-
-	if (editable != m_statusBar->GetStatusText(2))
-	{
-		m_statusBar->SetStatusText(editable, 2);
-	}
-
-	bool synchronousOp = m_network->DoingSynchronousOperation();
-
-	if (synchronousOp)
-	{
-#ifdef DO_LOG
-		wxLogDebug("UI aware of synchronous op");
-#endif
-	}
-
-	/*
-	wxString netStatus = m_network->GetStatusDetails();
-	wxString statusText;
-	if(netStatus == "NET_STARTING")
-	{
-		statusText = "Networking starting";
-	}
-	else if(netStatus == "NET_GOOD")
-	{
-		statusText = "Network connected";
-	}
-	else if(netStatus == "NET_UNKNOWN_HOST")
-	{
-		statusText = "Can't find host";
-	}
-	else if(netStatus == "NET_CONN_REFUSED")
-	{
-		statusText = "Connection refused";
-	}
-	else if (netStatus = "NET_AUTH_FAILED")
-	{
-		statusText = "Login failed";
-	}
-	else if(netStatus == "NET_ERROR_MESSAGE")
-	{
-		statusText = "Unknown network error";
-
-	}
-
-	SetStatusText(statusText, 3);
-	*/
 
 	int curLine = m_currentEd->GetCurrentLine();
 	int curPos = m_currentEd->GetCurrentPos() - m_currentEd->PositionFromLine (-curLine);
 	wxString linecol;
 	linecol.Printf (_(_guilang.get("GUI_STATUSBAR_LINECOL")), curLine+1, curPos+1);
-	//linecol.Printf (_("Line: %d, Col: %d"), curLine+1, curPos+1);
-	if (linecol != m_statusBar->GetStatusText (3))
-	{
-		SetStatusText (linecol, 3);
-	}
-	if (m_terminal->getKernelSettings().getUseDebugger() && m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER))
-        SetStatusText(_guilang.get("GUI_STATUSBAR_DEBUGGER_ANALYZER"), 4);
+
+	wxString sDebuggerMode = "";
+    if (m_terminal->getKernelSettings().getUseDebugger() && m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER))
+         sDebuggerMode = _guilang.get("GUI_STATUSBAR_DEBUGGER_ANALYZER");
 	else if (m_terminal->getKernelSettings().getUseDebugger() && !m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER))
-        SetStatusText(_guilang.get("GUI_STATUSBAR_DEBUGGER"), 4);
+         sDebuggerMode = _guilang.get("GUI_STATUSBAR_DEBUGGER");
 	else if (!m_terminal->getKernelSettings().getUseDebugger() && m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER))
-        SetStatusText(_guilang.get("GUI_STATUSBAR_ANALYZER"), 4);
-    else
-        SetStatusText("", 4);
+         sDebuggerMode = _guilang.get("GUI_STATUSBAR_ANALYZER");
+
+    m_statusBar->SetStatus(NumeReStatusbar::STATUS_PATH, filename);
+    m_statusBar->SetStatus(NumeReStatusbar::STATUS_FILETYPE, filetype);
+    m_statusBar->SetStatus(NumeReStatusbar::STATUS_RWMODE, editable);
+    m_statusBar->SetStatus(NumeReStatusbar::STATUS_CARETPOSITION, linecol);
+    m_statusBar->SetStatus(NumeReStatusbar::STATUS_DEBUGGER, sDebuggerMode);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -5816,7 +5772,7 @@ void NumeReWindow::OnExecuteFile(const string& sFileName)
 {
     if (!sFileName.length())
         return;
-    wxToolBar* tb = GetToolBar();
+    //wxToolBar* tb = GetToolBar();
     string command = replacePathSeparator(sFileName);
     vector<string> vPaths = m_terminal->getPathSettings();
     if (command.rfind(".nprc") != string::npos)
@@ -5833,8 +5789,7 @@ void NumeReWindow::OnExecuteFile(const string& sFileName)
         else
             command = "'" + command + "'";
         command = "$" + command + "()";
-        tb->EnableTool(ID_DEBUG_START, false);
-        tb->EnableTool(ID_DEBUG_STOP, true);
+        Busy();
     }
     else if (command.rfind(".nscr") != string::npos)
     {
@@ -5846,8 +5801,7 @@ void NumeReWindow::OnExecuteFile(const string& sFileName)
         if (command.find(' ') != string::npos)
             command = "\"" + command + "\"";
         command = "start " + command;
-        tb->EnableTool(ID_DEBUG_START, false);
-        tb->EnableTool(ID_DEBUG_STOP, true);
+        Busy();
     }
     else
     {
