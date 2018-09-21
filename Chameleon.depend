@@ -2181,7 +2181,7 @@
 	"../../kernel/kernel.hpp"
 	"../../kernel/debugmessenger.hpp"
 
-1536734093 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1536865330 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -2197,6 +2197,7 @@
 	"viewerframe.hpp"
 	"viewerbook.hpp"
 	"filetree.hpp"
+	"NumeReStatusbar.hpp"
 	"../kernel/core/plotting/graph_helper.hpp"
 	"../kernel/core/datamanagement/container.hpp"
 
@@ -2936,7 +2937,7 @@
 	<windows.h>
 	"commctrl.h"
 
-1530964298 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
+1536735759 source:d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.cpp
 	"duplicatecodedialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 	"../editor/editor.h"
@@ -3694,7 +3695,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1536697760 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1536865330 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3911,7 +3912,7 @@
 	"wxssh.h"
 	"../../common/debug.h"
 
-1536697274 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1536865330 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -4021,9 +4022,11 @@
 1533222925 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
 	"functionimplementation.hpp"
 
-1535559189 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
+1537448604 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
+	<list>
+	<cmath>
 
 1533224385 source:d:\cpp\numere-source\trunk\kernel\core\maths\odesolver.cpp
 	"odesolver.hpp"
@@ -8784,5 +8787,12 @@
 	<wx/gauge.h>
 
 1536847514 source:c:\cpp\numere-source\trunk\gui\numerestatusbar.cpp
+	"NumeReStatusbar.hpp"
+
+1536865330 d:\cpp\numere-source\trunk\gui\numerestatusbar.hpp
+	<wx/statusbr.h>
+	<wx/gauge.h>
+
+1536865330 source:d:\cpp\numere-source\trunk\gui\numerestatusbar.cpp
 	"NumeReStatusbar.hpp"
 
