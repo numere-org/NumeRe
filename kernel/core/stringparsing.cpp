@@ -708,6 +708,91 @@ static string strfnc_replace(StringFuncArgs& funcArgs)
 	return "\"" + funcArgs.sArg1.replace(funcArgs.nArg1 - 1, funcArgs.nArg2, funcArgs.sArg2) + "\"";
 }
 
+// {val} = textparse(str, str, [pos], [pos])
+static string strfnc_textparse(StringFuncArgs& funcArgs)
+{
+    // Remove the masked strings
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+
+    // Exclude border cases
+    if (!funcArgs.sArg1.length())
+        return "\"\"";
+    if (!funcArgs.sArg2.length())
+        return "\"" + funcArgs.sArg1 + "\"";
+
+    // Ensure that the indices are valid
+    if (funcArgs.nArg1 < 1)
+        funcArgs.nArg1 = 1;
+    if ((size_t)funcArgs.nArg1 > funcArgs.sArg1.length())
+        return "\"\"";
+    if (funcArgs.nArg2 == DEFAULT_NUM_ARG)
+        funcArgs.nArg2 = -1;
+
+    // Examples for text, which shall be parsed
+    // 2018-09-21: Message VAL=12452
+    // %s: %s VAL=%f
+    // {sDate, sMessage, fValue} = textparse("2018-09-21: Message VAL=12452", "%s: %s VAL=%f");
+
+    string sParsedStrings;
+    size_t lastPosition = funcArgs.nArg1 - 1;
+
+    // Go through the pattern
+    for (size_t i = 0; i < funcArgs.sArg2.length(); i++)
+    {
+        // Ensure that the last position is considered
+        if (lastPosition > (size_t)funcArgs.nArg2)
+            break;
+
+        // Find the identifiers
+        if (funcArgs.sArg2.substr(i, 2) == "%s" || funcArgs.sArg2.substr(i, 2) == "%f" || funcArgs.sArg2.substr(i, 2) == "%a")
+        {
+            // Find the following identifier
+            size_t pos = string::npos;
+            for (size_t j = i+2; j < funcArgs.sArg2.length(); j++)
+            {
+                if (funcArgs.sArg2.substr(j, 2) == "%s" || funcArgs.sArg2.substr(j, 2) == "%f" || funcArgs.sArg2.substr(j, 2) == "%a")
+                {
+                    pos = j;
+                    break;
+                }
+            }
+
+            // Define the search pattern to find the
+            // separator at the end of the current
+            // token
+            string sSearchPattern = funcArgs.sArg2.substr(i+2, pos - i - 2);
+            if (!sSearchPattern.length())
+                pos = string::npos;
+            else
+                pos = funcArgs.sArg1.find(sSearchPattern, lastPosition);
+
+            // Ensure that the found position is inside
+            // the right border
+            if (pos > (size_t)funcArgs.nArg2 && (size_t)funcArgs.nArg2 < funcArgs.sArg1.length())
+                break;
+
+            // Append a newstring character, if needed
+            if (sParsedStrings.length() && funcArgs.sArg2.substr(i, 2) != "%a")
+                sParsedStrings += NEWSTRING;
+
+            // Append the found token
+            if (funcArgs.sArg2.substr(i, 2) == "%s")
+                sParsedStrings += "\"" + funcArgs.sArg1.substr(lastPosition, pos - lastPosition) + "\"";
+            else if (funcArgs.sArg2.substr(i, 2) == "%f")
+                sParsedStrings += funcArgs.sArg1.substr(lastPosition, pos - lastPosition);
+
+            // Store the position of the separator
+            lastPosition = pos;
+            i++;
+        }
+        else
+            lastPosition++;
+    }
+
+    return sParsedStrings;
+}
+
 // ----------------------------
 // bool PARSER(const string&, string&, string&, string&, int&, int&)
 // STR__STR_STR_STR_VALOPT_VALOPT
@@ -1980,6 +2065,7 @@ static map<string, StringFuncHandle> parser_getStringFuncHandles()
 	mHandleTable["char"]                = StringFuncHandle(STR_VAL, strfnc_char, false);
 	mHandleTable["getopt"]              = StringFuncHandle(STR_VAL, strfnc_getopt, false);
 	mHandleTable["replace"]             = StringFuncHandle(STR_VAL_VALOPT_STROPT, strfnc_replace, false); // fehler
+	mHandleTable["textparse"]           = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_textparse, false);
 	mHandleTable["replaceall"]          = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_replaceall, false);
 	mHandleTable["getfilelist"]         = StringFuncHandle(STR_VALOPT, strfnc_getfilelist, false);
 	mHandleTable["getfolderlist"]       = StringFuncHandle(STR_VALOPT, strfnc_getfolderlist, false);

@@ -36,3 +36,4 @@ Added	The editor font and size may now be changed by the user.
 Fixed	Closing NumeRe may now aborted, if a file was not saved yet.
 New	NumeRe now features a "Busy-Indicator" in the status bar, which pulses, if NumeRe is currently working.
 New	The "matop" mode now features are "unique()" function, which will remove duplicates from a passed matrix.
+New	The new string function "textparse()" allows parsing a line of text using a pattern into a set of tokens of defined types.

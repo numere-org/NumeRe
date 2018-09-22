@@ -3969,7 +3969,7 @@
 
 1501083705 d:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1533982184 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1537529943 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 	"io/fileops.hpp"
@@ -4022,7 +4022,7 @@
 1533222925 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
 	"functionimplementation.hpp"
 
-1537448604 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
+1537526918 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	<list>
@@ -4233,7 +4233,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1535611748 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1537554528 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>
