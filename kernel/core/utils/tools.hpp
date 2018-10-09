@@ -123,7 +123,7 @@ string toHexString(int nNumber);
  */
 string condenseText(const string& sText);
 
-int intCast(double number);
+long long int intCast(double number);
 string wcstombs(const wstring& wStr);
 void StripSpaces(string&);
 int matchParams(const string& sCmd, const string& sParam, const char cFollowing = ' ');

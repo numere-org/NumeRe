@@ -1,4 +1,5 @@
 
+
 #include "maths/parser_functions.hpp"
 #include "../kernel.hpp"
 #include <ctime>
@@ -15,14 +16,14 @@ extern Plugin _plugin;
 // define the "End of transmission block" as string separator
 
 typedef std::vector<std::string> s_vect;
-typedef std::vector<int> n_vect;
+typedef std::vector<long long int> n_vect;
 
 // Define the string function arguments in a structure
 struct StringFuncArgs
 {
 	string sArg1, sArg2, sArg3;
 	s_vect sMultiArg;
-	int nArg1, nArg2;
+	long long int nArg1, nArg2;
 	n_vect nMultiArg;
 	const Settings* opt;
 };
@@ -604,8 +605,8 @@ static string padWithZeros(int nTime, size_t nLength)
 static string strfnc_timeformat(StringFuncArgs& funcArgs)
 {
 	string sFormattedTime = funcArgs.sArg1 + " "; // contains pattern
-	time_t nTime = abs(funcArgs.nArg1);
-	tm* timeStruct = localtime(&nTime);
+	__time64_t nTime = llabs(funcArgs.nArg1);
+	tm* timeStruct = _localtime64(&nTime);
 	TIME_ZONE_INFORMATION timezone;
 	GetTimeZoneInformation(&timezone);
 	char cCurrentChar = sFormattedTime.front();

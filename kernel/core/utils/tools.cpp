@@ -1698,13 +1698,13 @@ bool isToStringArg(const string& sExpr, unsigned int nPos)
 }
 
 // Casts doubles to integers and avoids rounding errors
-int intCast(double number)
+long long int intCast(double number)
 {
 	// if quite close, use rint
 	if (fabs(number - rint(number)) < 1e-7)
 		return rint(number);
 	// otherwise truncate
-	return (int)number;
+	return (long long int)number;
 }
 
 // This function is a wrapper for the usual wcstombs function, which can handle wstrings
