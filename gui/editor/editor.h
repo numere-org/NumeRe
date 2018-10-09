@@ -340,7 +340,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void ApplyAutoFormatCPP(int nFirstLine = 0, int nLastLine = -1);
 		int countUmlauts(const string& sStr);
 		string realignLangString(string sLine, size_t& lastpos);
-		string addLinebreaks(const string& sLine);
+		string addLinebreaks(const string& sLine, bool onlyDocumentation = false);
 		AnnotationCount addToAnnotation(string& sCurrentLine, string& sStyles, const string& sMessage, int nStyle);
 		string getTextCoordsAsString(int nPos);
 		string constructSyntaxElementForAnalyzer(const string& sElement, int nPos, int nLength);
@@ -366,6 +366,10 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		wxString FindNameSpaceOfProcedure(int charpos);
 		wxString FindProceduresInCurrentFile(wxString sFirstChars, wxString sSelectedNameSpace);
 		wxString FindProcedureDefinition();
+		wxString FindProcedureDefinitionInLocalFile(const wxString& procedurename);
+		wxString FindProcedureDefinitionInOtherFile(const wxString& pathname, const wxString& procedurename);
+		void AppendToDocumentation(wxString& sDocumentation, const wxString& sNewDocLine);
+		string CleanDocumentation(const wxString& sDocumentation);
 		int FindCurrentProcedureHead(int pos);
 		int FindNamingProcedure();
 		vector<int> FindAll(const wxString& sSymbol, int nStyle, int nStartPos = 0, int nEndPos = -1);

@@ -61,6 +61,15 @@ class Script : public FileSystem
 
         string stripLineComments(const string& sLine);
         string stripBlockComments(const string& sLine);
+        bool startInstallation(string& sScriptCommand, bool& bFirstPassedInstallCommand);
+        bool handleInstallInformation(string& sScriptCommand, bool& bFirstPassedInstallCommand);
+        string extractDocumentationIndex(string& sScriptCommand);
+        void writeDocumentationArticle(string& sScriptCommand);
+        void evaluateInstallInformation(bool bFirstPassedInstallCommand);
+        string getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand);
+        string getNextScriptCommandFromInclude();
+        string handleIncludeSyntax(string& sScriptCommand);
+
 
     public:
         Script();

@@ -804,6 +804,8 @@ void NumeReEditor::HandleFunctionCallTip()
 	if (sFunctionContext.front() == '$')
 	{
 		sDefinition = this->FindProcedureDefinition().ToStdString();
+		if (sDefinition.find('\n') != string::npos)
+            sDefinition.erase(sDefinition.find('\n'));
 		if (sDefinition.find(')') != string::npos)
 			sDefinition.erase(sDefinition.rfind(')') + 1);
 	}
@@ -1188,16 +1190,20 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 
 	if (this->GetStyleAt(charpos) == wxSTC_NSCR_FUNCTION || this->GetStyleAt(charpos) == wxSTC_NPRC_FUNCTION)
 	{
-		if (this->CallTipActive())
-			this->AdvCallTipCancel();
+		if (this->CallTipActive() && m_nCallTipStart == startPosition)
+            return;
+        else
+            this->AdvCallTipCancel();
 		size_t lastpos = 22;
 		this->AdvCallTipShow(startPosition, addLinebreaks(realignLangString(GetFunctionCallTip(selection.ToStdString()), lastpos)));
 		this->CallTipSetHighlight(0, lastpos);
 	}
 	else if (this->GetStyleAt(charpos) == wxSTC_NSCR_COMMAND || this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURE_COMMANDS || this->GetStyleAt(charpos) == wxSTC_NPRC_COMMAND)
 	{
-		if (this->CallTipActive())
-			this->AdvCallTipCancel();
+		if (this->CallTipActive() && m_nCallTipStart == startPosition)
+            return;
+        else
+            this->AdvCallTipCancel();
 		if (selection == "showf")
 			selection = "show";
 		else if (selection == "view")
@@ -1334,8 +1340,14 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 	}
 	else if (this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURES || this->GetStyleAt(charpos) == wxSTC_NPRC_PROCEDURES)
 	{
-		if (this->CallTipActive())
-			this->AdvCallTipCancel();
+		if (GetCharAt(charpos) != '$')
+            startPosition--;
+
+        if (this->CallTipActive() && m_nCallTipStart == startPosition)
+            return;
+        else
+            this->AdvCallTipCancel();
+
 		wxString proc = FindMarkedProcedure(charpos);
 		if (!proc.length())
 			return;
@@ -1348,14 +1360,25 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 			flags = procdef.substr(procdef.find("::"));
 			procdef.erase(procdef.find("::"));
 		}
+		else if (procdef.find('\n') != string::npos)
+        {
+            flags = procdef.substr(procdef.find('\n'));
+            procdef.erase(procdef.find('\n'));
+        }
 
-		this->AdvCallTipShow(startPosition, _guilang.get("GUI_EDITOR_CALLTIP_PROC1") + " " + procdef + flags + "\n" + _guilang.get("GUI_EDITOR_CALLTIP_PROC2"));
-		this->CallTipSetHighlight(_guilang.get("GUI_EDITOR_CALLTIP_PROC1").length() + 1, 1 + procdef.length() + _guilang.get("GUI_EDITOR_CALLTIP_PROC1").length());
+
+		if (flags.find('\n') != string::npos)
+            this->AdvCallTipShow(startPosition, procdef + flags);
+        else
+            this->AdvCallTipShow(startPosition, procdef + flags + "\n    " + _guilang.get("GUI_EDITOR_CALLTIP_PROC2"));
+		this->CallTipSetHighlight(0, procdef.length());
 	}
 	else if (this->GetStyleAt(charpos) == wxSTC_NSCR_OPTION || this->GetStyleAt(charpos) == wxSTC_NPRC_OPTION)
 	{
-		if (this->CallTipActive())
-			this->AdvCallTipCancel();
+		if (this->CallTipActive() && m_nCallTipStart == startPosition)
+            return;
+        else
+            this->AdvCallTipCancel();
 		selection = _guilang.get("GUI_EDITOR_CALLTIP_OPT_" + toUpperCase(selection.ToStdString()));
 		size_t highlightlength = selection.length();
 		if (selection.find(' ') != string::npos)
@@ -1365,8 +1388,10 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 	}
 	else if (this->GetStyleAt(charpos) == wxSTC_NSCR_METHOD || this->GetStyleAt(charpos) == wxSTC_NPRC_METHOD)
 	{
-		if (this->CallTipActive())
-			this->AdvCallTipCancel();
+		if (this->CallTipActive() && m_nCallTipStart == startPosition)
+            return;
+        else
+            this->AdvCallTipCancel();
 		selection = GetMethodCallTip(selection.ToStdString());
 		size_t highlightlength;
 		size_t highlightStart = selection.find('.') + 1;
@@ -1377,16 +1402,20 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 	}
 	else if (this->GetStyleAt(charpos) == wxSTC_NSCR_PREDEFS || this->GetStyleAt(charpos) == wxSTC_NPRC_PREDEFS)
 	{
-		if (this->CallTipActive())
-			this->AdvCallTipCancel();
+		if (this->CallTipActive() && m_nCallTipStart == startPosition)
+            return;
+        else
+            this->AdvCallTipCancel();
 		size_t highlightLength = 10;
 		this->AdvCallTipShow(startPosition, addLinebreaks(realignLangString(_guilang.get("GUI_EDITOR_CALLTIP_" + toUpperCase(selection.ToStdString())), highlightLength)));
 		this->CallTipSetHighlight(0, highlightLength);
 	}
 	else if (this->GetStyleAt(charpos) == wxSTC_NSCR_CONSTANTS || this->GetStyleAt(charpos) == wxSTC_NPRC_CONSTANTS)
 	{
-		if (this->CallTipActive())
-			this->AdvCallTipCancel();
+		if (this->CallTipActive() && m_nCallTipStart == startPosition)
+            return;
+        else
+            this->AdvCallTipCancel();
 		string sCalltip = _guilang.get("GUI_EDITOR_CALLTIP_CONST" + toUpperCase(selection.ToStdString()) + "_*");
 		if (selection == "_G")
 			sCalltip = _guilang.get("GUI_EDITOR_CALLTIP_CONST_GRAV_*");
@@ -5121,79 +5150,51 @@ wxString NumeReEditor::FindProceduresInCurrentFile(wxString sFirstChars, wxStrin
 	return sThisFileProcedures + _syntax->getNameSpaceAutoCompList(sFirstChars.ToStdString());
 }
 
+// This member function searches for the definition of
+// the procedure, which is currently below the cursor.
 wxString NumeReEditor::FindProcedureDefinition()
 {
+    // do nothing, if there's no currently selected procedure
 	if (!m_clickedProcedure.length())
 		return "";
 	vector<std::string> vPaths = m_terminal->getPathSettings();
 	wxString pathname = m_clickedProcedure;
 	wxString procedurename = pathname.substr(pathname.rfind('~') + 1); // contains a "$", if it's not used for the "thisfile~" case
+
+	// Handle the namespaces
 	if (pathname.find("$this~") != string::npos)
 	{
+	    // This namespace (the current folder)
 		wxString thispath = GetFileNameAndPath();
 		pathname.replace(pathname.find("$this~"), 6, thispath.substr(0, thispath.rfind('\\') + 1));
 	}
 	else if (pathname.find("$thisfile~") != string::npos)
 	{
-		wxString procedureline;
-		int nminpos = 0;
-		int nmaxpos = GetLastPosition();
-		while (nminpos < nmaxpos && FindText(nminpos, nmaxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) != -1)
-		{
-			nminpos = FindText(nminpos, nmaxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) + 1;
-			if (this->GetStyleAt(nminpos) == wxSTC_NSCR_COMMENT_BLOCK || this->GetStyleAt(nminpos) == wxSTC_NSCR_COMMENT_LINE)
-				continue;
-			procedureline = GetLine(LineFromPosition(nminpos));
-			if (procedureline.find("$" + procedurename) != string::npos && procedureline[procedureline.find_first_not_of(' ', procedureline.find("$" + procedurename) + procedurename.length() + 1)] == '(')
-			{
-				if (getMatchingParenthesis(procedureline.substr(procedureline.find("$" + procedurename)).ToStdString()) == string::npos)
-					return "";
-				string sProcDef = procedureline.substr(procedureline.find("$" + procedurename), getMatchingParenthesis(procedureline.substr(procedureline.find("$" + procedurename)).ToStdString()) + 1).ToStdString();
-				size_t nFirstParens = sProcDef.find('(');
-				string sArgList = sProcDef.substr(nFirstParens + 1, getMatchingParenthesis(sProcDef.substr(nFirstParens)) - 1);
-				sProcDef.erase(nFirstParens + 1);
-				while (sArgList.length())
-				{
-					string currentarg = getNextArgument(sArgList, true);
-					if (currentarg.front() == '_')
-						currentarg.erase(0, 1);
-					sProcDef += currentarg;
-					if (sArgList.length())
-						sProcDef += ", ";
-				}
-				sProcDef += ") :: local";
-
-				if (procedureline.find("::") != string::npos)
-				{
-					string sFlags = procedureline.substr(procedureline.find("::") + 2).ToStdString();
-					if (sFlags.find("##") != string::npos)
-						sFlags.erase(sFlags.find("##"));
-					if (sFlags.find_first_of("\r\n") != string::npos)
-						sFlags.erase(sFlags.find_first_of("\r\n"));
-					StripSpaces(sFlags);
-					sProcDef += " " + sFlags;
-				}
-
-				return sProcDef;
-			}
-		}
+	    // local namespace
+		return FindProcedureDefinitionInLocalFile(procedurename);
 	}
 	else
 	{
+	    // All other namespaces
 		if (pathname.find("$main~") != string::npos)
 			pathname.erase(pathname.find("$main~") + 1, 5);
+
 		while (pathname.find('~') != string::npos)
 			pathname[pathname.find('~')] = '/';
+
+		// Add the root folders to the path name
 		if (pathname[0] == '$' && pathname.find(':') == string::npos)
-			pathname.replace(0, 1, vPaths[5] + "/");
+			pathname.replace(0, 1, vPaths[PROCPATH] + "/");
 		else if (pathname.find(':') == string::npos)
-			pathname.insert(0, vPaths[5]);
+			pathname.insert(0, vPaths[PROCPATH]);
 		else // pathname.find(':') != string::npos
 		{
+		    // Absolute file paths
 			pathname = pathname.substr(pathname.find('\'') + 1, pathname.rfind('\'') - pathname.find('\'') - 1);
 		}
 	}
 
+	// Find the namespace in absolute procedure paths
 	while (procedurename.find('\'') != string::npos)
 		procedurename.erase(procedurename.find('\''), 1);
 	if (procedurename.find('/') != string::npos)
@@ -5203,6 +5204,141 @@ wxString NumeReEditor::FindProcedureDefinition()
 	if (procedurename[0] != '$')
 		procedurename.insert(0, 1, '$');
 
+	// Find procedure in a global procedure file
+	return FindProcedureDefinitionInOtherFile(pathname, procedurename);
+}
+
+// This private member function searches for the procedure
+// definition in the currently opened procedure file
+wxString NumeReEditor::FindProcedureDefinitionInLocalFile(const wxString& procedurename)
+{
+    wxString procedureline;
+    int nminpos = 0;
+    int nmaxpos = GetLastPosition();
+
+    // Force Scintilla to style the whole document
+    if (GetLastPosition() > GetEndStyled() && !GetWrapMode())
+    {
+        SetWrapMode(wxSTC_WRAP_WORD);
+        SetWrapMode(wxSTC_WRAP_NONE);
+    }
+
+    while (nminpos < nmaxpos && FindText(nminpos, nmaxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) != -1)
+    {
+        nminpos = FindText(nminpos, nmaxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) + 1;
+
+        // Ignore comments
+        if (this->GetStyleAt(nminpos) == wxSTC_NSCR_COMMENT_BLOCK || this->GetStyleAt(nminpos) == wxSTC_NSCR_COMMENT_LINE)
+            continue;
+
+        procedureline = GetLine(LineFromPosition(nminpos));
+
+        if (procedureline.find("$" + procedurename) != string::npos && procedureline[procedureline.find_first_not_of(' ', procedureline.find("$" + procedurename) + procedurename.length() + 1)] == '(')
+        {
+            if (getMatchingParenthesis(procedureline.substr(procedureline.find("$" + procedurename)).ToStdString()) == string::npos)
+                return "";
+
+            // Extraxt the procedure definition
+            string sProcDef = procedureline.substr(procedureline.find("$" + procedurename), getMatchingParenthesis(procedureline.substr(procedureline.find("$" + procedurename)).ToStdString()) + 1).ToStdString();
+            size_t nFirstParens = sProcDef.find('(');
+            string sArgList = sProcDef.substr(nFirstParens + 1, getMatchingParenthesis(sProcDef.substr(nFirstParens)) - 1);
+            sProcDef.erase(nFirstParens + 1);
+
+            // Handle the argument list
+            while (sArgList.length())
+            {
+                string currentarg = getNextArgument(sArgList, true);
+                if (currentarg.front() == '_')
+                    currentarg.erase(0, 1);
+                sProcDef += currentarg;
+                if (sArgList.length())
+                    sProcDef += ", ";
+            }
+
+            sProcDef += ") :: local";
+
+            // Handle the flags
+            if (procedureline.find("::") != string::npos)
+            {
+                string sFlags = procedureline.substr(procedureline.find("::") + 2).ToStdString();
+                if (sFlags.find("##") != string::npos)
+                    sFlags.erase(sFlags.find("##"));
+                if (sFlags.find_first_of("\r\n") != string::npos)
+                    sFlags.erase(sFlags.find_first_of("\r\n"));
+                StripSpaces(sFlags);
+                sProcDef += " " + sFlags;
+            }
+
+            wxString sDocumentation;
+
+            // Find now the documentations - documentation lines above
+            // the current line are preferred:
+            for (int docline = LineFromPosition(nminpos)-1; docline >= 0; docline--)
+            {
+                if (!isStyleType(STYLE_COMMENT_BLOCK, GetLineIndentPosition(docline))
+                    && !isStyleType(STYLE_COMMENT_SECTION_LINE, GetLineIndentPosition(docline))
+                    && !isStyleType(STYLE_COMMENT_SECTION_BLOCK, GetLineIndentPosition(docline)))
+                {
+                    if (docline < LineFromPosition(nminpos)-1)
+                    {
+                        for (int curline = docline+1; curline < LineFromPosition(nminpos); curline++)
+                        {
+                            wxString curdocline = GetLine(curline);
+                            curdocline.erase(0, curdocline.find_first_not_of(" \t#*!"));
+                            curdocline.erase(curdocline.find_first_of("\r\n"));
+                            if (curdocline.find("*#") != string::npos)
+                                curdocline.erase(curdocline.find("*#"));
+
+                            AppendToDocumentation(sDocumentation, curdocline);
+                        }
+                    }
+                    break;
+                }
+            }
+
+            // If the documentation string is still empty
+            // search below the definition
+            if (!sDocumentation.length())
+            {
+                for (int docline = LineFromPosition(nminpos)+1; docline < GetLineCount(); docline++)
+                {
+                    if (!isStyleType(STYLE_COMMENT_BLOCK, GetLineIndentPosition(docline))
+                        && !isStyleType(STYLE_COMMENT_SECTION_LINE, GetLineIndentPosition(docline))
+                        && !isStyleType(STYLE_COMMENT_SECTION_BLOCK, GetLineIndentPosition(docline)))
+                    {
+                        if (docline > LineFromPosition(nminpos)+1)
+                        {
+                            for (int curline = LineFromPosition(nminpos)+1; curline < docline; curline++)
+                            {
+                                wxString curdocline = GetLine(curline);
+                                curdocline.erase(0, curdocline.find_first_not_of(" \t#*!"));
+                                curdocline.erase(curdocline.find_first_of("\r\n"));
+
+                                AppendToDocumentation(sDocumentation, curdocline);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+
+            // clean the documentation
+            sDocumentation = CleanDocumentation(sDocumentation);
+
+            // Append the documentation if it is present
+            if (sDocumentation.length())
+                sProcDef += "\n" + sDocumentation.ToStdString();
+
+            return sProcDef;
+        }
+    }
+    return "";
+}
+
+// This private member function searches for the procedure
+// definition in a selected global procedure file
+wxString NumeReEditor::FindProcedureDefinitionInOtherFile(const wxString& pathname, const wxString& procedurename)
+{
 	if (!fileExists((pathname + ".nprc").ToStdString()))
 	{
 		return "";
@@ -5212,27 +5348,64 @@ wxString NumeReEditor::FindProcedureDefinition()
 		ifstream procedure_in;
 		string sProcCommandLine;
 		bool bBlockComment = false;
+		wxString sDocumentation;
+		bool bDocFound = false;
 		procedure_in.open((pathname + ".nprc").c_str());
+
+		// Ensure that the file is in good state
 		if (!procedure_in.good())
 			return "";
+
+		// As long as we're not at the end of the file
 		while (!procedure_in.eof())
 		{
+		    // Read one line and strip all spaces
 			getline(procedure_in, sProcCommandLine);
 			StripSpaces(sProcCommandLine);
+
+			// Ignore empty lines
 			if (!sProcCommandLine.length())
+            {
+                sDocumentation.clear();
+                bDocFound = false;
 				continue;
+            }
+
+            // Ignore comment lines
 			if (sProcCommandLine.substr(0, 2) == "##")
+            {
+                // Append each documentation string
+                if (sProcCommandLine.substr(0, 3) == "##!")
+                {
+                    AppendToDocumentation(sDocumentation, sProcCommandLine.substr(3));
+                }
 				continue;
+            }
+
+            // Erase line comment parts
 			if (sProcCommandLine.find("##") != string::npos)
 				sProcCommandLine = sProcCommandLine.substr(0, sProcCommandLine.find("##"));
+
+			// Remove block comments and continue
 			if (sProcCommandLine.substr(0, 2) == "#*" && sProcCommandLine.find("*#", 2) == string::npos)
 			{
+			    if (sProcCommandLine.substr(0, 3) == "#*!")
+                {
+                    bDocFound = true;
+                    AppendToDocumentation(sDocumentation, sProcCommandLine.substr(3));
+                }
 				bBlockComment = true;
 				continue;
 			}
+
+			// Search for the end of the current block comment
 			if (bBlockComment && sProcCommandLine.find("*#") != string::npos)
 			{
 				bBlockComment = false;
+				if (bDocFound)
+                {
+                    AppendToDocumentation(sDocumentation, sProcCommandLine.substr(0, sProcCommandLine.find("*#")));
+                }
 				if (sProcCommandLine.find("*#") == sProcCommandLine.length() - 2)
 				{
 					continue;
@@ -5242,18 +5415,47 @@ wxString NumeReEditor::FindProcedureDefinition()
 			}
 			else if (bBlockComment && sProcCommandLine.find("*#") == string::npos)
 			{
+			    // if the documentation has a length, append the current block
+			    if (bDocFound)
+                {
+                    AppendToDocumentation(sDocumentation, sProcCommandLine);
+                }
 				continue;
 			}
+
+			// Ignore includes
 			if (sProcCommandLine[0] != '@' && findCommand(sProcCommandLine).sString != "procedure")
+            {
+                sDocumentation.clear();
+                bDocFound = false;
 				continue;
+            }
 			else if (sProcCommandLine[0] == '@')
+            {
+                sDocumentation.clear();
+                bDocFound = false;
 				continue;
+            }
+
+			// Ignore lines without "procedure"
 			if (findCommand(sProcCommandLine).sString != "procedure")
+            {
+                sDocumentation.clear();
+                bDocFound = false;
 				continue;
+            }
+
+			// Search for the current procedure name
 			if (sProcCommandLine.find(procedurename.ToStdString()) == string::npos || sProcCommandLine.find('(') == string::npos)
+            {
+                // clear the documentation string
+                sDocumentation.clear();
+                bDocFound = false;
 				continue;
+            }
 			else
 			{
+                // Found the procedure name, now extract the definition
 				if (getMatchingParenthesis(sProcCommandLine.substr(sProcCommandLine.find(procedurename.ToStdString()))) == string::npos)
 					return "";
 				string sProcDef = sProcCommandLine.substr(sProcCommandLine.find(procedurename.ToStdString()), getMatchingParenthesis(sProcCommandLine.substr(sProcCommandLine.find(procedurename.ToStdString()))) + 1);
@@ -5279,11 +5481,118 @@ wxString NumeReEditor::FindProcedureDefinition()
 					StripSpaces(sFlags);
 					sProcDef += " :: " + sFlags;
 				}
+
+				// If no documentation was found, search in the following lines
+				if (!sDocumentation.length())
+                {
+                    while (!procedure_in.eof())
+                    {
+                        getline(procedure_in, sProcCommandLine);
+                        StripSpaces(sProcCommandLine);
+                        if (sProcCommandLine.substr(0, 3) == "##!")
+                        {
+                            AppendToDocumentation(sDocumentation, sProcCommandLine.substr(3));
+                        }
+                        else if (sProcCommandLine.substr(0, 3) == "#*!")
+                        {
+                            AppendToDocumentation(sDocumentation, sProcCommandLine.substr(3));
+                            bBlockComment = true;
+                        }
+                        else if (bBlockComment)
+                        {
+                            AppendToDocumentation(sDocumentation, sProcCommandLine.substr(0, sProcCommandLine.find("*#")));
+                            if (sProcCommandLine.find("*#") != string::npos)
+                                break;
+                        }
+                        else
+                            break;
+                    }
+                }
+
+                // clean the documentation
+                sDocumentation = CleanDocumentation(sDocumentation);
+
+				// if the documentation has a length, append it here
+				if (sDocumentation.length())
+                    sProcDef += "\n" + sDocumentation.ToStdString();
 				return sProcDef;
 			}
 		}
 	}
-	return "";
+    return "";
+}
+
+// This member function appends a found documentation line to the overall
+// documentation
+void NumeReEditor::AppendToDocumentation(wxString& sDocumentation, const wxString& sNewDocLine)
+{
+    static bool bBeginEnd = false;
+
+    if (sNewDocLine.find("\\begin{") != string::npos && sNewDocLine.find("\\end{") == string::npos)
+    {
+        if (sDocumentation.length() && sDocumentation[sDocumentation.length()-1] != '\n')
+            sDocumentation += "\n    ";
+        bBeginEnd = true;
+    }
+    else if (sNewDocLine.find("\\begin{") == string::npos && sNewDocLine.find("\\end{") != string::npos)
+    {
+        if (sDocumentation.length() && sDocumentation[sDocumentation.length()-1] != '\n')
+            sDocumentation += "\n    ";
+        bBeginEnd = false;
+    }
+    else if ((sNewDocLine.length() && sNewDocLine.substr(0, 2) == "- ") || bBeginEnd)
+    {
+        if (sDocumentation.length() && sDocumentation[sDocumentation.length()-1] != '\n')
+            sDocumentation += "\n    ";
+    }
+    else
+    {
+        if (sDocumentation.length() && sDocumentation[sDocumentation.length()-1] != ' ')
+            sDocumentation += " ";
+    }
+    sDocumentation += sNewDocLine;
+}
+
+// This member function checks the layout of the found documentations
+// and applies some special modifications
+string NumeReEditor::CleanDocumentation(const wxString& __sDoc)
+{
+    string sDocumentation = __sDoc.ToStdString();
+    if (sDocumentation.find_first_not_of(" \n") != string::npos)
+    {
+        // Clean whitespace before and after the documentation
+        sDocumentation.erase(0, sDocumentation.find_first_not_of(" \n"));
+        if (sDocumentation.back() == ' ' || sDocumentation.back() == '\n')
+        {
+            sDocumentation.erase(sDocumentation.find_last_not_of(" \n")+1);
+        }
+
+        // Remove doubled exclamation marks
+        while (sDocumentation.find("!!") != string::npos)
+            sDocumentation.erase(sDocumentation.find("!!"), 2);
+
+        // Replace \begin{} and \end{} with line breaks
+        // This logic bases upon the replacements done
+        // in NumeReEditor::AppendToDocumentation
+        size_t nMatch = 0;
+        while ((nMatch = sDocumentation.find("\\begin{")) != string::npos)
+        {
+            sDocumentation.erase(nMatch, sDocumentation.find('}', nMatch) + 1 - nMatch);
+            if (sDocumentation.substr(nMatch, 5) == "\n    ")
+                sDocumentation.erase(nMatch, 5);
+        }
+        while ((nMatch = sDocumentation.find("\\end{")) != string::npos)
+        {
+            sDocumentation.erase(nMatch, sDocumentation.find('}', nMatch) + 1 - nMatch + 1);
+        }
+
+        // Check the length of the line
+        sDocumentation = addLinebreaks(sDocumentation, true);
+    }
+    else
+        sDocumentation.clear();
+
+    return sDocumentation;
 }
 
 // This member function identifies the position of the procedure
@@ -7024,31 +7333,51 @@ string NumeReEditor::realignLangString(string sLine, size_t& lastpos)
 	return sLine;
 }
 
-string NumeReEditor::addLinebreaks(const string& sLine)
+// This member function adds linebreaks at the maximal line length
+// of 100 characters. It is used for the tooltips of functions, commands
+// and procedures
+string NumeReEditor::addLinebreaks(const string& sLine, bool onlyDocumentation /* = false*/)
 {
-	const unsigned int nMAXLINE = 80;
-	/*if (sLine.length() < nMAXLINE)
-	    return sLine;*/
+	const unsigned int nMAXLINE = 100;
 
 	string sReturn = sLine;
-	/*unsigned int nIndentPos = sReturn.find("- ")+2;
-	unsigned int nLastLineBreak = 0;
-	for (unsigned int i = 0; i < sReturn.length(); i++)*/
+
+	// Remove escaped dollar signs
 	while (sReturn.find("\\$") != string::npos)
 	{
 		sReturn.erase(sReturn.find("\\$"), 1);
 	}
 	unsigned int nDescStart = sReturn.find("- ");
-	unsigned int nIndentPos = 4;//
+	unsigned int nIndentPos = 4;
 	unsigned int nLastLineBreak = 0;
+    bool isItemize = false;
+
+    // Handle the first indent depending on whether this is
+    // only a documentation string or a whole definition
+	if (onlyDocumentation)
+    {
+        nDescStart = 0;
+        sReturn.insert(0, "    ");
+    }
+    else
+        sReturn.replace(nDescStart, 2, "\n    ");
+
 	if (nDescStart == string::npos)
 		return sLine;
-	sReturn.replace(nDescStart, 2, "\n    ");
+
 	nLastLineBreak = nDescStart;
+
 	for (unsigned int i = nDescStart; i < sReturn.length(); i++)
 	{
 		if (sReturn[i] == '\n')
+        {
 			nLastLineBreak = i;
+            if (sReturn.substr(i, 7) == "\n    - ")
+                isItemize = true;
+            else
+                isItemize = false;
+        }
+
 		if ((i == nMAXLINE && !nLastLineBreak)
 				|| (nLastLineBreak && i - nLastLineBreak == nMAXLINE))
 		{
@@ -7057,7 +7386,7 @@ string NumeReEditor::addLinebreaks(const string& sLine)
 				if (sReturn[j] == ' ')
 				{
 					sReturn[j] = '\n';
-					sReturn.insert(j + 1, nIndentPos, ' ');
+					sReturn.insert(j + 1, nIndentPos + 2*isItemize, ' ');
 					nLastLineBreak = j;
 					break;
 				}
@@ -7075,14 +7404,14 @@ string NumeReEditor::addLinebreaks(const string& sLine)
 							))
 						continue;
 					sReturn.insert(j + 1, "\n");
-					sReturn.insert(j + 2, nIndentPos, ' ');
+					sReturn.insert(j + 2, nIndentPos + 2*isItemize, ' ');
 					nLastLineBreak = j + 1;
 					break;
 				}
 				else if (sReturn[j] == ',' && j != (int)i && sReturn[j + 1] != ' ')
 				{
 					sReturn.insert(j + 1, "\n");
-					sReturn.insert(j + 2, nIndentPos, ' ');
+					sReturn.insert(j + 2, nIndentPos + 2*isItemize, ' ');
 					nLastLineBreak = j + 1;
 					break;
 				}

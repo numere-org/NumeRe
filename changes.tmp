@@ -37,3 +37,5 @@ Fixed	Closing NumeRe may now aborted, if a file was not saved yet.
 New	NumeRe now features a "Busy-Indicator" in the status bar, which pulses, if NumeRe is currently working.
 New	The "matop" mode now features are "unique()" function, which will remove duplicates from a passed matrix.
 New	The new string function "textparse()" allows parsing a line of text using a pattern into a set of tokens of defined types.
+Added	Documentation strings in or above NumeRe procedures are now displayed as tooltip.
+Applied	Documentation strings in NumeRe procedures are now copied during an installation to be usable as tooltip documentation.
