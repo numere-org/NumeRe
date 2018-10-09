@@ -803,6 +803,7 @@ bool wxTerm::filterKeyCodes(int keyCode)
                 GenericTerminal::lf();
                 GetTM()->ChangeEditableState();
                 GenericTerminal::update_changes();
+                m_wxParent->Busy();
                 pipe_command(sCommand);
                 return true;
             }
