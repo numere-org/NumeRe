@@ -41,3 +41,5 @@ Added	Documentation strings in or above NumeRe procedures are now displayed as t
 Applied	Documentation strings in NumeRe procedures are now copied during an installation to be usable as tooltip documentation.
 Cleaned	Semicolons are now used consistently in loops and if statements. Use them to suppress the output on the console.
 Added	New setting in the GUI to enable the flow control "-mask" flag as default. Added the "-sp" flag to force the process display although the "-mask" flag is enabled.
+Fixed	"hist" may now display more than two columns.
+Fixed	Backslashes are now masked correctly in strings.
