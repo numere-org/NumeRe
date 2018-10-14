@@ -6506,7 +6506,7 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1536743863 c:\cpp\numere-source\trunk\gui\editor\editor.h
+1539083369 c:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -6697,7 +6697,7 @@
 	<sstream>
 	<windows.h>
 
-1532596532 c:\cpp\numere-source\trunk\kernel\core\utils\tools.hpp
+1539083369 c:\cpp\numere-source\trunk\kernel\core\utils\tools.hpp
 	<iostream>
 	<iomanip>
 	<sstream>
@@ -6720,7 +6720,7 @@
 	<string>
 	"language.hpp"
 
-1533712459 c:\cpp\numere-source\trunk\kernel\core\settings.hpp
+1539523335 c:\cpp\numere-source\trunk\kernel\core\settings.hpp
 	<string>
 	<sstream>
 	<fstream>
@@ -6887,7 +6887,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1533712459 c:\cpp\numere-source\trunk\kernel\kernel.hpp
+1539523335 c:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	<queue>
@@ -7155,7 +7155,7 @@
 	"../settings.hpp"
 	"../structures.hpp"
 
-1530082137 c:\cpp\numere-source\trunk\kernel\core\script.hpp
+1539083369 c:\cpp\numere-source\trunk\kernel\core\script.hpp
 	<iostream>
 	<string>
 	<fstream>
@@ -7744,7 +7744,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1536743863 source:c:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1539083369 source:c:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -8091,7 +8091,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1536833926 source:c:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1536862722 source:c:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -8308,7 +8308,7 @@
 	"wxssh.h"
 	"../../common/debug.h"
 
-1536833909 source:c:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1539083369 source:c:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -8365,7 +8365,7 @@
 
 1530082144 c:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1533729800 source:c:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1538049272 source:c:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 	"io/fileops.hpp"
@@ -8460,9 +8460,11 @@
 1533712459 source:c:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
 	"functionimplementation.hpp"
 
-1535707987 source:c:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
+1537799686 source:c:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
+	<list>
+	<cmath>
 
 1533712459 source:c:\cpp\numere-source\trunk\kernel\core\maths\odesolver.cpp
 	"odesolver.hpp"
@@ -8607,7 +8609,7 @@
 1531231205 source:c:\cpp\numere-source\trunk\kernel\core\plugin.cpp
 	"plugin.hpp"
 
-1533712459 source:c:\cpp\numere-source\trunk\kernel\core\plugin_histogram.cpp
+1538057697 source:c:\cpp\numere-source\trunk\kernel\core\plugin_histogram.cpp
 	"plugins.hpp"
 	"../kernel.hpp"
 
@@ -8657,7 +8659,7 @@
 	"procedurevarfactory.hpp"
 	"procedure.hpp"
 
-1530082135 source:c:\cpp\numere-source\trunk\kernel\core\script.cpp
+1539083369 source:c:\cpp\numere-source\trunk\kernel\core\script.cpp
 	"script.hpp"
 	"../kernel.hpp"
 
@@ -8665,7 +8667,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1535707987 source:c:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1539083369 source:c:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>
@@ -8688,7 +8690,7 @@
 	<cstddef>
 	<cstdarg>
 
-1533712459 source:c:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
+1539083369 source:c:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
 	"tools.hpp"
 	"../../kernel.hpp"
 	<cstdlib>
@@ -8786,7 +8788,7 @@
 	<wx/statusbr.h>
 	<wx/gauge.h>
 
-1536847514 source:c:\cpp\numere-source\trunk\gui\numerestatusbar.cpp
+1536863121 source:c:\cpp\numere-source\trunk\gui\numerestatusbar.cpp
 	"NumeReStatusbar.hpp"
 
 1536865330 d:\cpp\numere-source\trunk\gui\numerestatusbar.hpp

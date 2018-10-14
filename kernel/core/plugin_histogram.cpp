@@ -150,7 +150,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 				if (sTemp.length())
 				{
 					nDataRowFinal = (int)StrToDb(sTemp);
-					if (nDataRowFinal > _data.getCols(sDatatable))
+					if (nDataRowFinal > _data.getCols(sDatatable) || !nDataRowFinal)
 						nDataRowFinal = _data.getCols(sDatatable);
 				}
 				else

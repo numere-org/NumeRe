@@ -3667,9 +3667,9 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						//NumeReKernel::print(sCmd );
 						_data.setCacheStatus(false);
 						if (sCommand == "hist2d")
-							sArgument = "hist2d -cache c=1: " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
+							sArgument = "hist2d -cache c=1:inf " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
 						else
-							sArgument = "hist -cache c=1: " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
+							sArgument = "hist -cache c=1:inf " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
 						sArgument = BI_evalParamString(sArgument, _parser, _data, _option, _functions);
 						plugin_histogram(sArgument, _cache, _data, _out, _option, _pData, true, false);
 						break;
@@ -5442,7 +5442,7 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
             // convert the doubles into strings and remove the trailing comma
             for (int i = 0; i < nResult; i++)
             {
-                sTemp += toString(v[i], _option) + ",";
+                sTemp += toString(v[i], _option) + ":";
             }
             sTemp.pop_back();
 
