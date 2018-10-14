@@ -1628,15 +1628,21 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
                     int answer = wxMessageBox(_guilang.get("GUI_DLG_FILEMODIFIED_QUESTION", sEventPath.ToStdString()), _guilang.get("GUI_DLG_FILEMODIFIED"), wxYES_NO | wxICON_QUESTION, this);
                     if (answer == wxYES)
                     {
+                        int pos = m_currentEd->GetCurrentPos();
                         m_currentEd->LoadFile(sEventPath);
                         m_currentEd->MarkerDeleteAll(MARKER_SAVED);
+                        m_currentEd->UpdateSyntaxHighlighting(true);
+                        m_currentEd->GotoPos(pos);
                         m_currentSavedFile = toString((int)time(0))+"|"+sEventPath;
                     }
                 }
                 else
                 {
+                    int pos = edit->GetCurrentPos();
                     edit->LoadFile(sEventPath);
                     edit->MarkerDeleteAll(MARKER_SAVED);
+                    edit->UpdateSyntaxHighlighting(true);
+                    edit->GotoPos(pos);
                     m_currentSavedFile = toString((int)time(0))+"|"+sEventPath;
                 }
                 break;

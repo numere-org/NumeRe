@@ -39,3 +39,5 @@ New	The "matop" mode now features are "unique()" function, which will remove dup
 New	The new string function "textparse()" allows parsing a line of text using a pattern into a set of tokens of defined types.
 Added	Documentation strings in or above NumeRe procedures are now displayed as tooltip.
 Applied	Documentation strings in NumeRe procedures are now copied during an installation to be usable as tooltip documentation.
+Cleaned	Semicolons are now used consistently in loops and if statements. Use them to suppress the output on the console.
+Added	New setting in the GUI to enable the flow control "-mask" flag as default. Added the "-sp" flag to force the process display although the "-mask" flag is enabled.

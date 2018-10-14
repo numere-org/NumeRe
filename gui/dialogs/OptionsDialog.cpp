@@ -144,6 +144,7 @@ bool OptionsDialog::Create( wxWindow* parent, wxWindowID id, const wxString& cap
     m_saveSession = NULL;
     m_termHistory = NULL;
     m_formatBeforeSaving = nullptr;
+    m_useMaskAsDefault = nullptr;
 
     m_compactTables = nullptr;
     m_AutoLoadDefines = nullptr;
@@ -271,6 +272,10 @@ void OptionsDialog::CreateControls()
     m_ESCinScripts = new wxCheckBox( configurationPanel, wxID_ANY, _(_guilang.get("GUI_OPTIONS_ESCINSCRIPTS")), wxDefaultPosition, wxDefaultSize, 0 );
     m_ESCinScripts->SetValue(false);
     configVSizer->Add(m_ESCinScripts, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+
+    m_useMaskAsDefault = new wxCheckBox( configurationPanel, wxID_ANY, _(_guilang.get("GUI_OPTIONS_USEMASKASDEFAULT")), wxDefaultPosition, wxDefaultSize, 0 );
+    m_useMaskAsDefault->SetValue(false);
+    configVSizer->Add(m_useMaskAsDefault, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     m_UseLogfile = new wxCheckBox( configurationPanel, wxID_ANY, _(_guilang.get("GUI_OPTIONS_LOGFILE")), wxDefaultPosition, wxDefaultSize, 0 );
     m_UseLogfile->SetValue(false);
@@ -988,6 +993,7 @@ bool OptionsDialog::EvaluateOptions()
     _option->setDefaultPlotFont(m_defaultFont->GetValue().ToStdString());
     _option->setWindowBufferSize(0, m_termHistory->GetValue());
     _option->setAutoSaveInterval(m_autosaveinterval->GetValue());
+    _option->setUseMaskAsDefault(m_useMaskAsDefault->GetValue());
     m_options->SetTerminalHistorySize(m_termHistory->GetValue());
 
     wxString selectedPrintStyleString = m_printStyle->GetValue();
@@ -1054,6 +1060,7 @@ void OptionsDialog::InitializeDialog()
     m_UseLogfile->SetValue(_option->getbUseLogFile());
     m_UseExternalViewer->SetValue(_option->getUseExternalViewer());
     m_useExecuteCommand->SetValue(_option->getUseExecuteCommand());
+    m_useMaskAsDefault->SetValue(_option->getUseMaskAsDefault());
     m_LoadPath->SetValue(_option->getLoadPath());
     m_SavePath->SetValue(_option->getSavePath());
     m_ScriptPath->SetValue(_option->getScriptPath());

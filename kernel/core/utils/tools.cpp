@@ -3129,6 +3129,14 @@ void evalRecursiveExpressions(string& sExpr)
 
 	unsigned int nArgSepPos = 0;
 	int nQuotes = 0;
+	bool bAnswerSuppressor = false;
+
+	// Find the trailing semicolon
+	if (sExpr.find_last_not_of(" \t") != string::npos && sExpr[sExpr.find_last_not_of(" \t")] == ';')
+    {
+        sExpr.erase(sExpr.find_last_not_of(" \t"));
+        bAnswerSuppressor = true;
+    }
 
 	// Go through the complete expression
 	for (unsigned int i = 0; i < sExpr.length(); i++)
@@ -3177,6 +3185,10 @@ void evalRecursiveExpressions(string& sExpr)
 			handleIncAndDecOperators(sExpr, i, nArgSepPos);
 		}
 	}
+
+	// Add the trailing semicolon
+	if (bAnswerSuppressor)
+        sExpr += ";";
 
 	return;
 }

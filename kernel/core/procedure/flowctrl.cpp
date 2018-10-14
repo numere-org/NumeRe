@@ -1492,6 +1492,9 @@ void FlowCtrl::eval(Parser& _parser, Datafile& _data, Define& _functions, Settin
 	_pDataRef = &_pData;
 	_scriptRef = &_script;
 
+	if (_option.getUseMaskAsDefault())
+        bMask = true;
+
 
 	for (int i = 0; i <= nCmd; i++)
 	{
@@ -1515,6 +1518,8 @@ void FlowCtrl::eval(Parser& _parser, Datafile& _data, Define& _functions, Settin
 			bSilent = false;
 		if ((sCmd[i][0].substr(0, 6) == "endfor" || sCmd[i][0].substr(0, 8) == "endwhile" || sCmd[i][0].find(">>endif") != string::npos) && matchParams(sCmd[i][0], "mask"))
 			bMask = true;
+		if ((sCmd[i][0].substr(0, 6) == "endfor" || sCmd[i][0].substr(0, 8) == "endwhile" || sCmd[i][0].find(">>endif") != string::npos) && matchParams(sCmd[i][0], "sp"))
+			bMask = false;
 		if ((sCmd[i][0].substr(0, 6) == "endfor" || sCmd[i][0].substr(0, 8) == "endwhile" || sCmd[i][0].find(">>endif") != string::npos) && matchParams(sCmd[i][0], "lnumctrl"))
 			nLoopSavety = 1000;
 		if ((sCmd[i][0].substr(0, 6) == "endfor" || sCmd[i][0].substr(0, 8) == "endwhile" || sCmd[i][0].find(">>endif") != string::npos) && matchParams(sCmd[i][0], "lnumctrl", '='))
@@ -1727,8 +1732,8 @@ void FlowCtrl::eval(Parser& _parser, Datafile& _data, Define& _functions, Settin
 		throw;
 	}
 
-	if (bSilent)
-		bLoopSupressAnswer = true;
+//	if (bSilent)
+//		bLoopSupressAnswer = true;
 
 	vVarArray = new value_type*[nVarArray];
 	sVarArray = new string[nVarArray];
@@ -2000,6 +2005,14 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 
 	int nCurrentCalcType = nCalcType[nthCmd];
 
+	if (sLine.find_last_not_of(" \t") != string::npos && sLine[sLine.find_last_not_of(" \t")] == ';')
+    {
+        sLine.erase(sLine.find_last_not_of(" \t"));
+        bLoopSupressAnswer = true;
+    }
+    else
+        bLoopSupressAnswer = false;
+
 	// Eval the debugger breakpoint first
 	if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT)
 	{
@@ -2114,7 +2127,10 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 		{
 			if (!nCurrentCalcType)
 				nCalcType[nthCmd] |= CALCTYPE_NUMERICAL;
-			if (!bSilent)
+            v = _parserRef->Eval(nNum);
+            vAns = v[0];
+
+			if (!bLoopSupressAnswer)
 			{
 				/* --> Der Benutzer will also die Ergebnisse sehen. Es gibt die Moeglichkeit,
 				 *     dass der Parser mehrere Ausdruecke je Zeile auswertet. Dazu muessen die
@@ -2122,38 +2138,9 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 				 *     mehrere Ausdruecke auszuwerten hat, muss man die Auswerte-Funktion des
 				 *     Parsers einmal aufgerufen werden <--
 				 */
-				v = _parserRef->Eval(nNum);
-				string sAns = "|" + sBlock + "> " + sLine_Temp + " => ";
-				// --> Ist die Zahl der Ausdruecke groesser als 1? <--
-				if (nNum > 1)
-				{
-					// --> Gebe die nNum Ergebnisse durch Kommata getrennt aus <--
-					sAns += "{";
-					vAns = v[0];
-					for (int i = 0; i < nNum; ++i)
-					{
-						sAns += toString(v[i], *_optionRef);
-						if (i < nNum - 1)
-							sAns += ", ";
-					}
-					NumeReKernel::printPreFmt(sAns + "}\n");
-				}
-				else
-				{
-					// --> Zahl der Ausdruecke gleich 1? Dann einfach ausgeben <--
-					vAns = v[0];
-					NumeReKernel::printPreFmt(sAns + toString(vAns, *_optionRef) + "\n");
-				}
+                NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v, *_optionRef));
 			}
-			else
-			{
-				/* --> Hier ist bSilent = TRUE: d.h., werte die Ausdruecke im Stillen aus,
-				 *     ohne dass der Benutzer irgendetwas davon mitbekommt <--
-				 */
-				v = _parserRef->Eval(nNum);
-				if (nNum)
-					vAns = v[0];
-			}
+
 			return FLOWCTRL_OK;
 		}
 	}
@@ -2449,7 +2436,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 				nCalcType[nthCmd] |= CALCTYPE_STRING | CALCTYPE_DATAACCESS;
 			if (!bLockedPauseMode && bUseLoopParsingMode)
 				_parserRef->PauseLoopMode();
-			int nReturn = parser_StringParser(sLine, sCache, *_dataRef, *_parserRef, *_optionRef, bSilent);
+			int nReturn = parser_StringParser(sLine, sCache, *_dataRef, *_parserRef, *_optionRef, bLoopSupressAnswer);
 			if (nReturn)
 			{
 				if (nReturn == 1)
@@ -2530,7 +2517,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 	if (!nCurrentCalcType && !(nCalcType[nthCmd] & CALCTYPE_DATAACCESS || nCalcType[nthCmd] & CALCTYPE_STRING))
 		nCalcType[nthCmd] |= CALCTYPE_NUMERICAL;
 
-	if (!bSilent)
+	if (!bLoopSupressAnswer)
 	{
 		/* --> Der Benutzer will also die Ergebnisse sehen. Es gibt die Moeglichkeit,
 		 *     dass der Parser mehrere Ausdruecke je Zeile auswertet. Dazu muessen die
@@ -2538,25 +2525,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 		 *     mehrere Ausdruecke auszuwerten hat, muss man die Auswerte-Funktion des
 		 *     Parsers einmal aufgerufen werden <--
 		 */
-		// --> Ist die Zahl der Ausdruecke groesser als 1? <--
-		string sAns = "|" + sBlock + "> " + sLine_Temp + " => ";
-		if (nNum > 1)
-		{
-			// --> Gebe die nNum Ergebnisse durch Kommata getrennt aus <--
-			sAns += "{";
-			for (int i = 0; i < nNum; ++i)
-			{
-				sAns += toString(v[i], *_optionRef);
-				if (i < nNum - 1)
-					sAns += ", ";
-			}
-			NumeReKernel::printPreFmt(sAns + "}\n");
-		}
-		else
-		{
-			// --> Zahl der Ausdruecke gleich 1? Dann einfach ausgeben <--
-			NumeReKernel::printPreFmt(sAns + toString(vAns, *_optionRef) + "\n");
-		}
+		NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v, *_optionRef));
 	}
 	if (bWriteToCache)
 	{

@@ -249,6 +249,7 @@ public:
     wxSpinCtrl* m_termHistory;
     wxCheckBox* m_useExecuteCommand;
     wxCheckBox* m_formatBeforeSaving;
+    wxCheckBox* m_useMaskAsDefault;
 ////@end OptionsDialog member variables
 
 	NumeReWindow* m_parentFrame;

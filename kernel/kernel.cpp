@@ -1607,6 +1607,8 @@ bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, co
 {
     if (_procedure.getLoop() || sCurrentCommand == "for" || sCurrentCommand == "if" || sCurrentCommand == "while")
     {
+        if (bSupressAnswer)
+            sLine += ";";
         // --> Die Zeile in den Ausdrucksspeicher schreiben, damit sie spaeter wiederholt aufgerufen werden kann <--
         _procedure.setCommand(sLine, _parser, _data, _functions, _option, _out, _pData, _script);
         /* --> So lange wir im Loop sind und nicht endfor aufgerufen wurde, braucht die Zeile nicht an den Parser
@@ -1703,37 +1705,10 @@ bool NumeReKernel::evaluateStrings(string& sLine, string& sCache, const string& 
 // which is then passed to printResult
 void NumeReKernel::createCalculationAnswer(int nNum, value_type* v, const string& sCmdCache)
 {
-    if (nNum > 1)
-    {
-        // More than one result
-        // store the first one in vAns
-        vAns = v[0];
+    vAns = v[0];
 
-        // Create the output string, if needed
-        if (!bSupressAnswer)
-        {
-            int nLineBreak = numberOfNumbersPerLine(_option);
-            string sAns = "ans = {";
-            for (int i = 0; i < nNum; ++i)
-            {
-                sAns += strfill(toString(v[i], _option), _option.getPrecision() + 7);
-                if (i < nNum - 1)
-                    sAns += ", ";
-                if (nNum + 1 > nLineBreak && !((i + 1) % nLineBreak) && i < nNum - 1)
-                    sAns += "...\n|          ";
-            }
-            sAns += "}";
-            printResult(sAns, sCmdCache, _script.isValid() && _script.isOpen());
-        }
-    }
-    else
-    {
-        // Only one result
-        // store it in vAns
-        vAns = v[0];
-        if (!bSupressAnswer)
-            printResult("ans = " + toString(vAns, _option), sCmdCache, _script.isOpen() && _script.isValid());
-    }
+    if (!bSupressAnswer)
+        printResult(formatResultOutput(nNum, v, _option), sCmdCache, _script.isValid() && _script.isOpen());
 }
 
 // This private member function will reset the kernel variables after an error
@@ -2003,6 +1978,43 @@ void NumeReKernel::printPreFmt(const string& __sLine)
 		return;
 	wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
 	Sleep(5);
+}
+
+// This static function is used to format the result output
+// for the terminal
+string NumeReKernel::formatResultOutput(int nNum, value_type* v, const Settings& _option)
+{
+    if (nNum > 1)
+    {
+        // More than one result
+        //
+        // How many fit into one line?
+        int nLineBreak = numberOfNumbersPerLine(_option);
+        string sAns = "ans = {";
+
+        // compose the result
+        for (int i = 0; i < nNum; ++i)
+        {
+            sAns += strfill(toString(v[i], _option), _option.getPrecision() + 7);
+            if (i < nNum - 1)
+                sAns += ", ";
+            if (nNum + 1 > nLineBreak && !((i + 1) % nLineBreak) && i < nNum - 1)
+                sAns += "...\n|          ";
+        }
+        sAns += "}";
+
+        // return the composed result
+        return sAns;
+    }
+    else
+    {
+        // Only one result
+        // return the answer
+        return "ans = " + toString(vAns, _option);
+    }
+
+    // fallback
+    return "";
 }
 
 int NumeReKernel::numberOfNumbersPerLine(const Settings& _option)

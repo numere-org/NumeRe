@@ -45,6 +45,7 @@ Settings::Settings() : Documentation()
 	bUseCustomLanguageFile = true;
 	bUseExternalDocViewer = true;
 	bUseExecuteCommand = false; // execute command is disabled by the default
+	bUseMaskAsDefault = false; // mask is disabled as default
 	nPrecision = 7;			// Standardmaessig setzen wir die Praezision auf 7
 	nAutoSaveInterval = 30; // 30 sec
 	sPath = "./";
@@ -215,6 +216,7 @@ void Settings::save(string _sWhere, bool bMkBackUp)
 	Settings_ini << "-USECUSTOMLANGFILE=" << bUseCustomLanguageFile << endl;
 	Settings_ini << "-USEEXTERNALVIEWER=" << bUseExternalDocViewer << endl;
 	Settings_ini << "-USEEXECUTECOMMAND=" << bUseExecuteCommand << endl;
+	Settings_ini << "-USEMASKASDEFAULT=" << bUseMaskAsDefault << endl;
 	Settings_ini << "-DEFCONTROL=" << bDefineAutoLoad << endl;
 	Settings_ini << "-USEDRAFTMODE=" << bUseDraftMode << endl;
 	Settings_ini << "-EXTENDEDFILEINFO=" << bShowExtendedFileInfo << endl;
@@ -422,6 +424,11 @@ bool Settings::set(const string& _sOption)
     else if (matchParams(_sOption, "useexecutecommand", '='))
     {
         bUseExecuteCommand = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
+        return true;
+    }
+    else if (matchParams(_sOption, "usemaskasdefault", '='))
+    {
+        bUseMaskAsDefault = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
     else if (matchParams(_sOption, "extendedfileinfo", '='))
@@ -695,6 +702,7 @@ void Settings::copySettings(const Settings& _settings)
     bUseDebugger = _settings.bUseDebugger;
     bUseExternalDocViewer = _settings.bUseExternalDocViewer;
     bUseExecuteCommand = _settings.bUseExecuteCommand;
+    bUseMaskAsDefault = _settings.bUseMaskAsDefault;
     setTokens(_settings.getTokenPaths());
 }
 

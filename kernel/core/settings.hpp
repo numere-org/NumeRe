@@ -59,6 +59,7 @@ class Settings : public Documentation
 		bool bUseCustomLanguageFile;
 		bool bUseExternalDocViewer;
 		bool bUseExecuteCommand;
+		bool bUseMaskAsDefault;
 		int nPrecision;			    // Setzt die Genauigkeit der Ausgabe
 		int nAutoSaveInterval;      // Das Intervall fuer die automatische Speicherung
 		string sPath;               // Programm-Hauptpfad
@@ -313,6 +314,11 @@ class Settings : public Documentation
                 bUseExecuteCommand = _useExecuteCommand;
                 return;
             }
+        inline void setUseMaskAsDefault(bool _useMask)
+            {
+                bUseMaskAsDefault = _useMask;
+                return;
+            }
 
         // --> Keine inline-Methode, da hoehere Komplexitaet <--
 		void setViewerPath(const string& _sViewerPath);
@@ -412,6 +418,8 @@ class Settings : public Documentation
             {return bUseExternalDocViewer;}
         inline bool getUseExecuteCommand() const
             {return bUseExecuteCommand;}
+        inline bool getUseMaskAsDefault() const
+            {return bUseMaskAsDefault;}
 
 };
 #endif

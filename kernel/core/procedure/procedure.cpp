@@ -304,6 +304,8 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
 	//cerr << getLoop() << endl;
 	if (getLoop() || sCurrentCommand == "for" || sCurrentCommand == "if" || sCurrentCommand == "while")
 	{
+	    if (bProcSupressAnswer)
+            sLine += ";";
 		// --> Die Zeile in den Ausdrucksspeicher schreiben, damit sie spaeter wiederholt aufgerufen werden kann <--
 		setCommand(sLine, _parser, _data, _functions, _option, _out, _pData, _script);
 		//cerr << getLoop() << endl;
@@ -396,30 +398,15 @@ Returnvalue Procedure::ProcCalc(string sLine, Parser& _parser, Define& _function
 	{
 		for (int i = 0; i < nNum; ++i)
 			thisReturnVal.vNumVal.push_back(v[i]);
-		if (!bProcSupressAnswer)
-		{
-			int nLineBreak = NumeReKernel::numberOfNumbersPerLine(_option);
-			NumeReKernel::toggleTableStatus();
-			NumeReKernel::printPreFmt("|-> ans = {");
-			for (int i = 0; i < nNum; ++i)
-			{
-				NumeReKernel::printPreFmt(strfill(toString(v[i], _option), _option.getPrecision() + 7));
-				if (i < nNum - 1)
-					NumeReKernel::printPreFmt(", ");
-				if (nNum + 1 > nLineBreak && !((i + 1) % nLineBreak) && i < nNum - 1)
-					NumeReKernel::printPreFmt("...\n|          ");
-			}
-			NumeReKernel::toggleTableStatus();
-			NumeReKernel::printPreFmt("}\n");
-		}
 	}
 	else
 	{
 		thisReturnVal.vNumVal.push_back(v[0]);
-
-		if (!bProcSupressAnswer)
-			NumeReKernel::print("ans = " + toString(thisReturnVal.vNumVal[0], _option));
 	}
+
+	if (!bProcSupressAnswer)
+        NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v, _option));
+
 	if (bWriteToCache)
 		_data.writeToCache(_idx, sCache, v, nNum);
 	if (!_parser.ActiveLoopMode() || (!_parser.IsLockedPause() && !(nFlags & FLAG_INLINE)))
@@ -1109,7 +1096,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
 					sCmdCache.clear();
 				}
 			}
-			else if (sProcCommandLine.find(';') == sProcCommandLine.length() - 1)
+			else if (sProcCommandLine.back() == ';')
 			{
 				//bSupressAnswer = true;
 				bProcSupressAnswer = true;

@@ -268,6 +268,9 @@
 				</Linker>
 			</Target>
 		</Build>
+		<Compiler>
+			<Add option="-D__MSVCRT_VERSION__=0x0601" />
+		</Compiler>
 		<Linker>
 			<Add option="-lmgl" />
 			<Add option="-lgsl" />

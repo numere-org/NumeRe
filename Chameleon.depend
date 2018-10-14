@@ -2349,7 +2349,7 @@
 	<string>
 	"language.hpp"
 
-1533284257 d:\cpp\numere-source\trunk\kernel\core\settings.hpp
+1539507268 d:\cpp\numere-source\trunk\kernel\core\settings.hpp
 	<string>
 	<sstream>
 	<fstream>
@@ -2516,7 +2516,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1533107252 d:\cpp\numere-source\trunk\kernel\kernel.hpp
+1539241699 d:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	<queue>
@@ -2948,7 +2948,7 @@
 	"fndrpldialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1536695769 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1539507268 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
@@ -3079,7 +3079,7 @@
 
 1490791550 d:\cpp\numere-source\trunk\common\fixvsbug.h
 
-1536647520 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
+1539506918 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
 	"wx/notebook.h"
 	"wx/spinctrl.h"
 	<wx/clrpicker.h>
@@ -3695,7 +3695,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1536865330 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1539154964 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -4190,11 +4190,11 @@
 1505416352 source:d:\cpp\numere-source\trunk\kernel\core\procedure\debugger.cpp
 	"debugger.hpp"
 
-1531083273 source:d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.cpp
+1539507256 source:d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.cpp
 	"flowctrl.hpp"
 	"../../kernel.hpp"
 
-1535525976 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.cpp
+1539241602 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.cpp
 	"procedure.hpp"
 	"../../kernel.hpp"
 	"procedurevarfactory.hpp"
@@ -4256,7 +4256,7 @@
 	<cstddef>
 	<cstdarg>
 
-1538748644 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
+1539358582 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
 	"tools.hpp"
 	"../../kernel.hpp"
 	<cstdlib>
@@ -4282,7 +4282,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1538224242 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1539241420 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 

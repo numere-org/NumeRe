@@ -157,6 +157,7 @@ class NumeReKernel
         static void flush();
         static void print(const string& sLine);
         static void printPreFmt(const string& sLine);
+        static string formatResultOutput(int nNum, value_type* v, const Settings& _option);
         static void setFileName(const string& sFileName);
         static int numberOfNumbersPerLine(const Settings& _option);
         static void statusBar(int nStep, int nFirstStep, int nFinalStep, const string& sType);
