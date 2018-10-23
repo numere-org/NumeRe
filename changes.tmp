@@ -43,3 +43,4 @@ Cleaned	Semicolons are now used consistently in loops and if statements. Use the
 Added	New setting in the GUI to enable the flow control "-mask" flag as default. Added the "-sp" flag to force the process display although the "-mask" flag is enabled.
 Fixed	"hist" may now display more than two columns.
 Fixed	Backslashes are now masked correctly in strings.
+Cleaned	Renamed functions "faculty()" -> "factorial()", "dblfacul()" -> "dblfact()", "trace()" -> "line()" and "trace()" -> "linev()" (latter one in draw mode) due to wrong translation and uniqueness. The previous names are still supported, however they won't be recognized by the code styler.

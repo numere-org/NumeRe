@@ -1833,7 +1833,7 @@ void Plot::create2dDrawing(Parser& _parser, Datafile& _data, const Settings& _op
 		_parser.SetExpr(sDrawExpr);
 		vResults = _parser.Eval(nFunctions);
 
-		if (vDrawVector[v].substr(0, 6) == "trace(")
+		if (vDrawVector[v].substr(0, 6) == "trace(" || vDrawVector[v].substr(0, 5) == "line(")
 		{
 			if (nFunctions < 2)
 				continue;
@@ -1842,7 +1842,7 @@ void Plot::create2dDrawing(Parser& _parser, Datafile& _data, const Settings& _op
 			else
 				_graph->Line(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2], vResults[3]), sStyle.c_str());
 		}
-		else if (vDrawVector[v].substr(0, 7) == "tracev(")
+		else if (vDrawVector[v].substr(0, 7) == "tracev(" || vDrawVector[v].substr(0, 6) == "linev(")
 		{
 			if (nFunctions < 2)
 				continue;
@@ -2082,7 +2082,7 @@ void Plot::create3dDrawing(Parser& _parser, Datafile& _data, const Settings& _op
 			parser_VectorToExpr(sDrawExpr, _option);
 		_parser.SetExpr(sDrawExpr);
 		vResults = _parser.Eval(nFunctions);
-		if (vDrawVector[v].substr(0, 6) == "trace(")
+		if (vDrawVector[v].substr(0, 6) == "trace(" || vDrawVector[v].substr(0, 5) == "line(")
 		{
 			if (nFunctions < 3)
 				continue;
@@ -2091,7 +2091,7 @@ void Plot::create3dDrawing(Parser& _parser, Datafile& _data, const Settings& _op
 			else
 				_graph->Line(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]), sStyle.c_str());
 		}
-		else if (vDrawVector[v].substr(0, 7) == "tracev(")
+		else if (vDrawVector[v].substr(0, 7) == "tracev(" || vDrawVector[v].substr(0, 6) == "linev(")
 		{
 			if (nFunctions < 3)
 				continue;

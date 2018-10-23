@@ -386,7 +386,9 @@ void NumeReKernel::defineFunctions()
 {
 	// --> mathemat. Funktion deklarieren <--
 	_parser.DefineFun("faculty", parser_Faculty, false);                        // faculty(n)
+	_parser.DefineFun("factorial", parser_Faculty, false);                      // factorial(n)
 	_parser.DefineFun("dblfacul", parser_doubleFaculty, false);                 // dblfacul(n)
+	_parser.DefineFun("dblfact", parser_doubleFaculty, false);                  // dblfact(n)
 	_parser.DefineFun("binom", parser_Binom, false);                            // binom(Wert1,Wert2)
 	_parser.DefineFun("num", parser_Num, true);                                 // num(a,b,c,...)
 	_parser.DefineFun("cnt", parser_Cnt, true);                                 // num(a,b,c,...)
