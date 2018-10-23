@@ -1741,6 +1741,7 @@ void NumeReEditor::AnalyseCode()
 	bool isContinuedLine = false;
 	bool hasProcedureDefinition = false;
 	bool isAlreadyMeasured = false;
+	bool isSuppressed = false;
 	string sCurrentLine = "";
 	string sStyles = "";
 	string sFirstLine = "";
@@ -1803,6 +1804,39 @@ void NumeReEditor::AnalyseCode()
 				}
 			}
 			currentLine = this->LineFromPosition(i);
+
+			// Get the new line for finding the trailing semicolon
+			sLine = this->GetLine(currentLine).ToStdString();
+
+			// Ensure that there's no trailing comment
+			if (sLine.rfind("##") != string::npos)
+                sLine.erase(sLine.rfind("##"));
+
+            // Remove also block comments
+            size_t nBlockStart = 0;
+            while ((nBlockStart = sLine.find("#*")) != string::npos)
+            {
+                if (sLine.find("*#", nBlockStart+2) == string::npos)
+                {
+                    sLine.erase(nBlockStart);
+                    break;
+                }
+                else
+                {
+                    sLine.erase(nBlockStart, sLine.find("*#", nBlockStart+2)+2 - nBlockStart);
+                }
+            }
+
+			// Find the last visible character
+			size_t lastVisibleChar = sLine.find_last_not_of(" \t\r\n");
+
+			// Determine, whether it is a semicolon or a line continuation
+			if (lastVisibleChar != string::npos
+                && (sLine[lastVisibleChar] == ';' || (lastVisibleChar > 0 && sLine.substr(lastVisibleChar-1, 2) == "\\\\")))
+                isSuppressed = true;
+            else
+                isSuppressed = false;
+
 			sCurrentLine = "";
 			sStyles = "";
 		}
@@ -1847,12 +1881,27 @@ void NumeReEditor::AnalyseCode()
 		// Handle the different style types
 		if (isStyleType(STYLE_COMMAND, i))
 		{
+		    if (!isSuppressed)
+            {
+                string sWord = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true)).ToStdString();
+
+                // the commands "matop" or "mtrxop" are needing semicolons
+                // and are the first element in a command line
+                if (sWord != "matop" && sWord != "mtrxop")
+                    isSuppressed = true;
+            }
 		    // Handle commands
 		    AnnotCount += analyseCommands(i, currentLine, hasProcedureDefinition, sCurrentLine, sStyles, sNote, sWarn, sError);
 		}
 		else if (isStyleType(STYLE_FUNCTION, i)
            || ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC) && this->GetStyleAt(i) == wxSTC_NSCR_METHOD))
 		{
+		    if (!isSuppressed)
+            {
+                string sWord = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true)).ToStdString();
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sWord + "()", WordStartPosition(i, true), sWord.length()), sNote, _guilang.get("GUI_ANALYZER_SUPPRESS_OUTPUT")), ANNOTATION_NOTE);
+                isSuppressed = true;
+            }
 		    // Handle standard functions
 		    AnnotCount += analyseFunctions(i, currentLine, hasProcedureDefinition, sCurrentLine, sStyles, sNote, sWarn, sError, isContinuedLine);
 		}
@@ -1867,11 +1916,22 @@ void NumeReEditor::AnalyseCode()
 				 && this->GetCharAt(i) != '\r'
 				 && this->GetCharAt(i) != '\n')
 		{
+		    if (!isSuppressed)
+            {
+                string sWord = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true)).ToStdString();
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sWord, WordStartPosition(i, true), sWord.length()), sNote, _guilang.get("GUI_ANALYZER_SUPPRESS_OUTPUT")), ANNOTATION_NOTE);
+                isSuppressed = true;
+            }
 		    // Handle identifiers (like variable names)
 		    AnnotCount += analyseIdentifiers(i, currentLine, hasProcedureDefinition, sCurrentLine, sStyles, sNote, sWarn, sError);
 		}
 		else if (isStyleType(STYLE_OPERATOR, i))
 		{
+		    if (this->GetCharAt(i) == '=' && !isSuppressed)
+            {
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer("=", i, 1), sNote, _guilang.get("GUI_ANALYZER_SUPPRESS_OUTPUT")), ANNOTATION_NOTE);
+                isSuppressed = true;
+            }
 		    // Handle special operators
 		    AnnotCount += analyseOperators(i, currentLine, hasProcedureDefinition, sCurrentLine, sStyles, sNote, sWarn, sError);
 		}

@@ -206,9 +206,12 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 	for (int __i = (int)vVarArray[nVarAdress][1]; (nInc)*__i <= nInc * (int)vVarArray[nVarAdress][2]; __i += nInc)
 	{
 		vVarArray[nVarAdress][0] = __i;
-		if (nLoopCount >= nLoopSavety && nLoopSavety > 0)
-			return -1;
-		nLoopCount++;
+		if (nLoopSavety > 0)
+        {
+            if (nLoopCount >= nLoopSavety)
+                return FLOWCTRL_ERROR;
+            nLoopCount++;
+        }
 		for (int __j = nth_Cmd; __j < nJumpTable[nth_Cmd][BLOCK_END]; __j++)
 		{
 			if (__j != nth_Cmd)
@@ -319,9 +322,12 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
 	{
 		v = evalHeader(nNum, sWhile_Condition, false, nth_Cmd);
 
-		if (nLoopCount >= nLoopSavety && nLoopSavety > 1)
-			return -1;
-		nLoopCount++;
+		if (nLoopSavety > 0)
+        {
+            if (nLoopCount >= nLoopSavety)
+                return FLOWCTRL_ERROR;
+            nLoopCount++;
+        }
 		//v = _parserRef->Eval(nResults);*/
 		if (!(bool)v[0] || isnan(v[0]) || isinf(v[0]))
 		{
@@ -677,7 +683,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
 }
 
 
-value_type* FlowCtrl::evalHeader(int& nNum, string sHeadExpression, bool bIsForHead, int nth_Cmd)
+value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsForHead, int nth_Cmd)
 {
 	value_type* v = nullptr;
 	string sCache = "";
@@ -2005,10 +2011,19 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 
 	int nCurrentCalcType = nCalcType[nthCmd];
 
-	if (sLine.find_last_not_of(" \t") != string::npos && sLine[sLine.find_last_not_of(" \t")] == ';')
+	if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_SUPPRESSANSWER)
     {
-        sLine.erase(sLine.find_last_not_of(" \t"));
-        bLoopSupressAnswer = true;
+        if (nCurrentCalcType & CALCTYPE_SUPPRESSANSWER)
+        {
+            sLine.erase(sLine.rfind(';'));
+            bLoopSupressAnswer = true;
+        }
+        else if (sLine.find_last_not_of(" \t") != string::npos && sLine[sLine.find_last_not_of(" \t")] == ';')
+        {
+            sLine.erase(sLine.rfind(';'));
+            bLoopSupressAnswer = true;
+            nCalcType[nthCmd] |= CALCTYPE_SUPPRESSANSWER;
+        }
     }
     else
         bLoopSupressAnswer = false;
@@ -2034,13 +2049,13 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 
 	if (!nCurrentCalcType
 			|| !bFunctionsReplaced
-			|| nCurrentCalcType & CALCTYPE_COMMAND
-			|| nCurrentCalcType & CALCTYPE_DEFINITION
+			|| nCurrentCalcType & (CALCTYPE_COMMAND | CALCTYPE_DEFINITION | CALCTYPE_PROGRESS | CALCTYPE_COMPOSE | CALCTYPE_RETURNCOMMAND | CALCTYPE_THROWCOMMAND | CALCTYPE_EXPLICIT)
+			/*|| nCurrentCalcType & CALCTYPE_DEFINITION
 			|| nCurrentCalcType & CALCTYPE_PROGRESS
 			|| nCurrentCalcType & CALCTYPE_COMPOSE
 			|| nCurrentCalcType & CALCTYPE_RETURNCOMMAND
 			|| nCurrentCalcType & CALCTYPE_THROWCOMMAND
-			|| nCurrentCalcType & CALCTYPE_EXPLICIT)
+			|| nCurrentCalcType & CALCTYPE_EXPLICIT*/)
 		sCommand = findCommand(sLine).sString;
 
 
@@ -2117,7 +2132,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 	if (NumeReKernel::GetAsyncCancelState())
 	{
 		if (bPrintedStatus)
-			NumeReKernel::printPreFmt(" ABBRUCH!");
+			NumeReKernel::printPreFmt(" " + _lang.get("COMMON_CANCEL"));
 
 		throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
 	}

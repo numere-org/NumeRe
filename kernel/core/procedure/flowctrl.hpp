@@ -76,7 +76,8 @@ class FlowCtrl
             CALCTYPE_CONTINUECMD = 8192,
             CALCTYPE_BREAKCMD = 16384,
             CALCTYPE_PROMPT = 32768,
-            CALCTYPE_RECURSIVEEXPRESSION = 65536
+            CALCTYPE_RECURSIVEEXPRESSION = 65536,
+            CALCTYPE_SUPPRESSANSWER = 131072
         };
         string** sCmd;
         value_type** vVarArray;
@@ -105,7 +106,7 @@ class FlowCtrl
         int while_loop(int nth_Cmd = 0, int nth_Loop = 0);
         int if_fork(int nth_Cmd = 0, int nth_Loop = -1);
         int calc(string sLine, int nthCmd, string sBlock);
-        value_type* evalHeader(int& nNum, string sHeadExpression, bool bIsForHead, int nth_Cmd);
+        value_type* evalHeader(int& nNum, string& sHeadExpression, bool bIsForHead, int nth_Cmd);
         int evalLoopFlowCommands(int __j, int nth_loop);
         int evalForkFlowCommands(int __j, int nth_loop);
         void replaceLocalVars(string& sLine);
