@@ -2135,7 +2135,7 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1538219431 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1540363615 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -3331,7 +3331,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1539844517 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1540364623 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -4151,7 +4151,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1535656860 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1540276360 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
@@ -4282,7 +4282,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1539241420 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1540276248 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 

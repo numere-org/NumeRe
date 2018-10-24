@@ -337,7 +337,44 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 		wxCopyFile(filename, filename + ".backup", true);
 	}
 
-	// create a std::ofstream to avoid encoding issues
+	bool bWriteSuccess = false;
+
+	// Write the file depending on its type
+	if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+    {
+        bWriteSuccess = SaveNumeReFile(filename);
+    }
+    else
+    {
+        bWriteSuccess = SaveGeneralFile(filename);
+    }
+
+	// Check the contents of the newly created file
+	wxFile filecheck;
+	filecheck.Open(filename);
+	if (!bWriteSuccess || filecheck.Length() != this->GetLength() - countUmlauts(this->GetText().ToStdString()))
+	{
+		// if the contents are not matching, restore the backup and signalize that an error occured
+		if (wxFileExists(filename + ".backup"))
+			wxCopyFile(filename + ".backup", filename, true);
+		return false;
+	}
+
+	// Only mark the editor as saved, if the saving process was successful
+	markSaved();
+	EmptyUndoBuffer();
+	SetSavePoint();
+
+	m_filetime = fn.GetModificationTime();
+	m_bSetUnsaved = false;
+	return true;
+}
+
+
+// Saves a NumeRe-specific file and tries to stick to ASCII encoding
+bool NumeReEditor::SaveNumeReFile(const wxString& filename)
+{
+    // create a std::ofstream to avoid encoding issues
 	std::ofstream file;
 	file.open(filename.ToStdString().c_str(), std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 
@@ -354,28 +391,32 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 	file.flush();
 	file.close();
 
-	// Check the contents of the newly created file
-	wxFile filecheck;
-	filecheck.Open(filename);
-	if (filecheck.Length() != this->GetLength() - countUmlauts(this->GetText().ToStdString()))
-	{
-		/*int pos1 = filecheck.Length();
-		int pos2 = this->GetLastPosition()-countUmlauts(this->GetText().ToStdString());
-		int pos3 = this->GetLength();*/
-		// if the contents are not matching, restore the backup and signalize that an error occured
-		if (wxFileExists(filename + ".backup"))
-			wxCopyFile(filename + ".backup", filename, true);
-		return false;
-	}
-
-	// Only mark the editor as saved, if the saving process was successful
-	markSaved();
-	EmptyUndoBuffer();
-	SetSavePoint();
-
-	m_filetime = fn.GetModificationTime();
-	m_bSetUnsaved = false;
 	return true;
+}
+
+// Saves a general file without touching the encoding
+bool NumeReEditor::SaveGeneralFile(const wxString& filename)
+{
+    // Create file and check, if it has been opened successfully
+    wxFile file (filename, wxFile::write);
+
+    if (!file.IsOpened())
+    {
+        return false;
+    }
+
+    // Get text and write it to the file
+    wxString buf = GetText();
+    bool okay = file.Write(buf.ToStdString().c_str(), buf.ToStdString().length());
+
+    file.Close();
+
+    // Notify caller that there was an error during writing
+    if (!okay)
+    {
+        return false;
+    }
+    return true;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -7357,6 +7398,8 @@ int NumeReEditor::countUmlauts(const string& sStr)
 				|| sStr[i] == 'Ü'
 				|| sStr[i] == 'ü'
 				|| sStr[i] == 'ß'
+				|| sStr[i] == '°'
+				|| sStr[i] == 'µ'
 				|| sStr[i] == (char)142
 				|| sStr[i] == (char)132
 				|| sStr[i] == (char)153
@@ -7364,6 +7407,8 @@ int NumeReEditor::countUmlauts(const string& sStr)
 				|| sStr[i] == (char)154
 				|| sStr[i] == (char)129
 				|| sStr[i] == (char)225
+				|| sStr[i] == (char)167
+				|| sStr[i] == (char)230
 		   )
 			nUmlauts++;
 	}
