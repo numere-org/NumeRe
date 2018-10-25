@@ -88,7 +88,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 	Indices _idx;
 	map<string, long long int> mCaches = _data.getCacheList();
 	mCaches["data"] = -1;
-	const static string sPreferredCmds = ";clear;copy;smooth;retoque;resample;stats;save;showf;swap;hist;help;man;move;matop;mtrxop;random;remove;rename;append;reload;delete;datagrid;list;load;export;edit";
+	const static string sPreferredCmds = ";clear;copy;smooth;retoque;retouch;resample;stats;save;showf;swap;hist;help;man;move;matop;mtrxop;random;remove;rename;append;reload;delete;datagrid;list;load;export;edit";
 	const static string sPlotCommands = " plotcompose plot plot3d graph graph3d mesh meshgrid mesh3d meshgrid3d surf surface surf3d surface3d cont contour cont3d contour3d vect vector vect3d vector3d dens density dens3d density3d draw draw3d grad gradient grad3d gradient3d ";
 	string sCacheCmd = "";
 
@@ -1695,6 +1695,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			 && sCommand != "copy"
 			 && sCommand != "smooth"
 			 && sCommand != "retoque"
+			 && sCommand != "retouch"
 			 && sCommand != "resample")
 	{
 		//NumeReKernel::print("found" );
@@ -3992,7 +3993,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			}
 			return 1;
 		}
-		else if (sCommand == "retoque")
+		else if (sCommand == "retoque" || sCommand == "retouch")
 		{
 			if (!_data.containsCacheElements(sCmd) || sCmd.find(',') == string::npos)
 				return 1;

@@ -45,3 +45,5 @@ Fixed	"hist" may now display more than two columns.
 Fixed	Backslashes are now masked correctly in strings.
 Cleaned	Renamed functions "faculty()" -> "factorial()", "dblfacul()" -> "dblfact()", "trace()" -> "line()" and "trace()" -> "linev()" (latter one in draw mode) due to wrong translation and uniqueness. The previous names are still supported, however they won't be recognized by the code styler.
 Fixed	Encoding of general file is not changed any more.
+Cleaned	The command "retoque" was renamed to "retouch". The previous command is internally supported, too.
+Removed	The command "replaceline" was removed.
