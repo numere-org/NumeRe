@@ -340,7 +340,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 	bool bWriteSuccess = false;
 
 	// Write the file depending on its type
-	if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+	if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || filename.find("numere.history") != string::npos)
     {
         bWriteSuccess = SaveNumeReFile(filename);
     }

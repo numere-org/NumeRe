@@ -21,6 +21,10 @@
 #include <list>
 #include <cmath>
 
+#define EIGENVALUES 0
+#define EIGENVECTORS 1
+#define DIAGONALIZE 2
+
 static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
 static size_t parser_getPreviousMatrixMultiplicationOperator(const string& sCmd, size_t nLastPos);
 static Matrix parser_matrixMultiplication(const Matrix& _mLeft, const Matrix& _mRight, const string& sCmd, const string& sExpr, size_t position);
@@ -487,7 +491,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
         {
             string sSubExpr = sCmd.substr(i+9, getMatchingParenthesis(sCmd.substr(i+9))+1);
             __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_calcEigenVects(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), 0, sCmd, sSubExpr, i+9));
+            vReturnedMatrices.push_back(parser_calcEigenVects(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), EIGENVALUES, sCmd, sSubExpr, i+9));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+9))+10;
             __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
@@ -500,7 +504,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
         {
             string sSubExpr = sCmd.substr(i+10, getMatchingParenthesis(sCmd.substr(i+10))+1);
             __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_calcEigenVects(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), 1, sCmd, sSubExpr, i+10));
+            vReturnedMatrices.push_back(parser_calcEigenVects(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), EIGENVECTORS, sCmd, sSubExpr, i+10));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+10))+11;
             __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
@@ -513,7 +517,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
         {
             string sSubExpr = sCmd.substr(i+11, getMatchingParenthesis(sCmd.substr(i+11))+1);
             __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_calcEigenVects(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), 2, sCmd, sSubExpr, i+11));
+            vReturnedMatrices.push_back(parser_calcEigenVects(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), DIAGONALIZE, sCmd, sSubExpr, i+11));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+11))+12;
             __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
@@ -2734,15 +2738,23 @@ static Matrix parser_calcCrossProduct(const Matrix& _mMatrix, const string& sCmd
     return _mResult;
 }
 
+// This static function does the whole eigenvalues, eigenvectors and diagonalizing
+// stuff. If the results are complex then the real and imaginary parts of the result
+// are returned as separate results:
+// for eigenvalues it's two columns of the returned matrix
+// for eigenvectors or the diagonal matrix it's a matrix with 2N columns, where the
+// imaginary part may be found in the columns N+1 - 2N
 // __attribute__((force_align_arg_pointer)) fixes TDM-GCC Bug for wrong stack alignment
 __attribute__((force_align_arg_pointer)) static Matrix parser_calcEigenVects(const Matrix& _mMatrix, int nReturnType, const string& sCmd, const string& sExpr, size_t position)
 {
     if (_mMatrix.size() != _mMatrix[0].size())
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix.size()) +"x"+ toString(_mMatrix[0].size()));
     Matrix _mEigenVals;
-    Matrix _mEigenVects; // Temporaere Zuweisung, um die Matrix ggf. Symmetrisch zu machen
-    //Matrix _mTriangular;
+    Matrix _mEigenVects;
+
     Eigen::MatrixXd mMatrix(_mMatrix.size(), _mMatrix.size());
+
+    // Copy the passed matrix into an Eigen matrix
     for (unsigned int i = 0; i < _mMatrix.size(); i++)
     {
         for (unsigned int j = 0; j < _mMatrix.size(); j++)
@@ -2750,13 +2762,21 @@ __attribute__((force_align_arg_pointer)) static Matrix parser_calcEigenVects(con
             mMatrix(i,j) = _mMatrix[i][j];
         }
     }
+
+    // For symmetric matrices the return value is always real
+    // This is not true for asymmetric matrices
     if (parser_IsSymmMatrix(_mMatrix, sCmd, sExpr, position))
     {
+        // Prepare return values
         _mEigenVals = parser_ZeroesMatrix(_mMatrix.size(),1);
         _mEigenVects = parser_ZeroesMatrix(_mMatrix.size(), _mMatrix.size());
+
+        // Construct an Eigen eigenvalue solver
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eSolver(mMatrix);
 
-        if (!nReturnType)
+        // Get eigenvalues, eigenvectors or the diagonal matrix depending
+        // on the selected return type
+        if (nReturnType == EIGENVALUES)
         {
             Eigen::VectorXd vEigenVals = eSolver.eigenvalues();
             for (unsigned int i = 0; i < _mEigenVals.size(); i++)
@@ -2764,7 +2784,7 @@ __attribute__((force_align_arg_pointer)) static Matrix parser_calcEigenVects(con
                 _mEigenVals[i][0] = vEigenVals(i,0);
             }
         }
-        else if (nReturnType == 1)
+        else if (nReturnType == EIGENVECTORS)
         {
             Eigen::MatrixXd mEigenVects = eSolver.eigenvectors();
             for (unsigned int i = 0; i < _mEigenVects.size(); i++)
@@ -2775,7 +2795,7 @@ __attribute__((force_align_arg_pointer)) static Matrix parser_calcEigenVects(con
                 }
             }
         }
-        else
+        else if (nReturnType == DIAGONALIZE)
         {
             Eigen::VectorXd vEigenVals = eSolver.eigenvalues();
             for (unsigned int i = 0; i < _mEigenVects.size(); i++)
@@ -2786,11 +2806,17 @@ __attribute__((force_align_arg_pointer)) static Matrix parser_calcEigenVects(con
     }
     else
     {
+        // Prepare return values
         _mEigenVals = parser_ZeroesMatrix(_mMatrix.size(),2);
         _mEigenVects = parser_ZeroesMatrix(_mMatrix.size(), 2*_mMatrix.size());
+
+        // Construct an Eigen eigenvalue solver
         Eigen::EigenSolver<Eigen::MatrixXd> eSolver(mMatrix);
 
-        if (!nReturnType)
+        // Get eigenvalues, eigenvectors or the diagonal matrix depending
+        // on the selected return type. Separate the result into real and
+        // imaginary parts
+        if (nReturnType == EIGENVALUES)
         {
             Eigen::VectorXcd vEigenVals = eSolver.eigenvalues();
             for (unsigned int i = 0; i < _mEigenVals.size(); i++)
@@ -2800,50 +2826,57 @@ __attribute__((force_align_arg_pointer)) static Matrix parser_calcEigenVects(con
             }
             parser_makeReal(_mEigenVals);
         }
-        else if (nReturnType == 1)
+        else if (nReturnType == EIGENVECTORS)
         {
             Eigen::MatrixXcd mEigenVects = eSolver.eigenvectors();
             for (unsigned int i = 0; i < _mEigenVects.size(); i++)
             {
                 for (unsigned int j = 0; j < _mEigenVects.size(); j++)
                 {
-                    _mEigenVects[i][2*j] = real(mEigenVects(i,j));
-                    _mEigenVects[i][2*j+1] = imag(mEigenVects(i,j));
+                    _mEigenVects[i][j] = real(mEigenVects(i, j));
+                    _mEigenVects[i][j+_mEigenVects.size()] = imag(mEigenVects(i, j));
                 }
             }
             parser_makeReal(_mEigenVects);
         }
-        else
+        else if (nReturnType == DIAGONALIZE)
         {
             Eigen::VectorXcd vEigenVals = eSolver.eigenvalues();
             for (unsigned int i = 0; i < _mEigenVects.size(); i++)
             {
-                _mEigenVects[i][2*i] = real(vEigenVals(i,0));
-                _mEigenVects[i][2*i+1] = imag(vEigenVals(i,0));
+                _mEigenVects[i][i] = real(vEigenVals(i, 0));
+                _mEigenVects[i][i+_mEigenVects.size()] = imag(vEigenVals(i, 0));
             }
             parser_makeReal(_mEigenVects);
         }
     }
 
-    if (!nReturnType)
+    // Return the corresponding result
+    if (nReturnType == EIGENVALUES)
         return _mEigenVals;
     else
         return _mEigenVects;
 }
 
+// This static function tries to remove the imaginary part of
+// the eigen return values
 static void parser_makeReal(Matrix& _mMatrix)
 {
     if (_mMatrix[0].size() < 2 || (_mMatrix[0].size() % 2))
         return;
 
+    // Try to find a non-zero imaginary value
     for (unsigned int i = 0; i < _mMatrix.size(); i++)
     {
-        for (unsigned int j = 1; j < _mMatrix[0].size(); j+=2)
+        // imaginary values are found in the second half of the columns
+        for (unsigned int j = _mMatrix[0].size()/2; j < _mMatrix[0].size(); j++)
         {
             if (_mMatrix[i][j])
                 return;
         }
     }
+
+    // The matrix is completely real, remove the unnecessary empty columns
     if (_mMatrix[0].size() == 2)
     {
         for (unsigned int i = 0; i < _mMatrix.size(); i++)
@@ -2853,28 +2886,30 @@ static void parser_makeReal(Matrix& _mMatrix)
     {
         for (unsigned int i = 0; i < _mMatrix.size(); i++)
         {
-            for (int j = _mMatrix[i].size()-1; j > 0; j -= 2)
-            {
-                _mMatrix[i].erase(_mMatrix[i].begin()+j);
-            }
+            _mMatrix[i].erase(_mMatrix[i].begin() + _mMatrix[i].size()/2, _mMatrix[i].end());
         }
     }
     return;
 }
 
+// This static function determines, whether the passed matrix is symmetric or not
 static bool parser_IsSymmMatrix(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     if (_mMatrix.size() != _mMatrix[0].size())
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix.size()) +"x"+ toString(_mMatrix[0].size()));
 
+    // Try to find a value, which is not symmetric
     for (unsigned int i = 0; i < _mMatrix.size(); i++)
     {
         for (unsigned int j = i; j < _mMatrix.size(); j++)
         {
+            // Is this value not symmetric?
             if (_mMatrix[i][j] != _mMatrix[j][i])
                 return false;
         }
     }
+
+    // Is symmetric
     return true;
 }
 

@@ -47,3 +47,4 @@ Cleaned	Renamed functions "faculty()" -> "factorial()", "dblfacul()" -> "dblfact
 Fixed	Encoding of general file is not changed any more.
 Cleaned	The command "retoque" was renamed to "retouch". The previous command is internally supported, too.
 Removed	The command "replaceline" was removed.
+Cleaned	Complex return values from "matop" are now returned as two simple separatable matrices: the real values are in the first half and the imaginary values are in the second half of the columns.
