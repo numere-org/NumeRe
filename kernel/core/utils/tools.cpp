@@ -952,9 +952,14 @@ static Match findCasualCommand(const string& sCmd)
     Match _mMatch;
 	_mMatch.sString = "";
 	_mMatch.nPos = string::npos;
+	size_t nStart = 0;
+
+	// Jump over breakpoints
+	if (sCmd.substr(0,2) == "|>")
+        nStart = 2;
 
 	// Go through the complete command line
-    for (unsigned int i = 0; i < sCmd.length(); i++)
+    for (unsigned int i = nStart; i < sCmd.length(); i++)
     {
         // Break the loop, if one recognizes typical initializers of the parameter list
         if ((sCmd.substr(i, 2) == "--" || sCmd.substr(i, 5) == "-set ") && !isInQuotes(sCmd, i))
@@ -1078,9 +1083,14 @@ static Match findCommandWithReturnValue(const string& sCmd, const string& sComma
     Match _mMatch;
 	_mMatch.sString = "";
 	_mMatch.nPos = string::npos;
+	size_t nStart = 0;
+
+	// Jump over breakpoints
+	if (sCmd.substr(0,2) == "|>")
+        nStart = 2;
 
 	// Go through the complete command line
-    for (unsigned int i = 0; i < sCmd.length(); i++)
+    for (unsigned int i = nStart; i < sCmd.length(); i++)
     {
         // Break the loop, if we find typical parameter string initializers
         if ((sCmd.substr(i, 2) == "--" || sCmd.substr(i, 5) == "-set ") && !isInQuotes(sCmd, i))
@@ -1956,7 +1966,7 @@ string LineBreak(string sOutput, const Settings& _option, bool bAllowDashBreaks,
 							 || (sOutput[j + 1] == '"' && sOutput[j - 1] == '"')
 							))
 						continue;
-					sOutput[j] = '~';   // '-' durch '~' ersetzen
+					sOutput.insert(j + 1, 1, '\n');   // Insert a linebreak
 					nLastLineBreak = j + 1;
 					break;
 				}
@@ -2015,13 +2025,6 @@ string LineBreak(string sOutput, const Settings& _option, bool bAllowDashBreaks,
 		else if (sOutput[i] == '$' && sOutput[i - 1] == '\\')
 		{
 			sOutput.erase(i - 1, 1);
-		}
-		else if (sOutput[i] == '~' && bAllowDashBreaks)
-		{
-			if (sOutput[i - 1] == '"' && sOutput[i + 1] == '"')
-				continue;
-			// --> Ersetze '~' durch '-' und den oben erstellten Einzug, falls erlaubt <--
-			sOutput = sOutput.substr(0, i) + "-" + sIndent + sOutput.substr(i + 1);
 		}
 		else if (sOutput[i] == '%' && bAllowDashBreaks)
 		{
@@ -2894,6 +2897,36 @@ string replaceToVectorname(const string& sExpression)
 
 	// return the new vector name
 	return sVectorName;
+}
+
+// This function replaces all occurences of the string sToRep
+// in the string sToModify with the new value sNewValue. The
+// Boundaries limit the range of processing
+void replaceAll(string& sToModify, const string& sToRep, const string& sNewValue, size_t nStart /*= 0*/, size_t nEnd /*= string::npos*/)
+{
+    // Ensure the values are correct
+    if (!sToModify.length() || !sToRep.length())
+		return;
+
+    // check the boundaries
+	if ((size_t)nStart > sToModify.length())
+		return;
+
+	if (nEnd == string::npos)
+		nEnd = sToModify.length();
+
+    // Process the replacing
+	for (size_t i = nStart; i < nEnd; i++)
+	{
+		if (i == sToModify.length())
+			break;
+		if (sToModify.substr(i, sToRep.length()) == sToRep)
+		{
+			sToModify.replace(i, sToRep.length(), sNewValue);
+			nEnd += sNewValue.length() - sToRep.length() + 1;
+			i += sNewValue.length() - 1;
+		}
+	}
 }
 
 // This function accesses the windows clipboard and tries to convert the

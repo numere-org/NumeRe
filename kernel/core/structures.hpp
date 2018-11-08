@@ -76,6 +76,23 @@ struct Returnvalue
 {
     vector<double> vNumVal;
     vector<string> vStringVal;
+
+    // clear method
+    void clear()
+    {
+        vNumVal.clear();
+        vStringVal.clear();
+    }
+
+    // boolean checkers
+    bool isString() const
+    {
+        return vStringVal.size();
+    }
+    bool isNumeric() const
+    {
+        return vNumVal.size() && !vStringVal.size();
+    }
 };
 
 // Structure for the retouch functionality

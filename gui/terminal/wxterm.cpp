@@ -55,6 +55,7 @@ void WinMessageBeep();
 
 #define CURSOR_BLINK_DEFAULT_TIMEOUT	300
 #define CURSOR_BLINK_MAX_TIMEOUT	2000
+#define KERNEL_THREAD_STACK_SIZE 4194304 // Bytes
 
 BEGIN_EVENT_TABLE(wxTerm, wxWindow)
 	EVT_PAINT						(wxTerm::OnPaint)
@@ -239,7 +240,7 @@ void wxTerm::setKernelSettings(const Settings& _settings)
 // This member function will start the managed, second thread
 void wxTerm::StartKernelTask()
 {
-	if (CreateThread(wxTHREAD_JOINABLE) != wxTHREAD_NO_ERROR)
+	if (CreateThread(wxTHREAD_JOINABLE, KERNEL_THREAD_STACK_SIZE) != wxTHREAD_NO_ERROR)
 	{
 		wxLogError("Could not create kernel thread!");
 		return;

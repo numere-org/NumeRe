@@ -43,7 +43,6 @@ static Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, Datafile& _da
 static Matrix parser_solveLGS(const Matrix& _mMatrix, Parser& _parser, Define& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_calcCrossProduct(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_calcEigenVects(const Matrix& _mMatrix, int nReturnType, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_SplitMatrix(Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_calcTrace(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_IdentityMatrix(unsigned int nSize);
 static Matrix parser_OnesMatrix(unsigned int nLines, unsigned int nCols);
@@ -2911,28 +2910,6 @@ static bool parser_IsSymmMatrix(const Matrix& _mMatrix, const string& sCmd, cons
 
     // Is symmetric
     return true;
-}
-
-static Matrix parser_SplitMatrix(Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (_mMatrix.size() != _mMatrix[0].size())
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix.size()) +"x"+ toString(_mMatrix[0].size()));
-    Matrix _mTriangular = _mMatrix;
-    for (unsigned int i = 0; i < _mMatrix.size(); i++)
-    {
-        for (unsigned int j = i; j < _mMatrix.size(); j++)
-        {
-            if (i == j)
-                _mMatrix[i][j] = 0.0;
-            else
-            {// A = (S + T) ==> T = A - S
-                _mTriangular[i][j] = 0.0;
-                _mTriangular[j][i] -= _mMatrix[j][i];
-                _mMatrix[j][i] = _mMatrix[i][j];
-            }
-        }
-    }
-    return _mTriangular;
 }
 
 static Matrix parser_calcTrace(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)

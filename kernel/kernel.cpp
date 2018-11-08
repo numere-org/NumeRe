@@ -20,6 +20,7 @@
 
 #include "wx/wx.h"
 #include "../gui/terminal/wxterm.h"
+#define KERNEL_PRINT_SLEEP 2
 
 extern const string sVersion;
 /* --> STATUS: Versionsname des Programms; Aktuell "Ampere", danach "Angstroem". Ab 1.0 Namen mit "B",
@@ -37,6 +38,7 @@ extern Integration_Vars parser_iVars;
 time_t tTimeZero = time(0);
 
 // Initialization of the static member variables
+int* NumeReKernel::baseStackPosition = nullptr;
 wxTerm* NumeReKernel::m_parent = nullptr;
 queue<GraphHelper*> NumeReKernel::graphHelper;
 int NumeReKernel::nLINE_LENGTH = 80;
@@ -459,6 +461,10 @@ void NumeReKernel::defineFunctions()
 // This member function prints the version headline and the version information to the console
 void NumeReKernel::printVersionInfo()
 {
+    // measure the current stack position
+    int stackMeasureVar;
+    baseStackPosition = &stackMeasureVar;
+
 	bWritingTable = true;
 	make_hline(80);
 	printPreFmt("| ");
@@ -1578,7 +1584,7 @@ bool NumeReKernel::executePlugins(string& sLine)
             Returnvalue _rTemp = _procedure.execute(_procedure.getPluginProcName(), _procedure.getPluginVarList(), _parser, _functions, _data, _option, _out, _pData, _script);
 
             // Handle the return values
-            if (_rTemp.vStringVal.size() && sLine.find("<<RETURNVAL>>") != string::npos)
+            if (_rTemp.isString() && sLine.find("<<RETURNVAL>>") != string::npos)
             {
                 string sReturn = "{";
                 for (unsigned int v = 0; v < _rTemp.vStringVal.size(); v++)
@@ -1586,7 +1592,7 @@ bool NumeReKernel::executePlugins(string& sLine)
                 sReturn.back() = '}';
                 sLine.replace(sLine.find("<<RETURNVAL>>"), 13, sReturn);
             }
-            else if (!_rTemp.vStringVal.size() && sLine.find("<<RETURNVAL>>") != string::npos)
+            else if (_rTemp.isNumeric() && sLine.find("<<RETURNVAL>>") != string::npos)
             {
                 sLine.replace(sLine.find("<<RETURNVAL>>"), 13, "_~PLUGIN[" + _procedure.getPluginProcName() + "~ROOT]");
                 vAns = _rTemp.vNumVal[0];
@@ -1947,7 +1953,7 @@ void NumeReKernel::print(const string& __sLine)
 	if (bWritingTable)
 		return;
 	wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
-	Sleep(5);
+	Sleep(KERNEL_PRINT_SLEEP);
 }
 
 // This is the virtual cout function. The port from the kernel of course needs some tweaking
@@ -1979,7 +1985,7 @@ void NumeReKernel::printPreFmt(const string& __sLine)
 	if (bWritingTable)
 		return;
 	wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
-	Sleep(5);
+	Sleep(KERNEL_PRINT_SLEEP);
 }
 
 // This static function is used to format the result output

@@ -4,6 +4,7 @@
 #include "../kernel.hpp"
 #include <ctime>
 #include <windows.h>
+#include <algorithm>
 
 extern value_type vAns;
 extern Integration_Vars parser_iVars;
@@ -451,6 +452,7 @@ static string strfnc_strfnd(StringFuncArgs& funcArgs)
 		funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"') + 1, funcArgs.sArg2.rfind('"') - funcArgs.sArg2.find('"') - 1);
 	return toString((int)funcArgs.sArg2.find(funcArgs.sArg1, funcArgs.nArg1 - 1) + 1);
 }
+
 // val = strmatch(str, str, [val])
 static string strfnc_strmatch(StringFuncArgs& funcArgs)
 {
@@ -819,7 +821,9 @@ static string strfnc_replaceall(StringFuncArgs& funcArgs)
 	if (!funcArgs.sArg2.length())
 		return "\"" + funcArgs.sArg1 + "\"";
 
-	for (int i = funcArgs.nArg1 - 1; i < funcArgs.nArg2 - 1; i++)
+    replaceAll(funcArgs.sArg1, funcArgs.sArg2, funcArgs.sArg3, funcArgs.nArg1-1, funcArgs.nArg2-1);
+
+	/*for (int i = funcArgs.nArg1 - 1; i < funcArgs.nArg2 - 1; i++)
 	{
 		if ((size_t)i == funcArgs.sArg1.length())
 			break;
@@ -829,7 +833,7 @@ static string strfnc_replaceall(StringFuncArgs& funcArgs)
 			funcArgs.nArg2 += funcArgs.sArg3.length() - funcArgs.sArg2.length() + 1;
 			i += funcArgs.sArg3.length() - 1;
 		}
-	}
+	}*/
 
 	return "\"" + funcArgs.sArg1 + "\"";
 }
@@ -920,62 +924,70 @@ static string strfnc_sum(StringFuncArgs& funcArgs)
 //
 //
 
+// Static map containing parameters with their corresponding flags
+static map<string, int> getStringParamFlags()
+{
+    map<string, int> stringParams;
+
+    stringParams["noquotes"] = NO_QUOTES;
+    stringParams["nq"] = NO_QUOTES;
+    stringParams["peek"] = PEEK;
+    stringParams["print"] = NO_QUOTES | PEEK;
+    stringParams["komq"] = KEEP_MASKED_QUOTES;
+    stringParams["kmq"] = KEEP_MASKED_CONTROL_CHARS | KEEP_MASKED_QUOTES;
+
+    return stringParams;
+}
+
+// static function for decoding the string paramters
+// and removing the parameter list from
+static int decodeStringParams(string& sLine)
+{
+    static map<string, int> stringParams = getStringParamFlags();
+
+    int parserFlags = NO_FLAG;
+    vector<int> vPositions;
+
+    // Search for every parameter and add the
+    // corresponding flag, if the parameter was
+    // detected
+    for (auto iter = stringParams.begin(); iter != stringParams.end(); ++iter)
+    {
+        vPositions.push_back(matchParams(sLine, iter->first));
+        if (vPositions.back())
+            parserFlags |= iter->second;
+    }
+
+    // Sort the vector (only about 6 elements,
+    // should be quite fast) to obtain the
+    // smallest, non-zero object quite fast
+    sort(vPositions.begin(), vPositions.end());
+
+    // Find the start of the parameter list and
+    // erase them from the expression
+    for (size_t i = 0; i < vPositions.size(); i++)
+    {
+        if (vPositions[i])
+        {
+            sLine.erase(sLine.rfind('-', vPositions[i]));
+            break;
+        }
+    }
+
+    // Return the calculated flags
+    return parserFlags;
+}
 
 
 // This function is the interface to the current file.
 // It wraps the string parser core, which will do the main tasks
 int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& _parser, const Settings& _option, bool bSilent)
 {
-	int parserFlags = NO_FLAG;
-
 	sLine = " " + sLine + " ";
 
 	// Process the parameters and store their
 	// results in the parser flags
-	if (matchParams(sLine, "noquotes")
-			|| matchParams(sLine, "nq")
-			|| matchParams(sLine, "peek")
-			|| matchParams(sLine, "print")
-			|| matchParams(sLine, "komq")
-			|| matchParams(sLine, "kmq"))
-	{
-		int nPos = (int)sLine.length();
-		if (matchParams(sLine, "noquotes") < nPos && matchParams(sLine, "noquotes"))
-		{
-			nPos = matchParams(sLine, "noquotes");
-			parserFlags |= NO_QUOTES;
-		}
-		if (matchParams(sLine, "nq") < nPos && matchParams(sLine, "nq"))
-		{
-			nPos = matchParams(sLine, "nq");
-			parserFlags |= NO_QUOTES;
-		}
-		if (matchParams(sLine, "peek") < nPos && matchParams(sLine, "peek"))
-		{
-			nPos = matchParams(sLine, "peek");
-			parserFlags |= PEEK;
-		}
-		if (matchParams(sLine, "komq") < nPos && matchParams(sLine, "komq"))
-		{
-			nPos = matchParams(sLine, "komq");
-			parserFlags |= KEEP_MASKED_QUOTES;
-		}
-		if (matchParams(sLine, "kmq") < nPos && matchParams(sLine, "kmq"))
-		{
-			nPos = matchParams(sLine, "kmq");
-			parserFlags |= KEEP_MASKED_CONTROL_CHARS | KEEP_MASKED_QUOTES;
-		}
-		if (matchParams(sLine, "print")  < nPos && matchParams(sLine, "print"))
-		{
-			nPos = matchParams(sLine, "print");
-			parserFlags |= NO_QUOTES | PEEK;
-		}
-
-		// Fint the start of the parameter list and
-		// erase them from the expression
-		nPos = sLine.rfind('-', nPos);
-		sLine.erase(nPos);
-	}
+	int parserFlags = decodeStringParams(sLine);
 
     // Create a map for the string vector vars, which may
     // occur in the current expression. This map will be used
@@ -997,10 +1009,16 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
 		bSilent = true;
 
     // Print the output
-	if (parserFlags & PEEK)
-		NumeReKernel::printPreFmt("\r");
 	if ((!bSilent || parserFlags & PEEK) && !StrRes.bOnlyLogicals)
-		NumeReKernel::printPreFmt(LineBreak(sConsoleOut, _option, false, 0) + "\n");
+    {
+        // The Line break function is not needed any more
+        // because the terminal is capable of breaking the
+        // lines by itself
+        if (parserFlags & PEEK)
+            NumeReKernel::printPreFmt("\r" + sConsoleOut + "\n");
+		else
+            NumeReKernel::printPreFmt(sConsoleOut + "\n");
+    }
 
     // return the corresponding value. The string parser may
     // evaluate the command line to only contain logical or
@@ -3620,6 +3638,8 @@ static string parser_CreateStringOutput(vector<string>& vFinal, const vector<boo
 		vFinal[i] = removeQuotationMarks(vFinal[i]);
 
 	string sConsoleOut = "|-> ";
+	static const string sConsoleIndent = "|   ";
+	bool bLineBreaks = false;
 
 	// Every result in the current return values
 	// is a single string result
@@ -3667,8 +3687,9 @@ static string parser_CreateStringOutput(vector<string>& vFinal, const vector<boo
 				//\not\neq\ni
 				if (vFinal[j][k + 1] == 'n') // Line break
 				{
-					sConsoleOut += "$";
+					sConsoleOut += "\n";
 					sLine += "\n";
+					bLineBreaks = true;
 				}
 				else if (vFinal[j][k + 1] == 't') // tabulator
 				{
@@ -3723,8 +3744,9 @@ static string parser_CreateStringOutput(vector<string>& vFinal, const vector<boo
 				sLine += ", ";
 				if (sConsoleOut.back() == '"')
 				{
-					sConsoleOut[sConsoleOut.rfind('$')] = '"';
-					sConsoleOut.back() = '$';
+					sConsoleOut[sConsoleOut.rfind('\n')] = '"';
+					sConsoleOut.back() = '\n';
+					bLineBreaks = true;
 				}
 				continue;
 			}
@@ -3734,6 +3756,12 @@ static string parser_CreateStringOutput(vector<string>& vFinal, const vector<boo
 			sLine += ", ";
 		}
 	}
+
+	// Replace all line break characters with the console
+	// indentation, if that is needed
+	if (bLineBreaks)
+        replaceAll(sConsoleOut, "\n", "\n" + sConsoleIndent);
+
 	return sConsoleOut;
 }
 

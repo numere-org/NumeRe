@@ -48,3 +48,6 @@ Fixed	Encoding of general file is not changed any more.
 Cleaned	The command "retoque" was renamed to "retouch". The previous command is internally supported, too.
 Removed	The command "replaceline" was removed.
 Cleaned	Complex return values from "matop" are now returned as two simple separatable matrices: the real values are in the first half and the imaginary values are in the second half of the columns.
+Fixed	NumeRe catches now stack overflows, which happen during recursive calls of procedures.
+Added	Procedures have now the "template" flag, which indicates that they have to cope with multiple data types.
+Updated	The procedure execution was been speed up about 25%.

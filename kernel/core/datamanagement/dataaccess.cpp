@@ -226,6 +226,18 @@ void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, 
 		}
 		handleMafDataAccess(sLine, getMafAccessString(sLine, sEntity), _parser, _data);
 	}
+	nPos = 0;
+	while ((nPos = sLine.find(sEntity + ")", nPos)) != string::npos)
+	{
+		if (isInQuotes(sLine, nPos, true)
+            || (nPos && isalpha(sLine[nPos-1])))
+		{
+			nPos++;
+			continue;
+		}
+		sLine.replace(nPos, sEntity.length()+1, (_data.getCols(sEntity.substr(0, sEntity.length()-1)) ? "true" : "false"));
+	}
+
 	if (sLine.find(sEntity) == string::npos)
 		return;
 

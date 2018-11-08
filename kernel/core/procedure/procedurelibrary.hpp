@@ -30,7 +30,7 @@ using namespace std;
 class ProcedureLibrary
 {
     private:
-        map<string,ProcedureElement*> mLibraryEntries;
+        map<string, ProcedureElement*> mLibraryEntries;
 
         ProcedureElement* constructProcedureElement(const string& sProcedureFileName);
         vector<string> getFileContents(const string& sProcedureFileName);

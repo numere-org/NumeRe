@@ -170,6 +170,7 @@ class SyntaxError
             PROCEDURE_NOT_FOUND,
             PROCEDURE_THROW,
             PROCEDURE_WITHOUT_INSTALL_FOUND,
+            PROCEDURE_STACK_OVERFLOW,
             PROCESS_ABORTED_BY_USER=3200,
             READ_ONLY_DATA=3300,
             SCRIPT_NOT_EXIST=3400,

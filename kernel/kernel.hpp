@@ -122,6 +122,7 @@ class NumeReKernel
         // Static public class members
         // Used for controlling the programm flow, to update the internal
         // state and to communicate with the graphical layer
+        static int* baseStackPosition;
         static wxTerm* m_parent;
         static queue<GraphHelper*> graphHelper;
         static int nLINE_LENGTH;

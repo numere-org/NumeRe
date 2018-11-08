@@ -158,6 +158,7 @@ bool containsStrings(const string& sLine);
 bool fileExists(const string& sFilename);
 void reduceLogFilesize(const string& sFileName);
 string replaceToVectorname(const string& sExpression);
+void replaceAll(string& sToModify, const string& sToRep, const string& sNewValue, size_t nStart = 0, size_t nEnd = string::npos);
 string utf8parser(const string& sString);
 void eraseToken(string& sExpr, const string& sToken, bool bTokenHasValue = false);
 vector<string> getDBFileContent(const string& sFilename, Settings& _option);

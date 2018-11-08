@@ -19,24 +19,33 @@
 #include <string>
 #include <map>
 #include <vector>
+#include "procedurecommandline.hpp"
 
 #ifndef PROCEDUREELEMENT_HPP
 #define PROCEDUREELEMENT_HPP
 
 using namespace std;
 
+// This class contains the pre-parsed contents of a single
+// procedure file
 class ProcedureElement
 {
     private:
-        map<int,string> mProcedureContents;
+        map<int, ProcedureCommandLine> mProcedureContents;
+        map<string, int> mProcedureList;
+
+        void cleanCurrentLine(string& sProcCommandLine, const string& sCurrentCommand, const string& sFolderPath);
 
     public:
-        ProcedureElement(const vector<string>& vProcedureContents);
+        ProcedureElement(const vector<string>& vProcedureContents, const string& sFolderPath);
 
-        pair<int,string> getFirstLine();
-        pair<int,string> getNextLine(int currentline);
+        pair<int, ProcedureCommandLine> getFirstLine();
+        pair<int, ProcedureCommandLine> getCurrentLine(int currentLine);
+        pair<int, ProcedureCommandLine> getNextLine(int currentline);
+        int gotoProcedure(const string& sProcedureName);
 
         bool isLastLine(int currentline);
+        void setByteCode(int _nByteCode, int nCurrentLine);
 };
 
 #endif // PROCEDUREELEMENT_HPP

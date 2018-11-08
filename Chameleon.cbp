@@ -275,6 +275,7 @@
 			<Add option="-lmgl" />
 			<Add option="-lgsl" />
 			<Add option="-lgslcblas" />
+			<Add option="-Wl,--stack,8388608" />
 		</Linker>
 		<Unit filename="Chameleon.rc">
 			<Option compilerVar="WINDRES" />
@@ -473,6 +474,7 @@
 		<Unit filename="kernel/core/procedure/flowctrl.hpp" />
 		<Unit filename="kernel/core/procedure/procedure.cpp" />
 		<Unit filename="kernel/core/procedure/procedure.hpp" />
+		<Unit filename="kernel/core/procedure/procedurecommandline.hpp" />
 		<Unit filename="kernel/core/procedure/procedureelement.cpp" />
 		<Unit filename="kernel/core/procedure/procedureelement.hpp" />
 		<Unit filename="kernel/core/procedure/procedurelibrary.cpp" />

@@ -58,8 +58,6 @@ class Procedure : /*public FileSystem,*/ public FlowCtrl, public Plugin
         string sProcNames;
         string sCurrentProcedureName;
         unsigned int nCurrentLine;
-        string sProcKeep;
-        string sProcPlotCompose;
         string sNameSpace;
         string sCallingNameSpace;
         string sThisNameSpace;
@@ -75,13 +73,18 @@ class Procedure : /*public FileSystem,*/ public FlowCtrl, public Plugin
 
         unsigned int nVarSize;
         unsigned int nStrSize;
-        //int nReturnType;
-        //Loop _block;
 
-        Returnvalue ProcCalc(string sLine, Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script);
+        void init();
+
+        Returnvalue ProcCalc(string sLine, string sCurrentCommand, int& nByteCode, Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script);
         bool setProcName(const string& sProc, bool bInstallFileName = false);
         int procedureCmdInterface(string& sLine);
         void resetProcedure(Parser& _parser, bool bSupressAnswer);
+        void extractCurrentNamespace(const string& sProc);
+        bool handleVariableDefinitions(string& sProcCommandLine, const string& sCommand, ProcedureVarFactory& _varfactory);
+        void readFromInclude(ifstream& fInclude, int nIncludeType, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure);
+        int handleIncludeSyntax(string& sProcCommandLine, ifstream& fInclude, bool bReadingFromInclude);
+
     public:
         Procedure();
         Procedure(const Procedure& _procedure);

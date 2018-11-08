@@ -100,6 +100,13 @@ class FlowCtrl
         bool bFunctionsReplaced;
         string sLoopPlotCompose;
         map<string,string> mVarMap;
+        bool bSilent;
+        bool bMask;
+        bool bPrintedStatus;
+        bool bBreakSignal;
+        bool bContinueSignal;
+        bool bReturnSignal;
+        int nLoopSavety;
 
         void generateCommandArray();
         int for_loop(int nth_Cmd = 0, int nth_Loop = 0);
@@ -110,13 +117,12 @@ class FlowCtrl
         int evalLoopFlowCommands(int __j, int nth_loop);
         int evalForkFlowCommands(int __j, int nth_loop);
         void replaceLocalVars(string& sLine);
-        bool bSilent;
-        bool bMask;
-        bool bPrintedStatus;
-        bool bBreakSignal;
-        bool bContinueSignal;
-        bool bReturnSignal;
-        int nLoopSavety;
+        bool checkFlowControlArgument(const string& sFlowControlArgument, bool isForLoop = false);
+        string extractFlagsAndIndexVariables();
+        void fillJumpTableAndExpandRecursives();
+        void checkParsingModeAndExpandDefinitions();
+        void prepareLocalVarsAndReplace(string& sVars);
+
 
         virtual int procedureCmdInterface(string& sLine);
         virtual int procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command);
