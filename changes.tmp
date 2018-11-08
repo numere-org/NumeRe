@@ -51,3 +51,4 @@ Cleaned	Complex return values from "matop" are now returned as two simple separa
 Fixed	NumeRe catches now stack overflows, which happen during recursive calls of procedures.
 Added	Procedures have now the "template" flag, which indicates that they have to cope with multiple data types.
 Updated	The procedure execution was been speed up about 25%.
+New	The function "getenvvar(sVarName)" may be used to read system environment variables.

@@ -3,6 +3,7 @@
 #include "maths/parser_functions.hpp"
 #include "../kernel.hpp"
 #include <ctime>
+#include <cstdlib>
 #include <windows.h>
 #include <algorithm>
 
@@ -179,6 +180,20 @@ static string strfnc_to_uppercase(StringFuncArgs& funcArgs)
 static string strfnc_to_lowercase(StringFuncArgs& funcArgs)
 {
 	return "\"" + toLowerCase(funcArgs.sArg1) + "\"";
+}
+
+// str = getenvvar(str)
+static string strfnc_getenvvar(StringFuncArgs& funcArgs)
+{
+    if (!funcArgs.sArg1.length())
+        return "\"\"";
+
+    char* sVarValue = getenv(funcArgs.sArg1.c_str());
+
+    if (!sVarValue)
+        return "\"\"";
+    else
+        return "\"" + string(sVarValue) + "\"";
 }
 
 // cmd = to_cmd(str)
@@ -2070,6 +2085,7 @@ static map<string, StringFuncHandle> parser_getStringFuncHandles()
 	mHandleTable["to_value"]            = StringFuncHandle(STR, strfnc_to_value, false);
 	mHandleTable["to_uppercase"]        = StringFuncHandle(STR, strfnc_to_uppercase, false);
 	mHandleTable["to_lowercase"]        = StringFuncHandle(STR, strfnc_to_lowercase, false);
+	mHandleTable["getenvvar"]           = StringFuncHandle(STR, strfnc_getenvvar, false);
 	mHandleTable["getmatchingparens"]   = StringFuncHandle(STR, strfnc_getmatchingparens, false);
 	mHandleTable["findfile"]            = StringFuncHandle(STR_STROPT, strfnc_findfile, false);
 	mHandleTable["split"]               = StringFuncHandle(STR_STR, strfnc_split, false);
