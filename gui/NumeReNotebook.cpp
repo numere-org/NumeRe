@@ -87,13 +87,13 @@ void NumeReNotebook::OnTabRightClicked (wxMouseEvent &event)
 
 	m_top_parent->SetIntVar(VN_CLICKEDTAB, pageNum);
 	wxMenu popupMenu;
-	popupMenu.Append(ID_CLOSETAB, _guilang.get("GUI_EDITOR_TAB_CLOSE"));
-	popupMenu.Append(ID_CLOSEALL, _guilang.get("GUI_EDITOR_TAB_CLOSEALL"));
-	popupMenu.Append(ID_CLOSEOTHERS, _guilang.get("GUI_EDITOR_TAB_CLOSEOTHERS"));
+	popupMenu.Append(ID_MENU_CLOSETAB, _guilang.get("GUI_EDITOR_TAB_CLOSE"));
+	popupMenu.Append(ID_MENU_CLOSEALL, _guilang.get("GUI_EDITOR_TAB_CLOSEALL"));
+	popupMenu.Append(ID_MENU_CLOSEOTHERS, _guilang.get("GUI_EDITOR_TAB_CLOSEOTHERS"));
 	popupMenu.AppendSeparator();
-	popupMenu.Append(ID_OPEN_FOLDER, _guilang.get("GUI_EDITOR_TAB_OPENFOLDER"));
+	popupMenu.Append(ID_MENU_OPEN_FOLDER, _guilang.get("GUI_EDITOR_TAB_OPENFOLDER"));
 	popupMenu.AppendSeparator();
-	popupMenu.Append(ID_DEBUG_START_TAB, _guilang.get("GUI_TB_RUN"));
+	popupMenu.Append(ID_MENU_RUN_FROM_TAB, _guilang.get("GUI_TB_RUN"));
 	PopupMenu(&popupMenu, pt);
 }
 
@@ -223,7 +223,7 @@ void NumeReNotebook::OnTabMiddleClicked( wxMouseEvent &event )
 
 
 	wxCommandEvent command;
-	command.SetId(ID_CLOSETAB);
+	command.SetId(ID_MENU_CLOSETAB);
 	command.SetEventType(wxEVT_MENU); //10019//wxEVT_MIDDLE_UP
 	/*m_parent->GetEventHandler()->*/m_top_parent->GetEventHandler()->ProcessEvent(command);
 

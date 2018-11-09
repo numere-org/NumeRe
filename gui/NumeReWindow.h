@@ -255,8 +255,6 @@ class NumeReWindow : public wxFrame
         void OnDebugCommand(wxCommandEvent &event);
         void OnDebugBreakpointCommand(wxCommandEvent &event);
 
-        void OnDebugEvent(wxDebugEvent &event);
-
         void OnClose(wxCloseEvent& event);
         void Test(wxCommandEvent& event);
 

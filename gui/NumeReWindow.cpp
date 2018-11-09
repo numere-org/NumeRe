@@ -97,123 +97,52 @@ wxPrintData *g_printData = (wxPrintData*) NULL;
 wxPageSetupData *g_pageSetupData = (wxPageSetupData*) NULL;
 
 BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
-	EVT_MENU						(ID_NEW_EMPTY, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_NEW_SCRIPT, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_NEW_PROCEDURE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_NEW_PLUGIN, NumeReWindow::OnMenuEvent)
-	EVT_MENU_RANGE					(ID_OPEN_SOURCE_LOCAL, ID_OPEN_SOURCE_REMOTE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_QUIT,  NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_ABOUT, NumeReWindow::OnMenuEvent)
+    EVT_MENU_RANGE                  (EVENTID_MENU_START, EVENTID_MENU_END-1, NumeReWindow::OnMenuEvent)
+
 	EVT_MENU						(ID_TEST, NumeReWindow::Test)
-	EVT_MENU						(ID_SAVE, NumeReWindow::OnMenuEvent)
-	EVT_MENU_RANGE					(ID_SAVE_SOURCE_LOCAL, ID_SAVE_SOURCE_REMOTE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_CLOSEPAGE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_CLOSETAB, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_DEBUG_START_TAB, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_CLOSEALL, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_CLOSEOTHERS, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_OPEN_FOLDER, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_TOGGLE_CONSOLE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_TOGGLE_FILETREE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_TOGGLE_HISTORY, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_STARTCONNECT, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_DISCONNECT, NumeReWindow::OnMenuEvent)
 	EVT_MENU_RANGE					(ID_COMPILE, ID_COMPILE_PROJECT, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_UNDO, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_REDO, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_DEBUGGER, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_OPTIONS, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_CUT, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_COPY, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_PASTE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_FIND, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_REPLACE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_OPEN_FILE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_EDIT_FILE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_INSERT_IN_EDITOR, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_INSERT_IN_CONSOLE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_HELP_ON_ITEM, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_SHOW_DESCRIPTION, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_OPEN_IMAGE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_DELETE_FILE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_COPY_FILE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_INSERT_FILE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_RENAME_FILE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_NEW_FOLDER, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_REMOVE_FOLDER, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_OPEN_IN_EXPLORER, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_AUTOINDENT, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_INDENTONTYPE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_USESECTIONS, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_AUTOFORMAT, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_LINEWRAP, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_DISPCTRLCHARS, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_USETXTADV, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_USEANALYZER, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_GOTOLINE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_TOGGLE_NOTEBOOK_MULTIROW, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_TOGGLE_COMMENT_LINE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_TOGGLE_COMMENT_SELECTION, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_FOLD_ALL, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_UNFOLD_ALL, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_SELECTION_UP, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_SELECTION_DOWN, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_SORT_SELECTION_ASC, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_SORT_SELECTION_DESC, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_BOOKMARK_TOGGLE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_BOOKMARK_CLEARMENU, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_BOOKMARK_NEXT, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_BOOKMARK_PREVIOUS, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_FIND_DUPLICATES, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_STRIP_SPACES_BOTH, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_STRIP_SPACES_FRONT, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_STRIP_SPACES_BACK, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_CREATE_LATEX_FILE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_RUN_LATEX, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_COMPILE_LATEX, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_PROJECT_ADDFILE, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_PROJECT_REMOVEFILE, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_PROJECT_EXCLUDE_FILE, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_PROJECT_INCLUDE_FILE, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_NEW_PROJECT, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_OPEN_PROJECT_LOCAL, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_OPEN_PROJECT_REMOTE, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_CLOSE_PROJECT, NumeReWindow::OnMenuEvent)
+	EVT_MENU						(ID_DEBUG_CONTINUE, NumeReWindow::OnDebugCommand)
+	EVT_MENU						(ID_DEBUG_STEPNEXT, NumeReWindow::OnDebugCommand)
+	EVT_MENU						(ID_DEBUG_STEPOVER, NumeReWindow::OnDebugCommand)
+	EVT_MENU						(ID_DEBUG_STEPOUT, NumeReWindow::OnDebugCommand)
+
 	EVT_FIND						(-1, NumeReWindow::OnFindEvent)
 	EVT_FIND_NEXT					(-1, NumeReWindow::OnFindEvent)
 	EVT_FIND_REPLACE				(-1, NumeReWindow::OnFindEvent)
 	EVT_FIND_REPLACE_ALL			(-1, NumeReWindow::OnFindEvent)
 	EVT_FIND_CLOSE					(-1, NumeReWindow::OnFindEvent)
+
 	EVT_CLOSE						(NumeReWindow::OnClose)
+
 	EVT_NOTEBOOK_PAGE_CHANGED		(ID_NOTEBOOK_ED, NumeReWindow::OnPageChange)
 	EVT_SPLITTER_SASH_POS_CHANGED	(ID_SPLITEDITOROUTPUT, NumeReWindow::OnTermResize)
+
 	EVT_SIZE						(NumeReWindow::OnSize)
+
 	EVT_SPLITTER_DCLICK				(ID_SPLITPROJECTEDITOR, NumeReWindow::OnSplitterDoubleClick)
 	EVT_SPLITTER_DCLICK				(ID_SPLITEDITOROUTPUT, NumeReWindow::OnSplitterDoubleClick)
+
 	EVT_TREE_ITEM_RIGHT_CLICK		(ID_PROJECTTREE, NumeReWindow::OnTreeItemRightClick)
 	EVT_TREE_ITEM_RIGHT_CLICK		(ID_FUNCTIONTREE, NumeReWindow::OnTreeItemRightClick)
-	EVT_MENU						(ID_PROJECT_ADDFILE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_PROJECT_REMOVEFILE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_PROJECT_EXCLUDE_FILE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_PROJECT_INCLUDE_FILE, NumeReWindow::OnMenuEvent)
 	EVT_TREE_ITEM_ACTIVATED			(ID_PROJECTTREE, NumeReWindow::OnTreeItemActivated)
 	EVT_TREE_ITEM_ACTIVATED			(ID_FUNCTIONTREE, NumeReWindow::OnTreeItemActivated)
 	EVT_TREE_ITEM_GETTOOLTIP        (ID_PROJECTTREE, NumeReWindow::OnTreeItemToolTip)
 	EVT_TREE_ITEM_GETTOOLTIP        (ID_FUNCTIONTREE, NumeReWindow::OnTreeItemToolTip)
 	EVT_TREE_BEGIN_DRAG             (ID_PROJECTTREE, NumeReWindow::OnTreeDragDrop)
 	EVT_TREE_BEGIN_DRAG             (ID_FUNCTIONTREE, NumeReWindow::OnTreeDragDrop)
-	EVT_MENU						(ID_NEW_PROJECT, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_OPEN_PROJECT_LOCAL, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_OPEN_PROJECT_REMOTE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_PRINT_PAGE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_PRINT_PREVIEW, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_PRINT_SETUP, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_CLOSE_PROJECT, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_DEBUG_START, NumeReWindow::OnDebugCommand)
-	EVT_MENU						(ID_DEBUG_CONTINUE, NumeReWindow::OnDebugCommand)
-	EVT_MENU						(ID_DEBUG_STOP, NumeReWindow::OnDebugCommand)
-	EVT_MENU						(ID_DEBUG_STEPNEXT, NumeReWindow::OnDebugCommand)
-	EVT_MENU						(ID_DEBUG_STEPOVER, NumeReWindow::OnDebugCommand)
-	EVT_MENU						(ID_DEBUG_STEPOUT, NumeReWindow::OnDebugCommand)
-	EVT_MENU						(ID_DEBUG_ADDEDITORBREAKPOINT, NumeReWindow::OnDebugBreakpointCommand)
-	EVT_MENU						(ID_DEBUG_REMOVEEDITORBREAKPOINT, NumeReWindow::OnDebugBreakpointCommand)
-	EVT_MENU						(ID_DEBUG_CLEAREDITORBREAKPOINTS, NumeReWindow::OnDebugBreakpointCommand)
-	EVT_DEBUG						(NumeReWindow::OnDebugEvent)
+
 	EVT_IDLE						(NumeReWindow::OnIdle)
 	EVT_TIMER						(ID_STATUSTIMER, NumeReWindow::OnStatusTimer)
-	EVT_MENU						(ID_HELP, NumeReWindow::OnMenuEvent)
 END_EVENT_TABLE()
 
 IMPLEMENT_APP(MyApp)
@@ -964,13 +893,13 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 
 	switch(id)
 	{
-        case ID_OPEN_FILE:
+        case ID_MENU_OPEN_FILE_FROM_TREE:
         {
             FileNameTreeData* data = static_cast <FileNameTreeData* > (m_fileTree->GetItemData(m_clickedTreeItem));
             OnExecuteFile(data->filename.ToStdString());
             break;
         }
-        case ID_EDIT_FILE:
+        case ID_MENU_EDIT_FILE_FROM_TREE:
         {
 			FileNameTreeData* data = static_cast <FileNameTreeData* > (m_fileTree->GetItemData(m_clickedTreeItem));
 
@@ -979,7 +908,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             OpenSourceFile(fnames);
             break;
         }
-        case ID_INSERT_IN_EDITOR:
+        case ID_MENU_INSERT_IN_EDITOR_FROM_TREE:
         {
             FileNameTreeData* data = static_cast <FileNameTreeData* > (m_functionTree->GetItemData(m_clickedTreeItem));
             wxString command;
@@ -993,7 +922,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             m_currentEd->GotoPos(m_currentEd->GetCurrentPos()+command.length());
             break;
         }
-        case ID_INSERT_IN_CONSOLE:
+        case ID_MENU_INSERT_IN_CONSOLE_FROM_TREE:
         {
             FileNameTreeData* data = static_cast <FileNameTreeData* > (m_functionTree->GetItemData(m_clickedTreeItem));
             string command;
@@ -1007,108 +936,108 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             m_terminal->ProcessInput(command.length(), command);
             break;
         }
-        case ID_HELP_ON_ITEM:
+        case ID_MENU_HELP_ON_ITEM:
         {
             FileNameTreeData* data = static_cast <FileNameTreeData* > (m_functionTree->GetItemData(m_clickedTreeItem));
             string command = (data->tooltip).substr(0, (data->tooltip).find(' ')).ToStdString();
             openHTML(m_terminal->getDocumentation(command));
             break;
         }
-        case ID_SHOW_DESCRIPTION:
+        case ID_MENU_SHOW_DESCRIPTION:
         {
             FileNameTreeData* data = static_cast <FileNameTreeData* > (m_functionTree->GetItemData(m_clickedTreeItem));
             wxMessageBox(data->tooltip, "DESCRIPTION", wxICON_INFORMATION, this);
             break;
         }
-        case ID_OPEN_IMAGE:
+        case ID_MENU_OPEN_IMAGE_FROM_TREE:
         {
             FileNameTreeData* data = static_cast <FileNameTreeData*> (m_fileTree->GetItemData(m_clickedTreeItem));
             openImage(wxFileName(data->filename));
             break;
         }
-        case ID_DELETE_FILE:
+        case ID_MENU_DELETE_FILE_FROM_TREE:
             deleteFile();
             break;
-        case ID_COPY_FILE:
+        case ID_MENU_COPY_FILE_FROM_TREE:
             m_copiedTreeItem = m_clickedTreeItem;
             break;
-        case ID_INSERT_FILE:
+        case ID_MENU_INSERT_FILE_INTO_TREE:
             insertCopiedFile();
             break;
-        case ID_RENAME_FILE:
+        case ID_MENU_RENAME_FILE_IN_TREE:
             renameFile();
             break;
-        case ID_NEW_FOLDER:
+        case ID_MENU_NEW_FOLDER_IN_TREE:
             OnCreateNewFolder();
             break;
-        case ID_REMOVE_FOLDER:
+        case ID_MENU_REMOVE_FOLDER_FROM_TREE:
             OnRemoveFolder();
             break;
-        case ID_OPEN_IN_EXPLORER:
+        case ID_MENU_OPEN_IN_EXPLORER:
             OnOpenInExplorer();
             break;
-        case ID_AUTOINDENT:
+        case ID_MENU_AUTOINDENT:
         {
             m_currentEd->ApplyAutoIndentation();
             break;
         }
-        case ID_LINEWRAP:
+        case ID_MENU_LINEWRAP:
         {
             wxToolBar* t = GetToolBar();
             m_currentEd->ToggleSettings(NumeReEditor::SETTING_WRAPEOL);
-            t->ToggleTool(ID_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
+            t->ToggleTool(ID_MENU_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
             wxMenu* tools = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_VIEW")));
-            tools->Check(ID_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
+            tools->Check(ID_MENU_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
             break;
         }
-        case ID_DISPCTRLCHARS:
+        case ID_MENU_DISPCTRLCHARS:
         {
             m_currentEd->ToggleSettings(NumeReEditor::SETTING_DISPCTRLCHARS);
             break;
         }
-        case ID_USETXTADV:
+        case ID_MENU_USETXTADV:
         {
             m_currentEd->ToggleSettings(NumeReEditor::SETTING_USETXTADV);
             break;
         }
-        case ID_USEANALYZER:
+        case ID_MENU_USEANALYZER:
         {
             wxToolBar* t = GetToolBar();
             m_currentEd->ToggleSettings(NumeReEditor::SETTING_USEANALYZER);
-            t->ToggleTool(ID_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
+            t->ToggleTool(ID_MENU_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
             wxMenu* tools = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
-            tools->Check(ID_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
+            tools->Check(ID_MENU_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
             break;
         }
-        case ID_INDENTONTYPE:
+        case ID_MENU_INDENTONTYPE:
         {
             wxToolBar* t = GetToolBar();
             m_currentEd->ToggleSettings(NumeReEditor::SETTING_INDENTONTYPE);
-            t->ToggleTool(ID_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+            t->ToggleTool(ID_MENU_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
             wxMenu* tools = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
-            tools->Check(ID_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+            tools->Check(ID_MENU_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
             break;
         }
-        case ID_USESECTIONS:
+        case ID_MENU_USESECTIONS:
         {
             //wxToolBar* t = GetToolBar();
             m_currentEd->ToggleSettings(NumeReEditor::SETTING_USESECTIONS);
             //t->ToggleTool(ID_USESECTIONS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
             wxMenu* tools = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_VIEW")));
-            tools->Check(ID_USESECTIONS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
+            tools->Check(ID_MENU_USESECTIONS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
             break;
         }
-        case ID_AUTOFORMAT:
+        case ID_MENU_AUTOFORMAT:
         {
             m_currentEd->ApplyAutoFormat();
             break;
         }
-        case ID_GOTOLINE:
+        case ID_MENU_GOTOLINE:
         {
             gotoLine();
             break;
         }
-        case ID_TOGGLE_NOTEBOOK_MULTIROW:
+        case ID_MENU_TOGGLE_NOTEBOOK_MULTIROW:
         {
             m_book->ToggleWindowStyle(wxNB_MULTILINE);
             m_book->SendSizeEvent();
@@ -1117,138 +1046,138 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             m_multiRowState = !m_multiRowState;
             break;
         }
-        case ID_TOGGLE_COMMENT_LINE:
+        case ID_MENU_TOGGLE_COMMENT_LINE:
         {
             m_currentEd->ToggleCommentLine();
             break;
         }
-        case ID_TOGGLE_COMMENT_SELECTION:
+        case ID_MENU_TOGGLE_COMMENT_SELECTION:
         {
             m_currentEd->ToggleCommentSelection();
             break;
         }
-        case ID_FOLD_ALL:
+        case ID_MENU_FOLD_ALL:
         {
             m_currentEd->FoldAll();
             break;
         }
-        case ID_UNFOLD_ALL:
+        case ID_MENU_UNFOLD_ALL:
         {
             m_currentEd->UnfoldAll();
             break;
         }
-        case ID_SELECTION_UP:
+        case ID_MENU_SELECTION_UP:
         {
             m_currentEd->MoveSelection(false);
             break;
         }
-        case ID_SELECTION_DOWN:
+        case ID_MENU_SELECTION_DOWN:
         {
             m_currentEd->MoveSelection();
             break;
         }
-        case ID_SORT_SELECTION_ASC:
+        case ID_MENU_SORT_SELECTION_ASC:
         {
             m_currentEd->sortSelection();
             break;
         }
-        case ID_SORT_SELECTION_DESC:
+        case ID_MENU_SORT_SELECTION_DESC:
         {
             m_currentEd->sortSelection(false);
             break;
         }
-        case ID_BOOKMARK_TOGGLE:
+        case ID_MENU_BOOKMARK_TOGGLE:
         {
             m_currentEd->toggleBookmark();
             break;
         }
-        case ID_BOOKMARK_CLEARMENU:
+        case ID_MENU_BOOKMARK_CLEARMENU:
         {
             m_currentEd->clearBookmarks();
             break;
         }
-        case ID_BOOKMARK_PREVIOUS:
+        case ID_MENU_BOOKMARK_PREVIOUS:
         {
             m_currentEd->JumpToBookmark(false);
             break;
         }
-        case ID_BOOKMARK_NEXT:
+        case ID_MENU_BOOKMARK_NEXT:
         {
             m_currentEd->JumpToBookmark(true);
             break;
         }
-        case ID_FIND_DUPLICATES:
+        case ID_MENU_FIND_DUPLICATES:
         {
             // only if the file type is matching
             m_currentEd->InitDuplicateCode();
             break;
         }
-        case ID_STRIP_SPACES_BOTH:
+        case ID_MENU_STRIP_SPACES_BOTH:
         {
             m_currentEd->removeWhiteSpaces(RM_WS_BOTH);
             break;
         }
-        case ID_STRIP_SPACES_FRONT:
+        case ID_MENU_STRIP_SPACES_FRONT:
         {
             m_currentEd->removeWhiteSpaces(RM_WS_FRONT);
             break;
         }
-        case ID_STRIP_SPACES_BACK:
+        case ID_MENU_STRIP_SPACES_BACK:
         {
             m_currentEd->removeWhiteSpaces(RM_WS_BACK);
             break;
         }
-        case ID_CREATE_LATEX_FILE:
+        case ID_MENU_CREATE_LATEX_FILE:
         {
             createLaTeXFile();
             break;
         }
-        case ID_RUN_LATEX:
+        case ID_MENU_RUN_LATEX:
         {
             runLaTeX();
             break;
         }
-        case ID_COMPILE_LATEX:
+        case ID_MENU_COMPILE_LATEX:
         {
             compileLaTeX();
             break;
         }
-		case ID_NEW_EMPTY:
+		case ID_MENU_NEW_EMPTY:
 		{
 			NewFile();
 			break;
 		}
-		case ID_NEW_SCRIPT:
+		case ID_MENU_NEW_SCRIPT:
 		{
 			NewFile(FILE_NSCR);
 			break;
 		}
-		case ID_NEW_PROCEDURE:
+		case ID_MENU_NEW_PROCEDURE:
 		{
 			NewFile(FILE_NPRC);
 			break;
 		}
-		case ID_NEW_PLUGIN:
+		case ID_MENU_NEW_PLUGIN:
 		{
 			NewFile(FILE_PLUGIN);
 			break;
 		}
 
-		case ID_OPEN_SOURCE_LOCAL:
-		case ID_OPEN_SOURCE_REMOTE:
+		case ID_MENU_OPEN_SOURCE_LOCAL:
+		case ID_MENU_OPEN_SOURCE_REMOTE:
 		{
 			OnOpenSourceFile(id);
 			break;
 		}
 
-		case ID_SAVE:
+		case ID_MENU_SAVE:
 		{
 			SaveFile(false, true, FILE_ALLSOURCETYPES);
 			break;
 		}
 
-		case ID_SAVE_SOURCE_LOCAL:
-		case ID_SAVE_SOURCE_REMOTE:
+		case ID_MENU_SAVE_SOURCE_LOCAL:
+		case ID_MENU_SAVE_SOURCE_REMOTE:
 		{
 			OnSaveSourceFile(id);
 			break;
@@ -1273,18 +1202,18 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 			break;
 		}
 
-		case ID_CLOSETAB:
+		case ID_MENU_CLOSETAB:
 		{
 			CloseTab();
 			break;
 		}
-		case ID_DEBUG_START_TAB:
+		case ID_MENU_RUN_FROM_TAB:
 		{
 			EvaluateTab();
 			break;
 		}
 
-		case ID_CLOSEPAGE:
+		case ID_MENU_CLOSEPAGE:
 		{
 			if (!m_currentEd)
 			{
@@ -1296,23 +1225,23 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 			break;
 		}
 
-		case ID_CLOSEALL:
+		case ID_MENU_CLOSEALL:
 		{
 			CloseAllFiles();
 			break;
 		}
-		case ID_CLOSEOTHERS:
+		case ID_MENU_CLOSEOTHERS:
         {
 			CloseOtherTabs();
 			break;
 		}
-		case ID_OPEN_FOLDER:
+		case ID_MENU_OPEN_FOLDER:
         {
 			OpenContainingFolder();
 			break;
 		}
 
-		case ID_TOGGLE_CONSOLE:
+		case ID_MENU_TOGGLE_CONSOLE:
 		{
             toggleConsole();
             if (m_termContainer->IsShown())
@@ -1320,13 +1249,13 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             break;
 		}
 
-		case ID_TOGGLE_FILETREE:
+		case ID_MENU_TOGGLE_FILETREE:
 		{
             toggleFiletree();
             break;
 		}
 
-		case ID_TOGGLE_HISTORY:
+		case ID_MENU_TOGGLE_HISTORY:
 		{
             toggleHistory();
             break;
@@ -1345,16 +1274,16 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 			break;
 		}
 
-		case ID_QUIT:
+		case ID_MENU_QUIT:
 		{
 			Close(true);
 			break;
 		}
 
-		case ID_REDO:
-		case ID_UNDO:
+		case ID_MENU_REDO:
+		case ID_MENU_UNDO:
 		{
-			if(id == ID_REDO)
+			if(id == ID_MENU_REDO)
 			{
 				m_currentEd->Redo();
 			}
@@ -1367,7 +1296,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 			break;
 		}
 
-		case ID_COPY:
+		case ID_MENU_COPY:
 		{
             if (m_currentEd->HasFocus())
                 OnCopy();
@@ -1376,45 +1305,45 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 			break;
 		}
 
-		case ID_CUT:
+		case ID_MENU_CUT:
 		{
 			m_currentEd->Cut();
 			break;
 		}
 
-		case ID_PASTE:
+		case ID_MENU_PASTE:
 		{
 			m_currentEd->Paste();
 			break;
 		}
 
-		case ID_FIND:
-		case ID_REPLACE:
+		case ID_MENU_FIND:
+		case ID_MENU_REPLACE:
 		{
 			OnFindReplace(id);
 			break;
 		}
 
-		case ID_ABOUT:
+		case ID_MENU_ABOUT:
 		{
 			OnAbout();
 			break;
 		}
 
-		case ID_OPTIONS:
+		case ID_MENU_OPTIONS:
 		{
 			OnOptions();
 			break;
 		}
-		case ID_DEBUGGER:
+		case ID_MENU_TOGGLE_DEBUGGER:
 		{
             Settings _option = m_terminal->getKernelSettings();
             _option.setDebbuger(!_option.getUseDebugger());
             m_terminal->setKernelSettings(_option);
             wxToolBar* tb = GetToolBar();
-            tb->ToggleTool(ID_DEBUGGER, _option.getUseDebugger());
+            tb->ToggleTool(ID_MENU_TOGGLE_DEBUGGER, _option.getUseDebugger());
             wxMenu* view = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
-            view->Check(ID_DEBUGGER, _option.getUseDebugger());
+            view->Check(ID_MENU_TOGGLE_DEBUGGER, _option.getUseDebugger());
             break;
 		}
 
@@ -1461,25 +1390,25 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 			break;
 		}
 
-		case ID_PRINT_PAGE:
+		case ID_MENU_PRINT_PAGE:
 		{
 			OnPrintPage();
 			break;
 		}
 
-		case ID_PRINT_PREVIEW:
+		case ID_MENU_PRINT_PREVIEW:
 		{
 			OnPrintPreview();
 			break;
 		}
 
-		case ID_PRINT_SETUP:
+		case ID_MENU_PRINT_SETUP:
 		{
 			OnPrintSetup();
 			break;
 		}
 
-		case ID_HELP:
+		case ID_MENU_HELP:
 		{
 			OnHelp();
 			break;
@@ -1491,17 +1420,17 @@ void NumeReWindow::OnDebugBreakpointCommand(wxCommandEvent &event)
 {
 	switch(event.GetId())
 	{
-		case ID_DEBUG_ADDEDITORBREAKPOINT:
+		case ID_MENU_ADDEDITORBREAKPOINT:
 		{
 			m_currentEd->OnAddBreakpoint(event);
 			break;
 		}
-		case ID_DEBUG_REMOVEEDITORBREAKPOINT:
+		case ID_MENU_REMOVEEDITORBREAKPOINT:
 		{
 			m_currentEd->OnRemoveBreakpoint(event);
 			break;
 		}
-		case ID_DEBUG_CLEAREDITORBREAKPOINTS:
+		case ID_MENU_CLEAREDITORBREAKPOINTS:
 		{
 			m_currentEd->OnClearBreakpoints(event);
 			break;
@@ -1527,7 +1456,7 @@ void NumeReWindow::OnDebugCommand(wxCommandEvent &event)
 
 	//ProjectInfo* currentProject = NULL;
 
-	if(eventID == ID_DEBUG_START)
+	if(eventID == ID_MENU_EXECUTE)
 	{
         if(!m_currentEd->HasBeenSaved() || m_currentEd->Modified())
 		{
@@ -1552,31 +1481,12 @@ void NumeReWindow::OnDebugCommand(wxCommandEvent &event)
 			currentProject = m_currentEd->GetProject();
 		}*/
 	}
-    else if (eventID == ID_DEBUG_STOP)
+    else if (eventID == ID_MENU_STOP_EXECUTION)
     {
         m_terminal->CancelCalculation();
     }
 	//m_debugManager->OnDebugCommand(eventID, currentProject, m_currentEd);
 
-}
-
-//////////////////////////////////////////////////////////////////////////////
-///  private OnDebugEvent
-///  Handles debug-related events created by the debugger or other widgets
-///
-///  @param  event wxDebugEvent & The debug event to handle
-///
-///  @return void
-///
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::OnDebugEvent(wxDebugEvent &event)
-{
-	int eventID = event.GetId();
-
-#ifdef DO_LOG
-	wxLogDebug("ChameleonWindow:OnDebugEvent - shouldn't be here any more!  Event ID: %d", eventID);
-#endif
 }
 
 void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
@@ -2297,6 +2207,10 @@ void NumeReWindow::DefaultPage()
     ProjectInfo* singleFileProject = new ProjectInfo();
     NumeReEditor* edit = new NumeReEditor (this, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
 
+#if wxUSE_DRAG_AND_DROP
+    edit->SetDropTarget(new NumeReDropTarget(this, edit, NumeReDropTarget::EDITOR));
+#endif
+
     m_currentEd = edit;
     m_currentEd->LoadFileText(template_file);
     m_currentEd->defaultPage = true;
@@ -2362,13 +2276,13 @@ void NumeReWindow::PageHasChanged (int pageNr)
 	if (m_currentEd != NULL)
 	{
         wxMenu* view = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_VIEW")));
-        view->Check(ID_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
-        view->Check(ID_DISPCTRLCHARS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_DISPCTRLCHARS));
-        view->Check(ID_USETXTADV, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USETXTADV));
-        view->Check(ID_USESECTIONS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
+        view->Check(ID_MENU_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
+        view->Check(ID_MENU_DISPCTRLCHARS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_DISPCTRLCHARS));
+        view->Check(ID_MENU_USETXTADV, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USETXTADV));
+        view->Check(ID_MENU_USESECTIONS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
         view = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
-        view->Check(ID_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
-        view->Check(ID_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+        view->Check(ID_MENU_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
+        view->Check(ID_MENU_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
         m_currentEd->Refresh();
 
 		wxString tabText = m_book->GetPageText(m_currentPage);
@@ -3086,8 +3000,8 @@ void NumeReWindow::Ready()
     if (m_statusBar)
         m_statusBar->Ready();
     wxToolBar* tb = GetToolBar();
-    tb->EnableTool(ID_DEBUG_START, true);
-    tb->EnableTool(ID_DEBUG_STOP, false);
+    tb->EnableTool(ID_MENU_EXECUTE, true);
+    tb->EnableTool(ID_MENU_STOP_EXECUTION, false);
 }
 
 // This member function tells NumeRe that
@@ -3097,8 +3011,8 @@ void NumeReWindow::Busy()
     if (m_statusBar)
         m_statusBar->Busy();
     wxToolBar* tb = GetToolBar();
-    tb->EnableTool(ID_DEBUG_START, false);
-    tb->EnableTool(ID_DEBUG_STOP, true);
+    tb->EnableTool(ID_MENU_EXECUTE, false);
+    tb->EnableTool(ID_MENU_STOP_EXECUTION, true);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -3496,39 +3410,39 @@ void NumeReWindow::ToolbarStatusUpdate()
 {
 	wxToolBar* tb = GetToolBar();
 
-    if (!tb->GetToolEnabled(ID_DEBUG_STOP))
+    if (!tb->GetToolEnabled(ID_MENU_STOP_EXECUTION))
     {
-        tb->EnableTool(ID_DEBUG_START, true);
-        tb->EnableTool(ID_DEBUG_STOP, false);
+        tb->EnableTool(ID_MENU_EXECUTE, true);
+        tb->EnableTool(ID_MENU_STOP_EXECUTION, false);
     }
     if (!m_currentEd)
         return;
 	if (m_currentEd->getFileType() == FILE_NSCR || m_currentEd->getFileType() == FILE_NPRC || m_currentEd->getFileType() == FILE_MATLAB || m_currentEd->getFileType() == FILE_CPP)
 	{
-        tb->EnableTool(ID_DEBUG_ADDEDITORBREAKPOINT, true);
-        tb->EnableTool(ID_DEBUG_REMOVEEDITORBREAKPOINT, true);
-        tb->EnableTool(ID_DEBUG_CLEAREDITORBREAKPOINTS, true);
-        tb->EnableTool(ID_USEANALYZER, true);
-        tb->ToggleTool(ID_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
-        tb->EnableTool(ID_INDENTONTYPE, true);
-        tb->ToggleTool(ID_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+        tb->EnableTool(ID_MENU_ADDEDITORBREAKPOINT, true);
+        tb->EnableTool(ID_MENU_REMOVEEDITORBREAKPOINT, true);
+        tb->EnableTool(ID_MENU_CLEAREDITORBREAKPOINTS, true);
+        tb->EnableTool(ID_MENU_USEANALYZER, true);
+        tb->ToggleTool(ID_MENU_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
+        tb->EnableTool(ID_MENU_INDENTONTYPE, true);
+        tb->ToggleTool(ID_MENU_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
 	}
 	else
 	{
-        tb->EnableTool(ID_DEBUG_ADDEDITORBREAKPOINT, false);
-        tb->EnableTool(ID_DEBUG_REMOVEEDITORBREAKPOINT, false);
-        tb->EnableTool(ID_DEBUG_CLEAREDITORBREAKPOINTS, false);
-        tb->EnableTool(ID_USEANALYZER, false);
-        tb->ToggleTool(ID_USEANALYZER, false);
-        tb->EnableTool(ID_INDENTONTYPE, false);
-        tb->ToggleTool(ID_INDENTONTYPE, false);
+        tb->EnableTool(ID_MENU_ADDEDITORBREAKPOINT, false);
+        tb->EnableTool(ID_MENU_REMOVEEDITORBREAKPOINT, false);
+        tb->EnableTool(ID_MENU_CLEAREDITORBREAKPOINTS, false);
+        tb->EnableTool(ID_MENU_USEANALYZER, false);
+        tb->ToggleTool(ID_MENU_USEANALYZER, false);
+        tb->EnableTool(ID_MENU_INDENTONTYPE, false);
+        tb->ToggleTool(ID_MENU_INDENTONTYPE, false);
 	}
 	if (m_currentEd->GetFileName().GetExt() == "m")
     {
-        tb->EnableTool(ID_INDENTONTYPE, true);
-        tb->ToggleTool(ID_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+        tb->EnableTool(ID_MENU_INDENTONTYPE, true);
+        tb->ToggleTool(ID_MENU_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
     }
-    tb->ToggleTool(ID_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
+    tb->ToggleTool(ID_MENU_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
 
 	/*if(isDebugging)
 	{
@@ -3694,13 +3608,13 @@ void NumeReWindow::OnUpdateSaveUI()//wxUpdateUIEvent &event)
             UpdateWindowTitle(title);
 		}
 	}
-	GetToolBar()->EnableTool(ID_SAVE, enable);
+	GetToolBar()->EnableTool(ID_MENU_SAVE, enable);
 
 	wxMenuBar* mb = GetMenuBar();
 	WXWidget handle = mb->GetHandle();
 	if(handle != NULL)
 	{
-		mb->FindItem(ID_SAVE)->Enable(enable);
+		mb->FindItem(ID_MENU_SAVE)->Enable(enable);
 	}
 }
 
@@ -4017,45 +3931,45 @@ void NumeReWindow::UpdateMenuBar()
 
 	wxMenu* menuNewFile = new wxMenu();
 
-	menuNewFile->Append(ID_NEW_EMPTY, _guilang.get("GUI_MENU_NEW_EMPTYFILE"), _guilang.get("GUI_MENU_NEW_EMPTYFILE_TTP"));
+	menuNewFile->Append(ID_MENU_NEW_EMPTY, _guilang.get("GUI_MENU_NEW_EMPTYFILE"), _guilang.get("GUI_MENU_NEW_EMPTYFILE_TTP"));
 	menuNewFile->AppendSeparator();
-	menuNewFile->Append(ID_NEW_SCRIPT, _guilang.get("GUI_MENU_NEW_NSCR"), _guilang.get("GUI_MENU_NEW_NSCR_TTP"));
-	menuNewFile->Append(ID_NEW_PROCEDURE, _guilang.get("GUI_MENU_NEW_NPRC"), _guilang.get("GUI_MENU_NEW_NPRC_TTP"));
-	menuNewFile->Append(ID_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
+	menuNewFile->Append(ID_MENU_NEW_SCRIPT, _guilang.get("GUI_MENU_NEW_NSCR"), _guilang.get("GUI_MENU_NEW_NSCR_TTP"));
+	menuNewFile->Append(ID_MENU_NEW_PROCEDURE, _guilang.get("GUI_MENU_NEW_NPRC"), _guilang.get("GUI_MENU_NEW_NPRC_TTP"));
+	menuNewFile->Append(ID_MENU_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
 
 	wxMenu* menuFile = new wxMenu();
 
 	menuFile->Append(wxID_ANY, _guilang.get("GUI_MENU_NEWFILE"), menuNewFile, _guilang.get("GUI_MENU_NEWFILE_TTP"));
 
-    menuFile->Append(ID_OPEN_SOURCE_LOCAL, _guilang.get("GUI_MENU_OPENFILE"), _guilang.get("GUI_MENU_OPENFILE_TTP"));
-    menuFile->Append(ID_CLOSEPAGE, _guilang.get("GUI_MENU_CLOSEFILE"), _guilang.get("GUI_MENU_CLOSEFILE_TTP"));
-	menuFile->Append(ID_CLOSEALL, _guilang.get("GUI_MENU_CLOSEALLFILES"));
+    menuFile->Append(ID_MENU_OPEN_SOURCE_LOCAL, _guilang.get("GUI_MENU_OPENFILE"), _guilang.get("GUI_MENU_OPENFILE_TTP"));
+    menuFile->Append(ID_MENU_CLOSEPAGE, _guilang.get("GUI_MENU_CLOSEFILE"), _guilang.get("GUI_MENU_CLOSEFILE_TTP"));
+	menuFile->Append(ID_MENU_CLOSEALL, _guilang.get("GUI_MENU_CLOSEALLFILES"));
 	menuFile->AppendSeparator();
-	menuFile->Append(ID_SAVE, _guilang.get("GUI_MENU_SAVEFILE"), _guilang.get("GUI_MENU_SAVEFILE_TTP"));
-    menuFile->Append(ID_SAVE_SOURCE_LOCAL, _guilang.get("GUI_MENU_SAVEFILEAS"), _guilang.get("GUI_MENU_SAVEFILEAS_TTP"));
+	menuFile->Append(ID_MENU_SAVE, _guilang.get("GUI_MENU_SAVEFILE"), _guilang.get("GUI_MENU_SAVEFILE_TTP"));
+    menuFile->Append(ID_MENU_SAVE_SOURCE_LOCAL, _guilang.get("GUI_MENU_SAVEFILEAS"), _guilang.get("GUI_MENU_SAVEFILEAS_TTP"));
 	menuFile->AppendSeparator();
-	menuFile->Append(ID_PRINT_PAGE, _guilang.get("GUI_MENU_PRINT"), _guilang.get("GUI_MENU_PRINT_TTP"));
-	menuFile->Append(ID_PRINT_PREVIEW, _guilang.get("GUI_MENU_PRINTPREVIEW"));
-	menuFile->Append(ID_PRINT_SETUP, _guilang.get("GUI_MENU_PRINTSETUP"));
-	menuFile->Append(ID_QUIT,_guilang.get("GUI_MENU_EXIT"), _guilang.get("GUI_MENU_EXIT_TTP"));
+	menuFile->Append(ID_MENU_PRINT_PAGE, _guilang.get("GUI_MENU_PRINT"), _guilang.get("GUI_MENU_PRINT_TTP"));
+	menuFile->Append(ID_MENU_PRINT_PREVIEW, _guilang.get("GUI_MENU_PRINTPREVIEW"));
+	menuFile->Append(ID_MENU_PRINT_SETUP, _guilang.get("GUI_MENU_PRINTSETUP"));
+	menuFile->Append(ID_MENU_QUIT,_guilang.get("GUI_MENU_EXIT"), _guilang.get("GUI_MENU_EXIT_TTP"));
 
 	menuBar->Append(menuFile, _guilang.get("GUI_MENU_FILE"));
 
 
 	wxMenu* menuEdit = new wxMenu();
 
-	menuEdit->Append(ID_UNDO, _guilang.get("GUI_MENU_UNDO"));
-	menuEdit->Append(ID_REDO, _guilang.get("GUI_MENU_REDO"));
+	menuEdit->Append(ID_MENU_UNDO, _guilang.get("GUI_MENU_UNDO"));
+	menuEdit->Append(ID_MENU_REDO, _guilang.get("GUI_MENU_REDO"));
 	menuEdit->AppendSeparator();
-	menuEdit->Append(ID_CUT, _guilang.get("GUI_MENU_CUT"));
-	menuEdit->Append(ID_COPY, _guilang.get("GUI_MENU_COPY"));
-	menuEdit->Append(ID_PASTE, _guilang.get("GUI_MENU_PASTE"));
+	menuEdit->Append(ID_MENU_CUT, _guilang.get("GUI_MENU_CUT"));
+	menuEdit->Append(ID_MENU_COPY, _guilang.get("GUI_MENU_COPY"));
+	menuEdit->Append(ID_MENU_PASTE, _guilang.get("GUI_MENU_PASTE"));
 	menuEdit->AppendSeparator();
-	menuEdit->Append(ID_FIND, _guilang.get("GUI_MENU_FIND"));
-	menuEdit->Append(ID_REPLACE, _guilang.get("GUI_MENU_REPLACE"));
+	menuEdit->Append(ID_MENU_FIND, _guilang.get("GUI_MENU_FIND"));
+	menuEdit->Append(ID_MENU_REPLACE, _guilang.get("GUI_MENU_REPLACE"));
 	menuEdit->AppendSeparator();
-	menuEdit->Append(ID_SELECTION_UP, _guilang.get("GUI_MENU_SELECT_UP"), _guilang.get("GUI_MENU_SELECT_UP_TTP"));
-	menuEdit->Append(ID_SELECTION_DOWN, _guilang.get("GUI_MENU_SELECT_DOWN"), _guilang.get("GUI_MENU_SELECT_DOWN_TTP"));
+	menuEdit->Append(ID_MENU_SELECTION_UP, _guilang.get("GUI_MENU_SELECT_UP"), _guilang.get("GUI_MENU_SELECT_UP_TTP"));
+	menuEdit->Append(ID_MENU_SELECTION_DOWN, _guilang.get("GUI_MENU_SELECT_DOWN"), _guilang.get("GUI_MENU_SELECT_DOWN_TTP"));
 
 	// TODO Implement these Edit menu items
 
@@ -4068,92 +3982,92 @@ void NumeReWindow::UpdateMenuBar()
 	menuBar->Append(menuEdit, _guilang.get("GUI_MENU_EDIT"));
 
     wxMenu* menuView = new wxMenu();
-	menuView->Append(ID_TOGGLE_CONSOLE, _guilang.get("GUI_MENU_TOGGLE_CONSOLE"));
-	menuView->Append(ID_TOGGLE_FILETREE, _guilang.get("GUI_MENU_TOGGLE_FILETREE"));
-	menuView->Append(ID_TOGGLE_HISTORY, _guilang.get("GUI_MENU_TOGGLE_HISTORY"));
+	menuView->Append(ID_MENU_TOGGLE_CONSOLE, _guilang.get("GUI_MENU_TOGGLE_CONSOLE"));
+	menuView->Append(ID_MENU_TOGGLE_FILETREE, _guilang.get("GUI_MENU_TOGGLE_FILETREE"));
+	menuView->Append(ID_MENU_TOGGLE_HISTORY, _guilang.get("GUI_MENU_TOGGLE_HISTORY"));
 	menuView->AppendSeparator();
-	menuView->Append(ID_GOTOLINE, _guilang.get("GUI_MENU_GOTOLINE"), _guilang.get("GUI_MENU_GOTOLINE_TTP"));
-	menuView->Append(ID_FOLD_ALL, _guilang.get("GUI_MENU_FOLDALL"), _guilang.get("GUI_MENU_FOLDALL_TTP"));
-	menuView->Append(ID_UNFOLD_ALL, _guilang.get("GUI_MENU_UNFOLDALL"), _guilang.get("GUI_MENU_UNFOLDALL_TTP"));
+	menuView->Append(ID_MENU_GOTOLINE, _guilang.get("GUI_MENU_GOTOLINE"), _guilang.get("GUI_MENU_GOTOLINE_TTP"));
+	menuView->Append(ID_MENU_FOLD_ALL, _guilang.get("GUI_MENU_FOLDALL"), _guilang.get("GUI_MENU_FOLDALL_TTP"));
+	menuView->Append(ID_MENU_UNFOLD_ALL, _guilang.get("GUI_MENU_UNFOLDALL"), _guilang.get("GUI_MENU_UNFOLDALL_TTP"));
 	menuView->AppendSeparator();
-	menuView->Append(ID_BOOKMARK_TOGGLE, _guilang.get("GUI_MENU_BOOKMARK_TOGGLE"));
-	menuView->Append(ID_BOOKMARK_CLEARMENU, _guilang.get("GUI_MENU_BOOKMARK_CLEAR"));
-	menuView->Append(ID_BOOKMARK_PREVIOUS, _guilang.get("GUI_MENU_BOOKMARK_PREVIOUS"));
-	menuView->Append(ID_BOOKMARK_NEXT, _guilang.get("GUI_MENU_BOOKMARK_NEXT"));
+	menuView->Append(ID_MENU_BOOKMARK_TOGGLE, _guilang.get("GUI_MENU_BOOKMARK_TOGGLE"));
+	menuView->Append(ID_MENU_BOOKMARK_CLEARMENU, _guilang.get("GUI_MENU_BOOKMARK_CLEAR"));
+	menuView->Append(ID_MENU_BOOKMARK_PREVIOUS, _guilang.get("GUI_MENU_BOOKMARK_PREVIOUS"));
+	menuView->Append(ID_MENU_BOOKMARK_NEXT, _guilang.get("GUI_MENU_BOOKMARK_NEXT"));
 	menuView->AppendSeparator();
-	menuView->Append(ID_LINEWRAP, _guilang.get("GUI_MENU_LINEWRAP"), _guilang.get("GUI_MENU_LINEWRAP_TTP"), true);
-	menuView->Append(ID_DISPCTRLCHARS, _guilang.get("GUI_MENU_DISPCTRLCHARS"), _guilang.get("GUI_MENU_DISPCTRLCHARS_TTP"), true);
-	menuView->Append(ID_USETXTADV, _guilang.get("GUI_MENU_USETXTADV"), _guilang.get("GUI_MENU_USETXTADV_TTP"), true);
-	menuView->Append(ID_TOGGLE_NOTEBOOK_MULTIROW, _guilang.get("GUI_MENU_MULTIROW"), _guilang.get("GUI_MENU_MULTIROW_TTP"), true);
-	menuView->Check(ID_TOGGLE_NOTEBOOK_MULTIROW, m_multiRowState);
-	menuView->Append(ID_USESECTIONS, _guilang.get("GUI_MENU_USESECTIONS"), _guilang.get("GUI_MENU_USESECTIONS_TTP"), true);
+	menuView->Append(ID_MENU_LINEWRAP, _guilang.get("GUI_MENU_LINEWRAP"), _guilang.get("GUI_MENU_LINEWRAP_TTP"), true);
+	menuView->Append(ID_MENU_DISPCTRLCHARS, _guilang.get("GUI_MENU_DISPCTRLCHARS"), _guilang.get("GUI_MENU_DISPCTRLCHARS_TTP"), true);
+	menuView->Append(ID_MENU_USETXTADV, _guilang.get("GUI_MENU_USETXTADV"), _guilang.get("GUI_MENU_USETXTADV_TTP"), true);
+	menuView->Append(ID_MENU_TOGGLE_NOTEBOOK_MULTIROW, _guilang.get("GUI_MENU_MULTIROW"), _guilang.get("GUI_MENU_MULTIROW_TTP"), true);
+	menuView->Check(ID_MENU_TOGGLE_NOTEBOOK_MULTIROW, m_multiRowState);
+	menuView->Append(ID_MENU_USESECTIONS, _guilang.get("GUI_MENU_USESECTIONS"), _guilang.get("GUI_MENU_USESECTIONS_TTP"), true);
 	if (m_currentEd)
 	{
-        menuView->Check(ID_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
-        menuView->Check(ID_DISPCTRLCHARS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_DISPCTRLCHARS));
-        menuView->Check(ID_USETXTADV, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USETXTADV));
-        menuView->Check(ID_USESECTIONS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
+        menuView->Check(ID_MENU_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
+        menuView->Check(ID_MENU_DISPCTRLCHARS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_DISPCTRLCHARS));
+        menuView->Check(ID_MENU_USETXTADV, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USETXTADV));
+        menuView->Check(ID_MENU_USESECTIONS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
     }
     else
     {
-        menuView->Check(ID_LINEWRAP, false);
-        menuView->Check(ID_DISPCTRLCHARS, false);
-        menuView->Check(ID_USETXTADV, false);
-        menuView->Check(ID_USESECTIONS, false);
+        menuView->Check(ID_MENU_LINEWRAP, false);
+        menuView->Check(ID_MENU_DISPCTRLCHARS, false);
+        menuView->Check(ID_MENU_USETXTADV, false);
+        menuView->Check(ID_MENU_USESECTIONS, false);
     }
 
 	menuBar->Append(menuView, _guilang.get("GUI_MENU_VIEW"));
 
 	// stripspaces (only front, only back, all)
 	wxMenu* menuStripSpaces = new wxMenu();
-	menuStripSpaces->Append(ID_STRIP_SPACES_BOTH, _guilang.get("GUI_MENU_STRIP_BOTH"), _guilang.get("GUI_MENU_STRIP_BOTH_TTP"));
-	menuStripSpaces->Append(ID_STRIP_SPACES_FRONT, _guilang.get("GUI_MENU_STRIP_FRONT"), _guilang.get("GUI_MENU_STRIP_FRONT_TTP"));
-	menuStripSpaces->Append(ID_STRIP_SPACES_BACK, _guilang.get("GUI_MENU_STRIP_BACK"), _guilang.get("GUI_MENU_STRIP_BACK_TTP"));
+	menuStripSpaces->Append(ID_MENU_STRIP_SPACES_BOTH, _guilang.get("GUI_MENU_STRIP_BOTH"), _guilang.get("GUI_MENU_STRIP_BOTH_TTP"));
+	menuStripSpaces->Append(ID_MENU_STRIP_SPACES_FRONT, _guilang.get("GUI_MENU_STRIP_FRONT"), _guilang.get("GUI_MENU_STRIP_FRONT_TTP"));
+	menuStripSpaces->Append(ID_MENU_STRIP_SPACES_BACK, _guilang.get("GUI_MENU_STRIP_BACK"), _guilang.get("GUI_MENU_STRIP_BACK_TTP"));
 
 	wxMenu* menuFormat = new wxMenu();
-	menuFormat->Append(ID_AUTOINDENT, _guilang.get("GUI_MENU_AUTOINDENT"), _guilang.get("GUI_MENU_AUTOINDENT_TTP"));
-	menuFormat->Append(ID_INDENTONTYPE, _guilang.get("GUI_MENU_INDENTONTYPE"), _guilang.get("GUI_MENU_INDENTONTYPE_TTP"), true);
-	menuFormat->Append(ID_AUTOFORMAT, _guilang.get("GUI_MENU_AUTOFORMAT"), _guilang.get("GUI_MENU_AUTOFORMAT_TTP"));
+	menuFormat->Append(ID_MENU_AUTOINDENT, _guilang.get("GUI_MENU_AUTOINDENT"), _guilang.get("GUI_MENU_AUTOINDENT_TTP"));
+	menuFormat->Append(ID_MENU_INDENTONTYPE, _guilang.get("GUI_MENU_INDENTONTYPE"), _guilang.get("GUI_MENU_INDENTONTYPE_TTP"), true);
+	menuFormat->Append(ID_MENU_AUTOFORMAT, _guilang.get("GUI_MENU_AUTOFORMAT"), _guilang.get("GUI_MENU_AUTOFORMAT_TTP"));
 
 	wxMenu* menuLaTeX = new wxMenu();
-	menuLaTeX->Append(ID_CREATE_LATEX_FILE, _guilang.get("GUI_MENU_CREATELATEX"), _guilang.get("GUI_MENU_CREATELATEX_TTP"));
-	menuLaTeX->Append(ID_RUN_LATEX, _guilang.get("GUI_MENU_RUNLATEX"), _guilang.get("GUI_MENU_RUNLATEX_TTP"));
-	menuLaTeX->Append(ID_COMPILE_LATEX, _guilang.get("GUI_MENU_COMPILE_TEX"), _guilang.get("GUI_MENU_COMPILE_TEX_TTP"));
+	menuLaTeX->Append(ID_MENU_CREATE_LATEX_FILE, _guilang.get("GUI_MENU_CREATELATEX"), _guilang.get("GUI_MENU_CREATELATEX_TTP"));
+	menuLaTeX->Append(ID_MENU_RUN_LATEX, _guilang.get("GUI_MENU_RUNLATEX"), _guilang.get("GUI_MENU_RUNLATEX_TTP"));
+	menuLaTeX->Append(ID_MENU_COMPILE_LATEX, _guilang.get("GUI_MENU_COMPILE_TEX"), _guilang.get("GUI_MENU_COMPILE_TEX_TTP"));
 
 	wxMenu* menuTools = new wxMenu();
 
-	menuTools->Append(ID_OPTIONS, _guilang.get("GUI_MENU_OPTIONS"));
+	menuTools->Append(ID_MENU_OPTIONS, _guilang.get("GUI_MENU_OPTIONS"));
 	menuTools->AppendSeparator();
-	menuTools->Append(ID_DEBUG_START, _guilang.get("GUI_MENU_EXECUTE"), _guilang.get("GUI_MENU_EXECUTE_TTP"));
+	menuTools->Append(ID_MENU_EXECUTE, _guilang.get("GUI_MENU_EXECUTE"), _guilang.get("GUI_MENU_EXECUTE_TTP"));
 	menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_FORMAT"), menuFormat);
-	menuTools->Append(ID_TOGGLE_COMMENT_LINE, _guilang.get("GUI_MENU_COMMENTLINE"), _guilang.get("GUI_MENU_COMMENTLINE_TTP"));
-	menuTools->Append(ID_TOGGLE_COMMENT_SELECTION, _guilang.get("GUI_MENU_COMMENTSELECTION"), _guilang.get("GUI_MENU_COMMENTSELECTION_TTP"));
+	menuTools->Append(ID_MENU_TOGGLE_COMMENT_LINE, _guilang.get("GUI_MENU_COMMENTLINE"), _guilang.get("GUI_MENU_COMMENTLINE_TTP"));
+	menuTools->Append(ID_MENU_TOGGLE_COMMENT_SELECTION, _guilang.get("GUI_MENU_COMMENTSELECTION"), _guilang.get("GUI_MENU_COMMENTSELECTION_TTP"));
 	menuTools->AppendSeparator();
 	menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_STRIP"), menuStripSpaces);
-	menuTools->Append(ID_SORT_SELECTION_ASC, _guilang.get("GUI_MENU_SORT_ASC"), _guilang.get("GUI_MENU_SORT_ASC_TTP"));
-	menuTools->Append(ID_SORT_SELECTION_DESC, _guilang.get("GUI_MENU_SORT_DESC"), _guilang.get("GUI_MENU_SORT_DESC_TTP"));
+	menuTools->Append(ID_MENU_SORT_SELECTION_ASC, _guilang.get("GUI_MENU_SORT_ASC"), _guilang.get("GUI_MENU_SORT_ASC_TTP"));
+	menuTools->Append(ID_MENU_SORT_SELECTION_DESC, _guilang.get("GUI_MENU_SORT_DESC"), _guilang.get("GUI_MENU_SORT_DESC_TTP"));
 	menuTools->AppendSeparator();
 	menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_LATEX"), menuLaTeX);
-	menuTools->Append(ID_USEANALYZER, _guilang.get("GUI_MENU_ANALYZER"), _guilang.get("GUI_MENU_ANALYZER_TTP"), true);
+	menuTools->Append(ID_MENU_USEANALYZER, _guilang.get("GUI_MENU_ANALYZER"), _guilang.get("GUI_MENU_ANALYZER_TTP"), true);
     if (m_currentEd)
 	{
-        menuTools->Check(ID_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
-        menuTools->Check(ID_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
+        menuTools->Check(ID_MENU_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+        menuTools->Check(ID_MENU_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
     }
     else
     {
-        menuTools->Check(ID_INDENTONTYPE, false);
-        menuTools->Check(ID_USEANALYZER, false);
+        menuTools->Check(ID_MENU_INDENTONTYPE, false);
+        menuTools->Check(ID_MENU_USEANALYZER, false);
     }
-    menuTools->Append(ID_FIND_DUPLICATES, _guilang.get("GUI_MENU_FIND_DUPLICATES"), _guilang.get("GUI_MENU_FIND_DUPLICATES_TTP"));
-	menuTools->Append(ID_DEBUGGER, _guilang.get("GUI_MENU_DEBUGGER"), _guilang.get("GUI_MENU_DEBUGGER_TTP"), true);
-	menuTools->Check(ID_DEBUGGER, m_terminal->getKernelSettings().getUseDebugger());
+    menuTools->Append(ID_MENU_FIND_DUPLICATES, _guilang.get("GUI_MENU_FIND_DUPLICATES"), _guilang.get("GUI_MENU_FIND_DUPLICATES_TTP"));
+	menuTools->Append(ID_MENU_TOGGLE_DEBUGGER, _guilang.get("GUI_MENU_DEBUGGER"), _guilang.get("GUI_MENU_DEBUGGER_TTP"), true);
+	menuTools->Check(ID_MENU_TOGGLE_DEBUGGER, m_terminal->getKernelSettings().getUseDebugger());
 
 	menuBar->Append(menuTools, _guilang.get("GUI_MENU_TOOLS"));
 
 	wxMenu *helpMenu = new wxMenu;
-	helpMenu->Append(ID_HELP, _guilang.get("GUI_MENU_SHOWHELP"));
-	helpMenu->Append(ID_ABOUT, _guilang.get("GUI_MENU_ABOUT"), _guilang.get("GUI_MENU_ABOUT_TTP"));
+	helpMenu->Append(ID_MENU_HELP, _guilang.get("GUI_MENU_SHOWHELP"));
+	helpMenu->Append(ID_MENU_ABOUT, _guilang.get("GUI_MENU_ABOUT"), _guilang.get("GUI_MENU_ABOUT_TTP"));
 
 	menuBar->Append(helpMenu, _guilang.get("GUI_MENU_HELP"));
 }
@@ -4181,77 +4095,77 @@ void NumeReWindow::UpdateToolbar()
 	m_config->Write("Interface/ShowToolbarText", showText ? "true" : "false");
 	t = CreateToolBar(style);//new wxToolBar(this, -1, wxDefaultPosition, wxDefaultSize, style);
 
-	t->AddTool(ID_NEW_EMPTY, _guilang.get("GUI_TB_NEW"), wxArtProvider::GetBitmap(wxART_NEW, wxART_TOOLBAR), _guilang.get("GUI_TB_NEW_TTP"), wxITEM_DROPDOWN);
+	t->AddTool(ID_MENU_NEW_EMPTY, _guilang.get("GUI_TB_NEW"), wxArtProvider::GetBitmap(wxART_NEW, wxART_TOOLBAR), _guilang.get("GUI_TB_NEW_TTP"), wxITEM_DROPDOWN);
 	wxMenu* menuNewFile = new wxMenu();
-	menuNewFile->Append(ID_NEW_EMPTY, _guilang.get("GUI_MENU_NEW_EMPTYFILE"), _guilang.get("GUI_MENU_NEW_EMPTYFILE_TTP"));
+	menuNewFile->Append(ID_MENU_NEW_EMPTY, _guilang.get("GUI_MENU_NEW_EMPTYFILE"), _guilang.get("GUI_MENU_NEW_EMPTYFILE_TTP"));
 	menuNewFile->AppendSeparator();
-	menuNewFile->Append(ID_NEW_SCRIPT, _guilang.get("GUI_MENU_NEW_NSCR"), _guilang.get("GUI_MENU_NEW_NSCR_TTP"));
-	menuNewFile->Append(ID_NEW_PROCEDURE, _guilang.get("GUI_MENU_NEW_NPRC"), _guilang.get("GUI_MENU_NEW_NPRC_TTP"));
-	menuNewFile->Append(ID_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
-	t->SetDropdownMenu(ID_NEW_EMPTY, menuNewFile);
+	menuNewFile->Append(ID_MENU_NEW_SCRIPT, _guilang.get("GUI_MENU_NEW_NSCR"), _guilang.get("GUI_MENU_NEW_NSCR_TTP"));
+	menuNewFile->Append(ID_MENU_NEW_PROCEDURE, _guilang.get("GUI_MENU_NEW_NPRC"), _guilang.get("GUI_MENU_NEW_NPRC_TTP"));
+	menuNewFile->Append(ID_MENU_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
+	t->SetDropdownMenu(ID_MENU_NEW_EMPTY, menuNewFile);
 
-    t->AddTool(ID_OPEN_SOURCE_LOCAL, _guilang.get("GUI_TB_OPEN"), wxArtProvider::GetBitmap(wxART_FILE_OPEN, wxART_TOOLBAR), _guilang.get("GUI_TB_OPEN_TTP"));
+    t->AddTool(ID_MENU_OPEN_SOURCE_LOCAL, _guilang.get("GUI_TB_OPEN"), wxArtProvider::GetBitmap(wxART_FILE_OPEN, wxART_TOOLBAR), _guilang.get("GUI_TB_OPEN_TTP"));
 
-	t->AddTool(ID_SAVE, _guilang.get("GUI_TB_SAVE"), wxArtProvider::GetBitmap(wxART_FILE_SAVE, wxART_TOOLBAR), _guilang.get("GUI_TB_SAVE_TTP"));
-
-    t->AddSeparator();
-
-    t->AddTool(ID_UNDO, _guilang.get("GUI_TB_UNDO"), wxArtProvider::GetBitmap(wxART_UNDO, wxART_TOOLBAR), _guilang.get("GUI_TB_UNDO"));
-
-    t->AddTool(ID_REDO, _guilang.get("GUI_TB_REDO"), wxArtProvider::GetBitmap(wxART_REDO, wxART_TOOLBAR), _guilang.get("GUI_TB_REDO"));
+	t->AddTool(ID_MENU_SAVE, _guilang.get("GUI_TB_SAVE"), wxArtProvider::GetBitmap(wxART_FILE_SAVE, wxART_TOOLBAR), _guilang.get("GUI_TB_SAVE_TTP"));
 
     t->AddSeparator();
-    t->AddTool(ID_CUT, _guilang.get("GUI_TB_CUT"), wxArtProvider::GetBitmap(wxART_CUT, wxART_TOOLBAR), _guilang.get("GUI_TB_CUT"));
-    t->AddTool(ID_COPY, _guilang.get("GUI_TB_COPY"), wxArtProvider::GetBitmap(wxART_COPY, wxART_TOOLBAR), _guilang.get("GUI_TB_COPY"));
-    t->AddTool(ID_PASTE, _guilang.get("GUI_TB_PASTE"), wxArtProvider::GetBitmap(wxART_PASTE, wxART_TOOLBAR), _guilang.get("GUI_TB_PASTE"));
+
+    t->AddTool(ID_MENU_UNDO, _guilang.get("GUI_TB_UNDO"), wxArtProvider::GetBitmap(wxART_UNDO, wxART_TOOLBAR), _guilang.get("GUI_TB_UNDO"));
+
+    t->AddTool(ID_MENU_REDO, _guilang.get("GUI_TB_REDO"), wxArtProvider::GetBitmap(wxART_REDO, wxART_TOOLBAR), _guilang.get("GUI_TB_REDO"));
 
     t->AddSeparator();
-    t->AddTool(ID_FIND, _guilang.get("GUI_TB_SEARCH"), wxArtProvider::GetBitmap(wxART_FIND, wxART_TOOLBAR), _guilang.get("GUI_TB_SEARCH"));
-    t->AddTool(ID_REPLACE, _guilang.get("GUI_TB_REPLACE"), wxArtProvider::GetBitmap(wxART_FIND_AND_REPLACE, wxART_TOOLBAR), _guilang.get("GUI_TB_REPLACE"));
+    t->AddTool(ID_MENU_CUT, _guilang.get("GUI_TB_CUT"), wxArtProvider::GetBitmap(wxART_CUT, wxART_TOOLBAR), _guilang.get("GUI_TB_CUT"));
+    t->AddTool(ID_MENU_COPY, _guilang.get("GUI_TB_COPY"), wxArtProvider::GetBitmap(wxART_COPY, wxART_TOOLBAR), _guilang.get("GUI_TB_COPY"));
+    t->AddTool(ID_MENU_PASTE, _guilang.get("GUI_TB_PASTE"), wxArtProvider::GetBitmap(wxART_PASTE, wxART_TOOLBAR), _guilang.get("GUI_TB_PASTE"));
+
+    t->AddSeparator();
+    t->AddTool(ID_MENU_FIND, _guilang.get("GUI_TB_SEARCH"), wxArtProvider::GetBitmap(wxART_FIND, wxART_TOOLBAR), _guilang.get("GUI_TB_SEARCH"));
+    t->AddTool(ID_MENU_REPLACE, _guilang.get("GUI_TB_REPLACE"), wxArtProvider::GetBitmap(wxART_FIND_AND_REPLACE, wxART_TOOLBAR), _guilang.get("GUI_TB_REPLACE"));
 
     t->AddSeparator();
     wxBitmap bmIndent(stepnext_xpm);
-    t->AddTool(ID_INDENTONTYPE, _guilang.get("GUI_TB_INDENTONTYPE"), bmIndent, _guilang.get("GUI_TB_INDENTONTYPE_TTP"), wxITEM_CHECK);
-    t->ToggleTool(ID_INDENTONTYPE, false);
-    t->EnableTool(ID_INDENTONTYPE, false);
+    t->AddTool(ID_MENU_INDENTONTYPE, _guilang.get("GUI_TB_INDENTONTYPE"), bmIndent, _guilang.get("GUI_TB_INDENTONTYPE_TTP"), wxITEM_CHECK);
+    t->ToggleTool(ID_MENU_INDENTONTYPE, false);
+    t->EnableTool(ID_MENU_INDENTONTYPE, false);
     wxBitmap bmWrapAround(wraparound_xpm);
-    t->AddTool(ID_LINEWRAP, _guilang.get("GUI_TB_LINEWRAP"), bmWrapAround, _guilang.get("GUI_TB_LINEWRAP_TTP"), wxITEM_CHECK);
+    t->AddTool(ID_MENU_LINEWRAP, _guilang.get("GUI_TB_LINEWRAP"), bmWrapAround, _guilang.get("GUI_TB_LINEWRAP_TTP"), wxITEM_CHECK);
 
     t->AddSeparator();
     wxBitmap bmStart(newstart1_xpm);
-    t->AddTool(ID_DEBUG_START, _guilang.get("GUI_TB_RUN"), bmStart, _guilang.get("GUI_TB_RUN_TTP"));
+    t->AddTool(ID_MENU_EXECUTE, _guilang.get("GUI_TB_RUN"), bmStart, _guilang.get("GUI_TB_RUN_TTP"));
 
     wxBitmap bmStop(newstop1_xpm);
-    t->AddTool(ID_DEBUG_STOP, _guilang.get("GUI_TB_STOP"), bmStop, _guilang.get("GUI_TB_STOP_TTP"));
+    t->AddTool(ID_MENU_STOP_EXECUTION, _guilang.get("GUI_TB_STOP"), bmStop, _guilang.get("GUI_TB_STOP_TTP"));
 
     t->AddSeparator();
 
     wxBitmap bmStartDebugger(newcontinue1_xpm);
-    t->AddTool(ID_DEBUGGER, _guilang.get("GUI_TB_DEBUGGER"), bmStartDebugger, _guilang.get("GUI_TB_DEBUGGER_TTP"), wxITEM_CHECK);
-    t->ToggleTool(ID_DEBUGGER, m_terminal->getKernelSettings().getUseDebugger());
+    t->AddTool(ID_MENU_TOGGLE_DEBUGGER, _guilang.get("GUI_TB_DEBUGGER"), bmStartDebugger, _guilang.get("GUI_TB_DEBUGGER_TTP"), wxITEM_CHECK);
+    t->ToggleTool(ID_MENU_TOGGLE_DEBUGGER, m_terminal->getKernelSettings().getUseDebugger());
 
     wxBitmap bmAddBreakpoint(breakpoint_xpm);
-    t->AddTool(ID_DEBUG_ADDEDITORBREAKPOINT, _guilang.get("GUI_TB_ADD"), bmAddBreakpoint,
+    t->AddTool(ID_MENU_ADDEDITORBREAKPOINT, _guilang.get("GUI_TB_ADD"), bmAddBreakpoint,
         _guilang.get("GUI_TB_ADD_TTP"));
 
     wxBitmap bmRemoveBreakpoint(breakpoint_octagon_disable_xpm);
-    t->AddTool(ID_DEBUG_REMOVEEDITORBREAKPOINT, _guilang.get("GUI_TB_REMOVE"), bmRemoveBreakpoint,
+    t->AddTool(ID_MENU_REMOVEEDITORBREAKPOINT, _guilang.get("GUI_TB_REMOVE"), bmRemoveBreakpoint,
         _guilang.get("GUI_TB_REMOVE_TTP"));
 
     wxBitmap bmClearBreakpoint(breakpoint_crossed_xpm);
-    t->AddTool(ID_DEBUG_CLEAREDITORBREAKPOINTS, _guilang.get("GUI_TB_CLEAR"), bmClearBreakpoint,
+    t->AddTool(ID_MENU_CLEAREDITORBREAKPOINTS, _guilang.get("GUI_TB_CLEAR"), bmClearBreakpoint,
         _guilang.get("GUI_TB_CLEAR_TTP"));
 
-    for(int i = ID_DEBUG_IDS_FIRST; i < ID_DEBUG_IDS_LAST; i++)
+    /*for(int i = ID_DEBUG_IDS_FIRST; i < ID_DEBUG_IDS_LAST; i++)
     {
         t->EnableTool(i, false);
-    }
+    }*/
 
     t->AddSeparator();
     wxBitmap bmAnalyzer(gtk_apply_xpm);
-    t->AddTool(ID_USEANALYZER, _guilang.get("GUI_TB_ANALYZER"), bmAnalyzer, _guilang.get("GUI_TB_ANALYZER_TTP"), wxITEM_CHECK);
-    t->ToggleTool(ID_USEANALYZER, false);
-    t->EnableTool(ID_USEANALYZER, false);
+    t->AddTool(ID_MENU_USEANALYZER, _guilang.get("GUI_TB_ANALYZER"), bmAnalyzer, _guilang.get("GUI_TB_ANALYZER_TTP"), wxITEM_CHECK);
+    t->ToggleTool(ID_MENU_USEANALYZER, false);
+    t->EnableTool(ID_MENU_USEANALYZER, false);
 
 	t->Realize();
 
@@ -4557,11 +4471,11 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
             return;
         if (!data || data->isDir)
         {
-            popupMenu.Append(ID_NEW_FOLDER, _guilang.get("GUI_TREE_POP_NEWFOLDER"));
+            popupMenu.Append(ID_MENU_NEW_FOLDER_IN_TREE, _guilang.get("GUI_TREE_POP_NEWFOLDER"));
             if (data)
-                popupMenu.Append(ID_REMOVE_FOLDER, _guilang.get("GUI_TREE_POP_REMOVEFOLDER"));
+                popupMenu.Append(ID_MENU_REMOVE_FOLDER_FROM_TREE, _guilang.get("GUI_TREE_POP_REMOVEFOLDER"));
             popupMenu.AppendSeparator();
-            popupMenu.Append(ID_OPEN_IN_EXPLORER, _guilang.get("GUI_TREE_POP_OPENINEXPLORER"));
+            popupMenu.Append(ID_MENU_OPEN_IN_EXPLORER, _guilang.get("GUI_TREE_POP_OPENINEXPLORER"));
             /*if (loadableExt.find(fname_ext) != string::npos)
                 popupMenu.Append(ID_OPEN_FILE, _guilang.get("GUI_TREE_PUP_LOAD"));
             else if (fname_ext == ".nscr;")
@@ -4587,22 +4501,22 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
         fname_ext = fname_ext.substr(fname_ext.rfind('.')) + ";";
 
         if (loadableExt.find(fname_ext) != string::npos)
-            popupMenu.Append(ID_OPEN_FILE, _guilang.get("GUI_TREE_PUP_LOAD"));
+            popupMenu.Append(ID_MENU_OPEN_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_LOAD"));
         else if (fname_ext == ".nscr;")
-            popupMenu.Append(ID_OPEN_FILE, _guilang.get("GUI_TREE_PUP_START"));
+            popupMenu.Append(ID_MENU_OPEN_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_START"));
         else if (fname_ext == ".nprc;")
-            popupMenu.Append(ID_OPEN_FILE, _guilang.get("GUI_TREE_PUP_RUN"));
+            popupMenu.Append(ID_MENU_OPEN_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_RUN"));
 
         if (editableExt.find(fname_ext) != string::npos)
-            popupMenu.Append(ID_EDIT_FILE, _guilang.get("GUI_TREE_PUP_EDIT"));
+            popupMenu.Append(ID_MENU_EDIT_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_EDIT"));
         if (showableImgExt.find(fname_ext) != string::npos)
-            popupMenu.Append(ID_OPEN_IMAGE, _guilang.get("GUI_TREE_PUP_OPENIMAGE"));
+            popupMenu.Append(ID_MENU_OPEN_IMAGE_FROM_TREE, _guilang.get("GUI_TREE_PUP_OPENIMAGE"));
         popupMenu.AppendSeparator();
-        popupMenu.Append(ID_DELETE_FILE, _guilang.get("GUI_TREE_PUP_DELETEFILE"));
-        popupMenu.Append(ID_COPY_FILE, _guilang.get("GUI_TREE_PUP_COPYFILE"));
+        popupMenu.Append(ID_MENU_DELETE_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_DELETEFILE"));
+        popupMenu.Append(ID_MENU_COPY_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_COPYFILE"));
         if (m_copiedTreeItem)
-            popupMenu.Append(ID_INSERT_FILE, _guilang.get("GUI_TREE_PUP_INSERTFILE"));
-        popupMenu.Append(ID_RENAME_FILE, _guilang.get("GUI_TREE_PUP_RENAMEFILE"));
+            popupMenu.Append(ID_MENU_INSERT_FILE_INTO_TREE, _guilang.get("GUI_TREE_PUP_INSERTFILE"));
+        popupMenu.Append(ID_MENU_RENAME_FILE_IN_TREE, _guilang.get("GUI_TREE_PUP_RENAMEFILE"));
 
         wxPoint p = event.GetPoint();
         m_fileTree->PopupMenu(&popupMenu, p);
@@ -4617,12 +4531,12 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
 
         if (data->isDir)
             return;
-        popupMenu.Append(ID_INSERT_IN_EDITOR, _guilang.get("GUI_TREE_PUP_INSERT_EDITOR"));
-        popupMenu.Append(ID_INSERT_IN_CONSOLE, _guilang.get("GUI_TREE_PUP_INSERT_CONSOLE"));
+        popupMenu.Append(ID_MENU_INSERT_IN_EDITOR_FROM_TREE, _guilang.get("GUI_TREE_PUP_INSERT_EDITOR"));
+        popupMenu.Append(ID_MENU_INSERT_IN_CONSOLE_FROM_TREE, _guilang.get("GUI_TREE_PUP_INSERT_CONSOLE"));
         if (data->isCommand)
         {
             popupMenu.AppendSeparator();
-            popupMenu.Append(ID_HELP_ON_ITEM, _guilang.get("GUI_TREE_PUP_HELPONITEM", m_functionTree->GetItemText(clickedItem).ToStdString()));
+            popupMenu.Append(ID_MENU_HELP_ON_ITEM, _guilang.get("GUI_TREE_PUP_HELPONITEM", m_functionTree->GetItemText(clickedItem).ToStdString()));
         }
         //popupMenu.Append(ID_SHOW_DESCRIPTION, _guilang.get("GUI_TREE_PUP_SHOW_DESCRIPTION"));
 
@@ -5744,11 +5658,11 @@ bool NumeReWindow::AskUserForPassword()
 
 void NumeReWindow::OnOpenSourceFile(int id )
 {
-	if( id == ID_OPEN_SOURCE_LOCAL)
+	if( id == ID_MENU_OPEN_SOURCE_LOCAL)
 	{
 		m_remoteMode = false;
 	}
-	else if(id == ID_OPEN_SOURCE_REMOTE)
+	else if(id == ID_MENU_OPEN_SOURCE_REMOTE)
 	{
 		m_remoteMode = true;
 	}
@@ -5763,11 +5677,11 @@ void NumeReWindow::OnOpenSourceFile(int id )
 
 void NumeReWindow::OnSaveSourceFile( int id )
 {
-	if( id == ID_SAVE_SOURCE_LOCAL)
+	if( id == ID_MENU_SAVE_SOURCE_LOCAL)
 	{
 		m_remoteMode = false;
 	}
-	else if(id == ID_SAVE_SOURCE_REMOTE)
+	else if(id == ID_MENU_SAVE_SOURCE_REMOTE)
 	{
 		m_remoteMode = true;
 	}
@@ -5950,8 +5864,8 @@ void NumeReWindow::OnFindReplace(int id)
 	{
 		bool isReplaceDialog = g_findReplace->GetWindowStyle() & wxFR_REPLACEDIALOG;
 
-		if( (isReplaceDialog && (id == ID_REPLACE)) ||
-			(!isReplaceDialog && (id == ID_FIND)) )
+		if( (isReplaceDialog && (id == ID_MENU_REPLACE)) ||
+			(!isReplaceDialog && (id == ID_MENU_FIND)) )
 		{
 			return;
 		}
@@ -5963,7 +5877,7 @@ void NumeReWindow::OnFindReplace(int id)
 	else
         m_findData.SetFlags(wxFR_DOWN | wxFR_WRAPAROUND);
 
-	bool showFind = (id == ID_FIND);
+	bool showFind = (id == ID_MENU_FIND);
 	int dialogFlags = showFind ? 0 : wxFR_REPLACEDIALOG;
 	wxString title = showFind ? _guilang.get("GUI_DLG_FIND") : _guilang.get("GUI_DLG_REPLACE");
 
