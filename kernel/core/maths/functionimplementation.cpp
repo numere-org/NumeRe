@@ -1314,6 +1314,13 @@ value_type parser_clock()
     return (double)clock();
 }
 
+// --> Sleeps for the passed amount of milliseconds and returns this number <--
+value_type parser_sleep(value_type milliseconds)
+{
+    Sleep(intCast(milliseconds));
+    return intCast(milliseconds);
+}
+
 // --> NumeRe-Version als natuerliche Zahl <--
 value_type parser_numereversion()
 {

@@ -2658,7 +2658,7 @@
 	"utils/tools.hpp"
 	"plotting/plotdata.hpp"
 
-1525450580 d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.hpp
+1541838906 d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.hpp
 	<cstdlib>
 	<cmath>
 	<fstream>
@@ -3332,7 +3332,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1540448961 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1541749697 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3684,7 +3684,7 @@
 	"wx/stream.h"
 	"wx/convauto.h"
 
-1503426556 source:d:\cpp\numere-source\trunk\gui\numerenotebook.cpp
+1541750008 source:d:\cpp\numere-source\trunk\gui\numerenotebook.cpp
 	"../common/CommonHeaders.h"
 	"NumeReNotebook.h"
 	"NumeReWindow.h"
@@ -3696,7 +3696,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1539151364 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1541750727 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
