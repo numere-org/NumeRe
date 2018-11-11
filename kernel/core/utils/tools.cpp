@@ -2970,6 +2970,9 @@ string getClipboardText()
 // This function is a static helper function for evalRecursiveExpressions further down
 static bool handleRecursiveOperators(string& sExpr, size_t& nPos, size_t& nArgSepPos)
 {
+    size_t nLength = 2;
+    if (sExpr.substr(nPos, 3) == "**=")
+        nLength = 3;
     // Do we find another comma?
     if (sExpr.find(',', nPos) != string::npos)
     {
@@ -3008,9 +3011,9 @@ static bool handleRecursiveOperators(string& sExpr, size_t& nPos, size_t& nArgSe
                         sExpr = sExpr.substr(0, nPos)
                                 + " = "
                                 + sExpr.substr(0, nPos)
-                                + sExpr[nPos]
+                                + sExpr.substr(nPos, nLength-1)
                                 + "("
-                                + sExpr.substr(nPos + 2, j - nPos - 2)
+                                + sExpr.substr(nPos + nLength, j - nPos - nLength)
                                 + ") "
                                 + sExpr.substr(j);
                     }
@@ -3019,9 +3022,9 @@ static bool handleRecursiveOperators(string& sExpr, size_t& nPos, size_t& nArgSe
                         sExpr = sExpr.substr(0, nPos)
                                 + " = "
                                 + sExpr.substr(nArgSepPos + 1, nPos - nArgSepPos - 1)
-                                + sExpr[nPos]
+                                + sExpr.substr(nPos, nLength-1)
                                 + "("
-                                + sExpr.substr(nPos + 2, j - nPos - 2)
+                                + sExpr.substr(nPos + nLength, j - nPos - nLength)
                                 + ") "
                                 + sExpr.substr(j);
                     }
@@ -3034,9 +3037,9 @@ static bool handleRecursiveOperators(string& sExpr, size_t& nPos, size_t& nArgSe
                         sExpr = sExpr.substr(0, nPos)
                                 + " = "
                                 + sExpr.substr(0, nPos)
-                                + sExpr[nPos]
+                                + sExpr.substr(nPos, nLength-1)
                                 + "("
-                                + sExpr.substr(nPos + 2)
+                                + sExpr.substr(nPos + nLength)
                                 + ") ";
                     }
                     else
@@ -3044,9 +3047,9 @@ static bool handleRecursiveOperators(string& sExpr, size_t& nPos, size_t& nArgSe
                         sExpr = sExpr.substr(0, nPos)
                                 + " = "
                                 + sExpr.substr(nArgSepPos + 1, nPos - nArgSepPos - 1)
-                                + sExpr[nPos]
+                                + sExpr.substr(nPos, nLength-1)
                                 + "("
-                                + sExpr.substr(nPos + 2)
+                                + sExpr.substr(nPos + nLength)
                                 + ") ";
                     }
 
@@ -3098,9 +3101,9 @@ static bool handleRecursiveOperators(string& sExpr, size_t& nPos, size_t& nArgSe
             sExpr = sExpr.substr(0, nPos)
                     + " = "
                     + sExpr.substr(0, nPos)
-                    + sExpr[nPos]
+                    + sExpr.substr(nPos, nLength-1)
                     + "("
-                    + sExpr.substr(nPos + 2)
+                    + sExpr.substr(nPos + nLength)
                     + ")";
         }
         else
@@ -3108,9 +3111,9 @@ static bool handleRecursiveOperators(string& sExpr, size_t& nPos, size_t& nArgSe
             sExpr = sExpr.substr(0, nPos)
                     + " = "
                     + sExpr.substr(nArgSepPos + 1, nPos - nArgSepPos - 1)
-                    + sExpr[nPos]
+                    + sExpr.substr(nPos, nLength-1)
                     + "("
-                    + sExpr.substr(nPos + 2)
+                    + sExpr.substr(nPos + nLength)
                     + ")";
         }
 
@@ -3202,6 +3205,7 @@ void evalRecursiveExpressions(string& sExpr)
 		// Do we find a recursive expression?
 		if (sExpr.substr(i, 2) == "+="
 				|| sExpr.substr(i, 2) == "-="
+				|| sExpr.substr(i, 3) == "**="
 				|| sExpr.substr(i, 2) == "*="
 				|| sExpr.substr(i, 2) == "/="
 				|| sExpr.substr(i, 2) == "^=")

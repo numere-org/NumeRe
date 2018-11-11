@@ -2181,7 +2181,7 @@
 	"../../kernel/kernel.hpp"
 	"../../kernel/debugmessenger.hpp"
 
-1541750820 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1541860016 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -3696,7 +3696,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1541750727 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1541860053 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -4020,10 +4020,10 @@
 	"fitcontroller.hpp"
 	"../../kernel.hpp"
 
-1533219325 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
+1541839123 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
 	"functionimplementation.hpp"
 
-1541574462 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
+1541938818 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	<list>
@@ -4169,7 +4169,7 @@
 	"plotinfo.hpp"
 	"graph_helper.hpp"
 
-1500714312 d:\cpp\numere-source\trunk\kernel\core\plotting\plotinfo.hpp
+1541863118 d:\cpp\numere-source\trunk\kernel\core\plotting\plotinfo.hpp
 	<mgl2/mgl.h>
 	<string>
 
@@ -4214,7 +4214,7 @@
 	"../plotting/plotdata.hpp"
 	"../script.hpp"
 
-1541162527 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedureelement.cpp
+1541862799 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedureelement.cpp
 	"procedureelement.hpp"
 	"../utils/tools.hpp"
 
@@ -4260,7 +4260,7 @@
 	<cstddef>
 	<cstdarg>
 
-1541318583 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
+1541930005 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
 	"tools.hpp"
 	"../../kernel.hpp"
 	<cstdlib>
@@ -4286,7 +4286,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1541574080 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1541839162 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 
