@@ -50,6 +50,8 @@ struct PlotInfo
     string* sPointStyles;
     string* sConPointStyles;
 
+    inline PlotInfo() : nStyle(nullptr), nFunctions(nullptr), sLineStyles(nullptr), sContStyles(nullptr), sPointStyles(nullptr), sConPointStyles(nullptr) {}
+
     inline ~PlotInfo()
         {
             nStyle = 0;

@@ -122,7 +122,9 @@ ProcedureElement::ProcedureElement(const vector<string>& vProcedureContents, con
 
                 if (sCommand.substr(0, 4) == "plot"
                         || sCommand.substr(0, 7) == "subplot"
+                        || sCommand.substr(0, 5) == "graph"
                         || sCommand.substr(0, 4) == "grad"
+                        || sCommand.substr(0, 4) == "draw"
                         || sCommand.substr(0, 4) == "dens"
                         || sCommand.substr(0, 4) == "vect"
                         || sCommand.substr(0, 4) == "cont"
