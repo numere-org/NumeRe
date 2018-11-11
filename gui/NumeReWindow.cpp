@@ -111,10 +111,10 @@ BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
 	EVT_MENU						(ID_OPEN_PROJECT_LOCAL, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_OPEN_PROJECT_REMOTE, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_CLOSE_PROJECT, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_DEBUG_CONTINUE, NumeReWindow::OnDebugCommand)
-	EVT_MENU						(ID_DEBUG_STEPNEXT, NumeReWindow::OnDebugCommand)
-	EVT_MENU						(ID_DEBUG_STEPOVER, NumeReWindow::OnDebugCommand)
-	EVT_MENU						(ID_DEBUG_STEPOUT, NumeReWindow::OnDebugCommand)
+//	EVT_MENU						(ID_DEBUG_CONTINUE, NumeReWindow::OnDebugCommand)
+//	EVT_MENU						(ID_DEBUG_STEPNEXT, NumeReWindow::OnDebugCommand)
+//	EVT_MENU						(ID_DEBUG_STEPOVER, NumeReWindow::OnDebugCommand)
+//	EVT_MENU						(ID_DEBUG_STEPOUT, NumeReWindow::OnDebugCommand)
 
 	EVT_FIND						(-1, NumeReWindow::OnFindEvent)
 	EVT_FIND_NEXT					(-1, NumeReWindow::OnFindEvent)
@@ -1413,13 +1413,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 			OnHelp();
 			break;
 		}
-	}
-}
 
-void NumeReWindow::OnDebugBreakpointCommand(wxCommandEvent &event)
-{
-	switch(event.GetId())
-	{
 		case ID_MENU_ADDEDITORBREAKPOINT:
 		{
 			m_currentEd->OnAddBreakpoint(event);
@@ -1435,59 +1429,29 @@ void NumeReWindow::OnDebugBreakpointCommand(wxCommandEvent &event)
 			m_currentEd->OnClearBreakpoints(event);
 			break;
 		}
+
+		case ID_MENU_EXECUTE:
+        {
+            if(!m_currentEd->HasBeenSaved() || m_currentEd->Modified())
+            {
+                int tabNum = m_book->FindPagePosition(m_currentEd);
+                int result = HandleModifiedFile(tabNum, MODIFIEDFILE_COMPILE);
+
+                if (result == wxCANCEL)
+                {
+                    return;
+                }
+            }
+            string command = replacePathSeparator((m_currentEd->GetFileName()).GetFullPath().ToStdString());
+            OnExecuteFile(command);
+            break;
+        }
+        case ID_MENU_STOP_EXECUTION:
+            m_terminal->CancelCalculation();
+            break;
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////////
-///  private OnDebugCommand
-///  Responsible for handling all debug-related menu / toolbar commands
-///
-///  @param  event wxCommandEvent & The menu event generated
-///
-///  @return void
-///
-///  @remarks Basically just creates a debug event with the same ID and passes it to
-///  @remarks the debugger.  Sets up the start debug information if necessary.
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::OnDebugCommand(wxCommandEvent &event)
-{
-	int eventID = event.GetId();
-
-	//ProjectInfo* currentProject = NULL;
-
-	if(eventID == ID_MENU_EXECUTE)
-	{
-        if(!m_currentEd->HasBeenSaved() || m_currentEd->Modified())
-		{
-			int tabNum = m_book->FindPagePosition(m_currentEd);
-			int result = HandleModifiedFile(tabNum, MODIFIEDFILE_COMPILE);
-
-			if (result == wxCANCEL)
-			{
-				return;
-			}
-		}
-        string command = replacePathSeparator((m_currentEd->GetFileName()).GetFullPath().ToStdString());
-        OnExecuteFile(command);
-
-        return;
-		/*if(m_projMultiFiles != NULL)
-		{
-			currentProject = m_projMultiFiles;
-		}
-		else
-		{
-			currentProject = m_currentEd->GetProject();
-		}*/
-	}
-    else if (eventID == ID_MENU_STOP_EXECUTION)
-    {
-        m_terminal->CancelCalculation();
-    }
-	//m_debugManager->OnDebugCommand(eventID, currentProject, m_currentEd);
-
-}
 
 void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
 {
