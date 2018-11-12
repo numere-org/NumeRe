@@ -35,7 +35,7 @@ static void parser_makeReal(Matrix& _mMatrix);
 static double parser_calcDeterminant(const Matrix& _mMatrix, vector<int> vRemovedLines);
 static void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _option);
 static void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, Define& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position);
-static Indices parser_getIndicesForMatrix(const string& sCmd, const vector<Matrix>& vReturnedMatrices, Parser& _parser, Datafile& _data, const Settings& _option);
+static Indices parser_getIndicesForMatrix(const string& sCmd, const vector<string>& vMatrixNames, const vector<Indices>& vIndices, const vector<Matrix>& vReturnedMatrices, Parser& _parser, Datafile& _data, const Settings& _option);
 
 
 
@@ -921,7 +921,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
         }
 
         // Get the indices
-        vIndices.push_back(parser_getIndicesForMatrix(__sCmd.substr(nPos), vReturnedMatrices, _parser, _data, _option));
+        vIndices.push_back(parser_getIndicesForMatrix(__sCmd.substr(nPos), vMatrixNames, vIndices, vReturnedMatrices, _parser, _data, _option));
 
         // Evaluate the indices
         if (!vIndices[vIndices.size()-1].vI.size())
@@ -959,7 +959,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             }
 
             // Get the indices
-            vIndices.push_back(parser_getIndicesForMatrix(__sCmd.substr(nPos), vReturnedMatrices, _parser, _data, _option));
+            vIndices.push_back(parser_getIndicesForMatrix(__sCmd.substr(nPos), vMatrixNames, vIndices, vReturnedMatrices, _parser, _data, _option));
 
             // Evaluate the indices
             if (!vIndices[vIndices.size()-1].vI.size())
@@ -3144,8 +3144,6 @@ Indices parser_getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _p
 
         for (int n = 0; n < 2; n++)
         {
-            //cerr << sI[n] << endl;
-            //cerr << sJ[n] << endl;
             if (sI[n] == "<<EMPTY>>")
             {
                 if (n)
@@ -3220,9 +3218,10 @@ Indices parser_getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _p
     return _idx;
 }
 
-static Indices parser_getIndicesForMatrix(const string& sCmd, const vector<Matrix>& vReturnedMatrices, Parser& _parser, Datafile& _data, const Settings& _option)
+// Static helper function for parser_getIndicesForMatrix(), which will
+// handle the return values of matrix evaluations
+static void parser_declareMatrixReturnValuesForIndices(const string& _sCmd, const vector<Matrix>& vReturnedMatrices, Parser& _parser)
 {
-    string _sCmd = sCmd;
     for (unsigned int j = 0; j < vReturnedMatrices.size(); j++)
     {
         vector<double> v;
@@ -3240,11 +3239,72 @@ static Indices parser_getIndicesForMatrix(const string& sCmd, const vector<Matri
                 v.push_back(vReturnedMatrices[j][i][0]);
         }
 
-
+        // Declare the corresponding vector variable
         if (_sCmd.find("returnedMatrix["+toString((int)j)+"]") != string::npos)
             _parser.SetVectorVar("returnedMatrix["+toString((int)j)+"]", v);
     }
+}
 
+// Static helper function for parser_getIndicesForMatrix(), which will
+// handle the indices of already parsed datafile matrices
+static void parser_declareDataMatrixValuesForIndices(string& _sCmd, const vector<string>& vMatrixNames, const vector<Indices>& vIndices, Parser&_parser, Datafile& _data)
+{
+    for (unsigned int j = 0; j < vIndices.size(); j++)
+    {
+        vector<double> v;
+
+        // Get the values using the indices
+        if (vIndices[j].vI.size())
+        {
+            if (vIndices[j].vI.size() > vIndices[j].vJ.size())
+                v = _data.getElement(vIndices[j].vI, vector<long long int>(1, vIndices[j].vJ[0]), vMatrixNames[j]);
+            else
+                v = _data.getElement(vector<long long int>(1, vIndices[j].vI[0]), vIndices[j].vJ, vMatrixNames[j]);
+        }
+        else
+        {
+            if (vIndices[j].nJ[1] - vIndices[j].nJ[0] < vIndices[j].nI[1] - vIndices[j].nI[0] || vIndices[j].nJ[1] == -1)
+            {
+                for (long long int k = vIndices[j].nI[0]; k <= vIndices[j].nI[1]; k++)
+                {
+                    if (_data.isValidEntry(k, vIndices[j].nJ[0], vMatrixNames[j]))
+                        v.push_back(_data.getElement(k, vIndices[j].nJ[0], vMatrixNames[j]));
+                }
+            }
+            else
+            {
+                for (long long int k = vIndices[j].nJ[0]; k <= vIndices[j].nJ[1]; k++)
+                {
+                    if (_data.isValidEntry(vIndices[j].nI[0], k, vMatrixNames[j]))
+                        v.push_back(_data.getElement(vIndices[j].nI[0], k, vMatrixNames[j]));
+                }
+            }
+        }
+
+        // Declare the corresponding vector variable
+        if (_sCmd.find("matrix["+toString((int)j)+"]") != string::npos)
+            _parser.SetVectorVar("matrix["+toString((int)j)+"]", v);
+    }
+}
+
+// Static wrapper function for resolving already parsed datafile
+// matrix elements and evaluated matrix expressions, which are used
+// as indices for datafile matrices
+static Indices parser_getIndicesForMatrix(const string& sCmd, const vector<string>& vMatrixNames, const vector<Indices>& vIndices, const vector<Matrix>& vReturnedMatrices, Parser& _parser, Datafile& _data, const Settings& _option)
+{
+    string _sCmd = sCmd;
+
+    // Declare the return values of the former matrix calculations
+    // to the parser by extracting the values and creating a vector
+    // variable
+    parser_declareMatrixReturnValuesForIndices(_sCmd, vReturnedMatrices, _parser);
+
+    // Declare the already parsed data object matrices in the
+    // current expressions by parsing their indices, extracting
+    // the corresponding values and creating a vector variable
+    parser_declareDataMatrixValuesForIndices(_sCmd, vMatrixNames, vIndices, _parser, _data);
+
+    // Return the calculated indices
     return parser_getIndices(_sCmd, _parser, _data, _option);
 }
 
