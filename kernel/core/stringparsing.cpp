@@ -589,7 +589,7 @@ static string strfnc_substr(StringFuncArgs& funcArgs)
 		funcArgs.nArg1 = 1;
 	if ((size_t)funcArgs.nArg1 > funcArgs.sArg1.length())
 		funcArgs.nArg1 = funcArgs.sArg1.length();
-	if (funcArgs.nArg2 <= 0)
+	if (funcArgs.nArg2 < 0)
 		funcArgs.nArg2 = -1;
     string sRet = funcArgs.sArg1.substr(funcArgs.nArg1 - 1, funcArgs.nArg2);
     if (sRet.length() && sRet.back() == '\\')

@@ -54,3 +54,4 @@ Updated	The procedure execution was been speed up about 25%.
 New	The function "getenvvar(sVarName)" may be used to read system environment variables.
 Fixed	Drag&Drop into the first editor tab now works as expected.
 New	The function "sleep(nMilliSeconds)" waits for the passed nMilliSeconds.
+Fixed	"substr()" may now create strings with zero length.
