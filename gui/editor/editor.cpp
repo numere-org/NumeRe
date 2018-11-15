@@ -352,13 +352,27 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 	// Check the contents of the newly created file
 	wxFile filecheck;
 	filecheck.Open(filename);
-	if (!bWriteSuccess || filecheck.Length() != this->GetLength() - countUmlauts(this->GetText().ToStdString()))
+	if (!bWriteSuccess)
 	{
 		// if the contents are not matching, restore the backup and signalize that an error occured
 		if (wxFileExists(filename + ".backup"))
 			wxCopyFile(filename + ".backup", filename, true);
 		return false;
 	}
+	else if ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC) && filecheck.Length() != this->GetLength() - countUmlauts(this->GetText().ToStdString()))
+	{
+        // if the contents are not matching, restore the backup and signalize that an error occured
+		if (wxFileExists(filename + ".backup"))
+			wxCopyFile(filename + ".backup", filename, true);
+		return false;
+	}
+	else if ((m_fileType != FILE_NSCR && m_fileType != FILE_NPRC) && !filecheck.Length() && this->GetLength())
+    {
+		// if the contents are not matching, restore the backup and signalize that an error occured
+		if (wxFileExists(filename + ".backup"))
+			wxCopyFile(filename + ".backup", filename, true);
+		return false;
+    }
 
 	// Only mark the editor as saved, if the saving process was successful
 	markSaved();

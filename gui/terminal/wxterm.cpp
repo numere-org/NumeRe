@@ -424,6 +424,7 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
 				vDebugInfo = NumeReKernel::vDebugInfos;
 				break;
 			case NumeReKernel::NUMERE_PENDING:
+			    done = true;
 				sAnswer = "|<- ";
 				break;
 			case NumeReKernel::NUMERE_QUIT:
