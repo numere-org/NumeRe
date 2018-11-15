@@ -55,3 +55,4 @@ New	The function "getenvvar(sVarName)" may be used to read system environment va
 Fixed	Drag&Drop into the first editor tab now works as expected.
 New	The function "sleep(nMilliSeconds)" waits for the passed nMilliSeconds.
 Fixed	"substr()" may now create strings with zero length.
+New	Added the "getfileparts()" function, which will split the passed path into its parts (drive letter, path, name and extension).

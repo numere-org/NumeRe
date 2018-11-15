@@ -196,6 +196,23 @@ static string strfnc_getenvvar(StringFuncArgs& funcArgs)
         return "\"" + string(sVarValue) + "\"";
 }
 
+// {str} = getfileparts(str)
+static string strfnc_getFileParts(StringFuncArgs& funcArgs)
+{
+    if (!funcArgs.sArg1.length())
+        return "\"\"";
+
+    vector<string> vFileParts = funcArgs.opt->getFileParts(funcArgs.sArg1);
+
+    string sReturnValue;
+
+    for (size_t i = 0; i < vFileParts.size(); i++)
+        sReturnValue += "\"" + vFileParts[i] + "\"" + NEWSTRING;
+
+    sReturnValue.pop_back();
+    return sReturnValue;
+}
+
 // cmd = to_cmd(str)
 // string strfnc_to_cmd(StringFuncArgs& funcArgs);
 
@@ -2081,6 +2098,7 @@ static map<string, StringFuncHandle> parser_getStringFuncHandles()
 
 	mHandleTable["strlen"]              = StringFuncHandle(STR, strfnc_strlen, false);
 	mHandleTable["ascii"]               = StringFuncHandle(STR, strfnc_ascii, false);
+	mHandleTable["getfileparts"]        = StringFuncHandle(STR, strfnc_getFileParts, false);
 	mHandleTable["to_string"]           = StringFuncHandle(STR, strfnc_to_string, false);
 	mHandleTable["to_value"]            = StringFuncHandle(STR, strfnc_to_value, false);
 	mHandleTable["to_uppercase"]        = StringFuncHandle(STR, strfnc_to_uppercase, false);

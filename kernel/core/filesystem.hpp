@@ -22,6 +22,7 @@
 #include <fstream>
 #include <sstream>
 #include <windows.h>
+#include <vector>
 
 //#include "error.hpp"
 
@@ -39,17 +40,24 @@ string fromSystemCodePage(string);
 
 class FileSystem
 {
+    private:
+        string cleanPath(string sFilePath) const;
+        void resolveWildCards(string& _sFileName, bool isFile) const;
+
 	protected:												// In allen CHILD-Klassen verfuegbar
 		string sPath;										// String-Variable fuer den Dateipfad
 		string sWhere;
 		string sTokens[7][2];
-		string sValidExtensions;
+		mutable string sValidExtensions;
+
 	public:
         FileSystem();
 
-		string ValidFileName(string _sFileName, const string sExtension = ".dat");			// gibt einen gueltigen Dateinamen auf Basis von _sFileName zurueck
+		string ValidFileName(string _sFileName, const string sExtension = ".dat", bool checkExtension = true) const;			// gibt einen gueltigen Dateinamen auf Basis von _sFileName zurueck
+		string ValidFolderName(string _sFileName) const;			// gibt einen gueltigen Ordnernamen auf Basis von _sFileName zurueck
 		int setPath(string _sPath, bool bMkDir, string _sWhere);			// setzt sPath auf _sPath
 		string getPath() const;								// gibt sPath zurueck
+		vector<string> getFileParts(const string& sFilePath) const;
         inline void setProgramPath(string _sWhere)
             {
                 sWhere = _sWhere;
@@ -69,6 +77,7 @@ class FileSystem
                 return;
             }
         void setTokens(string _sTokens);
+        bool isFile(const string& _sPath) const;
 };
 
 #endif

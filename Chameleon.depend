@@ -6694,12 +6694,13 @@
 	<fstream>
 	"../filesystem.hpp"
 
-1530078534 c:\cpp\numere-source\trunk\kernel\core\filesystem.hpp
+1542265779 c:\cpp\numere-source\trunk\kernel\core\filesystem.hpp
 	<string>
 	<iostream>
 	<fstream>
 	<sstream>
 	<windows.h>
+	<vector>
 
 1541668197 c:\cpp\numere-source\trunk\kernel\core\utils\tools.hpp
 	<iostream>
@@ -8427,7 +8428,7 @@
 	"documentation.hpp"
 	"../../kernel.hpp"
 
-1530078533 source:c:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
+1542267191 source:c:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
 	"filesystem.hpp"
 	"../kernel.hpp"
 
@@ -8673,7 +8674,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1541668196 source:c:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1542229029 source:c:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>

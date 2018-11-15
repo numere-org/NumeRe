@@ -35,89 +35,86 @@ FileSystem::FileSystem()
     }
 }
 
-// --> Pruefe den string _sFileName, ob er als Dateiname verwendet werden kann
-string FileSystem::ValidFileName(string _sFileName, const string sExtension)
+// clean the passed file path
+string FileSystem::cleanPath(string sFilePath) const
 {
-	string sValid = "";			// Variable fuer den gueltigen Dateinamen
-	sValidExtensions = toLowerCase(sValidExtensions);
-
-    for (size_t i = 0; i < _sFileName.length(); i++)
+    for (size_t i = 0; i < sFilePath.length(); i++)
     {
-        if (_sFileName[i] == '\\')
-            _sFileName[i] = '/';
+        if (sFilePath[i] == '\\')
+            sFilePath[i] = '/';
     }
 
-    while (_sFileName.front() == ' ')
-    {
-        _sFileName.erase(0,1);
-    }
-    while (_sFileName.back() ==  ' ')
-        _sFileName.pop_back();
-	if (_sFileName[0] == '<')
+    sFilePath.erase(0, sFilePath.find_first_not_of(" \t"));
+    if (sFilePath.find_last_not_of(" \t") != string::npos)
+        sFilePath.erase(sFilePath.find_last_not_of(" \t")+1);
+
+	if (sFilePath[0] == '<')
 	{
         for (int i = 0; i < 7; i++)
         {
-            if (_sFileName.substr(0,sTokens[i][0].length()) == sTokens[i][0])
+            if (sFilePath.substr(0,sTokens[i][0].length()) == sTokens[i][0])
             {
-                if (_sFileName[sTokens[i][0].length()] != '/')
-                    _sFileName = sTokens[i][1] + "/" + _sFileName.substr(sTokens[i][0].length());
+                if (sFilePath[sTokens[i][0].length()] != '/')
+                    sFilePath = sTokens[i][1] + "/" + sFilePath.substr(sTokens[i][0].length());
                 else
-                    _sFileName = sTokens[i][1] + _sFileName.substr(sTokens[i][0].length());
+                    sFilePath = sTokens[i][1] + sFilePath.substr(sTokens[i][0].length());
                 break;
             }
         }
-        if (_sFileName.substr(0,6) == "<this>")
+        if (sFilePath.substr(0,6) == "<this>")
         {
-            if (_sFileName[6] != '/')
-                _sFileName = sTokens[0][1] + "/" + _sFileName.substr(6);
+            if (sFilePath[6] != '/')
+                sFilePath = sTokens[0][1] + "/" + sFilePath.substr(6);
             else
-                _sFileName = sTokens[0][1] + _sFileName.substr(6);
+                sFilePath = sTokens[0][1] + sFilePath.substr(6);
         }
 	}
 
-	for (unsigned int i = 0; i < _sFileName.length(); i++)
+	for (unsigned int i = 0; i < sFilePath.length(); i++)
 	{
-        if (_sFileName[i] == (char)142)
-            _sFileName[i] = 'Ä';
-        else if (_sFileName[i] == (char)132)
-            _sFileName[i] = 'ä';
-        else if (_sFileName[i] == (char)153)
-            _sFileName[i] = 'Ö';
-        else if (_sFileName[i] == (char)148)
-            _sFileName[i] = 'ö';
-        else if (_sFileName[i] == (char)154)
-            _sFileName[i] = 'Ü';
-        else if (_sFileName[i] == (char)129)
-            _sFileName[i] = 'ü';
-        else if (_sFileName[i] == (char)225)
-            _sFileName[i] = 'ß';
+        if (sFilePath[i] == (char)142)
+            sFilePath[i] = 'Ä';
+        else if (sFilePath[i] == (char)132)
+            sFilePath[i] = 'ä';
+        else if (sFilePath[i] == (char)153)
+            sFilePath[i] = 'Ö';
+        else if (sFilePath[i] == (char)148)
+            sFilePath[i] = 'ö';
+        else if (sFilePath[i] == (char)154)
+            sFilePath[i] = 'Ü';
+        else if (sFilePath[i] == (char)129)
+            sFilePath[i] = 'ü';
+        else if (sFilePath[i] == (char)225)
+            sFilePath[i] = 'ß';
         else
             continue;
 	}
 
-	unsigned int nPos = _sFileName.find_last_of(':');	// Suchen wir mal nach eventuellen relativen Pfadangaben.
-	if (nPos == string::npos)						// Nichts gefunden...? Dann nehmen wir den default
-	{
-	    if (_sFileName.substr(0,2) != "//")
-            _sFileName = sPath.substr(1,sPath.length()-2) + "/" + _sFileName;
-    }
+	return sFilePath;
+}
 
-
-	if (_sFileName.find('*') != string::npos || _sFileName.find('?') != string::npos)
+// Resolve wildcards in paths
+void FileSystem::resolveWildCards(string& _sFileName, bool isFile) const
+{
+    if (_sFileName.find('*') != string::npos || _sFileName.find('?') != string::npos)
 	{
         WIN32_FIND_DATA FindFileData;
         HANDLE hFind = INVALID_HANDLE_VALUE;
-        //LARGE_INTEGER Filesize;
         hFind = FindFirstFile(_sFileName.c_str(), &FindFileData);
-        //cerr << _sFileName << endl;
         string sNewFileName = "";
+
         do
         {
-            if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            if (!isFile && FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            {
+                sNewFileName = FindFileData.cFileName;
+                break;
+            }
+            else if (isFile && FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
                 continue;
+
             sNewFileName = FindFileData.cFileName;
-            //cerr << sNewFileName << endl;
-            //cerr << sNewFileName.substr(sNewFileName.rfind('.')) << endl;
+
             if (sNewFileName.length() > 4
                 && sNewFileName.find('.') != string::npos
                 && sValidExtensions.find(";"+toLowerCase(sNewFileName.substr(sNewFileName.rfind('.')))+";") != string::npos)
@@ -128,11 +125,13 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension)
                 sNewFileName += ".*";
         }
         while (FindNextFile(hFind, &FindFileData) != 0);
+
         FindClose(hFind);
 
         if (sNewFileName.length() > 4)
         {
             string sPathTemp = _sFileName;
+
             if (sPathTemp.rfind('/') != string::npos && sPathTemp.rfind('\\') != string::npos)
             {
                 if (sPathTemp.rfind('/') < sPathTemp.rfind('\\'))
@@ -152,96 +151,88 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension)
             {
                 sPathTemp = "";
             }
+
             if (sPathTemp.length())
                 _sFileName = sPathTemp + "/" + sNewFileName;
             else
                 _sFileName = sNewFileName;
         }
 	}
+}
 
-    //cerr << _sFileName << endl;
 
-    nPos = _sFileName.find_last_of("."); // Suche nach dem letzten Auftreten eines Punkts in dem Dateinamen
+// --> Pruefe den string _sFileName, ob er als Dateiname verwendet werden kann
+string FileSystem::ValidFileName(string _sFileName, const string sExtension, bool checkExtension) const
+{
+	string sValid = "";
+	sValidExtensions = toLowerCase(sValidExtensions);
 
-								// nPos == 0 || nPos == 1 sind fuer relative Pfadangaben TRUE. Zur Sicherheit pruefen wir dann noch das
-								//		folgende Zeichen: Sollte dann / oder \ sein
+	_sFileName = cleanPath(_sFileName);
+
+    // Find the position of the last colon in the string
+    // should be directly after the drive letter
+	unsigned int nPos = _sFileName.find_last_of(':');
+
+	// If there's no colon in the current path, then it is a
+	// network address
+	if (nPos == string::npos)
+	{
+	    if (_sFileName.substr(0, 2) != "//")
+            _sFileName = sPath.substr(1, sPath.length()-2) + "/" + _sFileName;
+    }
+
+    // Resolve wildcards in the passed file name
+    resolveWildCards(_sFileName, true);
+
+    // Find the last dot to identify the extension
+    nPos = _sFileName.find_last_of(".");
+
+    // If the position of the last dot is either
+    // zero or one, it is a relative path. The
+    // consecutive character should be a path
+    // separator. In this case, we'll add the
+    // default extension
 	if (nPos == string::npos
         || (nPos == 0 || nPos == 1)
         || (_sFileName.find('/', nPos) != string::npos || _sFileName.find('\\', nPos) != string::npos))
-		sValid = _sFileName + sExtension; // Keiner gefunden? Kein Problem. Haengen wir einfach ".dat" an.
-	else						// Einen gefunden...? Oje...
+		sValid = _sFileName + sExtension;
+	else if (checkExtension)
 	{
-		sValid = _sFileName.substr(nPos); // Genauer anschauen. Wie sieht der substr denn aus?
-		if (sValid[sValid.length()-1] == '"')
-            sValid = sValid.substr(0,sValid.length()-1);
-		if (sValidExtensions.find(";"+toLowerCase(sValid)+";") != string::npos) // Nun, ich akzeptiere entweder "dat" oder "txt" ...
+	    // Extract the string part after the last
+	    // dot in the file path
+		sValid = _sFileName.substr(nPos);
+
+		// Remove the possible trailing quotation
+		// mark from the extension
+		if (sValid.back() == '"')
+            sValid.pop_back();
+
+		// Ensure that the found extension is valid.
+		// Otherwise the extension will be exchanged
+		// automatically
+		if (sValidExtensions.find(";"+toLowerCase(sValid)+";") != string::npos)
 		{
 			sValid = _sFileName;
 		}
-		else					// Ist es das nicht? Dann ersetzen wir die Endung doch einfach...
+		else
 		{
             if (sValid == ".*")
                 sValid = _sFileName.substr(0,nPos);
             else
             {
-                NumeReKernel::printPreFmt("|-> WARNUNG: Dieser Datentyp ist unbekannt oder geschuetzt! Die Endung wurde\n|   automatisch durch \".dat\" ersetzt!\n");
-                sValid = _sFileName.substr(0,nPos) + ".dat";
+                NumeReKernel::printPreFmt("|-> WARNUNG: Dieser Datentyp ist unbekannt oder geschuetzt! Die Endung wurde automatisch durch \".dat\" ersetzt!\n");
+                sValid = _sFileName.substr(0, nPos) + ".dat";
             }
 		}
 	}
+	else
+        sValid = _sFileName;
 
-	if (sValid.find('*') != string::npos || sValid.find('?') != string::npos)
-	{
-        WIN32_FIND_DATA FindFileData;
-        HANDLE hFind = INVALID_HANDLE_VALUE;
-        //LARGE_INTEGER Filesize;
-        hFind = FindFirstFile(sValid.c_str(), &FindFileData);
-        //cerr << sValid << endl;
-        string sNewFileName = "";
-        do
-        {
-            if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-                continue;
-            sNewFileName = FindFileData.cFileName;
-            if (sNewFileName.length() > 4
-                && sNewFileName.find('.') != string::npos
-                && sValidExtensions.find(";"+toLowerCase(sNewFileName.substr(sNewFileName.rfind('.')))+";") != string::npos)
-                break;
-            else
-                sNewFileName = "";
-        }
-        while (FindNextFile(hFind, &FindFileData) != 0);
-        FindClose(hFind);
+	// It's possible, that a new wildcard was added to the
+	// file path. Resolve it here
+	resolveWildCards(sValid, true);
 
-        if (sNewFileName.length() > 4)
-        {
-            string sPathTemp = sValid;
-            if (sPathTemp.rfind('/') != string::npos && sPathTemp.rfind('\\') != string::npos)
-            {
-                if (sPathTemp.rfind('/') < sPathTemp.rfind('\\'))
-                    sPathTemp = sPathTemp.substr(0, sPathTemp.rfind('\\'));
-                else
-                    sPathTemp = sPathTemp.substr(0, sPathTemp.rfind('/'));
-            }
-            else if (sPathTemp.rfind('/') != string::npos)
-            {
-                sPathTemp = sPathTemp.substr(0, sPathTemp.rfind('/'));
-            }
-            else if (sPathTemp.rfind('\\') != string::npos)
-            {
-                sPathTemp = sPathTemp.substr(0, sPathTemp.rfind('\\'));
-            }
-            else
-            {
-                sPathTemp = "";
-            }
-            if (sPathTemp.length())
-                sValid = sPathTemp + "/" + sNewFileName;
-            else
-                sValid = sNewFileName;
-        }
-	}
-
+	// Ensure that the file path separators are unix-like
 	for (unsigned int i = 0; i < sValid.length(); i++)
 	{
         if (sValid[i] == '\\')
@@ -249,6 +240,39 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension)
 	}
 
 	return sValid;
+}
+
+// --> Pruefe den string _sFileName, ob er als Dateiname verwendet werden kann
+string FileSystem::ValidFolderName(string _sFileName) const
+{
+	_sFileName = cleanPath(_sFileName);
+
+    // Find the position of the last colon in the string
+    // should be directly after the drive letter
+	unsigned int nPos = _sFileName.find_last_of(':');
+
+	// If there's no colon in the current path, then it is a
+	// network address
+	if (nPos == string::npos)
+	{
+	    if (_sFileName.substr(0,2) != "//")
+            _sFileName = sPath.substr(1, sPath.length()-2) + "/" + _sFileName;
+    }
+
+    // Resolve wildcards in the passed file name
+    resolveWildCards(_sFileName, false);
+
+	// Ensure that the file path separators are unix-like
+	for (unsigned int i = 0; i < _sFileName.length(); i++)
+	{
+        if (_sFileName[i] == '\\')
+            _sFileName[i] = '/';
+	}
+
+	// Append a trailing path separator, if it is missing
+	if (_sFileName.back() != '/')
+        _sFileName += "/";
+	return _sFileName;
 }
 
 int FileSystem::setPath(string _sPath, bool bMkDir, string _sWhere)
@@ -349,6 +373,51 @@ string FileSystem::getPath() const
     return sPath;
 }
 
+// C:/Software/NumeRe/numere.exe -> C, Software/NumeRe, numere, exe
+vector<string> FileSystem::getFileParts(const string& sFilePath) const
+{
+    vector<string> vFileParts;
+    // Create a valid file path first
+    string sValidName = sFilePath;
+
+    if (isFile(sValidName))
+        sValidName = ValidFileName(sValidName, ".dat", false);
+    else
+        sValidName = ValidFolderName(sValidName);
+
+    // Does it contain a drive letter? Then the second
+    // character will always be a colon
+    if (sValidName[1] == ':')
+    {
+        vFileParts.push_back(sValidName.substr(0, 1));
+        // extract everything from the fourth character
+        // to the last path separator
+        vFileParts.push_back(sValidName.substr(3, sValidName.rfind('/') - 3));
+    }
+    else
+    {
+        vFileParts.push_back("");
+        vFileParts.push_back(sValidName.substr(0, sValidName.rfind('/')));
+    }
+
+    // Is it a file or a folder?
+    if (sValidName.find('.') != string::npos)
+    {
+        // file
+        vFileParts.push_back(sValidName.substr(sValidName.rfind('/')+1, sValidName.rfind('.') - sValidName.rfind('/')-1));
+        vFileParts.push_back(sValidName.substr(sValidName.rfind('.')+1));
+    }
+    else
+    {
+        // folder
+        vFileParts.push_back(sValidName.substr(sValidName.rfind('/')+1));
+        vFileParts.push_back("");
+    }
+
+    // Return the separated paths
+    return vFileParts;
+}
+
 void FileSystem::setTokens(string _sTokens)
 {
     for (int i = 0; i < 7; i++)
@@ -360,3 +429,30 @@ void FileSystem::setTokens(string _sTokens)
             break;
     }
 }
+
+// Determine, whether a path name indicates a file or a folder
+bool FileSystem::isFile(const string& _sPath) const
+{
+    if (fileExists(_sPath))
+        return true;
+
+    if (_sPath.rfind('.') != string::npos)
+    {
+        string sExt = _sPath.substr(_sPath.rfind('.'));
+
+        if (sValidExtensions.find(";" + sExt + ";") != string::npos)
+            return true;
+
+        if (sExt.find('/') != string::npos || sExt.find('\\') != string::npos)
+            return false;
+
+        if (sExt.length() < 6 || sExt == ".*")
+            return true;
+
+        if (_sPath.find_last_of("\\/", _sPath.length() - sExt.length()) != string::npos)
+            return true;
+    }
+
+    return false;
+}
+
