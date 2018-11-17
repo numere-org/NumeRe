@@ -4236,7 +4236,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1542445684 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1542445882 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>
@@ -4330,7 +4330,7 @@
 	"output.hpp"
 	"../../kernel.hpp"
 
-1534579417 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataops.cpp
+1542450601 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataops.cpp
 	<wx/image.h>
 	"dataops.hpp"
 	"container.hpp"

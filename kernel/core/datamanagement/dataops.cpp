@@ -1599,7 +1599,10 @@ static string getFilenameFromCommandString(string& sCmd, string& sParams, const 
 			_data.getStringValues(sCmd);
 
 		// Get the expression
-		sFileName = sCmd.substr(sCmd.find_first_not_of(' ', 4));
+		if (sCmd.find(' ') != string::npos)
+            sFileName = sCmd.substr(sCmd.find_first_not_of(' ', sCmd.find(' ')));
+        else
+            sFileName = sCmd;
 
 		// Strip the spaces and ensure that there's something left
 		StripSpaces(sFileName);
