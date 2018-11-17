@@ -173,7 +173,7 @@ NumeReEditor::NumeReEditor( NumeReWindow* mframe,
 	this->SetYCaretPolicy(wxSTC_CARET_SLOP | wxSTC_CARET_STRICT | wxSTC_CARET_EVEN, 1);
 
 	wxFileName f(wxStandardPaths::Get().GetExecutablePath());
-	wxInitAllImageHandlers();
+	//wxInitAllImageHandlers();
 	this->RegisterImage(NumeReSyntax::SYNTAX_COMMAND, wxBitmap(f.GetPath(true) + "icons\\cmd.png", wxBITMAP_TYPE_PNG));
 	this->RegisterImage(NumeReSyntax::SYNTAX_FUNCTION, wxBitmap(f.GetPath(true) + "icons\\fnc.png", wxBITMAP_TYPE_PNG));
 	this->RegisterImage(NumeReSyntax::SYNTAX_OPTION, wxBitmap(f.GetPath(true) + "icons\\opt.png", wxBITMAP_TYPE_PNG));

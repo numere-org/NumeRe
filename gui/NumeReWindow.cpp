@@ -153,8 +153,8 @@ bool MyApp::OnInit()
 {
     wxFileName f(wxStandardPaths::Get().GetExecutablePath());
     //wxString appPath(f.GetPath());
-
-    wxImage::AddHandler(new wxPNGHandler());
+    wxInitAllImageHandlers();
+    //wxImage::AddHandler(new wxPNGHandler());
     wxBitmap splashImage;
     if (splashImage.LoadFile(f.GetPath(true)+"icons\\splash.png", wxBITMAP_TYPE_PNG))
     {
