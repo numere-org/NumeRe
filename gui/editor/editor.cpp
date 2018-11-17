@@ -5926,14 +5926,17 @@ void NumeReEditor::AbstrahizeSection()
             // Find all occurences
             vector<int> vMatch = FindAll(sCurrentToken, this->GetStyleAt(i), nCurrentBlockStart, nCurrentBlockEnd);
 
-            // Determine, whether the token is used before
-            // or afer the current section
-            if (vMatch.front() < nStartPos)
-                lInputTokens.push_back(sCurrentToken);
-            if (vMatch.back() > nEndPos && vMatch.front() < nStartPos && IsModifiedInSection(nStartPos, nEndPos, sCurrentToken, vMatch))
-                lOutputTokens.push_back(sCurrentToken);
-            else if (vMatch.back() > nEndPos && vMatch.front() >= nStartPos)
-                lOutputTokens.push_back(sCurrentToken);
+            if (vMatch.size())
+            {
+                // Determine, whether the token is used before
+                // or afer the current section
+                if (vMatch.front() < nStartPos)
+                    lInputTokens.push_back(sCurrentToken);
+                if (vMatch.back() > nEndPos && vMatch.front() < nStartPos && IsModifiedInSection(nStartPos, nEndPos, sCurrentToken, vMatch))
+                    lOutputTokens.push_back(sCurrentToken);
+                else if (vMatch.back() > nEndPos && vMatch.front() >= nStartPos)
+                    lOutputTokens.push_back(sCurrentToken);
+            }
 
             i += sCurrentToken.length();
         }
@@ -5947,10 +5950,13 @@ void NumeReEditor::AbstrahizeSection()
             // Find all occurences
             vector<int> vMatch = FindAll(sCurrentToken, this->GetStyleAt(i), nCurrentBlockStart, nCurrentBlockEnd);
 
-            // Determine, whether the token is used before
-            // or afer the current section
-            if (vMatch.front() < nStartPos || vMatch.back() > nEndPos)
-                lInputTokens.push_back(sCurrentToken + "()");
+            if (vMatch.size())
+            {
+                // Determine, whether the token is used before
+                // or afer the current section
+                if (vMatch.front() < nStartPos || vMatch.back() > nEndPos)
+                    lInputTokens.push_back(sCurrentToken + "()");
+            }
 
             i += sCurrentToken.length();
         }
