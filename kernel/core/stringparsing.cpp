@@ -2208,7 +2208,7 @@ static string addMaskedStrings(const string& sString)
 // This static function simply removes the surrounding quotation marks
 static string removeQuotationMarks(const string& sString)
 {
-	if (sString.find('"') == string::npos)
+	if (sString.find('"') == string::npos || sString.front() != '"' || sString.back() != '"')
 		return sString;
 	return sString.substr(1, sString.length() - 2);
 }
@@ -3263,11 +3263,20 @@ static vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFina
 		// or a numerical expression
 		if (vFinal[n].front() != '"' && vFinal[n].back() != '"')
 		{
-		    // Evaluate the numerical expression, parse it as
+		    // Try to evaluate the numerical expression, parse it as
 		    // string and store it correspondingly
-			_parser.SetExpr(vFinal[n]);
-			vFinal[n] = toCmdString(_parser.Eval());
-			vIsNoStringValue.push_back(true);
+		    try
+		    {
+                _parser.SetExpr(vFinal[n]);
+                vFinal[n] = toCmdString(_parser.Eval());
+                vIsNoStringValue.push_back(true);
+            }
+            catch (...)
+            {
+                // The parser was not able to parse the expression,
+                // we keep it as a string
+                vIsNoStringValue.push_back(false);
+            }
 		}
 		else
 			vIsNoStringValue.push_back(false);

@@ -763,6 +763,12 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
 			{
 				for (unsigned int i = 0; i < sProcCommandLine.length(); i++)
 				{
+				    if (sProcCommandLine[i] == '(' || sProcCommandLine[i] == '[' || sProcCommandLine[i] == '{')
+                    {
+                        size_t parens = getMatchingParenthesis(sProcCommandLine.substr(i));
+                        if (parens != string::npos)
+                            i += parens;
+                    }
 					if (sProcCommandLine[i] == ';' && !isInQuotes(sProcCommandLine, i))
 					{
 						if (i != sProcCommandLine.length() - 1)

@@ -7566,10 +7566,10 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
 	// Get the samples
 	vector<size_t> vSamples = parser_getSamplesForDatagrid(sCmd, sZVals, nSamples, _parser, _data, _option);
 
-	//>> X-Vector (Swich the samples depending on the "transpose" command line option)
+	//>> X-Vector (Switch the samples depending on the "transpose" command line option)
 	vXVals = parser_extractVectorForDatagrid(sCmd, sXVals, sZVals, vSamples[bTranspose], _parser, _data, _option);
 
-	//>> Y-Vector (Swich the samples depending on the "transpose" command line option)
+	//>> Y-Vector (Switch the samples depending on the "transpose" command line option)
 	vYVals = parser_extractVectorForDatagrid(sCmd, sYVals, sZVals, vSamples[1 - bTranspose], _parser, _data, _option);
 
 	//>> Z-Matrix

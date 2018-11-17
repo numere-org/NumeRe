@@ -3180,7 +3180,11 @@ void evalRecursiveExpressions(string& sExpr)
         // Jump over parentheses
 		if (!(nQuotes % 2)
             && (sExpr[i] == '(' || sExpr[i] == '{' || sExpr[i] == '['))
-			i += getMatchingParenthesis(sExpr.substr(i));
+        {
+            size_t parens = getMatchingParenthesis(sExpr.substr(i));
+            if (parens != string::npos)
+                i += parens;
+        }
 
 		// Count the quatation marks, which are not escaped
 		if (sExpr[i] == '"')

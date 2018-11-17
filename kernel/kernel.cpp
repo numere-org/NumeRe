@@ -1224,6 +1224,12 @@ bool NumeReKernel::getLineFromCommandCache(string& sLine, string& sCmdCache, con
             // part in the command cache
             for (unsigned int i = 0; i < sLine.length(); i++)
             {
+                if (sLine[i] == '(' || sLine[i] == '[' || sLine[i] == '{')
+                {
+                    size_t parens = getMatchingParenthesis(sLine.substr(i));
+                    if (parens != string::npos)
+                        i += parens;
+                }
                 if (sLine[i] == ';' && !isInQuotes(sLine, i))
                 {
                     if (i != sLine.length() - 1)

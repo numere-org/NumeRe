@@ -2319,12 +2319,13 @@
 	<fstream>
 	"../filesystem.hpp"
 
-1490787951 d:\cpp\numere-source\trunk\kernel\core\filesystem.hpp
+1542355040 d:\cpp\numere-source\trunk\kernel\core\filesystem.hpp
 	<string>
 	<iostream>
 	<fstream>
 	<sstream>
 	<windows.h>
+	<vector>
 
 1541317756 d:\cpp\numere-source\trunk\kernel\core\utils\tools.hpp
 	<iostream>
@@ -3332,7 +3333,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1541749697 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1542355037 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3913,7 +3914,7 @@
 	"wxssh.h"
 	"../../common/debug.h"
 
-1541149633 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1542355037 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -3996,7 +3997,7 @@
 	"documentation.hpp"
 	"../../kernel.hpp"
 
-1518014949 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
+1542355040 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
 	"filesystem.hpp"
 	"../kernel.hpp"
 
@@ -4023,7 +4024,7 @@
 1541839123 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
 	"functionimplementation.hpp"
 
-1541960150 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
+1542005996 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	<list>
@@ -4033,7 +4034,7 @@
 	"odesolver.hpp"
 	"../../kernel.hpp"
 
-1535093704 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
+1542356716 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	"spline.h"
@@ -4195,7 +4196,7 @@
 	"flowctrl.hpp"
 	"../../kernel.hpp"
 
-1541574110 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.cpp
+1542443767 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.cpp
 	"procedure.hpp"
 	"../../kernel.hpp"
 	"procedurevarfactory.hpp"
@@ -4235,7 +4236,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1541660686 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1542445684 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>
@@ -4260,7 +4261,7 @@
 	<cstddef>
 	<cstdarg>
 
-1541930005 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
+1542443817 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
 	"tools.hpp"
 	"../../kernel.hpp"
 	<cstdlib>
@@ -4286,7 +4287,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1541839162 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1542443883 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 
