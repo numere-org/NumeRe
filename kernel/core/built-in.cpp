@@ -3425,24 +3425,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			}
 			return 1;
 		}
-		/*else if (sCommand == "sort")
-		{
-		    if (_data.matchCache(sCmd).length() || _data.matchCache(sCmd, '=').length())
-		    {
-		        if (!_data.sortElements(sCmd))
-		            throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sCmd, SyntaxError::invalid_position);
-		        else if (_option.getSystemPrintStatus())
-		            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SORT_SUCCESS"), _option) );
-		    }
-		    else if (matchParams(sCmd, "data", '=') || matchParams(sCmd, "data"))
-		    {
-		        if (!_data.sortElements(sCmd))
-		            throw SyntaxError(SyntaxError::CANNOT_SORT_DATA, sCmd, SyntaxError::invalid_position);
-		        else if (_option.getSystemPrintStatus())
-		            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SORT_SUCCESS"), _option) );
-		    }
-		    return 1;
-		}*/
 		else if (sCommand == "smooth")
 		{
 			// smooth cache(i1:i2,j1:j2) -order=1
@@ -3784,7 +3766,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		else if (sCommand == "resample")
 		{
 			//NumeReKernel::print(sCommand );
-			if (!_data.containsCacheElements(sCmd) || sCmd.find(',') == string::npos)
+			if (!_data.containsCacheElements(sCmd))
 				return 1;
 			for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
 			{
@@ -3995,7 +3977,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		}
 		else if (sCommand == "retoque" || sCommand == "retouch")
 		{
-			if (!_data.containsCacheElements(sCmd) || sCmd.find(',') == string::npos)
+			if (!_data.containsCacheElements(sCmd))
 				return 1;
 			for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
 			{
