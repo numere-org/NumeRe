@@ -4,7 +4,7 @@
 	"kernel/core/version.h"
 	<wx/msw/wx.rc>
 
-1534106497 d:\cpp\numere-source\trunk\kernel\core\version.h
+1542695669 d:\cpp\numere-source\trunk\kernel\core\version.h
 
 1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wx.rc
 	<windows.h>
@@ -3333,7 +3333,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1542459458 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1542467264 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3697,7 +3697,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1541860053 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1542467295 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
