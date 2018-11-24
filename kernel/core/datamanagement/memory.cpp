@@ -46,6 +46,7 @@ Memory::Memory()
 {
 	nLines = 128;
 	nCols = 8;
+	nWrittenHeadlines = 0;
 	dMemTable = nullptr;
 	sHeadLine = nullptr;
 	nAppendedZeroes = nullptr;
@@ -56,9 +57,8 @@ Memory::Memory()
 }
 
 // --> Allgemeiner Konstruktor <--
-Memory::Memory(long long int _nLines, long long int _nCols)
+Memory::Memory(long long int _nLines, long long int _nCols) : Memory()
 {
-	Memory();
 	nLines = _nLines;
 	nCols = _nCols;
 	Allocate(_nLines, _nCols);
@@ -192,9 +192,9 @@ bool Memory::resizeMemory(long long int _nLines, long long int _nCols)
 // --> gibt nCols zurueck <--
 long long int Memory::getCols(bool _bFull) const
 {
-	if (!_bFull && dMemTable && bValidData)
+	if (!_bFull && dMemTable && (bValidData || nWrittenHeadlines))
 	{
-		if (nAppendedZeroes)
+		if (nAppendedZeroes && bValidData)
 		{
 			long long int nReturn = nCols;
 			/* --> Von oben runterzaehlen, damit nur die leeren Spalten rechts von den Daten
@@ -208,10 +208,10 @@ long long int Memory::getCols(bool _bFull) const
 				if (nAppendedZeroes[i] != nLines)
 					break;
 			}
-			return nReturn;
+			return std::max(nReturn, nWrittenHeadlines);
 		}
 		else
-			return 0;
+			return nWrittenHeadlines;
 	}
 	else if (!dMemTable || !bValidData)
 		return 0;
@@ -366,7 +366,7 @@ bool Memory::getSaveStatus() const
 // --> gibt das _i-te Element der gespeicherten Kopfzeile zurueck <--
 string Memory::getHeadLineElement(long long int _i) const
 {
-	if (_i >= getCols(true))
+	if (_i >= getCols(false))
 		return "Spalte " + toString((int)_i + 1) + " (leer)";
 	else
 		return sHeadLine[_i];
@@ -394,12 +394,18 @@ vector<string> Memory::getHeadLineElement(vector<long long int> _vCol) const
 bool Memory::setHeadLineElement(long long int _i, string _sHead)
 {
 	if (_i < nCols && dMemTable)
+    {
 		sHeadLine[_i] = _sHead;
+        if (_i >= nWrittenHeadlines && _sHead != "Spalte_" + toString(_i + 1) && _sHead != "Spalte " + toString(_i + 1) + " (leer)")
+            nWrittenHeadlines = _i+1;
+    }
 	else
 	{
 		if (!resizeMemory(nLines, _i + 1))
 			return false;
 		sHeadLine[_i] = _sHead;
+		if (_sHead != "Spalte_" + toString(_i + 1) && _sHead != "Spalte " + toString(_i + 1) + " (leer)")
+            nWrittenHeadlines = _i+1;
 	}
 
 	if (bIsSaved)
@@ -1100,7 +1106,11 @@ void Memory::deleteEntry(long long int _nLine, long long int _nCol)
 				{
 					nAppendedZeroes[_nCol] = nLines;
 					if (!_nLine)
+                    {
 						sHeadLine[_nCol] = "Spalte_" + toString((int)_nCol + 1);
+						if (nWrittenHeadlines > _nCol)
+                            nWrittenHeadlines = _nCol;
+                    }
 				}
 			}
 			if (!getLines(false) && !getCols(false))
@@ -1144,7 +1154,11 @@ void Memory::deleteBulk(long long int i1, long long int i2, long long int j1, lo
 			{
 				nAppendedZeroes[j] = nLines;
 				if (!i1 && j1 <= j && j <= j2)
+                {
 					sHeadLine[j] = "Spalte_" + toString((int)j + 1);
+                    if (nWrittenHeadlines > j)
+                        nWrittenHeadlines = j;
+                }
 			}
 		}
 	}
@@ -1195,7 +1209,11 @@ void Memory::deleteBulk(const vector<long long int>& _vLine, const vector<long l
 			{
 				nAppendedZeroes[j] = nLines;
 				if (currentcol >= 0 && bHasFirstLine)
+                {
 					sHeadLine[j] = "Spalte_" + toString((int)j + 1);
+                    if (nWrittenHeadlines > j)
+                        nWrittenHeadlines = j;
+                }
 			}
 		}
 	}

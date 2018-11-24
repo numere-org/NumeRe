@@ -53,6 +53,7 @@ class Memory
 	private:
 		long long int nLines;							// Zeilen des Caches
 		long long int nCols;							// Spalten des Caches
+		long long int nWrittenHeadlines;
 		long long int* nAppendedZeroes;			    	// Pointer auf ein Array von ints, die fuer jede Spalte die Zahl der angehaengten Nullen beinhaelt
 		double** dMemTable;								// Pointer auf Pointer auf die Datenfile-double-Matrix
 		bool bValidData;								// TRUE, wenn die Instanz der Klasse auch Daten enthaelt

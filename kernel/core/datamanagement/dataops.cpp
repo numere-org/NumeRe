@@ -354,11 +354,14 @@ string** make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, con
 	nCols = _data.getCols(sCache);
 
 	// Check for a reasonable dimension
-	if (!nCols || nLines == 1)
+	if (!nCols)
 		throw SyntaxError(SyntaxError::NO_CACHED_DATA, "", SyntaxError::invalid_position);
 
 	if (_option.getbDebug())
 		NumeReKernel::print("DEBUG: nLine = " + toString(nLines) + ", nCol = " + toString(nCols) );
+
+    if (nLines == nHeadlineCount)
+        nLines++;
 
     // Create the formatting memory
 	string** sOut = new string*[nLines];		// die eigentliche Ausgabematrix. Wird spaeter gefuellt an Output::format(string**,int,int,Output&) uebergeben

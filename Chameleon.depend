@@ -4236,7 +4236,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1542445882 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1543051808 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>
@@ -4330,7 +4330,7 @@
 	"output.hpp"
 	"../../kernel.hpp"
 
-1542450601 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataops.cpp
+1543056526 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataops.cpp
 	<wx/image.h>
 	"dataops.hpp"
 	"container.hpp"
@@ -4354,11 +4354,11 @@
 	"../utils/tools.hpp"
 	<vector>
 
-1534255416 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\memory.cpp
+1543055852 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\memory.cpp
 	"memory.hpp"
 	"../../kernel.hpp"
 
-1530031686 d:\cpp\numere-source\trunk\kernel\core\datamanagement\memory.hpp
+1543053475 d:\cpp\numere-source\trunk\kernel\core\datamanagement\memory.hpp
 	<iostream>
 	<fstream>
 	<string>
