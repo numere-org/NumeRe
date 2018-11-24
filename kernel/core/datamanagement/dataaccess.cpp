@@ -1187,7 +1187,8 @@ static Table copyAndExtract(Datafile& _data, const string& sDatatable, const vec
 	_cache.sortElements("cache -sort c=1[2:]");
 
 	// Rename the table
-	_cache.renameCache("cache", sDatatable, true);
+	if (sDatatable != "cache")
+        _cache.renameCache("cache", sDatatable, true);
 
 	// Return the extracted table object
 	return _cache.extractTable(sDatatable);
