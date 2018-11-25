@@ -158,6 +158,7 @@ int matchParams(const string& sCmd, const string& sParam, const char cFollowing)
 		string __sCmd = toLowerCase(sCmd + " ");
 		int nQuotes = 0;
 		size_t nParamStart = string::npos;
+		bool isOptionValue = false;
 
 		// Go through the complete string
 		for (size_t i = 0; i < __sCmd.length(); i++)
@@ -173,10 +174,30 @@ int matchParams(const string& sCmd, const string& sParam, const char cFollowing)
 				nParamStart = i;
 			}
 
+			// Detect option values and force NumeRe to ignore
+			// them in this context
+			if (nParamStart != string::npos
+                && !(nQuotes % 2)
+                && !isOptionValue
+                && __sCmd[i] == '=')
+            {
+                isOptionValue = true;
+
+                // jump over the following white spaces
+                while (i+1 < __sCmd.length() && __sCmd[i+1] == ' ')
+                    i++;
+            }
+            else if (nParamStart != string::npos
+                && !(nQuotes % 2)
+                && isOptionValue
+                && __sCmd[i] == ' ')
+                isOptionValue = false;
+
 			// If we found a paramter start and the substring with the length of the searched parameter
 			// is matching to the searched parameter, then we go into this block
 			if (nParamStart != string::npos
 					&& !(nQuotes % 2)
+                    && !isOptionValue
 					&& __sCmd.substr(i, sParam.length()) == sParam)
 			{
 				/* --> Pruefe die Zeichen davor und danach (unter Beachtung eines moeglicherweise
