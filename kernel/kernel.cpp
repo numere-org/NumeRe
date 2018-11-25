@@ -40,20 +40,15 @@ time_t tTimeZero = time(0);
 // Initialization of the static member variables
 int* NumeReKernel::baseStackPosition = nullptr;
 wxTerm* NumeReKernel::m_parent = nullptr;
-queue<GraphHelper*> NumeReKernel::graphHelper;
+queue<NumeReTask> NumeReKernel::taskQueue;
 int NumeReKernel::nLINE_LENGTH = 80;
 bool NumeReKernel::bWritingTable = false;
-string NumeReKernel::sFileToEdit = "";
-string NumeReKernel::sDocumentation = "";
-unsigned int NumeReKernel::nLineToGoTo = 0;
 int NumeReKernel::nOpenFileFlag = 0;
 int NumeReKernel::nLastStatusVal = 0;
 unsigned int NumeReKernel::nLastLineLength = 0;
 bool NumeReKernel::modifiedSettings = false;
 bool NumeReKernel::bCancelSignal = false;
-queue<NumeRe::Container<string> > NumeReKernel::sTable;
-vector<string> NumeReKernel::vDebugInfos;
-queue<string> NumeReKernel::sTableName;
+NumeRe::Container<string> NumeReKernel::sTable;
 Debugmessenger NumeReKernel::_messenger;
 bool NumeReKernel::bSupressAnswer = false;
 bool NumeReKernel::bGettingLine = false;
@@ -1848,16 +1843,20 @@ vector<string> NumeReKernel::getPluginCommands()
 
 string NumeReKernel::ReadFileName()
 {
-	string sFile = sFileToEdit;
-	sFileToEdit.clear();
-	return sFile;
+	//string sFile = sFileToEdit;
+	//sFileToEdit.clear();
+	//return sFile;
+
+	return "";
 }
 
 unsigned int NumeReKernel::ReadLineNumber()
 {
-	unsigned int nLine = nLineToGoTo;
-	nLineToGoTo = 0;
-	return nLine;
+	//unsigned int nLine = nLineToGoTo;
+	//nLineToGoTo = 0;
+	//return nLine;
+
+	return 0;
 }
 
 int NumeReKernel::ReadOpenFileFlag()
@@ -1869,9 +1868,11 @@ int NumeReKernel::ReadOpenFileFlag()
 
 string NumeReKernel::ReadDoc()
 {
-	string Doc = sDocumentation;
-	sDocumentation.clear();
-	return Doc;
+	//string Doc = sDocumentation;
+	//sDocumentation.clear();
+	//return Doc;
+
+	return "";
 }
 
 string NumeReKernel::getDocumentation(const string& sCommand)
@@ -2155,6 +2156,8 @@ void NumeReKernel::statusBar(int nStep, int nFirstStep, int nFinalStep, const st
 	return;
 }
 
+// This member function handles opening files and jumping to lines as
+// requested by the kernel
 void NumeReKernel::gotoLine(const string& sFile, unsigned int nLine)
 {
 	if (!m_parent)
@@ -2162,15 +2165,23 @@ void NumeReKernel::gotoLine(const string& sFile, unsigned int nLine)
 	else
 	{
 		wxCriticalSectionLocker lock(m_parent->m_kernelCS);
-		sFileToEdit = sFile;
-		if (nLine)
-			nLineToGoTo = nLine - 1;
-		m_parent->m_KernelStatus = NUMERE_EDIT_FILE;
+
+		// Create the task
+		NumeReTask task;
+		task.sString = sFile;
+		task.nLine = nLine-1;
+		task.taskType = NUMERE_EDIT_FILE;
+
+		taskQueue.push(task);
+
+		m_parent->m_KernelStatus = NUMERE_QUEUED_COMMAND;
 	}
 	wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
-	Sleep(100);
+	Sleep(10);
 }
 
+// This member function handles the display of a documentation window
+// as requested by the kernel
 void NumeReKernel::setDocumentation(const string& _sDocumentation)
 {
 	if (!m_parent)
@@ -2178,13 +2189,23 @@ void NumeReKernel::setDocumentation(const string& _sDocumentation)
 	else
 	{
 		wxCriticalSectionLocker lock(m_parent->m_kernelCS);
-		sDocumentation = _sDocumentation;
-		m_parent->m_KernelStatus = NUMERE_OPEN_DOC;
+
+		// Create the task
+		NumeReTask task;
+		task.sString = _sDocumentation;
+		task.taskType = NUMERE_OPEN_DOC;
+
+		taskQueue.push(task);
+
+		m_parent->m_KernelStatus = NUMERE_QUEUED_COMMAND;
 	}
 	wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
-	Sleep(100);
+	Sleep(10);
 }
 
+// This member function passes a table to the GUI to be displayed
+// in the table viewer. It also allows to create a table editor
+// window
 void NumeReKernel::showTable(NumeRe::Container<string>& _container, string __name, bool openeditable)
 {
 	if (!m_parent)
@@ -2193,20 +2214,27 @@ void NumeReKernel::showTable(NumeRe::Container<string>& _container, string __nam
 	{
 		wxCriticalSectionLocker lock(m_parent->m_kernelCS);
 
-		NumeRe::Container<string> _copyContainer(_container);
+		// Create the task
+        NumeReTask task;
+		task.sString = __name;
+		task.tableContainer = _container;
 
-		sTable.push(_copyContainer);
-
-		sTableName.push(__name);
+		// Use the corresponding task type
 		if (openeditable)
-			m_parent->m_KernelStatus = NUMERE_EDIT_TABLE;
-		else
-			m_parent->m_KernelStatus = NUMERE_SHOW_TABLE;
+            task.taskType = NUMERE_EDIT_TABLE;
+        else
+            task.taskType = NUMERE_SHOW_TABLE;
+
+		taskQueue.push(task);
+
+		m_parent->m_KernelStatus = NUMERE_QUEUED_COMMAND;
 	}
 	wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
-	Sleep(150);
+	Sleep(10);
 }
 
+// This member function passes a computed graph to be rendered
+// in the GraphViewer window
 void NumeReKernel::updateGraphWindow(GraphHelper* _helper)
 {
 	if (!m_parent)
@@ -2214,14 +2242,22 @@ void NumeReKernel::updateGraphWindow(GraphHelper* _helper)
 	else
 	{
 		wxCriticalSectionLocker lock(m_parent->m_kernelCS);
-		graphHelper.push(_helper);
 
-		m_parent->m_KernelStatus = NUMERE_GRAPH_UPDATE;
+		// create the task
+		NumeReTask task;
+		task.graph = _helper;
+		task.taskType = NUMERE_GRAPH_UPDATE;
+
+		taskQueue.push(task);
+
+		m_parent->m_KernelStatus = NUMERE_QUEUED_COMMAND;
 	}
 	wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
-	Sleep(150);
+	Sleep(10);
 }
 
+// This member function is used by the kernel to be notified
+// when the user finished the table edit process
 NumeRe::Container<string> NumeReKernel::getTable()
 {
 	if (!m_parent)
@@ -2243,8 +2279,7 @@ NumeRe::Container<string> NumeReKernel::getTable()
 
 	if (bWasCanceled)
 		return NumeRe::Container<string>();
-	NumeRe::Container<string> _container(sTable.front());
-	sTable.pop();
+	NumeRe::Container<string> _container(sTable);
 	return _container;
 }
 
@@ -2258,6 +2293,8 @@ void NumeReKernel::showDebugError(const string& sTitle)
 	_option._debug.reset();
 }
 
+// This member function passes the debugging informations to the
+// GUI to be displayed in the debugger window
 void NumeReKernel::showDebugEvent(const string& sTitle, const vector<string>& vModule, const vector<string>& vStacktrace, const vector<string>& vNumVars, const vector<string>& vStringVars)
 {
 	if (!m_parent)
@@ -2265,23 +2302,28 @@ void NumeReKernel::showDebugEvent(const string& sTitle, const vector<string>& vM
 	else
 	{
 		wxCriticalSectionLocker lock(m_parent->m_kernelCS);
-		vDebugInfos.clear();
+
+		NumeReTask task;
+		task.taskType = NUMERE_DEBUG_EVENT;
 
 		// note the size of the fields
-		vDebugInfos.push_back(toString(vModule.size()) + ";" + toString(vStacktrace.size()) + ";" + toString(vNumVars.size()) + ";");
-		vDebugInfos.push_back(sTitle);
+		task.vDebugEvent.push_back(toString(vModule.size()) + ";" + toString(vStacktrace.size()) + ";" + toString(vNumVars.size()) + ";");
+		task.vDebugEvent.push_back(sTitle);
 
-		vDebugInfos.insert(vDebugInfos.end(), vModule.begin(), vModule.end());
-		vDebugInfos.insert(vDebugInfos.end(), vStacktrace.begin(), vStacktrace.end());
+		task.vDebugEvent.insert(task.vDebugEvent.end(), vModule.begin(), vModule.end());
+		task.vDebugEvent.insert(task.vDebugEvent.end(), vStacktrace.begin(), vStacktrace.end());
 		if (vNumVars.size())
-			vDebugInfos.insert(vDebugInfos.end(), vNumVars.begin(), vNumVars.end());
+			task.vDebugEvent.insert(task.vDebugEvent.end(), vNumVars.begin(), vNumVars.end());
 		if (vStringVars.size())
-			vDebugInfos.insert(vDebugInfos.end(), vStringVars.begin(), vStringVars.end());
+			task.vDebugEvent.insert(task.vDebugEvent.end(), vStringVars.begin(), vStringVars.end());
 
-		m_parent->m_KernelStatus = NUMERE_DEBUG_EVENT;
+		taskQueue.push(task);
+
+		m_parent->m_KernelStatus = NUMERE_QUEUED_COMMAND;
+		m_parent->m_bContinueDebug = false;
 	}
 	wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
-	Sleep(100);
+	Sleep(10);
 }
 
 void NumeReKernel::waitForContinue()
@@ -2403,7 +2445,7 @@ void NumeReKernel::getline(string& sLine)
 
 void NumeReKernel::setFileName(const string& sFileName)
 {
-	sFileToEdit = sFileName;
+	//sFileToEdit = sFileName;
 }
 
 void make_hline(int nLength)

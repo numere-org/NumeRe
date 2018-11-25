@@ -156,6 +156,33 @@ namespace NumeRe
 				freeStorage();
 			}
 
+			// Assignment operator
+			Container<T>& operator=(const Container<T>& _container)
+			{
+			    // Avoid copying empty storage
+			    if (!_container.storage)
+                    return *this;
+
+				// Ensure that the storage is empty
+				if (storage)
+				{
+					freeStorage();
+				}
+
+				// Copy the storage and the dimensions
+				storage = _container.storage;
+				rows = _container.rows;
+				cols = _container.cols;
+
+				// reset the passed container
+				_container.storage = nullptr;
+				_container.rows = 0;
+				_container.cols = 0;
+
+				return *this;
+			}
+
+
 			// Accessors
 			// read accessor
 			T& get(size_t row, size_t col)

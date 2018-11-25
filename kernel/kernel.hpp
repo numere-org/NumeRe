@@ -50,7 +50,11 @@
 using namespace std;
 using namespace mu;
 
+// Forward declarations of the terminal class and
+// the task container used for communicating between
+// the kernel and the GUI
 class wxTerm;
+struct NumeReTask;
 
 
 // This class provides the interface to the kernel of NumeRe
@@ -73,6 +77,7 @@ class NumeReKernel
             NUMERE_PENDING_SPECIAL,
             NUMERE_CALC_UPDATE,
             NUMERE_STATUSBAR_UPDATE,
+            NUMERE_QUEUED_COMMAND,
             NUMERE_EDIT_FILE,
             NUMERE_OPEN_DOC,
             NUMERE_SHOW_TABLE,
@@ -124,20 +129,15 @@ class NumeReKernel
         // state and to communicate with the graphical layer
         static int* baseStackPosition;
         static wxTerm* m_parent;
-        static queue<GraphHelper*> graphHelper;
+        static queue<NumeReTask> taskQueue;
         static int nLINE_LENGTH;
         static bool bWritingTable;
         static bool bCancelSignal;
-        static string sFileToEdit;
-        static string sDocumentation;
-        static unsigned int nLineToGoTo;
         static int nOpenFileFlag;
         static int nLastStatusVal;
         static unsigned int nLastLineLength;
         static bool modifiedSettings;
-        static queue<NumeRe::Container<string> > sTable;
-        static vector<string> vDebugInfos;
-        static queue<string> sTableName;
+        static NumeRe::Container<string> sTable;
         static Debugmessenger _messenger;
         static bool bSupressAnswer;
         static bool bGettingLine;
@@ -207,6 +207,17 @@ class NumeReKernel
         void sendErrorNotification();
 };
 
+
+// Definition of the task container
+struct NumeReTask
+{
+    string sString;
+    size_t nLine;
+    vector<string> vDebugEvent;
+    NumeRe::Container<string> tableContainer;
+    GraphHelper* graph;
+    int taskType;
+};
 
 // This function fills the passed string up to the width nWidth with the characters cFill
 // The characters are inserted on the right

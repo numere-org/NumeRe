@@ -1,3 +1,4 @@
 Fixed	A missing language string was added. 
 Fixed	Table headlines of empty tables are now accessible, if they've been written before.
 Fixed	"fft cache(:,1:2)" works now as expected.
+Fixed	Debugger and GraphViewer windows are not lost any more

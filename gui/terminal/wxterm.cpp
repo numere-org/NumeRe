@@ -194,7 +194,7 @@ void wxTerm::passEditedTable(NumeRe::Container<string>& _container)
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	NumeRe::Container<string> _copyContainer(_container);
-	_kernel.sTable.push(_copyContainer);
+	_kernel.sTable = _copyContainer;
 	m_bTableEditAvailable = true;
 }
 
@@ -360,16 +360,8 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
 {
 	bool Closing = false;
 	bool changedSettings = false;
-	bool openDoc = false;
 	bool done = false;
-	bool editTable = false;
-	string sFileName = "";
-	queue<string> qTableName;
-	queue<NumeRe::Container<string> > qTable;
-	queue<GraphHelper*> qGraphHelper;
-	vector<string> vDebugInfo;
-	unsigned int nLineNumber = 0;
-	int nFileOpenFlag = 0;
+	queue<NumeReTask> taskQueue;
 	string sAnswer = "";
 
 	// Get the kernel status and read the variables
@@ -392,37 +384,13 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
 				sAnswer = m_sAnswer + "|\n|<- ";
 				done = true;
 				break;
-			case NumeReKernel::NUMERE_EDIT_FILE:
-				sAnswer = m_sAnswer;
-				sFileName = _kernel.ReadFileName();
-				nLineNumber = _kernel.ReadLineNumber();
-				nFileOpenFlag = _kernel.ReadOpenFileFlag();
-				break;
-			case NumeReKernel::NUMERE_GRAPH_UPDATE:
-				sAnswer = m_sAnswer;
-				qGraphHelper.swap(_kernel.graphHelper);
-				break;
-			case NumeReKernel::NUMERE_OPEN_DOC:
-				sAnswer = m_sAnswer;
-				sFileName = _kernel.ReadDoc();
-				openDoc = true;
-				break;
-			case NumeReKernel::NUMERE_SHOW_TABLE:
-				sAnswer = m_sAnswer;
-				qTable.swap(_kernel.sTable);
-				qTableName.swap(_kernel.sTableName);
-				break;
-			case NumeReKernel::NUMERE_EDIT_TABLE:
-				sAnswer = m_sAnswer;
-				qTable.swap(_kernel.sTable);
-				qTableName.swap(_kernel.sTableName);
-				editTable = true;
-				break;
-			case NumeReKernel::NUMERE_DEBUG_EVENT:
-				sAnswer = m_sAnswer;
-				m_bContinueDebug = false;
-				vDebugInfo = NumeReKernel::vDebugInfos;
-				break;
+            case NumeReKernel::NUMERE_QUEUED_COMMAND:
+                {
+                    // Read the complete task queue
+                    sAnswer = m_sAnswer;
+                    taskQueue.swap(_kernel.taskQueue);
+                    break;
+                }
 			case NumeReKernel::NUMERE_PENDING:
 			    done = true;
 				sAnswer = "|<- ";
@@ -456,65 +424,51 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
 		return;
 	}
 
-	// This will evaluate the different read communication
-	// variables
-	if (qTable.size())
-	{
-	    // One or more shall be displayed or edited
-		if (editTable)
-		{
-			while (qTable.size())
-			{
-				m_wxParent->editTable(qTable.front(), qTableName.front());
-				qTable.pop();
-				qTableName.pop();
-			}
-		}
-		else
-		{
-			while (qTable.size())
-			{
-				m_wxParent->openTable(qTable.front(), qTableName.front());
-				qTable.pop();
-				qTableName.pop();
-			}
-		}
-	}
-	else if (qGraphHelper.size())
-	{
-	    // One or more plots shall be displayed
-		while (qGraphHelper.size())
-		{
-			m_wxParent->showGraph(qGraphHelper.front());
-			qGraphHelper.pop();
-		}
-	}
-	else if (vDebugInfo.size())
-	{
-	    // The debugger shows some information
-		m_wxParent->evaluateDebugInfo(vDebugInfo);
-	}
-	else if (openDoc)
-	{
-	    // A documentation article shall be displayed
-		m_wxParent->openHTML(sFileName);
-	}
-	else if (sFileName.length())
-	{
-	    // A file shall be displayed or opened
-		if (sFileName.find(".png") != string::npos
-				|| sFileName.find(".jpg") != string::npos
-				|| sFileName.find(".jpeg") != string::npos
-				|| sFileName.find(".gif") != string::npos
-				|| sFileName.find(".bmp") != string::npos)
-		{
-			m_wxParent->openImage(wxFileName(sFileName));
-		}
-		else
-		{
-			m_wxParent->OpenSourceFile(wxArrayString(1, sFileName), nLineNumber, nFileOpenFlag);
-		}
-	}
+    // Evaluate the task queue. It will contain also the tranmitted
+    // variables needed for the current task
+    while (taskQueue.size())
+    {
+        // Get the first task and remove it from
+        // the queue
+        NumeReTask task = taskQueue.front();
+        taskQueue.pop();
+
+        // Evaluate the current task depending on its type
+        switch (task.taskType)
+        {
+            case NumeReKernel::NUMERE_EDIT_FILE:
+            {
+                if (task.sString.find(".png") != string::npos
+                        || task.sString.find(".jpg") != string::npos
+                        || task.sString.find(".jpeg") != string::npos
+                        || task.sString.find(".gif") != string::npos
+                        || task.sString.find(".bmp") != string::npos)
+                {
+                    m_wxParent->openImage(wxFileName(task.sString));
+                }
+                else
+                {
+                    m_wxParent->OpenSourceFile(wxArrayString(1, task.sString), task.nLine, _kernel.ReadOpenFileFlag());
+                }
+                break;
+            }
+            case NumeReKernel::NUMERE_GRAPH_UPDATE:
+                m_wxParent->showGraph(task.graph);
+                break;
+            case NumeReKernel::NUMERE_OPEN_DOC:
+                m_wxParent->openHTML(task.sString);
+                break;
+            case NumeReKernel::NUMERE_SHOW_TABLE:
+                m_wxParent->openTable(task.tableContainer, task.sString);
+                break;
+            case NumeReKernel::NUMERE_EDIT_TABLE:
+                m_wxParent->editTable(task.tableContainer, task.sString);
+                break;
+            case NumeReKernel::NUMERE_DEBUG_EVENT:
+                m_wxParent->evaluateDebugInfo(task.vDebugEvent);
+                break;
+        }
+    }
 
 	// This boolean is true, if the user switched a setting directly in the kernel
 	if (changedSettings)
