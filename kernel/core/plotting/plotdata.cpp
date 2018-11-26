@@ -1509,7 +1509,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             else if ((matchParams(sCmd, "export", '=') || matchParams(sCmd, "save", '=')) && sFileName.rfind('.') == string::npos)
                 sFileName += ".png";
 
-            sFileName = FileSystem::ValidFileName(sFileName, sFileName.substr(sFileName.rfind('.')));
+            sFileName = FileSystem::ValidizeAndPrepareName(sFileName, sFileName.substr(sFileName.rfind('.')));
         }
     }
     if ((matchParams(sCmd, "xlabel", '=')
@@ -2674,7 +2674,7 @@ void PlotData::setFileName(string _sFileName)
         else
             sFileName = _sFileName;
 
-        sFileName = FileSystem::ValidFileName(sFileName, sExt);
+        sFileName = FileSystem::ValidizeAndPrepareName(sFileName, sExt);
     }
     else
         sFileName = "";

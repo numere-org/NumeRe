@@ -160,6 +160,40 @@ void FileSystem::resolveWildCards(string& _sFileName, bool isFile) const
 	}
 }
 
+// Create the missing folders in the path
+int FileSystem::createFolders(const string& _sPath) const
+{
+    // Create the folder (returns false, if there's more
+    // than one folder to be created)
+    if (CreateDirectory(_sPath.c_str(), nullptr))
+    {
+        return 1;
+    }
+
+    // If there's more than one folder to be created
+    // create them recursively here
+    if (GetLastError() == ERROR_PATH_NOT_FOUND)
+    {
+        for (unsigned int i = 0; i < _sPath.length(); i++)
+        {
+            if (_sPath[i] == '/' || _sPath[i] == '\\')
+            {
+                CreateDirectory(_sPath.substr(0,i).c_str(), nullptr);
+            }
+        }
+
+        CreateDirectory(_sPath.c_str(), nullptr);
+    }
+
+    // Note that the folder might already exist
+    if (GetLastError() == ERROR_ALREADY_EXISTS)
+    {
+        return -1;
+    }
+
+    return 1;
+}
+
 
 // --> Pruefe den string _sFileName, ob er als Dateiname verwendet werden kann
 string FileSystem::ValidFileName(string _sFileName, const string sExtension, bool checkExtension) const
@@ -275,6 +309,16 @@ string FileSystem::ValidFolderName(string _sFileName) const
 	return _sFileName;
 }
 
+// This member function validizes the passed file name and
+// creates the needed folders on-the-fly
+string FileSystem::ValidizeAndPrepareName(const string& _sFileName, const string& sExtension) const
+{
+    string sValid = ValidFileName(_sFileName, sExtension);
+    createFolders(sValid.substr(0, sValid.rfind('/')));
+    return sValid;
+}
+
+
 int FileSystem::setPath(string _sPath, bool bMkDir, string _sWhere)
 {
 
@@ -339,28 +383,11 @@ int FileSystem::setPath(string _sPath, bool bMkDir, string _sWhere)
 
 	if (bMkDir)
 	{
-		if (CreateDirectory(sPath.c_str(), NULL))
-		{
-            sPath = "\"" + sPath + "\"";
-            return 1;
-		}
-		if (GetLastError() == ERROR_PATH_NOT_FOUND)
-		{
-            for (unsigned int i = 0; i < sPath.length(); i++)
-            {
-                if (sPath[i] == '/' || sPath[i] == '\\')
-                {
-                    CreateDirectory(sPath.substr(0,i).c_str(), NULL);
-                }
-            }
-            CreateDirectory(sPath.c_str(), NULL);
-		}
-        if (GetLastError() == ERROR_ALREADY_EXISTS)
-        {
-            sPath = "\"" + sPath + "\"";
-            return -1;
-        }
+	    int nReturn = createFolders(sPath);
+	    sPath = "\"" + sPath + "\"";
+	    return nReturn;
 	}
+
     sPath = "\"" + sPath + "\"";
 
 	return 1;

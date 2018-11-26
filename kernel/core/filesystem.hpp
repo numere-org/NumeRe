@@ -43,6 +43,7 @@ class FileSystem
     private:
         string cleanPath(string sFilePath) const;
         void resolveWildCards(string& _sFileName, bool isFile) const;
+        int createFolders(const string& _sPath) const;
 
 	protected:												// In allen CHILD-Klassen verfuegbar
 		string sPath;										// String-Variable fuer den Dateipfad
@@ -55,6 +56,7 @@ class FileSystem
 
 		string ValidFileName(string _sFileName, const string sExtension = ".dat", bool checkExtension = true) const;			// gibt einen gueltigen Dateinamen auf Basis von _sFileName zurueck
 		string ValidFolderName(string _sFileName) const;			// gibt einen gueltigen Ordnernamen auf Basis von _sFileName zurueck
+		string ValidizeAndPrepareName(const string& _sFileName, const string& sExtension = ".dat") const;
 		int setPath(string _sPath, bool bMkDir, string _sWhere);			// setzt sPath auf _sPath
 		string getPath() const;								// gibt sPath zurueck
 		vector<string> getFileParts(const string& sFilePath) const;
