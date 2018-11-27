@@ -30,7 +30,13 @@ class GraphViewer : public ViewerFrame
 
     public:
         GraphViewer(wxWindow* parent, const wxString& title, GraphHelper* _helper, wxTerm* terminal);
-        //~GraphViewer();
+        ~GraphViewer()
+            {
+                if (_grapherWindow)
+                    delete _grapherWindow;
+                _grapherWindow = nullptr;
+            }
+
 
         wxMGL* _grapherWindow;
         wxTerm* m_terminal;

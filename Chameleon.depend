@@ -3436,14 +3436,14 @@
 1517397028 source:d:\cpp\numere-source\trunk\gui\graphviewer.cpp
 	"graphviewer.hpp"
 
-1511630412 d:\cpp\numere-source\trunk\gui\graphviewer.hpp
+1543319875 d:\cpp\numere-source\trunk\gui\graphviewer.hpp
 	<wx/wx.h>
 	"wx.h"
 	"viewerframe.hpp"
 	"../kernel/core/plotting/graph_helper.hpp"
 	"terminal/wxterm.h"
 
-1501396206 d:\cpp\numere-source\trunk\gui\wx.h
+1543320097 d:\cpp\numere-source\trunk\gui\wx.h
 	<mgl2/wnd.h>
 	<wx/window.h>
 	<wx/image.h>
@@ -3697,7 +3697,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1542467295 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1543320944 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3914,7 +3914,7 @@
 	"wxssh.h"
 	"../../common/debug.h"
 
-1543132965 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1543312106 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -3929,13 +3929,13 @@
 1491130379 source:d:\cpp\numere-source\trunk\gui\viewerbook.cpp
 	"viewerbook.hpp"
 
-1527173459 source:d:\cpp\numere-source\trunk\gui\viewerframe.cpp
+1543319989 source:d:\cpp\numere-source\trunk\gui\viewerframe.cpp
 	"viewerframe.hpp"
 
 1491130247 source:d:\cpp\numere-source\trunk\gui\viewerpanel.cpp
 	"viewerpanel.hpp"
 
-1511685627 source:d:\cpp\numere-source\trunk\gui\wx.cpp
+1543320405 source:d:\cpp\numere-source\trunk\gui\wx.cpp
 	<wx/dcclient.h>
 	<wx/msgdlg.h>
 	<wx/clipbrd.h>

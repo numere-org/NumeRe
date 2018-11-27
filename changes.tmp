@@ -4,3 +4,4 @@ Fixed	"fft cache(:,1:2)" works now as expected.
 Fixed	Debugger and GraphViewer windows are not lost any more
 Fixed	Option values are not longer recognized as command line parameters.
 Fixed	"plot" now creates the needed folder paths by itself.
+Fixed	Plots with animations do not produce memory leaks anymore.

@@ -136,6 +136,7 @@ protected:
 	void OnKeyDown(wxKeyEvent& event);
 	void OnNavigationKey(wxNavigationKeyEvent& event);
 	void OnMenuEvent(wxCommandEvent& event);
+	void OnClose(wxCloseEvent& event);
 
 	mglGraph *gr;		///< pointer to grapher
 	void *draw_par;		///< Parameters for drawing function mglCanvasWnd::DrawFunc.

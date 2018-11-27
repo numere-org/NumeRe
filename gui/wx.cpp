@@ -102,6 +102,7 @@ BEGIN_EVENT_TABLE(wxMGL, wxWindow)
 	EVT_KEY_DOWN    (wxMGL::OnKeyDown)
 	EVT_NAVIGATION_KEY(wxMGL::OnNavigationKey)
 	EVT_ENTER_WINDOW(wxMGL::OnEnter)
+	EVT_CLOSE       (wxMGL::OnClose)
 
 	EVT_MENU        (ID_GRAPH_EXPORT, wxMGL::OnMenuEvent)
 	EVT_MENU        (ID_GRAPH_COPY, wxMGL::OnMenuEvent)
@@ -847,6 +848,12 @@ void wxMGL::OnMenuEvent(wxCommandEvent& event)
             Animation(false);
             break;
     }
+}
+//----------------------------------------------------------------------------
+void wxMGL::OnClose(wxCloseEvent& event)
+{
+    // Stop the animation before closing
+    Animation(false);
 }
 //-----------------------------------------------------------------------------
 wxString mglSetExtension(const wxString &fname, const wxString& ext)
