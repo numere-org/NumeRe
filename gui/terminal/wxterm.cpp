@@ -368,6 +368,10 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
 	// correspondingly
 	{
 		wxCriticalSectionLocker lock(m_kernelCS);
+		// Always read the complete task queue
+		if (_kernel.taskQueue.size())
+            taskQueue.swap(_kernel.taskQueue);
+
 		switch (m_KernelStatus)
 		{
 			case NumeReKernel::NUMERE_ANSWER_READ:
@@ -384,13 +388,6 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
 				sAnswer = m_sAnswer + "|\n|<- ";
 				done = true;
 				break;
-            case NumeReKernel::NUMERE_QUEUED_COMMAND:
-                {
-                    // Read the complete task queue
-                    sAnswer = m_sAnswer;
-                    taskQueue.swap(_kernel.taskQueue);
-                    break;
-                }
 			case NumeReKernel::NUMERE_PENDING:
 			    done = true;
 				sAnswer = "|<- ";
