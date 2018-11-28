@@ -3935,7 +3935,7 @@
 1491130247 source:d:\cpp\numere-source\trunk\gui\viewerpanel.cpp
 	"viewerpanel.hpp"
 
-1543320405 source:d:\cpp\numere-source\trunk\gui\wx.cpp
+1543321258 source:d:\cpp\numere-source\trunk\gui\wx.cpp
 	<wx/dcclient.h>
 	<wx/msgdlg.h>
 	<wx/clipbrd.h>
@@ -4287,7 +4287,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1543139841 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1543398818 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 

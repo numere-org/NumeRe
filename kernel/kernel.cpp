@@ -1112,15 +1112,6 @@ bool NumeReKernel::handleCommandLineSource(string& sLine, const string& sCmdCach
                 sLine[i] = ' ';
         }
 
-        if (findCommand(sLine).sString != "help"
-                && findCommand(sLine).sString != "find"
-                && findCommand(sLine).sString != "search"
-                && (sLine.find('(') != string::npos || sLine.find('{') != string::npos))
-        {
-            if (!validateParenthesisNumber(sLine))
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, sLine.find('('));
-        }
-
         // --> Keine Laenge? Ignorieren! <--
         if (!sLine.length() || sLine[0] == '@')
             return false;
@@ -1161,6 +1152,17 @@ bool NumeReKernel::handleCommandLineSource(string& sLine, const string& sCmdCach
             sLine = sKeep;
             sKeep = "";
         }
+
+        // Ensure that the number of parentheses is matching
+        if (findCommand(sLine).sString != "help"
+                && findCommand(sLine).sString != "find"
+                && findCommand(sLine).sString != "search"
+                && (sLine.find('(') != string::npos || sLine.find('{') != string::npos))
+        {
+            if (!validateParenthesisNumber(sLine))
+                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, sLine.find('('));
+        }
+
 
     }
     return true;
