@@ -7,3 +7,4 @@ Fixed	"plot" now creates the needed folder paths by itself.
 Fixed	Plots with animations do not produce memory leaks anymore.
 Fixed	Code may now be wrapped around although not all parentheses are closed in the current line.
 Fixed	The autoformatting and the autoindentation feature do now indent wrapped lines correctly.
+Fixed	"smooth" can now handle single-column data sets correctly.

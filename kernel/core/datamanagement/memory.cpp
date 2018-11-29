@@ -3118,8 +3118,6 @@ bool Memory::smooth(long long int i1, long long int i2, long long int j1, long l
 	// Avoid the border cases
 	if (!bValidData)
 		throw SyntaxError(SyntaxError::NO_CACHED_DATA, "smooth", SyntaxError::invalid_position);
-	if (nOrder < 1 || (nOrder >= nLines && Direction == COLS) || (nOrder >= nCols && Direction == LINES) || ((nOrder >= nLines || nOrder >= nCols) && (Direction == ALL || Direction == GRID)))
-		throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, "smooth", SyntaxError::invalid_position);
 	if (i1 == -1 && i2 == -1 && j1 == -1 && j2 == -1)
 		throw SyntaxError(SyntaxError::INVALID_INDEX, "smooth", SyntaxError::invalid_position, i1, i2, j1, j2);
 
@@ -3134,6 +3132,10 @@ bool Memory::smooth(long long int i1, long long int i2, long long int j1, long l
 		Direction = LINES;
 	if ((Direction == ALL || Direction == GRID) && j2 - j1 < 3)
 		Direction = COLS;
+
+    // Check the order
+	if (nOrder < 1 || (nOrder >= nLines && Direction == COLS) || (nOrder >= nCols && Direction == LINES) || ((nOrder >= nLines || nOrder >= nCols) && (Direction == ALL || Direction == GRID)))
+		throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, "smooth", SyntaxError::invalid_position);
 
     // Get the appended zeros
 	if (bUseAppendedZeroes)
