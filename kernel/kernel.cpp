@@ -1162,8 +1162,6 @@ bool NumeReKernel::handleCommandLineSource(string& sLine, const string& sCmdCach
             if (!validateParenthesisNumber(sLine))
                 throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, sLine.find('('));
         }
-
-
     }
     return true;
 }

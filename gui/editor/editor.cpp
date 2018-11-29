@@ -7195,6 +7195,8 @@ int NumeReEditor::determineIndentationLevelNSCR(int nLine, int& singleLineIndent
 			if (word.length())
 				i += word.length() - 1;
 		}
+		if (this->GetStyleAt(i) == wxSTC_NSCR_OPERATORS && this->GetTextRange(i, i + 2) == "\\\\")
+			singleLineIndent = 1;
 	}
 
 	return nIndentCount;
