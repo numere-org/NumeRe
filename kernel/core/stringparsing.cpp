@@ -3302,10 +3302,14 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
     string si = "";
     string sj = "";
     int nIndex[2] = {0, 0};
+    string sTableName;
 
     // Identify the correct data table
-    if (sObject.find("data(") != string::npos)
+    if (sObject.substr(sObject.find_first_not_of(" "), 5) == "data(")
+    {
         si = sObject.substr(sObject.find("data(") + 4);
+        sTableName = "data";
+    }
     else
     {
         for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
@@ -3315,6 +3319,7 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
                         || (sObject.find(iter->first + "(") && checkDelimiter(sObject.substr(sObject.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
             {
                 si = sObject.substr(sObject.find(iter->first + "(") + (iter->first).length());
+                sTableName = iter->first;
                 break;
             }
         }
@@ -3347,41 +3352,16 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
         }
 
         // Write the string to the correct data table
-        if (sObject.find("data(") != string::npos)
+        if (!nIndex[1])
+            nIndex[1] = _data.getCols(sTableName);
+        parser_CheckIndices(nIndex[0], nIndex[1]);
+        for (int n = nCurrentComponent; n < (int)nStrings; n++)
         {
-            if (!nIndex[1])
-                nIndex[1] = _data.getCols("data");
-            parser_CheckIndices(nIndex[0], nIndex[1]);
-            for (int n = nCurrentComponent; n < (int)nStrings; n++)
-            {
-                if (!vFinal[n].length() || n + nIndex[0] == nIndex[1] + 1 || n + nIndex[0] >= _data.getCols("data"))
-                    break;
-                _data.setHeadLineElement(n + nIndex[0], "data", removeQuotationMarks(vFinal[n]));
-            }
-            nCurrentComponent = nStrings;
+            if (!vFinal[n].length() || n + nIndex[0] == nIndex[1] + 1 || n + nIndex[0] >= _data.getCols(sTableName))
+                break;
+            _data.setHeadLineElement(n + nIndex[0], sTableName, removeQuotationMarks(vFinal[n]));
         }
-        else
-        {
-            for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-            {
-                if (sObject.find(iter->first + "(") != string::npos
-                        && (!sObject.find(iter->first + "(")
-                            || (sObject.find(iter->first + "(") && checkDelimiter(sObject.substr(sObject.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
-                {
-                    if (nIndex[1])
-                        parser_CheckIndices(nIndex[0], nIndex[1]);
-
-                    for (int n = nCurrentComponent; n < (int)nStrings; n++)
-                    {
-                        if (!vFinal[n].length() || (nIndex[1] && n + nIndex[0] == nIndex[1] + 1))
-                            break;
-                        _data.setHeadLineElement(n + nIndex[0], iter->first, removeQuotationMarks(vFinal[n]));
-                    }
-                    nCurrentComponent = nStrings;
-                    break;
-                }
-            }
-        }
+        nCurrentComponent = nStrings;
     }
     else
     {
@@ -3389,21 +3369,9 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
         // Get the corresponding indices
         Indices _idx = parser_getIndices(sObject, _parser, _data, _option);
 
-        string sTable;
-
         // Find the correct table
-        if (sObject.find("data(") != string::npos)
+        if (sTableName == "data")
             throw SyntaxError(SyntaxError::READ_ONLY_DATA, sObject, SyntaxError::invalid_position);
-        else
-        {
-            for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-            {
-                if (sObject.find(iter->first + "(") != string::npos
-                        && (!sObject.find(iter->first + "(")
-                            || (sObject.find(iter->first + "(") && checkDelimiter(sObject.substr(sObject.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
-                    sTable = iter->first;
-            }
-        }
 
         if (_idx.nI[1] == -1)
             _idx.nI[1] = _idx.nI[0];
@@ -3419,17 +3387,17 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
             {
                 if (_idx.nJ[0] + i - nCurrentComponent > _idx.nJ[1] && _idx.nJ[1] != -2)
                     break;
-                _data.writeToCache(_idx.nI[0], _idx.nJ[0] + i - nCurrentComponent, sTable, StrToDb(vFinal[i]));
+                _data.writeToCache(_idx.nI[0], _idx.nJ[0] + i - nCurrentComponent, sTableName, StrToDb(vFinal[i]));
             }
             else if (_idx.nI[0] != _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
             {
                 if (_idx.nI[0] + i - nCurrentComponent > _idx.nI[1] && _idx.nI[1] != -2)
                     break;
-                _data.writeToCache(_idx.nI[0] + i - nCurrentComponent, _idx.nJ[0], sTable, StrToDb(vFinal[i]));
+                _data.writeToCache(_idx.nI[0] + i - nCurrentComponent, _idx.nJ[0], sTableName, StrToDb(vFinal[i]));
             }
             else if (_idx.nI[0] == _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
             {
-                _data.writeToCache(_idx.nI[0], _idx.nJ[0], sTable, StrToDb(vFinal[i]));
+                _data.writeToCache(_idx.nI[0], _idx.nJ[0], sTableName, StrToDb(vFinal[i]));
                 break;
             }
 

@@ -227,7 +227,7 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 		//cerr << "|-> Die Statistiken von " << nCol << " Spalte(n) wurden erfolgreich berechnet." << endl;
 
 		// --> Allgemeine Ausgabe-Info-Parameter setzen <--
-		_out.setPluginName(_lang.get("RANDOM_OUT_PLGNINFO", PI_MED, _data.getDataFileName(sDatatable)));
+		_out.setPluginName(_lang.get("STATS_OUT_PLGNINFO", PI_MED, _data.getDataFileName(sDatatable)));
 		//_out.setCommentLine("Legende: MW = Mittelwert, +/- = Standardabweichung, iVInt = im Vertrauensintervall, Uns = Unsicherheit");
 		_out.setPrefix("stats");
 		// --> Wenn sCmd einen Eintrag enthaelt, dann soll die Ausgabe automatische in eine Datei geschrieben werden <--
