@@ -219,18 +219,20 @@ void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, 
 	// handle MAF methods. sEntity already has "(" at its back
 	while ((nPos = sLine.find(sEntity + ").", nPos)) != string::npos)
 	{
-		if (isInQuotes(sLine, nPos, true))
+		if (isInQuotes(sLine, nPos, true) || (nPos && !isDelimiter(sLine[nPos-1])))
 		{
 			nPos++;
 			continue;
 		}
 		handleMafDataAccess(sLine, getMafAccessString(sLine, sEntity), _parser, _data);
 	}
+
 	nPos = 0;
+
+	// handle logical table accesses
 	while ((nPos = sLine.find(sEntity + ")", nPos)) != string::npos)
 	{
-		if (isInQuotes(sLine, nPos, true)
-            || (nPos && isalpha(sLine[nPos-1])))
+		if (isInQuotes(sLine, nPos, true) || (nPos && !isDelimiter(sLine[nPos-1])))
 		{
 			nPos++;
 			continue;
@@ -476,7 +478,10 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 		// Get the last token
 		string sLeft = getLastToken(sLine.substr(0, nPos));
 
-		if (sLeft.length() < 3 || sLeft.back() != '(' || sLine[sLine.find_first_not_of(" ", nPos + sEntityOccurence.length())] != ')')
+		// Find the next character, which is no whitespace
+        size_t nNextNonWhiteSpace = sLine.find_first_not_of(" ", nPos + sEntityOccurence.length());
+
+		if (sLeft.length() < 3 || sLeft.back() != '(' || (sLine[nNextNonWhiteSpace] != ')' && sLine[nNextNonWhiteSpace] != ','))
 		{
 			// Simply replace it with the vector name
 			sLine.replace(nPos, sEntityOccurence.length(), sEntityReplacement);
@@ -584,18 +589,22 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 				double dRef = 0.0;
 				int nType = 0;
 				string sArg = "";
-				sLeft = sLine.substr(sLine.find(sLeft) + sLeft.length(), getMatchingParenthesis(sLine.substr(sLine.find(sLeft) + sLeft.length() - 1)) - 2);
+				sLeft = sLine.substr(sLine.find(sLeft) + sLeft.length(), getMatchingParenthesis(sLine.substr(sLine.find(sLeft) + sLeft.length() - 1)) - 1);
 				sArg = getNextArgument(sLeft, true);
 				sArg = getNextArgument(sLeft, true);
+
 				if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
 					getDataElements(sArg, _parser, _data, _option);
+
 				_parser.SetExpr(sArg);
-				dRef = (double)_parser.Eval();
+				dRef = _parser.Eval();
 				sArg = getNextArgument(sLeft, true);
+
 				if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
 					getDataElements(sArg, _parser, _data, _option);
+
 				_parser.SetExpr(sArg);
-				nType = (int)_parser.Eval();
+				nType = intCast(_parser.Eval());
 				sLine = sLine.replace(sLine.rfind("cmp(", sLine.find(sEntityOccurence)),
 									  getMatchingParenthesis(sLine.substr(sLine.rfind("cmp(", sLine.find(sEntityOccurence)) + 3)) + 4,
 									  toCmdString(_data.cmp(sEntityName, vLine, vCol, dRef, nType)));
@@ -606,11 +615,13 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 				_parser.DisableAccessCaching();
 				double dPct = 0.5;
 				string sArg = "";
-				sLeft = sLine.substr(sLine.find(sLeft) + sLeft.length(), getMatchingParenthesis(sLine.substr(sLine.find(sLeft) + sLeft.length() - 1)) - 2);
+				sLeft = sLine.substr(sLine.find(sLeft) + sLeft.length(), getMatchingParenthesis(sLine.substr(sLine.find(sLeft) + sLeft.length() - 1)) - 1);
 				sArg = getNextArgument(sLeft, true);
 				sArg = getNextArgument(sLeft, true);
+
 				if (_data.containsCacheElements(sArg) || sArg.find("data(") != string::npos)
 					getDataElements(sArg, _parser, _data, _option);
+
 				_parser.SetExpr(sArg);
 				dPct = _parser.Eval();
 				sLine = sLine.replace(sLine.rfind("pct(", sLine.find(sEntityOccurence)),

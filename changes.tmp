@@ -8,3 +8,5 @@ Fixed	Plots with animations do not produce memory leaks anymore.
 Fixed	Code may now be wrapped around although not all parentheses are closed in the current line.
 Fixed	The autoformatting and the autoindentation feature do now indent wrapped lines correctly.
 Fixed	"smooth" can now handle single-column data sets correctly.
+Fixed	The functions "cmp()" and "pct()" can now be used with data sets again.
+Fixed	An issue with caches sharing the last part of their name has been solved.
