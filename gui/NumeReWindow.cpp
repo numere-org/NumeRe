@@ -2038,8 +2038,11 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
     else
     {
         wxString filename;
-        wxString proc_namespace;
+        wxString folder;
         wxTextEntryDialog* textentry;
+
+        // If no default file name was passed, ask
+        // the user
         if (!defaultfilename.length())
         {
             if (_filetype == FILE_NSCR)
@@ -2048,6 +2051,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
                 textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNPRC_QUESTION"), _guilang.get("GUI_DLG_NEWNPRC"), _guilang.get("GUI_DLG_NEWNPRC_DFLT"));
             else
                 textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWPLUGIN_QUESTION"), _guilang.get("GUI_DLG_NEWPLUGIN"), _guilang.get("GUI_DLG_NEWPLUGIN_DFLT"));
+
             int retval = textentry->ShowModal();
 
             if (retval == wxID_CANCEL)
@@ -2055,47 +2059,88 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
                 delete textentry;
                 return;
             }
+
+            // Get the file name, if the user didn't hit "Cancel"
             filename = textentry->GetValue();
             delete textentry;
         }
         else
             filename = defaultfilename;
+
+        // Remove the dollar sign, if there is one
         if (filename.find('$') != string::npos)
             filename.erase(filename.find('$'),1);
+
+        // Remove the path parts from the file name
+        // These are either the tilde, the slash or the
+        // backslash
         if (filename.find('~') != string::npos)
         {
-            proc_namespace = filename.substr(0, filename.rfind('~')+1);
+            folder = filename.substr(0, filename.rfind('~')+1);
             filename.erase(0, filename.rfind('~')+1);
         }
-        if (proc_namespace.length())
-        {
-            while (proc_namespace.find('~') != string::npos)
-                proc_namespace[proc_namespace.find('~')] = '\\';
-        }
-        if (proc_namespace == "main\\")
-            proc_namespace.clear();
-        else
-            proc_namespace.insert(0,"\\");
 
+        if (filename.find('/') != string::npos)
+        {
+            if (folder.length())
+                folder += "/" + filename.substr(0, filename.rfind('/')+1);
+            else
+                folder = filename.substr(0, filename.rfind('/')+1);
+
+            filename.erase(0, filename.rfind('/')+1);
+        }
+
+        if (filename.find('\\') != string::npos)
+        {
+            if (folder.length())
+                folder += "/" + filename.substr(0, filename.rfind('\\')+1);
+            else
+                folder = filename.substr(0, filename.rfind('\\')+1);
+
+            filename.erase(0, filename.rfind('\\')+1);
+        }
+
+        // Replace all path separators
+        if (folder.length())
+        {
+            while (folder.find('~') != string::npos)
+                folder[folder.find('~')] = '\\';
+            while (folder.find('/') != string::npos)
+                folder[folder.find('/')] = '\\';
+        }
+
+        if (folder == "main\\" && _filetype == FILE_NPRC)
+            folder.clear();
+        else
+            folder.insert(0,"\\");
+
+        // Prepare the template file
         wxString template_file, dummy, timestamp;
+
+        // Search the correct filename
         if (_filetype == FILE_NSCR)
             dummy = "tmpl_script.nlng";
         else if (_filetype == FILE_PLUGIN)
             dummy = "tmpl_plugin.nlng";
         else
             dummy = "tmpl_procedure.nlng";
+
         timestamp = getTimeStamp(false);
 
+        // Get the template file contents
         if (m_terminal->getKernelSettings().getUseCustomLanguageFiles() && wxFileExists(getProgramFolder() + "\\user\\lang\\"+dummy))
             GetFileContents(getProgramFolder() + "\\user\\lang\\"+dummy, template_file, dummy);
         else
             GetFileContents(getProgramFolder() + "\\lang\\"+dummy, template_file, dummy);
 
+        // Replace the tokens in the file
         while (template_file.find("%%1%%") != string::npos)
             template_file.replace(template_file.find("%%1%%"), 5, filename);
+
         while (template_file.find("%%2%%") != string::npos)
             template_file.replace(template_file.find("%%2%%"), 5, timestamp);
 
+        // Determine the file extension
         if (_filetype == FILE_NSCR)
             filename += ".nscr";
         else if (_filetype == FILE_PLUGIN)
@@ -2107,6 +2152,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
 
         m_fileNum += 1;
 
+        // Create a new editor
         ProjectInfo* singleFileProject = new ProjectInfo();
         NumeReEditor* edit = new NumeReEditor (this, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
         edit->SetText(template_file);
@@ -2114,22 +2160,28 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         CopyEditorSettings(edit, _filetype);
 
         m_currentEd = edit;
+
+        // Set the corresponding full file name
         if (_filetype == FILE_NSCR || _filetype == FILE_PLUGIN)
-            m_currentEd->SetFilename(wxFileName(vPaths[SCRIPTPATH], filename), false);
+            m_currentEd->SetFilename(wxFileName(vPaths[SCRIPTPATH] + folder, filename), false);
         else
-            m_currentEd->SetFilename(wxFileName(vPaths[PROCPATH] + proc_namespace, filename), false);
+            m_currentEd->SetFilename(wxFileName(vPaths[PROCPATH] + folder, filename), false);
+
+        // Jump to the standard input line in the corresponding template file
         if (_filetype == FILE_NSCR)
             m_currentEd->GotoLine(13);
         else if (_filetype == FILE_NPRC)
             m_currentEd->GotoLine(6);
         else
             m_currentEd->GotoLine(28);
+
         m_currentEd->EmptyUndoBuffer();
         m_currentPage = m_book->GetPageCount();
         m_currentEd->UpdateSyntaxHighlighting();
         m_currentEd->SetUnsaved();
-        m_book->AddPage (edit, filename, true);
 
+        // Add a new tab for the editor
+        m_book->AddPage (edit, filename, true);
     }
 }
 
