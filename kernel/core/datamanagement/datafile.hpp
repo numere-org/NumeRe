@@ -232,6 +232,7 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
 		vector<string> getHeadLineElement(vector<long long int> _vCol, const string& sCache) const;		// gibt das _i-te Element der Kopfzeile zurueck
 		bool setHeadLineElement(long long int _i, const string& sCache, string _sHead);	// setzt das _i-te Element der Kopfzeile auf _sHead
 		long long int getAppendedZeroes(long long int _i, const string& sCache) const;			// gibt die Zahl der angehaengten Nullen der _i-ten Spalte zurueck
+		int getHeadlineCount(const string& sCache) const;
 		void melt (Datafile& _cache);					// Methode, um die Daten einer anderen Instanz dieser Klasse den Daten dieser Klasse
 														//		(als weitere Spalten) hinzu zu fuegen
 		bool isValidEntry(long long int _nLine, long long int _nCol, const string& sCache) const;	// gibt zurueck, ob der Datenpunkt ueberhaupt gueltig ist

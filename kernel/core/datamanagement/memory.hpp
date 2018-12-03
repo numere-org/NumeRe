@@ -102,6 +102,7 @@ class Memory
 		vector<double> readMem(const vector<long long int>& _vLine, const vector<long long int>& _vCol) const;
 		void copyElementsInto(vector<double>* vTarget, const vector<long long int>& _vLine, const vector<long long int>& _vCol) const;
 		long long int getAppendedZeroes(long long int _i) const;			    // gibt die Zahl der angehaengten Nullen der _i-ten Spalte zurueck
+		int getHeadlineCount() const;
 
 		bool writeSingletonData(Indices& _idx, double* _dData);	// Methode, um ein Element zu schreiben
 		bool writeData(long long int _Line, long long int _nCol, double _dData);	// Methode, um ein Element zu schreiben

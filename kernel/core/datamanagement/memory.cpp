@@ -425,6 +425,34 @@ long long int Memory::getAppendedZeroes(long long int _i) const
 		return nLines;
 }
 
+// This function counts the number of all headline lines
+int Memory::getHeadlineCount() const
+{
+    int nHeadlineCount = 1;
+    // Get the dimensions of the complete headline (i.e. including possible linebreaks)
+    for (long long int j = 0; j < getCols(); j++)
+    {
+        // No linebreak? Continue
+        if (sHeadLine[j].find("\\n") == string::npos)
+            continue;
+
+        int nLinebreak = 0;
+
+        // Count all linebreaks
+        for (unsigned int n = 0; n < sHeadLine[j].length() - 2; n++)
+        {
+            if (sHeadLine[j].substr(n, 2) == "\\n")
+                nLinebreak++;
+        }
+
+        // Save the maximal number
+        if (nLinebreak + 1 > nHeadlineCount)
+            nHeadlineCount = nLinebreak + 1;
+    }
+
+    return nHeadlineCount;
+}
+
 
 // --> Schreibt einen Wert an beliebiger Stelle in den Memory <--
 bool Memory::writeData(long long int _nLine, long long int _nCol, double _dData)

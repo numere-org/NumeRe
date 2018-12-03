@@ -11,3 +11,4 @@ Fixed	"smooth" can now handle single-column data sets correctly.
 Fixed	The functions "cmp()" and "pct()" can now be used with data sets again.
 Fixed	An issue with caches sharing the last part of their name has been solved.
 Fixed	Scripts may now created in subfolders, if they are created via the GUI dialog.
+Fixed	The "stats" command now supports multiple table headlines.

@@ -328,25 +328,7 @@ string** make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, con
 	if (!_out.isCompact())
 	{
 	    // Get the dimensions of the complete headline (i.e. including possible linebreaks)
-		for (long long int j = 0; j < _data.getCols(sCache); j++)
-		{
-			// No linebreak? Continue
-			if (_data.getHeadLineElement(j, sCache).find("\\n") == string::npos)
-				continue;
-
-			int nLinebreak = 0;
-
-			// Count all linebreaks
-			for (unsigned int n = 0; n < _data.getHeadLineElement(j, sCache).length() - 2; n++)
-			{
-				if (_data.getHeadLineElement(j, sCache).substr(n, 2) == "\\n")
-					nLinebreak++;
-			}
-
-			// Save the maximal number
-			if (nLinebreak + 1 > nHeadlineCount)
-				nHeadlineCount = nLinebreak + 1;
-		}
+		nHeadlineCount = _data.getHeadlineCount(sCache);
 	}
 
 	// Get the dimensions of the data and add the needed headlins

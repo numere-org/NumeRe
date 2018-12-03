@@ -39,18 +39,12 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 	double dKurt;
 	int nCount;				// Zaehlvariable
 	const int nPrecision = 4;
-	const int nStatsFields = 17;
+	const int nStatsFields = 16;
 	double dUnsure; 		// Variable fuer die Unsicherheit
 	string sSavePath = "";  // Variable fuer den Speicherpfad
 
 	if(_data.isValid() || _data.isValidCache())	// Sind eigentlich Daten verfuegbar?
 	{
-
-		//cerr << "|-> STATISTIK (v " << PI_MED << ")" << endl;
-		//cerr << "|   " << std::setfill((char)196) << std::setw(19) << (char)196 << endl;
-        //cerr << LineBreak("|-> Dieses Plugin berechnet aus einer gegebenen Tabelle Mittelwert, Standardabweichung, Unsicherheit und den Prozentsatz der Datenpunkte im Vertrauensintervall.", _option) << endl;
-
-
         if (!bUseCache && !bUseData)
         {
             if (!_data.isValid() && _data.isValidCache())
@@ -107,10 +101,11 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 
 		int nLine = _data.getLines(sDatatable);
 		int nCol = _data.getCols(sDatatable);
+		int nHeadlines = _data.getHeadlineCount(sDatatable);
 		// --> Allozieren einer Ausgabe-String-Matrix <--
-		string** sOut = new string*[nLine + nStatsFields];
+		string** sOut = new string*[nLine + nStatsFields + nHeadlines];
 		string** sOverview = 0;
-		for (int i = 0; i < nLine+nStatsFields; i++)
+		for (int i = 0; i < nLine + nStatsFields + nHeadlines; i++)
 		{
 			sOut[i] = new string[nCol];
 		}
@@ -120,22 +115,22 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 		{
 		    if (!_data.num(sDatatable, 0, nLine-1, j))
             {
-                sOut[nLine+1][j] = "<<SUMBAR>>"; // Schreiben der berechneten Werte in die letzten drei Zeilen der Ausgabe
-                sOut[nLine+2][j] = _lang.get("STATS_TYPE_AVG") + ": ---";
-                sOut[nLine+3][j] = _lang.get("STATS_TYPE_STD") + ": ---";
-                sOut[nLine+4][j] = _lang.get("STATS_TYPE_CONFINT") + ": ---";
-                sOut[nLine+5][j] = _lang.get("STATS_TYPE_STDERR") + ": ---";
-                sOut[nLine+6][j] = _lang.get("STATS_TYPE_MED") + ": ---";
-                sOut[nLine+7][j] = "Q1: ---";
-                sOut[nLine+8][j] = "Q3: ---";
-                sOut[nLine+9][j] = _lang.get("STATS_TYPE_RMS") + ": ---";
-                sOut[nLine+10][j] = _lang.get("STATS_TYPE_SKEW") + ": ---";
-                sOut[nLine+11][j] = _lang.get("STATS_TYPE_EXCESS") + ": ---";
-                sOut[nLine+12][j] = "min: ---";
-                sOut[nLine+13][j] = "max: ---";
-                sOut[nLine+14][j] = "num: ---";
-                sOut[nLine+15][j] = "cnt: ---";
-                sOut[nLine+16][j] = "s_t: ---";
+                sOut[nHeadlines + nLine + 0][j] = "<<SUMBAR>>"; // Schreiben der berechneten Werte in die letzten drei Zeilen der Ausgabe
+                sOut[nHeadlines + nLine + 1][j] = _lang.get("STATS_TYPE_AVG") + ": ---";
+                sOut[nHeadlines + nLine + 2][j] = _lang.get("STATS_TYPE_STD") + ": ---";
+                sOut[nHeadlines + nLine + 3][j] = _lang.get("STATS_TYPE_CONFINT") + ": ---";
+                sOut[nHeadlines + nLine + 4][j] = _lang.get("STATS_TYPE_STDERR") + ": ---";
+                sOut[nHeadlines + nLine + 5][j] = _lang.get("STATS_TYPE_MED") + ": ---";
+                sOut[nHeadlines + nLine + 6][j] = "Q1: ---";
+                sOut[nHeadlines + nLine + 7][j] = "Q3: ---";
+                sOut[nHeadlines + nLine + 8][j] = _lang.get("STATS_TYPE_RMS") + ": ---";
+                sOut[nHeadlines + nLine + 9][j] = _lang.get("STATS_TYPE_SKEW") + ": ---";
+                sOut[nHeadlines + nLine + 10][j] = _lang.get("STATS_TYPE_EXCESS") + ": ---";
+                sOut[nHeadlines + nLine + 11][j] = "min: ---";
+                sOut[nHeadlines + nLine + 12][j] = "max: ---";
+                sOut[nHeadlines + nLine + 13][j] = "num: ---";
+                sOut[nHeadlines + nLine + 14][j] = "cnt: ---";
+                sOut[nHeadlines + nLine + 15][j] = "s_t: ---";
                 continue;
             }
 			dAverage = _data.avg(sDatatable,0,nLine-1,j); // Wichtig: Nullsetzen aller wesentlichen Variablen!
@@ -145,35 +140,32 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 			dSkew = 0.0;
 			dKurt = 0.0;
 			nCount = 0;
-			sOut[0][j] = _data.getHeadLineElement(j, sDatatable);
+			string sHeadline = _data.getHeadLineElement(j, sDatatable);
+
+            for (int i = 0; i < nHeadlines; i++)
+            {
+                if (sHeadline.length())
+                {
+                    sOut[i][j] = sHeadline.substr(0, sHeadline.find("\\n"));
+                    if (sHeadline.find("\\n") != string::npos)
+                        sHeadline.erase(0, sHeadline.find("\\n") + 2);
+                    else
+                        break;
+                }
+            }
 
 
 			for (int i = 0; i < nLine; i++)
 			{
 				if (!_data.isValidEntry(i,j, sDatatable))
 				{
-					sOut[i+1][j] = "---";
+					sOut[i + nHeadlines][j] = "---";
 					continue;
 				}
-				sOut[i+1][j] = toString(_data.getElement(i,j, sDatatable),_option); // Kopieren der Matrix in die Ausgabe
+				sOut[i + nHeadlines][j] = toString(_data.getElement(i,j, sDatatable),_option); // Kopieren der Matrix in die Ausgabe
 			}
 
-			// --> Mittelwert: Durch den Anzahl aller Werte teilen <--
-			//dAverage = dAverage / (double) (_data.getLines(true) - _data.getAppendedZeroes(j)); // WICHTIG: Angehaengte Nullzeilen ignorieren
 
-			if(_option.getbDebug())
-				cerr << "|-> DEBUG: dAverage = " << dAverage << endl;
-
-			/*for (int i = 0; i < nLine; i++)
-			{
-				if(!_data.isValidEntry(i,j))
-					continue;						// Angehaengte Nullzeilen ignorieren
-				dError += (_data.getElement(i,j) - dAverage)*(_data.getElement(i,j) - dAverage); // Fehler: Erst mal alle Fehlerquadrate addieren
-			}
-
-			// --> Fehler: Jetzt durch die Anzahl aller Werte teilen und danach die Wurzel ziehen <--
-			dError = sqrt(dError / (double) (_data.getLines(true) - 1 - _data.getAppendedZeroes(j)));*/ // WICHTIG: Angehaengte Nullzeilen wieder ignorieren
-			// --> Unsicherheit: den Fehler nochmals durch die Wurzel aus der Anzahl aller Werte-1 teilen
 			dUnsure = dError / sqrt(_data.num(sDatatable,0,nLine-1,j));
 
 			// --> Wie viele Werte sind nun innerhalb der Abweichung? <--
@@ -206,25 +198,24 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 			dKurt /= _data.num(sDatatable,0,nLine-1,j) * (dError*dError*dError*dError);
 			dKurt -= 3;
 
-			sOut[nLine+1][j] = "<<SUMBAR>>"; // Schreiben der berechneten Werte in die letzten drei Zeilen der Ausgabe
-			sOut[nLine+2][j] = _lang.get("STATS_TYPE_AVG") + ": " + toString(dAverage, nPrecision);
-			sOut[nLine+3][j] = _lang.get("STATS_TYPE_STD") + ": " + toString(dError, nPrecision);
-			sOut[nLine+4][j] = _lang.get("STATS_TYPE_CONFINT") + ": " + toString(dPercentage, nPrecision) + " %";
-			sOut[nLine+5][j] = _lang.get("STATS_TYPE_STDERR") + ": " + toString(dUnsure, nPrecision);
-			sOut[nLine+6][j] = _lang.get("STATS_TYPE_MED") + ": " + toString(_data.med(sDatatable,0,nLine-1,j), nPrecision);
-			sOut[nLine+7][j] = "Q1: " + toString(_data.pct(sDatatable,0,nLine-1,j,-1,0.25), nPrecision);
-			sOut[nLine+8][j] = "Q3: " + toString(_data.pct(sDatatable,0,nLine-1,j,-1,0.75), nPrecision);
-			sOut[nLine+9][j] = _lang.get("STATS_TYPE_RMS") + ": " + toString(_data.norm(sDatatable,0,nLine-1,j)/sqrt(_data.num(sDatatable,0,nLine-1,j)), nPrecision);
-			sOut[nLine+10][j] = _lang.get("STATS_TYPE_SKEW") + ": " + toString(dSkew, nPrecision);
-			sOut[nLine+11][j] = _lang.get("STATS_TYPE_EXCESS") + ": " + toString(dKurt, nPrecision);
-			sOut[nLine+12][j] = "min: " + toString(_data.min(sDatatable,0,nLine-1,j), nPrecision);
-			sOut[nLine+13][j] = "max: " + toString(_data.max(sDatatable,0,nLine-1,j), nPrecision);
-			sOut[nLine+14][j] = "num: " + toString(_data.num(sDatatable,0,nLine-1,j), nPrecision);
-			sOut[nLine+15][j] = "cnt: " + toString(_data.cnt(sDatatable,0,nLine-1,j), nPrecision);
+			sOut[nHeadlines + nLine+0][j] = "<<SUMBAR>>"; // Schreiben der berechneten Werte in die letzten drei Zeilen der Ausgabe
+			sOut[nHeadlines + nLine+1][j] = _lang.get("STATS_TYPE_AVG") + ": " + toString(dAverage, nPrecision);
+			sOut[nHeadlines + nLine+2][j] = _lang.get("STATS_TYPE_STD") + ": " + toString(dError, nPrecision);
+			sOut[nHeadlines + nLine+3][j] = _lang.get("STATS_TYPE_CONFINT") + ": " + toString(dPercentage, nPrecision) + " %";
+			sOut[nHeadlines + nLine+4][j] = _lang.get("STATS_TYPE_STDERR") + ": " + toString(dUnsure, nPrecision);
+			sOut[nHeadlines + nLine+5][j] = _lang.get("STATS_TYPE_MED") + ": " + toString(_data.med(sDatatable,0,nLine-1,j), nPrecision);
+			sOut[nHeadlines + nLine+6][j] = "Q1: " + toString(_data.pct(sDatatable,0,nLine-1,j,-1,0.25), nPrecision);
+			sOut[nHeadlines + nLine+7][j] = "Q3: " + toString(_data.pct(sDatatable,0,nLine-1,j,-1,0.75), nPrecision);
+			sOut[nHeadlines + nLine+8][j] = _lang.get("STATS_TYPE_RMS") + ": " + toString(_data.norm(sDatatable,0,nLine-1,j)/sqrt(_data.num(sDatatable,0,nLine-1,j)), nPrecision);
+			sOut[nHeadlines + nLine+9][j] = _lang.get("STATS_TYPE_SKEW") + ": " + toString(dSkew, nPrecision);
+			sOut[nHeadlines + nLine+10][j] = _lang.get("STATS_TYPE_EXCESS") + ": " + toString(dKurt, nPrecision);
+			sOut[nHeadlines + nLine+11][j] = "min: " + toString(_data.min(sDatatable,0,nLine-1,j), nPrecision);
+			sOut[nHeadlines + nLine+12][j] = "max: " + toString(_data.max(sDatatable,0,nLine-1,j), nPrecision);
+			sOut[nHeadlines + nLine+13][j] = "num: " + toString(_data.num(sDatatable,0,nLine-1,j), nPrecision);
+			sOut[nHeadlines + nLine+14][j] = "cnt: " + toString(_data.cnt(sDatatable,0,nLine-1,j), nPrecision);
 			boost::math::students_t dist(_data.num(sDatatable,0,nLine-1,j));
-			sOut[nLine+16][j] = "s_t: " + toString(boost::math::quantile(boost::math::complement(dist, 0.025)), nPrecision);
+			sOut[nHeadlines + nLine+15][j] = "s_t: " + toString(boost::math::quantile(boost::math::complement(dist, 0.025)), nPrecision);
 		}
-		//cerr << "|-> Die Statistiken von " << nCol << " Spalte(n) wurden erfolgreich berechnet." << endl;
 
 		// --> Allgemeine Ausgabe-Info-Parameter setzen <--
 		_out.setPluginName(_lang.get("STATS_OUT_PLGNINFO", PI_MED, _data.getDataFileName(sDatatable)));
@@ -232,18 +223,35 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 		_out.setPrefix("stats");
 		// --> Wenn sCmd einen Eintrag enthaelt, dann soll die Ausgabe automatische in eine Datei geschrieben werden <--
 
-        sOverview = new string*[nStatsFields-1];
-        for (unsigned int i = 0; i < nStatsFields-1; i++)
+        sOverview = new string*[nStatsFields-2 + nHeadlines];
+
+        for (unsigned int i = 0; i < nStatsFields-2+nHeadlines; i++)
             sOverview[i] = new string[nCol+1];
+
         sOverview[0][0] = " ";
+
         for (int j = 0; j < nCol; j++)
         {
-            sOverview[0][j+1] = _data.getHeadLineElement(j,sDatatable);
-            for (int n = 1; n < nStatsFields-1; n++)
+            string sHeadline = _data.getHeadLineElement(j, sDatatable);
+
+            for (int i = 0; i < nHeadlines; i++)
             {
-                sOverview[n][j+1] = sOut[nLine+n+1][j].substr(sOut[nLine+n+1][j].find(':')+1);
+                if (sHeadline.length())
+                {
+                    sOverview[i][j+1] = sHeadline.substr(0, sHeadline.find("\\n"));
+                    if (sHeadline.find("\\n") != string::npos)
+                        sHeadline.erase(0, sHeadline.find("\\n") + 2);
+                    else
+                        break;
+                }
+            }
+
+            for (int n = 0; n < nStatsFields-2; n++)
+            {
+                sOverview[n + nHeadlines][j+1] = sOut[nHeadlines + nLine+n+1][j].substr(sOut[nHeadlines + nLine+n+1][j].find(':')+1);
+
                 if (!j)
-                    sOverview[n][0] = sOut[nLine+n+1][j].substr(0,sOut[nLine+n+1][j].find(':')+1);
+                    sOverview[n + nHeadlines][0] = sOut[nHeadlines + nLine+n+1][j].substr(0,sOut[nHeadlines + nLine+n+1][j].find(':')+1);
             }
         }
 
@@ -251,12 +259,15 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
             _out.setFileName(sSavePath);
         else
             _out.generateFileName();
+
 		// --> Formatieren und Schreiben der Ausgabe <--
         //cerr << "|" << endl;
         _out.setCompact(false);
 		_out.setCommentLine(_lang.get("STATS_OUT_COMMENTLINE"));
+
 		if (_out.isFile())
-            _out.format(sOut, nCol, nLine+nStatsFields, _option, true);
+            _out.format(sOut, nCol, nLine+nStatsFields+nHeadlines, _option, true, nHeadlines);
+
         _out.reset();
         _out.setCompact(false);
 		_out.setCommentLine(_lang.get("STATS_OUT_COMMENTLINE"));
@@ -265,19 +276,22 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
         make_hline();
         NumeReKernel::print("NUMERE: " + toSystemCodePage(toUpperCase(_lang.get("STATS_HEADLINE"))));
         make_hline();
-        _out.format(sOverview, nCol+1, nStatsFields-1, _option, true);
+        _out.format(sOverview, nCol+1, nStatsFields-2+nHeadlines, _option, true, nHeadlines);
         _out.reset();
         NumeReKernel::toggleTableStatus();
         make_hline();
         // --> Speicher wieder freigeben! <--
 
-        for (unsigned int i = 0; i < nStatsFields-1; i++)
+        for (unsigned int i = 0; i < nStatsFields-2+nHeadlines; i++)
             delete[] sOverview[i];
+
         delete[] sOverview;
-		for (int i = 0; i < nLine+nStatsFields; i++)
+
+		for (int i = 0; i < nLine + nStatsFields + nHeadlines; i++)
 		{
 			delete[] sOut[i];
 		}
+
 		delete[] sOut;
 		sOut = 0;
 	}

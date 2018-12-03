@@ -3740,6 +3740,37 @@ long long int Datafile::getAppendedZeroes(long long int _i, const string& sCache
 	}
 }
 
+// This function counts the headline lines of the whole table
+int Datafile::getHeadlineCount(const string& sCache) const
+{
+    if (sCache != "data")
+        return Cache::getHeadlineCount(sCache);
+
+    int nHeadlineCount = 1;
+    // Get the dimensions of the complete headline (i.e. including possible linebreaks)
+    for (long long int j = 0; j < getCols(sCache); j++)
+    {
+        // No linebreak? Continue
+        if (sHeadLine[j].find("\\n") == string::npos)
+            continue;
+
+        int nLinebreak = 0;
+
+        // Count all linebreaks
+        for (unsigned int n = 0; n < sHeadLine[j].length() - 2; n++)
+        {
+            if (sHeadLine[j].substr(n, 2) == "\\n")
+                nLinebreak++;
+        }
+
+        // Save the maximal number
+        if (nLinebreak + 1 > nHeadlineCount)
+            nHeadlineCount = nLinebreak + 1;
+    }
+
+    return nHeadlineCount;
+}
+
 // --> gibt zurueck, ob das Element der _nLine-ten Zeile und der _nCol-ten Spalte ueberhaupt gueltig ist <--
 bool Datafile::isValidEntry(long long int _nLine, long long int _nCol, const string& sCache) const
 {

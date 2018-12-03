@@ -116,6 +116,10 @@ class Cache : public FileSystem
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->save(ValidFileName(_sFileName, ".ndat"));
 		}
+		inline int getHeadlineCount(const string& _sCache) const
+		{
+		    return vCacheMemory[mCachesMap.at(_sCache)]->getHeadlineCount();
+		}
 
 	public:
 		Cache();										// Standard-Konstruktor
