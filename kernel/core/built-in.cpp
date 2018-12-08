@@ -907,6 +907,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			{
 				if (!nPos)
 					sCmd = "x = " + toString((int)_option.getWindow() + 1) + ", y = " + toString((int)_option.getWindow(1) + 1);
+                else
+                    sCmd.replace(nPos, sCommand.length(), "{" + toString((int)_option.getWindow() + 1) + ", " + toString((int)_option.getWindow(1) + 1) + "}");
 				return 0;
 			}
 			if (matchParams(sCmd, "asstr"))
