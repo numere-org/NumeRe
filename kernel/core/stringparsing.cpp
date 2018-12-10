@@ -2222,6 +2222,15 @@ static string addQuotationMarks(const string& sString)
 		return "\"" + sString + "\"";
 }
 
+// This static function masks the line break and the tabulator
+// control characters for storing the results
+static string maskControlCharacters(string sString)
+{
+    replaceAll(sString, "\n", "\\n");
+    replaceAll(sString, "\t", "\\t");
+    return sString;
+}
+
 // This static function handles all regular string functions
 static void parser_StringFuncHandler(string& sLine, const string& sFuncName, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars, StringFuncHandle funcHandle)
 {
@@ -3359,7 +3368,7 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
         {
             if (!vFinal[n].length() || n + nIndex[0] == nIndex[1] + 1 || n + nIndex[0] >= _data.getCols(sTableName))
                 break;
-            _data.setHeadLineElement(n + nIndex[0], sTableName, removeQuotationMarks(vFinal[n]));
+            _data.setHeadLineElement(n + nIndex[0], sTableName, removeQuotationMarks(maskControlCharacters(vFinal[n])));
         }
         nCurrentComponent = nStrings;
     }
@@ -3493,7 +3502,7 @@ static void parser_StoreStringToStringObject(const vector<string>& vFinal, strin
         {
             if (n + nIndex[0] == nIndex[1] + 1)
                 break;
-            _data.writeString(removeQuotationMarks(vFinal[n]), n + nIndex[0], nIndex[2]);
+            _data.writeString(removeQuotationMarks(maskControlCharacters(vFinal[n])), n + nIndex[0], nIndex[2]);
         }
         nCurrentComponent = nStrings;
     }
@@ -3503,7 +3512,7 @@ static void parser_StoreStringToStringObject(const vector<string>& vFinal, strin
         // Simply append the string results to the already available ones
         for (int n = nCurrentComponent; n < (int)nStrings; n++)
         {
-            _data.writeString(removeQuotationMarks(vFinal[n]));
+            _data.writeString(removeQuotationMarks(maskControlCharacters(vFinal[n])));
         }
         nCurrentComponent = nStrings;
     }
@@ -3555,7 +3564,7 @@ static int parser_StoreStringResults(const vector<string>& vFinal, const vector<
                 if (nCurrentComponent >= nStrings)
                     _data.setStringValue(sObject, "");
                 else
-                    _data.setStringValue(sObject, removeQuotationMarks(vFinal[nCurrentComponent]));
+                    _data.setStringValue(sObject, removeQuotationMarks(maskControlCharacters(vFinal[nCurrentComponent])));
                 nCurrentComponent++;
             }
             catch (...)
@@ -3623,7 +3632,7 @@ static int parser_StoreStringResults(const vector<string>& vFinal, const vector<
                 try
                 {
                     // Create a new string variable
-                    _data.setStringValue(sObject, removeQuotationMarks(vFinal[nCurrentComponent]));
+                    _data.setStringValue(sObject, removeQuotationMarks(maskControlCharacters(vFinal[nCurrentComponent])));
                     nCurrentComponent++;
                 }
                 catch (...)
@@ -3728,6 +3737,8 @@ static string parser_CreateStringOutput(vector<string>& vFinal, const vector<boo
 			else
 			{
 			    // Otherwise simply append the current character
+			    if (vFinal[j][k] == '\n')
+                    bLineBreaks = true;
 				sConsoleOut += vFinal[j][k];
 				sLine += vFinal[j][k];
 			}

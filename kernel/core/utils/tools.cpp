@@ -989,7 +989,7 @@ static Match findCasualCommand(const string& sCmd)
         // Jump over some special characters, if one didn't find any command yet
         if ((sCmd[i] == ' ' || sCmd[i] == '\t' || sCmd[i] == '-' || sCmd[i] == '=') && _mMatch.nPos == string::npos)
             continue;
-        else if ((sCmd[i] == ' ' || sCmd[i] == '-') && _mMatch.nPos != string::npos)
+        else if ((sCmd[i] == ' ' || sCmd[i] == '-' || sCmd[i] == ';') && _mMatch.nPos != string::npos)
         {
             // If we found a command start, then we examine these characters further
             if (sCmd[i] != '-' && sCmd.find_first_not_of(' ', i) != string::npos && sCmd[sCmd.find_first_not_of(' ', i)] == '=')
