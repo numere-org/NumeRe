@@ -789,7 +789,7 @@ void Cache::replaceStringMethod(string& sLine, size_t nPos, size_t nLength, cons
         sLine.replace(nPos, nLength, "\"" + sVarValue + "\"");
         return;
     }
-    string sDelimiter = "+-*/ ={^&|!,\\%#?:\";";
+    string sDelimiter = "+-*/ ={}^&|!,\\%#?:\";";
     string sMethod = "";
     string sArgument = "";
     size_t nFinalPos = 0;

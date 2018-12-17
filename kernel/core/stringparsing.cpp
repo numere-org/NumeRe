@@ -1398,8 +1398,10 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 		}
 	}
 
-	// Are there any vector braces left?
-	if (sLine.find('{') != string::npos)
+	// Are there any vector braces left? We will only parse them, if they
+    // contain a string part or a string parser
+	if (sLine.find('{') != string::npos
+        && (sLine.find('"') != string::npos || sLine.find('#') != string::npos))
 	{
 		n_pos = 0;
 		if (sLine.find('=') != string::npos
@@ -2520,7 +2522,7 @@ static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const
 			for (int n = 0; n < nReturn; n++)
 				nArg.push_back(intCast(v[n]));
 		}
-		return strRes.vResult.size();
+		return nArg.size();
 	}
 
 	// Set the expression and evaluate it
@@ -3277,7 +3279,8 @@ static vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFina
 		    try
 		    {
                 _parser.SetExpr(vFinal[n]);
-                vFinal[n] = toCmdString(_parser.Eval());
+                if (vFinal[n].find('{') == string::npos)
+                    vFinal[n] = toCmdString(_parser.Eval());
                 vIsNoStringValue.push_back(true);
             }
             catch (...)

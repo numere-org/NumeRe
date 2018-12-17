@@ -15,3 +15,4 @@ Fixed	The "stats" command now supports multiple table headlines.
 Fixed	The option "windowsize" of the "get" command works now as expected.
 Fixed	An issue with line break characters was resolved.
 Fixed	"break;" is now correctly recognized as "break". The same is valid for "continue".
+Fixed	Results of string functions may now be used as vector components.

@@ -3977,7 +3977,7 @@
 	"io/fileops.hpp"
 	"datamanagement/dataops.hpp"
 
-1533744499 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
+1544460011 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
 	"cache.hpp"
 	"../../kernel.hpp"
 
@@ -4236,7 +4236,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1544431078 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1544463183 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>
