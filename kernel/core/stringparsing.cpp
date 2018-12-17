@@ -831,6 +831,31 @@ static string strfnc_textparse(StringFuncArgs& funcArgs)
     return sParsedStrings;
 }
 
+// STR__STR_STR_STROPT
+// val = findtoken(str, str, [str])
+static string strfnc_findtoken(StringFuncArgs& funcArgs)
+{
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+    funcArgs.sArg3 = removeMaskedStrings(funcArgs.sArg3);
+
+    if (!funcArgs.sArg3.length())
+        funcArgs.sArg3 = " \t";
+
+    size_t nMatch = 0;
+
+    while ((nMatch = funcArgs.sArg1.find(funcArgs.sArg2, nMatch)) != string::npos)
+    {
+        if ((!nMatch || funcArgs.sArg3.find(funcArgs.sArg1[nMatch-1]) != string::npos)
+            && (nMatch + funcArgs.sArg2.length() >= funcArgs.sArg1.length() || funcArgs.sArg3.find(funcArgs.sArg1[nMatch+funcArgs.sArg2.length()]) != string::npos))
+        {
+            return toString(nMatch + 1);
+        }
+        nMatch++;
+    }
+    return "0";
+}
+
 // ----------------------------
 // bool PARSER(const string&, string&, string&, string&, int&, int&)
 // STR__STR_STR_STR_VALOPT_VALOPT
@@ -2124,6 +2149,7 @@ static map<string, StringFuncHandle> parser_getStringFuncHandles()
 	mHandleTable["getopt"]              = StringFuncHandle(STR_VAL, strfnc_getopt, false);
 	mHandleTable["replace"]             = StringFuncHandle(STR_VAL_VALOPT_STROPT, strfnc_replace, false); // fehler
 	mHandleTable["textparse"]           = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_textparse, false);
+	mHandleTable["findtoken"]           = StringFuncHandle(STR_STR_STROPT, strfnc_findtoken, false);
 	mHandleTable["replaceall"]          = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_replaceall, false);
 	mHandleTable["getfilelist"]         = StringFuncHandle(STR_VALOPT, strfnc_getfilelist, false);
 	mHandleTable["getfolderlist"]       = StringFuncHandle(STR_VALOPT, strfnc_getfolderlist, false);
