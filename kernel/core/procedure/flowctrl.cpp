@@ -1624,6 +1624,8 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
             bLoopSupressAnswer = true;
             nCalcType[nthCmd] |= CALCTYPE_SUPPRESSANSWER;
         }
+        else
+            bLoopSupressAnswer = false;
     }
     else
         bLoopSupressAnswer = false;
