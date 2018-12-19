@@ -345,7 +345,7 @@ bool Script::handleInstallInformation(string& sScriptCommand, bool& bFirstPassed
                 sScriptCommand += " " + sTemp;
             else
             {
-                sScriptCommand += " " + sTemp.substr(0,sTemp.find("<endinfo>"));
+                sScriptCommand += " " + sTemp.substr(0, sTemp.find("<endinfo>") + 9);
                 break;
             }
         }
