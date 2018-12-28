@@ -211,6 +211,7 @@ namespace mu
 			const valmap_type& GetConst() const;
 			const string_type& GetExpr() const;
 			const funmap_type& GetFunDef() const;
+			const std::map<std::string, std::vector<double> >& GetVectors() const;
 			string_type GetVersion(EParserVersionInfo eInfo = pviFULL) const;
 
 			const char_type** GetOprtDef() const;

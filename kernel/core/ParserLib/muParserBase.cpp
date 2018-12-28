@@ -1152,6 +1152,11 @@ namespace mu
 		return m_FunDef;
 	}
 
+	const std::map<std::string, std::vector<double> >& ParserBase::GetVectors() const
+	{
+	    return mVectorVars;
+	}
+
 	//---------------------------------------------------------------------------
 	/** \brief Retrieve the formula. */
 	const string_type& ParserBase::GetExpr() const

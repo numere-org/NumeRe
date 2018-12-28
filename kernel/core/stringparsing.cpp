@@ -125,11 +125,11 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 static string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars, size_t n_pos);
 static string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars);
 static int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string sObject, Datafile& _data, Parser& _parser, const Settings& _option);
-static string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string& sLine, bool bReturningLogicals, int parserFlags);
+static string parser_CreateStringOutput(Parser& _parser, vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string& sLine, bool bReturningLogicals, int parserFlags);
 static vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFinal, Parser& _parser, const Settings& _option, bool& bReturningLogicals);
 static string parser_CreateStringVectorVar(const vector<string>& vStringVector, map<string, vector<string> >& mStringVectorVars);
 static bool parser_containsStringVectorVars(const string& sLine, const map<string, vector<string> >& mStringVectorVars);
-static vector<string> parser_EvaluateStringVectors(string sLine, const map<string, vector<string> >& mStringVectorVars);
+static vector<string> parser_EvaluateStringVectors(string sLine, const map<string, vector<string> >& mStringVectorVars, Parser& _parser);
 static void parser_ExpandStringVectorComponents(vector<string>& vStringVector);
 static string parser_evalStringLogic(string sLine, Parser& _parser, bool& bReturningLogicals);
 static string parser_evalStringTernary(string sLine, Parser& _parser);
@@ -1059,7 +1059,7 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
 	// The result of the string parser core has to be parsed, so that
 	// it is readable in the terminal. This is done here in this
 	// function
-	string sConsoleOut = parser_CreateStringOutput(StrRes.vResult, StrRes.vNoStringVal, sLine, StrRes.bOnlyLogicals, parserFlags);
+	string sConsoleOut = parser_CreateStringOutput(_parser, StrRes.vResult, StrRes.vNoStringVal, sLine, StrRes.bOnlyLogicals, parserFlags);
 
 	// The output is probably not desired
 	if (NumeReKernel::bSupressAnswer)
@@ -1086,6 +1086,15 @@ int parser_StringParser(string& sLine, string& sCache, Datafile& _data, Parser& 
 		return 1;
 }
 
+// This static function determines, whether the equal sign at eq_pos is
+// an assignment operator and no boolean expression
+static bool parser_isAssignmentOperator(const string& sLine, size_t eq_pos)
+{
+    if (!eq_pos || eq_pos >= sLine.length())
+        return false;
+    return sLine[eq_pos - 1] != '!' && sLine[eq_pos - 1] != '<' && sLine[eq_pos - 1] != '>' && sLine[eq_pos + 1] != '=';
+}
+
 // This static function contains the core string functionality
 static StringResult parser_StringParserCore(string& sLine, string sCache, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> > mStringVectorVars, bool bParseNumericals)
 {
@@ -1098,17 +1107,14 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 	if (sLine.find('{') != string::npos
 			&& eq_pos != string::npos
 			&& sLine.find('{') < eq_pos
-			&& sLine.find('<') != eq_pos - 1
-			&& sLine.find('>') != eq_pos - 1
-			&& sLine.find('!') != eq_pos - 1
-			&& sLine[eq_pos + 1] != '=')
+			&& parser_isAssignmentOperator(sLine, eq_pos))
 	{
 	    // find the actual equal sign in the current string expression
 		while (isInQuotes(sLine, eq_pos) && sLine.find('=', eq_pos + 1) != string::npos)
 			eq_pos = sLine.find('=', eq_pos + 1);
 
         // Did we find an actual equal sign?
-		if (!isInQuotes(sLine, eq_pos))
+		if (!isInQuotes(sLine, eq_pos) && parser_isAssignmentOperator(sLine, eq_pos))
 		{
 		    // Store the left side and erase it from the original string
 			string sLeftSide = sLine.substr(0, eq_pos + 1);
@@ -1133,10 +1139,7 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 			 && sLine.find("string(") < sLine.find('{')
 			 && eq_pos > sLine.find("string(")
 			 && sLine.find('=') < sLine.find('{')
-			 && sLine[eq_pos - 1] != '<'
-			 && sLine[eq_pos - 1] != '>'
-			 && sLine[eq_pos - 1] != '!'
-			 && sLine[eq_pos + 1] != '='
+			 && parser_isAssignmentOperator(sLine, eq_pos)
 			)
 	{
 	    // Examine the left side of the assignment
@@ -1255,10 +1258,7 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 	if (!sObject.length()
 			&& eq_pos != string::npos
 			&& !isInQuotes(sLine, eq_pos)
-			&& eq_pos != sLine.find("==")
-			&& eq_pos != sLine.find("!=") + 1
-			&& eq_pos != sLine.find("<=") + 1
-			&& eq_pos != sLine.find(">=") + 1)
+			&& parser_isAssignmentOperator(sLine, eq_pos))
 		n_pos = eq_pos + 1;
 
 	// Get the string variables
@@ -1279,10 +1279,7 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 	if (!sObject.length()
 			&& eq_pos != string::npos
 			&& !isInQuotes(sLine, eq_pos)
-			&& eq_pos != sLine.find("==")
-			&& eq_pos != sLine.find("!=") + 1
-			&& eq_pos != sLine.find("<=") + 1
-			&& eq_pos != sLine.find(">=") + 1)
+			&& parser_isAssignmentOperator(sLine, eq_pos))
 	{
 		if (sLine.substr(0, eq_pos).find("data(") != string::npos || _data.containsCacheElements(sLine.substr(0, eq_pos)))
 		{
@@ -1321,10 +1318,7 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 			if (eq_pos != string::npos
 					&& eq_pos
 					&& eq_pos < sLine.length() + 1
-					&& sLine[eq_pos + 1] != '='
-					&& sLine[eq_pos - 1] != '!'
-					&& sLine[eq_pos - 1] != '<'
-					&& sLine[eq_pos - 1] != '>')
+					&& parser_isAssignmentOperator(sLine, eq_pos))
 				sLine.erase(0, eq_pos + 1);
 			StripSpaces(sLine);
 		}
@@ -1429,11 +1423,9 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
         && (sLine.find('"') != string::npos || sLine.find('#') != string::npos))
 	{
 		n_pos = 0;
-		if (sLine.find('=') != string::npos
-				&& sLine.find('=') != sLine.find("==")
-				&& sLine.find('=') != sLine.find("!=") + 1
-				&& sLine.find('=') != sLine.find("<=") + 1
-				&& sLine.find('=') != sLine.find(">=") + 1
+		eq_pos = sLine.find('=');
+		if (eq_pos != string::npos
+				&& parser_isAssignmentOperator(sLine, eq_pos)
 				&& !sObject.length()
 				&& !isInQuotes(sLine, sLine.find('=')))
 			n_pos = sLine.find('=') + 1;
@@ -1475,10 +1467,7 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 	if (!sObject.length()
 			&& eq_pos != string::npos
 			&& !isInQuotes(sLine, eq_pos)
-			&& eq_pos != sLine.find("==")
-			&& eq_pos != sLine.find("!=") + 1
-			&& eq_pos != sLine.find("<=") + 1
-			&& eq_pos != sLine.find(">=") + 1)
+			&& parser_isAssignmentOperator(sLine, eq_pos))
 	{
 		sObject = sLine.substr(0, eq_pos);
 		sLine = sLine.substr(eq_pos + 1);
@@ -1488,7 +1477,7 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 	sLine = parser_NumToString(sLine, _data, _parser, _option, mStringVectorVars);
 
 	// Split the list to a vector
-	strRes.vResult = parser_EvaluateStringVectors(sLine, mStringVectorVars);
+	strRes.vResult = parser_EvaluateStringVectors(sLine, mStringVectorVars, _parser);
 
 	// Ensure that there is at least one result
 	if (!strRes.vResult.size())
@@ -1544,12 +1533,22 @@ static bool parser_containsStringVectorVars(const string& sLine, const map<strin
 	return false;
 }
 
+// This static function is used to determine, whether a string vector
+// component is numerical parsable
+static bool parser_isNumericCandidate(const string& sComponent)
+{
+    if (sComponent.front() != '"' && sComponent.find_first_of("+-*/^!&|<>=% ?:,") != string::npos)
+        return true;
+    return false;
+}
+
 // This static function evaluates the passed string vector
 // and returns it's evaluated components in separate vector
 // components
-static vector<string> parser_EvaluateStringVectors(string sLine, const map<string, vector<string> >& mStringVectorVars)
+static vector<string> parser_EvaluateStringVectors(string sLine, const map<string, vector<string> >& mStringVectorVars, Parser& _parser)
 {
 	vector<string> vRes;
+    const map<string, vector<double> >& mNumVectorVars = _parser.GetVectors();
 
 	// As long as the current vector is not empty
 	while (sLine.length())
@@ -1585,14 +1584,43 @@ static vector<string> parser_EvaluateStringVectors(string sLine, const map<strin
 						if ((iter->second).size() > nCurrentComponent)
 						{
 							bHasComponents = true;
-							currentline.replace(nMatch, (iter->first).length(), (iter->second)[nCurrentComponent]);
+							if (parser_isNumericCandidate((iter->second)[nCurrentComponent]))
+                                currentline.replace(nMatch, (iter->first).length(), "(" + (iter->second)[nCurrentComponent] + ")");
+                            else
+                                currentline.replace(nMatch, (iter->first).length(), (iter->second)[nCurrentComponent]);
 						}
 						else if ((iter->second).size() == 1)
 						{
-							currentline.replace(nMatch, (iter->first).length(), (iter->second)[0]);
+						    if (parser_isNumericCandidate((iter->second)[0]))
+                                currentline.replace(nMatch, (iter->first).length(), "(" + (iter->second)[0] + ")");
+                            else
+                                currentline.replace(nMatch, (iter->first).length(), (iter->second)[0]);
 						}
 						else
 							currentline.replace(nMatch, (iter->first).length(), "\"\"");
+					}
+				}
+
+				// Replace all found numerical vectors with their nCurrentComponent-th component
+				for (auto iter = mNumVectorVars.begin(); iter != mNumVectorVars.end(); ++iter)
+				{
+					size_t nMatch = 0;
+
+					// Vector found: replace its occurence with its nCurrentComponent-th value
+					while ((nMatch = currentline.find(iter->first)) != string::npos)
+					{
+					    // Handle the size of the current vector correspondingly
+						if ((iter->second).size() > nCurrentComponent)
+						{
+							bHasComponents = true;
+							currentline.replace(nMatch, (iter->first).length(), toCmdString((iter->second)[nCurrentComponent]));
+						}
+						else if ((iter->second).size() == 1)
+						{
+							currentline.replace(nMatch, (iter->first).length(), toCmdString((iter->second)[0]));
+						}
+						else
+							currentline.replace(nMatch, (iter->first).length(), "nan");
 					}
 				}
 
@@ -3304,9 +3332,9 @@ static vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFina
 		    // string and store it correspondingly
 		    try
 		    {
-                _parser.SetExpr(vFinal[n]);
-                if (vFinal[n].find('{') == string::npos)
-                    vFinal[n] = toCmdString(_parser.Eval());
+//                _parser.SetExpr(vFinal[n]);
+//                if (vFinal[n].find('{') == string::npos)
+//                    vFinal[n] = toCmdString(_parser.Eval());
                 vIsNoStringValue.push_back(true);
             }
             catch (...)
@@ -3416,29 +3444,43 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
         if (_idx.nJ[1] == -1)
             _idx.nJ[1] = _idx.nJ[0];
 
-        // Write the return values to the data table without
-        // parsing them but directly converting the string into
-        // double
+        // Write the return values to the data table with
+        // parsing them
+        value_type* v = nullptr;
+        int nResults = 0;
+        int nthComponent = 0;
+
         for (size_t i = nCurrentComponent; i < vFinal.size(); i++)
         {
-            if (_idx.nI[0] == _idx.nI[1] && _idx.nJ[0] != _idx.nJ[1])
+            // Set expression and evaluate it (not efficient but currently necessary)
+            _parser.SetExpr(vFinal[i]);
+            v = _parser.Eval(nResults);
+
+            // Special case: only one single value
+            if (_idx.nI[0] == _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
             {
-                if (_idx.nJ[0] + i - nCurrentComponent > _idx.nJ[1] && _idx.nJ[1] != -2)
-                    break;
-                _data.writeToCache(_idx.nI[0], _idx.nJ[0] + i - nCurrentComponent, sTableName, StrToDb(vFinal[i]));
-            }
-            else if (_idx.nI[0] != _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
-            {
-                if (_idx.nI[0] + i - nCurrentComponent > _idx.nI[1] && _idx.nI[1] != -2)
-                    break;
-                _data.writeToCache(_idx.nI[0] + i - nCurrentComponent, _idx.nJ[0], sTableName, StrToDb(vFinal[i]));
-            }
-            else if (_idx.nI[0] == _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
-            {
-                _data.writeToCache(_idx.nI[0], _idx.nJ[0], sTableName, StrToDb(vFinal[i]));
+                _data.writeToCache(_idx.nI[0], _idx.nJ[0], sTableName, v[0]);
                 break;
             }
 
+            // Write the single values
+            for (int j = 0; j < nResults; j++)
+            {
+                if (_idx.nI[0] == _idx.nI[1] && _idx.nJ[0] != _idx.nJ[1])
+                {
+                    if (_idx.nJ[0] + nthComponent > _idx.nJ[1] && _idx.nJ[1] != -2)
+                        break;
+                    _data.writeToCache(_idx.nI[0], _idx.nJ[0] + nthComponent, sTableName, v[j]);
+                }
+                else if (_idx.nI[0] != _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
+                {
+                    if (_idx.nI[0] + nthComponent > _idx.nI[1] && _idx.nI[1] != -2)
+                        break;
+                    _data.writeToCache(_idx.nI[0] + nthComponent, _idx.nJ[0], sTableName, v[j]);
+                }
+
+                nthComponent++;
+            }
         }
         nCurrentComponent = nStrings;
     }
@@ -3547,7 +3589,6 @@ static void parser_StoreStringToStringObject(const vector<string>& vFinal, strin
     }
 
 }
-
 
 // This static function stores the calculated string results
 // in their desired targets.
@@ -3678,7 +3719,7 @@ static int parser_StoreStringResults(const vector<string>& vFinal, const vector<
 
 // This static function converts the string parser results
 // into an output string for the console
-static string parser_CreateStringOutput(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string& sLine, bool bReturningLogicals, int parserFlags)
+static string parser_CreateStringOutput(Parser& _parser, vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string& sLine, bool bReturningLogicals, int parserFlags)
 {
 	sLine.clear();
 
@@ -3701,7 +3742,10 @@ static string parser_CreateStringOutput(vector<string>& vFinal, const vector<boo
 			if (!(parserFlags & NO_QUOTES) && !vIsNoStringValue[j])
 				sLine += "\"" + vFinal[j] + "\"";
 			else
-				sLine += vFinal[j];
+            {
+                sLine += vFinal[j];
+            }
+
 			if (j < vFinal.size() - 1)
 				sLine += ",";
 			continue;
@@ -3715,64 +3759,79 @@ static string parser_CreateStringOutput(vector<string>& vFinal, const vector<boo
 			sLine += "\"";
 		}
 
-		// Go through the current string value
-		for (size_t k = 0; k < vFinal[j].length(); k++)
-		{
-		    // If there are escaped control characters,
-		    // Replace them with their actual value here
-			if (k + 1 < vFinal[j].length()
-					&& vFinal[j][k] == '\\'
-					&& (vFinal[j][k + 1] == 'n' || vFinal[j][k + 1] == 't' || vFinal[j][k + 1] == '"' || vFinal[j][k + 1] == ' ')
-					&& !(vFinal[j].substr(k + 1, 3) == "tau"
-						 && ((checkDelimiter(vFinal[j].substr(k, 5)) && vFinal[j].length() >= k + 5) || (vFinal[j].length() == k + 4)))
-					&& !(vFinal[j].substr(k + 1, 5) == "theta"
-						 && ((checkDelimiter(vFinal[j].substr(k, 7)) && vFinal[j].length() >= k + 7) || (vFinal[j].length() == k + 6)))
-					&& !(vFinal[j].substr(k + 1, 2) == "nu"
-						 && ((checkDelimiter(vFinal[j].substr(k, 4)) && vFinal[j].length() >= k + 4) || (vFinal[j].length() == k + 3)))
-					&& !(vFinal[j].substr(k + 1, 3) == "neq"
-						 && ((checkDelimiter(vFinal[j].substr(k, 5)) && vFinal[j].length() >= k + 5) || (vFinal[j].length() == k + 4)))
-			   )
-			{
-				//\not\neq\ni
-				if (vFinal[j][k + 1] == 'n') // Line break
-				{
-					sConsoleOut += "\n";
-					sLine += "\n";
-					bLineBreaks = true;
-				}
-				else if (vFinal[j][k + 1] == 't') // tabulator
-				{
-					sConsoleOut += "\t";
-					sLine += "\t";
-				}
-				else if (vFinal[j][k + 1] == '"') // quotation mark
-				{
-					sConsoleOut += "\"";
-					if (!(parserFlags & KEEP_MASKED_QUOTES))
-						sLine += "\"";
-					else
-						sLine += "\\\"";
-				}
-				else if (vFinal[j][k + 1] == ' ') // backslash itself
-				{
-					sConsoleOut += "\\";
-					if (!(parserFlags & KEEP_MASKED_CONTROL_CHARS))
-						sLine += "\\";
-					else
-						sLine += "\\ ";
-				}
-				k += 1;
-			}
-			else
-			{
-			    // Otherwise simply append the current character
-			    if (vFinal[j][k] == '\n')
-                    bLineBreaks = true;
-				sConsoleOut += vFinal[j][k];
-				sLine += vFinal[j][k];
-			}
-		}
-
+		if (!vIsNoStringValue[j])
+        {
+            // Go through the current string value
+            for (size_t k = 0; k < vFinal[j].length(); k++)
+            {
+                // If there are escaped control characters,
+                // Replace them with their actual value here
+                if (k + 1 < vFinal[j].length()
+                        && vFinal[j][k] == '\\'
+                        && (vFinal[j][k + 1] == 'n' || vFinal[j][k + 1] == 't' || vFinal[j][k + 1] == '"' || vFinal[j][k + 1] == ' ')
+                        && !(vFinal[j].substr(k + 1, 3) == "tau"
+                             && ((checkDelimiter(vFinal[j].substr(k, 5)) && vFinal[j].length() >= k + 5) || (vFinal[j].length() == k + 4)))
+                        && !(vFinal[j].substr(k + 1, 5) == "theta"
+                             && ((checkDelimiter(vFinal[j].substr(k, 7)) && vFinal[j].length() >= k + 7) || (vFinal[j].length() == k + 6)))
+                        && !(vFinal[j].substr(k + 1, 2) == "nu"
+                             && ((checkDelimiter(vFinal[j].substr(k, 4)) && vFinal[j].length() >= k + 4) || (vFinal[j].length() == k + 3)))
+                        && !(vFinal[j].substr(k + 1, 3) == "neq"
+                             && ((checkDelimiter(vFinal[j].substr(k, 5)) && vFinal[j].length() >= k + 5) || (vFinal[j].length() == k + 4)))
+                   )
+                {
+                    //\not\neq\ni
+                    if (vFinal[j][k + 1] == 'n') // Line break
+                    {
+                        sConsoleOut += "\n";
+                        sLine += "\n";
+                        bLineBreaks = true;
+                    }
+                    else if (vFinal[j][k + 1] == 't') // tabulator
+                    {
+                        sConsoleOut += "\t";
+                        sLine += "\t";
+                    }
+                    else if (vFinal[j][k + 1] == '"') // quotation mark
+                    {
+                        sConsoleOut += "\"";
+                        if (!(parserFlags & KEEP_MASKED_QUOTES))
+                            sLine += "\"";
+                        else
+                            sLine += "\\\"";
+                    }
+                    else if (vFinal[j][k + 1] == ' ') // backslash itself
+                    {
+                        sConsoleOut += "\\";
+                        if (!(parserFlags & KEEP_MASKED_CONTROL_CHARS))
+                            sLine += "\\";
+                        else
+                            sLine += "\\ ";
+                    }
+                    k += 1;
+                }
+                else
+                {
+                    // Otherwise simply append the current character
+                    if (vFinal[j][k] == '\n')
+                        bLineBreaks = true;
+                    sConsoleOut += vFinal[j][k];
+                    sLine += vFinal[j][k];
+                }
+            }
+        }
+        else
+        {
+            _parser.SetExpr(vFinal[j]);
+            int nResults = 0;
+            value_type* v = _parser.Eval(nResults);
+            for (int k = 0; k < nResults-1; k++)
+            {
+                sLine += toCmdString(v[k]) + ", ";
+                sConsoleOut += toCmdString(v[k]) + ", ";
+            }
+            sLine += toCmdString(v[nResults-1]);
+            sConsoleOut += toCmdString(v[nResults-1]);
+        }
 		// End the current string value with a quotation mark
 		// if it is not a special case
 		if (vFinal[j] != "\\n" && vFinal[j] != "\\t" && !(parserFlags & NO_QUOTES) && !bReturningLogicals && !vIsNoStringValue[j])
