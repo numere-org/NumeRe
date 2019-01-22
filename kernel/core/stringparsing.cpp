@@ -3418,12 +3418,14 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
         }
 
         // Write the string to the correct data table
-        if (!nIndex[1])
-            nIndex[1] = _data.getCols(sTableName);
+        if (!nIndex[1] && sTableName == "data")
+            nIndex[1] = _data.getCols("data");
         parser_CheckIndices(nIndex[0], nIndex[1]);
         for (int n = nCurrentComponent; n < (int)nStrings; n++)
         {
-            if (!vFinal[n].length() || n + nIndex[0] == nIndex[1] + 1 || n + nIndex[0] >= _data.getCols(sTableName))
+            if (!vFinal[n].length()
+                || (nIndex[1] && n + nIndex[0] == nIndex[1] + 1)
+                || (sTableName == "data" && n + nIndex[0] >= _data.getCols("data")))
                 break;
             _data.setHeadLineElement(n + nIndex[0], sTableName, removeQuotationMarks(maskControlCharacters(vFinal[n])));
         }
