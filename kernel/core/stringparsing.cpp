@@ -2079,6 +2079,10 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 			}
 			if (!containsStrings(sExpr) && !_data.containsStringVars(sExpr) && !parser_containsStringVectorVars(sExpr, mStringVectorVars))
 			{
+                // check for data sets in the evaluation of the `valtostr()` arguments
+                if (sExpr.find("data(") != string::npos || _data.containsCacheElements(sExpr))
+                    getDataElements(sExpr, _parser, _data, _option);
+
 				int nResults = 0;
 				value_type* v = 0;
 				_parser.SetExpr(sExpr);
@@ -2623,6 +2627,10 @@ static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const
 	}
 	else
 		sArg.push_back(removeQuotationMarks(sFuncArgument));
+
+    // Declare argument as numerical only
+    bLogicalOnly = true;
+
 	return sArg.size();
 }
 

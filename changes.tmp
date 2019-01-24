@@ -19,3 +19,5 @@ Fixed	Results of string functions may now be used as vector components.
 Fixed	A single suppressed line in an "if" flow control statement does not suppress all following lines any more.
 Fixed	The "install" section of scripts may now be executed again.
 Fixed	Recursive expressions with string and numerical mixes are now allowed
+Fixed	"valtostr()" is now able to handle data sets
+Fixed	Index vectors now work correctly, when used in a string expression
