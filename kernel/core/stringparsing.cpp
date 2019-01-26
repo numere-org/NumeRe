@@ -124,7 +124,7 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 
 static string parser_GetDataForString(string sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars, size_t n_pos);
 static string parser_NumToString(const string& sLine, Datafile& _data, Parser& _parser, const Settings& _option, map<string, vector<string> >& mStringVectorVars);
-static int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string sObject, Datafile& _data, Parser& _parser, const Settings& _option);
+static int parser_StoreStringResults(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string sObject, Datafile& _data, Parser& _parser, const Settings& _option);
 static string parser_CreateStringOutput(Parser& _parser, vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string& sLine, bool bReturningLogicals, int parserFlags);
 static vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFinal, Parser& _parser, const Settings& _option, bool& bReturningLogicals);
 static string parser_CreateStringVectorVar(const vector<string>& vStringVector, map<string, vector<string> >& mStringVectorVars);
@@ -3602,7 +3602,7 @@ static void parser_StoreStringToStringObject(const vector<string>& vFinal, strin
 
 // This static function stores the calculated string results
 // in their desired targets.
-static int parser_StoreStringResults(const vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string __sObject, Datafile& _data, Parser& _parser, const Settings& _option)
+static int parser_StoreStringResults(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string __sObject, Datafile& _data, Parser& _parser, const Settings& _option)
 {
     // Only do something, if the target object is not empty
 	if (!__sObject.length())
@@ -3680,7 +3680,26 @@ static int parser_StoreStringResults(const vector<string>& vFinal, const vector<
                     value_type* v = 0;
                     _parser.SetExpr(sObject + " = " + vFinal[nCurrentComponent]);
                     v = _parser.Eval(nResults);
-                    vAns = v[0];
+
+                    // Replace the evaluated expression with its result,
+                    // which will be shown in the terminal. The actual precision
+                    // remains untouched!
+                    if (nResults)
+                    {
+                        vAns = v[0];
+                        string sValues;
+
+                        // Transform the results into a string
+                        for (int n = 0; n < nResults; n++)
+                        {
+                            sValues += toString(v[n], _option) + ",";
+                        }
+                        sValues.pop_back();
+
+                        // replace the current expression
+                        vFinal[nCurrentComponent] = sValues;
+                    }
+
                     nCurrentComponent++;
                 }
                 catch (...)
