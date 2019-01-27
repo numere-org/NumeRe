@@ -2044,39 +2044,51 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 	while (sLine.find("valtostr(", n_pos) != string::npos)
 	{
 		n_pos = sLine.find("valtostr(", n_pos);
+
 		if (isInQuotes(sLine, n_pos, true))
 		{
 			n_pos++;
 			continue;
 		}
+
 		unsigned int nPos = n_pos + 8;
+
 		if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
 			throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
+
 		nPos += getMatchingParenthesis(sLine.substr(nPos));
+
 		if (!isInQuotes(sLine, n_pos, true) && !isInQuotes(sLine, nPos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos - 1, 10))))
 		{
 			string sToString = sLine.substr(n_pos + 9, nPos - n_pos - 9);
 			string sExpr = getNextArgument(sToString, true);
 			string sChar = "";
 			unsigned int nCount = 0;
+
 			if (sToString.length())
 			{
 				sChar = getNextArgument(sToString, true);
+
 				if (containsStrings(sChar) || _data.containsStringVars(sChar))
 				{
 					StringResult strRes = parser_StringParserCore(sChar, "", _data, _parser, _option, mStringVectorVars);
+
 					if (!strRes.vResult.size())
 						throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
 					// use only first one
 					sChar = removeQuotationMarks(strRes.vResult[0]);
 				}
+
 				string sCnt = getNextArgument(sToString, true);
+
 				if (sCnt.length())
 				{
 					_parser.SetExpr(sCnt);
 					nCount = (unsigned int)fabs(_parser.Eval());
 				}
 			}
+
 			if (!containsStrings(sExpr) && !_data.containsStringVars(sExpr) && !parser_containsStringVectorVars(sExpr, mStringVectorVars))
 			{
                 // check for data sets in the evaluation of the `valtostr()` arguments
@@ -2087,41 +2099,40 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 				value_type* v = 0;
 				_parser.SetExpr(sExpr);
 				v = _parser.Eval(nResults);
-				if (nResults > 1)
-					sToString = "{";
-				else
-					sToString.clear();
-				string sElement = "";
+				vector<string> vToString;
+                string sElement = "";
+
 				for (int n = 0; n < nResults; n++)
 				{
 					if (fabs(rint(v[n]) - v[n]) < 1e-14 && fabs(v[n]) >= 1.0)
 						sElement = toString((long long int)rint(v[n]));
 					else
 						sElement = toString(v[n], _option);
+
 					while (sElement.length() < nCount && sChar.length())
 						sElement.insert(0, sChar);
-					sToString += sElement;
-					if (nResults > 1)
-						sToString += ",";
+
+                    vToString.push_back("\"" + sElement + "\"");
 				}
-				if (nResults > 1)
-				{
-					sToString.back() = '}';
-				}
-				sToString = "\"" + sToString + "\"";
+
+				sToString = parser_CreateStringVectorVar(vToString, mStringVectorVars);
 			}
 			else
 			{
 				StringResult strRes = parser_StringParserCore(sExpr, "", _data, _parser, _option, mStringVectorVars);
+
 				if (!strRes.vResult.size())
 					throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
 				for (size_t i = 0; i < strRes.vResult.size(); i++)
 				{
 					while (strRes.vResult[i].length() < nCount && sChar.length())
 						strRes.vResult[i].insert(0, sChar);
+
 					// add quotation marks, if they are missing
 					strRes.vResult[i] = addQuotationMarks(strRes.vResult[i]);
 				}
+
 				sToString = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
 			}
 
