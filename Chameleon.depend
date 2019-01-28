@@ -4,7 +4,7 @@
 	"kernel/core/version.h"
 	<wx/msw/wx.rc>
 
-1542695669 d:\cpp\numere-source\trunk\kernel\core\version.h
+1548662819 d:\cpp\numere-source\trunk\kernel\core\version.h
 
 1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wx.rc
 	<windows.h>
