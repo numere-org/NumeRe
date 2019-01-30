@@ -839,11 +839,14 @@ static string strfnc_findtoken(StringFuncArgs& funcArgs)
     funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
     funcArgs.sArg3 = removeMaskedStrings(funcArgs.sArg3);
 
+    // Define default arguments
     if (!funcArgs.sArg3.length())
         funcArgs.sArg3 = " \t";
 
     size_t nMatch = 0;
 
+    // search the first match of the token, which is surrounded by the
+    // defined separator characters
     while ((nMatch = funcArgs.sArg1.find(funcArgs.sArg2, nMatch)) != string::npos)
     {
         if ((!nMatch || funcArgs.sArg3.find(funcArgs.sArg1[nMatch-1]) != string::npos)
