@@ -27,6 +27,7 @@ GraphHelper::GraphHelper(mglGraph* __graph, const PlotData& _pData)
     bLightActive = _pData.getLighting();
     bHires = _pData.getHighRes() == 2;
     dAspect = _pData.getAspect();
+    sTitle = _pData.getComposedTitle();
 }
 
 GraphHelper::~GraphHelper()

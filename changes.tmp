@@ -1,1 +1,4 @@
 New	Added new function "findtoken()"
+Applied	The "title" option of plots is now used as part of the window title of the graph window
+Fixed	Solved a little logical issue in the assignment of table headlines
+Applied	The "reset" option of plots is now used for the whole (!) plot. This will have an impact on multiplots. Do not use the "reset" option for a single plot of a multiplot set any more.

@@ -1640,7 +1640,7 @@ void NumeReWindow::editTable(NumeRe::Container<string> _stringTable, const strin
 
 void NumeReWindow::showGraph(GraphHelper* _helper)
 {
-    GraphViewer* viewer = new GraphViewer(this, "NumeRe: Graph", _helper, m_terminal);
+    GraphViewer* viewer = new GraphViewer(this, "NumeRe: " + _helper->getTitle(), _helper, m_terminal);
 
     viewer->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
     viewer->Show();

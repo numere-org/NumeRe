@@ -237,7 +237,7 @@ string PlotData::getFileName() const
 void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& _option, int nType)
 {
     string sCmd = toLowerCase(__sCmd);
-    if (matchParams(sCmd, "reset") && (nType == ALL || nType & GLOBAL))
+    if (matchParams(sCmd, "reset") && (nType == ALL || nType & SUPERGLOBAL))
         reset();
     if (matchParams(sCmd, "grid") && (nType == ALL || nType & GLOBAL))
         nGrid = 1;
@@ -1542,6 +1542,10 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             nPos = matchParams(sCmd, "title", '=') + 5;
             sPlotTitle = getArgAtPos(__sCmd, nPos);
             StripSpaces(sPlotTitle);
+            if (sComposedTitle.length())
+                sComposedTitle += ", " + sPlotTitle;
+            else
+                sComposedTitle = sPlotTitle;
         }
         if (matchParams(sCmd, "background", '='))
         {
@@ -1934,6 +1938,7 @@ void PlotData::reset()
     nTextsize = 5;
     sFileName = "";
     sPlotTitle = "";
+    sComposedTitle = "";
     nCoords = CARTESIAN;
     nLegendPosition = 3;
     nLegendstyle = 0;
@@ -1946,7 +1951,7 @@ void PlotData::reset()
 }
 
 // --> Daten im Speicher loeschen. Speicher selbst bleibt bestehen <--
-void PlotData::deleteData()
+void PlotData::deleteData(bool bGraphFinished /* = false*/)
 {
     if (dPlotData)
     {
@@ -1989,6 +1994,8 @@ void PlotData::deleteData()
     nRanges = 0;
     sFileName = "";
     sPlotTitle = "";
+    if (bGraphFinished)
+        sComposedTitle = "";
     if (!bAllHighRes)
         nHighResLevel = 0;
     dMin = NAN;

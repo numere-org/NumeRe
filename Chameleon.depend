@@ -2393,12 +2393,12 @@
 	<wx/wx.h>
 	<wx/treectrl.h>
 
-1517392809 d:\cpp\numere-source\trunk\kernel\core\plotting\graph_helper.hpp
+1549099518 d:\cpp\numere-source\trunk\kernel\core\plotting\graph_helper.hpp
 	<mgl2/wnd.h>
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1530279579 d:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.hpp
+1549101230 d:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.hpp
 	<string>
 	<cmath>
 	<vector>
@@ -3697,7 +3697,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1543739129 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1549099909 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -4144,16 +4144,16 @@
 	"muParserTokenReader.h"
 	"muParserBase.h"
 
-1517392843 source:d:\cpp\numere-source\trunk\kernel\core\plotting\graph_helper.cpp
+1549100899 source:d:\cpp\numere-source\trunk\kernel\core\plotting\graph_helper.cpp
 	"graph_helper.hpp"
 	"../../kernel.hpp"
 	"../utils/tools.hpp"
 
-1543220652 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.cpp
+1549105230 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.cpp
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1540272760 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1549105311 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
@@ -4236,7 +4236,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1548612724 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1549106644 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>

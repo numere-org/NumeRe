@@ -60,6 +60,7 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         string sAxisLabels[3];      // Achsenbeschriftungen fuer alle drei Achsen
         bool bDefaultAxisLabels[3];      // Achsenbeschriftungen fuer alle drei Achsen
         string sPlotTitle;          // Titelzeile fuer den Plot
+        string sComposedTitle;
         string sFontStyle;
         string sAxisBind;
         string sFunctionAxisBind;
@@ -515,7 +516,9 @@ class PlotData : public FileSystem  // CHILD von Filesystem
 
         // --> Lesen der Titelzeile <--
         inline string getTitle() const
-            {return sPlotTitle;};
+            {return sPlotTitle;}
+        inline string getComposedTitle() const
+            {return sComposedTitle;}
 
         // --> Einstellen der Groesse des Speichers <--
         void setDim(int _i, int _j = 1, int _k = 1);
@@ -528,7 +531,7 @@ class PlotData : public FileSystem  // CHILD von Filesystem
 
         // --> Zuruecksetzen des gesamten Objekts bzw. Loeschen des Speichers <--
         void reset();
-        void deleteData();
+        void deleteData(bool bGraphFinished = false);
 
         // --> Dimensionen des Speichers lesen <--
         int getRows() const;

@@ -3442,6 +3442,12 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
         // Write the string to the correct data table
         if (!nIndex[1] && sTableName == "data")
             nIndex[1] = _data.getCols("data");
+
+        // If the first element is non-zero but the second is,
+        // we use the number of elements as upper boundary
+        if (nIndex[0] && !nIndex[1])
+            nIndex[1] = nIndex[0] + nStrings - nCurrentComponent;
+
         parser_CheckIndices(nIndex[0], nIndex[1]);
         for (int n = nCurrentComponent; n < (int)nStrings; n++)
         {
