@@ -5,3 +5,4 @@ Applied	The "reset" option of plots is now used for the whole (!) plot. This wil
 New	Added shortkeys for "find procedure definition" and "find included file"
 Fixed	Context menu entry "fold current block" is now available for MATLAB and C/C++ files
 New	Created new "search" menu
+New	Added shortkeys for "Rename symbol" and "Extract marked section"

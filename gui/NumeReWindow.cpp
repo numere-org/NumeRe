@@ -1356,6 +1356,16 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             view->Check(ID_MENU_TOGGLE_DEBUGGER, _option.getUseDebugger());
             break;
 		}
+		case ID_MENU_RENAME_SYMBOL:
+        {
+            m_currentEd->OnRenameSymbolsFromMenu();
+            break;
+        }
+		case ID_MENU_ABSTRAHIZE_SECTION:
+        {
+            m_currentEd->OnAbstrahizeSectionFromMenu();
+            break;
+        }
 
 		case ID_COMPILE_PROJECT:
 		case ID_COMPILE:
@@ -4067,12 +4077,17 @@ void NumeReWindow::UpdateMenuBar()
 	menuLaTeX->Append(ID_MENU_RUN_LATEX, _guilang.get("GUI_MENU_RUNLATEX"), _guilang.get("GUI_MENU_RUNLATEX_TTP"));
 	menuLaTeX->Append(ID_MENU_COMPILE_LATEX, _guilang.get("GUI_MENU_COMPILE_TEX"), _guilang.get("GUI_MENU_COMPILE_TEX_TTP"));
 
+	wxMenu* menuRefactoring = new wxMenu();
+	menuRefactoring->Append(ID_MENU_RENAME_SYMBOL, _guilang.get("GUI_MENU_RENAME_SYMBOL"), _guilang.get("GUI_MENU_RENAME_SYMBOL_TTP"));
+	menuRefactoring->Append(ID_MENU_ABSTRAHIZE_SECTION, _guilang.get("GUI_MENU_ABSTRAHIZE_SECTION"), _guilang.get("GUI_MENU_ABSTRAHIZE_SECTION_TTP"));
+
 	wxMenu* menuTools = new wxMenu();
 
 	menuTools->Append(ID_MENU_OPTIONS, _guilang.get("GUI_MENU_OPTIONS"));
 	menuTools->AppendSeparator();
 	menuTools->Append(ID_MENU_EXECUTE, _guilang.get("GUI_MENU_EXECUTE"), _guilang.get("GUI_MENU_EXECUTE_TTP"));
 	menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_FORMAT"), menuFormat);
+    menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_REFACTORING"), menuRefactoring);
 	menuTools->Append(ID_MENU_TOGGLE_COMMENT_LINE, _guilang.get("GUI_MENU_COMMENTLINE"), _guilang.get("GUI_MENU_COMMENTLINE_TTP"));
 	menuTools->Append(ID_MENU_TOGGLE_COMMENT_SELECTION, _guilang.get("GUI_MENU_COMMENTSELECTION"), _guilang.get("GUI_MENU_COMMENTSELECTION_TTP"));
 	menuTools->AppendSeparator();

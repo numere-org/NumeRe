@@ -200,7 +200,9 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void OnChangeCase(wxCommandEvent& event);
 		void OnFoldCurrentBlock(wxCommandEvent& event);
 		void OnRenameSymbols(wxCommandEvent& event);
+		void OnRenameSymbolsFromMenu();
 		void OnAbstrahizeSection(wxCommandEvent& event);
+		void OnAbstrahizeSectionFromMenu();
 		bool InitDuplicateCode();
 		void OnFindDuplicateCode(int nDuplicateFlag = 1, int nNumDuplicatedLines = 6); // 0 = direct comparison, 1 = use var semanticals, 2 = use string semanticals,
 		void IndicateDuplicatedLine(int nStart1, int nEnd1, int nStart2, int nEnd2, int nSelectionLine);

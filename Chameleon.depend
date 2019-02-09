@@ -1970,7 +1970,7 @@
 	"datastructures.h"
 	"ProjectInfo.h"
 
-1549699232 d:\cpp\numere-source\trunk\common\datastructures.h
+1549703812 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -2135,7 +2135,7 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1549701020 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1549703737 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -3333,7 +3333,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1549700676 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1549704669 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"

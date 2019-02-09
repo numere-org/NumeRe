@@ -6509,9 +6509,22 @@ void NumeReEditor::OnRenameSymbols(wxCommandEvent& event)
     this->RenameSymbols(this->PositionFromPoint(m_lastRightClick));
 }
 
+void NumeReEditor::OnRenameSymbolsFromMenu()
+{
+    int charpos = GetCurrentPos();
+    if (this->isStyleType(STYLE_DEFAULT, charpos) || this->isStyleType(STYLE_IDENTIFIER, charpos) || this->isStyleType(STYLE_CUSTOMFUNCTION, charpos))
+        this->RenameSymbols(charpos);
+}
+
 void NumeReEditor::OnAbstrahizeSection(wxCommandEvent& event)
 {
     this->AbstrahizeSection();
+}
+
+void NumeReEditor::OnAbstrahizeSectionFromMenu()
+{
+    if (HasSelection())
+        this->AbstrahizeSection();
 }
 
 bool NumeReEditor::InitDuplicateCode()
