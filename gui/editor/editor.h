@@ -194,7 +194,9 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void OnDisplayVariable(wxCommandEvent& event);
 		void OnHelpOnSelection(wxCommandEvent& event);
 		void OnFindProcedure(wxCommandEvent& event);
+		void OnFindProcedureFromMenu();
 		void OnFindInclude(wxCommandEvent& event);
+		void OnFindIncludeFromMenu();
 		void OnChangeCase(wxCommandEvent& event);
 		void OnFoldCurrentBlock(wxCommandEvent& event);
 		void OnRenameSymbols(wxCommandEvent& event);
@@ -298,6 +300,14 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		string parseDocumentation(int nPos1, int nPos2);
 		void notifyDialogClose();
 		void SetEditorFont(const wxFont& font);
+		bool isNumeReFileType()
+		{
+		    return m_fileType == FILE_NSCR || m_fileType == FILE_NPRC;
+		}
+		bool isCodeFile()
+		{
+		    return m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_CPP || m_fileType == FILE_MATLAB;
+		}
 
 	protected:
 		Options* m_options;
@@ -363,6 +373,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void ResetRightClickLocation();
 		wxString FindClickedWord();
 		wxString FindClickedInclude();
+		wxString FindMarkedInclude(int charpos);
 		wxString FindClickedProcedure();
 		wxString FindMarkedProcedure(int charpos);
 		wxString FindNameSpaceOfProcedure(int charpos);
@@ -370,6 +381,8 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		wxString FindProcedureDefinition();
 		wxString FindProcedureDefinitionInLocalFile(const wxString& procedurename);
 		wxString FindProcedureDefinitionInOtherFile(const wxString& pathname, const wxString& procedurename);
+		void FindAndOpenProcedure(const wxString& procedurename);
+		void FindAndOpenInclude(const wxString& includename);
 		void AppendToDocumentation(wxString& sDocumentation, const wxString& sNewDocLine);
 		string CleanDocumentation(const wxString& sDocumentation);
 		int FindCurrentProcedureHead(int pos);

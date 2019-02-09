@@ -4443,8 +4443,7 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
 	bool breakpointOnLine = MarkerOnLine(linenum, MARKER_BREAKPOINT);
 	bool bookmarkOnLine = MarkerOnLine(linenum, MARKER_BOOKMARK);
 
-	bool breakpointsAllowed = (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC);
-	//bool isDebugging = true; //m_debugManager->IsDebugging();//m_mainFrame->IsDebugging();
+	bool breakpointsAllowed = isNumeReFileType();
 
 	if (m_popupMenu.FindItem(ID_DEBUG_DISPLAY_SELECTION) != nullptr)
 	{
@@ -4474,12 +4473,7 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
 		m_popupMenu.Remove(ID_REFACTORING_MENU);
 	}
 
-	/*if(isDebugging)
-	{
-		breakpointsAllowed = m_debugManager->IsDebuggerPaused();//m_mainFrame->IsDebuggerPaused();
-	}*/
-
-	m_popupMenu.Enable(ID_FOLD_CURRENT_BLOCK, breakpointsAllowed);
+	m_popupMenu.Enable(ID_FOLD_CURRENT_BLOCK, isCodeFile());
 
 	m_popupMenu.Enable(ID_DEBUG_ADD_BREAKPOINT, breakpointsAllowed && !breakpointOnLine);
 	m_popupMenu.Enable(ID_DEBUG_REMOVE_BREAKPOINT, breakpointsAllowed && breakpointOnLine);
@@ -5105,40 +5099,66 @@ wxString NumeReEditor::FindClickedWord()
 	return clickedWord;
 }
 
-
+// This member function is used from the context menu to
+// obtain the name of the included file and to store it
+// internally
 wxString NumeReEditor::FindClickedInclude()
 {
 	int charpos = PositionFromPoint(m_lastRightClick);
+    return FindMarkedInclude(charpos);
+}
 
+// This member function constructs the name of the included
+// file at the passed position, returns its name and stores
+// the name internally
+wxString NumeReEditor::FindMarkedInclude(int charpos)
+{
 	int startPosition = WordStartPosition(charpos, true);
+	int endPosition = WordEndPosition(startPosition + 1, true);
+
+	// Find the first position
 	while (startPosition && GetStyleAt(startPosition - 1) == wxSTC_NSCR_INCLUDES && GetCharAt(startPosition - 1) != '@')
 		startPosition--;
+
+    // Ignore the quotation mark
 	if (GetCharAt(startPosition) == '"')
 		startPosition++;
-	int endPosition = WordEndPosition(startPosition + 1, true);
+
+	// Find the last position and exclude the trailing
+	// quotation mark automatically
 	while (endPosition < GetLastPosition() && GetStyleAt(endPosition) == wxSTC_NSCR_INCLUDES && GetCharAt(endPosition) != ':' && GetCharAt(endPosition) != '"')
 		endPosition++;
 
+    // Get the name from the positions
 	wxString clickedWord = this->GetTextRange(startPosition, endPosition);
 
+	// Resolve path tokens, which are probably
+	// part of the name
 	if (clickedWord.find('<') != string::npos)
 	{
 		if (clickedWord.find("<>") != string::npos)
 			clickedWord.replace(clickedWord.find("<>"), 2, m_terminal->getPathSettings()[EXEPATH]);
+
 		if (clickedWord.find("<this>") != string::npos)
 			clickedWord.replace(clickedWord.find("<this>"), 6, this->GetFileName().GetPath(wxPATH_GET_VOLUME));
+
 		if (clickedWord.find("<loadpath>") != string::npos)
 			clickedWord.replace(clickedWord.find("<loadpath>"), 10, m_terminal->getPathSettings()[LOADPATH]);
+
 		if (clickedWord.find("<savepath>") != string::npos)
 			clickedWord.replace(clickedWord.find("<savepath>"), 10, m_terminal->getPathSettings()[SAVEPATH]);
+
 		if (clickedWord.find("<scriptpath>") != string::npos)
 			clickedWord.replace(clickedWord.find("<scriptpath>"), 12, m_terminal->getPathSettings()[SCRIPTPATH]);
+
 		if (clickedWord.find("<procpath>") != string::npos)
 			clickedWord.replace(clickedWord.find("<procpath>"), 10, m_terminal->getPathSettings()[PROCPATH]);
+
 		if (clickedWord.find("<plotpath>") != string::npos)
 			clickedWord.replace(clickedWord.find("<plotpath>"), 10, m_terminal->getPathSettings()[PLOTPATH]);
 	}
 
+	// Prepend the script folder, if necessary
 	if (clickedWord.find('/') != string::npos || clickedWord.find('\\') != string::npos)
 	{
 		m_clickedInclude = clickedWord + ".nscr";
@@ -5635,6 +5655,144 @@ wxString NumeReEditor::FindProcedureDefinitionInOtherFile(const wxString& pathna
 		}
 	}
     return "";
+}
+
+// This private member function searches for the procedure
+// definition in the local or a global file (depending on
+// the namespace) opens the procedure and goes to the
+// corresponding position
+void NumeReEditor::FindAndOpenProcedure(const wxString& procedurename)
+{
+    if (!procedurename.length())
+		return;
+
+	vector<std::string> vPaths = m_terminal->getPathSettings();
+	wxString pathname = procedurename;
+
+	// Resolve the namespaces
+	if (pathname.find("$this~") != string::npos)
+	{
+	    // Get the current namespace and replace it
+		wxString thispath = GetFileNameAndPath();
+		pathname.replace(pathname.find("$this~"), 6, thispath.substr(0, thispath.rfind('\\') + 1));
+	}
+	else if (pathname.find("$thisfile~") != string::npos)
+	{
+	    // Search for the procedure in the current file
+		wxString procedurename = pathname.substr(pathname.rfind('~') + 1);
+		wxString procedureline;
+		int nminpos = 0;
+		int nmaxpos = GetLastPosition();
+
+		// Search the procedure and check, whether it is uncommented
+		while (nminpos < nmaxpos && FindText(nminpos, nmaxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) != -1)
+		{
+			nminpos = FindText(nminpos, nmaxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) + 1;
+
+			// Check for comments
+			if (this->GetStyleAt(nminpos) == wxSTC_NSCR_COMMENT_BLOCK || this->GetStyleAt(nminpos) == wxSTC_NSCR_COMMENT_LINE)
+				continue;
+
+			procedureline = GetLine(LineFromPosition(nminpos));
+
+			// If the line contains the necessary syntax elements
+			// jump to it
+			if (procedureline.find("$" + procedurename) != string::npos && procedureline[procedureline.find_first_not_of(' ', procedureline.find("$" + procedurename) + procedurename.length() + 1)] == '(')
+			{
+				this->SetFocus();
+				this->EnsureVisible(LineFromPosition(nminpos));
+				this->GotoLine(LineFromPosition(nminpos));
+				return;
+			}
+		}
+
+		// If it is not found, ask the user for creation
+		int ret = wxMessageBox(_guilang.get("GUI_DLG_PROC_NEXISTS_CREATE", procedurename.ToStdString()), _guilang.get("GUI_DLG_PROC_NEXISTS_CREATE_HEADLINE"), wxCENTER | wxICON_WARNING | wxYES_NO, this);
+
+		if (ret != wxYES)
+			return;
+
+        // Get the template
+		wxString proctemplate = getTemplateContent(procedurename);
+
+		// Add the template after the last line
+		int nLastLine = this->GetLineCount();
+		this->GotoLine(nLastLine);
+		this->AddText("\n");
+		this->AddText(proctemplate);
+
+		// Replace the name in the template with the correct name
+		// and goto the position
+		nLastLine = FindText(this->PositionFromLine(nLastLine), this->GetLastPosition(), "procedure $" + procedurename, wxSTC_FIND_MATCHCASE);
+		this->GotoPos(nLastLine);
+
+		// Update the syntax highlighting and the analyzer state
+		UpdateSyntaxHighlighting(true);
+		AnalyseCode();
+
+		return;
+	}
+	else
+	{
+	    // Usual case: replace the namespace syntax with
+	    // the path syntax
+		if (pathname.find("$main~") != string::npos)
+			pathname.erase(pathname.find("$main~") + 1, 5);
+
+		while (pathname.find('~') != string::npos)
+			pathname[pathname.find('~')] = '/';
+
+		if (pathname[0] == '$' && pathname.find(':') == string::npos)
+			pathname.replace(0, 1, vPaths[5] + "/");
+		else if (pathname.find(':') == string::npos)
+			pathname.insert(0, vPaths[5]);
+		else // pathname.find(':') != string::npos
+		{
+			pathname = pathname.substr(pathname.find('\'') + 1, pathname.rfind('\'') - pathname.find('\'') - 1);
+		}
+	}
+
+	wxArrayString pathnames;
+	pathnames.Add(pathname + ".nprc");
+
+	// If the file with this path exists, open it,
+	// otherwise ask the user for creation
+	if (!fileExists((pathname + ".nprc").ToStdString()))
+	{
+		int ret = wxMessageBox(_guilang.get("GUI_DLG_PROC_NEXISTS_CREATE", procedurename.ToStdString()), _guilang.get("GUI_DLG_PROC_NEXISTS_CREATE_HEADLINE"), wxCENTER | wxICON_WARNING | wxYES_NO, this);
+
+		if (ret != wxYES)
+			return;
+
+		m_mainFrame->NewFile(FILE_NPRC, procedurename);
+	}
+	else
+		m_mainFrame->OpenSourceFile(pathnames);
+}
+
+// This private member function searches for the included
+// script as a global file and opens it, if it exists
+void NumeReEditor::FindAndOpenInclude(const wxString& includename)
+{
+    if (!includename.length())
+        return;
+
+    wxArrayString pathnames;
+	pathnames.Add(includename);
+
+	// If the file exists, open it, otherwise
+	// ask the user for creation
+	if (!fileExists((includename).ToStdString()))
+	{
+		int ret = wxMessageBox(_guilang.get("GUI_DLG_SCRIPT_NEXISTS_CREATE", includename.ToStdString()), _guilang.get("GUI_DLG_SCRIPT_NEXISTS_CREATE_HEADLINE"), wxCENTER | wxICON_WARNING | wxYES_NO, this);
+
+		if (ret != wxYES)
+			return;
+
+		m_mainFrame->NewFile(FILE_NSCR, includename);
+	}
+	else
+		m_mainFrame->OpenSourceFile(pathnames);
 }
 
 // This member function appends a found documentation line to the overall
@@ -6286,98 +6444,43 @@ void NumeReEditor::OnHelpOnSelection(wxCommandEvent& event)
 	m_mainFrame->openHTML(m_terminal->getDocumentation(m_clickedWord.ToStdString()));
 }
 
+// Private event handler function for finding the procedure definition
 void NumeReEditor::OnFindProcedure(wxCommandEvent& event)
 {
 	if (!m_clickedProcedure.length())
 		return;
-	vector<std::string> vPaths = m_terminal->getPathSettings();
-	wxString pathname = m_clickedProcedure;
-	if (pathname.find("$this~") != string::npos)
-	{
-		wxString thispath = GetFileNameAndPath();
-		pathname.replace(pathname.find("$this~"), 6, thispath.substr(0, thispath.rfind('\\') + 1));
-	}
-	else if (pathname.find("$thisfile~") != string::npos)
-	{
-		wxString procedurename = pathname.substr(pathname.rfind('~') + 1);
-		wxString procedureline;
-		int nminpos = 0;
-		int nmaxpos = GetLastPosition();
-		while (nminpos < nmaxpos && FindText(nminpos, nmaxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) != -1)
-		{
-			nminpos = FindText(nminpos, nmaxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) + 1;
-			if (this->GetStyleAt(nminpos) == wxSTC_NSCR_COMMENT_BLOCK || this->GetStyleAt(nminpos) == wxSTC_NSCR_COMMENT_LINE)
-				continue;
-			procedureline = GetLine(LineFromPosition(nminpos));
-			if (procedureline.find("$" + procedurename) != string::npos && procedureline[procedureline.find_first_not_of(' ', procedureline.find("$" + procedurename) + procedurename.length() + 1)] == '(')
-			{
-				this->SetFocus();
-				this->EnsureVisible(LineFromPosition(nminpos));
-				this->GotoLine(LineFromPosition(nminpos));
-				return;
-			}
-		}
-		int ret = wxMessageBox(_guilang.get("GUI_DLG_PROC_NEXISTS_CREATE", m_clickedProcedure.ToStdString()), _guilang.get("GUI_DLG_PROC_NEXISTS_CREATE_HEADLINE"), wxCENTER | wxICON_WARNING | wxYES_NO, this);
-		if (ret != wxYES)
-			return;
-		wxString proctemplate = getTemplateContent(procedurename);
 
-		int nLastLine = this->GetLineCount();
-		this->GotoLine(nLastLine);
-		this->AddText("\n");
-		this->AddText(proctemplate);
-		nLastLine = FindText(this->PositionFromLine(nLastLine), this->GetLastPosition(), "procedure $" + procedurename, wxSTC_FIND_MATCHCASE);
-		this->GotoPos(nLastLine);
-
-		UpdateSyntaxHighlighting(true);
-		AnalyseCode();
-
-		return;
-	}
-	else
-	{
-		if (pathname.find("$main~") != string::npos)
-			pathname.erase(pathname.find("$main~") + 1, 5);
-		while (pathname.find('~') != string::npos)
-			pathname[pathname.find('~')] = '/';
-		if (pathname[0] == '$' && pathname.find(':') == string::npos)
-			pathname.replace(0, 1, vPaths[5] + "/");
-		else if (pathname.find(':') == string::npos)
-			pathname.insert(0, vPaths[5]);
-		else // pathname.find(':') != string::npos
-		{
-			pathname = pathname.substr(pathname.find('\'') + 1, pathname.rfind('\'') - pathname.find('\'') - 1);
-		}
-	}
-	wxArrayString pathnames;
-	pathnames.Add(pathname + ".nprc");
-	if (!fileExists((pathname + ".nprc").ToStdString()))
-	{
-		int ret = wxMessageBox(_guilang.get("GUI_DLG_PROC_NEXISTS_CREATE", m_clickedProcedure.ToStdString()), _guilang.get("GUI_DLG_PROC_NEXISTS_CREATE_HEADLINE"), wxCENTER | wxICON_WARNING | wxYES_NO, this);
-		if (ret != wxYES)
-			return;
-		m_mainFrame->NewFile(FILE_NPRC, m_clickedProcedure);
-	}
-	else
-		m_mainFrame->OpenSourceFile(pathnames);
+	FindAndOpenProcedure(m_clickedProcedure);
 }
 
+// Global event handler function for finding the procedure definition
+void NumeReEditor::OnFindProcedureFromMenu()
+{
+    if (!isNumeReFileType() || GetStyleAt(GetCurrentPos()) != wxSTC_NSCR_PROCEDURES)
+        return;
+
+    FindMarkedProcedure(GetCurrentPos());
+    FindAndOpenProcedure(m_clickedProcedure);
+}
+
+// Private event handler function for finding the included script
 void NumeReEditor::OnFindInclude(wxCommandEvent& event)
 {
 	if (!m_clickedInclude.length())
 		return;
-	wxArrayString pathnames;
-	pathnames.Add(m_clickedInclude);
-	if (!fileExists((m_clickedInclude).ToStdString()))
-	{
-		int ret = wxMessageBox(_guilang.get("GUI_DLG_SCRIPT_NEXISTS_CREATE", m_clickedInclude.ToStdString()), _guilang.get("GUI_DLG_SCRIPT_NEXISTS_CREATE_HEADLINE"), wxCENTER | wxICON_WARNING | wxYES_NO, this);
-		if (ret != wxYES)
-			return;
-		m_mainFrame->NewFile(FILE_NSCR, m_clickedInclude);
-	}
-	else
-		m_mainFrame->OpenSourceFile(pathnames);
+	FindAndOpenInclude(m_clickedInclude);
 }
+
+// Global event handler function for finding the included scripi
+void NumeReEditor::OnFindIncludeFromMenu()
+{
+    if (!isNumeReFileType() || GetStyleAt(GetCurrentPos()) != wxSTC_NSCR_INCLUDES)
+        return;
+
+    FindMarkedInclude(GetCurrentPos());
+    FindAndOpenInclude(m_clickedInclude);
+}
+
 
 void NumeReEditor::OnChangeCase(wxCommandEvent& event)
 {

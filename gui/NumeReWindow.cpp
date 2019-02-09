@@ -1323,6 +1323,16 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 			OnFindReplace(id);
 			break;
 		}
+		case ID_MENU_FIND_PROCEDURE:
+        {
+            m_currentEd->OnFindProcedureFromMenu();
+            break;
+        }
+		case ID_MENU_FIND_INCLUDE:
+        {
+            m_currentEd->OnFindIncludeFromMenu();
+            break;
+        }
 
 		case ID_MENU_ABOUT:
 		{
@@ -3981,9 +3991,6 @@ void NumeReWindow::UpdateMenuBar()
 	menuEdit->Append(ID_MENU_COPY, _guilang.get("GUI_MENU_COPY"));
 	menuEdit->Append(ID_MENU_PASTE, _guilang.get("GUI_MENU_PASTE"));
 	menuEdit->AppendSeparator();
-	menuEdit->Append(ID_MENU_FIND, _guilang.get("GUI_MENU_FIND"));
-	menuEdit->Append(ID_MENU_REPLACE, _guilang.get("GUI_MENU_REPLACE"));
-	menuEdit->AppendSeparator();
 	menuEdit->Append(ID_MENU_SELECTION_UP, _guilang.get("GUI_MENU_SELECT_UP"), _guilang.get("GUI_MENU_SELECT_UP_TTP"));
 	menuEdit->Append(ID_MENU_SELECTION_DOWN, _guilang.get("GUI_MENU_SELECT_DOWN"), _guilang.get("GUI_MENU_SELECT_DOWN_TTP"));
 
@@ -3997,19 +4004,29 @@ void NumeReWindow::UpdateMenuBar()
 
 	menuBar->Append(menuEdit, _guilang.get("GUI_MENU_EDIT"));
 
+	wxMenu* menuSearch = new wxMenu();
+	menuSearch->Append(ID_MENU_FIND, _guilang.get("GUI_MENU_FIND"));
+	menuSearch->Append(ID_MENU_REPLACE, _guilang.get("GUI_MENU_REPLACE"));
+    menuSearch->AppendSeparator();
+	menuSearch->Append(ID_MENU_FIND_PROCEDURE, _guilang.get("GUI_MENU_FIND_PROCEDURE"), _guilang.get("GUI_MENU_FIND_PRCOCEDURE_TTP"));
+	menuSearch->Append(ID_MENU_FIND_INCLUDE, _guilang.get("GUI_MENU_FIND_INCLUDE"), _guilang.get("GUI_MENU_FIND_INCLUDE_TTP"));
+	menuSearch->Append(ID_MENU_GOTOLINE, _guilang.get("GUI_MENU_GOTOLINE"), _guilang.get("GUI_MENU_GOTOLINE_TTP"));
+	menuSearch->AppendSeparator();
+	menuSearch->Append(ID_MENU_BOOKMARK_TOGGLE, _guilang.get("GUI_MENU_BOOKMARK_TOGGLE"));
+	menuSearch->Append(ID_MENU_BOOKMARK_CLEARMENU, _guilang.get("GUI_MENU_BOOKMARK_CLEAR"));
+	menuSearch->Append(ID_MENU_BOOKMARK_PREVIOUS, _guilang.get("GUI_MENU_BOOKMARK_PREVIOUS"));
+	menuSearch->Append(ID_MENU_BOOKMARK_NEXT, _guilang.get("GUI_MENU_BOOKMARK_NEXT"));
+
+	menuBar->Append(menuSearch, _guilang.get("GUI_MENU_SEARCH"));
+
+
     wxMenu* menuView = new wxMenu();
 	menuView->Append(ID_MENU_TOGGLE_CONSOLE, _guilang.get("GUI_MENU_TOGGLE_CONSOLE"));
 	menuView->Append(ID_MENU_TOGGLE_FILETREE, _guilang.get("GUI_MENU_TOGGLE_FILETREE"));
 	menuView->Append(ID_MENU_TOGGLE_HISTORY, _guilang.get("GUI_MENU_TOGGLE_HISTORY"));
 	menuView->AppendSeparator();
-	menuView->Append(ID_MENU_GOTOLINE, _guilang.get("GUI_MENU_GOTOLINE"), _guilang.get("GUI_MENU_GOTOLINE_TTP"));
 	menuView->Append(ID_MENU_FOLD_ALL, _guilang.get("GUI_MENU_FOLDALL"), _guilang.get("GUI_MENU_FOLDALL_TTP"));
 	menuView->Append(ID_MENU_UNFOLD_ALL, _guilang.get("GUI_MENU_UNFOLDALL"), _guilang.get("GUI_MENU_UNFOLDALL_TTP"));
-	menuView->AppendSeparator();
-	menuView->Append(ID_MENU_BOOKMARK_TOGGLE, _guilang.get("GUI_MENU_BOOKMARK_TOGGLE"));
-	menuView->Append(ID_MENU_BOOKMARK_CLEARMENU, _guilang.get("GUI_MENU_BOOKMARK_CLEAR"));
-	menuView->Append(ID_MENU_BOOKMARK_PREVIOUS, _guilang.get("GUI_MENU_BOOKMARK_PREVIOUS"));
-	menuView->Append(ID_MENU_BOOKMARK_NEXT, _guilang.get("GUI_MENU_BOOKMARK_NEXT"));
 	menuView->AppendSeparator();
 	menuView->Append(ID_MENU_LINEWRAP, _guilang.get("GUI_MENU_LINEWRAP"), _guilang.get("GUI_MENU_LINEWRAP_TTP"), true);
 	menuView->Append(ID_MENU_DISPCTRLCHARS, _guilang.get("GUI_MENU_DISPCTRLCHARS"), _guilang.get("GUI_MENU_DISPCTRLCHARS_TTP"), true);

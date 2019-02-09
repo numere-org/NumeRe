@@ -1970,7 +1970,7 @@
 	"datastructures.h"
 	"ProjectInfo.h"
 
-1541750429 d:\cpp\numere-source\trunk\common\datastructures.h
+1549699232 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -2135,7 +2135,7 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1540360015 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1549701020 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -3333,7 +3333,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1543481848 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1549700676 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3697,7 +3697,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1549099909 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1549700942 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -4153,7 +4153,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1549105311 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1549214227 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
