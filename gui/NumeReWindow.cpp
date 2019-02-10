@@ -94,8 +94,8 @@ Language _guilang;
 FindReplaceDialog* g_findReplace;
 
 //! global print data, to remember settings during the session
-wxPrintData *g_printData = (wxPrintData*) NULL;
-wxPageSetupData *g_pageSetupData = (wxPageSetupData*) NULL;
+wxPrintData* g_printData = (wxPrintData*) nullptr;
+wxPageSetupData* g_pageSetupData = (wxPageSetupData*) nullptr;
 
 BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
     EVT_MENU_RANGE                  (EVENTID_MENU_START, EVENTID_MENU_END-1, NumeReWindow::OnMenuEvent)

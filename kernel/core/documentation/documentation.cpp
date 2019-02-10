@@ -811,13 +811,13 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
     }
     else
     {
-        sHTML += "<hr><h4>"+_lang.get("DOC_HELP_NAVIGATION")+"</h4>\n"
+        /*sHTML += "<hr><h4>"+_lang.get("DOC_HELP_NAVIGATION")+"</h4>\n"
                 "<table cellspacing=\"0\" width=\"100%\" bgcolor=\"#DDDDDD\"><tr>"
                 "<td align=\"center\"><a href=\"nhlp://numere?frame=self\">"+_lang.get("DOC_HELP_START")+"</a></td>"
                 "<td align=\"center\"><a href=\"history://back?frame=self\">&lt;&lt; "+_lang.get("DOC_HELP_BACK")+"</a></td>"
                 "<td align=\"center\"><a href=\"history://forward?frame=self\">"+_lang.get("DOC_HELP_FORWARD")+" &gt;&gt;</a></td>"
                 "<td align=\"center\"><a href=\"nhlp://index?frame=self\">"+_lang.get("DOC_HELP_INDEX")+"</a></td>"
-                "</tr></table>\n";
+                "</tr></table>\n";*/
         sHTML += "</body>\n</html>\n";
     }
     return sHTML;

@@ -34,6 +34,7 @@ class DocumentationBrowser : public ViewerFrame
         wxTreeCtrl* m_doctree;
         IconManager* m_manager;
 
+        void prepareToolbar();
         void fillDocTree(NumeReWindow* mainwindow);
 
     public:
@@ -42,6 +43,7 @@ class DocumentationBrowser : public ViewerFrame
 
         bool SetStartPage(const wxString& docId);
         void OnTreeClick(wxTreeEvent& event);
+        void OnToolbarEvent(wxCommandEvent& event);
 
         DECLARE_EVENT_TABLE();
 };

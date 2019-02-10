@@ -18,13 +18,19 @@
 
 #include "documentationbrowser.hpp"
 #include "NumeReWindow.h"
+#include "../common/datastructures.h"
+#include "../kernel/core/ui/language.hpp"
 #include <vector>
 #include <string>
+#include <wx/artprov.h>
+
+extern Language _guilang;
 
 using namespace std;
 
 BEGIN_EVENT_TABLE(DocumentationBrowser, ViewerFrame)
     EVT_TREE_SEL_CHANGED(-1, DocumentationBrowser::OnTreeClick)
+    EVT_MENU_RANGE(EVENTID_HELP_START, EVENTID_HELP_END-1, DocumentationBrowser::OnToolbarEvent)
 END_EVENT_TABLE()
 
 // Documentation browser constructor
@@ -37,6 +43,7 @@ DocumentationBrowser::DocumentationBrowser(wxWindow* parent, const wxString& tit
 
     // Create the status bar and the window splitter
     this->CreateStatusBar();
+    prepareToolbar();
     wxSplitterWindow* splitter = new wxSplitterWindow(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_3D | wxBORDER_THEME);
 
     // Create the tree and the viewer objects as childs
@@ -73,6 +80,26 @@ bool DocumentationBrowser::SetStartPage(const wxString& docId)
     return m_viewer->ShowPageOnItem(docId);
 }
 
+// Private member function to prepare the toolbar of the window
+void DocumentationBrowser::prepareToolbar()
+{
+    // Create a new tool bar
+    wxToolBar* tb = this->CreateToolBar();
+
+    // Fill the tool bar with tools
+    tb->AddTool(ID_HELP_HOME, _guilang.get("GUI_TB_DOCBROWSER_HOME"), wxArtProvider::GetBitmap(wxART_GO_HOME, wxART_TOOLBAR), _guilang.get("GUI_TB_DOCBROWSER_HOME"));
+    tb->AddTool(ID_HELP_INDEX, _guilang.get("GUI_TB_DOCBROWSER_INDEX"), wxArtProvider::GetBitmap(wxART_LIST_VIEW, wxART_TOOLBAR), _guilang.get("GUI_TB_DOCBROWSER_INDEX"));
+    tb->AddSeparator();
+    tb->AddTool(ID_HELP_GO_BACK, _guilang.get("GUI_TB_DOCBROWSER_BACK"), wxArtProvider::GetBitmap(wxART_GO_BACK, wxART_TOOLBAR), _guilang.get("GUI_TB_DOCBROWSER_BACK"));
+    tb->AddTool(ID_HELP_GO_FORWARD, _guilang.get("GUI_TB_DOCBROWSER_FORWARD"), wxArtProvider::GetBitmap(wxART_GO_FORWARD, wxART_TOOLBAR), _guilang.get("GUI_TB_DOCBROWSER_FORWARD"));
+    tb->AddSeparator();
+    tb->AddTool(ID_HELP_PRINT, _guilang.get("GUI_TB_DOCBROWSER_PRINT"), wxArtProvider::GetBitmap(wxART_PRINT, wxART_TOOLBAR), _guilang.get("GUI_TB_DOCBROWSER_PRINT"));
+//    tb->AddTool(ID_HELP_HOME, _guilang.get("GUI_TB_DOCBROWSER_FORWARD"), wxArtProvider::GetBitmap(wxART_GO_FORWARD, wxART_TOOLBAR));
+
+    // Display the toolbar
+    tb->Realize();
+}
+
 // This private member function prepares the index tree of the documentation browser
 void DocumentationBrowser::fillDocTree(NumeReWindow* mainwindow)
 {
@@ -96,5 +123,32 @@ void DocumentationBrowser::fillDocTree(NumeReWindow* mainwindow)
 void DocumentationBrowser::OnTreeClick(wxTreeEvent& event)
 {
     m_viewer->ShowPageOnItem(m_doctree->GetItemText(event.GetItem()));
+}
+
+// Event handler function for clicks on the toolbar of the current window.
+// Redirects all clicks to the HelpViewer class
+void DocumentationBrowser::OnToolbarEvent(wxCommandEvent& event)
+{
+    switch (event.GetId())
+    {
+        case ID_HELP_HOME:
+            m_viewer->GoHome();
+            break;
+        case ID_HELP_INDEX:
+            m_viewer->GoIndex();
+            break;
+        case ID_HELP_GO_BACK:
+            m_viewer->HistoryGoBack();
+            break;
+        case ID_HELP_GO_FORWARD:
+            m_viewer->HistoryGoForward();
+            break;
+        case ID_HELP_PRINT:
+            m_viewer->Print();
+            break;
+        case ID_HELP_PRINT_PREVIEW:
+            m_viewer->PrintPreview();
+            break;
+    }
 }
 

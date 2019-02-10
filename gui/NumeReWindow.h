@@ -226,6 +226,8 @@ class NumeReWindow : public wxFrame
         void Ready();
         void Busy();
 
+        void OnPrintSetup();
+        wxRect DeterminePrintSize();
 
     private:
         void InitializeProgramOptions();
@@ -240,7 +242,6 @@ class NumeReWindow : public wxFrame
 
         void OnHelp();
         void OnAbout();
-        void OnPrintSetup();
         void OnPrintPreview();
         void OnPrintPage();
         void OnProjectIncludeExcludeFile( int id );
@@ -311,7 +312,6 @@ class NumeReWindow : public wxFrame
 
         void Compile();
 
-        wxRect DeterminePrintSize();
 
         wxString ConstructFilterString(FileFilterType filterType);
         int FindString(const wxString &findString, int start_pos = -1, int flags = -1, bool highlight = TRUE);

@@ -34,6 +34,12 @@ class HelpViewer : public wxHtmlWindow
         virtual bool SetPage(const wxString& source);
         bool ShowPageOnItem(wxString docID);
 
+        bool HistoryGoBack();
+        bool HistoryGoForward();
+        bool GoHome();
+        bool GoIndex();
+        bool Print();
+
     private:
         void OnKeyDown(wxKeyEvent& event);
         void OnEnter(wxMouseEvent& event);

@@ -1970,7 +1970,7 @@
 	"datastructures.h"
 	"ProjectInfo.h"
 
-1549703812 d:\cpp\numere-source\trunk\common\datastructures.h
+1549814056 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -2181,7 +2181,7 @@
 	"../../kernel/kernel.hpp"
 	"../../kernel/debugmessenger.hpp"
 
-1549722909 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1549816151 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -3454,11 +3454,12 @@
 	<wx/textctrl.h>
 	<wx/cursor.h>
 
-1549721860 source:d:\cpp\numere-source\trunk\gui\helpviewer.cpp
+1549816539 source:d:\cpp\numere-source\trunk\gui\helpviewer.cpp
 	"helpviewer.hpp"
 	"NumeReWindow.h"
+	<wx/html/htmprint.h>
 
-1549800121 d:\cpp\numere-source\trunk\gui\helpviewer.hpp
+1549802320 d:\cpp\numere-source\trunk\gui\helpviewer.hpp
 	<wx/wxhtml.h>
 	<wx/wx.h>
 	<vector>
@@ -3698,7 +3699,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1549722928 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1549815549 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3996,7 +3997,7 @@
 	"../version.h"
 	<list>
 
-1519812791 source:d:\cpp\numere-source\trunk\kernel\core\documentation\documentation.cpp
+1549823603 source:d:\cpp\numere-source\trunk\kernel\core\documentation\documentation.cpp
 	"documentation.hpp"
 	"../../kernel.hpp"
 
@@ -8817,13 +8818,16 @@
 1545212919 c:\cpp\numere-source\trunk\kernel\core\procedure\procedurecommandline.hpp
 	<string>
 
-1549799868 source:d:\cpp\numere-source\trunk\gui\documentationbrowser.cpp
+1549815167 source:d:\cpp\numere-source\trunk\gui\documentationbrowser.cpp
 	"documentationbrowser.hpp"
 	"NumeReWindow.h"
+	"../common/datastructures.h"
+	"../kernel/core/ui/language.hpp"
 	<vector>
 	<string>
+	<wx/artprov.h>
 
-1549799271 d:\cpp\numere-source\trunk\gui\documentationbrowser.hpp
+1549815004 d:\cpp\numere-source\trunk\gui\documentationbrowser.hpp
 	<wx/treectrl.h>
 	<wx/splitter.h>
 	"viewerframe.hpp"
