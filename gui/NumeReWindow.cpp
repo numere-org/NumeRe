@@ -42,6 +42,7 @@
 #include "viewerframe.hpp"
 #include "imagepanel.hpp"
 #include "helpviewer.hpp"
+#include "documentationbrowser.hpp"
 #include "tableviewer.hpp"
 #include "tableeditpanel.hpp"
 #include "graphviewer.hpp"
@@ -625,6 +626,11 @@ wxString NumeReWindow::GetDocContent(wxString docid)
     return m_terminal->getDocumentation(docid.ToStdString());
 }
 
+vector<string> NumeReWindow::GetDocIndex()
+{
+    return m_terminal->getDocIndex();
+}
+
 void NumeReWindow::forceHistoryPageDown()
 {
     m_history->PageDown();
@@ -940,7 +946,8 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         {
             FileNameTreeData* data = static_cast <FileNameTreeData* > (m_functionTree->GetItemData(m_clickedTreeItem));
             string command = (data->tooltip).substr(0, (data->tooltip).find(' ')).ToStdString();
-            openHTML(m_terminal->getDocumentation(command));
+            //openHTML(m_terminal->getDocumentation(command));
+            ShowHelp(command);
             break;
         }
         case ID_MENU_SHOW_DESCRIPTION:
@@ -6072,7 +6079,13 @@ void NumeReWindow::OnPrintSetup()
 
 void NumeReWindow::OnHelp()
 {
-    this->openHTML(m_terminal->getDocumentation("numere"));
+    ShowHelp("numere");
+}
+
+bool NumeReWindow::ShowHelp(const wxString& sDocId)
+{
+    DocumentationBrowser* browser = new DocumentationBrowser(this, _guilang.get("DOC_HELP_HEADLINE", "%s"), this);
+    return browser->SetStartPage(sDocId);
 }
 
 void NumeReWindow::OnAbout()

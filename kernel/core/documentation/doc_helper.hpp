@@ -56,6 +56,7 @@ class Documentation : public FileSystem
         void addToDocIndex(string& _sIndexToAdd, bool bUseUserLangFiles);
         void removeFromDocIndex(const string& _sID, bool bUseUserLangFiles);
         vector<string> getHelpArticle(const string& _sTheme);
+        vector<string> getDocIndex();
         string getHelpIdxKey(const string& _sTheme);
         string getHelpArtclID(const string& _sTheme);
         string getHelpArticleTitle(const string& _sIdxKey);

@@ -10,6 +10,7 @@
 #include "icons/defaultfile.xpm"
 #include "icons/closedfolder16x1632bpp.xpm"
 #include "icons/exe.xpm"
+#include "icons/doc.xpm"
 
 
 IconManager::IconManager(const wxString& programPath)
@@ -25,6 +26,10 @@ IconManager::IconManager(const wxString& programPath)
 	wxBitmap closedfolder(closedfolder16x1632bpp_xpm);
 	m_iconExtensionMapping["FOLDERCLOSED"] = m_images->GetImageCount();
 	m_images->Add(closedfolder);
+
+	wxBitmap document(doc_xpm);
+	m_iconExtensionMapping["DOCUMENT"] = m_images->GetImageCount();
+	m_images->Add(document);
 
 	//wxBitmap openfolder(openfolder16x1632bpp_xpm);
 	wxIcon openfolder(programPath + "\\icons\\folder.ico", wxBITMAP_TYPE_ICO);

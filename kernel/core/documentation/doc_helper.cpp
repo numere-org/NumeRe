@@ -18,6 +18,7 @@
 
 #include "doc_helper.hpp"
 #include "../version.h"
+#include <list>
 
 bool fileExists(const string&);
 
@@ -610,6 +611,32 @@ vector<string> Documentation::getHelpArticle(const string& _sTheme)
         vReturn.push_back("</list>");
         vReturn.push_back(_lang.get("DOCHELPER_KEYWORDS_AND_ARTICLES_NUMBERS", toString((int)vReturn.size()-4), toString((int)vDocIndexTable.size())));
     }
+
+    return vReturn;
+}
+
+vector<string> Documentation::getDocIndex()
+{
+    vector<string> vReturn;
+    list<string> lIndex;
+    string sKeyList;
+
+    for (unsigned int i = 0; i < vDocIndexTable.size(); i++)
+    {
+        sKeyList = vDocIndexTable[i][3];
+
+        while (sKeyList.find(',') != string::npos)
+        {
+            lIndex.push_back(sKeyList.substr(0,sKeyList.find(',')));
+            sKeyList.erase(0,sKeyList.find(',')+1);
+            StripSpaces(sKeyList);
+        }
+        lIndex.push_back(sKeyList);
+    }
+
+    lIndex.sort();
+
+    vReturn.assign(lIndex.begin(), lIndex.end());
 
     return vReturn;
 }

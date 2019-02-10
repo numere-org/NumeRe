@@ -185,6 +185,7 @@ class NumeReWindow : public wxFrame
         void openHTML(wxString HTMLcontent);
         void openTable(NumeRe::Container<string> _stringTable, const string& sTableName);
         void editTable(NumeRe::Container<string> _stringTable, const string& sTableName);
+        bool ShowHelp(const wxString& docId);
         void showGraph(GraphHelper* _helper);
         void evaluateDebugInfo(const vector<string>& vDebugInfo);
         void createLaTeXFile();
@@ -206,6 +207,7 @@ class NumeReWindow : public wxFrame
         wxString getProgramFolder();
         void AddToHistory(const wxString& sCommand);
         wxString GetDocContent(wxString docid);
+        vector<string> GetDocIndex();
         void forceHistoryPageDown();
 
         string m_UnrecoverableFiles;

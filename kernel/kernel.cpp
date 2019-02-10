@@ -1880,6 +1880,11 @@ string NumeReKernel::getDocumentation(const string& sCommand)
 	return doc_HelpAsHTML(sCommand, false, _option);
 }
 
+vector<string> NumeReKernel::getDocIndex()
+{
+    return _option.getDocIndex();
+}
+
 bool NumeReKernel::SettingsModified()
 {
 	bool modified = modifiedSettings;

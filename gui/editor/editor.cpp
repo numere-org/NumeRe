@@ -6441,7 +6441,8 @@ void NumeReEditor::OnDisplayVariable(wxCommandEvent& event)
 
 void NumeReEditor::OnHelpOnSelection(wxCommandEvent& event)
 {
-	m_mainFrame->openHTML(m_terminal->getDocumentation(m_clickedWord.ToStdString()));
+	m_mainFrame->ShowHelp(m_clickedWord.ToStdString());
+//	m_mainFrame->openHTML(m_terminal->getDocumentation(m_clickedWord.ToStdString()));
 }
 
 // Private event handler function for finding the procedure definition

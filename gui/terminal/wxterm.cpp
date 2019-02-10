@@ -205,6 +205,13 @@ string wxTerm::getDocumentation(const string& sCommand)
 	return _kernel.getDocumentation(sCommand);
 }
 
+// Gets the contents of the documentation as a vector
+vector<string> wxTerm::getDocIndex()
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    return _kernel.getDocIndex();
+}
+
 // This will return the language strings for the plugins
 // used by the language class
 map<string, string> wxTerm::getPluginLanguageStrings()
@@ -453,7 +460,7 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
                 m_wxParent->showGraph(task.graph);
                 break;
             case NumeReKernel::NUMERE_OPEN_DOC:
-                m_wxParent->openHTML(task.sString);
+                m_wxParent->ShowHelp(task.sString);
                 break;
             case NumeReKernel::NUMERE_SHOW_TABLE:
                 m_wxParent->openTable(task.tableContainer, task.sString);

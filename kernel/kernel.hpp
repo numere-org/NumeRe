@@ -187,6 +187,7 @@ class NumeReKernel
         string ReadAnswer();
         string ReadDoc();
         string getDocumentation(const string& sCommand);
+        vector<string> getDocIndex();;
         bool SettingsModified();
         int getAutosaveInterval() {return _option.getAutoSaveInterval();}
         long long int getLastSavedTime() {return _data.getLastSaved();}

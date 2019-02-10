@@ -2,6 +2,7 @@
 static const char *doc_xpm[] = {
 /* columns rows colors chars-per-pixel */
 "16 16 86 1",
+"  c None",
 "L c #E3EAF8",
 "K c #E8EEF9",
 "P c #DEE6F8",
@@ -61,7 +62,6 @@ static const char *doc_xpm[] = {
 "G c #2851A7",
 "/ c #CAD7F3",
 "I c #D9E3F7",
-"  c #C0C0C0",
 "i c #E6ECF9",
 "V c #E1E8F9",
 "z c #F0F4FC",

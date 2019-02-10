@@ -198,6 +198,7 @@ class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
 			m_bContinueDebug = true;
 		}
 		string getDocumentation(const string& sCommand);
+		vector<string> getDocIndex();
 		map<string, string> getPluginLanguageStrings();
 		map<string, string> getFunctionLanguageStrings();
 		void UpdateLibrary()

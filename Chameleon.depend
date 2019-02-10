@@ -2173,7 +2173,7 @@
 
 1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\droptgt.h
 
-1543059915 d:\cpp\numere-source\trunk\gui\terminal\wxterm.h
+1549710757 d:\cpp\numere-source\trunk\gui\terminal\wxterm.h
 	<map>
 	"../NumeReWindow.h"
 	"../../common/Options.h"
@@ -2181,7 +2181,7 @@
 	"../../kernel/kernel.hpp"
 	"../../kernel/debugmessenger.hpp"
 
-1541860016 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1549722909 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -2360,7 +2360,7 @@
 	"documentation/doc_helper.hpp"
 	"procedure/debugger.hpp"
 
-1511629592 d:\cpp\numere-source\trunk\kernel\core\documentation\doc_helper.hpp
+1549711109 d:\cpp\numere-source\trunk\kernel\core\documentation\doc_helper.hpp
 	<fstream>
 	<string>
 	<vector>
@@ -2517,7 +2517,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1543132842 d:\cpp\numere-source\trunk\kernel\kernel.hpp
+1549710875 d:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	<queue>
@@ -3333,7 +3333,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1549704669 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1549721701 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3454,11 +3454,11 @@
 	<wx/textctrl.h>
 	<wx/cursor.h>
 
-1491247725 source:d:\cpp\numere-source\trunk\gui\helpviewer.cpp
+1549721860 source:d:\cpp\numere-source\trunk\gui\helpviewer.cpp
 	"helpviewer.hpp"
 	"NumeReWindow.h"
 
-1509114857 d:\cpp\numere-source\trunk\gui\helpviewer.hpp
+1549800121 d:\cpp\numere-source\trunk\gui\helpviewer.hpp
 	<wx/wxhtml.h>
 	<wx/wx.h>
 	<vector>
@@ -3606,7 +3606,7 @@
 	"wx/printdlg.h"
 	<limits.h>
 
-1523001125 source:d:\cpp\numere-source\trunk\gui\iconmanager.cpp
+1549724113 source:d:\cpp\numere-source\trunk\gui\iconmanager.cpp
 	"IconManager.h"
 	<string>
 	<wx/icon.h>
@@ -3616,6 +3616,7 @@
 	"icons/defaultfile.xpm"
 	"icons/closedfolder16x1632bpp.xpm"
 	"icons/exe.xpm"
+	"icons/doc.xpm"
 
 1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\mimetype.h
 	"wx/defs.h"
@@ -3697,7 +3698,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1549700942 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1549722928 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3728,6 +3729,7 @@
 	"viewerframe.hpp"
 	"imagepanel.hpp"
 	"helpviewer.hpp"
+	"documentationbrowser.hpp"
 	"tableviewer.hpp"
 	"tableeditpanel.hpp"
 	"graphviewer.hpp"
@@ -3914,7 +3916,7 @@
 	"wxssh.h"
 	"../../common/debug.h"
 
-1543312106 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1549721168 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -3989,9 +3991,10 @@
 	"table.hpp"
 	<cmath>
 
-1532186473 source:d:\cpp\numere-source\trunk\kernel\core\documentation\doc_helper.cpp
+1549711673 source:d:\cpp\numere-source\trunk\kernel\core\documentation\doc_helper.cpp
 	"doc_helper.hpp"
 	"../version.h"
+	<list>
 
 1519812791 source:d:\cpp\numere-source\trunk\kernel\core\documentation\documentation.cpp
 	"documentation.hpp"
@@ -4287,7 +4290,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1543399522 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1549710862 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 
@@ -8813,4 +8816,19 @@
 
 1545212919 c:\cpp\numere-source\trunk\kernel\core\procedure\procedurecommandline.hpp
 	<string>
+
+1549799868 source:d:\cpp\numere-source\trunk\gui\documentationbrowser.cpp
+	"documentationbrowser.hpp"
+	"NumeReWindow.h"
+	<vector>
+	<string>
+
+1549799271 d:\cpp\numere-source\trunk\gui\documentationbrowser.hpp
+	<wx/treectrl.h>
+	<wx/splitter.h>
+	"viewerframe.hpp"
+	"helpviewer.hpp"
+	"IconManager.h"
+
+1549723881 d:\cpp\numere-source\trunk\gui\icons\doc.xpm
 

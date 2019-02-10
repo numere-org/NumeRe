@@ -31,7 +31,127 @@ bool HelpViewer::SetPage(const wxString& source)
 {
     if (!vHistory.size())
         vHistory.push_back(source);
+
     return this->wxHtmlWindow::SetPage(source);
+}
+
+bool HelpViewer::ShowPageOnItem(wxString docID)
+{
+    wxString pageContent = "";
+    bool openself = true;
+
+    if (docID.substr(0,10) == "history://")
+    {
+        if (docID.find("?frame=new") != string::npos)
+            openself = false;
+
+        docID.erase(0,10);
+
+        if (docID.find('?') != string::npos)
+            docID.erase(docID.find('?'));
+
+        if (docID == "back" && m_nHistoryPointer)
+        {
+            pageContent = vHistory[m_nHistoryPointer-1];
+            if (openself)
+                m_nHistoryPointer--;
+        }
+        else if (docID == "forward" && m_nHistoryPointer+1 < vHistory.size())
+        {
+            pageContent = vHistory[m_nHistoryPointer+1];
+            if (openself)
+                m_nHistoryPointer++;
+        }
+        else
+            return false;
+
+        if (pageContent.substr(0,15) == "<!DOCTYPE html>")
+        {
+            if (openself)
+            {
+                this->SetPage(pageContent);
+            }
+            else
+                m_mainFrame->ShowHelp(pageContent);
+        }
+        else if (pageContent.length())
+        {
+            if (openself)
+                this->SetPage(m_mainFrame->GetDocContent(pageContent));
+            else
+                m_mainFrame->ShowHelp(pageContent);
+        }
+    }
+    else if (docID.substr(0,7) == "nhlp://")
+    {
+
+        if (docID.find("?frame=new") != string::npos)
+            openself = false;
+
+        docID.erase(0,7);
+
+        if (docID.find('?') != string::npos)
+            docID.erase(docID.find('?'));
+
+        if (!openself)
+            return m_mainFrame->ShowHelp(docID);
+
+        pageContent = m_mainFrame->GetDocContent(docID);
+
+        if (!pageContent.length())
+            return false;
+
+        if (openself)
+        {
+            if (m_nHistoryPointer+1 != vHistory.size())
+            {
+                // erase the obsolete history
+                vHistory.erase(vHistory.begin()+1+m_nHistoryPointer, vHistory.end());
+            }
+
+            vHistory.push_back(docID);
+            m_nHistoryPointer++;
+            this->SetPage(pageContent);
+        }
+        else
+        {
+            m_mainFrame->ShowHelp(pageContent);
+        }
+    }
+    else if (docID.find("://") == string::npos)
+    {
+        pageContent = m_mainFrame->GetDocContent(docID);
+
+        if (!pageContent.length())
+            return false;
+
+        if (m_nHistoryPointer+1 != vHistory.size() && vHistory.size())
+        {
+            // erase the obsolete history
+            vHistory.erase(vHistory.begin()+1+m_nHistoryPointer, vHistory.end());
+        }
+
+        if (vHistory.size())
+        {
+            vHistory.push_back(docID);
+            m_nHistoryPointer++;
+        }
+
+        this->SetPage(pageContent);
+    }
+    else if (docID.substr(0,15) == "<!DOCTYPE html>")
+    {
+        if (openself)
+        {
+            this->SetPage(docID);
+        }
+        else
+            m_mainFrame->ShowHelp(docID);
+    }
+    else
+        return false;
+
+    return true;
 }
 
 void HelpViewer::OnKeyDown(wxKeyEvent& event)
@@ -50,77 +170,6 @@ void HelpViewer::OnEnter(wxMouseEvent& event)
 void HelpViewer::OnLinkClick(wxHtmlLinkEvent& event)
 {
     wxString linkadress = event.GetLinkInfo().GetHref();
-    wxString pageContent = "";
-    bool openself = true;
-    if (linkadress.substr(0,10) == "history://")
-    {
-        if (linkadress.find("?frame=new") != string::npos)
-            openself = false;
-
-        linkadress.erase(0,10);
-        if (linkadress.find('?') != string::npos)
-            linkadress.erase(linkadress.find('?'));
-
-        if (linkadress == "back" && m_nHistoryPointer)
-        {
-            pageContent = vHistory[m_nHistoryPointer-1];
-            if (openself)
-                m_nHistoryPointer--;
-        }
-        else if (linkadress == "forward" && m_nHistoryPointer+1 < vHistory.size())
-        {
-            pageContent = vHistory[m_nHistoryPointer+1];
-            if (openself)
-                m_nHistoryPointer++;
-        }
-        else
-            return;
-        if (pageContent.substr(0,15) == "<!DOCTYPE html>")
-        {
-            if (openself)
-            {
-                this->SetPage(pageContent);
-            }
-            else
-                m_mainFrame->openHTML(pageContent);
-        }
-        else if (pageContent.length())
-        {
-            if (openself)
-                this->SetPage(m_mainFrame->GetDocContent(pageContent));
-            else
-                m_mainFrame->openHTML(m_mainFrame->GetDocContent(pageContent));
-        }
-    }
-    else if (linkadress.substr(0,7) == "nhlp://")
-    {
-
-        if (linkadress.find("?frame=new") != string::npos)
-            openself = false;
-
-        linkadress.erase(0,7);
-        if (linkadress.find('?') != string::npos)
-            linkadress.erase(linkadress.find('?'));
-
-        pageContent = m_mainFrame->GetDocContent(linkadress);
-
-        if (!pageContent.length())
-            return;
-        if (openself)
-        {
-            if (m_nHistoryPointer+1 != vHistory.size())
-            {
-                // erase the obsolete history
-                vHistory.erase(vHistory.begin()+1+m_nHistoryPointer, vHistory.end());
-            }
-            vHistory.push_back(linkadress);
-            m_nHistoryPointer++;
-            this->SetPage(pageContent);
-        }
-        else
-        {
-            m_mainFrame->openHTML(pageContent);
-        }
-    }
+    ShowPageOnItem(linkadress);
 }
 

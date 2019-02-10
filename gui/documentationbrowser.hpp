@@ -1,6 +1,6 @@
 /*****************************************************************************
     NumeRe: Framework fuer Numerische Rechnungen
-    Copyright (C) 2017  Erik Haenel et al.
+    Copyright (C) 2019  Erik Haenel et al.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,34 +16,35 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef HELPVIEWER_HPP
-#define HELPVIEWER_HPP
+#ifndef DOCUMENTATIONBROWSER_HPP
+#define DOCUMENTATIONBROWSER_HPP
 
-#include <wx/wxhtml.h>
-#include <wx/wx.h>
-#include <vector>
-
-using namespace std;
+#include <wx/treectrl.h>
+#include <wx/splitter.h>
+#include "viewerframe.hpp"
+#include "helpviewer.hpp"
+#include "IconManager.h"
 
 class NumeReWindow;
 
-class HelpViewer : public wxHtmlWindow
+class DocumentationBrowser : public ViewerFrame
 {
-    public:
-        HelpViewer(wxWindow* parent, NumeReWindow* m_main) : wxHtmlWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxHW_SCROLLBAR_AUTO), m_mainFrame(m_main), m_nHistoryPointer(0) {SetFonts(wxEmptyString, "Consolas");};
-        virtual bool SetPage(const wxString& source);
-        bool ShowPageOnItem(wxString docID);
-
     private:
-        void OnKeyDown(wxKeyEvent& event);
-        void OnEnter(wxMouseEvent& event);
-        void OnLinkClick(wxHtmlLinkEvent& event);
+        HelpViewer* m_viewer;
+        wxTreeCtrl* m_doctree;
+        IconManager* m_manager;
 
-        NumeReWindow* m_mainFrame;
-        vector<wxString> vHistory;
-        size_t m_nHistoryPointer;
+        void fillDocTree(NumeReWindow* mainwindow);
+
+    public:
+        DocumentationBrowser(wxWindow* parent, const wxString& titletemplate, NumeReWindow* mainwindow);
+        ~DocumentationBrowser();
+
+        bool SetStartPage(const wxString& docId);
+        void OnTreeClick(wxTreeEvent& event);
 
         DECLARE_EVENT_TABLE();
 };
 
-#endif
+
+#endif // DOCUMENTATIONBROWSER_HPP
