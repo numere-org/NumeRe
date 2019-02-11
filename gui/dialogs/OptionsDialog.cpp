@@ -460,6 +460,10 @@ void OptionsDialog::CreateControls()
     m_formatBeforeSaving->SetValue(false);
     miscVSizer->Add(m_formatBeforeSaving, 0, wxALIGN_LEFT | wxALL, 5);
 
+    m_keepBackupFiles = new wxCheckBox(miscPanel, wxID_ANY, _guilang.get("GUI_OPTIONS_KEEP_BACKUP_FILES"), wxDefaultPosition, wxDefaultSize, 0);
+    m_keepBackupFiles->SetValue(false);
+    miscVSizer->Add(m_keepBackupFiles, 0, wxALIGN_LEFT | wxALL, 5);
+
     m_showToolbarText = new wxCheckBox( miscPanel, ID_SHOWTOOLBARTEXT, _(_guilang.get("GUI_OPTIONS_SHOW_TOOLBARTEXT")), wxDefaultPosition, wxDefaultSize, 0 );
     m_showToolbarText->SetValue(false);
     miscVSizer->Add(m_showToolbarText, 1, wxGROW|wxALL, 5);
@@ -1014,6 +1018,7 @@ bool OptionsDialog::EvaluateOptions()
     m_options->SetSaveSession(m_saveSession->IsChecked());
     m_options->SetFormatBeforeSaving(m_formatBeforeSaving->IsChecked());
     m_options->SetEditorFont(m_fontPicker->GetSelectedFont());
+    m_options->SetKeepBackupFile(m_keepBackupFiles->IsChecked());
 
 
     synchronizeColors();
@@ -1093,6 +1098,7 @@ void OptionsDialog::InitializeDialog()
     m_fontPicker->SetSelectedFont(m_options->GetEditorFont());
     m_backColor->Enable(!m_defaultBackground->GetValue());
     m_LaTeXRoot->SetValue(m_options->GetLaTeXRoot());
+    m_keepBackupFiles->SetValue(m_options->GetKeepBackupFile());
 
 
 	/**m_chkCombineWatchWindow->SetValue(m_options->GetCombineWatchWindow());

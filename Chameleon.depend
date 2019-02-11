@@ -2087,7 +2087,7 @@
 	<wx/dir.h>
 	"debug.h"
 
-1536645819 d:\cpp\numere-source\trunk\common\options.h
+1549915952 d:\cpp\numere-source\trunk\common\options.h
 	<wx/wx.h>
 	<wx/validate.h>
 	<wx/valgen.h>
@@ -2950,7 +2950,7 @@
 	"fndrpldialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1539503668 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1549915919 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
@@ -3081,7 +3081,7 @@
 
 1490787950 d:\cpp\numere-source\trunk\common\fixvsbug.h
 
-1539503318 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
+1549915725 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
 	"wx/notebook.h"
 	"wx/spinctrl.h"
 	<wx/clrpicker.h>
@@ -3333,7 +3333,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1549872161 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1549915415 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3699,7 +3699,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1549815549 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1549915671 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"

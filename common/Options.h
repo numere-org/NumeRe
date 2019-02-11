@@ -64,6 +64,7 @@ class Options
 		void SetMingwExecutables(StringFilenameHash files);
 		void SetLaTeXRoot(const wxString& root) {m_LaTeXRoot = root;}
 		void SetEditorFont(const wxFont& font) {m_editorFont = font; m_editorFont.SetEncoding(wxFONTENCODING_CP1252); }
+		void SetKeepBackupFile(bool keepFile) {m_keepBackupFile = keepFile;}
 
 		// Accessors:  (inlined)
 		wxString GetPscpApp() { return m_pscpProg; }
@@ -82,6 +83,7 @@ class Options
 		bool GetShowCompileCommands() { return m_showCompileCommands; }
 		bool GetSaveSession() {return m_saveSession;}
 		bool GetFormatBeforeSaving() {return m_formatBeforeSaving;}
+		bool GetKeepBackupFile() {return m_keepBackupFile;}
 		int GetTerminalHistorySize() { return m_terminalSize; }
 		wxArrayString GetMingwProgramNames() { return m_mingwProgramNames; }
 		StringFilenameHash GetMingwExecutables() { return m_mingwExecutableNames; }
@@ -157,6 +159,7 @@ class Options
 		bool m_showCompileCommands;
 		bool m_saveSession;
 		bool m_formatBeforeSaving;
+		bool m_keepBackupFile;
 
 		StringFilenameHash m_mingwExecutableNames;
 		wxArrayString m_mingwBinPaths;

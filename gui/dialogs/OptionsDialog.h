@@ -250,6 +250,7 @@ public:
     wxCheckBox* m_useExecuteCommand;
     wxCheckBox* m_formatBeforeSaving;
     wxCheckBox* m_useMaskAsDefault;
+    wxCheckBox* m_keepBackupFiles;
 ////@end OptionsDialog member variables
 
 	NumeReWindow* m_parentFrame;

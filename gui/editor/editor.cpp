@@ -374,6 +374,11 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 		return false;
     }
 
+    // If the user doesn't want to keep the backup files
+    // delete it here
+    if (!m_options->GetKeepBackupFile() && wxFileExists(filename + ".backup"))
+        wxRemoveFile(filename + ".backup");
+
 	// Only mark the editor as saved, if the saving process was successful
 	markSaved();
 	EmptyUndoBuffer();

@@ -10,3 +10,4 @@ New	The documentation window now features a clickable index tree on the left sid
 New	The documentation window now features a toolbar with navigation and printing functionality. The navigation at the bottom of the help page was removed.
 Fixed	It's now possible to overtype matching parentheses without entering new ones.
 Applied	The "permanent highlighting" feature of the editor's context menu is now toggable (simply right-click a highlighted word again).
+Cleaned	The backup files during saving are now optional (and will now be removed as default).

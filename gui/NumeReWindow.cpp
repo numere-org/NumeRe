@@ -675,33 +675,26 @@ bool NumeReWindow::isOnReloadBlackList(wxString sFilename)
     return false;
 }
 
+// This member function loads the configuration file available
+// for the graphical user interface. If no configuration file is
+// available or if the config file is of an older version, default
+// values are used
 void NumeReWindow::InitializeProgramOptions()
 {
-	// Open up the configuration file, assumed to be in the user's home directory
-
-	wxString authorizedCode = "0";
-	wxString enabledCode = "0";
-
-	// by default, enable nothing
-	wxString defaultAuthorizedCode = "10A80000000";
-	wxString defaultEnableCode = "0";
-
-
-
-	//Permission* perms = m_options->GetPerms();
+	// Open up the configuration file, assumed to be located
+	// in the program's root directory
 	wxString path = wxStandardPaths::Get().GetExecutablePath();
 
+	// Construct a file name class from the path
 	wxFileName configName(path.substr(0, path.rfind('\\')+1), "numeregui.ini");
-	//path = configName.GetFullPath();
 
+	// Prepare the configuration file
 	m_config = new wxFileConfig("numeregui", wxEmptyString, configName.GetFullPath());
 
+	// Depending on whether the file exists, load the contents
+	// or use the default values
 	if (configName.FileExists())
 	{
-		//m_options->SetHostname(m_config->Read("Network/hostname"));
-		//m_options->SetUsername(m_config->Read("Network/username"));
-		//m_options->SetMingwPath(m_config->Read("Compiler/mingwpath"));
-
 		bool printInColor = (m_config->Read("Miscellaneous/PrintInColor", "true") == "true");
 		int printStyle = printInColor ? wxSTC_PRINT_COLOURONWHITE : wxSTC_PRINT_BLACKONWHITE;
 		m_options->SetPrintStyle(printStyle);
@@ -718,13 +711,9 @@ void NumeReWindow::InitializeProgramOptions()
 		bool formatBeforeSaving = (m_config->Read("Miscellaneous/FormatBeforeSaving", "false") == "true");
 		m_options->SetFormatBeforeSaving(formatBeforeSaving);
 
-		//bool combineWatchWindow = (m_config->Read("Miscellaneous/CombineWatchWindow", "true") == "true");
-		//m_options->SetCombineWatchWindow(combineWatchWindow);
+		bool keepBackups = (m_config->Read("Miscellaneous/KeepBackups", "false") == "true");
+		m_options->SetFormatBeforeSaving(keepBackups);
 
-		//bool showCompileCommands = (m_config->Read("Miscellaneous/ShowCompileCommands", "true") == "true");
-		//m_options->SetCombineWatchWindow(combineWatchWindow);
-
-        ///FIXME
 		int terminalHistory = 300;
 		m_config->Read("Miscellaneous/TerminalHistory", &terminalHistory, 300);
 		if (terminalHistory >= 100 && terminalHistory <= 500)
@@ -732,6 +721,8 @@ void NumeReWindow::InitializeProgramOptions()
         else
             m_options->SetTerminalHistorySize(300);
 
+        // Read the color codes from the configuration file,
+        // if they exist
         m_options->readColoursFromConfig(m_config);
 
         wxFont font;
@@ -743,79 +734,23 @@ void NumeReWindow::InitializeProgramOptions()
         wxString latexroot;
         m_config->Read("Miscellaneous/LaTeXRoot", &latexroot, "C:/Program Files");
         m_options->SetLaTeXRoot(latexroot);
-
-		//authorizedCode = m_config->Read("Permissions/authorized", defaultAuthorizedCode);
-		//enabledCode = m_config->Read("Permissions/enabled", defaultEnableCode);
-
-
-		//wxString mingwBasePath = m_config->Read("Compiler/MingwBasePath", wxEmptyString);
-		//m_options->SetMingwBasePath(mingwBasePath);
-
-		//m_config->SetPath("/MinGW Bin Paths");
-		/*int numEntries = m_config->GetNumberOfEntries();
-
-		wxArrayString binPaths;
-		for(int i = 0; i < numEntries; i++)
-		{
-			wxString keyName;
-			keyName.Printf("BinPath%d", i + 1);
-
-			wxString binPath = m_config->Read(keyName, wxEmptyString);
-			binPaths.Add(binPath);
-		}
-		m_options->SetMingwBinPaths(binPaths);
-
-		wxArrayString programNames = m_options->GetMingwProgramNames();
-		StringFilenameHash programPaths;
-
-		m_config->SetPath("/MinGW Program Names");
-		for(int i = 0; i < programNames.GetCount(); i++)
-		{
-			wxString programName = programNames[i];
-			wxString programPath = m_config->Read(programName, wxEmptyString);
-			programPaths[programName] = programPath;
-		}
-		m_options->SetMingwExecutables(programPaths);
-
-		m_config->SetPath("/");*/
 	}
 	else
 	{
+	    // Use the default configuration set
 #ifdef DO_LOG
 		wxLogDebug("Failed to locate config file, loading default permissions");
 #endif
-		authorizedCode = defaultAuthorizedCode;
-		enabledCode = defaultEnableCode;
-
 		m_config->Write("Miscellaneous/TerminalHistory", m_options->GetTerminalHistorySize());
 		m_config->Write("Miscellaneous/LaTeXRoot", m_options->GetLaTeXRoot());
 		m_config->Write("Miscellaneous/PrintInColor", "false");
 		m_config->Write("Miscellaneous/PrintLineNumbers", "false");
 		m_config->Write("Miscellaneous/SaveSession", "false");
 		m_config->Write("Miscellaneous/FormatBeforeSaving", "false");
+		m_config->Write("Miscellaneous/KeepBackups", "false");
 		m_options->writeColoursToConfig(m_config);
 		m_config->Write("Styles/EditorFont", m_options->GetEditorFont().GetNativeFontInfoUserDesc());
 	}
-
-	/*if(authorizedCode == wxEmptyString)
-	{
-		authorizedCode = defaultAuthorizedCode;
-	}
-	if(enabledCode == wxEmptyString)
-	{
-		enabledCode = defaultEnableCode;
-	}
-
-	if(!perms->setGlobalAuthorized(authorizedCode))
-	{
-		wxLogDebug("Authcode initialization failed!  Code: %s", authorizedCode.c_str());
-	}
-	else
-	{
-		perms->setGlobalEnabled(enabledCode);
-	}*/
-
-
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -3828,73 +3763,67 @@ void NumeReWindow::EvaluateOptions()
 {
 	m_network->PingOptions();
 
-	//Permission* perms = m_options->GetPerms();
-
+	// Update the GUI elements by re-constructing them
 	UpdateToolbar();
 	UpdateMenuBar();
 	UpdateTerminalNotebook();
 
-	if (true) //(perms->isEnabled(PERM_PROJECTS))
-	{
-		if (m_fileTree)
-		{
-            if (!m_treeBook->IsShown())
+	// Prepare the contents of the navigators
+    if (m_fileTree)
+    {
+        // If the left sidebar is not shown, display it here.
+        // Otherwise simply clear the contents of the file
+        // navigator tree
+        if (!m_treeBook->IsShown())
+        {
+            m_splitProjectEditor->SplitVertically(m_treeBook, m_splitEditorOutput, 200);
+            m_splitProjectEditor->SetMinimumPaneSize(30);
+            m_treeBook->Show();
+        }
+        else
+        {
+            for (size_t i = 0; i < 5; i++)
             {
-                m_splitProjectEditor->SplitVertically(m_treeBook, m_splitEditorOutput, 200);
-                m_splitProjectEditor->SetMinimumPaneSize(30);
-                m_treeBook->Show();
-			}
-            else
-            {
-                for (size_t i = 0; i < 5; i++)
-                {
-                    m_fileTree->DeleteChildren(m_projectFileFolders[i]);
-                }
+                m_fileTree->DeleteChildren(m_projectFileFolders[i]);
             }
-			if (!m_fileTree->IsExpanded(m_fileTree->GetRootItem()))
-                m_fileTree->Toggle(m_fileTree->GetRootItem());
+        }
 
-			vector<string> vPaths = m_terminal->getPathSettings();
-			LoadFilesToTree(vPaths[LOADPATH], FILE_DATAFILES, m_projectFileFolders[0]);
-			LoadFilesToTree(vPaths[SAVEPATH], FILE_DATAFILES, m_projectFileFolders[1]);
-			LoadFilesToTree(vPaths[SCRIPTPATH], FILE_NSCR, m_projectFileFolders[2]);
-			LoadFilesToTree(vPaths[PROCPATH], FILE_NPRC, m_projectFileFolders[3]);
-			LoadFilesToTree(vPaths[PLOTPATH], FILE_IMAGEFILES, m_projectFileFolders[4]);
+        // Expand the root node
+        if (!m_fileTree->IsExpanded(m_fileTree->GetRootItem()))
+            m_fileTree->Toggle(m_fileTree->GetRootItem());
 
-			CreateProcedureTree(vPaths[PROCPATH]);
+        // Fill the contents to the tree
+        vector<string> vPaths = m_terminal->getPathSettings();
+        LoadFilesToTree(vPaths[LOADPATH], FILE_DATAFILES, m_projectFileFolders[0]);
+        LoadFilesToTree(vPaths[SAVEPATH], FILE_DATAFILES, m_projectFileFolders[1]);
+        LoadFilesToTree(vPaths[SCRIPTPATH], FILE_NSCR, m_projectFileFolders[2]);
+        LoadFilesToTree(vPaths[PROCPATH], FILE_NPRC, m_projectFileFolders[3]);
+        LoadFilesToTree(vPaths[PLOTPATH], FILE_IMAGEFILES, m_projectFileFolders[4]);
 
-			if (m_watcher)
-			{
-                m_watcher->SetDefaultPaths(vPaths);
-			}
-		}
-	}
-	else
-	{
-		if(m_projMultiFiles != NULL)
-		{
-			CloseProjectFile(false);
-		}
-		if(m_treeBook->IsShown())
-		{
-			//m_splitProjectEditor->Unsplit(m_projectTree);
-			m_splitProjectEditor->Unsplit(m_treeBook);
-			m_treeBook->Hide();
-			m_book->Refresh();
-		}
-	}
+        // Construct the internal procedure tree
+        // for the autocompletion feature
+        CreateProcedureTree(vPaths[PROCPATH]);
 
+        // Activate the file system watcher
+        if (m_watcher)
+        {
+            m_watcher->SetDefaultPaths(vPaths);
+        }
+    }
+
+    // Update the syntax highlighting in every
+    // editor instance
 	for(int i = 0; i < (int)m_book->GetPageCount(); i++)
 	{
 		NumeReEditor* edit = static_cast<NumeReEditor*> (m_book->GetPage(i));
 		edit->UpdateSyntaxHighlighting();
 	}
 
+	// Copy the settings in the options object
+	// into the configuration object
 	int newMaxTermSize = m_options->GetTerminalHistorySize();
 	m_termContainer->SetTerminalHistory(newMaxTermSize);
-
 	m_config->Write("Miscellaneous/TerminalHistory", newMaxTermSize);
-
 
 	bool printInColor = (m_options->GetPrintStyle() == wxSTC_PRINT_COLOURONWHITE);
 	m_config->Write("Miscellaneous/PrintInColor", printInColor ? "true" : "false");
@@ -3913,38 +3842,9 @@ void NumeReWindow::EvaluateOptions()
 
 	m_config->Write("Miscellaneous/LateXRoot", m_options->GetLaTeXRoot());
 
-	/*bool combineWatchWindow = m_options->GetCombineWatchWindow();
-	m_config->Write("Miscellaneous/CombineWatchWindow", combineWatchWindow ? "true" : "false");*/
+	m_config->Write("Miscellaneous/KeepBackups", m_options->GetKeepBackupFile() ? "true" : "false");
 
-	/*bool showCompileCommands = m_options->GetShowCompileCommands();
-	m_config->Write("Miscellaneous/ShowCompileCommands", showCompileCommands ? "true" : "false");*/
-
-	/*m_config->Write("Compiler/MingwBasePath", m_options->GetMingwBasePath());
-
-	wxArrayString mingwBinPaths = m_options->GetMingwBinPaths();
-
-	for(int i = 0; i < mingwBinPaths.GetCount(); i++)
-	{
-		wxString keyName;
-		keyName.Printf("MinGW Bin Paths/BinPath%d", i + 1);
-		m_config->Write(keyName, mingwBinPaths[i]);
-	}
-
-	wxArrayString programNames = m_options->GetMingwProgramNames();
-	StringFilenameHash programPaths = m_options->GetMingwExecutables();
-
-	for(int i = 0; i < programNames.GetCount(); i++)
-	{
-		wxString programName = programNames[i];
-		wxFileName programPath = programPaths[programName];
-
-		wxString keyName;
-		keyName.Printf("MinGW Programs/%s", programName);
-		m_config->Write(keyName, programPath.GetFullPath());
-	}
-
-	m_options->VerifyMingwPath(m_options->GetMingwBasePath());*/
-
+    // Write the configuration to its file
 	m_config->Flush();
 }
 
