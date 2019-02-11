@@ -252,7 +252,7 @@ NumeReEditor::NumeReEditor( NumeReWindow* mframe,
 	//m_menuAddWatch = m_popupMenu.Append(ID_DEBUG_WATCH_SELECTION, "Watch selection");
 	m_menuFindProcedure = m_popupMenu.Append(ID_FIND_PROCEDURE, _guilang.get("GUI_MENU_EDITOR_FINDPROC", "$procedure"));
 	m_menuFindInclude = m_popupMenu.Append(ID_FIND_INCLUDE, _guilang.get("GUI_MENU_EDITOR_FINDINCLUDE", "script"));
-	m_menuShowValue = m_popupMenu.Append(ID_DEBUG_DISPLAY_SELECTION, _guilang.get("GUI_MENU_EDITOR_HIGHLIGHT", "selection"));
+	m_menuShowValue = m_popupMenu.Append(ID_DEBUG_DISPLAY_SELECTION, _guilang.get("GUI_MENU_EDITOR_HIGHLIGHT", "selection"), "", wxITEM_CHECK);
 	m_menuHelpOnSelection = m_popupMenu.Append(ID_MENU_HELP_ON_ITEM, _guilang.get("GUI_TREE_PUP_HELPONITEM", "..."));
 	m_menuRefactoring = m_popupMenu.Append(ID_REFACTORING_MENU, _guilang.get("GUI_MENU_EDITOR_REFACTORING"), m_refactoringMenu);
 	m_popupMenu.AppendSeparator();
@@ -4470,6 +4470,11 @@ void NumeReEditor::ResetEditor()
 
 	m_fileNameAndPath.Clear();
 	m_breakpoints.Clear();
+	m_clickedWord.clear();
+	m_clickedProcedure.clear();
+	m_clickedInclude.clear();
+	m_clickedWordLength = 0;
+	m_watchedString.clear();
 
 	SetReadOnly(false);
 	SetText(wxEmptyString);
@@ -4505,48 +4510,12 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
 	m_lastRightClick = event.GetPosition();
 	int charpos = PositionFromPoint(m_lastRightClick);
 	int linenum = LineFromPosition(charpos);
+    wxString clickedWord = FindClickedWord();
 
+	// Determine the marker and breakpoint conditions
 	bool breakpointOnLine = MarkerOnLine(linenum, MARKER_BREAKPOINT);
 	bool bookmarkOnLine = MarkerOnLine(linenum, MARKER_BOOKMARK);
-
 	bool breakpointsAllowed = isNumeReFileType();
-
-	if (m_popupMenu.FindItem(ID_DEBUG_DISPLAY_SELECTION) != nullptr)
-	{
-		//m_popupMenu.Remove(ID_DEBUG_WATCH_SELECTION);
-		//m_popupMenu.Remove(ID_DEBUG_DISPLAY_SELECTION);
-		m_popupMenu.Enable(ID_DEBUG_DISPLAY_SELECTION, false);
-		m_menuShowValue->SetItemLabel(_guilang.get("GUI_MENU_EDITOR_HIGHLIGHT", "..."));
-	}
-	if (m_popupMenu.FindItem(ID_FIND_PROCEDURE) != nullptr)
-	{
-		//m_popupMenu.Remove(ID_DEBUG_WATCH_SELECTION);
-		m_popupMenu.Remove(ID_FIND_PROCEDURE);
-	}
-	if (m_popupMenu.FindItem(ID_FIND_INCLUDE) != nullptr)
-	{
-		//m_popupMenu.Remove(ID_DEBUG_WATCH_SELECTION);
-		m_popupMenu.Remove(ID_FIND_INCLUDE);
-	}
-	if (m_popupMenu.FindItem(ID_MENU_HELP_ON_ITEM) != nullptr)
-	{
-		m_popupMenu.Remove(ID_MENU_HELP_ON_ITEM);
-	}
-	if (m_popupMenu.FindItem(ID_REFACTORING_MENU) != nullptr)
-	{
-	    m_refactoringMenu->Enable(ID_RENAME_SYMBOLS, false);
-	    m_refactoringMenu->Enable(ID_ABSTRAHIZE_SECTION, false);
-		m_popupMenu.Remove(ID_REFACTORING_MENU);
-	}
-
-	m_popupMenu.Enable(ID_FOLD_CURRENT_BLOCK, isCodeFile());
-
-	m_popupMenu.Enable(ID_DEBUG_ADD_BREAKPOINT, breakpointsAllowed && !breakpointOnLine);
-	m_popupMenu.Enable(ID_DEBUG_REMOVE_BREAKPOINT, breakpointsAllowed && breakpointOnLine);
-
-	m_popupMenu.Enable(ID_BOOKMARK_ADD, !bookmarkOnLine);
-	m_popupMenu.Enable(ID_BOOKMARK_REMOVE, bookmarkOnLine);
-	//m_popupMenu.Enable(ID_DEBUG_RUNTOCURSOR, breakpointsAllowed && isDebugging);
 
 	// returns a copy of a member variable, which would seem sort of pointless, but
 	// GetBreakpoints cleans up any stray marker IDs in the list before returning
@@ -4554,8 +4523,45 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
 	wxArrayInt currentBreakpoints = GetBreakpoints();
 	bool canClearBreakpoints = currentBreakpoints.GetCount() > 0;
 
+	// Prepare the context menu
+	if (m_popupMenu.FindItem(ID_DEBUG_DISPLAY_SELECTION) != nullptr)
+	{
+		m_popupMenu.Enable(ID_DEBUG_DISPLAY_SELECTION, false);
+		m_menuShowValue->SetItemLabel(_guilang.get("GUI_MENU_EDITOR_HIGHLIGHT", "..."));
+	}
+
+	if (m_popupMenu.FindItem(ID_FIND_PROCEDURE) != nullptr)
+	{
+		m_popupMenu.Remove(ID_FIND_PROCEDURE);
+	}
+
+	if (m_popupMenu.FindItem(ID_FIND_INCLUDE) != nullptr)
+	{
+		m_popupMenu.Remove(ID_FIND_INCLUDE);
+	}
+
+	if (m_popupMenu.FindItem(ID_MENU_HELP_ON_ITEM) != nullptr)
+	{
+		m_popupMenu.Remove(ID_MENU_HELP_ON_ITEM);
+	}
+
+	if (m_popupMenu.FindItem(ID_REFACTORING_MENU) != nullptr)
+	{
+	    m_refactoringMenu->Enable(ID_RENAME_SYMBOLS, false);
+	    m_refactoringMenu->Enable(ID_ABSTRAHIZE_SECTION, false);
+		m_popupMenu.Remove(ID_REFACTORING_MENU);
+	}
+
+	// Enable menus depending on the marker and breakpint states
+	m_popupMenu.Enable(ID_FOLD_CURRENT_BLOCK, isCodeFile());
+	m_popupMenu.Enable(ID_DEBUG_ADD_BREAKPOINT, breakpointsAllowed && !breakpointOnLine);
+	m_popupMenu.Enable(ID_DEBUG_REMOVE_BREAKPOINT, breakpointsAllowed && breakpointOnLine);
+	m_popupMenu.Enable(ID_BOOKMARK_ADD, !bookmarkOnLine);
+	m_popupMenu.Enable(ID_BOOKMARK_REMOVE, bookmarkOnLine);
 	m_popupMenu.Enable(ID_DEBUG_CLEAR_ALL_BREAKPOINTS, canClearBreakpoints);
 
+	// Enable upper- and lowercase if the user made
+	// a selection in advance
 	if (HasSelection())
 	{
 		m_popupMenu.Enable(ID_UPPERCASE, true);
@@ -4567,14 +4573,14 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
 		m_popupMenu.Enable(ID_LOWERCASE, false);
 	}
 
-    wxString clickedWord = FindClickedWord();
-
+    // If th user clicked a word or made a selection
     if (clickedWord.Length() > 0 || HasSelection())
     {
         if (this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURES)
         {
             // Show "find procedure"
             wxString clickedProc = FindClickedProcedure();
+
             if (clickedProc.length())
             {
                 m_popupMenu.Insert(15, m_menuFindProcedure);
@@ -4594,6 +4600,7 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
         {
             // Show "find included file"
             wxString clickedInclude = FindClickedInclude();
+
             if (clickedInclude.length())
             {
                 m_popupMenu.Insert(15, m_menuFindInclude);
@@ -4604,18 +4611,31 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
         {
             // Show the refactoring menu
             m_popupMenu.Insert(15, m_menuRefactoring);
+
             if (this->isStyleType(STYLE_DEFAULT, charpos) || this->isStyleType(STYLE_IDENTIFIER, charpos) || this->isStyleType(STYLE_CUSTOMFUNCTION, charpos))
                 m_refactoringMenu->Enable(ID_RENAME_SYMBOLS, true);
+
             if (HasSelection())
                 m_refactoringMenu->Enable(ID_ABSTRAHIZE_SECTION, true);
         }
 
+        // Enable the "highlight" menu item and add the clicked word
+        // to the item text
         m_popupMenu.Enable(ID_DEBUG_DISPLAY_SELECTION, true);
         m_menuShowValue->SetItemLabel(_guilang.get("GUI_MENU_EDITOR_HIGHLIGHT", clickedWord.ToStdString()));
+
+        // Set the boolean flag to correspond to the highlight
+        // state of the clicked word
+        if (m_clickedWord == m_watchedString)
+            m_menuShowValue->Check(true);
+        else
+            m_menuShowValue->Check(false);
     }
 
+    // Cancel the call tip, if there's one active
 	if (this->CallTipActive())
 		this->AdvCallTipCancel();
+
 	PopupMenu(&m_popupMenu, m_lastRightClick);
 	m_PopUpActive = false;
 }
@@ -6462,9 +6482,13 @@ wxString NumeReEditor::generateAutoCompList(const wxString& wordstart, string sP
 	return wReturn;
 }
 
-
+// This member function highlights the clicked word
+// permanently or removes the highlighting, if the
+// word was already selected
 void NumeReEditor::OnDisplayVariable(wxCommandEvent& event)
 {
+    // Clear the highlighting state and prepare the
+    // colors and style for the next highlighting
 	long int maxpos = this->GetLastPosition();
 	this->SetIndicatorCurrent(HIGHLIGHT);
 	this->IndicatorClearRange(0, maxpos);
@@ -6476,39 +6500,36 @@ void NumeReEditor::OnDisplayVariable(wxCommandEvent& event)
 	unsigned int nCurr = 0;
 	vector<unsigned int> vSelectionList;
 
+	// If the current clicked word is already
+	// highlighted, then simply clear out the
+	// buffer string and return
+	if (m_watchedString == m_clickedWord)
+    {
+        m_watchedString.clear();
+        return;
+    }
+
+    // Update the buffer with the new clicked word
 	m_watchedString = m_clickedWord;
+
+	// Search for all occurences of the current clicked
+	// word in the document and store them
 	while ((nPos = this->FindText(nCurr, maxpos, m_clickedWord, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD)) != string::npos)
 	{
 		vSelectionList.push_back(nPos);
-		nCurr = nPos +  m_clickedWordLength; //m_clickedWord.length();
+		nCurr = nPos +  m_clickedWordLength;
 	}
 
-	// this->SetIndicatorCurrent(HIGHLIGHT);
-
+    // Apply the indicator to all found occurences
 	for (size_t i = 0; i < vSelectionList.size(); i++)
 	{
-		this->IndicatorFillRange(vSelectionList[i], m_clickedWordLength); //m_clickedWord.length());
+		this->IndicatorFillRange(vSelectionList[i], m_clickedWordLength);
 	}
-
-	/*wxDebugEvent dbg;
-
-	dbg.SetId(ID_DEBUG_DISPLAY_SELECTION);
-
-	wxArrayString vars;
-	vars.Add(m_clickedWord);
-	dbg.SetVariableNames(vars);
-
-	m_debugManager->AddPendingEvent(dbg);*///m_mainFrame->AddPendingEvent(dbg);
-
-
-	// TODO Need to signal that it's a one-shot, which needs to be
-	// handled appropriately in the debugger.
 }
 
 void NumeReEditor::OnHelpOnSelection(wxCommandEvent& event)
 {
 	m_mainFrame->ShowHelp(m_clickedWord.ToStdString());
-//	m_mainFrame->openHTML(m_terminal->getDocumentation(m_clickedWord.ToStdString()));
 }
 
 // Private event handler function for finding the procedure definition
