@@ -146,9 +146,6 @@ void DocumentationBrowser::OnToolbarEvent(wxCommandEvent& event)
         case ID_HELP_PRINT:
             m_viewer->Print();
             break;
-        case ID_HELP_PRINT_PREVIEW:
-            m_viewer->PrintPreview();
-            break;
     }
 }
 

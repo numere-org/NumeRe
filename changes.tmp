@@ -8,3 +8,4 @@ New	Created new "search" menu
 New	Added shortkeys for "Rename symbol" and "Extract marked section"
 New	The documentation window now features a clickable index tree on the left side.
 New	The documentation window now features a toolbar with navigation and printing functionality. The navigation at the bottom of the help page was removed.
+Fixed	It's now possible to overtype matching parentheses without entering new ones.

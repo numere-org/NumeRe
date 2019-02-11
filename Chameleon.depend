@@ -3333,7 +3333,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1549721701 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1549872161 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3454,12 +3454,12 @@
 	<wx/textctrl.h>
 	<wx/cursor.h>
 
-1549816539 source:d:\cpp\numere-source\trunk\gui\helpviewer.cpp
+1549827389 source:d:\cpp\numere-source\trunk\gui\helpviewer.cpp
 	"helpviewer.hpp"
 	"NumeReWindow.h"
 	<wx/html/htmprint.h>
 
-1549802320 d:\cpp\numere-source\trunk\gui\helpviewer.hpp
+1549826561 d:\cpp\numere-source\trunk\gui\helpviewer.hpp
 	<wx/wxhtml.h>
 	<wx/wx.h>
 	<vector>
@@ -8818,7 +8818,7 @@
 1545212919 c:\cpp\numere-source\trunk\kernel\core\procedure\procedurecommandline.hpp
 	<string>
 
-1549815167 source:d:\cpp\numere-source\trunk\gui\documentationbrowser.cpp
+1549872209 source:d:\cpp\numere-source\trunk\gui\documentationbrowser.cpp
 	"documentationbrowser.hpp"
 	"NumeReWindow.h"
 	"../common/datastructures.h"

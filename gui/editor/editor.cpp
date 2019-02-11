@@ -1042,14 +1042,26 @@ void NumeReEditor::AdvCallTipCancel()
 	CallTipCancel();
 }
 
+// This member function checks the key input events
+// before(!) they are typed into the editor. We catch
+// here parentheses and quotation marks in the case
+// that we have
+// - either a selection (we then surround the selection)
+// - or a already matching partner of the parenthesis (we
+//   then jump over the matching partner)
 void NumeReEditor::OnKeyDn(wxKeyEvent& event)
 {
+    // Check the parentheses in the case of selections
+    // and matching partners
 	if (this->HasSelection()
 			&& event.GetKeyCode() != WXK_SHIFT
 			&& event.GetKeyCode() != WXK_CAPITAL
 			&& event.GetKeyCode() != WXK_END
 			&& event.GetKeyCode() != WXK_HOME)
 	{
+	    // Selection case: extract the position of the
+	    // end of the selection and insert the parenthesis
+	    // characters around the selection
 		char chr = event.GetKeyCode();
 		if (event.ShiftDown() && (chr == '8' || chr == '9'))
 		{
@@ -1113,13 +1125,67 @@ void NumeReEditor::OnKeyDn(wxKeyEvent& event)
 			return;
 		}
 	}
+	else if (event.GetKeyCode() != WXK_SHIFT
+			&& event.GetKeyCode() != WXK_CAPITAL
+			&& event.GetKeyCode() != WXK_END
+			&& event.GetKeyCode() != WXK_HOME)
+    {
+        // Matching partner case: if the matching partner
+        // is right to the current input position, simply
+        // jump one position to the right. Note that this
+        // algorithm will not work in strings, because
+        // parenthesis matching in strings is not necessary
+        char chr = event.GetKeyCode();
+		if (event.ShiftDown() && chr == '9')
+		{
+		    if (!isStyleType(STYLE_STRING, GetCurrentPos()) && GetCharAt(GetCurrentPos()) == ')' && BraceMatch(GetCurrentPos()) != wxSTC_INVALID_POSITION)
+            {
+                GotoPos(GetCurrentPos()+1);
+                return;
+            }
+		}
+		else if (event.ShiftDown() && chr == '2')
+		{
+		    if (isStyleType(STYLE_STRING, GetCurrentPos()-1) && GetCharAt(GetCurrentPos()) == '"' && GetCharAt(GetCurrentPos()-1) != '\\')
+            {
+                GotoPos(GetCurrentPos()+1);
+                return;
+            }
+		}
+		else if (event.ControlDown() && event.AltDown() && chr == '9') // Alt Gr means CTRL+ALT
+		{
+			if (!isStyleType(STYLE_STRING, GetCurrentPos()) && GetCharAt(GetCurrentPos()) == ']' && BraceMatch(GetCurrentPos()) != wxSTC_INVALID_POSITION)
+            {
+                GotoPos(GetCurrentPos()+1);
+                return;
+            }
+		}
+		else if (event.ControlDown() && event.AltDown() && chr == '0')
+		{
+			if (!isStyleType(STYLE_STRING, GetCurrentPos()) && GetCharAt(GetCurrentPos()) == '}' && BraceMatch(GetCurrentPos()) != wxSTC_INVALID_POSITION)
+            {
+                GotoPos(GetCurrentPos()+1);
+                return;
+            }
+		}
+    }
+
+	// Pass the control to the internal OnKeyDown event
+	// handler, which will insert the correct character
 	OnKeyDown(event);
+
+	// Apply the brace match indicator, if we have only
+	// one or no selection
 	if (this->GetSelections() <= 1)
 		MakeBraceCheck();
+
+	// Apply the block match indicator
 	MakeBlockCheck();
+
+	// Clear the double click occurence highlighter,
+	// if the user doesn't press Ctrl or Shift.
 	if (!event.ControlDown() && !event.ShiftDown())
 		ClearDblClkIndicator();
-	//event.Skip();
 }
 
 void NumeReEditor::OnKeyRel(wxKeyEvent& event)
