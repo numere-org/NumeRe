@@ -3141,14 +3141,21 @@ static string parser_NumToString(const string& sLine, Datafile& _data, Parser& _
 					if (!strRes.vResult.size())
 						throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
+                    // Examine, whether the return value is logical only
                     if (!strRes.bOnlyLogicals)
                     {
+                        // This case contains strings. We will cast the whole
+                        // result into a string
                         for (size_t i = 0; i < strRes.vResult.size(); i++)
                         {
                             strRes.vResult[i] = addQuotationMarks(strRes.vResult[i]);
                         }
+
+                        // Create a vector variable from the return value
                         sExpr = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
                         sLineToParsedTemp += sExpr;
+
+                        // Get the next part of the command line
                         if (parser_getDelimiterPos(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
                             sLineToParsed = sLineToParsed.substr(parser_getDelimiterPos(sLineToParsed.substr(n_pos)));
                         else
@@ -3158,8 +3165,12 @@ static string parser_NumToString(const string& sLine, Datafile& _data, Parser& _
                         continue;
                     }
 
+                    // This code section is reached, if the return value
+                    // is logical only. We will construct a multi-value
+                    // expression and evaluate it numerically
                     sExpr.clear();
 
+                    // Construct the expression and remove the trailing comma
                     for (size_t i = 0; i < strRes.vResult.size(); i++)
                     {
                         sExpr += strRes.vResult[i] + ",";
