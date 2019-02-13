@@ -13,3 +13,4 @@ Applied	The "permanent highlighting" feature of the editor's context menu is now
 Cleaned	The backup files during saving are now optional (and will now be removed as default).
 Cleaned	The "swap" command was transformed into a more modern syntax: "swap cache1(), cache2()"
 Cleaned	The "rename" command was transformed into a more modern syntax: "rename cache(), newname()"
+Fixed	The num-to-string variable parser symbol "#" can now handle string functions as its argument.

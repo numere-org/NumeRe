@@ -3141,19 +3141,31 @@ static string parser_NumToString(const string& sLine, Datafile& _data, Parser& _
 					if (!strRes.vResult.size())
 						throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
-					for (size_t i = 0; i < strRes.vResult.size(); i++)
-					{
-						strRes.vResult[i] = addQuotationMarks(strRes.vResult[i]);
-					}
-					sExpr = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
-					sLineToParsedTemp += sExpr;
-					if (parser_getDelimiterPos(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
-						sLineToParsed = sLineToParsed.substr(parser_getDelimiterPos(sLineToParsed.substr(n_pos)));
-					else
-						sLineToParsed.clear();
+                    if (!strRes.bOnlyLogicals)
+                    {
+                        for (size_t i = 0; i < strRes.vResult.size(); i++)
+                        {
+                            strRes.vResult[i] = addQuotationMarks(strRes.vResult[i]);
+                        }
+                        sExpr = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
+                        sLineToParsedTemp += sExpr;
+                        if (parser_getDelimiterPos(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
+                            sLineToParsed = sLineToParsed.substr(parser_getDelimiterPos(sLineToParsed.substr(n_pos)));
+                        else
+                            sLineToParsed.clear();
 
-					nPos = 0;
-					continue;
+                        nPos = 0;
+                        continue;
+                    }
+
+                    sExpr.clear();
+
+                    for (size_t i = 0; i < strRes.vResult.size(); i++)
+                    {
+                        sExpr += strRes.vResult[i] + ",";
+                    }
+                    sExpr.pop_back();
+
 				}
 
 				// Set the expression
