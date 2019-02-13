@@ -32,6 +32,8 @@ static bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Setting
 static bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
 static string BI_getVarList(const string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
 static bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
+static int swapCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions);
+static int renameCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions);
 
 
 
@@ -3551,18 +3553,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		}
 		else if (sCommand == "swap")
 		{
-			if (_data.containsStringVars(sCmd) || containsStrings(sCmd))
-				sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
-
-			if (_data.matchCache(sCmd, '=').length())
-			{
-				sArgument = getArgAtPos(sCmd, matchParams(sCmd, _data.matchCache(sCmd, '='), '=') + _data.matchCache(sCmd, '=').length());
-				_data.swapCaches(_data.matchCache(sCmd, '='), sArgument);
-				if (_option.getSystemPrintStatus())
-					NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SWAP_CACHE", _data.matchCache(sCmd, '='), sArgument), _option) );
-				//NumeReKernel::print(LineBreak("|-> Der Inhalt von \""+_data.matchCache(sCmd, '=')+"\" wurde erfolgreich mit dem Inhalt von \""+sArgument+"\" getauscht.", _option) );
-			}
-			return 1;
+			return swapCaches(sCmd, _data, _parser, _option, _functions);
 		}
 
 		return 0;
@@ -3915,16 +3906,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		}
 		else if (sCommand == "rename") //rename CACHE=NEWNAME
 		{
-			if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
-				sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
-			if (_data.matchCache(sCmd, '=').length())
-			{
-				sArgument = getArgAtPos(sCmd, matchParams(sCmd, _data.matchCache(sCmd, '='), '=') + _data.matchCache(sCmd, '=').length());
-				_data.renameCache(_data.matchCache(sCmd, '='), sArgument);
-				NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RENAME_CACHE", sArgument), _option) );
-				//NumeReKernel::print(LineBreak("|-> Der Cache wurde erfolgreich zu \""+sArgument+"\" umbenannt.", _option) );
-			}
-			return 1;
+			return renameCaches(sCmd, _data, _parser, _option, _functions);
 		}
 		else if (sCommand == "reload")
 		{
@@ -4996,6 +4978,140 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 	}
 	return 0;
 }
+
+// This static function handles the swapping of the values
+// of two caches
+static int swapCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions)
+{
+    string sArgument;
+
+    // If the current command line contains strings
+    // handle them here
+    if (_data.containsStringVars(sCmd) || containsStrings(sCmd))
+        sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
+
+    // Handle legacy and new syntax in these two cases
+    if (_data.matchCache(sCmd, '=').length())
+    {
+        // Legacy syntax: swap -cache1=cache2
+        //
+        // Get the option value of the parameter "cache1"
+        sArgument = getArgAtPos(sCmd, matchParams(sCmd, _data.matchCache(sCmd, '='), '=') + _data.matchCache(sCmd, '=').length());
+
+        // Swap the caches
+        _data.swapCaches(_data.matchCache(sCmd, '='), sArgument);
+
+        if (_option.getSystemPrintStatus())
+            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SWAP_CACHE", _data.matchCache(sCmd, '='), sArgument), _option) );
+    }
+    else if (sCmd.find("()") != string::npos && sCmd.find(',') != string::npos)
+    {
+        // New syntax: swap cache1(), cache2()
+        //
+        // Extract the first of the two arguments
+        // (length of command = 4)
+        sCmd.erase(0, 4);
+        sArgument = getNextArgument(sCmd, true);
+
+        if (!sCmd.length())
+            return 1;
+
+        // Remove parentheses, if available
+        if (sArgument.find('(') != string::npos)
+            sArgument.erase(sArgument.find('('));
+
+        if (sCmd.find('(') != string::npos)
+            sCmd.erase(sCmd.find('('));
+
+        // Remove not necessary white spaces
+        StripSpaces(sCmd);
+        StripSpaces(sArgument);
+
+        // Swap the caches
+        _data.swapCaches(sCmd, sArgument);
+
+        if (_option.getSystemPrintStatus())
+            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SWAP_CACHE", sCmd, sArgument), _option) );
+    }
+
+    return 1;
+}
+
+// This static function handles the renaming of a cache with
+// a new name
+static int renameCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions)
+{
+    string sArgument;
+
+    // If the current command line contains strings
+    // handle them here
+    if (_data.containsStringVars(sCmd) || containsStrings(sCmd))
+        sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
+
+    // Handle legacy and new syntax in these two cases
+    if (_data.matchCache(sCmd, '=').length())
+    {
+        // Legacy syntax: rename -cache1=cache2
+        //
+        // Get the option value of the parameter "cache1"
+        sArgument = getArgAtPos(sCmd, matchParams(sCmd, _data.matchCache(sCmd, '='), '=') + _data.matchCache(sCmd, '=').length());
+
+        // Rename the cache
+        _data.renameCache(_data.matchCache(sCmd, '='), sArgument);
+
+        if (_option.getSystemPrintStatus())
+            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RENAME_CACHE", sArgument), _option) );
+    }
+    else if (sCmd.find("()") != string::npos && sCmd.find(',') != string::npos)
+    {
+        // New syntax: rename cache1(), cache2()
+        //
+        // Extract the first of the two arguments
+        // (length of command = 6)
+        sCmd.erase(0, 6);
+        sArgument = getNextArgument(sCmd, true);
+
+        if (!sCmd.length())
+            return 1;
+
+        // Remove parentheses, if available
+        if (sArgument.find('(') != string::npos)
+            sArgument.erase(sArgument.find('('));
+
+        if (sCmd.find('(') != string::npos)
+            sCmd.erase(sCmd.find('('));
+
+        // Remove not necessary white spaces
+        StripSpaces(sArgument);
+        StripSpaces(sCmd);
+
+        // Rename the cache
+        _data.renameCache(sArgument, sCmd);
+
+        if (_option.getSystemPrintStatus())
+            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RENAME_CACHE", sCmd), _option) );
+    }
+
+    return 1;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // This function performs the autosave at the application termination
 void BI_Autosave(Datafile& _data, Output& _out, Settings& _option)
