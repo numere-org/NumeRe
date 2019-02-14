@@ -14,3 +14,4 @@ Cleaned	The backup files during saving are now optional (and will now be removed
 Cleaned	The "swap" command was transformed into a more modern syntax: "swap cache1(), cache2()"
 Cleaned	The "rename" command was transformed into a more modern syntax: "rename cache(), newname()"
 Fixed	The num-to-string variable parser symbol "#" can now handle string functions as its argument.
+Fixed	The symbols renaming functionality may now correctly detect all symbols although the user didn't click exactly on the selected symbol.

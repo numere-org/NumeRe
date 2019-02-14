@@ -6084,6 +6084,10 @@ void NumeReEditor::RenameSymbols(int nPos)
     if (!sCurrentName.length())
         return;
 
+    // Change the position to the start of the selected symbol
+    // to correctly identify the style of the selected symbol
+    nPos = this->WordStartPosition(nPos, true);
+
     // Prepare and show the text entry dialog, so that the
     // user may supply a new symbol name
     wxTextEntryDialog textdialog(this, _guilang.get("GUI_DLG_RENAMESYMBOLS_QUESTION"), _guilang.get("GUI_DLG_RENAMESYMBOLS"), sCurrentName);
