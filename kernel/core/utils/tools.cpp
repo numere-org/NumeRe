@@ -2163,7 +2163,7 @@ string utf8parser(const string& sString)
 
 // This function gets the first argument in the passed argument list
 // if the boolean bCut is true then the argument is erased from the string
-string getNextArgument(string& sArgList, bool bCut)
+static string getNextCommandLineToken(string& sArgList, bool bCut, char cSep)
 {
 	if (!sArgList.length())
 		return "";
@@ -2177,7 +2177,7 @@ string getNextArgument(string& sArgList, bool bCut)
             i += getMatchingParenthesis(sArgList.substr(i));
 
 		// A comma was found -> break the loop
-		if (sArgList[i] == ',' && !isInQuotes(sArgList, i, true))
+		if (sArgList[i] == cSep && !isInQuotes(sArgList, i, true))
 		{
 			nPos = i;
 			break;
@@ -2185,13 +2185,13 @@ string getNextArgument(string& sArgList, bool bCut)
 	}
 
 	// If no comma was found, simply use the complete string
-	if (!nPos && sArgList[0] != ',')
+	if (!nPos && sArgList[0] != cSep)
 		nPos = sArgList.length();
 
     // If the comma was at the first position, then return nothing
 	if (!nPos)
 	{
-		if (bCut && sArgList[0] == ',')
+		if (bCut && sArgList[0] == cSep)
 			sArgList.erase(0, 1);
 		return "";
 	}
@@ -2208,6 +2208,16 @@ string getNextArgument(string& sArgList, bool bCut)
 
     // return the first argument
 	return sArg;
+}
+
+string getNextArgument(string& sArgList, bool bCut)
+{
+    return getNextCommandLineToken(sArgList, bCut, ',');
+}
+
+string getNextIndex(string& sArgList, bool bCut)
+{
+    return getNextCommandLineToken(sArgList, bCut, ':');
 }
 
 // Wrapper for the static member function of the kernel

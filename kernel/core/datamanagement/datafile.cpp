@@ -3456,6 +3456,23 @@ bool Datafile::isNumeric(const string& _sString)
     return true;
 }
 
+// Implementation for the "Sorter" object
+int Datafile::compare(int i, int j, int col)
+{
+    if (dDatafile[i][col] == dDatafile[j][col])
+        return 0;
+    else if (dDatafile[i][col] < dDatafile[j][col])
+        return -1;
+
+    return 1;
+}
+
+// Implementation for the "Sorter" object
+bool Datafile::isValue(int line, int col)
+{
+    return !isnan(dDatafile[line][col]);
+}
+
 // --> Setzt nCols <--
 void Datafile::setCols(long long int _nCols)
 {
@@ -3983,100 +4000,6 @@ void Datafile::openAutosave(string _sFile, Settings& _option)
     return;
 }
 
-bool Datafile::qSortWrapper(int* nIndex, int nElements, int nKey, int nLeft, int nRight, int nSign)
-{
-    if (!nIndex || !nElements || nLeft < 0 || nRight > nElements || nRight < nLeft)
-    {
-        return false;
-    }
-    while (isnan(dDatafile[nIndex[nLeft]][nKey]) && nRight >= nLeft)
-    {
-        nRight--;
-    }
-    if (nRight < 0)
-        return false;
-    // swap all NaNs to the right
-    int nPos = nRight;
-    while (nPos >= nLeft)
-    {
-        if (isnan(dDatafile[nIndex[nLeft]][nKey]))
-        {
-            int nTemp = nIndex[nPos];
-            nIndex[nPos] = nIndex[nRight];
-            nIndex[nRight] = nTemp;
-            nRight--;
-        }
-        nPos--;
-    }
-    return qSort(nIndex, nElements, nKey, nLeft, nRight, nSign);
-}
-
-bool Datafile::qSort(int* nIndex, int nElements, int nKey, int nLeft, int nRight, int nSign)
-{
-    if (!nIndex || !nElements || nLeft < 0 || nRight > nElements || nRight < nLeft)
-    {
-        return false;
-    }
-    if (nRight == nLeft)
-        return true;
-    if (nRight - nLeft <= 1 && (nSign*dDatafile[nIndex[nLeft]][nKey] <= nSign*dDatafile[nIndex[nRight]][nKey] || isnan(dDatafile[nIndex[nRight]][nKey])))
-        return true;
-    else if (nRight - nLeft <= 1 && (nSign*dDatafile[nIndex[nRight]][nKey] <= nSign*dDatafile[nIndex[nLeft]][nKey] || isnan(dDatafile[nIndex[nLeft]][nKey])))
-    {
-        int nTemp = nIndex[nLeft];
-        nIndex[nLeft] = nIndex[nRight];
-        nIndex[nRight] = nTemp;
-        return true;
-    }
-    while (isnan(dDatafile[nIndex[nRight]][nKey]) && nRight >= nLeft)
-    {
-        nRight--;
-    }
-    double nPivot = nSign*dDatafile[nIndex[nRight]][nKey];
-    int i = nLeft;
-    int j = nRight-1;
-    do
-    {
-        while ((nSign*dDatafile[nIndex[i]][nKey] <= nPivot && !isnan(dDatafile[nIndex[i]][nKey])) && i < nRight)
-            i++;
-        while ((nSign*dDatafile[nIndex[j]][nKey] >= nPivot || isnan(dDatafile[nIndex[j]][nKey])) && j > nLeft)
-            j--;
-        if (i < j)
-        {
-            int nTemp = nIndex[i];
-            nIndex[i] = nIndex[j];
-            nIndex[j] = nTemp;
-        }
-    }
-    while (i < j);
-
-    if (nSign*dDatafile[nIndex[i]][nKey] > nPivot || isnan(dDatafile[nIndex[i]][nKey]))
-    {
-        int nTemp = nIndex[i];
-        nIndex[i] = nIndex[nRight];
-        nIndex[nRight] = nTemp;
-    }
-    while (isnan(dDatafile[nIndex[nRight-1]][nKey]) && !isnan(dDatafile[nIndex[nLeft]][nKey]))
-    {
-        int nTemp = nIndex[nRight-1];
-        nIndex[nRight-1] = nIndex[nRight];
-        nIndex[nRight] = nTemp;
-        nRight--;
-    }
-
-    if (i > nLeft)
-    {
-        if (!qSort(nIndex, nElements, nKey, nLeft, i-1, nSign))
-            return false;
-    }
-    if (i < nRight)
-    {
-        if (!qSort(nIndex, nElements, nKey, i+1, nRight, nSign))
-            return false;
-    }
-    return true;
-}
-
 vector<int> Datafile::sortElements(const string& sLine) // data -sort[[=desc]] cols=1[2:3]4[5:9]10:
 {
     if (!dDatafile && sLine.find("data") != string::npos)
@@ -4148,7 +4071,7 @@ vector<int> Datafile::sortElements(const string& sCache, long long int i1, long 
     {
         for (int i = j1; i <= j2; i++)
         {
-            if (!qSortWrapper(&vIndex[0], i2-i1+1, i, 0, i2-i1, nSign))
+            if (!qSort(&vIndex[0], i2-i1+1, i, 0, i2-i1, nSign))
             {
                 throw SyntaxError(SyntaxError::CANNOT_SORT_DATA, sCache + " " + sSortingExpression, SyntaxError::invalid_position);
             }
@@ -4184,14 +4107,14 @@ vector<int> Datafile::sortElements(const string& sCache, long long int i1, long 
 
             for (int j = keys->nKey[0]; j < keys->nKey[1]; j++)
             {
-                if (!qSortWrapper(&vIndex[0], i2-i1+1, j+j1, 0, i2-i1, nSign))
+                if (!qSort(&vIndex[0], i2-i1+1, j+j1, 0, i2-i1, nSign))
                 {
                     throw SyntaxError(SyntaxError::CANNOT_SORT_DATA, sCache + " " + sSortingExpression, SyntaxError::invalid_position);
                 }
                 // Subkey list
                 if (keys->subkeys && keys->subkeys->subkeys)
                 {
-                    if (!sortSubList(vIndex, keys, i1, i2, j1, nSign))
+                   if (!sortSubList(&vIndex[0], i2-i1+1, keys, i1, i2, j1, nSign, nCols))
                     {
                         delete keys;
                         throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sCache + " " + sSortingExpression, SyntaxError::invalid_position);
@@ -4236,36 +4159,6 @@ vector<int> Datafile::sortElements(const string& sCache, long long int i1, long 
         return vector<int>();
     return vIndex;
 }
-
-bool Datafile::sortSubList(vector<int>& vIndex, ColumnKeys* KeyList, long long int i1, long long int i2, long long int j1, int nSign)
-{
-    ColumnKeys* subKeyList = KeyList->subkeys;
-    int nTopColumn = KeyList->nKey[0];
-    size_t nStart = i1;
-
-    if (subKeyList && subKeyList->subkeys && j1+nTopColumn < nCols)
-    {
-        for (size_t k = i1+1; k <= i2 && k < vIndex.size(); k++)
-        {
-            if (dDatafile[vIndex[k]][j1+nTopColumn] != dDatafile[vIndex[nStart]][j1+nTopColumn])
-            {
-                if (k > nStart+1)
-                {
-                    if (!qSortWrapper(&vIndex[0], vIndex.size(), j1+subKeyList->nKey[0], nStart, k-1, nSign))
-                    {
-                        return false;
-                    }
-                    if (!sortSubList(vIndex, subKeyList, nStart, k-1, j1, nSign))
-                        return false;
-                }
-                nStart = k;
-            }
-        }
-    }
-    return true;
-}
-
-
 
 bool Datafile::saveFile(const string& sCache, string _sFileName)
 {

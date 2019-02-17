@@ -188,7 +188,7 @@ void addArgumentQuotes(string& sToAdd, const string& sParam);
 double intPower(double dNumber, int nExponent);
 
 string getNextArgument(string& sArgList, bool bCut = true);
-
+string getNextIndex(string& sArgList, bool bCut = true);
 /** \brief Transforms Windows-style filepaths to Unix-Style
  *
  * \param __sPath const string&

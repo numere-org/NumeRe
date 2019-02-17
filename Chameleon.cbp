@@ -337,6 +337,8 @@
 		<Unit filename="gui/dialogs/treelistctrl.h" />
 		<Unit filename="gui/dialogs/wxTermContainer.cpp" />
 		<Unit filename="gui/dialogs/wxTermContainer.h" />
+		<Unit filename="gui/documentationbrowser.cpp" />
+		<Unit filename="gui/documentationbrowser.hpp" />
 		<Unit filename="gui/editor/NumeRePrintout.cpp" />
 		<Unit filename="gui/editor/NumeRePrintout.h" />
 		<Unit filename="gui/editor/editor.cpp" />
@@ -427,6 +429,10 @@
 		<Unit filename="kernel/core/datamanagement/indices.cpp" />
 		<Unit filename="kernel/core/datamanagement/memory.cpp" />
 		<Unit filename="kernel/core/datamanagement/memory.hpp" />
+		<Unit filename="kernel/core/datamanagement/sorter.cpp" />
+		<Unit filename="kernel/core/datamanagement/sorter.hpp" />
+		<Unit filename="kernel/core/datamanagement/stringmemory.cpp" />
+		<Unit filename="kernel/core/datamanagement/stringmemory.hpp" />
 		<Unit filename="kernel/core/datamanagement/table.cpp" />
 		<Unit filename="kernel/core/datamanagement/table.hpp" />
 		<Unit filename="kernel/core/documentation/doc_helper.cpp" />

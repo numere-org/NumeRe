@@ -27,6 +27,7 @@ static void extractIndexList(string& sArgument, string sI[2], string sJ[2]);
 static void handleIndexVectors(Parser& _parser, Indices& _idx, string sI[2], string sJ[2]);
 static void handleCasualIndices(Parser& _parser, Indices& _idx, string sI[2], string sJ[2], const string& sCmd);
 static void expandIndexVectors(Indices& _idx, Datafile& _data, const string& sCmd);
+static void expandStringIndexVectors(Indices& _idx, Datafile& _data);
 static bool isCandidateForVectors(string sI[2], string sJ[2]);
 static bool isCandidateForCasuals(string sI[2], string sJ[2]);
 
@@ -76,10 +77,8 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
 	_idx.sCompiledAccessEquation = sArgument;
 
 	// If the argument contains a comma, handle it as a usual index list
-	if (sArgument.find(',') != string::npos)
-	{
-		handleArgumentForIndices(_idx, _parser, _data, sArgument, sCmd);
-	}
+    handleArgumentForIndices(_idx, _parser, _data, sArgument, sCmd);
+
 	return _idx;
 }
 
@@ -120,74 +119,30 @@ static void handleArgumentForIndices(Indices& _idx, Parser& _parser, Datafile& _
 // separates the argument into its up to four parts and returns the position after the last operator
 static void extractIndexList(string& sArgument, string sI[2], string sJ[2])
 {
-	int nParenthesis = 0;
-	size_t nPos = 0;
+	string sLines;
+	string sCols = sArgument + " ";
 
-	// Go through the arguments and separate it at the relevant characters
-	for (unsigned int n = 0; n < sArgument.length(); n++)
-	{
-		// handle parentheses
-		if (sArgument[n] == '(' || sArgument[n] == '{')
-			nParenthesis++;
-		if (sArgument[n] == ')' || sArgument[n] == '}')
-			nParenthesis--;
+	// Split line and column indices at
+	// the comma (if it is available). Otherwise
+	// only the line indices are available
+	sLines = getNextArgument(sCols, true) + " ";
 
-		// If all parentheses are closed and there's a colon
-		if (sArgument[n] == ':' && !nParenthesis)
-		{
-			if (!nPos)
-			{
-				if (!n)
-					sI[0] = "<<EMPTY>>";
-				else
-					sI[0] = sArgument.substr(0, n);
-			}
-			else if (n == nPos)
-			{
-				sJ[0] = "<<EMPTY>>";
-			}
-			else
-			{
-				sJ[0] = sArgument.substr(nPos, n - nPos);
-			}
-			nPos = n + 1;
-		}
+	// Split the line indices
+	sI[0] = getNextIndex(sLines);
+	if (sLines.length())
+        sI[1] = sLines;
 
-		// If all parentheses are closed and there's a comma
-		if (sArgument[n] == ',' && !nParenthesis)
-		{
-			if (!nPos)
-			{
-				if (!n)
-					sI[0] = "<<EMPTY>>";
-				else
-					sI[0] = sArgument.substr(0, n);
-			}
-			else
-			{
-				if (n == nPos)
-					sI[1] = "<<EMPTY>>";
-				else
-					sI[1] = sArgument.substr(nPos, n - nPos);
-			}
-			nPos = n + 1;
-		}
-	}
-
-	// Handle the last possible argument:
-	// - Either it's a single column or
-	// - the last index of the column
-	if (sJ[0] == "<<NONE>>")
-	{
-		if (nPos < sArgument.length())
-			sJ[0] = sArgument.substr(nPos);
-		else
-			sJ[0] = "<<EMPTY>>";
-	}
-	else if (nPos < sArgument.length())
-		sJ[1] = sArgument.substr(nPos);
-	else
-		sJ[1] = "<<EMPTY>>";
+    // If the column indices are available,
+    // split them also. Otherwise use the
+    // <<EMPTY>> tag
+    if (sCols.length())
+    {
+        sJ[0] = getNextIndex(sCols);
+        if (sCols.length())
+            sJ[1] = sCols;
+    }
+    else
+        sJ[0] = "<<EMPTY>>";
 
     // Ensure that the indices are not only whitespaces
     for (size_t i = 0; i < 2; i++)
@@ -233,6 +188,8 @@ static void handleIndexVectors(Parser& _parser, Indices& _idx, string sI[2], str
 	{
 		if (sJ[0] == "#")
 			_idx.nJ[0] = -3;
+        else if (sJ[0] == "<<EMPTY>>")
+            _idx.nJ[0] = 0;
 		else
 		{
 			_parser.SetExpr(sJ[0]);
@@ -336,23 +293,33 @@ static void expandIndexVectors(Indices& _idx, Datafile& _data, const string& sCm
 	// should now only contain the name of the table
 	string sCache = sCmd.substr(0, sCmd.find('('));
 
+	// remove leading whitespaces
+	if (sCache.find(' ') != string::npos)
+		sCache.erase(0, sCache.rfind(' ') + 1);
+
 	// check, whether it exists
 	if (!sCache.length())
 		throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, SyntaxError::invalid_position);
+
+    // Ensure that the indices are valid
+    if ((!_idx.vI.size() && _idx.nI[0] == -1)
+        || (!_idx.vJ.size() && _idx.nJ[0] == -1))
+        throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+
+    // Is it the "string" object?
+    if (sCache == "string")
+    {
+        expandStringIndexVectors(_idx, _data);
+        return;
+    }
 
 	// If the cache is not really a cache
 	if (sCache.find("data") == string::npos && !_data.isCacheElement(sCache))
 		throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, SyntaxError::invalid_position);
 
-	// remove leading whitespaces
-	if (sCache.find(' ') != string::npos)
-		sCache.erase(0, sCache.rfind(' ') + 1);
-
 	// Expand the line indices
 	if (!_idx.vI.size())
 	{
-		if (_idx.nI[0] == -1)
-			throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 		// Handle special cases
 		if (_idx.nI[1] == -2 && _idx.nI[0] != -3)
 		{
@@ -372,8 +339,6 @@ static void expandIndexVectors(Indices& _idx, Datafile& _data, const string& sCm
 	// Expand the column indices
 	if (!_idx.vJ.size())
 	{
-		if (_idx.nJ[0] == -1)
-			throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 		// Handle special cases
 		if (_idx.nJ[1] == -2 && _idx.nJ[0] != -3)
 		{
@@ -390,6 +355,49 @@ static void expandIndexVectors(Indices& _idx, Datafile& _data, const string& sCm
 		}
 	}
 
+}
+
+// This static function expands the indices into vectors, if the
+// the current object is the string object
+static void expandStringIndexVectors(Indices& _idx, Datafile& _data)
+{
+	// Expand the line indices
+	if (!_idx.vI.size())
+	{
+		// Handle special cases
+		if (_idx.nI[1] == -2 && _idx.nI[0] != -3)
+		{
+			for (long long int i = _idx.nI[0]; i < _data.getStringElements(); i++)
+				_idx.vI.push_back(i);
+		}
+		else if (_idx.nI[1] == -1)
+			_idx.vI.push_back(_idx.nI[0]);
+		else if (_idx.nI[0] != -3)
+		{
+			// Just fill the vector with every value from the first to the last index
+			for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
+				_idx.vI.push_back(i);
+		}
+	}
+
+	// Expand the column indices
+	if (!_idx.vJ.size())
+	{
+		// Handle special cases
+		if (_idx.nJ[1] == -2 && _idx.nJ[0] != -3)
+		{
+			for (long long int j = _idx.nJ[0]; j < _data.getStringCols(); j++)
+				_idx.vJ.push_back(j);
+		}
+		else if (_idx.nJ[1] == -1)
+			_idx.vJ.push_back(_idx.nJ[0]);
+		else if (_idx.nJ[0] != -3)
+		{
+			// Just fill the vector with every value from the first to the last index
+			for (long long int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
+				_idx.vJ.push_back(j);
+		}
+	}
 }
 
 // This function will ensure that at least one of the indices contains a vector

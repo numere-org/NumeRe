@@ -15,3 +15,4 @@ Cleaned	The "swap" command was transformed into a more modern syntax: "swap cach
 Cleaned	The "rename" command was transformed into a more modern syntax: "rename cache(), newname()"
 Fixed	The num-to-string variable parser symbol "#" can now handle string functions as its argument.
 Fixed	The symbols renaming functionality may now correctly detect all symbols although the user didn't click exactly on the selected symbol.
+New	The string object may now be sorted using the "sort" command.

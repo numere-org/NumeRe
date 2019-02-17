@@ -31,6 +31,8 @@
 #include "../utils/BasicExcel.hpp"
 #include "../utils/tinyxml2.h"
 
+#include "sorter.hpp"
+
 
 #ifndef DATAFILE_HPP
 #define DATAFILE_HPP
@@ -51,7 +53,7 @@ int StrToInt(const string&);
  * Header zur Datafile-Klasse
  */
 
-class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und von Cache
+class Datafile : public Cache, private Sorter		//	Diese Klasse ist ein CHILD von FileSystem und von Cache
 {
 	private:
 		long long int nLines;							// Zeilen des Datenfiles
@@ -61,7 +63,6 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
 		ifstream file_in;								// ifstream, der zum Einlesen eines Datenfiles verwendet wird
 		ofstream file_out;                              // ofstream, der zum Schreiben des Datenfiles verwendet wird
 		bool bValidData;								// TRUE, wenn die Instanz der Klasse auch Daten enthaelt
-		//bool** bValidEntry;							// Pointer auf Pointer auf Valid-Element-Bool-Matrix
 		bool bUseCache;									// TRUE, wenn die Elemente des Caches verwendet werden sollen
 		bool bLoadEmptyCols;
 		bool bLoadEmptyColsInNextFile;
@@ -130,8 +131,8 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
                 return;
             }
         bool isNumeric(const string& _sString);
-        bool qSortWrapper(int* nIndex, int nElements, int nKey, int nLeft, int nRight, int nSign = 1);
-        bool qSort(int* nIndex, int nElements, int nKey, int nLeft, int nRight, int nSign = 1);
+        virtual int compare(int i, int j, int col);
+        virtual bool isValue(int line, int col);
         void openLabx(Settings& _option);
         void openCSV(Settings& _option);
         void openNDAT(Settings& _option);
@@ -147,7 +148,6 @@ class Datafile : public Cache		//	Diese Klasse ist ein CHILD von FileSystem und 
         vector<double> parseJDXLine(const string& sLine);
         vector<string> getPastedDataFromCmdLine(const Settings& _option, bool& bKeepEmptyTokens);
         void reorderColumn(const vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
-        bool sortSubList(vector<int>& vIndex, ColumnKeys* KeyList, long long int i1, long long int i2, long long int j1, int nSign);
 
         inline void parseJDXDataLabel(string& sLine)
             {

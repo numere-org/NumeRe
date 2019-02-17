@@ -35,6 +35,7 @@
 #include "../maths/resampler.h"
 #include "table.hpp"
 #include "memory.hpp"
+#include "stringmemory.hpp"
 
 
 #ifndef CACHE_HPP
@@ -48,7 +49,7 @@ using namespace std;
  * Header zur Cache-Klasse --> PARENT zur Datafile-Klasse
  */
 
-class Cache : public FileSystem
+class Cache : public FileSystem, public StringMemory
 {
 	public:
 		enum AppDir {LINES = Memory::LINES, COLS = Memory::COLS, GRID = Memory::GRID, ALL = Memory::ALL};
@@ -63,18 +64,12 @@ class Cache : public FileSystem
 		string sPredefinedCommands;
 		string sPluginCommands;
 
-		vector<vector<string> > sStrings;
-		map<string, string> sStringVars;
-
-		bool checkStringvarDelimiter(const string& sToken) const;
-		void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const string& sVarValue);
 		void reorderColumn(long long int _nLayer, const vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
 
 
 	protected:
 		bool isValid() const;							                        // gibt den Wert von bValidData zurueck
 		void removeCachedData();						                        // Loescht den Inhalt von dCache, allen Arrays und setzt das Objekt auf den Urzustand zurueck
-		ColumnKeys* evaluateKeyList(string& sKeyList, long long int nMax);
 
 		inline bool resizeCache(long long int _nLines, long long int _nCols, const string& _sCache)
 		{
@@ -262,89 +257,6 @@ class Cache : public FileSystem
 		inline Table extractTable(long long int _nLayer, const string& _sTable = "")
 		{
 			return vCacheMemory[_nLayer]->extractTable(_sTable);
-		}
-
-		// STRINGFUNCS
-		bool writeString(const string& _sString, unsigned int _nthString = string::npos, unsigned int nCol = 0);
-		string readString(unsigned int _nthString = string::npos, unsigned int nCol = 0);
-		string maxString(unsigned int i1 = 0, unsigned int i2 = string::npos, unsigned int nCol = 0);
-		string minString(unsigned int i1 = 0, unsigned int i2 = string::npos, unsigned int nCol = 0);
-		string sumString(unsigned int i1 = 0, unsigned int i2 = string::npos, unsigned int nCol = 0);
-		inline unsigned int getStringElements(unsigned int nCol = string::npos) const
-		{
-			if (nCol == string::npos)
-			{
-				unsigned int nCnt = 0;
-				for (unsigned int i = 0; i < sStrings.size(); i++)
-				{
-					if (nCnt < sStrings[i].size())
-						nCnt = sStrings[i].size();
-				}
-				return nCnt;
-			}
-			else if (nCol >= sStrings.size())
-				return 0;
-			else
-				return sStrings[nCol].size();
-			return 0;
-		}
-		inline unsigned int getStringCols() const
-		{
-			return sStrings.size();
-		}
-		inline bool removeStringElements(unsigned int nCol = 0)
-		{
-			if (nCol < sStrings.size())
-			{
-				if (sStrings[nCol].size())
-					sStrings[nCol].clear();
-				return true;
-			}
-			return false;
-		}
-		inline bool clearStringElements()
-		{
-			if (sStrings.size())
-			{
-				sStrings.clear();
-				return true;
-			}
-			return false;
-		}
-		inline int getStringSize(unsigned int nCol = string::npos) const
-		{
-			if (nCol == string::npos)
-			{
-				unsigned int nSize = 0;
-				for (unsigned int i = 0; i < sStrings.size(); i++)
-				{
-					nSize += getStringSize(i);
-				}
-				return nSize;
-			}
-			else if (nCol < sStrings.size())
-			{
-				if (sStrings[nCol].size())
-				{
-					int nSize = 0;
-					for (unsigned int i = 0; i < sStrings[nCol].size(); i++)
-						nSize += sStrings[nCol][i].size() * sizeof(char);
-					return nSize;
-				}
-				else
-					return 0;
-			}
-			else
-				return 0;
-		}
-		// STRINGVARFUNCS
-		bool containsStringVars(const string& sLine) const;
-		void getStringValues(string& sLine, unsigned int nPos = 0);
-		void setStringValue(const string& sVar, const string& sValue);
-		void removeStringVar(const string& sVar);
-		inline const map<string, string>& getStringVars() const
-		{
-			return sStringVars;
 		}
 
 		// MAFIMPLEMENTATIONS

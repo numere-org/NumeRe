@@ -28,11 +28,12 @@
 
 #include "../ui/error.hpp"
 #include "../settings.hpp"
-#include "../structures.hpp"
+//#include "../structures.hpp"
 #include "../utils/tools.hpp"
 #include "../version.h"
 #include "../maths/resampler.h"
 #include "table.hpp"
+#include "sorter.hpp"
 
 
 #ifndef MEMORY_HPP
@@ -45,7 +46,7 @@ using namespace std;
  * Header zur Memory-Klasse
  */
 
-class Memory
+class Memory : public Sorter
 {
     public:
         enum AppDir {LINES, COLS, GRID, ALL};
@@ -69,11 +70,8 @@ class Memory
 		bool retoqueRegion(RetoqueRegion& _region);
 
 		void reorderColumn(const vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
-		bool qSortWrapper(int* nIndex, int nElements, int nKey, long long int nLeft, long long int nRight, int nSign = 1); // wendet den Quicksort-Algorithmus an
-		bool qSort(int* nIndex, int nElements, int nKey, long long int nLeft, long long int nRight, int nSign = 1); // wendet den Quicksort-Algorithmus an
-		ColumnKeys* evaluateKeyList(string& sKeyList, long long int nMax);
-		bool sortSubList(vector<int>& vIndex, ColumnKeys* KeyList, long long int i1, long long int i2, long long int j1, int nSign);
-
+		virtual int compare(int i, int j, int col);
+        virtual bool isValue(int line, int col);
 		bool evaluateIndices(long long int& i1, long long int& i2, long long int& j1, long long int& j2);
 
     public:

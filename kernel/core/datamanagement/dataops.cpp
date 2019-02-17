@@ -1126,6 +1126,42 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
     _data.setCacheStatus(false);
 }
 
+// This static function sorts strings and is called by sortData, if the selected data object
+// equals "string"
+static bool sortStrings(string& sCmd, Indices& _idx, Parser& _parser, Datafile& _data)
+{
+    vector<int> vSortIndex;
+
+    // Evalulate special index values
+	if (_idx.nI[1] == -2)
+		_idx.nI[1] = _data.getStringElements(_idx.nJ[0]) - 1;
+	if (_idx.nJ[1] == -2)
+		_idx.nJ[1] = _data.getStringCols() - 1;
+
+    // Perform the actual sorting operation
+    // The member function will be able to handle the remaining command line parameters by itself
+	vSortIndex = _data.sortStringElements(_idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], sCmd.substr(11));
+
+	// If the sorting index contains elements, the user had requested them
+	if (vSortIndex.size())
+	{
+	    // Transform the integer indices into doubles
+		vector<double> vDoubleSortIndex;
+		for (size_t i = 0; i < vSortIndex.size(); i++)
+			vDoubleSortIndex.push_back(vSortIndex[i]);
+
+        // Set the vector name and set the vector for the parser
+		sCmd = "_~sortIndex[]";
+		_parser.SetVectorVar(sCmd, vDoubleSortIndex);
+	}
+	else
+		sCmd.clear(); // simply clear, if the user didn't request a sorting index
+
+    // Return true
+	return true;
+}
+
+
 // This function is a wrapper for the corresponding member function of the Datafile object
 bool sortData(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
 {
@@ -1141,6 +1177,12 @@ bool sortData(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions
 		throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, "", _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1]);
 
 	sCache.erase(sCache.find('('));
+
+	// If the current cache equals to "string", leave the function at
+	// this point and redirect the control to the string sorting
+	// function
+	if (sCache == "string")
+        return sortStrings(sCmd, _idx, _parser, _data);
 
 	// Evalulate special index values
 	if (_idx.nI[1] == -2)

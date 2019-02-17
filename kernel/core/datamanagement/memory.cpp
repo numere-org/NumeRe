@@ -670,99 +670,6 @@ long long int Memory::getLastSaved() const
 	return nLastSaved;
 }
 
-
-bool Memory::qSortWrapper(int* nIndex, int nElements, int nKey, long long int nLeft, long long int nRight, int nSign)
-{
-	if (!nIndex || !nElements || nLeft < 0 || nRight > nElements || nRight < nLeft)
-	{
-		return false;
-	}
-	while (nRight >= nLeft && isnan(dMemTable[nIndex[nRight]][nKey]))
-	{
-		nRight--;
-	}
-	if (nRight < 0)
-		return false;
-	// swap all NaNs to the right
-	int nPos = nRight;
-	while (nPos >= nLeft)
-	{
-		if (isnan(dMemTable[nIndex[nPos]][nKey]))
-		{
-			int nTemp = nIndex[nPos];
-			nIndex[nPos] = nIndex[nRight];
-			nIndex[nRight] = nTemp;
-			nRight--;
-		}
-		nPos--;
-	}
-	return qSort(nIndex, nElements, nKey, nLeft, nRight, nSign);
-}
-
-bool Memory::qSort(int* nIndex, int nElements, int nKey, long long int nLeft, long long int nRight, int nSign)
-{
-	//cerr << nLeft << "/" << nRight << endl;
-	if (!nIndex || !nElements || nLeft < 0 || nRight > nElements || nRight < nLeft)
-	{
-		return false;
-	}
-	if (nRight == nLeft)
-		return true;
-	if (nRight - nLeft <= 1 && (nSign * dMemTable[nIndex[nLeft]][nKey] <= nSign * dMemTable[nIndex[nRight]][nKey] || isnan(dMemTable[nIndex[nRight]][nKey])))
-		return true;
-	else if (nRight - nLeft <= 1 && (nSign * dMemTable[nIndex[nRight]][nKey] <= nSign * dMemTable[nIndex[nLeft]][nKey] || isnan(dMemTable[nIndex[nLeft]][nKey])))
-	{
-		int nTemp = nIndex[nLeft];
-		nIndex[nLeft] = nIndex[nRight];
-		nIndex[nRight] = nTemp;
-		return true;
-	}
-
-	double nPivot = nSign * dMemTable[nIndex[nRight]][nKey];
-	int i = nLeft;
-	int j = nRight - 1;
-	do
-	{
-		while ((nSign * dMemTable[nIndex[i]][nKey] <= nPivot && !isnan(dMemTable[nIndex[i]][nKey])) && i < nRight)
-			i++;
-		while ((nSign * dMemTable[nIndex[j]][nKey] >= nPivot || isnan(dMemTable[nIndex[j]][nKey])) && j > nLeft)
-			j--;
-		if (i < j)
-		{
-			int nTemp = nIndex[i];
-			nIndex[i] = nIndex[j];
-			nIndex[j] = nTemp;
-		}
-	}
-	while (i < j);
-
-	if (nSign * dMemTable[nIndex[i]][nKey] > nPivot || isnan(dMemTable[nIndex[i]][nKey]))
-	{
-		int nTemp = nIndex[i];
-		nIndex[i] = nIndex[nRight];
-		nIndex[nRight] = nTemp;
-	}
-	while (isnan(dMemTable[nIndex[nRight - 1]][nKey]) && !isnan(dMemTable[nIndex[nRight]][nKey]))
-	{
-		int nTemp = nIndex[nRight - 1];
-		nIndex[nRight - 1] = nIndex[nRight];
-		nIndex[nRight] = nTemp;
-		nRight--;
-	}
-	//cerr << nLeft << "/" << i << endl;
-	if (i > nLeft)
-	{
-		if (!qSort(nIndex, nElements, nKey, nLeft, i - 1, nSign))
-			return false;
-	}
-	if (i < nRight)
-	{
-		if (!qSort(nIndex, nElements, nKey, i + 1, nRight, nSign))
-			return false;
-	}
-	return true;
-}
-
 vector<int> Memory::sortElements(long long int i1, long long int i2, long long int j1, long long int j2, const string& sSortingExpression)
 {
 	if (!dMemTable)
@@ -794,7 +701,7 @@ vector<int> Memory::sortElements(long long int i1, long long int i2, long long i
 	{
 		for (int i = j1; i <= j2; i++)
 		{
-			if (!qSortWrapper(&vIndex[0], i2 - i1 + 1, i, 0, i2 - i1, nSign))
+			if (!qSort(&vIndex[0], i2 - i1 + 1, i, 0, i2 - i1, nSign))
 			{
 				throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sSortingExpression, SyntaxError::invalid_position);
 			}
@@ -829,7 +736,7 @@ vector<int> Memory::sortElements(long long int i1, long long int i2, long long i
 
 			for (int j = keys->nKey[0]; j < keys->nKey[1]; j++)
 			{
-				if (!qSortWrapper(&vIndex[0], i2 - i1 + 1, j + j1, 0, i2 - i1, nSign))
+				if (!qSort(&vIndex[0], i2 - i1 + 1, j + j1, 0, i2 - i1, nSign))
 				{
 					delete keys;
 					throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sSortingExpression, SyntaxError::invalid_position);
@@ -837,7 +744,7 @@ vector<int> Memory::sortElements(long long int i1, long long int i2, long long i
 				// Subkey list
 				if (keys->subkeys && keys->subkeys->subkeys)
 				{
-					if (!sortSubList(vIndex, keys, i1, i2, j1, nSign))
+					if (!sortSubList(&vIndex[0], i2 - i1 + 1, keys, i1, i2, j1, nSign, getCols(false)))
 					{
 						delete keys;
 						throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sSortingExpression, SyntaxError::invalid_position);
@@ -898,34 +805,6 @@ vector<int> Memory::sortElements(long long int i1, long long int i2, long long i
 	return vIndex;
 }
 
-bool Memory::sortSubList(vector<int>& vIndex, ColumnKeys* KeyList, long long int i1, long long int i2, long long int j1, int nSign)
-{
-	ColumnKeys* subKeyList = KeyList->subkeys;
-	int nTopColumn = KeyList->nKey[0];
-	size_t nStart = i1;
-
-	if (subKeyList && subKeyList->subkeys && j1 + nTopColumn < getCols(false))
-	{
-		for (size_t k = i1 + 1; k <= i2 && k < vIndex.size(); k++)
-		{
-			if (dMemTable[vIndex[k]][j1 + nTopColumn] != dMemTable[vIndex[nStart]][j1 + nTopColumn])
-			{
-				if (k > nStart + 1)
-				{
-					if (!qSortWrapper(&vIndex[0], vIndex.size(), j1 + subKeyList->nKey[0], nStart, k - 1, nSign))
-					{
-						return false;
-					}
-					if (!sortSubList(vIndex, subKeyList, nStart, k - 1, j1, nSign))
-						return false;
-				}
-				nStart = k;
-			}
-		}
-	}
-	return true;
-}
-
 void Memory::reorderColumn(const vector<int>& vIndex, long long int i1, long long int i2, long long int j1)
 {
 	double* dSortVector = new double[i2 - i1 + 1];
@@ -939,73 +818,22 @@ void Memory::reorderColumn(const vector<int>& vIndex, long long int i1, long lon
 	}
 	delete[] dSortVector;
 }
-// cols=1[2:3]4[5:9]10:
-ColumnKeys* Memory::evaluateKeyList(string& sKeyList, long long int nMax)
+
+// Implementation for the "Sorter" object
+int Memory::compare(int i, int j, int col)
 {
-	ColumnKeys* keys = new ColumnKeys();
-	if (sKeyList.find(':') == string::npos && sKeyList.find('[') == string::npos)
-	{
-		keys->nKey[0] = StrToInt(sKeyList) - 1;
-		sKeyList.clear();
-	}
-	else
-	{
-		unsigned int nLastIndex = 0;
-		for (unsigned int n = 0; n < sKeyList.length(); n++)
-		{
-			if (sKeyList[n] == ':')
-			{
-				if (n != nLastIndex)
-					keys->nKey[0] = StrToInt(sKeyList.substr(nLastIndex, n - nLastIndex)) - 1;
+    if (dMemTable[i][col] == dMemTable[j][col])
+        return 0;
+    else if (dMemTable[i][col] < dMemTable[j][col])
+        return -1;
 
-				if (n + 1 == sKeyList.length())
-					keys->nKey[1] = nMax;
+    return 1;
+}
 
-				for (size_t i = n + 1; i < sKeyList.length(); i++)
-				{
-					if (sKeyList[i] == '[' || sKeyList[i] == ':' || sKeyList[i] == ',')
-					{
-						keys->nKey[1] = StrToInt(sKeyList.substr(n + 1, i - n - 1));
-						sKeyList.erase(0, i + 1);
-						break;
-					}
-					else if (i + 1 == sKeyList.length())
-					{
-						if (i == n + 1)
-							keys->nKey[1] = nMax;
-						else
-							keys->nKey[1] = StrToInt(sKeyList.substr(n + 1));
-						sKeyList.clear();
-						break;
-					}
-				}
-
-				break;
-			}
-			else if (sKeyList[n] == '[' && sKeyList.find(']', n) != string::npos)
-			{
-				keys->nKey[0] = StrToInt(sKeyList.substr(nLastIndex, n - nLastIndex)) - 1;
-				string sColArray;
-
-				size_t i = getMatchingParenthesis(sKeyList.substr(n));
-				if (i != string::npos)
-				{
-					sColArray = sKeyList.substr(n + 1, i - 1);
-					sKeyList.erase(0, i + n + 1);
-				}
-
-				keys->subkeys = evaluateKeyList(sColArray, nMax);
-
-				break;
-			}
-			else if (sKeyList[n] == '[')
-			{
-				delete keys;
-				return nullptr;
-			}
-		}
-	}
-	return keys;
+// Implementation for the "Sorter" object
+bool Memory::isValue(int line, int col)
+{
+    return !isnan(dMemTable[line][col]);
 }
 
 
