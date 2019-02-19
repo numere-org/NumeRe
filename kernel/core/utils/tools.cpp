@@ -989,7 +989,7 @@ static Match findCasualCommand(const string& sCmd)
         // Jump over some special characters, if one didn't find any command yet
         if ((sCmd[i] == ' ' || sCmd[i] == '\t' || sCmd[i] == '-' || sCmd[i] == '=') && _mMatch.nPos == string::npos)
             continue;
-        else if ((sCmd[i] == ' ' || sCmd[i] == '-' || sCmd[i] == ';') && _mMatch.nPos != string::npos)
+        else if ((sCmd[i] == ' ' || sCmd[i] == '-' || sCmd[i] == ';' || sCmd[i] == ':') && _mMatch.nPos != string::npos)
         {
             // If we found a command start, then we examine these characters further
             if (sCmd[i] != '-' && sCmd.find_first_not_of(' ', i) != string::npos && sCmd[sCmd.find_first_not_of(' ', i)] == '=')
@@ -1025,6 +1025,7 @@ static Match findCasualCommand(const string& sCmd)
             if (isInQuotes(sCmd, (i - _mMatch.nPos) / 2)
                     || (_mMatch.sString != "if"
                         && _mMatch.sString != "elseif"
+                        && _mMatch.sString != "switch"
                         && _mMatch.sString != "for"
                         && _mMatch.sString != "while"))
             {
@@ -3188,6 +3189,10 @@ void evalRecursiveExpressions(string& sExpr)
 			|| sExpr.substr(0, 7) == "elseif "
 			|| sExpr.substr(0, 7) == "elseif("
 			|| sExpr.substr(0, 5) == "else "
+			|| sExpr.substr(0, 7) == "switch "
+			|| sExpr.substr(0, 7) == "switch("
+			|| sExpr.substr(0, 5) == "case "
+			|| sExpr.substr(0, 8) == "default:"
 			|| sExpr.substr(0, 4) == "for "
 			|| sExpr.substr(0, 4) == "for("
 			|| sExpr.substr(0, 6) == "while "

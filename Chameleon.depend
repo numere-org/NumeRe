@@ -2346,7 +2346,7 @@
 	<string>
 	<vector>
 
-1541147882 d:\cpp\numere-source\trunk\kernel\core\ui\error.hpp
+1550473502 d:\cpp\numere-source\trunk\kernel\core\ui\error.hpp
 	<string>
 	"language.hpp"
 
@@ -2795,7 +2795,7 @@
 	"../settings.hpp"
 	"../ui/error.hpp"
 
-1541572856 d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.hpp
+1550478582 d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.hpp
 	<string>
 	<iostream>
 	"../ui/error.hpp"
@@ -3335,7 +3335,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1550213715 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1550493809 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3701,7 +3701,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1549919732 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1550413203 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3919,7 +3919,7 @@
 	"wxssh.h"
 	"../../common/debug.h"
 
-1549721168 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1550413994 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -4019,7 +4019,7 @@
 1490787950 source:d:\cpp\numere-source\trunk\kernel\core\igorlib\readwave.cpp
 	"./ReadWave.h"
 
-1511630597 source:d:\cpp\numere-source\trunk\kernel\core\maths\define.cpp
+1550420496 source:d:\cpp\numere-source\trunk\kernel\core\maths\define.cpp
 	"define.hpp"
 	"../../kernel.hpp"
 
@@ -4180,7 +4180,7 @@
 	<mgl2/mgl.h>
 	<string>
 
-1532186473 source:d:\cpp\numere-source\trunk\kernel\core\plugin.cpp
+1550420513 source:d:\cpp\numere-source\trunk\kernel\core\plugin.cpp
 	"plugin.hpp"
 
 1539521458 source:d:\cpp\numere-source\trunk\kernel\core\plugin_histogram.cpp
@@ -4198,11 +4198,11 @@
 1505412752 source:d:\cpp\numere-source\trunk\kernel\core\procedure\debugger.cpp
 	"debugger.hpp"
 
-1545387130 source:d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.cpp
+1550524625 source:d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.cpp
 	"flowctrl.hpp"
 	"../../kernel.hpp"
 
-1544373855 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.cpp
+1550480585 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.cpp
 	"procedure.hpp"
 	"../../kernel.hpp"
 	"procedurevarfactory.hpp"
@@ -4267,7 +4267,7 @@
 	<cstddef>
 	<cstdarg>
 
-1550243097 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
+1550475077 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
 	"tools.hpp"
 	"../../kernel.hpp"
 	<cstdlib>
@@ -4293,7 +4293,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1549710862 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1550421082 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 
@@ -8860,21 +8860,21 @@
 	<string>
 	<wx/artprov.h>
 
-1550262890 d:\cpp\numere-source\trunk\kernel\core\datamanagement\sorter.hpp
+1550393389 d:\cpp\numere-source\trunk\kernel\core\datamanagement\sorter.hpp
 	<string>
 	"../structures.hpp"
 
-1550265489 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\sorter.cpp
+1550393393 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\sorter.cpp
 	"sorter.hpp"
 	"../utils/tools.hpp"
 
-1550389468 d:\cpp\numere-source\trunk\kernel\core\datamanagement\stringmemory.hpp
+1550393397 d:\cpp\numere-source\trunk\kernel\core\datamanagement\stringmemory.hpp
 	<string>
 	<map>
 	<vector>
 	"sorter.hpp"
 
-1550245394 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\stringmemory.cpp
+1550393385 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\stringmemory.cpp
 	"stringmemory.hpp"
 	"../utils/tools.hpp"
 

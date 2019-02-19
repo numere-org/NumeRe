@@ -256,7 +256,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 	if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
         || !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT))
     {
-        if (!getLoop() && sCurrentCommand != "for" && sCurrentCommand != "if" && sCurrentCommand != "while")
+        if (!getLoop() && sCurrentCommand != "for" && sCurrentCommand != "if" && sCurrentCommand != "while" && sCurrentCommand != "switch")
         {
             if (!_functions.call(sLine, _option))
                 throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
@@ -297,7 +297,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 	if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
         || nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT)
     {
-        if (getLoop() || sCurrentCommand == "for" || sCurrentCommand == "if" || sCurrentCommand == "while")
+        if (getLoop() || sCurrentCommand == "for" || sCurrentCommand == "if" || sCurrentCommand == "while" || sCurrentCommand == "switch")
         {
             if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                 nByteCode |= ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT;
@@ -895,6 +895,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
 		{
 			if (sCurrentCommand == "for"
                 || sCurrentCommand == "if"
+                || sCurrentCommand == "switch"
                 || sCurrentCommand == "while")
 			{
 				if (_option.getUseDebugger())
@@ -1423,14 +1424,25 @@ bool Procedure::writeProcedure(string sProcedureLine)
 					|| sProcedureLine.substr(0, 3) == "if "
 					|| sProcedureLine.substr(0, 3) == "if("
 					|| sProcedureLine.substr(0, 6) == "elseif"
+					|| sProcedureLine.substr(0, 6) == "switch"
 					|| sProcedureLine.substr(0, 5) == "while"))
 		{
 			sAppendedLine = sProcedureLine.substr(getMatchingParenthesis(sProcedureLine) + 1);
 			sProcedureLine.erase(getMatchingParenthesis(sProcedureLine) + 1);
 		}
+		else if (sProcedureLine.find(':', 5) != string::npos
+				 && (sProcedureLine.substr(0, 5) == "case "
+					 || sProcedureLine.substr(0, 8) == "default "
+					 || sProcedureLine.substr(0, 8) == "default:")
+				 && sProcedureLine.find_first_not_of(' ', sProcedureLine.find(':', 5)) != string::npos)
+		{
+			sAppendedLine = sProcedureLine.substr(sProcedureLine.find(':', 5)+1);
+			sProcedureLine.erase(sProcedureLine.find(':', 5)+1);
+		}
 		else if (sProcedureLine.find(' ', 4) != string::npos
 				 && (sProcedureLine.substr(0, 5) == "else "
 					 || sProcedureLine.substr(0, 6) == "endif "
+					 || sProcedureLine.substr(0, 10) == "endswitch "
 					 || sProcedureLine.substr(0, 7) == "endfor "
 					 || sProcedureLine.substr(0, 9) == "endwhile ")
 				 && sProcedureLine.find_first_not_of(' ', sProcedureLine.find(' ', 4)) != string::npos
@@ -1447,6 +1459,13 @@ bool Procedure::writeProcedure(string sProcedureLine)
 				 || sProcedureLine.find(" else") != string::npos
 				 || sProcedureLine.find(" elseif ") != string::npos
 				 || sProcedureLine.find(" elseif(") != string::npos
+				 || sProcedureLine.find(" endif") != string::npos
+				 || sProcedureLine.find(" switch ") != string::npos
+				 || sProcedureLine.find(" switch(") != string::npos
+				 || sProcedureLine.find(" case") != string::npos
+				 || sProcedureLine.find(" default") != string::npos
+				 || sProcedureLine.find(" endswitch") != string::npos
+				 || sProcedureLine.find(" endif") != string::npos
 				 || sProcedureLine.find(" endif") != string::npos
 				 || sProcedureLine.find(" while ") != string::npos
 				 || sProcedureLine.find(" while(") != string::npos
@@ -1465,6 +1484,12 @@ bool Procedure::writeProcedure(string sProcedureLine)
 							|| sProcedureLine.substr(n, 8) == " elseif "
 							|| sProcedureLine.substr(n, 8) == " elseif("
 							|| sProcedureLine.substr(n, 6) == " endif"
+							|| sProcedureLine.substr(n, 8) == " switch "
+							|| sProcedureLine.substr(n, 8) == " switch("
+							|| sProcedureLine.substr(n, 6) == " case "
+							|| sProcedureLine.substr(n, 8) == " default "
+							|| sProcedureLine.substr(n, 9) == " default:"
+							|| sProcedureLine.substr(n, 10) == " endswitch"
 							|| sProcedureLine.substr(n, 7) == " while "
 							|| sProcedureLine.substr(n, 7) == " while("
 							|| sProcedureLine.substr(n, 9) == " endwhile")
@@ -1483,6 +1508,9 @@ bool Procedure::writeProcedure(string sProcedureLine)
 				|| findCommand(sProcedureLine).sString == "endwhile"
 				|| findCommand(sProcedureLine).sString == "endfor"
 				|| findCommand(sProcedureLine).sString == "endcompose"
+				|| findCommand(sProcedureLine).sString == "endswitch"
+				|| findCommand(sProcedureLine).sString == "case"
+				|| findCommand(sProcedureLine).sString == "default"
 				|| findCommand(sProcedureLine).sString == "elseif"
 				|| findCommand(sProcedureLine).sString == "else")
 			nthBlock--;
@@ -1501,6 +1529,9 @@ bool Procedure::writeProcedure(string sProcedureLine)
 				|| findCommand(sProcedureLine).sString == "while"
 				|| findCommand(sProcedureLine).sString == "for"
 				|| findCommand(sProcedureLine).sString == "compose"
+				|| findCommand(sProcedureLine).sString == "switch"
+				|| findCommand(sProcedureLine).sString == "case"
+				|| findCommand(sProcedureLine).sString == "default"
 				|| findCommand(sProcedureLine).sString == "elseif"
 				|| findCommand(sProcedureLine).sString == "else")
 			nthBlock++;

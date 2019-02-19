@@ -91,6 +91,7 @@ class FlowCtrl
         int nLoop;
         int nIf;
         int nWhile;
+        int nSwitch;
         int nDefaultLength;
         int nVarArray;
         int nReturnType;
@@ -112,14 +113,17 @@ class FlowCtrl
         int for_loop(int nth_Cmd = 0, int nth_Loop = 0);
         int while_loop(int nth_Cmd = 0, int nth_Loop = 0);
         int if_fork(int nth_Cmd = 0, int nth_Loop = -1);
+        int switch_fork(int nth_Cmd = 0, int nth_Loop = -1);
         int calc(string sLine, int nthCmd, string sBlock);
         value_type* evalHeader(int& nNum, string& sHeadExpression, bool bIsForHead, int nth_Cmd);
         int evalLoopFlowCommands(int __j, int nth_loop);
         int evalForkFlowCommands(int __j, int nth_loop);
         void replaceLocalVars(string& sLine);
         bool checkFlowControlArgument(const string& sFlowControlArgument, bool isForLoop = false);
+        bool checkCaseValue(const string& sCaseDefinition);
         string extractFlagsAndIndexVariables();
         void fillJumpTableAndExpandRecursives();
+        void prepareSwitchExpression(int nSwitchStart);
         void checkParsingModeAndExpandDefinitions();
         void prepareLocalVarsAndReplace(string& sVars);
 
@@ -136,7 +140,7 @@ class FlowCtrl
 
         int nthRecursion;
         inline int getLoop() const
-            {return nLoop + nIf + nWhile;};
+            {return nLoop + nIf + nWhile + nSwitch;};
         inline string getCurrentBlock() const
             {
                 if (sLoopNames.length())

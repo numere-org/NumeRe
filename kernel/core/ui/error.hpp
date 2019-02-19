@@ -77,6 +77,7 @@ class SyntaxError
             CANNOT_SMOOTH_CACHE,
             CANNOT_SORT_CACHE,
             CANNOT_SORT_DATA,
+            CANNOT_EVAL_SWITCH,
             /// INSERT HERE
             COL_COUNTS_DOESNT_MATCH=200,
             DATAFILE_NOT_EXIST=300,

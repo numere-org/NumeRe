@@ -211,7 +211,7 @@ bool Plugin::evalPluginCmd(string& sCmd)
 
 bool Plugin::declareNewPlugin(const string& sInstallInfoString)
 {
-    string sProtectedCommands = ";quit;help;find;uninstall;install;credits;about;continue;break;var;tab;global;throw;namespace;return;abort;explicit;str;if;else;elseif;endif;while;endwhile;for;endfor;";
+    string sProtectedCommands = ";quit;help;find;uninstall;install;credits;about;continue;break;var;tab;global;throw;namespace;return;abort;explicit;str;if;else;elseif;endif;while;endwhile;for;endfor;switch;case;default;endswitch;";
     vector<string> vPlugin;
     vector<string> vParams = {"plugincommand", "pluginmain", "pluginmain", "type", "name", "version", "author", "plugindesc"};
     bool bAllowOverride = false;

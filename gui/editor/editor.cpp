@@ -828,6 +828,7 @@ void NumeReEditor::MakeBlockCheck()
 			|| currentWord == "endcompose"
 			|| currentWord == "procedure"
 			|| currentWord == "endprocedure"
+			|| currentWord == "endswitch"
 			|| currentWord == "end"
 			|| currentWord == "function"
 			|| currentWord == "classdef"
@@ -836,6 +837,7 @@ void NumeReEditor::MakeBlockCheck()
 			|| currentWord == "switch"
 			|| currentWord == "case"
 			|| currentWord == "otherwise"
+			|| currentWord == "default"
 			|| currentWord == "try"
 			|| currentWord == "catch"
 	   )
@@ -1403,6 +1405,31 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 			if (selection == "if")
 				this->CallTipSetHighlight(nLength, lastpos + nLength);
 			else if (selection == "elseif")
+				this->CallTipSetHighlight(nLength, lastpos2 + nLength);
+			else
+				this->CallTipSetHighlight(nLength, 13 + nLength);
+		}
+		if (selection == "switch" || selection == "endswitch" || selection == "case" || selection == "default")
+		{
+			size_t nLength = 0;
+			size_t lastpos2 = 0;
+			string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_SWITCH_*"), lastpos)) + "\n  [...]\n";
+			if (selection != "switch")
+				nLength = sBlock.length();
+
+			sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_CASE_*"), lastpos2)) + "\n  [...]\n";
+			if (selection != "switch" && selection != "case")
+				nLength = sBlock.length() + countUmlauts(sBlock);
+
+			sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_DEFAULT_*")) + "\n  [...]\n";
+			if (selection != "switch" && selection != "case" && selection != "default")
+				nLength = sBlock.length() + countUmlauts(sBlock);
+
+			sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDSWITCH_*"));
+			this->AdvCallTipShow(startPosition, sBlock);
+			if (selection == "switch")
+				this->CallTipSetHighlight(nLength, lastpos + nLength);
+			else if (selection == "case")
 				this->CallTipSetHighlight(nLength, lastpos2 + nLength);
 			else
 				this->CallTipSetHighlight(nLength, 13 + nLength);
@@ -3323,11 +3350,13 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
 	int nWhile = 0;
 	int nCompose = 0;
 	int nProcedure = 0;
+	int nSwitch = 0;
 	int nStartPos = WordStartPosition(nPos, true);
 	vector<int> vPos;
 	wxString startblock;
 	wxString endblock;
 	bool bSearchForIf = false; //if we search for an if block element. If yes => also mark the "else..." parts.
+	bool bSearchForSwitch = false; //if we search for an switch block element. If yes => also mark the "case..." parts.
 	int nSearchDir = 1; //direction in which to search for the matching block partner
 	if (this->GetStyleAt(nPos) != wxSTC_NSCR_COMMAND && this->GetStyleAt(nPos) != wxSTC_NPRC_COMMAND)
 	{
@@ -3352,11 +3381,13 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
 		// search for starting "if"
 		// adding 1 to nIf, because we're already inside of an "if"
 		nIf++;
+
 		for (int i = WordEndPosition(nPos, true); i >= 0; i--)
 		{
 			if (this->GetStyleAt(i) == wxSTC_NSCR_COMMAND || this->GetStyleAt(i) == wxSTC_NPRC_COMMAND)
 			{
 				wxString currentWord = this->GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
+
 				if (currentWord == "for")
 					nFor--; //if we iterate upwards, the closing blocks shall increment and the opening blocks decrement the counter
 				else if (currentWord == "endfor")
@@ -3377,14 +3408,21 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
 					nProcedure--;
 				else if (currentWord == "endprocedure")
 					nProcedure++;
-				if (currentWord == "if" && !nFor && !nIf && !nWhile && !nCompose && !nProcedure)
+				else if (currentWord == "switch")
+					nSwitch--;
+				else if (currentWord == "endswitch")
+					nSwitch++;
+
+				if (currentWord == "if" && !nFor && !nIf && !nWhile && !nCompose && !nProcedure && !nSwitch)
 				{
 					nStartPos = WordStartPosition(i, true);
 					break;
 				}
+
 				i -= currentWord.length();
 			}
-			if (nFor < 0 || nWhile < 0 || nIf < 0 || nCompose < 0 || nProcedure < 0)
+
+			if (nFor < 0 || nWhile < 0 || nIf < 0 || nCompose < 0 || nProcedure < 0 || nSwitch < 0)
 			{
 				// There's no matching partner
 				// set the first to invalid but do not return
@@ -3393,7 +3431,7 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
 			}
 		}
 
-		if (nFor > 0 || nWhile > 0 || nIf > 0 || nCompose > 0 || nProcedure > 0)
+		if (nFor > 0 || nWhile > 0 || nIf > 0 || nCompose > 0 || nProcedure > 0 || nSwitch > 0)
 		{
 			// There's no matching partner
 			// set the first to invalid but do not return
@@ -3402,15 +3440,91 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
 		}
 		else
 			nIf = 0;
+
 		nFor = 0;
 		nWhile = 0;
 		nCompose = 0;
 		nProcedure = 0;
+		nSwitch = 0;
 
 		bSearchForIf = true;
 		endblock = "endif";
 	}
-	else if (startblock == "if" || startblock == "for" || startblock == "while" || startblock == "compose" || startblock == "procedure")
+	else if (startblock == "case" || startblock == "default")
+	{
+		// search for starting "switch"
+		// adding 1 to nSwitch, because we're already inside of an "switch"
+		nSwitch++;
+
+		for (int i = WordEndPosition(nPos, true); i >= 0; i--)
+		{
+			if (this->GetStyleAt(i) == wxSTC_NSCR_COMMAND || this->GetStyleAt(i) == wxSTC_NPRC_COMMAND)
+			{
+				wxString currentWord = this->GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
+
+				if (currentWord == "for")
+					nFor--; //if we iterate upwards, the closing blocks shall increment and the opening blocks decrement the counter
+				else if (currentWord == "endfor")
+					nFor++;
+				else if (currentWord == "while")
+					nWhile--;
+				else if (currentWord == "endwhile")
+					nWhile++;
+				else if (currentWord == "if")
+					nIf--;
+				else if (currentWord == "endif")
+					nIf++;
+				else if (currentWord == "compose")
+					nCompose--;
+				else if (currentWord == "endcompose")
+					nCompose++;
+				else if (currentWord == "procedure")
+					nProcedure--;
+				else if (currentWord == "endprocedure")
+					nProcedure++;
+				else if (currentWord == "switch")
+					nSwitch--;
+				else if (currentWord == "endswitch")
+					nSwitch++;
+
+				if (currentWord == "switch" && !nFor && !nIf && !nWhile && !nCompose && !nProcedure && !nSwitch)
+				{
+					nStartPos = WordStartPosition(i, true);
+					break;
+				}
+
+				i -= currentWord.length();
+			}
+
+			if (nFor < 0 || nWhile < 0 || nIf < 0 || nCompose < 0 || nProcedure < 0 || nSwitch < 0)
+			{
+				// There's no matching partner
+				// set the first to invalid but do not return
+				vPos.push_back(wxSTC_INVALID_POSITION);
+				break;
+			}
+		}
+
+		if (nFor > 0 || nWhile > 0 || nIf > 0 || nCompose > 0 || nProcedure > 0 || nSwitch > 0)
+		{
+			// There's no matching partner
+			// set the first to invalid but do not return
+			vPos.push_back(wxSTC_INVALID_POSITION);
+			nIf = 1;
+		}
+		else
+			nIf = 0;
+
+		nFor = 0;
+		nWhile = 0;
+		nCompose = 0;
+		nProcedure = 0;
+		nSwitch = 0;
+
+		bSearchForSwitch = true;
+		endblock = "endswitch";
+	}
+	else if (startblock == "if" || startblock == "for" || startblock == "while" || startblock == "compose" || startblock == "procedure" || startblock == "switch")
 	{
 		endblock = "end" + startblock;
 	}
@@ -3422,16 +3536,20 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
 
 	if (startblock == "if" || endblock == "if")
 		bSearchForIf = true;
+	else if (startblock == "switch" || endblock == "switch")
+		bSearchForSwitch = true;
 
 	vPos.push_back(nStartPos);
 
 	if (nSearchDir == -1)
 		nStartPos = WordEndPosition(nPos, true);
+
 	for (int i = nStartPos; (i < this->GetLastPosition() && i >= 0); i += nSearchDir) // iterates down, if nSearchDir == 1, and up of nSearchDir == -1
 	{
 		if (this->GetStyleAt(i) == wxSTC_NSCR_COMMAND || this->GetStyleAt(i) == wxSTC_NPRC_COMMAND)
 		{
 			wxString currentWord = this->GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
+
 			if (currentWord == "for")
 				nFor += nSearchDir; //if we iterate upwards, the closing blocks shall increment and the opening blocks decrement the counter
 			else if (currentWord == "endfor")
@@ -3452,28 +3570,44 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
 				nProcedure += nSearchDir;
 			else if (currentWord == "endprocedure")
 				nProcedure -= nSearchDir;
-			if (bSearchForIf && nIf == 1 && !nFor && !nWhile && !nProcedure && !nCompose // only in the current if block
+			else if (currentWord == "switch")
+				nSwitch += nSearchDir;
+			else if (currentWord == "endswitch")
+				nSwitch -= nSearchDir;
+
+			if (bSearchForIf && nIf == 1 && !nFor && !nWhile && !nProcedure && !nCompose && !nSwitch // only in the current if block
 					&& (currentWord == "else" || currentWord == "elseif"))
 			{
 				vPos.push_back(WordStartPosition(i, true));
 			}
-			if (currentWord == endblock && !nFor && !nIf && !nWhile && !nProcedure && !nCompose)
+
+			if (bSearchForSwitch && nSwitch == 1 && !nFor && !nWhile && !nProcedure && !nCompose && !nIf // only in the current if block
+					&& (currentWord == "case" || currentWord == "default"))
+			{
+				vPos.push_back(WordStartPosition(i, true));
+			}
+
+			if (currentWord == endblock && !nFor && !nIf && !nWhile && !nProcedure && !nCompose && !nSwitch)
 			{
 				vPos.push_back(WordStartPosition(i, true));
 				break;
 			}
+
 			i += nSearchDir * currentWord.length();
 		}
-		if (nFor < 0 || nWhile < 0 || nIf < 0 || nProcedure < 0 || nCompose < 0)
+
+		if (nFor < 0 || nWhile < 0 || nIf < 0 || nProcedure < 0 || nCompose < 0 || nSwitch < 0)
 		{
 			// There's no matching partner
 			vPos.push_back(wxSTC_INVALID_POSITION);
 			break;
 		}
 	}
+
 	if (!vPos.size()
-			|| (nFor > 0 || nWhile > 0 || nIf > 0 || nProcedure > 0 || nCompose > 0))
+			|| (nFor > 0 || nWhile > 0 || nIf > 0 || nProcedure > 0 || nCompose > 0 || nSwitch > 0))
 		vPos.push_back(wxSTC_INVALID_POSITION);
+
 	return vPos;
 }
 
@@ -4262,7 +4396,19 @@ void NumeReEditor::updateDefaultHighlightSettings()
 {
 	this->CallTipSetForegroundHighlight(*wxBLUE);
 	this->SetCaretLineVisible(true);
-	this->SetIndentationGuides(true);
+	this->SetIndentationGuides(wxSTC_IV_LOOKBOTH);
+
+	this->StyleSetBackground(wxSTC_STYLE_INDENTGUIDE, m_options->GetSyntaxStyle(Options::STANDARD).foreground);
+	this->StyleSetForeground(wxSTC_STYLE_INDENTGUIDE, m_options->GetSyntaxStyle(Options::STANDARD).background);
+
+	this->SetCaretForeground(m_options->GetSyntaxStyle(Options::STANDARD).foreground);
+
+	// Use these styles for enabling black mode
+//	this->StyleSetBackground(wxSTC_STYLE_LINENUMBER, m_options->GetSyntaxStyle(Options::STANDARD).background);
+//	this->StyleSetForeground(wxSTC_STYLE_LINENUMBER, m_options->GetSyntaxStyle(Options::STANDARD).foreground);
+//
+//	this->SetFoldMarginColour(true, m_options->GetSyntaxStyle(Options::STANDARD).background);
+//	this->SetFoldMarginHiColour(true, m_options->GetSyntaxStyle(Options::STANDARD).foreground);
 
 	if (!m_options->GetSyntaxStyle(Options::ACTIVE_LINE).defaultbackground)
 		this->SetCaretLineBackground(m_options->GetSyntaxStyle(Options::ACTIVE_LINE).background);
@@ -7339,15 +7485,15 @@ int NumeReEditor::determineIndentationLevelNSCR(int nLine, int& singleLineIndent
 		if (this->GetStyleAt(i) == wxSTC_NSCR_COMMAND)
 		{
 			wxString word = this->GetTextRange(i, this->WordEndPosition(i + 1, true));
-			if (word == "endif" || word == "endfor" || word == "endwhile" || word == "endcompose" || word == "endprocedure")
+			if (word == "endif" || word == "endfor" || word == "endwhile" || word == "endcompose" || word == "endprocedure" || word == "endswitch")
 			{
 				nIndentCount--;
 			}
-			else if (word == "if" || word == "for" || word == "while" || word == "compose" || word == "procedure")
+			else if (word == "if" || word == "for" || word == "while" || word == "compose" || word == "procedure" || word == "switch")
 			{
 				nIndentCount++;
 			}
-			else if (word == "else" || word == "elseif")
+			else if (word == "else" || word == "elseif" || word == "case" || word == "default")
 			{
 				singleLineIndent = -1;
 			}
@@ -8058,6 +8204,7 @@ void NumeReEditor::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine) // int nFi
 			if (command == "if"
 					|| command == "elseif"
 					|| command == "for"
+					|| command == "switch"
 					|| command == "while")
 			{
 				int parens = i;
@@ -8081,12 +8228,25 @@ void NumeReEditor::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine) // int nFi
 						&& !isStyleType(STYLE_COMMENT_BLOCK, i + 1 + this->GetTextRange(i + 1, nCurrentLineEnd).find_first_not_of(" \r\n\t")))
 					nLastPosition += insertTextAndMove(i + 1, "\r\n");
 			}
+			else if (command == "case" || command == "default")
+			{
+			    int nColon = FindText(i, nCurrentLineEnd, ":");
+				if (this->GetTextRange(nColon + 1, nCurrentLineEnd).find_first_not_of(" \r\n\t") != string::npos
+						&& !isStyleType(STYLE_COMMENT_LINE, nColon + 1 + this->GetTextRange(nColon + 1, nCurrentLineEnd).find_first_not_of(" \r\n\t"))
+						&& !isStyleType(STYLE_COMMENT_BLOCK, nColon + 1 + this->GetTextRange(nColon + 1, nCurrentLineEnd).find_first_not_of(" \r\n\t")))
+					nLastPosition += insertTextAndMove(nColon + 1, "\r\n");
+			}
+
 			if (command == "if"
 					|| command == "for"
 					|| command == "else"
 					|| command == "elseif"
+					|| command == "switch"
+					|| command == "case"
+					|| command == "default"
 					|| command == "while"
 					|| command == "endif"
+					|| command == "endswitch"
 					|| command == "endfor"
 					|| command == "endwhile")
 			{
@@ -8096,14 +8256,17 @@ void NumeReEditor::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine) // int nFi
 					i += 2;
 				}
 			}
-			if (command == "if" || command == "for" || command == "while" || command == "compose" || command == "procedure")
+
+			if (command == "if" || command == "for" || command == "while" || command == "compose" || command == "procedure" || command == "switch")
 			{
 				if (nIndentationLevel <= 0)
 				{
 					int nLine = this->LineFromPosition(i);
 					int position = this->PositionFromLine(nLine - 1);
+
 					while (this->GetCharAt(position) == ' ' || this->GetCharAt(position) == '\t')
 						position++;
+
 					if (nLine
 							&& this->GetLine(nLine - 1).find_first_not_of(" \t\r\n") != string::npos
 							&& this->GetStyleAt(this->PositionFromLine(nLine - 1)) != wxSTC_NSCR_COMMENT_BLOCK
@@ -8114,14 +8277,18 @@ void NumeReEditor::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine) // int nFi
 						i += 2;
 					}
 				}
+
 				nIndentationLevel++;
 			}
-			if (command == "endif" || command == "endfor" || command == "endwhile" || command == "endcompose" || command == "endprocedure")
+
+			if (command == "endif" || command == "endfor" || command == "endwhile" || command == "endcompose" || command == "endprocedure" || command == "endswitch")
 			{
 				nIndentationLevel--;
+
 				if (nIndentationLevel <= 0)
 				{
 					int nLine = this->LineFromPosition(i);
+
 					if (nLine < this->GetLineCount() - 1
 							&& this->GetLine(nLine + 1).find_first_not_of(" \t\r\n") != string::npos)
 					{
@@ -8130,6 +8297,7 @@ void NumeReEditor::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine) // int nFi
 				}
 			}
 		}
+
 		if (this->GetStyleAt(i) == wxSTC_NSCR_STRING)
 		{
 			if (this->GetStyleAt(i + 1) != wxSTC_NSCR_STRING
@@ -8141,6 +8309,7 @@ void NumeReEditor::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine) // int nFi
 					&& this->GetCharAt(i + 1) != ']'
 					&& this->GetCharAt(i + 1) != '}')
 				nLastPosition += insertTextAndMove(i + 1, " ");
+
 			if (this->GetStyleAt(i - 1) != wxSTC_NSCR_STRING
 					&& this->PositionFromLine(this->LineFromPosition(i)) != i
 					&& this->GetCharAt(i - 1) != ' '

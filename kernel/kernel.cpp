@@ -718,7 +718,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 			}
 
 			// Evaluate function calls (only outside the flow control blocks)
-			if (!_procedure.getLoop() && sCurrentCommand != "for" && sCurrentCommand != "if" && sCurrentCommand != "while")
+			if (!_procedure.getLoop() && sCurrentCommand != "for" && sCurrentCommand != "if" && sCurrentCommand != "while" && sCurrentCommand != "switch")
 			{
 				if (!_functions.call(sLine, _option))
 					throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
@@ -1615,7 +1615,7 @@ bool NumeReKernel::executePlugins(string& sLine)
 // This private member function will handle the flow controls
 bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, const string& sCurrentCommand, KernelStatus& nReturnVal)
 {
-    if (_procedure.getLoop() || sCurrentCommand == "for" || sCurrentCommand == "if" || sCurrentCommand == "while")
+    if (_procedure.getLoop() || sCurrentCommand == "for" || sCurrentCommand == "if" || sCurrentCommand == "while" || sCurrentCommand == "switch")
     {
         if (bSupressAnswer)
             sLine += ";";

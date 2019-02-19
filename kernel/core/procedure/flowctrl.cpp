@@ -64,6 +64,7 @@ FlowCtrl::FlowCtrl()
 	nCmd = 0;
 	nLoop = 0;
 	nIf = 0;
+	nSwitch = 0;
 	nWhile = 0;
 	nDefaultLength = 10;
 	nVarArray = 0;
@@ -753,6 +754,141 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
 	return nCmd;
 }
 
+// This member function realizes the SWITCH-CASE control flow
+// statement. The return value is either a error value or
+// the end of the current flow control statement
+int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
+{
+	string sSwitch_Condition = sCmd[nth_Cmd][0].substr(sCmd[nth_Cmd][0].find('(') + 1, sCmd[nth_Cmd][0].rfind(')') - sCmd[nth_Cmd][0].find('(') - 1);
+	int nNextCase = nJumpTable[nth_Cmd][ELSE_START]; // Position of next case/default
+	int nSwitchEnd = nJumpTable[nth_Cmd][BLOCK_END];
+	string sLine = "";
+	bPrintedStatus = false;
+	value_type* v;
+	int nNum = 0;
+
+    // Evaluate the header of the current switch statement and its cases
+    v = evalHeader(nNum, sSwitch_Condition, false, nth_Cmd);
+
+	// Search for the correct first(!) case
+	for (int i = 0; i < nNum; i++)
+    {
+        if (!v[i])
+            nNextCase = nJumpTable[nNextCase][ELSE_START];
+        else
+            break;
+
+        if (nNextCase < 0)
+            return nSwitchEnd;
+    }
+
+    // Set the start index of the current switch case
+    if (nNextCase == -1)
+        return nSwitchEnd;
+    else
+        nth_Cmd = nNextCase;
+
+    // The inner loop goes through the contained
+    // commands
+    for (int __i = nth_Cmd; __i < nCmd; __i++)
+    {
+        // If we reach the end of the
+        // current block, return with the last line
+        // of this block
+        if (__i == nSwitchEnd)
+            return nSwitchEnd;
+
+        if (__i != nth_Cmd)
+        {
+            // If this is not the first line of the command block
+            // try to find control flow statements in the first column
+            if (sCmd[__i][0].length())
+            {
+                // Evaluate the flow control commands
+                int nReturn = evalForkFlowCommands(__i, nth_loop);
+
+                // Handle the return value
+                if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
+                    return nReturn;
+                else if (nReturn == FLOWCTRL_BREAK || nReturn == FLOWCTRL_CONTINUE)
+                {
+                    // We don't propagate the break signal
+                    bBreakSignal = false;
+                    return nSwitchEnd;
+                }
+                else if (nReturn != FLOWCTRL_NO_CMD)
+                    __i = nReturn;
+            }
+        }
+
+        // No regular command in this line
+        if (!sCmd[__i][1].length())
+            continue;
+
+        // Handle the "continue" and "break" flow
+        // control statements
+        if (!nCalcType[__i])
+        {
+            string sCommand = findCommand(sCmd[__i][1]).sString;
+
+            // "continue" and "break" are both exiting the current
+            // condition, but they are yielding different signals
+            if (sCommand == "continue")
+            {
+                nCalcType[__i] = CALCTYPE_CONTINUECMD;
+                bContinueSignal = true;
+                return nSwitchEnd;
+            }
+
+            if (sCommand == "break")
+            {
+                // We don't propagate the break signal in this case
+                nCalcType[__i] = CALCTYPE_BREAKCMD;
+                return nSwitchEnd;
+            }
+        }
+        else if (nCalcType[__i] & CALCTYPE_CONTINUECMD)
+        {
+            bContinueSignal = true;
+            return nSwitchEnd;
+        }
+        else if (nCalcType[__i] & CALCTYPE_BREAKCMD)
+        {
+            // We don't propagate the break signal in this case
+            return nSwitchEnd;
+        }
+
+        // Increment the parser index, if the loop parsing
+        // mode was activated
+        if (bUseLoopParsingMode && !bLockedPauseMode)
+            _parserRef->SetIndex(__i + nCmd + 1);
+
+        try
+        {
+            // Evaluate the command line with the calc function
+            if (calc(sCmd[__i][1], __i, "SWCH") == FLOWCTRL_ERROR)
+            {
+                if (_optionRef->getUseDebugger())
+                    _optionRef->_debug.gatherLoopBasedInformations(sCmd[__i][1], nCmd - __i, mVarMap, vVarArray, sVarArray, nVarArray);
+
+                return FLOWCTRL_ERROR;
+            }
+
+            if (bReturnSignal)
+                return FLOWCTRL_RETURN;
+        }
+        catch (...)
+        {
+            if (_optionRef->getUseDebugger())
+                _optionRef->_debug.gatherLoopBasedInformations(sCmd[__i][1], nCmd - __i, mVarMap, vVarArray, sVarArray, nVarArray);
+
+            throw;
+        }
+    }
+
+	return nCmd;
+}
+
 // This member function abstracts the evaluation of all
 // flow control headers. It will return an array of
 // evaluated return values, although only the first
@@ -805,10 +941,6 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
 		if (!bLockedPauseMode && bUseLoopParsingMode)
 			_parserRef->PauseLoopMode(false);
 	}
-
-	// Catch string vector statements (possible not necessary)
-	/*if (sHeadExpression.find("{") != string::npos && (containsStrings(sHeadExpression) || _dataRef->containsStringVars(sHeadExpression)))
-		parser_VectorToExpr(sHeadExpression, *_optionRef);*/
 
     // Call procedures, if necessary
 	if (sHeadExpression.find("$") != string::npos)
@@ -944,6 +1076,20 @@ int FlowCtrl::evalLoopFlowCommands(int __j, int nth_loop)
 
 		return __j;
 	}
+	else if (sCmd[__j][0].find(">>switch") != string::npos)
+	{
+		__j = switch_fork(__j, nth_loop + 1);
+
+		if (__j == FLOWCTRL_ERROR || __j == FLOWCTRL_RETURN || bReturnSignal)
+			return __j;
+
+		if (bContinueSignal)
+		{
+			return FLOWCTRL_CONTINUE;
+		}
+
+		return __j;
+	}
 
 	return FLOWCTRL_NO_CMD;
 }
@@ -1019,6 +1165,20 @@ int FlowCtrl::evalForkFlowCommands(int __i, int nth_loop)
 
 		return __i;
 	}
+	else if (sCmd[__i][0].find(">>switch") != string::npos)
+	{
+		__i = switch_fork(__i, nth_loop + 1);
+
+		if (__i == FLOWCTRL_ERROR || __i == FLOWCTRL_RETURN || bReturnSignal)
+			return __i;
+
+		if (bContinueSignal)
+		{
+			return FLOWCTRL_CONTINUE;
+		}
+
+		return __i;
+	}
 
 	return FLOWCTRL_NO_CMD;
 }
@@ -1070,6 +1230,10 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
         || command == "endif"
         || command == "else"
         || command == "elseif"
+        || command == "switch"
+        || command == "endswitch"
+        || command == "case"
+        || command == "default"
         || command == "while"
         || command == "endwhile")
 	{
@@ -1081,7 +1245,7 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
 			throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, __sCmd, __sCmd.find('('));
 		}
 
-		if (__sCmd.substr(0, 3) == "for")
+		if (command == "for")
 		{
 			sLoopNames += ";FOR";
 			nLoop++;
@@ -1111,7 +1275,7 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
 
 			__sCmd.replace(nPos, 1, ",");
 		}
-		else if (__sCmd.substr(0, 5) == "while")
+		else if (command == "while")
 		{
 			sLoopNames += ";WHL";
 			nWhile++;
@@ -1123,7 +1287,7 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
 				throw SyntaxError(SyntaxError::CANNOT_EVAL_WHILE, __sCmd, SyntaxError::invalid_position);
 			}
 		}
-		else if (__sCmd.substr(0, 3) == "if " || __sCmd.substr(0, 3) == "if(")
+		else if (command == "if")
 		{
 			sLoopNames += ";IF";
 			nIf++;
@@ -1137,11 +1301,11 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
 
 			__sCmd = toString(nIf) + ">>" + __sCmd;
 		}
-		else if (__sCmd.substr(0, 4) == "else")
+		else if (command == "else" || command == "elseif")
 		{
 			if (nIf && (getCurrentBlock() == "IF" || getCurrentBlock() == "ELIF"))
 			{
-				if (__sCmd.substr(0, 6) == "elseif")
+				if (command == "elseif")
 				{
 					sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';')) + ";ELIF";
 
@@ -1162,7 +1326,7 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
 			else
 				return;
 		}
-		else if (__sCmd.substr(0, 5) == "endif")
+		else if (command == "endif")
 		{
 			if (nIf && (getCurrentBlock() == "IF" || getCurrentBlock() == "ELIF" || getCurrentBlock() == "ELSE"))
 			{
@@ -1173,7 +1337,58 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
 			else
 				return;
 		}
-		else if (__sCmd.substr(0, 6) == "endfor")
+		else if (command == "switch")
+		{
+			sLoopNames += ";SWCH";
+			nSwitch++;
+
+			// check the flow control argument for completeness
+			if (!checkFlowControlArgument(__sCmd, false))
+			{
+				reset();
+				throw SyntaxError(SyntaxError::CANNOT_EVAL_SWITCH, __sCmd, SyntaxError::invalid_position);
+			}
+
+			__sCmd = toString(nSwitch) + ">>" + __sCmd;
+		}
+		else if (command == "case" || command == "default")
+		{
+			if (nSwitch && (getCurrentBlock() == "SWCH" || getCurrentBlock() == "CASE"))
+			{
+                // check the case definition for completeness
+                if (!checkCaseValue(__sCmd))
+                {
+                    reset();
+                    throw SyntaxError(SyntaxError::CANNOT_EVAL_SWITCH, __sCmd, SyntaxError::invalid_position);
+                }
+
+                // Set the corresponding loop names
+				if (command == "default")
+				{
+					sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';')) + ";DEF";
+				}
+				else
+				{
+					sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';')) + ";CASE";
+				}
+
+				__sCmd = toString(nSwitch) + ">>" + __sCmd;
+			}
+			else
+				return;
+		}
+		else if (command == "endswitch")
+		{
+			if (nSwitch && (getCurrentBlock() == "SWCH" || getCurrentBlock() == "CASE" || getCurrentBlock() == "DEF"))
+			{
+				sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';'));
+				__sCmd = toString(nSwitch) + ">>" + __sCmd;
+				nSwitch--;
+			}
+			else
+				return;
+		}
+		else if (command == "endfor")
 		{
 			if (nLoop && getCurrentBlock() == "FOR")
 			{
@@ -1183,7 +1398,7 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
 			else
 				return;
 		}
-		else if (__sCmd.substr(0, 8) == "endwhile")
+		else if (command == "endwhile")
 		{
 			if (nWhile && getCurrentBlock() == "WHL")
 			{
@@ -1200,13 +1415,23 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
         // control statement (i.e. a continued command
         // line), then cache this part here
 		if (__sCmd.find('(') != string::npos
-            && (__sCmd.substr(0, 3) == "for"
-                || __sCmd.find(">>if") != string::npos
-                || __sCmd.find(">>elseif") != string::npos
-                || __sCmd.substr(0, 5) == "while"))
+            && (command == "for"
+                || command == "if"
+                || command == "elseif"
+                || command == "switch"
+                || command == "while"))
 		{
 			sAppendedExpression = __sCmd.substr(getMatchingParenthesis(__sCmd) + 1);
 			__sCmd.erase(getMatchingParenthesis(__sCmd) + 1);
+		}
+		else if (command == "case" || command == "default")
+		{
+            if (__sCmd.find(':', 4) != string::npos
+                && __sCmd.find_first_not_of(": ", __sCmd.find(':', 4)) != string::npos)
+            {
+                sAppendedExpression = __sCmd.substr(__sCmd.find(':', 4)+1);
+                __sCmd.erase(__sCmd.find(':', 4)+1);
+            }
 		}
 		else if (__sCmd.find(' ', 4) != string::npos
             && __sCmd.find_first_not_of(' ', __sCmd.find(' ', 4)) != string::npos
@@ -1240,6 +1465,12 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
             || __sCmd.find(" elseif ") != string::npos
             || __sCmd.find(" elseif(") != string::npos
             || __sCmd.find(" endif") != string::npos
+            || __sCmd.find(" switch ") != string::npos
+            || __sCmd.find(" switch(") != string::npos
+            || __sCmd.find(" case ") != string::npos
+            || __sCmd.find(" default ") != string::npos
+            || __sCmd.find(" default:") != string::npos
+            || __sCmd.find(" endswitch") != string::npos
             || __sCmd.find(" while ") != string::npos
             || __sCmd.find(" while(") != string::npos
             || __sCmd.find(" endwhile") != string::npos)
@@ -1257,6 +1488,12 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
                         || __sCmd.substr(n, 8) == " elseif "
                         || __sCmd.substr(n, 8) == " elseif("
                         || __sCmd.substr(n, 6) == " endif"
+                        || __sCmd.substr(n, 8) == " switch "
+                        || __sCmd.substr(n, 8) == " switch("
+                        || __sCmd.substr(n, 6) == " case "
+                        || __sCmd.substr(n, 9) == " default "
+                        || __sCmd.substr(n, 9) == " default:"
+                        || __sCmd.substr(n, 10) == " endswitch"
                         || __sCmd.substr(n, 7) == " while "
                         || __sCmd.substr(n, 7) == " while("
                         || __sCmd.substr(n, 9) == " endwhile")
@@ -1287,7 +1524,7 @@ void FlowCtrl::setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Defi
     // the complete block
 	if (nCmd)
 	{
-		if (!(nLoop + nIf + nWhile) && sCmd[nCmd][0].length())
+		if (!(nLoop + nIf + nWhile + nSwitch) && sCmd[nCmd][0].length())
 			eval(_parser, _data, _functions, _option, _out, _pData, _script);
 	}
 
@@ -1435,7 +1672,7 @@ void FlowCtrl::eval(Parser& _parser, Datafile& _data, Define& _functions, Settin
 					NumeReKernel::printPreFmt("|WHL> " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
 			}
 		}
-		else
+		else if (sCmd[0][0].find(">>if") != string::npos)
 		{
 			if (if_fork() == FLOWCTRL_ERROR)
 			{
@@ -1443,6 +1680,16 @@ void FlowCtrl::eval(Parser& _parser, Datafile& _data, Define& _functions, Settin
 					NumeReKernel::printPreFmt("\n");
 
 				throw SyntaxError(SyntaxError::CANNOT_EVAL_IF, "", SyntaxError::invalid_position);
+			}
+		}
+		else
+		{
+			if (switch_fork() == FLOWCTRL_ERROR)
+			{
+				if (bSilent || bMask)
+					NumeReKernel::printPreFmt("\n");
+
+				throw SyntaxError(SyntaxError::CANNOT_EVAL_SWITCH, "", SyntaxError::invalid_position);
 			}
 		}
 	}
@@ -1557,6 +1804,7 @@ void FlowCtrl::reset()
 	nLoop = 0;
 	nLoopSavety = -1;
 	nIf = 0;
+	nSwitch = 0;
 	nWhile = 0;
 	nDefaultLength = 10;
 	bSilent = true;
@@ -1653,13 +1901,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 
 	if (!nCurrentCalcType
         || !bFunctionsReplaced
-        || nCurrentCalcType & (CALCTYPE_COMMAND | CALCTYPE_DEFINITION | CALCTYPE_PROGRESS | CALCTYPE_COMPOSE | CALCTYPE_RETURNCOMMAND | CALCTYPE_THROWCOMMAND | CALCTYPE_EXPLICIT)
-        /*|| nCurrentCalcType & CALCTYPE_DEFINITION
-        || nCurrentCalcType & CALCTYPE_PROGRESS
-        || nCurrentCalcType & CALCTYPE_COMPOSE
-        || nCurrentCalcType & CALCTYPE_RETURNCOMMAND
-        || nCurrentCalcType & CALCTYPE_THROWCOMMAND
-        || nCurrentCalcType & CALCTYPE_EXPLICIT*/)
+        || nCurrentCalcType & (CALCTYPE_COMMAND | CALCTYPE_DEFINITION | CALCTYPE_PROGRESS | CALCTYPE_COMPOSE | CALCTYPE_RETURNCOMMAND | CALCTYPE_THROWCOMMAND | CALCTYPE_EXPLICIT))
 		sCommand = findCommand(sLine).sString;
 
     // Replace the custom defined functions, if it wasn't already done
@@ -2324,6 +2566,38 @@ bool FlowCtrl::checkFlowControlArgument(const string& sFlowControlArgument, bool
     return true;
 }
 
+// This member function checks, whether the entered case
+// definition is valid or not
+bool FlowCtrl::checkCaseValue(const string& sCaseDefinition)
+{
+    // Colon operator is missing
+    if (sCaseDefinition.find(':') == string::npos)
+        return false;
+
+    // Check, whether there's a valid value between
+    // "case" and the colon operator
+    if (sCaseDefinition.substr(0, 5) == "case ")
+    {
+        // Extract the value
+        string sValue = sCaseDefinition.substr(4);
+        sValue.erase(sValue.find(':'));
+
+        // Check, whether there are other characters
+        // than the whitespace
+        if (sValue.find_first_not_of(' ') == string::npos)
+            return false;
+
+        // Cut of the first expression (in the possible list)
+        getNextArgument(sValue, true);
+
+        // Check for more than one value (only one allowed)
+        if (sValue.length() && sValue.find_first_not_of(' ') != string::npos)
+            return false;
+    }
+    // Everything seems to be OK
+    return true;
+}
+
 // Read the flow control statements only and
 // extract the index variables and the flow
 // control flags
@@ -2474,6 +2748,46 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
 					}
 				}
 			}
+			else if (sCmd[i][0].find(">>switch") != string::npos)
+			{
+				string sNth_Switch = sCmd[i][0].substr(0, sCmd[i][0].find(">>"));
+
+				for (int j = i + 1; j <= nCmd; j++)
+				{
+					if (sCmd[j][0].length() && sCmd[j][0].substr(0, (sNth_Switch + ">>case").length()) == sNth_Switch + ">>case" && nJumpTable[i][ELSE_START] == NO_FLOW_COMMAND)
+						nJumpTable[i][ELSE_START] = j;
+					else if (sCmd[j][0].length() && sCmd[j][0].substr(0, (sNth_Switch + ">>default").length()) == sNth_Switch + ">>default" && nJumpTable[i][ELSE_START] == NO_FLOW_COMMAND)
+						nJumpTable[i][ELSE_START] = j;
+					else if (sCmd[j][0].length() && sCmd[j][0].substr(0, (sNth_Switch + ">>endswitch").length()) == sNth_Switch + ">>endswitch")
+					{
+						nJumpTable[i][BLOCK_END] = j;
+						break;
+					}
+				}
+
+				// For the switch case, all case values are gathered
+				// as logical expression into one single expression,
+				// which will be evaluated at once and the switch
+				// will jump into the first non-zero case
+				prepareSwitchExpression(i);
+			}
+			else if (sCmd[i][0].find(">>case") != string::npos)
+			{
+				string sNth_Switch = sCmd[i][0].substr(0, sCmd[i][0].find(">>"));
+
+				for (int j = i + 1; j <= nCmd; j++)
+				{
+					if (sCmd[j][0].length() && sCmd[j][0].substr(0, (sNth_Switch + ">>case").length()) == sNth_Switch + ">>case" && nJumpTable[i][ELSE_START] == NO_FLOW_COMMAND)
+						nJumpTable[i][ELSE_START] = j;
+					else if (sCmd[j][0].length() && sCmd[j][0].substr(0, (sNth_Switch + ">>default").length()) == sNth_Switch + ">>default" && nJumpTable[i][ELSE_START] == NO_FLOW_COMMAND)
+						nJumpTable[i][ELSE_START] = j;
+					else if (sCmd[j][0].length() && sCmd[j][0].substr(0, (sNth_Switch + ">>endswitch").length()) == sNth_Switch + ">>endswitch")
+					{
+						nJumpTable[i][BLOCK_END] = j;
+						break;
+					}
+				}
+			}
 		}
 
 		// Pre-evaluate all recursive expressions
@@ -2514,6 +2828,56 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
 		}
 	}
 
+}
+
+// This member function will prepare the single logical switch expression
+void FlowCtrl::prepareSwitchExpression(int nSwitchStart)
+{
+    // Extract the condition of the "switch"
+    string sSwitchArgument = sCmd[nSwitchStart][0];
+    sCmd[nSwitchStart][0].erase(sSwitchArgument.find('('));
+    sSwitchArgument.erase(0, sSwitchArgument.find('(')+1);
+    sSwitchArgument.erase(sSwitchArgument.rfind(')'));
+
+    string sArgument = "";
+
+    // Extract the switch level
+    string sNth_Switch = sCmd[nSwitchStart][0].substr(0, sCmd[nSwitchStart][0].find(">>"));
+
+    // Search for all cases, which belong to the current
+    // switch level
+    for (int j = nSwitchStart + 1; j <= nCmd; j++)
+    {
+        // Extract the value of the found case and gather
+        // it in the argument list
+        if (sCmd[j][0].length() && sCmd[j][0].substr(0, (sNth_Switch + ">>case").length()) == sNth_Switch + ">>case")
+        {
+            if (sArgument.length())
+                sArgument += ", ";
+
+            sArgument += sCmd[j][0].substr(sCmd[j][0].find(' ', sCmd[j][0].find(">>case"))+1);
+            sArgument.erase(sArgument.rfind(':'));
+        }
+    }
+
+    // If the argument list is not empty, transform it
+    // into a vector and append it using the equality
+    // operator to the switch condition
+    if (sArgument.length())
+    {
+        string sExpr = sSwitchArgument;
+        sSwitchArgument.clear();
+
+        while (sArgument.length())
+        {
+            sSwitchArgument += sExpr + " == " + getNextArgument(sArgument, true) + ",";
+        }
+
+        sSwitchArgument.pop_back();
+    }
+
+    // Append the new switch condition to the "switch" command
+    sCmd[nSwitchStart][0] += "(" + sSwitchArgument + ")";
 }
 
 // If the loop parsing mode is active, ensure that only
