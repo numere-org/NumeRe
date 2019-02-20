@@ -16,6 +16,7 @@
 #include <wx/stdpaths.h>
 #include <vector>
 #include <string>
+#include <set>
 
 #include "editor.h"
 #include "../NumeReWindow.h"
@@ -6290,14 +6291,47 @@ void NumeReEditor::AbstrahizeSection()
     list<wxString> lInputTokens;
     list<wxString> lOutputTokens;
 
+    set<string> sArgumentListSet;
+    set<string> sMatlabReturnListSet;
+
 
     // If we have a procedure file, consider scoping
     if (m_fileType == FILE_NPRC || m_fileType == FILE_MATLAB)
     {
         nCurrentBlockStart = FindCurrentProcedureHead(nStartPos);
+
+        string sArgumentList = getFunctionArgumentList(LineFromPosition(nCurrentBlockStart)).ToStdString();
+
+        // Split the argument list into single tokens
+        while (sArgumentList.length())
+        {
+            sArgumentListSet.insert(getNextArgument(sArgumentList, true));
+        }
+
+        // In the MATLAB case, get the return list of
+        // the function
+        if (m_fileType == FILE_MATLAB)
+        {
+            string sReturnList = getMatlabReturnList(LineFromPosition(nCurrentBlockStart)).ToStdString();
+
+            // Split the return list into single tokens
+            while (sReturnList.length())
+            {
+                sMatlabReturnListSet.insert(getNextArgument(sReturnList, true));
+            }
+
+        }
+
+        // Ensure that the end of the current block exists
         vector<int> vBlock = BlockMatch(nCurrentBlockStart);
+
         if (vBlock.back() != wxSTC_INVALID_POSITION && vBlock.back() > nEndPos)
             nCurrentBlockEnd = vBlock.back();
+
+        // Increment the starting line to omit the argument list
+        // as variable occurence source. Those will be detected
+        // by comparing with the splitted argument list
+        nCurrentBlockStart = PositionFromLine(LineFromPosition(nCurrentBlockStart)+1);
     }
 
     // Determine the interface by searching for variables
@@ -6312,6 +6346,7 @@ void NumeReEditor::AbstrahizeSection()
             // Jump over string parser characters
             while (isStyleType(STYLE_STRINGPARSER, i) && (GetCharAt(i) == '#' || GetCharAt(i) == '~'))
                 i++;
+
             if (isStyleType(STYLE_OPERATOR, i))
                 continue;
 
@@ -6329,11 +6364,14 @@ void NumeReEditor::AbstrahizeSection()
             {
                 // Determine, whether the token is used before
                 // or afer the current section
-                if (vMatch.front() < nStartPos)
+                if (vMatch.front() < nStartPos || (sArgumentListSet.size() && sArgumentListSet.find(sCurrentToken.ToStdString()) != sArgumentListSet.end()))
                     lInputTokens.push_back(sCurrentToken);
+
                 if (vMatch.back() > nEndPos && vMatch.front() < nStartPos && IsModifiedInSection(nStartPos, nEndPos, sCurrentToken, vMatch))
                     lOutputTokens.push_back(sCurrentToken);
                 else if (vMatch.back() > nEndPos && vMatch.front() >= nStartPos)
+                    lOutputTokens.push_back(sCurrentToken);
+                else if (sMatlabReturnListSet.size() && sMatlabReturnListSet.find(sCurrentToken.ToStdString()) != sMatlabReturnListSet.end() && IsModifiedInSection(nStartPos, nEndPos, sCurrentToken, vMatch))
                     lOutputTokens.push_back(sCurrentToken);
             }
 
@@ -6368,6 +6406,7 @@ void NumeReEditor::AbstrahizeSection()
         lInputTokens.sort();
         lInputTokens.unique();
     }
+
     if (lOutputTokens.size())
     {
         lOutputTokens.sort();
@@ -6382,12 +6421,15 @@ void NumeReEditor::AbstrahizeSection()
     {
         sInputList += *iter + ",";
     }
+
     if (sInputList.length())
         sInputList.erase(sInputList.length()-1);
+
     for (auto iter = lOutputTokens.begin(); iter != lOutputTokens.end(); ++iter)
     {
         sOutputList += *iter + ",";
     }
+
     if (sOutputList.length())
         sOutputList.erase(sOutputList.length()-1);
 
@@ -6534,7 +6576,14 @@ bool NumeReEditor::IsModifiedInSection(int nSectionStart, int nSectionEnd, const
             }
             else if (isStyleType(STYLE_OPERATOR, j) && GetCharAt(j) == '.' && isStyleType(STYLE_IDENTIFIER, j+1))
             {
+                // MATLAB struct fix
                 while (isStyleType(STYLE_IDENTIFIER, j+1))
+                    j++;
+            }
+            else if (isStyleType(STYLE_OPERATOR, j) && GetCharAt(j) == '.' && isStyleType(STYLE_FUNCTION, j+1))
+            {
+                // MATLAB struct fix
+                while (isStyleType(STYLE_FUNCTION, j+1))
                     j++;
             }
             else if (isStyleType(STYLE_OPERATOR, j) && GetCharAt(j) == ',')
@@ -6560,6 +6609,64 @@ bool NumeReEditor::IsModifiedInSection(int nSectionStart, int nSectionEnd, const
     }
 
     return false;
+}
+
+// This private member function extracts the return list from
+// MATLAB functions, which is necessary for correct function
+// extraction
+wxString NumeReEditor::getFunctionArgumentList(int nFunctionStartLine)
+{
+    // Get the complete line
+    wxString sReturn = GetLine(nFunctionStartLine);
+
+    // Ensure that the line contains the keyword "function"
+    // or "procedure", respectively
+    if ((sReturn.find("function ") == string::npos && m_fileType == FILE_MATLAB)
+        || (sReturn.find("procedure ") == string::npos && m_fileType == FILE_NPRC))
+        return "";
+
+    // Ensure that the line contains opening and
+    // closing parentheses
+    if (sReturn.find('(') == string::npos || sReturn.find(')') == string::npos)
+        return "";
+
+    // Extract the function argument list
+    sReturn.erase(0, sReturn.find('(')+1);
+    sReturn.erase(sReturn.rfind(')'));
+
+    // Return the argument list
+    return sReturn;
+}
+
+// This private member function extracts the return list from
+// MATLAB functions, which is necessary for correct function
+// extraction
+wxString NumeReEditor::getMatlabReturnList(int nMatlabFunctionStartLine)
+{
+    // Get the complete line
+    wxString sReturn = GetLine(nMatlabFunctionStartLine);
+
+    // Ensure that the line contains the keyword "function"
+    if (sReturn.find("function") == string::npos)
+        return "";
+
+    // Ensure that the line contains an equal sign
+    if (sReturn.find('=') == string::npos)
+        return "";
+
+    // Remove the keyword part and the function declaration itself
+    sReturn.erase(0, sReturn.find("function")+8);
+    sReturn.erase(sReturn.find('='));
+
+    // Remove surrounding brackets
+    if (sReturn.find('[') != string::npos && sReturn.find(']') != string::npos)
+    {
+        sReturn.erase(0, sReturn.find('[')+1);
+        sReturn.erase(sReturn.rfind(']'));
+    }
+
+    // Return the return list
+    return sReturn;
 }
 
 wxString NumeReEditor::getTemplateContent(const wxString& sFileName)
@@ -6759,11 +6866,13 @@ void NumeReEditor::OnRenameSymbolsFromMenu()
         this->RenameSymbols(charpos);
 }
 
+// Private event handler for extracting the selected section
 void NumeReEditor::OnAbstrahizeSection(wxCommandEvent& event)
 {
     this->AbstrahizeSection();
 }
 
+// Global event handler for extracting the selected section
 void NumeReEditor::OnAbstrahizeSectionFromMenu()
 {
     if (HasSelection())

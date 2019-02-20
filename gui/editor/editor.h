@@ -395,6 +395,8 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void AbstrahizeSection();
 		void CreateProcedureFromSection(int nStartPos, int nEndPos, const wxString& sInputList, const wxString sOutputList);
 		bool IsModifiedInSection(int nSectionStart, int nSectionEnd, const wxString& sToken, const vector<int>& vMatch);
+		wxString getFunctionArgumentList(int nFunctionStartLine);
+		wxString getMatlabReturnList(int nMatlabFunctionStartLine);
 		wxString getTemplateContent(const wxString& sFileName);
 
 		wxString generateAutoCompList(const wxString& wordstart, string sPreDefList);
