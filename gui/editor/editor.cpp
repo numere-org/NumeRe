@@ -224,6 +224,8 @@ NumeReEditor::NumeReEditor( NumeReWindow* mframe,
 
 	this->UsePopUp(false);
 
+	this->SetCaretPeriod(m_options->GetCaretBlinkTime());
+
 	m_refactoringMenu = new wxMenu();
 	m_refactoringMenu->Append(ID_RENAME_SYMBOLS, _guilang.get("GUI_MENU_EDITOR_RENAME_SYMBOLS"));
 	m_refactoringMenu->Append(ID_ABSTRAHIZE_SECTION, _guilang.get("GUI_MENU_EDITOR_ABSTRAHIZE_SECTION"));

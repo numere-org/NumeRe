@@ -716,10 +716,17 @@ void NumeReWindow::InitializeProgramOptions()
 
 		int terminalHistory = 300;
 		m_config->Read("Miscellaneous/TerminalHistory", &terminalHistory, 300);
-		if (terminalHistory >= 100 && terminalHistory <= 500)
+		if (terminalHistory >= 100 && terminalHistory <= 1000)
             m_options->SetTerminalHistorySize(terminalHistory);
         else
             m_options->SetTerminalHistorySize(300);
+
+		int caretBlinkTime = 500;
+		m_config->Read("Interface/CaretBlinkTime", &caretBlinkTime, 500);
+		if (caretBlinkTime >= 100 && caretBlinkTime <= 1000)
+            m_options->SetCaretBlinkTime(caretBlinkTime);
+        else
+            m_options->SetCaretBlinkTime(500);
 
         // Read the color codes from the configuration file,
         // if they exist
@@ -742,6 +749,7 @@ void NumeReWindow::InitializeProgramOptions()
 		wxLogDebug("Failed to locate config file, loading default permissions");
 #endif
 		m_config->Write("Miscellaneous/TerminalHistory", m_options->GetTerminalHistorySize());
+		m_config->Write("Interface/CaretBlinkTime", m_options->GetCaretBlinkTime());
 		m_config->Write("Miscellaneous/LaTeXRoot", m_options->GetLaTeXRoot());
 		m_config->Write("Miscellaneous/PrintInColor", "false");
 		m_config->Write("Miscellaneous/PrintLineNumbers", "false");
@@ -3817,6 +3825,7 @@ void NumeReWindow::EvaluateOptions()
 	{
 		NumeReEditor* edit = static_cast<NumeReEditor*> (m_book->GetPage(i));
 		edit->UpdateSyntaxHighlighting();
+		edit->SetCaretPeriod(m_options->GetCaretBlinkTime());
 	}
 
 	// Copy the settings in the options object
@@ -3824,6 +3833,10 @@ void NumeReWindow::EvaluateOptions()
 	int newMaxTermSize = m_options->GetTerminalHistorySize();
 	m_termContainer->SetTerminalHistory(newMaxTermSize);
 	m_config->Write("Miscellaneous/TerminalHistory", newMaxTermSize);
+
+	int newCaretBlinkTime = m_options->GetCaretBlinkTime();
+	m_termContainer->SetCaretBlinkTime(newCaretBlinkTime);
+	m_config->Write("Interface/CaretBlinkTime", newCaretBlinkTime);
 
 	bool printInColor = (m_options->GetPrintStyle() == wxSTC_PRINT_COLOURONWHITE);
 	m_config->Write("Miscellaneous/PrintInColor", printInColor ? "true" : "false");

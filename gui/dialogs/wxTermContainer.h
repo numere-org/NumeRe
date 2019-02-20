@@ -92,6 +92,7 @@ public:
 ////@end wxTermContainer member function declarations
 
 	void SetTerminalHistory(int newSize);
+	void SetCaretBlinkTime(int newTime);
 
     /// Should we show tooltips?
     static bool ShowToolTips();

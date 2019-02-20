@@ -19,3 +19,5 @@ New	The string object may now be sorted using the "sort" command.
 New	A "switch...case...default...endswitch" control flow block is now available.
 Fixed	The code abstrahizer may now handle MATLAB structs containing standard function names as field names correctly.
 Fixed	The code abstrahizer will now use input argument list and (in the MATLAB case) the return list as input and output sources correctly.
+Added	It's now possible to alter the blinking frequency of the cursors in the editor and the console.
+Cleaned	Improved the options dialog using named static boxes.

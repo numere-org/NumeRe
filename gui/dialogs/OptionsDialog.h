@@ -247,6 +247,7 @@ public:
     wxCheckBox* m_showToolbarText;
     wxCheckBox* m_saveSession;
     wxSpinCtrl* m_termHistory;
+    wxSpinCtrl* m_caretBlinkTime;
     wxCheckBox* m_useExecuteCommand;
     wxCheckBox* m_formatBeforeSaving;
     wxCheckBox* m_useMaskAsDefault;

@@ -2080,14 +2080,14 @@
 1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\fswatcher.h
 	"wx/defs.h"
 
-1549916160 source:d:\cpp\numere-source\trunk\common\options.cpp
+1550687012 source:d:\cpp\numere-source\trunk\common\options.cpp
 	"Options.h"
 	<wx/filename.h>
 	<wx/arrstr.h>
 	<wx/dir.h>
 	"debug.h"
 
-1549915952 d:\cpp\numere-source\trunk\common\options.h
+1550687000 d:\cpp\numere-source\trunk\common\options.h
 	<wx/wx.h>
 	<wx/validate.h>
 	<wx/valgen.h>
@@ -2488,7 +2488,7 @@
 	<cmath>
 	"muParserError.h"
 
-1533706271 d:\cpp\numere-source\trunk\gui\terminal\gterm.hpp
+1550687577 d:\cpp\numere-source\trunk\gui\terminal\gterm.hpp
 	<string.h>
 	<cstring>
 	<stdlib.h>
@@ -3083,7 +3083,7 @@
 
 1490787950 d:\cpp\numere-source\trunk\common\fixvsbug.h
 
-1549915725 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
+1550687730 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
 	"wx/notebook.h"
 	"wx/spinctrl.h"
 	<wx/clrpicker.h>
@@ -3314,7 +3314,7 @@
 	<set>
 	<queue>
 
-1533304201 source:d:\cpp\numere-source\trunk\gui\dialogs\wxtermcontainer.cpp
+1550687618 source:d:\cpp\numere-source\trunk\gui\dialogs\wxtermcontainer.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	"wx/scrolbar.h"
@@ -3322,7 +3322,7 @@
 	"../terminal/wxTerm.h"
 	"../../common/debug.h"
 
-1490787950 d:\cpp\numere-source\trunk\gui\dialogs\wxtermcontainer.h
+1550687474 d:\cpp\numere-source\trunk\gui\dialogs\wxtermcontainer.h
 
 1523000842 source:d:\cpp\numere-source\trunk\gui\dirtraverser.cpp
 	"DirTraverser.hpp"
@@ -3335,7 +3335,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1550647156 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1550687066 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3702,7 +3702,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1550413203 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1550688752 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"

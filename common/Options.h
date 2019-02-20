@@ -65,6 +65,7 @@ class Options
 		void SetLaTeXRoot(const wxString& root) {m_LaTeXRoot = root;}
 		void SetEditorFont(const wxFont& font) {m_editorFont = font; m_editorFont.SetEncoding(wxFONTENCODING_CP1252); }
 		void SetKeepBackupFile(bool keepFile) {m_keepBackupFile = keepFile;}
+		void SetCaretBlinkTime(int nTime) {m_caretBlinkTime = nTime;}
 
 		// Accessors:  (inlined)
 		wxString GetPscpApp() { return m_pscpProg; }
@@ -85,6 +86,7 @@ class Options
 		bool GetFormatBeforeSaving() {return m_formatBeforeSaving;}
 		bool GetKeepBackupFile() {return m_keepBackupFile;}
 		int GetTerminalHistorySize() { return m_terminalSize; }
+		int GetCaretBlinkTime() {return m_caretBlinkTime;}
 		wxArrayString GetMingwProgramNames() { return m_mingwProgramNames; }
 		StringFilenameHash GetMingwExecutables() { return m_mingwExecutableNames; }
 		wxArrayString GetMingwBinPaths() { return m_mingwBinPaths; }
@@ -152,6 +154,7 @@ class Options
 
 		int m_printStyle;
 		int m_terminalSize;
+		int m_caretBlinkTime;
 
 		bool m_showToolbarText;
 		bool m_printLineNumbers;

@@ -378,3 +378,9 @@ void wxTermContainer::SetTerminalHistory(int newSize)
 	m_terminal->SetTerminalHistory(newSize);
 	//m_scrollbar->SetScrollbar(100 - termHeight, termHeight, 100, 10);
 }
+
+void wxTermContainer::SetCaretBlinkTime(int newTime)
+{
+	m_terminal->SetCursorBlinkRate(newTime);
+	//m_scrollbar->SetScrollbar(100 - termHeight, termHeight, 100, 10);
+}

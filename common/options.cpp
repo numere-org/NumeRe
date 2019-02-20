@@ -24,6 +24,7 @@ Options::Options()
 	m_password = "";
 	m_remoteCompileOut = "a.out";
 	m_terminalSize = 300;
+	m_caretBlinkTime = 500;
 	m_LaTeXRoot = "C:/Program Files";
 
 	// Default to printing with black text, white background
