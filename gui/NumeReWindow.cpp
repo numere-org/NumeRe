@@ -377,6 +377,10 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_history = new NumeReHistory(this, m_options, new ProjectInfo(), m_splitCommandHistory, -1, m_terminal->getSyntax(), m_terminal, wxDefaultPosition, wxDefaultSize, wxBORDER_SUNKEN);
 
     wxMilliSleep(500);
+
+    UpdateMenuBar();
+	UpdateTerminalNotebook();
+
 	EvaluateOptions();
 
 	// create the initial blank open file or recreate the last session
@@ -1014,6 +1018,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_MENU_UNFOLD_ALL:
         {
             m_currentEd->UnfoldAll();
+            break;
+        }
+        case ID_MENU_UNHIDE_ALL:
+        {
+            m_currentEd->OnUnhideAllFromMenu();
             break;
         }
         case ID_MENU_SELECTION_UP:
@@ -3773,8 +3782,6 @@ void NumeReWindow::EvaluateOptions()
 
 	// Update the GUI elements by re-constructing them
 	UpdateToolbar();
-	UpdateMenuBar();
-	UpdateTerminalNotebook();
 
 	// Prepare the contents of the navigators
     if (m_fileTree)
@@ -3957,6 +3964,7 @@ void NumeReWindow::UpdateMenuBar()
 	menuView->AppendSeparator();
 	menuView->Append(ID_MENU_FOLD_ALL, _guilang.get("GUI_MENU_FOLDALL"), _guilang.get("GUI_MENU_FOLDALL_TTP"));
 	menuView->Append(ID_MENU_UNFOLD_ALL, _guilang.get("GUI_MENU_UNFOLDALL"), _guilang.get("GUI_MENU_UNFOLDALL_TTP"));
+	menuView->Append(ID_MENU_UNHIDE_ALL, _guilang.get("GUI_MENU_UNHIDEALL"), _guilang.get("GUI_MENU_UNHIDEALL_TTP"));
 	menuView->AppendSeparator();
 	menuView->Append(ID_MENU_LINEWRAP, _guilang.get("GUI_MENU_LINEWRAP"), _guilang.get("GUI_MENU_LINEWRAP_TTP"), true);
 	menuView->Append(ID_MENU_DISPCTRLCHARS, _guilang.get("GUI_MENU_DISPCTRLCHARS"), _guilang.get("GUI_MENU_DISPCTRLCHARS_TTP"), true);
@@ -3964,6 +3972,7 @@ void NumeReWindow::UpdateMenuBar()
 	menuView->Append(ID_MENU_TOGGLE_NOTEBOOK_MULTIROW, _guilang.get("GUI_MENU_MULTIROW"), _guilang.get("GUI_MENU_MULTIROW_TTP"), true);
 	menuView->Check(ID_MENU_TOGGLE_NOTEBOOK_MULTIROW, m_multiRowState);
 	menuView->Append(ID_MENU_USESECTIONS, _guilang.get("GUI_MENU_USESECTIONS"), _guilang.get("GUI_MENU_USESECTIONS_TTP"), true);
+
 	if (m_currentEd)
 	{
         menuView->Check(ID_MENU_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
@@ -4050,16 +4059,20 @@ void NumeReWindow::UpdateMenuBar()
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::UpdateToolbar()
 {
-	wxToolBar* t = GetToolBar();
-	delete t;
-	SetToolBar(NULL);
 	int style = wxTB_FLAT | wxTB_HORIZONTAL;
 
 	bool showText = m_options->GetShowToolbarText();
-	if(showText)
+	if (showText)
 	{
 		style |= wxTB_TEXT;
 	}
+
+	if (GetToolBar() && GetToolBar()->GetWindowStyle() == style)
+        return;
+
+	wxToolBar* t = GetToolBar();
+	delete t;
+	SetToolBar(nullptr);
 	m_config->Write("Interface/ShowToolbarText", showText ? "true" : "false");
 	t = CreateToolBar(style);//new wxToolBar(this, -1, wxDefaultPosition, wxDefaultSize, style);
 

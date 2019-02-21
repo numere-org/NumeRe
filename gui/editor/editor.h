@@ -199,6 +199,8 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void OnFindIncludeFromMenu();
 		void OnChangeCase(wxCommandEvent& event);
 		void OnFoldCurrentBlock(wxCommandEvent& event);
+		void OnHideSelection(wxCommandEvent& event);
+		void OnUnhideAllFromMenu();
 		void OnRenameSymbols(wxCommandEvent& event);
 		void OnRenameSymbolsFromMenu();
 		void OnAbstrahizeSection(wxCommandEvent& event);

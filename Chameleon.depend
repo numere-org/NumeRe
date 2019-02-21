@@ -1970,7 +1970,7 @@
 	"datastructures.h"
 	"ProjectInfo.h"
 
-1549814056 d:\cpp\numere-source\trunk\common\datastructures.h
+1550733983 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -2135,7 +2135,7 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1550646621 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1550733008 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -2952,7 +2952,7 @@
 	"fndrpldialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1549915919 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1550692935 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
@@ -3335,7 +3335,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1550687066 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1550733103 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3702,7 +3702,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1550688752 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1550733848 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"

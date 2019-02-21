@@ -83,6 +83,7 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
 	EVT_MENU            (ID_UPPERCASE, NumeReEditor::OnChangeCase)
 	EVT_MENU            (ID_LOWERCASE, NumeReEditor::OnChangeCase)
 	EVT_MENU            (ID_FOLD_CURRENT_BLOCK, NumeReEditor::OnFoldCurrentBlock)
+	EVT_MENU            (ID_HIDE_SELECTION, NumeReEditor::OnHideSelection)
 	EVT_MENU            (ID_MENU_HELP_ON_ITEM, NumeReEditor::OnHelpOnSelection)
 	EVT_MENU			(ID_DEBUG_RUNTOCURSOR, NumeReEditor::OnRunToCursor)
 	EVT_MENU            (ID_RENAME_SYMBOLS, NumeReEditor::OnRenameSymbols)
@@ -220,6 +221,11 @@ NumeReEditor::NumeReEditor( NumeReWindow* mframe,
 	//this->MarkerSetBackground(MARKER_SECTION, wxColor(255,192,192));
 	this->MarkerSetBackground(MARKER_SECTION, m_options->GetSyntaxStyle(Options::COMMENT).foreground);
 
+	this->MarkerDefine(MARKER_HIDDEN, wxSTC_MARK_UNDERLINE);
+	this->MarkerSetBackground(MARKER_HIDDEN, wxColour(128, 128, 128));
+	this->MarkerDefine(MARKER_HIDDEN_MARGIN, wxSTC_MARK_DOTDOTDOT);
+	this->MarkerSetBackground(MARKER_HIDDEN_MARGIN, wxColour(128, 128, 128));
+
 	this->SetMarginSensitive(1, true);
 
 	this->UsePopUp(false);
@@ -236,6 +242,7 @@ NumeReEditor::NumeReEditor( NumeReWindow* mframe,
 	m_popupMenu.AppendSeparator();
 
 	m_popupMenu.Append(ID_FOLD_CURRENT_BLOCK, _guilang.get("GUI_MENU_EDITOR_FOLDCURRENTBLOCK"));
+	m_popupMenu.Append(ID_HIDE_SELECTION, _guilang.get("GUI_MENU_EDITOR_HIDECURRENTBLOCK"));
 	m_popupMenu.AppendSeparator();
 
 	m_popupMenu.Append(ID_DEBUG_ADD_BREAKPOINT, _guilang.get("GUI_MENU_EDITOR_ADDBP"));
@@ -4664,6 +4671,7 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
 	m_lastRightClick = event.GetPosition();
 	int charpos = PositionFromPoint(m_lastRightClick);
 	int linenum = LineFromPosition(charpos);
+	const int nINSERTIONPOINT = 16;
     wxString clickedWord = FindClickedWord();
 
 	// Determine the marker and breakpoint conditions
@@ -4708,6 +4716,7 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
 
 	// Enable menus depending on the marker and breakpint states
 	m_popupMenu.Enable(ID_FOLD_CURRENT_BLOCK, isCodeFile());
+	m_popupMenu.Enable(ID_HIDE_SELECTION, HasSelection());
 	m_popupMenu.Enable(ID_DEBUG_ADD_BREAKPOINT, breakpointsAllowed && !breakpointOnLine);
 	m_popupMenu.Enable(ID_DEBUG_REMOVE_BREAKPOINT, breakpointsAllowed && breakpointOnLine);
 	m_popupMenu.Enable(ID_BOOKMARK_ADD, !bookmarkOnLine);
@@ -4737,7 +4746,7 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
 
             if (clickedProc.length())
             {
-                m_popupMenu.Insert(15, m_menuFindProcedure);
+                m_popupMenu.Insert(nINSERTIONPOINT, m_menuFindProcedure);
                 m_menuFindProcedure->SetItemLabel(_guilang.get("GUI_MENU_EDITOR_FINDPROC", clickedProc.ToStdString()));
             }
         }
@@ -4746,7 +4755,7 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
                 || this->GetStyleAt(charpos) == wxSTC_NSCR_OPTION)
         {
             // Show "help on item"
-            m_popupMenu.Insert(15, m_menuHelpOnSelection);
+            m_popupMenu.Insert(nINSERTIONPOINT, m_menuHelpOnSelection);
             m_menuHelpOnSelection->SetItemLabel(_guilang.get("GUI_TREE_PUP_HELPONITEM", clickedWord.ToStdString()));
         }
         else if (this->GetStyleAt(charpos) == wxSTC_NSCR_INCLUDES
@@ -4757,14 +4766,14 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
 
             if (clickedInclude.length())
             {
-                m_popupMenu.Insert(15, m_menuFindInclude);
+                m_popupMenu.Insert(nINSERTIONPOINT, m_menuFindInclude);
                 m_menuFindInclude->SetItemLabel(_guilang.get("GUI_MENU_EDITOR_FINDINCLUDE", clickedInclude.ToStdString()));
             }
         }
         else
         {
             // Show the refactoring menu
-            m_popupMenu.Insert(15, m_menuRefactoring);
+            m_popupMenu.Insert(nINSERTIONPOINT, m_menuRefactoring);
 
             if (this->isStyleType(STYLE_DEFAULT, charpos) || this->isStyleType(STYLE_IDENTIFIER, charpos) || this->isStyleType(STYLE_CUSTOMFUNCTION, charpos))
                 m_refactoringMenu->Enable(ID_RENAME_SYMBOLS, true);
@@ -5218,6 +5227,33 @@ void NumeReEditor::FocusOnLine(int linenumber, bool showMarker)
 {
 	GotoLine(linenumber);
 	EnsureVisible(linenumber);
+
+	// Unhide the lines, if the current line is part
+	// of a hidden sectioon
+	if (!GetLineVisible(linenumber))
+    {
+        int nFirstLine = linenumber-1;
+        int nLastLine = linenumber+1;
+
+        // Find the first unhidden line
+        while (!GetLineVisible(nFirstLine))
+            nFirstLine--;
+
+        // Find the last hidden line
+        while (!GetLineVisible(nLastLine))
+            nLastLine++;
+
+        // Show the lines
+        ShowLines(nFirstLine, nLastLine);
+
+        // Delete the markers
+        for (int i = nFirstLine; i < nLastLine; i++)
+        {
+            MarkerDelete(i, MARKER_HIDDEN);
+            MarkerDelete(i, MARKER_HIDDEN_MARGIN);
+        }
+    }
+
 	if (showMarker)
 	{
 		MarkerDeleteAll(MARKER_FOCUSEDLINE);
@@ -6856,6 +6892,30 @@ void NumeReEditor::OnFoldCurrentBlock(wxCommandEvent& event)
 	FoldCurrentBlock(this->LineFromPosition(this->PositionFromPoint(m_lastRightClick)));
 }
 
+// Private event handling function for hiding the selection
+void NumeReEditor::OnHideSelection(wxCommandEvent& event)
+{
+    int nFirstLine = LineFromPosition(GetSelectionStart());
+    int nLastLine = LineFromPosition(GetSelectionEnd());
+
+    HideLines(nFirstLine, nLastLine);
+
+    MarkerAdd(nFirstLine-1, MARKER_HIDDEN);
+    MarkerAdd(nFirstLine-1, MARKER_HIDDEN_MARGIN);
+}
+
+// Global event handling function to unhide all lines
+void NumeReEditor::OnUnhideAllFromMenu()
+{
+    if (GetAllLinesVisible())
+        return;
+
+    ShowLines(0, LineFromPosition(GetLastPosition()));
+
+    MarkerDeleteAll(MARKER_HIDDEN);
+    MarkerDeleteAll(MARKER_HIDDEN_MARGIN);
+}
+
 void NumeReEditor::OnRenameSymbols(wxCommandEvent& event)
 {
     this->RenameSymbols(this->PositionFromPoint(m_lastRightClick));
@@ -6984,8 +7044,8 @@ void NumeReEditor::OnMarginClick( wxStyledTextEvent& event )
 {
 	// we know it's margin 2, because that's the only sensitive margin
 
-	if (m_fileType != FILE_NSCR && m_fileType != FILE_NPRC && m_fileType != FILE_MATLAB && m_fileType != FILE_CPP)
-		return;
+	bool bCanUseBreakPoints = m_fileType == FILE_NSCR || m_fileType == FILE_NPRC;
+
 	int position = event.GetPosition();
 
 	int linenum = this->LineFromPosition(position);
@@ -6998,12 +7058,31 @@ void NumeReEditor::OnMarginClick( wxStyledTextEvent& event )
 	}
 	else
 	{
-		if (MarkerOnLine(linenum, MARKER_BREAKPOINT))
+	    if (MarkerOnLine(linenum, MARKER_HIDDEN))
+        {
+            // Hidden lines
+            int nNextVisibleLine = linenum+1;
+
+            while (!GetLineVisible(nNextVisibleLine))
+                nNextVisibleLine++;
+
+            ShowLines(linenum, nNextVisibleLine);
+
+            for (int i = linenum; i < nNextVisibleLine; i++)
+            {
+                MarkerDelete(i, MARKER_HIDDEN);
+                MarkerDelete(i, MARKER_HIDDEN_MARGIN);
+            }
+
+        }
+		else if (MarkerOnLine(linenum, MARKER_BREAKPOINT) && bCanUseBreakPoints)
 		{
+		    // Breakpoint
 			RemoveBreakpoint(linenum);
 		}
-		else
+		else if (bCanUseBreakPoints)
 		{
+		    // Add breakpoint
 			AddBreakpoint(linenum);
 		}
 	}
