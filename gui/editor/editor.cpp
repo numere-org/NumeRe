@@ -6415,6 +6415,39 @@ void NumeReEditor::AbstrahizeSection()
 
             i += sCurrentToken.length();
         }
+        else if (isStyleType(STYLE_FUNCTION, i) && m_fileType == FILE_MATLAB)
+        {
+            // Matlab specials
+            //
+            // Get the token name
+            wxString sCurrentToken = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
+
+            // Ignore MATLAB structure fields
+            if (GetCharAt(WordStartPosition(i, true)-1) == '.')
+                continue;
+
+            // Ignore functions, which are not part of any argument list;
+            // these are most probably actual functions
+            if ((!sMatlabReturnListSet.size() || sMatlabReturnListSet.find(sCurrentToken.ToStdString()) == sMatlabReturnListSet.end())
+                && (!sArgumentListSet.size() || sArgumentListSet.find(sCurrentToken.ToStdString()) == sMatlabReturnListSet.end()))
+                continue;
+
+            // Find all occurences
+            vector<int> vMatch = FindAll(sCurrentToken, this->GetStyleAt(i), nCurrentBlockStart, nCurrentBlockEnd);
+
+            if (vMatch.size())
+            {
+                // Determine, whether the token is used before
+                // or afer the current section
+                if (sArgumentListSet.size() && sArgumentListSet.find(sCurrentToken.ToStdString()) != sArgumentListSet.end())
+                    lInputTokens.push_back(sCurrentToken);
+
+                if (sMatlabReturnListSet.size() && sMatlabReturnListSet.find(sCurrentToken.ToStdString()) != sMatlabReturnListSet.end() && IsModifiedInSection(nStartPos, nEndPos, sCurrentToken, vMatch))
+                    lOutputTokens.push_back(sCurrentToken);
+            }
+
+            i += sCurrentToken.length();
+        }
         else if (isStyleType(STYLE_CUSTOMFUNCTION, i))
         {
             // Tables
@@ -6623,6 +6656,14 @@ bool NumeReEditor::IsModifiedInSection(int nSectionStart, int nSectionEnd, const
                 // MATLAB struct fix
                 while (isStyleType(STYLE_FUNCTION, j+1))
                     j++;
+            }
+            else if (isStyleType(STYLE_OPERATOR, j) && GetCharAt(j) == '.' && GetCharAt(j+1) == '(')
+            {
+                // MATLAB struct fix
+                // Jump over parentheses
+                j = BraceMatch(j+1);
+                if (j == wxSTC_INVALID_POSITION)
+                    return false;
             }
             else if (isStyleType(STYLE_OPERATOR, j) && GetCharAt(j) == ',')
             {
