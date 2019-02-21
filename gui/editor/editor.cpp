@@ -4775,7 +4775,7 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
             // Show the refactoring menu
             m_popupMenu.Insert(nINSERTIONPOINT, m_menuRefactoring);
 
-            if (this->isStyleType(STYLE_DEFAULT, charpos) || this->isStyleType(STYLE_IDENTIFIER, charpos) || this->isStyleType(STYLE_CUSTOMFUNCTION, charpos))
+            if (this->isStyleType(STYLE_DEFAULT, charpos) || this->isStyleType(STYLE_IDENTIFIER, charpos) || this->isStyleType(STYLE_CUSTOMFUNCTION, charpos) || this->isStyleType(STYLE_FUNCTION, charpos))
                 m_refactoringMenu->Enable(ID_RENAME_SYMBOLS, true);
 
             if (HasSelection())
@@ -6620,6 +6620,10 @@ bool NumeReEditor::IsModifiedInSection(int nSectionStart, int nSectionEnd, const
         if (vMatch[i] > nSectionEnd)
             break;
 
+        // Ignore dynamic structure field accesses in MATLAB
+        if (isStyleType(STYLE_OPERATOR, vMatch[i]-1) && (GetCharAt(vMatch[i]-1) == '.' || (GetCharAt(vMatch[i]-2) == '.' && GetCharAt(vMatch[i]-1) == '(')))
+            continue;
+
         // Examine the code part left of the token, whether
         // there's a modifying operator
         for (int j = vMatch[i]+sToken.length(); j < nSectionEnd; j++)
@@ -6965,7 +6969,7 @@ void NumeReEditor::OnRenameSymbols(wxCommandEvent& event)
 void NumeReEditor::OnRenameSymbolsFromMenu()
 {
     int charpos = GetCurrentPos();
-    if (this->isStyleType(STYLE_DEFAULT, charpos) || this->isStyleType(STYLE_IDENTIFIER, charpos) || this->isStyleType(STYLE_CUSTOMFUNCTION, charpos))
+    if (this->isStyleType(STYLE_DEFAULT, charpos) || this->isStyleType(STYLE_IDENTIFIER, charpos) || this->isStyleType(STYLE_CUSTOMFUNCTION, charpos) || this->isStyleType(STYLE_FUNCTION, charpos))
         this->RenameSymbols(charpos);
 }
 
