@@ -1419,7 +1419,7 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 			else
 				this->CallTipSetHighlight(nLength, 13 + nLength);
 		}
-		if (selection == "switch" || selection == "endswitch" || selection == "case" || selection == "default")
+		else if (selection == "switch" || selection == "endswitch" || selection == "case" || selection == "default")
 		{
 			size_t nLength = 0;
 			size_t lastpos2 = 0;
