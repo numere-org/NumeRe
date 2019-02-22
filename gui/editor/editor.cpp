@@ -6300,6 +6300,29 @@ void NumeReEditor::RenameSymbols(int nPos)
             nEndPos = vBlock.back();
     }
 
+    // Ensure that the new symbol is not already in use
+    vector<int> vNewNameOccurences = FindAll(sNewName, GetStyleAt(nPos), nStartPos, nEndPos);
+
+    // It's possible to rename a standard function with
+    // a new name. Check here against custom function
+    // names
+    if (!vNewNameOccurences.size() && isStyleType(STYLE_FUNCTION, nPos))
+        vNewNameOccurences = FindAll(sNewName, wxSTC_NSCR_CUSTOM_FUNCTION, nStartPos, nEndPos);
+
+    // MATLAB-specific fix, because the MATLAB lexer
+    // does know custom defined functions
+    if (!vNewNameOccurences.size() && m_fileType == FILE_MATLAB && (isStyleType(STYLE_FUNCTION, nPos) || isStyleType(STYLE_COMMAND, nPos)))
+        vNewNameOccurences = FindAll(sNewName, wxSTC_MATLAB_IDENTIFIER, nStartPos, nEndPos);
+
+    // If the vector size is non-zero, this symbol is
+    // already in use
+    if (vNewNameOccurences.size())
+    {
+        // Allow the user to cancel the replacement
+        if (wxMessageBox(_guilang.get("GUI_DLG_RENAMESYMBOLS_ALREADYINUSE_WARNING"), _guilang.get("GUI_DLG_RENAMESYMBOLS_ALREADYINUSE"), wxCENTER | wxOK | wxCANCEL | wxICON_EXCLAMATION, this) == wxCANCEL)
+            return;
+    }
+
     // Gather all operations into one undo step
     this->BeginUndoAction();
 
