@@ -4789,7 +4789,7 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
 
         // Set the boolean flag to correspond to the highlight
         // state of the clicked word
-        if (m_clickedWord == m_watchedString)
+        if (m_clickedWord == m_watchedString && m_clickedWord.length())
             m_menuShowValue->Check(true);
         else
             m_menuShowValue->Check(false);
