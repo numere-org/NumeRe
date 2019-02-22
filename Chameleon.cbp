@@ -331,6 +331,8 @@
 		<Unit filename="gui/dialogs/duplicatecodedialog.hpp" />
 		<Unit filename="gui/dialogs/fndrpldialog.cpp" />
 		<Unit filename="gui/dialogs/fndrpldialog.hpp" />
+		<Unit filename="gui/dialogs/grouppanel.cpp" />
+		<Unit filename="gui/dialogs/grouppanel.hpp" />
 		<Unit filename="gui/dialogs/tipdialog.cpp" />
 		<Unit filename="gui/dialogs/tipdialog.hpp" />
 		<Unit filename="gui/dialogs/treelistctrl.cpp" />

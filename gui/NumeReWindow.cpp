@@ -5870,14 +5870,6 @@ void NumeReWindow::OnFindReplace(int id)
 
 void NumeReWindow::OnOptions()
 {
-	if(m_terminal->IsConnected())
-	{
-		m_optionsDialog->DisableServerSettings();
-	}
-	else
-	{
-		m_optionsDialog->EnableServerSettings();
-	}
 	Settings _option = m_terminal->getKernelSettings();
     m_optionsDialog->_option = &_option;
 

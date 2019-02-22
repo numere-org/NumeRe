@@ -110,6 +110,14 @@ class OptionsDialog: public wxDialog
     DECLARE_CLASS( OptionsDialog )
     DECLARE_EVENT_TABLE()
 
+    void CreateConfigPage();
+    void CreatePathPage();
+    void CreateStylePage();
+    void CreateMiscPage();
+    wxTextCtrl* CreatePathInput(wxWindow* parent, wxSizer* sizer, const wxString& description, int buttonID);
+    wxCheckBox* CreateCheckBox(wxWindow* parent, wxSizer* sizer, const wxString& description);
+    wxSpinCtrl* CreateSpinControl(wxWindow* parent, wxSizer* sizer, const wxString& description, int nMin, int nMax, int nInitial);
+
 public:
     /// Constructors
     OptionsDialog( );
@@ -121,94 +129,29 @@ public:
     /// Creates the controls and sizers
     void CreateControls();
 
-////@begin OptionsDialog event handler declarations
-
-    /// wxEVT_COMMAND_BUTTON_CLICKED event handler for ID_SETAUTHCODE
-    void OnUpdateAuthCode( wxCommandEvent& event );
-
-    /// wxEVT_COMMAND_TEXT_UPDATED event handler for ID_TEXTMINGWPATH
-    void OnTextmingwpathUpdated( wxCommandEvent& event );
-
-    /// wxEVT_COMMAND_BUTTON_CLICKED event handler for ID_BTNFINDMINGW
-    void OnFindMingwClick( wxCommandEvent& event );
-
-    /// wxEVT_COMMAND_BUTTON_CLICKED event handler for ID_BUTTON1
-    void OnVerifyMingwClick( wxCommandEvent& event );
-
     /// wxEVT_COMMAND_BUTTON_CLICKED event handler for ID_BUTTON_OK
     void OnButtonOkClick( wxCommandEvent& event );
 
     /// wxEVT_COMMAND_BUTTON_CLICKED event handler for ID_BUTTON_CANCEL
     void OnButtonCancelClick( wxCommandEvent& event );
-
     void OnColorPickerChange(wxColourPickerEvent& event);
-
     void OnColorTypeChange(wxCommandEvent& event);
-
     void OnButtonClick(wxCommandEvent& event);
-
     void OnStyleButtonClick(wxCommandEvent& event);
-
-////@end OptionsDialog event handler declarations
-
-	void OnChar(wxKeyEvent &event);
-
 	void synchronizeColors();
-
-
-////@begin OptionsDialog member function declarations
-
-    /// Retrieves bitmap resources
-    wxBitmap GetBitmapResource( const wxString& name );
-
-    /// Retrieves icon resources
-    wxIcon GetIconResource( const wxString& name );
-////@end OptionsDialog member function declarations
-
-	bool VerifyMingwPath(bool showResults = false);
-
-    /*
-    wxCheckListBox* GetListBox();
-    wxString GetServerAddress();
-    wxString GetUsername();
-    wxString GetPassword1();
-    wxString GetPassword2();
-	wxString GetAuthCode();
-	wxString GetMingwPath(){ return m_txtMingwPath->GetValue(); }
-	*/
 
 	void BrowseForDir(wxTextCtrl* textbox, wxString name);
 	bool EvaluateOptions();
 
 	void InitializeDialog();
 	void ExitDialog();
-	void OnEnter(wxCommandEvent &event);
-
-/*
-    void SetServerAddress(wxString address);
-    void SetUsername(wxString username);
-    void SetPassword1(wxString pwd);
-    void SetPassword2(wxString pwd);
-	void SetAuthCode(wxString authcode);
-*/
-
-	void EnableServerSettings();
-	void DisableServerSettings();
 
     /// Should we show tooltips?
     static bool ShowToolTips();
 
 ////@begin OptionsDialog member variables
     wxNotebook* m_optionsNotebook;
-    wxCheckListBox* m_checkList;
-    wxTextCtrl* m_txtProfCode;
-    wxButton* m_butSetAuthCode;
-    wxStaticText* m_authCodeLabel;
-    wxTextCtrl* m_hostname;
-    wxTextCtrl* m_username;
-    wxTextCtrl* m_password1;
-    wxTextCtrl* m_password2;
-    wxTextCtrl* m_txtMingwPath;
+    wxCheckListBox* m_checkList;;
 
     wxCheckBox* m_compactTables;
     wxCheckBox* m_AutoLoadDefines;
@@ -258,10 +201,6 @@ public:
 	Options* m_options;
 	Options m_colorOptions;
 	Settings* _option;
-
-	wxArrayInt m_permMappings;
-
-	bool m_mingwPathValidated;
 };
 
 #endif

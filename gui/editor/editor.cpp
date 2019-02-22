@@ -6407,7 +6407,7 @@ void NumeReEditor::AbstrahizeSection()
 
                 if (vMatch.back() > nEndPos && vMatch.front() < nStartPos && IsModifiedInSection(nStartPos, nEndPos, sCurrentToken, vMatch))
                     lOutputTokens.push_back(sCurrentToken);
-                else if (vMatch.back() > nEndPos && vMatch.front() >= nStartPos)
+                else if (vMatch.back() > nEndPos && vMatch.front() >= nStartPos && sArgumentListSet.find(sCurrentToken.ToStdString()) == sArgumentListSet.end())
                     lOutputTokens.push_back(sCurrentToken);
                 else if (sMatlabReturnListSet.size() && sMatlabReturnListSet.find(sCurrentToken.ToStdString()) != sMatlabReturnListSet.end() && IsModifiedInSection(nStartPos, nEndPos, sCurrentToken, vMatch))
                     lOutputTokens.push_back(sCurrentToken);
@@ -8766,6 +8766,7 @@ void NumeReEditor::ApplyAutoFormatMATLAB(int nFirstLine, int nLastLine) // int n
 						i += 2;
 					}
 				}
+
 				nIndentationLevel++;
 			}
 			if (command == "end")

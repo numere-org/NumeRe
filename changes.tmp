@@ -23,3 +23,4 @@ Added	It's now possible to alter the blinking frequency of the cursors in the ed
 Cleaned	Improved the options dialog using named static boxes.
 Cleaned	Removed (reduced) flickering of GUI after options update
 New	It's now possible to hide lines independent on the folding state.
+Cleaned	Cleaned the internal architecture of the options dialog.
