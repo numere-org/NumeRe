@@ -204,21 +204,21 @@ void OptionsDialog::CreateConfigPage()
     // Create a group
     wxStaticBoxSizer* group = panel->createGroup(_guilang.get("GUI_OPTIONS_USERINTERFACE"));
 
-    m_compactTables = CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_COMPACTTABLES"));
-    m_ExtendedInfo = CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXTENDEDINFO"));
-    m_CustomLanguage = CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_CUSTOMLANG"));
-    m_ESCinScripts = CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ESCINSCRIPTS"));
-    m_UseExternalViewer = CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXTERNALVIEWER"));
+    m_compactTables = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_COMPACTTABLES"));
+    m_ExtendedInfo = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXTENDEDINFO"));
+    m_CustomLanguage = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_CUSTOMLANG"));
+    m_ESCinScripts = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ESCINSCRIPTS"));
+    m_UseExternalViewer = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXTERNALVIEWER"));
 
     // Create a group
     group = panel->createGroup(_guilang.get("GUI_OPTIONS_INTERNALS"));
 
-    m_AutoLoadDefines = CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_DEFCTRL"));
-    m_LoadCompactTables = CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EMPTYCOLS"));
-    m_useMaskAsDefault = CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_USEMASKASDEFAULT"));
-    m_UseLogfile = CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_LOGFILE"));
-    m_useExecuteCommand = CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXECUTECOMMAND"));
-    m_autosaveinterval = CreateSpinControl(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_AUTOSAVE"), 10, 600, 30);
+    m_AutoLoadDefines = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_DEFCTRL"));
+    m_LoadCompactTables = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EMPTYCOLS"));
+    m_useMaskAsDefault = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_USEMASKASDEFAULT"));
+    m_UseLogfile = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_LOGFILE"));
+    m_useExecuteCommand = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXECUTECOMMAND"));
+    m_autosaveinterval = panel->CreateSpinControl(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_AUTOSAVE"), 10, 600, 30);
 
     // Add the grouped page to the notebook
     m_optionsNotebook->AddPage(panel, _guilang.get("GUI_OPTIONS_CONFIG"));
@@ -234,16 +234,16 @@ void OptionsDialog::CreatePathPage()
     // Create a group
     wxStaticBoxSizer* group = panel->createGroup(_guilang.get("GUI_OPTIONS_DEFAULTPATHS"));
 
-    m_LoadPath = CreatePathInput(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_LOADPATH"), ID_BTN_LOADPATH);
-    m_SavePath = CreatePathInput(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SAVEPATH"), ID_BTN_SAVEPATH);
-    m_ScriptPath = CreatePathInput(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SCRIPTPATH"), ID_BTN_SCRIPTPATH);
-    m_ProcPath = CreatePathInput(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_PROCPATH"), ID_BTN_PROCPATH);
-    m_PlotPath = CreatePathInput(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_PLOTPATH"), ID_BTN_PLOTPATH);
+    m_LoadPath = panel->CreatePathInput(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_LOADPATH"), ID_BTN_LOADPATH);
+    m_SavePath = panel->CreatePathInput(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SAVEPATH"), ID_BTN_SAVEPATH);
+    m_ScriptPath = panel->CreatePathInput(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SCRIPTPATH"), ID_BTN_SCRIPTPATH);
+    m_ProcPath = panel->CreatePathInput(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_PROCPATH"), ID_BTN_PROCPATH);
+    m_PlotPath = panel->CreatePathInput(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_PLOTPATH"), ID_BTN_PLOTPATH);
 
     // Create a group
     group = panel->createGroup(_guilang.get("GUI_OPTIONS_MISCPATHS"));
 
-    m_LaTeXRoot= CreatePathInput(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_LATEXPATH"), ID_BTN_LATEXPATH);
+    m_LaTeXRoot = panel->CreatePathInput(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_LATEXPATH"), ID_BTN_LATEXPATH);
 
     // Add the grouped page to the notebook
     m_optionsNotebook->AddPage(panel, _guilang.get("GUI_OPTIONS_PATHS"));
@@ -352,91 +352,31 @@ void OptionsDialog::CreateMiscPage()
     m_printStyle->SetStringSelection(_guilang.get("GUI_OPTIONS_PRINT_BW"));
     group->Add(m_printStyle, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT | wxBOTTOM, ELEMENT_BORDER);
 
-    m_cbPrintLineNumbers = CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_PRINT_LINENUMBERS"));
+    m_cbPrintLineNumbers = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_PRINT_LINENUMBERS"));
 
     // Create a group
     group = panel->createGroup(_guilang.get("GUI_OPTIONS_SAVING"));
 
-    m_formatBeforeSaving = CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_FORMAT_BEFORE_SAVING"));
-    m_keepBackupFiles = CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_KEEP_BACKUP_FILES"));
+    m_formatBeforeSaving = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_FORMAT_BEFORE_SAVING"));
+    m_keepBackupFiles = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_KEEP_BACKUP_FILES"));
 
     // Create a group
     group = panel->createGroup(_guilang.get("GUI_OPTIONS_STARTING"));
 
-    m_saveSession = CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SAVE_SESSION"));
-    m_showGreeting = CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_GREETING"));
-    m_ShowHints = CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_HINTS"));
+    m_saveSession = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SAVE_SESSION"));
+    m_showGreeting = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_GREETING"));
+    m_ShowHints = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_HINTS"));
 
     // Those are not part of any group
-    m_showToolbarText = CreateCheckBox(panel, panel->getVerticalSizer(), _guilang.get("GUI_OPTIONS_SHOW_TOOLBARTEXT"));
-    m_termHistory = CreateSpinControl(panel, panel->getVerticalSizer(), _guilang.get("GUI_OPTIONS_HISTORY_LINES"), 100, 1000, 100);
-    m_caretBlinkTime = CreateSpinControl(panel, panel->getVerticalSizer(), _guilang.get("GUI_OPTIONS_CARET_BLINK_TIME"), 100, 2000, 500);
-    m_precision = CreateSpinControl(panel, panel->getVerticalSizer(), _guilang.get("GUI_OPTIONS_PRECISION"), 1, 14, 7);
+    m_showToolbarText = panel->CreateCheckBox(panel, panel->getVerticalSizer(), _guilang.get("GUI_OPTIONS_SHOW_TOOLBARTEXT"));
+    m_termHistory = panel->CreateSpinControl(panel, panel->getVerticalSizer(), _guilang.get("GUI_OPTIONS_HISTORY_LINES"), 100, 1000, 100);
+    m_caretBlinkTime = panel->CreateSpinControl(panel, panel->getVerticalSizer(), _guilang.get("GUI_OPTIONS_CARET_BLINK_TIME"), 100, 2000, 500);
+    m_precision = panel->CreateSpinControl(panel, panel->getVerticalSizer(), _guilang.get("GUI_OPTIONS_PRECISION"), 1, 14, 7);
 
     // Add the grouped page to the notebook
     m_optionsNotebook->AddPage(panel, _guilang.get("GUI_OPTIONS_MISC"));
 }
 
-// This private member function creates the
-// layout for a path input dialog including
-// the "choose" button
-wxTextCtrl* OptionsDialog::CreatePathInput(wxWindow* parent, wxSizer* sizer, const wxString& description, int buttonID)
-{
-    // Create the text above the input line
-    wxStaticText* inputStaticText = new wxStaticText(parent, wxID_STATIC, description, wxDefaultPosition, wxDefaultSize, 0);
-    sizer->Add(inputStaticText, 0, wxALIGN_LEFT|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, ELEMENT_BORDER);
-
-    // Create a horizontal sizer for the input
-    // line and the buttoon
-    wxBoxSizer* horizontalSizer = new wxBoxSizer(wxHORIZONTAL);
-    sizer->Add(horizontalSizer, wxALIGN_LEFT);
-
-    // Create the input line
-    wxTextCtrl* textCtrl = new wxTextCtrl(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(310, -1), wxTE_PROCESS_ENTER);
-
-    // Create the button
-    wxButton* button = new wxButton(parent, buttonID, _guilang.get("GUI_OPTIONS_CHOOSE"));
-
-    // Add both to the horizontal sizer
-    horizontalSizer->Add(textCtrl, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT | wxBOTTOM, ELEMENT_BORDER);
-    horizontalSizer->Add(button, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT | wxBOTTOM, ELEMENT_BORDER);
-
-    return textCtrl;
-}
-
-// This private member function creates the
-// layout for a usual checkbox
-wxCheckBox* OptionsDialog::CreateCheckBox(wxWindow* parent, wxSizer* sizer, const wxString& description)
-{
-    // Create the checkbox and assign it to the passed sizer
-    wxCheckBox* checkBox = new wxCheckBox(parent, wxID_ANY, description, wxDefaultPosition, wxDefaultSize, 0);
-    sizer->Add(checkBox, 0, wxALIGN_CENTER_VERTICAL | wxALL, ELEMENT_BORDER);
-
-    return checkBox;
-}
-
-// This private member function creates the
-// layout for a spin control including the
-// assigned text
-wxSpinCtrl* OptionsDialog::CreateSpinControl(wxWindow* parent, wxSizer* sizer, const wxString& description, int nMin, int nMax, int nInitial)
-{
-    // Create a horizontal sizer for the
-    // spin control and its assigned text
-    wxBoxSizer* spinCtrlSizer = new wxBoxSizer(wxHORIZONTAL);
-    sizer->Add(spinCtrlSizer, 0, wxALIGN_LEFT|wxALL, 0);
-
-    // Create the spin control
-    wxSpinCtrl* spinCtrl = new wxSpinCtrl(parent, wxID_ANY, _T("0"), wxDefaultPosition, wxSize(60, -1), wxSP_ARROW_KEYS, nMin, nMax, nInitial);
-
-    // Create the assigned static text
-    wxStaticText* spinCtrlStaticText = new wxStaticText(parent, wxID_STATIC, description, wxDefaultPosition, wxDefaultSize, 0);
-
-    // Add both to the horizontal sizer
-    spinCtrlSizer->Add(spinCtrl, 0, wxALIGN_CENTER_VERTICAL | wxALL, ELEMENT_BORDER);
-    spinCtrlSizer->Add(spinCtrlStaticText, 0, wxALIGN_CENTER_VERTICAL | wxALL | wxADJUST_MINSIZE, ELEMENT_BORDER);
-
-    return spinCtrl;
-}
 
 /*!
  * Should we show tooltips?

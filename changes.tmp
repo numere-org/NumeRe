@@ -25,3 +25,4 @@ Cleaned	Removed (reduced) flickering of GUI after options update
 New	It's now possible to hide lines independent on the folding state.
 Cleaned	Cleaned the internal architecture of the options dialog.
 New	A message box now appears, if the user tries to replace a symbol's name with an already used one.
+Added	The "rename symbols" dialog has now multiple options modifying the search behavior.

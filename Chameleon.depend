@@ -2135,7 +2135,7 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1550733008 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1550911418 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -2952,7 +2952,7 @@
 	"fndrpldialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1550823767 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1550907340 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
@@ -3084,7 +3084,7 @@
 
 1490787950 d:\cpp\numere-source\trunk\common\fixvsbug.h
 
-1550783969 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
+1550907240 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
 	"wx/notebook.h"
 	"wx/spinctrl.h"
 	<wx/clrpicker.h>
@@ -3336,7 +3336,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1550771798 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1550911876 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3355,6 +3355,7 @@
 	"../../common/DebugEvent.h"
 	"../../common/ProjectInfo.h"
 	"../../common/debug.h"
+	"../dialogs/renamesymbolsdialog.hpp"
 	"../globals.hpp"
 
 1540448925 source:d:\cpp\numere-source\trunk\gui\editor\history.cpp
@@ -8900,9 +8901,19 @@
 	"stringmemory.hpp"
 	"../utils/tools.hpp"
 
-1550827536 source:d:\cpp\numere-source\trunk\gui\dialogs\grouppanel.cpp
+1550910894 source:d:\cpp\numere-source\trunk\gui\dialogs\grouppanel.cpp
 	"grouppanel.hpp"
+	"../../kernel/core/ui/language.hpp"
 
-1550778133 d:\cpp\numere-source\trunk\gui\dialogs\grouppanel.hpp
+1550910823 d:\cpp\numere-source\trunk\gui\dialogs\grouppanel.hpp
+	<wx/wx.h>
+	<wx/spinctrl.h>
+
+1550910969 source:d:\cpp\numere-source\trunk\gui\dialogs\renamesymbolsdialog.cpp
+	"renamesymbolsdialog.hpp"
+	"grouppanel.hpp"
+	"../../kernel/core/ui/language.hpp"
+
+1550911144 d:\cpp\numere-source\trunk\gui\dialogs\renamesymbolsdialog.hpp
 	<wx/wx.h>
 

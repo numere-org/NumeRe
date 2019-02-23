@@ -107,100 +107,97 @@ class Options;
 
 class OptionsDialog: public wxDialog
 {
-    DECLARE_CLASS( OptionsDialog )
-    DECLARE_EVENT_TABLE()
+        DECLARE_CLASS( OptionsDialog )
+        DECLARE_EVENT_TABLE()
 
-    void CreateConfigPage();
-    void CreatePathPage();
-    void CreateStylePage();
-    void CreateMiscPage();
-    wxTextCtrl* CreatePathInput(wxWindow* parent, wxSizer* sizer, const wxString& description, int buttonID);
-    wxCheckBox* CreateCheckBox(wxWindow* parent, wxSizer* sizer, const wxString& description);
-    wxSpinCtrl* CreateSpinControl(wxWindow* parent, wxSizer* sizer, const wxString& description, int nMin, int nMax, int nInitial);
+        void CreateConfigPage();
+        void CreatePathPage();
+        void CreateStylePage();
+        void CreateMiscPage();
 
-public:
-    /// Constructors
-    OptionsDialog( );
-    OptionsDialog( wxWindow* parent, Options* options, wxWindowID id = -1,  const wxString& caption = _("Options"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxCAPTION|wxRESIZE_BORDER|wxSYSTEM_MENU );
+    public:
+        /// Constructors
+        OptionsDialog( );
+        OptionsDialog( wxWindow* parent, Options* options, wxWindowID id = -1,  const wxString& caption = _("Options"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxCAPTION|wxRESIZE_BORDER|wxSYSTEM_MENU );
 
-    /// Creation
-    bool Create( wxWindow* parent, wxWindowID id = -1, const wxString& caption = _("Options"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxCAPTION|wxRESIZE_BORDER|wxSYSTEM_MENU );
+        /// Creation
+        bool Create( wxWindow* parent, wxWindowID id = -1, const wxString& caption = _("Options"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxCAPTION|wxRESIZE_BORDER|wxSYSTEM_MENU );
 
-    /// Creates the controls and sizers
-    void CreateControls();
+        /// Creates the controls and sizers
+        void CreateControls();
 
-    /// wxEVT_COMMAND_BUTTON_CLICKED event handler for ID_BUTTON_OK
-    void OnButtonOkClick( wxCommandEvent& event );
+        /// wxEVT_COMMAND_BUTTON_CLICKED event handler for ID_BUTTON_OK
+        void OnButtonOkClick( wxCommandEvent& event );
 
-    /// wxEVT_COMMAND_BUTTON_CLICKED event handler for ID_BUTTON_CANCEL
-    void OnButtonCancelClick( wxCommandEvent& event );
-    void OnColorPickerChange(wxColourPickerEvent& event);
-    void OnColorTypeChange(wxCommandEvent& event);
-    void OnButtonClick(wxCommandEvent& event);
-    void OnStyleButtonClick(wxCommandEvent& event);
-	void synchronizeColors();
+        /// wxEVT_COMMAND_BUTTON_CLICKED event handler for ID_BUTTON_CANCEL
+        void OnButtonCancelClick( wxCommandEvent& event );
+        void OnColorPickerChange(wxColourPickerEvent& event);
+        void OnColorTypeChange(wxCommandEvent& event);
+        void OnButtonClick(wxCommandEvent& event);
+        void OnStyleButtonClick(wxCommandEvent& event);
+        void synchronizeColors();
 
-	void BrowseForDir(wxTextCtrl* textbox, wxString name);
-	bool EvaluateOptions();
+        void BrowseForDir(wxTextCtrl* textbox, wxString name);
+        bool EvaluateOptions();
 
-	void InitializeDialog();
-	void ExitDialog();
+        void InitializeDialog();
+        void ExitDialog();
 
-    /// Should we show tooltips?
-    static bool ShowToolTips();
+        /// Should we show tooltips?
+        static bool ShowToolTips();
 
-////@begin OptionsDialog member variables
-    wxNotebook* m_optionsNotebook;
-    wxCheckListBox* m_checkList;;
+    ////@begin OptionsDialog member variables
+        wxNotebook* m_optionsNotebook;
+        wxCheckListBox* m_checkList;;
 
-    wxCheckBox* m_compactTables;
-    wxCheckBox* m_AutoLoadDefines;
-    wxCheckBox* m_showGreeting;
-    wxCheckBox* m_LoadCompactTables;
-    wxComboBox* m_colorType;
-    wxColourPickerCtrl* m_foreColor;
-    wxColourPickerCtrl* m_backColor;
-    wxCheckBox* m_defaultBackground;
-    wxButton* m_resetButton;
-    wxCheckBox* m_boldCheck;
-    wxCheckBox* m_italicsCheck;
-    wxCheckBox* m_underlineCheck;
-    wxFontPickerCtrl* m_fontPicker;
+        wxCheckBox* m_compactTables;
+        wxCheckBox* m_AutoLoadDefines;
+        wxCheckBox* m_showGreeting;
+        wxCheckBox* m_LoadCompactTables;
+        wxComboBox* m_colorType;
+        wxColourPickerCtrl* m_foreColor;
+        wxColourPickerCtrl* m_backColor;
+        wxCheckBox* m_defaultBackground;
+        wxButton* m_resetButton;
+        wxCheckBox* m_boldCheck;
+        wxCheckBox* m_italicsCheck;
+        wxCheckBox* m_underlineCheck;
+        wxFontPickerCtrl* m_fontPicker;
 
-    wxCheckBox* m_ExtendedInfo;
-    wxCheckBox* m_ShowHints;
-    wxCheckBox* m_CustomLanguage;
-    wxCheckBox* m_ESCinScripts;
-    wxCheckBox* m_UseLogfile;
-    wxCheckBox* m_UseExternalViewer;
-    wxTextCtrl* m_LoadPath;
-    wxTextCtrl* m_SavePath;
-    wxTextCtrl* m_ScriptPath;
-    wxTextCtrl* m_ProcPath;
-    wxTextCtrl* m_PlotPath;
-    wxTextCtrl* m_LaTeXRoot;
+        wxCheckBox* m_ExtendedInfo;
+        wxCheckBox* m_ShowHints;
+        wxCheckBox* m_CustomLanguage;
+        wxCheckBox* m_ESCinScripts;
+        wxCheckBox* m_UseLogfile;
+        wxCheckBox* m_UseExternalViewer;
+        wxTextCtrl* m_LoadPath;
+        wxTextCtrl* m_SavePath;
+        wxTextCtrl* m_ScriptPath;
+        wxTextCtrl* m_ProcPath;
+        wxTextCtrl* m_PlotPath;
+        wxTextCtrl* m_LaTeXRoot;
 
-    wxComboBox* m_defaultFont;
-    wxSpinCtrl* m_precision;
-    wxSpinCtrl* m_autosaveinterval;
+        wxComboBox* m_defaultFont;
+        wxSpinCtrl* m_precision;
+        wxSpinCtrl* m_autosaveinterval;
 
-    wxCheckBox* m_chkShowCompileCommands;
-    wxComboBox* m_printStyle;
-    wxCheckBox* m_cbPrintLineNumbers;
-    wxCheckBox* m_showToolbarText;
-    wxCheckBox* m_saveSession;
-    wxSpinCtrl* m_termHistory;
-    wxSpinCtrl* m_caretBlinkTime;
-    wxCheckBox* m_useExecuteCommand;
-    wxCheckBox* m_formatBeforeSaving;
-    wxCheckBox* m_useMaskAsDefault;
-    wxCheckBox* m_keepBackupFiles;
-////@end OptionsDialog member variables
+        wxCheckBox* m_chkShowCompileCommands;
+        wxComboBox* m_printStyle;
+        wxCheckBox* m_cbPrintLineNumbers;
+        wxCheckBox* m_showToolbarText;
+        wxCheckBox* m_saveSession;
+        wxSpinCtrl* m_termHistory;
+        wxSpinCtrl* m_caretBlinkTime;
+        wxCheckBox* m_useExecuteCommand;
+        wxCheckBox* m_formatBeforeSaving;
+        wxCheckBox* m_useMaskAsDefault;
+        wxCheckBox* m_keepBackupFiles;
+    ////@end OptionsDialog member variables
 
-	NumeReWindow* m_parentFrame;
-	Options* m_options;
-	Options m_colorOptions;
-	Settings* _option;
+        NumeReWindow* m_parentFrame;
+        Options* m_options;
+        Options m_colorOptions;
+        Settings* _option;
 };
 
 #endif

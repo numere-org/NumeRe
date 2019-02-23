@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include <wx/wx.h>
+#include <wx/spinctrl.h>
 
 #ifndef GROUPPANEL_HPP
 #define GROUPPANEL_HPP
@@ -32,7 +33,15 @@ class GroupPanel : public wxPanel
 
         wxBoxSizer* getVerticalSizer();
         wxBoxSizer* getHorizontalSizer();
+        void AddSpacer(int nSize = 10);
+
         wxStaticBoxSizer* createGroup(const wxString& sGroupName, int orient = wxVERTICAL);
+
+        wxTextCtrl* CreatePathInput(wxWindow* parent, wxSizer* sizer, const wxString& description, int buttonID);
+        wxTextCtrl* CreateTextInput(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxString& sDefault = wxEmptyString);
+        wxCheckBox* CreateCheckBox(wxWindow* parent, wxSizer* sizer, const wxString& description);
+        wxSpinCtrl* CreateSpinControl(wxWindow* parent, wxSizer* sizer, const wxString& description, int nMin, int nMax, int nInitial);
+
 };
 
 

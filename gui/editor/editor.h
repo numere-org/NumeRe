@@ -391,7 +391,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		string CleanDocumentation(const wxString& sDocumentation);
 		int FindCurrentProcedureHead(int pos);
 		int FindNamingProcedure();
-		vector<int> FindAll(const wxString& sSymbol, int nStyle, int nStartPos = 0, int nEndPos = -1);
+		vector<int> FindAll(const wxString& sSymbol, int nStyle, int nStartPos = 0, int nEndPos = -1, bool bSearchInComments = false);
 		void ReplaceMatches(const vector<int>& vMatches, const wxString& sSymbol, const wxString& sNewSymbol);
 		void RenameSymbols(int nPos);
 		void AbstrahizeSection();

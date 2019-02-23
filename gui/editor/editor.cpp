@@ -27,6 +27,7 @@
 #include "../../common/DebugEvent.h"
 #include "../../common/ProjectInfo.h"
 #include "../../common/debug.h"
+#include "../dialogs/renamesymbolsdialog.hpp"
 //#include "../../common/fixvsbug.h"
 #include "../globals.hpp"
 
@@ -6208,7 +6209,7 @@ int NumeReEditor::FindNamingProcedure()
 // This member function detects all occurences of a code symbol
 // between the passed positions. It does take the current style
 // into account and returns the matches as a vector
-vector<int> NumeReEditor::FindAll(const wxString& sSymbol, int nStyle, int nStartPos, int nEndPos)
+vector<int> NumeReEditor::FindAll(const wxString& sSymbol, int nStyle, int nStartPos, int nEndPos, bool bSearchInComments)
 {
     vector<int> vMatches;
     int nCurrentPos = 0;
@@ -6224,8 +6225,10 @@ vector<int> NumeReEditor::FindAll(const wxString& sSymbol, int nStyle, int nStar
         nStartPos = nCurrentPos+1;
 
         // Is it the correct style and no field of a structure?
-        if ((this->GetCharAt(nCurrentPos-1) != '.' && this->GetStyleAt(nCurrentPos) == nStyle)
-            || (this->GetStyleAt(nCurrentPos) == wxSTC_NSCR_STRING_PARSER && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)))
+        if (this->GetCharAt(nCurrentPos-1) != '.'
+            && (this->GetStyleAt(nCurrentPos) == nStyle
+                || ((isStyleType(STYLE_COMMENT_LINE, nCurrentPos) || isStyleType(STYLE_COMMENT_BLOCK, nCurrentPos)) && bSearchInComments)
+                || (this->GetStyleAt(nCurrentPos) == wxSTC_NSCR_STRING_PARSER && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC))))
             vMatches.push_back(nCurrentPos);
     }
 
@@ -6275,7 +6278,7 @@ void NumeReEditor::RenameSymbols(int nPos)
 
     // Prepare and show the text entry dialog, so that the
     // user may supply a new symbol name
-    wxTextEntryDialog textdialog(this, _guilang.get("GUI_DLG_RENAMESYMBOLS_QUESTION"), _guilang.get("GUI_DLG_RENAMESYMBOLS"), sCurrentName);
+    RenameSymbolsDialog textdialog(this, wxID_ANY, _guilang.get("GUI_DLG_RENAMESYMBOLS"), sCurrentName);
     int retval = textdialog.ShowModal();
     if (retval == wxID_CANCEL)
         return;
@@ -6283,12 +6286,12 @@ void NumeReEditor::RenameSymbols(int nPos)
     // Get the new symbol name and ensure that it
     // exists
     sNewName = textdialog.GetValue();
-    if (!sNewName.length())
+    if (!sNewName.length() || (!textdialog.replaceAfterCursor() && !textdialog.replaceBeforeCursor()))
         return;
 
     // The selected symbol is probably part of a procedure. If this is
     // the case, get the start and end position here
-    if (m_fileType == FILE_NPRC || m_fileType == FILE_MATLAB)
+    if ((m_fileType == FILE_NPRC || m_fileType == FILE_MATLAB) && !textdialog.replaceInWholeFile())
     {
         // Find the head of the current procedure
         nStartPos = this->FindCurrentProcedureHead(nPos);
@@ -6298,6 +6301,17 @@ void NumeReEditor::RenameSymbols(int nPos)
         vector<int> vBlock = this->BlockMatch(nStartPos);
         if (vBlock.back() != wxSTC_INVALID_POSITION)
             nEndPos = vBlock.back();
+    }
+
+    // Adjust start and end position depending
+    // on the flags of the renaming dialog
+    if (!textdialog.replaceAfterCursor())
+    {
+        nEndPos = WordEndPosition(nPos, true);
+    }
+    else if (!textdialog.replaceBeforeCursor())
+    {
+        nStartPos = WordStartPosition(nPos, true);
     }
 
     // Ensure that the new symbol is not already in use
@@ -6327,7 +6341,7 @@ void NumeReEditor::RenameSymbols(int nPos)
     this->BeginUndoAction();
 
     // Perform the renaming of symbols
-    this->ReplaceMatches(this->FindAll(sCurrentName, this->GetStyleAt(nPos), nStartPos, nEndPos), sCurrentName, sNewName);
+    this->ReplaceMatches(this->FindAll(sCurrentName, this->GetStyleAt(nPos), nStartPos, nEndPos, textdialog.replaceInComments()), sCurrentName, sNewName);
     this->EndUndoAction();
 }
 
