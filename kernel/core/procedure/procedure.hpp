@@ -70,9 +70,11 @@ class Procedure : /*public FileSystem,*/ public FlowCtrl, public Plugin
         string** sVars;
         double* dVars;
         string** sStrings;
+        string** sTables;
 
         unsigned int nVarSize;
         unsigned int nStrSize;
+        unsigned int nTabSize;
 
         void init();
 
@@ -94,7 +96,7 @@ class Procedure : /*public FileSystem,*/ public FlowCtrl, public Plugin
         int procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure = 0, int nth_command = 0);
         bool writeProcedure(string sProcedureLine);
         bool isInline(const string& sProc);
-        void evalDebuggerBreakPoint(Parser& _parser, Settings& _option, const map<string,string>& sStringMap);
+        void evalDebuggerBreakPoint(Parser& _parser, Settings& _option);
         inline string getCurrentProcedureName() const
             {return sCurrentProcedureName;}
         inline unsigned int GetCurrentLine() const

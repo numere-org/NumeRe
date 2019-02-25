@@ -48,6 +48,7 @@ class NumeReDebugger
         string sErraticModule;
         map<string,double> mLocalVars;
         map<string,string> mLocalStrings;
+        map<string,string> mLocalTables;
         //map<string,string> mVarMap;
         bool bAlreadyThrown;
 
@@ -72,23 +73,19 @@ class NumeReDebugger
                                 double* dLocalVars,
                                 string** sLocalStrings,
                                 unsigned int nLocalStrMapSize,
-                                const map<string,string>& sStringMap,
-                                /*string** sVarMap,
-                                unsigned int nVarMapSize,*/
+                                string** sLocalTables,
+                                unsigned int nLocalTableMapSize,
                                 const string& _sErraticCommand,
                                 const string& _sErraticModule,
                                 unsigned int _nLineNumber);
+
         void gatherLoopBasedInformations(const string& _sErraticCommand, unsigned int _nLineNumber, map<string,string>& mVarMap, double** vVarArray, string* sVarArray, int nVarArray);
-        string printModuleInformations();
-        string printNonErrorModuleInformations();
-        string printStackTrace();
-        string printLocalVars();
-        string printLocalStrings();
 
         vector<string> getModuleInformations();
         vector<string> getStackTrace();
         vector<string> getNumVars();
         vector<string> getStringVars();
+        vector<string> getTables();
 };
 
 

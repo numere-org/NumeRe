@@ -38,6 +38,7 @@ extern Integration_Vars parser_iVars;
 time_t tTimeZero = time(0);
 
 // Initialization of the static member variables
+NumeReKernel* NumeReKernel::kernelInstance = nullptr;
 int* NumeReKernel::baseStackPosition = nullptr;
 wxTerm* NumeReKernel::m_parent = nullptr;
 queue<NumeReTask> NumeReKernel::taskQueue;
@@ -86,12 +87,14 @@ NumeReKernel::NumeReKernel()
 	sCommandLine.clear();
 	sAnswer.clear();
 	sPlotCompose.clear();
+	kernelInstance = this;
 }
 
 // Destructor
 NumeReKernel::~NumeReKernel()
 {
 	CloseSession();
+	kernelInstance = nullptr;
 }
 
 // Get the settings available in the options
@@ -578,7 +581,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 			{
 				sLine.erase(0, 2);
 				if (_option.getUseDebugger())
-					evalDebuggerBreakPoint(_option, _data.getStringVars(), sLine, &_parser);
+					evalDebuggerBreakPoint(_option, sLine, &_parser);
 			}
 
 			// Log the current line
@@ -1885,6 +1888,65 @@ vector<string> NumeReKernel::getDocIndex()
     return _option.getDocIndex();
 }
 
+NumeReVariables NumeReKernel::getVariableList()
+{
+    NumeReVariables vars;
+
+    mu::varmap_type varmap = _parser.GetVar();
+    map<string, string> stringmap = _data.getStringVars();
+    map<string, long long int> tablemap = _data.mCachesMap;
+    string sCurrentLine;
+
+    if (_data.isValid())
+        tablemap["data"] = -1;
+    if (_data.getStringElements())
+        tablemap["string"] = -2;
+
+	for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
+    {
+        if ((iter->first).substr(0, 2) == "_~")
+            continue;
+
+        sCurrentLine = iter->first + "\t1 x 1\tdouble\t" + toString(*iter->second, 5);
+        vars.vVariables.push_back(sCurrentLine);
+    }
+    vars.nNumerics = vars.vVariables.size();
+
+	for (auto iter = stringmap.begin(); iter != stringmap.end(); ++iter)
+    {
+        if ((iter->first).substr(0, 2) == "_~")
+            continue;
+
+        sCurrentLine = iter->first + "\t1 x 1\tstring\t\"" + iter->second + "\"";
+        vars.vVariables.push_back(sCurrentLine);
+    }
+    vars.nStrings = vars.vVariables.size() - vars.nNumerics;
+
+
+    for (auto iter = tablemap.begin(); iter != tablemap.end(); ++iter)
+    {
+        if ((iter->first).substr(0, 2) == "_~")
+            continue;
+
+        if (iter->first == "string")
+        {
+            sCurrentLine = iter->first + "()\t" + toString(_data.getStringElements()) + " x " + toString(_data.getStringCols());
+            sCurrentLine += "\tstring\t{\"" + _data.minString() + "\", ..., \"" + _data.maxString() + "\"}";
+        }
+        else
+        {
+            sCurrentLine = iter->first + "()\t" + toString(_data.getLines(iter->first, false)) + " x " + toString(_data.getCols(iter->first, false));
+            sCurrentLine += "\tdouble\t{" + toString(_data.min(iter->first, "")[0], 5) + ", ..., " + toString(_data.max(iter->first, "")[0], 5) + "}";
+        }
+
+        vars.vVariables.push_back(sCurrentLine);
+    }
+
+    vars.nTables = vars.vVariables.size() - vars.nNumerics - vars.nStrings;
+
+    return vars;
+}
+
 bool NumeReKernel::SettingsModified()
 {
 	bool modified = modifiedSettings;
@@ -2292,7 +2354,7 @@ void NumeReKernel::showDebugError(const string& sTitle)
 {
 	if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
 	{
-		showDebugEvent(sTitle, _option._debug.getModuleInformations(), _option._debug.getStackTrace(), _option._debug.getNumVars(), _option._debug.getStringVars());
+		showDebugEvent(sTitle, _option._debug.getModuleInformations(), _option._debug.getStackTrace(), _option._debug.getNumVars(), _option._debug.getStringVars(), _option._debug.getTables());
 		gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber() + 1);
 	}
 	_option._debug.reset();
@@ -2300,7 +2362,7 @@ void NumeReKernel::showDebugError(const string& sTitle)
 
 // This member function passes the debugging informations to the
 // GUI to be displayed in the debugger window
-void NumeReKernel::showDebugEvent(const string& sTitle, const vector<string>& vModule, const vector<string>& vStacktrace, const vector<string>& vNumVars, const vector<string>& vStringVars)
+void NumeReKernel::showDebugEvent(const string& sTitle, const vector<string>& vModule, const vector<string>& vStacktrace, const vector<string>& vNumVars, const vector<string>& vStringVars, const vector<string>& vTables)
 {
 	if (!m_parent)
 		return;
@@ -2312,7 +2374,7 @@ void NumeReKernel::showDebugEvent(const string& sTitle, const vector<string>& vM
 		task.taskType = NUMERE_DEBUG_EVENT;
 
 		// note the size of the fields
-		task.vDebugEvent.push_back(toString(vModule.size()) + ";" + toString(vStacktrace.size()) + ";" + toString(vNumVars.size()) + ";");
+		task.vDebugEvent.push_back(toString(vModule.size()) + ";" + toString(vStacktrace.size()) + ";" + toString(vNumVars.size()) + ";" + toString(vStringVars.size()) + ";" + toString(vTables.size()));
 		task.vDebugEvent.push_back(sTitle);
 
 		task.vDebugEvent.insert(task.vDebugEvent.end(), vModule.begin(), vModule.end());
@@ -2321,6 +2383,8 @@ void NumeReKernel::showDebugEvent(const string& sTitle, const vector<string>& vM
 			task.vDebugEvent.insert(task.vDebugEvent.end(), vNumVars.begin(), vNumVars.end());
 		if (vStringVars.size())
 			task.vDebugEvent.insert(task.vDebugEvent.end(), vStringVars.begin(), vStringVars.end());
+		if (vTables.size())
+			task.vDebugEvent.insert(task.vDebugEvent.end(), vTables.begin(), vTables.end());
 
 		taskQueue.push(task);
 
@@ -2350,7 +2414,7 @@ void NumeReKernel::waitForContinue()
 	return;
 }
 
-void NumeReKernel::evalDebuggerBreakPoint(Settings& _option, const map<string, string>& sStringMap, const string& sCurrentCommand, Parser* _parser)
+void NumeReKernel::evalDebuggerBreakPoint(Settings& _option, const string& sCurrentCommand, Parser* _parser)
 {
 	mu::varmap_type varmap;
 	string** sLocalVars = nullptr;
@@ -2359,6 +2423,8 @@ void NumeReKernel::evalDebuggerBreakPoint(Settings& _option, const map<string, s
 	size_t nLocalVarMapSkip = 0;
 	string** sLocalStrings = nullptr;
 	size_t nLocalStringMapSize = 0;
+	string** sLocalTables = nullptr;
+	size_t nLocalTableMapSize = 0;
 	if (_parser)
 	{
 		varmap = _parser->GetVar();
@@ -2380,6 +2446,8 @@ void NumeReKernel::evalDebuggerBreakPoint(Settings& _option, const map<string, s
 			i++;
 		}
 
+		map<string, string> sStringMap = getInstance()->getData().getStringVars();
+
 		nLocalStringMapSize = sStringMap.size();
 		if (nLocalStringMapSize)
 		{
@@ -2390,11 +2458,36 @@ void NumeReKernel::evalDebuggerBreakPoint(Settings& _option, const map<string, s
 				sLocalStrings[i] = new string[2];
 				sLocalStrings[i][0] = iter->first;
 				sLocalStrings[i][1] = iter->first;
+				i++;
+			}
+		}
+
+		map<string, long long int> tableMap = getInstance()->getData().mCachesMap;
+
+		if (getInstance()->getData().isValid())
+            tableMap["data"] = -1;
+        if (getInstance()->getData().getStringElements())
+            tableMap["string"] = -2;
+
+		nLocalTableMapSize = tableMap.size();
+
+		if (nLocalTableMapSize)
+		{
+			sLocalTables = new string*[nLocalTableMapSize];
+			i = 0;
+			for (auto iter = tableMap.begin(); iter != tableMap.end(); ++iter)
+			{
+				sLocalTables[i] = new string[2];
+				sLocalTables[i][0] = iter->first;
+				sLocalTables[i][1] = iter->first;
+				i++;
 			}
 		}
 	}
-	_option._debug.gatherInformations(sLocalVars, nLocalVarMapSize - nLocalVarMapSkip, dLocalVars, sLocalStrings, nLocalStringMapSize, sStringMap, sCurrentCommand, sScriptFileName, nScriptLine - 1);
-	showDebugEvent(_lang.get("DBG_HEADLINE"), _option._debug.getModuleInformations(), _option._debug.getStackTrace(), _option._debug.getNumVars(), _option._debug.getStringVars());
+
+	_option._debug.gatherInformations(sLocalVars, nLocalVarMapSize - nLocalVarMapSkip, dLocalVars, sLocalStrings, nLocalStringMapSize, sLocalTables, nLocalTableMapSize, sCurrentCommand, sScriptFileName, nScriptLine - 1);
+
+	showDebugEvent(_lang.get("DBG_HEADLINE"), _option._debug.getModuleInformations(), _option._debug.getStackTrace(), _option._debug.getNumVars(), _option._debug.getStringVars(), _option._debug.getTables());
 	gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber() + 1);
 	_option._debug.resetBP();
 	if (sLocalVars)
@@ -2409,6 +2502,12 @@ void NumeReKernel::evalDebuggerBreakPoint(Settings& _option, const map<string, s
 		for (size_t i = 0; i < nLocalStringMapSize; i++)
 			delete[] sLocalStrings[i];
 		delete[] sLocalStrings;
+	}
+	if (sLocalTables)
+	{
+		for (size_t i = 0; i < nLocalTableMapSize; i++)
+			delete[] sLocalTables[i];
+		delete[] sLocalTables;
 	}
 	waitForContinue();
 }

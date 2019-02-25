@@ -52,18 +52,15 @@ DebugViewer::DebugViewer(wxWindow* parent, const wxString& title) : ViewerFrame(
     m_moduleinfos->InsertItem(2,_guilang.get("DBG_LINENO"));
     m_moduleinfos->SetColumnWidth(0, wxLIST_AUTOSIZE);
 
-    m_stacktrace = new wxListCtrl(stackBox->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize(200, 400), wxLC_REPORT);
+    m_stacktrace = new wxListCtrl(stackBox->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize(300, -1), wxLC_REPORT);
     m_stacktrace->AppendColumn("Stack");
 
-    m_vartreelist = new wxTreeListCtrl(varBox->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_FULL_ROW_HIGHLIGHT | wxTR_ROW_LINES | wxTR_NO_LINES | wxTR_HIDE_ROOT);
+    m_varViewer = new VariableViewer(varBox->GetStaticBox());
+    m_varViewer->setDebuggerMode(true);
 
     moduleBox->Add(m_moduleinfos, 1, wxALIGN_CENTER_HORIZONTAL | wxALL);
     stackBox->Add(m_stacktrace, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL);
-    varBox->Add(m_vartreelist, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL);
-
-    m_vartreelist->AddColumn(_guilang.get("DBG_NAME"), 200);
-    m_vartreelist->AddColumn(_guilang.get("DBG_VALUE"), 600);
-    m_vartreelist->AddRoot("ROOT");
+    varBox->Add(m_varViewer->control, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL);
 
     wxButton* buttonContinue = new wxButton(panel, ID_DEBUG_CONTINUE, _guilang.get("DBG_CONTINUE"));
     wxButton* buttonCancel = new wxButton(panel, ID_DEBUG_CANCEL, _guilang.get("GUI_OPTIONS_CANCEL"));
@@ -73,22 +70,12 @@ DebugViewer::DebugViewer(wxWindow* parent, const wxString& title) : ViewerFrame(
 
     vsizer->Add(moduleBox, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL, 5);
     vsizer->AddSpacer(10);
-    hsizer->Add(stackBox, 1, wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 0);
+    hsizer->Add(stackBox, 0, wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 0);
     hsizer->AddSpacer(5);
     hsizer->Add(varBox, 1, wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 0);
     vsizer->Add(hsizer, 3, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL, 5);
     vsizer->Add(buttonsizer, 0, wxALIGN_RIGHT, 5);
     panel->SetSizer(vsizer);
-}
-
-bool DebugViewer::checkPresence(const string& sVar)
-{
-    for (size_t i = 0; i < vLastVarSet.size(); i++)
-    {
-        if (vLastVarSet[i] == sVar)
-            return true;
-    }
-    return false;
 }
 
 string DebugViewer::removeControlSymbols(string sCommandLine)
@@ -98,7 +85,7 @@ string DebugViewer::removeControlSymbols(string sCommandLine)
     return sCommandLine;
 }
 
-void DebugViewer::setDebugInfo(const wxString& title, const vector<string>& vModuleInfo, const vector<string>& vStack, const vector<string>& vVarList, size_t n_num)
+void DebugViewer::setDebugInfo(const wxString& title, const vector<string>& vModuleInfo, const vector<string>& vStack, const vector<string>& vVarList, size_t n_num, size_t s_num, size_t t_num)
 {
     this->SetTitle(title);
     b_transferredControl = true;
@@ -115,57 +102,7 @@ void DebugViewer::setDebugInfo(const wxString& title, const vector<string>& vMod
     }
     m_stacktrace->SetColumnWidth(0, wxLIST_AUTOSIZE);
 
-
-    m_vartreelist->DeleteChildren(m_vartreelist->GetRootItem());
-
-    //size_t firstcol = 0, secondcol = 0;
-    wxTreeItemId numroot = m_vartreelist->AppendItem(m_vartreelist->GetRootItem(), _guilang.get("DBG_LOCALVARS"));
-    wxTreeItemId stringroot = m_vartreelist->AppendItem(m_vartreelist->GetRootItem(), _guilang.get("DBG_LOCALSTRINGS"));
-
-    m_vartreelist->SetItemText(numroot, 1, "[" + toString(n_num) + "]");
-    m_vartreelist->SetItemText(stringroot, 1, "[" + toString(vVarList.size()-n_num) + "]");
-
-    m_vartreelist->SetItemBold(numroot, true);
-    m_vartreelist->SetItemBold(stringroot, true);
-
-    /*firstcol = 1.5*GetTextExtent(_guilang.get("DBG_LOCALVARS")).GetWidth();
-    if (firstcol < 1.5*GetTextExtent(_guilang.get("DBG_LOCALSTRINGS")).GetWidth())
-        firstcol = 1.5*GetTextExtent(_guilang.get("DBG_LOCALSTRINGS")).GetWidth();*/
-
-    wxTreeItemId currentItem;
-    for (size_t i = 0; i < vVarList.size(); i++)
-    {
-        if (i < n_num)
-        {
-            currentItem = m_vartreelist->AppendItem(numroot, vVarList[i].substr(0, vVarList[i].find('\t')));
-            m_vartreelist->SetItemText(currentItem, 1, vVarList[i].substr(vVarList[i].find('\t')+1));
-        }
-        else
-        {
-            currentItem = m_vartreelist->AppendItem(stringroot, vVarList[i].substr(0, vVarList[i].find('\t')));
-            m_vartreelist->SetItemText(currentItem, 1, vVarList[i].substr(vVarList[i].find('\t')+1));
-        }
-
-        if (!checkPresence(vVarList[i]))
-            m_vartreelist->SetItemTextColour(currentItem, *wxRED);
-
-        /*if (firstcol < GetTextExtent(vVarList[i].substr(0, vVarList[i].find('\t'))).GetWidth()+m_vartreelist->GetIndent())
-            firstcol = GetTextExtent(vVarList[i].substr(0, vVarList[i].find('\t'))).GetWidth()+m_vartreelist->GetIndent();
-
-        if (secondcol < GetTextExtent(vVarList[i].substr(vVarList[i].find('\t')+1)).GetWidth())
-            secondcol = GetTextExtent(vVarList[i].substr(vVarList[i].find('\t')+1)).GetWidth();*/
-    }
-
-    /*m_vartreelist->SetColumnWidth(0, firstcol);
-    m_vartreelist->SetColumnWidth(1, secondcol*1.4);
-
-    m_vartreelist->Refresh();*/
-
-    if (m_vartreelist->HasChildren(numroot))
-        m_vartreelist->Expand(numroot);
-    if (m_vartreelist->HasChildren(stringroot))
-        m_vartreelist->Expand(stringroot);
-    vLastVarSet = vVarList;
+    m_varViewer->UpdateVariables(vVarList, n_num, s_num, t_num);
 }
 
 void DebugViewer::OnButtonContinue(wxCommandEvent& event)

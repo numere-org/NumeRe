@@ -2928,7 +2928,7 @@ string replaceToVectorname(const string& sExpression)
 	}
 
 	// return the new vector name
-	return sVectorName;
+	return "_~" + sVectorName;
 }
 
 // This function replaces all occurences of the string sToRep

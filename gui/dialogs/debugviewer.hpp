@@ -21,7 +21,7 @@
 
 #include "../viewerframe.hpp"
 #include "../terminal/wxterm.h"
-#include "treelistctrl.h"
+#include "variableviewer.hpp"
 //#include <wx/treelist.h>
 #include <wx/listctrl.h>
 #include <wx/panel.h>
@@ -31,14 +31,12 @@
 class DebugViewer : public ViewerFrame
 {
     private:
-        wxTreeListCtrl* m_vartreelist;
+        VariableViewer* m_varViewer;
         wxListCtrl* m_moduleinfos;
         wxListCtrl* m_stacktrace;
         wxTerm* m_terminal;
         bool b_transferredControl;
-        vector<string> vLastVarSet;
 
-        bool checkPresence(const string& sVar);
         string removeControlSymbols(string sCommandLine);
 
     public:
@@ -46,7 +44,7 @@ class DebugViewer : public ViewerFrame
 
         void setTerminal(wxTerm* term) {m_terminal = term;}
 
-        void setDebugInfo(const wxString& title, const vector<string>& vModuleInfo, const vector<string>& vStack, const vector<string>& vVarList, size_t n_num = 0); //n_num = number of numerical vars => strings may be calculated
+        void setDebugInfo(const wxString& title, const vector<string>& vModuleInfo, const vector<string>& vStack, const vector<string>& vVarList, size_t n_num = 0, size_t s_num = 0, size_t t_num = 0);
 
         void OnButtonContinue(wxCommandEvent& event);
         void OnButtonCancel(wxCommandEvent& event);

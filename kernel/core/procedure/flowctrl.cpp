@@ -1894,7 +1894,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 			if (_optionRef->getUseDebugger())
 			{
 				_optionRef->_debug.gatherLoopBasedInformations(sLine, nCmd - nthCmd, mVarMap, vVarArray, sVarArray, nVarArray);
-				evalDebuggerBreakPoint(*_parserRef, *_optionRef, _dataRef->getStringVars());
+				evalDebuggerBreakPoint(*_parserRef, *_optionRef);
 			}
 		}
 	}
@@ -3081,7 +3081,7 @@ bool FlowCtrl::isInline(const string& sProc)
 	return true;
 }
 
-void FlowCtrl::evalDebuggerBreakPoint(Parser& _parser, Settings& _option, const map<string, string>& sStringMap)
+void FlowCtrl::evalDebuggerBreakPoint(Parser& _parser, Settings& _option)
 {
 	return;
 }

@@ -75,9 +75,11 @@ void Procedure::init()
 	sVars = nullptr;
 	dVars = nullptr;
 	sStrings = nullptr;
+	sTables = nullptr;
 
 	nVarSize = 0;
 	nStrSize = 0;
+	nTabSize = 0;
 }
 
 // This member function does the calculation stuff for the current procedure
@@ -618,19 +620,19 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
     if (findCommand(sVarList, "var").sString == "var")
     {
         if (_option.getUseDebugger())
-            _option._debug.gatherInformations(0, 0, 0, 0, 0, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
+            _option._debug.gatherInformations(nullptr, 0, nullptr, nullptr, 0, nullptr, 0, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
         throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "var");
     }
     if (findCommand(sVarList, "str").sString == "str")
     {
         if (_option.getUseDebugger())
-            _option._debug.gatherInformations(0, 0, 0, 0, 0, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
+            _option._debug.gatherInformations(nullptr, 0, nullptr, nullptr, 0, nullptr, 0, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
         throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "str");
     }
     if (findCommand(sVarList, "tab").sString == "tab")
     {
         if (_option.getUseDebugger())
-            _option._debug.gatherInformations(0, 0, 0, 0, 0, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
+            _option._debug.gatherInformations(nullptr, 0, nullptr, nullptr, 0, nullptr, 0, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
         throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "tab");
     }
 
@@ -681,7 +683,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
 			    catch (...)
 			    {
 			        if (_option.getUseDebugger())
-                        _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
+                        _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _varfactory.sLocalTables, _varfactory.nLocalTableSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
 
                     resetProcedure(_parser, bSupressAnswer_back);
                     throw;
@@ -800,8 +802,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
 
                 if (_option.getUseDebugger())
                 {
-                    _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                    evalDebuggerBreakPoint(_parser, _option, _data.getStringVars());
+                    _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _varfactory.sLocalTables, _varfactory.nLocalTableSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
+                    evalDebuggerBreakPoint(_parser, _option);
                 }
 
                 if (!sProcCommandLine.length())
@@ -883,7 +885,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             catch (...)
             {
                 if (_option.getUseDebugger())
-                    _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
+                    _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _varfactory.sLocalTables, _varfactory.nLocalTableSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
 
                 resetProcedure(_parser, bSupressAnswer_back);
                 throw;
@@ -899,7 +901,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 || sCurrentCommand == "while")
 			{
 				if (_option.getUseDebugger())
-					_option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
+					_option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _varfactory.sLocalTables, _varfactory.nLocalTableSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
 
 				resetProcedure(_parser, bSupressAnswer_back);
 				throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sProcCommandLine, SyntaxError::invalid_position);
@@ -934,7 +936,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 catch (...)
                 {
                     if (_option.getUseDebugger())
-                        _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
+                        _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _varfactory.sLocalTables, _varfactory.nLocalTableSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
 
                     resetProcedure(_parser, bSupressAnswer_back);
                     throw;
@@ -976,7 +978,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     nByteCode |= ProcedureCommandLine::BYTECODE_THROWCOMMAND;
 
                 if (_option.getUseDebugger())
-                    _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
+                    _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _varfactory.sLocalTables, _varfactory.nLocalTableSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                 resetProcedure(_parser, bSupressAnswer_back);
 
                 throw SyntaxError(SyntaxError::PROCEDURE_THROW, sProcCommandLine, SyntaxError::invalid_position, sErrorToken);
@@ -1014,7 +1016,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 catch (...)
                 {
                     if (_option.getUseDebugger())
-                        _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
+                        _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _varfactory.sLocalTables, _varfactory.nLocalTableSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
                     resetProcedure(_parser, bSupressAnswer_back);
                     throw;
                 }
@@ -1035,7 +1037,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
         catch (...)
         {
             if (_option.getUseDebugger())
-                _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
+                _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _varfactory.sLocalTables, _varfactory.nLocalTableSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
             resetProcedure(_parser, bSupressAnswer_back);
             throw;
         }
@@ -1049,7 +1051,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
 	if (getLoop())
 	{
 		if (_option.getUseDebugger())
-			_option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _data.getStringVars(), sProcCommandLine, sCurrentProcedureName, nCurrentLine);
+			_option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _varfactory.sLocalTables, _varfactory.nLocalTableSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
 		resetProcedure(_parser, bSupressAnswer_back);
 		throw SyntaxError(SyntaxError::IF_OR_LOOP_SEEMS_NOT_TO_BE_CLOSED, "endprocedure", SyntaxError::invalid_position, "\\$" + sProc + "()");
 	}
@@ -1678,22 +1680,22 @@ bool Procedure::isInline(const string& sProc)
 // This virtual member function handles the gathering of all
 // relevant information for the debugger for the currently
 // found break point
-void Procedure::evalDebuggerBreakPoint(Parser& _parser, Settings& _option, const map<string, string>& sStringMap)
+void Procedure::evalDebuggerBreakPoint(Parser& _parser, Settings& _option)
 {
 	// if the stack is empty, it has to be a breakpoint from a script
 	// This is only valid, if the script contained flow control statements
 	if (!_option._debug.getStackSize())
 	{
-		NumeReKernel::evalDebuggerBreakPoint(_option, sStringMap, "", &_parser);
+		NumeReKernel::evalDebuggerBreakPoint(_option, "", &_parser);
 		return;
 	}
 
 	// Gather all information needed by the debugger
-	_option._debug.gatherInformations(sVars, nVarSize, dVars, sStrings, nStrSize, sStringMap, "", sCurrentProcedureName, nCurrentLine);
+	_option._debug.gatherInformations(sVars, nVarSize, dVars, sStrings, nStrSize, sTables, nTabSize, "", sCurrentProcedureName, nCurrentLine);
 
 	// Let the kernel display the debugger window and jump to the
 	// corresponding line in the procedure file
-	NumeReKernel::showDebugEvent(_lang.get("DBG_HEADLINE"), _option._debug.getModuleInformations(), _option._debug.getStackTrace(), _option._debug.getNumVars(), _option._debug.getStringVars());
+	NumeReKernel::showDebugEvent(_lang.get("DBG_HEADLINE"), _option._debug.getModuleInformations(), _option._debug.getStackTrace(), _option._debug.getNumVars(), _option._debug.getStringVars(), _option._debug.getTables());
 	NumeReKernel::gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber() + 1);
 
 	// Rese the debugger and wait for the user action
@@ -1842,6 +1844,8 @@ bool Procedure::handleVariableDefinitions(string& sProcCommandLine, const string
     if (sCommand == "tab" && sProcCommandLine.length() > 6)
     {
         _varfactory.createLocalTables(sProcCommandLine.substr(sProcCommandLine.find("tab") + 3));
+        sTables = _varfactory.sLocalTables;
+        nTabSize = _varfactory.nLocalTableSize;
         sProcCommandLine = "";
         return true;
     }

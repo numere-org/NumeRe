@@ -30,6 +30,7 @@
 #include "NumeReStatusbar.hpp"
 #include "../kernel/core/plotting/graph_helper.hpp"
 #include "../kernel/core/datamanagement/container.hpp"
+#include "dialogs/variableviewer.hpp"
 
 #define OPENFILE_NOTHING 0
 #define OPENFILE_BLACKLIST_ADD 1
@@ -327,6 +328,7 @@ class NumeReWindow : public wxFrame
         void UpdateMenuBar();
         void UpdateToolbar();
         void UpdateTerminalNotebook();
+        void UpdateVarViewer();
         void UpdateWindowTitle(const wxString& filename);
         void toggleConsole();
         void toggleFiletree();
@@ -354,13 +356,14 @@ class NumeReWindow : public wxFrame
         /*! Main editor notebook */
         NumeReNotebook* m_book;
         /*! Notebook for the terminal and debug-related widgets */
-        NumeReNotebook*  m_noteTerm;
+        ViewerBook*  m_noteTerm;
         /*! Notebook for the tree controls on the right side */
         ViewerBook* m_treeBook;
         /*! Pointer to the currently active editor */
         NumeReEditor* m_currentEd;
 
         NumeReHistory* m_history;
+        VariableViewer* m_varViewer;
 
         ViewerFrame* m_currentView;
         /*! Displays the files in the current project */

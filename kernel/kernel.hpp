@@ -57,6 +57,15 @@ class wxTerm;
 struct NumeReTask;
 
 
+struct NumeReVariables
+{
+    vector<string> vVariables;
+    size_t nNumerics;
+    size_t nStrings;
+    size_t nTables;
+};
+
+
 // This class provides the interface to the kernel of NumeRe
 // It provides all functionalities, which was done by the main
 // function before.
@@ -91,6 +100,8 @@ class NumeReKernel
         string sCommandLine;
         string sAnswer;
         string sPlotCompose;
+
+        static NumeReKernel* kernelInstance;
 
         //datasets
         Settings _option;
@@ -154,6 +165,11 @@ class NumeReKernel
         // Static member functions
         // can be called from everywhere without an explicit instance of the kernel
         // These functions are the interface for communication with the GUI
+        static NumeReKernel* getInstance()
+        {
+            return kernelInstance;
+        }
+
         static void toggleTableStatus();
         static void flush();
         static void print(const string& sLine);
@@ -169,14 +185,39 @@ class NumeReKernel
         static void showTable(NumeRe::Container<string>& _container, string __name, bool openeditable = false);
         static void updateGraphWindow(GraphHelper* _helper);
         static NumeRe::Container<string> getTable();
-        static void showDebugEvent(const string& sTitle, const vector<string>& vModule, const vector<string>& vStacktrace, const vector<string>& vNumVars, const vector<string>& vStringVars);
+        static void showDebugEvent(const string& sTitle, const vector<string>& vModule, const vector<string>& vStacktrace, const vector<string>& vNumVars, const vector<string>& vStringVars, const vector<string>& vTables);
         static void waitForContinue();
-        static void evalDebuggerBreakPoint(Settings& _option, const map<string,string>& sStringMap, const string& sCurrentCommand = "", Parser* _parser = nullptr);
+        static void evalDebuggerBreakPoint(Settings& _option, const string& sCurrentCommand = "", Parser* _parser = nullptr);
         static void addToLog(const string& sLogMessage);
 
         // Public member functions
         // Main loop function
         KernelStatus MainLoop(const string& sCommand);
+
+        Datafile& getData()
+        {
+            return _data;
+        }
+
+        Parser& getParser()
+        {
+            return _parser;
+        }
+
+        Define& getDefinitions()
+        {
+            return _functions;
+        }
+
+        Settings& getSettings()
+        {
+            return _option;
+        }
+
+        PlotData& getPlottingData()
+        {
+            return _pData;
+        }
 
         map<string,string> getPluginLanguageStrings();
         map<string,string> getFunctionLanguageStrings();
@@ -188,6 +229,7 @@ class NumeReKernel
         string ReadDoc();
         string getDocumentation(const string& sCommand);
         vector<string> getDocIndex();;
+        NumeReVariables getVariableList();
         bool SettingsModified();
         int getAutosaveInterval() {return _option.getAutoSaveInterval();}
         long long int getLastSavedTime() {return _data.getLastSaved();}

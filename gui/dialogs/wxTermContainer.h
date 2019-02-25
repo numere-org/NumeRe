@@ -54,10 +54,10 @@ class wxTermContainer: public wxPanel
 public:
     /// Constructors
     wxTermContainer( );
-    wxTermContainer( wxWindow* parent, wxWindowID id, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxBORDER_SUNKEN );
+    wxTermContainer( wxWindow* parent, wxWindowID id, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxBORDER_STATIC );
 
     /// Creation
-    bool Create( wxWindow* parent, wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxBORDER_SUNKEN );
+    bool Create( wxWindow* parent, wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxBORDER_STATIC );
 
     /// Creates the controls and sizers
     void CreateControls();

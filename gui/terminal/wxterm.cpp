@@ -228,6 +228,13 @@ map<string, string> wxTerm::getFunctionLanguageStrings()
 	return _kernel.getFunctionLanguageStrings();
 }
 
+// This will return the variable list from the kernel
+NumeReVariables wxTerm::getVariableList()
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    return _kernel.getVariableList();
+}
+
 // This will return a copy of the internal settings
 // object of the kernel
 Settings wxTerm::getKernelSettings()

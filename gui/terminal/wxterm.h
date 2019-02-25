@@ -205,6 +205,7 @@ class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
 		{
 			m_updateProcedureLibrary = true;
 		}
+        NumeReVariables getVariableList();
 
 		// Styling functions
         bool SetFont(const wxFont& font);

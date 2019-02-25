@@ -19,6 +19,7 @@
 
 
 #include "debugger.hpp"
+#include "../../kernel.hpp"
 
 void StripSpaces(string&);
 
@@ -45,6 +46,7 @@ void NumeReDebugger::resetBP()
     sErraticModule = "";
     mLocalVars.clear();
     mLocalStrings.clear();
+    mLocalTables.clear();
     //mVarMap.clear();
     bAlreadyThrown = false;
     return;
@@ -78,18 +80,22 @@ void NumeReDebugger::gatherInformations(string** sLocalVars,
                         double* dLocalVars,
                         string** sLocalStrings,
                         unsigned int nLocalStrMapSize,
-                        const map<string,string>& sStringMap,
-                        /*string** sVarMap,
-                        unsigned int nVarMapSize,*/
+                        string** sLocalTables,
+                        unsigned int nLocalTableMapSize,
                         const string& _sErraticCommand,
                         const string& _sErraticModule,
                         unsigned int _nLineNumber)
 {
     if (bAlreadyThrown)
         return;
+
+    NumeReKernel* instance = NumeReKernel::getInstance();
+
     if (!sErraticCommand.length())
         sErraticCommand = _sErraticCommand;
+
     StripSpaces(sErraticCommand);
+
     for (unsigned int i = 0; i < sErraticCommand.length(); i++)
     {
         if ((!i && sErraticCommand[i] == '$') || (i && sErraticCommand[i] == '$' && sErraticCommand[i-1] != '\\'))
@@ -99,6 +105,7 @@ void NumeReDebugger::gatherInformations(string** sLocalVars,
     sErraticModule = _sErraticModule;
     nLineNumber = _nLineNumber - nLineNumber; // nLineNumber ist entweder 0 oder gleich der Loop-Line.
     bAlreadyThrown = true;
+
     for (unsigned int i = 0; i < nLocalVarMapSize; i++)
     {
         if (sLocalVars[i][0] != sLocalVars[i][1])
@@ -106,8 +113,10 @@ void NumeReDebugger::gatherInformations(string** sLocalVars,
             while (sErraticCommand.find(sLocalVars[i][1]) != string::npos)
                 sErraticCommand.replace(sErraticCommand.find(sLocalVars[i][1]), sLocalVars[i][1].length(), sLocalVars[i][0]);
         }
+
         mLocalVars[sLocalVars[i][0]] = dLocalVars[i];
     }
+
     for (unsigned int i = 0; i < nLocalStrMapSize; i++)
     {
         if (sLocalStrings[i][0] != sLocalStrings[i][1])
@@ -115,7 +124,32 @@ void NumeReDebugger::gatherInformations(string** sLocalVars,
             while (sErraticCommand.find(sLocalStrings[i][1]) != string::npos)
                 sErraticCommand.replace(sErraticCommand.find(sLocalStrings[i][1]), sLocalStrings[i][1].length(), sLocalStrings[i][0]);
         }
-        mLocalStrings[sLocalStrings[i][0]] = sStringMap.at(sLocalStrings[i][1]);
+
+        mLocalStrings[sLocalStrings[i][0]] = instance->getData().getStringVars().at(sLocalStrings[i][1]);
+    }
+
+    for (unsigned int i = 0; i < nLocalTableMapSize; i++)
+    {
+        if (sLocalTables[i][0] != sLocalTables[i][1])
+        {
+            while (sErraticCommand.find(sLocalTables[i][1]) != string::npos)
+                sErraticCommand.replace(sErraticCommand.find(sLocalTables[i][1]), sLocalTables[i][1].length(), sLocalTables[i][0]);
+        }
+
+        string sTableData;
+
+        if (sLocalTables[i][1] == "string")
+        {
+            sTableData = toString(instance->getData().getStringElements()) + " x " + toString(instance->getData().getStringCols());
+            sTableData += "\tstring\t{\"" + instance->getData().minString() + "\", ..., \"" + instance->getData().maxString() + "\"}";
+        }
+        else
+        {
+            sTableData = toString(instance->getData().getLines(sLocalTables[i][1], false)) + " x " + toString(instance->getData().getCols(sLocalTables[i][1], false));
+            sTableData += "\tdouble\t{" + toString(instance->getData().min(sLocalTables[i][1], "")[0], 5) + ", ..., " + toString(instance->getData().max(sLocalTables[i][1], "")[0], 5) + "}";
+        }
+
+        mLocalTables[sLocalTables[i][0] + "()"] = sTableData;
     }
 
     return;
@@ -125,8 +159,10 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
 {
     if (bAlreadyThrown)
         return;
+
     sErraticCommand = _sErraticCommand;
     nLineNumber = _nLineNumber;
+
     for (int i = 0; i < nVarArray; i++)
     {
         for (auto iter = mVarMap.begin(); iter != mVarMap.end(); ++iter)
@@ -134,98 +170,16 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
             if (iter->second == sVarArray[i])
             {
                 mLocalVars[iter->first] = vVarArray[i][0];
+
                 while (sErraticCommand.find(iter->second) != string::npos)
                     sErraticCommand.replace(sErraticCommand.find(iter->second), (iter->second).length(), iter->first);
             }
         }
     }
+
     return;
 }
 
-
-string NumeReDebugger::printModuleInformations()
-{
-    /*string sModuleInformations = "Fehlerhafter Ausdruck:   " + sErraticCommand
-                            + "\\nFehlerhaftes Modul:      " + sErraticModule
-                            + "\\nZeilennummer:            " + toString(nLineNumber);*/
-    return _lang.get("DBG_MODULE_TEMPLATE", sErraticCommand, sErraticModule, toString(nLineNumber));
-    //return sModuleInformations;
-}
-
-string NumeReDebugger::printNonErrorModuleInformations()
-{
-    /*string sModuleInformations = "Aktueller Ausdruck:      " + sErraticCommand
-                            + "\\nAktuelles Modul:         " + sErraticModule
-                            + "\\nZeilennummer:            " + toString(nLineNumber);*/
-    return _lang.get("DBG_MODULE_TEMPLATE_BP", sErraticCommand, sErraticModule, toString(nLineNumber));
-    //return sModuleInformations;
-}
-
-string NumeReDebugger::printStackTrace()
-{
-    string sStackTrace = "";
-    for (int i = vStackTrace.size()-1; i >= 0; i--)
-    {
-        if (vStackTrace.size() > 15 && vStackTrace.size()-i > 10)
-        {
-            sStackTrace += "   [...]\\n";
-            i = 2;
-        }
-        sStackTrace += "   \\$"+vStackTrace[i] + "\\n";
-    }
-    if (sStackTrace.length())
-    {
-        sStackTrace.replace(0,2,"->");
-        sStackTrace.erase(sStackTrace.length()-2);
-    }
-    else
-        sStackTrace = _lang.get("DBG_STACK_EMPTY");
-    return sStackTrace;
-}
-
-string NumeReDebugger::printLocalVars()
-{
-    string sLocalVars = "";
-    unsigned int nLength = 0;
-    for (auto iter = mLocalVars.begin(); iter != mLocalVars.end(); ++iter)
-    {
-        if (nLength < (iter->first).length())
-            nLength = (iter->first).length();
-    }
-    for (auto iter = mLocalVars.begin(); iter != mLocalVars.end(); ++iter)
-    {
-        sLocalVars += iter->first;
-        sLocalVars.append(nLength - (iter->first).length()+2,' ');
-        sLocalVars += " =   " + toString(iter->second, 7) + "\\n";
-    }
-    if (sLocalVars.length())
-        sLocalVars.erase(sLocalVars.length()-2);
-    else
-        sLocalVars = _lang.get("DBG_LOCALVARS_EMPTY");
-    return sLocalVars;
-}
-
-string NumeReDebugger::printLocalStrings()
-{
-    string sLocalStrings = "";
-    unsigned int nLength = 0;
-    for (auto iter = mLocalStrings.begin(); iter != mLocalStrings.end(); ++iter)
-    {
-        if ((iter->first).length() > nLength)
-            nLength = (iter->first).length();
-    }
-    for (auto iter = mLocalStrings.begin(); iter != mLocalStrings.end(); ++iter)
-    {
-        sLocalStrings += iter->first;
-        sLocalStrings.append(nLength - (iter->first).length()+2,' ');
-        sLocalStrings += " =   \"" + iter->second + "\"\\n";
-    }
-    if (sLocalStrings.length())
-        sLocalStrings.erase(sLocalStrings.length()-2);
-    else
-        sLocalStrings = _lang.get("DBG_LOCALSTRINGS_EMPTY");
-    return sLocalStrings;
-}
 
 vector<string> NumeReDebugger::getModuleInformations()
 {
@@ -259,7 +213,7 @@ vector<string> NumeReDebugger::getNumVars()
     vector<string> vNumVars;
     for (auto iter = mLocalVars.begin(); iter != mLocalVars.end(); ++iter)
     {
-        vNumVars.push_back(iter->first + "\t" + toString(iter->second, 7));
+        vNumVars.push_back(iter->first + "\t1 x 1\tdouble\t" + toString(iter->second, 7));
     }
     return vNumVars;
 }
@@ -269,9 +223,19 @@ vector<string> NumeReDebugger::getStringVars()
     vector<string> vStringVars;
     for (auto iter = mLocalStrings.begin(); iter != mLocalStrings.end(); ++iter)
     {
-        vStringVars.push_back(iter->first + "\t\"" + iter->second + "\"");
+        vStringVars.push_back(iter->first + "\t1 x 1\tstring\t\"" + iter->second + "\"");
     }
     return vStringVars;
+}
+
+vector<string> NumeReDebugger::getTables()
+{
+    vector<string> vTables;
+    for (auto iter = mLocalTables.begin(); iter != mLocalTables.end(); ++iter)
+    {
+        vTables.push_back(iter->first + "\t" + iter->second);
+    }
+    return vTables;
 }
 
 

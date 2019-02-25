@@ -55,7 +55,7 @@
 #include "dialogs/OptionsDialog.h"
 #include "dialogs/RemoteFileDialog.h"
 #include "dialogs/wxTermContainer.h"
-#include "dialogs/VariableWatchPanel.h"
+//#include "dialogs/VariableWatchPanel.h"
 #include "dialogs/AboutChameleonDialog.h"
 #include "dialogs/debugviewer.hpp"
 
@@ -254,7 +254,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_currentView = nullptr;
     m_statusBar = nullptr;
     fSplitPercentage = -0.65f;
-    fVerticalSplitPercentage = 0.75f; // positive number to deactivate internal default algorithm
+    fVerticalSplitPercentage = 0.7f; // positive number to deactivate internal default algorithm
 
     m_copiedTreeItem = 0;
     m_multiRowState = false;
@@ -288,8 +288,9 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_splitProjectEditor = new wxSplitterWindow(this, ID_SPLITPROJECTEDITOR, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME);
 	m_splitEditorOutput = new wxProportionalSplitterWindow(m_splitProjectEditor, ID_SPLITEDITOROUTPUT, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
 	m_splitCommandHistory = new wxProportionalSplitterWindow(m_splitEditorOutput, wxID_ANY, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
-	m_book = new NumeReNotebook(m_splitEditorOutput, ID_NOTEBOOK_ED, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE);
+	m_book = new NumeReNotebook(m_splitEditorOutput, ID_NOTEBOOK_ED, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC);
 	m_book->SetTopParent(this);
+	m_noteTerm = new ViewerBook(m_splitCommandHistory, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC);
 
 	m_termContainer = new wxTermContainer(m_splitCommandHistory, ID_CONTAINER_TERM);
 
@@ -312,7 +313,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
 	// project setup
 	m_projMultiFiles = NULL;
-	m_treeBook = new ViewerBook(m_splitProjectEditor, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE);
+	m_treeBook = new ViewerBook(m_splitProjectEditor, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC);
 	m_fileTree = new FileTree(m_treeBook, ID_PROJECTTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT);
 	m_treeBook->AddPage(m_fileTree, _guilang.get("GUI_FILETREE"));
 	m_functionTree = new FileTree(m_treeBook, ID_FUNCTIONTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT | wxTR_HIDE_ROOT);
@@ -374,7 +375,11 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_splitEditorOutput->Show();
 	m_splitCommandHistory->Show();
 	m_book->Show();
-    m_history = new NumeReHistory(this, m_options, new ProjectInfo(), m_splitCommandHistory, -1, m_terminal->getSyntax(), m_terminal, wxDefaultPosition, wxDefaultSize, wxBORDER_SUNKEN);
+    m_history = new NumeReHistory(this, m_options, new ProjectInfo(), m_noteTerm, -1, m_terminal->getSyntax(), m_terminal, wxDefaultPosition, wxDefaultSize);
+    m_varViewer = new VariableViewer(m_noteTerm);
+
+    m_noteTerm->AddPage(m_history, _guilang.get("GUI_HISTORY"));
+    m_noteTerm->AddPage(m_varViewer->control, _guilang.get("GUI_VARVIEWER"));
 
     wxMilliSleep(500);
 
@@ -1631,7 +1636,7 @@ void NumeReWindow::evaluateDebugInfo(const vector<string>& vDebugInfo)
     // initialize the debugger, if necessary and pass the new contents
     string sSizes = vDebugInfo[0];
     string sTitle = vDebugInfo[1];
-    size_t nModuleSize = 0, nStackSize = 0, nNumVarSize = 0;
+    size_t nModuleSize = 0, nStackSize = 0, nNumVarSize = 0, sStrVarSize = 0, sTabVarSize = 0;
     vector<string> vModule;
     vector<string> vStack;
     vector<string> vVars;
@@ -1650,6 +1655,10 @@ void NumeReWindow::evaluateDebugInfo(const vector<string>& vDebugInfo)
     nStackSize = StrToInt(sSizes.substr(0, sSizes.find(';')));
     sSizes.erase(0, sSizes.find(';')+1);
     nNumVarSize = StrToInt(sSizes.substr(0, sSizes.find(';')));
+    sSizes.erase(0, sSizes.find(';')+1);
+    sStrVarSize = StrToInt(sSizes.substr(0, sSizes.find(';')));
+    sSizes.erase(0, sSizes.find(';')+1);
+    sTabVarSize = StrToInt(sSizes.substr(0, sSizes.find(';')));
     //sSizes.erase(0, sSizes.find(';')+1);
 
     for (size_t i = 2; i < vDebugInfo.size(); i++)
@@ -1668,7 +1677,7 @@ void NumeReWindow::evaluateDebugInfo(const vector<string>& vDebugInfo)
         }
     }
 
-    m_debugViewer->setDebugInfo(sTitle, vModule, vStack, vVars, nNumVarSize);
+    m_debugViewer->setDebugInfo(sTitle, vModule, vStack, vVars, nNumVarSize, sStrVarSize, sTabVarSize);
 }
 
 void NumeReWindow::createLaTeXFile()
@@ -2997,6 +3006,8 @@ void NumeReWindow::Ready()
     wxToolBar* tb = GetToolBar();
     tb->EnableTool(ID_MENU_EXECUTE, true);
     tb->EnableTool(ID_MENU_STOP_EXECUTION, false);
+
+    UpdateVarViewer();
 }
 
 // This member function tells NumeRe that
@@ -4175,18 +4186,29 @@ void NumeReWindow::UpdateTerminalNotebook()
     {
         m_splitEditorOutput->SplitHorizontally(m_book, m_splitCommandHistory, fSplitPercentage);//-260);//-200);
         m_splitEditorOutput->SetMinimumPaneSize(20);
+
         if (!m_splitCommandHistory->IsSplit())
         {
-            m_splitCommandHistory->SplitVertically(m_termContainer, m_history, fVerticalSplitPercentage);
+            m_splitCommandHistory->SplitVertically(m_termContainer, m_noteTerm, fVerticalSplitPercentage);
         }
+
         m_terminal->UpdateSize();
         m_termContainer->Show();
-        m_history->Show();
+        m_noteTerm->Show();
     }
 
 	m_termContainer->Refresh();
 	m_book->Refresh();
-	m_history->Refresh();
+	m_noteTerm->Refresh();
+}
+
+void NumeReWindow::UpdateVarViewer()
+{
+    if (m_varViewer)
+    {
+        NumeReVariables vars = m_terminal->getVariableList();
+        m_varViewer->UpdateVariables(vars.vVariables, vars.nNumerics, vars.nStrings, vars.nTables);
+    }
 }
 
 void NumeReWindow::UpdateWindowTitle(const wxString& filename)
@@ -4200,7 +4222,7 @@ void NumeReWindow::toggleConsole()
     if (m_termContainer->IsShown())
     {
         m_termContainer->Hide();
-        m_history->Hide();
+        m_noteTerm->Hide();
         fSplitPercentage = m_splitEditorOutput->GetSplitPercentage();
         m_splitEditorOutput->Unsplit(m_splitCommandHistory);
     }
@@ -4211,7 +4233,7 @@ void NumeReWindow::toggleConsole()
         m_terminal->UpdateSize();
         m_termContainer->Show();
         if (m_splitCommandHistory->IsSplit())
-            m_history->Show();
+            m_noteTerm->Show();
     }
     m_book->Refresh();
 }
@@ -4236,20 +4258,20 @@ void NumeReWindow::toggleFiletree()
 
 void NumeReWindow::toggleHistory()
 {
-    if (m_history->IsShown())
+    if (m_noteTerm->IsShown())
     {
-        m_history->Hide();
+        m_noteTerm->Hide();
         fVerticalSplitPercentage = m_splitCommandHistory->GetSplitPercentage();
-        m_splitCommandHistory->Unsplit(m_history);
+        m_splitCommandHistory->Unsplit(m_noteTerm);
     }
     else
     {
-        m_splitCommandHistory->SplitVertically(m_termContainer, m_history, fVerticalSplitPercentage);
-        m_history->Show();
+        m_splitCommandHistory->SplitVertically(m_termContainer, m_noteTerm, fVerticalSplitPercentage);
+        m_noteTerm->Show();
     }
     m_terminal->UpdateSize();
     m_termContainer->Refresh();
-    m_history->Refresh();
+    m_noteTerm->Refresh();
 }
 
 void NumeReWindow::showConsole()
@@ -4261,7 +4283,7 @@ void NumeReWindow::showConsole()
         m_terminal->UpdateSize();
         m_termContainer->Show();
         if (m_splitCommandHistory->IsSplit())
-            m_history->Show();
+            m_noteTerm->Show();
         m_book->Refresh();
     }
 }
