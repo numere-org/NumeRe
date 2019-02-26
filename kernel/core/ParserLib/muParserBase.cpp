@@ -590,7 +590,7 @@ namespace mu
 						vResults.push_back(parser_Max(v, nResults));
 
                     // Store the result in a new temporary vector
-                    string sVectorVarName = "~TMAFV[" + getNextVectorVarIndex() + "]";
+                    string sVectorVarName = "_~TMAFV[" + getNextVectorVarIndex() + "]";
 					sExpr.replace(nMultiArgParens - sMultiArgFunc.length(), nClosingParens - nMultiArgParens + 1 + sMultiArgFunc.length(), sVectorVarName);
 					SetVectorVar(sVectorVarName, vResults);
 				}
@@ -604,7 +604,7 @@ namespace mu
 					evaluateVectorExpansion(sSubExpr, vResults);
 
 					// Store the result in a new temporary vector
-                    string sVectorVarName = "~TV[" + getNextVectorVarIndex() + "]";
+                    string sVectorVarName = "_~TV[" + getNextVectorVarIndex() + "]";
 					sExpr.replace(i, j + 1 - i, sVectorVarName);
 					SetVectorVar(sVectorVarName, vResults);
 				}
@@ -645,7 +645,7 @@ namespace mu
 						{
 						    // This is a usual vector
 						    // Store the vector result as a new temporary vector variable
-                            string sVectorVarName = "~TV[" + getNextVectorVarIndex() + "]";
+                            string sVectorVarName = "_~TV[" + getNextVectorVarIndex() + "]";
 							sExpr.replace(i, j + 1 - i, sVectorVarName);
 							SetVectorVar(sVectorVarName, vResults);
 						}

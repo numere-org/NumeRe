@@ -37,7 +37,7 @@ VariableViewer::VariableViewer(wxWindow* parent, int fieldsize)
     control = new wxTreeListCtrl(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_FULL_ROW_HIGHLIGHT | wxTR_ROW_LINES | wxTR_NO_LINES | wxTR_HIDE_ROOT);
 
     control->AddColumn(_guilang.get("GUI_VARVIEWER_NAME"), 150);
-    control->AddColumn(_guilang.get("GUI_VARVIEWER_DIM"), 60, wxALIGN_RIGHT);
+    control->AddColumn(_guilang.get("GUI_VARVIEWER_DIM"), 80, wxALIGN_RIGHT);
     control->AddColumn(_guilang.get("GUI_VARVIEWER_CLASS"), 55);
     control->AddColumn(_guilang.get("GUI_VARVIEWER_VALUE"), fieldsize);
 
@@ -59,6 +59,28 @@ bool VariableViewer::checkPresence(const std::string& sVar)
         if (vLastVarSet[i] == sVar)
             return true;
     }
+
+    return false;
+}
+
+bool VariableViewer::checkSpecialVals(const std::string& sVar)
+{
+    if (sVar.substr(0, sVar.find('\t')) == "data()")
+        return true;
+    else if (sVar.substr(0, sVar.find('\t')) == "cache()")
+        return true;
+    else if (sVar.substr(0, sVar.find('\t')) == "string()")
+        return true;
+    else if (sVar.substr(0, sVar.find('\t')) == "x")
+        return true;
+    else if (sVar.substr(0, sVar.find('\t')) == "y")
+        return true;
+    else if (sVar.substr(0, sVar.find('\t')) == "z")
+        return true;
+    else if (sVar.substr(0, sVar.find('\t')) == "t")
+        return true;
+    else if (sVar.substr(0, sVar.find('\t')) == "ans")
+        return true;
 
     return false;
 }
@@ -131,6 +153,10 @@ void VariableViewer::UpdateVariables(const std::vector<std::string>& vVarList, s
 
         if (debuggerMode && !checkPresence(vVarList[i]))
             control->SetItemTextColour(currentItem, *wxRED);
+        if (!debuggerMode && checkSpecialVals(vVarList[i]))
+        {
+            control->SetItemTextColour(currentItem, wxColour(0, 0, 192));
+        }
     }
 
     ExpandAll();

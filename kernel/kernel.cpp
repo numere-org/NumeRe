@@ -1917,7 +1917,7 @@ NumeReVariables NumeReKernel::getVariableList()
         if ((iter->first).substr(0, 2) == "_~")
             continue;
 
-        sCurrentLine = iter->first + "\t1 x 1\tstring\t\"" + iter->second + "\"";
+        sCurrentLine = iter->first + "\t1 x 1\tstring\t\"" + replaceControlCharacters(iter->second) + "\"";
         vars.vVariables.push_back(sCurrentLine);
     }
     vars.nStrings = vars.vVariables.size() - vars.nNumerics;
@@ -1931,7 +1931,7 @@ NumeReVariables NumeReKernel::getVariableList()
         if (iter->first == "string")
         {
             sCurrentLine = iter->first + "()\t" + toString(_data.getStringElements()) + " x " + toString(_data.getStringCols());
-            sCurrentLine += "\tstring\t{\"" + _data.minString() + "\", ..., \"" + _data.maxString() + "\"}";
+            sCurrentLine += "\tstring\t{\"" + replaceControlCharacters(_data.minString()) + "\", ..., \"" + replaceControlCharacters(_data.maxString()) + "\"}";
         }
         else
         {

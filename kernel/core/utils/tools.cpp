@@ -2961,6 +2961,16 @@ void replaceAll(string& sToModify, const string& sToRep, const string& sNewValue
 	}
 }
 
+// This function is a simple wrapper for replaceAll() and
+// specialized to remove control characters from strings
+string replaceControlCharacters(string sToModify)
+{
+    replaceAll(sToModify, "\n", "\\n");
+    replaceAll(sToModify, "\t", "\\t");
+
+    return sToModify;
+}
+
 // This function accesses the windows clipboard and tries to convert the
 // contents into usual text
 string getClipboardText()

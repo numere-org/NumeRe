@@ -37,6 +37,7 @@ class VariableViewer
         wxTreeItemId tableRoot;
 
         bool checkPresence(const std::string& sVar);
+        bool checkSpecialVals(const std::string& sVar);
         wxTreeItemId AppendVariable(wxTreeItemId rootNode, std::string sVar);
         void ClearTree();
         void HandleDebugActions(const std::vector<std::string>& vVarList);

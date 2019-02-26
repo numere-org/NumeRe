@@ -259,7 +259,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_transposeMatrix(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option)));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+9))+10;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -272,7 +272,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_InvertMatrix(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+6));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -285,7 +285,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_calcEigenVects(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), EIGENVALUES, sCmd, sSubExpr, i+9));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+9))+10;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -298,7 +298,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_calcEigenVects(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), EIGENVECTORS, sCmd, sSubExpr, i+10));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+10))+11;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -311,7 +311,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_calcEigenVects(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), DIAGONALIZE, sCmd, sSubExpr, i+11));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+11))+12;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -324,7 +324,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_solveLGS(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), _parser, _functions, _option, sCmd, sSubExpr, i+5));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+5))+6;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -337,7 +337,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_calcCrossProduct(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+5));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+5))+6;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -350,7 +350,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_calcTrace(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+5));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+5))+6;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -363,7 +363,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_getDeterminant(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -381,7 +381,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             else
                 vReturnedMatrices.push_back(parser_OnesMatrix((unsigned int)v[0], (unsigned int)v[0]));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -399,7 +399,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             else
                 vReturnedMatrices.push_back(parser_ZeroesMatrix((unsigned int)v[0], (unsigned int)v[0]));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+4))+5;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -414,7 +414,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             v = _parser.Eval(nResults);
             vReturnedMatrices.push_back(parser_IdentityMatrix((unsigned int)v[0]));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+8))+9;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -427,7 +427,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_matFromCols(sSubExpr, _parser, _data, _functions, _option));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+5))+6;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -440,7 +440,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_matFromLines(sSubExpr, _parser, _data, _functions, _option));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+5))+6;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -453,7 +453,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_matFromColsFilled(sSubExpr, _parser, _data, _functions, _option));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -466,7 +466,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_matFromLinesFilled(sSubExpr, _parser, _data, _functions, _option));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -479,7 +479,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_diagonalMatrix(sSubExpr, _parser, _data, _functions, _option));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+4))+5;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -492,7 +492,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixLogToIndex(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+8));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+8))+9;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -505,7 +505,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixIndexToLog(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+8));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+8))+9;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -518,7 +518,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixSize(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+4));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+4))+5;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -531,7 +531,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixAnd(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -544,7 +544,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixXor(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -557,7 +557,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixOr(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+2));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+2))+3;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -570,7 +570,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixSum(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -583,7 +583,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixAvg(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -596,7 +596,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixStd(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -609,7 +609,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixNum(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -622,7 +622,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixCnt(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -635,7 +635,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixMin(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -648,7 +648,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixMax(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -661,7 +661,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixPrd(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -674,7 +674,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixNorm(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+4))+5;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -687,7 +687,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixMed(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -710,7 +710,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
 
             vReturnedMatrices.push_back(parser_MatrixCmp(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), v[0], (int)v[1], sCmd, sSubExpr, i+3));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -731,7 +731,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
 
             vReturnedMatrices.push_back(parser_MatrixPct(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), v[0], sCmd, sSubExpr, i+3));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -754,7 +754,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
 
             vReturnedMatrices.push_back(parser_MatrixReshape(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), (size_t)v[0], (size_t)v[1], sCmd, sSubExpr, i+7));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+7))+8;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -776,7 +776,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixResize(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), (size_t)v[0], (size_t)v[1], sCmd, sSubExpr, i+6));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -801,7 +801,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
 
             vReturnedMatrices.push_back(parser_MatrixUnique(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), nDim, sCmd, sSubExpr, i+3));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -814,7 +814,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_matFromCols(sSubExpr, _parser, _data, _functions, _option));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i))+1;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -827,7 +827,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_matFromCols(sSubExpr, _parser, _data, _functions, _option));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i))+1;
-            __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
@@ -840,7 +840,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
         {
             int nMatrix = 0;
             nMatrix = StrToInt(__sCmd.substr(__sCmd.rfind('[')+1, __sCmd.rfind(']')-__sCmd.rfind('[')-1));
-            if (__sCmd.substr(__sCmd.rfind('[')-14,15) == "returnedMatrix[")
+            if (__sCmd.substr(__sCmd.rfind('[')-16,17) == "_~returnedMatrix[")
             {
                 string sSubExpr = sCmd.substr(i, getMatchingParenthesis(sCmd.substr(i))+1);
                 pos_back = i+getMatchingParenthesis(sCmd.substr(i))+1;
@@ -878,13 +878,13 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
                         __sCmd += sCmd.substr(pos_back, i-pos_back);
                     }
                     vReturnedMatrices.push_back(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option));
-                    __sCmd += "returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+                    __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
                 }
                 else
                 {
                     __sCmd += sCmd.substr(pos_back, i-pos_back);
                     vReturnedMatrices.push_back(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option));
-                    __sCmd += "(returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"])";
+                    __sCmd += "(_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"])";
                 }
                 pos_back = closing_par_pos+1;
                 i = pos_back-1;
@@ -940,7 +940,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             vMissingValues.push_back(1);
 
         // Replace the current call with a standardized one
-        __sCmd.replace(nPos, getMatchingParenthesis(__sCmd.substr(nPos+4))+5, "matrix["+toString((int)vMatrixNames.size()-1)+"]");
+        __sCmd.replace(nPos, getMatchingParenthesis(__sCmd.substr(nPos+4))+5, "_~matrix["+toString((int)vMatrixNames.size()-1)+"]");
     }
 
     // now all other caches
@@ -978,7 +978,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
                 vMissingValues.push_back(1);
 
             // Replace the current call with a standardized one
-            __sCmd.replace(nPos, getMatchingParenthesis(__sCmd.substr(nPos+(iter->first).length()))+(iter->first).length()+1, "matrix["+toString((int)vMatrixNames.size()-1)+"]");
+            __sCmd.replace(nPos, getMatchingParenthesis(__sCmd.substr(nPos+(iter->first).length()))+(iter->first).length()+1, "_~matrix["+toString((int)vMatrixNames.size()-1)+"]");
         }
     }
 
@@ -1009,7 +1009,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
 
                 // It's either an access to a memory object
                 // or the return value of a matrix function
-                if (sElement.substr(0,7) == "matrix[")
+                if (sElement.substr(0,9) == "_~matrix[")
                 {
                     // memory access
                     vector<double> vLine;
@@ -1052,16 +1052,16 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
 
                 // Left handed matrix expression
                 sElement = __sCmd.substr(0,__sCmd.find_last_of(']', n-1)+1);
-                sElement.erase(0,sElement.find_last_of('[')-6);
+                sElement.erase(0,sElement.find_last_of('[')-8);
                 if (sElement.find_first_of("()+-*/^!%&|<>=?:,") != string::npos || sElement.find_first_of("[]") == string::npos)
                     throw SyntaxError(SyntaxError::NO_MATRIX_FOR_MATOP, sCmd, pos_back+1);
 
                 // It's either an access to a memory object
                 // or the return value of a matrix function
-                if (sElement.substr(0,7) == "matrix[")
+                if (sElement.substr(0,9) == "_~matrix[")
                 {
                     // memory access
-                    nPositions[0] = __sCmd.rfind("matrix[",n);
+                    nPositions[0] = __sCmd.rfind("_~matrix[",n);
                     vector<double> vLine;
                     unsigned int nthMatrix = StrToInt(sElement.substr(sElement.find('[')+1, sElement.find(']')-1-sElement.find('[')));
 
@@ -1098,7 +1098,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
                 else
                 {
                     // return value
-                    nPositions[0] = __sCmd.rfind("returnedMatrix[", n);
+                    nPositions[0] = __sCmd.rfind("_~returnedMatrix[", n);
                     _mLeft = vReturnedMatrices[StrToInt(sElement.substr(sElement.find('[')+1, sElement.find(']')-1-sElement.find('[')))];
                 }
 
@@ -1106,7 +1106,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
                 vReturnedMatrices.push_back(parser_matrixMultiplication(_mLeft, _mRight, sCmd, "", pos_back+1));
 
                 // Replace the current multiplication with its return value
-                __sCmd.replace(nPositions[0], nPositions[1]-nPositions[0], "returnedMatrix[" + toString((int)vReturnedMatrices.size()-1)+"]");
+                __sCmd.replace(nPositions[0], nPositions[1]-nPositions[0], "_~returnedMatrix[" + toString((int)vReturnedMatrices.size()-1)+"]");
                 n = nPositions[0];
             }
         }
@@ -1121,7 +1121,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
     // in the expression
     for (unsigned int i = 0; i < vIndices.size(); i++)
     {
-        if (sCmd.find("matrix["+toString((int)i)+"]") == string::npos)
+        if (sCmd.find("_~matrix["+toString((int)i)+"]") == string::npos)
             continue;
 
         // Get the column count from the dimensions of the indices
@@ -1140,7 +1140,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
     // Examine now the return values available in the expression
     for (unsigned int i = 0; i < vReturnedMatrices.size(); i++)
     {
-        if (vReturnedMatrices[i][0].size() > nColCount && sCmd.find("returnedMatrix["+toString((int)i)+"]") != string::npos)
+        if (vReturnedMatrices[i][0].size() > nColCount && sCmd.find("_~returnedMatrix["+toString((int)i)+"]") != string::npos)
             nColCount = vReturnedMatrices[i][0].size();
     }
 
@@ -1175,8 +1175,8 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
         }
 
         // Declare the corresponding vector variable
-        if (sCmd.find("matrix["+toString((int)j)+"]") != string::npos)
-            _parser.SetVectorVar("matrix["+toString((int)j)+"]", vMatrixVector);
+        if (sCmd.find("_~matrix["+toString((int)j)+"]") != string::npos)
+            _parser.SetVectorVar("_~matrix["+toString((int)j)+"]", vMatrixVector);
     }
 
     // Get now the first columns of the returned values
@@ -1197,8 +1197,8 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
         }
 
         // Declare the corresponding vector variable
-        if (sCmd.find("returnedMatrix["+toString((int)j)+"]") != string::npos)
-            _parser.SetVectorVar("returnedMatrix["+toString((int)j)+"]", vMatrixVector);
+        if (sCmd.find("_~returnedMatrix["+toString((int)j)+"]") != string::npos)
+            _parser.SetVectorVar("_~returnedMatrix["+toString((int)j)+"]", vMatrixVector);
     }
 
     // Set the expression in the parser
@@ -1272,8 +1272,8 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
                 }
             }
 
-            if (sCmd.find("matrix["+toString((int)j)+"]") != string::npos)
-                _parser.SetVectorVar("matrix["+toString((int)j)+"]", vMatrixVector);
+            if (sCmd.find("_~matrix["+toString((int)j)+"]") != string::npos)
+                _parser.SetVectorVar("_~matrix["+toString((int)j)+"]", vMatrixVector);
         }
 
         // Get now the next columns of the returned values
@@ -1297,8 +1297,8 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
                 }
             }
 
-            if (sCmd.find("returnedMatrix["+toString((int)j)+"]") != string::npos)
-                _parser.SetVectorVar("returnedMatrix["+toString((int)j)+"]", vMatrixVector);
+            if (sCmd.find("_~returnedMatrix["+toString((int)j)+"]") != string::npos)
+                _parser.SetVectorVar("_~returnedMatrix["+toString((int)j)+"]", vMatrixVector);
         }
 
         // Evaluate
@@ -3240,8 +3240,8 @@ static void parser_declareMatrixReturnValuesForIndices(const string& _sCmd, cons
         }
 
         // Declare the corresponding vector variable
-        if (_sCmd.find("returnedMatrix["+toString((int)j)+"]") != string::npos)
-            _parser.SetVectorVar("returnedMatrix["+toString((int)j)+"]", v);
+        if (_sCmd.find("_~returnedMatrix["+toString((int)j)+"]") != string::npos)
+            _parser.SetVectorVar("_~returnedMatrix["+toString((int)j)+"]", v);
     }
 }
 
@@ -3282,8 +3282,8 @@ static void parser_declareDataMatrixValuesForIndices(string& _sCmd, const vector
         }
 
         // Declare the corresponding vector variable
-        if (_sCmd.find("matrix["+toString((int)j)+"]") != string::npos)
-            _parser.SetVectorVar("matrix["+toString((int)j)+"]", v);
+        if (_sCmd.find("_~matrix["+toString((int)j)+"]") != string::npos)
+            _parser.SetVectorVar("_~matrix["+toString((int)j)+"]", v);
     }
 }
 

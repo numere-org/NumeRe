@@ -788,26 +788,20 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
 		}
 
 		// Handle breakpoints
-		if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
-            || (nCurrentByteCode & ProcedureCommandLine::BYTECODE_DEBUGBREAKPOINT
-                && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT)))
+		if (_option.getUseDebugger()
+            && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT))
         {
             if (sProcCommandLine.substr(sProcCommandLine.find_first_not_of(' '), 2) == "|>" && !getLoop())
             {
                 sProcCommandLine.erase(sProcCommandLine.find_first_not_of(' '), 2);
                 StripSpaces(sProcCommandLine);
 
-                if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
-                    nByteCode |= ProcedureCommandLine::BYTECODE_DEBUGBREAKPOINT;
-
-                if (_option.getUseDebugger())
-                {
-                    _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _varfactory.sLocalTables, _varfactory.nLocalTableSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
-                    evalDebuggerBreakPoint(_parser, _option);
-                }
+                _option._debug.gatherInformations(_varfactory.sLocalVars, _varfactory.nLocalVarMapSize, _varfactory.dLocalVars, _varfactory.sLocalStrings, _varfactory.nLocalStrMapSize, _varfactory.sLocalTables, _varfactory.nLocalTableSize, sProcCommandLine, sCurrentProcedureName, nCurrentLine);
+                evalDebuggerBreakPoint(_parser, _option);
 
                 if (!sProcCommandLine.length())
                     continue;
+
                 sProcCommandLine.insert(0, 1, ' ');
             }
         }

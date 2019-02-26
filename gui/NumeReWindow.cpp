@@ -3003,11 +3003,13 @@ void NumeReWindow::Ready()
 {
     if (m_statusBar)
         m_statusBar->Ready();
+
     wxToolBar* tb = GetToolBar();
     tb->EnableTool(ID_MENU_EXECUTE, true);
     tb->EnableTool(ID_MENU_STOP_EXECUTION, false);
 
-    UpdateVarViewer();
+    //UpdateVarViewer();
+    CallAfter(NumeReWindow::UpdateVarViewer);
 }
 
 // This member function tells NumeRe that
