@@ -6639,76 +6639,19 @@ static bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settin
 	if (_data.containsCacheElements(sObject))
 	{
 		StripSpaces(sObject);
-		//Indices _idx = parser_getIndices(sObject, _parser, _data, _option);
 		string sTableName = sObject.substr(0, sObject.find('('));
-		long long int nLine = 0;
-		long long int nCol = 0;
-		int nHeadlineCount = 0;
-		Output _out;
-		_out.setCompact(false);
-		string** sTable = 0;
-		if (!_data.getCols(sTableName))
-		{
-			sTable = new string*[2];
-			for (size_t i = 0; i < 2; i++)
-				sTable[i] = new string[1];
-			nLine = 2;
-			nCol = 1;
-			sTable[0][0] = "Spalte_1";
-			sTable[1][0] = "";
-		}
-		else
-		{
-			sTable = make_stringmatrix(_data, _out, _option, sTableName, nLine, nCol, nHeadlineCount, _option.getPrecision());
-		}
 
-		NumeRe::Container<string> _copyContainer(sTable, (size_t)nLine, (size_t)nCol);
-		NumeReKernel::showTable(_copyContainer, sTableName, true);
+		NumeReKernel::showTable(_data.extractTable(sTableName), sTableName, true);
 		NumeReKernel::printPreFmt("|-> " + _lang.get("BUILTIN_WAITINGFOREDIT") + " ... ");
 
-		NumeRe::Container<string> _sTable(NumeReKernel::getTable());
+		NumeRe::Table _table = NumeReKernel::getTable();
 		NumeReKernel::printPreFmt(_lang.get("COMMON_DONE") + ".\n");
 
-		if (!_sTable.getRows())
-			return true;
+		if (_table.isEmpty())
+            return true;
 
-		if (_data.getCols(sTableName))
-			_data.deleteBulk(sTableName, 0, _data.getLines(sTableName, true) - 1, 0, _data.getCols(sTableName, true) - 1);
-
-		size_t nFirstRow = 0;
-		while (_sTable.get(nFirstRow, 0).front() == '#' && nFirstRow < _sTable.getRows())
-			nFirstRow++;
-
-		for (size_t i = nFirstRow; i < _sTable.getRows(); i++)
-		{
-			for (size_t j = 0; j < _sTable.getCols(); j++)
-			{
-				if (_sTable.get(i, j) == "---"
-						|| !_sTable.get(i, j).length()
-						|| toLowerCase(_sTable.get(i, j)) == "nan"
-						|| toLowerCase(_sTable.get(i, j)) == "inf"
-						|| toLowerCase(_sTable.get(i, j)) == "-inf")
-					continue;
-				_data.writeToCache(i - nFirstRow, j, sTableName, StrToDb(_sTable.get(i, j)));
-			}
-		}
-		for (size_t i = 0; i < nFirstRow; i++)
-		{
-			for (size_t j = 0; j < _sTable.getCols(); j++)
-			{
-				if (!j)
-					_sTable.get(i, j).erase(0, 1);
-				if (!i && _sTable.get(i, j).length())
-					_data.setHeadLineElement(j, sTableName, _sTable.get(i, j));
-				else
-				{
-					if (_sTable.get(i, j).length())
-						_data.setHeadLineElement(j, sTableName, _data.getHeadLineElement(j, sTableName) + "\\n" + _sTable.get(i, j));
-				}
-			}
-		}
-
-		return true;
+        _data.importTable(_table, sTableName);
+        return true;
 	}
 	if (!BI_FileExists(sObject) || sObject.find('.') == string::npos)
 	{

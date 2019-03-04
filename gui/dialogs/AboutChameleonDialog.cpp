@@ -125,7 +125,7 @@ void AboutChameleonDialog::CreateControls()
     wxBoxSizer* itemBoxSizer2 = new wxBoxSizer(wxVERTICAL);
     itemDialog1->SetSizer(itemBoxSizer2);
 
-    wxNotebook* itemNotebook3 = new wxNotebook( itemDialog1, ID_NOTEBOOK, wxDefaultPosition, wxDefaultSize, wxNB_TOP );
+    wxNotebook* itemNotebook3 = new wxNotebook( itemDialog1, ID_NOTEBOOK, wxDefaultPosition, wxDefaultSize, wxNB_TOP);
     //itemNotebook3->SetForegroundColour(wxColour(0, 0, 0));
     //itemNotebook3->SetBackgroundColour(wxColour(255, 255, 255));
 #if !wxCHECK_VERSION(2,5,2)

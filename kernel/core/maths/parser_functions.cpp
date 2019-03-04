@@ -6939,7 +6939,7 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
 	StripSpaces(sCmd);
 
 	// get the data from the data object
-	Table _table = parser_extractData(sCmd, _parser, _data, _option);
+	NumeRe::Table _table = parser_extractData(sCmd, _parser, _data, _option);
 
 	dNyquistFrequency = _table.getLines() / (_table.getValue(_table.getLines() - 1, 0) - _table.getValue(0, 0)) / 2.0;
 	dTimeInterval = (_table.getLines() - 1) / (_table.getValue(_table.getLines() - 1, 0));
@@ -7105,7 +7105,7 @@ bool parser_wavelet(string& sCmd, Parser& _parser, Datafile& _data, const Settin
 	StripSpaces(sCmd);
 
 	// get the data from the data object
-	Table _table = parser_extractData(sCmd, _parser, _data, _option);
+	NumeRe::Table _table = parser_extractData(sCmd, _parser, _data, _option);
 
 	if (_option.getSystemPrintStatus())
 	{
@@ -7151,7 +7151,7 @@ bool parser_wavelet(string& sCmd, Parser& _parser, Datafile& _data, const Settin
 	// write the output as datagrid for plotting (only if not an inverse trafo)
 	if (bTargetGrid && !bInverseTrafo)
 	{
-		Table tWaveletData = decodeWaveletData(vWaveletData, vAxisData);
+		NumeRe::Table tWaveletData = decodeWaveletData(vWaveletData, vAxisData);
 
 		if (_idx.nJ[1] == -2)
 			_idx.nJ[1] = _idx.nJ[0] + tWaveletData.getCols() - 1;

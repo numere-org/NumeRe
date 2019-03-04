@@ -213,11 +213,7 @@ class Datafile : public Cache, private Sorter		//	Diese Klasse ist ein CHILD von
 		double getElement(long long int _nLine, long long int _nCol, const string& sCache) const;	// Methode, um auf ein Element von dDatafile zuzugreifen
 		vector<double> getElement(const vector<long long int>& _vLine, const vector<long long int>& _vCol, const string& sCache) const;
 		void copyElementsInto(vector<double>* vTarget, const vector<long long int>& _vLine, const vector<long long int>& _vCol, const string& sCache) const;
-		void openFile(string _sFile,
-                    Settings& _option,
-                    bool bAutoSave = false,
-                    bool bIgnore = false,
-                    int _nHeadline = 0);	                // zentrale Methode: Oeffnet ein Datenfile, liest die Daten und interpretiert sie als double.
+		void openFile(string _sFile, Settings& _option, bool bAutoSave = false, bool bIgnore = false, int _nHeadline = 0);	                // zentrale Methode: Oeffnet ein Datenfile, liest die Daten und interpretiert sie als double.
                                                         //		Ist auch in der Lage, Tabellenkoepfe aus Kommentarzeilen zu extrahieren.
         void pasteLoad(const Settings& _option);
 		void openAutosave(string _sFile, Settings& _option);
@@ -250,6 +246,7 @@ class Datafile : public Cache, private Sorter		//	Diese Klasse ist ein CHILD von
                 else
                     return 0;
             }
+        NumeRe::Table extractTable(const string& _sTable);
         bool saveFile(const string& sCache, string _sFileName);
         inline string getOutputFileName() const
             {

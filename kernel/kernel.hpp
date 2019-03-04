@@ -148,7 +148,7 @@ class NumeReKernel
         static int nLastStatusVal;
         static unsigned int nLastLineLength;
         static bool modifiedSettings;
-        static NumeRe::Container<string> sTable;
+        static NumeRe::Table table;
         static Debugmessenger _messenger;
         static bool bSupressAnswer;
         static bool bGettingLine;
@@ -182,9 +182,10 @@ class NumeReKernel
         static void gotoLine(const string& sFile, unsigned int nLine = 0);
         static void setDocumentation(const string& _sDocumentation);
         static bool GetAsyncCancelState();
-        static void showTable(NumeRe::Container<string>& _container, string __name, bool openeditable = false);
+        static void showTable(NumeRe::Table _table, string __name, bool openeditable = false);
         static void updateGraphWindow(GraphHelper* _helper);
-        static NumeRe::Container<string> getTable();
+        static NumeRe::Table getTable();
+        NumeRe::Table getTable(const string& sTableName);
         static void showDebugEvent(const string& sTitle, const vector<string>& vModule, const vector<string>& vStacktrace, const vector<string>& vNumVars, const vector<string>& vStringVars, const vector<string>& vTables);
         static void waitForContinue();
         static void evalDebuggerBreakPoint(Settings& _option, const string& sCurrentCommand = "", Parser* _parser = nullptr);
@@ -257,7 +258,7 @@ struct NumeReTask
     string sString;
     size_t nLine;
     vector<string> vDebugEvent;
-    NumeRe::Container<string> tableContainer;
+    NumeRe::Table table;
     GraphHelper* graph;
     int taskType;
 };

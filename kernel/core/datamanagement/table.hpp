@@ -24,33 +24,60 @@
 
 using namespace std;
 
-class Table
+namespace NumeRe
 {
-    private:
-        vector<vector<double> > vTableData;
-        vector<string> vTableHeadings;
-        string sTableName;
+    class Table
+    {
+        private:
+            vector<vector<double> > vTableData;
+            vector<string> vTableHeadings;
+            string sTableName;
 
-        void setMinSize(size_t i, size_t j);
+            void setMinSize(size_t i, size_t j);
+            bool isNumerical(const string& sValue);
 
-    public:
-        Table();
-        Table(const Table& _table);
-        ~Table();
+        public:
+            Table();
+            Table(int nLines, int nCols);
+            Table(double** const dData, string* const sHeadings, long long int nLines, long long int nCols, const string& sName = "");
+            Table(const Table& _table);
+            Table(Table&& _table);
+            ~Table();
 
-        void setSize(size_t i, size_t j);
+            Table& operator=(Table _table);
 
-        void setName(const string& _sName);
-        void setHead(size_t i, const string& _sHead);
-        void setValue(size_t i, size_t j, double _dValue);
+            void Clear();
 
-        string getName();
-        string getHead(size_t i);
-        double getValue(size_t i, size_t j);
+            void setSize(size_t i, size_t j);
 
-        size_t getLines();
-        size_t getCols();
-};
+            void setName(const string& _sName);
+            void setHead(size_t i, const string& _sHead);
+            void setHeadPart(size_t i, size_t part, const string& _sHead);
+            void setValue(size_t i, size_t j, double _dValue);
+            void setValueAsString(size_t i, size_t j, const string& _sValue);
 
+            string getName();
+            int getHeadCount();
+            string getHead(size_t i);
+            string getCleanHead(size_t i);
+            string getCleanHeadPart(size_t i, size_t part = 0);
+            double getValue(size_t i, size_t j);
+            string getValueAsString(size_t i, size_t j);
+
+            size_t getLines();
+            size_t getCols();
+
+            bool isEmpty();
+
+            bool insertLines(size_t nPos = 0, size_t nNum = 1);
+            bool appendLines(size_t nNum = 1);
+            bool deleteLines(size_t nPos = 0, size_t nNum = 1);
+            bool insertCols(size_t nPos = 0, size_t nNum = 1);
+            bool appendCols(size_t nNum = 1);
+            bool deleteCols(size_t nPos = 0, size_t nNum = 1);
+
+    };
+
+}
 #endif // TABLE_HPP
 

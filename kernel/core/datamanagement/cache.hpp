@@ -226,6 +226,7 @@ class Cache : public FileSystem, public StringMemory
 			}
 			mCachesMap[sNewName] = mCachesMap[sCache];
 			mCachesMap.erase(sCache);
+			setSaveStatus(false);
 			return;
 		}
 		inline void swapCaches(const string& sCache1, const string& sCache2)
@@ -250,13 +251,21 @@ class Cache : public FileSystem, public StringMemory
 		bool saveCache();
 		bool loadCache();
 
-		inline Table extractTable(const string& _sTable)
+		inline NumeRe::Table extractTable(const string& _sTable)
 		{
 			return vCacheMemory[mCachesMap.at(_sTable)]->extractTable(_sTable);
 		}
-		inline Table extractTable(long long int _nLayer, const string& _sTable = "")
+		inline NumeRe::Table extractTable(long long int _nLayer, const string& _sTable = "")
 		{
 			return vCacheMemory[_nLayer]->extractTable(_sTable);
+		}
+		inline void importTable(NumeRe::Table _table, const string& _sTable)
+		{
+			return vCacheMemory[mCachesMap.at(_sTable)]->importTable(_table);
+		}
+		inline void importTable(NumeRe::Table _table, long long int _nLayer)
+		{
+			return vCacheMemory[_nLayer]->importTable(_table);
 		}
 
 		// MAFIMPLEMENTATIONS

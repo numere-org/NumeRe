@@ -122,7 +122,8 @@ class Memory : public Sorter
         void deleteBulk(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = 0);
         void deleteBulk(const vector<long long int>& _vLine, const vector<long long int>& _vCol);
 
-        Table extractTable(const string& _sTable = "");
+        NumeRe::Table extractTable(const string& _sTable = "");
+        void importTable(NumeRe::Table _table);
 
         // MAFIMPLEMENTATIONS
         double std(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);

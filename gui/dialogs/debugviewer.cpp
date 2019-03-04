@@ -55,12 +55,12 @@ DebugViewer::DebugViewer(wxWindow* parent, const wxString& title) : ViewerFrame(
     m_stacktrace = new wxListCtrl(stackBox->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize(300, -1), wxLC_REPORT);
     m_stacktrace->AppendColumn("Stack");
 
-    m_varViewer = new VariableViewer(varBox->GetStaticBox());
+    m_varViewer = new VariableViewer(varBox->GetStaticBox(), (NumeReWindow*)parent);
     m_varViewer->setDebuggerMode(true);
 
     moduleBox->Add(m_moduleinfos, 1, wxALIGN_CENTER_HORIZONTAL | wxALL);
     stackBox->Add(m_stacktrace, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL);
-    varBox->Add(m_varViewer->control, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL);
+    varBox->Add(m_varViewer, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL);
 
     wxButton* buttonContinue = new wxButton(panel, ID_DEBUG_CONTINUE, _guilang.get("DBG_CONTINUE"));
     wxButton* buttonCancel = new wxButton(panel, ID_DEBUG_CANCEL, _guilang.get("GUI_OPTIONS_CANCEL"));

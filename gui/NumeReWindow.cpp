@@ -376,12 +376,12 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_splitCommandHistory->Show();
 	m_book->Show();
     m_history = new NumeReHistory(this, m_options, new ProjectInfo(), m_noteTerm, -1, m_terminal->getSyntax(), m_terminal, wxDefaultPosition, wxDefaultSize);
-    m_varViewer = new VariableViewer(m_noteTerm);
+    m_varViewer = new VariableViewer(m_noteTerm, this);
 
     m_noteTerm->AddPage(m_history, _guilang.get("GUI_HISTORY"));
-    m_noteTerm->AddPage(m_varViewer->control, _guilang.get("GUI_VARVIEWER"));
+    m_noteTerm->AddPage(m_varViewer, _guilang.get("GUI_VARVIEWER"));
 
-    wxMilliSleep(500);
+    wxMilliSleep(250);
 
     UpdateMenuBar();
 	UpdateTerminalNotebook();
@@ -1600,8 +1600,20 @@ void NumeReWindow::openTable(NumeRe::Container<string> _stringTable, const strin
 {
     ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + sTableName + "()");
     frame->SetSize(800,600);
-    TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3));
+    TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3), wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
     grid->SetData(_stringTable);
+    frame->SetSize(min(800u, grid->GetWidth()), min(600u, grid->GetHeight()+30));
+    frame->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    frame->Show();
+    frame->SetFocus();
+}
+
+void NumeReWindow::openTable(NumeRe::Table _table, const string& sTableName)
+{
+    ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + sTableName + "()");
+    frame->SetSize(800,600);
+    TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3), wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
+    grid->SetData(_table);
     frame->SetSize(min(800u, grid->GetWidth()), min(600u, grid->GetHeight()+30));
     frame->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
     frame->Show();
@@ -1622,6 +1634,20 @@ void NumeReWindow::editTable(NumeRe::Container<string> _stringTable, const strin
     frame->SetFocus();
 }
 
+void NumeReWindow::editTable(NumeRe::Table _table, const string& sTableName)
+{
+    ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + sTableName + "()");
+    frame->SetSize(800,600);
+    TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3));
+    panel->SetTerminal(m_terminal);
+    panel->grid->SetTableReadOnly(false);
+    panel->grid->SetData(_table);
+    frame->SetSize(min(800u, panel->grid->GetWidth()), min(600u, panel->grid->GetHeight()+30));
+    frame->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    frame->Show();
+    frame->SetFocus();
+}
+
 void NumeReWindow::showGraph(GraphHelper* _helper)
 {
     GraphViewer* viewer = new GraphViewer(this, "NumeRe: " + _helper->getTitle(), _helper, m_terminal);
@@ -1629,6 +1655,16 @@ void NumeReWindow::showGraph(GraphHelper* _helper)
     viewer->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
     viewer->Show();
     viewer->SetFocus();
+}
+
+void NumeReWindow::showTable(const wxString& tableName, const wxString& tableDisplayName)
+{
+    openTable(m_terminal->getTable(tableName.ToStdString()), tableDisplayName.substr(0, tableDisplayName.length()-2).ToStdString());
+}
+
+void NumeReWindow::pass_command(const wxString& command)
+{
+    m_terminal->pass_command(command.ToStdString());
 }
 
 void NumeReWindow::evaluateDebugInfo(const vector<string>& vDebugInfo)

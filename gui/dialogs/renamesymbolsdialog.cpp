@@ -33,7 +33,7 @@ RenameSymbolsDialog::RenameSymbolsDialog(wxWindow* parent, wxWindowID id, const 
     wxBoxSizer* vSizer = new wxBoxSizer(wxVERTICAL);
     this->SetSizer(vSizer);
 
-    GroupPanel* panel = new GroupPanel(this, wxID_ANY, wxDefaultPosition, wxSize(350, 200));
+    GroupPanel* panel = new GroupPanel(this, wxID_ANY, wxDefaultPosition, wxSize(350, 220));
     vSizer->Add(panel, 0, wxALIGN_CENTER_HORIZONTAL | wxALL, 5);
 
     m_replaceName = panel->CreateTextInput(panel, panel->getVerticalSizer(), _guilang.get("GUI_DLG_RENAMESYMBOLS_QUESTION"), defaultval);

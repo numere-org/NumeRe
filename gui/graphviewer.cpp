@@ -31,7 +31,7 @@ END_EVENT_TABLE()
 GraphViewer::GraphViewer(wxWindow* parent, const wxString& title, GraphHelper* _helper, wxTerm* terminal) : ViewerFrame(parent, title)
 {
     wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
-    _grapherWindow = new wxMGL(this);
+    _grapherWindow = new wxMGL(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME);
 
     _grapherWindow->SetGraph(_helper->setGrapher());
     _grapherWindow->SetDraw(_helper);

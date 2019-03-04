@@ -1152,7 +1152,7 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, Define& _funct
 					sLine = sLine.substr(0, nPos - 1) + sLine.substr(nParPos + 1);
 				else
 				{
-					replaceReturnVal(sLine, _parser, tempreturnval, nPos - 1, nParPos + 1, "PROC~[" + __sName + "~" + toString(nProc) + "_" + toString((int)nth_procedure) + "_" + toString((int)(nth_command + nth_procedure)) + "]");
+					replaceReturnVal(sLine, _parser, tempreturnval, nPos - 1, nParPos + 1, "_~PROC~[" + __sName + "~" + toString(nProc) + "_" + toString((int)nth_procedure) + "_" + toString((int)(nth_command + nth_procedure)) + "]");
 				}
 
 				nReturnType = 1;

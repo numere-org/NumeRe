@@ -354,6 +354,8 @@
 		<Unit filename="gui/globals.hpp" />
 		<Unit filename="gui/graphviewer.cpp" />
 		<Unit filename="gui/graphviewer.hpp" />
+		<Unit filename="gui/gridtable.cpp" />
+		<Unit filename="gui/gridtable.hpp" />
 		<Unit filename="gui/helpviewer.cpp" />
 		<Unit filename="gui/helpviewer.hpp" />
 		<Unit filename="gui/imagepanel.cpp" />

@@ -178,6 +178,7 @@ class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
 
 		// Kernel communication functions
 		void pass_command(const string& command);
+		NumeRe::Table getTable(const string& sTableName);
 		Settings getKernelSettings();
 		void setKernelSettings(const Settings&);
 		void EndKernelTask();
@@ -186,7 +187,7 @@ class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
 		void OnThreadUpdate(wxThreadEvent& event);
 		void OnClose(wxCloseEvent& event);
 		vector<string> getPathSettings();
-		void passEditedTable(NumeRe::Container<string>& _container);
+		void passEditedTable(NumeRe::Table _table);
 		void cancelTableEdit()
 		{
 			wxCriticalSectionLocker lock(m_kernelCS);

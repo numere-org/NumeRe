@@ -26,7 +26,9 @@
 #include <vector>
 #include <string>
 
-class VariableViewer
+class NumeReWindow;
+
+class VariableViewer : public wxcode::wxTreeListCtrl
 {
     private:
         bool debuggerMode;
@@ -35,19 +37,33 @@ class VariableViewer
         wxTreeItemId numRoot;
         wxTreeItemId stringRoot;
         wxTreeItemId tableRoot;
+        wxTreeItemId selectedID;
+
+        NumeReWindow* mainWindow;
 
         bool checkPresence(const std::string& sVar);
         bool checkSpecialVals(const std::string& sVar);
         wxTreeItemId AppendVariable(wxTreeItemId rootNode, std::string sVar);
         void ClearTree();
         void HandleDebugActions(const std::vector<std::string>& vVarList);
+        wxString GetInternalName(wxTreeItemId id);
+
+        void OnMenuEvent(wxCommandEvent& event);
+
+        void OnNewTable();
+        void OnShowTable(const wxString& table, const wxString& tableDisplayName);
+        void OnRenameTable(const wxString& table);
+        void OnRemoveTable(const wxString& table);
+        void OnSaveTable(const wxString& table);
+        void OnSaveasTable(const wxString& table);
 
 
     public:
-        wxcode::wxTreeListCtrl* control;
-        void ExpandAll();
+        VariableViewer(wxWindow* parent, NumeReWindow* mainWind, int fieldsize = 600);
 
-        VariableViewer(wxWindow* parent, int fieldsize = 600);
+        void ExpandAll();
+        void OnRightClick(wxTreeEvent& event);
+        void OnDoubleClick(wxTreeEvent& event);
 
         void setDebuggerMode(bool mode = true)
         {
@@ -55,6 +71,8 @@ class VariableViewer
         }
 
         void UpdateVariables(const std::vector<std::string>& vVarList, size_t nNumerics, size_t nStrings, size_t nTables);
+
+        DECLARE_EVENT_TABLE();
 };
 
 

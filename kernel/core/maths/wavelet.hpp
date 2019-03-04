@@ -36,7 +36,7 @@ enum WaveletType
 };
 
 void calculateWavelet(std::vector<double>& data, WaveletType _type, int k, int dir);
-Table decodeWaveletData(const vector<double>& vWaveletData, const vector<double>& vAxisData);
+NumeRe::Table decodeWaveletData(const vector<double>& vWaveletData, const vector<double>& vAxisData);
 
 #endif // WAVELET_HPP
 

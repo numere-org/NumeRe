@@ -35,7 +35,7 @@ TableEditPanel::TableEditPanel(wxFrame* parent, wxWindowID id, wxStatusBar* stat
     vsizer = new wxBoxSizer(wxVERTICAL);
     hsizer = new wxBoxSizer(wxHORIZONTAL);
 
-    grid = new TableViewer(this, wxID_ANY, statusbar);
+    grid = new TableViewer(this, wxID_ANY, statusbar, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
 
     wxButton* button_ok = new wxButton(this, ID_TABLEEDIT_OK, _guilang.get("GUI_OPTIONS_OK"));
     wxButton* button_cancel = new wxButton(this, ID_TABLEEDIT_CANCEL, _guilang.get("GUI_OPTIONS_CANCEL"));
@@ -50,8 +50,7 @@ TableEditPanel::TableEditPanel(wxFrame* parent, wxWindowID id, wxStatusBar* stat
 
 void TableEditPanel::OnButtonOk(wxCommandEvent& event)
 {
-    NumeRe::Container<string> _copyContainer(grid->GetData());
-    m_terminal->passEditedTable(_copyContainer);
+    m_terminal->passEditedTable(grid->GetData());
     finished = true;
     m_parent->Close();
 }

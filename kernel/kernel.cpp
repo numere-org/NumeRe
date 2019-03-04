@@ -20,6 +20,7 @@
 
 #include "wx/wx.h"
 #include "../gui/terminal/wxterm.h"
+#include "core/datamanagement/dataops.hpp" // for make_stringmatrix()
 #define KERNEL_PRINT_SLEEP 2
 
 extern const string sVersion;
@@ -49,7 +50,7 @@ int NumeReKernel::nLastStatusVal = 0;
 unsigned int NumeReKernel::nLastLineLength = 0;
 bool NumeReKernel::modifiedSettings = false;
 bool NumeReKernel::bCancelSignal = false;
-NumeRe::Container<string> NumeReKernel::sTable;
+NumeRe::Table NumeReKernel::table;
 Debugmessenger NumeReKernel::_messenger;
 bool NumeReKernel::bSupressAnswer = false;
 bool NumeReKernel::bGettingLine = false;
@@ -1532,7 +1533,7 @@ bool NumeReKernel::evaluateProcedureCalls(string& sLine)
                     sLine = sLine.substr(0, nPos - 1) + sLine.substr(nParPos + 1);
                 else
                 {
-                    _procedure.replaceReturnVal(sLine, _parser, _rTemp, nPos - 1, nParPos + 1, "PROC~[" + __sName + "~ROOT_" + toString(nProc) + "]");
+                    _procedure.replaceReturnVal(sLine, _parser, _rTemp, nPos - 1, nParPos + 1, "_~PROC~[" + __sName + "~ROOT_" + toString(nProc) + "]");
                     nProc++;
                 }
             }
@@ -1907,7 +1908,7 @@ NumeReVariables NumeReKernel::getVariableList()
         if ((iter->first).substr(0, 2) == "_~")
             continue;
 
-        sCurrentLine = iter->first + "\t1 x 1\tdouble\t" + toString(*iter->second, 5);
+        sCurrentLine = iter->first + "\t1 x 1\tdouble\t" + toString(*iter->second, 5) + "\t" + iter->first;
         vars.vVariables.push_back(sCurrentLine);
     }
     vars.nNumerics = vars.vVariables.size();
@@ -1917,7 +1918,7 @@ NumeReVariables NumeReKernel::getVariableList()
         if ((iter->first).substr(0, 2) == "_~")
             continue;
 
-        sCurrentLine = iter->first + "\t1 x 1\tstring\t\"" + replaceControlCharacters(iter->second) + "\"";
+        sCurrentLine = iter->first + "\t1 x 1\tstring\t\"" + replaceControlCharacters(iter->second) + "\"\t" + iter->first;
         vars.vVariables.push_back(sCurrentLine);
     }
     vars.nStrings = vars.vVariables.size() - vars.nNumerics;
@@ -1931,12 +1932,12 @@ NumeReVariables NumeReKernel::getVariableList()
         if (iter->first == "string")
         {
             sCurrentLine = iter->first + "()\t" + toString(_data.getStringElements()) + " x " + toString(_data.getStringCols());
-            sCurrentLine += "\tstring\t{\"" + replaceControlCharacters(_data.minString()) + "\", ..., \"" + replaceControlCharacters(_data.maxString()) + "\"}";
+            sCurrentLine += "\tstring\t{\"" + replaceControlCharacters(_data.minString()) + "\", ..., \"" + replaceControlCharacters(_data.maxString()) + "\"}\tstring()";
         }
         else
         {
             sCurrentLine = iter->first + "()\t" + toString(_data.getLines(iter->first, false)) + " x " + toString(_data.getCols(iter->first, false));
-            sCurrentLine += "\tdouble\t{" + toString(_data.min(iter->first, "")[0], 5) + ", ..., " + toString(_data.max(iter->first, "")[0], 5) + "}";
+            sCurrentLine += "\tdouble\t{" + toString(_data.min(iter->first, "")[0], 5) + ", ..., " + toString(_data.max(iter->first, "")[0], 5) + "}\t" + iter->first + "()";
         }
 
         vars.vVariables.push_back(sCurrentLine);
@@ -2273,7 +2274,7 @@ void NumeReKernel::setDocumentation(const string& _sDocumentation)
 // This member function passes a table to the GUI to be displayed
 // in the table viewer. It also allows to create a table editor
 // window
-void NumeReKernel::showTable(NumeRe::Container<string>& _container, string __name, bool openeditable)
+void NumeReKernel::showTable(NumeRe::Table _table, string __name, bool openeditable)
 {
 	if (!m_parent)
 		return;
@@ -2284,7 +2285,7 @@ void NumeReKernel::showTable(NumeRe::Container<string>& _container, string __nam
 		// Create the task
         NumeReTask task;
 		task.sString = __name;
-		task.tableContainer = _container;
+		task.table = _table;
 
 		// Use the corresponding task type
 		if (openeditable)
@@ -2325,12 +2326,14 @@ void NumeReKernel::updateGraphWindow(GraphHelper* _helper)
 
 // This member function is used by the kernel to be notified
 // when the user finished the table edit process
-NumeRe::Container<string> NumeReKernel::getTable()
+NumeRe::Table NumeReKernel::getTable()
 {
 	if (!m_parent)
-		return NumeRe::Container<string>();
+		return NumeRe::Table();
+
 	bool bHasTable = false;
 	bool bWasCanceled = false;
+
 	do
 	{
 		Sleep(100);
@@ -2345,9 +2348,24 @@ NumeRe::Container<string> NumeReKernel::getTable()
 	while (!bHasTable && !bWasCanceled);
 
 	if (bWasCanceled)
-		return NumeRe::Container<string>();
-	NumeRe::Container<string> _container(sTable);
-	return _container;
+		return NumeRe::Table();
+
+	return table;
+}
+
+// This member function creates the table container for the
+// selected string table
+NumeRe::Table NumeReKernel::getTable(const string& sTableName)
+{
+    string sSelectedTable = sTableName;
+
+    if (sSelectedTable.find("()") != string::npos)
+        sSelectedTable.erase(sSelectedTable.find("()"));
+
+    if ((!_data.isCacheElement(sSelectedTable) && sSelectedTable != "data") || !_data.getCols(sSelectedTable))
+        return NumeRe::Table();
+
+    return _data.extractTable(sSelectedTable);
 }
 
 void NumeReKernel::showDebugError(const string& sTitle)

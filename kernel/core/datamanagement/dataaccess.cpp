@@ -33,7 +33,7 @@ static string getMafAccessString(const string& sLine, const string& sEntity);
 static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser& _parser, Datafile& _data);
 static string getLastToken(const string& sLine);
 static int evalColumnIndicesAndGetDimension(Datafile& _data, Parser& _parser, const string& sDatatable, const string& sDataExpression, string si_pos[2], string sj_pos[3], vector<long long int>& vLine, vector<long long int>& vCol, int i_pos[2], int j_pos[3], const Settings& _option);
-static Table copyAndExtract(Datafile& _data, const string& sDatatable, const vector<long long int>& vLine, const vector<long long int>& vCol, int i_pos[2], int j_pos[3], int nDim);
+static NumeRe::Table copyAndExtract(Datafile& _data, const string& sDatatable, const vector<long long int>& vLine, const vector<long long int>& vCol, int i_pos[2], int j_pos[3], int nDim);
 
 /* --> Diese Funktion durchsucht einen gegebenen String sLine nach den Elementen "data(" oder "cache(" und erstetzt diese
  *     entsprechend der Syntax durch Elemente (oder Vektoren) aus dem Datenfile oder dem Cache. Falls des Weiteren auch
@@ -895,7 +895,7 @@ bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Dat
 
 
 // This function will extract the needed data into a table object
-Table parser_extractData(const string& sDataExpression, Parser& _parser, Datafile& _data, const Settings& _option)
+NumeRe::Table parser_extractData(const string& sDataExpression, Parser& _parser, Datafile& _data, const Settings& _option)
 {
 	string si_pos[2] = {"", ""};                    // String-Array fuer die Zeilen-Position: muss fuer alle Spalten identisch sein!
 	string sj_pos[3] = {"", "", ""};                // String-Array fuer die Spalten: kann bis zu drei beliebige Werte haben
@@ -1147,7 +1147,7 @@ static int evalColumnIndicesAndGetDimension(Datafile& _data, Parser& _parser, co
 
 
 // This function will copy the contents to the target table and extract the table
-static Table copyAndExtract(Datafile& _data, const string& sDatatable, const vector<long long int>& vLine, const vector<long long int>& vCol, int i_pos[2], int j_pos[3], int nDim)
+static NumeRe::Table copyAndExtract(Datafile& _data, const string& sDatatable, const vector<long long int>& vLine, const vector<long long int>& vCol, int i_pos[2], int j_pos[3], int nDim)
 {
     Cache _cache;
     // Copy the contents of the data into the local cache object

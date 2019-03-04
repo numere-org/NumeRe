@@ -4160,6 +4160,18 @@ vector<int> Datafile::sortElements(const string& sCache, long long int i1, long 
     return vIndex;
 }
 
+// Create a copy-efficient table object from the
+// contents of the contained table (or the
+// corresponding tables from the cache)
+NumeRe::Table Datafile::extractTable(const string& _sTable)
+{
+    if (_sTable != "data")
+        return Cache::extractTable(_sTable);
+
+    return NumeRe::Table(dDatafile, sHeadLine, nLines, nCols, "data");
+}
+
+
 bool Datafile::saveFile(const string& sCache, string _sFileName)
 {
     if (!_sFileName.length())

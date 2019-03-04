@@ -190,11 +190,10 @@ vector<string> wxTerm::getPathSettings()
 }
 
 // Passes a table (as a container) to the kernel
-void wxTerm::passEditedTable(NumeRe::Container<string>& _container)
+void wxTerm::passEditedTable(NumeRe::Table _table)
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
-	NumeRe::Container<string> _copyContainer(_container);
-	_kernel.sTable = _copyContainer;
+	_kernel.table = _table;
 	m_bTableEditAvailable = true;
 }
 
@@ -435,7 +434,7 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
 		return;
 	}
 
-    // Evaluate the task queue. It will contain also the tranmitted
+    // Evaluate the task queue. It will contain also the transmitted
     // variables needed for the current task
     while (taskQueue.size())
     {
@@ -470,10 +469,10 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
                 m_wxParent->ShowHelp(task.sString);
                 break;
             case NumeReKernel::NUMERE_SHOW_TABLE:
-                m_wxParent->openTable(task.tableContainer, task.sString);
+                m_wxParent->openTable(task.table, task.sString);
                 break;
             case NumeReKernel::NUMERE_EDIT_TABLE:
-                m_wxParent->editTable(task.tableContainer, task.sString);
+                m_wxParent->editTable(task.table, task.sString);
                 break;
             case NumeReKernel::NUMERE_DEBUG_EVENT:
                 m_wxParent->evaluateDebugInfo(task.vDebugEvent);
@@ -689,6 +688,12 @@ void wxTerm::pass_command(const string& command)
 	m_wxParent->AddToHistory(command);
 	m_sCommandLine = command;
 	m_bCommandAvailable = true;
+}
+
+NumeRe::Table wxTerm::getTable(const string& sTableName)
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    return _kernel.getTable(sTableName);
 }
 
 // Inform the kernel to stop the current calculation

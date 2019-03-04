@@ -37,7 +37,7 @@ void parser_CheckIndices(int&, int&);
 string getDataElements(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option, bool bReplaceNANs = true);
 void replaceDataEntities(string&, const string&, Datafile&, Parser&, const Settings&, bool);
 bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Datafile& _cache, int nDesiredCols = 2, bool bSort = true);
-Table parser_extractData(const string& sDataExpression, Parser& _parser, Datafile& _data, const Settings& _option);
+NumeRe::Table parser_extractData(const string& sDataExpression, Parser& _parser, Datafile& _data, const Settings& _option);
 bool isNotEmptyExpression(const string&);
 
 Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);

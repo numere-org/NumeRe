@@ -836,27 +836,37 @@ bool Memory::isValue(int line, int col)
     return !isnan(dMemTable[line][col]);
 }
 
-
-Table Memory::extractTable(const string& _sTable)
+// Create a copy-efficient table object
+// from the data contents
+NumeRe::Table Memory::extractTable(const string& _sTable)
 {
-	Table _table;
-
-	_table.setName(_sTable);
-	_table.setSize(this->getLines(false), this->getCols(false));
-
-	for (long long int i = 0; i < this->getLines(false); i++)
-	{
-		for (long long int j = 0; j < this->getCols(false); j++)
-		{
-			if (!i)
-				_table.setHead(j, sHeadLine[j]);
-			_table.setValue(i, j, dMemTable[i][j]);
-		}
-	}
-
-	return _table;
+    return NumeRe::Table(dMemTable, sHeadLine, getLines(false), getCols(false), _sTable);
 }
 
+// Import data from a copy-efficient table object
+void Memory::importTable(NumeRe::Table _table)
+{
+    deleteBulk(0, nLines-1, 0, nCols-1);
+    resizeMemory(_table.getLines(), _table.getCols());
+
+    for (size_t i = 0; i < _table.getLines(); i++)
+    {
+        for (size_t j = 0; j < _table.getCols(); j++)
+        {
+            // Use writeData() to automatically set all
+            // other parameters
+            writeData(i, j, _table.getValue(i, j));
+        }
+    }
+
+    // Set the table heads, if they have
+    // a non-zero length
+    for (size_t j = 0; j < _table.getCols(); j++)
+    {
+        if (_table.getHead(j).length())
+            sHeadLine[j] = _table.getHead(j);
+    }
+}
 
 bool Memory::save(string _sFileName)
 {

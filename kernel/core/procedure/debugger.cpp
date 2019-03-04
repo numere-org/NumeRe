@@ -134,7 +134,7 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, unsigned int nLocal
                 sErraticCommand.replace(sErraticCommand.find(sLocalVars[i][1]), sLocalVars[i][1].length(), sLocalVars[i][0]);
         }
 
-        mLocalVars[sLocalVars[i][0]] = dLocalVars[i];
+        mLocalVars[sLocalVars[i][0] + "\t" + sLocalVars[i][1]] = dLocalVars[i];
     }
 
     // Store the local string variables and replace their
@@ -148,7 +148,7 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, unsigned int nLocal
                 sErraticCommand.replace(sErraticCommand.find(sLocalStrings[i][1]), sLocalStrings[i][1].length(), sLocalStrings[i][0]);
         }
 
-        mLocalStrings[sLocalStrings[i][0]] = replaceControlCharacters(instance->getData().getStringVars().at(sLocalStrings[i][1]));
+        mLocalStrings[sLocalStrings[i][0] + "\t" + sLocalStrings[i][1]] = replaceControlCharacters(instance->getData().getStringVars().at(sLocalStrings[i][1]));
     }
 
     // Store the local tables and replace their
@@ -169,12 +169,12 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, unsigned int nLocal
         if (sLocalTables[i][1] == "string")
         {
             sTableData = toString(instance->getData().getStringElements()) + " x " + toString(instance->getData().getStringCols());
-            sTableData += "\tstring\t{\"" + replaceControlCharacters(instance->getData().minString()) + "\", ..., \"" + replaceControlCharacters(instance->getData().maxString()) + "\"}";
+            sTableData += "\tstring\t{\"" + replaceControlCharacters(instance->getData().minString()) + "\", ..., \"" + replaceControlCharacters(instance->getData().maxString()) + "\"}\tstring()";
         }
         else
         {
             sTableData = toString(instance->getData().getLines(sLocalTables[i][1], false)) + " x " + toString(instance->getData().getCols(sLocalTables[i][1], false));
-            sTableData += "\tdouble\t{" + toString(instance->getData().min(sLocalTables[i][1], "")[0], 5) + ", ..., " + toString(instance->getData().max(sLocalTables[i][1], "")[0], 5) + "}";
+            sTableData += "\tdouble\t{" + toString(instance->getData().min(sLocalTables[i][1], "")[0], 5) + ", ..., " + toString(instance->getData().max(sLocalTables[i][1], "")[0], 5) + "}\t" + sLocalTables[i][1] + "()";
         }
 
         mLocalTables[sLocalTables[i][0] + "()"] = sTableData;
@@ -257,7 +257,7 @@ vector<string> NumeReDebugger::getNumVars()
 
     for (auto iter = mLocalVars.begin(); iter != mLocalVars.end(); ++iter)
     {
-        vNumVars.push_back(iter->first + "\t1 x 1\tdouble\t" + toString(iter->second, 7));
+        vNumVars.push_back((iter->first).substr(0, (iter->first).find('\t')) + "\t1 x 1\tdouble\t" + toString(iter->second, 7) + (iter->first).substr((iter->first).find('\t')));
     }
 
     return vNumVars;
@@ -270,7 +270,7 @@ vector<string> NumeReDebugger::getStringVars()
 
     for (auto iter = mLocalStrings.begin(); iter != mLocalStrings.end(); ++iter)
     {
-        vStringVars.push_back(iter->first + "\t1 x 1\tstring\t\"" + iter->second + "\"");
+        vStringVars.push_back((iter->first).substr(0, (iter->first).find('\t')) + "\t1 x 1\tstring\t\"" + iter->second + "\"" + (iter->first).substr((iter->first).find('\t')));
     }
 
     return vStringVars;

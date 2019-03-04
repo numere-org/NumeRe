@@ -30,6 +30,7 @@
 #include "NumeReStatusbar.hpp"
 #include "../kernel/core/plotting/graph_helper.hpp"
 #include "../kernel/core/datamanagement/container.hpp"
+#include "../kernel/core/datamanagement/table.hpp"
 #include "dialogs/variableviewer.hpp"
 
 #define OPENFILE_NOTHING 0
@@ -185,9 +186,13 @@ class NumeReWindow : public wxFrame
         void openPDF(wxFileName filename);
         void openHTML(wxString HTMLcontent);
         void openTable(NumeRe::Container<string> _stringTable, const string& sTableName);
+        void openTable(NumeRe::Table _table, const string& sTableName);
         void editTable(NumeRe::Container<string> _stringTable, const string& sTableName);
+        void editTable(NumeRe::Table _table, const string& sTableName);
         bool ShowHelp(const wxString& docId);
         void showGraph(GraphHelper* _helper);
+        void showTable(const wxString& tableName, const wxString& tableDisplayName);
+        void pass_command(const wxString& command);
         void evaluateDebugInfo(const vector<string>& vDebugInfo);
         void createLaTeXFile();
         string createLaTeXMain(const string& sRootPath, const string& sIncludes);
@@ -229,6 +234,7 @@ class NumeReWindow : public wxFrame
 
         void OnPrintSetup();
         wxRect DeterminePrintSize();
+
 
     private:
         void InitializeProgramOptions();
