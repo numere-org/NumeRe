@@ -28,3 +28,4 @@ New	A message box now appears, if the user tries to replace a symbol's name with
 Added	The "rename symbols" dialog has now multiple options modifying the search behavior.
 New	A variable viewer is now available in a second tab next to the history.
 Fixed	Tables perform much faster now.
+Added	"switch" was added to the static code analyzer.

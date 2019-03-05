@@ -1938,8 +1938,8 @@ void NumeReEditor::AnalyseCode()
 			StripSpaces(sLine);
 
             // catch constant expressions
-			if (sLine.length() && sLine.find_first_not_of("\n\r\t") != string::npos && sLine.find_first_not_of("0123456789+-*/.,^(){} \t\r\n") == string::npos)
-				AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sLine.substr(0, sLine.find_last_not_of("0123456789+-*/.,^()")), sWarn, _guilang.get("GUI_ANALYZER_CONSTEXPR")), ANNOTATION_WARN);
+			if (sLine.length() && sLine.find_first_not_of("\n\r\t") != string::npos && sLine.find_first_not_of("0123456789eE+-*/.,;^(){} \t\r\n") == string::npos)
+				AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sLine.substr(0, sLine.find_last_not_of("0123456789eE+-*/.,;^()")), sWarn, _guilang.get("GUI_ANALYZER_CONSTEXPR")), ANNOTATION_WARN);
 
 			// Handle line continuations
 			if (sLine.find("\\\\") != string::npos)
@@ -2239,6 +2239,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
             && sSyntaxElement != "endif"
             && sSyntaxElement != "endfor"
             && sSyntaxElement != "endwhile"
+            && sSyntaxElement != "endswitch"
             && sSyntaxElement != "endprocedure"
             && sSyntaxElement != "endcompose"
             && sSyntaxElement != "about"
@@ -2308,7 +2309,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
     }
 
     // Examine the if, elseif and while commands
-    if (sSyntaxElement == "if" || sSyntaxElement == "elseif" || sSyntaxElement == "while")
+    if (sSyntaxElement == "if" || sSyntaxElement == "elseif" || sSyntaxElement == "while" || sSyntaxElement == "switch")
     {
         for (int j = wordend; j < this->GetLineEndPosition(currentLine); j++)
         {
@@ -2347,6 +2348,8 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
                 {
                     if (sSyntaxElement == "while")
                         AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j+1, sArgument.length()), sWarn, _guilang.get("GUI_ANALYZER_WHILE_ALWAYSTRUE")), ANNOTATION_WARN);
+                    else if (sSyntaxElement == "switch")
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j+1, sArgument.length()), sWarn, _guilang.get("GUI_ANALYZER_SWITCH_CONSTANT")), ANNOTATION_WARN);
                     else
                         AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j+1, sArgument.length()), sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSTRUE")), ANNOTATION_WARN);
                 }
@@ -2354,6 +2357,8 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
                 {
                     if (sSyntaxElement == "while")
                         AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j+1, sArgument.length()), sWarn, _guilang.get("GUI_ANALYZER_WHILE_ALWAYSFALSE")), ANNOTATION_WARN);
+                    else if (sSyntaxElement == "switch")
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j+1, sArgument.length()), sWarn, _guilang.get("GUI_ANALYZER_SWITCH_CONSTANT")), ANNOTATION_WARN);
                     else
                         AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j+1, sArgument.length()), sWarn, _guilang.get("GUI_ANALYZER_IF_ALWAYSFALSE")), ANNOTATION_WARN);
                 }
@@ -2407,6 +2412,82 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
                 }
             }
         }
+
+        // Ensure that a switch does contain at least one case
+        if (sSyntaxElement == "switch")
+        {
+            vector<int> vBlock = BlockMatch(nCurPos);
+
+            // Examine each match
+            for (size_t i = 1; i < vBlock.size(); i++)
+            {
+                // Invalid position -> missing end. Already handled elsewhere
+                if (vBlock[i] == wxSTC_INVALID_POSITION)
+                    break;
+
+                // Examine the command
+                if (GetTextRange(vBlock[i], WordEndPosition(vBlock[i], true)) == "case")
+                {
+                    // Contains a case: everything is alright
+                    break;
+                }
+                else if (GetTextRange(vBlock[i], WordEndPosition(vBlock[i], true)) == "default")
+                {
+                    // Only a default statement?
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sWarn, _guilang.get("GUI_ANALYZER_SWITCH_ONLY_DEFAULT")), ANNOTATION_WARN);
+                    break;
+                }
+                else if (GetTextRange(vBlock[i], WordEndPosition(vBlock[i], true)) == "endswitch")
+                {
+                    // Neither a case nor a default statement?
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sError, _guilang.get("GUI_ANALYZER_SWITCH_MISSING_CASE")), ANNOTATION_ERROR);
+                    break;
+                }
+            }
+        }
+    }
+
+    // Check for fallthroughs and warn the user,
+    // if one was found. Also check the appended value.
+    if (sSyntaxElement == "case" && m_fileType != FILE_MATLAB)
+    {
+        vector<int> vBlock = BlockMatch(nCurPos);
+
+        // Search the correct position in the
+        // whole block
+        for (size_t i = 0; i < vBlock.size(); i++)
+        {
+            // Is this the correct position?
+            if (vBlock[i] == wordstart)
+            {
+                if (vBlock[i+1] != wxSTC_INVALID_POSITION && GetTextRange(vBlock[i+1], WordEndPosition(vBlock[i+1], true)) != "endswitch")
+                {
+                    // Search all occurences of the "break"
+                    // command between the two statements
+                    vector<int> vMatches = FindAll("break", wxSTC_NSCR_COMMAND, wordend, vBlock[i+1], false);
+
+                    // Ensure that there's one "break"
+                    // statement
+                    if (!vMatches.size())
+                    {
+                        AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sWarn, _guilang.get("GUI_ANALYZER_SWITCH_MISSING_BREAK")), ANNOTATION_WARN);
+                    }
+                }
+
+                break;
+            }
+        }
+
+        // Check the value of the case
+        wxString sLine = GetTextRange(wordend, GetLineEndPosition(currentLine));
+
+        // Does the value contain something, which is not a whitespace
+        // and not a comment?
+        if (sLine.find_first_not_of(":\r\n#* ") == string::npos || sLine.find(':') == string::npos)
+        {
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sError, _guilang.get("GUI_ANALYZER_SWITCH_MISSING_VALUE")), ANNOTATION_ERROR);
+        }
+
     }
 
     // Examine the for command
@@ -2611,6 +2692,8 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
             || sSyntaxElement == "endfor"
             || sSyntaxElement == "while"
             || sSyntaxElement == "endwhile"
+            || sSyntaxElement == "switch"
+            || sSyntaxElement == "endswitch"
             || sSyntaxElement == "compose"
             || sSyntaxElement == "endcompose"
             || sSyntaxElement == "function"
