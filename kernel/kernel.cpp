@@ -318,7 +318,7 @@ void NumeReKernel::defineOperators()
 	_parser.DefinePostfixOprt(_nrT("'Gs"), parser_Gauss);
 	_parser.DefinePostfixOprt(_nrT("'Ps"), parser_Poise);
 	_parser.DefinePostfixOprt(_nrT("'mol"), parser_mol);
-	_parser.DefinePostfixOprt(_nrT("!"), parser_Faculty);
+	//_parser.DefinePostfixOprt(_nrT("!"), parser_Faculty);
 
 	// --> Logisches NICHT <--
 	_parser.DefineInfixOprt(_nrT("!"), parser_Not);
