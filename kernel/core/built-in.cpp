@@ -1036,6 +1036,9 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 	}
 	else if (findCommand(sCmd, "data").sString == "data" && sCacheCmd == "data" && sCommand != "clear" && sCommand != "copy")
 	{
+	    // DEPRECATED: Declared at v1.1.2rc1
+		NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
+
 		if (matchParams(sCmd, "clear"))
 		{
 			if (matchParams(sCmd, "i") || matchParams(sCmd, "ignore"))
@@ -1238,11 +1241,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			show_data(_data, _out, _option, "data", _option.getPrecision(), true, false);
 			return 1;
 		}
-		/*else if (matchParams(sCmd, "headedit"))
-		{
-		    BI_edit_header(_data, _option);
-		    return 1;
-		}*/
 		else if (sCmd.substr(0, 5) == "data(")
 		{
 			return 0;
@@ -1662,6 +1660,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 	}
 	else if (sCommand == "firststart")
 	{
+	    // DEPRECATED: Declared at v1.1.2rc1
+	    NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
 		doc_FirstStart(_option);
 		return 1;
 	}
@@ -1702,7 +1702,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			 && sCommand != "retouch"
 			 && sCommand != "resample")
 	{
-		//NumeReKernel::print("found" );
+	    // DEPRECATED: Declared at v1.1.2rc1
+	    NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
 		if (matchParams(sCmd, "showf"))
 		{
 			show_data(_data, _out, _option, sCommand, _option.getPrecision(), false, true);
@@ -1714,11 +1715,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			show_data(_data, _out, _option, sCommand, _option.getPrecision(), false, true);
 			return 1;
 		}
-		/*else if (matchParams(sCmd, "headedit"))
-		{
-		    BI_edit_header(_data, _option);
-		    return 1;
-		}*/
 		else if (matchParams(sCmd, "clear"))
 		{
 			if (matchParams(sCmd, "i") || matchParams(sCmd, "ignore"))
@@ -2244,6 +2240,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		{
 			if (matchParams(sCmd, "data") || matchParams(sCmd, "data", '='))
 			{
+			    // DEPRECATED: Declared at v1.1.2rc1
+			    NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
 				sCmd.replace(sCmd.find("data"), 4, "app");
 				append_data(sCmd, _data, _option, _parser);
 			}
@@ -3210,6 +3208,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				throw SyntaxError(SyntaxError::CANNOT_CALL_SCRIPT_RECURSIVELY, sCmd, SyntaxError::invalid_position, sCommand);
 			if (matchParams(sCmd, "script") || matchParams(sCmd, "script", '='))
 			{
+			    // DEPRECATED: Declared at v1.1.2rc1
+			    NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
 				if (_data.containsStringVars(sCmd))
 					_data.getStringValues(sCmd);
 				if (matchParams(sCmd, "install"))
@@ -3253,6 +3253,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		{
 			if (matchParams(sCmd, "load") || matchParams(sCmd, "load", '='))
 			{
+			    // DEPRECATED: Declared at v1.1.2rc1
+			    NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
 				if (!_script.isOpen())
 				{
 					if (_data.containsStringVars(sCmd))
@@ -3292,6 +3294,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			}
 			else if (matchParams(sCmd, "start") || matchParams(sCmd, "start", '='))
 			{
+			    // DEPRECATED: Declared at v1.1.2rc1
+			    NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
 				if (_script.isOpen())
 					//throw CANNOT_CALL_SCRIPT_RECURSIVELY;
 					throw SyntaxError(SyntaxError::CANNOT_CALL_SCRIPT_RECURSIVELY, sCmd, SyntaxError::invalid_position, sCommand);
@@ -3536,6 +3540,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		{
 			if (matchParams(sCmd, "clear"))
 			{
+			    // DEPRECATED: Declared at v1.1.2rc1
+			    NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
 				if (_data.clearStringElements())
 				{
 					if (_option.getSystemPrintStatus())
@@ -3564,9 +3570,17 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		{
 			sArgument = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
 			if (matchParams(sCmd, "data") && _data.isValid())
+			{
+			    // DEPRECATED: Declared at v1.1.2rc1
+			    NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRACATED"));
 				plugin_histogram(sArgument, _data, _data, _out, _option, _pData, false, true);
+			}
 			else if (matchParams(sCmd, "cache") && _data.isValidCache())
+            {
+                // DEPRECATED: Declared at v1.1.2rc1
+                NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
 				plugin_histogram(sArgument, _data, _data, _out, _option, _pData, true, false);
+            }
 			else
 			{
 				for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
@@ -3729,7 +3743,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 	}
 	else if (sCommand[0] == 'r')
 	{
-		//NumeReKernel::print("redefine" );
 		if (sCommand == "random")
 		{
 			if (matchParams(sCmd, "o"))
@@ -3974,7 +3987,10 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 					break;
 				}
 			}
-			//NumeReKernel::print(sArgument );
+			// DEPRECATED: Declared at v1.1.2rc1
+			if (sCommand == "retoque")
+                NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
+
 			_idx = parser_getIndices(sArgument, _parser, _data, _option);
 			if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
 				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sArgument, sArgument);
@@ -4194,11 +4210,6 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				BI_ListFiles(sCmd, _option);
 				return 1;
 			}
-			/*else if (matchParams(sCmd, "exprvar") && bParserActive)
-			{
-			    parser_ListExprVar(_parser, _option, _data);
-			    return 1;
-			}*/
 			else if (matchParams(sCmd, "var") && bParserActive)
 			{
 				parser_ListVar(_parser, _option, _data);
@@ -4298,10 +4309,11 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 					_functions.load(_option);
 				else
 					NumeReKernel::print( _lang.get("BUILTIN_CHECKKEYWORD_DEF_EMPTY") );
-				//NumeReKernel::print("|-> Es wurden keine Funktionen gespeichert." );
 			}
 			else if (matchParams(sCmd, "data") || matchParams(sCmd, "data", '='))
 			{
+			    // DEPRECATED: Declared at v1.1.2rc1
+			    NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
 				if (_data.containsStringVars(sCmd))
 					_data.getStringValues(sCmd);
 				if (matchParams(sCmd, "data", '='))
@@ -4485,6 +4497,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			}
 			else if (matchParams(sCmd, "script") || matchParams(sCmd, "script", '='))
 			{
+			    // DEPRECATED: Declared at v1.1.2rc1
+			    NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
 				if (!_script.isOpen())
 				{
 					if (_data.containsStringVars(sCmd))
@@ -4901,6 +4915,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		{
 			if (matchParams(sCmd, "data"))
 			{
+			    // DEPRECATED: Declared at v1.1.2rc1
+			    NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
 				_data.pasteLoad(_option);
 				if (_data.isValid())
 					NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_PASTE_SUCCESS", toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );

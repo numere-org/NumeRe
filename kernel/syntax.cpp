@@ -194,21 +194,25 @@ bool NumeReSyntax::matchItem(const vector<string>& vVector, const string& sStrin
 // This function applies the highlighting colors to the command line (only used in the console)
 string NumeReSyntax::highlightLine(const string& sCommandLine)
 {
-    // Create a color string, which will only contain default colors
-    string colors;
-
     // Ensure that a command line with a length is available
     if (!sCommandLine.length())
         return "";
-
-    // Fill the color string with the default colors
-    colors.assign(sCommandLine.length(),'0'+SYNTAX_STD);
-    char c;
 
     // Search for the error marker.
     // If found jump to the error highlighting function and return
     if (sCommandLine.front() == (char)15)
         return highlightError(sCommandLine);
+
+    // Search for the warning operator.
+    if (sCommandLine.substr(0, 3) == "|!>")
+        return highlightWarning(sCommandLine);
+
+    // Create a color string, which will only contain default colors
+    string colors;
+
+    // Fill the color string with the default colors
+    colors.assign(sCommandLine.length(),'0'+SYNTAX_STD);
+    char c;
 
     // Avoid some special cases
     // These shall not be highlighted, because they are messages from the kernel
@@ -401,6 +405,14 @@ string NumeReSyntax::highlightError(const string& sCommandLine)
 {
     string colors;
     colors.assign(sCommandLine.length(),'0'+SYNTAX_OPERATOR);
+    return colors;
+}
+
+// Highlight a warning message. We simply use the color of numbers (orange as default)
+string NumeReSyntax::highlightWarning(const string& sCommandLine)
+{
+    string colors;
+    colors.assign(sCommandLine.length(),'0'+SYNTAX_NUMBER);
     return colors;
 }
 

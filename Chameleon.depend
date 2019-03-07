@@ -2507,7 +2507,7 @@
 	<deque>
 	<string>
 
-1523015751 d:\cpp\numere-source\trunk\kernel\syntax.hpp
+1551854191 d:\cpp\numere-source\trunk\kernel\syntax.hpp
 	<string>
 	<vector>
 	<map>
@@ -2519,7 +2519,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1551612090 d:\cpp\numere-source\trunk\kernel\kernel.hpp
+1551854057 d:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	<queue>
@@ -3339,7 +3339,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1550911876 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1551794899 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3983,7 +3983,7 @@
 
 1501080105 d:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1551697142 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1551940273 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 	"io/fileops.hpp"
@@ -4092,7 +4092,7 @@
 	<algorithm>
 	<numeric>
 
-1551697769 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
+1551941443 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
 	"muParserBase.h"
 	"muParserTemplateMagic.h"
 	"../../kernel.hpp"
@@ -4149,7 +4149,7 @@
 	"muParser.h"
 	"muParserInt.h"
 
-1531079605 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsertokenreader.cpp
+1551942477 source:d:\cpp\numere-source\trunk\kernel\core\parserlib\muparsertokenreader.cpp
 	<cassert>
 	<cstdio>
 	<cstring>
@@ -4304,12 +4304,12 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1551612087 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1551941458 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 	"core/datamanagement/dataops.hpp"
 
-1533313233 source:d:\cpp\numere-source\trunk\kernel\syntax.cpp
+1551854381 source:d:\cpp\numere-source\trunk\kernel\syntax.cpp
 	"syntax.hpp"
 	"core/utils/tools.hpp"
 

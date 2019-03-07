@@ -318,7 +318,7 @@ void NumeReKernel::defineOperators()
 	_parser.DefinePostfixOprt(_nrT("'Gs"), parser_Gauss);
 	_parser.DefinePostfixOprt(_nrT("'Ps"), parser_Poise);
 	_parser.DefinePostfixOprt(_nrT("'mol"), parser_mol);
-	//_parser.DefinePostfixOprt(_nrT("!"), parser_Faculty);
+	_parser.DefinePostfixOprt(_nrT("!"), parser_Faculty);
 
 	// --> Logisches NICHT <--
 	_parser.DefineInfixOprt(_nrT("!"), parser_Not);
@@ -2040,12 +2040,14 @@ void NumeReKernel::printPreFmt(const string& __sLine)
 	else
 	{
 		string sLine = __sLine;
+
 		if (bErrorNotification)
 		{
 			if (sLine.front() == '\r')
 				sLine.insert(1, 1, (char)15);
 			else
 				sLine.insert(0, 1, (char)15);
+
 			for (size_t i = 0; i < sLine.length(); i++)
 			{
 				if (sLine[i] == '\n' && i < sLine.length() - 2)
@@ -2055,11 +2057,14 @@ void NumeReKernel::printPreFmt(const string& __sLine)
 
 		wxCriticalSectionLocker lock(m_parent->m_kernelCS);
 		m_parent->m_sAnswer += sLine;
+
 		if (m_parent->m_KernelStatus < NumeReKernel::NUMERE_STATUSBAR_UPDATE || m_parent->m_KernelStatus == NumeReKernel::NUMERE_ANSWER_READ)//m_parent->m_KernelStatus != NumeReKernel::NUMERE_PRINTLINE_PREFMT)
 			m_parent->m_KernelStatus = NumeReKernel::NUMERE_PRINTLINE_PREFMT;
 	}
+
 	if (bWritingTable)
 		return;
+
 	wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
 	Sleep(KERNEL_PRINT_SLEEP);
 }
@@ -2099,6 +2104,25 @@ string NumeReKernel::formatResultOutput(int nNum, value_type* v, const Settings&
 
     // fallback
     return "";
+}
+
+// This static function may be used to issue a warning to the user
+void NumeReKernel::issueWarning(const string& sWarningMessage)
+{
+    if (!m_parent)
+        return;
+    else
+    {
+        wxCriticalSectionLocker lock(m_parent->m_kernelCS);
+        m_parent->m_sAnswer += "|!> " + _lang.get("COMMON_WARNING") + ": " + sWarningMessage + "\n";
+
+        if (m_parent->m_KernelStatus < NumeReKernel::NUMERE_STATUSBAR_UPDATE || m_parent->m_KernelStatus == NumeReKernel::NUMERE_ANSWER_READ)
+            m_parent->m_KernelStatus = NumeReKernel::NUMERE_ISSUE_WARNING;
+
+    }
+
+    wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
+    Sleep(KERNEL_PRINT_SLEEP);
 }
 
 int NumeReKernel::numberOfNumbersPerLine(const Settings& _option)

@@ -29,3 +29,4 @@ Added	The "rename symbols" dialog has now multiple options modifying the search 
 New	A variable viewer is now available in a second tab next to the history.
 Fixed	Tables perform much faster now.
 Added	"switch" was added to the static code analyzer.
+Added	NumeRe will now warn the user, if a syntax, a command or a function is deprecated and will be removed in the future.

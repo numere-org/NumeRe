@@ -82,6 +82,7 @@ class NumeReKernel
             NUMERE_DONE_KEYWORD,
             NUMERE_PRINTLINE,
             NUMERE_PRINTLINE_PREFMT,
+            NUMERE_ISSUE_WARNING,
             NUMERE_PENDING,
             NUMERE_PENDING_SPECIAL,
             NUMERE_CALC_UPDATE,
@@ -175,6 +176,7 @@ class NumeReKernel
         static void print(const string& sLine);
         static void printPreFmt(const string& sLine);
         static string formatResultOutput(int nNum, value_type* v, const Settings& _option);
+        static void issueWarning(const string& sWarningMessage);
         static void setFileName(const string& sFileName);
         static int numberOfNumbersPerLine(const Settings& _option);
         static void statusBar(int nStep, int nFirstStep, int nFinalStep, const string& sType);

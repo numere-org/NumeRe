@@ -109,6 +109,7 @@ class NumeReSyntax
 
         string highlightLine(const string& sCommandLine);
         string highlightError(const string& sCommandLine);
+        string highlightWarning(const string& sCommandLine);
 
 };
 #endif // SYNTAX_HPP
