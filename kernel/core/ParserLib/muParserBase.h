@@ -108,6 +108,7 @@ namespace mu
 			bool checkDelimiter(const std::string& sLine);
 			void evaluateVectorExpansion(string& sSubExpr, vector<double>& vResults);
 			void expandVector(double dFirst, double dLast, double dIncrement, vector<double>& vResults);
+			void assignResultsToTarget(const varmap_type& varmap, int nFinalResults);
 
 		public:
 
@@ -153,7 +154,7 @@ namespace mu
 
 			virtual ~ParserBase();
 
-			value_type  Eval();
+			value_type  Eval() __attribute__((deprecated));
 			value_type* Eval(int& nStackSize);
 			void Eval(value_type* results, int nBulkSize);
 

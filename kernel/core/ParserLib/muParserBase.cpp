@@ -2627,6 +2627,40 @@ namespace mu
             return toString(nVectorIndex);
 	}
 
+	// This member function assigns the results of the calculation to
+	// the temporary vector
+    void ParserBase::assignResultsToTarget(const varmap_type& varmap, int nFinalResults)
+	{
+	    if (!mTargets.size() || varmap.find("~TRGTVCT[~]") == varmap.end())
+            return;
+
+        std::string sTemp = sTargets;
+        size_t nthStackPos = 0;
+
+        // As long as the list of the targets has a length
+        while (sTemp.length())
+        {
+            if (mTargets.find(getNextVarObject(sTemp, false)) != mTargets.end())
+            {
+                if (g_DbgDumpStack)
+                    NumeReKernel::printPreFmt("|-> Target: " + getNextVarObject(sTemp, false) + " = " + toString(m_vStackBuffer[nthStackPos+1], 5) +  " (m_vStackBuffer[" +toString(nthStackPos+1)+ "])\n");
+                *(mTargets[getNextVarObject(sTemp, false)]) = m_vStackBuffer[nthStackPos+1];
+            }
+
+            getNextVarObject(sTemp, true);
+
+            // Handle singleton results correctly
+            if (nFinalResults > 1)
+                nthStackPos++;
+
+            // Ensure that we don't read wrong values
+            if (nthStackPos >= nFinalResults)
+                break;
+        }
+
+	}
+
+
 	//------------------------------------------------------------------------------
 	/** \brief Evaluate an expression containing comma seperated subexpressions
 	    \param [out] nStackSize The total number of results available
@@ -2638,13 +2672,15 @@ namespace mu
 	value_type* ParserBase::Eval(int& nStackSize)
 	{
 		(this->*m_pParseFormula)();
+
 		if (bMakeLoopByteCode && !bPauseLoopByteCode && vValidByteCode[nthLoopElement][nthLoopPartEquation])
 		{
 			nStackSize = vNumResultsIDX[nthLoopElement][nthLoopPartEquation];
 			m_vStackBuffer = vLoopStackBuf[nthLoopElement][nthLoopPartEquation];
+
 			if (g_DbgDumpStack)
                 NumeReKernel::printPreFmt("|-> EvalOpt LoopEl,PartEq = (" + toString(nthLoopElement) +","+ toString(nthLoopPartEquation) +") m_vStackBuffer[1] = " + toString(m_vStackBuffer[1], 5));
-			//m_nFinalResultIdx = nStackSize;
+
 			if (mVectorVars.size() && !(mTargets.size() && mVectorVars.size() == 1 && vUsedVar[nthLoopElement][nthLoopPartEquation].find("~TRGTVCT[~]") != vUsedVar[nthLoopElement][nthLoopPartEquation].end()))
 			{
 				unsigned int nVectorlength = 0;
@@ -2652,78 +2688,75 @@ namespace mu
 				std::map<double*, double> mFirstVals;
 				valbuf_type buffer;
 				buffer.push_back(0.0); // erster Wert wird nicht mitgezaehlt
+
+				// Get the maximal size of the used vectors
 				for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
 				{
-					// Laengsten Vektor suchen
 					if ((iter->second).size() > nVectorlength && iter->first != "~TRGTVCT[~]" && vars.find(iter->first) != vars.end())
 						nVectorlength = (iter->second).size();
 				}
+
+				// Only do something, if there's at least one vector with
+				// an arbitrary length used
 				if (nVectorlength)
 				{
-					//std::cerr << "Evaluating " << nVectorlength << " Expressions ..." << endl;
-					// erste Elemente kopieren
+					// Copy the first elements
 					for (int j = 1; j < nStackSize + 1; j++)
 						buffer.push_back(vLoopStackBuf[nthLoopElement][nthLoopPartEquation][j]);
 
+                    // Redo the calculations for each component of the
+                    // used vectors
 					for (unsigned int i = 0; i < nVectorlength; i++)
 					{
 						for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
 						{
-							// Werte der Variablen aendern
+							// Modify the value of the used variables
 							if (vars.find(iter->first) != vars.end())
 							{
 								if (i == 0)
 								{
-									// Zwischenspeichern der ersten Elemente
+									// Cache the values of the first component
+									// so that we may restore them later
 									mFirstVals[vars[iter->first]] = *(vars[iter->first]);
-									//std::cerr << iter->first << " = " << *(vars[iter->first]) << endl;
 									continue;
 								}
+
 								if ((iter->second).size() > i)
 									*vars[iter->first] = (iter->second)[i];
-								else if ((iter->second).size() == 1);
-								//*vars[iter->first] = (iter->second)[0];
-								else
+								else if ((iter->second).size() != 1)
 									*vars[iter->first] = 0.0;
 							}
 						}
-						// Parser erneut ausfuehren und Werte kopieren
+
+						// Repeat the evaluation of the parser
 						if (i)
 						{
 							(this->*m_pParseFormula)();
+
 							for (int j = 1; j < nStackSize + 1; j++)
 								buffer.push_back(vLoopStackBuf[nthLoopElement][nthLoopPartEquation][j]);
 						}
 					}
 
 					m_vStackBuffer = buffer;
+
+					// Restore the first components of the used vectors
 					for (auto iter = mFirstVals.begin(); iter != mFirstVals.end(); ++iter)
 						*(iter->first) = iter->second;
-					/*for (unsigned int i = 0; i < m_vStackBuffer.size(); i++)
-					    std::cerr << m_vStackBuffer[i] << endl;*/
 
 					nStackSize *= nVectorlength;
 				}
 			}
-			if (mTargets.size() && vUsedVar[nthLoopElement][nthLoopPartEquation].find("~TRGTVCT[~]") != vUsedVar[nthLoopElement][nthLoopPartEquation].end())
-			{
-				std::string sTemp = sTargets;
-				for (unsigned int i = 1; i <  m_vStackBuffer.size(); i++)
-				{
-					if (!sTemp.length())
-						break;
-					if (mTargets.find(getNextVarObject(sTemp, false)) != mTargets.end())
-					{
-						*(mTargets[getNextVarObject(sTemp, false)]) = m_vStackBuffer[i];
-					}
-					getNextVarObject(sTemp, true);
-				}
-			}
+
+			// assign the results of the calculation to a possible
+			// temporary vector
+			assignResultsToTarget(vUsedVar[nthLoopElement][nthLoopPartEquation], vNumResultsIDX[nthLoopElement][nthLoopPartEquation]);
+
 			if (bMakeLoopByteCode && !bPauseLoopByteCode)
 			{
-				//NumeReKernel::printPreFmt(" Creating new byte code");
 				nthLoopPartEquation++;
 				nCurrVectorIndex = 0;
+
 				if (vLoopByteCode[nthLoopElement].size() <= nthLoopPartEquation)
 				{
 					vLoopByteCode[nthLoopElement].push_back(ParserByteCode());
@@ -2737,86 +2770,88 @@ namespace mu
 
 			if (g_DbgDumpStack)
                 NumeReKernel::printPreFmt(" Returning " + toString(m_vStackBuffer[1], 5) + "\n");
+
 			return &m_vStackBuffer[1];
 		}
 		else
 		{
 			nStackSize = m_nFinalResultIdx;
+
 			if (mVectorVars.size() && !(mVectorVars.size() == 1 && mTargets.size() && vCurrentUsedVars.find("~TRGTVCT[~]") != vCurrentUsedVars.end()))
 			{
 				unsigned int nVectorlength = 0;
 				valbuf_type buffer;
 				std::map<double*, double> mFirstVals;
 				buffer.push_back(0.0);
+
+				// Get the maximal size of the used vectors
 				for (auto iter = mNonSingletonVectorVars.begin(); iter != mNonSingletonVectorVars.end(); ++iter)
 				{
-					//std::cerr << iter->first << endl;
 					if ((iter->second)->size() > nVectorlength && iter->first != "~TRGTVCT[~]" && vCurrentUsedVars.find(iter->first) != vCurrentUsedVars.end())
 					{
 						nVectorlength = (iter->second)->size();
-						/*for (unsigned int nsize = 0; nsize < (iter->second).size(); nsize++)
-						    std::cerr << (iter->second)[nsize] << endl;*/
-						//std::cerr << "found" << endl;
 					}
 				}
-				//std::cerr << "Evaluating " << nVectorlength << " Expressions ..." << endl;
-				for (int j = 1; j < m_nFinalResultIdx + 1; j++)
-					buffer.push_back(m_vStackBuffer[j]);
 
+				// Only do something, if the vector length is LARGER than 1
 				if (nVectorlength > 1)
 				{
+				    // Copy the first elements
+                    for (int j = 1; j < m_nFinalResultIdx + 1; j++)
+                        buffer.push_back(m_vStackBuffer[j]);
+
+                    // Redo the calculations for each component of the
+                    // used vectors
 					for (unsigned int i = 0; i < nVectorlength; i++)
 					{
 						for (auto iter = mNonSingletonVectorVars.begin(); iter != mNonSingletonVectorVars.end(); ++iter)
 						{
+							// Modify the value of the used variables
 							if (vCurrentUsedVars.find(iter->first) != vCurrentUsedVars.end())
 							{
 								if (i == 0)
 								{
+									// Cache the values of the first component
+									// so that we may restore them later
 									mFirstVals[vCurrentUsedVars[iter->first]] = *(vCurrentUsedVars[iter->first]);
 									continue;
 								}
+
 								if ((iter->second)->size() > i)
 									*vCurrentUsedVars[iter->first] = (*(iter->second))[i];
-								else if ((iter->second)->size() == 1);
-								//*vars[iter->first] = (iter->second)[0];
-								else
+								else if ((iter->second)->size() != 1)
 									*vCurrentUsedVars[iter->first] = 0.0;
 							}
 						}
+
+						// Repeat the evaluation of the parser
 						if (i)
 						{
 							(this->*m_pParseFormula)();
+
 							for (int j = 1; j < m_nFinalResultIdx + 1; j++)
 								buffer.push_back(m_vStackBuffer[j]);
 						}
 					}
 
 					m_vStackBuffer = buffer;
+
+					// Restore the first components of the used vectors
 					for (auto iter = mFirstVals.begin(); iter != mFirstVals.end(); ++iter)
 						*(iter->first) = iter->second;
-					/*for (unsigned int i = 0; i < m_vStackBuffer.size(); i++)
-					    std::cerr << m_vStackBuffer[i] << endl;*/
+
 					nStackSize *= nVectorlength;
 				}
 			}
-			if (mTargets.size() && vCurrentUsedVars.find("~TRGTVCT[~]") != vCurrentUsedVars.end())
-			{
-				std::string sTemp = sTargets;
-				for (unsigned int i = 1; i <  m_vStackBuffer.size(); i++)
-				{
-					if (!sTemp.length())
-						break;
-					if (mTargets.find(getNextVarObject(sTemp, false)) != mTargets.end())
-					{
-						*(mTargets[getNextVarObject(sTemp, false)]) = m_vStackBuffer[i];
-					}
-					getNextVarObject(sTemp, true);
-				}
-			}
+
+			// assign the results of the calculation to a possible
+			// temporary vector
+			assignResultsToTarget(vCurrentUsedVars, m_nFinalResultIdx);
+
 			// (for historic reasons the stack starts at position 1)
 			if (g_DbgDumpStack)
                 NumeReKernel::printPreFmt("|-> Eval LoopEl,PartEq = (" + toString(nthLoopElement) +","+ toString(nthLoopPartEquation) +") m_vStackBuffer[1] = " + toString(m_vStackBuffer[1], 5) + "\n");
+
 			return &m_vStackBuffer[1];
 		}
 	}
@@ -2851,113 +2886,17 @@ namespace mu
 	  \return The evaluation result
 	  \throw ParseException if no Formula is set or in case of any other error related to the formula.
 	*/
-	value_type ParserBase::Eval()
+	value_type ParserBase::Eval() // declared as deprecated
 	{
-		if (mVectorVars.size() && (nVectorDimension > 1 || !nVectorDimension))
-		{
-			(this->*m_pParseFormula)();
+	    value_type* v;
+	    int nResults;
 
-			unsigned int nVectorlength = 1;
-			varmap_type vars = GetUsedVar();
-			valbuf_type buffer;
-			buffer.push_back(0.0);
-			for (auto iter = mNonSingletonVectorVars.begin(); iter != mNonSingletonVectorVars.end(); ++iter)
-			{
-				// check only vector variables which are larger than one element
-				if (vars.find(iter->first) != vars.end() && (iter->second)->size() > nVectorlength)
-					nVectorlength = (iter->second)->size();
-			}
-			//std::cerr << "Evaluating " << nVectorlength << " Expressions ..." << endl;
+	    v = Eval(nResults);
 
-			for (int j = 1; j < m_nFinalResultIdx + 1; j++)
-				buffer.push_back(m_vStackBuffer[j]);
+	    if (!nResults)
+            return NAN;
 
-			nVectorDimension = nVectorlength;
-
-			if (nVectorlength > 1)
-			{
-				std::map<double*, double> mFirstVals;
-				for (unsigned int i = 0; i < nVectorlength; i++)
-				{
-					for (auto iter = mNonSingletonVectorVars.begin(); iter != mNonSingletonVectorVars.end(); ++iter)
-					{
-						if (vars.find(iter->first) != vars.end())
-						{
-							if (i == 0)
-							{
-								mFirstVals[vars[iter->first]] = *(vars[iter->first]);
-								continue;
-							}
-							if ((iter->second)->size() > i)
-								*vars[iter->first] = (*(iter->second))[i];
-							else if ((iter->second)->size() == 1);
-							//*vars[iter->first] = (iter->second)[0];
-							else
-								*vars[iter->first] = 0.0;
-						}
-					}
-					if (i)
-					{
-						(this->*m_pParseFormula)();
-						for (int j = 1; j < m_nFinalResultIdx + 1; j++)
-							buffer.push_back(m_vStackBuffer[j]);
-					}
-				}
-				for (auto iter = mFirstVals.begin(); iter != mFirstVals.end(); ++iter)
-					*(iter->first) = iter->second;
-				/*for (unsigned int i = 0; i < m_vStackBuffer.size(); i++)
-				    std::cerr << m_vStackBuffer[i] << endl;*/
-				//nStackSize *= nVectorlength;
-			}
-
-			if (mTargets.size() && vars.find("~TRGTVCT[~]") != vars.end())
-			{
-				std::string sTemp = sTargets;
-				for (unsigned int i = 1; i <  buffer.size(); i++)
-				{
-					if (!sTemp.length())
-						break;
-					if (mTargets.find(getNextVarObject(sTemp, false)) != mTargets.end())
-					{
-						*(mTargets[getNextVarObject(sTemp, false)]) = buffer[i];
-					}
-					getNextVarObject(sTemp, true);
-				}
-			}
-
-			if (bMakeLoopByteCode && !bPauseLoopByteCode)
-			{
-				nthLoopPartEquation++;
-				nCurrVectorIndex = 0;
-				if (vLoopByteCode[nthLoopElement].size() <= nthLoopPartEquation)
-				{
-					vLoopByteCode[nthLoopElement].push_back(ParserByteCode());
-					vLoopString[nthLoopElement].push_back("");
-					vValidByteCode[nthLoopElement].push_back(1);
-					vNumResultsIDX[nthLoopElement].push_back(0);
-					vLoopStackBuf[nthLoopElement].push_back(valbuf_type());
-					vUsedVar[nthLoopElement].push_back(varmap_type());
-				}
-			}
-
-			return buffer[1];
-		}
-		value_type res = (this->*m_pParseFormula)();
-		if (bMakeLoopByteCode && !bPauseLoopByteCode)
-		{
-			nthLoopPartEquation++;
-			nCurrVectorIndex = 0;
-			if (vLoopByteCode[nthLoopElement].size() <= nthLoopPartEquation)
-			{
-				vLoopByteCode[nthLoopElement].push_back(ParserByteCode());
-				vLoopString[nthLoopElement].push_back("");
-				vValidByteCode[nthLoopElement].push_back(1);
-				vNumResultsIDX[nthLoopElement].push_back(0);
-				vLoopStackBuf[nthLoopElement].push_back(valbuf_type());
-				vUsedVar[nthLoopElement].push_back(varmap_type());
-			}
-		}
-		return res;
+	    return v[0];
 	}
 
 	ParserByteCode ParserBase::GetByteCode() const
