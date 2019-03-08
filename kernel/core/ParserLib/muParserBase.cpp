@@ -2677,13 +2677,13 @@ namespace mu
 		{
 			nStackSize = vNumResultsIDX[nthLoopElement][nthLoopPartEquation];
 			m_vStackBuffer = vLoopStackBuf[nthLoopElement][nthLoopPartEquation];
+            unsigned int nVectorlength = 0;
 
 			if (g_DbgDumpStack)
                 NumeReKernel::printPreFmt("|-> EvalOpt LoopEl,PartEq = (" + toString(nthLoopElement) +","+ toString(nthLoopPartEquation) +") m_vStackBuffer[1] = " + toString(m_vStackBuffer[1], 5));
 
 			if (mVectorVars.size() && !(mTargets.size() && mVectorVars.size() == 1 && vUsedVar[nthLoopElement][nthLoopPartEquation].find("_~TRGTVCT[~]") != vUsedVar[nthLoopElement][nthLoopPartEquation].end()))
 			{
-				unsigned int nVectorlength = 0;
 				varmap_type vars = vUsedVar[nthLoopElement][nthLoopPartEquation];
 				std::map<double*, double> mFirstVals;
 				valbuf_type buffer;
@@ -2750,7 +2750,7 @@ namespace mu
 
 			// assign the results of the calculation to a possible
 			// temporary vector
-			assignResultsToTarget(vUsedVar[nthLoopElement][nthLoopPartEquation], vNumResultsIDX[nthLoopElement][nthLoopPartEquation]);
+			assignResultsToTarget(vUsedVar[nthLoopElement][nthLoopPartEquation], max((unsigned)vNumResultsIDX[nthLoopElement][nthLoopPartEquation], nVectorlength));
 
 			if (bMakeLoopByteCode && !bPauseLoopByteCode)
 			{
@@ -2776,10 +2776,10 @@ namespace mu
 		else
 		{
 			nStackSize = m_nFinalResultIdx;
+            unsigned int nVectorlength = 0;
 
 			if (mVectorVars.size() && !(mVectorVars.size() == 1 && mTargets.size() && vCurrentUsedVars.find("_~TRGTVCT[~]") != vCurrentUsedVars.end()))
 			{
-				unsigned int nVectorlength = 0;
 				valbuf_type buffer;
 				std::map<double*, double> mFirstVals;
 				buffer.push_back(0.0);
@@ -2846,7 +2846,7 @@ namespace mu
 
 			// assign the results of the calculation to a possible
 			// temporary vector
-			assignResultsToTarget(vCurrentUsedVars, m_nFinalResultIdx);
+			assignResultsToTarget(vCurrentUsedVars, max((unsigned)m_nFinalResultIdx, nVectorlength));
 
 			// (for historic reasons the stack starts at position 1)
 			if (g_DbgDumpStack)
