@@ -1871,8 +1871,8 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 					else
 						vIndices[0] = _data.getStringElements((unsigned int)vIndices.back() - 1);
 				}
-				_parser.SetVectorVar("indices[" + replaceToVectorname(_sObject) + "]", vIndices);
-				sLine = sLine.substr(0, n_pos) + "indices[" + replaceToVectorname(_sObject) + "]" + sLine.substr(nPos + 1);
+				_parser.SetVectorVar("_~indices[" + replaceToVectorname(_sObject) + "]", vIndices);
+				sLine = sLine.substr(0, n_pos) + "_~indices[" + replaceToVectorname(_sObject) + "]" + sLine.substr(nPos + 1);
 				n_pos++;
 				continue;
 			}
@@ -1934,8 +1934,8 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 			vIndices.push_back(_mIndex.nI[1] + 1);
 			vIndices.push_back(_mIndex.nJ[0] + 1);
 			vIndices.push_back(_mIndex.nJ[1] + 1);
-			_parser.SetVectorVar("indices[" + replaceToVectorname(_sObject) + "]", vIndices);
-			sLine = sLine.substr(0, n_pos) + "indices[" + replaceToVectorname(_sObject) + "]" + sLine.substr(nPos + 1);
+			_parser.SetVectorVar("_~indices[" + replaceToVectorname(_sObject) + "]", vIndices);
+			sLine = sLine.substr(0, n_pos) + "_~indices[" + replaceToVectorname(_sObject) + "]" + sLine.substr(nPos + 1);
 		}
 		n_pos++;
 	}

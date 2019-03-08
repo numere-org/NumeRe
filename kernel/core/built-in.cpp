@@ -151,16 +151,16 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		{
 			vIntegrate = parser_Integrate_2(sCmd, _data, _parser, _option, _functions);
 			sCmd = sArgument;
-			sCmd.replace(sCmd.find("<<ANS>>"), 7, "integrate2[~_~]");
-			_parser.SetVectorVar("integrate2[~_~]", vIntegrate);
+			sCmd.replace(sCmd.find("<<ANS>>"), 7, "_~integrate2[~_~]");
+			_parser.SetVectorVar("_~integrate2[~_~]", vIntegrate);
 			return 0;
 		}
 		else if (bParserActive)
 		{
 			vIntegrate = parser_Integrate(sCmd, _data, _parser, _option, _functions);
 			sCmd = sArgument;
-			sCmd.replace(sCmd.find("<<ANS>>"), 7, "integrate[~_~]");
-			_parser.SetVectorVar("integrate[~_~]", vIntegrate);
+			sCmd.replace(sCmd.find("<<ANS>>"), 7, "_~integrate[~_~]");
+			_parser.SetVectorVar("_~integrate[~_~]", vIntegrate);
 			return 0;
 		}
 		else
@@ -194,8 +194,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			        sArgument += ",";
 			}
 			sArgument += "}}";*/
-			sCmd.replace(sCmd.find("<<ANS>>"), 7, "diff[~_~]");
-			_parser.SetVectorVar("diff[~_~]", vDiff);
+			sCmd.replace(sCmd.find("<<ANS>>"), 7, "_~diff[~_~]");
+			_parser.SetVectorVar("_~diff[~_~]", vDiff);
 			return 0;
 		}
 		else
@@ -1370,169 +1370,169 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[avg_lines]");
-					_parser.SetVectorVar("data[avg_lines]", _data.avg("data", sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[avg_lines]");
+					_parser.SetVectorVar("_~data[avg_lines]", _data.avg("data", sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[avg_cols]");
-					_parser.SetVectorVar("data[avg_cols]", _data.avg("data", sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[avg_cols]");
+					_parser.SetVectorVar("_~data[avg_cols]", _data.avg("data", sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "sum"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[sum_lines]");
-					_parser.SetVectorVar("data[sum_lines]", _data.sum("data", sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[sum_lines]");
+					_parser.SetVectorVar("_~data[sum_lines]", _data.sum("data", sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[sum_cols]");
-					_parser.SetVectorVar("data[sum_cols]", _data.sum("data", sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[sum_cols]");
+					_parser.SetVectorVar("_~data[sum_cols]", _data.sum("data", sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "min"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[min_lines]");
-					_parser.SetVectorVar("data[min_lines]", _data.min("data", sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[min_lines]");
+					_parser.SetVectorVar("_~data[min_lines]", _data.min("data", sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[min_cols]");
-					_parser.SetVectorVar("data[min_cols]", _data.min("data", sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[min_cols]");
+					_parser.SetVectorVar("_~data[min_cols]", _data.min("data", sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "max"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[max_lines]");
-					_parser.SetVectorVar("data[max_lines]", _data.max("data", sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[max_lines]");
+					_parser.SetVectorVar("_~data[max_lines]", _data.max("data", sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[max_cols]");
-					_parser.SetVectorVar("data[max_cols]", _data.max("data", sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[max_cols]");
+					_parser.SetVectorVar("_~data[max_cols]", _data.max("data", sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "norm"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[norm_lines]");
-					_parser.SetVectorVar("data[norm_lines]", _data.norm("data", sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[norm_lines]");
+					_parser.SetVectorVar("_~data[norm_lines]", _data.norm("data", sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[norm_cols]");
-					_parser.SetVectorVar("data[norm_cols]", _data.norm("data", sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[norm_cols]");
+					_parser.SetVectorVar("_~data[norm_cols]", _data.norm("data", sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "std"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[std_lines]");
-					_parser.SetVectorVar("data[std_lines]", _data.std("data", sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[std_lines]");
+					_parser.SetVectorVar("_~data[std_lines]", _data.std("data", sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[std_cols]");
-					_parser.SetVectorVar("data[std_cols]", _data.std("data", sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[std_cols]");
+					_parser.SetVectorVar("_~data[std_cols]", _data.std("data", sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "prd"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[prd_lines]");
-					_parser.SetVectorVar("data[prd_lines]", _data.prd("data", sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[prd_lines]");
+					_parser.SetVectorVar("_~data[prd_lines]", _data.prd("data", sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[prd_cols]");
-					_parser.SetVectorVar("data[prd_cols]", _data.prd("data", sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[prd_cols]");
+					_parser.SetVectorVar("_~data[prd_cols]", _data.prd("data", sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "num"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[num_lines]");
-					_parser.SetVectorVar("data[num_lines]", _data.num("data", sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[num_lines]");
+					_parser.SetVectorVar("_~data[num_lines]", _data.num("data", sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[num_cols]");
-					_parser.SetVectorVar("data[num_cols]", _data.num("data", sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[num_cols]");
+					_parser.SetVectorVar("_~data[num_cols]", _data.num("data", sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "cnt"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[cnt_lines]");
-					_parser.SetVectorVar("data[cnt_lines]", _data.cnt("data", sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[cnt_lines]");
+					_parser.SetVectorVar("_~data[cnt_lines]", _data.cnt("data", sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[cnt_cols]");
-					_parser.SetVectorVar("data[cnt_cols]", _data.cnt("data", sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[cnt_cols]");
+					_parser.SetVectorVar("_~data[cnt_cols]", _data.cnt("data", sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "med"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[med_lines]");
-					_parser.SetVectorVar("data[med_lines]", _data.med("data", sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[med_lines]");
+					_parser.SetVectorVar("_~data[med_lines]", _data.med("data", sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[med_cols]");
-					_parser.SetVectorVar("data[med_cols]", _data.med("data", sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[med_cols]");
+					_parser.SetVectorVar("_~data[med_cols]", _data.med("data", sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "and"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[and_lines]");
-					_parser.SetVectorVar("data[and_lines]", _data.and_func("data", sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[and_lines]");
+					_parser.SetVectorVar("_~data[and_lines]", _data.and_func("data", sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[and_cols]");
-					_parser.SetVectorVar("data[and_cols]", _data.and_func("data", sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[and_cols]");
+					_parser.SetVectorVar("_~data[and_cols]", _data.and_func("data", sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "or"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[or_lines]");
-					_parser.SetVectorVar("data[or_lines]", _data.or_func("data", sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[or_lines]");
+					_parser.SetVectorVar("_~data[or_lines]", _data.or_func("data", sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[or_cols]");
-					_parser.SetVectorVar("data[or_cols]", _data.or_func("data", sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[or_cols]");
+					_parser.SetVectorVar("_~data[or_cols]", _data.or_func("data", sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "xor"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[xor_lines]");
-					_parser.SetVectorVar("data[xor_lines]", _data.xor_func("data", sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[xor_lines]");
+					_parser.SetVectorVar("_~data[xor_lines]", _data.xor_func("data", sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), "data[xor_cols]");
-					_parser.SetVectorVar("data[xor_cols]", _data.xor_func("data", sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~data[xor_cols]");
+					_parser.SetVectorVar("_~data[xor_cols]", _data.xor_func("data", sArgument + "cols" + sEvery));
 				}
 			}
 
@@ -1881,173 +1881,174 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				sArgument = "grid";
 			else
 				sArgument.clear();
+
 			if (matchParams(sCmd, "avg"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[avg_lines]");
-					_parser.SetVectorVar(sCacheCmd + "[avg_lines]", _data.avg(sCacheCmd, sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[avg_lines]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[avg_lines]", _data.avg(sCacheCmd, sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[avg_cols]");
-					_parser.SetVectorVar(sCacheCmd + "[avg_cols]", _data.avg(sCacheCmd, sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[avg_cols]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[avg_cols]", _data.avg(sCacheCmd, sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "sum"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[sum_lines]");
-					_parser.SetVectorVar(sCacheCmd + "[sum_lines]", _data.sum(sCacheCmd, sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[sum_lines]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[sum_lines]", _data.sum(sCacheCmd, sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[sum_cols]");
-					_parser.SetVectorVar(sCacheCmd + "[sum_cols]", _data.sum(sCacheCmd, sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[sum_cols]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[sum_cols]", _data.sum(sCacheCmd, sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "min"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[min_lines]");
-					_parser.SetVectorVar(sCacheCmd + "[min_lines]", _data.min(sCacheCmd, sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[min_lines]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[min_lines]", _data.min(sCacheCmd, sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[min_cols]");
-					_parser.SetVectorVar(sCacheCmd + "[min_cols]", _data.min(sCacheCmd, sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[min_cols]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[min_cols]", _data.min(sCacheCmd, sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "max"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[max_lines]");
-					_parser.SetVectorVar(sCacheCmd + "[max_lines]", _data.max(sCacheCmd, sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[max_lines]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[max_lines]", _data.max(sCacheCmd, sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[max_cols]");
-					_parser.SetVectorVar(sCacheCmd + "[max_cols]", _data.max(sCacheCmd, sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[max_cols]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[max_cols]", _data.max(sCacheCmd, sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "norm"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[norm_lines]");
-					_parser.SetVectorVar(sCacheCmd + "[norm_lines]", _data.norm(sCacheCmd, sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[norm_lines]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[norm_lines]", _data.norm(sCacheCmd, sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[norm_cols]");
-					_parser.SetVectorVar(sCacheCmd + "[norm_cols]", _data.norm(sCacheCmd, sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[norm_cols]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[norm_cols]", _data.norm(sCacheCmd, sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "std"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[std_lines]");
-					_parser.SetVectorVar(sCacheCmd + "[std_lines]", _data.std(sCacheCmd, sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[std_lines]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[std_lines]", _data.std(sCacheCmd, sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[std_cols]");
-					_parser.SetVectorVar(sCacheCmd + "[std_cols]", _data.std(sCacheCmd, sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[std_cols]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[std_cols]", _data.std(sCacheCmd, sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "prd"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[prd_lines]");
-					_parser.SetVectorVar(sCacheCmd + "[prd_lines]", _data.prd(sCacheCmd, sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[prd_lines]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[prd_lines]", _data.prd(sCacheCmd, sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[prd_cols]");
-					_parser.SetVectorVar(sCacheCmd + "[prd_cols]", _data.prd(sCacheCmd, sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[prd_cols]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[prd_cols]", _data.prd(sCacheCmd, sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "num"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[num_lines]");
-					_parser.SetVectorVar(sCacheCmd + "[num_lines]", _data.num(sCacheCmd, sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[num_lines]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[num_lines]", _data.num(sCacheCmd, sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[num_cols]");
-					_parser.SetVectorVar(sCacheCmd + "[num_cols]", _data.num(sCacheCmd, sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[num_cols]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[num_cols]", _data.num(sCacheCmd, sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "cnt"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[cnt_lines]");
-					_parser.SetVectorVar(sCacheCmd + "[cnt_lines]", _data.cnt(sCacheCmd, sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[cnt_lines]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[cnt_lines]", _data.cnt(sCacheCmd, sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[cnt_cols]");
-					_parser.SetVectorVar(sCacheCmd + "[cnt_cols]", _data.cnt(sCacheCmd, sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[cnt_cols]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[cnt_cols]", _data.cnt(sCacheCmd, sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "med"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[med_lines]");
-					_parser.SetVectorVar(sCacheCmd + "[med_lines]", _data.med(sCacheCmd, sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[med_lines]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[med_lines]", _data.med(sCacheCmd, sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[med_cols]");
-					_parser.SetVectorVar(sCacheCmd + "[med_cols]", _data.med(sCacheCmd, sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[med_cols]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[med_cols]", _data.med(sCacheCmd, sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "and"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[and_lines]");
-					_parser.SetVectorVar(sCacheCmd + "[and_lines]", _data.and_func(sCacheCmd, sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[and_lines]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[and_lines]", _data.and_func(sCacheCmd, sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[and_cols]");
-					_parser.SetVectorVar(sCacheCmd + "[and_cols]", _data.and_func(sCacheCmd, sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[and_cols]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[and_cols]", _data.and_func(sCacheCmd, sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "or"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[or_lines]");
-					_parser.SetVectorVar(sCacheCmd + "[or_lines]", _data.or_func(sCacheCmd, sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[or_lines]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[or_lines]", _data.or_func(sCacheCmd, sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[or_cols]");
-					_parser.SetVectorVar(sCacheCmd + "[or_cols]", _data.or_func(sCacheCmd, sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[or_cols]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[or_cols]", _data.or_func(sCacheCmd, sArgument + "cols" + sEvery));
 				}
 			}
 			else if (matchParams(sCmd, "xor"))
 			{
 				if (matchParams(sCmd, "lines"))
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[xor_lines]");
-					_parser.SetVectorVar(sCacheCmd + "[xor_lines]", _data.med(sCacheCmd, sArgument + "lines" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[xor_lines]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[xor_lines]", _data.med(sCacheCmd, sArgument + "lines" + sEvery));
 				}
 				else
 				{
-					sCmd.replace(nPos, sCommand.length(), sCacheCmd + "[xor_cols]");
-					_parser.SetVectorVar(sCacheCmd + "[xor_cols]", _data.med(sCacheCmd, sArgument + "cols" + sEvery));
+					sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[xor_cols]");
+					_parser.SetVectorVar("_~" + sCacheCmd + "[xor_cols]", _data.med(sCacheCmd, sArgument + "cols" + sEvery));
 				}
 			}
 

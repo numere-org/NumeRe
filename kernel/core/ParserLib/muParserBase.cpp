@@ -637,8 +637,8 @@ namespace mu
 							sTargets = sExpr.substr(i + 1, j - i - 1);
 
 							// Set the special target vector variable
-							SetVectorVar("~TRGTVCT[~]", vResults);
-							sExpr.replace(i, j + 1 - i, "~TRGTVCT[~]");
+							SetVectorVar("_~TRGTVCT[~]", vResults);
+							sExpr.replace(i, j + 1 - i, "_~TRGTVCT[~]");
 							mTargets = GetUsedVar();
 						}
 						else
@@ -2631,7 +2631,7 @@ namespace mu
 	// the temporary vector
     void ParserBase::assignResultsToTarget(const varmap_type& varmap, int nFinalResults)
 	{
-	    if (!mTargets.size() || varmap.find("~TRGTVCT[~]") == varmap.end())
+	    if (!mTargets.size() || varmap.find("_~TRGTVCT[~]") == varmap.end())
             return;
 
         std::string sTemp = sTargets;
@@ -2681,7 +2681,7 @@ namespace mu
 			if (g_DbgDumpStack)
                 NumeReKernel::printPreFmt("|-> EvalOpt LoopEl,PartEq = (" + toString(nthLoopElement) +","+ toString(nthLoopPartEquation) +") m_vStackBuffer[1] = " + toString(m_vStackBuffer[1], 5));
 
-			if (mVectorVars.size() && !(mTargets.size() && mVectorVars.size() == 1 && vUsedVar[nthLoopElement][nthLoopPartEquation].find("~TRGTVCT[~]") != vUsedVar[nthLoopElement][nthLoopPartEquation].end()))
+			if (mVectorVars.size() && !(mTargets.size() && mVectorVars.size() == 1 && vUsedVar[nthLoopElement][nthLoopPartEquation].find("_~TRGTVCT[~]") != vUsedVar[nthLoopElement][nthLoopPartEquation].end()))
 			{
 				unsigned int nVectorlength = 0;
 				varmap_type vars = vUsedVar[nthLoopElement][nthLoopPartEquation];
@@ -2692,7 +2692,7 @@ namespace mu
 				// Get the maximal size of the used vectors
 				for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
 				{
-					if ((iter->second).size() > nVectorlength && iter->first != "~TRGTVCT[~]" && vars.find(iter->first) != vars.end())
+					if ((iter->second).size() > nVectorlength && iter->first != "_~TRGTVCT[~]" && vars.find(iter->first) != vars.end())
 						nVectorlength = (iter->second).size();
 				}
 
@@ -2777,7 +2777,7 @@ namespace mu
 		{
 			nStackSize = m_nFinalResultIdx;
 
-			if (mVectorVars.size() && !(mVectorVars.size() == 1 && mTargets.size() && vCurrentUsedVars.find("~TRGTVCT[~]") != vCurrentUsedVars.end()))
+			if (mVectorVars.size() && !(mVectorVars.size() == 1 && mTargets.size() && vCurrentUsedVars.find("_~TRGTVCT[~]") != vCurrentUsedVars.end()))
 			{
 				unsigned int nVectorlength = 0;
 				valbuf_type buffer;
@@ -2787,7 +2787,7 @@ namespace mu
 				// Get the maximal size of the used vectors
 				for (auto iter = mNonSingletonVectorVars.begin(); iter != mNonSingletonVectorVars.end(); ++iter)
 				{
-					if ((iter->second)->size() > nVectorlength && iter->first != "~TRGTVCT[~]" && vCurrentUsedVars.find(iter->first) != vCurrentUsedVars.end())
+					if ((iter->second)->size() > nVectorlength && iter->first != "_~TRGTVCT[~]" && vCurrentUsedVars.find(iter->first) != vCurrentUsedVars.end())
 					{
 						nVectorlength = (iter->second)->size();
 					}
