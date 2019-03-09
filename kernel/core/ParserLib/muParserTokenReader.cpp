@@ -258,6 +258,7 @@ namespace mu
 		std::stack<int> FunArgs;
 		const char_type* szFormula = m_strFormula.c_str();
 		token_type tok;
+		m_lastTok.GetCode();
 
 		// Ignore all non printable characters when reading the expression
 		while (szFormula[m_iPos] > 0 && szFormula[m_iPos] <= 0x20)
@@ -281,7 +282,7 @@ namespace mu
 			return SaveBeforeReturn(tok); // Check for string variables
 		if ( IsString(tok) )
 			return SaveBeforeReturn(tok); // Check for String tokens
-		if ( IsInfixOpTok(tok) )
+		if (IsInfixOpTok(tok))
 			return SaveBeforeReturn(tok); // Check for unary operators
 		if ( IsPostOpTok(tok) )
 			return SaveBeforeReturn(tok); // Check for unary operators
@@ -544,6 +545,9 @@ namespace mu
 	*/
 	bool ParserTokenReader::IsInfixOpTok(token_type& a_Tok)
 	{
+	    if (m_lastTok.GetCode() == cmVAR || m_lastTok.GetCode() == cmVAL || m_lastTok.GetCode() == cmBC)
+            return false;
+
 		string_type sTok;
 		int iEnd = ExtractToken(m_pParser->ValidInfixOprtChars(), sTok, m_iPos);
 		if (iEnd == m_iPos)

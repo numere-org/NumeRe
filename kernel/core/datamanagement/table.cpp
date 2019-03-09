@@ -40,6 +40,10 @@ namespace NumeRe
     // Fill constructor
     Table::Table(double** const dData, string* const sHeadings, long long int nLines, long long int nCols, const string& sName)
     {
+        // Empty table with predefined headlines
+        if (nCols && !nLines)
+            nLines = 1;
+
         // Prepare the table
         setMinSize(nLines, nCols);
 

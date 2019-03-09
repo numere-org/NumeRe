@@ -409,10 +409,10 @@ namespace mu
 		if ( pFunMap != &m_FunDef && m_FunDef.find(a_strName) != m_FunDef.end() )
 			Error(ecNAME_CONFLICT, -1, a_strName);
 
-//        if ( pFunMap != &m_PostOprtDef && m_PostOprtDef.find(a_strName) != m_PostOprtDef.end() )
-//            Error(ecNAME_CONFLICT, -1, a_strName);
+        if ( pFunMap != &m_PostOprtDef && pFunMap != &m_InfixOprtDef && m_PostOprtDef.find(a_strName) != m_PostOprtDef.end() )
+            Error(ecNAME_CONFLICT, -1, a_strName);
 
-		if ( pFunMap != &m_InfixOprtDef && pFunMap != &m_OprtDef && m_InfixOprtDef.find(a_strName) != m_InfixOprtDef.end() )
+		if ( pFunMap != &m_InfixOprtDef && pFunMap != &m_OprtDef && pFunMap != &m_PostOprtDef && m_InfixOprtDef.find(a_strName) != m_InfixOprtDef.end() )
 			Error(ecNAME_CONFLICT, -1, a_strName);
 
 		if ( pFunMap != &m_InfixOprtDef && pFunMap != &m_OprtDef && m_OprtDef.find(a_strName) != m_OprtDef.end() )
@@ -3262,7 +3262,7 @@ namespace mu
 			string siter = iter->first;
 			if ((iter->first).find('[') != string::npos && (iter->first).find(']') != string::npos)
 			{
-				if (bIgnoreProcedureVects && (iter->first).substr(0, 6) == "PROC~[")
+				if (bIgnoreProcedureVects && (iter->first).substr(0, 8) == "_~PROC~[")
 				{
 					iter++;
 					continue;
