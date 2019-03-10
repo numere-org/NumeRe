@@ -3451,7 +3451,7 @@
 	"../kernel/core/plotting/graph_helper.hpp"
 	"terminal/wxterm.h"
 
-1543320097 d:\cpp\numere-source\trunk\gui\wx.h
+1552130757 d:\cpp\numere-source\trunk\gui\wx.h
 	<mgl2/wnd.h>
 	<wx/window.h>
 	<wx/image.h>
@@ -3461,6 +3461,7 @@
 	<wx/statusbr.h>
 	<wx/textctrl.h>
 	<wx/cursor.h>
+	<vector>
 
 1549827389 source:d:\cpp\numere-source\trunk\gui\helpviewer.cpp
 	"helpviewer.hpp"
@@ -3947,7 +3948,7 @@
 1491130247 source:d:\cpp\numere-source\trunk\gui\viewerpanel.cpp
 	"viewerpanel.hpp"
 
-1543321258 source:d:\cpp\numere-source\trunk\gui\wx.cpp
+1552131370 source:d:\cpp\numere-source\trunk\gui\wx.cpp
 	<wx/dcclient.h>
 	<wx/msgdlg.h>
 	<wx/clipbrd.h>
@@ -4168,7 +4169,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1549214227 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1552118748 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
@@ -4372,7 +4373,7 @@
 	"../utils/tools.hpp"
 	<vector>
 
-1552081976 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\memory.cpp
+1552134759 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\memory.cpp
 	"memory.hpp"
 	"../../kernel.hpp"
 

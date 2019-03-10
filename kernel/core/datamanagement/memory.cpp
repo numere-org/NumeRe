@@ -3197,26 +3197,33 @@ bool Memory::resample(long long int i1, long long int i2, long long int j1, long
 
 	bool bUseAppendedZeroes = false;
 
-	const long long int __nLines = nLines;
-	const long long int __nCols = nCols;
+	const long long int __nOrigLines = nLines;
+	const long long int __nOrigCols = nCols;
+
+	long long int __nLines = nLines;
+	long long int __nCols = nCols;
 
 	// Avoid border cases
 	if (!bValidData)
 		throw SyntaxError(SyntaxError::NO_CACHED_DATA, "resample", SyntaxError::invalid_position);
+
 	if (!nSamples)
 		throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, "resample", SyntaxError::invalid_position);
+
 	if (i1 == -1 && i2 == -1 && j1 == -1 && j2 == -1)
 		throw SyntaxError(SyntaxError::INVALID_INDEX, "resample", SyntaxError::invalid_position, i1, i2, j1, j2);
 
     // Evaluate the indices
     if (i2 == -2)
         bUseAppendedZeroes = true;
+
     if (!evaluateIndices(i1, i2, j1, j2))
         throw SyntaxError(SyntaxError::INVALID_INDEX, "resample", SyntaxError::invalid_position, i1, i2, j1, j2);
 
     // Change the predefined application directions, if it's needed
 	if ((Direction == ALL || Direction == GRID) && i2 - i1 < 3)
 		Direction = LINES;
+
 	if ((Direction == ALL || Direction == GRID) && j2 - j1 < 3)
 		Direction = COLS;
 
@@ -3224,11 +3231,13 @@ bool Memory::resample(long long int i1, long long int i2, long long int j1, long
 	if (bUseAppendedZeroes)
 	{
 		long long int nMax = 0;
+
 		for (long long int j = j1; j <= j2; j++)
 		{
 			if (nMax < nLines - nAppendedZeroes[j] - 1)
 				nMax = nLines - nAppendedZeroes[j] - 1;
 		}
+
 		if (i2 > nMax)
 			i2 = nMax;
 	}
@@ -3243,57 +3252,58 @@ bool Memory::resample(long long int i1, long long int i2, long long int j1, long
 			throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, "resample", SyntaxError::invalid_position);
 	}
 
-	// Create the dynamic memory
-	double** dResampleBuffer = new double*[__nLines];
-	for (long long int i = 0; i < __nLines; i++)
-		dResampleBuffer[i] = new double[__nCols];
-
     // Prepare a pointer to the resampler object
 	Resampler* _resampler = nullptr;
 
-	// Create the actual resample object based upon the application direction
+	// Create the actual resample object based upon the application direction.
+	// Additionally determine the size of the resampling buffer, which might
+	// be larger than the current data set
 	if (Direction == ALL || Direction == GRID) // 2D
 	{
 		if (Direction == GRID)
 		{
-		    try
-		    {
-                // Apply the resampling to the first two columns first:
-                // These contain the axis values
-                if (bUseAppendedZeroes)
-                {
-                    resample(i1, -2, j1, -1, nSamples, COLS);
-                    resample(i1, -2, j1 + 1, -1, nSamples, COLS);
-                }
-                else
-                {
-                    // Achsenwerte getrennt resamplen
-                    resample(i1, i2, j1, j1 + 1, nSamples, COLS);
-                }
-            }
-            catch (...)
+            // Apply the resampling to the first two columns first:
+            // These contain the axis values
+            if (bUseAppendedZeroes)
             {
-                for (long long int i = 0; i < __nLines; i++)
-                    delete[] dResampleBuffer[i];
-                delete[] dResampleBuffer;
-                throw;
+                resample(i1, -2, j1, -1, nSamples, COLS);
+                resample(i1, -2, j1 + 1, -1, nSamples, COLS);
             }
-                j1 += 2;
+            else
+            {
+                // Achsenwerte getrennt resamplen
+                resample(i1, i2, j1, j1 + 1, nSamples, COLS);
+            }
+
+            // Increment the first column
+            j1 += 2;
+
+            // Determine the size of the buffer
+            if (nSamples > i2-i1+1)
+                __nLines += nSamples - (i2-i1+1);
+
+            if (nSamples > j2-j1+1)
+                __nCols += nSamples - (j2-j1+1);
 		}
+
 		if (bUseAppendedZeroes)
 		{
 			long long int nMax = 0;
+
 			for (long long int j = j1; j <= j2; j++)
 			{
 				if (nMax < nLines - nAppendedZeroes[j] - 1)
 					nMax = nLines - nAppendedZeroes[j] - 1;
 			}
+
 			if (i2 > nMax)
 				i2 = nMax;
 		}
 
 		// Create the resample object and prepare the needed memory
 		_resampler = new Resampler(j2 - j1 + 1, i2 - i1 + 1, nSamples, nSamples, Resampler::BOUNDARY_CLAMP, 1.0, 0.0, "lanczos6");
+
+		// Determine final size (only upscale)
 		if (nSamples > i2 - i1 + 1 || nSamples > j2 - j1 + 1)
 			resizeMemory(nLines + nSamples - (i2 - i1 + 1), nCols + nSamples - (j2 - j1 + 1));
 	}
@@ -3301,27 +3311,47 @@ bool Memory::resample(long long int i1, long long int i2, long long int j1, long
 	{
 		// Create the resample object and prepare the needed memory
 		_resampler = new Resampler(j2 - j1 + 1, i2 - i1 + 1, j2 - j1 + 1, nSamples, Resampler::BOUNDARY_CLAMP, 1.0, 0.0, "lanczos6");
+
+		// Determine final size (only upscale)
 		if (nSamples > i2 - i1 + 1)
 			resizeMemory(nLines + nSamples - (i2 - i1 + 1), nCols - 1);
+
+        // Determine the size of the buffer
+        if (nSamples > i2-i1+1)
+            __nLines += nSamples - (i2-i1+1);
 	}
 	else if (Direction == LINES)// lines
 	{
 		// Create the resample object and prepare the needed memory
 		_resampler = new Resampler(j2 - j1 + 1, i2 - i1 + 1, nSamples, i2 - i1 + 1, Resampler::BOUNDARY_CLAMP, 1.0, 0.0, "lanczos6");
+
+		// Determine final size (only upscale)
 		if (nSamples > j2 - j1 + 1)
 			resizeMemory(nLines - 1, nCols + nSamples - (j2 - j1 + 1));
+
+        // Determine the size of the buffer
+        if (nSamples > j2-j1+1)
+            __nCols += nSamples - (j2-j1+1);
 	}
 
 	// Ensure that the resampler was created
 	if (!_resampler)
 	{
-		for (long long int i = 0; i < __nLines; i++)
-			delete[] dResampleBuffer[i];
-		delete[] dResampleBuffer;
-
 		throw SyntaxError(SyntaxError::INTERNAL_RESAMPLER_ERROR, "resample", SyntaxError::invalid_position);
 	}
 
+    // Create and initalize the dynamic memory: resampler buffer
+    double** dResampleBuffer = new double*[__nLines];
+
+    for (long long int i = 0; i < __nLines; i++)
+    {
+        dResampleBuffer[i] = new double[__nCols];
+
+        for (long long int j = 0; j < __nCols; j++)
+            dResampleBuffer[i][j] = NAN;
+    }
+
+    // resampler output buffer
 	const double* dOutputSamples = 0;
 	double* dInputSamples = new double[j2 - j1 + 1];
 	long long int _ret_line = 0;
@@ -3335,9 +3365,9 @@ bool Memory::resample(long long int i1, long long int i2, long long int j1, long
 		_final_cols = j2 - j1 + 1;
 
     // Copy the whole memory
-	for (long long int i = 0; i < __nLines; i++)
+	for (long long int i = 0; i < __nOrigLines; i++)
 	{
-		for (long long int j = 0; j < __nCols; j++)
+		for (long long int j = 0; j < __nOrigCols; j++)
 		{
 			dResampleBuffer[i][j] = dMemTable[i][j];
 		}
@@ -3361,8 +3391,10 @@ bool Memory::resample(long long int i1, long long int i2, long long int j1, long
 			    // Obviously not the case
 			    // Clear the memory and return
 				delete _resampler;
+
 				for (long long int i = 0; i < __nLines; i++)
 					delete[] dResampleBuffer[i];
+
 				delete[] dResampleBuffer;
 				delete[] dInputSamples;
 
@@ -3379,6 +3411,7 @@ bool Memory::resample(long long int i1, long long int i2, long long int j1, long
 					// lines are available
 					if (!dOutputSamples)
 						break;
+
 					for (long long int _fin = 0; _fin < _final_cols; _fin++)
 					{
 						if (isnan(dOutputSamples[_fin]))
@@ -3386,8 +3419,10 @@ bool Memory::resample(long long int i1, long long int i2, long long int j1, long
 							dResampleBuffer[i1 + _ret_line][j1 + _fin] = NAN;
 							continue;
 						}
+
 						dResampleBuffer[i1 + _ret_line][j1 + _fin] = dOutputSamples[_fin];
 					}
+
 					_ret_line++;
 				}
 
@@ -3409,6 +3444,7 @@ bool Memory::resample(long long int i1, long long int i2, long long int j1, long
         // lines are available
 		if (!dOutputSamples)
 			break;
+
 		for (long long int _fin = 0; _fin < _final_cols; _fin++)
 		{
 			if (isnan(dOutputSamples[_fin]))
@@ -3416,11 +3452,14 @@ bool Memory::resample(long long int i1, long long int i2, long long int j1, long
 				dResampleBuffer[i1 + _ret_line][j1 + _fin] = NAN;
 				continue;
 			}
+
 			dResampleBuffer[i1 + _ret_line][j1 + _fin] = dOutputSamples[_fin];
 		}
+
 		_ret_line++;
 	}
-	_ret_line++;
+
+	//_ret_line++;
 
 	// Delete the resampler: it is not used any more
 	delete _resampler;
@@ -3428,7 +3467,7 @@ bool Memory::resample(long long int i1, long long int i2, long long int j1, long
 	// Block unter dem resampleten kopieren
 	if (i2 - i1 + 1 < nSamples && (Direction == ALL || Direction == GRID || Direction == COLS))
 	{
-		for (long long int i = i2 + 1; i < __nLines; i++)
+		for (long long int i = i2 + 1; i < __nOrigLines; i++)
 		{
 			for (long long int j = j1; j <= j2; j++)
 			{
@@ -3436,10 +3475,12 @@ bool Memory::resample(long long int i1, long long int i2, long long int j1, long
 				{
 					for (long long int i = 0; i < __nLines; i++)
 						delete[] dResampleBuffer[i];
+
 					delete[] dResampleBuffer;
 
 					throw SyntaxError(SyntaxError::INTERNAL_RESAMPLER_ERROR, "resample", SyntaxError::invalid_position);
 				}
+
 				if (isnan(dMemTable[i][j]))
 				{
 					dResampleBuffer[_ret_line + i - (i2 + 1) + i1][j] = NAN;
@@ -3461,10 +3502,12 @@ bool Memory::resample(long long int i1, long long int i2, long long int j1, long
 				{
 					for (long long int i = 0; i < __nLines; i++)
 						delete[] dResampleBuffer[i];
+
 					delete[] dResampleBuffer;
 
 					throw SyntaxError(SyntaxError::INTERNAL_RESAMPLER_ERROR, "resample", SyntaxError::invalid_position);
 				}
+
 				dResampleBuffer[i][j] = NAN;
 			}
 		}
@@ -3473,18 +3516,20 @@ bool Memory::resample(long long int i1, long long int i2, long long int j1, long
 	// Block rechts kopieren
 	if (j2 - j1 + 1 < nSamples && (Direction == ALL || Direction == GRID || Direction == LINES))
 	{
-		for (long long int i = 0; i < __nLines; i++)
+		for (long long int i = 0; i < __nOrigLines; i++)
 		{
-			for (long long int j = j2 + 1; j < __nCols; j++)
+			for (long long int j = j2 + 1; j < __nOrigCols; j++)
 			{
 				if (_final_cols + j - (j2 + 1) + j1 >= nCols)
 				{
 					for (long long int i = 0; i < __nLines; i++)
 						delete[] dResampleBuffer[i];
+
 					delete[] dResampleBuffer;
 
 					throw SyntaxError(SyntaxError::INTERNAL_RESAMPLER_ERROR, "resample", SyntaxError::invalid_position);
 				}
+
 				if (isnan(dMemTable[i][j]))
 				{
 					dResampleBuffer[i][_final_cols + j - (j2 + 1) + j1] = NAN;
@@ -3506,10 +3551,12 @@ bool Memory::resample(long long int i1, long long int i2, long long int j1, long
 				{
 					for (long long int i = 0; i < __nLines; i++)
 						delete[] dResampleBuffer[i];
+
 					delete[] dResampleBuffer;
 
 					throw SyntaxError(SyntaxError::INTERNAL_RESAMPLER_ERROR, "resample", SyntaxError::invalid_position);
 				}
+
 				dResampleBuffer[i][j] = NAN;
 			}
 		}
@@ -3519,8 +3566,14 @@ bool Memory::resample(long long int i1, long long int i2, long long int j1, long
 	// copy the data points from the buffer back to their original state
 	for (long long int i = 0; i < nLines; i++)
 	{
+	    if (i >= __nLines)
+            break;
+
 		for (long long int j = 0; j < nCols; j++)
 		{
+		    if (j >= __nCols)
+                break;
+
 			dMemTable[i][j] = dResampleBuffer[i][j];
 		}
 	}
@@ -3544,6 +3597,7 @@ bool Memory::resample(long long int i1, long long int i2, long long int j1, long
 	// Clear unused memory
 	for (long long int i = 0; i < __nLines; i++)
 		delete[] dResampleBuffer[i];
+
 	delete[] dResampleBuffer;
 
 	if (bIsSaved)
@@ -3551,7 +3605,7 @@ bool Memory::resample(long long int i1, long long int i2, long long int j1, long
 		bIsSaved = false;
 		nLastSaved = time(0);
 	}
-	//cerr << "Erfolg!" << endl;
+
 	return true;
 }
 
