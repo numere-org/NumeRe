@@ -91,6 +91,7 @@ bool parser_spline(string& sCmd, Parser& _parser, Datafile& _data, Define& _func
 
 // Tools & Stuff
 bool parser_CheckVarOccurence(Parser&, const string_type&);
+size_t parser_findVariable(const string& sExpr, const string& sVarName);
 void parser_VectorToExpr(string&, const Settings&);
 string parser_AddVectorComponent(const string&, const string&, const string&, bool);
 double* parser_GetVarAdress(const string& sVarName, Parser& _parser);

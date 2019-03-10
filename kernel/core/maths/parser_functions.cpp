@@ -64,6 +64,29 @@ bool parser_CheckVarOccurence(Parser& _parser, const string_type& sVar)
     return variables.find(sVar) != variables.end();
 }
 
+// This function searches for the selected variable in the passed
+// string and returns the position of the first occurence or
+// string::npos, if nothing was found
+size_t parser_findVariable(const string& sExpr, const string& sVarName)
+{
+    size_t nMatch = 0;
+    const static string sDelimiter = "+-*/,^!%&|()?:{}[]#<>='";
+
+    // search the first match of the token, which is surrounded by the
+    // defined separator characters
+    while ((nMatch = sExpr.find(sVarName, nMatch)) != string::npos)
+    {
+        if ((!nMatch || sDelimiter.find(sExpr[nMatch-1]) != string::npos)
+            && (nMatch + sVarName.length() >= sExpr.length() || sDelimiter.find(sExpr[nMatch+sVarName.length()]) != string::npos))
+        {
+            return nMatch;
+        }
+        nMatch++;
+    }
+
+    return string::npos;
+}
+
 // Calculate the integral of a function or a data set
 // in one dimension
 vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions)
