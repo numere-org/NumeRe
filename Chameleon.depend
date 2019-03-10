@@ -2709,7 +2709,7 @@
 	"documentation/documentation.hpp"
 	"maths/odesolver.hpp"
 
-1532186473 d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.hpp
+1552227828 d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.hpp
 	<cmath>
 	<string>
 	<sstream>
@@ -3451,7 +3451,7 @@
 	"../kernel/core/plotting/graph_helper.hpp"
 	"terminal/wxterm.h"
 
-1552130757 d:\cpp\numere-source\trunk\gui\wx.h
+1552210844 d:\cpp\numere-source\trunk\gui\wx.h
 	<mgl2/wnd.h>
 	<wx/window.h>
 	<wx/image.h>
@@ -3948,7 +3948,7 @@
 1491130247 source:d:\cpp\numere-source\trunk\gui\viewerpanel.cpp
 	"viewerpanel.hpp"
 
-1552131370 source:d:\cpp\numere-source\trunk\gui\wx.cpp
+1552211221 source:d:\cpp\numere-source\trunk\gui\wx.cpp
 	<wx/dcclient.h>
 	<wx/msgdlg.h>
 	<wx/clipbrd.h>
@@ -4050,7 +4050,7 @@
 	"odesolver.hpp"
 	"../../kernel.hpp"
 
-1552082471 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
+1552228023 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	"spline.h"
@@ -4169,7 +4169,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1552118748 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1552226637 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
@@ -4373,7 +4373,7 @@
 	"../utils/tools.hpp"
 	<vector>
 
-1552134759 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\memory.cpp
+1552203532 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\memory.cpp
 	"memory.hpp"
 	"../../kernel.hpp"
 

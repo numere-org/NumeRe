@@ -33,3 +33,4 @@ Added	NumeRe will now warn the user, if a syntax, a command or a function is dep
 Fixed	Assignment of singleton values to temporary vectors is now possible again.
 Added	The factorial and the double factorial functions are now aliased through trailing exclamation marks: A! and A!!
 Fixed	Resolved a crash resulting from upsampling data sets.
+Applied	Resolved the flickering and stuttering issue by introducing an initial rendering step

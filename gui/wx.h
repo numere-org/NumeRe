@@ -30,10 +30,9 @@
 #include <wx/textctrl.h>
 #include <wx/cursor.h>
 
+#include <vector>
+
 class mglCanvas;
-//-----------------------------------------------------------------------------
-/// Convert MathGL image to wxBitmap
-wxBitmap ConvertFromGraph(HMGL gr);
 //-----------------------------------------------------------------------------
 /// Class is Wx widget which display MathGL graphics
 class wxMGL : public wxWindow
@@ -47,7 +46,6 @@ public:
 	double GetRatio();
 	void SetPopup(wxMenu *p)	{	popup = p;	};	///< Set popup menu pointer
 	void SetSize(int w, int h);		///< Set window/picture sizes
-	void SetGraph(HMGL gr);	///< Set grapher object
 	void SetGraph(mglGraph* GR)
 	{
         if (gr)
@@ -68,13 +66,13 @@ public:
 	inline void ZoomRegion(mreal xx1,mreal xx2,mreal yy1, mreal yy2)
 	{	x1=xx1;	y1=yy1;	x2=xx2;	y2=yy2;	}
 
-	int GetPer() 	{return per;};		///< Get perspective value
-	int GetPhi() 	{return phi;};		///< Get Phi-angle value
-	int GetTet() 	{return tet;};		///< Get Theta-angle value
+	int GetPer() 	{return dPerspective;};		///< Get perspective value
+	int GetPhi() 	{return dAzimutalViewPoint;};		///< Get Phi-angle value
+	int GetTet() 	{return dPolarViewPoint;};		///< Get Theta-angle value
 	bool GetAlpha()	{return alpha;};	///< Get transparency state
 	bool GetLight()	{return light;};	///< Get lightning state
-	bool GetZoom()	{return zoom;};		///< Get mouse zooming state
-	bool GetRotate()	{return rotate;};	///< Get mouse rotation state
+	bool GetZoom()	{return bZoomingMode;};		///< Get mouse zooming state
+	bool GetRotate()	{return bRotatingMode;};	///< Get mouse rotation state
 
 	void Repaint();
 	void Update();			///< Update picture
@@ -110,8 +108,6 @@ public:
 	void PrevSlide();	///< Show previous slide
 	void Animation(bool st=true);	///< Start animation
 
-	void About();		///< Show about information
-
 	enum CurrentDrawMode
 	{
         DM_NONE = 0,
@@ -122,8 +118,10 @@ public:
 	};
 
 protected:
+    void InitializeToolbar();
     void OnExport();
 	void OnPaint(wxPaintEvent& event);
+	void OnEraseBackground(wxEraseEvent& event);
 	void OnSize(wxSizeEvent& event);
 	void OnNextSlide(wxTimerEvent& evt);	///< Show next slide
 	void OnMouseLeftDown(wxMouseEvent &ev);
@@ -138,6 +136,10 @@ protected:
 	void OnMenuEvent(wxCommandEvent& event);
 	void OnClose(wxCloseEvent& event);
 
+	void setBitmap();
+	wxImage ConvertFromGraph();
+
+
 	mglGraph *gr;		///< pointer to grapher
 	void *draw_par;		///< Parameters for drawing function mglCanvasWnd::DrawFunc.
 	/// Drawing function for window procedure. It should return the number of frames.
@@ -146,13 +148,14 @@ protected:
 
 	wxString MousePos;	///< Last mouse position
 	wxBitmap pic;		///< Pixmap for drawing (changed by update)
-	double tet, phi;	///< Rotation angles
-	double per;			///< Value of perspective ( must be in [0,1) )
+	double dPolarViewPoint, dAzimutalViewPoint;	///< Rotation angles
+	double dPerspective;			///< Value of perspective ( must be in [0,1) )
 	bool alpha;			///< Transparency state
 	bool light;			///< Lightning state
-	bool zoom;			///< Mouse zoom state
-	bool rotate;		///< Mouse rotation state
+	bool bZoomingMode;			///< Mouse zoom state
+	bool bRotatingMode;		///< Mouse rotation state
 	bool zoomactive;
+	bool animation;
 	int skiprotate;
 	int nFramesToSkip;
 	int drawMode;       ///< Stores the current draw mode
@@ -164,6 +167,7 @@ protected:
 	wxMenu *popup;		///< Pointer to pop-up menu
 	wxTimer *timer;		///< Timer for animation
 	int nFrameCounter;
+	std::vector<wxImage> vAnimationBuffer;
 
 	DECLARE_EVENT_TABLE()
 
