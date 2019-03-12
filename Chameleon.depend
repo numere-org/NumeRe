@@ -8927,7 +8927,7 @@
 	"grouppanel.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1552334927 d:\cpp\numere-source\trunk\gui\dialogs\grouppanel.hpp
+1552416186 d:\cpp\numere-source\trunk\gui\dialogs\grouppanel.hpp
 	<wx/wx.h>
 	<wx/spinctrl.h>
 

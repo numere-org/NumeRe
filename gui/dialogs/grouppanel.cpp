@@ -106,14 +106,14 @@ wxTextCtrl* GroupPanel::CreatePathInput(wxWindow* parent, wxSizer* sizer, const 
 
 // This member function creates the
 // layout for a text input
-wxTextCtrl* GroupPanel::CreateTextInput(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxString& sDefault)
+wxTextCtrl* GroupPanel::CreateTextInput(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxString& sDefault, int nStyle)
 {
     // Create the text above the input line
     wxStaticText* inputStaticText = new wxStaticText(parent, wxID_STATIC, description, wxDefaultPosition, wxDefaultSize, 0);
     sizer->Add(inputStaticText, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT | wxALL | wxADJUST_MINSIZE, ELEMENT_BORDER);
 
     // Create the input line
-    wxTextCtrl* textCtrl = new wxTextCtrl(parent, wxID_ANY, sDefault, wxDefaultPosition, wxSize(310, -1), wxTE_PROCESS_ENTER);
+    wxTextCtrl* textCtrl = new wxTextCtrl(parent, wxID_ANY, sDefault, wxDefaultPosition, wxSize(310, -1), nStyle);
     sizer->Add(textCtrl, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT | wxALL | wxGROW, ELEMENT_BORDER);
 
     return textCtrl;
