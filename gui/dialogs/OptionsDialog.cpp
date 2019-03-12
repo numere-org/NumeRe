@@ -132,6 +132,9 @@ bool OptionsDialog::Create(wxWindow* parent, wxWindowID id, const wxString& capt
     m_italicsCheck = nullptr;
     m_underlineCheck = nullptr;
 
+    for (int i = 0; i < Options::ANALYZER_OPTIONS_END; i++)
+        m_analyzer[i] = nullptr;
+
     SetExtraStyle(wxWS_EX_BLOCK_EVENTS);
     wxDialog::Create(parent, id, caption, pos, size, style);
 
@@ -156,7 +159,7 @@ void OptionsDialog::CreateControls()
     this->SetSizer(optionVSizer);
 
     // Create the notebook
-    m_optionsNotebook = new wxNotebook(this, ID_NOTEBOOK, wxDefaultPosition, wxSize(450, 500), wxNB_DEFAULT | wxNB_TOP | wxNB_MULTILINE);
+    m_optionsNotebook = new wxNotebook(this, ID_NOTEBOOK, wxDefaultPosition, wxSize(450, 520), wxNB_DEFAULT | wxNB_TOP | wxNB_MULTILINE);
 
     // Create the single pages in the following
     // private member functions. This approach
@@ -174,6 +177,9 @@ void OptionsDialog::CreateControls()
 
     // Style panel
     CreateStylePage();
+
+    // Static analyzer panel
+    CreateAnalyzerPage();
 
     // Misc panel
     CreateMiscPage();
@@ -209,6 +215,8 @@ void OptionsDialog::CreateConfigPage()
     m_CustomLanguage = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_CUSTOMLANG"));
     m_ESCinScripts = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ESCINSCRIPTS"));
     m_UseExternalViewer = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXTERNALVIEWER"));
+    m_showToolbarText = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOW_TOOLBARTEXT"));
+    m_caretBlinkTime = panel->CreateSpinControl(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_CARET_BLINK_TIME"), 100, 2000, 500);
 
     // Create a group
     group = panel->createGroup(_guilang.get("GUI_OPTIONS_INTERNALS"));
@@ -368,15 +376,63 @@ void OptionsDialog::CreateMiscPage()
     m_ShowHints = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_HINTS"));
 
     // Those are not part of any group
-    m_showToolbarText = panel->CreateCheckBox(panel, panel->getVerticalSizer(), _guilang.get("GUI_OPTIONS_SHOW_TOOLBARTEXT"));
     m_termHistory = panel->CreateSpinControl(panel, panel->getVerticalSizer(), _guilang.get("GUI_OPTIONS_HISTORY_LINES"), 100, 1000, 100);
-    m_caretBlinkTime = panel->CreateSpinControl(panel, panel->getVerticalSizer(), _guilang.get("GUI_OPTIONS_CARET_BLINK_TIME"), 100, 2000, 500);
     m_precision = panel->CreateSpinControl(panel, panel->getVerticalSizer(), _guilang.get("GUI_OPTIONS_PRECISION"), 1, 14, 7);
 
     // Add the grouped page to the notebook
     m_optionsNotebook->AddPage(panel, _guilang.get("GUI_OPTIONS_MISC"));
 }
 
+// This private member function creates the
+// "Static analyzer" page
+void OptionsDialog::CreateAnalyzerPage()
+{
+    // Create a grouped page
+    GroupPanel* panel = new GroupPanel(m_optionsNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
+
+    // Create a group
+    wxStaticBoxSizer* group = panel->createGroup(_guilang.get("GUI_OPTIONS_ANALYZER_MAIN"));
+
+    m_analyzer[Options::USE_NOTES] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_USE_NOTES"));
+    m_analyzer[Options::USE_WARNINGS] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_USE_WARNINGS"));
+    m_analyzer[Options::USE_ERRORS] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_USE_ERRORS"));
+
+    // Create a group
+    group = panel->createGroup(_guilang.get("GUI_OPTIONS_ANALYZER_METRICS"));
+    m_analyzer[Options::COMMENT_DENSITY] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_COMMENT_DENSITY"));
+    m_analyzer[Options::LINES_OF_CODE] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_LINES_OF_CODE"));
+    m_analyzer[Options::COMPLEXITY] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_COMPLEXITY"));
+    m_analyzer[Options::MAGIC_NUMBERS] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_MAGIC_NUMBERS"));
+    m_analyzer[Options::ALWAYS_SHOW_METRICS] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_ALWAYS_SHOW_METRICS"));
+
+    // Create a group
+    group = panel->createGroup(_guilang.get("GUI_OPTIONS_ANALYZER_OPTIMIZATION"));
+    m_analyzer[Options::INLINE_IF] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_INLINE_IF"));
+    m_analyzer[Options::CONSTANT_EXPRESSION] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_CONSTANT_EXPRESSION"));
+    m_analyzer[Options::PROGRESS_RUNTIME] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_PROGRESS_RUNTIME"));
+    m_analyzer[Options::PROCEDURE_LENGTH] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_PROCEDURE_LENGTH"));
+
+    // Create a group
+    group = panel->createGroup(_guilang.get("GUI_OPTIONS_ANALYZER_UNINTENDED_BEHAVIOR"));
+    m_analyzer[Options::RESULT_SUPPRESSION] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_RESULT_SUPPRESSION"));
+    m_analyzer[Options::RESULT_ASSIGNMENT] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_RESULT_ASSIGNMENT"));
+    m_analyzer[Options::UNUSED_VARIABLES] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_UNUSED_VARIABLES"));
+    m_analyzer[Options::THISFILE_NAMESPACE] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_THISFILE_NAMESPACE"));
+    m_analyzer[Options::SWITCH_FALLTHROUGH] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_SWITCH_FALLTHROUGH"));
+
+    // Create a group
+    group = panel->createGroup(_guilang.get("GUI_OPTIONS_ANALYZER_STYLE"));
+    m_analyzer[Options::TYPE_ORIENTATION] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_TYPE_ORIENTATION"));
+    m_analyzer[Options::ARGUMENT_UNDERSCORE] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_ARGUMENT_UNDERSCORE"));
+    m_analyzer[Options::VARIABLE_LENGTH] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_VARIABLE_LENGTH"));
+
+    // Enable scrolling for this page, because it might be very large
+    panel->SetScrollbars(0, 20, 0, 200);
+
+    // Add the grouped page to the notebook
+    m_optionsNotebook->AddPage(panel, _guilang.get("GUI_OPTIONS_ANALYZER"));
+
+}
 
 /*!
  * Should we show tooltips?
@@ -611,6 +667,11 @@ bool OptionsDialog::EvaluateOptions()
     m_options->SetKeepBackupFile(m_keepBackupFiles->IsChecked());
 
 
+    for (int i = 0; i < Options::ANALYZER_OPTIONS_END; i++)
+    {
+        m_options->SetAnalyzerOption((Options::AnalyzerOptions)i, m_analyzer[i]->IsChecked());
+    }
+
     synchronizeColors();
 
 	return true;
@@ -690,6 +751,11 @@ void OptionsDialog::InitializeDialog()
     m_backColor->Enable(!m_defaultBackground->GetValue());
     m_LaTeXRoot->SetValue(m_options->GetLaTeXRoot());
     m_keepBackupFiles->SetValue(m_options->GetKeepBackupFile());
+
+    for (int i = 0; i < Options::ANALYZER_OPTIONS_END; i++)
+    {
+        m_analyzer[i]->SetValue(m_options->GetAnalyzerOption((Options::AnalyzerOptions)i));
+    }
 
 }
 

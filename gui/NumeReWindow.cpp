@@ -741,6 +741,10 @@ void NumeReWindow::InitializeProgramOptions()
         // if they exist
         m_options->readColoursFromConfig(m_config);
 
+        // Read the analyzer config from the configuration file,
+        // if it exists
+        m_options->readAnalyzerOptionsFromConfig(m_config);
+
         wxFont font;
         wxString nativeInfo;
         m_config->Read("Styles/EditorFont", &nativeInfo, "Consolas 10");
@@ -767,6 +771,7 @@ void NumeReWindow::InitializeProgramOptions()
 		m_config->Write("Miscellaneous/KeepBackups", "false");
 		m_options->writeColoursToConfig(m_config);
 		m_config->Write("Styles/EditorFont", m_options->GetEditorFont().GetNativeFontInfoUserDesc());
+		m_options->writeAnalyzerOptionsToConfig(m_config);
 	}
 }
 
@@ -3882,6 +3887,7 @@ void NumeReWindow::EvaluateOptions()
 		NumeReEditor* edit = static_cast<NumeReEditor*> (m_book->GetPage(i));
 		edit->UpdateSyntaxHighlighting();
 		edit->SetCaretPeriod(m_options->GetCaretBlinkTime());
+		edit->AnalyseCode();
 	}
 
 	// Copy the settings in the options object
@@ -3908,6 +3914,8 @@ void NumeReWindow::EvaluateOptions()
 
 	m_options->writeColoursToConfig(m_config);
 	m_config->Write("Styles/EditorFont", m_options->GetEditorFont().GetNativeFontInfoUserDesc());
+
+	m_options->writeAnalyzerOptionsToConfig(m_config);
 
 	m_config->Write("Miscellaneous/LateXRoot", m_options->GetLaTeXRoot());
 

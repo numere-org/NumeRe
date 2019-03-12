@@ -23,7 +23,7 @@ extern Language _guilang;
 #define ELEMENT_BORDER 5
 
 // Constructor
-GroupPanel::GroupPanel(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style) : wxPanel(parent, id, pos, size, style)
+GroupPanel::GroupPanel(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style) : wxScrolledWindow(parent, id, pos, size, style | wxVSCROLL)
 {
     verticalSizer = nullptr;
     horizontalSizer = nullptr;
@@ -31,6 +31,10 @@ GroupPanel::GroupPanel(wxWindow* parent, wxWindowID id, const wxPoint& pos, cons
     // Create the horizontal and the vertical sizers
     horizontalSizer = new wxBoxSizer(wxHORIZONTAL);
     verticalSizer = new wxBoxSizer(wxVERTICAL);
+
+    // Enable a scrollbar, if it is needed. The
+    // scrolling units are 20px per scroll
+    //SetScrollbars(0, 20, 0, 100);
 
     // Set the horizontal sizer as main
     // sizer for the panel
@@ -148,3 +152,4 @@ wxSpinCtrl* GroupPanel::CreateSpinControl(wxWindow* parent, wxSizer* sizer, cons
 
     return spinCtrl;
 }
+

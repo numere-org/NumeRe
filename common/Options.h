@@ -119,6 +119,31 @@ class Options
             STYLE_END
 		};
 
+		enum AnalyzerOptions
+		{
+		    USE_NOTES,
+		    USE_WARNINGS,
+		    USE_ERRORS,
+		    COMMENT_DENSITY,
+		    LINES_OF_CODE,
+		    COMPLEXITY,
+            MAGIC_NUMBERS,
+            ALWAYS_SHOW_METRICS,
+            INLINE_IF,
+            CONSTANT_EXPRESSION,
+            RESULT_SUPPRESSION,
+            RESULT_ASSIGNMENT,
+            TYPE_ORIENTATION,
+            ARGUMENT_UNDERSCORE,
+            VARIABLE_LENGTH,
+            UNUSED_VARIABLES,
+            PROCEDURE_LENGTH,
+            THISFILE_NAMESPACE,
+            PROGRESS_RUNTIME,
+            SWITCH_FALLTHROUGH,
+		    ANALYZER_OPTIONS_END
+		};
+
         SyntaxStyles GetDefaultSyntaxStyle(size_t i);
 		inline SyntaxStyles GetSyntaxStyle(size_t i) const
             {
@@ -127,8 +152,13 @@ class Options
                 return SyntaxStyles();
             }
 
+        void SetAnalyzerOption(AnalyzerOptions opt, int nVal);
+        int GetAnalyzerOption(AnalyzerOptions opt);
+
         void readColoursFromConfig(wxFileConfig* _config);
         void writeColoursToConfig(wxFileConfig* _config);
+        void readAnalyzerOptionsFromConfig(wxFileConfig* _config);
+        void writeAnalyzerOptionsToConfig(wxFileConfig* _config);
 
         void SetStyleForeground(size_t i, const wxColour& color);
         void SetStyleBackground(size_t i, const wxColour& color);
@@ -168,6 +198,7 @@ class Options
 		wxArrayString m_mingwBinPaths;
 		wxArrayString m_mingwProgramNames;
 
+		vector<int> vAnalyzerOptions;
 		vector<SyntaxStyles> vSyntaxStyles;
 		wxFont m_editorFont;
 

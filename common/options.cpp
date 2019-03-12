@@ -46,6 +46,11 @@ Options::Options()
 	m_editorFont.SetEncoding(wxFONTENCODING_CP1252);
 
 	setDefaultSyntaxStyles();
+
+	for (size_t i = 0; i < AnalyzerOptions::ANALYZER_OPTIONS_END; i++)
+        vAnalyzerOptions.push_back(1);
+
+    vAnalyzerOptions[AnalyzerOptions::ALWAYS_SHOW_METRICS] = 0;
 }
 
 Options::~Options()
@@ -291,6 +296,12 @@ Finished:
 	return errorMessage;
 }
 
+void Options::SetAnalyzerOption(AnalyzerOptions opt, int nVal)
+{
+    if (opt < ANALYZER_OPTIONS_END && vAnalyzerOptions.size())
+        vAnalyzerOptions[opt] = nVal;
+}
+
 SyntaxStyles Options::GetDefaultSyntaxStyle(size_t i)
 {
     SyntaxStyles _style;
@@ -378,7 +389,8 @@ void Options::readColoursFromConfig(wxFileConfig* _config)
 {
     if (!_config->HasGroup("Styles"))
         return;
-    wxString KeyValues[] = {
+
+    static wxString KeyValues[] = {
         "STANDARD",
         "CONSOLE_STD",
         "COMMAND",
@@ -401,7 +413,9 @@ void Options::readColoursFromConfig(wxFileConfig* _config)
         "ACTIVE_LINE",
         "STYLE_END"
     };
+
     wxString val;
+
     for (size_t i = 0; i < Styles::STYLE_END; i++)
     {
         if (_config->Read("Styles/"+KeyValues[i], &val))
@@ -413,7 +427,7 @@ void Options::readColoursFromConfig(wxFileConfig* _config)
 
 void Options::writeColoursToConfig(wxFileConfig* _config)
 {
-    wxString KeyValues[] = {
+    static wxString KeyValues[] = {
         "STANDARD",
         "CONSOLE_STD",
         "COMMAND",
@@ -436,11 +450,87 @@ void Options::writeColoursToConfig(wxFileConfig* _config)
         "ACTIVE_LINE",
         "STYLE_END"
     };
+
     for (size_t i = 0; i < Styles::STYLE_END; i++)
     {
         _config->Write("Styles/"+KeyValues[i], convertToString(vSyntaxStyles[i]));
     }
 }
+
+void Options::readAnalyzerOptionsFromConfig(wxFileConfig* _config)
+{
+    if (!_config->HasGroup("AnalyzerOptions"))
+        return;
+
+    static wxString KeyValues[] = {
+        "USE_NOTES",
+        "USE_WARNINGS",
+        "USE_ERRORS",
+        "COMMENT_DENSITY",
+        "LINES_OF_CODE",
+        "COMPLEXITY",
+        "MAGIC_NUMBERS",
+        "ALWAYS_SHOW_METRICS",
+        "INLINE_IF",
+        "CONSTANT_EXPRESSION",
+        "RESULT_SUPPRESSION",
+        "RESULT_ASSIGNMENT",
+        "TYPE_ORIENTATION",
+        "ARGUMENT_UNDERSCORE",
+        "VARIABLE_LENGTH",
+        "UNUSED_VARIABLES",
+        "PROCEDURE_LENGTH",
+        "THISFILE_NAMESPACE",
+        "PROGRESS_RUNTIME",
+        "SWITCH_FALLTHROUGH",
+        "ANALYZER_OPTIONS_END"
+    };
+
+    wxString val;
+
+    for (size_t i = 0; i < AnalyzerOptions::ANALYZER_OPTIONS_END; i++)
+    {
+        if (_config->Read("AnalyzerOptions/"+KeyValues[i], &val))
+        {
+            vAnalyzerOptions[i] = StrToInt(val.ToStdString());
+        }
+    }
+}
+
+void Options::writeAnalyzerOptionsToConfig(wxFileConfig* _config)
+{
+    static wxString KeyValues[] = {
+        "USE_NOTES",
+        "USE_WARNINGS",
+        "USE_ERRORS",
+        "COMMENT_DENSITY",
+        "LINES_OF_CODE",
+        "COMPLEXITY",
+        "MAGIC_NUMBERS",
+        "ALWAYS_SHOW_METRICS",
+        "INLINE_IF",
+        "CONSTANT_EXPRESSION",
+        "RESULT_SUPPRESSION",
+        "RESULT_ASSIGNMENT",
+        "TYPE_ORIENTATION",
+        "ARGUMENT_UNDERSCORE",
+        "VARIABLE_LENGTH",
+        "UNUSED_VARIABLES",
+        "PROCEDURE_LENGTH",
+        "THISFILE_NAMESPACE",
+        "PROGRESS_RUNTIME",
+        "SWITCH_FALLTHROUGH",
+        "ANALYZER_OPTIONS_END"
+    };
+
+    for (size_t i = 0; i < AnalyzerOptions::ANALYZER_OPTIONS_END; i++)
+    {
+        _config->Write("AnalyzerOptions/"+KeyValues[i], ::toString(vAnalyzerOptions[i]).c_str());
+    }
+}
+
+
+
 
 void Options::SetStyleForeground(size_t i, const wxColour& color)
 {
@@ -457,7 +547,6 @@ void Options::SetStyleBackground(size_t i, const wxColour& color)
         vSyntaxStyles[i].background = color;
     }
 }
-
 
 void Options::SetStyleDefaultBackground(size_t i, bool defaultbackground)
 {
@@ -491,6 +580,13 @@ void Options::SetStyleUnderline(size_t i, bool _underline)
     }
 }
 
+int Options::GetAnalyzerOption(AnalyzerOptions opt)
+{
+    if (opt < ANALYZER_OPTIONS_END && vAnalyzerOptions.size())
+        return vAnalyzerOptions[opt];
+
+    return 0;
+}
 
 
 wxArrayString Options::GetStyleIdentifier()

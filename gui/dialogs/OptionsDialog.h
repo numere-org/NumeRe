@@ -114,6 +114,7 @@ class OptionsDialog: public wxDialog
         void CreatePathPage();
         void CreateStylePage();
         void CreateMiscPage();
+        void CreateAnalyzerPage();
 
     public:
         /// Constructors
@@ -192,6 +193,9 @@ class OptionsDialog: public wxDialog
         wxCheckBox* m_formatBeforeSaving;
         wxCheckBox* m_useMaskAsDefault;
         wxCheckBox* m_keepBackupFiles;
+
+        wxCheckBox* m_analyzer[Options::ANALYZER_OPTIONS_END];
+
     ////@end OptionsDialog member variables
 
         NumeReWindow* m_parentFrame;

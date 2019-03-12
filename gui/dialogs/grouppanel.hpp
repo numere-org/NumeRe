@@ -22,7 +22,7 @@
 #ifndef GROUPPANEL_HPP
 #define GROUPPANEL_HPP
 
-class GroupPanel : public wxPanel
+class GroupPanel : public wxScrolledWindow
 {
     private:
         wxBoxSizer* verticalSizer;

@@ -1938,7 +1938,7 @@ void NumeReEditor::AnalyseCode()
 			StripSpaces(sLine);
 
             // catch constant expressions
-			if (sLine.length() && sLine.find_first_not_of("\n\r\t") != string::npos && sLine.find_first_not_of("0123456789eE+-*/.,;^(){} \t\r\n") == string::npos)
+			if (m_options->GetAnalyzerOption(Options::CONSTANT_EXPRESSION) && sLine.length() && sLine.find_first_not_of("\n\r\t") != string::npos && sLine.find_first_not_of("0123456789eE+-*/.,;^(){} \t\r\n") == string::npos)
 				AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sLine.substr(0, sLine.find_last_not_of("0123456789eE+-*/.,;^()")), sWarn, _guilang.get("GUI_ANALYZER_CONSTEXPR")), ANNOTATION_WARN);
 
 			// Handle line continuations
@@ -2029,15 +2029,17 @@ void NumeReEditor::AnalyseCode()
 				double dCommentDensity = (double)nNumberOfComments / (double)nLinesOfCode;
 
 				// Compare the metrics with the contants and issue a note or a warning
-				if (nCyclomaticComplexity > MAXCOMPLEXITYWARN)
+				if (m_options->GetAnalyzerOption(Options::COMPLEXITY) && nCyclomaticComplexity > MAXCOMPLEXITYWARN)
 					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_WARN);
-				else if (nCyclomaticComplexity > MAXCOMPLEXITYNOTIFY)
+				else if ((m_options->GetAnalyzerOption(Options::COMPLEXITY) && nCyclomaticComplexity > MAXCOMPLEXITYNOTIFY) || m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS))
 					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_NOTE);
-				if (nLinesOfCode > MAXLINESOFCODE)
+				if ((m_options->GetAnalyzerOption(Options::LINES_OF_CODE) && nLinesOfCode > MAXLINESOFCODE) || m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS))
 					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_MANYLINES", toString(nLinesOfCode))), ANNOTATION_NOTE);
-				if (dCommentDensity < MINCOMMENTDENSITY)
+
+				if ((m_options->GetAnalyzerOption(Options::COMMENT_DENSITY) && dCommentDensity < MINCOMMENTDENSITY) || (dCommentDensity < 1.0 && m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS)))
 					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_LOWCOMMENTDENSITY", toString(dCommentDensity * 100.0, 3))), ANNOTATION_NOTE);
-				if (dCommentDensity > MAXCOMMENTDENSITY)
+
+				if ((m_options->GetAnalyzerOption(Options::COMMENT_DENSITY) && dCommentDensity > MAXCOMMENTDENSITY)  || (dCommentDensity >= 1.0 && m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS)))
 					AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMMENTDENSITY", toString(dCommentDensity * 100.0, 3))), ANNOTATION_NOTE);
 			}
 		}
@@ -2060,7 +2062,7 @@ void NumeReEditor::AnalyseCode()
 		else if (isStyleType(STYLE_FUNCTION, i)
            || ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC) && this->GetStyleAt(i) == wxSTC_NSCR_METHOD))
 		{
-		    if (!isSuppressed)
+		    if (m_options->GetAnalyzerOption(Options::RESULT_SUPPRESSION) && !isSuppressed)
             {
                 string sWord = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true)).ToStdString();
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sWord + "()", WordStartPosition(i, true), sWord.length()), sNote, _guilang.get("GUI_ANALYZER_SUPPRESS_OUTPUT")), ANNOTATION_NOTE);
@@ -2080,7 +2082,7 @@ void NumeReEditor::AnalyseCode()
 				 && this->GetCharAt(i) != '\r'
 				 && this->GetCharAt(i) != '\n')
 		{
-		    if (!isSuppressed)
+		    if (m_options->GetAnalyzerOption(Options::RESULT_SUPPRESSION) && !isSuppressed)
             {
                 string sWord = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true)).ToStdString();
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sWord, WordStartPosition(i, true), sWord.length()), sNote, _guilang.get("GUI_ANALYZER_SUPPRESS_OUTPUT")), ANNOTATION_NOTE);
@@ -2091,7 +2093,7 @@ void NumeReEditor::AnalyseCode()
 		}
 		else if (isStyleType(STYLE_OPERATOR, i))
 		{
-		    if (this->GetCharAt(i) == '=' && !isSuppressed)
+		    if (m_options->GetAnalyzerOption(Options::RESULT_SUPPRESSION) && this->GetCharAt(i) == '=' && !isSuppressed)
             {
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer("=", i, 1), sNote, _guilang.get("GUI_ANALYZER_SUPPRESS_OUTPUT")), ANNOTATION_NOTE);
                 isSuppressed = true;
@@ -2199,7 +2201,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
     }
 
     // The progress command needs extra runtime (2-4 times). Inform the user about this issue
-    if (sSyntaxElement == "progress")
+    if (m_options->GetAnalyzerOption(Options::PROGRESS_RUNTIME) && sSyntaxElement == "progress")
     {
         AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sNote, _guilang.get("GUI_ANALYZER_PROGRESS_RUNTIME")), ANNOTATION_NOTE);
     }
@@ -2304,7 +2306,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
         }
 
         // Was an assignment operator found?
-        if (!canContinue)
+        if (m_options->GetAnalyzerOption(Options::RESULT_ASSIGNMENT) && !canContinue)
             AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
     }
 
@@ -2405,7 +2407,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
                     }
 
                     // Was an other command found?
-                    if (!canContinue)
+                    if (m_options->GetAnalyzerOption(Options::INLINE_IF) && !canContinue)
                     {
                         AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sNote, _guilang.get("GUI_ANALYZER_USEINLINEIF")), ANNOTATION_NOTE);
                     }
@@ -2468,7 +2470,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
 
                     // Ensure that there's one "break"
                     // statement
-                    if (!vMatches.size())
+                    if (m_options->GetAnalyzerOption(Options::SWITCH_FALLTHROUGH) && !vMatches.size())
                     {
                         AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sWarn, _guilang.get("GUI_ANALYZER_SWITCH_MISSING_BREAK")), ANNOTATION_WARN);
                     }
@@ -2578,7 +2580,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
                 StripSpaces(currentArg);
 
                 // Try to find the variable in the remaining code
-                if (this->FindText(nNextLine, nProcedureEnd, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) == -1)
+                if (m_options->GetAnalyzerOption(Options::UNUSED_VARIABLES) && this->FindText(nNextLine, nProcedureEnd, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) == -1)
                 {
                     // No variable found
                     AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, this->FindText(wordstart, nProcedureEnd, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD), currentArg.length()), sWarn, _guilang.get("GUI_ANALYZER_UNUSEDVARIABLE", currentArg)), ANNOTATION_WARN);
@@ -2614,7 +2616,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
                 {
                     AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_NONAMINGPROCEDURE")), ANNOTATION_ERROR);
                 }
-                else if (nNamingProcedure != currentLine)
+                else if (m_options->GetAnalyzerOption(Options::THISFILE_NAMESPACE) && nNamingProcedure != currentLine)
                 {
                     AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_THISFILEPROCEDURE")), ANNOTATION_WARN);
                 }
@@ -2633,17 +2635,17 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
             double dCommentDensity = (double)nNumberOfComments / (double)nLinesOfCode;
 
             // Compare the metrics with the contants and issue a note or a warning
-            if (nLinesOfCode < 3)
+            if (m_options->GetAnalyzerOption(Options::PROCEDURE_LENGTH) && nLinesOfCode < 3)
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_INLINING")), ANNOTATION_WARN);
-            if (nCyclomaticComplexity > MAXCOMPLEXITYWARN)
+            if (m_options->GetAnalyzerOption(Options::COMPLEXITY) && nCyclomaticComplexity > MAXCOMPLEXITYWARN)
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_WARN);
-            else if (nCyclomaticComplexity > MAXCOMPLEXITYNOTIFY)
+            else if ((m_options->GetAnalyzerOption(Options::COMPLEXITY) && nCyclomaticComplexity > MAXCOMPLEXITYNOTIFY) || m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS))
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_NOTE);
-            if (nLinesOfCode > MAXLINESOFCODE)
+            if ((m_options->GetAnalyzerOption(Options::LINES_OF_CODE) && nLinesOfCode > MAXLINESOFCODE) || m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS))
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_MANYLINES", toString(nLinesOfCode))), ANNOTATION_NOTE);
-            if (dCommentDensity < MINCOMMENTDENSITY)
+            if ((m_options->GetAnalyzerOption(Options::COMMENT_DENSITY) && dCommentDensity < MINCOMMENTDENSITY) || (dCommentDensity < 1.0 && m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS)))
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_LOWCOMMENTDENSITY", toString(dCommentDensity * 100.0, 3))), ANNOTATION_NOTE);
-            if (dCommentDensity > MAXCOMMENTDENSITY)
+            if ((m_options->GetAnalyzerOption(Options::COMMENT_DENSITY) && dCommentDensity > MAXCOMMENTDENSITY) || (dCommentDensity >= 1.0 && m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS)))
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMMENTDENSITY", toString(dCommentDensity * 100.0, 3))), ANNOTATION_NOTE);
 
         }
@@ -2672,7 +2674,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
         if (sArgs.length())
         {
             // Inform the user to add an semicolon to the arguments, if he uses something else than "void"
-            if (sArgs.back() != ';' && sArgs != "void")
+            if (m_options->GetAnalyzerOption(Options::RESULT_SUPPRESSION) && sArgs.back() != ';' && sArgs != "void")
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordend + 1, sArgs.length()), sNote, _guilang.get("GUI_ANALYZER_RETURN_ADDSEMICOLON")), ANNOTATION_NOTE);
         }
         else
@@ -2740,7 +2742,7 @@ AnnotationCount NumeReEditor::analyseFunctions(int& nCurPos, int currentLine, bo
         sSyntaxElement += "()";
 
     // Is the current function called without a target variable?
-    if (this->PositionFromLine(currentLine) == wordstart && !isContinuedLine)
+    if (m_options->GetAnalyzerOption(Options::RESULT_ASSIGNMENT) && this->PositionFromLine(currentLine) == wordstart && !isContinuedLine)
     {
         // The function is called at the first position without a target variable
         AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, wordend-wordstart), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
@@ -2759,7 +2761,7 @@ AnnotationCount NumeReEditor::analyseFunctions(int& nCurPos, int currentLine, bo
         }
 
         // Was an operator or a command found?
-        if (!canContinue && !isContinuedLine)
+        if (m_options->GetAnalyzerOption(Options::RESULT_ASSIGNMENT) && !canContinue && !isContinuedLine)
             AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, wordend-wordstart), sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
     }
 
@@ -2836,7 +2838,7 @@ AnnotationCount NumeReEditor::analyseIdentifiers(int& nCurPos, int currentLine, 
     if (sSyntaxElement.length() < 4 && sSyntaxElement.length() > 1 && sSyntaxElement.find_first_not_of("\r\n") != string::npos && sSyntaxElement.find('.') == string::npos)
     {
         // Too short
-        if (!(sSyntaxElement.length() == 2 && ((sSyntaxElement[1] >= '0' && sSyntaxElement[1] <= '9') || sSyntaxElement[0] == 'd')))
+        if (m_options->GetAnalyzerOption(Options::VARIABLE_LENGTH) && !(sSyntaxElement.length() == 2 && ((sSyntaxElement[1] >= '0' && sSyntaxElement[1] <= '9') || sSyntaxElement[0] == 'd')))
             AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_VARNAMETOOSHORT")), ANNOTATION_NOTE);
     }
 
@@ -2864,13 +2866,14 @@ AnnotationCount NumeReEditor::analyseIdentifiers(int& nCurPos, int currentLine, 
         {
             // var not type-oriented
             // Add and underscore to indicate the procedures arguments
-            if (hasProcedureDefinition && !shift && m_fileType != FILE_MATLAB)
+            if (m_options->GetAnalyzerOption(Options::ARGUMENT_UNDERSCORE) && hasProcedureDefinition && !shift && m_fileType != FILE_MATLAB)
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sNote, _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
 
             // variable should begin with lowercase letter indicate its type
-            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sNote, _guilang.get("GUI_ANALYZER_VARNOTTYPEORIENTED")), ANNOTATION_NOTE);
+            if (m_options->GetAnalyzerOption(Options::TYPE_ORIENTATION))
+                AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sNote, _guilang.get("GUI_ANALYZER_VARNOTTYPEORIENTED")), ANNOTATION_NOTE);
         }
-        else if (hasProcedureDefinition && !shift && m_fileType != FILE_MATLAB)
+        else if (m_options->GetAnalyzerOption(Options::ARGUMENT_UNDERSCORE) && hasProcedureDefinition && !shift && m_fileType != FILE_MATLAB)
         {
             // Add and underscore to indicate the procedures arguments
             AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sNote, _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
@@ -2911,6 +2914,9 @@ AnnotationCount NumeReEditor::analyseNumbers(int& nCurPos, int currentLine, bool
     // Advance until the style of the next character is not a number any more
     while (isStyleType(STYLE_NUMBER, nCurPos + 1))
         nCurPos++;
+
+    if (!m_options->GetAnalyzerOption(Options::MAGIC_NUMBERS))
+        return AnnotCount;
 
     // Get the number
     string sCurrentNumber = this->GetTextRange(nNumberStart, nCurPos + 1).ToStdString();
@@ -8265,6 +8271,14 @@ string NumeReEditor::addLinebreaks(const string& sLine, bool onlyDocumentation /
 AnnotationCount NumeReEditor::addToAnnotation(string& sCurrentLine, string& sStyles, const string& sMessage, int nStyle)
 {
 	AnnotationCount annoCount;
+
+	if (nStyle == ANNOTATION_NOTE && !m_options->GetAnalyzerOption(Options::USE_NOTES))
+        return annoCount;
+	if (nStyle == ANNOTATION_WARN && !m_options->GetAnalyzerOption(Options::USE_WARNINGS))
+        return annoCount;
+	if (nStyle == ANNOTATION_ERROR && !m_options->GetAnalyzerOption(Options::USE_ERRORS))
+        return annoCount;
+
 	int chartoadd = 0;
 	// Do not show the same message multiple times
 	if (sCurrentLine.find(sMessage) != string::npos

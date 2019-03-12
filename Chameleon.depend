@@ -2080,14 +2080,14 @@
 1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\fswatcher.h
 	"wx/defs.h"
 
-1552081975 source:d:\cpp\numere-source\trunk\common\options.cpp
+1552371966 source:d:\cpp\numere-source\trunk\common\options.cpp
 	"Options.h"
 	<wx/filename.h>
 	<wx/arrstr.h>
 	<wx/dir.h>
 	"debug.h"
 
-1552081975 d:\cpp\numere-source\trunk\common\options.h
+1552371797 d:\cpp\numere-source\trunk\common\options.h
 	<wx/wx.h>
 	<wx/validate.h>
 	<wx/valgen.h>
@@ -2953,7 +2953,7 @@
 	"fndrpldialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1552081976 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1552338609 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
@@ -3085,7 +3085,7 @@
 
 1490787950 d:\cpp\numere-source\trunk\common\fixvsbug.h
 
-1552081976 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
+1552334301 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
 	"wx/notebook.h"
 	"wx/spinctrl.h"
 	<wx/clrpicker.h>
@@ -3339,7 +3339,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1552082471 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1552372280 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3451,7 +3451,7 @@
 	"../kernel/core/plotting/graph_helper.hpp"
 	"terminal/wxterm.h"
 
-1552210844 d:\cpp\numere-source\trunk\gui\wx.h
+1552231917 d:\cpp\numere-source\trunk\gui\wx.h
 	<mgl2/wnd.h>
 	<wx/window.h>
 	<wx/image.h>
@@ -3708,7 +3708,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1552081975 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1552335642 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3948,7 +3948,7 @@
 1491130247 source:d:\cpp\numere-source\trunk\gui\viewerpanel.cpp
 	"viewerpanel.hpp"
 
-1552211221 source:d:\cpp\numere-source\trunk\gui\wx.cpp
+1552232015 source:d:\cpp\numere-source\trunk\gui\wx.cpp
 	<wx/dcclient.h>
 	<wx/msgdlg.h>
 	<wx/clipbrd.h>
@@ -4169,7 +4169,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1552226637 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1552229256 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
@@ -8923,11 +8923,11 @@
 	"stringmemory.hpp"
 	"../utils/tools.hpp"
 
-1552081976 source:d:\cpp\numere-source\trunk\gui\dialogs\grouppanel.cpp
+1552338558 source:d:\cpp\numere-source\trunk\gui\dialogs\grouppanel.cpp
 	"grouppanel.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1552081976 d:\cpp\numere-source\trunk\gui\dialogs\grouppanel.hpp
+1552334927 d:\cpp\numere-source\trunk\gui\dialogs\grouppanel.hpp
 	<wx/wx.h>
 	<wx/spinctrl.h>
 
