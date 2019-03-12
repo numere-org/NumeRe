@@ -28,7 +28,7 @@ class RenameSymbolsDialog : public wxDialog
         wxCheckBox* m_replaceInWholeFile;
         wxCheckBox* m_replaceBeforeCursor;
         wxCheckBox* m_replaceAfterCursor;
-        wxTextEntry* m_replaceName;
+        wxTextCtrl* m_replaceName;
 
     public:
         RenameSymbolsDialog(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxString& defaultval = wxEmptyString);

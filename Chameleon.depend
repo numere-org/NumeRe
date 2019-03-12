@@ -2953,7 +2953,7 @@
 	"fndrpldialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1552338609 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1552373102 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
@@ -8931,12 +8931,12 @@
 	<wx/wx.h>
 	<wx/spinctrl.h>
 
-1552081976 source:d:\cpp\numere-source\trunk\gui\dialogs\renamesymbolsdialog.cpp
+1552375443 source:d:\cpp\numere-source\trunk\gui\dialogs\renamesymbolsdialog.cpp
 	"renamesymbolsdialog.hpp"
 	"grouppanel.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1552081976 d:\cpp\numere-source\trunk\gui\dialogs\renamesymbolsdialog.hpp
+1552375527 d:\cpp\numere-source\trunk\gui\dialogs\renamesymbolsdialog.hpp
 	<wx/wx.h>
 
 1552081976 d:\cpp\numere-source\trunk\gui\dialogs\variableviewer.hpp

@@ -59,5 +59,8 @@ RenameSymbolsDialog::RenameSymbolsDialog(wxWindow* parent, wxWindowID id, const 
     GetSizer()->SetSizeHints(this);
 
     this->Centre();
+
+    m_replaceName->SetFocus();
+    m_replaceName->SelectAll();
 }
 
