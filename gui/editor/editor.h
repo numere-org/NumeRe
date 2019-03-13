@@ -184,6 +184,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 			return m_bLastSavedRemotely;
 		}
 
+		void GotoPipe();
 		void OnAddBreakpoint(wxCommandEvent& event);
 		void OnRemoveBreakpoint(wxCommandEvent& event);
 		void OnClearBreakpoints(wxCommandEvent& event);

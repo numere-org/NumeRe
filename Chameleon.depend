@@ -2135,7 +2135,7 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1552081976 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1552459147 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
@@ -3708,7 +3708,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1552335642 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1552459221 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -8923,7 +8923,7 @@
 	"stringmemory.hpp"
 	"../utils/tools.hpp"
 
-1552338558 source:d:\cpp\numere-source\trunk\gui\dialogs\grouppanel.cpp
+1552416212 source:d:\cpp\numere-source\trunk\gui\dialogs\grouppanel.cpp
 	"grouppanel.hpp"
 	"../../kernel/core/ui/language.hpp"
 
@@ -8931,7 +8931,7 @@
 	<wx/wx.h>
 	<wx/spinctrl.h>
 
-1552375443 source:d:\cpp\numere-source\trunk\gui\dialogs\renamesymbolsdialog.cpp
+1552416218 source:d:\cpp\numere-source\trunk\gui\dialogs\renamesymbolsdialog.cpp
 	"renamesymbolsdialog.hpp"
 	"grouppanel.hpp"
 	"../../kernel/core/ui/language.hpp"

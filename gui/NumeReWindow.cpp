@@ -2196,18 +2196,14 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         else
             m_currentEd->SetFilename(wxFileName(vPaths[PROCPATH] + folder, filename), false);
 
-        // Jump to the standard input line in the corresponding template file
-        if (_filetype == FILE_NSCR)
-            m_currentEd->GotoLine(13);
-        else if (_filetype == FILE_NPRC)
-            m_currentEd->GotoLine(6);
-        else
-            m_currentEd->GotoLine(28);
-
-        m_currentEd->EmptyUndoBuffer();
         m_currentPage = m_book->GetPageCount();
         m_currentEd->UpdateSyntaxHighlighting();
+
+        // Jump to the predefined template position
+        m_currentEd->GotoPipe();
+
         m_currentEd->SetUnsaved();
+        m_currentEd->EmptyUndoBuffer();
 
         // Add a new tab for the editor
         m_book->AddPage (edit, filename, true);

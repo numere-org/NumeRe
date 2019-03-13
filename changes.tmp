@@ -36,3 +36,4 @@ Fixed	Resolved a crash resulting from upsampling data sets.
 Applied	Resolved the flickering and stuttering issue by introducing an initial rendering step
 Added	The animation mode is now enabled for drawings.
 Added	The static analyzer may now be configured in the settings dialog.
+Cleaned	The summary of the static analyzer is now displayed always above or below the first non-comment line in a file.

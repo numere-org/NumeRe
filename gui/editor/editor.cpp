@@ -1901,7 +1901,7 @@ void NumeReEditor::AnalyseCode()
     // Determine the annotation style
 	this->AnnotationSetVisible(wxSTC_ANNOTATION_BOXED);
 
-	int currentLine = 0;
+	int currentLine = -1;
 	bool isContinuedLine = false;
 	bool hasProcedureDefinition = false;
 	bool isAlreadyMeasured = false;
@@ -1910,7 +1910,7 @@ void NumeReEditor::AnalyseCode()
 	string sStyles = "";
 	string sFirstLine = "";
 	string sFirstStyles = "";
-	int nFirstLine = 0;
+	int nFirstLine = -1;
 	string sNote = _guilang.get("GUI_ANALYZER_NOTE");
 	string sWarn = _guilang.get("GUI_ANALYZER_WARN");
 	string sError = _guilang.get("GUI_ANALYZER_ERROR");
@@ -1930,7 +1930,8 @@ void NumeReEditor::AnalyseCode()
 		if (isStyleType(STYLE_COMMENT_BLOCK, i) || isStyleType(STYLE_COMMENT_LINE, i))
 			continue;
 
-		// It's a new line?
+		// It's a new line? Then finalize the contents of the last line
+		// and display the contents as annotation
 		if (currentLine < this->LineFromPosition(i))
 		{
 		    // Get the line's contents
@@ -1950,23 +1951,23 @@ void NumeReEditor::AnalyseCode()
 				hasProcedureDefinition = false;
 			}
 
-			// If there are gathered annotations for the current line
-			if (sCurrentLine.length())
-			{
-			    // Find the summary line for the current file
-				if (!sFirstLine.length())
-				{
-					sFirstLine = sCurrentLine;
-					sFirstStyles = sStyles;
-					nFirstLine = currentLine;
-				}
-				else
-				{
-				    // Write the annotion to the current line
-					this->AnnotationSetText(currentLine, sCurrentLine);
-					this->AnnotationSetStyles(currentLine, sStyles);
-				}
-			}
+            // Find the summary line for the current file and push the
+            // current lines contents, if this is the first line,
+            // otherwise simply add the current lines contents to the
+            // current line
+            if (nFirstLine < 0 && currentLine >= 0)
+            {
+                sFirstLine = sCurrentLine;
+                sFirstStyles = sStyles;
+                nFirstLine = currentLine;
+            }
+            else if (sCurrentLine.length())
+            {
+                // Write the annotion to the current line
+                this->AnnotationSetText(currentLine, sCurrentLine);
+                this->AnnotationSetStyles(currentLine, sStyles);
+            }
+
 			currentLine = this->LineFromPosition(i);
 
 			// Get the new line for finding the trailing semicolon
@@ -1978,6 +1979,7 @@ void NumeReEditor::AnalyseCode()
 
             // Remove also block comments
             size_t nBlockStart = 0;
+
             while ((nBlockStart = sLine.find("#*")) != string::npos)
             {
                 if (sLine.find("*#", nBlockStart+2) == string::npos)
@@ -2001,8 +2003,8 @@ void NumeReEditor::AnalyseCode()
             else
                 isSuppressed = false;
 
-			sCurrentLine = "";
-			sStyles = "";
+			sCurrentLine.clear();
+			sStyles.clear();
 		}
 
 		// Get code metrics for scripts if not already done
@@ -2115,18 +2117,20 @@ void NumeReEditor::AnalyseCode()
 	// Write the summary lines
 	if (AnnotCount.nNotes)
 		addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_NOTE_TOTAL", toString(AnnotCount.nNotes)), ANNOTATION_NOTE);
+
 	if (AnnotCount.nWarnings)
 		addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_WARN_TOTAL", toString(AnnotCount.nWarnings)), ANNOTATION_WARN);
+
 	if (AnnotCount.nErrors)
 		addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_ERROR_TOTAL", toString(AnnotCount.nErrors)), ANNOTATION_ERROR);
 
     // Append the summary line to the first line (if it is not empty)
-	if (sCurrentLine.length())
+	if (sCurrentLine.length() && sFirstLine.length())
 	{
 		sCurrentLine += "\n" + sFirstLine;
 		sStyles += sStyles.back() + sFirstStyles;
 	}
-	else
+	else if (sFirstLine.length())
 	{
 		sCurrentLine = sFirstLine;
 		sStyles = sFirstStyles;
@@ -5146,6 +5150,29 @@ void NumeReEditor::OnMouseMotion(wxMouseEvent& event)
 		DoDragOver(event.GetX(), event.GetY(), wxDragMove);
 	event.Skip();
 }
+
+// This member function jumps the caret to the predefined
+// caret position (using a pipe "|") in the template and
+// removes the character at the position
+void NumeReEditor::GotoPipe()
+{
+    vector<int> vPos;
+
+    if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+        vPos = FindAll("|", wxSTC_NSCR_OPERATORS, 0, GetLastPosition(), false);
+
+    if (m_fileType == FILE_NSCR && !vPos.size())
+        vPos = FindAll("|", wxSTC_NSCR_INSTALL, 0, GetLastPosition(), false);
+
+    if (vPos.size())
+    {
+        GotoPos(vPos.front());
+        DeleteRange(vPos.front(), 1);
+    }
+    else
+        GotoLine(6); // fallback solution
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnAddBreakpoint
