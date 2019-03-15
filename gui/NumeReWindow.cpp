@@ -377,9 +377,11 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_book->Show();
     m_history = new NumeReHistory(this, m_options, new ProjectInfo(), m_noteTerm, -1, m_terminal->getSyntax(), m_terminal, wxDefaultPosition, wxDefaultSize);
     m_varViewer = new VariableViewer(m_noteTerm, this);
+    m_procedureViewer = new ProcedureViewer(m_noteTerm);
 
     m_noteTerm->AddPage(m_history, _guilang.get("GUI_HISTORY"));
     m_noteTerm->AddPage(m_varViewer, _guilang.get("GUI_VARVIEWER"));
+    m_noteTerm->AddPage(m_procedureViewer, _guilang.get("GUI_PROCEDUREVIEWER"));
 
     wxMilliSleep(250);
 
@@ -388,103 +390,15 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
 	EvaluateOptions();
 
-	// create the initial blank open file or recreate the last session
-	if (wxFileExists(getProgramFolder()+"\\numere.session") && m_options->GetSaveSession())
-	{
-	    m_loadingFilesDuringStartup = true;
-        NewFile();
-	    ifstream if_session;
-	    vector<string> vSessionFile;
-	    string sLine;
-	    string sFileName;
-	    int activefile = 0;
-	    int nId = 0;
-        int nLine = 0;
-        int nSetting = 0;
-	    bool modifiedFile = false;
-        if_session.open((getProgramFolder().ToStdString()+"\\numere.session").c_str());
-        if (if_session.is_open())
-        {
-            while (!if_session.eof())
-            {
-                getline(if_session, sLine);
-                if (!sLine.length() || sLine.front() == '#')
-                    continue;
-                if (sLine.substr(0,12) == "ACTIVEFILEID")
-                {
-                    activefile = StrToInt(sLine.substr(sLine.find('\t')+1));
-                    continue;
-                }
-                vSessionFile.push_back(sLine);
-            }
-            if_session.close();
-            for (size_t i = 0; i < vSessionFile.size(); i++)
-            {
-                // copy the current fileinfo
-                sLine = vSessionFile[i];
-                // check for the "modified" attribute
-                if (sLine.front() == '*')
-                {
-                    sLine.erase(0,1);
-                    modifiedFile = true;
-                }
-                else
-                    modifiedFile = false;
-                // create filename and current line
-                sFileName = sLine.substr(0,sLine.find('\t'));
-                // erase until id
-                sLine.erase(0,sLine.find('\t')+1);
-                nId = StrToInt(sLine.substr(0,sLine.find('\t')));
-                // erase until position
-                sLine.erase(0,sLine.find('\t')+1);
-                nLine = StrToInt(sLine.substr(0,sLine.find('\t')));
-                if (sLine.find('\t') != string::npos)
-                {
-                    nSetting = StrToInt(sLine.substr(sLine.rfind('\t')+1));
-                }
-                // create the files
-                if (sFileName == "<NEWFILE>")
-                {
-                    if (vSessionFile.size() != 1)
-                    {
-                        NewFile();
-                        m_currentEd->SetUnsaved();
-                    }
-                    m_currentEd->GotoPos(nLine);
-                    m_currentEd->ToggleSettings(nSetting);
-                    continue;
-                }
-                if (wxFileExists(sFileName))
-                {
-                    OpenSourceFile(wxArrayString(1, sFileName));
-                    m_currentEd->GotoPos(nLine);
-                    m_currentEd->ToggleSettings(nSetting);
-                }
-                else
-                {
-                    if (!modifiedFile)
-                    {
-                        m_UnrecoverableFiles += sFileName + "\n";
-                    }
-                    int nUnloadableID = nId;
-                    if (nUnloadableID < activefile)
-                        activefile--;
-                }
-            }
-            if (activefile >= (int)m_book->GetPageCount())
-                m_book->SetSelection(m_book->GetPageCount()-1);
-            else
-                m_book->SetSelection(activefile);
-            /*if (sUnloadableFiles.length())
-                wxMessageBox(_guilang.get("GUI_DLG_SESSION_RECREATIONERROR", sUnloadableFiles), _guilang.get("GUI_DLG_SESSION_ERROR"), wxCENTRE | wxICON_ERROR, nullptr, 10,10);*/
-        }
-        m_loadingFilesDuringStartup = false;
-	}
-	else
-	{
-        NewFile();
-	}
+	// Recreate the last session or
+	// create a new empty file
+	prepareSession();
+
 	PageHasChanged(m_currentPage);
+
+	// TO BE INVESTIGATED: For some reason we have to
+	// set the procedure list twice to function it correctly
+	m_procedureViewer->setCurrentEditor(m_currentEd);
 
 	// bind the event after the loading of the files - FIX for Win10 1803
 	Connect(wxEVT_FSWATCHER, wxFileSystemWatcherEventHandler(NumeReWindow::OnFileSystemEvent));
@@ -772,6 +686,145 @@ void NumeReWindow::InitializeProgramOptions()
 		m_options->writeColoursToConfig(m_config);
 		m_config->Write("Styles/EditorFont", m_options->GetEditorFont().GetNativeFontInfoUserDesc());
 		m_options->writeAnalyzerOptionsToConfig(m_config);
+	}
+}
+
+// This member function recreates the last session by reading
+// the session file or creates a new empty session, if the corresponding
+// setting was set to false
+void NumeReWindow::prepareSession()
+{
+	// create the initial blank open file or recreate the last session
+	if (wxFileExists(getProgramFolder()+"\\numere.session") && m_options->GetSaveSession())
+	{
+	    // Inform the application that the editor
+	    // settings do not have to be copied during
+	    // the session recovery
+	    m_loadingFilesDuringStartup = true;
+        NewFile();
+	    ifstream if_session;
+	    vector<string> vSessionFile;
+	    string sLine;
+	    string sFileName;
+	    int activefile = 0;
+	    int nId = 0;
+        int nLine = 0;
+        int nSetting = 0;
+	    bool modifiedFile = false;
+        if_session.open((getProgramFolder().ToStdString()+"\\numere.session").c_str());
+
+        // Is the session file available and readable? Then
+        // recreate the last session from this file
+        if (if_session.is_open())
+        {
+            // Read the session file completely
+            while (!if_session.eof())
+            {
+                getline(if_session, sLine);
+
+                // Ignore comments
+                if (!sLine.length() || sLine.front() == '#')
+                    continue;
+
+                // store the active file ID
+                if (sLine.substr(0,12) == "ACTIVEFILEID")
+                {
+                    activefile = StrToInt(sLine.substr(sLine.find('\t')+1));
+                    continue;
+                }
+
+                vSessionFile.push_back(sLine);
+            }
+
+            // Close the session file
+            if_session.close();
+
+            // Decode the session file
+            for (size_t i = 0; i < vSessionFile.size(); i++)
+            {
+                // copy the current fileinfo
+                sLine = vSessionFile[i];
+
+                // check for the "modified" attribute
+                if (sLine.front() == '*')
+                {
+                    sLine.erase(0,1);
+                    modifiedFile = true;
+                }
+                else
+                    modifiedFile = false;
+
+                // create filename and current line
+                sFileName = sLine.substr(0,sLine.find('\t'));
+
+                // erase until id
+                sLine.erase(0,sLine.find('\t')+1);
+                nId = StrToInt(sLine.substr(0,sLine.find('\t')));
+
+                // erase until position
+                sLine.erase(0,sLine.find('\t')+1);
+                nLine = StrToInt(sLine.substr(0,sLine.find('\t')));
+
+                if (sLine.find('\t') != string::npos)
+                {
+                    nSetting = StrToInt(sLine.substr(sLine.rfind('\t')+1));
+                }
+
+                // create the files
+                //
+                // This is a new file
+                if (sFileName == "<NEWFILE>")
+                {
+                    if (vSessionFile.size() != 1)
+                    {
+                        NewFile();
+                        m_currentEd->SetUnsaved();
+                    }
+
+                    m_currentEd->GotoPos(nLine);
+                    m_currentEd->ToggleSettings(nSetting);
+                    continue;
+                }
+
+                // Recreate the file if it exists
+                if (wxFileExists(sFileName))
+                {
+                    OpenSourceFile(wxArrayString(1, sFileName));
+                    m_currentEd->GotoPos(nLine);
+                    m_currentEd->ToggleSettings(nSetting);
+                }
+                else
+                {
+                    // If it not exists, inform the user
+                    // that we were not able to load it
+                    if (!modifiedFile)
+                    {
+                        m_UnrecoverableFiles += sFileName + "\n";
+                    }
+
+                    int nUnloadableID = nId;
+
+                    // Move the active file ID if necessary
+                    if (nUnloadableID < activefile)
+                        activefile--;
+                }
+            }
+
+            // Select the active file
+            if (activefile >= (int)m_book->GetPageCount())
+                m_book->SetSelection(m_book->GetPageCount()-1);
+            else
+                m_book->SetSelection(activefile);
+        }
+
+        // Inform the application that we are finished
+        // recreating the session
+        m_loadingFilesDuringStartup = false;
+	}
+	else
+	{
+	    // Simply create a new empty file
+        NewFile();
 	}
 }
 
@@ -2279,7 +2332,8 @@ void NumeReWindow::PageHasChanged (int pageNr)
 	if (m_book->GetPageCount() == 0)
 	{
 		m_currentPage = -1;
-		m_currentEd = NULL;
+		m_currentEd = nullptr;
+		m_procedureViewer->setCurrentEditor(nullptr);
 		return;
 	}
 
@@ -2311,10 +2365,18 @@ void NumeReWindow::PageHasChanged (int pageNr)
 	else
 	{
 		m_currentPage = -1;
-		m_currentEd = NULL;
+		m_currentEd = nullptr;
 	}
+
+	// Set the current editor in the procedure viewer,
+	// but avoid refreshing during closing the application
+	if (m_appClosing || m_loadingFilesDuringStartup)
+        m_procedureViewer->setCurrentEditor(nullptr);
+    else
+        m_procedureViewer->setCurrentEditor(m_currentEd);
+
 	m_book->Refresh();
-	if (m_currentEd != NULL)
+	if (m_currentEd != nullptr)
 	{
         wxMenu* view = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_VIEW")));
         view->Check(ID_MENU_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));

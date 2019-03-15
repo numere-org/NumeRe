@@ -32,6 +32,7 @@
 #include "../kernel/core/datamanagement/container.hpp"
 #include "../kernel/core/datamanagement/table.hpp"
 #include "dialogs/variableviewer.hpp"
+#include "procedureviewer.hpp"
 
 #define OPENFILE_NOTHING 0
 #define OPENFILE_BLACKLIST_ADD 1
@@ -238,6 +239,7 @@ class NumeReWindow : public wxFrame
 
     private:
         void InitializeProgramOptions();
+        void prepareSession();
 
         void CheckSize();
 
@@ -370,6 +372,7 @@ class NumeReWindow : public wxFrame
 
         NumeReHistory* m_history;
         VariableViewer* m_varViewer;
+        ProcedureViewer* m_procedureViewer;
 
         ViewerFrame* m_currentView;
         /*! Displays the files in the current project */

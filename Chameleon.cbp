@@ -362,6 +362,8 @@
 		<Unit filename="gui/imagepanel.hpp" />
 		<Unit filename="gui/numeredroptarget.cpp" />
 		<Unit filename="gui/numeredroptarget.hpp" />
+		<Unit filename="gui/procedureviewer.cpp" />
+		<Unit filename="gui/procedureviewer.hpp" />
 		<Unit filename="gui/tableeditpanel.cpp" />
 		<Unit filename="gui/tableeditpanel.hpp" />
 		<Unit filename="gui/tableviewer.cpp" />

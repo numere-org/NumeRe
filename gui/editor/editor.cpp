@@ -155,6 +155,7 @@ NumeReEditor::NumeReEditor( NumeReWindow* mframe,
 
 	m_nFirstLine = m_nLastLine = 0;
 	m_nDuplicateCodeFlag = 0;
+	m_procedureViewer = nullptr;
 
 	Bind(wxEVT_THREAD, &NumeReEditor::OnThreadUpdate, this);
 
@@ -394,6 +395,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 	markSaved();
 	EmptyUndoBuffer();
 	SetSavePoint();
+	UpdateProcedureViewer();
 
 	m_filetime = fn.GetModificationTime();
 	m_bSetUnsaved = false;
@@ -931,6 +933,16 @@ void NumeReEditor::HandleFunctionCallTip()
 		this->AdvCallTipShow(nStartingBrace, sDefinition);
 	if (sArgument.length())
 		this->CallTipSetHighlight(nArgStartPos, nArgStartPos + sArgument.length());
+}
+
+// This member function updates the procedure viewer,
+// if it was registered in this editor
+void NumeReEditor::UpdateProcedureViewer()
+{
+    if (m_procedureViewer && m_fileType == FILE_NPRC)
+    {
+        m_procedureViewer->updateProcedureList(getProceduresInFile());
+    }
 }
 
 string NumeReEditor::GetCurrentFunctionContext(int& nStartingBrace)
@@ -1512,13 +1524,17 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
         else
             this->AdvCallTipCancel();
 
-		wxString proc = FindMarkedProcedure(charpos);
+        wxString proc = FindMarkedProcedure(charpos);
+
 		if (!proc.length())
 			return;
+
 		wxString procdef = FindProcedureDefinition();
 		wxString flags = "";
+
 		if (!procdef.length())
 			procdef = m_clickedProcedure + "(...)";
+
 		if (procdef.find("::") != string::npos)
 		{
 			flags = procdef.substr(procdef.find("::"));
@@ -5154,15 +5170,15 @@ void NumeReEditor::OnMouseMotion(wxMouseEvent& event)
 // This member function jumps the caret to the predefined
 // caret position (using a pipe "|") in the template and
 // removes the character at the position
-void NumeReEditor::GotoPipe()
+void NumeReEditor::GotoPipe(int nStartPos)
 {
     vector<int> vPos;
 
     if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
-        vPos = FindAll("|", wxSTC_NSCR_OPERATORS, 0, GetLastPosition(), false);
+        vPos = FindAll("|", wxSTC_NSCR_OPERATORS, nStartPos, GetLastPosition(), false);
 
     if (m_fileType == FILE_NSCR && !vPos.size())
-        vPos = FindAll("|", wxSTC_NSCR_INSTALL, 0, GetLastPosition(), false);
+        vPos = FindAll("|", wxSTC_NSCR_INSTALL, nStartPos, GetLastPosition(), false);
 
     if (vPos.size())
     {
@@ -5170,7 +5186,7 @@ void NumeReEditor::GotoPipe()
         DeleteRange(vPos.front(), 1);
     }
     else
-        GotoLine(6); // fallback solution
+        GotoLine(nStartPos); // fallback solution
 }
 
 
@@ -5303,6 +5319,43 @@ wxArrayInt NumeReEditor::GetBreakpoints()
 	return linenumbers;
 }
 
+// This member function creates the procedure list from
+// the current viewed file. It does nothing, if the
+// current file is not a procedure file
+vector<wxString> NumeReEditor::getProceduresInFile()
+{
+    if (m_fileType != FILE_NPRC)
+        return vector<wxString>();
+
+    // Find all "procedure" commands in the current file
+    vector<int> vMatch = FindAll("procedure", wxSTC_NPRC_COMMAND, 0, GetLastPosition(), false);
+
+    if (!vMatch.size())
+        return vector<wxString>();
+
+    vector<wxString> vProcDef;
+
+    // Go through all matches and store the corresponding
+    // definitions in the procedure definitions vector
+    for (size_t i = 0; i < vMatch.size(); i++)
+    {
+        int pos = vMatch[i]+9;
+
+        // Find the dollar sign
+        pos = FindText(pos, GetLineEndPosition(LineFromPosition(pos)), "$");
+
+        if (pos == wxSTC_INVALID_POSITION)
+            continue;
+
+        // Find the procedure definition
+        if (FindMarkedProcedure(pos+1, false).length())
+            vProcDef.push_back(FindProcedureDefinition());
+    }
+
+    return vProcDef;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public HasBeenCompiled
 ///  Returns the compiled status for this editor's project
@@ -5327,6 +5380,11 @@ bool NumeReEditor::HasBeenCompiled()
 void NumeReEditor::SetCompiled()
 {
 	m_project->SetCompiled(true);
+}
+
+void NumeReEditor::registerProcedureViewer(ProcedureViewer* viewer)
+{
+    m_procedureViewer = viewer;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -5570,24 +5628,52 @@ wxString NumeReEditor::FindClickedProcedure()
 	return FindMarkedProcedure(charpos);
 }
 
-wxString NumeReEditor::FindMarkedProcedure(int charpos)
+// This member function extracts the procedure call
+// located around the position charpos and stores
+// its value internally. If ignoreDefinitions is set
+// to false, then also definitions are detected
+wxString NumeReEditor::FindMarkedProcedure(int charpos, bool ignoreDefinitions)
 {
 	int startPosition = WordStartPosition(charpos, true);
+	int endPosition = WordEndPosition(charpos, true);
+
+	// Search for the first procedure character
 	while (startPosition && GetStyleAt(startPosition - 1) == wxSTC_NSCR_PROCEDURES)
 		startPosition--;
-	int endPosition = WordEndPosition(charpos, true);
+
+    // Search for the last procedure character
 	while (endPosition < GetLastPosition() && GetStyleAt(endPosition) == wxSTC_NSCR_PROCEDURES)
 		endPosition++;
 
-	wxString currentline = this->GetLine(LineFromPosition(startPosition));
-	if (currentline.find("procedure") != string::npos && currentline[currentline.find_first_not_of(' ', currentline.find("procedure") + 9)] == '$')
-		return "";
+    // Ignore procedure definitions, if the
+    // flag is set to true
+    if (ignoreDefinitions)
+    {
+        wxString currentline = this->GetLine(LineFromPosition(startPosition));
 
+        if (currentline.find("procedure") != string::npos && currentline[currentline.find_first_not_of(' ', currentline.find("procedure") + 9)] == '$')
+            return "";
+    }
+
+    // Extract the procedure call
 	wxString clickedWord = this->GetTextRange(startPosition, endPosition);
 
+    // Insert the namespaces, if we use
+    // definition as well
+	if (!ignoreDefinitions && clickedWord.find('~') == string::npos && GetNameOfNamingProcedure() != clickedWord)
+    {
+        clickedWord.insert(1, "thisfile~");
+    }
+
+    // Search the namespace of the current call
+    // and insert it
 	if (m_fileType == FILE_NPRC && clickedWord.find('~') == string::npos)
 	{
+	    // Find the the namespace
 		wxString sNameSpace = FindNameSpaceOfProcedure(charpos);
+
+		// Insert the namespace, if it is
+		// available
 		if (sNameSpace.length())
 		{
 			if (clickedWord[0] == '$')
@@ -5597,19 +5683,23 @@ wxString NumeReEditor::FindMarkedProcedure(int charpos)
 		}
 	}
 
+	// Store the procedure call
 	m_clickedProcedure = clickedWord;
 
+	// Remove namespaces for the context menu
 	if (clickedWord.find('~') != string::npos)
 		clickedWord.erase(1, clickedWord.rfind('~'));
+
 	if (clickedWord[0] != '$')
 		clickedWord.insert(0, 1, '$');
 
+    // Return the string for the context menu
 	return clickedWord + "()";
 }
 
 wxString NumeReEditor::FindNameSpaceOfProcedure(int charpos)
 {
-	wxString sNameSpace = "";
+	wxString sNameSpace = "this";
 	if (m_fileType == FILE_NPRC)
 	{
 		int minpos = 0;
@@ -6050,6 +6140,11 @@ wxString NumeReEditor::FindProcedureDefinitionInOtherFile(const wxString& pathna
     return "";
 }
 
+wxString NumeReEditor::GetNameOfNamingProcedure()
+{
+    return "$" + GetFileName().GetName();
+}
+
 // This private member function searches for the procedure
 // definition in the local or a global file (depending on
 // the namespace) opens the procedure and goes to the
@@ -6093,8 +6188,9 @@ void NumeReEditor::FindAndOpenProcedure(const wxString& procedurename)
 			if (procedureline.find("$" + procedurename) != string::npos && procedureline[procedureline.find_first_not_of(' ', procedureline.find("$" + procedurename) + procedurename.length() + 1)] == '(')
 			{
 				this->SetFocus();
-				this->EnsureVisible(LineFromPosition(nminpos));
 				this->GotoLine(LineFromPosition(nminpos));
+				this->SetFirstVisibleLine(VisibleFromDocLine(LineFromPosition(nminpos))-2);
+				this->EnsureVisible(LineFromPosition(nminpos));
 				return;
 			}
 		}
@@ -6117,7 +6213,7 @@ void NumeReEditor::FindAndOpenProcedure(const wxString& procedurename)
 		// Replace the name in the template with the correct name
 		// and goto the position
 		nLastLine = FindText(this->PositionFromLine(nLastLine), this->GetLastPosition(), "procedure $" + procedurename, wxSTC_FIND_MATCHCASE);
-		this->GotoPos(nLastLine);
+		this->GotoPipe(nLastLine);
 
 		// Update the syntax highlighting and the analyzer state
 		UpdateSyntaxHighlighting(true);

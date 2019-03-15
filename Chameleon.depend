@@ -2135,17 +2135,17 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1552459147 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1552580683 d:\cpp\numere-source\trunk\gui\editor\editor.h
+	"../terminal/wxterm.h"
+	"../../common/datastructures.h"
+	"../../kernel/syntax.hpp"
+	"../dialogs/duplicatecodedialog.hpp"
 	<wx/wx.h>
 	<wx/stc/stc.h>
 	<wx/menu.h>
 	<wx/dynarray.h>
 	<wx/thread.h>
 	<wx/buffer.h>
-	"../terminal/wxterm.h"
-	"../../common/datastructures.h"
-	"../../kernel/syntax.hpp"
-	"../dialogs/duplicatecodedialog.hpp"
 
 1522871729 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stc\stc.h
 	"wx/defs.h"
@@ -2181,7 +2181,7 @@
 	"../../kernel/kernel.hpp"
 	"../../kernel/debugmessenger.hpp"
 
-1552081975 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1552633106 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -2202,6 +2202,7 @@
 	"../kernel/core/datamanagement/container.hpp"
 	"../kernel/core/datamanagement/table.hpp"
 	"dialogs/variableviewer.hpp"
+	"procedureviewer.hpp"
 
 1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxprec.h
 	"wx/defs.h"
@@ -3339,7 +3340,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1552372280 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1552597204 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3708,7 +3709,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1552459221 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1552635443 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -4279,7 +4280,7 @@
 	<cstddef>
 	<cstdarg>
 
-1552081976 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
+1552596437 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
 	"tools.hpp"
 	"../../kernel.hpp"
 	<cstdlib>
@@ -9117,4 +9118,14 @@
 1551853229 c:\cpp\numere-source\trunk\gui\gridtable.hpp
 	"../kernel/core/datamanagement/table.hpp"
 	<wx/grid.h>
+
+1552633794 d:\cpp\numere-source\trunk\gui\procedureviewer.hpp
+	<wx/wx.h>
+	<vector>
+	"NumeReWindow.h"
+
+1552635173 source:d:\cpp\numere-source\trunk\gui\procedureviewer.cpp
+	"procedureviewer.hpp"
+	"../kernel/core/ui/language.hpp"
+	"editor/editor.h"
 

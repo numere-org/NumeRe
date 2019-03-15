@@ -391,7 +391,7 @@ void StripSpaces(string& sToStrip)
 	if (!sToStrip.length())
 		return;
 	// --> Am Anfgang und am Ende weder ' ' noch '\t' gefunden? Zurueckkehren <--
-	if (sToStrip[0] != ' ' && sToStrip[sToStrip.length() - 1] != ' ' && sToStrip[0] != '\t' && sToStrip[sToStrip.length() - 1] != '\t')
+	if (sToStrip[0] != ' ' && sToStrip.back() != ' ' && sToStrip[0] != '\t' && sToStrip.back() != '\t')
 		return;
 	sToStrip.erase(0, sToStrip.find_first_not_of(" \t"));
 	if (sToStrip.length() && (sToStrip.back() == ' ' || sToStrip.back() == '\t'))

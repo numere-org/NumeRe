@@ -1,3 +1,8 @@
+#include "../terminal/wxterm.h"
+#include "../../common/datastructures.h"
+#include "../../kernel/syntax.hpp"
+#include "../dialogs/duplicatecodedialog.hpp"
+
 #ifndef EDITOR_H
 #define EDITOR_H
 
@@ -7,10 +12,6 @@
 #include <wx/dynarray.h>
 #include <wx/thread.h>
 #include <wx/buffer.h>
-#include "../terminal/wxterm.h"
-#include "../../common/datastructures.h"
-#include "../../kernel/syntax.hpp"
-#include "../dialogs/duplicatecodedialog.hpp"
 
 #define RM_WS_BOTH 0
 #define RM_WS_FRONT 1
@@ -22,6 +23,7 @@ class wxFileName;
 class Options;
 class ProjectInfo;
 class DebugManager;
+class ProcedureViewer;
 
 /** \brief Stores the number of annotations for displaying a summary
  */
@@ -83,6 +85,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		bool HasBeenSaved();
 
 		void SetCompiled();
+		void registerProcedureViewer(ProcedureViewer* viewer);
 
 		void OnChar(wxStyledTextEvent& event);
 		void OnRightClick(wxMouseEvent& event);
@@ -105,6 +108,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		// asynch update calls
 		void HandleFunctionCallTip();
+		void UpdateProcedureViewer();
 		string GetCurrentFunctionContext(int& nStartingBrace);
 		string GetFunctionCallTip(const string& sFunctionName);
 		string GetMethodCallTip(const string& sMethodName);
@@ -172,6 +176,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		{
 			return m_project;
 		}
+		vector<wxString> getProceduresInFile();
 
 
 		//void SetFileNameAndPath(wxString path, wxString name, bool fileIsRemote);
@@ -184,7 +189,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 			return m_bLastSavedRemotely;
 		}
 
-		void GotoPipe();
+		void GotoPipe(int nStartPos = 0);
 		void OnAddBreakpoint(wxCommandEvent& event);
 		void OnRemoveBreakpoint(wxCommandEvent& event);
 		void OnClearBreakpoints(wxCommandEvent& event);
@@ -314,6 +319,9 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		    return m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_CPP || m_fileType == FILE_MATLAB;
 		}
 
+		void FindAndOpenProcedure(const wxString& procedurename);
+		void FindAndOpenInclude(const wxString& includename);
+
 	protected:
 		Options* m_options;
 
@@ -380,14 +388,14 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		wxString FindClickedInclude();
 		wxString FindMarkedInclude(int charpos);
 		wxString FindClickedProcedure();
-		wxString FindMarkedProcedure(int charpos);
+		wxString FindMarkedProcedure(int charpos, bool ignoreDefinitions = true);
 		wxString FindNameSpaceOfProcedure(int charpos);
 		wxString FindProceduresInCurrentFile(wxString sFirstChars, wxString sSelectedNameSpace);
 		wxString FindProcedureDefinition();
 		wxString FindProcedureDefinitionInLocalFile(const wxString& procedurename);
 		wxString FindProcedureDefinitionInOtherFile(const wxString& pathname, const wxString& procedurename);
-		void FindAndOpenProcedure(const wxString& procedurename);
-		void FindAndOpenInclude(const wxString& includename);
+		wxString GetNameOfNamingProcedure();
+
 		void AppendToDocumentation(wxString& sDocumentation, const wxString& sNewDocLine);
 		string CleanDocumentation(const wxString& sDocumentation);
 		int FindCurrentProcedureHead(int pos);
@@ -429,6 +437,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		wxString getNextToken(int& nPos);
 
 		NumeReWindow* m_mainFrame;
+		ProcedureViewer* m_procedureViewer;
 		//ChameleonNotebook* m_parentNotebook;
 		ProjectInfo* m_project;
 
