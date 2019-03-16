@@ -2080,7 +2080,7 @@
 1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\fswatcher.h
 	"wx/defs.h"
 
-1552371966 source:d:\cpp\numere-source\trunk\common\options.cpp
+1552732249 source:d:\cpp\numere-source\trunk\common\options.cpp
 	"Options.h"
 	<wx/filename.h>
 	<wx/arrstr.h>
@@ -2135,7 +2135,7 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1552580683 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1552735244 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	"../terminal/wxterm.h"
 	"../../common/datastructures.h"
 	"../../kernel/syntax.hpp"
@@ -3340,7 +3340,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1552597204 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1552735427 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -8924,21 +8924,24 @@
 	"stringmemory.hpp"
 	"../utils/tools.hpp"
 
-1552416212 source:d:\cpp\numere-source\trunk\gui\dialogs\grouppanel.cpp
+1552734095 source:d:\cpp\numere-source\trunk\gui\dialogs\grouppanel.cpp
 	"grouppanel.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1552416186 d:\cpp\numere-source\trunk\gui\dialogs\grouppanel.hpp
+1552733737 d:\cpp\numere-source\trunk\gui\dialogs\grouppanel.hpp
 	<wx/wx.h>
 	<wx/spinctrl.h>
+	<wx/listctrl.h>
 
-1552416218 source:d:\cpp\numere-source\trunk\gui\dialogs\renamesymbolsdialog.cpp
+1552736093 source:d:\cpp\numere-source\trunk\gui\dialogs\renamesymbolsdialog.cpp
 	"renamesymbolsdialog.hpp"
 	"grouppanel.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1552375527 d:\cpp\numere-source\trunk\gui\dialogs\renamesymbolsdialog.hpp
+1552734488 d:\cpp\numere-source\trunk\gui\dialogs\renamesymbolsdialog.hpp
 	<wx/wx.h>
+	<wx/listctrl.h>
+	<vector>
 
 1552081976 d:\cpp\numere-source\trunk\gui\dialogs\variableviewer.hpp
 	"treelistctrl.h"

@@ -468,6 +468,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		wxCriticalSection m_editorCS;
 		vector<string> vDuplicateCodeResults;
 		vector<string> vParsedSemanticCode;
+		vector<wxString> vRenameSymbolsChangeLog;
 		int m_nProcessValue;
 		int m_nDuplicateCodeFlag;
 		int m_nDuplicateCodeLines;

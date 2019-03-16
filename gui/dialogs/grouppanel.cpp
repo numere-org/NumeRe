@@ -114,7 +114,7 @@ wxTextCtrl* GroupPanel::CreateTextInput(wxWindow* parent, wxSizer* sizer, const 
 
     // Create the input line
     wxTextCtrl* textCtrl = new wxTextCtrl(parent, wxID_ANY, sDefault, wxDefaultPosition, wxSize(310, -1), nStyle);
-    sizer->Add(textCtrl, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT | wxALL | wxGROW, ELEMENT_BORDER);
+    sizer->Add(textCtrl, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT | wxALL | wxEXPAND | wxFIXED_MINSIZE, ELEMENT_BORDER);
 
     return textCtrl;
 }
@@ -151,5 +151,16 @@ wxSpinCtrl* GroupPanel::CreateSpinControl(wxWindow* parent, wxSizer* sizer, cons
     spinCtrlSizer->Add(spinCtrlStaticText, 0, wxALIGN_CENTER_VERTICAL | wxALL | wxADJUST_MINSIZE, ELEMENT_BORDER);
 
     return spinCtrl;
+}
+
+// This member function creates the
+// layout for a listview control
+wxListView* GroupPanel::CreateListView(wxWindow* parent, wxSizer* sizer, int nStyle /*= wxLC_REPORT*/)
+{
+    // Create the listview and assign it to the passed sizer
+    wxListView* listView = new wxListView(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, nStyle);
+    sizer->Add(listView, 1, wxALIGN_CENTER_VERTICAL | wxALL | wxEXPAND | wxFIXED_MINSIZE, ELEMENT_BORDER);
+
+    return listView;
 }
 

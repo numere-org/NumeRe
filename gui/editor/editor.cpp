@@ -4746,6 +4746,7 @@ void NumeReEditor::ResetEditor()
 	m_clickedInclude.clear();
 	m_clickedWordLength = 0;
 	m_watchedString.clear();
+	vRenameSymbolsChangeLog.clear();
 
 	SetReadOnly(false);
 	SetText(wxEmptyString);
@@ -6491,7 +6492,7 @@ void NumeReEditor::RenameSymbols(int nPos)
 
     // Prepare and show the text entry dialog, so that the
     // user may supply a new symbol name
-    RenameSymbolsDialog textdialog(this, wxID_ANY, _guilang.get("GUI_DLG_RENAMESYMBOLS"), sCurrentName);
+    RenameSymbolsDialog textdialog(this, vRenameSymbolsChangeLog, wxID_ANY, _guilang.get("GUI_DLG_RENAMESYMBOLS"), sCurrentName);
     int retval = textdialog.ShowModal();
     if (retval == wxID_CANCEL)
         return;
@@ -6501,6 +6502,8 @@ void NumeReEditor::RenameSymbols(int nPos)
     sNewName = textdialog.GetValue();
     if (!sNewName.length() || (!textdialog.replaceAfterCursor() && !textdialog.replaceBeforeCursor()))
         return;
+
+    vRenameSymbolsChangeLog.push_back(sCurrentName + "\t" + sNewName);
 
     // The selected symbol is probably part of a procedure. If this is
     // the case, get the start and end position here

@@ -17,6 +17,8 @@
 ******************************************************************************/
 
 #include <wx/wx.h>
+#include <wx/listctrl.h>
+#include <vector>
 
 #ifndef RENAMESYMBOLSDIALOG_HPP
 #define RENAMESYMBOLSDIALOG_HPP
@@ -30,8 +32,10 @@ class RenameSymbolsDialog : public wxDialog
         wxCheckBox* m_replaceAfterCursor;
         wxTextCtrl* m_replaceName;
 
+        void fillChangesLog(wxListView* listView, const std::vector<wxString>& vChangeLog);
+
     public:
-        RenameSymbolsDialog(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxString& defaultval = wxEmptyString);
+        RenameSymbolsDialog(wxWindow* parent, const std::vector<wxString>& vChangeLog, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxString& defaultval = wxEmptyString);
 
         wxString GetValue()
         {
