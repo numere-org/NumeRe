@@ -2108,13 +2108,17 @@ string NumeReKernel::formatResultOutput(int nNum, value_type* v, const Settings&
 }
 
 // This static function may be used to issue a warning to the user
-void NumeReKernel::issueWarning(const string& sWarningMessage)
+void NumeReKernel::issueWarning(string sWarningMessage)
 {
     if (!m_parent)
         return;
     else
     {
         wxCriticalSectionLocker lock(m_parent->m_kernelCS);
+
+        // Insert warning symbols, if linebreaks are contained in this message
+        replaceAll(sWarningMessage, "\n", "\n|!> ");
+
         m_parent->m_sAnswer += "|!> " + _lang.get("COMMON_WARNING") + ": " + sWarningMessage + "\n";
 
         if (m_parent->m_KernelStatus < NumeReKernel::NUMERE_STATUSBAR_UPDATE || m_parent->m_KernelStatus == NumeReKernel::NUMERE_ANSWER_READ)

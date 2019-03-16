@@ -2338,6 +2338,37 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			//NumeReKernel::print("|-> Dateipfad erfolgreich aktualisiert." );
 			return 1;
 		}
+		else if (sCommand == "warn")
+        {
+            if (sCmd.length() > 5)
+            {
+                if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+                {
+                    sArgument = sCmd.substr(sCmd.find("warn")+5);
+                    _parser.SetExpr(sArgument);
+                    int nResults = 0;
+                    value_type* v = _parser.Eval(nResults);
+                    if (nResults > 1)
+                    {
+                        sArgument = "{";
+                        for (int i = 0; i < nResults; i++)
+                        {
+                            sArgument += " " + toString(v[i], _option) + ",";
+                        }
+                        sArgument.pop_back();
+                        sArgument += "}";
+                    }
+                    else
+                        sArgument = toString(v[0], _option);
+                }
+
+                NumeReKernel::issueWarning(sArgument);
+            }
+            else
+                doc_Help("warn", _option);
+
+            return 1;
+        }
 		return 0;
 	}
 	else if (sCommand[0] == 's')

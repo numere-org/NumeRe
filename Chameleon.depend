@@ -2520,7 +2520,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1552082471 d:\cpp\numere-source\trunk\kernel\kernel.hpp
+1552725041 d:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	<queue>
@@ -3985,7 +3985,7 @@
 
 1501080105 d:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1552082471 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1552724431 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 	"io/fileops.hpp"
@@ -9124,7 +9124,7 @@
 	<vector>
 	"NumeReWindow.h"
 
-1552635173 source:d:\cpp\numere-source\trunk\gui\procedureviewer.cpp
+1552635801 source:d:\cpp\numere-source\trunk\gui\procedureviewer.cpp
 	"procedureviewer.hpp"
 	"../kernel/core/ui/language.hpp"
 	"editor/editor.h"
