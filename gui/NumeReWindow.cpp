@@ -112,6 +112,7 @@ BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
 	EVT_MENU						(ID_OPEN_PROJECT_LOCAL, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_OPEN_PROJECT_REMOTE, NumeReWindow::OnMenuEvent)
 	EVT_MENU						(ID_CLOSE_PROJECT, NumeReWindow::OnMenuEvent)
+
 //	EVT_MENU						(ID_DEBUG_CONTINUE, NumeReWindow::OnDebugCommand)
 //	EVT_MENU						(ID_DEBUG_STEPNEXT, NumeReWindow::OnDebugCommand)
 //	EVT_MENU						(ID_DEBUG_STEPOVER, NumeReWindow::OnDebugCommand)
@@ -364,6 +365,11 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
 	m_statusBar = new NumeReStatusbar(this);
 	SetStatusBar(m_statusBar);
+
+	// Redirect the menu help strings to the
+	// second status bar field
+	SetStatusBarPane(1);
+
 	SendSizeEvent();
 
 	m_updateTimer = new wxTimer (this, ID_STATUSTIMER);
@@ -4060,7 +4066,7 @@ void NumeReWindow::UpdateMenuBar()
 	menuSearch->Append(ID_MENU_FIND, _guilang.get("GUI_MENU_FIND"));
 	menuSearch->Append(ID_MENU_REPLACE, _guilang.get("GUI_MENU_REPLACE"));
     menuSearch->AppendSeparator();
-	menuSearch->Append(ID_MENU_FIND_PROCEDURE, _guilang.get("GUI_MENU_FIND_PROCEDURE"), _guilang.get("GUI_MENU_FIND_PRCOCEDURE_TTP"));
+	menuSearch->Append(ID_MENU_FIND_PROCEDURE, _guilang.get("GUI_MENU_FIND_PROCEDURE"), _guilang.get("GUI_MENU_FIND_PROCEDURE_TTP"));
 	menuSearch->Append(ID_MENU_FIND_INCLUDE, _guilang.get("GUI_MENU_FIND_INCLUDE"), _guilang.get("GUI_MENU_FIND_INCLUDE_TTP"));
 	menuSearch->Append(ID_MENU_GOTOLINE, _guilang.get("GUI_MENU_GOTOLINE"), _guilang.get("GUI_MENU_GOTOLINE_TTP"));
 	menuSearch->AppendSeparator();

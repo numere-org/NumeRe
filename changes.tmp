@@ -39,3 +39,4 @@ Added	The static analyzer may now be configured in the settings dialog.
 Cleaned	The summary of the static analyzer is now displayed always above or below the first non-comment line in a file.
 Added	A procedure browser for opened files is available next to the variable viewer and can be used to navigate in large procedure files.
 New	The new command "warn" can be used to warn users using the warning colour of the editor.
+Fixed	Re-enabled the menu help strings in the main window's toolbar.

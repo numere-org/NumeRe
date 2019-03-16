@@ -2181,7 +2181,7 @@
 	"../../kernel/kernel.hpp"
 	"../../kernel/debugmessenger.hpp"
 
-1552633106 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1552727271 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -3985,7 +3985,7 @@
 
 1501080105 d:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1552724431 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1552725412 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 	"io/fileops.hpp"
@@ -4306,7 +4306,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1552026845 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1552725025 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 	"core/datamanagement/dataops.hpp"
