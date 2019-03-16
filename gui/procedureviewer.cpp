@@ -43,31 +43,30 @@ struct ProcedureViewerData
 // stored in the items to return the order of two elements by returning
 // numbers.
 // wxCALLBACK aliases some weird calling convention on WIN32.
-int wxCALLBACK ProcedureViewerCompare(wxIntPtr item1, wxIntPtr item2, wxIntPtr nSortingColumn)
+int wxCALLBACK ProcedureViewerCompare(wxIntPtr item1, wxIntPtr item2, wxIntPtr parent)
 {
-    ProcedureViewerData* curData1 = reinterpret_cast<ProcedureViewerData*>(wxUIntPtr(item1));
-    ProcedureViewerData* curData2 = reinterpret_cast<ProcedureViewerData*>(wxUIntPtr(item2));
+    ProcedureViewer* viewer = reinterpret_cast<ProcedureViewer*>(parent);
 
     // Switch to determine the correct data field
     // of the internal data structure
-    switch (nSortingColumn)
+    switch (viewer->nSortColumn)
     {
         case 0:
-            if (curData1->ID < curData2->ID)
+            if (viewer->vData[item1].ID < viewer->vData[item2].ID)
                 return -1;
-            else if (curData1->ID == curData2->ID)
+            else if (viewer->vData[item1].ID == viewer->vData[item2].ID)
                 return 0;
             return 1;
         case 1:
-            if (curData1->procedureFlags < curData2->procedureFlags)
+            if (viewer->vData[item1].procedureFlags < viewer->vData[item2].procedureFlags)
                 return -1;
-            else if (curData1->procedureFlags == curData2->procedureFlags)
+            else if (viewer->vData[item1].procedureFlags == viewer->vData[item2].procedureFlags)
                 return 0;
             return 1;
         case 2:
-            if (toLowerCase(curData1->procedureDefinition.ToStdString()) < toLowerCase(curData2->procedureDefinition.ToStdString()))
+            if (toLowerCase(viewer->vData[item1].procedureDefinition.ToStdString()) < toLowerCase(viewer->vData[item2].procedureDefinition.ToStdString()))
                 return -1;
-            else if (toLowerCase(curData1->procedureDefinition.ToStdString()) == toLowerCase(curData2->procedureDefinition.ToStdString()))
+            else if (toLowerCase(viewer->vData[item1].procedureDefinition.ToStdString()) == toLowerCase(viewer->vData[item2].procedureDefinition.ToStdString()))
                 return 0;
             return 1;
     }
@@ -87,9 +86,31 @@ void ProcedureViewer::getProcedureListFromEditor()
     }
     else
     {
-        // Simply delete all items
-        DeleteAllItems();
+        // Create an empty control
+        emptyControl();
     }
+}
+
+// This private member function creates an empty control,
+// which will display "no procedures in this file" message
+void ProcedureViewer::emptyControl()
+{
+    if (GetItemCount())
+    {
+        DeleteAllItems();
+        vData.clear();
+    }
+
+    InsertItem(0, "--");
+    SetItem(0, 2, _guilang.get("GUI_PROCEDUREVIEWER_EMPTY"));
+    SetItemData(0, 0);
+
+    // Make the message grey and printed in italics
+    SetItemFont(0, GetFont().MakeItalic());
+    SetItemTextColour(0, wxColour(128, 128, 128));
+
+    // Add a fallback data object
+    vData.push_back(ProcedureViewerData(0, "", ""));
 }
 
 // Constructor
@@ -101,6 +122,9 @@ ProcedureViewer::ProcedureViewer(wxWindow* parent) : wxListView(parent, wxID_ANY
     AppendColumn("ID");
     AppendColumn("Flags");
     AppendColumn(_guilang.get("GUI_PROCEDUREVIEWER_SIGNATURE"));
+
+    // Create an empty control
+    emptyControl();
 }
 
 // This member function removes obsolete whitespaces from
@@ -144,8 +168,11 @@ void ProcedureViewer::setCurrentEditor(NumeReEditor* editor)
 void ProcedureViewer::updateProcedureList(const vector<wxString>& vProcedures)
 {
     // Clear the contents of the list
-    DeleteAllItems();
-    vData.clear();
+    if (GetItemCount())
+    {
+        DeleteAllItems();
+        vData.clear();
+    }
 
     wxString procdef;
     wxString flags;
@@ -186,7 +213,8 @@ void ProcedureViewer::updateProcedureList(const vector<wxString>& vProcedures)
         InsertItem(i, toString(i+1));
         SetItem(i, 1, flags);
         SetItem(i, 2, procdef);
-        SetItemPtrData(i, (wxUIntPtr)&vData[vData.size()-1]);
+        //SetItemPtrData(i, (wxUIntPtr)&vData[vData.size()-1]);
+        SetItemData(i, i);
 
         // If the current procedure is not flagged as
         // "local" (which is done by the editor automatically)
@@ -194,6 +222,14 @@ void ProcedureViewer::updateProcedureList(const vector<wxString>& vProcedures)
         if (flags.find("local") == string::npos)
             SetItemFont(i, GetFont().MakeBold());
     }
+
+    // Sort the items according the last selected
+    // sorting column or create an empty control,
+    // if no data is available in the control
+    if (GetItemCount())
+        SortItems(ProcedureViewerCompare, (wxIntPtr)this);
+    else
+        emptyControl();
 
     // Resize the columns
     if (vProcedures.size())
@@ -206,12 +242,8 @@ void ProcedureViewer::updateProcedureList(const vector<wxString>& vProcedures)
     {
         SetColumnWidth(0, wxLIST_AUTOSIZE_USEHEADER);
         SetColumnWidth(1, wxLIST_AUTOSIZE_USEHEADER);
-        SetColumnWidth(2, wxLIST_AUTOSIZE_USEHEADER);
+        SetColumnWidth(2, wxLIST_AUTOSIZE);
     }
-
-    // Sort the items according the last selected
-    // sorting column
-    SortItems(ProcedureViewerCompare, nSortColumn);
 }
 
 // This member function is the event handler for
@@ -221,7 +253,7 @@ void ProcedureViewer::OnColumnClick(wxListEvent& event)
 {
     nSortColumn = event.GetColumn();
 
-    SortItems(ProcedureViewerCompare, nSortColumn);
+    SortItems(ProcedureViewerCompare, (wxIntPtr)this);
 }
 
 // This member function is the event handler called
@@ -229,12 +261,10 @@ void ProcedureViewer::OnColumnClick(wxListEvent& event)
 // selected procedure in the editor
 void ProcedureViewer::OnItemClick(wxListEvent& event)
 {
-    ProcedureViewerData* data = reinterpret_cast<ProcedureViewerData*>(event.GetData());
-
-    if (!data)
+    if (!vData[event.GetData()].procedureDefinition.length())
         return;
 
-    wxString sProcDef = data->procedureDefinition.substr(0, data->procedureDefinition.find('('));
+    wxString sProcDef = vData[event.GetData()].procedureDefinition.substr(0, vData[event.GetData()].procedureDefinition.find('('));
 
     // We can use the "thisfile" namespace always. The
     // editor will find the correct procedure although

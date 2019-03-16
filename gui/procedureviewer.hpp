@@ -29,13 +29,15 @@ class ProcedureViewer : public wxListView
 {
     private:
         NumeReEditor* m_currentEd;
-        vector<ProcedureViewerData> vData;
         void getProcedureListFromEditor();
         void stripSpaces(wxString& sString);
-        int nSortColumn;
+        void emptyControl();
 
     public:
         ProcedureViewer(wxWindow* parent);
+
+        int nSortColumn;
+        vector<ProcedureViewerData> vData;
 
         void setCurrentEditor(NumeReEditor* editor);
         void OnColumnClick(wxListEvent& event);

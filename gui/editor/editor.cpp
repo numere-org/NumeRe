@@ -5401,7 +5401,8 @@ void NumeReEditor::registerProcedureViewer(ProcedureViewer* viewer)
 void NumeReEditor::FocusOnLine(int linenumber, bool showMarker)
 {
 	GotoLine(linenumber);
-	EnsureVisible(linenumber);
+    SetFirstVisibleLine(VisibleFromDocLine(linenumber) - m_options->GetDebuggerFocusLine());
+    EnsureVisible(linenumber);
 
 	// Unhide the lines, if the current line is part
 	// of a hidden sectioon

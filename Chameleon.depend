@@ -2087,7 +2087,7 @@
 	<wx/dir.h>
 	"debug.h"
 
-1552371797 d:\cpp\numere-source\trunk\common\options.h
+1552732282 d:\cpp\numere-source\trunk\common\options.h
 	<wx/wx.h>
 	<wx/validate.h>
 	<wx/valgen.h>
@@ -3709,7 +3709,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1552635443 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1552727843 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -9119,12 +9119,12 @@
 	"../kernel/core/datamanagement/table.hpp"
 	<wx/grid.h>
 
-1552633794 d:\cpp\numere-source\trunk\gui\procedureviewer.hpp
+1552729311 d:\cpp\numere-source\trunk\gui\procedureviewer.hpp
 	<wx/wx.h>
 	<vector>
 	"NumeReWindow.h"
 
-1552635801 source:d:\cpp\numere-source\trunk\gui\procedureviewer.cpp
+1552730603 source:d:\cpp\numere-source\trunk\gui\procedureviewer.cpp
 	"procedureviewer.hpp"
 	"../kernel/core/ui/language.hpp"
 	"editor/editor.h"
