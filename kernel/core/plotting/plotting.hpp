@@ -51,6 +51,10 @@ class Plot
         mglGraph* _graph;
 
     protected:
+        void determinePlottingDimensions(const string& sPlotCommand);
+        size_t createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser, Define& _functions, Settings& _option, string& sOutputName, bool& bAnimateVar, vector<string>& vPlotCompose, size_t nSubPlotStart, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap);
+        void applyPlotSizeAndQualitySettings(PlotData& _pData);
+        bool createPlotOrAnimation(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option, int& nStyle, size_t nPlotCompose, size_t nPlotComposeSize, size_t& nLegends, bool bNewSubPlot, bool bAnimateVar, vector<string>& vDrawVector, vector<short>& vType, int nFunctions, double dDataRanges[3][2], const string& sOutputName);
         void create2dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize);
         bool plot2d(PlotData& _pData, mglData& _mData, mglData& _mMaskData, mglData* _mAxisVals, mglData& _mContVec, const Settings& _option);
         void createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize);

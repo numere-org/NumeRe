@@ -61,8 +61,6 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
 	sFunc = "";                      // string mit allen Funktionen
 	sLabels = "";                    // string mit den Namen aller Funktionen (Fuer die Legende)
 	sDataLabels = "";                // string mit den Datenpunkt-Namen (Fuer die Legende)
-	string sDataPlots = "";                 // string mit allen Datenpunkt-Plot-Ausdruecken
-	vector<string> vPlotCompose;
 
 	_mDataPlots = nullptr;              // 2D-Pointer auf ein Array aus mglData-Objekten
 	mglData _mBackground;                   // mglData-Objekt fuer ein evtl. Hintergrundbild
@@ -83,28 +81,16 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
 	_pInfo.bDraw3D = false;
 	_pInfo.nMaxPlotDim = 1;
 	_pInfo.nStyleMax = 14;                  // Gesamtzahl der Styles
-	int nStyle = 0;                         // Nummer des aktuellen Plotstyles (automatische Variation des Styles)
-	_pInfo.nStyle = &nStyle;
-	double dDataRanges[3][2];               // Fuer die berechneten Daten-Intervalle (hoehere Prioritaet)
-	double dSecDataRanges[2][2] = {{NAN, NAN}, {NAN, NAN}};
-	string sAxisBinds = "";
-	string sDataAxisBinds = "";
 
 	bool bAnimateVar = false;
-	vector<string> vDrawVector;
-	vector<short> vType;
-	const short TYPE_FUNC = 1;
-	int nFunctions = 0;                     // Zahl der zu plottenden Funktionen
-	_pInfo.nFunctions = &nFunctions;
-	string sConvLegends = "";               // Variable fuer Legenden, die dem String-Parser zugewiesen werden
-	string sDummy = "";
-	unsigned int nLegends = 0;
+	string sOutputName = "";
+
+	vector<string> vPlotCompose;
 	unsigned int nMultiplots[2] = {0, 0};
-	bool bNewSubPlot = false;
+
 	unsigned int nSubPlots = 0;
 	unsigned int nSubPlotMap = 0;
-	string sOutputName = ""; // string fuer den Export-Dateinamen
-	value_type* vResults = nullptr;                   // Pointer auf ein Ergebnis-Array (fuer den muParser)
+
 
     // Pre-analyze the contents of the passed plotting command. If it
     // contains the "plotcompose" command at start (this will be added
@@ -153,27 +139,7 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
 			string __sCMD = findCommand(sCmd).sString;
 
 			// Identify the plotting dimensions
-			if ((__sCMD.substr(0, 4) == "mesh"
-					|| __sCMD.substr(0, 4) == "surf"
-					|| __sCMD.substr(0, 4) == "cont"
-					|| __sCMD.substr(0, 4) == "vect"
-					|| __sCMD.substr(0, 4) == "dens"
-					|| __sCMD.substr(0, 4) == "draw"
-					|| __sCMD.substr(0, 4) == "grad"
-					|| __sCMD.substr(0, 4) == "plot")
-					&& __sCMD.find("3d") != string::npos)
-			{
-				_pInfo.nMaxPlotDim = 3;
-			}
-			else if (__sCMD.substr(0, 4) == "mesh" || __sCMD.substr(0, 4) == "surf" || __sCMD.substr(0, 4) == "cont")
-			{
-				_pInfo.nMaxPlotDim = 3;
-			}
-			else if (__sCMD.substr(0, 4) == "vect" || __sCMD.substr(0, 4) == "dens" || __sCMD.substr(0, 4) == "grad")
-			{
-				if (_pInfo.nMaxPlotDim < 3)
-					_pInfo.nMaxPlotDim = 2;
-			}
+			determinePlottingDimensions(__sCMD);
 
 			// Split the command lines
 			vPlotCompose.push_back(sCmd.substr(0, sCmd.find("<<COMPOSE>>")));
@@ -215,27 +181,7 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
 		string __sCMD = findCommand(sCmd).sString;
 
 		// Identify the maximal plotting dimension
-		if ((__sCMD.substr(0, 4) == "mesh"
-				|| __sCMD.substr(0, 4) == "surf"
-				|| __sCMD.substr(0, 4) == "cont"
-				|| __sCMD.substr(0, 4) == "vect"
-				|| __sCMD.substr(0, 4) == "dens"
-				|| __sCMD.substr(0, 4) == "draw"
-				|| __sCMD.substr(0, 4) == "grad"
-				|| __sCMD.substr(0, 4) == "plot")
-				&& __sCMD.find("3d") != string::npos)
-		{
-			_pInfo.nMaxPlotDim = 3;
-		}
-		else if (__sCMD.substr(0, 4) == "mesh" || __sCMD.substr(0, 4) == "surf" || __sCMD.substr(0, 4) == "cont")
-		{
-			_pInfo.nMaxPlotDim = 3;
-		}
-		else if (__sCMD.substr(0, 4) == "vect" || __sCMD.substr(0, 4) == "dens" || __sCMD.substr(0, 4) == "grad")
-		{
-			if (_pInfo.nMaxPlotDim < 3)
-				_pInfo.nMaxPlotDim = 2;
-		}
+		determinePlottingDimensions(__sCMD);
 
 		// Use the current command as a single "plot composition"
 		vPlotCompose.push_back(sCmd);
@@ -252,10 +198,158 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
 	if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
 		NumeReKernel::printPreFmt("\r");
 
-    // Main loop of the plotting object. This will walk through all
-    // plotting commands of the plot composition (Reminder: a single
-    // plotting command is also interpreted as a plot composition).
-	for (unsigned int nPlotCompose = 0; nPlotCompose < vPlotCompose.size(); nPlotCompose++)
+    size_t nPlotStart = 0;
+
+    // Main loop of the plotting object. This will execute all plotting
+    // commands in the current comamnd set clustered into subplots event
+    // if only one plotting command is used
+    while (nPlotStart < vPlotCompose.size())
+    {
+		// If this is a multiplot layout then we need to evaluate the global options for every subplot,
+		// because we omitted this set further up. We enter this for each "subplot" command.
+		if (vPlotCompose.size() > 1
+				&& nMultiplots[0])
+		{
+		    // Reset the maximal plotting dimension
+		    _pInfo.nMaxPlotDim = 0;
+
+		    // Gather each plotting parameter until the next "subplot" command or until the end of the
+		    // whole block
+			for (unsigned int i = nPlotStart; i < vPlotCompose.size(); i++)
+			{
+				if (vPlotCompose[i].find("-set") != string::npos
+						&& !isInQuotes(vPlotCompose[i], vPlotCompose[i].find("-set"))
+						&& findCommand(vPlotCompose[i]).sString != "subplot")
+					_pInfo.sPlotParams += vPlotCompose[i].substr(vPlotCompose[i].find("-set"));
+				else if (vPlotCompose[i].find("--") != string::npos
+						 && !isInQuotes(vPlotCompose[i], vPlotCompose[i].find("--"))
+						 && findCommand(vPlotCompose[i]).sString != "subplot")
+					_pInfo.sPlotParams += vPlotCompose[i].substr(vPlotCompose[i].find("--"));
+
+                // Leave the loop, if the current command equals "subplot"
+				if (findCommand(vPlotCompose[i]).sString == "subplot")
+					break;
+
+                // Find the maximal plotting dimension of the current subplot
+                determinePlottingDimensions(findCommand(vPlotCompose[i]).sString);
+
+                // Append a whitespace for safety reasons
+                _pInfo.sPlotParams += " ";
+			}
+
+			// Apply the global parameters for this single subplot
+			if (_pInfo.sPlotParams.length())
+			{
+				evaluatePlotParamString(_parser, _data, _functions, _option);
+				_pData.setParams(_pInfo.sPlotParams, _parser, _option, PlotData::GLOBAL);
+				_pInfo.sPlotParams.clear();
+			}
+		}
+
+		// Create the actual subplot of this plot composition (if only
+        // one plotting command is used, the return value will be equal to
+        // the size of the plot composition vectore, which is 1)
+        nPlotStart = createSubPlotSet(_pData, _data, _parser, _functions, _option, sOutputName, bAnimateVar, vPlotCompose, nPlotStart, nMultiplots, nSubPlots, nSubPlotMap);
+
+        // Perform the reset between single subplots here
+        if (nPlotStart < vPlotCompose.size())
+        {
+            _graph->SetFunc("", "", "");
+            _graph->SetOrigin(NAN, NAN, NAN);
+            _graph->Alpha(false);
+            _graph->Light(false);
+        }
+    }
+
+	// Save the created plot to the desired file, if the user specifies a file
+	// name to write to.
+	if (_pData.getSilentMode() || !_pData.getOpenImage() || bOutputDesired)
+	{
+		// --> Speichern und Erfolgsmeldung <--
+		if (!_pData.getAnimateSamples() || !bAnimateVar)
+		{
+			if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
+				NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("PLOT_SAVING")) + " ... ");
+			_graph->WriteFrame(sOutputName.c_str());
+
+			// --> TeX-Ausgabe gewaehlt? Dann werden mehrere Dateien erzeugt, die an den Zielort verschoben werden muessen <--
+			if (sOutputName.substr(sOutputName.length() - 4, 4) == ".tex")
+			{
+				writeTeXMain(sOutputName);
+			}
+			if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
+				NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
+		}
+		if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
+		{
+			NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("PLOT_SAVE_LOCATION", sOutputName), _option, 0) + "\n");
+		}
+	}
+}
+
+
+Plot::~Plot()
+{
+	clearData();
+	if (_graph)
+		delete _graph;
+}
+
+// This member function determines the maximal plotting dimension
+// of the passed command
+void Plot::determinePlottingDimensions(const string& sPlotCommand)
+{
+    if ((sPlotCommand.substr(0, 4) == "mesh"
+            || sPlotCommand.substr(0, 4) == "surf"
+            || sPlotCommand.substr(0, 4) == "cont"
+            || sPlotCommand.substr(0, 4) == "vect"
+            || sPlotCommand.substr(0, 4) == "dens"
+            || sPlotCommand.substr(0, 4) == "draw"
+            || sPlotCommand.substr(0, 4) == "grad"
+            || sPlotCommand.substr(0, 4) == "plot")
+            && sPlotCommand.find("3d") != string::npos)
+    {
+        _pInfo.nMaxPlotDim = 3;
+    }
+    else if (sPlotCommand.substr(0, 4) == "mesh" || sPlotCommand.substr(0, 4) == "surf" || sPlotCommand.substr(0, 4) == "cont")
+    {
+        _pInfo.nMaxPlotDim = 3;
+    }
+    else if (sPlotCommand.substr(0, 4) == "vect" || sPlotCommand.substr(0, 4) == "dens" || sPlotCommand.substr(0, 4) == "grad")
+    {
+        if (_pInfo.nMaxPlotDim < 3)
+            _pInfo.nMaxPlotDim = 2;
+    }
+}
+
+// This member function handles the creation of a single subplot, which
+// may be part of a plot composition or a single plot
+size_t Plot::createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser, Define& _functions, Settings& _option, string& sOutputName, bool& bAnimateVar, vector<string>& vPlotCompose, size_t nSubPlotStart, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
+{
+    vector<short> vType;
+    vector<string> vDrawVector;
+    string sCmd;
+    string sDataPlots;
+    string sAxisBinds;
+    string sDataAxisBinds;
+    bool bNewSubPlot = nSubPlotStart != 0;
+    const short TYPE_FUNC = 1;
+
+	double dDataRanges[3][2];
+	double dSecDataRanges[2][2] = {{NAN, NAN}, {NAN, NAN}};
+
+	size_t nLegends = 0;
+
+    int nFunctions = 0;
+    _pInfo.nFunctions = &nFunctions;
+
+    int nStyle = 0;
+    _pInfo.nStyle = &nStyle;
+
+    // This loop will iterate through the plotting commands from
+    // the passed starting index until the end or until the command
+    // "subplot" has been found
+    for (unsigned int nPlotCompose = nSubPlotStart; nPlotCompose < vPlotCompose.size(); nPlotCompose++)
 	{
 		vType.clear();
 		sCmd = vPlotCompose[nPlotCompose];
@@ -265,17 +359,20 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
 		// run through this loop
 		if (nPlotCompose)
 		{
-			// --> Speicher wieder freigeben <--
+			// Clear allocated memory
 			if (_mDataPlots)
 			{
 				for (int i = 0; i < nDataPlots; i++)
 					delete[] _mDataPlots[i];
+
 				delete[] _mDataPlots;
+
 				_mDataPlots = 0;
 				nDataPlots = 0;
 				sDataPlots = "";
 				sDataLabels = "";
 			}
+
 			if (nDataDim)
 			{
 				delete[] nDataDim;
@@ -311,42 +408,6 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
 		else
 			sFunc = sCmd.substr(nOffset + _pInfo.sCommand.length());
 
-		// If this is a multiplot layout then we need to evaluate the global options for every subplot,
-		// because we omitted this set further up. We enter this for each "subplot" command.
-		if (vPlotCompose.size() > 1
-				&& nMultiplots[0]
-				&& (!nPlotCompose || _pInfo.sCommand == "subplot"))
-		{
-		    // Gather each plotting parameter until the next "subplot" command or until the end of the
-		    // whole block
-			for (unsigned int i = nPlotCompose + (_pInfo.sCommand == "subplot"); i < vPlotCompose.size(); i++)
-			{
-				if (vPlotCompose[i].find("-set") != string::npos
-						&& !isInQuotes(vPlotCompose[i], vPlotCompose[i].find("-set"))
-						&& findCommand(vPlotCompose[i]).sString != "subplot")
-					_pInfo.sPlotParams += vPlotCompose[i].substr(vPlotCompose[i].find("-set"));
-				else if (vPlotCompose[i].find("--") != string::npos
-						 && !isInQuotes(vPlotCompose[i], vPlotCompose[i].find("--"))
-						 && findCommand(vPlotCompose[i]).sString != "subplot")
-					_pInfo.sPlotParams += vPlotCompose[i].substr(vPlotCompose[i].find("--"));
-
-                // Leave the loop, if the current command equals "subplot"
-				if (findCommand(vPlotCompose[i]).sString == "subplot")
-					break;
-
-                // Append a whitespace for safety reasons
-                _pInfo.sPlotParams += " ";
-			}
-
-			// Apply the global parameters for this single subplot
-			if (_pInfo.sPlotParams.length())
-			{
-				evaluatePlotParamString(_parser, _data, _functions, _option);
-				_pData.setParams(_pInfo.sPlotParams, _parser, _option, PlotData::GLOBAL);
-				_pInfo.sPlotParams.clear();
-			}
-		}
-
 		// --> Unnoetige Leerstellen entfernen <--
 		StripSpaces(sFunc);
 
@@ -360,13 +421,16 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
 		else if (sCmd.find("--") != string::npos && !isInQuotes(sCmd, sCmd.find("--")) && _pInfo.sCommand != "subplot")
 			_pInfo.sPlotParams = sCmd.substr(sCmd.find("--"));
 
+        // If the current command has plotting parameters,
+        // evaluate them here. The contained strings are
+        // also parsed at this location
 		if (_pInfo.sPlotParams.length())
 		{
 			evaluatePlotParamString(_parser, _data, _functions, _option);
 
 			// Apply the parameters locally (for a plot composition) or globally, if
 			// this is a single plot command
-			if (vPlotCompose.size() > 1 /*&& !bNewSubPlot*/)
+			if (vPlotCompose.size() > 1)
 				_pData.setLocalComposeParams(_pInfo.sPlotParams, _parser, _option);
 			else
 			{
@@ -374,62 +438,19 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
 			}
 		}
 
+		if (!nPlotCompose)
+        {
+            // Apply the quality and image dimension settings to the overall result
+            // image. This affects also a whole multiplot and is therefore done before
+            // the first plot is rendered.
+            applyPlotSizeAndQualitySettings(_pData);
+        }
+
 		// Ensure that the current command line contains a "function-and-data" section
 		if (!sFunc.length() && vPlotCompose.size() > 1 && _pInfo.sCommand != "subplot")
 			continue;
 		else if (!sFunc.length() && _pInfo.sCommand != "subplot")
 			throw SyntaxError(SyntaxError::PLOT_ERROR, sCmd, SyntaxError::invalid_position);
-
-        // Apply the quality and image dimension settings to the overall result
-        // image. This affects also a whole multiplot and is therefore done before
-        // the first plot is rendered.
-		if (!nPlotCompose)
-		{
-			if (_pData.getSilentMode() || !_pData.getOpenImage())
-			{
-				if (_pData.getHighRes() == 2)           // Aufloesung und Qualitaet einstellen
-				{
-					double dHeight = sqrt(1920.0 * 1440.0 / _pData.getAspect());
-					_graph->SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));          // FullHD!
-				}
-				else if (_pData.getHighRes() == 1 || !_option.getbUseDraftMode())
-				{
-					double dHeight = sqrt(1280.0 * 960.0 / _pData.getAspect());
-					_graph->SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));           // ehem. die bessere Standard-Aufloesung
-					//_graph->SetQuality(5);
-				}
-				else
-				{
-					double dHeight = sqrt(800.0 * 600.0 / _pData.getAspect());
-					_graph->SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));
-					// --> Im Falle, dass wir meinen mesh/surf/anders gearteten 3D-Plot machen, drehen wir die Qualitaet runter <--
-					if (_pInfo.sCommand.substr(0, 4) != "plot")
-						_graph->SetQuality(MGL_DRAW_FAST);
-				}
-			}
-			else
-			{
-				if (_pData.getAnimateSamples() && !_pData.getFileName().length())
-				{
-					double dHeight = sqrt(640.0 * 480.0 / _pData.getAspect());
-					_graph->SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));
-				}
-				else if (_pData.getHighRes() == 2)
-				{
-					double dHeight = sqrt(1280.0 * 960.0 / _pData.getAspect());
-					_graph->SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));
-				}
-				else
-				{
-					double dHeight = sqrt(800.0 * 600.0 / _pData.getAspect());
-					_graph->SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));
-				}
-			}
-
-			// --> Noetige Einstellungen und Deklarationen fuer den passenden Plot-Stil <--
-			_graph->CopyFont(&_fontData);
-			_graph->SetFontSizeCM(0.24 * ((double)(1 + _pData.getTextSize()) / 6.0), 72);
-		}
 
 		setStyles(_pData);
 
@@ -478,16 +499,17 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
 		// command afterwards
 		if (findCommand(sCmd).sString == "subplot" && nMultiplots[0] && nMultiplots[1])
 		{
-			bNewSubPlot = true;
-			nStyle = 0;
-
+		    // This function closes the current graph (puts the legend)
+		    // and determines the position of the next subplot in the
+		    // plotting layout
 			evaluateSubplot(_pData, _parser, _data, _functions, _option, nLegends, sCmd, nMultiplots, nSubPlots, nSubPlotMap);
-
 			nSubPlots++;
-			continue;
+
+			// Return the position of the next plotting command
+			return nPlotCompose+1;
 		}
 		else if (findCommand(sCmd).sString == "subplot")
-			continue;
+			continue; // Ignore the "subplot" command, if we have no multiplot layout
 
         // Display the "Calculating data for SOME PLOT" message
 		displayMessage(_pData, _option);
@@ -495,13 +517,11 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
 		// Apply the logic and the transformation for logarithmic
 		// plotting axes
 		if (_pData.getCoords() == PlotData::CARTESIAN
-				&& (!nPlotCompose || bNewSubPlot)
+				&& (nPlotCompose == nSubPlotStart)
 				&& (_pData.getxLogscale() || _pData.getyLogscale() || _pData.getzLogscale() || _pData.getcLogscale()))
 		{
 			setLogScale(_pData, (_pInfo.b2D || _pInfo.sCommand == "plot3d"));
 		}
-		else if (bNewSubPlot)
-			_graph->SetFunc("", "", "");
 
         // Prepare the legend strings
 		if (!_pInfo.bDraw3D && !_pInfo.bDraw)
@@ -513,7 +533,7 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
 
 			// Add the legends to the function-and-data section
 			if (!addLegends(sFunc))
-				return; // --> Bei Fehlern: Zurueck zur aufrufenden Funktion <--
+				return vPlotCompose.size(); // --> Bei Fehlern: Zurueck zur aufrufenden Funktion <--
 		}
 
 		// Replace the custom defined functions with their definition
@@ -564,14 +584,11 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
 			try
 			{
 				_parser.SetExpr(sFunc);
-				_parser.Eval();
+				_parser.Eval(nFunctions);
 
 				// Search for the animation time variable "t"
 				if (parser_CheckVarOccurence(_parser, "t"))
 					bAnimateVar = true;
-
-                // Get the number of functions
-				nFunctions = _parser.GetNumResults();
 
 				// Check, whether the number of functions correspond to special
 				// plotting styles
@@ -654,223 +671,272 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
 		// on their number
 		prepareMemory(_pData, sFunc, nFunctions);
 
-		// If the animation is saved to a file, set the frame time
-		// for the GIF image
-		if (_pData.getAnimateSamples() && bOutputDesired)
-			_graph->StartGIF(sOutputName.c_str(), 40); // 40msec = 2sec bei 50 Frames, d.h. 25 Bilder je Sekunde
+		// Now create the plot or the animation using the provided and
+		// pre-calculated data. This function will also open and
+		// close the GIF, if the animation directly saved to a file
+        createPlotOrAnimation(_pData, _data, _parser, _option, nStyle, nPlotCompose, vPlotCompose.size(), nLegends, bNewSubPlot, bAnimateVar, vDrawVector, vType, nFunctions, dDataRanges, sOutputName);
 
-        // Prepare a label cache for the function and data labels,
-        // which will be modified during the plot
-		string sLabelsCache[2];
-		sLabelsCache[0] = sLabels;
-		sLabelsCache[1] = sDataLabels;
-
-		// Load the background image from the target file and apply the
-		// black/white color scheme
-		if (_pData.getBackground().length() && _pData.getBGColorScheme() != "<<REALISTIC>>")
-		{
-			if (_pData.getAnimateSamples() && _option.getSystemPrintStatus())
-				NumeReKernel::printPreFmt("|-> ");
-
-			if (_option.getSystemPrintStatus())
-				NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("PLOT_LOADING_BACKGROUND")) + " ... ");
-
-			_mBackground.Import(_pData.getBackground().c_str(), "kw");
-
-			if (_pData.getAnimateSamples() && _option.getSystemPrintStatus())
-				NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
-		}
-
-		// This is the start of the actual plotting algorithm. The previous
-		// lines were only preparations for this algorithm. We create either a
-		// single plot or a set of frames for an animation
-		for (int t_animate = 0; t_animate <= _pData.getAnimateSamples(); t_animate++)
-		{
-		    // If it is an animation, then we're required to reset the plotting
-		    // variables for each frame. Additionally, we have to start a new
-		    // frame at this location.
-			if (_pData.getAnimateSamples() && !_pData.getSilentMode() && _option.getSystemPrintStatus() && bAnimateVar)
-			{
-				NumeReKernel::printPreFmt("\r|-> " + toSystemCodePage(_lang.get("PLOT_RENDERING_FRAME", toString(t_animate + 1), toString(_pData.getAnimateSamples() + 1))) + " ... ");
-				nStyle = 0;
-
-				// Prepare a new frame
-				_graph->NewFrame();
-
-				// Reset the plotting variables (x, y and z) to their initial values
-				// and increment the time variable one step further
-				if (t_animate)
-				{
-					parser_iVars.vValue[XCOORD][0] = _pInfo.dRanges[XCOORD][0];
-					parser_iVars.vValue[YCOORD][0] = _pInfo.dRanges[YCOORD][0];
-					parser_iVars.vValue[ZCOORD][0] = _pInfo.dRanges[ZCOORD][0];
-					parser_iVars.vValue[TCOORD][0] += (_pData.gettBoundary(1) - _pData.gettBoundary()) / (double)_pData.getAnimateSamples();
-					sLabels = sLabelsCache[0];
-					sDataLabels = sLabelsCache[1];
-				}
-			}
-
-			double dt_max = parser_iVars.vValue[TCOORD][0];
-
-			// Apply the title line to the graph
-			if (_pData.getTitle().length())
-				_graph->Title(fromSystemCodePage(_pData.getTitle()).c_str(), "", -1.5);
-
-			// If the user requested an orthogonal projection, then
-			// we activate this plotting mode at this location
-			if (_pData.getOrthoProject()
-					&& (_pInfo.b3D
-						|| (_pInfo.b2D && _pInfo.sCommand.substr(0, 4) != "grad" && _pInfo.sCommand.substr(0, 4) != "dens")
-						|| _pInfo.b3DVect
-						|| _pInfo.sCommand == "plot3d")
-			   )
-			{
-				_graph->Ternary(4);
-				_graph->SetRotatedText(false);
-			}
-
-			// Rotate the graph to the desired plotting angles
-			if (_pInfo.nMaxPlotDim > 2 && (!nPlotCompose || bNewSubPlot))
-			{
-				_graph->Rotate(_pData.getRotateAngle(), _pData.getRotateAngle(1));
-			}
-
-			// Calculate the function values for the set plotting ranges
-			// and the eventually set time variable
-			nFunctions = fillData(_pData, _parser, sFunc, vResults, dt_max, t_animate, nFunctions);
-
-			// Normalize the plotting results, if the current plotting
-			// style is a vector field
-			if (_pInfo.b2DVect)
-				_pData.normalize(2, t_animate);
-			else if (_pInfo.b3DVect)
-				_pData.normalize(3, t_animate);
-
-            // Change the plotting ranges to fit to the calculated plot
-            // data (only, if the user did not specify those ranges, too).
-			fitPlotRanges(_pData, sFunc, dDataRanges, nPlotCompose, bNewSubPlot);
-
-			// Pass the final ranges to the graph. Only do this, if this is
-			// the first plot of a plot composition or a new subplot.
-			if (!nPlotCompose || bNewSubPlot)
-			{
-				passRangesToGraph(_pData, sFunc, dDataRanges);
-			}
-
-			// Apply a color bar, if desired and supplied by the plotting style
-			applyColorbar(_pData);
-
-			// Apply the light effect, if desired and supplied by the plotting stype
-			applyLighting(_pData);
-
-			// Activate the perspective effect
-			if ((!nPlotCompose || bNewSubPlot) && _pInfo.nMaxPlotDim > 2)
-				_graph->Perspective(_pData.getPerspective());
-
-			// Render the background image
-			if (_pData.getBackground().length())
-			{
-				if (_pData.getBGColorScheme() != "<<REALISTIC>>")
-				{
-					_graph->SetRanges(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[XCOORD][1], _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[YCOORD][1], _mBackground.Minimal(), _mBackground.Maximal());
-					_graph->Dens(_mBackground, _pData.getBGColorScheme().c_str());
-				}
-				else
-					_graph->Logo(_pData.getBackground().c_str());
-
-				_graph->Rasterize();
-				_graph->SetRanges(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[XCOORD][1], _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[YCOORD][1], _pInfo.dRanges[ZCOORD][0], _pInfo.dRanges[ZCOORD][1]);
-            }
-
-			// This section will transform the calculated data points into the desired
-			// plotting style. The most complex plots are the default plot, the "plot3d"
-			// and the 2D-Plots (mesh, surf, etc.)
-			if (_pInfo.b2D)        // 2D-Plot
-			{
-				create2dPlot(_pData, _data, _parser, _option,
-							 vType,
-							 nStyle, nLegends, nFunctions, nPlotCompose, vPlotCompose.size());
-			}
-			else if (_pInfo.sCommand != "plot3d" && !_pInfo.b3D && !_pInfo.b3DVect && !_pInfo.b2DVect && !_pInfo.bDraw3D && !_pInfo.bDraw)      // Standardplot
-			{
-				createStdPlot(_pData, _data, _parser, _option,
-							  vType,
-							  nStyle, nLegends, nFunctions, nPlotCompose, vPlotCompose.size());
-			}
-			else if (_pInfo.b3D)   // 3D-Plot
-			{
-				create3dPlot(_pData, _option);
-			}
-			else if (_pInfo.b3DVect)   // 3D-Vektorplot
-			{
-				create3dVect(_pData);
-			}
-			else if (_pInfo.b2DVect)   // 2D-Vektorplot
-			{
-				create2dVect(_pData);
-			}
-			else if (_pInfo.bDraw)
-			{
-				create2dDrawing(_parser, _data, _option, vDrawVector, vResults, nFunctions);
-			}
-			else if (_pInfo.bDraw3D)
-			{
-				create3dDrawing(_parser, _data, _option, vDrawVector, vResults, nFunctions);
-			}
-			else            // 3D-Trajektorie
-			{
-				createStd3dPlot(_pData, _data, _parser, _option,
-								vType,
-								nStyle, nLegends, nFunctions, nPlotCompose, vPlotCompose.size());
-			}
-
-			// Finalize the GIF frame
-			if (_pData.getAnimateSamples() && bAnimateVar)
-				_graph->EndFrame();
-			if (!bAnimateVar)
-				break;
-		}
-
-		// Finalize the GIF completely
-		if (_pData.getAnimateSamples() && bAnimateVar && bOutputDesired)
-			_graph->CloseGIF();
 		bNewSubPlot = false;
+
 		if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
 			NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
 	}
 
-	// Save the created plot to the desired file, if the user specifies a file
-	// name to write to.
-	if (_pData.getSilentMode() || !_pData.getOpenImage() || bOutputDesired)
-	{
-		// --> Speichern und Erfolgsmeldung <--
-		if (!_pData.getAnimateSamples() || !bAnimateVar)
-		{
-			if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
-				NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("PLOT_SAVING")) + " ... ");
-			_graph->WriteFrame(sOutputName.c_str());
+	// Return the lenght of the plotcompostion array, which
+	// will signal the calling function that we're finished
+	// with plotting and that the control can be returned to
+	// the kernel.
+    return vPlotCompose.size();
+}
 
-			// --> TeX-Ausgabe gewaehlt? Dann werden mehrere Dateien erzeugt, die an den Zielort verschoben werden muessen <--
-			if (sOutputName.substr(sOutputName.length() - 4, 4) == ".tex")
-			{
-				writeTeXMain(sOutputName);
-			}
-			if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
-				NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
-		}
-		if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
-		{
-			NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("PLOT_SAVE_LOCATION", sOutputName), _option, 0) + "\n");
-		}
-	}
+// This member function determines output size and quality on the
+// plotting target and the plotting parameters
+void Plot::applyPlotSizeAndQualitySettings(PlotData& _pData)
+{
+    // Apply the quality and image dimension settings to the overall result
+    // image. This affects also a whole multiplot and is therefore done before
+    // the first plot is rendered.
+    if (_pData.getSilentMode() || !_pData.getOpenImage())
+    {
+        // Switch between fullHD and the normal resolution
+        if (_pData.getHighRes() == 2)
+        {
+            double dHeight = sqrt(1920.0 * 1440.0 / _pData.getAspect());
+            _graph->SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));
+        }
+        else
+        {
+            double dHeight = sqrt(1280.0 * 960.0 / _pData.getAspect());
+            _graph->SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));
+        }
+    }
+    else
+    {
+        // This section is for printing to the GraphViewer window
+        // we use different resolutions here
+        if (_pData.getAnimateSamples() && !_pData.getFileName().length())
+        {
+            // Animation size (faster for rendering)
+            double dHeight = sqrt(640.0 * 480.0 / _pData.getAspect());
+            _graph->SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));
+        }
+        else if (_pData.getHighRes() == 2)
+        {
+            // Hires output
+            double dHeight = sqrt(1280.0 * 960.0 / _pData.getAspect());
+            _graph->SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));
+        }
+        else
+        {
+            // Standard output
+            double dHeight = sqrt(800.0 * 600.0 / _pData.getAspect());
+            _graph->SetSize((int)lrint(_pData.getAspect()*dHeight), (int)lrint(dHeight));
+        }
+    }
+
+    // Copy the font and select the font size
+    _graph->CopyFont(&_fontData);
+    _graph->SetFontSizeCM(0.24 * ((double)(1 + _pData.getTextSize()) / 6.0), 72);
+
 }
 
 
-Plot::~Plot()
+// This member function creates the plot or animation selected
+// by the plotting command. It will also create the samples for
+// the animation, which may be target either directly to a file
+// (aka GIF) or to the GraphViewer, which will finalize the
+// Rendering step.
+bool Plot::createPlotOrAnimation(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option, int& nStyle, size_t nPlotCompose, size_t nPlotComposeSize, size_t& nLegends, bool bNewSubPlot, bool bAnimateVar, vector<string>& vDrawVector, vector<short>& vType, int nFunctions, double dDataRanges[3][2], const string& sOutputName)
 {
-	clearData();
-	if (_graph)
-		delete _graph;
+    mglData _mBackground;
+    value_type* vResults = nullptr;
+
+    // If the animation is saved to a file, set the frame time
+    // for the GIF image
+    if (_pData.getAnimateSamples() && bOutputDesired)
+        _graph->StartGIF(sOutputName.c_str(), 40); // 40msec = 2sec bei 50 Frames, d.h. 25 Bilder je Sekunde
+
+    // Load the background image from the target file and apply the
+    // black/white color scheme
+    if (_pData.getBackground().length() && _pData.getBGColorScheme() != "<<REALISTIC>>")
+    {
+        if (_pData.getAnimateSamples() && _option.getSystemPrintStatus())
+            NumeReKernel::printPreFmt("|-> ");
+
+        if (_option.getSystemPrintStatus())
+            NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("PLOT_LOADING_BACKGROUND")) + " ... ");
+
+        _mBackground.Import(_pData.getBackground().c_str(), "kw");
+
+        if (_pData.getAnimateSamples() && _option.getSystemPrintStatus())
+            NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
+    }
+
+    // Prepare a label cache for the function and data labels,
+    // which will be modified during the plot
+    string sLabelsCache[2];
+    sLabelsCache[0] = sLabels;
+    sLabelsCache[1] = sDataLabels;
+
+    // This is the start of the actual plotting algorithm. The previous
+    // lines were only preparations for this algorithm. We create either a
+    // single plot or a set of frames for an animation
+    for (int t_animate = 0; t_animate <= _pData.getAnimateSamples(); t_animate++)
+    {
+        // If it is an animation, then we're required to reset the plotting
+        // variables for each frame. Additionally, we have to start a new
+        // frame at this location.
+        if (_pData.getAnimateSamples() && !_pData.getSilentMode() && _option.getSystemPrintStatus() && bAnimateVar)
+        {
+            NumeReKernel::printPreFmt("\r|-> " + toSystemCodePage(_lang.get("PLOT_RENDERING_FRAME", toString(t_animate + 1), toString(_pData.getAnimateSamples() + 1))) + " ... ");
+            nStyle = 0;
+
+            // Prepare a new frame
+            _graph->NewFrame();
+
+            // Reset the plotting variables (x, y and z) to their initial values
+            // and increment the time variable one step further
+            if (t_animate)
+            {
+                parser_iVars.vValue[XCOORD][0] = _pInfo.dRanges[XCOORD][0];
+                parser_iVars.vValue[YCOORD][0] = _pInfo.dRanges[YCOORD][0];
+                parser_iVars.vValue[ZCOORD][0] = _pInfo.dRanges[ZCOORD][0];
+                parser_iVars.vValue[TCOORD][0] += (_pData.gettBoundary(1) - _pData.gettBoundary()) / (double)_pData.getAnimateSamples();
+                sLabels = sLabelsCache[0];
+                sDataLabels = sLabelsCache[1];
+            }
+        }
+
+        double dt_max = parser_iVars.vValue[TCOORD][0];
+
+        // Apply the title line to the graph
+        if (_pData.getTitle().length())
+            _graph->Title(fromSystemCodePage(_pData.getTitle()).c_str(), "", -1.5);
+
+        // If the user requested an orthogonal projection, then
+        // we activate this plotting mode at this location
+        if (_pData.getOrthoProject()
+                && (_pInfo.b3D
+                    || (_pInfo.b2D && _pInfo.sCommand.substr(0, 4) != "grad" && _pInfo.sCommand.substr(0, 4) != "dens")
+                    || _pInfo.b3DVect
+                    || _pInfo.sCommand == "plot3d")
+           )
+        {
+            _graph->Ternary(4);
+            _graph->SetRotatedText(false);
+        }
+
+        // Rotate the graph to the desired plotting angles
+        if (_pInfo.nMaxPlotDim > 2 && (!nPlotCompose || bNewSubPlot))
+        {
+            _graph->Rotate(_pData.getRotateAngle(), _pData.getRotateAngle(1));
+        }
+
+        // Calculate the function values for the set plotting ranges
+        // and the eventually set time variable
+        nFunctions = fillData(_pData, _parser, sFunc, vResults, dt_max, t_animate, nFunctions);
+
+        // Normalize the plotting results, if the current plotting
+        // style is a vector field
+        if (_pInfo.b2DVect)
+            _pData.normalize(2, t_animate);
+        else if (_pInfo.b3DVect)
+            _pData.normalize(3, t_animate);
+
+        // Change the plotting ranges to fit to the calculated plot
+        // data (only, if the user did not specify those ranges, too).
+        fitPlotRanges(_pData, sFunc, dDataRanges, nPlotCompose, bNewSubPlot);
+
+        // Pass the final ranges to the graph. Only do this, if this is
+        // the first plot of a plot composition or a new subplot.
+        if (!nPlotCompose || bNewSubPlot)
+        {
+            passRangesToGraph(_pData, sFunc, dDataRanges);
+        }
+
+        // Apply a color bar, if desired and supplied by the plotting style
+        applyColorbar(_pData);
+
+        // Apply the light effect, if desired and supplied by the plotting stype
+        applyLighting(_pData);
+
+        // Activate the perspective effect
+        if ((!nPlotCompose || bNewSubPlot) && _pInfo.nMaxPlotDim > 2)
+            _graph->Perspective(_pData.getPerspective());
+
+        // Render the background image
+        if (_pData.getBackground().length())
+        {
+            if (_pData.getBGColorScheme() != "<<REALISTIC>>")
+            {
+                _graph->SetRanges(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[XCOORD][1], _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[YCOORD][1], _mBackground.Minimal(), _mBackground.Maximal());
+                _graph->Dens(_mBackground, _pData.getBGColorScheme().c_str());
+            }
+            else
+                _graph->Logo(_pData.getBackground().c_str());
+
+            _graph->Rasterize();
+            _graph->SetRanges(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[XCOORD][1], _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[YCOORD][1], _pInfo.dRanges[ZCOORD][0], _pInfo.dRanges[ZCOORD][1]);
+        }
+
+        // This section will transform the calculated data points into the desired
+        // plotting style. The most complex plots are the default plot, the "plot3d"
+        // and the 2D-Plots (mesh, surf, etc.)
+        if (_pInfo.b2D)        // 2D-Plot
+        {
+            create2dPlot(_pData, _data, _parser, _option,
+                         vType,
+                         nStyle, nLegends, nFunctions, nPlotCompose, nPlotComposeSize);
+        }
+        else if (_pInfo.sCommand != "plot3d" && !_pInfo.b3D && !_pInfo.b3DVect && !_pInfo.b2DVect && !_pInfo.bDraw3D && !_pInfo.bDraw)      // Standardplot
+        {
+            createStdPlot(_pData, _data, _parser, _option,
+                          vType,
+                          nStyle, nLegends, nFunctions, nPlotCompose, nPlotComposeSize);
+        }
+        else if (_pInfo.b3D)   // 3D-Plot
+        {
+            create3dPlot(_pData, _option);
+        }
+        else if (_pInfo.b3DVect)   // 3D-Vektorplot
+        {
+            create3dVect(_pData);
+        }
+        else if (_pInfo.b2DVect)   // 2D-Vektorplot
+        {
+            create2dVect(_pData);
+        }
+        else if (_pInfo.bDraw)
+        {
+            create2dDrawing(_parser, _data, _option, vDrawVector, vResults, nFunctions);
+        }
+        else if (_pInfo.bDraw3D)
+        {
+            create3dDrawing(_parser, _data, _option, vDrawVector, vResults, nFunctions);
+        }
+        else            // 3D-Trajektorie
+        {
+            createStd3dPlot(_pData, _data, _parser, _option,
+                            vType,
+                            nStyle, nLegends, nFunctions, nPlotCompose, nPlotComposeSize);
+        }
+
+        // Finalize the GIF frame
+        if (_pData.getAnimateSamples() && bAnimateVar)
+            _graph->EndFrame();
+
+        // If no animation was selected or the
+        // animation variable ("t") is missing,
+        // leave the loop at this position
+        if (!bAnimateVar)
+            break;
+    }
+
+    // Finalize the GIF completely
+    if (_pData.getAnimateSamples() && bAnimateVar && bOutputDesired)
+        _graph->CloseGIF();
+
+    return true;
 }
 
 
@@ -4793,32 +4859,53 @@ void Plot::prepareMemory(PlotData& _pData, const string& sFunc, int nFunctions)
 	}
 }
 
-
+// This member function separates the legend
+// strings from the actual functions
 void Plot::separateLegends()
 {
+    // Do only something, if the function has
+    // a length and we're not in drawing mode
 	if (sFunc.length() && !_pInfo.bDraw3D && !_pInfo.bDraw)
 	{
 		unsigned int n_pos = 0;
 		unsigned int n_pos_2 = 0;
+
+		// As long as quotation marks are part
+		// of the function
 		do
 		{
+		    // Find the first of quotation mark
+		    // or variable to string parser
 			if (sFunc.find('#') != string::npos && sFunc.find('#') < sFunc.find('"'))
 				n_pos = sFunc.find('#');
 			else
 				n_pos = sFunc.find('"');
+
+            // Find the next comma
 			n_pos_2 = sFunc.find(',', n_pos);
+
 			if (n_pos_2 == string::npos)
 				n_pos_2 = sFunc.length();
+
+            // Find the next comma, which is not part
+            // of the string
 			while (sFunc.find(',', n_pos_2 + 1) != string::npos && isInQuotes(sFunc, n_pos_2))
 			{
 				n_pos_2 = sFunc.find(',', n_pos_2 + 1);
 			}
+
+			// Use the remaining string, if the next comma
+			// does not exist
 			if (n_pos_2 == string::npos || isInQuotes(sFunc, n_pos_2))
 				n_pos_2 = sFunc.length();
+
+            // Separate labels and function
 			sLabels += sFunc.substr(n_pos, n_pos_2 - n_pos) + ";";
 			sFunc = sFunc.substr(0, n_pos) + (n_pos_2 < sFunc.length() ? sFunc.substr(n_pos_2) : "");
 		}
 		while (sFunc.find('"') != string::npos || sFunc.find('#') != string::npos);
+
+		// Remove obsolete whitespaces
 		StripSpaces(sLabels);
 	}
 }
@@ -6876,7 +6963,7 @@ void Plot::CoordSettings(const PlotData& _pData)
 					 && _pInfo.nMaxPlotDim <= 2 //(sCommand.find("3d") == string::npos && !(_pInfo.b2D && sCommand != "dens"))
 					)
 			{
-				_graph->SetOrigin(0.0, 0.0);
+				_graph->SetOrigin(0.0, 0.0, 0.0);
 				if (!_pData.getSchematic())
 					_graph->Axis("AKDTVISO");
 				else
@@ -7073,7 +7160,7 @@ void Plot::CoordSettings(const PlotData& _pData)
 				 && _pInfo.nMaxPlotDim <= 2 //(sCommand.find("3d") == string::npos && !(_pInfo.b2D && sCommand != "dens"))
 				)
 		{
-			_graph->SetOrigin(0.0, 0.0);
+			_graph->SetOrigin(0.0, 0.0, 0.0);
 			if (!_pData.getSchematic())
 				_graph->Axis("AKDTVISO");
 			else

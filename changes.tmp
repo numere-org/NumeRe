@@ -42,3 +42,4 @@ New	The new command "warn" can be used to warn users using the warning colour of
 Fixed	Re-enabled the menu help strings in the main window's toolbar.
 Added	The rename symbols dialog now features a changes log for the current file, which will display the tasks done by this dialog. It won't be updated using the undo and redo commands.
 Fixed	Vector plots like the one in the "vect3d" description are now work as expected.
+Fixed	Complex plot compositions are now possible and work as expected.
