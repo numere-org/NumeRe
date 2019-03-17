@@ -2534,136 +2534,35 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
 	vector<string> vScalars(1, "");
 
 	string sTemp = sLine;
-	string sInterVector = "";
-	string sExprParts[3] = {"", "", ""};
 	string sDelim = "+-*/^&|!%";
 	int nDim = 0;
 	int nDim_vec = 0;
 	unsigned int nPos = 0;
-	unsigned int nPos_2 = 0;
 	size_t nQuotes = 0;
 	bool bIsStringExpression = containsStrings(sLine);
 
-	// Handle multi-eexpression expressions first
-	for (nPos_2 = 0; nPos_2 < sTemp.length(); nPos_2++)
-	{
-		// Count the quotation marks to ensure that
-		// we're only focussing on actual operators
-		if (sTemp[nPos_2] == '"')
-		{
-			if (!nPos_2 || (nPos_2 && sTemp[nPos_2 - 1] != '\\'))
-				nQuotes++;
-		}
+	// Handle multi-expression expressions first
+	if (isMultiValue(sLine))
+    {
+        string sBuffer;
 
-		// If we're in quotation marks, then continue
-		if ((nQuotes % 2) || sTemp[nPos_2] != '{')
-			continue;
-		if (isToStringArg(sTemp, nPos_2))
-			continue;
+        // Use the getNextArgument function to
+        // obtain the next single expression part
+        // of the current string
+        while (sLine.length())
+        {
+            sTemp = getNextArgument(sLine, true);
 
-		// Examine the substring: is it a multi-expression expression
-		// (i.e.) does it contain usual commas, which are not part of a
-		// function?
-		if (isMultiValue(sTemp.substr(nPos, nPos_2 - nPos), true))
-		{
-			sInterVector = sTemp.substr(nPos, nPos_2 - nPos);
-			int nParenthesis = 0;
+            // Evaluate the single expression part using a recursion
+            parser_VectorToExpr(sTemp, _option);
 
-			// Evaluate the single expressions separately
-			for (unsigned int i = 0; i < sInterVector.length(); i++)
-			{
-				if (sInterVector[i] == '(')
-					nParenthesis++;
-				if (sInterVector[i] == ')')
-					nParenthesis--;
-
-				// This is a comma, which indicates the end of a single
-				// expression in the multi-expression expression
-				if (sInterVector[i] == ',' && nParenthesis <= 0)
-				{
-					// Copy the single expression and the remaining expressions
-					if (!nParenthesis)
-					{
-						sExprParts[0] = sInterVector.substr(0, i);
-						sExprParts[2] = sInterVector.substr(i + 1);
-						break;
-					}
-					else
-					{
-						// Search for the corresponding opening parenthesis
-						for (int j = sTemp.rfind("{", nPos); j >= 0; j--)
-						{
-							if (sTemp[j] == '(')
-								nParenthesis++;
-							else if (sTemp[j] == ')')
-								nParenthesis--;
-							if (!nParenthesis)
-								break;
-						}
-
-						// If the searched parentheses was found, copy the strings
-						if (!nParenthesis)
-						{
-							sExprParts[0] = sInterVector.substr(0, i);
-							sExprParts[2] = sInterVector.substr(i + 1);
-							break;
-						}
-						else
-						{
-							// Otherwise throw an exception
-							sLine = "";
-							throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, SyntaxError::invalid_position);
-						}
-					}
-				}
-			}
-			if (_option.getbDebug())
-				cerr << "|-> DEBUG: sExprParts[0] = " << sExprParts[0] << "; sExprParts[2] = " << sExprParts[2] << endl;
-
-			// If the remaining part of the expression is also
-			// a multi-expression, split it here
-			while (isMultiValue(sExprParts[2]))
-			{
-				parser_SplitArgs(sExprParts[2], sExprParts[1], ',', _option, true);
-				sExprParts[2] = sExprParts[1];
-			}
-
-			// Use the extracted expression parts as lengths to
-			// finally extract the correct expression parts
-			//
-			// First the actual vector
-			sExprParts[1] = sInterVector.substr(sExprParts[0].length(), sInterVector.length() - sExprParts[0].length() - sExprParts[2].length());
-
-			// The expression parts before and after the vector
-			sExprParts[0] = sTemp.substr(0, nPos) + sExprParts[0];
-			sExprParts[2] = sExprParts[2] + sTemp.substr(nPos_2);
-
-			// If the expression parts contain vectors by
-			// themselves, evaluate them recursively
-			if (sExprParts[0].find("{") != string::npos)
-				parser_VectorToExpr(sExprParts[0], _option);
-			if (sExprParts[2].find("{") != string::npos)
-				parser_VectorToExpr(sExprParts[2], _option);
-
-            // Combine the line and return
-			sLine = sExprParts[0] + sExprParts[1] + sExprParts[2];
-			return;
-		}
-
-		// This is not a multi-expression
-		// set the positions and continue
-		nPos = sTemp.find("}", nPos);
-		if (nPos == string::npos)
-			break;
-		if (sTemp[nPos + 1] == '}')
-			nPos += 2;
-		else
-			nPos++;
-	}
+            sBuffer += sTemp + ",";
+        }
+        sLine = sBuffer.substr(0, sBuffer.length()-1);
+    }
 
 	// Reset the positions
 	nPos = 0;
-	nPos_2 = 0;
 	nQuotes = 0;
 
 	// Separate the expression in scalars and vectors
@@ -2680,8 +2579,10 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
 		// If we're in quotation marks, then continue
 		if (sTemp[nPos] != '{' || (nQuotes % 2))
 			continue;
+
 		if (isToStringArg(sTemp, nPos))
 			continue;
+
 		nDim_vec = 0;
 
 		// Ensure that there's a matching parenthesis
@@ -2700,6 +2601,7 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
 		if (vVectors.back()[0] == '{')
 		{
 			vVectors.back().erase(0, 1);
+
 			if (vVectors.back().back() == '}')
 				vVectors.back().pop_back();
 		}
@@ -2720,6 +2622,7 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
 		if (vVectors.back().length())
 		{
 			string sTempCopy = vVectors.back();
+
 			while (sTempCopy.length())
 			{
 			    // Get-cut the next argument
@@ -2805,6 +2708,7 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
 			// Append the last scalar and a comma, if it is needed
 			if (vScalars.size() > vVectors.size())
 				sLine += vScalars[vScalars.size()-2];
+
 			if (i < nDim - 1)
 				sLine += ",";
 		}

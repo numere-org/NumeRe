@@ -4051,7 +4051,7 @@
 	"odesolver.hpp"
 	"../../kernel.hpp"
 
-1552228023 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
+1552810817 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	"spline.h"
@@ -4170,12 +4170,12 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1552229256 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1552841721 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
 
-1534743295 d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.hpp
+1552830957 d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.hpp
 	<mgl2/mgl.h>
 	<string>
 	<vector>
@@ -8924,7 +8924,7 @@
 	"stringmemory.hpp"
 	"../utils/tools.hpp"
 
-1552734095 source:d:\cpp\numere-source\trunk\gui\dialogs\grouppanel.cpp
+1552736475 source:d:\cpp\numere-source\trunk\gui\dialogs\grouppanel.cpp
 	"grouppanel.hpp"
 	"../../kernel/core/ui/language.hpp"
 
@@ -8933,7 +8933,7 @@
 	<wx/spinctrl.h>
 	<wx/listctrl.h>
 
-1552736093 source:d:\cpp\numere-source\trunk\gui\dialogs\renamesymbolsdialog.cpp
+1552741562 source:d:\cpp\numere-source\trunk\gui\dialogs\renamesymbolsdialog.cpp
 	"renamesymbolsdialog.hpp"
 	"grouppanel.hpp"
 	"../../kernel/core/ui/language.hpp"
