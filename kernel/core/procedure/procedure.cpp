@@ -45,6 +45,8 @@ Procedure::Procedure(const Procedure& _procedure) : FlowCtrl(), Plugin(_procedur
 	sCallingNameSpace = _procedure.sCallingNameSpace;
 	sProcNames = _procedure.sProcNames;
 
+	_localDef.setPredefinedFuncs(_procedure._localDef.getPredefinedFuncs());
+
 	for (unsigned int i = 0; i < 6; i++)
 	{
 		sTokens[i][0] = _procedure.sTokens[i][0];
@@ -260,7 +262,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     {
         if (!getLoop() && sCurrentCommand != "for" && sCurrentCommand != "if" && sCurrentCommand != "while" && sCurrentCommand != "switch")
         {
-            if (!_functions.call(sLine, _option))
+            if (!_functions.call(sLine))
                 throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
 
             // Reduce surrounding white spaces
@@ -786,6 +788,21 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
 				}
 			}
 		}
+
+		// Handle the defining process and the calling
+		// of local functions
+		if (sCurrentCommand == "lclfunc")
+        {
+            // This is a definition
+            _localDef.defineFunc(sProcCommandLine.substr(sProcCommandLine.find("lclfunc")+7));
+            sProcCommandLine.clear();
+            continue;
+        }
+        else
+        {
+            // This is probably a call to a local function
+            _localDef.call(sProcCommandLine);
+        }
 
 		// Handle breakpoints
 		if (_option.getUseDebugger()
@@ -1752,6 +1769,7 @@ void Procedure::resetProcedure(Parser& _parser, bool bSupressAnswer)
 	mVarMap.clear();
 	NumeReKernel::bSupressAnswer = bSupressAnswer;
 	_parser.mVarMapPntr = 0;
+	_localDef.reset();
 
 	// Remove the last procedure in the current stack
 	if (sProcNames.length())
@@ -1942,6 +1960,7 @@ void Procedure::readFromInclude(ifstream& fInclude, int nIncludeType, Parser& _p
                 && findCommand(sProcCommandLine).sString != "ifndefined"
                 && findCommand(sProcCommandLine).sString != "redefine"
                 && findCommand(sProcCommandLine).sString != "redef"
+                && findCommand(sProcCommandLine).sString != "lclfunc"
                 && findCommand(sProcCommandLine).sString != "global"
                 && !bAppendNextLine)
         {
@@ -1959,6 +1978,7 @@ void Procedure::readFromInclude(ifstream& fInclude, int nIncludeType, Parser& _p
                 && findCommand(sProcCommandLine).sString != "ifndefined"
                 && findCommand(sProcCommandLine).sString != "redefine"
                 && findCommand(sProcCommandLine).sString != "redef"
+                && findCommand(sProcCommandLine).sString != "lclfunc"
                 && !bAppendNextLine)
         {
             if (sProcCommandLine.length() > 2 && sProcCommandLine.substr(sProcCommandLine.length() - 2) == "\\\\")

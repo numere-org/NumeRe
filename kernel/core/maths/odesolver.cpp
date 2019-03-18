@@ -170,7 +170,7 @@ bool Odesolver::solve(const string& sCmd)
     //cerr << 2 << endl;
     if (!sFunc.length())
         throw SyntaxError(SyntaxError::NO_EXPRESSION_FOR_ODE, sCmd, SyntaxError::invalid_position);
-    if (!_odeFunctions->call(sFunc, *_odeSettings))
+    if (!_odeFunctions->call(sFunc))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sFunc, sFunc);
     if (sFunc.find("data(") != string::npos || _odeData->containsCacheElements(sFunc))
         getDataElements(sFunc, *_odeParser, *_odeData, *_odeSettings);
@@ -202,7 +202,7 @@ bool Odesolver::solve(const string& sCmd)
         _idx.nJ[1] = _idx.nJ[0]+1;
     sTarget.erase(sTarget.find('('));
 
-    if (!_odeFunctions->call(sParams, *_odeSettings))
+    if (!_odeFunctions->call(sParams))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sParams, sParams);
     if (sParams.find("data(") != string::npos || _odeData->containsCacheElements(sParams))
         getDataElements(sParams, *_odeParser, *_odeData, *_odeSettings);

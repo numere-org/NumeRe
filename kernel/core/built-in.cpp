@@ -34,6 +34,7 @@ static string BI_getVarList(const string& sCmd, Parser& _parser, Datafile& _data
 static bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
 static int swapCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions);
 static int renameCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions);
+static bool undefineFunctions(string sFunctionList, Define& _functions, const Settings& _option);
 
 
 
@@ -956,12 +957,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		nPos = findCommand(sCmd).nPos;
 		if (sCmd.length() > 7)
 		{
-			if (!_functions.undefineFunc(sCmd.substr(sCmd.find(' ', nPos) + 1)))
-				NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_UNDEF_FAIL"), _option) );
-			//NumeReKernel::print(LineBreak("|-> Diese Funktion existiert nicht, oder sie wurde nicht korrekt bezeichnet. Siehe \"help -define\" für weitere Informationen.", _option) );
-			else if (_option.getSystemPrintStatus())
-				NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_UNDEF_SUCCESS"), _option) );
-			//NumeReKernel::print(LineBreak("|-> Die Funktion wurde erfolgreich aus dem Funktionsspeicher entfernt.", _option) );
+			undefineFunctions(sCmd.substr(sCmd.find(' ', nPos) + 1), _functions, _option);
 		}
 		else
 			doc_Help("define", _option);
@@ -2177,7 +2173,12 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				sArgument = sCmd.substr(sCmd.find(' '));
 				StripSpaces(sArgument);
 				if (!_functions.isDefined(sArgument.substr(0, sArgument.find(":="))))
-					_functions.defineFunc(sArgument, _parser, _option);
+                {
+					if (_functions.defineFunc(sArgument))
+                        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"));
+                    else
+                        NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
+                }
 			}
 			else
 				doc_Help("ifndef", _option);
@@ -3791,11 +3792,14 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			{
 				if (_data.containsStringVars(sCmd))
 					_data.getStringValues(sCmd);
+
 				if (matchParams(sCmd, "comment", '='))
 					addArgumentQuotes(sCmd, "comment");
-				if (!_functions.defineFunc(sCmd.substr(sCmd.find(' ') + 1), _parser, _option, true))
-					NumeReKernel::print(LineBreak(  _lang.get("BUILTIN_CHECKKEYWORD_HELP_DEF"), _option) );
-				//NumeReKernel::print(LineBreak("|-> Siehe \"help -redefine\" für weitere Informationen.", _option) );
+
+				if (_functions.defineFunc(sCmd.substr(sCmd.find(' ') + 1), true))
+					NumeReKernel::print(_lang.get("DEFINE_SUCCESS"));
+                else
+                    NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
 			}
 			else
 				doc_Help("define", _option);
@@ -4124,13 +4128,14 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						_functions.load(_option);
 					else
 						NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_DEF_EMPTY")) );
-					//NumeReKernel::print("|-> Es wurden keine Funktionen gespeichert." );
 					return 1;
 				}
-				else if (!_functions.defineFunc(sCmd.substr(7), _parser, _option))
+				else
 				{
-					NumeReKernel::print(LineBreak(  _lang.get("BUILTIN_CHECKKEYWORD_HELP_DEF"), _option) );
-					//NumeReKernel::print(LineBreak("|-> Siehe \"help -define\" für weitere Informationen.", _option) );
+				    if (_functions.defineFunc(sCmd.substr(7)))
+                        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"));
+                    else
+                        NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
 				}
 			}
 			else
@@ -4314,6 +4319,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			}
 			else if (matchParams(sCmd, "settings"))
 			{
+			    // DEPRECATED: Declared at v1.1.2rc1
+                NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
 				BI_ListOptions(_option);
 				return 1;
 			}
@@ -5143,8 +5150,31 @@ static int renameCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings
     return 1;
 }
 
+// This static function handles the undefinition process of
+// custom defined functions
+static bool undefineFunctions(string sFunctionList, Define& _functions, const Settings& _option)
+{
+    string sSuccessFulRemoved;
 
+    // As long as the list of passed functions has a length,
+    // undefine the current first argument of the list
+    while (sFunctionList.length())
+    {
+        string sFunction = getNextArgument(sFunctionList, true);
 
+        // Try to undefine the functions
+        if (!_functions.undefineFunc(sFunction))
+            NumeReKernel::issueWarning(_lang.get("BUILTIN_CHECKKEYWORD_UNDEF_FAIL", sFunction));
+        else
+            sSuccessFulRemoved += sFunction + ", ";
+    }
+
+    // Inform the user that (some) of the functions were undefined
+    if (_option.getSystemPrintStatus() && sSuccessFulRemoved.length())
+        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_UNDEF_SUCCESS", sSuccessFulRemoved.substr(0, sSuccessFulRemoved.length()-2)));
+
+    return true;
+}
 
 
 
@@ -5560,7 +5590,7 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
 			nLength = sTemp.length();
 
 			// Call functions
-			if (!_functions.call(sTemp, _option))
+			if (!_functions.call(sTemp))
 				return "";
 
             // Get data elements

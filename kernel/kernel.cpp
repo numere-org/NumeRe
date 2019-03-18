@@ -133,6 +133,8 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 	// Set the functions provided by the syntax object in the parent class
 	_functions.setPredefinedFuncs(sPredefinedFunctions);
 	_data.setPredefinedFuncs(_functions.getPredefinedFuncs());
+	_script.setPredefinedFuncs(sPredefinedFunctions);
+	_procedure.setPredefinedFuncs(sPredefinedFunctions);
 
 	// Get the version of the operating system
 	OSVERSIONINFOA _osversioninfo;
@@ -725,7 +727,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 			// Evaluate function calls (only outside the flow control blocks)
 			if (!_procedure.getLoop() && sCurrentCommand != "for" && sCurrentCommand != "if" && sCurrentCommand != "while" && sCurrentCommand != "switch")
 			{
-				if (!_functions.call(sLine, _option))
+				if (!_functions.call(sLine))
 					throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
 			}
 
@@ -2005,7 +2007,7 @@ string NumeReKernel::maskProcedureSigns(string sLine)
 // This is the virtual cout function. The port from the kernel of course needs some tweaking
 void NumeReKernel::print(const string& __sLine)
 {
-	if (!m_parent)
+	if (!m_parent || !getInstance()->getSettings().getSystemPrintStatus())
 		return;
 	else
 	{
@@ -2024,11 +2026,13 @@ void NumeReKernel::print(const string& __sLine)
 		}
 		wxCriticalSectionLocker lock(m_parent->m_kernelCS);
 		m_parent->m_sAnswer += "|-> " + sLine + "\n";
-		if (m_parent->m_KernelStatus < NumeReKernel::NUMERE_STATUSBAR_UPDATE || m_parent->m_KernelStatus == NumeReKernel::NUMERE_ANSWER_READ)//m_parent->m_KernelStatus != NumeReKernel::NUMERE_PRINTLINE && m_parent->m_KernelStatus != NumeReKernel::NUMERE_CALC_UPDATE)
+		if (m_parent->m_KernelStatus < NumeReKernel::NUMERE_STATUSBAR_UPDATE || m_parent->m_KernelStatus == NumeReKernel::NUMERE_ANSWER_READ)
 			m_parent->m_KernelStatus = NumeReKernel::NUMERE_PRINTLINE;
 	}
+
 	if (bWritingTable)
 		return;
+
 	wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
 	Sleep(KERNEL_PRINT_SLEEP);
 }
@@ -2036,7 +2040,7 @@ void NumeReKernel::print(const string& __sLine)
 // This is the virtual cout function. The port from the kernel of course needs some tweaking
 void NumeReKernel::printPreFmt(const string& __sLine)
 {
-	if (!m_parent)
+	if (!m_parent || !getInstance()->getSettings().getSystemPrintStatus())
 		return;
 	else
 	{

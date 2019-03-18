@@ -32,13 +32,8 @@
 #include "../filesystem.hpp"
 #include "../settings.hpp"
 #include "../utils/tools.hpp"
-#include "../ParserLib/muParser.h"
+
 using namespace std;
-using namespace mu;
-
-// --> Prototypen von ein paar Funktionen, die nicht ueber einen Header eingebunden werden koennen <--
-int parser_SplitArgs(string& sToSplit, string& sSecArg, const char& cSep, const Settings& _option, bool bIgnoreSurroundingParenthesis);
-
 
 class Define : public FileSystem
 {
@@ -60,13 +55,13 @@ class Define : public FileSystem
         bool isDefined(const string& sFunc);
 
         // --> Zentrale Methode: Definiert eine eigene Funktion <--
-        bool defineFunc(const string& sExpr, Parser& _parser, const Settings& _option, bool bRedefine = false, bool bFallback = false);
+        bool defineFunc(const string& sExpr, bool bRedefine = false, bool bFallback = false);
 
         // --> Entfernt eine definierte Funktion aus dem Funktionenspeicher <--
         bool undefineFunc(const string& sFunc);
 
         // --> Ruft zuvor definierte Funktionen auf <--
-        bool call(string& sExpr, const Settings& _option, int nRecursion = 0);
+        bool call(string& sExpr, int nRecursion = 0);
 
         // --> Gibt die Zahl der definierten Funktionen zurueck <--
         unsigned int getDefinedFunctions() const;
@@ -76,6 +71,8 @@ class Define : public FileSystem
         string getFunction(unsigned int _i) const;
         string getImplemention(unsigned int _i) const;
         string getComment(unsigned int _i) const;
+
+        bool reset();
 
         // --> Speichern der Funktionsdefinitionen <--
         bool save(const Settings& _option);

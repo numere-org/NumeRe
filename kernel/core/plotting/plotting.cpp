@@ -537,7 +537,7 @@ size_t Plot::createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser
 		}
 
 		// Replace the custom defined functions with their definition
-		if (!_functions.call(sFunc, _option))
+		if (!_functions.call(sFunc))
 			throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
 
 		// Call the input prompt, if one of the function definition requires this
@@ -2991,7 +2991,7 @@ void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _fu
 	{
 		_pInfo.sPlotParams = parser_Prompt(_pInfo.sPlotParams);
 	}
-	if (!_functions.call(_pInfo.sPlotParams, _option))
+	if (!_functions.call(_pInfo.sPlotParams))
 		throw SyntaxError(SyntaxError::FUNCTION_ERROR, _pInfo.sPlotParams, SyntaxError::invalid_position);
 	if ((containsStrings(_pInfo.sPlotParams) || _data.containsStringVars(_pInfo.sPlotParams))
 			&& _pInfo.sPlotParams.find('=') != string::npos)
@@ -3246,7 +3246,7 @@ void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, D
 		}
 		if (sSubPlotIDX.length())
 		{
-			if (!_functions.call(sSubPlotIDX, _option))
+			if (!_functions.call(sSubPlotIDX))
 				throw SyntaxError(SyntaxError::FUNCTION_ERROR, sSubPlotIDX, SyntaxError::invalid_position);
 			if (_data.containsCacheElements(sSubPlotIDX) || sSubPlotIDX.find("data(") != string::npos)
 			{
@@ -3301,7 +3301,7 @@ void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, D
 	{
 		if (sSubPlotIDX.length())
 		{
-			if (!_functions.call(sSubPlotIDX, _option))
+			if (!_functions.call(sSubPlotIDX))
 				throw SyntaxError(SyntaxError::FUNCTION_ERROR, sSubPlotIDX, SyntaxError::invalid_position);
 			if (_data.containsCacheElements(sSubPlotIDX) || sSubPlotIDX.find("data(") != string::npos)
 			{
@@ -3513,7 +3513,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 			else
 			{
 				sFunc += "," + sToken;
-				_functions.call(sToken, _option);
+				_functions.call(sToken);
 				StripSpaces(sToken);
 				if (sToken.front() == '{')
 					sToken.front() = ' ';

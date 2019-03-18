@@ -321,7 +321,7 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
 	sLabel = sInt_Line[3];
 
     // Call custom defined functions
-	if (sInt_Line[3].length() && !_functions.call(sInt_Line[3], _option))
+	if (sInt_Line[3].length() && !_functions.call(sInt_Line[3]))
 	{
 		sInt_Line[3] = "";
 		sLabel = "";
@@ -769,7 +769,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
 	sLabel = sInt_Fct;
 
 	// Try to call custom functions
-	if (sInt_Fct.length() && !_functions.call(sInt_Fct, _option))
+	if (sInt_Fct.length() && !_functions.call(sInt_Fct))
 	{
 		throw SyntaxError(SyntaxError::NO_INTEGRATION_FUNCTION, sCmd, SyntaxError::invalid_position);
 	}
@@ -1685,7 +1685,7 @@ vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data,
 		sExpr.erase(sExpr.find("--"));
 
     // Try to call custom functions
-	if (!_functions.call(sExpr, _option))
+	if (!_functions.call(sExpr))
 		throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sExpr, sExpr);
 
 	StripSpaces(sExpr);
@@ -1701,7 +1701,7 @@ vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data,
 			sVar = sCmd.substr(sCmd.find("--"));
 
 		// Try to call custom functions
-		if (!_functions.call(sVar, _option))
+		if (!_functions.call(sVar))
 			throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sVar, sVar);
 
 		StripSpaces(sVar);
@@ -2970,9 +2970,9 @@ bool parser_findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Se
 	// Ensure that the expression is not empty
 	// and that the custom functions don't throw
 	// any errors
-	if (!isNotEmptyExpression(sExpr) || !_functions.call(sExpr, _option))
+	if (!isNotEmptyExpression(sExpr) || !_functions.call(sExpr))
 		return false;
-	if (!_functions.call(sParams, _option))
+	if (!_functions.call(sParams))
 		return false;
 
 	StripSpaces(sParams);
@@ -3507,9 +3507,9 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
 
 	// Ensure that custom functions don't throw any
 	// errors and that the expression is not empty
-	if (!isNotEmptyExpression(sExpr) || !_functions.call(sExpr, _option))
+	if (!isNotEmptyExpression(sExpr) || !_functions.call(sExpr))
 		return false;
-	if (!_functions.call(sParams, _option))
+	if (!_functions.call(sParams))
 		return false;
 
 	StripSpaces(sParams);
@@ -4167,7 +4167,7 @@ void parser_Taylor(string& sCmd, Parser& _parser, const Settings& _option, Defin
 		sTaylor += toString((int)nth_taylor) + "_" + sExpr;
 
     // Ensure that the call to the custom function throws errors
-	if (!_functions.call(sExpr, _option))
+	if (!_functions.call(sExpr))
 		return;
 	StripSpaces(sExpr);
 	_parser.SetExpr(sExpr);
@@ -4350,10 +4350,18 @@ void parser_Taylor(string& sCmd, Parser& _parser, const Settings& _option, Defin
 		NumeReKernel::print(LineBreak(sTaylor, _option, true, 0, 8));
 	sTaylor += _lang.get("PARSERFUNCS_TAYLOR_DEFINESTRING", sExpr_cpy, sVarName, toString(dVarValue, 4), toString((int)nth_taylor));
 
+	bool bDefinitionSuccess = false;
+
 	if (_functions.isDefined(sTaylor.substr(0, sTaylor.find(":="))))
-		_functions.defineFunc(sTaylor, _parser, _option, true);
+		bDefinitionSuccess = _functions.defineFunc(sTaylor, true);
 	else
-		_functions.defineFunc(sTaylor, _parser, _option);
+		bDefinitionSuccess = _functions.defineFunc(sTaylor);
+
+    if (bDefinitionSuccess)
+        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"));
+    else
+        NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
+
 	return;
 }
 
@@ -4657,7 +4665,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
 			sParams[sParams.length() - 1] = ' ';
 			StripSpaces(sParams);
 		}
-		if (!_functions.call(sParams, _option))
+		if (!_functions.call(sParams))
 			throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sParams, sParams);
 		if (sParams.find("data(") != string::npos || _data.containsCacheElements(sParams))
 		{
@@ -4668,7 +4676,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
 	}
 	StripSpaces(sCmd);
 
-	if (!_functions.call(sFitFunction, _option))
+	if (!_functions.call(sFitFunction))
 		throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sFitFunction, sFitFunction);
 
 	if (sFitFunction.find("data(") != string::npos || _data.containsCacheElements(sFitFunction))
@@ -5858,10 +5866,18 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
 			NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
 			NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_FIT_CHIMAPLOCATION", sChiMap), _option));
 		}
+
+		bool bDefinitionSuccess = false;
+
 		if (!_functions.isDefined(sFunctionDefString))
-			_functions.defineFunc(sFunctionDefString, _parser, _option);
+			bDefinitionSuccess = _functions.defineFunc(sFunctionDefString);
 		else if (_functions.getDefine(_functions.getFunctionIndex(sFunctionDefString)) != sFunctionDefString)
-			_functions.defineFunc(sFunctionDefString, _parser, _option, true);
+			bDefinitionSuccess = _functions.defineFunc(sFunctionDefString, true);
+
+        if (bDefinitionSuccess)
+            NumeReKernel::print(_lang.get("DEFINE_SUCCESS"));
+        else
+            NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
 
 		return true;
 	}
@@ -6447,10 +6463,19 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
 		NumeReKernel::toggleTableStatus();
 		make_hline();
 	}
+
+	bool bDefinitionSuccess = false;
+
 	if (!_functions.isDefined(sFunctionDefString))
-		_functions.defineFunc(sFunctionDefString, _parser, _option);
+		bDefinitionSuccess = _functions.defineFunc(sFunctionDefString);
 	else if (_functions.getDefine(_functions.getFunctionIndex(sFunctionDefString)) != sFunctionDefString)
-		_functions.defineFunc(sFunctionDefString, _parser, _option, true);
+		bDefinitionSuccess = _functions.defineFunc(sFunctionDefString, true);
+
+    if (bDefinitionSuccess)
+        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"));
+    else
+        NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
+
 	oFitLog.close();
 	return true;
 }
@@ -6805,12 +6830,12 @@ bool parser_evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Set
 
 	if (isNotEmptyExpression(sExpr))
 	{
-		if (!_functions.call(sExpr, _option))
+		if (!_functions.call(sExpr))
 			return false;
 	}
 	if (isNotEmptyExpression(sParams))
 	{
-		if (!_functions.call(sParams, _option))
+		if (!_functions.call(sParams))
 			return false;
 	}
 	StripSpaces(sParams);
@@ -7082,7 +7107,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
 	}
 
 	// Try to call the functions
-	if (!_functions.call(sZVals, _option))
+	if (!_functions.call(sZVals))
 		throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sZVals, sZVals);
 
 	// Get the samples
@@ -7623,7 +7648,7 @@ vector<double> parser_IntervalReader(string& sExpr, Parser& _parser, Datafile& _
 	string sInterval[2] = {"", ""};
 
 	// Get user defined functions
-	if (!_functions.call(sExpr, _option))
+	if (!_functions.call(sExpr))
 		throw SyntaxError(SyntaxError::FUNCTION_ERROR, sExpr, SyntaxError::invalid_position);
 
 	// If the expression contains data elements, get their contents here
@@ -7849,7 +7874,7 @@ bool parser_writeAudio(string& sCmd, Parser& _parser, Datafile& _data, Define& _
 			throw SyntaxError(SyntaxError::STRING_ERROR, sCmd, SyntaxError::invalid_position);
 	}
 	// Funktionen aufrufen
-	if (!_functions.call(sCmd, _option))
+	if (!_functions.call(sCmd))
 		throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
 
 	// Samples lesen
@@ -7998,7 +8023,7 @@ bool parser_regularize(string& sCmd, Parser& _parser, Datafile& _data, Define& _
 			throw SyntaxError(SyntaxError::STRING_ERROR, sCmd, SyntaxError::invalid_position);
 	}
 	// Funktionen aufrufen
-	if (!_functions.call(sCmd, _option))
+	if (!_functions.call(sCmd))
 		throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
 
 	// Samples lesen
@@ -8074,7 +8099,7 @@ bool parser_pulseAnalysis(string& _sCmd, Parser& _parser, Datafile& _data, Defin
 			throw SyntaxError(SyntaxError::STRING_ERROR, _sCmd, SyntaxError::invalid_position);
 	}
 	// Funktionen aufrufen
-	if (!_functions.call(sCmd, _option))
+	if (!_functions.call(sCmd))
 		throw SyntaxError(SyntaxError::FUNCTION_ERROR, _sCmd, SyntaxError::invalid_position);
 
 
@@ -8157,7 +8182,7 @@ bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& 
 			throw SyntaxError(SyntaxError::STRING_ERROR, sCmd, SyntaxError::invalid_position);
 	}
 	// Funktionen aufrufen
-	if (!_functions.call(sCmd, _option))
+	if (!_functions.call(sCmd))
 		throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
 
 	if (matchParams(sCmd, "samples", '='))
@@ -8329,9 +8354,17 @@ bool parser_spline(string& sCmd, Parser& _parser, Datafile& _data, Define& _func
 	if (_option.getSystemPrintStatus())
 		NumeReKernel::print(LineBreak(sDefinition, _option, true, 0, 8));
 
+    bool bDefinitionSuccess = false;
+
 	if (_functions.isDefined(sDefinition.substr(0, sDefinition.find(":="))))
-		_functions.defineFunc(sDefinition, _parser, _option, true);
+		bDefinitionSuccess = _functions.defineFunc(sDefinition, true);
 	else
-		_functions.defineFunc(sDefinition, _parser, _option);
+		bDefinitionSuccess = _functions.defineFunc(sDefinition);
+
+    if (bDefinitionSuccess)
+        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"));
+    else
+        NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
+
 	return true;
 }

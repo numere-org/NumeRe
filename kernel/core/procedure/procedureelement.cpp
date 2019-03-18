@@ -268,7 +268,8 @@ void ProcedureElement::cleanCurrentLine(string& sProcCommandLine, const string& 
         && sCurrentCommand != "ifndefined"
         && sCurrentCommand != "redefine"
         && sCurrentCommand != "ifndef"
-        && sCurrentCommand != "redef")
+        && sCurrentCommand != "redef"
+        && sCurrentCommand != "lclfunc")
     {
         while (sProcCommandLine.find(":=") != string::npos)
             sProcCommandLine.erase(sProcCommandLine.find(":="), 1);

@@ -28,6 +28,7 @@
 #include "filesystem.hpp"
 #include "utils/tools.hpp"
 #include "version.h"
+#include "maths/define.hpp"
 
 using namespace std;
 
@@ -58,6 +59,7 @@ class Script : public FileSystem
         string sInstallID;
         vector<string> vInstallPackages;
         unsigned int nCurrentPackage;
+        Define _localDef;
 
         string stripLineComments(const string& sLine);
         string stripBlockComments(const string& sLine);
@@ -69,6 +71,7 @@ class Script : public FileSystem
         string getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand);
         string getNextScriptCommandFromInclude();
         string handleIncludeSyntax(string& sScriptCommand);
+        bool handleLocalDefinitions(string& sScriptCommand);
 
 
     public:
@@ -76,11 +79,16 @@ class Script : public FileSystem
         Script(const string& _sScriptFileName);
         ~Script();
 
+
         string getNextScriptCommand();
         void setScriptFileName(string& _sScriptFileName);
         inline string getScriptFileName() const
             {return sScriptFileName;};
         string getScriptFileNameShort() const;
+        inline void setPredefinedFuncs(const string& sPredefined)
+        {
+            _localDef.setPredefinedFuncs(sPredefined);
+        }
         inline unsigned int getCurrentLine() const
             {return bReadFromInclude ? nIncludeLine : nLine;}
         inline bool is_including() const

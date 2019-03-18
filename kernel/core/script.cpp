@@ -179,6 +179,7 @@ void Script::openScript()
         sInstallID = "";
         nLine = 0;
         nIncludeLine = 0;
+        _localDef.reset();
     }
     return;
 }
@@ -244,6 +245,7 @@ void Script::close()
         sHelpID = "";
         sInstallID = "";
         nLine = 0;
+        _localDef.reset();
     }
     return;
 }
@@ -252,6 +254,8 @@ void Script::close()
 // script
 void Script::restart()
 {
+    _localDef.reset();
+
     if (bScriptOpen)
     {
         // If the script is already open,
@@ -869,6 +873,7 @@ string Script::getNextScriptCommandFromInclude()
             && findCommand(sScriptCommand).sString != "ifndefined"
             && findCommand(sScriptCommand).sString != "redefine"
             && findCommand(sScriptCommand).sString != "redef"
+            && findCommand(sScriptCommand).sString != "lclfunc"
             && findCommand(sScriptCommand).sString != "global"
             && !bAppendNextLine)
         {
@@ -887,6 +892,7 @@ string Script::getNextScriptCommandFromInclude()
             && findCommand(sScriptCommand).sString != "ifndefined"
             && findCommand(sScriptCommand).sString != "redefine"
             && findCommand(sScriptCommand).sString != "redef"
+            && findCommand(sScriptCommand).sString != "lclfunc"
             && !bAppendNextLine)
         {
             // Definition commands required, but none found
@@ -995,6 +1001,27 @@ string Script::handleIncludeSyntax(string& sScriptCommand)
     return sScriptCommand;
 }
 
+// This private member function handles the definition and
+// replacement of local functions
+bool Script::handleLocalDefinitions(string& sScriptCommand)
+{
+    // If the current command contains the command "lclfunc",
+    // then this is a definition
+    if (findCommand(sScriptCommand).sString == "lclfunc")
+    {
+        _localDef.defineFunc(sScriptCommand.substr(7));
+        sScriptCommand.clear();
+        return false;
+    }
+    else
+    {
+        // Simply replace the current call
+        return _localDef.call(sScriptCommand);
+    }
+
+    return true;
+}
+
 // This member function is the main interface to the
 // internal managed script. It will always return the
 // next valid script line
@@ -1070,6 +1097,13 @@ string Script::getNextScriptCommand()
 
         if (sScriptCommand.find("endprocedure") != string::npos)
             bIsInstallingProcedure = false;
+    }
+
+    // If we're not installing, replace all local functions
+    if (!bInstallProcedures)
+    {
+        if (!handleLocalDefinitions(sScriptCommand))
+            return "";
     }
 
     // Return the script command for evaluation

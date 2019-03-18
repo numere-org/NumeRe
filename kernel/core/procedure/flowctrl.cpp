@@ -901,7 +901,7 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
 	// Replace the function definitions, if not already done
 	if (!bFunctionsReplaced)
 	{
-		if (!_functionRef->call(sHeadExpression, *_optionRef))
+		if (!_functionRef->call(sHeadExpression))
 		{
 			throw SyntaxError(SyntaxError::FUNCTION_ERROR, sHeadExpression, SyntaxError::invalid_position);
 		}
@@ -1916,7 +1916,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
             && sCommand != "ifndef"
             && sCommand != "ifndefined")
 		{
-			if (!_functionRef->call(sLine, *_optionRef))
+			if (!_functionRef->call(sLine))
 			{
 				throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
 			}
@@ -2952,12 +2952,12 @@ void FlowCtrl::checkParsingModeAndExpandDefinitions()
         {
             for (int i = 0; i <= nCmd; i++)
             {
-                if (!_functionRef->call(sCmd[i][0], *_optionRef))
+                if (!_functionRef->call(sCmd[i][0]))
                 {
                     throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd[i][0], SyntaxError::invalid_position);
                 }
 
-                if (!_functionRef->call(sCmd[i][1], *_optionRef))
+                if (!_functionRef->call(sCmd[i][1]))
                 {
                     throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd[i][1], SyntaxError::invalid_position);
                 }

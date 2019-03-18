@@ -103,7 +103,7 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
         sCmd.erase(0, findCommand(sCmd).nPos+5);
     if (findCommand(sCmd).sString == "mtrxop")
         sCmd.erase(0, findCommand(sCmd).nPos+6);
-    if (!_functions.call(sCmd, _option))
+    if (!_functions.call(sCmd))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
 
     if (sCmd.find("data(") == string::npos
@@ -1613,7 +1613,7 @@ static Matrix parser_matFromLines(string& sCmd, Parser& _parser, Datafile& _data
     {
         _matfl.push_back(vector<double>(1,NAN));
     }
-    if (!_functions.call(sCmd, _option))
+    if (!_functions.call(sCmd))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
     if (sCmd.find("data(") != string::npos || _data.containsCacheElements(sCmd))
     {
@@ -1658,7 +1658,7 @@ static Matrix parser_matFromLinesFilled(string& sCmd, Parser& _parser, Datafile&
     {
         _matfl.push_back(vector<double>(1,NAN));
     }
-    if (!_functions.call(sCmd, _option))
+    if (!_functions.call(sCmd))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
     if (sCmd.find("data(") != string::npos || _data.containsCacheElements(sCmd))
     {
@@ -1724,7 +1724,7 @@ static Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, Datafile& _da
     {
         _diag.push_back(vector<double>(1,NAN));
     }
-    if (!_functions.call(sCmd, _option))
+    if (!_functions.call(sCmd))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
     if (sCmd.find("data(") != string::npos || _data.containsCacheElements(sCmd))
     {
@@ -3004,10 +3004,17 @@ static void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, Def
     NumeReKernel::print(sSolution);
     sSolution += " "+_lang.get("MATOP_SOLVELGSSYMBOLIC_DEFINECOMMENT");
 
+    bool bDefinitionSuccess = false;
+
     if (!_functions.isDefined(sSolution))
-        _functions.defineFunc(sSolution, _parser, _option);
+        bDefinitionSuccess = _functions.defineFunc(sSolution);
     else if (_functions.getDefine(_functions.getFunctionIndex(sSolution)) != sSolution)
-        _functions.defineFunc(sSolution, _parser, _option, true);
+        bDefinitionSuccess = _functions.defineFunc(sSolution, true);
+
+    if (bDefinitionSuccess)
+        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"));
+    else
+        NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
 
     return;
 }

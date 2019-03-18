@@ -28,6 +28,7 @@
 #include "../maths/define.hpp"
 
 using namespace std;
+using namespace mu;
 
 string** make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, const string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, size_t nPrecision, bool bSave = true);
 void load_data(Datafile& _data, Settings& _option, Parser& _parser, string sFileName = "");

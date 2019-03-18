@@ -19,12 +19,17 @@
 #include "define.hpp"
 #include "../../kernel.hpp"
 
+using namespace mu;
+
+// --> Prototypen von ein paar Funktionen, die nicht ueber einen Header eingebunden werden koennen <--
+int parser_SplitArgs(string& sToSplit, string& sSecArg, const char& cSep, const Settings& _option, bool bIgnoreSurroundingParenthesis);
+
+
 // --> Standard-Konstruktor: Deklariert auch die Inhalte der Built-In-Funktionen- und der Kommando-Strings <--
 Define::Define() : FileSystem()
 {
     nDefinedFunctions = 0;
     sBuilt_In.clear();
-    //= ",abs(),acos(),acosh(),Ai(),and(),asin(),asinh(),ascii(),atan(),atanh(),avg(),bessel(),betheweizsaecker(),Bi(),binom(),cache(),char(),clock(),cmp(),cnt(),cos(),cosh(),cot(),cross(),data(),date(),dblfacul(),degree(),det(),diag(),diagonalize(),ellipticD(),ellipticE(),ellipticF(),ellipticPi(),eigenvals(),eigenvect(),erf(),erfc(),exp(),faculty(),findfile(),findparam(),floor(),gamma(),gauss(),gcd(),getfilelist(),getfolderlist(),getindices(),getmatchingparens(),getopt(),heaviside(),hermite(),identity(),imY(),invert(),is_data(),is_nan(),is_string(),laguerre(),laguerre_a(),lcm(),legendre(),legendre_a(),ln(),log(),log10(),log2(),matfc(),matfcf(),matfl(),matflf(),max(),med(),min(),neumann(),norm(),num(),one(),or(),pct(),phi(),prd(),radian(),rand(),range(),rect(),repeat(),replace(),replaceall(),reshape(),resize(),rint(),roof(),round(),sbessel(),sign(),sin(),sinc(),sinh(),size(),sneumann(),solve(),split(),sqrt(),std(),strfnd(),strrfnd(),strmatch(),strrmatch(),str_not_match(),str_not_rmatch(),string_cast(),strlen(),student_t(),substr(),sum(),tan(),tanh(),theta(),time(),to_char(),to_cmd(),to_lowercase(),to_string(),to_uppercase(),to_value(),trace(),transpose(),valtostr(),version(),Y(),Z(),zero()";
     sCommands = ",for,if,while,endfor,endwhile,endif,else,elseif,continue,break,explicit,procedure,endprocedure,throw,return,switch,case,endswitch,default,";
     sFileName = "<>/functions.def";
     sCaches = "";
@@ -42,9 +47,8 @@ Define::Define() : FileSystem()
 /* --> Kopierkonstruktor: Ruft zunaechst den Standard-Konstruktor auf, ehe die Werte und
  *     Definitionen des anderen Objekts kopiert werden <--
  */
-Define::Define(Define& _defined) : FileSystem()
+Define::Define(Define& _defined) : Define()
 {
-    Define();
     nDefinedFunctions = _defined.nDefinedFunctions;
     sFileName = _defined.sFileName;
     sCaches = _defined.sCaches;
@@ -81,8 +85,14 @@ bool Define::isDefined(const string& sFunc)
 }
 
 // --> Zentrale Methode: Definieren von eigenen Funktionen <--
-bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _option, bool bRedefine, bool bFallback)
+bool Define::defineFunc(const string& sExpr, bool bRedefine, bool bFallback)
 {
+    if (!NumeReKernel::getInstance())
+        return false;
+
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    Settings& _option = NumeReKernel::getInstance()->getSettings();
+
     int nPos = 0;               // Index-Variable fuer Char-Positionen in strings
     unsigned int nDefine = -1;  // Index-Variable fuer die zu schreibende Position im Array
     string sFallback = "";      // Im Falle einer Umdefinition speichern wir den alten Eintrag in diesen
@@ -97,6 +107,7 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
         string sComment = sExpr.substr(matchParams(sExpr, "comment", '=')+7);
         StripSpaces(sComment);
         sComment = sComment.substr(sComment.find('"'), sComment.find('"', sComment.find('"')+1)+1-sComment.find('"'));
+
         for (unsigned int i = 0; i < nDefinedFunctions; i++)
         {
             if (sFunctions[i][0] == sFunction)
@@ -115,12 +126,11 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
                 {
                     sFunctions[i][2] = sFunctions[i][2] + "-set comment=" + fromSystemCodePage(sComment);
                 }
-                if (_option.getSystemPrintStatus())
-                    NumeReKernel::print(LineBreak(_lang.get("DEFINE_FUNCTION_COMMENTED", sFunction), _option));
+
                 return true;
             }
         }
-        NumeReKernel::print(LineBreak(_lang.get("DEFINE_FUNCTION_NOT_EXISTING", sFunction), _option));
+
         return false;
     }
 
@@ -140,27 +150,22 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
         // --> Passende Fehlermeldungen ausgeben <--
         if (sExpr.find(":=") == string::npos)
         {
-            //throw CANNOT_FIND_DEFINE_OPRT;
             throw SyntaxError(SyntaxError::CANNOT_FIND_DEFINE_OPRT, sExpr, SyntaxError::invalid_position);
         }
         else if (sExpr.find('(') == string::npos || (sExpr.find('(') != string::npos && sExpr.find('(') > sExpr.find(":=")))
         {
-            //throw CANNOT_FIND_FUNCTION_ARGS;
             throw SyntaxError(SyntaxError::CANNOT_FIND_FUNCTION_ARGS, sExpr, SyntaxError::invalid_position);
         }
         else if (sBuilt_In.find(","+sExpr.substr(0,sExpr.find('(')+1)) != string::npos)
         {
-            //sErrorToken = sExpr.substr(0,sExpr.find('('));
             throw SyntaxError(SyntaxError::FUNCTION_IS_PREDEFINED, sExpr, SyntaxError::invalid_position, sExpr.substr(0,sExpr.find('(')));
         }
         else if (sCaches.length() && sCaches.find(";"+sExpr.substr(0,sExpr.find('('))+";") != string::npos)
         {
-            //sErrorToken = sExpr.substr(0,sExpr.find('('));
             throw SyntaxError(SyntaxError::CACHE_ALREADY_EXISTS, sExpr, SyntaxError::invalid_position, sExpr.substr(0,sExpr.find('(')));
         }
         else if (sCommands.find(","+sExpr.substr(0,sExpr.find('('))+",") != string::npos)
         {
-            //sErrorToken = sExpr.substr(0,sExpr.find('('));
             throw SyntaxError(SyntaxError::FUNCTION_STRING_IS_COMMAND, sExpr, SyntaxError::invalid_position, sExpr.substr(0,sExpr.find('(')));
         }
         else
@@ -174,18 +179,22 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
 
     // --> Definition in sFunction kopieren und fuehrende/schliessende Leerzeichen entfernen <--
     sFunction = sExpr.substr(sExpr.find(":=")+2);
+
     if (sFunction.rfind("-set") != string::npos)
     {
         sFunction = sFunction.substr(0, sFunction.rfind("-set"));
     }
+
     if (sFunction.rfind(" --") != string::npos)
     {
         sFunction = sFunction.substr(0, sFunction.rfind(" --"));
     }
+
     sFunctionName = sExpr.substr(0, sExpr.find(":="));
 
     StripSpaces(sFunction);
     StripSpaces(sFunctionName);
+
     // --> Fehler abfangen: Ziffern am Anfang eines Funktionsnamens und Operatoren in einem Funktionsnamen <--
     if (sFunctionName[0] >= '0' && sFunctionName[0] <= '9')
     {
@@ -193,18 +202,17 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
     }
 
     string sDelim = "+-*/^!=&| ><()?[]{}$%§~#:.,;";
+
     for (unsigned int i = 0; i < sFunctionName.find('('); i++)
     {
         if (sDelim.find(sFunctionName[i]) != string::npos)
         {
-            //sErrorToken = sFunctionName.substr(i,1);
             throw SyntaxError(SyntaxError::FUNCTION_NAMES_MUST_NOT_CONTAIN_SIGN, sExpr, SyntaxError::invalid_position, sFunctionName.substr(i,1));
-            //cerr << LineBreak("|-> FEHLER: Funktionsnamen dürfen nicht \"" + sFunctionName.substr(i,1) + "\" enthalten!", _option) << endl;
-            return false;
         }
     }
 
     sFunction = " " + sFunction + " ";
+
     if (matchParams(sExpr, "recursive"))
     {
         string sFuncOccurence = "";
@@ -214,44 +222,50 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
                 && (!i || !isalnum(sFunction[i-1])))
             {
                 sFuncOccurence = sFunction.substr(i, sFunction.find(')', i)+1-i);
-                if (!call(sFuncOccurence, _option))
+
+                if (!call(sFuncOccurence))
                 {
                     return false;
                 }
+
                 sFunction.replace(i,sFunction.find(')', i)+1-i, sFuncOccurence);
             }
         }
     }
+
     if (matchParams(sExpr, "asval", '='))
     {
         string sAsVal = getArgAtPos(sExpr, matchParams(sExpr, "asval", '=')+5);
+
         if (sAsVal.front() == '{')
             sAsVal.erase(0,1);
+
         if (sAsVal.back() == '}')
             sAsVal.pop_back();
+
         _parser.SetExpr(sAsVal);
         _parser.Eval();
         mAsVal = _parser.GetUsedVar();
     }
 
-    //cerr << sFunction << endl;
-
     StripSpaces(sFunction);
+
     /* --> Dies ist ein Endlosschleifentest: Define::call() gibt FALSE zurueck, wenn die Rekursion nicht nach
      *     einer definierten Anzahl an Schritten abbricht. (Die Anzahl ist dabei von der Anzahl an definierten
      *     Funktionen abhaengig) <--
      */
-    if (!call(sFunction, _option))
+    if (!call(sFunction))
     {
         return false;
     }
 
-
     sFunction = " " + sExpr.substr(sExpr.find(":=")+2) + " ";
+
     if (sFunction.rfind("-set") != string::npos)
     {
         sFunction = sFunction.substr(0, sFunction.rfind("-set")) + " ";
     }
+
     if (sFunction.rfind(" --") != string::npos)
     {
         sFunction = sFunction.substr(0, sFunction.rfind(" --")) + " ";
@@ -260,16 +274,19 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
     if (matchParams(sExpr, "recursive"))
     {
         string sFuncOccurence = "";
+
         for (unsigned int i = 0; i < sFunction.length(); i++)
         {
             if (sFunction.substr(i,sFunctionName.find('(')+1) == sFunctionName.substr(0, sFunctionName.find('(')+1)
                 && (!i || !isalnum(sFunction[i-1])))
             {
                 sFuncOccurence = sFunction.substr(i, sFunction.find(')', i)+1-i);
-                if (!call(sFuncOccurence, _option))
+
+                if (!call(sFuncOccurence))
                 {
                     return false;
                 }
+
                 StripSpaces(sFuncOccurence);
                 sFunction.replace(i,sFunction.find(')', i)+1-i, sFuncOccurence);
             }
@@ -289,13 +306,12 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
                 break;
             }
         }
+
         if (nDefine == string::npos)
         {
             /* --> nDefine hat den Defaultwert, wenn keine bereits definierte Funktion mit der
              *     umzudefinierenden Funktion uebereinstimmt. Definieren wir einfach eine neue. <--
              */
-            if (_option.getSystemPrintStatus())
-                NumeReKernel::print(LineBreak(_lang.get("DEFINE_NEW_FUNCTION")+" ...", _option));
             nDefine = nDefinedFunctions;
             bRedefine = false;
         }
@@ -303,7 +319,8 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
         {
             // --> Kopieren wir den urspruenglichen Ausdruck in sFallback und geben wir die komplette Zeile frei <--
             sFallback = sFunctions[nDefine][2];
-            for (int i = 0; i < 6; i++)
+
+            for (int i = 0; i < 13; i++)
             {
                 sFunctions[nDefine][i] = "";
             }
@@ -325,36 +342,6 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
     // --> Gibt offenbar Platz: Kopieren wir schon mal die Eindeutigen Einstaege in die Datenbank <--
     sFunctions[nDefine][0] = sExpr.substr(0,sExpr.find('('));                   // Funktionsname
     sFunctions[nDefine][1] = sFunction;
-    /*sFunctions[nDefine][1] = " " + sExpr.substr(sExpr.find(":=")+2) + " ";      // Funktionsausdruck; die Leerzeichen sind dazu da,
-                                                                                // sicher zu gehen, dass wenn man das Zeichen VOR
-                                                                                // dem Treffer untersuchen moechte, kein SEG-FAULT
-                                                                                // auftritt
-    if (sFunctions[nDefine][1].rfind("-set") != string::npos)
-    {
-        sFunctions[nDefine][1] = sFunctions[nDefine][1].substr(0, sFunctions[nDefine][1].rfind("-set")) + " ";
-    }
-    if (sFunctions[nDefine][1].rfind(" --") != string::npos)
-    {
-        sFunctions[nDefine][1] = sFunctions[nDefine][1].substr(0, sFunctions[nDefine][1].rfind(" --")) + " ";
-    }*/
-
-    /*if (matchParams(sExpr, "recursive"))
-    {
-        string sFuncOccurence = "";
-        for (unsigned int i = 0; i < sFunctions[nDefine][1].length(); i++)
-        {
-            if (sFunctions[nDefine][1].substr(i,sFunctions[nDefine][0].length()+1) == sFunctions[nDefine][0]+"("
-                && (!i || !isalnum(sFunctions[nDefine][1][i-1])))
-            {
-                sFuncOccurence = sFunctions[nDefine][1].substr(i, sFunctions[nDefine][1].find(')', i)+1-i);
-                if (!call(sFuncOccurence, _option))
-                {
-                    return false;
-                }
-                sFunctions[nDefine][1].replace(i,sFunctions[nDefine][1].find(')', i)+1-i, sFuncOccurence);
-            }
-        }
-    }*/
 
     if (matchParams(sExpr, "asval", '='))
     {
@@ -370,18 +357,17 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
         }
     }
 
-    //cerr << sFunctions[nDefine][1] << endl;
-
     // Warum mit Parameter?
     sFunctions[nDefine][2] = fromSystemCodePage(sExpr);                                             // Urspruengliche Definition
 
     // --> Hierein kommt die Argumentliste aus der Definition. Wir werden sie weiter unten weiterverarbeiten <--
-    //sFunctions[nDefine][3] = sExpr.substr(sExpr.find('('),sExpr.find(')')-sExpr.find('(')+1);
     sFunctions[nDefine][3] = getArgAtPos(sExpr, sExpr.find('('));
+
     if (sFunctions[nDefine][3].front() == '('
         && getMatchingParenthesis(sFunctions[nDefine][3]) != string::npos
         && getMatchingParenthesis(sFunctions[nDefine][3]) != sFunctions[nDefine][3].length()-1)
         sFunctions[nDefine][3].erase(getMatchingParenthesis(sFunctions[nDefine][3])+1);
+
     if (getMatchingParenthesis(sFunctions[nDefine][3]) != string::npos && sFunctions[nDefine][3].front() == '(' && sFunctions[nDefine][3].back() == ')')
     {
         sFunctions[nDefine][3].erase(0,1);
@@ -402,23 +388,14 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
                 {
                     sFunctions[nDefine][j] = "";
                 }
+
                 throw SyntaxError(SyntaxError::FUNCTION_ALREADY_EXISTS, sExpr, SyntaxError::invalid_position, sFunctions[i][0]);
-                //cerr << LineBreak("|-> FEHLER: Dieser Funktionsname ist bereits belegt!", _option) << endl;
-                return false;
             }
         }
     }
 
-    if (_option.getbDebug())
-    {
-        cerr << "|-> DEBUG: sFunctions[][0] = " << sFunctions[nDefine][0] << endl;
-        cerr << "|-> DEBUG: sFunctions[][1] = " << sFunctions[nDefine][1] << endl;
-        cerr << "|-> DEBUG: sFunctions[][2] = " << sFunctions[nDefine][2] << endl;
-        cerr << "|-> DEBUG: sFunctions[][3] = " << sFunctions[nDefine][3] << endl;
-    }
     if (sFunctions[nDefine][3].find('(') != string::npos || sFunctions[nDefine][3].find(')') != string::npos)
     {
-        //sErrorToken = "()";
         throw SyntaxError(SyntaxError::FUNCTION_ARGS_MUST_NOT_CONTAIN_SIGN, sExpr, SyntaxError::invalid_position, "()");
     }
 
@@ -429,7 +406,6 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
      */
     if (sFunctions[nDefine][3].find(',') != string::npos)
     {
-        //sFunctions[nDefine][3] = "(" + sFunctions[nDefine][3] + ")";
         for (int i = 3; i < 12; i++)
         {
             try
@@ -440,24 +416,26 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
             {
                 if (e.errorcode == SyntaxError::SEPARATOR_NOT_FOUND)
                 {
-                    //sErrorToken = ",";
                     throw SyntaxError(SyntaxError::FUNCTION_ARGS_MUST_NOT_CONTAIN_SIGN, sExpr, SyntaxError::invalid_position, ",");
                 }
                 else
                     throw;
             }
+
             StripSpaces(sFunctions[nDefine][i]);
             StripSpaces(sFunctions[nDefine][i+1]);
+
             if (sFunctions[nDefine][i] == "...")
             {
                 if (bRedefine)
-                    defineFunc(sFallback, _parser, _option, true, true);
+                    defineFunc(sFallback, true, true);
                 else
                 {
                     for (int u = 0; u < 6; u++)
                         sFunctions[nDefine][u] = "";
                 }
-                throw SyntaxError(SyntaxError::ELLIPSIS_MUST_BE_LAST_ARG, sExpr, SyntaxError::invalid_position);
+
+               throw SyntaxError(SyntaxError::ELLIPSIS_MUST_BE_LAST_ARG, sExpr, SyntaxError::invalid_position);
             }
             if (sFunctions[nDefine][i] != "...")
             {
@@ -465,7 +443,6 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
                 {
                     if (sFunctions[nDefine][i].find(sDelim[n]) != string::npos)
                     {
-                        //sErrorToken = sDelim[n];
                         throw SyntaxError(SyntaxError::FUNCTION_ARGS_MUST_NOT_CONTAIN_SIGN, sExpr, SyntaxError::invalid_position, sDelim.substr(n,1));
                     }
                 }
@@ -475,67 +452,38 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
                 if (sFunctions[nDefine][i] == "...")
                 {
                     if (bRedefine)
-                        defineFunc(sFallback, _parser, _option, true, true);
+                        defineFunc(sFallback, true, true);
                     else
                     {
                         for (int u = 0; u < 6; u++)
                             sFunctions[nDefine][u] = "";
                     }
+
                     throw SyntaxError(SyntaxError::ELLIPSIS_MUST_BE_LAST_ARG, sExpr, SyntaxError::invalid_position);
                 }
-                //sFunctions[nDefine][i+1] = "(" + sFunctions[nDefine][i+1] + ")";
             }
             else if (sFunctions[nDefine][i+1].find(',') != string::npos)
             {
                 if (bRedefine)
                 {
-                    //cerr << LineBreak("|-> FEHLER: Funktionen können nicht mehr als zehn Argumente besitzen! Die Neudefinition wird rückgängig gemacht ...", _option) << endl;
-                    defineFunc(sFallback, _parser, _option, true, true);
+                    defineFunc(sFallback, true, true);
                 }
                 else
                 {
-                    //cerr << LineBreak("|-> FEHLER: Funktionen können nicht mehr als zehn Argumente besitzen!", _option) << endl;
                     for (int u = 0; u < 6; u++)
                         sFunctions[nDefine][u] = "";
                 }
+
                 throw SyntaxError(SyntaxError::TOO_MANY_ARGS_FOR_DEFINE, sExpr, SyntaxError::invalid_position);
             }
             else
                 break;
-                /*parser_SplitArgs(sFunctions[nDefine][4], sFunctions[nDefine][5], ',', _option, false);
-                StripSpaces(sFunctions[nDefine][4]);
-                StripSpaces(sFunctions[nDefine][5]);
-                if (sFunctions[nDefine][5].find(',') != -1)
-                {
-                    if (bRedefine)
-                    {
-                        cerr << LineBreak("|-> FEHLER: Funktionen koennen nicht mehr als zehn Argumente besitzen! Die Neudefinition wird rueckgaengig gemacht ...", _option) << endl;
-                        defineFunc(sFallback, _parser, _option, true);
-                    }
-                    else
-                    {
-                        cerr << LineBreak("|-> FEHLER: Funktionen koennen nicht mehr als zehn Argumente besitzen!", _option) << endl;
-                        for (int u = 0; u < 6; u++)
-                            sFunctions[nDefine][u] = "";
-                    }
-                    return false;
-                }
-            }*/
         }
     }
     else
     {
         // --> Kein Komma? Dann nur ein Argument. Entfernen wir rasch die Klammern und entfernen ueberzaehlige Leerzeichen <--
-        //sFunctions[nDefine][3] = sFunctions[nDefine][3].substr(1,sFunctions[nDefine][3].length()-2);
         StripSpaces(sFunctions[nDefine][3]);
-    }
-
-    if (_option.getbDebug())
-    {
-        for (int i = 3; i < 13; i++)
-        {
-            cerr << "|-> DEBUG: sFunctions[][" << i << "] = " << sFunctions[nDefine][i] << "." << endl;
-        }
     }
 
     /* --> Einer der zentralen Abschnitte: wir ersetzen jedes Auftreten der Variablen durch ein
@@ -557,8 +505,6 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
         {
             // --> Speichere die Position <--
             nPos = sFunctions[nDefine][1].find(sFunctions[nDefine][n], nPos);
-            if (_option.getbDebug())
-                cerr << "|-> DEBUG: nPos = " << nPos << endl;
 
             // --> Pruefe, ob die "scheinbare" Variable von Delimitern umgeben ist und damit eine "echte" Variable ist <--
             if (checkDelimiter(sFunctions[nDefine][1].substr(nPos-1, sFunctions[nDefine][n].length() + 2)))
@@ -568,8 +514,6 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
 
                 // --> Setze den Positionsindex um die Laenge der VAR + 4 weiter <--
                 nPos += sFunctions[nDefine][n].length() + 4;
-                if (_option.getbDebug())
-                    cerr << "|-> DEBUG: Var replaced!" << endl;
             }
             else        // Wenn sie das nicht ist, dann setze den Positionsindex um die Laenge der aktuellen Variable weiter
                 nPos += sFunctions[nDefine][n].length();
@@ -577,11 +521,6 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
 
         // --> Nachdem alle Variablen ersetzt wurden, ergaenze die Variable selbst zu ">>VAR<<" <--
         sFunctions[nDefine][n] = ">>" + sFunctions[nDefine][n] + "<<";
-
-        if (_option.getbDebug())
-        {
-            cerr << "|-> DEBUG: sFunctions[][1] = " << sFunctions[nDefine][1] << endl;
-        }
     }
 
     // --> Entferne die umschliessenden Leerzeichen <--
@@ -598,9 +537,6 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
     else if ((sFunctions[nDefine][1].find("{") != string::npos && sFunctions[nDefine][1].find("}") == string::npos)
         || (sFunctions[nDefine][1].find("{") == string::npos && sFunctions[nDefine][1].find("}") != string::npos))
     {
-        // --> Fehlt "{{" oder "}}" auf einer Seite? Fehlermeldung und alles rueckgaengig machen! <--
-        //cerr << LineBreak("|-> FEHLER: Unvollständige Vektor-Zuweisung!", _option) << endl;
-
         if (nDefine == nDefinedFunctions)
         {
             for (int i = 0; i < 13; i++)
@@ -610,19 +546,10 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
         }
         else
         {
-            //cerr << LineBreak("|   Die Neudefinition wird rückgängig gemacht ...", _option) << endl;
-            defineFunc(sFallback, _parser, _option, true, true);
+            defineFunc(sFallback, true, true);
         }
 
         throw SyntaxError(SyntaxError::INCOMPLETE_VECTOR_SYNTAX, sExpr, SyntaxError::invalid_position);
-    }
-
-    if (_option.getbDebug())
-    {
-        for (int i = 0; i < 13; i++)
-        {
-            cerr << "|-> DEBUG: sFunctions[][" << i << "] = " << sFunctions[nDefine][i] << endl;
-        }
     }
 
     // --> Falls es keine Umdefinition war, erhoehen wir den Funktionenszaehler um 1 <--
@@ -634,9 +561,10 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
      */
     sFunction = sExpr.substr(sExpr.find(":=")+2);
     StripSpaces(sFunction);
+
     try
     {
-        if (!call(sFunction, _option))
+        if (!call(sFunction))
         {
             if (!bRedefine)
             {
@@ -644,6 +572,7 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
                 {
                     sFunctions[nDefine][i] = "";
                 }
+
                 nDefinedFunctions--;
             }
             else
@@ -652,8 +581,8 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
                 {
                     sFunctions[nDefine][i] = "";
                 }
-                NumeReKernel::printPreFmt(LineBreak("|   "+_lang.get("DEFINE_UNDOING_REDEFINE")+" ...", _option,0)+"\n");
-                defineFunc(sFallback, _parser, _option, true);
+
+                defineFunc(sFallback, true);
             }
             return false;
         }
@@ -666,6 +595,7 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
             {
                 sFunctions[nDefine][i] = "";
             }
+
             nDefinedFunctions--;
         }
         else
@@ -674,25 +604,12 @@ bool Define::defineFunc(const string& sExpr, Parser& _parser, const Settings& _o
             {
                 sFunctions[nDefine][i] = "";
             }
-            //cerr << LineBreak("|   Die Neudefinition wird rückgängig gemacht ...", _option) << endl;
-            defineFunc(sFallback, _parser, _option, true, true);
+
+            defineFunc(sFallback, true, true);
         }
         throw;
     }
-    // --> Alles hat geklappt! Geben wir eine entsprechende Erfolgsmeldung zurueck! <--
-    if (_option.getSystemPrintStatus() && !bFallback)
-    {
-        if (bRedefine)
-        {
-            NumeReKernel::print(LineBreak(_lang.get("DEFINE_REDEFINE_SUCCESS", sFunctions[nDefine][0]), _option));
-        }
-        else
-        {
-            NumeReKernel::print(LineBreak(_lang.get("DEFINE_NEW_FUNCTION_SUCCESS", sFunctions[nDefine][0]), _option));
-            if (nDefinedFunctions > 90)
-                NumeReKernel::printPreFmt(toSystemCodePage("|   ("+_lang.get("DEFINE_FREE_SPACE", toString(100-nDefinedFunctions))+")")+"\n");
-        }
-    }
+
     // --> Gebe TRUE zurueck <--
     return true;
 }
@@ -761,8 +678,11 @@ bool Define::undefineFunc(const string& sFunc)
 }
 
 // --> Weitere, zentrale Methode: Aufrufen der Funktionen <--
-bool Define::call(string& sExpr, const Settings& _option, int nRecursion)
+bool Define::call(string& sExpr, int nRecursion)
 {
+    if (!NumeReKernel::getInstance())
+        return false;
+
     unsigned int nPos = 0;          // Diverse Positions-Indices:
     unsigned int nPos_2 = 0;        //  - Fuer Anfang und Ende einer Funktion im String
 
@@ -797,9 +717,6 @@ bool Define::call(string& sExpr, const Settings& _option, int nRecursion)
         // --> Findest du eine Uebereinstimmung? <--
         if (sExpr.find(sFunctions[i][0]+"(") != string::npos)
         {
-            if (_option.getbDebug())
-                cerr << "|-> DEBUG: Match: i = " << i << endl;
-
             /* --> Fuer jede Uebereinstimmung: Pruefe, ob es wirklich eine Uebereinstimmung und nicht nur ein aehnlicher Treffer ist <--
              * --> Suche und merke dir die gegebenen Argumente <--
              * --> Ersetze die Uebereinstimmung mit den entsprechenden Definition aus der Datenbank,
@@ -818,16 +735,11 @@ bool Define::call(string& sExpr, const Settings& _option, int nRecursion)
                 // --> Kopiere den Teil vor dem Treffer in den temporaeren String <--
                 sTemp = sExpr.substr(0,sExpr.find(sFunctions[i][0] + "(", nPos));
 
-                if (_option.getbDebug())
-                    cerr << "|-> DEBUG: sTemp = " << sTemp << endl;
-
                 // --> Speichere die Position der zugehoerigen Argument-Klammer <--
                 nPos = sExpr.find(sFunctions[i][0]+"(",nPos) + sFunctions[i][0].length();
 
                 // --> Kopiere den String ab der Argumentklammer in sArg[0] <--
                 vArg.push_back(sExpr.substr(nPos));
-                if (_option.getbDebug())
-                    cerr << "|-> DEBUG: vArg[0] = " << vArg[0] << endl;
 
                 // --> Speichere die Position der zugehoerigen, schliessenden Klammer <--
                 nPos_2 = getMatchingParenthesis(vArg[0]);
@@ -842,10 +754,6 @@ bool Define::call(string& sExpr, const Settings& _option, int nRecursion)
                 vArg[0].erase(0,1);
                 nPos += nPos_2 + 1;
 
-                if (_option.getbDebug())
-                {
-                    cerr << "|-> DEBUG: vArg[0] = " << vArg[0] << endl;
-                }
                 if (!vArg[0].length() && vArg.size() == 1)
                 {
                     vArg.clear();
@@ -855,7 +763,7 @@ bool Define::call(string& sExpr, const Settings& _option, int nRecursion)
                 {
                     vArg.back() = "(" + vArg.back() + ")";
                     vArg.push_back("");
-                    if (!parser_SplitArgs(vArg[vArg.size()-2], vArg.back(), ',', _option, false))
+                    if (!parser_SplitArgs(vArg[vArg.size()-2], vArg.back(), ',', NumeReKernel::getInstance()->getSettings(), false))
                         return false;
                 }
 
@@ -879,14 +787,6 @@ bool Define::call(string& sExpr, const Settings& _option, int nRecursion)
 
                 // --> Kopiere die Funktionsdefinition in sImpFunc <--
                 sImpFunc = sFunctions[i][1];
-                if (_option.getbDebug())
-                {
-                    for (unsigned int j = 0; j < vArg.size(); j++)
-                    {
-                        cerr << "|-> DEBUG: vArg[" << j << "] = " << vArg[j] << endl;
-                    }
-                    cerr << "|-> DEBUG: sImpFunc = " << sImpFunc << endl;
-                }
 
                 // --> Ersetze nun die Argumente der Definition durch die gegeben Argumente <--
                 for (unsigned int n = 3; n < 13; n++)
@@ -924,8 +824,6 @@ bool Define::call(string& sExpr, const Settings& _option, int nRecursion)
                  *     ein Produkt oder WasAuchImmer eingefuegt werden soll, ergaenzen wir sicherheitshalber
                  *     Klammern um sImpFunc <--
                  */
-                if (_option.getbDebug())
-                    cerr << "|-> DEBUG: sImpFunc = " << sImpFunc << endl;
                 StripSpaces(sImpFunc);
                 while (sExpr[nPos] == ')' && sExpr[nPos+1] == ')' && sTemp[sTemp.length()-1] == '(' && sTemp[sTemp.length()-2] == '(')
                 {
@@ -963,8 +861,6 @@ bool Define::call(string& sExpr, const Settings& _option, int nRecursion)
                 {
                     sExpr = sTemp + "(" + sImpFunc + ")" + sExpr.substr(nPos);
                 }
-                if (_option.getbDebug())
-                    cerr << "|-> DEBUG: sExpr = " << sExpr << endl;
 
                 // --> Alle benoetigten Variablen zureucksetzen! <--
                 sImpFunc = "";
@@ -984,7 +880,7 @@ bool Define::call(string& sExpr, const Settings& _option, int nRecursion)
     // --> Wenn es noetig ist, eine weitere Rekursion durchzufuehren, mach' das hier <--
     if (bDoRecursion)
     {
-        if (!call(sExpr, _option, nRecursion+1))
+        if (!call(sExpr, nRecursion+1))
             return false;
     }
 
@@ -1038,6 +934,19 @@ string Define::getComment(unsigned int _i) const
         return getArgAtPos(sFunctions[_i][2], matchParams(sFunctions[_i][2], "comment", '=')+7);
     else
         return "";
+}
+
+// This member function resets the Define object
+// to a state before any function was defined
+bool Define::reset()
+{
+    for (int i = 0; i < nDefinedFunctions; i++)
+    {
+        for (int j = 0; j < 13; j++)
+            sFunctions[i][j] = "";
+    }
+
+    nDefinedFunctions = 0;
 }
 
 // --> Speichern der Definitionen: Falls man manche Funktionen wiederverwenden moechte <--
