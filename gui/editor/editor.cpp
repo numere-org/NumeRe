@@ -776,6 +776,14 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
 		this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
 		this->AutoCompShow(lenEntered, _syntax->getProcAutoCompList(GetTextRange(wordstartpos, currentPos).ToStdString(), sNamespace.ToStdString(), sSelectedNamespace.ToStdString()));
 	}
+	else if (lenEntered > 1 && m_fileType == FILE_TEXSOURCE && GetStyleAt(wordstartpos) == wxSTC_TEX_COMMAND)
+	{
+		this->AutoCompSetIgnoreCase(true);
+		this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
+		wxString sAutoCompList = generateAutoCompList(GetTextRange(wordstartpos, currentPos), _syntax->getAutoCompListTeX(GetTextRange(wordstartpos, currentPos).ToStdString()));
+		if (sAutoCompList.length())
+			this->AutoCompShow(lenEntered, sAutoCompList);
+	}
 	else if (lenEntered > 1
 			 && !(m_fileType == FILE_NSCR || m_fileType == FILE_NPRC))
 	{

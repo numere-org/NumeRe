@@ -36,6 +36,7 @@ NumeReSyntax::NumeReSyntax()
     vMatlabFunctions.push_back("NO_SYNTAX_ELEMENTS");
     vCppKeyWords.push_back("NO_SYNTAX_ELEMENTS");
     vCppFunctions.push_back("NO_SYNTAX_ELEMENTS");
+    vTeXKeyWords.push_back("NO_SYNTAX_ELEMENTS");
 
     // The operator characters are always the same
     sSingleOperators = "+-*/?=()[]{},;#^!&|<>%:";
@@ -99,6 +100,8 @@ void NumeReSyntax::loadSyntax(const string& sPath)
             vCppKeyWords = splitString(sLine.substr(sLine.find('=')+1));
         else if (sLine.substr(0, 12) == "CPPFUNCTIONS")
             vCppFunctions = splitString(sLine.substr(sLine.find('=')+1));
+        else if (sLine.substr(0, 11) == "TEXKEYWORDS")
+            vTeXKeyWords = splitString(sLine.substr(sLine.find('=')+1));
     }
 }
 
@@ -510,6 +513,32 @@ string NumeReSyntax::getAutoCompListCPP(string sFirstChars)
     }
     sFirstChars = toLowerCase(sFirstChars);
     for (auto iter = mAutoCompListCPP.begin(); iter != mAutoCompListCPP.end(); ++iter)
+    {
+        if ((iter->first).front() == sFirstChars.front())
+        {
+            if (sFirstChars == (iter->first).substr(0,sFirstChars.length()))
+            {
+                sAutoCompList += (iter->first).substr((iter->first).find('|')+1) + "?" + toString((int)(iter->second)) + " ";
+            }
+        }
+        else if ((iter->first).front() > sFirstChars.front())
+            break;
+    }
+
+    return sAutoCompList;
+}
+
+// The same as above but specialized for LaTeX Commands
+string NumeReSyntax::getAutoCompListTeX(string sFirstChars)
+{
+    string sAutoCompList;
+    if (!mAutoCompListTeX.size())
+    {
+        for (size_t i = 0; i < vTeXKeyWords.size(); i++)
+            mAutoCompListTeX[toLowerCase(vTeXKeyWords[i])+" |"+vTeXKeyWords[i]] = SYNTAX_COMMAND;
+    }
+    sFirstChars = toLowerCase(sFirstChars);
+    for (auto iter = mAutoCompListTeX.begin(); iter != mAutoCompListTeX.end(); ++iter)
     {
         if ((iter->first).front() == sFirstChars.front())
         {

@@ -44,3 +44,4 @@ Added	The rename symbols dialog now features a changes log for the current file,
 Fixed	Vector plots like the one in the "vect3d" description are now work as expected.
 Fixed	Complex plot compositions are now possible and work as expected.
 Updated	The function definition logic now provides the "lclfunc" command, which declares functions locally, and the "undef" command may now remove multiple functions at once.
+Added	LaTeX commands now have an autocompletion list as well.

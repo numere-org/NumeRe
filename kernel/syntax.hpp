@@ -44,6 +44,7 @@ class NumeReSyntax
         vector<string> vMatlabFunctions;
         vector<string> vCppKeyWords;
         vector<string> vCppFunctions;
+        vector<string> vTeXKeyWords;
 
         vector<string> vProcedureTree;
 
@@ -51,6 +52,7 @@ class NumeReSyntax
         map<string, int> mAutoCompList;
         map<string, int> mAutoCompListMATLAB;
         map<string, int> mAutoCompListCPP;
+        map<string, int> mAutoCompListTeX;
 
         string constructString(const vector<string>& vVector) const;
         vector<string> splitString(string sString);
@@ -104,6 +106,7 @@ class NumeReSyntax
         string getAutoCompList(string sFirstChars, string sType = "NSCR");
         string getAutoCompListMATLAB(string sFirstChars);
         string getAutoCompListCPP(string sFirstChars);
+        string getAutoCompListTeX(string sFirstChars);
         string getProcAutoCompList(string sFirstChars, string sBaseNameSpace, string sSelectedNameSpace);
         string getNameSpaceAutoCompList(string sFirstChars);
 
