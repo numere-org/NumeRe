@@ -110,6 +110,10 @@ bool VariableViewer::checkSpecialVals(const std::string& sVar)
         return true;
     else if (sVar.substr(0, sVar.find('\t')) == "t")
         return true;
+    else if (sVar.substr(0, sVar.find('\t')) == "nlines")
+        return true;
+    else if (sVar.substr(0, sVar.find('\t')) == "ncols")
+        return true;
     else if (sVar.substr(0, sVar.find('\t')) == "ans")
         return true;
 

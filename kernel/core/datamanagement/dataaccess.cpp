@@ -945,6 +945,9 @@ NumeRe::Table parser_extractData(const string& sDataExpression, Parser& _parser,
 		getDataElements(si_pos[0],  _parser, _data, _option);
 	}
 
+    // Update the dimension variables used for accessing the elements
+    _data.updateDimensionVariables(sDatatable);
+
 	// --> Rausgeschnittenen String am Komma ',' in zwei Teile teilen <--
     parser_SplitArgs(si_pos[0], sj_pos[0], ',', _option);
 

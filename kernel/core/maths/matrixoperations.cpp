@@ -3010,6 +3010,8 @@ static void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, Def
         bDefinitionSuccess = _functions.defineFunc(sSolution);
     else if (_functions.getDefine(_functions.getFunctionIndex(sSolution)) != sSolution)
         bDefinitionSuccess = _functions.defineFunc(sSolution, true);
+    else if (_functions.getDefine(_functions.getFunctionIndex(sSolution)) == sSolution)
+        return;
 
     if (bDefinitionSuccess)
         NumeReKernel::print(_lang.get("DEFINE_SUCCESS"));

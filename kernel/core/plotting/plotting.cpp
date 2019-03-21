@@ -3614,6 +3614,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 						}
 					}
 				}
+
 				// --> Klammer und schliessende Klammer finden und in einen anderen String schreiben <--
 				nMatch = sDataPlots.find('(', nPos);
 				si_pos[0] = sDataPlots.substr(nMatch, getMatchingParenthesis(sDataPlots.substr(nMatch)) + 1);
@@ -3623,6 +3624,9 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 				{
 					getDataElements(si_pos[0], _parser, _data, _option);
 				}
+
+                // Update the dimension variables used for accessing the elements
+                _data.updateDimensionVariables(sDataTable);
 
 				if (_option.getbDebug())
 					cerr << "|-> DEBUG: si_pos[0] = " << si_pos[0] << endl;
@@ -4370,6 +4374,9 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
 
             // Extract the argument of the data object
 			string sArgs = sTemp.substr(sTemp.find('('), getMatchingParenthesis(sTemp.substr(sTemp.find('('))) + 1);
+
+			// Update the data dimension variables
+			_data.updateDimensionVariables(sTableName);
 
 			// Expand empty parentheses
 			if (sArgs == "()")

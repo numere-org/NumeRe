@@ -51,6 +51,9 @@ Datafile::Datafile() : Cache()
 	sOutputFile = "";
 	sPrefix = "data";
 	sSavePath = "<savepath>";
+
+	tableColumnsCount = 0.0;
+	tableLinesCount = 0.0;
 }
 
 // --> Allgemeiner Konstruktor <--
@@ -4158,6 +4161,31 @@ vector<int> Datafile::sortElements(const string& sCache, long long int i1, long 
     if (bError || !bReturnIndex)
         return vector<int>();
     return vIndex;
+}
+
+// This member function updates the special dimension variables
+// (table end constants) for the selected table name or the string
+// table. It has to be called directly before the corresponding indices
+// are evaluated.
+bool Datafile::updateDimensionVariables(const string& sTableName)
+{
+    // Determine the type of table
+    if (sTableName != "string")
+    {
+        // Update the dimensions for the selected
+        // numerical table
+        tableLinesCount = getLines(sTableName, false);
+        tableColumnsCount = getCols(sTableName, false);
+    }
+    else
+    {
+        // Update the dimensions for the selected
+        // string table
+        tableLinesCount = getStringElements();
+        tableColumnsCount = getStringCols();
+    }
+
+    return true;
 }
 
 // Create a copy-efficient table object from the

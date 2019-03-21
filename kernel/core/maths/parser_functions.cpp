@@ -4853,6 +4853,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
 	}
 	else if (!_data.isValid())
 		throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
+
 	// --> Klammer und schliessende Klammer finden und in einen anderen String schreiben <--
 	nMatch = sCmd.find('(');
 	si_pos[0] = sCmd.substr(nMatch, getMatchingParenthesis(sCmd.substr(nMatch)) + 1);
@@ -4864,6 +4865,10 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
 	}
 	if (_option.getbDebug())
 		cerr << "|-> DEBUG: si_pos[0] = " << si_pos[0] << endl;
+
+    // Update the dimension variables used for accessing the elements
+    _data.updateDimensionVariables(sDataTable);
+
 
 	// --> Rausgeschnittenen String am Komma ',' in zwei Teile teilen <--
 	try
@@ -5873,6 +5878,8 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
 			bDefinitionSuccess = _functions.defineFunc(sFunctionDefString);
 		else if (_functions.getDefine(_functions.getFunctionIndex(sFunctionDefString)) != sFunctionDefString)
 			bDefinitionSuccess = _functions.defineFunc(sFunctionDefString, true);
+        else if (_functions.getDefine(_functions.getFunctionIndex(sFunctionDefString)) == sFunctionDefString)
+            return true;
 
         if (bDefinitionSuccess)
             NumeReKernel::print(_lang.get("DEFINE_SUCCESS"));
@@ -6464,19 +6471,22 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
 		make_hline();
 	}
 
+	oFitLog.close();
+
 	bool bDefinitionSuccess = false;
 
 	if (!_functions.isDefined(sFunctionDefString))
 		bDefinitionSuccess = _functions.defineFunc(sFunctionDefString);
 	else if (_functions.getDefine(_functions.getFunctionIndex(sFunctionDefString)) != sFunctionDefString)
 		bDefinitionSuccess = _functions.defineFunc(sFunctionDefString, true);
+    else if (_functions.getDefine(_functions.getFunctionIndex(sFunctionDefString)) == sFunctionDefString)
+        return true;
 
     if (bDefinitionSuccess)
         NumeReKernel::print(_lang.get("DEFINE_SUCCESS"));
     else
         NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
 
-	oFitLog.close();
 	return true;
 }
 
@@ -6576,14 +6586,18 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
 	{
 		if (_idx.nI[1] == -2)
 			_idx.nI[1] = _idx.nI[0] + (int)round(_fftData.GetNx() / 2.0) + 1;
+
 		for (long long int i = 0; i < (int)round(_fftData.GetNx() / 2.0) + 1; i++)
 		{
 			if (i > _idx.nI[1] - _idx.nI[0])
 				break;
+
 			_data.writeToCache(i + _idx.nI[0], _idx.nJ[0], sTargetTable, 2.0 * (double)(i)*dNyquistFrequency / (double)(_fftData.GetNx()));
+
 			if (!bComplex)
 			{
 				_data.writeToCache(i + _idx.nI[0], _idx.nJ[0] + 1, sTargetTable, hypot(_fftData.a[i].real(), _fftData.a[i].imag()));
+
 				if (i > 2 && (fabs(atan2(_fftData.a[i].imag(), _fftData.a[i].real()) - atan2(_fftData.a[i - 1].imag(), _fftData.a[i - 1].real())) >= M_PI)
 						&& ((atan2(_fftData.a[i].imag(), _fftData.a[i].real()) - atan2(_fftData.a[i - 1].imag(), _fftData.a[i - 1].real())) * (atan2(_fftData.a[i - 1].imag(), _fftData.a[i - 1].real()) - atan2(_fftData.a[i - 2].imag(), _fftData.a[i - 2].real())) < 0))
 				{
@@ -6592,6 +6606,7 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
 					else if (atan2(_fftData.a[i - 1].imag(), _fftData.a[i - 1].real()) - atan2(_fftData.a[i - 2].imag(), _fftData.a[i - 2].real()) > 0.0)
 						dPhaseOffset += 2 * M_PI;
 				}
+
 				_data.writeToCache(i + _idx.nI[0], _idx.nJ[0] + 2, sTargetTable, atan2(_fftData.a[i].imag(), _fftData.a[i].real()) + dPhaseOffset);
 			}
 			else
@@ -6603,6 +6618,7 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
 
 		_data.setCacheStatus(true);
 		_data.setHeadLineElement(_idx.nJ[0], sTargetTable, _lang.get("COMMON_FREQUENCY") + "_[Hz]");
+
 		if (!bComplex)
 		{
 			_data.setHeadLineElement(_idx.nJ[0] + 1, sTargetTable, _lang.get("COMMON_AMPLITUDE"));

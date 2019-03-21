@@ -269,6 +269,10 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 	_parser.DefineVar(parser_iVars.sName[2], &parser_iVars.vValue[2][0]);
 	_parser.DefineVar(parser_iVars.sName[3], &parser_iVars.vValue[3][0]);
 
+	// Declare the table dimension variables
+	_parser.DefineVar("nlines", &_data.tableLinesCount);
+	_parser.DefineVar("ncols", &_data.tableColumnsCount);
+
 	// --> VAR-FACTORY Deklarieren (Irgendwo muessen die ganzen Variablen-Werte ja auch gespeichert werden) <--
 	_parser.SetVarFactory(parser_AddVariable, &_parser);
 

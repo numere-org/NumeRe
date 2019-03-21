@@ -207,6 +207,10 @@ class Datafile : public Cache, private Sorter		//	Diese Klasse ist ein CHILD von
                                                                 // 		auf Basis der uebergeben Werte)
 		~Datafile();									// Destruktor (wendet delete[] auf die Matrix und alle Arrays an, sofern es noetig ist)
 
+		// Variables for the parser
+		double tableLinesCount;
+		double tableColumnsCount;
+
 		long long int getLines(const string& sCache, bool _bFull = false) const;	// gibt nLines zurueck
 		long long int getCols(const string& sCache, bool _bFull = false) const;					// gibt nCols zurueck
 		bool isValid() const;							// gibt den Wert von bValidData zurueck
@@ -239,6 +243,8 @@ class Datafile : public Cache, private Sorter		//	Diese Klasse ist ein CHILD von
 		bool setCacheSize(long long int _nLines, long long int _nCols, const string& sCache);		// Setzt die Anfangsgroesse des Caches
 		vector<int> sortElements(const string& sLine);
 		vector<int> sortElements(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = 0, const string& sSortingExpression = "");
+		bool updateDimensionVariables(const string& sTableName);
+
         inline int getDataSize() const
             {
                 if (bValidData)

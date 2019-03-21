@@ -30,7 +30,6 @@ static void expandIndexVectors(Indices& _idx, Datafile& _data, const string& sCm
 static void expandStringIndexVectors(Indices& _idx, Datafile& _data);
 static bool isCandidateForVectors(string sI[2], string sJ[2]);
 static bool isCandidateForCasuals(string sI[2], string sJ[2]);
-
 /*
  * --> Gibt DATENELEMENT-Indices als Ints in einem Indices-Struct zurueck <--
  * --> Index = -1, falls der Index nicht gefunden wurde/kein DATENELEMENT uebergeben wurde <--
@@ -43,6 +42,7 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
 	Indices _idx;
 
 	string sArgument = "";
+	string sTableName = "";
 	unsigned int nPos = 0;
 
 	// Check, whether indices are available
@@ -52,13 +52,22 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
 	// Find parenthesis position and get the matching closing parenthesis
 	nPos = sCmd.find('(');
 	size_t nClosingParens = getMatchingParenthesis(sCmd);
+
+	// Return, if the closing parenthesis is missing
 	if (nClosingParens == string::npos)
 		return _idx;
+
+    sTableName = sCmd.substr(0, sCmd.find('('));
+    StripSpaces(sTableName);
+
 	sArgument = sCmd.substr(nPos + 1, nClosingParens - nPos - 1);
 
 	// If the argument contains tables, get their values. This leads to a recursion!
 	if (sArgument.find("data(") != string::npos || _data.containsCacheElements(sArgument))
 		getDataElements(sArgument, _parser, _data, _option);
+
+    // update the dimension variables
+    _data.updateDimensionVariables(sTableName);
 
 	// Remove not necessary white spaces
 	StripSpaces(sArgument);
