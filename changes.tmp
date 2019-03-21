@@ -46,3 +46,4 @@ Fixed	Complex plot compositions are now possible and work as expected.
 Updated	The function definition logic now provides the "lclfunc" command, which declares functions locally, and the "undef" command may now remove multiple functions at once.
 Added	LaTeX commands now have an autocompletion list as well.
 New	The variables "nlines" and "ncols" may now be used as table "end" constants for the corresponding direction.
+Cleaned	Tables may now store and handle "inf" and "-inf" correctly.

@@ -58,6 +58,11 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
 		return _idx;
 
     sTableName = sCmd.substr(0, sCmd.find('('));
+
+    // Remove leading whitespaces
+    if (sTableName.find(' ') != string::npos)
+        sTableName.erase(0, sTableName.rfind(' ')+1);
+
     StripSpaces(sTableName);
 
 	sArgument = sCmd.substr(nPos + 1, nClosingParens - nPos - 1);

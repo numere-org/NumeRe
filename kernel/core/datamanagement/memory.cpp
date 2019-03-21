@@ -459,13 +459,15 @@ bool Memory::writeData(long long int _nLine, long long int _nCol, double _dData)
 {
 	if (dMemTable && (_nLine < nLines) && (_nCol < nCols))
 	{
-		if (isinf(_dData) || isnan(_dData))
+		if (isnan(_dData))
 		{
 			dMemTable[_nLine][_nCol] = NAN;
+
 			// re-count the number of appended zeros for the current column
 			if (nLines - nAppendedZeroes[_nCol] == _nLine + 1)
 			{
 				nAppendedZeroes[_nCol] = 0;
+
 				for (long long int j = nLines - 1; j >= 0; j--)
 				{
 					if (isnan(dMemTable[j][_nCol]))
@@ -478,14 +480,16 @@ bool Memory::writeData(long long int _nLine, long long int _nCol, double _dData)
 		else
 		{
 			dMemTable[_nLine][_nCol] = _dData;
+
 			if (nLines - nAppendedZeroes[_nCol] <= _nLine)
 			{
 				nAppendedZeroes[_nCol] = nLines - _nLine - 1;
 			}
+
 			bValidData = true;
 		}
 	}
-	else if (!dMemTable && (isinf(_dData) || isnan(_dData)))
+	else if (!dMemTable && isnan(_dData))
 		return true;
 	else
 	{
@@ -495,32 +499,39 @@ bool Memory::writeData(long long int _nLine, long long int _nCol, double _dData)
 		 */
 		long long int _nNLines = nLines;
 		long long int _nNCols = nCols;
+
 		while (_nLine + 1 >= _nNLines)
 		{
 			_nNLines = 2 * _nNLines;
 		}
+
 		while (_nCol + 1 >= _nNCols)
 		{
 			_nNCols = 2 * _nNCols;
 		}
+
 		if (!Allocate(_nNLines, _nNCols))
 			return false;
 
-		if (isinf(_dData) || isnan(_dData))
+		if (isnan(_dData))
 		{
 			dMemTable[_nLine][_nCol] = NAN;
 		}
 		else
 		{
 			dMemTable[_nLine][_nCol] = _dData;
+
 			if (nLines - nAppendedZeroes[_nCol] <= _nLine)
 				nAppendedZeroes[_nCol] = nLines - _nLine - 1;
 		}
+
 		nLines = _nNLines;
 		nCols = _nNCols;
-		if (!isinf(_dData) && !isnan(_dData) && !bValidData)
+
+		if (!isnan(_dData) && !bValidData)
 			bValidData = true;
 	}
+
 	// --> Setze den Zeitstempel auf "jetzt", wenn der Memory eben noch gespeichert war <--
 	if (bIsSaved)
 	{

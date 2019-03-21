@@ -580,7 +580,7 @@ void Datafile::openCSV(Settings& _option)
             cerr << "|-> DEBUG: nCols = " << nCols << endl;
         if (!sHeadLine)
             sHeadLine = new string[nCols];
-        string sValidSymbols = "0123456789.,;-+eE ";
+        string sValidSymbols = "0123456789.,;-+eE INFAinfa";
         sValidSymbols += cSep;
         if (_option.getbDebug())
             cerr << "|-> DEBUG: sValidSymbols = \"" << sValidSymbols << "\"" << endl;
@@ -703,15 +703,17 @@ void Datafile::openCSV(Settings& _option)
 					if (sDataMatrix[i][j] == "---"
                         || sDataMatrix[i][j] == "NaN"
                         || sDataMatrix[i][j] == "NAN"
-                        || sDataMatrix[i][j] == "nan"
-                        || sDataMatrix[i][j] == "inf"
-                        || sDataMatrix[i][j] == "-inf")	// Liefert der Token den seltsamen '---'-String oder einen NaN?
+                        || sDataMatrix[i][j] == "nan")	// Liefert der Token den seltsamen '---'-String oder einen NaN?
 					{
 						// --> Aha! Da ist der gesuchte String. Dann ist das Wohl eine Leerzeile. Wir werden '0.0' in
 						//	   den Datensatz schreiben und den Datenpunkt als zu ignorierende Nullzeile interpretieren <--
 						dDatafile[i][j] = NAN;
 						//bValidEntry[i][j] = false;
 					}
+					else if (sDataMatrix[i][j] == "inf")
+                        dDatafile[i][j] = INFINITY;
+                    else if (sDataMatrix[i][j] == "-inf")
+                        dDatafile[i][j] = -INFINITY;
 					else
 					{
                         for (unsigned int n = 0; n < sDataMatrix[i][j].length(); n++)
@@ -2772,15 +2774,17 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 					if (sDataMatrix[i][j] == "---"
                         || sDataMatrix[i][j] == "NaN"
                         || sDataMatrix[i][j] == "NAN"
-                        || sDataMatrix[i][j] == "nan"
-                        || sDataMatrix[i][j] == "inf"
-                        || sDataMatrix[i][j] == "-inf")	// Liefert der Token den seltsamen '---'-String oder einen NaN?
+                        || sDataMatrix[i][j] == "nan")	// Liefert der Token den seltsamen '---'-String oder einen NaN?
 					{
 						// --> Aha! Da ist der gesuchte String. Dann ist das Wohl eine Leerzeile. Wir werden '0.0' in
 						//	   den Datensatz schreiben und den Datenpunkt als zu ignorierende Nullzeile interpretieren <--
 						dDatafile[i][j] = NAN;
 						//bValidEntry[i][j] = false;
 					}
+					else if (sDataMatrix[i][j] == "inf")
+                        dDatafile[i][j] = INFINITY;
+                    else if (sDataMatrix[i][j] == "-inf")
+                        dDatafile[i][j] = -INFINITY;
 					else
 					{
 						// --> Nein, dann wandle in double um <--

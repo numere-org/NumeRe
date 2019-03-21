@@ -387,7 +387,7 @@ void TableViewer::deleteSelection()
 // the entered cell value is a numerical value
 bool TableViewer::isNumerical(const string& sCell)
 {
-    static string sNums = "0123456789,.eE+- ";
+    static string sNums = "0123456789,.eE+- INFinf";
     return sCell.find_first_not_of(sNums) == string::npos;
 }
 

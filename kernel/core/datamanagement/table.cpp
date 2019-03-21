@@ -133,7 +133,7 @@ namespace NumeRe
     // into a numerical value
     bool Table::isNumerical(const string& sValue)
     {
-        static string sValidNumericalCharacters = "0123456789,.eE+- ";
+        static string sValidNumericalCharacters = "0123456789,.eE+- INFAinfa";
         return sValue.find_first_not_of(sValidNumericalCharacters) == string::npos;
     }
 
@@ -231,6 +231,8 @@ namespace NumeRe
             _dValue = NAN;
         else if (_sValue == "inf")
             _dValue = INFINITY;
+        else if (_sValue == "-inf")
+            _dValue = -INFINITY;
         else
         {
             while (sValue.find(',') != string::npos)

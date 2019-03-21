@@ -345,6 +345,7 @@ string** make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, con
 
     // Create the formatting memory
 	string** sOut = new string*[nLines];		// die eigentliche Ausgabematrix. Wird spaeter gefuellt an Output::format(string**,int,int,Output&) uebergeben
+
 	for (long long int i = 0; i < nLines; i++)
 	{
 		sOut[i] = new string[nCols];			// Vollstaendig Allozieren!
@@ -377,6 +378,7 @@ string** make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, con
 				    // Store the complete headlines separated into the different rows
 					string sHead = sOut[i][j];
 					int nCount = 0;
+
 					for (unsigned int n = 0; n < sHead.length(); n++)
 					{
 						if (sHead.substr(n, 2) == "\\n")
@@ -387,6 +389,7 @@ string** make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, con
 							nCount++;
 						}
 					}
+
 					sOut[i + nCount][j] = sHead;
 				}
 
@@ -403,6 +406,20 @@ string** make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, con
 				continue;
 			}
 
+			// Handle infinity
+			if (isinf(_data.getElement(i - nHeadlineCount, j, sCache)) && _data.getElement(i - nHeadlineCount, j, sCache) > 0)
+            {
+                sOut[i][j] = "inf";
+                continue;
+            }
+
+            // Handle negative infinity
+			if (isinf(_data.getElement(i - nHeadlineCount, j, sCache)) && _data.getElement(i - nHeadlineCount, j, sCache) < 0)
+            {
+                sOut[i][j] = "-inf";
+                continue;
+            }
+
 			// Transform the data to strings and write it to the string table
 			// We use the C-style conversion function sprintf(), because it is 4 times faster than
 			// using the stringstream conversion way.
@@ -410,6 +427,7 @@ string** make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, con
                 sprintf(cBuffer, "%.*g", 4, _data.getElement(i - nHeadlineCount, j, sCache));
             else
                 sprintf(cBuffer, "%.*g", nPrecision, _data.getElement(i - nHeadlineCount, j, sCache));
+
             sOut[i][j] = cBuffer;
 		}
 	}

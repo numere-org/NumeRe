@@ -36,12 +36,14 @@ Output::Output(bool bStatus, string sFile) : FileSystem()
 {
 	Output::reset();			// Hier rufen wir ebenfalls die reset()-Methode und ueberschreiben dann lieber die nicht-defaults
 	bFile = bStatus;
+
 	if (bStatus) 				// Wenn ein Datenfile verwendet werden soll, erzeuge dieses sogleich
 	{
 		setFileName(sFile);		// sFile wird nur in diesem Fall uebernommen, damit hier so Schlauberger, die Output _out(false,0); aufrufen
 								// 		keinen Muell machen koennen
 		start();				// Datenfile anlegen
 	}
+
 	sPath = "save";
 	return;
 }
@@ -53,6 +55,7 @@ Output::~Output()
 	{
 		end();					// Schliesse Datei, falls eine geoeffnet ist
 	}
+
 	return;
 }
 
@@ -61,6 +64,7 @@ void Output::setStatus(bool bStatus)
 {
 	if (bFile == true && bFileOpen == true)
 		end();					// Falls zuvor bereits ein Datenfile erzeugt wurde, schliesse dieses zuerst
+
 	bFile = bStatus;			// Weise den neuen Wert an den Bool bFile zu.
 	return;
 }
@@ -70,6 +74,7 @@ void Output::reset()
 {
 	if(bFile && bFileOpen)
 		end();
+
 	bFile = false;
 	bFileOpen = false;
 	bCompact = false;
@@ -92,29 +97,41 @@ string Output::replaceTeXControls(const string& _sText)
     {
         if (sReturn[i] == 'Ä' || sReturn[i] == (char)142)
             sReturn.replace(i,1,"\\\"A");
+
         if (sReturn[i] == 'ä' || sReturn[i] == (char)132)
             sReturn.replace(i,1,"\\\"a");
+
         if (sReturn[i] == 'Ö' || sReturn[i] == (char)153)
             sReturn.replace(i,1,"\\\"O");
+
         if (sReturn[i] == 'ö' || sReturn[i] == (char)148)
             sReturn.replace(i,1,"\\\"o");
+
         if (sReturn[i] == 'Ü' || sReturn[i] == (char)154)
             sReturn.replace(i,1,"\\\"U");
+
         if (sReturn[i] == 'ü' || sReturn[i] == (char)129)
             sReturn.replace(i,1,"\\\"u");
+
         if (sReturn[i] == 'ß' || sReturn[i] == (char)225)
             sReturn.replace(i,1,"\\ss ");
+
         if (sReturn[i] == '°' || sReturn[i] == (char)248)
             sReturn.replace(i,1,"$^\\circ$");
+
         if (sReturn[i] == (char)196 || sReturn[i] == (char)249)
             sReturn.replace(i,1,"\\pm ");
+
         if (sReturn[i] == (char)171 || sReturn[i] == (char)174)
             sReturn.replace(i,1,"\"<");
+
         if (sReturn[i] == (char)187 || sReturn[i] == (char)175)
             sReturn.replace(i,1,"\">");
+
         if ((!i && sReturn[i] == '_') || (i && sReturn[i] == '_' && sReturn[i-1] != '\\'))
             sReturn.insert(i,1,'\\');
     }
+
     return sReturn;
 }
 
@@ -137,6 +154,7 @@ void Output::setFileName(string sFile)
 	{
 		end();
 	}
+
 	if (sFile != "0")		// Ist sFile != 0, pruefe und korrigiere sFile und weise dann an
 	{							//		sFileName zu, sonst verwende den Default
         if (sFile.rfind('.') != string::npos
@@ -144,7 +162,9 @@ void Output::setFileName(string sFile)
                     || sFile.substr(sFile.rfind('.')) == ".nprc"
                     || sFile.substr(sFile.rfind('.')) == ".nscr"))
             sFile = sFile.substr(0,sFile.rfind('.'));
+
 		sFileName = FileSystem::ValidFileName(sFile);	// Rufe die Methode der PARENT-Klasse auf, um den Namen zu pruefen
+
 		if (sFileName.substr(sFileName.rfind('.')) == ".tex")
             bPrintTeX = true;
         else if (sFileName.substr(sFileName.rfind('.')) == ".csv")
@@ -154,6 +174,7 @@ void Output::setFileName(string sFile)
 	{
 		generateFileName();		// Generiere einen Dateinamen aus data_YYYY-MM-DD-hhmmss.dat
 	}
+
 	return;
 }
 
@@ -208,9 +229,12 @@ void Output::print_legal()		// Pro forma Kommentare in die Datei
 {
     if (bPrintCSV)
         return;
+
     string sCommentSign = "#";
+
     if (bPrintTeX)
         sCommentSign = "%";
+
     string sBuild = AutoVersion::YEAR;
     sBuild += "-";
     sBuild += AutoVersion::MONTH;
@@ -225,10 +249,12 @@ void Output::print_legal()		// Pro forma Kommentare in die Datei
 	print(sCommentSign + "");
 	print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_LINE4", getDate(false)));
 	print(sCommentSign + "");
+
 	if (bPrintTeX)
         print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_TEX"));
     else
         print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_STD"));
+
 	print(sCommentSign);
 	return;
 }
@@ -240,6 +266,7 @@ void Output::end()
 		file_out.close();		// Schliesse die Datei
 		bFileOpen = false;		// Setze den Boolean auf FALSE
 	}
+
 	return;						// Mach nichts, wenn gar nicht in eine Datei geschrieben wurde,
 								//		oder die Datei bereits geschlossen ist
 }
@@ -247,41 +274,12 @@ void Output::end()
 
 void Output::print(string sOutput)
 {
-    if (!bFile)
-    {
-        /*for (unsigned int i = 0; i < sOutput.length(); i++)
-        {
-            if (sOutput[i] == 'Ä')
-                sOutput[i] = (char)142;
-            else if (sOutput[i] == 'ä')
-                sOutput[i] = (char)132;
-            else if (sOutput[i] == 'Ö')
-                sOutput[i] = (char)153;
-            else if (sOutput[i] == 'ö')
-                sOutput[i] = (char)148;
-            else if (sOutput[i] == 'Ü')
-                sOutput[i] = (char)154;
-            else if (sOutput[i] == 'ü')
-                sOutput[i] = (char)129;
-            else if (sOutput[i] == 'ß')
-                sOutput[i] = (char)225;
-            else if (sOutput[i] == '°')
-                sOutput[i] = (char)248;
-            else if (sOutput[i] == (char)249)
-                sOutput[i] = (char)196;
-            else if (sOutput[i] == (char)171)
-                sOutput[i] = (char)174;
-            else if (sOutput[i] == (char)187)
-                sOutput[i] = (char)175;
-            else
-                continue;
-        }*/
-	}
 	if (sOutput.find("---------") != string::npos || sOutput.find("<<SUMBAR>>") != string::npos)
     {
         if (sOutput.find("<<SUMBAR>>") != string::npos)
         {
             unsigned int nLength = sOutput.length();
+
             if (!bFile)
                 sOutput.assign(nLength, '-');
             else
@@ -289,10 +287,13 @@ void Output::print(string sOutput)
         }
         else if (!bFile)
             sOutput.assign(sOutput.length(), '-');
+
         if (bPrintTeX)
             sOutput = "\\midrule";
+
         bSumBar = true;
 	}
+
 	if (bFile)
 	{
 		if (!bFileOpen)
@@ -300,6 +301,7 @@ void Output::print(string sOutput)
 			start();			// Wenn in eine Datei geschrieben werden soll, aber diese noch nicht geoeffnet wurde,
 								// 		rufe die Methode start() auf.
 		}
+
 		if (file_out.fail())	// Fehlermeldung, falls nicht in die Datei geschrieben werden kann
 		{
 			NumeReKernel::printPreFmt("*************************************************\n");
@@ -324,6 +326,7 @@ void Output::print(string sOutput)
 	}
 	else
         NumeReKernel::printPreFmt(sOutput + "\n");
+
 	return;
 }
 
@@ -331,6 +334,7 @@ void Output::print(string sOutput)
 void Output::generateFileName()	// Generiert einen Dateinamen auf Basis des aktuellen Datums
 {								//		Der Dateinamen hat das Format: data_YYYY-MM-DD_hhmmss.dat
 	string sTime;
+
 	if (sPath.find('"') != string::npos)
         sTime = sPath.substr(1,sPath.length()-2);
     else
@@ -338,6 +342,7 @@ void Output::generateFileName()	// Generiert einen Dateinamen auf Basis des aktu
 
     while (sTime.find('\\') != string::npos)
         sTime[sTime.find('\\')] = '/';
+
     sTime += "/" + sPluginPrefix + "_";		// Prefix laden
 	sTime += getDate(true);		// Datum aus der Klasse laden
 	sTime += ".dat";
@@ -352,29 +357,43 @@ string Output::getDate(bool bForFile)	// Der Boolean entscheidet, ob ein Dateina
 	tm *ltm = localtime(&now);
 	ostringstream Temp_str;
 	Temp_str << 1900+ltm->tm_year << "-"; //YYYY-
+
 	if(1+ltm->tm_mon < 10)		// 0, falls Monat kleiner als 10
 		Temp_str << "0";
+
 	Temp_str << 1+ltm->tm_mon << "-"; // MM-
+
 	if(ltm->tm_mday < 10)		// 0, falls Tag kleiner als 10
 		Temp_str << "0";
+
 	Temp_str << ltm->tm_mday; 	// DD
+
 	if(bForFile)
 		Temp_str << "_";		// Unterstrich im Dateinamen
 	else
 		Temp_str << ", um ";	// Komma im regulaeren Datum
+
 	if(ltm->tm_hour < 10)
 		Temp_str << "0";
+
 	Temp_str << ltm->tm_hour; 	// hh
+
 	if(!bForFile)
 		Temp_str << ":";		// ':' im regulaeren Datum
+
 	if(ltm->tm_min < 10)
 		Temp_str << "0";
+
 	Temp_str << ltm->tm_min;	// mm
+
 	if(!bForFile)
 		Temp_str << ":";
+
 	if(ltm->tm_sec < 10)
 		Temp_str << "0";
+
 	Temp_str << ltm->tm_sec;	// ss
+
 	return Temp_str.str();
 }
 
@@ -383,22 +402,23 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
 {
     if (!nHeadLineCount)
         nHeadLineCount = 1;
+
 	unsigned int nLongest[_nCol];		// Int fuer die laengste Zeichenkette: unsigned da string::length() einen unsigned zurueck gibt
 	unsigned int nLen = 0;			// Int fuer die aktuelle Laenge: dito
 	string sPrint = "";				// String fuer die endgueltige Ausgabe
 	string sLabel = sFileName;
+
 	if (sLabel.find('/') != string::npos)
         sLabel.erase(0,sLabel.rfind('/')+1);
+
     if (sLabel.find(".tex") != string::npos)
         sLabel.erase(sLabel.rfind(".tex"));
+
     while (sLabel.find(' ') != string::npos)
         sLabel[sLabel.find(' ')] = '_';
+
 	string cRerun = "";				// String fuer den erneuten Aufruf
 									// Wegen dem Rueckgabewert von string::length() sind alle Schleifenindices unsigned
-
-	if(_option.getbDebug())
-		cerr << "|-> DEBUG: starte _out.format..." << endl;
-
 
     if ((!bCompact || _nLine < 12) && !bPrintCSV)
     {
@@ -406,6 +426,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
         for (long long int j = 0; j < _nCol; j++)
         {
             nLongest[j] = 0;
+
             for (long long int i = 0; i < _nLine; i++)
             {
                 if (i >= nHeadLineCount && bPrintTeX)
@@ -418,25 +439,41 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
                                 + _sMatrix[i][j].substr(_sMatrix[i][j].find_first_not_of('0', _sMatrix[i][j].find('e')+2))
                                 + "}";
                     }
+
                     if (_sMatrix[i][j].find('%') != string::npos)
                     {
                         _sMatrix[i][j] = _sMatrix[i][j].substr(0,_sMatrix[i][j].find('%'))
                                 + "\\"
                                 + _sMatrix[i][j].substr(_sMatrix[i][j].find('%'));
                     }
+
                     if (_sMatrix[i][j].find("+/-") != string::npos)
                     {
                         _sMatrix[i][j] = _sMatrix[i][j].substr(0,_sMatrix[i][j].find("+/-"))
                                 + "\\pm"
                                 + _sMatrix[i][j].substr(_sMatrix[i][j].find("+/-")+3);
                     }
+
+                    if (_sMatrix[i][j] == "inf")
+                    {
+                        _sMatrix[i][j] = "\\infty";
+                    }
+
+                    if (_sMatrix[i][j] == "-inf")
+                    {
+                        _sMatrix[i][j] = "-\\infty";
+                    }
                 }
+
                 if (bPrintTeX)
                     _sMatrix[i][j] = replaceTeXControls(_sMatrix[i][j]);
+
                 nLen = _sMatrix[i][j].length(); // Erhalte die Laenge der aktuellen Zeichenkette
+
                 if (nLen > nLongest[j])
                     nLongest[j] = nLen;	// Weise neue Laenge an nLongest zu, falls nLen > nLongest
             }
+
             nLongest[j] += 2;
         }
 	}
@@ -445,23 +482,22 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
         for (long long int j = 0; j < _nCol; j++)
         {
             nLongest[j] = 0;
+
             for (long long int i = 0; i < _nLine; i++)
             {
                 if (i < 5 || i >= _nLine - 5)
                 {
                     nLen = _sMatrix[i][j].length();
+
                     if (nLen > nLongest[j])
                         nLongest[j] = nLen;
                 }
             }
+
             nLongest[j] += 2;
         }
 	}
 
-
-
-	if (_option.getbDebug())
-		cerr << "|-> DEBUG: nLongest = " << nLongest[0] << endl;
     if (bCompact)
     {
         for (long long int j = 0; j < _nCol; j++)
@@ -470,7 +506,9 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
                 nLongest[j] = 7;
         }
     }
+
 	nLen = 0;
+
 	for (long long int j = 0; j < _nCol; j++)
         nLen += nLongest[j];
 
@@ -492,8 +530,10 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
             print("\\begin{table}[htb]");
             print("\\centering");
             sPrint = "\\begin{tabular}{";
+
             for (long long int j = 0; j < _nCol; j++)
                 sPrint += "c";
+
             sPrint += "}";
             print(sPrint);
             print("\\toprule");
@@ -501,25 +541,31 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
         else
         {
             sPrint = "\\begin{longtable}{";
+
             for (long long int j = 0; j < _nCol; j++)
                 sPrint += "c";
+
             sPrint += "}";
             print(sPrint);
             print("\\caption{" + _lang.get("OUTPUT_FORMAT_TEX_HEAD", sPluginName)+"}");
             print("\\label{tab:" + sLabel + "}\\\\");
             print("\\toprule");
             sPrint = "";
+
             for (int i = 0; i < nHeadLineCount; i++)
             {
                 for (long long int j = 0; j < _nCol; j++)
                     sPrint += _sMatrix[i][j] + " & ";
+
                 sPrint = sPrint.substr(0,sPrint.length()-2) + "\\\\\n";
             }
+
             for (unsigned int i = 0; i < sPrint.length(); i++)
             {
                 if (sPrint[i] == '_')
                     sPrint[i] = ' ';
             }
+
             print(sPrint);
             print("\\midrule");
             print("\\endfirsthead");
@@ -535,6 +581,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
             print("\\bottomrule");
             print("\\endlastfoot");
         }
+
         sPrint = "";
     }
 
@@ -546,10 +593,11 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
             {
                 if (_sMatrix[i][j] != "---")
                     sPrint += _sMatrix[i][j];
+
                 sPrint += ",";
             }
+
             print(sPrint);
-            //cerr << sPrint << endl;
             sPrint = "";
         }
     }
@@ -559,6 +607,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
         long long int nCol_1 = _nCol;
         unsigned int nLine = 0;
         int nNotRepeatFirstCol = 1;
+
         if (!bFile && _option.getWindow()-4 < nLen)
         {
             for (long long int j = 0; j < _nCol; j++)
@@ -568,19 +617,23 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
                     nCol_1 = j;
                     break;
                 }
+
                 nLine += nLongest[j];
             }
         }
         else
             nLine = nLen;
+
         do
         {
             if (nCol_0 == nCol_1)
                 nCol_1 = _nCol;
+
             for (long long int i = 0; i < _nLine; i++)
             {
                 if (bPrintTeX && _nLine >= 30 && i < nHeadLineCount)
                     continue;
+
                 if (!bCompact || _nLine < 12 || (bCompact && _nLine >= 12 && (i < 5 || i >= _nLine - 5)))
                 {
                     for (long long int j = nCol_0*nNotRepeatFirstCol; j < nCol_1; j++)
@@ -607,13 +660,10 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
 
                             for (unsigned int n = 0; n < nLongest[j] - _sMatrix[i][j].length(); n++)
                             {
-                                /*if (!j && n == nLongest-_sMatrix[i][j].length()-1)
-                                    break;*/
                                 sPrint += " ";
                             }
                         }
-                        /*else
-                            sPrint += "  ";*/
+
                         if (bPrintTeX && i >= nHeadLineCount && _sMatrix[i][j] != "---" && !bSumBar)
                             sPrint += "$";
                         else if (bPrintTeX && !bSumBar)
@@ -628,16 +678,20 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
                         }
                         else
                             sPrint += _sMatrix[i][j];	// Verknuepfe alle Elemente einer Zeile zu einem einzigen String
+
                         if (!nCol_0 && nCol_1 != _nCol && nNotRepeatFirstCol && i >= nHeadLineCount)
                         {
                             if (_sMatrix[i][0].find(':') != string::npos)
                                 nNotRepeatFirstCol = 0;
                         }
+
                         if (bPrintTeX && i >= nHeadLineCount && _sMatrix[i][j] != "---")
                             sPrint += "$";
+
                         if (!nNotRepeatFirstCol && nCol_0 && !j)
                             j = nCol_0-1;
                     }
+
                     if ((!bFile || bPrintTeX) && i < nHeadLineCount)
                     {
                         for (unsigned int k = 0; k < sPrint.length(); k++)
@@ -646,26 +700,33 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
                                 sPrint[k] = ' ';
                         }
                     }
+
                     if (bPrintTeX)
                         sPrint += "\\\\";
+
                     print(sPrint); 				// Ende der Zeile: Ausgabe in das Ziel
                 }
                 else if (bCompact && _nLine >= 10 && i == 5)
                 {
                     if (!bFile)
                         sPrint = "|  ";
+
                     for (long long int j = nCol_0*nNotRepeatFirstCol; j < nCol_1; j++)
                     {
                         for (unsigned int k = 0; k < nLongest[j] - 5; k++)
                         {
                             if (j == nCol_0*nNotRepeatFirstCol && k == nLongest[j]-6)
                                 break;
+
                             sPrint += " ";
                         }
+
                         sPrint += "[...]";
+
                         if (!nNotRepeatFirstCol && nCol_0 && !j)
                             j = nCol_0-1;
                     }
+
                     print(sPrint);
                 }
 
@@ -680,12 +741,11 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
                     }
                     else
                         sPrint = "|   ";
+
                     if (!bPrintTeX)
                     {
                         if (!bFile)
                         {
-                            /*sPrint.assign(nLen-2, (char)205);
-                            sPrint.insert(0,"|   ");*/
                             sPrint.assign(nLine+2, '-');
                         }
                         else
@@ -694,11 +754,13 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
                             sPrint.insert(0, "#");
                         }
                     }
+
                     print(sPrint);
                 }
 
                 sPrint = "";				// WICHTIG: sPrint auf einen leeren String setzen, sonst verknuepft man alle Zeilen iterativ miteinander... LOL
             }
+
             if (nCol_1 != _nCol)
             {
                 if (nLine > 2)
@@ -707,12 +769,15 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
                     print(sPrint);
                     sPrint.clear();
                 }
+
                 nCol_0 = nCol_1;
                 nLine = 0;
+
                 if (!nNotRepeatFirstCol)
                 {
                     nLine = nLongest[0];
                 }
+
                 for (long long int j = nCol_1; j < _nCol; j++)
                 {
                     if (_option.getWindow()-4 < nLine + nLongest[j])
@@ -720,16 +785,19 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
                         nCol_1 = j;
                         break;
                     }
+
                     nLine += nLongest[j];
                 }
             }
         }
         while (nCol_1 != _nCol);
     }
+
     if (sCommentLine.length() && !bPrintCSV)
     {
         if (bSumBar)
             bSumBar = false;
+
         if (bFile)
         {
             if (bPrintTeX)
@@ -749,6 +817,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
             NumeReKernel::print(LineBreak(sCommentLine, _option));
         }
     }
+
     if (bPrintTeX && _nLine < 30)
     {
         print("\\bottomrule");
@@ -762,37 +831,25 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
         print("\\end{longtable}");
     }
 
-    //if (nLen > 2)
-    //    sPrint.assign(nLen+2, '-');
-        //sPrint.assign(nLen-2, (char)205);
-
     string sConsoleOut = "";
+
     if (!bFile)
     {
-        //print("|   " + sPrint);
-        //print(sPrint);
         sConsoleOut += "|   -- " + toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY", toString(_nCol), toString(_nLine-nHeadLineCount), toString(_nCol*(_nLine-nHeadLineCount)))) + " --";
-        //sConsoleOut += "|   -- " + toString(_nCol) + " Spalte(n) und " + toString(_nLine-1) + " Zeile(n) [" + toString(_nCol*(_nLine-1)) + " Elemente] --";
     }
     else
         sConsoleOut += "|-> "+toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY_FILE", toString(_nCol*(_nLine-nHeadLineCount)), sFileName));
-        //sConsoleOut += "|-> Eine Tabelle mit " + toString(_nCol*(_nLine-1)) + " Elementen ";
 
     if (_option.getSystemPrintStatus())
         NumeReKernel::printPreFmt(LineBreak(sConsoleOut, _option) + "\n");
+
     if (bFile)
     {
-        /*sConsoleOut += "wurde erfolgreich in die Datei \"" + sFileName + "\" geschrieben.";
-        if (_option.getSystemPrintStatus())
-            cerr << LineBreak(sConsoleOut, _option) << endl;*/
-
         end();
         return;
     }
     else
     {
-        /*if (_option.getSystemPrintStatus())
-            cerr << LineBreak(sConsoleOut, _option) << endl;*/
         if (!bDontAsk)
         {
             NumeReKernel::print(toSystemCodePage(_lang.get("OUTPUT_FORMAT_ASK_FILEOUT")));
@@ -822,6 +879,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
             {
                NumeReKernel::print(toSystemCodePage(_lang.get("OUTPUT_FORMAT_CONFIRMDEFAULT")));
             }
+
             format(_sMatrix, _nCol, _nLine, _option);	// Nochmal dieselbe Funktion mit neuen Parametern aufrufen
         }
         else if (!bDontAsk)
@@ -830,8 +888,6 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
         }
     }
 
-	/*if (!bDontAsk)
-        cin.ignore(1);*/
 	return;
 }
 
