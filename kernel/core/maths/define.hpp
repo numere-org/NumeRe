@@ -35,9 +35,35 @@
 
 using namespace std;
 
+class FunctionDefinition
+{
+    public:
+        string sName;
+        string sSignature;
+        string sDefinitionString;
+        string sParsedDefinitionString;
+        string sComment;
+        vector<string> vArguments;
+
+        FunctionDefinition(const string& _sDefinitionString = "");
+        FunctionDefinition& operator=(const FunctionDefinition&);
+        string parse(const string& _sArgList);
+        string exportFunction();
+        bool importFunction(const string& _sExportedString);
+        string getDefinition() const;
+        bool appendComment(const string& _sComment);
+
+    private:
+        bool decodeDefinition();
+        bool splitAndValidateArguments();
+        bool convertToValues();
+        bool replaceArgumentOccurences();
+};
+
 class Define : public FileSystem
 {
     private:
+        map<string, FunctionDefinition> mFunctionsMap;
         string sFunctions[100][13];         // Funct-Name, Expression, Definition, VarX, VarY, VarZ, VarT, ...
         unsigned int nDefinedFunctions;     // Anzahl der definierten Funktionen
         string sFileName;                   // Dateinamen fuer die Speichern-Funktion
@@ -46,6 +72,9 @@ class Define : public FileSystem
         string sBuilt_In;                   // String, der die Namen der Built-In-Funktionen speichert
         string sCommands;                   // String, der alle NumeRe-Kommandos speichert
         string sCaches;
+
+        string resolveRecursiveDefinitions(string sDefinition);
+        map<string, FunctionDefinition>::const_iterator findItemById(size_t id) const;
 
     public:
         Define();                           // Standard-Konstruktor
@@ -69,7 +98,7 @@ class Define : public FileSystem
         // --> Gibt die zur Definition der _i-ten Funktion verwendete Definition zurueck <--
         string getDefine(unsigned int _i) const;
         string getFunction(unsigned int _i) const;
-        string getImplemention(unsigned int _i) const;
+        string getImplementation(unsigned int _i) const;
         string getComment(unsigned int _i) const;
 
         bool reset();

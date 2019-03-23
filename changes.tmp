@@ -47,3 +47,4 @@ Updated	The function definition logic now provides the "lclfunc" command, which 
 Added	LaTeX commands now have an autocompletion list as well.
 New	The variables "nlines" and "ncols" may now be used as table "end" constants for the corresponding direction.
 Cleaned	Tables may now store and handle "inf" and "-inf" correctly.
+Cleaned	The internal architecture of the definition object was improved.

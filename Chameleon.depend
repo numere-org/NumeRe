@@ -7147,7 +7147,7 @@
 	"fitcontroller.hpp"
 	"../datamanagement/dataaccess.hpp"
 
-1552998753 c:\cpp\numere-source\trunk\kernel\core\maths\define.hpp
+1553280915 c:\cpp\numere-source\trunk\kernel\core\maths\define.hpp
 	<string>
 	<iostream>
 	<fstream>
@@ -8440,7 +8440,7 @@
 	"datafile.hpp"
 	"../../kernel.hpp"
 
-1553190117 source:c:\cpp\numere-source\trunk\kernel\core\datamanagement\dataops.cpp
+1553190965 source:c:\cpp\numere-source\trunk\kernel\core\datamanagement\dataops.cpp
 	<wx/image.h>
 	"dataops.hpp"
 	"container.hpp"
@@ -8489,11 +8489,11 @@
 	"../../kernel.hpp"
 	"../ui/language.hpp"
 
-1553189903 source:c:\cpp\numere-source\trunk\kernel\core\io\output.cpp
+1553191527 source:c:\cpp\numere-source\trunk\kernel\core\io\output.cpp
 	"output.hpp"
 	"../../kernel.hpp"
 
-1552998753 source:c:\cpp\numere-source\trunk\kernel\core\maths\define.cpp
+1553332270 source:c:\cpp\numere-source\trunk\kernel\core\maths\define.cpp
 	"define.hpp"
 	"../../kernel.hpp"
 
@@ -8514,7 +8514,7 @@
 	"odesolver.hpp"
 	"../../kernel.hpp"
 
-1553119813 source:c:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
+1553280207 source:c:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	"spline.h"

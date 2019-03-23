@@ -21,8 +21,391 @@
 
 using namespace mu;
 
-// --> Prototypen von ein paar Funktionen, die nicht ueber einen Header eingebunden werden koennen <--
-int parser_SplitArgs(string& sToSplit, string& sSecArg, const char& cSep, const Settings& _option, bool bIgnoreSurroundingParenthesis);
+// Constructor
+FunctionDefinition::FunctionDefinition(const string& _sDefinitionString)
+{
+    sDefinitionString = _sDefinitionString;
+
+    if (sDefinitionString.length())
+        decodeDefinition();
+}
+
+FunctionDefinition& FunctionDefinition::operator=(const FunctionDefinition& _def)
+{
+    sDefinitionString = _def.sDefinitionString;
+    sSignature = _def.sSignature;
+    sName = _def.sName;
+    vArguments = _def.vArguments;
+    sComment = _def.sComment;
+    sParsedDefinitionString = _def.sParsedDefinitionString;
+
+    return *this;
+}
+
+// This member function parses the call to the contained
+// function definition and returns a function definition
+// string containing the passed values
+string FunctionDefinition::parse(const string& _sArgList)
+{
+    string sParsedDefinition = sParsedDefinitionString;
+    static const string sOperators = "+-*/^&|!?:{";
+    string sArgs = _sArgList;
+
+    vector<string> vArg;
+
+    // Split the arguments
+    while (sArgs.length())
+    {
+        vArg.push_back(getNextArgument(sArgs, true));
+    }
+
+    // Clear the vector, if the first and single
+    // argument is empty
+    if (vArg.size() == 1 && !vArg[0].length())
+    {
+        vArg.clear();
+    }
+
+    // check, whether the arguments contain operators,
+    // which means, they are expressions and not only
+    // values -> They have to be surrounded by parentheses
+    for (unsigned int j = 0; j < vArg.size(); j++)
+    {
+        StripSpaces(vArg[j]);
+
+        if (!vArg[j].length())
+            vArg[j] = "0";
+
+        // Do nothing, if the argument is already surrounded
+        // with parentheses
+        if (vArg[j].front() == '(' && vArg[j].back() == ')')
+            continue;
+
+        // Search for operators
+        if (vArg[j].find_first_of(sOperators) != string::npos)
+        {
+            vArg[j] = "(" + vArg[j] + ")";
+        }
+    }
+
+    // Replace the variables in the definition with
+    // the passed arguments
+    for (size_t n = 0; n < vArguments.size(); n++)
+    {
+        // If fewer values than required are passed,
+        // append additional zeros
+        if (n >= vArg.size())
+            vArg.push_back("0");
+
+        if (!vArg[n].length())
+            vArg[n] = "0";
+
+        // If the current argument is the dotdotdot
+        // place holder, simply concatenate all following
+        // input arguments
+        if (vArguments[n] == ">>...<<")
+        {
+            if (n+1 < vArg.size())
+            {
+                for (unsigned int k = n+1; k < vArg.size(); k++)
+                    vArg[n] += "," + vArg[k];
+
+                vArg.erase(vArg.begin()+n+1, vArg.end());
+            }
+        }
+
+        // Replace each occurence
+        while (sParsedDefinition.find(vArguments[n]) != string::npos)
+        {
+            sParsedDefinition.replace(sParsedDefinition.find(vArguments[n]), vArguments[n].length(), vArg[n]);
+        }
+    }
+
+    // Ensure that the number of passed values is not
+    // larger than the intended number of arguments
+    if (vArg.size() > vArguments.size())
+        throw SyntaxError(SyntaxError::TOO_MANY_ARGS_FOR_DEFINE, sDefinitionString, SyntaxError::invalid_position);
+
+    // Remove obsolete surrounding whitespaces
+    StripSpaces(sParsedDefinition);
+
+    return sParsedDefinition;
+}
+
+// This member function creates the save string used
+// for writing to the definition file
+string FunctionDefinition::exportFunction()
+{
+    string sExport = sName + "; " + sParsedDefinitionString + "; " + sDefinitionString + "; ";
+
+    // Append the single arguments
+    for (size_t i = 0; i < vArguments.size(); i++)
+        sExport += vArguments[i] + "; ";
+
+    return sExport;
+}
+
+// This member function imports a previously exported
+// definition string and distributes its contents
+// along the member variables
+bool FunctionDefinition::importFunction(const string& _sExportedString)
+{
+    string sImport = _sExportedString;
+    vArguments.clear();
+
+    // Decode function identifier
+    sName = sImport.substr(0, sImport.find(';'));
+    StripSpaces(sName);
+    sImport.erase(0, sImport.find(';')+1);
+
+    // Decode parsed expression
+    sParsedDefinitionString = sImport.substr(0, sImport.find(';'));
+    StripSpaces(sParsedDefinitionString);
+    sImport.erase(0, sImport.find(';')+1);
+
+    // Decode the original definition string
+    sDefinitionString = sImport.substr(0, sImport.find(';'));
+    StripSpaces(sDefinitionString);
+    sImport.erase(0, sImport.find(';')+1);
+
+    // Recreate the signature
+    sSignature = sDefinitionString.substr(0, getMatchingParenthesis(sDefinitionString)+1);
+    StripSpaces(sSignature);
+
+
+    // Separate the comment
+    if (matchParams(sDefinitionString, "comment", '='))
+    {
+        sComment = getArgAtPos(sDefinitionString, matchParams(sDefinitionString, "comment", '=')+7);
+    }
+
+    StripSpaces(sImport);
+
+    // Decode the variable list
+    while (sImport.length())
+    {
+        vArguments.push_back(sImport.substr(0, sImport.find(';')));
+        StripSpaces(vArguments.back());
+        sImport.erase(0, sImport.find(';')+1);
+        StripSpaces(sImport);
+    }
+
+    return true;
+}
+
+// This member function appends a comment, which might
+// be set after the definition
+bool FunctionDefinition::appendComment(const string& _sComment)
+{
+    sComment += _sComment;
+
+    // Replace a previous comment, if there's one available
+    if (matchParams(sDefinitionString, "comment", '='))
+    {
+        size_t pos = matchParams(sDefinitionString, "comment", '=')+7;
+        string sTemp = getArgAtPos(sDefinitionString, pos);
+        pos = sDefinitionString.find(sTemp, pos);
+
+        sDefinitionString.replace(pos, sTemp.length(), sComment);
+    }
+    else
+        sDefinitionString += " -set comment=\"" + sComment + "\"";
+
+    return true;
+}
+
+// This member function returns the definition of the
+// function without the appended parameters
+string FunctionDefinition::getDefinition() const
+{
+    string sDefinition = sDefinitionString.substr(sDefinitionString.find(":=")+2);
+
+    // Remove trailing parameters
+    if (sDefinition.find("-set") != string::npos)
+        sDefinition.erase(sDefinition.find("-set"));
+    else if (sDefinition.find("--") != string::npos)
+        sDefinition.erase(sDefinition.find("--"));
+
+    StripSpaces(sDefinition);
+
+    return sDefinition;
+}
+
+// This private member function decodes the definition in the
+// private member variable "sDefinitionString" into single fields.
+bool FunctionDefinition::decodeDefinition()
+{
+    // Store the function identifier
+    sName = sDefinitionString.substr(0, sDefinitionString.find('('));
+    StripSpaces(sName);
+
+    // Store the signature
+    sSignature = sDefinitionString.substr(0, getMatchingParenthesis(sDefinitionString)+1);
+    StripSpaces(sSignature);
+
+    // catch errors: numbers at the beginning or usual operators
+    // in the name
+    if (sName[0] >= '0' && sName[0] <= '9')
+    {
+        throw SyntaxError(SyntaxError::NO_NUMBER_AT_POS_1, sDefinitionString, SyntaxError::invalid_position, sName);
+    }
+
+    string sDelim = "+-*/^!=&| ><()?[]{}$%§~#:.,;";
+
+    if (sName.find_first_of(sDelim) != string::npos)
+    {
+        SyntaxError(SyntaxError::FUNCTION_NAMES_MUST_NOT_CONTAIN_SIGN, sDefinitionString, SyntaxError::invalid_position, sName.substr(sName.find_first_of(sDelim), 1));
+    }
+
+    // Separate the comment
+    if (matchParams(sDefinitionString, "comment", '='))
+    {
+        sComment = getArgAtPos(sDefinitionString, matchParams(sDefinitionString, "comment", '=')+7);
+    }
+
+    // Create the initial version of the parsed definition
+    // by extracting the expression from the definition
+    // string
+    sParsedDefinitionString = sDefinitionString.substr(sDefinitionString.find(":=")+2);
+
+    if (sParsedDefinitionString.find("-set") != string::npos)
+        sParsedDefinitionString.erase(sParsedDefinitionString.find("-set"));
+    else if (sParsedDefinitionString.find("--") != string::npos)
+        sParsedDefinitionString.erase(sParsedDefinitionString.find("--"));
+
+    // Surround the definition string with whitespaces for
+    // simplifying the use of "checkDelimiter"
+    sParsedDefinitionString = " " + sParsedDefinitionString + " ";
+
+    // Split the argument list and validate its contents
+    splitAndValidateArguments();
+
+    // This section handles variables, which shall be
+    // stored as values instead variables
+    convertToValues();
+
+    // Replace all occurences in the expression with
+    // new placeholders
+    replaceArgumentOccurences();
+
+    return true;
+}
+
+// This private member function validates the arguments
+// of the function definition
+bool FunctionDefinition::splitAndValidateArguments()
+{
+    string sDelim = "+-*/^!=&| ><()?[]{}$%§~#:.,;";
+
+    // Get the argument list of the definition
+    string sArguments = sDefinitionString.substr(sDefinitionString.find('('));
+    sArguments.erase(getMatchingParenthesis(sArguments));
+    sArguments.erase(0, 1);
+
+    StripSpaces(sArguments);
+
+    // Split the arguments using "getNextArgument"
+    while (sArguments.length())
+    {
+        vArguments.push_back(getNextArgument(sArguments, true));
+    }
+
+    // Validate the arguments
+    for (size_t i = 0; i < vArguments.size(); i++)
+    {
+        // Ellipsis shall always be the last argument
+        if (vArguments[i] == "..." && i + 1 < vArguments.size())
+        {
+           throw SyntaxError(SyntaxError::ELLIPSIS_MUST_BE_LAST_ARG, sDefinitionString, SyntaxError::invalid_position);
+        }
+
+        // All other arguments shall not contain
+        // delimiters
+        if (vArguments[i] != "...")
+        {
+            if (vArguments[i].find_first_of(sDelim) != string::npos)
+            {
+                throw SyntaxError(SyntaxError::FUNCTION_ARGS_MUST_NOT_CONTAIN_SIGN, sDefinitionString, SyntaxError::invalid_position, vArguments[i].substr(vArguments[i].find_first_of(sDelim), 1));
+            }
+        }
+    }
+
+    return true;
+}
+
+// This private member function converts the selected
+// the passed variables into their values
+bool FunctionDefinition::convertToValues()
+{
+    if (matchParams(sDefinitionString, "asval", '='))
+    {
+        string sAsVal = getArgAtPos(sDefinitionString, matchParams(sDefinitionString, "asval", '=')+5);
+
+        if (sAsVal.front() == '{')
+            sAsVal.erase(0,1);
+
+        if (sAsVal.back() == '}')
+            sAsVal.pop_back();
+
+        // Parse the list numerically
+        NumeReKernel::getInstance()->getParser().SetExpr(sAsVal);
+        NumeReKernel::getInstance()->getParser().Eval();
+        mu::varmap_type mAsVal = NumeReKernel::getInstance()->getParser().GetUsedVar();
+
+        // Replace each occurence of the parsed variables
+        // with their value
+        for (auto iter = mAsVal.begin(); iter != mAsVal.end(); ++iter)
+        {
+            for (unsigned int i = 0; i < sParsedDefinitionString.length(); i++)
+            {
+                if (sParsedDefinitionString.substr(i, (iter->first).length()) == iter->first && checkDelimiter(sParsedDefinitionString.substr(i-1, (iter->first).length()+2)))
+                {
+                    sParsedDefinitionString.replace(i, (iter->first).length(), toString(*iter->second, NumeReKernel::getInstance()->getSettings()));
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+// This private member function replaces all occurences
+// of the passed arguments with the corresponding new
+// placeholders
+bool FunctionDefinition::replaceArgumentOccurences()
+{
+    size_t nPos = 0;
+
+    // Replace all occurences in the expression with
+    // new placeholders
+    for (size_t i = 0; i < vArguments.size(); i++)
+    {
+        // reset position index
+        nPos = 0;
+
+        // Search for the next occurence of the variable
+        while ((nPos = sParsedDefinitionString.find(vArguments[i], nPos)) != string::npos)
+        {
+            // check, whether the found match is an actual variable
+            if (checkDelimiter(sParsedDefinitionString.substr(nPos-1, vArguments[i].length() + 2)))
+            {
+                // replace VAR with >>VAR<< and increment the
+                // position index by the variable length + 4
+                sParsedDefinitionString.replace(nPos, vArguments[i].length(), ">>" + vArguments[i] + "<<");
+                nPos += vArguments[i].length() + 4;
+            }
+            else
+                nPos += vArguments[i].length();
+        }
+
+        // Replace the variable itself with >>VAR<<
+        vArguments[i] = ">>" + vArguments[i] + "<<";
+    }
+
+    return true;
+}
+
+
 
 
 // --> Standard-Konstruktor: Deklariert auch die Inhalte der Built-In-Funktionen- und der Kommando-Strings <--
@@ -33,15 +416,6 @@ Define::Define() : FileSystem()
     sCommands = ",for,if,while,endfor,endwhile,endif,else,elseif,continue,break,explicit,procedure,endprocedure,throw,return,switch,case,endswitch,default,";
     sFileName = "<>/functions.def";
     sCaches = "";
-
-    // --> Speicher-Array der definierten Funktionen korrekt initialisieren <--
-    for (int i = 0; i < 100; i++)
-    {
-        for (int j = 0; j < 13; j++)
-        {
-            sFunctions[i][j] = "";
-        }
-    }
 }
 
 /* --> Kopierkonstruktor: Ruft zunaechst den Standard-Konstruktor auf, ehe die Werte und
@@ -53,93 +427,117 @@ Define::Define(Define& _defined) : Define()
     sFileName = _defined.sFileName;
     sCaches = _defined.sCaches;
 
-    for (unsigned int i = 0; i < nDefinedFunctions; i++)
-    {
-        for (int j = 0; j < 13; j++)
-        {
-            sFunctions[i][j] = _defined.sFunctions[i][j];
-        }
-    }
+    mFunctionsMap = _defined.mFunctionsMap;
 }
 
-// --> Diese Methode gibt TRUE zurueck, wenn eine Funktion mit dem angegeben Funktionsnamen bereits definiert wurde <--
-bool Define::isDefined(const string& sFunc)
+// This private member function resolves recursive definitions,
+// which are handled by replacing the occuring function calls with
+// their previous definition
+string Define::resolveRecursiveDefinitions(string sDefinition)
 {
-    // --> Verwenden wir nur den Teil vor der ersten Klammer, da dieser den Namen der Funktion beinhaelt <--
-    string sToLocate = sFunc.substr(0,sFunc.find('('));
+    // Get the different parts of the definition
+    string sFunctionName = sDefinition.substr(0, sDefinition.find('(')+1);
+    string sFunction = sDefinition.substr(sDefinition.find(":=")+2);
+    string sFuncOccurence = "";
 
-    // --> Cyclen wir durch das Array und pruefen wir, ob es bereits eine Funktion mit dem Namen gibt <--
-    for (unsigned int i = 0; i < nDefinedFunctions; i++)
+    // Remove obsolete surrounding whitespaces
+    StripSpaces(sFunction);
+    StripSpaces(sFunctionName);
+
+    // Replace each occurence of this function by its previous
+    // definition
+    for (unsigned int i = 0; i < sFunction.length(); i++)
     {
-        if (sFunctions[i][0] == sToLocate)
-            return true;
+        if (sFunction.substr(i, sFunctionName.length()) == sFunctionName
+            && (!i || !isalnum(sFunction[i-1])))
+        {
+            sFuncOccurence = sFunction.substr(i, sFunction.find(')', i) + 1 - i);
+
+            if (!call(sFuncOccurence))
+            {
+                return "";
+            }
+
+            StripSpaces(sFuncOccurence);
+            sFunction.replace(i, sFunction.find(')', i) + 1 - i, sFuncOccurence);
+        }
     }
 
-    /* --> Wenn das nicht der Fall ist: pruefen wir gleich noch, ob die zu suchende Funktion nicht zufaellig
-     *     einer Built-In-Funktion oder einem Kommando entspricht <--
-     */
+    // Reconstruct the function definition using the
+    // replaced definition string
+    return sDefinition.substr(0, sDefinition.find(":=")) + " := " + sFunction;
+}
+
+// This private member function returns the iterator to
+// the function pointed by the passed ID
+map<string, FunctionDefinition>::const_iterator Define::findItemById(size_t id) const
+{
+    if (id >= mFunctionsMap.size())
+        return mFunctionsMap.end();
+
+    map<string, FunctionDefinition>::const_iterator iter = mFunctionsMap.begin();
+
+    // As long as the ID is not zero,
+    // we increment the iterator and
+    // decrement the ID
+    while (iter != mFunctionsMap.end() && id >= 0)
+    {
+        // Return the current iterator,
+        // if the ID is zero
+        if (!id)
+            return iter;
+
+        ++iter;
+        id--;
+    }
+
+    // Return the end, if the ID does not
+    // correspond to any item
+    return mFunctionsMap.end();
+}
+
+// This method checks, whether the passed function is already defined
+bool Define::isDefined(const string& sFunc)
+{
+    // Only use the function name
+    string sToLocate = sFunc.substr(0,sFunc.find('('));
+    StripSpaces(sToLocate);
+
+    if (mFunctionsMap.find(sToLocate) != mFunctionsMap.end())
+        return true;
+
+    // If it is not already defined by the user, check additionally,
+    // whether the passed function identifier corresponds either to
+    // a built-in function or a protected command
     if (sBuilt_In.find("," + sToLocate + "(") != string::npos || sCommands.find("," + sToLocate + ",") != string::npos)
         return true;
     else
         return false;
 }
 
-// --> Zentrale Methode: Definieren von eigenen Funktionen <--
+// This function defines a custom function
 bool Define::defineFunc(const string& sExpr, bool bRedefine, bool bFallback)
 {
     if (!NumeReKernel::getInstance())
         return false;
 
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-
-    int nPos = 0;               // Index-Variable fuer Char-Positionen in strings
-    unsigned int nDefine = -1;  // Index-Variable fuer die zu schreibende Position im Array
-    string sFallback = "";      // Im Falle einer Umdefinition speichern wir den alten Eintrag in diesen
-                                // String, um selbigen im Fehlerfall wiederherstellen zu koennen
-    string sFunction = "";      // String, der die eigentliche Definition enthalten wird
-    string sFunctionName = "";  // String, der den Funktionsnamen beinhalten wird
-    mu::varmap_type mAsVal;
-
-    if (bRedefine && sExpr.find("()") != string::npos && matchParams(sExpr, "comment", '=') && nDefinedFunctions)
+    // Handle the case that the user simply wanted to append
+    // a comment to the existing definition
+    if (bRedefine && sExpr.find("()") != string::npos && matchParams(sExpr, "comment", '=') && mFunctionsMap.size())
     {
-        sFunction = sExpr.substr(0,sExpr.find("()"));
-        string sComment = sExpr.substr(matchParams(sExpr, "comment", '=')+7);
-        StripSpaces(sComment);
-        sComment = sComment.substr(sComment.find('"'), sComment.find('"', sComment.find('"')+1)+1-sComment.find('"'));
+        string sComment = getArgAtPos(sExpr, matchParams(sExpr, "comment", '=')+7);
 
-        for (unsigned int i = 0; i < nDefinedFunctions; i++)
+        if (mFunctionsMap.find(sExpr.substr(0, sExpr.find("()"))) != mFunctionsMap.end())
         {
-            if (sFunctions[i][0] == sFunction)
-            {
-                if (sFunctions[i][2].find("-set") != string::npos || sFunctions[i][2].find(" --") != string::npos)
-                {
-                    if (matchParams(sFunctions[i][2], "comment", '='))
-                    {
-                        sFunctions[i][2] = sFunctions[i][2].substr(0,matchParams(sFunctions[i][2], "comment", '=')+7) + fromSystemCodePage(sComment)
-                            + sFunctions[i][2].substr(sFunctions[i][2].find('"', sFunctions[i][2].find('"', matchParams(sFunctions[i][2], "comment", '='))+1)+1);
-                    }
-                    else
-                        sFunctions[i][2] = sFunctions[i][2] + "comment=" + fromSystemCodePage(sComment);
-                }
-                else
-                {
-                    sFunctions[i][2] = sFunctions[i][2] + "-set comment=" + fromSystemCodePage(sComment);
-                }
+            mFunctionsMap[sExpr.substr(0, sExpr.find("()"))].appendComment(sComment);
 
-                return true;
-            }
+            return true;
         }
 
         return false;
     }
 
-    /* --> Fehler abfangen: <--
-     *     - Keine oeffnende Klammer oder nur oeffnende Klammern nach ':='
-     *     - Ausdruck ohne ':='
-     *     - Name stimmt mit einer Built-In-Funktion ueberein
-     *     - Name stimmt mit einem Kommando ueberein
-     */
+    // Catch all possible syntax errors at this location
     if (sExpr.find('(') == string::npos
         || (sExpr.find('(') != string::npos && sExpr.find('(') > sExpr.find(":="))
         || sBuilt_In.find(","+sExpr.substr(0,sExpr.find('(')+1)) != string::npos
@@ -147,7 +545,7 @@ bool Define::defineFunc(const string& sExpr, bool bRedefine, bool bFallback)
         || sCommands.find(","+sExpr.substr(0,sExpr.find('('))+",") != string::npos
         || sExpr.find(":=") == string::npos)
     {
-        // --> Passende Fehlermeldungen ausgeben <--
+        // Throw the corresponding error messages
         if (sExpr.find(":=") == string::npos)
         {
             throw SyntaxError(SyntaxError::CANNOT_FIND_DEFINE_OPRT, sExpr, SyntaxError::invalid_position);
@@ -172,531 +570,107 @@ bool Define::defineFunc(const string& sExpr, bool bRedefine, bool bFallback)
         {
             throw SyntaxError(SyntaxError::CANNOT_FIND_FUNCTION_ARGS, sExpr, SyntaxError::invalid_position);
         }
+    }
 
-        // --> FALSE zurueckgeben <--
+    // Check, whether the passed function is not already defined
+    if (!bRedefine && isDefined(sExpr))
+        throw SyntaxError(SyntaxError::FUNCTION_ALREADY_EXISTS, sExpr, SyntaxError::invalid_position, sExpr.substr(0, sExpr.find('(')));
+
+    string sDefinition = sExpr;
+
+    // Handle recursive redefinitions
+    if (bRedefine && matchParams(sExpr, "recursive"))
+        sDefinition = resolveRecursiveDefinitions(sDefinition);
+
+    // Prepare the function definition and the possible
+    // needed fallback
+    FunctionDefinition definition(sDefinition);
+    FunctionDefinition fallback;
+
+    // Get the function string
+    string sFunctionString = definition.getDefinition().substr(definition.getDefinition().find(":=")+2);
+
+    // check, whether the new function would result in an
+    // endless recursion
+    if (!call(sFunctionString))
         return false;
-    }
 
-    // --> Definition in sFunction kopieren und fuehrende/schliessende Leerzeichen entfernen <--
-    sFunction = sExpr.substr(sExpr.find(":=")+2);
+    // Store the fallback definition
+    if (bRedefine && isDefined(sDefinition))
+        fallback = mFunctionsMap[definition.sName];
 
-    if (sFunction.rfind("-set") != string::npos)
-    {
-        sFunction = sFunction.substr(0, sFunction.rfind("-set"));
-    }
+    // "define" the function
+    mFunctionsMap[definition.sName] = definition;
 
-    if (sFunction.rfind(" --") != string::npos)
-    {
-        sFunction = sFunction.substr(0, sFunction.rfind(" --"));
-    }
+    // Recreate the function string
+    sFunctionString = definition.getDefinition().substr(definition.getDefinition().find(":=")+2);
 
-    sFunctionName = sExpr.substr(0, sExpr.find(":="));
-
-    StripSpaces(sFunction);
-    StripSpaces(sFunctionName);
-
-    // --> Fehler abfangen: Ziffern am Anfang eines Funktionsnamens und Operatoren in einem Funktionsnamen <--
-    if (sFunctionName[0] >= '0' && sFunctionName[0] <= '9')
-    {
-        throw SyntaxError(SyntaxError::NO_NUMBER_AT_POS_1, sExpr, SyntaxError::invalid_position, sFunctionName);
-    }
-
-    string sDelim = "+-*/^!=&| ><()?[]{}$%§~#:.,;";
-
-    for (unsigned int i = 0; i < sFunctionName.find('('); i++)
-    {
-        if (sDelim.find(sFunctionName[i]) != string::npos)
-        {
-            throw SyntaxError(SyntaxError::FUNCTION_NAMES_MUST_NOT_CONTAIN_SIGN, sExpr, SyntaxError::invalid_position, sFunctionName.substr(i,1));
-        }
-    }
-
-    sFunction = " " + sFunction + " ";
-
-    if (matchParams(sExpr, "recursive"))
-    {
-        string sFuncOccurence = "";
-        for (unsigned int i = 0; i < sFunction.length(); i++)
-        {
-            if (sFunction.substr(i,sFunctionName.find('(')+1) == sFunctionName.substr(0, sFunctionName.find('(')+1)
-                && (!i || !isalnum(sFunction[i-1])))
-            {
-                sFuncOccurence = sFunction.substr(i, sFunction.find(')', i)+1-i);
-
-                if (!call(sFuncOccurence))
-                {
-                    return false;
-                }
-
-                sFunction.replace(i,sFunction.find(')', i)+1-i, sFuncOccurence);
-            }
-        }
-    }
-
-    if (matchParams(sExpr, "asval", '='))
-    {
-        string sAsVal = getArgAtPos(sExpr, matchParams(sExpr, "asval", '=')+5);
-
-        if (sAsVal.front() == '{')
-            sAsVal.erase(0,1);
-
-        if (sAsVal.back() == '}')
-            sAsVal.pop_back();
-
-        _parser.SetExpr(sAsVal);
-        _parser.Eval();
-        mAsVal = _parser.GetUsedVar();
-    }
-
-    StripSpaces(sFunction);
-
-    /* --> Dies ist ein Endlosschleifentest: Define::call() gibt FALSE zurueck, wenn die Rekursion nicht nach
-     *     einer definierten Anzahl an Schritten abbricht. (Die Anzahl ist dabei von der Anzahl an definierten
-     *     Funktionen abhaengig) <--
-     */
-    if (!call(sFunction))
-    {
-        return false;
-    }
-
-    sFunction = " " + sExpr.substr(sExpr.find(":=")+2) + " ";
-
-    if (sFunction.rfind("-set") != string::npos)
-    {
-        sFunction = sFunction.substr(0, sFunction.rfind("-set")) + " ";
-    }
-
-    if (sFunction.rfind(" --") != string::npos)
-    {
-        sFunction = sFunction.substr(0, sFunction.rfind(" --")) + " ";
-    }
-
-    if (matchParams(sExpr, "recursive"))
-    {
-        string sFuncOccurence = "";
-
-        for (unsigned int i = 0; i < sFunction.length(); i++)
-        {
-            if (sFunction.substr(i,sFunctionName.find('(')+1) == sFunctionName.substr(0, sFunctionName.find('(')+1)
-                && (!i || !isalnum(sFunction[i-1])))
-            {
-                sFuncOccurence = sFunction.substr(i, sFunction.find(')', i)+1-i);
-
-                if (!call(sFuncOccurence))
-                {
-                    return false;
-                }
-
-                StripSpaces(sFuncOccurence);
-                sFunction.replace(i,sFunction.find(')', i)+1-i, sFuncOccurence);
-            }
-        }
-    }
-
-    // --> Handelt es sich um eine Umdefinition? <--
-    if (bRedefine)
-    {
-        // --> Suche nach der umzudefinierenden Funktion in der Datenbank <--
-        for (unsigned int i = 0; i < nDefinedFunctions; i++)
-        {
-            if (sFunctions[i][0] == sExpr.substr(0,sExpr.find('(')))
-            {
-                // --> Sobald die Funktion gefunden wurde, koennen wir die Schleife abbrechen <--
-                nDefine = i;
-                break;
-            }
-        }
-
-        if (nDefine == string::npos)
-        {
-            /* --> nDefine hat den Defaultwert, wenn keine bereits definierte Funktion mit der
-             *     umzudefinierenden Funktion uebereinstimmt. Definieren wir einfach eine neue. <--
-             */
-            nDefine = nDefinedFunctions;
-            bRedefine = false;
-        }
-        else
-        {
-            // --> Kopieren wir den urspruenglichen Ausdruck in sFallback und geben wir die komplette Zeile frei <--
-            sFallback = sFunctions[nDefine][2];
-
-            for (int i = 0; i < 13; i++)
-            {
-                sFunctions[nDefine][i] = "";
-            }
-        }
-    }
-    else
-    {
-        // --> Gehen wir sicher, dass nicht mehr als 100 Funktionen definiert werden koennen <--
-        if (nDefinedFunctions < 100)
-            nDefine = nDefinedFunctions; // nDefinedFunctions ist immer der Absolutwert an definierten Funktionen (1,2,3,...)
-        else
-        {
-            NumeReKernel::print(LineBreak(_lang.get("DEFINE_NO_SPACE"), _option));
-            return false;
-        }
-    }
-
-
-    // --> Gibt offenbar Platz: Kopieren wir schon mal die Eindeutigen Einstaege in die Datenbank <--
-    sFunctions[nDefine][0] = sExpr.substr(0,sExpr.find('('));                   // Funktionsname
-    sFunctions[nDefine][1] = sFunction;
-
-    if (matchParams(sExpr, "asval", '='))
-    {
-        for (auto iter = mAsVal.begin(); iter != mAsVal.end(); ++iter)
-        {
-            for (unsigned int i = 0; i < sFunctions[nDefine][1].length(); i++)
-            {
-                if (sFunctions[nDefine][1].substr(i, (iter->first).length()) == iter->first && checkDelimiter(sFunctions[nDefine][1].substr(i-1, (iter->first).length()+2)))
-                {
-                    sFunctions[nDefine][1].replace(i,(iter->first).length(), toString(*iter->second, _option));
-                }
-            }
-        }
-    }
-
-    // Warum mit Parameter?
-    sFunctions[nDefine][2] = fromSystemCodePage(sExpr);                                             // Urspruengliche Definition
-
-    // --> Hierein kommt die Argumentliste aus der Definition. Wir werden sie weiter unten weiterverarbeiten <--
-    sFunctions[nDefine][3] = getArgAtPos(sExpr, sExpr.find('('));
-
-    if (sFunctions[nDefine][3].front() == '('
-        && getMatchingParenthesis(sFunctions[nDefine][3]) != string::npos
-        && getMatchingParenthesis(sFunctions[nDefine][3]) != sFunctions[nDefine][3].length()-1)
-        sFunctions[nDefine][3].erase(getMatchingParenthesis(sFunctions[nDefine][3])+1);
-
-    if (getMatchingParenthesis(sFunctions[nDefine][3]) != string::npos && sFunctions[nDefine][3].front() == '(' && sFunctions[nDefine][3].back() == ')')
-    {
-        sFunctions[nDefine][3].erase(0,1);
-        sFunctions[nDefine][3].pop_back();
-    }
-
-    // --> Entfernen wir Leerzeichen um den Funktionsnamen <--
-    StripSpaces(sFunctions[nDefine][0]);
-
-    // --> Gehen wir sicher, dass es nicht schon eine Funktion gleichen Namens gibt <--
-    if (!bRedefine)
-    {
-        for (unsigned int i = 0; i < nDefinedFunctions; i++)
-        {
-            if (sFunctions[nDefine][0] == sFunctions[i][0])
-            {
-                for (int j = 0; j < 13; j++)
-                {
-                    sFunctions[nDefine][j] = "";
-                }
-
-                throw SyntaxError(SyntaxError::FUNCTION_ALREADY_EXISTS, sExpr, SyntaxError::invalid_position, sFunctions[i][0]);
-            }
-        }
-    }
-
-    if (sFunctions[nDefine][3].find('(') != string::npos || sFunctions[nDefine][3].find(')') != string::npos)
-    {
-        throw SyntaxError(SyntaxError::FUNCTION_ARGS_MUST_NOT_CONTAIN_SIGN, sExpr, SyntaxError::invalid_position, "()");
-    }
-
-    /* --> Pruefen wir, ob in der Argumentliste nicht das ein oder andere Komma enthalten ist
-     *     und teilen den String an dieser Stelle <--
-     * --> Wir machen das 9 Mal, da es bei maximal 10 Argumenten auch nur maximal 9
-     *     Kommata geben kann <--
-     */
-    if (sFunctions[nDefine][3].find(',') != string::npos)
-    {
-        for (int i = 3; i < 12; i++)
-        {
-            try
-            {
-                parser_SplitArgs(sFunctions[nDefine][i], sFunctions[nDefine][i+1], ',', _option, true);
-            }
-            catch (SyntaxError &e)
-            {
-                if (e.errorcode == SyntaxError::SEPARATOR_NOT_FOUND)
-                {
-                    throw SyntaxError(SyntaxError::FUNCTION_ARGS_MUST_NOT_CONTAIN_SIGN, sExpr, SyntaxError::invalid_position, ",");
-                }
-                else
-                    throw;
-            }
-
-            StripSpaces(sFunctions[nDefine][i]);
-            StripSpaces(sFunctions[nDefine][i+1]);
-
-            if (sFunctions[nDefine][i] == "...")
-            {
-                if (bRedefine)
-                    defineFunc(sFallback, true, true);
-                else
-                {
-                    for (int u = 0; u < 6; u++)
-                        sFunctions[nDefine][u] = "";
-                }
-
-               throw SyntaxError(SyntaxError::ELLIPSIS_MUST_BE_LAST_ARG, sExpr, SyntaxError::invalid_position);
-            }
-            if (sFunctions[nDefine][i] != "...")
-            {
-                for (unsigned int n = 0; n < sDelim.length(); n++)
-                {
-                    if (sFunctions[nDefine][i].find(sDelim[n]) != string::npos)
-                    {
-                        throw SyntaxError(SyntaxError::FUNCTION_ARGS_MUST_NOT_CONTAIN_SIGN, sExpr, SyntaxError::invalid_position, sDelim.substr(n,1));
-                    }
-                }
-            }
-            if (sFunctions[nDefine][i+1].find(',') != string::npos && i < 11)
-            {
-                if (sFunctions[nDefine][i] == "...")
-                {
-                    if (bRedefine)
-                        defineFunc(sFallback, true, true);
-                    else
-                    {
-                        for (int u = 0; u < 6; u++)
-                            sFunctions[nDefine][u] = "";
-                    }
-
-                    throw SyntaxError(SyntaxError::ELLIPSIS_MUST_BE_LAST_ARG, sExpr, SyntaxError::invalid_position);
-                }
-            }
-            else if (sFunctions[nDefine][i+1].find(',') != string::npos)
-            {
-                if (bRedefine)
-                {
-                    defineFunc(sFallback, true, true);
-                }
-                else
-                {
-                    for (int u = 0; u < 6; u++)
-                        sFunctions[nDefine][u] = "";
-                }
-
-                throw SyntaxError(SyntaxError::TOO_MANY_ARGS_FOR_DEFINE, sExpr, SyntaxError::invalid_position);
-            }
-            else
-                break;
-        }
-    }
-    else
-    {
-        // --> Kein Komma? Dann nur ein Argument. Entfernen wir rasch die Klammern und entfernen ueberzaehlige Leerzeichen <--
-        StripSpaces(sFunctions[nDefine][3]);
-    }
-
-    /* --> Einer der zentralen Abschnitte: wir ersetzen jedes Auftreten der Variablen durch ein
-     *     sogenanntes Token ">>VAR<<". Dieses ist stets eindeutig und kann rascher ersetzt werden <--
-     * --> Wuerden wir das hier nicht machen, muessten wir bei jedem Funktionsaufruf die Variablen eindeutig
-     *     identifizieren, was nur unnoetig Rechenzeit kosten wuerde <--
-     */
-    for (int n = 3; n < 13; n++)
-    {
-        // --> Gibt's das n-te Element nicht mehr? Schleife abbrechen! <--
-        if (!sFunctions[nDefine][n].length())
-            break;
-
-        // --> Positions-Index zuruecksetzen <--
-        nPos = 0;
-
-        // --> Suche immer die naechste Position, die so "aussieht" wie die aktuelle Variable <--
-        while (sFunctions[nDefine][1].find(sFunctions[nDefine][n], nPos) != string::npos)
-        {
-            // --> Speichere die Position <--
-            nPos = sFunctions[nDefine][1].find(sFunctions[nDefine][n], nPos);
-
-            // --> Pruefe, ob die "scheinbare" Variable von Delimitern umgeben ist und damit eine "echte" Variable ist <--
-            if (checkDelimiter(sFunctions[nDefine][1].substr(nPos-1, sFunctions[nDefine][n].length() + 2)))
-            {
-                // --> Ersetze die aktuelle Position, an der VAR aufgetreten ist, durch ">>VAR<<" <--
-                sFunctions[nDefine][1].replace(nPos, sFunctions[nDefine][n].length(), ">>" + sFunctions[nDefine][n] + "<<");
-
-                // --> Setze den Positionsindex um die Laenge der VAR + 4 weiter <--
-                nPos += sFunctions[nDefine][n].length() + 4;
-            }
-            else        // Wenn sie das nicht ist, dann setze den Positionsindex um die Laenge der aktuellen Variable weiter
-                nPos += sFunctions[nDefine][n].length();
-        }
-
-        // --> Nachdem alle Variablen ersetzt wurden, ergaenze die Variable selbst zu ">>VAR<<" <--
-        sFunctions[nDefine][n] = ">>" + sFunctions[nDefine][n] + "<<";
-    }
-
-    // --> Entferne die umschliessenden Leerzeichen <--
-    StripSpaces(sFunctions[nDefine][1]);
-
-    /* --> Hier muessen wir noch abfangen, ob es sich um einen Mehrfachausdruck (ein Ausdruck, der mehrere
-     *     Rueckgabewerte besitzt) handelt <--
-     */
-    if (isMultiValue(sFunctions[nDefine][1]) && sFunctions[nDefine][1].find("{") == string::npos)
-    {
-        // --> Wenn die Funktion isMultiValue() TRUE liefert und keine "{{" gefunden wurden, ergaenze sie <--
-        sFunctions[nDefine][1] = "{" + sFunctions[nDefine][1] + "}";
-    }
-    else if ((sFunctions[nDefine][1].find("{") != string::npos && sFunctions[nDefine][1].find("}") == string::npos)
-        || (sFunctions[nDefine][1].find("{") == string::npos && sFunctions[nDefine][1].find("}") != string::npos))
-    {
-        if (nDefine == nDefinedFunctions)
-        {
-            for (int i = 0; i < 13; i++)
-            {
-                sFunctions[nDefine][i] = "";
-            }
-        }
-        else
-        {
-            defineFunc(sFallback, true, true);
-        }
-
-        throw SyntaxError(SyntaxError::INCOMPLETE_VECTOR_SYNTAX, sExpr, SyntaxError::invalid_position);
-    }
-
-    // --> Falls es keine Umdefinition war, erhoehen wir den Funktionenszaehler um 1 <--
-    if (!bRedefine)
-        nDefinedFunctions++;
-
-    /* --> Jetzt haben wir eine weitere Funktion definiert, pruefen wir nochmal, ob die
-     *     Rekursion abbricht (um so was wie "f(x) = c*f(x)+b" abzufangen) <--
-     */
-    sFunction = sExpr.substr(sExpr.find(":=")+2);
-    StripSpaces(sFunction);
-
+    // Recheck, if the defined function will result in an
+    // endless loop and revert the definition, if this is
+    // the case
     try
     {
-        if (!call(sFunction))
+        if (!call(sFunctionString))
         {
             if (!bRedefine)
-            {
-                for (int i = 0; i < 13; i++)
-                {
-                    sFunctions[nDefine][i] = "";
-                }
-
-                nDefinedFunctions--;
-            }
+                mFunctionsMap.erase(definition.sName);
             else
-            {
-                for (int i = 1; i < 13; i++)
-                {
-                    sFunctions[nDefine][i] = "";
-                }
+                mFunctionsMap[definition.sName] = fallback;
 
-                defineFunc(sFallback, true);
-            }
             return false;
         }
     }
     catch (...)
     {
         if (!bRedefine)
-        {
-            for (int i = 0; i < 13; i++)
-            {
-                sFunctions[nDefine][i] = "";
-            }
-
-            nDefinedFunctions--;
-        }
+            mFunctionsMap.erase(definition.sName);
         else
-        {
-            for (int i = 1; i < 13; i++)
-            {
-                sFunctions[nDefine][i] = "";
-            }
+            mFunctionsMap[definition.sName] = fallback;
 
-            defineFunc(sFallback, true, true);
-        }
         throw;
     }
 
-    // --> Gebe TRUE zurueck <--
     return true;
 }
 
-// --> Aufheben einer Funktionendefinition <--
+// This function removes a previously defined function
+// from the internal memory
 bool Define::undefineFunc(const string& sFunc)
 {
-    string _sFunc = sFunc;
-    string sInput = "";
-    StripSpaces(_sFunc);
-    if (_sFunc.substr(_sFunc.length()-2,2) != "()")
-        return false;
-    int nth_function = -1;
-    for (unsigned int i = 0; i < nDefinedFunctions; i++)
-    {
-        if (sFunctions[i][0] + "()" == _sFunc)
-            nth_function = i;
-    }
+    if (mFunctionsMap.find(sFunc.substr(0, sFunc.find('('))) != mFunctionsMap.end())
+        mFunctionsMap.erase(sFunc.substr(0, sFunc.find('(')));
 
-    if (nth_function == -1)
-        return false;
+    // Update the definition file, if the corresponding setting
+    // is active
+    if (NumeReKernel::getInstance() && NumeReKernel::getInstance()->getSettings().getbDefineAutoLoad())
+        save(NumeReKernel::getInstance()->getSettings());
 
-    for (unsigned int i = (unsigned)nth_function; i < nDefinedFunctions-1; i++)
-    {
-        for (int j = 0; j < 13; j++)
-        {
-            sFunctions[i][j] = sFunctions[i+1][j];
-        }
-    }
-    for (int j = 0; j < 13; j++)
-    {
-        sFunctions[nDefinedFunctions-1][j] = "";
-    }
-    nDefinedFunctions--;
-    sFileName = FileSystem::ValidFileName(sFileName, ".def");
-
-    if (ifstream(sFileName.c_str()).good())
-    {
-        Defines_def.open(sFileName.c_str());
-        Defines_def.clear();
-        Defines_def.seekg(0);
-
-        nth_function = 0;
-        int nLength = 0;
-        while (!Defines_def.eof())
-        {
-            getline(Defines_def, sInput);
-
-            if (sInput.substr(0,sInput.find(';'))+"()" == _sFunc)
-            {
-
-                nLength = sInput.length();
-
-                Defines_def.seekg(nth_function);
-                for (int i = 0; i < nLength; i++)
-                {
-                    Defines_def << " ";
-                }
-                break;
-            }
-            nth_function += sInput.length()+2;
-        }
-        Defines_def.close();
-    }
     return true;
 }
 
-// --> Weitere, zentrale Methode: Aufrufen der Funktionen <--
+// This function searches for known custom definitions
+// in the passed expression and replaces them with
+// their parsed definition strings.
 bool Define::call(string& sExpr, int nRecursion)
 {
     if (!NumeReKernel::getInstance())
         return false;
 
-    unsigned int nPos = 0;          // Diverse Positions-Indices:
-    unsigned int nPos_2 = 0;        //  - Fuer Anfang und Ende einer Funktion im String
+    unsigned int nPos = 0;
+    unsigned int nPos_2 = 0;
 
-    string sTemp = "";              // Temporaerer String; erleichtert das Ersetzen
-    vector<string> vArg;           // String-Array mit den gegebenen Argumenten
-    string sImpFunc = "";           // String fuer die jeweils zu ersetzende Funktion
-    string sOperators = "+-*/^&|!?:{";
-    bool bDoRecursion = false;      // BOOL; Ist TRUE, wenn eine Rekursion noetig ist
+    string sTemp = "";
+    string sImpFunc = "";
+    bool bDoRecursion = false;
 
     if (!sExpr.length())
         return true;
 
-    // --> Rekursionsabbruchbedingung: 2xDefinierteFunktionen+1 (da nDefinedFunctions auch 0 sein kann) <--
-    if ((unsigned)nRecursion == nDefinedFunctions*2 + 1)
+    // Check, whether we've a possible candidate for an endless
+    // loop: if the number of recursions is twice the number of
+    // known function definitions, we've probably replaced every
+    // function twice, so we do not expect to terminate it.
+    if ((unsigned)nRecursion == mFunctionsMap.size()*2 + 1)
     {
         throw SyntaxError(SyntaxError::TOO_MANY_FUNCTION_CALLS, sExpr, SyntaxError::invalid_position);
     }
@@ -706,154 +680,92 @@ bool Define::call(string& sExpr, int nRecursion)
      */
     if (sExpr[0] != ' ')
         sExpr = " " + sExpr;
+
     if (sExpr[sExpr.length()-1] != ' ')
         sExpr += " ";
 
-    // --> Lauf durch die gesamte Datenbank <--
-    for (unsigned int i = 0; i < nDefinedFunctions; i++)
+    // search through the whole set of definitions for
+    // possible matches
+    for (auto iter = mFunctionsMap.begin(); iter != mFunctionsMap.end(); ++iter)
     {
         nPos = 0;
 
-        // --> Findest du eine Uebereinstimmung? <--
-        if (sExpr.find(sFunctions[i][0]+"(") != string::npos)
+        // Is there a possible match?
+        if (sExpr.find(iter->second.sName + "(") != string::npos)
         {
-            /* --> Fuer jede Uebereinstimmung: Pruefe, ob es wirklich eine Uebereinstimmung und nicht nur ein aehnlicher Treffer ist <--
-             * --> Suche und merke dir die gegebenen Argumente <--
-             * --> Ersetze die Uebereinstimmung mit den entsprechenden Definition aus der Datenbank,
-             *     wobei natuerlich die entsprechenden Funktionsargumente durch die gegebenen Funktionsargumente
-             *     zu ersetzen sind <--
-             */
+            // Check for each occurence, whether the candidate
+            // is an actual match and replace it with the parsed
+            // definition string
             do
             {
-                if (!checkDelimiter(sExpr.substr(sExpr.find(sFunctions[i][0]+"(", nPos)-1, sFunctions[i][0].length()+2))
-                    || isInQuotes(sExpr, sExpr.find(sFunctions[i][0]+"(", nPos), true))
+                // Is it an actual match?
+                if (!checkDelimiter(sExpr.substr(sExpr.find(iter->second.sName + "(", nPos)-1, iter->second.sName.length()+2))
+                    || isInQuotes(sExpr, sExpr.find(iter->second.sName + "(", nPos), true))
                 {
-                    nPos = sExpr.find(sFunctions[i][0]+"(", nPos) + sFunctions[i][0].length() + 1;
+                    nPos = sExpr.find(iter->second.sName + "(", nPos) + iter->second.sName.length() + 1;
                     continue;
                 }
 
-                // --> Kopiere den Teil vor dem Treffer in den temporaeren String <--
-                sTemp = sExpr.substr(0,sExpr.find(sFunctions[i][0] + "(", nPos));
+                // Copy the part in front of the match into a
+                // temporary buffer
+                sTemp = sExpr.substr(0, sExpr.find(iter->second.sName + "(", nPos));
 
-                // --> Speichere die Position der zugehoerigen Argument-Klammer <--
-                nPos = sExpr.find(sFunctions[i][0]+"(",nPos) + sFunctions[i][0].length();
+                // save the position of the argument's opening
+                // parenthesis
+                nPos = sExpr.find(iter->second.sName + "(",nPos) + iter->second.sName.length();
 
-                // --> Kopiere den String ab der Argumentklammer in sArg[0] <--
-                vArg.push_back(sExpr.substr(nPos));
+                // Copy the calling arguments
+                string sArgs = sExpr.substr(nPos);
+                nPos_2 = getMatchingParenthesis(sArgs);
 
-                // --> Speichere die Position der zugehoerigen, schliessenden Klammer <--
-                nPos_2 = getMatchingParenthesis(vArg[0]);
-                // --> Pruefen, ob eine Klammer gefunden wurde <--
+                // Check, whether the sArgs are terminated
+                // by a parenthesis
                 if (nPos_2 == string::npos)
                 {
                     throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sExpr, nPos);
                 }
 
-                // --> Trenne den Teil nach der schliessenden Klammer ab <--
-                vArg[0].erase(nPos_2);// = sArg[0].substr(0,nPos_2+1);
-                vArg[0].erase(0,1);
+                // Remove the surrounding parentheses
+                sArgs.erase(nPos_2);
+                sArgs.erase(0, 1);
                 nPos += nPos_2 + 1;
 
-                if (!vArg[0].length() && vArg.size() == 1)
-                {
-                    vArg.clear();
-                }
-                // --> Pruefe, ob mehr als ein Funktionsargument gegeben ist und trenne die liste entsprechend <--
-                while (vArg.size() && isMultiValue(vArg.back()))
-                {
-                    vArg.back() = "(" + vArg.back() + ")";
-                    vArg.push_back("");
-                    if (!parser_SplitArgs(vArg[vArg.size()-2], vArg.back(), ',', NumeReKernel::getInstance()->getSettings(), false))
-                        return false;
-                }
-
-                // --> Pruefe, ob die Argumente Operatoren enthalten; also selbst Ausdruecke sind <--
-                for (unsigned int j = 0; j < vArg.size(); j++)
-                {
-                    StripSpaces(vArg[j]);
-                    if (!vArg[j].length())
-                        vArg[j] = "0";
-                    if (vArg[j][0] == '(' && vArg[j][vArg[j].length()-1] == ')')
-                        continue;
-                    for (unsigned int n = 0; n < sOperators.length(); n++)
-                    {
-                        if (vArg[j].find(sOperators[n]) != string::npos)
-                        {
-                            vArg[j] = "(" + vArg[j] + ")";
-                            break;
-                        }
-                    }
-                }
-
-                // --> Kopiere die Funktionsdefinition in sImpFunc <--
-                sImpFunc = sFunctions[i][1];
-
-                // --> Ersetze nun die Argumente der Definition durch die gegeben Argumente <--
-                for (unsigned int n = 3; n < 13; n++)
-                {
-                    // --> Gibt's das n-te Argument nicht? Abbrechen! <--
-                    if (!sFunctions[i][n].length() && vArg.size() > n-3 && vArg[n-3].length())
-                        throw SyntaxError(SyntaxError::TOO_MANY_ARGS_FOR_DEFINE, sExpr, SyntaxError::invalid_position);
-                    else if (!sFunctions[i][n].length())
-                        break;
-
-                    // --> Sind weniger Argumente gegeben, als benoetigt werden? Ergaenze den Rest mit "0.0" <--
-                    if (n-3 >= vArg.size())
-                        vArg.push_back("0");
-                    if (!vArg[n-3].length())
-                        vArg[n-3] = "0";
-
-                    if (sFunctions[i][n] == ">>...<<")
-                    {
-                        if (n-2 < vArg.size())
-                        {
-                            for (unsigned int k = n-2; k < vArg.size(); k++)
-                                vArg[n-3] += "," + vArg[k];
-                            vArg.erase(vArg.begin()+n-2, vArg.end());
-                        }
-                    }
-                    // --> Ersetze jedes Auftreten des Arguments durch das gegebene <--
-                    while (sImpFunc.find(sFunctions[i][n]) != string::npos)
-                    {
-                        sImpFunc.replace(sImpFunc.find(sFunctions[i][n]), sFunctions[i][n].length(), vArg[n-3]);
-                    }
-                }
-
-                /* --> Setze alles wieder zusammen <--
-                 * --> WICHTIG: Da wir nicht unnoetig pruefen wollen, ob die Funktion in eine Summe, oder
-                 *     ein Produkt oder WasAuchImmer eingefuegt werden soll, ergaenzen wir sicherheitshalber
-                 *     Klammern um sImpFunc <--
-                 */
+                // Parse the function definition using the
+                // passed arguments
+                sImpFunc = iter->second.parse(sArgs);
                 StripSpaces(sImpFunc);
-                while (sExpr[nPos] == ')' && sExpr[nPos+1] == ')' && sTemp[sTemp.length()-1] == '(' && sTemp[sTemp.length()-2] == '(')
+
+                // Remove obsolete duplicated parenthesis pairs
+                while (sExpr[nPos] == ')' && sExpr[nPos+1] == ')' && sTemp.back() == '(' && sTemp[sTemp.length()-2] == '(')
                 {
                     nPos++;
-                    sTemp = sTemp.substr(0, sTemp.length()-1);
+                    sTemp.pop_back();
                 }
 
+                // Recreate the complete expression
                 if (sImpFunc.front() == '{' && sImpFunc.back() == '}')
                 {
-                    if (sExpr[nPos] == ')' && sTemp[sTemp.length()-1] == '(')
+                    if (sExpr[nPos] == ')' && sTemp.back() == '(')
                     {
                         if (sTemp[sTemp.length()-2] != ' ')
                         {
-                            string sDelim = "+-*/^!?:,!&|#";
-                            //char c = sTemp[sTemp.length()-2];
+                            static string sDelim = "+-*/^!?:,!&|#";
+
                             if (sDelim.find(sTemp[sTemp.length()-2]) != string::npos)
                             {
-                                sTemp = sTemp.substr(0, sTemp.length()-1);
+                                sTemp.pop_back();
                                 nPos++;
                             }
                         }
                         else
                         {
-                            sTemp = sTemp.substr(0,sTemp.length()-1);
+                            sTemp.pop_back();
                             nPos++;
                         }
                     }
                     sExpr = sTemp + sImpFunc + sExpr.substr(nPos);
                 }
-                else if (sTemp[sTemp.length()-1] == '(' && sExpr[nPos] == ')')
+                else if (sTemp.back() == '(' && sExpr[nPos] == ')')
                 {
                     sExpr = sTemp + sImpFunc + sExpr.substr(nPos);
                 }
@@ -862,353 +774,182 @@ bool Define::call(string& sExpr, int nRecursion)
                     sExpr = sTemp + "(" + sImpFunc + ")" + sExpr.substr(nPos);
                 }
 
-                // --> Alle benoetigten Variablen zureucksetzen! <--
-                sImpFunc = "";
-                vArg.clear();
-
-                /* --> Wenn auch nur eine einzige Ersetzung vorgenommen wurde, kann es sein, dass
-                 *     dadurch eine andere Funktion eingefuegt wurde. Wir setzen also den BOOL bDoRecursion
-                 *     auf TRUE <--
-                 */
+                // If at least one replacement was preformed,
+                // is is possible that we introduced another
+                // function. Therefore we set the recursion
+                // boolean to true
                 if (!bDoRecursion)
                     bDoRecursion = true;
             }
-            while (sExpr.find(sFunctions[i][0]+"(",nPos) != string::npos);
+            while (sExpr.find(iter->second.sName + "(", nPos) != string::npos);
         }
     }
 
-    // --> Wenn es noetig ist, eine weitere Rekursion durchzufuehren, mach' das hier <--
+    // If necessary, then perform another recursion
     if (bDoRecursion)
     {
         if (!call(sExpr, nRecursion+1))
             return false;
     }
 
-    // --> Offenbar hat alles geklappt und die Rekursionen sind erfolgreich abgebrochen: Gib TRUE zureuck! <--
     return true;
 }
 
-// --> Gibt einfach nur die Zahl der definierten Funktionen zurueck <--
+// Returns the number of defined functions
 unsigned int Define::getDefinedFunctions() const
 {
-    return nDefinedFunctions;
+    return mFunctionsMap.size();
 }
 
 // --> Gibt einfach nur die Definition der Funktion _i zurueck <--
 string Define::getDefine(unsigned int _i) const
 {
-    if (_i < nDefinedFunctions)
-        return sFunctions[_i][2];
-    else
-        return "";
+    auto iter = findItemById(_i);
+
+    if (iter != mFunctionsMap.end())
+        return iter->second.sDefinitionString;
+
+    return "";
 }
 
 string Define::getFunction(unsigned int _i) const
 {
-    if (_i < nDefinedFunctions)
-        return sFunctions[_i][2].substr(0,sFunctions[_i][2].find(')')+1);
-    else
-        return "";
-}
-string Define::getImplemention(unsigned int _i) const
-{
-    if (_i >= nDefinedFunctions)
-        return "";
-    string sImplemention = sFunctions[_i][2].substr(sFunctions[_i][2].find(":=")+2);
+    auto iter = findItemById(_i);
 
-    if (matchParams(sImplemention, "comment", '=') || matchParams(sImplemention, "recursive") || matchParams(sImplemention, "asval", '='))
-    {
-        if (sImplemention.find("-set"))
-            sImplemention.erase(sImplemention.rfind("-set"));
-        else if (sImplemention.find("--"))
-            sImplemention.erase(sImplemention.rfind("--"));
-    }
-    StripSpaces(sImplemention);
-    return sImplemention;
+    if (iter != mFunctionsMap.end())
+        return iter->second.sSignature;
+
+    return "";
 }
+
+string Define::getImplementation(unsigned int _i) const
+{
+    auto iter = findItemById(_i);
+
+    if (iter != mFunctionsMap.end())
+        return iter->second.getDefinition();
+
+    return "";
+}
+
 string Define::getComment(unsigned int _i) const
 {
-    if (_i >= nDefinedFunctions)
-        return "";
-    if (matchParams(sFunctions[_i][2], "comment", '='))
-        return getArgAtPos(sFunctions[_i][2], matchParams(sFunctions[_i][2], "comment", '=')+7);
-    else
-        return "";
+    auto iter = findItemById(_i);
+
+    if (iter != mFunctionsMap.end())
+        return iter->second.sComment;
+
+    return "";
 }
 
 // This member function resets the Define object
 // to a state before any function was defined
 bool Define::reset()
 {
-    for (int i = 0; i < nDefinedFunctions; i++)
-    {
-        for (int j = 0; j < 13; j++)
-            sFunctions[i][j] = "";
-    }
+    mFunctionsMap.clear();
 
-    nDefinedFunctions = 0;
+    return true;
 }
 
-// --> Speichern der Definitionen: Falls man manche Funktionen wiederverwenden moechte <--
+// This function saves the function definitions
+// to definition file
 bool Define::save(const Settings& _option)
 {
-
     sFileName = FileSystem::ValidFileName(sFileName, ".def");
-    string* sDefines_def = 0;
-    string sTemp = "";
-    unsigned int nIndex = 0;
-    if (nDefinedFunctions)
+    ofstream ofDefineFile;
+
+    // Do not save anything, if the map is empty
+    if (mFunctionsMap.size())
     {
         if (_option.getSystemPrintStatus())
             NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("DEFINE_SAVING_FUNCTIONS")) + " ... ");
-        if (ifstream(sFileName.c_str()).good())
-        {
-            Defines_def.open(sFileName.c_str(), ios_base::in);
-            Defines_def.clear();    // Falls es zuvor Probleme beim Lesen gegeben hat, loeschen wir hier die Fehler-Flags
-            Defines_def.seekg(0);   // Anfang der Datei suchen
 
-            while (!Defines_def.eof())
-            {
-                getline(Defines_def, sTemp);
-                nIndex++;
-            }
-            if (!sTemp.length())
-                nIndex--;
-            Defines_def.clear();
-            Defines_def.seekg(0);
+        // Open the definition file
+        ofDefineFile.open(sFileName.c_str(), ios_base::trunc);
 
-            sDefines_def = new string[nIndex+nDefinedFunctions];
+        // Ensure that the file stream is in a
+        // valid state
+        if (ofDefineFile.good())
+        {
+            ofDefineFile << "# This file saves the function definitions. Do not edit unles you know, what you're doing!" << endl;
 
-            for (unsigned int i = 0; i < nIndex+nDefinedFunctions; i++)
+            // Save each definition
+            for (auto iter = mFunctionsMap.begin(); iter != mFunctionsMap.end(); ++iter)
             {
-                getline(Defines_def, sDefines_def[i]);
-                StripSpaces(sDefines_def[i]);
-                if (i >= nIndex)
-                    sDefines_def[i] = "";
+                ofDefineFile << iter->second.exportFunction() << endl;
             }
-            Defines_def.close();
-            remove(sFileName.c_str());
-            // --> Schreiben der Definitionen in die Datei "functions.def": wir kopieren das Array 1:1 <--
-            sDefines_def[0] = "# Dieses File speichert die Funktionsdefinitionen. Bearbeiten auf eigene Gefahr!";
-            for (unsigned int i = 0; i < nDefinedFunctions; i++)
-            {
-                int nPos = -1;
-                for (unsigned int n = 0; n < nIndex+nDefinedFunctions; n++)
-                {
-                    if (sDefines_def[n].substr(0,sDefines_def[n].find(';')) == sFunctions[i][0])
-                    {
-                        nPos = n;
-                        sDefines_def[n] = "";
-                        break;
-                    }
-                }
-                if (nPos == -1)
-                {
-                    for (unsigned int n = 0; n < nIndex+nDefinedFunctions; n++)
-                    {
-                        if (!sDefines_def[n].length())
-                        {
-                            nPos = n;
-                            break;
-                        }
-                    }
-                }
 
-                for (int j = 0; j < 13; j++)
-                {
-                    if (!sFunctions[i][j].length())
-                        break;
-                    sDefines_def[nPos] += sFunctions[i][j]+"; ";
-                }
-            }
+            if (_option.getSystemPrintStatus())
+                NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
+
+            return true;
         }
-        else
-        {
-            nIndex = 1;
-            sDefines_def = new string[nDefinedFunctions+nIndex];
-            sDefines_def[0] = "# Dieses File speichert die Funktionsdefinitionen. Bearbeiten auf eigene Gefahr!";
-            for (unsigned int i = 0; i < nDefinedFunctions; i++)
-            {
-                sDefines_def[i+1] = "";
-                for (unsigned int j = 0; i < 13; j++)
-                {
-                    if (!sFunctions[i][j].length())
-                        break;
-                    sDefines_def[i+1] += sFunctions[i][j] + "; ";
-                }
-            }
-        }
-        Defines_def.open(sFileName.c_str(), ios_base::out);
-        Defines_def.clear();
-        Defines_def.seekg(0);
-        for (unsigned int i = 0; i < nIndex+nDefinedFunctions; i++)
-        {
-            if (i >= 100)
-                break;
-            if (sDefines_def[i].length())
-                Defines_def << sDefines_def[i] << endl;
-        }
-        // --> Fertig? Schliessen der Datei nicht vergessen! <--
-        Defines_def.close();
-        if (sDefines_def)
-        {
-            delete[] sDefines_def;
-            sDefines_def = 0;
-        }
-        if (_option.getSystemPrintStatus())
-            NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
-        return true;
-    }
-    else
-    {
-        NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_EMPTY")));
+
         return false;
     }
+
+    return false;
 }
 
-// --> Laden frueherer Funktionsdefinitionen <--
+// This function loads previously saved function
+// definitions to memory
 bool Define::load(const Settings& _option, bool bAutoLoad)
 {
     sFileName = FileSystem::ValidFileName(sFileName, ".def");
-    map<string,int> mFunctions;
-    string** sFunc_Temp = 0;
-    // --> Sind bereits Funktionen definiert? Diese werden ueberschrieben! <--
-    if (nDefinedFunctions)
+    ifstream ifDefinedFile;
+    string sInputLine;
+
+    // Open the definition file
+    ifDefinedFile.open(sFileName.c_str());
+
+    // Check, whether the file stream is in
+    // a valid state, aka the file exists
+    if (ifDefinedFile.good())
     {
-        string sTemp = "";
-        NumeReKernel::print(LineBreak(_lang.get("DEFINE_ASK_OVERRIDE"), _option));
-        NumeReKernel::printPreFmt("|\n|<- ");
-        NumeReKernel::getline(sTemp);
-        StripSpaces(sTemp);
-        if (sTemp != _lang.YES())
+        if (_option.getSystemPrintStatus() && !bAutoLoad)
         {
-            NumeReKernel::print(_lang.get("COMMON_CANCEL") + ".");
-            return false;
+            if (!bAutoLoad)
+                NumeReKernel::printPreFmt("|-> ");
+
+            NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("DEFINE_LOADING_FUNCTIONS")) + " ... ");
         }
-    }
-    if (_option.getSystemPrintStatus() && !bAutoLoad)
-    {
-        if (!bAutoLoad)
-            NumeReKernel::printPreFmt("|-> ");
-        NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("DEFINE_LOADING_FUNCTIONS")) + " ... ");
-    }
-    string sIn = "";
-    // --> Oeffne Datei "functions.def" <--
-    Defines_def.open(sFileName.c_str(), ios_base::in);
 
-    // --> Dateifehler abfangen! <--
-    if (Defines_def.fail())
-    {
-        NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_FAILURE")) + ".\n");
-        //cerr << LineBreak("|-> FEHLER: Aus der Datei \"" + sFileName + "\" kann nicht gelesen werden oder die Datei existiert nicht!", _option) << endl;
-        Defines_def.close();
-        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sFileName, SyntaxError::invalid_position, sFileName);
-    }
-    getline(Defines_def, sIn);
-
-    // --> Manchmal kann es sein, dass erst nach dem ersten Leseversuch ein fail-Flag auftritt. Fangen wir hier ab! <--
-    if (Defines_def.fail())
-    {
-        NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_FAILURE")) + ".\n");
-        //cerr << LineBreak("|-> FEHLER: Aus der Datei \"" + sFileName + "\" kann nicht gelesen werden oder die Datei existiert nicht!", _option) << endl;
-        Defines_def.close();
-        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sFileName, SyntaxError::invalid_position, sFileName);
-    }
-
-    int i = 0;
-    int j = 0;
-    // --> So lange das EOF-Flag nicht erscheint, lese wiederholt Zeilen ein <--
-    while (!Defines_def.eof())
-    {
-        getline(Defines_def, sIn);
-        if (Defines_def.fail())     // Unwahrscheinlicher Fall: Fail-Flag. Trotzdem abfangen
-            break;
-        if (sIn.find(';') == string::npos)    // Kein Semikolon? Dann steht da etwas sinnloses. Ueberspringen wir diese Zeile
-            continue;
-        StripSpaces(sIn);
-        if (sIn[0] == '#' || !sIn.length())
-            continue;
-
-        // --> Wir teilen die eingelesene Zeile an den Semikola auf und kopieren die jeweiligen Tokens in unser Array <--
-        do
+        // Read every line of the definition file
+        while (!ifDefinedFile.eof())
         {
-            if (j == 13)
-                break;
-            sFunctions[i][j] = sIn.substr(0,sIn.find(';'));
-            sIn = sIn.substr(sIn.find(';')+1);
-            StripSpaces(sFunctions[i][j]);
-            if (!sIn.length())
-                break;
-            j++;
+            getline(ifDefinedFile, sInputLine);
+
+            // Ignore emoty lines and comments
+            if (!sInputLine.length() || sInputLine.front() == '#')
+                continue;
+
+            // Create an empty definition object and import
+            // the read definition
+            FunctionDefinition definition;
+            definition.importFunction(sInputLine);
+            mFunctionsMap[definition.sName] = definition;
         }
-        while (sIn.find(';') != string::npos);
 
-        // --> Zahl der definierten Funktionen erhoehen <--
-        i++;
-        nDefinedFunctions = i;
-
-        // --> Seg-Faults abfangen! <--
-        if (i == 100)
-            break;
-        j = 0;
-    }
-    // --> Zuruecksetzen des FileStreams und Schliessen der Datei <--
-    Defines_def.clear();
-    Defines_def.close();
-
-    // --> Kopieren der Funktionsnamen und der Indices in die map <--
-    for (unsigned int n = 0; n < nDefinedFunctions; n++)
-    {
-        if (n < 10)
-            mFunctions[toLowerCase(sFunctions[n][0])+"!0"+toString((int)n)] = n;
-        else
-            mFunctions[toLowerCase(sFunctions[n][0])+"!"+toString((int)n)] = n;
-    }
-    sFunc_Temp = new string*[nDefinedFunctions];
-    for (unsigned int n = 0; n < nDefinedFunctions; n++)
-    {
-        sFunc_Temp[n] = new string[13];
-        for (unsigned int k = 0; k < 13; k++)
+        if (!bAutoLoad && _option.getSystemPrintStatus())
         {
-            sFunc_Temp[n][k] = sFunctions[n][k];
+            NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
+            NumeReKernel::print(LineBreak(_lang.get("DEFINE_DONE_LOADING", toString((int)nDefinedFunctions)), _option));
         }
+
     }
 
-    map<string,int>::const_iterator item = mFunctions.begin();
-    unsigned int nPos = 0;
-    for (; item != mFunctions.end(); ++item)
-    {
-        for (unsigned int k = 0; k < 13; k++)
-        {
-            sFunctions[nPos][k] = sFunc_Temp[item->second][k];
-        }
-        nPos++;
-    }
-
-    for (unsigned int n = 0; n < nDefinedFunctions; n++)
-    {
-        delete[] sFunc_Temp[n];
-    }
-    delete[] sFunc_Temp;
-    sFunc_Temp = 0;
-
-    if (bAutoLoad);
-        //NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("DEFINE_DONE_AUTOLOADING", toString((int)nDefinedFunctions))));
-    else if (_option.getSystemPrintStatus())
-    {
-        NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
-        NumeReKernel::print(LineBreak(_lang.get("DEFINE_DONE_LOADING", toString((int)nDefinedFunctions)), _option));
-    }
     return true;
 }
 
 void Define::setPredefinedFuncs(const string& sPredefined)
 {
     sBuilt_In = sPredefined;
+
     if ((sBuilt_In.find(',') == string::npos || sBuilt_In.find("()") == string::npos) && sBuilt_In.find(' ') != string::npos)
     {
         sBuilt_In.insert(0, ",");
         sBuilt_In += "()";
+
         for (size_t i = 0; i < sBuilt_In.length(); i++)
         {
             if (sBuilt_In[i] == ' ')

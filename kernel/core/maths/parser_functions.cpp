@@ -2082,7 +2082,7 @@ void parser_ListDefine(const Define& _functions, const Settings& _option)
 			}
 
 			// Print the actual implementation of the function
-			NumeReKernel::printPreFmt(LineBreak("|       " + _lang.get("PARSERFUNCS_LISTDEFINE_DEFINITION", _functions.getFunction(i), _functions.getImplemention(i)), _option, false, 0, 29) + "\n"); //14
+			NumeReKernel::printPreFmt(LineBreak("|       " + _lang.get("PARSERFUNCS_LISTDEFINE_DEFINITION", _functions.getFunction(i), _functions.getImplementation(i)), _option, false, 0, 29) + "\n"); //14
         }
 		NumeReKernel::printPreFmt("|   -- " + toString((int)_functions.getDefinedFunctions()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_FUNCTIONS"))  + " --\n");
 	}
