@@ -21,15 +21,173 @@
 #include "debugger.hpp"
 #include "../../kernel.hpp"
 #include "../utils/tools.hpp"
-
+#include "procedurevarfactory.hpp"
 
 // constructor
 NumeReDebugger::NumeReDebugger()
 {
-    nLineNumber = 0;
+    nLineNumber = string::npos;
     sErraticCommand = "";
     sErraticModule = "";
+    sErrorMessage = "";
     bAlreadyThrown = false;
+    bDebuggerActive = false;
+    bExceptionHandled = false;
+}
+
+void NumeReDebugger::showError(exception_ptr e)
+{
+    if (!bDebuggerActive)
+        return;
+
+    try
+    {
+        rethrow_exception(e);
+    }
+    catch (mu::Parser::exception_type& e)
+    {
+        sErrorMessage = _lang.get("ERR_MUP_HEAD") + "\n\n" + e.GetMsg();
+        showError(_lang.get("ERR_MUP_HEAD_DBG"));
+    }
+    catch (const std::exception& e)
+    {
+        sErrorMessage = _lang.get("ERR_STD_INTERNAL_HEAD") + "\n\n" + e.what();
+        showError(_lang.get("ERR_STD_INTERNAL_HEAD_DBG"));
+    }
+    catch (SyntaxError& e)
+    {
+        if (e.errorcode == SyntaxError::PROCESS_ABORTED_BY_USER)
+        {
+            return;
+        }
+        else
+        {
+            if (e.getToken().length() && (e.errorcode == SyntaxError::PROCEDURE_THROW || e.errorcode == SyntaxError::LOOP_THROW))
+            {
+                sErrorMessage = _lang.get("ERR_NR_HEAD") + "\n\n" + e.getToken();
+            }
+            else
+            {
+                sErrorMessage = _lang.get("ERR_NR_" + toString((int)e.errorcode) + "_0_*", e.getToken(), toString(e.getIndices()[0]), toString(e.getIndices()[1]), toString(e.getIndices()[2]),
+                                          toString(e.getIndices()[3]));
+
+                if (sErrorMessage.substr(0, 7) == "ERR_NR_")
+                {
+                    sErrorMessage = _lang.get("ERR_GENERIC_0", toString((int)e.errorcode));
+                }
+
+                sErrorMessage = _lang.get("ERR_NR_HEAD") + "\n\n" + sErrorMessage;
+            }
+
+            showError(_lang.get("ERR_NR_HEAD_DBG"));
+        }
+    }
+    catch (...)
+    {
+        return;
+    }
+}
+
+void NumeReDebugger::showError(const string& sTitle)
+{
+    if (bExceptionHandled)
+        return;
+
+    formatMessage();
+
+    bExceptionHandled = true;
+    showEvent(sTitle);
+    reset();
+}
+
+void NumeReDebugger::throwException(SyntaxError error)
+{
+    if (error.errorcode != SyntaxError::PROCESS_ABORTED_BY_USER)
+    {
+        if (error.getToken().length() && (error.errorcode == SyntaxError::PROCEDURE_THROW || error.errorcode == SyntaxError::LOOP_THROW))
+        {
+            sErrorMessage = _lang.get("ERR_NR_HEAD") + "\n\n" + error.getToken();
+        }
+        else
+        {
+            sErrorMessage = _lang.get("ERR_NR_" + toString((int)error.errorcode) + "_0_*", error.getToken(), toString(error.getIndices()[0]), toString(error.getIndices()[1]), toString(error.getIndices()[2]),
+                                      toString(error.getIndices()[3]));
+
+            if (sErrorMessage.substr(0, 7) == "ERR_NR_")
+            {
+                sErrorMessage = _lang.get("ERR_GENERIC_0", toString((int)error.errorcode));
+            }
+        }
+
+        sErrorMessage = _lang.get("ERR_NR_HEAD") + "\n\n" + sErrorMessage;
+
+        showError(_lang.get("ERR_NR_HEAD_DBG"));
+    }
+
+    throw error;
+}
+
+int NumeReDebugger::showBreakPoint()
+{
+    int nDebuggerCode = showEvent(_lang.get("DBG_HEADLINE"));
+    resetBP();
+
+    return nDebuggerCode;
+}
+
+
+int NumeReDebugger::showEvent(const string& sTitle)
+{
+    if (!bDebuggerActive)
+        return NumeReKernel::DEBUGGER_CONTINUE;
+
+    if (validDebuggingInformations())
+    {
+        NumeReKernel::showDebugEvent(sTitle, getStackTrace());
+        NumeReKernel::gotoLine(sErraticModule, nLineNumber);
+
+        return NumeReKernel::waitForContinue();
+    }
+
+    return NumeReKernel::DEBUGGER_CONTINUE;
+}
+
+void NumeReDebugger::formatMessage()
+{
+    for (size_t i = 1; i < sErrorMessage.length(); i++)
+    {
+        if (sErrorMessage[i] == '$' && sErrorMessage[i-1] != '\\')
+            sErrorMessage[i] = '\n';
+        else if (sErrorMessage[i] == '$' && sErrorMessage[i-1] == '\\')
+        {
+            sErrorMessage.erase(i-1, 1);
+            i--;
+        }
+    }
+}
+
+bool NumeReDebugger::select(size_t nStackElement)
+{
+    if (nStackElement >= vStackTrace.size())
+        return false;
+
+    Procedure* _curProcedure = vStackTrace[nStackElement].second;
+
+    if (!_curProcedure)
+        return false;
+
+    resetBP();
+
+    if (_curProcedure->bEvaluatingFlowControlStatements)
+    {
+        gatherLoopBasedInformations(_curProcedure->getCurrentCommand(), _curProcedure->getCurrentLineNumber(), _curProcedure->mVarMap, _curProcedure->vVarArray, _curProcedure->sVarArray, _curProcedure->nVarArray);
+    }
+
+    gatherInformations(_curProcedure->_varFactory, _curProcedure->sProcCommandLine, _curProcedure->sCurrentProcedureName, _curProcedure->GetCurrentLine());
+
+    NumeReKernel::gotoLine(sErraticModule, nLineNumber);
+
+    return true;
 }
 
 // This member function resets the debugger after a
@@ -37,6 +195,7 @@ NumeReDebugger::NumeReDebugger()
 void NumeReDebugger::reset()
 {
     vStackTrace.clear();
+    sErrorMessage.clear();
     resetBP();
     return;
 }
@@ -46,7 +205,7 @@ void NumeReDebugger::reset()
 // the stacktrace
 void NumeReDebugger::resetBP()
 {
-    nLineNumber = 0;
+    nLineNumber = string::npos;
     sErraticCommand = "";
     sErraticModule = "";
     mLocalVars.clear();
@@ -59,23 +218,23 @@ void NumeReDebugger::resetBP()
 // This member function adds a new stack item to the
 // monitored stack. Additionally, it cleanes the procedure's
 // names for the stack trace display
-void NumeReDebugger::pushStackItem(const string& sStackItem)
+void NumeReDebugger::pushStackItem(const string& sStackItem, Procedure* _currentProcedure)
 {
-    vStackTrace.push_back(sStackItem);
+    vStackTrace.push_back(pair<string, Procedure*>(sStackItem, _currentProcedure));
 
     // Insert a leading backslash, if it missing
-    for (unsigned int i = 0; i < vStackTrace.back().length(); i++)
+    for (unsigned int i = 0; i < vStackTrace.back().first.length(); i++)
     {
-        if ((!i && vStackTrace.back()[i] == '$') || (i && vStackTrace.back()[i] == '$' && vStackTrace.back()[i-1] != '\\'))
-            vStackTrace.back().insert(i,1,'\\');
+        if ((!i && vStackTrace.back().first[i] == '$') || (i && vStackTrace.back().first[i] == '$' && vStackTrace.back().first[i-1] != '\\'))
+            vStackTrace.back().first.insert(i,1,'\\');
     }
 
     // Insert the single quotation marks for explicit procedure
     // paths
-    if (vStackTrace.back().find('/') != string::npos && vStackTrace.back().find('/') < vStackTrace.back().find('('))
+    if (vStackTrace.back().first.find('/') != string::npos && vStackTrace.back().first.find('/') < vStackTrace.back().first.find('('))
     {
-        vStackTrace.back().insert(vStackTrace.back().find('$')+1, "'");
-        vStackTrace.back().insert(vStackTrace.back().find('('), "'");
+        vStackTrace.back().first.insert(vStackTrace.back().first.find('$')+1, "'");
+        vStackTrace.back().first.insert(vStackTrace.back().first.find('('), "'");
     }
 
     return;
@@ -90,10 +249,23 @@ void NumeReDebugger::popStackItem()
     return;
 }
 
+void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber)
+{
+    if (!bDebuggerActive)
+        return;
+
+    gatherInformations(_varFactory->sLocalVars, _varFactory->nLocalVarMapSize, _varFactory->dLocalVars, _varFactory->sLocalStrings, _varFactory->nLocalStrMapSize, _varFactory->sLocalTables,
+                       _varFactory->nLocalTableSize, _sErraticCommand, _sErraticModule, _nLineNumber);
+}
+
 // This member function gathers all information from the current
 // workspace and stores them internally to display them to the user
-void NumeReDebugger::gatherInformations(string** sLocalVars, unsigned int nLocalVarMapSize, double* dLocalVars, string** sLocalStrings, unsigned int nLocalStrMapSize, string** sLocalTables, unsigned int nLocalTableMapSize, const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber)
+void NumeReDebugger::gatherInformations(string** sLocalVars, unsigned int nLocalVarMapSize, double* dLocalVars, string** sLocalStrings, unsigned int nLocalStrMapSize, string** sLocalTables,
+                                        unsigned int nLocalTableMapSize, const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber)
 {
+    if (!bDebuggerActive)
+        return;
+
     if (bAlreadyThrown)
         return;
 
@@ -120,7 +292,10 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, unsigned int nLocal
     }
 
     sErraticModule = _sErraticModule;
-    nLineNumber = _nLineNumber - nLineNumber; // nLineNumber ist entweder 0 oder gleich der Loop-Line.
+
+    if (nLineNumber == string::npos)
+        nLineNumber = _nLineNumber;
+
     bAlreadyThrown = true;
 
     // Store the local numerical variables and replace their
@@ -185,13 +360,23 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, unsigned int nLocal
 
 // This member funciton gathers the necessary debugging informations
 // from the current executed control flow block
-void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand, unsigned int _nLineNumber, map<string,string>& mVarMap, double** vVarArray, string* sVarArray, int nVarArray)
+void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand, unsigned int _nLineNumber, map<string, string>& mVarMap, double** vVarArray, string* sVarArray, int nVarArray)
 {
+    if (!bDebuggerActive)
+        return;
+
     if (bAlreadyThrown)
         return;
 
     // Store command line and line number
     sErraticCommand = _sErraticCommand;
+
+    if (sErraticCommand.substr(sErraticCommand.find_first_not_of(' '), 2) == "|>")
+    {
+        sErraticCommand.erase(sErraticCommand.find_first_not_of(' '), 2);
+    }
+
+
     nLineNumber = _nLineNumber;
 
     // store variable names and replace their occurences with
@@ -203,7 +388,7 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
             if (iter->second == sVarArray[i])
             {
                 // Store the variables
-                mLocalVars[iter->first] = vVarArray[i][0];
+                mLocalVars[iter->first + "\t" + iter->second] = vVarArray[i][0];
 
                 // Replace the variables
                 while (sErraticCommand.find(iter->second) != string::npos)
@@ -222,6 +407,7 @@ vector<string> NumeReDebugger::getModuleInformations()
     vModule.push_back(sErraticCommand);
     vModule.push_back(sErraticModule);
     vModule.push_back(toString(nLineNumber+1));
+    vModule.push_back(sErrorMessage);
     return vModule;
 }
 
@@ -233,7 +419,7 @@ vector<string> NumeReDebugger::getStackTrace()
     // Return a corresponding message, if the stack is empty
     if (!vStackTrace.size())
     {
-        vStack.push_back(_lang.get("DBG_STACK_EMPTY"));
+        vStack.push_back(_lang.get("DBG_STACK_EMPTY") + "\t" + sErraticModule + "\t" + toString(nLineNumber+1));
         return vStack;
     }
 
@@ -241,10 +427,8 @@ vector<string> NumeReDebugger::getStackTrace()
     // on the stack with a prefixed arrow
     for (int i = vStackTrace.size()-1; i >= 0; i--)
     {
-        if (i == (int)vStackTrace.size()-1)
-            vStack.push_back("-> $" + vStackTrace[i]);
-        else
-            vStack.push_back("$" + vStackTrace[i]);
+        Procedure* _curProc = vStackTrace[i].second;
+        vStack.push_back("$" + vStackTrace[i].first + "\t" + _curProc->sCurrentProcedureName + "\t" + toString(_curProc->GetCurrentLine()+1));
     }
 
     return vStack;

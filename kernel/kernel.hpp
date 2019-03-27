@@ -40,6 +40,7 @@
 #include "core/script.hpp"
 #include "core/procedure/flowctrl.hpp"
 #include "core/procedure/procedure.hpp"
+#include "core/procedure/debugger.hpp"
 #include "core/plugin.hpp"
 #include "core/ui/language.hpp"
 #include "debugmessenger.hpp"
@@ -97,6 +98,12 @@ class NumeReKernel
             NUMERE_GRAPH_UPDATE
         };
 
+        enum DebuggerCodes
+        {
+            DEBUGGER_CONTINUE = 1,
+            DEBUGGER_STEP
+        };
+
     private:
         string sCommandLine;
         string sAnswer;
@@ -113,6 +120,7 @@ class NumeReKernel
         PlotData _pData;
         Script _script;
         Procedure _procedure;
+        NumeReDebugger _debugger;
 
         // private member functions for special tasks
         void printResult(const string& sLine, const string& sCmdCache, bool bScriptRunning);
@@ -150,13 +158,11 @@ class NumeReKernel
         static unsigned int nLastLineLength;
         static bool modifiedSettings;
         static NumeRe::Table table;
-        static Debugmessenger _messenger;
+        static BreakpointManager _messenger;
         static bool bSupressAnswer;
         static bool bGettingLine;
         static bool bErrorNotification;
         static ofstream oLogFile;
-        static size_t nScriptLine;
-        static string sScriptFileName;
         static ProcedureLibrary ProcLibrary;
 
         // Constructor and Destructor
@@ -188,9 +194,9 @@ class NumeReKernel
         static void updateGraphWindow(GraphHelper* _helper);
         static NumeRe::Table getTable();
         NumeRe::Table getTable(const string& sTableName);
-        static void showDebugEvent(const string& sTitle, const vector<string>& vModule, const vector<string>& vStacktrace, const vector<string>& vNumVars, const vector<string>& vStringVars, const vector<string>& vTables);
-        static void waitForContinue();
-        static void evalDebuggerBreakPoint(Settings& _option, const string& sCurrentCommand = "", Parser* _parser = nullptr);
+        static void showDebugEvent(const string& sTitle, const vector<string>& vStacktrace);
+        static int waitForContinue();
+        static int evalDebuggerBreakPoint(const string& sCurrentCommand = "");
         static void addToLog(const string& sLogMessage);
 
         // Public member functions
@@ -220,6 +226,21 @@ class NumeReKernel
         PlotData& getPlottingData()
         {
             return _pData;
+        }
+
+        Output& getOutput()
+        {
+            return _out;
+        }
+
+        Script& getScript()
+        {
+            return _script;
+        }
+
+        NumeReDebugger& getDebugger()
+        {
+            return _debugger;
         }
 
         map<string,string> getPluginLanguageStrings();

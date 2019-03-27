@@ -91,6 +91,14 @@ string toString(time_t tTime, bool bOnlyTime = false);
  */
 string toString(long long int nNumber);
 
+/** \brief Macht aus einem size_t ein String (ohne Praezision)
+ *
+ * \param nNumber size_t
+ * \return string
+ *
+ */
+string toString(size_t nNumber);
+
 /** \brief Macht aus einem Double einen String mit 20 Ziffern
  *
  * \param dNumber double

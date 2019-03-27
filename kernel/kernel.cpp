@@ -51,13 +51,11 @@ unsigned int NumeReKernel::nLastLineLength = 0;
 bool NumeReKernel::modifiedSettings = false;
 bool NumeReKernel::bCancelSignal = false;
 NumeRe::Table NumeReKernel::table;
-Debugmessenger NumeReKernel::_messenger;
+BreakpointManager NumeReKernel::_messenger;
 bool NumeReKernel::bSupressAnswer = false;
 bool NumeReKernel::bGettingLine = false;
 bool NumeReKernel::bErrorNotification = false;
 ofstream NumeReKernel::oLogFile;
-size_t NumeReKernel::nScriptLine = 0;
-string NumeReKernel::sScriptFileName = "";
 ProcedureLibrary NumeReKernel::ProcLibrary;
 
 typedef BOOL (WINAPI* LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
@@ -108,6 +106,7 @@ Settings NumeReKernel::getKernelSettings()
 void NumeReKernel::setKernelSettings(const Settings& _settings)
 {
 	_option.copySettings(_settings);
+	_debugger.setActive(_settings.getUseDebugger());
 }
 
 // Save the cache in its current state automatically
@@ -513,6 +512,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 	string sLine = "";          // The actual line
 	string sCurrentCommand = "";// The current command
 	value_type* v = 0;          // Ergebnisarray
+	int& nDebuggerCode = _procedure.getDebuggerCode();
 	int nNum = 0;               // Zahl der Ergebnisse in value_type* v
 
 	// Needed for some handler functions
@@ -582,14 +582,18 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 continue;
 
 			// Eval debugger breakpoints from scripts
-			if (sLine.substr(0, 2) == "|>"
+			if ((sLine.substr(0, 2) == "|>" || nDebuggerCode == DEBUGGER_STEP)
 					&& _script.isValid()
 					&& !_procedure.is_writing()
 					&& !_procedure.getLoop())
 			{
-				sLine.erase(0, 2);
+			    if (sLine.substr(0, 2) == "|>")
+                    sLine.erase(0, 2);
+
 				if (_option.getUseDebugger())
-					evalDebuggerBreakPoint(_option, sLine, &_parser);
+                {
+					nDebuggerCode = evalDebuggerBreakPoint(sLine);
+                }
 			}
 
 			// Log the current line
@@ -833,7 +837,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 			make_hline();
 			print(toUpperCase(_lang.get("ERR_MUP_HEAD")));
 			make_hline();
-			showDebugError(_lang.get("ERR_MUP_HEAD_DBG"));
+			//showDebugError(_lang.get("ERR_MUP_HEAD_DBG"));
 
 			// --> Eigentliche Fehlermeldung <--
 			print(LineBreak(e.GetMsg(), _option));
@@ -917,7 +921,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 			make_hline();
 			print(toUpperCase(_lang.get("ERR_STD_INTERNAL_HEAD")));
 			make_hline();
-			showDebugError(_lang.get("ERR_STD_INTERNAL_HEAD_DBG"));
+			//showDebugError(_lang.get("ERR_STD_INTERNAL_HEAD_DBG"));
 			print(LineBreak(string(e.what()), _option));
 			print(LineBreak(_lang.get("ERR_STD_INTERNAL"), _option));
 
@@ -949,14 +953,12 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 					// --> Script beenden! Mit einem Fehler ist es unsinnig weiterzurechnen <--
 					_script.close();
 				}
-				if (_option.getUseDebugger())
-					_option._debug.reset();
 			}
 			else
 			{
 				print(toUpperCase(_lang.get("ERR_NR_HEAD")));
 				make_hline();
-				showDebugError(_lang.get("ERR_NR_HEAD_DBG"));
+				//showDebugError(_lang.get("ERR_NR_HEAD_DBG"));
 
 				if (e.getToken().length() && (e.errorcode == SyntaxError::PROCEDURE_THROW || e.errorcode == SyntaxError::LOOP_THROW))
 				{
@@ -1064,6 +1066,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 	while ((_script.isValid() && _script.isOpen()) || sCmdCache.length());
 
 	bCancelSignal = false;
+    nDebuggerCode = 0;
 
 	if (_script.wasLastCommand())
 	{
@@ -1106,8 +1109,6 @@ bool NumeReKernel::handleCommandLineSource(string& sLine, const string& sCmdCach
         if (_script.isValid() && _script.isOpen())
         {
             sLine = _script.getNextScriptCommand();
-            sScriptFileName = _script.getScriptFileName();
-            nScriptLine = _script.getCurrentLine();
         }
         else if (_option.readCmdCache().length())
         {
@@ -1631,7 +1632,7 @@ bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, co
         if (bSupressAnswer)
             sLine += ";";
         // --> Die Zeile in den Ausdrucksspeicher schreiben, damit sie spaeter wiederholt aufgerufen werden kann <--
-        _procedure.setCommand(sLine, _parser, _data, _functions, _option, _out, _pData, _script);
+        _procedure.setCommand(sLine, (_script.isValid() && _script.isOpen()) ? _script.getCurrentLine()-1 : 0);
         /* --> So lange wir im Loop sind und nicht endfor aufgerufen wurde, braucht die Zeile nicht an den Parser
          *     weitergegeben werden. Wir ignorieren daher den Rest dieser for(;;)-Schleife <--
          */
@@ -1750,8 +1751,7 @@ void NumeReKernel::resetAfterError(string& sCmdCache)
     }
 
     // Reset the debugger, if not already done
-    if (_option.getUseDebugger())
-        _option._debug.reset();
+    _debugger.finalize();
 }
 
 void NumeReKernel::updateLineLenght(int nLength)
@@ -2274,7 +2274,7 @@ void NumeReKernel::gotoLine(const string& sFile, unsigned int nLine)
 		// Create the task
 		NumeReTask task;
 		task.sString = sFile;
-		task.nLine = nLine-1;
+		task.nLine = nLine;
 		task.taskType = NUMERE_EDIT_FILE;
 
 		taskQueue.push(task);
@@ -2407,17 +2407,16 @@ NumeRe::Table NumeReKernel::getTable(const string& sTableName)
 
 void NumeReKernel::showDebugError(const string& sTitle)
 {
-	if (_option.getUseDebugger() && _option._debug.validDebuggingInformations())
+	if (_option.getUseDebugger() && _debugger.validDebuggingInformations())
 	{
-		showDebugEvent(sTitle, _option._debug.getModuleInformations(), _option._debug.getStackTrace(), _option._debug.getNumVars(), _option._debug.getStringVars(), _option._debug.getTables());
-		gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber() + 1);
+		_debugger.showError(sTitle);
 	}
-	_option._debug.reset();
+	_debugger.reset();
 }
 
 // This member function passes the debugging informations to the
 // GUI to be displayed in the debugger window
-void NumeReKernel::showDebugEvent(const string& sTitle, const vector<string>& vModule, const vector<string>& vStacktrace, const vector<string>& vNumVars, const vector<string>& vStringVars, const vector<string>& vTables)
+void NumeReKernel::showDebugEvent(const string& sTitle, const vector<string>& vStacktrace)
 {
 	if (!m_parent)
 		return;
@@ -2429,48 +2428,44 @@ void NumeReKernel::showDebugEvent(const string& sTitle, const vector<string>& vM
 		task.taskType = NUMERE_DEBUG_EVENT;
 
 		// note the size of the fields
-		task.vDebugEvent.push_back(toString(vModule.size()) + ";" + toString(vStacktrace.size()) + ";" + toString(vNumVars.size()) + ";" + toString(vStringVars.size()) + ";" + toString(vTables.size()));
 		task.vDebugEvent.push_back(sTitle);
-
-		task.vDebugEvent.insert(task.vDebugEvent.end(), vModule.begin(), vModule.end());
-		task.vDebugEvent.insert(task.vDebugEvent.end(), vStacktrace.begin(), vStacktrace.end());
-		if (vNumVars.size())
-			task.vDebugEvent.insert(task.vDebugEvent.end(), vNumVars.begin(), vNumVars.end());
-		if (vStringVars.size())
-			task.vDebugEvent.insert(task.vDebugEvent.end(), vStringVars.begin(), vStringVars.end());
-		if (vTables.size())
-			task.vDebugEvent.insert(task.vDebugEvent.end(), vTables.begin(), vTables.end());
+        task.vDebugEvent.insert(task.vDebugEvent.end(), vStacktrace.begin(), vStacktrace.end());
 
 		taskQueue.push(task);
 
 		m_parent->m_KernelStatus = NUMERE_QUEUED_COMMAND;
-		m_parent->m_bContinueDebug = false;
+		m_parent->m_nDebuggerCode = 0;
 	}
 	wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
 	Sleep(10);
 }
 
-void NumeReKernel::waitForContinue()
+int NumeReKernel::waitForContinue()
 {
 	if (!m_parent)
-		return;
-	bool bContinue = false;
+		return DEBUGGER_CONTINUE;
+
+	int nDebuggerCode = 0;
+
 	do
 	{
 		Sleep(100);
 		{
 			wxCriticalSectionLocker lock(m_parent->m_kernelCS);
-			bContinue = m_parent->m_bContinueDebug;
-			m_parent->m_bContinueDebug = false;
+			nDebuggerCode = m_parent->m_nDebuggerCode;
+			m_parent->m_nDebuggerCode = 0;
 		}
 	}
-	while (!bContinue);
+	while (!nDebuggerCode);
 
-	return;
+	return nDebuggerCode;
 }
 
-void NumeReKernel::evalDebuggerBreakPoint(Settings& _option, const string& sCurrentCommand, Parser* _parser)
+int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
 {
+    if (!getInstance())
+        return DEBUGGER_CONTINUE;
+
 	mu::varmap_type varmap;
 	string** sLocalVars = nullptr;
 	double* dLocalVars = nullptr;
@@ -2480,71 +2475,70 @@ void NumeReKernel::evalDebuggerBreakPoint(Settings& _option, const string& sCurr
 	size_t nLocalStringMapSize = 0;
 	string** sLocalTables = nullptr;
 	size_t nLocalTableMapSize = 0;
-	if (_parser)
-	{
-		varmap = _parser->GetVar();
-		nLocalVarMapSize = varmap.size();
-		sLocalVars = new string*[nLocalVarMapSize];
-		dLocalVars = new double[nLocalVarMapSize];
-		size_t i = 0;
-		for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
-		{
-			sLocalVars[i + nLocalVarMapSkip] = new string[2];
-			if ((iter->first).substr(0, 2) == "_~")
-			{
-				nLocalVarMapSkip++;
-				continue;
-			}
-			sLocalVars[i][0] = iter->first;
-			sLocalVars[i][1] = iter->first;
-			dLocalVars[i] = *(iter->second);
-			i++;
-		}
 
-		map<string, string> sStringMap = getInstance()->getData().getStringVars();
+	NumeReDebugger& _debugger = getInstance()->getDebugger();
+	Parser& _parser = getInstance()->getParser();
 
-		nLocalStringMapSize = sStringMap.size();
-		if (nLocalStringMapSize)
-		{
-			sLocalStrings = new string*[nLocalStringMapSize];
-			i = 0;
-			for (auto iter = sStringMap.begin(); iter != sStringMap.end(); ++iter)
-			{
-				sLocalStrings[i] = new string[2];
-				sLocalStrings[i][0] = iter->first;
-				sLocalStrings[i][1] = iter->first;
-				i++;
-			}
-		}
+    varmap = _parser.GetVar();
+    nLocalVarMapSize = varmap.size();
+    sLocalVars = new string*[nLocalVarMapSize];
+    dLocalVars = new double[nLocalVarMapSize];
+    size_t i = 0;
+    for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
+    {
+        sLocalVars[i + nLocalVarMapSkip] = new string[2];
+        if ((iter->first).substr(0, 2) == "_~")
+        {
+            nLocalVarMapSkip++;
+            continue;
+        }
+        sLocalVars[i][0] = iter->first;
+        sLocalVars[i][1] = iter->first;
+        dLocalVars[i] = *(iter->second);
+        i++;
+    }
 
-		map<string, long long int> tableMap = getInstance()->getData().mCachesMap;
+    map<string, string> sStringMap = getInstance()->getData().getStringVars();
 
-		if (getInstance()->getData().isValid())
-            tableMap["data"] = -1;
-        if (getInstance()->getData().getStringElements())
-            tableMap["string"] = -2;
+    nLocalStringMapSize = sStringMap.size();
+    if (nLocalStringMapSize)
+    {
+        sLocalStrings = new string*[nLocalStringMapSize];
+        i = 0;
+        for (auto iter = sStringMap.begin(); iter != sStringMap.end(); ++iter)
+        {
+            sLocalStrings[i] = new string[2];
+            sLocalStrings[i][0] = iter->first;
+            sLocalStrings[i][1] = iter->first;
+            i++;
+        }
+    }
 
-		nLocalTableMapSize = tableMap.size();
+    map<string, long long int> tableMap = getInstance()->getData().mCachesMap;
 
-		if (nLocalTableMapSize)
-		{
-			sLocalTables = new string*[nLocalTableMapSize];
-			i = 0;
-			for (auto iter = tableMap.begin(); iter != tableMap.end(); ++iter)
-			{
-				sLocalTables[i] = new string[2];
-				sLocalTables[i][0] = iter->first;
-				sLocalTables[i][1] = iter->first;
-				i++;
-			}
-		}
-	}
+    if (getInstance()->getData().isValid())
+        tableMap["data"] = -1;
+    if (getInstance()->getData().getStringElements())
+        tableMap["string"] = -2;
 
-	_option._debug.gatherInformations(sLocalVars, nLocalVarMapSize - nLocalVarMapSkip, dLocalVars, sLocalStrings, nLocalStringMapSize, sLocalTables, nLocalTableMapSize, sCurrentCommand, sScriptFileName, nScriptLine - 1);
+    nLocalTableMapSize = tableMap.size();
 
-	showDebugEvent(_lang.get("DBG_HEADLINE"), _option._debug.getModuleInformations(), _option._debug.getStackTrace(), _option._debug.getNumVars(), _option._debug.getStringVars(), _option._debug.getTables());
-	gotoLine(_option._debug.getErrorModule(), _option._debug.getLineNumber() + 1);
-	_option._debug.resetBP();
+    if (nLocalTableMapSize)
+    {
+        sLocalTables = new string*[nLocalTableMapSize];
+        i = 0;
+        for (auto iter = tableMap.begin(); iter != tableMap.end(); ++iter)
+        {
+            sLocalTables[i] = new string[2];
+            sLocalTables[i][0] = iter->first;
+            sLocalTables[i][1] = iter->first;
+            i++;
+        }
+    }
+
+	_debugger.gatherInformations(sLocalVars, nLocalVarMapSize - nLocalVarMapSkip, dLocalVars, sLocalStrings, nLocalStringMapSize, sLocalTables, nLocalTableMapSize, sCurrentCommand,
+                                 getInstance()->getScript().getScriptFileName(), getInstance()->getScript().getCurrentLine() - 1);
+
 	if (sLocalVars)
 	{
 		delete[] dLocalVars;
@@ -2564,7 +2558,8 @@ void NumeReKernel::evalDebuggerBreakPoint(Settings& _option, const string& sCurr
 			delete[] sLocalTables[i];
 		delete[] sLocalTables;
 	}
-	waitForContinue();
+
+	return _debugger.showBreakPoint();
 }
 
 void NumeReKernel::addToLog(const string& sLogMessage)

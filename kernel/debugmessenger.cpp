@@ -15,20 +15,20 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
-#include "debugmessenger.hpp"
+#include "breakpointmanager.hpp"
 #include "core/utils/tools.hpp"
 
-Debugmessenger::Debugmessenger()
+BreakpointManager::BreakpointManager()
 {
     mBreakpoints.clear();
 }
 
-Debugmessenger::Debugmessenger(const Debugmessenger& _messenger) : Debugmessenger()
+BreakpointManager::BreakpointManager(const BreakpointManager& _messenger) : BreakpointManager()
 {
     passBreakpoints(_messenger.mBreakpoints);
 }
 
-void Debugmessenger::addBreakpoint(const string& _sFilename, size_t nLine)
+void BreakpointManager::addBreakpoint(const string& _sFilename, size_t nLine)
 {
     if (mBreakpoints.find(replacePathSeparator(_sFilename)) != mBreakpoints.end())
     {
@@ -49,7 +49,7 @@ void Debugmessenger::addBreakpoint(const string& _sFilename, size_t nLine)
     }
 }
 
-void Debugmessenger::removeBreakpoint(const string& _sFilename, size_t nLine)
+void BreakpointManager::removeBreakpoint(const string& _sFilename, size_t nLine)
 {
     if (mBreakpoints.find(replacePathSeparator(_sFilename)) == mBreakpoints.end())
     {
@@ -72,27 +72,27 @@ void Debugmessenger::removeBreakpoint(const string& _sFilename, size_t nLine)
     }
 }
 
-void Debugmessenger::clearBreakpoints(const string& _sFilename)
+void BreakpointManager::clearBreakpoints(const string& _sFilename)
 {
     if (mBreakpoints.find(replacePathSeparator(_sFilename)) != mBreakpoints.end())
         mBreakpoints.erase(replacePathSeparator(_sFilename));
 }
 
-void Debugmessenger::passBreakpoints(const map<string,vector<size_t> >& _mBreakpoints)
+void BreakpointManager::passBreakpoints(const map<string,vector<size_t> >& _mBreakpoints)
 {
     mBreakpoints.clear();
     mBreakpoints = _mBreakpoints;
 }
 
 
-bool Debugmessenger::hasBreakpoints(const string& _sFilename)
+bool BreakpointManager::hasBreakpoints(const string& _sFilename)
 {
     if (mBreakpoints.find(replacePathSeparator(_sFilename)) != mBreakpoints.end())
         return true;
     return false;
 }
 
-bool Debugmessenger::isBreakpoint(const string& _sFilename, size_t nLine)
+bool BreakpointManager::isBreakpoint(const string& _sFilename, size_t nLine)
 {
     if (mBreakpoints.find(replacePathSeparator(_sFilename)) == mBreakpoints.end())
     {

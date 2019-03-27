@@ -79,9 +79,10 @@ class ProcedureVarFactory
         unsigned int nLocalTableSize;
 
         ProcedureVarFactory();
-        ProcedureVarFactory(Procedure* _procedure, Parser* _parser, Datafile* _data, Settings* _option, Define* _functions, Output* _out, PlotData* _pData, Script* _script, const string& sProc, unsigned int currentProc);
+        ProcedureVarFactory(Procedure* _procedure, const string& sProc, unsigned int currentProc);
         ~ProcedureVarFactory();
 
+        void reset();
         map<string,string> createProcedureArguments(string sArgumentList, string sArgumentValues);
         void createLocalVars(string sVarList);
         void createLocalStrings(string sStringList);

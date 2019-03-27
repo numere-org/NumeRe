@@ -2990,10 +2990,12 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DEBUGGER"), _lang.get("COMMON_INACTIVE")), _option) );
 						//NumeReKernel::print(LineBreak("|-> Debugger wurde deaktiviert.", _option) );
 						_option.setDebbuger(false);
+						NumeReKernel::getInstance()->getDebugger().setActive(false);
 					}
 					else
 					{
 						_option.setDebbuger(true);
+						NumeReKernel::getInstance()->getDebugger().setActive(true);
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DEBUGGER"), _lang.get("COMMON_ACTIVE")), _option) );
 						//NumeReKernel::print(LineBreak("|-> Debugger wurde aktiviert.", _option) );
 					}

@@ -16,8 +16,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef DEBUGMESSENGER_HPP
-#define DEBUGMESSENGER_HPP
+#ifndef BREAKPOINTMANAGER_HPP
+#define BREAKPOINTMANAGER_HPP
 
 #include <map>
 #include <string>
@@ -25,14 +25,14 @@
 
 using namespace std;
 
-class Debugmessenger
+class BreakpointManager
 {
     private:
         map<string,vector<size_t> > mBreakpoints;
 
     public:
-        Debugmessenger();
-        Debugmessenger(const Debugmessenger& _messenger);
+        BreakpointManager();
+        BreakpointManager(const BreakpointManager& _messenger);
 
         void addBreakpoint(const string& _sFilename, size_t nLine);
         void removeBreakpoint(const string& _sFilename, size_t nLine);
@@ -42,5 +42,5 @@ class Debugmessenger
         bool isBreakpoint(const string& _sFilename, size_t nLine);
 };
 
-#endif // DEBUGMESSENGER_HPP
+#endif // BREAKPOINTMANAGER_HPP
 

@@ -19,6 +19,7 @@
 
 #include "procedurevarfactory.hpp"
 #include "procedure.hpp"
+#include "../../kernel.hpp"
 
 #define FLAG_EXPLICIT 1
 #define FLAG_INLINE 2
@@ -28,23 +29,48 @@ ProcedureVarFactory::ProcedureVarFactory()
     init();
 }
 
-ProcedureVarFactory::ProcedureVarFactory(Procedure* _procedure, Parser* _parser, Datafile* _data, Settings* _option, Define* _functions, Output* _out, PlotData* _pData, Script* _script, const string& sProc, unsigned int currentProc)
+ProcedureVarFactory::ProcedureVarFactory(Procedure* _procedure, const string& sProc, unsigned int currentProc)
 {
     init();
     _currentProcedure = _procedure;
-    _parserRef = _parser;
-    _dataRef = _data;
-    _optionRef = _option;
-    _functionRef = _functions;
-    _outRef = _out;
-    _pDataRef = _pData;
-    _scriptRef = _script;
 
     sProcName = replaceProcedureName(sProc);
     nth_procedure = currentProc;
 }
 
 ProcedureVarFactory::~ProcedureVarFactory()
+{
+    reset();
+}
+
+void ProcedureVarFactory::init()
+{
+    _currentProcedure = nullptr;
+    _parserRef = &NumeReKernel::getInstance()->getParser();
+    _dataRef = &NumeReKernel::getInstance()->getData();
+    _optionRef = &NumeReKernel::getInstance()->getSettings();
+    _functionRef = &NumeReKernel::getInstance()->getDefinitions();
+    _outRef = &NumeReKernel::getInstance()->getOutput();
+    _pDataRef = &NumeReKernel::getInstance()->getPlottingData();
+    _scriptRef = &NumeReKernel::getInstance()->getScript();
+
+    sProcName = "";
+    nth_procedure = 0;
+
+    sArgumentMap = nullptr;
+    sLocalVars = nullptr;
+    sLocalStrings = nullptr;
+    sLocalTables = nullptr;
+
+    dLocalVars = nullptr;
+
+    nArgumentMapSize = 0;
+    nLocalVarMapSize = 0;
+    nLocalStrMapSize = 0;
+    nLocalTableSize = 0;
+}
+
+void ProcedureVarFactory::reset()
 {
     if (nArgumentMapSize)
     {
@@ -94,33 +120,6 @@ ProcedureVarFactory::~ProcedureVarFactory()
     }
 }
 
-void ProcedureVarFactory::init()
-{
-    _currentProcedure = nullptr;
-    _parserRef = nullptr;
-    _dataRef = nullptr;
-    _optionRef = nullptr;
-    _functionRef = nullptr;
-    _outRef = nullptr;
-    _pDataRef = nullptr;
-    _scriptRef = nullptr;
-
-    sProcName = "";
-    nth_procedure = 0;
-
-    sArgumentMap = nullptr;
-    sLocalVars = nullptr;
-    sLocalStrings = nullptr;
-    sLocalTables = nullptr;
-
-    dLocalVars = nullptr;
-
-    nArgumentMapSize = 0;
-    nLocalVarMapSize = 0;
-    nLocalStrMapSize = 0;
-    nLocalTableSize = 0;
-}
-
 // replaces path characters etc.
 string ProcedureVarFactory::replaceProcedureName(string sProcedureName)
 {
@@ -151,20 +150,20 @@ unsigned int ProcedureVarFactory::countVarListElements(const string& sVarList)
 map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumentList, string sArgumentValues)
 {
     map<string,string> mVarMap;
+    NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
     if (!sArgumentList.length() && sArgumentValues.length())
     {
         if (_optionRef->getUseDebugger())
-            _optionRef->_debug.popStackItem();
+            _debugger.popStackItem();
         throw SyntaxError(SyntaxError::TOO_MANY_ARGS, sArgumentList, SyntaxError::invalid_position);
     }
     if (sArgumentList.length())
     {
         if (!validateParenthesisNumber(sArgumentList))
         {
-            if (_optionRef->getUseDebugger())
-                _optionRef->_debug.gatherInformations(nullptr, 0, nullptr, nullptr, 0, nullptr, 0, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sArgumentList, SyntaxError::invalid_position);
+            _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+            _debugger.throwException(SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sArgumentList, SyntaxError::invalid_position));
         }
         nArgumentMapSize = countVarListElements(sArgumentList);
 
@@ -180,10 +179,9 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
                     delete[] sArgumentMap[j];
                 delete[] sArgumentMap;
                 nArgumentMapSize = 0;
-                if (_optionRef->getUseDebugger())
-                    _optionRef->_debug.gatherInformations(nullptr, 0, nullptr, nullptr, 0, nullptr, 0, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                //sErrorToken = "var";
-                throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "var");
+
+                _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                _debugger.throwException(SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "var"));
             }
             if (findCommand(sArgumentMap[i][0]).sString == "str")
             {
@@ -191,10 +189,9 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
                     delete[] sArgumentMap[j];
                 delete[] sArgumentMap;
                 nArgumentMapSize = 0;
-                if (_optionRef->getUseDebugger())
-                    _optionRef->_debug.gatherInformations(nullptr, 0, nullptr, nullptr, 0, nullptr, 0, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                //sErrorToken = "str";
-                throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "str");
+
+                _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                _debugger.throwException(SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "str"));
             }
             if (findCommand(sArgumentMap[i][0]).sString == "tab")
             {
@@ -202,10 +199,9 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
                     delete[] sArgumentMap[j];
                 delete[] sArgumentMap;
                 nArgumentMapSize = 0;
-                if (_optionRef->getUseDebugger())
-                    _optionRef->_debug.gatherInformations(nullptr, 0, nullptr, nullptr, 0, nullptr, 0, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                //sErrorToken = "str";
-                throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "tab");
+
+                _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                _debugger.throwException(SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "tab"));
             }
 
             if (i < nArgumentMapSize-1 && sArgumentValues.length() && sArgumentValues.find(',') != string::npos)
@@ -218,10 +214,9 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
                         delete[] sArgumentMap[j];
                     delete[] sArgumentMap;
                     nArgumentMapSize = 0;
-                    if (_optionRef->getUseDebugger())
-                        _optionRef->_debug.gatherInformations(nullptr, 0, nullptr, nullptr, 0, nullptr, 0, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                    //sErrorToken = "var";
-                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "var");
+
+                    _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.throwException(SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "var"));
                 }
                 if (findCommand(sArgumentMap[i][1]).sString == "str")
                 {
@@ -229,10 +224,9 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
                         delete[] sArgumentMap[j];
                     delete[] sArgumentMap;
                     nArgumentMapSize = 0;
-                    if (_optionRef->getUseDebugger())
-                        _optionRef->_debug.gatherInformations(nullptr, 0, nullptr, nullptr, 0, nullptr, 0, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                    //sErrorToken = "str";
-                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "str");
+
+                    _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.throwException(SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "str"));
                 }
                 if (findCommand(sArgumentMap[i][1]).sString == "tab")
                 {
@@ -240,10 +234,9 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
                         delete[] sArgumentMap[j];
                     delete[] sArgumentMap;
                     nArgumentMapSize = 0;
-                    if (_optionRef->getUseDebugger())
-                        _optionRef->_debug.gatherInformations(nullptr, 0, nullptr, nullptr, 0, nullptr, 0, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                    //sErrorToken = "str";
-                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "tab");
+
+                    _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.throwException(SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "tab"));
                 }
                 if (sArgumentMap[i][1].length() && sArgumentMap[i][0].find('=') != string::npos)
                 {
@@ -265,7 +258,7 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
                     delete[] sArgumentMap;
                     nArgumentMapSize = 0;
                     if (_optionRef->getUseDebugger())
-                        _optionRef->_debug.popStackItem();
+                        _debugger.popStackItem();
                     throw SyntaxError(SyntaxError::MISSING_DEFAULT_VALUE, sArgumentList, sErrorToken, sErrorToken);
                 }
             }
@@ -280,10 +273,9 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
                         delete[] sArgumentMap[j];
                     delete[] sArgumentMap;
                     nArgumentMapSize = 0;
-                    if (_optionRef->getUseDebugger())
-                        _optionRef->_debug.gatherInformations(nullptr, 0, nullptr, nullptr, 0, nullptr, 0, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                    //sErrorToken = "var";
-                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "var");
+
+                    _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.throwException(SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "var"));
                 }
                 if (findCommand(sArgumentMap[i][1]).sString == "str")
                 {
@@ -291,10 +283,9 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
                         delete[] sArgumentMap[j];
                     delete[] sArgumentMap;
                     nArgumentMapSize = 0;
-                    if (_optionRef->getUseDebugger())
-                        _optionRef->_debug.gatherInformations(nullptr, 0, nullptr, nullptr, 0, nullptr, 0, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                    //sErrorToken = "str";
-                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "str");
+
+                    _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.throwException(SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "str"));
                 }
                 if (findCommand(sArgumentMap[i][1]).sString == "tab")
                 {
@@ -302,10 +293,9 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
                         delete[] sArgumentMap[j];
                     delete[] sArgumentMap;
                     nArgumentMapSize = 0;
-                    if (_optionRef->getUseDebugger())
-                        _optionRef->_debug.gatherInformations(nullptr, 0, nullptr, nullptr, 0, nullptr, 0, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                    //sErrorToken = "str";
-                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "tab");
+
+                    _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.throwException(SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, "tab"));
                 }
                 if (sArgumentMap[i][0].find('=') != string::npos)
                 {
@@ -330,7 +320,7 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
                     delete[] sArgumentMap;
                     nArgumentMapSize = 0;
                     if (_optionRef->getUseDebugger())
-                        _optionRef->_debug.popStackItem();
+                        _debugger.popStackItem();
                     throw SyntaxError(SyntaxError::MISSING_DEFAULT_VALUE, sArgumentList, sErrorToken, sErrorToken);
                 }
             }
@@ -341,18 +331,16 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
             {
                 if (_currentProcedure->getProcedureFlags() & FLAG_INLINE)
                 {
-                    if (_optionRef->getUseDebugger())
-                        _optionRef->_debug.gatherInformations(nullptr, 0, nullptr, nullptr, 0, nullptr, 0, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                    throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sArgumentList, SyntaxError::invalid_position);
+                    _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sArgumentList, SyntaxError::invalid_position));
                 }
 
                 int nReturn = _currentProcedure->procedureInterface(sArgumentMap[i][1], *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_procedure);
                 if (nReturn == -1)
                 {
-                    if (_optionRef->getUseDebugger())
-                        _optionRef->_debug.gatherInformations(nullptr, 0, nullptr, nullptr, 0, nullptr, 0, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
 
-                    throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sArgumentList, SyntaxError::invalid_position);
+                    _debugger.throwException(SyntaxError(SyntaxError::PROCEDURE_ERROR, sArgumentList, SyntaxError::invalid_position));
                 }
                 else if (nReturn == -2)
                     sArgumentMap[i][1] = "false";
@@ -382,6 +370,8 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
     if (!_currentProcedure)
         return;
 
+    NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
+
     nLocalVarMapSize = countVarListElements(sVarList);
 
     sLocalVars = new string*[nLocalVarMapSize];
@@ -398,8 +388,8 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
             {
                 if (_currentProcedure->getProcedureFlags() & FLAG_INLINE)
                 {
-                    if (_optionRef->getUseDebugger())
-                        _optionRef->_debug.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+
                     for (unsigned int j = 0; j <= i; j++)
                     {
                         if (j < i)
@@ -408,7 +398,8 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
                     }
                     delete[] sLocalVars;
                     nLocalVarMapSize = 0;
-                    throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sVarList, SyntaxError::invalid_position);
+
+                    _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sVarList, SyntaxError::invalid_position));
                 }
                 try
                 {
@@ -422,8 +413,7 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
                 }
                 catch (...)
                 {
-                    if (_optionRef->getUseDebugger())
-                        _optionRef->_debug.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                     for (unsigned int j = 0; j <= i; j++)
                     {
                         if (j < i)
@@ -432,6 +422,8 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
                     }
                     delete[] sLocalVars;
                     nLocalVarMapSize = 0;
+
+                    _debugger.showError(current_exception());
                     throw;
                 }
             }
@@ -442,8 +434,7 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
                     string sTemp;
                     if (!parser_StringParser(sVarValue, sTemp, *_dataRef, *_parserRef, *_optionRef, true))
                     {
-                        if (_optionRef->getUseDebugger())
-                            _optionRef->_debug.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                        _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                         for (unsigned int j = 0; j <= i; j++)
                         {
                             if (j < i)
@@ -452,7 +443,7 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
                         }
                         delete[] sLocalVars;
                         nLocalVarMapSize = 0;
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sVarList, SyntaxError::invalid_position);
+                        _debugger.throwException(SyntaxError(SyntaxError::STRING_ERROR, sVarList, SyntaxError::invalid_position));
                     }
                 }
                 if (sVarValue.find("data(") != string::npos || _dataRef->containsCacheElements(sVarValue))
@@ -483,8 +474,7 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
             }
             catch (...)
             {
-                if (_optionRef->getUseDebugger())
-                    _optionRef->_debug.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                 for (unsigned int j = 0; j <= i; j++)
                 {
                     if (j < i)
@@ -493,6 +483,8 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
                 }
                 delete[] sLocalVars;
                 nLocalVarMapSize = 0;
+
+                _debugger.showError(current_exception());
                 throw;
             }
         }
@@ -514,6 +506,8 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
     if (!_currentProcedure)
         return;
 
+    NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
+
     nLocalStrMapSize = countVarListElements(sStringList);
     sLocalStrings = new string*[nLocalStrMapSize];
 
@@ -528,8 +522,8 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
             {
                 if (_currentProcedure->getProcedureFlags() & FLAG_INLINE)
                 {
-                    if (_optionRef->getUseDebugger())
-                        _optionRef->_debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+
+                    _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                     for (unsigned int j = 0; j <= i; j++)
                     {
                         if (j < i)
@@ -538,7 +532,8 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
                     }
                     delete[] sLocalStrings;
                     nLocalStrMapSize = 0;
-                    throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sStringList, SyntaxError::invalid_position);
+
+                    _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sStringList, SyntaxError::invalid_position));
                 }
                 try
                 {
@@ -552,8 +547,7 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
                 }
                 catch (...)
                 {
-                    if (_optionRef->getUseDebugger())
-                        _optionRef->_debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
 
                     for (unsigned int j = 0; j <= i; j++)
                     {
@@ -563,6 +557,8 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
                     }
                     delete[] sLocalStrings;
                     nLocalStrMapSize = 0;
+
+                    _debugger.showError(current_exception());
                     throw;
                 }
             }
@@ -592,9 +588,8 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
                     string sTemp;
                     if (!parser_StringParser(sVarValue, sTemp, *_dataRef, *_parserRef, *_optionRef, true))
                     {
-                        if (_optionRef->getUseDebugger())
-                            _optionRef->_debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sStringList, SyntaxError::invalid_position);
+                        _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                        _debugger.throwException(SyntaxError(SyntaxError::STRING_ERROR, sStringList, SyntaxError::invalid_position));
                     }
                 }
 
@@ -625,8 +620,7 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
         }
         catch (...)
         {
-            if (_optionRef->getUseDebugger())
-                _optionRef->_debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+            _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
             for (unsigned int j = 0; j <= i; j++)
             {
                 if (j < i)
@@ -635,6 +629,8 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
             }
             delete[] sLocalStrings;
             nLocalStrMapSize = 0;
+
+            _debugger.showError(current_exception());
             throw;
         }
     }
@@ -669,8 +665,8 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
         }
         catch (...)
         {
-            if (_optionRef->getUseDebugger())
-                _optionRef->_debug.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sTableList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+            NumeReKernel::getInstance()->getDebugger().gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sTableList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+
             for (unsigned int j = 0; j <= i; j++)
             {
                 if (j < i)
@@ -679,6 +675,8 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
             }
             delete[] sLocalTables;
             nLocalTableSize = 0;
+
+            NumeReKernel::getInstance()->getDebugger().showError(current_exception());
             throw;
         }
     }

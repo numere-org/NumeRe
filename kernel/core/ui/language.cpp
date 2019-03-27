@@ -23,10 +23,7 @@
 void StripSpaces(string&);
 string toString(int);
 bool fileExists(const string&);
-inline string toString(unsigned int nInt)
-{
-    return toString((int)nInt);
-}
+string toString(unsigned int nInt);
 
 Language::Language() : FileSystem()
 {

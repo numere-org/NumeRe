@@ -45,6 +45,7 @@ class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
     // Easier to use the NumeReKernel as a friend
     // to create the communication
     friend class NumeReKernel;
+    friend class DebugViewer;
 
 	private:
 		int
@@ -126,7 +127,7 @@ class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
 		{
 			return m_charHeight;
 		}
-		Debugmessenger _guimessenger;
+		BreakpointManager _guimessenger;
 
 	private:
 		void pipe_command(const string& sCommand);
@@ -162,7 +163,7 @@ class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
 		bool m_bCommandAvailable;
 		bool m_bTableEditAvailable;
 		bool m_bTableEditCanceled;
-		bool m_bContinueDebug;
+		int m_nDebuggerCode;
 		string m_sCommandLine;
 		string m_sAnswer;
 
@@ -196,7 +197,12 @@ class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
 		void continueDebug()
 		{
 			wxCriticalSectionLocker lock(m_kernelCS);
-			m_bContinueDebug = true;
+			m_nDebuggerCode = NumeReKernel::DEBUGGER_CONTINUE;
+		}
+		void stepDebug()
+		{
+		    wxCriticalSectionLocker lock(m_kernelCS);
+		    m_nDebuggerCode = NumeReKernel::DEBUGGER_STEP;
 		}
 		string getDocumentation(const string& sCommand);
 		vector<string> getDocIndex();

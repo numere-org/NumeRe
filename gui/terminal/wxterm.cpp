@@ -159,7 +159,7 @@ wxTerm::wxTerm(wxWindow* parent, wxWindowID id,
 	m_bCommandAvailable = false;
 	m_bTableEditAvailable = false;
 	m_bTableEditCanceled = false;
-	m_bContinueDebug = false;
+	m_nDebuggerCode = 0;
 	m_sCommandLine = "";
 	m_sAnswer = "";
 

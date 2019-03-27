@@ -32,22 +32,24 @@ class DebugViewer : public ViewerFrame
 {
     private:
         VariableViewer* m_varViewer;
-        wxListCtrl* m_moduleinfos;
+        wxTextCtrl* m_expression;
+        wxTextCtrl* m_errorMessage;
         wxListCtrl* m_stacktrace;
         wxTerm* m_terminal;
         bool b_transferredControl;
 
         string removeControlSymbols(string sCommandLine);
+        void getInformationByStackId(size_t id);
+        void OnStackItemActivate(wxListEvent& event);
+        void OnMenuEvent(wxCommandEvent& event);
 
     public:
         DebugViewer(wxWindow* parent, const wxString& title = "NumeRe: Debugger");
 
         void setTerminal(wxTerm* term) {m_terminal = term;}
 
-        void setDebugInfo(const wxString& title, const vector<string>& vModuleInfo, const vector<string>& vStack, const vector<string>& vVarList, size_t n_num = 0, size_t s_num = 0, size_t t_num = 0);
+        void setDebugInfo(const wxString& title, const vector<string>& vStack);
 
-        void OnButtonContinue(wxCommandEvent& event);
-        void OnButtonCancel(wxCommandEvent& event);
         void OnClose(wxCloseEvent& event);
 
     DECLARE_EVENT_TABLE();

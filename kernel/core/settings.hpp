@@ -27,7 +27,6 @@
 
 #include "ui/error.hpp"
 #include "documentation/doc_helper.hpp"
-#include "procedure/debugger.hpp"
 
 using namespace std;
 /*
@@ -96,8 +95,6 @@ class Settings : public Documentation
 		Settings();				    // Standard-Konstruktor
 		Settings(const Settings& _settings);
 		~Settings();                // Destruktor (schliesst ggf. die INI-Datei)
-
-        NumeReDebugger _debug;
 
         Settings sendSettings();
         void copySettings(const Settings& _settings);

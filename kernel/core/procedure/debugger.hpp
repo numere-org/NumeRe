@@ -25,59 +25,87 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <exception>
 #include "../ui/error.hpp"
 using namespace std;
 
-string toString(int);
-inline string toString(unsigned int n)
-{
-    return toString((int)n);
-}
-string toString(double,int);
 // stacktrace
 // line number
 // var vals/names
 // erratic command
 // erratic module
+class ProcedureVarFactory;
+class Procedure;
+
 class NumeReDebugger
 {
     private:
-        vector<string> vStackTrace;
+        vector<pair<string, Procedure*> > vStackTrace;
         unsigned int nLineNumber;
         string sErraticCommand;
         string sErraticModule;
+        string sErrorMessage;
         map<string,double> mLocalVars;
         map<string,string> mLocalStrings;
         map<string,string> mLocalTables;
-        //map<string,string> mVarMap;
         bool bAlreadyThrown;
+        bool bExceptionHandled;
+        size_t nCurrentStackElement;
+
+        bool bDebuggerActive;
+
+        int showEvent(const string& sTitle);
+        void resetBP();
+        void formatMessage();
 
     public:
         NumeReDebugger();
 
-        inline bool validDebuggingInformations()
-            {return bAlreadyThrown;}
-        inline unsigned int getLineNumber()
-            {return nLineNumber;}
-        inline string getErrorModule()
-            {return sErraticModule;}
-        inline size_t getStackSize()
-            {return vStackTrace.size();}
         void reset();
-        void resetBP();
-        void pushStackItem(const string& sStackItem);
+        inline void finalize()
+            {
+                bExceptionHandled = false;
+                reset();
+            }
+        inline bool validDebuggingInformations()
+            {
+                return bAlreadyThrown;
+            }
+        inline unsigned int getLineNumber()
+            {
+                return nLineNumber;
+            }
+        inline string getErrorModule()
+            {
+                return sErraticModule;
+            }
+        inline size_t getStackSize()
+            {
+                return vStackTrace.size();
+            }
+        inline bool isActive()
+            {
+                return bDebuggerActive;
+            }
+        inline void setActive(bool active)
+            {
+                bDebuggerActive = active;
+            }
+
+        void showError(const string& sTitle);
+        void showError(exception_ptr e);
+        void throwException(SyntaxError error);
+
+        int showBreakPoint();
+
+        bool select(size_t nStackElement);
+
+        void pushStackItem(const string& sStackItem, Procedure* _currentProcedure);
         void popStackItem();
 
-        void gatherInformations(string** sLocalVars,
-                                unsigned int nLocalVarMapSize,
-                                double* dLocalVars,
-                                string** sLocalStrings,
-                                unsigned int nLocalStrMapSize,
-                                string** sLocalTables,
-                                unsigned int nLocalTableMapSize,
-                                const string& _sErraticCommand,
-                                const string& _sErraticModule,
-                                unsigned int _nLineNumber);
+        void gatherInformations(ProcedureVarFactory* _varFactory, const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber);
+        void gatherInformations(string** sLocalVars, unsigned int nLocalVarMapSize, double* dLocalVars, string** sLocalStrings, unsigned int nLocalStrMapSize, string** sLocalTables, unsigned int nLocalTableMapSize,
+                                const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber);
 
         void gatherLoopBasedInformations(const string& _sErraticCommand, unsigned int _nLineNumber, map<string,string>& mVarMap, double** vVarArray, string* sVarArray, int nVarArray);
 

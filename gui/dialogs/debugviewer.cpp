@@ -22,60 +22,74 @@
 
 #define ID_DEBUG_CONTINUE 10201
 #define ID_DEBUG_CANCEL 10202
+#define ID_DEBUG_STEP 10203
+#define ID_DEBUG_STACK_VIEWER 10204
 
 extern Language _guilang;
 
 BEGIN_EVENT_TABLE(DebugViewer, ViewerFrame)
-    EVT_BUTTON(ID_DEBUG_CONTINUE, DebugViewer::OnButtonContinue)
-    EVT_BUTTON(ID_DEBUG_CANCEL, DebugViewer::OnButtonCancel)
     EVT_CLOSE (DebugViewer::OnClose)
+    EVT_LIST_ITEM_ACTIVATED(ID_DEBUG_STACK_VIEWER, DebugViewer::OnStackItemActivate)
+    EVT_MENU_RANGE(ID_DEBUG_CONTINUE, ID_DEBUG_STEP, DebugViewer::OnMenuEvent)
 END_EVENT_TABLE()
 
 DebugViewer::DebugViewer(wxWindow* parent, const wxString& title) : ViewerFrame(parent, title)
 {
+    wxToolBar* tb = CreateToolBar(wxTB_HORZ_TEXT);
+    tb->AddSeparator();
+    tb->AddTool(ID_DEBUG_CONTINUE, _guilang.get("DBG_CONTINUE"), wxArtProvider::GetBitmap(wxART_GO_FORWARD, wxART_TOOLBAR));
+    tb->AddSeparator();
+    tb->AddTool(ID_DEBUG_STEP, _guilang.get("DBG_STEP"), wxArtProvider::GetBitmap(wxART_GOTO_LAST, wxART_TOOLBAR));
+    tb->AddStretchableSpace();
+    tb->AddTool(ID_DEBUG_CANCEL, _guilang.get("GUI_OPTIONS_CANCEL"), wxArtProvider::GetBitmap(wxART_QUIT, wxART_TOOLBAR));
+    //tb->AddTool(-1, "Label", wxArtProvider::GetBitmap(wxART_GOTO_FIRST, wxART_TOOLBAR));
+    tb->Realize();
     b_transferredControl = false;
     // initialize the controls
-    wxPanel* panel = new wxPanel(this);
+    wxPanel* panel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_STATIC);
     wxBoxSizer* vsizer = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer* hsizer = new wxBoxSizer(wxHORIZONTAL);
-    wxBoxSizer* buttonsizer = new wxBoxSizer(wxHORIZONTAL);
 
-    wxStaticBoxSizer* moduleBox = new wxStaticBoxSizer(wxHORIZONTAL, panel, _guilang.get("DBG_MODULE"));
-    wxStaticBoxSizer* stackBox = new wxStaticBoxSizer(wxHORIZONTAL,panel, _guilang.get("DBG_STACKTRACE"));
-    wxStaticBoxSizer* varBox = new wxStaticBoxSizer(wxHORIZONTAL,panel, _guilang.get("DBG_LOCALS"));
+    wxStaticBoxSizer* exprBox = new wxStaticBoxSizer(wxHORIZONTAL, panel, _guilang.get("DBG_EXPR"));
+    wxStaticBoxSizer* errorBox = new wxStaticBoxSizer(wxVERTICAL, panel, _guilang.get("DBG_MODULE"));
+    wxStaticBoxSizer* stackBox = new wxStaticBoxSizer(wxHORIZONTAL, panel, _guilang.get("DBG_STACKTRACE"));
+    wxStaticBoxSizer* varBox = new wxStaticBoxSizer(wxHORIZONTAL, panel, _guilang.get("DBG_LOCALS"));
 
-    m_moduleinfos = new wxListCtrl(moduleBox->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize(600, 100), wxLC_REPORT);
-    m_moduleinfos->AppendColumn(_guilang.get("DBG_TYPE"));
-    m_moduleinfos->AppendColumn(_guilang.get("DBG_VALUE"));
-    m_moduleinfos->InsertItem(0,_guilang.get("DBG_EXPR"));
-    m_moduleinfos->InsertItem(1,_guilang.get("DBG_FILE"));
-    m_moduleinfos->InsertItem(2,_guilang.get("DBG_LINENO"));
-    m_moduleinfos->SetColumnWidth(0, wxLIST_AUTOSIZE);
+    m_expression = new wxTextCtrl(exprBox->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxTE_RICH);
+    m_errorMessage = new wxTextCtrl(errorBox->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
 
-    m_stacktrace = new wxListCtrl(stackBox->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize(300, -1), wxLC_REPORT);
+    wxFont font;
+    font.SetNativeFontInfoUserDesc("consolas 10");
+    m_expression->SetFont(font);
+    m_expression->SetBackgroundColour(*wxWHITE);
+    m_errorMessage->SetForegroundColour(*wxRED);
+
+    m_stacktrace = new wxListCtrl(stackBox->GetStaticBox(), ID_DEBUG_STACK_VIEWER, wxDefaultPosition, wxDefaultSize /*wxSize(400, -1)*/, wxLC_REPORT);
+    m_stacktrace->AppendColumn("  ");
     m_stacktrace->AppendColumn("Stack");
+    m_stacktrace->AppendColumn(_guilang.get("DBG_LINENO"), wxLIST_FORMAT_RIGHT);
+    m_stacktrace->AppendColumn(_guilang.get("DBG_FILE"));
 
     m_varViewer = new VariableViewer(varBox->GetStaticBox(), (NumeReWindow*)parent);
     m_varViewer->setDebuggerMode(true);
 
-    moduleBox->Add(m_moduleinfos, 1, wxALIGN_CENTER_HORIZONTAL | wxALL);
+    //moduleBox->Add(m_expression, 0, wxALIGN_CENTER_HORIZONTAL | wxALL | wxEXPAND);
+    //moduleBox->AddSpacer(10);
+    exprBox->Add(m_expression, 1, wxALIGN_CENTER_HORIZONTAL | wxALL | wxEXPAND);
+    errorBox->Add(m_errorMessage, 1, wxALIGN_CENTER_HORIZONTAL | wxALL | wxEXPAND);
     stackBox->Add(m_stacktrace, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL);
     varBox->Add(m_varViewer, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL);
 
-    wxButton* buttonContinue = new wxButton(panel, ID_DEBUG_CONTINUE, _guilang.get("DBG_CONTINUE"));
-    wxButton* buttonCancel = new wxButton(panel, ID_DEBUG_CANCEL, _guilang.get("GUI_OPTIONS_CANCEL"));
-
-    buttonsizer->Add(buttonContinue, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-    buttonsizer->Add(buttonCancel, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-
-    vsizer->Add(moduleBox, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL, 5);
-    vsizer->AddSpacer(10);
-    hsizer->Add(stackBox, 0, wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 0);
-    hsizer->AddSpacer(5);
-    hsizer->Add(varBox, 1, wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 0);
-    vsizer->Add(hsizer, 3, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL, 5);
-    vsizer->Add(buttonsizer, 0, wxALIGN_RIGHT, 5);
+    hsizer->Add(stackBox, 2, wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 0);
+    hsizer->AddSpacer(10);
+    hsizer->Add(errorBox, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL, 0);
+    //vsizer->AddSpacer(5);
+    vsizer->Add(exprBox, 0, wxALIGN_CENTER_HORIZONTAL | wxALL | wxEXPAND, 5);
+    vsizer->Add(hsizer, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL, 5);
+    vsizer->Add(varBox, 2, wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 5);
+    //vsizer->Add(hsizer, 3, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL, 5);
     panel->SetSizer(vsizer);
+    m_expression->SetFocus();
 }
 
 string DebugViewer::removeControlSymbols(string sCommandLine)
@@ -85,39 +99,106 @@ string DebugViewer::removeControlSymbols(string sCommandLine)
     return sCommandLine;
 }
 
-void DebugViewer::setDebugInfo(const wxString& title, const vector<string>& vModuleInfo, const vector<string>& vStack, const vector<string>& vVarList, size_t n_num, size_t s_num, size_t t_num)
+void DebugViewer::OnStackItemActivate(wxListEvent& event)
+{
+    getInformationByStackId(m_stacktrace->GetItemCount() - event.GetIndex() - 1);
+}
+
+void DebugViewer::getInformationByStackId(size_t id)
+{
+    vector<string> vModuleInfo;
+    vector<string> vNumVars;
+    vector<string> vStringVars;
+    vector<string> vTables;
+
+    {
+        wxCriticalSectionLocker lock(m_terminal->m_kernelCS);
+        NumeReDebugger& _debugger = m_terminal->_kernel.getDebugger();
+
+        _debugger.select(id);
+
+        vModuleInfo = _debugger.getModuleInformations();
+        vNumVars = _debugger.getNumVars();
+        vStringVars = _debugger.getStringVars();
+        vTables = _debugger.getTables();
+    }
+
+    for (int i = 0; i < m_stacktrace->GetItemCount(); i++)
+    {
+        if (m_stacktrace->GetItemCount() - 1 - i == id)
+            m_stacktrace->SetItemText(i, "->");
+        else
+            m_stacktrace->SetItemText(i, "");
+    }
+
+    m_expression->Clear();
+    m_expression->SetDefaultStyle(wxTextAttr(wxColour(128, 128, 128)));
+    m_expression->AppendText("@("+vModuleInfo[2]+") |  ");
+    m_expression->SetDefaultStyle(wxTextAttr(*wxBLACK));
+    m_expression->AppendText(removeControlSymbols(vModuleInfo[0]));
+
+    m_errorMessage->SetValue(vModuleInfo[3]);
+
+    size_t n_num = vNumVars.size();
+    size_t s_num = vStringVars.size();
+    size_t t_num = vTables.size();
+
+    vNumVars.insert(vNumVars.end(), vStringVars.begin(), vStringVars.end());
+    vNumVars.insert(vNumVars.end(), vTables.begin(), vTables.end());
+
+    m_varViewer->UpdateVariables(vNumVars, n_num, s_num, t_num);
+}
+
+void DebugViewer::OnMenuEvent(wxCommandEvent& event)
+{
+    switch (event.GetId())
+    {
+        case ID_DEBUG_CONTINUE:
+            if (b_transferredControl)
+                m_terminal->continueDebug();
+
+            break;
+        case ID_DEBUG_CANCEL:
+            if (b_transferredControl)
+            {
+                m_terminal->CancelCalculation();
+                m_terminal->continueDebug();
+            }
+
+            break;
+        case ID_DEBUG_STEP:
+            if (b_transferredControl)
+                m_terminal->stepDebug();
+
+            break;
+    }
+}
+
+
+void DebugViewer::setDebugInfo(const wxString& title, const vector<string>& vStack)
 {
     this->SetTitle(title);
     b_transferredControl = true;
-    m_moduleinfos->SetItem(0,1,this->removeControlSymbols(vModuleInfo[0]));
-    m_moduleinfos->SetItem(1,1,vModuleInfo[1]);
-    m_moduleinfos->SetItem(2,1,vModuleInfo[2]);
-    m_moduleinfos->SetColumnWidth(1, wxLIST_AUTOSIZE);
 
     m_stacktrace->DeleteAllItems();
 
     for (size_t i = 0; i < vStack.size(); i++)
     {
-        m_stacktrace->InsertItem(i, vStack[i]);
+        m_stacktrace->InsertItem(i, "");
+        m_stacktrace->SetItem(i, 1, vStack[i].substr(0, vStack[i].find('\t')));
+        m_stacktrace->SetItem(i, 2, vStack[i].substr(vStack[i].rfind('\t')+1));
+        m_stacktrace->SetItem(i, 3, vStack[i].substr(vStack[i].find('\t')+1, vStack[i].rfind('\t') - vStack[i].find('\t') - 1));
     }
+
     m_stacktrace->SetColumnWidth(0, wxLIST_AUTOSIZE);
+    m_stacktrace->SetColumnWidth(1, wxLIST_AUTOSIZE);
+    m_stacktrace->SetColumnWidth(2, wxLIST_AUTOSIZE_USEHEADER);
+    m_stacktrace->SetColumnWidth(3, wxLIST_AUTOSIZE);
 
-    m_varViewer->UpdateVariables(vVarList, n_num, s_num, t_num);
-}
-
-void DebugViewer::OnButtonContinue(wxCommandEvent& event)
-{
-    if (b_transferredControl)
-        m_terminal->continueDebug();
-}
-
-void DebugViewer::OnButtonCancel(wxCommandEvent& event)
-{
-    if (b_transferredControl)
-    {
-        m_terminal->CancelCalculation();
-        m_terminal->continueDebug();
-    }
+    if (vStack.size())
+        getInformationByStackId(vStack.size()-1);
+    else
+        getInformationByStackId(0);
 }
 
 void DebugViewer::OnClose(wxCloseEvent& event)

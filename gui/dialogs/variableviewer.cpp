@@ -27,7 +27,7 @@
 #define CLASSCOLUMN 2
 #define VALUECOLUMN 3
 
-std::string toString(int nNum);
+std::string toString(size_t nNum);
 
 extern Language _guilang;
 using namespace wxcode;

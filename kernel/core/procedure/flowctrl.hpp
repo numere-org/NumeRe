@@ -41,6 +41,15 @@
 using namespace std;
 using namespace mu;
 
+struct FlowCtrlCommand
+{
+    string sCommand;
+    int nInputLine;
+    bool bFlowCtrlStatement;
+
+    FlowCtrlCommand(const string& sCmd, int nLine, bool bStatement = false) : sCommand(sCmd), nInputLine(nLine), bFlowCtrlStatement(bStatement) {}
+};
+
 class FlowCtrl
 {
     private:
@@ -79,7 +88,7 @@ class FlowCtrl
             CALCTYPE_RECURSIVEEXPRESSION = 65536,
             CALCTYPE_SUPPRESSANSWER = 131072
         };
-        string** sCmd;
+        vector<FlowCtrlCommand> vCmdArray;
         value_type** vVarArray;
         string* sVarArray;
         varmap_type vVars;
@@ -87,7 +96,6 @@ class FlowCtrl
         int* nCalcType;
         unsigned int nJumpTableLength;
         string sLoopNames;
-        int nCmd;
         int nLoop;
         int nIf;
         int nWhile;
@@ -95,6 +103,7 @@ class FlowCtrl
         int nDefaultLength;
         int nVarArray;
         int nReturnType;
+        int nCurrentCommand;
         Returnvalue ReturnVal;
         bool bUseLoopParsingMode;
         bool bLockedPauseMode;
@@ -107,9 +116,10 @@ class FlowCtrl
         bool bBreakSignal;
         bool bContinueSignal;
         bool bReturnSignal;
+        bool bEvaluatingFlowControlStatements;
         int nLoopSavety;
+        int nDebuggerCode;
 
-        void generateCommandArray();
         int for_loop(int nth_Cmd = 0, int nth_Loop = 0);
         int while_loop(int nth_Cmd = 0, int nth_Loop = 0);
         int if_fork(int nth_Cmd = 0, int nth_Loop = -1);
@@ -131,7 +141,7 @@ class FlowCtrl
         virtual int procedureCmdInterface(string& sLine);
         virtual int procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command);
         virtual bool isInline(const string& sProc);
-        virtual void evalDebuggerBreakPoint(Parser& _parser, Settings& _option);
+        virtual int evalDebuggerBreakPoint(Parser& _parser, Settings& _option);
 
     public:
         FlowCtrl();
@@ -156,9 +166,12 @@ class FlowCtrl
             {
                 return bReturnSignal;
             }
-        void setCommand(string& __sCmd, Parser& _parser, Datafile& _data, Define& _functions, Settings& _option, Output& _out, PlotData& _pData, Script& _script);
-        void eval(Parser& _parser, Datafile& _data, Define& _functions, Settings& _option, Output& _out, PlotData& _pData, Script& _script);
+        void setCommand(string& __sCmd, int nCurrentLine);
+        void eval();
         void reset();
+
+        int getCurrentLineNumber() const;
+        string getCurrentCommand() const;
 
 };
 

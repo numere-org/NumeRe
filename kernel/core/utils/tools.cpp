@@ -51,6 +51,12 @@ string toString(int nNumber)
 	return toString((long long int)nNumber);
 }
 
+// Integer to string without the Settings bloat
+string toString(size_t nNumber)
+{
+	return toString((long long int)nNumber);
+}
+
 // time_t to string - Will convert a time into a time string
 string toString(time_t tTime, bool bOnlyTime)
 {

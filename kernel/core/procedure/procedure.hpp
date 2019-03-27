@@ -51,9 +51,11 @@ class ProcedureVarFactory;
 
 //extern bool bSupressAnswer;
 
-class Procedure : /*public FileSystem,*/ public FlowCtrl, public Plugin
+class Procedure : public FlowCtrl, public Plugin
 {
     private:
+        friend class NumeReDebugger;
+
         fstream fProcedure;
         string sProcNames;
         string sCurrentProcedureName;
@@ -62,19 +64,12 @@ class Procedure : /*public FileSystem,*/ public FlowCtrl, public Plugin
         string sCallingNameSpace;
         string sThisNameSpace;
         string sLastWrittenProcedureFile;
+        string sProcCommandLine;
         bool bProcSupressAnswer;
         bool bWritingTofile;
         int nFlags;
         int nthBlock;
-
-        string** sVars;
-        double* dVars;
-        string** sStrings;
-        string** sTables;
-
-        unsigned int nVarSize;
-        unsigned int nStrSize;
-        unsigned int nTabSize;
+        ProcedureVarFactory* _varFactory;
 
         Define _localDef;
 
@@ -85,7 +80,7 @@ class Procedure : /*public FileSystem,*/ public FlowCtrl, public Plugin
         int procedureCmdInterface(string& sLine);
         void resetProcedure(Parser& _parser, bool bSupressAnswer);
         void extractCurrentNamespace(const string& sProc);
-        bool handleVariableDefinitions(string& sProcCommandLine, const string& sCommand, ProcedureVarFactory& _varfactory);
+        bool handleVariableDefinitions(string& sProcCommandLine, const string& sCommand);
         void readFromInclude(ifstream& fInclude, int nIncludeType, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure);
         int handleIncludeSyntax(string& sProcCommandLine, ifstream& fInclude, bool bReadingFromInclude);
 
@@ -98,7 +93,7 @@ class Procedure : /*public FileSystem,*/ public FlowCtrl, public Plugin
         int procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure = 0, int nth_command = 0);
         bool writeProcedure(string sProcedureLine);
         bool isInline(const string& sProc);
-        void evalDebuggerBreakPoint(Parser& _parser, Settings& _option);
+        int evalDebuggerBreakPoint(Parser& _parser, Settings& _option);
 
         inline void setPredefinedFuncs(const string& sPredefined)
         {
@@ -106,14 +101,17 @@ class Procedure : /*public FileSystem,*/ public FlowCtrl, public Plugin
         }
         inline string getCurrentProcedureName() const
             {return sCurrentProcedureName;}
-        inline unsigned int GetCurrentLine() const
-            {return nCurrentLine;}
+        unsigned int GetCurrentLine() const;
         inline int getReturnType() const
             {return nReturnType;}
         inline bool is_writing() const
             {return bWritingTofile;}
         inline int getProcedureFlags() const
             {return nFlags;}
+        inline int& getDebuggerCode()
+            {
+                return nDebuggerCode;
+            }
         void replaceReturnVal(string& sLine, Parser& _parser, const Returnvalue& _return, unsigned int nPos, unsigned int nPos2, const string& sReplaceName);
 };
 

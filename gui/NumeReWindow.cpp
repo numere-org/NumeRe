@@ -1734,12 +1734,10 @@ void NumeReWindow::pass_command(const wxString& command)
 void NumeReWindow::evaluateDebugInfo(const vector<string>& vDebugInfo)
 {
     // initialize the debugger, if necessary and pass the new contents
-    string sSizes = vDebugInfo[0];
-    string sTitle = vDebugInfo[1];
-    size_t nModuleSize = 0, nStackSize = 0, nNumVarSize = 0, sStrVarSize = 0, sTabVarSize = 0;
-    vector<string> vModule;
+    string sTitle = vDebugInfo[0];
     vector<string> vStack;
-    vector<string> vVars;
+
+    vStack.insert(vStack.begin(), vDebugInfo.begin()+1, vDebugInfo.end());
 
     if (m_debugViewer == nullptr)
     {
@@ -1748,36 +1746,11 @@ void NumeReWindow::evaluateDebugInfo(const vector<string>& vDebugInfo)
         m_debugViewer->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
         m_debugViewer->setTerminal(m_terminal);
     }
+
     if (!m_debugViewer->IsShown())
         m_debugViewer->Show();
-    nModuleSize = StrToInt(sSizes.substr(0, sSizes.find(';')));
-    sSizes.erase(0, sSizes.find(';')+1);
-    nStackSize = StrToInt(sSizes.substr(0, sSizes.find(';')));
-    sSizes.erase(0, sSizes.find(';')+1);
-    nNumVarSize = StrToInt(sSizes.substr(0, sSizes.find(';')));
-    sSizes.erase(0, sSizes.find(';')+1);
-    sStrVarSize = StrToInt(sSizes.substr(0, sSizes.find(';')));
-    sSizes.erase(0, sSizes.find(';')+1);
-    sTabVarSize = StrToInt(sSizes.substr(0, sSizes.find(';')));
-    //sSizes.erase(0, sSizes.find(';')+1);
 
-    for (size_t i = 2; i < vDebugInfo.size(); i++)
-    {
-        if (i < nModuleSize+2)
-        {
-            vModule.push_back(vDebugInfo[i]);
-        }
-        else if (i < nStackSize + nModuleSize+2)
-        {
-            vStack.push_back(vDebugInfo[i]);
-        }
-        else
-        {
-            vVars.push_back(vDebugInfo[i]);
-        }
-    }
-
-    m_debugViewer->setDebugInfo(sTitle, vModule, vStack, vVars, nNumVarSize, sStrVarSize, sTabVarSize);
+    m_debugViewer->setDebugInfo(sTitle, vStack);
 }
 
 void NumeReWindow::createLaTeXFile()
