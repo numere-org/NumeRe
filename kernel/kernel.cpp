@@ -51,7 +51,6 @@ unsigned int NumeReKernel::nLastLineLength = 0;
 bool NumeReKernel::modifiedSettings = false;
 bool NumeReKernel::bCancelSignal = false;
 NumeRe::Table NumeReKernel::table;
-BreakpointManager NumeReKernel::_messenger;
 bool NumeReKernel::bSupressAnswer = false;
 bool NumeReKernel::bGettingLine = false;
 bool NumeReKernel::bErrorNotification = false;
@@ -590,7 +589,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 			    if (sLine.substr(0, 2) == "|>")
                     sLine.erase(0, 2);
 
-				if (_option.getUseDebugger())
+				if (_option.getUseDebugger() && nDebuggerCode != DEBUGGER_LEAVE)
                 {
 					nDebuggerCode = evalDebuggerBreakPoint(sLine);
                 }
@@ -837,7 +836,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 			make_hline();
 			print(toUpperCase(_lang.get("ERR_MUP_HEAD")));
 			make_hline();
-			//showDebugError(_lang.get("ERR_MUP_HEAD_DBG"));
 
 			// --> Eigentliche Fehlermeldung <--
 			print(LineBreak(e.GetMsg(), _option));
@@ -921,7 +919,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 			make_hline();
 			print(toUpperCase(_lang.get("ERR_STD_INTERNAL_HEAD")));
 			make_hline();
-			//showDebugError(_lang.get("ERR_STD_INTERNAL_HEAD_DBG"));
 			print(LineBreak(string(e.what()), _option));
 			print(LineBreak(_lang.get("ERR_STD_INTERNAL"), _option));
 
@@ -958,7 +955,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 			{
 				print(toUpperCase(_lang.get("ERR_NR_HEAD")));
 				make_hline();
-				//showDebugError(_lang.get("ERR_NR_HEAD_DBG"));
 
 				if (e.getToken().length() && (e.errorcode == SyntaxError::PROCEDURE_THROW || e.errorcode == SyntaxError::LOOP_THROW))
 				{
@@ -2405,15 +2401,6 @@ NumeRe::Table NumeReKernel::getTable(const string& sTableName)
     return _data.extractTable(sSelectedTable);
 }
 
-void NumeReKernel::showDebugError(const string& sTitle)
-{
-	if (_option.getUseDebugger() && _debugger.validDebuggingInformations())
-	{
-		_debugger.showError(sTitle);
-	}
-	_debugger.reset();
-}
-
 // This member function passes the debugging informations to the
 // GUI to be displayed in the debugger window
 void NumeReKernel::showDebugEvent(const string& sTitle, const vector<string>& vStacktrace)
@@ -2440,6 +2427,9 @@ void NumeReKernel::showDebugEvent(const string& sTitle, const vector<string>& vS
 	Sleep(10);
 }
 
+// This static function waits until the user sends a
+// continuation command via the debugger and returns the
+// corresponding debugger code
 int NumeReKernel::waitForContinue()
 {
 	if (!m_parent)
@@ -2447,6 +2437,7 @@ int NumeReKernel::waitForContinue()
 
 	int nDebuggerCode = 0;
 
+	// Periodically check for an updated debugger code
 	do
 	{
 		Sleep(100);
@@ -2458,9 +2449,13 @@ int NumeReKernel::waitForContinue()
 	}
 	while (!nDebuggerCode);
 
+	// Return the obtained debugger code
 	return nDebuggerCode;
 }
 
+// This member function handles the creation of the debugger
+// information for a script debugger breakpoint and returns the
+// obtained debugger code
 int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
 {
     if (!getInstance())
@@ -2476,35 +2471,45 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
 	string** sLocalTables = nullptr;
 	size_t nLocalTableMapSize = 0;
 
+	// Obtain references to the debugger and the parser
 	NumeReDebugger& _debugger = getInstance()->getDebugger();
 	Parser& _parser = getInstance()->getParser();
 
+	// Get the numerical variable map
     varmap = _parser.GetVar();
     nLocalVarMapSize = varmap.size();
     sLocalVars = new string*[nLocalVarMapSize];
     dLocalVars = new double[nLocalVarMapSize];
     size_t i = 0;
+
+    // Create the numerical variable set
     for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
     {
         sLocalVars[i + nLocalVarMapSkip] = new string[2];
+
         if ((iter->first).substr(0, 2) == "_~")
         {
             nLocalVarMapSkip++;
             continue;
         }
+
         sLocalVars[i][0] = iter->first;
         sLocalVars[i][1] = iter->first;
         dLocalVars[i] = *(iter->second);
         i++;
     }
 
+    // Get the string variable map
     map<string, string> sStringMap = getInstance()->getData().getStringVars();
 
     nLocalStringMapSize = sStringMap.size();
+
+    // Create the string variable set
     if (nLocalStringMapSize)
     {
         sLocalStrings = new string*[nLocalStringMapSize];
         i = 0;
+
         for (auto iter = sStringMap.begin(); iter != sStringMap.end(); ++iter)
         {
             sLocalStrings[i] = new string[2];
@@ -2514,19 +2519,23 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
         }
     }
 
+    // Get the table variable map
     map<string, long long int> tableMap = getInstance()->getData().mCachesMap;
 
     if (getInstance()->getData().isValid())
         tableMap["data"] = -1;
+
     if (getInstance()->getData().getStringElements())
         tableMap["string"] = -2;
 
     nLocalTableMapSize = tableMap.size();
 
+    // Create the table variable set
     if (nLocalTableMapSize)
     {
         sLocalTables = new string*[nLocalTableMapSize];
         i = 0;
+
         for (auto iter = tableMap.begin(); iter != tableMap.end(); ++iter)
         {
             sLocalTables[i] = new string[2];
@@ -2536,29 +2545,38 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
         }
     }
 
-	_debugger.gatherInformations(sLocalVars, nLocalVarMapSize - nLocalVarMapSkip, dLocalVars, sLocalStrings, nLocalStringMapSize, sLocalTables, nLocalTableMapSize, sCurrentCommand,
+    // Pass the created information to the debugger
+	_debugger.gatherInformations(sLocalVars, nLocalVarMapSize - nLocalVarMapSkip, dLocalVars, sLocalStrings, nLocalStringMapSize, sLocalTables, nLocalTableMapSize, nullptr, 0, sCurrentCommand,
                                  getInstance()->getScript().getScriptFileName(), getInstance()->getScript().getCurrentLine() - 1);
 
+    // Clean up memory
 	if (sLocalVars)
 	{
-		delete[] dLocalVars;
 		for (size_t i = 0; i < nLocalVarMapSize; i++)
 			delete[] sLocalVars[i];
+
 		delete[] sLocalVars;
+		delete[] dLocalVars;
 	}
+
 	if (sLocalStrings)
 	{
 		for (size_t i = 0; i < nLocalStringMapSize; i++)
 			delete[] sLocalStrings[i];
+
 		delete[] sLocalStrings;
 	}
+
 	if (sLocalTables)
 	{
 		for (size_t i = 0; i < nLocalTableMapSize; i++)
 			delete[] sLocalTables[i];
+
 		delete[] sLocalTables;
 	}
 
+	// Show the breakpoint and wait for the
+	// user interaction
 	return _debugger.showBreakPoint();
 }
 

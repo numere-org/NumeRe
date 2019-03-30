@@ -19,6 +19,7 @@
 #include "variableviewer.hpp"
 #include "../../kernel/core/ui/language.hpp"
 #include "../../common/datastructures.h"
+#include "../../common/Options.h"
 #include "../NumeReWindow.h"
 #include <wx/menu.h>
 #include <wx/dialog.h>
@@ -157,6 +158,12 @@ void VariableViewer::ClearTree()
     DeleteChildren(numRoot);
     DeleteChildren(stringRoot);
     DeleteChildren(tableRoot);
+
+    if (argumentRoot.IsOk())
+        DeleteChildren(argumentRoot);
+
+    if (globalRoot.IsOk())
+        DeleteChildren(globalRoot);
 }
 
 // This member function handles every task, which
@@ -306,6 +313,12 @@ void VariableViewer::ExpandAll()
 
     if (HasChildren(tableRoot))
         Expand(tableRoot);
+
+    if (argumentRoot.IsOk() && HasChildren(argumentRoot))
+        Expand(argumentRoot);
+
+    if (globalRoot.IsOk() && HasChildren(globalRoot))
+        Expand(globalRoot);
 }
 
 // This member function creates the pop-up menu
@@ -369,9 +382,47 @@ void VariableViewer::OnDoubleClick(wxTreeEvent& event)
     OnShowTable(GetInternalName(event.GetItem()), GetItemText(event.GetItem()));
 }
 
+// This member function creates or removes unneeded
+// tree root items and handles the debugger mode
+void VariableViewer::setDebuggerMode(bool mode)
+{
+    debuggerMode = mode;
+
+    if (mode)
+    {
+        SetColumnWidth(CLASSCOLUMN, 75);
+
+        // Create or remove the procedure argument
+        // root item
+        if (!argumentRoot.IsOk() && mainWindow->getOptions()->GetShowProcedureArguments())
+        {
+            argumentRoot = AppendItem(GetRootItem(), _guilang.get("GUI_VARVIEWER_ARGUMENTS"));
+            SetItemBold(argumentRoot, true);
+        }
+        else if (!mainWindow->getOptions()->GetShowProcedureArguments())
+        {
+            Delete(argumentRoot);
+            argumentRoot.Unset();
+        }
+
+        // Create or remove the global variable
+        // root item
+        if (!globalRoot.IsOk() && mainWindow->getOptions()->GetShowGlobalVariables())
+        {
+            globalRoot = AppendItem(GetRootItem(), _guilang.get("GUI_VARVIEWER_GLOBALS"));
+            SetItemBold(globalRoot, true);
+        }
+        else if (!mainWindow->getOptions()->GetShowGlobalVariables())
+        {
+            Delete(globalRoot);
+            globalRoot.Unset();
+        }
+    }
+}
+
 // This member function is used to update the variable
 // list, which is displayed by this control.
-void VariableViewer::UpdateVariables(const std::vector<std::string>& vVarList, size_t nNumerics, size_t nStrings, size_t nTables)
+void VariableViewer::UpdateVariables(const std::vector<std::string>& vVarList, size_t nNumerics, size_t nStrings, size_t nTables, size_t nArguments, size_t nGlobals)
 {
     // Clear the tree first
     ClearTree();
@@ -380,6 +431,16 @@ void VariableViewer::UpdateVariables(const std::vector<std::string>& vVarList, s
     SetItemText(numRoot, DIMCOLUMN, "[" + toString(nNumerics) + "] ");
     SetItemText(stringRoot, DIMCOLUMN, "[" + toString(nStrings) + "] ");
     SetItemText(tableRoot, DIMCOLUMN, "[" + toString(nTables) + "] ");
+
+    if (argumentRoot.IsOk())
+    {
+        SetItemText(argumentRoot, DIMCOLUMN, "[" + toString(nArguments) + "] ");
+    }
+
+    if (globalRoot.IsOk())
+    {
+        SetItemText(globalRoot, DIMCOLUMN, "[" + toString(nGlobals) + "] ");
+    }
 
     wxTreeItemId currentItem;
 
@@ -396,10 +457,20 @@ void VariableViewer::UpdateVariables(const std::vector<std::string>& vVarList, s
             // Append a variable to the string list
             currentItem = AppendVariable(stringRoot, vVarList[i]);
         }
-        else
+        else if (i < nStrings+nNumerics+nTables)
         {
             // Append a variable to the tables list
             currentItem = AppendVariable(tableRoot, vVarList[i]);
+        }
+        else if (argumentRoot.IsOk() && i < nStrings+nNumerics+nTables+nArguments)
+        {
+            // Append a variable to the tables list
+            currentItem = AppendVariable(argumentRoot, vVarList[i]);
+        }
+        else if (globalRoot.IsOk() && i < nStrings+nNumerics+nTables+nArguments+nGlobals)
+        {
+            // Append a variable to the tables list
+            currentItem = AppendVariable(globalRoot, vVarList[i]);
         }
 
         // Perform all necessary highlighting options

@@ -29,7 +29,6 @@
 #include "../../common/Options.h"
 #include "gterm.hpp"
 #include "../../kernel/kernel.hpp"
-#include "../../kernel/debugmessenger.hpp"
 
 #define wxEVT_COMMAND_TERM_RESIZE        wxEVT_USER_FIRST + 1000
 #define wxEVT_COMMAND_TERM_NEXT          wxEVT_USER_FIRST + 1001
@@ -127,7 +126,6 @@ class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
 		{
 			return m_charHeight;
 		}
-		BreakpointManager _guimessenger;
 
 	private:
 		void pipe_command(const string& sCommand);
@@ -194,6 +192,10 @@ class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
 			wxCriticalSectionLocker lock(m_kernelCS);
 			m_bTableEditCanceled = true;
 		}
+		void addBreakpoint(const string& _sFilename, size_t nLine);
+        void removeBreakpoint(const string& _sFilename, size_t nLine);
+        void clearBreakpoints(const string& _sFilename);
+
 		void continueDebug()
 		{
 			wxCriticalSectionLocker lock(m_kernelCS);
@@ -203,6 +205,16 @@ class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
 		{
 		    wxCriticalSectionLocker lock(m_kernelCS);
 		    m_nDebuggerCode = NumeReKernel::DEBUGGER_STEP;
+		}
+		void stepOverDebug()
+		{
+		    wxCriticalSectionLocker lock(m_kernelCS);
+		    m_nDebuggerCode = NumeReKernel::DEBUGGER_STEPOVER;
+		}
+		void leaveDebug()
+		{
+		    wxCriticalSectionLocker lock(m_kernelCS);
+		    m_nDebuggerCode = NumeReKernel::DEBUGGER_LEAVE;
 		}
 		string getDocumentation(const string& sCommand);
 		vector<string> getDocIndex();

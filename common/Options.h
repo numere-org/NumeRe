@@ -67,6 +67,10 @@ class Options
 		void SetKeepBackupFile(bool keepFile) {m_keepBackupFile = keepFile;}
 		void SetCaretBlinkTime(int nTime) {m_caretBlinkTime = nTime;}
 		void SetDebuggerFocusLine(int nLine) {m_debuggerFocusLine = nLine;}
+		void SetShowLinesInStackTrace(bool show) {m_showLineNumbersInStackTrace = show;}
+		void SetShowModulesInStackTrace(bool show) {m_showModulesInStackTrace = show;}
+		void SetShowProcedureArguments(bool show) {m_showProcedureArguments = show;}
+		void SetShowGlobalVariables(bool show) {m_showGlobalVariables = show;}
 
 		// Accessors:  (inlined)
 		wxString GetPscpApp() { return m_pscpProg; }
@@ -89,6 +93,10 @@ class Options
 		int GetTerminalHistorySize() { return m_terminalSize; }
 		int GetCaretBlinkTime() {return m_caretBlinkTime;}
 		int GetDebuggerFocusLine() {return m_debuggerFocusLine;}
+		bool GetShowLinesInStackTrace() {return m_showLineNumbersInStackTrace;}
+		bool GetShowModulesInStackTrace() {return m_showModulesInStackTrace;}
+		bool GetShowProcedureArguments() {return m_showProcedureArguments;}
+		bool GetShowGlobalVariables() {return m_showGlobalVariables;}
 		wxArrayString GetMingwProgramNames() { return m_mingwProgramNames; }
 		StringFilenameHash GetMingwExecutables() { return m_mingwExecutableNames; }
 		wxArrayString GetMingwBinPaths() { return m_mingwBinPaths; }
@@ -190,6 +198,10 @@ class Options
 
 		// debugger options
 		int m_debuggerFocusLine;
+		bool m_showLineNumbersInStackTrace;
+		bool m_showModulesInStackTrace;
+		bool m_showProcedureArguments;
+		bool m_showGlobalVariables;
 
 		bool m_showToolbarText;
 		bool m_printLineNumbers;

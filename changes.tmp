@@ -48,3 +48,4 @@ Added	LaTeX commands now have an autocompletion list as well.
 New	The variables "nlines" and "ncols" may now be used as table "end" constants for the corresponding direction.
 Cleaned	Tables may now store and handle "inf" and "-inf" correctly.
 Cleaned	The internal architecture of the definition object was improved.
+Applied	The debugger was massively improved and supports now standard features like "Step", "Step over" and "Step out". Additionally it supports modifiying breakpoint during execution and now halts the execution right before an error is processed.

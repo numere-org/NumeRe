@@ -235,6 +235,7 @@ class NumeReWindow : public wxFrame
 
         void OnPrintSetup();
         wxRect DeterminePrintSize();
+        Options* getOptions() {return m_options;}
 
 
     private:

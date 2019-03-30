@@ -350,7 +350,7 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
             if (matchItem(vNPRCCommands, sCommandLine.substr(i,nLen)))
             {
                 // Commands for NPRC in NSCR (highlighted differently)
-                colors.replace(i, nLen, nLen, '0'+SYNTAX_PROCEDURE);
+                colors.replace(i, nLen, nLen, '0'+SYNTAX_COMMAND); // Changed for debug viewer
             }
             else if (i+nLen < sCommandLine.length()
                 && sCommandLine.find('.', i) < i+nLen)

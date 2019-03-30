@@ -197,6 +197,30 @@ void wxTerm::passEditedTable(NumeRe::Table _table)
 	m_bTableEditAvailable = true;
 }
 
+// This member function adds a breakpoint to the passed
+// file at the indicated line number
+void wxTerm::addBreakpoint(const string& _sFilename, size_t nLine)
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    _kernel.getDebugger().getBreakpointManager().addBreakpoint(_sFilename, nLine);
+}
+
+// This member function removes a breakpoint from the
+// passed file at the indicated line number
+void wxTerm::removeBreakpoint(const string& _sFilename, size_t nLine)
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    _kernel.getDebugger().getBreakpointManager().removeBreakpoint(_sFilename, nLine);
+}
+
+// This member function removes all breakpoints from
+// the passed file
+void wxTerm::clearBreakpoints(const string& _sFilename)
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    _kernel.getDebugger().getBreakpointManager().clearBreakpoints(_sFilename);
+}
+
 // Gets the desired documentation article as a HTML string
 string wxTerm::getDocumentation(const string& sCommand)
 {
@@ -298,8 +322,6 @@ wxThread::ExitCode wxTerm::Entry()
 				wxQueueEvent(GetEventHandler(), new wxThreadEvent());
 				continue;
 			}
-			if (bCommandAvailable)
-				NumeReKernel::_messenger = _guimessenger;
 		}
 
 		// A command is available

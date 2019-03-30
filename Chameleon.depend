@@ -1970,7 +1970,7 @@
 	"datastructures.h"
 	"ProjectInfo.h"
 
-1552081975 d:\cpp\numere-source\trunk\common\datastructures.h
+1553709566 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -2080,14 +2080,14 @@
 1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\fswatcher.h
 	"wx/defs.h"
 
-1552732249 source:d:\cpp\numere-source\trunk\common\options.cpp
+1553947029 source:d:\cpp\numere-source\trunk\common\options.cpp
 	"Options.h"
 	<wx/filename.h>
 	<wx/arrstr.h>
 	<wx/dir.h>
 	"debug.h"
 
-1552732282 d:\cpp\numere-source\trunk\common\options.h
+1553947047 d:\cpp\numere-source\trunk\common\options.h
 	<wx/wx.h>
 	<wx/validate.h>
 	<wx/valgen.h>
@@ -2135,7 +2135,7 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1552735244 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1553709556 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	"../terminal/wxterm.h"
 	"../../common/datastructures.h"
 	"../../kernel/syntax.hpp"
@@ -2173,15 +2173,14 @@
 
 1412504350 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\droptgt.h
 
-1553619820 d:\cpp\numere-source\trunk\gui\terminal\wxterm.h
+1553942308 d:\cpp\numere-source\trunk\gui\terminal\wxterm.h
 	<map>
 	"../NumeReWindow.h"
 	"../../common/Options.h"
 	"gterm.hpp"
 	"../../kernel/kernel.hpp"
-	"../../kernel/debugmessenger.hpp"
 
-1552727271 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1553946748 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -2353,7 +2352,7 @@
 	<string>
 	"language.hpp"
 
-1553501449 d:\cpp\numere-source\trunk\kernel\core\settings.hpp
+1553947145 d:\cpp\numere-source\trunk\kernel\core\settings.hpp
 	<string>
 	<sstream>
 	<fstream>
@@ -2520,7 +2519,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1553622701 d:\cpp\numere-source\trunk\kernel\kernel.hpp
+1553942288 d:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	<queue>
@@ -2541,10 +2540,9 @@
 	"core/script.hpp"
 	"core/procedure/flowctrl.hpp"
 	"core/procedure/procedure.hpp"
-	"core/procedure/debugger.hpp"
+	"core/debugger/debugger.hpp"
 	"core/plugin.hpp"
 	"core/ui/language.hpp"
-	"debugmessenger.hpp"
 	"core/procedure/procedurelibrary.hpp"
 	"core/ParserLib/muParser.h"
 
@@ -2923,14 +2921,16 @@
 1490787950 d:\cpp\numere-source\trunk\gui\dialogs\addvariablewatch.h
 	"wx/wx.h"
 
-1553620330 source:d:\cpp\numere-source\trunk\gui\dialogs\debugviewer.cpp
+1553957744 source:d:\cpp\numere-source\trunk\gui\dialogs\debugviewer.cpp
 	"debugviewer.hpp"
 	<wx/statbox.h>
 	"../../kernel/core/ui/language.hpp"
+	"../NumeReWindow.h"
 
-1553616190 d:\cpp\numere-source\trunk\gui\dialogs\debugviewer.hpp
+1553956773 d:\cpp\numere-source\trunk\gui\dialogs\debugviewer.hpp
 	"../viewerframe.hpp"
 	"../terminal/wxterm.h"
+	"../../common/Options.h"
 	"variableviewer.hpp"
 	<wx/listctrl.h>
 	<wx/panel.h>
@@ -2955,7 +2955,7 @@
 	"fndrpldialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1552373102 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1553949731 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
@@ -3087,7 +3087,7 @@
 
 1490787950 d:\cpp\numere-source\trunk\common\fixvsbug.h
 
-1552334301 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
+1553948271 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
 	"wx/notebook.h"
 	"wx/spinctrl.h"
 	<wx/clrpicker.h>
@@ -3341,7 +3341,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1552978525 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1553709549 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3710,7 +3710,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1553585453 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1553949682 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3929,7 +3929,7 @@
 	"wxssh.h"
 	"../../common/debug.h"
 
-1553620291 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1553718587 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -4213,17 +4213,17 @@
 	"../utils/tools.hpp"
 	"procedurevarfactory.hpp"
 
-1553621817 source:d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.cpp
+1553944194 source:d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.cpp
 	"flowctrl.hpp"
 	"../../kernel.hpp"
 
-1553622903 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.cpp
+1553942511 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.cpp
 	"procedure.hpp"
 	"../../kernel.hpp"
 	"procedurevarfactory.hpp"
 	<memory>
 
-1553441620 d:\cpp\numere-source\trunk\kernel\core\procedure\procedurevarfactory.hpp
+1553722888 d:\cpp\numere-source\trunk\kernel\core\procedure\procedurevarfactory.hpp
 	<string>
 	<map>
 	"../utils/tools.hpp"
@@ -4245,16 +4245,16 @@
 	"../ui/error.hpp"
 	"../utils/tools.hpp"
 
-1553510010 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedurevarfactory.cpp
+1553839460 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedurevarfactory.cpp
 	"procedurevarfactory.hpp"
 	"procedure.hpp"
 	"../../kernel.hpp"
 
-1552933435 source:d:\cpp\numere-source\trunk\kernel\core\script.cpp
+1553669608 source:d:\cpp\numere-source\trunk\kernel\core\script.cpp
 	"script.hpp"
 	"../kernel.hpp"
 
-1539504182 source:d:\cpp\numere-source\trunk\kernel\core\settings.cpp
+1553947267 source:d:\cpp\numere-source\trunk\kernel\core\settings.cpp
 	"settings.hpp"
 	"../kernel.hpp"
 
@@ -4309,12 +4309,12 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1553622701 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1553938738 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 	"core/datamanagement/dataops.hpp"
 
-1552977577 source:d:\cpp\numere-source\trunk\kernel\syntax.cpp
+1553751643 source:d:\cpp\numere-source\trunk\kernel\syntax.cpp
 	"syntax.hpp"
 	"core/utils/tools.hpp"
 
@@ -8948,16 +8948,17 @@
 	<wx/listctrl.h>
 	<vector>
 
-1552081976 d:\cpp\numere-source\trunk\gui\dialogs\variableviewer.hpp
+1553934161 d:\cpp\numere-source\trunk\gui\dialogs\variableviewer.hpp
 	"treelistctrl.h"
 	<map>
 	<vector>
 	<string>
 
-1553592123 source:d:\cpp\numere-source\trunk\gui\dialogs\variableviewer.cpp
+1553958348 source:d:\cpp\numere-source\trunk\gui\dialogs\variableviewer.cpp
 	"variableviewer.hpp"
 	"../../kernel/core/ui/language.hpp"
 	"../../common/datastructures.h"
+	"../../common/Options.h"
 	"../NumeReWindow.h"
 	<wx/menu.h>
 	<wx/dialog.h>
@@ -9149,4 +9150,27 @@
 	"procedureviewer.hpp"
 	"../kernel/core/ui/language.hpp"
 	"editor/editor.h"
+
+1553934336 d:\cpp\numere-source\trunk\kernel\core\debugger\debugger.hpp
+	<vector>
+	<string>
+	<map>
+	<exception>
+	"../ui/error.hpp"
+	"breakpointmanager.hpp"
+
+1553719251 d:\cpp\numere-source\trunk\kernel\core\debugger\breakpointmanager.hpp
+	<map>
+	<string>
+	<vector>
+
+1553719713 source:d:\cpp\numere-source\trunk\kernel\core\debugger\breakpointmanager.cpp
+	"breakpointmanager.hpp"
+	"../utils/tools.hpp"
+
+1553947359 source:d:\cpp\numere-source\trunk\kernel\core\debugger\debugger.cpp
+	"debugger.hpp"
+	"../../kernel.hpp"
+	"../utils/tools.hpp"
+	"../procedure/procedurevarfactory.hpp"
 

@@ -27,6 +27,10 @@ Options::Options()
 	m_caretBlinkTime = 500;
 
 	m_debuggerFocusLine = 10;
+    m_showLineNumbersInStackTrace = true;
+    m_showModulesInStackTrace = true;
+    m_showProcedureArguments = true;
+    m_showGlobalVariables = false;
 
 	m_LaTeXRoot = "C:/Program Files";
 

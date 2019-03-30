@@ -115,6 +115,7 @@ class OptionsDialog: public wxDialog
         void CreateStylePage();
         void CreateMiscPage();
         void CreateAnalyzerPage();
+        void CreateDebuggerPage();
 
     public:
         /// Constructors
@@ -193,6 +194,13 @@ class OptionsDialog: public wxDialog
         wxCheckBox* m_formatBeforeSaving;
         wxCheckBox* m_useMaskAsDefault;
         wxCheckBox* m_keepBackupFiles;
+
+        wxSpinCtrl* m_debuggerFocusLine;
+        wxCheckBox* m_debuggerShowLineNumbers;
+        wxCheckBox* m_debuggerShowModules;
+        wxCheckBox* m_debuggerShowProcedureArguments;
+        wxCheckBox* m_debuggerShowGlobals;
+        wxCheckBox* m_debuggerDecodeArguments;
 
         wxCheckBox* m_analyzer[Options::ANALYZER_OPTIONS_END];
 

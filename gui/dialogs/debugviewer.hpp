@@ -21,6 +21,7 @@
 
 #include "../viewerframe.hpp"
 #include "../terminal/wxterm.h"
+#include "../../common/Options.h"
 #include "variableviewer.hpp"
 //#include <wx/treelist.h>
 #include <wx/listctrl.h>
@@ -36,20 +37,25 @@ class DebugViewer : public ViewerFrame
         wxTextCtrl* m_errorMessage;
         wxListCtrl* m_stacktrace;
         wxTerm* m_terminal;
-        bool b_transferredControl;
+        Options* m_options;
 
-        string removeControlSymbols(string sCommandLine);
+        bool b_transferredControl;
+        int nLineColumn;
+        int nModuleColumn;
+
+        void initializeToolbar();
+        void setExpression(const string& sLineNumber, const string& sExpression);
+
         void getInformationByStackId(size_t id);
         void OnStackItemActivate(wxListEvent& event);
         void OnMenuEvent(wxCommandEvent& event);
 
     public:
-        DebugViewer(wxWindow* parent, const wxString& title = "NumeRe: Debugger");
+        DebugViewer(wxWindow* parent, Options* _options, const wxString& title = "NumeRe: Debugger");
 
+        void updateSettings();
         void setTerminal(wxTerm* term) {m_terminal = term;}
-
         void setDebugInfo(const wxString& title, const vector<string>& vStack);
-
         void OnClose(wxCloseEvent& event);
 
     DECLARE_EVENT_TABLE();

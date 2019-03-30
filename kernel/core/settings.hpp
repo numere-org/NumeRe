@@ -59,6 +59,7 @@ class Settings : public Documentation
 		bool bUseExternalDocViewer;
 		bool bUseExecuteCommand;
 		bool bUseMaskAsDefault;
+        bool bTryToDecodeProcedureArguments;
 		int nPrecision;			    // Setzt die Genauigkeit der Ausgabe
 		int nAutoSaveInterval;      // Das Intervall fuer die automatische Speicherung
 		string sPath;               // Programm-Hauptpfad
@@ -316,6 +317,11 @@ class Settings : public Documentation
                 bUseMaskAsDefault = _useMask;
                 return;
             }
+        inline void setTryToDecodeProcedureArguments(bool _decode)
+            {
+                bTryToDecodeProcedureArguments = _decode;
+                return;
+            }
 
         // --> Keine inline-Methode, da hoehere Komplexitaet <--
 		void setViewerPath(const string& _sViewerPath);
@@ -417,6 +423,10 @@ class Settings : public Documentation
             {return bUseExecuteCommand;}
         inline bool getUseMaskAsDefault() const
             {return bUseMaskAsDefault;}
+        inline bool getTryToDecodeProcedureArguments() const
+            {
+                return bTryToDecodeProcedureArguments;
+            }
 
 };
 #endif

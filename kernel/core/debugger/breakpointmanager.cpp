@@ -16,55 +16,80 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 #include "breakpointmanager.hpp"
-#include "core/utils/tools.hpp"
+#include "../utils/tools.hpp"
 
+// Constructor
 BreakpointManager::BreakpointManager()
 {
     mBreakpoints.clear();
 }
 
+// Copy constructor
 BreakpointManager::BreakpointManager(const BreakpointManager& _messenger) : BreakpointManager()
 {
     passBreakpoints(_messenger.mBreakpoints);
 }
 
+// This member function adds a breakpoint to the passed
+// file at the indicated line number
 void BreakpointManager::addBreakpoint(const string& _sFilename, size_t nLine)
 {
+    // Try to find the current file in the map
     if (mBreakpoints.find(replacePathSeparator(_sFilename)) != mBreakpoints.end())
     {
+        // Get the current breakpoint set of this file
         vector<size_t> vLine = mBreakpoints[replacePathSeparator(_sFilename)];
+
+        // Try to find the current line
         for (size_t i = 0; i < vLine.size(); i++)
         {
             if (vLine[i] == nLine)
                 return;
         }
+
+        // If the line was not part of the breakpoint set
+        // add it to this set and store it in the map
         vLine.push_back(nLine);
         mBreakpoints[replacePathSeparator(_sFilename)] = vLine;
     }
     else
     {
+        // This file does not yet exist. Create it and
+        // store the passed breakpoint
         vector<size_t> vLine;
         vLine.push_back(nLine);
         mBreakpoints[replacePathSeparator(_sFilename)] = vLine;
     }
 }
 
+// This member function removes a breakpoint from the
+// passed file at the indicated line number
 void BreakpointManager::removeBreakpoint(const string& _sFilename, size_t nLine)
 {
+    // Try to find the current file in the map
     if (mBreakpoints.find(replacePathSeparator(_sFilename)) == mBreakpoints.end())
     {
+        // If it does not exist, do nothing
         return;
     }
     else
     {
+        // Get the current breakpoint set of this file
         vector<size_t> vLine = mBreakpoints[replacePathSeparator(_sFilename)];
+
+        // Try to find the current line
         for (size_t i = 0; i < vLine.size(); i++)
         {
             if (vLine[i] == nLine)
             {
+                // Erase the breakpoint from the set
                 vLine.erase(vLine.begin()+i);
             }
         }
+
+        // If this was the last breakpoint, erase the whole
+        // file from the map. Otherwise store the new breakpoint
+        // set in the map
         if (!vLine.size())
             mBreakpoints.erase(replacePathSeparator(_sFilename));
         else
@@ -72,35 +97,38 @@ void BreakpointManager::removeBreakpoint(const string& _sFilename, size_t nLine)
     }
 }
 
+// This member function removes all breakpoints from
+// the passed file
 void BreakpointManager::clearBreakpoints(const string& _sFilename)
 {
     if (mBreakpoints.find(replacePathSeparator(_sFilename)) != mBreakpoints.end())
         mBreakpoints.erase(replacePathSeparator(_sFilename));
 }
 
+// This member function accepts the breakpoints passed
+// by a map of the corresponding type
 void BreakpointManager::passBreakpoints(const map<string,vector<size_t> >& _mBreakpoints)
 {
     mBreakpoints.clear();
     mBreakpoints = _mBreakpoints;
 }
 
-
-bool BreakpointManager::hasBreakpoints(const string& _sFilename)
-{
-    if (mBreakpoints.find(replacePathSeparator(_sFilename)) != mBreakpoints.end())
-        return true;
-    return false;
-}
-
+// This member function returns true, if the user has set
+// a breakpoint in the passed file at the passed line number
 bool BreakpointManager::isBreakpoint(const string& _sFilename, size_t nLine)
 {
+    // Try to find the current file in the map
     if (mBreakpoints.find(replacePathSeparator(_sFilename)) == mBreakpoints.end())
     {
+        // If it does not exist, return false
         return false;
     }
     else
     {
+        // Get the current breakpoint set of this file
         vector<size_t> vLine = mBreakpoints[replacePathSeparator(_sFilename)];
+
+        // Try to find the current line
         for (size_t i = 0; i < vLine.size(); i++)
         {
             if (vLine[i] == nLine)
@@ -109,6 +137,8 @@ bool BreakpointManager::isBreakpoint(const string& _sFilename, size_t nLine)
             }
         }
     }
+
+    // Nothing found
     return false;
 }
 

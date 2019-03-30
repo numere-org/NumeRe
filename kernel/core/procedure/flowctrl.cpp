@@ -1458,7 +1458,9 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
 	return;
 }
 
-// --> Alle Variablendefinitionen und Deklarationen und den Error-Handler! <--
+// This member function prepares the command array by
+// pre-evaluating all constant stuff or function calls
+// whereever possible
 void FlowCtrl::eval()
 {
 	nReturnType = 1;
@@ -1719,6 +1721,9 @@ void FlowCtrl::reset()
 		nCalcType = nullptr;
 	}
 
+	if (nDebuggerCode == NumeReKernel::DEBUGGER_STEPOVER)
+        nDebuggerCode = NumeReKernel::DEBUGGER_STEP;
+
 	nVarArray = 0;
 	nLoop = 0;
 	nLoopSavety = -1;
@@ -1804,7 +1809,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 	{
 		if (sLine.substr(sLine.find_first_not_of(' '), 2) == "|>" || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
 		{
-			if (!nCurrentCalcType && nDebuggerCode != NumeReKernel::DEBUGGER_STEP)
+			if (!nCurrentCalcType && sLine.substr(sLine.find_first_not_of(' '), 2) == "|>")
 				nCalcType[nthCmd] |= CALCTYPE_DEBUGBREAKPOINT;
 
             if (sLine.substr(sLine.find_first_not_of(' '), 2) == "|>")
@@ -1815,7 +1820,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
                 StripSpaces(sLine_Temp);
             }
 
-			if (_optionRef->getUseDebugger())
+			if (_optionRef->getUseDebugger() && nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER)
 			{
 				NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sLine, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
 				nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
@@ -2967,7 +2972,9 @@ void FlowCtrl::prepareLocalVarsAndReplace(string& sVars)
 	}
 }
 
-
+// This member function returns the current line number
+// as enumerated during passing the commands via
+// "setCommand()"
 int FlowCtrl::getCurrentLineNumber() const
 {
     if (vCmdArray.size() > nCurrentCommand)
@@ -2976,6 +2983,9 @@ int FlowCtrl::getCurrentLineNumber() const
     return 0;
 }
 
+// This member function returns the current command
+// line, which will or has been evaluated in the
+// current line
 string FlowCtrl::getCurrentCommand() const
 {
     if (!vCmdArray.size())

@@ -1,3 +1,23 @@
+/*****************************************************************************
+    NumeRe: Framework fuer Numerische Rechnungen
+    Copyright (C) 2019  Erik Haenel et al.
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
+
+
+
 #define CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 #ifdef _MSC_VER
@@ -5267,7 +5287,7 @@ void NumeReEditor::OnClearBreakpoints(wxCommandEvent& event)
 		this->MarkerDeleteHandle(markerHandle);
 		CreateBreakpointEvent(linenum, false);
 	}
-	m_terminal->_guimessenger.clearBreakpoints(GetFileNameAndPath().ToStdString());
+	m_terminal->clearBreakpoints(GetFileNameAndPath().ToStdString());
 
 	ResetRightClickLocation();
 }
@@ -7409,7 +7429,7 @@ void NumeReEditor::AddBreakpoint( int linenum )
 
 			m_breakpoints.Add(markerNum);
 			CreateBreakpointEvent(linenum, true);
-			m_terminal->_guimessenger.addBreakpoint(GetFileNameAndPath().ToStdString(), linenum);
+			m_terminal->addBreakpoint(GetFileNameAndPath().ToStdString(), linenum);
 			break;
 		}
 	}
@@ -7955,7 +7975,7 @@ void NumeReEditor::RemoveBreakpoint( int linenum )
 	// LineFromHandle on debug start and clean up then
 	this->MarkerDelete(linenum, MARKER_BREAKPOINT);
 	CreateBreakpointEvent(linenum, false);
-	m_terminal->_guimessenger.removeBreakpoint(GetFileNameAndPath().ToStdString(), linenum);
+	m_terminal->removeBreakpoint(GetFileNameAndPath().ToStdString(), linenum);
 }
 
 int NumeReEditor::determineIndentationLevel(int nLine, int& singleLineIndent)

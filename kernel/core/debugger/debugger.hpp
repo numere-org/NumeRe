@@ -27,6 +27,7 @@
 #include <map>
 #include <exception>
 #include "../ui/error.hpp"
+#include "breakpointmanager.hpp"
 using namespace std;
 
 // stacktrace
@@ -40,6 +41,7 @@ class Procedure;
 class NumeReDebugger
 {
     private:
+        BreakpointManager _breakpointManager;
         vector<pair<string, Procedure*> > vStackTrace;
         unsigned int nLineNumber;
         string sErraticCommand;
@@ -48,6 +50,7 @@ class NumeReDebugger
         map<string,double> mLocalVars;
         map<string,string> mLocalStrings;
         map<string,string> mLocalTables;
+        map<string,string> mArguments;
         bool bAlreadyThrown;
         bool bExceptionHandled;
         size_t nCurrentStackElement;
@@ -57,6 +60,7 @@ class NumeReDebugger
         int showEvent(const string& sTitle);
         void resetBP();
         void formatMessage();
+        string decodeType(string& sArgumentValue);
 
     public:
         NumeReDebugger();
@@ -92,6 +96,10 @@ class NumeReDebugger
                 bDebuggerActive = active;
             }
 
+        inline BreakpointManager& getBreakpointManager()
+            {
+                return _breakpointManager;
+            }
         void showError(const string& sTitle);
         void showError(exception_ptr e);
         void throwException(SyntaxError error);
@@ -104,8 +112,7 @@ class NumeReDebugger
         void popStackItem();
 
         void gatherInformations(ProcedureVarFactory* _varFactory, const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber);
-        void gatherInformations(string** sLocalVars, unsigned int nLocalVarMapSize, double* dLocalVars, string** sLocalStrings, unsigned int nLocalStrMapSize, string** sLocalTables, unsigned int nLocalTableMapSize,
-                                const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber);
+        void gatherInformations(string** sLocalVars, unsigned int nLocalVarMapSize, double* dLocalVars, string** sLocalStrings, unsigned int nLocalStrMapSize, string** sLocalTables, unsigned int nLocalTableMapSize,                                string** sArgumentMap, unsigned int nArgumentMapSize, const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber);
 
         void gatherLoopBasedInformations(const string& _sErraticCommand, unsigned int _nLineNumber, map<string,string>& mVarMap, double** vVarArray, string* sVarArray, int nVarArray);
 
@@ -114,6 +121,8 @@ class NumeReDebugger
         vector<string> getNumVars();
         vector<string> getStringVars();
         vector<string> getTables();
+        vector<string> getArguments();
+        vector<string> getGlobals();
 };
 
 

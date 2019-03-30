@@ -65,6 +65,8 @@ class ProcedureVarFactory
 
         unsigned int countVarListElements(const string& sVarList);
 
+        void checkKeywordsInArgument(const string& sArgument, const string& sArgumentList, unsigned int nCurrentIndex);
+
     public:
         string** sArgumentMap;
         string** sLocalVars;

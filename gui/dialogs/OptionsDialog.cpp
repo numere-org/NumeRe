@@ -128,6 +128,13 @@ bool OptionsDialog::Create(wxWindow* parent, wxWindowID id, const wxString& capt
     m_autosaveinterval = nullptr;
     m_useExecuteCommand = nullptr;
 
+    m_debuggerFocusLine = nullptr;
+    m_debuggerShowLineNumbers = nullptr;
+    m_debuggerShowModules = nullptr;
+    m_debuggerShowProcedureArguments = nullptr;
+    m_debuggerShowGlobals = nullptr;
+    m_debuggerDecodeArguments = nullptr;
+
     m_boldCheck = nullptr;
     m_italicsCheck = nullptr;
     m_underlineCheck = nullptr;
@@ -180,6 +187,9 @@ void OptionsDialog::CreateControls()
 
     // Static analyzer panel
     CreateAnalyzerPage();
+
+    // Static debugger panel
+    CreateDebuggerPage();
 
     // Misc panel
     CreateMiscPage();
@@ -434,6 +444,33 @@ void OptionsDialog::CreateAnalyzerPage()
 
 }
 
+// This private member function creates the
+// "debugger" page
+void OptionsDialog::CreateDebuggerPage()
+{
+    // Create a grouped page
+    GroupPanel* panel = new GroupPanel(m_optionsNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
+
+    // Create a group
+    wxStaticBoxSizer* group = panel->createGroup(_guilang.get("GUI_OPTIONS_STACKTRACE"));
+
+    m_debuggerShowLineNumbers = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_DEBUGGER_SHOW_LINENUMBERS"));
+    m_debuggerShowModules = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_DEBUGGER_SHOW_MODULES"));
+
+    // Create a group
+    group = panel->createGroup(_guilang.get("GUI_OPTIONS_VARVIEWER"));
+
+    m_debuggerShowProcedureArguments = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_DEBUGGER_SHOW_ARGUMENTS"));
+    m_debuggerDecodeArguments = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_DEBUGGER_DECODE_ARGUMENTS"));
+    m_debuggerShowGlobals = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_DEBUGGER_SHOW_GLOBALS"));
+
+    // Those are not part of any group
+    m_debuggerFocusLine = panel->CreateSpinControl(panel, panel->getVerticalSizer(), _guilang.get("GUI_OPTIONS_DEBUGGER_FOCUS_LINE"), 1, 30, 10);
+
+    // Add the grouped page to the notebook
+    m_optionsNotebook->AddPage(panel, _guilang.get("GUI_OPTIONS_DEBUGGER"));
+}
+
 /*!
  * Should we show tooltips?
  */
@@ -643,6 +680,7 @@ bool OptionsDialog::EvaluateOptions()
     _option->setWindowBufferSize(0, m_termHistory->GetValue());
     _option->setAutoSaveInterval(m_autosaveinterval->GetValue());
     _option->setUseMaskAsDefault(m_useMaskAsDefault->GetValue());
+    _option->setTryToDecodeProcedureArguments(m_debuggerDecodeArguments->GetValue());
     m_options->SetTerminalHistorySize(m_termHistory->GetValue());
     m_options->SetCaretBlinkTime(m_caretBlinkTime->GetValue());
 
@@ -665,6 +703,11 @@ bool OptionsDialog::EvaluateOptions()
     m_options->SetFormatBeforeSaving(m_formatBeforeSaving->IsChecked());
     m_options->SetEditorFont(m_fontPicker->GetSelectedFont());
     m_options->SetKeepBackupFile(m_keepBackupFiles->IsChecked());
+    m_options->SetDebuggerFocusLine(m_debuggerFocusLine->GetValue());
+    m_options->SetShowGlobalVariables(m_debuggerShowGlobals->GetValue());
+    m_options->SetShowLinesInStackTrace(m_debuggerShowLineNumbers->GetValue());
+    m_options->SetShowModulesInStackTrace(m_debuggerShowModules->GetValue());
+    m_options->SetShowProcedureArguments(m_debuggerShowProcedureArguments->GetValue());
 
 
     for (int i = 0; i < Options::ANALYZER_OPTIONS_END; i++)
@@ -751,6 +794,13 @@ void OptionsDialog::InitializeDialog()
     m_backColor->Enable(!m_defaultBackground->GetValue());
     m_LaTeXRoot->SetValue(m_options->GetLaTeXRoot());
     m_keepBackupFiles->SetValue(m_options->GetKeepBackupFile());
+
+    m_debuggerFocusLine->SetValue(m_options->GetDebuggerFocusLine());
+    m_debuggerDecodeArguments->SetValue(_option->getTryToDecodeProcedureArguments());
+    m_debuggerShowGlobals->SetValue(m_options->GetShowGlobalVariables());
+    m_debuggerShowLineNumbers->SetValue(m_options->GetShowLinesInStackTrace());
+    m_debuggerShowModules->SetValue(m_options->GetShowModulesInStackTrace());
+    m_debuggerShowProcedureArguments->SetValue(m_options->GetShowProcedureArguments());
 
     for (int i = 0; i < Options::ANALYZER_OPTIONS_END; i++)
     {

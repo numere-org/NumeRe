@@ -443,6 +443,10 @@
 		<Unit filename="kernel/core/datamanagement/stringmemory.hpp" />
 		<Unit filename="kernel/core/datamanagement/table.cpp" />
 		<Unit filename="kernel/core/datamanagement/table.hpp" />
+		<Unit filename="kernel/core/debugger/breakpointmanager.cpp" />
+		<Unit filename="kernel/core/debugger/breakpointmanager.hpp" />
+		<Unit filename="kernel/core/debugger/debugger.cpp" />
+		<Unit filename="kernel/core/debugger/debugger.hpp" />
 		<Unit filename="kernel/core/documentation/doc_helper.cpp" />
 		<Unit filename="kernel/core/documentation/doc_helper.hpp" />
 		<Unit filename="kernel/core/documentation/documentation.cpp" />
@@ -482,8 +486,6 @@
 		<Unit filename="kernel/core/plugin_random.cpp" />
 		<Unit filename="kernel/core/plugin_statistics.cpp" />
 		<Unit filename="kernel/core/plugins.hpp" />
-		<Unit filename="kernel/core/procedure/debugger.cpp" />
-		<Unit filename="kernel/core/procedure/debugger.hpp" />
 		<Unit filename="kernel/core/procedure/flowctrl.cpp" />
 		<Unit filename="kernel/core/procedure/flowctrl.hpp" />
 		<Unit filename="kernel/core/procedure/procedure.cpp" />
@@ -518,8 +520,6 @@
 		<Unit filename="kernel/core/utils/zip.cpp" />
 		<Unit filename="kernel/core/utils/zip.h" />
 		<Unit filename="kernel/core/version.h" />
-		<Unit filename="kernel/debugmessenger.cpp" />
-		<Unit filename="kernel/debugmessenger.hpp" />
 		<Unit filename="kernel/kernel.cpp" />
 		<Unit filename="kernel/kernel.hpp" />
 		<Unit filename="kernel/syntax.cpp" />

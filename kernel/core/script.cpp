@@ -654,7 +654,7 @@ string Script::getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand)
         StripSpaces(sScriptCommand);
 
         // Add a breakpoint, if the user has set it in the editor
-        if (NumeReKernel::_messenger.isBreakpoint(sScriptFileName, nLine-1) && sScriptCommand.substr(0,2) != "|>")
+        if (NumeReKernel::getInstance()->getDebugger().getBreakpointManager().isBreakpoint(sScriptFileName, nLine-1) && sScriptCommand.substr(0,2) != "|>")
             sScriptCommand.insert(0, "|> ");
 
         // Ignore empty lines

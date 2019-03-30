@@ -21,7 +21,7 @@
 #include "debugger.hpp"
 #include "../../kernel.hpp"
 #include "../utils/tools.hpp"
-#include "procedurevarfactory.hpp"
+#include "../procedure/procedurevarfactory.hpp"
 
 // constructor
 NumeReDebugger::NumeReDebugger()
@@ -35,29 +35,38 @@ NumeReDebugger::NumeReDebugger()
     bExceptionHandled = false;
 }
 
+// This member function shows the debugger with the
+// corresponding error message obtained by the passed
+// exception_ptr
 void NumeReDebugger::showError(exception_ptr e)
 {
     if (!bDebuggerActive)
         return;
 
+    // Rethrow the obtained exception to determine its
+    // type and its message
     try
     {
         rethrow_exception(e);
     }
     catch (mu::Parser::exception_type& e)
     {
+        // Parser exception
         sErrorMessage = _lang.get("ERR_MUP_HEAD") + "\n\n" + e.GetMsg();
         showError(_lang.get("ERR_MUP_HEAD_DBG"));
     }
     catch (const std::exception& e)
     {
+        // C++ Standard exception
         sErrorMessage = _lang.get("ERR_STD_INTERNAL_HEAD") + "\n\n" + e.what();
         showError(_lang.get("ERR_STD_INTERNAL_HEAD_DBG"));
     }
     catch (SyntaxError& e)
     {
+        // Internal exception
         if (e.errorcode == SyntaxError::PROCESS_ABORTED_BY_USER)
         {
+            // Do nothing, if the user pressed ESC
             return;
         }
         else
@@ -88,11 +97,14 @@ void NumeReDebugger::showError(exception_ptr e)
     }
 }
 
+// This member function shows the debugger with the
+// passed error message
 void NumeReDebugger::showError(const string& sTitle)
 {
     if (bExceptionHandled)
         return;
 
+    // Convert dollars into line breaks
     formatMessage();
 
     bExceptionHandled = true;
@@ -100,8 +112,13 @@ void NumeReDebugger::showError(const string& sTitle)
     reset();
 }
 
+// This member function shows the debugger with the
+// corresponding error message obtained by the passed
+// SyntaxError object and throws the corresponding
+// exception afterwards
 void NumeReDebugger::throwException(SyntaxError error)
 {
+    // do not show the debugger, if the user simply pressed ESC
     if (error.errorcode != SyntaxError::PROCESS_ABORTED_BY_USER)
     {
         if (error.getToken().length() && (error.errorcode == SyntaxError::PROCEDURE_THROW || error.errorcode == SyntaxError::LOOP_THROW))
@@ -127,6 +144,9 @@ void NumeReDebugger::throwException(SyntaxError error)
     throw error;
 }
 
+// This member function shows the debugger for the
+// current breakpoint and returns the debugger code
+// obtained from the user
 int NumeReDebugger::showBreakPoint()
 {
     int nDebuggerCode = showEvent(_lang.get("DBG_HEADLINE"));
@@ -135,23 +155,34 @@ int NumeReDebugger::showBreakPoint()
     return nDebuggerCode;
 }
 
-
+// This private member function shows the debugger for
+// the current selected event and returns the debugger
+// code obtained from the user
 int NumeReDebugger::showEvent(const string& sTitle)
 {
     if (!bDebuggerActive)
         return NumeReKernel::DEBUGGER_CONTINUE;
 
+    // Show the debugger, if valid information is
+    // available
     if (validDebuggingInformations())
     {
         NumeReKernel::showDebugEvent(sTitle, getStackTrace());
         NumeReKernel::gotoLine(sErraticModule, nLineNumber);
 
+        // Return the obtained debugger code
         return NumeReKernel::waitForContinue();
     }
 
+    // Always return CONTINUE - we don't want to
+    // block the kernel due to lacking debugger
+    // information
     return NumeReKernel::DEBUGGER_CONTINUE;
 }
 
+// This function replaces unmasked dollars with regular
+// line break characters and also removes the masking
+// characters in front of masked dollars
 void NumeReDebugger::formatMessage()
 {
     for (size_t i = 1; i < sErrorMessage.length(); i++)
@@ -166,25 +197,104 @@ void NumeReDebugger::formatMessage()
     }
 }
 
+// This private member function decodes the type of the arguments
+// by looking at their values and apply some guesses
+string NumeReDebugger::decodeType(string& sArgumentValue)
+{
+    Datafile& _data = NumeReKernel::getInstance()->getData();
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+
+    // Only try to decode the arguments, if the user decided to
+    // do so
+    if (!NumeReKernel::getInstance()->getSettings().getTryToDecodeProcedureArguments())
+        return "\t1 x 1\t(...)\t";
+
+    // Is the current argument value a table?
+    if (_data.isCacheElement(sArgumentValue) || sArgumentValue.substr(0, 5) == "data(")
+    {
+        string sCache = sArgumentValue.substr(0, sArgumentValue.find('('));
+
+        // Replace the value with its actual value and mark the
+        // argument type as reference
+        sArgumentValue = "{" + toString(_data.min(sCache, "")[0], 5) + ", ..., " + toString(_data.max(sCache, "")[0], 5) + "}";
+        return "\t" + toString(_data.getLines(sCache, false)) + " x " + toString(_data.getCols(sCache, false)) + "\t(&) double\t";
+    }
+
+    // Is the current argument a string variable?
+    if (_data.getStringVars().find(sArgumentValue) != _data.getStringVars().end())
+    {
+        // Replace the value with its actual value and mark the
+        // argument type as reference
+        sArgumentValue = "\"" + (_data.getStringVars().find(sArgumentValue)->second) + "\"";
+        return "\t1 x 1\t(&) string\t";
+    }
+
+    // Equals the current argument the string table?
+    if (sArgumentValue.substr(0, 7) == "string(")
+    {
+        // Replace the value with its actual value and mark the
+        // argument type as reference
+        sArgumentValue = "{\"" + replaceControlCharacters(_data.minString()) + "\", ..., \"" + replaceControlCharacters(_data.maxString()) + "\"}";
+        return "\t" + toString(_data.getStringSize()) + " x " + toString(_data.getStringCols()) + "\t(&) string\t";
+    }
+
+    // Is the current argument a numerical variable?
+    if (_parser.GetVar().find(sArgumentValue) != _parser.GetVar().end())
+    {
+        // Replace the value with its actual value and mark the
+        // argument type as reference
+        sArgumentValue = toString(*(_parser.GetVar().find(sArgumentValue)->second), 5);
+        return "\t1 x 1\t(&) double\t";
+    }
+
+    // Is it a constant numerical expression or value?
+    if (sArgumentValue.find_first_not_of("0123456789.eE-+*/^!&|<>=(){},") == string::npos)
+        return "\t1 x 1\tdouble\t";
+
+    // Is the current argument a string expression?
+    // This heuristic is potentially wrong
+    if (containsStrings(sArgumentValue))
+        return "\t1 x 1\tstring\t";
+
+    // Does it not contain any special characters?
+    if (sArgumentValue.find_first_of("$\"#?:") == string::npos)
+        return "\t1 x 1\tdouble\t";
+
+    // We cannot decode it
+    return "\t1 x 1\t(...)\t";
+}
+
+// This member function can be used to select a
+// specific element in the current stack trace to
+// read the state at this position
 bool NumeReDebugger::select(size_t nStackElement)
 {
+    // Ensure that the selected element exists
     if (nStackElement >= vStackTrace.size())
         return false;
 
+    // Get the procedure pointer
     Procedure* _curProcedure = vStackTrace[nStackElement].second;
 
+    // Do nothing, if it does not exist
+    // (for some reason)
     if (!_curProcedure)
         return false;
 
+    // Clear the breakpoint information
     resetBP();
 
+    // If the current procedure is evaluating a flow control
+    // statement, obtain the corresponding information here
     if (_curProcedure->bEvaluatingFlowControlStatements)
     {
         gatherLoopBasedInformations(_curProcedure->getCurrentCommand(), _curProcedure->getCurrentLineNumber(), _curProcedure->mVarMap, _curProcedure->vVarArray, _curProcedure->sVarArray, _curProcedure->nVarArray);
     }
 
+    // Obtain the remaining information here
     gatherInformations(_curProcedure->_varFactory, _curProcedure->sProcCommandLine, _curProcedure->sCurrentProcedureName, _curProcedure->GetCurrentLine());
 
+    // Jump to the selected file and the selected line number
     NumeReKernel::gotoLine(sErraticModule, nLineNumber);
 
     return true;
@@ -211,6 +321,7 @@ void NumeReDebugger::resetBP()
     mLocalVars.clear();
     mLocalStrings.clear();
     mLocalTables.clear();
+    mArguments.clear();
     bAlreadyThrown = false;
     return;
 }
@@ -249,19 +360,23 @@ void NumeReDebugger::popStackItem()
     return;
 }
 
+// This member function gathers all information from the current
+// workspace and stores them internally to display them to the user.
+// This member function is a wrapper for the more complicated signature
+// further below
 void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber)
 {
     if (!bDebuggerActive)
         return;
 
     gatherInformations(_varFactory->sLocalVars, _varFactory->nLocalVarMapSize, _varFactory->dLocalVars, _varFactory->sLocalStrings, _varFactory->nLocalStrMapSize, _varFactory->sLocalTables,
-                       _varFactory->nLocalTableSize, _sErraticCommand, _sErraticModule, _nLineNumber);
+                       _varFactory->nLocalTableSize, _varFactory->sArgumentMap, _varFactory->nArgumentMapSize, _sErraticCommand, _sErraticModule, _nLineNumber);
 }
 
 // This member function gathers all information from the current
 // workspace and stores them internally to display them to the user
 void NumeReDebugger::gatherInformations(string** sLocalVars, unsigned int nLocalVarMapSize, double* dLocalVars, string** sLocalStrings, unsigned int nLocalStrMapSize, string** sLocalTables,
-                                        unsigned int nLocalTableMapSize, const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber)
+                                        unsigned int nLocalTableMapSize, string** sArgumentMap, unsigned int nArgumentMapSize, const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber)
 {
     if (!bDebuggerActive)
         return;
@@ -282,14 +397,6 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, unsigned int nLocal
 
     // Removes the leading and trailing whitespaces
     StripSpaces(sErraticCommand);
-
-    // Add leading backspaces to all occuring procedure calls
-    // in the stored command line
-    for (unsigned int i = 0; i < sErraticCommand.length(); i++)
-    {
-        if ((!i && sErraticCommand[i] == '$') || (i && sErraticCommand[i] == '$' && sErraticCommand[i-1] != '\\'))
-            sErraticCommand.insert(i,1,'\\');
-    }
 
     sErraticModule = _sErraticModule;
 
@@ -355,6 +462,15 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, unsigned int nLocal
         mLocalTables[sLocalTables[i][0] + "()"] = sTableData;
     }
 
+    // Store the arguments
+    for (unsigned int i = 0; i < nArgumentMapSize; i++)
+    {
+        if (sArgumentMap[i][0].back() == '(')
+            mArguments[sArgumentMap[i][0] + ")\t" + sArgumentMap[i][1]] = sArgumentMap[i][1];
+        else
+            mArguments[sArgumentMap[i][0] + "\t" + sArgumentMap[i][1]] = sArgumentMap[i][1];
+    }
+
     return;
 }
 
@@ -417,14 +533,15 @@ vector<string> NumeReDebugger::getStackTrace()
     vector<string> vStack;
 
     // Return a corresponding message, if the stack is empty
+    // Append the line number and the file name, though
     if (!vStackTrace.size())
     {
         vStack.push_back(_lang.get("DBG_STACK_EMPTY") + "\t" + sErraticModule + "\t" + toString(nLineNumber+1));
         return vStack;
     }
 
-    // Return the stack and indicate the current procedure
-    // on the stack with a prefixed arrow
+    // Return the stack and append the current procedure
+    // name and the line number
     for (int i = vStackTrace.size()-1; i >= 0; i--)
     {
         Procedure* _curProc = vStackTrace[i].second;
@@ -473,5 +590,84 @@ vector<string> NumeReDebugger::getTables()
     return vTables;
 }
 
+// This member function returns the procedure argument as a vector
+vector<string> NumeReDebugger::getArguments()
+{
+    vector<string> vArguments;
+
+    for (auto iter = mArguments.begin(); iter != mArguments.end(); ++iter)
+    {
+        string sValue = iter->second;
+        vArguments.push_back((iter->first).substr(0, (iter->first).find('\t')) + decodeType(sValue) + sValue + (iter->first).substr((iter->first).find('\t')));
+    }
+
+    return vArguments;
+}
+
+// This member function returns the current global
+// variables as a vector
+vector<string> NumeReDebugger::getGlobals()
+{
+    vector<string> vGlobals;
+
+    if (!vStackTrace.size())
+        return vGlobals;
+
+    map<string,string> mGlobals;
+
+    Datafile& _data = NumeReKernel::getInstance()->getData();
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+
+    // Is there valid data?
+    if (_data.isValid())
+    {
+        mGlobals["data()"] = toString(_data.getLines("data", false)) + " x " + toString(_data.getCols("data", false))
+                             + "\tdouble\t{" + toString(_data.min("data", "")[0], 5) + ", ...," + toString(_data.max("data", "")[0], 5) + "}";
+    }
+
+    // Is there anything in the string object?
+    if (_data.getStringElements())
+    {
+        mGlobals["string()"] = toString(_data.getStringElements()) + " x " + toString(_data.getStringCols())
+                               + "\tstring\t{\"" + _data.minString() + "\", ...,\"" + _data.maxString() + "\"}";
+    }
+
+    // List all relevant caches
+    for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
+    {
+        if (iter->first.substr(0, 2) != "_~")
+        {
+            mGlobals[iter->first + "()"] = toString(_data.getLines(iter->first, false)) + " x " + toString(_data.getCols(iter->first, false))
+                                           + "\tdouble\t{" + toString(_data.min(iter->first, "")[0], 5) + ", ...," + toString(_data.max(iter->first, "")[0], 5) + "}";
+        }
+    }
+
+    // List all relevant string variables
+    for (auto iter = _data.getStringVars().begin(); iter != _data.getStringVars().end(); ++iter)
+    {
+        if (iter->first.substr(0, 2) != "_~")
+        {
+            mGlobals[iter->first] = "1 x 1\tstring\t\"" + iter->second + "\"";
+        }
+    }
+
+    // List all relevant numerical variables
+    for (auto iter = _parser.GetVar().begin(); iter != _parser.GetVar().end(); ++iter)
+    {
+        if (iter->first.substr(0, 2) != "_~")
+        {
+            mGlobals[iter->first] = "1 x 1\tdouble\t" + toString(*iter->second, 5);
+        }
+    }
+
+    // Push everything into the vector
+    for (auto iter = mGlobals.begin(); iter != mGlobals.end(); ++iter)
+    {
+        vGlobals.push_back(iter->first + "\t" + iter->second + "\t" + iter->first);
+    }
+
+    // Return the vector filled with the global variables
+    return vGlobals;
+}
 
 

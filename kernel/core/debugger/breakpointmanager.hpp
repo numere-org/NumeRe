@@ -38,7 +38,6 @@ class BreakpointManager
         void removeBreakpoint(const string& _sFilename, size_t nLine);
         void clearBreakpoints(const string& _sFilename);
         void passBreakpoints(const map<string,vector<size_t> >& _mBreakpoints);
-        bool hasBreakpoints(const string& _sFilename);
         bool isBreakpoint(const string& _sFilename, size_t nLine);
 };
 

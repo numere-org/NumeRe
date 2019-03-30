@@ -40,10 +40,9 @@
 #include "core/script.hpp"
 #include "core/procedure/flowctrl.hpp"
 #include "core/procedure/procedure.hpp"
-#include "core/procedure/debugger.hpp"
+#include "core/debugger/debugger.hpp"
 #include "core/plugin.hpp"
 #include "core/ui/language.hpp"
-#include "debugmessenger.hpp"
 #include "core/procedure/procedurelibrary.hpp"
 // --> PARSER-HEADER <--
 #include "core/ParserLib/muParser.h"
@@ -101,7 +100,9 @@ class NumeReKernel
         enum DebuggerCodes
         {
             DEBUGGER_CONTINUE = 1,
-            DEBUGGER_STEP
+            DEBUGGER_STEP,
+            DEBUGGER_STEPOVER,
+            DEBUGGER_LEAVE
         };
 
     private:
@@ -158,7 +159,6 @@ class NumeReKernel
         static unsigned int nLastLineLength;
         static bool modifiedSettings;
         static NumeRe::Table table;
-        static BreakpointManager _messenger;
         static bool bSupressAnswer;
         static bool bGettingLine;
         static bool bErrorNotification;
@@ -252,7 +252,7 @@ class NumeReKernel
         string ReadAnswer();
         string ReadDoc();
         string getDocumentation(const string& sCommand);
-        vector<string> getDocIndex();;
+        vector<string> getDocIndex();
         NumeReVariables getVariableList();
         bool SettingsModified();
         int getAutosaveInterval() {return _option.getAutoSaveInterval();}
@@ -269,7 +269,6 @@ class NumeReKernel
         void setKernelSettings(const Settings& _settings);
         vector<string> getPathSettings() const;
         void printVersionInfo();
-        void showDebugError(const string& sTitle);
         void updateLineLenght(int nLength);
         void sendErrorNotification();
 };

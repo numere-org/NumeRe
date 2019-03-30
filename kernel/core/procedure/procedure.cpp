@@ -45,6 +45,9 @@ Procedure::Procedure(const Procedure& _procedure) : FlowCtrl(), Plugin(_procedur
 	sCallingNameSpace = _procedure.sCallingNameSpace;
 	sProcNames = _procedure.sProcNames;
 
+	if (_procedure.nDebuggerCode == NumeReKernel::DEBUGGER_LEAVE || _procedure.nDebuggerCode == NumeReKernel::DEBUGGER_STEPOVER)
+        nDebuggerCode = NumeReKernel::DEBUGGER_LEAVE;
+
 	_localDef.setPredefinedFuncs(_procedure._localDef.getPredefinedFuncs());
 
 	for (unsigned int i = 0; i < 6; i++)
@@ -571,8 +574,10 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
     {
         sCallingNameSpace = "main";
 		mVarMap.clear();
+
 		if (_option.getUseDebugger())
 			_debugger.popStackItem();
+
 		throw SyntaxError(SyntaxError::PROCEDURE_NOT_FOUND, "", SyntaxError::invalid_position, sProc);
     }
 
@@ -584,8 +589,10 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
     {
         sCallingNameSpace = "main";
 		mVarMap.clear();
+
 		if (_option.getUseDebugger())
 			_debugger.popStackItem();
+
 		throw SyntaxError(SyntaxError::PROCEDURE_NOT_FOUND, "", SyntaxError::invalid_position, sProc);
     }
 
@@ -597,12 +604,15 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
     if (nFlags & ProcedureCommandLine::FLAG_PRIVATE && sThisNameSpace != sCallingNameSpace)
     {
         string sErrorToken;
+
         if (sCallingNameSpace == "main")
             sErrorToken = "\"" + sThisNameSpace + "\" aus dem globalen Namensraum";
         else
             sErrorToken = "\"" + sThisNameSpace + "\" aus dem Namensraum \"" + sCallingNameSpace + "\"";
+
         if (_option.getUseDebugger())
             _debugger.popStackItem();
+
         throw SyntaxError(SyntaxError::PRIVATE_PROCEDURE_CALLED, sProcCommandLine, SyntaxError::invalid_position, sErrorToken);
     }
 
@@ -627,11 +637,13 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
         _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
         throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "var");
     }
+
     if (findCommand(sVarList, "str").sString == "str")
     {
         _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
         throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "str");
     }
+
     if (findCommand(sVarList, "tab").sString == "tab")
     {
         _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
@@ -672,7 +684,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
 				// Obtain the current command from the command line
 				sCurrentCommand = findCommand(sProcCommandLine).sString;
 
-				if (_option.getUseDebugger() && NumeReKernel::_messenger.isBreakpoint(sCurrentProcedureName, nCurrentLine) && sProcCommandLine.substr(0, 2) != "|>")
+				if (_option.getUseDebugger() && _debugger.getBreakpointManager().isBreakpoint(sCurrentProcedureName, nCurrentLine) && sProcCommandLine.substr(0, 2) != "|>")
                 {
 					sProcCommandLine.insert(0, "|> ");
                 }
@@ -772,9 +784,11 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
 				    if (sProcCommandLine[i] == '(' || sProcCommandLine[i] == '[' || sProcCommandLine[i] == '{')
                     {
                         size_t parens = getMatchingParenthesis(sProcCommandLine.substr(i));
+
                         if (parens != string::npos)
                             i += parens;
                     }
+
 					if (sProcCommandLine[i] == ';' && !isInQuotes(sProcCommandLine, i))
 					{
 						if (i != sProcCommandLine.length() - 1)
@@ -783,6 +797,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
 						sProcCommandLine.erase(i);
 						bProcSupressAnswer = true;
 					}
+
 					if (i == sProcCommandLine.length() - 1)
 					{
 						break;
@@ -810,7 +825,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
 		if (_option.getUseDebugger()
             && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT))
         {
-            if ((sProcCommandLine.substr(sProcCommandLine.find_first_not_of(' '), 2) == "|>" || nDebuggerCode == NumeReKernel::DEBUGGER_STEP) && !getLoop())
+            if ((sProcCommandLine.substr(sProcCommandLine.find_first_not_of(' '), 2) == "|>" || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
+                && !getLoop())
             {
                 if (sProcCommandLine.substr(sProcCommandLine.find_first_not_of(' '), 2) == "|>")
                 {
@@ -818,8 +834,11 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     StripSpaces(sProcCommandLine);
                 }
 
-                _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
-                nDebuggerCode = evalDebuggerBreakPoint(_parser, _option);
+                if (nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE)
+                {
+                    _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+                    nDebuggerCode = evalDebuggerBreakPoint(_parser, _option);
+                }
 
                 if (!sProcCommandLine.length())
                     continue;
@@ -837,6 +856,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                     nByteCode |= ProcedureCommandLine::BYTECODE_VARDEF;
             }
+
             if (!sProcCommandLine.length())
                 continue;
         }
@@ -974,6 +994,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             {
                 sProcCommandLine.erase(findCommand(sProcCommandLine).nPos, 8);
                 StripSpaces(sProcCommandLine);
+
                 if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                     nByteCode |= ProcedureCommandLine::BYTECODE_EXPLICIT;
             }
@@ -986,10 +1007,12 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             if (sCurrentCommand == "throw" && !getLoop())
             {
                 string sErrorToken;
+
                 if (sProcCommandLine.length() > 7 && (containsStrings(sProcCommandLine) || _data.containsStringVars(sProcCommandLine)))
                 {
                     if (_data.containsStringVars(sProcCommandLine))
                         _data.getStringValues(sProcCommandLine);
+
                     getStringArgument(sProcCommandLine, sErrorToken);
                     sErrorToken += " -nq";
                     string sDummy = "";
@@ -1023,10 +1046,12 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                 {
                     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                         nByteCode |= ProcedureCommandLine::BYTECODE_RETURNCOMMAND;
+
                     if (sProcCommandLine.find("void", sProcCommandLine.find("return") + 1) != string::npos)
                     {
                         string sReturnValue = sProcCommandLine.substr(sProcCommandLine.find("return") + 6);
                         StripSpaces(sReturnValue);
+
                         if (sReturnValue == "void")
                         {
                             nReturnType = 0;
@@ -1039,6 +1064,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
                     }
                     else if (sProcCommandLine.length() > 6)
                         _ReturnVal = ProcCalc(sProcCommandLine.substr(sProcCommandLine.find("return") + 6), sCurrentCommand, nCurrentByteCode, _parser, _functions, _data, _option, _out, _pData, _script);
+
                     break;
                 }
                 catch (...)
@@ -1057,6 +1083,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
         try
         {
             ProcCalc(sProcCommandLine, sCurrentCommand, nCurrentByteCode, _parser, _functions, _data, _option, _out, _pData, _script);
+
             if (getReturnSignal())
             {
                 _ReturnVal = getReturnValue();
@@ -1727,6 +1754,7 @@ int Procedure::evalDebuggerBreakPoint(Parser& _parser, Settings& _option)
 		return NumeReKernel::evalDebuggerBreakPoint("");
 	}
 
+	// Get a reference to the debugger object
 	NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
 	// Gather all information needed by the debugger
@@ -1737,11 +1765,16 @@ int Procedure::evalDebuggerBreakPoint(Parser& _parser, Settings& _option)
 	return _debugger.showBreakPoint();
 }
 
+// This member function will return the current line number
+// depending on whether a flow control statement is evaluated
+// or not
 unsigned int Procedure::GetCurrentLine() const
 {
+    // Get the line number from FlowCtrl
     if (bEvaluatingFlowControlStatements)
         return getCurrentLineNumber();
 
+    // Use the internal line number
     return nCurrentLine;
 }
 
@@ -1802,6 +1835,7 @@ void Procedure::resetProcedure(Parser& _parser, bool bSupressAnswer)
 	_localDef.reset();
 	nDebuggerCode = 0;
 
+	// Delete the variable factory for the current procedure
 	if (_varFactory)
     {
         delete _varFactory;

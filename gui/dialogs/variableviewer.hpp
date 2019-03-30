@@ -37,6 +37,8 @@ class VariableViewer : public wxcode::wxTreeListCtrl
         wxTreeItemId numRoot;
         wxTreeItemId stringRoot;
         wxTreeItemId tableRoot;
+        wxTreeItemId argumentRoot;
+        wxTreeItemId globalRoot;
         wxTreeItemId selectedID;
 
         NumeReWindow* mainWindow;
@@ -65,12 +67,8 @@ class VariableViewer : public wxcode::wxTreeListCtrl
         void OnRightClick(wxTreeEvent& event);
         void OnDoubleClick(wxTreeEvent& event);
 
-        void setDebuggerMode(bool mode = true)
-        {
-            debuggerMode = mode;
-        }
-
-        void UpdateVariables(const std::vector<std::string>& vVarList, size_t nNumerics, size_t nStrings, size_t nTables);
+        void setDebuggerMode(bool mode = true);
+        void UpdateVariables(const std::vector<std::string>& vVarList, size_t nNumerics, size_t nStrings, size_t nTables, size_t nArguments = 0, size_t nGlobals = 0);
 
         DECLARE_EVENT_TABLE();
 };

@@ -1,3 +1,25 @@
+/*****************************************************************************
+    NumeRe: Framework fuer Numerische Rechnungen
+    Copyright (C) 2019  Erik Haenel et al.
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
+
+
+
+
+
 #define CHAMELEON__CPP
 
 #define _CRTDBG_MAP_ALLOC
@@ -665,6 +687,23 @@ void NumeReWindow::InitializeProgramOptions()
         // if it exists
         m_options->readAnalyzerOptionsFromConfig(m_config);
 
+        // Read the debugger options from the configuration file
+        int debuggerFocusLine = 10;
+		m_config->Read("Debugger/FocusLine", &debuggerFocusLine, 10);
+		m_options->SetDebuggerFocusLine(debuggerFocusLine);
+
+		bool bDebuggerOption = (m_config->Read("Debugger/ShowLineNumbersInStackTrace", "true") == "true");
+		m_options->SetShowLinesInStackTrace(bDebuggerOption);
+
+		bDebuggerOption = (m_config->Read("Debugger/ShowModulesInStackTrace", "true") == "true");
+		m_options->SetShowModulesInStackTrace(bDebuggerOption);
+
+		bDebuggerOption = (m_config->Read("Debugger/ShowProcedureArguments", "true") == "true");
+		m_options->SetShowProcedureArguments(bDebuggerOption);
+
+		bDebuggerOption = (m_config->Read("Debugger/ShowGlobalVariables", "false") == "true");
+		m_options->SetShowGlobalVariables(bDebuggerOption);
+
         wxFont font;
         wxString nativeInfo;
         m_config->Read("Styles/EditorFont", &nativeInfo, "Consolas 10");
@@ -692,6 +731,11 @@ void NumeReWindow::InitializeProgramOptions()
 		m_options->writeColoursToConfig(m_config);
 		m_config->Write("Styles/EditorFont", m_options->GetEditorFont().GetNativeFontInfoUserDesc());
 		m_options->writeAnalyzerOptionsToConfig(m_config);
+		m_config->Write("Debugger/FocusLine", m_options->GetDebuggerFocusLine());
+		m_config->Write("Debugger/ShowLineNumbersInStackTrace", m_options->GetShowLinesInStackTrace() ? "true" : "false");
+		m_config->Write("Debugger/ShowModulesInStackTrace", m_options->GetShowModulesInStackTrace() ? "true" : "false");
+		m_config->Write("Debugger/ShowProcedureArguments", m_options->GetShowProcedureArguments() ? "true" : "false");
+		m_config->Write("Debugger/ShowGlobalVariables", m_options->GetShowGlobalVariables() ? "true" : "false");
 	}
 }
 
@@ -1731,6 +1775,9 @@ void NumeReWindow::pass_command(const wxString& command)
     m_terminal->pass_command(command.ToStdString());
 }
 
+// This function will pass the obtained debugging information to
+// the debug viewer. If this object does not yet exist, it will be
+// created on-the-fly
 void NumeReWindow::evaluateDebugInfo(const vector<string>& vDebugInfo)
 {
     // initialize the debugger, if necessary and pass the new contents
@@ -1739,17 +1786,22 @@ void NumeReWindow::evaluateDebugInfo(const vector<string>& vDebugInfo)
 
     vStack.insert(vStack.begin(), vDebugInfo.begin()+1, vDebugInfo.end());
 
+    // If the debug viewer does not yet exist, create a corresponding
+    // instance here
     if (m_debugViewer == nullptr)
     {
-        m_debugViewer = new DebugViewer(this, sTitle);
-        m_debugViewer->SetSize(800,600);
+        m_debugViewer = new DebugViewer(this, m_options, sTitle);
+        m_debugViewer->SetSize(800, 700);
         m_debugViewer->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
         m_debugViewer->setTerminal(m_terminal);
     }
 
+    // If the debug viewer is not shown, show it
     if (!m_debugViewer->IsShown())
         m_debugViewer->Show();
 
+    // Pass the obtained debugging information to the
+    // debug viewer
     m_debugViewer->setDebugInfo(sTitle, vStack);
 }
 
@@ -2460,7 +2512,7 @@ void NumeReWindow::CloseFile (int pageNr, bool askforsave)
 	if (m_book->GetPageCount() > 0)
 	{
 		wxFileName currentFileName;
-		m_terminal->_guimessenger.clearBreakpoints(m_currentEd->GetFileNameAndPath().ToStdString());
+		m_terminal->clearBreakpoints(m_currentEd->GetFileNameAndPath().ToStdString());
 		if ((m_book->GetPageCount() > 1) || m_appClosing)
 		{
 			currentFileName = m_currentEd->GetFileName();
@@ -3927,6 +3979,11 @@ void NumeReWindow::EvaluateOptions()
 		edit->AnalyseCode();
 	}
 
+	if (m_debugViewer)
+    {
+        m_debugViewer->updateSettings();
+    }
+
 	// Copy the settings in the options object
 	// into the configuration object
 	int newMaxTermSize = m_options->GetTerminalHistorySize();
@@ -3957,6 +4014,12 @@ void NumeReWindow::EvaluateOptions()
 	m_config->Write("Miscellaneous/LateXRoot", m_options->GetLaTeXRoot());
 
 	m_config->Write("Miscellaneous/KeepBackups", m_options->GetKeepBackupFile() ? "true" : "false");
+
+    m_config->Write("Debugger/FocusLine", m_options->GetDebuggerFocusLine());
+    m_config->Write("Debugger/ShowLineNumbersInStackTrace", m_options->GetShowLinesInStackTrace() ? "true" : "false");
+    m_config->Write("Debugger/ShowModulesInStackTrace", m_options->GetShowModulesInStackTrace() ? "true" : "false");
+    m_config->Write("Debugger/ShowProcedureArguments", m_options->GetShowProcedureArguments() ? "true" : "false");
+    m_config->Write("Debugger/ShowGlobalVariables", m_options->GetShowGlobalVariables() ? "true" : "false");
 
     // Write the configuration to its file
 	m_config->Flush();
