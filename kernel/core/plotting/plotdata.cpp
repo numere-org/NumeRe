@@ -254,7 +254,27 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
     if (matchParams(sCmd, "nogrid") && (nType == ALL || nType & GLOBAL))
         nGrid = 0;
     if ((matchParams(sCmd, "alpha") || matchParams(sCmd, "transparency")) && (nType == ALL || nType & LOCAL))
+    {
         bAlpha = true;
+
+        if (matchParams(sCmd, "alpha", '='))
+        {
+            _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "alpha", '=')+5));
+            dAlphaVal = _parser.Eval();
+
+            if (dAlphaVal < 0 || dAlphaVal > 1)
+                dAlphaVal = 0.5;
+        }
+
+        if (matchParams(sCmd, "transparency", '='))
+        {
+            _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "transparency", '=')+12));
+            dAlphaVal = _parser.Eval();
+
+            if (dAlphaVal < 0 || dAlphaVal > 1)
+                dAlphaVal = 0.5;
+        }
+    }
     if ((matchParams(sCmd, "noalpha") || matchParams(sCmd, "notransparency")) && (nType == ALL || nType & LOCAL))
         bAlpha = false;
     if (matchParams(sCmd, "light") && (nType == ALL || nType & LOCAL))
@@ -279,15 +299,39 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
     if (matchParams(sCmd, "nobox") && (nType == ALL || nType & GLOBAL))
         bBox = false;
     if (matchParams(sCmd, "lcont") && (nType == ALL || nType & LOCAL))
+    {
         bContLabels = true;
+
+        if (matchParams(sCmd, "lcont", '='))
+        {
+            _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "lcont", '=')));
+            nContLines = (size_t)_parser.Eval();
+        }
+    }
     if (matchParams(sCmd, "nolcont") && (nType == ALL || nType & LOCAL))
         bContLabels = false;
     if (matchParams(sCmd, "pcont") && (nType == ALL || nType & LOCAL))
+    {
         bContProj = true;
+
+        if (matchParams(sCmd, "pcont", '='))
+        {
+            _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "pcont", '=')));
+            nContLines = (size_t)_parser.Eval();
+        }
+    }
     if (matchParams(sCmd, "nopcont") && (nType == ALL || nType & LOCAL))
         bContProj = false;
     if (matchParams(sCmd, "fcont") && (nType == ALL || nType & LOCAL))
+    {
         bContFilled = true;
+
+        if (matchParams(sCmd, "fcont", '='))
+        {
+            _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "fcont", '=')));
+            nContLines = (size_t)_parser.Eval();
+        }
+    }
     if (matchParams(sCmd, "nofcont") && (nType == ALL || nType & LOCAL))
         bContFilled = false;
     if (matchParams(sCmd, "xerrorbars") && (nType == ALL || nType & LOCAL))
@@ -1886,10 +1930,12 @@ void PlotData::reset()
     nLighting = 0;
     bAxis = true;
     bAlpha = false;
+    dAlphaVal = 0.5;
     bBox = false;
     bContLabels = false;
     bContProj = false;
     bContFilled = false;
+    nContLines = 35;
     bxError = false;
     byError = false;
     bConnectPoints = false;

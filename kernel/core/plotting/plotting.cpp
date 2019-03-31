@@ -954,12 +954,13 @@ void Plot::create2dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, cons
 	if (_pData.getColorMask() || _pData.getAlphaMask())
 		_mMaskData.Create(_pInfo.nSamples, _pInfo.nSamples);
 
-	mglData _mContVec(35);
-	for (int nCont = 0; nCont < 35; nCont++)
+	mglData _mContVec(_pData.getNumContLines());
+	for (int nCont = 0; nCont < _pData.getNumContLines(); nCont++)
 	{
-		_mContVec.a[nCont] = nCont * (_pInfo.dRanges[ZCOORD][1] - _pInfo.dRanges[ZCOORD][0]) / 34.0 + _pInfo.dRanges[ZCOORD][0];
+		_mContVec.a[nCont] = nCont * (_pInfo.dRanges[ZCOORD][1] - _pInfo.dRanges[ZCOORD][0]) / ((double)_pData.getNumContLines()-1) + _pInfo.dRanges[ZCOORD][0];
 	}
-	_mContVec.a[17] = (_pInfo.dRanges[ZCOORD][1] - _pInfo.dRanges[ZCOORD][0]) / 2.0 + _pInfo.dRanges[ZCOORD][0];
+	if (_pData.getNumContLines() % 2)
+        _mContVec.a[_pData.getNumContLines()/2] = (_pInfo.dRanges[ZCOORD][1] - _pInfo.dRanges[ZCOORD][0]) / 2.0 + _pInfo.dRanges[ZCOORD][0];
 
 	int nPos[2] = {0, 0};
 	int nTypeCounter[2] = {0, 0};
@@ -1047,10 +1048,10 @@ void Plot::create2dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, cons
 			{
 				if (_pData.getContLabels() && _pInfo.sCommand.substr(0, 4) != "cont")
 				{
-					_graph->Cont(_mAxisVals[0], _mAxisVals[1], _mData, ("t" + _pInfo.sContStyles[nStyle]).c_str());
+					_graph->Cont(_mAxisVals[0], _mAxisVals[1], _mData, ("t" + _pInfo.sContStyles[nStyle]).c_str(), ("val " + toString(_pData.getNumContLines())).c_str());
 				}
 				else if (!_pData.getContLabels() && _pInfo.sCommand.substr(0, 4) != "cont")
-					_graph->Cont(_mAxisVals[0], _mAxisVals[1], _mData, _pInfo.sContStyles[nStyle].c_str());
+					_graph->Cont(_mAxisVals[0], _mAxisVals[1], _mData, _pInfo.sContStyles[nStyle].c_str(), ("val " + toString(_pData.getNumContLines())).c_str());
 				nPos[0] = sLabels.find(';');
 				sConvLegends = sLabels.substr(0, nPos[0]);
 				// --> Der String-Parser wertet Ausdruecke wie "Var " + #var aus <--
@@ -1076,10 +1077,10 @@ void Plot::create2dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, cons
 			{
 				if (_pData.getContLabels() && _pInfo.sCommand.substr(0, 4) != "cont")
 				{
-					_graph->Cont(_mDataPlots[nTypeCounter[1]][2], ("t" + _pInfo.sContStyles[nStyle]).c_str());
+					_graph->Cont(_mDataPlots[nTypeCounter[1]][2], ("t" + _pInfo.sContStyles[nStyle]).c_str(), ("val " + toString(_pData.getNumContLines())).c_str());
 				}
 				else if (!_pData.getContLabels() && _pInfo.sCommand.substr(0, 4) != "cont")
-					_graph->Cont(_mDataPlots[nTypeCounter[1]][2], _pInfo.sContStyles[nStyle].c_str());
+					_graph->Cont(_mDataPlots[nTypeCounter[1]][2], _pInfo.sContStyles[nStyle].c_str(), ("val " + toString(_pData.getNumContLines())).c_str());
 				nPos[1] = sDataLabels.find(';');
 				sConvLegends = sDataLabels.substr(0, nPos[1]);
 				// --> Der String-Parser wertet Ausdruecke wie "Var " + #var aus <--
@@ -6026,9 +6027,15 @@ void Plot::applyLighting(PlotData& _pData)
 				|| (_pInfo.sCommand.substr(0, 4) == "cont" && _pInfo.sCommand.find("3d") && _pData.getContFilled() && !_pData.getContProj())
 				|| _pInfo.bDraw3D
 				|| _pInfo.bDraw)
-			_graph->Alpha(_pData.getTransparency());
+            {
+                _graph->Alpha(_pData.getTransparency());
+                _graph->SetAlphaDef(_pData.getAlphaVal());
+            }
 		if (_pData.getAlphaMask() && _pInfo.sCommand.substr(0, 4) == "surf" && !_pData.getTransparency())
+        {
 			_graph->Alpha(true);
+            _graph->SetAlphaDef(_pData.getAlphaVal());
+        }
 
 		if (_pData.getLighting())
 		{

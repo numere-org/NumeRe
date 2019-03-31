@@ -71,11 +71,13 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         int nGrid;                  // Gitter ein/aus
         int nLighting;             // Lichteffekt ein/aus
         bool bAlpha;                // Transparenz ein/aus
+        double dAlphaVal;
         bool bAxis;                 // Achsen ein/aus
         bool bBox;                  // Umschliessende Box ein/aus
         bool bContProj;             // Projektion der Konturlinien auf untere Ebene ein/aus
         bool bContLabels;           // Darstellen der Konturlinien-Werte ein/aus
         bool bContFilled;           // Gefuellte Konturlinien
+        size_t nContLines;
         bool bxError;               // Fehlerbalken in x-Richtung ein/aus
         bool byError;               // Fehlerbalken in y-Richtung ein/aus
         bool bConnectPoints;        // Verbindende Punkte zwischen Datenpunkten zeichnen
@@ -275,27 +277,16 @@ class PlotData : public FileSystem  // CHILD von Filesystem
                     sFunctionAxisBind = sBind;
                 return;
             }
-
-//        inline void prepareGraph()
-//            {
-//                if (!_graph)
-//                {
-//                    _graph = new mglFLTK("NumeRe: Graph");
-//                    _graph->RunThr();
-//                    _graph->CopyFont(&_fontData);
-//                    _graph->Box();
-//                    _graph->Update();
-//                }
-//                else
-//                    _graph->Clf();
-//                return;
-//            }
         inline int getGrid() const
             {return nGrid;};
         inline int getLighting() const
             {return nLighting;};
         inline bool getTransparency() const
             {return bAlpha;};
+        inline double getAlphaVal() const
+            {
+                return dAlphaVal;
+            }
         inline bool getAxis() const
             {return bAxis;};
         inline int getSamples() const
@@ -310,6 +301,10 @@ class PlotData : public FileSystem  // CHILD von Filesystem
             {return bContLabels;};
         inline bool getContFilled() const
             {return bContFilled;}
+        inline size_t getNumContLines() const
+            {
+                return nContLines;
+            }
         inline bool getxError() const
             {return bxError;};
         inline bool getyError() const
