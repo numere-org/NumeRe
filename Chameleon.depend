@@ -6917,7 +6917,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1554029222 c:\cpp\numere-source\trunk\kernel\kernel.hpp
+1554302938 c:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	<queue>
@@ -8409,7 +8409,7 @@
 
 1530082144 c:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1554029221 source:c:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1554303050 source:c:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 	"io/fileops.hpp"
@@ -8507,7 +8507,7 @@
 1542035624 source:c:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
 	"functionimplementation.hpp"
 
-1553123357 source:c:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
+1554303068 source:c:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	<list>
@@ -8517,7 +8517,7 @@
 	"odesolver.hpp"
 	"../../kernel.hpp"
 
-1553283807 source:c:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
+1554303093 source:c:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	"spline.h"
@@ -8628,7 +8628,7 @@
 	"../../kernel.hpp"
 	"../utils/tools.hpp"
 
-1549900536 source:c:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.cpp
+1554035623 source:c:\cpp\numere-source\trunk\kernel\core\plotting\plotdata.cpp
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 

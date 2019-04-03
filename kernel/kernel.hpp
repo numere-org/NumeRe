@@ -179,8 +179,8 @@ class NumeReKernel
 
         static void toggleTableStatus();
         static void flush();
-        static void print(const string& sLine);
-        static void printPreFmt(const string& sLine);
+        static void print(const string& sLine, bool printingEnabled = true);
+        static void printPreFmt(const string& sLine, bool printingEnabled = true);
         static string formatResultOutput(int nNum, value_type* v, const Settings& _option);
         static void issueWarning(string sWarningMessage);
         static void setFileName(const string& sFileName);

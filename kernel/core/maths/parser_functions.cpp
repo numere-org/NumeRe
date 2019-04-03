@@ -4358,7 +4358,7 @@ void parser_Taylor(string& sCmd, Parser& _parser, const Settings& _option, Defin
 		bDefinitionSuccess = _functions.defineFunc(sTaylor);
 
     if (bDefinitionSuccess)
-        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"));
+        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.getSystemPrintStatus());
     else
         NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
 
@@ -5882,7 +5882,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
             return true;
 
         if (bDefinitionSuccess)
-            NumeReKernel::print(_lang.get("DEFINE_SUCCESS"));
+            NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.getSystemPrintStatus());
         else
             NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
 
@@ -6483,7 +6483,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
         return true;
 
     if (bDefinitionSuccess)
-        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"));
+        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.getSystemPrintStatus());
     else
         NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
 
@@ -8378,7 +8378,7 @@ bool parser_spline(string& sCmd, Parser& _parser, Datafile& _data, Define& _func
 		bDefinitionSuccess = _functions.defineFunc(sDefinition);
 
     if (bDefinitionSuccess)
-        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"));
+        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.getSystemPrintStatus());
     else
         NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
 

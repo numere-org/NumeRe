@@ -2175,7 +2175,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				if (!_functions.isDefined(sArgument.substr(0, sArgument.find(":="))))
                 {
 					if (_functions.defineFunc(sArgument))
-                        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"));
+                        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.getSystemPrintStatus());
                     else
                         NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
                 }
@@ -3799,7 +3799,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 					addArgumentQuotes(sCmd, "comment");
 
 				if (_functions.defineFunc(sCmd.substr(sCmd.find(' ') + 1), true))
-					NumeReKernel::print(_lang.get("DEFINE_SUCCESS"));
+					NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.getSystemPrintStatus());
                 else
                     NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
 			}
@@ -4135,7 +4135,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				else
 				{
 				    if (_functions.defineFunc(sCmd.substr(7)))
-                        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"));
+                        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.getSystemPrintStatus());
                     else
                         NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
 				}

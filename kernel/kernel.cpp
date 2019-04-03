@@ -2005,9 +2005,9 @@ string NumeReKernel::maskProcedureSigns(string sLine)
 
 
 // This is the virtual cout function. The port from the kernel of course needs some tweaking
-void NumeReKernel::print(const string& __sLine)
+void NumeReKernel::print(const string& __sLine, bool printingEnabled)
 {
-	if (!m_parent || !getInstance()->getSettings().getSystemPrintStatus())
+	if (!m_parent || !printingEnabled)
 		return;
 	else
 	{
@@ -2038,9 +2038,9 @@ void NumeReKernel::print(const string& __sLine)
 }
 
 // This is the virtual cout function. The port from the kernel of course needs some tweaking
-void NumeReKernel::printPreFmt(const string& __sLine)
+void NumeReKernel::printPreFmt(const string& __sLine, bool printingEnabled)
 {
-	if (!m_parent || !getInstance()->getSettings().getSystemPrintStatus())
+	if (!m_parent || !printingEnabled)
 		return;
 	else
 	{

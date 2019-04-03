@@ -3014,7 +3014,7 @@ static void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, Def
         return;
 
     if (bDefinitionSuccess)
-        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"));
+        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.getSystemPrintStatus());
     else
         NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
 
