@@ -45,7 +45,7 @@ void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _opti
 	if (_pData.getOpenImage() && !_pData.getSilentMode())
 	{
 		GraphHelper* _graphHelper = graph.createGraphHelper(_pData);
-		NumeReKernel::updateGraphWindow(_graphHelper);
+		NumeReKernel::getInstance()->getWindowManager().createWindow(_graphHelper);
 	}
 	// --> Speicher wieder freigeben <--
 	_pData.deleteData(true);

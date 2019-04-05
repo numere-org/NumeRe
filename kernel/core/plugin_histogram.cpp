@@ -1121,7 +1121,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 			{
 				GraphHelper* _graphHelper = new GraphHelper(_histGraph, _pData);
 				_graphHelper->setAspect(dAspect);
-				NumeReKernel::updateGraphWindow(_graphHelper);
+				NumeReKernel::getInstance()->getWindowManager().createWindow(_graphHelper);
 				_histGraph = nullptr;
 				NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
 			}
@@ -1905,7 +1905,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 			{
 				GraphHelper* _graphHelper = new GraphHelper(_histGraph, _pData);
 				_graphHelper->setAspect(dAspect);
-				NumeReKernel::updateGraphWindow(_graphHelper);
+				NumeReKernel::getInstance()->getWindowManager().createWindow(_graphHelper);
 				_histGraph = nullptr;
 				NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
 			}

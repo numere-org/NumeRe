@@ -46,7 +46,7 @@ queue<NumeReTask> NumeReKernel::taskQueue;
 int NumeReKernel::nLINE_LENGTH = 80;
 bool NumeReKernel::bWritingTable = false;
 int NumeReKernel::nOpenFileFlag = 0;
-int NumeReKernel::nLastStatusVal = 0;
+int NumeReKernel::nLastStatusVal = -1;
 unsigned int NumeReKernel::nLastLineLength = 0;
 bool NumeReKernel::modifiedSettings = false;
 bool NumeReKernel::bCancelSignal = false;
@@ -513,6 +513,8 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 	value_type* v = 0;          // Ergebnisarray
 	int& nDebuggerCode = _procedure.getDebuggerCode();
 	int nNum = 0;               // Zahl der Ergebnisse in value_type* v
+	nLastStatusVal = -1;
+	nLastLineLength = 0;
 
 	// Needed for some handler functions
 	KernelStatus nReturnVal = NUMERE_ERROR;
@@ -2123,7 +2125,7 @@ void NumeReKernel::issueWarning(string sWarningMessage)
         // Insert warning symbols, if linebreaks are contained in this message
         replaceAll(sWarningMessage, "\n", "\n|!> ");
 
-        m_parent->m_sAnswer += "|!> " + _lang.get("COMMON_WARNING") + ": " + sWarningMessage + "\n";
+        m_parent->m_sAnswer += "\r|!> " + _lang.get("COMMON_WARNING") + ": " + sWarningMessage + "\n";
 
         if (m_parent->m_KernelStatus < NumeReKernel::NUMERE_STATUSBAR_UPDATE || m_parent->m_KernelStatus == NumeReKernel::NUMERE_ANSWER_READ)
             m_parent->m_KernelStatus = NumeReKernel::NUMERE_ISSUE_WARNING;
@@ -2149,28 +2151,33 @@ void NumeReKernel::sendErrorNotification()
 }
 
 // This shall replace the corresponding function from "tools.hpp"
-
-void NumeReKernel::statusBar(int nStep, int nFirstStep, int nFinalStep, const string& sType)
+void NumeReKernel::progressBar(int nStep, int nFirstStep, int nFinalStep, const string& sType)
 {
-	//cerr << nStep << endl << nFirstStep << endl << nFinalStep << endl << sType << endl;
 	int nStatusVal = 0;
+	const int BARLENGTH = 40;
+	const double BARDIVISOR = 2.5;
+
 	if (abs(nFinalStep - nFirstStep) < 9999
-			&& abs((nStep - nFirstStep) / (double)(nFinalStep - nFirstStep) * 20)
-			> abs((nStep - 1 - nFirstStep) / (double)(nFinalStep - nFirstStep) * 20))
+        && abs((nStep - nFirstStep) / (double)(nFinalStep - nFirstStep) * BARLENGTH)
+        > abs((nStep - 1 - nFirstStep) / (double)(nFinalStep - nFirstStep) * BARLENGTH))
 	{
-		nStatusVal = abs((int)((nStep - nFirstStep) / (double)(nFinalStep - nFirstStep) * 20)) * 5;
+		nStatusVal = abs((int)((nStep - nFirstStep) / (double)(nFinalStep - nFirstStep) * BARLENGTH)) * BARDIVISOR;
 	}
 	else if (abs(nFinalStep - nFirstStep) >= 9999
-			 && abs((nStep - nFirstStep) / (double)(nFinalStep - nFirstStep) * 100)
-			 > abs((nStep - 1 - nFirstStep) / (double)(nFinalStep - nFirstStep) * 100))
+        && abs((nStep - nFirstStep) / (double)(nFinalStep - nFirstStep) * 100)
+        > abs((nStep - 1 - nFirstStep) / (double)(nFinalStep - nFirstStep) * 100))
 	{
 		nStatusVal = abs((int)((nStep - nFirstStep) / (double)(nFinalStep - nFirstStep) * 100));
 	}
+
 	if (nLastStatusVal >= 0 && nLastStatusVal == nStatusVal && (sType != "cancel" && sType != "bcancel"))
 		return;
+
 	toggleTableStatus();
+
 	if (nLastLineLength > 0)
 		printPreFmt("\r");
+
 	if (sType == "std")
 	{
 		printPreFmt("\r|-> " + _lang.get("COMMON_EVALUATING") + " ... " + toString(nStatusVal) + " %");
@@ -2183,41 +2190,45 @@ void NumeReKernel::statusBar(int nStep, int nFirstStep, int nFinalStep, const st
 	}
 	else if (sType == "bar")
 	{
-		printPreFmt("\r|-> [" + strfill("#", (int)(nStatusVal / 5.0), '#') + strfill(" ", 20 - (int)(nStatusVal / 5.0)) + "] (" + toString(nStatusVal) + " %)");
-		nLastLineLength = 34;
+		printPreFmt("\r|-> [" + strfill("#", (int)(nStatusVal / BARDIVISOR), '#') + strfill(" ", BARLENGTH - (int)(nStatusVal / BARDIVISOR)) + "] (" + toString(nStatusVal) + " %)");
+		nLastLineLength = 14 + BARLENGTH;
 	}
 	else if (sType == "bcancel")
 	{
-		printPreFmt("\r|-> [" + strfill("#", (int)(nLastStatusVal / 5.0), '#') + strfill(" ", 20 - (int)(nLastStatusVal / 5.0)) + "] (--- %)");
+		printPreFmt("\r|-> [" + strfill("#", (int)(nLastStatusVal / BARDIVISOR), '#') + strfill(" ", BARLENGTH - (int)(nLastStatusVal / BARDIVISOR)) + "] (--- %)");
 		nFinalStep = nStep;
 	}
 	else
 	{
 		nLastLineLength = 1;
 		printPreFmt("\r|");
+
 		for (unsigned int i = 0; i < sType.length(); i++)
 		{
 			if (sType.substr(i, 5) == "<bar>")
 			{
-				printPreFmt("[" + strfill("#", (int)(nStatusVal / 5.0), '#') + strfill(" ", 20 - (int)(nStatusVal / 5.0)) + "]");
+				printPreFmt("[" + strfill("#", (int)(nStatusVal / BARDIVISOR), '#') + strfill(" ", BARLENGTH - (int)(nStatusVal / BARDIVISOR)) + "]");
 				i += 4;
-				nLastLineLength += 22;
+				nLastLineLength += 2 + BARLENGTH;
 				continue;
 			}
+
 			if (sType.substr(i, 5) == "<Bar>")
 			{
-				printPreFmt("[" + strfill("#", (int)(nStatusVal / 5.0), '#') + strfill("-", 20 - (int)(nStatusVal / 5.0), '-') + "]");
+				printPreFmt("[" + strfill("#", (int)(nStatusVal / BARDIVISOR), '#') + strfill("-", BARLENGTH - (int)(nStatusVal / BARDIVISOR), '-') + "]");
 				i += 4;
-				nLastLineLength += 22;
+				nLastLineLength += 2 + BARLENGTH;
 				continue;
 			}
+
 			if (sType.substr(i, 5) == "<BAR>")
 			{
-				printPreFmt("[" + strfill("#", (int)(nStatusVal / 5.0), '#') + strfill("=", 20 - (int)(nStatusVal / 5.0), '=') + "]");
+				printPreFmt("[" + strfill("#", (int)(nStatusVal / BARDIVISOR), '#') + strfill("=", BARLENGTH - (int)(nStatusVal / BARDIVISOR), '=') + "]");
 				i += 4;
-				nLastLineLength += 22;
+				nLastLineLength += 2 + BARLENGTH;
 				continue;
 			}
+
 			if (sType.substr(i, 5) == "<val>")
 			{
 				printPreFmt(toString(nStatusVal));
@@ -2225,6 +2236,7 @@ void NumeReKernel::statusBar(int nStep, int nFirstStep, int nFinalStep, const st
 				nLastLineLength += 3;
 				continue;
 			}
+
 			if (sType.substr(i, 5) == "<Val>")
 			{
 				printPreFmt(strfill(toString(nStatusVal), 3));
@@ -2232,6 +2244,7 @@ void NumeReKernel::statusBar(int nStep, int nFirstStep, int nFinalStep, const st
 				nLastLineLength += 3;
 				continue;
 			}
+
 			if (sType.substr(i, 5) == "<VAL>")
 			{
 				printPreFmt(strfill(toString(nStatusVal), 3, '0'));
@@ -2239,6 +2252,7 @@ void NumeReKernel::statusBar(int nStep, int nFirstStep, int nFinalStep, const st
 				nLastLineLength += 3;
 				continue;
 			}
+
 			printPreFmt(sType.substr(i, 1));
 			nLastLineLength++;
 		}
@@ -2246,15 +2260,16 @@ void NumeReKernel::statusBar(int nStep, int nFirstStep, int nFinalStep, const st
 
 	if (nLastStatusVal == 0 || nLastStatusVal != nStatusVal)
 		nLastStatusVal = nStatusVal;
+
 	if (nFinalStep == nStep)
 	{
 		printPreFmt("\n");
 		nLastStatusVal = 0;
 		nLastLineLength = 0;
 	}
+
 	flush();
 	toggleTableStatus();
-	return;
 }
 
 // This member function handles opening files and jumping to lines as
@@ -2334,9 +2349,10 @@ void NumeReKernel::showTable(NumeRe::Table _table, string __name, bool openedita
 	Sleep(10);
 }
 
-// This member function passes a computed graph to be rendered
-// in the GraphViewer window
-void NumeReKernel::updateGraphWindow(GraphHelper* _helper)
+// This member function passes a window object to the
+// user interface, which will then converted into a real
+// window
+void NumeReKernel::showWindow(const NumeRe::Window& window)
 {
 	if (!m_parent)
 		return;
@@ -2346,16 +2362,18 @@ void NumeReKernel::updateGraphWindow(GraphHelper* _helper)
 
 		// create the task
 		NumeReTask task;
-		task.graph = _helper;
-		task.taskType = NUMERE_GRAPH_UPDATE;
+		task.window = window;
+		task.taskType = NUMERE_SHOW_WINDOW;
 
 		taskQueue.push(task);
 
 		m_parent->m_KernelStatus = NUMERE_QUEUED_COMMAND;
 	}
+
 	wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
 	Sleep(10);
 }
+
 
 // This member function is used by the kernel to be notified
 // when the user finished the table edit process

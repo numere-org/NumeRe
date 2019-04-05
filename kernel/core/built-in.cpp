@@ -35,6 +35,7 @@ static bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, De
 static int swapCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions);
 static int renameCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions);
 static bool undefineFunctions(string sFunctionList, Define& _functions, const Settings& _option);
+static int showDialog(string& sCmd);
 
 
 
@@ -318,6 +319,10 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			return 0;
 		}
 		return 1;
+	}
+	else if (findCommand(sCmd, "dialog").sString == "dialog" && sCommand != "help")
+	{
+        return showDialog(sCmd);
 	}
 	else if (sPlotCommands.find(" " + sCommand + " ") != string::npos)
 	{
@@ -5178,8 +5183,136 @@ static bool undefineFunctions(string sFunctionList, Define& _functions, const Se
     return true;
 }
 
+// This static function handles the displaying of user interaction dialogs.
+// This includes message boxes, file and directory pickers, text entries,
+// list and selection dialogs
+static int showDialog(string& sCmd)
+{
+    size_t position = findCommand(sCmd, "dialog").nPos;
+    string sDialogSettings = sCmd.substr(position+7);
+    string sMessage;
+    string sTitle = "NumeRe: Window";
+    string sExpression;
+    int nControls = NumeRe::CTRL_NONE;
+    NumeReKernel* kernel = NumeReKernel::getInstance();
 
+    // If the current command line contains strings in the option values
+    // handle them here
+    if (kernel->getData().containsStringVars(sDialogSettings) || containsStrings(sDialogSettings))
+        sDialogSettings = BI_evalParamString(sDialogSettings, kernel->getParser(), kernel->getData(), kernel->getSettings(), kernel->getDefinitions());
 
+    // Extract the message for the user
+    if (matchParams(sDialogSettings, "msg", '='))
+        sMessage = getArgAtPos(sDialogSettings, matchParams(sDialogSettings, "msg", '=')+3);
+
+    // Extract the window title
+    if (matchParams(sDialogSettings, "title", '='))
+        sTitle = getArgAtPos(sDialogSettings, matchParams(sDialogSettings, "title", '=')+5);
+
+    // Extract the selected dialog type if available, otherwise
+    // use the message box as default value
+    if (matchParams(sDialogSettings, "type", '='))
+    {
+        string sType = getArgAtPos(sDialogSettings, matchParams(sDialogSettings, "type", '=')+4);
+
+        if (sType == "filedialog")
+            nControls = NumeRe::CTRL_FILEDIALOG;
+        else if (sType == "dirdialog")
+            nControls = NumeRe::CTRL_FOLDERDIALOG;
+        else if (sType == "listdialog")
+            nControls = NumeRe::CTRL_LISTDIALOG;
+        else if (sType == "selectiondialog")
+            nControls = NumeRe::CTRL_SELECTIONDIALOG;
+        else if (sType == "messagebox")
+            nControls = NumeRe::CTRL_MESSAGEBOX;
+        else if (sType == "textentry")
+            nControls = NumeRe::CTRL_TEXTENTRY;
+    }
+    else
+        nControls = NumeRe::CTRL_MESSAGEBOX;
+
+    // Extract the button information. The default values are
+    // created by wxWidgets. We don't have to do that here
+    if (matchParams(sDialogSettings, "buttons", '='))
+    {
+        string sButtons = getArgAtPos(sDialogSettings, matchParams(sDialogSettings, "buttons", '=')+7);
+
+        if (sButtons == "ok")
+            nControls |= NumeRe::CTRL_OKBUTTON;
+        else if (sButtons == "okcancel")
+            nControls |= NumeRe::CTRL_OKBUTTON | NumeRe::CTRL_CANCELBUTTON;
+        else if (sButtons == "yesno")
+            nControls |= NumeRe::CTRL_YESNOBUTTON;
+    }
+
+    // Extract the icon information. The default values are
+    // created by wxWidgets. We don't have to do that here
+    if (matchParams(sDialogSettings, "icon", '='))
+    {
+        string sIcon = getArgAtPos(sDialogSettings, matchParams(sDialogSettings, "icon", '=')+4);
+
+        if (sIcon == "erroricon")
+            nControls |= NumeRe::CTRL_ICONERROR;
+        else if (sIcon == "warnicon")
+            nControls |= NumeRe::CTRL_ICONWARNING;
+        else if (sIcon == "infoicon")
+            nControls |= NumeRe::CTRL_ICONINFORMATION;
+        else if (sIcon == "questionicon")
+            nControls |= NumeRe::CTRL_ICONQUESTION;
+    }
+
+    // Extract the default values for the dialog. First,
+    // erase the appended parameter list
+    if (sDialogSettings.find("-set") != string::npos)
+        sDialogSettings.erase(sDialogSettings.find("-set"));
+    else if (sDialogSettings.find("--") != string::npos)
+        sDialogSettings.erase(sDialogSettings.find("--"));
+
+    // Strip spaces and assign the value
+    StripSpaces(sDialogSettings);
+    sExpression = sDialogSettings;
+
+    // Handle strings in the default value
+    // expression. This will include also possible path
+    // tokens
+    if (kernel->getData().containsStringVars(sExpression) || containsStrings(sExpression))
+    {
+        string sDummy;
+        parser_StringParser(sExpression, sDummy, kernel->getData(), kernel->getParser(), kernel->getSettings(), true);
+    }
+
+    // Ensure that default values are available, if the user
+    // selected either a list or a selection dialog
+    if ((nControls & NumeRe::CTRL_LISTDIALOG || nControls & NumeRe::CTRL_SELECTIONDIALOG) && (!sExpression.length() || sExpression == "\"\""))
+    {
+        throw SyntaxError(SyntaxError::NO_DEFAULTVALUE_FOR_DIALOG, sCmd, "dialog");
+    }
+
+    // Use the default expression as message for the message
+    // box as a fallback solution
+    if (nControls & NumeRe::CTRL_MESSAGEBOX && (!sMessage.length() || sMessage == "\"\""))
+        sMessage = getNextArgument(sExpression, false);
+
+    // Ensure that the message box has at least a message,
+    // because the message box is the default value
+    if (nControls & NumeRe::CTRL_MESSAGEBOX && (!sMessage.length() || sMessage == "\"\""))
+    {
+        throw SyntaxError(SyntaxError::NO_DEFAULTVALUE_FOR_DIALOG, sCmd, "dialog");
+    }
+
+    // Get the window manager, create the modal window and
+    // wait until the user interacted with the dialog
+    NumeRe::WindowManager& manager = kernel->getWindowManager();
+    size_t winid = manager.createWindow(NumeRe::WINDOW_MODAL, NumeRe::WindowSettings(nControls, true, sMessage, sTitle, sExpression));
+    NumeRe::WindowInformation wininfo = manager.getWindowInformationModal(winid);
+
+    // Insert the return value as a string into the command
+    // line and inform the command handler, that a value
+    // has to be evaluated
+    sCmd = sCmd.substr(0, position) + "\"" + replacePathSeparator(wininfo.sReturn) + "\"";
+
+    return 0;
+}
 
 
 
@@ -5577,7 +5710,9 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
 			sReturn.replace(nPos, nLength, sTemp);
 		}
 		else if ((nPos > 8 && sReturn.substr(nPos - 8, 8) == "tocache=")
-				 || (nPos > 5 && sReturn.substr(nPos - 5, 5) == "type="))
+				 || (nPos > 5 && sReturn.substr(nPos - 5, 5) == "type=")
+                 || (nPos > 5 && sReturn.substr(nPos - 5, 5) == "icon=")
+                 || (nPos > 8 && sReturn.substr(nPos - 8, 8) == "buttons="))
 		{
 		    // do nothing here
 			nPos++;

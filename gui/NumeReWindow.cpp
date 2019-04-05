@@ -111,7 +111,13 @@
 
 const string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\"";
 std::string replacePathSeparator(const std::string&);
-
+string removeQuotationMarks(const string& sString)
+{
+	if (sString.find('"') == string::npos || sString.front() != '"' || sString.back() != '"')
+		return sString;
+	return sString.substr(1, sString.length() - 2);
+}
+// Create the stack trace object here
 Language _guilang;
 FindReplaceDialog* g_findReplace;
 
@@ -121,24 +127,6 @@ wxPageSetupData* g_pageSetupData = (wxPageSetupData*) nullptr;
 
 BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
     EVT_MENU_RANGE                  (EVENTID_MENU_START, EVENTID_MENU_END-1, NumeReWindow::OnMenuEvent)
-
-	EVT_MENU						(ID_TEST, NumeReWindow::Test)
-	EVT_MENU						(ID_STARTCONNECT, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_DISCONNECT, NumeReWindow::OnMenuEvent)
-	EVT_MENU_RANGE					(ID_COMPILE, ID_COMPILE_PROJECT, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_PROJECT_ADDFILE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_PROJECT_REMOVEFILE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_PROJECT_EXCLUDE_FILE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_PROJECT_INCLUDE_FILE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_NEW_PROJECT, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_OPEN_PROJECT_LOCAL, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_OPEN_PROJECT_REMOTE, NumeReWindow::OnMenuEvent)
-	EVT_MENU						(ID_CLOSE_PROJECT, NumeReWindow::OnMenuEvent)
-
-//	EVT_MENU						(ID_DEBUG_CONTINUE, NumeReWindow::OnDebugCommand)
-//	EVT_MENU						(ID_DEBUG_STEPNEXT, NumeReWindow::OnDebugCommand)
-//	EVT_MENU						(ID_DEBUG_STEPOVER, NumeReWindow::OnDebugCommand)
-//	EVT_MENU						(ID_DEBUG_STEPOUT, NumeReWindow::OnDebugCommand)
 
 	EVT_FIND						(-1, NumeReWindow::OnFindEvent)
 	EVT_FIND_NEXT					(-1, NumeReWindow::OnFindEvent)
@@ -176,33 +164,23 @@ IMPLEMENT_APP(MyApp)
 bool MyApp::OnInit()
 {
     wxFileName f(wxStandardPaths::Get().GetExecutablePath());
-    //wxString appPath(f.GetPath());
     wxInitAllImageHandlers();
-    //wxImage::AddHandler(new wxPNGHandler());
     wxBitmap splashImage;
+
     if (splashImage.LoadFile(f.GetPath(true)+"icons\\splash.png", wxBITMAP_TYPE_PNG))
     {
-        /*TextSplashScreen* splash = new TextSplashScreen(splashImage, wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_NO_TIMEOUT, 4000, nullptr);
-        splash->SetText("Loading configuration ...");
-        wxMilliSleep(500);
-        splash->SetText("Checking filesystem ...");
-        wxMilliSleep(500);
-        splash->SetText("Loading language files ...");
-        wxMilliSleep(500);
-        splash->Destroy();*/
         wxSplashScreen* splash = new wxSplashScreen(splashImage, wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_NO_TIMEOUT, 4000, nullptr, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
-        wxApp::Yield();
+        //wxApp::Yield();
         wxSleep(3);
         splash->Destroy();
     }
 
     g_findReplace = nullptr;
 
+    NumeReWindow *NumeReMainFrame = new NumeReWindow("NumeRe: Framework für Numerische Rechnungen (v" + sVersion + ")", wxDefaultPosition, wxDefaultSize);
 
-    NumeReWindow *frame = new NumeReWindow("NumeRe: Framework für Numerische Rechnungen (v" + sVersion + ")", wxDefaultPosition, wxDefaultSize);
-
-    frame->Show(true);
-    frame->Maximize();
+    NumeReMainFrame->Show(true);
+    NumeReMainFrame->Maximize();
 
     // Passed commandline items
     wxArrayString wxArgV;
@@ -210,13 +188,15 @@ bool MyApp::OnInit()
     {
         wxArgV.Add(argv[i]);
     }
+
     // force the history window to perform a
     // page down to scroll to its actually
     // last position
-    frame->forceHistoryPageDown();
-    frame->EvaluateCommandLine(wxArgV);
+    NumeReMainFrame->forceHistoryPageDown();
+    NumeReMainFrame->EvaluateCommandLine(wxArgV);
+
     // Tip of the day
-    if (frame->showTipAtStartup)
+    if (NumeReMainFrame->showTipAtStartup)
     {
         wxArrayString DialogText;
         DialogText.Add(_guilang.get("GUI_TIPOTD_HEAD"));
@@ -224,18 +204,20 @@ bool MyApp::OnInit()
         DialogText.Add(_guilang.get("GUI_TIPOTD_NEXT"));
         DialogText.Add(_guilang.get("GUI_TIPOTD_STAS"));
         DialogText.Add(_guilang.get("GUI_TIPOTD_CLOSE"));
-        frame->updateTipAtStartupSetting(ShowTip(frame, frame->tipProvider, DialogText));
-    }
-    delete frame->tipProvider;
-    frame->tipProvider = nullptr;
-    if (frame->m_UnrecoverableFiles.length())
-    {
-        frame->Refresh();
-        frame->Update();
-        wxMessageBox(_guilang.get("GUI_DLG_SESSION_RECREATIONERROR", frame->m_UnrecoverableFiles), _guilang.get("GUI_DLG_SESSION_ERROR"), wxICON_ERROR);
+        NumeReMainFrame->updateTipAtStartupSetting(ShowTip(NumeReMainFrame, NumeReMainFrame->tipProvider, DialogText));
     }
 
-    frame->Ready();
+    delete NumeReMainFrame->tipProvider;
+    NumeReMainFrame->tipProvider = nullptr;
+
+    if (NumeReMainFrame->m_UnrecoverableFiles.length())
+    {
+        NumeReMainFrame->Refresh();
+        NumeReMainFrame->Update();
+        wxMessageBox(_guilang.get("GUI_DLG_SESSION_RECREATIONERROR", NumeReMainFrame->m_UnrecoverableFiles), _guilang.get("GUI_DLG_SESSION_ERROR"), wxICON_ERROR);
+    }
+
+    NumeReMainFrame->Ready();
     return true;
 }
 
@@ -467,7 +449,6 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	g_pageSetupData = new wxPageSetupDialogData(*g_printData);
 
 	m_appStarting = false;
-	m_compileProject = false;
 
 	HINSTANCE hInstance = wxGetInstance();
 	char *pStr, szPath[_MAX_PATH];
@@ -920,10 +901,6 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
 		m_updateTimer->Stop();
 	}
 
-	if(m_terminal->IsConnected())
-	{
-		m_terminal->Disconnect();
-	}
 	if (m_terminal->IsWorking())
 	{
         m_terminal->EndKernelTask();
@@ -933,10 +910,6 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
 	if (m_debugViewer != nullptr)
         m_debugViewer->Destroy();
 
-	/*if(m_debugTerminal->IsConnected())
-	{
-		m_debugTerminal->Disconnect();
-	}*/
 
 	Destroy();
 }
@@ -1334,18 +1307,6 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 		}
 
 
-		case ID_STARTCONNECT:
-		{
-			OnStartConnect();
-			break;
-		}
-
-		case ID_DISCONNECT:
-		{
-			m_terminal->Disconnect();
-			break;
-		}
-
 		case ID_MENU_QUIT:
 		{
 			Close(true);
@@ -1438,30 +1399,6 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             m_currentEd->OnAbstrahizeSectionFromMenu();
             break;
         }
-
-		case ID_COMPILE_PROJECT:
-		case ID_COMPILE:
-		{
-			// We didn't have time to really test compile cancellation, so this
-			// code is commented out.
-			/*
-			if(m_compiler->IsCompiling())
-			{
-				m_compiler->HaltCompiling();
-			}
-			else
-			{
-				Compile();
-			}
-			*/
-
-			if(id == ID_COMPILE_PROJECT)
-			{
-				m_compileProject = true;
-			}
-			Compile();
-			break;
-		}
 
 		case ID_PROJECT_ADDFILE:
 		{
@@ -1703,7 +1640,10 @@ void NumeReWindow::openHTML(wxString HTMLcontent)
     frame->SetFocus();
 }
 
-
+//
+// Table Viewer and Editor functions
+//
+//
 void NumeReWindow::openTable(NumeRe::Container<string> _stringTable, const string& sTableName)
 {
     ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + sTableName + "()");
@@ -1756,19 +1696,210 @@ void NumeReWindow::editTable(NumeRe::Table _table, const string& sTableName)
     frame->SetFocus();
 }
 
-void NumeReWindow::showGraph(GraphHelper* _helper)
+// simple wrapper for the variable viewer
+void NumeReWindow::showTable(const wxString& tableName, const wxString& tableDisplayName)
 {
-    GraphViewer* viewer = new GraphViewer(this, "NumeRe: " + _helper->getTitle(), _helper, m_terminal);
+    openTable(m_terminal->getTable(tableName.ToStdString()), tableDisplayName.substr(0, tableDisplayName.length()-2).ToStdString());
+}
+
+//
+// Kernel window creation functions
+//
+//
+// This public member function handles the creation of windows
+// requested by the kernel
+void NumeReWindow::showWindow(NumeRe::Window& window)
+{
+    if (window.getType() == NumeRe::WINDOW_GRAPH)
+    {
+        showGraph(window);
+    }
+    else if (window.getType() == NumeRe::WINDOW_MODAL)
+    {
+        if (window.getWindowSettings().nControls & NumeRe::CTRL_FILEDIALOG)
+        {
+            showFileDialog(window);
+        }
+        else if (window.getWindowSettings().nControls & NumeRe::CTRL_FOLDERDIALOG)
+        {
+            showDirDialog(window);
+        }
+        else if (window.getWindowSettings().nControls & NumeRe::CTRL_TEXTENTRY)
+        {
+            showTextEntry(window);
+        }
+        else if (window.getWindowSettings().nControls & NumeRe::CTRL_MESSAGEBOX)
+        {
+            showMessageBox(window);
+        }
+        else if (window.getWindowSettings().nControls & NumeRe::CTRL_LISTDIALOG)
+        {
+            showListDialog(window);
+        }
+        else if (window.getWindowSettings().nControls & NumeRe::CTRL_SELECTIONDIALOG)
+        {
+            showSelectionDialog(window);
+        }
+    }
+}
+
+// This private member function displays a graph
+void NumeReWindow::showGraph(NumeRe::Window& window)
+{
+    GraphViewer* viewer = new GraphViewer(this, "NumeRe: " + window.getGraph()->getTitle(), window.getGraph(), m_terminal);
 
     viewer->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
     viewer->Show();
     viewer->SetFocus();
 }
 
-void NumeReWindow::showTable(const wxString& tableName, const wxString& tableDisplayName)
+// This private member function displays a file dialog
+void NumeReWindow::showFileDialog(NumeRe::Window& window)
 {
-    openTable(m_terminal->getTable(tableName.ToStdString()), tableDisplayName.substr(0, tableDisplayName.length()-2).ToStdString());
+    string sExpression = window.getWindowSettings().sExpression;
+    wxFileDialog dialog(this, window.getWindowSettings().sTitle, removeQuotationMarks(getNextArgument(sExpression, true)));
+    dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    int ret = dialog.ShowModal();
+
+    if (ret == wxID_CANCEL)
+        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
+    else
+    {
+        window.updateWindowInformation(NumeRe::STATUS_OK, dialog.GetPath().ToStdString());
+    }
 }
+
+// This private member function displays a directory dialog
+void NumeReWindow::showDirDialog(NumeRe::Window& window)
+{
+    string sExpression = window.getWindowSettings().sExpression;
+    wxDirDialog dialog(this, window.getWindowSettings().sTitle, removeQuotationMarks(getNextArgument(sExpression, true)));
+    dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    int ret = dialog.ShowModal();
+
+    if (ret == wxID_CANCEL)
+        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
+    else
+    {
+        window.updateWindowInformation(NumeRe::STATUS_OK, dialog.GetPath().ToStdString());
+    }
+}
+
+// This private member function displays a text entry dialog
+void NumeReWindow::showTextEntry(NumeRe::Window& window)
+{
+    string sExpression = window.getWindowSettings().sExpression;
+    wxTextEntryDialog dialog(this, window.getWindowSettings().sMessage, window.getWindowSettings().sTitle, removeQuotationMarks(getNextArgument(sExpression, true)));
+    dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    int ret = dialog.ShowModal();
+
+    if (ret == wxID_CANCEL)
+        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
+    else
+    {
+        window.updateWindowInformation(NumeRe::STATUS_OK, dialog.GetValue().ToStdString());
+    }
+}
+
+// This private member function displays a message box
+void NumeReWindow::showMessageBox(NumeRe::Window& window)
+{
+    string sExpression = window.getWindowSettings().sExpression;
+    long style = wxCENTRE;
+    int nControls = window.getWindowSettings().nControls;
+
+    if (nControls & NumeRe::CTRL_CANCELBUTTON)
+        style |= wxCANCEL;
+
+    if (nControls & NumeRe::CTRL_OKBUTTON)
+        style |= wxOK;
+
+    if (nControls & NumeRe::CTRL_YESNOBUTTON)
+        style |= wxYES_NO;
+
+    if (nControls & NumeRe::CTRL_ICONQUESTION)
+        style |= wxICON_QUESTION;
+
+    if (nControls & NumeRe::CTRL_ICONINFORMATION)
+        style |= wxICON_INFORMATION;
+
+    if (nControls & NumeRe::CTRL_ICONWARNING)
+        style |= wxICON_WARNING;
+
+    if (nControls & NumeRe::CTRL_ICONERROR)
+        style |= wxICON_ERROR;
+
+    int ret = wxMessageBox(removeQuotationMarks(window.getWindowSettings().sMessage), window.getWindowSettings().sTitle, style, this);
+
+    if (ret == wxOK)
+        window.updateWindowInformation(NumeRe::STATUS_OK, "ok");
+    else if (ret == wxCANCEL)
+        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "cancel");
+    else if (ret == wxYES)
+        window.updateWindowInformation(NumeRe::STATUS_OK, "yes");
+    else
+        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "no");
+}
+
+// This private member function shows a list dialog
+void NumeReWindow::showListDialog(NumeRe::Window& window)
+{
+    string sExpression = window.getWindowSettings().sExpression;
+    wxArrayString choices;
+
+    while (sExpression.length())
+    {
+        choices.Add(removeQuotationMarks(getNextArgument(sExpression, true)));
+    }
+
+    wxSingleChoiceDialog dialog(this, window.getWindowSettings().sMessage, window.getWindowSettings().sTitle, choices);
+    dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    int ret = dialog.ShowModal();
+
+    if (ret == wxID_CANCEL)
+        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
+    else
+    {
+        window.updateWindowInformation(NumeRe::STATUS_OK, choices[dialog.GetSelection()].ToStdString());
+    }
+}
+
+// This private member function shows a selection dialog
+void NumeReWindow::showSelectionDialog(NumeRe::Window& window)
+{
+    string sExpression = window.getWindowSettings().sExpression;
+    wxArrayString choices;
+
+    while (sExpression.length())
+    {
+        choices.Add(removeQuotationMarks(getNextArgument(sExpression, true)));
+    }
+
+    wxMultiChoiceDialog dialog(this, window.getWindowSettings().sMessage, window.getWindowSettings().sTitle, choices);
+    dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    int ret = dialog.ShowModal();
+
+    if (ret == wxID_CANCEL)
+        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
+    else
+    {
+        wxArrayInt selections = dialog.GetSelections();
+
+        sExpression.clear();
+
+        for (size_t i = 0; i < selections.size(); i++)
+        {
+            sExpression += choices[selections[i]].ToStdString() + "\",\"";
+        }
+
+        if (sExpression.length())
+            sExpression.erase(sExpression.length()-3);
+
+        window.updateWindowInformation(NumeRe::STATUS_OK, sExpression);
+    }
+}
+
+
 
 void NumeReWindow::pass_command(const wxString& command)
 {
@@ -1805,6 +1936,11 @@ void NumeReWindow::evaluateDebugInfo(const vector<string>& vDebugInfo)
     m_debugViewer->setDebugInfo(sTitle, vStack);
 }
 
+
+//
+// LaTeX handler functions
+//
+//
 void NumeReWindow::createLaTeXFile()
 {
     wxFileName filename = m_currentEd->GetFileName();
@@ -1996,6 +2132,11 @@ void NumeReWindow::compileLaTeX()
     }
 }
 
+
+//
+// File tree handler functions
+//
+//
 void NumeReWindow::deleteFile()
 {
     FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
@@ -2007,7 +2148,6 @@ void NumeReWindow::deleteFile()
     _recycler.recycle(data->filename.c_str());
     //wxRemoveFile(data->filename);
 }
-
 
 void NumeReWindow::insertCopiedFile()
 {
@@ -2026,7 +2166,6 @@ void NumeReWindow::insertCopiedFile()
     wxCopyFile(source_filename.GetFullPath(), target_filename.GetFullPath());
     m_copiedTreeItem = 0;
 }
-
 
 void NumeReWindow::renameFile()
 {
@@ -2053,6 +2192,52 @@ void NumeReWindow::renameFile()
 
     wxRenameFile(source_filename.GetFullPath(), target_filename.GetFullPath());
 }
+
+void NumeReWindow::OnOpenInExplorer()
+{
+    wxString fileName = getTreeFolderPath(m_clickedTreeItem);
+
+    if (fileName.length())
+        ShellExecute(nullptr, nullptr, fileName.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+}
+
+void NumeReWindow::OnCreateNewFolder()
+{
+    wxString fileName = getTreeFolderPath(m_clickedTreeItem);
+
+    if (!fileName.length())
+        return;
+
+    wxTextEntryDialog* textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWFOLDER_QUESTION"), _guilang.get("GUI_DLG_NEWFOLDER"), _guilang.get("GUI_DLG_NEWFOLDER_DFLT"));
+    int retval = textentry->ShowModal();
+
+    if (retval == wxID_CANCEL)
+    {
+        delete textentry;
+        return;
+    }
+
+    if (textentry->GetValue().length())
+    {
+        wxString foldername = fileName + "\\" + textentry->GetValue();
+        wxMkdir(foldername);
+    }
+    delete textentry;
+}
+
+void NumeReWindow::OnRemoveFolder()
+{
+    FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
+    if (wxYES != wxMessageBox(_guilang.get("GUI_DLG_DELETE_QUESTION", data->filename.ToStdString()), _guilang.get("GUI_DLG_DELETE"), wxCENTRE | wxICON_QUESTION | wxYES_NO, this))
+        return;
+    if (m_clickedTreeItem == m_copiedTreeItem)
+        m_copiedTreeItem = 0;
+    Recycler _recycler;
+    int error = _recycler.recycle(data->filename.ToStdString().c_str());
+    error;
+    return;
+}
+
 
 
 void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
@@ -3479,18 +3664,6 @@ void NumeReWindow::Test(wxCommandEvent& WXUNUSED(event))
 }
 
 
-// not currently used.  may come into play later regarding terminal resizing
-void NumeReWindow::CheckSize()
-{
-	int x, y;
-	this->GetClientSize(&x, &y);
-	wxString result;
-	result << x << ", " << y;
-	wxMessageBox(result );
-	m_currentEd->SetScrollWidth(x);
-
-}
-
 // UI update code begins here
 
 //////////////////////////////////////////////////////////////////////////////
@@ -3531,8 +3704,6 @@ void NumeReWindow::OnStatusTimer(wxTimerEvent &WXUNUSED(event))
 		UpdateStatusBar();
 		OnUpdateSaveUI();
 		ToolbarStatusUpdate();
-		OnUpdateConnectionUI();
-		OnUpdateProjectUI();
 	}
 }
 
@@ -3581,59 +3752,8 @@ void NumeReWindow::ToolbarStatusUpdate()
         tb->ToggleTool(ID_MENU_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
     }
     tb->ToggleTool(ID_MENU_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
-
-	/*if(isDebugging)
-	{
-		tb->EnableTool(ID_DEBUG_START, false);
-		tb->EnableTool(ID_DEBUG_CONTINUE, isPaused);
-		tb->EnableTool(ID_DEBUG_STOP, true);
-
-		tb->EnableTool(ID_DEBUG_STEPNEXT, isPaused);
-		tb->EnableTool(ID_DEBUG_STEPOVER, isPaused);
-		tb->EnableTool(ID_DEBUG_STEPOUT, isPaused);
-	}
-	else
-	{
-		// skip ID_DEBUG_START;
-		for(int i = ID_DEBUG_IDS_FIRST + 1; i < ID_DEBUG_IDS_LAST; i++)
-		{
-			tb->EnableTool(i, false);
-		}
-
-		//ProjectInfo* proj = m_currentEd->GetProject();
-
-		//bool canStartDebug = proj->IsCompiled();
-		tb->EnableTool(ID_DEBUG_START, true);
-	}*/
 }
 
-//////////////////////////////////////////////////////////////////////////////
-///  private OnUpdateConnectionUI
-///  Updates the terminal connection buttons and menu items
-///
-///  @return void
-///
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::OnUpdateConnectionUI()//wxUpdateUIEvent &event)
-{
-	bool termConnected = m_terminal->IsConnected();
-
-	wxToolBar* tb = GetToolBar();
-	tb->EnableTool(ID_STARTCONNECT, !termConnected);
-	tb->EnableTool(ID_DISCONNECT, termConnected);
-
-	wxMenuBar* mb = GetMenuBar();
-	WXWidget handle = mb->GetHandle();
-	if(handle != NULL)
-	{
-		wxMenu* toolsMenu = mb->GetMenu(mb->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
-		toolsMenu->Enable(ID_STARTCONNECT, !termConnected);
-		toolsMenu->Enable(ID_DISCONNECT, termConnected);
-	}
-
-
-}
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private UpdateStatusBar
@@ -3756,31 +3876,6 @@ void NumeReWindow::OnUpdateSaveUI()//wxUpdateUIEvent &event)
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////////
-///  private OnUpdateProjectUI
-///  Updates project-related menu items
-///
-///  @return void
-///
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::OnUpdateProjectUI ()
-{
-	/*
-	bool enable = (m_book->GetPageCount() > 1) ||
-		(m_currentEd && (m_currentEd->GetLength() > 0));
-	*/
-	bool projectOpen = (m_projMultiFiles != NULL);
-
-	wxMenuBar* mb = GetMenuBar();
-	WXWidget handle = mb->GetHandle();
-	if(handle != NULL)
-	{
-		mb->FindItem(ID_CLOSE_PROJECT)->Enable(projectOpen);
-		mb->FindItem(ID_COMPILE_PROJECT)->Enable(projectOpen);
-	}
-
-}
 
 // Gets / sets begin here
 
@@ -3860,36 +3955,6 @@ int* NumeReWindow::SelectIntVar(int variableName)
 #endif
         return NULL;
 	}
-}
-
-//////////////////////////////////////////////////////////////////////////////
-///  public IsDebugging
-///  Returns the debugger's active status
-///
-///  @return bool Whether or not the debugger is active
-///
-///  @remarks Used by ChameleonEditor
-///
-///  @author Mark Erikson @date 04-23-2004
-//////////////////////////////////////////////////////////////////////////////
-bool NumeReWindow::IsDebugging()
-{
-//	return m_debugger->isDebugging();
-    return false;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-///  public IsDebuggerPaused
-///  Returns if the debugger is paused or not
-///
-///  @return bool Whether or not the debugger is paused
-///
-///  @author Mark Erikson @date 04-23-2004
-//////////////////////////////////////////////////////////////////////////////
-bool NumeReWindow::IsDebuggerPaused()
-{
-//	return m_debugger->isPaused();
-    return false;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -5403,83 +5468,6 @@ NetworkCallResult NumeReWindow::CheckNetworkStatus()
 }
 
 //////////////////////////////////////////////////////////////////////////////
-///  private Compile
-///  Compiles the active editor's project
-///
-///  @return void
-///
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::Compile()
-{
-	//bool doCompile = true;
-
-	if(!m_compileProject)
-	{
-		/*
-		if(!m_currentEd->HasBeenSaved())
-		{
-			wxMessageBox("Please save this file before trying to compile it.",
-				"Unsaved File", wxOK | wxICON_INFORMATION);
-
-			doCompile = false;
-		}
-		else if(m_currentEd->Modified())
-		{
-			// yes, same message... this can later be changed to ask about
-			// saving, then do the appropriate thing.
-			wxMessageBox("Please save this file before trying to compile it.", "Unsaved File",
-				wxOK | wxICON_INFORMATION);
-
-			doCompile = false;
-		}
-		*/
-
-		if(!m_currentEd->HasBeenSaved() || m_currentEd->Modified())
-		{
-			int tabNum = m_book->FindPagePosition(m_currentEd);
-			int result = HandleModifiedFile(tabNum, MODIFIEDFILE_COMPILE);
-
-			if(result == wxCANCEL || result == wxNO)
-			{
-				return;
-			}
-		}
-	}
-
-	/*if(doCompile)
-	{
-		ProjectInfo* projToCompile;
-		if(m_compileProject)
-		{
-			projToCompile = m_projMultiFiles;
-		}
-		else
-		{
-			projToCompile = m_currentEd->GetProject();
-		}
-
-
-		if(!projToCompile->IsRemote())
-		{
-			wxMessageBox("Local compiling has not been implemented.\nPlease save this file to a network server\nand try again",
-						"Can't Compile Locally", wxOK | wxICON_WARNING);
-			return;
-		}
-
-
-
-		//m_outputPanel->ClearOutput();
-
-		//m_compiler->CompileProject(projToCompile, m_outputPanel);
-
-		int outputIndex = m_noteTerm->FindPagePosition(m_outputPanel);
-		m_noteTerm->SetSelection(outputIndex);
-		m_outputPanel->SetFocus();
-	}*/
-}
-
-//////////////////////////////////////////////////////////////////////////////
 ///  public FocusOnLine
 ///  Moves the cursor to a given file and line, with an optional line marker
 ///
@@ -5880,52 +5868,6 @@ void NumeReWindow::OnExecuteFile(const string& sFileName)
     m_terminal->pass_command(command);
 }
 
-void NumeReWindow::OnStartConnect()
-{
-checkPassword:
-	if(!CheckForBlankPassword())
-	{
-		return;
-	}
-restartConnection:
-	NetworkStatus isok = m_network->GetStatus();
-	if(isok == NET_GOOD)
-	{
-
-		m_terminal->Connect();
-#ifdef DO_LOG
-		wxLogDebug("Connected: %d", m_terminal->IsConnected());
-#endif
-
-		// Focus on the terminal
-		///int terminalIndex = m_noteTerm->FindPagePosition(m_termContainer);
-		///m_noteTerm->SetSelection(terminalIndex);
-		m_terminal->SetFocus();
-	}
-	else if(isok == NET_AUTH_FAILED)
-	{
-#ifdef DO_LOG
-		wxLogDebug("User gave us an invalid password");
-#endif
-		wxMessageBox("Your password was not accepted.  Perhaps you typed it wrong?", "Invalid Password",
-		wxOK | wxICON_HAND);
-
-		// reset the password to blank so we go into CheckForBlankPassword()
-		m_options->SetPassphrase(wxEmptyString);
-		goto checkPassword;
-	}
-	else
-	{
-#ifdef DO_LOG
-		wxLogDebug("Tried to start Terminal with invalid networking status: %d", isok);
-#endif
-		if(CheckNetworkStatus() == NETCALL_REDO)
-		{
-			goto restartConnection;
-		}
-	}
-}
-
 void NumeReWindow::OnCopy()
 {
 	/* HACK !!!
@@ -5958,51 +5900,6 @@ void NumeReWindow::OnCopy()
 	{
 		m_currentEd->Copy();
 	}
-}
-
-void NumeReWindow::OnOpenInExplorer()
-{
-    wxString fileName = getTreeFolderPath(m_clickedTreeItem);
-
-    if (fileName.length())
-        ShellExecute(nullptr, nullptr, fileName.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
-}
-
-void NumeReWindow::OnCreateNewFolder()
-{
-    wxString fileName = getTreeFolderPath(m_clickedTreeItem);
-
-    if (!fileName.length())
-        return;
-
-    wxTextEntryDialog* textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWFOLDER_QUESTION"), _guilang.get("GUI_DLG_NEWFOLDER"), _guilang.get("GUI_DLG_NEWFOLDER_DFLT"));
-    int retval = textentry->ShowModal();
-
-    if (retval == wxID_CANCEL)
-    {
-        delete textentry;
-        return;
-    }
-
-    if (textentry->GetValue().length())
-    {
-        wxString foldername = fileName + "\\" + textentry->GetValue();
-        wxMkdir(foldername);
-    }
-    delete textentry;
-}
-
-void NumeReWindow::OnRemoveFolder()
-{
-    FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
-    if (wxYES != wxMessageBox(_guilang.get("GUI_DLG_DELETE_QUESTION", data->filename.ToStdString()), _guilang.get("GUI_DLG_DELETE"), wxCENTRE | wxICON_QUESTION | wxYES_NO, this))
-        return;
-    if (m_clickedTreeItem == m_copiedTreeItem)
-        m_copiedTreeItem = 0;
-    Recycler _recycler;
-    int error = _recycler.recycle(data->filename.ToStdString().c_str());
-    error;
-    return;
 }
 
 void NumeReWindow::OnFindReplace(int id)

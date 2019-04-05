@@ -524,6 +524,8 @@
 		<Unit filename="kernel/kernel.hpp" />
 		<Unit filename="kernel/syntax.cpp" />
 		<Unit filename="kernel/syntax.hpp" />
+		<Unit filename="kernel/windowmanager.cpp" />
+		<Unit filename="kernel/windowmanager.hpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />

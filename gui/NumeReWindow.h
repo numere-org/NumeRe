@@ -28,6 +28,7 @@
 #include "viewerbook.hpp"
 #include "filetree.hpp"
 #include "NumeReStatusbar.hpp"
+#include "../kernel/windowmanager.hpp"
 #include "../kernel/core/plotting/graph_helper.hpp"
 #include "../kernel/core/datamanagement/container.hpp"
 #include "../kernel/core/datamanagement/table.hpp"
@@ -163,19 +164,6 @@ class NumeReWindow : public wxFrame
         void SetIntVar(int variableName, int value);
         int GetIntVar(int variableName);
 
-        bool IsEnabled(int permission);
-        bool IsDebugging();
-        bool IsDebuggerPaused();
-
-        bool GetRemoteMode()
-        {
-            return m_remoteMode;
-        }
-        void SetRemoteMode(bool remote)
-        {
-            m_remoteMode = remote;
-        }
-
         void FocusOnLine(wxString filename, int linenumber, bool showMarker = true, wxString linecontents = wxEmptyString);
 
         NetworkCallResult CheckNetworkStatus();
@@ -185,14 +173,14 @@ class NumeReWindow : public wxFrame
         void OpenSourceFile(wxArrayString fnames, unsigned int nLine = 0, int nOpenFileFlag = OPENFILE_NOTHING);
         void openImage(wxFileName filename);
         void openPDF(wxFileName filename);
+        bool ShowHelp(const wxString& docId);
         void openHTML(wxString HTMLcontent);
         void openTable(NumeRe::Container<string> _stringTable, const string& sTableName);
         void openTable(NumeRe::Table _table, const string& sTableName);
         void editTable(NumeRe::Container<string> _stringTable, const string& sTableName);
         void editTable(NumeRe::Table _table, const string& sTableName);
-        bool ShowHelp(const wxString& docId);
-        void showGraph(GraphHelper* _helper);
         void showTable(const wxString& tableName, const wxString& tableDisplayName);
+        void showWindow(NumeRe::Window& window);
         void pass_command(const wxString& command);
         void evaluateDebugInfo(const vector<string>& vDebugInfo);
         void createLaTeXFile();
@@ -208,6 +196,7 @@ class NumeReWindow : public wxFrame
 
         MyTipProvider* tipProvider;
         bool showTipAtStartup;
+
         void updateTipAtStartupSetting(bool bTipAtStartup);
         void EvaluateOptions();
         void EvaluateCommandLine(wxArrayString& wxArgV);
@@ -242,8 +231,6 @@ class NumeReWindow : public wxFrame
         void InitializeProgramOptions();
         void prepareSession();
 
-        void CheckSize();
-
         void CopyEditorSettings(NumeReEditor* edit, FileFilterType _fileType);
 
         void OnMenuEvent(wxCommandEvent &event);
@@ -261,7 +248,6 @@ class NumeReWindow : public wxFrame
         void OnOpenInExplorer();
         void OnCreateNewFolder();
         void OnRemoveFolder();
-        void OnStartConnect();
         void OnSaveSourceFile( int id );
         void OnOpenSourceFile( int id );
         void OnExecuteFile(const string& sFileName);
@@ -269,10 +255,8 @@ class NumeReWindow : public wxFrame
         void OnClose(wxCloseEvent& event);
         void Test(wxCommandEvent& event);
 
-        void OnUpdateSaveUI();//wxUpdateUIEvent &event);
-        void ToolbarStatusUpdate();//wxUpdateUIEvent &event);
-        void OnUpdateConnectionUI();//wxUpdateUIEvent &event);
-        void OnUpdateProjectUI();//wxUpdateUIEvent &event);
+        void OnUpdateSaveUI();
+        void ToolbarStatusUpdate();
         void OnIdle(wxIdleEvent &event);
         void UpdateStatusBar();
 
@@ -299,6 +283,14 @@ class NumeReWindow : public wxFrame
         void OnFileSystemEvent(wxFileSystemWatcherEvent& event);
         void CreateProcedureTree(const string& sProcedurePath);
 
+        void showGraph(NumeRe::Window& window);
+        void showFileDialog(NumeRe::Window& window);
+        void showDirDialog(NumeRe::Window& window);
+        void showTextEntry(NumeRe::Window& window);
+        void showMessageBox(NumeRe::Window& window);
+        void showListDialog(NumeRe::Window& window);
+        void showSelectionDialog(NumeRe::Window& window);
+
         wxArrayString OpenFile(FileFilterType filterType );
         bool SaveFile(bool saveas, bool askLocalRemote, FileFilterType filterType);
         void CloseFile(int pageNr = -1, bool askforsave = true);
@@ -319,8 +311,6 @@ class NumeReWindow : public wxFrame
         void LoadFilesIntoProjectTree(wxString configPath, FileFilterType fileType, wxTreeItemId treeid,
                                       wxFileConfig& config, wxPathFormat currentPathFormat);
         void LoadFilesToTree(wxString fromPath, FileFilterType fileType, wxTreeItemId treeid);
-
-        void Compile();
 
 
         wxString ConstructFilterString(FileFilterType filterType);
@@ -468,7 +458,6 @@ class NumeReWindow : public wxFrame
         bool m_remoteMode;
         bool m_appStarting;
         bool m_currentlyDebugging;
-        bool m_compileProject;
         bool m_multiRowState;
         bool m_loadingFilesDuringStartup;
 

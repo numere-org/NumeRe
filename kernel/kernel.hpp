@@ -44,8 +44,9 @@
 #include "core/plugin.hpp"
 #include "core/ui/language.hpp"
 #include "core/procedure/procedurelibrary.hpp"
-// --> PARSER-HEADER <--
 #include "core/ParserLib/muParser.h"
+
+#include "windowmanager.hpp"
 
 using namespace std;
 using namespace mu;
@@ -94,7 +95,7 @@ class NumeReKernel
             NUMERE_EDIT_TABLE,
             NUMERE_DEBUG_EVENT,
             NUMERE_ANSWER_READ,
-            NUMERE_GRAPH_UPDATE
+            NUMERE_SHOW_WINDOW
         };
 
         enum DebuggerCodes
@@ -122,6 +123,7 @@ class NumeReKernel
         Script _script;
         Procedure _procedure;
         NumeReDebugger _debugger;
+        NumeRe::WindowManager _manager;
 
         // private member functions for special tasks
         void printResult(const string& sLine, const string& sCmdCache, bool bScriptRunning);
@@ -185,13 +187,13 @@ class NumeReKernel
         static void issueWarning(string sWarningMessage);
         static void setFileName(const string& sFileName);
         static int numberOfNumbersPerLine(const Settings& _option);
-        static void statusBar(int nStep, int nFirstStep, int nFinalStep, const string& sType);
+        static void progressBar(int nStep, int nFirstStep, int nFinalStep, const string& sType);
         static void getline(string& sLine);
         static void gotoLine(const string& sFile, unsigned int nLine = 0);
         static void setDocumentation(const string& _sDocumentation);
         static bool GetAsyncCancelState();
         static void showTable(NumeRe::Table _table, string __name, bool openeditable = false);
-        static void updateGraphWindow(GraphHelper* _helper);
+        void showWindow(const NumeRe::Window& window);
         static NumeRe::Table getTable();
         NumeRe::Table getTable(const string& sTableName);
         static void showDebugEvent(const string& sTitle, const vector<string>& vStacktrace);
@@ -243,6 +245,11 @@ class NumeReKernel
             return _debugger;
         }
 
+        NumeRe::WindowManager& getWindowManager()
+        {
+            return _manager;
+        }
+
         map<string,string> getPluginLanguageStrings();
         map<string,string> getFunctionLanguageStrings();
         vector<string> getPluginCommands();
@@ -281,7 +288,7 @@ struct NumeReTask
     size_t nLine;
     vector<string> vDebugEvent;
     NumeRe::Table table;
-    GraphHelper* graph;
+    NumeRe::Window window;
     int taskType;
 };
 

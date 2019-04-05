@@ -155,6 +155,7 @@ class SyntaxError
             NO_TARGET,
             NO_ZEROES_OPTIONS,
             NO_ZEROES_VAR,
+            NO_DEFAULTVALUE_FOR_DIALOG,
             /// INSERT HERE
             NUMBER_OF_FUNCTIONS_NOT_MATCHING=2600,
             OVERFITTING_ERROR=2700,

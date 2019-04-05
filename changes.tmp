@@ -50,3 +50,4 @@ Cleaned	Tables may now store and handle "inf" and "-inf" correctly.
 Cleaned	The internal architecture of the definition object was improved.
 Applied	The debugger was massively improved and supports now standard features like "Step", "Step over" and "Step out". Additionally it supports modifiying breakpoint during execution and now halts the execution right before an error is processed.
 Added	The transparency factor and the number of contour lines may now be modified by appending the value to the corresponding option value (i.e. "alpha=0.75" and "pcont=7")
+New	The "dialog" command may be used to display various dialogs to interact with the user.

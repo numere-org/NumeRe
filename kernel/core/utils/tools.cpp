@@ -2230,7 +2230,7 @@ string getNextIndex(string& sArgList, bool bCut)
 // Wrapper for the static member function of the kernel
 void make_progressBar(int nStep, int nFirstStep, int nFinalStep, const string& sType)
 {
-	NumeReKernel::statusBar(nStep, nFirstStep, nFinalStep, sType);
+	NumeReKernel::progressBar(nStep, nFirstStep, nFinalStep, sType);
 	return;
 }
 

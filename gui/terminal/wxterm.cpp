@@ -484,8 +484,9 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
                 }
                 break;
             }
-            case NumeReKernel::NUMERE_GRAPH_UPDATE:
-                m_wxParent->showGraph(task.graph);
+            case NumeReKernel::NUMERE_SHOW_WINDOW:
+                Refresh();
+                m_wxParent->showWindow(task.window);
                 break;
             case NumeReKernel::NUMERE_OPEN_DOC:
                 m_wxParent->ShowHelp(task.sString);
