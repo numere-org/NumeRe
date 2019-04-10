@@ -6371,7 +6371,7 @@
 	"datastructures.h"
 	"ProjectInfo.h"
 
-1554029221 c:\cpp\numere-source\trunk\common\datastructures.h
+1554800540 c:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -6581,7 +6581,7 @@
 	"gterm.hpp"
 	"../../kernel/kernel.hpp"
 
-1554029221 c:\cpp\numere-source\trunk\gui\numerewindow.h
+1554800540 c:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	"../common/datastructures.h"
@@ -6598,6 +6598,7 @@
 	"viewerbook.hpp"
 	"filetree.hpp"
 	"NumeReStatusbar.hpp"
+	"../kernel/windowmanager.hpp"
 	"../kernel/core/plotting/graph_helper.hpp"
 	"../kernel/core/datamanagement/container.hpp"
 	"../kernel/core/datamanagement/table.hpp"
@@ -6749,7 +6750,7 @@
 	<string>
 	<vector>
 
-1550658141 c:\cpp\numere-source\trunk\kernel\core\ui\error.hpp
+1554800540 c:\cpp\numere-source\trunk\kernel\core\ui\error.hpp
 	<string>
 	"language.hpp"
 
@@ -6919,7 +6920,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1554302938 c:\cpp\numere-source\trunk\kernel\kernel.hpp
+1554800540 c:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	<queue>
@@ -6945,6 +6946,7 @@
 	"core/ui/language.hpp"
 	"core/procedure/procedurelibrary.hpp"
 	"core/ParserLib/muParser.h"
+	"windowmanager.hpp"
 
 1530082133 c:\cpp\numere-source\trunk\kernel\core\io\output.hpp
 	<string>
@@ -8135,7 +8137,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1554029222 source:c:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1554800540 source:c:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -8354,7 +8356,7 @@
 	"wxssh.h"
 	"../../common/debug.h"
 
-1554029222 source:c:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1554800540 source:c:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -8411,7 +8413,7 @@
 
 1530082144 c:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1554303050 source:c:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1554800540 source:c:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 	"io/fileops.hpp"
@@ -8498,7 +8500,7 @@
 	"output.hpp"
 	"../../kernel.hpp"
 
-1553335870 source:c:\cpp\numere-source\trunk\kernel\core\maths\define.cpp
+1554897258 source:c:\cpp\numere-source\trunk\kernel\core\maths\define.cpp
 	"define.hpp"
 	"../../kernel.hpp"
 
@@ -8519,7 +8521,7 @@
 	"odesolver.hpp"
 	"../../kernel.hpp"
 
-1554303093 source:c:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
+1554381532 source:c:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	"spline.h"
@@ -8634,7 +8636,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1554035453 source:c:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1554800540 source:c:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
@@ -8658,7 +8660,7 @@
 1550658141 source:c:\cpp\numere-source\trunk\kernel\core\plugin.cpp
 	"plugin.hpp"
 
-1538057697 source:c:\cpp\numere-source\trunk\kernel\core\plugin_histogram.cpp
+1554800540 source:c:\cpp\numere-source\trunk\kernel\core\plugin_histogram.cpp
 	"plugins.hpp"
 	"../kernel.hpp"
 
@@ -8745,7 +8747,7 @@
 	<cstddef>
 	<cstdarg>
 
-1554029222 source:c:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
+1554800540 source:c:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
 	"tools.hpp"
 	"../../kernel.hpp"
 	<cstdlib>
@@ -8771,7 +8773,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1554029221 source:c:\cpp\numere-source\trunk\kernel\kernel.cpp
+1554800540 source:c:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 	"core/datamanagement/dataops.hpp"
@@ -9112,7 +9114,7 @@
 
 1412507950 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\apptrait.h
 
-1554029222 source:c:\cpp\numere-source\trunk\gui\dialogs\variableviewer.cpp
+1554800540 source:c:\cpp\numere-source\trunk\gui\dialogs\variableviewer.cpp
 	"variableviewer.hpp"
 	"../../kernel/core/ui/language.hpp"
 	"../../common/datastructures.h"
@@ -9207,6 +9209,15 @@
 	"core/plotting/graph_helper.hpp"
 
 1554452064 source:d:\cpp\numere-source\trunk\kernel\windowmanager.cpp
+	"windowmanager.hpp"
+	"kernel.hpp"
+
+1554800540 c:\cpp\numere-source\trunk\kernel\windowmanager.hpp
+	<map>
+	<string>
+	"core/plotting/graph_helper.hpp"
+
+1554800540 source:c:\cpp\numere-source\trunk\kernel\windowmanager.cpp
 	"windowmanager.hpp"
 	"kernel.hpp"
 

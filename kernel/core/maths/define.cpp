@@ -288,6 +288,11 @@ bool FunctionDefinition::decodeDefinition()
     // new placeholders
     replaceArgumentOccurences();
 
+    // If the parsed definition string is multivalue
+    // surround it with braces
+    if (isMultiValue(sParsedDefinitionString))
+        sParsedDefinitionString = "{" + sParsedDefinitionString + "}";
+
     return true;
 }
 

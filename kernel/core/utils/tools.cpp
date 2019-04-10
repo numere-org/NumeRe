@@ -560,14 +560,20 @@ bool isMultiValue(const string& sExpr, bool bIgnoreClosingParenthesis)
 		return false;
 	else
 	{
+	    size_t nQuotationMarks = 0;
+
 	    // Go through the string
 		for (unsigned int i = 0; i < sExpr.length(); i++)
 		{
 		    // Jump over parentheses
-			if (sExpr[i] == '(' || sExpr[i] == '{' || sExpr[i] == '[')
+			if ((sExpr[i] == '(' || sExpr[i] == '{' || sExpr[i] == '[') && !(nQuotationMarks % 2))
                 i += getMatchingParenthesis(sExpr.substr(i));
 
-			if (sExpr[i] == ',')
+            // Count quotation marks
+            if (sExpr[i] == '"')
+                nQuotationMarks++;
+
+			if (sExpr[i] == ',' && !(nQuotationMarks % 2))
 				return true;
 		}
 
