@@ -1610,8 +1610,16 @@ static vector<string> parser_EvaluateStringVectors(string sLine, const map<strin
 					size_t nMatch = 0;
 
 					// Vector found: replace its occurence with its nCurrentComponent-th value
-					while ((nMatch = currentline.find(iter->first)) != string::npos)
+					while ((nMatch = currentline.find(iter->first, nMatch)) != string::npos)
 					{
+					    // Do not replace vector variables, which are part
+					    // of a string
+					    if (isInQuotes(currentline, nMatch))
+					    {
+					        nMatch++;
+                            continue;
+					    }
+
 					    // Handle the size of the current vector correspondingly
 						if ((iter->second).size() > nCurrentComponent)
 						{
