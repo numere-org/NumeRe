@@ -23,13 +23,13 @@
 using namespace std;
 
 static void handleArgumentForIndices(Indices& _idx, Parser& _parser, Datafile& _data, string& sArgument, const string& sCmd);
-static void extractIndexList(string& sArgument, string sI[2], string sJ[2]);
-static void handleIndexVectors(Parser& _parser, Indices& _idx, string sI[2], string sJ[2]);
-static void handleCasualIndices(Parser& _parser, Indices& _idx, string sI[2], string sJ[2], const string& sCmd);
+static void extractIndexList(string& sArgument, vector<string>& vLines, vector<string>& vCols);
+static void handleIndexVectors(Parser& _parser, Indices& _idx, vector<string>& vLines, vector<string>& vCols);
+static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<string>& vLines, vector<string>& vCols, const string& sCmd);
 static void expandIndexVectors(Indices& _idx, Datafile& _data, const string& sCmd);
 static void expandStringIndexVectors(Indices& _idx, Datafile& _data);
-static bool isCandidateForVectors(string sI[2], string sJ[2]);
-static bool isCandidateForCasuals(string sI[2], string sJ[2]);
+static bool isCandidateForVectors(vector<string>& vLines, vector<string>& vCols);
+static bool isCandidateForCasuals(vector<string>& vLines, vector<string>& vCols);
 /*
  * --> Gibt DATENELEMENT-Indices als Ints in einem Indices-Struct zurueck <--
  * --> Index = -1, falls der Index nicht gefunden wurde/kein DATENELEMENT uebergeben wurde <--
@@ -46,18 +46,18 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
 	unsigned int nPos = 0;
 
 	// Check, whether indices are available
-	if (sCmd.find('(') == string::npos)
+	if (sCmd.find_first_of("({") == string::npos)
 		return _idx;
 
 	// Find parenthesis position and get the matching closing parenthesis
-	nPos = sCmd.find('(');
-	size_t nClosingParens = getMatchingParenthesis(sCmd);
+	nPos = sCmd.find_first_of("({");
+	size_t nClosingParens = getMatchingParenthesis(sCmd.substr(sCmd.find_first_of("({")));
 
 	// Return, if the closing parenthesis is missing
 	if (nClosingParens == string::npos)
 		return _idx;
 
-    sTableName = sCmd.substr(0, sCmd.find('('));
+    sTableName = sCmd.substr(0, sCmd.find_first_of("({"));
 
     // Remove leading whitespaces
     if (sTableName.find(' ') != string::npos)
@@ -65,14 +65,17 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
 
     StripSpaces(sTableName);
 
-	sArgument = sCmd.substr(nPos + 1, nClosingParens - nPos - 1);
+	sArgument = sCmd.substr(nPos + 1, nClosingParens - 1);
 
 	// If the argument contains tables, get their values. This leads to a recursion!
-	if (sArgument.find("data(") != string::npos || _data.containsCacheElements(sArgument))
+	if (sArgument.find("data(") != string::npos || _data.containsTablesOrClusters(sArgument))
 		getDataElements(sArgument, _parser, _data, _option);
 
     // update the dimension variables
-    _data.updateDimensionVariables(sTableName);
+    if (sCmd[nPos] == '(')
+        _data.updateDimensionVariables(sTableName);
+    else
+        _data.updateClusterSizeVariables(sTableName);
 
 	// Remove not necessary white spaces
 	StripSpaces(sArgument);
@@ -103,24 +106,24 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
 
 static void handleArgumentForIndices(Indices& _idx, Parser& _parser, Datafile& _data, string& sArgument, const string& sCmd)
 {
-	string sI[2] = {"<<NONE>>", "<<NONE>>"};
-	string sJ[2] = {"<<NONE>>", "<<NONE>>"};
+	vector<string> vLines {"<<NONE>>", "<<NONE>>"};
+	vector<string> vCols {"<<NONE>>", "<<NONE>>"};
 
 	// extract the (textual) indices from the argument list and store it in sI and sJ
-	extractIndexList(sArgument, sI, sJ);
+	extractIndexList(sArgument, vLines, vCols);
 
 	// Ensure that the access equation contains at least one vector
-	if (isCandidateForVectors(sI, sJ))
+	if (isCandidateForVectors(vLines, vCols))
 	{
         // Try to match the textual indices to vectors
-        handleIndexVectors(_parser, _idx, sI, sJ);
+        handleIndexVectors(_parser, _idx, vLines, vCols);
 	}
 
 	// Ensure that the indices are casuals and no indices
-	if (isCandidateForCasuals(sI, sJ))
+	if (isCandidateForCasuals(vLines, vCols))
     {
         // Handle the casual indices
-        handleCasualIndices(_parser, _idx, sI, sJ, sCmd);
+        handleCasualIndices(_parser, _idx, vLines, vCols, sCmd);
     }
 
 	if (_idx.vI.size() || _idx.vJ.size())
@@ -131,10 +134,11 @@ static void handleArgumentForIndices(Indices& _idx, Parser& _parser, Datafile& _
 }
 
 // separates the argument into its up to four parts and returns the position after the last operator
-static void extractIndexList(string& sArgument, string sI[2], string sJ[2])
+static void extractIndexList(string& sArgument, vector<string>& vLines, vector<string>& vCols)
 {
 	string sLines;
 	string sCols = sArgument + " ";
+	size_t nElement = 0;
 
 	// Split line and column indices at
 	// the comma (if it is available). Otherwise
@@ -142,47 +146,61 @@ static void extractIndexList(string& sArgument, string sI[2], string sJ[2])
 	sLines = getNextArgument(sCols, true) + " ";
 
 	// Split the line indices
-	sI[0] = getNextIndex(sLines);
+	vLines[0] = getNextIndex(sLines);
+
 	if (sLines.length())
-        sI[1] = sLines;
+        vLines[1] = sLines;
 
     // If the column indices are available,
     // split them also. Otherwise use the
-    // <<EMPTY>> tag
+    // <<EMPTY>> tag. It's possible that the
+    // column indices are more than two.
     if (sCols.length())
     {
-        sJ[0] = getNextIndex(sCols);
-        if (sCols.length())
-            sJ[1] = sCols;
+        vCols[0] = getNextIndex(sCols);
+
+        // As long as there's a column index
+        // available, separate it here
+        while (sCols.length())
+        {
+            nElement++;
+
+            if (vCols.size() <= nElement)
+                vCols.push_back("");
+
+            vCols[nElement] = getNextIndex(sCols);
+        }
     }
     else
-        sJ[0] = "<<EMPTY>>";
+        vCols[0] = "<<EMPTY>>";
 
     // Ensure that the indices are not only whitespaces
     for (size_t i = 0; i < 2; i++)
     {
-        if (sI[i].find_first_not_of(' ') == string::npos)
-            sI[i] = "<<EMPTY>>";
-        if (sJ[i].find_first_not_of(' ') == string::npos)
-            sJ[i] = "<<EMPTY>>";
+        if (vLines[i].find_first_not_of(' ') == string::npos)
+            vLines[i] = "<<EMPTY>>";
+
+        if (vCols[i].find_first_not_of(' ') == string::npos)
+            vCols[i] = "<<EMPTY>>";
     }
 }
 
 // This function will evaluate the indices and it tries to match it to a vector
-static void handleIndexVectors(Parser& _parser, Indices& _idx, string sI[2], string sJ[2])
+static void handleIndexVectors(Parser& _parser, Indices& _idx, vector<string>& vLines, vector<string>& vCols)
 {
 	value_type* v;
 	int nResults;
 
 	// Evaluate the line indices
-	if (sI[0] != "<<NONE>>" && sI[1] == "<<NONE>>")
+	if (vLines[0] != "<<NONE>>" && vLines[1] == "<<NONE>>")
 	{
-		if (sI[0] == "#")
+		if (vLines[0] == "#")
 			_idx.nI[0] = -3;
 		else
 		{
-			_parser.SetExpr(sI[0]);
+			_parser.SetExpr(vLines[0]);
 			v = _parser.Eval(nResults);
+
 			if (nResults > 1)
 			{
 				// vector
@@ -198,16 +216,17 @@ static void handleIndexVectors(Parser& _parser, Indices& _idx, string sI[2], str
 	}
 
 	// Evalute the column indices
-	if (sJ[0] != "<<NONE>>" && sJ[1] == "<<NONE>>")
+	if (vCols[0] != "<<NONE>>" && vCols[1] == "<<NONE>>")
 	{
-		if (sJ[0] == "#")
+		if (vCols[0] == "#")
 			_idx.nJ[0] = -3;
-        else if (sJ[0] == "<<EMPTY>>")
+        else if (vCols[0] == "<<EMPTY>>")
             _idx.nJ[0] = 0;
 		else
 		{
-			_parser.SetExpr(sJ[0]);
+			_parser.SetExpr(vCols[0]);
 			v = _parser.Eval(nResults);
+
 			if (nResults > 1)
 			{
 				// vector
@@ -224,7 +243,7 @@ static void handleIndexVectors(Parser& _parser, Indices& _idx, string sI[2], str
 }
 
 // This function will evaluate all indices at once and store them into the Indices object
-static void handleCasualIndices(Parser& _parser, Indices& _idx, string sI[2], string sJ[2], const string& sCmd)
+static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<string>& vLines, vector<string>& vCols, const string& sCmd)
 {
 	value_type* v = 0;
 	int nResults = 0;
@@ -233,42 +252,50 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, string sI[2], st
 
 	// Go through all indices and connect them to one single equation
 	// store the assignment of the indices
-	for (int n = 0; n < 2; n++)
+	for (size_t n = 0; n < vLines.size(); n++)
 	{
-		if (sI[n] == "<<EMPTY>>")
+		if (vLines[n] == "<<EMPTY>>")
 		{
 			if (n)
-				_idx.nI[n] = -2; //special one: last possible index
+				_idx.nI[n == 1] = -2; //special one: last possible index
 			else
 				_idx.nI[0] = 0;
 		}
-		else if (sI[n] != "<<NONE>>")
+		else if (vLines[n] != "<<NONE>>")
 		{
 			if (!_idx.vI.size() && _idx.nI[0] != -3)
 			{
 				// connect the indices
 				if (sIndexExpressions.length())
 					sIndexExpressions += ",";
-				sIndexExpressions += sI[n];
+
+				sIndexExpressions += vLines[n];
 				// Store the assignment (lines are positive)
 				vIndexNumbers.push_back((n + 1));
 			}
 		}
-		if (sJ[n] == "<<EMPTY>>")
+	}
+
+	// Go through the column indices separately,
+	// because they might be more than two
+	for (size_t n = 0; n < vCols.size(); n++)
+	{
+		if (vCols[n] == "<<EMPTY>>")
 		{
-			if (n)
+			if (n == 1)
 				_idx.nJ[n] = -2; // special one: last possible index
 			else
 				_idx.nJ[0] = 0;
 		}
-		else if (sJ[n] != "<<NONE>>")
+		else if (vCols[n] != "<<NONE>>")
 		{
 			if (!_idx.vJ.size() && _idx.nJ[0] != -3)
 			{
 				// connect the indices
 				if (sIndexExpressions.length())
 					sIndexExpressions += ",";
-				sIndexExpressions += sJ[n];
+
+				sIndexExpressions += vCols[n];
 				// store the assignments (columns are negative)
 				vIndexNumbers.push_back(-(n + 1));
 			}
@@ -281,6 +308,13 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, string sI[2], st
 		_parser.SetExpr(sIndexExpressions);
 		v = _parser.Eval(nResults);
 
+		// Create the necessary column vector fields,
+        // if more than two column indices are available
+		if (vCols.size() > 2)
+        {
+            _idx.vJ.assign(vCols.size(), -1);
+        }
+
 		// check whether the number of the results is matching
 		if ((size_t)nResults != vIndexNumbers.size())
 			throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
@@ -290,10 +324,16 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, string sI[2], st
 		{
 			if (isnan(v[i]) || intCast(v[i]) <= 0)
 				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+
 			if (isinf(v[i])) // infinity => last possible index
 				v[i] = -1; // only -1 because it will be decremented in the following lines
+
 			if (vIndexNumbers[i] > 0)
 				_idx.nI[vIndexNumbers[i] - 1] = intCast(v[i]) - 1;
+            else if (vCols.size() > 2)
+            {
+                _idx.vJ[abs(vIndexNumbers[i]) - 1] = intCast(v[i]) - 1;
+            }
 			else
 				_idx.nJ[abs(vIndexNumbers[i]) - 1] = intCast(v[i]) - 1;
 		}
@@ -415,14 +455,14 @@ static void expandStringIndexVectors(Indices& _idx, Datafile& _data)
 }
 
 // This function will ensure that at least one of the indices contains a vector
-static bool isCandidateForVectors(string sI[2], string sJ[2])
+static bool isCandidateForVectors(vector<string>& vLines, vector<string>& vCols)
 {
-    return (sI[1] == "<<NONE>>" || sJ[1] == "<<NONE>>");
+    return (vLines[1] == "<<NONE>>" || vCols[1] == "<<NONE>>");
 }
 
 // This function will ensure that at least one index is a casual one
-static bool isCandidateForCasuals(string sI[2], string sJ[2])
+static bool isCandidateForCasuals(vector<string>& vLines, vector<string>& vCols)
 {
-    return (sI[1] != "<<NONE>>" || sJ[1] != "<<NONE>>");
+    return (vLines[1] != "<<NONE>>" || vCols[1] != "<<NONE>>");
 }
 

@@ -134,6 +134,7 @@ static void parser_ExpandStringVectorComponents(vector<string>& vStringVector);
 static string parser_evalStringLogic(string sLine, Parser& _parser, bool& bReturningLogicals);
 static string parser_evalStringTernary(string sLine, Parser& _parser);
 static vector<string> parser_getStringTernaryExpression(string& sLine, size_t& nPos);
+static string parser_concatenateStrings(const string& sExpr);
 
 // String functions:
 // ======================
@@ -1107,6 +1108,7 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 
 	// Identify target vectors and parse this as a list
 	size_t eq_pos = sLine.find('=');
+
 	if (sLine.find('{') != string::npos
 			&& eq_pos != string::npos
 			&& sLine.find('{') < eq_pos
@@ -1199,7 +1201,7 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 		// otherwise it is cleared
 		if (sStringObject.substr(sStringObject.find_first_not_of(' '), 7) == "string("
 				|| sStringObject.substr(sStringObject.find_first_not_of(' '), 5) == "data("
-				|| _data.containsCacheElements(sStringObject))
+				|| _data.containsTablesOrClusters(sStringObject))
 		{
 		    // Find the equal sign after the closing parenthesis
 			unsigned int nPos = getMatchingParenthesis(sLine);
@@ -1284,7 +1286,7 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 			&& !isInQuotes(sLine, eq_pos)
 			&& parser_isAssignmentOperator(sLine, eq_pos))
 	{
-		if (sLine.substr(0, eq_pos).find("data(") != string::npos || _data.containsCacheElements(sLine.substr(0, eq_pos)))
+		if (sLine.substr(0, eq_pos).find("data(") != string::npos || _data.containsTablesOrClusters(sLine.substr(0, eq_pos)))
 		{
 			sObject = sLine.substr(0, eq_pos);
 			sLine.erase(0, eq_pos + 1);
@@ -1433,15 +1435,33 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 				&& !isInQuotes(sLine, sLine.find('=')))
 			n_pos = sLine.find('=') + 1;
 
-        // Get the assignment target
-		string sVectortemp = sLine.substr(0, n_pos);
-		sLine.erase(0, n_pos);
+        size_t nQuotes = 0;
 
-		// Parse the expression into a mulit-expression expression
-		parser_VectorToExpr(sLine, _option);
+		for (size_t i = n_pos; i < sLine.length(); i++)
+        {
+            if (sLine[i] == '"' && (!i || sLine[i-1] != '\\'))
+                nQuotes++;
 
-		// Append the parsed expression to the assignment target
-		sLine = sVectortemp + sLine;
+            if (!(nQuotes % 2) && sLine[i] == '{')
+            {
+                size_t nmatching = getMatchingParenthesis(sLine.substr(i));
+                string sVectorTemp = sLine.substr(i+1, nmatching-1);
+                StringResult tempres = parser_StringParserCore(sVectorTemp, "", _data, _parser, _option, mStringVectorVars);
+
+                if (!tempres.vResult.size())
+					throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+                // Create a string vector variable from the returned vector
+                // if it is a string. Otherwise simple use the first return
+                // value, which already contains a numerical vector
+                if (!tempres.bOnlyLogicals)
+                    sVectorTemp = parser_CreateStringVectorVar(tempres.vResult, mStringVectorVars);
+                else
+                    sVectorTemp = tempres.vResult.front();
+
+                sLine.replace(i, nmatching+1, sVectorTemp);
+            }
+        }
 	}
 
 	// Strip all whitespaces and ensure, that there's something left
@@ -1475,6 +1495,11 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 		sObject = sLine.substr(0, eq_pos);
 		sLine = sLine.substr(eq_pos + 1);
 	}
+
+	if (!sObject.length() && sCache.length())
+    {
+        sObject = sCache;
+    }
 
 	// Apply the "#" parser to the string
 	sLine = parser_NumToString(sLine, _data, _parser, _option, mStringVectorVars);
@@ -1884,7 +1909,7 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 				n_pos++;
 				continue;
 			}
-			if (_sObject.find("data(") == string::npos && !_data.containsCacheElements(_sObject))
+			if (_sObject.find("data(") == string::npos && !_data.containsTablesOrClusters(_sObject))
 			{
 				sLine = sLine.substr(0, n_pos) + "nan" + sLine.substr(nPos + 1);
 				n_pos++;
@@ -2103,7 +2128,7 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 			if (!containsStrings(sExpr) && !_data.containsStringVars(sExpr) && !parser_containsStringVectorVars(sExpr, mStringVectorVars))
 			{
                 // check for data sets in the evaluation of the `valtostr()` arguments
-                if (sExpr.find("data(") != string::npos || _data.containsCacheElements(sExpr))
+                if (sExpr.find("data(") != string::npos || _data.containsTablesOrClusters(sExpr))
                     getDataElements(sExpr, _parser, _data, _option);
 
 				int nResults = 0;
@@ -3041,18 +3066,24 @@ static string parser_GetDataForString(string sLine, Datafile& _data, Parser& _pa
 	for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
 	{
 		n_pos = 0;
+
 		while (sLine.find(iter->first + "(", n_pos) != string::npos)
 		{
 			n_pos = sLine.find(iter->first + "(", n_pos);
+
 			if (isInQuotes(sLine, n_pos, true))
 			{
 				n_pos++;
 				continue;
 			}
+
 			unsigned int nPos = n_pos + (iter->first).length();
+
 			if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && !isInQuotes(sLine, nPos))
 				throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
+
 			nPos += getMatchingParenthesis(sLine.substr(nPos));
+
 			if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos - 1, (iter->first).length() + 2))))
 			{
 				if (parser_CheckMultArgFunc(sLine.substr(0, n_pos), sLine.substr(nPos + 1)))
@@ -3061,8 +3092,64 @@ static string parser_GetDataForString(string sLine, Datafile& _data, Parser& _pa
 						n_pos -= 5;
 					else
 						n_pos -= 4;
+
 					nPos++;
 				}
+
+				string sData = sLine.substr(n_pos, nPos - n_pos + 1);
+				// Get the data and parse string expressions
+				getDataElements(sData, _parser, _data, _option);
+				StringResult strRes = parser_StringParserCore(sData, "", _data, _parser, _option, mStringVectorVars);
+
+				if (!strRes.vResult.size())
+					throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+                // Create a string vector variable from the returned vector
+                // if it is a string. Otherwise simple use the first return
+                // value, which already contains a numerical vector
+                if (!strRes.bOnlyLogicals)
+                    sData = parser_CreateStringVectorVar(strRes.vResult, mStringVectorVars);
+                else
+                    sData = strRes.vResult.front();
+
+				sLine = sLine.substr(0, n_pos) + sData + sLine.substr(nPos + 1);
+			}
+		}
+	}
+
+	for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
+	{
+		n_pos = 0;
+
+		while (sLine.find(iter->first + "{", n_pos) != string::npos)
+		{
+			n_pos = sLine.find(iter->first + "{", n_pos);
+
+			if (isInQuotes(sLine, n_pos, true))
+			{
+				n_pos++;
+				continue;
+			}
+
+			unsigned int nPos = n_pos + (iter->first).length();
+
+			if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && !isInQuotes(sLine, nPos))
+				throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
+
+			nPos += getMatchingParenthesis(sLine.substr(nPos));
+
+			if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos - 1, (iter->first).length() + 2))))
+			{
+				if (parser_CheckMultArgFunc(sLine.substr(0, n_pos), sLine.substr(nPos + 1)))
+				{
+					if (n_pos > 4 && sLine.substr(sLine.rfind('(', n_pos) - 4, 5) == "norm(")
+						n_pos -= 5;
+					else
+						n_pos -= 4;
+
+					nPos++;
+				}
+
 				string sData = sLine.substr(n_pos, nPos - n_pos + 1);
 				// Get the data and parse string expressions
 				getDataElements(sData, _parser, _data, _option);
@@ -3361,20 +3448,9 @@ static vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFina
 		}
 
 		// Concatenate the strings
-		if (vFinal[n].front() == '"' && vFinal[n].back() == '"')
+		if (vFinal[n].front() == '"' || vFinal[n].back() == '"')
 		{
-			for (unsigned int j = 0; j < vFinal[n].length(); j++)
-			{
-			    // Search for the concatenation operator (aka "+")
-				if (vFinal[n][j] == '+' && !isInQuotes(vFinal[n], j))
-				{
-					unsigned int k = j;
-					j = vFinal[n].rfind('"', j);
-
-					// Concatenate here
-					vFinal[n] = vFinal[n].substr(0, vFinal[n].rfind('"', k)) + vFinal[n].substr(vFinal[n].find('"', k) + 1);
-				}
-			}
+			vFinal[n] = parser_concatenateStrings(vFinal[n]);
 		}
 
 		// Determine, whether the current component is a string
@@ -3418,18 +3494,15 @@ static vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFina
 // It will store the strings into the data tables
 static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string& sObject, size_t& nCurrentComponent, size_t nStrings, Parser& _parser, Datafile& _data, const Settings& _option)
 {
-    string si = "";
-    string sj = "";
-    int nIndex[2] = {0, 0};
     string sTableName;
+    bool isCluster = false;
 
     // Identify the correct data table
     if (sObject.substr(sObject.find_first_not_of(" "), 5) == "data(")
     {
-        si = sObject.substr(sObject.find("data(") + 4);
         sTableName = "data";
     }
-    else
+    else if (_data.containsCacheElements(sObject))
     {
         for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
         {
@@ -3437,71 +3510,136 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
                     && (!sObject.find(iter->first + "(")
                         || (sObject.find(iter->first + "(") && checkDelimiter(sObject.substr(sObject.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
             {
-                si = sObject.substr(sObject.find(iter->first + "(") + (iter->first).length());
                 sTableName = iter->first;
                 break;
             }
         }
         _data.setCacheStatus(true);
     }
-    parser_SplitArgs(si, sj, ',', _option);
+    else
+    {
+        for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
+        {
+            if (sObject.find(iter->first + "{") != string::npos
+                    && (!sObject.find(iter->first + "{")
+                        || (sObject.find(iter->first + "{") && checkDelimiter(sObject.substr(sObject.find(iter->first + "{") - 1, (iter->first).length() + 2)))))
+            {
+                sTableName = iter->first;
+                isCluster = true;
+                break;
+            }
+        }
+    }
+
+    // Regular index
+    // Get the corresponding indices
+    Indices _idx = parser_getIndices(sObject, _parser, _data, _option);
 
     // Is the target a headline or is it a regular index?
-    if (si.find('#') != string::npos)
+    if (_idx.nI[0] == -3)
     {
         // Headline
-        // Parse the indices
-        if (sj.find(':') != string::npos)
-        {
-            si = sj.substr(0, sj.find(':'));
-            sj = sj.substr(sj.find(':') + 1);
-        }
-        else
-            si = sj;
-        if (isNotEmptyExpression(si))
-        {
-            _parser.SetExpr(si);
-            nIndex[0] = (int)_parser.Eval();
-            nIndex[0]--;
-        }
-        if (isNotEmptyExpression(sj))
-        {
-            _parser.SetExpr(sj);
-            nIndex[1] = (int)_parser.Eval();
-        }
+        if (_idx.nJ[1] == -1)
+            _idx.nJ[1] = _idx.nJ[0]+1;
 
         // Write the string to the correct data table
-        if (!nIndex[1] && sTableName == "data")
-            nIndex[1] = _data.getCols("data");
+        if (_idx.nJ[1] == -2 && sTableName == "data")
+            _idx.nJ[1] = _data.getCols("data");
 
         // If the first element is non-zero but the second is,
         // we use the number of elements as upper boundary
-        if (nIndex[0] && !nIndex[1])
-            nIndex[1] = nIndex[0] + nStrings - nCurrentComponent;
+        if (_idx.nJ[1] == -2)
+            _idx.nJ[1] = _idx.nJ[0] + nStrings - nCurrentComponent;
 
-        parser_CheckIndices(nIndex[0], nIndex[1]);
+        parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
+
         for (int n = nCurrentComponent; n < (int)nStrings; n++)
         {
             if (!vFinal[n].length()
-                || (nIndex[1] && n + nIndex[0] == nIndex[1] + 1)
-                || (sTableName == "data" && n + nIndex[0] >= _data.getCols("data")))
+                || (n + _idx.nJ[0] == _idx.nJ[1] + 1)
+                || (sTableName == "data" && n + _idx.nJ[0] >= _data.getCols("data")))
                 break;
-            _data.setHeadLineElement(n + nIndex[0], sTableName, removeQuotationMarks(maskControlCharacters(vFinal[n])));
+
+            _data.setHeadLineElement(n + _idx.nJ[0], sTableName, removeQuotationMarks(maskControlCharacters(vFinal[n])));
         }
+
+        nCurrentComponent = nStrings;
+    }
+    else if (isCluster)
+    {
+        if (_idx.nI[1] == -1)
+            _idx.nI[1] = _idx.nI[0];
+
+        if (_idx.nJ[1] == -1)
+            _idx.nJ[1] = _idx.nJ[0];
+
+        // Write the return values to the cluster with
+        // parsing them
+        value_type* v = nullptr;
+        int nResults = 0;
+        int nthComponent = 0;
+        NumeRe::Cluster& cluster = _data.getCluster(sTableName);
+
+        // Clusters are overwritten, if the last index
+        // is not explictly set
+        if (_idx.nI[1] == -2 && _idx.nI[0] == 0)
+            cluster.clear();
+
+        for (size_t i = nCurrentComponent; i < vFinal.size(); i++)
+        {
+            // Set expression and evaluate it (not efficient but currently necessary)
+            if (vFinal[i].front() == '"')
+            {
+                // Special case: only one single value
+                if (_idx.nI[0] == _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
+                {
+                    cluster.setString(_idx.nI[0], vFinal[i]);
+                    break;
+                }
+
+                if (_idx.nI[0] + nthComponent > _idx.nI[1] && _idx.nI[1] != -2)
+                    break;
+
+                cluster.setString(_idx.nI[0] + nthComponent, vFinal[i]);
+                nthComponent++;
+            }
+            else
+            {
+                _parser.SetExpr(vFinal[i]);
+                v = _parser.Eval(nResults);
+
+                // Special case: only one single value
+                if (_idx.nI[0] == _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
+                {
+                    cluster.setDouble(_idx.nI[0], v[0]);
+
+                    break;
+                }
+
+                // Write the single values
+                for (int j = 0; j < nResults; j++)
+                {
+                    if (_idx.nI[0] + nthComponent > _idx.nI[1] && _idx.nI[1] != -2)
+                        break;
+
+                    cluster.setDouble(_idx.nI[0] + nthComponent, v[j]);
+
+                    nthComponent++;
+                }
+            }
+        }
+
         nCurrentComponent = nStrings;
     }
     else
     {
-        // Regular index
-        // Get the corresponding indices
-        Indices _idx = parser_getIndices(sObject, _parser, _data, _option);
-
         // Find the correct table
         if (sTableName == "data")
             throw SyntaxError(SyntaxError::READ_ONLY_DATA, sObject, SyntaxError::invalid_position);
 
         if (_idx.nI[1] == -1)
             _idx.nI[1] = _idx.nI[0];
+
         if (_idx.nJ[1] == -1)
             _idx.nJ[1] = _idx.nJ[0];
 
@@ -3521,6 +3659,7 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
             if (_idx.nI[0] == _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
             {
                 _data.writeToCache(_idx.nI[0], _idx.nJ[0], sTableName, v[0]);
+
                 break;
             }
 
@@ -3531,20 +3670,24 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
                 {
                     if (_idx.nJ[0] + nthComponent > _idx.nJ[1] && _idx.nJ[1] != -2)
                         break;
+
                     _data.writeToCache(_idx.nI[0], _idx.nJ[0] + nthComponent, sTableName, v[j]);
                 }
                 else if (_idx.nI[0] != _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
                 {
                     if (_idx.nI[0] + nthComponent > _idx.nI[1] && _idx.nI[1] != -2)
                         break;
+
                     _data.writeToCache(_idx.nI[0] + nthComponent, _idx.nJ[0], sTableName, v[j]);
                 }
 
                 nthComponent++;
             }
         }
+
         nCurrentComponent = nStrings;
     }
+
     _data.setCacheStatus(false);
 }
 
@@ -3674,7 +3817,7 @@ static int parser_StoreStringResults(vector<string>& vFinal, const vector<bool>&
         sObject = getNextArgument(__sObject, true);
 
         // Examine the current target
-        if (sObject.find("data(") != string::npos || _data.containsCacheElements(sObject))
+        if (sObject.find("data(") != string::npos || _data.containsTablesOrClusters(sObject))
         {
             // Store the strings into the data object
             parser_StoreStringToDataObjects(vFinal, sObject, nCurrentComponent, nStrings, _parser, _data, _option);
@@ -4374,6 +4517,54 @@ static vector<string> parser_getStringTernaryExpression(string& sLine, size_t& n
 	return vTernary;
 }
 
+static string parser_concatenateStrings(const string& sExpr)
+{
+    string sConcatenated = sExpr;
+    size_t nQuotes = 0;
 
+    for (unsigned int i = 0; i < sConcatenated.length(); i++)
+    {
+        if (sConcatenated[i] == '"' && (!i || sConcatenated[i-1] != '\\'))
+            nQuotes++;
+
+        // Search for the concatenation operator (aka "+")
+        if (!(nQuotes % 2) && sConcatenated[i] == '+')
+        {
+            string sLeft = sConcatenated.substr(0, i);
+            string sRight = sConcatenated.substr(i+1);
+
+            StripSpaces(sLeft);
+            StripSpaces(sRight);
+
+            // Determine the correct concatenation process
+            if (sLeft == "\"\"" && sRight != "\"\"")
+            {
+                sConcatenated = " " + sRight;
+                i = 0;
+            }
+            else if (sLeft != "\"\"" && sRight == "\"\"")
+            {
+                sConcatenated = sLeft;
+                break;
+            }
+            else if (sLeft.back() == '"' && sRight.front() == '"')
+            {
+                sConcatenated = sLeft.substr(0, sLeft.length()-1) + sRight.substr(1);
+
+                // We removed some characters
+                i = sLeft.length()-2;
+
+                // We're now part of a string
+                nQuotes++;
+            }
+
+            // Everything not catched here is a strange mixture
+        }
+    }
+
+    StripSpaces(sConcatenated);
+
+    return sConcatenated;
+}
 
 

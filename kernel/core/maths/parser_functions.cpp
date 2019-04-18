@@ -1691,7 +1691,7 @@ vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data,
 	StripSpaces(sExpr);
 
 	// Numerical expressions and data sets are handled differently
-	if ((sExpr.find("data(") == string::npos && !_data.containsCacheElements(sExpr))
+	if ((sExpr.find("data(") == string::npos && !_data.containsTablesOrClusters(sExpr))
 			&& (sCmd.find("-set") != string::npos || sCmd.find("--") != string::npos))
 	{
 	    // This is a numerical expression
@@ -1772,7 +1772,7 @@ vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data,
 			// Evaluate the position/range expression
 			if (isNotEmptyExpression(sPos))
 			{
-				if (_data.containsCacheElements(sPos) || sPos.find("data(") != string::npos)
+				if (_data.containsTablesOrClusters(sPos) || sPos.find("data(") != string::npos)
 				{
 					getDataElements(sPos, _parser, _data, _option);
 				}
@@ -1847,7 +1847,7 @@ vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data,
             }
         }
 	}
-	else if (sExpr.find("data(") != string::npos || _data.containsCacheElements(sExpr))
+	else if (sExpr.find("data(") != string::npos || _data.containsTablesOrClusters(sExpr))
 	{
 	    // This is a data set
 	    //
@@ -1858,7 +1858,7 @@ vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data,
 		sExpr.erase(sExpr.find('('));
 
 		// Validate the indices
-		if (((_idx.nI[0] == -1 || _idx.nI[1] == -1) && !_idx.vI.size()) || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
+		if (!isValidIndexSet(_idx))
 			throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 
         // Copy the data contents, sort the values
@@ -2138,6 +2138,8 @@ void parser_ListVar(mu::ParserBase& _parser, const Settings& _option, const Data
 	// Get the current defined data tables
 	map<string, long long int> CacheMap = _data.getCacheList();
 
+	const map<string, NumeRe::Cluster>& mClusterMap = _data.getClusterMap();
+
 	// Combine string and numerical variables to have
 	// them sorted after their name
 	for (auto iter = variables.begin(); iter != variables.end(); ++iter)
@@ -2163,15 +2165,38 @@ void parser_ListVar(mu::ParserBase& _parser, const Settings& _option, const Data
 	{
 		string sCacheSize = toString(_data.getCacheLines(iter->first, false)) + " x " + toString(_data.getCacheCols(iter->first, false));
 		NumeReKernel::printPreFmt("|   " + iter->first + "()" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - (iter->first).length() + _option.getWindow(0) % 2) + strfill(sCacheSize, (_option.getWindow(0) - 50) / 2) + strfill("[double x double]", 19));
+
 		if (_data.getSize(iter->second) >= 1024 * 1024)
 			NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second) / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
 		else if (_data.getSize(iter->second) >= 1024)
 			NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second) / (1024.0), 4), 9) + " KBytes\n");
 		else
 			NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second)), 9) + "  Bytes\n");
+
 		nBytesSum += _data.getSize(iter->second);
 	}
+
 	NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
+
+	// Print all defined cluster
+	for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
+	{
+		string sClusterSize = toString(iter->second.size()) + " x 1";
+		NumeReKernel::printPreFmt("|   " + iter->first + "{}" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - (iter->first).length() + _option.getWindow(0) % 2) + strfill(sClusterSize, (_option.getWindow(0) - 50) / 2) + strfill("[cluster]", 19));
+
+		if (iter->second.getBytes() >= 1024 * 1024)
+			NumeReKernel::printPreFmt(strfill(toString(iter->second.getBytes() / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
+		else if (iter->second.getBytes() >= 1024)
+			NumeReKernel::printPreFmt(strfill(toString(iter->second.getBytes() / (1024.0), 4), 9) + " KBytes\n");
+		else
+			NumeReKernel::printPreFmt(strfill(toString(iter->second.getBytes()), 9) + "  Bytes\n");
+
+		nBytesSum += iter->second.getBytes();
+	}
+
+	if (mClusterMap.size())
+        NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
+
 
 	// Print now the dimension of the data table
 	if (_data.isValid())
@@ -2580,7 +2605,7 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
 		if (sTemp[nPos] != '{' || (nQuotes % 2))
 			continue;
 
-		if (isToStringArg(sTemp, nPos))
+		if (isToStringArg(sTemp, nPos) || (nPos && (isalnum(sTemp[nPos-1]) || sTemp[nPos-1] == '_')))
 			continue;
 
 		nDim_vec = 0;
@@ -2958,7 +2983,7 @@ bool parser_findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Se
 		sExpr = sCmd.substr(0, sCmd.find("--"));
 		sParams = sCmd.substr(sCmd.find("--"));
 	}
-	else if (sCmd.find("data(") == string::npos && !_data.containsCacheElements(sCmd))
+	else if (sCmd.find("data(") == string::npos && !_data.containsTablesOrClusters(sCmd))
 		throw SyntaxError(SyntaxError::NO_EXTREMA_OPTIONS, sCmd, SyntaxError::invalid_position);
 	else
 		sExpr = sCmd;
@@ -2979,11 +3004,11 @@ bool parser_findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Se
 
 	// If the expression or the parameter list contains
 	// data elements, get their values here
-	if (sExpr.find("data(") != string::npos || _data.containsCacheElements(sExpr))
+	if (sExpr.find("data(") != string::npos || _data.containsTablesOrClusters(sExpr))
 	{
 		getDataElements(sExpr, _parser, _data, _option, false);
 	}
-	if (sParams.find("data(") != string::npos || _data.containsCacheElements(sParams))
+	if (sParams.find("data(") != string::npos || _data.containsTablesOrClusters(sParams))
 	{
 		getDataElements(sParams, _parser, _data, _option, false);
 	}
@@ -3230,7 +3255,7 @@ bool parser_findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Se
 			}
 		}
 	}
-	else if (sCmd.find("data(") != string::npos || _data.containsCacheElements(sCmd))
+	else if (sCmd.find("data(") != string::npos || _data.containsTablesOrClusters(sCmd))
 	{
 		value_type* v;
 		int nResults = 0;
@@ -3496,7 +3521,7 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
 		sExpr = sCmd.substr(0, sCmd.find("--"));
 		sParams = sCmd.substr(sCmd.find("--"));
 	}
-	else if (sCmd.find("data(") == string::npos && !_data.containsCacheElements(sCmd))
+	else if (sCmd.find("data(") == string::npos && !_data.containsTablesOrClusters(sCmd))
 		throw SyntaxError(SyntaxError::NO_ZEROES_OPTIONS, sCmd, SyntaxError::invalid_position);
 	else
 		sExpr = sCmd;
@@ -3516,11 +3541,11 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
 
 	// If the expression or the parameter list contains
 	// data elements, get their values here
-	if (sExpr.find("data(") != string::npos || _data.containsCacheElements(sExpr))
+	if (sExpr.find("data(") != string::npos || _data.containsTablesOrClusters(sExpr))
 	{
 		getDataElements(sExpr, _parser, _data, _option, false);
 	}
-	if (sParams.find("data(") != string::npos || _data.containsCacheElements(sParams))
+	if (sParams.find("data(") != string::npos || _data.containsTablesOrClusters(sParams))
 	{
 		getDataElements(sParams, _parser, _data, _option, false);
 	}
@@ -3708,7 +3733,7 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
 			}
 		}
 	}
-	else if (sCmd.find("data(") != string::npos || _data.containsCacheElements(sCmd))
+	else if (sCmd.find("data(") != string::npos || _data.containsTablesOrClusters(sCmd))
 	{
 		value_type* v;
 		int nResults = 0;
@@ -4413,2083 +4438,6 @@ bool parser_parseCmdArg(const string& sCmd, const string& sParam, Parser& _parse
 	return false;
 }
 
-bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
-{
-	vector<double> vx;
-	vector<double> vy;
-	vector<double> vy_w;
-	vector<double> vTempZ;
-	vector<vector<double> > vz;
-	vector<vector<double> > vz_w;
-
-	vector<double> vInitialVals;
-
-	ofstream oFitLog;
-	ofstream oTeXExport;
-	string sFitLog = "<savepath>/numerefit.log";
-	sFitLog = _data.ValidFileName(sFitLog, ".log");
-	unsigned int nDim = 1;
-	unsigned int nFitVars = 0;
-	bool bUseErrors = false;
-	bool bSaveErrors = false;
-	double dChisq = 0.0;
-	double dNormChisq = 0.0;
-	bool bRestrictXVals = false;
-	bool bRestrictYVals = false;
-	bool bMaskDialog = false;
-	bool bNoParams = false;
-	bool b1DChiMap = false;
-	bool bTeXExport = false;
-	string sTeXExportFile = "<savepath>/fit.tex";
-	double dMin = NAN;
-	double dMax = NAN;
-	double dMinY = NAN;
-	double dMaxY = NAN;
-	double dPrecision = 1e-4;
-	int nMaxIterations = 500;
-
-	double dErrorPercentageSum = 0.0;
-	vector<double> vInterVal;
-
-	Indices _idx;
-
-	if (findCommand(sCmd, "fit").sString == "fitw")
-		bUseErrors = true;
-
-	if (sCmd.find("data(") == string::npos && !_data.containsCacheElements(sCmd))
-		throw SyntaxError(SyntaxError::NO_DATA_FOR_FIT, sCmd, SyntaxError::invalid_position);
-	string sBadFunctions = "ascii(),char(),findfile(),findparam(),gauss(),getopt(),is_string(),rand(),replace(),replaceall(),split(),strfnd(),string_cast(),strrfnd(),strlen(),time(),to_char(),to_cmd(),to_string(),to_value()";
-	string sFitFunction = sCmd;
-	string sParams = "";
-	string sFuncDisplay = "";
-	string sFunctionDefString = "";
-	string sFittedFunction = "";
-	string sRestrictions = "";
-	string sChiMap = "";
-	string sChiMap_Vars[2] = {"", ""};
-
-	mu::varmap_type varMap;
-	mu::varmap_type paramsMap;
-
-	if (matchParams(sCmd, "chimap", '='))
-	{
-		sChiMap = getArgAtPos(sCmd, matchParams(sCmd, "chimap", '=') + 6);
-		eraseToken(sCmd, "chimap", true);
-
-		if (sChiMap.length())
-		{
-			if (sChiMap.substr(0, sChiMap.find('(')) == "data")
-				throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, SyntaxError::invalid_position);
-			_idx = parser_getIndices(sChiMap, _parser, _data, _option);
-			if ((_idx.nI[0] == -1 || _idx.nJ[0] == -1) && (!_idx.vI.size() && !_idx.vJ.size()))
-				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
-			if (_idx.vJ.size() && _idx.vJ.size() < 2)
-				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
-			parser_evalIndices(sChiMap, _idx, _data);
-			sChiMap.erase(sChiMap.find('('));
-			if (!_idx.vJ.size())
-			{
-				if (_idx.nJ[1] < _idx.nJ[0])
-				{
-					sChiMap_Vars[0] = _data.getHeadLineElement(_idx.nJ[0], sChiMap);
-					sChiMap_Vars[1] = _data.getHeadLineElement(_idx.nJ[0] - 1, sChiMap);
-				}
-				else
-				{
-					sChiMap_Vars[0] = _data.getHeadLineElement(_idx.nJ[0], sChiMap);
-					sChiMap_Vars[1] = _data.getHeadLineElement(_idx.nJ[0] + 1, sChiMap);
-				}
-			}
-			else
-			{
-				sChiMap_Vars[0] = _data.getHeadLineElement(_idx.vJ[0], sChiMap);
-				sChiMap_Vars[1] = _data.getHeadLineElement(_idx.vJ[1], sChiMap);
-			}
-		}
-	}
-	if (matchParams(sCmd, "export", '='))
-	{
-		bTeXExport = true;
-		sTeXExportFile = getArgAtPos(sCmd, matchParams(sCmd, "export", '=') + 6);
-		eraseToken(sCmd, "export", true);
-	}
-	else if (matchParams(sCmd, "export"))
-	{
-		bTeXExport = true;
-		eraseToken(sCmd, "export", false);
-	}
-
-	if (bTeXExport)
-	{
-		sTeXExportFile = _data.ValidFileName(sTeXExportFile, ".tex");
-		if (sTeXExportFile.substr(sTeXExportFile.rfind('.')) != ".tex")
-			sTeXExportFile.replace(sTeXExportFile.rfind('.'), string::npos, ".tex");
-	}
-
-	for (unsigned int i = 0; i < sCmd.length(); i++)
-	{
-		if (sCmd[i] == '(')
-			i += getMatchingParenthesis(sCmd.substr(i));
-		if (sCmd[i] == '-')
-		{
-			sCmd.erase(0, i);
-			break;
-		}
-	}
-	vInterVal = parser_IntervalReader(sCmd, _parser, _data, _functions, _option, true);
-	if (vInterVal.size())
-	{
-		if (vInterVal.size() >= 4)
-		{
-			dMin = vInterVal[0];
-			dMax = vInterVal[1];
-			dMinY = vInterVal[2];
-			dMaxY = vInterVal[3];
-			if (!isnan(dMin) || !isnan(dMax))
-				bRestrictXVals = true;
-			if (!isnan(dMinY) || !isnan(dMaxY))
-				bRestrictYVals = true;
-		}
-		else if (vInterVal.size() == 2)
-		{
-			dMin = vInterVal[0];
-			dMax = vInterVal[1];
-			if (!isnan(dMin) || !isnan(dMax))
-				bRestrictXVals = true;
-		}
-	}
-	for (unsigned int i = 0; i < sFitFunction.length(); i++)
-	{
-		if (sFitFunction[i] == '(')
-			i += getMatchingParenthesis(sFitFunction.substr(i));
-		if (sFitFunction[i] == '-')
-		{
-			sFitFunction.replace(i, string::npos, sCmd.substr(sCmd.find('-')));
-			break;
-		}
-	}
-	sCmd = sFitFunction;
-
-	if (matchParams(sFitFunction, "saverr"))
-	{
-		bSaveErrors = true;
-		sFitFunction.erase(matchParams(sFitFunction, "saverr") - 1, 6);
-		sCmd.erase(matchParams(sCmd, "saverr") - 1, 6);
-	}
-	if (matchParams(sFitFunction, "saveer"))
-	{
-		bSaveErrors = true;
-		sFitFunction.erase(matchParams(sFitFunction, "saveer") - 1, 6);
-		sCmd.erase(matchParams(sCmd, "saveer") - 1, 6);
-	}
-	if (matchParams(sFitFunction, "mask"))
-	{
-		bMaskDialog = true;
-		sFitFunction.erase(matchParams(sFitFunction, "mask") - 1, 6);
-		sCmd.erase(matchParams(sCmd, "mask") - 1, 6);
-	}
-	if (!matchParams(sFitFunction, "with", '='))
-		throw SyntaxError(SyntaxError::NO_FUNCTION_FOR_FIT, sCmd, SyntaxError::invalid_position);
-	if (matchParams(sFitFunction, "tol", '='))
-	{
-		_parser.SetExpr(getArgAtPos(sFitFunction, matchParams(sFitFunction, "tol", '=') + 3));
-		eraseToken(sCmd, "tol", true);
-		eraseToken(sFitFunction, "tol", true);
-		dPrecision = fabs(_parser.Eval());
-		if (isnan(dPrecision) || isinf(dPrecision) || dPrecision == 0)
-			dPrecision = 1e-4;
-	}
-	if (matchParams(sFitFunction, "iter", '='))
-	{
-		_parser.SetExpr(getArgAtPos(sFitFunction, matchParams(sFitFunction, "iter", '=') + 4));
-		eraseToken(sCmd, "iter", true);
-		eraseToken(sFitFunction, "iter", true);
-		nMaxIterations = abs(rint(_parser.Eval()));
-		if (!nMaxIterations)
-			nMaxIterations = 500;
-	}
-	if (matchParams(sFitFunction, "restrict", '='))
-	{
-		sRestrictions = getArgAtPos(sFitFunction, matchParams(sFitFunction, "restrict", '=') + 8);
-		eraseToken(sCmd, "restrict", true);
-		eraseToken(sFitFunction, "restrict", true);
-		if (sRestrictions.length() && sRestrictions.front() == '[' && sRestrictions.back() == ']')
-		{
-			sRestrictions.erase(0, 1);
-			sRestrictions.pop_back();
-		}
-		StripSpaces(sRestrictions);
-		if (sRestrictions.length())
-		{
-			if (sRestrictions.front() == ',')
-				sRestrictions.erase(0, 1);
-			if (sRestrictions.back() == ',')
-				sRestrictions.pop_back();
-			_parser.SetExpr(sRestrictions);
-			_parser.Eval();
-		}
-	}
-	if (!matchParams(sFitFunction, "params", '='))
-	{
-		bNoParams = true;
-		sFitFunction = sFitFunction.substr(matchParams(sFitFunction, "with", '=') + 4);
-		sCmd.erase(matchParams(sCmd, "with", '=') - 1);
-	}
-	else if (matchParams(sFitFunction, "with", '=') < matchParams(sFitFunction, "params", '='))
-	{
-		sParams = sFitFunction.substr(matchParams(sFitFunction, "params", '=') + 6);
-		sFitFunction = sFitFunction.substr(matchParams(sFitFunction, "with", '=') + 4, matchParams(sFitFunction, "params", '=') - 1 - matchParams(sFitFunction, "with", '=') - 4);
-		sCmd = sCmd.substr(0, matchParams(sCmd, "with", '=') - 1);
-	}
-	else
-	{
-		sParams = sFitFunction.substr(matchParams(sFitFunction, "params", '=') + 6, matchParams(sFitFunction, "with", '=') - 1 - matchParams(sFitFunction, "params", '=') - 6);
-		sFitFunction = sFitFunction.substr(matchParams(sFitFunction, "with", '=') + 4);
-		sCmd = sCmd.substr(0, matchParams(sCmd, "params", '=') - 1);
-	}
-	if (sParams.find('[') != string::npos)
-		sParams = sParams.substr(sParams.find('[') + 1);
-	if (sParams.find(']') != string::npos)
-		sParams = sParams.substr(0, sParams.find(']'));
-	StripSpaces(sFitFunction);
-	if (sFitFunction[sFitFunction.length() - 1] == '-')
-	{
-		sFitFunction[sFitFunction.length() - 1] = ' ';
-		StripSpaces(sFitFunction);
-	}
-	if (!bNoParams)
-	{
-		StripSpaces(sParams);
-		if (sParams[sParams.length() - 1] == '-')
-		{
-			sParams[sParams.length() - 1] = ' ';
-			StripSpaces(sParams);
-		}
-		if (!_functions.call(sParams))
-			throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sParams, sParams);
-		if (sParams.find("data(") != string::npos || _data.containsCacheElements(sParams))
-		{
-			getDataElements(sParams, _parser, _data, _option);
-		}
-		if (sParams.find("{") != string::npos && (containsStrings(sParams) || _data.containsStringVars(sParams)))
-			parser_VectorToExpr(sParams, _option);
-	}
-	StripSpaces(sCmd);
-
-	if (!_functions.call(sFitFunction))
-		throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sFitFunction, sFitFunction);
-
-	if (sFitFunction.find("data(") != string::npos || _data.containsCacheElements(sFitFunction))
-	{
-		getDataElements(sFitFunction, _parser, _data, _option);
-	}
-	if (sFitFunction.find("{") != string::npos)
-		parser_VectorToExpr(sFitFunction, _option);
-
-	unsigned int nPos = 0;
-	while (sBadFunctions.find(',', nPos) != string::npos)
-	{
-		if (sFitFunction.find(sBadFunctions.substr(nPos, sBadFunctions.find(',', nPos) - nPos - 1)) != string::npos)
-		{
-			throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, sCmd, SyntaxError::invalid_position, sBadFunctions.substr(nPos, sBadFunctions.find(',', nPos) - nPos));
-		}
-		else
-			nPos = sBadFunctions.find(',', nPos) + 1;
-		if (nPos >= sBadFunctions.length())
-			break;
-	}
-	nPos = 0;
-
-	sFitFunction = " " + sFitFunction + " ";
-	_parser.SetExpr(sFitFunction);
-	_parser.Eval();
-	varMap = _parser.GetUsedVar();
-	if (bNoParams)
-	{
-		paramsMap = varMap;
-		if (paramsMap.find("x") != paramsMap.end())
-			paramsMap.erase(paramsMap.find("x"));
-		if (paramsMap.find("y") != paramsMap.end())
-			paramsMap.erase(paramsMap.find("y"));
-		if (!paramsMap.size())
-			throw SyntaxError(SyntaxError::NO_PARAMS_FOR_FIT, sCmd, SyntaxError::invalid_position);
-	}
-	else
-	{
-		_parser.SetExpr(sParams);
-		_parser.Eval();
-		if (sParams.find('=') != string::npos)
-		{
-			for (unsigned int i = 0; i < sParams.length(); i++)
-			{
-				if (sParams[i] == '=')
-				{
-					for (unsigned int j = i; j < sParams.length(); j++)
-					{
-						if (sParams[j] == '(')
-							j += getMatchingParenthesis(sParams.substr(j));
-						if (sParams[j] == ',')
-						{
-							sParams.erase(i, j - i);
-							break;
-						}
-						if (j == sParams.length() - 1)
-							sParams.erase(i);
-					}
-				}
-			}
-			_parser.SetExpr(sParams);
-			_parser.Eval();
-		}
-		paramsMap = _parser.GetUsedVar();
-	}
-
-
-	mu::varmap_type::const_iterator pItem = paramsMap.begin();
-	mu::varmap_type::const_iterator vItem = varMap.begin();
-	sParams = "";
-	if (varMap.find("x") != varMap.end())
-		nFitVars += 1;
-	if (varMap.find("y") != varMap.end())
-		nFitVars += 2;
-	if (varMap.find("z") != varMap.end())
-		nFitVars += 4;
-
-	if (sChiMap.length())
-	{
-		if (sChiMap_Vars[0] == "x" || sChiMap_Vars[1] == "x")
-		{
-			throw SyntaxError(SyntaxError::CANNOT_BE_A_FITTING_PARAM, sCmd, SyntaxError::invalid_position, "x");
-		}
-		if (sChiMap_Vars[0] == "y" || sChiMap_Vars[1] == "y")
-		{
-			throw SyntaxError(SyntaxError::CANNOT_BE_A_FITTING_PARAM, sCmd, SyntaxError::invalid_position, "y");
-		}
-		if (varMap.find(sChiMap_Vars[0]) == varMap.end())
-		{
-			throw SyntaxError(SyntaxError::FITFUNC_NOT_CONTAINS, sCmd, SyntaxError::invalid_position, sChiMap_Vars[0]);
-		}
-		if (varMap.find(sChiMap_Vars[1]) == varMap.end())
-		{
-			b1DChiMap = true;
-		}
-	}
-
-	if (!nFitVars || !(nFitVars & 1))
-	{
-		throw SyntaxError(SyntaxError::FITFUNC_NOT_CONTAINS, sCmd, SyntaxError::invalid_position, "x");
-	}
-
-	pItem = paramsMap.begin();
-	for (; pItem != paramsMap.end(); ++pItem)
-	{
-		if (pItem->first == "x" || pItem->first == "y" || pItem->first == "z")
-		{
-			throw SyntaxError(SyntaxError::CANNOT_BE_A_FITTING_PARAM, sCmd, SyntaxError::invalid_position, pItem->first);
-		}
-
-		bool bParamFound = false;
-		vItem = varMap.begin();
-		for (; vItem != varMap.end(); ++vItem)
-		{
-			if (vItem->first == pItem->first)
-			{
-				bParamFound = true;
-				break;
-			}
-		}
-		if (!bParamFound)
-		{
-			throw SyntaxError(SyntaxError::FITFUNC_NOT_CONTAINS, sCmd, SyntaxError::invalid_position, pItem->first);
-		}
-	}
-	if (sChiMap.length())
-	{
-		paramsMap.erase(sChiMap_Vars[0]);
-		if (!b1DChiMap)
-			paramsMap.erase(sChiMap_Vars[1]);
-	}
-	if (!paramsMap.size())
-		throw SyntaxError(SyntaxError::NO_PARAMS_FOR_FIT, sCmd, SyntaxError::invalid_position);
-
-	sFuncDisplay = sFitFunction;
-	StripSpaces(sFuncDisplay);
-	pItem = paramsMap.begin();
-
-	if (_option.getbDebug())
-		cerr << "|-> DEBUG: sFitFunction = " << sFitFunction << endl;
-	sCmd.erase(0, findCommand(sCmd).nPos + findCommand(sCmd).sString.length());
-	StripSpaces(sCmd);
-
-	string si_pos[2] = {"", ""};                    // String-Array fuer die Zeilen-Position: muss fuer alle Spalten identisch sein!
-	string sj_pos[6] = {"", "", "", "", "", ""};    // String-Array fuer die Spalten: kann bis zu sechs beliebige Werte haben
-	string sDataTable = "data";
-	int i_pos[2] = {0, 0};                          // Int-Array fuer den Wert der Zeilen-Positionen
-	int j_pos[6] = {0, 0, 0, 0, 0, 0};              // Int-Array fuer den Wert der Spalten-Positionen
-	int nMatch = 0;                                 // Int fuer die Position des aktuellen find-Treffers eines Daten-Objekts
-	vector<long long int> vLine;
-	vector<long long int> vCol;
-	value_type* v = 0;
-	int nResults = 0;
-
-	// --> Ist da "cache" drin? Aktivieren wir den Cache-Status <--
-	if (_data.containsCacheElements(sCmd) && sCmd.substr(0, 5) != "data(")
-	{
-		if (_data.isValidCache())
-			_data.setCacheStatus(true);
-		else
-			throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);
-
-		for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-		{
-			if (sCmd.find(iter->first + "(") != string::npos
-					&& (!sCmd.find(iter->first + "(")
-						|| (sCmd.find(iter->first + "(") && checkDelimiter(sCmd.substr(sCmd.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
-			{
-				sDataTable = iter->first;
-				break;
-			}
-		}
-	}
-	else if (!_data.isValid())
-		throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
-
-	// --> Klammer und schliessende Klammer finden und in einen anderen String schreiben <--
-	nMatch = sCmd.find('(');
-	si_pos[0] = sCmd.substr(nMatch, getMatchingParenthesis(sCmd.substr(nMatch)) + 1);
-	if (si_pos[0] == "()" || si_pos[0][si_pos[0].find_first_not_of(' ', 1)] == ')')
-		si_pos[0] = "(:,:)";
-	if (si_pos[0].find("data(") != string::npos || _data.containsCacheElements(si_pos[0]))
-	{
-		getDataElements(si_pos[0], _parser, _data, _option);
-	}
-	if (_option.getbDebug())
-		cerr << "|-> DEBUG: si_pos[0] = " << si_pos[0] << endl;
-
-    // Update the dimension variables used for accessing the elements
-    _data.updateDimensionVariables(sDataTable);
-
-
-	// --> Rausgeschnittenen String am Komma ',' in zwei Teile teilen <--
-	try
-	{
-		parser_SplitArgs(si_pos[0], sj_pos[0], ',', _option);
-	}
-	catch (...)
-	{
-		throw;
-	}
-	if (_option.getbDebug())
-		cerr << "|-> DEBUG: si_pos[0] = " << si_pos[0] << ", sj_pos[0] = " << sj_pos[0] << endl;
-
-	// --> Gibt's einen Doppelpunkt? Dann teilen wir daran auch noch mal <--
-	if (si_pos[0].find(':') != string::npos && si_pos[0].find('{') == string::npos)
-	{
-		si_pos[0] = "( " + si_pos[0] + " )";
-		try
-		{
-			parser_SplitArgs(si_pos[0], si_pos[1], ':', _option);
-		}
-		catch (...)
-		{
-			throw;
-		}
-		if (!isNotEmptyExpression(si_pos[1]))
-			si_pos[1] = "inf";
-	}
-	else
-		si_pos[1] = "";
-
-	// --> Auswerten mit dem Parser <--
-	if (isNotEmptyExpression(si_pos[0]))
-	{
-		_parser.SetExpr(si_pos[0]);
-		v = _parser.Eval(nResults);
-		if (nResults > 1)
-		{
-			for (int n = 0; n < nResults; n++)
-				vLine.push_back((int)v[n] - 1);
-		}
-		else
-			i_pos[0] = (int)v[0] - 1;
-	}
-	else
-		i_pos[0] = 0;
-	if (si_pos[1] == "inf")
-	{
-		i_pos[1] = _data.getLines(sDataTable, false);
-	}
-	else if (isNotEmptyExpression(si_pos[1]))
-	{
-		_parser.SetExpr(si_pos[1]);
-		i_pos[1] = (int)_parser.Eval();
-	}
-	else if (!vLine.size())
-		i_pos[1] = i_pos[0] + 1;
-	// --> Pruefen, ob die Reihenfolge der Indices sinnvoll ist <--
-	parser_CheckIndices(i_pos[0], i_pos[1]);
-
-	if (_option.getbDebug())
-		cerr << "|-> DEBUG: i_pos[0] = " << i_pos[0] << ", i_pos[1] = " << i_pos[1] << ", vLine.size() = " << vLine.size() << endl;
-
-	if (!isNotEmptyExpression(sj_pos[0]))
-		sj_pos[0] = "0";
-
-	/* --> Jetzt fuer die Spalten: Fummelig. Man soll bis zu 6 Spalten angeben koennen und
-	 *     das Programm sollte trotzdem einen Sinn darin finden <--
-	 */
-	int j = 0;
-	try
-	{
-		while (sj_pos[j].find(':') != string::npos && sj_pos[0].find('{') == string::npos && j < 5)
-		{
-			sj_pos[j] = "( " + sj_pos[j] + " )";
-			// --> String am naechsten ':' teilen <--
-			parser_SplitArgs(sj_pos[j], sj_pos[j + 1], ':', _option);
-			// --> Spezialfaelle beachten: ':' ohne linke bzw. rechte Grenze <--
-			if (!isNotEmptyExpression(sj_pos[j]))
-				sj_pos[j] = "1";
-			j++;
-			if (!isNotEmptyExpression(sj_pos[j]))
-				sj_pos[j] = "inf";
-		}
-	}
-	catch (...)
-	{
-		throw;
-	}
-
-	// --> Alle nicht-beschriebenen Grenzen-Strings auf "" setzen <--
-	for (int k = j + 1; k < 6; k++)
-		sj_pos[k] = "";
-
-	// --> Grenzen-Strings moeglichst sinnvoll auswerten <--
-	for (int k = 0; k <= j; k++)
-	{
-		// --> "inf" bedeutet "infinity". Ergo: die letztmoegliche Spalte <--
-		if (sj_pos[k] == "inf")
-		{
-			j_pos[k] = _data.getCols(sDataTable) - 1;
-			break;
-		}
-		else if (isNotEmptyExpression(sj_pos[k]))
-		{
-			if (j == 0)
-			{
-				_parser.SetExpr(sj_pos[0]);
-				v = _parser.Eval(nResults);
-				if (nResults > 1)
-				{
-					for (int n = 0; n < nResults; n++)
-					{
-						if (n >= 6)
-							break;
-						vCol.push_back((int)v[n] - 1);
-						j_pos[n] = (int)v[n] - 1;
-						j = n;
-					}
-					break;
-				}
-				else
-					j_pos[0] = (int)v[0] - 1;
-			}
-			else
-			{
-				// --> Hat einen Wert: Kann man auch auswerten <--
-				_parser.SetExpr(sj_pos[k]);
-				j_pos[k] = (int)_parser.Eval() - 1;
-			}
-		}
-		else if (!k)
-		{
-			// --> erstes Element pro Forma auf 0 setzen <--
-			j_pos[k] = 0;
-		}
-		else // "data(2:4::7) = Spalten 2-4,5-7"
-		{
-			// --> Spezialfall. Verwendet vermutlich niemand <--
-			j_pos[k] = j_pos[k] + 1;
-		}
-	}
-	if (i_pos[1] > _data.getLines(sDataTable, false))
-		i_pos[1] = _data.getLines(sDataTable, false);
-	if (j_pos[1] > _data.getCols(sDataTable) - 1)
-		j_pos[1] = _data.getCols(sDataTable) - 1;
-	if (!vLine.size() && !vCol.size() && (j_pos[0] < 0
-										  || j_pos[1] < 0
-										  || i_pos[0] > _data.getLines(sDataTable, false)
-										  || i_pos[1] > _data.getLines(sDataTable, false)
-										  || j_pos[0] > _data.getCols(sDataTable) - 1
-										  || j_pos[1] > _data.getCols(sDataTable) - 1))
-	{
-		throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
-	}
-
-	// --> Jetzt wissen wir die Spalten: Suchen wir im Falle von si_pos[1] == inf nach der laengsten <--
-	if (si_pos[1] == "inf")
-	{
-		int nAppendedZeroes = _data.getAppendedZeroes(j_pos[0], sDataTable);
-		for (int k = 1; k <= j; k++)
-		{
-			if (nAppendedZeroes > _data.getAppendedZeroes(j_pos[k], sDataTable))
-				nAppendedZeroes = _data.getAppendedZeroes(j_pos[k], sDataTable);
-		}
-		if (nAppendedZeroes < i_pos[1])
-			i_pos[1] = _data.getLines(sDataTable, true) - nAppendedZeroes;
-	}
-
-
-	/* --> Bestimmen wir die "Dimension" des zu fittenden Datensatzes. Dabei ist es auch
-	 *     von Bedeutung, ob Fehlerwerte verwendet werden sollen <--
-	 */
-	nDim = 0;
-	if (j == 0 && bUseErrors && vCol.size() < 3)
-		throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
-	if (j == 0 && !vCol.size())
-		nDim = 2;
-	else if (j == 0)
-		nDim = vCol.size();
-	else if (j == 1)
-	{
-		if (!bUseErrors)
-		{
-			if (!(nFitVars & 2))
-			{
-				nDim = 2;
-				if (abs(j_pos[1] - j_pos[0]) < 1)
-					throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
-			}
-			else
-			{
-				nDim = 3;
-				if (abs(j_pos[1] - j_pos[0]) < abs(i_pos[1] - i_pos[0]) + 1)
-					throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
-			}
-		}
-		else
-		{
-			if (!(nFitVars & 2))
-			{
-				nDim = 4;
-				if (abs(j_pos[1] - j_pos[0]) < 2)
-					throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
-			}
-			else
-			{
-				nDim = 5;
-				if (abs(j_pos[1] - j_pos[0]) < 2 * abs(i_pos[1] - i_pos[0]) + 1)
-					throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
-			}
-		}
-	}
-	else
-	{
-		nDim = j + 1;
-	}
-
-	parser_CheckIndices(i_pos[0], i_pos[1]);
-	// Groesse der Datensaetze bestimmen:
-	if (vLine.size() && !vCol.size())
-	{
-		vCol.push_back(j_pos[0]);
-		if (j == 1)
-		{
-			if (nDim == 2)
-			{
-				if (sj_pos[1] == "inf")
-					vCol.push_back(j_pos[0] + 1);
-				else
-					vCol.push_back(j_pos[1]);
-			}
-			else
-			{
-				if (j_pos[0] < j_pos[1] || sj_pos[1] == "inf")
-				{
-					for (unsigned int n = 1; n < nDim; n++)
-						vCol.push_back(j_pos[0] + n);
-				}
-				else if (j_pos[0] < j_pos[1])
-				{
-					for (unsigned int n = 1; n < nDim; n++)
-						vCol.push_back(j_pos[0] - n);
-				}
-			}
-		}
-		else
-		{
-			for (int n = 1; n <= j; n++)
-				vCol.push_back(j_pos[n]);
-		}
-	}
-
-
-	if (isnan(dMin))
-	{
-		if (!vLine.size())
-			dMin = _data.min(sDataTable, i_pos[0], i_pos[1] - 1, j_pos[0]);
-		else
-			dMin = _data.min(sDataTable, vLine, vector<long long int>(1, vCol[0]));
-	}
-	if (isnan(dMax))
-	{
-		if (!vLine.size())
-			dMax = _data.max(sDataTable, i_pos[0], i_pos[1] - 1, j_pos[0]);
-		else
-			dMax = _data.max(sDataTable, vLine, vector<long long int>(1, vCol[0]));
-	}
-	if (dMax < dMin)
-	{
-		double dTemp = dMax;
-		dMax = dMin;
-		dMin = dTemp;
-	}
-
-	if (nFitVars & 2)
-	{
-		if (isnan(dMinY))
-		{
-			if (!vLine.size())
-			{
-				if (j == 1 && j_pos[1] > j_pos[0])
-					dMinY = _data.min(sDataTable, i_pos[0], i_pos[1] - 1, j_pos[0] + 1);
-				else if (j == 1)
-					dMinY = _data.min(sDataTable, i_pos[0], i_pos[1] - 1, j_pos[0] - 1);
-				else
-					dMinY = _data.min(sDataTable, i_pos[0], i_pos[1] - 1, j_pos[1]);
-			}
-			else
-			{
-				dMinY = _data.min(sDataTable, vLine, vector<long long int>(1, vCol[1]));
-			}
-		}
-		if (isnan(dMaxY))
-		{
-			if (!vLine.size())
-			{
-				if (j == 1 && j_pos[1] > j_pos[0])
-					dMaxY = _data.max(sDataTable, i_pos[0], i_pos[1] - 1, j_pos[0] + 1);
-				else if (j == 1)
-					dMaxY = _data.max(sDataTable, i_pos[0], i_pos[1] - 1, j_pos[1] - 1);
-				else
-					dMaxY = _data.max(sDataTable, i_pos[0], i_pos[1] - 1, j_pos[1]);
-			}
-			else
-				dMaxY = _data.max(sDataTable, vLine, vector<long long int>(1, vCol[1]));
-		}
-		if (dMaxY < dMinY)
-		{
-			double dTemp = dMaxY;
-			dMaxY = dMinY;
-			dMinY = dTemp;
-		}
-	}
-
-	if (nDim == 2)
-	{
-
-		if (!vLine.size())
-		{
-			for (int i = i_pos[0]; i < i_pos[1]; i++)
-			{
-
-				if (!j)
-				{
-					if (_data.isValidEntry(i, j_pos[0], sDataTable))
-					{
-						vx.push_back(i + 1);
-						vy.push_back(_data.getElement(i, j_pos[0], sDataTable));
-					}
-				}
-				else
-				{
-					if (_data.isValidEntry(i, j_pos[0], sDataTable) && _data.isValidEntry(i, j_pos[1], sDataTable) && sj_pos[1] != "inf")
-					{
-						if (!isnan(dMin) && !isnan(dMax) && (_data.getElement(i, j_pos[0], sDataTable) < dMin || _data.getElement(i, j_pos[0], sDataTable) > dMax))
-						{
-							continue;
-						}
-						vx.push_back(_data.getElement(i, j_pos[0], sDataTable));
-						vy.push_back(_data.getElement(i, j_pos[1], sDataTable));
-					}
-					else if (_data.isValidEntry(i, j_pos[0], sDataTable) && _data.isValidEntry(i, j_pos[0] + 1, sDataTable) && sj_pos[1] == "inf")
-					{
-						if (!isnan(dMin) && !isnan(dMax) && (_data.getElement(i, j_pos[0], sDataTable) < dMin || _data.getElement(i, j_pos[0], sDataTable) > dMax))
-						{
-							continue;
-						}
-						vx.push_back(_data.getElement(i, j_pos[0], sDataTable));
-						vy.push_back(_data.getElement(i, j_pos[0] + 1, sDataTable));
-					}
-				}
-			}
-		}
-		else
-		{
-			for (unsigned int i = 0; i < vLine.size(); i++)
-			{
-				if (!j)
-				{
-					if (_data.isValidEntry(vLine[i], vCol[0], sDataTable))
-					{
-						vx.push_back(vLine[i] + 1);
-						vy.push_back(_data.getElement(vLine[i], vCol[0], sDataTable));
-					}
-				}
-				else
-				{
-					if (_data.isValidEntry(vLine[i], vCol[0], sDataTable) && _data.isValidEntry(vLine[i], vCol[1], sDataTable))
-					{
-						if (!isnan(dMin) && !isnan(dMax) && (_data.getElement(vLine[i], vCol[0], sDataTable) < dMin || _data.getElement(vLine[i], vCol[0], sDataTable) > dMax))
-						{
-							continue;
-						}
-						vx.push_back(_data.getElement(vLine[i], vCol[0], sDataTable));
-						vy.push_back(_data.getElement(vLine[i], vCol[1], sDataTable));
-					}
-				}
-			}
-		}
-		if (paramsMap.size() > vx.size())
-			throw SyntaxError(SyntaxError::OVERFITTING_ERROR, sCmd, SyntaxError::invalid_position);
-	}
-	else if (nDim == 4)
-	{
-		if (!vLine.size())
-		{
-			int nErrorCols = 2;
-			if (j == 1)
-			{
-				if (abs(j_pos[1] - j_pos[0]) == 2)
-					nErrorCols = 1;
-			}
-			else if (j == 3)
-				nErrorCols = 2;
-			for (int i = i_pos[0]; i < i_pos[1]; i++)
-			{
-				if (j == 1)
-				{
-					if ((_data.isValidEntry(i, j_pos[0], sDataTable) && _data.isValidEntry(i, j_pos[0] + 1, sDataTable) && j_pos[0] < j_pos[1])
-							|| (_data.isValidEntry(i, j_pos[1], sDataTable) && _data.isValidEntry(i, j_pos[1] - 1, sDataTable) && j_pos[1] < j_pos[0]))
-					{
-						if (!isnan(dMin) && !isnan(dMax) && (_data.getElement(i, j_pos[0], sDataTable) < dMin || _data.getElement(i, j_pos[0], sDataTable) > dMax))
-						{
-							continue;
-						}
-						if (j_pos[0] < j_pos[1])
-						{
-							vx.push_back(_data.getElement(i, j_pos[0], sDataTable));
-							vy.push_back(_data.getElement(i, j_pos[0] + 1, sDataTable));
-							if (nErrorCols == 1)
-							{
-								if (_data.isValidEntry(i, j_pos[0] + 2, sDataTable))
-									vy_w.push_back(fabs(_data.getElement(i, j_pos[0] + 2, sDataTable)));
-								else
-									vy_w.push_back(0.0);
-							}
-							else
-							{
-								if (_data.isValidEntry(i, j_pos[0] + 2, sDataTable) && _data.isValidEntry(i, j_pos[0] + 3, sDataTable) && (_data.getElement(i, j_pos[0] + 2, sDataTable) && _data.getElement(i, j_pos[0] + 3, sDataTable)))
-									vy_w.push_back(sqrt(fabs(_data.getElement(i, j_pos[0] + 2, sDataTable)) * fabs(_data.getElement(i, j_pos[0] + 3, sDataTable))));
-								else if (_data.isValidEntry(i, j_pos[0] + 2, sDataTable) && _data.getElement(i, j_pos[0] + 2, sDataTable))
-									vy_w.push_back(fabs(_data.getElement(i, j_pos[0] + 2, sDataTable)));
-								else if (_data.isValidEntry(i, j_pos[0] + 3, sDataTable) && _data.getElement(i, j_pos[0] + 3, sDataTable))
-									vy_w.push_back(fabs(_data.getElement(i, j_pos[0] + 3, sDataTable)));
-								else
-									vy_w.push_back(0.0);
-							}
-						}
-						else
-						{
-							vx.push_back(_data.getElement(i, j_pos[0], sDataTable));
-							vy.push_back(_data.getElement(i, j_pos[0] - 1, sDataTable));
-							if (nErrorCols == 1)
-							{
-								if (_data.isValidEntry(i, j_pos[0] - 2, sDataTable))
-									vy_w.push_back(fabs(_data.getElement(i, j_pos[0] - 2, sDataTable)));
-								else
-									vy_w.push_back(0.0);
-							}
-							else
-							{
-								if (_data.isValidEntry(i, j_pos[0] - 2, sDataTable) && _data.isValidEntry(i, j_pos[0] - 3, sDataTable) && (_data.getElement(i, j_pos[0] - 2, sDataTable) && _data.getElement(i, j_pos[0] - 3, sDataTable)))
-									vy_w.push_back(sqrt(fabs(_data.getElement(i, j_pos[0] - 2, sDataTable)) * fabs(_data.getElement(i, j_pos[0] - 3, sDataTable))));
-								else if (_data.isValidEntry(i, j_pos[0] - 2, sDataTable) && _data.getElement(i, j_pos[0] - 2, sDataTable))
-									vy_w.push_back(fabs(_data.getElement(i, j_pos[0] - 2, sDataTable)));
-								else if (_data.isValidEntry(i, j_pos[0] - 3, sDataTable) && _data.getElement(i, j_pos[0] - 3, sDataTable))
-									vy_w.push_back(fabs(_data.getElement(i, j_pos[0] - 3, sDataTable)));
-								else
-									vy_w.push_back(0.0);
-							}
-						}
-					}
-				}
-				else
-				{
-					if (_data.isValidEntry(i, j_pos[0], sDataTable) && _data.isValidEntry(i, j_pos[1], sDataTable))
-					{
-						if (!isnan(dMin) && !isnan(dMax) && (_data.getElement(i, j_pos[0], sDataTable) < dMin || _data.getElement(i, j_pos[0], sDataTable) > dMax))
-						{
-							continue;
-						}
-						vx.push_back(_data.getElement(i, j_pos[0], sDataTable));
-						vy.push_back(_data.getElement(i, j_pos[1], sDataTable));
-						if (_data.isValidEntry(i, j_pos[2], sDataTable) && _data.isValidEntry(i, j_pos[3], sDataTable) && (_data.getElement(i, j_pos[2], sDataTable) || _data.getElement(i, j_pos[3], sDataTable)))
-							vy_w.push_back(sqrt(fabs(_data.getElement(i, j_pos[2], sDataTable)) * fabs(_data.getElement(i, j_pos[3], sDataTable))));
-						if (_data.isValidEntry(i, j_pos[2], sDataTable) && _data.getElement(i, j_pos[2], sDataTable))
-							vy_w.push_back(fabs(_data.getElement(i, j_pos[2], sDataTable)));
-						if (_data.isValidEntry(i, j_pos[3], sDataTable) && _data.getElement(i, j_pos[3], sDataTable))
-							vy_w.push_back(fabs(_data.getElement(i, j_pos[3], sDataTable)));
-						else
-							vy_w.push_back(0.0);
-					}
-				}
-			}
-			if (paramsMap.size() > vx.size())
-				throw SyntaxError(SyntaxError::OVERFITTING_ERROR, sCmd, SyntaxError::invalid_position);
-		}
-		else
-		{
-			int nErrorCols = 2;
-			if (j == 1)
-			{
-				if (abs(vCol[1] - vCol[0]) == 2)
-					nErrorCols = 1;
-			}
-			else if (j == 3)
-				nErrorCols = 2;
-			for (unsigned int i = 0; i < vLine.size(); i++)
-			{
-				if (j == 1)
-				{
-					if (_data.isValidEntry(vLine[i], vCol[0], sDataTable) && _data.isValidEntry(vLine[i], vCol[1], sDataTable))
-					{
-						if (!isnan(dMin) && !isnan(dMax) && (_data.getElement(vLine[i], vCol[0], sDataTable) < dMin || _data.getElement(vLine[i], vCol[0], sDataTable) > dMax))
-						{
-							continue;
-						}
-
-						vx.push_back(_data.getElement(vLine[i], vCol[0], sDataTable));
-						vy.push_back(_data.getElement(vLine[i], vCol[1], sDataTable));
-						if (nErrorCols == 1)
-						{
-							if (_data.isValidEntry(vLine[i], vCol[2], sDataTable))
-								vy_w.push_back(fabs(_data.getElement(vLine[i], vCol[2], sDataTable)));
-							else
-								vy_w.push_back(0.0);
-						}
-						else
-						{
-							if (_data.isValidEntry(vLine[i], vCol[2], sDataTable) && _data.isValidEntry(vLine[i], vCol[3], sDataTable) && (_data.getElement(vLine[i], vCol[2], sDataTable) && _data.getElement(vLine[i], vCol[3], sDataTable)))
-								vy_w.push_back(sqrt(fabs(_data.getElement(vLine[i], vCol[2], sDataTable)) * fabs(_data.getElement(vLine[i], vCol[3], sDataTable))));
-							else if (_data.isValidEntry(vLine[i], vCol[2], sDataTable) && _data.getElement(vLine[i], vCol[2], sDataTable))
-								vy_w.push_back(fabs(_data.getElement(vLine[i], vCol[2], sDataTable)));
-							else if (_data.isValidEntry(vLine[i], vCol[3], sDataTable) && _data.getElement(vLine[i], vCol[3], sDataTable))
-								vy_w.push_back(fabs(_data.getElement(vLine[i], vCol[3], sDataTable)));
-							else
-								vy_w.push_back(0.0);
-						}
-					}
-				}
-				else
-				{
-					if (_data.isValidEntry(vLine[i], vCol[0], sDataTable) && _data.isValidEntry(vLine[i], vCol[1], sDataTable))
-					{
-						if (!isnan(dMin) && !isnan(dMax) && (_data.getElement(vLine[i], vCol[0], sDataTable) < dMin || _data.getElement(vLine[i], vCol[0], sDataTable) > dMax))
-						{
-							continue;
-						}
-						vx.push_back(_data.getElement(vLine[i], vCol[0], sDataTable));
-						vy.push_back(_data.getElement(vLine[i], vCol[1], sDataTable));
-						if (_data.isValidEntry(vLine[i], vCol[2], sDataTable) && _data.isValidEntry(vLine[i], vCol[3], sDataTable) && (_data.getElement(vLine[i], vCol[2], sDataTable) && _data.getElement(vLine[i], vCol[3], sDataTable)))
-							vy_w.push_back(sqrt(fabs(_data.getElement(vLine[i], vCol[2], sDataTable)) * fabs(_data.getElement(i, vCol[3], sDataTable))));
-						else if (_data.isValidEntry(vLine[i], vCol[2], sDataTable) && _data.getElement(vLine[i], vCol[2], sDataTable))
-							vy_w.push_back(fabs(_data.getElement(vLine[i], vCol[2], sDataTable)));
-						else if (_data.isValidEntry(vLine[i], vCol[3], sDataTable) && _data.getElement(vLine[i], vCol[3], sDataTable))
-							vy_w.push_back(fabs(_data.getElement(vLine[i], vCol[3], sDataTable)));
-						else
-							vy_w.push_back(0.0);
-					}
-				}
-			}
-			if (paramsMap.size() > vx.size())
-				throw SyntaxError(SyntaxError::OVERFITTING_ERROR, sCmd, SyntaxError::invalid_position);
-		}
-
-	}
-	else if ((nFitVars & 2))
-	{
-		if (!vLine.size())
-		{
-			for (long long int i = i_pos[0]; i < i_pos[1]; i++)
-			{
-				if (j == 1 && j_pos[1] > j_pos[0])
-				{
-					if (!_data.isValidEntry(i, j_pos[0] + 1, sDataTable) || _data.getElement(i, j_pos[0] + 1, sDataTable) < dMinY || _data.getElement(i, j_pos[0] + 1, sDataTable) > dMaxY)
-					{
-					}
-					else
-						vy.push_back(_data.getElement(i, j_pos[0] + 1, sDataTable));
-				}
-				else if (j == 1)
-				{
-					if (!_data.isValidEntry(i, j_pos[0] - 1, sDataTable) || _data.getElement(i, j_pos[0] - 1, sDataTable) < dMinY || _data.getElement(i, j_pos[0] - 1, sDataTable) > dMaxY)
-					{
-					}
-					else
-						vy.push_back(_data.getElement(i, j_pos[0] - 1, sDataTable));
-				}
-				else
-				{
-					if (!_data.isValidEntry(i, j_pos[1], sDataTable) || _data.getElement(i, j_pos[1], sDataTable) < dMinY || _data.getElement(i, j_pos[1], sDataTable) > dMaxY)
-					{
-					}
-					else
-						vy.push_back(_data.getElement(i, j_pos[1], sDataTable));
-				}
-				if (!_data.isValidEntry(i, j_pos[0], sDataTable) || _data.getElement(i, j_pos[0], sDataTable) < dMin || _data.getElement(i, j_pos[0], sDataTable) > dMax)
-				{
-					continue;
-				}
-				else
-					vx.push_back(_data.getElement(i, j_pos[0], sDataTable));
-
-				if (j == 1 && j_pos[1] > j_pos[0])
-				{
-					for (long long int k = j_pos[0] + 2; k < j_pos[0] + i_pos[1] - i_pos[0] + 2; k++)
-					{
-						if (!_data.isValidEntry(k - j_pos[0] - 2 + i_pos[0], j_pos[0] + 1, sDataTable) || _data.getElement(k - j_pos[0] - 2 + i_pos[0], j_pos[0] + 1, sDataTable) < dMinY || _data.getElement(k - j_pos[0] - 2 + i_pos[0], j_pos[0] + 1, sDataTable) > dMaxY)
-						{
-							continue;
-						}
-						else
-						{
-							vTempZ.push_back(_data.getElement(i, k, sDataTable));
-							if (bUseErrors && _data.isValidEntry(i, k + i_pos[1] - i_pos[0], sDataTable))
-								vy_w.push_back(_data.getElement(i, k + i_pos[1] - i_pos[0], sDataTable));
-							else if (bUseErrors)
-								vy_w.push_back(0.0);
-						}
-					}
-				}
-				else if (j == 1)
-				{
-					for (long long int k = j_pos[0] - 2; k > j_pos[0] - i_pos[1] + i_pos[0] - 2; k--)
-					{
-						if (k < 0)
-							break;
-						if (!_data.isValidEntry(i_pos[0] - (k - j_pos[0] + 2), j_pos[0] - 1, sDataTable) || _data.getElement(i_pos[0] - (k - j_pos[0] + 2), j_pos[0] - 1, sDataTable) < dMinY || _data.getElement(i_pos[0] - (k - j_pos[0] + 2), j_pos[0] - 1, sDataTable) > dMaxY)
-						{
-							continue;
-						}
-						else
-						{
-							vTempZ.push_back(_data.getElement(i, k, sDataTable));
-							if (bUseErrors && k - i_pos[1] + i_pos[0] >= 0 && _data.isValidEntry(i, k - i_pos[1] + i_pos[0], sDataTable))
-								vy_w.push_back(_data.getElement(i, k - i_pos[1] + i_pos[0], sDataTable));
-							else if (bUseErrors)
-								vy_w.push_back(0.0);
-						}
-					}
-				}
-				else
-				{
-					for (long long int k = j_pos[2]; k < j_pos[2] + i_pos[1] - i_pos[0]; k++)
-					{
-						if (j > 2 && k == j_pos[3])
-							break;
-						if (!_data.isValidEntry(k - j_pos[2] + i_pos[0], j_pos[1], sDataTable) || _data.getElement(k - j_pos[2] + i_pos[0], j_pos[1], sDataTable) < dMinY || _data.getElement(k - j_pos[2] + i_pos[0], j_pos[1], sDataTable) > dMaxY)
-						{
-							continue;
-						}
-						else
-						{
-							vTempZ.push_back(_data.getElement(i, k, sDataTable));
-							if (bUseErrors && j > 2 && _data.isValidEntry(i, k + j_pos[3], sDataTable))
-								vy_w.push_back(_data.getElement(i, k + j_pos[3], sDataTable));
-							else if (bUseErrors && _data.isValidEntry(i, k + i_pos[1] - i_pos[0], sDataTable))
-								vy_w.push_back(_data.getElement(i, k + i_pos[1] - i_pos[0], sDataTable));
-							else if (bUseErrors)
-								vy_w.push_back(0.0);
-						}
-					}
-				}
-				vz.push_back(vTempZ);
-				vTempZ.clear();
-				if (vy_w.size() && bUseErrors)
-				{
-					vz_w.push_back(vy_w);
-					vy_w.clear();
-				}
-
-			}
-			if (paramsMap.size() > vz.size()
-					|| paramsMap.size() > vz[0].size())
-				throw SyntaxError(SyntaxError::OVERFITTING_ERROR, sCmd, SyntaxError::invalid_position);
-		}
-		else
-		{
-			for (long long int i = 0; i < vLine.size(); i++)
-			{
-				if (!_data.isValidEntry(vLine[i], vCol[1], sDataTable) || _data.getElement(vLine[i], vCol[1], sDataTable) < dMinY || _data.getElement(vLine[i], vCol[1], sDataTable) > dMaxY)
-				{
-				}
-				else
-					vy.push_back(_data.getElement(vLine[i], vCol[1], sDataTable));
-
-				if (!_data.isValidEntry(vLine[i], vCol[0], sDataTable) || _data.getElement(vLine[i], vCol[0], sDataTable) < dMin || _data.getElement(vLine[i], vCol[0], sDataTable) > dMax)
-				{
-					continue;
-				}
-				else
-					vx.push_back(_data.getElement(vLine[i], vCol[0], sDataTable));
-
-				if (j == 1 && j_pos[1] > j_pos[0])
-				{
-					for (long long int k = j_pos[0] + 2; k < j_pos[0] + i_pos[1] - i_pos[0] + 2; k++)
-					{
-						if (!_data.isValidEntry(k - j_pos[0] - 2 + i_pos[0], j_pos[0] + 1, sDataTable) || _data.getElement(k - j_pos[0] - 2 + i_pos[0], j_pos[0] + 1, sDataTable) < dMinY || _data.getElement(k - j_pos[0] - 2 + i_pos[0], j_pos[0] + 1, sDataTable) > dMaxY)
-						{
-							continue;
-						}
-						else
-						{
-							vTempZ.push_back(_data.getElement(i, k, sDataTable));
-							if (bUseErrors && _data.isValidEntry(i, k + i_pos[1] - i_pos[0], sDataTable))
-								vy_w.push_back(_data.getElement(i, k + i_pos[1] - i_pos[0], sDataTable));
-							else if (bUseErrors)
-								vy_w.push_back(0.0);
-						}
-					}
-				}
-				else if (j == 1)
-				{
-					for (long long int k = j_pos[0] - 2; k > j_pos[0] - i_pos[1] + i_pos[0] - 2; k--)
-					{
-						if (k < 0)
-							break;
-						if (!_data.isValidEntry(i_pos[0] - (k - j_pos[0] + 2), j_pos[0] - 1, sDataTable) || _data.getElement(i_pos[0] - (k - j_pos[0] + 2), j_pos[0] - 1, sDataTable) < dMinY || _data.getElement(i_pos[0] - (k - j_pos[0] + 2), j_pos[0] - 1, sDataTable) > dMaxY)
-						{
-							continue;
-						}
-						else
-						{
-							vTempZ.push_back(_data.getElement(i, k, sDataTable));
-							if (bUseErrors && k - i_pos[1] + i_pos[0] >= 0 && _data.isValidEntry(i, k - i_pos[1] + i_pos[0], sDataTable))
-								vy_w.push_back(_data.getElement(i, k - i_pos[1] + i_pos[0], sDataTable));
-							else if (bUseErrors)
-								vy_w.push_back(0.0);
-						}
-					}
-				}
-				else
-				{
-					for (long long int k = vCol[2]; k < vCol.size(); k++)
-					{
-						if (j > 2 && k == vLine.size() + 2)
-							break;
-						if (!_data.isValidEntry(vLine[k], vCol[1], sDataTable)
-								|| _data.getElement(vLine[k], vCol[1], sDataTable) < dMinY
-								|| _data.getElement(vLine[k], vCol[1], sDataTable) > dMaxY)
-						{
-							continue;
-						}
-						else
-						{
-							vTempZ.push_back(_data.getElement(vLine[i], vCol[k], sDataTable));
-						}
-					}
-				}
-				vz.push_back(vTempZ);
-				vTempZ.clear();
-				if (vy_w.size() && bUseErrors)
-				{
-					vz_w.push_back(vy_w);
-					vy_w.clear();
-				}
-			}
-			if (paramsMap.size() > vz.size()
-					|| paramsMap.size() > vz[0].size())
-				throw SyntaxError(SyntaxError::OVERFITTING_ERROR, sCmd, SyntaxError::invalid_position);
-		}
-	}
-	else
-	{
-		if (!vLine.size())
-		{
-			for (int i = i_pos[0]; i < i_pos[1]; i++)
-			{
-				if (_data.isValidEntry(i, j_pos[0], sDataTable) && _data.isValidEntry(i, j_pos[1], sDataTable))
-				{
-					if (!isnan(dMin) && !isnan(dMax) && (_data.getElement(i, j_pos[0], sDataTable) < dMin || _data.getElement(i, j_pos[0], sDataTable) > dMax))
-					{
-						continue;
-					}
-					vx.push_back(_data.getElement(i, j_pos[0], sDataTable));
-					vy.push_back(_data.getElement(i, j_pos[1], sDataTable));
-
-					if (_data.isValidEntry(i, j_pos[2], sDataTable))
-						vy_w.push_back(fabs(_data.getElement(i, j_pos[2], sDataTable)));
-					else
-						vy_w.push_back(0.0);
-				}
-			}
-			if (paramsMap.size() > vy.size())
-				throw SyntaxError(SyntaxError::OVERFITTING_ERROR, sCmd, SyntaxError::invalid_position);
-		}
-		else
-		{
-			for (unsigned int i = 0; i < vLine.size(); i++)
-			{
-				if (_data.isValidEntry(vLine[i], vCol[0], sDataTable) && _data.isValidEntry(vLine[i], vCol[1], sDataTable))
-				{
-					if (!isnan(dMin) && !isnan(dMax) && (_data.getElement(vLine[i], vCol[0], sDataTable) < dMin || _data.getElement(vLine[i], vCol[0], sDataTable) > dMax))
-					{
-						continue;
-					}
-					vx.push_back(_data.getElement(vLine[i], vCol[0], sDataTable));
-					vy.push_back(_data.getElement(vLine[i], vCol[1], sDataTable));
-					if (_data.isValidEntry(vLine[i], vCol[2], sDataTable))
-						vy_w.push_back(fabs(_data.getElement(vLine[i], vCol[2], sDataTable)));
-					else
-						vy_w.push_back(0.0);
-				}
-			}
-			if (paramsMap.size() > vy.size())
-				throw SyntaxError(SyntaxError::OVERFITTING_ERROR, sCmd, SyntaxError::invalid_position);
-		}
-	}
-
-	if (paramsMap.size() > vx.size())
-		throw SyntaxError(SyntaxError::OVERFITTING_ERROR, sCmd, SyntaxError::invalid_position);
-
-	// Überzählige Klammern (durch Fit(x)) entfernen
-	while (sFuncDisplay.front() == '(')
-	{
-		if (getMatchingParenthesis(sFuncDisplay) == sFuncDisplay.length() - 1 && getMatchingParenthesis(sFuncDisplay) != string::npos)
-		{
-			sFuncDisplay.erase(0, 1);
-			sFuncDisplay.pop_back();
-			StripSpaces(sFuncDisplay);
-		}
-		else
-			break;
-	}
-	StripSpaces(sFitFunction);
-	while (sFitFunction.front() == '(')
-	{
-		if (getMatchingParenthesis(sFitFunction) == sFitFunction.length() - 1 && getMatchingParenthesis(sFitFunction) != string::npos)
-		{
-			sFitFunction.erase(0, 1);
-			sFitFunction.pop_back();
-			StripSpaces(sFitFunction);
-		}
-		else
-			break;
-	}
-
-	if (_option.getSystemPrintStatus())
-		NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_FIT_FITTING", sFuncDisplay) + " ", _option, 0));
-
-	for (auto iter = paramsMap.begin(); iter != paramsMap.end(); ++iter)
-	{
-		vInitialVals.push_back(*(iter->second));
-	}
-	if (sChiMap.length())
-	{
-		Fitcontroller _fControl(&_parser);
-
-		if (!_idx.vI.size())
-		{
-			for (long long int i = _idx.nI[0]; i < _idx.nI[1]; i++)
-			{
-				for (long long int j = _idx.nI[0]; j <= (_idx.nI[1] - 1) * (!b1DChiMap) + _idx.nI[0] * (b1DChiMap); j++)
-				{
-					auto iter = paramsMap.begin();
-					for (unsigned int n = 0; n < vInitialVals.size(); n++)
-					{
-						*(iter->second) = vInitialVals[n];
-						++iter;
-					}
-					if (!_data.isValidEntry(i, _idx.nJ[0], sChiMap))
-						continue;
-					*(varMap.at(sChiMap_Vars[0])) = _data.getElement(i, _idx.nJ[0], sChiMap);
-					if (!b1DChiMap && _idx.nJ[0] < _idx.nJ[1])
-					{
-						if (!_data.isValidEntry(i, _idx.nJ[0] + 1, sChiMap))
-							continue;
-						*(varMap.at(sChiMap_Vars[1])) = _data.getElement(j, _idx.nJ[0] + 1, sChiMap);
-					}
-					else if (!b1DChiMap)
-					{
-						if (!_data.isValidEntry(i, _idx.nJ[0] - 1, sChiMap))
-							continue;
-						*(varMap.at(sChiMap_Vars[1])) = _data.getElement(j, _idx.nJ[0] - 1, sChiMap);
-					}
-					if (nDim >= 2 && nFitVars == 1)
-					{
-						if (!bUseErrors)
-						{
-							if (!_fControl.fit(vx, vy, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
-							{
-								if (_option.getSystemPrintStatus())
-									NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
-								return false;
-							}
-							sFunctionDefString = "Fit(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
-						}
-						else
-						{
-							if (!_fControl.fit(vx, vy, vy_w, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
-							{
-								if (_option.getSystemPrintStatus())
-									NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
-								return false;
-							}
-							sFunctionDefString = "Fitw(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
-						}
-					}
-					else if (nDim == 3)
-					{
-						if (!_fControl.fit(vx, vy, vz, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
-						{
-							if (_option.getSystemPrintStatus())
-								NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
-							return false;
-						}
-						sFunctionDefString = "Fit(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
-					}
-					else if (nDim == 5)
-					{
-						if (!_fControl.fit(vx, vy, vz, vz_w, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
-						{
-							if (_option.getSystemPrintStatus())
-								NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
-							return false;
-						}
-						sFunctionDefString = "Fitw(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
-					}
-					if (_idx.nJ[0] < _idx.nJ[1])
-					{
-						_data.writeToCache(i, _idx.nJ[0] + 1 + (!b1DChiMap) * (j - _idx.nI[0] + 1), sChiMap, _fControl.getFitChi());
-						if (i == _idx.nI[0] && !b1DChiMap)
-							_data.setHeadLineElement(_idx.nJ[0] + 1 + (!b1DChiMap) * (j - _idx.nI[0] + 1), sChiMap, "chi^2[" + toString(j - _idx.nI[0] + 1) + "]");
-						else if (i == _idx.nI[0])
-							_data.setHeadLineElement(_idx.nJ[0] + 1 + (!b1DChiMap) * (j - _idx.nI[0] + 1), sChiMap, "chi^2");
-					}
-					else
-					{
-						_data.writeToCache(i, _idx.nJ[0] - 1 - (!b1DChiMap) * (j - _idx.nI[0] + 1), sChiMap, _fControl.getFitChi());
-						if (i == _idx.nI[0] && !b1DChiMap)
-							_data.setHeadLineElement(_idx.nJ[0] - 1 - (!b1DChiMap) * (j - _idx.nI[0] + 1), sChiMap, "chi^2[" + toString(j - _idx.nI[0] + 1) + "]");
-						else if (i == _idx.nI[0])
-							_data.setHeadLineElement(_idx.nJ[0] - 1 - (!b1DChiMap) * (j - _idx.nI[0] + 1), sChiMap, "chi^2");
-					}
-				}
-			}
-		}
-		else
-		{
-			for (long long int i = 0; i < _idx.vI.size(); i++)
-			{
-				for (long long int j = 0; j <= (_idx.vI.size() - 1) * (!b1DChiMap); j++)
-				{
-					auto iter = paramsMap.begin();
-					for (unsigned int n = 0; n < vInitialVals.size(); n++)
-					{
-						*(iter->second) = vInitialVals[n];
-						++iter;
-					}
-					if (!_data.isValidEntry(_idx.vI[i], _idx.vJ[0], sChiMap))
-						continue;
-					*(varMap.at(sChiMap_Vars[0])) = _data.getElement(_idx.vI[i], _idx.vJ[0], sChiMap);
-					if (!b1DChiMap)
-					{
-						if (!_data.isValidEntry(_idx.vI[j], _idx.vJ[1], sChiMap))
-							continue;
-						*(varMap.at(sChiMap_Vars[1])) = _data.getElement(_idx.vI[j], _idx.vJ[1], sChiMap);
-					}
-					if (nDim >= 2 && nFitVars == 1)
-					{
-						if (!bUseErrors)
-						{
-							if (!_fControl.fit(vx, vy, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
-							{
-								if (_option.getSystemPrintStatus())
-									NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
-								return false;
-							}
-							sFunctionDefString = "Fit(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
-						}
-						else
-						{
-							if (!_fControl.fit(vx, vy, vy_w, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
-							{
-								if (_option.getSystemPrintStatus())
-									NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
-								return false;
-							}
-							sFunctionDefString = "Fitw(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
-						}
-					}
-					else if (nDim == 3)
-					{
-						if (!_fControl.fit(vx, vy, vz, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
-						{
-							if (_option.getSystemPrintStatus())
-								NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
-							return false;
-						}
-						sFunctionDefString = "Fit(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
-					}
-					else if (nDim == 5)
-					{
-						if (!_fControl.fit(vx, vy, vz, vz_w, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
-						{
-							if (_option.getSystemPrintStatus())
-								NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
-							return false;
-						}
-						sFunctionDefString = "Fitw(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
-					}
-					_data.writeToCache(_idx.vI[i], _idx.vJ[1 + (!b1DChiMap) * (j + 1)], sChiMap, _fControl.getFitChi());
-					if (!i && !b1DChiMap)
-						_data.setHeadLineElement(_idx.vJ[1 + (!b1DChiMap) * (j + 1)], sChiMap, "chi^2[" + toString(j + 1) + "]");
-					else if (!i)
-						_data.setHeadLineElement(_idx.vJ[1 + (!b1DChiMap) * (j + 1)], sChiMap, "chi^2");
-
-				}
-			}
-		}
-		auto iter = paramsMap.begin();
-		for (unsigned int n = 0; n < vInitialVals.size(); n++)
-		{
-			*(iter->second) = vInitialVals[n];
-			++iter;
-		}
-		if (_option.getSystemPrintStatus())
-		{
-			NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
-			NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_FIT_CHIMAPLOCATION", sChiMap), _option));
-		}
-
-		bool bDefinitionSuccess = false;
-
-		if (!_functions.isDefined(sFunctionDefString))
-			bDefinitionSuccess = _functions.defineFunc(sFunctionDefString);
-		else if (_functions.getDefine(_functions.getFunctionIndex(sFunctionDefString)) != sFunctionDefString)
-			bDefinitionSuccess = _functions.defineFunc(sFunctionDefString, true);
-        else if (_functions.getDefine(_functions.getFunctionIndex(sFunctionDefString)) == sFunctionDefString)
-            return true;
-
-        if (bDefinitionSuccess)
-            NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.getSystemPrintStatus());
-        else
-            NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
-
-		return true;
-	}
-
-	Fitcontroller _fControl(&_parser);
-
-	if (nDim >= 2 && nFitVars == 1)
-	{
-		if (!bUseErrors)
-		{
-			if (!_fControl.fit(vx, vy, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
-			{
-				if (_option.getSystemPrintStatus())
-					NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
-				return false;
-			}
-			sFunctionDefString = "Fit(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
-		}
-		else
-		{
-			if (!_fControl.fit(vx, vy, vy_w, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
-			{
-				if (_option.getSystemPrintStatus())
-					NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
-				return false;
-			}
-			sFunctionDefString = "Fitw(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
-		}
-	}
-	else if (nDim == 3)
-	{
-		if (!_fControl.fit(vx, vy, vz, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
-		{
-			if (_option.getSystemPrintStatus())
-				NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
-			return false;
-		}
-		sFunctionDefString = "Fit(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
-	}
-	else if (nDim == 5)
-	{
-		if (!_fControl.fit(vx, vy, vz, vz_w, sFitFunction, sRestrictions, paramsMap, dPrecision, nMaxIterations))
-		{
-			if (_option.getSystemPrintStatus())
-				NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
-			return false;
-		}
-		sFunctionDefString = "Fitw(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
-	}
-
-	vz_w = _fControl.getCovarianceMatrix();
-	dChisq = _fControl.getFitChi();
-
-	dNormChisq = dChisq;
-
-	unsigned int nSize = ((vz.size()) ? (vz.size() * vz[0].size()) : vx.size());
-	if (!bUseErrors && !(nFitVars & 2))
-	{
-		for (unsigned int i = 0; i < vz_w.size(); i++)
-		{
-			for (unsigned int j = 0; j < vz_w[0].size(); j++)
-			{
-				vz_w[i][j] *= dChisq / (nSize - paramsMap.size());
-			}
-		}
-	}
-	else if (!bUseErrors)
-	{
-		for (unsigned int i = 0; i < vz_w.size(); i++)
-		{
-			for (unsigned int j = 0; j < vz_w[0].size(); j++)
-			{
-				vz_w[i][j] *= dChisq / (nSize * nSize - paramsMap.size());
-			}
-		}
-	}
-
-	if (!bMaskDialog && _option.getSystemPrintStatus())
-		reduceLogFilesize(sFitLog);
-	sFittedFunction = _fControl.getFitFunction();
-	oFitLog.open(sFitLog.c_str(), ios_base::ate | ios_base::app);
-	if (oFitLog.fail())
-	{
-		oFitLog.close();
-		_data.setCacheStatus(false);
-		NumeReKernel::printPreFmt("\n");
-		throw SyntaxError(SyntaxError::CANNOT_OPEN_FITLOG, sCmd, SyntaxError::invalid_position);
-	}
-	if (bTeXExport)
-	{
-		oTeXExport.open(sTeXExportFile.c_str(), ios_base::trunc);
-		if (oTeXExport.fail())
-		{
-			oTeXExport.close();
-			_data.setCacheStatus(false);
-			NumeReKernel::printPreFmt("\n");
-			throw SyntaxError(SyntaxError::CANNOT_OPEN_TARGET, sCmd, SyntaxError::invalid_position, sTeXExportFile);
-		}
-	}
-	// FITLOG
-	oFitLog << std::setw(76) << std::setfill('=') << '=' << endl;
-	oFitLog << toUpperCase(_lang.get("PARSERFUNCS_FIT_HEADLINE")) << ": " << getTimeStamp(false) << endl;
-	oFitLog << std::setw(76) << std::setfill('=') << '=' << endl;
-	oFitLog << (_lang.get("PARSERFUNCS_FIT_FUNCTION", sFuncDisplay)) << endl;
-	oFitLog << (_lang.get("PARSERFUNCS_FIT_FITTED_FUNC", sFittedFunction)) << endl;
-	oFitLog << (_lang.get("PARSERFUNCS_FIT_DATASET")) << " ";
-	if (nDim == 2)
-	{
-		oFitLog << j_pos[0] + 1;
-		if (j)
-		{
-			oFitLog << ", " << j_pos[1] + 1;
-		}
-	}
-	else if (nDim == 4)
-	{
-		int nErrorCols = 2;
-		if (j == 1)
-		{
-			if (abs(j_pos[1] - j_pos[0]) == 3)
-				nErrorCols = 1;
-		}
-		else if (j == 3)
-			nErrorCols = 2;
-
-		if (j == 1)
-		{
-			if (j_pos[0] < j_pos[1])
-			{
-				oFitLog << j_pos[0] + 1 << ", " << j_pos[0] + 2 << ", " << j_pos[0] + 3;
-				if (nErrorCols == 2)
-					oFitLog << ", " << j_pos[0] + 4;
-			}
-			else
-			{
-				oFitLog << j_pos[0] + 1 << ", " << j_pos[0] << ", " << j_pos[0] - 1;
-				if (nErrorCols == 2)
-					oFitLog << ", " << j_pos[0] - 2;
-			}
-		}
-		else
-		{
-			oFitLog << j_pos[0] + 1 << ", " << j_pos[1] + 1 << ", " << j_pos[2] + 1 << ", " << j_pos[3] + 1;
-		}
-	}
-	else if ((nFitVars & 2))
-	{
-		if (j == 1 && j_pos[1] > j_pos[0])
-		{
-			oFitLog << j_pos[0] + 1 << ", " << j_pos[0] + 2 << ", " << j_pos[0] + 3 << "-" << j_pos[0] + 2 + i_pos[1] - i_pos[0];
-			if (bUseErrors)
-				oFitLog << ", " << j_pos[2] + 3 + i_pos[1] - i_pos[0] << "-" << j_pos[0] + 2 + 2 * (i_pos[1] - i_pos[0]);
-		}
-		else if (j == 1)
-		{
-			oFitLog << j_pos[0] + 1 << ", " << j_pos[0] << ", " << j_pos[0] - 1 << "-" << j_pos[0] - 2 - i_pos[1] + i_pos[0];
-			if (bUseErrors)
-				oFitLog << ", " << j_pos[2] - 3 - i_pos[1] + i_pos[0] << "-" << j_pos[0] - 2 - 2 * (i_pos[1] - i_pos[0]);
-		}
-		else
-		{
-			oFitLog << j_pos[0] + 1 << ", " << j_pos[1] + 1 << ", " << j_pos[2] + 1 << "-" << j_pos[2] + i_pos[1] - i_pos[0];
-			if (bUseErrors)
-			{
-				if (j > 2)
-					oFitLog << ", " << j_pos[3] + 1 << "-" << j_pos[3] + (i_pos[1] - i_pos[0]);
-				else
-					oFitLog << ", " << j_pos[2] + i_pos[1] - i_pos[0] + 1 << "-" << j_pos[0] + 2 * (i_pos[1] - i_pos[0]);
-			}
-		}
-	}
-	else
-	{
-		for (int k = 0; k < (int)nDim; k++)
-		{
-			oFitLog << j_pos[k] + 1;
-			if (k + 1 < (int)nDim)
-				oFitLog << ", ";
-		}
-	}
-	oFitLog << " " << _lang.get("PARSERFUNCS_FIT_FROM") << " " << _data.getDataFileName(sDataTable) << endl;
-	if (bUseErrors)
-		oFitLog << (_lang.get("PARSERFUNCS_FIT_POINTS_W_ERR", toString((int)nSize))) << endl;
-	else
-		oFitLog << (_lang.get("PARSERFUNCS_FIT_POINTS_WO_ERR", toString((int)nSize))) << endl;
-	if (bRestrictXVals)
-		oFitLog << (_lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "x", toString(dMin, 5), toString(dMax, 5))) << endl;
-	if (bRestrictYVals)
-		oFitLog << (_lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "y", toString(dMinY, 5), toString(dMaxY, 5))) << endl;
-	if (sRestrictions.length())
-		oFitLog << _lang.get("PARSERFUNCS_FIT_PARAM_RESTRICTS", sRestrictions) << endl;
-	oFitLog << _lang.get("PARSERFUNCS_FIT_FREEDOMS", toString((int)nSize - paramsMap.size())) << endl;
-	oFitLog << _lang.get("PARSERFUNCS_FIT_ALGORITHM_SETTINGS", toString(dPrecision, 5), toString(nMaxIterations)) << endl;
-	oFitLog << _lang.get("PARSERFUNCS_FIT_ITERATIONS", toString(_fControl.getIterations())) << endl;
-	if (nSize != paramsMap.size() && !(nFitVars & 2))
-	{
-		oFitLog << _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7)) << endl;
-		oFitLog << _lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7)) << endl;
-		oFitLog << _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) << endl;
-	}
-	else if (nFitVars & 2 && nSize != paramsMap.size() )
-	{
-		oFitLog << _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7)) << endl;
-		oFitLog << _lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7)) << endl;
-		oFitLog << _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) << endl;
-	}
-	oFitLog << endl;
-	if (bUseErrors)
-		oFitLog << _lang.get("PARSERFUNCS_FIT_LOG_TABLEHEAD1") << endl;
-	else
-		oFitLog << _lang.get("PARSERFUNCS_FIT_LOG_TABLEHEAD2") << endl;
-	oFitLog << std::setw(76) << std::setfill('-') << '-' << endl;
-
-	// TEXEXPORT
-	if (bTeXExport)
-	{
-		oTeXExport << "%\n% " << _lang.get("OUTPUT_PRINTLEGAL_TEX") << "\n%" << endl;
-		oTeXExport << "\\section{" << _lang.get("PARSERFUNCS_FIT_HEADLINE") << ": " << getTimeStamp(false)  << "}" << endl;
-		oTeXExport << "\\begin{itemize}" << endl;
-		oTeXExport << "\t\\item " << (_lang.get("PARSERFUNCS_FIT_FUNCTION", "$" + replaceToTeX(sFuncDisplay, true) + "$")) << endl;
-		oTeXExport << "\t\\item " << (_lang.get("PARSERFUNCS_FIT_FITTED_FUNC", "$" + replaceToTeX(sFittedFunction, true) + "$")) << endl;
-        if (bUseErrors)
-			oTeXExport << "\t\\item " << (_lang.get("PARSERFUNCS_FIT_POINTS_W_ERR", toString((int)nSize))) << endl;
-		else
-			oTeXExport << "\t\\item " << (_lang.get("PARSERFUNCS_FIT_POINTS_WO_ERR", toString((int)nSize))) << endl;
-		if (bRestrictXVals)
-			oTeXExport << "\t\\item " << (_lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "x", toString(dMin, 5), toString(dMax, 5))) << endl;
-		if (bRestrictYVals)
-			oTeXExport << "\t\\item " << (_lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "y", toString(dMinY, 5), toString(dMaxY, 5))) << endl;
-		if (sRestrictions.length())
-			oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_PARAM_RESTRICTS", "$" + replaceToTeX(sRestrictions, true) + "$") << endl;
-		oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_FREEDOMS", toString((int)nSize - paramsMap.size())) << endl;
-		oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_ALGORITHM_SETTINGS", toString(dPrecision, 5), toString(nMaxIterations)) << endl;
-		oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_ITERATIONS", toString(_fControl.getIterations())) << endl;
-		if (nSize != paramsMap.size() && !(nFitVars & 2))
-		{
-			string sChiReplace = _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7));
-			sChiReplace.replace(sChiReplace.find("chi^2"), 5, "$\\chi^2$");
-			oTeXExport << "\t\\item " << sChiReplace << endl;
-			sChiReplace = _lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7));
-			sChiReplace.replace(sChiReplace.find("chi^2"), 5, "$\\chi^2$");
-			oTeXExport << "\t\\item " << sChiReplace << endl;
-			oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) << endl;
-		}
-		else if (nFitVars & 2 && nSize != paramsMap.size())
-		{
-			string sChiReplace = _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7));
-			sChiReplace.replace(sChiReplace.find("chi^2"), 5, "$\\chi^2$");
-			oTeXExport << "\t\\item " << sChiReplace << endl;
-			sChiReplace = _lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7));
-			sChiReplace.replace(sChiReplace.find("chi^2"), 5, "$\\chi^2$");
-			oTeXExport << "\t\\item " << sChiReplace << endl;
-			oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) << endl;
-		}
-		oTeXExport << "\\end{itemize}" << endl << "\\begin{table}[htb]" << endl << "\t\\centering\n\t\\begin{tabular}{cccc}" << endl << "\t\t\\toprule" << endl;
-		if (bUseErrors)
-			oTeXExport << "\t\t" << _lang.get("PARSERFUNCS_FIT_PARAM") << " & "
-					   << _lang.get("PARSERFUNCS_FIT_INITIAL") << " & "
-					   << _lang.get("PARSERFUNCS_FIT_FITTED") << " & "
-					   << _lang.get("PARSERFUNCS_FIT_PARAM_DEV") << "\\\\" << endl;
-		else
-			oTeXExport << "\t\t" << _lang.get("PARSERFUNCS_FIT_PARAM") << " & "
-					   << _lang.get("PARSERFUNCS_FIT_INITIAL") << " & "
-					   << _lang.get("PARSERFUNCS_FIT_FITTED") << " & "
-					   << _lang.get("PARSERFUNCS_FIT_ASYMPTOTIC_ERROR") << "\\\\" << endl;
-		oTeXExport << "\t\t\\midrule" << endl;
-	}
-	_data.setCacheStatus(false);
-
-
-	if (_option.getSystemPrintStatus())
-		NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
-
-	if (_option.getSystemPrintStatus() && !bMaskDialog)
-	{
-		NumeReKernel::toggleTableStatus();
-		make_hline();
-		NumeReKernel::print(toSystemCodePage("NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_FIT_HEADLINE"))));
-		make_hline();
-		NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_FIT_FUNCTION", sFittedFunction), _option, true));
-		if (bUseErrors)
-			NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_FIT_POINTS_W_ERR", toString((int)nSize))));
-		else
-			NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_FIT_POINTS_WO_ERR", toString((int)nSize))));
-		if (bRestrictXVals)
-			NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "x", toString(dMin, 5), toString(dMax, 5))));
-		if (bRestrictYVals)
-			NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "y", toString(dMinY, 5), toString(dMaxY, 5))));
-		if (sRestrictions.length())
-			NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_FIT_PARAM_RESTRICTS", sRestrictions)));
-		NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_FIT_FREEDOMS", toString((int)nSize - paramsMap.size()))));
-		NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_FIT_ALGORITHM_SETTINGS", toString(dPrecision, 5), toString(nMaxIterations))));
-		NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_FIT_ITERATIONS", toString(_fControl.getIterations()))));
-		if (nSize != paramsMap.size() && !(nFitVars & 2))
-		{
-			NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7))));
-			NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7))));
-			NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7))));
-		}
-		else if (nSize != paramsMap.size() && (nFitVars & 2))
-		{
-			NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7))));
-			NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7))));
-			NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7))));
-		}
-		NumeReKernel::printPreFmt("|\n");
-
-		if (bUseErrors)
-		{
-			NumeReKernel::print(_lang.get("PARSERFUNCS_FIT_PARAM")
-								+ strfill(_lang.get("PARSERFUNCS_FIT_INITIAL"), (_option.getWindow() - 32) / 2 + _option.getWindow() % 2 - 5 + 9 - _lang.get("PARSERFUNCS_FIT_PARAM").length())
-								+ strfill(_lang.get("PARSERFUNCS_FIT_FITTED"), (_option.getWindow() - 50) / 2)
-								+ strfill(_lang.get("PARSERFUNCS_FIT_PARAM_DEV"), 33));
-		}
-		else
-		{
-			NumeReKernel::print(_lang.get("PARSERFUNCS_FIT_PARAM")
-								+ strfill(_lang.get("PARSERFUNCS_FIT_INITIAL"), (_option.getWindow() - 32) / 2 + _option.getWindow() % 2 - 5 + 9 - _lang.get("PARSERFUNCS_FIT_PARAM").length())
-								+ strfill(_lang.get("PARSERFUNCS_FIT_FITTED"), (_option.getWindow() - 50) / 2)
-								+ strfill(_lang.get("PARSERFUNCS_FIT_ASYMPTOTIC_ERROR"), 33));
-		}
-		NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow() - 4, '-') + "\n");
-	}
-	pItem = paramsMap.begin();
-	string sErrors = "";
-	string sPMSign = " ";
-	sPMSign[0] = (char)177;
-
-	for (unsigned int n = 0; n < paramsMap.size(); n++)
-	{
-		if (pItem == paramsMap.end())
-			break;
-		oFitLog << pItem->first << "    ";
-		oFitLog << std::setprecision(_option.getPrecision()) << std::setw(24 - pItem->first.length()) << std::setfill(' ') << vInitialVals[n];
-		oFitLog << std::setprecision(_option.getPrecision()) << std::setw(15) << std::setfill(' ') << *(pItem->second);
-		oFitLog << std::setprecision(_option.getPrecision()) << std::setw(16) << std::setfill(' ') << "± " + toString(sqrt(abs(vz_w[n][n])), 5);
-		if (vz_w[n][n])
-		{
-			oFitLog << " " << std::setw(16) << std::setfill(' ') << "(" + toString(abs(sqrt(abs(vz_w[n][n] / (*(pItem->second)))) * 100.0), 4) + "%)" << endl;
-			dErrorPercentageSum += abs(sqrt(abs(vz_w[n][n] / (*(pItem->second)))) * 100.0);
-		}
-		else
-			oFitLog << endl;
-
-		if (bTeXExport)
-		{
-			oTeXExport << "\t\t$" <<  replaceToTeX(pItem->first, true) << "$ & $"
-					   << vInitialVals[n] << "$ & $"
-					   << *(pItem->second) << "$ & $\\pm"
-					   << sqrt(abs(vz_w[n][n]));
-			if (vz_w[n][n])
-			{
-				oTeXExport << " \\quad (" + toString(abs(sqrt(abs(vz_w[n][n] / (*(pItem->second)))) * 100.0), 4) + "\\%)$\\\\" << endl;
-			}
-			else
-				oTeXExport << "$\\\\" << endl;
-		}
-		if (_option.getSystemPrintStatus() && !bMaskDialog)
-		{
-			NumeReKernel::printPreFmt("|   " + pItem->first + "    "
-									  + strfill(toString(vInitialVals[n], _option), (_option.getWindow() - 32) / 2 + _option.getWindow() % 2 - pItem->first.length())
-									  + strfill(toString(*(pItem->second), _option), (_option.getWindow() - 50) / 2)
-									  + strfill(sPMSign + " " + toString(sqrt(abs(vz_w[n][n])), 5), 16));
-			if (vz_w[n][n])
-				NumeReKernel::printPreFmt(" " + strfill("(" + toString(abs(sqrt(abs(vz_w[n][n] / (*(pItem->second)))) * 100.0), 4) + "%)", 16) + "\n");
-			else
-				NumeReKernel::printPreFmt("\n");
-		}
-		if (bSaveErrors)
-		{
-			sErrors += pItem->first + "_error = " + toCmdString(sqrt(abs(vz_w[n][n]))) + ",";
-		}
-		++pItem;
-	}
-	dErrorPercentageSum /= (double)paramsMap.size();
-	if (bSaveErrors)
-	{
-		sErrors[sErrors.length() - 1] = ' ';
-		_parser.SetExpr(sErrors);
-		_parser.Eval();
-	}
-	_parser.SetExpr("chi = " + toCmdString(sqrt(dChisq)));
-	_parser.Eval();
-	oFitLog << std::setw(76) << std::setfill('-') << '-' << endl;
-	if (bTeXExport)
-	{
-		oTeXExport << "\t\t\\bottomrule" << endl << "\t\\end{tabular}" << endl << "\\end{table}" << endl;
-	}
-	if (_option.getSystemPrintStatus() && !bMaskDialog)
-		NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow() - 4, '-') + "\n");
-	if (paramsMap.size() > 1 && paramsMap.size() != nSize)
-	{
-		oFitLog << endl;
-		oFitLog << _lang.get("PARSERFUNCS_FIT_CORRELMAT_HEAD") << ":" << endl;
-		oFitLog << endl;
-		for (unsigned int n = 0; n < paramsMap.size(); n++)
-		{
-			if (!n)
-				oFitLog << '/';
-			else if (n + 1 == paramsMap.size())
-				oFitLog << '\\';
-			else
-				oFitLog << '|';
-			for (unsigned int k = 0; k < paramsMap.size(); k++)
-			{
-				oFitLog << " " << std::setprecision(3) << std::setw(10) << std::setfill(' ') << vz_w[n][k] / sqrt(fabs(vz_w[n][n]*vz_w[k][k]));
-			}
-			if (!n)
-				oFitLog << " \\";
-			else if (n + 1 == paramsMap.size())
-				oFitLog << " /";
-			else
-				oFitLog << " |";
-			oFitLog << endl;
-		}
-
-		if (bTeXExport)
-		{
-			oTeXExport << endl << "\\subsection{" << _lang.get("PARSERFUNCS_FIT_CORRELMAT_HEAD") << "}" << endl;
-			oTeXExport << "\\[" << endl << "\t\\begin{pmatrix}" << endl;
-			for (unsigned int n = 0; n < paramsMap.size(); n++)
-			{
-				oTeXExport << "\t\t";
-				for (unsigned int k = 0; k < paramsMap.size(); k++)
-				{
-					oTeXExport << vz_w[n][k] / sqrt(fabs(vz_w[n][n]*vz_w[k][k]));
-					if (k + 1 < paramsMap.size())
-						oTeXExport << " & ";
-				}
-				oTeXExport << "\\\\" << endl;
-			}
-			oTeXExport << "\t\\end{pmatrix}" << endl << "\\]" << endl;
-		}
-
-		if (_option.getSystemPrintStatus() && !bMaskDialog)
-		{
-			NumeReKernel::printPreFmt("|\n|-> " + toSystemCodePage(_lang.get("PARSERFUNCS_FIT_CORRELMAT_HEAD")) + ":\n|\n");
-			for (unsigned int n = 0; n < paramsMap.size(); n++)
-			{
-				NumeReKernel::printPreFmt("|   ");
-				if (!n)
-					NumeReKernel::printPreFmt("/");
-				else if (n + 1 == paramsMap.size())
-					NumeReKernel::printPreFmt("\\");
-				else
-					NumeReKernel::printPreFmt("|");
-				for (unsigned int k = 0; k < paramsMap.size(); k++)
-				{
-					NumeReKernel::printPreFmt(" " + strfill(toString(vz_w[n][k] / sqrt(fabs(vz_w[n][n] * vz_w[k][k])), 3), 10));
-				}
-				if (!n)
-					NumeReKernel::printPreFmt(" \\\n");
-				else if (n + 1 == paramsMap.size())
-					NumeReKernel::printPreFmt(" /\n");
-				else
-					NumeReKernel::printPreFmt(" |\n");
-			}
-		}
-	}
-	if (nFitVars & 2)
-		nSize *= nSize;
-	dNormChisq /= (double)(nSize - paramsMap.size());
-	if (nFitVars & 2)
-		dNormChisq = sqrt(dNormChisq);
-	// FITLOG
-	oFitLog << endl;
-	oFitLog << _lang.get("PARSERFUNCS_FIT_ANALYSIS") << ":" << endl;
-	if (_fControl.getIterations() == nMaxIterations)
-	{
-		oFitLog << LineBreak(_lang.get("PARSERFUNCS_FIT_MAXITER_REACHED"), _option) << endl;
-	}
-	else
-	{
-		if (nSize != paramsMap.size())
-		{
-			if (bUseErrors)
-			{
-				if (log10(dNormChisq) > -1.0 && log10(dNormChisq) < 0.5 && dErrorPercentageSum < 50.0)
-					oFitLog << _lang.get("PARSERFUNCS_FIT_GOOD_W_ERROR") << endl;
-				else if (log10(dNormChisq) <= -1.0 && dErrorPercentageSum < 20.0)
-					oFitLog << _lang.get("PARSERFUNCS_FIT_BETTER_W_ERROR") << endl;
-				else if (log10(dNormChisq) >= 0.5 && log10(dNormChisq) < 1.5 && dErrorPercentageSum < 100.0)
-					oFitLog << _lang.get("PARSERFUNCS_FIT_NOT_GOOD_W_ERROR") << endl;
-				else
-					oFitLog << _lang.get("PARSERFUNCS_FIT_BAD_W_ERROR") << endl;
-			}
-			else
-			{
-				if (log10(dNormChisq) < -3.0 && dErrorPercentageSum < 20.0)
-					oFitLog << _lang.get("PARSERFUNCS_FIT_GOOD_WO_ERROR") << endl;
-				else if (log10(dNormChisq) < 0.0 && dErrorPercentageSum < 50.0)
-					oFitLog << _lang.get("PARSERFUNCS_FIT_IMPROVABLE_WO_ERROR") << endl;
-				else if (log10(dNormChisq) >= 0.0 && log10(dNormChisq) < 0.5 && dErrorPercentageSum < 100.0)
-					oFitLog << _lang.get("PARSERFUNCS_FIT_NOT_GOOD_WO_ERROR") << endl;
-				else
-					oFitLog << _lang.get("PARSERFUNCS_FIT_BAD_WO_ERROR") << endl;
-			}
-		}
-		else
-		{
-			oFitLog << _lang.get("PARSERFUNCS_FIT_OVERFITTING") << endl;
-		}
-	}
-	// TEXEXPORT
-	oTeXExport << endl;
-	oTeXExport << "\\subsection{" << _lang.get("PARSERFUNCS_FIT_ANALYSIS") << "}" << endl;
-	if (_fControl.getIterations() == nMaxIterations)
-	{
-		oTeXExport << LineBreak(_lang.get("PARSERFUNCS_FIT_MAXITER_REACHED"), _option) << endl;
-	}
-	else
-	{
-		if (nSize != paramsMap.size())
-		{
-			if (bUseErrors)
-			{
-				if (log10(dNormChisq) > -1.0 && log10(dNormChisq) < 0.5 && dErrorPercentageSum < 50.0)
-					oTeXExport << _lang.get("PARSERFUNCS_FIT_GOOD_W_ERROR") << endl;
-				else if (log10(dNormChisq) <= -1.0 && dErrorPercentageSum < 20.0)
-					oTeXExport << _lang.get("PARSERFUNCS_FIT_BETTER_W_ERROR") << endl;
-				else if (log10(dNormChisq) >= 0.5 && log10(dNormChisq) < 1.5 && dErrorPercentageSum < 100.0)
-					oTeXExport << _lang.get("PARSERFUNCS_FIT_NOT_GOOD_W_ERROR") << endl;
-				else
-					oTeXExport << _lang.get("PARSERFUNCS_FIT_BAD_W_ERROR") << endl;
-			}
-			else
-			{
-				if (log10(dNormChisq) < -3.0 && dErrorPercentageSum < 20.0)
-					oTeXExport << _lang.get("PARSERFUNCS_FIT_GOOD_WO_ERROR") << endl;
-				else if (log10(dNormChisq) < 0.0 && dErrorPercentageSum < 50.0)
-					oTeXExport << _lang.get("PARSERFUNCS_FIT_IMPROVABLE_WO_ERROR") << endl;
-				else if (log10(dNormChisq) >= 0.0 && log10(dNormChisq) < 0.5 && dErrorPercentageSum < 100.0)
-					oTeXExport << _lang.get("PARSERFUNCS_FIT_NOT_GOOD_WO_ERROR") << endl;
-				else
-					oTeXExport << _lang.get("PARSERFUNCS_FIT_BAD_WO_ERROR") << endl;
-			}
-		}
-		else
-		{
-			oTeXExport << _lang.get("PARSERFUNCS_FIT_OVERFITTING") << endl;
-		}
-	}
-
-	if (_option.getSystemPrintStatus() && !bMaskDialog)
-	{
-		NumeReKernel::printPreFmt("|\n|-> " + _lang.get("PARSERFUNCS_FIT_ANALYSIS") + ":\n");
-		if (_fControl.getIterations() == nMaxIterations)
-		{
-			NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_FIT_MAXITER_REACHED"), _option));
-		}
-		else
-		{
-			if (nSize != paramsMap.size())
-			{
-				if (bUseErrors)
-				{
-					if (log10(dNormChisq) > -1.0 && log10(dNormChisq) < 0.5 && dErrorPercentageSum < 50.0)
-						NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_FIT_GOOD_W_ERROR"), _option));
-					else if (log10(dNormChisq) <= -1.0 && dErrorPercentageSum < 20.0)
-						NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_FIT_BETTER_W_ERROR"), _option));
-					else if (log10(dNormChisq) >= 0.5 && log10(dNormChisq) < 1.5 && dErrorPercentageSum < 100.0)
-						NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_FIT_NOT_GOOD_W_ERROR"), _option));
-					else
-						NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_FIT_BAD_W_ERROR"), _option));
-				}
-				else
-				{
-					if (log10(dNormChisq) < -3.0 && dErrorPercentageSum < 20.0)
-						NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_FIT_GOOD_WO_ERROR"), _option));
-					else if (log10(dNormChisq) < 0.0 && dErrorPercentageSum < 50.0)
-						NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_FIT_IMPROVABLE_WO_ERROR"), _option));
-					else if (log10(dNormChisq) >= 0.0 && log10(dNormChisq) < 0.5 && dErrorPercentageSum < 100.0)
-						NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_FIT_NOT_GOOD_WO_ERROR"), _option));
-					else
-						NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_FIT_BAD_WO_ERROR"), _option));
-				}
-			}
-			else
-			{
-				NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_FIT_OVERFITTING"), _option));
-			}
-		}
-		NumeReKernel::toggleTableStatus();
-		make_hline();
-	}
-
-	oFitLog.close();
-
-	bool bDefinitionSuccess = false;
-
-	if (!_functions.isDefined(sFunctionDefString))
-		bDefinitionSuccess = _functions.defineFunc(sFunctionDefString);
-	else if (_functions.getDefine(_functions.getFunctionIndex(sFunctionDefString)) != sFunctionDefString)
-		bDefinitionSuccess = _functions.defineFunc(sFunctionDefString, true);
-    else if (_functions.getDefine(_functions.getFunctionIndex(sFunctionDefString)) == sFunctionDefString)
-        return true;
-
-    if (bDefinitionSuccess)
-        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.getSystemPrintStatus());
-    else
-        NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
-
-	return true;
-}
-
 // fft data(:,:) -set inverse complex
 bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
 {
@@ -6856,7 +4804,7 @@ bool parser_evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Set
 	}
 	StripSpaces(sParams);
 
-	if (sExpr.find("data(") != string::npos || _data.containsCacheElements(sExpr))
+	if (sExpr.find("data(") != string::npos || _data.containsTablesOrClusters(sExpr))
 	{
 
 		getDataElements(sExpr, _parser, _data, _option);
@@ -6865,7 +4813,7 @@ bool parser_evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Set
 			parser_VectorToExpr(sExpr, _option);
 	}
 
-	if (sParams.find("data(") != string::npos || _data.containsCacheElements(sParams))
+	if (sParams.find("data(") != string::npos || _data.containsTablesOrClusters(sParams))
 	{
 		getDataElements(sParams, _parser, _data, _option);
 
@@ -7026,7 +4974,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
 
 	if (sCmd.find("data(") != string::npos && !_data.isValid())
 		throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
-	if (_data.containsCacheElements(sCmd) && !_data.isValidCache())
+	if (_data.containsTablesOrClusters(sCmd) && !_data.isValidCache())
 		throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);
 
 	// Extract the z expression from the command line
@@ -7136,14 +5084,14 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
 	vYVals = parser_extractVectorForDatagrid(sCmd, sYVals, sZVals, vSamples[1 - bTranspose], _parser, _data, _option);
 
 	//>> Z-Matrix
-	if (sZVals.find("data(") != string::npos || _data.containsCacheElements(sZVals))
+	if (sZVals.find("data(") != string::npos || _data.containsTablesOrClusters(sZVals))
 	{
 		// Get the datagrid from another table
 		Indices _idx = parser_getIndices(sZVals, _parser, _data, _option);
 
 		// identify the table
 		string szDatatable = "data";
-		if (_data.containsCacheElements(sZVals))
+		if (_data.containsTablesOrClusters(sZVals))
 		{
 			_data.setCacheStatus(true);
 			for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
@@ -7159,7 +5107,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
 		}
 
 		// Check the indices
-		if ((_idx.nI[0] == -1 && !_idx.vI.size()) || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
+		if (!isValidIndexSet(_idx))
 			throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 
 		// The indices are numbers
@@ -7315,12 +5263,12 @@ static vector<size_t> parser_getSamplesForDatagrid(const string& sCmd, const str
 {
 	vector<size_t> vSamples;
 	// If the z vals are inside of a table then obtain the correct number of samples here
-	if (sZVals.find("data(") != string::npos || _data.containsCacheElements(sZVals))
+	if (sZVals.find("data(") != string::npos || _data.containsTablesOrClusters(sZVals))
 	{
 		// Get the indices and identify the table name
 		Indices _idx = parser_getIndices(sZVals, _parser, _data, _option);
 		string sZDatatable = "data";
-		if (_data.containsCacheElements(sZVals))
+		if (_data.containsTablesOrClusters(sZVals))
 		{
 			for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
 			{
@@ -7334,7 +5282,7 @@ static vector<size_t> parser_getSamplesForDatagrid(const string& sCmd, const str
 			}
 		}
 		// Check the indices
-		if ((_idx.nI[0] == -1 && !_idx.vI.size()) || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
+		if (!isValidIndexSet(_idx))
 			throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 		if (!_idx.vI.size())
 		{
@@ -7393,14 +5341,14 @@ static vector<double> parser_extractVectorForDatagrid(const string& sCmd, string
 	vector<double> vVectorVals;
 
 	// Data direct from the table, not an index pair
-	if ((sVectorVals.find("data(") != string::npos || _data.containsCacheElements(sVectorVals)) && sVectorVals.find(':', getMatchingParenthesis(sVectorVals.substr(sVectorVals.find('('))) + sVectorVals.find('(')) == string::npos)
+	if ((sVectorVals.find("data(") != string::npos || _data.containsTablesOrClusters(sVectorVals)) && sVectorVals.find(':', getMatchingParenthesis(sVectorVals.substr(sVectorVals.find('('))) + sVectorVals.find('(')) == string::npos)
 	{
 		// Get the indices
 		Indices _idx = parser_getIndices(sVectorVals, _parser, _data, _option);
 
 		// Identify the table
 		string sDatatable = "data";
-		if (_data.containsCacheElements(sVectorVals))
+		if (_data.containsTablesOrClusters(sVectorVals))
 		{
 			_data.setCacheStatus(true);
 			for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
@@ -7416,7 +5364,7 @@ static vector<double> parser_extractVectorForDatagrid(const string& sCmd, string
 		}
 
 		// Check the indices
-		if ((_idx.nI[0] == -1 && !_idx.vI.size()) || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
+		if (!isValidIndexSet(_idx))
 			throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 		if (!_idx.vI.size())
 		{
@@ -7436,7 +5384,7 @@ static vector<double> parser_extractVectorForDatagrid(const string& sCmd, string
 			parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
 
 			// Only if the z values are also a table read the vector from the table
-			if (sZVals.find("data(") != string::npos || _data.containsCacheElements(sZVals))
+			if (sZVals.find("data(") != string::npos || _data.containsTablesOrClusters(sZVals))
 			{
 				for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
 				{
@@ -7459,7 +5407,7 @@ static vector<double> parser_extractVectorForDatagrid(const string& sCmd, string
 		else
 		{
 			// The indices are vectors
-			if (sZVals.find("data(") != string::npos || _data.containsCacheElements(sZVals))
+			if (sZVals.find("data(") != string::npos || _data.containsTablesOrClusters(sZVals))
 			{
 				// Only if the z values are also a table read the vector from the table
 				vVectorVals = _data.getElement(_idx.vI, _idx.vJ, sDatatable);
@@ -7479,7 +5427,7 @@ static vector<double> parser_extractVectorForDatagrid(const string& sCmd, string
 	else if (sVectorVals.find(':') != string::npos)
 	{
 		// Index pair - If the index pair contains data elements, get their values now
-		if (sVectorVals.find("data(") != string::npos || _data.containsCacheElements(sVectorVals))
+		if (sVectorVals.find("data(") != string::npos || _data.containsTablesOrClusters(sVectorVals))
 		{
 			getDataElements(sVectorVals, _parser, _data, _option);
 		}
@@ -7668,7 +5616,7 @@ vector<double> parser_IntervalReader(string& sExpr, Parser& _parser, Datafile& _
 		throw SyntaxError(SyntaxError::FUNCTION_ERROR, sExpr, SyntaxError::invalid_position);
 
 	// If the expression contains data elements, get their contents here
-	if (sExpr.find("data(") != string::npos || _data.containsCacheElements(sExpr))
+	if (sExpr.find("data(") != string::npos || _data.containsTablesOrClusters(sExpr))
 		getDataElements(sExpr, _parser, _data, _option);
 
 	// Get the interval for x
@@ -7897,7 +5845,7 @@ bool parser_writeAudio(string& sCmd, Parser& _parser, Datafile& _data, Define& _
 	if (matchParams(sCmd, "samples", '='))
 	{
 		string sSamples = getArgAtPos(sCmd, matchParams(sCmd, "samples", '=') + 7);
-		if (sSamples.find("data(") != string::npos || _data.containsCacheElements(sSamples))
+		if (sSamples.find("data(") != string::npos || _data.containsTablesOrClusters(sSamples))
 		{
 			getDataElements(sSamples, _parser, _data, _option);
 		}
@@ -8046,7 +5994,7 @@ bool parser_regularize(string& sCmd, Parser& _parser, Datafile& _data, Define& _
 	if (matchParams(sCmd, "samples", '='))
 	{
 		string sSamples = getArgAtPos(sCmd, matchParams(sCmd, "samples", '=') + 7);
-		if (sSamples.find("data(") != string::npos || _data.containsCacheElements(sSamples))
+		if (sSamples.find("data(") != string::npos || _data.containsTablesOrClusters(sSamples))
 		{
 			getDataElements(sSamples, _parser, _data, _option);
 		}
@@ -8211,8 +6159,13 @@ bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& 
 	if (matchParams(sCmd, "target", '='))
 	{
 		sTargetCache = getArgAtPos(sCmd, matchParams(sCmd, "target", '=') + 6);
+
+        if (!_data.isCacheElement(sTargetCache))
+            _data.addCache(sTargetCache, _option);
+
 		_target = parser_getIndices(sTargetCache, _parser, _data, _option);
 		sTargetCache.erase(sTargetCache.find('('));
+
 		if (sTargetCache == "data")
 			throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, SyntaxError::invalid_position);
 
@@ -8224,8 +6177,12 @@ bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& 
 		_target.nI[0] = 0;
 		_target.nI[1] = -2;
 		_target.nJ[0] = 0;
+
 		if (_data.isCacheElement("stfdat()"))
 			_target.nJ[0] += _data.getCols("stfdat", false);
+        else
+            _data.addCache("stfdat()", _option);
+
 		sTargetCache = "stfdat";
 		_target.nJ[1] = -2;
 	}
@@ -8273,10 +6230,6 @@ bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& 
 	if (_target.nJ[1] == -2 || _target.nJ[1] == -1)
 		_target.nJ[1] = _target.nJ[0] + _result.GetNy() + 2; //?
 
-	if (!_data.isCacheElement(sTargetCache))
-		_data.addCache(sTargetCache, _option);
-	_data.setCacheStatus(true);
-
 	// UPDATE DATA ELEMENTS
 	for (int i = 0; i < _result.GetNx(); i++)
 		_data.writeToCache(i, _target.nJ[0], sTargetCache, dXmin + i * dSampleSize);
@@ -8299,7 +6252,6 @@ bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& 
 				_data.setHeadLineElement(_target.nJ[0] + 2 + j, sTargetCache, "A[" + toString((int)j + 1) + "]");
 		}
 	}
-	_data.setCacheStatus(false);
 
 	return true;
 }

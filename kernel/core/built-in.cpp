@@ -2131,7 +2131,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				else
 					remove_data(_data, _option);
 			}
-			else if (_data.matchCache(sCmd).length() || _data.containsCacheElements(sCmd.substr(findCommand(sCmd).nPos)))
+			else if (_data.matchCache(sCmd).length() || _data.containsTablesOrClusters(sCmd.substr(findCommand(sCmd).nPos)))
 			{
 				if (matchParams(sCmd, "i") || matchParams(sCmd, "ignore"))
 					clear_cache(_data, _option, true);
@@ -2207,7 +2207,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		}
 		else if (sCommand == "copy")
 		{
-			if (_data.containsCacheElements(sCmd) || sCmd.find("data(", 5) != string::npos)
+			if (_data.containsTablesOrClusters(sCmd) || sCmd.find("data(", 5) != string::npos)
 			{
 				if (CopyData(sCmd, _parser, _data, _option))
 				{
@@ -2405,9 +2405,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						_idx = parser_getIndices(sCmd, _parser, _data, _option);
 						if (sCmd.find(iter->first + "(") != string::npos && iter->second != -1)
 							_data.setCacheStatus(true);
-						if ((_idx.nI[0] == -1 && !_idx.vI.size())
-								|| (_idx.nJ[0] == -1 && !_idx.vJ.size()))
-							//throw INVALID_INDEX;
+						if (!isValidIndexSet(_idx))
 							throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 						if (!_idx.vI.size())
 						{
@@ -3372,7 +3370,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			{
 				show_data(_data, _out, _option, _data.matchCache(sCmd), _option.getPrecision(), false, true);
 			}
-			else if (_data.containsCacheElements(sCmd) || sCmd.find(" data(") != string::npos)
+			else if (_data.containsTablesOrClusters(sCmd) || sCmd.find(" data(") != string::npos)
 			{
 				for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
 				{
@@ -3479,7 +3477,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			if (matchParams(sCmd, "order", '='))
 			{
 				nArgument = matchParams(sCmd, "order", '=') + 5;
-				if (_data.containsCacheElements(sCmd.substr(nArgument)) || sCmd.substr(nArgument).find("data(") != string::npos)
+				if (_data.containsTablesOrClusters(sCmd.substr(nArgument)) || sCmd.substr(nArgument).find("data(") != string::npos)
 				{
 					sArgument = sCmd.substr(nArgument);
 					getDataElements(sArgument, _parser, _data, _option);
@@ -3492,7 +3490,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			}
 			else
 				nArgument = 1;
-			if (!_data.containsCacheElements(sCmd))
+			if (!_data.containsTablesOrClusters(sCmd))
 				return 1;
 			for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
 			{
@@ -3640,8 +3638,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						_idx = parser_getIndices(sCmd, _parser, _data, _option);
 						if (sCmd.find(iter->first + "(") != string::npos && iter->second != -1)
 							_data.setCacheStatus(true);
-						if ((_idx.nI[0] == -1 && !_idx.vI.size())
-								|| (_idx.nJ[0] == -1 && !_idx.vJ.size()))
+						if (!isValidIndexSet(_idx))
 							throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, iter->first + "(", iter->first);
 						if (!_idx.vI.size())
 						{
@@ -3730,7 +3727,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		{
 			if (sCmd.length() > 5)
 			{
-				if (_data.containsCacheElements(sCmd) && (matchParams(sCmd, "target", '=') || matchParams(sCmd, "t", '=')))
+				if (_data.containsTablesOrClusters(sCmd) && (matchParams(sCmd, "target", '=') || matchParams(sCmd, "t", '=')))
 				{
 					if (moveData(sCmd, _parser, _data, _option))
 					{
@@ -3815,7 +3812,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		else if (sCommand == "resample")
 		{
 			//NumeReKernel::print(sCommand );
-			if (!_data.containsCacheElements(sCmd))
+			if (!_data.containsTablesOrClusters(sCmd))
 				return 1;
 			for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
 			{
@@ -3830,7 +3827,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			if (matchParams(sCmd, "samples", '='))
 			{
 				nArgument = matchParams(sCmd, "samples", '=') + 7;
-				if (_data.containsCacheElements(getArgAtPos(sCmd, nArgument)) || getArgAtPos(sCmd, nArgument).find("data(") != string::npos)
+				if (_data.containsTablesOrClusters(getArgAtPos(sCmd, nArgument)) || getArgAtPos(sCmd, nArgument).find("data(") != string::npos)
 				{
 					sArgument = getArgAtPos(sCmd, nArgument);
 					//NumeReKernel::print("get data element (BI)" );
@@ -3910,9 +3907,9 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		}
 		else if (sCommand == "remove")
 		{
-			if (_data.containsCacheElements(sCmd))
+			if (_data.containsTablesOrClusters(sCmd))
 			{
-				while (_data.containsCacheElements(sCmd))
+				while (_data.containsTablesOrClusters(sCmd))
 				{
 					for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
 					{
@@ -4017,7 +4014,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		}
 		else if (sCommand == "retoque" || sCommand == "retouch")
 		{
-			if (!_data.containsCacheElements(sCmd))
+			if (!_data.containsTablesOrClusters(sCmd))
 				return 1;
 			for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
 			{
@@ -4151,7 +4148,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		}
 		else if (sCommand.substr(0, 3) == "del" || sCommand == "delete")
 		{
-			if (_data.containsCacheElements(sCmd))
+			if (_data.containsTablesOrClusters(sCmd))
 			{
 				if (matchParams(sCmd, "ignore") || matchParams(sCmd, "i"))
 					if (deleteCacheEntry(sCmd, _parser, _data, _option))
@@ -5477,7 +5474,7 @@ bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, 
 	string sTemp = sCmd;
 
     // Get the contents of the contained data tables
-	if (sTemp.find("data(") != string::npos || _data.containsCacheElements(sTemp))
+	if (sTemp.find("data(") != string::npos || _data.containsTablesOrClusters(sTemp))
 	{
 		getDataElements(sTemp, _parser, _data, _option);
 	}
@@ -5731,7 +5728,7 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
 				return "";
 
             // Get data elements
-			if (sTemp.find("data(") != string::npos || _data.containsCacheElements(sTemp))
+			if (sTemp.find("data(") != string::npos || _data.containsTablesOrClusters(sTemp))
 				getDataElements(sTemp, _parser, _data, _option);
 
             int nResult = 0;
@@ -6799,7 +6796,7 @@ static bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settin
 		_fSys.setPath(_option.getExePath(), false, _option.getExePath());
 		sObject = _fSys.ValidFileName(sObject, ".dat");
 	}
-	else if (!_data.containsCacheElements(sObject))
+	else if (!_data.containsTablesOrClusters(sObject))
 	{
 		if (sObject.find('.') == string::npos && (sObject.find('/') != string::npos || sObject.find('\\') != string::npos))
 		{
@@ -6846,12 +6843,12 @@ static bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settin
 	}
 	if (_option.getbDebug())
 		NumeReKernel::print("DEBUG: sObject = " + sObject );
-	if (!_data.containsCacheElements(sObject) && sObject.find('.') == string::npos && (sObject.find('/') != string::npos || sObject.find('\\') != string::npos))
+	if (!_data.containsTablesOrClusters(sObject) && sObject.find('.') == string::npos && (sObject.find('/') != string::npos || sObject.find('\\') != string::npos))
 	{
 		ShellExecute(NULL, NULL, sObject.c_str(), NULL, NULL, SW_SHOWNORMAL);
 		return true;
 	}
-	if (_data.containsCacheElements(sObject))
+	if (_data.containsTablesOrClusters(sObject))
 	{
 		StripSpaces(sObject);
 		string sTableName = sObject.substr(0, sObject.find('('));

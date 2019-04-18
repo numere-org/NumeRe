@@ -38,6 +38,7 @@ ProcedureElement::ProcedureElement(const vector<string>& vProcedureContents, con
         // skip easy cases
         if (!sProcCommandLine.length())
             continue;
+
         if (sProcCommandLine.substr(0,2) == "##")
             continue;
 
@@ -55,6 +56,7 @@ ProcedureElement::ProcedureElement(const vector<string>& vProcedureContents, con
 
         // examine the string: consider also quotation marks
         int nQuotes = 0;
+
         for (size_t j = 0; j < sProcCommandLine.length(); j++)
         {
             // count the quotation marks
@@ -194,14 +196,19 @@ ProcedureElement::ProcedureElement(const vector<string>& vProcedureContents, con
             if (sProcCommandLine.rfind("::") != string::npos)
             {
                 string sFlags = sProcCommandLine.substr(sProcCommandLine.rfind("::"));
+
                 if (sFlags.find("private") != string::npos)
                     nFlags |= ProcedureCommandLine::FLAG_PRIVATE;
+
                 if (sFlags.find("explicit") != string::npos)
                     nFlags |= ProcedureCommandLine::FLAG_EXPLICIT;
+
                 if (sFlags.find("inline") != string::npos)
                     nFlags |= ProcedureCommandLine::FLAG_INLINE;
+
                 if (sFlags.find("mask") != string::npos || sFlags.find("silent") != string::npos)
                     nFlags |= ProcedureCommandLine::FLAG_MASK;
+
                 if (sFlags.find("template") != string::npos)
                     nFlags |= ProcedureCommandLine::FLAG_TEMPLATE;
             }
@@ -218,8 +225,10 @@ ProcedureElement::ProcedureElement(const vector<string>& vProcedureContents, con
                 // Ensure that the argument list is defined reasonable
                 if (findCommand(sArgumentList, "var").sString == "var")
                     throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "var");
+
                 if (findCommand(sArgumentList, "str").sString == "str")
                     throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "str");
+
                 if (findCommand(sArgumentList, "tab").sString == "tab")
                     throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "tab");
 
@@ -242,7 +251,7 @@ ProcedureElement::ProcedureElement(const vector<string>& vProcedureContents, con
 
 // This member function does the hard work on cleaning the current
 // procedure command line. This includes removing tabulators, definition
-// operators and replacing the "<this>" path placeholde.
+// operators and replacing the "<this>" path placeholder.
 void ProcedureElement::cleanCurrentLine(string& sProcCommandLine, const string& sCurrentCommand, const string& sFolderPath)
 {
     // Replace the "this" path place holder
@@ -293,10 +302,12 @@ pair<int, ProcedureCommandLine> ProcedureElement::getCurrentLine(int nCurrentLin
 {
     pair<int, ProcedureCommandLine> currentLine;
     auto iter = mProcedureContents.find(nCurrentLine);
+
     if (iter != mProcedureContents.end())
     {
         currentLine = *iter;
     }
+
     return currentLine;
 }
 
@@ -308,12 +319,15 @@ pair<int, ProcedureCommandLine> ProcedureElement::getNextLine(int nCurrentLine)
 {
     pair<int, ProcedureCommandLine> currentLine;
     auto iter = mProcedureContents.find(nCurrentLine);
+
     if (iter != mProcedureContents.end())
     {
         iter++;
+
         if (iter != mProcedureContents.end())
             currentLine = *iter;
     }
+
     return currentLine;
 }
 
@@ -322,13 +336,17 @@ pair<int, ProcedureCommandLine> ProcedureElement::getNextLine(int nCurrentLine)
 bool ProcedureElement::isLastLine(int nCurrentLine)
 {
     auto iter = mProcedureContents.find(nCurrentLine);
+
     if (iter != mProcedureContents.end())
     {
         iter++;
+
         if (iter != mProcedureContents.end())
             return false;
+
         return true;
     }
+
     return false;
 }
 
@@ -339,8 +357,10 @@ bool ProcedureElement::isLastLine(int nCurrentLine)
 int ProcedureElement::gotoProcedure(const string& sProcedureName)
 {
     auto iter = mProcedureList.find(sProcedureName);
+
     if (iter != mProcedureList.end())
         return iter->second;
+
     return -1;
 }
 
@@ -352,8 +372,12 @@ int ProcedureElement::gotoProcedure(const string& sProcedureName)
 void ProcedureElement::setByteCode(int _nByteCode, int nCurrentLine)
 {
     auto iter = mProcedureContents.find(nCurrentLine);
+
     if (iter != mProcedureContents.end())
     {
         iter->second.setByteCode(_nByteCode);
     }
 }
+
+
+

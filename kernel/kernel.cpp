@@ -270,6 +270,7 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 	// Declare the table dimension variables
 	_parser.DefineVar("nlines", &_data.tableLinesCount);
 	_parser.DefineVar("ncols", &_data.tableColumnsCount);
+	_parser.DefineVar("nlen", &_data.dClusterElementsCount);
 
 	// --> VAR-FACTORY Deklarieren (Irgendwo muessen die ganzen Variablen-Werte ja auch gespeichert werden) <--
 	_parser.SetVarFactory(parser_AddVariable, &_parser);
@@ -503,6 +504,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 	Indices _idx;
 
 	bool bWriteToCache = false; // TRUE, wenn das/die errechneten Ergebnisse in den Cache geschrieben werden sollen
+	bool bWriteToCluster = false;
 
 	string sLine_Temp = "";     // Temporaerer String fuer die Eingabe
 	string sCache = "";         // Zwischenspeicher fuer die Cache-Koordinaten
@@ -561,6 +563,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 	{
 		bSupressAnswer = false;
 		bWriteToCache = false;
+		bWriteToCluster = false;
 		sCache = "";
 
 		// Reset the parser variable map pointer
@@ -768,15 +771,20 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 			if (sLine.find("??") != string::npos)
 				sLine = parser_Prompt(sLine);
 
-			// Get data elements for the current command line
+			// Get data elements for the current command line or determine,
+			// if the target value of the current command line is a candidate
+			// for a cluster
 			if (!containsStrings(sLine)
 					&& !_data.containsStringVars(sLine)
-					&& (sLine.find("data(") != string::npos || _data.containsCacheElements(sLine)))
+					&& (sLine.find("data(") != string::npos || _data.containsTablesOrClusters(sLine)))
 			{
 				sCache = getDataElements(sLine, _parser, _data, _option);
+
 				if (sCache.length() && sCache.find('#') == string::npos)
 					bWriteToCache = true;
 			}
+			else if (isClusterCandidate(sLine, sCache))
+                bWriteToCache = true;
 
 			// Remove the definition operator
 			while (sLine.find(":=") != string::npos)
@@ -786,12 +794,14 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 
 			// evaluate strings
 			nReturnVal = NUMERE_ERROR;
+
 			if (!evaluateStrings(sLine, sCache, sCmdCache, bWriteToCache, nReturnVal))
             {
                 // returns false either when the loop shall return
                 // or it shall continue
                 if (nReturnVal)
                     return nReturnVal;
+
                 continue;
             }
 
@@ -801,16 +811,24 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 				// Get the indices from the corresponding function
 				_idx = parser_getIndices(sCache, _parser, _data, _option);
 
+                if (sCache[sCache.find_first_of("({")] == '{')
+                {
+                    bWriteToCluster = true;
+                }
+
 				if ((_idx.nI[0] < 0 || _idx.nJ[0] < 0) && !_idx.vI.size() && !_idx.vJ.size())
 					throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "");
-				if ((_idx.nI[1] == -2 && _idx.nJ[1] == -2))
+
+				if (!bWriteToCluster && _idx.nI[1] == -2 && _idx.nJ[1] == -2)
 					throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
 
 				if (_idx.nI[1] == -1)
 					_idx.nI[1] = _idx.nI[0];
+
 				if (_idx.nJ[1] == -1)
 					_idx.nJ[1] = _idx.nJ[0];
-				sCache.erase(sCache.find('('));
+
+				sCache.erase(sCache.find_first_of("({"));
 				StripSpaces(sCache);
 			}
 
@@ -826,7 +844,16 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 			createCalculationAnswer(nNum, v, sCmdCache);
 
 			if (bWriteToCache)
-				_data.writeToCache(_idx, sCache, v, nNum);
+            {
+                // Is it a cluster?
+                if (bWriteToCluster)
+                {
+                    NumeRe::Cluster& cluster = _data.getCluster(sCache);
+                    cluster.assignResults(_idx, nNum, v);
+                }
+                else
+                    _data.writeToCache(_idx, sCache, v, nNum);
+            }
 		}
 		// This section starts the error handling
 		catch (mu::Parser::exception_type& e)
@@ -1710,7 +1737,7 @@ bool NumeReKernel::evaluateStrings(string& sLine, string& sCache, const string& 
                 else
                     return false;
             }
-            if (sCache.length() && _data.containsCacheElements(sCache) && !bWriteToCache)
+            if (sCache.length() && _data.containsTablesOrClusters(sCache) && !bWriteToCache)
                 bWriteToCache = true;
         }
         else
@@ -1901,6 +1928,7 @@ NumeReVariables NumeReKernel::getVariableList()
     mu::varmap_type varmap = _parser.GetVar();
     map<string, string> stringmap = _data.getStringVars();
     map<string, long long int> tablemap = _data.mCachesMap;
+    const map<string, NumeRe::Cluster>& clustermap = _data.getClusterMap();
     string sCurrentLine;
 
     if (_data.isValid())
@@ -1916,6 +1944,7 @@ NumeReVariables NumeReKernel::getVariableList()
         sCurrentLine = iter->first + "\t1 x 1\tdouble\t" + toString(*iter->second, 5) + "\t" + iter->first;
         vars.vVariables.push_back(sCurrentLine);
     }
+
     vars.nNumerics = vars.vVariables.size();
 
 	for (auto iter = stringmap.begin(); iter != stringmap.end(); ++iter)
@@ -1926,8 +1955,8 @@ NumeReVariables NumeReKernel::getVariableList()
         sCurrentLine = iter->first + "\t1 x 1\tstring\t\"" + replaceControlCharacters(iter->second) + "\"\t" + iter->first;
         vars.vVariables.push_back(sCurrentLine);
     }
-    vars.nStrings = vars.vVariables.size() - vars.nNumerics;
 
+    vars.nStrings = vars.vVariables.size() - vars.nNumerics;
 
     for (auto iter = tablemap.begin(); iter != tablemap.end(); ++iter)
     {
@@ -1949,6 +1978,19 @@ NumeReVariables NumeReKernel::getVariableList()
     }
 
     vars.nTables = vars.vVariables.size() - vars.nNumerics - vars.nStrings;
+
+    for (auto iter = clustermap.begin(); iter != clustermap.end(); ++iter)
+    {
+        if ((iter->first).substr(0, 2) == "_~")
+            continue;
+
+        sCurrentLine = iter->first + "{}\t" + toString(iter->second.size()) + " x 1";
+        sCurrentLine += "\tcluster\t" + iter->second.getShortVectorRepresentation() + "\t" + iter->first + "{}";
+
+        vars.vVariables.push_back(sCurrentLine);
+    }
+
+    vars.nClusters = vars.vVariables.size() - vars.nNumerics - vars.nStrings - vars.nTables;
 
     return vars;
 }
@@ -2488,6 +2530,8 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
 	size_t nLocalStringMapSize = 0;
 	string** sLocalTables = nullptr;
 	size_t nLocalTableMapSize = 0;
+	string** sLocalClusters = nullptr;
+	size_t nLocalClusterMapSize = 0;
 
 	// Obtain references to the debugger and the parser
 	NumeReDebugger& _debugger = getInstance()->getDebugger();
@@ -2563,8 +2607,28 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
         }
     }
 
+    const map<string, NumeRe::Cluster>& clusterMap = getInstance()->getData().getClusterMap();
+
+    nLocalClusterMapSize = clusterMap.size();
+
+    // Create the cluster variable set
+    if (nLocalClusterMapSize)
+    {
+        sLocalClusters = new string*[nLocalClusterMapSize];
+        i = 0;
+
+        for (auto iter = clusterMap.begin(); iter != clusterMap.end(); ++iter)
+        {
+            sLocalClusters[i] = new string[2];
+            sLocalClusters[i][0] = iter->first;
+            sLocalClusters[i][1] = iter->first;
+            i++;
+        }
+    }
+
+
     // Pass the created information to the debugger
-	_debugger.gatherInformations(sLocalVars, nLocalVarMapSize - nLocalVarMapSkip, dLocalVars, sLocalStrings, nLocalStringMapSize, sLocalTables, nLocalTableMapSize, nullptr, 0, sCurrentCommand,
+	_debugger.gatherInformations(sLocalVars, nLocalVarMapSize - nLocalVarMapSkip, dLocalVars, sLocalStrings, nLocalStringMapSize, sLocalTables, nLocalTableMapSize, sLocalClusters, nLocalClusterMapSize, nullptr, 0, sCurrentCommand,
                                  getInstance()->getScript().getScriptFileName(), getInstance()->getScript().getCurrentLine() - 1);
 
     // Clean up memory
@@ -2591,6 +2655,14 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
 			delete[] sLocalTables[i];
 
 		delete[] sLocalTables;
+	}
+
+	if (sLocalClusters)
+	{
+		for (size_t i = 0; i < nLocalClusterMapSize; i++)
+			delete[] sLocalClusters[i];
+
+		delete[] sLocalClusters;
 	}
 
 	// Show the breakpoint and wait for the

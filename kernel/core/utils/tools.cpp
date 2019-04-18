@@ -432,6 +432,10 @@ unsigned int getMatchingParenthesis(const string& sLine)
 {
     // Get the opening parenthesis
 	char cParenthesis = sLine.front();
+
+	if (cParenthesis != '(' && cParenthesis != '[' && cParenthesis != '{' && sLine.find_first_of("([{") != string::npos)
+        cParenthesis = sLine[sLine.find_first_of("({[")];
+
 	char cClosingParenthesis = 0;
 
 	// Depending on the opening parenthesis, determine the closing one
@@ -2724,7 +2728,7 @@ vector<string> getFileList(const string& sDirectory, const Settings& _option, in
 			sDir += "*";
 		}
 		else if ((sDir.find('.') == string::npos
-				  || (sDir.find('.') != string::npos && sDir.find('/', sDir.find('.')) != string::npos))
+				  || (sDir.find('.') != string::npos && sDir.find('/', sDir.rfind('.')) != string::npos))
 				 && sDir.back() != '*')
 			sDir += "*";
 
@@ -2785,7 +2789,7 @@ vector<string> getFolderList(const string& sDirectory, const Settings& _option, 
 			sDir += "*";
 		}
 		else if ((sDir.find('.') == string::npos
-				  || (sDir.find('.') != string::npos && sDir.find('/', sDir.find('.')) != string::npos))
+				  || (sDir.find('.') != string::npos && sDir.find('/', sDir.rfind('.')) != string::npos))
 				 && sDir.back() != '*')
 			sDir += "*";
 
@@ -2938,6 +2942,9 @@ string replaceToVectorname(const string& sExpression)
 		while (sVectorName.find(iter->first) != string::npos)
 			sVectorName.replace(sVectorName.find(iter->first), (iter->first).length(), iter->second);
 	}
+
+	if (sVectorName.find('[') == string::npos)
+        sVectorName += "[]";
 
 	// return the new vector name
 	return "_~" + sVectorName;

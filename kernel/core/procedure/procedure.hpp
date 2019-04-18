@@ -77,12 +77,19 @@ class Procedure : public FlowCtrl, public Plugin
 
         Returnvalue ProcCalc(string sLine, string sCurrentCommand, int& nByteCode, Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script);
         bool setProcName(const string& sProc, bool bInstallFileName = false);
-        int procedureCmdInterface(string& sLine);
         void resetProcedure(Parser& _parser, bool bSupressAnswer);
         void extractCurrentNamespace(const string& sProc);
         bool handleVariableDefinitions(string& sProcCommandLine, const string& sCommand);
         void readFromInclude(ifstream& fInclude, int nIncludeType, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure);
         int handleIncludeSyntax(string& sProcCommandLine, ifstream& fInclude, bool bReadingFromInclude);
+        void extractProcedureInformation(const string& sCmdLine, size_t nPos, string& sProcName, string& sArgList, string& sFileName);
+
+        virtual int procedureCmdInterface(string& sLine) override;
+        virtual vector<string> expandInlineProcedures(string& sLine) override;
+        int isInlineable(const string& sProc, const string& sFileName, int* nInlineFlag = nullptr);
+        int applyInliningRuleset(const string& sCommandLine, const string& sArgumentList);
+        size_t countProceduresInLine(const string& sCommandLine);
+        vector<string> getInlined(const string& sProc, const string& sArgumentList, const string& sFileName, size_t nProcedures);
 
     public:
         Procedure();
@@ -90,15 +97,15 @@ class Procedure : public FlowCtrl, public Plugin
         ~Procedure();
 
         Returnvalue execute(string sProc, string sVarList, Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, unsigned int nth_procedure = 0);
-        int procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure = 0, int nth_command = 0);
+        virtual int procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure = 0, int nth_command = 0) override;
         bool writeProcedure(string sProcedureLine);
-        bool isInline(const string& sProc);
-        int evalDebuggerBreakPoint(Parser& _parser, Settings& _option);
+        virtual int isInline(const string& sProc) override;
+        virtual int evalDebuggerBreakPoint(Parser& _parser, Settings& _option) override;
 
         inline void setPredefinedFuncs(const string& sPredefined)
-        {
-            _localDef.setPredefinedFuncs(sPredefined);
-        }
+            {
+                _localDef.setPredefinedFuncs(sPredefined);
+            }
         inline string getCurrentProcedureName() const
             {return sCurrentProcedureName;}
         unsigned int GetCurrentLine() const;
@@ -112,7 +119,7 @@ class Procedure : public FlowCtrl, public Plugin
             {
                 return nDebuggerCode;
             }
-        void replaceReturnVal(string& sLine, Parser& _parser, const Returnvalue& _return, unsigned int nPos, unsigned int nPos2, const string& sReplaceName);
+        size_t replaceReturnVal(string& sLine, Parser& _parser, const Returnvalue& _return, unsigned int nPos, unsigned int nPos2, const string& sReplaceName);
 };
 
 #endif // PROCEDURE_HPP

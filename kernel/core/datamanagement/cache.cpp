@@ -27,7 +27,7 @@ using namespace std;
  */
 
 // --> Standard-Konstruktor <--
-Cache::Cache() : FileSystem()
+Cache::Cache() : FileSystem(), StringMemory(), NumeRe::ClusterManager()
 {
 	bSaveMutex = false;
 	sCache_file = "<>/numere.cache";
@@ -524,64 +524,91 @@ bool Cache::isCacheElement(const string& sCache)
     return false;
 }
 
+// This member function detects, whether a table is used
+// in the current expression
 bool Cache::containsCacheElements(const string& sExpression)
 {
-    for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
+    size_t nQuotes = 0;
+
+    // Search through the expression
+    for (size_t i = 0; i < sExpression.length(); i++)
     {
-        if (sExpression.find(iter->first+"(") != string::npos
-            && (!sExpression.find(iter->first+"(")
-                || checkDelimiter(sExpression.substr(sExpression.find(iter->first+"(")-1, (iter->first).length()+2))))
+        // Consider quotation marks
+        if (sExpression[i] == '"' && (!i || sExpression[i-1] != '\\'))
+            nQuotes++;
+
+        if (!(nQuotes % 2))
         {
-            return true;
+            // If the current character might probably be an
+            // identifier for a table, search for the next
+            // nonmatching character and try to find the obtained
+            // string in the internal map
+            if (isalpha(sExpression[i]) || sExpression[i] == '_' || sExpression[i] == '~')
+            {
+                size_t nStartPos = i;
+
+                do
+                {
+                    i++;
+                }
+                while (isalnum(sExpression[i]) || sExpression[i] == '_' || sExpression[i] == '~');
+
+                if (sExpression[i] == '(')
+                {
+                    if (mCachesMap.find(sExpression.substr(nStartPos, i - nStartPos)) != mCachesMap.end())
+                        return true;
+                }
+            }
         }
     }
+
     return false;
 }
 
+// This member function creates a new table
 bool Cache::addCache(const string& sCache, const Settings& _option)
 {
     string sCacheName = sCache.substr(0,sCache.find('('));
-    string sValidChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_~";
+    static const string sVALIDCHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_~";
 
-    //cerr << sCache << endl;
-    if ((sCacheName[0] >= '0' && sCacheName[0] <= '9') || sCacheName[0] == '~' || sCacheName == "data" || sCacheName == "string")
-        //throw INVALID_CACHE_NAME;
+    // Ensure that the name of the new table contains only
+    // valid characters
+    if ((sCacheName[0] >= '0' && sCacheName[0] <= '9') || sCacheName[0] == '~' || sCacheName == "data" || sCacheName == "string" || sCacheName.find_first_not_of(sVALIDCHARACTERS) != string::npos)
         throw SyntaxError(SyntaxError::INVALID_CACHE_NAME, "", SyntaxError::invalid_position, sCacheName);
+
+    // Ensure that the new table does not match a
+    // predefined function
     if (sPredefinedFuncs.find(","+sCacheName+"()") != string::npos)
     {
-        //sErrorToken = sCacheName+"()";
-        //throw FUNCTION_IS_PREDEFINED;
         throw SyntaxError(SyntaxError::FUNCTION_IS_PREDEFINED, "", SyntaxError::invalid_position, sCacheName+"()");
     }
+
+    // Ensure that the new table does not match a
+    // user-defined function
     if (sUserdefinedFuncs.length() && sUserdefinedFuncs.find(";"+sCacheName+";") != string::npos)
     {
-        //sErrorToken = sCacheName;
-        //throw FUNCTION_ALREADY_EXISTS;
         throw SyntaxError(SyntaxError::FUNCTION_ALREADY_EXISTS, "", SyntaxError::invalid_position, sCacheName);
     }
 
-    for (unsigned int i = 0; i < sCacheName.length(); i++)
-    {
-        if (sValidChars.find(sCacheName[i]) == string::npos)
-            //throw INVALID_CACHE_NAME;
-            throw SyntaxError(SyntaxError::INVALID_CACHE_NAME, "", SyntaxError::invalid_position, sCacheName);
-    }
-
+    // Ensure that the new table does not already
+    // exist
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
         if (iter->first == sCacheName)
         {
-            //sErrorToken = sCacheName + "()";
-            //throw CACHE_ALREADY_EXISTS;
             throw SyntaxError(SyntaxError::CACHE_ALREADY_EXISTS, "", SyntaxError::invalid_position, sCacheName+"()");
         }
     }
 
+    // Warn, if the new table equals an existing command
     if (sPredefinedCommands.find(";"+sCacheName+";") != string::npos)
         NumeReKernel::print(LineBreak(_lang.get("CACHE_WARNING_CMD_OVERLAP", sCacheName), _option));
+
+    // Warn, if the new table equals a plugin command
     if (sPluginCommands.length() && sPluginCommands.find(";"+sCacheName+";") != string::npos)
         NumeReKernel::print(LineBreak(_lang.get("CACHE_WARNING_PLUGIN_OVERLAP"), _option));
 
+    // Actually create the new table
     long long int nIndex = vCacheMemory.size();
     mCachesMap[sCacheName] = nIndex;
     vCacheMemory.push_back(new Memory());

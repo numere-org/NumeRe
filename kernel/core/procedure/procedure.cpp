@@ -91,6 +91,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 	string sCache = "";
 	Indices _idx;
 	bool bWriteToCache = false;
+	bool bWriteToCluster = false;
 	Returnvalue thisReturnVal;
 	int nNum = 0;
 	int nCurrentByteCode = nByteCode;
@@ -326,7 +327,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     {
         if (!containsStrings(sLine)
             && !_data.containsStringVars(sLine)
-            && (sLine.find("data(") != string::npos || _data.containsCacheElements(sLine)))
+            && (sLine.find("data(") != string::npos || _data.containsTablesOrClusters(sLine)))
         {
             if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                 nByteCode |= ProcedureCommandLine::BYTECODE_DATAACCESS;
@@ -335,6 +336,13 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 
             if (sCache.length() && sCache.find('#') == string::npos)
                 bWriteToCache = true;
+        }
+        else if (isClusterCandidate(sLine, sCache))
+        {
+            bWriteToCache = true;
+
+            if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
+                nByteCode |= ProcedureCommandLine::BYTECODE_DATAACCESS;
         }
     }
 
@@ -365,7 +373,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
             }
 
             // Other: numerical values
-            if (sCache.length() && _data.containsCacheElements(sCache) && !bWriteToCache)
+            if (sCache.length() && _data.containsTablesOrClusters(sCache) && !bWriteToCache)
                 bWriteToCache = true;
 
             // Ensure that the correct variables are available, because
@@ -385,10 +393,13 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
             // Get the indices from the corresponding function
             _idx = parser_getIndices(sCache, _parser, _data, _option);
 
-            if ((_idx.nI[0] < 0 || _idx.nJ[0] < 0) && !_idx.vI.size() && !_idx.vJ.size())
+            if (sCache[sCache.find_first_of("({")] == '{')
+                bWriteToCluster = true;
+
+            if (!isValidIndexSet(_idx))
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "");
 
-            if ((_idx.nI[1] == -2 && _idx.nJ[1] == -2))
+            if (!bWriteToCluster && _idx.nI[1] == -2 && _idx.nJ[1] == -2)
                 throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
 
             if (_idx.nI[1] == -1)
@@ -397,7 +408,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
             if (_idx.nJ[1] == -1)
                 _idx.nJ[1] = _idx.nJ[0];
 
-            sCache.erase(sCache.find('('));
+            sCache.erase(sCache.find_first_of("({"));
             StripSpaces(sCache);
         }
     }
@@ -426,7 +437,16 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 
     // Write the return values to cache
 	if (bWriteToCache)
-		_data.writeToCache(_idx, sCache, v, nNum);
+    {
+        // Is it a cluster?
+        if (bWriteToCluster)
+        {
+            NumeRe::Cluster& cluster = _data.getCluster(sCache);
+            cluster.assignResults(_idx, nNum, v);
+        }
+        else
+            _data.writeToCache(_idx, sCache, v, nNum);
+    }
 
     // Clear the vector variables after the loop returned
 	if (!_parser.ActiveLoopMode() || (!_parser.IsLockedPause() && !(nFlags & ProcedureCommandLine::FLAG_INLINE)))
@@ -434,7 +454,6 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 
 	return thisReturnVal;
 }
-
 
 // This member function is used to obtain the procedure file name
 // from the selected procedure. It handles the "thisfile" namespace
@@ -650,6 +669,12 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
         throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "tab");
     }
 
+    if (findCommand(sVarList, "cst").sString == "cst")
+    {
+        _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+        throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "cst");
+    }
+
     StripSpaces(sVarDeclarationList);
     StripSpaces(sVarList);
 
@@ -851,10 +876,18 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
         if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
             || nCurrentByteCode & ProcedureCommandLine::BYTECODE_VARDEF)
         {
-            if (handleVariableDefinitions(sProcCommandLine, sCurrentCommand))
+            try
             {
-                if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
-                    nByteCode |= ProcedureCommandLine::BYTECODE_VARDEF;
+                if (handleVariableDefinitions(sProcCommandLine, sCurrentCommand))
+                {
+                    if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
+                        nByteCode |= ProcedureCommandLine::BYTECODE_VARDEF;
+                }
+            }
+            catch (...)
+            {
+                resetProcedure(_parser, bSupressAnswer_back);
+                throw;
             }
 
             if (!sProcCommandLine.length())
@@ -1162,43 +1195,44 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, Define& _funct
 		// Handle all procedure calls one after the other
 		while (sLine.find('$', nPos) != string::npos && sLine.find('(', sLine.find('$', nPos)) != string::npos)
 		{
-			unsigned int nParPos = 0;
 			nPos = sLine.find('$', nPos) + 1;
-			string __sName = sLine.substr(nPos, sLine.find('(', nPos) - nPos);
-
-			// Add namespaces, where necessary
-			if (__sName.find('~') == string::npos)
-				__sName = sNameSpace + __sName;
-
-			if (__sName.substr(0, 5) == "this~")
-				__sName.replace(0, 4, sThisNameSpace);
-
-			string __sVarList = "";
-
-			// Handle explicit procedure file names
-			if (sLine[nPos] == '\'')
-			{
-				__sName = sLine.substr(nPos + 1, sLine.find('\'', nPos + 1) - nPos - 1);
-				nParPos = sLine.find('(', nPos + 1 + __sName.length());
-			}
-			else
-				nParPos = sLine.find('(', nPos);
-
-            // Get the variable list
-			__sVarList = sLine.substr(nParPos);
-
-			// Ensure that each parenthesis has its counterpart
-			if (getMatchingParenthesis(sLine.substr(nParPos)) == string::npos)
-			{
-				throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nParPos);
-			}
-
-			nParPos += getMatchingParenthesis(sLine.substr(nParPos));
-			__sVarList = __sVarList.substr(1, getMatchingParenthesis(__sVarList) - 1);
+            string __sName = sLine.substr(nPos, sLine.find('(', nPos) - nPos);
+            string __sVarList = "";
 
 			if (!isInQuotes(sLine, nPos, true))
 			{
+                unsigned int nParPos = 0;
+
+                // Add namespaces, where necessary
+                if (__sName.find('~') == string::npos)
+                    __sName = sNameSpace + __sName;
+
+                if (__sName.substr(0, 5) == "this~")
+                    __sName.replace(0, 4, sThisNameSpace);
+
+
+                // Handle explicit procedure file names
+                if (sLine[nPos] == '\'')
+                {
+                    __sName = sLine.substr(nPos + 1, sLine.find('\'', nPos + 1) - nPos - 1);
+                    nParPos = sLine.find('(', nPos + 1 + __sName.length());
+                }
+                else
+                    nParPos = sLine.find('(', nPos);
+
+                // Get the variable list
+                __sVarList = sLine.substr(nParPos);
+
+                // Ensure that each parenthesis has its counterpart
+                if (getMatchingParenthesis(sLine.substr(nParPos)) == string::npos)
+                {
+                    throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nParPos);
+                }
+
+                nParPos += getMatchingParenthesis(sLine.substr(nParPos));
+                __sVarList = __sVarList.substr(1, getMatchingParenthesis(__sVarList) - 1);
                 unsigned int nVarPos = 0;
+
                 // Try to find other procedure calls in the argument
                 // list and prepend the current namespace
                 while (__sVarList.find('$', nVarPos) != string::npos)
@@ -1223,12 +1257,13 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, Define& _funct
 					sLine = sLine.substr(0, nPos - 1) + sLine.substr(nParPos + 1);
 				else
 				{
-					replaceReturnVal(sLine, _parser, tempreturnval, nPos - 1, nParPos + 1, "_~PROC~[" + __sName + "~" + toString(nProc) + "_" + toString((int)nth_procedure) + "_" + toString((int)(nth_command + nth_procedure)) + "]");
+					nPos += replaceReturnVal(sLine, _parser, tempreturnval, nPos - 1, nParPos + 1, "_~PROC~[" + __sName + "~" + toString(nProc) + "_" + toString((int)nth_procedure) + "_" + toString((int)(nth_command + nth_procedure)) + "]");
 				}
 
 				nReturnType = 1;
 			}
-			nPos += __sName.length() + __sVarList.length() + 1;
+            else
+                nPos += __sName.length() + 1;
 		}
 
 		nReturn = 2;
@@ -1271,6 +1306,7 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, Define& _funct
 			if (!_option.getSystemPrintStatus())
             {
 				_return = _procedure->execute(_procedure->getPluginProcName(), _procedure->getPluginVarList(), _parser, _functions, _data, _option, _out, _pData, _script, nthRecursion + 1);
+
                 if (nFlags & ProcedureCommandLine::FLAG_MASK)
                     _option.setSystemPrintStatus(false);
             }
@@ -1638,17 +1674,90 @@ bool Procedure::writeProcedure(string sProcedureLine)
 	return true;
 }
 
+// This private member function extracts procedure name, argument
+// list and the corresponding file name from the passed position
+// in the command line
+void Procedure::extractProcedureInformation(const string& sCmdLine, size_t nPos, string& sProcName, string& sArgList, string& sFileName)
+{
+    string __sName = sCmdLine.substr(nPos, sCmdLine.find('(', nPos) - nPos);
+
+    // Get the argument list
+    sArgList = sCmdLine.substr(sCmdLine.find('(', nPos));
+    sArgList.erase(getMatchingParenthesis(sArgList));
+    sArgList.erase(0, 1);
+
+    if (__sName.find('~') == string::npos)
+        __sName = sNameSpace + __sName;
+
+    if (__sName.substr(0, 5) == "this~")
+        __sName.replace(0, 4, sThisNameSpace);
+
+    // Handle the special case of absolute paths
+    if (sCmdLine[nPos] == '\'')
+    {
+        __sName = sCmdLine.substr(nPos + 1, sCmdLine.find('\'', nPos + 1) - nPos - 1);
+    }
+
+    // Create a valid filename first
+    sFileName = __sName;
+
+    // Now remove the namespace stuff
+    if (__sName.find('~') != string::npos)
+        sProcName = __sName.substr(__sName.rfind('~')+1);
+    else
+        sProcName = __sName;
+
+    // Handle namespaces
+    if (sFileName.find('~') != string::npos)
+    {
+        if (sFileName.substr(0, 9) == "thisfile~")
+        {
+            if (sProcNames.length())
+                sFileName = sProcNames.substr(sProcNames.rfind(';') + 1);
+            else
+            {
+                throw SyntaxError(SyntaxError::PRIVATE_PROCEDURE_CALLED, sCmdLine, SyntaxError::invalid_position, "thisfile");
+            }
+        }
+        else
+        {
+            for (unsigned int i = 0; i < sFileName.length(); i++)
+            {
+                if (sFileName[i] == '~')
+                {
+                    if (sFileName.length() > 5 && i >= 4 && sFileName.substr(i - 4, 5) == "main~")
+                        sFileName = sFileName.substr(0, i - 4) + sFileName.substr(i + 1);
+                    else
+                        sFileName[i] = '/';
+                }
+            }
+        }
+    }
+
+    // Use the filesystem to determine a valid file name
+    sFileName = ValidFileName(sFileName, ".nprc");
+
+    if (sFileName[1] != ':')
+    {
+        sFileName = "<procpath>/" + sFileName;
+        sFileName = ValidFileName(sFileName, ".nprc");
+    }
+}
+
 // This virtual member function checks, whether the procedures in the
-// current line are declared as inline
-bool Procedure::isInline(const string& sProc)
+// current line are declared as inline and whether they are inlinable
+int Procedure::isInline(const string& sProc)
 {
     // No procedures?
     if (sProc.find('$') == string::npos)
-		return false;
+		return ProcedureCommandLine::INLINING_IMPOSSIBLE;
+
+    size_t nProcedures = 0;
+    int nInlineable = ProcedureCommandLine::INLINING_POSSIBLE;
 
 	if (sProc.find('$') != string::npos && sProc.find('(', sProc.find('$')) != string::npos)
 	{
-		unsigned int nPos = 0;
+		size_t nPos = 0;
 
 		// Examine all procedures, which may be found in the
 		// current command string
@@ -1656,90 +1765,354 @@ bool Procedure::isInline(const string& sProc)
 		{
 		    // Extract the name of the procedure
 			nPos = sProc.find('$', nPos) + 1;
-			string __sName = sProc.substr(nPos, sProc.find('(', nPos) - nPos);
-			string __sProcName;
-
-			if (__sName.find('~') == string::npos)
-				__sName = sNameSpace + __sName;
-
-			if (__sName.substr(0, 5) == "this~")
-				__sName.replace(0, 4, sThisNameSpace);
-
-            // Handle the special case of absolute paths
-			if (sProc[nPos] == '\'')
-			{
-				__sName = sProc.substr(nPos + 1, sProc.find('\'', nPos + 1) - nPos - 1);
-			}
 
 			// Only evaluate the current match, if it is not part of a string
 			if (!isInQuotes(sProc, nPos, true))
 			{
-			    // Create a valid filename first
-				string __sFileName = __sName;
+                string __sFileName;
+                string __sProcName;
+                string __sArgList;
 
-				// Now remove the namespace stuff
-				if (__sName.find('~') != string::npos)
-                    __sProcName = __sName.substr(__sName.rfind('~')+1);
-                else
-                    __sProcName = __sName;
+                // Obtain procedure name, argument list and the corresponding
+                // file name of the procedure
+                extractProcedureInformation(sProc, nPos, __sProcName, __sArgList, __sFileName);
 
-				// Handle namespaces
-				if (__sFileName.find('~') != string::npos)
-				{
-					if (__sFileName.substr(0, 9) == "thisfile~")
-					{
-						if (sProcNames.length())
-							__sFileName = sProcNames.substr(sProcNames.rfind(';') + 1);
-						else
-						{
-							throw SyntaxError(SyntaxError::PRIVATE_PROCEDURE_CALLED, sProc, SyntaxError::invalid_position, "thisfile");
-						}
-					}
-					else
-					{
-						for (unsigned int i = 0; i < __sFileName.length(); i++)
-						{
-							if (__sFileName[i] == '~')
-							{
-								if (__sFileName.length() > 5 && i >= 4 && __sFileName.substr(i - 4, 5) == "main~")
-									__sFileName = __sFileName.substr(0, i - 4) + __sFileName.substr(i + 1);
-								else
-									__sFileName[i] = '/';
-							}
-						}
-					}
-				}
-
-				// Use the filesystem to determine a valid file name
-				__sFileName = ValidFileName(__sFileName, ".nprc");
-
-				if (__sFileName[1] != ':')
-				{
-					__sFileName = "<procpath>/" + __sFileName;
-					__sFileName = ValidFileName(__sFileName, ".nprc");
-				}
+				int nInlineFlag = 0;
 
 				// Here happens the hard work: get a procedure element from the library, find
 				// the procedure definition line, obtain it and examine the already parsed
-				// flags of this procedure
-				ProcedureElement* element = NumeReKernel::ProcLibrary.getProcedureContents(__sFileName);
-                int nProcedureLine = element->gotoProcedure("$" + __sProcName);
-                if (nProcedureLine < 0)
-                    throw SyntaxError(SyntaxError::PROCEDURE_NOT_FOUND, sProc, SyntaxError::invalid_position, "$" + __sName);
-                pair<int, ProcedureCommandLine> header = element->getCurrentLine(nProcedureLine);
+				// flags of this procedure. Additionally, determine, whether the current procedure
+				// is inlinable.
+				nInlineable = max(isInlineable(__sProcName, __sFileName, &nInlineFlag), nInlineable);
+				nProcedures++;
 
-                // Only return false, if this procedure is NOT inline,
-                // otherwise continue
-                if (!(header.second.getFlags() & ProcedureCommandLine::FLAG_INLINE))
-                    return false;
+				// If the current procedure is not flagged as inline, return the corresponding
+				// value - we do not need to inspect the current command line further
+                if (!nInlineFlag)
+                    return ProcedureCommandLine::INLINING_IMPOSSIBLE;
 			}
 		}
 	}
 	else
-		return false;
+		return ProcedureCommandLine::INLINING_IMPOSSIBLE;
 
     // All procedures were declared as inline
-	return true;
+	return nInlineable;
+}
+
+// This virtual private member function expands all procedures in
+// single command line, which were declared as "inline" and which
+// are inlinable, into a vector of command lines, which will be
+// inserted in the flow control command array before the current
+// command line
+vector<string> Procedure::expandInlineProcedures(string& sProc)
+{
+    vector<string> vExpandedProcedures;
+
+    // No procedures?
+    if (sProc.find('$') == string::npos)
+		return vExpandedProcedures;
+
+    size_t nProcedures = countProceduresInLine(sProc);
+
+	if (sProc.find('$') != string::npos && sProc.find('(', sProc.find('$')) != string::npos)
+	{
+		size_t nPos = 0;
+
+		// Examine all procedures, which may be found in the
+		// current command string
+		while (sProc.find('$', nPos) != string::npos && sProc.find('(', sProc.find('$', nPos)) != string::npos && nProcedures)
+		{
+		    // Extract the name of the procedure
+			nPos = sProc.find('$', nPos) + 1;
+
+			// Only evaluate the current match, if it is not part of a string
+			if (!isInQuotes(sProc, nPos, true))
+			{
+                string __sFileName;
+                string __sProcName;
+                string __sArgList;
+
+                // Obtain procedure name, argument list and the corresponding
+                // file name of the procedure
+                extractProcedureInformation(sProc, nPos, __sProcName, __sArgList, __sFileName);
+
+                // Pre-parse procedures, which are part of the current
+                // argument list
+				if (__sArgList.find('$') != string::npos)
+                {
+                    // Call member function recursively
+                    vector<string> vExpandedArgList = expandInlineProcedures(__sArgList);
+
+                    // Insert the returned list, if it is non-empty
+                    if (vExpandedArgList.size())
+                    {
+                        vExpandedProcedures.insert(vExpandedProcedures.end(), vExpandedArgList.begin(), vExpandedArgList.end());
+                    }
+                }
+
+                // Ensure that the current procedure is inlinable
+                // (won't be re-evaluated here, because the result
+                // of the last evaluation is cached)
+				if (isInlineable(__sProcName, __sFileName))
+				{
+				    // Get the inlined representation as a vector
+				    vector<string> vInlinedRepresentation = getInlined(__sProcName, __sArgList, __sFileName, nProcedures);
+
+				    // Replace the return value and insert the
+				    // stuff before the return value in the overall
+				    // expansion
+				    sProc.replace(nPos-1, getMatchingParenthesis(sProc.substr(nPos-1))+1, vInlinedRepresentation.back());
+                    vExpandedProcedures.insert(vExpandedProcedures.end(), vInlinedRepresentation.begin(), vInlinedRepresentation.end()-1);
+				}
+
+                nProcedures--;
+			}
+		}
+	}
+
+    // All procedures were expanded
+	return vExpandedProcedures;
+}
+
+// This private member function evaluates, whether the current procedure
+// is inlineable, i.e. whether it fulfills the internal inlining rules.
+int Procedure::isInlineable(const string& sProc, const string& sFileName, int* nInlineFlag)
+{
+    // Get procedure element and goto to the corresponding line
+    ProcedureElement* element = NumeReKernel::ProcLibrary.getProcedureContents(sFileName);
+    int nProcedureLine = element->gotoProcedure("$" + sProc);
+    int nInlineable = ProcedureCommandLine::INLINING_IMPOSSIBLE;
+    string sArgumentList;
+
+    const int nMAX_INLINING_LINES = 7;
+
+    if (nProcedureLine < 0)
+        throw SyntaxError(SyntaxError::PROCEDURE_NOT_FOUND, sProc, SyntaxError::invalid_position, "$" + sProc);
+
+    // Get the procedure head
+    pair<int, ProcedureCommandLine> currentline = element->getCurrentLine(nProcedureLine);
+
+    // If the inline flag pointer was passed, store the inline flag
+    // value here
+    if (nInlineFlag)
+    {
+        *nInlineFlag = currentline.second.getFlags() & ProcedureCommandLine::FLAG_INLINE;
+    }
+
+    // Extract information about inlinability and the argument list
+    nInlineable = currentline.second.isInlineable();
+    sArgumentList = currentline.second.getArgumentList();
+
+    if (nInlineable == ProcedureCommandLine::INLINING_UNKNOWN)
+    {
+        size_t nLines = 0;
+
+        // Apply the rules and update the procedure definition
+        while (!element->isLastLine(currentline.first))
+        {
+            currentline = element->getNextLine(currentline.first);
+
+            // Apply the internal inlining rule set
+            nInlineable = applyInliningRuleset(currentline.second.getCommandLine(), sArgumentList);
+
+            // If the procedure either is not inlinable or we've reached
+            // the end of the procedure, break the loop
+            if (!nInlineable || currentline.second.getType() == ProcedureCommandLine::TYPE_PROCEDURE_FOOT || findCommand(currentline.second.getCommandLine()).sString == "return")
+            {
+                break;
+            }
+
+            nLines++;
+        }
+
+        // Ensure that we don't have too many lines
+        if (nLines > nMAX_INLINING_LINES)
+            nInlineable = ProcedureCommandLine::INLINING_IMPOSSIBLE;
+
+        // Go to the procedure head again and update the
+        // inlinability information
+        currentline = element->getCurrentLine(nProcedureLine);
+        currentline.second.setInlineable(nInlineable);
+
+        return nInlineable;
+    }
+
+    return nInlineable;
+}
+
+// This private member function applies the internal inlining rule
+// set for a single procedure command line and returns the
+// corresponding enumeration flags
+int Procedure::applyInliningRuleset(const string& sCommandLine, const string& sArgumentList)
+{
+    static const string sINVALID_INLINING_COMMANDS = " var str tab namespace for if while switch ifndef ifndefined def define lclfunc redef redefine undef undefine ";
+    string command = findCommand(sCommandLine).sString;
+
+    // Check for invalid inlining commands
+    if (sINVALID_INLINING_COMMANDS.find(" " + command + " ") != string::npos)
+        return ProcedureCommandLine::INLINING_IMPOSSIBLE;
+
+    // Check for procedures in the current line
+    if (sCommandLine.find("$") != string::npos)
+    {
+        size_t nQuotes = 0;
+
+        // Go through the line and search for dollars,
+        // while considering the quotation marks
+        for (size_t i = 0; i < sCommandLine.length(); i++)
+        {
+            if (sCommandLine[i] == '"' && (!i || sCommandLine[i-1] != '\\'))
+                nQuotes++;
+
+            if (sCommandLine[i] == '$' && !(nQuotes % 2))
+                return ProcedureCommandLine::INLINING_IMPOSSIBLE;
+        }
+    }
+
+    return ProcedureCommandLine::INLINING_POSSIBLE;
+}
+
+// This private member function simply counts the number of procedures,
+// which may be found in the current command line
+size_t Procedure::countProceduresInLine(const string& sCommandLine)
+{
+    size_t nProcedures = 0;
+    size_t nPos = 0;
+
+    // Only do something, if there are candidates for procedures
+    if (sCommandLine.find('$') != string::npos && sCommandLine.find('(', sCommandLine.find('$')) != string::npos)
+	{
+
+		// Examine all procedures candidates, which may be found in the
+		// current command string
+		while (sCommandLine.find('$', nPos) != string::npos && sCommandLine.find('(', sCommandLine.find('$', nPos)) != string::npos)
+		{
+			nPos = sCommandLine.find('$', nPos) + 1;
+
+			// Only count the current match, if it is not part of a string
+			if (!isInQuotes(sCommandLine, nPos, true))
+			{
+                nProcedures++;
+			}
+		}
+	}
+
+	// Return the number of strings
+	return nProcedures;
+}
+
+// This virutal private member function returns the inlined
+// representation of the selected procedure as a vector containing
+// the single commands
+vector<string> Procedure::getInlined(const string& sProc, const string& sArgumentList, const string& sFileName, size_t nProcedures)
+{
+    // Prepare a variable factory and get the procedure
+    // element
+    ProcedureVarFactory varFactory(this, sProc, nthRecursion);
+    ProcedureElement* element = NumeReKernel::ProcLibrary.getProcedureContents(sFileName);
+
+    // Goto to the corresponding procedure head
+    int nProcedureLine = element->gotoProcedure("$" + sProc);
+    vector<string> vProcCommandLines;
+    string sCommandLine;
+    static const string sSPECIALRETURNVALS = " true false nan inf -inf ";
+
+    // Get a reference to the debugger. This is needed to insert
+    // the applied breakpoints at the correct location
+    NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+
+    // Ensure that the procedure was found in the file
+    if (nProcedureLine < 0)
+        throw SyntaxError(SyntaxError::PROCEDURE_NOT_FOUND, sProc, SyntaxError::invalid_position, "$" + sProc);
+
+    // Get the procedure head
+    pair<int, ProcedureCommandLine> currentline = element->getCurrentLine(nProcedureLine);
+
+    // Create the filled argument list in the variable factory
+    varFactory.createProcedureArguments(currentline.second.getArgumentList(), sArgumentList);
+
+    // Read each line, replace the arguments with their
+    // values and push the result in the vector
+    while (!element->isLastLine(currentline.first))
+    {
+        // Get next line and replace the argument occurences
+        currentline = element->getNextLine(currentline.first);
+        sCommandLine = varFactory.resolveVariables(" " + currentline.second.getCommandLine() + " ");
+
+        // Insert a breakpoint, if the breakpoint manager
+        // contains a reference to this line
+        if (_debugger.getBreakpointManager().isBreakpoint(sFileName, currentline.first))
+            sCommandLine = "|> " + sCommandLine;
+
+        // If the current line is the last procedure line,
+        // simply push a "true" into the vector
+        if (currentline.second.getType() == ProcedureCommandLine::TYPE_PROCEDURE_FOOT)
+        {
+            vProcCommandLines.push_back("true");
+            break;
+        }
+
+        // If the current line is a "return" statement,
+        // remove the statement and inspect the return
+        // value
+        if (findCommand(sCommandLine).sString == "return")
+        {
+            // Get the return value
+            size_t pos = findCommand(sCommandLine).nPos;
+            sCommandLine.erase(0, pos+7);
+
+            if (sCommandLine.find(';') != string::npos)
+                sCommandLine.erase(sCommandLine.rfind(';'));
+
+            // Strip all spaces from the return value
+            StripSpaces(sCommandLine);
+
+            // Push a or the return value depending on the
+            // type into the vector. We try to exclude all
+            // constant cases, which will increase the speed
+            // of the inlined procedure even more
+            if (sCommandLine == "void")
+                vProcCommandLines.push_back("");
+            else if (!sCommandLine.length())
+                vProcCommandLines.push_back("true");
+            else if (sSPECIALRETURNVALS.find(" " + sCommandLine + " ") != string::npos || _parser.GetConst().find(sCommandLine) != _parser.GetConst().end())
+                vProcCommandLines.push_back(sCommandLine);
+            else if (isMultiValue(sCommandLine))
+            {
+                // Multi value return value
+                if (nProcedures > 1)
+                {
+                    // Save the return value in a cluster
+                    string sTempCluster = NumeReKernel::getInstance()->getData().createTemporaryCluster();
+                    vProcCommandLines.push_back(sTempCluster + " = " + sCommandLine + ";");
+                    vProcCommandLines.push_back(sTempCluster);
+                }
+                else
+                    vProcCommandLines.push_back("{" + sCommandLine + "}");
+            }
+            else
+            {
+                // Single value return value
+                if (nProcedures > 1)
+                {
+                    // Save the return value in a cluster
+                    string sTempCluster = NumeReKernel::getInstance()->getData().createTemporaryCluster();
+                    vProcCommandLines.push_back(sTempCluster + " = " + sCommandLine + ";");
+                    vProcCommandLines.push_back(sTempCluster);
+                }
+                else
+                    vProcCommandLines.push_back("(" + sCommandLine + ")");
+            }
+
+            break;
+        }
+        else
+            vProcCommandLines.push_back(sCommandLine);
+    }
+
+    return vProcCommandLines;
 }
 
 // This virtual member function handles the gathering of all
@@ -1782,7 +2155,7 @@ unsigned int Procedure::GetCurrentLine() const
 // between the both passed positions using akronymed version
 // of the called procedure. It also declares the numerical
 // return value as a vector to the parser.
-void Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnvalue& _return, unsigned int nPos, unsigned int nPos2, const string& sReplaceName)
+size_t Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnvalue& _return, unsigned int nPos, unsigned int nPos2, const string& sReplaceName)
 {
     // Replace depending on the type
 	if (_return.isString())
@@ -1796,6 +2169,8 @@ void Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnval
 
 		sReturn.back() = '}';
 		sLine = sLine.substr(0, nPos) + sReturn + sLine.substr(nPos2);
+
+		return sReturn.length();
 	}
 	else if (_return.isNumeric())
 	{
@@ -1815,10 +2190,12 @@ void Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnval
 
 		_parser.SetVectorVar(__sRplcNm, _return.vNumVal);
 		sLine = sLine.substr(0, nPos) + __sRplcNm +  sLine.substr(nPos2);
+
+		return __sRplcNm.length();
 	}
-	else
-		sLine = sLine.substr(0, nPos) + "nan" + sLine.substr(nPos2);
-	return;
+
+    sLine = sLine.substr(0, nPos) + "nan" + sLine.substr(nPos2);
+	return 3;
 }
 
 // This member function sets the current procedure object
@@ -1915,6 +2292,15 @@ bool Procedure::handleVariableDefinitions(string& sProcCommandLine, const string
     if (sCommand == "tab" && sProcCommandLine.length() > 6)
     {
         _varFactory->createLocalTables(sProcCommandLine.substr(sProcCommandLine.find("tab") + 3));
+
+        sProcCommandLine = "";
+        return true;
+    }
+
+    // Is it a cluster declaration?
+    if (sCommand == "cst" && sProcCommandLine.length() > 6)
+    {
+        _varFactory->createLocalClusters(sProcCommandLine.substr(sProcCommandLine.find("cst") + 3));
 
         sProcCommandLine = "";
         return true;

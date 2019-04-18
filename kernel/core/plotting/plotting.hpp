@@ -76,7 +76,8 @@ class Plot
         void evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option, vector<short>& vType, string& sDataPlots, string& sAxisBinds, string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2]);
         void createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data, const Settings& _option);
         string constructDataLegendElement(Parser& _parser, Datafile& _data, const PlotData& _pData, const string& sColumnIndices, const string& sTableName);
-        void calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2], int i, int l, int i_pos[2]);
+        void calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2], int i, int l, long long i_pos[2]);
+        size_t countValidElements(const mglData& _mData);
         void separateLegends();
         void prepareMemory(PlotData& _pData, const string& sFunc, int nFunctions);
         void defaultRanges(PlotData& _pData, double dDataRanges[3][2], double dSecDataRanges[2][2], size_t nPlotCompose, bool bNewSubPlot);
@@ -99,6 +100,11 @@ class Plot
         void CoordSettings(const PlotData& _pData);
         string CoordFunc(const string& sFunc, double dPhiScale = 1.0, double dThetaScale = 1.0);
         string composeColoursForBarChart(long int nNum);
+
+        inline double validize(double d)
+        {
+            return isValidValue(d) ? d : NAN;
+        }
 
     public:
         Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions, PlotData& _pData);

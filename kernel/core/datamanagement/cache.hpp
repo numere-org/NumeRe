@@ -36,6 +36,7 @@
 #include "table.hpp"
 #include "memory.hpp"
 #include "stringmemory.hpp"
+#include "cluster.hpp"
 
 
 #ifndef CACHE_HPP
@@ -49,7 +50,7 @@ using namespace std;
  * Header zur Cache-Klasse --> PARENT zur Datafile-Klasse
  */
 
-class Cache : public FileSystem, public StringMemory
+class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterManager
 {
 	public:
 		enum AppDir {LINES = Memory::LINES, COLS = Memory::COLS, GRID = Memory::GRID, ALL = Memory::ALL};

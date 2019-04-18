@@ -1334,7 +1334,7 @@ bool writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opti
 	sExpression = sCmd.substr(findCommand(sCmd).nPos + findCommand(sCmd).sString.length());
 
 	// Parse the expression, which should be a string
-	if (containsStrings(sExpression) || _data.containsStringVars(sExpression))
+	if (containsStrings(sExpression) || _data.containsStringVars(sExpression) || _data.containsClusters(sExpression))
 	{
 		sExpression += " -komq";
 		string sDummy = "";

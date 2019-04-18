@@ -4418,7 +4418,7 @@ void NumeReWindow::UpdateVarViewer()
     if (m_varViewer)
     {
         NumeReVariables vars = m_terminal->getVariableList();
-        m_varViewer->UpdateVariables(vars.vVariables, vars.nNumerics, vars.nStrings, vars.nTables);
+        m_varViewer->UpdateVariables(vars.vVariables, vars.nNumerics, vars.nStrings, vars.nTables, vars.nClusters);
     }
 }
 

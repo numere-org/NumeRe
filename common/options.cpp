@@ -343,6 +343,9 @@ SyntaxStyles Options::GetDefaultSyntaxStyle(size_t i)
         case Styles::CUSTOM_FUNCTION:
             _style.foreground = wxColour(0,0,160);
             break;
+        case Styles::CLUSTER:
+            _style.foreground = wxColour(96, 96, 96);
+            break;
         case Styles::CONSTANT:
             _style.foreground = wxColour(255,0,128);
             _style.bold = true;
@@ -405,6 +408,7 @@ void Options::readColoursFromConfig(wxFileConfig* _config)
         "OPTION",
         "FUNCTION",
         "CUSTOM_FUNCTION",
+        "CLUSTER",
         "CONSTANT",
         "SPECIALVAL", // ans cache ...
         "STRING",
@@ -442,6 +446,7 @@ void Options::writeColoursToConfig(wxFileConfig* _config)
         "OPTION",
         "FUNCTION",
         "CUSTOM_FUNCTION",
+        "CLUSTER",
         "CONSTANT",
         "SPECIALVAL", // ans cache ...
         "STRING",
@@ -606,6 +611,7 @@ wxArrayString Options::GetStyleIdentifier()
     sReturn.Add("OPTION");
     sReturn.Add("FUNCTION");
     sReturn.Add("CUSTOM_FUNCTION");
+    sReturn.Add("CLUSTER");
     sReturn.Add("CONSTANT");
     sReturn.Add("SPECIALVAL");
     sReturn.Add("STRING");

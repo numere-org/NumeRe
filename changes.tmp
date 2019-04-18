@@ -51,3 +51,5 @@ Cleaned	The internal architecture of the definition object was improved.
 Applied	The debugger was massively improved and supports now standard features like "Step", "Step over" and "Step out". Additionally it supports modifiying breakpoint during execution and now halts the execution right before an error is processed.
 Added	The transparency factor and the number of contour lines may now be modified by appending the value to the corresponding option value (i.e. "alpha=0.75" and "pcont=7")
 New	The "dialog" command may be used to display various dialogs to interact with the user.
+New	A new data type is available: a so-called "cluster", which can contain strings and numerical values in an arbitrary order. It is always single-dimensioned and constructed on-the-fly like usual variables and unlike tables.
+Applied	The procedure and flow control algorithms now support "true inlining", which means that the contents of a inlined procedure is actually copied to the calling flow control statement.

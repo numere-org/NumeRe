@@ -93,6 +93,7 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
     Indices _idx;
 
     bool bAllowMatrixClearing = false;
+    bool isCluster = false;
 
     // 1. Objekte ersetzen cmd
     // 2. Vektoren deklarieren
@@ -101,13 +102,15 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
     // Kommando entfernen
     if (findCommand(sCmd).sString == "matop")
         sCmd.erase(0, findCommand(sCmd).nPos+5);
+
     if (findCommand(sCmd).sString == "mtrxop")
         sCmd.erase(0, findCommand(sCmd).nPos+6);
+
     if (!_functions.call(sCmd))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
 
     if (sCmd.find("data(") == string::npos
-        && !_data.containsCacheElements(sCmd)
+        && !_data.containsTablesOrClusters(sCmd)
         && sCmd.find("{") == string::npos
         && sCmd.find("det(") == string::npos
         && sCmd.find("invert(") == string::npos
@@ -147,37 +150,68 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
         && sCmd[sCmd.find('=')-1] != '!'
         && sCmd[sCmd.find('=')-1] != '<'
         && sCmd[sCmd.find('=')-1] != '>'
-        && sCmd.substr(0,sCmd.find('=')).find('(') != string::npos)
+        && sCmd.substr(0, sCmd.find('=')).find_first_of("({") != string::npos
+        && sCmd[sCmd.find_first_not_of(' ')] != '{')
     {
-        sTargetName = sCmd.substr(0,sCmd.find('='));
+        sTargetName = sCmd.substr(0, sCmd.find('='));
         StripSpaces(sTargetName);
-        if (sTargetName.substr(0,5) == "data(")
+
+        if (sTargetName.substr(0, 5) == "data(")
             throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, sTargetName, sTargetName);
-        if (sTargetName.find('(') == string::npos)
+
+        if (sTargetName.find_first_of("({") == string::npos)
             throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, sTargetName, sTargetName);
-        if (!_data.isCacheElement(sTargetName))
+
+        // Distinguish between tables and clusters
+        if (sTargetName.find("(") != string::npos && !_data.isCacheElement(sTargetName))
         {
+            // Create a new table
             _data.addCache(sTargetName.substr(0,sTargetName.find('(')), _option);
+
+            if (sTargetName.substr(sTargetName.find('('),2) == "()")
+                bAllowMatrixClearing = true;
         }
+        else if (sTargetName.find("{") != string::npos && !_data.isCluster(sTargetName))
+        {
+            // Create a new cluster
+            _data.newCluster(sTargetName);
+            isCluster = true;
+
+            if (sTargetName.substr(sTargetName.find('{'),2) == "{}")
+                bAllowMatrixClearing = true;
+        }
+        else if (sTargetName.find("{") != string::npos)
+        {
+            // Cluster exists already - only mark the target as cluster
+            isCluster = true;
+
+            if (sTargetName.substr(sTargetName.find('{'),2) == "{}")
+                bAllowMatrixClearing = true;
+        }
+
         _idx = parser_getIndices(sTargetName, _parser, _data, _option);
-        if ((_idx.nI[0] == -1 && !_idx.vI.size()) || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
+
+        if (!isValidIndexSet(_idx))
             throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sTargetName, sTargetName);
-        if (sTargetName.substr(sTargetName.find('('),2) == "()")
-            bAllowMatrixClearing = true;
-        sCmd.erase(0,sCmd.find('=')+1);
+
+        sCmd.erase(0, sCmd.find('=')+1);
+
         if (!_idx.vI.size())
         {
             if (_idx.nI[1] == -1)
                 _idx.nI[1] = _idx.nI[0];
+
             if (_idx.nJ[1] == -1)
                 _idx.nJ[1] = _idx.nJ[0];
+
             if (_idx.nI[1] != -2)
                 _idx.nI[1]++;
+
             if (_idx.nJ[1] != -2)
                 _idx.nJ[1]++;
         }
 
-        sTargetName.erase(sTargetName.find('('));
+        sTargetName.erase(sTargetName.find_first_of("({"));
     }
     else
     {
@@ -186,6 +220,7 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
         _idx.nJ[0] = 0;
         _idx.nJ[1] = -2;
         _idx.nI[1] = -2;
+
         if (!_data.isCacheElement("matrix("))
         {
             _data.addCache("matrix", _option);
@@ -199,24 +234,65 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
     Matrix _mResult = parser_subMatrixOperations(sCmd, _parser, _data, _functions, _option);
 
     // Target in Zielmatrix speichern
-    if (bAllowMatrixClearing)
-        _data.deleteBulk(sTargetName, 0, _data.getLines(sTargetName, false) - 1, 0, _data.getCols(sTargetName, false) - 1);
-    _data.setCacheSize(_idx.nI[0]+_mResult.size(), _idx.nJ[0]+_mResult[0].size(), sTargetName);
-    for (unsigned int i = 0; i < _mResult.size(); i++)
+    if (!isCluster)
     {
-        if (_idx.nI[1] == -2 || _idx.nI[1] - _idx.nI[1] > i)
+        // This target is a table
+        if (bAllowMatrixClearing)
+            _data.deleteBulk(sTargetName, 0, _data.getLines(sTargetName, false) - 1, 0, _data.getCols(sTargetName, false) - 1);
+
+        // Prepare the target size
+        _data.setCacheSize(_idx.nI[0]+_mResult.size(), _idx.nJ[0]+_mResult[0].size(), sTargetName);
+
+        // Write the contents to the table
+        for (unsigned int i = 0; i < _mResult.size(); i++)
         {
-            for (unsigned int j = 0; j < _mResult[0].size(); j++)
+            if (_idx.nI[1] == -2 || _idx.nI[1] - _idx.nI[1] > i)
             {
-                if (_idx.nJ[1] == -2 || _idx.nJ[1] - _idx.nJ[0] > j)
-                    _data.writeToCache((long long int)i+_idx.nI[0], (long long int)j+_idx.nJ[0], sTargetName, _mResult[i][j]);
-                else
+                for (unsigned int j = 0; j < _mResult[0].size(); j++)
+                {
+                    if (_idx.nJ[1] == -2 || _idx.nJ[1] - _idx.nJ[0] > j)
+                        _data.writeToCache((long long int)i+_idx.nI[0], (long long int)j+_idx.nJ[0], sTargetName, _mResult[i][j]);
+                    else
+                        break;
+                }
+            }
+            else
+                break;
+        }
+    }
+    else
+    {
+        // This target is a cluster, get a reference to it
+        NumeRe::Cluster& cluster = _data.getCluster(sTargetName);
+
+        if (bAllowMatrixClearing)
+            cluster.clear();
+
+        // Assign either the first column or the first line
+        if (_mResult.size() == 1)
+        {
+            // Assign the first line
+            for (size_t i = 0; i < _mResult[0].size(); i++)
+            {
+                if (_idx.nI[1] != -2 && _idx.nI[0]+i > _idx.nI[1])
                     break;
+
+                cluster.setDouble(_idx.nI[0]+i, _mResult[0][i]);
             }
         }
         else
-            break;
+        {
+            // Assign the first column
+            for (size_t i = 0; i < _mResult.size(); i++)
+            {
+                if (_idx.nI[1] != -2 && _idx.nI[0]+i > _idx.nI[1])
+                    break;
+
+                cluster.setDouble(_idx.nI[0]+i, _mResult[i][0]);
+            }
+        }
     }
+
     parser_ShowMatrixResult(_mResult, _option);
 
     return true;
@@ -982,6 +1058,49 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
         }
     }
 
+    // now all clusters
+    for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
+    {
+        nPos = 0;
+
+        while (__sCmd.find(iter->first+"{", nPos) != string::npos)
+        {
+            nPos = __sCmd.find(iter->first+"{", nPos);
+
+            // Check the delimiters
+            if (nPos && !checkDelimiter(__sCmd.substr(nPos-1,(iter->first).length()+2)))
+            {
+                nPos++;
+                continue;
+            }
+
+            // Get the indices
+            Indices _idx = parser_getIndices(__sCmd.substr(nPos), _parser, _data, _option);
+
+            if (_idx.nI[1] == -1)
+                _idx.nI[1] = _idx.nI[0]+1;
+
+            if (_idx.nI[1] == -2)
+                _idx.nI[1] = iter->second.size();
+
+            // Prepare a target matrix
+            Matrix _mClusterMatrix = parser_ZeroesMatrix(_idx.nI[1] - _idx.nI[0], 1);
+
+            // Write the contents to the matrix
+            for (size_t i = 0; i < _idx.nI[1] - _idx.nI[0]; i++)
+            {
+                _mClusterMatrix[i][0] = iter->second.getDouble(i+_idx.nI[0]);
+            }
+
+            // Declare the cluster as a returned matrix (simplifies the
+            // access logic further down)
+            vReturnedMatrices.push_back(_mClusterMatrix);
+
+            // Replace the current call with a standardized one
+            __sCmd.replace(nPos, getMatchingParenthesis(__sCmd.substr(nPos+(iter->first).length()))+(iter->first).length()+1, "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]");
+        }
+    }
+
     pos_back = sCmd.length();
 
     // Apply the matrix multiplication
@@ -1615,7 +1734,7 @@ static Matrix parser_matFromLines(string& sCmd, Parser& _parser, Datafile& _data
     }
     if (!_functions.call(sCmd))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
-    if (sCmd.find("data(") != string::npos || _data.containsCacheElements(sCmd))
+    if (sCmd.find("data(") != string::npos || _data.containsTablesOrClusters(sCmd))
     {
         getDataElements(sCmd, _parser, _data, _option);
     }
@@ -1660,7 +1779,7 @@ static Matrix parser_matFromLinesFilled(string& sCmd, Parser& _parser, Datafile&
     }
     if (!_functions.call(sCmd))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
-    if (sCmd.find("data(") != string::npos || _data.containsCacheElements(sCmd))
+    if (sCmd.find("data(") != string::npos || _data.containsTablesOrClusters(sCmd))
     {
         getDataElements(sCmd, _parser, _data, _option);
     }
@@ -1726,7 +1845,7 @@ static Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, Datafile& _da
     }
     if (!_functions.call(sCmd))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
-    if (sCmd.find("data(") != string::npos || _data.containsCacheElements(sCmd))
+    if (sCmd.find("data(") != string::npos || _data.containsTablesOrClusters(sCmd))
     {
         getDataElements(sCmd, _parser, _data, _option);
     }
@@ -3053,7 +3172,7 @@ Indices parser_getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _p
         }
     }
     StripSpaces(sArgument);
-    if (sArgument.find("data(") != string::npos || _data.containsCacheElements(sArgument))
+    if (sArgument.find("data(") != string::npos || _data.containsTablesOrClusters(sArgument))
         getDataElements(sArgument, _parser, _data, _option);
     // --> Kurzschreibweise!
     if (!sArgument.length())

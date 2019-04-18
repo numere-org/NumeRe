@@ -443,7 +443,7 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
 		// If the while condition has changed during the evaluation
 		// re-use the original condition to ensure that the result of
 		// the condition is true
-		if (sWhile_Condition != sWhile_Condition_Back || _dataRef->containsCacheElements(sWhile_Condition_Back) || sWhile_Condition_Back.find("data(") != string::npos)
+		if (sWhile_Condition != sWhile_Condition_Back || _dataRef->containsTablesOrClusters(sWhile_Condition_Back) || sWhile_Condition_Back.find("data(") != string::npos)
 		{
 			sWhile_Condition = sWhile_Condition_Back;
 			//v = evalHeader(nNum, sWhile_Condition, false, nth_Cmd);
@@ -485,7 +485,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
         {
             // The inner loop goes through the contained
             // commands
-            for (int __i = nth_Cmd+1; __i < vCmdArray.size(); __i++)
+            for (size_t __i = nth_Cmd+1; __i < vCmdArray.size(); __i++)
             {
                 nCurrentCommand = __i;
 
@@ -595,7 +595,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
     }
 
     // This is the else-case, if it is available
-    for (int __i = nth_Cmd+1; __i < vCmdArray.size(); __i++)
+    for (size_t __i = nth_Cmd+1; __i < vCmdArray.size(); __i++)
     {
         nCurrentCommand = __i;
 
@@ -725,7 +725,7 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
 
     // The inner loop goes through the contained
     // commands
-    for (int __i = nth_Cmd+1; __i < vCmdArray.size(); __i++)
+    for (size_t __i = nth_Cmd+1; __i < vCmdArray.size(); __i++)
     {
         nCurrentCommand = __i;
         // If we reach the end of the
@@ -843,7 +843,7 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
 	}
 
 	// Catch and evaluate all data and cache calls
-	if ((sHeadExpression.find("data(") != string::npos || _dataRef->containsCacheElements(sHeadExpression))
+	if ((sHeadExpression.find("data(") != string::npos || _dataRef->containsTablesOrClusters(sHeadExpression))
 			&& (!containsStrings(sHeadExpression) && !_dataRef->containsStringVars(sHeadExpression)))
 	{
 		if (!bLockedPauseMode && bUseLoopParsingMode)
@@ -858,10 +858,8 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
 		}
 
 		// Handle calls to an arbitrary "CACHE()"
-		if (_dataRef->containsCacheElements(sHeadExpression))
+		if (_dataRef->containsTablesOrClusters(sHeadExpression))
 		{
-			_dataRef->setCacheStatus(true);
-
 			for (auto iter = _dataRef->mCachesMap.begin(); iter != _dataRef->mCachesMap.end(); ++iter)
 			{
 				if (sHeadExpression.find(iter->first + "(") != string::npos && !isInQuotes(sHeadExpression, sHeadExpression.find(iter->first + "(")))
@@ -870,7 +868,14 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
 				}
 			}
 
-			_dataRef->setCacheStatus(false);
+			for (auto iter = _dataRef->getClusterMap().begin(); iter != _dataRef->getClusterMap().end(); ++iter)
+            {
+                if (sHeadExpression.find(iter->first + "{") != string::npos && !isInQuotes(sHeadExpression, sHeadExpression.find(iter->first + "{")))
+				{
+					replaceDataEntities(sHeadExpression, iter->first + "{", *_dataRef, *_parserRef, *_optionRef, true);
+				}
+            }
+
 		}
 
 		if (!bLockedPauseMode && bUseLoopParsingMode)
@@ -1506,31 +1511,6 @@ void FlowCtrl::eval()
 	if (!_optionRef->getSystemPrintStatus())
 		bMask = true;
 
-    // Prepare the bytecode storage
-	nCalcType = new int[vCmdArray.size()];
-
-	for (int i = 0; i < vCmdArray.size(); i++)
-		nCalcType[i] = CALCTYPE_NONE;
-
-    // Prepare the jump table
-	nJumpTableLength = vCmdArray.size();
-	nJumpTable = new int* [nJumpTableLength];
-
-	for (unsigned int i = 0; i < nJumpTableLength; i++)
-	{
-		nJumpTable[i] = new int[3];
-		nJumpTable[i][BLOCK_END] = NO_FLOW_COMMAND;
-		nJumpTable[i][ELSE_START] = NO_FLOW_COMMAND;
-		nJumpTable[i][PROCEDURE_INTERFACE] = NO_FLOW_COMMAND;
-	}
-
-	// Go again through the whole command set and fill
-	// the jump table with the corresponding block ends
-	// and pre-evaluate the recursive expressions.
-	// Furthermore, determine, whether the loop parsing
-	// mode is reasonable.
-	fillJumpTableAndExpandRecursives();
-
 	// If the loop parsing mode is active, ensure that only
 	// inline procedures are used in this case. Otherwise
 	// turn it off again. Additionally check for "to_cmd()"
@@ -1549,6 +1529,31 @@ void FlowCtrl::eval()
 		NumeReKernel::bSupressAnswer = bSupressAnswer_back;
 		throw;
 	}
+
+    // Prepare the bytecode storage
+	nCalcType = new int[vCmdArray.size()];
+
+	for (size_t i = 0; i < vCmdArray.size(); i++)
+		nCalcType[i] = CALCTYPE_NONE;
+
+    // Prepare the jump table
+	nJumpTableLength = vCmdArray.size();
+	nJumpTable = new int*[nJumpTableLength];
+
+	for (size_t i = 0; i < nJumpTableLength; i++)
+	{
+		nJumpTable[i] = new int[3];
+		nJumpTable[i][BLOCK_END] = NO_FLOW_COMMAND;
+		nJumpTable[i][ELSE_START] = NO_FLOW_COMMAND;
+		nJumpTable[i][PROCEDURE_INTERFACE] = NO_FLOW_COMMAND;
+	}
+
+	// Go again through the whole command set and fill
+	// the jump table with the corresponding block ends
+	// and pre-evaluate the recursive expressions.
+	// Furthermore, determine, whether the loop parsing
+	// mode is reasonable.
+	fillJumpTableAndExpandRecursives();
 
     // Prepare the array for the local variables
 	//
@@ -1751,8 +1756,14 @@ void FlowCtrl::reset()
 	bLockedPauseMode = false;
 	bFunctionsReplaced = false;
 
+	// Remove obsolete vector variables
 	if (_parserRef)
 		_parserRef->ClearVectorVars();
+
+    // Remove all temporary clusters defined for
+    // inlined procedures
+    if (_dataRef)
+        _dataRef->removeTemporaryClusters();
 
 	_parserRef = nullptr;
 	_dataRef = nullptr;
@@ -1780,6 +1791,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 	Indices _idx;
 	bool bCompiling = false;
 	bool bWriteToCache = false;
+	bool bWriteToCluster = false;
 
 	// Get the current bytecode for this command
 	int nCurrentCalcType = nCalcType[nthCmd];
@@ -2282,7 +2294,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 		// --> Datafile/Cache! <--
 		if (!containsStrings(sLine)
             && !_dataRef->containsStringVars(sLine)
-            && (sLine.find("data(") != string::npos || _dataRef->containsCacheElements(sLine)))
+            && (sLine.find("data(") != string::npos || _dataRef->containsTablesOrClusters(sLine)))
 		{
 			if (!nCurrentCalcType)
 				nCalcType[nthCmd] |= CALCTYPE_DATAACCESS;
@@ -2306,6 +2318,13 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 
 			_parserRef->SetCompiling(false);
 		}
+		else if (isClusterCandidate(sLine, sCache))
+        {
+            bWriteToCache = true;
+
+            if (!nCurrentCalcType)
+				nCalcType[nthCmd] |= CALCTYPE_DATAACCESS;
+        }
 	}
 
 	// Evaluate string expressions
@@ -2345,7 +2364,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 
 			replaceLocalVars(sLine);
 
-			if (sCache.length() && _dataRef->containsCacheElements(sCache) && !bWriteToCache)
+			if (sCache.length() && _dataRef->containsTablesOrClusters(sCache) && !bWriteToCache)
 				bWriteToCache = true;
 
 			if (!bLockedPauseMode && bUseLoopParsingMode)
@@ -2363,31 +2382,42 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 
 			if (bCompiling)
 			{
+			    if (sCache[sCache.find_first_of("({")] == '{')
+                    bWriteToCluster = true;
+
 				_parserRef->SetCompiling(true);
 				_idx = parser_getIndices(sCache, *_parserRef, *_dataRef, *_optionRef);
 
 				if ((_idx.nI[0] < 0 || _idx.nJ[0] < 0) && !_idx.vI.size() && !_idx.vJ.size())
 					throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "");
 
-				if ((_idx.nI[1] == -2 && _idx.nJ[1] == -2))
+				if (!bWriteToCluster && _idx.nI[1] == -2 && _idx.nJ[1] == -2)
 					throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
 
-				sCache.erase(sCache.find('('));
+				sCache.erase(sCache.find_first_of("({"));
 				StripSpaces(sCache);
-				_parserRef->CacheCurrentTarget(sCache + "(" + _idx.sCompiledAccessEquation + ")");
+
+				if (!bWriteToCluster)
+                    _parserRef->CacheCurrentTarget(sCache + "(" + _idx.sCompiledAccessEquation + ")");
+				else
+                    _parserRef->CacheCurrentTarget(sCache + "{" + _idx.sCompiledAccessEquation + "}");
+
 				_parserRef->SetCompiling(false);
 			}
 			else
 			{
 				_idx = parser_getIndices(sCache, *_parserRef, *_dataRef, *_optionRef);
 
-				if ((_idx.nI[0] < 0 || _idx.nJ[0] < 0) && !_idx.vI.size() && !_idx.vJ.size())
+				if (sCache[sCache.find_first_of("({")] == '{')
+                    bWriteToCluster = true;
+
+				if (!isValidIndexSet(_idx))
 					throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "");
 
-				if ((_idx.nI[1] == -2 && _idx.nJ[1] == -2))
+				if (!bWriteToCluster && _idx.nI[1] == -2 && _idx.nJ[1] == -2)
 					throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
 
-				sCache.erase(sCache.find('('));
+				sCache.erase(sCache.find_first_of("({"));
 				StripSpaces(sCache);
 			}
 
@@ -2424,11 +2454,24 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 		NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v, *_optionRef));
 	}
 
+	// Write the result to a table or a cluster
+	// this was implied by the syntax of the command
+	// line
 	if (bWriteToCache)
 	{
-		_dataRef->writeToCache(_idx, sCache, v, nNum);
-		bWriteToCache = false;
-	}
+	    // Is it a cluster?
+	    if (bWriteToCluster)
+        {
+            NumeRe::Cluster& cluster = _dataRef->getCluster(sCache);
+            cluster.assignResults(_idx, nNum, v);
+            bWriteToCluster = false;
+        }
+        else
+        {
+            _dataRef->writeToCache(_idx, sCache, v, nNum);
+            bWriteToCache = false;
+        }
+    }
 
 	if (bReturnSignal)
 	{
@@ -2534,7 +2577,7 @@ string FlowCtrl::extractFlagsAndIndexVariables()
 {
     string sVars = ";";
     string sVar;
-	for (int i = 0; i < vCmdArray.size(); i++)
+	for (size_t i = 0; i < vCmdArray.size(); i++)
 	{
 	    // No flow control statement
 		if (!vCmdArray[i].bFlowCtrlStatement)
@@ -2589,7 +2632,7 @@ string FlowCtrl::extractFlagsAndIndexVariables()
 // mode is reasonable.
 void FlowCtrl::fillJumpTableAndExpandRecursives()
 {
-	for (int i = 0; i < vCmdArray.size(); i++)
+	for (size_t i = 0; i < vCmdArray.size(); i++)
 	{
 	    // Fill the jump table and determine, whether
 	    // the loop parsing mode is reasonable
@@ -2599,7 +2642,7 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
 			{
 				int nForCount = 0;
 
-				for (int j = i + 1; j < vCmdArray.size(); j++)
+				for (size_t j = i + 1; j < vCmdArray.size(); j++)
 				{
 				    if (!vCmdArray[j].bFlowCtrlStatement)
                         continue;
@@ -2611,10 +2654,6 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
 						else
 						{
 							nJumpTable[i][BLOCK_END] = j;
-
-							if (!bUseLoopParsingMode && !bLockedPauseMode)
-								bUseLoopParsingMode = true;
-
 							break;
 						}
 					}
@@ -2626,7 +2665,7 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
 			{
 				int nWhileCount = 0;
 
-				for (int j = i + 1; j < vCmdArray.size(); j++)
+				for (size_t j = i + 1; j < vCmdArray.size(); j++)
 				{
 					if (!vCmdArray[j].bFlowCtrlStatement)
                         continue;
@@ -2638,10 +2677,6 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
 						else
 						{
 							nJumpTable[i][BLOCK_END] = j;
-
-							if (!bUseLoopParsingMode /*&& j-i > 1*/ && !bLockedPauseMode)
-								bUseLoopParsingMode = true;
-
 							break;
 						}
 					}
@@ -2653,7 +2688,7 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
 			{
 				string sNth_If = vCmdArray[i].sCommand.substr(0, vCmdArray[i].sCommand.find(">>"));
 
-				for (int j = i + 1; j < vCmdArray.size(); j++)
+				for (size_t j = i + 1; j < vCmdArray.size(); j++)
 				{
 					if (!vCmdArray[j].bFlowCtrlStatement)
                         continue;
@@ -2673,7 +2708,7 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
 			{
 				string sNth_If = vCmdArray[i].sCommand.substr(0, vCmdArray[i].sCommand.find(">>"));
 
-				for (int j = i + 1; j < vCmdArray.size(); j++)
+				for (size_t j = i + 1; j < vCmdArray.size(); j++)
 				{
 					if (!vCmdArray[j].bFlowCtrlStatement)
                         continue;
@@ -2693,7 +2728,7 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
 			{
 				string sNth_Switch = vCmdArray[i].sCommand.substr(0, vCmdArray[i].sCommand.find(">>"));
 
-				for (int j = i + 1; j < vCmdArray.size(); j++)
+				for (size_t j = i + 1; j < vCmdArray.size(); j++)
 				{
 					if (!vCmdArray[j].bFlowCtrlStatement)
                         continue;
@@ -2719,7 +2754,7 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
 			{
 				string sNth_Switch = vCmdArray[i].sCommand.substr(0, vCmdArray[i].sCommand.find(">>"));
 
-				for (int j = i + 1; j < vCmdArray.size(); j++)
+				for (size_t j = i + 1; j < vCmdArray.size(); j++)
 				{
 					if (!vCmdArray[j].bFlowCtrlStatement)
                         continue;
@@ -2795,7 +2830,7 @@ void FlowCtrl::prepareSwitchExpression(int nSwitchStart)
 
     // Search for all cases, which belong to the current
     // switch level
-    for (int j = nSwitchStart + 1; j < vCmdArray.size(); j++)
+    for (size_t j = nSwitchStart + 1; j < vCmdArray.size(); j++)
     {
         // Extract the value of the found case and gather
         // it in the argument list
@@ -2839,31 +2874,61 @@ void FlowCtrl::prepareSwitchExpression(int nSwitchStart)
 // expanded form.
 void FlowCtrl::checkParsingModeAndExpandDefinitions()
 {
+    const int INLINING_GLOBALINRETURN = 2;
+
+    for (size_t i = 0; i < vCmdArray.size(); i++)
+    {
+        if (vCmdArray[i].bFlowCtrlStatement)
+        {
+            if (vCmdArray[i].sCommand.substr(0, 3) == "for" || vCmdArray[i].sCommand.substr(0, 5) == "while")
+            {
+                if (!bUseLoopParsingMode && !bLockedPauseMode)
+                    bUseLoopParsingMode = true;
+
+                break;
+            }
+        }
+    }
+
     if (bUseLoopParsingMode)
     {
         // Check for inline procedures and "to_cmd()"
-        for (int i = 0; i < vCmdArray.size(); i++)
+        for (size_t i = 0; i < vCmdArray.size(); i++)
         {
-            if (vCmdArray[i].sCommand.find('$') != string::npos)
-            {
-                if (!isInline(vCmdArray[i].sCommand))
-                {
-                    bUseLoopParsingMode = false;
-                    break;
-                }
-            }
-
             if (vCmdArray[i].sCommand.find("to_cmd(") != string::npos)
             {
                 bUseLoopParsingMode = false;
                 break;
+            }
+
+            if (vCmdArray[i].sCommand.find('$') != string::npos)
+            {
+                int nInlining = 0;
+
+                if (!(nInlining = isInline(vCmdArray[i].sCommand)))
+                {
+                    bUseLoopParsingMode = false;
+                    break;
+                }
+                else if (!vCmdArray[i].bFlowCtrlStatement && nInlining != INLINING_GLOBALINRETURN)
+                {
+                    vector<string> vExpandedProcedure = expandInlineProcedures(vCmdArray[i].sCommand);
+                    int nLine = vCmdArray[i].nInputLine;
+
+                    for (size_t j = 0; j < vExpandedProcedure.size(); j++)
+                    {
+                        vCmdArray.emplace(vCmdArray.begin() + i + j, FlowCtrlCommand(vExpandedProcedure[j], nLine));
+                    }
+
+                    i += vExpandedProcedure.size();
+                }
             }
         }
 
         bool bDefineCommands = false;
 
         // Search for function definition commands
-        for (int i = 0; i < vCmdArray.size(); i++)
+        for (size_t i = 0; i < vCmdArray.size(); i++)
         {
             if (findCommand(vCmdArray[i].sCommand).sString == "define"
                 || findCommand(vCmdArray[i].sCommand).sString == "taylor"
@@ -2884,7 +2949,7 @@ void FlowCtrl::checkParsingModeAndExpandDefinitions()
         // function
         if (!bDefineCommands)
         {
-            for (int i = 0; i < vCmdArray.size(); i++)
+            for (size_t i = 0; i < vCmdArray.size(); i++)
             {
                 if (!_functionRef->call(vCmdArray[i].sCommand))
                 {
@@ -2943,7 +3008,7 @@ void FlowCtrl::prepareLocalVarsAndReplace(string& sVars)
 	// statement
 	for (auto iter = mVarMap.begin(); iter != mVarMap.end(); ++iter)
 	{
-		for (int i = 0; i < vCmdArray.size(); i++)
+		for (size_t i = 0; i < vCmdArray.size(); i++)
 		{
 		    // Replace it in the flow control
 		    // statements
@@ -3006,7 +3071,7 @@ int FlowCtrl::procedureCmdInterface(string& sLine)
 	return 1;
 }
 
-bool FlowCtrl::isInline(const string& sProc)
+int FlowCtrl::isInline(const string& sProc)
 {
 	return true;
 }
@@ -3016,5 +3081,8 @@ int FlowCtrl::evalDebuggerBreakPoint(Parser& _parser, Settings& _option)
 	return 0;
 }
 
-
+vector<string> FlowCtrl::expandInlineProcedures(string& sLine)
+{
+    return vector<string>();
+}
 

@@ -64,6 +64,7 @@ struct NumeReVariables
     size_t nNumerics;
     size_t nStrings;
     size_t nTables;
+    size_t nClusters;
 };
 
 

@@ -2204,8 +2204,9 @@ class WXDLLIMPEXP_FWD_CORE wxScrollBar;
 #define wxSTC_NSCR_INCLUDES 16
 #define wxSTC_NSCR_NUMBERS 17
 #define wxSTC_NSCR_CUSTOM_FUNCTION 18
-#define wxSTC_NSCR_INSTALL 19
-#define wxSTC_NSCR_PROCEDURE_COMMANDS 20
+#define wxSTC_NSCR_CLUSTER 19
+#define wxSTC_NSCR_INSTALL 20
+#define wxSTC_NSCR_PROCEDURE_COMMANDS 21
 
 /// Lexical states for SCLEX_NPRC
 #define wxSTC_NPRC_DEFAULT 0
@@ -2227,7 +2228,8 @@ class WXDLLIMPEXP_FWD_CORE wxScrollBar;
 #define wxSTC_NPRC_INCLUDES 16
 #define wxSTC_NPRC_NUMBERS 17
 #define wxSTC_NPRC_CUSTOM_FUNCTION 18
-#define wxSTC_NPRC_FLAGS 19
+#define wxSTC_NPRC_CLUSTER 19
+#define wxSTC_NPRC_FLAGS 20
 
 /// Lexical states for SCLEX_TXTADV
 #define wxSTC_TXTADV_DEFAULT 0
@@ -4903,7 +4905,7 @@ public:
     int  GetToken() const                 { return m_token; }
     int  GetAnnotationsLinesAdded() const { return m_annotationLinesAdded; }
     int  GetUpdated() const               { return m_updated; }
-    
+
 #ifdef STC_USE_DND
     wxString GetDragText()           { return m_dragText; }
     int GetDragFlags()               { return m_dragFlags; }
@@ -4944,8 +4946,8 @@ private:
     int m_x;
     int m_y;
 
-    int m_token;                // wxEVT_STC__MODIFIED with SC_MOD_CONTAINER 
-    int m_annotationLinesAdded; // wxEVT_STC_MODIFIED with SC_MOD_CHANGEANNOTATION 
+    int m_token;                // wxEVT_STC__MODIFIED with SC_MOD_CONTAINER
+    int m_annotationLinesAdded; // wxEVT_STC_MODIFIED with SC_MOD_CHANGEANNOTATION
     int m_updated;              // wxEVT_STC_UPDATEUI
 
 

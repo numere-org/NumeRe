@@ -32,6 +32,7 @@ class ProcedureCommandLine
         int nFlags;
         int nType;
         int nByteCode;
+        int nInlinable;
         std::string sCommandLine;
         std::string sArgumentList;
 
@@ -77,10 +78,22 @@ class ProcedureCommandLine
             BYTECODE_SUPPRESSANSWER = 0x20000
         };
 
+        enum Inlineable
+        {
+            INLINING_UNKNOWN = -1,
+            INLINING_IMPOSSIBLE = 0,
+            INLINING_POSSIBLE = 1,
+            INLINING_GLOBALINRETURN = 2
+        };
+
         // Possible constructors
-        ProcedureCommandLine() : nFlags(FLAG_NONE), nType(TYPE_UNSPECIFIED), nByteCode(BYTECODE_NOT_PARSED), sCommandLine(""), sArgumentList("") {}
-        ProcedureCommandLine(int _nFlags, int _nType, const std::string& _sCommandLine, const std::string& _sArgumentList = "") : nFlags(_nFlags), nType(_nType), nByteCode(BYTECODE_NOT_PARSED), sCommandLine(_sCommandLine), sArgumentList(_sArgumentList) {}
-        ProcedureCommandLine(const ProcedureCommandLine& _procCommandLine) : nFlags(_procCommandLine.nFlags), nType(_procCommandLine.nType), nByteCode(_procCommandLine.nByteCode), sCommandLine(_procCommandLine.sCommandLine), sArgumentList(_procCommandLine.sArgumentList) {}
+        ProcedureCommandLine()
+            : nFlags(FLAG_NONE), nType(TYPE_UNSPECIFIED), nByteCode(BYTECODE_NOT_PARSED), nInlinable(INLINING_UNKNOWN), sCommandLine(""), sArgumentList("") {}
+        ProcedureCommandLine(int _nFlags, int _nType, const std::string& _sCommandLine, const std::string& _sArgumentList = "")
+            : nFlags(_nFlags), nType(_nType), nByteCode(BYTECODE_NOT_PARSED), nInlinable(INLINING_UNKNOWN), sCommandLine(_sCommandLine), sArgumentList(_sArgumentList) {}
+        ProcedureCommandLine(const ProcedureCommandLine& _procCommandLine)
+            : nFlags(_procCommandLine.nFlags), nType(_procCommandLine.nType), nByteCode(_procCommandLine.nByteCode), nInlinable(_procCommandLine.nInlinable),
+              sCommandLine(_procCommandLine.sCommandLine), sArgumentList(_procCommandLine.sArgumentList) {}
 
         // Get the command line
         std::string getCommandLine()
@@ -118,6 +131,30 @@ class ProcedureCommandLine
         {
             if (nByteCode == BYTECODE_NOT_PARSED)
                 nByteCode = _nByteCode;
+        }
+
+        // Get the information on whether the
+        // (whole) procedure is inlinable
+        int isInlineable()
+        {
+            if (nFlags & FLAG_INLINE)
+                return nInlinable;
+
+            return INLINING_IMPOSSIBLE;
+        }
+
+        // Declare the whole procedure as inlineable
+        void setInlineable(int inlineable)
+        {
+            // do not declare other lines than the
+            // procedure head
+            if (nType != TYPE_PROCEDURE_HEAD)
+                return;
+
+            if (inlineable && nFlags & FLAG_INLINE)
+                nInlinable = inlineable;
+            else
+                nInlinable = INLINING_IMPOSSIBLE;
         }
 };
 

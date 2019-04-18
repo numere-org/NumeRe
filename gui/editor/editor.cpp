@@ -417,6 +417,9 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 	SetSavePoint();
 	UpdateProcedureViewer();
 
+	if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+        SynchronizeBreakpoints();
+
 	m_filetime = fn.GetModificationTime();
 	m_bSetUnsaved = false;
 	return true;
@@ -1024,55 +1027,100 @@ string NumeReEditor::GetMethodCallTip(const string& sMethodName)
 		return "TABLE()." + _guilang.get("PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sMethodName) + "_[DATA]");
 }
 
+// This member function identifies the current active argument
+// of a function or a procedure, on which the cursor is currently
+// located
 string NumeReEditor::GetCurrentArgument(const string& sCallTip, int nStartingBrace, int& nArgStartPos)
 {
 	int nCurrentPos = this->GetCurrentPos();
 	int nCurrentArg = 0;
 	size_t nParensPos = 0;
 	char currentChar;
+
+	// Do nothing, if no parenthesis is found
 	if (sCallTip.find('(') == string::npos)
 		return "";
+
 	nParensPos = sCallTip.find('(');
+
+	// If this is a method call of a table,
+	// advance the position to the method
+	// parenthesis, if it is available
 	if (sCallTip.find("().") != string::npos)
 	{
 		if (sCallTip.find('(', sCallTip.find("().") + 3) == string::npos)
 			return "";
+
 		nParensPos = sCallTip.find('(', sCallTip.find("().") + 3);
 	}
+
+	// Extract the argument list
 	string sArgList = sCallTip.substr(nParensPos);
 	sArgList.erase(getMatchingParenthesis(sArgList));
 
+	// Find the n-th argument in the editor
 	for (int i = nStartingBrace + 1; i < nCurrentPos && i < this->GetLineEndPosition(this->GetCurrentLine()); i++)
 	{
+	    // Ignore comments and strings
 		if (this->GetStyleAt(i) == wxSTC_NSCR_STRING
 				|| this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_LINE
 				|| this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_BLOCK)
 			continue;
+
 		currentChar = this->GetCharAt(i);
+
+		// Increment the argument count, if a comma
+		// has been found
 		if (currentChar == ',')
 			nCurrentArg++;
+
+        // Jump over parentheses and braces
 		if ((currentChar == '(' || currentChar == '[' || currentChar == '{')
 				&& this->BraceMatch(i) != -1)
 			i = this->BraceMatch(i);
 	}
 
+	size_t nQuotationMarks = 0;
+
+	// Find the corresponding argument in the argument list
 	for (size_t i = 1; i < sArgList.length(); i++)
 	{
-		if (!nCurrentArg && (sArgList[i - 1] == '(' || sArgList[i - 1] == ','))
+	    // If this is the current argument and we're after
+	    // an opening parenthesis or a comma
+		if (!(nQuotationMarks % 2) && !nCurrentArg && (sArgList[i - 1] == '(' || sArgList[i - 1] == ','))
 		{
 			nArgStartPos = i + nParensPos;
 			string sArgument = sArgList.substr(i);
-			/*if (sArgument.find(')') < sArgument.find(','))
-			    sArgument.erase(sArgument.find(')'));
-			else*/
-			if (sArgument.find(',') != string::npos)
-				sArgument.erase(sArgument.find(','));
 
+			// If the argument still contains commas,
+			// extract them here. Probably it is necessary
+			// to move the position to the right
+			if (sArgument.find(',') != string::npos)
+            {
+				sArgument = getNextArgument(sArgument, false);
+                nArgStartPos = nParensPos + sArgList.find(sArgument, i);
+            }
+
+            // return the extracted argument
 			return sArgument;
 		}
-		if (sArgList[i] == ',')
+
+		// Count and consider quotation marks
+		if (sArgList[i] == '"' && sArgList[i-1] != '\\')
+            nQuotationMarks++;
+
+		// If a parenthesis or a brace was found,
+		// jump over it
+		if (!(nQuotationMarks % 2) && (sArgList[i] == '(' || sArgList[i] == '{'))
+            i += getMatchingParenthesis(sArgList.substr(i));
+
+		// If a comma was found,
+		// decrement the argument count
+		if (!(nQuotationMarks % 2) && sArgList[i] == ',')
 			nCurrentArg--;
 	}
+
+	// Return nothing
 	return "";
 }
 
@@ -4239,6 +4287,9 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
 				case wxSTC_NSCR_CUSTOM_FUNCTION:
 					_style = m_options->GetSyntaxStyle(Options::CUSTOM_FUNCTION);
 					break;
+				case wxSTC_NSCR_CLUSTER:
+					_style = m_options->GetSyntaxStyle(Options::CLUSTER);
+					break;
 				case wxSTC_NSCR_OPERATORS:
 				case wxSTC_NSCR_OPERATOR_KEYWORDS:
 					_style = m_options->GetSyntaxStyle(Options::OPERATOR);
@@ -4325,6 +4376,9 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
 					break;
 				case wxSTC_NPRC_CUSTOM_FUNCTION:
 					_style = m_options->GetSyntaxStyle(Options::CUSTOM_FUNCTION);
+					break;
+				case wxSTC_NPRC_CLUSTER:
+					_style = m_options->GetSyntaxStyle(Options::CLUSTER);
 					break;
 				case wxSTC_NPRC_OPERATORS:
 				case wxSTC_NPRC_OPERATOR_KEYWORDS:
@@ -7976,6 +8030,23 @@ void NumeReEditor::RemoveBreakpoint( int linenum )
 	this->MarkerDelete(linenum, MARKER_BREAKPOINT);
 	CreateBreakpointEvent(linenum, false);
 	m_terminal->removeBreakpoint(GetFileNameAndPath().ToStdString(), linenum);
+}
+
+// This member function synchronizes all breakpoints
+// in the current opened file after the file was
+// modified and saved
+void NumeReEditor::SynchronizeBreakpoints()
+{
+    // Clear all breakpoints stored internally
+    m_terminal->clearBreakpoints(GetFileNameAndPath().ToStdString());
+    int line = 0;
+
+    // Re-set the existing breakpoints
+    while ((line = MarkerNext(line, 1 << MARKER_BREAKPOINT)) != -1)
+    {
+        m_terminal->addBreakpoint(GetFileNameAndPath().ToStdString(), line);
+        line++;
+    }
 }
 
 int NumeReEditor::determineIndentationLevel(int nLine, int& singleLineIndent)

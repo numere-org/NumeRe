@@ -30,6 +30,7 @@
 #include <fstream>
 #include <ctime>
 #include <vector>
+#include <cmath>
 
 #include "../structures.hpp"
 #include "../ui/error.hpp"
@@ -174,6 +175,13 @@ vector<string> getDBFileContent(const string& sFilename, Settings& _option);
 vector<vector<string> > getDataBase(const string& sDatabaseFileName, Settings& _option);
 string generateCacheName(const string& sFilename, Settings& _option);
 string getFileInfo(const string& sFilename);
+
+// This inline function checks, if the passed value is finite and
+// not a NAN value
+inline bool isValidValue(double d)
+{
+    return !isnan(d) && !isinf(d);
+}
 
 /** \brief Checks, whether the number of parentheses is an even number
  *

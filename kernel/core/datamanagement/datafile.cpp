@@ -4192,6 +4192,13 @@ bool Datafile::updateDimensionVariables(const string& sTableName)
     return true;
 }
 
+// This member function is a wrapper for the tables and
+// the clusters detector functions
+bool Datafile::containsTablesOrClusters(const string& sCmdLine)
+{
+    return containsCacheElements(" " + sCmdLine + " ") || containsClusters(" " + sCmdLine + " ");
+}
+
 // Create a copy-efficient table object from the
 // contents of the contained table (or the
 // corresponding tables from the cache)

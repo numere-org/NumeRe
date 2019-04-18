@@ -71,13 +71,16 @@ VariableViewer::VariableViewer(wxWindow* parent, NumeReWindow* mainWin, int fiel
     // Create variable class nodes
     numRoot = AppendItem(GetRootItem(), _guilang.get("GUI_VARVIEWER_VARS"));
     stringRoot = AppendItem(GetRootItem(), _guilang.get("GUI_VARVIEWER_STRINGS"));
+    clusterRoot = AppendItem(GetRootItem(), _guilang.get("GUI_VARVIEWER_CLUSTERS"));
     tableRoot = AppendItem(GetRootItem(), _guilang.get("GUI_VARVIEWER_TABLES"));
     SetItemText(tableRoot, VALUECOLUMN, " {min, ..., max}");
+    SetItemText(clusterRoot, VALUECOLUMN, " {first, ..., last}");
 
     // Make the variable class nodes bold
     SetItemBold(numRoot, true);
     SetItemBold(stringRoot, true);
     SetItemBold(tableRoot, true);
+    SetItemBold(clusterRoot, true);
 }
 
 // This member function checks, whether a variable was already
@@ -114,6 +117,8 @@ bool VariableViewer::checkSpecialVals(const std::string& sVar)
     else if (sVar.substr(0, sVar.find('\t')) == "nlines")
         return true;
     else if (sVar.substr(0, sVar.find('\t')) == "ncols")
+        return true;
+    else if (sVar.substr(0, sVar.find('\t')) == "nlen")
         return true;
     else if (sVar.substr(0, sVar.find('\t')) == "ans")
         return true;
@@ -158,6 +163,7 @@ void VariableViewer::ClearTree()
     DeleteChildren(numRoot);
     DeleteChildren(stringRoot);
     DeleteChildren(tableRoot);
+    DeleteChildren(clusterRoot);
 
     if (argumentRoot.IsOk())
         DeleteChildren(argumentRoot);
@@ -314,6 +320,9 @@ void VariableViewer::ExpandAll()
     if (HasChildren(tableRoot))
         Expand(tableRoot);
 
+    if (HasChildren(clusterRoot))
+        Expand(clusterRoot);
+
     if (argumentRoot.IsOk() && HasChildren(argumentRoot))
         Expand(argumentRoot);
 
@@ -433,7 +442,7 @@ void VariableViewer::setDebuggerMode(bool mode)
 
 // This member function is used to update the variable
 // list, which is displayed by this control.
-void VariableViewer::UpdateVariables(const std::vector<std::string>& vVarList, size_t nNumerics, size_t nStrings, size_t nTables, size_t nArguments, size_t nGlobals)
+void VariableViewer::UpdateVariables(const std::vector<std::string>& vVarList, size_t nNumerics, size_t nStrings, size_t nTables, size_t nClusters, size_t nArguments, size_t nGlobals)
 {
     // Clear the tree first
     ClearTree();
@@ -442,6 +451,7 @@ void VariableViewer::UpdateVariables(const std::vector<std::string>& vVarList, s
     SetItemText(numRoot, DIMCOLUMN, "[" + toString(nNumerics) + "] ");
     SetItemText(stringRoot, DIMCOLUMN, "[" + toString(nStrings) + "] ");
     SetItemText(tableRoot, DIMCOLUMN, "[" + toString(nTables) + "] ");
+    SetItemText(clusterRoot, DIMCOLUMN, "[" + toString(nClusters) + "] ");
 
     if (argumentRoot.IsOk())
     {
@@ -473,12 +483,17 @@ void VariableViewer::UpdateVariables(const std::vector<std::string>& vVarList, s
             // Append a variable to the tables list
             currentItem = AppendVariable(tableRoot, vVarList[i]);
         }
-        else if (argumentRoot.IsOk() && i < nStrings+nNumerics+nTables+nArguments)
+        else if (i < nStrings+nNumerics+nTables+nClusters)
+        {
+            // Append a variable to the tables list
+            currentItem = AppendVariable(clusterRoot, vVarList[i]);
+        }
+        else if (argumentRoot.IsOk() && i < nStrings+nNumerics+nTables+nClusters+nArguments)
         {
             // Append a variable to the tables list
             currentItem = AppendVariable(argumentRoot, vVarList[i]);
         }
-        else if (globalRoot.IsOk() && i < nStrings+nNumerics+nTables+nArguments+nGlobals)
+        else if (globalRoot.IsOk() && i < nStrings+nNumerics+nTables+nClusters+nArguments+nGlobals)
         {
             // Append a variable to the tables list
             currentItem = AppendVariable(globalRoot, vVarList[i]);

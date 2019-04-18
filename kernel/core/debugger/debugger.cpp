@@ -220,6 +220,32 @@ string NumeReDebugger::decodeType(string& sArgumentValue)
         return "\t" + toString(_data.getLines(sCache, false)) + " x " + toString(_data.getCols(sCache, false)) + "\t(&) double\t";
     }
 
+    // Is the current argument value a cluster?
+    if (_data.isCluster(sArgumentValue))
+    {
+        NumeRe::Cluster& cluster = _data.getCluster(sArgumentValue.substr(0, sArgumentValue.find('{')));
+
+        // Replace the value with its actual value and mark the
+        // argument type as reference
+        sArgumentValue = cluster.getShortVectorRepresentation();
+        return "\t" + toString(cluster.size()) + " x 1\t(&) cluster\t";
+    }
+
+    // Is the current value surrounded from braces?
+    if (sArgumentValue.front() == '{' && sArgumentValue.back() == '}')
+    {
+        size_t nDim = 0;
+        string sArg = sArgumentValue.substr(1, sArgumentValue.length()-2);
+
+        while (sArg.length())
+        {
+            nDim++;
+            getNextArgument(sArg, true);
+        }
+
+        return "\t" + toString(nDim) + " x 1\tcluster\t";
+    }
+
     // Is the current argument a string variable?
     if (_data.getStringVars().find(sArgumentValue) != _data.getStringVars().end())
     {
@@ -321,6 +347,7 @@ void NumeReDebugger::resetBP()
     mLocalVars.clear();
     mLocalStrings.clear();
     mLocalTables.clear();
+    mLocalClusters.clear();
     mArguments.clear();
     bAlreadyThrown = false;
     return;
@@ -370,13 +397,15 @@ void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const 
         return;
 
     gatherInformations(_varFactory->sLocalVars, _varFactory->nLocalVarMapSize, _varFactory->dLocalVars, _varFactory->sLocalStrings, _varFactory->nLocalStrMapSize, _varFactory->sLocalTables,
-                       _varFactory->nLocalTableSize, _varFactory->sArgumentMap, _varFactory->nArgumentMapSize, _sErraticCommand, _sErraticModule, _nLineNumber);
+                       _varFactory->nLocalTableSize, _varFactory->sLocalClusters, _varFactory->nLocalClusterSize, _varFactory->sArgumentMap, _varFactory->nArgumentMapSize, _sErraticCommand, _sErraticModule,
+                       _nLineNumber);
 }
 
 // This member function gathers all information from the current
 // workspace and stores them internally to display them to the user
-void NumeReDebugger::gatherInformations(string** sLocalVars, unsigned int nLocalVarMapSize, double* dLocalVars, string** sLocalStrings, unsigned int nLocalStrMapSize, string** sLocalTables,
-                                        unsigned int nLocalTableMapSize, string** sArgumentMap, unsigned int nArgumentMapSize, const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber)
+void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMapSize, double* dLocalVars, string** sLocalStrings, size_t nLocalStrMapSize, string** sLocalTables,
+                                        size_t nLocalTableMapSize, string** sLocalClusters, size_t nLocalClusterMapSize, string** sArgumentMap, size_t nArgumentMapSize, const string& _sErraticCommand,
+                                        const string& _sErraticModule, unsigned int _nLineNumber)
 {
     if (!bDebuggerActive)
         return;
@@ -462,11 +491,34 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, unsigned int nLocal
         mLocalTables[sLocalTables[i][0] + "()"] = sTableData;
     }
 
+    // Store the local clusters and replace their
+    // occurence with their definition in the command lines
+    for (unsigned int i = 0; i < nLocalClusterMapSize; i++)
+    {
+        // Replace the occurences
+        if (sLocalClusters[i][0] != sLocalClusters[i][1])
+        {
+            while (sErraticCommand.find(sLocalClusters[i][1]) != string::npos)
+                sErraticCommand.replace(sErraticCommand.find(sLocalClusters[i][1]), sLocalClusters[i][1].length(), sLocalClusters[i][0].substr(0, sLocalClusters[i][0].length()-1));
+        }
+
+        string sTableData;
+
+        // Extract the minimal and maximal values of the tables
+        // to display them in the variable viewer panel
+        sTableData = toString(instance->getData().getCluster(sLocalClusters[i][1]).size()) + " x 1";
+        sTableData += "\tcluster\t" + instance->getData().getCluster(sLocalClusters[i][1]).getShortVectorRepresentation() + "\t" + sLocalClusters[i][1] + "{}";
+
+        mLocalClusters[sLocalClusters[i][0] + "}"] = sTableData;
+    }
+
     // Store the arguments
     for (unsigned int i = 0; i < nArgumentMapSize; i++)
     {
         if (sArgumentMap[i][0].back() == '(')
             mArguments[sArgumentMap[i][0] + ")\t" + sArgumentMap[i][1]] = sArgumentMap[i][1];
+        else if (sArgumentMap[i][0].back() == '{')
+            mArguments[sArgumentMap[i][0] + "}\t" + sArgumentMap[i][1]] = sArgumentMap[i][1];
         else
             mArguments[sArgumentMap[i][0] + "\t" + sArgumentMap[i][1]] = sArgumentMap[i][1];
     }
@@ -590,6 +642,19 @@ vector<string> NumeReDebugger::getTables()
     return vTables;
 }
 
+// This member function returns the clusters as a vector
+vector<string> NumeReDebugger::getClusters()
+{
+    vector<string> vClusters;
+
+    for (auto iter = mLocalClusters.begin(); iter != mLocalClusters.end(); ++iter)
+    {
+        vClusters.push_back(iter->first + "\t" + iter->second);
+    }
+
+    return vClusters;
+}
+
 // This member function returns the procedure argument as a vector
 vector<string> NumeReDebugger::getArguments()
 {
@@ -639,6 +704,16 @@ vector<string> NumeReDebugger::getGlobals()
         {
             mGlobals[iter->first + "()"] = toString(_data.getLines(iter->first, false)) + " x " + toString(_data.getCols(iter->first, false))
                                            + "\tdouble\t{" + toString(_data.min(iter->first, "")[0], 5) + ", ...," + toString(_data.max(iter->first, "")[0], 5) + "}";
+        }
+    }
+
+    // List all relevant clusters
+    for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
+    {
+        if (iter->first.substr(0, 2) != "_~")
+        {
+            mGlobals[iter->first + "{}"] = toString(iter->second.size()) + " x 1"
+                                           + "\tcluster\t{...}";
         }
     }
 

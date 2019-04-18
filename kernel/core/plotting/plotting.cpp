@@ -1628,7 +1628,7 @@ bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglDa
 		}
 		else if (!_pData.getxError() && !_pData.getyError())
 		{
-			if (_pData.getInterpolate() && _mData.nx >= _pInfo.nSamples)
+			if (_pData.getInterpolate() && countValidElements(_mData) >= _pInfo.nSamples)
 			{
 				if (!_pData.getArea() && !_pData.getBars() && !_pData.getRegion() && !_pData.getStepplot())
 					_graph->Plot(_mAxisVals, _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
@@ -1651,7 +1651,7 @@ bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglDa
 				else if (!_pData.getBars() && !_pData.getArea() && !_pData.getHBars() && _pData.getStepplot())
 					_graph->Step(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
 			}
-			else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mData.nx >= 0.9 * _pInfo.nSamples))
+			else if (_pData.getConnectPoints() || (_pData.getInterpolate() && countValidElements(_mData) >= 0.9 * _pInfo.nSamples))
 			{
 				if (!_pData.getArea() && !_pData.getBars() && !_pData.getStepplot())
 					_graph->Plot(_mAxisVals, _mData, _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
@@ -2920,7 +2920,7 @@ bool Plot::plotstd3d(PlotData& _pData, mglData _mData[3], mglData _mData2[3], co
 		if (!_pData.getxError() && !_pData.getyError())
 		{
 			// --> Interpolate-Schalter. Siehe weiter oben fuer Details <--
-			if (_pData.getInterpolate() && _mData[0].nx >= _pInfo.nSamples)
+			if (_pData.getInterpolate() && countValidElements(_mData[0]) >= _pInfo.nSamples)
 			{
 				if (!_pData.getArea() && !_pData.getBars() && !_pData.getRegion())
 					_graph->Plot(_mData[0], _mData[1], _mData[2], _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
@@ -2942,7 +2942,7 @@ bool Plot::plotstd3d(PlotData& _pData, mglData _mData[3], mglData _mData2[3], co
 				else
 					_graph->Area(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
 			}
-			else if (_pData.getConnectPoints() || (_pData.getInterpolate() && _mData[0].nx >= 0.9 * _pInfo.nSamples))
+			else if (_pData.getConnectPoints() || (_pData.getInterpolate() && countValidElements(_mData[0]) >= 0.9 * _pInfo.nSamples))
 			{
 				if (!_pData.getArea() && !_pData.getBars())
 					_graph->Plot(_mData[0], _mData[1], _mData[2], _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
@@ -3023,10 +3023,10 @@ void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _fu
 					&& _pInfo.sPlotParams.substr(nPos, 6) != "min("
 					&& _pInfo.sPlotParams.substr(nPos, 6) != "max("
 					&& _pInfo.sPlotParams.substr(nPos, 5) != "data("
-					&& !_data.containsCacheElements(_pInfo.sPlotParams.substr(nPos)))
+					&& !_data.containsTablesOrClusters(_pInfo.sPlotParams.substr(nPos)))
 					|| isInQuotes(_pInfo.sPlotParams, nPos - 1))
 				continue;
-			if (_data.containsCacheElements(_pInfo.sPlotParams.substr(nPos)))
+			if (_data.containsTablesOrClusters(_pInfo.sPlotParams.substr(nPos)))
 			{
 				bool bMatch = false;
 				for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
@@ -3249,7 +3249,7 @@ void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, D
 		{
 			if (!_functions.call(sSubPlotIDX))
 				throw SyntaxError(SyntaxError::FUNCTION_ERROR, sSubPlotIDX, SyntaxError::invalid_position);
-			if (_data.containsCacheElements(sSubPlotIDX) || sSubPlotIDX.find("data(") != string::npos)
+			if (_data.containsTablesOrClusters(sSubPlotIDX) || sSubPlotIDX.find("data(") != string::npos)
 			{
 				getDataElements(sSubPlotIDX, _parser, _data, _option);
 			}
@@ -3304,7 +3304,7 @@ void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, D
 		{
 			if (!_functions.call(sSubPlotIDX))
 				throw SyntaxError(SyntaxError::FUNCTION_ERROR, sSubPlotIDX, SyntaxError::invalid_position);
-			if (_data.containsCacheElements(sSubPlotIDX) || sSubPlotIDX.find("data(") != string::npos)
+			if (_data.containsTablesOrClusters(sSubPlotIDX) || sSubPlotIDX.find("data(") != string::npos)
 			{
 				getDataElements(sSubPlotIDX, _parser, _data, _option);
 			}
@@ -3476,7 +3476,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 	const short TYPE_DATA = -1;
 	const short TYPE_FUNC = 1;
 
-	if (containsDataObject(sFunc) || _data.containsCacheElements(sFunc))
+	if (containsDataObject(sFunc) || _data.containsTablesOrClusters(sFunc))
 	{
 		string sFuncTemp = sFunc;
 		string sToken = "";
@@ -3485,13 +3485,19 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 		{
 			sToken = getNextArgument(sFuncTemp, true);
 			StripSpaces(sToken);
-			if (containsDataObject(sToken) || _data.containsCacheElements(sToken))
+
+			if (containsDataObject(sToken) || _data.containsTablesOrClusters(sToken))
 			{
 				if (sToken.find("data(") != string::npos && sToken.find("data(") && checkDelimiter(sToken.substr(sToken.find("data(") - 1, 6)))
 					throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, "", SyntaxError::invalid_position, sToken);
-				if (_data.containsCacheElements(sToken.substr(0, sToken.find("(") + 1)) && !_data.isCacheElement(sToken.substr(0, sToken.find("("))))
+
+				if (_data.containsTablesOrClusters(sToken.substr(0, sToken.find_first_of("({") + 1))
+                    && !_data.isCacheElement(sToken.substr(0, sToken.find_first_of("({")))
+                    && !_data.isCluster(sToken.substr(0, sToken.find_first_of("({"))))
 					throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, "", SyntaxError::invalid_position, sToken);
-				string sSubstr = sToken.substr(getMatchingParenthesis(sToken.substr(sToken.find('('))) + sToken.find('(') + 1);
+
+				string sSubstr = sToken.substr(getMatchingParenthesis(sToken.substr(sToken.find_first_of("({"))) + sToken.find_first_of("({") + 1);
+
 				if (sSubstr[sSubstr.find_first_not_of(' ')] != '"')
 					throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, "", SyntaxError::invalid_position, sToken);
 			}
@@ -3502,10 +3508,12 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 		sFunc.clear();
 		unsigned int nPos = 0;
 		unsigned int nPos_1 = 0;
+
 		while (sFuncTemp.length())
 		{
 			sToken = getNextArgument(sFuncTemp, true);
-			if (containsDataObject(sToken) || _data.containsCacheElements(sToken))
+
+			if (containsDataObject(sToken) || _data.containsTablesOrClusters(sToken))
 			{
 				sDataPlots += ";" + sToken;
 				vType.push_back(TYPE_DATA);
@@ -3516,16 +3524,22 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 				sFunc += "," + sToken;
 				_functions.call(sToken);
 				StripSpaces(sToken);
+
 				if (sToken.front() == '{')
 					sToken.front() = ' ';
+
 				if (sToken.back() == '}')
 					sToken.back() = ' ';
+
 				while (getNextArgument(sToken, true).length())
 					vType.push_back(TYPE_FUNC);
+
 				sAxisBinds += _pData.getAxisbind((sDataAxisBinds.length() + sAxisBinds.length()) / 2);
 			}
 		}
+
 		sFunc.erase(0, 1);
+
 		/* --> In dem string sFunc sind nun nur noch "gewoehnliche" Funktionen, die der Parser auswerten kann,
 		 *     in dem string sDataPlots sollten alle Teile sein, die "data(" oder "cache(" enthalten <--
 		 */
@@ -3554,6 +3568,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 					n_dpos = sDataPlots.find('#');
 				else
 					n_dpos = sDataPlots.find('"');
+
 				if (sDataPlots.find(';', n_dpos + 1) == string::npos)
 				{
 					sDataLabels += sDataPlots.substr(n_dpos) + ";";
@@ -3569,591 +3584,321 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 
 			createDataLegends(_pData, _parser, _data, _option);
 
-			if (_option.getbDebug())
-			{
-				cerr << "|-> DEBUG: sDataPlots = " << sDataPlots << endl;
-				cerr << "|-> DEBUG: sDataLabels = " << sDataLabels << endl;
-			}
-
-			string si_pos[2] = {"", ""};                    // String-Array fuer die Zeilen-Position: muss fuer alle Spalten identisch sein!
-			string sj_pos[6] = {"", "", "", "", "", ""};    // String-Array fuer die Spalten: kann bis zu sechs beliebige Werte haben
 			string sDataTable = "";
-			int i_pos[2] = {0, 0};                          // Int-Array fuer den Wert der Zeilen-Positionen
-			int j_pos[6] = {0, 0, 0, 0, 0, 0};              // Int-Array fuer den Wert der Spalten-Positionen
-			int nMatch = 0;                                 // Int fuer die Position des aktuellen find-Treffers eines Daten-Objekts
-			vector<long long int> vLine;
-			vector<long long int> vCol;
-			value_type* v = 0;
-			int nResults = 0;
+			Indices _idx;
+			int nColumns = 0;
 
-			// --> Bestimmen wir die Zeilen- und Spalten-Koordinaten des aktuellen Daten-Objekts <--
+			// Now extract the index informations of each referred
+			// data object and copy its contents to the prepared
+			// mglData objects
 			for (int i = 0; i < nDataPlots; i++)
 			{
+                bool openEnd = false;
+                bool isCluster = false;
 				sDataTable = "data";
 				// --> Suchen wir den aktuellen und den darauf folgenden ';' <--
 				nPos = sDataPlots.find(';', nPos) + 1;
 				nPos_1 = sDataPlots.find(';', nPos);
-				size_t nParPos = sDataPlots.substr(nPos, nPos_1-nPos).find('(');
+				size_t nParPos = sDataPlots.substr(nPos, nPos_1-nPos).find_first_of("({");
+
 				if (nParPos == string::npos)
                 {
                     throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sDataPlots , sDataPlots.substr(nPos, nPos_1-nPos));
                 }
-                nParPos += nPos+1;
 
-				// --> Ist da "cache" drin? Aktivieren wir den Cache-Status <--
-				if (_data.containsCacheElements(sDataPlots.substr(nPos, nParPos - nPos)) && sDataPlots.substr(nPos, 5) != "data(")
-				{
-					_data.setCacheStatus(true);
-					for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-					{
-						if (sDataPlots.substr(nPos, nParPos - nPos).find(iter->first + "(") != string::npos
-								&& (!sDataPlots.substr(nPos, nParPos - nPos).find(iter->first + "(")
-									|| checkDelimiter(sDataPlots.substr(nPos, nParPos - nPos).substr(sDataPlots.substr(nPos, nParPos - nPos).find(iter->first + "(") - 1, (iter->first).length() + 2))))
-						{
-							sDataTable = iter->first;
-							break;
-						}
-					}
-				}
-
-				// --> Klammer und schliessende Klammer finden und in einen anderen String schreiben <--
-				nMatch = sDataPlots.find('(', nPos);
-				si_pos[0] = sDataPlots.substr(nMatch, getMatchingParenthesis(sDataPlots.substr(nMatch)) + 1);
-				if (si_pos[0] == "()" || si_pos[0][si_pos[0].find_first_not_of(' ', 1)] == ')')
-					si_pos[0] = "(:,:)";
-				if (containsDataObject(si_pos[0]) || _data.containsCacheElements(si_pos[0]))
-				{
-					getDataElements(si_pos[0], _parser, _data, _option);
-				}
-
-                // Update the dimension variables used for accessing the elements
-                _data.updateDimensionVariables(sDataTable);
-
-				if (_option.getbDebug())
-					cerr << "|-> DEBUG: si_pos[0] = " << si_pos[0] << endl;
-
-				// --> Rausgeschnittenen String am Komma ',' in zwei Teile teilen <--
 				try
 				{
-					parser_SplitArgs(si_pos[0], sj_pos[0], ',', _option);
+				    // Get the indices for the current data plot object optimized
+				    // for the plotting algorithm
+                    _idx = getIndicesForPlotAndFit(sDataPlots.substr(nPos, nPos_1-nPos), sDataTable, nColumns, openEnd, isCluster);
+
+                    // fill the open end indices
+                    if (_idx.nI[1] == -1)
+                        _idx.nI[1] = _idx.nI[0]+1;
+
+                    if (_idx.nJ[1] == -1)
+                        _idx.nJ[1] = _idx.nJ[0]+1;
+
+                    if (_idx.nI[1] == -2)
+                    {
+                        if (!isCluster)
+                            _idx.nI[1] = _data.getLines(sDataTable, false);
+                        else
+                            _idx.nI[1] = _data.getCluster(sDataTable).size();
+                    }
+
+                    if (!isCluster && _idx.nJ[1] == -2)
+                    {
+                        _idx.nJ[1] = _data.getCols(sDataTable, false);
+                    }
+
+                    if (!isCluster)
+                    {
+                        if (_idx.nI[1] > _data.getLines(sDataTable, false))
+                            _idx.nI[1] = _data.getLines(sDataTable, false);
+
+                        if (_idx.nJ[1] > _data.getCols(sDataTable) - 1 && _pInfo.sCommand != "plot3d")
+                            _idx.nJ[1] = _data.getCols(sDataTable) - 1;
+                    }
+                    else
+                    {
+                        if (_idx.nI[1] > _data.getCluster(sDataTable).size())
+                            _idx.nI[1] = _data.getCluster(sDataTable).size();
+                    }
+
+                    // Validize the indices depending on whether a cluster or
+                    // a table is used for the current data access
+                    if (isCluster)
+                    {
+                        if (!_idx.vI.size() && !_idx.vJ.size() && _idx.nI[0] > _data.getCluster(sDataTable).size())
+                        {
+                            throw SyntaxError(SyntaxError::INVALID_INDEX, sDataTable, SyntaxError::invalid_position);
+                        }
+                    }
+                    else
+                    {
+                        if (!_idx.vI.size() && !_idx.vJ.size()
+                            && (_idx.nI[0] > _data.getLines(sDataTable, false)
+                                || (_idx.nJ[0] > _data.getCols(sDataTable) - 1 && _pInfo.sCommand != "plot3d")))
+                        {
+                            throw SyntaxError(SyntaxError::INVALID_INDEX, sDataTable, SyntaxError::invalid_position);
+                        }
+                    }
+
+                    /* --> Bestimmen wir die "Dimension" des zu plottenden Datensatzes. Dabei ist es auch
+                     *     von Bedeutung, ob Fehlerbalken anzuzeigen sind <--
+                     */
+                    nDataDim[i] = 0;
+
+                    switch (nColumns)
+                    {
+                        case 1:
+                            if (!_pData.getxError() && !_pData.getyError())
+                                nDataDim[i] = 2;
+                            else if (_pData.getxError() && _pData.getyError())
+                                nDataDim[i] = 4;
+                            else if (_pData.getxError() || _pData.getyError())
+                                nDataDim[i] = 3;
+
+                            break;
+                        case 2:
+                            if (_pInfo.sCommand == "plot" && !_pData.getxError() && !_pData.getyError())
+                                nDataDim[i] = 2;
+                            else if (_pInfo.sCommand == "plot" && _pData.getxError() && _pData.getyError())
+                                nDataDim[i] = 4;
+                            else if (_pInfo.sCommand == "plot" && (_pData.getxError() || _pData.getyError()))
+                                nDataDim[i] = 3;
+                            else if (_pInfo.sCommand == "plot3d" && !_pData.getxError() && !_pData.getyError())
+                                nDataDim[i] = 3;
+                            else if (_pInfo.sCommand == "plot3d" && _pData.getxError() && _pData.getyError())
+                                nDataDim[i] = 6;
+                            else if (_pInfo.b2D)
+                                nDataDim[i] = 3;
+
+                            if ((_pData.getBoxplot() || _pData.getBars() || _pData.getHBars()) && openEnd)
+                                nDataDim[i] = _data.getCols(sDataTable, false) + _pData.getBoxplot() - _idx.nJ[0];
+
+                            break;
+                        default:
+                            if (!(_pData.getBoxplot() || _pData.getBars() || _pData.getHBars()) || _pInfo.b2D)
+                            {
+                                if (nColumns > 6)
+                                    nDataDim[i] = 6;
+                                else
+                                    nDataDim[i] = nColumns;
+
+                                if (_idx.vJ.size() > 6)
+                                    _idx.vJ.erase(_idx.vJ.begin() + 6, _idx.vJ.end());
+                            }
+                            else
+                            {
+                                if (_pData.getBars() || _pData.getHBars())
+                                    nDataDim[i] = nColumns;
+                                else
+                                    nDataDim[i] = nColumns + 1;
+                            }
+                    }
+
+                    if (!nDataDim[i])
+                    {
+                        throw SyntaxError(SyntaxError::PLOT_ERROR, sDataTable, SyntaxError::invalid_position);
+                    }
+
 				}
 				catch (...)
 				{
-					delete[] _mDataPlots;
-					delete[] nDataDim;
-					throw;
+				    delete[] _mDataPlots;
+				    delete[] nDataDim;
+				    throw;
 				}
-				if (_option.getbDebug())
-					cerr << "|-> DEBUG: si_pos[0] = " << si_pos[0] << ", sj_pos[0] = " << sj_pos[0] << endl;
-
-				// --> Gibt's einen Doppelpunkt? Dann teilen wir daran auch noch mal <--
-				if (si_pos[0].find(':') != string::npos && si_pos[0].find('{') == string::npos)
-				{
-					si_pos[0] = "( " + si_pos[0] + " )";
-					try
-					{
-						parser_SplitArgs(si_pos[0], si_pos[1], ':', _option);
-					}
-					catch (...)
-					{
-						delete[] _mDataPlots;
-						delete[] nDataDim;
-						throw;
-					}
-					if (!isNotEmptyExpression(si_pos[1]))
-						si_pos[1] = "inf";
-				}
-				else
-					si_pos[1] = "";
-
-				if (_option.getbDebug())
-				{
-					cerr << "|-> DEBUG: si_pos[0] = " << si_pos[0] << ", si_pos[1] = " << si_pos[1] << endl;
-				}
-
-				// --> Auswerten mit dem Parser <--
-				if (isNotEmptyExpression(si_pos[0]))
-				{
-					_parser.SetExpr(si_pos[0]);
-					v = _parser.Eval(nResults);
-					if (nResults > 1)
-					{
-						for (int n = 0; n < nResults; n++)
-						{
-							if (!isnan(v[n]) && !isinf(v[n]))
-								vLine.push_back((int)v[n] - 1);
-						}
-					}
-					else
-						i_pos[0] = (int)v[0] - 1;
-				}
-				else
-					i_pos[0] = 0;
-				if (si_pos[1] == "inf")
-				{
-					i_pos[1] = _data.getLines(sDataTable, false);
-				}
-				else if (isNotEmptyExpression(si_pos[1]))
-				{
-					_parser.SetExpr(si_pos[1]);
-					i_pos[1] = (int)_parser.Eval();
-				}
-				else if (!vLine.size())
-					i_pos[1] = i_pos[0] + 1;
-				// --> Pruefen, ob die Reihenfolge der Indices sinnvoll ist <--
-				parser_CheckIndices(i_pos[0], i_pos[1]);
-
-				if (_option.getbDebug())
-					cerr << "|-> DEBUG: i_pos[0] = " << i_pos[0] << ", i_pos[1] = " << i_pos[1] << ", vLine.size() = " << vLine.size() << endl;
-
-				if (!isNotEmptyExpression(sj_pos[0]))
-					sj_pos[0] = "0";
-
-				/* --> Jetzt fuer die Spalten: Fummelig. Man soll bis zu 6 Spalten angeben koennen und
-				 *     das Programm sollte trotzdem einen Sinn darin finden <--
-				 */
-				int j = 0;
-				try
-				{
-					while (sj_pos[j].find(':') != string::npos && sj_pos[j].find('{') == string::npos && j < 5)
-					{
-						sj_pos[j] = "( " + sj_pos[j] + " )";
-						// --> String am naechsten ':' teilen <--
-						parser_SplitArgs(sj_pos[j], sj_pos[j + 1], ':', _option);
-						// --> Spezialfaelle beachten: ':' ohne linke bzw. rechte Grenze <--
-						if (!isNotEmptyExpression(sj_pos[j]))
-							sj_pos[j] = "1";
-						j++;
-						if (!isNotEmptyExpression(sj_pos[j]))
-							sj_pos[j] = "inf";
-					}
-				}
-				catch (...)
-				{
-					delete[] _mDataPlots;
-					delete[] nDataDim;
-					throw;
-				}
-				// --> Alle nicht-beschriebenen Grenzen-Strings auf "" setzen <--
-				for (int k = j + 1; k < 6; k++)
-					sj_pos[k] = "";
-
-				// --> Grenzen-Strings moeglichst sinnvoll auswerten <--
-				for (int k = 0; k <= j; k++)
-				{
-
-					// --> "inf" bedeutet "infinity". Ergo: die letztmoegliche Spalte <--
-					if (sj_pos[k] == "inf")
-					{
-						j_pos[k] = _data.getCols(sDataTable) - 1;
-						break;
-					}
-					else if (isNotEmptyExpression(sj_pos[k]))
-					{
-						if (j == 0)
-						{
-							_parser.SetExpr(sj_pos[0]);
-							v = _parser.Eval(nResults);
-							if (nResults > 1)
-							{
-								for (int n = 0; n < nResults; n++)
-								{
-									/*if (n >= 6)
-									    break;*/
-
-									if (!isnan(v[n]) && !isinf(v[n]))
-									{
-										vCol.push_back((int)v[n] - 1);
-										if (n < 6)
-											j_pos[n] = (int)v[n] - 1;
-										j = n;
-									}
-								}
-								break;
-							}
-							else
-								j_pos[0] = (int)v[0] - 1;
-						}
-						else
-						{
-							// --> Hat einen Wert: Kann man auch auswerten <--
-							_parser.SetExpr(sj_pos[k]);
-							j_pos[k] = (int)_parser.Eval() - 1;
-						}
-						//cerr << j_pos[k] << endl;
-					}
-					else if (!k)
-					{
-						// --> erstes Element pro Forma auf 0 setzen <--
-						j_pos[k] = 0;
-					}
-					else // "data(2:4::7) = Spalten 2-4,5-7"
-					{
-						// --> Spezialfall. Verwendet vermutlich niemand <--
-						j_pos[k] = j_pos[k] + 1;
-					}
-				}
-
-				if (_option.getbDebug())
-					cerr << "|-> DEBUG: j_pos[0] = " << j_pos[0] << ", j_pos[1] = " << j_pos[1] << ", vCol.size() = " << vCol.size() << endl;
-
-				if (i_pos[1] > _data.getLines(sDataTable, false))
-					i_pos[1] = _data.getLines(sDataTable, false);
-				if (j_pos[1] > _data.getCols(sDataTable) - 1 && _pInfo.sCommand != "plot3d")
-					j_pos[1] = _data.getCols(sDataTable) - 1;
-				if (!vLine.size() && !vCol.size() && (j_pos[0] < 0
-													  || j_pos[1] < 0
-													  || i_pos[0] > _data.getLines(sDataTable, false)
-													  || i_pos[1] > _data.getLines(sDataTable, false)
-													  || (j_pos[0] > _data.getCols(sDataTable) - 1 && _pInfo.sCommand != "plot3d")
-													  || (j_pos[1] > _data.getCols(sDataTable) - 1 && _pInfo.sCommand != "plot3d")))
-				{
-					delete[] _mDataPlots;
-					delete[] nDataDim;
-					throw SyntaxError(SyntaxError::INVALID_INDEX, sDataTable, SyntaxError::invalid_position);
-				}
-
-
-
-				/* --> Bestimmen wir die "Dimension" des zu plottenden Datensatzes. Dabei ist es auch
-				 *     von Bedeutung, ob Fehlerbalken anzuzeigen sind <--
-				 */
-				nDataDim[i] = 0;
-				/*if (vCol.size())
-				    nDataDim[i] = vCol.size();
-				else*/ if (j == 0 && !_pData.getxError() && !_pData.getyError())
-					nDataDim[i] = 2;
-				else if (j == 0 && _pData.getxError() && _pData.getyError())
-					nDataDim[i] = 4;
-				else if (j == 0 && (_pData.getxError() || _pData.getyError()))
-					nDataDim[i] = 3;
-				else if (j == 1)
-				{
-					if (_pInfo.sCommand == "plot" && !_pData.getxError() && !_pData.getyError())
-						nDataDim[i] = 2;
-					else if (_pInfo.sCommand == "plot" && _pData.getxError() && _pData.getyError())
-						nDataDim[i] = 4;
-					else if (_pInfo.sCommand == "plot" && (_pData.getxError() || _pData.getyError()))
-						nDataDim[i] = 3;
-					else if (_pInfo.sCommand == "plot3d" && !_pData.getxError() && !_pData.getyError())
-						nDataDim[i] = 3;
-					else if (_pInfo.sCommand == "plot3d" && _pData.getxError() && _pData.getyError())
-						nDataDim[i] = 6;
-					else if (_pInfo.b2D)
-						nDataDim[i] = 3;
-					if ((_pData.getBoxplot() || _pData.getBars() || _pData.getHBars()) && sj_pos[1] == "inf")
-						nDataDim[i] = _data.getCols(sDataTable, false) + _pData.getBoxplot() - j_pos[0];
-				}
-				else
-				{
-					if (!(_pData.getBoxplot() || _pData.getBars() || _pData.getHBars()) || _pInfo.b2D)
-					{
-						if (j + 1 > 6)
-							nDataDim[i] = 6;
-						else
-							nDataDim[i] = j + 1;
-						if (vCol.size() > 6)
-							vCol.erase(vCol.begin() + 6, vCol.end());
-					}
-					else
-					{
-						if (_pData.getBars() || _pData.getHBars())
-							nDataDim[i] = j + 1;
-						else
-							nDataDim[i] = j + 2;
-					}
-				}
-
-				if (!nDataDim[i])
-				{
-					delete[] nDataDim;
-					delete[] _mDataPlots;
-					throw SyntaxError(SyntaxError::PLOT_ERROR, sDataTable, SyntaxError::invalid_position);
-				}
-
-				// --> Jetzt wissen wir die Spalten: Suchen wir im Falle von si_pos[1] == inf nach der laengsten <--
-				if (si_pos[1] == "inf")
-				{
-					int nAppendedZeroes = _data.getAppendedZeroes(j_pos[0], sDataTable);
-					if (sj_pos[1] == "inf"
-							&& ((nDataDim[i] < 3 && _pInfo.sCommand == "plot")
-								|| (nDataDim[i] == 3 && _pInfo.sCommand == "plot3d")))
-					{
-						for (int k = 1; k <= nDataDim[i]; k++)
-						{
-							//cerr << nAppendedZeroes << endl;
-							if (nAppendedZeroes > _data.getAppendedZeroes(j_pos[0] + k, sDataTable))
-								nAppendedZeroes = _data.getAppendedZeroes(j_pos[0] + k, sDataTable);
-						}
-					}
-					else if (_pInfo.b2D)
-					{
-						for (int j = j_pos[0]; j < j_pos[1]; j++)
-						{
-							if (nAppendedZeroes > _data.getAppendedZeroes(j, sDataTable))
-								nAppendedZeroes = _data.getAppendedZeroes(j, sDataTable);
-						}
-					}
-					else
-					{
-						if (vCol.size())
-						{
-							for (size_t k = 1; k < vCol.size(); k++)
-							{
-								//cerr << nAppendedZeroes << endl;
-								if (nAppendedZeroes > _data.getAppendedZeroes(vCol[k], sDataTable))
-									nAppendedZeroes = _data.getAppendedZeroes(vCol[k], sDataTable);
-							}
-						}
-						else
-						{
-							for (int k = 1; k <= j; k++)
-							{
-								//cerr << nAppendedZeroes << endl;
-								if (nAppendedZeroes > _data.getAppendedZeroes(j_pos[k], sDataTable))
-									nAppendedZeroes = _data.getAppendedZeroes(j_pos[k], sDataTable);
-							}
-						}
-					}
-					//if (nAppendedZeroes < i_pos[1])
-					i_pos[1] = _data.getLines(sDataTable, true) - nAppendedZeroes;
-					if (_option.getbDebug())
-						cerr << "|-> DEBUG: i_pos[1] = " << i_pos[1] << endl;
-				}
-
 
 				/* --> Mit der bestimmten Dimension koennen wir einen passenden Satz neuer mglData-Objekte
 				 *     im _mDataPlots-Array initialisieren <--
 				 */
 				_mDataPlots[i] = new mglData[nDataDim[i]];
-				if (_option.getbDebug())
-					cerr << "|-> DEBUG: mglData-Element created! nDataDim[i] = " << nDataDim[i] << endl;
 
-				// --> Datenspeicher der mglData-Objekte vorbereiten <--
-				if (vLine.size())
+				// Prepare and fill the mglData objects for the current
+				// data access depending on whether single indices or an
+				// index vector is used
+				if (_idx.vI.size())
 				{
-					if (!vCol.size())
+				    // A vector index was used. Insert a column index
+				    // if the current plot is a boxplot
+                    if (_pData.getBoxplot())
 					{
-						if (j == 0 && nDataDim[i] == 2)
-							vCol.push_back(-1);
-						vCol.push_back(j_pos[0]);
-						if (j == 1 && nDataDim[i] == 2)
-						{
-							if (sj_pos[1] != "inf")
-								vCol.push_back(j_pos[1]);
-							else if (sj_pos[1] == "inf")
-								vCol.push_back(j_pos[0] + 1);
-						}
-						else if (j == 1 && nDataDim[i] >= 3)
-						{
-							if (_pData.getBoxplot())
-								vCol.push_back(-1);
-							if (j_pos[0] < j_pos[1] || sj_pos[1] == "inf")
-							{
-								for (int q = 1; q < nDataDim[i]; q++)
-									vCol.push_back(j_pos[0] + q);
-							}
-							else
-							{
-								for (int q = 1; q < nDataDim[i]; q++)
-									vCol.push_back(j_pos[0] - q);
-							}
-						}
-						else
-						{
-							if (_pData.getBoxplot())
-								vCol.push_back(-1);
-							for (int n = 1; n <= j; n++)
-								vCol.push_back(j_pos[n]);
-						}
-					}
-					else if (_pData.getBoxplot())
-					{
-						vCol.insert(vCol.begin(), -1);
+						_idx.vJ.insert(_idx.vJ.begin(), -1);
 					}
 
+					// Fill the mglData objects with the data from the
+					// referenced data object
 					for (int q = 0; q < nDataDim[i]; q++)
 					{
-						_mDataPlots[i][q].Create(vLine.size());
-						if (vCol[q] == -1)
+						_mDataPlots[i][q].Create(_idx.vI.size());
+
+						if (_idx.vJ[q] == -1)
 						{
-							for (unsigned int n = 0; n < vLine.size(); n++)
-								_mDataPlots[i][q].a[n] = vLine[n] + 1;
+							for (unsigned int n = 0; n < _idx.vI.size(); n++)
+								_mDataPlots[i][q].a[n] = _idx.vI[n] + 1;
 						}
 						else
 						{
-							for (unsigned int n = 0; n < vLine.size(); n++)
+							for (unsigned int n = 0; n < _idx.vI.size(); n++)
 							{
-								_mDataPlots[i][q].a[n] = _data.getElement(vLine[n], vCol[q], sDataTable);
+								_mDataPlots[i][q].a[n] = validize(getDataFromObject(sDataTable, _idx.vI[n], _idx.vJ[q], isCluster));
+
+								if (!isCluster && _pInfo.sCommand == "plot3d" && q < 3 && !(_data.getLines(sDataTable, true) - _data.getAppendedZeroes(_idx.vJ[q], sDataTable) - _idx.vI[0]))
+                                {
+                                    _mDataPlots[i][q].a[n] = 0.0;
+                                }
 							}
 						}
 					}
+
 					// --> Berechnen der DataRanges <--
-					for (int l = 0; l < (int)vLine.size(); l++)
+					for (int l = 0; l < (int)_idx.vI.size(); l++)
 					{
-						calculateDataRanges(_pData, sDataAxisBinds, dDataRanges, dSecDataRanges, i, l, i_pos);
+						calculateDataRanges(_pData, sDataAxisBinds, dDataRanges, dSecDataRanges, i, l, _idx.nI);
 					}
 				}
 				else
 				{
+				    // Create the mglData object for the current data
+				    // access using single indices
 					for (int q = 0; q < nDataDim[i]; q++)
 					{
 						if (_pInfo.b2D && q == 2)///TEMPORARY
-							_mDataPlots[i][q].Create(i_pos[1] - i_pos[0], i_pos[1] - i_pos[0]);
+							_mDataPlots[i][q].Create(_idx.nI[1] - _idx.nI[0], _idx.nI[1] - _idx.nI[0]);
 						else
-							_mDataPlots[i][q].Create(i_pos[1] - i_pos[0]);
+							_mDataPlots[i][q].Create(_idx.nI[1] - _idx.nI[0]);
 					}
 
-					// --> Datenspeicher der mglData-Objekte mit den noetigen Daten fuellen <--
-					for (int l = 0; l < i_pos[1] - i_pos[0]; l++)
+					// Fill the mglData objects using the single indices
+					// and the referenced data object
+					for (int l = 0; l < _idx.nI[1] - _idx.nI[0]; l++)
 					{
-						if (j == 0 && _data.getCols(sDataTable) > j_pos[0])
+					    // Fill the objects depending on the selected columns
+						if (nColumns == 1 && (isCluster || _data.getCols(sDataTable) > _idx.nJ[0]))
 						{
-							// --> Nur y-Datenwerte! <--
-							_mDataPlots[i][0].a[l] = l + 1 + i_pos[0];
-							if (_data.isValidEntry(l + i_pos[0], j_pos[0], sDataTable))
-							{
-								if (!l && (isinf(_data.getElement(l + i_pos[0], j_pos[0], sDataTable)) || isnan(_data.getElement(l + i_pos[0], j_pos[0], sDataTable))))
-									_mDataPlots[i][1].a[l] = NAN;
-								else if (isinf(_data.getElement(l + i_pos[0], j_pos[0], sDataTable)))
-									_mDataPlots[i][1].a[l] = NAN;
-								else
-									_mDataPlots[i][1].a[l] = _data.getElement(l + i_pos[0], j_pos[0], sDataTable);
-							}
-							else if (l)
-								_mDataPlots[i][1].a[l] = NAN;
-							else
-								_mDataPlots[i][1].a[0] = NAN;
-							// --> Pseudo-0-Fehler fuer den Fall, dass Errorplotting aktiviert, aber keine Error-Daten vorhanden sind <--
-							if (_pData.getxError())
-								_mDataPlots[i][2].a[l] = 0.0;
+							// These are only y-values. Add index values
+							// as x column
+							_mDataPlots[i][0].a[l] = l + 1 + _idx.nI[0];
+
+                            _mDataPlots[i][1].a[l] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], _idx.nJ[0], isCluster));
+
+							// Create pseudo error values in this case
 							if (_pData.getxError() && _pData.getyError())
 								_mDataPlots[i][3].a[l] = 0.0;
-							else if (_pData.getyError())
+							else if (_pData.getyError() || _pData.getxError())
 								_mDataPlots[i][2].a[l] = 0.0;
 						}
-						else if (_data.getCols(sDataTable) <= j_pos[0] && _pInfo.sCommand != "plot3d")
+						else if (!isCluster && _data.getCols(sDataTable) <= _idx.nJ[0] && _pInfo.sCommand != "plot3d")
 						{
-							// --> Dumme Spalten-Fehler abfangen! <--
+							// Catch column index errors
 							for (int i = 0; i < nDataPlots; i++)
 								delete[] _mDataPlots[i];
+
 							delete[] _mDataPlots;
 							_mDataPlots = 0;
 							delete[] nDataDim;
 							nDataDim = 0;
-							_data.setCacheStatus(false);
+
 							throw SyntaxError(SyntaxError::TOO_FEW_COLS, sDataTable, SyntaxError::invalid_position);
 						}
-						else if (nDataDim[i] == 2 && j == 1)
+						else if (!isCluster && nDataDim[i] == 2 && nColumns == 2)
 						{
-							if ((_data.getCols(sDataTable) > j_pos[0] + 1 && (j_pos[0] < j_pos[1] || sj_pos[1] == "inf"))
-									|| (_data.getCols(sDataTable) > j_pos[1] + 1 && j_pos[0] > j_pos[1]))
+						    // These are xy data values
+							if ((_data.getCols(sDataTable) > _idx.nJ[0] + 1 && (_idx.nJ[0] < _idx.nJ[1] || openEnd))
+									|| (_data.getCols(sDataTable) > _idx.nJ[1] + 1 && _idx.nJ[0] > _idx.nJ[1]))
 							{
-								// --> xy-Datenwerte! <--
-								if (_data.isValidEntry(l + i_pos[0], j_pos[0], sDataTable))
+								// These data columns are in correct order
+                                _mDataPlots[i][0].a[l] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], _idx.nJ[0], isCluster));
+
+								if (!openEnd)
 								{
-									if (!l && (isnan(_data.getElement(l + i_pos[0], j_pos[0], sDataTable)) || isinf(_data.getElement(l + i_pos[0], j_pos[0], sDataTable))))
-										_mDataPlots[i][0].a[l] = NAN;
-									else if (isinf(_data.getElement(l + i_pos[0], j_pos[0], sDataTable)))
-										_mDataPlots[i][0].a[l] = NAN;
-									else
-										_mDataPlots[i][0].a[l] = _data.getElement(l + i_pos[0], j_pos[0], sDataTable);
+									_mDataPlots[i][1].a[l] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], _idx.nJ[1], isCluster));
 								}
-								else if (l)
-									_mDataPlots[i][0].a[l] = NAN;
 								else
-									_mDataPlots[i][0].a[0] = NAN;
-								if (_data.isValidEntry(l + i_pos[0], j_pos[1], sDataTable) && sj_pos[1] != "inf")
 								{
-									if (!l && (isinf(_data.getElement(l + i_pos[0], j_pos[1], sDataTable)) || isnan(_data.getElement(l + i_pos[0], j_pos[1], sDataTable))))
-										_mDataPlots[i][1].a[l] = NAN;
-									else if (isinf(_data.getElement(l + i_pos[0], j_pos[1], sDataTable)))
-										_mDataPlots[i][1].a[l] = NAN;
-									else
-										_mDataPlots[i][1].a[l] = _data.getElement(l + i_pos[0], j_pos[1], sDataTable);
+									_mDataPlots[i][1].a[l] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], _idx.nJ[0] + 1, isCluster));
 								}
-								else if (_data.isValidEntry(l + i_pos[0], j_pos[0] + 1, sDataTable) && sj_pos[1] == "inf")
-								{
-									if (!l && (isinf(_data.getElement(l + i_pos[0], j_pos[0] + 1, sDataTable)) || isnan(_data.getElement(l + i_pos[0], j_pos[0] + 1, sDataTable))))
-										_mDataPlots[i][1].a[l] = NAN;
-									else if (isinf(_data.getElement(l + i_pos[0], j_pos[0] + 1, sDataTable)))
-										_mDataPlots[i][1].a[l] = NAN;
-									else
-										_mDataPlots[i][1].a[l] = _data.getElement(l + i_pos[0], j_pos[0] + 1, sDataTable);
-								}
-								else if (l)
-									_mDataPlots[i][1].a[l] = NAN;
-								else
-									_mDataPlots[i][1].a[0] = NAN;
 							}
-							else if ((_data.getCols(sDataTable) > j_pos[0] && (j_pos[0] < j_pos[1] || sj_pos[1] == "inf"))
-									 || (_data.getCols(sDataTable) > j_pos[1] && j_pos[0] > j_pos[1]))
+							else if ((_data.getCols(sDataTable) > _idx.nJ[0] && (_idx.nJ[0] < _idx.nJ[1] || openEnd))
+									 || (_data.getCols(sDataTable) > _idx.nJ[1] && _idx.nJ[0] > _idx.nJ[1]))
 							{
-								// --> Reinterpretation der angegeben Spalten, falls eine Spalte zu wenig angegeben wurde <--
-								_mDataPlots[i][0].a[l] = l + 1 + i_pos[0];
-								if (_data.isValidEntry(l + i_pos[0], j_pos[0], sDataTable) && (j_pos[0] < j_pos[1] || sj_pos[1] == "inf"))
+								// These data columns are in inverted order
+								_mDataPlots[i][0].a[l] = l + 1 + _idx.nI[0];
+
+								if (_idx.nJ[0] < _idx.nJ[1] || openEnd)
 								{
-									if (!l && (isnan(_data.getElement(l + i_pos[0], j_pos[0], sDataTable)) || isinf(_data.getElement(l + i_pos[0], j_pos[0], sDataTable))))
-										_mDataPlots[i][1].a[l] = NAN;
-									else if (isinf(_data.getElement(l + i_pos[0], j_pos[0], sDataTable)))
-										_mDataPlots[i][1].a[l] = NAN;
-									else
-										_mDataPlots[i][1].a[l] = _data.getElement(l + i_pos[0], j_pos[0], sDataTable);
+									_mDataPlots[i][1].a[l] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], _idx.nJ[0], isCluster));
 								}
-								else if (_data.isValidEntry(l + i_pos[0], j_pos[1], sDataTable) && (j_pos[0] > j_pos[1]))
+								else if (_idx.nJ[0] > _idx.nJ[1])
 								{
-									if (!l && (isnan(_data.getElement(l + i_pos[0], j_pos[1], sDataTable)) || isinf(_data.getElement(l + i_pos[0], j_pos[1], sDataTable))))
-										_mDataPlots[i][1].a[l] = NAN;
-									else if (isinf(_data.getElement(l + i_pos[0], j_pos[1], sDataTable)))
-										_mDataPlots[i][1].a[l] = NAN;
-									else
-										_mDataPlots[i][1].a[l] = _data.getElement(l + i_pos[0], j_pos[1], sDataTable);
+									_mDataPlots[i][1].a[l] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], _idx.nJ[1], isCluster));
 								}
-								else if (l)
-									_mDataPlots[i][1].a[l] = NAN;
 								else
-									_mDataPlots[i][1].a[0] = NAN;
+									_mDataPlots[i][1].a[l] = NAN;
 							}
 							else
 							{
-								// --> Dumme Spalten-Fehler abfangen <--
+								// Catch column index errors
 								for (int i = 0; i < nDataPlots; i++)
 									delete[] _mDataPlots[i];
+
 								delete[] _mDataPlots;
 								_mDataPlots = 0;
 								delete[] nDataDim;
 								nDataDim = 0;
-								_data.setCacheStatus(false);
+
 								throw SyntaxError(SyntaxError::TOO_FEW_COLS, sDataTable, SyntaxError::invalid_position);
 							}
 						}
-						else if (nDataDim[i] >= 3 && j == 1)
+						else if (!isCluster && nDataDim[i] >= 3 && nColumns == 2)
 						{
-							// --> xyz-Datenwerte! <--
-							if (j_pos[0] < j_pos[1] || sj_pos[1] == "inf")
+							// These are xyz data values
+							if (_idx.nJ[0] < _idx.nJ[1] || openEnd)
 							{
+							    // These columns are in correct order
 								for (int q = 0; q < nDataDim[i] - (_pData.getBoxplot()); q++)
 								{
+								    // Use the data either as data grid or as xyz
+								    // tuple values
 									if (_pInfo.b2D && q == 2)
 									{
-										for (int k = 0; k < i_pos[1] - i_pos[0]; k++)
+										for (int k = 0; k < _idx.nI[1] - _idx.nI[0]; k++)
 										{
-											if (_data.num(sDataTable, i_pos[0], i_pos[1]-1, j_pos[0] + 1) <= k)
+											if (_data.num(sDataTable, _idx.nI[0], _idx.nI[1]-1, _idx.nJ[0] + 1) <= k)
 											{
-												_mDataPlots[i][q].a[l + (i_pos[1] - i_pos[0])*k] = NAN;
+												_mDataPlots[i][q].a[l + (_idx.nI[1] - _idx.nI[0])*k] = NAN;
 												continue;
 											}
-											if (_data.getCols(sDataTable) > q + k + j_pos[0] && _data.isValidEntry(l + i_pos[0], q + k + j_pos[0], sDataTable) && (j_pos[0] <= j_pos[1] || sj_pos[1] == "inf"))
+
+											if (_data.getCols(sDataTable) > q + k + _idx.nJ[0] && _data.isValidEntry(l + _idx.nI[0], q + k + _idx.nJ[0], sDataTable) && (_idx.nJ[0] <= _idx.nJ[1] || openEnd))
 											{
-												if (!l && (isnan(_data.getElement(l + i_pos[0], q + k + j_pos[0], sDataTable)) || isinf(_data.getElement(l + i_pos[0], q + k + j_pos[0], sDataTable))))
-													_mDataPlots[i][q].a[l + (i_pos[1] - i_pos[0])*k] = NAN;
-												else if (isinf(_data.getElement(l + i_pos[0], q + k + j_pos[0], sDataTable)))
-													_mDataPlots[i][q].a[l + (i_pos[1] - i_pos[0])*k] = NAN;
-												else
-													_mDataPlots[i][q].a[l + (i_pos[1] - i_pos[0])*k] = _data.getElement(l + i_pos[0], q + k + j_pos[0], sDataTable);
+												_mDataPlots[i][q].a[l + (_idx.nI[1] - _idx.nI[0])*k] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], q + k + _idx.nJ[0], isCluster));
 											}
 											else
-												_mDataPlots[i][q].a[l + (i_pos[1] - i_pos[0])*k] = NAN;
+												_mDataPlots[i][q].a[l + (_idx.nI[1] - _idx.nI[0])*k] = NAN;
 										}
 									}
 									else
@@ -4161,51 +3906,44 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 										// --> Vorwaerts zaehlen <--
 										if (!q && (_pData.getBoxplot()))
 										{
-											_mDataPlots[i][q] = l + 1 + i_pos[0];
+											_mDataPlots[i][q] = l + 1 + _idx.nI[0];
 										}
-										if (_data.getCols(sDataTable) > q + j_pos[0] && _data.isValidEntry(l + i_pos[0], q + j_pos[0], sDataTable) && (j_pos[0] <= j_pos[1] || sj_pos[1] == "inf"))
+
+										if (_data.getCols(sDataTable) > q + _idx.nJ[0] && _data.isValidEntry(l + _idx.nI[0], q + _idx.nJ[0], sDataTable) && (_idx.nJ[0] <= _idx.nJ[1] || openEnd))
 										{
-											if (!l && (isnan(_data.getElement(l + i_pos[0], q + j_pos[0], sDataTable)) || isinf(_data.getElement(l + i_pos[0], q + j_pos[0], sDataTable))))
-												_mDataPlots[i][q + (_pData.getBoxplot())].a[l] = NAN;
-											else if (isinf(_data.getElement(l + i_pos[0], q + j_pos[0], sDataTable)))
-												_mDataPlots[i][q + (_pData.getBoxplot())].a[l] = NAN;
-											else
-												_mDataPlots[i][q + (_pData.getBoxplot())].a[l] = _data.getElement(l + i_pos[0], q + j_pos[0], sDataTable);
+											_mDataPlots[i][q + (_pData.getBoxplot())].a[l] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], q + _idx.nJ[0], isCluster));
 										}
 										else if (q == 2 && _pInfo.sCommand == "plot3d"
-												 && !(_data.getLines(sDataTable, true) - _data.getAppendedZeroes(q + j_pos[0], sDataTable) - i_pos[0]))
+												 && !(_data.getLines(sDataTable, true) - _data.getAppendedZeroes(q + _idx.nJ[0], sDataTable) - _idx.nI[0]))
 											_mDataPlots[i][q].a[l] = 0.0;
-										else if (l)
-											_mDataPlots[i][q + (_pData.getBoxplot())].a[l] = NAN;
 										else
-											_mDataPlots[i][q + (_pData.getBoxplot())].a[0] = NAN;
+											_mDataPlots[i][q + (_pData.getBoxplot())].a[l] = NAN;
 									}
 								}
 							}
 							else
 							{
+							    // These columns are in inverted order
 								for (int q = 0; q < nDataDim[i]; q++)
 								{
+									// Use the data either as data grid or as xyz
+								    // tuple values
 									if (_pInfo.b2D && q == 2)
 									{
-										for (int k = 0; k < i_pos[1] - i_pos[0]; k++)
+										for (int k = 0; k < _idx.nI[1] - _idx.nI[0]; k++)
 										{
-											if (_data.num(sDataTable, i_pos[0], i_pos[1]-1, j_pos[0] - 1) <= k)
+											if (_data.num(sDataTable, _idx.nI[0], _idx.nI[1]-1, _idx.nJ[0] - 1) <= k)
 											{
-												_mDataPlots[i][q].a[l + (i_pos[1] - i_pos[0])*k] = NAN;
+												_mDataPlots[i][q].a[l + (_idx.nI[1] - _idx.nI[0])*k] = NAN;
 												continue;
 											}
-											if (_data.getCols(sDataTable) > j_pos[0] && _data.isValidEntry(l + i_pos[0], j_pos[0] - q - k, sDataTable) && (j_pos[0] - q - k >= j_pos[1] && j_pos[0] - q - k >= 0))
+
+											if (_data.getCols(sDataTable) > _idx.nJ[0] && (_idx.nJ[0] - q - k >= _idx.nJ[1] && _idx.nJ[0] - q - k >= 0))
 											{
-												if (!l && (isnan(_data.getElement(l + i_pos[0], j_pos[0] - q - k, sDataTable)) || isinf(_data.getElement(l + i_pos[0], j_pos[0] - q - k, sDataTable))))
-													_mDataPlots[i][q].a[l + (i_pos[1] - i_pos[0])*k] = NAN;
-												else if (isinf(_data.getElement(l + i_pos[0], q + k + j_pos[0], sDataTable)))
-													_mDataPlots[i][q].a[l + (i_pos[1] - i_pos[0])*k] = NAN;
-												else
-													_mDataPlots[i][q].a[l + (i_pos[1] - i_pos[0])*k] = _data.getElement(l + i_pos[0], j_pos[0] - q - k, sDataTable);
+												_mDataPlots[i][q].a[l + (_idx.nI[1] - _idx.nI[0])*k] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], _idx.nJ[0] - q - k, isCluster));
 											}
 											else
-												_mDataPlots[i][q].a[l + (i_pos[1] - i_pos[0])*k] = NAN;
+												_mDataPlots[i][q].a[l + (_idx.nI[1] - _idx.nI[0])*k] = NAN;
 										}
 									}
 									else
@@ -4213,125 +3951,56 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 										// --> Rueckwaerts zaehlen <--
 										if (!q && (_pData.getBoxplot()))
 										{
-											_mDataPlots[i][q] = l + 1 + i_pos[0];
+											_mDataPlots[i][q] = l + 1 + _idx.nI[0];
 										}
-										if (_data.getCols(sDataTable) > j_pos[0] && _data.isValidEntry(l + i_pos[0], j_pos[0] - q, sDataTable) && j_pos[0] - q >= 0 && j_pos[0] - q >= j_pos[1])
+
+										if (_data.getCols(sDataTable) > _idx.nJ[0] && _idx.nJ[0] - q >= 0 && _idx.nJ[0] - q >= _idx.nJ[1])
 										{
-											if (!l && (isnan(_data.getElement(l + i_pos[0], j_pos[0] - q, sDataTable)) || isinf(_data.getElement(l + i_pos[0], j_pos[0] - q, sDataTable))))
-												_mDataPlots[i][q + (_pData.getBoxplot())].a[l] = NAN;
-											else if (isinf(_data.getElement(l + i_pos[0], j_pos[0] - q, sDataTable)))
-												_mDataPlots[i][q + (_pData.getBoxplot())].a[l] = NAN;
-											else
-												_mDataPlots[i][q + (_pData.getBoxplot())].a[l] = _data.getElement(l + i_pos[0], j_pos[0] - q, sDataTable);
+											_mDataPlots[i][q + (_pData.getBoxplot())].a[l] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], _idx.nJ[0] - q, isCluster));
 										}
 										else if (q == 2 && _pInfo.sCommand == "plot3d"
-												 && !(_data.getLines(sDataTable, true) - _data.getAppendedZeroes(j_pos[0] - q, sDataTable) - i_pos[0]))
+												 && !(_data.getLines(sDataTable, true) - _data.getAppendedZeroes(_idx.nJ[0] - q, sDataTable) - _idx.nI[0]))
 											_mDataPlots[i][q].a[l] = 0.0;
-										else if (l)
-											_mDataPlots[i][q + (_pData.getBoxplot())].a[l] = NAN;
 										else
-											_mDataPlots[i][q + (_pData.getBoxplot())].a[0] = NAN;
+											_mDataPlots[i][q + (_pData.getBoxplot())].a[l] = NAN;
 									}
 								}
 							}
 						}
-						else
+						else if (!isCluster)
 						{
-							// --> Beliebige Spalten <--
-							//cerr << "arbitrary" << endl;
-							if ((_pData.getBoxplot() || _pData.getBars() || _pData.getHBars()) && !_pInfo.b2D && vCol.size())
+							// These are columns in arbitrary order and an
+							// arbitrary number of columns
+							if ((_pData.getBoxplot() || _pData.getBars() || _pData.getHBars()) && !_pInfo.b2D && _idx.vJ.size())
 							{
 								bool bBoxplot = _pData.getBoxplot() && !_pData.getBars() && !_pData.getHBars();
-								for (int k = 0; k < min(nDataDim[i], (int)vCol.size()); k++)
+
+								for (int k = 0; k < min(nDataDim[i], (int)_idx.vJ.size()); k++)
 								{
 									if (bBoxplot && !k)
 									{
-										_mDataPlots[i][0] = l + 1 + i_pos[0];
+										_mDataPlots[i][0] = l + 1 + _idx.nI[0];
 									}
-									if (_data.getCols(sDataTable) > vCol[k] && _data.isValidEntry(l + i_pos[0], vCol[k], sDataTable))
+
+									if (_data.getCols(sDataTable) > _idx.vJ[k])
 									{
-										if (!l && (isnan(_data.getElement(l + i_pos[0], vCol[k], sDataTable)) || isinf(_data.getElement(l + i_pos[0], vCol[k], sDataTable))))
-											_mDataPlots[i][k + bBoxplot].a[l] = NAN;
-										else if (isinf(_data.getElement(l + i_pos[0], vCol[k], sDataTable)))
-											_mDataPlots[i][k + bBoxplot].a[l] = NAN;
-										else
-											_mDataPlots[i][k + bBoxplot].a[l] = _data.getElement(l + i_pos[0], vCol[k], sDataTable);
+										_mDataPlots[i][k + bBoxplot].a[l] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], _idx.vJ[k], isCluster));
 									}
 									else if (_pInfo.sCommand == "plot3d" && k < 3
-											 && !(_data.getLines(sDataTable, true) - _data.getAppendedZeroes(vCol[k], sDataTable) - i_pos[0]))
+											 && !(_data.getLines(sDataTable, true) - _data.getAppendedZeroes(_idx.vJ[k], sDataTable) - _idx.nI[0]))
 									{
 										_mDataPlots[i][k].a[l] = 0.0;
-										//cerr << 0.0 << endl;
 									}
-									else if (l)
+									else
 										_mDataPlots[i][k + bBoxplot].a[l] = NAN;
-									else
-										_mDataPlots[i][k + bBoxplot].a[0] = NAN;
-								}
-							}
-							else
-							{
-								for (int k = 0; k < nDataDim[i] - (_pData.getBoxplot()); k++)
-								{
-									//cerr << j_pos[k] << " " << k << endl;
-									if (_pInfo.b2D && k == 2)
-									{
-										for (int m = 0; m < i_pos[1] - i_pos[0]; m++)
-										{
-											if (_data.num(sDataTable, i_pos[0], i_pos[1]-1, j_pos[k - 1]) <= m)
-											{
-												_mDataPlots[i][k].a[l + (i_pos[1] - i_pos[0])*m] = NAN;
-												continue;
-											}
-											if (_data.getCols(sDataTable) > j_pos[k] + m && _data.isValidEntry(l + i_pos[0], j_pos[k] + m, sDataTable))
-											{
-												if (!l && (isnan(_data.getElement(l + i_pos[0], j_pos[k] + m, sDataTable)) || isinf(_data.getElement(l + i_pos[0], j_pos[k] + m, sDataTable))))
-													_mDataPlots[i][k].a[l + (i_pos[1] - i_pos[0])*m] = NAN;
-												else if (isinf(_data.getElement(l + i_pos[0], j_pos[k] + m, sDataTable)))
-													_mDataPlots[i][k].a[l + (i_pos[1] - i_pos[0])*m] = NAN;
-												else
-													_mDataPlots[i][k].a[l + (i_pos[1] - i_pos[0])*m] = _data.getElement(l + i_pos[0], j_pos[k] + m, sDataTable);
-											}
-										}
-									}
-									else
-									{
-										if (_data.getCols(sDataTable) > j_pos[k] && _data.isValidEntry(l + i_pos[0], j_pos[k], sDataTable))
-										{
-											if (!l && (isnan(_data.getElement(l + i_pos[0], j_pos[k], sDataTable)) || isinf(_data.getElement(l + i_pos[0], j_pos[k], sDataTable))))
-												_mDataPlots[i][k].a[l] = NAN;
-											else if (isinf(_data.getElement(l + i_pos[0], j_pos[k], sDataTable)))
-												_mDataPlots[i][k].a[l] = NAN;
-											else
-												_mDataPlots[i][k].a[l] = _data.getElement(l + i_pos[0], j_pos[k], sDataTable);
-										}
-										else if (_pInfo.sCommand == "plot3d" && k < 3
-												 && !(_data.getLines(sDataTable, true) - _data.getAppendedZeroes(j_pos[k], sDataTable) - i_pos[0]))
-										{
-											_mDataPlots[i][k].a[l] = 0.0;
-											//cerr << 0.0 << endl;
-										}
-										else if (l)
-											_mDataPlots[i][k].a[l] = NAN;
-										else
-											_mDataPlots[i][k].a[0] = NAN;
-									}
 								}
 							}
 						}
 
 						// --> Berechnen der DataRanges <--
-						calculateDataRanges(_pData, sDataAxisBinds, dDataRanges, dSecDataRanges, i, l, i_pos);
+						calculateDataRanges(_pData, sDataAxisBinds, dDataRanges, dSecDataRanges, i, l, _idx.nI);
 					}
 				}
-
-				//cerr << dSecDataRanges[0][0] << "  " << dSecDataRanges[0][1] << endl;
-				//cerr << dSecDataRanges[1][0] << "  " << dSecDataRanges[1][1] << endl;
-
-				// --> Sicherheitshalber den Cache wieder deaktivieren <--
-				_data.setCacheStatus(false);
-				vLine.clear();
-				vCol.clear();
 			}
 		}
 	}
@@ -4350,13 +4019,13 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
 		string sTemp = sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos) - n_dpos);
 
 		// Try to find a data object in the current label
-		if ((sTemp.find("data(") != string::npos || _data.containsCacheElements(sTemp))
+		if ((sTemp.find("data(") != string::npos || _data.containsTablesOrClusters(sTemp.substr(1, sTemp.length()-2)))
 				&& (sTemp.find(',') != string::npos || sTemp.substr(sTemp.find('('), 2) == "()")
 				&& sTemp.find(')') != string::npos)
 		{
 		    // Ensure that the referenced data object contains valid data
 			if ((sTemp.find("data(") != string::npos && checkDelimiter(sDataLabels.substr(sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos) - n_dpos).find("data(") - 1, 6)) && !_data.isValid())
-					|| (_data.containsCacheElements(sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos) - n_dpos)) && !_data.isValidCache()))
+                || (_data.containsTablesOrClusters(sTemp.substr(1, sTemp.length()-2)) && !_data.isValidCache()))
 			{
 				throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sDataLabels, SyntaxError::invalid_position);
 			}
@@ -4416,7 +4085,7 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
 				{
 					if (e.errorcode == SyntaxError::SEPARATOR_NOT_FOUND)
 					{
-					    if (sArg_1.find("data(") != string::npos || _data.containsCacheElements(sArg_1))
+					    if (sArg_1.find("data(") != string::npos || _data.containsTablesOrClusters(sArg_1))
                         {
                             getDataElements(sArg_1, _parser, _data, _option);
                         }
@@ -4584,7 +4253,19 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
 
 		}
 		n_dpos = sDataLabels.find(';', n_dpos) + 1;
+
 	}
+
+    // Prepend backslashes before opening and closing
+    // braces
+    for (size_t i = 0; i < sDataLabels.size(); i++)
+    {
+        if (sDataLabels[i] == '{' || sDataLabels[i] == '}')
+        {
+            sDataLabels.insert(i, 1, '\\');
+            i++;
+        }
+    }
 }
 
 // This member function is used to construct special legend elements
@@ -4629,7 +4310,7 @@ string Plot::constructDataLegendElement(Parser& _parser, Datafile& _data, const 
 
 // This member function is used to calculate the data ranges.
 // It is called during filling the data objects.
-void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2], int i, int l, int i_pos[2])
+void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2], int i, int l, long long int i_pos[2])
 {
     // Calculate the ranges for all three spatial directions
 	for (int q = 0; q < 3; q++)
@@ -4841,6 +4522,24 @@ void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, d
 			}
 		}
 	}
+}
+
+// This member function counts the valid data
+// points in the passed mglData object
+size_t Plot::countValidElements(const mglData& _mData)
+{
+    size_t nElements = 0;
+
+    // Go through the array
+    for (size_t i = 0; i < _mData.nx; i++)
+    {
+        // count only non-nans
+        if (!isnan(_mData.a[i]))
+            nElements++;
+    }
+
+    // return the number of elements
+    return nElements;
 }
 
 void Plot::prepareMemory(PlotData& _pData, const string& sFunc, int nFunctions)

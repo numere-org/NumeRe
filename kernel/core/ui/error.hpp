@@ -41,6 +41,7 @@ class SyntaxError
             CACHE_ALREADY_EXISTS,
             CACHE_CANNOT_BE_RENAMED,
             CACHE_DOESNT_EXIST,
+            CLUSTER_DOESNT_EXIST,
             /// INSERT HERE
             CANNOT_BE_A_FITTING_PARAM=100,
             CANNOT_CALL_SCRIPT_RECURSIVELY,
@@ -122,6 +123,7 @@ class SyntaxError
             INVALID_SUBPLOT_INDEX,
             INVALID_WAVELET_TYPE,
             INVALID_WAVELET_COEFFICIENT,
+            INVALID_CLUSTER_NAME,
             /// INSERT HERE
             LGS_HAS_NO_SOLUTION=2100,
             LGS_HAS_NO_UNIQUE_SOLUTION,

@@ -244,6 +244,7 @@ class Datafile : public Cache, private Sorter		//	Diese Klasse ist ein CHILD von
 		vector<int> sortElements(const string& sLine);
 		vector<int> sortElements(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = 0, const string& sSortingExpression = "");
 		bool updateDimensionVariables(const string& sTableName);
+		bool containsTablesOrClusters(const string& sCmdLine);
 
         inline int getDataSize() const
             {

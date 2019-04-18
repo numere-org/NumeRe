@@ -113,6 +113,7 @@ class Options
             OPTION,
             FUNCTION,
             CUSTOM_FUNCTION,
+            CLUSTER,
             CONSTANT,
             SPECIALVAL, // ans cache ...
             STRING,

@@ -241,6 +241,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		void AddBreakpoint( int linenum );
 		void RemoveBreakpoint( int linenum );
+		void SynchronizeBreakpoints();
 		void SetSyntax(NumeReSyntax* __syntax)
 		{
 			if (!_syntax)

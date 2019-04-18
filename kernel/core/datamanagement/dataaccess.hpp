@@ -39,8 +39,16 @@ void replaceDataEntities(string&, const string&, Datafile&, Parser&, const Setti
 bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Datafile& _cache, int nDesiredCols = 2, bool bSort = true);
 NumeRe::Table parser_extractData(const string& sDataExpression, Parser& _parser, Datafile& _data, const Settings& _option);
 bool isNotEmptyExpression(const string&);
+bool isClusterCandidate(string& sLine, string& sCluster, bool doCut = true);
+double getDataFromObject(const string& sObject, long long int i, long long int j, bool isCluster);
+Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, int& nColumns, bool& openEnd, bool& isCluster);
 
 Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
 int parser_SplitArgs(string& sToSplit, string& sSecArg, const char& cSep, const Settings& _option, bool bIgnoreSurroundingParenthesis = false);
+
+inline bool isValidIndexSet(const Indices& _idx)
+{
+    return (_idx.nI[0] != -1 || _idx.vI.size()) && (_idx.nJ[0] != -1 || _idx.vJ.size());
+}
 
 #endif // DATAACCESS_HPP

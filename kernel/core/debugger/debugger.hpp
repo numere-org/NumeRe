@@ -50,6 +50,7 @@ class NumeReDebugger
         map<string,double> mLocalVars;
         map<string,string> mLocalStrings;
         map<string,string> mLocalTables;
+        map<string,string> mLocalClusters;
         map<string,string> mArguments;
         bool bAlreadyThrown;
         bool bExceptionHandled;
@@ -112,7 +113,9 @@ class NumeReDebugger
         void popStackItem();
 
         void gatherInformations(ProcedureVarFactory* _varFactory, const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber);
-        void gatherInformations(string** sLocalVars, unsigned int nLocalVarMapSize, double* dLocalVars, string** sLocalStrings, unsigned int nLocalStrMapSize, string** sLocalTables, unsigned int nLocalTableMapSize,                                string** sArgumentMap, unsigned int nArgumentMapSize, const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber);
+        void gatherInformations(string** sLocalVars, size_t nLocalVarMapSize, double* dLocalVars, string** sLocalStrings, size_t nLocalStrMapSize, string** sLocalTables, size_t nLocalTableMapSize,
+                                string** sLocalClusters, size_t nLocalClusterMapSize, string** sArgumentMap, size_t nArgumentMapSize, const string& _sErraticCommand, const string& _sErraticModule,
+                                unsigned int _nLineNumber);
 
         void gatherLoopBasedInformations(const string& _sErraticCommand, unsigned int _nLineNumber, map<string,string>& mVarMap, double** vVarArray, string* sVarArray, int nVarArray);
 
@@ -121,6 +124,7 @@ class NumeReDebugger
         vector<string> getNumVars();
         vector<string> getStringVars();
         vector<string> getTables();
+        vector<string> getClusters();
         vector<string> getArguments();
         vector<string> getGlobals();
 };

@@ -58,10 +58,11 @@ class ProcedureVarFactory
 
         string replaceProcedureName(string sProcedureName);
 
-        string resolveArguments(string sProcedureCommandLine);
-        string resolveLocalVars(string sProcedureCommandLine);
-        string resolveLocalStrings(string sProcedureCommandLine);
-        string resolveLocalTables(string sProcedureCommandLine);
+        string resolveArguments(string sProcedureCommandLine, size_t nMapSize = string::npos);
+        string resolveLocalVars(string sProcedureCommandLine, size_t nMapSize = string::npos);
+        string resolveLocalStrings(string sProcedureCommandLine, size_t nMapSize = string::npos);
+        string resolveLocalTables(string sProcedureCommandLine, size_t nMapSize = string::npos);
+        string resolveLocalClusters(string sProcedureCommandLine, size_t nMapSize = string::npos);
 
         unsigned int countVarListElements(const string& sVarList);
 
@@ -72,13 +73,15 @@ class ProcedureVarFactory
         string** sLocalVars;
         string** sLocalStrings;
         string** sLocalTables;
+        string** sLocalClusters;
 
         double* dLocalVars;
 
-        unsigned int nArgumentMapSize;
-        unsigned int nLocalVarMapSize;
-        unsigned int nLocalStrMapSize;
-        unsigned int nLocalTableSize;
+        size_t nArgumentMapSize;
+        size_t nLocalVarMapSize;
+        size_t nLocalStrMapSize;
+        size_t nLocalTableSize;
+        size_t nLocalClusterSize;
 
         ProcedureVarFactory();
         ProcedureVarFactory(Procedure* _procedure, const string& sProc, unsigned int currentProc);
@@ -89,10 +92,11 @@ class ProcedureVarFactory
         void createLocalVars(string sVarList);
         void createLocalStrings(string sStringList);
         void createLocalTables(string sTableList);
+        void createLocalClusters(string sClusterList);
 
         string resolveVariables(string sProcedureCommandLine)
             {
-                return resolveLocalTables(resolveArguments(resolveLocalStrings(resolveLocalVars(sProcedureCommandLine))));
+                return resolveLocalTables(resolveLocalClusters(resolveArguments(resolveLocalStrings(resolveLocalVars(sProcedureCommandLine)))));
             }
 };
 

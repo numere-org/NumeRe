@@ -68,7 +68,7 @@ DebugViewer::DebugViewer(wxWindow* parent, Options* _options, const wxString& ti
 
     // Create the expression and the error message
     // text contrls
-    m_expression = new wxTextCtrl(exprBox->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxTE_RICH);
+    m_expression = new wxTextCtrl(exprBox->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxTE_RICH | wxTE_MULTILINE);
     m_errorMessage = new wxTextCtrl(errorBox->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
 
     // Change font and colour of the two text controls
@@ -198,6 +198,7 @@ void DebugViewer::getInformationByStackId(size_t id)
     vector<string> vNumVars;
     vector<string> vStringVars;
     vector<string> vTables;
+    vector<string> vClusters;
     vector<string> vArguments;
     vector<string> vGlobals;
 
@@ -215,6 +216,7 @@ void DebugViewer::getInformationByStackId(size_t id)
         vNumVars = _debugger.getNumVars();
         vStringVars = _debugger.getStringVars();
         vTables = _debugger.getTables();
+        vClusters = _debugger.getClusters();
 
         if (m_options->GetShowProcedureArguments())
             vArguments = _debugger.getArguments();
@@ -247,6 +249,7 @@ void DebugViewer::getInformationByStackId(size_t id)
     size_t n_num = vNumVars.size();
     size_t s_num = vStringVars.size();
     size_t t_num = vTables.size();
+    size_t c_num = vClusters.size();
     size_t a_num = vArguments.size();
     size_t g_num = vGlobals.size();
 
@@ -254,11 +257,12 @@ void DebugViewer::getInformationByStackId(size_t id)
     // variable viewer
     vNumVars.insert(vNumVars.end(), vStringVars.begin(), vStringVars.end());
     vNumVars.insert(vNumVars.end(), vTables.begin(), vTables.end());
+    vNumVars.insert(vNumVars.end(), vClusters.begin(), vClusters.end());
     vNumVars.insert(vNumVars.end(), vArguments.begin(), vArguments.end());
     vNumVars.insert(vNumVars.end(), vGlobals.begin(), vGlobals.end());
 
     // Update the variable viewer
-    m_varViewer->UpdateVariables(vNumVars, n_num, s_num, t_num, a_num, g_num);
+    m_varViewer->UpdateVariables(vNumVars, n_num, s_num, t_num, c_num, a_num, g_num);
 }
 
 // This member function is the event handler routine

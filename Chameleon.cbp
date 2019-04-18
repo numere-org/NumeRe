@@ -427,6 +427,8 @@
 		<Unit filename="kernel/core/built-in.hpp" />
 		<Unit filename="kernel/core/datamanagement/cache.cpp" />
 		<Unit filename="kernel/core/datamanagement/cache.hpp" />
+		<Unit filename="kernel/core/datamanagement/cluster.cpp" />
+		<Unit filename="kernel/core/datamanagement/cluster.hpp" />
 		<Unit filename="kernel/core/datamanagement/container.hpp" />
 		<Unit filename="kernel/core/datamanagement/dataaccess.cpp" />
 		<Unit filename="kernel/core/datamanagement/dataaccess.hpp" />
@@ -461,6 +463,7 @@
 		<Unit filename="kernel/core/maths/define.hpp" />
 		<Unit filename="kernel/core/maths/fitcontroller.cpp" />
 		<Unit filename="kernel/core/maths/fitcontroller.hpp" />
+		<Unit filename="kernel/core/maths/fitting.cpp" />
 		<Unit filename="kernel/core/maths/functionimplementation.cpp" />
 		<Unit filename="kernel/core/maths/functionimplementation.hpp" />
 		<Unit filename="kernel/core/maths/matrixoperations.cpp" />

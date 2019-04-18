@@ -1377,7 +1377,7 @@ double Memory::prd(const vector<long long int>& _vLine, const vector<long long i
 {
 	if (!bValidData)
 		return NAN;
-	double dPrd = 0.0;
+	double dPrd = 1.0;
 
 	for (unsigned int i = 0; i < _vLine.size(); i++)
 	{
@@ -1873,6 +1873,7 @@ double Memory::med(const vector<long long int>& _vLine, const vector<long long i
 {
 	if (!bValidData)
 		return NAN;
+
 	double dMed = 0.0;
 	unsigned int nInvalid = 0;
 	unsigned int nCount = 0;
@@ -1884,28 +1885,36 @@ double Memory::med(const vector<long long int>& _vLine, const vector<long long i
 		{
 			if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
 				nInvalid++;
-			if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
+			else if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
 				nInvalid++;
 		}
 	}
+
 	if (nInvalid >= _vLine.size()*_vCol.size())
 		return NAN;
+
 	dData = new double[(_vLine.size()*_vCol.size()) - nInvalid];
+
 	for (unsigned int i = 0; i < _vLine.size(); i++)
 	{
 		for (unsigned int j = 0; j < _vCol.size(); j++)
 		{
 			if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false) || isnan(dMemTable[_vLine[i]][_vCol[j]]))
 				continue;
+
 			dData[nCount] = dMemTable[_vLine[i]][_vCol[j]];
 			nCount++;
+
 			if (nCount == (_vLine.size()*_vCol.size()) - nInvalid)
 				break;
 		}
+
 		if (nCount == (_vLine.size()*_vCol.size()) - nInvalid)
 			break;
 	}
+
 	nCount = qSortDouble(dData, nCount);
+
 	if (!nCount)
 	{
 		delete[] dData;
@@ -1976,29 +1985,36 @@ double Memory::pct(const vector<long long int>& _vLine, const vector<long long i
 		{
 			if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
 				nInvalid++;
-			if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
+			else if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
 				nInvalid++;
 		}
 	}
+
 	if (nInvalid >= _vLine.size()*_vCol.size())
 		return NAN;
+
 	dData = new double[(_vLine.size()*_vCol.size()) - nInvalid];
+
 	for (unsigned int i = 0; i < _vLine.size(); i++)
 	{
 		for (unsigned int j = 0; j < _vCol.size(); j++)
 		{
 			if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false) || isnan(dMemTable[_vLine[i]][_vCol[j]]))
 				continue;
+
 			dData[nCount] = dMemTable[_vLine[i]][_vCol[j]];
 			nCount++;
+
 			if (nCount == (_vLine.size()*_vCol.size()) - nInvalid)
 				break;
 		}
+
 		if (nCount == (_vLine.size()*_vCol.size()) - nInvalid)
 			break;
 	}
 
 	nCount = qSortDouble(dData, nCount);
+
 	if (!nCount)
 	{
 		delete[] dData;

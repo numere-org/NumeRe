@@ -67,6 +67,7 @@ void ProcedureVarFactory::init()
     sLocalVars = nullptr;
     sLocalStrings = nullptr;
     sLocalTables = nullptr;
+    sLocalClusters = nullptr;
 
     dLocalVars = nullptr;
 
@@ -74,6 +75,7 @@ void ProcedureVarFactory::init()
     nLocalVarMapSize = 0;
     nLocalStrMapSize = 0;
     nLocalTableSize = 0;
+    nLocalClusterSize = 0;
 }
 
 // This member function will reset the object, i.e. free
@@ -138,6 +140,21 @@ void ProcedureVarFactory::reset()
         sLocalTables = nullptr;
         nLocalTableSize = 0;
     }
+
+    if (nLocalClusterSize)
+    {
+        for (size_t i = 0; i < nLocalClusterSize; i++)
+        {
+            if (_dataRef)
+                _dataRef->removeCluster(sLocalClusters[i][1]);
+
+            delete[] sLocalClusters[i];
+        }
+
+        delete[] sLocalClusters;
+        sLocalClusters = nullptr;
+        nLocalClusterSize = 0;
+    }
 }
 
 // replaces path characters etc.
@@ -164,10 +181,10 @@ unsigned int ProcedureVarFactory::countVarListElements(const string& sVarList)
     // also not between two quotation marks
     for (unsigned int i = 0; i < sVarList.length(); i++)
     {
-        if (sVarList[i] == '(' && !isInQuotes(sVarList, i))
+        if ((sVarList[i] == '(' || sVarList[i] == '{') && !isInQuotes(sVarList, i))
             nParenthesis++;
 
-        if (sVarList[i] == ')' && !isInQuotes(sVarList, i))
+        if ((sVarList[i] == ')' || sVarList[i] == '}') && !isInQuotes(sVarList, i))
             nParenthesis--;
 
         if (sVarList[i] == ',' && !nParenthesis && !isInQuotes(sVarList, i))
@@ -317,7 +334,7 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
         }
 
         // Evaluate procedure calls and the parentheses of the
-        // passed tables
+        // passed tables and clusters
         for (unsigned int i = 0; i < nArgumentMapSize; i++)
         {
             if (sArgumentMap[i][1].find('$') != string::npos && sArgumentMap[i][1].find('(') != string::npos)
@@ -345,6 +362,13 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
 
                 if (sArgumentMap[i][1].find('(') != string::npos)
                     sArgumentMap[i][1].erase(sArgumentMap[i][1].find('('));
+            }
+            else if (sArgumentMap[i][0].length() > 2 && sArgumentMap[i][0].substr(sArgumentMap[i][0].length()-2) == "{}")
+            {
+                sArgumentMap[i][0].pop_back();
+
+                if (sArgumentMap[i][1].front() != '{' && sArgumentMap[i][1].find('{') != string::npos)
+                    sArgumentMap[i][1].erase(sArgumentMap[i][1].find('{'));
             }
         }
 
@@ -392,7 +416,7 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
             {
                 if (_currentProcedure->getProcedureFlags() & FLAG_INLINE)
                 {
-                    _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sArgumentMap, nArgumentMapSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
 
                     for (unsigned int j = 0; j <= i; j++)
                     {
@@ -421,7 +445,7 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
                 }
                 catch (...)
                 {
-                    _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sArgumentMap, nArgumentMapSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                     for (unsigned int j = 0; j <= i; j++)
                     {
                         if (j < i)
@@ -446,7 +470,7 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
 
                     if (!parser_StringParser(sVarValue, sTemp, *_dataRef, *_parserRef, *_optionRef, true))
                     {
-                        _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sArgumentMap, nArgumentMapSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                        _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                         for (unsigned int j = 0; j <= i; j++)
                         {
                             if (j < i)
@@ -461,31 +485,12 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
                     }
                 }
 
-                if (sVarValue.find("data(") != string::npos || _dataRef->containsCacheElements(sVarValue))
+                if (sVarValue.find("data(") != string::npos || _dataRef->containsTablesOrClusters(sVarValue))
                 {
                     getDataElements(sVarValue, *_parserRef, *_dataRef, *_optionRef);
                 }
 
-                for (unsigned int j = 0; j < i; j++)
-                {
-                    unsigned int nPos = 0;
-
-                    while (sVarValue.find(sLocalVars[j][0], nPos) != string::npos)
-                    {
-                        nPos = sVarValue.find(sLocalVars[j][0], nPos);
-
-                        if (((nPos+sLocalVars[j][0].length()+1 > sVarValue.length() && checkDelimiter(sVarValue.substr(nPos-1, sLocalVars[j][0].length()+1) + " "))
-                            || (nPos+sLocalVars[j][0].length()+1 <= sVarValue.length() && checkDelimiter(sVarValue.substr(nPos-1, sLocalVars[j][0].length()+2))))
-                            && (!isInQuotes(sVarValue, nPos, true)
-                                || isToCmd(sVarValue, nPos)))
-                        {
-                            sVarValue.replace(nPos, sLocalVars[j][0].length(), sLocalVars[j][1]);
-                            nPos += sLocalVars[j][1].length();
-                        }
-                        else
-                            nPos += sLocalVars[j][0].length();
-                    }
-                }
+                sVarValue = resolveLocalVars(sVarValue, i);
 
                 _parserRef->SetExpr(sVarValue);
                 sLocalVars[i][0] = sLocalVars[i][0].substr(0,sLocalVars[i][0].find('='));
@@ -493,7 +498,7 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
             }
             catch (...)
             {
-                _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sArgumentMap, nArgumentMapSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
 
                 for (unsigned int j = 0; j <= i; j++)
                 {
@@ -554,7 +559,7 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
                 if (_currentProcedure->getProcedureFlags() & FLAG_INLINE)
                 {
 
-                    _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sArgumentMap, nArgumentMapSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                     for (unsigned int j = 0; j <= i; j++)
                     {
                         if (j < i)
@@ -582,7 +587,7 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
                 }
                 catch (...)
                 {
-                    _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sArgumentMap, nArgumentMapSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
 
                     for (unsigned int j = 0; j <= i; j++)
                     {
@@ -602,26 +607,7 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
 
             try
             {
-                for (unsigned int j = 0; j < i; j++)
-                {
-                    unsigned int nPos = 0;
-
-                    while (sVarValue.find(sLocalStrings[j][0], nPos) != string::npos)
-                    {
-                        nPos = sVarValue.find(sLocalStrings[j][0], nPos);
-
-                        if (((nPos+sLocalStrings[j][0].length()+1 > sVarValue.length() && checkDelimiter(sVarValue.substr(nPos-1, sLocalStrings[j][0].length()+1) + " "))
-                            || (nPos+sLocalStrings[j][0].length()+1 <= sVarValue.length() && checkDelimiter(sVarValue.substr(nPos-1, sLocalStrings[j][0].length()+2))))
-                            && (!isInQuotes(sVarValue, nPos, true)
-                                || isToCmd(sVarValue, nPos)))
-                        {
-                            sVarValue.replace(nPos, sLocalStrings[j][0].length(), sLocalStrings[j][1]);
-                            nPos += sLocalStrings[j][1].length();
-                        }
-                        else
-                            nPos += sLocalStrings[j][0].length();
-                    }
-                }
+                sVarValue = resolveLocalStrings(sVarValue, i);
 
                 if (containsStrings(sVarValue) || _dataRef->containsStringVars(sVarValue))
                 {
@@ -629,7 +615,7 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
 
                     if (!parser_StringParser(sVarValue, sTemp, *_dataRef, *_parserRef, *_optionRef, true))
                     {
-                        _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sArgumentMap, nArgumentMapSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                        _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                         _debugger.throwException(SyntaxError(SyntaxError::STRING_ERROR, sStringList, SyntaxError::invalid_position));
                     }
                 }
@@ -664,7 +650,7 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
         }
         catch (...)
         {
-            _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sArgumentMap, nArgumentMapSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+            _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
 
             for (unsigned int j = 0; j <= i; j++)
             {
@@ -716,7 +702,7 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
         }
         catch (...)
         {
-            NumeReKernel::getInstance()->getDebugger().gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sArgumentMap, nArgumentMapSize, sTableList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+            NumeReKernel::getInstance()->getDebugger().gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, i, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sTableList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
 
             for (unsigned int j = 0; j <= i; j++)
             {
@@ -735,37 +721,146 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
     }
 }
 
+// This member function will create the local clusters
+// for the current procedure.
+void ProcedureVarFactory::createLocalClusters(string sClusterList)
+{
+    // already declared the local vars?
+    if (nLocalClusterSize)
+        return;
+
+    if (!_currentProcedure)
+        return;
+
+    // Get the number of declared variables
+    nLocalClusterSize = countVarListElements(sClusterList);
+    sLocalClusters = new string*[nLocalClusterSize];
+    string sCurrentValue;
+
+    // Decode the variable list
+    for (unsigned int i = 0; i < nLocalClusterSize; i++)
+    {
+        sLocalClusters[i] = new string[2];
+        sLocalClusters[i][0] = getNextArgument(sClusterList, true);
+
+        if (sLocalClusters[i][0].find('=') != string::npos)
+        {
+            sCurrentValue = sLocalClusters[i][0].substr(sLocalClusters[i][0].find('=')+1);
+        }
+
+        if (sLocalClusters[i][0].find('{') != string::npos)
+            sLocalClusters[i][0].erase(sLocalClusters[i][0].find('{'));
+
+        StripSpaces(sLocalClusters[i][0]);
+        sLocalClusters[i][1] = "_~"+sProcName+"_"+toString((int)nth_procedure)+"_"+sLocalClusters[i][0];
+
+        sLocalClusters[i][0] += "{";
+
+        try
+        {
+            NumeRe::Cluster& cluster = _dataRef->newCluster(sLocalClusters[i][1]);
+
+            if (!sCurrentValue.length())
+                continue;
+
+            sCurrentValue = resolveLocalClusters(sCurrentValue, i);
+
+            if (sCurrentValue.find('$') != string::npos && sCurrentValue.find('(', sCurrentValue.find('$')+1))
+            {
+                if (_currentProcedure->getProcedureFlags() & FLAG_INLINE)
+                {
+                    throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sClusterList, SyntaxError::invalid_position);
+                }
+
+                int nReturn = _currentProcedure->procedureInterface(sCurrentValue, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_procedure);
+
+                if (nReturn == -1)
+                {
+                    throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sClusterList, SyntaxError::invalid_position);
+                }
+                else if (nReturn == -2)
+                    sCurrentValue = "false";
+            }
+
+            if (_dataRef->containsTablesOrClusters(sCurrentValue) || sCurrentValue.find("data(") != string::npos)
+                getDataElements(sCurrentValue, *_parserRef, *_dataRef, *_optionRef, false);
+
+            if (containsStrings(sCurrentValue) || _dataRef->containsStringVars(sCurrentValue))
+            {
+                string sCluster = sLocalClusters[i][1] + "{}";
+                parser_StringParser(sCurrentValue, sCluster, *_dataRef, *_parserRef, *_optionRef, true);
+            }
+            else
+            {
+                value_type* v = nullptr;
+                int nResults;
+                _parserRef->SetExpr(sCurrentValue);
+                v = _parserRef->Eval(nResults);
+                cluster.setDoubleArray(nResults, v);
+            }
+        }
+        catch (...)
+        {
+            NumeReKernel::getInstance()->getDebugger().gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sLocalClusters, i, sArgumentMap, nArgumentMapSize, sClusterList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+
+            for (unsigned int j = 0; j <= i; j++)
+            {
+                if (j < i)
+                    _dataRef->removeCluster(sLocalClusters[j][1]);
+
+                delete[] sLocalClusters[j];
+            }
+
+            delete[] sLocalClusters;
+            nLocalClusterSize = 0;
+
+            NumeReKernel::getInstance()->getDebugger().showError(current_exception());
+            throw;
+        }
+    }
+}
+
 // This private member function will resolve the argument
 // calls in the passed procedure command line
-string ProcedureVarFactory::resolveArguments(string sProcedureCommandLine)
+string ProcedureVarFactory::resolveArguments(string sProcedureCommandLine, size_t nMapSize)
 {
-    if (!nArgumentMapSize)
+    if (!nMapSize)
         return sProcedureCommandLine;
 
-    for (unsigned int i = 0; i < nArgumentMapSize; i++)
+    if (nMapSize == string::npos)
+        nMapSize = nArgumentMapSize;
+
+    for (unsigned int i = 0; i < nMapSize; i++)
     {
         unsigned int nPos = 0;
+        size_t nArgumentBaseLength = sArgumentMap[i][0].length();
 
-        while (sProcedureCommandLine.find(sArgumentMap[i][0].substr(0, sArgumentMap[i][0].length() - (sArgumentMap[i][0].back() == '(')), nPos) != string::npos)
+        if (sArgumentMap[i][0].back() == '(' || sArgumentMap[i][0].back() == '{')
+            nArgumentBaseLength--;
+
+        while ((nPos = sProcedureCommandLine.find(sArgumentMap[i][0].substr(0, nArgumentBaseLength), nPos)) != string::npos)
         {
-            nPos = sProcedureCommandLine.find(sArgumentMap[i][0].substr(0, sArgumentMap[i][0].length() - (sArgumentMap[i][0].back() == '(')), nPos);
-
             if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~',nPos-1)] != '#')
-                || (sArgumentMap[i][0].back() != '(' && sProcedureCommandLine[nPos+sArgumentMap[i][0].length()] == '('))
+                || (sArgumentMap[i][0].back() != '(' && sProcedureCommandLine[nPos+nArgumentBaseLength] == '(')
+                || (sArgumentMap[i][0].back() != '{' && sProcedureCommandLine[nPos+nArgumentBaseLength] == '{'))
             {
                 nPos += sArgumentMap[i][0].length();
                 continue;
             }
 
-            if (checkDelimiter(sProcedureCommandLine.substr(nPos-1, sArgumentMap[i][0].length()+1+(sArgumentMap[i][0].back() != '(')))
+            if (checkDelimiter(sProcedureCommandLine.substr(nPos-1, nArgumentBaseLength+2))
                 && (!isInQuotes(sProcedureCommandLine, nPos, true)
                     || isToCmd(sProcedureCommandLine, nPos)))
             {
-                sProcedureCommandLine.replace(nPos, sArgumentMap[i][0].length()-(sArgumentMap[i][0].back() == '('), sArgumentMap[i][1]);
+                if (sArgumentMap[i][1].front() == '{' && sArgumentMap[i][0].back() == '{')
+                    sProcedureCommandLine.replace(nPos, getMatchingParenthesis(sProcedureCommandLine.substr(nPos))+1, sArgumentMap[i][1]);
+                else
+                    sProcedureCommandLine.replace(nPos, nArgumentBaseLength, sArgumentMap[i][1]);
+
                 nPos += sArgumentMap[i][1].length();
             }
             else
-                nPos += sArgumentMap[i][0].length() - (sArgumentMap[i][0].back() == '(');
+                nPos += nArgumentBaseLength;
         }
     }
 
@@ -774,27 +869,36 @@ string ProcedureVarFactory::resolveArguments(string sProcedureCommandLine)
 
 // This private member function will resolve the numerical variable
 // calls in the passed procedure command line
-string ProcedureVarFactory::resolveLocalVars(string sProcedureCommandLine)
+string ProcedureVarFactory::resolveLocalVars(string sProcedureCommandLine, size_t nMapSize)
 {
-    if (!nLocalVarMapSize)
+    if (!nMapSize)
         return sProcedureCommandLine;
 
-    for (unsigned int i = 0; i < nLocalVarMapSize; i++)
+    if (nMapSize == string::npos)
+        nMapSize = nLocalVarMapSize;
+
+    for (size_t i = 0; i < nMapSize; i++)
     {
-        unsigned int nPos = 0;
+        size_t nPos = 0;
+        size_t nDelimCheck = 0;
 
         while (sProcedureCommandLine.find(sLocalVars[i][0], nPos) != string::npos)
         {
             nPos = sProcedureCommandLine.find(sLocalVars[i][0], nPos);
 
-            if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~',nPos-1)] != '#')
+            if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#')
                 || sProcedureCommandLine[nPos+sLocalVars[i][0].length()] == '(')
             {
                 nPos += sLocalVars[i][0].length();
                 continue;
             }
 
-            if (checkDelimiter(sProcedureCommandLine.substr(nPos-1, sLocalVars[i][0].length()+2))
+            nDelimCheck = nPos-1;
+
+            if ((sProcedureCommandLine[nDelimCheck] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nDelimCheck)] == '#'))
+                nDelimCheck = sProcedureCommandLine.find_last_not_of('~', nDelimCheck);
+
+            if (checkDelimiter(sProcedureCommandLine.substr(nDelimCheck, sLocalVars[i][0].length() + 1 + nPos - nDelimCheck))
                 && (!isInQuotes(sProcedureCommandLine, nPos, true)
                     || isToCmd(sProcedureCommandLine, nPos)))
             {
@@ -811,14 +915,18 @@ string ProcedureVarFactory::resolveLocalVars(string sProcedureCommandLine)
 
 // This private member function will resolve the string variable
 // calls in the passed procedure command line
-string ProcedureVarFactory::resolveLocalStrings(string sProcedureCommandLine)
+string ProcedureVarFactory::resolveLocalStrings(string sProcedureCommandLine, size_t nMapSize)
 {
-    if (!nLocalStrMapSize)
+    if (!nMapSize)
         return sProcedureCommandLine;
 
-    for (unsigned int i = 0; i < nLocalStrMapSize; i++)
+    if (nMapSize == string::npos)
+        nMapSize = nLocalStrMapSize;
+
+    for (size_t i = 0; i < nMapSize; i++)
     {
-        unsigned int nPos = 0;
+        size_t nPos = 0;
+        size_t nDelimCheck = 0;
 
         while (sProcedureCommandLine.find(sLocalStrings[i][0], nPos) != string::npos)
         {
@@ -831,7 +939,12 @@ string ProcedureVarFactory::resolveLocalStrings(string sProcedureCommandLine)
                 continue;
             }
 
-            if (checkDelimiter(sProcedureCommandLine.substr(nPos-1, sLocalStrings[i][0].length()+2), true)
+            nDelimCheck = nPos-1;
+
+            if ((sProcedureCommandLine[nDelimCheck] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nDelimCheck)] == '#'))
+                nDelimCheck = sProcedureCommandLine.find_last_not_of('~', nDelimCheck);
+
+            if (checkDelimiter(sProcedureCommandLine.substr(nDelimCheck, sLocalStrings[i][0].length() + 1 + nPos - nDelimCheck), true)
                 && (!isInQuotes(sProcedureCommandLine, nPos, true) || isToCmd(sProcedureCommandLine, nPos)))
             {
                 sProcedureCommandLine.replace(nPos, sLocalStrings[i][0].length(), sLocalStrings[i][1]);
@@ -847,14 +960,18 @@ string ProcedureVarFactory::resolveLocalStrings(string sProcedureCommandLine)
 
 // This private member function will resolve the table
 // calls in the passed procedure command line
-string ProcedureVarFactory::resolveLocalTables(string sProcedureCommandLine)
+string ProcedureVarFactory::resolveLocalTables(string sProcedureCommandLine, size_t nMapSize)
 {
-    if (!nLocalTableSize)
+    if (!nMapSize)
         return sProcedureCommandLine;
 
-    for (unsigned int i = 0; i < nLocalTableSize; i++)
+    if (nMapSize == string::npos)
+        nMapSize = nLocalTableSize;
+
+    for (size_t i = 0; i < nMapSize; i++)
     {
-        unsigned int nPos = 0;
+        size_t nPos = 0;
+        size_t nDelimCheck = 0;
 
         while (sProcedureCommandLine.find(sLocalTables[i][0], nPos) != string::npos)
         {
@@ -867,7 +984,12 @@ string ProcedureVarFactory::resolveLocalTables(string sProcedureCommandLine)
                 continue;
             }
 
-            if (checkDelimiter(sProcedureCommandLine.substr(nPos-1, sLocalTables[i][0].length()+2), true)
+            nDelimCheck = nPos-1;
+
+            if ((sProcedureCommandLine[nDelimCheck] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nDelimCheck)] == '#'))
+                nDelimCheck = sProcedureCommandLine.find_last_not_of('~', nDelimCheck);
+
+            if (checkDelimiter(sProcedureCommandLine.substr(nDelimCheck, sLocalTables[i][0].length() + 1 + nPos - nDelimCheck), true)
                 && (!isInQuotes(sProcedureCommandLine, nPos, true) || isToCmd(sProcedureCommandLine, nPos)))
             {
                 sProcedureCommandLine.replace(nPos, sLocalTables[i][0].length(), sLocalTables[i][1]);
@@ -875,6 +997,50 @@ string ProcedureVarFactory::resolveLocalTables(string sProcedureCommandLine)
             }
             else
                 nPos += sLocalTables[i][0].length();
+        }
+    }
+
+    return sProcedureCommandLine;
+}
+
+// This private member function will resolve the cluster
+// calls in the passed procedure command line
+string ProcedureVarFactory::resolveLocalClusters(string sProcedureCommandLine, size_t nMapSize)
+{
+    if (!nMapSize)
+        return sProcedureCommandLine;
+
+    if (nMapSize == string::npos)
+        nMapSize = nLocalClusterSize;
+
+    for (size_t i = 0; i < nMapSize; i++)
+    {
+        size_t nPos = 0;
+        size_t nDelimCheck = 0;
+
+        while (sProcedureCommandLine.find(sLocalClusters[i][0], nPos) != string::npos)
+        {
+            nPos = sProcedureCommandLine.find(sLocalClusters[i][0], nPos);
+
+            if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#'))
+            {
+                nPos += sLocalClusters[i][0].length();
+                continue;
+            }
+
+            nDelimCheck = nPos-1;
+
+            if ((sProcedureCommandLine[nDelimCheck] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nDelimCheck)] == '#'))
+                nDelimCheck = sProcedureCommandLine.find_last_not_of('~', nDelimCheck);
+
+            if (checkDelimiter(sProcedureCommandLine.substr(nDelimCheck, sLocalClusters[i][0].length() + nPos - nDelimCheck), true)
+                && (!isInQuotes(sProcedureCommandLine, nPos, true) || isToCmd(sProcedureCommandLine, nPos)))
+            {
+                sProcedureCommandLine.replace(nPos, sLocalClusters[i][0].length()-1, sLocalClusters[i][1]);
+                nPos += sLocalClusters[i][1].length();
+            }
+            else
+                nPos += sLocalClusters[i][0].length();
         }
     }
 
