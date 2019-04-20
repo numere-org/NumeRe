@@ -1258,6 +1258,7 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, Define& _funct
 				else
 				{
 					nPos += replaceReturnVal(sLine, _parser, tempreturnval, nPos - 1, nParPos + 1, "_~PROC~[" + __sName + "~" + toString(nProc) + "_" + toString((int)nth_procedure) + "_" + toString((int)(nth_command + nth_procedure)) + "]");
+					nProc++;
 				}
 
 				nReturnType = 1;
@@ -1946,7 +1947,7 @@ int Procedure::isInlineable(const string& sProc, const string& sFileName, int* n
 // corresponding enumeration flags
 int Procedure::applyInliningRuleset(const string& sCommandLine, const string& sArgumentList)
 {
-    static const string sINVALID_INLINING_COMMANDS = " var str tab namespace for if while switch ifndef ifndefined def define lclfunc redef redefine undef undefine ";
+    static const string sINVALID_INLINING_COMMANDS = " cst tab namespace for if while switch ifndef ifndefined def define lclfunc redef redefine undef undefine ";
     string command = findCommand(sCommandLine).sString;
 
     // Check for invalid inlining commands
@@ -2009,7 +2010,7 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
 {
     // Prepare a variable factory and get the procedure
     // element
-    ProcedureVarFactory varFactory(this, sProc, nthRecursion);
+    ProcedureVarFactory varFactory(this, sProc, nthRecursion, true);
     ProcedureElement* element = NumeReKernel::ProcLibrary.getProcedureContents(sFileName);
 
     // Goto to the corresponding procedure head
@@ -2040,6 +2041,19 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
         // Get next line and replace the argument occurences
         currentline = element->getNextLine(currentline.first);
         sCommandLine = varFactory.resolveVariables(" " + currentline.second.getCommandLine() + " ");
+
+        // Local variables and strings are allowed and will be redirected
+        // into temporary cluster elements
+        if (findCommand(sCommandLine).sString == "var")
+        {
+            varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4));
+            sCommandLine = varFactory.sInlineVarDef + ";";
+        }
+        else if (findCommand(sCommandLine).sString == "str")
+        {
+            varFactory.createLocalStrings(sCommandLine.substr(findCommand(sCommandLine).nPos + 4));
+            sCommandLine = varFactory.sInlineStringDef + ";";
+        }
 
         // Insert a breakpoint, if the breakpoint manager
         // contains a reference to this line

@@ -712,8 +712,7 @@ vector<string> NumeReDebugger::getGlobals()
     {
         if (iter->first.substr(0, 2) != "_~")
         {
-            mGlobals[iter->first + "{}"] = toString(iter->second.size()) + " x 1"
-                                           + "\tcluster\t{...}";
+            mGlobals[iter->first + "{}"] = toString(iter->second.size()) + " x 1" + "\tcluster\t" + iter->second.getShortVectorRepresentation();
         }
     }
 

@@ -2630,7 +2630,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
 
     // Examine the current usage of the local variable declarators
     // Esp. ensure that the declared variables are used
-    if (m_fileType == FILE_NPRC && (sSyntaxElement == "var" || sSyntaxElement == "str" || sSyntaxElement == "tab"))
+    if (m_fileType == FILE_NPRC && (sSyntaxElement == "var" || sSyntaxElement == "str" || sSyntaxElement == "tab" || sSyntaxElement == "cst"))
     {
         // Handle the special case "list -var"
         if (sSyntaxElement == "var" && this->GetTextRange(this->PositionFromLine(currentLine), this->GetLineEndPosition(currentLine)).find("list") < (size_t)(wordstart - this->PositionFromLine(currentLine)))
@@ -2640,10 +2640,17 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
         }
 
         // Get the next line
-        int nNextLine = this->GetLineEndPosition(currentLine) + 1;
+        int nNextLineStartPosition = this->GetLineEndPosition(currentLine) + 1;
 
         // Find the end of the current procedure
-        int nProcedureEnd = this->FindText(nNextLine, this->GetLastPosition(), "endprocedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD);
+        int nProcedureEndPosition = this->FindText(nNextLineStartPosition, this->GetLastPosition(), "endprocedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD);
+
+        int nStyle = wxSTC_NSCR_IDENTIFIER;
+
+        if (sSyntaxElement == "tab")
+            nStyle = wxSTC_NSCR_CUSTOM_FUNCTION;
+        else if (sSyntaxElement == "cst")
+            nStyle = wxSTC_NSCR_CLUSTER;
 
         // extract the arguments and strip the spaces
         string sArgs = this->GetTextRange(wordend, this->GetLineEndPosition(currentLine)).ToStdString();
@@ -2652,9 +2659,9 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
         StripSpaces(sArgs);
 
         // Ensure that the end of the procedure is available
-        if (nProcedureEnd == -1)
+        if (nProcedureEndPosition == -1)
         {
-            nProcedureEnd = this->GetLastPosition();
+            nProcedureEndPosition = this->GetLastPosition();
             AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
         }
 
@@ -2671,15 +2678,17 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
                 // remove assignments and parentheses and strip the spaces
                 if (currentArg.find('=') != string::npos)
                     currentArg.erase(currentArg.find('='));
-                if (currentArg.find('(') != string::npos)
-                    currentArg.erase(currentArg.find('('));
+
+                if (currentArg.find_first_of("({") != string::npos)
+                    currentArg.erase(currentArg.find_first_of("({"));
+
                 StripSpaces(currentArg);
 
                 // Try to find the variable in the remaining code
-                if (m_options->GetAnalyzerOption(Options::UNUSED_VARIABLES) && this->FindText(nNextLine, nProcedureEnd, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) == -1)
+                if (m_options->GetAnalyzerOption(Options::UNUSED_VARIABLES) && !FindAll(currentArg, nStyle, nNextLineStartPosition, nProcedureEndPosition, false).size())//   this->FindText(nNextLine, nProcedureEnd, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) == -1)
                 {
                     // No variable found
-                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, this->FindText(wordstart, nProcedureEnd, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD), currentArg.length()), sWarn, _guilang.get("GUI_ANALYZER_UNUSEDVARIABLE", currentArg)), ANNOTATION_WARN);
+                    AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, this->FindText(wordstart, nProcedureEndPosition, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD), currentArg.length()), sWarn, _guilang.get("GUI_ANALYZER_UNUSEDVARIABLE", currentArg)), ANNOTATION_WARN);
                 }
             }
         }

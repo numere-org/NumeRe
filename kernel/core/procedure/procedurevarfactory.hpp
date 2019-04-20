@@ -53,6 +53,7 @@ class ProcedureVarFactory
 
         string sProcName;
         unsigned int nth_procedure;
+        bool inliningMode;
 
         void init();
 
@@ -63,10 +64,10 @@ class ProcedureVarFactory
         string resolveLocalStrings(string sProcedureCommandLine, size_t nMapSize = string::npos);
         string resolveLocalTables(string sProcedureCommandLine, size_t nMapSize = string::npos);
         string resolveLocalClusters(string sProcedureCommandLine, size_t nMapSize = string::npos);
-
         unsigned int countVarListElements(const string& sVarList);
-
         void checkKeywordsInArgument(const string& sArgument, const string& sArgumentList, unsigned int nCurrentIndex);
+        void createLocalInlineVars(string sVarList);
+        void createLocalInlineStrings(string sVarList);
 
     public:
         string** sArgumentMap;
@@ -83,8 +84,11 @@ class ProcedureVarFactory
         size_t nLocalTableSize;
         size_t nLocalClusterSize;
 
+        string sInlineVarDef;
+        string sInlineStringDef;
+
         ProcedureVarFactory();
-        ProcedureVarFactory(Procedure* _procedure, const string& sProc, unsigned int currentProc);
+        ProcedureVarFactory(Procedure* _procedure, const string& sProc, unsigned int currentProc, bool _inliningMode = false);
         ~ProcedureVarFactory();
 
         void reset();

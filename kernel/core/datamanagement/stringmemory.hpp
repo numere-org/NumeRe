@@ -56,9 +56,6 @@ class StringMemory
         StringInternalMemory _stringIntMem;
 
 		bool checkStringvarDelimiter(const string& sToken) const;
-		void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const string& sVarValue);
-		void replaceSearchMethods(string& sLine, size_t nFinalPos, size_t nLength, const string& sVarValue, const string& sMethod, string& sArgument);
-		void replaceAccessMethods(string& sLine, size_t nFinalPos, size_t nLength, const string& sVarValue, const string& sMethod, string& sArgument);
 
     public:
 		bool writeString(const string& _sString, unsigned int _nthString = string::npos, unsigned int nCol = 0);

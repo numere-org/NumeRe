@@ -31,13 +31,14 @@ ProcedureVarFactory::ProcedureVarFactory()
 }
 
 // General constructor from a procedure instance
-ProcedureVarFactory::ProcedureVarFactory(Procedure* _procedure, const string& sProc, unsigned int currentProc)
+ProcedureVarFactory::ProcedureVarFactory(Procedure* _procedure, const string& sProc, unsigned int currentProc, bool _inliningMode)
 {
     init();
     _currentProcedure = _procedure;
 
     sProcName = replaceProcedureName(sProc);
     nth_procedure = currentProc;
+    inliningMode = _inliningMode;
 }
 
 // Destructor. Will free up all memory
@@ -76,6 +77,10 @@ void ProcedureVarFactory::init()
     nLocalStrMapSize = 0;
     nLocalTableSize = 0;
     nLocalClusterSize = 0;
+
+    inliningMode = false;
+    sInlineVarDef.clear();
+    sInlineStringDef.clear();
 }
 
 // This member function will reset the object, i.e. free
@@ -105,7 +110,10 @@ void ProcedureVarFactory::reset()
         }
 
         delete[] sLocalVars;
-        delete[] dLocalVars;
+
+        if (dLocalVars)
+            delete[] dLocalVars;
+
         sLocalVars = nullptr;
         dLocalVars = nullptr;
         nLocalVarMapSize = 0;
@@ -155,6 +163,9 @@ void ProcedureVarFactory::reset()
         sLocalClusters = nullptr;
         nLocalClusterSize = 0;
     }
+
+    sInlineVarDef.clear();
+    sInlineStringDef.clear();
 }
 
 // replaces path characters etc.
@@ -217,6 +228,210 @@ void ProcedureVarFactory::checkKeywordsInArgument(const string& sArgument, const
         _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
         _debugger.throwException(SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, sCommand));
     }
+}
+
+// This private member function creates the local variables for
+// inlined procedures. The variables are redirected to cluster items.
+void ProcedureVarFactory::createLocalInlineVars(string sVarList)
+{
+    NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
+
+    // Get the number of declared variables
+    nLocalVarMapSize = countVarListElements(sVarList);
+
+    // Create a new temporary cluster
+    string sTempCluster = _dataRef->createTemporaryCluster();
+    sInlineVarDef = sTempCluster + " = {";
+
+    sTempCluster.erase(sTempCluster.length()-2);
+
+    // Get a reference to the temporary cluster
+    NumeRe::Cluster& tempCluster = _dataRef->getCluster(sTempCluster);
+
+    sLocalVars = new string*[nLocalVarMapSize];
+
+    // Decode the variable list
+    for (unsigned int i = 0; i < nLocalVarMapSize; i++)
+    {
+        sLocalVars[i] = new string[2];
+        sLocalVars[i][0] = getNextArgument(sVarList, true);
+
+        // Fill in the value of the variable by either
+        // using the default or the explicit passed value
+        if (sLocalVars[i][0].find('=') != string::npos)
+        {
+            string sVarValue = sLocalVars[i][0].substr(sLocalVars[i][0].find('=')+1);
+            sInlineVarDef += sVarValue + ",";
+
+            if (sVarValue.find('$') != string::npos && sVarValue.find('(') != string::npos)
+            {
+                _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+
+                for (unsigned int j = 0; j <= i; j++)
+                {
+                    delete[] sLocalVars[j];
+                }
+
+                delete[] sLocalVars;
+                nLocalVarMapSize = 0;
+
+                _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sVarList, SyntaxError::invalid_position));
+            }
+
+            try
+            {
+                if (containsStrings(sVarValue) || _dataRef->containsStringVars(sVarValue))
+                {
+                    string sTemp;
+
+                    if (!parser_StringParser(sVarValue, sTemp, *_dataRef, *_parserRef, *_optionRef, true))
+                    {
+                        _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+
+                        for (unsigned int j = 0; j <= i; j++)
+                        {
+                            delete[] sLocalVars[j];
+                        }
+
+                        delete[] sLocalVars;
+                        nLocalVarMapSize = 0;
+                        _debugger.throwException(SyntaxError(SyntaxError::STRING_ERROR, sVarList, SyntaxError::invalid_position));
+                    }
+                }
+
+                if (sVarValue.find("data(") != string::npos || _dataRef->containsTablesOrClusters(sVarValue))
+                {
+                    getDataElements(sVarValue, *_parserRef, *_dataRef, *_optionRef);
+                }
+
+                sVarValue = resolveLocalVars(sVarValue, i);
+
+                _parserRef->SetExpr(sVarValue);
+                sLocalVars[i][0] = sLocalVars[i][0].substr(0, sLocalVars[i][0].find('='));
+                tempCluster.setDouble(i, _parserRef->Eval());
+            }
+            catch (...)
+            {
+                _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+
+                for (unsigned int j = 0; j <= i; j++)
+                {
+                    delete[] sLocalVars[j];
+                }
+
+                delete[] sLocalVars;
+                nLocalVarMapSize = 0;
+
+                _debugger.showError(current_exception());
+                throw;
+            }
+        }
+        else
+        {
+            tempCluster.setDouble(i, 0.0);
+            sInlineVarDef += "0,";
+        }
+
+        StripSpaces(sLocalVars[i][0]);
+        sLocalVars[i][1] = sTempCluster + "{" + toString(i+1) + "}";
+    }
+
+    sInlineVarDef.back() = '}';
+}
+
+// This private member function creates the local string variables for
+// inlined procedures. The variables are redirected to cluster items.
+void ProcedureVarFactory::createLocalInlineStrings(string sStringList)
+{
+    NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
+
+    // Get the number of declared variables
+    nLocalStrMapSize = countVarListElements(sStringList);
+
+    // Create a new temporary cluster
+    string sTempCluster = _dataRef->createTemporaryCluster();
+    sInlineStringDef = sTempCluster + " = {";
+    sTempCluster.erase(sTempCluster.length()-2);
+
+    // Get a reference to the temporary cluster
+    NumeRe::Cluster& tempCluster = _dataRef->getCluster(sTempCluster);
+
+    sLocalStrings = new string*[nLocalStrMapSize];
+
+    // Decode the variable list
+    for (unsigned int i = 0; i < nLocalStrMapSize; i++)
+    {
+        sLocalStrings[i] = new string[3];
+        sLocalStrings[i][0] = getNextArgument(sStringList, true);
+
+        // Fill in the value of the variable by either
+        // using the default or the explicit passed value
+        if (sLocalStrings[i][0].find('=') != string::npos)
+        {
+            string sVarValue = sLocalStrings[i][0].substr(sLocalStrings[i][0].find('=')+1);
+            sInlineStringDef += sVarValue + ",";
+
+            if (sVarValue.find('$') != string::npos && sVarValue.find('(') != string::npos)
+            {
+                _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+
+                for (unsigned int j = 0; j <= i; j++)
+                {
+                    delete[] sLocalStrings[j];
+                }
+
+                delete[] sLocalStrings;
+                nLocalStrMapSize = 0;
+
+                _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sStringList, SyntaxError::invalid_position));
+            }
+
+            try
+            {
+                sVarValue = resolveLocalStrings(sVarValue, i);
+
+                if (containsStrings(sVarValue) || _dataRef->containsStringVars(sVarValue))
+                {
+                    string sTemp;
+
+                    if (!parser_StringParser(sVarValue, sTemp, *_dataRef, *_parserRef, *_optionRef, true))
+                    {
+                        _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                        _debugger.throwException(SyntaxError(SyntaxError::STRING_ERROR, sStringList, SyntaxError::invalid_position));
+                    }
+                }
+
+                sLocalStrings[i][0] = sLocalStrings[i][0].substr(0, sLocalStrings[i][0].find('='));
+                sLocalStrings[i][2] = sVarValue;
+                tempCluster.setString(i, sVarValue);
+            }
+            catch (...)
+            {
+                _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+
+                for (unsigned int j = 0; j <= i; j++)
+                {
+                    delete[] sLocalStrings[j];
+                }
+
+                delete[] sLocalVars;
+                nLocalStrMapSize = 0;
+
+                _debugger.showError(current_exception());
+                throw;
+            }
+        }
+        else
+        {
+            tempCluster.setString(i, "\"\"");
+            sInlineStringDef += "\"\",";
+        }
+
+        StripSpaces(sLocalStrings[i][0]);
+        sLocalStrings[i][1] = sTempCluster + "{" + toString(i+1) + "}";
+    }
+
+    sInlineStringDef.back() = '}';
 }
 
 // This member function will create the procedure arguments for the
@@ -392,6 +607,12 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
     if (!_currentProcedure)
         return;
 
+    if (inliningMode)
+    {
+        createLocalInlineVars(sVarList);
+        return;
+    }
+
     NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
     // Get the number of declared variables
@@ -535,6 +756,12 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
 
     if (!_currentProcedure)
         return;
+
+    if (inliningMode)
+    {
+        createLocalInlineStrings(sStringList);
+        return;
+    }
 
     NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
@@ -680,6 +907,9 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
     if (!_currentProcedure)
         return;
 
+    if (inliningMode)
+        return;
+
     // Get the number of declared variables
     nLocalTableSize = countVarListElements(sTableList);
     sLocalTables = new string*[nLocalTableSize];
@@ -730,6 +960,9 @@ void ProcedureVarFactory::createLocalClusters(string sClusterList)
         return;
 
     if (!_currentProcedure)
+        return;
+
+    if (inliningMode)
         return;
 
     // Get the number of declared variables
@@ -947,7 +1180,11 @@ string ProcedureVarFactory::resolveLocalStrings(string sProcedureCommandLine, si
             if (checkDelimiter(sProcedureCommandLine.substr(nDelimCheck, sLocalStrings[i][0].length() + 1 + nPos - nDelimCheck), true)
                 && (!isInQuotes(sProcedureCommandLine, nPos, true) || isToCmd(sProcedureCommandLine, nPos)))
             {
-                sProcedureCommandLine.replace(nPos, sLocalStrings[i][0].length(), sLocalStrings[i][1]);
+                if (inliningMode)
+                    replaceStringMethod(sProcedureCommandLine, nPos, sLocalStrings[i][0].length(), sLocalStrings[i][1]);
+                else
+                    sProcedureCommandLine.replace(nPos, sLocalStrings[i][0].length(), sLocalStrings[i][1]);
+
                 nPos += sLocalStrings[i][1].length();
             }
             else

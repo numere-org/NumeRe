@@ -472,7 +472,6 @@ static string handleCachedDataAccess(string& sLine, Parser& _parser, Datafile& _
 	mu::CachedDataAccess _access;
 	Indices _idx;
 	bool isCluster = false;
-	bool openEnd = false;
 
 	for (size_t i = 0; i < _parser.HasCachedAccess(); i++)
 	{
@@ -507,10 +506,7 @@ static string handleCachedDataAccess(string& sLine, Parser& _parser, Datafile& _
 		if (_idx.nI[1] == -2)
         {
 			_idx.nI[1] = isCluster ? _data.getCluster(_access.sCacheName).size() - 1 : _data.getLines(_access.sCacheName, false) - 1;
-            openEnd = true;
         }
-        else
-            openEnd = false;
 
 		if (_idx.nJ[1] == -2)
 			_idx.nJ[1] = isCluster ? 1 : _data.getCols(_access.sCacheName, false) - 1;
@@ -581,8 +577,16 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 	}
 
 	// As long as the entity occurs
-	while ((nPos = sLine.find(sEntityOccurence)) != string::npos)
+	while ((nPos = sLine.find(sEntityOccurence, nPos)) != string::npos)
 	{
+	    // if the last character before the current occurence is
+	    // alphanumeric, then ignore this occurence
+	    if (nPos && (isalnum(sLine[nPos-1]) || sLine[nPos-1] == '_'))
+        {
+            nPos++;
+            continue;
+        }
+
 		// Get the last token
 		string sLeft = getLastToken(sLine.substr(0, nPos));
 

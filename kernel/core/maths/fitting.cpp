@@ -65,8 +65,8 @@ static void calculateCovarianceData(FittingData& fitData, double dChisq, size_t 
 static string getFitOptionsTable(Fitcontroller& _fControl, FittingData& fitData, const string& sFuncDisplay, const string& sFittedFunction, const string& sDimsForFitLog, double dChisq, const mu::varmap_type& paramsMap, size_t nSize, bool forFitLog);
 static string getParameterTable(FittingData& fitData, mu::varmap_type& paramsMap, const vector<double>& vInitialVals, size_t windowSize, const string& sPMSign, bool forFitLog);
 static string constructCovarianceMatrix(FittingData& fitData, size_t paramsMapSize, bool forFitLog);
-static double calculatePercentageSumAndCreateParserVariables(FittingData& fitData, mu::varmap_type& paramsMap, double dChisq);
-static string getFitAnalysis(Fitcontroller& _fControl, FittingData& fitData, double dNormChisq, double dErrorPercentageSum, bool noOverfitting);
+static double calculatePercentageAvgAndCreateParserVariables(FittingData& fitData, mu::varmap_type& paramsMap, double dChisq);
+static string getFitAnalysis(Fitcontroller& _fControl, FittingData& fitData, double dNormChisq, double dAverageErrorPercentage, bool noOverfitting);
 static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFile, const string& sCmd, mu::varmap_type& paramsMap, FittingData& fitData, const vector<double>& vInitialVals, size_t nSize, const string& sFitAnalysis, const string& sFuncDisplay, const string& sFittedFunction, double dChisq);
 
 // This is the fitting main routine
@@ -337,10 +337,10 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
 		NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow() - 4, '-') + "\n");
 	}
 
-	// Calculate the sum of the percentual errors, which will be used to
+	// Calculate the average of the percentual errors, which will be used to
 	// derive a fitting analysis and create the variable to store the individual
 	// fitting error values needed for further calulations (error propagation, etc.)
-	double dErrorPercentageSum = calculatePercentageSumAndCreateParserVariables(fitData, paramsMap, dChisq);
+	double dAverageErrorPercentage = calculatePercentageAvgAndCreateParserVariables(fitData, paramsMap, dChisq);
 
 	// Write the correlation matrix to the log file and the terminal
 	if (paramsMap.size() > 1 && paramsMap.size() != nSize)
@@ -361,9 +361,9 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
 		nSize *= nSize;
 
     // Get the fitting analysis as a string. The fitting analysis is
-    // calculated from the sum of the percentual errors and the
+    // calculated from the average of the percentual errors and the
     // value of the reduced chi^2
-    string sFitAnalysis = getFitAnalysis(_fControl, fitData, dChisq / (double)(nSize - paramsMap.size()), dErrorPercentageSum, nSize != paramsMap.size());
+    string sFitAnalysis = getFitAnalysis(_fControl, fitData, dChisq / (double)(nSize - paramsMap.size()), dAverageErrorPercentage, nSize != paramsMap.size());
 
 	// Write the fitting analysis to the logfile and to the terminal
 	oFitLog << _lang.get("PARSERFUNCS_FIT_ANALYSIS") << ":" << endl;
@@ -415,6 +415,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
     vector<double> vInterVal;
     static const string sBADFUNCTIONS = "ascii(),char(),findfile(),findparam(),gauss(),getopt(),is_string(),rand(),replace(),replaceall(),split(),strfnd(),string_cast(),strrfnd(),strlen(),time(),to_char(),to_cmd(),to_string(),to_value()";
 
+    // Evaluate the chi^2 map option
     if (matchParams(sCmd, "chimap", '='))
 	{
 		fitData.sChiMap = getArgAtPos(sCmd, matchParams(sCmd, "chimap", '=') + 6);
@@ -457,6 +458,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 		}
 	}
 
+	// Does the user want to export the results into a TeX file?
 	if (matchParams(sCmd, "export", '='))
 	{
 		bTeXExport = true;
@@ -469,6 +471,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 		eraseToken(sCmd, "export", false);
 	}
 
+	// Ensure that the file name for the TeX file is valid
 	if (bTeXExport)
 	{
 		sTeXExportFile = _data.ValidFileName(sTeXExportFile, ".tex");
@@ -477,6 +480,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 			sTeXExportFile.replace(sTeXExportFile.rfind('.'), string::npos, ".tex");
 	}
 
+	// Separate expression from the command line option list
 	for (unsigned int i = 0; i < sCmd.length(); i++)
 	{
 		if (sCmd[i] == '(')
@@ -489,8 +493,11 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 		}
 	}
 
+	// Decode possible interval definitions in the command
+	// line option list
 	vInterVal = parser_IntervalReader(sCmd, _parser, _data, _functions, _option, true);
 
+	// Evaluate the contents of the parsed interval definitions
 	if (vInterVal.size())
 	{
 		if (vInterVal.size() >= 4)
@@ -516,6 +523,8 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 		}
 	}
 
+	// Insert the command line option list after the intervals
+	// were parsed into the original command line
 	for (unsigned int i = 0; i < fitData.sFitFunction.length(); i++)
 	{
 		if (fitData.sFitFunction[i] == '(')
@@ -530,6 +539,8 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 
 	sCmd = fitData.sFitFunction;
 
+	// Because it's quite likely that one misspells the option value
+	// "saverr", whe accept also the spelling "saveer" as an alternative
 	if (matchParams(fitData.sFitFunction, "saverr"))
 	{
 		fitData.bSaveErrors = true;
@@ -544,6 +555,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 		sCmd.erase(matchParams(sCmd, "saveer") - 1, 6);
 	}
 
+	// The masking paramter
 	if (matchParams(fitData.sFitFunction, "mask"))
 	{
 		bMaskDialog = true;
@@ -551,9 +563,11 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 		sCmd.erase(matchParams(sCmd, "mask") - 1, 6);
 	}
 
+	// Ensure that a fitting function was defined
 	if (!matchParams(fitData.sFitFunction, "with", '='))
 		throw SyntaxError(SyntaxError::NO_FUNCTION_FOR_FIT, sCmd, SyntaxError::invalid_position);
 
+    // Changes to the tolerance
 	if (matchParams(fitData.sFitFunction, "tol", '='))
 	{
 		_parser.SetExpr(getArgAtPos(fitData.sFitFunction, matchParams(fitData.sFitFunction, "tol", '=') + 3));
@@ -565,6 +579,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 			fitData.dPrecision = 1e-4;
 	}
 
+	// Changes to the maximal number of iterations
 	if (matchParams(fitData.sFitFunction, "iter", '='))
 	{
 		_parser.SetExpr(getArgAtPos(fitData.sFitFunction, matchParams(fitData.sFitFunction, "iter", '=') + 4));
@@ -576,6 +591,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 			fitData.nMaxIterations = 500;
 	}
 
+	// Fitting parameter restrictions
 	if (matchParams(fitData.sFitFunction, "restrict", '='))
 	{
 		fitData.sRestrictions = getArgAtPos(fitData.sFitFunction, matchParams(fitData.sFitFunction, "restrict", '=') + 8);
@@ -603,6 +619,8 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 		}
 	}
 
+	// The fitting parameter list including their possible
+	// starting values
 	if (!matchParams(fitData.sFitFunction, "params", '='))
 	{
 		fitData.bNoParams = true;
@@ -622,6 +640,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 		sCmd = sCmd.substr(0, matchParams(sCmd, "params", '=') - 1);
 	}
 
+	// Remove surrounding brackets from the parameter list
 	if (fitData.sParams.find('[') != string::npos)
 		fitData.sParams = fitData.sParams.substr(fitData.sParams.find('[') + 1);
 
@@ -630,12 +649,14 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 
 	StripSpaces(fitData.sFitFunction);
 
+	// Remove the possible trailing minus character
 	if (fitData.sFitFunction.back() == '-')
 	{
 		fitData.sFitFunction.back() = ' ';
 		StripSpaces(fitData.sFitFunction);
 	}
 
+	// Evaluate the defined paramters and their initial values
 	if (!fitData.bNoParams)
 	{
 		StripSpaces(fitData.sParams);
@@ -660,20 +681,25 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 
 	StripSpaces(sCmd);
 
+	// Evaluate function definition calls
 	if (!_functions.call(fitData.sFitFunction))
 		throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, fitData.sFitFunction, fitData.sFitFunction);
 
+    // Get values from a references data object
 	if (fitData.sFitFunction.find("data(") != string::npos || _data.containsTablesOrClusters(fitData.sFitFunction))
 	{
 		getDataElements(fitData.sFitFunction, _parser, _data, _option);
 	}
 
+	// Expand remaining vectors
 	if (fitData.sFitFunction.find("{") != string::npos)
 		parser_VectorToExpr(fitData.sFitFunction, _option);
 
-
     size_t nPos = 0;
 
+    // Ensure that the fitting function does not contain any of the
+    // functions from the bad fitting functions list (a list of functions,
+    // which cannot be used to solve the optimisation problem)
 	while (sBADFUNCTIONS.find(',', nPos) != string::npos)
 	{
 		if (fitData.sFitFunction.find(sBADFUNCTIONS.substr(nPos, sBADFUNCTIONS.find(',', nPos) - nPos - 1)) != string::npos)
@@ -698,10 +724,15 @@ static mu::varmap_type getFittingParameters(FittingData& fitData, const mu::varm
     mu::varmap_type paramsMap;
     Parser& _parser = NumeReKernel::getInstance()->getParser();
 
+    // If the user did not provide his own fitting parameters,
+    // we'll create our own list depending on the found variables
+    // in the fitting expression
     if (fitData.bNoParams)
 	{
+	    // Get the variable map
 		paramsMap = varMap;
 
+		// Remove x and y variables
 		if (paramsMap.find("x") != paramsMap.end())
 			paramsMap.erase(paramsMap.find("x"));
 
@@ -713,9 +744,14 @@ static mu::varmap_type getFittingParameters(FittingData& fitData, const mu::varm
 	}
 	else
 	{
+	    // Evaluate the fitting parameters provided
+	    // by the user
 		_parser.SetExpr(fitData.sParams);
 		_parser.Eval();
 
+		// Remove the values from the expression, to avoid
+		// that they would be mis-identified as fitting
+		// parameters
 		if (fitData.sParams.find('=') != string::npos)
 		{
 			for (size_t i = 0; i < fitData.sParams.length(); i++)
@@ -836,12 +872,14 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 			if (!(fitData.nFitVars & 2))
 			{
 				nDim = 2;
+
 				if (abs(_idx.nJ[1] - _idx.nJ[0]) < 1)
 					throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
 			}
 			else
 			{
 				nDim = 3;
+
 				if (abs(_idx.nJ[1] - _idx.nJ[0]) < abs(_idx.nI[1] - _idx.nI[0]) + 1)
 					throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
 			}
@@ -851,12 +889,14 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 			if (!(fitData.nFitVars & 2))
 			{
 				nDim = 4;
+
 				if (abs(_idx.nJ[1] - _idx.nJ[0]) < 2)
 					throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
 			}
 			else
 			{
 				nDim = 5;
+
 				if (abs(_idx.nJ[1] - _idx.nJ[0]) < 2 * abs(_idx.nI[1] - _idx.nI[0]) + 1)
 					throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
 			}
@@ -940,7 +980,6 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 		{
 			for (int i = _idx.nI[0]; i < _idx.nI[1]; i++)
 			{
-
 				if (nColumns == 1)
 				{
 					if (isValidValue(getDataFromObject(sDataTable, i, _idx.nJ[0], isCluster)))
@@ -954,9 +993,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 					if (_data.isValidEntry(i, _idx.nJ[0], sDataTable) && _data.isValidEntry(i, _idx.nJ[1], sDataTable) && !openEnd)
 					{
 						if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(i, _idx.nJ[0], sDataTable) < fitData.dMin || _data.getElement(i, _idx.nJ[0], sDataTable) > fitData.dMax))
-						{
 							continue;
-						}
 
 						fitData.vx.push_back(_data.getElement(i, _idx.nJ[0], sDataTable));
 						fitData.vy.push_back(_data.getElement(i, _idx.nJ[1], sDataTable));
@@ -964,9 +1001,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 					else if (_data.isValidEntry(i, _idx.nJ[0], sDataTable) && _data.isValidEntry(i, _idx.nJ[0] + 1, sDataTable) && openEnd)
 					{
 						if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(i, _idx.nJ[0], sDataTable) < fitData.dMin || _data.getElement(i, _idx.nJ[0], sDataTable) > fitData.dMax))
-						{
 							continue;
-						}
 
 						fitData.vx.push_back(_data.getElement(i, _idx.nJ[0], sDataTable));
 						fitData.vy.push_back(_data.getElement(i, _idx.nJ[0] + 1, sDataTable));
@@ -991,9 +1026,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 					if (_data.isValidEntry(_idx.vI[i], _idx.vJ[0], sDataTable) && _data.isValidEntry(_idx.vI[i], _idx.vJ[1], sDataTable))
 					{
 						if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) < fitData.dMin || _data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) > fitData.dMax))
-						{
 							continue;
-						}
 
 						fitData.vx.push_back(_data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable));
 						fitData.vy.push_back(_data.getElement(_idx.vI[i], _idx.vJ[1], sDataTable));
@@ -1024,9 +1057,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 							|| (_data.isValidEntry(i, _idx.nJ[1], sDataTable) && _data.isValidEntry(i, _idx.nJ[1] - 1, sDataTable) && _idx.nJ[1] < _idx.nJ[0]))
 					{
 						if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(i, _idx.nJ[0], sDataTable) < fitData.dMin || _data.getElement(i, _idx.nJ[0], sDataTable) > fitData.dMax))
-						{
 							continue;
-						}
 
 						if (_idx.nJ[0] < _idx.nJ[1])
 						{
@@ -1078,30 +1109,6 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 						}
 					}
 				}
-				//else
-				//{
-				//	if (_data.isValidEntry(i, _idx.nJ[0], sDataTable) && _data.isValidEntry(i, _idx.nJ[1], sDataTable))
-				//	{
-				//		if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(i, _idx.nJ[0], sDataTable) < fitData.dMin || _data.getElement(i, _idx.nJ[0], sDataTable) > fitData.dMax))
-				//		{
-				//			continue;
-				//		}
-                //
-				//		fitData.vx.push_back(_data.getElement(i, _idx.nJ[0], sDataTable));
-				//		fitData.vy.push_back(_data.getElement(i, _idx.nJ[1], sDataTable));
-                //
-				//		if (_data.isValidEntry(i, j_pos[2], sDataTable) && _data.isValidEntry(i, j_pos[3], sDataTable) && (_data.getElement(i, j_pos[2], sDataTable) || _data.getElement(i, j_pos[3], sDataTable)))
-				//			fitData.vy_w.push_back(sqrt(fabs(_data.getElement(i, j_pos[2], sDataTable)) * fabs(_data.getElement(i, j_pos[3], sDataTable))));
-                //
-				//		if (_data.isValidEntry(i, j_pos[2], sDataTable) && _data.getElement(i, j_pos[2], sDataTable))
-				//			fitData.vy_w.push_back(fabs(_data.getElement(i, j_pos[2], sDataTable)));
-                //
-				//		if (_data.isValidEntry(i, j_pos[3], sDataTable) && _data.getElement(i, j_pos[3], sDataTable))
-				//			fitData.vy_w.push_back(fabs(_data.getElement(i, j_pos[3], sDataTable)));
-				//		else
-				//			fitData.vy_w.push_back(0.0);
-				//	}
-				//}
 			}
 		}
 		else
@@ -1123,9 +1130,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 					if (_data.isValidEntry(_idx.vI[i], _idx.vJ[0], sDataTable) && _data.isValidEntry(_idx.vI[i], _idx.vJ[1], sDataTable))
 					{
 						if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) < fitData.dMin || _data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) > fitData.dMax))
-						{
 							continue;
-						}
 
 						fitData.vx.push_back(_data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable));
 						fitData.vy.push_back(_data.getElement(_idx.vI[i], _idx.vJ[1], sDataTable));
@@ -1155,9 +1160,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 					if (_data.isValidEntry(_idx.vI[i], _idx.vJ[0], sDataTable) && _data.isValidEntry(_idx.vI[i], _idx.vJ[1], sDataTable))
 					{
 						if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) < fitData.dMin || _data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) > fitData.dMax))
-						{
 							continue;
-						}
 
 						fitData.vx.push_back(_data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable));
 						fitData.vy.push_back(_data.getElement(_idx.vI[i], _idx.vJ[1], sDataTable));
@@ -1208,9 +1211,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 				}
 
 				if (!_data.isValidEntry(i, _idx.nJ[0], sDataTable) || _data.getElement(i, _idx.nJ[0], sDataTable) < fitData.dMin || _data.getElement(i, _idx.nJ[0], sDataTable) > fitData.dMax)
-				{
 					continue;
-				}
 				else
 					fitData.vx.push_back(_data.getElement(i, _idx.nJ[0], sDataTable));
 
@@ -1219,9 +1220,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 					for (long long int k = _idx.nJ[0] + 2; k < _idx.nJ[0] + _idx.nI[1] - _idx.nI[0] + 2; k++)
 					{
 						if (!_data.isValidEntry(k - _idx.nJ[0] - 2 + _idx.nI[0], _idx.nJ[0] + 1, sDataTable) || _data.getElement(k - _idx.nJ[0] - 2 + _idx.nI[0], _idx.nJ[0] + 1, sDataTable) < fitData.dMinY || _data.getElement(k - _idx.nJ[0] - 2 + _idx.nI[0], _idx.nJ[0] + 1, sDataTable) > fitData.dMaxY)
-						{
 							continue;
-						}
 						else
 						{
 							vTempZ.push_back(_data.getElement(i, k, sDataTable));
@@ -1241,9 +1240,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 							break;
 
 						if (!_data.isValidEntry(_idx.nI[0] - (k - _idx.nJ[0] + 2), _idx.nJ[0] - 1, sDataTable) || _data.getElement(_idx.nI[0] - (k - _idx.nJ[0] + 2), _idx.nJ[0] - 1, sDataTable) < fitData.dMinY || _data.getElement(_idx.nI[0] - (k - _idx.nJ[0] + 2), _idx.nJ[0] - 1, sDataTable) > fitData.dMaxY)
-						{
 							continue;
-						}
 						else
 						{
 							vTempZ.push_back(_data.getElement(i, k, sDataTable));
@@ -1255,30 +1252,6 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 						}
 					}
 				}
-				//else
-				//{
-				//	for (long long int k = j_pos[2]; k < j_pos[2] + _idx.nI[1] - _idx.nI[0]; k++)
-				//	{
-				//		if (j > 2 && k == j_pos[3])
-				//			break;
-                //
-				//		if (!_data.isValidEntry(k - j_pos[2] + _idx.nI[0], j_pos[1], sDataTable) || _data.getElement(k - j_pos[2] + _idx.nI[0], j_pos[1], sDataTable) < fitData.dMinY || _data.getElement(k - j_pos[2] + _idx.nI[0], j_pos[1], sDataTable) > fitData.dMaxY)
-				//		{
-				//			continue;
-				//		}
-				//		else
-				//		{
-				//			vTempZ.push_back(_data.getElement(i, k, sDataTable));
-                //
-				//			if (bUseErrors && j > 2 && _data.isValidEntry(i, k + j_pos[3], sDataTable))
-				//				fitData.vy_w.push_back(_data.getElement(i, k + j_pos[3], sDataTable));
-				//			else if (bUseErrors && _data.isValidEntry(i, k + _idx.nI[1] - _idx.nI[0], sDataTable))
-				//				fitData.vy_w.push_back(_data.getElement(i, k + _idx.nI[1] - _idx.nI[0], sDataTable));
-				//			else if (bUseErrors)
-				//				fitData.vy_w.push_back(0.0);
-				//		}
-				//	}
-				//}
 
 				fitData.vz.push_back(vTempZ);
 				vTempZ.clear();
@@ -1301,9 +1274,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 					fitData.vy.push_back(_data.getElement(_idx.vI[i], _idx.vJ[1], sDataTable));
 
 				if (!_data.isValidEntry(_idx.vI[i], _idx.vJ[0], sDataTable) || _data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) < fitData.dMin || _data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) > fitData.dMax)
-				{
 					continue;
-				}
 				else
 					fitData.vx.push_back(_data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable));
 
@@ -1312,9 +1283,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 					for (long long int k = _idx.nJ[0] + 2; k < _idx.nJ[0] + _idx.nI[1] - _idx.nI[0] + 2; k++)
 					{
 						if (!_data.isValidEntry(k - _idx.nJ[0] - 2 + _idx.nI[0], _idx.nJ[0] + 1, sDataTable) || _data.getElement(k - _idx.nJ[0] - 2 + _idx.nI[0], _idx.nJ[0] + 1, sDataTable) < fitData.dMinY || _data.getElement(k - _idx.nJ[0] - 2 + _idx.nI[0], _idx.nJ[0] + 1, sDataTable) > fitData.dMaxY)
-						{
 							continue;
-						}
 						else
 						{
 							vTempZ.push_back(_data.getElement(i, k, sDataTable));
@@ -1334,9 +1303,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 							break;
 
 						if (!_data.isValidEntry(_idx.nI[0] - (k - _idx.nJ[0] + 2), _idx.nJ[0] - 1, sDataTable) || _data.getElement(_idx.nI[0] - (k - _idx.nJ[0] + 2), _idx.nJ[0] - 1, sDataTable) < fitData.dMinY || _data.getElement(_idx.nI[0] - (k - _idx.nJ[0] + 2), _idx.nJ[0] - 1, sDataTable) > fitData.dMaxY)
-						{
 							continue;
-						}
 						else
 						{
 							vTempZ.push_back(_data.getElement(i, k, sDataTable));
@@ -1358,13 +1325,9 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 						if (!_data.isValidEntry(_idx.vI[k], _idx.vJ[1], sDataTable)
 								|| _data.getElement(_idx.vI[k], _idx.vJ[1], sDataTable) < fitData.dMinY
 								|| _data.getElement(_idx.vI[k], _idx.vJ[1], sDataTable) > fitData.dMaxY)
-						{
 							continue;
-						}
 						else
-						{
 							vTempZ.push_back(_data.getElement(_idx.vI[i], _idx.vJ[k], sDataTable));
-						}
 					}
 				}
 
@@ -1381,48 +1344,22 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 	}
 	else
 	{
-		//if (!_idx.vI.size())
-		//{
-		//	for (int i = _idx.nI[0]; i < _idx.nI[1]; i++)
-		//	{
-		//		if (_data.isValidEntry(i, _idx.nJ[0], sDataTable) && _data.isValidEntry(i, _idx.nJ[1], sDataTable))
-		//		{
-		//			if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(i, _idx.nJ[0], sDataTable) < fitData.dMin || _data.getElement(i, _idx.nJ[0], sDataTable) > fitData.dMax))
-		//			{
-		//				continue;
-		//			}
-        //
-		//			fitData.vx.push_back(_data.getElement(i, _idx.nJ[0], sDataTable));
-		//			fitData.vy.push_back(_data.getElement(i, _idx.nJ[1], sDataTable));
-        //
-		//			if (_data.isValidEntry(i, j_pos[2], sDataTable))
-		//				fitData.vy_w.push_back(fabs(_data.getElement(i, _idx.nJ[2], sDataTable)));
-		//			else
-		//				fitData.vy_w.push_back(0.0);
-		//		}
-		//	}
-		//}
-		//else
-		//{
-			for (unsigned int i = 0; i < _idx.vI.size(); i++)
-			{
-				if (_data.isValidEntry(_idx.vI[i], _idx.vJ[0], sDataTable) && _data.isValidEntry(_idx.vI[i], _idx.vJ[1], sDataTable))
-				{
-					if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) < fitData.dMin || _data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) > fitData.dMax))
-					{
-						continue;
-					}
+        for (unsigned int i = 0; i < _idx.vI.size(); i++)
+        {
+            if (_data.isValidEntry(_idx.vI[i], _idx.vJ[0], sDataTable) && _data.isValidEntry(_idx.vI[i], _idx.vJ[1], sDataTable))
+            {
+                if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) < fitData.dMin || _data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) > fitData.dMax))
+                    continue;
 
-					fitData.vx.push_back(_data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable));
-					fitData.vy.push_back(_data.getElement(_idx.vI[i], _idx.vJ[1], sDataTable));
+                fitData.vx.push_back(_data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable));
+                fitData.vy.push_back(_data.getElement(_idx.vI[i], _idx.vJ[1], sDataTable));
 
-					if (_data.isValidEntry(_idx.vI[i], _idx.vJ[2], sDataTable))
-						fitData.vy_w.push_back(fabs(_data.getElement(_idx.vI[i], _idx.vJ[2], sDataTable)));
-					else
-						fitData.vy_w.push_back(0.0);
-				}
-			}
-		//}
+                if (_data.isValidEntry(_idx.vI[i], _idx.vJ[2], sDataTable))
+                    fitData.vy_w.push_back(fabs(_data.getElement(_idx.vI[i], _idx.vJ[2], sDataTable)));
+                else
+                    fitData.vy_w.push_back(0.0);
+            }
+        }
 	}
 
 	sDimsForFitLog.clear();
@@ -1522,6 +1459,9 @@ static void removeObsoleteParentheses(string& sFunction)
 {
     StripSpaces(sFunction);
 
+    // As long as the first character is an opening
+    // parenthesis, search the closing one and remove both,
+    // if it is the last character of the function
 	while (sFunction.front() == '(')
 	{
 		if (getMatchingParenthesis(sFunction) == sFunction.length() - 1 && getMatchingParenthesis(sFunction) != string::npos)
@@ -1846,28 +1786,29 @@ static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, 
 // upon whether fitting weights shall be used for fitting)
 static void calculateCovarianceData(FittingData& fitData, double dChisq, size_t paramsMapSize)
 {
-    size_t nSize = ((fitData.vz.size()) ? (fitData.vz.size() * fitData.vz[0].size()) : fitData.vx.size());
+    // Do nothing, if fitting weights have been used
+    if (fitData.bUseErrors)
+        return;
 
-	if (!fitData.bUseErrors && !(fitData.nFitVars & 2))
-	{
-		for (unsigned int i = 0; i < fitData.vz_w.size(); i++)
-		{
-			for (unsigned int j = 0; j < fitData.vz_w[0].size(); j++)
-			{
-				fitData.vz_w[i][j] *= dChisq / (nSize - paramsMapSize);
-			}
-		}
-	}
-	else if (!fitData.bUseErrors)
-	{
-		for (unsigned int i = 0; i < fitData.vz_w.size(); i++)
-		{
-			for (unsigned int j = 0; j < fitData.vz_w[0].size(); j++)
-			{
-				fitData.vz_w[i][j] *= dChisq / (nSize * nSize - paramsMapSize);
-			}
-		}
-	}
+    double dSize = (fitData.vz.size()) ? (fitData.vz.size() * fitData.vz[0].size()) : fitData.vx.size();
+    double dFactor = dChisq;
+
+    // Calculate the factor depending on the number of fitting dimensions
+    if (!(fitData.nFitVars & 2))
+        dFactor /= dSize - paramsMapSize;
+    else
+        dFactor /= dSize*dSize - paramsMapSize;
+
+    // SCale all elements in the covariance matrix with the
+    // calculated factor
+    for (unsigned int i = 0; i < fitData.vz_w.size(); i++)
+    {
+        for (unsigned int j = 0; j < fitData.vz_w[0].size(); j++)
+        {
+            fitData.vz_w[i][j] *= dFactor;
+        }
+    }
+
 }
 
 
@@ -1929,11 +1870,14 @@ static string constructCovarianceMatrix(FittingData& fitData, size_t paramsMapSi
 {
     string sCovMatrix;
 
+    // Construct the whole matrix as a string
     for (unsigned int n = 0; n < paramsMapSize; n++)
     {
+        // The terminal requires some indentation
         if (!forFitLog)
             sCovMatrix += "|   ";
 
+        // Append the part of the opening parenthesis
         if (!n)
             sCovMatrix += "/";
         else if (n + 1 == paramsMapSize)
@@ -1941,11 +1885,13 @@ static string constructCovarianceMatrix(FittingData& fitData, size_t paramsMapSi
         else
             sCovMatrix += "|";
 
+        // Write the current matrix line
         for (unsigned int k = 0; k < paramsMapSize; k++)
         {
             sCovMatrix += " " + strfill(toString(fitData.vz_w[n][k] / sqrt(fabs(fitData.vz_w[n][n] * fitData.vz_w[k][k])), 3), 10);
         }
 
+        // Append the part of the closing parenthesis
         if (!n)
             sCovMatrix += " \\\n";
         else if (n + 1 == paramsMapSize)
@@ -1966,19 +1912,25 @@ static string getParameterTable(FittingData& fitData, mu::varmap_type& paramsMap
     auto pItem = paramsMap.begin();
     string sParameterTable;
 
+    // Construct the fitting parameter table as a single string
     for (size_t n = 0; n < paramsMap.size(); n++)
 	{
 		if (pItem == paramsMap.end())
 			break;
 
+        // The terminal requires some indentation
         if (!forFitLog)
             sParameterTable += "|   ";
 
+        // Write the single fitting parameter line including
+        // parameter name, initial and final value and errors
         sParameterTable += pItem->first + "    "
             + strfill(toString(vInitialVals[n], _option), (windowSize - 32) / 2 + windowSize % 2 - pItem->first.length())
             + strfill(toString(*(pItem->second), _option), (windowSize - 50) / 2)
             + strfill(sPMSign + " " + toString(sqrt(abs(fitData.vz_w[n][n])), 5), 16);
 
+        // Append the percentage of error compared to the final
+        // value if the final value does exist
         if (fitData.vz_w[n][n])
             sParameterTable += " " + strfill("(" + toString(abs(sqrt(abs(fitData.vz_w[n][n] / (*(pItem->second)))) * 100.0), 4) + "%)", 16) + "\n";
         else
@@ -1991,26 +1943,31 @@ static string getParameterTable(FittingData& fitData, mu::varmap_type& paramsMap
 }
 
 
-// This static function calculates the sum of the percentual
+// This static function calculates the average of the percentual
 // fitting errors and creates the variables for storing the
 // fitting errors for each parameter for further calculations
-static double calculatePercentageSumAndCreateParserVariables(FittingData& fitData, mu::varmap_type& paramsMap, double dChisq)
+static double calculatePercentageAvgAndCreateParserVariables(FittingData& fitData, mu::varmap_type& paramsMap, double dChisq)
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     string sErrors = "";
 	auto pItem = paramsMap.begin();
-	double dErrorPercentageSum = 0.0;
+	double dAverageErrorPercentage = 0.0;
 
+	// Go through all fitting parameters and summarize the
+	// percentual errors and construct error variables, if the
+	// user required them
 	for (unsigned int n = 0; n < paramsMap.size(); n++)
 	{
 		if (pItem == paramsMap.end())
 			break;
 
+        // Add the percentage value
 		if (fitData.vz_w[n][n])
 		{
-			dErrorPercentageSum += abs(sqrt(abs(fitData.vz_w[n][n] / (*(pItem->second)))) * 100.0);
+			dAverageErrorPercentage += abs(sqrt(abs(fitData.vz_w[n][n] / (*(pItem->second)))) * 100.0);
 		}
 
+		// Add a constructed variable containing the error value
 		if (fitData.bSaveErrors)
 		{
 			sErrors += pItem->first + "_error = " + toCmdString(sqrt(abs(fitData.vz_w[n][n]))) + ",";
@@ -2019,8 +1976,10 @@ static double calculatePercentageSumAndCreateParserVariables(FittingData& fitDat
 		++pItem;
 	}
 
-	dErrorPercentageSum /= (double)paramsMap.size();
+	// Devide the sum to obtain the average value
+	dAverageErrorPercentage /= (double)paramsMap.size();
 
+	// Create the error variables and the chi variable
 	if (fitData.bSaveErrors)
 	{
 		sErrors.pop_back();
@@ -2031,13 +1990,13 @@ static double calculatePercentageSumAndCreateParserVariables(FittingData& fitDat
 	_parser.SetExpr("chi = " + toCmdString(sqrt(dChisq)));
 	_parser.Eval();
 
-	return dErrorPercentageSum;
+	return dAverageErrorPercentage;
 }
 
 
 // This static function returns the fitting analysis depending
 // upon the chi^2 value and the sum of the percentual errors
-static string getFitAnalysis(Fitcontroller& _fControl, FittingData& fitData, double dNormChisq, double dErrorPercentageSum, bool noOverfitting)
+static string getFitAnalysis(Fitcontroller& _fControl, FittingData& fitData, double dNormChisq, double dAverageErrorPercentage, bool noOverfitting)
 {
     if (fitData.nFitVars & 2)
 		dNormChisq = sqrt(dNormChisq);
@@ -2052,22 +2011,22 @@ static string getFitAnalysis(Fitcontroller& _fControl, FittingData& fitData, dou
 		{
 			if (fitData.bUseErrors)
 			{
-				if (log10(dNormChisq) > -1.0 && log10(dNormChisq) < 0.5 && dErrorPercentageSum < 50.0)
+				if (log10(dNormChisq) > -1.0 && log10(dNormChisq) < 0.5 && dAverageErrorPercentage < 50.0)
 					return _lang.get("PARSERFUNCS_FIT_GOOD_W_ERROR");
-				else if (log10(dNormChisq) <= -1.0 && dErrorPercentageSum < 20.0)
+				else if (log10(dNormChisq) <= -1.0 && dAverageErrorPercentage < 20.0)
 					return _lang.get("PARSERFUNCS_FIT_BETTER_W_ERROR");
-				else if (log10(dNormChisq) >= 0.5 && log10(dNormChisq) < 1.5 && dErrorPercentageSum < 100.0)
+				else if (log10(dNormChisq) >= 0.5 && log10(dNormChisq) < 1.5 && dAverageErrorPercentage < 100.0)
 					return _lang.get("PARSERFUNCS_FIT_NOT_GOOD_W_ERROR");
 				else
 					return _lang.get("PARSERFUNCS_FIT_BAD_W_ERROR");
 			}
 			else
 			{
-				if (log10(dNormChisq) < -3.0 && dErrorPercentageSum < 20.0)
+				if (log10(dNormChisq) < -3.0 && dAverageErrorPercentage < 20.0)
 					return _lang.get("PARSERFUNCS_FIT_GOOD_WO_ERROR");
-				else if (log10(dNormChisq) < 0.0 && dErrorPercentageSum < 50.0)
+				else if (log10(dNormChisq) < 0.0 && dAverageErrorPercentage < 50.0)
 					return _lang.get("PARSERFUNCS_FIT_IMPROVABLE_WO_ERROR");
-				else if (log10(dNormChisq) >= 0.0 && log10(dNormChisq) < 0.5 && dErrorPercentageSum < 100.0)
+				else if (log10(dNormChisq) >= 0.0 && log10(dNormChisq) < 0.5 && dAverageErrorPercentage < 100.0)
 					return _lang.get("PARSERFUNCS_FIT_NOT_GOOD_WO_ERROR");
 				else
 					return _lang.get("PARSERFUNCS_FIT_BAD_WO_ERROR");
@@ -2091,6 +2050,7 @@ static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFi
 
     oTeXExport.open(sTeXExportFile.c_str(), ios_base::trunc);
 
+    // Ensure that the file stream can be opened
     if (oTeXExport.fail())
     {
         oTeXExport.close();
@@ -2098,6 +2058,7 @@ static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFi
         throw SyntaxError(SyntaxError::CANNOT_OPEN_TARGET, sCmd, SyntaxError::invalid_position, sTeXExportFile);
     }
 
+    // Write the headline to the TeX file
     oTeXExport << "%\n% " << _lang.get("OUTPUT_PRINTLEGAL_TEX") << "\n%" << endl;
     oTeXExport << "\\section{" << _lang.get("PARSERFUNCS_FIT_HEADLINE") << ": " << getTimeStamp(false)  << "}" << endl;
     oTeXExport << "\\begin{itemize}" << endl;
@@ -2122,6 +2083,7 @@ static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFi
     oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_ALGORITHM_SETTINGS", toString(fitData.dPrecision, 5), toString(fitData.nMaxIterations)) << endl;
     oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_ITERATIONS", toString(_fControl.getIterations())) << endl;
 
+    // Write the calculated fitting result values to the TeX file
     if (nSize != paramsMap.size() && !(fitData.nFitVars & 2))
     {
         string sChiReplace = _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7));
@@ -2142,8 +2104,11 @@ static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFi
         oTeXExport << "\t\\item " << sChiReplace << endl;
         oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) << endl;
     }
+
+    // Start the table for the fitting parameters
     oTeXExport << "\\end{itemize}" << endl << "\\begin{table}[htb]" << endl << "\t\\centering\n\t\\begin{tabular}{cccc}" << endl << "\t\t\\toprule" << endl;
 
+    // Write the headline for the fitting parameters
     if (fitData.bUseErrors)
         oTeXExport << "\t\t" << _lang.get("PARSERFUNCS_FIT_PARAM") << " & "
                    << _lang.get("PARSERFUNCS_FIT_INITIAL") << " & "
@@ -2161,6 +2126,7 @@ static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFi
 	string sErrors = "";
 	string sPMSign = " ";
 
+	// Write the fitting parameters linewise to the table
 	for (unsigned int n = 0; n < paramsMap.size(); n++)
 	{
 		if (pItem == paramsMap.end())
@@ -2171,6 +2137,8 @@ static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFi
                    << *(pItem->second) << "$ & $\\pm"
                    << sqrt(abs(fitData.vz_w[n][n]));
 
+        // Append the percentual error value, if the current parameter
+        // is non-zero.
         if (fitData.vz_w[n][n])
         {
             oTeXExport << " \\quad (" + toString(abs(sqrt(abs(fitData.vz_w[n][n] / (*(pItem->second)))) * 100.0), 4) + "\\%)$\\\\" << endl;
@@ -2181,11 +2149,12 @@ static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFi
 		++pItem;
 	}
 
+	// Close the fitting parameter table
     oTeXExport << "\t\t\\bottomrule" << endl << "\t\\end{tabular}" << endl << "\\end{table}" << endl;
 
+    // Write the correlation matrix
 	if (paramsMap.size() > 1 && paramsMap.size() != nSize)
 	{
-
         oTeXExport << endl << "\\subsection{" << _lang.get("PARSERFUNCS_FIT_CORRELMAT_HEAD") << "}" << endl;
         oTeXExport << "\\[" << endl << "\t\\begin{pmatrix}" << endl;
 

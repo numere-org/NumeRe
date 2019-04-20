@@ -31,6 +31,8 @@ namespace NumeRe
     // Private cluster copy assignment function
     void Cluster::assign(const Cluster& cluster)
     {
+        bSortCaseInsensitive = false;
+
         // Clear the contents first
         clear();
 
@@ -47,6 +49,8 @@ namespace NumeRe
     // Private double vector assign ment function
     void Cluster::assign(const vector<double>& vVals)
     {
+        bSortCaseInsensitive = false;
+
         // clear the contents first
         clear();
 
@@ -60,6 +64,8 @@ namespace NumeRe
     // Private string vector assignment function
     void Cluster::assign(const vector<string>& vStrings)
     {
+        bSortCaseInsensitive = false;
+
         // Clear the contents first
         clear();
 
@@ -123,6 +129,73 @@ namespace NumeRe
             else
                 vClusterArray[_idx.nI[0] + i]->setDouble(nNum == 1 ? data[0] : data[i]);
         }
+    }
+
+    // This private member function is an override for the
+    // sorter object
+    int Cluster::compare(int i, int j, int col)
+    {
+        if (isString() || isMixed())
+        {
+            if (bSortCaseInsensitive)
+            {
+                if (toLowerCase(vClusterArray[i]->getString()) < toLowerCase(vClusterArray[j]->getString()))
+                    return -1;
+
+                if (toLowerCase(vClusterArray[i]->getString()) == toLowerCase(vClusterArray[j]->getString()))
+                    return 0;
+            }
+            else
+            {
+                if (vClusterArray[i]->getString() < vClusterArray[j]->getString())
+                    return -1;
+
+                if (vClusterArray[i]->getString() == vClusterArray[j]->getString())
+                    return 0;
+            }
+
+            return 1;
+        }
+        else if (isDouble())
+        {
+            if (vClusterArray[i]->getDouble() < vClusterArray[j]->getDouble())
+                return -1;
+
+            if (vClusterArray[i]->getDouble() == vClusterArray[j]->getDouble())
+                return 0;
+
+            return 1;
+        }
+
+        return 0;
+    }
+
+    // This private member function is an override for the
+    // sorter object
+    bool Cluster::isValue(int line, int col)
+    {
+        if (vClusterArray[line]->getType() == ClusterItem::ITEMTYPE_DOUBLE && !isnan(vClusterArray[line]->getDouble()))
+            return true;
+
+        if (vClusterArray[line]->getType() == ClusterItem::ITEMTYPE_STRING && vClusterArray[line]->getString() != "\"\"")
+            return true;
+
+        return false;
+    }
+
+    // This private member function reorders the elements in the
+    // cluster based upon the passed index vector
+    void Cluster::reorderElements(vector<int> vIndex, int i1, int i2)
+    {
+        vector<ClusterItem*> vSortVector = vClusterArray;
+
+        // Copy the contents directly from the
+        // prepared in the new order
+        for (int i = 0; i <= i2-i1; i++)
+        {
+            vClusterArray[i+i1] = vSortVector[vIndex[i]];
+        }
+
     }
 
     // This member function appends an arbitrary cluster
@@ -544,6 +617,125 @@ namespace NumeRe
         sVector.back() = '}';
 
         return sVector;
+    }
+
+    // This public member function provides access to the sorting
+    // algorithm for the cluster object
+    vector<int> Cluster::sortElements(long long int i1, long long int i2, const string& sSortingExpression)
+    {
+        if (!vClusterArray.size())
+            return vector<int>();
+
+        bool bReturnIndex = false;
+        bSortCaseInsensitive = false;
+        int nSign = 1;
+        vector<int> vIndex;
+
+        // Look for command line parameters
+        if (matchParams(sSortingExpression, "desc"))
+            nSign = -1;
+
+        if (matchParams(sSortingExpression, "ignorecase"))
+            bSortCaseInsensitive = true;
+
+        if (matchParams(sSortingExpression, "index"))
+            bReturnIndex = true;
+
+        // Prepare the indices
+        if (i2 == -1)
+            i2 = i1;
+
+        // Create the sorting index
+        for (int i = i1; i <= i2; i++)
+            vIndex.push_back(i);
+
+        // Sort everything
+        if (!qSort(&vIndex[0], i2-i1+1, 0, 0, i2-i1, nSign))
+        {
+            throw SyntaxError(SyntaxError::CANNOT_SORT_DATA, "cluster{} " + sSortingExpression, SyntaxError::invalid_position);
+        }
+
+        // If the sorting index is requested,
+        // then only sort the first column and return
+        if (!bReturnIndex)
+        {
+            reorderElements(vIndex, i1, i2);
+        }
+        else
+        {
+            // If the index was requested, increment every index by one
+            for (int i = 0; i <= i2-i1; i++)
+                vIndex[i]++;
+        }
+
+        if (!bReturnIndex)
+            return vector<int>();
+
+        return vIndex;
+    }
+
+    // This public member function erases elements located from
+    // the index i1 to i2
+    void Cluster::deleteItems(long long int i1, long long int i2)
+    {
+        if (i2 >= vClusterArray.size())
+            i2 = vClusterArray.size()-1;
+
+        // If everything shall be erased, use the
+        // "clear()" function
+        if (!i1 && i2+1 == vClusterArray.size())
+        {
+            clear();
+            return;
+        }
+
+        // Delete the cluster items first and
+        // set the pointer to a nullpointer
+        for (long long int i = i1; i < i2; i++)
+        {
+            delete vClusterArray[i];
+            vClusterArray[i] = nullptr;
+        }
+
+        auto iter = vClusterArray.begin();
+
+        // Remove all nullpointers from the array
+        while (iter != vClusterArray.end())
+        {
+            if (!(*iter))
+                iter = vClusterArray.erase(iter);
+            else
+                ++iter;
+        }
+    }
+
+    // This public member function erases elements located from
+    // the index i1 to i2
+    void Cluster::deleteItems(const vector<long long int>& vLines)
+    {
+        // Delete the cluster items first and
+        // set the pointer to a nullpointer
+        for (size_t i = 0; i < vLines.size(); i++)
+        {
+            if (vLines[i] < 0 || vLines[i] >= vClusterArray.size())
+                continue;
+
+            if (vClusterArray[vLines[i]])
+                delete vClusterArray[vLines[i]];
+
+            vClusterArray[vLines[i]] = nullptr;
+        }
+
+        auto iter = vClusterArray.begin();
+
+        // Remove all nullpointers from the array
+        while (iter != vClusterArray.end())
+        {
+            if (!(*iter))
+                iter = vClusterArray.erase(iter);
+            else
+                ++iter;
+        }
     }
 
     //
@@ -1249,7 +1441,7 @@ namespace NumeRe
     // calling function
     string ClusterManager::createTemporaryCluster()
     {
-        string sTemporaryClusterName = "_~~TEMPCLUSTER[" + toString(mClusterMap.size()) + "]_";
+        string sTemporaryClusterName = "_~~TEMPCLUSTER_" + toString(mClusterMap.size()) + "_";
         mClusterMap[sTemporaryClusterName] = Cluster();
 
         return sTemporaryClusterName + "{}";
@@ -1264,7 +1456,7 @@ namespace NumeRe
 
         while (iter != mClusterMap.end())
         {
-            if (iter->first.substr(0, 14) == "_~~TEMPCLUSTER")
+            if (iter->first.substr(0, 15) == "_~~TEMPCLUSTER_")
             {
                 iter = mClusterMap.erase(iter);
             }

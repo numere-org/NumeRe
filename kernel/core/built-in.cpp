@@ -4151,19 +4151,19 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			if (_data.containsTablesOrClusters(sCmd))
 			{
 				if (matchParams(sCmd, "ignore") || matchParams(sCmd, "i"))
+                {
 					if (deleteCacheEntry(sCmd, _parser, _data, _option))
 					{
 						if (_option.getSystemPrintStatus())
 							NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_DELETE_SUCCESS"), _option) );
-						//NumeReKernel::print(LineBreak("|-> Element(e) wurde(n) erfolgreich gelöscht.", _option) );
 					}
 					else
-						throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, SyntaxError::invalid_position);
-				//NumeReKernel::print(LineBreak("|-> FEHLER: Element(e) konnte(n) nicht gelöscht werden!", _option) );
+						throw SyntaxError(SyntaxError::CANNOT_DELETE_ELEMENTS, sCmd, SyntaxError::invalid_position);
+                }
 				else
 				{
 					NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_DELETE_CONFIRM"), _option) );
-					//NumeReKernel::print(LineBreak("|-> Ein oder mehrere Elemente werden dadurch unwiderruflich gelöscht!$Sicher? (j/n)", _option) );
+
 					do
 					{
 						NumeReKernel::printPreFmt("|\n|<- ");
@@ -4171,6 +4171,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						StripSpaces(sArgument);
 					}
 					while (!sArgument.length());
+
 					if (sArgument.substr(0, 1) == _lang.YES())
 						deleteCacheEntry(sCmd, _parser, _data, _option);
 					else
@@ -4179,9 +4180,11 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						return 1;
 					}
 				}
+
 				if (!_data.isValidCache())
 				{
 					sArgument = _option.getSavePath() + "/cache.tmp";
+
 					if (BI_FileExists(sArgument))
 					{
 						remove(sArgument.c_str());

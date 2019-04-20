@@ -3581,4 +3581,123 @@ size_t qSortDouble(double* dArray, size_t nlength)
 	return 0;
 }
 
+// This static function replaces all search-oriented methods
+// in the current string variable access
+static void replaceSearchMethods(string& sLine, size_t nPos, size_t nFinalPos, const string& sReplacement, const string& sMethod, string& sArgument)
+{
+    // Prepare the argument (use empty one or construct one
+    // from argument and variable value)
+    if (sArgument == "()")
+        sArgument = "(" + sReplacement + ", " + sReplacement + ")";
+    else if (sArgument.find(',') == string::npos)
+        sArgument.insert(sArgument.length()-1, ", " + sReplacement + "");
+    else
+    {
+        string sTemp = "(";
+        sArgument.erase(0,1);
+        sTemp += getNextArgument(sArgument, true);
+        sTemp += ", " + sReplacement;
 
+        if (sArgument[sArgument.find_first_not_of(' ')] == ')')
+            sArgument = sTemp + ")";
+        else
+            sArgument = sTemp + ", " + sArgument;
+    }
+
+    // Replace the method with its standard function signature
+    if (sMethod == "fnd")
+        sLine.replace(nPos, nFinalPos-nPos, "strfnd" + sArgument);
+    else if (sMethod == "rfnd")
+        sLine.replace(nPos, nFinalPos-nPos, "strrfnd" + sArgument);
+    else if (sMethod == "mtch")
+        sLine.replace(nPos, nFinalPos-nPos, "strmatch" + sArgument);
+    else if (sMethod == "rmtch")
+        sLine.replace(nPos, nFinalPos-nPos, "strrmatch" + sArgument);
+    else if (sMethod == "nmtch")
+        sLine.replace(nPos, nFinalPos-nPos, "str_not_match" + sArgument);
+    else if (sMethod == "nrmtch")
+        sLine.replace(nPos, nFinalPos-nPos, "str_not_rmatch" + sArgument);
+}
+
+// This static function replaces all access-oriented methods
+// and the string splitter in the current string variable access
+static void replaceAccessMethods(string& sLine, size_t nPos, size_t nFinalPos, const string& sReplacement, const string& sMethod, string& sArgument)
+{
+    // Prepare the argument (use empty one or construct one
+    // from argument and variable value)
+    if (sArgument == "()")
+        sArgument = "(" + sReplacement + ", 1)";
+    else
+        sArgument.insert(1, sReplacement + ", ");
+
+    // Replace the method with its standard function signature
+    if (sMethod == "at")
+        sLine.replace(nPos, nFinalPos-nPos, "char" + sArgument);
+    else if (sMethod == "sub")
+        sLine.replace(nPos, nFinalPos-nPos, "substr" + sArgument);
+    else if (sMethod == "splt")
+        sLine.replace(nPos, nFinalPos-nPos, "split" + sArgument);
+}
+
+// This function searches the indicated string
+// variable occurence for possible string methods and replaces
+// them with the standard string function.
+void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const string& sReplacement)
+{
+    // Does the string variable name end with a dot?
+    if (sLine[nPos+nLength] != '.')
+    {
+        sLine.replace(nPos, nLength, sReplacement);
+        return;
+    }
+
+    static const string sDELIMITER = "+-*/ ={}^&|!,\\%#?:\";";
+    string sMethod = "";
+    string sArgument = "";
+    size_t nFinalPos = 0;
+
+    // Find the end of the appended method. This is either
+    // the closing parenthesis or a delimiter character. Split
+    // the found method into its name and its argument
+    for (size_t i = nPos+nLength+1; i < sLine.length(); i++)
+    {
+        if (sLine[i] == '(')
+        {
+            // Method ends with closing parenthesis
+            sMethod = sLine.substr(nPos+nLength+1, i-(nPos+nLength+1));
+            sArgument = sLine.substr(i, getMatchingParenthesis(sLine.substr(i))+1);
+            nFinalPos = i += getMatchingParenthesis(sLine.substr(i))+1;
+            break;
+        }
+        else if (sDELIMITER.find(sLine[i]) != string::npos)
+        {
+            // Method ends with a delimiter
+            sMethod = sLine.substr(nPos+nLength+1, i-(nPos+nLength+1));
+            nFinalPos = i;
+            break;
+        }
+    }
+
+    // If the argument list is empty, use an empty
+    // parenthesis instead
+    if (!sArgument.length())
+        sArgument = "()";
+
+    // This if-else constrct replaces the found
+    // method occurences with their standard string function
+    if (sMethod == "len")
+    {
+        // String length methods
+        sLine.replace(nPos, nFinalPos-nPos, "strlen(" + sReplacement + ")");
+    }
+    else if (sMethod == "at" || sMethod == "sub" || sMethod == "splt")
+    {
+        // Access methods and splitter
+        replaceAccessMethods(sLine, nPos, nFinalPos, sReplacement, sMethod, sArgument);
+    }
+    else if (sMethod == "fnd" || sMethod == "rfnd" || sMethod == "mtch" || sMethod == "rmtch" || sMethod == "nmtch" || sMethod == "nrmtch")
+    {
+        // All search-oriented methods
+        replaceSearchMethods(sLine, nPos, nFinalPos, sReplacement, sMethod, sArgument);
+    }
+}

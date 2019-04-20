@@ -24,6 +24,7 @@
 #include <map>
 #include <cmath>
 #include "../utils/tools.hpp"
+#include "sorter.hpp"
 
 using namespace std;
 
@@ -140,19 +141,23 @@ namespace NumeRe
     // are stored as pointers to the abstract cluster item. This
     // object can be constructed from many different base items
     // and has more or less all memory-like functions.
-    class Cluster
+    class Cluster : public Sorter
     {
         private:
             vector<ClusterItem*> vClusterArray;
+            bool bSortCaseInsensitive;
 
             void assign(const Cluster& cluster);
             void assign(const vector<double>& vVals);
             void assign(const vector<string>& vStrings);
             void assignVectorResults(Indices _idx, int nNum, double* data);
             void assignIndexResults(Indices _idx, int nNum, double* data);
+            virtual int compare(int i, int j, int col) override;
+            virtual bool isValue(int line, int col) override;
+            void reorderElements(vector<int> vIndex, int i1, int i2);
 
         public:
-            Cluster() {}
+            Cluster() {bSortCaseInsensitive = false;}
             Cluster(const Cluster& cluster)
             {
                 assign(cluster);
@@ -217,6 +222,10 @@ namespace NumeRe
 
             string getVectorRepresentation() const;
             string getShortVectorRepresentation() const;
+
+            vector<int> sortElements(long long int i1, long long int i2, const string& sSortingExpression);
+            void deleteItems(long long int i1, long long int i2);
+            void deleteItems(const vector<long long int>& vLines);
 
             double std(const vector<long long int>& _vLine);
             double avg(const vector<long long int>& _vLine);

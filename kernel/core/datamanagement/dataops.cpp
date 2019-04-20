@@ -641,10 +641,100 @@ void clear_cache(Datafile& _data, Settings& _option, bool bIgnore)
 	return;
 }
 
+// This static function searches for the named table in the cache
+// map, evaluates the specified indices and deletes the corresponding
+// contents from the table
+static bool searchAndDeleteTable(const string& sCache, Parser& _parser, Datafile& _data, const Settings& _option)
+{
+    for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
+    {
+        if (sCache.substr(0, sCache.find('(')) == iter->first)
+        {
+            // Cache was found
+            // Get the indices from the cache expression
+            Indices _iDeleteIndex = parser_getIndices(sCache, _parser, _data, _option);
+
+            // Check the indices
+            if (!isValidIndexSet(_iDeleteIndex))
+                return false;
+
+            // Evaluate the indices
+            if (_iDeleteIndex.nI[1] == -2)
+                _iDeleteIndex.nI[1] = _data.getLines(iter->first, false) - 1;
+            else if (_iDeleteIndex.nI[1] != -1)
+                _iDeleteIndex.nI[1] += 1;
+
+            if (_iDeleteIndex.nJ[1] == -2)
+                _iDeleteIndex.nJ[1] = _data.getCols(iter->first) - 1;
+            else if (_iDeleteIndex.nJ[1] != -1)
+                _iDeleteIndex.nJ[1] += 1;
+
+            // Delete the section identified by the cache expression
+            if (!_iDeleteIndex.vI.size() && !_iDeleteIndex.vJ.size())
+            {
+                // The indices are casual
+                _data.deleteBulk(iter->first, _iDeleteIndex.nI[0], _iDeleteIndex.nI[1], _iDeleteIndex.nJ[0], _iDeleteIndex.nJ[1]);
+            }
+            else
+            {
+                // The indices are vectors
+                _data.deleteBulk(iter->first, _iDeleteIndex.vI, _iDeleteIndex.vJ);
+            }
+
+            // Return true
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// This static function searches for the named cluster in the cluster
+// map, evaluates the specified indices and deletes the corresponding
+// contents from the cluster
+static bool searchAndDeleteCluster(const string& sCluster, Parser& _parser, Datafile& _data, const Settings& _option)
+{
+    for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
+    {
+        if (sCluster.substr(0, sCluster.find('{')) == iter->first)
+        {
+            // Cache was found
+            // Get the indices from the cache expression
+            Indices _iDeleteIndex = parser_getIndices(sCluster, _parser, _data, _option);
+
+            // Check the indices
+            if (!isValidIndexSet(_iDeleteIndex))
+                return false;
+
+            // Evaluate the indices
+            if (_iDeleteIndex.nI[1] == -2)
+                _iDeleteIndex.nI[1] = _data.getCluster(iter->first).size() - 1;
+            else if (_iDeleteIndex.nI[1] != -1)
+                _iDeleteIndex.nI[1] += 1;
+
+            // Delete the section identified by the cache expression
+            if (!_iDeleteIndex.vI.size() && !_iDeleteIndex.vJ.size())
+            {
+                // The indices are casual
+                _data.getCluster(iter->first).deleteItems(_iDeleteIndex.nI[0], _iDeleteIndex.nI[1]);
+            }
+            else
+            {
+                // The indices are vectors
+                _data.getCluster(iter->first).deleteItems(_iDeleteIndex.vI);
+            }
+
+            // Return true
+            return true;
+        }
+    }
+
+    return false;
+}
+
 // 20. Loescht ein der mehrere Eintraege im Cache
 bool deleteCacheEntry(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
 {
-	Indices _iDeleteIndex;
 	bool bSuccess = false;
 
 	// Remove the command from the command line
@@ -662,48 +752,14 @@ bool deleteCacheEntry(string& sCmd, Parser& _parser, Datafile& _data, const Sett
 
         // Try to find the current cache in the list of available caches
 		StripSpaces(sCache);
-		for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-		{
-			if (sCache.substr(0, sCache.find('(')) == iter->first)
-			{
-			    // Cache was found
-			    // Get the indices from the cache expression
-				_iDeleteIndex = parser_getIndices(sCache, _parser, _data, _option);
 
-				// Check the indices
-				if ((_iDeleteIndex.nI[0] == -1 && !_iDeleteIndex.vI.size()) || (_iDeleteIndex.nJ[0] == -1 && !_iDeleteIndex.vJ.size()))
-					return false;
+		// Is it a normal table?
+		if (!_data.isCluster(sCache) && searchAndDeleteTable(sCache, _parser, _data, _option))
+            bSuccess = true;
 
-                // Evaluate the indices
-				_data.setCacheStatus(true);
-				if (_iDeleteIndex.nI[1] == -2)
-					_iDeleteIndex.nI[1] = _data.getLines(iter->first, false) - 1;
-				else if (_iDeleteIndex.nI[1] != -1)
-					_iDeleteIndex.nI[1] += 1;
-				if (_iDeleteIndex.nJ[1] == -2)
-					_iDeleteIndex.nJ[1] = _data.getCols(iter->first) - 1;
-				else if (_iDeleteIndex.nJ[1] != -1)
-					_iDeleteIndex.nJ[1] += 1;
-
-                // Delete the section identified by the cache expression
-				if (!_iDeleteIndex.vI.size() && !_iDeleteIndex.vJ.size())
-                {
-                    // The indices are casual
-					_data.deleteBulk(iter->first, _iDeleteIndex.nI[0], _iDeleteIndex.nI[1], _iDeleteIndex.nJ[0], _iDeleteIndex.nJ[1]);
-                }
-				else
-				{
-				    // The indices are vectors
-					_data.deleteBulk(iter->first, _iDeleteIndex.vI, _iDeleteIndex.vJ);
-				}
-
-				_data.setCacheStatus(false);
-
-				// Set the boolean to true and break the current for loop
-				bSuccess = true;
-				break;
-			}
-		}
+        // Is it a cluster?
+		if (_data.isCluster(sCache) && searchAndDeleteCluster(sCache, _parser, _data, _option))
+            bSuccess = true;
 	}
 
 	// return the value of the boolean flag
@@ -1163,6 +1219,7 @@ static bool sortStrings(string& sCmd, Indices& _idx, Parser& _parser, Datafile& 
 	{
 	    // Transform the integer indices into doubles
 		vector<double> vDoubleSortIndex;
+
 		for (size_t i = 0; i < vSortIndex.size(); i++)
 			vDoubleSortIndex.push_back(vSortIndex[i]);
 
@@ -1177,6 +1234,40 @@ static bool sortStrings(string& sCmd, Indices& _idx, Parser& _parser, Datafile& 
 	return true;
 }
 
+// This static function sorst clusters and is called by sortData, if the selected data object
+// equals a cluster identifier
+static bool sortClusters(string& sCmd, const string& sCluster, Indices& _idx, Parser& _parser, Datafile& _data)
+{
+    vector<int> vSortIndex;
+    NumeRe::Cluster& cluster = _data.getCluster(sCluster);
+
+    // Evalulate special index values
+	if (_idx.nI[1] == -2)
+		_idx.nI[1] = cluster.size() - 1;
+
+    // Perform the actual sorting operation
+    // The member function will be able to handle the remaining command line parameters by itself
+	vSortIndex = cluster.sortElements(_idx.nI[0], _idx.nI[1], sCmd.substr(5 + sCluster.length()));
+
+	// If the sorting index contains elements, the user had requested them
+	if (vSortIndex.size())
+	{
+	    // Transform the integer indices into doubles
+		vector<double> vDoubleSortIndex;
+
+		for (size_t i = 0; i < vSortIndex.size(); i++)
+			vDoubleSortIndex.push_back(vSortIndex[i]);
+
+        // Set the vector name and set the vector for the parser
+		sCmd = "_~sortIndex[]";
+		_parser.SetVectorVar(sCmd, vDoubleSortIndex);
+	}
+	else
+		sCmd.clear(); // simply clear, if the user didn't request a sorting index
+
+    // Return true
+	return true;
+}
 
 // This function is a wrapper for the corresponding member function of the Datafile object
 bool sortData(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
@@ -1192,13 +1283,19 @@ bool sortData(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions
 	if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
 		throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, "", _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1]);
 
-	sCache.erase(sCache.find('('));
+	sCache.erase(sCache.find_first_of("({"));
 
 	// If the current cache equals to "string", leave the function at
 	// this point and redirect the control to the string sorting
 	// function
 	if (sCache == "string")
         return sortStrings(sCmd, _idx, _parser, _data);
+
+    // If the current cache equals a cluster, leave the function at
+	// this point and redirect the control to the cluster sorting
+	// function
+	if (_data.isCluster(sCache))
+        return sortClusters(sCmd, sCache, _idx, _parser, _data);
 
 	// Evalulate special index values
 	if (_idx.nI[1] == -2)
