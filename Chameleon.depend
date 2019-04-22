@@ -2135,7 +2135,7 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1555259534 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1555838233 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	"../terminal/wxterm.h"
 	"../../common/datastructures.h"
 	"../../kernel/syntax.hpp"
@@ -2147,7 +2147,7 @@
 	<wx/thread.h>
 	<wx/buffer.h>
 
-1555143067 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stc\stc.h
+1555919612 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stc\stc.h
 	"wx/defs.h"
 	"wx/control.h"
 	"wx/dnd.h"
@@ -3345,7 +3345,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1555328777 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1555844589 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3702,7 +3702,7 @@
 	"wx/stream.h"
 	"wx/convauto.h"
 
-1541753608 source:d:\cpp\numere-source\trunk\gui\numerenotebook.cpp
+1555842949 source:d:\cpp\numere-source\trunk\gui\numerenotebook.cpp
 	"../common/CommonHeaders.h"
 	"NumeReNotebook.h"
 	"NumeReWindow.h"
@@ -3714,7 +3714,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1555015535 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1555843151 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3990,7 +3990,7 @@
 
 1501083705 d:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1555747286 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1555856076 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 	"io/fileops.hpp"
@@ -4019,7 +4019,7 @@
 	"documentation.hpp"
 	"../../kernel.hpp"
 
-1543224221 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
+1555855774 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
 	"filesystem.hpp"
 	"../kernel.hpp"
 

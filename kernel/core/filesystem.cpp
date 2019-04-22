@@ -27,7 +27,7 @@ FileSystem::FileSystem()
 {
     sPath = "";
     sWhere = "";
-    sValidExtensions = ";.dat;.txt;.tmp;.def;.nscr;.png;.gif;.eps;.svg;.tex;.labx;.csv;.cache;.ndat;.nprc;.nlng;.log;.plugins;.hlpidx;.nhlp;.jdx;.dx;.jcm;.ibw;.ndb;.ods;.jpg;.bmp;.tga;.bps;.prc;.obj;.xyz;.stl;.json;.off;.pdf;.wav;.wave;.xls;.xlsx;.chm;";
+    sValidExtensions = ";.dat;.txt;.tmp;.def;.nscr;.png;.gif;.eps;.svg;.tex;.labx;.csv;.cache;.ndat;.nprc;.nlng;.log;.plugins;.hlpidx;.nhlp;.jdx;.dx;.jcm;.ibw;.ndb;.ods;.jpg;.bmp;.tga;.bps;.prc;.obj;.xyz;.stl;.json;.off;.pdf;.wav;.wave;.xls;.xlsx;.chm;.h;.hpp;.cxx;.cpp;.c;.m;";
     for (int i = 0; i < 7; i++)
     {
         sTokens[i][0] = "";

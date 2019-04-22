@@ -225,6 +225,6 @@ void NumeReNotebook::OnTabMiddleClicked( wxMouseEvent &event )
 	wxCommandEvent command;
 	command.SetId(ID_MENU_CLOSETAB);
 	command.SetEventType(wxEVT_MENU); //10019//wxEVT_MIDDLE_UP
-	/*m_parent->GetEventHandler()->*/m_top_parent->GetEventHandler()->ProcessEvent(command);
+	m_top_parent->GetEventHandler()->ProcessEvent(command);
 
 }

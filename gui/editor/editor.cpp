@@ -92,6 +92,7 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
 	EVT_STC_MARGINCLICK (-1, NumeReEditor::OnMarginClick)
 	EVT_STC_DRAG_OVER   (-1, NumeReEditor::OnDragOver)
 	EVT_STC_SAVEPOINTREACHED (-1, NumeReEditor::OnSavePointReached)
+	EVT_STC_SAVEPOINTLEFT (-1, NumeReEditor::OnSavePointLeft)
 	EVT_MENU			(ID_DEBUG_ADD_BREAKPOINT, NumeReEditor::OnAddBreakpoint)
 	EVT_MENU			(ID_DEBUG_REMOVE_BREAKPOINT, NumeReEditor::OnRemoveBreakpoint)
 	EVT_MENU			(ID_DEBUG_CLEAR_ALL_BREAKPOINTS, NumeReEditor::OnClearBreakpoints)
@@ -413,7 +414,6 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 
 	// Only mark the editor as saved, if the saving process was successful
 	markSaved();
-	EmptyUndoBuffer();
 	SetSavePoint();
 	UpdateProcedureViewer();
 
@@ -501,6 +501,8 @@ bool NumeReEditor::LoadFileText(wxString fileContents)
 	}
 
 	EmptyUndoBuffer();
+	SetSavePoint();
+	m_bSetUnsaved = false;
 
 	// determine and set EOL mode
 	int eolMode = -1;
@@ -1691,7 +1693,13 @@ void NumeReEditor::OnIdle(wxIdleEvent& event)
 void NumeReEditor::OnSavePointReached(wxStyledTextEvent& event)
 {
 	markSaved();
+	m_bSetUnsaved = false;
 	event.Skip();
+}
+
+void NumeReEditor::OnSavePointLeft(wxStyledTextEvent& event)
+{
+	SetUnsaved();
 }
 
 void NumeReEditor::ToggleCommentLine()
@@ -5012,6 +5020,7 @@ void NumeReEditor::markModified(int nLine)
 {
 	int nMarkSaved = 1 << (MARKER_SAVED);
 	int nMarkModified = 1 << (MARKER_MODIFIED);
+
 	while (this->MarkerGet(nLine) & nMarkSaved)
 		this->MarkerDelete(nLine, MARKER_SAVED);
 
@@ -5024,6 +5033,7 @@ void NumeReEditor::markSaved()
 	int nMarkModified = 1 << (MARKER_MODIFIED);
 	int nMarkSaved = 1 << (MARKER_SAVED);
 	int nNextLine = 0;
+
 	while ((nNextLine = this->MarkerNext(0, nMarkModified)) != -1)
 	{
 		this->MarkerDelete(nNextLine, MARKER_MODIFIED);
@@ -5031,6 +5041,7 @@ void NumeReEditor::markSaved()
 		if (!(this->MarkerGet(nNextLine) & nMarkSaved))
 			this->MarkerAdd(nNextLine, MARKER_SAVED);
 	}
+
 	this->MarkerDeleteAll(MARKER_MODIFIED);
 }
 

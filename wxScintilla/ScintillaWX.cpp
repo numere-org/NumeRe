@@ -493,7 +493,6 @@ void ScintillaWX::Copy() {
 
 void ScintillaWX::Paste() {
     pdoc->BeginUndoAction();
-    ClearSelection();
 
 #if wxUSE_DATAOBJ
     wxTextDataObject data;
@@ -515,9 +514,11 @@ void ScintillaWX::Paste() {
         text = wxEmptyString;
 #endif
         int len = strlen(buf);
-        int caretMain = sel.MainCaret();
-        pdoc->InsertString(caretMain, buf, len);
-        SetEmptySelection(caretMain + len);
+		
+		if (sel.IsRectangular())
+			PasteRectangular(sel.Last(), buf, len);
+		else
+			InsertPaste(SelectionPosition(sel.MainCaret()), buf, len);
     }
 #endif // wxUSE_DATAOBJ
 

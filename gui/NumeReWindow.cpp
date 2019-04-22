@@ -2562,7 +2562,7 @@ void NumeReWindow::PageHasChanged (int pageNr)
 
 	if ((int)m_book->GetPageCount() <= pageNr)
 	{
-		pageNr = pageNr - 1;
+		pageNr = m_book->GetPageCount() - 1;
 	}
 
 	// activate the selected page
@@ -2570,11 +2570,14 @@ void NumeReWindow::PageHasChanged (int pageNr)
 	{
         if (m_currentEd->AutoCompActive())
             m_currentEd->AutoCompCancel();
+
         if (m_currentEd->CallTipActive())
             m_currentEd->AdvCallTipCancel();
+
 		m_currentPage = pageNr;
 		m_currentEd = static_cast< NumeReEditor * > (m_book->GetPage (m_currentPage));
 		m_book->SetSelection(pageNr);
+
 		if (!m_book->GetMouseFocus())
             m_currentEd->SetFocus();
 	}
@@ -2592,6 +2595,7 @@ void NumeReWindow::PageHasChanged (int pageNr)
         m_procedureViewer->setCurrentEditor(m_currentEd);
 
 	m_book->Refresh();
+
 	if (m_currentEd != nullptr)
 	{
         wxMenu* view = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_VIEW")));
@@ -2599,13 +2603,14 @@ void NumeReWindow::PageHasChanged (int pageNr)
         view->Check(ID_MENU_DISPCTRLCHARS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_DISPCTRLCHARS));
         view->Check(ID_MENU_USETXTADV, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USETXTADV));
         view->Check(ID_MENU_USESECTIONS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
+
         view = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
         view->Check(ID_MENU_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
         view->Check(ID_MENU_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+
         m_currentEd->Refresh();
 
 		wxString tabText = m_book->GetPageText(m_currentPage);
-		wxString statusText;
 		// set the title of the main window according the current opened file
 		UpdateWindowTitle(tabText);
 
@@ -3576,7 +3581,6 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 
 	if(isSourceFile)
 	{
-		m_currentEd->EmptyUndoBuffer();
 		m_currentEd->SetSavePoint();
         m_currentEd->UpdateSyntaxHighlighting();
 		m_book->Refresh();
@@ -3724,8 +3728,10 @@ void NumeReWindow::ToolbarStatusUpdate()
         tb->EnableTool(ID_MENU_EXECUTE, true);
         tb->EnableTool(ID_MENU_STOP_EXECUTION, false);
     }
+
     if (!m_currentEd)
         return;
+
 	if (m_currentEd->getFileType() == FILE_NSCR || m_currentEd->getFileType() == FILE_NPRC || m_currentEd->getFileType() == FILE_MATLAB || m_currentEd->getFileType() == FILE_CPP)
 	{
         tb->EnableTool(ID_MENU_ADDEDITORBREAKPOINT, true);
@@ -3746,11 +3752,13 @@ void NumeReWindow::ToolbarStatusUpdate()
         tb->EnableTool(ID_MENU_INDENTONTYPE, false);
         tb->ToggleTool(ID_MENU_INDENTONTYPE, false);
 	}
+
 	if (m_currentEd->GetFileName().GetExt() == "m")
     {
         tb->EnableTool(ID_MENU_INDENTONTYPE, true);
         tb->ToggleTool(ID_MENU_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
     }
+
     tb->ToggleTool(ID_MENU_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
 }
 
@@ -3843,7 +3851,7 @@ void NumeReWindow::OnUpdateSaveUI()//wxUpdateUIEvent &event)
 	int tabNum = m_book->GetSelection();
 	wxString title = m_book->GetPageText(tabNum);
 
-	if(enable)
+	if (enable)
 	{
 		int tabNum = m_book->GetSelection();
 		wxString title = m_book->GetPageText(tabNum);
@@ -3866,10 +3874,12 @@ void NumeReWindow::OnUpdateSaveUI()//wxUpdateUIEvent &event)
             UpdateWindowTitle(title);
 		}
 	}
+
 	GetToolBar()->EnableTool(ID_MENU_SAVE, enable);
 
 	wxMenuBar* mb = GetMenuBar();
 	WXWidget handle = mb->GetHandle();
+
 	if(handle != NULL)
 	{
 		mb->FindItem(ID_MENU_SAVE)->Enable(enable);

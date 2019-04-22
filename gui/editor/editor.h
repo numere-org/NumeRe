@@ -121,6 +121,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void OnLoseFocus(wxFocusEvent& event);
 		void OnMouseDwell(wxStyledTextEvent& event);
 		void OnSavePointReached(wxStyledTextEvent& event);
+		void OnSavePointLeft(wxStyledTextEvent& event);
 		void ClearDblClkIndicator();
 		void MakeBraceCheck();
 		void MakeBlockCheck();

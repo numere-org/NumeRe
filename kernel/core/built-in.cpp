@@ -5675,6 +5675,13 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
 	    // Get the position after the equal sign
 		nPos = sReturn.find('=', nPos) + 1;
 
+		// Ignore equal signs in strings
+		if (isInQuotes(sReturn, nPos))
+        {
+            nPos++;
+            continue;
+        }
+
 		// jump over whitespaces
 		while (nPos < sReturn.length() - 1 && sReturn[nPos] == ' ')
 			nPos++;

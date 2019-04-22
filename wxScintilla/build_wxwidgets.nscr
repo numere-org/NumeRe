@@ -1,0 +1,29 @@
+#**********************************************************************************************
+ * SCRIPTNAME: build_wxwidgets 
+ * ============================================================================================
+ * Hinzugefügt: 2019-04-21, um 14:57:16 *#
+
+## The root paths needed for this script. Change the two upper
+## base paths to fit your configuration
+sCodeBasePath = "D:/CPP/numere-source/trunk/wxScintilla";
+sLibBasePath = "D:/TDM-GCC-32/wxWidgets-3.0.2";
+sLibSrcBasePath = sLibBasePath + "/src/stc";
+sLibIncludeBasePath = sLibBasePath + "/include/wx/stc";
+
+## Copy all files in the numere-source folder into the
+## wxWidgets target directory
+copy sCodeBasePath + "/stc.h" -target=sLibIncludeBasePath + "/*"
+copy sCodeBasePath + "/Catalogue.cxx" -target=sLibSrcBasePath + "/scintilla/src/*"
+copy sCodeBasePath + "/LexMatlab.cxx" -target=sLibSrcBasePath + "/scintilla/lexers/*"
+copy sCodeBasePath + "/LexOthers.cxx" -target=sLibSrcBasePath + "/scintilla/lexers/*"
+copy sCodeBasePath + "/SciLexer.h" -target=sLibSrcBasePath + "/scintilla/include/*"
+copy sCodeBasePath + "/ScintillaWX.cpp" -target=sLibSrcBasePath + "/*"
+
+## Run the build script
+execute "mingw32-make" -set params="SHELL=CMD.exe -j4 -f makefile.gcc BUILD=release UNICODE=1 SHARED=0" -wp=sLibBasePath + "/build/msw" wait
+
+
+#**Ende der Datei
+ * NumeRe: Framework für Numerische Rechnungen | Freie numerische Software unter der GNU GPL v3
+ * https://sites.google.com/site/numereframework/
+ **********************************************************************************************#
