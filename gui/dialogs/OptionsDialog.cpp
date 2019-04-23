@@ -224,6 +224,7 @@ void OptionsDialog::CreateConfigPage()
     m_ExtendedInfo = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXTENDEDINFO"));
     m_CustomLanguage = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_CUSTOMLANG"));
     m_ESCinScripts = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ESCINSCRIPTS"));
+    m_foldDuringLoading = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_FOLD_DURING_LOADING"));
     m_UseExternalViewer = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXTERNALVIEWER"));
     m_showToolbarText = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOW_TOOLBARTEXT"));
     m_caretBlinkTime = panel->CreateSpinControl(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_CARET_BLINK_TIME"), 100, 2000, 500);
@@ -237,6 +238,9 @@ void OptionsDialog::CreateConfigPage()
     m_UseLogfile = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_LOGFILE"));
     m_useExecuteCommand = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXECUTECOMMAND"));
     m_autosaveinterval = panel->CreateSpinControl(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_AUTOSAVE"), 10, 600, 30);
+
+    // Enable scrolling for this page, because it might be very large
+    panel->SetScrollbars(0, 20, 0, 200);
 
     // Add the grouped page to the notebook
     m_optionsNotebook->AddPage(panel, _guilang.get("GUI_OPTIONS_CONFIG"));
@@ -703,6 +707,7 @@ bool OptionsDialog::EvaluateOptions()
     m_options->SetFormatBeforeSaving(m_formatBeforeSaving->IsChecked());
     m_options->SetEditorFont(m_fontPicker->GetSelectedFont());
     m_options->SetKeepBackupFile(m_keepBackupFiles->IsChecked());
+    m_options->SetFoldDuringLoading(m_foldDuringLoading->IsChecked());
     m_options->SetDebuggerFocusLine(m_debuggerFocusLine->GetValue());
     m_options->SetShowGlobalVariables(m_debuggerShowGlobals->GetValue());
     m_options->SetShowLinesInStackTrace(m_debuggerShowLineNumbers->GetValue());
@@ -794,6 +799,7 @@ void OptionsDialog::InitializeDialog()
     m_backColor->Enable(!m_defaultBackground->GetValue());
     m_LaTeXRoot->SetValue(m_options->GetLaTeXRoot());
     m_keepBackupFiles->SetValue(m_options->GetKeepBackupFile());
+    m_foldDuringLoading->SetValue(m_options->GetFoldDuringLoading());
 
     m_debuggerFocusLine->SetValue(m_options->GetDebuggerFocusLine());
     m_debuggerDecodeArguments->SetValue(_option->getTryToDecodeProcedureArguments());

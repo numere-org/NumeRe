@@ -71,6 +71,7 @@ class Options
 		void SetShowModulesInStackTrace(bool show) {m_showModulesInStackTrace = show;}
 		void SetShowProcedureArguments(bool show) {m_showProcedureArguments = show;}
 		void SetShowGlobalVariables(bool show) {m_showGlobalVariables = show;}
+		void SetFoldDuringLoading(bool fold) {m_foldDuringLoading = fold;}
 
 		// Accessors:  (inlined)
 		wxString GetPscpApp() { return m_pscpProg; }
@@ -97,6 +98,7 @@ class Options
 		bool GetShowModulesInStackTrace() {return m_showModulesInStackTrace;}
 		bool GetShowProcedureArguments() {return m_showProcedureArguments;}
 		bool GetShowGlobalVariables() {return m_showGlobalVariables;}
+		bool GetFoldDuringLoading() {return m_foldDuringLoading;}
 		wxArrayString GetMingwProgramNames() { return m_mingwProgramNames; }
 		StringFilenameHash GetMingwExecutables() { return m_mingwExecutableNames; }
 		wxArrayString GetMingwBinPaths() { return m_mingwBinPaths; }
@@ -211,6 +213,7 @@ class Options
 		bool m_saveSession;
 		bool m_formatBeforeSaving;
 		bool m_keepBackupFile;
+		bool m_foldDuringLoading;
 
 		StringFilenameHash m_mingwExecutableNames;
 		wxArrayString m_mingwBinPaths;

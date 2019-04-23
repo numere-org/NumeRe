@@ -644,7 +644,10 @@ void NumeReWindow::InitializeProgramOptions()
 		m_options->SetFormatBeforeSaving(formatBeforeSaving);
 
 		bool keepBackups = (m_config->Read("Miscellaneous/KeepBackups", "false") == "true");
-		m_options->SetFormatBeforeSaving(keepBackups);
+		m_options->SetKeepBackupFile(keepBackups);
+
+		bool foldDuringLoading = (m_config->Read("Interface/FoldDuringLoading", "false") == "true");
+		m_options->SetFoldDuringLoading(foldDuringLoading);
 
 		int terminalHistory = 300;
 		m_config->Read("Miscellaneous/TerminalHistory", &terminalHistory, 300);
@@ -703,6 +706,7 @@ void NumeReWindow::InitializeProgramOptions()
 #endif
 		m_config->Write("Miscellaneous/TerminalHistory", m_options->GetTerminalHistorySize());
 		m_config->Write("Interface/CaretBlinkTime", m_options->GetCaretBlinkTime());
+		m_config->Write("Interface/FoldDuringLoading", "false");
 		m_config->Write("Miscellaneous/LaTeXRoot", m_options->GetLaTeXRoot());
 		m_config->Write("Miscellaneous/PrintInColor", "false");
 		m_config->Write("Miscellaneous/PrintLineNumbers", "false");
@@ -823,6 +827,7 @@ void NumeReWindow::prepareSession()
                     OpenSourceFile(wxArrayString(1, sFileName));
                     m_currentEd->GotoPos(nLine);
                     m_currentEd->ToggleSettings(nSetting);
+                    m_currentEd->EnsureCaretVisible();
                 }
                 else
                 {
@@ -3158,6 +3163,8 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
                     m_currentEd->LoadFileText(fileContents);
                 }
 			}
+
+			m_currentEd->UpdateSyntaxHighlighting();
 		}
 		else
 		{
@@ -3210,10 +3217,14 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
 				m_book->AddPage (m_currentEd, /*locationPrefix + */fileNameNoPath, true);
 			}
 
-
 			m_currentEd->SetFilename(newFileName, m_remoteMode);
+            m_currentEd->UpdateSyntaxHighlighting();
+
+            if (m_options->GetFoldDuringLoading())
+                m_currentEd->FoldAll();
 
             m_watcher->Add(newFileName);
+
 			if (nLine)
                 m_currentEd->GotoLine(nLine);
 		}
@@ -3223,7 +3234,6 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
 			firstPageNr = m_currentPage;
 		}
 
-		m_currentEd->UpdateSyntaxHighlighting();
 	}
 
 	// show the active tab, new or otherwise
@@ -4068,6 +4078,9 @@ void NumeReWindow::EvaluateOptions()
 	int newCaretBlinkTime = m_options->GetCaretBlinkTime();
 	m_termContainer->SetCaretBlinkTime(newCaretBlinkTime);
 	m_config->Write("Interface/CaretBlinkTime", newCaretBlinkTime);
+
+	bool foldDuringLoading = m_options->GetFoldDuringLoading();
+	m_config->Write("Interface/FoldDuringLoading", foldDuringLoading ? "true" : "false");
 
 	bool printInColor = (m_options->GetPrintStyle() == wxSTC_PRINT_COLOURONWHITE);
 	m_config->Write("Miscellaneous/PrintInColor", printInColor ? "true" : "false");

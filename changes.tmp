@@ -56,3 +56,4 @@ Applied	The procedure and flow control algorithms now support "true inlining", w
 Removed	The undo buffer of the editor is not cleared anymore after the file was saved. This allows undo actions to revert changes done before the last save point.
 Fixed	Small fixes for interactions with C++ and MATLAB files
 Added	Enabled the multi-selection pasting and the rectangular pasting, which was disabled by the wxSTC-Interface to Scintilla.
+Added	One may now activate that NumeRe folds all code during loading files.

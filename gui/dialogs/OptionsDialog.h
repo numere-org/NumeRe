@@ -194,6 +194,7 @@ class OptionsDialog: public wxDialog
         wxCheckBox* m_formatBeforeSaving;
         wxCheckBox* m_useMaskAsDefault;
         wxCheckBox* m_keepBackupFiles;
+        wxCheckBox* m_foldDuringLoading;
 
         wxSpinCtrl* m_debuggerFocusLine;
         wxCheckBox* m_debuggerShowLineNumbers;
