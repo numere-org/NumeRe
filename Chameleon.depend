@@ -8142,7 +8142,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1556016447 source:c:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1556016559 source:c:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -8728,7 +8728,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1555578235 source:c:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1556037432 source:c:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>

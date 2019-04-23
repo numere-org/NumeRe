@@ -827,7 +827,7 @@ void NumeReWindow::prepareSession()
                     OpenSourceFile(wxArrayString(1, sFileName));
                     m_currentEd->GotoPos(nLine);
                     m_currentEd->ToggleSettings(nSetting);
-                    m_currentEd->EnsureCaretVisible();
+                    m_currentEd->EnsureVisible(m_currentEd->LineFromPosition(nLine));
                 }
                 else
                 {
@@ -3226,7 +3226,10 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
             m_watcher->Add(newFileName);
 
 			if (nLine)
+            {
                 m_currentEd->GotoLine(nLine);
+                m_currentEd->EnsureVisible(nLine);
+            }
 		}
 
 		if (firstPageNr < 0)

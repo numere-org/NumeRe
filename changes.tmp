@@ -57,3 +57,4 @@ Removed	The undo buffer of the editor is not cleared anymore after the file was 
 Fixed	Small fixes for interactions with C++ and MATLAB files
 Added	Enabled the multi-selection pasting and the rectangular pasting, which was disabled by the wxSTC-Interface to Scintilla.
 Added	One may now activate that NumeRe folds all code during loading files.
+Added	The new string functions for clusters were added: "is_table()" and "is_cluster()". Additionally, the function "locate()" can be used to find a specific string in a whole string array.
