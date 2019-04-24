@@ -2634,12 +2634,15 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
                     AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j+1, sArgument.length()), sError, _guilang.get("GUI_ANALYZER_FOR_INTERVALERROR")), ANNOTATION_ERROR);
                 }
 
+                // Store the for index variable in the list of known
+                // local variables
                 if (m_fileType == FILE_NPRC)
                 {
                     for (int i = j+1; i < nPos; i++)
                     {
                         if (GetStyleAt(i) == wxSTC_NPRC_IDENTIFIER || GetStyleAt(i) == wxSTC_NPRC_CUSTOM_FUNCTION || GetStyleAt(i) == wxSTC_NPRC_CLUSTER)
                         {
+                            // Store it and break directly
                             vLocalVariables.push_back(pair<string,int>(GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true)).ToStdString(), GetStyleAt(i)));
                             break;
                         }
@@ -2730,17 +2733,24 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
         int nProcedureEnd = 0;
         hasProcedureDefinition = true;
 
+        // If the current file is a procedure file, then decode the
+        // argument list and store it in the list of known local
+        // variables
         if (m_fileType == FILE_NPRC)
         {
             int nArgumentParensStart = FindText(nCurPos, GetLineEndPosition(currentLine), "(");
             int nArgumentParensEnd = BraceMatch(nArgumentParensStart);
 
-            for (int i = nArgumentParensStart+1; i < nArgumentParensEnd; i++)
+            if (nArgumentParensStart != -1 && nArgumentParensEnd != -1)
             {
-                if (GetStyleAt(i) == wxSTC_NPRC_IDENTIFIER || GetStyleAt(i) == wxSTC_NPRC_CUSTOM_FUNCTION || GetStyleAt(i) == wxSTC_NPRC_CLUSTER)
+                // Decode the list
+                for (int i = nArgumentParensStart+1; i < nArgumentParensEnd; i++)
                 {
-                    vLocalVariables.push_back(pair<string,int>(GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true)).ToStdString(), GetStyleAt(i)));
-                    i = WordEndPosition(i, true);
+                    if (GetStyleAt(i) == wxSTC_NPRC_IDENTIFIER || GetStyleAt(i) == wxSTC_NPRC_CUSTOM_FUNCTION || GetStyleAt(i) == wxSTC_NPRC_CLUSTER)
+                    {
+                        vLocalVariables.push_back(pair<string,int>(GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true)).ToStdString(), GetStyleAt(i)));
+                        i = WordEndPosition(i, true);
+                    }
                 }
             }
         }
@@ -2862,9 +2872,11 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sError, _guilang.get("GUI_ANALYZER_UNFINISHEDBLOCK")), ANNOTATION_ERROR);
         }
 
+        // Clear the list of local variables
         if (sSyntaxElement == "endprocedure")
             vLocalVariables.clear();
 
+        // Remove the last declared local variable
         if (sSyntaxElement == "endfor" && m_fileType == FILE_NPRC)
             vLocalVariables.pop_back();
     }
@@ -2996,6 +3008,8 @@ AnnotationCount NumeReEditor::analyseIdentifiers(int& nCurPos, int currentLine, 
     {
         bool bOK = false;
 
+        // Try to find the current identifier in the list
+        // of known local variables
         for (size_t i = 0; i < vLocalVariables.size(); i++)
         {
             if (vLocalVariables[i].first == sSyntaxElement && vLocalVariables[i].second == GetStyleAt(nCurPos))
@@ -3005,12 +3019,14 @@ AnnotationCount NumeReEditor::analyseIdentifiers(int& nCurPos, int currentLine, 
             }
         }
 
+        // nothing found
         if (!bOK)
         {
             AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sWarn, _guilang.get("GUI_ANALYZER_GLOBALVARIABLE")), ANNOTATION_WARN);
         }
     }
 
+    // Return, if the current identifier is a data object
     if (isStyleType(STYLE_DATAOBJECT, nCurPos))
     {
         nCurPos = wordend;
