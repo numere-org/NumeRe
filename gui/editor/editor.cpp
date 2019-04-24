@@ -2015,6 +2015,7 @@ void NumeReEditor::AnalyseCode()
 	string sWarn = _guilang.get("GUI_ANALYZER_WARN");
 	string sError = _guilang.get("GUI_ANALYZER_ERROR");
 	AnnotationCount AnnotCount;
+	vector<pair<string,int> > vLocalVariables;
 
 	// Some code metric constants
 	const double MINCOMMENTDENSITY = 0.5;
@@ -2159,7 +2160,7 @@ void NumeReEditor::AnalyseCode()
                     isSuppressed = true;
             }
 		    // Handle commands
-		    AnnotCount += analyseCommands(i, currentLine, hasProcedureDefinition, sCurrentLine, sStyles, sNote, sWarn, sError);
+		    AnnotCount += analyseCommands(i, currentLine, hasProcedureDefinition, sCurrentLine, sStyles, vLocalVariables, sNote, sWarn, sError);
 		}
 		else if (isStyleType(STYLE_FUNCTION, i)
            || ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC) && this->GetStyleAt(i) == wxSTC_NSCR_METHOD))
@@ -2178,7 +2179,7 @@ void NumeReEditor::AnalyseCode()
 		    // Handle NumeRe procedure calls (NumeRe only)
 		    AnnotCount += analyseProcedures(i, currentLine, hasProcedureDefinition, sCurrentLine, sStyles, sNote, sWarn, sError);
 		}
-		else if (isStyleType(STYLE_IDENTIFIER, i)
+		else if ((isStyleType(STYLE_IDENTIFIER, i) || isStyleType(STYLE_DATAOBJECT, i))
 				 && this->GetCharAt(i) != ' '
 				 && this->GetCharAt(i) != '\t'
 				 && this->GetCharAt(i) != '\r'
@@ -2191,7 +2192,7 @@ void NumeReEditor::AnalyseCode()
                 isSuppressed = true;
             }
 		    // Handle identifiers (like variable names)
-		    AnnotCount += analyseIdentifiers(i, currentLine, hasProcedureDefinition, sCurrentLine, sStyles, sNote, sWarn, sError);
+		    AnnotCount += analyseIdentifiers(i, currentLine, hasProcedureDefinition, sCurrentLine, sStyles, vLocalVariables, sNote, sWarn, sError);
 		}
 		else if (isStyleType(STYLE_OPERATOR, i))
 		{
@@ -2246,7 +2247,7 @@ void NumeReEditor::AnalyseCode()
 
 
 // This member function analyses syntax elements, which are highlighted as commands
-AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError)
+AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, vector<pair<string,int> >& vLocalVariables, const string& sNote, const string& sWarn, const string& sError)
 {
     AnnotationCount AnnotCount;
 
@@ -2619,6 +2620,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
                 string sArgument = this->GetTextRange(j + 1, nPos).ToStdString();
                 StripSpaces(sArgument);
 
+
                 // Argument is empty?
                 if (!sArgument.length())
                 {
@@ -2631,6 +2633,19 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
                 {
                     AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, j+1, sArgument.length()), sError, _guilang.get("GUI_ANALYZER_FOR_INTERVALERROR")), ANNOTATION_ERROR);
                 }
+
+                if (m_fileType == FILE_NPRC)
+                {
+                    for (int i = j+1; i < nPos; i++)
+                    {
+                        if (GetStyleAt(i) == wxSTC_NPRC_IDENTIFIER || GetStyleAt(i) == wxSTC_NPRC_CUSTOM_FUNCTION || GetStyleAt(i) == wxSTC_NPRC_CLUSTER)
+                        {
+                            vLocalVariables.push_back(pair<string,int>(GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true)).ToStdString(), GetStyleAt(i)));
+                            break;
+                        }
+                    }
+                }
+
                 break;
             }
         }
@@ -2692,6 +2707,8 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
 
                 StripSpaces(currentArg);
 
+                vLocalVariables.push_back(pair<string,int>(currentArg, nStyle));
+
                 // Try to find the variable in the remaining code
                 if (m_options->GetAnalyzerOption(Options::UNUSED_VARIABLES) && !FindAll(currentArg, nStyle, nNextLineStartPosition, nProcedureEndPosition, false).size())//   this->FindText(nNextLine, nProcedureEnd, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) == -1)
                 {
@@ -2712,6 +2729,22 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
         vector<int> vBlock = BlockMatch(nCurPos);
         int nProcedureEnd = 0;
         hasProcedureDefinition = true;
+
+        if (m_fileType == FILE_NPRC)
+        {
+            int nArgumentParensStart = FindText(nCurPos, GetLineEndPosition(currentLine), "(");
+            int nArgumentParensEnd = BraceMatch(nArgumentParensStart);
+
+            for (int i = nArgumentParensStart+1; i < nArgumentParensEnd; i++)
+            {
+                if (GetStyleAt(i) == wxSTC_NPRC_IDENTIFIER || GetStyleAt(i) == wxSTC_NPRC_CUSTOM_FUNCTION || GetStyleAt(i) == wxSTC_NPRC_CLUSTER)
+                {
+                    vLocalVariables.push_back(pair<string,int>(GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true)).ToStdString(), GetStyleAt(i)));
+                    i = WordEndPosition(i, true);
+                }
+            }
+        }
+
         if (vBlock.back() == wxSTC_INVALID_POSITION)
         {
             nProcedureEnd = this->GetLastPosition();
@@ -2725,6 +2758,7 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
             {
                 // check the name of the procedure - is there a naming procedure?
                 int nNamingProcedure = FindNamingProcedure();
+
                 if (nNamingProcedure == wxNOT_FOUND)
                 {
                     AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sError, _guilang.get("GUI_ANALYZER_NONAMINGPROCEDURE")), ANNOTATION_ERROR);
@@ -2750,17 +2784,20 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
             // Compare the metrics with the contants and issue a note or a warning
             if (m_options->GetAnalyzerOption(Options::PROCEDURE_LENGTH) && nLinesOfCode < 3)
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_INLINING")), ANNOTATION_WARN);
+
             if (m_options->GetAnalyzerOption(Options::COMPLEXITY) && nCyclomaticComplexity > MAXCOMPLEXITYWARN)
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sWarn, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_WARN);
             else if ((m_options->GetAnalyzerOption(Options::COMPLEXITY) && nCyclomaticComplexity > MAXCOMPLEXITYNOTIFY) || m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS))
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMPLEXITY", toString(nCyclomaticComplexity))), ANNOTATION_NOTE);
+
             if ((m_options->GetAnalyzerOption(Options::LINES_OF_CODE) && nLinesOfCode > MAXLINESOFCODE) || m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS))
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_MANYLINES", toString(nLinesOfCode))), ANNOTATION_NOTE);
+
             if ((m_options->GetAnalyzerOption(Options::COMMENT_DENSITY) && dCommentDensity < MINCOMMENTDENSITY) || (dCommentDensity < 1.0 && m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS)))
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_LOWCOMMENTDENSITY", toString(dCommentDensity * 100.0, 3))), ANNOTATION_NOTE);
+
             if ((m_options->GetAnalyzerOption(Options::COMMENT_DENSITY) && dCommentDensity > MAXCOMMENTDENSITY) || (dCommentDensity >= 1.0 && m_options->GetAnalyzerOption(Options::ALWAYS_SHOW_METRICS)))
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_HIGHCOMMENTDENSITY", toString(dCommentDensity * 100.0, 3))), ANNOTATION_NOTE);
-
         }
     }
 
@@ -2817,12 +2854,19 @@ AnnotationCount NumeReEditor::analyseCommands(int& nCurPos, int currentLine, boo
     {
         // Try to find the matching block parts
         vector<int> vMatch = this->BlockMatch(nCurPos);
+
         if (vMatch.size() > 1)
         {
             // If there's an invalid position, this means that the current block is unfinished
             if (vMatch.front() == wxSTC_INVALID_POSITION || vMatch.back() == wxSTC_INVALID_POSITION)
                 AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sError, _guilang.get("GUI_ANALYZER_UNFINISHEDBLOCK")), ANNOTATION_ERROR);
         }
+
+        if (sSyntaxElement == "endprocedure")
+            vLocalVariables.clear();
+
+        if (sSyntaxElement == "endfor" && m_fileType == FILE_NPRC)
+            vLocalVariables.pop_back();
     }
     nCurPos = wordend;
 
@@ -2933,7 +2977,7 @@ AnnotationCount NumeReEditor::analyseProcedures(int& nCurPos, int currentLine, b
 }
 
 // This member function analyses syntax elements, which are highlighted as identifiers (aka variable names)
-AnnotationCount NumeReEditor::analyseIdentifiers(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError)
+AnnotationCount NumeReEditor::analyseIdentifiers(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, vector<pair<string,int> >& vLocalVariables, const string& sNote, const string& sWarn, const string& sError)
 {
     AnnotationCount AnnotCount;
 
@@ -2947,12 +2991,38 @@ AnnotationCount NumeReEditor::analyseIdentifiers(int& nCurPos, int currentLine, 
     // Get the corresponding syntax element
     string sSyntaxElement = this->GetTextRange(wordstart, wordend).ToStdString();
 
+    // Warn about global variables
+    if (m_options->GetAnalyzerOption(Options::GLOBAL_VARIABLES) && vLocalVariables.size())
+    {
+        bool bOK = false;
+
+        for (size_t i = 0; i < vLocalVariables.size(); i++)
+        {
+            if (vLocalVariables[i].first == sSyntaxElement && vLocalVariables[i].second == GetStyleAt(nCurPos))
+            {
+                bOK = true;
+                break;
+            }
+        }
+
+        if (!bOK)
+        {
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sWarn, _guilang.get("GUI_ANALYZER_GLOBALVARIABLE")), ANNOTATION_WARN);
+        }
+    }
+
+    if (isStyleType(STYLE_DATAOBJECT, nCurPos))
+    {
+        nCurPos = wordend;
+        return AnnotCount;
+    }
+
     // Handle very short variable names
     if (sSyntaxElement.length() < 4 && sSyntaxElement.length() > 1 && sSyntaxElement.find_first_not_of("\r\n") != string::npos && sSyntaxElement.find('.') == string::npos)
     {
         // Too short
         if (m_options->GetAnalyzerOption(Options::VARIABLE_LENGTH) && !(sSyntaxElement.length() == 2 && ((sSyntaxElement[1] >= '0' && sSyntaxElement[1] <= '9') || sSyntaxElement[0] == 'd')))
-            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, sNote, _guilang.get("GUI_ANALYZER_VARNAMETOOSHORT")), ANNOTATION_NOTE);
+            AnnotCount += addToAnnotation(sCurrentLine, sStyles, _guilang.get("GUI_ANALYZER_TEMPLATE", constructSyntaxElementForAnalyzer(sSyntaxElement, wordstart, sSyntaxElement.length()), sNote, _guilang.get("GUI_ANALYZER_VARNAMETOOSHORT")), ANNOTATION_NOTE);
     }
 
     // Handle the variable's names: are they following guidelines?
@@ -8286,6 +8356,8 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
                         return this->GetStyleAt(nPos) == wxSTC_NSCR_PROCEDURES;
                     case STYLE_IDENTIFIER:
                         return this->GetStyleAt(nPos) == wxSTC_NSCR_IDENTIFIER;
+                    case STYLE_DATAOBJECT:
+                        return this->GetStyleAt(nPos) == wxSTC_NSCR_CUSTOM_FUNCTION || this->GetStyleAt(nPos) == wxSTC_NSCR_CLUSTER;
                     case STYLE_NUMBER:
                         return this->GetStyleAt(nPos) == wxSTC_NSCR_NUMBERS;
                     case STYLE_STRINGPARSER:
@@ -8321,6 +8393,8 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
                         return false;
                     case STYLE_IDENTIFIER:
                         return this->GetStyleAt(nPos) == wxSTC_MATLAB_IDENTIFIER;
+                    case STYLE_DATAOBJECT:
+                        return false;
                     case STYLE_NUMBER:
                         return this->GetStyleAt(nPos) == wxSTC_MATLAB_NUMBER;
                     case STYLE_STRINGPARSER:
@@ -8359,6 +8433,8 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
                         return false;
                     case STYLE_IDENTIFIER:
                         return this->GetStyleAt(nPos) == wxSTC_C_IDENTIFIER;
+                    case STYLE_DATAOBJECT:
+                        return false;
                     case STYLE_NUMBER:
                         return this->GetStyleAt(nPos) == wxSTC_C_NUMBER;
                     case STYLE_STRINGPARSER:

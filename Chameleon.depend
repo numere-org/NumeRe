@@ -6484,14 +6484,14 @@
 1412507950 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\fswatcher.h
 	"wx/defs.h"
 
-1556014632 source:c:\cpp\numere-source\trunk\common\options.cpp
+1556087376 source:c:\cpp\numere-source\trunk\common\options.cpp
 	"Options.h"
 	<wx/filename.h>
 	<wx/arrstr.h>
 	<wx/dir.h>
 	"debug.h"
 
-1556014622 c:\cpp\numere-source\trunk\common\options.h
+1556087325 c:\cpp\numere-source\trunk\common\options.h
 	<wx/wx.h>
 	<wx/validate.h>
 	<wx/valgen.h>
@@ -6539,7 +6539,7 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1556013700 c:\cpp\numere-source\trunk\gui\editor\editor.h
+1556086811 c:\cpp\numere-source\trunk\gui\editor\editor.h
 	"../terminal/wxterm.h"
 	"../../common/datastructures.h"
 	"../../kernel/syntax.hpp"
@@ -7404,7 +7404,7 @@
 	"fndrpldialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1556015480 source:c:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1556087488 source:c:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
@@ -8142,7 +8142,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1556016559 source:c:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1556038314 source:c:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"

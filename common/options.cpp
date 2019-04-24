@@ -496,6 +496,7 @@ void Options::readAnalyzerOptionsFromConfig(wxFileConfig* _config)
         "THISFILE_NAMESPACE",
         "PROGRESS_RUNTIME",
         "SWITCH_FALLTHROUGH",
+        "GLOBAL_VARIABLES",
         "ANALYZER_OPTIONS_END"
     };
 
@@ -533,6 +534,7 @@ void Options::writeAnalyzerOptionsToConfig(wxFileConfig* _config)
         "THISFILE_NAMESPACE",
         "PROGRESS_RUNTIME",
         "SWITCH_FALLTHROUGH",
+        "GLOBAL_VARIABLES",
         "ANALYZER_OPTIONS_END"
     };
 

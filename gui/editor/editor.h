@@ -361,6 +361,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 			STYLE_OPERATOR,
 			STYLE_PROCEDURE,
 			STYLE_IDENTIFIER,
+			STYLE_DATAOBJECT,
 			STYLE_NUMBER,
 			STYLE_STRINGPARSER,
 			STYLE_STRING
@@ -441,10 +442,10 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		int calculateLinesOfCode(int startline, int endline);
 		int countNumberOfComments(int startline, int endline);
 
-		AnnotationCount analyseCommands(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError);
+		AnnotationCount analyseCommands(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, vector<pair<string,int> >& vLocalVariables, const string& sNote, const string& sWarn, const string& sError);
         AnnotationCount analyseFunctions(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError, bool isContinuedLine);
         AnnotationCount analyseProcedures(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError);
-        AnnotationCount analyseIdentifiers(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError);
+        AnnotationCount analyseIdentifiers(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, vector<pair<string,int> >& vLocalVariables, const string& sNote, const string& sWarn, const string& sError);
         AnnotationCount analyseOperators(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError);
         AnnotationCount analyseNumbers(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError);
 

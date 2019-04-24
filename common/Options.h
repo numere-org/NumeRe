@@ -154,6 +154,7 @@ class Options
             THISFILE_NAMESPACE,
             PROGRESS_RUNTIME,
             SWITCH_FALLTHROUGH,
+            GLOBAL_VARIABLES,
 		    ANALYZER_OPTIONS_END
 		};
 
