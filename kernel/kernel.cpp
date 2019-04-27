@@ -2374,7 +2374,7 @@ void NumeReKernel::showTable(NumeRe::Table _table, string __name, bool openedita
 
 		// Create the task
         NumeReTask task;
-		task.sString = __name;
+		task.sString = __name + "()";
 		task.table = _table;
 
 		// Use the corresponding task type
@@ -2382,6 +2382,35 @@ void NumeReKernel::showTable(NumeRe::Table _table, string __name, bool openedita
             task.taskType = NUMERE_EDIT_TABLE;
         else
             task.taskType = NUMERE_SHOW_TABLE;
+
+		taskQueue.push(task);
+
+		m_parent->m_KernelStatus = NUMERE_QUEUED_COMMAND;
+	}
+	wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
+	Sleep(10);
+}
+
+// This member function passes a string table to the GUI to be displayed
+// in the table viewer
+void NumeReKernel::showStringTable(NumeRe::Container<string> _stringtable, string __name, bool openeditable)
+{
+	if (!m_parent)
+		return;
+	else
+	{
+		wxCriticalSectionLocker lock(m_parent->m_kernelCS);
+
+		// Create the task
+        NumeReTask task;
+		task.sString = __name;
+		task.stringTable = _stringtable;
+
+		// Use the corresponding task type
+		if (openeditable)
+            task.taskType = NUMERE_EDIT_TABLE;
+        else
+            task.taskType = NUMERE_SHOW_STRING_TABLE;
 
 		taskQueue.push(task);
 
@@ -2459,6 +2488,45 @@ NumeRe::Table NumeReKernel::getTable(const string& sTableName)
         return NumeRe::Table();
 
     return _data.extractTable(sSelectedTable);
+}
+
+// This member function creates the table container for the
+// string table or the clusters
+NumeRe::Container<string> NumeReKernel::getStringTable(const string& sStringTableName)
+{
+    if (sStringTableName == "string()")
+    {
+        // Create the container for the string table
+        NumeRe::Container<string> stringTable(_data.getStringElements(), _data.getStringCols());
+
+        for (size_t j = 0; j < _data.getStringCols(); j++)
+        {
+            for (size_t i = 0; i < _data.getStringElements(j); i++)
+            {
+                stringTable.set(i, j, "\"" + _data.readString(i, j) + "\"");
+            }
+        }
+
+        return stringTable;
+    }
+    else if (_data.isCluster(sStringTableName))
+    {
+        // Create the container for the selected cluster
+        NumeRe::Cluster& clust = _data.getCluster(sStringTableName.substr(0, sStringTableName.find("{}")));
+        NumeRe::Container<string> stringTable(clust.size(), 1);
+
+        for (size_t i = 0; i < clust.size(); i++)
+        {
+            if (clust.getType(i) == NumeRe::ClusterItem::ITEMTYPE_STRING)
+                stringTable.set(i, 0, clust.getString(i));
+            else
+                stringTable.set(i, 0, toString(clust.getDouble(i), 5));
+        }
+
+        return stringTable;
+    }
+
+    return NumeRe::Container<string>();
 }
 
 // This member function passes the debugging informations to the

@@ -36,6 +36,7 @@ static int swapCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings& 
 static int renameCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions);
 static bool undefineFunctions(string sFunctionList, Define& _functions, const Settings& _option);
 static int showDialog(string& sCmd);
+static int showDataObject(string& sCmd);
 
 
 
@@ -3354,108 +3355,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		}
 		else if (sCommand.substr(0, 4) == "show" || sCommand == "showf")
 		{
-			if (sCmd.substr(0, 5) == "showf")
-			{
-				_out.setCompact(false);
-			}
-			else
-			{
-				_out.setCompact(_option.getbCompact());
-			}
-			if (matchParams(sCmd, "data") || sCmd.find(" data()") != string::npos)
-			{
-				show_data(_data, _out, _option, "data", _option.getPrecision(), true, false);
-			}
-			else if (_data.matchCache(sCmd).length())
-			{
-				show_data(_data, _out, _option, _data.matchCache(sCmd), _option.getPrecision(), false, true);
-			}
-			else if (_data.containsTablesOrClusters(sCmd) || sCmd.find(" data(") != string::npos)
-			{
-				for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
-				{
-					if (sCmd.find(iter->first + "(") != string::npos
-							&& (!sCmd.find(iter->first + "(")
-								|| (sCmd.find(iter->first + "(") && checkDelimiter(sCmd.substr(sCmd.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
-					{
-						//NumeReKernel::print(sCmd );
-						Datafile _cache;
-						_cache.setCacheStatus(true);
-						_idx = parser_getIndices(sCmd, _parser, _data, _option);
-						if (sCmd.find(iter->first + "(") != string::npos && iter->second != -1)
-							_data.setCacheStatus(true);
-						if ((_idx.nI[0] == -1 && !_idx.vI.size())
-								|| (_idx.nJ[0] == -1 && !_idx.vJ.size()))
-							//throw TABLE_DOESNT_EXIST;
-							throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, iter->first + "(", iter->first + "()");
-						if (!_idx.vI.size())
-						{
-							if (_idx.nI[1] == -1)
-								_idx.nI[1] = _idx.nI[0];
-							else if (_idx.nI[1] == -2)
-								_idx.nI[1] = _data.getLines(iter->first, false) - 1;
-							if (_idx.nJ[1] == -1)
-								_idx.nJ[1] = _idx.nJ[0];
-							else if (_idx.nJ[1] == -2)
-								_idx.nJ[1] = _data.getCols(iter->first) - 1;
-							parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
-							parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
-
-							_cache.setCacheSize(_idx.nI[1] - _idx.nI[0] + 1, _idx.nJ[1] - _idx.nJ[0] + 1, "cache");
-							//if (iter->first != "cache")
-							_cache.renameCache("cache", "*" + (iter->first), true);
-							for (unsigned int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-							{
-								for (unsigned int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
-								{
-									if (i == _idx.nI[0])
-									{
-										_cache.setHeadLineElement(j - _idx.nJ[0], "*" + (iter->first), _data.getHeadLineElement(j, iter->first));
-									}
-									if (_data.isValidEntry(i, j, iter->first))
-										_cache.writeToCache(i - _idx.nI[0], j - _idx.nJ[0], "*" + (iter->first), _data.getElement(i, j, iter->first));
-								}
-							}
-						}
-						else
-						{
-							_cache.setCacheSize(_idx.vI.size(), _idx.vJ.size(), "cache");
-							//if (iter->first != "cache")
-							_cache.renameCache("cache", "*" + (iter->first), true);
-							for (unsigned int i = 0; i < _idx.vI.size(); i++)
-							{
-								for (unsigned int j = 0; j < _idx.vJ.size(); j++)
-								{
-									if (!i)
-									{
-										_cache.setHeadLineElement(j, "*" + (iter->first), _data.getHeadLineElement(_idx.vJ[j], iter->first));
-									}
-									if (_data.isValidEntry(_idx.vI[i], _idx.vJ[j], iter->first))
-										_cache.writeToCache(i, j, "*" + (iter->first), _data.getElement(_idx.vI[i], _idx.vJ[j], iter->first));
-								}
-							}
-						}
-						if (_data.containsStringVars(sCmd))
-							_data.getStringValues(sCmd);
-						/*if (matchParams(sCmd, "file", '='))
-						    addArgumentQuotes(sCmd, "file");*/
-
-						//NumeReKernel::print(sCmd );
-						_data.setCacheStatus(false);
-						show_data(_cache, _out, _option, "*" + (iter->first), _option.getPrecision(), false, true);
-						return 1;
-					}
-				}
-				//throw TABLE_DOESNT_EXIST;
-				throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
-			}
-			else
-			{
-				//throw TABLE_DOESNT_EXIST;
-				throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
-			}
-			return 1;
-
+            return showDataObject(sCmd);
 		}
 		else if (sCommand == "search")
 		{
@@ -5314,7 +5214,199 @@ static int showDialog(string& sCmd)
     return 0;
 }
 
+// This static function handles the displaying of tables and clusters
+// in the table viewer. Editing of tables is not supplied by this function.
+static int showDataObject(string& sCmd)
+{
+    // Get references to the main objects
+    Datafile& _data = NumeReKernel::getInstance()->getData();
+    Output& _out = NumeReKernel::getInstance()->getOutput();
+    Settings& _option = NumeReKernel::getInstance()->getSettings();
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
 
+    // Handle the compact mode (probably not needed any more)
+    if (sCmd.substr(0, 5) == "showf")
+    {
+        _out.setCompact(false);
+    }
+    else
+    {
+        _out.setCompact(_option.getbCompact());
+    }
+
+    // Determine the correct data object
+    if (matchParams(sCmd, "data") || sCmd.find(" data()") != string::npos)
+    {
+        // data as object, passed as parameter
+        show_data(_data, _out, _option, "data", _option.getPrecision(), true, false);
+    }
+    else if (_data.matchCache(sCmd).length())
+    {
+        // a cache as object, passed as parameter
+        show_data(_data, _out, _option, _data.matchCache(sCmd), _option.getPrecision(), false, true);
+    }
+    else if (_data.containsCacheElements(sCmd) || sCmd.find(" data(") != string::npos)
+    {
+        // A table was passed, using indices to select part of the
+        // table
+        auto mCaches = _data.mCachesMap;
+        mCaches["data"] = -1;
+
+        // Search the correct table
+        for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
+        {
+            if (sCmd.find(iter->first + "(") != string::npos
+                    && (!sCmd.find(iter->first + "(")
+                        || (sCmd.find(iter->first + "(") && checkDelimiter(sCmd.substr(sCmd.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
+            {
+                Datafile _cache;
+                Indices _idx = parser_getIndices(sCmd, _parser, _data, _option);
+
+                // Validize the obtained index sets
+                if (!isValidIndexSet(_idx))
+                    throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, iter->first + "(", iter->first + "()");
+
+                // Copy the target data to a new table
+                if (!_idx.vI.size())
+                {
+                    if (_idx.nI[1] == -1)
+                        _idx.nI[1] = _idx.nI[0];
+                    else if (_idx.nI[1] == -2)
+                        _idx.nI[1] = _data.getLines(iter->first, false) - 1;
+
+                    if (_idx.nJ[1] == -1)
+                        _idx.nJ[1] = _idx.nJ[0];
+                    else if (_idx.nJ[1] == -2)
+                        _idx.nJ[1] = _data.getCols(iter->first) - 1;
+
+                    parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
+                    parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
+
+                    _cache.setCacheSize(_idx.nI[1] - _idx.nI[0] + 1, _idx.nJ[1] - _idx.nJ[0] + 1, "cache");
+                    _cache.renameCache("cache", "*" + (iter->first), true);
+
+                    for (unsigned int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
+                    {
+                        for (unsigned int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
+                        {
+                            if (i == _idx.nI[0])
+                            {
+                                _cache.setHeadLineElement(j - _idx.nJ[0], "*" + (iter->first), _data.getHeadLineElement(j, iter->first));
+                            }
+
+                            if (_data.isValidEntry(i, j, iter->first))
+                                _cache.writeToCache(i - _idx.nI[0], j - _idx.nJ[0], "*" + (iter->first), _data.getElement(i, j, iter->first));
+                        }
+                    }
+                }
+                else
+                {
+                    _cache.setCacheSize(_idx.vI.size(), _idx.vJ.size(), "cache");
+                    _cache.renameCache("cache", "*" + (iter->first), true);
+
+                    for (unsigned int i = 0; i < _idx.vI.size(); i++)
+                    {
+                        for (unsigned int j = 0; j < _idx.vJ.size(); j++)
+                        {
+                            if (!i)
+                            {
+                                _cache.setHeadLineElement(j, "*" + (iter->first), _data.getHeadLineElement(_idx.vJ[j], iter->first));
+                            }
+
+                            if (_data.isValidEntry(_idx.vI[i], _idx.vJ[j], iter->first))
+                                _cache.writeToCache(i, j, "*" + (iter->first), _data.getElement(_idx.vI[i], _idx.vJ[j], iter->first));
+                        }
+                    }
+                }
+
+                if (_data.containsStringVars(sCmd))
+                    _data.getStringValues(sCmd);
+
+                // Redirect the control
+                show_data(_cache, _out, _option, "*" + (iter->first), _option.getPrecision(), false, true);
+                return 1;
+            }
+        }
+
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
+    }
+    else if (_data.containsClusters(sCmd))
+    {
+        // Find the correct cluster
+        for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
+        {
+            if (sCmd.find(iter->first + "{") != string::npos
+                && (!sCmd.find(iter->first + "{")
+                    || (sCmd.find(iter->first + "{") && checkDelimiter(sCmd.substr(sCmd.find(iter->first + "{") - 1, (iter->first).length() + 2)))))
+            {
+                // Get the indices
+                Indices _idx = parser_getIndices(sCmd, _parser, _data, _option);
+
+                if (_idx.nI[1] == -1)
+                    _idx.nI[1] = _idx.nI[0];
+                else if (_idx.nI[1] == -2)
+                    _idx.nI[1] = iter->second.size();
+
+                // Create the target container
+                NumeRe::Container<string> _stringTable(_idx.nI[1] - _idx.nI[0], 1);
+
+                // Copy the data to the new container
+                for (size_t i = 0; i < _idx.nI[1]-_idx.nI[0]; i++)
+                {
+                    if (iter->second.getType(i) == NumeRe::ClusterItem::ITEMTYPE_STRING)
+                        _stringTable.set(i, 0, iter->second.getString(i));
+                    else
+                        _stringTable.set(i, 0, toString(iter->second.getDouble(i), 5));
+                }
+
+                // Redirect control
+                NumeReKernel::showStringTable(_stringTable, iter->first + "{}");
+
+                return 1;
+            }
+        }
+    }
+    else if (sCmd.find(" string(") != string::npos)
+    {
+        // Get the indices
+        Indices _idx = parser_getIndices(sCmd, _parser, _data, _option);
+
+        if (_idx.nI[1] == -1)
+            _idx.nI[1] = _idx.nI[0];
+        else if (_idx.nI[1] == -2)
+            _idx.nI[1] = _data.getStringElements();
+
+        if (_idx.nJ[1] == -1)
+            _idx.nJ[1] = _idx.nJ[0];
+        else if (_idx.nJ[1] == -2)
+            _idx.nJ[1] = _data.getStringCols();
+
+        // Create the target container
+        NumeRe::Container<string> _stringTable(_idx.nI[1] - _idx.nI[0], _idx.nJ[1] - _idx.nJ[0]);
+
+        // Copy the data to the new container and add surrounding
+        // quotation marks
+        for (size_t j = 0; j < _idx.nJ[1] - _idx.nJ[0]; j++)
+        {
+            for (size_t i = 0; i < _idx.nI[1] - _idx.nI[0]; i++)
+            {
+                if (_data.getStringElements(_idx.nJ[0]+j) <= i + _idx.nI[0])
+                    break;
+
+                _stringTable.set(i, j, "\"" + _data.readString(_idx.nI[0]+i, _idx.nJ[0]+j) + "\"");
+            }
+        }
+
+        // Redirect control
+        NumeReKernel::showStringTable(_stringTable, "string()");
+    }
+    else
+    {
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
+    }
+
+    return 1;
+}
 
 
 

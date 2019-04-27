@@ -6577,7 +6577,7 @@
 
 1412507950 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\droptgt.h
 
-1554029221 c:\cpp\numere-source\trunk\gui\terminal\wxterm.h
+1556171821 c:\cpp\numere-source\trunk\gui\terminal\wxterm.h
 	<map>
 	"../NumeReWindow.h"
 	"../../common/Options.h"
@@ -6924,7 +6924,7 @@
 	<stdlib.h>
 	"gterm.hpp"
 
-1555578293 c:\cpp\numere-source\trunk\kernel\kernel.hpp
+1556353213 c:\cpp\numere-source\trunk\kernel\kernel.hpp
 	<string>
 	<fstream>
 	<queue>
@@ -7790,7 +7790,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1556013700 source:c:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1556090949 source:c:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -8142,7 +8142,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1556038314 source:c:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1556175031 source:c:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -8214,7 +8214,7 @@
 	<wx/splitter.h>
 	<cmath>
 
-1551856829 c:\cpp\numere-source\trunk\gui\tableviewer.hpp
+1556267777 c:\cpp\numere-source\trunk\gui\tableviewer.hpp
 	<wx/wx.h>
 	<wx/grid.h>
 	<vector>
@@ -8255,7 +8255,7 @@
 	"tableeditpanel.hpp"
 	"../kernel/core/datamanagement/container.hpp"
 
-1553154086 source:c:\cpp\numere-source\trunk\gui\tableviewer.cpp
+1556269311 source:c:\cpp\numere-source\trunk\gui\tableviewer.cpp
 	"tableviewer.hpp"
 	"gridtable.hpp"
 	"../kernel/core/ui/language.hpp"
@@ -8361,7 +8361,7 @@
 	"wxssh.h"
 	"../../common/debug.h"
 
-1554800540 source:c:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1556353455 source:c:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -8418,7 +8418,7 @@
 
 1530082144 c:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1556013701 source:c:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1556353774 source:c:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 	"io/fileops.hpp"
@@ -8779,7 +8779,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1555578293 source:c:\cpp\numere-source\trunk\kernel\kernel.cpp
+1556353716 source:c:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 	"core/datamanagement/dataops.hpp"
@@ -9120,7 +9120,7 @@
 
 1412507950 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\apptrait.h
 
-1555578294 source:c:\cpp\numere-source\trunk\gui\dialogs\variableviewer.cpp
+1556175392 source:c:\cpp\numere-source\trunk\gui\dialogs\variableviewer.cpp
 	"variableviewer.hpp"
 	"../../kernel/core/ui/language.hpp"
 	"../../common/datastructures.h"

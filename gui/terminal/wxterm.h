@@ -178,6 +178,7 @@ class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
 		// Kernel communication functions
 		void pass_command(const string& command);
 		NumeRe::Table getTable(const string& sTableName);
+		NumeRe::Container<string> getStringTable(const string& sStringTableName);
 		Settings getKernelSettings();
 		void setKernelSettings(const Settings&);
 		void EndKernelTask();

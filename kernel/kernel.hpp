@@ -94,6 +94,7 @@ class NumeReKernel
             NUMERE_OPEN_DOC,
             NUMERE_SHOW_TABLE,
             NUMERE_EDIT_TABLE,
+            NUMERE_SHOW_STRING_TABLE,
             NUMERE_DEBUG_EVENT,
             NUMERE_ANSWER_READ,
             NUMERE_SHOW_WINDOW
@@ -194,9 +195,11 @@ class NumeReKernel
         static void setDocumentation(const string& _sDocumentation);
         static bool GetAsyncCancelState();
         static void showTable(NumeRe::Table _table, string __name, bool openeditable = false);
+        static void showStringTable(NumeRe::Container<string> _stringtable, string __name, bool openeditable = false);
         void showWindow(const NumeRe::Window& window);
         static NumeRe::Table getTable();
         NumeRe::Table getTable(const string& sTableName);
+        NumeRe::Container<string> getStringTable(const string& sStringTableName);
         static void showDebugEvent(const string& sTitle, const vector<string>& vStacktrace);
         static int waitForContinue();
         static int evalDebuggerBreakPoint(const string& sCurrentCommand = "");
@@ -290,6 +293,7 @@ struct NumeReTask
     vector<string> vDebugEvent;
     NumeRe::Table table;
     NumeRe::Window window;
+    NumeRe::Container<string> stringTable;
     int taskType;
 };
 

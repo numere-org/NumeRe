@@ -494,6 +494,9 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
             case NumeReKernel::NUMERE_SHOW_TABLE:
                 m_wxParent->openTable(task.table, task.sString);
                 break;
+            case NumeReKernel::NUMERE_SHOW_STRING_TABLE:
+                m_wxParent->openTable(task.stringTable, task.sString);
+                break;
             case NumeReKernel::NUMERE_EDIT_TABLE:
                 m_wxParent->editTable(task.table, task.sString);
                 break;
@@ -717,6 +720,12 @@ NumeRe::Table wxTerm::getTable(const string& sTableName)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     return _kernel.getTable(sTableName);
+}
+
+NumeRe::Container<string> wxTerm::getStringTable(const string& sStringTableName)
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    return _kernel.getStringTable(sStringTableName);
 }
 
 // Inform the kernel to stop the current calculation

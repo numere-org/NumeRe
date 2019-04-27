@@ -385,14 +385,14 @@ void VariableViewer::OnRightClick(wxTreeEvent& event)
 // This event handler displays the selected table
 void VariableViewer::OnDoubleClick(wxTreeEvent& event)
 {
-    if (GetItemParent(event.GetItem()) != tableRoot)
+    if (GetItemParent(event.GetItem()) != tableRoot && GetItemParent(event.GetItem()) != clusterRoot)
     {
         // In the debugger mode it's possible that the arguments
         // or the globals contain table variables, which should
         // also be viewable
         if (debuggerMode && (GetItemParent(event.GetItem()) == argumentRoot || GetItemParent(event.GetItem()) == globalRoot))
         {
-            if (GetItemText(event.GetItem()).find("()") != string::npos)
+            if (GetItemText(event.GetItem()).find("()") != string::npos || GetItemText(event.GetItem()).find("{}") != string::npos)
                 OnShowTable(GetInternalName(event.GetItem()), GetItemText(event.GetItem()));
         }
 

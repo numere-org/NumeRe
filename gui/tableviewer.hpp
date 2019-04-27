@@ -90,7 +90,7 @@ class TableViewer : public wxGrid
     public:
         TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxWANTS_CHARS, const wxString& name = wxGridNameStr);
 
-        void SetData(NumeRe::Container<string>& _stringTable) __attribute__ ((deprecated));
+        void SetData(NumeRe::Container<string>& _stringTable);
         void SetData(NumeRe::Table& _table);
         NumeRe::Table GetData();
 

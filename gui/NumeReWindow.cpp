@@ -1651,7 +1651,7 @@ void NumeReWindow::openHTML(wxString HTMLcontent)
 //
 void NumeReWindow::openTable(NumeRe::Container<string> _stringTable, const string& sTableName)
 {
-    ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + sTableName + "()");
+    ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + sTableName);
     frame->SetSize(800,600);
     TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3), wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
     grid->SetData(_stringTable);
@@ -1663,7 +1663,7 @@ void NumeReWindow::openTable(NumeRe::Container<string> _stringTable, const strin
 
 void NumeReWindow::openTable(NumeRe::Table _table, const string& sTableName)
 {
-    ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + sTableName + "()");
+    ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + sTableName);
     frame->SetSize(800,600);
     TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3), wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
     grid->SetData(_table);
@@ -1675,7 +1675,7 @@ void NumeReWindow::openTable(NumeRe::Table _table, const string& sTableName)
 
 void NumeReWindow::editTable(NumeRe::Container<string> _stringTable, const string& sTableName)
 {
-    ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + sTableName + "()");
+    ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + sTableName);
     frame->SetSize(800,600);
     TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3));
     panel->SetTerminal(m_terminal);
@@ -1689,7 +1689,7 @@ void NumeReWindow::editTable(NumeRe::Container<string> _stringTable, const strin
 
 void NumeReWindow::editTable(NumeRe::Table _table, const string& sTableName)
 {
-    ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + sTableName + "()");
+    ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + sTableName);
     frame->SetSize(800,600);
     TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3));
     panel->SetTerminal(m_terminal);
@@ -1704,7 +1704,10 @@ void NumeReWindow::editTable(NumeRe::Table _table, const string& sTableName)
 // simple wrapper for the variable viewer
 void NumeReWindow::showTable(const wxString& tableName, const wxString& tableDisplayName)
 {
-    openTable(m_terminal->getTable(tableName.ToStdString()), tableDisplayName.substr(0, tableDisplayName.length()-2).ToStdString());
+    if (tableDisplayName == "string()" || tableDisplayName.find("{}") != string::npos)
+        openTable(m_terminal->getStringTable(tableName.ToStdString()), tableDisplayName.ToStdString());
+    else
+        openTable(m_terminal->getTable(tableName.ToStdString()), tableDisplayName.ToStdString());
 }
 
 //

@@ -94,6 +94,10 @@ void TableViewer::layoutGrid()
                 // Surrounding frame
                 this->SetCellBackgroundColour(i, j, FrameColor);
             }
+            else if (!nFirstNumRow && this->GetCellValue(i, j)[0] == '"')
+            {
+                this->SetCellAlignment(wxALIGN_LEFT, i, j);
+            }
         }
     }
 
@@ -841,8 +845,13 @@ wxGridCellCoords TableViewer::CreateEmptyGridSpace(int rows, int headrows, int c
 // Return the cell value as double
 double TableViewer::CellToDouble(int row, int col)
 {
-    if (GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_FLOAT));
+    if (GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_FLOAT))
         return GetTable()->GetValueAsDouble(row, col);
+    else if (!nFirstNumRow && GetCellValue(row, col)[0] != '"' && isNumerical(GetCellValue(row, col).ToStdString()))
+    {
+        return atof(GetCellValue(row, col).ToStdString().c_str());
+    }
+    return NAN;
 }
 
 // This member function calculates the minimal
@@ -937,7 +946,7 @@ void TableViewer::updateStatusBar(const wxGridCellCoords& topLeft, const wxGridC
     if (cursor)
         sel << this->GetRowLabelValue(cursor->GetRow()) << "," << cursor->GetCol()+1;
     else
-        sel << this->GetRowLabelValue(this->GetGridCursorRow()) << "," << this->GetGridCursorCol()+1;
+        sel << "--,--";
 
     // Calculate the simple statistics
     wxString statustext = "Min: " + toString(calculateMin(topLeft, bottomRight), 5);
@@ -957,6 +966,9 @@ void TableViewer::updateStatusBar(const wxGridCellCoords& topLeft, const wxGridC
 wxString TableViewer::copyCell(int row, int col)
 {
     wxString cell = this->GetCellValue(row, col);
+
+    if (cell[0] == '"')
+        return cell;
 
     while (cell.find(' ') != string::npos)
         cell[cell.find(' ')] = '_';
@@ -1090,8 +1102,8 @@ vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
     return vPaste;
 }
 
-// This member function is a legacy data setter
-// function. It's declared as deprecated
+// This member function is the data setter for string
+// and cluster tables
 void TableViewer::SetData(NumeRe::Container<string>& _stringTable)
 {
     if (!_stringTable.getCols())
@@ -1101,22 +1113,9 @@ void TableViewer::SetData(NumeRe::Container<string>& _stringTable)
     }
 
     this->CreateGrid(_stringTable.getRows()+1, _stringTable.getCols()+1);
-    nFirstNumRow = -1;
 
-    for (size_t i = 0; i < _stringTable.getRows(); i++)
-    {
-        for (size_t j = 0; j < _stringTable.getCols(); j++)
-        {
-            if ((_stringTable.get(i, j).length() && (isNumerical(_stringTable.get(i, j)) || _stringTable.get(i, j) == "---")) || (!_stringTable.get(i, j).length() && i+1 == _stringTable.getRows()))
-            {
-                nFirstNumRow = i;
-                break;
-            }
-        }
-
-        if (nFirstNumRow != string::npos)
-            break;
-    }
+    // String tables and clusters do not have a headline
+    nFirstNumRow = 0;
 
     for (size_t i = 0; i < _stringTable.getRows()+1; i++)
     {
@@ -1126,12 +1125,12 @@ void TableViewer::SetData(NumeRe::Container<string>& _stringTable)
         {
             if (i == _stringTable.getRows() || j == _stringTable.getCols())
             {
-                this->SetColLabelValue(j, GetColLabelValue(j));
+                this->SetColLabelValue(j, toString(j+1));
                 continue;
             }
 
             if (_stringTable.get(i, j).length())
-                this->SetCellValue(i, j, replaceCtrlChars(_stringTable.get(i, j)));
+                this->SetCellValue(i, j, _stringTable.get(i, j));
         }
     }
 
