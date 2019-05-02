@@ -80,11 +80,11 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->readMem(_nLine, _nCol);
 		}
-		inline vector<double> readFromCache(const vector<long long int>& _vLine, const vector<long long int>& _vCol, const string& _sCache) const
+		inline vector<double> readFromCache(const VectorIndex& _vLine, const VectorIndex& _vCol, const string& _sCache) const
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->readMem(_vLine, _vCol);
 		}
-		inline void copyCachedElementsInto(vector<double>* vTarget, const vector<long long int>& _vLine, const vector<long long int>& _vCol, const string& _sCache) const
+		inline void copyCachedElementsInto(vector<double>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol, const string& _sCache) const
 		{
 			vCacheMemory[mCachesMap.at(_sCache)]->copyElementsInto(vTarget, _vLine, _vCol);
 		}
@@ -92,7 +92,7 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->getHeadLineElement(_i);
 		}
-		inline vector<string> getCacheHeadLineElement(vector<long long int> _vCol, const string& _sCache) const
+		inline vector<string> getCacheHeadLineElement(const VectorIndex& _vCol, const string& _sCache) const
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->getHeadLineElement(_vCol);
 		}
@@ -190,7 +190,7 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 		{
 			vCacheMemory[mCachesMap.at(_sCache)]->deleteBulk(i1, i2, j1, j2);
 		}
-		void deleteBulk(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+		void deleteBulk(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
 			vCacheMemory[mCachesMap.at(_sCache)]->deleteBulk(_vLine, _vCol);
 		}
@@ -274,7 +274,7 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->std(i1, i2, j1, j2);
 		}
-		inline double std(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+		inline double std(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->std(_vLine, _vCol);
 		}
@@ -282,7 +282,7 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->avg(i1, i2, j1, j2);
 		}
-		inline double avg(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+		inline double avg(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->avg(_vLine, _vCol);
 		}
@@ -290,7 +290,7 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->max(i1, i2, j1, j2);
 		}
-		inline double max(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+		inline double max(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->max(_vLine, _vCol);
 		}
@@ -298,11 +298,11 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->min(i1, i2, j1, j2);
 		}
-		inline double min(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+		inline double min(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->min(_vLine, _vCol);
 		}
-		inline double prd(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+		inline double prd(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->prd(_vLine, _vCol);
 		}
@@ -310,7 +310,7 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->prd(i1, i2, j1, j2);
 		}
-		inline double sum(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+		inline double sum(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->sum(_vLine, _vCol);
 		}
@@ -318,7 +318,7 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->sum(i1, i2, j1, j2);
 		}
-		inline double num(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+		inline double num(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->num(_vLine, _vCol);
 		}
@@ -330,7 +330,7 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->and_func(i1, i2, j1, j2);
 		}
-		inline double and_func(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+		inline double and_func(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->and_func(_vLine, _vCol);
 		}
@@ -338,7 +338,7 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->or_func(i1, i2, j1, j2);
 		}
-		inline double or_func(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+		inline double or_func(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->or_func(_vLine, _vCol);
 		}
@@ -346,11 +346,11 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->xor_func(i1, i2, j1, j2);
 		}
-		inline double xor_func(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+		inline double xor_func(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->xor_func(_vLine, _vCol);
 		}
-		inline double cnt(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+		inline double cnt(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->cnt(_vLine, _vCol);
 		}
@@ -358,7 +358,7 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->cnt(i1, i2, j1, j2);
 		}
-		inline double norm(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+		inline double norm(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->norm(_vLine, _vCol);
 		}
@@ -366,7 +366,7 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->norm(i1, i2, j1, j2);
 		}
-		inline double cmp(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol, double dRef = 0.0, int nType = 0)
+		inline double cmp(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef = 0.0, int nType = 0)
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->cmp(_vLine, _vCol, dRef, nType);
 		}
@@ -374,7 +374,7 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->cmp(i1, i2, j1, j2, dRef, nType);
 		}
-		inline double med(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+		inline double med(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->med(_vLine, _vCol);
 		}
@@ -382,7 +382,7 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->med(i1, i2, j1, j2);
 		}
-		inline double pct(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol, double dPct = 0.5)
+		inline double pct(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct = 0.5)
 		{
 			return vCacheMemory[mCachesMap.at(_sCache)]->pct(_vLine, _vCol, dPct);
 		}
@@ -391,17 +391,17 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 			return vCacheMemory[mCachesMap.at(_sCache)]->pct(i1, i2, j1, j2, dPct);
 		}
 
-		inline bool smooth(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, unsigned int nOrder = 1, AppDir Direction = ALL)
+		inline bool smooth(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, unsigned int nOrder = 1, AppDir Direction = ALL)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->smooth(i1, i2, j1, j2, nOrder, (Memory::AppDir)Direction);
+			return vCacheMemory[mCachesMap.at(_sCache)]->smooth(_vLine, _vCol, nOrder, (Memory::AppDir)Direction);
 		}
-		inline bool retoque(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, AppDir Direction = ALL)
+		inline bool retoque(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, AppDir Direction = ALL)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->retoque(i1, i2, j1, j2, (Memory::AppDir)Direction);
+			return vCacheMemory[mCachesMap.at(_sCache)]->retoque(_vLine, _vCol, (Memory::AppDir)Direction);
 		}
-		inline bool resample(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, unsigned int nSamples = 0, AppDir Direction = ALL)
+		inline bool resample(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, unsigned int nSamples = 0, AppDir Direction = ALL)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->resample(i1, i2, j1, j2, nSamples, (Memory::AppDir)Direction);
+			return vCacheMemory[mCachesMap.at(_sCache)]->resample(_vLine, _vCol, nSamples, (Memory::AppDir)Direction);
 		}
 };
 

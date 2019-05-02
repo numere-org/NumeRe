@@ -1987,36 +1987,37 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 				n_pos++;
 				continue;
 			}
+
 			Indices _mIndex = parser_getIndices(_sObject, _parser, _data, _option);
-			if (_mIndex.nI[0] == -1 || _mIndex.nJ[0] == -1)
+
+			if (!isValidIndexSet(_mIndex))
 			{
 				sLine = sLine.substr(0, n_pos) + "nan" + sLine.substr(nPos + 1);
 				n_pos++;
 				continue;
 			}
+
 			if (nType > -1)
 			{
-				if (_mIndex.nI[1] == -1)
-					_mIndex.nI[1] = _mIndex.nI[0];
-				if (_mIndex.nJ[1] == -1)
-					_mIndex.nJ[1] = _mIndex.nJ[0];
-				if (_mIndex.nI[1] == -2)
+				if (_mIndex.row.isOpenEnd())
 				{
 					if (nType == 2)
-						_mIndex.nI[1] = _mIndex.nI[0] + 1;
+						_mIndex.row.back() = _mIndex.row.front() + 1;
 				}
-				if (_mIndex.nJ[1] == -2)
+
+				if (_mIndex.col.isOpenEnd())
 				{
 					if (nType == 1)
-						_mIndex.nJ[1] = _mIndex.nJ[0] + 1;
+						_mIndex.col.back() = _mIndex.col.front() + 1;
 				}
+
 				if (_sObject.find("data(") != string::npos)
 				{
-					if (_mIndex.nI[1] == -2)
-						_mIndex.nI[1] = _data.getLines("data", false) - 1;
+					if (_mIndex.row.isOpenEnd())
+						_mIndex.row.back() = _data.getLines("data", false);
 
-					if (_mIndex.nJ[1] == -2)
-						_mIndex.nJ[1] = _data.getCols("data") - 1;
+					if (_mIndex.col.isOpenEnd())
+						_mIndex.col.back() = _data.getCols("data", false);
 				}
 				else
 				{
@@ -2026,19 +2027,20 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 								&& (!_sObject.find(iter->first + "(")
 									|| (_sObject.find(iter->first + "(") && checkDelimiter(_sObject.substr(_sObject.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
 						{
-							if (_mIndex.nI[1] == -2)
-								_mIndex.nI[1] = _data.getLines(iter->first, false) - 1;
-							if (_mIndex.nJ[1] == -2)
-								_mIndex.nJ[1] = _data.getCols(iter->first) - 1;
+							if (_mIndex.row.isOpenEnd())
+                                _mIndex.row.back() = _data.getLines(iter->first, false);
+
+                            if (_mIndex.col.isOpenEnd())
+                                _mIndex.col.back() = _data.getCols(iter->first, false);
 						}
 					}
 				}
 			}
 			vector<double> vIndices;
-			vIndices.push_back(_mIndex.nI[0] + 1);
-			vIndices.push_back(_mIndex.nI[1] + 1);
-			vIndices.push_back(_mIndex.nJ[0] + 1);
-			vIndices.push_back(_mIndex.nJ[1] + 1);
+			vIndices.push_back(_mIndex.row.front() + 1);
+			vIndices.push_back(_mIndex.row.back() + 1);
+			vIndices.push_back(_mIndex.col.front() + 1);
+			vIndices.push_back(_mIndex.col.back() + 1);
 			_parser.SetVectorVar("_~indices[" + replaceToVectorname(_sObject) + "]", vIndices);
 			sLine = sLine.substr(0, n_pos) + "_~indices[" + replaceToVectorname(_sObject) + "]" + sLine.substr(nPos + 1);
 		}
@@ -3763,43 +3765,31 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
     Indices _idx = parser_getIndices(sObject, _parser, _data, _option);
 
     // Is the target a headline or is it a regular index?
-    if (_idx.nI[0] == -3)
+    if (_idx.row.isString())
     {
-        // Headline
-        if (_idx.nJ[1] == -1)
-            _idx.nJ[1] = _idx.nJ[0]+1;
-
         // Write the string to the correct data table
-        if (_idx.nJ[1] == -2 && sTableName == "data")
-            _idx.nJ[1] = _data.getCols("data");
+        if (_idx.col.isOpenEnd() && sTableName == "data")
+            _idx.col.back() = _data.getCols("data");
 
         // If the first element is non-zero but the second is,
         // we use the number of elements as upper boundary
-        if (_idx.nJ[1] == -2)
-            _idx.nJ[1] = _idx.nJ[0] + nStrings - nCurrentComponent;
-
-        parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
+        if (_idx.col.isOpenEnd())
+            _idx.col.back() = _idx.col.front() + nStrings - nCurrentComponent;
 
         for (int n = nCurrentComponent; n < (int)nStrings; n++)
         {
             if (!vFinal[n].length()
-                || (n + _idx.nJ[0] == _idx.nJ[1] + 1)
-                || (sTableName == "data" && n + _idx.nJ[0] >= _data.getCols("data")))
+                || (_idx.col[n] == VectorIndex::INVALID)
+                || (sTableName == "data" && _idx.col[n] >= _data.getCols("data")))
                 break;
 
-            _data.setHeadLineElement(n + _idx.nJ[0], sTableName, removeQuotationMarks(maskControlCharacters(vFinal[n])));
+            _data.setHeadLineElement(_idx.col[n], sTableName, removeQuotationMarks(maskControlCharacters(vFinal[n])));
         }
 
         nCurrentComponent = nStrings;
     }
     else if (isCluster)
     {
-        if (_idx.nI[1] == -1)
-            _idx.nI[1] = _idx.nI[0];
-
-        if (_idx.nJ[1] == -1)
-            _idx.nJ[1] = _idx.nJ[0];
-
         // Write the return values to the cluster with
         // parsing them
         value_type* v = nullptr;
@@ -3809,7 +3799,7 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
 
         // Clusters are overwritten, if the last index
         // is not explictly set
-        if (_idx.nI[1] == -2 && _idx.nI[0] == 0)
+        if (_idx.row.back() == -2 && _idx.row.front() == 0)
             cluster.clear();
 
         for (size_t i = nCurrentComponent; i < vFinal.size(); i++)
@@ -3818,16 +3808,16 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
             if (vFinal[i].front() == '"')
             {
                 // Special case: only one single value
-                if (_idx.nI[0] == _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
+                if (_idx.row.size() == 1 && _idx.col.size() == 1)
                 {
-                    cluster.setString(_idx.nI[0], vFinal[i]);
+                    cluster.setString(_idx.row.front(), vFinal[i]);
                     break;
                 }
 
-                if (_idx.nI[0] + nthComponent > _idx.nI[1] && _idx.nI[1] != -2)
+                if (_idx.row[nthComponent] == VectorIndex::INVALID)
                     break;
 
-                cluster.setString(_idx.nI[0] + nthComponent, vFinal[i]);
+                cluster.setString(_idx.row[nthComponent], vFinal[i]);
                 nthComponent++;
             }
             else
@@ -3836,9 +3826,9 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
                 v = _parser.Eval(nResults);
 
                 // Special case: only one single value
-                if (_idx.nI[0] == _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
+                if (_idx.row.size() == 1 && _idx.col.size() == 1)
                 {
-                    cluster.setDouble(_idx.nI[0], v[0]);
+                    cluster.setDouble(_idx.row.front(), v[0]);
 
                     break;
                 }
@@ -3846,10 +3836,10 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
                 // Write the single values
                 for (int j = 0; j < nResults; j++)
                 {
-                    if (_idx.nI[0] + nthComponent > _idx.nI[1] && _idx.nI[1] != -2)
+                    if (_idx.row[nthComponent] == VectorIndex::INVALID)
                         break;
 
-                    cluster.setDouble(_idx.nI[0] + nthComponent, v[j]);
+                    cluster.setDouble(_idx.row[nthComponent], v[j]);
 
                     nthComponent++;
                 }
@@ -3864,12 +3854,6 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
         if (sTableName == "data")
             throw SyntaxError(SyntaxError::READ_ONLY_DATA, sObject, SyntaxError::invalid_position);
 
-        if (_idx.nI[1] == -1)
-            _idx.nI[1] = _idx.nI[0];
-
-        if (_idx.nJ[1] == -1)
-            _idx.nJ[1] = _idx.nJ[0];
-
         // Write the return values to the data table with
         // parsing them
         value_type* v = nullptr;
@@ -3883,9 +3867,9 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
             v = _parser.Eval(nResults);
 
             // Special case: only one single value
-            if (_idx.nI[0] == _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
+            if (_idx.row.size() == 1 && _idx.col.size() == 1)
             {
-                _data.writeToCache(_idx.nI[0], _idx.nJ[0], sTableName, v[0]);
+                _data.writeToCache(_idx.row.front(), _idx.col.front(), sTableName, v[0]);
 
                 break;
             }
@@ -3893,19 +3877,19 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
             // Write the single values
             for (int j = 0; j < nResults; j++)
             {
-                if (_idx.nI[0] == _idx.nI[1] && _idx.nJ[0] != _idx.nJ[1])
+                if (_idx.row.size() == 1 && _idx.col.size() > 1)
                 {
-                    if (_idx.nJ[0] + nthComponent > _idx.nJ[1] && _idx.nJ[1] != -2)
+                    if (_idx.col[nthComponent] == VectorIndex::INVALID)
                         break;
 
-                    _data.writeToCache(_idx.nI[0], _idx.nJ[0] + nthComponent, sTableName, v[j]);
+                    _data.writeToCache(_idx.row.front(), _idx.col[nthComponent], sTableName, v[j]);
                 }
-                else if (_idx.nI[0] != _idx.nI[1] && _idx.nJ[0] == _idx.nJ[1])
+                else if (_idx.row.size() > 1 && _idx.col.size() == 1)
                 {
-                    if (_idx.nI[0] + nthComponent > _idx.nI[1] && _idx.nI[1] != -2)
+                    if (_idx.row[nthComponent] == VectorIndex::INVALID)
                         break;
 
-                    _data.writeToCache(_idx.nI[0] + nthComponent, _idx.nJ[0], sTableName, v[j]);
+                    _data.writeToCache(_idx.row[nthComponent], _idx.col.front(), sTableName, v[j]);
                 }
 
                 nthComponent++;

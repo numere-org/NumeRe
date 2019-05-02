@@ -428,33 +428,16 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 
 			_idx = parser_getIndices(fitData.sChiMap, _parser, _data, _option);
 
-			if ((_idx.nI[0] == -1 || _idx.nJ[0] == -1) && (!_idx.vI.size() && !_idx.vJ.size()))
+			if (!isValidIndexSet(_idx))
 				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 
-			if (_idx.vJ.size() && _idx.vJ.size() < 2)
+			if (_idx.col.size() < 2)
 				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 
 			parser_evalIndices(fitData.sChiMap, _idx, _data);
 			fitData.sChiMap.erase(fitData.sChiMap.find('('));
-
-			if (!_idx.vJ.size())
-			{
-				if (_idx.nJ[1] < _idx.nJ[0])
-				{
-					fitData.sChiMap_Vars[0] = _data.getHeadLineElement(_idx.nJ[0], fitData.sChiMap);
-					fitData.sChiMap_Vars[1] = _data.getHeadLineElement(_idx.nJ[0] - 1, fitData.sChiMap);
-				}
-				else
-				{
-					fitData.sChiMap_Vars[0] = _data.getHeadLineElement(_idx.nJ[0], fitData.sChiMap);
-					fitData.sChiMap_Vars[1] = _data.getHeadLineElement(_idx.nJ[0] + 1, fitData.sChiMap);
-				}
-			}
-			else
-			{
-				fitData.sChiMap_Vars[0] = _data.getHeadLineElement(_idx.vJ[0], fitData.sChiMap);
-				fitData.sChiMap_Vars[1] = _data.getHeadLineElement(_idx.vJ[1], fitData.sChiMap);
-			}
+            fitData.sChiMap_Vars[0] = _data.getHeadLineElement(_idx.col[0], fitData.sChiMap);
+            fitData.sChiMap_Vars[1] = _data.getHeadLineElement(_idx.col[1], fitData.sChiMap);
 		}
 	}
 
@@ -803,54 +786,32 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 
     _idx = getIndicesForPlotAndFit(sCmd, sDataTable, nColumns, openEnd, isCluster);
 
-    if (_idx.nI[1] == -1)
-        _idx.nI[1] = _idx.nI[0]+1;
 
-    if (_idx.nJ[1] == -1)
-        _idx.nJ[1] = _idx.nJ[0]+1;
-
-    if (_idx.nI[1] == -2)
+    if (_idx.row.isOpenEnd())
     {
         if (!isCluster)
-            _idx.nI[1] = _data.getLines(sDataTable, false);
+            _idx.row.back() = _data.getLines(sDataTable, false);
         else
-            _idx.nI[1] = _data.getCluster(sDataTable).size();
+            _idx.row.back() = _data.getCluster(sDataTable).size();
     }
 
-    if (!isCluster && _idx.nJ[1] == -2)
+    if (!isCluster && _idx.col.isOpenEnd())
     {
-        _idx.nJ[1] = _data.getCols(sDataTable, false);
+        _idx.col.back() = _data.getCols(sDataTable, false);
     }
 
     if (!isCluster)
     {
-        if (_idx.nI[1] > _data.getLines(sDataTable, false))
-            _idx.nI[1] = _data.getLines(sDataTable, false);
+        if (_idx.row.back() > _data.getLines(sDataTable, false))
+            _idx.row.back() = _data.getLines(sDataTable, false);
 
-        if (_idx.nJ[1] > _data.getCols(sDataTable) - 1)
-            _idx.nJ[1] = _data.getCols(sDataTable) - 1;
+        if (_idx.col.back() > _data.getCols(sDataTable))
+            _idx.col.back() = _data.getCols(sDataTable);
     }
     else
     {
-        if (_idx.nI[1] > _data.getCluster(sDataTable).size())
-            _idx.nI[1] = _data.getCluster(sDataTable).size();
-    }
-
-    if (isCluster)
-    {
-        if (!_idx.vI.size() && !_idx.vJ.size() && _idx.nI[0] > _data.getCluster(sDataTable).size())
-        {
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sDataTable, SyntaxError::invalid_position);
-        }
-    }
-    else
-    {
-        if (!_idx.vI.size() && !_idx.vJ.size()
-            && (_idx.nI[0] > _data.getLines(sDataTable, false)
-                || _idx.nJ[0] > _data.getCols(sDataTable) - 1))
-        {
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sDataTable, SyntaxError::invalid_position);
-        }
+        if (_idx.row.back() > _data.getCluster(sDataTable).size())
+            _idx.row.back() = _data.getCluster(sDataTable).size();
     }
 
 	/* --> Bestimmen wir die "Dimension" des zu fittenden Datensatzes. Dabei ist es auch
@@ -858,13 +819,13 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 	 */
 	nDim = 0;
 
-	if (nColumns == 1 && fitData.bUseErrors && _idx.vJ.size() < 3)
+	if (nColumns == 1 && fitData.bUseErrors && _idx.col.size() < 3)
 		throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
 
-	if (nColumns == 1 && !_idx.vJ.size())
+	if (nColumns == 1 && !_idx.col.size())
 		nDim = 2;
 	else if (nColumns == 1)
-		nDim = _idx.vJ.size();
+		nDim = _idx.col.size();
 	else if (nColumns == 2)
 	{
 		if (!fitData.bUseErrors)
@@ -873,14 +834,14 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 			{
 				nDim = 2;
 
-				if (abs(_idx.nJ[1] - _idx.nJ[0]) < 1)
+				if (_idx.col.size() < 2)
 					throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
 			}
 			else
 			{
 				nDim = 3;
 
-				if (abs(_idx.nJ[1] - _idx.nJ[0]) < abs(_idx.nI[1] - _idx.nI[0]) + 1)
+				if (_idx.col.size() < _idx.row.size() + 2)
 					throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
 			}
 		}
@@ -890,39 +851,31 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 			{
 				nDim = 4;
 
-				if (abs(_idx.nJ[1] - _idx.nJ[0]) < 2)
+				if (_idx.col.size() < 3)
 					throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
 			}
 			else
 			{
 				nDim = 5;
 
-				if (abs(_idx.nJ[1] - _idx.nJ[0]) < 2 * abs(_idx.nI[1] - _idx.nI[0]) + 1)
+				if (_idx.col.size() < 3 * _idx.row.size() + 2)
 					throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
 			}
 		}
 	}
 	else
 	{
-		nDim = _idx.vJ.size();
+		nDim = _idx.col.size();
 	}
-
-	parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
 
 	if (isnan(fitData.dMin))
 	{
-		if (!_idx.vI.size())
-			fitData.dMin = _data.min(sDataTable, _idx.nI[0], _idx.nI[1] - 1, _idx.nJ[0]);
-		else
-			fitData.dMin = _data.min(sDataTable, _idx.vI, vector<long long int>(1, _idx.vJ[0]));
+		fitData.dMin = _data.min(sDataTable, _idx.row, VectorIndex(_idx.col.front()));
 	}
 
 	if (isnan(fitData.dMax))
 	{
-		if (!_idx.vI.size())
-			fitData.dMax = _data.max(sDataTable, _idx.nI[0], _idx.nI[1] - 1, _idx.nJ[0]);
-		else
-			fitData.dMax = _data.max(sDataTable, _idx.vI, vector<long long int>(1, _idx.vJ[0]));
+		fitData.dMax = _data.max(sDataTable, _idx.row, VectorIndex(_idx.col.front()));
 	}
 
 	if (fitData.dMax < fitData.dMin)
@@ -936,34 +889,12 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 	{
 		if (isnan(fitData.dMinY))
 		{
-			if (!_idx.vI.size())
-			{
-				if (nColumns == 2 && _idx.nJ[1] > _idx.nJ[0])
-					fitData.dMinY = _data.min(sDataTable, _idx.nI[0], _idx.nI[1] - 1, _idx.nJ[0] + 1);
-				else if (nColumns == 2)
-					fitData.dMinY = _data.min(sDataTable, _idx.nI[0], _idx.nI[1] - 1, _idx.nJ[0] - 1);
-				else
-					fitData.dMinY = _data.min(sDataTable, _idx.nI[0], _idx.nI[1] - 1, _idx.nJ[1]);
-			}
-			else
-			{
-				fitData.dMinY = _data.min(sDataTable, _idx.vI, vector<long long int>(1, _idx.vJ[1]));
-			}
+            fitData.dMinY = _data.min(sDataTable, _idx.row, VectorIndex(_idx.col[1]));
 		}
 
 		if (isnan(fitData.dMaxY))
 		{
-			if (!_idx.vI.size())
-			{
-				if (nColumns == 2 && _idx.nJ[1] > _idx.nJ[0])
-					fitData.dMaxY = _data.max(sDataTable, _idx.nI[0], _idx.nI[1] - 1, _idx.nJ[0] + 1);
-				else if (nColumns == 2)
-					fitData.dMaxY = _data.max(sDataTable, _idx.nI[0], _idx.nI[1] - 1, _idx.nJ[1] - 1);
-				else
-					fitData.dMaxY = _data.max(sDataTable, _idx.nI[0], _idx.nI[1] - 1, _idx.nJ[1]);
-			}
-			else
-				fitData.dMaxY = _data.max(sDataTable, _idx.vI, vector<long long int>(1, _idx.vJ[1]));
+			fitData.dMaxY = _data.max(sDataTable, _idx.row, VectorIndex(_idx.col[1]));
 		}
 
 		if (fitData.dMaxY < fitData.dMinY)
@@ -976,386 +907,146 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 
 	if (nDim == 2 || isCluster)
 	{
-		if (!_idx.vI.size())
-		{
-			for (int i = _idx.nI[0]; i < _idx.nI[1]; i++)
-			{
-				if (nColumns == 1)
-				{
-					if (isValidValue(getDataFromObject(sDataTable, i, _idx.nJ[0], isCluster)))
-					{
-						fitData.vx.push_back(i + 1);
-						fitData.vy.push_back(getDataFromObject(sDataTable, i, _idx.nJ[0], isCluster));
-					}
-				}
-				else
-				{
-					if (_data.isValidEntry(i, _idx.nJ[0], sDataTable) && _data.isValidEntry(i, _idx.nJ[1], sDataTable) && !openEnd)
-					{
-						if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(i, _idx.nJ[0], sDataTable) < fitData.dMin || _data.getElement(i, _idx.nJ[0], sDataTable) > fitData.dMax))
-							continue;
+        for (size_t i = 0; i < _idx.row.size(); i++)
+        {
+            if (nColumns == 1)
+            {
+                if (isValidValue(getDataFromObject(sDataTable, _idx.row[i], _idx.col[0], isCluster)))
+                {
+                    fitData.vx.push_back(_idx.row[i] + 1);
+                    fitData.vy.push_back(getDataFromObject(sDataTable, _idx.row[i], _idx.col[0], isCluster));
+                }
+            }
+            else
+            {
+                if (_data.isValidEntry(_idx.row[i], _idx.col[0], sDataTable) && _data.isValidEntry(_idx.row[i], _idx.col[1], sDataTable))
+                {
+                    if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col[0], sDataTable) < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable) > fitData.dMax))
+                        continue;
 
-						fitData.vx.push_back(_data.getElement(i, _idx.nJ[0], sDataTable));
-						fitData.vy.push_back(_data.getElement(i, _idx.nJ[1], sDataTable));
-					}
-					else if (_data.isValidEntry(i, _idx.nJ[0], sDataTable) && _data.isValidEntry(i, _idx.nJ[0] + 1, sDataTable) && openEnd)
-					{
-						if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(i, _idx.nJ[0], sDataTable) < fitData.dMin || _data.getElement(i, _idx.nJ[0], sDataTable) > fitData.dMax))
-							continue;
-
-						fitData.vx.push_back(_data.getElement(i, _idx.nJ[0], sDataTable));
-						fitData.vy.push_back(_data.getElement(i, _idx.nJ[0] + 1, sDataTable));
-					}
-				}
-			}
-		}
-		else
-		{
-			for (unsigned int i = 0; i < _idx.vI.size(); i++)
-			{
-				if (nColumns == 1)
-				{
-					if (isValidValue(getDataFromObject(sDataTable, _idx.vI[i], _idx.vJ[0], isCluster)))
-					{
-						fitData.vx.push_back(_idx.vI[i] + 1);
-						fitData.vy.push_back(getDataFromObject(sDataTable, _idx.vI[i], _idx.vJ[0], isCluster));
-					}
-				}
-				else
-				{
-					if (_data.isValidEntry(_idx.vI[i], _idx.vJ[0], sDataTable) && _data.isValidEntry(_idx.vI[i], _idx.vJ[1], sDataTable))
-					{
-						if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) < fitData.dMin || _data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) > fitData.dMax))
-							continue;
-
-						fitData.vx.push_back(_data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable));
-						fitData.vy.push_back(_data.getElement(_idx.vI[i], _idx.vJ[1], sDataTable));
-					}
-				}
-			}
-		}
+                    fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable));
+                    fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable));
+                }
+            }
+        }
 	}
 	else if (!isCluster && nDim == 4)
 	{
-		if (!_idx.vI.size())
-		{
-			int nErrorCols = 2;
+        int nErrorCols = 2;
 
-			if (nColumns == 2)
-			{
-				if (abs(_idx.nJ[1] - _idx.nJ[0]) == 2)
-					nErrorCols = 1;
-			}
-			else if (nColumns == 4)
-				nErrorCols = 2;
+        if (nColumns == 2)
+        {
+            if (abs(_idx.col[1] - _idx.col[0]) == 2)
+                nErrorCols = 1;
+        }
+        else if (nColumns == 4)
+            nErrorCols = 2;
 
-			for (int i = _idx.nI[0]; i < _idx.nI[1]; i++)
-			{
-				if (nColumns == 2)
-				{
-					if ((_data.isValidEntry(i, _idx.nJ[0], sDataTable) && _data.isValidEntry(i, _idx.nJ[0] + 1, sDataTable) && _idx.nJ[0] < _idx.nJ[1])
-							|| (_data.isValidEntry(i, _idx.nJ[1], sDataTable) && _data.isValidEntry(i, _idx.nJ[1] - 1, sDataTable) && _idx.nJ[1] < _idx.nJ[0]))
-					{
-						if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(i, _idx.nJ[0], sDataTable) < fitData.dMin || _data.getElement(i, _idx.nJ[0], sDataTable) > fitData.dMax))
-							continue;
+        for (size_t i = 0; i < _idx.row.size(); i++)
+        {
+            if (nColumns == 2)
+            {
+                if (_data.isValidEntry(_idx.row[i], _idx.col[0], sDataTable) && _data.isValidEntry(_idx.row[i], _idx.col[1], sDataTable))
+                {
+                    if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col[0], sDataTable) < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable) > fitData.dMax))
+                        continue;
 
-						if (_idx.nJ[0] < _idx.nJ[1])
-						{
-							fitData.vx.push_back(_data.getElement(i, _idx.nJ[0], sDataTable));
-							fitData.vy.push_back(_data.getElement(i, _idx.nJ[0] + 1, sDataTable));
+                    fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable));
+                    fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable));
 
-							if (nErrorCols == 1)
-							{
-								if (_data.isValidEntry(i, _idx.nJ[0] + 2, sDataTable))
-									fitData.vy_w.push_back(fabs(_data.getElement(i, _idx.nJ[0] + 2, sDataTable)));
-								else
-									fitData.vy_w.push_back(0.0);
-							}
-							else
-							{
-								if (_data.isValidEntry(i, _idx.nJ[0] + 2, sDataTable) && _data.isValidEntry(i, _idx.nJ[0] + 3, sDataTable) && (_data.getElement(i, _idx.nJ[0] + 2, sDataTable) && _data.getElement(i, _idx.nJ[0] + 3, sDataTable)))
-									fitData.vy_w.push_back(sqrt(fabs(_data.getElement(i, _idx.nJ[0] + 2, sDataTable)) * fabs(_data.getElement(i, _idx.nJ[0] + 3, sDataTable))));
-								else if (_data.isValidEntry(i, _idx.nJ[0] + 2, sDataTable) && _data.getElement(i, _idx.nJ[0] + 2, sDataTable))
-									fitData.vy_w.push_back(fabs(_data.getElement(i, _idx.nJ[0] + 2, sDataTable)));
-								else if (_data.isValidEntry(i, _idx.nJ[0] + 3, sDataTable) && _data.getElement(i, _idx.nJ[0] + 3, sDataTable))
-									fitData.vy_w.push_back(fabs(_data.getElement(i, _idx.nJ[0] + 3, sDataTable)));
-								else
-									fitData.vy_w.push_back(0.0);
-							}
-						}
-						else
-						{
-							fitData.vx.push_back(_data.getElement(i, _idx.nJ[0], sDataTable));
-							fitData.vy.push_back(_data.getElement(i, _idx.nJ[0] - 1, sDataTable));
+                    if (nErrorCols == 1)
+                    {
+                        if (_data.isValidEntry(_idx.row[i], _idx.col[2], sDataTable))
+                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable)));
+                        else
+                            fitData.vy_w.push_back(0.0);
+                    }
+                    else
+                    {
+                        if (_data.isValidEntry(_idx.row[i], _idx.col[2], sDataTable) && _data.isValidEntry(_idx.row[i], _idx.col[3], sDataTable) && (_data.getElement(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[3], sDataTable)))
+                            fitData.vy_w.push_back(sqrt(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable)) * fabs(_data.getElement(_idx.row[i], _idx.col[3], sDataTable))));
+                        else if (_data.isValidEntry(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[2], sDataTable))
+                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable)));
+                        else if (_data.isValidEntry(_idx.row[i], _idx.col[3], sDataTable) && _data.getElement(_idx.row[i], _idx.col[3], sDataTable))
+                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[3], sDataTable)));
+                        else
+                            fitData.vy_w.push_back(0.0);
+                    }
+                }
+            }
+            else
+            {
+                if (_data.isValidEntry(_idx.row[i], _idx.col[0], sDataTable) && _data.isValidEntry(_idx.row[i], _idx.col[1], sDataTable))
+                {
+                    if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col[0], sDataTable) < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable) > fitData.dMax))
+                        continue;
 
-							if (nErrorCols == 1)
-							{
-								if (_data.isValidEntry(i, _idx.nJ[0] - 2, sDataTable))
-									fitData.vy_w.push_back(fabs(_data.getElement(i, _idx.nJ[0] - 2, sDataTable)));
-								else
-									fitData.vy_w.push_back(0.0);
-							}
-							else
-							{
-								if (_data.isValidEntry(i, _idx.nJ[0] - 2, sDataTable) && _data.isValidEntry(i, _idx.nJ[0] - 3, sDataTable) && (_data.getElement(i, _idx.nJ[0] - 2, sDataTable) && _data.getElement(i, _idx.nJ[0] - 3, sDataTable)))
-									fitData.vy_w.push_back(sqrt(fabs(_data.getElement(i, _idx.nJ[0] - 2, sDataTable)) * fabs(_data.getElement(i, _idx.nJ[0] - 3, sDataTable))));
-								else if (_data.isValidEntry(i, _idx.nJ[0] - 2, sDataTable) && _data.getElement(i, _idx.nJ[0] - 2, sDataTable))
-									fitData.vy_w.push_back(fabs(_data.getElement(i, _idx.nJ[0] - 2, sDataTable)));
-								else if (_data.isValidEntry(i, _idx.nJ[0] - 3, sDataTable) && _data.getElement(i, _idx.nJ[0] - 3, sDataTable))
-									fitData.vy_w.push_back(fabs(_data.getElement(i, _idx.nJ[0] - 3, sDataTable)));
-								else
-									fitData.vy_w.push_back(0.0);
-							}
-						}
-					}
-				}
-			}
-		}
-		else
-		{
-			int nErrorCols = 2;
+                    fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable));
+                    fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable));
 
-			if (nColumns == 2)
-			{
-				if (abs(_idx.vJ[1] - _idx.vJ[0]) == 2)
-					nErrorCols = 1;
-			}
-			else if (nColumns == 4)
-				nErrorCols = 2;
-
-			for (unsigned int i = 0; i < _idx.vI.size(); i++)
-			{
-				if (nColumns == 2)
-				{
-					if (_data.isValidEntry(_idx.vI[i], _idx.vJ[0], sDataTable) && _data.isValidEntry(_idx.vI[i], _idx.vJ[1], sDataTable))
-					{
-						if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) < fitData.dMin || _data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) > fitData.dMax))
-							continue;
-
-						fitData.vx.push_back(_data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable));
-						fitData.vy.push_back(_data.getElement(_idx.vI[i], _idx.vJ[1], sDataTable));
-
-						if (nErrorCols == 1)
-						{
-							if (_data.isValidEntry(_idx.vI[i], _idx.vJ[2], sDataTable))
-								fitData.vy_w.push_back(fabs(_data.getElement(_idx.vI[i], _idx.vJ[2], sDataTable)));
-							else
-								fitData.vy_w.push_back(0.0);
-						}
-						else
-						{
-							if (_data.isValidEntry(_idx.vI[i], _idx.vJ[2], sDataTable) && _data.isValidEntry(_idx.vI[i], _idx.vJ[3], sDataTable) && (_data.getElement(_idx.vI[i], _idx.vJ[2], sDataTable) && _data.getElement(_idx.vI[i], _idx.vJ[3], sDataTable)))
-								fitData.vy_w.push_back(sqrt(fabs(_data.getElement(_idx.vI[i], _idx.vJ[2], sDataTable)) * fabs(_data.getElement(_idx.vI[i], _idx.vJ[3], sDataTable))));
-							else if (_data.isValidEntry(_idx.vI[i], _idx.vJ[2], sDataTable) && _data.getElement(_idx.vI[i], _idx.vJ[2], sDataTable))
-								fitData.vy_w.push_back(fabs(_data.getElement(_idx.vI[i], _idx.vJ[2], sDataTable)));
-							else if (_data.isValidEntry(_idx.vI[i], _idx.vJ[3], sDataTable) && _data.getElement(_idx.vI[i], _idx.vJ[3], sDataTable))
-								fitData.vy_w.push_back(fabs(_data.getElement(_idx.vI[i], _idx.vJ[3], sDataTable)));
-							else
-								fitData.vy_w.push_back(0.0);
-						}
-					}
-				}
-				else
-				{
-					if (_data.isValidEntry(_idx.vI[i], _idx.vJ[0], sDataTable) && _data.isValidEntry(_idx.vI[i], _idx.vJ[1], sDataTable))
-					{
-						if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) < fitData.dMin || _data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) > fitData.dMax))
-							continue;
-
-						fitData.vx.push_back(_data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable));
-						fitData.vy.push_back(_data.getElement(_idx.vI[i], _idx.vJ[1], sDataTable));
-
-						if (_data.isValidEntry(_idx.vI[i], _idx.vJ[2], sDataTable) && _data.isValidEntry(_idx.vI[i], _idx.vJ[3], sDataTable) && (_data.getElement(_idx.vI[i], _idx.vJ[2], sDataTable) && _data.getElement(_idx.vI[i], _idx.vJ[3], sDataTable)))
-							fitData.vy_w.push_back(sqrt(fabs(_data.getElement(_idx.vI[i], _idx.vJ[2], sDataTable)) * fabs(_data.getElement(i, _idx.vJ[3], sDataTable))));
-						else if (_data.isValidEntry(_idx.vI[i], _idx.vJ[2], sDataTable) && _data.getElement(_idx.vI[i], _idx.vJ[2], sDataTable))
-							fitData.vy_w.push_back(fabs(_data.getElement(_idx.vI[i], _idx.vJ[2], sDataTable)));
-						else if (_data.isValidEntry(_idx.vI[i], _idx.vJ[3], sDataTable) && _data.getElement(_idx.vI[i], _idx.vJ[3], sDataTable))
-							fitData.vy_w.push_back(fabs(_data.getElement(_idx.vI[i], _idx.vJ[3], sDataTable)));
-						else
-							fitData.vy_w.push_back(0.0);
-					}
-				}
-			}
-		}
-
+                    if (_data.isValidEntry(_idx.row[i], _idx.col[2], sDataTable) && _data.isValidEntry(_idx.row[i], _idx.col[3], sDataTable) && (_data.getElement(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[3], sDataTable)))
+                        fitData.vy_w.push_back(sqrt(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable)) * fabs(_data.getElement(i, _idx.col[3], sDataTable))));
+                    else if (_data.isValidEntry(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[2], sDataTable))
+                        fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable)));
+                    else if (_data.isValidEntry(_idx.row[i], _idx.col[3], sDataTable) && _data.getElement(_idx.row[i], _idx.col[3], sDataTable))
+                        fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[3], sDataTable)));
+                    else
+                        fitData.vy_w.push_back(0.0);
+                }
+            }
+        }
 	}
 	else if (!isCluster && (fitData.nFitVars & 2))
 	{
-		if (!_idx.vI.size())
-		{
-			for (long long int i = _idx.nI[0]; i < _idx.nI[1]; i++)
-			{
-				if (nColumns == 2 && _idx.nJ[1] > _idx.nJ[0])
-				{
-					if (!_data.isValidEntry(i, _idx.nJ[0] + 1, sDataTable) || _data.getElement(i, _idx.nJ[0] + 1, sDataTable) < fitData.dMinY || _data.getElement(i, _idx.nJ[0] + 1, sDataTable) > fitData.dMaxY)
-					{
-					}
-					else
-						fitData.vy.push_back(_data.getElement(i, _idx.nJ[0] + 1, sDataTable));
-				}
-				else if (nColumns == 2)
-				{
-					if (!_data.isValidEntry(i, _idx.nJ[0] - 1, sDataTable) || _data.getElement(i, _idx.nJ[0] - 1, sDataTable) < fitData.dMinY || _data.getElement(i, _idx.nJ[0] - 1, sDataTable) > fitData.dMaxY)
-					{
-					}
-					else
-						fitData.vy.push_back(_data.getElement(i, _idx.nJ[0] - 1, sDataTable));
-				}
-				else
-				{
-					if (!_data.isValidEntry(i, _idx.nJ[1], sDataTable) || _data.getElement(i, _idx.nJ[1], sDataTable) < fitData.dMinY || _data.getElement(i, _idx.nJ[1], sDataTable) > fitData.dMaxY)
-					{
-					}
-					else
-						fitData.vy.push_back(_data.getElement(i, _idx.nJ[1], sDataTable));
-				}
+        for (size_t i = 0; i < _idx.row.size(); i++)
+        {
+            if (!_data.isValidEntry(_idx.row[i], _idx.col[1], sDataTable) || _data.getElement(_idx.row[i], _idx.col[1], sDataTable) < fitData.dMinY || _data.getElement(_idx.row[i], _idx.col[1], sDataTable) > fitData.dMaxY)
+                continue;
+            else
+                fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable));
 
-				if (!_data.isValidEntry(i, _idx.nJ[0], sDataTable) || _data.getElement(i, _idx.nJ[0], sDataTable) < fitData.dMin || _data.getElement(i, _idx.nJ[0], sDataTable) > fitData.dMax)
-					continue;
-				else
-					fitData.vx.push_back(_data.getElement(i, _idx.nJ[0], sDataTable));
+            if (!_data.isValidEntry(_idx.row[i], _idx.col[0], sDataTable) || _data.getElement(_idx.row[i], _idx.col[0], sDataTable) < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable) > fitData.dMax)
+                continue;
+            else
+                fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable));
 
-				if (nColumns == 2 && _idx.nJ[1] > _idx.nJ[0])
-				{
-					for (long long int k = _idx.nJ[0] + 2; k < _idx.nJ[0] + _idx.nI[1] - _idx.nI[0] + 2; k++)
-					{
-						if (!_data.isValidEntry(k - _idx.nJ[0] - 2 + _idx.nI[0], _idx.nJ[0] + 1, sDataTable) || _data.getElement(k - _idx.nJ[0] - 2 + _idx.nI[0], _idx.nJ[0] + 1, sDataTable) < fitData.dMinY || _data.getElement(k - _idx.nJ[0] - 2 + _idx.nI[0], _idx.nJ[0] + 1, sDataTable) > fitData.dMaxY)
-							continue;
-						else
-						{
-							vTempZ.push_back(_data.getElement(i, k, sDataTable));
+            for (size_t k = 2; k < _idx.col.size(); k++)
+            {
+                if (nColumns > 3 && k == _idx.row.size() + 2)
+                    break;
 
-							if (fitData.bUseErrors && _data.isValidEntry(i, k + _idx.nI[1] - _idx.nI[0], sDataTable))
-								fitData.vy_w.push_back(_data.getElement(i, k + _idx.nI[1] - _idx.nI[0], sDataTable));
-							else if (fitData.bUseErrors)
-								fitData.vy_w.push_back(0.0);
-						}
-					}
-				}
-				else if (nColumns == 2)
-				{
-					for (long long int k = _idx.nJ[0] - 2; k > _idx.nJ[0] - _idx.nI[1] + _idx.nI[0] - 2; k--)
-					{
-						if (k < 0)
-							break;
+                if (!_data.isValidEntry(_idx.row[k], _idx.col[1], sDataTable)
+                        || _data.getElement(_idx.row[k], _idx.col[1], sDataTable) < fitData.dMinY
+                        || _data.getElement(_idx.row[k], _idx.col[1], sDataTable) > fitData.dMaxY)
+                    continue;
+                else
+                    vTempZ.push_back(_data.getElement(_idx.row[i], _idx.col[k], sDataTable));
+            }
 
-						if (!_data.isValidEntry(_idx.nI[0] - (k - _idx.nJ[0] + 2), _idx.nJ[0] - 1, sDataTable) || _data.getElement(_idx.nI[0] - (k - _idx.nJ[0] + 2), _idx.nJ[0] - 1, sDataTable) < fitData.dMinY || _data.getElement(_idx.nI[0] - (k - _idx.nJ[0] + 2), _idx.nJ[0] - 1, sDataTable) > fitData.dMaxY)
-							continue;
-						else
-						{
-							vTempZ.push_back(_data.getElement(i, k, sDataTable));
+            fitData.vz.push_back(vTempZ);
+            vTempZ.clear();
 
-							if (fitData.bUseErrors && k - _idx.nI[1] + _idx.nI[0] >= 0 && _data.isValidEntry(i, k - _idx.nI[1] + _idx.nI[0], sDataTable))
-								fitData.vy_w.push_back(_data.getElement(i, k - _idx.nI[1] + _idx.nI[0], sDataTable));
-							else if (fitData.bUseErrors)
-								fitData.vy_w.push_back(0.0);
-						}
-					}
-				}
-
-				fitData.vz.push_back(vTempZ);
-				vTempZ.clear();
-
-				if (fitData.vy_w.size() && fitData.bUseErrors)
-				{
-					fitData.vz_w.push_back(fitData.vy_w);
-					fitData.vy_w.clear();
-				}
-			}
-		}
-		else
-		{
-			for (long long int i = 0; i < _idx.vI.size(); i++)
-			{
-				if (!_data.isValidEntry(_idx.vI[i], _idx.vJ[1], sDataTable) || _data.getElement(_idx.vI[i], _idx.vJ[1], sDataTable) < fitData.dMinY || _data.getElement(_idx.vI[i], _idx.vJ[1], sDataTable) > fitData.dMaxY)
-				{
-				}
-				else
-					fitData.vy.push_back(_data.getElement(_idx.vI[i], _idx.vJ[1], sDataTable));
-
-				if (!_data.isValidEntry(_idx.vI[i], _idx.vJ[0], sDataTable) || _data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) < fitData.dMin || _data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) > fitData.dMax)
-					continue;
-				else
-					fitData.vx.push_back(_data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable));
-
-				if (nColumns == 2 && _idx.nJ[1] > _idx.nJ[0])
-				{
-					for (long long int k = _idx.nJ[0] + 2; k < _idx.nJ[0] + _idx.nI[1] - _idx.nI[0] + 2; k++)
-					{
-						if (!_data.isValidEntry(k - _idx.nJ[0] - 2 + _idx.nI[0], _idx.nJ[0] + 1, sDataTable) || _data.getElement(k - _idx.nJ[0] - 2 + _idx.nI[0], _idx.nJ[0] + 1, sDataTable) < fitData.dMinY || _data.getElement(k - _idx.nJ[0] - 2 + _idx.nI[0], _idx.nJ[0] + 1, sDataTable) > fitData.dMaxY)
-							continue;
-						else
-						{
-							vTempZ.push_back(_data.getElement(i, k, sDataTable));
-
-							if (fitData.bUseErrors && _data.isValidEntry(i, k + _idx.nI[1] - _idx.nI[0], sDataTable))
-								fitData.vy_w.push_back(_data.getElement(i, k + _idx.nI[1] - _idx.nI[0], sDataTable));
-							else if (fitData.bUseErrors)
-								fitData.vy_w.push_back(0.0);
-						}
-					}
-				}
-				else if (nColumns == 2)
-				{
-					for (long long int k = _idx.nJ[0] - 2; k > _idx.nJ[0] - _idx.nI[1] + _idx.nI[0] - 2; k--)
-					{
-						if (k < 0)
-							break;
-
-						if (!_data.isValidEntry(_idx.nI[0] - (k - _idx.nJ[0] + 2), _idx.nJ[0] - 1, sDataTable) || _data.getElement(_idx.nI[0] - (k - _idx.nJ[0] + 2), _idx.nJ[0] - 1, sDataTable) < fitData.dMinY || _data.getElement(_idx.nI[0] - (k - _idx.nJ[0] + 2), _idx.nJ[0] - 1, sDataTable) > fitData.dMaxY)
-							continue;
-						else
-						{
-							vTempZ.push_back(_data.getElement(i, k, sDataTable));
-
-							if (fitData.bUseErrors && k - _idx.nI[1] + _idx.nI[0] >= 0 && _data.isValidEntry(i, k - _idx.nI[1] + _idx.nI[0], sDataTable))
-								fitData.vy_w.push_back(_data.getElement(i, k - _idx.nI[1] + _idx.nI[0], sDataTable));
-							else if (fitData.bUseErrors)
-								fitData.vy_w.push_back(0.0);
-						}
-					}
-				}
-				else
-				{
-					for (long long int k = _idx.vJ[2]; k < _idx.vJ.size(); k++)
-					{
-						if (nColumns > 3 && k == _idx.vI.size() + 2)
-							break;
-
-						if (!_data.isValidEntry(_idx.vI[k], _idx.vJ[1], sDataTable)
-								|| _data.getElement(_idx.vI[k], _idx.vJ[1], sDataTable) < fitData.dMinY
-								|| _data.getElement(_idx.vI[k], _idx.vJ[1], sDataTable) > fitData.dMaxY)
-							continue;
-						else
-							vTempZ.push_back(_data.getElement(_idx.vI[i], _idx.vJ[k], sDataTable));
-					}
-				}
-
-				fitData.vz.push_back(vTempZ);
-				vTempZ.clear();
-
-				if (fitData.vy_w.size() && fitData.bUseErrors)
-				{
-					fitData.vz_w.push_back(fitData.vy_w);
-					fitData.vy_w.clear();
-				}
-			}
-		}
+            if (fitData.vy_w.size() && fitData.bUseErrors)
+            {
+                fitData.vz_w.push_back(fitData.vy_w);
+                fitData.vy_w.clear();
+            }
+        }
 	}
 	else
 	{
-        for (unsigned int i = 0; i < _idx.vI.size(); i++)
+        for (unsigned int i = 0; i < _idx.row.size(); i++)
         {
-            if (_data.isValidEntry(_idx.vI[i], _idx.vJ[0], sDataTable) && _data.isValidEntry(_idx.vI[i], _idx.vJ[1], sDataTable))
+            if (_data.isValidEntry(_idx.row[i], _idx.col[0], sDataTable) && _data.isValidEntry(_idx.row[i], _idx.col[1], sDataTable))
             {
-                if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) < fitData.dMin || _data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable) > fitData.dMax))
+                if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col[0], sDataTable) < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable) > fitData.dMax))
                     continue;
 
-                fitData.vx.push_back(_data.getElement(_idx.vI[i], _idx.vJ[0], sDataTable));
-                fitData.vy.push_back(_data.getElement(_idx.vI[i], _idx.vJ[1], sDataTable));
+                fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable));
+                fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable));
 
-                if (_data.isValidEntry(_idx.vI[i], _idx.vJ[2], sDataTable))
-                    fitData.vy_w.push_back(fabs(_data.getElement(_idx.vI[i], _idx.vJ[2], sDataTable)));
+                if (_data.isValidEntry(_idx.row[i], _idx.col[2], sDataTable))
+                    fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable)));
                 else
                     fitData.vy_w.push_back(0.0);
             }
@@ -1366,11 +1057,11 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 
 	if (nDim == 2)
 	{
-		sDimsForFitLog += toString(_idx.nJ[0]+1);
+		sDimsForFitLog += toString(_idx.col.front()+1);
 
 		if (nColumns == 2)
 		{
-			sDimsForFitLog += ", " + toString(_idx.nJ[1] + 1);
+			sDimsForFitLog += ", " + toString(_idx.col.last() + 1);
 		}
 	}
 	else if (nDim == 4)
@@ -1379,7 +1070,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 
 		if (nColumns == 2)
 		{
-			if (abs(_idx.nJ[1] - _idx.nJ[0]) == 3)
+			if (_idx.col.size() == 3)
 				nErrorCols = 1;
 		}
 		else if (nColumns == 4)
@@ -1387,52 +1078,35 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 
 		if (nColumns == 2)
 		{
-			if (_idx.nJ[0] < _idx.nJ[1])
-			{
-				sDimsForFitLog += toString(_idx.nJ[0] + 1) + ", " + toString(_idx.nJ[0] + 2) + ", " + toString(_idx.nJ[0] + 3);
+            sDimsForFitLog += toString(_idx.col[0] + 1) + ", " + toString(_idx.col[1] + 1) + ", " + toString(_idx.col[2] + 1);
 
-				if (nErrorCols == 2)
-					sDimsForFitLog + ", " + toString(_idx.nJ[0] + 4);
-			}
-			else
-			{
-				sDimsForFitLog += toString(_idx.nJ[0] + 1) + ", " + toString(_idx.nJ[0]) + ", " + toString(_idx.nJ[0] - 1);
-
-				if (nErrorCols == 2)
-					sDimsForFitLog += ", " + toString(_idx.nJ[0] - 2);
-			}
+            if (nErrorCols == 2)
+                sDimsForFitLog + ", " + toString(_idx.col[3] + 1);
 		}
 		else
 		{
-			sDimsForFitLog += toString(_idx.vJ[0] + 1) + ", " + toString(_idx.vJ[1] + 1) + ", " + toString(_idx.vJ[2] + 1) + ", " + toString(_idx.vJ[3] + 1);
+			sDimsForFitLog += toString(_idx.col[0] + 1) + ", " + toString(_idx.col[1] + 1) + ", " + toString(_idx.col[2] + 1) + ", " + toString(_idx.col[3] + 1);
 		}
 	}
 	else if ((fitData.nFitVars & 2))
 	{
-		if (nColumns == 2 && _idx.nJ[1] > _idx.nJ[0])
+		if (nColumns == 2)
 		{
-			sDimsForFitLog += toString(_idx.nJ[0] + 1) + ", " + toString(_idx.nJ[0] + 2) + ", " + toString(_idx.nJ[0] + 3) + "-" + toString(_idx.nJ[0] + 2 + _idx.nI[1] - _idx.nI[0]);
+			sDimsForFitLog += toString(_idx.col[0] + 1) + ", " + toString(_idx.col[1] + 1) + ", " + toString(_idx.col[2] + 1) + "-" + toString(_idx.col.last()+1);
 
 			if (fitData.bUseErrors)
-				sDimsForFitLog += ", " + toString(_idx.vJ[2] + 3 + _idx.nI[1] - _idx.nI[0]) + "-" + toString(_idx.vJ[0] + 2 + 2 * (_idx.nI[1] - _idx.nI[0]));
-		}
-		else if (nColumns == 2)
-		{
-			sDimsForFitLog += toString(_idx.nJ[0] + 1) + ", " + toString(_idx.nJ[0]) + ", " + toString(_idx.nJ[0] - 1) + "-" + toString(_idx.nJ[0] - 2 - _idx.nI[1] + _idx.nI[0]);
-
-			if (fitData.bUseErrors)
-				sDimsForFitLog += ", " + toString(_idx.vJ[2] - 3 - _idx.nI[1] + _idx.nI[0]) + "-" + toString(_idx.vJ[0] - 2 - 2 * (_idx.nI[1] - _idx.nI[0]));
+				sDimsForFitLog += ", " + toString(_idx.col[2] + 2 + _idx.row.size()) + "-" + toString(_idx.col[2] + 2 + 2 * _idx.row.size());
 		}
 		else
 		{
-			sDimsForFitLog += toString(_idx.vJ[0] + 1) + ", " + toString(_idx.vJ[1] + 1) + ", " + toString(_idx.vJ[2] + 1) + "-" + toString(_idx.vJ[2] + _idx.nI[1] - _idx.nI[0]);
+			sDimsForFitLog += toString(_idx.col[0] + 1) + ", " + toString(_idx.col[1] + 1) + ", " + toString(_idx.col[2] + 1) + "-" + toString(_idx.col[2] + _idx.row.size());
 
 			if (fitData.bUseErrors)
 			{
 				if (nColumns > 3)
-					sDimsForFitLog += ", " + toString(_idx.vJ[3] + 1) + "-" + toString(_idx.vJ[3] + (_idx.nI[1] - _idx.nI[0]));
+					sDimsForFitLog += ", " + toString(_idx.col[3] + 1) + "-" + toString(_idx.col[3] + _idx.row.size());
 				else
-					sDimsForFitLog += ", " + toString(_idx.vJ[2] + _idx.nI[1] - _idx.nI[0] + 1) + "-" + toString(_idx.vJ[0] + 2 * (_idx.nI[1] - _idx.nI[0]));
+					sDimsForFitLog += ", " + toString(_idx.col[2] + _idx.row.size() + 1) + "-" + toString(_idx.col[0] + 2 * (_idx.row.size()));
 			}
 		}
 	}
@@ -1440,7 +1114,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 	{
 		for (int k = 0; k < (int)nDim; k++)
 		{
-			sDimsForFitLog += toString(_idx.vJ[k] + 1);
+			sDimsForFitLog += toString(_idx.col[k] + 1);
 
 			if (k + 1 < (int)nDim)
 				sDimsForFitLog += ", ";
@@ -1487,70 +1161,36 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
 
     Fitcontroller _fControl(&_parser);
 
-    if (!_idx.vI.size())
+    for (size_t i = 0; i < _idx.row.size(); i++)
     {
-        for (long long int i = _idx.nI[0]; i < _idx.nI[1]; i++)
+        for (size_t j = 0; j <= (_idx.row.size() - 1) * (!fitData.b1DChiMap); j++)
         {
-            for (long long int j = _idx.nI[0]; j <= (_idx.nI[1] - 1) * (!fitData.b1DChiMap) + _idx.nI[0] * (fitData.b1DChiMap); j++)
+            auto iter = paramsMap.begin();
+
+            for (unsigned int n = 0; n < vInitialVals.size(); n++)
             {
-                auto iter = paramsMap.begin();
+                *(iter->second) = vInitialVals[n];
+                ++iter;
+            }
 
-                for (unsigned int n = 0; n < vInitialVals.size(); n++)
-                {
-                    *(iter->second) = vInitialVals[n];
-                    ++iter;
-                }
+            if (!_data.isValidEntry(_idx.row[i], _idx.col[0], fitData.sChiMap))
+                continue;
 
-                if (!_data.isValidEntry(i, _idx.nJ[0], fitData.sChiMap))
+            *(varMap.at(fitData.sChiMap_Vars[0])) = _data.getElement(_idx.row[i], _idx.col[0], fitData.sChiMap);
+
+            if (!fitData.b1DChiMap)
+            {
+                if (!_data.isValidEntry(_idx.row[j], _idx.col[1], fitData.sChiMap))
                     continue;
 
-                *(varMap.at(fitData.sChiMap_Vars[0])) = _data.getElement(i, _idx.nJ[0], fitData.sChiMap);
+                *(varMap.at(fitData.sChiMap_Vars[1])) = _data.getElement(_idx.row[j], _idx.col[1], fitData.sChiMap);
+            }
 
-                if (!fitData.b1DChiMap && _idx.nJ[0] < _idx.nJ[1])
+            if (fitData.nDim >= 2 && fitData.nFitVars == 1)
+            {
+                if (!fitData.bUseErrors)
                 {
-                    if (!_data.isValidEntry(i, _idx.nJ[0] + 1, fitData.sChiMap))
-                        continue;
-
-                    *(varMap.at(fitData.sChiMap_Vars[1])) = _data.getElement(j, _idx.nJ[0] + 1, fitData.sChiMap);
-                }
-                else if (!fitData.b1DChiMap)
-                {
-                    if (!_data.isValidEntry(i, _idx.nJ[0] - 1, fitData.sChiMap))
-                        continue;
-
-                    *(varMap.at(fitData.sChiMap_Vars[1])) = _data.getElement(j, _idx.nJ[0] - 1, fitData.sChiMap);
-                }
-
-                if (fitData.nDim >= 2 && fitData.nFitVars == 1)
-                {
-                    if (!fitData.bUseErrors)
-                    {
-                        if (!_fControl.fit(fitData.vx, fitData.vy, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
-                        {
-                            if (_option.getSystemPrintStatus())
-                                NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
-
-                            return false;
-                        }
-
-                        sFunctionDefString = "Fit(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
-                    }
-                    else
-                    {
-                        if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vy_w, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
-                        {
-                            if (_option.getSystemPrintStatus())
-                                NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
-
-                            return false;
-                        }
-
-                        sFunctionDefString = "Fitw(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
-                    }
-                }
-                else if (fitData.nDim == 3)
-                {
-                    if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vz, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
+                    if (!_fControl.fit(fitData.vx, fitData.vy, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
                     {
                         if (_option.getSystemPrintStatus())
                             NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
@@ -1558,128 +1198,53 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
                         return false;
                     }
 
-                    sFunctionDefString = "Fit(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
-                }
-                else if (fitData.nDim == 5)
-                {
-                    if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vz, fitData.vz_w, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
-                    {
-                        if (_option.getSystemPrintStatus())
-                            NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
-
-                        return false;
-                    }
-
-                    sFunctionDefString = "Fitw(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
-                }
-                if (_idx.nJ[0] < _idx.nJ[1])
-                {
-                    _data.writeToCache(i, _idx.nJ[0] + 1 + (!fitData.b1DChiMap) * (j - _idx.nI[0] + 1), fitData.sChiMap, _fControl.getFitChi());
-
-                    if (i == _idx.nI[0] && !fitData.b1DChiMap)
-                        _data.setHeadLineElement(_idx.nJ[0] + 1 + (!fitData.b1DChiMap) * (j - _idx.nI[0] + 1), fitData.sChiMap, "chi^2[" + toString(j - _idx.nI[0] + 1) + "]");
-                    else if (i == _idx.nI[0])
-                        _data.setHeadLineElement(_idx.nJ[0] + 1 + (!fitData.b1DChiMap) * (j - _idx.nI[0] + 1), fitData.sChiMap, "chi^2");
+                    sFunctionDefString = "Fit(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
                 }
                 else
                 {
-                    _data.writeToCache(i, _idx.nJ[0] - 1 - (!fitData.b1DChiMap) * (j - _idx.nI[0] + 1), fitData.sChiMap, _fControl.getFitChi());
+                    if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vy_w, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
+                    {
+                        if (_option.getSystemPrintStatus())
+                            NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
 
-                    if (i == _idx.nI[0] && !fitData.b1DChiMap)
-                        _data.setHeadLineElement(_idx.nJ[0] - 1 - (!fitData.b1DChiMap) * (j - _idx.nI[0] + 1), fitData.sChiMap, "chi^2[" + toString(j - _idx.nI[0] + 1) + "]");
-                    else if (i == _idx.nI[0])
-                        _data.setHeadLineElement(_idx.nJ[0] - 1 - (!fitData.b1DChiMap) * (j - _idx.nI[0] + 1), fitData.sChiMap, "chi^2");
+                        return false;
+                    }
+
+                    sFunctionDefString = "Fitw(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
                 }
             }
-        }
-    }
-    else
-    {
-        for (long long int i = 0; i < _idx.vI.size(); i++)
-        {
-            for (long long int j = 0; j <= (_idx.vI.size() - 1) * (!fitData.b1DChiMap); j++)
+            else if (fitData.nDim == 3)
             {
-                auto iter = paramsMap.begin();
-
-                for (unsigned int n = 0; n < vInitialVals.size(); n++)
+                if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vz, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
                 {
-                    *(iter->second) = vInitialVals[n];
-                    ++iter;
+                    if (_option.getSystemPrintStatus())
+                        NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
+
+                    return false;
                 }
 
-                if (!_data.isValidEntry(_idx.vI[i], _idx.vJ[0], fitData.sChiMap))
-                    continue;
-
-                *(varMap.at(fitData.sChiMap_Vars[0])) = _data.getElement(_idx.vI[i], _idx.vJ[0], fitData.sChiMap);
-
-                if (!fitData.b1DChiMap)
-                {
-                    if (!_data.isValidEntry(_idx.vI[j], _idx.vJ[1], fitData.sChiMap))
-                        continue;
-
-                    *(varMap.at(fitData.sChiMap_Vars[1])) = _data.getElement(_idx.vI[j], _idx.vJ[1], fitData.sChiMap);
-                }
-
-                if (fitData.nDim >= 2 && fitData.nFitVars == 1)
-                {
-                    if (!fitData.bUseErrors)
-                    {
-                        if (!_fControl.fit(fitData.vx, fitData.vy, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
-                        {
-                            if (_option.getSystemPrintStatus())
-                                NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
-
-                            return false;
-                        }
-
-                        sFunctionDefString = "Fit(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
-                    }
-                    else
-                    {
-                        if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vy_w, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
-                        {
-                            if (_option.getSystemPrintStatus())
-                                NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
-
-                            return false;
-                        }
-
-                        sFunctionDefString = "Fitw(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
-                    }
-                }
-                else if (fitData.nDim == 3)
-                {
-                    if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vz, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
-                    {
-                        if (_option.getSystemPrintStatus())
-                            NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
-
-                        return false;
-                    }
-
-                    sFunctionDefString = "Fit(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
-                }
-                else if (fitData.nDim == 5)
-                {
-                    if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vz, fitData.vz_w, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
-                    {
-                        if (_option.getSystemPrintStatus())
-                            NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
-
-                        return false;
-                    }
-
-                    sFunctionDefString = "Fitw(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
-                }
-
-                _data.writeToCache(_idx.vI[i], _idx.vJ[1 + (!fitData.b1DChiMap) * (j + 1)], fitData.sChiMap, _fControl.getFitChi());
-
-                if (!i && !fitData.b1DChiMap)
-                    _data.setHeadLineElement(_idx.vJ[1 + (!fitData.b1DChiMap) * (j + 1)], fitData.sChiMap, "chi^2[" + toString(j + 1) + "]");
-                else if (!i)
-                    _data.setHeadLineElement(_idx.vJ[1 + (!fitData.b1DChiMap) * (j + 1)], fitData.sChiMap, "chi^2");
-
+                sFunctionDefString = "Fit(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
             }
+            else if (fitData.nDim == 5)
+            {
+                if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vz, fitData.vz_w, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
+                {
+                    if (_option.getSystemPrintStatus())
+                        NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
+
+                    return false;
+                }
+
+                sFunctionDefString = "Fitw(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
+            }
+
+            _data.writeToCache(_idx.row[i], _idx.col[1 + (!fitData.b1DChiMap) * (j + 1)], fitData.sChiMap, _fControl.getFitChi());
+
+            if (!i && !fitData.b1DChiMap)
+                _data.setHeadLineElement(_idx.col[1 + (!fitData.b1DChiMap) * (j + 1)], fitData.sChiMap, "chi^2[" + toString(j + 1) + "]");
+            else if (!i)
+                _data.setHeadLineElement(_idx.col[1 + (!fitData.b1DChiMap) * (j + 1)], fitData.sChiMap, "chi^2");
+
         }
     }
 

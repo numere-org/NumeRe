@@ -215,8 +215,8 @@ class Datafile : public Cache, private Sorter		//	Diese Klasse ist ein CHILD von
 		long long int getCols(const string& sCache, bool _bFull = false) const;					// gibt nCols zurueck
 		bool isValid() const;							// gibt den Wert von bValidData zurueck
 		double getElement(long long int _nLine, long long int _nCol, const string& sCache) const;	// Methode, um auf ein Element von dDatafile zuzugreifen
-		vector<double> getElement(const vector<long long int>& _vLine, const vector<long long int>& _vCol, const string& sCache) const;
-		void copyElementsInto(vector<double>* vTarget, const vector<long long int>& _vLine, const vector<long long int>& _vCol, const string& sCache) const;
+		vector<double> getElement(const VectorIndex& _vLine, const VectorIndex& _vCol, const string& sCache) const;
+		void copyElementsInto(vector<double>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol, const string& sCache) const;
 		void openFile(string _sFile, Settings& _option, bool bAutoSave = false, bool bIgnore = false, int _nHeadline = 0);	                // zentrale Methode: Oeffnet ein Datenfile, liest die Daten und interpretiert sie als double.
                                                         //		Ist auch in der Lage, Tabellenkoepfe aus Kommentarzeilen zu extrahieren.
         void pasteLoad(const Settings& _option);
@@ -229,7 +229,7 @@ class Datafile : public Cache, private Sorter		//	Diese Klasse ist ein CHILD von
             {
                 return getHeadLineElement(_i, sCache).substr(0, getHeadLineElement(_i, sCache).find("\\n"));
             }
-		vector<string> getHeadLineElement(vector<long long int> _vCol, const string& sCache) const;		// gibt das _i-te Element der Kopfzeile zurueck
+		vector<string> getHeadLineElement(const VectorIndex& _vCol, const string& sCache) const;		// gibt das _i-te Element der Kopfzeile zurueck
 		bool setHeadLineElement(long long int _i, const string& sCache, string _sHead);	// setzt das _i-te Element der Kopfzeile auf _sHead
 		long long int getAppendedZeroes(long long int _i, const string& sCache) const;			// gibt die Zahl der angehaengten Nullen der _i-ten Spalte zurueck
 		int getHeadlineCount(const string& sCache) const;
@@ -1193,21 +1193,21 @@ class Datafile : public Cache, private Sorter		//	Diese Klasse ist ein CHILD von
         double med(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
         double pct(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, double dPct = 0.5);
 
-        double std(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
-        double avg(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
-        double max(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
-        double min(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
-        double prd(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
-        double sum(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
-        double num(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
-        double and_func(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
-        double or_func(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
-        double xor_func(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
-        double cnt(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
-        double norm(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
-        double cmp(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol, double dRef = 0.0, int nType = 0);
-        double med(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol);
-        double pct(const string& _sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol, double dPct = 0.5);
+        double std(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
+        double avg(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
+        double max(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
+        double min(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
+        double prd(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
+        double sum(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
+        double num(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
+        double and_func(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
+        double or_func(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
+        double xor_func(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
+        double cnt(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
+        double norm(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
+        double cmp(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef = 0.0, int nType = 0);
+        double med(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
+        double pct(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct = 0.5);
 
 
 };

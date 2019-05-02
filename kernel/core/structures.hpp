@@ -22,27 +22,339 @@
 
 #include <string>
 #include <vector>
+#include <cmath>
 
 using namespace std;
+
+long long int intCast(double);
+
+class VectorIndex
+{
+    private:
+        vector<long long int> vStorage;
+        bool expand;
+
+    public:
+        enum
+        {
+            INVALID = -1,
+            OPEN_END = -2,
+            STRING = -3
+        };
+
+        VectorIndex()
+        {
+            vStorage.assign({INVALID, INVALID});
+            expand = true;
+        }
+
+        VectorIndex(const VectorIndex& vindex)
+        {
+            vStorage = vindex.vStorage;
+            expand = vindex.expand;
+        }
+
+        VectorIndex(const double* indices, int nResults, int unused)
+        {
+            for (int i = 0; i < nResults; i++)
+            {
+                if (!isnan(indices[i]) && !isinf(indices[i]))
+                    vStorage.push_back(intCast(indices[i]) - 1);
+            }
+
+            expand = false;
+        }
+
+        VectorIndex(long long int nStart, long long int nEnd = INVALID)
+        {
+            vStorage.assign({nStart, nEnd});
+            expand = true;
+        }
+
+        VectorIndex(const vector<long long int>& vIndex)
+        {
+            vStorage = vIndex;
+            expand = false;
+        }
+
+        VectorIndex& operator=(const VectorIndex& vindex)
+        {
+            vStorage = vindex.vStorage;
+            expand = vindex.expand;
+            return *this;
+        }
+
+        VectorIndex& operator=(const vector<long long int>& vIndex)
+        {
+            vStorage = vIndex;
+            expand = false;
+            return *this;
+        }
+
+        VectorIndex subidx(size_t pos, size_t nLen = string::npos) const
+        {
+            if (pos >= size())
+                return VectorIndex();
+
+            if (nLen == string::npos)
+                nLen = size() - pos;
+
+            if (expand)
+                return VectorIndex(operator[](pos), operator[](pos+nLen));
+
+            return VectorIndex(vector<long long int>(vStorage.begin()+pos, vStorage.begin()+pos+nLen));
+        }
+
+        void linearize()
+        {
+            if (!expand)
+            {
+                long long int nMin = min();
+                long long int nMax = max()+1;
+
+                vStorage.clear();
+                vStorage.assign({nMin, nMax});
+                expand = true;
+            }
+        }
+
+        long long int operator[](size_t n) const
+        {
+            if (expand)
+            {
+                if (vStorage.back() == INVALID && !n)
+                    return vStorage.front();
+
+                if (vStorage.back() == OPEN_END)
+                {
+                    if (vStorage.size() == 2)
+                        return vStorage.front() + n;
+                    else if (vStorage.size() > n+2)
+                        return vStorage[n];
+                    else
+                        return vStorage[vStorage.size()-2] + n - (vStorage.size()-1);
+                }
+
+                if (vStorage.front() <= vStorage.back() && n + vStorage.front() < vStorage.back())
+                    return vStorage.front() + n;
+                else if (vStorage.front() > vStorage.back() && vStorage.front() - n >= vStorage.back()) // >= because vStorage.back() was not decremented first
+                    return vStorage.front() - n;
+            }
+            else if (n < vStorage.size())
+            {
+                return vStorage[n];
+            }
+
+            return INVALID;
+        }
+
+        size_t size() const
+        {
+            if (vStorage.size() == 2 && !isValid())
+                return 0;
+            else if (vStorage.back() == INVALID)
+                return 1;
+            else if (vStorage.back() == OPEN_END)
+                return -1;
+            else if (vStorage.size() == 2 && expand)
+                return abs(vStorage.back() - vStorage.front());
+            else
+                return vStorage.size();
+        }
+
+        size_t numberOfNodes() const
+        {
+            if (!isValid())
+                return 0;
+            else if (vStorage.size() == 2 && vStorage.back() == INVALID)
+                return 1;
+            else
+                return vStorage.size();
+        }
+
+        bool isOrdered() const
+        {
+            if (isValid())
+                return vStorage.front() <= vStorage.back() || vStorage.back() == INVALID || vStorage.back() == OPEN_END;
+
+            return false;
+        }
+
+        bool isExpanded() const
+        {
+            return expand;
+        }
+
+        void setIndex(size_t nthIndex, long long int nVal)
+        {
+            if (nthIndex < vStorage.size())
+            {
+                if (vStorage.size() == 2 && nthIndex == 1 && nVal >= 0)
+                    vStorage[nthIndex] = nVal+1;
+                else
+                    vStorage[nthIndex] = nVal;
+            }
+            else
+            {
+                if (vStorage.size() == 2 && expand && vStorage.back() > 0)
+                    vStorage.back()--;
+
+                while (vStorage.size() <= nthIndex)
+                    vStorage.push_back(INVALID);
+
+                vStorage[nthIndex] = nVal;
+
+                if (vStorage.size() > 2 && vStorage.back() != OPEN_END)
+                    expand = false;
+            }
+        }
+
+        vector<long long int> getVector() const
+        {
+            if (expand)
+            {
+                vector<long long int> vReturn;
+
+                for (size_t i = 0; i < size(); i++)
+                {
+                    vReturn.push_back(this->operator[](i));
+                }
+
+                return vReturn;
+            }
+
+            return vStorage;
+        }
+
+        long long int max() const
+        {
+            if (expand)
+                return ::max(vStorage.front(), vStorage.back()-1);
+
+            long long int nMax = vStorage.front();
+
+            for (size_t i = 1; i < vStorage.size(); i++)
+            {
+                if (vStorage[i] > nMax)
+                    nMax = vStorage[i];
+            }
+
+            return nMax;
+        }
+
+        long long int min() const
+        {
+            if (expand)
+                return ::min(vStorage.front(), vStorage.back()-1);
+
+            long long int nMin = vStorage.front();
+
+            for (size_t i = 1; i < vStorage.size(); i++)
+            {
+                if (vStorage[i] > nMin)
+                    nMin = vStorage[i];
+            }
+
+            return nMin;
+        }
+
+        inline bool isValid() const
+        {
+            return vStorage.front() != INVALID;
+        }
+
+        inline bool isOpenEnd() const
+        {
+            return vStorage.back() == OPEN_END;
+        }
+
+        inline bool isString() const
+        {
+            return vStorage.front() == STRING || vStorage.back() == STRING;
+        }
+
+        long long int& front()
+        {
+            return vStorage.front();
+        }
+
+        long long int& back()
+        {
+            return vStorage.back();
+        }
+
+        const long long int& front() const
+        {
+            return vStorage.front();
+        }
+
+        const long long int& back() const
+        {
+            return vStorage.back();
+        }
+
+        long long int last() const
+        {
+            if (expand && isOrdered())
+                return vStorage.back()-1;
+
+            if (expand && vStorage.back() == INVALID)
+                return vStorage.front();
+
+            return vStorage.back();
+        }
+
+        void setRange(long long int nMin, long long int nMax)
+        {
+            if (nMin > nMax)
+            {
+                long long int nTemp = nMin;
+                nMin = nMax;
+                nMax = nTemp;
+            }
+
+            if (expand)
+            {
+                if (vStorage.front() < nMin)
+                    vStorage.front() = nMin;
+
+                if (vStorage.front() > nMax)
+                    vStorage.front() = nMax;
+
+                if (vStorage.back() != INVALID && vStorage.back() != OPEN_END)
+                {
+                    if (vStorage.back() < nMin+1)
+                        vStorage.back() = nMin+1;
+
+                    if (vStorage.back() > nMax+1)
+                        vStorage.back() = nMax+1;
+                }
+                else if (vStorage.back() == OPEN_END)
+                    vStorage.back() = nMax+1;
+
+                return;
+            }
+
+            for (size_t i = 0; i < vStorage.size(); i++)
+            {
+                if (vStorage[i] < nMin)
+                    vStorage[i] = nMin;
+
+                if (vStorage[i] > nMax)
+                    vStorage[i] = nMax;
+            }
+        }
+
+};
+
+
 
 // Structure for the indices
 struct Indices
 {
-    long long int nI[2];
-    long long int nJ[2];
-    vector<long long int> vI;
-    vector<long long int> vJ;
+    VectorIndex row;
+    VectorIndex col;
     string sCompiledAccessEquation;
-
-    // Default constructor sets the casual indices to -1
-    Indices()
-        {
-            for (size_t i = 0; i < 2; i++)
-            {
-                this->nI[i] = -1;
-                this->nJ[i] = -1;
-            }
-        }
 };
 
 // Structure for the findCommand function

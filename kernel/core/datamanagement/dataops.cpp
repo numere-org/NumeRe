@@ -659,27 +659,15 @@ static bool searchAndDeleteTable(const string& sCache, Parser& _parser, Datafile
                 return false;
 
             // Evaluate the indices
-            if (_iDeleteIndex.nI[1] == -2)
-                _iDeleteIndex.nI[1] = _data.getLines(iter->first, false) - 1;
-            else if (_iDeleteIndex.nI[1] != -1)
-                _iDeleteIndex.nI[1] += 1;
+            if (_iDeleteIndex.row.isOpenEnd())
+                _iDeleteIndex.row.back() = _data.getLines(iter->first, false);
 
-            if (_iDeleteIndex.nJ[1] == -2)
-                _iDeleteIndex.nJ[1] = _data.getCols(iter->first) - 1;
-            else if (_iDeleteIndex.nJ[1] != -1)
-                _iDeleteIndex.nJ[1] += 1;
+            if (_iDeleteIndex.col.isOpenEnd())
+                _iDeleteIndex.col.back() = _data.getCols(iter->first);
 
             // Delete the section identified by the cache expression
-            if (!_iDeleteIndex.vI.size() && !_iDeleteIndex.vJ.size())
-            {
-                // The indices are casual
-                _data.deleteBulk(iter->first, _iDeleteIndex.nI[0], _iDeleteIndex.nI[1], _iDeleteIndex.nJ[0], _iDeleteIndex.nJ[1]);
-            }
-            else
-            {
-                // The indices are vectors
-                _data.deleteBulk(iter->first, _iDeleteIndex.vI, _iDeleteIndex.vJ);
-            }
+            // The indices are vectors
+            _data.deleteBulk(iter->first, _iDeleteIndex.row, _iDeleteIndex.col);
 
             // Return true
             return true;
@@ -707,22 +695,12 @@ static bool searchAndDeleteCluster(const string& sCluster, Parser& _parser, Data
                 return false;
 
             // Evaluate the indices
-            if (_iDeleteIndex.nI[1] == -2)
-                _iDeleteIndex.nI[1] = _data.getCluster(iter->first).size() - 1;
-            else if (_iDeleteIndex.nI[1] != -1)
-                _iDeleteIndex.nI[1] += 1;
+            if (_iDeleteIndex.row.isOpenEnd())
+                _iDeleteIndex.row.back() = _data.getCluster(iter->first).size();
 
             // Delete the section identified by the cache expression
-            if (!_iDeleteIndex.vI.size() && !_iDeleteIndex.vJ.size())
-            {
-                // The indices are casual
-                _data.getCluster(iter->first).deleteItems(_iDeleteIndex.nI[0], _iDeleteIndex.nI[1]);
-            }
-            else
-            {
-                // The indices are vectors
-                _data.getCluster(iter->first).deleteItems(_iDeleteIndex.vI);
-            }
+            // The indices are vectors
+            _data.getCluster(iter->first).deleteItems(_iDeleteIndex.row);
 
             // Return true
             return true;
@@ -875,18 +853,15 @@ static string getSourceForDataOperation(const string& sExpression, Indices& _idx
 				sSourceForFileOperation = "data";
 
             // Ensure that the indices are reasonable
-			if ((_idx.nI[0] == -1 && !_idx.vI.size()) || (_idx.nJ[0] == -1 && !_idx.vJ.size()))
+			if (!isValidIndexSet(_idx))
 				return "";
 
             // Evaluate the indices
-			if (_idx.nI[1] == -1)
-				_idx.nI[1] = _idx.nI[0];
-			if (_idx.nJ[1] == -1)
-				_idx.nJ[1] = _idx.nJ[0];
-			if (_idx.nI[1] == -2)
-				_idx.nI[1] = _data.getLines(sSourceForFileOperation, false) - 1;
-			if (_idx.nJ[1] == -2)
-				_idx.nJ[1] = _data.getCols(sSourceForFileOperation) - 1;
+			if (_idx.row.isOpenEnd())
+				_idx.row.back() = _data.getLines(sSourceForFileOperation, false);
+
+			if (_idx.col.isOpenEnd())
+				_idx.col.back() = _data.getCols(sSourceForFileOperation, false);
 		}
 	}
 
@@ -897,39 +872,23 @@ static string getSourceForDataOperation(const string& sExpression, Indices& _idx
 // This function evaluates the transpose flag and switches the indices correspondingly
 static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _iSourceIndex, Indices& _iTargetIndex, const Datafile& _data, bool bTranspose)
 {
-    if (_iTargetIndex.nI[0] == -1 && !_iTargetIndex.vI.size())
+    if (!isValidIndexSet(_iTargetIndex))
     {
         // This section is for cases, in which the target was not defined
         // Get the dimensions of the target to calculate the indices correspondingly
         // Depending on the transpose flag, the rows and columns are exchanged
         if (!bTranspose)
         {
-            _iTargetIndex.nJ[0] = _data.getCacheCols(sTarget, false);
-            if (!_iSourceIndex.vJ.size())
-                _iTargetIndex.nJ[1] = _data.getCacheCols(sTarget, false) + (_iSourceIndex.nJ[1] - _iSourceIndex.nJ[0]) + 1;
-            else
-                _iTargetIndex.nJ[1] = _data.getCacheCols(sTarget, false) + _iSourceIndex.vJ.size();
-            _iTargetIndex.nI[0] = 0;
-            if (!_iSourceIndex.vI.size())
-                _iTargetIndex.nI[1] = _iSourceIndex.nI[1] - _iSourceIndex.nI[0];
-            else
-                _iTargetIndex.nI[1] = _iSourceIndex.vI.size();
+            _iTargetIndex.row = VectorIndex(0LL, _iSourceIndex.row.size());
+            _iTargetIndex.col = VectorIndex(_data.getCacheCols(sTarget, false), _data.getCacheCols(sTarget, false) + _iSourceIndex.col.size());
         }
         else
         {
-            _iTargetIndex.nI[0] = 0;
-            if (!_iSourceIndex.vJ.size())
-                _iTargetIndex.nI[1] = (_iSourceIndex.nJ[1] - _iSourceIndex.nJ[0]);
-            else
-                _iTargetIndex.nI[1] = _iSourceIndex.vJ.size();
-            _iTargetIndex.nJ[0] = _data.getCacheCols(sTarget, false);
-            if (!_iSourceIndex.vI.size())
-                _iTargetIndex.nJ[1] = _data.getCacheCols(sTarget, false) + (_iSourceIndex.nI[1] - _iSourceIndex.nI[0]) + 1;
-            else
-                _iTargetIndex.nJ[1] = _data.getCacheCols(sTarget, false) + _iSourceIndex.vI.size();
+            _iTargetIndex.row = VectorIndex(0LL, _iSourceIndex.col.size());
+            _iTargetIndex.col = VectorIndex(_data.getCacheCols(sTarget, false), _data.getCacheCols(sTarget, false) + _iSourceIndex.row.size());
         }
     }
-    else if (_iTargetIndex.vI.size())
+    else if (_iTargetIndex.row.size())
     {
         // This section is for cases, in which the target was defined via vectors
         // Get the dimensions of the target to calculate the indices correspondingly
@@ -938,110 +897,21 @@ static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _i
         // The vectors are cleared because they will probably contain not reasonable data
         if (!bTranspose)
         {
-            if (_iTargetIndex.nI[1] == -2)
-            {
-                _iTargetIndex.vI.clear();
-                if (_iSourceIndex.vI.size())
-                {
-                    for (long long int i = _iTargetIndex.nI[0]; i < _iTargetIndex.nI[0] + _iSourceIndex.vI.size(); i++)
-                        _iTargetIndex.vI.push_back(i);
-                }
-                else
-                {
-                    for (long long int i = _iTargetIndex.nI[0]; i <= _iTargetIndex.nI[0] + (_iSourceIndex.nI[1] - _iSourceIndex.nI[0]); i++)
-                        _iTargetIndex.vI.push_back(i);
-                }
-            }
-            if (_iTargetIndex.nJ[1] == -2)
-            {
-                _iTargetIndex.vJ.clear();
-                if (_iSourceIndex.vJ.size())
-                {
-                    for (long long int j = _iTargetIndex.nJ[0]; j < _iTargetIndex.nJ[0] + _iSourceIndex.vJ.size(); j++)
-                        _iTargetIndex.vJ.push_back(j);
-                }
-                else
-                {
-                    for (long long int j = _iTargetIndex.nJ[0]; j <= _iTargetIndex.nJ[0] + (_iSourceIndex.nJ[1] - _iSourceIndex.nJ[0]); j++)
-                        _iTargetIndex.vJ.push_back(j);
-                }
-            }
-        }
-        else
-        {
-            if (_iTargetIndex.nI[1] == -2)
-            {
-                _iTargetIndex.vI.clear();
-                if (_iSourceIndex.vJ.size())
-                {
-                    for (long long int i = _iTargetIndex.nI[0]; i < _iTargetIndex.nI[0] + _iSourceIndex.vJ.size(); i++)
-                        _iTargetIndex.vI.push_back(i);
-                }
-                else
-                {
-                    for (long long int i = _iTargetIndex.nI[0]; i <= _iTargetIndex.nI[0] + (_iSourceIndex.nJ[1] - _iSourceIndex.nJ[0]); i++)
-                        _iTargetIndex.vI.push_back(i);
-                }
-            }
-            if (_iTargetIndex.nJ[1] == -2)
-            {
-                _iTargetIndex.vJ.clear();
-                if (_iSourceIndex.vI.size())
-                {
-                    for (long long int j = _iTargetIndex.nJ[0]; j < _iTargetIndex.nJ[0] + _iSourceIndex.vI.size(); j++)
-                        _iTargetIndex.vJ.push_back(j);
-                }
-                else
-                {
-                    for (long long int j = _iTargetIndex.nJ[0]; j <= _iTargetIndex.nJ[0] + (_iSourceIndex.nI[1] - _iSourceIndex.nI[0]); j++)
-                        _iTargetIndex.vJ.push_back(j);
-                }
-            }
-        }
-    }
-    else if (_iSourceIndex.vI.size())
-    {
-        // Use the dimensions of the source data block, if the target data block
-        // is marked as the overall data block
-        if (!bTranspose)
-        {
-            if (_iTargetIndex.nI[1] == -2)
-                _iTargetIndex.nI[1] = _iTargetIndex.nI[0] + _iSourceIndex.vI.size();
-            if (_iTargetIndex.nJ[1] == -2)
-                _iTargetIndex.nJ[1] = _iTargetIndex.nJ[0] + _iSourceIndex.vJ.size();
-        }
-        else
-        {
-            if (_iTargetIndex.nI[1] == -2)
-                _iTargetIndex.nI[1] = _iTargetIndex.nI[0] + _iSourceIndex.vJ.size();
-            if (_iTargetIndex.nJ[1] == -2)
-                _iTargetIndex.nJ[1] = _iTargetIndex.nJ[0] + _iSourceIndex.vI.size();
-        }
-    }
-    else
-    {
-        if (!bTranspose)
-        {
-            if (_iTargetIndex.nI[1] == -2)
-                _iTargetIndex.nI[1] = _iTargetIndex.nI[0] + (_iSourceIndex.nI[1] - _iSourceIndex.nI[0]);
-            if (_iTargetIndex.nJ[1] == -2)
-                _iTargetIndex.nJ[1] = _iTargetIndex.nJ[0] + (_iSourceIndex.nJ[1] - _iSourceIndex.nJ[0]);
-        }
-        else
-        {
-            if (_iTargetIndex.nI[1] == -2)
-                _iTargetIndex.nI[1] = _iTargetIndex.nI[0] + (_iSourceIndex.nJ[1] - _iSourceIndex.nJ[0]);
-            if (_iTargetIndex.nJ[1] == -2)
-                _iTargetIndex.nJ[1] = _iTargetIndex.nJ[0] + (_iSourceIndex.nI[1] - _iSourceIndex.nI[0]);
-        }
-    }
+            if (_iTargetIndex.row.isOpenEnd())
+                _iTargetIndex.row = VectorIndex(_iTargetIndex.row.front(), _iTargetIndex.row.front() + _iSourceIndex.row.size());
 
-    // check the casual indices
-    parser_CheckIndices(_iSourceIndex.nI[0], _iSourceIndex.nI[1]);
-    parser_CheckIndices(_iSourceIndex.nJ[0], _iSourceIndex.nJ[1]);
-    parser_CheckIndices(_iTargetIndex.nI[0], _iTargetIndex.nI[1]);
-    parser_CheckIndices(_iTargetIndex.nJ[0], _iTargetIndex.nJ[1]);
+            if (_iTargetIndex.col.isOpenEnd())
+                _iTargetIndex.col = VectorIndex(_iTargetIndex.col.front(), _iTargetIndex.col.front() + _iSourceIndex.col.size());
+        }
+        else
+        {
+            if (_iTargetIndex.row.isOpenEnd())
+                _iTargetIndex.row = VectorIndex(_iTargetIndex.row.front(), _iTargetIndex.row.front() + _iSourceIndex.col.size());
 
+            if (_iTargetIndex.col.isOpenEnd())
+                _iTargetIndex.col = VectorIndex(_iTargetIndex.col.front(), _iTargetIndex.col.front() + _iSourceIndex.row.size());
+        }
+    }
 }
 
 // This function will perform the actual data operation
@@ -1052,145 +922,71 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
 
     // First step: copy the contents to the Datafile _cache
     // If the move flag is set, then the contents are cleared at the source location
-    if (!_iSourceIndex.vI.size() && !_iSourceIndex.vJ.size())
+    // vector indices
+    for (unsigned int i = 0; i < _iSourceIndex.row.size(); i++)
     {
-        // Casual indices
-        for (long long int i = _iSourceIndex.nI[0]; i <= _iSourceIndex.nI[1]; i++)
+        for (unsigned int j = 0; j < _iSourceIndex.col.size(); j++)
         {
-            for (long long int j = _iSourceIndex.nJ[0]; j <= _iSourceIndex.nJ[1]; j++)
+            if (!i)
+                _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_iSourceIndex.col[j], sSource));
+
+            if (_data.isValidEntry(_iSourceIndex.row[i], _iSourceIndex.col[j], sSource))
             {
-                if (!i)
-                    _cache.setHeadLineElement(j - _iSourceIndex.nJ[0], "cache", _data.getHeadLineElement(j, sSource));
-                if (_data.isValidEntry(i, j, sSource))
-                {
-                    _cache.writeToCache(i - _iSourceIndex.nI[0], j - _iSourceIndex.nJ[0], "cache", _data.getElement(i, j, sSource));
-                    if (bMove)
-                        _data.deleteEntry(i, j, sSource);
-                }
-            }
-        }
-    }
-    else
-    {
-        // vector indices
-        for (unsigned int i = 0; i < _iSourceIndex.vI.size(); i++)
-        {
-            for (unsigned int j = 0; j < _iSourceIndex.vJ.size(); j++)
-            {
-                if (!i)
-                    _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_iSourceIndex.vJ[j], sSource));
-                if (_data.isValidEntry(_iSourceIndex.vI[i], _iSourceIndex.vJ[j], sSource))
-                {
-                    _cache.writeToCache(i, j, "cache", _data.getElement(_iSourceIndex.vI[i], _iSourceIndex.vJ[j], sSource));
-                    if (bMove)
-                        _data.deleteEntry(_iSourceIndex.vI[i], _iSourceIndex.vJ[j], sSource);
-                }
+                _cache.writeToCache(i, j, "cache", _data.getElement(_iSourceIndex.row[i], _iSourceIndex.col[j], sSource));
+
+                if (bMove)
+                    _data.deleteEntry(_iSourceIndex.row[i], _iSourceIndex.col[j], sSource);
             }
         }
     }
 
     // Second step: Copy the contents in "_cache" to the new location in the original Datafile object
-    if (!_iTargetIndex.vI.size())
+
+    for (long long int i = 0; i < _cache.getCacheLines("cache", false); i++)
     {
-        for (long long int i = 0; i < _cache.getCacheLines("cache", false); i++)
+        // Break the operation, if the indices are marking a smaller section
+        if (!bTranspose)
         {
-            // Break the operation, if the indices are marking a smaller section
-            if (!bTranspose)
-            {
-                if (i > _iTargetIndex.nI[1] - _iTargetIndex.nI[0])
-                    break;
-            }
-            else
-            {
-                if (i > _iTargetIndex.nJ[1] - _iTargetIndex.nJ[0])
-                    break;
-            }
-
-            for (long long int j = 0; j < _cache.getCacheCols("cache", false); j++)
-            {
-                if (!bTranspose)
-                {
-                    // Write the headlines
-                    if (!i && !j && (!_iTargetIndex.nI[0] || _iTargetIndex.nJ[0] >= _data.getCols(sTarget)))
-                    {
-                        for (long long int n = 0; n < _cache.getCacheCols("cache", false); n++)
-                            _data.setHeadLineElement(n + _iTargetIndex.nJ[0], sTarget, _cache.getHeadLineElement(n, "cache"));
-                    }
-
-                    // Break the operation, if the indices are marking a smaller section
-                    if (j > _iTargetIndex.nJ[1] - _iTargetIndex.nJ[0])
-                        break;
-
-                    // Write the data. Invalid data is deleted explicitly, because it might already contain old data
-                    if (_cache.isValidEntry(i, j, "cache"))
-                        _data.writeToCache(i + _iTargetIndex.nI[0], j + _iTargetIndex.nJ[0], sTarget, _cache.getElement(i, j, "cache"));
-                    else if (_data.isValidEntry(i + _iTargetIndex.nI[0], j + _iTargetIndex.nJ[0], sTarget))
-                        _data.deleteEntry(i + _iTargetIndex.nI[0], j + _iTargetIndex.nJ[0], sTarget);
-                }
-                else
-                {
-                    // We don't have headlines in this case
-                    // Break the operation, if the indices are marking a smaller section
-                    if (j > _iTargetIndex.nI[1] - _iTargetIndex.nI[0])
-                        break;
-
-                    // Write the data. Invalid data is deleted explicitly, because it might already contain old data
-                    if (_cache.isValidEntry(i, j, "cache"))
-                        _data.writeToCache(j + _iTargetIndex.nI[0], i + _iTargetIndex.nJ[0], sTarget, _cache.getElement(i, j, "cache"));
-                    else if (_data.isValidEntry(j + _iTargetIndex.nI[0], i + _iTargetIndex.nJ[0], sTarget))
-                        _data.deleteEntry(j + _iTargetIndex.nI[0], i + _iTargetIndex.nJ[0], sTarget);
-                }
-            }
+            if (i >= _iTargetIndex.row.size())
+                break;
         }
-    }
-    else
-    {
-        for (long long int i = 0; i < _cache.getCacheLines("cache", false); i++)
+        else
         {
-            // Break the operation, if the indices are marking a smaller section
+            if (i >= _iTargetIndex.col.size())
+                break;
+        }
+        for (long long int j = 0; j < _cache.getCacheCols("cache", false); j++)
+        {
             if (!bTranspose)
             {
-                if (i >= _iTargetIndex.vI.size())
+                // Write the headlines
+                if (!_iTargetIndex.row[i] && _data.getHeadLineElement(_iTargetIndex.col[j], sTarget).substr(0, 5) == "Spalte")
+                {
+                    _data.setHeadLineElement(_iTargetIndex.col[j], sTarget, _cache.getHeadLineElement(j, "cache"));
+                }
+
+                // Break the operation, if the indices are marking a smaller section
+                if (j > _iTargetIndex.col.size())
                     break;
+
+                // Write the data. Invalid data is deleted explicitly, because it might already contain old data
+                if (_cache.isValidEntry(i, j, "cache"))
+                    _data.writeToCache(_iTargetIndex.row[i], _iTargetIndex.col[j], sTarget, _cache.getElement(i, j, "cache"));
+                else if (_data.isValidEntry(_iTargetIndex.row[i], _iTargetIndex.col[j], sTarget))
+                    _data.deleteEntry(_iTargetIndex.row[i], _iTargetIndex.col[j], sTarget);
             }
             else
             {
-                if (i >= _iTargetIndex.vJ.size())
+                // We don't have headlines in this case
+                // Break the operation, if the indices are marking a smaller section
+                if (j > _iTargetIndex.row.size())
                     break;
-            }
-            for (long long int j = 0; j < _cache.getCacheCols("cache", false); j++)
-            {
-                if (!bTranspose)
-                {
-                    // Write the headlines
-                    if (!_iTargetIndex.vI[i] && _data.getHeadLineElement(_iTargetIndex.vJ[j], sTarget).substr(0, 5) == "Spalte")
-                    {
-                        _data.setHeadLineElement(_iTargetIndex.vJ[j], sTarget, _cache.getHeadLineElement(j, "cache"));
-                    }
 
-                    // Break the operation, if the indices are marking a smaller section
-                    if (j > _iTargetIndex.vJ.size())
-                        break;
-
-                    // Write the data. Invalid data is deleted explicitly, because it might already contain old data
-                    if (_cache.isValidEntry(i, j, "cache"))
-                        _data.writeToCache(_iTargetIndex.vI[i], _iTargetIndex.vJ[j], sTarget, _cache.getElement(i, j, "cache"));
-                    else if (_data.isValidEntry(_iTargetIndex.vI[i], _iTargetIndex.vJ[j], sTarget))
-                        _data.deleteEntry(_iTargetIndex.vI[i], _iTargetIndex.vJ[j], sTarget);
-                }
-                else
-                {
-                    // We don't have headlines in this case
-                    // Break the operation, if the indices are marking a smaller section
-                    if (j > _iTargetIndex.vI.size())
-                        break;
-
-                    // Write the data. Invalid data is deleted explicitly, because it might already contain old data
-                    if (_cache.isValidEntry(i, j, "cache"))
-                        _data.writeToCache(_iTargetIndex.vJ[j], _iTargetIndex.vI[i], sTarget, _cache.getElement(i, j, "cache"));
-                    else if (_data.isValidEntry(_iTargetIndex.vJ[j], _iTargetIndex.vI[i], sTarget))
-                        _data.deleteEntry(_iTargetIndex.vJ[j], _iTargetIndex.vI[i], sTarget);
-                }
+                // Write the data. Invalid data is deleted explicitly, because it might already contain old data
+                if (_cache.isValidEntry(i, j, "cache"))
+                    _data.writeToCache(_iTargetIndex.col[j], _iTargetIndex.row[i], sTarget, _cache.getElement(i, j, "cache"));
+                else if (_data.isValidEntry(_iTargetIndex.col[j], _iTargetIndex.row[i], sTarget))
+                    _data.deleteEntry(_iTargetIndex.col[j], _iTargetIndex.row[i], sTarget);
             }
         }
     }
@@ -1205,14 +1001,15 @@ static bool sortStrings(string& sCmd, Indices& _idx, Parser& _parser, Datafile& 
     vector<int> vSortIndex;
 
     // Evalulate special index values
-	if (_idx.nI[1] == -2)
-		_idx.nI[1] = _data.getStringElements(_idx.nJ[0]) - 1;
-	if (_idx.nJ[1] == -2)
-		_idx.nJ[1] = _data.getStringCols() - 1;
+	if (_idx.row.isOpenEnd())
+		_idx.row.back() = _data.getStringElements(_idx.col.front())-1;
+
+	if (_idx.col.isOpenEnd())
+		_idx.col.back() = _data.getStringCols()-1;
 
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself
-	vSortIndex = _data.sortStringElements(_idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], sCmd.substr(11));
+	vSortIndex = _data.sortStringElements(_idx.row.front(), _idx.row.back(), _idx.col.front(), _idx.row.back(), sCmd.substr(11));
 
 	// If the sorting index contains elements, the user had requested them
 	if (vSortIndex.size())
@@ -1242,12 +1039,12 @@ static bool sortClusters(string& sCmd, const string& sCluster, Indices& _idx, Pa
     NumeRe::Cluster& cluster = _data.getCluster(sCluster);
 
     // Evalulate special index values
-	if (_idx.nI[1] == -2)
-		_idx.nI[1] = cluster.size() - 1;
+	if (_idx.row.isOpenEnd())
+		_idx.row.back() = cluster.size() - 1;
 
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself
-	vSortIndex = cluster.sortElements(_idx.nI[0], _idx.nI[1], sCmd.substr(5 + sCluster.length()));
+	vSortIndex = cluster.sortElements(_idx.row.front(), _idx.row.back(), sCmd.substr(5 + sCluster.length()));
 
 	// If the sorting index contains elements, the user had requested them
 	if (vSortIndex.size())
@@ -1280,8 +1077,8 @@ bool sortData(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions
 	Indices _idx = parser_getIndices(sCache, _parser, _data, _option);
 
 	// Ensure that the indices are reasonable
-	if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
-		throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, "", _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1]);
+	if (!isValidIndexSet(_idx))
+		throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, "", _idx.row.front(), _idx.row.back(), _idx.col.front(), _idx.col.back());
 
 	sCache.erase(sCache.find_first_of("({"));
 
@@ -1298,14 +1095,14 @@ bool sortData(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions
         return sortClusters(sCmd, sCache, _idx, _parser, _data);
 
 	// Evalulate special index values
-	if (_idx.nI[1] == -2)
-		_idx.nI[1] = _data.getLines(sCache, false) - 1;
-	if (_idx.nJ[1] == -2)
-		_idx.nJ[1] = _data.getCols(sCache, false) - 1;
+	if (_idx.row.isOpenEnd())
+		_idx.row.back() = _data.getLines(sCache, false) - 1;
+	if (_idx.col.isOpenEnd())
+		_idx.col.back() = _data.getCols(sCache, false) - 1;
 
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself
-	vSortIndex = _data.sortElements(sCache, _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], sCmd.substr(5 + sCache.length()));
+	vSortIndex = _data.sortElements(sCache, _idx.row.front(), _idx.row.back(), _idx.col.front(), _idx.col.back(), sCmd.substr(5 + sCache.length()));
 
 	// If the sorting index contains elements, the user had requested them
 	if (vSortIndex.size())
@@ -1640,23 +1437,27 @@ bool readImage(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option
 	unsigned char* imageData = image.GetData();
 
 	// Evaluate the indices correspondingly
-	if (_idx.nI[1] == -2)
-		_idx.nI[1] = _idx.nI[0] + nWidth;
-	if (_idx.nJ[1] == -2)
-		_idx.nJ[1] = _idx.nJ[0] + 2 + nHeight;
+	if (_idx.row.isOpenEnd())
+		_idx.row.back() = _idx.row.front() + nWidth;
+
+	if (_idx.col.isOpenEnd())
+		_idx.col.back() = _idx.col.front() + 2 + nHeight;
 
     // Write the axes to the target cache
 	for (int i = 0; i < nWidth; i++)
 	{
-		if (_idx.nI[0] + i > _idx.nI[1])
+		if (_idx.row[i] == VectorIndex::INVALID)
 			break;
-		_data.writeToCache(_idx.nI[0] + i, _idx.nJ[0], sTargetCache, i + 1);
+
+		_data.writeToCache(_idx.row[i], _idx.col.front(), sTargetCache, i + 1);
 	}
+
 	for (int i = 0; i < nHeight; i++)
 	{
-		if (_idx.nI[0] + i > _idx.nI[1])
+		if (_idx.row[i] == VectorIndex::INVALID)
 			break;
-		_data.writeToCache(_idx.nI[0] + i, _idx.nJ[0] + 1, sTargetCache, i + 1);
+
+		_data.writeToCache(_idx.row[i] + i, _idx.col[1], sTargetCache, i + 1);
 	}
 
 	// iData is a iterator over the image data
@@ -1666,15 +1467,18 @@ bool readImage(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option
 	for (int j = 0; j < nHeight; j++)
 	{
 		iData = 0;
-		if (_idx.nJ[0] + 2 + j > _idx.nJ[1])
+
+		if (_idx.col[j+2] == VectorIndex::INVALID)
 			break;
+
 		for (int i = 0; i < nWidth; i++)
 		{
-			if (_idx.nI[0] + i > _idx.nI[1])
+			if (_idx.row[i] == VectorIndex::INVALID)
 				break;
+
             // The actual copy process
             // Calculate the average of the three channels and store it in the target cache
-			_data.writeToCache(_idx.nI[0] + i, _idx.nJ[0] + 2 + (nHeight - j - 1), sTargetCache, imageData[j * 3 * nWidth + iData] / 3.0 + imageData[j * 3 * nWidth + iData + 1] / 3.0 + imageData[j * 3 * nWidth + iData + 2] / 3.0);
+			_data.writeToCache(_idx.row[i], _idx.col[2 + (nHeight - j - 1)], sTargetCache, imageData[j * 3 * nWidth + iData] / 3.0 + imageData[j * 3 * nWidth + iData + 1] / 3.0 + imageData[j * 3 * nWidth + iData + 2] / 3.0);
 
 			// Advance the iterator three channels
 			iData += 3;

@@ -66,6 +66,7 @@ class Memory : public Sorter
 		bool Allocate(long long int _nNLines, long long int _nNCols, bool shrink = false);	// Methode, um dem Pointer dMemTable die finale Matrix zuzuweisen
 
 		bool isValidDisc(long long int _nLine, long long int _nCol, unsigned int nSize);
+		bool isValidDisc(VectorIndex _vLine, VectorIndex _vCol);
 		bool retoqueRegion(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, unsigned int nOrder = 1, AppDir Direction = ALL);
 		bool retoqueRegion(RetoqueRegion& _region);
 
@@ -97,8 +98,8 @@ class Memory : public Sorter
             }
 
 		double readMem(long long int _nLine, long long int _nCol) const;	// Methode, um auf ein Element von dMemTable zuzugreifen
-		vector<double> readMem(const vector<long long int>& _vLine, const vector<long long int>& _vCol) const;
-		void copyElementsInto(vector<double>* vTarget, const vector<long long int>& _vLine, const vector<long long int>& _vCol) const;
+		vector<double> readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+		void copyElementsInto(vector<double>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		long long int getAppendedZeroes(long long int _i) const;			    // gibt die Zahl der angehaengten Nullen der _i-ten Spalte zurueck
 		int getHeadlineCount() const;
 
@@ -107,7 +108,7 @@ class Memory : public Sorter
 		bool writeData(Indices& _idx, double* _dData, unsigned int _nNum);	// Methode, um ein Element zu schreiben
 
 		string getHeadLineElement(long long int _i) const;		            // gibt das _i-te Element der Kopfzeile zurueck
-		vector<string> getHeadLineElement(vector<long long int> _vCol) const;
+		vector<string> getHeadLineElement(const VectorIndex& _vCol) const;
 
 		bool setHeadLineElement(long long int _i, string _sHead);	        // setzt das _i-te Element der Kopfzeile auf _sHead
 
@@ -120,60 +121,60 @@ class Memory : public Sorter
 
         void deleteEntry(long long int _nLine, long long int _nCol);
         void deleteBulk(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = 0);
-        void deleteBulk(const vector<long long int>& _vLine, const vector<long long int>& _vCol);
+        void deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol);
 
         NumeRe::Table extractTable(const string& _sTable = "");
         void importTable(NumeRe::Table _table);
 
         // MAFIMPLEMENTATIONS
         double std(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-        double std(const vector<long long int>& _vLine, const vector<long long int>& _vCol);
+        double std(const VectorIndex& _vLine, const VectorIndex& _vCol);
 
         double avg(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-        double avg(const vector<long long int>& _vLine, const vector<long long int>& _vCol);
+        double avg(const VectorIndex& _vLine, const VectorIndex& _vCol);
 
         double max(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-        double max(const vector<long long int>& _vLine, const vector<long long int>& _vCol);
+        double max(const VectorIndex& _vLine, const VectorIndex& _vCol);
 
         double min(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-        double min(const vector<long long int>& _vLine, const vector<long long int>& _vCol);
+        double min(const VectorIndex& _vLine, const VectorIndex& _vCol);
 
-        double prd(const vector<long long int>& _vLine, const vector<long long int>& _vCol);
+        double prd(const VectorIndex& _vLine, const VectorIndex& _vCol);
         double prd(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
 
-        double sum(const vector<long long int>& _vLine, const vector<long long int>& _vCol);
+        double sum(const VectorIndex& _vLine, const VectorIndex& _vCol);
         double sum(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
 
-        double num(const vector<long long int>& _vLine, const vector<long long int>& _vCol);
+        double num(const VectorIndex& _vLine, const VectorIndex& _vCol);
         double num(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
 
         double and_func(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-        double and_func(const vector<long long int>& _vLine, const vector<long long int>& _vCol);
+        double and_func(const VectorIndex& _vLine, const VectorIndex& _vCol);
 
         double or_func(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-        double or_func(const vector<long long int>& _vLine, const vector<long long int>& _vCol);
+        double or_func(const VectorIndex& _vLine, const VectorIndex& _vCol);
 
         double xor_func(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-        double xor_func(const vector<long long int>& _vLine, const vector<long long int>& _vCol);
+        double xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol);
 
-        double cnt(const vector<long long int>& _vLine, const vector<long long int>& _vCol);
+        double cnt(const VectorIndex& _vLine, const VectorIndex& _vCol);
         double cnt(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
 
-        double norm(const vector<long long int>& _vLine, const vector<long long int>& _vCol);
+        double norm(const VectorIndex& _vLine, const VectorIndex& _vCol);
         double norm(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
 
-        double cmp(const vector<long long int>& _vLine, const vector<long long int>& _vCol, double dRef = 0.0, int nType = 0);
+        double cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef = 0.0, int nType = 0);
         double cmp(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, double dRef = 0.0, int nType = 0);
 
-        double med(const vector<long long int>& _vLine, const vector<long long int>& _vCol);
+        double med(const VectorIndex& _vLine, const VectorIndex& _vCol);
         double med(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
 
-        double pct(const vector<long long int>& _vLine, const vector<long long int>& _vCol, double dPct = 0.5);
+        double pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct = 0.5);
         double pct(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, double dPct = 0.5);
 
-        bool smooth(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, unsigned int nOrder = 1, AppDir Direction = ALL);
-        bool retoque(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, AppDir Direction = ALL);
-        bool resample(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, unsigned int nSamples = 0, AppDir Direction = ALL);
+        bool smooth(VectorIndex _vLine, VectorIndex _vCol, unsigned int nOrder = 1, AppDir Direction = ALL);
+        bool retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction = ALL);
+        bool resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSamples = 0, AppDir Direction = ALL);
 
 };
 
