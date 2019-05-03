@@ -555,10 +555,10 @@ bool Memory::writeData(Indices& _idx, double* _dData, unsigned int _nNum)
 		return writeSingletonData(_idx, _dData);
 
     if (_idx.row.isOpenEnd())
-        _idx.row.back() = _idx.row.front() + _nNum;
+        _idx.row.setRange(0, _idx.row.front() + _nNum - 1);
 
     if (_idx.col.isOpenEnd())
-        _idx.col.back() = _idx.col.front() + _nNum;
+        _idx.col.setRange(0, _idx.col.front() + _nNum - 1);
 
     if (_idx.row.size() > 1)
         nDirection = COLS;
@@ -589,10 +589,10 @@ bool Memory::writeData(Indices& _idx, double* _dData, unsigned int _nNum)
 bool Memory::writeSingletonData(Indices& _idx, double* _dData)
 {
     if (_idx.row.isOpenEnd())
-        _idx.row.back() = ::max(_idx.row.front(), getLines(false));
+        _idx.row.setRange(0, ::max(_idx.row.front(), getLines(false)) - 1);
 
     if (_idx.col.isOpenEnd())
-        _idx.col.back() = ::max(_idx.col.front(), getCols(false));
+        _idx.col.setRange(0, ::max(_idx.col.front(), getCols(false)) - 1);
 
     for (size_t i = 0; i < _idx.row.size(); i++)
     {
@@ -3049,7 +3049,7 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, unsigned int nOrder, 
 	if (!bValidData)
 		throw SyntaxError(SyntaxError::NO_CACHED_DATA, "smooth", SyntaxError::invalid_position);
 
-	if (!_vLine.isValid() || _vCol.isValid())
+	if (!_vLine.isValid() || !_vCol.isValid())
 		throw SyntaxError(SyntaxError::INVALID_INDEX, "smooth", SyntaxError::invalid_position);
 
 	// Evaluate the indices

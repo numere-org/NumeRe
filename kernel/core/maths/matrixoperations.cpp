@@ -1051,7 +1051,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             Indices _idx = parser_getIndices(__sCmd.substr(nPos), _parser, _data, _option);
 
             if (_idx.row.isOpenEnd())
-                _idx.row.back() = iter->second.size();
+                _idx.row.setRange(0, iter->second.size()-1);
 
             // Prepare a target matrix
             Matrix _mClusterMatrix = parser_ZeroesMatrix(_idx.row.size(), 1);
@@ -2715,10 +2715,10 @@ static Matrix parser_getMatrixElements(string& sExpr, const Matrix& _mMatrix, Pa
     Indices _idx = parser_getIndices(sExpr, _mMatrix, _parser, _data, _option);
 
     if (_idx.row.isOpenEnd())
-        _idx.row.back() = _mMatrix.size();
+        _idx.row.setRange(0, _mMatrix.size()-1);
 
     if (_idx.col.isOpenEnd())
-        _idx.col.back() = _mMatrix[0].size();
+        _idx.col.setRange(0, _mMatrix[0].size()-1);
 
     _mReturn = parser_ZeroesMatrix(_idx.row.size(), _idx.col.size());
 
@@ -3129,7 +3129,7 @@ Indices parser_getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _p
             if (sI[n] == "<<EMPTY>>")
             {
                 if (n)
-                    _idx.row.back() = _mMatrix.size();
+                    _idx.row.setRange(0, _mMatrix.size()-1);
                 else
                     _idx.row.front() = 0;
             }
@@ -3145,7 +3145,7 @@ Indices parser_getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _p
             if (sJ[n] == "<<EMPTY>>")
             {
                 if (n)
-                    _idx.col.back() = _mMatrix[0].size();
+                    _idx.col.setRange(0, _mMatrix[0].size()-1);
                 else
                     _idx.col.front() = 0;
             }

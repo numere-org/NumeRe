@@ -316,9 +316,9 @@ bool Odesolver::solve(const string& sCmd)
     //cerr << sFunc << endl;
     //cerr << nDimensions << endl;
     if (_idx.row.isOpenEnd())
-        _idx.row.back() = _idx.row.front() + nSamples+1;
+        _idx.row.setRange(0, _idx.row.front() + nSamples);
     if (_idx.col.isOpenEnd())
-        _idx.col.back() = _idx.col.front() + nDimensions+1+(long long int)bCalcLyapunov*2;
+        _idx.col.setRange(0, _idx.col.front() + nDimensions + (long long int)bCalcLyapunov*2);
 
     if (bAllowCacheClearance)
     {

@@ -316,12 +316,12 @@ void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, 
 		// -3: string access in the current dimension
 
 		if (!isCluster && _idx.col.isOpenEnd())
-			_idx.col.back() = _data.getCols(sEntityName, false);
+			_idx.col.setRange(0, _data.getCols(sEntityName, false)-1);
 
 		if (!isCluster && _idx.row.isOpenEnd())
-			_idx.row.back() = _data.getLines(sEntityName, true) - _data.getAppendedZeroes(_idx.col.front(), sEntityName);
+			_idx.row.setRange(0, _data.getLines(sEntityName, true) - _data.getAppendedZeroes(_idx.col.front(), sEntityName)-1);
 		else if (isCluster && _idx.row.isOpenEnd())
-            _idx.row.back() = _data.getCluster(sEntityName).size();
+            _idx.row.setRange(0, _data.getCluster(sEntityName).size()-1);
 
 		if (_idx.row.isString())
 			bWriteStrings = true;
@@ -447,10 +447,10 @@ static string handleCachedDataAccess(string& sLine, Parser& _parser, Datafile& _
 
 		// Evaluate the indices
 		if (_idx.row.isOpenEnd())
-			_idx.row.back() = isCluster ? _data.getCluster(_access.sCacheName).size() : _data.getLines(_access.sCacheName, false);
+			_idx.row.setRange(0, isCluster ? _data.getCluster(_access.sCacheName).size()-1 : _data.getLines(_access.sCacheName, false)-1);
 
 		if (_idx.col.isOpenEnd())
-			_idx.col.back() = isCluster ? 1 : _data.getCols(_access.sCacheName, false);
+			_idx.col.setRange(0, isCluster ? 0 : _data.getCols(_access.sCacheName, false)-1);
 
 		// Get new data (Parser::GetVectorVar returns a pointer to the vector var) and update the stored elements in the internal representation
 		if (isCluster)
@@ -851,10 +851,10 @@ bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Dat
 	// write the data
 	// the first case uses vector indices
     if (_idx.row.isOpenEnd())
-        _idx.row.back() = _data.getLines(sTableName, false);
+        _idx.row.setRange(0, _data.getLines(sTableName, false)-1);
 
     if (_idx.col.isOpenEnd())
-        _idx.col.back() = _idx.col.front() + nDesiredCols;
+        _idx.col.setRange(0, _idx.col.front() + nDesiredCols-1);
 
     if (nDesiredCols == 2 && _idx.col.numberOfNodes() == 2 && _idx.col.isExpanded()) // Do not expand in this case!
     {
@@ -921,11 +921,8 @@ static int evalColumnIndicesAndGetDimension(Datafile& _data, Parser& _parser, co
     int nDim = 0;
 
     // Ensure consistent indices
-    if (_idx.row.back() > _data.getLines(sDatatable, false) || _idx.row.isOpenEnd())
-        _idx.row.back() = _data.getLines(sDatatable, false);
-
-	if (_idx.col.back() > _data.getCols(sDatatable) || _idx.col.isOpenEnd())
-		_idx.col.back() = _data.getCols(sDatatable);
+    _idx.row.setRange(0, _data.getLines(sDatatable, false)-1);
+    _idx.col.setRange(0, _data.getCols(sDatatable)-1);
 
     // Validate the calculated indices
 	if (_idx.row.front() > _data.getLines(sDatatable, false)

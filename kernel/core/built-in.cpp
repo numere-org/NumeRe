@@ -2410,10 +2410,10 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 							throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 
                         if (_idx.row.isOpenEnd())
-                            _idx.row.back() = _data.getLines(iter->first, false);
+                            _idx.row.setRange(0, _data.getLines(iter->first, false)-1);
 
                         if (_idx.col.isOpenEnd())
-                            _idx.col.back() = _data.getCols(iter->first, false);
+                            _idx.col.setRange(0, _data.getCols(iter->first, false)-1);
 
                         _cache.setCacheSize(_idx.row.size(), _idx.col.size(), "cache");
 
@@ -2502,10 +2502,10 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 							throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, SyntaxError::invalid_position);
 
                         if (_idx.row.isOpenEnd())
-                            _idx.row.back() = _data.getLines(iter->first, false);
+                            _idx.row.setRange(0, _data.getLines(iter->first, false)-1);
 
                         if (_idx.col.isOpenEnd())
-                            _idx.col.back() = _data.getCols(iter->first, false);
+                            _idx.col.setRange(0, _data.getCols(iter->first, false)-1);
 
                         _cache.setCacheSize(_idx.row.size(), _idx.col.size(), "cache");
 
@@ -3363,10 +3363,10 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sArgument);
 
 			if (_idx.row.isOpenEnd())
-				_idx.row.back() = _data.getLines(sArgument.substr(0, sArgument.find('(')), false);
+				_idx.row.setRange(0, _data.getLines(sArgument.substr(0, sArgument.find('(')), false)-1);
 
 			if (_idx.col.isOpenEnd())
-				_idx.col.back() = _data.getCols(sArgument.substr(0, sArgument.find('(')));
+				_idx.col.setRange(0, _data.getCols(sArgument.substr(0, sArgument.find('(')))-1);
 
 			if (matchParams(sCmd, "grid"))
 			{
@@ -3488,10 +3488,10 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 							throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, iter->first + "(", iter->first);
 
                         if (_idx.row.isOpenEnd())
-                            _idx.row.back() = _data.getLines(iter->first, false);
+                            _idx.row.setRange(0, _data.getLines(iter->first, false)-1);
 
                         if (_idx.col.isOpenEnd())
-                            _idx.col.back() = _data.getCols(iter->first, false);
+                            _idx.col.setRange(0, _data.getCols(iter->first, false)-1);
 
                         _cache.setCacheSize(_idx.row.size(), _idx.col.size(), "cache");
 
@@ -3672,10 +3672,10 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sArgument, sArgument);
 
 			if (_idx.row.isOpenEnd())
-				_idx.row.back() = _data.getLines(sArgument.substr(0, sArgument.find('(')), false);
+				_idx.row.setRange(0, _data.getLines(sArgument.substr(0, sArgument.find('(')), false)-1);
 
 			if (_idx.col.isOpenEnd())
-				_idx.col.back() = _data.getCols(sArgument.substr(0, sArgument.find('(')));
+				_idx.col.setRange(0, _data.getCols(sArgument.substr(0, sArgument.find('(')))-1);
 
 			if (matchParams(sCmd, "grid"))
 			{
@@ -3859,10 +3859,10 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sArgument, sArgument);
 
 			if (_idx.row.isOpenEnd())
-				_idx.row.back() = _data.getLines(sArgument.substr(0, sArgument.find('(')), false);
+				_idx.row.setRange(0, _data.getLines(sArgument.substr(0, sArgument.find('(')), false)-1);
 
 			if (_idx.col.isOpenEnd())
-				_idx.col.back() = _data.getCols(sArgument.substr(0, sArgument.find('(')));
+				_idx.col.setRange(0, _data.getCols(sArgument.substr(0, sArgument.find('(')))-1);
 
 			if (matchParams(sCmd, "grid"))
 			{
@@ -4681,10 +4681,10 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 							throw SyntaxError(SyntaxError::CANNOT_EXPORT_DATA, sCmd, iter->first + "(", iter->first);
 
                         if (_idx.row.isOpenEnd())
-                            _idx.row.back() = _data.getLines(iter->first);
+                            _idx.row.setRange(0, _data.getLines(iter->first)-1);
 
                         if (_idx.col.isOpenEnd())
-                            _idx.col.back() = _data.getCols(iter->first);
+                            _idx.col.setRange(0, _data.getCols(iter->first)-1);
 
                         _cache.setCacheSize(_idx.row.size(), _idx.col.size(), "cache");
 
@@ -5161,13 +5161,10 @@ static int showDataObject(string& sCmd)
 
                 // Copy the target data to a new table
                 if (_idx.row.isOpenEnd())
-                    _idx.row.back() = _data.getLines(iter->first, false);
+                    _idx.row.setRange(0, _data.getLines(iter->first, false)-1);
 
                 if (_idx.col.isOpenEnd())
-                    _idx.col.back() = _data.getCols(iter->first, false);
-
-                if (_idx.col.back() && !_idx.row.back())
-                    _idx.row.back()++;
+                    _idx.col.setRange(0, _data.getCols(iter->first, false)-1);
 
                 _cache.setCacheSize(_idx.row.size(), _idx.col.size(), "cache");
                 _cache.renameCache("cache", "*" + (iter->first), true);
@@ -5210,7 +5207,7 @@ static int showDataObject(string& sCmd)
                 Indices _idx = parser_getIndices(sCmd, _parser, _data, _option);
 
                 if (_idx.row.isOpenEnd())
-                    _idx.row.back() = iter->second.size();
+                    _idx.row.setRange(0, iter->second.size()-1);
 
                 // Create the target container
                 NumeRe::Container<string> _stringTable(_idx.row.size(), 1);
@@ -5237,10 +5234,10 @@ static int showDataObject(string& sCmd)
         Indices _idx = parser_getIndices(sCmd, _parser, _data, _option);
 
         if (_idx.row.isOpenEnd())
-            _idx.row.back() = _data.getStringElements();
+            _idx.row.setRange(0, _data.getStringElements()-1);
 
         if (_idx.col.isOpenEnd())
-            _idx.col.back() = _data.getStringCols();
+            _idx.col.setRange(0, _data.getStringCols()-1);
 
         // Create the target container
         NumeRe::Container<string> _stringTable(_idx.row.size(), _idx.col.size());

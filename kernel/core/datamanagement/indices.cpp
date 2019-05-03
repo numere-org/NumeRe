@@ -194,6 +194,8 @@ static void handleIndexVectors(Parser& _parser, Indices& _idx, vector<string>& v
 	{
 		if (vLines[0] == "#")
 			_idx.row.front() = VectorIndex::STRING;
+        else if (vLines[0] == "<<EMPTY>>")
+            _idx.row.front() = 0;
 		else
 		{
 			_parser.SetExpr(vLines[0]);
@@ -380,12 +382,12 @@ static void expandStringIndexVectors(Indices& _idx, Datafile& _data)
 {
     if (_idx.row.isOpenEnd())
     {
-        _idx.row.back() = _data.getStringElements();
+        _idx.row.setRange(0, _data.getStringElements()-1);
     }
 
     if (_idx.col.isOpenEnd())
     {
-        _idx.col.back() = _data.getStringCols();
+        _idx.col.setRange(0, _data.getStringCols()-1);
     }
 }
 

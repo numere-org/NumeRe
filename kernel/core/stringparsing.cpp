@@ -1872,48 +1872,66 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 	while (sLine.find("getindices(", n_pos) != string::npos)
 	{
 		n_pos = sLine.find("getindices(", n_pos);
+
 		if (isInQuotes(sLine, n_pos, true))
 		{
 			n_pos++;
 			continue;
 		}
+
 		unsigned int nPos = n_pos + 10;
+
 		if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
 			throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
+
 		nPos += getMatchingParenthesis(sLine.substr(nPos));
+
 		if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos - 1, 12))))
 		{
 			string _sObject = sLine.substr(n_pos + 11, nPos - n_pos - 11);
 			StringResult strRes = parser_StringParserCore(_sObject, "", _data, _parser, _option, mStringVectorVars);
+
 			if (!strRes.vResult.size())
 				throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
 			// use only first one
 			string sType = strRes.vResult[0];
 			int nType = 0;
 			_sObject = getNextArgument(sType, true);
+
 			if (!sType.length())
 			{
 				sType = "0";
 			}
+
 			if (_sObject[0] == '"')
 				_sObject.erase(0, 1);
+
 			if (_sObject[_sObject.length() - 1] == '"')
 				_sObject.erase(_sObject.length() - 1);
+
 			StripSpaces(_sObject);
+
 			if (containsStrings(sType) || parser_containsStringVectorVars(sType, mStringVectorVars))
 			{
 				StringResult strRes = parser_StringParserCore(sType, "", _data, _parser, _option, mStringVectorVars);
+
 				if (!strRes.vResult.size())
 					throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
 				sType = strRes.vResult[0];
 			}
+
 			_parser.SetExpr(sType);
 			nType = (int)_parser.Eval();
+
 			if (nType < -1 || nType > 2)
 				nType = 0;
+
 			if (_sObject.find("string(") != string::npos)
 			{
 				vector<double> vIndices;
+
 				if (_sObject.find(':', _sObject.find("string(") + 7) != string::npos)
 				{
 					string s[3];
@@ -1921,8 +1939,10 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 					parser_SplitArgs(s[0], s[1], ':', _option);
 					StripSpaces(s[0]);
 					StripSpaces(s[1]);
+
 					if (s[1].find(',') != string::npos)
 						parser_SplitArgs(s[1], s[2], ',', _option, true);
+
 					if (!s[0].length())
 						vIndices.push_back(1.0);
 					else
@@ -1930,7 +1950,9 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 						_parser.SetExpr(s[0]);
 						vIndices.push_back(_parser.Eval());
 					}
+
 					vIndices.push_back(-1.0);
+
 					if (!s[2].length())
 						vIndices.push_back(1.0);
 					else
@@ -1938,6 +1960,7 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 						_parser.SetExpr(s[2]);
 						vIndices.push_back(_parser.Eval());
 					}
+
 					if (!s[1].length() && nType == -1)
 						vIndices[1] = -1.0;
 					else if (!s[1].length() && nType > 0)
@@ -1945,6 +1968,7 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 					else if (!s[1].length())
 					{
 						vIndices[1] = _data.getStringElements((unsigned int)vIndices.back() - 1);
+
 						if (!vIndices[1])
 							vIndices[1] = vIndices[0];
 					}
@@ -1957,10 +1981,12 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 				else
 				{
 					string s1 = _sObject.substr(_sObject.find("string(") + 7, getMatchingParenthesis(_sObject.substr(_sObject.find("string(") + 6)) - 1), sCol = "";
+
 					if (s1.find(',') != string::npos)
 						parser_SplitArgs(s1, sCol, ',', _option, true);
 
 					vIndices.push_back(1.0);
+
 					if (isNotEmptyExpression(sCol))
 					{
 						_parser.SetExpr(sCol);
@@ -1968,6 +1994,7 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 					}
 					else
 						vIndices.push_back(1.0);
+
 					if (isNotEmptyExpression(s1))
 					{
 						_parser.SetExpr(s1);
@@ -1976,11 +2003,13 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 					else
 						vIndices[0] = _data.getStringElements((unsigned int)vIndices.back() - 1);
 				}
+
 				_parser.SetVectorVar("_~indices[" + replaceToVectorname(_sObject) + "]", vIndices);
 				sLine = sLine.substr(0, n_pos) + "_~indices[" + replaceToVectorname(_sObject) + "]" + sLine.substr(nPos + 1);
 				n_pos++;
 				continue;
 			}
+
 			if (_sObject.find("data(") == string::npos && !_data.containsTablesOrClusters(_sObject))
 			{
 				sLine = sLine.substr(0, n_pos) + "nan" + sLine.substr(nPos + 1);
@@ -2002,22 +2031,22 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 				if (_mIndex.row.isOpenEnd())
 				{
 					if (nType == 2)
-						_mIndex.row.back() = _mIndex.row.front() + 1;
+						_mIndex.row.setRange(0, _mIndex.row.front() + 1);
 				}
 
 				if (_mIndex.col.isOpenEnd())
 				{
 					if (nType == 1)
-						_mIndex.col.back() = _mIndex.col.front() + 1;
+						_mIndex.col.setRange(0, _mIndex.col.front() + 1);
 				}
 
 				if (_sObject.find("data(") != string::npos)
 				{
 					if (_mIndex.row.isOpenEnd())
-						_mIndex.row.back() = _data.getLines("data", false);
+						_mIndex.row.setRange(0, _data.getLines("data", false)-1);
 
 					if (_mIndex.col.isOpenEnd())
-						_mIndex.col.back() = _data.getCols("data", false);
+						_mIndex.col.setRange(0, _data.getCols("data", false)-1);
 				}
 				else
 				{
@@ -2028,10 +2057,10 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 									|| (_sObject.find(iter->first + "(") && checkDelimiter(_sObject.substr(_sObject.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
 						{
 							if (_mIndex.row.isOpenEnd())
-                                _mIndex.row.back() = _data.getLines(iter->first, false);
+                                _mIndex.row.setRange(0, _data.getLines(iter->first, false)-1);
 
                             if (_mIndex.col.isOpenEnd())
-                                _mIndex.col.back() = _data.getCols(iter->first, false);
+                                _mIndex.col.setRange(0, _data.getCols(iter->first, false)-1);
 						}
 					}
 				}
@@ -3107,144 +3136,83 @@ static string parser_GetDataForString(string sLine, Datafile& _data, Parser& _pa
 	while (sLine.find("string(", n_pos) != string::npos)
 	{
 		n_pos = sLine.find("string(", n_pos);
+
 		if (isInQuotes(sLine, n_pos, true))
 		{
 			n_pos++;
 			continue;
 		}
+
 		unsigned int nPos = n_pos + 6;
+
 		if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
 			throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
+
 		nPos += getMatchingParenthesis(sLine.substr(nPos));
+
 		if (!isInQuotes(sLine, n_pos, true) && !isInQuotes(sLine, nPos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos - 1, 8))))
 		{
 			string sString = "";
+
 			if (nPos - n_pos - 7 > 0)
 			{
 				sString = sLine.substr(n_pos + 7, nPos - n_pos - 7);
 				StripSpaces(sString);
 			}
-			if (sString.length())
-			{
-				StringResult strRes = parser_StringParserCore(sString, "", _data, _parser, _option, mStringVectorVars, false);
-				if (!strRes.vResult.size())
-					throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-				sString = strRes.vResult[0];
-				if (sString.find(':') != string::npos)
-				{
-					int i1 = 0, i2 = 0, nCol = 0;
-					string s1 = "(" + sString + ")", s2 = "", sCol = "";
-					parser_SplitArgs(s1, s2, ':', _option);
-					if (s2.find(',') != string::npos)
-						parser_SplitArgs(s2, sCol, ',', _option, true);
-					if (isNotEmptyExpression(s1))
-					{
-						_parser.SetExpr(s1);
-						i1 = (unsigned int)_parser.Eval() - 1;
-					}
-					if (isNotEmptyExpression(sCol))
-					{
-						_parser.SetExpr(sCol);
-						nCol = (unsigned int)_parser.Eval() - 1;
-					}
-					if (isNotEmptyExpression(s2))
-					{
-						_parser.SetExpr(s2);
-						i2 = (unsigned int)_parser.Eval();
-					}
-					else
-						i2 = _data.getStringElements(nCol);
-					parser_CheckIndices(i1, i2);
-					if (parser_CheckMultArgFunc(sLine.substr(0, n_pos), sLine.substr(nPos + 1)))
-					{
-						string sLeft = sLine.substr(0, n_pos);
-						StripSpaces(sLeft);
-						if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "num(")
-							sLine = sLeft.substr(0, sLeft.length() - 4) + toString((int)(i2 - i1)) + sLine.substr(sLine.find(')', nPos + 1) + 1);
-						else if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "max(")
-							sLine = sLeft.substr(0, sLeft.length() - 4) + "\"" + _data.maxString(i1, i2, nCol) + "\"" + sLine.substr(sLine.find(')', nPos + 1) + 1);
-						else if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "min(")
-							sLine = sLeft.substr(0, sLeft.length() - 4) + "\"" + _data.minString(i1, i2, nCol) + "\"" + sLine.substr(sLine.find(')', nPos + 1) + 1);
-						else if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "sum(")
-							sLine = sLeft.substr(0, sLeft.length() - 4) + "\"" + _data.sumString(i1, i2, nCol) + "\"" + sLine.substr(sLine.find(')', nPos + 1) + 1);
-					}
-					else
-					{
-						if (_data.getStringElements(nCol))
-						{
-							sString = "";
-							vector<string> vStrings;
-							for (int i = i1; i < i2; i++)
-							{
-								vStrings.push_back("\"" +  _data.readString((unsigned int)i, nCol) + "\"");
-							}
-							sString = parser_CreateStringVectorVar(vStrings, mStringVectorVars);
-							sLine = sLine.substr(0, n_pos) + sString + sLine.substr(nPos + 1);
-						}
-						else
-							sLine = sLine.substr(0, n_pos) + "\"\"" + sLine.substr(nPos + 1);
-					}
-				}
-				else
-				{
-					unsigned int nIndex = string::npos, nCol = 0;
-					string s1 = "(" + sString + ")", sCol = "";
-					if (s1.find(',') != string::npos)
-						parser_SplitArgs(s1, sCol, ',', _option);
-					if (isNotEmptyExpression(sCol))
-					{
-						_parser.SetExpr(sCol);
-						nCol = (unsigned int)_parser.Eval() - 1;
-					}
-					if (isNotEmptyExpression(s1))
-					{
-						_parser.SetExpr(s1);
-						nIndex = (unsigned int)_parser.Eval() - 1;
-					}
 
+            StringResult strRes = parser_StringParserCore(sString, "", _data, _parser, _option, mStringVectorVars, false);
 
-					if (parser_CheckMultArgFunc(sLine.substr(0, n_pos), sLine.substr(nPos + 1)))
-					{
-						string sLeft = sLine.substr(0, n_pos);
+            if (!strRes.vResult.size())
+                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
-						StripSpaces(sLeft);
-						if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "num(")
-							sLine = sLeft.substr(0, sLeft.length() - 4) + "1" + sLine.substr(sLine.find(')', nPos + 1) + 1);
-						else if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "max(")
-							sLine = sLeft.substr(0, sLeft.length() - 4) + "\"" + _data.readString(nIndex, nCol) + "\"" + sLine.substr(sLine.find(')', nPos + 1) + 1);
-						else if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "min(")
-							sLine = sLeft.substr(0, sLeft.length() - 4) + "\"" + _data.readString(nIndex, nCol) + "\"" + sLine.substr(sLine.find(')', nPos + 1) + 1);
-						else if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "sum(")
-							sLine = sLeft.substr(0, sLeft.length() - 4) + "\"" + _data.readString(nIndex, nCol) + "\"" + sLine.substr(sLine.find(')', nPos + 1) + 1);
-					}
-					else
-					{
-						sLine = sLine.substr(0, n_pos) + "\"" + _data.readString(nIndex, nCol) + "\"" + sLine.substr(nPos + 1);
-					}
-				}
-			}
-			else
-			{
-				//cerr << sLine.substr(0,n_pos) << "***" << sLine.substr(nPos+1) << endl;
-				if (parser_CheckMultArgFunc(sLine.substr(0, n_pos), sLine.substr(nPos + 1)))
-				{
-					string sLeft = sLine.substr(0, n_pos);
-					StripSpaces(sLeft);
-					if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "num(")
-						sLine = sLeft.substr(0, sLeft.length() - 4) + "1" + sLine.substr(sLine.find(')', nPos + 1) + 1);
-					else if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "max(")
-						sLine = sLeft.substr(0, sLeft.length() - 4) + "\"" + _data.readString() + "\"" + sLine.substr(sLine.find(')', nPos + 1) + 1);
-					else if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "min(")
-						sLine = sLeft.substr(0, sLeft.length() - 4) + "\"" + _data.readString() + "\"" + sLine.substr(sLine.find(')', nPos + 1) + 1);
-					else if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "sum(")
-						sLine = sLeft.substr(0, sLeft.length() - 4) + "\"" + _data.readString() + "\"" + sLine.substr(sLine.find(')', nPos + 1) + 1);
-				}
-				else
-					sLine = sLine.substr(0, n_pos) + "\"" + _data.readString() + "\"" + sLine.substr(nPos + 1);
-			}
+            sString = strRes.vResult[0];
+
+            Indices _idx = parser_getIndices("string(" + sString + ")", _parser, _data, _option);
+
+            if (_idx.col.isOpenEnd())
+                _idx.col.back() = VectorIndex::INVALID;
+
+            if (_idx.row.isOpenEnd())
+                _idx.row.setRange(0, _data.getStringElements()-1);
+
+            if (!_idx.col.isValid())
+                _idx.col.front() = 0;
+
+            if (parser_CheckMultArgFunc(sLine.substr(0, n_pos), sLine.substr(nPos + 1)))
+            {
+                string sLeft = sLine.substr(0, n_pos);
+                StripSpaces(sLeft);
+
+                if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "num(")
+                    sLine = sLeft.substr(0, sLeft.length() - 4) + toString(_idx.row.size()) + sLine.substr(sLine.find(')', nPos + 1) + 1);
+                else if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "max(")
+                    sLine = sLeft.substr(0, sLeft.length() - 4) + "\"" + _data.maxString(_idx.row, _idx.col) + "\"" + sLine.substr(sLine.find(')', nPos + 1) + 1);
+                else if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "min(")
+                    sLine = sLeft.substr(0, sLeft.length() - 4) + "\"" + _data.minString(_idx.row, _idx.col) + "\"" + sLine.substr(sLine.find(')', nPos + 1) + 1);
+                else if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "sum(")
+                    sLine = sLeft.substr(0, sLeft.length() - 4) + "\"" + _data.sumString(_idx.row, _idx.col) + "\"" + sLine.substr(sLine.find(')', nPos + 1) + 1);
+            }
+            else
+            {
+                if (_data.getStringElements(_idx.col.front()))
+                {
+                    sString = "";
+                    vector<string> vStrings;
+
+                    for (size_t i = 0; i < _idx.row.size(); i++)
+                    {
+                        vStrings.push_back("\"" +  _data.readString((unsigned int)_idx.row[i], _idx.col.front()) + "\"");
+                    }
+
+                    sString = parser_CreateStringVectorVar(vStrings, mStringVectorVars);
+                    sLine = sLine.substr(0, n_pos) + sString + sLine.substr(nPos + 1);
+                }
+                else
+                    sLine = sLine.substr(0, n_pos) + "\"\"" + sLine.substr(nPos + 1);
+            }
 		}
+
 		n_pos++;
-		//cerr << sLine << endl;
 	}
 
 	n_pos = 0;
@@ -3769,12 +3737,12 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
     {
         // Write the string to the correct data table
         if (_idx.col.isOpenEnd() && sTableName == "data")
-            _idx.col.back() = _data.getCols("data");
+            _idx.col.setRange(0, _data.getCols("data")-1);
 
         // If the first element is non-zero but the second is,
         // we use the number of elements as upper boundary
         if (_idx.col.isOpenEnd())
-            _idx.col.back() = _idx.col.front() + nStrings - nCurrentComponent;
+            _idx.col.setRange(0, _idx.col.front() + nStrings - nCurrentComponent - 1);
 
         for (int n = nCurrentComponent; n < (int)nStrings; n++)
         {
@@ -3906,103 +3874,32 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
 // It will store the strings into the string object
 static void parser_StoreStringToStringObject(const vector<string>& vFinal, string& sObject, size_t& nCurrentComponent, size_t nStrings, Parser& _parser, Datafile& _data, const Settings& _option)
 {
-    string si = "";
-    string sj = "";
-    string sCol = "";
-    int nIndex[3] = {-2, -2, 0};
-    si = sObject.substr(sObject.find("string(") + 6);
-    si = si.substr(1, getMatchingParenthesis(si) - 1);
-    StripSpaces(si);
+    Indices _idx = parser_getIndices(sObject, _parser, _data, _option);
 
-    // Does an index exist?
-    if (si.length())
+    /*if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
     {
-        // Yes, it does
-        // Parse the indices
-        if (si.find(':') != string::npos)
-        {
-            try
-            {
-                si = "(" + si + ")";
-                parser_SplitArgs(si, sj, ':', _option);
-                if (sj.find(',') != string::npos)
-                {
-                    parser_SplitArgs(sj, sCol, ',', _option, true);
-                }
-                if (!isNotEmptyExpression(si))
-                {
-                    si = "1";
-                }
-            }
-            catch (...)
-            {
-                throw;
-            }
-        }
-        else if (si.find(',') != string::npos)
-        {
-            try
-            {
-                parser_SplitArgs(si, sCol, ',', _option, true);
-                sj = si;
-            }
-            catch (...)
-            {
-                throw;
-            }
-        }
-        else
-            sj = si;
-
-        // Get the numerical values
-        // First the column, if does exist
-        if (isNotEmptyExpression(sCol))
-        {
-            _parser.SetExpr(sCol);
-            nIndex[2] = (unsigned int)_parser.Eval() - 1;
-        }
-
-        // Now the rows
-        if (isNotEmptyExpression(si))
-        {
-            _parser.SetExpr(si);
-            nIndex[0] = (unsigned int)_parser.Eval() - 1;
-        }
-        if (isNotEmptyExpression(sj))
-        {
-            _parser.SetExpr(sj);
-            nIndex[1] = (unsigned int)_parser.Eval() - 1;
-        }
-
-        // Ensure that the indices are valid
-        if (nIndex[0] < 0 && nIndex[1] < 0)
-            nIndex[0] = _data.getStringElements(nIndex[2]);
-        else if (nIndex[0] < 0)
-            nIndex[0] = 0;
-
-        if (nIndex[1] >= 0)
-            parser_CheckIndices(nIndex[0], nIndex[1]);
-
-        // Write the current string values to the corresponding indices
-        for (int n = nCurrentComponent; n < (int)nStrings; n++)
-        {
-            if (n + nIndex[0] == nIndex[1] + 1)
-                break;
-            _data.writeString(removeQuotationMarks(maskControlCharacters(vFinal[n])), n + nIndex[0], nIndex[2]);
-        }
-        nCurrentComponent = nStrings;
-    }
-    else
-    {
-        // No, it doesn't
-        // Simply append the string results to the already available ones
-        for (int n = nCurrentComponent; n < (int)nStrings; n++)
+        for (size_t n = nCurrentComponent; n < nStrings; n++)
         {
             _data.writeString(removeQuotationMarks(maskControlCharacters(vFinal[n])));
         }
-        nCurrentComponent = nStrings;
-    }
 
+        return;
+    }*/
+
+    if (_idx.row.isOpenEnd())
+        _idx.row.setRange(0, _idx.row.front()+nStrings-nCurrentComponent-1);
+
+    if (!_idx.col.isValid())
+        _idx.col.front() = 0;
+
+    for (size_t i = 0; i < _idx.row.size(); i++)
+    {
+        if (nCurrentComponent == nStrings)
+            return;
+
+        _data.writeString(removeQuotationMarks(maskControlCharacters(vFinal[nCurrentComponent])), _idx.row[i], _idx.col.front());
+        nCurrentComponent++;
+    }
 }
 
 // This static function stores the calculated string results

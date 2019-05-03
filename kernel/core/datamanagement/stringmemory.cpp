@@ -371,6 +371,34 @@ string StringMemory::maxString(unsigned int i1, unsigned int i2, unsigned int nC
     return sMax;
 }
 
+// This member function returns the maximal string in the "string()" object
+// in the selected column
+string StringMemory::maxString(VectorIndex _vLine, VectorIndex _vCol)
+{
+    // Ensure that the selected column exists
+    if (_vCol.front() >= _stringIntMem.sStrings.size())
+        return "";
+
+    // Fill the second line index automatically
+    if (_vLine.isOpenEnd() || _vLine.last() > _stringIntMem.sStrings[_vCol.front()].size())
+        _vLine.setRange(0, _stringIntMem.sStrings[_vCol.front()].size()-1);
+
+    // Return an empty string, if the second column does not exist
+    if (!_vLine.last() || _stringIntMem.sStrings[_vCol.front()].empty())
+        return "";
+
+    string sMax = _stringIntMem.sStrings[_vCol.front()][_vLine[0]];
+
+    // Search for the maximal string
+    for (size_t i = 1; i < _vLine.size(); i++)
+    {
+        if (sMax < _stringIntMem.sStrings[_vCol.front()][_vLine[i]])
+            sMax = _stringIntMem.sStrings[_vCol.front()][_vLine[i]];
+    }
+
+    return sMax;
+}
+
 // This member function returns the minimal string in the "string()" object
 // in the selected column
 string StringMemory::minString(unsigned int i1, unsigned int i2, unsigned int nCol)
@@ -399,6 +427,34 @@ string StringMemory::minString(unsigned int i1, unsigned int i2, unsigned int nC
     return sMin;
 }
 
+// This member function returns the minimal string in the "string()" object
+// in the selected column
+string StringMemory::minString(VectorIndex _vLine, VectorIndex _vCol)
+{
+    // Ensure that the selected column exists
+    if (_vCol.front() >= _stringIntMem.sStrings.size())
+        return "";
+
+    // Fill the second line index automatically
+    if (_vLine.isOpenEnd() || _vLine.last() > _stringIntMem.sStrings[_vCol.front()].size())
+        _vLine.setRange(0, _stringIntMem.sStrings[_vCol.front()].size()-1);
+
+    // Return an empty string, if the second column does not exist
+    if (!_vLine.last() || _stringIntMem.sStrings[_vCol.front()].empty())
+        return "";
+
+    string sMin = _stringIntMem.sStrings[_vCol.front()][_vLine[0]];
+
+    // Search for the minimal string
+    for (size_t i = 1; i < _vLine.size(); i++)
+    {
+        if (sMin > _stringIntMem.sStrings[_vCol.front()][_vLine[i]])
+            sMin = _stringIntMem.sStrings[_vCol.front()][_vLine[i]];
+    }
+
+    return sMin;
+}
+
 // This member function concatenates the strings in the "string()" object
 // in the selected range and returns it
 string StringMemory::sumString(unsigned int i1, unsigned int i2, unsigned int nCol)
@@ -421,6 +477,33 @@ string StringMemory::sumString(unsigned int i1, unsigned int i2, unsigned int nC
     for (unsigned int i = i1; i < i2; i++)
     {
         sSum += _stringIntMem.sStrings[nCol][i];
+    }
+
+    return sSum;
+}
+
+// This member function concatenates the strings in the "string()" object
+// in the selected range and returns it
+string StringMemory::sumString(VectorIndex _vLine, VectorIndex _vCol)
+{
+    // Ensure that the selected column exists
+    if (_vCol.front() >= _stringIntMem.sStrings.size())
+        return "";
+
+    // Fill the second line index automatically
+    if (_vLine.isOpenEnd() || _vLine.last() > _stringIntMem.sStrings[_vCol.front()].size())
+        _vLine.setRange(0, _stringIntMem.sStrings[_vCol.front()].size()-1);
+
+    // Return an empty string, if the second column does not exist
+    if (!_vLine.last() || _stringIntMem.sStrings[_vCol.front()].empty())
+        return "";
+
+    string sSum = "";
+
+    // Concatenate the strings
+    for (size_t i = 0; i < _vLine.size(); i++)
+    {
+        sSum += _stringIntMem.sStrings[_vCol.front()][_vLine[i]];
     }
 
     return sSum;

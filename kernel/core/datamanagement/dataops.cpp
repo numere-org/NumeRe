@@ -660,10 +660,10 @@ static bool searchAndDeleteTable(const string& sCache, Parser& _parser, Datafile
 
             // Evaluate the indices
             if (_iDeleteIndex.row.isOpenEnd())
-                _iDeleteIndex.row.back() = _data.getLines(iter->first, false);
+                _iDeleteIndex.row.setRange(0, _data.getLines(iter->first, false)-1);
 
             if (_iDeleteIndex.col.isOpenEnd())
-                _iDeleteIndex.col.back() = _data.getCols(iter->first);
+                _iDeleteIndex.col.setRange(0, _data.getCols(iter->first)-1);
 
             // Delete the section identified by the cache expression
             // The indices are vectors
@@ -696,7 +696,7 @@ static bool searchAndDeleteCluster(const string& sCluster, Parser& _parser, Data
 
             // Evaluate the indices
             if (_iDeleteIndex.row.isOpenEnd())
-                _iDeleteIndex.row.back() = _data.getCluster(iter->first).size();
+                _iDeleteIndex.row.setRange(0, _data.getCluster(iter->first).size()-1);
 
             // Delete the section identified by the cache expression
             // The indices are vectors
@@ -858,10 +858,10 @@ static string getSourceForDataOperation(const string& sExpression, Indices& _idx
 
             // Evaluate the indices
 			if (_idx.row.isOpenEnd())
-				_idx.row.back() = _data.getLines(sSourceForFileOperation, false);
+				_idx.row.setRange(0, _data.getLines(sSourceForFileOperation, false)-1);
 
 			if (_idx.col.isOpenEnd())
-				_idx.col.back() = _data.getCols(sSourceForFileOperation, false);
+				_idx.col.setRange(0, _data.getCols(sSourceForFileOperation, false)-1);
 		}
 	}
 
@@ -1002,10 +1002,10 @@ static bool sortStrings(string& sCmd, Indices& _idx, Parser& _parser, Datafile& 
 
     // Evalulate special index values
 	if (_idx.row.isOpenEnd())
-		_idx.row.back() = _data.getStringElements(_idx.col.front())-1;
+		_idx.row.setRange(0, _data.getStringElements(_idx.col.front())-1);
 
 	if (_idx.col.isOpenEnd())
-		_idx.col.back() = _data.getStringCols()-1;
+		_idx.col.setRange(0, _data.getStringCols()-1);
 
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself
@@ -1040,7 +1040,7 @@ static bool sortClusters(string& sCmd, const string& sCluster, Indices& _idx, Pa
 
     // Evalulate special index values
 	if (_idx.row.isOpenEnd())
-		_idx.row.back() = cluster.size() - 1;
+		_idx.row.setRange(0, cluster.size()-1);
 
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself
@@ -1096,9 +1096,9 @@ bool sortData(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions
 
 	// Evalulate special index values
 	if (_idx.row.isOpenEnd())
-		_idx.row.back() = _data.getLines(sCache, false) - 1;
+		_idx.row.setRange(0, _data.getLines(sCache, false)-1);
 	if (_idx.col.isOpenEnd())
-		_idx.col.back() = _data.getCols(sCache, false) - 1;
+		_idx.col.setRange(0, _data.getCols(sCache, false)-1);
 
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself
@@ -1438,10 +1438,10 @@ bool readImage(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option
 
 	// Evaluate the indices correspondingly
 	if (_idx.row.isOpenEnd())
-		_idx.row.back() = _idx.row.front() + nWidth;
+		_idx.row.setRange(0, _idx.row.front() + nWidth-1);
 
 	if (_idx.col.isOpenEnd())
-		_idx.col.back() = _idx.col.front() + 2 + nHeight;
+		_idx.col.setRange(0, _idx.col.front() + 2 + nHeight-1);
 
     // Write the axes to the target cache
 	for (int i = 0; i < nWidth; i++)

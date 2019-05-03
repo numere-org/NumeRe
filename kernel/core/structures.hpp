@@ -34,6 +34,34 @@ class VectorIndex
         vector<long long int> vStorage;
         bool expand;
 
+        inline long long int getIndex(size_t n) const
+        {
+            if (expand)
+            {
+                if (vStorage.back() == INVALID && !n)
+                    return vStorage.front();
+
+                if (vStorage.back() == OPEN_END)
+                {
+                    if (vStorage.size() == 2)
+                        return vStorage.front() + n;
+                    else if (vStorage.size() > n+1)
+                        return vStorage[n];
+                    else
+                        return vStorage[vStorage.size()-1] + n - (vStorage.size()-1);
+                }
+
+                if (vStorage.front() <= vStorage.back() && n + vStorage.front() <= vStorage.back())
+                    return vStorage.front() + n;
+                else if (vStorage.front() > vStorage.back() && vStorage.front() - n >= vStorage.back()) // >= because vStorage.back() was not decremented first
+                    return vStorage.front() - n;
+            }
+            else if (n < vStorage.size())
+                return vStorage[n];
+
+            return INVALID;
+        }
+
     public:
         enum
         {
@@ -96,11 +124,11 @@ class VectorIndex
             if (pos >= size())
                 return VectorIndex();
 
-            if (nLen == string::npos)
+            if (nLen >= size())
                 nLen = size() - pos;
 
             if (expand)
-                return VectorIndex(operator[](pos), operator[](pos+nLen));
+                return VectorIndex(getIndex(pos), getIndex(pos+nLen));
 
             return VectorIndex(vector<long long int>(vStorage.begin()+pos, vStorage.begin()+pos+nLen));
         }
@@ -110,7 +138,7 @@ class VectorIndex
             if (!expand)
             {
                 long long int nMin = min();
-                long long int nMax = max()+1;
+                long long int nMax = max();
 
                 vStorage.clear();
                 vStorage.assign({nMin, nMax});
@@ -118,34 +146,9 @@ class VectorIndex
             }
         }
 
-        long long int operator[](size_t n) const
+        inline long long int operator[](size_t n) const
         {
-            if (expand)
-            {
-                if (vStorage.back() == INVALID && !n)
-                    return vStorage.front();
-
-                if (vStorage.back() == OPEN_END)
-                {
-                    if (vStorage.size() == 2)
-                        return vStorage.front() + n;
-                    else if (vStorage.size() > n+2)
-                        return vStorage[n];
-                    else
-                        return vStorage[vStorage.size()-2] + n - (vStorage.size()-1);
-                }
-
-                if (vStorage.front() <= vStorage.back() && n + vStorage.front() < vStorage.back())
-                    return vStorage.front() + n;
-                else if (vStorage.front() > vStorage.back() && vStorage.front() - n >= vStorage.back()) // >= because vStorage.back() was not decremented first
-                    return vStorage.front() - n;
-            }
-            else if (n < vStorage.size())
-            {
-                return vStorage[n];
-            }
-
-            return INVALID;
+            return getIndex(n);
         }
 
         size_t size() const
@@ -157,7 +160,7 @@ class VectorIndex
             else if (vStorage.back() == OPEN_END)
                 return -1;
             else if (vStorage.size() == 2 && expand)
-                return abs(vStorage.back() - vStorage.front());
+                return abs(vStorage.back() - vStorage.front() + 1);
             else
                 return vStorage.size();
         }
@@ -189,16 +192,10 @@ class VectorIndex
         {
             if (nthIndex < vStorage.size())
             {
-                if (vStorage.size() == 2 && nthIndex == 1 && nVal >= 0)
-                    vStorage[nthIndex] = nVal+1;
-                else
-                    vStorage[nthIndex] = nVal;
+                vStorage[nthIndex] = nVal;
             }
             else
             {
-                if (vStorage.size() == 2 && expand && vStorage.back() > 0)
-                    vStorage.back()--;
-
                 while (vStorage.size() <= nthIndex)
                     vStorage.push_back(INVALID);
 
@@ -217,7 +214,7 @@ class VectorIndex
 
                 for (size_t i = 0; i < size(); i++)
                 {
-                    vReturn.push_back(this->operator[](i));
+                    vReturn.push_back(getIndex(i));
                 }
 
                 return vReturn;
@@ -229,7 +226,7 @@ class VectorIndex
         long long int max() const
         {
             if (expand)
-                return ::max(vStorage.front(), vStorage.back()-1);
+                return ::max(vStorage.front(), vStorage.back());
 
             long long int nMax = vStorage.front();
 
@@ -245,7 +242,7 @@ class VectorIndex
         long long int min() const
         {
             if (expand)
-                return ::min(vStorage.front(), vStorage.back()-1);
+                return ::min(vStorage.front(), vStorage.back());
 
             long long int nMin = vStorage.front();
 
@@ -295,9 +292,6 @@ class VectorIndex
 
         long long int last() const
         {
-            if (expand && isOrdered())
-                return vStorage.back()-1;
-
             if (expand && vStorage.back() == INVALID)
                 return vStorage.front();
 
@@ -313,30 +307,16 @@ class VectorIndex
                 nMax = nTemp;
             }
 
-            if (expand)
-            {
-                if (vStorage.front() < nMin)
-                    vStorage.front() = nMin;
-
-                if (vStorage.front() > nMax)
-                    vStorage.front() = nMax;
-
-                if (vStorage.back() != INVALID && vStorage.back() != OPEN_END)
-                {
-                    if (vStorage.back() < nMin+1)
-                        vStorage.back() = nMin+1;
-
-                    if (vStorage.back() > nMax+1)
-                        vStorage.back() = nMax+1;
-                }
-                else if (vStorage.back() == OPEN_END)
-                    vStorage.back() = nMax+1;
-
-                return;
-            }
-
             for (size_t i = 0; i < vStorage.size(); i++)
             {
+                if (vStorage[i] == OPEN_END)
+                {
+                    vStorage[i] = nMax;
+                    continue;
+                }
+                else if (vStorage[i] == INVALID)
+                    continue;
+
                 if (vStorage[i] < nMin)
                     vStorage[i] = nMin;
 

@@ -790,28 +790,28 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
     if (_idx.row.isOpenEnd())
     {
         if (!isCluster)
-            _idx.row.back() = _data.getLines(sDataTable, false);
+            _idx.row.setRange(0, _data.getLines(sDataTable, false)-1);
         else
-            _idx.row.back() = _data.getCluster(sDataTable).size();
+            _idx.row.setRange(0, _data.getCluster(sDataTable).size()-1);
     }
 
     if (!isCluster && _idx.col.isOpenEnd())
     {
-        _idx.col.back() = _data.getCols(sDataTable, false);
+        _idx.col.setRange(0, _data.getCols(sDataTable, false)-1);
     }
 
     if (!isCluster)
     {
         if (_idx.row.back() > _data.getLines(sDataTable, false))
-            _idx.row.back() = _data.getLines(sDataTable, false);
+            _idx.row.setRange(0, _data.getLines(sDataTable, false)-1);
 
         if (_idx.col.back() > _data.getCols(sDataTable))
-            _idx.col.back() = _data.getCols(sDataTable);
+            _idx.col.setRange(0, _data.getCols(sDataTable)-1);
     }
     else
     {
         if (_idx.row.back() > _data.getCluster(sDataTable).size())
-            _idx.row.back() = _data.getCluster(sDataTable).size();
+            _idx.row.setRange(0, _data.getCluster(sDataTable).size()-1);
     }
 
 	/* --> Bestimmen wir die "Dimension" des zu fittenden Datensatzes. Dabei ist es auch

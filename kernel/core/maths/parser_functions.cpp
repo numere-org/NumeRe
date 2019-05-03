@@ -1800,10 +1800,10 @@ vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data,
 			throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 
         if (_idx.row.isOpenEnd())
-            _idx.row.back() = _data.getLines(sExpr, false);
+            _idx.row.setRange(0, _data.getLines(sExpr, false)-1);
 
         if (_idx.col.isOpenEnd())
-            _idx.col.back() = _idx.col.front()+2;
+            _idx.col.setRange(0, _idx.col.front()+1);
 
         // Copy the data contents, sort the values
         // and calculate the derivative
@@ -4395,12 +4395,12 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
 
 
 	if (_idx.col.isOpenEnd())
-		_idx.col.back() = _idx.col.front() + 4;
+		_idx.col.setRange(0, _idx.col.front() + 3);
 
 	if (!bInverseTrafo)
 	{
 		if (_idx.row.isOpenEnd())
-			_idx.row.back() = _idx.row.front() + (int)round(_fftData.GetNx() / 2.0) + 2;
+			_idx.row.setRange(0, _idx.row.front() + (int)round(_fftData.GetNx() / 2.0) + 1);
 
 		for (long long int i = 0; i < (int)round(_fftData.GetNx() / 2.0) + 1; i++)
 		{
@@ -4448,7 +4448,7 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
 	else
 	{
 		if (_idx.row.isOpenEnd())
-			_idx.row.back() = _idx.row.front() + _fftData.GetNx()+1;
+			_idx.row.setRange(0, _idx.row.front() + _fftData.GetNx());
 
 		for (long long int i = 0; i < _fftData.GetNx(); i++)
 		{
@@ -4566,10 +4566,10 @@ bool parser_wavelet(string& sCmd, Parser& _parser, Datafile& _data, const Settin
 		NumeRe::Table tWaveletData = decodeWaveletData(vWaveletData, vAxisData);
 
 		if (_idx.col.isOpenEnd())
-			_idx.col.back() = _idx.col.front() + tWaveletData.getCols();
+			_idx.col.setRange(0, _idx.col.front() + tWaveletData.getCols()-1);
 
 		if (_idx.row.isOpenEnd())
-			_idx.row.back() = _idx.row.front() + tWaveletData.getLines();
+			_idx.row.setRange(0, _idx.row.front() + tWaveletData.getLines()-1);
 
 		for (size_t i = 0; i < tWaveletData.getLines(); i++)
 		{
@@ -4608,10 +4608,10 @@ bool parser_wavelet(string& sCmd, Parser& _parser, Datafile& _data, const Settin
 
 	// write the output as usual data rows
 	if (_idx.col.isOpenEnd())
-		_idx.col.back() = _idx.col.front() + 3;
+		_idx.col.setRange(0, _idx.col.front() + 2);
 
 	if (_idx.row.isOpenEnd())
-		_idx.row.back() = _idx.row.front() + vWaveletData.size();
+		_idx.row.setRange(0,  _idx.row.front() + vWaveletData.size()-1);
 
 	for (long long int i = 0; i < vWaveletData.size(); i++)
 	{
@@ -4992,16 +4992,16 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
         vector<double> vVector;
 
         if (_idx.col.isOpenEnd())
-            _idx.col.back() = _data.getCols(szDatatable);
+            _idx.col.setRange(0, _data.getCols(szDatatable)-1);
 
         if (_idx.row.isOpenEnd())
         {
-            _idx.row.back() = _data.getLines(szDatatable, true) - _data.getAppendedZeroes(_idx.col.front(), szDatatable);
+            _idx.row.setRange(0, _data.getLines(szDatatable, true) - _data.getAppendedZeroes(_idx.col.front(), szDatatable) - 1);
 
             for (size_t j = 1; j < _idx.col.size(); j++)
             {
                 if (_data.getLines(szDatatable, true) - _data.getAppendedZeroes(_idx.col[j], szDatatable) > _idx.row.back())
-                    _idx.row.back() = _data.getLines(szDatatable, true) - _data.getAppendedZeroes(_idx.col[j], szDatatable);
+                    _idx.row.setRange(0, _data.getLines(szDatatable, true) - _data.getAppendedZeroes(_idx.col[j], szDatatable) - 1);
             }
         }
 
@@ -5053,9 +5053,9 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
 
 	// Store the results in the target cache
 	if (_iTargetIndex.row.isOpenEnd())
-		_iTargetIndex.row.back() = _iTargetIndex.row.front() + vXVals.size();
+		_iTargetIndex.row.setRange(0, _iTargetIndex.row.front() + vXVals.size() - 1);
 	if (_iTargetIndex.col.isOpenEnd())
-		_iTargetIndex.col.back() = _iTargetIndex.col.front() + vYVals.size() + 2;
+		_iTargetIndex.col.setRange(0, _iTargetIndex.col.front() + vYVals.size() + 1);
 
 	_data.setCacheStatus(true);
 
@@ -5124,16 +5124,16 @@ static vector<size_t> parser_getSamplesForDatagrid(const string& sCmd, const str
 
         // The indices are vectors
         if (_idx.col.isOpenEnd())
-            _idx.col.back() = _data.getCols(sZDatatable);
+            _idx.col.setRange(0, _data.getCols(sZDatatable)-1);
 
         if (_idx.row.isOpenEnd())
         {
-            _idx.row.back() = _data.getLines(sZDatatable, true) - _data.getAppendedZeroes(_idx.col.front(), sZDatatable);
+            _idx.row.setRange(0, _data.getLines(sZDatatable, true) - _data.getAppendedZeroes(_idx.col.front(), sZDatatable) - 1);
 
             for (size_t j = 1; j < _idx.col.size(); j++)
             {
                 if (_data.getLines(sZDatatable, true) - _data.getAppendedZeroes(_idx.col[j], sZDatatable) > _idx.row.back())
-                    _idx.row.back() = _data.getLines(sZDatatable, true) - _data.getAppendedZeroes(_idx.col[j], sZDatatable);
+                    _idx.row.setRange(0, _data.getLines(sZDatatable, true) - _data.getAppendedZeroes(_idx.col[j], sZDatatable) - 1);
             }
         }
 
@@ -5192,13 +5192,13 @@ static vector<double> parser_extractVectorForDatagrid(const string& sCmd, string
 
         // The indices are vectors
         if (_idx.col.isOpenEnd())
-            _idx.col.back() = _data.getCols(sDatatable);
+            _idx.col.setRange(0, _data.getCols(sDatatable)-1);
 
         if (_idx.row.isOpenEnd() && _idx.col.size() > 1)
             throw SyntaxError(SyntaxError::NO_MATRIX, sCmd, SyntaxError::invalid_position);
 
         if (_idx.row.isOpenEnd())
-            _idx.row.back() = _data.getLines(sDatatable, true) - _data.getAppendedZeroes(_idx.col.front(), sDatatable);
+            _idx.row.setRange(0, _data.getLines(sDatatable, true) - _data.getAppendedZeroes(_idx.col.front(), sDatatable)-1);
 
         if (sZVals.find("data(") != string::npos || _data.containsTablesOrClusters(sZVals))
         {
@@ -5380,10 +5380,10 @@ bool parser_evalIndices(const string& sCache, Indices& _idx, Datafile& _data)
 
 	// Evaluate the case for an open end index
 	if (_idx.row.isOpenEnd())
-		_idx.row.back() = _data.getLines(sCache.substr(0, sCache.find('(')), false);
+		_idx.row.setRange(0, _data.getLines(sCache.substr(0, sCache.find('(')), false)-1);
 
 	if (_idx.col.isOpenEnd())
-		_idx.col.back() = _data.getCols(sCache.substr(0, sCache.find('(')), false);
+		_idx.col.setRange(0, _data.getCols(sCache.substr(0, sCache.find('(')), false)-1);
 
 	// Signal success
 	return true;
@@ -5653,10 +5653,10 @@ bool parser_writeAudio(string& sCmd, Parser& _parser, Datafile& _data, Define& _
 	StripSpaces(sDataset);
 
     if (_idx.row.isOpenEnd())
-        _idx.row.back() = _data.getLines(sDataset, false);
+        _idx.row.setRange(0, _data.getLines(sDataset, false)-1);
 
     if (_idx.col.isOpenEnd())
-        _idx.col.back() = _idx.col.front() + 2;
+        _idx.col.setRange(0, _idx.col.front() + 1);
 
     if (_idx.col.size() > 2)
         return false;
@@ -5978,10 +5978,10 @@ bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& 
 	// Zielcache befuellen entsprechend der Fourier-Algorithmik
 
 	if (_target.row.isOpenEnd())
-		_target.row.back() = _target.row.front() + _result.GetNx();//?
+		_target.row.setRange(0, _target.row.front() + _result.GetNx() - 1);//?
 
 	if (_target.col.isOpenEnd())
-		_target.col.back() = _target.col.front() + _result.GetNy() + 2; //?
+		_target.col.setRange(0, _target.col.front() + _result.GetNy() + 1); //?
 
 	// UPDATE DATA ELEMENTS
 	for (int i = 0; i < _result.GetNx(); i++)
